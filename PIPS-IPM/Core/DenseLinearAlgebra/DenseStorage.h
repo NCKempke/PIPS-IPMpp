@@ -33,14 +33,14 @@ public:
 
 
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( OoqpVector& vec ) override;
 
-  virtual void atPutDense( int row, int col, double * A, int lda,
-			   int rowExtent, int colExtent );
+  void atPutDense( int row, int col, double * A, int lda,
+			   int rowExtent, int colExtent ) override;
 
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent );
+  void fromGetDense( int row, int col, double * A, int lda,
+			     int rowExtent, int colExtent ) override;
   
   virtual void atPutZeros( int row, int col,
 			   int rowExtent, int colExtent );
@@ -51,23 +51,23 @@ public:
 
   virtual void addToDiagonalAt( double alpha, double x[], int incx,
 				int idiag, int extent );
-  virtual void fromGetSpRow( int row, int col,
+  void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int irowA[], int& nnz,
-			     int rowExtent, int& info );
+			     int rowExtent, int& info ) override;
 
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector& vec );
-  virtual void scalarMult( double num);
+  void ColumnScale( OoqpVector& vec ) override;
+  void RowScale( OoqpVector& vec ) override;
+  void SymmetricScale( OoqpVector& vec ) override;
+  void scalarMult( double num) override;
 
-  virtual void atPutSpRow( int col, double A[], int lenA, int irowA[],
-			   int& info );
+  void atPutSpRow( int col, double A[], int lenA, int irowA[],
+			   int& info ) override;
 
   virtual void putSparseTriple( int irow[], int len, int jcol[], double A[], 
 				int& info );
 
-  virtual void atPutDiagonal(   int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void atPutDiagonal(   int idiag, OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
   virtual void atPutDiagonal( int idiag, double x[], int incx, int extent );
 };
   

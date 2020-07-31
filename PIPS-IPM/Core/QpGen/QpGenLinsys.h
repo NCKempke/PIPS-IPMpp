@@ -80,7 +80,7 @@ public:
    * @see QpGenSparseLinsys::factor
    * @see QpGenDenseLinsys::factor
    */
-  virtual void factor(Data *prob, Variables *vars);
+  void factor(Data *prob, Variables *vars) override;
 
   /** solves the system for a given set of residuals. Assembles the
    * right-hand side appropriate to the matrix factored in factor,
@@ -92,8 +92,8 @@ public:
    * @see QpGenSparseLinsys::solveCompressed
    * @see QpGenDenseLinsys::solveCompressed
 */
-  virtual void solve(Data *prob, Variables *vars, Residuals *res,
-		     Variables *step);
+  void solve(Data *prob, Variables *vars, Residuals *res,
+		     Variables *step) override;
 
   /** assembles a single vector object from three given vectors
    *
