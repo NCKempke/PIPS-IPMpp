@@ -31,8 +31,8 @@ class sLinsysRoot : public sLinsys {
  protected:
   sLinsysRoot() {};
 
-  virtual void         createChildren(sData* prob);
-  virtual void         deleteChildren();
+  virtual void createChildren(sData* prob);
+  void deleteChildren() override;
 
   virtual SymMatrix*   createKKT     (sData* prob) = 0;
   virtual DoubleLinearSolver* 
@@ -51,7 +51,7 @@ class sLinsysRoot : public sLinsys {
 	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 	      OoqpVector* rhs_);
 
-  virtual void factor2(sData *prob, Variables *vars);
+  void factor2(sData *prob, Variables *vars) override;
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   virtual void initializeKKT(sData* prob, Variables* vars);
   virtual void reduceKKT();
@@ -61,23 +61,23 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKT(sData* prob, Variables* vars)=0;
   virtual void finalizeKKTdist(sData* prob) {assert("not implemented here \n" && 0);};
 
-  virtual void Lsolve ( sData *prob, OoqpVector& x );
-  virtual void Dsolve ( sData *prob, OoqpVector& x );
-  virtual void Ltsolve( sData *prob, OoqpVector& x );
+  void Lsolve ( sData *prob, OoqpVector& x ) override;
+  void Dsolve ( sData *prob, OoqpVector& x ) override;
+  void Ltsolve( sData *prob, OoqpVector& x ) override;
 
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
 
   virtual void solveReduced( sData *prob, SimpleVector& b)=0;
   virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
-  virtual void putXDiagonal( OoqpVector& xdiag_ );
-  virtual void putZDiagonal( OoqpVector& zdiag );
+  void putXDiagonal( OoqpVector& xdiag_ ) override;
+  void putZDiagonal( OoqpVector& zdiag ) override;
  
   virtual void AddChild(sLinsys* child);
 
   virtual bool usingSparseKkt() {return hasSparseKkt;};
 
-  void sync();
+  void sync() override;
  public:
   virtual ~sLinsysRoot();
 

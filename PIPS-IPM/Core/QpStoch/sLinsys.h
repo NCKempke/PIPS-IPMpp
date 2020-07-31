@@ -35,26 +35,26 @@ class sLinsys : public QpGenLinsys
 
   virtual ~sLinsys();
 
-  virtual void factor (Data *prob, Variables *vars);
-  virtual void factor2(sData *prob, Variables *vars)=0;
+  void factor (Data *prob, Variables *vars) override;
+  virtual void factor2(sData *prob, Variables *vars) = 0;
 
-  virtual void Lsolve ( sData *prob, OoqpVector& x )=0;
-  virtual void Dsolve ( sData *prob, OoqpVector& x )=0;
-  virtual void Ltsolve( sData *prob, OoqpVector& x )=0;
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)=0;
+  virtual void Lsolve ( sData *prob, OoqpVector& x ) = 0;
+  virtual void Dsolve ( sData *prob, OoqpVector& x ) = 0;
+  virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
+  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) = 0;
 
-  virtual void putZDiagonal( OoqpVector& zdiag )=0;
-  virtual void solveCompressed( OoqpVector& rhs );
-  virtual void putXDiagonal( OoqpVector& xdiag_ )=0;
+  void putZDiagonal( OoqpVector& zdiag ) override = 0;
+  void solveCompressed( OoqpVector& rhs ) override;
+  void putXDiagonal( OoqpVector& xdiag_ ) override = 0;
 
   void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-		OoqpVector& rhs2_in, OoqpVector& rhs3_in );
+		OoqpVector& rhs2_in, OoqpVector& rhs3_in ) override;
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, OoqpVector& vars_in );
+		     OoqpVector& z_in, OoqpVector& vars_in ) override;
   
-  virtual void sync()=0;
-  virtual void deleteChildren()=0;
+  virtual void sync() = 0;
+  virtual void deleteChildren() = 0;
 
   virtual bool isDummy() const { return false; };
 
