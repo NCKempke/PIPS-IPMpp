@@ -98,8 +98,8 @@ public:
   void writeMPSformat(ostream& out);
   void writeMPSColumns(ostream& out);
   virtual sData* cloneFull(bool switchToDynamicStorage = false) const;
-  virtual double objectiveValue( QpGenVars * vars );
-  virtual void createScaleFromQ();
+  double objectiveValue( QpGenVars * vars ) override;
+  void createScaleFromQ() override;
 
   void cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC, const StochVectorBase<int>& colNnzVec);
 
