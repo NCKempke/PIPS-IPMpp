@@ -54,17 +54,17 @@ public:
 
   virtual ~GondzioSolver();
 
-  virtual int solve( Data *prob, Variables *iterate, Residuals * resid );
+  int solve( Data *prob, Variables *iterate, Residuals * resid ) override;
 
   /** reset parameters to their default values */
   virtual void reset_parameters() {};
 
-  virtual void defaultMonitor( Data * data, Variables * vars,
+  void defaultMonitor( Data * data, Variables * vars,
 							   Residuals * resids,
 							   double alpha, double sigma,
 							   int i, double mu, 
 							   int status_code,
-							   int level ) ;
+							   int level ) override;
 
 };
 
