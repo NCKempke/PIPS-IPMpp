@@ -22,13 +22,13 @@ public:
   DenseGenMatrix( int m, int n );
   DenseGenMatrix( double A[], int m, int n );
 
-  virtual int isKindOf( int matType ) const;
+  int isKindOf( int matType ) const override;
 
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
 
-  virtual void atPutDense( int row, int col, double * A, int lda,
-			   int rowExtent, int colExtent );
+  void atPutDense( int row, int col, double * A, int lda,
+			   int rowExtent, int colExtent ) override;
 
   /** Fill a region of this matrix with zeros.
    *
@@ -39,18 +39,18 @@ public:
 			   int rowExtent, int colExtent );
 
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( OoqpVector& vec ) override;
 
-  virtual void atPutSubmatrix( int destRow, int destCol,
+  void atPutSubmatrix( int destRow, int destCol,
 			       DoubleMatrix& M,
 			       int srcRow, int srcCol,
-			       int rowExtent, int colExtent );
-  virtual void atPutSpRow( int row, double A[], int lenA, int jcolA[],
-			   int& info );
+			       int rowExtent, int colExtent ) override;
+  void atPutSpRow( int row, double A[], int lenA, int jcolA[],
+			   int& info ) override;
 
-  virtual void putSparseTriple( int irow[], int len, int jcol[], double A[],
-				int& info );
+  void putSparseTriple( int irow[], int len, int jcol[], double A[],
+				int& info ) override;
 
   void mult ( double beta,  OoqpVector& y,
 		      double alpha, const OoqpVector& x ) const override;
@@ -62,28 +62,28 @@ public:
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
 
-  virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res);
-  virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res);
+  void matTransDMultMat(OoqpVector& d, SymMatrix** res) override;
+  void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override;
 
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent );
+  void fromGetDense( int row, int col, double * A, int lda,
+			     int rowExtent, int colExtent ) override;
 
-  virtual void fromGetSpRow( int row, int col,
+  void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
-			     int rowExtent, int& info );
+			     int rowExtent, int& info ) override;
 
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector &vec);
-  virtual void scalarMult( double num);
+  void ColumnScale( OoqpVector& vec ) override;
+  void RowScale( OoqpVector& vec ) override;
+  void SymmetricScale( OoqpVector &vec) override;
+  void scalarMult( double num) override;
 
-  virtual double abmaxnorm();
+  double abmaxnorm() override;
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamDense( std::ostream& out ) const override;
-  virtual void randomize( double alpha, double beta, double * seed );
+  void randomize( double alpha, double beta, double * seed ) override;
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void atPutDiagonal( int idiag, OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
   /** Get a row of this matrix. */
   virtual void getRow ( int rowIndex, OoqpVector& v_in);
 
