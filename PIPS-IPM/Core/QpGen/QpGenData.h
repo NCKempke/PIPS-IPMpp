@@ -150,7 +150,7 @@ public:
   virtual void flipg();
   virtual void flipQ();
 
-  virtual double datanorm();
+  double datanorm() override;
   virtual void datainput() {};
   virtual void datainput( MpsReader * reader, int& iErr );
   /** Create a random problem
@@ -158,7 +158,7 @@ public:
    */
   virtual void datarandom( OoqpVector  & x, OoqpVector  & y,
 			    OoqpVector & z, OoqpVector & s );
-  virtual void print();
+  void print() override;
 
   virtual double objectiveValue( QpGenVars * vars );
 
