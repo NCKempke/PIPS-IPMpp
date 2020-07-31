@@ -6,7 +6,13 @@
 #define SPSTOCHFACTORY
 
 #include "QpGen.h"
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include "mpi.h"
+// turn the warnings back 
+#pragma GCC diagnostic pop
 
 class QpGenData;
 class sData;
