@@ -54,7 +54,7 @@ public:
    virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
 			     OoqpVector& z_in, OoqpVector& vars_in ) = 0;
 
-   virtual void writeProblemToStream(std::ostream& out) const;
+   void writeProblemToStream(std::ostream& out) const;
 
    virtual ~QpGen() {};
 };
