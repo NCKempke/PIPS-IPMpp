@@ -23,8 +23,8 @@ protected:
   DenseStorageHandle mStorage;
 public:
   DeSymPSDSolver( DenseSymMatrix * dsm );
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
   void solve ( OoqpVector& x ) override;

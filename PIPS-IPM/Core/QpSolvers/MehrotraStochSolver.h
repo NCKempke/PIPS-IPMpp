@@ -19,7 +19,7 @@ public:
 
   ~MehrotraStochSolver();
 
-  virtual int solve( Data *prob, Variables *iterate, Residuals * resids );
+  int solve( Data *prob, Variables *iterate, Residuals * resids ) override;
 
 };
 

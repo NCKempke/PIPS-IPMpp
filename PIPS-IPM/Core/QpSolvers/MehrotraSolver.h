@@ -40,15 +40,15 @@ public:
 
   ~MehrotraSolver();
 
-  virtual int solve( Data *prob, Variables *iterate, Residuals * resids );
+  int solve( Data *prob, Variables *iterate, Residuals * resids ) override;
 
 
-  virtual void defaultMonitor( Data * data, Variables * vars,
+  void defaultMonitor( Data * data, Variables * vars,
 			       Residuals * resids,
 			       double alpha, double sigma,
 			       int i, double mu,
 			       int status_code,
-			       int level );
+			       int level ) override;
 };
 
 #endif

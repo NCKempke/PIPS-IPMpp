@@ -67,10 +67,10 @@ protected:
   void * ctx;
 public:
   CStatus( StatusCFunc doItC_, void * ctx );
-  virtual int doIt(  Solver * solver, Data * data, Variables * vars, 
+  int doIt(  Solver * solver, Data * data, Variables * vars, 
 		     Residuals * resids,
 		     int i, double mu, 
-		     int level );
+		     int level ) override;
 };
 
 #endif

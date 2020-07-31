@@ -48,12 +48,12 @@ public:
  */
 class OoqpSelfMonitor : public OoqpMonitor {
 public:
-  virtual void doIt( Solver * solver, Data * data, Variables * vars,
+  void doIt( Solver * solver, Data * data, Variables * vars,
 					 Residuals * resids,
 					 double alpha, double sigma,
 					 int i, double mu,
                      int status_code,
-					 int level );
+					 int level ) override;
 };
 
 #include "OoqpMonitorData.h"
@@ -69,12 +69,12 @@ protected:
   void * ctx;
 public:
   COoqpMonitor( DoItCFunc doItC_, void * ctx_ );
-  virtual void doIt( Solver * solver, Data * data, Variables * vars,
+  void doIt( Solver * solver, Data * data, Variables * vars,
 					 Residuals * resids,
 					 double alpha, double sigma,
 					 int i, double mu,
                      int status_code,
-					 int level );
+					 int level ) override;
 };
 
 
