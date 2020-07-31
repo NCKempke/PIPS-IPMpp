@@ -202,8 +202,8 @@ public:
      getColMinMaxVec(getMin, initializeVec, rowScaleVec, nullptr, minmaxVec, nullptr);
   };
 
-  virtual void addRowSums( OoqpVector& sumVec ) {addRowSums(sumVec, nullptr);};
-  virtual void addColSums( OoqpVector& sumVec ) {addColSums(sumVec, nullptr);};
+  void addRowSums( OoqpVector& sumVec ) {addRowSums(sumVec, nullptr); } override;
+  void addColSums( OoqpVector& sumVec ) {addColSums(sumVec, nullptr); } override;
 
   virtual void initStaticStorageFromDynamic(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>& colNnzVec)
   {
