@@ -5,24 +5,14 @@
  */
 
 #include "Ma57Solver.h"
+
+#include <algorithm>
 #include "SparseStorage.h"
 #include "SparseSymMatrix.h"
 #include "SimpleVector.h"
 #include "SimpleVectorHandle.h"
 #include "DenseGenMatrix.h"
 #include "pipsport.h"
-
-#ifdef HAVE_GETRUSAGE
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#endif
-
-extern int gOoqpPrintLevel;
-
-#ifndef MIN
-#define MIN(a,b) ((a > b) ? b : a)
-#endif
 
 #include <mpi.h>
 
@@ -31,55 +21,52 @@ void dumpdata(int* irow, int* jcol, double*M, int n, int nnz)
   printf("======================================================\n");
   for(int i=0; i<nnz; i++)  printf("%6d %6d %10.2f\n", irow[i], jcol[i], M[i]);
   printf("\n");
-  /*  for(int i=0; i<nnz; i++)  printf("%10d ", jcol[i]);
-  printf("\n");
-  for(int i=0; i<nnz; i++)  printf("%10.2f ", M[i]);
-  printf("\n");
-  */
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
-Ma57Solver::Ma57Solver( SparseSymMatrix * sgm )
+Ma57Solver::Ma57Solver( SparseSymMatrix * sgm ) :
+      M(mStorage->M),
+      n(mStorage->n),
+      nnz(mStorage->krowM[n]),
+      mStorage(sgm->getStorageHandle())
 {
-  irowM = 0;
-  jcolM = 0;
-  fact  = 0;
-  ifact = 0;
-  keep  = 0;
+   /* set default parameters */
+   FNAME(ma57id)( cntl, icntl );
 
-  iworkn  = nullptr; dworkn = nullptr;
-  niworkn = ndworkn = 0;
+   cntl[0] = threshold_pivoting; // default is 1e-2 - only use if icntl[6] == 1 (default)
+   cntl[1] = treat_pivot_as_zero; // for Ma57BD
 
-  ipessimism = 1.4;
-  rpessimism = 1.4;
+//   cntl[2] convergence for Ma57DD iterative refinement (norm improvement by factor..) default 0.5
+//   cntl[3] Ma57BD (reuse of old factorization)
+//   cntl[4] static pivoting
 
-  FNAME(ma57id)( cntl, icntl );
-  //icntl[1] = -1; // don't print warning messages
-  icntl[8] = 10; // up to 10 steps of iterative refinement
-  icntl[5] = 5; // 4 use Metis; 5 automatic choice(MA47 or Metis); 3 min
-	      // degree ordering as in MA27; 2 use MC47;
+//icntl[1] = -1; // don't print warning messages
+   // 1 -> use pivot order in KEEP, 0 -> AMD ordering using MC47 (no dense rows), 2 -> AMD using MC47,
+   // 3 -> min degree MA27, 4 -> METIS ordering, 5 -> auto choice (default)
+//   icntl[5] = 5;
 
-  // set initial value of "Treat As Zero" parameter
-  kTreatAsZero = 1.e-10;      this->setTreatAsZero();
+   // numerical pivoting: 1 (default) use threshold in cntl[0], 2 -> no pivoting exit on sign change/zero,
+   // 3 -> no pivoting exit on pivot < cntl[1], 4 -> no pivoting but alter matrix to have pivots of smae sign only...
+//   icntl[6]
+//   icntl[7]
+   icntl[8] = n_iterative_refinement;
+//   icntl[9]
+//   icntl[10]
+//   icntl[11]
+//   icntl[12]
+//   icntl[13]
 
-  // set initial value of Threshold parameter
-  kThresholdPivoting = 1.e-5; this->setThresholdPivoting();
+   // default 1 -> scale using symmetrized MC64 version, if != 1 no sclaing
+//   icntl[14] = 1;
+   // if 0 nothing (default) if 1 remove small entries cntl[1] and place corresponding pivots at the end of factorization -> for highly rank deficient matrices ..
+//   icntl[15] = 1
 
   // set the largest value of ThresholdPivoting parameter we are
   // willing to tolerate.
-  kThresholdPivotingMax = 1.e-1;
+  threshold_pivoting_max = 1.e-1;
 
   // set the increase factor for ThresholdPivoting parameter
-  kThresholdPivotingFactor = 10.0;
-
-  // set the required precision for each linear system solve
-  kPrecision = 1.e-9;
-
-  mStorage = sgm->getStorageHandle();
-  n        = mStorage->n;
-  M        = mStorage->M;
-
-  nnz = mStorage->krowM[n];
+  threshold_pivoting_factor = 10.0;
 }
 
 void Ma57Solver::firstCall()
@@ -87,30 +74,35 @@ void Ma57Solver::firstCall()
   irowM = new int[nnz];
   jcolM = new int[nnz];
 
+  /* keep irowM, jcolM in case we solve with iterative refinement */
   int * krowM = mStorage->krowM;
-  for( int i = 0; i < n; i++ ) {
+
+  for( int i = 0; i < n; i++ )
+  {
     for( int k = krowM[i]; k < krowM[i+1]; k++ ) {
       irowM[k] = i + 1;
     }
   }
-  for( int k = 0; k < nnz; k++ ) {
-    jcolM[k] = mStorage->jcolM[k] + 1;
-  }
 
-  lkeep = ( nnz > n ) ? (5 * n + 2 *nnz + 42) : (6 * n + nnz + 42);
+  for( int k = 0; k < nnz; k++ )
+    jcolM[k] = mStorage->jcolM[k] + 1;
+
+  lkeep = 5 * n + nnz + 2 * std::max(n, nnz) + 42;
   keep = new int[lkeep];
 
   int * iwork = new int[5 * n];
-  FNAME(ma57ad)( &n, &nnz, irowM, jcolM, &lkeep, keep, iwork, icntl,
-	   info, rinfo );
+
+  int nn = n;
+  FNAME(ma57ad)( &nn, &nnz, irowM, jcolM, &lkeep, keep, iwork, icntl, info, rinfo );
 
   delete [] iwork;
 
   lfact = info[8];
-  lfact = 2*(int) (rpessimism * lfact);
+  lfact = 2 * static_cast<int>(rpessimism * lfact);
   fact  = new double[lfact];
+
   lifact = info[9];
-  lifact = (int) (ipessimism * lifact);
+  lifact = static_cast<int>(ipessimism * lifact);
   ifact  = new int[lifact];
 
 }
@@ -121,224 +113,154 @@ void Ma57Solver::diagonalChanged( int /* idiag */, int /* extent */ )
 
 void Ma57Solver::matrixChanged()
 {
-  if( !keep ) this->firstCall();
+  if( keep == nullptr )
+     this->firstCall();
 
-  int * iwork = new_iworkn(n);
+  int* iwork = new int[n];
 
-  int done = 0, tries = 0;;
-  do {
-#ifdef HAVE_GETRUSAGE
-    rusage before;
-    if( gOoqpPrintLevel >= 100 ) {
-      getrusage( RUSAGE_SELF, &before );
+  bool done = false;
+  int tries = 0;
+  do
+  {
+
+    int nn = n;
+    FNAME(ma57bd)( &nn, &nnz, M, fact, &lfact, ifact,
+          &lifact, &lkeep, keep, iwork, icntl, cntl,
+          info, rinfo );
+
+    if( info[0] != 0 )
+       std::cout << "ma57bd: Factorization: info[0]=: " << info[0] << std::endl;
+
+    switch( info[0] )
+    {
+         case 0:
+         {
+            done = true;
+            break;
+         }
+         case -3:
+         {
+            int ic = 0;
+            int lnfact = (int) (info[16] * rpessimism);
+            double *newfact = new double[lnfact];
+            int nn = n;
+            FNAME(ma57ed)(&nn, &ic, keep, fact, &lfact, newfact, &lnfact, ifact,
+                  &lifact, ifact, &lifact, info);
+            delete[] fact;
+            fact = newfact;
+            lfact = lnfact;
+            rpessimism *= 1.1;
+            std::cout << "Resizing real part. pessimism = " << rpessimism << std::endl;
+            break;
+         }
+         case -4:
+         {
+            int ic = 1;
+            int lnifact = (int) (info[17] * ipessimism);
+            int * nifact = new int[ lnifact ];
+            int nn = n;
+            FNAME(ma57ed)( &nn, &ic, keep, fact, &lfact, fact, &lfact,
+                  ifact, &lifact, nifact, &lnifact, info );
+            delete [] ifact;
+            ifact = nifact;
+            lifact = lnifact;
+            ipessimism *= 1.1;
+            std::cout << "Resizing int part. pessimism = " << ipessimism << std::endl;
+            break;
+         }
+         default:
+         {
+            if( info[0] >= 0 )
+               done = true;
+            assert( info[0] >= 0 );
+         }
     }
-#endif
 
-    //!log
-    //dumpdata(irowM, jcolM, M, n, nnz);
-    //assert(false);
-
-    FNAME(ma57bd)( &n,       &nnz,    M,     fact,  &lfact,  ifact,
-	     &lifact,  &lkeep,  keep,  iwork,  icntl,  cntl,
-	     info,     rinfo );
-#ifdef HAVE_GETRUSAGE
-    rusage  after;
-    if( gOoqpPrintLevel >= 100 ) {
-      getrusage( RUSAGE_SELF, &after );
-      cout << "For try " << tries + 1
-	   << " the factorization took "
-	   << (double) (after.ru_utime.tv_sec - before.ru_utime.tv_sec)
-	+ (after.ru_utime.tv_usec - before.ru_utime.tv_usec) / 1000000.0
-	   << " seconds.\n";
-    }
-
-    //cout << "MA57 factorization: " << info[21] << " 2x2 pivots were used in the factorization" <<  endl;
-    //cout << "MA57 factorization: " << info[23] << " negative eigenvalues were found." <<  endl;
-#endif
-
-    if( info[0] != 0 ) cout << "ma57bd: Factorization: info[0]=: " << info[0] << endl;
-    //assert(false);
-    switch( info[0] ) {
-    case 0: done = 1;
-      break;
-    case -3: {
-      int ic = 0;
-      int lnfact = (int) (info[16] * rpessimism);
-      double * newfact = new double[lnfact];
-      FNAME(ma57ed)( &n, &ic, keep, fact, &lfact, newfact, &lnfact,
-	       ifact, &lifact, ifact, &lifact, info );
-      delete [] fact;
-      fact = newfact;
-      lfact = lnfact;
-      rpessimism *= 1.1;
-      cout << "Resizing real part. pessimism = " << rpessimism << endl;
-    }; break;
-    case -4: {
-      int ic = 1;
-      int lnifact = (int) (info[17] * ipessimism);
-      int * nifact = new int[ lnifact ];
-      FNAME(ma57ed)( &n, &ic, keep, fact, &lfact, fact, &lfact,
-	       ifact, &lifact, nifact, &lnifact, info );
-      delete [] ifact;
-      ifact = nifact;
-      lifact = lnifact;
-      ipessimism *= 1.1;
-      cout << "Resizing int part. pessimism = " << ipessimism << endl;
-    }; break;
-    default:
-      if( info[0] >= 0 ) done = 1;
-      assert( info[0] >= 0 );
-    } // end switch
     tries++;
-  } while( !done );
-  freshFactor = 1;
+  }
+  while( !done );
 
-  //delete [] iwork;
+  freshFactor = true;
+
+  delete [] iwork;
 }
 
 void Ma57Solver::solve( OoqpVector& rhs_in )
 {
-	//    int job = 0; // Solve using A
-	//    int one = 1;
-
-	//    SimpleVectorHandle work( new SimpleVector(n) );
-	//    SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
-
-	//    double * drhs = rhs.elements();
-	//    double * dwork  = work->elements();
-
-	//    int * iwork = new int[n];
-
-	//    rusage before;
-	//    getrusage( RUSAGE_SELF, &before );
-
-	//    FNAME(ma57cd)( &job,       &n,
-	//  	   fact,       &lfact,    ifact,  &lifact,
-	//  	   &one,       drhs,      &n,
-	//  	   dwork,      &n,        iwork,
-	//  	   icntl,      info );
-
-
-	//    rusage after;
-	//    getrusage( RUSAGE_SELF, &after );
-	//    cout << "Solution with the factored matrix took "
-	//         << (double) (after.ru_utime.tv_sec - before.ru_utime.tv_sec)
-	//        + (after.ru_utime.tv_usec - before.ru_utime.tv_usec) / 1000000.0
-	//  	 << " seconds.\n";
-
-	//    delete [] iwork;
 	int job = 0;
-	if( freshFactor ) {
-		icntl[8] = 1; // No iterative refinement
-	} else {
+
+	if( freshFactor )
+	   icntl[8] = 1; // No iterative refinement
+	else
 		icntl[8] = 10; // Iterative refinement
-	}
 
-	// MIKE: are these structure ever released??
+	double* rhs = dynamic_cast<SimpleVector&>(rhs_in).elements();
+	const double rhs_inf = rhs_in.infnorm();
 
-	SimpleVectorHandle x( new SimpleVector(n) );
-	SimpleVectorHandle resid( new SimpleVector(n) );
-	SimpleVectorHandle work( new SimpleVector(5 * n) );
-	SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
+	double* x = new double[n];
+	double* resid = new double[n];
+	double* work = new double[6 * n];
 
-	double * drhs = rhs.elements();
-	double * dx   = x->elements();
-	double * dresid = resid->elements();
-	double * dwork  = work->elements();
+	int* iwork = new int[n];
 
-	int * iwork = new_iworkn(n);
-
-
-  /*static int s = 0;
-  int mype; MPI_Comm_rank(MPI_COMM_WORLD,&mype);
-  if (mype == 0 && s==105) {
-    printf("RHS IN\n\n");
-    for (int i = 0; i < n; i++) {
-      printf("%d: %.10E\n", i, rhs[i]);
-    }
-  }*/
-
-#ifdef HAVE_GETRUSAGE
-	rusage before;
-	if( gOoqpPrintLevel >= 100 ) {
-		getrusage( RUSAGE_SELF, &before );
-	}
-#endif
-
-	int done = 0;
+	bool done = false;
 	int refactorizations = 0;
-	int dontRefactor =  (kThresholdPivoting > kThresholdPivotingMax);
-  while( !done && refactorizations < 10 ) {
-    FNAME(ma57dd)( &job,       &n,        &nnz,   M,        irowM,   jcolM,
-        fact,       &lfact,    ifact,  &lifact,  drhs,    dx,
-        dresid,      dwork,    iwork,  icntl,    cntl,    info,
-        rinfo );
-    if( resid->infnorm() < kPrecision*( 1 + rhs.infnorm() ) ) {
-      // resids are fine, use them
-      done = 1;
-    } else {
-      // resids aren't good enough.
-      if( freshFactor ) { // We weren't doing iterative refinement,
-        // let's do so
-        job = 2;
-        icntl[8] = 10;
-        // Mark this factorization as stale
-        freshFactor = 0;
-        // And grow more pessimistic about the next factorization
-        if( kThresholdPivoting >= kThresholdPivotingMax ) {
-          // We have already refactored as with a high a pivtol as we
-          // are willing to use
-          dontRefactor = 1;
-        } else {
-          // refactor with a higher Threshold Pivoting parameter
-          kThresholdPivoting *= kThresholdPivotingFactor;
-          if( kThresholdPivoting > kThresholdPivotingMax )
-            kThresholdPivoting = kThresholdPivotingMax;
-          this->setThresholdPivoting();
-          cout << "Setting ThresholdPivoting parameter to "
-            << kThresholdPivoting << " for future factorizations" << endl;
-        }
-      } else if ( dontRefactor ) {
-        // We might have tried a refactor, but the pivtol is above our
-        // limit.
-        done = 1;
-      } else {
-        // Otherwise, we have already tried iterative refinement, and
-        // have already increased the ThresholdPivoting parameter
-        cout << "Refactoring with Threshold Pivoting parameter"
-          << kThresholdPivoting << endl;
-        this->matrixChanged();
-        refactorizations++;
-        // be optimistic about the next factorization
-        job = 0;
-        icntl[8] = 1;
-      } // end else we hava already tried iterative refinement
-    } // end else resids aren't good enough
-  } // end while not done
-	/*
-#ifdef HAVE_GETRUSAGE
-rusage after;
-if( gOoqpPrintLevel >= 100 ) {
-getrusage( RUSAGE_SELF, &after );
-cout << "Solution with the factored matrix took "
-<< (double) (after.ru_utime.tv_sec - before.ru_utime.tv_sec)
-+ (after.ru_utime.tv_usec - before.ru_utime.tv_usec) / 1000000.0
-<< " seconds.\n";
-}
-#endif
-*/
-rhs.copyFrom( *x );
+	bool no_refactor =  (threshold_pivoting > threshold_pivoting_max);
 
-/*
-if (mype == 0 && s==105) {
-  printf("SOL OUT\n\n");
-  for (int i = 0; i < n; i++) {
-    printf("%d: %.10E\n", i, rhs[i]);
-  }
-}
-s++;*/
+	while( !done && refactorizations < 10 )
+	{
+	   int nn = n;
+      FNAME(ma57dd)(&job, &nn, &nnz, M, irowM, jcolM, fact, &lfact, ifact,
+            &lifact, rhs, x, resid, work, iwork, icntl, cntl, info, rinfo);
 
-//delete [] iwork; //it is cached now
+      const double res = *std::max_element(resid, resid + n, [](const double& a, const double& b){ return std::abs(a) < std::abs(b); } );
+
+      if( res < precision * ( 1 + rhs_inf ) )
+         done = true;
+      else
+      {
+         if( freshFactor )
+         {
+            // Switch to iterative refinement
+            job = 2;
+            icntl[8] = 10;
+            freshFactor = 0;
+
+            if( threshold_pivoting >= threshold_pivoting_max )
+               no_refactor = true;
+            else
+            {
+               threshold_pivoting *= threshold_pivoting_factor;
+               if( threshold_pivoting > threshold_pivoting_max )
+                  threshold_pivoting = threshold_pivoting_max;
+
+               this->setThresholdPivoting();
+               std::cout << "Setting ThresholdPivoting parameter to " << threshold_pivoting << " for future factorizations" << std::endl;
+            }
+         }
+         else if ( no_refactor )
+         {
+            done = true;
+         }
+         else
+         {
+            std::cout << "Refactoring with Threshold Pivoting parameter" << threshold_pivoting << std::endl;
+            this->matrixChanged();
+            refactorizations++;
+
+            // be optimistic about the next factorization
+            job = 0;
+            icntl[8] = 1;
+         }
+      }
+	}
+
+   std::copy(x, x + n, rhs);
+
+   delete[] iwork;
+   delete[] work;
+   delete[] resid;
+   delete[] x;
 }
 
 /*void Ma57Solver::Refine( OoqpVector& x_in, OoqpVector& rhs_in )
@@ -373,8 +295,6 @@ Ma57Solver::~Ma57Solver()
   delete [] fact;
   delete [] ifact;
   delete [] keep;
-  if(iworkn) delete[] iworkn;
-  if(dworkn) delete[] dworkn;
 }
 
 /*void Ma57Solver::Lsolve( OoqpVector& x )
@@ -396,61 +316,44 @@ void Ma57Solver::Ltsolve( OoqpVector& x )
 
 void Ma57Solver::solve(int solveType, OoqpVector& rhs_in)
 {
-  //dumpdata(irowM, jcolM, M, n, nnz);
-  if(solveType < 1 || solveType > 4) {
-    assert("Unknown JOB assigned for use in MA57CD!" && 0);
-  } else if(solveType==1) {
-    // we prefer iterative refinement.
-    solve(rhs_in);
-    return;
-  } /*else */
+   if( solveType < 1 || solveType > 4 )
+      assert("Unknown JOB assigned for use in MA57CD!" && 0);
+   else if( solveType == 1)
+   {
+      solve(rhs_in);
+   }
+   else
+   {
+      int job = solveType;
+      int one_rhs = 1;
 
-  int job = solveType; // Solve using A
-  int one = 1;
+      double* rhs = dynamic_cast<SimpleVector &>(rhs_in).elements();
+      double* dwork = new double[n];
+      int* iwork = new int[n];
 
-  SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
-  //!SimpleVectorHandle work( new SimpleVector(n) );
+      int nn = n;
+      FNAME(ma57cd)(&job, &nn, fact, &lfact, ifact, &lifact, &one_rhs, rhs, &nn, dwork, &nn, iwork, icntl, info);
 
-  double * drhs   = rhs.elements();
-  double * dwork  = new_dworkn(n);
-  int * iwork     = new_iworkn(n);
-
-#ifdef HAVE_GETRUSAGE
-  rusage before;
-  getrusage( RUSAGE_SELF, &before );
-#endif
-
-  FNAME(ma57cd)( &job,       &n,
-	   fact,       &lfact,    ifact,  &lifact,
-	   &one,       drhs,      &n,
-	   dwork,      &n,        iwork,
-	   icntl,      info );
-  /*
-#ifdef HAVE_GETRUSAGE
-  rusage after;
-  getrusage( RUSAGE_SELF, &after );
-  cout << "Solution with the factored matrix took "
-       << (double) (after.ru_utime.tv_sec - before.ru_utime.tv_sec)
-    + (after.ru_utime.tv_usec - before.ru_utime.tv_usec) / 1000000.0
-       << " seconds.\n";
-#endif
-  */
-  //delete [] iwork; //!using a sort of cache now
+      delete[] iwork;
+      delete[] dwork;
+   }
 }
 
 void Ma57Solver::solve(GenMatrix& rhs_in)
 {
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
-  int N,NRHS;
+  int N, NRHS;
+
   // rhs vectors are on the "rows", for continuous memory
-  rhs.getSize(NRHS,N);
-  assert(n==N);
+  rhs.getSize( NRHS, N );
+  assert(n == N);
 
 
   // we need checks on the residuals, can't do that with multiple RHS
-  for (int i = 0; i < NRHS; i++) {
-    SimpleVector v(rhs[i],N);
-    solve(v);
+  for (int i = 0; i < NRHS; i++)
+  {
+     SimpleVector v(rhs[i],N);
+     solve(v);
   }
 
 
@@ -478,31 +381,4 @@ void Ma57Solver::solve(GenMatrix& rhs_in)
 //     }
 //   }
 
-}
-
-
-int* Ma57Solver::new_iworkn(int dim)
-{
-  if(niworkn != dim) {
-    if(iworkn) delete[] iworkn;
-    iworkn = new int[dim];
-    niworkn=dim;
-  }else {
-    if(nullptr == iworkn)
-      iworkn = new int[dim];
-  }
-  return iworkn;
-}
-
-double* Ma57Solver::new_dworkn(int dim)
-{
-  if(ndworkn != dim) {
-    if(dworkn) delete[] dworkn;
-    dworkn = new double[dim];
-    ndworkn = dim;
-  }else {
-    if(nullptr == dworkn)
-      dworkn = new double[dim];
-  }
-  return dworkn;
 }

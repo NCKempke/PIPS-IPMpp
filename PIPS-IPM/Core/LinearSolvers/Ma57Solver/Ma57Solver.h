@@ -5,12 +5,13 @@
 #ifndef MA57LINSYS_H
 #define MA57LINSYS_H
 
+#include "pipsport.h"
+
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
 #include "OoqpVectorHandle.h"
 #include "SparseStorage.h"
-#include "pipsport.h"
 
 
 #ifndef FNAME
@@ -21,36 +22,35 @@
 #endif
 #endif
 
+extern "C"
+{
+   void FNAME(ma57id)( double cntl[],  int icntl[] );
 
-extern "C" {
-  void FNAME(ma57id)( double cntl[],  int icntl[] );
-
-  void FNAME(ma57ad)( int * n,        int * ne,       int irn[],
-		int jcn[],      int * lkeep,    int keep[],
-		int iwork[],    int icntl[],    int info[],
-		double rinfo[] );
-
-  void FNAME(ma57bd)( int * n,        int * ne,       double a[],
-		double fact[],  int * lfact,    int ifact[],
-		int * lifact,   int * lkeep,    int keep[],
-		int ppos[],     int * icntl,    double cntl[],
-		int info[],     double rinfo[] );
-  void FNAME(ma57cd)( int * job,      int * n,        double fact[],
-		int * lfact,    int ifact[],    int * lifact,
-		int * nrhs,     double rhs[],   int * lrhs,
-		double w[],     int * lw,       int iw1[],
-		int icntl[],    int info[]);
-  void FNAME(ma57dd)( int * job,      int * n,        int * ne,
-		double a[],     int irn[],      int jcn[],
-		double fact[],  int * lfact,    int ifact[],
-		int * lifact,   double rhs[],   double x[],
-		double resid[], double w[],     int iw[],
-		int icntl[],    double cntl[],  int info[],
-		double rinfo[] );
-  void FNAME(ma57ed)( int * n,        int * ic,       int keep[],
-		double fact[],  int * lfact,    double * newfac,
-		int * lnew,     int  ifact[],   int * lifact,
-		int newifc[],   int * linew,    int * info );
+   void FNAME(ma57ad)( int * n,        int * ne,       int irn[],
+      int jcn[],      int * lkeep,    int keep[],
+      int iwork[],    int icntl[],    int info[],
+      double rinfo[] );
+   void FNAME(ma57bd)( int * n,        int * ne,       double a[],
+      double fact[],  int * lfact,    int ifact[],
+      int * lifact,   int * lkeep,    int keep[],
+      int work[],     int * icntl,    double cntl[],
+      int info[],     double rinfo[] );
+   void FNAME(ma57cd)( int * job,      int * n,        double fact[],
+      int * lfact,    int ifact[],    int * lifact,
+      int * nrhs,     double rhs[],   int * lrhs,
+      double w[],     int * lw,       int iw1[],
+      int icntl[],    int info[]);
+   void FNAME(ma57dd)( int * job,      int * n,        int * ne,
+      double a[],     int irn[],      int jcn[],
+      double fact[],  int * lfact,    int ifact[],
+      int * lifact,   double rhs[],   double x[],
+      double resid[], double w[],     int iw[],
+      int icntl[],    double cntl[],  int info[],
+      double rinfo[] );
+   void FNAME(ma57ed)( int * n,        int * ic,       int keep[],
+      double fact[],  int * lfact,    double * newfac,
+      int * lnew,     int  ifact[],   int * lifact,
+      int newifc[],   int * linew,    int * info );
 }
 
 /** implements the linear solver class using the HSL MA57 solver
@@ -58,73 +58,77 @@ extern "C" {
  * @ingroup LinearSolvers
  */
 class Ma57Solver : public DoubleLinearSolver {
-private:
-  Ma57Solver() {};
-protected:
-  int     icntl[20];
-  int     info[40];
-  double  cntl[5];
-  double  rinfo[20];
 
+protected:
+  int icntl[20];
+  int info[40];
+  double cntl[5];
+  double rinfo[20];
+
+  int n_iterative_refinement = 10;
   /** the Threshold Pivoting parameter, stored as U in the ma27dd
    *  common block. Takes values in the range [0,1]. Larger values
    *  enforce greater stability in the factorization as they insist on
    *  larger pivots. Smaller values preserve sparsity at the cost of
    *  using smaller pivots.  */
-  double   kThresholdPivoting;
+  double threshold_pivoting = 1e-5;
 
   /** the Threshold Pivoting parameter may need to be increased during
    * the algorithm if poor precision is obtained from the linear
-   * solves.  kThresholdPivoting indicates the largest value we are
+   * solves. threshold_pivoting indicates the largest value we are
    * willing to tolerate.  */
-  double   kThresholdPivotingMax;
+  double threshold_pivoting_max;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is
    * increased when it is found to be inadequate.  */
-  double   kThresholdPivotingFactor;
+  double threshold_pivoting_factor;
 
   /** the "Treat As Zero" parameter, stored as pivtol in the common
    * block ma27td. The factorization will not accept a pivot whose
    * absolute value is less than this parameter as a 1x1 pivot or as
    * the off-diagonal in a 2x2 pivot.  */
-  double   kTreatAsZero;
+  double treat_pivot_as_zero = 1e-5; // was 1e-10
 
   /** precision we demand from the linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
    * possibly refactorization with a higher value of
    * kThresholdPivoting. */
-  double  kPrecision;
+  double precision = 1e-9;
 
   /** index array for the factorization */
-  int     *irowM,    *jcolM;
+  int *irowM = nullptr;
+  int *jcolM = nullptr;
 
   /** storage for the original matrix */
-  double  *M;
+  double *M;
 
   /** dimension of the whole matrix */
-  int      n;
+  const int n;
 
   /** number of nonzeros in the matrix */
-  int      nnz;
+  int nnz;
 
   /** temporary storage */
-  int     lkeep, *keep;
+  int lkeep = 0;
+  int *keep = nullptr;
 
   /** temporary storage for the factorization process */
-  int     lifact, *ifact, lfact;
+  int lifact = 0, lfact = 0;
+  int *ifact = nullptr;
 
   /* storage for the factors */
-  double *fact;
+  double *fact = nullptr;
 
   /** amounts by which to increase allocated factorization space when
    * inadequate space is detected. ipessimism is for array "iw",
    * rpessimism is for the array "fact". */
-  double  ipessimism, rpessimism;
+  double ipessimism = 2;
+  double rpessimism = 2;
 
   /** used to indicate when we need a fresh factorization (when
    * iterative refinement has failed to improve the precision of the
    * computed solution satisfactorily */
-  int     freshFactor;
+  bool freshFactor = false;
 
   /** store as a sparse symmetric matrix */
   SparseStorageHandle mStorage;
@@ -138,6 +142,7 @@ public:
 
   virtual void diagonalChanged( int idiag, int extent );
   virtual void matrixChanged();
+
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;
@@ -146,25 +151,16 @@ public:
   //virtual void Dsolve  ( OoqpVector& x );
   //virtual void Ltsolve ( OoqpVector& x );
   //virtual void Refine  ( OoqpVector& x );
- private:
-  void solve(int solveType, OoqpVector& rhs);
 
-  int* iworkn, niworkn;
-  int* new_iworkn(int dim);
-
-  double* dworkn; int ndworkn;
-  double* new_dworkn(int dim);
- public:
-  /** set the Treat As Zero parameter in the MA27 data structures to
-   *  the current value of kTreatAsZero */
-  double setTreatAsZero() { return cntl[1] = kTreatAsZero; }
-
-  /** set the Pivoting Threshold parameter in the MA27 data structures
-   *  to the current value of kThresholdPivoting */
-  double setThresholdPivoting() { return cntl[0] = kThresholdPivoting; }
+  double setTreatAsZero() { return cntl[1] = treat_pivot_as_zero; }
+  double setThresholdPivoting() { return cntl[0] = threshold_pivoting; }
 
   /** destructor */
   virtual ~Ma57Solver();
+
+private:
+  void solve(int solveType, OoqpVector& rhs);
+
 };
 
 #endif
