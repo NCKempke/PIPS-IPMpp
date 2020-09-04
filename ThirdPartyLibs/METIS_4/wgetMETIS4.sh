@@ -24,6 +24,8 @@ fi
 #compile metis
 echo "### Compiling METIS 4"
 
+cp ./Makefile.in src/Makefile.in
+
 cd src
 make clean
 make
