@@ -55,10 +55,10 @@ ThirdPartyLibs/PARDISO
 ThirdPartyLibs/MUMPS
 ThirdPartyLibs/METIS
 ThirdPartyLibs/LUSOL
+ThirdPartyLibs/METIS_4
 pipstmp
 GAMSsmall
 PIPS-IPM/Drivers/simple/simple_data_12.gdx
-
 # Ignore the OS X DS_Store
 .DS_Store
 
