@@ -34,21 +34,21 @@ Ma57Solver::Ma57Solver( SparseSymMatrix * sgm )
   iworkn  = nullptr; dworkn = nullptr;
   niworkn = ndworkn = 0;
 
-  ipessimism = 2;
-  rpessimism = 2;
-
   mStorage = sgm->getStorageHandle();
-  assert( mStorage->n == mStorage->m );
-  n = mStorage->n;
-  M = mStorage->M;
-
-  nnz = mStorage->numberOfNonZeros();
-
   init();
 }
 
 void Ma57Solver::init()
 {
+   ipessimism = 2;
+   rpessimism = 2;
+
+   assert( mStorage->n == mStorage->m );
+   n = mStorage->n;
+   M = mStorage->M;
+
+   nnz = mStorage->numberOfNonZeros();
+
    FNAME(ma57id)( cntl, icntl );
    //icntl[1] = -1; // don't print warning messages
    icntl[8] = 10; // up to 10 steps of iterative refinement
@@ -261,10 +261,10 @@ rhs.copyFrom( *x );
 
 Ma57Solver::~Ma57Solver()
 {
-   freeWorkingArrays()
+   freeWorkingArrays();
 }
 
-Ma57Solver::freeWorkingArrays()
+void Ma57Solver::freeWorkingArrays()
 {
    if( jcolM )
       delete[] jcolM;

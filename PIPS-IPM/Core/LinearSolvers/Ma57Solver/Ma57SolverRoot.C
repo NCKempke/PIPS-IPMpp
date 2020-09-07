@@ -31,13 +31,9 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
       printf("\n Schur complement factorization is starting ...\n ");
 
-      mStorage = matrixNewSym.getStorageHandle();
-      n = mStorage->n;
-      M = mStorage->M;
-
-      nnz = mStorage->krowM[n];
-
       freeWorkingArrays();
+      mStorage = matrixNewSym.getStorageHandle();
+
       init();
       matrixChanged();
 
