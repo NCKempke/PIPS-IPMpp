@@ -34,7 +34,7 @@ int gInnerBiCGFails=0;
 
 Solver::Solver(const Scaler* scaler) : itsMonitors(0), status(0), startStrategy(0), scaler(scaler), dnorm(0.0),
       dnorm_orig(dnorm), mutol(1.e-6), artol(1.e-4), phi(0.0), maxit(0), mu_history(0), rnorm_history(0),
-      phi_history(0), phi_min_history(0), iter(0), sys(0)
+      phi_history(0), phi_min_history(0), iter(0), sys(0), printTimeStamp(false), startTime(-1)
 {
   // define parameters associated with the step length heuristic
 
