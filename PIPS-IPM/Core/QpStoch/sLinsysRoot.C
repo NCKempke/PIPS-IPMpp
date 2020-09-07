@@ -78,7 +78,13 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_)
 #else
   computeBlockwiseSC = false;
 #endif
-  // use sparse KKT if link structure is present
+
+  // compute schur complement blockwise when neiher MUMPS nor PARDISO are available
+#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
+   computeBlockwiseSC = true;
+#endif
+
+   // use sparse KKT if link structure is present
   hasSparseKkt = prob_->exploitingLinkStructure();
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
@@ -133,6 +139,10 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   computeBlockwiseSC = true;
 #else
   computeBlockwiseSC = false;
+#endif
+  // compute schur complement blcokwise when neiher MUMPS nor PARDISO are available
+#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
+   computeBlockwiseSC = true;
 #endif
 
   // use sparse KKT if (enough) 2 links are present
@@ -1304,8 +1314,9 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
    {
 	   if( hasSparseKkt )
 	   {
-		  SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
-		  children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
+	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+
+	      children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
 	   }
 	   else
 	   {
