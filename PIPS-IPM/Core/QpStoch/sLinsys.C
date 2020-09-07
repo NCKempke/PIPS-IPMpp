@@ -101,6 +101,7 @@ sLinsys::sLinsys(sFactory* factory_,
 
 sLinsys::~sLinsys()
 {
+  if( colSparsity ) delete[] colSparsity;
   if( colId ) delete[] colId;
   if( colsBlockDense ) delete[] colsBlockDense;
   if (solver) delete solver;
@@ -812,7 +813,7 @@ void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
    if( colSparsity == nullptr )
       colSparsity = new int[N];
 #else
-   int* colSparsity = nullptr;
+   colSparsity = nullptr;
 #endif
 
 #ifdef TIME_SCHUR
