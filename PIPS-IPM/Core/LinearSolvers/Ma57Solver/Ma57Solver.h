@@ -148,8 +148,11 @@ public:
   //virtual void Refine  ( OoqpVector& x );
  protected:
   void solve(int solveType, OoqpVector& rhs);
+  void freeWorkingArrays();
 
  protected:
+  void init();
+
   int* iworkn, niworkn;
   int* new_iworkn(int dim);
 

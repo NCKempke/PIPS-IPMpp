@@ -12,30 +12,14 @@
 #include "DenseGenMatrix.h"
 #include "pipsport.h"
 
-#ifdef HAVE_GETRUSAGE
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#endif
-
-extern int gOoqpPrintLevel;
-
-#ifndef MIN
-#define MIN(a,b) ((a > b) ? b : a)
-#endif
-
 #include <mpi.h>
 
 void dumpdata(int* irow, int* jcol, double*M, int n, int nnz)
 {
   printf("======================================================\n");
-  for(int i=0; i<nnz; i++)  printf("%6d %6d %10.2f\n", irow[i], jcol[i], M[i]);
+  for(int i = 0; i < nnz; i++)
+     printf("%6d %6d %10.2f\n", irow[i], jcol[i], M[i]);
   printf("\n");
-  /*  for(int i=0; i<nnz; i++)  printf("%10d ", jcol[i]);
-  printf("\n");
-  for(int i=0; i<nnz; i++)  printf("%10.2f ", M[i]);
-  printf("\n");
-  */
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
@@ -53,35 +37,40 @@ Ma57Solver::Ma57Solver( SparseSymMatrix * sgm )
   ipessimism = 2;
   rpessimism = 2;
 
-  FNAME(ma57id)( cntl, icntl );
-  //icntl[1] = -1; // don't print warning messages
-  icntl[8] = 10; // up to 10 steps of iterative refinement
-  icntl[5] = 5; // 4 use Metis; 5 automatic choice(MA47 or Metis); 3 min
-	      // degree ordering as in MA27; 2 use MC47;
-  icntl[15] = 1;
-
-  // set initial value of "Treat As Zero" parameter
-  kTreatAsZero = 1.e-10; this->setTreatAsZero();
-
-  // set initial value of Threshold parameter
-  kThresholdPivoting = 1.e-5; this->setThresholdPivoting();
-
-  // set the largest value of ThresholdPivoting parameter we are
-  // willing to tolerate.
-  kThresholdPivotingMax = 1.e-1;
-
-  // set the increase factor for ThresholdPivoting parameter
-  kThresholdPivotingFactor = 10.0;
-
-  // set the required precision for each linear system solve
-  kPrecision = 1.e-9;
-
   mStorage = sgm->getStorageHandle();
   assert( mStorage->n == mStorage->m );
   n = mStorage->n;
   M = mStorage->M;
 
   nnz = mStorage->numberOfNonZeros();
+
+  init();
+}
+
+void Ma57Solver::init()
+{
+   FNAME(ma57id)( cntl, icntl );
+   //icntl[1] = -1; // don't print warning messages
+   icntl[8] = 10; // up to 10 steps of iterative refinement
+   icntl[5] = 5; // 4 use Metis; 5 automatic choice(MA47 or Metis); 3 min
+                 // degree ordering as in MA27; 2 use MC47;
+   icntl[15] = 1;
+
+   // set initial value of "Treat As Zero" parameter
+   kTreatAsZero = 1.e-10; this->setTreatAsZero();
+
+   // set initial value of Threshold parameter
+   kThresholdPivoting = 1.e-5; this->setThresholdPivoting();
+
+   // set the largest value of ThresholdPivoting parameter we are
+   // willing to tolerate.
+   kThresholdPivotingMax = 1.e-1;
+
+   // set the increase factor for ThresholdPivoting parameter
+   kThresholdPivotingFactor = 10.0;
+
+   // set the required precision for each linear system solve
+   kPrecision = 1.e-9;
 }
 
 void Ma57Solver::firstCall()
@@ -144,16 +133,6 @@ void Ma57Solver::matrixChanged()
 #if 0
   do {
 #endif
-#ifdef HAVE_GETRUSAGE
-    rusage before;
-    if( gOoqpPrintLevel >= 100 ) {
-      getrusage( RUSAGE_SELF, &before );
-    }
-#endif
-
-    //!log
-    //dumpdata(irowM, jcolM, M, n, nnz);
-    //assert(false);
 
     FNAME(ma57bd)( &n, &nnz, M, fact, &lfact, ifact,
 	     &lifact, &lkeep, keep, iworkn, icntl, cntl, info, rinfo );
@@ -204,41 +183,11 @@ void Ma57Solver::matrixChanged()
 
 void Ma57Solver::solve( OoqpVector& rhs_in )
 {
-	//    int job = 0; // Solve using A
-	//    int one = 1;
-
-	//    SimpleVectorHandle work( new SimpleVector(n) );
-	//    SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
-
-	//    double * drhs = rhs.elements();
-	//    dworkn  =   dworkn  = new_dworkn(n);
-
-	//    int * iwork = new int[n];
-
-	//    rusage before;
-	//    getrusage( RUSAGE_SELF, &before );
-
-	//    FNAME(ma57cd)( &job,       &n,
-	//  	   fact,       &lfact,    ifact,  &lifact,
-	//  	   &one,       drhs,      &n,
-	//  	   dworkn,      &n,        iwork,
-	//  	   icntl,      info );
-
-
-	//    rusage after;
-	//    getrusage( RUSAGE_SELF, &after );
-	//    cout << "Solution with the factored matrix took "
-	//         << (double) (after.ru_utime.tv_sec - before.ru_utime.tv_sec)
-	//        + (after.ru_utime.tv_usec - before.ru_utime.tv_usec) / 1000000.0
-	//  	 << " seconds.\n";
-
-	//    delete [] iwork;
 	int job = 0;
-	if( freshFactor ) {
+	if( freshFactor )
 		icntl[8] = 1; // No iterative refinement
-	} else {
+	else
 		icntl[8] = 10; // Iterative refinement
-	}
 
 	SimpleVectorHandle x( new SimpleVector(n) );
 	SimpleVectorHandle resid( new SimpleVector(n) );
@@ -247,26 +196,17 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
 	double * drhs = rhs.elements();
 	double * dx   = x->elements();
 	double * dresid = resid->elements();
+
 	dworkn = new_dworkn(n * 5);
-
 	iworkn = new_iworkn(n);
-
-
-  /*static int s = 0;
-  int mype; MPI_Comm_rank(MPI_COMM_WORLD,&mype);
-  if (mype == 0 && s==105) {
-    printf("RHS IN\n\n");
-    for (int i = 0; i < n; i++) {
-      printf("%d: %.10E\n", i, rhs[i]);
-    }
-  }*/
 
 	int done = 0;
 	int refactorizations = 0;
 	int dontRefactor =  (kThresholdPivoting > kThresholdPivotingMax);
-  while( !done && refactorizations < 10 ) {
-    FNAME(ma57dd)( &job,       &n,        &nnz,   M,        irowM,   jcolM,
-        fact,       &lfact,    ifact,  &lifact,  drhs,    dx,
+	while( !done && refactorizations < 10 )
+	{
+	   FNAME(ma57dd)( &job,       &n,        &nnz,   M,        irowM,   jcolM,
+	         fact,       &lfact,    ifact,  &lifact,  drhs,    dx,
         dresid,      dworkn,    iworkn,  icntl,    cntl,    info,
         rinfo );
 
@@ -319,62 +259,34 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
 rhs.copyFrom( *x );
 }
 
-/*void Ma57Solver::Refine( OoqpVector& x_in, OoqpVector& rhs_in )
-{
-  int job=2; //calculate r=b-Ax, solve A(dx)=r, update solution and exit.
-
-  SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
-  SimpleVector & x   = dynamic_cast<SimpleVector &>(x_in);
-
-  double * drhs   = rhs.elements();
-  double * dx     = x.elements();
-  double * dresid = new double[n];
-  dworkn  = new double[5*n];
-
-  icntl[8]=2;//steps of iterative refinement
-
-  int * iwork = new_iworkn(n);
-  FNAME(ma57dd)( &job,       &n,        &nnz,   M,        irowM,   jcolM,
-	   fact,       &lfact,    ifact,  &lifact,  drhs,    dx,
-	   dresid,      dwork,    iwork,  icntl,    cntl,    info, rinfo );
-
-  if(info[0]!=0) cout << "ma57dd: info[0]=: " << info[0] << endl;
-
-  delete[] dwork; delete[] dresid;
-
-  }*/
-
 Ma57Solver::~Ma57Solver()
 {
-  delete[] jcolM;
-  delete [] irowM;
-  delete [] fact;
-  delete [] ifact;
-  delete [] keep;
-  if(iworkn) delete[] iworkn;
-  if(dworkn) delete[] dworkn;
+   freeWorkingArrays()
 }
 
-/*void Ma57Solver::Lsolve( OoqpVector& x )
+Ma57Solver::freeWorkingArrays()
 {
-  solve(2,x);
-}
+   if( jcolM )
+      delete[] jcolM;
+   if( irowM )
+      delete[] irowM;
+   if( fact )
+      delete[] fact;
+   if( ifact )
+      delete[] ifact;
+   if( keep )
+      delete[] keep;
+   if( iworkn )
+      delete[] iworkn;
+   if( dworkn )
+      delete[] dworkn;
 
-void Ma57Solver::Dsolve( OoqpVector& x )
-{
-  solve(3,x);
+   jcolM = irowM = ifact = keep = iworkn = nullptr;
+   fact = dworkn = nullptr;
 }
-
-void Ma57Solver::Ltsolve( OoqpVector& x )
-{
-  solve(4,x);
-}
-*/
-
 
 void Ma57Solver::solve(int solveType, OoqpVector& rhs_in)
 {
-  //dumpdata(irowM, jcolM, M, n, nnz);
   if( solveType < 1 || solveType > 4 )
     assert("Unknown JOB assigned for use in MA57CD!" && 0);
   else if( solveType == 1 )
@@ -409,40 +321,16 @@ void Ma57Solver::solve(GenMatrix& rhs_in)
 {
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
   int N,NRHS;
+
   // rhs vectors are on the "rows", for continuous memory
   rhs.getSize(NRHS,N);
-  assert(n==N);
+  assert( n == N );
 
   // we need checks on the residuals, can't do that with multiple RHS
   for (int i = 0; i < NRHS; i++) {
     SimpleVector v(rhs[i],N);
     solve(v);
   }
-
-
-//   int job = 1;
-
-//   const int BLOCKSIZE = 20;
-
-//   dworkn  = new_dworkn(n*BLOCKSIZE);
-//   int dworksize = n*BLOCKSIZE;
-//   int * iwork     = new_iworkn(n);
-
-//   for (int startcol = 0; startcol < NRHS; startcol += BLOCKSIZE) {
-//     double *drhs = rhs[startcol];
-//     int endcol = MIN(startcol+BLOCKSIZE,NRHS);
-//     int numcols = endcol-startcol;
-//     //cout << "MA57 multiple RHS" << endl;
-//     FNAME(ma57cd)( &job,       &n,
-// 		   fact,       &lfact,    ifact,  &lifact,
-// 		   &numcols,       drhs,      &n,
-// 		   dworkn,      &dworksize,        iwork,
-// 		   icntl,      info );
-//     assert(info[0] >= 0);
-//     if (info[0] > 0) {
-//       printf("warning from ma57cd, info[0]=%d\n",info[0]);
-//     }
-//   }
 }
 
 void Ma57Solver::solve( int nrhss, double* rhss, int* colSparsity )
@@ -486,3 +374,78 @@ double* Ma57Solver::new_dworkn(int dim)
    }
    return dworkn;
 }
+
+
+/*
+void Ma57Solver::Refine( OoqpVector& x_in, OoqpVector& rhs_in )
+{
+  int job=2; //calculate r=b-Ax, solve A(dx)=r, update solution and exit.
+
+  SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
+  SimpleVector & x   = dynamic_cast<SimpleVector &>(x_in);
+
+  double * drhs   = rhs.elements();
+  double * dx     = x.elements();
+  double * dresid = new double[n];
+  dworkn  = new double[5*n];
+
+  icntl[8]=2;//steps of iterative refinement
+
+  int * iwork = new_iworkn(n);
+  FNAME(ma57dd)( &job,       &n,        &nnz,   M,        irowM,   jcolM,
+      fact,       &lfact,    ifact,  &lifact,  drhs,    dx,
+      dresid,      dwork,    iwork,  icntl,    cntl,    info, rinfo );
+
+  if(info[0]!=0)
+     std::cout << "ma57dd: info[0]=: " << info[0] << std::endl;
+
+  delete[] dwork; delete[] dresid;
+
+}
+
+void Ma57Solver::solve(GenMatrix& rhs_in)
+{
+   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+   int N, NRHS;
+
+   // rhs vectors are on the "rows", for continuous memory
+   rhs.getSize(NRHS ,N);
+   assert( n == N );
+
+   int job = 1;
+   const int BLOCKSIZE = 20;
+
+   dworkn  = new_dworkn(n*BLOCKSIZE);
+   int dworksize = n*BLOCKSIZE;
+   iworkn = new_iworkn(n);
+
+   for (int startcol = 0; startcol < NRHS; startcol += BLOCKSIZE)
+   {
+      double *drhs = rhs[startcol];
+      int endcol = std::min( startcol + BLOCKSIZE, NRHS);
+      int numcols = endcol - startcol;
+
+      FNAME(ma57cd)( &job, &n, fact, &lfact, ifact, &lifact,
+         &numcols, drhs, &n, dworkn, &dworksize, iworkn,
+         icntl, info );
+      assert(info[0] >= 0);
+      if (info[0] > 0)
+         printf("warning from ma57cd, info[0]=%d\n",info[0]);
+   }
+}
+
+void Ma57Solver::Lsolve( OoqpVector& x )
+{
+  solve(2,x);
+}
+
+void Ma57Solver::Dsolve( OoqpVector& x )
+{
+  solve(3,x);
+}
+
+void Ma57Solver::Ltsolve( OoqpVector& x )
+{
+  solve(4,x);
+}
+*/

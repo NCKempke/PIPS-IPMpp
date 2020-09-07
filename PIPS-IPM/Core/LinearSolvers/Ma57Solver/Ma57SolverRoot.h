@@ -1,16 +1,18 @@
-/* OOQP                                                               *
- * Authors: E. Michael Gertz, Stephen J. Wright                       *
- * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
+/*
+ * Ma57SolverRoot.h
+ *
+ *  Created on: 07.09.2020
+ *      Author: bzfkempk
+ */
 
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_MA57SOLVER_MA57SOLVERROOT_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_MA57SOLVER_MA57SOLVERROOT_H_
 
-#include "DoubleLinearSolver.h"
 #include "Ma57Solver.h"
-
-#include "pipsport.h"
+#include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "OoqpVectorHandle.h"
+#include "pipsport.h"
 
 #include "mpi.h"
 

@@ -37,33 +37,8 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 
       nnz = mStorage->krowM[n];
 
-      if(keep)
-         delete[] keep;
-      if(irowM)
-         delete [] irowM;
-      if(jcolM)
-         delete [] jcolM;
-      if(fact)
-         delete [] fact;
-      if(ifact)
-         delete [] ifact;
-
-      ifact = jcolM = irowM = keep = nullptr;
-      fact = nullptr;
-
-      FNAME(ma57id)( cntl, icntl );
-      //icntl[1] = -1; // don't print warning messages
-      icntl[8] = 10; // up to 10 steps of iterative refinement
-      icntl[5] = 5; // 4 use Metis; 5 automatic choice(MA47 or Metis); 3 min
-             // degree ordering as in MA27; 2 use MC47;
-      icntl[15] = 1;
-
-      kTreatAsZero = 1.e-10; this->setTreatAsZero();
-
-      // set initial value of Threshold parameter
-      kThresholdPivoting = 1.e-5;
-      this->setThresholdPivoting();
-
+      freeWorkingArrays();
+      init();
       matrixChanged();
 
       printf("\n Schur complement factorization completed \n ");
