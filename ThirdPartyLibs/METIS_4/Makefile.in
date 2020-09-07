@@ -1,9 +1,9 @@
 
 # Which compiler to use
-CC = cc
+CC = gcc
 
 # What optimization level to use
-OPTFLAGS = -O2 
+OPTFLAGS = -O3 
 
 # What options to be used by the compiler
 COPTIONS = -fPIC 
