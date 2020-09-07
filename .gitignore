@@ -62,6 +62,9 @@ PIPS-IPM/Drivers/simple/simple_data_12.gdx
 # Ignore the OS X DS_Store
 .DS_Store
 
+# Jetbrains .idea...
+.idea
+
 # Ignore Eclipse files
 .metadata*
 .project
