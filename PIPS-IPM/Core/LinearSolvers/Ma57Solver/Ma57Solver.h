@@ -22,35 +22,35 @@
 #endif
 
 
-extern "C" {
-  void FNAME(ma57id)( double cntl[],  int icntl[] );
+extern "C"
+{
+   void FNAME(ma57id)( double cntl[],  int icntl[] );
 
-  void FNAME(ma57ad)( int * n,        int * ne,       int irn[],
-		int jcn[],      int * lkeep,    int keep[],
-		int iwork[],    int icntl[],    int info[],
-		double rinfo[] );
-
-  void FNAME(ma57bd)( int * n,        int * ne,       double a[],
-		double fact[],  int * lfact,    int ifact[],
-		int * lifact,   int * lkeep,    int keep[],
-		int ppos[],     int * icntl,    double cntl[],
-		int info[],     double rinfo[] );
-  void FNAME(ma57cd)( int * job,      int * n,        double fact[],
-		int * lfact,    int ifact[],    int * lifact,
-		int * nrhs,     double rhs[],   int * lrhs,
-		double w[],     int * lw,       int iw1[],
-		int icntl[],    int info[]);
-  void FNAME(ma57dd)( int * job,      int * n,        int * ne,
-		double a[],     int irn[],      int jcn[],
-		double fact[],  int * lfact,    int ifact[],
-		int * lifact,   double rhs[],   double x[],
-		double resid[], double w[],     int iw[],
-		int icntl[],    double cntl[],  int info[],
-		double rinfo[] );
-  void FNAME(ma57ed)( int * n,        int * ic,       int keep[],
-		double fact[],  int * lfact,    double * newfac,
-		int * lnew,     int  ifact[],   int * lifact,
-		int newifc[],   int * linew,    int * info );
+   void FNAME(ma57ad)( int * n,        int * ne,       int irn[],
+      int jcn[],      int * lkeep,    int keep[],
+      int iwork[],    int icntl[],    int info[],
+      double rinfo[] );
+   void FNAME(ma57bd)( int * n,        int * ne,       double a[],
+      double fact[],  int * lfact,    int ifact[],
+      int * lifact,   int * lkeep,    int keep[],
+      int work[],     int * icntl,    double cntl[],
+      int info[],     double rinfo[] );
+   void FNAME(ma57cd)( int * job,      int * n,        double fact[],
+      int * lfact,    int ifact[],    int * lifact,
+      int * nrhs,     double rhs[],   int * lrhs,
+      double w[],     int * lw,       int iw1[],
+      int icntl[],    int info[]);
+   void FNAME(ma57dd)( int * job,      int * n,        int * ne,
+      double a[],     int irn[],      int jcn[],
+      double fact[],  int * lfact,    int ifact[],
+      int * lifact,   double rhs[],   double x[],
+      double resid[], double w[],     int iw[],
+      int icntl[],    double cntl[],  int info[],
+      double rinfo[] );
+   void FNAME(ma57ed)( int * n,        int * ic,       int keep[],
+      double fact[],  int * lfact,    double * newfac,
+      int * lnew,     int  ifact[],   int * lifact,
+      int newifc[],   int * linew,    int * info );
 }
 
 /** implements the linear solver class using the HSL MA57 solver
@@ -58,8 +58,6 @@ extern "C" {
  * @ingroup LinearSolvers
  */
 class Ma57Solver : public DoubleLinearSolver {
-private:
-  Ma57Solver() {};
 protected:
   int     icntl[20];
   int     info[40];
@@ -137,18 +135,21 @@ public:
   Ma57Solver( SparseSymMatrix * sgm );
 
   virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void matrixChanged() override;
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;
+
+  void solve ( int nrhss, double* rhss, int* colSparsity ) override;
 
   //virtual void Lsolve  ( OoqpVector& x );
   //virtual void Dsolve  ( OoqpVector& x );
   //virtual void Ltsolve ( OoqpVector& x );
   //virtual void Refine  ( OoqpVector& x );
- private:
+ protected:
   void solve(int solveType, OoqpVector& rhs);
 
+ protected:
   int* iworkn, niworkn;
   int* new_iworkn(int dim);
 
