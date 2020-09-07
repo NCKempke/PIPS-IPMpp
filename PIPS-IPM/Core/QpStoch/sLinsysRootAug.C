@@ -3,20 +3,25 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRootAug.h"
+
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
+
 #include "PardisoSolver.h"
 #include "PardisoIndefSolver.h"
-#include "sData.h"
-#include "sTree.h"
-#include <limits>
+
+#include "Ma57SolverRoot.h"
+#include "Ma27Solver.h"
 #ifdef WITH_MUMPS_ROOT
 #include "MumpsSolverRoot.h"
 #endif
 
-//#define DUMPKKT
+#include "sData.h"
+#include "sTree.h"
+#include <limits>
 
+//#define DUMPKKT
 #ifdef DUMPKKT
 #include <iostream>
 #include <fstream>
@@ -106,40 +111,39 @@ sLinsysRootAug::createKKT(sData* prob)
 }
 
 
-DoubleLinearSolver*
-sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
+DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
 {
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
+   const int myRank = PIPS_MPIgetRank(mpiComm);
 
+   if( hasSparseKkt )
+   {
+      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
 
 #ifdef WITH_MUMPS_ROOT
-   if( hasSparseKkt )
-   {
       if( 0 == myRank )
-         cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << endl;
-
-      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
-
+         std::cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << std::endl;
       return new MumpsSolverRoot(mpiComm, kktmat);
-   }
-   else
 #elif defined(WITH_PARDISO)
-   if( hasSparseKkt )
-   {
       if( 0 == myRank )
-         cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << endl;
-
-      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
-
+         std::cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << std::endl;
       return new PardisoIndefSolver(kktmat);
+#elif defined(WITH_MA57)
+      if( 0 == myRank )
+         std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << std::endl;
+      return new Ma57SolverRoot(kktmat);
+#elif defined(WITH_MA27)
+      if( 0 == myRANK )
+         std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << std::endl;
+      return new Ma27SolverRoot(kktmat);
+#else
+      assert( false && "No sparse solver available for sparse Schur complement -sLinsysRootAug" );
+#endif
    }
    else
-#else
-   assert(!hasSparseKkt);
-#endif
    {
+
       if( 0 == myRank )
-         cout << "Using LAPACK dsytrf for summed Schur complement - sLinsysRootAug" << endl;
+         std::cout << "Using LAPACK dsytrf for dense summed Schur complement - sLinsysRootAug" << std::endl;
 
       DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
 

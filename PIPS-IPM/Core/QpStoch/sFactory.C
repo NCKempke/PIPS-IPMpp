@@ -81,9 +81,22 @@ sFactory::newLinsysLeaf(sData* prob,
 			OoqpVector* nomegaInv, OoqpVector* rhs)
 {
 #ifdef WITH_PARDISO
-   PardisoSolver* s=nullptr;
+   if( PIPS_MPIgetRank() == 0 )
+       std::cout << "Using Pardiso for the leaf schur complement computation" << std::endl;
+   PardisoSolver* s = nullptr;
+#elif defined(WITH_MA57)
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "Using MA57 for the blocked leaf schur complement computation" << std::endl;
+   Ma57Solver* s = nullptr;
+#elif defined(WITH_MA27)
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "Using M257 for the blocked leaf schur complement computation" << std::endl;
+   Ma27Solver* s = nullptr;
 #else
-   Ma27Solver* s=nullptr;
+   if( PIPS_MPIgetRank() == 0 )
+      std::cerr << "ERROR, no solver available/specified..." << std::endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+   MPI_Abort(MPI_COMM_WORLD, -1);
 #endif
 
   return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, s);
