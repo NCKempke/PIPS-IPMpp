@@ -282,7 +282,7 @@ else()
 endif(AMPL_LIBRARY)
 
 if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
-  #HSL Solver and METIS
+  #HSL Solver and METIS_4
   set(MA27_DIR ${SHARED_DIR}/MA27/src)
   set(MA57_DIR ${SHARED_DIR}/MA57/src)
   find_library(MA27_LIBRARY libma27.a PATHS ${MA27_DIR}/lib)
@@ -294,22 +294,34 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
     set(HAVE_MA27 TRUE)
     message(STATUS "MA27_LIBRARY = ${MA27_LIBRARY}")
   endif(MA27_LIBRARY)
-  set(METIS_DIR ${SHARED_DIR}/METIS)
-  find_library(PARMETIS_LIBRARY NAME libparmetis.a HINTS ${METIS_DIR}/lib PATHS ${METIS_DIR}/lib)
-  find_library(METIS_LIBRARY NAME libmetis.a HINTS ${METIS_DIR}/lib PATHS ${METIS_DIR})
-  find_path(METIS_INCLUDE_DIR NAME metis.h HINTS ${METIS_DIR}/include)
-  if(METIS_INCLUDE_DIR AND METIS_LIBRARY)
-    message(STATUS "METIS_INCLUDE_DIR = ${METIS_INCLUDE_DIR}")
-    include_directories(${METIS_INCLUDE_DIR})
+  
+  set(METIS_DIR ${SHARED_DIR}/METIS_4)
+  set(PARMETIS_DIR ${SHARED_DIR}/METIS)
+  
+  find_library(PARMETIS_LIBRARY NAME libparmetis.a HINTS ${PARMETIS_DIR}/lib PATHS ${PARMETIS_DIR}/lib)
+  find_library(METIS_5_LIBRARY NAME libmetis.a HINTS ${PARMETIS_DIR}/lib PATHS ${PARMETIS_DIR}/lib)
+  
+  find_library(METIS_4_LIBRARY NAME libmetis.a HINTS ${METIS_DIR}/src PATHS ${METIS_DIR})
+#  find_path(METIS_INCLUDE_DIR NAME metis.h HINTS ${METIS_DIR}/include)
+  if( METIS_4_LIBRARY )
+#    message(STATUS "METIS_INCLUDE_DIR = ${METIS_INCLUDE_DIR}")
+#    include_directories(${METIS_INCLUDE_DIR})
     set(HAVE_METIS TRUE)
-  else()
-    message(FATAL_ERROR "METIS not found! METIS is required for PIPS-IPM and PIPS-NLP. Please run ./wgetMETIS.sh in ${SHARED_DIR}/METIS")
-  endif(METIS_INCLUDE_DIR AND METIS_LIBRARY)
+  else( METIS_4_LIBRARY )
+    message(FATAL_ERROR "METIS not found! METIS is required for PIPS-IPM and PIPS-NLP. Please run ./wgetMETIS.sh in ${METIS_DIR}")
+  endif( METIS_4_LIBRARY )
+  
+  if( PARMETIS_LIBRARY AND METIS_5_LIBRARY )
+     set( HAVE_PARMETIS TRUE )
+  else( PARMETIS_LIBRARY AND METIS_5_LIBRARY )
+     message(STATUS "PARMETIS not found! Parmetis is required for PIPS-IPM and MUMPS. Please run ./wgetMETIS.sh in ${PARMETIS_DIR}")
+  endif( PARMETIS_LIBRARY AND METIS_5_LIBRARY )
+  
   if(MA57_LIBRARY)
     message(STATUS "MA57_LIBRARY = ${MA57_LIBRARY}")
     include_directories(${METIS_DIR}/Lib)
     set(HAVE_MA57 TRUE)
-  else()
+  else(MA57_LIBRARY)
     set(HAVE_MA57 FALSE)
   endif(MA57_LIBRARY)
 
@@ -319,16 +331,19 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
   #MUMPS Solver REMARK: Identical to the one from PIPS Master, so can simply be replaced if this branch is merged into master
   if(WITH_MUMPS_LEAF OR WITH_MUMPS_ROOT)
     set(MUMPS_DIR ${SHARED_DIR}/MUMPS)
+    
     find_library(MUMPS_D_LIBRARY libdmumps.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
     find_library(MUMPS_COMMON_LIBRARY libmumps_common.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
     find_library(MUMPS_PORD_LIBRARY libpord.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
+    
     find_path(MUMPS_INCLUDE_DIR NAME dmumps_c.h HINTS ${MUMPS_DIR}/include NO_DEFAULT_PATH)
+    
     if(NOT MUMPS_D_LIBRARY OR NOT MUMPS_COMMON_LIBRARY OR NOT MUMPS_PORD_LIBRARY OR NOT MUMPS_INCLUDE_DIR)
       message(WARNING "even though WITH_MUMPS_LEAF/WITH_MUMPS_ROOT was specified : no MUMPS was found under ${MUMPS_DIR}/lib")
    endif(NOT MUMPS_D_LIBRARY OR NOT MUMPS_COMMON_LIBRARY OR NOT MUMPS_PORD_LIBRARY OR NOT MUMPS_INCLUDE_DIR)
   endif(WITH_MUMPS_LEAF OR WITH_MUMPS_ROOT)
 
-  if(MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND PARMETIS_LIBRARY)
+  if( MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND HAVE_PARMETIS )
     # we assume the other libraries are in there
     set(HAVE_MUMPS TRUE)
     message(STATUS "FOUND MUMPS")
@@ -340,17 +355,12 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
     # - put all the  mumps libraries: -ldmumps -lmumps_common -lpord
     # - scalapack should be set in ${SCALAPACK_LIBRARIES} using Toolchain.cmake (or hardcoded here)
     # - mpifort also needed
-    # - parmetis 5.0 or later required by mumps but no need to specify it here: it should be detected by the build system at this point
-    # NOTE: the version of METIS recieved with wgetMETIS in ThirdPartyLibs/METIS does not export all necessary symbols for parmetis and MumpsSolver
-    #    use either the metis shipped together with permetis or download seperately and link against it
-    #    related ERROR looks like: ... undefined reference to `metis_setdefaultoptions_'
+    # - parmetis 4.3.0 or later required by mumps but no need to specify it here: it should be detected by the build system at this point
+    # NOTE: METIS 4 is no longer sufficient to link MUMPS against - needs METIS 5...
     if(NOT SCALAPACK_LIBRARIES)
       MESSAGE(STATUS "SCALAPACK_LIBRARIES for MUMPS not set. Default linking for Ubuntu.")
-      find_library(SCALAPACK_OMPI_LIBRARY NAMES scalapack-openmpi)
-      find_library(BLACS_LIBRARY blacs-openmpi)
-      find_library(BLACSF77_LIBRARY blacsF77init-openmpi)
-      find_library(BLACS_CINIT_LIBRARY blacsCinit-openmpi)
-      set(SCALAPACK_LIBRARIES "${SCALAPACK_OMPI_LIBRARY} ${BLACS_LIBRARY} ${BLACSF77_LIBRARY} ${BLACS_CINIT_LIBRARY}")
+      find_library(SCALAPACK_OMPI_LIBRARY NAMES scalapack-openmpi REQUIRED)
+      set(SCALAPACK_LIBRARIES "${SCALAPACK_OMPI_LIBRARY} ")
     endif(NOT SCALAPACK_LIBRARIES)
     message(STATUS "SCALAPACK_LIBRARIES:=${SCALAPACK_LIBRARIES}")
     find_library(BLACS_LIBRARY NAMES blacs-openmpi)
@@ -361,16 +371,17 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
       MESSAGE(STATUS "MUMPS_FORT_LIB not set for linking the Fortran MPI interface library required by MUMPS. Using OpenMPI Fortran interface -lmpi_mpifh")
       find_library(MUMPS_FORT_LIB mpi_mpifh)
     endif(NOT MUMPS_FORT_LIB)
-   set(MUMPS_LIBRARY "-Wl,--start-group ${MUMPS_D_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_FORT_LIB} ${MUMPS_PORD_LIBRARY} ${SCALAPACK_LIBRARIES} ${METIS_LIBRARY} \
+   set(MUMPS_LIBRARY "-Wl,--start-group ${MUMPS_D_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_FORT_LIB} ${MUMPS_PORD_LIBRARY} ${SCALAPACK_LIBRARIES} ${METIS_5_LIBRARY} \
    ${PARMETIS_LIBRARY} -Wl,--end-group")
     message(STATUS "MUMPS_LIBRARIES:=${MUMPS_LIBRARY}")
     include_directories(${MUMPS_INCLUDE_DIR})
-  else ()
-     set(HAVE_MUMPS FALSE)
-    message(STATUS "MUMPS library and/or headers are not present. Will build PIPS without MUMPS")
+  else( MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND HAVE_PARMETIS )
+    set(HAVE_MUMPS FALSE)
+    message(STATUS "MUMPS/Parmets library and/or headers are not present. Will build PIPS without MUMPS")
+    set(WITH_MUMPS_LEAF FALSE)
+    set(WITH_MUMPS_ROOT FALSE)
     set(MUMPS_LIBRARY "")
-  endif(MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND PARMETIS_LIBRARY)
-
+  endif( MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND HAVE_PARMETIS )
 
   #MKL_PARDISO Solver
   set(HAVE_MKL_PARDISO FALSE)
