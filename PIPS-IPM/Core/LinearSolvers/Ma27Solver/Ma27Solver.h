@@ -61,12 +61,10 @@ protected:
   int     info[20];
   double  cntl[5];
 
-  int ierror() { return info[1]; }
   int minimumRealWorkspace() { return info[4]; }
   int minimumIntWorkspace() { return info[5]; }
-  int ma27ErrFlg() { return info[0]; }
 
-  const int maxMa27Iter;
+  const int max_tries;
 
   const int max_n_iter_refinement;
 
