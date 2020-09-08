@@ -64,6 +64,10 @@ protected:
   double  cntl[5];
   double  rinfo[20];
 
+  const int max_tries;
+
+  const int ooqp_print_level_warnings;
+
   /** the Threshold Pivoting parameter, stored as U in the ma27dd
    *  common block. Takes values in the range [0,1]. Larger values
    *  enforce greater stability in the factorization as they insist on
@@ -149,9 +153,8 @@ public:
  protected:
   void solve(int solveType, OoqpVector& rhs);
   void freeWorkingArrays();
-
- protected:
   void init();
+  bool checkErrorsAndReact();
 
   int* iworkn, niworkn;
   int* new_iworkn(int dim);

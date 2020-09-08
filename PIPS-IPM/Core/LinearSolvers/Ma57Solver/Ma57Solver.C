@@ -12,6 +12,8 @@
 #include "DenseGenMatrix.h"
 #include "pipsport.h"
 
+extern int gOoqpPrintLevel;
+
 #include <mpi.h>
 
 void dumpdata(int* irow, int* jcol, double*M, int n, int nnz)
@@ -23,7 +25,8 @@ void dumpdata(int* irow, int* jcol, double*M, int n, int nnz)
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
-Ma57Solver::Ma57Solver( SparseSymMatrix * sgm )
+Ma57Solver::Ma57Solver( SparseSymMatrix * sgm ) :
+      max_tries(8), ooqp_print_level_warnings( 10000 )
 {
   irowM = 0;
   jcolM = 0;
@@ -80,6 +83,7 @@ void Ma57Solver::firstCall()
   irowM = new int[nnz];
   jcolM = new int[nnz];
 
+  // TODO : move somewhere .. same as in MA27
   const int* krowM = mStorage->krowM;
   for( int i = 0; i < mStorage->n; i++ )
   {
@@ -105,7 +109,6 @@ void Ma57Solver::firstCall()
   lkeep = 5 * n + nnz + 2 * std::max(n, nnz) + 42;
   keep = new int[lkeep];
 
-
   iworkn = new_iworkn( 5 * n );
 
   FNAME(ma57ad)( &n, &nnz, irowM, jcolM, &lkeep, keep, iworkn, icntl, info, rinfo );
@@ -126,61 +129,32 @@ void Ma57Solver::diagonalChanged( int /* idiag */, int /* extent */ )
 
 void Ma57Solver::matrixChanged()
 {
-  if( !keep ) this->firstCall();
+   if( !keep )
+      this->firstCall();
 
-  assert(mStorage->n == mStorage->m);
-  assert( n == mStorage->n);
-  iworkn = new_iworkn(n);
+   assert(mStorage->n == mStorage->m);
+   assert( n == mStorage->n);
 
-#if 0
-  do {
-#endif
+   iworkn = new_iworkn(n);
+   bool done = false;
+   int tries = 0;
 
-    FNAME(ma57bd)( &n, &nnz, M, fact, &lfact, ifact,
-	     &lifact, &lkeep, keep, iworkn, icntl, cntl, info, rinfo );
-    freshFactor = true;
-#if 0
-     int done = 0, tries = 0;;
-    if( info[0] != 0 )
-       std::cout << "ma57bd: Factorization: info[0]=: " << info[0] << std::endl;
-    //assert(false);
-    switch( info[0] ) {
-    case 0: done = 1;
-      break;
-    case -3: {
-      int ic = 0;
-      int lnfact = (int) (info[16] * rpessimism);
-      double * newfact = new double[lnfact];
-      FNAME(ma57ed)( &n, &ic, keep, fact, &lfact, newfact, &lnfact,
-	       ifact, &lifact, ifact, &lifact, info );
-      delete [] fact;
-      fact = newfact;
-      lfact = lnfact;
-      rpessimism *= 1.1;
-      cout << "Resizing real part. pessimism = " << rpessimism << endl;
-    }; break;
-    case -4: {
-      int ic = 1;
-      int lnifact = (int) (info[17] * ipessimism);
-      int * nifact = new int[ lnifact ];
-      FNAME(ma57ed)( &n, &ic, keep, fact, &lfact, fact, &lfact,
-	       ifact, &lifact, nifact, &lnifact, info );
-      delete [] ifact;
-      ifact = nifact;
-      lifact = lnifact;
-      ipessimism *= 1.1;
-      cout << "Resizing int part. pessimism = " << ipessimism << endl;
-    }; break;
-    default:
-      if( info[0] >= 0 ) done = 1;
-      assert( info[0] >= 0 );
-    } // end switch
-    tries++;
-  } while( !done );
-  freshFactor = true;
+   do
+   {
+      FNAME(ma57bd)( &n, &nnz, M, fact, &lfact, ifact,
+            &lifact, &lkeep, keep, iworkn, icntl, cntl, info, rinfo );
+      done = checkErrorsAndReact();
+      ++tries;
+   }
+   while( !done && tries < max_tries );
 
-  //delete [] iwork;
-#endif
+   if ( !done && tries > max_tries )
+   {
+      std::cerr << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -1);
+   }
+
+   freshFactor = true;
 }
 
 void Ma57Solver::solve( OoqpVector& rhs_in )
@@ -193,72 +167,65 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
 
 	SimpleVectorHandle x( new SimpleVector(n) );
 	SimpleVectorHandle resid( new SimpleVector(n) );
-	SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
+	SimpleVector& rhs = dynamic_cast<SimpleVector &>(rhs_in);
 
 	double * drhs = rhs.elements();
 	double * dx   = x->elements();
 	double * dresid = resid->elements();
 
+	const double rhsnorm = rhs.infnorm();
+
 	dworkn = new_dworkn(n * 5);
 	iworkn = new_iworkn(n);
 
-	int done = 0;
-	int refactorizations = 0;
-	int dontRefactor =  (kThresholdPivoting > kThresholdPivotingMax);
-	while( !done && refactorizations < 10 )
-	{
-	   FNAME(ma57dd)( &job,       &n,        &nnz,   M,        irowM,   jcolM,
-	         fact,       &lfact,    ifact,  &lifact,  drhs,    dx,
-        dresid,      dworkn,    iworkn,  icntl,    cntl,    info,
-        rinfo );
+	bool done = false;
+	int tries = 0;
 
-    done = 1;
-    continue;
-    if( resid->infnorm() < kPrecision*( 1 + rhs.infnorm() ) ) {
-      // resids are fine, use them
-      done = 1;
-    }
-    else if( !dontRefactor )
-    {
-      // resids aren't good enough.
-      if( freshFactor ) { // We weren't doing iterative refinement,
-        // let's do so
-        job = 2;
-        icntl[8] = 10;
-        // Mark this factorization as stale
-        freshFactor = false;
-        // And grow more pessimistic about the next factorization
-        if( kThresholdPivoting >= kThresholdPivotingMax ) {
-          // We have already refactored as with a high a pivtol as we
-          // are willing to use
-          dontRefactor = 1;
-        } else {
-          // refactor with a higher Threshold Pivoting parameter
-          kThresholdPivoting *= kThresholdPivotingFactor;
-          if( kThresholdPivoting > kThresholdPivotingMax )
-            kThresholdPivoting = kThresholdPivotingMax;
-          this->setThresholdPivoting();
-          cout << "Setting ThresholdPivoting parameter to "
-            << kThresholdPivoting << " for future factorizations" << endl;
-        }
-      } else if ( dontRefactor ) {
-        // We might have tried a refactor, but the pivtol is above our
-        // limit.
-        done = 1;
-      } else {
-        // Otherwise, we have already tried iterative refinement, and
-        // have already increased the ThresholdPivoting parameter
-        std::cout << "Refactoring with Threshold Pivoting parameter "
-          << kThresholdPivoting << std::endl;
-        this->matrixChanged();
-        refactorizations++;
-        // be optimistic about the next factorization
-        job = 0;
-        icntl[8] = 1;
-      } // end else we hava already tried iterative refinement
-    } // end else resids aren't good enough
-  } // end while not done
-rhs.copyFrom( *x );
+	while( !done && tries < max_tries )
+	{
+      FNAME(ma57dd)(&job, &n, &nnz, M, irowM, jcolM, fact, &lfact, ifact,
+            &lifact, drhs, dx, dresid, dworkn, iworkn, icntl, cntl, info,
+            rinfo);
+
+      done = checkErrorsAndReact();
+
+      if( resid->infnorm() < kPrecision * ( 1 + rhsnorm ) )
+         done = true;
+      else
+      {
+         if( freshFactor )
+         {
+            job = 2; // set to iterative refinement
+            icntl[8] = 10;
+
+            freshFactor = false;
+
+            if( kThresholdPivoting < kThresholdPivotingMax )
+            {
+               // refactor with a higher Threshold Pivoting parameter
+               kThresholdPivoting = std::min( kThresholdPivoting * kThresholdPivotingFactor, kThresholdPivotingMax);
+               this->setThresholdPivoting();
+
+               if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+                  std::cout << "Setting ThresholdPivoting parameter to " << kThresholdPivoting << " for future factorizations" << endl;
+            }
+         }
+         else if ( kThresholdPivoting == kThresholdPivotingMax )
+            done = true;
+         else
+         {
+            if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+               std::cout << "Refactoring with Threshold Pivoting parameter " << kThresholdPivoting << std::endl;
+
+            this->matrixChanged();
+
+            job = 0;
+            icntl[8] = 1;
+            ++tries;
+         }
+      }
+	}
+	rhs.copyFrom( *x );
 }
 
 Ma57Solver::~Ma57Solver()
@@ -376,6 +343,241 @@ double* Ma57Solver::new_dworkn(int dim)
    }
    return dworkn;
 }
+
+bool Ma57Solver::checkErrorsAndReact()
+{
+   bool error = false;
+   const int error_flag = info[0];
+   const int error_info = info[1];
+
+   switch ( error_flag )
+   {
+      case 0 :
+         break;
+      case -1 :
+      {
+         std::cerr << "ERROR MA57: N out of range or < -1: " << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -2 :
+      {
+         std::cerr << "ERROR MA57: NNZ out of range or < -1 : " << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -3 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: insufficient space in fact: " << info[1] << " suggest reset to " << info[16] << std::endl;
+         rpessimism *= 1.1;
+
+         assert( fact );
+         assert( keep );
+         int lnew = std::max( static_cast<int>(1.1 * lfact), info[16] );
+         double * newfac = new double[lnew];
+         assert( lnew > lfact );
+         int copy_real_array = 0;
+         int dummy = lifact + 1;
+
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << " resetting to " << lnew << std::endl;
+
+         FNAME(ma57ed)( &n, &copy_real_array, keep, fact, &lfact, newfac, &lnew, ifact, &lifact,
+               nullptr, &dummy, info );
+
+         delete[] fact;
+         fact = newfac;
+         lfact = lnew;
+
+         error = true;
+      }; break;
+      case -4 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: insufficient factorization space in ifact: " << info[1] << " suggest reset to " << info[17] << std::endl;;
+         ipessimism *= 1.1;
+
+         assert( ifact );
+         assert( keep );
+         int linew = std::max( static_cast<int>(1.1 * lifact), info[17] );
+         int* newifac = new int[linew];
+         assert( linew > lifact );
+         int copy_int_array = 1;
+         int dummy = lfact + 1;
+
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << " resetting to " << linew << std::endl;
+
+         FNAME(ma57ed)( &n, &copy_int_array, keep, fact, &lfact, nullptr, &dummy, ifact, &lifact,
+               newifac, &linew, info );
+
+         delete[] ifact;
+         ifact = newifac;
+         lifact = linew;
+
+         error = true;
+      } break;
+      case -5:
+      {
+         std::cerr << "WARNING MA57: Small pivot found when pivoting disabled" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -6:
+      {
+         std::cerr << "ERROR M527: change of sign of pivots detected at stage even though matrix supposedly definiet" << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -7:
+      {
+         std::cerr << "ERROR MA57: value new int/real array not bigger than old value in MA57ED " << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -8:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: iterative refinement failed to converge" << std::endl;
+         error = true;
+      }; break;
+      case -9:
+      {
+         std::cerr << "ERROR MA57: error in permutation array pos " << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -10:
+      {
+         std::cerr << "ERROR MA57: icntl[6] " << error_info << " is out of range" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -11:
+      {
+         std::cerr << "ERROR MA57: LRHS " << error_info << " smaller than n " << n << " on solve call" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -12:
+      {
+         std::cerr << "ERROR MA57: invalid value " << error_info << " for job" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -13:
+      {
+         std::cerr << "ERROR MA57: invalid value " << error_info << " for icntl[8]" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -14:
+      {
+         std::cerr << "ERROR MA57: MC71AD (icntl > 10) failed inside of MA57DD" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -15:
+      {
+         std::cerr << "ERROR MA57: lkeep " << error_info << " less than required" << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -16:
+      {
+         std::cerr << "ERROR MA57: NRHS " << error_info << " less than one"<< std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -17:
+      {
+         std::cerr << "ERROR MA57: lwork too small: " << error_info << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -18:
+      {
+         std::cerr << "ERROR MA57: METIS ordering requested but METIS was not linked" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case 1 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: detected " << info[2] << " entries out of range in irowM and jcolM; ignored" << std::endl;
+      }; break;
+      case 2 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout<< "WARNING M57: detected " << info[3] << " duplicate entries in user supplied matrix detected - summing them up" << std::endl;
+      } break;
+      case 3:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: out of range etries and duplicates detected .. ignoring/summing them up" << std::endl;
+      }; break;
+      case 4:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: rank deficient matrix detected; apparent rank is " << info[24] << std::endl;
+      }; break;
+      case 5:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: pivots have different sign when factorizing supposedly definite matrix; " << info[25] << " sign changes detected" << std::endl;
+      }; break;
+      case 8:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: inf norm of computed solution was zero" << std::endl;
+      }; break;
+      case 10:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: insufficient space in fact: " << lfact << std::endl;
+         rpessimism *= 1.5;
+
+         assert( fact );
+         assert( keep );
+         int lnew = static_cast<int>(1.5 * lfact);
+         double * newfac = new double[lnew];
+         assert( lnew > lfact );
+         int copy_real_array = 0;
+         int dummy = lifact + 1;
+
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << " resetting to " << lnew << std::endl;
+
+         FNAME(ma57ed)( &n, &copy_real_array, keep, fact, &lfact, newfac, &lnew, ifact, &lifact,
+               nullptr, &dummy, info );
+
+         delete[] fact;
+         fact = newfac;
+         lfact = lnew;
+
+         error = true;
+      }; break;
+      case 11:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA57: insufficient factorization space in ifact: " << lifact << std::endl;
+         ipessimism *= 1.5;
+
+         assert( ifact );
+         assert( keep );
+         int linew = static_cast<int>(1.5 * lifact);
+         int* newifac = new int[linew];
+         assert( linew > lifact );
+         int copy_int_array = 1;
+         int dummy = lfact + 1;
+
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << " resetting to " << linew << std::endl;
+
+         FNAME(ma57ed)( &n, &copy_int_array, keep, fact, &lfact, nullptr, &dummy, ifact, &lifact,
+               newifac, &linew, info );
+
+         delete[] ifact;
+         ifact = newifac;
+         lifact = linew;
+
+         error = true;
+      }; break;
+      default :
+      {
+         assert( error_flag == 0);
+      }; break;
+   }
+
+   return error;
+}
+
 
 
 /*
