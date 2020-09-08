@@ -73,17 +73,6 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_)
 
   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
 
-#ifdef PARDISO_BLOCKSC
-  computeBlockwiseSC = true;
-#else
-  computeBlockwiseSC = false;
-#endif
-
-  // compute schur complement blockwise when neiher MUMPS nor PARDISO are available
-#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
-   computeBlockwiseSC = true;
-#endif
-
    // use sparse KKT if link structure is present
   hasSparseKkt = prob_->exploitingLinkStructure();
 
@@ -134,16 +123,6 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   }
 
   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
-
-#ifdef PARDISO_BLOCKSC
-  computeBlockwiseSC = true;
-#else
-  computeBlockwiseSC = false;
-#endif
-  // compute schur complement blcokwise when neiher MUMPS nor PARDISO are available
-#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
-   computeBlockwiseSC = true;
-#endif
 
   // use sparse KKT if (enough) 2 links are present
   hasSparseKkt = prob_->exploitingLinkStructure();

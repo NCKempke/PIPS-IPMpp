@@ -3,27 +3,28 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysLeaf.h"
-#include "sTree.h"
-#include "sFactory.h"
-#include "sData.h"
-#include "SparseSymMatrix.h"
-#include "SparseGenMatrix.h"
-#include "Ma57Solver.h"
-#include "Ma27Solver.h"
-#include "PardisoSolver.h"
 
 sLinsysLeaf::~sLinsysLeaf()
 {
-
+ // TODO free blocked stuff
 }
 
 void sLinsysLeaf::factor2(sData *prob, Variables *vars)
 {
-  // Diagonals were already updated, so
-  // just trigger a local refactorization (if needed, depends on the type of lin solver).
-  stochNode->resMon.recFactTmLocal_start();
-  solver->matrixChanged();
-  stochNode->resMon.recFactTmLocal_stop();
+   // Diagonals were already updated, so
+   // just trigger a local refactorization (if needed, depends on the type of lin solver).
+   stochNode->resMon.recFactTmLocal_start();
+   #pragma omp parallel num_threads(n_solvers)
+   {
+      const int id = omp_get_thread_num();
+
+      const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
+
+      SparseSymMatrix& my_kkt = *problems_blocked[id];
+      kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
+      solvers_blocked[id]->matrixChanged();
+   }
+   stochNode->resMon.recFactTmLocal_stop();
 }
 
 void sLinsysLeaf::putXDiagonal( OoqpVector& xdiag_ )
@@ -38,6 +39,7 @@ void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
   kkt->atPutDiagonal( locnx+locmy, *zdiag.vec );
 }
 
+// TODO : solves must be adapted to solver array in case of blockwise ? not sure..
 void sLinsysLeaf::Lsolve  (  sData *prob, OoqpVector& x_in )
 {
   StochVector& x = dynamic_cast<StochVector&>(x_in);

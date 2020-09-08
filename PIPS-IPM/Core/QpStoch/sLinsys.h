@@ -116,10 +116,16 @@ class sLinsys : public QpGenLinsys
   int nThreads;
 
   /* members for blockwise schur complement computation */
+  bool computeBlockwiseSC;
+
   int blocksizemax;
   double* colsBlockDense;
   int* colId;
   int* colSparsity;
+
+  const int n_solvers = 2;
+  DoubleLinearSolver** solvers_blocked = nullptr;
+  SparseSymMatrix** problems_blocked = nullptr;
 
   void multLeftSchurComplBlocked(/*const*/sData *prob, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, bool sparseSC, SymMatrix& SC);

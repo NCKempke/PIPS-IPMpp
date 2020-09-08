@@ -29,6 +29,16 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob)
 {
   factory = factory_;
 
+#ifdef PARDISO_BLOCKSC
+  computeBlockwiseSC = true;
+#else
+  computeBlockwiseSC = false;
+#endif
+  // compute schur complement blcokwise when neiher MUMPS nor PARDISO are available
+#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
+   computeBlockwiseSC = true;
+#endif
+
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
   ixupp = prob->ixupp;
@@ -72,6 +82,15 @@ sLinsys::sLinsys(sFactory* factory_,
 {
   factory = factory_;
 
+#ifdef PARDISO_BLOCKSC
+  computeBlockwiseSC = true;
+#else
+  computeBlockwiseSC = false;
+#endif
+  // compute schur complement blcokwise when neiher MUMPS nor PARDISO are available
+#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
+   computeBlockwiseSC = true;
+#endif
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
@@ -129,9 +148,6 @@ void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
 
   vars.jointCopyToLinkCons(x, y, z);
 }
-
-
-
 
 void sLinsys::factor(Data *prob_, Variables *vars)
 {
