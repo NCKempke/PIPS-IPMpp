@@ -101,6 +101,7 @@ sLinsys::sLinsys(sFactory* factory_,
 
 sLinsys::~sLinsys()
 {
+  if( colSparsity ) delete[] colSparsity;
   if( colId ) delete[] colId;
   if( colsBlockDense ) delete[] colsBlockDense;
   if (solver) delete solver;
@@ -138,7 +139,7 @@ void sLinsys::factor(Data *prob_, Variables *vars)
   double tTot=MPI_Wtime();
 #endif
   // the call to the the parent's method takes care of all necessary updates
-  // to the KKT system (updating diagonals mainly). This is done reccursevely,
+  // to the KKT system (updating diagonals mainly). This is done recursively,
   // we don't have to worry about it anymore. 
   QpGenLinsys::factor(prob_, vars);
 
@@ -812,7 +813,7 @@ void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
    if( colSparsity == nullptr )
       colSparsity = new int[N];
 #else
-   int* colSparsity = nullptr;
+   colSparsity = nullptr;
 #endif
 
 #ifdef TIME_SCHUR

@@ -58,14 +58,17 @@ extern "C"
  * @ingroup LinearSolvers
  */
 class Ma57Solver : public DoubleLinearSolver {
-
 protected:
   int icntl[20];
   int info[40];
   double cntl[5];
   double rinfo[20];
 
-  int n_iterative_refinement = 10;
+  const int n_iterative_refinement = 10;
+  const int max_tries = 8;
+
+  const int ooqp_print_level_warnings = 10000;
+
   /** the Threshold Pivoting parameter, stored as U in the ma27dd
    *  common block. Takes values in the range [0,1]. Larger values
    *  enforce greater stability in the factorization as they insist on
@@ -81,7 +84,7 @@ protected:
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is
    * increased when it is found to be inadequate.  */
-  double threshold_pivoting_factor;
+  double threshold_pivoting_factor = 10.0;
 
   /** the "Treat As Zero" parameter, stored as pivtol in the common
    * block ma27td. The factorization will not accept a pivot whose
@@ -141,25 +144,31 @@ public:
   Ma57Solver( SparseSymMatrix * sgm );
 
   virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;
+  void solve ( int nrhss, double* rhss, int* colSparsity ) override;
 
   //virtual void Lsolve  ( OoqpVector& x );
   //virtual void Dsolve  ( OoqpVector& x );
   //virtual void Ltsolve ( OoqpVector& x );
   //virtual void Refine  ( OoqpVector& x );
+ protected:
+  void solve(int solveType, OoqpVector& rhs);
+  void freeWorkingArrays();
+  void init();
+  bool checkErrorsAndReact();
 
-  double setTreatAsZero() { return cntl[1] = treat_pivot_as_zero; }
-  double setThresholdPivoting() { return cntl[0] = threshold_pivoting; }
+  int* iworkn, niworkn;
+  int* new_iworkn(int dim);
+  double* dworkn;
+  int ndworkn;
+  double* new_dworkn(int dim);
 
   /** destructor */
   virtual ~Ma57Solver();
-
-private:
-  void solve(int solveType, OoqpVector& rhs);
 
 };
 

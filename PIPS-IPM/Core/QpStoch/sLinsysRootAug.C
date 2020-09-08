@@ -3,20 +3,31 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRootAug.h"
+
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
+
 #include "PardisoSolver.h"
 #include "PardisoIndefSolver.h"
-#include "sData.h"
-#include "sTree.h"
-#include <limits>
+
+#ifdef WITH_MA57
+#include "Ma57SolverRoot.h"
+#endif
+
+#ifdef WITH_MA27
+#include "Ma27SolverRoot.h"
+#endif
+
 #ifdef WITH_MUMPS_ROOT
 #include "MumpsSolverRoot.h"
 #endif
 
-//#define DUMPKKT
+#include "sData.h"
+#include "sTree.h"
+#include <limits>
 
+//#define DUMPKKT
 #ifdef DUMPKKT
 #include <iostream>
 #include <fstream>
@@ -29,7 +40,6 @@
 #ifdef STOCH_TESTING
 extern double g_iterNumber;
 #endif
-extern int gInnerSCsolve;
 extern int gInnerBiCGIter;
 extern int gInnerBiCGFails;
 
@@ -107,40 +117,39 @@ sLinsysRootAug::createKKT(sData* prob)
 }
 
 
-DoubleLinearSolver*
-sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
+DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
 {
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
+   const int myRank = PIPS_MPIgetRank(mpiComm);
 
+   if( hasSparseKkt )
+   {
+      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
 
 #ifdef WITH_MUMPS_ROOT
-   if( hasSparseKkt )
-   {
       if( 0 == myRank )
-         cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << endl;
-
-      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
-
+         std::cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << std::endl;
       return new MumpsSolverRoot(mpiComm, kktmat);
-   }
-   else
 #elif defined(WITH_PARDISO)
-   if( hasSparseKkt )
-   {
       if( 0 == myRank )
-         cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << endl;
-
-      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
-
+         std::cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << std::endl;
       return new PardisoIndefSolver(kktmat);
+#elif defined(WITH_MA57)
+      if( 0 == myRank )
+         std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << std::endl;
+      return new Ma57SolverRoot(kktmat);
+#elif defined(WITH_MA27)
+      if( 0 == myRank )
+         std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << std::endl;
+      return new Ma27SolverRoot(kktmat);
+#else
+      assert( false && "No sparse solver available for sparse Schur complement -sLinsysRootAug" );
+#endif
    }
    else
-#else
-   assert(!hasSparseKkt);
-#endif
    {
+
       if( 0 == myRank )
-         cout << "Using LAPACK dsytrf for summed Schur complement - sLinsysRootAug" << endl;
+         std::cout << "Using LAPACK dsytrf for dense summed Schur complement - sLinsysRootAug" << std::endl;
 
       DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
 
@@ -431,14 +440,14 @@ void sLinsysRootAug::solveReduced( sData *prob, SimpleVector& b)
   ///////////////////////////////////////////////////////////////////////
   // r contains all the stuff -> solve for it
   ///////////////////////////////////////////////////////////////////////
-  if(gInnerSCsolve==0) {
+  if( innerSCSolve == 0 ) {
     // Option 1. - solve with the factors
     solver->Dsolve(r);
-  } else if(gInnerSCsolve==1) {
+  } else if( innerSCSolve == 1 ) {
     // Option 2 - solve with the factors and perform iter. ref.
     solveWithIterRef(prob, r);
   } else {
-    assert(gInnerSCsolve==2);
+    assert( innerSCSolve == 2 );
     // Option 3 - use the factors as preconditioner and apply BiCGStab
     solveWithBiCGStab(prob, r);
   }
@@ -459,7 +468,7 @@ void sLinsysRootAug::solveReduced( sData *prob, SimpleVector& b)
     b3.componentDiv(*zDiag);
   }
 #ifdef TIMING
-  if(myRank==0 && gInnerSCsolve>=1)
+  if( myRank == 0 && innerSCSolve >= 1 )
     cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
 	 << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << endl;
 #endif
@@ -521,14 +530,14 @@ void sLinsysRootAug::solveReducedLinkCons( sData *prob, SimpleVector& b)
   // we do not need the last locmz elements of r
   SimpleVector rshort(&r[0], locnx+locmy+locmyl+locmzl);
 
-  if(gInnerSCsolve==0) {
+  if( innerSCSolve == 0 ) {
     // Option 1. - solve with the factors
     solver->Dsolve(rshort);
-  } else if(gInnerSCsolve==1) {
+  } else if( innerSCSolve == 1 ) {
     // Option 2 - solve with the factors and perform iter. ref.
     solveWithIterRef(prob, rshort);
   } else {
-    assert(gInnerSCsolve==2);
+    assert( innerSCSolve == 2 );
     // Option 3 - use the factors as preconditioner and apply BiCGStab
     solveWithBiCGStab(prob, rshort);
   }
@@ -571,7 +580,7 @@ void sLinsysRootAug::solveReducedLinkCons( sData *prob, SimpleVector& b)
   }
 
 #ifdef TIMING
-  if(myRank==0 && gInnerSCsolve>=1)
+  if( myRank == 0 && innerSCSolve >= 1 )
     cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
 	 << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << endl;
 #endif
