@@ -42,8 +42,7 @@ void Ma27Solver::firstCall()
 
   this->getIndices( irowM, jcolM );
 
-  // set array lengths as recommended in ma27 docs
-  liw = 2 * (nnz + 3 * n + 1);
+  liw = static_cast<int>(ipessimism * (2 * nnz + 3 * n + 1));
   iw = new int[liw];
   iw1 = new int[2 * n];
   ikeep = new int[3 * n];
@@ -51,33 +50,47 @@ void Ma27Solver::firstCall()
   int iflag = 0; // set to 1 if ikeep contains pivot order
   double ops;
 
-  FNAME(ma27ad)( &n, &nnz, irowM, jcolM, iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl, cntl, info, &ops);
+  bool done = false;
+
+  while( !done )
+  {
+     FNAME(ma27ad)( &n, &nnz, irowM, jcolM, iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl, cntl, info, &ops);
+     done = true;
+
+     switch ( this->ma27ErrFlg() )
+     {
+        case -1 :
+        {
+           std::cerr << "ERROR MA27: N out of range or < -1: " << n << std::endl;
+           MPI_Abort(MPI_COMM_WORLD, -1);
+        }; break;
+        case -2 :
+        {
+           std::cerr << "ERROR MA27: NNZ out of range or < -1 : " << nnz << std::endl;
+           MPI_Abort(MPI_COMM_WORLD, -1);
+        }; break;
+        case -3 :
+        {
+           if( gOoqpPrintLevel >= 1000 )
+              std::cerr << "WARNING MA27: insufficient space in iw: " << liw << " suggest reset to " << this->ierror() << std::endl;
+           ipessimism *= 1.1;
+           delete[] iw;
+           iw = new int[ static_cast<int>(ipessimism * this->ierror()) ];
+           done = false;
+        }; break;
+        case 1 :
+        {
+           std::cerr << "WARNING MA27: detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored" << std::endl;
+        }; break;
+        default :
+        {
+           assert( this->ma27ErrFlg() == 0);
+        }; break;
+     }
+  }
 
   delete [] iw;
   delete [] iw1;
-
-  switch ( this->ma27ErrFlg() )
-  {
-     case -1 :
-     {
-        std::cerr << "n out of range: " << n << std::endl;
-        assert( 0 );
-     }; break;
-     case -2 :
-     {
-        std::cerr << "nnz out of range: " << nnz << std::endl;
-        assert(0);
-     }; break;
-     case -3 :
-     {
-        if( gOoqpPrintLevel >= 100 )
-           std::cout << "insufficient space in iw: " << liw << " suggest reset to " << this->ierror() << std::endl;
-     }; break;
-     case 1 :
-     {
-        std::cerr << "detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored" << std::endl;
-     }; break;
-  }
 
   la = 2 *  this->minimumRealWorkspace();
   fact = new double[la];
@@ -126,7 +139,7 @@ void Ma27Solver::matrixChanged()
             break;
          case -3:
             {
-               if( gOoqpPrintLevel >= 100 )
+               if( gOoqpPrintLevel >= 10000 )
                   std::cout << "insufficient space in iw: " << liw;
                delete[] iw;
                liw = (this->ierror() > ipessimism * liw) ?
