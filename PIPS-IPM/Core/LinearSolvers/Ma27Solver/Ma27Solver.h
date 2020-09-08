@@ -153,7 +153,7 @@ protected:
   SparseStorageHandle mStorage;
 
   void init();
-  void deleteWorkingArrays();
+  void freeWorkingArrays();
 public:
   /** base class constructor. Allocates values for kTreatAsZero,
    * kThresholdPivoting, kThresholdPivotingMax,
@@ -162,6 +162,7 @@ public:
 
   virtual ~Ma27Solver();
 
+  using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
 
 };

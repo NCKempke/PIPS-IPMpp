@@ -1,7 +1,7 @@
 /*
- * Ma57SolverRoot.C
+ * Ma27SolverRoot.C
  *
- *  Created on: 07.09.2020
+ *  Created on: 08.09.2020
  *      Author: bzfkempk
  */
 
@@ -11,20 +11,19 @@
 #include "SimpleVector.h"
 #include "SparseSymMatrix.h"
 
-Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm )
- : Ma57Solver(sgm), comm(mpiComm)
+Ma27SolverRoot::Ma27SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm )
+ : Ma27Solver(sgm), comm(mpiComm)
+{
+   assert(mpiComm != MPI_COMM_NULL);
+}
+
+Ma27SolverRoot::~Ma27SolverRoot()
 {
 }
 
-Ma57SolverRoot::~Ma57SolverRoot()
+void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 {
-}
-
-void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
-{
-   const int myrank = PIPS_MPIgetRank();
-
-   if( myrank == 0 )
+   if( PIPS_MPIgetRank() == 0 )
    {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
 
@@ -41,32 +40,22 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
    }
 }
 
-void Ma57SolverRoot::matrixChanged()
+void Ma27SolverRoot::matrixChanged()
 {
    if( PIPS_MPIgetRank() == 0 )
-   {
-      if( !keep )
-         this->firstCall();
-
-      assert(mStorage->n == mStorage->m);
-      assert( n == mStorage->n);
-      iworkn = new_iworkn(n);
-
-      FNAME(ma57bd)( &n, &nnz, M, fact, &lfact, ifact,
-            &lifact, &lkeep, keep, iworkn, icntl, cntl, info, rinfo );
-   }
+      Ma27Solver::matrixChanged();
 }
 
-void Ma57SolverRoot::solve(OoqpVector& rhs)
+void Ma27SolverRoot::solve(OoqpVector& rhs)
 {
-   PIPSdebugMessage("MA57 solver: solve (single rhs) \n");
+   PIPSdebugMessage("MA27 solver: solve (single rhs) \n");
 
    SimpleVector& sv = dynamic_cast<SimpleVector &>(rhs);
 
    assert(n == rhs.length());
 
    if( PIPS_MPIgetRank() == 0 )
-      Ma57Solver::solve(sv);
+      Ma27Solver::solve(sv);
 
    if( PIPS_MPIgetSize() > 0 )
       MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, comm);

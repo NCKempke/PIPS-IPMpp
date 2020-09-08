@@ -1,14 +1,14 @@
 /*
- * Ma57SolverRoot.h
+ * Ma27SolverRoot.h
  *
- *  Created on: 07.09.2020
+ *  Created on: 08.09.2020
  *      Author: bzfkempk
  */
 
-#ifndef PIPS_IPM_CORE_LINEARSOLVERS_MA57SOLVER_MA57SOLVERROOT_H_
-#define PIPS_IPM_CORE_LINEARSOLVERS_MA57SOLVER_MA57SOLVERROOT_H_
+#ifndef PIPS_IPM_CORE_LINEARSOLVERS_MA27SOLVER_MA27SOLVERROOT_H_
+#define PIPS_IPM_CORE_LINEARSOLVERS_MA27SOLVER_MA27SOLVERROOT_H_
 
-#include "Ma57Solver.h"
+#include "Ma27Solver.h"
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "OoqpVectorHandle.h"
@@ -20,18 +20,18 @@
 /** implements linear solver class for root nodes that uses the MA57 solver
  */
 
-class Ma57SolverRoot : public Ma57Solver
+class Ma27SolverRoot : public Ma27Solver
 {
 
  public:
-  Ma57SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm = MPI_COMM_WORLD );
+  Ma27SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm = MPI_COMM_WORLD );
 
-  ~Ma57SolverRoot();
+  ~Ma27SolverRoot();
 
   void matrixRebuild( DoubleMatrix& matrixNew ) override;
   void matrixChanged() override;
 
-  using Ma57Solver::solve;
+  using Ma27Solver::solve;
 
   void solve( OoqpVector& rhs ) override;
 
@@ -42,4 +42,4 @@ class Ma57SolverRoot : public Ma57Solver
 };
 
 
-#endif /* PIPS_IPM_CORE_LINEARSOLVERS_MA57SOLVER_MA57SOLVERROOT_H_ */
+#endif /* PIPS_IPM_CORE_LINEARSOLVERS_MA27SOLVER_MA27SOLVERROOT_H_ */

@@ -239,7 +239,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    /* iterative refinement loop */
    while( !done && refactorizations < 10 )
    {
-      FNAME(ma27cd)(&rhs.length(), fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
+      FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
             &nsteps, icntl, info);
 
       // res = res - A * drhs where A * drhs_out = drhs_in
@@ -278,7 +278,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
 {
    assert( lafact >= nnz );
-   const double * M = mStorage->M();
+   const double * M = mStorage->M;
    std::copy( M, M + nnz, afact );
 
    if( lafact > nnz )
@@ -288,8 +288,6 @@ void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
 // TODO same as the one in MA57 - move somewhere else, some common MA_Solver thing maybe..
 void Ma27Solver::getIndices( int irow[], int jcol[] ) const
 {
-   assert( !mStorage->isFortranIndexed() );
-
    const int* krowM = mStorage->krowM;
    for( int i = 0; i < mStorage->n; i++ )
    {
@@ -315,10 +313,10 @@ void Ma27Solver::getIndices( int irow[], int jcol[] ) const
 
 Ma27Solver::~Ma27Solver()
 {
-   deleteWorkingArrays();
+   freeWorkingArrays();
 }
 
-void Ma27Solver::deleteWorkingArrays()
+void Ma27Solver::freeWorkingArrays()
 {
    if( irowM )
       delete[] irowM;
