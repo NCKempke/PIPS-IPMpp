@@ -164,6 +164,7 @@ public:
 
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
+  void solve( int nrhss, double* rhss, int* colSparsity ) override;
 
 };
 

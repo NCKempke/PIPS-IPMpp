@@ -156,8 +156,8 @@ void Ma27Solver::matrixChanged()
             {
                if( gOoqpPrintLevel >= 100 )
                {
-                  std::cout << "matrix apparently numerically singular, detected at stage " << this->ierror() << std::endl;
-                  std::cout << "accept this factorization and hope for the best.." << std::endl;
+//                  std::cout << "matrix apparently numerically singular, detected at stage " << this->ierror() << std::endl;
+//                  std::cout << "accept this factorization and hope for the best.." << std::endl;
                }
                done = 1;
             };
@@ -166,8 +166,8 @@ void Ma27Solver::matrixChanged()
             {
                if( gOoqpPrintLevel >= 100 )
                {
-                  std::cout << "change of sign of pivots detected at stage " << this->ierror() << std::endl;
-                  std::cout << "but who cares " << std::endl;
+//                  std::cout << "change of sign of pivots detected at stage " << this->ierror() << std::endl;
+//                  std::cout << "but who cares " << std::endl;
                }
                done = 1;
             };
@@ -182,8 +182,8 @@ void Ma27Solver::matrixChanged()
             {
                if( gOoqpPrintLevel >= 100 )
                {
-                  std::cout << "detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored"
-                        << std::endl;
+//                  std::cout << "detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored"
+//                        << std::endl;
                }
                done = 1;
             };
@@ -213,6 +213,14 @@ void Ma27Solver::matrixChanged()
 
   iw2 = new int[nsteps];
   w = new double[maxfrt];
+}
+
+void Ma27Solver::solve( int nrhss, double* rhss, int* colSparsity )
+{
+   for (int i = 0; i < nrhss; i++) {
+     SimpleVector v(rhss + i * n, n);
+     solve(v);
+   }
 }
 
 void Ma27Solver::solve( OoqpVector& rhs_in )
@@ -250,8 +258,8 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          done = true;
       else if ( this->thresholdPivoting() >= threshold_pivoting_max || refactorizations > 10)
       {
-         if( gOoqpPrintLevel >= 10 )
-            std::cout << "ThresholdPivoting parameter is already too high" << std::endl;
+//         if( gOoqpPrintLevel >= 10 )
+//            std::cout << "ThresholdPivoting parameter is already too high" << std::endl;
          done = true;
       }
       else
@@ -262,8 +270,9 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
             tp = threshold_pivoting_max;
          this->setThresholdPivoting(tp);
 
-         if( gOoqpPrintLevel >= 10 ) {
-            std::cout << "Ma27: Setting ThresholdPivoting parameter to " << this->thresholdPivoting() << " for future factorizations" << std::endl;
+         if( gOoqpPrintLevel >= 10 )
+         {
+//            std::cout << "Ma27: Setting ThresholdPivoting parameter to " << this->thresholdPivoting() << " for future factorizations" << std::endl;
       }
 
       this->matrixChanged();
@@ -282,7 +291,7 @@ void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
    std::copy( M, M + nnz, afact );
 
    if( lafact > nnz )
-      std::fill_n( afact + nnz, afact + (lafact - nnz), 0.0 );
+      std::fill( afact + nnz, afact + (lafact - nnz), 0.0 );
 }
 
 // TODO same as the one in MA57 - move somewhere else, some common MA_Solver thing maybe..

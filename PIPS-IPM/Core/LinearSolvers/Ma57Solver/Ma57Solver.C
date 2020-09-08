@@ -248,8 +248,8 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
       } else {
         // Otherwise, we have already tried iterative refinement, and
         // have already increased the ThresholdPivoting parameter
-        cout << "Refactoring with Threshold Pivoting parameter "
-          << kThresholdPivoting << endl;
+        std::cout << "Refactoring with Threshold Pivoting parameter "
+          << kThresholdPivoting << std::endl;
         this->matrixChanged();
         refactorizations++;
         // be optimistic about the next factorization

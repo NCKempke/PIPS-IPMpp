@@ -20,8 +20,14 @@
 #include "sLinsysRoot.h"
 #include "sLinsysLeaf.h"
 
+#ifdef WITH_MA57
 #include "Ma57Solver.h"
+#endif
+
+#ifdef WITH_MA27
 #include "Ma27Solver.h"
+#endif
+
 #include "PardisoSolver.h"
 #include "DeSymIndefSolver.h"
 

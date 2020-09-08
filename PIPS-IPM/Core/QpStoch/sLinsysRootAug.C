@@ -11,8 +11,14 @@
 #include "PardisoSolver.h"
 #include "PardisoIndefSolver.h"
 
+#ifdef WITH_MA57
 #include "Ma57SolverRoot.h"
-#include "Ma27Solver.h"
+#endif
+
+#ifdef WITH_MA27
+#include "Ma27SolverRoot.h"
+#endif
+
 #ifdef WITH_MUMPS_ROOT
 #include "MumpsSolverRoot.h"
 #endif
@@ -132,7 +138,7 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
          std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << std::endl;
       return new Ma57SolverRoot(kktmat);
 #elif defined(WITH_MA27)
-      if( 0 == myRANK )
+      if( 0 == myRank )
          std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << std::endl;
       return new Ma27SolverRoot(kktmat);
 #else
