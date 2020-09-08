@@ -122,7 +122,7 @@ protected:
   /** used to indicate when we need a fresh factorization (when
    * iterative refinement has failed to improve the precision of the
    * computed solution satisfactorily */
-  int     freshFactor;
+  bool freshFactor;
 
   /** store as a sparse symmetric matrix */
   SparseStorageHandle mStorage;

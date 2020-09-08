@@ -40,6 +40,8 @@ Ma57Solver::Ma57Solver( SparseSymMatrix * sgm )
 
 void Ma57Solver::init()
 {
+   freshFactor = false;
+
    ipessimism = 2;
    rpessimism = 2;
 
@@ -136,7 +138,7 @@ void Ma57Solver::matrixChanged()
 
     FNAME(ma57bd)( &n, &nnz, M, fact, &lfact, ifact,
 	     &lifact, &lkeep, keep, iworkn, icntl, cntl, info, rinfo );
-
+    freshFactor = true;
 #if 0
      int done = 0, tries = 0;;
     if( info[0] != 0 )
@@ -175,7 +177,7 @@ void Ma57Solver::matrixChanged()
     } // end switch
     tries++;
   } while( !done );
-  freshFactor = 1;
+  freshFactor = true;
 
   //delete [] iwork;
 #endif
@@ -224,7 +226,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
         job = 2;
         icntl[8] = 10;
         // Mark this factorization as stale
-        freshFactor = 0;
+        freshFactor = false;
         // And grow more pessimistic about the next factorization
         if( kThresholdPivoting >= kThresholdPivotingMax ) {
           // We have already refactored as with a high a pivtol as we

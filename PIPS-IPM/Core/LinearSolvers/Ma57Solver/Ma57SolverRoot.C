@@ -14,6 +14,7 @@
 Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm )
  : Ma57Solver(sgm), comm(mpiComm)
 {
+   assert(mpiComm != MPI_COMM_NULL);
 }
 
 Ma57SolverRoot::~Ma57SolverRoot()
@@ -22,9 +23,7 @@ Ma57SolverRoot::~Ma57SolverRoot()
 
 void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 {
-   const int myrank = PIPS_MPIgetRank();
-
-   if( myrank == 0 )
+   if( PIPS_MPIgetRank() == 0 )
    {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
 
@@ -44,17 +43,7 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 void Ma57SolverRoot::matrixChanged()
 {
    if( PIPS_MPIgetRank() == 0 )
-   {
-      if( !keep )
-         this->firstCall();
-
-      assert(mStorage->n == mStorage->m);
-      assert( n == mStorage->n);
-      iworkn = new_iworkn(n);
-
-      FNAME(ma57bd)( &n, &nnz, M, fact, &lfact, ifact,
-            &lifact, &lkeep, keep, iworkn, icntl, cntl, info, rinfo );
-   }
+      Ma57Solver::matrixChanged();
 }
 
 void Ma57SolverRoot::solve(OoqpVector& rhs)
