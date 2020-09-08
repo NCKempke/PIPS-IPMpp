@@ -10,15 +10,15 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver( SparseSymMatrix * sgm ) :
-      maxMa27Iter(18), precision(1e-7), threshold_pivoting_max(1.e-2), threshold_pivoting_factor(10.0),
-      irowM(nullptr), jcolM(nullptr), fact(nullptr),
-      ipessimism(2.0), rpessimism(2.0)
+Ma27Solver::Ma27Solver(SparseSymMatrix *sgm) :
+      maxMa27Iter(18), max_n_iter_refinement(10), ooqp_print_level_warnings(
+            10000), precision(1e-7), threshold_pivoting_max(1.e-2), threshold_pivoting_factor(
+            10.0), irowM(nullptr), jcolM(nullptr), fact(nullptr), ipessimism(
+            2.0), rpessimism(2.0)
 {
    mStorage = sgm->getStorageHandle();
    init();
 }
-
 
 void Ma27Solver::init()
 {
@@ -51,42 +51,19 @@ void Ma27Solver::firstCall()
   double ops;
 
   bool done = false;
-
-  while( !done )
+  int tries = 0;
+  do
   {
      FNAME(ma27ad)( &n, &nnz, irowM, jcolM, iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl, cntl, info, &ops);
-     done = true;
+     done = !checkErrorsAndReact();
+     ++tries;
+  }
+  while( !done && tries < maxMa27Iter );
 
-     switch ( this->ma27ErrFlg() )
-     {
-        case -1 :
-        {
-           std::cerr << "ERROR MA27: N out of range or < -1: " << n << std::endl;
-           MPI_Abort(MPI_COMM_WORLD, -1);
-        }; break;
-        case -2 :
-        {
-           std::cerr << "ERROR MA27: NNZ out of range or < -1 : " << nnz << std::endl;
-           MPI_Abort(MPI_COMM_WORLD, -1);
-        }; break;
-        case -3 :
-        {
-           if( gOoqpPrintLevel >= 1000 )
-              std::cerr << "WARNING MA27: insufficient space in iw: " << liw << " suggest reset to " << this->ierror() << std::endl;
-           ipessimism *= 1.1;
-           delete[] iw;
-           iw = new int[ static_cast<int>(ipessimism * this->ierror()) ];
-           done = false;
-        }; break;
-        case 1 :
-        {
-           std::cerr << "WARNING MA27: detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored" << std::endl;
-        }; break;
-        default :
-        {
-           assert( this->ma27ErrFlg() == 0);
-        }; break;
-     }
+  if ( !done && tries > maxMa27Iter )
+  {
+     std::cerr << "ERROR MA27: could not get ordering of matrix after max " << maxMa27Iter << " tries" << std::endl;
+     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   delete [] iw;
@@ -111,7 +88,8 @@ void Ma27Solver::matrixChanged()
    if( !fact )
       this->firstCall();
 
-   int done = 0, tries = 0;
+   bool done = false;
+   int tries = 0;
    do
    {
       // copy M to fact
@@ -120,112 +98,19 @@ void Ma27Solver::matrixChanged()
       FNAME(ma27bd)(&n, &nnz, irowM, jcolM, fact, &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl, cntl, info);
 
-      switch( this->ma27ErrFlg() )
-         {
-         case 0:
-            done = 1;
-            break;
-         case -1:
-            {
-               std::cerr << "n out of range: " << n << std::endl;
-               assert(0);
-            };
-            break;
-         case -2:
-            {
-               std::cerr << "nnz out of range: " << nnz << std::endl;
-               assert(0);
-            };
-            break;
-         case -3:
-            {
-               if( gOoqpPrintLevel >= 10000 )
-                  std::cout << "insufficient space in iw: " << liw;
-               delete[] iw;
-               liw = (this->ierror() > ipessimism * liw) ?
-                     this->ierror() : static_cast<int>(ipessimism * liw);
-               iw = new int[liw];
-               if( gOoqpPrintLevel >= 100 )
-                  std::cout << " resetting to " << liw << std::endl;
-
-               ipessimism *= 1.1;
-            };
-            break;
-         case -4:
-            {
-               if( gOoqpPrintLevel >= 100 )
-                  std::cout << "insufficient factorization space: " << la;
-               delete[] fact;
-               la = (this->ierror() > rpessimism * la) ?
-                     this->ierror() : static_cast<int>(rpessimism * la);
-               fact = new double[la];
-               this->copyMatrixElements(fact, la);
-               if( gOoqpPrintLevel >= 100 )
-                  std::cout << " resetting to " << la << std::endl;
-               rpessimism *= 1.1;
-            };
-            break;
-         case -5:
-            {
-               if( gOoqpPrintLevel >= 100 )
-               {
-//                  std::cout << "matrix apparently numerically singular, detected at stage " << this->ierror() << std::endl;
-//                  std::cout << "accept this factorization and hope for the best.." << std::endl;
-               }
-               done = 1;
-            };
-            break;
-         case -6:
-            {
-               if( gOoqpPrintLevel >= 100 )
-               {
-//                  std::cout << "change of sign of pivots detected at stage " << this->ierror() << std::endl;
-//                  std::cout << "but who cares " << std::endl;
-               }
-               done = 1;
-            };
-            break;
-         case -7:
-            {
-               std::cerr << "value of NSTEPS out of range " << nsteps << std::endl;
-               assert(0);
-            };
-            break;
-         case 1:
-            {
-               if( gOoqpPrintLevel >= 100 )
-               {
-//                  std::cout << "detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored"
-//                        << std::endl;
-               }
-               done = 1;
-            };
-            break;
-         case 3:
-            {
-               if( gOoqpPrintLevel >= 100 )
-               {
-                  std::cout << "rank deficient matrix detected; apparent rank is "
-                        << this->ierror() << std::endl;
-               }
-               done = 1;
-            };
-            break;
-         default:
-            break;
-         }
+      done = !checkErrorsAndReact();
       tries++;
    }
    while( !done && tries < maxMa27Iter );
 
-   if ( !done && maxMa27Iter >= 10)
+   if ( !done && tries > maxMa27Iter )
    {
-      if( gOoqpPrintLevel >= 100 )
-         std::cout << "we are screwed; did not get a factorization after 10 tries " << std::endl;
+      std::cerr << "ERROR MA27: could not get factorization of matrix after max " << maxMa27Iter << " tries" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
-  iw2 = new int[nsteps];
-  w = new double[maxfrt];
+   iw2 = new int[nsteps];
+   w = new double[maxfrt];
 }
 
 void Ma27Solver::solve( int nrhss, double* rhss, int* colSparsity )
@@ -247,8 +132,6 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    double *drhs = rhs.elements();
    double *dresid = resid->elements();
 
-   double rnorm = 0.0;
-
    rhsSave->copyFrom(rhs);
    resid->copyFrom(rhs);
 
@@ -258,43 +141,37 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    int refactorizations = 0;
 
    /* iterative refinement loop */
-   while( !done && refactorizations < 10 )
+   while( !done && refactorizations < max_n_iter_refinement )
    {
       FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
             &nsteps, icntl, info);
 
-      // res = res - A * drhs where A * drhs_out = drhs_in
+      /* res = res - A * drhs where A * drhs_out = drhs_in */
       mStorage->mult(-1.0, dresid, 1, 1.0, drhs, 1);
-      rnorm = resid->infnorm();
+      const double rnorm = resid->infnorm();
     
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
          done = true;
-      else if ( this->thresholdPivoting() >= threshold_pivoting_max || refactorizations > 10)
+      else if ( thresholdPivoting() >= threshold_pivoting_max || refactorizations > max_n_iter_refinement)
       {
-//         if( gOoqpPrintLevel >= 10 )
-//            std::cout << "ThresholdPivoting parameter is already too high" << std::endl;
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
          done = true;
       }
       else
       {
-         double tp = this->thresholdPivoting();
-         tp *= threshold_pivoting_factor;
-         if( tp > threshold_pivoting_max )
-            tp = threshold_pivoting_max;
-         this->setThresholdPivoting(tp);
+         setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
 
-         if( gOoqpPrintLevel >= 10 )
-         {
-//            std::cout << "Ma27: Setting ThresholdPivoting parameter to " << this->thresholdPivoting() << " for future factorizations" << std::endl;
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
+
+         this->matrixChanged();
+         refactorizations++;
+
+         resid->copyFrom(*rhsSave);
+         rhs.copyFrom(*rhsSave);
       }
-
-      this->matrixChanged();
-      refactorizations++;
-
-      resid->copyFrom(*rhsSave);
-      rhs.copyFrom(*rhsSave);
-    }
-  }
+   }
 }
 
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
@@ -361,6 +238,96 @@ void Ma27Solver::freeWorkingArrays()
    fact = w = nullptr;
 }
 
+bool Ma27Solver::checkErrorsAndReact()
+{
+   bool error = false;
 
+   switch ( this->ma27ErrFlg() )
+   {
+      case 0 :
+         break;
+      case -1 :
+      {
+         std::cerr << "ERROR MA27: N out of range or < -1: " << n << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -2 :
+      {
+         std::cerr << "ERROR MA27: NNZ out of range or < -1 : " << nnz << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case -3 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: insufficient space in iw: " << liw << " suggest reset to " << this->ierror() << std::endl;
+         ipessimism *= 1.1;
 
+         assert( iw );
+         delete[] iw;
 
+         liw = std::max( this->ierror(), static_cast<int>(ipessimism * liw) );
+         iw = new int[ liw ];
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << " resetting to " << liw << std::endl;
+
+         error = true;
+      }; break;
+      case -4 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: insufficient factorization space: " << la;
+         rpessimism *= 1.1;
+
+         assert( fact );
+         delete[] fact;
+
+         la = std::max(this->ierror(), static_cast<int>(rpessimism * la) );
+         fact = new double[la];
+
+         this->copyMatrixElements(fact, la);
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << " resetting to " << la << std::endl;
+
+         error = true;
+      } break;
+      case -5:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+         {
+            std::cout << "WARNING MA27: matrix apparently numerically singular, detected at stage " << this->ierror() << std::endl;
+            std::cout << " accepting factorization anyway" << std::endl;
+         }
+      }; break;
+      case -6:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: change of sign of pivots detected at stage " << this->ierror() << std::endl;
+      }; break;
+      case -7:
+      {
+         std::cerr << "ERROR MA27: value of NSTEPS out of range " << nsteps << " (should not happen..) " << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }; break;
+      case 1 :
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: detected " << this->ierror() << " entries out of range in irowM and jcolM; ignored" << std::endl;
+      }; break;
+      case 2 :
+      {
+         std::cerr << "ERROR MA27: change of sign in pivots detected when matrix is supposedly definite" << std::endl;
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      } break;
+      case 3:
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: rank deficient matrix detected; apparent rank is " << this->ierror() << std::endl;
+      }; break;
+      default :
+      {
+         assert( this->ma27ErrFlg() == 0);
+      }; break;
+   }
+
+   return error;
+}

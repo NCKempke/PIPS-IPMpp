@@ -68,6 +68,10 @@ protected:
 
   const int maxMa27Iter;
 
+  const int max_n_iter_refinement;
+
+  const int ooqp_print_level_warnings;
+
   /** precision we demand from the linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
    * possibly refactorization with a higher value of
@@ -154,6 +158,7 @@ protected:
 
   void init();
   void freeWorkingArrays();
+  bool checkErrorsAndReact();
 public:
   /** base class constructor. Allocates values for kTreatAsZero,
    * kThresholdPivoting, kThresholdPivotingMax,
