@@ -35,6 +35,8 @@ namespace pips_options
 
       /// PRECONDITIONERS
 #ifdef PARDISO_BLOCKSC
+      bool_options["PRECONDITION_DISTRIBUTED"] = false;
+#else
       bool_options["PRECONDITION_DISTRIBUTED"] = true;
 #endif
       bool_options["PRECONDITION_SPARSE"] = true;
