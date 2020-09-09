@@ -31,16 +31,22 @@ void sLinsysLeaf::factor2(sData *prob, Variables *vars)
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
    stochNode->resMon.recFactTmLocal_start();
-   #pragma omp parallel num_threads(n_solvers)
+
+   if( computeBlockwiseSC )
    {
-      const int id = omp_get_thread_num();
+      #pragma omp parallel num_threads(n_solvers)
+      {
+         const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
+         const int id = omp_get_thread_num();
 
-      const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
-
-      SparseSymMatrix& my_kkt = *problems_blocked[id];
-      kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
-      solvers_blocked[id]->matrixChanged();
+         SparseSymMatrix& my_kkt = *problems_blocked[id];
+         kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
+         solvers_blocked[id]->matrixChanged();
+      }
    }
+   else
+      solver->matrixChanged();
+
    stochNode->resMon.recFactTmLocal_stop();
 }
 
