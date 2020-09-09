@@ -39,6 +39,10 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob)
    computeBlockwiseSC = true;
 #endif
 
+   if( computeBlockwiseSC )
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "Using " << nThreads << " solvers parallely for blockwise SC computation" << std::endl;
+
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
   ixupp = prob->ixupp;
@@ -91,6 +95,10 @@ sLinsys::sLinsys(sFactory* factory_,
 #if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
    computeBlockwiseSC = true;
 #endif
+
+   if( computeBlockwiseSC )
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "Using " << nThreads << " solvers parallely for blockwise SC computation" << std::endl;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
