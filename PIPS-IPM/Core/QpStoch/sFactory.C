@@ -96,7 +96,7 @@ sFactory::newLinsysLeaf(sData* prob,
    Ma57Solver* s = nullptr;
 #elif defined(WITH_MA27)
    if( PIPS_MPIgetRank() == 0 )
-      std::cout << "Using M257 for the blocked leaf schur complement computation" << std::endl;
+      std::cout << "Using M27 for the blocked leaf schur complement computation" << std::endl;
    Ma27Solver* s = nullptr;
 #else
    if( PIPS_MPIgetRank() == 0 )
