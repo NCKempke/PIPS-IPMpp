@@ -34,7 +34,9 @@ namespace pips_options
       int_options["PARDISO_NITERATIVE_REFINS_ROOT"] = -1;
 
       /// PRECONDITIONERS
+#ifdef PARDISO_BLOCKSC
       bool_options["PRECONDITION_DISTRIBUTED"] = true;
+#endif
       bool_options["PRECONDITION_SPARSE"] = true;
 
       /// GONDZIO SOLVERS
