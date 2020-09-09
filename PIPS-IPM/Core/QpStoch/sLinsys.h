@@ -92,6 +92,9 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
                SymMatrix& SC);
 
+  virtual void addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparseSC,
+               SymMatrix& SC);
+
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
 					

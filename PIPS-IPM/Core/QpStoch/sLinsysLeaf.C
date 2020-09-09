@@ -6,7 +6,24 @@
 
 sLinsysLeaf::~sLinsysLeaf()
 {
- // TODO free blocked stuff
+   if( computeBlockwiseSC )
+      freeBlockedSolvers();
+}
+
+void sLinsysLeaf::freeBlockedSolvers()
+{
+   assert( solvers_blocked != nullptr );
+
+   #pragma omp parallel num_threads(n_solvers)
+   {
+      const int id = omp_get_thread_num();
+
+      delete solvers_blocked[id];
+      delete problems_blocked[id];
+   }
+
+   delete[] solvers_blocked;
+   delete[] problems_blocked;
 }
 
 void sLinsysLeaf::factor2(sData *prob, Variables *vars)
@@ -40,7 +57,7 @@ void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
 }
 
 // TODO : solves must be adapted to solver array in case of blockwise ? not sure..
-void sLinsysLeaf::Lsolve  (  sData *prob, OoqpVector& x_in )
+void sLinsysLeaf::Lsolve (  sData *prob, OoqpVector& x_in )
 {
   StochVector& x = dynamic_cast<StochVector&>(x_in);
   assert(x.children.size()==0);
@@ -71,7 +88,6 @@ void sLinsysLeaf::Ltsolve (  sData *prob, OoqpVector& x_in )
 
 void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
-
   StochVector& b   = dynamic_cast<StochVector&>(x);
   SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
   assert(0==b.children.size());

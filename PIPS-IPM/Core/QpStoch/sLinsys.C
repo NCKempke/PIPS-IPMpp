@@ -123,7 +123,10 @@ sLinsys::~sLinsys()
   if( colSparsity ) delete[] colSparsity;
   if( colId ) delete[] colId;
   if( colsBlockDense ) delete[] colsBlockDense;
-  if (solver) delete solver;
+  if( !computeBlockwiseSC )
+  {
+     if (solver) delete solver;
+  }
   if (kkt)    delete kkt;
 }
 
@@ -967,6 +970,216 @@ void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
    myfile.close();
 
    assert(0);
+#endif
+}
+
+void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparseSC,
+                   SymMatrix& SC)
+{
+   SparseGenMatrix& A = prob->getLocalA();
+   SparseGenMatrix& C = prob->getLocalC();
+   SparseGenMatrix& F = prob->getLocalF();
+   SparseGenMatrix& G = prob->getLocalG();
+   SparseGenMatrix& R = prob->getLocalCrossHessian();
+
+   int N, nxP;
+
+   R.getSize(N, nxP);
+   const bool withR = (nxP != -1);
+
+   A.getSize(N, nxP);
+   const bool withA = (nxP != -1);
+
+   assert(N == locmy);
+   assert(locmyl >= 0);
+   assert(locmzl >= 0);
+
+   const int NP = SC.size();
+   assert(NP >= nxP);
+
+   const int nxMyP = NP - locmyl - locmzl;
+   const int nxMyMzP = NP - locmzl;
+
+   assert( nxMyP > 0 );
+   assert( nxMyMzP > 0 );
+
+   if( nxP == -1 )
+      C.getSize(N, nxP);
+
+   int N2, nxP2;
+   C.getSize(N2, nxP2);
+   const bool withC = (nxP2 != -1);
+
+   // TODO : is this correct?
+   if( nxP == -1 )
+      nxP = NP;
+
+   N = locnx + locmy + locmz;
+
+   SimpleVectorBase<int> nnzPerColRAC(nxP);
+
+   if( withR )
+      R.addNnzPerCol(nnzPerColRAC);
+
+   if( withA )
+      A.addNnzPerCol(nnzPerColRAC);
+
+   if( withC )
+      C.addNnzPerCol(nnzPerColRAC);
+
+   const int withF = (locmyl > 0);
+   const int withG = (locmzl > 0);
+
+   assert(nThreads >= 1);
+
+   // indicating whether a right hand side is zero
+   if( colSparsity == nullptr )
+   {
+      colSparsity = new int[N * n_solvers];
+      memset(colSparsity, 0, N * n_solvers * sizeof(int));
+   }
+
+   if( colsBlockDense == nullptr )
+      colsBlockDense = new double[N * n_solvers];
+#ifdef TIME_SCHUR
+   const double t_start = omp_get_wtime();
+#endif
+
+
+   R.updateTransposed();
+   A.updateTransposed();
+   C.updateTransposed();
+
+   //                       (R)
+   //     SC +=  B^T  K^-1  (A)
+   //                       (C)
+   #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
+   for( int i = 0; i < nxP ; ++i )
+   {
+      if( nnzPerColRAC[i] == 0 )
+         continue;
+
+      const int id = omp_get_thread_num();
+
+      double* colsBlockDense_loc = colsBlockDense + id * N;
+      int* colSparsity_loc = colSparsity + id * N;
+
+      memset(colsBlockDense_loc, 0, N * sizeof(double));
+
+      R.fromGetColsBlock(&i, 1, N, 0, colsBlockDense_loc, colSparsity_loc);
+      A.fromGetColsBlock(&i, 1, N, locnx, colsBlockDense_loc, colSparsity_loc);
+      C.fromGetColsBlock(&i, 1, N, (locnx + locmy), colsBlockDense_loc, colSparsity_loc);
+
+      solvers_blocked[id]->solve(1, colsBlockDense_loc, colSparsity_loc);
+
+      // TODO: thread-safe?
+//      #pragma omp critical
+      {
+         multLeftSchurComplBlocked(prob, colsBlockDense_loc, &i, 1, sparseSC, SC);
+      }
+
+   }
+
+#ifdef TIME_SCHUR
+   const double t_end = omp_get_wtime();
+   std::cout << "t_end - t_start:" << (t_end - t_start) << std::endl;
+   assert(0);
+#endif
+
+   // do we have linking equality constraints?
+   if( withF )
+   {
+      //                       (F^T)
+      //     SC +=  B^T  K^-1  (0  )
+      //                       (0  )
+
+      SimpleVectorBase<int> nnzPerColFt(locmyl);
+      F.addNnzPerRow(nnzPerColFt);
+
+      // do block-wise multiplication for columns of F^T part
+      #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
+      for(int i = 0; i < locmyl; ++i )
+      {
+         if( nnzPerColFt[i] == 0 )
+            continue;
+
+         const int id = omp_get_thread_num();
+
+         double* colsBlockDense_loc = colsBlockDense + id * N;
+         int* colSparsity_loc = colSparsity + id * N;
+
+         memset(colsBlockDense_loc, 0, N * sizeof(double));
+
+         // get column block from Ft (i.e., row block from F)
+         F.fromGetRowsBlock(&i, 1, N, 0, colsBlockDense_loc, colSparsity_loc);
+
+         solvers_blocked[id]->solve(1, colsBlockDense_loc, colSparsity_loc);
+
+         const int colId = i + nxMyP;
+
+//         #pragma omp critical
+         {
+            // TODO : thread-safe?
+            multLeftSchurComplBlocked(prob, colsBlockDense_loc, &colId, 1, sparseSC, SC);
+         }
+      }
+   }
+
+   // do we have linking inequality constraints?
+   if( withG )
+   {
+      //                       (G^T)
+      //     SC +=  B^T  K^-1  (0  )
+      //                       (0  )
+
+      SimpleVectorBase<int> nnzPerColGt(locmzl);
+      G.addNnzPerRow(nnzPerColGt);
+
+      // do block-wise multiplication for columns of G^T part
+      #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
+      for( int i = 0; i < locmzl; ++i )
+      {
+         if( nnzPerColGt[i] == 0 )
+            continue;
+
+         const int id = omp_get_thread_num();
+
+         double* colsBlockDense_loc = colsBlockDense + id * N;
+         int* colSparsity_loc = colSparsity + id * N;
+
+         memset(colsBlockDense_loc, 0, N * sizeof(double));
+
+         G.fromGetRowsBlock(&i, 1, N, 0, colsBlockDense_loc, colSparsity_loc);
+
+         solvers_blocked[id]->solve(1, colsBlockDense_loc, colSparsity_loc);
+
+         const int colId = i + nxMyMzP;
+
+//         #pragma omp critical
+         {
+            // TODO : thread-safe?
+            multLeftSchurComplBlocked(prob, colsBlockDense_loc, &colId, 1, sparseSC, SC);
+         }
+      }
+   }
+
+#if 0
+   // debug stuff
+   const int myrank = PIPS_MPIgetRank();
+
+   if( myrank == 0 )
+   {
+      static int iteration = 0;
+      ofstream myfile;
+      char filename[50];
+      sprintf(filename, "../blocked_%d_%d.txt", myrank, iteration);
+      myfile.open(filename);
+      iteration++;
+      SC.writeToStream(myfile); // todo write out in each iteration with global counter and MPI rank!
+      myfile.close();
+
+      assert(0);
+   }
 #endif
 }
 

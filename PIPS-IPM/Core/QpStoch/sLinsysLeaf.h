@@ -57,6 +57,9 @@ class sLinsysLeaf : public sLinsys
 
   template<class LINSOLVER>
   void initBlockedSolvers();
+
+  void freeBlockedSolvers();
+
 }; 
 
 template<class LINSOLVER>
@@ -108,10 +111,10 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   // create the solver for the linear system
   if( computeBlockwiseSC )
   {
-     if( PIPS_MPIgetRank() == 0 )
-        std::cout << "Creating warp of solvers for blocked Schur Complement computation" << std::endl;
      initBlockedSolvers<LINSOLVER>();
-     solver = nullptr;
+     assert(solvers_blocked);
+
+     solver = solvers_blocked[0];
   }
   else
      solver = new LINSOLVER(kktsp);
