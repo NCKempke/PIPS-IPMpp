@@ -65,6 +65,11 @@ message(STATUS "WITH_PARDISO_BLOCKSC=${WITH_PARDISO_BLOCKSC}")
 option(BUILD_GDX_SOURCE "Build GDX Source" OFF)
 message(STATUS "BUILD_GDX_SOURCE=${BUILD_GDX_SOURCE}")
 
+option(USE_MA27 "Use MA27 solver for global and local Schur complement" OFF)
+message(STATUS "USE_MA27=${USE_MA27}")
+
+option(USE_MA57 "Use MA57 solver for global and local Schur complement" OFF)
+message(STATUS "USE_MA25=${USE_MA57}")
 
 #with timing for PIPS-IPM
 
@@ -451,6 +456,46 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
   message(STATUS "Pardiso lib: ${PARDISO_LIBRARY} and HAVE_PARDISO is ${HAVE_PARDISO}")
 
   #setting CXX_FLAGS
+  
+   #### switch for using MA27 over all other available solvers - since MA27 has no augmented schur complement appoach 
+   #### implemented we have to set -DPARDISO_BLOCKSC
+   if( USE_MA27 )
+      if( !HAVE_MA27 )
+         message(FATAL_ERROR "specified WITH_MA27 but could not find MA27..")
+      endif( !HAVE_MA27 )
+      
+      if( USE_MA57 )
+         message(WARNING "specified WITH_MA27 AND WITH_MA57 - only using MA57...")
+         set( HAVE_MA27 false )
+         set( MA27_LIBRARY  "")
+      endif( USE_MA57 )
+      
+      if( HAVE_MA27 )
+         set( HAVE_MA57 false )
+         set( HAVE_MUMPS false )
+         set( HAVE_PARDISO false )
+         set( WITH_MKL_PARDISO false )
+         set( HAVE_MKL_PARDISO false )
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPARDISO_BLOCKSC")
+      endif( HAVE_MA27 )
+   endif( USE_MA27 )
+   
+   
+   #### switch for using MA57 over all other available solvers - since MA27 has no augmented schur complement appoach 
+   #### implemented we have to set -DPARDISO_BLOCKSC
+   if( USE_MA57 )
+      if( !HAVE_MA57 )
+         message(FATAL_ERROR "specified WITH_MA57 but could not find MA57..")
+      endif( !HAVE_MA57 )
+      
+      set( HAVE_MA27 false )
+      set( HAVE_MUMPS false )
+      set( HAVE_PARDISO false )
+      set( WITH_MKL_PARDISO false )
+      set( HAVE_MKL_PARDISO false )
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPARDISO_BLOCKSC")
+   endif( USE_MA57 )     
+   
   if(HAVE_MA27)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_MA27")
   else(HAVE_MA27)
@@ -474,9 +519,9 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
     if(WITH_PARDISO_BLOCKSC)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPARDISO_BLOCKSC")
     endif(WITH_PARDISO_BLOCKSC)    
-  else(HAVE_PARDISO)
+ else(HAVE_PARDISO)
     set(PARDISO_LIBRARY "")
-  endif(HAVE_PARDISO)
+ endif(HAVE_PARDISO)
 
   if(HAVE_MUMPS)
     if(WITH_MUMPS_LEAF)
