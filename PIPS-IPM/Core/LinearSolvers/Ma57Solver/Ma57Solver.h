@@ -80,7 +80,7 @@ protected:
    * the algorithm if poor precision is obtained from the linear
    * solves. threshold_pivoting indicates the largest value we are
    * willing to tolerate.  */
-  double threshold_pivoting_max;
+  double threshold_pivoting_max = 1.0;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is
    * increased when it is found to be inadequate.  */
@@ -90,7 +90,7 @@ protected:
    * block ma27td. The factorization will not accept a pivot whose
    * absolute value is less than this parameter as a 1x1 pivot or as
    * the off-diagonal in a 2x2 pivot.  */
-  double treat_pivot_as_zero = 1e-5; // was 1e-10
+  double treat_pivot_as_zero = 1e-12; // was 1e-10
 
   /** precision we demand from the linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
