@@ -126,7 +126,8 @@ class sLinsys : public QpGenLinsys
   int* colId;
   int* colSparsity;
 
-  const int n_solvers = 2;
+  // TODO: remove and use only nThreads? What if a solver supports more than one thread?
+  int n_solvers = nThreads;
   DoubleLinearSolver** solvers_blocked = nullptr;
   SparseSymMatrix** problems_blocked = nullptr;
 
