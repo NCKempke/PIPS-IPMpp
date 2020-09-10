@@ -1063,7 +1063,7 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
    //                       (R)
    //     SC +=  B^T  K^-1  (A)
    //                       (C)
-   #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
+   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
    for( int i = 0; i < chunks_RAC; i++ )
    {
       const int actual_blocksize = std::min( (i + 1) * blocksize, nxP) - i * blocksize;
@@ -1118,7 +1118,7 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
       const int chunks_F = std::ceil( static_cast<double>(locmyl) / blocksize );
 
       // do block-wise multiplication for columns of F^T part
-      #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
+      #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
       for(int i = 0; i < chunks_F; ++i )
       {
          const int actual_blocksize = std::min( (i + 1) * blocksize, locmyl) - i * blocksize;
@@ -1169,7 +1169,7 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
       const int chunks_G = std::ceil( static_cast<double>(locmzl) / blocksize );
 
       // do block-wise multiplication for columns of G^T part
-      #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
+      #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
       for( int i = 0; i < chunks_G; ++i )
       {
          const int actual_blocksize = std::min( (i + 1) * blocksize, locmzl) - i * blocksize;
