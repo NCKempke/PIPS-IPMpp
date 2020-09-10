@@ -11,14 +11,7 @@
 #include "math.h"
 
 #include "pipsport.h"
-
-#ifdef _OPENMP
 #include "omp.h"
-#endif
-
-#ifndef MIN
-#define MIN(a,b) ((a > b) ? b : a)
-#endif
 
 extern int gOuterIterRefin;
 
@@ -838,7 +831,7 @@ void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
 #if 1
    // indicating whether a right hand side is zero
    if( colSparsity == nullptr )
-      colSparsity = new int[N];
+      colSparsity = new int[N * blocksizemax];
 #else
    colSparsity = nullptr;
 #endif
@@ -984,6 +977,9 @@ void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
 void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparseSC,
                    SymMatrix& SC)
 {
+   // TODO make member?
+   const int blocksize = 20;
+
    SparseGenMatrix& A = prob->getLocalA();
    SparseGenMatrix& C = prob->getLocalC();
    SparseGenMatrix& F = prob->getLocalF();
@@ -1043,12 +1039,17 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
    // indicating whether a right hand side is zero
    if( colSparsity == nullptr )
    {
-      colSparsity = new int[N * n_solvers];
-      memset(colSparsity, 0, N * n_solvers * sizeof(int));
+      colSparsity = new int[N * blocksize * n_solvers];
+      memset(colSparsity, 0, N * blocksize * n_solvers * sizeof(int));
    }
 
    if( colsBlockDense == nullptr )
-      colsBlockDense = new double[N * n_solvers];
+      colsBlockDense = new double[N * blocksize * n_solvers];
+
+   // to save original column index of each column in colsBlockTrans
+   if( colId == nullptr )
+      colId = new int[N * blocksizemax];
+
 #ifdef TIME_SCHUR
    const double t_start = omp_get_wtime();
 #endif
@@ -1058,32 +1059,42 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
    A.updateTransposed();
    C.updateTransposed();
 
+   const int chunks_RAC = std::ceil( static_cast<double>(nxP) / blocksize );
    //                       (R)
    //     SC +=  B^T  K^-1  (A)
    //                       (C)
    #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
-   for( int i = 0; i < nxP ; ++i )
+   for( int i = 0; i < chunks_RAC; i++ )
    {
-      if( nnzPerColRAC[i] == 0 )
-         continue;
+      const int actual_blocksize = std::min( (i + 1) * blocksize, nxP) - i * blocksize;
 
+      int nrhs = 0;
       const int id = omp_get_thread_num();
 
-      double* colsBlockDense_loc = colsBlockDense + id * N;
-      int* colSparsity_loc = colSparsity + id * N;
+      int * colId_loc = colId + id * blocksize;
 
-      memset(colsBlockDense_loc, 0, N * sizeof(double));
+      for( int j = 0; j < actual_blocksize; ++j )
+         if( nnzPerColRAC[j + i * blocksize] != 0 )
+            colId_loc[nrhs++] = j + i * blocksize;
 
-      R.fromGetColsBlock(&i, 1, N, 0, colsBlockDense_loc, colSparsity_loc);
-      A.fromGetColsBlock(&i, 1, N, locnx, colsBlockDense_loc, colSparsity_loc);
-      C.fromGetColsBlock(&i, 1, N, (locnx + locmy), colsBlockDense_loc, colSparsity_loc);
+      if( nrhs == 0 )
+         continue;
 
-      solvers_blocked[id]->solve(1, colsBlockDense_loc, colSparsity_loc);
+      double* colsBlockDense_loc = colsBlockDense + id * N * blocksize;
+      memset(colsBlockDense_loc, 0, blocksize * N * sizeof(double));
+
+      int* colSparsity_loc = colSparsity + id * N * blocksize;
+
+      R.fromGetColsBlock(colId_loc, nrhs, N, 0, colsBlockDense_loc, colSparsity_loc);
+      A.fromGetColsBlock(colId_loc, nrhs, N, locnx, colsBlockDense_loc, colSparsity_loc);
+      C.fromGetColsBlock(colId_loc, nrhs, N, (locnx + locmy), colsBlockDense_loc, colSparsity_loc);
+
+      solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
       // TODO: thread-safe?
 //      #pragma omp critical
       {
-         multLeftSchurComplBlocked(prob, colsBlockDense_loc, &i, 1, sparseSC, SC);
+         multLeftSchurComplBlocked(prob, colsBlockDense_loc, colId_loc, nrhs, sparseSC, SC);
       }
 
    }
@@ -1104,31 +1115,43 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
       SimpleVectorBase<int> nnzPerColFt(locmyl);
       F.addNnzPerRow(nnzPerColFt);
 
+      const int chunks_F = std::ceil( static_cast<double>(locmyl) / blocksize );
+
       // do block-wise multiplication for columns of F^T part
       #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
-      for(int i = 0; i < locmyl; ++i )
+      for(int i = 0; i < chunks_F; ++i )
       {
-         if( nnzPerColFt[i] == 0 )
-            continue;
+         const int actual_blocksize = std::min( (i + 1) * blocksize, locmyl) - i * blocksize;
 
+         int nrhs = 0;
          const int id = omp_get_thread_num();
 
-         double* colsBlockDense_loc = colsBlockDense + id * N;
-         int* colSparsity_loc = colSparsity + id * N;
+         int * colId_loc = colId + id * blocksize;
 
-         memset(colsBlockDense_loc, 0, N * sizeof(double));
+         for( int j = 0; j < actual_blocksize; ++j )
+            if( nnzPerColFt[j + i * blocksize] != 0 )
+               colId_loc[nrhs++] = j + i * blocksize;
+
+         if( nrhs == 0 )
+            continue;
+
+         double* colsBlockDense_loc = colsBlockDense + id * N * blocksize;
+         memset(colsBlockDense_loc, 0, blocksize * N * sizeof(double));
+
+         int* colSparsity_loc = colSparsity + id * N * blocksize;
 
          // get column block from Ft (i.e., row block from F)
-         F.fromGetRowsBlock(&i, 1, N, 0, colsBlockDense_loc, colSparsity_loc);
+         F.fromGetRowsBlock(colId_loc, nrhs, N, 0, colsBlockDense_loc, colSparsity_loc);
 
-         solvers_blocked[id]->solve(1, colsBlockDense_loc, colSparsity_loc);
+         solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
-         const int colId = i + nxMyP;
+         for( int j = 0; j < nrhs; ++j )
+            colId_loc[j] += nxMyP;
 
 //         #pragma omp critical
          {
             // TODO : thread-safe?
-            multLeftSchurComplBlocked(prob, colsBlockDense_loc, &colId, 1, sparseSC, SC);
+            multLeftSchurComplBlocked(prob, colsBlockDense_loc, colId_loc, nrhs, sparseSC, SC);
          }
       }
    }
@@ -1143,30 +1166,42 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
       SimpleVectorBase<int> nnzPerColGt(locmzl);
       G.addNnzPerRow(nnzPerColGt);
 
+      const int chunks_G = std::ceil( static_cast<double>(locmzl) / blocksize );
+
       // do block-wise multiplication for columns of G^T part
       #pragma omp parallel for schedule(guided, 5) num_threads(n_solvers)
-      for( int i = 0; i < locmzl; ++i )
+      for( int i = 0; i < chunks_G; ++i )
       {
-         if( nnzPerColGt[i] == 0 )
-            continue;
+         const int actual_blocksize = std::min( (i + 1) * blocksize, locmzl) - i * blocksize;
 
+         int nrhs = 0;
          const int id = omp_get_thread_num();
 
-         double* colsBlockDense_loc = colsBlockDense + id * N;
-         int* colSparsity_loc = colSparsity + id * N;
+         int * colId_loc = colId + id * blocksize;
 
-         memset(colsBlockDense_loc, 0, N * sizeof(double));
+         for( int j = 0; j < actual_blocksize; ++j )
+            if( nnzPerColGt[j + i * blocksize] != 0 )
+               colId_loc[nrhs++] = j + i * blocksize;
 
-         G.fromGetRowsBlock(&i, 1, N, 0, colsBlockDense_loc, colSparsity_loc);
+         if( nrhs == 0 )
+            continue;
 
-         solvers_blocked[id]->solve(1, colsBlockDense_loc, colSparsity_loc);
+         double* colsBlockDense_loc = colsBlockDense + id * N * blocksize;
+         memset(colsBlockDense_loc, 0, blocksize * N * sizeof(double));
 
-         const int colId = i + nxMyMzP;
+         int* colSparsity_loc = colSparsity + id * N * blocksize;
+
+         G.fromGetRowsBlock(colId_loc, nrhs, N, 0, colsBlockDense_loc, colSparsity_loc);
+
+         solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
+
+         for( int j = 0; j < nrhs; ++j )
+            colId_loc[j] += nxMyMzP;
 
 //         #pragma omp critical
          {
             // TODO : thread-safe?
-            multLeftSchurComplBlocked(prob, colsBlockDense_loc, &colId, 1, sparseSC, SC);
+            multLeftSchurComplBlocked(prob, colsBlockDense_loc, colId_loc, nrhs, sparseSC, SC);
          }
       }
    }
@@ -1237,7 +1272,7 @@ void sLinsys::addColsToDenseSchurCompl(sData *prob,
   const int blocksize = 20;
   
   for (int it=0; it < ncols; it += blocksize) {
-    int end = MIN(it+blocksize,ncols);
+    int end = std::min(it+blocksize,ncols);
     int numcols = end-it;
     assert(false); //add Rt*x -- and test the code
     // SC-=At*y
@@ -1279,7 +1314,7 @@ void sLinsys::symAddColsToDenseSchurCompl(sData *prob,
   
 
   for (int col = startcol; col < endcol; col += BLOCKSIZE) {
-    int ecol = MIN(col+BLOCKSIZE,endcol);
+    int ecol = std::min(col+BLOCKSIZE,endcol);
     int nbcols = ecol-col;
     
     
