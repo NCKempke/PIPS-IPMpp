@@ -50,6 +50,10 @@ option(WITH_MAKETEST "Enable 'make test'" ON)
 option(WITH_MKL_PARDISO "Use mkl_pardiso from Intel for PIPS-IPM" OFF)
 message(STATUS "WITH_MKL_PARDISO=${WITH_MKL_PARDISO}")
 
+#use mkl_pardiso solver instead of schenk solver
+option(WITH_HIERARCHICAL "Use hierarchical approach for solving" OFF)
+message(STATUS "WITH_HIERARCHICAL=${WITH_HIERARCHICAL}")
+
 #use (sparse) Pardiso solver for summed Schur complement
 option(WITH_PARDISOINDEF "Use Pardiso (if available) for summed Schur complement" ON)
 message(STATUS "WITH_PARDISOINDEF=${WITH_PARDISOINDEF}")
@@ -494,9 +498,14 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DREDUCED_ACCURACY")
   endif(WITH_REDUCED_ACCURACY)
 
+  if(WITH_HIERARCHICAL) # TODO : have to add blockwise schur computation?
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHIERARCHICAL")
+  endif(WITH_HIERARCHICAL)
+	
   if(WITH_INNER_BICGSTAB)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DINNER_BICGSTAB")
   endif(WITH_INNER_BICGSTAB)
+
 
   if(HAVE_PARDISO)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PARDISO")
