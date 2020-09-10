@@ -220,6 +220,8 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   data->activateLinkStructureExploitation();
 #endif
 
+  // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
+
   vars   = dynamic_cast<sVars*>( factory->makeVariables( data ) );
 #ifdef TIMING
   if(mype==0) printf("variables created\n");
