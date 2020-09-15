@@ -45,13 +45,10 @@ class BorderedGenMatrix : public GenMatrix
 
       /** y = beta * y + alpha * this * x */
       void mult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override; // TODO : implement
-
       /** y = beta * y + alpha * this^T * x */
       void transMult ( double beta,   OoqpVector& y, double alpha,  const OoqpVector& x ) const override; // TODO : implement
 
       double abmaxnorm() const override;
-
-      // probably needed by scaler ?
       void columnScale ( const OoqpVector& vec ) override; // TODO : implement
       void rowScale ( const OoqpVector& vec ) override; // TODO : implement
 
@@ -69,22 +66,24 @@ class BorderedGenMatrix : public GenMatrix
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
 
       /* methods not needed for Hierarchical approach */
-      void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
-      void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override { assert(0 && "not implemented"); };
-      void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info ) override { assert(0 && "not implemented"); };
       void writeToStream( std::ostream& out ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
       void writeToStreamDense( std::ostream& out ) const override { assert(0 && "not implemented"); };; // TODO implement maybe?
       void getDiagonal( OoqpVector& vec ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
       void setToDiagonal( OoqpVector& vec ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
       void atPutDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
       void fromGetDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+
+      void matTransDMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
+      void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
+
+      void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
+      void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override { assert(0 && "not implemented"); };
+      void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info ) override { assert(0 && "not implemented"); };
       void symmetricScale ( const OoqpVector& vec ) override { assert(0 && "not implemented"); };
       void atPutSubmatrix( int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
       void atPutDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
       void atPutSpRow( int col, double A[], int lenA, int jcolA[], int& info ) override { assert(0 && "not implemented"); };
       void randomize(double alpha, double beta, double * seed) override { assert(0 && "not implemented"); };
-      void matTransDMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
-      void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
    private:
 
       bool hasVecStructureForBorderedMat( const OoqpVector& vec, bool row_vec ) const;

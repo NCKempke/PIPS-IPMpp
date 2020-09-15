@@ -40,25 +40,23 @@ class StringGenMatrix : public GenMatrix
 
       /** y = beta * y + alpha * this * x */
       void mult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
-
       /** y = beta * y + alpha * this^T * x */
       void transMult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
 
       double abmaxnorm() const override;
-
       void scalarMult( double num ) override;
+
+      void writeToStreamDense(std::ostream& out) const override; // TODO : implement
+
+      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
+      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
+
+      void columnScale ( const OoqpVector& vec ) override;
+      void rowScale ( const OoqpVector& vec ) override;
 
       // TODO : again not sure what to return here - not implemented for now..
       void getSize( long long& m, long long& n ) const override { assert( "not implemented" && 0 ); };
       void getSize( int& m, int& n ) const override { assert( "not implemented" && 0 ); };
-
-      void writeToStreamDense(std::ostream& out) const override; // TODO : implement
-
-      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
-      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
-
-      void columnScale ( const OoqpVector& vec ) override;
-      void rowScale ( const OoqpVector& vec ) override;
 
       /* methods not needed for Hierarchical approach */
       void atPutDiagonal( int idiag, OoqpVector& x ) override { assert( "not implemented" && 0 ); };
@@ -98,16 +96,13 @@ class StringGenMatrix : public GenMatrix
       void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
 };
 
-
-
 /**
  * Dummy version ...
  */
 class StringGenDummyMatrix : public StringGenMatrix
 {
    public:
-      StringGenDummyMatrix(int id);
-//       : StringGenMatrix() {};
+      StringGenDummyMatrix();
 
       virtual ~StringGenDummyMatrix() {};
       void addChild(StringGenMatrix* child) override {};
@@ -122,7 +117,5 @@ class StringGenDummyMatrix : public StringGenMatrix
       void columnScale( const OoqpVector& vec ) override {};
       void rowScale( const OoqpVector& vec ) override {};
 };
-
-
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_ */
