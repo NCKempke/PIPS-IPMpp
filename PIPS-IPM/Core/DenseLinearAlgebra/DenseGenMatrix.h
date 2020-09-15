@@ -72,12 +72,12 @@ public:
 			     double A[], int lenA, int jcolA[], int& nnz,
 			     int rowExtent, int& info );
 
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector &vec);
+  void columnScale( const OoqpVector& vec ) override;
+  void rowScale( const OoqpVector& vec ) override;
+  void symmetricScale( const OoqpVector &vec ) override;
   virtual void scalarMult( double num);
 
-  virtual double abmaxnorm();
+  double abmaxnorm() const override;
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamDense( std::ostream& out ) const override;
   virtual void randomize( double alpha, double beta, double * seed );

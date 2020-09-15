@@ -109,76 +109,58 @@ void SparseStorage::fromGetDiagonal( int idiag, OoqpVector& vec_in )
 
 }
 
-void SparseStorage::ColumnScale( OoqpVector& scale_in )
+void SparseStorage::columnScale( const OoqpVector& scale_in )
 {
-  SimpleVector & scale = dynamic_cast<SimpleVector &>(scale_in);
+   const SimpleVector &scale = dynamic_cast<const SimpleVector&>(scale_in);
+   assert( scale.length() == n );
 
-  assert( scale.length() == n );
- 
-  int i, j, k;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the sparse matrix
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      // Loop over the elements of the sparse row
-      j = jcolM[k];
-      M[k] = M[k] * scale[j];
-    } // End loop over the elements of the sparse row
-  } // End loop over all rows in the sparse matrix
-
+   for( int i = 0; i < m; ++i )
+   {
+      for( int k = krowM[i]; k < krowM[i + 1]; ++k )
+      {
+         const int j = jcolM[k];
+         M[k] = M[k] * scale[j];
+      }
+   }
 }
 
-void SparseStorage::RowScale( OoqpVector& scale_in )
+void SparseStorage::rowScale(const OoqpVector &scale_in)
 {
-  SimpleVector & scale = dynamic_cast<SimpleVector &>(scale_in);
+   const SimpleVector &scale = dynamic_cast<const SimpleVector&>(scale_in);
+   assert(scale.length() == m);
 
-  assert( scale.length() == m );
-
-  int i, k;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the sparse matrix
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      // Loop over the elements of the sparse row
-      M[k] = M[k] * scale[i];
-    } // End loop over the elements of the sparse row
-  } // End loop over all rows in the sparse matrix
-
+   for( int i = 0; i < m; ++i )
+   {
+      for( int k = krowM[i]; k < krowM[i + 1]; ++k )
+         M[k] = M[k] * scale[i];
+   }
 }
 
-void SparseStorage::SymmetricScale( OoqpVector& scale_in )
+void SparseStorage::symmetricScale(const OoqpVector &scale_in)
 {
-  SimpleVector & scale = dynamic_cast<SimpleVector &>(scale_in);
+   const SimpleVector &scale = dynamic_cast<const SimpleVector&>(scale_in);
 
-  assert( scale.length() == n );
-  assert( scale.length() == m );
+   assert( scale.length() == n );
+   assert( scale.length() == m );
 
-  int i, j, k;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the sparse matrix
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      // Loop over the elements of the sparse row
-      j = jcolM[k];
-      M[k] = M[k] * scale[j] * scale[i];
-    } // End loop over the elements of the sparse row
-  } // End loop over all rows in the sparse matrix
-
+   for( int i = 0; i < m; ++i )
+   {
+      for( int k = krowM[i]; k < krowM[i + 1]; ++k )
+      {
+         const int j = jcolM[k];
+         M[k] = M[k] * scale[j] * scale[i];
+      }
+   }
 }
 
 
-void SparseStorage::scalarMult( double num )
+void SparseStorage::scalarMult(double num)
 {
-  int i, k;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the sparse matrix
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      // Loop over the elements of the sparse row
-      M[k] = M[k] * num;
-    } // End loop over the elements of the sparse row
-  } // End loop over all rows in the sparse matrix
-
+   for( int i = 0; i < m; ++i )
+   {
+      for( int k = krowM[i]; k < krowM[i + 1]; ++k )
+         M[k] = M[k] * num;
+   }
 }
 
 void SparseStorage::getDiagonal( OoqpVector& vec_in )
@@ -1211,7 +1193,7 @@ void SparseStorage::randomize( double alpha, double beta, double * seed )
 
 }
 
-double SparseStorage::abmaxnorm()
+double SparseStorage::abmaxnorm() const
 {
   double norm = 0.0;
   int nnz = this->numberOfNonZeros();

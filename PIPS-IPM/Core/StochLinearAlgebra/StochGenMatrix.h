@@ -76,10 +76,10 @@ public:
 						   OoqpVector& yvecParent );
 
   /** column scale method for children */
-  virtual void ColumnScale2( OoqpVector& vec, OoqpVector& parentvec );
+  virtual void columnScale2( const OoqpVector& vec, const OoqpVector& parentvec );
 
   /** row scale method for children */
-  virtual void RowScale2( OoqpVector& vec, OoqpVector* linkingvec );
+  virtual void rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec );
 
   virtual void getNnzPerRow(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<int>* linkParent);
 
@@ -126,9 +126,9 @@ public:
 			   int rowExtent, int colExtent ) override;
   void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent ) override;
-  void ColumnScale( OoqpVector& vec ) override;
-  void RowScale( OoqpVector& vec ) override;
-  void SymmetricScale( OoqpVector &vec) override;
+  void columnScale( const OoqpVector& vec ) override;
+  void rowScale( const OoqpVector& vec ) override;
+  void symmetricScale( const OoqpVector &vec) override;
   void scalarMult( double num) override;
   void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
@@ -152,7 +152,7 @@ public:
   void transMult ( double beta,   OoqpVector& y,
                            double alpha,  const OoqpVector& x ) const override;
 
-  double abmaxnorm() override;
+  double abmaxnorm() const override;
 
   virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
@@ -275,9 +275,9 @@ public:
 			   int rowExtent, int colExtent ) override {};
   void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent ) override {};
-  void ColumnScale( OoqpVector& vec ) override {};
-  void RowScale( OoqpVector& vec ) override {};
-  void SymmetricScale( OoqpVector &vec) override {};
+  void columnScale( const OoqpVector& vec ) override {};
+  void rowScale( const OoqpVector& vec ) override {};
+  void symmetricScale( const OoqpVector &vec) override {};
   void scalarMult( double num) override {};
   void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
@@ -316,7 +316,7 @@ public:
 		    double alpha,  StochVector& x,
 		    OoqpVector& yvecParent ) override {};
 
-  double abmaxnorm() override { return 0.0; };
+  double abmaxnorm() const override { return 0.0; };
 
   void permuteLinkingVarsChild(const std::vector<unsigned int>& permvec)  override {};
   void getLinkVarsNnzChild(std::vector<int>& vec) const override {};
@@ -345,8 +345,8 @@ public:
 
   void initTransposedChild(bool dynamic) override {};
 
-  void ColumnScale2( OoqpVector& vec, OoqpVector& parentvec )override {};
-  void RowScale2( OoqpVector& vec, OoqpVector* linkingvec )override {};
+  void columnScale2( const OoqpVector& vec, const OoqpVector& parentvec ) override {};
+  void rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec ) override {};
 
   void initTransposed(bool dynamic = false) override {};
   void deleteTransposed() override {};

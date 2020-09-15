@@ -78,7 +78,7 @@ public:
   void transMult ( double beta,  OoqpVector& y,
 			   double alpha, const OoqpVector& x ) const override;
   
-  virtual double abmaxnorm();
+  double abmaxnorm() const override;
   
   void writeToStream(ostream& out) const override;
 
@@ -94,9 +94,9 @@ public:
   virtual void putSparseTriple( int irow[], int len, int jcol[], double A[], 
 				int& info );
 
-  virtual void SymmetricScale ( OoqpVector& vec );
-  virtual void ColumnScale ( OoqpVector& vec );
-  virtual void RowScale ( OoqpVector& vec );
+  void symmetricScale ( const OoqpVector& vec ) override;
+  void columnScale ( const OoqpVector& vec ) override;
+  void rowScale ( const OoqpVector& vec ) override;
   virtual void scalarMult( double num );
 
   // note: also used for dummy class!
@@ -169,7 +169,7 @@ public:
   void transMult ( double beta,  OoqpVector& y,
 			   double alpha, const OoqpVector& x ) const override {};
   
-  double abmaxnorm() override {return 0.0;}
+  double abmaxnorm() const override { return 0.0; }
   
   void writeToStream(ostream& out) const override {};
   void writeToStreamDense(std::ostream& out) const override {};
@@ -184,9 +184,9 @@ public:
   void putSparseTriple( int irow[], int len, int jcol[], double A[],
 				int& info ) override {};
 
-  void SymmetricScale ( OoqpVector& vec ) override {};
-  void ColumnScale ( OoqpVector& vec ) override {};
-  void RowScale ( OoqpVector& vec ) override {};
+  void symmetricScale ( const OoqpVector& vec ) override {};
+  void columnScale ( const OoqpVector& vec ) override {};
+  void rowScale ( const OoqpVector& vec ) override {};
   void scalarMult( double num ) override {};
 };
 

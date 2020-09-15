@@ -176,7 +176,7 @@ void DenseSymMatrix::transMult ( double beta,  double y[], int incy,
 }
 
 
-double DenseSymMatrix::abmaxnorm()
+double DenseSymMatrix::abmaxnorm() const
 {
   double norm = 0;
   
@@ -305,19 +305,19 @@ void DenseSymMatrix::symAtPutDense( int row, int col, double * A, int lda,
   mStorage->atPutDense( row, col, A, lda, rowExtent, colExtent );
 }
 
-void DenseSymMatrix::SymmetricScale( OoqpVector& vec )
+void DenseSymMatrix::symmetricScale( const OoqpVector& vec )
 {
-  mStorage->SymmetricScale( vec );
+  mStorage->symmetricScale( vec );
 }
 
-void DenseSymMatrix::ColumnScale( OoqpVector& vec )
+void DenseSymMatrix::columnScale( const OoqpVector& vec )
 {
-  mStorage->ColumnScale( vec );
+  mStorage->columnScale( vec );
 }
 
-void DenseSymMatrix::RowScale( OoqpVector& vec )
+void DenseSymMatrix::rowScale( const OoqpVector& vec )
 {
-  mStorage->RowScale( vec );
+  mStorage->rowScale( vec );
 }
 
 void DenseSymMatrix::scalarMult( double num )

@@ -32,8 +32,15 @@ enum {kGenMatrix=0x01, kSymMatrix = 0x03,
       kScaDenSymMatrix	 = kScaDenMatrix + kSymMatrix,
       kEmtlDenMatrix  	 = 0x50,
       kEmtlDenGenMatrix	 = kEmtlDenMatrix + kGenMatrix,
-      kEmtlDenSymMatrix	 = kEmtlDenMatrix + kSymMatrix
-
+      kEmtlDenSymMatrix	 = kEmtlDenMatrix + kSymMatrix,
+      // 0x60-0x6f - string matrices
+      kStringMatrix     = 0x60,
+      kStringGenMatrix  = kStochMatrix + kGenMatrix,
+      kStringGenDummyMatrix,
+      // 0x70-0x7f - bordered matrices
+      kBorderedMatrix     = 0x70,
+      kBorderedGenMatrix  = kBorderedMatrix + kGenMatrix,
+      kBorderedSymMatrix  = kBorderedMatrix + kSymMatrix
 };
 
 #endif

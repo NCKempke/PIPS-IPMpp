@@ -159,65 +159,65 @@ void StochGenMatrix::fromGetDense( int row, int col, double * A, int lda,
   assert( "Not implemented" && 0 );
 }
 
-void StochGenMatrix::ColumnScale2( OoqpVector& vec, OoqpVector& parentvec )
+void StochGenMatrix::columnScale2( const OoqpVector& vec, const OoqpVector& parentvec )
 {
-   StochVector& scalevec = dynamic_cast<StochVector&>(vec);
-   SimpleVector& scalevecparent = dynamic_cast<SimpleVector&>(parentvec);
+   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
+   const SimpleVector& scalevecparent = dynamic_cast<const SimpleVector&>(parentvec);
 
    assert(scalevec.children.size() == 0 && children.size() == 0);
 
-   Amat->ColumnScale(scalevecparent);
-   Bmat->ColumnScale(*scalevec.vec);
-   Blmat->ColumnScale(*scalevec.vec);
+   Amat->columnScale(scalevecparent);
+   Bmat->columnScale(*scalevec.vec);
+   Blmat->columnScale(*scalevec.vec);
 }
 
-void StochGenMatrix::ColumnScale( OoqpVector& vec )
+void StochGenMatrix::columnScale( const OoqpVector& vec )
 {
-   StochVector& scalevec = dynamic_cast<StochVector&>(vec);
+   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
 
    assert(children.size() == scalevec.children.size());
 
-   Bmat->ColumnScale(*scalevec.vec);
-   Blmat->ColumnScale(*scalevec.vec);
+   Bmat->columnScale(*scalevec.vec);
+   Blmat->columnScale(*scalevec.vec);
 
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->ColumnScale2(*(scalevec.children[it]), *scalevec.vec);
+      children[it]->columnScale2(*(scalevec.children[it]), *scalevec.vec);
 }
 
-void StochGenMatrix::RowScale2( OoqpVector& vec, OoqpVector* linkingvec )
+void StochGenMatrix::rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec )
 {
-   StochVector& scalevec = dynamic_cast<StochVector&>(vec);
+   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
 
    assert(scalevec.children.size() == 0 && children.size() == 0);
 
-   Amat->RowScale(*scalevec.vec);
-   Bmat->RowScale(*scalevec.vec);
+   Amat->rowScale(*scalevec.vec);
+   Bmat->rowScale(*scalevec.vec);
 
    if( linkingvec )
    {
-      SimpleVector* vecl = dynamic_cast<SimpleVector*>(linkingvec);
-      Blmat->RowScale(*vecl);
+      const SimpleVector* vecl = dynamic_cast<const SimpleVector*>(linkingvec);
+      Blmat->rowScale(*vecl);
    }
 }
 
-void StochGenMatrix::RowScale( OoqpVector& vec )
+void StochGenMatrix::rowScale( const OoqpVector& vec )
 {
-   StochVector& scalevec = dynamic_cast<StochVector&>(vec);
+   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
 
    assert(children.size() == scalevec.children.size());
 
-   Bmat->RowScale(*scalevec.vec);
+   Bmat->rowScale(*scalevec.vec);
 
-   SimpleVector* vecl = dynamic_cast<SimpleVector*>(scalevec.vecl);
+   const SimpleVector* vecl = dynamic_cast<const SimpleVector*>(scalevec.vecl);
 
    if( vecl )
-      Blmat->RowScale(*vecl);
+      Blmat->rowScale(*vecl);
 
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->RowScale2(*(scalevec.children[it]), vecl);
+      children[it]->rowScale2(*(scalevec.children[it]), vecl);
 }
 
-void StochGenMatrix::SymmetricScale( OoqpVector &vec)
+void StochGenMatrix::symmetricScale( const OoqpVector &vec)
 {
   assert( "Has not been yet implemented" && 0 );
 }
@@ -555,21 +555,22 @@ void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
 }
 
 
-double StochGenMatrix::abmaxnorm()
+double StochGenMatrix::abmaxnorm() const
 {
   double nrm = 0.0;
   
-  for(size_t it=0; it<children.size(); it++)
-    nrm = max(nrm, children[it]->abmaxnorm());
+  for(size_t it = 0; it < children.size(); it++)
+    nrm = std::max(nrm, children[it]->abmaxnorm());
 
-  if(iAmDistrib) {
-    double nrmG=0;
-    MPI_Allreduce(&nrm, &nrmG, 1, MPI_DOUBLE, MPI_MAX, mpiComm);
-    nrm=nrmG;
+  if(iAmDistrib)
+  {
+     double nrmG = 0;
+     MPI_Allreduce(&nrm, &nrmG, 1, MPI_DOUBLE, MPI_MAX, mpiComm);
+     nrm = nrmG;
   }
 
-  nrm = max(nrm, max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
-  nrm = max(nrm, Blmat->abmaxnorm());
+  nrm = std::max(nrm, max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
+  nrm = std::max(nrm, Blmat->abmaxnorm());
 
   return nrm;
 }

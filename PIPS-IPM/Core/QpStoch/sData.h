@@ -94,6 +94,9 @@ public:
   bool isRootNodeInSync() const;
 
  public:
+  // Hierarchical Stuff
+  void switchToHierarchicalData();
+
   virtual void writeToStreamDense(ostream& out) const;
   void writeMPSformat(ostream& out);
   void writeMPSColumns(ostream& out);

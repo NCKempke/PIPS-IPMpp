@@ -38,7 +38,7 @@ public:
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
 
-  virtual double abmaxnorm();
+  double abmaxnorm() const override;
   void writeToStream(ostream& out) const override;
   void writeToStreamDense(std::ostream& out) const override;
   virtual void randomizePSD(double * seed);
@@ -50,10 +50,10 @@ public:
 			     double A[], int lenA, int jcolA[], int& nnz,
 			     int rowExtent, int& info );
 
-  virtual void SymmetricScale ( OoqpVector& vec );
-  virtual void ColumnScale ( OoqpVector& vec );
-  virtual void RowScale ( OoqpVector& vec );
-  virtual void scalarMult( double num);
+  void symmetricScale( const OoqpVector& vec ) override;
+  void columnScale( const OoqpVector& vec ) override;
+  void rowScale( const OoqpVector& vec ) override;
+  void scalarMult( double num ) override;
 
   virtual void symAtPutSpRow( int col, double A[], int lenA, int irowA[],
 			      int& info );

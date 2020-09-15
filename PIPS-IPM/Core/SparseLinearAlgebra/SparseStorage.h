@@ -85,9 +85,9 @@ public:
   virtual void getDiagonal( OoqpVector& vec );
   virtual void setToDiagonal( OoqpVector& vec );
 
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector& vec );
+  void columnScale( const OoqpVector& vec ) override;
+  void rowScale( const OoqpVector& vec ) override;
+  void symmetricScale( const OoqpVector& vec ) override;
   virtual void scalarMult( double num);
 
   virtual void atPutSpRow( int col, double A[], int lenA, int irowA[],
@@ -121,7 +121,7 @@ public:
   virtual void writeToStreamDenseRow( stringstream& out, int rowidx) const;
 
   virtual void symmetrize( int& info);
-  virtual double abmaxnorm();
+  double abmaxnorm() const;
 
   /** Computes the sparsity pattern of MtM = M^T * D * M 
    *  where D=diag(d) is a diagonal matrix and M=this.

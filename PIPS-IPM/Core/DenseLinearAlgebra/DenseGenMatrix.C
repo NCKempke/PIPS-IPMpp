@@ -196,7 +196,7 @@ void DenseGenMatrix::matTransDinvMultMat(OoqpVector& d, SymMatrix** res)
   assert(false && "not implemented");
 }
 
-double DenseGenMatrix::abmaxnorm()
+double DenseGenMatrix::abmaxnorm() const
 {
   double norm = 0;
   
@@ -290,19 +290,19 @@ void DenseGenMatrix::getRow ( int rowIndex, OoqpVector& v_in)
   mStorage->fromGetDense(rowIndex, 0, &v[0], 1, 1, mStorage->n);
 }
 
-void DenseGenMatrix::ColumnScale( OoqpVector& vec )
+void DenseGenMatrix::columnScale( const OoqpVector& vec )
 {
-  mStorage->ColumnScale( vec );
+  mStorage->columnScale( vec );
 }
 
-void DenseGenMatrix::SymmetricScale( OoqpVector& vec )
+void DenseGenMatrix::symmetricScale( const OoqpVector& vec )
 {
-  mStorage->SymmetricScale( vec );
+  mStorage->symmetricScale( vec );
 }
 
-void DenseGenMatrix::RowScale( OoqpVector& vec )
+void DenseGenMatrix::rowScale( const OoqpVector& vec )
 {
-  mStorage->ColumnScale( vec );
+  mStorage->columnScale( vec );
 }
 
 void DenseGenMatrix::scalarMult( double num )

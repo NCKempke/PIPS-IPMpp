@@ -281,7 +281,7 @@ void SparseSymMatrix::transMult ( double beta,  double y[], int incy,
   this->mult( beta, y, incy, alpha, x, incx );
 }
 
-double SparseSymMatrix::abmaxnorm()
+double SparseSymMatrix::abmaxnorm() const
 {
   return mStorage->abmaxnorm();
 }
@@ -357,19 +357,19 @@ void SparseSymMatrix::fromGetDiagonal( int idiag, OoqpVector& v )
   mStorage->fromGetDiagonal( idiag, v );
 }
 
-void SparseSymMatrix::SymmetricScale( OoqpVector& vec )
+void SparseSymMatrix::symmetricScale( const OoqpVector& vec )
 {
-  mStorage->SymmetricScale( vec );
+  mStorage->symmetricScale( vec );
 }
 
-void SparseSymMatrix::ColumnScale( OoqpVector& vec )
+void SparseSymMatrix::columnScale( const OoqpVector& vec )
 {
-  mStorage->ColumnScale( vec );
+  mStorage->columnScale( vec );
 }
 
-void SparseSymMatrix::RowScale( OoqpVector& vec )
+void SparseSymMatrix::rowScale( const OoqpVector& vec )
 {
-  mStorage->RowScale( vec );
+  mStorage->rowScale( vec );
 }
 
 void SparseSymMatrix::scalarMult( double num )

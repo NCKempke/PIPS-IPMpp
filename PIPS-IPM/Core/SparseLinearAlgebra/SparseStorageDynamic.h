@@ -95,9 +95,9 @@ public:
 
   void atPutDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented here"); };
   void fromGetDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented here"); };
-  void SymmetricScale ( OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void ColumnScale ( OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void RowScale ( OoqpVector& vec ) override { assert(0 && "not implemented here"); };
+  void symmetricScale ( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
+  void columnScale ( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
+  void rowScale ( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
   void scalarMult( double num ) override { assert(0 && "not implemented here"); };
 
   void removeEntryAtIndex(int row, int col_idx);

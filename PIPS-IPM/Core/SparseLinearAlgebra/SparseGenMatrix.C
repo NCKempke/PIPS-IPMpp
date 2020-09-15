@@ -343,7 +343,7 @@ void SparseGenMatrix::mult ( double beta,  OoqpVector& y_in,
 }
 
 void SparseGenMatrix::mult ( double beta,  double y[], int incy,
-			     double alpha, double x[], int incx )
+			     double alpha, double x[], int incx ) const
 {
   mStorage->mult( beta, y, incy, alpha, x, incx);
 }
@@ -385,38 +385,35 @@ void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
   mStorage->transMult( beta, yv, 1, alpha, xv, 1 );
 }
 
-// wrapper added by cpetra
-void SparseGenMatrix::transMult( double beta,  OoqpVector& y_in, int incy,
-			         double alpha, OoqpVector& x_in, int incx )
+void SparseGenMatrix::transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const
 {
-  SimpleVector & x = dynamic_cast<SimpleVector &>(x_in);
+  const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-  assert(x.n>0 && y.n>0);
-  assert(x.n>=incx*mStorage->m);
-  assert(y.n>=incy*mStorage->n);
+  assert( x.n > 0 && y.n > 0 );
+  assert( x.n >= incx * mStorage->m );
+  assert( y.n >= incy * mStorage->n );
 
-  double *xv = 0, *yv = 0;
+  const double* xv = 0;
+  double* yv = 0;
 
-  if( x.n > 0 ) xv = &x[0];
-  if( y.n > 0 ) yv = &y[0];
+  if( x.n > 0 )
+     xv = &x[0];
+  if( y.n > 0 )
+     yv = &y[0];
 
   mStorage->transMult( beta, yv, incy, alpha, xv, incx );
 }
 
-// wrapper added by cpetra
-void SparseGenMatrix::transMult( double beta,  double yv[], int incy,
-				 double alpha, double xv[], int incx )
+void SparseGenMatrix::transMult( double beta,  double yv[], int incy, double alpha, const double xv[], int incx ) const
 {
   mStorage->transMult( beta, yv, incy, alpha, xv, incx );
 }
 
-
-double SparseGenMatrix::abmaxnorm()
+double SparseGenMatrix::abmaxnorm() const
 {
   return mStorage->abmaxnorm();
 }
-
 
 void SparseGenMatrix::atPutDiagonal( int idiag, OoqpVector& vvec )
 {
@@ -433,28 +430,28 @@ void SparseGenMatrix::fromGetDiagonal( int idiag, OoqpVector& vvec )
   mStorage->fromGetDiagonal( idiag, vvec );
 }
 
-void SparseGenMatrix::ColumnScale( OoqpVector& vec )
+void SparseGenMatrix::columnScale( const OoqpVector& vec )
 {
-  mStorage->ColumnScale( vec );
+  mStorage->columnScale( vec );
 
   if( m_Mt != nullptr )
-     m_Mt->RowScale(vec);
+     m_Mt->rowScale(vec);
 }
 
-void SparseGenMatrix::SymmetricScale( OoqpVector& vec )
+void SparseGenMatrix::symmetricScale( const OoqpVector& vec )
 {
-  mStorage->SymmetricScale( vec );
+  mStorage->symmetricScale( vec );
 
   if( m_Mt != nullptr )
-     m_Mt->SymmetricScale(vec);
+     m_Mt->symmetricScale(vec);
 }
 
-void SparseGenMatrix::RowScale( OoqpVector& vec )
+void SparseGenMatrix::rowScale( const OoqpVector& vec )
 {
-  mStorage->RowScale( vec );
+  mStorage->rowScale( vec );
 
   if( m_Mt != nullptr )
-     m_Mt->ColumnScale(vec);
+     m_Mt->columnScale(vec);
 }
 
 void SparseGenMatrix::scalarMult( double num )
@@ -474,7 +471,7 @@ void SparseGenMatrix::matTransDMultMat(OoqpVector& d_, SymMatrix** res)
   if(*res==nullptr) {
     assert(m_Mt==nullptr);
     //we need to form the transpose
-    m_Mt=new SparseGenMatrix(n,m,nnz);
+    m_Mt = new SparseGenMatrix(n,m,nnz);
     mStorage->transpose(m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M());
 
     //find the sparsity pattern of the product -> the buffers for result will be allocated

@@ -227,6 +227,13 @@ Data * sFactory::makeData()
   return data;
 }
 
+Data* sFactory::switchToHierarchicalData( Data* prob_in )
+{
+   assert( 0 && "not implemented here");
+   return nullptr;
+}
+
+// TODO adjust this for hierarchical approach
 Variables* sFactory::makeVariables( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
@@ -268,6 +275,7 @@ Variables* sFactory::makeVariables( Data * prob_in )
 }
 
 
+// TODO : adjust this for hierarchical approach
 Residuals* sFactory::makeResiduals( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
@@ -277,15 +285,12 @@ Residuals* sFactory::makeResiduals( Data * prob_in )
   return resid;
 }
 
-
-
 LinearSystem* sFactory::makeLinsys( Data * prob_in )
 {
   linsys = newLinsysRoot();
 
   return linsys;
 }
-
 
 void sFactory::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 			  OoqpVector& rhs2_in, OoqpVector& rhs3_in )

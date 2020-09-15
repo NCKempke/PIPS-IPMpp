@@ -43,9 +43,9 @@ public:
   virtual void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
 			     int colExtent, int& info );
-  virtual void SymmetricScale ( OoqpVector& vec );
-  virtual void ColumnScale ( OoqpVector& vec );
-  virtual void RowScale ( OoqpVector& vec );
+  void symmetricScale ( const OoqpVector& vec ) override;
+  void columnScale ( const OoqpVector& vec ) override;
+  void rowScale ( const OoqpVector& vec ) override;
   virtual void scalarMult( double num);
 
   virtual void symAtPutSpRow( int col, double A[], int lenA, int jcolA[],
@@ -75,7 +75,7 @@ public:
   void transMult ( double beta,   OoqpVector& y,
                            double alpha,  const OoqpVector& x ) const override;
 
-  virtual double abmaxnorm();
+  double abmaxnorm() const override;
 
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamDense( std::ostream& out ) const override;

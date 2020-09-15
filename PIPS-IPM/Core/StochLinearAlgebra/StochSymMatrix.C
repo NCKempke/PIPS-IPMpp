@@ -253,7 +253,7 @@ void StochSymMatrix::transMult ( double beta,  OoqpVector& y_,
   
 /** the magnitude of the element in this matrix with largest absolute value.
    */
-double StochSymMatrix::abmaxnorm()
+double StochSymMatrix::abmaxnorm() const
 {
   double maxNorm=0.0, localMaxNorm, childMaxNorm;
 
@@ -422,37 +422,37 @@ void StochSymMatrix::putSparseTriple( int irow[], int len, int jcol[],
   assert("Not implemented!" && 0);
 }
 
-void StochSymMatrix::SymmetricScale( OoqpVector& vec_ )
+void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->SymmetricScale(*vec.vec);
+  diag->symmetricScale(*vec.vec);
 
   for (size_t it=0; it<children.size(); it++) 
-    children[it]->SymmetricScale(*vec.children[it]);
+    children[it]->symmetricScale(*vec.children[it]);
 }
 
-void StochSymMatrix::ColumnScale( OoqpVector& vec_ )
+void StochSymMatrix::columnScale( const OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->ColumnScale(*vec.vec);
+  diag->columnScale(*vec.vec);
 
-  for (size_t it=0; it<children.size(); it++) 
-    children[it]->ColumnScale(*vec.children[it]);
+  for (size_t it = 0; it < children.size(); it++)
+    children[it]->columnScale(*vec.children[it]);
 }
 
-void StochSymMatrix::RowScale ( OoqpVector& vec_ )
+void StochSymMatrix::rowScale ( const OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->RowScale(*vec.vec);
+  diag->rowScale(*vec.vec);
 
   for (size_t it=0; it<children.size(); it++) 
-    children[it]->RowScale(*vec.children[it]);
+    children[it]->rowScale(*vec.children[it]);
 }
 
 

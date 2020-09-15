@@ -273,70 +273,51 @@ void DenseStorage::atPutDiagonal( int idiag,
   }
 }
 
-void DenseStorage::ColumnScale( OoqpVector& scale_in )
+void DenseStorage::columnScale(const OoqpVector &scale_in)
 {
-  SimpleVector & scale = dynamic_cast<SimpleVector &>(scale_in);
-  
-  assert( scale.length() == n );
+   const SimpleVector &scale = dynamic_cast<const SimpleVector&>(scale_in);
 
-  int i,j;
+   assert(scale.length() == n);
 
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the dense matrix
-    for( j = 0; j < n; j++ ) {
-      // Loop over the elements of the dense row
-      M[i][j] = M[i][j] * scale[j];
-    } // End loop over the elements of the dense row
-  } // End loop over all rows in the dense matrix
-
+   for( int i = 0; i < m; i++ )
+   {
+      for( int j = 0; j < n; j++ )
+         M[i][j] = M[i][j] * scale[j];
+   }
 }
 
-void DenseStorage::scalarMult( double num )
+void DenseStorage::scalarMult(double num)
 {
-  int i,j;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the dense matrix
-    for( j = 0; j < n; j++ ) {
-      // Loop over the elements of the dense row
-      M[i][j] = M[i][j] * num;
-    } // End loop over the elements of the dense row
-  } // End loop over all rows in the dense matrix
+   for( int i = 0; i < m; i++ )
+   {
+      for( int j = 0; j < n; j++ )
+         M[i][j] = M[i][j] * num;
+   }
 }
 
-void DenseStorage::RowScale( OoqpVector& scale_in )
+void DenseStorage::rowScale( const OoqpVector& scale_in )
 {
-  SimpleVector & scale = dynamic_cast<SimpleVector &>(scale_in);
+   const SimpleVector &scale = dynamic_cast<const SimpleVector&>(scale_in);
 
-  assert( scale.length() == m );
+   assert(scale.length() == m);
 
-  int i, j;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the dense matrix
-    for( j = 0; j < n; j++ ) {
-      // Loop over the elements of the dense row
-      M[i][j] = M[i][j] * scale[i];
-    } // End loop over the elements of the dense row
-  } // End loop over all rows in the dense matrix
-
+   for( int i = 0; i < m; i++ )
+   {
+      for( int j = 0; j < n; j++ )
+         M[i][j] = M[i][j] * scale[i];
+   }
 }
 
-void DenseStorage::SymmetricScale( OoqpVector& scale_in )
+void DenseStorage::symmetricScale(const OoqpVector &scale_in)
 {
-  SimpleVector & scale = dynamic_cast<SimpleVector &>(scale_in);
+   const SimpleVector &scale = dynamic_cast<const SimpleVector&>(scale_in);
 
-  assert( scale.length() == n );
-  assert( scale.length() == m );
+   assert(scale.length() == n);
+   assert(scale.length() == m);
 
-  int i, j;
-
-  for ( i = 0; i < m; i++ ) {
-    // Loop over all rows in the dense matrix
-    for( j = 0; j < n; j++ ) {
-      // Loop over the elements of the dense row
-      M[i][j] = M[i][j] * scale[i] * scale[j];
-    } // End loop over the elements of the dense row
-  } // End loop over all rows in the dense matrix
-
+   for( int i = 0; i < m; i++ )
+   {
+      for( int j = 0; j < n; j++ )
+         M[i][j] = M[i][j] * scale[i] * scale[j];
+   }
 }

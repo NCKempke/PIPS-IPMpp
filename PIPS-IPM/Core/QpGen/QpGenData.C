@@ -507,18 +507,18 @@ void QpGenData::createScaleFromQ()
 
 void QpGenData::scaleQ()
 {
-  Q->SymmetricScale( *sc);
+  Q->symmetricScale( *sc);
 }
 
 
 void QpGenData::scaleA()
 {
-  A->ColumnScale( *sc);
+  A->columnScale( *sc);
 }
 
 void QpGenData::scaleC()
 {
-  C->ColumnScale( *sc);
+  C->columnScale( *sc);
 }
 
 void QpGenData::scaleg()

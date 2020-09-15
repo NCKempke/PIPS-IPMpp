@@ -1475,7 +1475,6 @@ sData::createChildren()
 	       clowSt.children[it], iclowSt.children[it], mclow,
 	       cuppSt.children[it], icuppSt.children[it], mcupp ));
   }
-
 }
 
 void
@@ -1488,6 +1487,17 @@ sData::destroyChildren()
    }
    children.clear();
 }
+
+void sData::switchToHierarchicalData()
+{
+   assert( 0 && "TODO: implement..");
+   // TODO: implement dense border detachment
+
+//  BorderMatrix = A->shaveBorder())
+
+   // TODO: implement recursive layering of linear system
+}
+
 
 void sData::permuteLinkingCons()
 {

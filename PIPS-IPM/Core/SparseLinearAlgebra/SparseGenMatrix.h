@@ -64,9 +64,9 @@ public:
 			   int rowExtent, int colExtent );
   virtual void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent );
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector &vec);
+  void columnScale( const OoqpVector& vec ) override;
+  void rowScale( const OoqpVector& vec ) override;
+  void symmetricScale( const OoqpVector &vec) override;
   virtual void scalarMult( double num);
   virtual void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
@@ -83,23 +83,16 @@ public:
   virtual void getDiagonal( OoqpVector& vec );
   virtual void setToDiagonal( OoqpVector& vec );
 
-  void mult ( double beta,  OoqpVector& y,
-                      double alpha, const OoqpVector& x ) const override;
-  virtual void mult ( double beta,  double y[], int incy,
-                      double alpha, double x[], int incx );
+  void mult ( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
+  virtual void mult ( double beta, double y[], int incy, double alpha, double x[], int incx ) const;
 
-  virtual void multMatSymUpper( double beta, SymMatrix& y,
-        double alpha, double x[], int yrowstart, int ycolstart ) const;
+  virtual void multMatSymUpper( double beta, SymMatrix& y, double alpha, double x[], int yrowstart, int ycolstart ) const;
 
-  virtual void transmultMatSymUpper( double beta, SymMatrix& y,
-        double alpha, double x[], int yrowstart, int ycolstart ) const;
+  virtual void transmultMatSymUpper( double beta, SymMatrix& y, double alpha, double x[], int yrowstart, int ycolstart ) const;
 
-  void transMult( double beta,   OoqpVector& y,
-			  double alpha,  const OoqpVector& x ) const override;
-  virtual void transMult( double beta,  OoqpVector& y_in, int incy,
-			  double alpha, OoqpVector& x_in, int incx );
-  virtual void transMult( double beta,  double y_in[], int incy,
-			  double alpha, double x_in[], int incx );
+  void transMult( double beta,   OoqpVector& y, double alpha,  const OoqpVector& x ) const override;
+  virtual void transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const;
+  virtual void transMult( double beta,  double y_in[], int incy, double alpha, const double x_in[], int incx ) const;
 
   /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
   virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res);
@@ -112,7 +105,7 @@ public:
   /** C = this * this^T */
   virtual void matMultTrans(SymMatrix** res);
 
-  virtual double abmaxnorm();
+  double abmaxnorm() const override;
 
   virtual void writeToStream(ostream& out) const;
   virtual void writeToStreamDense(ostream& out) const;

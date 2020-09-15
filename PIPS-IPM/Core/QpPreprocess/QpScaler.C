@@ -189,17 +189,16 @@ OoqpVector* QpScaler::getDualVarBoundsLowUnscaled(const OoqpVector& soldual) con
 void QpScaler::applyScaling()
 {
    // todo scale Q
-
    doObjScaling();
 
    // scale A and rhs
-   A->ColumnScale(*vec_colscale);
-   A->RowScale(*vec_rowscaleA);
+   A->columnScale(*vec_colscale);
+   A->rowScale(*vec_rowscaleA);
    bA->componentMult(*vec_rowscaleA);
 
    // scale C and lhs, rhs
-   C->ColumnScale(*vec_colscale);
-   C->RowScale(*vec_rowscaleC);
+   C->columnScale(*vec_colscale);
+   C->rowScale(*vec_rowscaleC);
    rhsC->componentMult(*vec_rowscaleC);
    lhsC->componentMult(*vec_rowscaleC);
 

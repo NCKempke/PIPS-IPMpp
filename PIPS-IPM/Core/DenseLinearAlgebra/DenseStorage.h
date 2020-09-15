@@ -55,10 +55,10 @@ public:
 			     double A[], int lenA, int irowA[], int& nnz,
 			     int rowExtent, int& info );
 
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector& vec );
-  virtual void scalarMult( double num);
+  void columnScale( const OoqpVector& vec ) override;
+  void rowScale( const OoqpVector& vec ) override;
+  void symmetricScale( const OoqpVector& vec ) override;
+  void scalarMult( double num) override;
 
   virtual void atPutSpRow( int col, double A[], int lenA, int irowA[],
 			   int& info );
