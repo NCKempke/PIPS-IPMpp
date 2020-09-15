@@ -61,8 +61,8 @@ class StringGenMatrix : public GenMatrix
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
 
-      void columnScale ( const OoqpVector& vec ) override; // TODO : implement
-      void rowScale ( const OoqpVector& vec ) override; // TODO : implement
+      void columnScale ( const OoqpVector& vec ) override;
+      void rowScale ( const OoqpVector& vec ) override;
 
       /* methods not needed for Hierarchical approach */
       void atPutDiagonal( int idiag, OoqpVector& x ) override { assert( "not implemented" && 0 ); };
@@ -88,6 +88,12 @@ class StringGenMatrix : public GenMatrix
 
       void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
       void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+
+      void columnScaleVertical( const OoqpVector& vec );
+      void columnScaleHorizontal( const OoqpVector& vec );
+
+      void rowScaleVertical( const OoqpVector& vec );
+      void rowScaleHorizontal( const OoqpVector& vec );
 };
 
 

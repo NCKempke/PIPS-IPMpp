@@ -199,3 +199,113 @@ void StringGenMatrix::transMultHorizontal ( double beta, OoqpVector& y_in, doubl
       children[i]->transMultHorizontal(beta, *y.children[i], alpha, x);
    }
 }
+
+//void ChainGenMatrix::getRowMinMaxVec( bool getMin, bool initializeVec,
+//      const OoqpVector* colScaleVec, OoqpVector& minmaxVec )
+//{
+//   if( iAmVertical )
+//      getRowMinMaxVecVertical(getMin, initializeVec, colScaleVec, minmaxVec);
+//   else
+//      getRowMinMaxVecHorizontal(getMin, initializeVec, colScaleVec, minmaxVec);
+//}
+//
+//
+//void ChainGenMatrix::getColMinMaxVec( bool getMin, bool initializeVec,
+//      const OoqpVector* rowScaleVec, OoqpVector& minmaxVec )
+//{
+//   if( iAmVertical )
+//      getColMinMaxVecVertical(getMin, initializeVec, rowScaleVec, minmaxVec);
+//   else
+//      getColMinMaxVecHorizontal(getMin, initializeVec, rowScaleVec, minmaxVec);
+//}
+
+void StringGenMatrix::columnScaleVertical( const OoqpVector& vec )
+{
+   assert( is_vertical );
+
+   mat->columnScale( vec );
+
+   for( size_t i = 0; i < children.size(); i++ )
+      children[i]->columnScaleVertical( vec );
+
+   if( mat_link )
+      mat_link->columnScale( vec );
+}
+
+void StringGenMatrix::columnScaleHorizontal( const OoqpVector& vec_in )
+{
+   assert( is_vertical );
+
+   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+
+   assert(vec.vec);
+   assert(vec.children.size() == children.size());
+   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+
+   mat->columnScale(*vec.vec);
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      assert(vec.children[i]);
+      if( children[i]->isKindOf(kStochGenDummyMatrix) )
+         assert( vec.children[i]->isKindOf(kStochDummy) );
+
+      children[i]->columnScaleHorizontal(*vec.children[i]);
+   }
+
+   if( mat_link )
+      mat_link->columnScale(*vec.vecl);
+}
+
+void StringGenMatrix::rowScaleVertical( const OoqpVector& vec_in )
+{
+   assert( is_vertical );
+
+   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+
+   assert(vec.vec);
+   assert(vec.children.size() == children.size());
+   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+
+   mat->rowScale(*vec.vec);
+
+   for( size_t i = 0; i < children.size(); i++ )
+   {
+      assert( vec.children[i] );
+      if( children[i]->isKindOf(kStringGenDummyMatrix) )
+         assert( vec.children[i]->isKindOf(kStochDummy) );
+
+      children[i]->rowScaleVertical(*vec.children[i]);
+   }
+
+   if( mat_link )
+      mat_link->rowScale(*vec.vecl);
+}
+
+void StringGenMatrix::rowScaleHorizontal( const OoqpVector& vec )
+{
+   assert( !is_vertical );
+   mat->rowScale( vec );
+
+   if( mat_link )
+      mat_link->rowScale( vec );
+
+   for( size_t i = 0; i < children.size(); ++i )
+      children[i]->rowScaleHorizontal(vec);
+}
+
+void StringGenMatrix::columnScale ( const OoqpVector& vec )
+{
+   if( is_vertical )
+      columnScaleVertical(vec);
+   else
+      columnScaleHorizontal(vec);
+}
+
+void StringGenMatrix::rowScale ( const OoqpVector& vec )
+{
+   if( is_vertical )
+      rowScaleVertical(vec);
+   else
+      rowScaleHorizontal(vec);
+}
