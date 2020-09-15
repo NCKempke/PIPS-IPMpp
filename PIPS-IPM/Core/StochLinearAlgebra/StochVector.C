@@ -1909,5 +1909,12 @@ bool StochVectorBase<T>::isRootNodeInSync() const
    return in_sync;
 }
 
+template<typename T>
+StochVectorBase<T>* StochVectorBase<T>::shaveBorder( int n_vars )
+{
+   assert( 0 && "TODO : implement");
+   return nullptr;
+}
+
 template class StochVectorBase<int>;
 template class StochVectorBase<double>;

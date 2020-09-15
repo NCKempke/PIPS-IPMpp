@@ -5,8 +5,10 @@
 #include "OoqpVector_fwd.h"
 #include "DoubleMatrix.h"
 #include "SparseGenMatrix.h"
-#include "mpi.h"
+#include "BorderedGenMatrix.h"
+
 #include "pipsport.h"
+#include "mpi.h"
 
 #include <vector>
 
@@ -233,6 +235,8 @@ public:
   /* y += alpha * RowAt(child, row, linking) */
   virtual void axpyWithRowAt( double alpha, StochVector* y, SimpleVector* y_linking, int child, int row, bool linking) const;
   virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const;
+
+  virtual BorderedGenMatrix* shaveBorder( int m_conss, int n_vars );
 };
 
 
@@ -391,11 +395,13 @@ public:
 
   bool isRootNodeInSync() const override { return true; };
 
-  int appendRow( const StochGenMatrix& matrix_row, int child, int row, bool linking ) override { assert("CANNOT APPEND ROW TO DUMMY MATRIX"); return -1; };
-  double localRowTimesVec( const StochVector& vec, int child, int row, bool linking ) const override { assert("CANNOT MULTIPLY ROW WITH DUMMY MATRIX"); return -1; };
+  int appendRow( const StochGenMatrix& matrix_row, int child, int row, bool linking ) override { assert( 0 && "CANNOT APPEND ROW TO DUMMY MATRIX"); return -1; };
+  double localRowTimesVec( const StochVector& vec, int child, int row, bool linking ) const override { assert( 0 && "CANNOT MULTIPLY ROW WITH DUMMY MATRIX"); return -1; };
 
   void axpyWithRowAt( double alpha, StochVector* y, SimpleVector* y_linking, int child, int row, bool linking) const override {};
   void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const override {};
+
+  BorderedGenMatrix* shaveBorder( int m_conss, int n_vars ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIRX"); return nullptr; };
 };
 
 

@@ -1957,3 +1957,9 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
 
    return res;
 }
+
+BorderedGenMatrix* StochGenMatrix::shaveBorder( int m_conss, int n_vars )
+{
+   assert( 0 && "TODO : implement");
+   return nullptr;
+}

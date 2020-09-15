@@ -1493,9 +1493,46 @@ void sData::switchToHierarchicalData()
    assert( 0 && "TODO: implement..");
    // TODO: implement dense border detachment
 
-//  BorderMatrix = A->shaveBorder())
+   int n_linking_vars_to_shave = -1;
+   int n_dense_linking_eq_rows = -1;
+   int n_dense_linking_ineq_rows = -1;
+
+   // TODO : does the tree need shaving/modification?
+   // sTree* tree = stochNode->shaveBorder( n_linking_vars_to_shave, n_dense_linking_eq_rows, n_dense_linking_ineq_rows );
+   sTree* tree = this->stochNode;
+
+   // TODO : Q ?? BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_dense_linking_eq_rows, n_linking_vars_to_shave);
+   BorderedGenMatrix* Q_border = nullptr; // TODO
+
+   BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_dense_linking_eq_rows, n_linking_vars_to_shave);
+   BorderedGenMatrix* C_border = dynamic_cast<StochGenMatrix&>(*C).shaveBorder(n_dense_linking_ineq_rows, n_linking_vars_to_shave);
+
+   StochVector* g_border = dynamic_cast<StochVector&>(*g).shaveBorder(n_linking_vars_to_shave);
+   StochVector* bux_border = dynamic_cast<StochVector&>(*bux).shaveBorder(n_linking_vars_to_shave);
+   StochVector* ixupp_border = dynamic_cast<StochVector&>(*ixupp).shaveBorder(n_linking_vars_to_shave);
+   StochVector* blx_border = dynamic_cast<StochVector&>(*blx).shaveBorder(n_linking_vars_to_shave);
+   StochVector* ixlow_border = dynamic_cast<StochVector&>(*ixlow).shaveBorder(n_linking_vars_to_shave);
+
+   StochVector* bA_border = dynamic_cast<StochVector&>(*bA).shaveBorder(n_dense_linking_eq_rows);
+
+   StochVector* bu_border = dynamic_cast<StochVector&>(*bu).shaveBorder(n_dense_linking_ineq_rows);
+   StochVector* icupp_border = dynamic_cast<StochVector&>(*icupp).shaveBorder(n_dense_linking_ineq_rows);
+   StochVector* bl_border = dynamic_cast<StochVector&>(*bl).shaveBorder(n_dense_linking_ineq_rows);
+   StochVector* iclow_border = dynamic_cast<StochVector&>(*iclow).shaveBorder(n_dense_linking_ineq_rows);
+
+   // TODO what is this?
+   StochVector* sc_border = dynamic_cast<StochVector&>(*sc).shaveBorder(-1); // TODO : what is this and is it necessary??
+
+   // TODO : do these store the whole vars (from here down the hierarchy) or only local values?
+   int nxlow_, nxupp_, mclow_, mcupp_;
+   sData* border_layer = new sData(tree, g_border, Q_border, blx_border,
+         ixlow_border, nxlow_, bux_border, ixupp_border, nxupp_,
+         A_border, bA_border, C_border, bl_border,
+         iclow_border, mclow_, bu_border, icupp_border, mcupp_);
 
    // TODO: implement recursive layering of linear system
+//   this->splitIntoMultiple();
+
 }
 
 
@@ -2461,7 +2498,7 @@ bool sData::isRootNodeInSync() const
       in_sync = false;
    }
 
-   /* sacle sc */
+   /* scale sc */
    // todo
 
    return in_sync;
