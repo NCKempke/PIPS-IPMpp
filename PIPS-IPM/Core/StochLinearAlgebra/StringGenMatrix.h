@@ -30,10 +30,6 @@ class StringGenMatrix : public GenMatrix
       const int rank;
 
    public:
-//      StringGenMatrix(int id, int A_m, int A_n, int A_nnz,
-//           int ALink_m, int ALink_n, int ALink_nnz,
-//           MPI_Comm mpiComm_);
-
       StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_);
 
       virtual ~StringGenMatrix();
@@ -94,6 +90,12 @@ class StringGenMatrix : public GenMatrix
 
       void rowScaleVertical( const OoqpVector& vec );
       void rowScaleHorizontal( const OoqpVector& vec );
+
+      void getRowMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const;
+      void getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const;
+
+      void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
+      void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
 };
 
 

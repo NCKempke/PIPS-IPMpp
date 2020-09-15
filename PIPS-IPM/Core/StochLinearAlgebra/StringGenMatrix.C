@@ -200,24 +200,123 @@ void StringGenMatrix::transMultHorizontal ( double beta, OoqpVector& y_in, doubl
    }
 }
 
-//void ChainGenMatrix::getRowMinMaxVec( bool getMin, bool initializeVec,
-//      const OoqpVector* colScaleVec, OoqpVector& minmaxVec )
-//{
-//   if( iAmVertical )
-//      getRowMinMaxVecVertical(getMin, initializeVec, colScaleVec, minmaxVec);
-//   else
-//      getRowMinMaxVecHorizontal(getMin, initializeVec, colScaleVec, minmaxVec);
-//}
-//
-//
-//void ChainGenMatrix::getColMinMaxVec( bool getMin, bool initializeVec,
-//      const OoqpVector* rowScaleVec, OoqpVector& minmaxVec )
-//{
-//   if( iAmVertical )
-//      getColMinMaxVecVertical(getMin, initializeVec, rowScaleVec, minmaxVec);
-//   else
-//      getColMinMaxVecHorizontal(getMin, initializeVec, rowScaleVec, minmaxVec);
-//}
+void StringGenMatrix::getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax_in ) const
+{
+   assert( !is_vertical );
+   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
+
+   assert( minmax.vec && mat );
+   assert( minmax.children.size() == children.size());
+   assert( (minmax.vecl && mat_link) || (minmax.vecl == nullptr && mat_link == nullptr) );
+
+   mat->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vec);
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      assert( minmax.children[i]);
+      if( children[i]->isKindOf(kStringGenDummyMatrix) )
+         assert( minmax.children[i]->isKindOf(kStochDummy) );
+
+      children[i]->getColMinMaxVecHorizontal(get_min, initialize_vec, row_scale, *minmax.children[i]);
+   }
+
+   if( mat_link )
+      mat_link->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vecl);
+}
+
+void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax ) const
+{
+   assert( is_vertical );
+   const bool has_rowscale = (row_scale_in != nullptr);
+
+   const StochVector* row_scale = dynamic_cast<const StochVector*>(row_scale_in);
+   assert( !has_rowscale || row_scale->children.size() == children.size() );
+   if( has_rowscale )
+      assert( (row_scale->vecl && mat_link) || ( row_scale->vecl == nullptr && mat_link == nullptr) );
+
+   mat->getColMinMaxVec( get_min, initialize_vec, has_rowscale ? row_scale->vec : nullptr, minmax );
+
+   for( size_t i = 0; i < children.size(); i++ )
+   {
+      if( has_rowscale )
+         if( children[i]->isKindOf(kStringGenDummyMatrix) )
+            assert( row_scale->children[i]->isKindOf(kStochDummy) );
+
+      children[i]->getColMinMaxVecVertical(get_min, false, has_rowscale ? row_scale->children[i] : nullptr, minmax);
+   }
+
+   if( mat_link )
+      mat_link->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, minmax);
+}
+
+/** StochVector colScaleVec, SimpleVector minmaxVec */
+void StringGenMatrix::getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax) const
+{
+   assert( !is_vertical );
+   const bool has_colscale = (col_scale_in != nullptr);
+
+   const StochVector* col_scale = dynamic_cast<const StochVector*>(col_scale_in);
+   assert( !has_colscale || col_scale->children.size() == children.size() );
+   if( has_colscale )
+      assert( (col_scale->vecl && mat_link) || ( col_scale->vecl == nullptr && mat_link == nullptr) );
+
+   mat->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, minmax);
+
+   for( size_t i = 0; i < children.size(); i++ )
+   {
+      if( has_colscale )
+         if( children[i]->isKindOf(kStringGenDummyMatrix) )
+            assert( col_scale->children[i]->isKindOf(kStochDummy) );
+
+      children[i]->getRowMinMaxVecHorizontal(get_min, false, has_colscale ? col_scale->children[i] : nullptr, minmax);
+   }
+
+   if( mat_link )
+      mat_link->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->vecl : nullptr, minmax);
+}
+
+/** StochVector minmaxVec, SimpleVector colScaleVec */
+void StringGenMatrix::getRowMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax_in ) const
+{
+   assert( is_vertical );
+
+   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
+
+   assert( minmax.vec && mat );
+   assert( minmax.children.size() == children.size());
+   assert( (minmax.vecl && mat_link) || (minmax.vecl == nullptr && mat_link == nullptr) );
+
+   mat->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.vec);
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      assert( minmax.children[i]);
+      if( children[i]->isKindOf(kStringGenDummyMatrix) )
+         assert( minmax.children[i]->isKindOf(kStochDummy) );
+
+      children[i]->getRowMinMaxVecVertical(get_min, initialize_vec, col_scale, *minmax.children[i]);
+   }
+
+   if( mat_link )
+      mat_link->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.vecl);
+}
+
+void StringGenMatrix::getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec )
+{
+   if( is_vertical )
+      getRowMinMaxVecVertical(getMin, initializeVec, colScaleVec, minmaxVec);
+   else
+      getRowMinMaxVecHorizontal(getMin, initializeVec, colScaleVec, minmaxVec);
+}
+
+
+void StringGenMatrix::getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec )
+{
+   if( is_vertical )
+      getColMinMaxVecVertical(getMin, initializeVec, rowScaleVec, minmaxVec);
+   else
+      getColMinMaxVecHorizontal(getMin, initializeVec, rowScaleVec, minmaxVec);
+}
 
 void StringGenMatrix::columnScaleVertical( const OoqpVector& vec )
 {
@@ -309,3 +408,9 @@ void StringGenMatrix::rowScale ( const OoqpVector& vec )
    else
       rowScaleHorizontal(vec);
 }
+
+void StringGenMatrix::writeToStreamDense(std::ostream& out) const
+{
+   assert( 0 && "TODO: implement...");
+}
+
