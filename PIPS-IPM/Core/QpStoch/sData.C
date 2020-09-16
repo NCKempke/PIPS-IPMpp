@@ -1493,9 +1493,9 @@ void sData::switchToHierarchicalData()
    assert( 0 && "TODO: implement..");
    // TODO: implement dense border detachment
 
-   int n_linking_vars_to_shave = -1;
-   int n_dense_linking_eq_rows = -1;
-   int n_dense_linking_ineq_rows = -1;
+   int n_linking_vars = -1;
+   int n_boder_eq = -1;
+   int n_border_ineq = -1;
 
    // TODO : does the tree need shaving/modification?
    // sTree* tree = stochNode->shaveBorder( n_linking_vars_to_shave, n_dense_linking_eq_rows, n_dense_linking_ineq_rows );
@@ -1504,21 +1504,21 @@ void sData::switchToHierarchicalData()
    // TODO : Q ?? BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_dense_linking_eq_rows, n_linking_vars_to_shave);
    BorderedGenMatrix* Q_border = nullptr; // TODO
 
-   BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_dense_linking_eq_rows, n_linking_vars_to_shave);
-   BorderedGenMatrix* C_border = dynamic_cast<StochGenMatrix&>(*C).shaveBorder(n_dense_linking_ineq_rows, n_linking_vars_to_shave);
+   BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_boder_eq, n_linking_vars);
+   BorderedGenMatrix* C_border = dynamic_cast<StochGenMatrix&>(*C).shaveBorder(n_border_ineq, n_linking_vars);
 
-   StochVector* g_border = dynamic_cast<StochVector&>(*g).shaveBorder(n_linking_vars_to_shave);
-   StochVector* bux_border = dynamic_cast<StochVector&>(*bux).shaveBorder(n_linking_vars_to_shave);
-   StochVector* ixupp_border = dynamic_cast<StochVector&>(*ixupp).shaveBorder(n_linking_vars_to_shave);
-   StochVector* blx_border = dynamic_cast<StochVector&>(*blx).shaveBorder(n_linking_vars_to_shave);
-   StochVector* ixlow_border = dynamic_cast<StochVector&>(*ixlow).shaveBorder(n_linking_vars_to_shave);
+   StochVector* g_border = dynamic_cast<StochVector&>(*g).shaveBorder(n_linking_vars);
+   StochVector* bux_border = dynamic_cast<StochVector&>(*bux).shaveBorder(n_linking_vars);
+   StochVector* ixupp_border = dynamic_cast<StochVector&>(*ixupp).shaveBorder(n_linking_vars);
+   StochVector* blx_border = dynamic_cast<StochVector&>(*blx).shaveBorder(n_linking_vars);
+   StochVector* ixlow_border = dynamic_cast<StochVector&>(*ixlow).shaveBorder(n_linking_vars);
 
-   StochVector* bA_border = dynamic_cast<StochVector&>(*bA).shaveBorder(n_dense_linking_eq_rows);
+   StochVector* bA_border = dynamic_cast<StochVector&>(*bA).shaveBorder(n_boder_eq);
 
-   StochVector* bu_border = dynamic_cast<StochVector&>(*bu).shaveBorder(n_dense_linking_ineq_rows);
-   StochVector* icupp_border = dynamic_cast<StochVector&>(*icupp).shaveBorder(n_dense_linking_ineq_rows);
-   StochVector* bl_border = dynamic_cast<StochVector&>(*bl).shaveBorder(n_dense_linking_ineq_rows);
-   StochVector* iclow_border = dynamic_cast<StochVector&>(*iclow).shaveBorder(n_dense_linking_ineq_rows);
+   StochVector* bu_border = dynamic_cast<StochVector&>(*bu).shaveBorder(n_border_ineq);
+   StochVector* icupp_border = dynamic_cast<StochVector&>(*icupp).shaveBorder(n_border_ineq);
+   StochVector* bl_border = dynamic_cast<StochVector&>(*bl).shaveBorder(n_border_ineq);
+   StochVector* iclow_border = dynamic_cast<StochVector&>(*iclow).shaveBorder(n_border_ineq);
 
    // TODO what is this?
    StochVector* sc_border = dynamic_cast<StochVector&>(*sc).shaveBorder(-1); // TODO : what is this and is it necessary??
