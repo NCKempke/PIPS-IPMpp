@@ -236,7 +236,7 @@ public:
   virtual void axpyWithRowAt( double alpha, StochVector* y, SimpleVector* y_linking, int child, int row, bool linking) const;
   virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const;
 
-  virtual BorderedGenMatrix* shaveBorder( int m_conss, int n_vars );
+  virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
 };
 
 

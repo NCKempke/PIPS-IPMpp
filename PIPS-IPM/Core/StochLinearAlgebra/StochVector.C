@@ -1910,7 +1910,7 @@ bool StochVectorBase<T>::isRootNodeInSync() const
 }
 
 template<typename T>
-StochVectorBase<T>* StochVectorBase<T>::shaveBorder( int n_vars )
+StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars )
 {
    assert( 0 && "TODO : implement");
    return nullptr;

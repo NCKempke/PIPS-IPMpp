@@ -167,7 +167,7 @@ public:
 
    virtual bool isRootNodeInSync() const;
 
-   virtual StochVectorBase<T>* shaveBorder( int n_vars );
+   virtual StochVectorBase<T>* raiseBorder( int n_vars );
 };
 
 /** DUMMY VERSION
@@ -302,7 +302,7 @@ public:
 
    bool isRootNodeInSync() const override { return true; };
 
-   StochVectorBase<T>* shaveBorder( int n_vars ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
+   StochVectorBase<T>* raiseBorder( int n_vars ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
 };
 
 #endif

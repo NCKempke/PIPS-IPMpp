@@ -1488,53 +1488,58 @@ sData::destroyChildren()
    children.clear();
 }
 
-sData* sData::switchToHierarchicalData()
+sData* sData::switchToHierarchicalData( sTree* tree )
 {
    assert( 0 && "TODO: implement..");
-   // TODO: implement dense border detachment
+   assert( tree->isHierarchicalRoot() );
+   assert( tree->children.size() == 0 );
 
-   int n_linking_vars = -1;
-   int n_boder_eq = -1;
-   int n_border_ineq = -1;
+   // TODO : Q ??
+   // BorderedSymMatrix Q ....
 
-   // TODO : does the tree need shaving/modification?
-   // sTree* tree = stochNode->shaveBorder( n_linking_vars_to_shave, n_dense_linking_eq_rows, n_dense_linking_ineq_rows );
-   sTree* hier_tree = stochNode->shaveBorder(n_linking_vars, n_boder_eq, n_border_ineq);
+   BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
+   BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
 
-   // TODO : Q ?? BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_dense_linking_eq_rows, n_linking_vars_to_shave);
-   BorderedGenMatrix* Q_border = nullptr; // TODO
+   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars);
+   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars);
+   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars);
+   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars);
+   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars);
 
-   BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_boder_eq, n_linking_vars);
-   BorderedGenMatrix* C_border = dynamic_cast<StochGenMatrix&>(*C).shaveBorder(n_border_ineq, n_linking_vars);
+   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss);
 
-   StochVector* g_border = dynamic_cast<StochVector&>(*g).shaveBorder(n_linking_vars);
-   StochVector* bux_border = dynamic_cast<StochVector&>(*bux).shaveBorder(n_linking_vars);
-   StochVector* ixupp_border = dynamic_cast<StochVector&>(*ixupp).shaveBorder(n_linking_vars);
-   StochVector* blx_border = dynamic_cast<StochVector&>(*blx).shaveBorder(n_linking_vars);
-   StochVector* ixlow_border = dynamic_cast<StochVector&>(*ixlow).shaveBorder(n_linking_vars);
-
-   StochVector* bA_border = dynamic_cast<StochVector&>(*bA).shaveBorder(n_boder_eq);
-
-   StochVector* bu_border = dynamic_cast<StochVector&>(*bu).shaveBorder(n_border_ineq);
-   StochVector* icupp_border = dynamic_cast<StochVector&>(*icupp).shaveBorder(n_border_ineq);
-   StochVector* bl_border = dynamic_cast<StochVector&>(*bl).shaveBorder(n_border_ineq);
-   StochVector* iclow_border = dynamic_cast<StochVector&>(*iclow).shaveBorder(n_border_ineq);
+   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss);
+   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss);
+   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss);
+   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss);
 
    // TODO what is this?
-   StochVector* sc_border = dynamic_cast<StochVector&>(*sc).shaveBorder(-1); // TODO : what is this and is it necessary??
+   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
-   // TODO : do these store the whole vars (from here down the hierarchy) or only local values?
-   int nxlow_, nxupp_, mclow_, mcupp_;
-   sData* border_layer = new sData(tree, g_border, Q_border, blx_border,
-         ixlow_border, nxlow_, bux_border, ixupp_border, nxupp_,
-         A_border, bA_border, C_border, bl_border,
-         iclow_border, mclow_, bu_border, icupp_border, mcupp_);
+   // TODO : do nxlow, nxupp ... store the whole vars (from here down the hierarchy) or only local values?
+   sData* hierarchical_top = new sData(tree, g_hier, *Q, blx_hier,
+         ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
+         A_hier, bA_hier, C_hier, bl_hier,
+         iclow_hier, mclow, bu_hier, icupp_hier, mcupp,
+         false);
+
+   assert( ixlow_hier->vec );
+   assert( ixupp_hier->vec );
+   this->nxlow -= ixlow_hier->vec->numberOfNonzeros();
+   this->nxupp -= ixupp_hier->vec->numberOfNonzeros();
+
+   assert( iclow_hier->vec );
+   assert( icupp_hier->vec );
+   this->mclow -= iclow_hier->vec->numberOfNonzeros();
+   this->mcupp -= icupp_hier->vec->numberOfNonzeros();
+
+   hierarchical_top->children.push_back(this);
+   stochNode = tree->children[0];
 
    // TODO: implement recursive layering of linear system
-//   this->splitIntoMultiple();
-   border_layer->children.push_back(this);
+   //   this->splitIntoMultiple();
 
-   return border_layer;
+   return hierarchical_top;
 }
 
 

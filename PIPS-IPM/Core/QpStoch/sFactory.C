@@ -243,7 +243,7 @@ Data* sFactory::switchToHierarchicalData( Data* prob_in )
    assert( tree_shaved->isHierarchicalRoot() );
 
    // adjust data
-   data = data->sliceAndLiftBorder(tree, nx_slice, myl_slice, mzl_slice);
+   data = data->switchToHierarchicalData(tree_shaved);
 
    return data;
 }

@@ -95,7 +95,7 @@ public:
 
  public:
   // Hierarchical Stuff
-  void switchToHierarchicalData();
+  sData* switchToHierarchicalData( sTree* tree );
 
   int getNGlobalVars() const { return n_global_linking_vars; };
   int getNGlobalEQConss() const { return n_global_eq_linking_conss; };
