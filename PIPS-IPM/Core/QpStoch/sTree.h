@@ -137,8 +137,11 @@ class sTree
 //to be called after assignProcesses
   virtual void loadLocalSizes() = 0;
 
-  sTree* shaveBorder(int n_linking_vars, int n_boder_eq, int n_border_ineq);
+  bool is_hierarchical_root = false;
+  bool isHierarchicalRoot() const { return is_hierarchical_root; };
 
+  // TODO : make sure that none of the not suitable methods get called...
+  virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
 };
 
 #endif 

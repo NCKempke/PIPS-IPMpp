@@ -1097,3 +1097,93 @@ StochVector* sTreeCallbacks::createicupp() const
   return icupp;
 }
 
+sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave)
+{
+   assert( !is_hierarchical_root );
+   assert( np == -1 );
+
+   assert( nx_to_shave >= 0 );
+   assert( myl_to_shave >=0 );
+   assert( mzl_to_shave >= 0 );
+
+   assert( nx_to_shave <= nx_active );
+   assert( myl_to_shave <= myl_active );
+   assert( mzl_to_shave <= mzl_active );
+
+   sTreeCallbacks* top_layer = new sTreeCallbacks();
+
+   /* sTree members */
+   top_layer->commWrkrs = commWrkrs;
+   top_layer->myProcs = myProcs;
+
+// TODO ?? we deactivate the preconditioner for hier approach anyway don't we?
+//     MPI_Comm commP2ZeroW;   // preconditioner (rank P+1) and special (rank 0) worker
+//   static int rankPrcnd;   // rank of preconditioner
+//   static int rankZeroW;   // rank of the "special" worker (the root, or 0-rank process)
+//   static int rankMe;      // rank of the running process
+
+   top_layer->N = N;
+   this->N -= nx_to_shave;
+
+   top_layer->MY = MY; // TODO : does this include linkings? if so - adapt the local one..
+   top_layer->MZ = MZ; // TODO : does this include linkings? if so - adapt the local one..
+   top_layer->np = -1;
+   top_layer->IPMIterExecTIME = IPMIterExecTIME;
+   top_layer->children.push_back(this);
+
+// todo : idx_EqIneq_Map
+   top_layer->numProcs = numProcs;
+// resMon, iterMon..
+   top_layer->is_hierarchical_root = true;
+
+   /* sTreeCallbacks members */
+   // TODO do i have to modify these for this lower level tree?
+   top_layer->NNZA = NNZA;
+   top_layer->NNZQ = NNZQ;
+   top_layer->NNZB = NNZB;
+   top_layer->NNZBl = NNZBl;
+   top_layer->NNZC = NNZC;
+   top_layer->NNZD = NNZD;
+   top_layer->NNZDl = NNZDl;
+
+   // TODO : unsure about the inactive stuff
+   top_layer->NNZA_INACTIVE = NNZA_INACTIVE;
+   top_layer->NNZQ_INACTIVE = NNZQ_INACTIVE;
+   top_layer->NNZB_INACTIVE = NNZB_INACTIVE;
+   top_layer->NNZBl_INACTIVE = NNZBl_INACTIVE;
+   top_layer->NNZC_INACTIVE = NNZC_INACTIVE;
+   top_layer->NNZD_INACTIVE = NNZD_INACTIVE;
+   top_layer->NNZDl_INACTIVE = NNZDl_INACTIVE;
+
+   top_layer->N_INACTIVE = N_INACTIVE;
+   top_layer->MY_INACTIVE = MY_INACTIVE;
+   top_layer->MZ_INACTIVE = MZ_INACTIVE;
+
+   top_layer->nx_active = nx_to_shave;
+   this->nx_active -= nx_to_shave;
+
+   top_layer->my_active = 0;
+   top_layer->mz_active = 0;
+
+   top_layer->myl_active = myl_to_shave;
+   this->myl_active -= myl_to_shave;
+
+   top_layer->mzl_active = mzl_to_shave;
+   this->mzl_active -= mzl_to_shave;
+
+   // TODO : unsure about the inactive stuff
+   top_layer->nx_inactive = nx_inactive;
+   top_layer->my_inactive = my_inactive;
+   top_layer->mz_inactive = mz_inactive;
+   top_layer->myl_inactive = myl_inactive;
+   top_layer->mzl_inactive = mzl_inactive;
+
+   top_layer->isDataPresolved = isDataPresolved;
+   top_layer->hasPresolvedData = hasPresolvedData;
+
+   // TODO : we do not actually modify the callback data ....
+   top_layer->data = data;
+   top_layer->tree = tree;
+}
+
+

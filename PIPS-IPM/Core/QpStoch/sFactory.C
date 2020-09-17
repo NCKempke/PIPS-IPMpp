@@ -229,8 +229,24 @@ Data * sFactory::makeData()
 
 Data* sFactory::switchToHierarchicalData( Data* prob_in )
 {
-   assert( 0 && "not implemented here");
-   return nullptr;
+   data = dynamic_cast<sData*>(prob_in);
+
+   const int nx_to_shave = data->getNVarsGlobal();
+   const int myl_to_shave = data->getNConsGlobalEQ();
+   const int mzl_to_shave = data->getNConsGlobalINEQ();
+
+   // adjust tree
+   sTree* tree_shaved = tree->switchToHierarchicalTree(nx_to_shave, myl_to_shave, mzl_to_shave);
+   assert( tree_shaved->children.size() == 0 );
+
+   tree_shaved->children.push_back(this);
+
+   // TODO : decide on how to split the lower tree levels
+
+   // adjust data
+   data = data->sliceAndLiftBorder(tree, nx_slice, myl_slice, mzl_slice);
+
+   return data;
 }
 
 // TODO adjust this for hierarchical approach

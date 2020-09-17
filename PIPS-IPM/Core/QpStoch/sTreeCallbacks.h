@@ -72,6 +72,10 @@ class sTreeCallbacks : public sTree
      initPresolvedData(Q, A, C, nxVec, myVec, mzVec, -1, -1);
   }
   virtual void writeSizes(ostream& sout) const;
+
+  // TODO : make sure that none of the not suitable methods get called...
+  sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+
  protected:
   bool isDataPresolved;
   bool hasPresolvedData;

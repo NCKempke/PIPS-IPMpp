@@ -48,6 +48,9 @@ class sTreeImpl : public sTree
 
   void computeGlobalSizes();
   void loadLocalSizes();
+
+  sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override { assert( 0 && "not implemented here"); return nullptr; };
+
  private:
   int m_id;
   stochasticInput& in;
