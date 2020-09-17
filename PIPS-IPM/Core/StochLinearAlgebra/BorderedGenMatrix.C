@@ -46,21 +46,34 @@ int BorderedGenMatrix::isKindOf( int type ) const
 
 void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
-   assert( hasVecStructureForBorderedMat(y_in, false) );
+   /* x row, y column shaped */
    assert( hasVecStructureForBorderedMat(x_in, true) );
+   assert( hasVecStructureForBorderedMat(y_in, false) );
 
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
    border_left->mult(beta, *y.children[0], alpha, *x.vec);
    inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
+
    bottom_left_block->mult(beta, *y.vecl, alpha, *x.vec);
    border_bottom->mult(1.0, *y.vecl, alpha, *x.children[0]);
 }
 
-void BorderedGenMatrix::transMult ( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const
+void BorderedGenMatrix::transMult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
-   assert( 0 && "todo: implement");
+   /* x column, y row shaped */
+   assert( hasVecStructureForBorderedMat(x_in, false) );
+   assert( hasVecStructureForBorderedMat(y_in, true) );
+
+   const StochVector& x = dynamic_cast<const StochVector&>(x_in);
+   StochVector& y = dynamic_cast<StochVector&>(y_in);
+
+   border_left->transMult(beta, *y.vec, alpha, *x.children[0]);
+   bottom_left_block->transMult(1.0, *y.vec, alpha, *x.vecl);
+
+   inner_matrix->transMult(beta, *y.children[0], alpha, *x.children[0]);
+   border_bottom->transMult(1.0, *y.children[0], alpha, *x.vecl);
 }
 
 double BorderedGenMatrix::abmaxnorm() const
@@ -75,14 +88,30 @@ double BorderedGenMatrix::abmaxnorm() const
    return norm;
 }
 
-void BorderedGenMatrix::columnScale ( const OoqpVector& vec )
+void BorderedGenMatrix::columnScale( const OoqpVector& vec )
 {
-   assert( 0 && "todo: implement");
+   assert( hasVecStructureForBorderedMat(vec, true) );
+
+   const StochVector& svec = dynamic_cast<const StochVector&>(vec);
+
+   border_left->columnScale(*svec.vec);
+   bottom_left_block->columnScale(*svec.vec);
+
+   inner_matrix->columnScale(*svec.children[0]);
+   border_bottom->columnScale(*svec.children[0]);
 }
 
 void BorderedGenMatrix::rowScale ( const OoqpVector& vec )
 {
-   assert( 0 && "todo: implement");
+   assert( hasVecStructureForBorderedMat(vec, false) );
+
+   const StochVector& svec = dynamic_cast<const StochVector&>(vec);
+
+   border_left->rowScale(*svec.children[0]);
+   inner_matrix->rowScale(*svec.children[0]);
+
+   bottom_left_block->rowScale(*svec.vecl);
+   border_bottom->rowScale(*svec.vecl);
 }
 
 void BorderedGenMatrix::scalarMult( double num )
@@ -105,14 +134,38 @@ void BorderedGenMatrix::getSize( int& m_, int& n_ ) const
    n_ = n;
 }
 
-void BorderedGenMatrix::getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec )
+void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax_in )
 {
-   assert( 0 && "todo: implement");
+   assert( hasVecStructureForBorderedMat(minmax_in, false) );
+   const bool has_colscale = (col_scale_in != nullptr);
+   if( has_colscale )
+      assert( hasVecStructureForBorderedMat(*col_scale_in, true) );
+
+   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
+   const StochVector* col_scale = has_colscale ? dynamic_cast<const StochVector*>(col_scale_in) : nullptr;
+
+   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, *minmax.children[0]);
+   inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.children[0]);
+
+   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, *minmax.vecl);
+   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.vecl);
 }
 
-void BorderedGenMatrix::getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec )
+void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_in )
 {
-   assert( 0 && "todo: implement");
+   assert( hasVecStructureForBorderedMat(minmax_in, true) );
+   const bool has_rowscale = (row_scale_in != nullptr);
+   if( has_rowscale )
+      assert( hasVecStructureForBorderedMat(*row_scale_in, true) );
+
+   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
+   const StochVector* row_scale = has_rowscale ? dynamic_cast<const StochVector*>(row_scale_in) : nullptr;
+
+   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.vec);
+   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, *minmax.vec);
+
+   inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.children[0]);
+   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, *minmax.children[0]);
 }
 
 void BorderedGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec)

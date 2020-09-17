@@ -55,30 +55,31 @@ class BorderedGenMatrix : public GenMatrix
       int isKindOf( int matrixType ) const override;
 
       /** y = beta * y + alpha * this * x */
-      void mult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override; // TODO : implement
+      void mult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override;
       /** y = beta * y + alpha * this^T * x */
-      void transMult ( double beta,   OoqpVector& y, double alpha,  const OoqpVector& x ) const override; // TODO : implement
+      void transMult( double beta, OoqpVector& y, double alpha,  const OoqpVector& x ) const override;
 
       double abmaxnorm() const override;
-      void columnScale ( const OoqpVector& vec ) override; // TODO : implement
-      void rowScale ( const OoqpVector& vec ) override; // TODO : implement
+      void columnScale( const OoqpVector& vec ) override;
+      void rowScale( const OoqpVector& vec ) override;
 
-      void scalarMult( double num ) override; // TODO : implement
+      void scalarMult( double num ) override;
 
       void getSize( long long& m_, long long& n_ ) const override;
       void getSize( int& m_, int& n_ ) const override;
+
+      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
+      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
 
       // TODO which of the following are necessary?
       void getNnzPerRow(OoqpVectorBase<int>& nnzVec) override; // TODO : implement
       void getNnzPerCol(OoqpVectorBase<int>& nnzVec) override; // TODO : implement
       void addRowSums( OoqpVector& vec ) override; // TODO : implement
       void addColSums( OoqpVector& vec ) override; // TODO : implement
-      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
-      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override; // TODO : implement
 
       /* methods not needed for Hierarchical approach */
       void writeToStream( std::ostream& out ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
-      void writeToStreamDense( std::ostream& out ) const override { assert(0 && "not implemented"); };; // TODO implement maybe?
+      void writeToStreamDense( std::ostream& out ) const override { assert(0 && "not implemented"); }; // TODO implement maybe?
       void getDiagonal( OoqpVector& vec ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
       void setToDiagonal( OoqpVector& vec ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
       void atPutDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
