@@ -1651,6 +1651,11 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
 void sData::activateLinkStructureExploitation()
 {
+   // TODO - where do the dense rows cols get soreted to ?
+   // TODO - add a threshold to tell when something is dense
+   // TODO - always activate when hierarchical
+   // TODO - store number of dense stuff somewhere...
+
    if( useLinkStructure )
       return;
    useLinkStructure = true;
@@ -1716,12 +1721,15 @@ void sData::activateLinkStructureExploitation()
             << (n2LinksEq + n2LinksIneq) / ((double) linkStartBlockIdA.size() + linkStartBlockIdC.size()) << std::endl;
    }
 
+
+#ifndef HIERARCHICAL
    if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + linkVarsNnz.size()) < minStructuredLinksRatio )
    {
       if( myrank == 0 )
          std::cout << "not enough linking structure found" << std::endl;
       useLinkStructure = false;
    }
+#endif
 
    if( useLinkStructure )
    {
