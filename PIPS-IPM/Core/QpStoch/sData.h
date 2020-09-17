@@ -97,6 +97,10 @@ public:
   // Hierarchical Stuff
   void switchToHierarchicalData();
 
+  int getNGlobalVars() const { return n_global_linking_vars; };
+  int getNGlobalEQConss() const { return n_global_eq_linking_conss; };
+  int getNGlobalINEQConss() const { return n_global_ineq_linking_conss; };
+
   virtual void writeToStreamDense(ostream& out) const;
   void writeMPSformat(ostream& out);
   void writeMPSColumns(ostream& out);
@@ -177,6 +181,10 @@ public:
 
   /* a two link must be in two blocks directly after one another */
   bool useLinkStructure;
+  int n_global_linking_vars = -1;
+  int n_global_eq_linking_conss = -1;
+  int n_global_ineq_linking_conss = -1;
+
   /* number of entries in each linking column */
   std::vector<int> linkVarsNnz;
   /* which blocks do the individual two-links start in */

@@ -1653,7 +1653,6 @@ void sData::activateLinkStructureExploitation()
 {
    // TODO - where do the dense rows cols get soreted to ?
    // TODO - add a threshold to tell when something is dense
-   // TODO - always activate when hierarchical
    // TODO - store number of dense stuff somewhere...
 
    if( useLinkStructure )
