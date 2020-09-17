@@ -16,15 +16,26 @@
 class StringGenMatrix;
 class StochGenMatrix;
 
+
+/*
+ * representing a matrix of type
+ *
+ * [ B  K ]
+ * [ C  B']
+ *
+ * Where K is a StochGenMatrix
+ */
+
+// TODO : make more general ? K B B' and C can be any matrices in theory..
 class BorderedGenMatrix : public GenMatrix
 {
    public:
       StochGenMatrix* inner_matrix;
-      StringGenMatrix* border_right;
+      StringGenMatrix* border_left;
       StringGenMatrix* border_bottom;
 	
       // TODO: is StochGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-      StochGenMatrix* bottom_right_block;
+      StochGenMatrix* bottom_left_block;
 
    protected:
 
@@ -37,8 +48,8 @@ class BorderedGenMatrix : public GenMatrix
       const long long n; // number cols in border
 
    public:
-      BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_right,
-            StringGenMatrix* border_bottom, StochGenMatrix* bottom_right_block, MPI_Comm mpi_comm_);
+      BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
+            StringGenMatrix* border_bottom, StochGenMatrix* bottom_left_block, MPI_Comm mpi_comm_);
       virtual ~BorderedGenMatrix();
 
       int isKindOf( int matrixType ) const override;
