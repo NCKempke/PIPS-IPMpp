@@ -25,6 +25,8 @@ class sFactoryHierarchical : public sFactory {
    sLinsysRoot* newLinsysRoot() override;
    sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
          OoqpVector* nomegaInv, OoqpVector* rhs) override;
+
+   Data* switchToHierarchicalData(Data* prob_in) override;
 };
 
 
