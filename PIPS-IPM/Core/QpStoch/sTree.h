@@ -135,7 +135,10 @@ class sTree
   void displayMatVsTreeStructure(StochSymMatrix& stVec, int myRank);
 #endif
 //to be called after assignProcesses
-  virtual void loadLocalSizes()=0;
+  virtual void loadLocalSizes() = 0;
+
+  sTree* shaveBorder(int n_linking_vars, int n_boder_eq, int n_border_ineq);
+
 };
 
 #endif 

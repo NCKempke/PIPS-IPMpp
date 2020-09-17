@@ -821,6 +821,13 @@ int sTree::isInVector(int elem, const vector<int>& vec)
   return 0;
 }
 
+sTree* sTree::shaveBorder(int n_linking_vars, int n_boder_eq, int n_border_ineq)
+{
+   assert( 0 && "TODO : implement");
+   return nullptr;
+}
+
+
 void sTree::computeNodeTotal()
 {
   if(0==children.size())

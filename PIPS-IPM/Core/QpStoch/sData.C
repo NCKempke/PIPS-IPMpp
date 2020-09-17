@@ -1488,7 +1488,7 @@ sData::destroyChildren()
    children.clear();
 }
 
-void sData::switchToHierarchicalData()
+sData* sData::switchToHierarchicalData()
 {
    assert( 0 && "TODO: implement..");
    // TODO: implement dense border detachment
@@ -1499,7 +1499,7 @@ void sData::switchToHierarchicalData()
 
    // TODO : does the tree need shaving/modification?
    // sTree* tree = stochNode->shaveBorder( n_linking_vars_to_shave, n_dense_linking_eq_rows, n_dense_linking_ineq_rows );
-   sTree* tree = this->stochNode;
+   sTree* hier_tree = stochNode->shaveBorder(n_linking_vars, n_boder_eq, n_border_ineq);
 
    // TODO : Q ?? BorderedGenMatrix* A_border = dynamic_cast<StochGenMatrix&>(*A).shaveBorder(n_dense_linking_eq_rows, n_linking_vars_to_shave);
    BorderedGenMatrix* Q_border = nullptr; // TODO
@@ -1532,7 +1532,9 @@ void sData::switchToHierarchicalData()
 
    // TODO: implement recursive layering of linear system
 //   this->splitIntoMultiple();
+   border_layer->children.push_back(this);
 
+   return border_layer;
 }
 
 
