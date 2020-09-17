@@ -1118,7 +1118,7 @@ sData::sData(sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         GenMatrix  * A_in, OoqpVector * bA_in,
         GenMatrix  * C_in,
         OoqpVector * clow_in, OoqpVector * iclow_in, long long mclow_,
-        OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_
+        OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_, bool add_children
         )
   : QpGenData(SparseLinearAlgebraPackage::soleInstance(),
          c_in, Q_in,
@@ -1131,7 +1131,8 @@ sData::sData(sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
   mclow = mclow_; mcupp = mcupp_;
   stochNode = tree_;
 
-  createChildren();
+  if( add_children )
+     createChildren();
 
   useLinkStructure = false;
   n0LinkVars = 0;
@@ -1490,13 +1491,11 @@ sData::destroyChildren()
 
 sData* sData::switchToHierarchicalData( sTree* tree )
 {
-   assert( 0 && "TODO: implement..");
    assert( tree->isHierarchicalRoot() );
    assert( tree->children.size() == 0 );
 
    // TODO : Q ??
    // BorderedSymMatrix Q ....
-
    BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
    BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
 
@@ -1517,7 +1516,7 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
    // TODO : do nxlow, nxupp ... store the whole vars (from here down the hierarchy) or only local values?
-   sData* hierarchical_top = new sData(tree, g_hier, *Q, blx_hier,
+   sData* hierarchical_top = new sData(tree, g_hier, Q, blx_hier,
          ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
          A_hier, bA_hier, C_hier, bl_hier,
          iclow_hier, mclow, bu_hier, icupp_hier, mcupp,

@@ -1184,6 +1184,8 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    // TODO : we do not actually modify the callback data ....
    top_layer->data = data;
    top_layer->tree = tree;
+
+   return top_layer;
 }
 
 

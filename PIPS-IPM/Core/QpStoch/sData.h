@@ -30,7 +30,8 @@ class sData : public QpGenData {
 	 GenMatrix * A, OoqpVector * bA,
 	 GenMatrix * C,
 	 OoqpVector * clow, OoqpVector * iclow, long long mclow,
-	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp);
+	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp,
+	 bool add_children = true );
 
   std::vector<sData*> children;
   void AddChild(sData* child);
