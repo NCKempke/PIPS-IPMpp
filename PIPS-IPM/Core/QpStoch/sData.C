@@ -681,7 +681,7 @@ int sData::n2linksRows(const std::vector<int>& linkStartBlockLengths)
    return n;
 }
 
-std::vector<int> sData::get2LinkLengthsVec(const std::vector<int>& linkStartBlockId, size_t nBlocks)
+std::vector<int> sData::get2LinkLengthsVec(const std::vector<int>& linkStartBlockId, const size_t nBlocks)
 {
    std::vector<int> linkStartBlockLengths(nBlocks, 0);
 
@@ -697,7 +697,6 @@ std::vector<int> sData::get2LinkLengthsVec(const std::vector<int>& linkStartBloc
          linkStartBlockLengths[block]++;
       }
    }
-
    assert(nBlocks == 0 || linkStartBlockLengths[nBlocks - 1] == 0);
 
    return linkStartBlockLengths;
@@ -1695,23 +1694,28 @@ void sData::activateLinkStructureExploitation()
    Astoch.getLinkVarsNnz( linkVarsNnz );
    Cstoch.getLinkVarsNnz( linkVarsNnz );
 
-   linkStartBlockIdA = Astoch.get2LinkStartBlocks();
-   std::vector<int> linkStart_A2 = Astoch.get2LinkStartBlocksNew();
+   linkStartBlockIdA = Astoch.get2LinkStartBlocksNew();
+   linkStartBlockIdC = Cstoch.get2LinkStartBlocksNew();
+
+#ifndef NDEBUG
+   std::vector<int> linkStart_A2 = Astoch.get2LinkStartBlocks();
    assert( linkStartBlockIdA.size() == linkStart_A2.size() );
    for( size_t i = 0; i < linkStart_A2.size(); ++i )
    {
+      assert( linkStart_A2[i] == linkStartBlockIdA[i] );
       if( linkStart_A2[i] != linkStartBlockIdA[i] && myrank == 0)
          std::cout << "New : " << linkStart_A2[i] << " != " << linkStartBlockIdA[i] << " old" << std::endl;
    }
 
-   linkStartBlockIdC = Cstoch.get2LinkStartBlocks();
-   std::vector<int> linkStart_C2 = Cstoch.get2LinkStartBlocksNew();
+   std::vector<int> linkStart_C2 = Cstoch.get2LinkStartBlocks();
    assert( linkStartBlockIdC.size() == linkStart_C2.size() );
    for( size_t i = 0; i < linkStart_C2.size(); ++i )
    {
+      assert( linkStart_C2[i] == linkStartBlockIdC[i] );
       if( linkStart_C2[i] != linkStartBlockIdC[i] && myrank == 0)
          std::cout << "New : " << linkStart_C2[i] << " != " << linkStartBlockIdC[i] << " old" << std::endl;
    }
+#endif
 
    linkStartBlockLengthsA = get2LinkLengthsVec(linkStartBlockIdA, stochNode->children.size());
    linkStartBlockLengthsC = get2LinkLengthsVec(linkStartBlockIdC, stochNode->children.size());
