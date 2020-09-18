@@ -61,14 +61,14 @@ public:
   int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl);
 
   int getLocalNnz(int& nnzQ, int& nnzB, int& nnzD);
-  int getN0LinkVars() {return n0LinkVars;}
+  int getN0LinkVars() { return n0LinkVars; }
 
   // returns upper bound on number of non-zeroes in Schur complement
   int getSchurCompMaxNnz();
 
   // distributed version
   int getSchurCompMaxNnzDist(int blocksStart, int blocksEnd);
-  bool exploitingLinkStructure() {return useLinkStructure;};
+  bool exploitingLinkStructure() { return useLinkStructure; };
 
   SparseSymMatrix* createSchurCompSymbSparseUpper();
 

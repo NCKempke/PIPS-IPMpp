@@ -1532,8 +1532,14 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    this->mclow -= iclow_hier->vec->numberOfNonzeros();
    this->mcupp -= icupp_hier->vec->numberOfNonzeros();
 
+   long long dummy;
+   nx = g->length();
+   A->getSize( my, dummy );
+   C->getSize( mz, dummy );
+
    hierarchical_top->children.push_back(this);
    stochNode = tree->children[0];
+
 
    // TODO: implement recursive layering of linear system
    //   this->splitIntoMultiple();
@@ -1655,7 +1661,7 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
 void sData::activateLinkStructureExploitation()
 {
-   // TODO - where do the dense rows cols get soreted to ?
+   // TODO - where do the dense rows cols get sorted to ?
    // TODO - add a threshold to tell when something is dense
    // TODO - store number of dense stuff somewhere...
 
