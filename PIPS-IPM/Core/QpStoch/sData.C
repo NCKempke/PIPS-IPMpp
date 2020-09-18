@@ -1663,6 +1663,7 @@ void sData::activateLinkStructureExploitation()
    // TODO - where do the dense rows cols get sorted to ?
    // TODO - add a threshold to tell when something is dense
    // TODO - store number of dense stuff somewhere...
+   assert( !stochNode->isHierarchicalRoot() );
 
    if( useLinkStructure )
       return;
@@ -1694,8 +1695,8 @@ void sData::activateLinkStructureExploitation()
    Astoch.getLinkVarsNnz( linkVarsNnz );
    Cstoch.getLinkVarsNnz( linkVarsNnz );
 
-   linkStartBlockIdA = Astoch.get2LinkStartBlocksNew();
-   linkStartBlockIdC = Cstoch.get2LinkStartBlocksNew();
+   Astoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdA, n_blocks_per_link_row_A);
+   Cstoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdC, n_blocks_per_link_row_C);
 
 #ifndef NDEBUG
    std::vector<int> linkStart_A2 = Astoch.get2LinkStartBlocks();

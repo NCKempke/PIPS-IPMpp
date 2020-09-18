@@ -190,10 +190,15 @@ public:
   std::vector<int> linkVarsNnz;
   /* which blocks do the individual two-links start in */
   std::vector<int> linkStartBlockIdA;
+  std::vector<int> n_blocks_per_link_row_A;
+
   std::vector<int> linkStartBlockIdC;
+  std::vector<int> n_blocks_per_link_row_C;
+
   /* how many two-links start in block i */
   std::vector<int> linkStartBlockLengthsA;
   std::vector<int> linkStartBlockLengthsC;
+
   std::vector<unsigned int> linkVarsPermutation;
   std::vector<unsigned int> linkConsPermutationA;
   std::vector<unsigned int> linkConsPermutationC;

@@ -214,7 +214,7 @@ public:
   virtual void freeDynamicStorage();
 
   /** returns Simple Vector indicating which linking rows have entries in exactly two blocks (indicated by 1.0 versus 0.0)*/
-  virtual std::vector<int> get2LinkStartBlocksNew() const;
+  virtual void get2LinkStartBlocksAndCountsNew( std::vector<int>& block_start, std::vector<int>& block_count) const;
   virtual std::vector<int> get2LinkStartBlocks() const;
 
   virtual void updateKLinkVarsCount(std::vector<int>& linkCount) const;

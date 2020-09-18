@@ -1288,21 +1288,27 @@ void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& linkCount) const
       MPI_Allreduce(MPI_IN_PLACE, &linkCount[0], n, MPI_INT, MPI_SUM, mpiComm);
 }
 
-std::vector<int> StochGenMatrix::get2LinkStartBlocksNew() const
+void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_start, std::vector<int>& block_count) const
 {
+   block_start.clear();
+   block_count.clear();
+
    if( Blmat == nullptr )
-      return std::vector<int>();
+      return;
 
    int m, n;
    Blmat->getSize(m, n);
    if( m == 0 )
-      return std::vector<int>();
+      return;
    assert( m > 0 );
 
    const int n_blocks = children.size();
-   std::vector<int> block_count_per_row(m, 0);
+   block_count.resize(m);
+   std::fill(block_count.begin(), block_count.end(), 0);
+
    /* init with max + 1 and max - 1 for allreduce later */
-   std::vector<int> block_start(m, n_blocks);
+   block_start.resize(m);
+   std::fill(block_start.begin(), block_start.end(), n_blocks);
    std::vector<int> block_end(m, -1);
 
    std::vector<bool> is_2_link(m, false);
@@ -1311,7 +1317,7 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocksNew() const
       if( !(children[it]->isKindOf(kStochGenDummyMatrix)) )
       {
          assert(children[it]->Blmat);
-         children[it]->Blmat->updateNonEmptyRowsCountNew(it, block_count_per_row, block_start, block_end);
+         children[it]->Blmat->updateNonEmptyRowsCountNew(it, block_count, block_start, block_end);
       }
 
    if( iAmDistrib )
@@ -1319,7 +1325,7 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocksNew() const
       // TODO : one can filter the non-candidates locally first on all processes
       PIPS_MPIminArrayInPlace(block_start, mpiComm);
       PIPS_MPImaxArrayInPlace(block_end, mpiComm);
-      PIPS_MPIsumArrayInPlace(block_count_per_row, mpiComm);
+      PIPS_MPIsumArrayInPlace(block_count, mpiComm);
    }
 
    for( int it = 0; it < m; ++it )
@@ -1334,15 +1340,13 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocksNew() const
          assert( start <= end && end < n_blocks );
 
       if( end == start + 1 )
-         assert( block_count_per_row[it] == 2 );
+         assert( block_count[it] == 2 );
       else
       {
          /* not a consecutive 2 link */
          block_start[it] = -1;
       }
    }
-
-   return block_start;
 }
 
 std::vector<int> StochGenMatrix::get2LinkStartBlocks() const
