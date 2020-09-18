@@ -115,6 +115,19 @@ inline bool PIPSisZeroFeas(double val)
    return (std::fabs(val) < feastol);
 }
 
+template<typename T>
+inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>& vec)
+{
+//   assert( permutationIsValid(perm) ); TODO...
+   assert( perm.size() == vec.size() );
+
+   std::vector<T> tmp(vec.size());
+
+   for( size_t i = 0; i < vec.size(); ++i )
+      tmp[i] = vec[perm[i]];
+   vec = tmp;
+}
+
 inline int PIPSgetnOMPthreads()
 {
    int num_procs;

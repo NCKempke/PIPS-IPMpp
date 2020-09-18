@@ -141,10 +141,13 @@ public:
 
  private:
   int n0LinkVars;
+
+  constexpr static int threshold_global_cons = 6;
   constexpr static int nLinkStats = 6;
   constexpr static double minStructuredLinksRatio = 0.5;
-  static std::vector<unsigned int> get0VarsRightPermutation(const std::vector<int>& linkVarsNnzCount);
-  static std::vector<unsigned int> getAscending2LinkPermutation(std::vector<int>& linkStartBlocks, size_t nBlocks);
+  static std::vector<unsigned int> get0VarsLastGlobalsFirstPermutation(const std::vector<int>& linkVarsNnzCount);
+  static std::vector<unsigned int> getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
+        std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals);
 
   // returns number of block rows
   static int getSCdiagBlocksNRows(const std::vector<int>& linkStartBlockLengths);
@@ -182,6 +185,7 @@ public:
 
   /* a two link must be in two blocks directly after one another */
   bool useLinkStructure;
+
   int n_global_linking_vars = -1;
   int n_global_eq_linking_conss = -1;
   int n_global_ineq_linking_conss = -1;

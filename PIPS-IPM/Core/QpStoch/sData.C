@@ -988,7 +988,7 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpperDist(int blocksStart, int 
    return (new SparseSymMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
 }
 
-std::vector<unsigned int> sData::get0VarsRightPermutation(const std::vector<int>& linkVarsNnzCount)
+std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(const std::vector<int>& linkVarsNnzCount)
 {
    const int size = int(linkVarsNnzCount.size());
 
@@ -1015,57 +1015,129 @@ std::vector<unsigned int> sData::get0VarsRightPermutation(const std::vector<int>
    return permvec;
 }
 
-std::vector<unsigned int> sData::getAscending2LinkPermutation(std::vector<int>& linkStartBlockId, size_t nBlocks)
+std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
+      std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals)
 {
-   const size_t size = linkStartBlockId.size();
+   assert( linkStartBlockId.size() == n_blocks_per_row.size() );
+   const size_t n_links = linkStartBlockId.size();
+   n_globals = 0;
 
-   if( size == 0 )
+   if( n_links == 0 )
       return std::vector<unsigned int>();
 
-   std::vector<unsigned int> permvec(size, 0);
+   std::vector<unsigned int> permvec(n_links, 0);
    std::vector<int> w(nBlocks + 1, 0);
 
-   for( size_t i = 0; i < size; ++i )
+   /* count the 2-links per block - the ones starting at block -1 are no 2-links and are counted in w[0] */
+   for( size_t i = 0; i < n_links; ++i )
    {
-      assert(linkStartBlockId[i] >= - 1 && linkStartBlockId[i] < int(nBlocks));
+      assert( -1 <= linkStartBlockId[i] );
+      assert( linkStartBlockId[i] < int(nBlocks) );
+
       w[linkStartBlockId[i] + 1]++;
    }
 
-   // initialize start pointers
-   int sum = 0;
+   /* set w[i] to the amount of preceding 2-links, so the start of the 2-links starting in block i */
+   int n_two_links = 0;
    for( size_t i = 1; i <= nBlocks; ++i )
    {
-      sum += w[i];
-      w[i] = sum;
+      n_two_links += w[i];
+      w[i] = n_two_links;
    }
-
-   assert(unsigned(sum + w[0]) == size);
+   assert(unsigned(n_two_links + w[0]) == n_links);
 
    w[0] = 0;
 
-   for( size_t i = 0; i < size; ++i )
+   /* sort 2-links ascending to front */
+   for( size_t i = 0; i < n_links; ++i )
    {
-      const int startBlock = (linkStartBlockId[i] >= 0) ? linkStartBlockId[i] : int(nBlocks);
+      /* index of 2_link_start of nBlocks if not a 2 link */
+      const int two_link_start = (linkStartBlockId[i] >= 0) ? linkStartBlockId[i] : int(nBlocks);
 
-      assert(w[startBlock] <= int(size));
-      assert(permvec[w[startBlock]] == 0);
+      assert(w[two_link_start] <= int(n_links));
+      assert(permvec[w[two_link_start]] == 0);
 
-      permvec[w[startBlock]] = i;
-      w[startBlock]++;
+      permvec[w[two_link_start]] = i;
+
+      /* move start of i-2-link block */
+      w[two_link_start]++;
    }
 
+   /* permvec now moves 2-links ascending and the rest to the end */
+   /* now permute global (long) linking constarints further to the end */
 #ifndef NDEBUG
-     for( size_t i = 1; i < permvec.size(); i++ )
-        assert(linkStartBlockId[permvec[i]] == - 1 || linkStartBlockId[permvec[i - 1]] <=  linkStartBlockId[permvec[i]]);
+   for( size_t i = 1; i < permvec.size(); i++ )
+      assert(linkStartBlockId[permvec[i]] == - 1 || linkStartBlockId[permvec[i - 1]] <=  linkStartBlockId[permvec[i]]);
 #endif
 
-   // permute linkStartBlockId
-   std::vector<int> tmpvec(size);
+   /* got through non-2-links from front and back and swap all globals to the back */
+   int end_non_two_links = n_two_links;
+   int start_global_links = n_links;
 
-   for( size_t i = 0; i < size; ++i )
-      tmpvec[i] = linkStartBlockId[permvec[i]];
+   assert( end_non_two_links <= start_global_links );
 
-   linkStartBlockId = tmpvec;
+   while( end_non_two_links != start_global_links )
+   {
+      if( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons )
+         ++end_non_two_links;
+      else if( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons )
+         --start_global_links;
+      else
+      {
+         assert( end_non_two_links < start_global_links - 1);
+         std::swap( permvec[end_non_two_links], permvec[start_global_links] );
+         assert( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons );
+         assert( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons );
+
+         ++end_non_two_links;
+         --start_global_links;
+      }
+   }
+
+   n_globals = n_links - start_global_links;
+
+   std::vector<int> tmpvec(n_links);
+
+   permuteVector(permvec, n_blocks_per_row);
+   permuteVector(permvec, linkStartBlockId);
+
+#ifndef NDEBUG
+   int phase = 0;
+   int n_globals_copy = 0;
+   for( size_t i = 0; i < linkStartBlockId.size(); ++i )
+   {
+      /* first ones are ascending 2-links */
+      if( phase == 0 )
+      {
+         if( n_blocks_per_row[i] != 2 )
+            ++phase;
+         else
+         {
+            assert( linkStartBlockId[i] != -1 );
+            if( i > 1 )
+               assert( linkStartBlockId[i - 1] <= linkStartBlockId[i] );
+         }
+      }
+      /* n-links up to the threshold */
+      else if( phase == 1 )
+      {
+         if( n_blocks_per_row[i] > threshold_global_cons )
+            ++phase;
+         else
+         {
+            assert( n_blocks_per_row[i] != 2 );
+            assert( linkStartBlockId[i] == -1);
+         }
+      }
+      /* global linking constraints */
+      else
+      {
+         ++n_globals_copy;
+         assert( n_blocks_per_row[i] > threshold_global_cons );
+      }
+   }
+   assert( n_globals == n_globals_copy );
+#endif
 
    return permvec;
 }
@@ -1549,17 +1621,17 @@ sData* sData::switchToHierarchicalData( sTree* tree )
 
 void sData::permuteLinkingCons()
 {
-   assert(linkConsPermutationA.size() == 0);
-   assert(linkConsPermutationC.size() == 0);
+   assert( linkConsPermutationA.size() == 0 );
+   assert( linkConsPermutationC.size() == 0 );
 
    const size_t nBlocks = dynamic_cast<StochVector&>(*g).children.size();
 
    // compute permutation vectors
-   linkConsPermutationA = getAscending2LinkPermutation(linkStartBlockIdA, nBlocks);
-   linkConsPermutationC = getAscending2LinkPermutation(linkStartBlockIdC, nBlocks);
+   linkConsPermutationA = getAscending2LinkFirstGlobalsLastPermutation(linkStartBlockIdA, n_blocks_per_link_row_A, nBlocks, n_global_eq_linking_conss);
+   linkConsPermutationC = getAscending2LinkFirstGlobalsLastPermutation(linkStartBlockIdC, n_blocks_per_link_row_C, nBlocks, n_global_ineq_linking_conss);
 
-   assert(permutationIsValid(linkConsPermutationA));
-   assert(permutationIsValid(linkConsPermutationC));
+   assert( permutationIsValid(linkConsPermutationA) );
+   assert( permutationIsValid(linkConsPermutationC) );
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(linkConsPermutationA);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(linkConsPermutationC);
@@ -1574,7 +1646,7 @@ void sData::permuteLinkingVars()
 {
    assert(linkVarsPermutation.size() == 0);
 
-   linkVarsPermutation = get0VarsRightPermutation(linkVarsNnz);
+   linkVarsPermutation = get0VarsLastGlobalsFirstPermutation(linkVarsNnz);
 
    assert(permutationIsValid(linkVarsPermutation));
 
