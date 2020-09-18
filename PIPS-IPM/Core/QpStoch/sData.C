@@ -6,8 +6,11 @@
 #include "StochVector.h"
 #include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
-#include <iostream>
 #include "pipsport.h"
+
+#include <iostream>
+#include <algorithm>
+#include <functional>
 
 static
 std::vector<unsigned int> getInversePermutation(const std::vector<unsigned int>& perm)
@@ -988,29 +991,78 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpperDist(int blocksStart, int 
    return (new SparseSymMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
 }
 
-std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(const std::vector<int>& linkVarsNnzCount)
+std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals)
 {
-   const int size = int(linkVarsNnzCount.size());
+   const size_t n_link_vars = link_vars_n_blocks.size();
+   n_globals = 0;
 
-   if( size == 0 )
+   if( n_link_vars == 0 )
       return std::vector<unsigned int>();
 
-   std::vector<unsigned int> permvec(size, 0);
+   std::vector<unsigned int> permvec(n_link_vars, 0);
 
    int count = 0;
-   int backCount = size - 1;
-   for( int i = 0; i < size; ++i )
-   {
-      assert(count <= backCount);
-      assert(linkVarsNnzCount[i] >= 0);
+   int back_count = n_link_vars - 1;
 
-      if( linkVarsNnzCount[i] != 0 )
+   for( size_t i = 0; i < n_link_vars; ++i )
+   {
+      assert( count <= back_count );
+      assert( link_vars_n_blocks[i] >= 0 );
+
+      if( link_vars_n_blocks[i] > threshold_global_cons )
+      {
+         ++n_globals;
          permvec[count++] = i;
-      else
-         permvec[backCount--] = i;
+      }
+      else if( link_vars_n_blocks[i] == 0 )
+         permvec[back_count--] = i;
    }
 
-   assert(count == backCount + 1);
+   for( size_t i = 0; i < n_link_vars; ++i )
+   {
+      if( link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_cons )
+      {
+         assert( count <= back_count );
+         permvec[count++] = i;
+      }
+   }
+   assert(count == back_count + 1);
+
+   permuteVector(permvec, link_vars_n_blocks);
+
+#ifndef NDEBUG
+   int n_globals_copy = 0;
+   int phase = 0;
+   for( size_t i = 0; i < n_link_vars; ++i )
+   {
+      if( phase == 0 )
+      {
+         if( link_vars_n_blocks[i] <= threshold_global_cons )
+         {
+            ++phase;
+            --i;
+         }
+         else
+            ++n_globals_copy;
+      }
+      else if( phase == 1 )
+      {
+         if( link_vars_n_blocks[i] == 0 )
+         {
+            ++phase;
+            --i;
+         }
+         else
+         {
+            assert( 0 < link_vars_n_blocks[i] );
+            assert( link_vars_n_blocks[i] <= threshold_global_cons );
+         }
+      }
+      else if( phase == 2 )
+         assert( link_vars_n_blocks[i] == 0 );
+   }
+   assert( n_globals_copy == n_globals );
+#endif
 
    return permvec;
 }
@@ -1076,9 +1128,9 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
 
    assert( end_non_two_links <= start_global_links );
 
-   if( end_non_two_links < start_global_links - 1 )
+   if( end_non_two_links < start_global_links )
    {
-      while( end_non_two_links != start_global_links - 1 )
+      while( end_non_two_links <= start_global_links )
       {
          if( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons )
             ++end_non_two_links;
@@ -1096,7 +1148,7 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
          }
       }
    }
-   n_globals = n_links - start_global_links;
+   n_globals = n_links - end_non_two_links;
 
    std::vector<int> tmpvec(n_links);
 
@@ -1112,7 +1164,10 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
       if( phase == 0 )
       {
          if( linkStartBlockId[i] == -1 )
+         {
             ++phase;
+            --i;
+         }
          else
          {
             assert( n_blocks_per_row[i] == 2 );
@@ -1124,7 +1179,10 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
       else if( phase == 1 )
       {
          if( n_blocks_per_row[i] > threshold_global_cons )
+         {
             ++phase;
+            --i;
+         }
          else
             assert( linkStartBlockId[i] == -1);
       }
@@ -1645,9 +1703,9 @@ void sData::permuteLinkingVars()
 {
    assert(linkVarsPermutation.size() == 0);
 
-   linkVarsPermutation = get0VarsLastGlobalsFirstPermutation(linkVarsNnz);
+   linkVarsPermutation = get0VarsLastGlobalsFirstPermutation(n_blocks_per_link_var, n_global_linking_vars);
 
-   assert(permutationIsValid(linkVarsPermutation));
+   assert( permutationIsValid(linkVarsPermutation) );
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(linkVarsPermutation);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(linkVarsPermutation);
@@ -1761,10 +1819,13 @@ void sData::activateLinkStructureExploitation()
    const StochGenMatrix& Astoch = dynamic_cast<const StochGenMatrix&>(*A);
    const StochGenMatrix& Cstoch = dynamic_cast<const StochGenMatrix&>(*C);
 
-   linkVarsNnz = std::vector<int>(nx0, 0);
+   n_blocks_per_link_var = std::vector<int>(nx0, 0);
+   Astoch.updateKLinkVarsCount( n_blocks_per_link_var );
 
-   Astoch.getLinkVarsNnz( linkVarsNnz );
-   Cstoch.getLinkVarsNnz( linkVarsNnz );
+   std::vector<int> tmp = std::vector<int>(nx0, 0); // to avoid doubling through second Allreduce inseite the count functions
+   Cstoch.updateKLinkVarsCount( tmp );
+
+   std::transform( n_blocks_per_link_var.begin(), n_blocks_per_link_var.end(), tmp.begin(), n_blocks_per_link_var.begin(), std::plus<int>() );
 
    Astoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdA, n_blocks_per_link_row_A);
    Cstoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdC, n_blocks_per_link_row_C);
@@ -1798,8 +1859,8 @@ void sData::activateLinkStructureExploitation()
    int n2LinksEq = 0;
    int n2LinksIneq = 0;
 
-   for( size_t i = 0; i < linkVarsNnz.size(); ++i )
-      if( linkVarsNnz[i] == 0 )
+   for( size_t i = 0; i < n_blocks_per_link_var.size(); ++i )
+      if( n_blocks_per_link_var[i] == 0 )
          n0LinkVars++;
 
    for( size_t i = 0; i < linkStartBlockIdA.size(); ++i )
@@ -1828,7 +1889,7 @@ void sData::activateLinkStructureExploitation()
 
 
 #ifndef HIERARCHICAL
-   if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + linkVarsNnz.size()) < minStructuredLinksRatio )
+   if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
    {
       if( myrank == 0 )
          std::cout << "not enough linking structure found" << std::endl;
@@ -1924,7 +1985,7 @@ void sData::printLinkVarsStats()
       Cstoch.Blmat->deleteTransposed();
    }
 
-   int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   const int rank = PIPS_MPIgetRank();
 
    if( rank == 0 )
    {

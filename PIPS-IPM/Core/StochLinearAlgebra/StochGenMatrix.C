@@ -1266,26 +1266,25 @@ void StochGenMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const
       MPI_Allreduce(MPI_IN_PLACE, &linkCount[0], m, MPI_INT, MPI_SUM, mpiComm);
 }
 
-void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& linkCount) const
+void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) const
 {
    int m, n;
-
    Bmat->getSize(m, n);
 
    if( n == 0 )
       return;
 
-   assert(linkCount.size() == size_t(n));
+   assert(link_block_count.size() == size_t(n));
 
    for( size_t it = 0; it < children.size(); it++ )
       if( !(children[it]->isKindOf(kStochGenDummyMatrix)) )
       {
-         children[it]->Amat->getTranspose().updateNonEmptyRowsCount(linkCount);
+         children[it]->Amat->getTranspose().updateNonEmptyRowsCount(link_block_count);
          children[it]->Amat->deleteTransposed();
       }
 
    if( iAmDistrib )
-      MPI_Allreduce(MPI_IN_PLACE, &linkCount[0], n, MPI_INT, MPI_SUM, mpiComm);
+      MPI_Allreduce(MPI_IN_PLACE, &link_block_count[0], n, MPI_INT, MPI_SUM, mpiComm);
 }
 
 void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_start, std::vector<int>& block_count) const
