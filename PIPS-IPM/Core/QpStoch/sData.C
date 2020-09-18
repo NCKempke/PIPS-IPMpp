@@ -1076,24 +1076,26 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
 
    assert( end_non_two_links <= start_global_links );
 
-   while( end_non_two_links != start_global_links )
+   if( end_non_two_links < start_global_links - 1 )
    {
-      if( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons )
-         ++end_non_two_links;
-      else if( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons )
-         --start_global_links;
-      else
+      while( end_non_two_links != start_global_links - 1 )
       {
-         assert( end_non_two_links < start_global_links - 1);
-         std::swap( permvec[end_non_two_links], permvec[start_global_links] );
-         assert( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons );
-         assert( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons );
+         if( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons )
+            ++end_non_two_links;
+         else if( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons )
+            --start_global_links;
+         else
+         {
+            assert( end_non_two_links <= start_global_links - 2);
+            std::swap( permvec[end_non_two_links], permvec[start_global_links] );
+            assert( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons );
+            assert( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons );
 
-         ++end_non_two_links;
-         --start_global_links;
+            ++end_non_two_links;
+            --start_global_links;
+         }
       }
    }
-
    n_globals = n_links - start_global_links;
 
    std::vector<int> tmpvec(n_links);
@@ -1109,11 +1111,11 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
       /* first ones are ascending 2-links */
       if( phase == 0 )
       {
-         if( n_blocks_per_row[i] != 2 )
+         if( linkStartBlockId[i] == -1 )
             ++phase;
          else
          {
-            assert( linkStartBlockId[i] != -1 );
+            assert( n_blocks_per_row[i] == 2 );
             if( i > 1 )
                assert( linkStartBlockId[i - 1] <= linkStartBlockId[i] );
          }
@@ -1124,10 +1126,7 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
          if( n_blocks_per_row[i] > threshold_global_cons )
             ++phase;
          else
-         {
-            assert( n_blocks_per_row[i] != 2 );
             assert( linkStartBlockId[i] == -1);
-         }
       }
       /* global linking constraints */
       else
