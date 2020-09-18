@@ -1090,15 +1090,16 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    }
 
    /* set w[i] to the amount of preceding 2-links, so the start of the 2-links starting in block i */
-   int n_two_links = 0;
+   size_t n_two_links = 0;
    for( size_t i = 1; i <= nBlocks; ++i )
    {
       n_two_links += w[i];
       w[i] = n_two_links;
    }
-   assert(unsigned(n_two_links + w[0]) == n_links);
-
+   const size_t n_non_2_links = w[0];
    w[0] = 0;
+
+   assert( n_two_links + n_non_2_links == n_links);
 
    /* sort 2-links ascending to front */
    for( size_t i = 0; i < n_links; ++i )
@@ -1116,41 +1117,42 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    }
 
    /* permvec now moves 2-links ascending and the rest to the end */
-   /* now permute global (long) linking constarints further to the end */
+   /* now permute global (long) linking constraints further to the end */
 #ifndef NDEBUG
-   for( size_t i = 1; i < permvec.size(); i++ )
-      assert(linkStartBlockId[permvec[i]] == - 1 || linkStartBlockId[permvec[i - 1]] <=  linkStartBlockId[permvec[i]]);
+   for( size_t i = 1; i < n_two_links; i++ )
+      assert( linkStartBlockId[permvec[i - 1]] <= linkStartBlockId[permvec[i]] );
+   for( size_t i = n_two_links; i < n_links; ++i )
+      assert( linkStartBlockId[permvec[i]] == -1 );
 #endif
 
    /* got through non-2-links from front and back and swap all globals to the back */
-   int end_non_two_links = n_two_links;
-   int start_global_links = n_links;
+   int front_pointer = n_two_links;
+   assert( n_links > 0 );
+   int end_pointer = n_links - 1;
 
-   assert( end_non_two_links <= start_global_links );
-
-   if( end_non_two_links < start_global_links )
+   while( front_pointer <= end_pointer )
    {
-      while( end_non_two_links <= start_global_links )
-      {
-         if( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons )
-            ++end_non_two_links;
-         else if( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons )
-            --start_global_links;
-         else
-         {
-            assert( end_non_two_links <= start_global_links - 2);
-            std::swap( permvec[end_non_two_links], permvec[start_global_links] );
-            assert( n_blocks_per_row[permvec[end_non_two_links]] <= threshold_global_cons );
-            assert( n_blocks_per_row[permvec[start_global_links]] > threshold_global_cons );
+      assert( linkStartBlockId[permvec[front_pointer]] == -1 );
+      assert( linkStartBlockId[permvec[end_pointer]] == -1 );
 
-            ++end_non_two_links;
-            --start_global_links;
-         }
+      if( n_blocks_per_row[permvec[front_pointer]] <= threshold_global_cons )
+         ++front_pointer;
+      else if( n_blocks_per_row[permvec[end_pointer]] > threshold_global_cons )
+         --end_pointer;
+      else
+      {
+         assert( front_pointer < end_pointer );
+         std::swap( permvec[end_pointer], permvec[front_pointer] );
+         assert( n_blocks_per_row[permvec[front_pointer]] <= threshold_global_cons );
+         assert( n_blocks_per_row[permvec[end_pointer]] > threshold_global_cons );
+
+         ++front_pointer;
+         --end_pointer;
       }
    }
-   n_globals = n_links - end_non_two_links;
+   n_globals = n_links - front_pointer;
 
-   std::vector<int> tmpvec(n_links);
+   assert( permutationIsValid(permvec) );
 
    permuteVector(permvec, n_blocks_per_row);
    permuteVector(permvec, linkStartBlockId);

@@ -19,9 +19,12 @@
 
 #include <iostream>
 #include <fstream>
-using namespace std;
 
 #define BICGSTAB
+
+#if defined(HIERARCHICAL)
+#include "sFactoryHierarchical.h"
+#endif
 
 #if defined(GMS_PIPS)
 extern int gOuterSolve;
@@ -410,8 +413,14 @@ int main(int argc, char ** argv)
 	if (stepDiffLp)
 	{
 	   if( gmsRank == 0 )
-	      cout << "Different steplengths in primal and dual direction are used." << endl;
-#if defined(WITH_MUMPS_LEAF)
+	      std::cout << "Different steplengths in primal and dual direction are used." << std::endl;
+
+#if defined(HIERARCHICAL)
+	   if( gmsRank == 0 )
+	      std::cout << "Using hierarchical approach" << std::endl;
+	   PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
+	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
+#elif defined(WITH_MUMPS_LEAF)
       PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
             scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
 #elif defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
@@ -449,7 +458,12 @@ int main(int argc, char ** argv)
 	}
 	else
 	{
-#if defined(WITH_MUMPS_LEAF)
+#if defined(HIERARCHICAL)
+      if( gmsRank == 0 )
+         std::cout << "Using hierarchical approach" << std::endl;
+      PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
+            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
+#elif defined(WITH_MUMPS_LEAF)
       PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
             scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
 #elif defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
