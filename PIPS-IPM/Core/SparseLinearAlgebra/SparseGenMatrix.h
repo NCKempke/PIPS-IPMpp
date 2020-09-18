@@ -203,6 +203,9 @@ public:
 
   virtual void addColToRow( double coeff, int col, int row );
 
+  virtual SparseGenMatrix* shaveFromLeft(int n_cols); // TODO : implement
+  virtual SparseGenMatrix* shaveFromBottom(int n_rows); // TODO : implement
+
   virtual ~SparseGenMatrix();
 };
 

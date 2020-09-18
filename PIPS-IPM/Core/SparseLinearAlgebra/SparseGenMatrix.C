@@ -1034,3 +1034,15 @@ void SparseGenMatrix::addColToRow( double coeff, int col, int row )
       assert( mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals() );
    }
 }
+
+SparseGenMatrix* SparseGenMatrix::shaveFromLeft(int n_cols)
+{
+   assert( 0 && "TODO : implement...");
+   return nullptr;
+}
+
+SparseGenMatrix* SparseGenMatrix::shaveFromBottom(int n_rows)
+{
+   assert( 0 && "TODO : implement...");
+   return nullptr;
+}

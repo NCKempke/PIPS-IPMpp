@@ -2020,6 +2020,64 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
 
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
-   assert( 0 && "TODO : implement");
-   return nullptr;
+   // TODO : hand though id? what is id for...
+
+#ifndef NDEBUG
+   int m_link, n_link;
+   Blmat->getSize(m_link, n_link);
+   assert(m_conss <= m_link && n_vars <= n_link);
+#endif
+
+   SparseGenMatrix* const A_left = Bmat->shaveFromLeft(n_vars);
+
+   SparseGenMatrix* const Bl_left_top = Blmat->shaveFromLeft(n_vars);
+   SparseGenMatrix* const bottom_left_block = Bl_left_top->shaveFromBottom(m_conss);
+
+   SparseGenMatrix* const Bl_right_bottom = Blmat->shaveFromBottom(m_conss);
+
+   StringGenMatrix* const border_bottom = new StringGenMatrix(false, Bl_right_bottom, nullptr, mpiComm);
+   StringGenMatrix* const border_left = new StringGenMatrix(true, A_left, Bl_left_top, mpiComm);
+
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      StringGenMatrix* border_left_child = nullptr;
+      StringGenMatrix* border_bottom_child = nullptr;
+
+      children[it]->shaveBorder(m_conss, n_vars, border_left_child, border_bottom_child);
+
+      border_left->addChild(border_left_child);
+      border_bottom->addChild(border_bottom_child);
+   }
+
+   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
+
+   m -= m_conss;
+   n -= n_vars;
+
+   assert(m >= 0 && n >= 0);
+
+   return bordered_matrix;
+}
+
+void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom )
+{
+   // TODO further pass id?
+   SparseGenMatrix* const border_a_mat = Amat->shaveFromLeft(n_vars);
+   SparseGenMatrix* const border_bl_mat = Blmat->shaveFromBottom(m_conss);
+
+   border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
+   border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
+
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      assert(" should not end up here! : todo implement?");
+
+      StringGenMatrix* border_left_child;
+      StringGenMatrix* border_bottom_child;
+
+      children[it]->shaveBorder(m_conss, n_vars, border_left_child, border_bottom_child);
+
+      border_left->addChild(border_left_child);
+      border_bottom->addChild(border_bottom_child);
+   }
 }

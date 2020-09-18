@@ -77,6 +77,8 @@ class StringGenMatrix : public GenMatrix
 
 
    protected:
+      StringGenMatrix();
+
       void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
       void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
@@ -102,7 +104,7 @@ class StringGenMatrix : public GenMatrix
 class StringGenDummyMatrix : public StringGenMatrix
 {
    public:
-      StringGenDummyMatrix();
+      StringGenDummyMatrix() {};
 
       virtual ~StringGenDummyMatrix() {};
       void addChild(StringGenMatrix* child) override {};

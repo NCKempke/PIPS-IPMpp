@@ -10,6 +10,7 @@
 #include "StochVector_fwd.h"
 #include "OoqpVector_fwd.h"
 #include "StochGenMatrix.h"
+#include "SparseGenMatrix.h"
 #include "StochVector.h"
 #include "DoubleMatrixTypes.h"
 
@@ -20,11 +21,12 @@
 #include "StringGenMatrix.h"
 
 BorderedGenMatrix::BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
-            StringGenMatrix* border_bottom, StochGenMatrix* bottom_right_block, MPI_Comm mpi_comm_) :
+            StringGenMatrix* border_bottom, SparseGenMatrix* bottom_right_block, MPI_Comm mpi_comm_) :
             inner_matrix(inner_matrix), border_left(border_left), border_bottom(border_bottom), bottom_left_block(bottom_right_block),
-            mpi_comm(mpi_comm_), distributed( mpi_comm == MPI_COMM_NULL ), rank( PIPS_MPIgetRank(mpi_comm) ),
-            m(bottom_right_block->m), n(bottom_right_block->n)
+            mpi_comm(mpi_comm_), distributed( mpi_comm == MPI_COMM_NULL ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
+   bottom_right_block->getSize(m, n);
+
    assert( inner_matrix );
    assert( border_left );
    assert( border_bottom );
