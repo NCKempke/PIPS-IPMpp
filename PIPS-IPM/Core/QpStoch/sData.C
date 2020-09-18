@@ -1622,7 +1622,7 @@ sData::destroyChildren()
 sData* sData::switchToHierarchicalData( sTree* tree )
 {
    assert( tree->isHierarchicalRoot() );
-   assert( tree->children.size() == 0 );
+   assert( tree->children.size() == 1 );
 
    // TODO : Q ??
    // BorderedSymMatrix Q ....
