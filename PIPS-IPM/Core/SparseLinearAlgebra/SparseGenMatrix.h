@@ -164,8 +164,10 @@ public:
 
   void updateNonEmptyRowsCount(std::vector<int>& rowcount) const;
 
-  void updateNonEmptyRowsCount(int blockPosition, std::vector<int>& rowcount, std::vector<int>& linkBlockPos1,
-     std::vector<int>& linkBlockPos2) const;
+  void updateNonEmptyRowsCountNew(int blockPosition, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
+     std::vector<int>& row_end_block) const;
+  void updateNonEmptyRowsCount(int blockPosition, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
+     std::vector<int>& row_end_block) const;
 
   SparseGenMatrix& getTranspose();
 

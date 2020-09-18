@@ -1541,7 +1541,6 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    hierarchical_top->children.push_back(this);
    stochNode = tree->children[0];
 
-
    // TODO: implement recursive layering of linear system
    //   this->splitIntoMultiple();
 
@@ -1675,6 +1674,11 @@ void sData::activateLinkStructureExploitation()
    /* don't attempt to use linking structure when there actually is no linking constraints */
    if( stochNode->myl() == 0 && stochNode->mzl() == 0 )
    {
+#ifdef HIERARCHICAL
+      if( myrank == 0 )
+         std::cout << "No linking constraints found - hierarchical approach cannot be used" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -1);
+#endif
       useLinkStructure = false;
       if( myrank == 0 )
          std::cout << "no linking constraints so no linking structure found" << std::endl;
@@ -1688,20 +1692,35 @@ void sData::activateLinkStructureExploitation()
 
    linkVarsNnz = std::vector<int>(nx0, 0);
 
-   int n2LinksEq = 0;
-   int n2LinksIneq = 0;
-
-   Astoch.getLinkVarsNnz(linkVarsNnz);
-   Cstoch.getLinkVarsNnz(linkVarsNnz);
+   Astoch.getLinkVarsNnz( linkVarsNnz );
+   Cstoch.getLinkVarsNnz( linkVarsNnz );
 
    linkStartBlockIdA = Astoch.get2LinkStartBlocks();
+   std::vector<int> linkStart_A2 = Astoch.get2LinkStartBlocksNew();
+   assert( linkStartBlockIdA.size() == linkStart_A2.size() );
+   for( size_t i = 0; i < linkStart_A2.size(); ++i )
+   {
+      if( linkStart_A2[i] != linkStartBlockIdA[i] && myrank == 0)
+         std::cout << "New : " << linkStart_A2[i] << " != " << linkStartBlockIdA[i] << " old" << std::endl;
+   }
+
    linkStartBlockIdC = Cstoch.get2LinkStartBlocks();
+   std::vector<int> linkStart_C2 = Cstoch.get2LinkStartBlocksNew();
+   assert( linkStartBlockIdC.size() == linkStart_C2.size() );
+   for( size_t i = 0; i < linkStart_C2.size(); ++i )
+   {
+      if( linkStart_C2[i] != linkStartBlockIdC[i] && myrank == 0)
+         std::cout << "New : " << linkStart_C2[i] << " != " << linkStartBlockIdC[i] << " old" << std::endl;
+   }
 
    linkStartBlockLengthsA = get2LinkLengthsVec(linkStartBlockIdA, stochNode->children.size());
    linkStartBlockLengthsC = get2LinkLengthsVec(linkStartBlockIdC, stochNode->children.size());
 
    printLinkConsStats();
    printLinkVarsStats();
+
+   int n2LinksEq = 0;
+   int n2LinksIneq = 0;
 
    for( size_t i = 0; i < linkVarsNnz.size(); ++i )
       if( linkVarsNnz[i] == 0 )

@@ -823,25 +823,45 @@ void SparseGenMatrix::updateNonEmptyRowsCount(std::vector<int>& rowcount) const
          rowcount[i]++;
 }
 
-void SparseGenMatrix::updateNonEmptyRowsCount(int blockPosition, std::vector<int>& rowcount, std::vector<int>& linkBlockPos1,
-      std::vector<int>& linkBlockPos2) const
+void SparseGenMatrix::updateNonEmptyRowsCountNew(int block_id, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
+      std::vector<int>& row_end_block) const
 {
    const int m = mStorage->m;
    const int* const rowStart = mStorage->krowM;
 
-   assert(blockPosition >= 0 && m >= 0);
-   assert(unsigned(m) == rowcount.size());
-   assert(rowcount.size() == linkBlockPos1.size() && rowcount.size() == linkBlockPos2.size());
+   assert(block_id >= 0 && m >= 0);
+   assert(unsigned(m) == n_blocks_per_row.size());
+   assert(n_blocks_per_row.size() == row_start_block.size() && n_blocks_per_row.size() == row_end_block.size());
 
    for( int i = 0; i < m; i++ )
       if( rowStart[i] != rowStart[i + 1] )
       {
-         if( linkBlockPos1[i] < 0 )
-            linkBlockPos1[i] = blockPosition;
-         else
-            linkBlockPos2[i] = blockPosition;
+         row_start_block[i] = std::min(row_start_block[i], block_id);
+         row_end_block[i] = std::max(row_end_block[i], block_id);
 
-         rowcount[i]++;
+         n_blocks_per_row[i]++;
+      }
+}
+
+void SparseGenMatrix::updateNonEmptyRowsCount(int block_id, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
+      std::vector<int>& row_end_block) const
+{
+   const int m = mStorage->m;
+   const int* const rowStart = mStorage->krowM;
+
+   assert(block_id >= 0 && m >= 0);
+   assert(unsigned(m) == n_blocks_per_row.size());
+   assert(n_blocks_per_row.size() == row_start_block.size() && n_blocks_per_row.size() == row_end_block.size());
+
+   for( int i = 0; i < m; i++ )
+      if( rowStart[i] != rowStart[i + 1] )
+      {
+         if( row_start_block[i] < 0 )
+            row_start_block[i] = block_id;
+         else
+            row_end_block[i] = block_id;
+
+         n_blocks_per_row[i]++;
       }
 }
 

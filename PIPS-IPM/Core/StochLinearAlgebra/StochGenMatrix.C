@@ -1288,6 +1288,63 @@ void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& linkCount) const
       MPI_Allreduce(MPI_IN_PLACE, &linkCount[0], n, MPI_INT, MPI_SUM, mpiComm);
 }
 
+std::vector<int> StochGenMatrix::get2LinkStartBlocksNew() const
+{
+   if( Blmat == nullptr )
+      return std::vector<int>();
+
+   int m, n;
+   Blmat->getSize(m, n);
+   if( m == 0 )
+      return std::vector<int>();
+   assert( m > 0 );
+
+   const int n_blocks = children.size();
+   std::vector<int> block_count_per_row(m, 0);
+   /* init with max + 1 and max - 1 for allreduce later */
+   std::vector<int> block_start(m, n_blocks);
+   std::vector<int> block_end(m, -1);
+
+   std::vector<bool> is_2_link(m, false);
+
+   for( size_t it = 0; it < children.size(); it++ )
+      if( !(children[it]->isKindOf(kStochGenDummyMatrix)) )
+      {
+         assert(children[it]->Blmat);
+         children[it]->Blmat->updateNonEmptyRowsCountNew(it, block_count_per_row, block_start, block_end);
+      }
+
+   if( iAmDistrib )
+   {
+      // TODO : one can filter the non-candidates locally first on all processes
+      PIPS_MPIminArrayInPlace(block_start, mpiComm);
+      PIPS_MPImaxArrayInPlace(block_end, mpiComm);
+      PIPS_MPIsumArrayInPlace(block_count_per_row, mpiComm);
+   }
+
+   for( int it = 0; it < m; ++it )
+   {
+      const int start = block_start[it];
+      const int end = block_end[it];
+
+      assert( start == n_blocks || (0 <= start && start < n_blocks) );
+      if( start == n_blocks )
+         assert( end == -1 );
+      else
+         assert( start <= end && end < n_blocks );
+
+      if( end == start + 1 )
+         assert( block_count_per_row[it] == 2 );
+      else
+      {
+         /* not a consecutive 2 link */
+         block_start[it] = -1;
+      }
+   }
+
+   return block_start;
+}
+
 std::vector<int> StochGenMatrix::get2LinkStartBlocks() const
 {
    if( Blmat == nullptr )
@@ -1298,10 +1355,9 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocks() const
 
    if( m == 0 )
       return std::vector<int>();
-
    assert(m > 0);
 
-   std::vector<int> linkCount(m, 0);
+   std::vector<int> linkBlockCount(m, 0);
    std::vector<int> linkBlockStart(m, -1);
    std::vector<int> linkBlockEnd(m, -1);
    std::vector<bool> is2link(m, false);
@@ -1310,23 +1366,24 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocks() const
       if( !(children[it]->isKindOf(kStochGenDummyMatrix)) )
       {
          assert(children[it]->Blmat);
-         children[it]->Blmat->updateNonEmptyRowsCount(it, linkCount, linkBlockStart, linkBlockEnd);
+         children[it]->Blmat->updateNonEmptyRowsCount(it, linkBlockCount, linkBlockStart, linkBlockEnd);
       }
 
    if( iAmDistrib )
-      PIPS_MPIsumArrayInPlace(linkCount, mpiComm);
+      PIPS_MPIsumArrayInPlace(linkBlockCount, mpiComm);
 
-   // set block identifier
+   /* filter out process local two links already */
    for( int i = 0; i < m; i++ )
    {
       assert(linkBlockEnd[i] == -1 || linkBlockStart[i] <= linkBlockEnd[i]);
 
-      if( linkCount[i] == 2 && (linkBlockEnd[i] - linkBlockStart[i]) == 1 )
+      if( linkBlockCount[i] == 2 && (linkBlockEnd[i] - linkBlockStart[i]) == 1 )
       {
          assert(linkBlockStart[i] >= 0 && linkBlockEnd[i] >= 0);
          is2link[i] = true;
       }
    }
+
 
    if( iAmDistrib )
    {
@@ -1340,9 +1397,9 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocks() const
       std::vector<int> localCandsBlock;
       std::vector<int> candsPerProc(size, -1);
 
-      /* a local candidate is a linking row that appears in exactly two blocks, starts on this process but where the second block is not stored on this process */
+      /* a local candidate is a linking row that appears in exactly two blocks, starts on this process but where the second block is is not stored on this process */
       for( int i = 0; i < m; i++ )
-         if( linkCount[i] == 2 && linkBlockStart[i] >= 0 && linkBlockEnd[i] == -1 )
+         if( linkBlockCount[i] == 2 && linkBlockStart[i] >= 0 && linkBlockEnd[i] == -1 )
          {
             assert(!is2link[i]);
 
