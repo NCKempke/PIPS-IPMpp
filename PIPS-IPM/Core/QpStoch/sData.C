@@ -1532,6 +1532,7 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    this->mclow -= iclow_hier->vec->numberOfNonzeros();
    this->mcupp -= icupp_hier->vec->numberOfNonzeros();
 
+   // TODO : do these include linking? i guess... so they change?
    long long dummy;
    nx = g->length();
    A->getSize( my, dummy );
