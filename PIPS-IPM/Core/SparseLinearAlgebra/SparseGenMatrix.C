@@ -36,11 +36,16 @@ SparseGenMatrix::SparseGenMatrix( int rows, int cols, int nnz,
 				  int deleteElts)
   : mStorageDynamic(nullptr), m_Mt(nullptr)
 {
-  //cout << "SparseGenMatrix1  " << rows << " " << cols << " " << nnz << endl;
   mStorage = SparseStorageHandle( new SparseStorage( rows, cols,nnz,
 						     krowM, jcolM, M,
 						     deleteElts) );
 }
+
+SparseGenMatrix::SparseGenMatrix( SparseStorage* m_storage ) : mStorageDynamic(nullptr), m_Mt(nullptr)
+{
+   mStorage = SparseStorageHandle( m_storage );
+}
+
 
 /*SparseGenMatrix::SparseGenMatrix(const std::vector<SparseGenMatrix*> &blocks, bool diagonal)
   : m_Mt(nullptr)
@@ -1035,14 +1040,34 @@ void SparseGenMatrix::addColToRow( double coeff, int col, int row )
    }
 }
 
-SparseGenMatrix* SparseGenMatrix::shaveFromLeft(int n_cols)
+SparseGenMatrix* SparseGenMatrix::shaveLeft(int n_cols)
 {
-   assert( 0 && "TODO : implement...");
-   return nullptr;
+   assert( !hasDynamicStorage() );
+   assert( n_cols < mStorage->n );
+
+   SparseStorage* border = mStorage->shaveLeft( n_cols );
+
+   if( m_Mt )
+   {
+      delete m_Mt;
+      this->initTransposed(false);
+   }
+
+   return new SparseGenMatrix(border);
 }
 
-SparseGenMatrix* SparseGenMatrix::shaveFromBottom(int n_rows)
+SparseGenMatrix* SparseGenMatrix::shaveBottom(int n_rows)
 {
-   assert( 0 && "TODO : implement...");
-   return nullptr;
+   assert( !hasDynamicStorage() );
+   assert( n_rows < mStorage->m );
+
+   SparseStorage* border = mStorage->shaveBottom( n_rows );
+
+   if( m_Mt )
+   {
+      delete m_Mt;
+      this->initTransposed(false);
+   }
+
+   return new SparseGenMatrix(border);
 }

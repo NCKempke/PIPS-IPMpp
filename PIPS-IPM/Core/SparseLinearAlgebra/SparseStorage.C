@@ -2230,6 +2230,126 @@ void SparseStorage::fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdx
     }
 }
 
+SparseStorage*  SparseStorage::shaveLeft( int n_cols )
+{
+   assert( n_cols < n );
+   assert( 0 <= n_cols );
+
+   const int n_border = n_cols;
+   const int m_border = m;
+
+   int count = 0;
+   for( int i = 0; i < len; ++i )
+   {
+      if( jcolM[i] < n_cols )
+         ++count;
+   }
+   const int len_border = count;
+   assert( 0 <= len_border && len_border <= len );
+
+   int* krowM_border = new int[m_border + 1];
+   int* jcolM_border = new int[len_border];
+   double * M_border = new double[len_border];
+
+   count = 0;
+   krowM_border[0] = 0;
+   for( int row = 0; row < m; ++row )
+   {
+      for( int j = krowM[row]; j < krowM[row + 1]; ++j )
+      {
+         const int col = jcolM[j];
+         if( col < n_cols )
+         {
+            jcolM_border[count] = col;
+            M_border[count] = M[j];
+            ++count;
+         }
+      }
+      krowM_border[row + 1] = count;
+   }
+   assert( count == len_border );
+
+   const int len_new = len - len_border;
+   const int n_new = n - n_cols;
+   const int m_new = m;
+   int* krowM_new = new int[m_new + 1];
+   int* jcolM_new = new int[len_new];
+   double * M_new = new double[len_new];
+   count = 0;
+   krowM_new[0] = 0;
+   for( int row = 0; row < m; ++row )
+   {
+      for( int j = krowM[row]; j < krowM[row + 1]; ++j )
+      {
+         const int col = jcolM[j];
+         if( col >= n_cols )
+         {
+            jcolM_new[count] = col- n_cols;
+            M_new[count] = M[j];
+            ++count;
+         }
+      }
+      krowM_new[row + 1] = count;
+   }
+   assert( count == len_new );
+
+   len = len_new;
+   m = m_new;
+   n = n_new;
+   std::swap( M, M_new );
+   std::swap( krowM, krowM_new );
+   std::swap( jcolM, jcolM_new );
+
+   delete[] M_new;
+   delete[] krowM_new;
+   delete[] jcolM_new;
+
+   SparseStorage* border = new SparseStorage( m_border, n_border, len_border, krowM_border, jcolM_border, M_border, true);
+
+   assert( this->isValid() );
+   assert( border->isValid() );
+
+   return border;
+}
+
+SparseStorage*  SparseStorage::shaveBottom( int n_rows )
+{
+   assert( n_rows < m );
+   assert( 0 <= n_rows );
+
+   const int n_border = n;
+   const int m_border = n_rows;
+   const int len_border = krowM[m] - krowM[ m - n_rows ];
+   assert( 0 <= len_border && len_border <= len );
+
+   int* krowM_border = new int[m_border + 1];
+   int* jcolM_border = new int[len_border];
+   double * M_border = new double[len_border];
+
+   const int len_new = len - len_border;
+   const int m_new = m - m_border;
+
+   std::copy( jcolM + len_new, jcolM + len, jcolM_border );
+   std::copy( M + len_new, M + len, M_border );
+
+   for( int i = 0; i <= m_border; ++i )
+   {
+      assert( i + m_new <= m );
+      assert( krowM[i + m_new] - len_new >= 0 );
+      krowM_border[i] = krowM[i + m_new] - len_new;
+   }
+
+   /* for this mat keep old storages but just set other sizes */
+   m = m_new;
+   len = len_new;
+   assert( krowM[m] == len );
+
+   SparseStorage* border = new SparseStorage( m_border, n_border, len_border, krowM_border, jcolM_border, M_border, true);
+   assert( this->isValid() );
+   assert( border->isValid() );
+
+   return border;
+}
 
 // concatenate matrices
 // if "diagonal", make a block diagonal matrix:

@@ -44,6 +44,7 @@ public:
   SparseGenMatrix( int rows, int cols, int nnz,
 		   int krowM[], int jcolM[], double M[],
 		   int deleteElts=0);
+  SparseGenMatrix( SparseStorage* m_storage );
 
   virtual SparseGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const;
   virtual SparseGenMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
@@ -203,8 +204,8 @@ public:
 
   virtual void addColToRow( double coeff, int col, int row );
 
-  virtual SparseGenMatrix* shaveFromLeft(int n_cols); // TODO : implement
-  virtual SparseGenMatrix* shaveFromBottom(int n_rows); // TODO : implement
+  virtual SparseGenMatrix* shaveLeft(int n_cols);
+  virtual SparseGenMatrix* shaveBottom(int n_rows);
 
   virtual ~SparseGenMatrix();
 };

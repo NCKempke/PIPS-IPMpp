@@ -1934,7 +1934,7 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
       vecs = dynamic_cast<SimpleVectorBase<T>*>(vec);
 
    assert( vecs );
-   assert( vecs->length() < n_vars );
+   assert( n_vars <= vecs->length() );
 
    SimpleVectorBase<T>* border = vecs->shaveBorder(n_vars, shave_top);
 
@@ -1944,8 +1944,7 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
    else
        top_layer = new StochVectorBase<T>( nullptr, border, mpiComm );
 
-   if( shave_top )
-      this->n -= n_vars; // TODO : check that...
+   this->n -= n_vars; // TODO : check that...
 
    this->parent = top_layer;
    top_layer->AddChild(this);

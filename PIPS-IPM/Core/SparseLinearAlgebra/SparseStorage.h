@@ -221,6 +221,8 @@ public:
    */
   void fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdxFull, double*& valuesFull) const;
 
+  virtual SparseStorage* shaveLeft( int n_cols ); // TODO : implement
+  virtual SparseStorage* shaveBottom( int n_rows ); // TODO : implement
 
   virtual ~SparseStorage();
 

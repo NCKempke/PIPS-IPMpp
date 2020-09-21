@@ -1624,6 +1624,9 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    assert( tree->isHierarchicalRoot() );
    assert( tree->children.size() == 1 );
 
+   const int my_rank = PIPS_MPIgetRank();
+   if( my_rank == 0 )
+      std::cout << "Switching to hierarchical data ..." << std::endl;
    // TODO : Q ??
    // BorderedSymMatrix Q ....
 
@@ -1659,10 +1662,10 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    this->nxlow -= ixlow_hier->vec->numberOfNonzeros();
    this->nxupp -= ixupp_hier->vec->numberOfNonzeros();
 
-   assert( iclow_hier->vec );
-   assert( icupp_hier->vec );
-   this->mclow -= iclow_hier->vec->numberOfNonzeros();
-   this->mcupp -= icupp_hier->vec->numberOfNonzeros();
+   assert( iclow_hier->vecl );
+   assert( icupp_hier->vecl );
+   this->mclow -= iclow_hier->vecl->numberOfNonzeros();
+   this->mcupp -= icupp_hier->vecl->numberOfNonzeros();
 
    // TODO : do these include linking? i guess... so they change?
    long long dummy;
@@ -1675,6 +1678,9 @@ sData* sData::switchToHierarchicalData( sTree* tree )
 
    // TODO: implement recursive layering of linear system
    //   this->splitIntoMultiple();
+
+   if( my_rank == 0 )
+      std::cout << "Hierarchical data built" << std::endl;
 
    return hierarchical_top;
 }

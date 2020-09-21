@@ -2020,7 +2020,7 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
 
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
-   // TODO : hand though id? what is id for...
+   // TODO : hand through id? what is id for...
 
 #ifndef NDEBUG
    int m_link, n_link;
@@ -2028,12 +2028,12 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    assert(m_conss <= m_link && n_vars <= n_link);
 #endif
 
-   SparseGenMatrix* const A_left = Bmat->shaveFromLeft(n_vars);
+   SparseGenMatrix* const A_left = Bmat->shaveLeft(n_vars);
 
-   SparseGenMatrix* const Bl_left_top = Blmat->shaveFromLeft(n_vars);
-   SparseGenMatrix* const bottom_left_block = Bl_left_top->shaveFromBottom(m_conss);
+   SparseGenMatrix* const Bl_left_top = Blmat->shaveLeft(n_vars);
+   SparseGenMatrix* const bottom_left_block = Bl_left_top->shaveBottom(m_conss);
 
-   SparseGenMatrix* const Bl_right_bottom = Blmat->shaveFromBottom(m_conss);
+   SparseGenMatrix* const Bl_right_bottom = Blmat->shaveBottom(m_conss);
 
    StringGenMatrix* const border_bottom = new StringGenMatrix(false, Bl_right_bottom, nullptr, mpiComm);
    StringGenMatrix* const border_left = new StringGenMatrix(true, A_left, Bl_left_top, mpiComm);
@@ -2062,8 +2062,8 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom )
 {
    // TODO further pass id?
-   SparseGenMatrix* const border_a_mat = Amat->shaveFromLeft(n_vars);
-   SparseGenMatrix* const border_bl_mat = Blmat->shaveFromBottom(m_conss);
+   SparseGenMatrix* const border_a_mat = Amat->shaveLeft(n_vars);
+   SparseGenMatrix* const border_bl_mat = Blmat->shaveBottom(m_conss);
 
    border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
    border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
