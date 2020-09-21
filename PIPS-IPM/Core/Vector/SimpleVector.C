@@ -28,9 +28,10 @@ long long SimpleVectorBase<T>::numberOfNonzeros() const
 template<typename T>
 void SimpleVectorBase<T>::min( T& m, int& index ) const
 {
-  if( this->n == 0 ) {
-    m = std::numeric_limits<T>::max();
-    return;
+  if( this->n == 0 )
+  {
+     m = std::numeric_limits<T>::max();
+     return;
   }
   index = 0;
   m     = v[0];

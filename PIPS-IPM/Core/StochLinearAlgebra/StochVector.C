@@ -479,101 +479,83 @@ T StochVectorBase<T>::onenorm() const
 template<typename T>
 void StochVectorBase<T>::min( T& m, int& index ) const
 {
-  T lMin; int lInd;
+   const int n_parent = parent ? parent->n - this->n : 0;
 
-  if(nullptr == parent) {
-    vec->min(m,index);
-    if( vecl )
-    {
-       vecl->min(lMin,lInd);
-       if( lMin < m )
-       {
-          m = lMin;
-          index = lInd + vec->length();
-       }
-    }
-  } else {
-    vec->min(lMin,lInd);
+   if( vec )
+   {
+      T lMin;
+      int lInd;
+      vec->min( lMin, lInd );
 
-    if( vecl )
-    {
-       T lMinlink;
-       int lIndlink;
-       vecl->min(lMinlink,lIndlink);
-       if( lMinlink < lMin )
-       {
-          lMin = lMinlink;
-          lInd = lIndlink + vec->length();
-       }
-    }
+      if( lMin < m )
+      {
+         m = lMin;
+         index = lInd;
+      }
+   }
 
-    if(lMin < m) {
-      m = lMin;
-      index = lInd + parent->n - this->n;
-    }
-  }
+   if( vecl )
+   {
+      T lMin;
+      int lInd;
+      vecl->min(lMin, lInd);
 
-  for(size_t it  =0; it < children.size(); it++) {
-    children[it]->min(m,index);
-  }
+      if( lMin < m )
+      {
+         m = lMin;
+         index = lInd + n_parent;
+         if( vec )
+            index += vec->length();
+      }
+   }
 
-  if(iAmDistrib == 1) {
-    T minG = PIPS_MPIgetMin(m, mpiComm);
-    m = minG;
-  }
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->min(m,index);
+
+   if( iAmDistrib == 1 )
+      // TODO : here index breaks...
+      PIPS_MPIgetMinInPlace(m, mpiComm);
 }
-
 
 template<typename T>
 void StochVectorBase<T>::max( T& m, int& index ) const
 {
-   T lMax;
-   int lInd;
+   const int n_parent = parent ? parent->n - this->n : 0;
 
-   if( nullptr == parent )
+   if( vec )
    {
-      vec->max(m, index);
-      if( vecl )
-      {
-         vecl->max(lMax, lInd);
-         if( lMax > m )
-         {
-            m = lMax;
-            index = lInd + vec->length();
-         }
-      }
-   }
-   else
-   {
-      vec->max(lMax, lInd);
+      T lMax = -std::numeric_limits<T>::max();
+      int lInd = -1;
+      vec->max( lMax, lInd );
 
-      if( vecl )
-      {
-         T lMaxlink;
-         int lIndlink;
-         vecl->max(lMaxlink, lIndlink);
-         if( lMaxlink > lMax )
-         {
-            lMax = lMaxlink;
-            lInd = lIndlink + vec->length();
-         }
-      }
-
-      if( lMax > m )
+      if( m < lMax )
       {
          m = lMax;
-         index = lInd + parent->n - this->n;
+         index = lInd;
       }
    }
 
-   for( size_t it = 0; it < children.size(); it++ )
-      children[it]->max(m, index);
+   if( vecl )
+   {
+      T lMax = -std::numeric_limits<T>::max();
+      int lInd = -1;
+      vecl->max(lMax, lInd);
+
+      if( m < lMax )
+      {
+         m = lMax;
+         index = lInd + n_parent;
+         if( vec )
+            index += vec->length();
+      }
+   }
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->max(m,index);
 
    if( iAmDistrib == 1 )
-   {
-      T maxG = PIPS_MPIgetMax(m, mpiComm);
-      m = maxG;
-   }
+      // TODO : here index breaks...
+      PIPS_MPIgetMaxInPlace(m, mpiComm);
 }
 
 template<typename T>
@@ -688,9 +670,7 @@ void StochVectorBase<T>::absminNonZero(T& m, T zero_eps) const
    {
       T minG;
       if( m < 0.0 )
-      {
          min = std::numeric_limits<T>::max();
-      }
       else
       {
          min = m;
@@ -1130,6 +1110,7 @@ void StochVectorBase<T>::scalarMult( T num )
 template<typename T>
 void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
 {
+   // TODO modify for hierarchical approach
    int rank;
    MPI_Comm_rank(mpiComm, &rank);
    int world_size;
@@ -1140,8 +1121,9 @@ void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
 
    if( rank == 0)
    {
-      sout << "----" << std::endl;
-      vec->writeToStreamAllStringStream(sout);
+      sout << "--vec--" << std::endl;
+      if( vec )
+         vec->writeToStreamAllStringStream(sout);
 
       for( size_t it = 0; it < children.size(); it++ )
          children[it]->writeToStreamAllChild(sout);
@@ -1161,7 +1143,7 @@ void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
       }
       if( vecl )
       {
-         sout << "---" << std::endl;
+         sout << "--vecl--" << std::endl;
          vecl->writeToStreamAllStringStream(sout);
       }
       sout << "----" << std::endl;

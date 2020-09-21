@@ -220,12 +220,16 @@ double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVecto
 
    if( !colScalevec )
    {
-      int j;
-      double max;
+      int j = -1;
+      double max = -std::numeric_limits<double>::max();
 
+      maxvecA.writeToStreamAll(std::cout);
       maxvecA.max(max, j);
+
       assert(max < 0 || max == A->abmaxnorm());
 
+      j = -1;
+      max = -std::numeric_limits<double>::max();
       maxvecC.max(max, j);
       assert(max < 0 || max == C->abmaxnorm());
    }
@@ -251,13 +255,13 @@ double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVecto
    ratiovecA->divideSome(minvecA, minvecA);
    ratiovecC->divideSome(minvecC, minvecC);
 
-   int i;
-   double maxratio;
+   int i = -1;
+   double maxratio = -std::numeric_limits<double>::infinity();
    ratiovecA->max(maxratio, i);
 
    PIPSdebugMessage("max row ratio A: %f \n", maxratio);
 
-   double maxvalC;
+   double maxvalC = -std::numeric_limits<double>::infinity();
    ratiovecC->max(maxvalC, i);
 
    PIPSdebugMessage("max row ratio C: %f \n", maxvalC);
