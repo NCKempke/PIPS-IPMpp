@@ -433,23 +433,20 @@ void StochVectorBase<T>::copyFromAbs(const OoqpVectorBase<T>& v_ )
 template<typename T>
 T StochVectorBase<T>::infnorm() const
 {
-  T infnrm;
+   T infnrm = 0.0;
 
-  infnrm = 0.0;
+   for(size_t it = 0; it < children.size(); it++)
+      infnrm = std::max(infnrm, children[it]->infnorm());
 
-  for(size_t it = 0; it < children.size(); it++)
-    infnrm = std::max(infnrm, children[it]->infnorm());
+   if( iAmDistrib )
+      PIPS_MPIgetMaxInPlace(infnrm, mpiComm);
 
-  if(iAmDistrib) {
-    T infnrmG = PIPS_MPIgetMax(infnrm, mpiComm);
-    infnrm = infnrmG;
-  }
+   if( vec )
+      infnrm = std::max(vec->infnorm(), infnrm);
 
-  infnrm = std::max(vec->infnorm(), infnrm);
-
-  if( vecl ) infnrm = std::max(vecl->infnorm(), infnrm);
-
-  return infnrm;
+   if( vecl )
+      infnrm = std::max(vecl->infnorm(), infnrm);
+   return infnrm;
 }
 
 template<typename T>
@@ -1556,7 +1553,12 @@ bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_
   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
   assert(children.size() == select.children.size());
 
-  bool match = vec->matchesNonZeroPattern(*select.vec);
+  bool match = true;
+  if( vec )
+  {
+     assert( select.vec );
+     match = match && vec->matchesNonZeroPattern(*select.vec);
+  }
 
   if( vecl )
   {
@@ -1564,7 +1566,8 @@ bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_
      match = match && vecl->matchesNonZeroPattern(*select.vecl);
   }
 
-  if(!match) return false;
+  if( !match )
+     return false;
 
   for(size_t it = 0; it < children.size() && match; it++)
     match = children[it]->matchesNonZeroPattern(*select.children[it]);

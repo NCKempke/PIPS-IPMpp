@@ -31,7 +31,7 @@ class sData : public QpGenData {
 	 GenMatrix * C,
 	 OoqpVector * clow, OoqpVector * iclow, long long mclow,
 	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp,
-	 bool add_children = true );
+	 bool add_children = true, bool is_hierarchy_root = false );
 
   std::vector<sData*> children;
   void AddChild(sData* child);
@@ -52,13 +52,13 @@ private:
   std::vector<unsigned int> getLinkConsIneqPermInv() const;
 
 public:
-  int getLocalnx();
-  int getLocalmy();
-  int getLocalmyl();
-  int getLocalmz();
-  int getLocalmzl();
-  int getLocalSizes(int& nx, int& my, int& mz);
-  int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl);
+  int getLocalnx() const;
+  int getLocalmy() const;
+  int getLocalmyl() const;
+  int getLocalmz() const;
+  int getLocalmzl() const;
+  int getLocalSizes(int& nx, int& my, int& mz) const;
+  int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
 
   int getLocalNnz(int& nnzQ, int& nnzB, int& nnzD);
   int getN0LinkVars() { return n0LinkVars; }
@@ -184,6 +184,7 @@ public:
   static std::vector<int> get2LinkLengthsVec(const std::vector<int>& linkStartBlocks, const size_t nBlocks);
 
   /* a two link must be in two blocks directly after one another */
+  bool is_hierarchy_root;
   bool useLinkStructure;
 
   int n_global_linking_vars = -1;

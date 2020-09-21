@@ -1248,14 +1248,17 @@ sData::sData(sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         GenMatrix  * A_in, OoqpVector * bA_in,
         GenMatrix  * C_in,
         OoqpVector * clow_in, OoqpVector * iclow_in, long long mclow_,
-        OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_, bool add_children
+        OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_,
+        bool add_children, bool is_hierarchy_root
         )
   : QpGenData(SparseLinearAlgebraPackage::soleInstance(),
          c_in, Q_in,
          xlow_in, ixlow_in, xupp_in, ixupp_in,
          A_in, bA_in,
          C_in,
-         clow_in, iclow_in, cupp_in, icupp_in)
+         clow_in, iclow_in, cupp_in, icupp_in),
+         is_hierarchy_root( false ),
+         useLinkStructure( false )
 {
   nxlow = nxlow_; nxupp = nxupp_;
   mclow = mclow_; mcupp = mcupp_;
@@ -1263,8 +1266,6 @@ sData::sData(sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
 
   if( add_children )
      createChildren();
-
-  useLinkStructure = false;
   n0LinkVars = 0;
 }
 
@@ -1659,7 +1660,7 @@ sData* sData::switchToHierarchicalData( sTree* tree )
          ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
          A_hier, bA_hier, C_hier, bl_hier,
          iclow_hier, mclow, bu_hier, icupp_hier, mcupp,
-         false);
+         false, true);
 
    assert( ixlow_hier->vec );
    assert( ixupp_hier->vec );
@@ -2135,59 +2136,98 @@ std::vector<unsigned int> sData::getLinkConsIneqPermInv() const
    return getInversePermutation(linkConsPermutationC);
 }
 
-int sData::getLocalnx()
+int sData::getLocalnx() const
 {
    long long my, nx;
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   Ast.Bmat->getSize(my, nx);
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
+      Abd.border_left->getSize(my, nx);
+   }
+   else
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      Ast.Bmat->getSize(my, nx);
+   }
    return nx;
 }
 
-int
-sData::getLocalmy()
+int sData::getLocalmy() const
 {
    long long my, nx;
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   Ast.Bmat->getSize(my, nx);
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+      const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
+      Cbd.getSize(my, nx);
+   }
+   else
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      Ast.Bmat->getSize(my, nx);
+   }
    return my;
 }
 
-int
-sData::getLocalmyl()
+int sData::getLocalmyl() const
 {
    long long myl, nxl;
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   Ast.Blmat->getSize(myl, nxl);
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+//      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
+//      Abd.Blmat->getSize(myl, nxl);
+   }
+   else
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      Ast.Blmat->getSize(myl, nxl);
+   }
    return myl;
 }
 
-int sData::getLocalmz()
+int sData::getLocalmz() const
 {
    long long mz, nx;
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   Cst.Bmat->getSize(mz, nx);
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
+   else
+   {
+      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      Cst.Bmat->getSize(mz, nx);
+   }
    return mz;
 }
 
-int
-sData::getLocalmzl()
+int sData::getLocalmzl() const
 {
    long long mzl, nxl;
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   Cst.Blmat->getSize(mzl, nxl);
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
+   else
+   {
+      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      Cst.Blmat->getSize(mzl, nxl);
+   }
    return mzl;
 }
 
-int
-sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl)
+int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
 {
+   if( is_hierarchy_root )
+      assert( 0 && "TODO : implement");
    long long nxloc, myloc, mzloc, mylloc, mzlloc;
 
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
    Ast.Blmat->getSize(mylloc, nxloc);
    Ast.Bmat->getSize(myloc, nxloc);
 
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
    Cst.Blmat->getSize(mzlloc, nxloc);
    Cst.Bmat->getSize(mzloc, nxloc);
 
@@ -2199,15 +2239,16 @@ sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl)
    return 0;
 }
 
-int
-sData::getLocalSizes(int& nx, int& my, int& mz)
+int sData::getLocalSizes(int& nx, int& my, int& mz) const
 {
+   if( is_hierarchy_root )
+      assert( 0 && "TODO : implement");
    long long nxll, myll, mzll;
 
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
    Ast.Bmat->getSize(myll, nxll);
 
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
    Cst.Bmat->getSize(mzll, nxll);
 
    nx = nxll;
@@ -2216,12 +2257,13 @@ sData::getLocalSizes(int& nx, int& my, int& mz)
    return 0;
 }
 
-int
-sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
+int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
 {
-   StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   if( is_hierarchy_root )
+      assert( 0 && "TODO : implement");
+   const StochSymMatrix& Qst = dynamic_cast<const StochSymMatrix&>(*Q);
+   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
 
    nnzQ = Qst.diag->getStorageRef().len + Qst.border->getStorageRef().len;
    nnzB = Ast.Bmat->getStorageRef().len;
@@ -2231,6 +2273,8 @@ sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
 
 int sData::getSchurCompMaxNnz()
 {
+   if( is_hierarchy_root )
+      assert( 0 && "TODO : implement");
    assert(children.size() > 0);
 
    const int n0 = getLocalnx();

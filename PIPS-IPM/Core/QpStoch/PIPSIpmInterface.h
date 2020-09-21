@@ -204,7 +204,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      presolver = nullptr;
   }
 
-  data->writeToStreamDense(std::cout);
+//  data->writeToStreamDense(std::cout);
 
 #if 0
   ofstream myfile;
@@ -274,26 +274,31 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 template<typename FORMULATION, typename IPMSOLVER>
 void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
 
-   int mype;
-   MPI_Comm_rank(comm,&mype);
+   const int mype = PIPS_MPIgetRank(comm);
 
-  if(0 == mype) cout << "solving ..." << endl;
+  if( 0 == mype )
+     std::cout << "solving ..." << std::endl;
 
-  if(mype==0) {
-    cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
-	 << " equality constraints, " << data->getLocalmz() << " inequality constraints." << endl;
+  // TODO : use unlifted data....
+  if( mype == 0 )
+  {
+#ifndef HIERARCHICAL
+     std::cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
+	       << " equality constraints, " << data->getLocalmz() << " inequality constraints." << std::endl;
 
-    int nscens=data->children.size();
-    if(nscens) {
-      cout << "2nd stage " << data->children[0]->getLocalnx() << " variables, "
-	   << data->children[0]->getLocalmy() << " equality constraints, "
-	   << data->children[0]->getLocalmz() << " inequality constraints." << endl;
+    const int nscens = data->children.size();
+    if( nscens )
+    {
+       std::cout << "2nd stage " << data->children[0]->getLocalnx() << " variables, "
+             << data->children[0]->getLocalmy() << " equality constraints, "
+             << data->children[0]->getLocalmz() << " inequality constraints." << std::endl;
 
-      cout << nscens << " scenarios." << endl;
-      cout << "Total " << data->getLocalnx()+nscens*data->children[0]->getLocalnx() << " variables, "
-	   << data->getLocalmy()+nscens*data->children[0]->getLocalmy()  << " equality constraints, "
-	   << data->getLocalmz()+nscens*data->children[0]->getLocalmz() << " inequality constraints." << endl;
+       std::cout << nscens << " scenarios." << std::endl;
+       std::cout << "Total " << data->getLocalnx() + nscens * data->children[0]->getLocalnx() << " variables, "
+             << data->getLocalmy() + nscens * data->children[0]->getLocalmy()  << " equality constraints, "
+             << data->getLocalmz() + nscens * data->children[0]->getLocalmz() << " inequality constraints." << std::endl;
     }
+#endif
   }
 #ifdef TIMING
   double tmElapsed=MPI_Wtime();
