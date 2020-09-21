@@ -90,6 +90,8 @@ template<typename T>
 OoqpVectorBase<T>* StochVectorBase<T>::dataClone() const
 {
   assert(!vecl);
+  assert( vec );
+
   OoqpVectorBase<T>* clone = new SimpleVectorBase<T>(vec->length());
   return clone;
 }
@@ -103,18 +105,20 @@ OoqpVectorBase<T>* StochVectorBase<T>::dataCloneLinkCons() const
 }
 
 template<typename T>
-OoqpVectorBase<T>* StochVectorBase<T>::clone() const
+OoqpVectorBase<T>*
+StochVectorBase<T>::clone() const
 {
-  StochVectorBase<T>* clone;
-  if( vecl )
-    clone = new StochVectorBase<T>(vec->length(), vecl->length(), mpiComm, -1);
-  else
-	 clone = new StochVectorBase<T>(vec->length(), mpiComm);
+   StochVectorBase<T> *clone;
+   if( vecl )
+      clone = new StochVectorBase<T>(vec->length(), vecl->length(), mpiComm, -1);
+   else
+      clone = new StochVectorBase<T>(vec->length(), mpiComm);
 
-  for(size_t it = 0; it < children.size(); it++) {
-    clone->AddChild(children[it]->clone());
-  }
-  return clone;
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      clone->AddChild(children[it]->clone());
+   }
+   return clone;
 }
 
 template<typename T>
@@ -1609,15 +1613,17 @@ long long StochVectorBase<T>::numberOfNonzeros() const
   for(size_t it = 0; it < children.size(); it++)
     nnz += children[it]->numberOfNonzeros();
 
-  if(iAmDistrib) {
+  if( iAmDistrib )
+  {
     long long nnzG = 0;
     nnzG = PIPS_MPIgetSum(nnz, mpiComm);
-    // MPI_Allreduce(&nnz, &nnzG, 1, MPI_LONG_LONG, MPI_SUM, mpiComm);
     nnz = nnzG;
   }
-  nnz += vec->numberOfNonzeros();
+  if( vec )
+     nnz += vec->numberOfNonzeros();
 
-  if( vecl ) nnz += vecl->numberOfNonzeros();
+  if( vecl )
+     nnz += vecl->numberOfNonzeros();
 
   return nnz;
 }
@@ -1944,7 +1950,7 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
    else
        top_layer = new StochVectorBase<T>( nullptr, border, mpiComm );
 
-   this->n -= n_vars; // TODO : check that...
+   this->n -= n_vars;
 
    this->parent = top_layer;
    top_layer->AddChild(this);

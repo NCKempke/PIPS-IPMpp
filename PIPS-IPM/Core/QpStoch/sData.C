@@ -1626,7 +1626,11 @@ sData* sData::switchToHierarchicalData( sTree* tree )
 
    const int my_rank = PIPS_MPIgetRank();
    if( my_rank == 0 )
+   {
       std::cout << "Switching to hierarchical data ..." << std::endl;
+      std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
+            n_global_ineq_linking_conss << " inequalities for the border" << std::endl;
+   }
    // TODO : Q ??
    // BorderedSymMatrix Q ....
 

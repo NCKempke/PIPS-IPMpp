@@ -204,6 +204,8 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      presolver = nullptr;
   }
 
+  data->writeToStreamDense(std::cout);
+
 #if 0
   ofstream myfile;
   myfile.open ("PipsToMPS_prslv.mps");
@@ -219,8 +221,9 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 #ifdef WITH_PARDISOINDEF
   data->activateLinkStructureExploitation();
 #endif
+  // todo->save old data somewhere?
 #ifdef HIERARCHICAL
-  factory->switchToHierarchicalData( data );
+  data = dynamic_cast<sData*>(factory->switchToHierarchicalData( data ));
 #endif
   // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
 
