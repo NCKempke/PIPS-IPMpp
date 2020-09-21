@@ -1031,27 +1031,45 @@ void StochVectorBase<T>::findBlocking_pd(const OoqpVectorBase<T> & wstep_vec,
 template<typename T>
 void StochVectorBase<T>::componentMult( const OoqpVectorBase<T>& v_ )
 {
-  const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-  assert(v.children.size() == children.size());
+   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
+   assert(v.children.size() == children.size());
 
-  vec->componentMult(*v.vec);
-  if( vecl ) vecl->componentMult(*v.vecl);
+   if( vec )
+   {
+      assert( v.vec );
+     vec->componentMult(*v.vec);
+   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->componentMult(*v.children[it]);
+   if( vecl )
+   {
+      assert( v.vecl );
+      vecl->componentMult(*v.vecl);
+   }
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->componentMult(*v.children[it]);
 }
 
 template<typename T>
 void StochVectorBase<T>::componentDiv ( const OoqpVectorBase<T>& v_ )
 {
-  const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-  assert(v.children.size() == children.size());
+   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
+   assert(v.children.size() == children.size());
 
-  vec->componentDiv(*v.vec);
-  if( vecl ) vecl->componentDiv(*v.vecl);
+   if( vec )
+   {
+      assert( v.vec );
+      vec->componentDiv(*v.vec);
+   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->componentDiv(*v.children[it]);
+   if( vecl )
+   {
+      assert( v.vecl );
+      vecl->componentDiv(*v.vecl);
+   }
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->componentDiv(*v.children[it]);
 }
 
 template<typename T>
@@ -1061,8 +1079,10 @@ bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol) con
    assert(v.children.size() == children.size());
 
    bool component_equal = true;
-   component_equal = (component_equal && vec->componentEqual(*v.vec, tol));
-   if(!component_equal)
+
+   if( vec )
+      component_equal = (component_equal && vec->componentEqual(*v.vec, tol));
+   if( !component_equal )
    {
       if(parent == NULL)
         std::cout << "not equal in root node non-link" << std::endl;
@@ -1093,7 +1113,9 @@ template<typename T>
 bool StochVectorBase<T>::componentNotEqual( const T val, const T tol ) const
 {
    bool not_equal = true;
-   not_equal = (not_equal && vec->componentNotEqual( val, tol ) );
+
+   if( vec )
+      not_equal = (not_equal && vec->componentNotEqual( val, tol ) );
    if( !not_equal )
    {
       if(parent == NULL)
@@ -1124,8 +1146,12 @@ bool StochVectorBase<T>::componentNotEqual( const T val, const T tol ) const
 template<typename T>
 void StochVectorBase<T>::scalarMult( T num )
 {
-  vec->scalarMult(num);
-  if( vecl ) vecl->scalarMult(num);
+   assert( vec || vecl );
+
+   if( vec )
+      vec->scalarMult(num);
+   if( vecl )
+      vecl->scalarMult(num);
 
   for(size_t it = 0; it < children.size(); it++)
     children[it]->scalarMult(num);
@@ -1304,22 +1330,28 @@ void StochVectorBase<T>::writeMPSformatBounds(std::ostream& out, const OoqpVecto
 template<typename T>
 void StochVectorBase<T>::axpy ( T alpha, const OoqpVectorBase<T>& x_ )
 {
-  const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
-  assert(x.children.size() == children.size());
+   assert( vec || vecl );
 
-  if( alpha == 0.0)
-     return;
+   const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
+   assert(x.children.size() == children.size());
 
-  vec->axpy(alpha, *x.vec);
+   if( alpha == 0.0)
+      return;
 
-  if( vecl )
-  {
-     assert(x.vecl);
-     vecl->axpy(alpha, *x.vecl);
-  }
+   if( vec )
+   {
+      assert( x.vec );
+      vec->axpy(alpha, *x.vec);
+   }
 
-  for(size_t it = 0; it<children.size(); it++)
-    children[it]->axpy(alpha, *x.children[it]);
+   if( vecl )
+   {
+      assert(x.vecl);
+      vecl->axpy(alpha, *x.vecl);
+   }
+
+   for(size_t it = 0; it<children.size(); it++)
+      children[it]->axpy(alpha, *x.children[it]);
 }
 
 /** this += alpha * x * z */
@@ -1348,22 +1380,28 @@ void StochVectorBase<T>::axzpy ( T alpha, const OoqpVectorBase<T>& x_, const Ooq
 template<typename T>
 void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_ )
 {
-  const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
-  const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
-  assert(x.children.size() == children.size());
-  assert(z.children.size() == children.size());
+   assert( vec || vecl );
+   const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
+   const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
+   assert(x.children.size() == children.size());
+   assert(z.children.size() == children.size());
 
-  vec->axdzpy(alpha, *x.vec, *z.vec);
+   if( vec )
+   {
+      assert( x.vec );
+      assert( z.vec );
+      vec->axdzpy(alpha, *x.vec, *z.vec);
+   }
 
-  if( vecl )
-  {
-    assert(x.vecl);
-    assert(z.vecl);
-    vecl->axdzpy(alpha, *x.vecl, *z.vecl);
-  }
+   if( vecl )
+   {
+      assert(x.vecl);
+      assert(z.vecl);
+      vecl->axdzpy(alpha, *x.vecl, *z.vecl);
+   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->axdzpy(alpha, *x.children[it], *z.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->axdzpy(alpha, *x.children[it], *z.children[it]);
 }
 
 
@@ -1382,64 +1420,66 @@ void StochVectorBase<T>::addConstant( T c )
 template<typename T>
 void StochVectorBase<T>::gondzioProjection( T rmin, T rmax )
 {
-  vec->gondzioProjection( rmin, rmax );
+   assert( vec || vecl );
+   if( vec )
+      vec->gondzioProjection( rmin, rmax );
 
+   if( vecl )
+      vecl->gondzioProjection( rmin, rmax );
 
-  if( vecl ) vecl->gondzioProjection( rmin, rmax );
-
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->gondzioProjection( rmin, rmax );
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->gondzioProjection( rmin, rmax );
 }
 
 template<typename T>
 T StochVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& v_ ) const
 {
-  const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-  assert(v.children.size() == children.size());
+   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
+   assert(v.children.size() == children.size());
 
-  T dotProd = 0.0;
+   T dot_product = 0.0;
 
-  for(size_t it = 0; it < children.size(); it++)
-    dotProd += children[it]->dotProductWith(*v.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      dot_product += children[it]->dotProductWith(*v.children[it]);
 
-  assert(!vecl || v.vecl);
+   assert(!vecl || v.vecl);
 
-  if(iAmDistrib == 1) {
-    T dotProdG = 0.0;
+   if(iAmDistrib == 1)
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
-    dotProdG = PIPS_MPIgetSum(dotProd, mpiComm);
+   if( vec )
+   {
+      assert( v.vec );
+      dot_product += vec->dotProductWith(*v.vec);
+   }
 
-    dotProd = dotProdG;
-  }
+   if( vecl )
+   {
+      assert( v.vecl );
+      dot_product += vecl->dotProductWith(*v.vecl);
+   }
 
-  dotProd += vec->dotProductWith(*v.vec);
-
-  if( vecl )
-    dotProd += vecl->dotProductWith(*v.vecl);
-
-  return dotProd;
+  return dot_product;
 }
 
 template<typename T>
 T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
 {
-  T dotSelf = 0.0;
+   T dot_product = 0.0;
 
-  for(size_t it = 0; it < children.size(); it++)
-     dotSelf += children[it]->dotProductSelf(scaleFactor);
+   for(size_t it = 0; it < children.size(); it++)
+      dot_product += children[it]->dotProductSelf(scaleFactor);
 
-  if(iAmDistrib == 1) {
-    T dotSelfG = PIPS_MPIgetSum(dotSelf, mpiComm);
+   if( iAmDistrib == 1 )
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
-    dotSelf = dotSelfG;
-  }
+   if( vec )
+      dot_product += vec->dotProductSelf(scaleFactor);
 
-  dotSelf += vec->dotProductSelf(scaleFactor);
+   if( vecl )
+      dot_product += vecl->dotProductSelf(scaleFactor);
 
-  if( vecl )
-     dotSelf += vecl->dotProductSelf(scaleFactor);
-
-  return dotSelf;
+   return dot_product;
 }
 
 /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
@@ -1449,35 +1489,35 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
 					const OoqpVectorBase<T>& yvec_,
 					T beta,  const OoqpVectorBase<T>& ystep_ ) const
 {
-  const StochVectorBase<T>& mystep = dynamic_cast<const StochVectorBase<T>&>(mystep_);
-  const StochVectorBase<T>& yvec   = dynamic_cast<const StochVectorBase<T>&>(yvec_);
-  const StochVectorBase<T>& ystep  = dynamic_cast<const StochVectorBase<T>&>(ystep_);
+   const StochVectorBase<T>& mystep = dynamic_cast<const StochVectorBase<T>&>(mystep_);
+   const StochVectorBase<T>& yvec   = dynamic_cast<const StochVectorBase<T>&>(yvec_);
+   const StochVectorBase<T>& ystep  = dynamic_cast<const StochVectorBase<T>&>(ystep_);
 
 
-  T dotProd = 0.0;
-  for(size_t it=0; it<children.size(); it++)
-    dotProd += children[it]->shiftedDotProductWith(alpha, *mystep.children[it],
-						   *yvec.children[it],
-						   beta, *ystep.children[it]);
-  if(iAmDistrib) {
-    T dotProdG=0.0;
-    dotProdG = PIPS_MPIgetSum(dotProd, mpiComm);
-    dotProd = dotProdG;
-  }
+   T dot_product = 0.0;
+   for(size_t it = 0; it < children.size(); it++)
+      dot_product += children[it]->shiftedDotProductWith(alpha, *mystep.children[it], *yvec.children[it], beta, *ystep.children[it]);
 
-  dotProd += vec->shiftedDotProductWith(alpha, *mystep.vec,
-					*yvec.vec,
-					beta, *ystep.vec);
+   if(iAmDistrib)
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
-  if( vecl )
-  {
-	 assert(mystep.vecl);
-	 assert(yvec.vecl);
-	 assert(ystep.vecl);
-    dotProd += vecl->shiftedDotProductWith(alpha, *mystep.vecl,  *yvec.vecl, beta, *ystep.vecl);
-  }
+   if( vec )
+   {
+      assert( mystep.vec );
+      assert( yvec.vec );
+      assert( ystep.vec );
+      dot_product += vec->shiftedDotProductWith(alpha, *mystep.vec, *yvec.vec, beta, *ystep.vec);
+   }
 
-  return dotProd;
+   if( vecl )
+   {
+      assert(mystep.vecl);
+      assert(yvec.vecl);
+      assert(ystep.vecl);
+      dot_product += vecl->shiftedDotProductWith(alpha, *mystep.vecl,  *yvec.vecl, beta, *ystep.vecl);
+   }
+
+   return dot_product;
 }
 
 template<typename T>
