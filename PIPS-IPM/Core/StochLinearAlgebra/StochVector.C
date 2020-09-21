@@ -1498,7 +1498,7 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
    for(size_t it = 0; it < children.size(); it++)
       dot_product += children[it]->shiftedDotProductWith(alpha, *mystep.children[it], *yvec.children[it], beta, *ystep.children[it]);
 
-   if(iAmDistrib)
+   if( iAmDistrib )
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    if( vec )
@@ -1523,41 +1523,57 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
 template<typename T>
 void StochVectorBase<T>::negate()
 {
-  vec->negate();
-  if( vecl ) vecl->negate();
+   assert( vec || vecl );
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->negate();
+   if( vec )
+      vec->negate();
+   if( vecl )
+      vecl->negate();
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->negate();
 }
 
 template<typename T>
 void StochVectorBase<T>::invert()
 {
-  vec->invert();
+   assert( vec || vecl );
 
-  if( vecl ) vecl->invert();
+   if( vec )
+      vec->invert();
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->invert();
+   if( vecl )
+      vecl->invert();
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->invert();
 }
 
 template<typename T>
 void StochVectorBase<T>::invertSave(T zeroReplacementVal)
 {
-  vec->invertSave(zeroReplacementVal);
+   assert( vec || vecl );
 
-  if( vecl ) vecl->invertSave(zeroReplacementVal);
+   if( vec )
+      vec->invertSave(zeroReplacementVal);
 
-  for( size_t it = 0; it < children.size(); it++ )
-    children[it]->invertSave(zeroReplacementVal);
+   if( vecl )
+      vecl->invertSave(zeroReplacementVal);
+
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->invertSave(zeroReplacementVal);
 }
 
 template<typename T>
 void StochVectorBase<T>::applySqrt()
 {
-   vec->applySqrt();
+   assert( vec || vecl );
 
-   if(vecl) vecl->applySqrt();
+   if( vec )
+      vec->applySqrt();
+
+   if( vecl )
+      vecl->applySqrt();
 
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->applySqrt();
@@ -1566,25 +1582,36 @@ void StochVectorBase<T>::applySqrt()
 template<typename T>
 void StochVectorBase<T>::roundToPow2()
 {
-  vec->roundToPow2();
+   assert(vec || vecl);
+   if( vec )
+      vec->roundToPow2();
 
-  if( vecl ) vecl->roundToPow2();
+   if( vecl )
+      vecl->roundToPow2();
 
-  for( size_t it = 0; it < children.size(); it++ )
-     children[it]->roundToPow2();
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->roundToPow2();
 }
 
 template<typename T>
 bool StochVectorBase<T>::allPositive() const
 {
-  //!parallel
-  bool allPos = vec->allPositive() && ((vecl != nullptr) ? vecl->allPositive() : true);
-  if (!allPos) return false;
+   assert( vec || vecl );
+   bool all_pos = true;
 
-  for(size_t it = 0; it < children.size() && allPos; it++)
-    allPos = children[it]->allPositive();
+   if( vec )
+      all_pos = all_pos && vec->allPositive();
 
-  return allPos;
+   if( vecl )
+      all_pos = all_pos && vecl->allPositive();
+
+   for(size_t it = 0; it < children.size() && allPos; it++)
+      all_pos = all_pos && children[it]->allPositive();
+
+   if( iAmDistrib )
+      PIPS_MPIgetLogicAndInPlace( all_pos, MPI_COMM_WORLD );
+
+   return all_pos;
 }
 
 template<typename T>
@@ -1618,25 +1645,33 @@ bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_
 template<typename T>
 void StochVectorBase<T>::selectNonZeros( const OoqpVectorBase<T>& select_ )
 {
-  const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-  assert(children.size() == select.children.size());
+   assert( vec || vecl );
+   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
+   assert(children.size() == select.children.size());
 
-  vec->selectNonZeros(*select.vec);
+   if( vec )
+   {
+      asset( select.vec );
+      vec->selectNonZeros(*select.vec);
+   }
 
-  if( vecl )
-  {
-     assert(select.vecl);
-     vecl->selectNonZeros(*select.vecl);
-  }
+   if( vecl )
+   {
+      assert(select.vecl);
+      vecl->selectNonZeros(*select.vecl);
+   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->selectNonZeros(*select.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->selectNonZeros(*select.children[it]);
 }
 
 template<typename T>
 void StochVectorBase<T>::selectPositive()
 {
-   vec->selectPositive();
+   assert( vec || vecl );
+
+   if( vec )
+      vec->selectPositive();
 
    if( vecl )
       vecl->selectPositive();
@@ -1648,7 +1683,10 @@ void StochVectorBase<T>::selectPositive()
 template<typename T>
 void StochVectorBase<T>::selectNegative()
 {
-   vec->selectNegative();
+   assert( vec || vecl );
+
+   if( vec )
+      vec->selectNegative();
 
    if( vecl )
       vecl->selectNegative();
@@ -1660,7 +1698,8 @@ void StochVectorBase<T>::selectNegative()
 template<typename T>
 long long StochVectorBase<T>::numberOfNonzeros() const
 {
-  //!opt - store the number of nnz to avoid communication
+   assert( vec || vecl );
+   //!opt - store the number of nnz to avoid communication
   long long nnz = 0;
 
   for(size_t it = 0; it < children.size(); it++)
@@ -1682,21 +1721,27 @@ long long StochVectorBase<T>::numberOfNonzeros() const
 }
 
 template<typename T>
-void StochVectorBase<T>::addSomeConstants( T c, const OoqpVectorBase<T>& select_ )
+void
+StochVectorBase<T>::addSomeConstants(T c, const OoqpVectorBase<T> &select_)
 {
-  const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-  assert(children.size() == select.children.size());
+   assert( vec || vecl );
+   const StochVectorBase<T> &select = dynamic_cast<const StochVectorBase<T>&>(select_);
+   assert(children.size() == select.children.size());
 
-  vec->addSomeConstants(c, *select.vec);
+   if( vec )
+   {
+      assert( select.vec );
+      vec->addSomeConstants(c, *select.vec);
+   }
 
-  if( vecl )
-  {
-     assert(select.vecl);
-     vecl->addSomeConstants(c, *select.vecl);
-  }
+   if( vecl )
+   {
+      assert(select.vecl);
+      vecl->addSomeConstants(c, *select.vecl);
+   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->addSomeConstants(c, *select.children[it]);
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->addSomeConstants(c, *select.children[it]);
 }
 
 template<typename T>
@@ -1704,64 +1749,73 @@ void StochVectorBase<T>::writefSomeToStream( std::ostream& out,
 			 const char format[],
 			 const OoqpVectorBase<T>& select_ ) const
 {
-  assert( "Have not been yet implemented" && 0 );
+   assert( "Have not been yet implemented" && 0 );
 }
 
 template<typename T>
 void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
 		       const OoqpVectorBase<T>& z_, const OoqpVectorBase<T>& select_ )
 {
-  const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-  const StochVectorBase<T>&      x = dynamic_cast<const StochVectorBase<T>&>(x_);
-  const StochVectorBase<T>&      z = dynamic_cast<const StochVectorBase<T>&>(z_);
+   assert( vec || vecl );
+   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
+   const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
+   const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
 
-  assert(children.size() == select.children.size());
-  assert(children.size() == x.     children.size());
-  assert(children.size() == z.     children.size());
+   assert(children.size() == select.children.size());
+   assert(children.size() == x.children.size());
+   assert(children.size() == z.children.size());
 
-  vec->axdzpy(alpha, *x.vec, *z.vec, *select.vec);
+   if( vec )
+   {
+      assert( x.vec );
+      assert( z.vec );
+      assert( select.vec );
+      vec->axdzpy(alpha, *x.vec, *z.vec, *select.vec);
+   }
 
-  if( vecl )
-  {
-     assert(x.vecl);
-     assert(z.vecl);
-     assert(select.vecl);
-     vecl->axdzpy(alpha, *x.vecl, *z.vecl, *select.vecl);
-  }
+   if( vecl )
+   {
+      assert( x.vecl );
+      assert( z.vecl );
+      assert( select.vecl );
+      vecl->axdzpy(alpha, *x.vecl, *z.vecl, *select.vecl);
+   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->axdzpy(alpha, *x.children[it], *z.children[it], *select.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->axdzpy(alpha, *x.children[it], *z.children[it], *select.children[it]);
 }
 
 template<typename T>
 bool StochVectorBase<T>::somePositive( const OoqpVectorBase<T>& select_ ) const
 {
-  const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-  assert(children.size() == select.children.size());
+   assert( vec || vecl );
+   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
+   assert( children.size() == select.children.size() );
 
-  //!parallel stuff needed
+   bool some_positive = true;;
+   if( vec )
+   {
+      assert( select.vec );
+      some_positive = some_positive && vec->somePositive(*select.vec);
+   }
 
-  bool somePos = vec->somePositive(*select.vec);
+   if( vecl )
+   {
+      assert(select.vecl);
+      some_positive = some_positive && vecl->somePositive(*select.vecl);
+   }
 
-  if( vecl )
-  {
-    assert(select.vecl);
-    somePos = somePos && vecl->somePositive(*select.vecl);
-  }
+   for(size_t it = 0; it < children.size() && somePos; it++)
+      some_positive = children[it]->somePositive(*select.children[it]);
 
-  for(size_t it = 0; it < children.size() && somePos; it++)
-    somePos = children[it]->somePositive(*select.children[it]);
-
-  return somePos;
+   return some_positive ;
 }
 
 template<typename T>
 void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVectorBase<T>& select_ )
 {
-   const StochVectorBase<T> &div =
-         dynamic_cast<const StochVectorBase<T>&>(div_);
-   const StochVectorBase<T> &select =
-         dynamic_cast<const StochVectorBase<T>&>(select_);
+   const StochVectorBase<T> &div = dynamic_cast<const StochVectorBase<T>&>(div_);
+   const StochVectorBase<T> &select = dynamic_cast<const StochVectorBase<T>&>(select_);
 
    assert(children.size() == div.children.size());
    assert(children.size() == select.children.size());
@@ -1807,15 +1861,20 @@ void StochVectorBase<T>::copyFromArray( const char v[] )
 template<typename T>
 void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select )
 {
+   assert( vec || vecl );
    const StochVectorBase<int>& selectStoch = dynamic_cast<const StochVectorBase<int>&>(select);
-
    assert(children.size() == selectStoch.children.size());
 
-   vec->removeEntries(*selectStoch.vec);
-   this->n = vec->n;
+   if( vec )
+   {
+      assert( selectStoch.vec );
+      vec->removeEntries(*selectStoch.vec);
+      this->n = vec->n;
+   }
 
    if( vecl )
    {
+      assert( selectStoch.vecl );
       vecl->removeEntries(*selectStoch.vecl);
    }
 
@@ -1829,6 +1888,7 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select )
 template<typename T>
 int StochVectorBase<T>::getNnzs() const
 {
+   assert( vec || vecl );
    int non_zeros = 0;
 
    for( size_t it = 0; it < children.size(); it++ )
@@ -1837,7 +1897,8 @@ int StochVectorBase<T>::getNnzs() const
    if( iAmDistrib )
       PIPS_MPIgetSumInPlace(non_zeros, mpiComm);
 
-   non_zeros += vec->getNnzs();
+   if( vec )
+      non_zeros += vec->getNnzs();
 
    if( vecl )
       non_zeros += vecl->getNnzs();
@@ -1848,7 +1909,8 @@ int StochVectorBase<T>::getNnzs() const
 template<typename T>
 void StochVectorBase<T>::permuteVec0Entries(const std::vector<unsigned int>& permvec)
 {
-   dynamic_cast<SimpleVectorBase<T>*>(vec)->permuteEntries(permvec);
+   if( vec )
+      dynamic_cast<SimpleVectorBase<T>*>(vec)->permuteEntries(permvec);
 }
 
 template<typename T>
@@ -1861,13 +1923,12 @@ void StochVectorBase<T>::permuteLinkingEntries(const std::vector<unsigned int>& 
 template<typename T>
 std::vector<T> StochVectorBase<T>::gatherStochVector() const
 {
+   // TODO adapt for hier approach
    const SimpleVectorBase<T>& firstvec = dynamic_cast<const SimpleVectorBase<T>&>(*vec);
    const size_t nChildren = children.size();
 
-   int myrank;
-   MPI_Comm_rank(mpiComm, &myrank);
-   int mysize;
-   MPI_Comm_size(mpiComm, &mysize);
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
+   const int my_size = PIPS_MPIgetSize(mpiComm);
 
    std::vector<T> gatheredVecLocal(0);
 
