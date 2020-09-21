@@ -152,6 +152,8 @@ public:
 
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };
+
+  virtual SimpleVectorBase<T>* shaveBorder( int n_shave, bool shave_top );
 };
 
 #endif

@@ -13,6 +13,18 @@
 #include "StochVector_fwd.h"
 
 template<typename T>
+StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
+   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( mpi_comm != MPI_COMM_NULL )
+{
+   assert( vec || vecl );
+
+   if( vec )
+      this->n += vec->length();
+   if( vecl )
+      this->n += vecl->length();
+}
+
+template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_, int isDistributed/*=-1*/)
   : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_),
     iAmDistrib(isDistributed)
@@ -1910,10 +1922,35 @@ bool StochVectorBase<T>::isRootNodeInSync() const
 }
 
 template<typename T>
-StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars )
+StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_part, bool shave_top )
 {
-   assert( 0 && "TODO : implement");
-   return nullptr;
+   assert( parent == nullptr );
+   assert( vec || vecl );
+
+   SimpleVectorBase<T>* vecs;
+   if( linking_part )
+      vecs = dynamic_cast<SimpleVectorBase<T>*>(vecl);
+   else
+      vecs = dynamic_cast<SimpleVectorBase<T>*>(vec);
+
+   assert( vecs );
+   assert( vecs->length() < n_vars );
+
+   SimpleVectorBase<T>* border = vecs->shaveBorder(n_vars, shave_top);
+
+   StochVectorBase<T>* top_layer;
+   if( shave_top )
+       top_layer = new StochVectorBase<T>( border, nullptr, mpiComm );
+   else
+       top_layer = new StochVectorBase<T>( nullptr, border, mpiComm );
+
+   if( shave_top )
+      this->n -= n_vars; // TODO : check that...
+
+   this->parent = top_layer;
+   top_layer->AddChild(this);
+
+   return top_layer;
 }
 
 template class StochVectorBase<int>;

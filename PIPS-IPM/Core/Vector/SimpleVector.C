@@ -1012,5 +1012,31 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
    delete[] buffer;
 }
 
+template<typename T>
+SimpleVectorBase<T>* SimpleVectorBase<T>::shaveBorder( int n_shave, bool shave_top )
+{
+   assert( n_shave < this->n );
+   assert( 0 <= n_shave );
+   T* vec_new = new T[n_shave];
+   T* vec_shaved = new T[this->n - n_shave];
+
+   if( shave_top )
+   {
+      std::copy( v, v + n_shave, vec_new );
+      std::copy( v + n_shave, v + this->n, vec_shaved );
+   }
+   else
+   {
+      std::copy( v + this->n - n_shave, v + this->n, vec_new );
+      std::copy( v, v + this->n - n_shave, vec_shaved );
+   }
+   delete[] v;
+   v = vec_shaved;
+   this->n -= n_shave;
+
+   return new SimpleVectorBase<T>( vec_new, n_shave );
+}
+
+
 template class SimpleVectorBase<int>;
 template class SimpleVectorBase<double>;

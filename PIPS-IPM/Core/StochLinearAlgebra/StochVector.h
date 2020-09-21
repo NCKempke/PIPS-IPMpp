@@ -18,6 +18,8 @@ private:
   void writeToStreamAllChild( std::stringstream& sout ) const override;
 
 public:
+  StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm);
+
   StochVectorBase( int n, MPI_Comm mpiComm, int isDistributed = -1);
   StochVectorBase( int n, int nl, MPI_Comm mpiComm, int isDistributed);
   virtual ~StochVectorBase();
@@ -167,7 +169,7 @@ public:
 
    virtual bool isRootNodeInSync() const;
 
-   virtual StochVectorBase<T>* raiseBorder( int n_vars );
+   virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
 };
 
 /** DUMMY VERSION
@@ -302,7 +304,7 @@ public:
 
    bool isRootNodeInSync() const override { return true; };
 
-   StochVectorBase<T>* raiseBorder( int n_vars ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
+   StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
 };
 
 #endif

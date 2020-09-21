@@ -1626,21 +1626,23 @@ sData* sData::switchToHierarchicalData( sTree* tree )
 
    // TODO : Q ??
    // BorderedSymMatrix Q ....
+
    BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
    BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
 
-   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars);
-   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars);
-   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars);
-   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars);
-   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars);
+   /* we ordered global linking vars first and global linking rows to the end */
+   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true);
+   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true);
+   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true);
+   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true);
+   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true);
 
-   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss);
+   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
 
-   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss);
-   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss);
-   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss);
-   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss);
+   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false);
+   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false);
+   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false);
+   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false);
 
    // TODO what is this?
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
@@ -1824,7 +1826,7 @@ void sData::activateLinkStructureExploitation()
    n_blocks_per_link_var = std::vector<int>(nx0, 0);
    Astoch.updateKLinkVarsCount( n_blocks_per_link_var );
 
-   std::vector<int> tmp = std::vector<int>(nx0, 0); // to avoid doubling through second Allreduce inseite the count functions
+   std::vector<int> tmp = std::vector<int>(nx0, 0); // to avoid doubling through second Allreduce inside the count functions
    Cstoch.updateKLinkVarsCount( tmp );
 
    std::transform( n_blocks_per_link_var.begin(), n_blocks_per_link_var.end(), tmp.begin(), n_blocks_per_link_var.begin(), std::plus<int>() );
