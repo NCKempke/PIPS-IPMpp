@@ -378,21 +378,26 @@ void StochVectorBase<T>::randomize( T alpha, T beta, T *ix )
 template<typename T>
 void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
 {
-  const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
+   assert( vec || vecl );
+   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
 
-  this->vec->copyFrom(*v.vec);
+   if( this->vec )
+   {
+      assert( v.vec );
+      this->vec->copyFrom(*v.vec);
+   }
 
-  if( this->vecl )
-  {
-     assert(v.vecl);
-     this->vecl->copyFrom(*v.vecl);
-  }
+   if( this->vecl )
+   {
+      assert( v.vecl );
+      this->vecl->copyFrom(*v.vecl);
+   }
 
-  //assert tree compatibility
-  assert(children.size() == v.children.size());
+   //assert tree compatibility
+   assert( children.size() == v.children.size() );
 
-  for(size_t it  =0; it < children.size(); it++)
-    children[it]->copyFrom(*v.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->copyFrom(*v.children[it]);
 }
 
 template<typename T>
