@@ -333,11 +333,13 @@ void StochVectorBase<T>::scale( T alpha )
 template<typename T>
 bool StochVectorBase<T>::isZero() const
 {
+   assert( vec || vecl );
 	bool is_zero = true;
 
-	is_zero = (is_zero && dynamic_cast<SimpleVectorBase<T>&>(*vec).isZero());
+	if( vec )
+	   is_zero = (is_zero && dynamic_cast<SimpleVectorBase<T>&>(*vec).isZero());
 
-	if(vecl)
+	if( vecl )
 		is_zero = (is_zero && dynamic_cast<SimpleVectorBase<T>&>(*vecl).isZero());
 
 	for( size_t node = 0; node < children.size(); ++node )
@@ -349,23 +351,31 @@ bool StochVectorBase<T>::isZero() const
 template<typename T>
 void StochVectorBase<T>::setToZero()
 {
-  vec->setToZero();
+   assert( vec || vecl );
 
-  if( vecl ) vecl->setToZero();
+   if( vec )
+      vec->setToZero();
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->setToZero();
+   if( vecl )
+      vecl->setToZero();
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->setToZero();
 }
 
 template<typename T>
 void StochVectorBase<T>::setToConstant( T c)
 {
-  vec->setToConstant(c);
+   assert( vec || vecl );
 
-  if( vecl ) vecl->setToConstant(c);
+   if( vec )
+      vec->setToConstant(c);
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->setToConstant(c);
+   if( vecl )
+      vecl->setToConstant(c);
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->setToConstant(c);
 }
 
 template<typename T>
@@ -486,6 +496,12 @@ void StochVectorBase<T>::min( T& m, int& index ) const
 {
    const int n_parent = parent ? parent->n - this->n : 0;
 
+   if( !parent )
+   {
+      index = -1;
+      m = std::numeric_limits<T>::max();
+   }
+
    if( vec )
    {
       T lMin;
@@ -526,6 +542,12 @@ template<typename T>
 void StochVectorBase<T>::max( T& m, int& index ) const
 {
    const int n_parent = parent ? parent->n - this->n : 0;
+
+   if( !parent )
+   {
+      index = -1;
+      m = -std::numeric_limits<T>::max();
+   }
 
    if( vec )
    {
@@ -1693,23 +1715,32 @@ bool StochVectorBase<T>::somePositive( const OoqpVectorBase<T>& select_ ) const
 template<typename T>
 void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVectorBase<T>& select_ )
 {
-  const StochVectorBase<T>& div    = dynamic_cast<const StochVectorBase<T>&>(div_);
-  const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
+   const StochVectorBase<T> &div =
+         dynamic_cast<const StochVectorBase<T>&>(div_);
+   const StochVectorBase<T> &select =
+         dynamic_cast<const StochVectorBase<T>&>(select_);
 
-  assert(children.size() == div.   children.size());
-  assert(children.size() == select.children.size());
+   assert(children.size() == div.children.size());
+   assert(children.size() == select.children.size());
+   assert(vec || vecl);
 
-  vec->divideSome(*div.vec, *select.vec);
+   if( vec )
+   {
+      assert(div.vec);
+      assert(select.vec);
+      vec->divideSome(*div.vec, *select.vec);
 
-  if( vecl )
-  {
-     assert(div.vecl);
-     assert(select.vecl);
-     vecl->divideSome(*div.vecl, *select.vecl);
-  }
+   }
 
-  for(size_t it=0; it<children.size(); it++)
-    children[it]->divideSome(*div.children[it], *select.children[it]);
+   if( vecl )
+   {
+      assert(div.vecl);
+      assert(select.vecl);
+      vecl->divideSome(*div.vecl, *select.vecl);
+   }
+
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->divideSome(*div.children[it], *select.children[it]);
 }
 
 template<typename T>
