@@ -582,7 +582,7 @@ int main(int argc, char ** argv) {
 #if defined(HIERARCHICAL)
   if( rank == 0 )
      std::cout << "Using hierarchical approach" << std::endl;
-  PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_EQUI_STOCH, PRESOLVER_NONE);
+  PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 #elif defined(WITH_MUMPS_LEAF)
   PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_EQUI_STOCH, PRESOLVER_NONE);
 #elif defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
