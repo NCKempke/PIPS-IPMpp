@@ -1555,10 +1555,10 @@ void StochVectorBase<T>::invertSave(T zeroReplacementVal)
    assert( vec || vecl );
 
    if( vec )
-      vec->invertSave(zeroReplacementVal);
+      vec->invertSave( zeroReplacementVal );
 
    if( vecl )
-      vecl->invertSave(zeroReplacementVal);
+      vecl->invertSave( zeroReplacementVal );
 
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->invertSave(zeroReplacementVal);
@@ -1605,12 +1605,13 @@ bool StochVectorBase<T>::allPositive() const
    if( vecl )
       all_pos = all_pos && vecl->allPositive();
 
-   for(size_t it = 0; it < children.size() && allPos; it++)
+   for(size_t it = 0; it < children.size(); it++)
       all_pos = all_pos && children[it]->allPositive();
 
    if( iAmDistrib )
-      PIPS_MPIgetLogicAndInPlace( all_pos, MPI_COMM_WORLD );
+      PIPS_MPIgetLogicAndInPlace( all_pos, mpiComm );
 
+   assert( false );
    return all_pos;
 }
 
@@ -1651,7 +1652,7 @@ void StochVectorBase<T>::selectNonZeros( const OoqpVectorBase<T>& select_ )
 
    if( vec )
    {
-      asset( select.vec );
+      assert( select.vec );
       vec->selectNonZeros(*select.vec);
    }
 
@@ -1805,9 +1806,11 @@ bool StochVectorBase<T>::somePositive( const OoqpVectorBase<T>& select_ ) const
       some_positive = some_positive && vecl->somePositive(*select.vecl);
    }
 
-   for(size_t it = 0; it < children.size() && somePos; it++)
+   for(size_t it = 0; it < children.size(); it++)
       some_positive = children[it]->somePositive(*select.children[it]);
 
+   // ! parallel..
+   assert( false );
    return some_positive ;
 }
 
@@ -1945,11 +1948,11 @@ std::vector<T> StochVectorBase<T>::gatherStochVector() const
    // final vector
    std::vector<T> gatheredVec(0);
 
-   if( mysize > 0 )
+   if( my_size > 0 )
    {
       // get all lengths
-      std::vector<int> recvcounts(mysize);
-      std::vector<int> recvoffsets(mysize);
+      std::vector<int> recvcounts(my_size);
+      std::vector<int> recvoffsets(my_size);
 
       int mylength = int(gatheredVecLocal.size());
 
@@ -1957,12 +1960,12 @@ std::vector<T> StochVectorBase<T>::gatherStochVector() const
 
       // all-gather local components
       recvoffsets[0] = 0;
-      for( size_t i = 1; i < size_t(mysize); ++i )
+      for( size_t i = 1; i < size_t(my_size); ++i )
          recvoffsets[i] = recvoffsets[i - 1] + recvcounts[i - 1];
 
-      if( myrank == 0 )
+      if( my_rank == 0 )
       {
-         solLength += recvoffsets[mysize - 1] + recvcounts[mysize - 1];
+         solLength += recvoffsets[my_size - 1] + recvcounts[my_size - 1];
          gatheredVec = std::vector<T>(solLength);
 
          PIPS_MPIgatherv(&gatheredVecLocal[0], mylength, &gatheredVec[0] + firstvec.length(),
@@ -1983,7 +1986,7 @@ std::vector<T> StochVectorBase<T>::gatherStochVector() const
       std::copy(gatheredVecLocal.begin(), gatheredVecLocal.end(), gatheredVec.begin() + firstvec.length());
    }
 
-   if( myrank == 0 )
+   if( my_rank == 0 )
    {
       std::copy(&firstvec[0], &firstvec[0] + firstvec.length(), &gatheredVec[0]);
 
