@@ -44,18 +44,21 @@ StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_, int isDi
   : OoqpVectorBase<T>(n_), parent(nullptr), mpiComm(mpiComm_),
     iAmDistrib(isDistributed)
 {
-  vec = new SimpleVectorBase<T>(n_);
+   if( n_ >= 0)
+      vec = new SimpleVectorBase<T>(n_);
+   else
+      vec = nullptr;
 
-  if( nl_ >= 0 )
-    vecl = new SimpleVectorBase<T>(nl_);
-  else
-	 vecl = nullptr;
+   if( nl_ >= 0 )
+      vecl = new SimpleVectorBase<T>(nl_);
+   else
+      vecl = nullptr;
 
-  if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm) {
-    int size;
-    MPI_Comm_size(mpiComm, &size);
-    iAmDistrib = (size == 1) ? 0 : 1;
-  }
+   if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm)
+   {
+      const int size = PIPS_MPIgetSize(mpiComm);
+      iAmDistrib = (size == 1) ? 0 : 1;
+   }
 }
 
 template<typename T>
@@ -108,26 +111,24 @@ template<typename T>
 OoqpVectorBase<T>*
 StochVectorBase<T>::clone() const
 {
+   assert( vec || vecl );
    StochVectorBase<T> *clone;
-   if( vecl )
-      clone = new StochVectorBase<T>(vec->length(), vecl->length(), mpiComm, -1);
-   else
-      clone = new StochVectorBase<T>(vec->length(), mpiComm);
+   clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm, -1);
 
    for( size_t it = 0; it < children.size(); it++ )
-   {
       clone->AddChild(children[it]->clone());
-   }
+
    return clone;
 }
 
 template<typename T>
 OoqpVectorBase<T>* StochVectorBase<T>::cloneFull() const
 {
-   StochVectorBase<T>* clone = new StochVectorBase<T>(vec->length(), (vecl != nullptr) ? vecl->length() : -1, mpiComm, -1);
+   assert( vec || vecl );
+   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm, -1);
 
-   clone->vec->copyFrom(*vec);
-
+   if( vec )
+      clone->vec->copyFrom(*vec);
    if( vecl )
       clone->vecl->copyFrom(*vecl);
 
