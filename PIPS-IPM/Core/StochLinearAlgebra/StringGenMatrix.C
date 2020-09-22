@@ -337,7 +337,7 @@ void StringGenMatrix::columnScaleVertical( const OoqpVector& vec )
 
 void StringGenMatrix::columnScaleHorizontal( const OoqpVector& vec_in )
 {
-   assert( is_vertical );
+   assert( !is_vertical );
 
    const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
 

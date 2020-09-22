@@ -2065,8 +2065,8 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& bor
    SparseGenMatrix* const border_a_mat = Amat->shaveLeft(n_vars);
    SparseGenMatrix* const border_bl_mat = Blmat->shaveBottom(m_conss);
 
-   border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
    border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
+   border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {

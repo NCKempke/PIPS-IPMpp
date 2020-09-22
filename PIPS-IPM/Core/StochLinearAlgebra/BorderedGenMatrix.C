@@ -158,7 +158,7 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    assert( hasVecStructureForBorderedMat(minmax_in, true) );
    const bool has_rowscale = (row_scale_in != nullptr);
    if( has_rowscale )
-      assert( hasVecStructureForBorderedMat(*row_scale_in, true) );
+      assert( hasVecStructureForBorderedMat(*row_scale_in, false) );
 
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
    const StochVector* row_scale = has_rowscale ? dynamic_cast<const StochVector*>(row_scale_in) : nullptr;

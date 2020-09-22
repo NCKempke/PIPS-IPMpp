@@ -223,9 +223,7 @@ double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVecto
       int j = -1;
       double max = -std::numeric_limits<double>::max();
 
-      maxvecA.writeToStreamAll(std::cout);
       maxvecA.max(max, j);
-
       assert(max < 0 || max == A->abmaxnorm());
 
       j = -1;
