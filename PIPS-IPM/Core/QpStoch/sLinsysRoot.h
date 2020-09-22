@@ -31,19 +31,15 @@ class sLinsysRoot : public sLinsys {
  protected:
   sLinsysRoot() {};
 
-  virtual void         createChildren(sData* prob);
-  virtual void         deleteChildren();
+  virtual void createChildren(sData* prob);
+  virtual void deleteChildren();
 
-  virtual SymMatrix*   createKKT     (sData* prob) = 0;
-  virtual DoubleLinearSolver* 
-                       createSolver  (sData* prob, 
-				      SymMatrix* kktmat) = 0;
+  virtual SymMatrix* createKKT(sData* prob) = 0;
+  virtual DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) = 0;
 
  public:
   std::vector<sLinsys*> children;
   int iAmDistrib;
-
- public:
 
   sLinsysRoot(sFactory * factory_, sData * prob_);
   sLinsysRoot(sFactory* factory,
@@ -58,7 +54,7 @@ class sLinsysRoot : public sLinsys {
   virtual void reduceKKT(sData *prob);
   virtual void factorizeKKT(); 
   virtual void factorizeKKT(sData *prob);
-  virtual void finalizeKKT(sData* prob, Variables* vars)=0;
+  virtual void finalizeKKT(sData* prob, Variables* vars) = 0;
   virtual void finalizeKKTdist(sData* prob) {assert("not implemented here \n" && 0);};
 
   virtual void Lsolve ( sData *prob, OoqpVector& x );
@@ -67,7 +63,7 @@ class sLinsysRoot : public sLinsys {
 
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
 
-  virtual void solveReduced( sData *prob, SimpleVector& b)=0;
+  virtual void solveReduced( sData *prob, SimpleVector& b) = 0;
   virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
   virtual void putXDiagonal( OoqpVector& xdiag_ );
@@ -78,10 +74,10 @@ class sLinsysRoot : public sLinsys {
   virtual bool usingSparseKkt() {return hasSparseKkt;};
 
   void sync();
- public:
+
   virtual ~sLinsysRoot();
 
- public: //utilities
+  //utilities
   void myAtPutZeros(DenseSymMatrix* mat);
   void myAtPutZeros(DenseSymMatrix* mat, 
 		    int row, int col, 

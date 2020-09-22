@@ -12,7 +12,7 @@
 #include "sFactoryAug.h"
 
 class sFactoryHierarchical : public sFactory {
- public:
+   public:
 
       sFactoryHierarchical( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD )
       : sFactory(inputTree, comm) {};
@@ -20,15 +20,13 @@ class sFactoryHierarchical : public sFactory {
       sFactoryHierarchical( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD )
       : sFactory(in,comm) {};
 
-   virtual ~sFactoryHierarchical() {};
+      virtual ~sFactoryHierarchical() {};
 
-   sLinsysRoot* newLinsysRoot() override;
-   sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
-         OoqpVector* nomegaInv, OoqpVector* rhs) override;
+      sLinsysRoot* newLinsysRoot() override;
+      sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
+            OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
-   Data* switchToHierarchicalData(Data* prob_in) override;
+      Data* switchToHierarchicalData(Data* prob_in) override;
 };
-
-
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_SFACTORYHIERARCHICAL_H_ */

@@ -138,7 +138,7 @@ public:
    * The length of x is the number of diagonal elements to be gotten.
    * Typically x will have length less than the length of the diagonal.
    */
-  virtual void fromGetDiagonal( int idiag, OoqpVector& x )= 0;
+  virtual void fromGetDiagonal( int idiag, OoqpVector& x ) = 0;
 
   /** Get the number of rows and columns in the matrix 
    * @param m the number of rows
