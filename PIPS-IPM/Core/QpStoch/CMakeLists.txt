@@ -29,6 +29,6 @@ endif(HAVE_MUMPS AND WITH_MUMPS_LEAF)
 if( WITH_HIERARCHICAL )
    set(LIBRARY_OOQPSTOCH_SOURCES ${LIBRARY_OOQPSTOCH_SOURCES}
    sFactoryHierarchical.C
-   sLinsysRootBorder.C )
+   sLinsysRootBordered.C )
 endif( WITH_HIERARCHICAL )
 add_library(ooqpstoch ${LIBRARY_OOQPSTOCH_SOURCES})

@@ -8,12 +8,14 @@
 #include "sFactoryHierarchical.h"
 #include "sData.h"
 #include "sTree.h"
+
 #include <cassert>
+#include "sLinsysRootBordered.h"
 
 sLinsysRoot* sFactoryHierarchical::newLinsysRoot()
 {
    // TODO return new root linear system (linear system with inner matrix and border only)
-   //return new sLinsysRootBordered(this, data);
+   return new sLinsysRootBordered(this, data);
 
    assert("not implemented" && 0 );
    return nullptr;
