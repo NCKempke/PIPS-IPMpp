@@ -135,7 +135,7 @@ void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
 void sLinsys::factor(Data *prob_, Variables *vars)
 {
 #ifdef TIMING
-  double tTot=MPI_Wtime();
+  double tTot = MPI_Wtime();
 #endif
   // the call to the the parent's method takes care of all necessary updates
   // to the KKT system (updating diagonals mainly). This is done reccursevely,
@@ -149,12 +149,12 @@ void sLinsys::factor(Data *prob_, Variables *vars)
   factor2(prob, vars);
 
 #ifdef TIMING
-  tTot = MPI_Wtime()-tTot;
+  tTot = MPI_Wtime() - tTot;
   MPI_Barrier(MPI_COMM_WORLD);
-  int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  //if(128*(myRank/128)==0)
-  if(0==myRank)
-      cout << "Outer fact. total time " << tTot << endl;
+  const int rank == PIPS_MPIgetRANK(MPI_COMM_WORLD);
+  //if( 128 * ( myRank / 128 ) == 0 )
+  if( 0 == myRank )
+      std::cout << "Outer fact. total time " << tTot << std::endl;
 #endif
 }
  

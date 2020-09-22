@@ -35,8 +35,8 @@ class sLinsys : public QpGenLinsys
 
   virtual ~sLinsys();
 
-  virtual void factor (Data *prob, Variables *vars);
-  virtual void factor2(sData *prob, Variables *vars)=0;
+  void factor (Data *prob, Variables *vars) override;
+  virtual void factor2(sData *prob, Variables *vars) = 0;
 
   virtual void Lsolve ( sData *prob, OoqpVector& x )=0;
   virtual void Dsolve ( sData *prob, OoqpVector& x )=0;

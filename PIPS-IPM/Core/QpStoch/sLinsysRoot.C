@@ -572,6 +572,9 @@ void sLinsysRoot::sync()
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
 void sLinsysRoot::initializeKKT(sData* prob, Variables* vars)
 {
+#ifdef HIERARCHICAL
+   assert( !hasSparseKkt );
+#endif
    if( hasSparseKkt )
    {
       SparseSymMatrix* kkts = dynamic_cast<SparseSymMatrix*>(kkt);
