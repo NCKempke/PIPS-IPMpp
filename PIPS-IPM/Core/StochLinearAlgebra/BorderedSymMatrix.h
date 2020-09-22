@@ -23,7 +23,7 @@ class BorderedSymMatrix : public SymMatrix
 {
    public:
       BorderedSymMatrix(int id, long long global_n, StochSymMatrix* interiorMatrix, StringGenMatrix* borderVerticalMatrix,
-            SymMatrix* bottom_right_block, MPI_Comm mpiComm_);
+            SymMatrix* bottom_block, MPI_Comm mpiComm_);
 
       virtual ~BorderedSymMatrix();
 
@@ -77,7 +77,7 @@ class BorderedSymMatrix : public SymMatrix
       StochSymMatrix* inner_matrix;
       StringGenMatrix* border_vertical;
 
-      SymMatrix* bottom_right_block;
+      SymMatrix* bottom_block;
 
    protected:
 

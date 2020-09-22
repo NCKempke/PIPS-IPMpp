@@ -516,6 +516,7 @@ int StochSymDummyMatrix::isKindOf( int type ) const
 
 BorderedSymMatrix* StochSymMatrix::raiseBorder( int n_vars )
 {
+
    assert( 0 && " TODO : implement ");
    return nullptr;
 }
