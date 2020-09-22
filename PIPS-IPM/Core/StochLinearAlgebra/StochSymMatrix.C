@@ -514,14 +514,44 @@ int StochSymDummyMatrix::isKindOf( int type ) const
 }
 */
 
-BorderedSymMatrix* StochSymMatrix::raiseBorder( int n_vars )
+BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 {
+#ifndef NDEBUG
+   // TODO no support for border...
+   int m, n;
+   border->getSize(m, n);
+   assert(m == 0 && n == 0);
+#endif
 
-   assert( 0 && " TODO : implement ");
-   return nullptr;
+   SparseGenMatrix* const border_left = diag->shaveLeft(n_vars);
+   StringGenMatrix* const border_vertical = new StringGenMatrix(true, border_left, nullptr, mpiComm);
+
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      StringGenMatrix* border_vertical_child;
+      children[it]->shaveBorder(n_vars, border_vertical_child);
+      border_vertical->addChild(border_vertical_child);
+   }
+
+   BorderedSymMatrix* const border_layer = new BorderedSymMatrix(id, n, this, border_vertical, new SparseSymMatrix(n, 0, false), mpiComm);
+   n -= n_vars;
+   assert(n >= 0);
+
+   return border_layer;
 }
 
 void StochSymMatrix::shaveBorder(int n_vars, StringGenMatrix*& border_vertical)
 {
-   assert( 0 && " TODO : implement ");
+   SparseGenMatrix* const border_block = border->shaveLeft(n_vars);
+   border_vertical = new StringGenMatrix(true, border_block, nullptr, mpiComm);
+
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      assert("deactivated for now" && 0);
+
+      StringGenMatrix* border_child;
+      children[it]->shaveBorder(n_vars, border_child);
+
+      border_vertical->addChild(border_child);
+   }
 }

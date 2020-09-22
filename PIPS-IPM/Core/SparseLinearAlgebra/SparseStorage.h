@@ -65,8 +65,8 @@ public:
 
   void shiftRows( int row, int shift, int& info );
   void getSize( int& m, int& n ) const override;
-  int rows() { return m; }
-  int cols() { return n; }
+  int rows() const { return m; }
+  int cols() const { return n; }
 
   bool isValid(bool verbose = false) const;
   bool isSorted() const;
@@ -221,8 +221,9 @@ public:
    */
   void fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdxFull, double*& valuesFull) const;
 
-  virtual SparseStorage* shaveLeft( int n_cols ); // TODO : implement
-  virtual SparseStorage* shaveBottom( int n_rows ); // TODO : implement
+  virtual SparseStorage* shaveLeft( int n_cols );
+  virtual SparseStorage* shaveSym( int n );
+  virtual SparseStorage* shaveBottom( int n_rows );
 
   virtual ~SparseStorage();
 

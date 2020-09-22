@@ -3,6 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "SparseSymMatrix.h"
+#include "SparseGenMatrix.h"
 #include "SparseStorage.h"
 #include <cassert>
 #include <cmath>
@@ -28,14 +29,10 @@ SparseSymMatrix::SparseSymMatrix( int size, int nnz, bool isLower )
   mStorage = SparseStorageHandle( new SparseStorage(size, size, nnz) );
 }
 
-
-/*SparseSymMatrix::SparseSymMatrix(const std::vector<SparseSymMatrix*> &blocks)
+SparseSymMatrix::SparseSymMatrix( SparseStorage* m_storage, bool is_lower_ ) : isLower( is_lower_ )
 {
-  vector<SparseStorage*> v(blocks.size());
-  for (size_t i = 0; i < blocks.size(); i++) v[i] = blocks[i]->mStorage;
-  mStorage = SparseStorageHandle(new SparseStorage(v,true)); // must be diagonal
+   mStorage = SparseStorageHandle( m_storage );
 }
-*/
 
 SparseSymMatrix::SparseSymMatrix( int size, int nnz,
 				  int krowM[], int jcolM[], double M[],
@@ -243,6 +240,7 @@ long long SparseSymMatrix::size() const
 {
   return mStorage->rows();
 }
+
 void SparseSymMatrix::mult ( double beta,  OoqpVector& y_in,
 				 double alpha, const OoqpVector& x_in ) const
 {
@@ -405,3 +403,12 @@ void SparseSymMatrix::deleteZeroRowsCols(int*& new2orgIdx)
    mStorage->deleteZeroRowsColsSym(new2orgIdx);
 }
 
+SparseGenMatrix* SparseSymMatrix::shaveLeft( int n_vars )
+{
+   assert( n_vars < mStorage->n );
+
+
+   SparseStorage* border = mStorage->shaveSym( n_vars );
+
+   return new SparseGenMatrix(border);
+}

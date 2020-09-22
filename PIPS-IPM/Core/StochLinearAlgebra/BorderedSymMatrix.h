@@ -22,7 +22,7 @@ class StochSymMatrix;
 class BorderedSymMatrix : public SymMatrix
 {
    public:
-      BorderedSymMatrix(int id, long long global_n, StochSymMatrix* interiorMatrix, StringGenMatrix* borderVerticalMatrix,
+      BorderedSymMatrix(int id, long long global_n, StochSymMatrix* inner_matrix, StringGenMatrix* border_vertical,
             SymMatrix* bottom_block, MPI_Comm mpiComm_);
 
       virtual ~BorderedSymMatrix();

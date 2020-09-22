@@ -2351,6 +2351,13 @@ SparseStorage*  SparseStorage::shaveBottom( int n_rows )
    return border;
 }
 
+SparseStorage* SparseStorage::shaveSym( int n )
+{
+   assert( 0 && "TODO : implement" );
+   return nullptr;
+
+}
+
 // concatenate matrices
 // if "diagonal", make a block diagonal matrix:
 // [ A 0 ]

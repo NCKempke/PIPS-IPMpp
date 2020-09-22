@@ -11,6 +11,8 @@
 #include "OoqpVector.h"
 #include "SparseSymMatrixHandle.h"
 
+class SparseGenMatrix;
+
 /** Represents sparse symmetric matrices stored in
  *  row-major Harwell-Boeing format.
  *  @ingroup SparseLinearAlgebra
@@ -22,7 +24,7 @@ public:
   SparseSymMatrix( int size, int nnz, bool isLower = true );
   SparseSymMatrix( int size, int nnz,
 		   int krowM[], int jcolM[], double M[], int deleteElts = 0, bool isLower = true);
-  //SparseSymMatrix(const std::vector<SparseSymMatrix*> &blocks); not needed anymore; cpetra
+  SparseSymMatrix( SparseStorage* m_storage, bool is_lower_ );
 
   SparseStorage&  getStorageRef() { return *mStorage; }
   SparseStorageHandle  getStorageHandle() { return mStorage; }
@@ -105,6 +107,7 @@ public:
 
   void getSparseTriplet_fortran2fortran(int*& irn, int*& jcn, double*& val) const;
 
+  virtual SparseGenMatrix* shaveLeft( int n_vars );
 
   virtual ~SparseSymMatrix() {};
 };
