@@ -239,7 +239,7 @@ void SparseSymMatrix::getSize( int& m, int& n ) const
 }
 
 
-long long SparseSymMatrix::size()
+long long SparseSymMatrix::size() const
 {
   return mStorage->rows();
 }

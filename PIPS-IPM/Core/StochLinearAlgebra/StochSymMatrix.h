@@ -60,16 +60,16 @@ public:
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
 
-  virtual long long size();
+  long long size() const override;
 
-  virtual void symAtPutSubmatrix( int destRow, int destCol,
+  void symAtPutSubmatrix( int destRow, int destCol,
 				  DoubleMatrix& M,
 				  int srcRow, int srcCol,
-				  int rowExtent, int colExtent );
+				  int rowExtent, int colExtent ) override;
 
-  virtual void fromGetSpRow( int row, int col,
+  void fromGetSpRow( int row, int col,
                              double A[], int lenA, int irowA[], int& nnz,
-                             int rowExtent, int& info );
+                             int rowExtent, int& info ) override;
 
   virtual void atPutZeros( int row, int col,
 			   int rowExtent, int colExtent );
@@ -151,7 +151,7 @@ public:
   void getSize( long long& m, long long& n ) const override { m = 0; n = 0; }
   void getSize( int& m, int& n ) const override { m = 0; n = 0; }
 
-  long long size() override { return 0; }
+  long long size() const override { return 0; }
 
   void symAtPutSubmatrix( int destRow, int destCol,
 				  DoubleMatrix& M,

@@ -55,10 +55,10 @@ public:
 
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
-  virtual long long size();
+  long long size() const override;
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( OoqpVector& vec ) override;
 
   virtual void symAtPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
 				  int srcRow, int srcCol,

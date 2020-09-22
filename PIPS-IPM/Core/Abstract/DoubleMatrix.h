@@ -198,7 +198,7 @@ public:
   virtual void symAtPutSpRow( int col, double A[], int lenA, int irowA[],
 			      int& info ) = 0;
   /** the size of this square matrix */
-  virtual long long size() = 0;
+  virtual long long size() const = 0;
 };
 
 /** Parent of all non-symmetric, possibly non-square, matrices.

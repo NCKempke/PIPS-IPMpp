@@ -97,7 +97,7 @@ public:
   /** Return mMat, an    */
   double **Mat() { return mStorage->M; };
 
-  virtual long long size();
+  long long size() const override;
 
   DenseStorage& getStorageRef() { return *mStorage; }
   DenseStorageHandle  getStorageHandle() { return mStorage; }

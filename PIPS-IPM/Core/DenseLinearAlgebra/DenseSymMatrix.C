@@ -103,7 +103,7 @@ void DenseSymMatrix::getSize( int& m, int& n ) const
 }
 
 
-long long DenseSymMatrix::size()
+long long DenseSymMatrix::size() const
 { 
    return mStorage->m;
 }

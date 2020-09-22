@@ -135,7 +135,7 @@ void StochSymMatrix::getSize( int& m_, int& n_ ) const
 }
 
 
-long long StochSymMatrix::size()
+long long StochSymMatrix::size() const
 {
   return n;
 }
