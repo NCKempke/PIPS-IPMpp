@@ -406,7 +406,7 @@ public:
   void axpyWithRowAt( double alpha, StochVector* y, SimpleVector* y_linking, int child, int row, bool linking) const override {};
   void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const override {};
 
-  BorderedGenMatrix* raiseBorder( int m_conss, int n_vars ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIRX"); return nullptr; };
+  BorderedGenMatrix* raiseBorder( int m_conss, int n_vars ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
 
  protected:
   void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom) override

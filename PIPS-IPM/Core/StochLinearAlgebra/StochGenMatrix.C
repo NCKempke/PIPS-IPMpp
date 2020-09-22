@@ -2018,6 +2018,7 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
    return res;
 }
 
+// TODO specify border and left from sData...
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
    // TODO : hand through id? what is id for...

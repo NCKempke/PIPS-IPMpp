@@ -4,6 +4,7 @@
 #include "DoubleMatrix.h"
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"
+#include "StringGenMatrix.h"
 #include "pipsport.h"
 
 #include <vector>
@@ -11,6 +12,8 @@
 #include <fstream>
 
 #include "mpi.h"
+
+class BorderedSymMatrix;
 
 class StochSymMatrix : public SymMatrix {
 
@@ -105,8 +108,12 @@ public:
      deleteEmptyRowsCols(nnzVec, nullptr);
   }
 
+  // TODO specify border bottom and left..
+  virtual BorderedSymMatrix* raiseBorder( int n_vars );
 
  protected:
+  virtual void shaveBorder(int n_vars, StringGenMatrix*& border_vertical);
+
   StochSymMatrix* parent;
 };
 
@@ -188,6 +195,13 @@ public:
   void columnScale ( const OoqpVector& vec ) override {};
   void rowScale ( const OoqpVector& vec ) override {};
   void scalarMult( double num ) override {};
+
+  BorderedSymMatrix* raiseBorder( int n_vars ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
+
+ protected:
+  void shaveBorder( int n_vars, StringGenMatrix*& border_vertical ) override
+     { border_vertical = new StringGenDummyMatrix(); };
+
 };
 
 typedef SmartPointer<StochSymMatrix> StochSymMatrixHandle;

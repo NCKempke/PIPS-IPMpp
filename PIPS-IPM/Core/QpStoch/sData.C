@@ -7,6 +7,7 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
 #include "pipsport.h"
+#include "BorderedSymMatrix.h"
 
 #include <iostream>
 #include <algorithm>
@@ -1632,8 +1633,7 @@ sData* sData::switchToHierarchicalData( sTree* tree )
       std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
             n_global_ineq_linking_conss << " inequalities for the border" << std::endl;
    }
-   // TODO : Q ??
-   // BorderedSymMatrix Q ....
+   BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars);
 
    BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
    BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
@@ -1656,7 +1656,7 @@ sData* sData::switchToHierarchicalData( sTree* tree )
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
    // TODO : do nxlow, nxupp ... store the whole vars (from here down the hierarchy) or only local values?
-   sData* hierarchical_top = new sData(tree, g_hier, Q, blx_hier,
+   sData* hierarchical_top = new sData(tree, g_hier, Q_hier, blx_hier,
          ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
          A_hier, bA_hier, C_hier, bl_hier,
          iclow_hier, mclow, bu_hier, icupp_hier, mcupp,

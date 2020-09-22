@@ -1,6 +1,8 @@
 #include "StochSymMatrix.h"
 #include "StochVector.h"
 #include "DoubleMatrixTypes.h"
+#include "BorderedSymMatrix.h"
+#include "StringGenMatrix.h"
 #include "pipsport.h"
 
 #include <cassert>
@@ -511,3 +513,14 @@ int StochSymDummyMatrix::isKindOf( int type ) const
 
 }
 */
+
+BorderedSymMatrix* StochSymMatrix::raiseBorder( int n_vars )
+{
+   assert( 0 && " TODO : implement ");
+   return nullptr;
+}
+
+void StochSymMatrix::shaveBorder(int n_vars, StringGenMatrix*& border_vertical)
+{
+   assert( 0 && " TODO : implement ");
+}
