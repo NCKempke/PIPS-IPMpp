@@ -403,12 +403,12 @@ void SparseSymMatrix::deleteZeroRowsCols(int*& new2orgIdx)
    mStorage->deleteZeroRowsColsSym(new2orgIdx);
 }
 
-SparseGenMatrix* SparseSymMatrix::shaveLeft( int n_vars )
+SparseGenMatrix* SparseSymMatrix::shaveSymLeftBottom( int n_vars )
 {
    assert( n_vars < mStorage->n );
 
 
-   SparseStorage* border = mStorage->shaveSym( n_vars );
+   SparseStorage* border = mStorage->shaveSymLeftBottom( n_vars );
 
    return new SparseGenMatrix(border);
 }

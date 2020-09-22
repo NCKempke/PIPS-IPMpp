@@ -107,7 +107,7 @@ public:
 
   void getSparseTriplet_fortran2fortran(int*& irn, int*& jcn, double*& val) const;
 
-  virtual SparseGenMatrix* shaveLeft( int n_vars );
+  virtual SparseGenMatrix* shaveSymLeftBottom( int n_vars );
 
   virtual ~SparseSymMatrix() {};
 };

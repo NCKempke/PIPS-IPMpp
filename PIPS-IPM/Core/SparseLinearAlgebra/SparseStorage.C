@@ -2351,9 +2351,10 @@ SparseStorage*  SparseStorage::shaveBottom( int n_rows )
    return border;
 }
 
-SparseStorage* SparseStorage::shaveSym( int n )
+SparseStorage* SparseStorage::shaveSymLeftBottom( int n )
 {
    assert( 0 && "TODO : implement" );
+   // TODO : assert is symmetric - either upper or lower?? then shave of elements from left and top at the same time
    return nullptr;
 
 }
