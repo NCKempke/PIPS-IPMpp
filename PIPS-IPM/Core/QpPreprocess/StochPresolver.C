@@ -18,12 +18,14 @@
 #include <cstdlib>
 #include <ctype.h>
 
+#include "sData.h"
+#include "sTreeCallbacks.h"
+
 #include "StochOptions.h"
 #include "PresolveData.h"
 #include "StochVector.h"
 #include "StochGenMatrix.h"
 #include "SmartPointer.h"
-#include "sData.h"
 #include "DoubleMatrix.h"
 #include "SparseGenMatrix.h"
 #include "StochVectorHandle.h"
@@ -41,14 +43,14 @@
 #include "pipschecks.h"
 #include "pipsport.h"
 
-StochPresolver::StochPresolver(const Data* prob, Postsolver* postsolver = nullptr)
+StochPresolver::StochPresolver(sTree* tree_, const Data* prob, Postsolver* postsolver = nullptr)
  : QpPresolver(prob, postsolver), my_rank( PIPS_MPIgetRank(MPI_COMM_WORLD) ),
    limit_max_rounds( pips_options::getIntParameter("PRESOLVE_MAX_ROUNDS") ),
    reset_free_variables_after_presolve( pips_options::getBoolParameter("PRESOLVE_RESET_FREE_VARIABLES") ),
    print_problem( pips_options::getBoolParameter("PRESOLVE_PRINT_PROBLEM") ),
    write_presolved_problem( pips_options::getBoolParameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS") ),
    verbosity( pips_options::getIntParameter("PRESOLVE_VERBOSITY") ),
-   presData( new PresolveData(dynamic_cast<const sData*>(origprob), dynamic_cast<StochPostsolver*>(postsolver)) )
+   tree(tree_), presData( new PresolveData(dynamic_cast<const sData*>(origprob), dynamic_cast<StochPostsolver*>(postsolver)) )
 {
    const sData* sorigprob = dynamic_cast<const sData*>(origprob);
 
@@ -121,7 +123,16 @@ Data* StochPresolver::presolve()
    if( reset_free_variables_after_presolve )
       resetFreeVariables();
 
+   /* finalize data and switch tree to new preolved data */
    sData* finalPresData = presData->finalize();
+
+   assert( tree != nullptr );
+   assert( tree == finalPresData->stochNode );
+
+   sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*tree);
+   callbackTree.initPresolvedData(*finalPresData);
+   callbackTree.switchToPresolvedData();
+
    assert( finalPresData );
    assert( finalPresData->isRootNodeInSync() );
 

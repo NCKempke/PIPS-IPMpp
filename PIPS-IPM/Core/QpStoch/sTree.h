@@ -46,13 +46,13 @@ class sTree
   bool balanceLoadPrecond();
 
   void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU );
-  void syncPrimalVector(StochVector& vec);
-  void syncDualYVector(StochVector& vec);
-  void syncDualZVector(StochVector& vec);
-  void syncStochVector(StochVector& vec);
+  void syncPrimalVector(StochVector& vec) const;
+  void syncDualYVector(StochVector& vec) const;
+  void syncDualZVector(StochVector& vec) const;
+  void syncStochVector(StochVector& vec) const;
 
-  void syncStochGenMatrix(StochGenMatrix& mat);
-  void syncStochSymMatrix(StochSymMatrix& mat);
+  void syncStochGenMatrix(StochGenMatrix& mat) const;
+  void syncStochSymMatrix(StochSymMatrix& mat) const;
 
   virtual StochSymMatrix*   createQ() const = 0;
   virtual StochVector*      createc() const = 0;
@@ -82,7 +82,7 @@ class sTree
 
   StochVector*      newRhs();
 
-  int innerSize(int which);
+  int innerSize(int which) const;
   virtual int nx() const = 0;
   virtual int my() const = 0;
   virtual int myl() const;

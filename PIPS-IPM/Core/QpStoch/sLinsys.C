@@ -57,7 +57,7 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob)
 
   useRefs=0;
   data = prob;
-  stochNode = prob->stochNode;
+  stochNode = factory_->tree;
 }
 
 sLinsys::sLinsys(sFactory* factory_,
@@ -95,7 +95,7 @@ sLinsys::sLinsys(sFactory* factory_,
 
   useRefs=1;
   data = prob;
-  stochNode = prob->stochNode;
+  stochNode = factory_->tree;
 }
 
 

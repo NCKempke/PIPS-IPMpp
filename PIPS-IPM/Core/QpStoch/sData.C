@@ -1202,7 +1202,7 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    return permvec;
 }
 
-sData::sData(sTree* tree)
+sData::sData(const sTree* tree)
 //  : QpGenData(nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr)
 {
    stochNode = tree;
@@ -1243,7 +1243,7 @@ sData::sData(sTree* tree)
    n0LinkVars = 0;
 }
 
-sData::sData(sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
+sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         OoqpVector * xlow_in, OoqpVector * ixlow_in, long long nxlow_,
         OoqpVector * xupp_in, OoqpVector * ixupp_in, long long nxupp_,
         GenMatrix  * A_in, OoqpVector * bA_in,
@@ -1567,7 +1567,7 @@ sData* sData::cloneFull(bool switchToDynamicStorage) const
    StochVectorHandle clow_clone (dynamic_cast<StochVector*>(bl->cloneFull()));
    StochVectorHandle iclow_clone (dynamic_cast<StochVector*>(iclow->cloneFull()));
 
-   sTree* tree_clone = stochNode; // todo
+   const sTree* tree_clone = stochNode;
 
    sData* clone = new sData(tree_clone, c_clone, Q_clone, xlow_clone,
          ixlow_clone, nxlow, xupp_clone, ixupp_clone, nxupp, A_clone, bA_clone,
@@ -1621,7 +1621,7 @@ sData::destroyChildren()
    children.clear();
 }
 
-sData* sData::switchToHierarchicalData( sTree* tree )
+sData* sData::switchToHierarchicalData( const sTree* tree )
 {
    assert( tree->isHierarchicalRoot() );
    assert( tree->children.size() == 1 );
@@ -2511,14 +2511,6 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
    iclow_stoch.removeEntries(rowNnzVecC);
    bu_stoch.removeEntries(rowNnzVecC);
    icupp_stoch.removeEntries(rowNnzVecC);
-
-   assert(stochNode != nullptr);
-
-   // adapt sizes and tree
-   sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*stochNode);
-
-   callbackTree.initPresolvedData(Q_stoch, A_stoch, C_stoch, g_stoch, b_Astoch, iclow_stoch);
-   callbackTree.switchToPresolvedData();
 
    long long dummy;
    nx = g_stoch.length();

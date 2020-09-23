@@ -39,12 +39,12 @@ public:
             }
       };
 
-      static Presolver* makePresolver(const Data* data, PresolverType type, Postsolver* postsolver = nullptr)
+      static Presolver* makePresolver(sTree* tree, const Data* data, PresolverType type, Postsolver* postsolver = nullptr)
       {
          switch( type )
             {
             case PRESOLVER_STOCH:
-               return new StochPresolver(data, postsolver);
+               return new StochPresolver(tree, data, postsolver);
             default:
                return 0;
             }

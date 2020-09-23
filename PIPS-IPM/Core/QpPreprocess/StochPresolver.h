@@ -15,7 +15,7 @@ class Data;
 class Postsolver;
 class StochPresolverBase;
 class PresolveData;
-
+class sTree;
 /**  * @defgroup QpPreprocess
  *
  * QP presolver
@@ -40,13 +40,16 @@ private:
 
    const int verbosity;
 
+   /* tree belonging to origData and presData */
+   sTree* const tree;
+
    PresolveData* presData;
    std::vector<StochPresolverBase*> presolvers;
 
    void resetFreeVariables();
 public:
 
-   StochPresolver(const Data* prob, Postsolver* postsolver);
+   StochPresolver(sTree* tree, const Data* prob, Postsolver* postsolver);
    virtual ~StochPresolver();
 
    Data* presolve() override;

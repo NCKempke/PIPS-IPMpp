@@ -13,6 +13,8 @@
  *  The new sTree implementation, C++-like is sTreeImpl.
  */
 
+class sData;
+
 class sTreeCallbacks : public sTree
 {
 
@@ -55,10 +57,7 @@ class sTreeCallbacks : public sTree
 
   void computeGlobalSizes();
  public:
-  int NNZA,NNZQ,NNZB,NNZBl,NNZC,NNZD,NNZDl; //global nnz
-
   /* inactive sizes store the original state of the tree when switching to the presolved data */
-  int NNZA_INACTIVE,NNZQ_INACTIVE,NNZB_INACTIVE,NNZBl_INACTIVE,NNZC_INACTIVE,NNZD_INACTIVE,NNZDl_INACTIVE; //global inactive nnz
   long long N_INACTIVE,MY_INACTIVE,MZ_INACTIVE; //global inactive sizes
 
   int nx_active, my_active, mz_active, myl_active, mzl_active;
@@ -70,10 +69,8 @@ class sTreeCallbacks : public sTree
   virtual void switchToOriginalData();
   virtual bool isPresolved();
   virtual bool hasPresolved();
-  virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C, const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec)
-  {
-     initPresolvedData(Q, A, C, nxVec, myVec, mzVec, -1, -1);
-  }
+  virtual void initPresolvedData(const sData& presolved_data);
+
   virtual void writeSizes(ostream& sout) const;
 
   // TODO : make sure that none of the not suitable methods get called...

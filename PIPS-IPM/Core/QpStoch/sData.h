@@ -19,11 +19,11 @@ class LinearAlgebraPackage;
 class sData : public QpGenData {
  public:
   /** constructor that makes data objects of the specified dimensions */
-  sData( sTree* tree);
+  sData( const sTree* tree);
 
   /** constructor that sets up pointers to the data objects that are
       passed as arguments */
-  sData( sTree* stochNode,
+  sData( const sTree* stochNode,
 	 OoqpVector * c, SymMatrix * Q,
 	 OoqpVector * xlow, OoqpVector * ixlow, long long nxlow,
 	 OoqpVector * xupp, OoqpVector * ixupp, long long nxupp,
@@ -35,7 +35,7 @@ class sData : public QpGenData {
 
   std::vector<sData*> children;
   void AddChild(sData* child);
-  sTree* stochNode;
+  const sTree* stochNode;
 
 public:
   long long nxlow, nxupp, mclow, mcupp;
@@ -96,7 +96,7 @@ public:
 
  public:
   // Hierarchical Stuff
-  sData* switchToHierarchicalData( sTree* tree );
+  sData* switchToHierarchicalData( const sTree* tree );
 
   int getNGlobalVars() const { return n_global_linking_vars; };
   int getNGlobalEQConss() const { return n_global_eq_linking_conss; };

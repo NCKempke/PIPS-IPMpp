@@ -186,7 +186,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      const double t0_presolve = MPI_Wtime();
 
      postsolver = (postsolve == true) ? prefactory->makePostsolver(origData) : nullptr;
-     presolver = prefactory->makePresolver(origData, presolver_type, postsolver);
+     presolver = prefactory->makePresolver(dynamic_cast<sFactory*>(factory)->tree, origData, presolver_type, postsolver);
 
      data = dynamic_cast<sData*>(presolver->presolve());
 
@@ -822,7 +822,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   unscaleUnpermResids->calcresids(dataUnperm, unscaleUnpermVars, true);
   printComplementarityResiduals(*unscaleUnpermVars);
 
-  sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*origData->stochNode);
+  sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*dynamic_cast<sFactory&>(*factory).tree);
   callbackTree.switchToOriginalData();
 
   factory->data = origData;

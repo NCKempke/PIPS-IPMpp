@@ -35,6 +35,7 @@ Data* sFactoryHierarchical::switchToHierarchicalData( Data* prob_in )
    // adjust tree
    // TODO : decide on how to split the lower tree levels
    tree = tree->switchToHierarchicalTree(nx_to_shave, myl_to_shave, mzl_to_shave);
+
    assert( tree->children.size() == 1 );
    assert( tree->isHierarchicalRoot() );
 

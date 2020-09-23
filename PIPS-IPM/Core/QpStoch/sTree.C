@@ -210,7 +210,7 @@ void sTree::GetGlobalSizes(long long& NOut, long long& MYOut, long long& MZOut)
   nOut=nx(); myOut=my(); mzOut=mz();
 }
 */
-int sTree::innerSize(int which)
+int sTree::innerSize(int which) const
 {
   if(which==0) return nx();
   if(which==1) return my();
@@ -218,24 +218,24 @@ int sTree::innerSize(int which)
   return mz();
 }
 
-void sTree::syncPrimalVector(StochVector& stVec)
+void sTree::syncPrimalVector(StochVector& stVec) const
 {
   //syncStochVector(stVec,0);
   syncStochVector(stVec);
 }
 
-void sTree::syncDualYVector(StochVector& stVec)
+void sTree::syncDualYVector(StochVector& stVec) const
 {
   //syncStochVector(stVec,1);
   syncStochVector(stVec);
 }
 
-void sTree::syncDualZVector(StochVector& stVec)
+void sTree::syncDualZVector(StochVector& stVec) const
 {
   syncStochVector(stVec);//,2);
 }
 
-void sTree::syncStochSymMatrix(StochSymMatrix& mat) 
+void sTree::syncStochSymMatrix(StochSymMatrix& mat) const
 {
   int syncChildren=0;
   char* marked4Del = new char[children.size()];
@@ -315,7 +315,7 @@ void sTree::syncStochSymMatrix(StochSymMatrix& mat)
 }
 
 
-void sTree::syncStochGenMatrix(StochGenMatrix& mat) 
+void sTree::syncStochGenMatrix(StochGenMatrix& mat) const
 {
   int syncChildren=0;
   char* marked4Del = new char[children.size()];
@@ -413,9 +413,9 @@ void sTree::syncStochGenMatrix(StochGenMatrix& mat)
   delete[] marked4Del;
 }
 
-void sTree::syncStochVector(StochVector& stVec)
+void sTree::syncStochVector(StochVector& stVec) const
 {
-  int syncChildren=0;
+  int syncChildren = 0;
 
   char* marked4Del = new char[children.size()];
   for(size_t it=0; it<children.size(); it++) {
