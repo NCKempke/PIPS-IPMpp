@@ -32,8 +32,8 @@ Data* sFactoryHierarchical::switchToHierarchicalData( Data* prob_in )
    const int myl_to_shave = data->getNGlobalEQConss();
    const int mzl_to_shave = data->getNGlobalINEQConss();
 
+   // TODO : lower hierarchy missing
    // adjust tree
-   // TODO : decide on how to split the lower tree levels
    tree = tree->switchToHierarchicalTree(nx_to_shave, myl_to_shave, mzl_to_shave);
 
    assert( tree->children.size() == 1 );

@@ -1655,7 +1655,6 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    // TODO what is this?
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
-   // TODO : do nxlow, nxupp ... store the whole vars (from here down the hierarchy) or only local values?
    sData* hierarchical_top = new sData(tree, g_hier, Q_hier, blx_hier,
          ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
          A_hier, bA_hier, C_hier, bl_hier,
@@ -1672,7 +1671,6 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    this->mclow -= iclow_hier->vecl->numberOfNonzeros();
    this->mcupp -= icupp_hier->vecl->numberOfNonzeros();
 
-   // TODO : do these include linking? i guess... so they change?
    long long dummy;
    nx = g->length();
    A->getSize( my, dummy );
