@@ -1802,9 +1802,6 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
 void sData::activateLinkStructureExploitation()
 {
-   // TODO - where do the dense rows cols get sorted to ?
-   // TODO - add a threshold to tell when something is dense
-   // TODO - store number of dense stuff somewhere...
    assert( !stochNode->isHierarchicalRoot() );
 
    if( useLinkStructure )
