@@ -33,35 +33,30 @@
 
 
 sFactory::sFactory( stochasticInput& in, MPI_Comm comm)
-  : QpGen(0,0,0), data(nullptr), m_tmTotal(0.0)
+  : QpGen(0,0,0), tree( new sTreeImpl(in, comm) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
 {
    assert( 0 && " Not used currently " );
-  tree = new sTreeImpl(in, comm);
-  //tree->computeGlobalSizes();
-  //tree->GetGlobalSizes(nx, my, mz);
-  //decide how the CPUs are assigned
-  tree->assignProcesses(comm);
-  tree->loadLocalSizes();
+   //tree->computeGlobalSizes();
+   //tree->GetGlobalSizes(nx, my, mz);
+   //decide how the CPUs are assigned
+   tree->assignProcesses(comm);
+   tree->loadLocalSizes();
 }
 
 
 sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
-  : QpGen(0,0,0), data(nullptr), m_tmTotal(0.0)
+  : QpGen(0,0,0), tree( new sTreeCallbacks(inputTree) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
 {
-
-  tree = new sTreeCallbacks(inputTree);
-
   //decide how the CPUs are assigned
   tree->assignProcesses(comm);
 
   tree->computeGlobalSizes();
   //now the sizes of the problem are available, set them for the parent class
   tree->GetGlobalSizes(nx, my, mz);
-
 }
 
 sFactory::sFactory()
-  : QpGen( 0,0,0 ), m_tmTotal(0.0)
+  : QpGen( 0,0,0 ), tree(nullptr), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
 { };
 
 sFactory::~sFactory()
@@ -126,26 +121,25 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 		}
 	}
 	colptr[nx_1] = nnz;
-	assert(nnz==nnzA+nnzC);
+	assert(nnz == nnzA + nnzC);
 
-	ofstream fd("augdump.dat");
+	std::ofstream fd("augdump.dat");
 	fd << scientific;
 	fd.precision(16);
-	fd << (nx + my + mz) << endl;
-	fd << nx_1 << endl;
-	fd << nnzA+nnzC << endl;
-	int i;
-	for (i = 0; i <= nx_1; i++)
-	fd << colptr[i] << " ";
-	fd << endl;
-	for (i = 0; i < nnz; i++)
-	fd << rowidx[i] << " ";
-	fd << endl;
-	for (i = 0; i < nnz; i++)
-	fd << elts[i] << " ";
-	fd << endl;
-	printf("finished dumping aug\n");
+	fd << (nx + my + mz) << std::endl;
+	fd << nx_1 << std::endl;
+	fd << nnzA+nnzC << std::endl;
 
+   for( int i = 0; i <= nx_1; i++ )
+      fd << colptr[i] << " ";
+   fd << std::endl;
+   for( int i = 0; i < nnz; i++ )
+      fd << rowidx[i] << " ";
+   fd << std::endl;
+   for( int i = 0; i < nnz; i++ )
+      fd << elts[i] << " ";
+   fd << std::endl;
+   printf("finished dumping aug\n");
 
 }
 
@@ -268,8 +262,6 @@ Variables* sFactory::makeVariables( Data * prob_in )
   return vars;
 }
 
-
-// TODO : adjust this for hierarchical approach
 Residuals* sFactory::makeResiduals( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
@@ -314,7 +306,7 @@ void sFactory::iterateEnded()
     // balance needed
     data->sync();
 
-    for(size_t i=0; i<registeredVars.size(); i++)
+    for(size_t i=0; i< registeredVars.size(); i++)
       registeredVars[i]->sync();
 
     resid->sync();

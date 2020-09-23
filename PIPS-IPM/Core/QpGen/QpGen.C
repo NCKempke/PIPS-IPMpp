@@ -7,16 +7,15 @@
 #include "QpGenVars.h"
 #include "QpGenResiduals.h"
 
-QpGen::QpGen( int nx_, int my_, int mz_ )
+QpGen::QpGen( int nx_, int my_, int mz_ ) :
+   la( nullptr ), nx( nx_ ), my( my_ ), mz( mz_ )
 {
-  nx = nx_;
-  my = my_;
-  mz = mz_;
 }
 
 
 Residuals * QpGen::makeResiduals( Data * prob_in )
 {
+  assert( la != nullptr );
   QpGenData * prob = (QpGenData *) prob_in;
 
   return new QpGenResiduals( la,
@@ -28,6 +27,7 @@ Residuals * QpGen::makeResiduals( Data * prob_in )
 
 Variables * QpGen::makeVariables( Data * prob_in )
 {
+  assert( la != nullptr );
   QpGenData * prob = (QpGenData *) prob_in;
 
   return new QpGenVars( la,

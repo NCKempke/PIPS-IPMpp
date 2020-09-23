@@ -41,8 +41,8 @@ class sFactory : public QpGen {
 
   virtual Data  * makeData();
 
-  virtual Residuals     * makeResiduals( Data * prob_in );
-  virtual Variables     * makeVariables( Data * prob_in );
+  virtual Residuals * makeResiduals( Data * prob_in );
+  virtual Variables * makeVariables( Data * prob_in );
 
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
