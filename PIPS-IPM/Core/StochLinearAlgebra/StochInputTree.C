@@ -125,10 +125,14 @@ StochInputNode(void* user_data_, int id_,
     deleteUserData(deleteUserData_)
 { }
 
-
-StochInputTree::StochInputNode::StochInputNode()
-  : id(-1), n(-1), my(-1), mz(-1), 
-    nnzQ(-1), nnzA(-1), nnzB(-1), nnzC(-1), nnzD(-1),
+StochInputTree::StochInputNode::StochInputNode( int id_ )
+  : id(id_), n(-1), my(-1), myl(-1), mz(-1), mzl(-1),
+    nnzQ(-1), nnzA(-1), nnzB(-1), nnzBl(-1), nnzC(-1), nnzD(-1), nnzDl(-1),
+    nCall(nullptr), myCall(nullptr), mzCall(nullptr), mylCall(nullptr), mzlCall(nullptr),
+    fnnzQ(nullptr), fnnzA(nullptr), fnnzB(nullptr), fnnzBl(nullptr), fnnzC(nullptr), fnnzD(nullptr),
+    fnnzDl(nullptr), fQ(nullptr), fA(nullptr), fB(nullptr), fBl(nullptr), fC(nullptr), fD(nullptr), fDl(nullptr),
+    fc(nullptr), fb(nullptr), fbl(nullptr), fclow(nullptr), fcupp(nullptr), ficlow(nullptr), ficupp(nullptr),
+    fdllow(nullptr), fdlupp(nullptr), fidllow(nullptr), fidlupp(nullptr), fxlow(nullptr), fxupp(nullptr), fixlow(nullptr), fixupp(nullptr),
     user_data(nullptr), 
     deleteUserData(false)
 { }

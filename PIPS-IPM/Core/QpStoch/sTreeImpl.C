@@ -12,6 +12,7 @@
 sTreeImpl::sTreeImpl( stochasticInput &in_, MPI_Comm comm /*=MPI_COMM_WORLD*/)
   : sTree(), m_id(0), in(in_), parent(nullptr)
 {
+   assert( false && "not used" );
   if(-1==rankMe) MPI_Comm_rank(comm, &rankMe);
   if(-1==numProcs) MPI_Comm_size(comm, &numProcs);
 
@@ -31,6 +32,7 @@ sTreeImpl::sTreeImpl( stochasticInput &in_, MPI_Comm comm /*=MPI_COMM_WORLD*/)
 sTreeImpl::sTreeImpl(int id, stochasticInput &in_)
   : sTree(), m_id(id), in(in_)
 { 
+   assert( false && "not used" );
   m_nx=0; m_my=0; m_mz=0;
   //m_nx = in.nSecondStageVars(id-1);
   //m_my = compute_nSecondStageEq(id-1);
@@ -41,6 +43,7 @@ sTreeImpl::sTreeImpl(int id, stochasticInput &in_)
   
 sTreeImpl::~sTreeImpl()
 { 
+   assert( false && "not used" );
   // parent deallocates children
   //for(size_t it=0; it<children.size(); it++)
   //  delete children[it];

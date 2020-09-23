@@ -32,7 +32,7 @@ class StochInputTree {
   class StochInputNode {
     friend class StochInputTree; friend class StochTree; friend class sTreeCallbacks;
   public:
-  StochInputNode();
+    StochInputNode(int id_ = -1);
 
 	StochInputNode(void* user_data, int id, 
 	   int n, int my, int mz,

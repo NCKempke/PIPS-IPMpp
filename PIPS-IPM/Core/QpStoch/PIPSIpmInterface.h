@@ -9,6 +9,7 @@
 #include <functional>
 
 #include "stochasticInput.hpp"
+#include "sTreeImpl.h"
 
 #include "sTree.h"
 #include "sData.h"
@@ -633,7 +634,8 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
 }
 
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStagePrimalColSolution() const {
+std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStagePrimalColSolution() const
+{
 	SimpleVector const &v = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->x).vec);
 	return std::vector<double>(&v[0],&v[0]+v.length());
 }
@@ -654,6 +656,7 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrim
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStageDualRowSolution() const
 {
+  assert( false && "not in use - can only be called when using sTreeImpl - we use sTreeCallbacks ...");
   SimpleVector const &y =
         *dynamic_cast<SimpleVector const*>((dynamic_cast<StochVector const&>(*vars->y)).vec);
   SimpleVector const &z =
@@ -663,7 +666,7 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStageDualR
      return std::vector<double>(); //this vector is not on this processor
   else
   {
-     std::vector<int> const &map = factory->tree->idx_EqIneq_Map;
+     std::vector<int> const &map = dynamic_cast<sTreeImpl*>(factory->tree)->idx_EqIneq_Map;
 
      std::vector<double> multipliers(map.size());
      for( size_t i = 0; i < map.size(); i++ )
@@ -692,10 +695,10 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStageDualR
   }
 }
 
-
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStageDualRowSolution(int scen) const 
 {
+  assert( false && "not in use - can only be called when using sTreeImpl - we use sTreeCallbacks ...");
   SimpleVector const &y = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->y).children[scen]->vec);
   SimpleVector const &z = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->z).children[scen]->vec);
   SimpleVector const &iclow = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->iclow).children[scen]->vec);
@@ -705,7 +708,7 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStageDual
     return std::vector<double>(); //this vector is not on this processor
   else 
   {
-    std::vector<int> const &map=factory->tree->children[scen]->idx_EqIneq_Map;
+    std::vector<int> const &map= dynamic_cast<sTreeImpl*>(factory->tree->children[scen])->idx_EqIneq_Map;
 
     std::vector<double> multipliers(map.size());
     for(size_t i = 0; i < map.size(); i++)

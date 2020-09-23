@@ -17,6 +17,8 @@ class sTreeImpl : public sTree
 {
  public:
   sTreeImpl(stochasticInput &in, MPI_Comm comm=MPI_COMM_WORLD);
+  vector<int> idx_EqIneq_Map;
+
  private: 
   sTreeImpl(int idx, stochasticInput &in);
  public:

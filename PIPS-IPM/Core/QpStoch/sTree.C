@@ -21,7 +21,7 @@ int sTree::rankPrcnd =-1;
 int sTree::numProcs  =-1;
 
 sTree::sTree()
-: commP2ZeroW(MPI_COMM_NULL), np(-1), IPMIterExecTIME(-1)
+: commWrkrs(MPI_COMM_NULL), myOldMpiComm(MPI_COMM_NULL), commP2ZeroW(MPI_COMM_NULL), N(0), MY(0), MZ(0), np(-1), IPMIterExecTIME(-1)
 {}
 
 
@@ -43,14 +43,13 @@ int sTree::mzl() const
 
 void sTree::assignProcesses(MPI_Comm comm)
 {
-  int size;
-  MPI_Comm_size(comm, &size);
+   const int size = PIPS_MPIgetSize(comm);
 
-  vector<int> processes(size);
-  for(int p=0; p<size; p++)
-    processes[p]=p;
+   std::vector<int> processes(size);
+   for( int p = 0; p < size; p++)
+      processes[p] = p;
 
-  assignProcesses(comm, processes);
+   assignProcesses(comm, processes);
 }
 
 #ifndef MIN
@@ -84,7 +83,7 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
     vecChildNodesLoad[i] = children[i]->processLoad();
   }
 #endif
-  //**** solve the asignment problem ****
+  //**** solve the assignment problem ****
   //here we'll have the mapping of children to processes
   vector<vector<int> > mapChildNodesToProcs;
 
@@ -195,9 +194,9 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
 double sTree::processLoad() const
 {
   //! need a recursive and also a collective call
-  if (IPMIterExecTIME<0.0)
-    //return (NNZQ+NNZA+NNZB+NNZC+NNZD + N+MY+MZ)/1000.0;
-    return (N+MY+MZ)/1000;
+  if( IPMIterExecTIME < 0.0 )
+     //return (NNZQ+NNZA+NNZB+NNZC+NNZD + N+MY+MZ)/1000.0;
+     return (N + MY + MZ) / 1000.0;
   return IPMIterExecTIME;
 }
 

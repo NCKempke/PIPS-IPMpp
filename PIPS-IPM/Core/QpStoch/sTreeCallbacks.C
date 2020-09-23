@@ -20,10 +20,10 @@
 
 sTreeCallbacks::~sTreeCallbacks()
 {
-  for(size_t it=0; it<children.size(); it++)
-    if (fakedata) delete fakedata;
-  for(size_t i = 0; i < real_children.size(); i++)
-    delete real_children[i];
+   for(size_t it=0; it<children.size(); it++)
+      if (fakedata) delete fakedata;
+   for(size_t i = 0; i < real_children.size(); i++)
+      delete real_children[i];
 }
 
 sTreeCallbacks::sTreeCallbacks() 
@@ -35,8 +35,8 @@ sTreeCallbacks::sTreeCallbacks()
     isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr), fakedata(nullptr)
 
 {
-  if(-1==rankMe) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
-  if(-1==numProcs) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+   if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
+   if( -1 == numProcs ) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 }
 
 sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
@@ -56,6 +56,7 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
   for(size_t it=0; it<inputTree->children.size(); it++)
     children.push_back(new sTreeCallbacks(inputTree->children[it]));
 #else
+  assert( false && "should not end up here..." );
 	tree = inputTree;
 #endif
 }
@@ -70,15 +71,16 @@ sTreeCallbacks::sTreeCallbacks(const vector<StochInputTree::StochInputNode*> &lo
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr), scens(localscens)
 {
-  if(-1==rankMe) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
-  if(-1==numProcs) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-	fakedata = new StochInputTree::StochInputNode();
-	real_children.reserve(scens.size());
-	for(size_t i = 0; i < scens.size(); i++) {
-		real_children.push_back(new sTreeCallbacks(scens[i]));
+   assert( 0 && "Not used currently" );
+   if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
+   if( -1 == numProcs ) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-	}
+   fakedata = new StochInputTree::StochInputNode();
+   real_children.reserve(scens.size());
+   for(size_t i = 0; i < scens.size(); i++)
+      real_children.push_back(new sTreeCallbacks(scens[i]));
 }
+
 sTreeCallbacks::sTreeCallbacks(StochInputTree::StochInputNode* data_)
   : sTree(), 
     NNZA(0), NNZQ(0), NNZB(0), NNZBl(0), NNZC(0), NNZD(0), NNZDl(0),
@@ -88,8 +90,9 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree::StochInputNode* data_)
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), data(data_), tree(nullptr), fakedata(nullptr)
 {
-  if(-1==rankMe) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
-  if(-1==numProcs) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+   assert( 0 && "Not used currently" );
+   if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
+   if( -1 == numProcs ) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 }
 
 void sTreeCallbacks::loadLocalSizes()
@@ -99,6 +102,7 @@ void sTreeCallbacks::loadLocalSizes()
 
 void sTreeCallbacks::switchToPresolvedData()
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    assert(!isDataPresolved);
    assert(hasPresolvedData);
 
@@ -132,6 +136,7 @@ void sTreeCallbacks::switchToPresolvedData()
 
 void sTreeCallbacks::switchToOriginalData()
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    assert(isDataPresolved);
 
    std::swap(NNZA_INACTIVE, NNZA);
@@ -163,17 +168,20 @@ void sTreeCallbacks::switchToOriginalData()
 
 bool sTreeCallbacks::isPresolved()
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    return isDataPresolved;
 }
 
 bool sTreeCallbacks::hasPresolved()
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    return hasPresolvedData;
 }
 
 void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
       const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent)
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    assert(!hasPresolvedData);
 
    assert(nxVec.children.size() == children.size());
@@ -278,10 +286,9 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
 }
 
 
-void sTreeCallbacks::writeSizes(ostream& sout) const
+void sTreeCallbacks::writeSizes( std::ostream& sout ) const
 {
-   int myRank;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
 #if 0
     sout << "NNZA : " << NNZA   << "\n";
@@ -295,14 +302,14 @@ void sTreeCallbacks::writeSizes(ostream& sout) const
 
     if( myRank == 0 )
     {
-    sout << "N          : "  <<  N           << "\n";
-    sout << "MY         : "  <<  MY          << "\n";
-    sout << "MZ         : "  <<  MZ          << "\n";
-    sout << "nx_active  : "  <<  nx_active    << "\n";
-    sout << "my_active  : "  <<  my_active    << "\n";
-    sout << "mz_active  : "  <<  mz_active    << "\n";
-    sout << "myl_active : "  <<  myl_active   << "\n";
-    sout << "mzl_active : "  <<  mzl_active   << "\n";
+       sout << "N          : "  <<  N           << "\n";
+       sout << "MY         : "  <<  MY          << "\n";
+       sout << "MZ         : "  <<  MZ          << "\n";
+       sout << "nx_active  : "  <<  nx_active    << "\n";
+       sout << "my_active  : "  <<  my_active    << "\n";
+       sout << "mz_active  : "  <<  mz_active    << "\n";
+       sout << "myl_active : "  <<  myl_active   << "\n";
+       sout << "mzl_active : "  <<  mzl_active   << "\n";
     }
 
 
@@ -314,161 +321,171 @@ void sTreeCallbacks::writeSizes(ostream& sout) const
 }
 
 
-// this is usually called before assigning processes
+// this is usually called after assigning processes
 void sTreeCallbacks::computeGlobalSizes()
 {
-   int myrank;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   const int myrank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-  if (data && sTree::isInVector(myrank, myProcs) ) {
+   if ( data && sTree::isInVector(myrank, myProcs) )
+   {
+      // callback used for sizes?
+      if( data->nCall )
+      {
+         assert(data->myCall);
+         assert(data->mzCall);
 
-    // callback used for sizes?
-    if( data->nCall ) {
-       assert(data->myCall);
-       assert(data->mzCall);
+         data->nCall(data->user_data, data->id, &data->n);
+         data->myCall(data->user_data, data->id, &data->my);
+         data->mzCall(data->user_data, data->id, &data->mz);
 
-       data->nCall(data->user_data, data->id, &data->n);
-       data->myCall(data->user_data, data->id, &data->my);
-       data->mzCall(data->user_data, data->id, &data->mz);
+         if( data->mylCall )
+            data->mylCall(data->user_data, data->id, &data->myl);
+         else
+            data->myl = -1;
 
-       if( data->mylCall )
-          data->mylCall(data->user_data, data->id, &data->myl);
-       else
-          data->myl = -1;
+         if( data->mzlCall )
+            data->mzlCall(data->user_data, data->id, &data->mzl);
+         else
+            data->myl = -1;
+      }
 
-       if( data->mzlCall )
-          data->mzlCall(data->user_data, data->id, &data->mzl);
-       else
-          data->myl = -1;
-    }
+      N  = data->n;
+      MY = data->my;
+      MZ = data->mz;
 
-    N  = data->n;
-    MY = data->my;
-    MZ = data->mz;
+      nx_active = data->n;
+      my_active = data->my;
+      mz_active = data->mz;
+      myl_active = data->myl;
+      mzl_active = data->mzl;
 
-    nx_active = data->n;
-    my_active = data->my;
-    mz_active = data->mz;
-    myl_active = data->myl;
-    mzl_active = data->mzl;
+      NNZQ = data->nnzQ;
+      NNZA = data->nnzA;
+      NNZB = data->nnzB;
+      NNZBl = data->nnzBl;
+      NNZC = data->nnzC;
+      NNZD = data->nnzD;
+      NNZDl = data->nnzDl;
+   }
+   else
+   {
+      N = MY = MZ = NNZQ = NNZA = NNZB = NNZBl = NNZC = NNZD = NNZDl = 0;
+   }
 
-    NNZQ = data->nnzQ;
-    NNZA = data->nnzA;
-    NNZB = data->nnzB;
-    NNZBl = data->nnzBl;
-    NNZC = data->nnzC;
-    NNZD = data->nnzD;
-    NNZDl = data->nnzDl;
-  } else {
-    N = MY = MZ = NNZQ = NNZA = NNZB = NNZBl = NNZC = NNZD = NNZDl = 0;
-  }
-  if (tree && np == -1) {
-    for(size_t it=0; it<tree->children.size();it++) {
-      N += tree->children[it]->nodeInput->n;
-      MY += tree->children[it]->nodeInput->my;
-      MZ += tree->children[it]->nodeInput->mz;
+   if (tree && np == -1)
+   {
+      for(size_t it = 0; it < tree->children.size();it++)
+      {
+         N += tree->children[it]->nodeInput->n;
+         MY += tree->children[it]->nodeInput->my;
+         MZ += tree->children[it]->nodeInput->mz;
       
-      NNZQ += tree->children[it]->nodeInput->nnzQ;
-      NNZA += tree->children[it]->nodeInput->nnzA;
-      NNZB += tree->children[it]->nodeInput->nnzB;
-      NNZBl += tree->children[it]->nodeInput->nnzBl;
-      NNZC += tree->children[it]->nodeInput->nnzC;
-      NNZD += tree->children[it]->nodeInput->nnzD;
-      NNZDl += tree->children[it]->nodeInput->nnzDl;
-    }
-  } else if (fakedata) {
-    fakedata->n = fakedata->my = fakedata->mz = fakedata->nnzQ = fakedata->nnzA = fakedata->nnzB = fakedata->nnzC = fakedata->nnzD = 0;	
-    for(size_t it=0; it<scens.size();it++) {
-      fakedata->n += scens[it]->n;
-      fakedata->my += scens[it]->my;
-      fakedata->mz += scens[it]->mz;
-      fakedata->nnzQ += scens[it]->nnzQ;
-      fakedata->nnzA += scens[it]->nnzA;
-      fakedata->nnzB += scens[it]->nnzB;
-      fakedata->nnzBl += scens[it]->nnzBl;
-      fakedata->nnzC += scens[it]->nnzC;
-      fakedata->nnzD += scens[it]->nnzD;
-      fakedata->nnzDl += scens[it]->nnzDl;
-      real_children[it]->np = np;
-    }
-    N += fakedata->n;
-    MY += fakedata->my;
-    MZ += fakedata->mz;
-    NNZQ += fakedata->nnzQ;
-    NNZA += fakedata->nnzA;
-    NNZB += fakedata->nnzB;
-    NNZBl += fakedata->nnzBl;
-    NNZC += fakedata->nnzC;
-    NNZD += fakedata->nnzD;
-    NNZDl += fakedata->nnzDl;
-  }
-  for(size_t it=0; it<children.size(); it++) {
-    children[it]->np = this->data->n;
-    children[it]->computeGlobalSizes();
-    N  += children[it]->N;
-    MY += children[it]->MY;
-    MZ += children[it]->MZ;
+         NNZQ += tree->children[it]->nodeInput->nnzQ;
+         NNZA += tree->children[it]->nodeInput->nnzA;
+         NNZB += tree->children[it]->nodeInput->nnzB;
+         NNZBl += tree->children[it]->nodeInput->nnzBl;
+         NNZC += tree->children[it]->nodeInput->nnzC;
+         NNZD += tree->children[it]->nodeInput->nnzD;
+         NNZDl += tree->children[it]->nodeInput->nnzDl;
+      }
+   }
+   else if (fakedata)
+   {
+      assert( false );
+      fakedata->n = fakedata->my = fakedata->mz = fakedata->nnzQ = fakedata->nnzA = fakedata->nnzB = fakedata->nnzC = fakedata->nnzD = 0;
+      for(size_t it = 0; it < scens.size();it++)
+      {
+         fakedata->n += scens[it]->n;
+         fakedata->my += scens[it]->my;
+         fakedata->mz += scens[it]->mz;
+         fakedata->nnzQ += scens[it]->nnzQ;
+         fakedata->nnzA += scens[it]->nnzA;
+         fakedata->nnzB += scens[it]->nnzB;
+         fakedata->nnzBl += scens[it]->nnzBl;
+         fakedata->nnzC += scens[it]->nnzC;
+         fakedata->nnzD += scens[it]->nnzD;
+         fakedata->nnzDl += scens[it]->nnzDl;
+         real_children[it]->np = np;
+      }
+      N += fakedata->n;
+      MY += fakedata->my;
+      MZ += fakedata->mz;
+      NNZQ += fakedata->nnzQ;
+      NNZA += fakedata->nnzA;
+      NNZB += fakedata->nnzB;
+      NNZBl += fakedata->nnzBl;
+      NNZC += fakedata->nnzC;
+      NNZD += fakedata->nnzD;
+      NNZDl += fakedata->nnzDl;
+   }
+
+   for(size_t it = 0; it < children.size(); it++)
+   {
+      children[it]->np = this->data->n;
+      children[it]->computeGlobalSizes();
+      N  += children[it]->N;
+      MY += children[it]->MY;
+      MZ += children[it]->MZ;
     
-    //nnz stuff
-    NNZQ += ((sTreeCallbacks*)children[it])->NNZQ;
-    NNZA += ((sTreeCallbacks*)children[it])->NNZA;
-    NNZB += ((sTreeCallbacks*)children[it])->NNZB;
-    NNZBl += ((sTreeCallbacks*)children[it])->NNZBl;
-    NNZC += ((sTreeCallbacks*)children[it])->NNZC;
-    NNZD += ((sTreeCallbacks*)children[it])->NNZD;
-    NNZDl += ((sTreeCallbacks*)children[it])->NNZDl;
-  }
+      //nnz stuff
+      NNZQ += ((sTreeCallbacks*)children[it])->NNZQ;
+      NNZA += ((sTreeCallbacks*)children[it])->NNZA;
+      NNZB += ((sTreeCallbacks*)children[it])->NNZB;
+      NNZBl += ((sTreeCallbacks*)children[it])->NNZBl;
+      NNZC += ((sTreeCallbacks*)children[it])->NNZC;
+      NNZD += ((sTreeCallbacks*)children[it])->NNZD;
+      NNZDl += ((sTreeCallbacks*)children[it])->NNZDl;
+   }
 }
 
 StochSymMatrix* sTreeCallbacks::createQ() const
 {
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochSymDummyMatrix(id());
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
+   //is this node a dead-end for this process?
+   if( commWrkrs == MPI_COMM_NULL )
+      return new StochSymDummyMatrix(id());
   
-  if (!fakedata) {
-    if(data->nnzQ<0)
-      data->fnnzQ(data->user_data, data->id, &data->nnzQ);
-    
-    StochSymMatrix* Q = 
-      new StochSymMatrix(data->id, 
-			 N, 
-			 data->n, 
-			 data->nnzQ,
-			 commWrkrs);
-    
-    data->fQ(data->user_data, data->id, 
-	     Q->diag->krowM(), 
-	     Q->diag->jcolM(),
-	     Q->diag->M());  
-    
-    for(size_t it=0; it<children.size(); it++) {
-      StochSymMatrix* child = children[it]->createQ();
-      Q->AddChild(child);
-    }
-    return Q;
-  } else {
-    assert(false);
-    return nullptr;
-    /*
-    assert(real_children.size() > 0);
-    vector<StochSymMatrix*> v(real_children.size());
-    for(size_t i = 0; i<real_children.size(); i++) {
-      v[i] = real_children[i]->createQ();
-    }
-    StochSymMatrix *out = new StochSymMatrix(v);
-    for(size_t i = 0; i<real_children.size(); i++) delete v[i];
-    return out;
-    */
-  }
+   if( !fakedata )
+   {
+      if( data->nnzQ < 0 )
+         data->fnnzQ(data->user_data, data->id, &data->nnzQ);
+
+      StochSymMatrix *Q = new StochSymMatrix(data->id, N, data->n, data->nnzQ,
+            commWrkrs);
+
+      data->fQ(data->user_data, data->id, Q->diag->krowM(), Q->diag->jcolM(),
+            Q->diag->M());
+
+      for( size_t it = 0; it < children.size(); it++ )
+      {
+         StochSymMatrix *child = children[it]->createQ();
+         Q->AddChild(child);
+      }
+      return Q;
+   }
+   else
+   {
+      assert(false);
+      return nullptr;
+      /*
+       assert(real_children.size() > 0);
+       vector<StochSymMatrix*> v(real_children.size());
+       for(size_t i = 0; i<real_children.size(); i++) {
+       v[i] = real_children[i]->createQ();
+       }
+       StochSymMatrix *out = new StochSymMatrix(v);
+       for(size_t i = 0; i<real_children.size(); i++) delete v[i];
+       return out;
+       */
+   }
 }
-
-
-
 
 StochGenMatrix* sTreeCallbacks::createA() const
 {
-  //is this node a dead-end for this process?
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL) {
     return new StochGenDummyMatrix(id());
   }
@@ -564,6 +581,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
 
 StochGenMatrix* sTreeCallbacks::createC() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochGenDummyMatrix(id());
@@ -657,35 +675,40 @@ StochGenMatrix* sTreeCallbacks::createC() const
   return C;
 }
 
-int sTreeCallbacks::nx() const {
+int sTreeCallbacks::nx() const
+{
    if( data )
       return nx_active;
    else
       return fakedata->n;
 }
 
-int sTreeCallbacks::my() const {
+int sTreeCallbacks::my() const
+{
    if( data )
       return my_active;
    else
       return fakedata->my;
 }
 
-int sTreeCallbacks::myl() const {
+int sTreeCallbacks::myl() const
+{
    if( data )
       return myl_active;
    else
       return fakedata->myl;
 }
 
-int sTreeCallbacks::mz() const {
+int sTreeCallbacks::mz() const
+{
    if( data )
       return mz_active;
    else
       return fakedata->mz;
 }
 
-int sTreeCallbacks::mzl() const {
+int sTreeCallbacks::mzl() const
+{
    if( data )
       return mzl_active;
    else
@@ -693,15 +716,18 @@ int sTreeCallbacks::mzl() const {
 }
 
 // not sure what this is used for
-int sTreeCallbacks::id() const {
-  if (data) return data->id;
-  else return 0;
+int sTreeCallbacks::id() const
+{
+   if( data )
+      return data->id;
+   else
+      return 0;
 }
 
 static double RESCALE=1.0;
 StochVector* sTreeCallbacks::createc() const
 {
-
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();  
@@ -748,6 +774,8 @@ StochVector* sTreeCallbacks::createc() const
 
 StochVector* sTreeCallbacks::createb() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -798,6 +826,8 @@ StochVector* sTreeCallbacks::createb() const
 
 StochVector* sTreeCallbacks::createxlow() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -825,6 +855,8 @@ StochVector* sTreeCallbacks::createxlow() const
 
 StochVector* sTreeCallbacks::createixlow() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -852,6 +884,8 @@ StochVector* sTreeCallbacks::createixlow() const
 
 StochVector* sTreeCallbacks::createxupp() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -879,6 +913,8 @@ StochVector* sTreeCallbacks::createxupp() const
 
 StochVector* sTreeCallbacks::createixupp() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -908,6 +944,8 @@ StochVector* sTreeCallbacks::createixupp() const
 
 StochVector* sTreeCallbacks::createclow() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -956,6 +994,8 @@ StochVector* sTreeCallbacks::createclow() const
 
 StochVector* sTreeCallbacks::createiclow() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -1003,6 +1043,8 @@ StochVector* sTreeCallbacks::createiclow() const
 
 StochVector* sTreeCallbacks::createcupp() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -1051,6 +1093,8 @@ StochVector* sTreeCallbacks::createcupp() const
 
 StochVector* sTreeCallbacks::createicupp() const
 {
+   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
@@ -1116,28 +1160,31 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    top_layer->commWrkrs = commWrkrs;
    top_layer->myProcs = myProcs;
 
-// TODO ?? we deactivate the preconditioner for hier approach anyway don't we?
-//     MPI_Comm commP2ZeroW;   // preconditioner (rank P+1) and special (rank 0) worker
-//   static int rankPrcnd;   // rank of preconditioner
-//   static int rankZeroW;   // rank of the "special" worker (the root, or 0-rank process)
-//   static int rankMe;      // rank of the running process
+   assert( rankMe == PIPS_MPIgetRank() );
+   assert( numProcs == PIPS_MPIgetSize() );
+
+   // make sure distributed presonditioner is deactivated
+   assert( rankZeroW == 0 );
+   assert( rankPrcnd == -1 );
+   assert( commP2ZeroW == MPI_COMM_NULL );
 
    top_layer->N = N;
    this->N -= nx_to_shave;
 
-   top_layer->MY = MY; // TODO : does this include linkings? if so - adapt the local one..
-   top_layer->MZ = MZ; // TODO : does this include linkings? if so - adapt the local one..
+   top_layer->MY = MY;
+   top_layer->MZ = MZ;
    top_layer->np = -1;
-   top_layer->IPMIterExecTIME = IPMIterExecTIME;
-   top_layer->children.push_back(this);
 
-// todo : idx_EqIneq_Map
+   assert( IPMIterExecTIME == -1 );
+   top_layer->children.push_back(this);
    top_layer->numProcs = numProcs;
-// resMon, iterMon..
+
+   // TODO: not sure about the ressources monitors..: resMon, iterMon..
    top_layer->is_hierarchical_root = true;
 
    /* sTreeCallbacks members */
-   // TODO do i have to modify these for this lower level tree?
+
+   /* non-zero countes will have to get adapted after actually modifying the data */
    top_layer->NNZA = NNZA;
    top_layer->NNZQ = NNZQ;
    top_layer->NNZB = NNZB;
@@ -1146,18 +1193,27 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    top_layer->NNZD = NNZD;
    top_layer->NNZDl = NNZDl;
 
-   // TODO : unsure about the inactive stuff
-   top_layer->NNZA_INACTIVE = NNZA_INACTIVE;
-   top_layer->NNZQ_INACTIVE = NNZQ_INACTIVE;
-   top_layer->NNZB_INACTIVE = NNZB_INACTIVE;
-   top_layer->NNZBl_INACTIVE = NNZBl_INACTIVE;
-   top_layer->NNZC_INACTIVE = NNZC_INACTIVE;
-   top_layer->NNZD_INACTIVE = NNZD_INACTIVE;
-   top_layer->NNZDl_INACTIVE = NNZDl_INACTIVE;
+   /* inactive counters are from a different data (the original not presolved one) object which does not have the root layer - set to -1 and false */
+   top_layer->isDataPresolved = false;
+   top_layer->hasPresolvedData = false;
 
-   top_layer->N_INACTIVE = N_INACTIVE;
-   top_layer->MY_INACTIVE = MY_INACTIVE;
-   top_layer->MZ_INACTIVE = MZ_INACTIVE;
+   top_layer->nx_inactive = -1;
+   top_layer->my_inactive = -1;
+   top_layer->mz_inactive = -1;
+   top_layer->myl_inactive = -1;
+   top_layer->mzl_inactive = -1;
+
+   top_layer->NNZA_INACTIVE = -1;
+   top_layer->NNZQ_INACTIVE = -1;
+   top_layer->NNZB_INACTIVE = -1;
+   top_layer->NNZBl_INACTIVE = -1;
+   top_layer->NNZC_INACTIVE = -1;
+   top_layer->NNZD_INACTIVE = -1;
+   top_layer->NNZDl_INACTIVE = -1;
+
+   top_layer->N_INACTIVE = -1;
+   top_layer->MY_INACTIVE = -1;
+   top_layer->MZ_INACTIVE = -1;
 
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
@@ -1171,19 +1227,9 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    top_layer->mzl_active = mzl_to_shave;
    this->mzl_active -= mzl_to_shave;
 
-   // TODO : unsure about the inactive stuff
-   top_layer->nx_inactive = nx_inactive;
-   top_layer->my_inactive = my_inactive;
-   top_layer->mz_inactive = mz_inactive;
-   top_layer->myl_inactive = myl_inactive;
-   top_layer->mzl_inactive = mzl_inactive;
-
-   top_layer->isDataPresolved = isDataPresolved;
-   top_layer->hasPresolvedData = hasPresolvedData;
-
-   // TODO : we do not actually modify the callback data ....
-   top_layer->data = data;
-   top_layer->tree = tree;
+   /* dummy data - should not except for querying the id */
+   top_layer->data = new StochInputTree::StochInputNode( data->id );
+   top_layer->tree = nullptr;
 
    return top_layer;
 }

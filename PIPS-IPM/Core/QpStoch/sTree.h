@@ -21,15 +21,18 @@ class sTree
 
   int NumberOfChildren() const { return children.size(); }
 
+  // global sizes are still local to each MPI process - they just sum all local data
   virtual void computeGlobalSizes() = 0;
   void GetGlobalSizes(long long& NXOut, long long& MYOut, long long& MZOut);
-  //void GetLocalSizes(int& nxOut, int& myOut, int& mzOut);
 
-  void assignProcesses  ( MPI_Comm comm = MPI_COMM_WORLD);
-  void assignProcesses  ( MPI_Comm, vector<int>&);
+  void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
 
+ protected:
+  void assignProcesses( MPI_Comm, vector<int>&);
+
+ public:
   MPI_Comm commWrkrs, myOldMpiComm; //workers only
-  vector<int> myProcs, myOldProcs;
+  std::vector<int> myProcs, myOldProcs;
 
   MPI_Comm commP2ZeroW;   // preconditioner (rank P+1) and special (rank 0) worker
   static int rankPrcnd;   // rank of preconditioner
@@ -95,8 +98,8 @@ class sTree
  protected:
   sTree();
 
-  void   toMonitorsList(list<NodeExecEntry>&);
-  void fromMonitorsList(list<NodeExecEntry>&);
+  void toMonitorsList( std::list<NodeExecEntry>& );
+  void fromMonitorsList( std::list<NodeExecEntry>& );
 
   void computeNodeTotal();
 
@@ -107,17 +110,16 @@ class sTree
   bool is_hierarchical_root = false;
 
  public:
+  /* global sizes - global meaning on this process - so the sum of all local matrices - MY, MZ do not include linking constraints */
   long long N,MY,MZ; //global sizes
   int np; //n for the parent
 
-  double IPMIterExecTIME;
+  double IPMIterExecTIME; // not used since we currentyl do not compute loads for nodes and processes...
   std::vector<sTree*> children;
-
-  vector<int> idx_EqIneq_Map;
 
   static int numProcs;
 
-  StochNodeResourcesMonitor    resMon;
+  StochNodeResourcesMonitor resMon;
   static StochIterateResourcesMonitor iterMon;
 #ifdef STOCH_TESTING
   void displayProcessInfo(int onWhichRank=0);

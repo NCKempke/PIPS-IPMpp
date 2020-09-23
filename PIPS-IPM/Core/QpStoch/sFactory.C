@@ -35,6 +35,7 @@
 sFactory::sFactory( stochasticInput& in, MPI_Comm comm)
   : QpGen(0,0,0), data(nullptr), m_tmTotal(0.0)
 {
+   assert( 0 && " Not used currently " );
   tree = new sTreeImpl(in, comm);
   //tree->computeGlobalSizes();
   //tree->GetGlobalSizes(nx, my, mz);
