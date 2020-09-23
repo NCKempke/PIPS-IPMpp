@@ -111,7 +111,7 @@ class sTree
 
  public:
   /* global sizes - global meaning on this process - so the sum of all local matrices - MY, MZ do not include linking constraints */
-  long long N,MY,MZ; //global sizes
+  long long N, MY, MZ, MYL, MZL;//global sizes
   int np; //n for the parent
 
   double IPMIterExecTIME; // not used since we currentyl do not compute loads for nodes and processes...

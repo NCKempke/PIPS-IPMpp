@@ -205,7 +205,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      presolver = nullptr;
   }
 
-//  data->writeToStreamDense(std::cout);
+  data->writeToStreamDense(std::cout);
 
 #if 0
   ofstream myfile;

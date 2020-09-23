@@ -21,7 +21,7 @@ int sTree::rankPrcnd =-1;
 int sTree::numProcs  =-1;
 
 sTree::sTree()
-: commWrkrs(MPI_COMM_NULL), myOldMpiComm(MPI_COMM_NULL), commP2ZeroW(MPI_COMM_NULL), N(0), MY(0), MZ(0), np(-1), IPMIterExecTIME(-1)
+: commWrkrs(MPI_COMM_NULL), myOldMpiComm(MPI_COMM_NULL), commP2ZeroW(MPI_COMM_NULL), N(0), MY(0), MZ(0), MYL(0), MZL(0), np(-1), IPMIterExecTIME(-1)
 {}
 
 

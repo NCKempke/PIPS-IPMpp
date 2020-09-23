@@ -2027,7 +2027,7 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    assert(m_conss <= m_link && n_vars <= n_link);
 #endif
 
-   SparseGenMatrix* const A_left = Bmat->shaveLeft( n_vars);
+   SparseGenMatrix* const A_left = Bmat->shaveLeft(n_vars);
 
    SparseGenMatrix* const Bl_left_top = Blmat->shaveLeft(n_vars);
    SparseGenMatrix* const bottom_left_block = Bl_left_top->shaveBottom(m_conss);
@@ -2048,10 +2048,10 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
       border_bottom->addChild(border_bottom_child);
    }
 
-   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(id, this, border_left, border_bottom, bottom_left_block, mpiComm);
-
    m -= m_conss;
    n -= n_vars;
+
+   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(id, this, border_left, border_bottom, bottom_left_block, mpiComm);
 
    assert(m >= 0 && n >= 0);
 

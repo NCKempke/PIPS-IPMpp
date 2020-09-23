@@ -27,7 +27,7 @@ sTreeCallbacks::~sTreeCallbacks()
 }
 
 sTreeCallbacks::sTreeCallbacks() 
-   : N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1),
+   : N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr), fakedata(nullptr)
@@ -39,7 +39,7 @@ sTreeCallbacks::sTreeCallbacks()
 
 sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
   : sTree(),
-    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1),
+    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), tree(nullptr), fakedata(nullptr)
@@ -60,7 +60,7 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
 // np==-1 is used to indicate the root node. these can't be root nodes
 sTreeCallbacks::sTreeCallbacks(const vector<StochInputTree::StochInputNode*> &localscens)
   : sTree(), 
-    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1),
+    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr), scens(localscens)
@@ -77,7 +77,7 @@ sTreeCallbacks::sTreeCallbacks(const vector<StochInputTree::StochInputNode*> &lo
 
 sTreeCallbacks::sTreeCallbacks(StochInputTree::StochInputNode* data_)
   : sTree(), 
-    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1),
+    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(data_->n),  my_active(data_->my),  mz_active(data_->mz),  myl_active(data_->myl),  mzl_active(data_->mzl),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), data(data_), tree(nullptr), fakedata(nullptr)
@@ -101,6 +101,8 @@ void sTreeCallbacks::switchToPresolvedData()
    std::swap(N_INACTIVE, N);
    std::swap(MY_INACTIVE, MY);
    std::swap(MZ_INACTIVE, MZ);
+   std::swap(MYL_INACTIVE, MYL);
+   std::swap(MZL_INACTIVE, MZL);
 
    std::swap(nx_active, nx_inactive);
    std::swap(my_active, my_inactive);
@@ -127,6 +129,8 @@ void sTreeCallbacks::switchToOriginalData()
    std::swap(N_INACTIVE, N);
    std::swap(MY_INACTIVE, MY);
    std::swap(MZ_INACTIVE, MZ);
+   std::swap(MYL_INACTIVE, MYL);
+   std::swap(MZL_INACTIVE, MZL);
 
    std::swap(nx_active, nx_inactive);
    std::swap(my_active, my_inactive);
@@ -204,7 +208,8 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    if( myVecSimpleLink != nullptr )
    {
       assert(np == -1);
-      myl_inactive = myVecSimpleLink->n;
+      MYL_INACTIVE = myVecSimpleLink->n;
+      myl_inactive = MYL_INACTIVE;
    }
    else
    {
@@ -214,7 +219,8 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    if( mzVecSimpleLink != nullptr )
    {
       assert(np == -1);
-      mzl_inactive = mzVecSimpleLink->n;
+      MZL_INACTIVE = mzVecSimpleLink->n;
+      mzl_inactive = MZL_INACTIVE;
    }
    else
    {
@@ -246,6 +252,8 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
       N_INACTIVE += sTreeCallbacksChild->N_INACTIVE;
       MY_INACTIVE += sTreeCallbacksChild->MY_INACTIVE;
       MZ_INACTIVE += sTreeCallbacksChild->MZ_INACTIVE;
+      MYL_INACTIVE += sTreeCallbacksChild->MYL_INACTIVE;
+      MZL_INACTIVE += sTreeCallbacksChild->MZL_INACTIVE;
    }
 
    hasPresolvedData = true;
@@ -261,6 +269,8 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
        sout << "N          : "  <<  N           << "\n";
        sout << "MY         : "  <<  MY          << "\n";
        sout << "MZ         : "  <<  MZ          << "\n";
+       sout << "MYL        : "  <<  MYL         << "\n";
+       sout << "MZL        : "  <<  MZL         << "\n";
        sout << "nx_active  : "  <<  nx_active    << "\n";
        sout << "my_active  : "  <<  my_active    << "\n";
        sout << "mz_active  : "  <<  mz_active    << "\n";
@@ -288,8 +298,8 @@ void sTreeCallbacks::computeGlobalSizes()
       // callback used for sizes?
       if( data->nCall )
       {
-         assert(data->myCall);
-         assert(data->mzCall);
+         assert( data->myCall );
+         assert(data->mzCall );
 
          data->nCall(data->user_data, data->id, &data->n);
          data->myCall(data->user_data, data->id, &data->my);
@@ -309,6 +319,8 @@ void sTreeCallbacks::computeGlobalSizes()
       N  = data->n;
       MY = data->my;
       MZ = data->mz;
+      MYL = data->myl;
+      MZL = data->mzl;
 
       nx_active = data->n;
       my_active = data->my;
@@ -318,7 +330,7 @@ void sTreeCallbacks::computeGlobalSizes()
    }
    else
    {
-      N = MY = MZ = 0; //NNZQ = NNZA = NNZB = NNZBl = NNZC = NNZD = NNZDl = 0;
+      N = MY = MZ = MYL = MZL = 0;
    }
 
    if (tree && np == -1)
@@ -351,6 +363,8 @@ void sTreeCallbacks::computeGlobalSizes()
       N += fakedata->n;
       MY += fakedata->my;
       MZ += fakedata->mz;
+      MYL += fakedata->myl;
+      MZL += fakedata->mzl;
    }
 
    for(size_t it = 0; it < children.size(); it++)
@@ -434,7 +448,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
     	// populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
     	// (i.e. the first block of linking constraints)
         A = new StochGenMatrix(data->id,
-             MY, N,
+             MY + MYL, N,
              data->my, np, data->nnzB,
              data->my, data->n,  data->nnzA,
              data->myl, data->n,  data->nnzBl,
@@ -444,7 +458,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       {
     	// populate B with A's data B_0 is the A_0 from the theoretical form
         A = new StochGenMatrix(data->id,
-             MY, N,
+             MY + MYL, N,
              data->my, np, data->nnzB,
              data->my, data->n,  data->nnzA,
              commWrkrs);
@@ -465,7 +479,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       if (data->fnnzBl)
       {
         A = new StochGenMatrix(data->id,
-             MY, N,
+             MY + MYL, N,
              data->my, np, data->nnzA,
              data->my, data->n,  data->nnzB,
 	  	       data->myl, data->n,  data->nnzBl,
@@ -474,7 +488,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       else
       {
         A = new StochGenMatrix(data->id,
-             MY, N,
+             MY + MYL, N,
              data->my, np, data->nnzA,
              data->my, data->n,  data->nnzB,
              commWrkrs);
@@ -530,7 +544,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       // populate D with C's data D_0 is the C_0 from the theoretical form; also fill Dl
       // (i.e. the first block of linking constraints)
         C = new StochGenMatrix(data->id,
-             MZ, N,
+             MZ + MZL, N,
              data->mz, np, data->nnzD,
              data->mz, data->n, data->nnzC,
              data->mzl, data->n, data->nnzDl,
@@ -541,7 +555,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
         //populate D with C's data
         //D_0 is the C_0 from the theoretical form
         C = new StochGenMatrix(data->id,
-             MZ, N,
+             MZ + MZL, N,
              data->mz, np, data->nnzD,
              data->mz, data->n,  data->nnzC,
              commWrkrs);
@@ -561,7 +575,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       if (data->fnnzDl)
       {
         C = new StochGenMatrix(data->id,
-             MZ, N,
+             MZ + MZL, N,
              data->mz, np, data->nnzC,
              data->mz, data->n, data->nnzD,
              data->mzl, data->n, data->nnzDl,
@@ -570,7 +584,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       else
       {
         C = new StochGenMatrix(data->id,
-             MZ, N,
+             MZ + MZL, N,
              data->mz, np, data->nnzC,
              data->mz, data->n, data->nnzD,
              commWrkrs);
@@ -1067,6 +1081,7 @@ StochVector* sTreeCallbacks::createicupp() const
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave)
 {
+   this->writeSizes(std::cout);
    assert( !is_hierarchical_root );
    assert( np == -1 );
 
@@ -1096,7 +1111,12 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    this->N -= nx_to_shave;
 
    top_layer->MY = MY;
+   top_layer->MYL = MYL;
+   this->MYL -= myl_to_shave;
+
    top_layer->MZ = MZ;
+   top_layer->MZL = MZL;
+   this->MZL -= mzl_to_shave;
    top_layer->np = -1;
 
    assert( IPMIterExecTIME == -1 );
@@ -1120,6 +1140,8 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    top_layer->N_INACTIVE = -1;
    top_layer->MY_INACTIVE = -1;
    top_layer->MZ_INACTIVE = -1;
+   top_layer->MYL_INACTIVE = -1;
+   top_layer->MZL_INACTIVE = -1;
 
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;

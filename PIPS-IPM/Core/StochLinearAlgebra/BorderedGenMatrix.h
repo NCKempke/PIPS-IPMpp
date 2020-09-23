@@ -45,7 +45,6 @@ class BorderedGenMatrix : public GenMatrix
       const bool distributed;
       const int rank;
 
-   private:
       long long m; // number rows in border
       long long n; // number cols in border
 

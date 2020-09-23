@@ -14,7 +14,7 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix() : mat(nullptr), mat_link(nullptr), is_vertical(false), id(-1), mpi_comm(MPI_COMM_NULL), distributed(false), rank(-1)
+StringGenMatrix::StringGenMatrix() : mat(nullptr), mat_link(nullptr), is_vertical(false), m(0), n(0), id(-1), mpi_comm(MPI_COMM_NULL), distributed(false), rank(-1)
 {
 }
 
@@ -22,6 +22,25 @@ StringGenMatrix::StringGenMatrix(int id_, bool is_vertical, SparseGenMatrix* mat
    : mat(mat), mat_link(mat_link), is_vertical(is_vertical), id(id_), mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL), rank(PIPS_MPIgetRank(mpi_comm))
 {
    assert(mat);
+
+   mat->getSize(m, n);
+
+   if( mat_link )
+   {
+      long long ml, nl;
+      mat_link->getSize(ml, nl);
+
+      if( is_vertical )
+      {
+         assert( n == nl );
+         m += ml;
+      }
+      else
+      {
+         assert( m == ml );
+         n += nl;
+      }
+   }
 }
 
 StringGenMatrix::~StringGenMatrix()
@@ -36,6 +55,25 @@ StringGenMatrix::~StringGenMatrix()
 void StringGenMatrix::addChild(StringGenMatrix* child)
 {
    children.push_back(child);
+
+   long long m_, n_;
+   child->getSize(m_, n_);
+
+   assert( child->is_vertical == this->is_vertical || child->isKindOf( kStringGenDummyMatrix ) );
+
+   if( ! child->isKindOf( kStringGenDummyMatrix ) )
+   {
+      if( is_vertical )
+      {
+         assert( n == n_ );
+         m += m_;
+      }
+      else
+      {
+         assert( m == m_ );
+         n += n_;
+      }
+   }
 }
 
 int StringGenMatrix::isKindOf( int type ) const

@@ -25,6 +25,7 @@ class StringGenMatrix : public GenMatrix
       bool is_vertical;
 
    protected:
+      long long m, n;
       const int id;
       MPI_Comm mpi_comm;
       const bool distributed;
@@ -55,9 +56,8 @@ class StringGenMatrix : public GenMatrix
       void columnScale ( const OoqpVector& vec ) override;
       void rowScale ( const OoqpVector& vec ) override;
 
-      // TODO : again not sure what to return here - not implemented for now..
-      void getSize( long long& m, long long& n ) const override { assert( "not implemented" && 0 ); };
-      void getSize( int& m, int& n ) const override { assert( "not implemented" && 0 ); };
+      void getSize( long long& m_, long long& n_ ) const override { m_ = m; n_ = n; };
+      void getSize( int& m_, int& n_ ) const override { m_ = m; n_ = n; };
 
       /* methods not needed for Hierarchical approach */
       void atPutDiagonal( int idiag, OoqpVector& x ) override { assert( "not implemented" && 0 ); };
@@ -109,7 +109,7 @@ class StringGenDummyMatrix : public StringGenMatrix
 
       virtual ~StringGenDummyMatrix() {};
       void addChild(StringGenMatrix* child) override {};
-      int isKindOf( int type ) const override { return type == kStochGenDummyMatrix; };
+      int isKindOf( int type ) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
       void mult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override {};
       void transMult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override {};
       double abmaxnorm() const override {return -std::numeric_limits<double>::infinity();};

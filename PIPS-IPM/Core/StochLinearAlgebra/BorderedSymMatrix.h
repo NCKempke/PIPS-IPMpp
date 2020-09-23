@@ -22,7 +22,7 @@ class StochSymMatrix;
 class BorderedSymMatrix : public SymMatrix
 {
    public:
-      BorderedSymMatrix(int id, long long global_n, StochSymMatrix* inner_matrix, StringGenMatrix* border_vertical,
+      BorderedSymMatrix(int id, StochSymMatrix* inner_matrix, StringGenMatrix* border_vertical,
             SymMatrix* bottom_block, MPI_Comm mpiComm_);
 
       virtual ~BorderedSymMatrix();
@@ -82,12 +82,10 @@ class BorderedSymMatrix : public SymMatrix
    protected:
 
       int id;
-      long long n;
       MPI_Comm mpiComm;
       const int iAmDistrib;
 
-   private:
-
+      long long n;
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDSYMMATRIX_H_ */

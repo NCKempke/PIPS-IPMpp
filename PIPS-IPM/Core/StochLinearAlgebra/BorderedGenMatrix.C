@@ -21,16 +21,36 @@
 #include "StringGenMatrix.h"
 
 BorderedGenMatrix::BorderedGenMatrix(int id_, StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
-            StringGenMatrix* border_bottom, SparseGenMatrix* bottom_right_block, MPI_Comm mpi_comm_) :
-            id(id_), inner_matrix(inner_matrix), border_left(border_left), border_bottom(border_bottom), bottom_left_block(bottom_right_block),
-            mpi_comm(mpi_comm_), distributed( mpi_comm == MPI_COMM_NULL ), rank( PIPS_MPIgetRank(mpi_comm) )
+            StringGenMatrix* border_bottom, SparseGenMatrix* bottom_left_block, MPI_Comm mpi_comm_) :
+            inner_matrix(inner_matrix), border_left(border_left), border_bottom(border_bottom), bottom_left_block(bottom_left_block),
+            id(id_), mpi_comm(mpi_comm_), distributed( mpi_comm == MPI_COMM_NULL ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
-   bottom_right_block->getSize(m, n);
-
    assert( inner_matrix );
    assert( border_left );
    assert( border_bottom );
-   assert( bottom_right_block );
+   assert( bottom_left_block );
+
+   bottom_left_block->getSize(m, n);
+
+   int m_bottom, n_bottom;
+   border_bottom->getSize(m_bottom, n_bottom);
+
+   int m_left, n_left;
+   border_left->getSize(m_left, n_left);
+
+   int m_inner, n_inner;
+   inner_matrix->getSize(m_inner, n_inner );
+
+   assert( n == n_left );
+   assert( m == m_bottom );
+
+   std::cout << m_inner << " " << m_left << std::endl;
+   assert( m_inner == m_left );
+   assert( n_inner == n_bottom );
+
+   m += m_left;
+   n += n_bottom;
+
 }
 
 BorderedGenMatrix::~BorderedGenMatrix()

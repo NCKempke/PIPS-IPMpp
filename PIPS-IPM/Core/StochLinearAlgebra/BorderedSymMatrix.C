@@ -11,22 +11,32 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-BorderedSymMatrix::BorderedSymMatrix(int id_, long long n_, StochSymMatrix* inner_matrix_, StringGenMatrix* border_vertical_, SymMatrix* bottom_block_,
-            MPI_Comm mpiComm_) : inner_matrix(inner_matrix_), border_vertical(border_vertical_), bottom_block(bottom_block_), id(id_), n(n_), mpiComm( mpiComm_ ),
+BorderedSymMatrix::BorderedSymMatrix(int id_, StochSymMatrix* inner_matrix_, StringGenMatrix* border_vertical_, SymMatrix* bottom_block_,
+            MPI_Comm mpiComm_) : inner_matrix(inner_matrix_), border_vertical(border_vertical_), bottom_block(bottom_block_), id(id_), mpiComm( mpiComm_ ),
             iAmDistrib( mpiComm == MPI_COMM_NULL )
 {
    assert( inner_matrix );
    assert( border_vertical );
    assert( bottom_block );
 
-   assert(inner_matrix->children.size() == border_vertical->children.size() );
+   assert( inner_matrix->children.size() == border_vertical->children.size() );
    assert( border_vertical->is_vertical );
 
-#ifndef NDEBUG
-   int n, m;
-   border_vertical->getSize(m, n);
+   inner_matrix->getSize(n, n);
 
-   assert( n == inner_matrix->n + n);
+   int n_border, m_border;
+   border_vertical->getSize(m_border, n_border);
+
+   n += n_border;
+
+#ifndef NDEBUG
+   int n_bottom;
+   bottom_block->getSize(n_bottom, n_bottom);
+   int n_inner;
+   inner_matrix->getSize(n_inner, n_inner);
+
+   assert( n_inner == m_border );
+   assert( n_bottom == n_border );
 #endif
 }
 
