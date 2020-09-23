@@ -97,9 +97,9 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 
     int nnzA = A.numberOfNonZeros();
     int nnzC = C.numberOfNonZeros();
-    cout << "augdump  nx=" << nx << endl;
-    cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << endl
-	 << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << endl;
+    std::cout << "augdump  nx=" << nx << std::endl;
+    std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << std::endl
+              << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << std::endl;
 
 	vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
 	vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
