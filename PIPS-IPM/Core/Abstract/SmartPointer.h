@@ -171,7 +171,7 @@ public:
   }
   //@{
   /**
-   * Send a message to, or access a data memeber of, the object
+   * Send a message to, or access a data member of, the object
    * to which this is a reference. */
   T * operator->() {
     return obj;
