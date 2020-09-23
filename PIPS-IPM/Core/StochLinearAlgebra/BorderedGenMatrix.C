@@ -44,7 +44,6 @@ BorderedGenMatrix::BorderedGenMatrix(int id_, StochGenMatrix* inner_matrix, Stri
    assert( n == n_left );
    assert( m == m_bottom );
 
-   std::cout << m_inner << " " << m_left << std::endl;
    assert( m_inner == m_left );
    assert( n_inner == n_bottom );
 
