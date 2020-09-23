@@ -40,6 +40,7 @@ class BorderedGenMatrix : public GenMatrix
 
    protected:
 
+      const int id;
       MPI_Comm mpi_comm;
       const bool distributed;
       const int rank;
@@ -49,7 +50,7 @@ class BorderedGenMatrix : public GenMatrix
       long long n; // number cols in border
 
    public:
-      BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
+      BorderedGenMatrix(int id, StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
             StringGenMatrix* border_bottom, SparseGenMatrix* bottom_left_block, MPI_Comm mpi_comm_);
       virtual ~BorderedGenMatrix();
 

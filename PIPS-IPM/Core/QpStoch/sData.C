@@ -1633,6 +1633,7 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
       std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
             n_global_ineq_linking_conss << " inequalities for the border" << std::endl;
    }
+
    BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars);
 
    BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);

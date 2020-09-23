@@ -20,9 +20,9 @@
 #include <cassert>
 #include "StringGenMatrix.h"
 
-BorderedGenMatrix::BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
+BorderedGenMatrix::BorderedGenMatrix(int id_, StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
             StringGenMatrix* border_bottom, SparseGenMatrix* bottom_right_block, MPI_Comm mpi_comm_) :
-            inner_matrix(inner_matrix), border_left(border_left), border_bottom(border_bottom), bottom_left_block(bottom_right_block),
+            id(id_), inner_matrix(inner_matrix), border_left(border_left), border_bottom(border_bottom), bottom_left_block(bottom_right_block),
             mpi_comm(mpi_comm_), distributed( mpi_comm == MPI_COMM_NULL ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
    bottom_right_block->getSize(m, n);

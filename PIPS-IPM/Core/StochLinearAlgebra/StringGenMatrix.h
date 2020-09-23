@@ -25,12 +25,13 @@ class StringGenMatrix : public GenMatrix
       bool is_vertical;
 
    protected:
+      const int id;
       MPI_Comm mpi_comm;
       const bool distributed;
       const int rank;
 
    public:
-      StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_);
+      StringGenMatrix(int id, bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_);
 
       virtual ~StringGenMatrix();
 

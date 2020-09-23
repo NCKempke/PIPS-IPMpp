@@ -524,7 +524,7 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 #endif
 
    SparseGenMatrix* const border_left = diag->shaveSymLeftBottom(n_vars);
-   StringGenMatrix* const border_vertical = new StringGenMatrix(true, border_left, nullptr, mpiComm);
+   StringGenMatrix* const border_vertical = new StringGenMatrix(id, true, border_left, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -543,7 +543,7 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 void StochSymMatrix::shaveBorder(int n_vars, StringGenMatrix*& border_vertical)
 {
    SparseGenMatrix* const border_block = border->shaveLeft(n_vars);
-   border_vertical = new StringGenMatrix(true, border_block, nullptr, mpiComm);
+   border_vertical = new StringGenMatrix(id, true, border_block, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {

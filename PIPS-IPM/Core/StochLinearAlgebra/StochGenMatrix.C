@@ -2021,23 +2021,21 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
 // TODO specify border and left from sData...
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
-   // TODO : hand through id? what is id for...
-
 #ifndef NDEBUG
    int m_link, n_link;
    Blmat->getSize(m_link, n_link);
    assert(m_conss <= m_link && n_vars <= n_link);
 #endif
 
-   SparseGenMatrix* const A_left = Bmat->shaveLeft(n_vars);
+   SparseGenMatrix* const A_left = Bmat->shaveLeft( n_vars);
 
    SparseGenMatrix* const Bl_left_top = Blmat->shaveLeft(n_vars);
    SparseGenMatrix* const bottom_left_block = Bl_left_top->shaveBottom(m_conss);
 
    SparseGenMatrix* const Bl_right_bottom = Blmat->shaveBottom(m_conss);
 
-   StringGenMatrix* const border_bottom = new StringGenMatrix(false, Bl_right_bottom, nullptr, mpiComm);
-   StringGenMatrix* const border_left = new StringGenMatrix(true, A_left, Bl_left_top, mpiComm);
+   StringGenMatrix* const border_bottom = new StringGenMatrix(id, false, Bl_right_bottom, nullptr, mpiComm);
+   StringGenMatrix* const border_left = new StringGenMatrix(id, true, A_left, Bl_left_top, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -2050,7 +2048,7 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
       border_bottom->addChild(border_bottom_child);
    }
 
-   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
+   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(id, this, border_left, border_bottom, bottom_left_block, mpiComm);
 
    m -= m_conss;
    n -= n_vars;
@@ -2066,8 +2064,8 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& bor
    SparseGenMatrix* const border_a_mat = Amat->shaveLeft(n_vars);
    SparseGenMatrix* const border_bl_mat = Blmat->shaveBottom(m_conss);
 
-   border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
-   border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
+   border_bottom = new StringGenMatrix(id, false, border_bl_mat, nullptr, mpiComm);
+   border_left = new StringGenMatrix(id, true, border_a_mat, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
