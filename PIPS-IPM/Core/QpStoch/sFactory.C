@@ -60,13 +60,6 @@ sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
 
 }
 
-sFactory::sFactory( int nx_, int my_, int mz_, int nnzQ_, int nnzA_, int nnzC_ )
-  : QpGen( nx_, my_, mz_ ),
-    nnzQ(nnzQ_), nnzA(nnzA_), nnzC(nnzC_),
-    tree(nullptr), data(nullptr), resid(nullptr), linsys(nullptr),
-    m_tmTotal(0.0)
-{ };
-
 sFactory::sFactory()
   : QpGen( 0,0,0 ), m_tmTotal(0.0)
 { };

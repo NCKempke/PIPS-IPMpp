@@ -12,7 +12,6 @@ class sFactoryAug : public sFactory {
   sFactoryAug( StochInputTree*, MPI_Comm comm=MPI_COMM_WORLD );
   sFactoryAug( stochasticInput&, MPI_Comm comm=MPI_COMM_WORLD );
  private:
-  sFactoryAug( int nx_, int my_, int mz_, int nnzQ_, int nnzA_, int nnzC_ );
   sFactoryAug();
  public:
   virtual ~sFactoryAug();

@@ -24,10 +24,6 @@ class sLinsysLeaf;
 #include "StochResourcesMonitor.h"
 
 class sFactory : public QpGen {
- protected:
-  int m_blocks;
-
-  long long nnzQ, nnzA, nnzC;
  public:
   sFactory( stochasticInput&, MPI_Comm comm=MPI_COMM_WORLD );
 
@@ -37,7 +33,6 @@ class sFactory : public QpGen {
   sFactory( StochInputTree*, MPI_Comm comm=MPI_COMM_WORLD );
 
  protected:
-  sFactory( int nx_, int my_, int mz_, int nnzQ_, int nnzA_, int nnzC_ );
   sFactory();
 
  public:
