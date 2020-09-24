@@ -37,6 +37,5 @@ sFactoryAug::newLinsysRoot(sData* prob,
 			   OoqpVector* dd,OoqpVector* dq,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
-   assert( false && "not in use" );
    return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
 }
