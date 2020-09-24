@@ -1202,9 +1202,10 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    return permvec;
 }
 
-sData::sData(const sTree* tree)
+sData::sData(const sTree* tree) : is_hierarchy_root(false)
 //  : QpGenData(nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr)
 {
+   assert( false && " not in use " );
    stochNode = tree;
    Q = SymMatrixHandle(tree->createQ());
    g = OoqpVectorHandle(tree->createc());
@@ -1258,7 +1259,7 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
          A_in, bA_in,
          C_in,
          clow_in, iclow_in, cupp_in, icupp_in),
-         is_hierarchy_root( false ),
+         is_hierarchy_root( is_hierarchy_root ),
          useLinkStructure( false )
 {
   nxlow = nxlow_; nxupp = nxupp_;
@@ -2215,41 +2216,66 @@ int sData::getLocalmzl() const
 
 int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
 {
+   long long nx_loc, my_loc, mz_loc, myl_loc, mzl_loc;
+
    if( is_hierarchy_root )
-      assert( 0 && "TODO : implement");
-   long long nxloc, myloc, mzloc, mylloc, mzlloc;
+   {
+      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
+      assert(Abd.border_left->mat);
+      assert(Abd.border_left->mat_link);
+      Abd.border_left->mat->getSize(my_loc, nx_loc);
+      Abd.border_left->mat_link->getSize(myl_loc, nx_loc);
 
-   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
-   Ast.Blmat->getSize(mylloc, nxloc);
-   Ast.Bmat->getSize(myloc, nxloc);
+      const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
+      assert(Cbd.border_left->mat);
+      assert(Cbd.border_left->mat_link);
+      Cbd.border_left->mat->getSize(mz_loc, nx_loc);
+      Cbd.border_left->mat_link->getSize(mzl_loc, nx_loc);
+   }
+   else
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      Ast.Blmat->getSize(myl_loc, nx_loc);
+      Ast.Bmat->getSize(my_loc, nx_loc);
 
-   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
-   Cst.Blmat->getSize(mzlloc, nxloc);
-   Cst.Bmat->getSize(mzloc, nxloc);
+      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      Cst.Blmat->getSize(mzl_loc, nx_loc);
+      Cst.Bmat->getSize(mz_loc, nx_loc);
+   }
 
-   nx = nxloc;
-   my = myloc;
-   mz = mzloc;
-   myl = mylloc;
-   mzl = mzlloc;
+   nx = nx_loc;
+   my = my_loc;
+   mz = mz_loc;
+   myl = myl_loc;
+   mzl = mzl_loc;
    return 0;
 }
 
 int sData::getLocalSizes(int& nx, int& my, int& mz) const
 {
+   long long nx_loc, my_loc, mz_loc;
    if( is_hierarchy_root )
-      assert( 0 && "TODO : implement");
-   long long nxll, myll, mzll;
+   {
+      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
+      assert(Abd.border_left->mat);
+      Abd.border_left->mat->getSize(my_loc, nx_loc);
 
-   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
-   Ast.Bmat->getSize(myll, nxll);
+      const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
+      assert(Cbd.border_left->mat);
+      Cbd.border_left->mat->getSize(mz_loc, nx_loc);
+   }
+   else
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      Ast.Bmat->getSize(my_loc, nx_loc);
 
-   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
-   Cst.Bmat->getSize(mzll, nxll);
+      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      Cst.Bmat->getSize(mz_loc, nx_loc);
+   }
 
-   nx = nxll;
-   my = myll;
-   mz = mzll;
+   nx = nx_loc;
+   my = my_loc;
+   mz = mz_loc;
    return 0;
 }
 

@@ -133,6 +133,8 @@ public:
   void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
         int& local2linksStartIneq, int& local2linksEndIneq);
 
+  bool isHierarchieRoot() const { return is_hierarchy_root; };
+
   virtual ~sData();
 
  protected:
@@ -184,7 +186,7 @@ public:
   static std::vector<int> get2LinkLengthsVec(const std::vector<int>& linkStartBlocks, const size_t nBlocks);
 
   /* a two link must be in two blocks directly after one another */
-  bool is_hierarchy_root;
+  const bool is_hierarchy_root;
   bool useLinkStructure;
 
   int n_global_linking_vars = -1;
