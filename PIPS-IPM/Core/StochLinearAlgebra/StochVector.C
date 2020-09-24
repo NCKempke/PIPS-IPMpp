@@ -1810,7 +1810,6 @@ bool StochVectorBase<T>::somePositive( const OoqpVectorBase<T>& select_ ) const
       some_positive = children[it]->somePositive(*select.children[it]);
 
    // ! parallel..
-   assert( false );
    return some_positive ;
 }
 
