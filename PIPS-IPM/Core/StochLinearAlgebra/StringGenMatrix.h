@@ -80,23 +80,23 @@ class StringGenMatrix : public GenMatrix
    protected:
       StringGenMatrix();
 
-      void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-      void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
-      void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-      void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
-      void columnScaleVertical( const OoqpVector& vec );
-      void columnScaleHorizontal( const OoqpVector& vec );
+      virtual void columnScaleVertical( const OoqpVector& vec );
+      virtual void columnScaleHorizontal( const OoqpVector& vec );
 
-      void rowScaleVertical( const OoqpVector& vec );
-      void rowScaleHorizontal( const OoqpVector& vec );
+      virtual void rowScaleVertical( const OoqpVector& vec );
+      virtual void rowScaleHorizontal( const OoqpVector& vec );
 
-      void getRowMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const;
-      void getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const;
+      virtual void getRowMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const;
+      virtual void getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const;
 
-      void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
-      void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
+      virtual void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
+      virtual void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
 };
 
 /**
@@ -119,6 +119,25 @@ class StringGenDummyMatrix : public StringGenMatrix
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override {};
       void columnScale( const OoqpVector& vec ) override {};
       void rowScale( const OoqpVector& vec ) override {};
+
+   protected:
+      void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
+      void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
+
+      void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
+      void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
+
+      void columnScaleVertical( const OoqpVector& vec ) override {};
+      void columnScaleHorizontal( const OoqpVector& vec ) override {};
+
+      void rowScaleVertical( const OoqpVector& vec ) override {};
+      void rowScaleHorizontal( const OoqpVector& vec ) override {};
+
+      void getRowMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const override {};
+      void getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const override {};
+
+      void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const override {};
+      void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const override {};
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_ */
