@@ -12,15 +12,9 @@
 #include <cassert>
 #include "sLinsysRootBordered.h"
 
-sLinsysRoot* sFactoryHierarchical::newLinsysRoot()
+sLinsysRoot* sFactoryHierarchical::newLinsysRootHierarchical()
 {
    return new sLinsysRootBordered(this, data);
-}
-
-sLinsysRoot* sFactoryHierarchical::newLinsysRoot(sData *prob, OoqpVector *dd, OoqpVector *dq,
-      OoqpVector *nomegaInv, OoqpVector *rhs)
-{
-   return new sLinsysRootBordered(this, prob, dd, dq, nomegaInv, rhs);
 }
 
 Data* sFactoryHierarchical::switchToHierarchicalData( Data* prob_in )
@@ -41,6 +35,8 @@ Data* sFactoryHierarchical::switchToHierarchicalData( Data* prob_in )
 
    // adjust data
    data = data->switchToHierarchicalData( tree );
+
+   assert( data->isHierarchieRoot() );
 
    return data;
 }

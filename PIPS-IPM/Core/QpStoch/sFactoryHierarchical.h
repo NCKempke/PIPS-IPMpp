@@ -11,20 +11,18 @@
 
 #include "sFactoryAug.h"
 
-class sFactoryHierarchical : public sFactory {
+class sFactoryHierarchical : public sFactoryAug {
    public:
 
       sFactoryHierarchical( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD )
-      : sFactory(inputTree, comm) {};
+      : sFactoryAug(inputTree, comm) {};
 
       sFactoryHierarchical( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD )
-      : sFactory(in,comm) {};
+      : sFactoryAug(in, comm) {};
 
       virtual ~sFactoryHierarchical() {};
 
-      sLinsysRoot* newLinsysRoot() override;
-      sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
-            OoqpVector* nomegaInv, OoqpVector* rhs) override;
+      sLinsysRoot* newLinsysRootHierarchical() override;
 
       Data* switchToHierarchicalData(Data* prob_in) override;
 };
