@@ -2295,6 +2295,7 @@ int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
 
 int sData::getSchurCompMaxNnz()
 {
+   assert( false && "TODO : adaped to shaved matrix probably..." );
    if( is_hierarchy_root )
       assert( 0 && "TODO : implement");
    assert(children.size() > 0);
