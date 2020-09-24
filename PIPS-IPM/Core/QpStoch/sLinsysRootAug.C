@@ -46,9 +46,10 @@ static void biCGStabCommunicateStatus(int flag, int it)
 sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
   : sLinsysRoot(factory_, prob_), CtDC(nullptr)
 { 
+  assert(locmyl >= 0 && locmzl >= 0);
+
   kkt = createKKT(prob_);
   solver = createSolver(prob_, kkt);
-  assert(locmyl >= 0 && locmzl >= 0);
   redRhs = new SimpleVector(locnx+locmy+locmz+locmyl+locmzl);
 }
 
@@ -60,11 +61,15 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* rhs_)
   : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
-  assert( locmyl == 0 && locmzl == 0 );
+#ifdef HIERARCHICAL
+   assert(locmyl >= 0 && locmzl >= 0);
+#else
+   assert(locmyl == 0 && locmzl == 0);
+#endif
 
-  kkt = createKKT(prob_);
-  solver = createSolver(prob_, kkt);
-  redRhs = new SimpleVector(locnx+locmy+locmz);
+   kkt = createKKT(prob_);
+   solver = createSolver(prob_, kkt);
+   redRhs = new SimpleVector(locnx+locmy+locmz);
 }
 
 sLinsysRootAug::~sLinsysRootAug()
