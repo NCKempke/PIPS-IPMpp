@@ -1154,8 +1154,8 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
 
-   top_layer->my_active = 0;
-   top_layer->mz_active = 0;
+   top_layer->my_active = -1;
+   top_layer->mz_active = -1;
 
    top_layer->myl_active = myl_to_shave;
    this->myl_active -= myl_to_shave;
