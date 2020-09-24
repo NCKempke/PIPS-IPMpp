@@ -518,9 +518,9 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 {
 #ifndef NDEBUG
    // TODO no support for border...
-   int m, n;
-   border->getSize(m, n);
-   assert(m == 0 && n == 0);
+   int m_border, n_border;
+   border->getSize(m_border, n_border);
+   assert(m_border == 0 && n_border == 0);
 #endif
 
    SparseGenMatrix* const border_left = diag->shaveSymLeftBottom(n_vars);
@@ -535,7 +535,10 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 
    n -= n_vars;
 
-   BorderedSymMatrix* const border_layer = new BorderedSymMatrix(id, this, border_vertical, new SparseSymMatrix(n, 0, false), mpiComm);
+   int mm, nn;
+   border_vertical->getSize(mm,nn);
+   std::cout << " kkkkkkkkkkkkk " << mm << " " << nn << std::endl;
+   BorderedSymMatrix* const border_layer = new BorderedSymMatrix(id, this, border_vertical, new SparseSymMatrix(n_vars, 0, false), mpiComm);
 
    assert(n >= 0);
 

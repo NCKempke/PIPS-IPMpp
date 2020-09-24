@@ -262,8 +262,9 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
 
 void sTreeCallbacks::writeSizes( std::ostream& sout ) const
 {
-   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
+   const int myRank = PIPS_MPIgetRank(commWrkrs);
 
+   MPI_Barrier(commWrkrs);
     if( myRank == 0 )
     {
        sout << "N          : "  <<  N           << "\n";
@@ -276,14 +277,21 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
        sout << "mz_active  : "  <<  mz_active    << "\n";
        sout << "myl_active : "  <<  myl_active   << "\n";
        sout << "mzl_active : "  <<  mzl_active   << "\n";
-    }
+   }
 
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      sout << "child " << it << ": \n\n";
-      dynamic_cast<sTreeCallbacks*>(children[it])->writeSizes(sout);
+      if( children[it]->commWrkrs != MPI_COMM_NULL )
+      {
+         sout << "child " << it << ": \n\n";
+         dynamic_cast<sTreeCallbacks*>(children[it])->writeSizes(sout);
+      }
+      MPI_Barrier(commWrkrs);
    }
+
+   if( myRank == 0 )
+      std::cout << std::endl;
 }
 
 
@@ -1081,7 +1089,6 @@ StochVector* sTreeCallbacks::createicupp() const
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave)
 {
-   this->writeSizes(std::cout);
    assert( !is_hierarchical_root );
    assert( np == -1 );
 

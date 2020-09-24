@@ -123,7 +123,7 @@ Data* StochPresolver::presolve()
    if( reset_free_variables_after_presolve )
       resetFreeVariables();
 
-   /* finalize data and switch tree to new preolved data */
+   /* finalize data and switch tree to new presolved data */
    sData* finalPresData = presData->finalize();
 
    assert( tree != nullptr );

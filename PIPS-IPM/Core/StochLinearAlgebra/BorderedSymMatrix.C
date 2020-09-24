@@ -35,6 +35,7 @@ BorderedSymMatrix::BorderedSymMatrix(int id_, StochSymMatrix* inner_matrix_, Str
    int n_inner;
    inner_matrix->getSize(n_inner, n_inner);
 
+   std::cout << n_inner << " " << m_border << std::endl;
    assert( n_inner == m_border );
    assert( n_bottom == n_border );
 #endif
