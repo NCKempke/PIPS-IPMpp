@@ -43,6 +43,7 @@ int sTree::mzl() const
 
 void sTree::assignProcesses(MPI_Comm comm)
 {
+   assert( !is_hierarchical_root );
    const int size = PIPS_MPIgetSize(comm);
 
    std::vector<int> processes(size);
@@ -58,6 +59,8 @@ void sTree::assignProcesses(MPI_Comm comm)
 
 void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
 {
+  assert( !is_hierarchical_root );
+
   int ierr;
   commWrkrs = world;
   myProcs = processes;
@@ -193,6 +196,7 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
 
 double sTree::processLoad() const
 {
+   assert( !is_hierarchical_root );
   //! need a recursive and also a collective call
   if( IPMIterExecTIME < 0.0 )
      //return (NNZQ+NNZA+NNZB+NNZC+NNZD + N+MY+MZ)/1000.0;
@@ -202,6 +206,7 @@ double sTree::processLoad() const
 
 void sTree::GetGlobalSizes(long long& NOut, long long& MYOut, long long& MZOut)
 {
+   assert( false );
   NOut=N; MYOut=MY; MZOut=MZ;
 }
 
@@ -212,6 +217,7 @@ void sTree::GetGlobalSizes(long long& NOut, long long& MYOut, long long& MZOut)
 */
 int sTree::innerSize(int which) const
 {
+   assert( false );
   if(which==0) return nx();
   if(which==1) return my();
   assert(which==2);
@@ -220,23 +226,31 @@ int sTree::innerSize(int which) const
 
 void sTree::syncPrimalVector(StochVector& stVec) const
 {
+   assert( !is_hierarchical_root );
+
   //syncStochVector(stVec,0);
   syncStochVector(stVec);
 }
 
 void sTree::syncDualYVector(StochVector& stVec) const
 {
+   assert( !is_hierarchical_root );
+
   //syncStochVector(stVec,1);
   syncStochVector(stVec);
 }
 
 void sTree::syncDualZVector(StochVector& stVec) const
 {
+   assert( !is_hierarchical_root );
+
   syncStochVector(stVec);//,2);
 }
 
 void sTree::syncStochSymMatrix(StochSymMatrix& mat) const
 {
+   assert( !is_hierarchical_root );
+
   int syncChildren=0;
   char* marked4Del = new char[children.size()];
 
@@ -317,6 +331,8 @@ void sTree::syncStochSymMatrix(StochSymMatrix& mat) const
 
 void sTree::syncStochGenMatrix(StochGenMatrix& mat) const
 {
+   assert( !is_hierarchical_root );
+
   int syncChildren=0;
   char* marked4Del = new char[children.size()];
 
@@ -415,6 +431,8 @@ void sTree::syncStochGenMatrix(StochGenMatrix& mat) const
 
 void sTree::syncStochVector(StochVector& stVec) const
 {
+   assert( !is_hierarchical_root );
+
   int syncChildren = 0;
 
   char* marked4Del = new char[children.size()];
