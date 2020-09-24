@@ -213,6 +213,7 @@ public:
      initStaticStorageFromDynamic(rowNnzVec, colNnzVec, nullptr, nullptr);
   };
   virtual void freeDynamicStorage();
+  virtual void recomputeSize( StochGenMatrix* parent = nullptr );
 
   /** returns Simple Vector indicating which linking rows have entries in exactly two blocks (indicated by 1.0 versus 0.0)*/
   virtual void get2LinkStartBlocksAndCountsNew( std::vector<int>& block_start, std::vector<int>& block_count) const;
@@ -408,6 +409,7 @@ public:
 
   BorderedGenMatrix* raiseBorder( int m_conss, int n_vars ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
 
+  void recomputeSize( StochGenMatrix* parent = nullptr) override {};
  protected:
   void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom) override
   { border_left = new StringGenDummyMatrix(); border_bottom = new StringGenDummyMatrix(); };

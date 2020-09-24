@@ -1868,6 +1868,8 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select )
    const StochVectorBase<int>& selectStoch = dynamic_cast<const StochVectorBase<int>&>(select);
    assert(children.size() == selectStoch.children.size());
 
+   this->n = 0;
+
    if( vec )
    {
       assert( selectStoch.vec );
@@ -1879,12 +1881,13 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select )
    {
       assert( selectStoch.vecl );
       vecl->removeEntries(*selectStoch.vecl);
+      this->n += vecl->n;
    }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
       children[it]->removeEntries(*selectStoch.children[it]);
-      this->n += children[it]->n;
+      this->n += children[it]->vec->n;
    }
 }
 

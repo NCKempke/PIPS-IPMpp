@@ -1228,6 +1228,7 @@ void StochGenMatrix::initStaticStorageFromDynamic(const OoqpVectorBase<int>& row
    }
    else
    {
+      assert( children.size() == 0 );
       if( rowLinkVec != nullptr)
          Blmat->initStaticStorageFromDynamic(*rowLinkVec, colvec);
    }
@@ -1242,6 +1243,42 @@ void StochGenMatrix::freeDynamicStorage()
 
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->freeDynamicStorage();
+}
+
+void StochGenMatrix::recomputeSize( StochGenMatrix* parent )
+{
+   m = 0;
+   n = 0;
+
+   if( parent )
+      Amat->getSize(m,n);
+
+   assert( m >= 0 );
+   assert( n >= 0 );
+
+   int b_mat_m = 0;
+   int b_mat_n = 0;
+   Bmat->getSize(b_mat_m, b_mat_n);
+   assert( b_mat_m >= 0 );
+   assert( b_mat_n >= 0 );
+
+   if( !parent )
+      m += b_mat_m;
+   n += b_mat_n;
+
+   if( parent != nullptr )
+   {
+      parent->m += b_mat_m;
+      parent->n += b_mat_n;
+   }
+
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->recomputeSize( this );
+
+   int bl_mat_m = 0; int bl_mat_n = 0;
+   Blmat->getSize(bl_mat_m, bl_mat_n);
+
+   m += bl_mat_m;
 }
 
 void StochGenMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const

@@ -2467,7 +2467,7 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
 {
    StochSymMatrix& Q_stoch = dynamic_cast<StochSymMatrix&>(*Q);
 
-   // todo only works if Q is empty - not existent?
+   // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
 
    // clean up equality system
@@ -2476,6 +2476,7 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
 
    A_stoch.initStaticStorageFromDynamic(rowNnzVecA, colNnzVec);
    A_stoch.freeDynamicStorage();
+   A_stoch.recomputeSize();
 
    b_Astoch.removeEntries(rowNnzVecA);
 
@@ -2495,6 +2496,7 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
 
    C_stoch.initStaticStorageFromDynamic(rowNnzVecC, colNnzVec);
    C_stoch.freeDynamicStorage();
+   C_stoch.recomputeSize();
 
    g_stoch.removeEntries(colNnzVec);
 

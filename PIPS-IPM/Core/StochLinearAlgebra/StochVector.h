@@ -27,6 +27,8 @@ public:
   virtual void AddChild(StochVectorBase<T>* child);
   virtual void AddChild(OoqpVectorBase<T>* child);
 
+  //TODO n mostly only count the non-linking part....
+
   /** The data for this node. */
   OoqpVectorBase<T>*               vec;
 
