@@ -1333,14 +1333,19 @@ void StochVectorBase<T>::axpy ( T alpha, const OoqpVectorBase<T>& x_ )
 
 /** this += alpha * x * z */
 template<typename T>
-void StochVectorBase<T>::axzpy ( T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_ )
+void StochVectorBase<T>::axzpy( T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_ )
 {
   const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
   const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
   assert(x.children.size() == children.size());
   assert(z.children.size() == children.size());
 
-  vec->axzpy(alpha, *x.vec, *z.vec);
+  if( vec )
+  {
+     assert( x.vec );
+     assert( z.vec );
+     vec->axzpy(alpha, *x.vec, *z.vec);
+  }
 
   if( vecl )
   {
