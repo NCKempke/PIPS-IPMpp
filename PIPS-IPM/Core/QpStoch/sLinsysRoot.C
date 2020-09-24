@@ -160,47 +160,34 @@ extern int gLackOfAccuracy;
 
 void sLinsysRoot::factor2(sData *prob, Variables *vars)
 {
-  initializeKKT(prob, vars);
+   /* set kkt to zero */
+   initializeKKT(prob, vars);
 
-  // First tell children to factorize. 
-  for(size_t c = 0; c < children.size(); c++)
-    children[c]->factor2(prob->children[c], vars);
+   // First tell children to factorize.
+   for(size_t c = 0; c < children.size(); c++)
+      children[c]->factor2(prob->children[c], vars);
 
-  for(size_t c = 0; c < children.size(); c++) {
-#ifdef STOCH_TESTING
-    g_scenNum=c;
-#endif
-    if(children[c]->mpiComm == MPI_COMM_NULL)
-      continue;
-
-    children[c]->stochNode->resMon.recFactTmChildren_start();
-    //---------------------------------------------
-    addTermToSchurCompl(prob, c);
-    //---------------------------------------------
-    children[c]->stochNode->resMon.recFactTmChildren_stop();
-  }
+   /* build KKT from local children */
+   assembleLocalKKT( prob );
 
 #ifdef TIMING
-  MPI_Barrier(MPI_COMM_WORLD);
-  stochNode->resMon.recReduceTmLocal_start();
+   MPI_Barrier(MPI_COMM_WORLD);
+   stochNode->resMon.recReduceTmLocal_start();
 #endif 
 
-  reduceKKT(prob);
+   reduceKKT(prob);
 
  #ifdef TIMING
-  stochNode->resMon.recReduceTmLocal_stop();
+   stochNode->resMon.recReduceTmLocal_stop();
 #endif
 
-  finalizeKKT(prob, vars);
+   finalizeKKT(prob, vars);
 
-  factorizeKKT(prob);
-
-  //if (mype==0) dumpMatrix(-1, 0, "kkt", kktd);
+   factorizeKKT(prob);
 
 #ifdef TIMING
-  afterFactor();
+   afterFactor();
 #endif
-  //gLackOfAccuracy=0;
 }
 
 #ifdef TIMING

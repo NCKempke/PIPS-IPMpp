@@ -27,7 +27,6 @@ class sLinsysRoot : public sLinsys {
     int col;
  };
 
-
  protected:
   void createChildren(sData* prob);
   void deleteChildren() override;
@@ -47,6 +46,8 @@ class sLinsysRoot : public sLinsys {
   virtual void factor2(sData *prob, Variables *vars);
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   virtual void initializeKKT(sData* prob, Variables* vars);
+  virtual void assembleLocalKKT( sData* prob ) = 0;
+  void addTermToSchurCompl(sData* prob, size_t childindex);
   virtual void reduceKKT();
   virtual void reduceKKT(sData *prob);
   virtual void factorizeKKT(); 
@@ -115,7 +116,6 @@ class sLinsysRoot : public sLinsys {
  private:
   void initProperChildrenRange();
   void registerMatrixEntryTripletMPI();
-  void addTermToSchurCompl(sData* prob, size_t childindex);
   void reduceKKTdist(sData* prob);
   void reduceKKTdense();
   void reduceKKTsparse();

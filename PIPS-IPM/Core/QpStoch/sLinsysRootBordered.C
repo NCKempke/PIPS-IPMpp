@@ -6,6 +6,10 @@
  */
 
 #include "sLinsysRootBordered.h"
+
+#include "DeSymIndefSolver.h"
+#include "DeSymIndefSolver2.h"
+#include "DeSymPSDSolver.h"
 #include "sLinsysRootAug.h"
 #include "sFactory.h"
 
@@ -16,8 +20,6 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 
    kkt = createKKT(prob_);
    solver = createSolver(prob_, kkt);
-
-   //   buffer = NULL;
 }
 
 sLinsysRootBordered::~sLinsysRootBordered()
@@ -37,14 +39,23 @@ void sLinsysRootBordered::solveReduced( sData *prob, SimpleVector& b)
    assert( 0 && "TODO: implement..");
 }
 
+/* create kkt used to store Schur Complement of border layer */
 SymMatrix* sLinsysRootBordered::createKKT(sData* prob)
 {
-   assert( 0 && "TODO: implement..");
-   return nullptr;
+   const int n = locnx + locmy + locmyl + locmzl;
+
+   return new DenseSymMatrix(n);
 }
 
-DoubleLinearSolver* sLinsysRootBordered::createSolver(sData* prob, SymMatrix* kktmat)
+void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 {
-   assert( 0 && "TODO: implement..");
-   return nullptr;
+   assert( 0 && "TODO : implement..");
+}
+
+DoubleLinearSolver* sLinsysRootBordered::createSolver(sData* prob, SymMatrix* kktmat_)
+{
+   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
+   return new DeSymIndefSolver(kktmat);
+   //return new DeSymIndefSolver2(kktmat, locnx); // saddle point solver
+   //return new DeSymPSDSolver(kktmat);
 }

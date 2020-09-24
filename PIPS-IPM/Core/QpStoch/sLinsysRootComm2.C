@@ -323,4 +323,21 @@ void sLinsysRootComm2::submatrixReduce(DenseSymMatrix* A,
   delete[] chunk;
 }
 
+void sLinsysRootComm2::assembleLocalKKT( sData* prob )
+{
+   for(size_t c = 0; c < children.size(); c++)
+   {
+#ifdef STOCH_TESTING
+      g_scenNum = c;
+#endif
 
+      if( children[c]->mpiComm == MPI_COMM_NULL )
+         continue;
+
+      children[c]->stochNode->resMon.recFactTmChildren_start();
+      //---------------------------------------------
+      addTermToSchurCompl(prob, c);
+      //---------------------------------------------
+      children[c]->stochNode->resMon.recFactTmChildren_stop();
+   }
+}

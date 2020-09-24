@@ -21,6 +21,7 @@ class sLinsysRootBordered : public sLinsysRoot
 
    protected:
       SymMatrix* createKKT(sData* prob) override;
+      void assembleLocalKKT(sData* prob) override;
       DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) override;
 
    private:

@@ -50,7 +50,8 @@ class sLinsysRootComm2 : public sLinsysRoot {
   void submatrixReduce(DenseSymMatrix* A,
 			  int row, int col, int drow, int dcol,
 			  MPI_Comm comm);
-
+ protected:
+  void assembleLocalKKT( sData* prob ) override;
 };
 
 #endif
