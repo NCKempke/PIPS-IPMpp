@@ -220,6 +220,12 @@ Data* sFactory::switchToHierarchicalData( Data* prob_in )
    return nullptr;
 }
 
+sLinsysRoot* sFactory::newLinsysRootHierarchical()
+{
+   assert( 0 && "not implemented here" );
+   return nullptr;
+}
+
 // TODO adjust this for hierarchical approach
 Variables* sFactory::makeVariables( Data * prob_in )
 {
@@ -272,9 +278,13 @@ Residuals* sFactory::makeResiduals( Data * prob_in )
 
 LinearSystem* sFactory::makeLinsys( Data * prob_in )
 {
-  linsys = newLinsysRoot();
 
-  return linsys;
+#ifdef HIERARCHICAL
+   linsys = newLinsysRootHierarchical();
+#else
+   linsys = newLinsysRoot();
+#endif
+   return linsys;
 }
 
 void sFactory::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,

@@ -47,6 +47,7 @@ class sFactory : public QpGen {
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
   virtual Data* switchToHierarchicalData( Data* prob_in );
+  virtual sLinsysRoot* newLinsysRootHierarchical();
 
   virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 			OoqpVector& rhs2_in, OoqpVector& rhs3_in );
