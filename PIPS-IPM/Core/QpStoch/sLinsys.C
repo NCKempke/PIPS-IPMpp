@@ -72,6 +72,7 @@ sLinsys::sLinsys(sFactory* factory_,
 {
   factory = factory_;
 
+  assert( prob );
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
