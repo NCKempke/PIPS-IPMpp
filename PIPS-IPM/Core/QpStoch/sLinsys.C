@@ -22,11 +22,12 @@
 
 extern int gOuterIterRefin;
 
-sLinsys::sLinsys(sFactory* factory_, sData* prob)
+sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
   : QpGenLinsys(), kkt(nullptr), solver(nullptr), nThreads(PIPSgetnOMPthreads()),
         blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-        colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr)
+        colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr), is_hierarchy_root(is_hierarchy_root)
 {
+  prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
   factory = factory_;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
@@ -40,20 +41,20 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob)
   mclow = prob->mclow;
   mcupp = prob->mcupp;
 
-  //cout << "sLinsys1: nxupp=" << nxupp << " nxlow=" << nxlow << "  sum=" << (nxlow+nxupp) << endl;
-
-  //if( nxupp + nxlow > 0 ) {
-  dd      = factory_->tree->newPrimalVector();
-  assert(dd!=nullptr);
+  dd = factory_->tree->newPrimalVector();
+  assert( dd != nullptr );
   
-  dq      = factory_->tree->newPrimalVector();
-  assert(dq!=nullptr);
+  dq = factory_->tree->newPrimalVector();
+  assert(dq != nullptr);
   prob->getDiagonalOfQ( *dq );
-    //}
-  nomegaInv   = factory_->tree->newDualZVector();
-  rhs         = factory_->tree->newRhs();
 
-  assert(dd!=nullptr);
+  nomegaInv = factory_->tree->newDualZVector();
+  rhs = factory_->tree->newRhs();
+
+  //get the communicator from one of the vectors
+  StochVector& dds = dynamic_cast<StochVector&>(*dd);
+  this->mpiComm = dds.mpiComm;
+  this->iAmDistrib = dds.iAmDistrib;
 
   useRefs=0;
   data = prob;
@@ -68,11 +69,12 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* rhs_)
   : QpGenLinsys(), kkt(nullptr), solver(nullptr), nThreads(PIPSgetnOMPthreads()),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-    colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr)
+    colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr), is_hierarchy_root(false)
 {
-  factory = factory_;
-
   assert( prob );
+
+  prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
+  factory = factory_;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
@@ -85,14 +87,15 @@ sLinsys::sLinsys(sFactory* factory_,
   mclow = prob->mclow;
   mcupp = prob->mcupp;
 
-  //cout << "sLinsys2: nxupp=" << nxupp << " nxlow=" << nxlow << endl;
-
-  //if( nxupp + nxlow > 0 ) {
   dd= dd_;
   dq = dq_;
-    //}
   nomegaInv = nomegaInv_;
   rhs = rhs_;
+
+  //get the communicator from one of the vectors
+  StochVector& dds = dynamic_cast<StochVector&>(*dd);
+  this->mpiComm = dds.mpiComm;
+  this->iAmDistrib = dds.iAmDistrib;
 
   useRefs=1;
   data = prob;

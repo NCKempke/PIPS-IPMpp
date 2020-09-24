@@ -24,8 +24,8 @@ extern double g_iterNumber;
 extern bool ipStartFound;
 extern int gOuterSolve;
 
-sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_)
-  : sLinsys(factory_, prob_), iAmDistrib(0), sparseKktBuffer(nullptr)
+sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
+  : sLinsys(factory_, prob_, is_hierarchy_root), sparseKktBuffer(nullptr)
 {
   assert( dd!=nullptr );
   assert( prob_ );
@@ -49,24 +49,29 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_)
 
   precondSC = SCsparsifier(-1.0, mpiComm);
 
-  if(gOuterSolve) {
+  if( gOuterSolve )
+  {
     // stuff for iterative refimenent and BiCG
     sol  = factory_->tree->newRhs();
     res  = factory_->tree->newRhs();
     resx = factory_->tree->newPrimalVector();
     resy = factory_->tree->newDualYVector();
     resz = factory_->tree->newDualZVector();
-    if(gOuterSolve==2) {
+
+    if( gOuterSolve == 2 )
+    {
       //BiCGStab; additional vectors needed
       sol2 = factory_->tree->newRhs();
       res2 = factory_->tree->newRhs();
       res3 = factory_->tree->newRhs();
       res4 = factory_->tree->newRhs();
       res5 = factory_->tree->newRhs();
-    } else {
-      sol2 = res2 = res3 = res4 = res5 = nullptr;
     }
-  } else {
+    else
+      sol2 = res2 = res3 = res4 = res5 = nullptr;
+  }
+  else
+  {
     sol  = res  = resx = resy = resz = nullptr;
     sol2 = res2 = res3 = res4 = res5 = nullptr;
   }
@@ -92,7 +97,7 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_)
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), iAmDistrib(0), sparseKktBuffer(nullptr)
+  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), sparseKktBuffer(nullptr)
 {
   xDiag = nullptr;
   zDiag = nullptr;
@@ -410,44 +415,58 @@ void sLinsysRoot::Dsolve( sData *prob, OoqpVector& x )
 
 
 
-void sLinsysRoot::createChildren(sData* prob)
+void sLinsysRoot::createChildren(sData *prob)
 {
-  sLinsys* child=nullptr;
-  assert(dd!=nullptr);
-  assert( prob );
-  assert(dynamic_cast<StochVector*>(dd) !=nullptr);
-  StochVector& ddst = dynamic_cast<StochVector&>(*dd);
-  StochVector& dqst = dynamic_cast<StochVector&>(*dq);
-  StochVector& nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
-  StochVector& rhsst = dynamic_cast<StochVector&>(*rhs);
+   sLinsys *child = nullptr;
+   assert( dd != nullptr );
+   assert( dq != nullptr );
+   assert( nomegaInv != nullptr );
+   assert( rhs != nullptr );
 
-  //get the communicator from one of the vectors
-  this->mpiComm = ddst.mpiComm;
-  this->iAmDistrib = ddst.iAmDistrib;
-  for(size_t it=0; it<prob->children.size(); it++) {
-      assert(ddst.children[it]!=nullptr); 
-      if(MPI_COMM_NULL == ddst.children[it]->mpiComm) {
-	  child = new sDummyLinsys(dynamic_cast<sFactory*>(factory), prob->children[it]);
-      } else {
+   assert( prob );
+   assert( dynamic_cast<StochVector*>(dd) != nullptr );
+   StochVector &ddst = dynamic_cast<StochVector&>(*dd);
+   StochVector &dqst = dynamic_cast<StochVector&>(*dq);
+   StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
+   StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
+
+   for( size_t it = 0; it < prob->children.size(); it++ )
+   {
+      assert( ddst.children[it] != nullptr );
+      if( MPI_COMM_NULL == ddst.children[it]->mpiComm )
+      {
+         child = new sDummyLinsys(dynamic_cast<sFactory*>(factory),
+               prob->children[it]);
+      }
+      else
+      {
          assert( prob->children[it] );
-	  sFactory* stochFactory = dynamic_cast<sFactory*>(factory);
-	  if(prob->children[it]->children.size() == 0) {	
-	      child = stochFactory->newLinsysLeaf(prob->children[it],
-						  ddst.children[it],
-						  dqst.children[it],
-						  nomegaInvst.children[it],
-						  rhsst.children[it]);
-	  } else {
-         assert( prob->children[it] );
-	      child = stochFactory->newLinsysRoot(prob->children[it],
-						  ddst.children[it],
-						  dqst.children[it],
-						  nomegaInvst.children[it],
-						  rhsst.children[it]);
-	  }
+         sFactory *stochFactory = dynamic_cast<sFactory*>(factory);
+         if( is_hierarchy_root )
+         {
+            assert( prob->children.size() == 1 );
+            assert( prob->children[0] );
+            assert( ddst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1
+                  && rhsst.children.size() == 1 );
+            assert( MPI_COMM_NULL != ddst.children[0]->mpiComm);
+         }
+
+         if( prob->children[it]->children.size() == 0 )
+         {
+            child = stochFactory->newLinsysLeaf(prob->children[it],
+                  ddst.children[it], dqst.children[it],
+                  nomegaInvst.children[it], rhsst.children[it]);
+         }
+         else
+         {
+            assert(prob->children[it]);
+            child = stochFactory->newLinsysRoot(prob->children[it],
+                  ddst.children[it], dqst.children[it],
+                  nomegaInvst.children[it], rhsst.children[it]);
+         }
       }
       AddChild(child);
-  }
+   }
 }
 
 void sLinsysRoot::deleteChildren()

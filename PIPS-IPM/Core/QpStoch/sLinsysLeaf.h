@@ -47,7 +47,6 @@ class sLinsysLeaf : public sLinsys
   void sync();
   virtual void deleteChildren();
  protected:
-  sLinsysLeaf() {};
 
   static void mySymAtPutSubmatrix(SymMatrix& kkt, 
 				  GenMatrix& B, GenMatrix& D, 

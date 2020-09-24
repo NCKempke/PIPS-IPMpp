@@ -13,8 +13,6 @@ class sLinsysRootBordered : public sLinsysRoot
 {
    public:
       sLinsysRootBordered(sFactory * factory_, sData * prob_);
-      sLinsysRootBordered(sFactory* factory, sData* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_)
-         { assert("should not be called" && 0); };
 
       virtual ~sLinsysRootBordered();
 
@@ -22,10 +20,8 @@ class sLinsysRootBordered : public sLinsysRoot
       void solveReduced( sData *prob, SimpleVector& b) override;
 
    protected:
-
       SymMatrix* createKKT(sData* prob) override;
       DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) override;
-
 
    private:
 

@@ -46,7 +46,6 @@ static void biCGStabCommunicateStatus(int flag, int it)
 sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
   : sLinsysRoot(factory_, prob_), CtDC(nullptr)
 { 
-  prob_->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
   kkt = createKKT(prob_);
   solver = createSolver(prob_, kkt);
   assert(locmyl >= 0 && locmzl >= 0);
@@ -61,7 +60,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* rhs_)
   : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
-  assert(locmyl == 0 && locmzl == 0);
+  assert( locmyl == 0 && locmzl == 0 );
 
   kkt = createKKT(prob_);
   solver = createSolver(prob_, kkt);

@@ -17,8 +17,6 @@ class sData;
  * ROOT (= NON-leaf) linear system
  */
 class sLinsysRootComm2 : public sLinsysRoot {
- protected:
-  sLinsysRootComm2() {};
  public:
   sLinsysRootComm2(sFactory * factory_, sData * prob_);
   sLinsysRootComm2(sFactory* factory,

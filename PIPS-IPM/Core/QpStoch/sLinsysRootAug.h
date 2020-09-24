@@ -15,8 +15,6 @@ class sData;
  */
 class sLinsysRootAug : public sLinsysRoot {
  protected:
-  sLinsysRootAug() {};
-
   virtual SymMatrix*   createKKT     (sData* prob);
   virtual DoubleLinearSolver* 
                        createSolver  (sData* prob, 

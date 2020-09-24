@@ -6,16 +6,25 @@
  */
 
 #include "sLinsysRootBordered.h"
+#include "sLinsysRootAug.h"
+#include "sFactory.h"
 
 sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
-  : sLinsysRoot(factory_, prob_)
+  : sLinsysRoot(factory_, prob_, true)
 {
-//   buffer = NULL;
+   assert(locmyl >= 0 && locmzl >= 0);
+
+   kkt = createKKT(prob_);
+   solver = createSolver(prob_, kkt);
+
+   //   buffer = NULL;
 }
 
 sLinsysRootBordered::~sLinsysRootBordered()
 {
-//   delete buffer;
+   // delete buffer;
+   assert( children.size() == 0 );
+   delete children[0];
 }
 
 void sLinsysRootBordered::finalizeKKT(sData* prob, Variables* vars)

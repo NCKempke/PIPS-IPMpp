@@ -29,19 +29,16 @@ class sLinsysRoot : public sLinsys {
 
 
  protected:
-  sLinsysRoot() {};
-
-  virtual void createChildren(sData* prob);
-  virtual void deleteChildren();
+  void createChildren(sData* prob);
+  void deleteChildren() override;
 
   virtual SymMatrix* createKKT(sData* prob) = 0;
   virtual DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) = 0;
 
  public:
   std::vector<sLinsys*> children;
-  int iAmDistrib;
 
-  sLinsysRoot(sFactory * factory_, sData * prob_);
+  sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
   sLinsysRoot(sFactory* factory,
 	      sData* prob_,				    
 	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,

@@ -25,7 +25,7 @@ class sData;
 class sLinsys : public QpGenLinsys
 {
  public:
-  sLinsys(sFactory* factory, sData* prob);
+  sLinsys(sFactory* factory, sData* prob, bool is_hierarchy_root = false);
   sLinsys(sFactory* factory,
 		   sData* prob, 
 		   OoqpVector* dd, 
@@ -59,8 +59,6 @@ class sLinsys : public QpGenLinsys
   virtual bool isDummy() const { return false; };
 
  protected:
-  sLinsys(){};
-
   SymMatrix* kkt;
   DoubleLinearSolver* solver;
   int locnx, locmy, locmyl, locmz, locmzl;
@@ -113,6 +111,7 @@ class sLinsys : public QpGenLinsys
   sTree* stochNode;
 
  protected:
+  int iAmDistrib;
   int nThreads;
 
   /* members for blockwise schur complement computation */
@@ -120,6 +119,9 @@ class sLinsys : public QpGenLinsys
   double* colsBlockDense;
   int* colId;
   int* colSparsity;
+
+  /* is this linsys the overall root */
+  const bool is_hierarchy_root;
 
   void multLeftSchurComplBlocked(/*const*/sData *prob, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, bool sparseSC, SymMatrix& SC);

@@ -12,7 +12,6 @@ class sData;
  */
 class sLinsysRootAugComm2 : public sLinsysRootComm2 {
  protected:
-  sLinsysRootAugComm2() {};
 
   virtual SymMatrix*   createKKT     (sData* prob);
   virtual DoubleLinearSolver* 
