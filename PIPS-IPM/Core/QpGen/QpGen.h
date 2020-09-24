@@ -37,16 +37,16 @@ protected:
   /** number of elements in x */
   long long nx;
 
-  /** number of rows in A and b */
+  /** number of rows in A and b including linking rows (sFactory..) */
   long long my;
 
-  /** number of rows in C */
+  /** number of rows in C including linking rows */
   long long mz;
 
   QpGen( int nx_, int my_, int mz_ );
 public:
-  virtual Residuals     * makeResiduals( Data * prob_in );
-  virtual Variables     * makeVariables( Data * prob_in );
+  virtual Residuals * makeResiduals( Data * prob_in );
+  virtual Variables * makeVariables( Data * prob_in );
 
   virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 			OoqpVector& rhs2_in, OoqpVector& rhs3_in ) = 0;
@@ -56,7 +56,7 @@ public:
 
   void writeProblemToStream(std::ostream& out) const;
 
-  virtual ~QpGen() {};
+  virtual ~QpGen(){};
 };
 
 #endif

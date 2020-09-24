@@ -21,7 +21,7 @@ QpGenResiduals::QpGenResiduals( LinearAlgebraPackage * la,
 				OoqpVector * ixlow_in, OoqpVector * ixupp_in,
 				OoqpVector * iclow_in, OoqpVector * icupp_in )
 {
-  assert(false && "not used currently");
+  assert(false && "Cannot be used with StochLinearAlgebra");
   nx = nx_;
   my = my_;
   mz = mz_;
@@ -63,6 +63,7 @@ QpGenResiduals::QpGenResiduals( LinearAlgebraPackage * la,
 
 QpGenResiduals::QpGenResiduals( const QpGenResiduals& res) : Residuals(res)
 {
+  assert(false && "Cannot be used with StochLinearAlgebra");
   nx = res.nx;
   my = res.my;
   mz = res.mz;

@@ -15,7 +15,7 @@ sResiduals::sResiduals( sTree* tree,
 			OoqpVector * icupp_, double mcuppGlobal)
   :QpGenResiduals()
 {
-  assert(false);
+  assert( false && "not used" );
   SpReferTo( ixlow, ixlow_ );
   nxlow = nxlowGlobal;
 

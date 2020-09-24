@@ -204,10 +204,9 @@ double sTree::processLoad() const
   return IPMIterExecTIME;
 }
 
-void sTree::GetGlobalSizes(long long& NOut, long long& MYOut, long long& MZOut)
+void sTree::getGlobalSizes(long long& n, long long& my, long long& mz)
 {
-   assert( false );
-  NOut=N; MYOut=MY; MZOut=MZ;
+   n = N; my = MY; mz = MZ;
 }
 
 /*void sTree::GetLocalSizes(int& nOut, int& myOut, int& mzOut)

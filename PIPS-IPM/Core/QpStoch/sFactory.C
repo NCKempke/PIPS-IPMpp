@@ -52,7 +52,7 @@ sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
 
   tree->computeGlobalSizes();
   //now the sizes of the problem are available, set them for the parent class
-  tree->GetGlobalSizes(nx, my, mz);
+  tree->getGlobalSizes(nx, my, mz);
 }
 
 sFactory::sFactory()

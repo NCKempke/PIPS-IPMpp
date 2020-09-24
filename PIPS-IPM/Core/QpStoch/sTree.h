@@ -23,7 +23,7 @@ class sTree
 
   // global sizes are still local to each MPI process - they just sum all local data
   virtual void computeGlobalSizes() = 0;
-  void GetGlobalSizes(long long& NXOut, long long& MYOut, long long& MZOut);
+  void getGlobalSizes(long long& n, long long& my, long long& mz);
 
   void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
 
@@ -108,7 +108,6 @@ class sTree
   int isInVector(int elem, const vector<int>& vec);
 
   bool is_hierarchical_root = false;
-
  public:
   /* global sizes - global meaning on this process - so the sum of all local matrices - MY, MZ do not include linking constraints */
   long long N, MY, MZ, MYL, MZL;//global sizes
