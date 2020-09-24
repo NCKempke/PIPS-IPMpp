@@ -214,31 +214,68 @@ bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVector& vec, bo
    const StochVector& vecs = dynamic_cast<const StochVector&>(vec);
 
    if( vecs.children.size() != 1 )
+   {
+      std::cout << "children" << std::endl;
       return false;
+   }
 
    if( vecs.children[0] == nullptr )
+   {
+      std::cout << "child[0]" << std::endl;
       return false;
+   }
 
    if( row_vec )
    {
       if( vecs.vecl != nullptr )
+      {
+         std::cout << "row-vec but root.vecl" << std::endl;
          return false;
+      }
       if( vecs.vec == nullptr )
+      {
+         std::cout << "row-vec but NO root.vec" << std::endl;
          return false;
+      }
    }
    else
    {
       if( vecs.vec != nullptr )
+      {
+         std::cout << "col-vec but root.vec" << std::endl;
          return false;
+      }
       if( vecs.vecl == nullptr )
+      {
+         std::cout << "col-vec but NO root.vecl" << std::endl;
          return false;
+      }
 
    }
 
-   if( row_vec && vecs.vec->length() != n )
+   if( row_vec && vecs.length() != n )
+   {
+      std::cout << "ROW: root.length = " << vecs.length() << " != " << n << " = border.n " << std::endl;
       return false;
-   if( !row_vec && vecs.vecl->length() != m )
+   }
+   if( !row_vec && vecs.length() != m )
+   {
+      std::cout << "COL: root.length = " << vecs.length() << " != " << m << " = border.m " << std::endl;
       return false;
+   }
+
+   int n_border, m_border;
+   border_left->getSize(m_border, n_border);
+   if( row_vec && vecs.vec->length() != n_border )
+   {
+      std::cout << "ROW: root.vec.length = " << vecs.vec->length() << " != " << n_border << " = border.n " << std::endl;
+      return false;
+   }
+   if( !row_vec && vecs.length() != m )
+   {
+      std::cout << "COL: root.vecl.length = " << vecs.vecl->length() << " != " << m_border << " = border.m " << std::endl;
+      return false;
+   }
 
    return true;
 }
