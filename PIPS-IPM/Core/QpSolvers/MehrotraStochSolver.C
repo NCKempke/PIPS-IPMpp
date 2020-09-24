@@ -12,8 +12,7 @@
 #include "OoqpVector.h"
 #include "DoubleMatrix.h"
 
-#include "StochTree.h"
-#include "QpGenStoch.h"
+#include "sFactory.h"
 #include "StochResourcesMonitor.h"
 
 #include <cstring>
@@ -49,7 +48,7 @@ int MehrotraStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid
   int done;
   double mu, alpha = 1, sigma = 1, muaff;
   int status_code;
-  QpGenStoch* stochFactory = reinterpret_cast<QpGenStoch*>(factory);
+  sFactory* stochFactory = reinterpret_cast<sFactory*>(factory);
   gmu = 1000;
   //  grnorm = 1000;
   dnorm = prob->datanorm();

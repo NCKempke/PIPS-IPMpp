@@ -18,8 +18,7 @@
 #include "OoqpVector.h"
 #include "DoubleMatrix.h"
 
-#include "StochTree.h"
-#include "QpGenStoch.h"
+#include "sFactory.h"
 #include "StochResourcesMonitor.h"
 
 #include "sData.h"
@@ -29,7 +28,6 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-using namespace std;
 
 #include <cstdio>
 #include <cassert>
@@ -115,7 +113,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
    int status_code;
    double sigma = 1.0;
    double alpha_pri = 1.0, alpha_dual = 1.0;
-   QpGenStoch* stochFactory = reinterpret_cast<QpGenStoch*>(factory);
+   sFactory* stochFactory = reinterpret_cast<sFactory*>(factory);
    g_iterNumber = 0.0;
 
    dnorm = prob->datanorm();

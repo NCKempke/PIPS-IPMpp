@@ -18,8 +18,7 @@
 #include "OoqpVector.h"
 #include "DoubleMatrix.h"
 
-#include "StochTree.h"
-#include "QpGenStoch.h"
+#include "sFactory.h"
 #include "StochResourcesMonitor.h"
 
 #include "sVars.h"
@@ -116,12 +115,13 @@ void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Varia
 
 int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
 {
+   assert( prob ); assert( iterate ); assert( resid );
    int done;
    double mu, muaff;
    double alpha_target, alpha_enhanced, rmin, rmax;
    int status_code;
    double alpha = 1, sigma = 1;
-   QpGenStoch* stochFactory = reinterpret_cast<QpGenStoch*>(factory);
+   sFactory* stochFactory = reinterpret_cast<sFactory*>(factory);
    g_iterNumber = 0.0;
 
    dnorm = prob->datanorm();
