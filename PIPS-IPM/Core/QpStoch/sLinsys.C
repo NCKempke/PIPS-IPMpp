@@ -87,17 +87,24 @@ sLinsys::sLinsys(sFactory* factory_,
   mclow = prob->mclow;
   mcupp = prob->mcupp;
 
-  dd= dd_;
+  dd = dd_;
   dq = dq_;
   nomegaInv = nomegaInv_;
   rhs = rhs_;
 
-  //get the communicator from one of the vectors
-  StochVector& dds = dynamic_cast<StochVector&>(*dd);
-  this->mpiComm = dds.mpiComm;
-  this->iAmDistrib = dds.iAmDistrib;
+  if( dd )
+  {
+     StochVector& dds = dynamic_cast<StochVector&>(*dd);
+     this->mpiComm = dds.mpiComm;
+     this->iAmDistrib = dds.iAmDistrib;
+  }
+  else
+  {
+     this->mpiComm = MPI_COMM_NULL;
+     this->iAmDistrib = false;
+  }
 
-  useRefs=1;
+  useRefs = 1;
   data = prob;
   stochNode = factory_->tree;
 }
