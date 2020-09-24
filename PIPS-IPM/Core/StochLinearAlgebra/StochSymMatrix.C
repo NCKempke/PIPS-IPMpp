@@ -469,25 +469,41 @@ void StochSymMatrix::scalarMult( double num )
 void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent)
 {
    const StochVectorBase<int>& nnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(nnzVec);
-
    assert(children.size() == nnzVecStoch.children.size());
 
    const SimpleVectorBase<int>* const vec = dynamic_cast<const SimpleVectorBase<int>*>(nnzVecStoch.vec);
    assert(vec);
 
-   diag->deleteEmptyRowsCols(*vec);
+   const int n_old = n;
 
-   // at root?
-   if( linkParent == nullptr )
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->deleteEmptyRowsCols(*nnzVecStoch.children[it], vec);
+
+   if( linkParent != nullptr )
    {
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->deleteEmptyRowsCols(*nnzVecStoch.children[it], vec);
-   }
-   else
-   {
+      assert( children.size() == 0 );
      // adapt border
       assert(dynamic_cast<const SimpleVectorBase<int>*>(linkParent));
       border->deleteEmptyRowsCols(*vec, *linkParent);
+   }
+
+   diag->deleteEmptyRowsCols(*vec);
+
+   const int nnzs = vec->getNnzs();
+   const int length = vec->length();
+
+   assert( nnzs <= length );
+   n -= (length - nnzs);
+
+   assert( n <= n_old );
+   assert( n >= 0 );
+
+   const int n_changes = n_old - n;
+
+   if( linkParent != nullptr )
+   {
+      assert( parent != nullptr );
+      parent->n -= n_changes;
    }
 }
 
@@ -535,9 +551,6 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 
    n -= n_vars;
 
-   int mm, nn;
-   border_vertical->getSize(mm,nn);
-   std::cout << " kkkkkkkkkkkkk " << mm << " " << nn << std::endl;
    BorderedSymMatrix* const border_layer = new BorderedSymMatrix(id, this, border_vertical, new SparseSymMatrix(n_vars, 0, false), mpiComm);
 
    assert(n >= 0);
