@@ -6,7 +6,8 @@
 template<typename T>
 OoqpVectorBase<T>::OoqpVectorBase( int n_ )
 {
-  n = n_;
+   assert( n_ >= 0 );
+   n = n_;
 }
 
 template<typename T>
