@@ -165,7 +165,6 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
    {
       assert( !distributed );
       assert( rank == 0 );
-      assert( mpi_comm == MPI_COMM_NULL );
    }
    assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
 
@@ -184,7 +183,7 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
       mat->mult(1.0, y, alpha, *x.vecl);
 }
 
-void StringGenMatrix::transMultVertical ( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
 
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
@@ -196,12 +195,13 @@ void StringGenMatrix::transMultVertical ( double beta, OoqpVector& y_in, double 
    {
       assert( !distributed );
       assert( rank == 0 );
-      assert( mpi_comm == MPI_COMM_NULL );
    }
+
+   assert( x.vec && mat );
    assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
 
    if( rank == 0 )
-      mat->transMult(beta, y, alpha, x);
+      mat->transMult(beta, y, alpha, *x.vec);
    else
       y.setToZero();
 
