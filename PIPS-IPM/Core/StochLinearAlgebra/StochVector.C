@@ -30,13 +30,13 @@ StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_, int isDistributed
     iAmDistrib(isDistributed)
 {
   vec = new SimpleVectorBase<T>(n_);
+  vecl = nullptr;
 
-  if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm) {
-    int size;
-    MPI_Comm_size(mpiComm, &size);
+  if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm)
+  {
+    const int size = PIPS_MPIgetSize(mpiComm);
     iAmDistrib = (size == 1) ? 0 : 1;
   }
-  vecl = nullptr;
 }
 
 template<typename T>
@@ -44,13 +44,21 @@ StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_, int isDi
   : OoqpVectorBase<T>(n_), parent(nullptr), mpiComm(mpiComm_),
     iAmDistrib(isDistributed)
 {
+   this->n = 0;
+
    if( n_ >= 0)
+   {
       vec = new SimpleVectorBase<T>(n_);
+      this->n += n_;
+   }
    else
       vec = nullptr;
 
    if( nl_ >= 0 )
+   {
       vecl = new SimpleVectorBase<T>(nl_);
+      this->n += nl_;
+   }
    else
       vecl = nullptr;
 
@@ -66,6 +74,7 @@ void StochVectorBase<T>::AddChild(StochVectorBase<T>* child)
 {
   child->parent = this;
   children.push_back(child);
+
   this->n += child->n;
 }
 
@@ -452,9 +461,6 @@ T StochVectorBase<T>::infnorm() const
 template<typename T>
 double StochVectorBase<T>::twonorm() const
 {
-#if 0
-  return sqrt(this->dotProductWith(*this));
-#else
   const T scale = this->infnorm();
   assert(scale >= 0.0);
 
@@ -462,7 +468,6 @@ double StochVectorBase<T>::twonorm() const
      return 0.0;
 
   return scale * sqrt(this->dotProductSelf(1 / scale));
-#endif
 }
 
 template<typename T>
@@ -491,94 +496,65 @@ T StochVectorBase<T>::onenorm() const
 template<typename T>
 void StochVectorBase<T>::min( T& m, int& index ) const
 {
-   const int n_parent = parent ? parent->n - this->n : 0;
-
+   // index is broken for StochVector
+   index = -1;
    if( !parent )
-   {
-      index = -1;
       m = std::numeric_limits<T>::max();
-   }
 
    if( vec )
    {
       T lMin;
-      int lInd;
-      vec->min( lMin, lInd );
+      vec->min( lMin, index );
 
       if( lMin < m )
-      {
          m = lMin;
-         index = lInd;
-      }
    }
 
    if( vecl )
    {
       T lMin;
-      int lInd;
-      vecl->min(lMin, lInd);
+      vecl->min(lMin, index);
 
       if( lMin < m )
-      {
          m = lMin;
-         index = lInd + n_parent;
-         if( vec )
-            index += vec->length();
-      }
    }
 
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->min(m,index);
+      children[it]->min(m, index);
 
    if( iAmDistrib == 1 )
-      // TODO : here index breaks...
       PIPS_MPIgetMinInPlace(m, mpiComm);
 }
 
 template<typename T>
 void StochVectorBase<T>::max( T& m, int& index ) const
 {
-   const int n_parent = parent ? parent->n - this->n : 0;
-
+   // index is broken for StochVector
    if( !parent )
-   {
-      index = -1;
       m = -std::numeric_limits<T>::max();
-   }
 
    if( vec )
    {
       T lMax = -std::numeric_limits<T>::max();
-      int lInd = -1;
-      vec->max( lMax, lInd );
+      vec->max( lMax, index );
 
       if( m < lMax )
-      {
          m = lMax;
-         index = lInd;
-      }
    }
 
    if( vecl )
    {
       T lMax = -std::numeric_limits<T>::max();
-      int lInd = -1;
-      vecl->max(lMax, lInd);
+      vecl->max(lMax, index);
 
       if( m < lMax )
-      {
          m = lMax;
-         index = lInd + n_parent;
-         if( vec )
-            index += vec->length();
-      }
    }
 
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->max(m,index);
+      children[it]->max(m, index);
 
    if( iAmDistrib == 1 )
-      // TODO : here index breaks...
       PIPS_MPIgetMaxInPlace(m, mpiComm);
 }
 
@@ -1886,7 +1862,7 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select )
    for( size_t it = 0; it < children.size(); it++ )
    {
       children[it]->removeEntries(*selectStoch.children[it]);
-      this->n += children[it]->vec->n;
+      this->n += children[it]->n;
    }
 }
 
