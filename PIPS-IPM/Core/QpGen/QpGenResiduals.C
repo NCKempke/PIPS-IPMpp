@@ -63,7 +63,6 @@ QpGenResiduals::QpGenResiduals( LinearAlgebraPackage * la,
 
 QpGenResiduals::QpGenResiduals( const QpGenResiduals& res) : Residuals(res)
 {
-  assert(false && "Cannot be used with StochLinearAlgebra");
   nx = res.nx;
   my = res.my;
   mz = res.mz;
