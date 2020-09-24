@@ -562,7 +562,6 @@ StochVector* sTree::newDualZVector() const
     return new StochDummyVector();
 
   //length of linking part
-
   int zl = (np == -1) ? mzl() : -1;
 
   StochVector* z = new StochVector(mz(), zl, commWrkrs, -1);
@@ -596,7 +595,10 @@ StochVector* sTree::newDualYVectorEmpty() const
   if(commWrkrs==MPI_COMM_NULL)
     return new StochDummyVector();
 
-  StochVector* y = new StochVector(0, commWrkrs);
+  //length of linking part
+  int yl = (np == -1) ? myl() : -1;
+
+  StochVector* y = new StochVector(std::min(my(), 0), std::min(0, yl), commWrkrs, -1);
 
   for(size_t it = 0; it < children.size(); it++) {
     StochVector* child = children[it]->newDualYVector();
@@ -611,7 +613,10 @@ StochVector* sTree::newDualZVectorEmpty() const
   if(commWrkrs == MPI_COMM_NULL)
     return new StochDummyVector();
 
-  StochVector* z = new StochVector(0, commWrkrs);
+  //length of linking part
+  int zl = (np == -1) ? mzl() : -1;
+
+  StochVector* z = new StochVector(std::min(mz(), 0), std::min(zl, 0), commWrkrs, -1);
 
   for(size_t it = 0; it < children.size(); it++) {
     StochVector* child = children[it]->newDualZVector();
@@ -630,10 +635,10 @@ StochVector* sTree::newRhs()
   int locmyl = (np == -1) ? myl() : 0;
   int locmzl = (np == -1) ? mzl() : 0;
 
-  locmyl = max(locmyl, 0);
-  locmzl = max(locmzl, 0);
+  locmyl = std::max(locmyl, 0);
+  locmzl = std::max(locmzl, 0);
 
-  StochVector* rhs = new StochVector(nx() + my() + mz() + locmyl + locmzl, commWrkrs);
+  StochVector* rhs = new StochVector(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
 
   for(size_t it=0; it<children.size(); it++) {
     StochVector* child = children[it]->newRhs();
