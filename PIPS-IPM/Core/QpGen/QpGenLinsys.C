@@ -97,6 +97,7 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_,
 : factory( factory_), rhs(nullptr), dd(nullptr), dq(nullptr), useRefs(0)
 {
 
+  assert( false && " currently never called .. " );
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
   ixupp = prob->ixupp;
@@ -155,7 +156,8 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_,
 }
 
 QpGenLinsys::QpGenLinsys()
- : factory( nullptr), rhs(nullptr), dd(nullptr), dq(nullptr), useRefs(0),
+ : nomegaInv(nullptr), factory( nullptr), rhs(nullptr), nx(-1), my(-1), mz(-1), dd(nullptr), dq(nullptr), ixupp(nullptr), icupp(nullptr),
+   ixlow(nullptr), iclow(nullptr), nxupp(-1), nxlow(-1), mcupp(-1), mclow(-1), useRefs(0),
    sol(nullptr), res(nullptr), resx(nullptr), resy(nullptr), resz(nullptr),
    sol2(nullptr), res2(nullptr), res3(nullptr), res4(nullptr), res5(nullptr), printStatistics(false), ipIterations(-2)
 {
