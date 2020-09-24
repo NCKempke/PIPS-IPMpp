@@ -117,7 +117,6 @@ void sTreeCallbacks::switchToPresolvedData()
    }
 
    isDataPresolved = true;
-
 }
 
 
@@ -299,6 +298,8 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
 void sTreeCallbacks::computeGlobalSizes()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   assert( !isDataPresolved );
+
    const int myrank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    if ( data && sTree::isInVector(myrank, myProcs) )
