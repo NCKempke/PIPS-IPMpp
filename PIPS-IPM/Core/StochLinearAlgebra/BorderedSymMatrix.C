@@ -11,13 +11,13 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-BorderedSymMatrix::BorderedSymMatrix(int id_, StochSymMatrix* inner_matrix_, StringGenMatrix* border_vertical_, SymMatrix* bottom_block_,
-            MPI_Comm mpiComm_) : inner_matrix(inner_matrix_), border_vertical(border_vertical_), bottom_block(bottom_block_), id(id_), mpiComm( mpiComm_ ),
+BorderedSymMatrix::BorderedSymMatrix(int id_, StochSymMatrix* inner_matrix_, StringGenMatrix* border_vertical_, SymMatrix* top_left_block_,
+            MPI_Comm mpiComm_) : inner_matrix(inner_matrix_), border_vertical(border_vertical_), top_left_block(top_left_block_), id(id_), mpiComm( mpiComm_ ),
             iAmDistrib( mpiComm == MPI_COMM_NULL )
 {
    assert( inner_matrix );
    assert( border_vertical );
-   assert( bottom_block );
+   assert( top_left_block );
 
    assert( inner_matrix->children.size() == border_vertical->children.size() );
    assert( border_vertical->is_vertical );
@@ -31,7 +31,7 @@ BorderedSymMatrix::BorderedSymMatrix(int id_, StochSymMatrix* inner_matrix_, Str
 
 #ifndef NDEBUG
    int n_bottom;
-   bottom_block->getSize(n_bottom, n_bottom);
+   top_left_block->getSize(n_bottom, n_bottom);
    int n_inner;
    inner_matrix->getSize(n_inner, n_inner);
 
@@ -44,7 +44,7 @@ BorderedSymMatrix::~BorderedSymMatrix()
 {
    delete inner_matrix;
    delete border_vertical;
-   delete bottom_block;
+   delete top_left_block;
 }
 
 int BorderedSymMatrix::isKindOf( int type ) const
@@ -60,14 +60,16 @@ void BorderedSymMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
 
    assert(x.children.size() == 1 && y.children.size() == 1);
    assert(x.children[0] && y.children[0]);
-   assert( y.vecl && !x.vecl);
-   assert( !y.vec && x.vec );
+   assert( x.vec );
+   assert( y.vec );
+   assert( !x.vecl );
+   assert( !y.vecl );
+
+   top_left_block->mult( beta, *y.vec, alpha, *x.vec );
+   border_vertical->transMult( 1.0, *y.vec, alpha, *x.children[0] );
 
    border_vertical->mult( beta, *y.children[0], alpha, *x.vec );
    inner_matrix->mult( 1.0, *y.children[0], alpha, *x.children[0] );
-
-   bottom_block->mult( beta, *y.vecl, alpha, *x.vec );
-   border_vertical->transMult( 1.0, *y.vecl, alpha, *x.children[0] );
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -85,7 +87,7 @@ void BorderedSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_in )
    assert( x.children[0] );
    assert( !x.vecl && x.vec );
 
-   bottom_block->getDiagonal(*x.vec);
+   top_left_block->getDiagonal(*x.vec);
 
    inner_matrix->fromGetDiagonal(idiag, *x.children[0]);
 }
@@ -96,7 +98,7 @@ double BorderedSymMatrix::abmaxnorm() const
 
    norm = std::max(norm, inner_matrix->abmaxnorm());
    norm = std::max(norm, border_vertical->abmaxnorm());
-   norm = std::max(norm, bottom_block->abmaxnorm());
+   norm = std::max(norm, top_left_block->abmaxnorm());
 
    return norm;
 }

@@ -19,6 +19,13 @@
 class StringGenMatrix;
 class StochSymMatrix;
 
+/* representing a matrix of the type
+ *
+ * [  D   B ]
+ * [ B^T  Q ]
+ *
+ */
+
 class BorderedSymMatrix : public SymMatrix
 {
    public:
@@ -77,7 +84,7 @@ class BorderedSymMatrix : public SymMatrix
       StochSymMatrix* inner_matrix;
       StringGenMatrix* border_vertical;
 
-      SymMatrix* bottom_block;
+      SymMatrix* top_left_block;
 
    protected:
 
