@@ -43,7 +43,7 @@ namespace pips_options
 
       /// STOCH PRESOLVER
       /** limit for max rounds to apply all presolvers */
-      int_options["PRESOLVE_MAX_ROUNDS"] = 2;
+      int_options["PRESOLVE_MAX_ROUNDS"] = 1;
       /** should the problem be written to std::cout before and after presolve */
       bool_options["PRESOLVE_PRINT_PROBLEM"] = false;
       /** should the presolved problem be written out in MPS format */
@@ -54,8 +54,8 @@ namespace pips_options
       int_options["PRESOLVE_VERBOSITY"] = 1;
 
       /** turn respective presolvers on/off */
-      bool_options["PRESOLVE_BOUND_STRENGTHENING"] = true;
-      bool_options["PRESOLVE_PARALLEL_ROWS"] = true;
+      bool_options["PRESOLVE_BOUND_STRENGTHENING"] = false;
+      bool_options["PRESOLVE_PARALLEL_ROWS"] = false;
       bool_options["PRESOLVE_COLUMN_FIXATION"] = true;
       bool_options["PRESOLVE_SINGLETON_ROWS"] = true;
       bool_options["PRESOLVE_SINGLETON_COLUMNS"] = false;
