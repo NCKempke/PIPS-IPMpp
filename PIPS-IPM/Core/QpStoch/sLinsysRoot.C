@@ -27,7 +27,8 @@ extern int gOuterSolve;
 sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_)
   : sLinsys(factory_, prob_), iAmDistrib(0), sparseKktBuffer(nullptr)
 {
-  assert(dd!=nullptr);
+  assert( dd!=nullptr );
+  assert( prob_ );
   xDiag = nullptr;
   zDiag = nullptr;
   zDiagLinkCons = nullptr;
@@ -413,6 +414,7 @@ void sLinsysRoot::createChildren(sData* prob)
 {
   sLinsys* child=nullptr;
   assert(dd!=nullptr);
+  assert( prob );
   assert(dynamic_cast<StochVector*>(dd) !=nullptr);
   StochVector& ddst = dynamic_cast<StochVector&>(*dd);
   StochVector& dqst = dynamic_cast<StochVector&>(*dq);
@@ -427,16 +429,16 @@ void sLinsysRoot::createChildren(sData* prob)
       if(MPI_COMM_NULL == ddst.children[it]->mpiComm) {
 	  child = new sDummyLinsys(dynamic_cast<sFactory*>(factory), prob->children[it]);
       } else {
+         assert( prob->children[it] );
 	  sFactory* stochFactory = dynamic_cast<sFactory*>(factory);
 	  if(prob->children[it]->children.size() == 0) {	
-	      //child = new sLinsysLeaf(dynamic_cast<QpGenStoch*>(factory),
 	      child = stochFactory->newLinsysLeaf(prob->children[it],
 						  ddst.children[it],
 						  dqst.children[it],
 						  nomegaInvst.children[it],
 						  rhsst.children[it]);
 	  } else {
-	      //child = new sLinsysRoot(dynamic_cast<QpGenStoch*>(factory), 
+         assert( prob->children[it] );
 	      child = stochFactory->newLinsysRoot(prob->children[it],
 						  ddst.children[it],
 						  dqst.children[it],

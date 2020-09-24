@@ -110,13 +110,12 @@ sLinsysRootAug::createKKT(sData* prob)
 DoubleLinearSolver*
 sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
 {
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
-
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
 
 #ifdef WITH_MUMPS_ROOT
    if( hasSparseKkt )
    {
-      if( 0 == myRank )
+      if( 0 == my_rank )
          cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << endl;
 
       SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
@@ -127,7 +126,7 @@ sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
 #elif defined(WITH_PARDISO)
    if( hasSparseKkt )
    {
-      if( 0 == myRank )
+      if( 0 == my_rank )
          cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << endl;
 
       SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
@@ -139,7 +138,7 @@ sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_)
    assert(!hasSparseKkt);
 #endif
    {
-      if( 0 == myRank )
+      if( 0 == my_rank )
          cout << "Using LAPACK dsytrf for summed Schur complement - sLinsysRootAug" << endl;
 
       DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
