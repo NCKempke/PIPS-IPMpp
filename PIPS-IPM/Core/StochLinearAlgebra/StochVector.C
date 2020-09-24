@@ -29,19 +29,20 @@ StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_, int isDistributed
   : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_),
     iAmDistrib(isDistributed)
 {
-  vec = new SimpleVectorBase<T>(n_);
-  vecl = nullptr;
+   assert( n_ >= 0 );
+   vec = new SimpleVectorBase<T>(n_);
+   vecl = nullptr;
 
-  if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm)
-  {
-    const int size = PIPS_MPIgetSize(mpiComm);
-    iAmDistrib = (size == 1) ? 0 : 1;
-  }
+   if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm)
+   {
+      const int size = PIPS_MPIgetSize(mpiComm);
+      iAmDistrib = (size == 1) ? 0 : 1;
+   }
 }
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_, int isDistributed)
-  : OoqpVectorBase<T>(n_), parent(nullptr), mpiComm(mpiComm_),
+  : OoqpVectorBase<T>(0), parent(nullptr), mpiComm(mpiComm_),
     iAmDistrib(isDistributed)
 {
    this->n = 0;
