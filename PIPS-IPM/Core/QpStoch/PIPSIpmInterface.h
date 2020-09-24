@@ -200,6 +200,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   else
   {
      data = dynamic_cast<sData*>(factory->makeData());
+     assert( data );
      origData = nullptr;
      postsolver = nullptr;
      presolver = nullptr;
@@ -266,7 +267,6 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
   MPI_Barrier(comm);
   const double t1 = MPI_Wtime();
-
   if( mype == 0 )
      std::cout << "---reading time (in sec.): " << t1 - t0 << std::endl;
 }
