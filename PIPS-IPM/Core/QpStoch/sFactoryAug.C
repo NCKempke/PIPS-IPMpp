@@ -28,7 +28,8 @@ sFactoryAug::~sFactoryAug()
 
 sLinsysRoot* sFactoryAug::newLinsysRoot()
 {
-  return new sLinsysRootAug(this, data);
+   assert( data );
+   return new sLinsysRootAug(this, data);
 }
 
 sLinsysRoot* 
@@ -36,5 +37,6 @@ sFactoryAug::newLinsysRoot(sData* prob,
 			   OoqpVector* dd,OoqpVector* dq,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
-  return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
+   assert( false && "not in use" );
+   return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
 }

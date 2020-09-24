@@ -7,7 +7,8 @@
 
 #include "sFactoryAug.h"
 
-class sFactoryAugSchurLeaf : public sFactoryAug {
+class sFactoryAugSchurLeaf : public sFactoryAug
+{
  public:
  
  sFactoryAugSchurLeaf( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD)
@@ -19,10 +20,12 @@ class sFactoryAugSchurLeaf : public sFactoryAug {
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
 			     OoqpVector* dd,OoqpVector* dq,
-			     OoqpVector* nomegaInv, OoqpVector* rhs);
+			     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
 };
-class sFactoryAugSchur32Leaf : public sFactoryAug {
+
+class sFactoryAugSchur32Leaf : public sFactoryAug
+{
  public:
 
   sFactoryAugSchur32Leaf( StochInputTree* in)
@@ -33,7 +36,7 @@ class sFactoryAugSchur32Leaf : public sFactoryAug {
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
 			     OoqpVector* dd,OoqpVector* dq,
-			     OoqpVector* nomegaInv, OoqpVector* rhs);
+			     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
 };
 

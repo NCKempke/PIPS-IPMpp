@@ -211,7 +211,6 @@ Data * sFactory::makeData()
 		    A, b,
 		    C, clow, iclow, iclow->numberOfNonzeros(),
 		    cupp, icupp, icupp->numberOfNonzeros());
-
   return data;
 }
 

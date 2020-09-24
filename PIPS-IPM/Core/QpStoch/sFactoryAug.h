@@ -16,9 +16,9 @@ class sFactoryAug : public sFactory {
  public:
   virtual ~sFactoryAug();
 
-  virtual sLinsysRoot* newLinsysRoot();
-  virtual sLinsysRoot* newLinsysRoot(sData* prob,
+  sLinsysRoot* newLinsysRoot() override;
+  sLinsysRoot* newLinsysRoot(sData* prob,
 				     OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs);
+				     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 };
 #endif

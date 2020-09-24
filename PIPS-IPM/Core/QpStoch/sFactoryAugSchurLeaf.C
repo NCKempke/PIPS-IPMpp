@@ -19,8 +19,8 @@ sLinsysLeaf* sFactoryAugSchurLeaf::newLinsysLeaf(sData* prob,
 						 OoqpVector* dd,OoqpVector* dq,
 						 OoqpVector* nomegaInv, OoqpVector* rhs)
 {
-  //cout << "sFactoryAugSchurLeaf::newLinsysLeaf  returns  a sLinsysLeafSchurSlv" << endl;
-  PardisoSchurSolver* linSolver=nullptr;
+  assert( prob );
+  PardisoSchurSolver* linSolver = nullptr;
   return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
 }
 
@@ -29,8 +29,8 @@ sFactoryAugSchur32Leaf::newLinsysLeaf(sData* prob,
 				      OoqpVector* dd,OoqpVector* dq,
 				      OoqpVector* nomegaInv, OoqpVector* rhs)
 {
-  //cout << "sFactoryAugSchurLeaf::newLinsysLeaf  returns  a sLinsysLeafSchurSlv" << endl;
-  PardisoSchur32Solver* linSolver=nullptr;
+  assert( prob );
+  PardisoSchur32Solver* linSolver = nullptr;
   return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
 }
 

@@ -39,7 +39,7 @@ class sFactory : public QpGen {
 
   virtual ~sFactory();
 
-  virtual Data  * makeData();
+  virtual Data* makeData();
 
   virtual Residuals * makeResiduals( Data * prob_in );
   virtual Variables * makeVariables( Data * prob_in );
@@ -66,7 +66,6 @@ class sFactory : public QpGen {
 
   sTree * tree;
   sData * data;
-  //  Variables
 
   virtual void iterateStarted();
   virtual void iterateEnded();
