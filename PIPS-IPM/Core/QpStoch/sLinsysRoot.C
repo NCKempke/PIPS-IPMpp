@@ -160,6 +160,9 @@ extern int gLackOfAccuracy;
 
 void sLinsysRoot::factor2(sData *prob, Variables *vars)
 {
+   if( this->is_hierarchy_root )
+      assert( children.size() == 1 );
+
    /* set kkt to zero */
    initializeKKT(prob, vars);
 
@@ -580,9 +583,9 @@ void sLinsysRoot::sync()
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
 void sLinsysRoot::initializeKKT(sData* prob, Variables* vars)
 {
-#ifdef HIERARCHICAL
-   assert( !hasSparseKkt );
-#endif
+   if( is_hierarchy_root )
+      assert( !hasSparseKkt );
+
    if( hasSparseKkt )
    {
       SparseSymMatrix* kkts = dynamic_cast<SparseSymMatrix*>(kkt);
