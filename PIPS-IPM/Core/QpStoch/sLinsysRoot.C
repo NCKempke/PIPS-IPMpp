@@ -296,6 +296,29 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
 
 }
 
+// compute B_{inner}^T K^{-1} B_{outer} and add it up
+void sLinsysRoot::solveHierarchyBorder(DenseSymMatrix& schur_compl, sData* data_border)
+{
+   assert(data_border);
+
+   /* get contribution to schur_complement from each child */
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->solveHierarchyBorder(schur_compl, data_border );
+
+   /* allreduce the result */
+   if( iAmDistrib )
+   {
+      int m, n;
+      schur_compl.getSize(m, n);
+
+      // XXXX todo don't reduce A_0 part
+      submatrixAllReduceFull(&schur_compl, 0, 0, m, n, mpiComm);
+   }
+
+   assert( false );
+   /* add own schur complement contribution */
+}
+
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {

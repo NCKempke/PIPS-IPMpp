@@ -94,6 +94,25 @@ void sLinsysLeaf::sync()
 void sLinsysLeaf::deleteChildren()
 { }
 
+void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC)
+{
+   SparseGenMatrix& A = prob->getLocalA();
+   SparseGenMatrix& C = prob->getLocalC();
+   SparseGenMatrix& F = prob->getLocalF();
+   SparseGenMatrix& G = prob->getLocalG();
+   SparseGenMatrix& R = prob->getLocalCrossHessian();
+
+   addTermToSchurComplBlocked(prob, sparseSC, R, A, C, F, G, SC);
+}
+
+// TODO : rename
+void sLinsysLeaf::solveHierarchyBorder(DenseSymMatrix& schur_comp, sData* data_border)
+{
+   assert( false && "TODO : implement");
+   // TODO : how to we get the correct A C R F G ?
+}
+
+
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
 					     GenMatrix& B_, GenMatrix& D_, 
 					     int locnx, int locmy, int locmz)

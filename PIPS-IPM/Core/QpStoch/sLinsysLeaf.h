@@ -46,7 +46,12 @@ class sLinsysLeaf : public sLinsys
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
   void sync();
   virtual void deleteChildren();
- protected:
+
+  using sLinsys::addTermToSchurComplBlocked;
+  void addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC) override;
+
+  void solveHierarchyBorder(DenseSymMatrix& schur_comp, sData* data_border) override;
+  protected:
 
   static void mySymAtPutSubmatrix(SymMatrix& kkt, 
 				  GenMatrix& B, GenMatrix& D, 

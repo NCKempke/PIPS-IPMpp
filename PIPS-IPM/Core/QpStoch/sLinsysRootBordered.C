@@ -42,13 +42,21 @@ void sLinsysRootBordered::solveReduced( sData *prob, SimpleVector& b)
 /* create kkt used to store Schur Complement of border layer */
 SymMatrix* sLinsysRootBordered::createKKT(sData* prob)
 {
-   const int n = locnx + locmy + locmyl + locmzl;
+   const int n = locmy + locmyl + locmzl;
 
    return new DenseSymMatrix(n);
 }
 
 void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 {
+   assert( is_hierarchy_root );
+   assert( !hasSparseKkt );
+   assert( children.size() == 1 );
+
+   DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
+
+   this->children[0]->addInnerToHierarchicalSchurComplement(kktd, prob);
+
    assert( 0 && "TODO : implement..");
 }
 

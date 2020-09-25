@@ -64,6 +64,8 @@ class sLinsysRoot : public sLinsys {
   virtual void solveReduced( sData *prob, SimpleVector& b) = 0;
   virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
+  void solveHierarchyBorder( DenseSymMatrix& schur_comp, sData* border_data );
+
   virtual void putXDiagonal( OoqpVector& xdiag_ );
   virtual void putZDiagonal( OoqpVector& zdiag );
  
