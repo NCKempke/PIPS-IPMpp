@@ -833,6 +833,7 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
        krowM[i + 1] = krowM[i] + blockrownnz;
    }
 
+   std::cout << nnzcount << " " << nnz << std::endl;
    assert(nnzcount == nnz);
 
    return (new SparseSymMatrix(sizeSC, nnz, krowM, jcolM, M, 1, false));
@@ -1678,6 +1679,43 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    A->getSize( my, dummy );
    C->getSize( mz, dummy );
 
+   /* adapt vectors and global link sizes - we pushed these up */
+
+   /* global linking variables have been ordered to the front, global linking constraints to the end of the matrices */
+   /* linking vars */
+   hierarchical_top->n_blocks_per_link_var = this->n_blocks_per_link_var;
+   this->n_blocks_per_link_var.erase(n_blocks_per_link_var.begin(), n_blocks_per_link_var.begin() + n_global_linking_vars);
+
+   /* Amat linking cons */
+   hierarchical_top->linkStartBlockIdA = this->linkStartBlockIdA;
+   this->linkStartBlockIdA.erase(linkStartBlockIdA.end() - n_global_eq_linking_conss, linkStartBlockIdA.end() );
+   hierarchical_top->n_blocks_per_link_row_A = this->n_blocks_per_link_row_A;
+   this->n_blocks_per_link_row_A.erase(n_blocks_per_link_row_A.end() - n_global_eq_linking_conss, n_blocks_per_link_row_A.end());
+
+   /* Cmat linking cons */
+   hierarchical_top->linkStartBlockIdC = this->linkStartBlockIdC;
+   this->linkStartBlockIdC.erase(linkStartBlockIdC.end() - n_global_ineq_linking_conss, linkStartBlockIdC.end() );
+   hierarchical_top->n_blocks_per_link_row_C = this->n_blocks_per_link_row_C;
+   this->n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.end() - n_global_ineq_linking_conss, n_blocks_per_link_row_C.end() );
+
+//   std::vector<unsigned int> linkVarsPermutation;
+//   std::vector<unsigned int> linkConsPermutationA;
+//   std::vector<unsigned int> linkConsPermutationC;
+
+   assert( isSCrowLocal.size() == 0 );
+   assert( isSCrowMyLocal.size() == 0 );
+
+   hierarchical_top->n_global_eq_linking_conss = n_global_eq_linking_conss;
+   this->n_global_eq_linking_conss = 0;
+
+   hierarchical_top->n_global_ineq_linking_conss = n_global_ineq_linking_conss;
+   this->n_global_ineq_linking_conss = 0;
+
+   hierarchical_top->n_global_linking_vars = n_global_linking_vars;
+   this->n_global_linking_vars = 0;
+
+   hierarchical_top->useLinkStructure = false;
+
    hierarchical_top->children.push_back(this);
    stochNode = tree->children[0];
 
@@ -2293,9 +2331,63 @@ int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
    return 0;
 }
 
+
+/*
+ * At this stage we expect the Schur Complement to be of the form
+ *                                                                                           nx  my0  mz0  myl  mzl
+ *       [  Xsymi   0     0    X1iT FiT      X1iT GiT  ]     [ Q0  A0T  C0T  F0T  G0T  ]   [  x   x    x    x    x ]
+ *       [   0      0     0       0             0      ]     [ A0   0    0    0    0   ]   [  x   0    0    0    0 ]
+ * SUM_i [   0      0     0       0             0      ]  +  [ C0   0   Om0   0    0   ] = [  x   0    x    0    0 ] =: global Schur complement (symmetric)
+ *       [ Fi X1i   0     0   Fi K11i FiT  Fi K11i GiT ]     [ F0   0    0    0    0   ]   [  x   0    0    x    x ]
+ *       [ Gi X1i   0     0   Gi K11i FiT  Gi K11i GiT ]     [ G0   0    0    0  OmN+1 ]   [  x   0    0    x    x ]
+ *
+ *                       [ Qi BiT DiT ]^-1     [ K11 K12 K13 ]
+ * Where Ki = (Ki)_lk =  [ Bi  0   0  ]      = [ K21 K22 K23 ]
+ *                       [ Di  0   0  ]        [ K31 K32 K33 ] symmetric, and Om0 OmN+1 are diagonal and Xsym symmetric too.
+ *
+ *
+ * Structure:
+ * SUM_i Fi K11i FiT = SUM_i Fi K11i GiT = SUM_i Gi K11i FiT = SUM_i Gi K11i GiT
+ *
+ *      [ x  x  x  x  .  .  x  x  x ]
+ *      [ x  x  x                   ]
+ *      [ x  x  x  x                ]
+ *    = [ .     x  .  .             ]
+ *      [ .        .  .  .          ]
+ *      [ .           .  .  .       ]
+ *      [ .              .  .  x    ]
+ *      [ .                 x  x  x ]
+ *      [ x                    x  x ]
+ *
+ *      sizes depending on the blocks involved.
+ *
+ * For the (distributed) computation of the Schur Complement we only need to consider
+ *
+ *       [  Xsymi   X1iT FiT      X1iT GiT  ]     [ Q0  F0T  G0T  ]   [  x   x   x ]
+ * SUM_i [ Fi X1i  Fi K11i FiT  Fi K11i GiT ]  +  [ F0   0    0   ] = [  x   x   x ]
+ *       [ Gi X1i  Gi K11i FiT  Gi K11i GiT ]     [ G0   0  OmN+1 ]   [  x   x   x ]
+ *
+ *       and even more structure can be exploited : define n0LinkVars variables that do only appear in the A_0(B_0) / C_0(D_0) block and in non of
+ *       the other A_i, C_i
+ *
+ *       X1i = K11iRi + K12i Ai + K13i Ci
+
+ *       Since Fi X1i := Fi (K11i Ri + K12i Ai + K12i Ci) = Fi (K11i [0, Ri] + K12i [0, Ai] + K13i [0, Ci] )
+ *           =  [     0        Fi (K11i Ri + K12i Ai + K13i Ci] myl
+ *                 n0LinkVars             n - n0LinkVars
+ *
+ *       So we need not to store the n0LinkVars (same for sym?) part either (neither for F, not for G), thus:
+ *
+ *                                                                      nx  myl mzl
+ *       [  Xsymi   X1iT FiT      X1iT GiT  ]     [ Q0  F0T  G0T  ]   [  x   x   x ]
+ * SUM_i [ Fi X1i  Fi K11i FiT  Fi K11i GiT ]  +  [ F0   0    0   ] = [  x   x   x ]
+ *       [ Gi X1i  Gi K11i FiT  Gi K11i GiT ]     [ G0   0  OmN+1 ]   [  x   x   x ]
+ *
+ *
+ */
 int sData::getSchurCompMaxNnz()
 {
-   assert( false && "TODO : adapt to shaved matrix probably..." );
+//   assert( false && "TODO : adapt to shaved matrix probably..." );
    if( is_hierarchy_root )
       assert( 0 && "not available in hierarchy root");
    assert(children.size() > 0);
@@ -2317,14 +2409,16 @@ int sData::getSchurCompMaxNnz()
 
    assert(n0 >= n0LinkVars);
 
-   // sum up half of dense square
+   /* Xsym */
    nnz += nnzTriangular(n0);
 
    // add B_0 (or A_0, depending on notation)
    nnz += getLocalB().numberOfNonZeros();
 
    // add borders
+   /* X1iT FiT */
    nnz += myl * (n0 - n0LinkVars);
+   /* X1iT GiT */
    nnz += mzl * (n0 - n0LinkVars);
 
    // (empty) diagonal
