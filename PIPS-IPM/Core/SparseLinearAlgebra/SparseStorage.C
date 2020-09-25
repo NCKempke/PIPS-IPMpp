@@ -333,7 +333,7 @@ void SparseStorage::fromGetColBlock(int col, double *A, int lda, int colExtent, 
 
 
 void SparseStorage::fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize,
-      int arrayLineOffset, double* rowsArrayDense, int* rowSparsity)
+      int arrayLineOffset, double* rowsArrayDense, int* rowSparsity) const
 {
    assert(rowsArrayDense && rowIndices);
    assert(arrayLineSize >= 0 && arrayLineOffset >= 0);
