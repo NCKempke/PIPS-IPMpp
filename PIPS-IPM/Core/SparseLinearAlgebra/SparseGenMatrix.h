@@ -141,7 +141,7 @@ public:
   const SparseStorageDynamic& getStorageDynamicTransposedRef() const { assert(m_Mt != nullptr && m_Mt->hasDynamicStorage()); return m_Mt->getStorageDynamicRef(); }
   bool hasDynamicStorage() const { return (mStorageDynamic != nullptr); };
 
-  virtual void addNnzPerRow(OoqpVectorBase<int>& nnzVec);
+  virtual void addNnzPerRow(OoqpVectorBase<int>& nnzVec) const;
   virtual void addNnzPerCol(OoqpVectorBase<int>& nnzVec);
 
   /** fill vector with absolute minimum/maximum value of each row */
@@ -177,7 +177,7 @@ public:
   void deleteEmptyRows(int*& orgIndex);
 
   void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset,
-        double* rowsArrayDense, int* rowSparsity = nullptr);
+        double* rowsArrayDense, int* rowSparsity = nullptr) const;
 
   void fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset,
         double* colsArrayDense, int* rowSparsity = nullptr);

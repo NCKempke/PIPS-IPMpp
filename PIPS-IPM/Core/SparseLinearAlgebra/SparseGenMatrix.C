@@ -581,7 +581,7 @@ void SparseGenMatrix::matMultTrans(SymMatrix** res)
 
 
 void
-SparseGenMatrix::addNnzPerRow(OoqpVectorBase<int>& nnzVec)
+SparseGenMatrix::addNnzPerRow(OoqpVectorBase<int>& nnzVec) const
 {
    SimpleVectorBase<int>& vec = dynamic_cast<SimpleVectorBase<int>&>(nnzVec);
 
@@ -752,7 +752,7 @@ void SparseGenMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& rowNnzVec, 
 }
 
 void SparseGenMatrix::fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset,
-       double* rowsArrayDense, int* rowSparsity)
+       double* rowsArrayDense, int* rowSparsity) const
 {
 
    mStorage->fromGetRowsBlock(rowIndices, nRows, arrayLineSize, arrayLineOffset, rowsArrayDense, rowSparsity);
