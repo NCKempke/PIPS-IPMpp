@@ -38,10 +38,10 @@ class sLinsys : public QpGenLinsys
   void factor (Data *prob, Variables *vars) override;
   virtual void factor2(sData *prob, Variables *vars) = 0;
 
-  virtual void Lsolve ( sData *prob, OoqpVector& x )=0;
-  virtual void Dsolve ( sData *prob, OoqpVector& x )=0;
-  virtual void Ltsolve( sData *prob, OoqpVector& x )=0;
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)=0;
+  virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
+  virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;
+  virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
+  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) = 0;
 
   virtual void putZDiagonal( OoqpVector& zdiag )=0;
   virtual void solveCompressed( OoqpVector& rhs );
@@ -88,8 +88,12 @@ class sLinsys : public QpGenLinsys
 					DenseSymMatrix& SC);
 
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
-               SymMatrix& SC);
-
+        SymMatrix& SC) { assert( 0 && "not implemented here" ); };
+ protected:
+  virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
+        SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
+        SparseGenMatrix& F, SparseGenMatrix& G, SymMatrix& SC);
+ public:
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
 					
@@ -106,6 +110,12 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurResidual(sData* prob, 
 				      SimpleVector& res, 
 				      SimpleVector& x);
+
+  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border );
+
+  virtual void solveHierarchyBorder( DenseSymMatrix& schur_comp, sData* data_border)
+     { assert( false && "not implemented here" ); };
+
  public:
   MPI_Comm mpiComm;
   sTree* stochNode;

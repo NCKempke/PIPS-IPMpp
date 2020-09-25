@@ -748,18 +748,12 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
   //assert(0);
 #endif
 }
- 
+
 //#define TIME_SCHUR
-
 void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
-                   SymMatrix& SC)
+      SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
+      SparseGenMatrix& F, SparseGenMatrix& G, SymMatrix& SC)
 {
-   SparseGenMatrix& A = prob->getLocalA();
-   SparseGenMatrix& C = prob->getLocalC();
-   SparseGenMatrix& F = prob->getLocalF();
-   SparseGenMatrix& G = prob->getLocalG();
-   SparseGenMatrix& R = prob->getLocalCrossHessian();
-
    int N, nxP;
 
    R.getSize(N, nxP);
@@ -1024,13 +1018,27 @@ void sLinsys::addColsToDenseSchurCompl(sData *prob,
 
 }
 
+/* solve own linear system with border data
+ *
+ * rhs-block^T looks like
+ *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [ 0  A0 C0 0 0 ]
+ *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ 0  0  0  0 0 ]
+ *  [ C1  0   0  ]         [ CN  0   0  ]   [ 0  0  0  0 0 ]
+ *
+ */
+void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border )
+{
+   assert( !is_hierarchy_root );
 
+   /* solve system with border right hand sides given in data_border */
+   solveHierarchyBorder(schur_comp, data_border);
+}
 
 // adds only lower triangular elements to out
 
-void sLinsys::symAddColsToDenseSchurCompl(sData *prob, 
-				       double *out, 
-				       int startcol, int endcol) 
+void sLinsys::symAddColsToDenseSchurCompl(sData *prob,
+				       double *out,
+				       int startcol, int endcol)
 {
   SparseGenMatrix& A = prob->getLocalA();
   SparseGenMatrix& C = prob->getLocalC();
