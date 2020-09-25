@@ -379,6 +379,7 @@ void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
+//  std::cout << " x.n " << x.n << " mStorage->m " << mStorage->m << ", y.n " << y.n << " mStorage->n " << mStorage->n << std::endl;
   assert( x.n == mStorage->m && y.n == mStorage->n );
 
   const double* xv = 0;
