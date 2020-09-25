@@ -19,64 +19,48 @@
  */
 StochSymMatrix::StochSymMatrix(int id, long long global_n, int local_n, int local_nnz, 
 			       MPI_Comm mpiComm_)
-  :id(id), n(global_n), mpiComm(mpiComm_), iAmDistrib(0), parent(nullptr)
+  :id(id), n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
 {
   diag = new SparseSymMatrix(local_n, local_nnz);
   // the cross Hessian is nullptr for the root node; it may be also nullptr for 
   // children in the case when the Hessian does not have cross terms and
   // the children are created with this constructor. The border will be 
   // set up to correct sizes later for this case.
-  border = new SparseGenMatrix(0, 0, 0);
-
-  if(mpiComm!=MPI_COMM_NULL) {
-    int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
-    if(size>1) iAmDistrib=1;
-  }
+  border = nullptr;
 }
 
 StochSymMatrix::StochSymMatrix( int id, long long global_n, 
 				int nrows, int diag_nnz, 
 				int nbordercols, int border_nnz,
 				MPI_Comm mpiComm_)
-  :id(id), n(global_n), mpiComm(mpiComm_), iAmDistrib(0), parent(nullptr)
+  :id(id), n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
 {
-  diag = new SparseSymMatrix(nrows, diag_nnz);
-  //printf("Creating cross Hessian: m=%d n=%d  nnz=%d\n", nbordercols, nrows, border_nnz);
-  border = new SparseGenMatrix(nrows, nbordercols, border_nnz);
-
-  if(mpiComm!=MPI_COMM_NULL) {
-    int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
-    if(size>1) iAmDistrib=1;
-  }
+   diag = new SparseSymMatrix(nrows, diag_nnz);
+   border = new SparseGenMatrix(nrows, nbordercols, border_nnz);
 }
 
 void StochSymMatrix::AddChild(StochSymMatrix* child)
 {
   child->parent=this;
 
-  int m,n; child->border->getStorageRef().getSize(m,n);
-
-  if (m==0 && n==0) {
-    // create an empty border for this children with correct dimensions
-    delete child->border;
-
-    //printf("(RE)Creating cross Hessian: m=%d n=%d  nnz=%d\n", this->diag->size(), child->diag->size(), 0);
-
+  if( !border )
     child->border = new SparseGenMatrix(child->diag->size(), this->diag->size(), 0);
-  }
 
   children.push_back(child);
 }
 
 StochSymMatrix::~StochSymMatrix()
 {
-  for(size_t it=0; it<children.size(); it++)
-    delete children[it];
+   for(size_t it = 0; it < children.size(); it++)
+      delete children[it];
 
-  if (diag) delete diag;
-  if (border) delete border;
+   if( diag )
+      delete diag;
+   if( border )
+      delete border;
 }
 
+// TODO : does not clone the border..
 StochSymMatrix* StochSymMatrix::clone() const
 {
    const int local_n = diag->getStorageRef().n;
@@ -172,77 +156,62 @@ void StochSymMatrix::atPutZeros( int row, int col, int rowExtent, int colExtent 
  *
  * Here Qi are diagonal blocks, Ri are left bordering blocks
  */
-void StochSymMatrix::mult ( double beta,  OoqpVector& y_,
+void StochSymMatrix::mult( double beta,  OoqpVector& y_,
 			    double alpha, const OoqpVector& x_ ) const
 {
-//   return;
-  const StochVector & x = dynamic_cast<const StochVector&>(x_);
-  StochVector & y = dynamic_cast<StochVector&>(y_);
+   const StochVector & x = dynamic_cast<const StochVector&>(x_);
+   StochVector & y = dynamic_cast<StochVector&>(y_);
 
-  //check the tree compatibility
-  size_t nChildren = children.size();
-  assert(y.children.size() - nChildren ==0);
-  assert(x.children.size() - nChildren ==0);
+   size_t nChildren = children.size();
+   assert(y.children.size() == nChildren );
+   assert(x.children.size() == nChildren );
 
-  //check the node size compatibility
-  assert(this->diag->size() == y.vec->length());
-  assert(this->diag->size() == x.vec->length());
+   assert(this->diag->size() == y.vec->length());
+   assert(this->diag->size() == x.vec->length());
 
-  SimpleVector & yvec = dynamic_cast<SimpleVector&>(*y.vec);
-  const SimpleVector & xvec = dynamic_cast<const SimpleVector&>(*x.vec);
+   SimpleVector & yvec = dynamic_cast<SimpleVector&>(*y.vec);
+   const SimpleVector & xvec = dynamic_cast<const SimpleVector&>(*x.vec);
 
-  if (0.0 == alpha) {
-    yvec.scale( beta );
-    return;
-  } else {
+   if(0.0 == alpha)
+   {
+      y.vec->scale( beta );
+      return;
+   }
 
-    bool iAmRoot = (parent==nullptr);
-    bool iAmSpecial = true; //the process that computes Q_0 * x_0
-    int rank; MPI_Comm_rank(mpiComm, &rank);
-    if(rank > 0) iAmSpecial = false;
+   const bool iAmRoot = (parent == nullptr);
+   const int my_rank = PIPS_MPIgetRank( mpiComm );
+   const bool iAmSpecial = (my_rank == 0);
 
-    if(iAmRoot)
-      // y0=beta*y0 + alpha * Q0*x0
+   if( iAmRoot )
+   {
+      // y0 = beta * y0 + alpha * Q0 * x0
       if(iAmSpecial)
          diag->mult( beta, yvec, alpha, xvec );
       else
          yvec.setToZero();
-    else
-      // yi=beta*yi + alpha * Qi*xi
-      diag->mult( beta, yvec, alpha, xvec ); 
-    
-    // y0 = y0 + alpha*sum( Ri^T * xi)
-    for (size_t it=0; it<nChildren; it++) {
-      int m,n;
-      children[it]->border->getStorageRef().getSize(m,n);
-      //printf(" child=%d ---- transMult mat=[%d %d %d]  y->%d  x->%d\n", it,m,n, children[it]->border->getStorageRef().length(), yvec.length(),  x.children[it]->vec->length());
-      children[it]->border->transMult(1.0, yvec, alpha, *x.children[it]->vec);
-      //printf("transMult DONE\n");
-    }
-  
-    if(iAmDistrib && nChildren>0) {
-      int locn=yvec.length();
-      double* buffer = new double[locn];
-      
-      MPI_Allreduce(yvec.elements(), buffer, locn, MPI_DOUBLE, MPI_SUM, mpiComm);
-      yvec.copyFromArray(buffer);
-      
-      delete[] buffer;
-    } 
+   }
+   else
+      // yi = beta * yi + alpha * Qi * xi
+      diag->mult( beta, yvec, alpha, xvec );
 
-    // yi = yi + alpha*R0*x0
-    if (!iAmRoot) {
+   // y0 = y0 + alpha * border^T * xi
+   if( border )
+   {
+      assert( !iAmRoot );
+      assert( x.parent );
+      assert( y.parent );
 
-      // this is a child, must add alpha*Ri*x0 to yvec
-      // yvec already contains beta*y + alpha*Qi*xi
-
+      border->transMult( 1.0, *x.parent->vec, alpha, xvec );
       border->mult(1.0, yvec, alpha, *x.parent->vec);
-    }
-  }
-  // reccursively multiply the children
-  for (size_t it = 0; it < nChildren; it++) {
-    children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
-  }
+   }
+
+   // recursively multiply the children
+   for (size_t it = 0; it < nChildren; it++)
+      children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
+
+   if( iAmDistrib && nChildren > 0 )
+      PIPS_MPIsumArrayInPlace( yvec.elements(), yvec.length(), mpiComm );
+
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -294,7 +263,7 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const
    int l;
 
    /* this is at the root node - thus there is no border */
-   assert(this->border->numberOfNonZeros() == 0);
+   assert(this->border == nullptr );
 
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
@@ -302,7 +271,7 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const
    if( iAmDistrib && rank > 0 )  // receive offset from previous process
       MPI_Recv(&offset, 1, MPI_INT, (rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
    else  //  !iAmDistrib || (iAmDistrib && rank == 0)
-      this->diag->writeToStreamDense(out);
+      this->diag->writeToStreamDense(sout);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -346,6 +315,7 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const
 
 void StochSymMatrix::writeToStreamDenseChild(stringstream& out, int offset) const
 {
+   assert( border != nullptr );
    int m_diag, m_border, n;
    this->diag->getSize(m_diag, n);
    this->border->getSize(m_border, n);
@@ -359,7 +329,7 @@ void StochSymMatrix::writeToStreamDenseChild(stringstream& out, int offset) cons
       for(int i = 0; i < offset; i++)
          out <<'\t';
 
-      this->diag->writeToStreamDenseRow(r);
+      this->diag->writeToStreamDenseRow(out, r);
       out << std::endl;
    }
 }
@@ -407,15 +377,15 @@ void StochSymMatrix::atPutDiagonal( int idiag, OoqpVector& v_ )
 
 void StochSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_ )
 {
-  assert("The value of the parameter is not supported!" && idiag==0);
+   assert("The value of the parameter is not supported!" && idiag==0);
 
-  StochVector& x = dynamic_cast<StochVector&>(x_);
-  assert(x.children.size() == children.size());
+   StochVector& x = dynamic_cast<StochVector&>(x_);
+   assert(x.children.size() == children.size());
 
-  diag->getDiagonal(*x.vec);
+   diag->getDiagonal(*x.vec);
 
-  for (size_t it=0; it<children.size(); it++) 
-    children[it]->getDiagonal(*x.children[it]);
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->getDiagonal(*x.children[it]);
 }
 
 void StochSymMatrix::putSparseTriple( int irow[], int len, int jcol[], 
@@ -486,6 +456,8 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
       assert(dynamic_cast<const SimpleVectorBase<int>*>(linkParent));
       border->deleteEmptyRowsCols(*vec, *linkParent);
    }
+   else
+      assert( border == nullptr );
 
    diag->deleteEmptyRowsCols(*vec);
 
@@ -532,12 +504,8 @@ int StochSymDummyMatrix::isKindOf( int type ) const
 
 BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 {
-#ifndef NDEBUG
-   // TODO no support for border...
-   int m_border, n_border;
-   border->getSize(m_border, n_border);
-   assert(m_border == 0 && n_border == 0);
-#endif
+   assert( parent == nullptr );
+   assert( border == nullptr );
 
    SparseGenMatrix* const border_left = diag->shaveSymLeftBottom(n_vars);
    StringGenMatrix* const border_vertical = new StringGenMatrix(id, true, border_left, nullptr, mpiComm);
@@ -560,6 +528,7 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 
 void StochSymMatrix::shaveBorder(int n_vars, StringGenMatrix*& border_vertical)
 {
+   assert( border );
    SparseGenMatrix* const border_block = border->shaveLeft(n_vars);
    border_vertical = new StringGenMatrix(id, true, border_block, nullptr, mpiComm);
 
