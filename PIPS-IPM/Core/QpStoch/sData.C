@@ -833,7 +833,6 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
        krowM[i + 1] = krowM[i] + blockrownnz;
    }
 
-   std::cout << nnzcount << " " << nnz << std::endl;
    assert(nnzcount == nnz);
 
    return (new SparseSymMatrix(sizeSC, nnz, krowM, jcolM, M, 1, false));
@@ -1274,8 +1273,7 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
 
 void sData::writeToStreamDense(ostream& out) const
 {
-   int myRank;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    if( myRank == 0 ) out <<  "A: " << std::endl;
    (*A).writeToStreamDense(out);
@@ -1697,10 +1695,6 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    this->linkStartBlockIdC.erase(linkStartBlockIdC.end() - n_global_ineq_linking_conss, linkStartBlockIdC.end() );
    hierarchical_top->n_blocks_per_link_row_C = this->n_blocks_per_link_row_C;
    this->n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.end() - n_global_ineq_linking_conss, n_blocks_per_link_row_C.end() );
-
-//   std::vector<unsigned int> linkVarsPermutation;
-//   std::vector<unsigned int> linkConsPermutationA;
-//   std::vector<unsigned int> linkConsPermutationC;
 
    assert( isSCrowLocal.size() == 0 );
    assert( isSCrowMyLocal.size() == 0 );
@@ -2387,7 +2381,6 @@ int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
  */
 int sData::getSchurCompMaxNnz()
 {
-//   assert( false && "TODO : adapt to shaved matrix probably..." );
    if( is_hierarchy_root )
       assert( 0 && "not available in hierarchy root");
    assert(children.size() > 0);
