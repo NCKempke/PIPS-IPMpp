@@ -14,14 +14,7 @@ class sData;
  * ROOT (= NON-leaf) linear system in reduced augmented form
  */
 class sLinsysRootAug : public sLinsysRoot {
- protected:
-  virtual SymMatrix*   createKKT     (sData* prob);
-  virtual DoubleLinearSolver* 
-                       createSolver  (sData* prob, 
-				      SymMatrix* kktmat);
 
-  //virtual void         createChildren(sData* prob) 
-  //{sLinsysRootAug::createChildren(prob);};
  public:
 
   sLinsysRootAug(sFactory * factory_, sData * prob_);
@@ -32,11 +25,12 @@ class sLinsysRootAug : public sLinsysRoot {
 		 OoqpVector* rhs_);
   virtual ~sLinsysRootAug();
 
- public:
   void finalizeKKT( sData* prob, Variables* vars) override;
   void finalizeKKTdist(sData* prob) override;
 
  protected:
+  virtual SymMatrix* createKKT (sData* prob);
+  virtual DoubleLinearSolver* createSolver (sData* prob, SymMatrix* kktmat);
   void assembleLocalKKT( sData* prob ) override;
   void solveReduced( sData *prob, SimpleVector& b) override;
   void solveReducedLinkCons( sData *prob, SimpleVector& b) override;
