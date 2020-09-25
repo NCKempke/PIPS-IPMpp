@@ -167,10 +167,21 @@ inline bool iAmSpecial(int iAmDistrib, MPI_Comm mpiComm = MPI_COMM_WORLD)
    return PIPS_MPIiAmSpecial(iAmDistrib, mpiComm);
 }
 
+inline int PIPS_MPIgetSize(MPI_Comm comm = MPI_COMM_WORLD)
+{
+   if( comm == MPI_COMM_NULL )
+      return -1;
+   int mysize;
+   MPI_Comm_size(comm, &mysize);
+   return mysize;
+}
+
 inline bool PIPS_MPIgetDistributed(MPI_Comm comm = MPI_COMM_WORLD)
 {
-   int world_size;
-   MPI_Comm_size(comm, &world_size);
+   if( comm == MPI_COMM_NULL )
+      return false;
+
+   const int world_size = PIPS_MPIgetSize(comm);
 
    if( world_size > 1)
       return true;
@@ -386,13 +397,6 @@ inline int PIPS_MPIgetRank(MPI_Comm mpiComm = MPI_COMM_WORLD)
    int myrank;
    MPI_Comm_rank(mpiComm, &myrank);
    return myrank;
-}
-
-inline int PIPS_MPIgetSize(MPI_Comm mpiComm = MPI_COMM_WORLD)
-{
-   int mysize;
-   MPI_Comm_size(mpiComm, &mysize);
-   return mysize;
 }
 
 template <typename T>
