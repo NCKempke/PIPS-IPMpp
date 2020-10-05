@@ -21,6 +21,8 @@
 class sTree;
 class sFactory;
 class sData;
+class StringGenMatrix;
+class StringSymMatrix;
 
 class sLinsys : public QpGenLinsys
 {
@@ -90,7 +92,7 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
         SymMatrix& SC) { assert( 0 && "not implemented here" ); };
  protected:
-  virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
+  virtual void addTermToSchurComplBlocked(bool sparseSC,
         SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
         SparseGenMatrix& F, SparseGenMatrix& G, SymMatrix& SC);
  public:
@@ -113,7 +115,8 @@ class sLinsys : public QpGenLinsys
 
   virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border );
 
-  virtual void solveHierarchyBorder( DenseSymMatrix& schur_comp, sData* data_border)
+  virtual void solveHierarchyBorder( DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
+        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
      { assert( false && "not implemented here" ); };
 
  public:
@@ -133,13 +136,16 @@ class sLinsys : public QpGenLinsys
   /* is this linsys the overall root */
   const bool is_hierarchy_root;
 
-  void multLeftSchurComplBlocked(/*const*/sData *prob, /*const*/double* colsBlockDense,
+  void multLeftSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
+        SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, bool sparseSC, SymMatrix& SC);
 
-  void multLeftSparseSchurComplBlocked(/*const*/sData *prob, /*const*/double* colsBlockDense,
+  void multLeftSparseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
+        SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, SparseSymMatrix& SC);
 
-  void multLeftDenseSchurComplBlocked(/*const*/sData *prob, /*const*/double* colsBlockDense,
+  void multLeftDenseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
+        SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, DenseSymMatrix& SC);
 
 };

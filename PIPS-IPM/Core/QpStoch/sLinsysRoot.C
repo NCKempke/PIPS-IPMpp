@@ -297,13 +297,22 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
 }
 
 // compute B_{inner}^T K^{-1} B_{outer} and add it up
-void sLinsysRoot::solveHierarchyBorder(DenseSymMatrix& schur_compl, sData* data_border)
+void sLinsysRoot::solveHierarchyBorder(DenseSymMatrix& schur_compl, StringGenMatrix& R_border, StringGenMatrix& A_border,
+      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
 {
-   assert(data_border);
+   assert( this->children.size() == R_border.children.size() );
+   assert( !R_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !A_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !C_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !F_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !G_border.isKindOf( kStringGenDummyMatrix ) );
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->solveHierarchyBorder(schur_compl, data_border );
+   {
+      children[it]->solveHierarchyBorder(schur_compl, *R_border.children[it], *A_border.children[it], *C_border.children[it],
+            *F_border.children[it], *G_border.children[it]);
+   }
 
    /* allreduce the result */
    if( iAmDistrib )
@@ -317,6 +326,7 @@ void sLinsysRoot::solveHierarchyBorder(DenseSymMatrix& schur_compl, sData* data_
 
    assert( false );
    /* add own schur complement contribution */
+   /* this is the root node part - we will do this in parallel too and allreduce the result! - so this will move upwards before the allreduce */
 }
 
 

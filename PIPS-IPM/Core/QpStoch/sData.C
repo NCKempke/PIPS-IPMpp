@@ -2538,6 +2538,10 @@ SparseSymMatrix& sData::getLocalQ()
 SparseGenMatrix&
 sData::getLocalCrossHessian()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
    return *Qst.border;
 }
@@ -2548,6 +2552,10 @@ sData::getLocalCrossHessian()
 SparseGenMatrix&
 sData::getLocalA()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
    return *Ast.Amat;
 }
@@ -2556,15 +2564,22 @@ sData::getLocalA()
 SparseGenMatrix&
 sData::getLocalB()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
    return *Ast.Bmat;
-
 }
 
 // This is F_i (linking equality matrix):
 SparseGenMatrix&
 sData::getLocalF()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
    return *Ast.Blmat;
 }
@@ -2575,6 +2590,10 @@ sData::getLocalF()
 SparseGenMatrix&
 sData::getLocalC()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
    return *Cst.Amat;
 }
@@ -2583,6 +2602,10 @@ sData::getLocalC()
 SparseGenMatrix&
 sData::getLocalD()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
    return *Cst.Bmat;
 }
@@ -2591,6 +2614,10 @@ sData::getLocalD()
 SparseGenMatrix&
 sData::getLocalG()
 {
+   if( is_hierarchy_root )
+   {
+      assert( 0 && "TODO : implement");
+   }
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
    return *Cst.Blmat;
 }

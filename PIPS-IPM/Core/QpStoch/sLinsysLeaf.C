@@ -102,12 +102,22 @@ void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatr
    SparseGenMatrix& G = prob->getLocalG();
    SparseGenMatrix& R = prob->getLocalCrossHessian();
 
-   addTermToSchurComplBlocked(prob, sparseSC, R, A, C, F, G, SC);
+   addTermToSchurComplBlocked(sparseSC, R, A, C, F, G, SC);
 }
 
 // TODO : rename
-void sLinsysLeaf::solveHierarchyBorder(DenseSymMatrix& schur_comp, sData* data_border)
+void sLinsysLeaf::solveHierarchyBorder(DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
+      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
 {
+   assert( R_border.children.size() == 0 );
+
+   SparseGenMatrix& A = *A_border.mat;
+   SparseGenMatrix& C = *C_border.mat;
+   SparseGenMatrix& F = *F_border.mat;
+   SparseGenMatrix& G = *G_border.mat;
+   SparseGenMatrix& R = *R_border.mat;
+
+   addTermToSchurComplBlocked(false, R, A, C, F, G, schur_comp);
    assert( false && "TODO : implement");
    // TODO : how to we get the correct A C R F G ?
 }

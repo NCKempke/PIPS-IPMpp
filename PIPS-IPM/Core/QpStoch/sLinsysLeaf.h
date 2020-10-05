@@ -50,7 +50,8 @@ class sLinsysLeaf : public sLinsys
   using sLinsys::addTermToSchurComplBlocked;
   void addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC) override;
 
-  void solveHierarchyBorder(DenseSymMatrix& schur_comp, sData* data_border) override;
+  void solveHierarchyBorder(DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
+        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override;
   protected:
 
   static void mySymAtPutSubmatrix(SymMatrix& kkt, 
@@ -60,7 +61,7 @@ class sLinsysLeaf : public sLinsys
 
 template<class LINSOLVER>
 sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
-			 OoqpVector* dd_, 
+			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_,
