@@ -111,6 +111,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
   double componentNorm, norm = 0.0, gap = 0.0;
  
+  /* rQ = g + Qx - y - z - gamma - phi */
   prob->getg( *rQ );
   prob->Qmult( 1.0, *rQ,  1.0, *vars->x );
 
