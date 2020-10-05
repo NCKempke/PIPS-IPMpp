@@ -83,7 +83,7 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
      std::cout << "Rank 0: building local Schur matrix ..." << std::endl;
 #endif
 
-  /* allocate and copy:
+  /* allocate and copy lower triangular:
    *
    * [ Qq BiT DiT ]
    * [ Bi  0   0  ]
@@ -99,11 +99,13 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   kkt->setToDiagonal(*v);
 
   kkt->symAtPutSubmatrix( 0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
-  if(locmz>0) {
+
+  if( locmz > 0 )
+  {
     kkt->symAtPutSubmatrix( locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-    kkt->symAtPutSubmatrix( locnx+locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
-    
-  } else
+    kkt->symAtPutSubmatrix( locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
+  }
+  else
     mySymAtPutSubmatrix(*kkt, prob->getLocalB(), prob->getLocalD(), locnx, locmy, locmz);
 
 #ifdef TIMING

@@ -2328,12 +2328,31 @@ int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
 
 /*
  * At this stage we expect the Schur Complement to be of the form
- *                                                                                           nx  my0  mz0  myl  mzl
+ *                                                                                             nx  my0  mz0  myl  mzl
  *         [  Xsymi   0     0    X1iT FiT      X1iT GiT  ]     [ Q0  A0T  C0T  F0T  G0T  ]   [  x   x    x    x    x ]
  *         [   0      0     0       0             0      ]     [ A0   0    0    0    0   ]   [  x   0    0    0    0 ]
  * - SUM_i [   0      0     0       0             0      ]  +  [ C0   0   Om0   0    0   ] = [  x   0    x    0    0 ] =: global Schur complement (symmetric)
  *         [ Fi X1i   0     0   Fi K11i FiT  Fi K11i GiT ]     [ F0   0    0    0    0   ]   [  x   0    0    x    x ]
  *         [ Gi X1i   0     0   Gi K11i FiT  Gi K11i GiT ]     [ G0   0    0    0  OmN+1 ]   [  x   0    0    x    x ]
+ *
+ * since we know, that x_3 = Om0^-1 ( b_3 - C0 x1 ) we can substitute x_3 in this system and arrive at the smaller
+ *
+ *         [  Xsymi   0      X1iT FiT      X1iT GiT  ]     [ Q0  A0T  F0T  G0T  ]   [  x   x    x    x ]
+ *         [   0      0         0             0      ]  +  [ A0   0    0    0   ] = [  x   0    0    0 ] =: global Schur complement (symmetric)
+ * - SUM_i [ Fi X1i   0     Fi K11i FiT  Fi K11i GiT ]     [ F0   0    0    0   ]   [  x   0    x    x ]
+ *         [ Gi X1i   0     Gi K11i FiT  Gi K11i GiT ]     [ G0   0    0  OmN+1 ]   [  x   0    x    x ]
+ *
+ * additionally we detect n0linkVars - Varaibles only appearing in one linking constraint block (dual to the A0/B0 block).
+ * These will not get dense since no one adds to them - we add them separately with their correct number of non-zeros:
+ *
+ *                                                                                                   nx  my0  myl-myl00 mzl-mzl00 myl00 mzl00
+ *         [  Xsymi   0   X1iT FiT      X1iT GiT  0  0 ]     [ Q0  A0T  F0T  G0T F00T   G00T  ]   [   x   x      x         x        x     x  ]
+ *         [   0      0      0             0      0  0 ]     [ A0   0    0    0    0     0    ]   [   x   0      0         0        0     0  ]
+ * - SUM_i [ Fi X1i   0  Fi K11i FiT  Fi K11i GiT 0  0 ]  +  [ F0   0    0    0    0     0    ] = [   x   0      x         x        0     0  ]
+ *         [ Gi X1i   0  Gi K11i FiT  Gi K11i GiT 0  0 ]     [ G0   0    0  OmN+1  0     0    ]   [   x   0      x         x        0     0  ]
+ *         [    0     0      0             0      0  0 ]     [ F00  0    0    0    0     0    ]   [   x   0      0         0        0     0  ]
+ *         [    0     0      0             0      0  0 ]     [ G00  0    0    0    0  OmN+100 ]   [   x   0      0         0        0     x  ]
+ *
  *
  *                       [ Qi BiT DiT ]^-1     [ K11 K12 K13 ]
  * Where Ki = (Ki)_lk =  [ Bi  0   0  ]      = [ K21 K22 K23 ]
@@ -2355,7 +2374,7 @@ int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
  *
  *      sizes depending on the blocks involved.
  *
- * For the (distributed) computation of the Schur Complement we only need to consider
+ * For the (distributed) computation of the Schur Complement we only need to communicate
  *
  *       [  Xsymi   X1iT FiT      X1iT GiT  ]     [ Q0  F0T  G0T  ]   [  x   x   x ]
  * SUM_i [ Fi X1i  Fi K11i FiT  Fi K11i GiT ]  +  [ F0   0    0   ] = [  x   x   x ]
