@@ -40,7 +40,7 @@ public:
 
 
   virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  virtual void setToDiagonal( const OoqpVector& vec );
 
   virtual void atPutSubmatrix( int destRow, int destCol,
 			       DoubleMatrix& M,

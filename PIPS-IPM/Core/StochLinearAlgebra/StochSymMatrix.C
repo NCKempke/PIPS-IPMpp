@@ -347,12 +347,12 @@ void StochSymMatrix::getDiagonal( OoqpVector& vec_ )
     children[it]->getDiagonal(*vec.children[it]);
 }
 
-void StochSymMatrix::setToDiagonal( OoqpVector& vec_ )
+void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->setToDiagonal( *vec.vec);
+  diag->setToDiagonal(*vec.vec);
 
   for(size_t it=0; it<children.size(); it++)
     children[it]->setToDiagonal(*vec.children[it]);

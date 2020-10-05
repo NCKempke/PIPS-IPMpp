@@ -90,7 +90,7 @@ public:
   virtual void randomizePSD(double * seed);
   
   virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void setToDiagonal( const OoqpVector& vec ) override;
   virtual void atPutDiagonal( int idiag, OoqpVector& v );
   virtual void fromGetDiagonal( int idiag, OoqpVector& x );
 
@@ -184,7 +184,7 @@ public:
   void randomizePSD(double * seed) override {};
   
   void getDiagonal( OoqpVector& vec ) override {};
-  void setToDiagonal( OoqpVector& vec ) override {};
+  void setToDiagonal( const OoqpVector& vec ) override {};
   void atPutDiagonal( int idiag, OoqpVector& v ) override {};
   void fromGetDiagonal( int idiag, OoqpVector& x ) override {};
 

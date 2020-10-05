@@ -83,7 +83,7 @@ public:
 				int& info );
 
   virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  virtual void setToDiagonal( const OoqpVector& vec );
 
   void columnScale( const OoqpVector& vec ) override;
   void rowScale( const OoqpVector& vec ) override;

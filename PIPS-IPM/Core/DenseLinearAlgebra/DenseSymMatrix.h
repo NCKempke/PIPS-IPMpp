@@ -80,7 +80,7 @@ public:
 				  int rowExtent, int colExtent );
 
   virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  virtual void setToDiagonal( const OoqpVector& vec );
 
   virtual void atPutDiagonal( int idiag, OoqpVector& v );
   virtual void fromGetDiagonal( int idiag, OoqpVector& v );

@@ -168,10 +168,10 @@ void SparseStorage::getDiagonal( OoqpVector& vec_in )
   this->fromGetDiagonal( 0, vec_in );
 }
 
-void SparseStorage::setToDiagonal( OoqpVector& vec_in )
+void SparseStorage::setToDiagonal( const OoqpVector& vec_in )
 {
-  SimpleVector & vec = dynamic_cast<SimpleVector &>(vec_in);
-  int diagExtent = (m <= n) ? m : n; 
+  const SimpleVector& vec = dynamic_cast<const SimpleVector &>(vec_in);
+  int diagExtent = std::min(m, n);
 
   assert( diagExtent == vec.length() );
 
@@ -183,10 +183,10 @@ void SparseStorage::setToDiagonal( OoqpVector& vec_in )
     krowM[i] = diagExtent;
   }
   
-  double * v = &vec[0];
+  const double * v = &vec[0];
   for( i = 0; i < diagExtent; i++ ) {
     jcolM[i] = i;
-    M[i]     = v[i];
+    M[i] = v[i];
   }
 }
 

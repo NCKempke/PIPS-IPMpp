@@ -65,7 +65,7 @@ class StringGenMatrix : public GenMatrix
       void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert( "not implemented" && 0 ); };
       void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override { assert( "not implemented" && 0 ); };
       void getDiagonal( OoqpVector& vec ) override { assert( "not implemented" && 0 ); };
-      void setToDiagonal( OoqpVector& vec ) override { assert( "not implemented" && 0 ); };
+      void setToDiagonal( const OoqpVector& vec ) override { assert( "not implemented" && 0 ); };
       void matTransDMultMat(OoqpVector& d, SymMatrix** res) override { assert( "not implemented" && 0 ); };
       void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override { assert( "not implemented" && 0 ); };
       void symmetricScale ( const OoqpVector& vec ) override { assert( "not implemented" && 0 ); };

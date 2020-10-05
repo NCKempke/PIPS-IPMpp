@@ -68,7 +68,7 @@ void DenseSymMatrix::getDiagonal( OoqpVector& vec )
 }
 
 
-void DenseSymMatrix::setToDiagonal( OoqpVector& vec )
+void DenseSymMatrix::setToDiagonal( const OoqpVector& vec )
 {
   mStorage->setToDiagonal( vec );
 }

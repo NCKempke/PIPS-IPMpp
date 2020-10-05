@@ -34,7 +34,7 @@ public:
 
 
   virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  virtual void setToDiagonal( const OoqpVector& vec );
 
   virtual void atPutDense( int row, int col, double * A, int lda,
 			   int rowExtent, int colExtent );

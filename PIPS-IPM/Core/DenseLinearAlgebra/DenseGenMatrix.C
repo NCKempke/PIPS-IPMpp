@@ -85,7 +85,7 @@ void DenseGenMatrix::getDiagonal( OoqpVector& vec )
 }
 
 
-void DenseGenMatrix::setToDiagonal( OoqpVector& vec )
+void DenseGenMatrix::setToDiagonal( const OoqpVector& vec )
 {
   mStorage->setToDiagonal( vec );
 }

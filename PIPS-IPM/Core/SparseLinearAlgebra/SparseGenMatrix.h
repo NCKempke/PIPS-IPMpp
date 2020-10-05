@@ -82,7 +82,7 @@ public:
 				int& info );
 
   virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void setToDiagonal( const OoqpVector& vec ) override;
 
   void mult ( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
   virtual void mult ( double beta, double y[], int incy, double alpha, double x[], int incx ) const;

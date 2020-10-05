@@ -67,7 +67,7 @@ class BorderedSymMatrix : public SymMatrix
          {assert( "Not implemented" && 0 );};
       void getDiagonal( OoqpVector& vec ) override
          {assert( "Not implemented" && 0 );};
-      void setToDiagonal( OoqpVector& vec ) override
+      void setToDiagonal( const OoqpVector& vec ) override
          {assert( "Not implemented" && 0 );};
       void symmetricScale ( const OoqpVector& vec ) override
          {assert( "Not implemented" && 0 );};

@@ -247,7 +247,7 @@ void SparseGenMatrix::getDiagonal( OoqpVector& vec )
 }
 
 
-void SparseGenMatrix::setToDiagonal( OoqpVector& vec )
+void SparseGenMatrix::setToDiagonal( const OoqpVector& vec )
 {
   mStorage->setToDiagonal( vec );
   assert(m_Mt == nullptr);

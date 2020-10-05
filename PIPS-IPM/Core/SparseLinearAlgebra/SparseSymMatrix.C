@@ -65,7 +65,7 @@ void SparseSymMatrix::getDiagonal( OoqpVector& vec )
   mStorage->getDiagonal( vec );
 }
 
-void SparseSymMatrix::setToDiagonal( OoqpVector& vec )
+void SparseSymMatrix::setToDiagonal( const OoqpVector& vec )
 {
   mStorage->setToDiagonal( vec );
 }

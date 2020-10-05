@@ -60,7 +60,7 @@ public:
   long long size() const override;
 
   void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( const OoqpVector& vec ) override;
 
   virtual void symAtPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
 				  int srcRow, int srcCol,

@@ -275,9 +275,9 @@ void StochGenMatrix::getDiagonal( OoqpVector& vec_ )
     children[it]->getDiagonal(*vec.children[it]);
 }
  
-void StochGenMatrix::setToDiagonal( OoqpVector& vec_ )
+void StochGenMatrix::setToDiagonal( const OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
   Bmat->setToDiagonal( *vec.vec);

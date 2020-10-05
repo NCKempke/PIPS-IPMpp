@@ -18,15 +18,14 @@ int DenseStorageInstances = 0;
 
 void DenseStorage::fromGetDiagonal( int idiag, OoqpVector& vec )
 { 
-  int k;
-  int extent = vec.length();
+  const int extent = vec.length();
   
   assert( idiag + extent <= n );
   assert( idiag + extent <= m );
 
   SimpleVector &  sv = (SimpleVector &) vec;
 
-  for ( k = idiag; k < idiag + extent; k++ ) {
+  for ( int k = idiag; k < idiag + extent; k++ ) {
     sv[k] = M[k][k];
   }
 }
@@ -37,23 +36,21 @@ void DenseStorage::getDiagonal( OoqpVector& vec )
 }
 
 
-void DenseStorage::setToDiagonal( OoqpVector& vec )
+void DenseStorage::setToDiagonal( const OoqpVector& vec )
 { 
-  int i,k;
-
-  int extent = vec.length();
+  const int extent = vec.length();
 
   assert( extent <= n );
   assert( extent <= m );
 
   SimpleVector &  sv = (SimpleVector &) vec;
-  for( i = 0; i < m; i++ ) {
-    for( k = 0; k < n; k++ ) {
+  for( int i = 0; i < m; i++ ) {
+    for( int k = 0; k < n; k++ ) {
       M[i][k] = 0.0;
     }
   }
 
-  for ( k = 0; k < extent; k++ ) {
+  for ( int k = 0; k < extent; k++ ) {
     M[k][k] = sv[k];
   }
 }

@@ -68,24 +68,30 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_)
 {
 #ifdef TIMING
-  int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  const int myRank = PIPS_MPIgetRank(mpiComm);
   const double t0 = MPI_Wtime();
 #endif
 
-  // size = ?  nnz = ?
-  int nnzQ, nnzB, nnzD;
-
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
-  const int n = locnx+locmy+locmz;
+  const int n = locnx + locmy + locmz;
 
+  int nnzQ, nnzB, nnzD;
   prob->getLocalNnz(nnzQ, nnzB, nnzD);
 
 #ifdef TIMING
-  if( myRank == 0 ) std::cout << "Rank 0: building local Schur matrix ..." << std::endl;
+  if( myRank == 0 )
+     std::cout << "Rank 0: building local Schur matrix ..." << std::endl;
 #endif
 
-  //alocate the matrix and copy the data into
-  SparseSymMatrix* kktsp = new SparseSymMatrix(n, n+nnzQ+nnzB+nnzD);
+  /* allocate and copy:
+   *
+   * [ Qq BiT DiT ]
+   * [ Bi  0   0  ]
+   * [ Di  0   0  ]
+   *
+   * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
+   */
+  SparseSymMatrix* kktsp = new SparseSymMatrix(n, n + nnzQ + nnzB + nnzD);
   kkt = kktsp;
 
   SimpleVectorHandle v( new SimpleVector(n) );

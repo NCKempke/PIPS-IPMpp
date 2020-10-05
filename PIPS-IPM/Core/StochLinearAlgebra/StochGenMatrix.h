@@ -146,7 +146,7 @@ public:
 				int& info ) override;
 
   void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( const OoqpVector& vec ) override;
 
   /** y = beta * y + alpha * this * x */
   void mult ( double beta,  OoqpVector& y,
@@ -304,7 +304,7 @@ public:
 				int& info ) override {};
 
   void getDiagonal( OoqpVector& vec ) override {};
-  void setToDiagonal( OoqpVector& vec ) override {};
+  void setToDiagonal( const OoqpVector& vec ) override {};
 
   /** y = beta * y + alpha * this * x */
   void mult ( double beta,  OoqpVector& y,

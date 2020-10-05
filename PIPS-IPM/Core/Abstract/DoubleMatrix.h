@@ -39,7 +39,7 @@ public:
   virtual void getSize( int& m, int& n ) const = 0;
 
   virtual void getDiagonal( OoqpVector& vec ) = 0;
-  virtual void setToDiagonal( OoqpVector& vec ) = 0;
+  virtual void setToDiagonal( const OoqpVector& vec ) = 0;
 
   virtual void atPutDiagonal( int idiag, OoqpVector& x ) = 0;
   virtual void fromGetDiagonal( int idiag, OoqpVector& x ) = 0;
@@ -121,7 +121,7 @@ public:
   /** Place the diagonal elements of this matrix in the vector vec */
   virtual void getDiagonal( OoqpVector& vec ) = 0;
   /** Set the matrix to the diagoanl matrix whose diagonal is vec */
-  virtual void setToDiagonal( OoqpVector& vec ) = 0;
+  virtual void setToDiagonal( const OoqpVector& vec ) = 0;
 
   /** Set some of the diagonal elements of this matrix.
    * @param idiag the index of the first diagonal element to be modified.

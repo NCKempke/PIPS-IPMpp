@@ -91,7 +91,7 @@ public:
   void getSize( int& m, int& n ) const override;
 
   void getDiagonal( OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void setToDiagonal( OoqpVector& vec ) override { assert(0 && "not implemented here"); };
+  void setToDiagonal( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
 
   void atPutDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented here"); };
   void fromGetDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented here"); };
