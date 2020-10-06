@@ -53,10 +53,19 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
    assert( !hasSparseKkt );
    assert( children.size() == 1 );
 
-   DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
+   DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(*kkt);
 
-   this->children[0]->addInnerToHierarchicalSchurComplement(kktd, prob);
+   // TODO
+   /* Add corner block
+    * [ Q0 F0T G0T  ]
+    * [ F0  0   0   ]
+    * [ G0  0 OmN+1 ]
+    */
+//   SC.symAtPutDense()
 
+   this->children[0]->addInnerToHierarchicalSchurComplement(SC, prob);
+
+   /* compute zero boder block - inner contribution of Schur complement */
    assert( 0 && "TODO : implement..");
 }
 

@@ -38,33 +38,36 @@ void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
   kkt->atPutDiagonal( locnx+locmy, *zdiag.vec );
 }
 
-void sLinsysLeaf::Lsolve  (  sData *prob, OoqpVector& x_in )
+void sLinsysLeaf::Lsolve( sData *prob, OoqpVector& x_in )
 {
-  StochVector& x = dynamic_cast<StochVector&>(x_in);
-  assert(x.children.size()==0);
- 
-  stochNode->resMon.recLsolveTmChildren_start();
-  solver->Lsolve(*x.vec);
-  stochNode->resMon.recLsolveTmChildren_stop();
-
+   // Lsolve is empty
+   return;
+//   StochVector& x = dynamic_cast<StochVector&>(x_in);
+//   assert(x.children.size()==0);
+//
+//   stochNode->resMon.recLsolveTmChildren_start();
+//   solver->Lsolve(*x.vec);
+//   stochNode->resMon.recLsolveTmChildren_stop();
 }
 
-void sLinsysLeaf::Dsolve  (  sData *prob, OoqpVector& x_in )
+void sLinsysLeaf::Dsolve( sData *prob, OoqpVector& x_in )
 {
-  StochVector& x = dynamic_cast<StochVector&>(x_in);
-  assert(x.children.size()==0);
-  stochNode->resMon.recDsolveTmChildren_start();
-  solver->Dsolve(*x.vec);
-  stochNode->resMon.recDsolveTmChildren_stop();
+   StochVector& x = dynamic_cast<StochVector&>(x_in);
+   assert(x.children.size()==0);
+   stochNode->resMon.recDsolveTmChildren_start();
+   solver->Dsolve(*x.vec);
+   stochNode->resMon.recDsolveTmChildren_stop();
 }
 
 void sLinsysLeaf::Ltsolve (  sData *prob, OoqpVector& x_in )
 {
-  StochVector& x = dynamic_cast<StochVector&>(x_in);
-  assert(x.children.size()==0);
-  stochNode->resMon.recLtsolveTmChildren_start();
-  solver->Ltsolve(*x.vec);
-  stochNode->resMon.recLtsolveTmChildren_stop();
+   // Ltsolve is empty
+   return;
+//  StochVector& x = dynamic_cast<StochVector&>(x_in);
+//  assert(x.children.size()==0);
+//  stochNode->resMon.recLtsolveTmChildren_start();
+//  solver->Ltsolve(*x.vec);
+//  stochNode->resMon.recLtsolveTmChildren_stop();
 }
 
 void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
@@ -81,7 +84,7 @@ void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 
   //b_i -= Lni^T x0
   this->LniTransMult(prob, bi, -1.0, xp);
-  solver->Ltsolve(bi);
+  //  solver->Ltsolve(bi); -> empty
 #ifdef TIMING
   stochNode->resMon.recLtsolveTmChildren_stop();
 #endif
@@ -102,26 +105,8 @@ void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatr
    SparseGenMatrix& G = prob->getLocalG();
    SparseGenMatrix& R = prob->getLocalCrossHessian();
 
-   addTermToSchurComplBlocked(sparseSC, R, A, C, F, G, SC);
+   addTermToSchurComplBlocked(prob, sparseSC, true, R, A, C, F, G, SC);
 }
-
-// TODO : rename
-void sLinsysLeaf::solveHierarchyBorder(DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
-      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
-{
-   assert( R_border.children.size() == 0 );
-
-   SparseGenMatrix& A = *A_border.mat;
-   SparseGenMatrix& C = *C_border.mat;
-   SparseGenMatrix& F = *F_border.mat;
-   SparseGenMatrix& G = *G_border.mat;
-   SparseGenMatrix& R = *R_border.mat;
-
-   addTermToSchurComplBlocked(false, R, A, C, F, G, schur_comp);
-   assert( false && "TODO : implement");
-   // TODO : how to we get the correct A C R F G ?
-}
-
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
 					     GenMatrix& B_, GenMatrix& D_, 

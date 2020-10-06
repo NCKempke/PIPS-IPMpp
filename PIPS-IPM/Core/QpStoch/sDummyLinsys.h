@@ -45,7 +45,7 @@ class sDummyLinsys : public sLinsys
 
   void addTermToSchurResidual(sData* prob, SimpleVector& res, SimpleVector& x) override {};
 
-  void solveHierarchyBorder( DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
+  void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override {};
 
   void allocU(DenseGenMatrix ** Ut, int np) override {};

@@ -71,6 +71,9 @@ class sLinsys : public QpGenLinsys
 
   virtual void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz);
 
+  virtual void addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
+        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border);
+
   /** y += alpha * Lni^T * x */
   void LniTransMult(sData *prob, 
 		    SimpleVector& y, 
@@ -92,9 +95,9 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
         SymMatrix& SC) { assert( 0 && "not implemented here" ); };
  protected:
-  virtual void addTermToSchurComplBlocked(bool sparseSC,
-        SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-        SparseGenMatrix& F, SparseGenMatrix& G, SymMatrix& SC);
+  virtual void addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bool symSC,
+        SparseGenMatrix& R_right, SparseGenMatrix& A_right, SparseGenMatrix& C_right,
+        SparseGenMatrix& F_right, SparseGenMatrix& G_right, DoubleMatrix& result);
  public:
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
@@ -113,11 +116,14 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& res, 
 				      SimpleVector& x);
 
-  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border );
+  /* solve for all border rhs -> calculate SC = Bborder^T K^-1 Bborder */
+  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* prob );
 
-  virtual void solveHierarchyBorder( DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
+  /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
      { assert( false && "not implemented here" ); };
+
 
  public:
   MPI_Comm mpiComm;
@@ -136,17 +142,14 @@ class sLinsys : public QpGenLinsys
   /* is this linsys the overall root */
   const bool is_hierarchy_root;
 
-  void multLeftSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-        SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
-        const int* colId, int blocksize, bool sparseSC, SymMatrix& SC);
+  void multLeftSchurComplBlocked( /*const*/ sData* prob, /*const*/double* colsBlockDense,
+        const int* colId, int blocksize, bool sparseSC, bool symSC, DoubleMatrix& SC);
 
-  void multLeftSparseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-        SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
+  void multLeftSparseSchurComplBlocked( /*const*/ sData* prob, /*const*/ double* colsBlockDense,
         const int* colId, int blocksize, SparseSymMatrix& SC);
 
-  void multLeftDenseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-        SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
-        const int* colId, int blocksize, DenseSymMatrix& SC);
+  void multLeftDenseSchurComplBlocked( /*const*/sData* prob, /*const*/double* colsBlockDense,
+        const int* colId, int blocksize, int ncolsSC, double** SC);
 
 };
 

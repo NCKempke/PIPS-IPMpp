@@ -220,44 +220,32 @@ void sLinsysRoot::afterFactor()
 }
 #endif
 
+/* forms right hand side for schur system and solves K_i^-1 bi for all children */
 void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
 {
   StochVector& b = dynamic_cast<StochVector&>(x);
   assert(children.size() == b.children.size() );
 
-  // children compute their part
-  for(size_t it=0; it<children.size(); it++) {
-    children[it]->Lsolve(prob->children[it], *b.children[it]);  
-  }
-
-  // Since a depth-first traversal is used, Li\bi is already done. 
-  // Do the Schur compl and L0\b0
+  // children compute their part -> does nothing
+  //  for(size_t it = 0; it < children.size(); it++) {
+  //    children[it]->Lsolve(prob->children[it], *b.children[it]);
+  //  }
 
   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
   assert(!b.vecl);
 
-  //this code actually works on a single CPU too :)
-  if (iAmDistrib) {
-    //only one process add b0
-    int myRank; MPI_Comm_rank(mpiComm, &myRank);
-    if(myRank>0) {
-      b0.setToZero();
-    }
-  }
+  if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
+     b0.setToZero();
 
   // compute B_i^T rhs_i and add it up
 
-  for(size_t it=0; it<children.size(); it++) {
+  for(size_t it = 0; it < children.size(); it++)
+  {
 #ifdef TIMING
     children[it]->stochNode->resMon.eLsolve.clear();
     children[it]->stochNode->resMon.recLsolveTmChildren_start();
 #endif
     SimpleVector& zi = dynamic_cast<SimpleVector&>(*b.children[it]->vec);
-
-    //!memopt here
-    //SimpleVector tmp(zi.length());
-    //tmp.copyFromArray(zi.elements());
-    //children[it]->addLnizi(prob->children[it], b0, tmp);
     children[it]->addLniziLinkCons(prob->children[it], b0, zi, locmy, locmz);
 
 #ifdef TIMING
@@ -270,8 +258,8 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
   stochNode->resMon.eReduce.clear();//reset
   stochNode->resMon.recReduceTmLocal_start();
 #endif
-  if (iAmDistrib) {
- 
+  if (iAmDistrib)
+  {
     double* buffer = new double[b0.length()];
     MPI_Allreduce(b0.elements(), buffer, b0.length(),
 		  MPI_DOUBLE, MPI_SUM, mpiComm);
@@ -289,15 +277,15 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
   stochNode->resMon.eLsolve.clear();
   stochNode->resMon.recLsolveTmLocal_start();
 #endif
-  solver->Lsolve(b0);
+//  solver->Lsolve(b0); -> empty
 #ifdef TIMING
   stochNode->resMon.recLsolveTmLocal_stop();
 #endif
 
 }
 
-// compute B_{inner}^T K^{-1} B_{outer} and add it up
-void sLinsysRoot::solveHierarchyBorder(DenseSymMatrix& schur_compl, StringGenMatrix& R_border, StringGenMatrix& A_border,
+/* compute SUM_i Bi_{inner}^T Ki^{-1} Bi_{border} */
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
       StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
 {
    assert( this->children.size() == R_border.children.size() );
@@ -310,28 +298,24 @@ void sLinsysRoot::solveHierarchyBorder(DenseSymMatrix& schur_compl, StringGenMat
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->solveHierarchyBorder(schur_compl, *R_border.children[it], *A_border.children[it], *C_border.children[it],
+      children[it]->addLniZiHierarchyBorder(result, *R_border.children[it], *A_border.children[it], *C_border.children[it],
             *F_border.children[it], *G_border.children[it]);
    }
 
    /* allreduce the result */
+   // TODO : optimize -> do not reduce A_0 part ( all zeros... )
    if( iAmDistrib )
    {
       int m, n;
-      schur_compl.getSize(m, n);
-
-      // XXXX todo don't reduce A_0 part
-      submatrixAllReduceFull(&schur_compl, 0, 0, m, n, mpiComm);
+      result.getSize(m, n);
+      submatrixAllReduceFull(&result, 0, 0, m, n, mpiComm);
    }
-
-   assert( false );
-   /* add own schur complement contribution */
-   /* this is the root node part - we will do this in parallel too and allreduce the result! - so this will move upwards before the allreduce */
 }
 
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
+   assert( false );
   StochVector& b   = dynamic_cast<StochVector&>(x);
   SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
 
@@ -358,23 +342,25 @@ void sLinsysRoot::Ltsolve( sData *prob, OoqpVector& x )
   StochVector& b   = dynamic_cast<StochVector&>(x);
   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
 
-#ifdef TIMING
-  stochNode->resMon.eLtsolve.clear();
-  stochNode->resMon.recLtsolveTmLocal_start();
-#endif
-  solver->Ltsolve(b0);
-#ifdef TIMING
-  stochNode->resMon.recLtsolveTmLocal_stop();
-#endif
+//#ifdef TIMING
+//  stochNode->resMon.eLtsolve.clear();
+//  stochNode->resMon.recLtsolveTmLocal_start();
+//#endif
+//  solver->Ltsolve(b0); -> empty
+//#ifdef TIMING
+//  stochNode->resMon.recLtsolveTmLocal_stop();
+//#endif
   //dumpRhs(0, "sol",  b0);
 
-  SimpleVector& x0 = b0; //just another name, for clarity
+  SimpleVector& z0 = b0; //just another name, for clarity
   
-  // Li^T\bi for each child i. The backsolve needs z0
-
+  // Adds for each child i. The backsolve needs z0
   for(size_t it=0; it<children.size(); it++) {
-    children[it]->Ltsolve2(prob->children[it], *b.children[it], x0);
+    children[it]->Ltsolve2(prob->children[it], *b.children[it], z0);
   }
+
+
+
 #ifdef TIMING
   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
@@ -413,16 +399,10 @@ void sLinsysRoot::Ltsolve( sData *prob, OoqpVector& x )
 
 void sLinsysRoot::Dsolve( sData *prob, OoqpVector& x )
 {
-//#ifdef TIMING
-//    double tTot = MPI_Wtime();
-//#endif
+  /* Ki^-1 bi has already been computed in Lsolve */
+
+  /* children have already computed Li^T\Di\Li\bi in Lsolve() */
   StochVector& b = dynamic_cast<StochVector&>(x);
-
-  //! commented - already done in addLnizi - cpetra
-  //  for(size_t it=0; it<children.size(); it++) {
-  //  children[it]->Dsolve(prob->children[it], *b.children[it]);
-  //}
-
   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
 #ifdef TIMING
   stochNode->resMon.eDsolve.clear();
@@ -1413,23 +1393,35 @@ void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A,
   delete[] chunk;
 }
 
+void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm)
+{
+   double** const M = A->mStorage->M;
+   assert(A->mStorage->n == A->mStorage->m);
+   assert(A->mStorage->n >= startRow + nRows);
+   assert(A->mStorage->n >= startCol + nCols);
 
-void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A,
+   submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
+}
+
+void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A,
                    int startRow, int startCol, int nRows, int nCols,
                  MPI_Comm comm)
 {
    double** const M = A->mStorage->M;
+   assert(A->mStorage->m >= startRow + nRows);
+   assert(A->mStorage->n >= startCol + nCols);
 
+   submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
+}
+
+void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm)
+{
    assert(nRows > 0);
    assert(nCols > 0);
    assert(startRow >= 0);
    assert(startCol >= 0);
 
    const int endRow = startRow + nRows;
-
-   assert(A->mStorage->n >= endRow);
-   assert(A->mStorage->n >= startCol + nCols);
-
    const int buffersize = nRows * nCols;
 
    double* const bufferSend = new double[buffersize];
@@ -1441,7 +1433,7 @@ void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A,
 
    for( int r = startRow; r < endRow; r++ )
    {
-      memcpy(&bufferSend[counter], &M[r][startCol], nColBytes);
+      memcpy(&bufferSend[counter], &A[r][startCol], nColBytes);
       counter += nCols;
    }
 
@@ -1458,7 +1450,7 @@ void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A,
    counter = 0;
    for( int r = startRow; r < endRow; r++ )
    {
-      memcpy(&M[r][startCol], &bufferRecv[counter], nColBytes);
+      memcpy(&A[r][startCol], &bufferRecv[counter], nColBytes);
       counter += nCols;
    }
 

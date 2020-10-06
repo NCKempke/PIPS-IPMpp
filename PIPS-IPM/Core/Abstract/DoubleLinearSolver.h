@@ -49,10 +49,10 @@ public:
    // solve with multiple RHS and column sparsity array (can be nullptr)
    virtual void solve ( int nrhss, double* rhss, int* colSparsity ) { assert(0 && "Not implemented"); }
 
-  virtual void Lsolve  ( OoqpVector& x ) {}
-  virtual void Lsolve  ( GenMatrix& mat ) { assert(0 && "Not implemented"); }
-  virtual void Dsolve  ( OoqpVector& x ) { solve(x);}
-  virtual void Ltsolve ( OoqpVector& x ) {}
+   void Lsolve( OoqpVector& x ) { assert(false && "is always empty.. "); }
+   virtual void Lsolve( GenMatrix& mat ) { assert(0 && "Not implemented"); }
+   void Dsolve( OoqpVector& x ) { solve(x);}
+   void Ltsolve( OoqpVector& x ){ assert(false && "is always empty.. "); }
 
   /** Destructor  */
   virtual ~DoubleLinearSolver() {};

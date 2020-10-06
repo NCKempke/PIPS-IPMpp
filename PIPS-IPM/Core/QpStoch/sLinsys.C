@@ -291,8 +291,8 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
   SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
 
-  solver->Dsolve (zi);
-  solver->Ltsolve(zi);
+  solver->Dsolve(zi);
+//  solver->Ltsolve(zi); -> empty
 
   SparseGenMatrix& A = prob->getLocalA();
   SparseGenMatrix& C = prob->getLocalC();
@@ -337,6 +337,19 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   }
 }
 
+void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
+      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
+{
+   assert( R_border.children.size() == 0 );
+
+   SparseGenMatrix& A = *A_border.mat;
+   SparseGenMatrix& C = *C_border.mat;
+   SparseGenMatrix& F = *F_border.mat;
+   SparseGenMatrix& G = *G_border.mat;
+   SparseGenMatrix& R = *R_border.mat;
+
+   addTermToSchurComplBlocked(data, false, false, R, A, C, F, G, result);
+}
 
 void sLinsys::solveCompressed( OoqpVector& rhs_ )
 {
@@ -411,11 +424,9 @@ void sLinsys::LniTransMult(sData *prob,
     G.transMult(1.0, LniTx1, 1.0, xlink);
   }
 
-  solver->Lsolve(LniTx);
+//  solver->Lsolve(LniTx); -> empty
   solver->Dsolve(LniTx);
-
   y.axpy(alpha,LniTx);
-
 }
 
 
@@ -763,56 +774,56 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
  *
  * computes (B^T K^{-1} B_right)^T and adds it to the SC
  */
-void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
-      SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-      SparseGenMatrix& F, SparseGenMatrix& G, SymMatrix& SC)
+void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bool symSC,
+      SparseGenMatrix& R_right, SparseGenMatrix& A_right, SparseGenMatrix& C_right,
+      SparseGenMatrix& F_right, SparseGenMatrix& G_right, DoubleMatrix& result)
 {
    int tmp;
 
-   int m_SC, n_SC;
-   SC.getSize(m_SC, n_SC);
-   assert( m_SC >= 0 && n_SC >= 0 );
+   int m_res, n_res;
+   result.getSize(m_res, n_res);
+   assert( m_res >= 0 && n_res >= 0 );
 
-   int nxl_, nx_;
-   R.getSize(nxl_, nx_);
-   assert( nx_ >= 0 && nxl_ >= 0 );
+   int nxl_right, nx_right;
+   R_right.getSize(nxl_right, nx_right);
+   assert( nx_right >= 0 && nxl_right >= 0 );
 
-   int my_;
-   A.getSize(my_, tmp);
-   assert( nx_ == tmp );
-   assert( my_ >= 0 );
+   int my_right;
+   A_right.getSize(my_right, tmp);
+   assert( nx_right == tmp );
+   assert( my_right >= 0 );
 
-   int mz_;
-   C.getSize(mz_, tmp);
-   assert( nx_ == tmp );
-   assert( mz_ >= 0 );
+   int mz_right;
+   C_right.getSize(mz_right, tmp);
+   assert( nx_right == tmp );
+   assert( mz_right >= 0 );
 
-   int myl_, mzl_;
+   int myl_right, mzl_right;
 
-   F.getSize(myl_, tmp);
-   assert( tmp == nxl_ );
-   assert( myl_ >= 0 );
+   F_right.getSize(myl_right, tmp);
+   assert( tmp == nxl_right );
+   assert( myl_right >= 0 );
 
-   G.getSize(mzl_, tmp);
-   assert( tmp == nxl_ );
-   assert( mzl_ >= 0 );
+   G_right.getSize(mzl_right, tmp);
+   assert( tmp == nxl_right );
+   assert( mzl_right >= 0 );
 
-   assert( nx_ + myl_ + mzl_ <= n_SC);
-   assert( nxl_ == locnx && my_ == locmy && mz_ == locmz );
+   assert( nx_right + myl_right + mzl_right <= n_res);
+   assert( nxl_right == locnx && my_right == locmy && mz_right == locmz );
 
 #ifndef HIERARCHICAL
-   assert( myl_ == locmyl && mzl_ == locmzl );
+   assert( myl_right == locmyl && mzl_right == locmzl );
 #endif
 
-   SimpleVectorBase<int> nnzPerColRAC(nx_);
+   SimpleVectorBase<int> nnzPerColRAC(nx_right);
 
-   R.addNnzPerCol(nnzPerColRAC);
-   A.addNnzPerCol(nnzPerColRAC);
-   C.addNnzPerCol(nnzPerColRAC);
+   R_right.addNnzPerCol(nnzPerColRAC);
+   A_right.addNnzPerCol(nnzPerColRAC);
+   C_right.addNnzPerCol(nnzPerColRAC);
 
    const int withF = (locmyl > 0);
    const int withG = (locmzl > 0);
-   const int N = nxl_ + my_ + mz_;
+   const int N = nxl_right + my_right + mz_right;
 
    assert(nThreads >= 1);
 
@@ -836,11 +847,11 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
    //                       (R)
    //     SC +=  B^T  K^-1  (A)
    //                       (C)
-   while( colpos < nx_ )
+   while( colpos < nx_right )
    {
       int blocksize = 0;
 
-      for( ; colpos < nx_ && blocksize < blocksizemax; colpos++ )
+      for( ; colpos < nx_right && blocksize < blocksizemax; colpos++ )
          if( nnzPerColRAC[colpos] != 0 )
             colId[blocksize++] = colpos;
 
@@ -852,13 +863,13 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       if( colSparsity )
          memset(colSparsity, 0, N * sizeof(int));
 
-      R.fromGetColsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
-      A.fromGetColsBlock(colId, blocksize, N, nxl_, colsBlockDense, colSparsity);
-      C.fromGetColsBlock(colId, blocksize, N, (nxl_ + my_), colsBlockDense, colSparsity);
+      R_right.fromGetColsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
+      A_right.fromGetColsBlock(colId, blocksize, N, nxl_right, colsBlockDense, colSparsity);
+      C_right.fromGetColsBlock(colId, blocksize, N, (nxl_right + my_right), colsBlockDense, colSparsity);
 
       solver->solve(blocksize, colsBlockDense, colSparsity);
 
-      multLeftSchurComplBlocked( R, A, C, F, G, colsBlockDense, colId, blocksize, sparseSC, SC);
+      multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparseSC, symSC, result);
    }
 
 #ifdef TIME_SCHUR
@@ -874,18 +885,18 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       //     SC +=  B^T  K^-1  (0  )
       //                       (0  )
 
-      SimpleVectorBase<int> nnzPerColFt(myl_);
-      F.addNnzPerRow(nnzPerColFt);
+      SimpleVectorBase<int> nnzPerColFt(myl_right);
+      F_right.addNnzPerRow(nnzPerColFt);
 
-      const int nxMySC = m_SC - myl_ - mzl_;
+      const int nxMySC = m_res - myl_right - mzl_right;
 
       colpos = 0;
       // do block-wise multiplication for columns of F^T part
-      while( colpos < myl_ )
+      while( colpos < myl_right )
       {
          int blocksize = 0;
 
-         for( ; colpos < myl_ && blocksize < blocksizemax; colpos++ )
+         for( ; colpos < myl_right && blocksize < blocksizemax; colpos++ )
             if( nnzPerColFt[colpos] != 0 )
                colId[blocksize++] = colpos;
 
@@ -898,14 +909,14 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
          memset(colsBlockDense, 0, blocksize * N * sizeof(double));
 
          // get column block from Ft (i.e., row block from F)
-         F.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
+         F_right.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
 
          solver->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
             colId[i] += nxMySC;
 
-         multLeftSchurComplBlocked(R, A, C, F, G, colsBlockDense, colId, blocksize, sparseSC, SC);
+         multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparseSC, symSC, result);
       }
    }
 
@@ -916,18 +927,18 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       //     SC +=  B^T  K^-1  (0  )
       //                       (0  )
 
-      SimpleVectorBase<int> nnzPerColGt(mzl_);
-      G.addNnzPerRow(nnzPerColGt);
-      const int nxMyMzSC = m_SC - mzl_;
+      SimpleVectorBase<int> nnzPerColGt(mzl_right);
+      G_right.addNnzPerRow(nnzPerColGt);
+      const int nxMyMzSC = m_res - mzl_right;
 
       colpos = 0;
 
       // do block-wise multiplication for columns of G^T part
-      while( colpos < mzl_ )
+      while( colpos < mzl_right )
       {
          int blocksize = 0;
 
-         for( ; colpos < mzl_ && blocksize < blocksizemax; colpos++ )
+         for( ; colpos < mzl_right && blocksize < blocksizemax; colpos++ )
             if( nnzPerColGt[colpos] != 0 )
                colId[blocksize++] = colpos;
 
@@ -939,14 +950,14 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
 
          memset(colsBlockDense, 0, blocksize * N * sizeof(double));
 
-         G.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
+         G_right.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
 
          solver->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
              colId[i] += nxMyMzSC;
 
-          multLeftSchurComplBlocked(R, A, C, F, G, colsBlockDense, colId, blocksize, sparseSC, SC);
+          multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparseSC, symSC, result);
       }
    }
 
@@ -1030,15 +1041,17 @@ void sLinsys::addColsToDenseSchurCompl(sData *prob,
 /* solve own linear system with border data
  *
  * rhs-block^T looks like
- *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [ 0  A0 C0 0 0 ]
- *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ 0  0  0  0 0 ] // TODO wrong - F and G blocks missing..
- *  [ C1  0   0  ]         [ CN  0   0  ]   [ 0  0  0  0 0 ]
+ *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [  0   A0 C0 F0V G0V ]
+ *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ F0C  0  0   0   0  ]
+ *  [ C1  0   0  ]         [ CN  0   0  ]   [ G0C  0  0   0   0  ]
  *
  */
 void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border )
 {
+   /* only called in sLinsysRootAug */
    assert( !is_hierarchy_root );
 
+   /* get right hand side parts */
    StringGenMatrix& R_border = *dynamic_cast<BorderedSymMatrix&>(*data_border->Q).border_vertical;
    StringGenMatrix& A_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left;
    StringGenMatrix& C_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left;
@@ -1046,9 +1059,22 @@ void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp,
    StringGenMatrix& F_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom;
    StringGenMatrix& G_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom;
 
-   /* solve system with border right hand sides given in data_border */
+   /* compute Schur Complement right hand sides SUM_i Bi_{inner} K^-1 Bi_{border}
+    * (keep in mind that in Bi_{inner} and the SC we projected C0 Omega0 out)
+    */
+   int nx_border, myl_border, mzl_border, dummy;
+   A_border.getSize(dummy, nx_border);
+   F_border.getSize(myl_border, dummy);
+   G_border.getSize(mzl_border, dummy);
 
-   solveHierarchyBorder(schur_comp, R_border, A_border, C_border, F_border, G_border);
+   const int m_buffer = nx_border + myl_border + mzl_border;
+   const int n_buffer = locnx + locmy + locmyl + locmzl;
+
+   // buffer for B_{inner}^T K^{-1} B_{outer}, stored in transposed form
+   DenseGenMatrix* buffer = new DenseGenMatrix(m_buffer, n_buffer);
+   LsolveHierarchyBorder(*buffer, R_border, A_border, C_border, F_border, G_border);
+
+   assert( false && "TODO : implement" );
 }
 
 // adds only lower triangular elements to out
@@ -1102,8 +1128,7 @@ void sLinsys::symAddColsToDenseSchurCompl(sData *prob,
   }
 }
 
-void sLinsys:: multLeftSparseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-      SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
+void sLinsys:: multLeftSparseSchurComplBlocked( /*const*/ sData* prob, /*const*/double* colsBlockDense,
       const int* colId, int blocksize, SparseSymMatrix& SC)
 {
    const int withF = (locmyl > 0);
@@ -1112,6 +1137,12 @@ void sLinsys:: multLeftSparseSchurComplBlocked( SparseGenMatrix& R, SparseGenMat
    const int NP = SC.size();
    const int nxMyP = NP - locmyl - locmzl;
    const int nxMyMzP = NP - locmzl;
+
+   SparseGenMatrix& A = prob->getLocalA();
+   SparseGenMatrix& C = prob->getLocalC();
+   SparseGenMatrix& F = prob->getLocalF();
+   SparseGenMatrix& G = prob->getLocalG();
+   SparseGenMatrix& R = prob->getLocalCrossHessian();
 
    // multiply each column with left factor of SC
    // todo: #pragma omp parallel for schedule(dynamic, 10)
@@ -1139,21 +1170,28 @@ void sLinsys:: multLeftSparseSchurComplBlocked( SparseGenMatrix& R, SparseGenMat
    }
 }
 
-void sLinsys:: multLeftDenseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
-      SparseGenMatrix& F, SparseGenMatrix& G, /*const*/double* colsBlockDense,
-      const int* colId, int blocksize, DenseSymMatrix& SC)
+void sLinsys:: multLeftDenseSchurComplBlocked( /*const*/sData* prob, /*const*/double* colsBlockDense,
+      const int* colId, int blocksize, int ncolsSC, double** SC)
 {
    const int withF = (locmyl > 0);
    const int withG = (locmzl > 0);
-   const int N = locnx + locmy + locmz;
-   const int NP = SC.size();
-   const int nxMyP = NP - locmyl - locmzl;
-   const int nxMyMzP = NP - locmzl;
+   const int nxMySC = ncolsSC - locmyl - locmzl;
+   const int nxMyMzSC = ncolsSC - locmzl;
+   const int blockcolLength = locnx + locmy + locmz;
+
+   SparseGenMatrix& A = prob->getLocalA();
+   SparseGenMatrix& C = prob->getLocalC();
+   SparseGenMatrix& F = prob->getLocalF();
+   SparseGenMatrix& G = prob->getLocalG();
+   SparseGenMatrix& R = prob->getLocalCrossHessian();
+
+   assert( ncolsSC >= 1 );
+   assert(nxMySC >= 0 && nxMyMzSC >= 0);
 
    // multiply each column with left factor of SC todo add OMP
    for( int it_col = 0; it_col < blocksize; it_col++ )
    {
-      double* const col = &colsBlockDense[it_col * N];
+      double* const col = &colsBlockDense[it_col * blockcolLength];
       const int row_sc = colId[it_col];
 
       // SC+=R^T*x
@@ -1167,29 +1205,46 @@ void sLinsys:: multLeftDenseSchurComplBlocked( SparseGenMatrix& R, SparseGenMatr
 
       // do we have linking equality constraints? If so, set SC+=F*x
       if( withF )
-         F.mult(1.0, &SC[row_sc][nxMyP], 1, -1.0, &col[0], 1);
+         F.mult(1.0, &SC[row_sc][nxMySC], 1, -1.0, &col[0], 1);
 
       // do we have linking inequality constraints? If so, set SC+=G*x
       if( withG )
-         G.mult(1.0, &SC[row_sc][nxMyMzP], 1, -1.0, &col[0], 1);
+         G.mult(1.0, &SC[row_sc][nxMyMzSC], 1, -1.0, &col[0], 1);
    }
 }
 
-void sLinsys::multLeftSchurComplBlocked( SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G,
-      /*const*/double* colsBlockDense, const int* colId, int blocksize, bool sparseSC, SymMatrix& SC)
+void sLinsys::multLeftSchurComplBlocked( /*const*/sData* prob, /*const*/double* colsBlockDense,
+      const int* colId, int blocksize, bool sparseSC, bool symSC, DoubleMatrix& SC)
 {
    assert(colId && colsBlockDense);
 
    if( sparseSC )
    {
+      assert( symSC );
       SparseSymMatrix& SC_sparse = dynamic_cast<SparseSymMatrix&>(SC);
-      multLeftSparseSchurComplBlocked( R, A, C, F, G, colsBlockDense, colId, blocksize, SC_sparse);
+      multLeftSparseSchurComplBlocked( prob, colsBlockDense, colId, blocksize, SC_sparse);
    }
    else
    {
-      DenseSymMatrix& SC_dense = dynamic_cast<DenseSymMatrix&>(SC);
-      multLeftDenseSchurComplBlocked( R, A, C, F, G, colsBlockDense, colId, blocksize, SC_dense);
+      double** SCarray;
+      int ncolsSC;
+      if( symSC )
+      {
+         DenseSymMatrix& SC_dense = dynamic_cast<DenseSymMatrix&>(SC);
+         SCarray = SC_dense.mStorage->M;
+         ncolsSC = SC_dense.size();
+      }
+      else
+      {
+         DenseGenMatrix& SC_dense = dynamic_cast<DenseGenMatrix&>(SC);
+         SCarray = SC_dense.mStorage->M;
+         ncolsSC = SC_dense.mStorage->n;
+      }
+      assert(ncolsSC >= locmyl + locmzl);
+
+      multLeftDenseSchurComplBlocked(prob, colsBlockDense, colId, blocksize, ncolsSC, SCarray);
    }
+
 }
 
 /*

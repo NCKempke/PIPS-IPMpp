@@ -128,8 +128,6 @@ void DenseSymMatrix::symAtPutSubmatrix( int destRow, int destCol,
 
   Mat.fromGetDense( srcRow, srcCol, &M[destRow][destCol], n,
 		     rowExtent, colExtent );
-
-  
 }
 
 

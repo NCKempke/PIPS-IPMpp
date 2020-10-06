@@ -64,7 +64,7 @@ class sLinsysRoot : public sLinsys {
   virtual void solveReduced( sData *prob, SimpleVector& b) = 0;
   virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
-  void solveHierarchyBorder( DenseSymMatrix& schur_comp, StringGenMatrix& R_border, StringGenMatrix& A_border,
+  void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override;
 
   virtual void putXDiagonal( OoqpVector& xdiag_ );
@@ -89,10 +89,11 @@ class sLinsysRoot : public sLinsys {
 			  int startRow, int startCol, int nRows, int nCols,
 			  MPI_Comm comm);
 
+  void submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+  void submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+
   // all_reduces specified submatrix as a while
-  void submatrixAllReduceFull(DenseSymMatrix* A,
-           int startRow, int startCol, int nRows, int nCols,
-           MPI_Comm comm);
+  void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
   // all_reducees lower half (including diagonal) of specified submatrix
   void submatrixAllReduceDiagLower(DenseSymMatrix* A,
