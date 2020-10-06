@@ -284,6 +284,23 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
 
 }
 
+
+/* compute
+ *
+ * [  0  F0C^T G0C^T ]
+ * [ A0   0     0    ]
+ * [ F0V  0     0    ] - buffer
+ * [ G0V  0     0    ]
+ */
+void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
+      SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border)
+{
+
+
+   assert(false && "TODO : implement");
+}
+
+
 /* compute SUM_i Bi_{inner}^T Ki^{-1} Bi_{border} */
 void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
       StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)

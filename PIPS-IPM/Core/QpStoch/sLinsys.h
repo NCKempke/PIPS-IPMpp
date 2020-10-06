@@ -122,8 +122,12 @@ class sLinsys : public QpGenLinsys
   /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */
   virtual void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
-     { assert( false && "not implemented here" ); };
+  { assert( false && "not implemented here" ); };
 
+  /* compute B0_{outer} - buffer */
+  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
+        SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border)
+  { assert( false && "not implemented here"); };
 
  public:
   MPI_Comm mpiComm;

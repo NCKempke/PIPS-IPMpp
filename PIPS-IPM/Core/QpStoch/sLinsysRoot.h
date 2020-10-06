@@ -64,6 +64,11 @@ class sLinsysRoot : public sLinsys {
   virtual void solveReduced( sData *prob, SimpleVector& b) = 0;
   virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
+  /* compute B0_{outer} - buffer */
+  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
+        SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border) override;
+
+  /* compute B0_{outer} - SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override;
 

@@ -1034,16 +1034,14 @@ void sLinsys::addColsToDenseSchurCompl(sData *prob,
     C.getStorageRef().transMultMat( 1.0, out[it], numcols, N_out,
 				  -1.0, &cols[it][locnx+locmy], N);
   }
-  
-
 }
 
 /* solve own linear system with border data
  *
  * rhs-block^T looks like
- *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [  0   A0 C0 F0V G0V ]
- *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ F0C  0  0   0   0  ]
- *  [ C1  0   0  ]         [ CN  0   0  ]   [ G0C  0  0   0   0  ]
+ *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [  0   A0 (C0) F0V G0V ]
+ *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ F0C  0  (0 )  0   0  ]
+ *  [ C1  0   0  ]         [ CN  0   0  ]   [ G0C  0  (0 )  0   0  ]
  *
  */
 void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border )
@@ -1070,11 +1068,20 @@ void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp,
    const int m_buffer = nx_border + myl_border + mzl_border;
    const int n_buffer = locnx + locmy + locmyl + locmzl;
 
-   // buffer for B_{inner}^T K^{-1} B_{outer}, stored in transposed form
+   // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form
    DenseGenMatrix* buffer = new DenseGenMatrix(m_buffer, n_buffer);
    LsolveHierarchyBorder(*buffer, R_border, A_border, C_border, F_border, G_border);
 
-   // TODO : add zero block of border
+   SparseGenMatrix& A0_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat;
+   SparseGenMatrix& F0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat_link;
+   SparseGenMatrix& F0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom->mat;
+
+   SparseGenMatrix& G0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat_link;
+   SparseGenMatrix& G0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom->mat;
+
+   finalizeZ0Hierarchical(*buffer, A0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
+
+
 
    // TODO : solve with Schur Complement
 
