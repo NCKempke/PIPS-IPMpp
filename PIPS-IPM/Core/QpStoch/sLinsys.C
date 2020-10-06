@@ -1074,6 +1074,18 @@ void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp,
    DenseGenMatrix* buffer = new DenseGenMatrix(m_buffer, n_buffer);
    LsolveHierarchyBorder(*buffer, R_border, A_border, C_border, F_border, G_border);
 
+   // TODO : add zero block of border
+
+   // TODO : solve with Schur Complement
+
+   // TODO : check that in hierarchical mode Schur Complement gets allreduced
+
+   // TODO : each process only solves a part of the hat{B}0 rhs with the Schur Complement -> then allreduce
+
+   // TODO : for each child solve Xi = Ki^-1 (Bi_{outer} - Bi_{inner} X0)
+
+   // TODO : for each child multiply and add Bi_{outer}^T X_i to Schur Complement
+
    assert( false && "TODO : implement" );
 }
 
