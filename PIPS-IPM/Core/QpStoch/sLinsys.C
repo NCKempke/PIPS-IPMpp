@@ -751,57 +751,65 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
 }
 
 //#define TIME_SCHUR
+
+/* Solving with
+ *        nx_  l_  myl_ mzl_
+ * nxl_ [ Ri   0   FiT  GiT ]
+ * my_  [ Ai   0    0    0  ]
+ * mz_  [ Ci   0    0    0  ]
+ *
+ * where the size of the zero part depends on the size of the factor K^-1:
+ * l = n_K^-1 - nx - myl - mzl
+ *
+ * computes (B^T K^{-1} B_right)^T and adds it to the SC
+ */
 void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C,
       SparseGenMatrix& F, SparseGenMatrix& G, SymMatrix& SC)
 {
-   int N, nxP;
+   int tmp;
 
-   R.getSize(N, nxP);
-   const bool withR = (nxP != -1);
+   int m_SC, n_SC;
+   SC.getSize(m_SC, n_SC);
+   assert( m_SC >= 0 && n_SC >= 0 );
 
-   A.getSize(N, nxP);
-   const bool withA = (nxP != -1);
+   int nxl_, nx_;
+   R.getSize(nxl_, nx_);
+   assert( nx_ >= 0 && nxl_ >= 0 );
 
-   assert(N == locmy);
-   assert(locmyl >= 0);
-   assert(locmzl >= 0);
+   int my_;
+   A.getSize(my_, tmp);
+   assert( nx_ == tmp );
+   assert( my_ >= 0 );
 
-   const int NP = SC.size();
-   assert(NP >= nxP);
+   int mz_;
+   C.getSize(mz_, tmp);
+   assert( nx_ == tmp );
+   assert( mz_ >= 0 );
 
-   const int nxMyP = NP - locmyl - locmzl;
-   const int nxMyMzP = NP - locmzl;
+   int myl_, mzl_;
 
-   assert( nxMyP > 0 );
-   assert( nxMyMzP > 0 );
+   F.getSize(myl_, tmp);
+   assert( tmp == nxl_ );
+   assert( myl_ >= 0 );
 
-   if( nxP == -1 )
-      C.getSize(N, nxP);
+   G.getSize(mzl_, tmp);
+   assert( tmp == nxl_ );
+   assert( mzl_ >= 0 );
 
-   int N2, nxP2;
-   C.getSize(N2, nxP2);
-   const bool withC = (nxP2 != -1);
+   assert( nx_ + myl_ + mzl_ <= n_SC);
+   assert( nxl_ == locnx && my_ == locmy && mz_ == locmz );
+   assert( myl_ == locmyl && mzl_ == locmzl );
 
-   // TODO : is this correct?
-   if( nxP == -1 )
-      nxP = NP;
+   SimpleVectorBase<int> nnzPerColRAC(nx_);
 
-   N = locnx + locmy + locmz;
-
-   SimpleVectorBase<int> nnzPerColRAC(nxP);
-
-   if( withR )
-      R.addNnzPerCol(nnzPerColRAC);
-
-   if( withA )
-      A.addNnzPerCol(nnzPerColRAC);
-
-   if( withC )
-      C.addNnzPerCol(nnzPerColRAC);
+   R.addNnzPerCol(nnzPerColRAC);
+   A.addNnzPerCol(nnzPerColRAC);
+   C.addNnzPerCol(nnzPerColRAC);
 
    const int withF = (locmyl > 0);
    const int withG = (locmzl > 0);
+   const int N = nxl_ + my_ + mz_;
 
    assert(nThreads >= 1);
 
@@ -812,14 +820,9 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
    // to save original column index of each column in colsBlockTrans
    if( colId == nullptr )
       colId = new int[blocksizemax];
-
-#if 1
    // indicating whether a right hand side is zero
    if( colSparsity == nullptr )
       colSparsity = new int[N];
-#else
-   int* colSparsity = nullptr;
-#endif
 
 #ifdef TIME_SCHUR
    const double t_start = omp_get_wtime();
@@ -830,11 +833,11 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
    //                       (R)
    //     SC +=  B^T  K^-1  (A)
    //                       (C)
-   while( colpos < nxP )
+   while( colpos < nx_ )
    {
       int blocksize = 0;
 
-      for( ; colpos < nxP && blocksize < blocksizemax; colpos++ )
+      for( ; colpos < nx_ && blocksize < blocksizemax; colpos++ )
          if( nnzPerColRAC[colpos] != 0 )
             colId[blocksize++] = colpos;
 
@@ -847,8 +850,8 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
          memset(colSparsity, 0, N * sizeof(int));
 
       R.fromGetColsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
-      A.fromGetColsBlock(colId, blocksize, N, locnx, colsBlockDense, colSparsity);
-      C.fromGetColsBlock(colId, blocksize, N, (locnx + locmy), colsBlockDense, colSparsity);
+      A.fromGetColsBlock(colId, blocksize, N, nxl_, colsBlockDense, colSparsity);
+      C.fromGetColsBlock(colId, blocksize, N, (nxl_ + my_), colsBlockDense, colSparsity);
 
       solver->solve(blocksize, colsBlockDense, colSparsity);
 
@@ -868,17 +871,18 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       //     SC +=  B^T  K^-1  (0  )
       //                       (0  )
 
-      SimpleVectorBase<int> nnzPerColFt(locmyl);
+      SimpleVectorBase<int> nnzPerColFt(myl_);
       F.addNnzPerRow(nnzPerColFt);
 
-      colpos = 0;
+      const int nxMySC = m_SC - myl_ - mzl_;
 
+      colpos = 0;
       // do block-wise multiplication for columns of F^T part
       while( colpos < locmyl )
       {
          int blocksize = 0;
 
-         for( ; colpos < locmyl && blocksize < blocksizemax; colpos++ )
+         for( ; colpos < myl_ && blocksize < blocksizemax; colpos++ )
             if( nnzPerColFt[colpos] != 0 )
                colId[blocksize++] = colpos;
 
@@ -896,7 +900,7 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
          solver->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
-            colId[i] += nxMyP;
+            colId[i] += nxMySC;
 
          multLeftSchurComplBlocked(R, A, C, F, G, colsBlockDense, colId, blocksize, sparseSC, SC);
       }
@@ -911,6 +915,7 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
 
       SimpleVectorBase<int> nnzPerColGt(locmzl);
       G.addNnzPerRow(nnzPerColGt);
+      const int nxMyMzSC = m_SC - mzl_;
 
       colpos = 0;
 
@@ -919,7 +924,7 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       {
          int blocksize = 0;
 
-         for( ; colpos < locmzl && blocksize < blocksizemax; colpos++ )
+         for( ; colpos < mzl_ && blocksize < blocksizemax; colpos++ )
             if( nnzPerColGt[colpos] != 0 )
                colId[blocksize++] = colpos;
 
@@ -936,7 +941,7 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
          solver->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
-             colId[i] += nxMyMzP;
+             colId[i] += nxMyMzSC;
 
           multLeftSchurComplBlocked(R, A, C, F, G, colsBlockDense, colId, blocksize, sparseSC, SC);
       }

@@ -42,7 +42,7 @@ void sLinsysRootBordered::solveReduced( sData *prob, SimpleVector& b)
 /* create kkt used to store Schur Complement of border layer */
 SymMatrix* sLinsysRootBordered::createKKT(sData* prob)
 {
-   const int n = locmy + locmyl + locmzl;
+   const int n = locnx + locmyl + locmzl;
 
    return new DenseSymMatrix(n);
 }
