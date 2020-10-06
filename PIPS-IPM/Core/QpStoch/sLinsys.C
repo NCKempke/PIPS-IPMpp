@@ -799,7 +799,10 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
 
    assert( nx_ + myl_ + mzl_ <= n_SC);
    assert( nxl_ == locnx && my_ == locmy && mz_ == locmz );
+
+#ifndef HIERARCHICAL
    assert( myl_ == locmyl && mzl_ == locmzl );
+#endif
 
    SimpleVectorBase<int> nnzPerColRAC(nx_);
 
@@ -878,7 +881,7 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
 
       colpos = 0;
       // do block-wise multiplication for columns of F^T part
-      while( colpos < locmyl )
+      while( colpos < myl_ )
       {
          int blocksize = 0;
 
@@ -913,14 +916,14 @@ void sLinsys::addTermToSchurComplBlocked(bool sparseSC,
       //     SC +=  B^T  K^-1  (0  )
       //                       (0  )
 
-      SimpleVectorBase<int> nnzPerColGt(locmzl);
+      SimpleVectorBase<int> nnzPerColGt(mzl_);
       G.addNnzPerRow(nnzPerColGt);
       const int nxMyMzSC = m_SC - mzl_;
 
       colpos = 0;
 
       // do block-wise multiplication for columns of G^T part
-      while( colpos < locmzl )
+      while( colpos < mzl_ )
       {
          int blocksize = 0;
 
@@ -1062,8 +1065,7 @@ void sLinsys::symAddColsToDenseSchurCompl(sData *prob,
   //out.getSize(ncols, N); assert(N == nxP);
   assert(endcol <= nxP);
 
-  if(nxP==-1) C.getSize(N,nxP);
-//  if(nxP==-1) {assert(false); nxP = NP;} //petra - found that NP may be unitialized; initialized NP (to remove the compile warning) but added an assert
+  if( nxP == -1 ) C.getSize(N,nxP);
 
   N = locnx+locmy+locmz;
 
