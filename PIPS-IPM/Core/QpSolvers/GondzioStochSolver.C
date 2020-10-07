@@ -178,23 +178,8 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       // *** Predictor step ***
       if( !pure_centering_step )
       {
-         resid->set_r3_xz_alpha(iterate, 0.0);
-
-         sys->factor(prob, iterate);
-         sys->solve(prob, iterate, resid, step);
-         step->negate();
-
-         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
-         {
-            PIPSdebugMessage("Affine step computation in BiCGStab failed");
-            numerical_troubles = true;
-            if( !small_corr_aggr )
-            {
-               if( my_rank == 0 )
-                  std::cout << "switching to small correctors aggressive" << std::endl;
-               small_corr_aggr = true;
-            }
-         }
+         computePredictorStep( prob, iterate, resid );
+         checkLinsysSolveNumericalTroublesAndReact( resid, numerical_troubles, small_corr_aggr );
       }
       else
          step->setToZero();
@@ -215,27 +200,8 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
 
       g_iterNumber += 1.0;
 
-      // *** Corrector step ***
-      corrector_resid->clear_r1r2();
-
-      // form right hand side of linear system:
-      corrector_resid->set_r3_xz_alpha(step, -sigma * mu);
-
-      sys->solve(prob, iterate, corrector_resid, corrector_step);
-      corrector_step->negate();
-
-      // if the corrector fails refactorize
-      if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
-      {
-         PIPSdebugMessage("corrector step computation in BiCGStab failed");
-         numerical_troubles = true;
-         if( !small_corr_aggr )
-         {
-            if( my_rank == 0 )
-               std::cout << "switching to small correctors aggressive" << std::endl;
-            small_corr_aggr = true;
-         }
-      }
+      computeCorrectorStep( prob, iterate, sigma, mu );
+      checkLinsysSolveNumericalTroublesAndReact( resid, numerical_troubles, small_corr_aggr );
 
       // calculate weighted predictor-corrector step
       double weight_candidate = -1.0;
@@ -279,44 +245,23 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
          corrector_step->saxpy(step, alpha_target);
          // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
-         // place XZ into the r3 component of corrector_resids
-         corrector_resid->set_r3_xz_alpha(corrector_step, 0.0);
+         /* compute corrector step */
+         computeGondzioCorrector(prob, iterate, rmin, rmax, small_corr);
+         checkLinsysSolveNumericalTroublesAndReact(resid, numerical_troubles, small_corr_aggr);
 
-         // do the projection operation
-         if( small_corr )
-            corrector_resid->project_r3(rmin, std::numeric_limits<double>::infinity());
-         else
-            corrector_resid->project_r3(rmin, rmax);
-
-         // solve for corrector direction
-         sys->solve(prob, iterate, corrector_resid, corrector_step);	// corrector_step is now delta_m
-
-         /* if a normal corrector did not converge - discard it, try a small corr one and set small correctors to aggressive */
-         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
+         if( !small_corr && small_corr_aggr )
          {
-            PIPSdebugMessage("Gondzio corrector step computation in BiCGStab failed - break corrector loop");
-
-            // try small correctors to improve centering and numerical stability
-            if( !small_corr )
+            if( my_rank == 0 )
             {
-               if( !small_corr_aggr )
-               {
-                  if( my_rank == 0 )
-                     std::cout << "switching to small correctors aggressive" << std::endl;
-                  small_corr_aggr = true;
-               }
-               if( my_rank == 0 )
-               {
-                  std::cout << "Switching to small corrector " << std::endl;
-                  std::cout << "Alpha when switching: " << alpha << std::endl;
-               }
-               small_corr = true;
-               continue;
+               std::cout << "Switching to small corrector " << std::endl;
+               std::cout << "Alpha when switching: " << alpha << std::endl;
             }
-            // exit corrector loop if small correctors have already been tried
-            else
-               break;
+            small_corr = true;
+            continue;
          }
+         else
+            // exit corrector loop if small correctors have already been tried or are not allowed
+            break;
 
          // calculate weighted predictor-corrector step
          calculateAlphaWeightCandidate(iterate, step, corrector_step, alpha_target, alpha_enhanced, weight_candidate);
@@ -410,6 +355,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
 
       pure_centering_step = false;
       numerical_troubles = false;
+      small_corr_aggr = false;
 
       stochFactory->iterateEnded();
    }
@@ -422,6 +368,56 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    }
 
    return status_code;
+}
+
+void GondzioStochSolver::computePredictorStep( Data* prob, Variables* iterate, Residuals* resid )
+{
+   resid->set_r3_xz_alpha(iterate, 0.0);
+   sys->factor(prob, iterate);
+   sys->solve(prob, iterate, resid, step);
+   step->negate();
+}
+
+void GondzioStochSolver::computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu )
+{
+   corrector_resid->clear_r1r2();
+   // form right hand side of linear system:
+   corrector_resid->set_r3_xz_alpha(step, -sigma * mu);
+
+   sys->solve(prob, iterate, corrector_resid, corrector_step);
+   corrector_step->negate();
+}
+
+void GondzioStochSolver::computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr )
+{
+   // place XZ into the r3 component of corrector_resids
+   corrector_resid->set_r3_xz_alpha(corrector_step, 0.0);
+   if( small_corr )
+      assert( additional_correctors_small_comp_pairs );
+   // do the projection operation
+   if( small_corr )
+      corrector_resid->project_r3(rmin, std::numeric_limits<double>::infinity());
+   else
+      corrector_resid->project_r3(rmin, rmax);
+
+   // solve for corrector direction
+   sys->solve(prob, iterate, corrector_resid, corrector_step); // corrector_step is now delta_m
+}
+
+
+void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr_aggr) const
+{
+   if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
+   {
+      PIPSdebugMessage("Step computation in BiCGStab failed");
+      numerical_troubles = true;
+      if( additional_correctors_small_comp_pairs && !small_corr_aggr )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+            std::cout << "switching to small correctors aggressive" << std::endl;
+         small_corr_aggr = true;
+      }
+   }
 }
 
 void GondzioStochSolver::registerBiCGStabOvserver(LinearSystem* sys)

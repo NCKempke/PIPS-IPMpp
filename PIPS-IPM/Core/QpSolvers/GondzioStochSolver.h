@@ -52,6 +52,12 @@ protected:
   double bigcstab_norm_res_rel;
   int bicg_iterations;
 
+  void computePredictorStep( Data* prob, Variables* iterate, Residuals* resid );
+  void computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu );
+  void computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr );
+
+  void checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr_aggr) const;
+
   void registerBiCGStabOvserver(LinearSystem* sys);
 
   void setBiCGStabTol(int iteration) const;
