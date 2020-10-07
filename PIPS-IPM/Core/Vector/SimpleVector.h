@@ -78,6 +78,8 @@ public:
   void componentDiv( const OoqpVectorBase<T>& v ) override;
   bool componentEqual( const OoqpVectorBase<T>& vec, T tol) const override;
   bool componentNotEqual( const T val, const T tol ) const override;
+  void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
+
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamAll( std::ostream& out ) const override;
   void writeToStreamAllStringStream( std::stringstream& sout ) const override;

@@ -182,8 +182,8 @@ void PresolveData::setUndefinedVarboundsTo(double value)
    StochVector& xupp = dynamic_cast<StochVector&>(*presProb->bux);
    StochVector& ixupp = dynamic_cast<StochVector&>(*presProb->ixupp);
 
-   setNotIndicatedEntriesTo(xlow, ixlow, -value);
-   setNotIndicatedEntriesTo(xupp, ixupp, value);
+   xlow.setNotIndicatedEntriesToVal(-value, ixlow);
+   xupp.setNotIndicatedEntriesToVal(value, ixupp);
 }
 
 void PresolveData::setUndefinedRowboundsTo(double value)
@@ -193,44 +193,8 @@ void PresolveData::setUndefinedRowboundsTo(double value)
    StochVector& cupp = dynamic_cast<StochVector&>(*presProb->bu);
    StochVector& icupp = dynamic_cast<StochVector&>(*presProb->icupp);
 
-   setNotIndicatedEntriesTo(clow, iclow, -value);
-   setNotIndicatedEntriesTo(cupp, icupp, value);
-}
-
-// TODO: move to StochVector
-void PresolveData::setNotIndicatedEntriesTo(StochVector& svec, StochVector& sivec, double value)
-{
-   assert(svec.children.size() == sivec.children.size());
-   assert(svec.children.size() == static_cast<unsigned int>(nChildren));
-
-   for( int node = -1; node < nChildren; ++node )
-   {
-      if( !nodeIsDummy(node) )
-      {
-         SimpleVector& vec = getSimpleVecFromColStochVec(svec, node);
-         const SimpleVector& ivec = getSimpleVecFromColStochVec(sivec, node);
-
-         assert(vec.n == ivec.n);
-         for( int row = 0; row < vec.n; ++row )
-         {
-            if( PIPSisZero( ivec[row] ) )
-               vec[row] = value;
-         }
-      }
-   }
-
-   if( sivec.vecl )
-   {
-      assert( svec.vecl );
-      SimpleVector& vec = getSimpleVecFromRowStochVec(svec, -1, true );
-      const SimpleVector& ivec = getSimpleVecFromRowStochVec(sivec, -1, true);
-
-      for( int row = 0; row < vec.n; ++row )
-      {
-         if (PIPSisZero( ivec[row] ) )
-            vec[row] = value;
-      }
-   }
+   clow.setNotIndicatedEntriesToVal(-value, iclow);
+   cupp.setNotIndicatedEntriesToVal(value, icupp);
 }
 
 void PresolveData::initAbsminAbsmaxInCols(StochVector& absmin, StochVector& absmax) const

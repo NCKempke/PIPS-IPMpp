@@ -73,6 +73,9 @@ public:
   /** Multiply the components of this OoqpVector by num. */
   virtual void scalarMult( T num ) = 0;
 
+  /** sets entries for which in[i] = zero to val */
+  virtual void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) = 0;
+
   /** Write the components of this OoqpVector, one element per line, to
    *  the stream out.
    */

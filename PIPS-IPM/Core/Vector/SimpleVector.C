@@ -355,6 +355,20 @@ bool SimpleVectorBase<T>::componentNotEqual( const T val, const T tol ) const
 }
 
 template<typename T>
+void SimpleVectorBase<T>::setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind )
+{
+   const SimpleVectorBase<T>& ind_vec = dynamic_cast<const SimpleVectorBase<T>&>(ind);
+   assert( ind_vec.length() == this->length() );
+
+   for( int i = 0; i < ind_vec.length(); ++i )
+   {
+      if( ind_vec[i] == 0 )
+         this->v[i] = val;
+   }
+}
+
+
+template<typename T>
 void SimpleVectorBase<T>::scalarMult( T num)
 {
   int i;

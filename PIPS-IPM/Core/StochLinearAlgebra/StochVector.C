@@ -121,6 +121,25 @@ OoqpVectorBase<T>* StochVectorBase<T>::cloneFull() const
    return clone;
 }
 
+template<typename T>
+void StochVectorBase<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase<T>& ind )
+{
+   const StochVectorBase<T>& ind_vec = dynamic_cast<const StochVectorBase<T>&>(ind);
+
+   assert(this->children.size() == ind_vec.children.size());
+   assert( (this->vec && ind_vec.vec) || (this->vec == nullptr && ind_vec.vec == nullptr) );
+   assert( (this->vecl && ind_vec.vecl) || (this->vecl == nullptr && ind_vec.vecl == nullptr) );
+
+   if( this->vec )
+      this->vec->setNotIndicatedEntriesToVal(val, *ind_vec.vec);
+
+   if( this->vecl )
+      this->vecl->setNotIndicatedEntriesToVal(val, *ind_vec.vecl);
+
+   for( size_t node = 0; node < children.size(); ++node )
+      this->children[node]->setNotIndicatedEntriesToVal(val, *ind_vec.children[node] );
+}
+
 
 template<typename T>
 void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& v1, const StochVectorBase<T>& v2, const StochVectorBase<T>& v3)
