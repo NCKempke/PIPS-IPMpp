@@ -375,11 +375,12 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       // We've finally decided on a step direction, now calculate the
       // length using Mehrotra's heuristic.x
       alpha = finalStepLength(iterate, step);
+      assert( alpha != 0 );
 
       // alternatively, just use a crude step scaling factor.
       // alpha = 0.995 * iterate->stepbound( step );
 
-      // if we encountered numerical troubles while computing the step check enter a probing round
+      // if we encountered numerical troubles while computing the step enter a probing round
       if( numerical_troubles )
       {
          if( !precond_limit )
@@ -499,31 +500,44 @@ void GondzioStochSolver::computeProbingStep(Variables* probing_step, const Varia
    probing_step->saxpy(step, alpha);
 }
 
+/* when numerical troubles occured we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
 double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing,
       double mu_last, double mu_probing) const
 {
+   assert( resids_norm_last > 0.0 );
+   assert( resids_norm_probing > 0.0 );
+
    double factor = 1.0;
-   const double limit_resids = std::max( artol * dnorm, resids_norm_last );
+   const double limit_resids = 10.0 * std::max( artol * dnorm, resids_norm_last );
 
    if( resids_norm_probing > limit_resids )
    {
+      assert( resids_norm_probing > resids_norm_last );
+      assert( limit_resids > resids_norm_last );
       const double resids_diff = resids_norm_probing - resids_norm_last;
       const double resids_max_change = limit_resids - resids_norm_last;
-      assert( resids_diff > 0 ); assert( resids_max_change > 0 );
+      assert( resids_diff > 0.0 ); assert( resids_max_change > 0.0 );
       assert( resids_max_change < resids_diff );
 
       factor = std::min(factor, resids_max_change / resids_diff * 0.9995 );
    }
 
-   if( mu_probing > 10 * mu_last )
+   const double mu_limit = 10.0 * mu_last;
+   if( mu_probing > mu_limit )
    {
+      assert( mu_probing > mu_last );
+      assert( mu_limit > mu_last );
       const double mu_diff = mu_probing - mu_last;
-      const double mu_max_change = 10 * mu_last - mu_probing;
-      assert( mu_diff > 0 ); assert( mu_max_change > 0 );
+      const double mu_max_change = mu_limit - mu_last;
+      assert( mu_diff > 0.0 ); assert( mu_max_change > 0.0 );
       assert( mu_max_change < mu_diff );
 
       factor = std::min(factor, mu_max_change / mu_diff * 0.9995 );
    }
+
+   assert( 0.0 < factor );
+   assert( factor <= 1.0 );
+
    return factor;
 }
 
