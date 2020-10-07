@@ -184,7 +184,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
          sys->solve(prob, iterate, resid, step);
          step->negate();
 
-         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm >= resid->residualNorm() )
+         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
          {
             PIPSdebugMessage("Affine step computation in BiCGStab failed");
             numerical_troubles = true;

@@ -284,7 +284,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
          // solve for corrector direction
          sys->solve(prob, iterate, corrector_resid, corrector_step); // corrector_step is now delta_m
 
-         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() / dnorm )
+         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
          {
             PIPSdebugMessage("Gondzio corrector step computation in BiCGStab failed - break corrector loop");
 
