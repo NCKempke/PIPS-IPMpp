@@ -56,7 +56,7 @@ protected:
   void computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu );
   void computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr );
 
-  void checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr_aggr) const;
+  void checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr) const;
 
   void registerBiCGStabOvserver(LinearSystem* sys);
 
@@ -73,6 +73,7 @@ protected:
 
   void computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step,
         double alpha) const;
+  void doProbing( Data* prob, Variables* iterate, Residuals* resid, double& alpha );
 
   bool restartIterateBecauseOfPoorStep( bool& pure_centering_step, bool precond_limit, double alpha_max) const;
 public:
