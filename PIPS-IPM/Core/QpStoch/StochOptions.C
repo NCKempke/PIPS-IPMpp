@@ -73,6 +73,7 @@ namespace pips_options
       int_options["INNER_SC_SOLVE"] = 0;
 
       /// OUTER BIGCSTAB
+      double_options["OUTER_BICG_TOL"] = 1e-10;
       double_options["OUTER_BICG_EPSILON"] = 1e-15;
 
       bool_options["OUTER_BICG_PRINT_STATISTICS"] = false;

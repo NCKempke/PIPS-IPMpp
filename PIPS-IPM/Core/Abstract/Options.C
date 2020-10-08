@@ -67,12 +67,12 @@ namespace base_options
       int_options[param] = value;
    }
 
-   void Options::setBoolParam(const std::string& param, int value)
+   void Options::setBoolParam(const std::string& param, bool value)
    {
       bool_options[param] = value;
    }
 
-   void Options::setDoubleParam(const std::string& param, int value)
+   void Options::setDoubleParam(const std::string& param, double value)
    {
       double_options[param] = value;
    }
