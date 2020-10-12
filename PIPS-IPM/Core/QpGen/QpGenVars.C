@@ -1213,38 +1213,38 @@ void QpGenVars::printNorms() const
 void QpGenVars::setNotIndicatedBoundsTo( Data& data, double value )
 {
    value = std::fabs(value);
-   QpGenData* sdata = dynamic_cast<QpGenData*>(data);
+   QpGenData& qpdata = dynamic_cast<QpGenData&>(data);
 
    const double x_inf = x->infnorm();
    const double xlow_inf = std::min( -10.0 * x_inf, -value );
    const double xupp_inf = std::min( 10.0 * x_inf, value );
 
    /* change original bounds and set ixlow ixupp */
-   sdata->xlowerBound().setNotIndicatedEntriesToVal( xlow_inf, *sdata->ixlow );
-   sdata->xupperBound().setNotIndicatedEntriesToVal( xupp_inf, *sdata->ixupp );
+   qpdata.xlowerBound().setNotIndicatedEntriesToVal( xlow_inf, *qpdata.ixlow );
+   qpdata.xupperBound().setNotIndicatedEntriesToVal( xupp_inf, *qpdata.ixupp );
 
-   OoqpVector* ixupp_inv = sdata->ixupp->clone();
+   OoqpVector* ixupp_inv = qpdata.ixupp->clone();
    ixupp_inv->setToZero();
-   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *sdata->ixupp);
+   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *qpdata.ixupp);
 
-   OoqpVector* ixlow_inv = *sdata->ixlow->clone();
+   OoqpVector* ixlow_inv = qpdata.ixlow->clone();
    ixlow_inv->setToZero();
-   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *sdata->ixlow);
+   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *qpdata.ixlow);
 
-   sdata->ixlow->setToConstant(1);
-   sdata->ixupp->setToConstant(1);
+   qpdata.ixlow->setToConstant(1);
+   qpdata.ixupp->setToConstant(1);
 
    /* adjust slacks */
    OoqpVector* x_copy = x->cloneFull();
 
    /* x - lx */
-   x_copy->axpy(-1.0, sdata->xlowerBound() );
+   x_copy->axpy(-1.0, qpdata.xlowerBound() );
    /* v = x - lx */
    v->axzpy(1.0, *ixlow_inv, *x_copy);
 
    x_copy->copyFrom(*x);
    /* x - ux */
-   x_copy->axpy(-1.0, sdata->xupperBound() );
+   x_copy->axpy(-1.0, qpdata.xupperBound() );
    /* w = -( x - ux ) = ux - x */
    w->axzpy(-1.0, *ixupp_inv, *x_copy);
 

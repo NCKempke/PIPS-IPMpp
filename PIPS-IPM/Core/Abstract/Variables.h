@@ -144,13 +144,25 @@ public:
   virtual void copy(const Variables *b) = 0;
 
   /** compute the 1-norm of the variables */
-  virtual double onenorm() = 0;
+  virtual double onenorm() const = 0;
 
   /** compute the inf-norm of the variables */
-  virtual double infnorm() = 0;
+  virtual double infnorm() const = 0;
 
   /** set variables to zero */
   virtual void setToZero() = 0;
+
+  /** print norms of all involved quantities */
+  virtual void printNorms() const
+  {
+     assert(0 && "not implemented here");
+  }
+
+  /** set not indicated bounds to +- value or 10 * the current max of the x variables */
+  virtual void setNotIndicatedBoundsTo( Data& data, double value )
+  {
+     assert(0 && "not implemented here");
+  }
 
   virtual ~Variables() {};
 };
