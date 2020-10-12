@@ -77,7 +77,7 @@ public:
 
   virtual ~QpGenVars();
   
-  void pushFromBound( const OoqpVector& xupp, const OoqpVector& xlow );
+  void pushFromBound( const Data& data );
 
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
   virtual double mu();
@@ -172,11 +172,16 @@ public:
   
   virtual void copy(const Variables *b);
 
-  virtual double onenorm();
+  double onenorm() const override;
 
-  virtual double infnorm();
+  double infnorm() const override;
 
   void setToZero() override;
+
+  void printNorms() const override;
+
+  void setNotIndicatedBoundsTo( Data& data, double value ) override;
+
 };
 
 /** Indicates what type is the blocking variable in the step length
