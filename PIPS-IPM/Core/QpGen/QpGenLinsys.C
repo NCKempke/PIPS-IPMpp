@@ -291,13 +291,16 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
   assert( vars->validNonZeroPattern() );
   assert( res ->validNonZeroPattern() );
   
+  /* x = rQ */
   step->x->copyFrom( *res->rQ );
   if( nxlow > 0 ) {
     OoqpVector & vInvGamma = *step->v;
     vInvGamma.copyFrom( *vars->gamma );
     vInvGamma.divideSome( *vars->v, *ixlow );
 	
+    /* x = rQ + Gamma/V * rv */
     step->x->axzpy ( 1.0, vInvGamma, *res->rv );
+    /* x = rQ + Gamma/V * rv + rGamma/V */
     step->x->axdzpy( 1.0, *res->rgamma, *vars->v, *ixlow );
   }
   if( nxupp > 0 ) {
@@ -305,28 +308,33 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     wInvPhi.copyFrom( *vars->phi );
     wInvPhi.divideSome( *vars->w, *ixupp );
 	  
+    /* x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
     step->x->axzpy (  1.0, wInvPhi,   *res->rw );
+    /* x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
     step->x->axdzpy( -1.0, *res->rphi, *vars->w, *ixupp );
   }
   // start by partially computing step->s
+  /* step->s = rz */
   step->s->copyFrom( *res->rz );
   if( mclow > 0 ) {
     OoqpVector & tInvLambda = *step->t;
-	
     tInvLambda.copyFrom( *vars->lambda );
     tInvLambda.divideSome( *vars->t, *iclow );
 
+    /* step->s = rz + Lambda/T * rt */
     step->s->axzpy( 1.0, tInvLambda, *res->rt );
+    /* step->s = rz + Lambda/T * rt + rlambda/T */
     step->s->axdzpy( 1.0, *res->rlambda, *vars->t, *iclow );
   }
 
   if( mcupp > 0 ) {
     OoqpVector & uInvPi = *step->u;
-	
     uInvPi.copyFrom( *vars->pi );
     uInvPi.divideSome( *vars->u, *icupp );
 
+    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
     step->s-> axzpy(  1.0, uInvPi, *res->ru );
+    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
     step->s->axdzpy( -1.0, *res->rpi, *vars->u, *icupp );
   }
 
@@ -401,8 +409,18 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 			       OoqpVector& /* ztemp */,
 			       QpGenData* prob )
 {
+  /* step->x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
+  /* step->y = rA */
+  /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
+  /* step->z = rC */
+
+   /* rz = rC - */
   stepz.axzpy( -1.0, *nomegaInv, steps );
- 
+
+#if 0 
+  OoqpVector * residual = rhs->cloneFull();
+  this->joinRHS(*residual, stepx, stepy, stepz);
+#endif
   if( outerSolve == 1 ) {
     ///////////////////////////////////////////////////////////////
     // Iterative refinement
@@ -427,6 +445,27 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     notifyObservers();
 
   }
+#if 0
+  const double bnorm = residual->infnorm();
+  this->joinRHS(*sol, stepx, stepy, stepz);
+  this->matXYZMult(1.0, *residual, -1.0, *sol, prob, stepx, stepy, stepz);
+
+  const double resnorm = residual->infnorm();
+
+  this->separateVars( *resx, *resy, *resz, *residual );
+  const double resxnorm = resx->infnorm();
+  const double resynorm = resy->infnorm();
+  const double resznorm = resz->infnorm();
+
+  if( PIPS_MPIgetRank() == 0 )
+  {
+     cout << "bnorm " << bnorm << std::endl;
+     cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << endl;
+     cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << endl;
+     cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << std::endl;
+  }
+  delete residual;
+#endif
   stepy.negate();
   stepz.negate();
 	
@@ -676,7 +715,10 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
 }
 
 /**
- * res = beta*res - alpha*mat*sol
+ * res = beta * res + alpha * mat * sol
+ *       [ Q + dq + gamma/ v + phi/w     AT           CT          ]
+ * mat = [            A                  0            0           ]
+ *       [            C                  0  -(lambda/V + pi/u)^-1 ]
  * stepx, stepy, stepz are used as temporary buffers
  */
 void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res, 
@@ -689,13 +731,18 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);
 
+  /* resx = beta resx + alpha Q solx + alpha dd solx */
   data->Qmult(beta, *resx, alpha, solx);
   resx->axzpy(alpha, *dd, solx);
+
+  /* resx = beta resx + alpha Q solx + alpha dd solx + alpha AT soly + alpha CT solz */
   data->ATransmult(1.0, *resx, alpha, soly);
   data->CTransmult(1.0, *resx, alpha, solz);
 
+  /* resy = beta resy + alpha A solx */
   data->Amult(beta, *resy, alpha, solx);
   //cout << "resy norm: " << resy->twonorm() << endl;
+  /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
   data->Cmult(beta, *resz, alpha, solx);
   resz->axzpy(alpha, *nomegaInv, solz);
   //cout << "resz norm: " << resz->twonorm() << endl;
