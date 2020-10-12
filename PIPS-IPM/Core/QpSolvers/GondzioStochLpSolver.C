@@ -145,11 +145,17 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
    while( true )
    {
       iter++;
+
+      if( false )
+         iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
+
       setBiCGStabTol(iter);
 
       bool small_corr = false;
 
       stochFactory->iterateStarted();
+
+      dynamic_cast<QpGenVars&>(*iterate).pushFromBound( *prob );
 
       // evaluate residuals and update algorithm status:
       resid->calcresids(prob, iterate);
@@ -358,6 +364,10 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
          if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_limit, alpha_max ) )
             continue;
       }
+
+
+//      step->printNorms();
+//      iterate->printNorms();
 
       // actually take the step and calculate the new mu
       iterate->saxpy_pd(step, alpha_pri, alpha_dual);
