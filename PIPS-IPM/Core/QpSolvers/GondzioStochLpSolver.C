@@ -155,7 +155,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
 
       stochFactory->iterateStarted();
 
-      dynamic_cast<QpGenVars&>(*iterate).pushFromBound( *prob, 1e-10, 1e-10 );
+      //dynamic_cast<QpGenVars&>(*iterate).pushFromBound( *prob, 1e-14, 1e-12 );
 
       // evaluate residuals and update algorithm status:
       resid->calcresids(prob, iterate);
