@@ -286,18 +286,186 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
 
 
 /* compute
+ *              locnx locmy locmyl locmzl
+ * nx_border  [   0    A0T   F0VT   G0VT ]
+ * myl_border [  F0C    0     0      0   ]
+ * mzl_border [  G0C    0     0      0   ]
  *
- * [  0  F0C^T G0C^T ]
+ * [  0 F0C^T  G0C^T ]^T
  * [ A0   0     0    ]
- * [ F0V  0     0    ] - buffer
+ * [ F0V  0     0    ]   - buffer
  * [ G0V  0     0    ]
  */
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
       SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border)
 {
+   int nx_border, myl_border, mzl_border, dummy;
+   A0_border.getSize(dummy, nx_border);
+   F0con_border.getSize(myl_border, dummy);
+   G0con_border.getSize(mzl_border, dummy);
 
+   /* add A0^T, F0V^T, G0V^T */
+   for( int row = 0; row < nx_border; ++row )
+   {
+      /* A0^T */
+      if( locmy > 0 )
+      {
+         const SparseGenMatrix& A0_transp = A0_border.getTranspose();
+#ifndef NDEBUG
+         int m,n;
+         A0_transp.getSize(m, n);
+         assert( locmy == n );
+         assert( nx_border == m );
+#endif
 
-   assert(false && "TODO : implement");
+         const double* MAt = A0_transp.M();
+         const int* krowAt = A0_transp.krowM();
+         const int* jcolAt = A0_transp.jcolM();
+
+         const int rowAt_start = krowAt[row];
+         const int rowAt_end = krowAt[row + 1];
+
+         const int col_buffer_start = locnx;
+         for( int k = rowAt_start; k < rowAt_end; ++k )
+         {
+            const int col_At = jcolAt[k];
+            const double val_At = MAt[k];
+
+            const int col_buffer = col_buffer_start + col_At;
+
+            assert( locnx <= col_buffer && col_buffer < locnx + locmy );
+            buffer[row][col_buffer] += val_At;
+         }
+      }
+
+      /* F0V^T */
+      if( locmyl > 0 )
+      {
+         const SparseGenMatrix& F0V_transp = F0vec_border.getTranspose();
+#ifndef NDEBUG
+         int m,n;
+         F0V_transp.getSize(m, n);
+         assert( locmyl == n );
+         assert( nx_border == m );
+#endif
+
+         const double* MF0Vt = F0V_transp.M();
+         const int* krowF0Vt = F0V_transp.krowM();
+         const int* jcolF0Vt = F0V_transp.jcolM();
+
+         const int rowF0Vt_start = krowF0Vt[row];
+         const int rowF0Vt_end = krowF0Vt[row + 1];
+
+         const int col_buffer_start = locnx + locmy;
+         for( int k = rowF0Vt_start; k < rowF0Vt_end; ++k )
+         {
+            const int col_F0Vt = jcolF0Vt[k];
+            const double val_F0Vt = MF0Vt[k];
+
+            const int col_buffer = col_buffer_start + col_F0Vt;
+
+            assert( locnx + locmy <= col_buffer && col_buffer < locnx + locmy + locmyl );
+            buffer[row][col_buffer] += val_F0Vt;
+         }
+      }
+
+      /* G0V^T */
+      if( locmzl > 0 )
+      {
+         const SparseGenMatrix& G0V_transp = G0vec_border.getTranspose();
+#ifndef NDEBUG
+         int m,n;
+         G0V_transp.getSize(m, n);
+         assert( locmzl == n );
+         assert( nx_border == m );
+#endif
+
+         const double* MG0Vt = G0V_transp.M();
+         const int* krowG0Vt = G0V_transp.krowM();
+         const int* jcolG0Vt = G0V_transp.jcolM();
+
+         const int rowG0Vt_start = krowG0Vt[row];
+         const int rowG0Vt_end = krowG0Vt[row + 1];
+
+         const int col_buffer_start = locnx + locmy + locmyl;
+         for( int k = rowG0Vt_start; k < rowG0Vt_end; ++k )
+         {
+            const int col_G0Vt = jcolG0Vt[k];
+            const double val_G0Vt = MG0Vt[k];
+
+            const int col_buffer = col_buffer_start + col_G0Vt;
+
+            assert( locnx + locmy + locmyl <= col_buffer && col_buffer < locnx + locmy + locmyl + locmzl );
+            buffer[row][col_buffer] += val_G0Vt;
+         }
+      }
+   }
+
+   /* F0C */
+   if( myl_border > 0 )
+   {
+      for( int rowF = 0; rowF < myl_border; ++rowF )
+      {
+#ifndef NDEBUG
+         int m,n;
+         F0con_border.getSize(m, n);
+         assert( locnx == n );
+         assert( myl_border == m );
+#endif
+
+         const double* MF0C = F0con_border.M();
+         const int* krowF0C = F0con_border.krowM();
+         const int* jcolF0C = F0con_border.jcolM();
+
+         const int rowF0C_start = krowF0C[rowF];
+         const int rowF0C_end = krowF0C[rowF + 1];
+
+         for( int k = rowF0C_start; k < rowF0C_end; ++k )
+         {
+            const int col = jcolF0C[k];
+            const double val_F0C = MF0C[k];
+
+            const int row_buffer = rowF + nx_border;
+
+            assert( nx_border <= row_buffer && row_buffer < nx_border + myl_border );
+            assert( 0 <= col && col < locnx );
+            buffer[row_buffer][col] += val_F0C;
+         }
+      }
+   }
+
+   /* G0C */
+   if( mzl_border > 0 )
+   {
+      for( int rowG = 0; rowG < mzl_border; ++rowG )
+      {
+#ifndef NDEBUG
+         int m,n;
+         G0con_border.getSize(m, n);
+         assert( locnx == n );
+         assert( mzl_border == m );
+#endif
+
+         const double* MG0C = G0con_border.M();
+         const int* krowG0C = G0con_border.krowM();
+         const int* jcolG0C = G0con_border.jcolM();
+
+         const int rowG0C_start = krowG0C[rowG];
+         const int rowG0C_end = krowG0C[rowG + 1];
+
+         for( int k = rowG0C_start; k < rowG0C_end; ++k )
+         {
+            const int col = jcolG0C[k];
+            const double val_G0C = MG0C[k];
+
+            const int row_buffer = rowG + nx_border + myl_border;
+
+            assert( nx_border + myl_border <= row_buffer && row_buffer < nx_border + myl_border + mzl_border );
+            assert( 0 <= col && col < locnx );
+            buffer[row_buffer][col] += val_G0C;
+         }
+      }
+   }
 }
 
 
