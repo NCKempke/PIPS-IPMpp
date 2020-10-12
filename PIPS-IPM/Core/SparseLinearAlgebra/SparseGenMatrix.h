@@ -126,10 +126,19 @@ public:
   virtual void fromGetDiagonal( int idiag, OoqpVector& v );
 
   SparseStorageHandle getStorageHandle() { return mStorage; }
+  const SparseStorageHandle getStorageHandle() const { return mStorage; }
+
   SparseStorage& getStorageRef() { return *mStorage; }
+  const SparseStorage& getStorageRef() const { return *mStorage; }
+
   int * krowM() { return mStorage->krowM; }
+  const int * krowM() const { return mStorage->krowM; }
+
   int * jcolM() { return mStorage->jcolM; }
+  const int * jcolM() const { return mStorage->jcolM; }
+
   double * M() { return mStorage->M; }
+  const double * M() const { return mStorage->M; }
 
   SparseStorageDynamic * getStorageDynamic() { assert(mStorageDynamic != nullptr); return mStorageDynamic; }
   const SparseStorageDynamic * getStorageDynamic() const { assert(mStorageDynamic != nullptr); return mStorageDynamic; }
