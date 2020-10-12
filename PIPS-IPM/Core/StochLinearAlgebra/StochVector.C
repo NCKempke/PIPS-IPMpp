@@ -1202,6 +1202,28 @@ void StochVectorBase<T>::writeToStreamAllChild( std::stringstream& sout ) const
 }
 
 template<typename T>
+void StochVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, double tol, double amount, const OoqpVectorBase<T>* select )
+{
+   const StochVectorBase<T>& others = dynamic_cast<const StochVectorBase<T>&>(other);
+   const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
+
+   if( vec )
+   {
+      assert( others.vec );
+      vec->pushAwayFrom( *others.vec, tol, amount, selects ? selects->vec : nullptr );
+   }
+
+   if( vecl )
+   {
+      assert( others.vecl );
+      vec->pushAwayFrom( *others.vecl, tol, amount, selects ? selects->vecl : nullptr );
+   }
+
+   for( size_t i = 0; i < others.children.size(); ++i )
+      this->children[i]->pushAwayFrom(*others.children[i], tol, amount, selects ? selects->children[i] : nullptr );
+}
+
+template<typename T>
 void StochVectorBase<T>::writeToStream( std::ostream& out ) const
 {
   out << "---" << std::endl;

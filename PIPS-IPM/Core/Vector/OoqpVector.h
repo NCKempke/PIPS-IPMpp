@@ -36,6 +36,8 @@ public:
   OoqpVectorBase( int n_ = 0 );
   virtual ~OoqpVectorBase();
 
+  virtual void pushAwayFrom( const OoqpVectorBase<T>& vec, double tol, double amount, const OoqpVectorBase<T>* select = nullptr) = 0;
+
   /** Set all elements of this OoqpVector to zero. */
   virtual void setToZero() = 0;
   /** Check if all elemens in the vector are equal to zero. */

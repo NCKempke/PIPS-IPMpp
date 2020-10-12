@@ -182,6 +182,25 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
 }
 
 template<typename T>
+void SimpleVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, double tol, double amount, const OoqpVectorBase<T>* select )
+{
+   const SimpleVectorBase<T>& others = dynamic_cast<const SimpleVectorBase<T>&>(other);
+   assert( this->n == others.n );
+
+   const SimpleVectorBase<T>* selects = dynamic_cast<const SimpleVectorBase<T>*>(select);
+   assert( this->n == selects->n );
+
+   for( int i = 0 ; i < this->n ; ++i )
+   {
+      if( selects && (*selects)[i] == 0 )
+            continue;
+
+      if( std::abs( v[i] - others.v[i] ) < std::abs(tol) )
+         v[i] += amount;
+   }
+}
+
+template<typename T>
 SimpleVectorBase<T>::SimpleVectorBase( T * v_, int n_ )
   : OoqpVectorBase<T>( n_ )
 {
@@ -607,6 +626,7 @@ void SimpleVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& xvec,
   int i;
   for( i = 0; i < this->n; i++ ) {
     //if(x[i] > 0 && z[i] > 0)
+     assert( z[i] != 0 );
       v[i] += alpha * x[i] / z[i];
   }
 }
@@ -749,7 +769,7 @@ void SimpleVectorBase<T>::invert()
   for( int i = 0; i < this->n; i++ )
   {
     assert(v[i] != 0.0);
-    v[i] = 1 / v[i];
+    v[i] = 1.0 / v[i];
   }
 }
 

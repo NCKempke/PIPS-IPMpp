@@ -25,6 +25,8 @@ protected:
   int preserveVec;
   T * v;
 public:
+  void pushAwayFrom( const OoqpVectorBase<T>& other, double tol, double amount, const OoqpVectorBase<T>* select ) override;
+
   SimpleVectorBase( int nx = 0 );
   SimpleVectorBase( T * v, int nx );
   //@{

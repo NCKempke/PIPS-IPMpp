@@ -172,6 +172,18 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
+void QpGenVars::pushFromBound( const OoqpVector& xupp, const OoqpVector& xlow )
+{
+   assert( xupp.matchesNonZeroPattern(*ixupp) );
+   assert( xlow.matchesNonZeroPattern(*ixlow) );
+
+   if( nxlow > 0 )
+      x->pushAwayFrom(xlow, 1e-10, 1e-8, &*ixlow);
+   if( nxupp > 0 )
+      x->pushAwayFrom(xupp, 1e-10, -1e-8, &*ixupp);
+}
+
+
 double QpGenVars::mu()
 {
   double mu  = 0.0;

@@ -18,6 +18,8 @@ private:
   void writeToStreamAllChild( std::stringstream& sout ) const override;
 
 public:
+  void pushAwayFrom( const OoqpVectorBase<T>& other, double tol, double amount, const OoqpVectorBase<T>* select ) override;
+
   StochVectorBase( int n, MPI_Comm mpiComm, int isDistributed = -1);
   StochVectorBase( int n, int nl, MPI_Comm mpiComm, int isDistributed);
   virtual ~StochVectorBase();
@@ -303,6 +305,8 @@ public:
    int getNnzs() const override { return 0; };
 
    bool isRootNodeInSync() const override { return true; };
+   void pushAwayFrom( const OoqpVectorBase<T>& other, double tol, double amount, const OoqpVectorBase<T>* select ) override {};
+
 };
 
 #endif
