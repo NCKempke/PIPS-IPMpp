@@ -1068,7 +1068,7 @@ void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp,
    const int m_buffer = nx_border + myl_border + mzl_border;
    const int n_buffer = locnx + locmy + locmyl + locmzl;
 
-   // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form
+   // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
    DenseGenMatrix* buffer = new DenseGenMatrix(m_buffer, n_buffer);
    LsolveHierarchyBorder(*buffer, R_border, A_border, C_border, F_border, G_border);
 
