@@ -77,7 +77,7 @@ public:
 
   virtual ~QpGenVars();
   
-  void pushFromBound( const Data& data );
+  void pushFromBound( const Data& data, double tol, double amount );
 
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
   virtual double mu();

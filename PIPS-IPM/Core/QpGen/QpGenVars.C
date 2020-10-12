@@ -172,7 +172,7 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
-void QpGenVars::pushFromBound( const Data& data )
+void QpGenVars::pushFromBound( const Data& data, double tol, double amount )
 {
    const OoqpVector& xupp = dynamic_cast<const QpGenData&>(data).xupperBound();
    const OoqpVector& xlow = dynamic_cast<const QpGenData&>(data).xlowerBound();
@@ -181,17 +181,9 @@ void QpGenVars::pushFromBound( const Data& data )
    assert( xlow.matchesNonZeroPattern(*ixlow) );
 
    if( nxlow > 0 )
-   {
-      x->pushAwayFrom(xlow, 1e-10, 1e-8, &*ixlow);
-      v->addConstant(1e-8);
-      v->selectNonZeros( *ixlow );
-   }
+      x->pushAwayFrom(xlow, *v, tol, amount, &*ixlow);
    if( nxupp > 0 )
-   {
-      x->pushAwayFrom(xupp, 1e-10, -1e-8, &*ixupp);
-      w->addConstant(1e-8);
-      w->selectNonZeros( *ixupp );
-   }
+      x->pushAwayFrom(xupp, *w, tol, amount, &*ixupp);
 }
 
 

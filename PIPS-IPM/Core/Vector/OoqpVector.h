@@ -36,7 +36,8 @@ public:
   OoqpVectorBase( int n_ = 0 );
   virtual ~OoqpVectorBase();
 
-  virtual void pushAwayFrom( const OoqpVectorBase<T>& vec, double tol, double amount, const OoqpVectorBase<T>* select = nullptr) = 0;
+  virtual void pushAwayFrom( const OoqpVectorBase<T>& vec, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select = nullptr)
+     { assert( 0 && "Not implemented here" ); };
 
   /** Set all elements of this OoqpVector to zero. */
   virtual void setToZero() = 0;

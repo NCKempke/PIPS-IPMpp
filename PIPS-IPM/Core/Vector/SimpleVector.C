@@ -182,9 +182,10 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
 }
 
 template<typename T>
-void SimpleVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, double tol, double amount, const OoqpVectorBase<T>* select )
+void SimpleVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select )
 {
    const SimpleVectorBase<T>& others = dynamic_cast<const SimpleVectorBase<T>&>(other);
+   SimpleVectorBase<T>& slacks = dynamic_cast<SimpleVectorBase<T>&>(slack);
    assert( this->n == others.n );
 
    const SimpleVectorBase<T>* selects = dynamic_cast<const SimpleVectorBase<T>*>(select);
@@ -196,7 +197,10 @@ void SimpleVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, double t
             continue;
 
       if( std::abs( v[i] - others.v[i] ) < std::abs(tol) )
+      {
          v[i] += amount;
+         slacks[i] += amount;
+      }
    }
 }
 
