@@ -53,6 +53,13 @@ namespace pips_options
       /** should the amount of gondzio correctors be scheduled dynamically - invalidates the max correctors setting */
       bool_options["GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE"] = false;
 
+      /** should relatively early converged variables be pushed away artificially from their bounds */
+      bool_options["GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND"] = true;
+      /** at which frequency should converged variables be pushed away from their bounds */
+      int_options["GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS"] = 4;
+      /** starting with which mu should the pushing be done */
+      double_options["GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS"] = 1e-3;
+
       /// SOLVER CONTROLS
 
       int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 64;

@@ -46,6 +46,13 @@ protected:
 
   int NumberSmallCorrectors;
 
+  /* should early converged variables push away a bit from their respecitve bounds */
+  const bool push_converged_vars_from_bound;
+  /* at which frequnecy should small vars be checked */
+  const int fequency_push_converged_vars_from_bound;
+  /* starting with which mu should checking start */
+  const double mu_limit_push_converged_vars_from_bound;
+
   /* observer stuff for checking convergence of BiCGStab */
   bool bicgstab_skipped;
   bool bicgstab_converged;

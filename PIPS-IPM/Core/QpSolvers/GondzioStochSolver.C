@@ -53,7 +53,11 @@ GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Data * prob, c
     max_additional_correctors( pips_options::getIntParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX") ),
     first_iter_small_correctors( pips_options::getIntParameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS") ),
     max_alpha_small_correctors( pips_options::getDoubleParameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS") ),
-    NumberSmallCorrectors(0), bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
+    NumberSmallCorrectors(0),
+    push_converged_vars_from_bound( pips_options::getBoolParameter("GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND") ),
+    fequency_push_converged_vars_from_bound( pips_options::getIntParameter("GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS") ),
+    mu_limit_push_converged_vars_from_bound( pips_options::getDoubleParameter("GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS") ),
+    bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
     dynamic_bicg_tol(pips_options::getBoolParameter("OUTER_BICG_DYNAMIC_TOL"))
 {
    assert(max_additional_correctors > 0);
@@ -562,7 +566,7 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep( bool& pure_centering_s
 
 void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const
 {
-   if( iter % 8 == 0 && vars.mu() < 1e-3 )
+   if( push_converged_vars_from_bound && (iter % fequency_push_converged_vars_from_bound) == 0 && vars.mu() < mu_limit_push_converged_vars_from_bound )
    {
       QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
 
@@ -575,6 +579,8 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables&
             std::cout << "Pushing converged vars away from bound: avg_dist: " << average_dist << std::endl;
          qpvars.pushFromBound( data, average_dist / 10.0 , average_dist );
       }
+      else if( PIPS_MPIgetRank() == 0 )
+         std::cout << "No push done.. avg was : " << average_dist << std::endl;
    }
 }
 
