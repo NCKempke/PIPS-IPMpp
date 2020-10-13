@@ -66,12 +66,12 @@ namespace pips_options
 
    inline void setDoubleParameter(const std::string& identifier, double value)
    {
-      StochOptions::getInstance().setIntParam(identifier, value);
+      StochOptions::getInstance().setDoubleParam(identifier, value);
    }
 
    inline void setBoolParameter(const std::string& identifier, bool value)
    {
-      StochOptions::getInstance().setIntParam(identifier, value);
+      StochOptions::getInstance().setBoolParam(identifier, value);
    }
 
    inline int getIntParameter(const std::string& identifier)

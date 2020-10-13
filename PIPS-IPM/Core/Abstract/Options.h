@@ -58,8 +58,8 @@ namespace base_options
       bool getBoolParam(const std::string& identifier) const;
 
       void setIntParam(const std::string& param, int value);
-      void setBoolParam(const std::string& param, int value);
-      void setDoubleParam(const std::string& param, int value);
+      void setBoolParam(const std::string& param, bool value);
+      void setDoubleParam(const std::string& param, double value);
    };
 
    inline int getIntParameter(const std::string& identifier)

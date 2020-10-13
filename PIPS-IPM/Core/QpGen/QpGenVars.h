@@ -77,6 +77,10 @@ public:
 
   virtual ~QpGenVars();
   
+  double getAverageDistanceToBoundForConvergedVars( const Data& data, double tol ) const;
+
+  void pushSlacksFromBound( double tol, double amount );
+
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
   virtual double mu();
 
@@ -170,11 +174,16 @@ public:
   
   virtual void copy(const Variables *b);
 
-  virtual double onenorm();
+  double onenorm() const override;
 
-  virtual double infnorm();
+  double infnorm() const override;
 
   void setToZero() override;
+
+  void printNorms() const override;
+
+  void setNotIndicatedBoundsTo( Data& data, double value ) override;
+
 };
 
 /** Indicates what type is the blocking variable in the step length

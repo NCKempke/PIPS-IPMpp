@@ -56,5 +56,7 @@ namespace qpgen_options
       int_options["OUTER_BICG_MAX_ITER"] = 75;
       int_options["OUTER_BICG_MAX_NORMR_DIVERGENCES"] = 4;
       int_options["OUTER_BICG_MAX_STAGNATIONS"] = 4;
+
+      bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
    }
 }

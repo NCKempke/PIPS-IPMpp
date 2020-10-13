@@ -57,6 +57,13 @@ namespace pips_options
       /** should the amount of gondzio correctors be scheduled dynamically - invalidates the max correctors setting */
       bool_options["GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE"] = false;
 
+      /** should relatively early converged variables be pushed away artificially from their bounds */
+      bool_options["GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND"] = false;
+      /** at which frequency should converged variables be pushed away from their bounds */
+      int_options["GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS"] = 4;
+      /** starting with which mu should the pushing be done */
+      double_options["GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS"] = 1e-3;
+
       /// SOLVER CONTROLS
 
       int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 64;
@@ -77,6 +84,7 @@ namespace pips_options
       int_options["INNER_SC_SOLVE"] = 0;
 
       /// OUTER BIGCSTAB
+      double_options["OUTER_BICG_TOL"] = 1e-10;
       double_options["OUTER_BICG_EPSILON"] = 1e-15;
 
       bool_options["OUTER_BICG_PRINT_STATISTICS"] = false;
@@ -84,6 +92,8 @@ namespace pips_options
       int_options["OUTER_BICG_MAX_ITER"] = 75;
       int_options["OUTER_BICG_MAX_NORMR_DIVERGENCES"] = 4;
       int_options["OUTER_BICG_MAX_STAGNATIONS"] = 4;
+
+      bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
 
       setPresolveDefaults();
    }

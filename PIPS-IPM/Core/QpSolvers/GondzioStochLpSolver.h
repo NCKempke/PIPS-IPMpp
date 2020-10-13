@@ -32,6 +32,8 @@ private:
 
   void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step,
         double alpha_primal, double alpha_dual) const;
+  void doProbing_pd( Data* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual );
+
 public:
 
   GondzioStochLpSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler = nullptr );

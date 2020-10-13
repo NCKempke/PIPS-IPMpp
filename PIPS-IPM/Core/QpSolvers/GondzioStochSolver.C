@@ -53,7 +53,11 @@ GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Data * prob, c
     max_additional_correctors( pips_options::getIntParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX") ),
     first_iter_small_correctors( pips_options::getIntParameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS") ),
     max_alpha_small_correctors( pips_options::getDoubleParameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS") ),
-    NumberSmallCorrectors(0), bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
+    NumberSmallCorrectors(0),
+    push_converged_vars_from_bound( pips_options::getBoolParameter("GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND") ),
+    fequency_push_converged_vars_from_bound( pips_options::getIntParameter("GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS") ),
+    mu_limit_push_converged_vars_from_bound( pips_options::getDoubleParameter("GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS") ),
+    bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
     dynamic_bicg_tol(pips_options::getBoolParameter("OUTER_BICG_DYNAMIC_TOL"))
 {
    assert(max_additional_correctors > 0);
@@ -128,7 +132,6 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    QpGenStoch* stochFactory = reinterpret_cast<QpGenStoch*>(factory);
    g_iterNumber = 0.0;
 
-   bool small_corr_aggr = false;
    bool pure_centering_step = false;
    bool numerical_troubles = false;
    bool precond_limit = false;
@@ -156,7 +159,13 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    do
    {
       iter++;
+
+      if( false )
+         iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
+      pushConvergedVarsAwayFromBounds(*prob, *iterate);
+
       setBiCGStabTol(iter);
+      bool small_corr = false;
 
       stochFactory->iterateStarted();
 
@@ -178,23 +187,8 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       // *** Predictor step ***
       if( !pure_centering_step )
       {
-         resid->set_r3_xz_alpha(iterate, 0.0);
-
-         sys->factor(prob, iterate);
-         sys->solve(prob, iterate, resid, step);
-         step->negate();
-
-         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm >= resid->residualNorm() )
-         {
-            PIPSdebugMessage("Affine step computation in BiCGStab failed");
-            numerical_troubles = true;
-            if( !small_corr_aggr )
-            {
-               if( my_rank == 0 )
-                  std::cout << "switching to small correctors aggressive" << std::endl;
-               small_corr_aggr = true;
-            }
-         }
+         computePredictorStep( prob, iterate, resid );
+         checkLinsysSolveNumericalTroublesAndReact( resid, numerical_troubles, small_corr );
       }
       else
          step->setToZero();
@@ -215,27 +209,8 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
 
       g_iterNumber += 1.0;
 
-      // *** Corrector step ***
-      corrector_resid->clear_r1r2();
-
-      // form right hand side of linear system:
-      corrector_resid->set_r3_xz_alpha(step, -sigma * mu);
-
-      sys->solve(prob, iterate, corrector_resid, corrector_step);
-      corrector_step->negate();
-
-      // if the corrector fails refactorize
-      if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
-      {
-         PIPSdebugMessage("corrector step computation in BiCGStab failed");
-         numerical_troubles = true;
-         if( !small_corr_aggr )
-         {
-            if( my_rank == 0 )
-               std::cout << "switching to small correctors aggressive" << std::endl;
-            small_corr_aggr = true;
-         }
-      }
+      computeCorrectorStep( prob, iterate, sigma, mu );
+      checkLinsysSolveNumericalTroublesAndReact( resid, numerical_troubles, small_corr );
 
       // calculate weighted predictor-corrector step
       double weight_candidate = -1.0;
@@ -259,7 +234,6 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       NumberSmallCorrectors = 0;
 
       // if small_corr_aggr only try small correctors
-      bool small_corr = small_corr_aggr;
 
       // enter the Gondzio correction loop:
       while( NumberGondzioCorrections < maximum_correctors
@@ -279,42 +253,17 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
          corrector_step->saxpy(step, alpha_target);
          // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
-         // place XZ into the r3 component of corrector_resids
-         corrector_resid->set_r3_xz_alpha(corrector_step, 0.0);
+         /* compute corrector step */
+         computeGondzioCorrector(prob, iterate, rmin, rmax, small_corr);
+         const bool was_small_corr = small_corr;
+         checkLinsysSolveNumericalTroublesAndReact(resid, numerical_troubles, small_corr);
 
-         // do the projection operation
-         if( small_corr )
-            corrector_resid->project_r3(rmin, std::numeric_limits<double>::infinity());
-         else
-            corrector_resid->project_r3(rmin, rmax);
-
-         // solve for corrector direction
-         sys->solve(prob, iterate, corrector_resid, corrector_step);	// corrector_step is now delta_m
-
-         /* if a normal corrector did not converge - discard it, try a small corr one and set small correctors to aggressive */
-         if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
+         if( numerical_troubles )
          {
-            PIPSdebugMessage("Gondzio corrector step computation in BiCGStab failed - break corrector loop");
-
-            // try small correctors to improve centering and numerical stability
-            if( !small_corr )
-            {
-               if( !small_corr_aggr )
-               {
-                  if( my_rank == 0 )
-                     std::cout << "switching to small correctors aggressive" << std::endl;
-                  small_corr_aggr = true;
-               }
-               if( my_rank == 0 )
-               {
-                  std::cout << "Switching to small corrector " << std::endl;
-                  std::cout << "Alpha when switching: " << alpha << std::endl;
-               }
-               small_corr = true;
+            if( !was_small_corr && small_corr )
                continue;
-            }
-            // exit corrector loop if small correctors have already been tried
             else
+               // exit corrector loop if small correctors have already been tried or are not allowed
                break;
          }
 
@@ -328,7 +277,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
             step->saxpy(corrector_step, weight_candidate);
             alpha = alpha_enhanced;
 
-            if( small_corr && !small_corr_aggr )
+            if( small_corr )
                NumberSmallCorrectors++;
 
             NumberGondzioCorrections++;
@@ -344,7 +293,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
             step->saxpy(corrector_step, weight_candidate);
             alpha = alpha_enhanced;
 
-            if( small_corr && !small_corr_aggr )
+            if( small_corr )
                NumberSmallCorrectors++;
 
             NumberGondzioCorrections++;
@@ -375,30 +324,17 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       // We've finally decided on a step direction, now calculate the
       // length using Mehrotra's heuristic.x
       alpha = finalStepLength(iterate, step);
+      assert( alpha != 0 );
 
       // alternatively, just use a crude step scaling factor.
       // alpha = 0.995 * iterate->stepbound( step );
 
-      // if we encountered numerical troubles while computing the step check enter a probing round
+      // if we encountered numerical troubles while computing the step enter a probing round
       if( numerical_troubles )
       {
          if( !precond_limit )
             precond_limit = decreasePreconditionerImpact(sys);
-
-         const double mu_last = iterate->mu();
-         const double resids_norm_last = resid->residualNorm();
-
-         computeProbingStep(temp_step, iterate, step, alpha);
-
-         resid->calcresids(prob, temp_step, false);
-         const double mu_probing = temp_step->mu();
-         const double resids_norm_probing = resid->residualNorm();
-
-         const double factor = computeStepFactorProbing(resids_norm_last, resids_norm_probing,
-               mu_last, mu_probing);
-
-         alpha = factor * alpha;
-
+         doProbing(prob, iterate, resid, alpha);
          if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_limit, alpha ) )
             continue;
       }
@@ -421,6 +357,56 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    }
 
    return status_code;
+}
+
+void GondzioStochSolver::computePredictorStep( Data* prob, Variables* iterate, Residuals* resid )
+{
+   resid->set_r3_xz_alpha(iterate, 0.0);
+   sys->factor(prob, iterate);
+   sys->solve(prob, iterate, resid, step);
+   step->negate();
+}
+
+void GondzioStochSolver::computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu )
+{
+   corrector_resid->clear_r1r2();
+   // form right hand side of linear system:
+   corrector_resid->set_r3_xz_alpha(step, -sigma * mu);
+
+   sys->solve(prob, iterate, corrector_resid, corrector_step);
+   corrector_step->negate();
+}
+
+void GondzioStochSolver::computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr )
+{
+   // place XZ into the r3 component of corrector_resids
+   corrector_resid->set_r3_xz_alpha(corrector_step, 0.0);
+   if( small_corr )
+      assert( additional_correctors_small_comp_pairs );
+   // do the projection operation
+   if( small_corr )
+      corrector_resid->project_r3(rmin, std::numeric_limits<double>::infinity());
+   else
+      corrector_resid->project_r3(rmin, rmax);
+
+   // solve for corrector direction
+   sys->solve(prob, iterate, corrector_resid, corrector_step); // corrector_step is now delta_m
+}
+
+
+void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr) const
+{
+   if( !bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > resid->residualNorm() )
+   {
+      PIPSdebugMessage("Step computation in BiCGStab failed");
+      numerical_troubles = true;
+      if( additional_correctors_small_comp_pairs && !small_corr )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+            std::cout << "switching to small correctors" << std::endl;
+         small_corr = true;
+      }
+   }
 }
 
 void GondzioStochSolver::registerBiCGStabOvserver(LinearSystem* sys)
@@ -499,31 +485,61 @@ void GondzioStochSolver::computeProbingStep(Variables* probing_step, const Varia
    probing_step->saxpy(step, alpha);
 }
 
+void GondzioStochSolver::doProbing( Data* prob, Variables* iterate, Residuals* resid, double& alpha )
+{
+   const double mu_last = iterate->mu();
+   const double resids_norm_last = resid->residualNorm();
+
+   computeProbingStep(temp_step, iterate, step, alpha);
+
+   resid->calcresids(prob, temp_step, false);
+   const double mu_probing = temp_step->mu();
+   const double resids_norm_probing = resid->residualNorm();
+
+   const double factor = computeStepFactorProbing(resids_norm_last, resids_norm_probing,
+         mu_last, mu_probing);
+
+   alpha = factor * alpha;
+}
+
+/* when numerical troubles occured we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
 double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing,
       double mu_last, double mu_probing) const
 {
+   assert( resids_norm_last > 0.0 );
+   assert( resids_norm_probing > 0.0 );
+
    double factor = 1.0;
-   const double limit_resids = std::max( artol * dnorm, resids_norm_last );
+   const double limit_resids = 10.0 * std::max( artol * dnorm, resids_norm_last );
 
    if( resids_norm_probing > limit_resids )
    {
+      assert( resids_norm_probing > resids_norm_last );
+      assert( limit_resids > resids_norm_last );
       const double resids_diff = resids_norm_probing - resids_norm_last;
       const double resids_max_change = limit_resids - resids_norm_last;
-      assert( resids_diff > 0 ); assert( resids_max_change > 0 );
+      assert( resids_diff > 0.0 ); assert( resids_max_change > 0.0 );
       assert( resids_max_change < resids_diff );
 
       factor = std::min(factor, resids_max_change / resids_diff * 0.9995 );
    }
 
-   if( mu_probing > 10 * mu_last )
+   const double mu_limit = 10.0 * mu_last;
+   if( mu_probing > mu_limit )
    {
+      assert( mu_probing > mu_last );
+      assert( mu_limit > mu_last );
       const double mu_diff = mu_probing - mu_last;
-      const double mu_max_change = 10 * mu_last - mu_probing;
-      assert( mu_diff > 0 ); assert( mu_max_change > 0 );
+      const double mu_max_change = mu_limit - mu_last;
+      assert( mu_diff > 0.0 ); assert( mu_max_change > 0.0 );
       assert( mu_max_change < mu_diff );
 
       factor = std::min(factor, mu_max_change / mu_diff * 0.9995 );
    }
+
+   assert( 0.0 < factor );
+   assert( factor <= 1.0 );
+
    return factor;
 }
 
@@ -546,6 +562,26 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep( bool& pure_centering_s
       return true;
    }
    return false;
+}
+
+void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const
+{
+   if( push_converged_vars_from_bound && (iter % fequency_push_converged_vars_from_bound) == 0 && vars.mu() < mu_limit_push_converged_vars_from_bound )
+   {
+      QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
+
+      const double convergence_tol = 1e-8;
+      const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars( data, convergence_tol );
+
+      if( average_dist < 1e-8 )
+      {
+         if(PIPS_MPIgetRank() == 0 )
+            std::cout << "Pushing converged vars away from bound: avg_dist: " << average_dist << std::endl;
+         qpvars.pushSlacksFromBound( average_dist / 10.0 , average_dist );
+      }
+      else if( PIPS_MPIgetRank() == 0 )
+         std::cout << "No push done.. avg was : " << average_dist << std::endl;
+   }
 }
 
 

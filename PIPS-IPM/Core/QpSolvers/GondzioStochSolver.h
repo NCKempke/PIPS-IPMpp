@@ -46,11 +46,24 @@ protected:
 
   int NumberSmallCorrectors;
 
+  /* should early converged variables push away a bit from their respecitve bounds */
+  const bool push_converged_vars_from_bound;
+  /* at which frequnecy should small vars be checked */
+  const int fequency_push_converged_vars_from_bound;
+  /* starting with which mu should checking start */
+  const double mu_limit_push_converged_vars_from_bound;
+
   /* observer stuff for checking convergence of BiCGStab */
   bool bicgstab_skipped;
   bool bicgstab_converged;
   double bigcstab_norm_res_rel;
   int bicg_iterations;
+
+  void computePredictorStep( Data* prob, Variables* iterate, Residuals* resid );
+  void computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu );
+  void computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr );
+
+  void checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr) const;
 
   void registerBiCGStabOvserver(LinearSystem* sys);
 
@@ -67,8 +80,11 @@ protected:
 
   void computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step,
         double alpha) const;
+  void doProbing( Data* prob, Variables* iterate, Residuals* resid, double& alpha );
 
   bool restartIterateBecauseOfPoorStep( bool& pure_centering_step, bool precond_limit, double alpha_max) const;
+
+  void pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const;
 public:
 
   GondzioStochSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler = nullptr );

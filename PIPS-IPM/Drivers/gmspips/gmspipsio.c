@@ -1367,6 +1367,9 @@ int readBlock(const int numBlocks,       /** < total number of blocks n in probl
    if (rc)
    {
       printf("Could not open GDX file %s (errNr=%d)\n", gdxFilename, rc);
+      char s[GMS_SSSIZE];
+      gdxErrorStr(fGDX, rc, s);
+      printf("GDX Error for GDX file: %s\n",s);
       return 1;
    }
 

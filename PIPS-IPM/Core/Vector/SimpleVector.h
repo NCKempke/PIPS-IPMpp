@@ -78,6 +78,8 @@ public:
   void componentDiv( const OoqpVectorBase<T>& v ) override;
   bool componentEqual( const OoqpVectorBase<T>& vec, T tol) const override;
   bool componentNotEqual( const T val, const T tol ) const override;
+  void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
+
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamAll( std::ostream& out ) const override;
   void writeToStreamAllStringStream( std::stringstream& sout ) const override;
@@ -149,6 +151,10 @@ public:
   void removeEntries(const OoqpVectorBase<int>& select) override;
 
   void permuteEntries(const std::vector<unsigned int>& permvec);
+
+  void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
+
+  void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
 
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };

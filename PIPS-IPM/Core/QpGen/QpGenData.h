@@ -129,9 +129,11 @@ public:
   /** extract the diagonal of Q and put it in the OoqpVector dQ */
   virtual void getDiagonalOfQ( OoqpVector& dQ );
 
-  virtual OoqpVector&  xupperBound() { return *bux; };
+  virtual OoqpVector& xupperBound() { return *bux; };
+  virtual const OoqpVector& xupperBound() const { return *bux; };
   virtual OoqpVector& ixupperBound() { return *ixupp; };
-  virtual OoqpVector&  xlowerBound() { return *blx; };
+  virtual OoqpVector& xlowerBound() { return *blx; };
+  virtual const OoqpVector& xlowerBound() const { return *blx; };
   virtual OoqpVector& ixlowerBound() { return *ixlow; };
   virtual OoqpVector&  supperBound() { return *bu; };
   virtual OoqpVector& isupperBound() { return *icupp; };

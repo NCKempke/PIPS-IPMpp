@@ -67,12 +67,12 @@ namespace base_options
       int_options[param] = value;
    }
 
-   void Options::setBoolParam(const std::string& param, int value)
+   void Options::setBoolParam(const std::string& param, bool value)
    {
       bool_options[param] = value;
    }
 
-   void Options::setDoubleParam(const std::string& param, int value)
+   void Options::setDoubleParam(const std::string& param, double value)
    {
       double_options[param] = value;
    }
@@ -80,7 +80,7 @@ namespace base_options
    void Options::fillOptionsFromFile(const std::string& filename)
    {
       std::ifstream params;
-      params.open(filename, std::ios::in);
+      params.open(filename.c_str(), std::ios::in);
       const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
       if( !params.good() )
