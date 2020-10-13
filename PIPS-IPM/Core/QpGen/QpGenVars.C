@@ -15,6 +15,7 @@
 
 #include <iostream> 
 #include <fstream>
+#include <limits>
 using namespace std;
 
 QpGenVars::QpGenVars( OoqpVector * x_in, OoqpVector * s_in,
@@ -171,6 +172,26 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    z = OoqpVectorHandle( vars.z->cloneFull() );
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
+
+double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, double convergence_tol ) const
+{
+   assert( 0 < convergence_tol );
+   const OoqpVector& xupp = dynamic_cast<const QpGenData&>(data).xupperBound();
+   const OoqpVector& xlow = dynamic_cast<const QpGenData&>(data).xlowerBound();
+
+   assert( xupp.matchesNonZeroPattern(*ixupp) );
+   assert( xlow.matchesNonZeroPattern(*ixlow) );
+
+   double sum_dist = 0.0;
+   int n_close = 0;
+   x->getAverageDistanceToBoundIfClose( xupp, *ixupp, xlow, *ixlow, convergence_tol, sum_dist, n_close );
+
+   if( n_close == 0 )
+      return std::numeric_limits<double>::infinity();
+   else
+      return sum_dist / (double) n_close;
+}
+
 
 void QpGenVars::pushFromBound( const Data& data, double tol, double amount )
 {
