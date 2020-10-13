@@ -155,8 +155,12 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    do
    {
       iter++;
-      setBiCGStabTol(iter);
 
+      if( false )
+         iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
+      pushConvergedVarsAwayFromBounds(*prob, *iterate);
+
+      setBiCGStabTol(iter);
       bool small_corr = false;
 
       stochFactory->iterateStarted();
@@ -554,6 +558,24 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep( bool& pure_centering_s
       return true;
    }
    return false;
+}
+
+void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const
+{
+   if( iter % 8 == 0 && vars.mu() < 1e-3 )
+   {
+      QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
+
+      const double convergence_tol = 1e-8;
+      const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars( data, convergence_tol );
+
+      if( average_dist < 1e-8 )
+      {
+         if(PIPS_MPIgetRank() == 0 )
+            std::cout << "Pushing converged vars away from bound: avg_dist: " << average_dist << std::endl;
+         qpvars.pushFromBound( data, average_dist / 10.0 , average_dist );
+      }
+   }
 }
 
 

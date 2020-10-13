@@ -76,6 +76,8 @@ protected:
   void doProbing( Data* prob, Variables* iterate, Residuals* resid, double& alpha );
 
   bool restartIterateBecauseOfPoorStep( bool& pure_centering_step, bool precond_limit, double alpha_max) const;
+
+  void pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const;
 public:
 
   GondzioStochSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler = nullptr );
