@@ -1050,5 +1050,46 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
    delete[] buffer;
 }
 
+template<typename T>
+void SimpleVectorBase<T>::getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
+      const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const
+{
+   if( this->n == 0 )
+      return;
+
+   assert( this->n == xupp.n );
+   assert( this->n == xlow.n );
+   assert( this->n == ixupp.n );
+   assert( this->n == ixlow.n );
+
+   const SimpleVectorBase<T>& xupps = dynamic_cast<const SimpleVectorBase<T>&>(xupp);
+   const SimpleVectorBase<T>& ixupps = dynamic_cast<const SimpleVectorBase<T>&>(ixupp);
+   const SimpleVectorBase<T>& xlows = dynamic_cast<const SimpleVectorBase<T>&>(xlow);
+   const SimpleVectorBase<T>& ixlows = dynamic_cast<const SimpleVectorBase<T>&>(ixlow);
+
+   for( int i = 0; i < this->n; ++i )
+   {
+      const bool upper_close = PIPSisEQ(ixupps[i], 1) ? PIPSisEQ( xupps[i], this->v[i], convergence_tol ) : false;
+      const bool lower_close = PIPSisEQ(ixlows[i], 1) ? PIPSisEQ( xlows[i], this->v[i], convergence_tol ) : false;
+
+      if( upper_close && lower_close)
+         continue;
+      else if( upper_close )
+      {
+         const double dist = xupps[i] - v[i];
+         assert( 0 <= dist );
+         sum_dist += dist;
+         ++n_close;
+      }
+      else if( lower_close )
+      {
+         const double dist = v[i] - xlows[i];
+         assert( 0 <= dist );
+         sum_dist += dist;
+         ++n_close;
+      }
+   }
+}
+
 template class SimpleVectorBase<int>;
 template class SimpleVectorBase<double>;

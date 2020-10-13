@@ -154,6 +154,9 @@ public:
 
   void permuteEntries(const std::vector<unsigned int>& permvec);
 
+  void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
+        const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const override;
+
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };
 };

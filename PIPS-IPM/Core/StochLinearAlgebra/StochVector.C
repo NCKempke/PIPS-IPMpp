@@ -1227,6 +1227,45 @@ void StochVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVecto
 }
 
 template<typename T>
+void StochVectorBase<T>::getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
+      const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const
+{
+   const StochVectorBase<T>& xupps = dynamic_cast<const StochVectorBase<T>&>(xupp);
+   const StochVectorBase<T>& xlows = dynamic_cast<const StochVectorBase<T>&>(xlow);
+   const StochVectorBase<T>& ixupps = dynamic_cast<const StochVectorBase<T>&>(ixupp);
+   const StochVectorBase<T>& ixlows = dynamic_cast<const StochVectorBase<T>&>(ixlow);
+
+   for( size_t i = 0; i < this->children.size(); ++i )
+      this->children[i]->getAverageDistanceToBoundIfClose( *xupps.children[i], *ixupps.children[i],
+            *xlows.children[i], *ixlows.children[i], convergence_tol, sum_dist, n_close);
+
+   PIPS_MPIgetSumInPlace(sum_dist, mpiComm);
+   PIPS_MPIgetSumInPlace(n_close, mpiComm);
+
+   if( vec )
+   {
+      assert(xupps.vec);
+      assert(xlows.vec);
+      assert(ixupps.vec);
+      assert(ixlows.vec);
+
+      vec->getAverageDistanceToBoundIfClose( *xupps.vec, *ixupps.vec, *xlows.vec, *ixlows.vec, convergence_tol, sum_dist, n_close);
+   }
+
+   if( vecl )
+   {
+      assert(xupps.vecl);
+      assert(xlows.vecl);
+      assert(ixupps.vecl);
+      assert(ixlows.vecl);
+
+      vecl->getAverageDistanceToBoundIfClose( *xupps.vecl, *ixupps.vecl, *xlows.vecl, *ixlows.vecl, convergence_tol, sum_dist, n_close);
+   }
+
+}
+
+
+template<typename T>
 void StochVectorBase<T>::writeToStream( std::ostream& out ) const
 {
   out << "---" << std::endl;

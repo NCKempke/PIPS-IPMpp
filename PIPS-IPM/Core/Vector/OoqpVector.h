@@ -290,6 +290,11 @@ public:
   /** Copy the absolute values of elements of v_in into this OoqpVector object. */
   virtual void copyFromAbs(const OoqpVectorBase<T>& v) = 0;
 
+  /** Compute the average distance to the given bounds if one is already as close as convergence_tol */
+  virtual void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp,
+        const OoqpVectorBase<T>& xlow, const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const
+  { assert( 0 && "not implemented here" ); };
+
   virtual OoqpVectorBase<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };
   virtual OoqpVectorBase<T>* cloneFull() const { assert(0 && "not implemented here"); return nullptr; };
 };

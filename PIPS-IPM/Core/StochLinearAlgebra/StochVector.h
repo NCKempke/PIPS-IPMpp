@@ -18,8 +18,6 @@ private:
   void writeToStreamAllChild( std::stringstream& sout ) const override;
 
 public:
-  void pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select ) override;
-
   StochVectorBase( int n, MPI_Comm mpiComm, int isDistributed = -1);
   StochVectorBase( int n, int nl, MPI_Comm mpiComm, int isDistributed);
   virtual ~StochVectorBase();
@@ -102,6 +100,7 @@ public:
    void componentDiv ( const OoqpVectorBase<T>& v ) override;
    bool componentEqual( const OoqpVectorBase<T>& v , T tol) const override;
    bool componentNotEqual( const T val, T const tol ) const override;
+
    void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
 
    void scalarMult( T num ) override;
@@ -169,6 +168,10 @@ public:
    int getNnzs() const override;
 
    virtual bool isRootNodeInSync() const;
+
+   void pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select ) override;
+   void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
+         const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close) const override;
 
 };
 
@@ -306,7 +309,8 @@ public:
 
    bool isRootNodeInSync() const override { return true; };
    void pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select ) override {};
-
+   void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp,
+         const OoqpVectorBase<T>& xlow, const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const override {};
 };
 
 #endif
