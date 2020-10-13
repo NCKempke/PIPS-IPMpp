@@ -86,6 +86,8 @@ protected:
   const int outer_bicg_max_normr_divergences;
   const int outer_bicg_max_stagnations;
 
+  const bool xyzs_solve_print_residuals;
+
 public:
   QpGenLinsys(  QpGen * factory,
 		QpGenData * data,

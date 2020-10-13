@@ -151,7 +151,8 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPacka
   outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
   outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
   outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-  outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS"))
+  outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+  xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL") )
 {
   nx = prob->nx; my = prob->my; mz = prob->mz;
   const int len_x = nx + my + mz;
@@ -217,7 +218,8 @@ QpGenLinsys::QpGenLinsys()
    outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
    outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
    outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-   outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS"))
+   outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+   xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL") )
 {
 }
 
@@ -417,10 +419,13 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
    /* rz = rC - */
   stepz.axzpy( -1.0, *nomegaInv, steps );
 
-#if 0 
-  OoqpVector * residual = rhs->cloneFull();
-  this->joinRHS(*residual, stepx, stepy, stepz);
-#endif
+  OoqpVector * residual = nullptr;
+  if( xyzs_solve_print_residuals )
+  {
+     residual = rhs->cloneFull();
+     this->joinRHS(*residual, stepx, stepy, stepz);
+  }
+
   if( outerSolve == 1 ) {
     ///////////////////////////////////////////////////////////////
     // Iterative refinement
@@ -445,27 +450,28 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     notifyObservers();
 
   }
-#if 0
-  const double bnorm = residual->infnorm();
-  this->joinRHS(*sol, stepx, stepy, stepz);
-  this->matXYZMult(1.0, *residual, -1.0, *sol, prob, stepx, stepy, stepz);
 
-  const double resnorm = residual->infnorm();
-
-  this->separateVars( *resx, *resy, *resz, *residual );
-  const double resxnorm = resx->infnorm();
-  const double resynorm = resy->infnorm();
-  const double resznorm = resz->infnorm();
-
-  if( PIPS_MPIgetRank() == 0 )
+  if( xyzs_solve_print_residuals )
   {
-     cout << "bnorm " << bnorm << std::endl;
-     cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << endl;
-     cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << endl;
-     cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << std::endl;
+     const double bnorm = residual->infnorm();
+     this->joinRHS(*sol, stepx, stepy, stepz);
+     this->matXYZMult(1.0, *residual, -1.0, *sol, prob, stepx, stepy, stepz);
+
+     this->separateVars( *resx, *resy, *resz, *residual );
+     const double resxnorm = resx->infnorm();
+     const double resynorm = resy->infnorm();
+     const double resznorm = resz->infnorm();
+
+     if( PIPS_MPIgetRank() == 0 )
+     {
+        cout << "bnorm " << bnorm << std::endl;
+        cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << endl;
+        cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << endl;
+        cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << std::endl;
+     }
+     delete residual;
   }
-  delete residual;
-#endif
+
   stepy.negate();
   stepz.negate();
 	
