@@ -426,7 +426,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
      this->joinRHS(*residual, stepx, stepy, stepz);
 
      const double xinf = stepx.infnorm();
-     const double yinf = stepx.infnorm();
+     const double yinf = stepy.infnorm();
      const double zinf = stepz.infnorm();
 
      if( PIPS_MPIgetRank() == 0 )
