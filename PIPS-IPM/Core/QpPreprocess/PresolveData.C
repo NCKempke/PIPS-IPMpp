@@ -1183,7 +1183,8 @@ INDEX PresolveData::getRowMarkedAsImplyingColumnBound(const INDEX& col, bool upp
 
 void PresolveData::markRowAsImplyingColumnBound(const INDEX& col, const INDEX& row, bool upper_bound)
 {
-   assert( row.isRow() );
+   // if row.isEmpty() the row is sitting on another process and we cannot do much with the info that the bound is implied
+   assert( row.isRow() || row.isEmpty() );
    assert( col.isCol() );
 
    StochVectorBaseHandle<int>& by_node = upper_bound ? upper_bound_implied_by_node : lower_bound_implied_by_node;
@@ -1577,14 +1578,17 @@ bool PresolveData::rowPropagatedBounds( const INDEX& row, const INDEX& col, doub
          postsolver->notifyRowPropagatedBound( row, col, xupp_old, xupp_new, true, getSystemMatrix(row.getSystemType()) );
    }
 
-   if( (lower_bound_changed || upper_bound_changed) && row.isLinkingRow() && !at_root_node )
+   if( row.isRow() )
    {
-      postsolve_linking_row_propagation_needed = true;
+      if( (lower_bound_changed || upper_bound_changed) && row.isLinkingRow() && !at_root_node )
+      {
+         postsolve_linking_row_propagation_needed = true;
 
-      if( row.inEqSys() )
-         store_linking_row_boundTightening_A[row.getIndex()] = 1;
-      else
-         store_linking_row_boundTightening_C[row.getIndex()] = 1;
+         if( row.inEqSys() )
+            store_linking_row_boundTightening_A[row.getIndex()] = 1;
+         else
+            store_linking_row_boundTightening_C[row.getIndex()] = 1;
+      }
    }
 
    outdated_linking_var_bounds = false;
