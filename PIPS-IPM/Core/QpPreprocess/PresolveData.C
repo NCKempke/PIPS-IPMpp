@@ -2193,7 +2193,6 @@ void PresolveData::removeRedundantRow( const INDEX& row )
          {
             assert(max_ubndd <= 1);
 
-            std::cout << max_act << " " << rhs << std::endl;
             if( max_ubndd == 0 )
                assert(PIPSisLEFeas(max_act, rhs));
          }
