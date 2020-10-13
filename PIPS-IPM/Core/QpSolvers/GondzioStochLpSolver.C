@@ -148,14 +148,12 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
 
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
+      pushConvergedVarsAwayFromBounds(*prob, *iterate);
 
       setBiCGStabTol(iter);
-
       bool small_corr = false;
 
       stochFactory->iterateStarted();
-
-      //dynamic_cast<QpGenVars&>(*iterate).pushFromBound( *prob, 1e-14, 1e-12 );
 
       // evaluate residuals and update algorithm status:
       resid->calcresids(prob, iterate);
