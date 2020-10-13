@@ -1202,66 +1202,45 @@ void StochVectorBase<T>::writeToStreamAllChild( std::stringstream& sout ) const
 }
 
 template<typename T>
-void StochVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select )
+void StochVectorBase<T>::pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select )
 {
-   const StochVectorBase<T>& others = dynamic_cast<const StochVectorBase<T>&>(other);
    const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
-   StochVectorBase<T>& slacks = dynamic_cast<StochVectorBase<T>&>(slack);
 
    if( vec )
-   {
-      assert( others.vec );
-      assert( slacks.vec );
-      vec->pushAwayFrom( *others.vec, *slacks.vec, tol, amount, selects ? selects->vec : nullptr );
-   }
+      vec->pushAwayFromZero( tol, amount, selects ? selects->vec : nullptr );
 
    if( vecl )
-   {
-      assert( others.vecl );
-      assert( slacks.vecl );
-      vec->pushAwayFrom( *others.vecl, *slacks.vecl, tol, amount, selects ? selects->vecl : nullptr );
-   }
+      vec->pushAwayFromZero( tol, amount, selects ? selects->vecl : nullptr );
 
-   for( size_t i = 0; i < others.children.size(); ++i )
-      this->children[i]->pushAwayFrom(*others.children[i], *slacks.children[i], tol, amount, selects ? selects->children[i] : nullptr );
+   for( size_t i = 0; i < this->children.size(); ++i )
+      this->children[i]->pushAwayFromZero( tol, amount, selects ? selects->children[i] : nullptr );
 }
 
 template<typename T>
-void StochVectorBase<T>::getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
-      const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const
+void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
 {
-   const StochVectorBase<T>& xupps = dynamic_cast<const StochVectorBase<T>&>(xupp);
-   const StochVectorBase<T>& xlows = dynamic_cast<const StochVectorBase<T>&>(xlow);
-   const StochVectorBase<T>& ixupps = dynamic_cast<const StochVectorBase<T>&>(ixupp);
-   const StochVectorBase<T>& ixlows = dynamic_cast<const StochVectorBase<T>&>(ixlow);
+   const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
 
    for( size_t i = 0; i < this->children.size(); ++i )
-      this->children[i]->getAverageDistanceToBoundIfClose( *xupps.children[i], *ixupps.children[i],
-            *xlows.children[i], *ixlows.children[i], convergence_tol, sum_dist, n_close);
+      this->children[i]->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->children[i] : nullptr );
 
-   PIPS_MPIgetSumInPlace(sum_dist, mpiComm);
+   PIPS_MPIgetSumInPlace(sum_small, mpiComm);
    PIPS_MPIgetSumInPlace(n_close, mpiComm);
 
    if( vec )
    {
-      assert(xupps.vec);
-      assert(xlows.vec);
-      assert(ixupps.vec);
-      assert(ixlows.vec);
+      if( selects )
+         assert(selects->vec);
 
-      vec->getAverageDistanceToBoundIfClose( *xupps.vec, *ixupps.vec, *xlows.vec, *ixlows.vec, convergence_tol, sum_dist, n_close);
+      vec->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vec : nullptr );
    }
 
    if( vecl )
    {
-      assert(xupps.vecl);
-      assert(xlows.vecl);
-      assert(ixupps.vecl);
-      assert(ixlows.vecl);
-
-      vecl->getAverageDistanceToBoundIfClose( *xupps.vecl, *ixupps.vecl, *xlows.vecl, *ixlows.vecl, convergence_tol, sum_dist, n_close);
+      if( selects )
+         assert(selects->vecl);
+      vecl->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vecl : nullptr );
    }
-
 }
 
 

@@ -577,7 +577,7 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables&
       {
          if(PIPS_MPIgetRank() == 0 )
             std::cout << "Pushing converged vars away from bound: avg_dist: " << average_dist << std::endl;
-         qpvars.pushFromBound( data, average_dist / 10.0 , average_dist );
+         qpvars.pushSlacksFromBound( average_dist / 10.0 , average_dist );
       }
       else if( PIPS_MPIgetRank() == 0 )
          std::cout << "No push done.. avg was : " << average_dist << std::endl;

@@ -77,9 +77,9 @@ public:
 
   virtual ~QpGenVars();
   
-  double getAverageDistanceToBoundForConvergedVars( const Data& data, double convergence_tol ) const;
+  double getAverageDistanceToBoundForConvergedVars( const Data& data, double tol ) const;
 
-  void pushFromBound( const Data& data, double tol, double amount );
+  void pushSlacksFromBound( double tol, double amount );
 
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
   virtual double mu();

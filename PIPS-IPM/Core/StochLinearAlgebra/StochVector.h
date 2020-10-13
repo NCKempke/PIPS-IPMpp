@@ -169,9 +169,8 @@ public:
 
    virtual bool isRootNodeInSync() const;
 
-   void pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select ) override;
-   void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
-         const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close) const override;
+   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
+   void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
 
 };
 
@@ -308,9 +307,8 @@ public:
    int getNnzs() const override { return 0; };
 
    bool isRootNodeInSync() const override { return true; };
-   void pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select ) override {};
-   void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp,
-         const OoqpVectorBase<T>& xlow, const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const override {};
+   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override {};
+   void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override {};
 };
 
 #endif

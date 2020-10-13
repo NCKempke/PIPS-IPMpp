@@ -173,38 +173,28 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
-double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, double convergence_tol ) const
+double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, double tol ) const
 {
-   assert( 0 < convergence_tol );
-   const OoqpVector& xupp = dynamic_cast<const QpGenData&>(data).xupperBound();
-   const OoqpVector& xlow = dynamic_cast<const QpGenData&>(data).xlowerBound();
+   assert( 0 < tol );
 
-   assert( xupp.matchesNonZeroPattern(*ixupp) );
-   assert( xlow.matchesNonZeroPattern(*ixlow) );
-
-   double sum_dist = 0.0;
+   double sum_small_distance = 0.0;
    int n_close = 0;
-   x->getAverageDistanceToBoundIfClose( xupp, *ixupp, xlow, *ixlow, convergence_tol, sum_dist, n_close );
+   v->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixlow );
+   w->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixupp );
 
    if( n_close == 0 )
       return std::numeric_limits<double>::infinity();
    else
-      return sum_dist / (double) n_close;
+      return sum_small_distance / (double) n_close;
 }
 
 
-void QpGenVars::pushFromBound( const Data& data, double tol, double amount )
+void QpGenVars::pushSlacksFromBound( double tol, double amount )
 {
-   const OoqpVector& xupp = dynamic_cast<const QpGenData&>(data).xupperBound();
-   const OoqpVector& xlow = dynamic_cast<const QpGenData&>(data).xlowerBound();
-
-   assert( xupp.matchesNonZeroPattern(*ixupp) );
-   assert( xlow.matchesNonZeroPattern(*ixlow) );
-
    if( nxlow > 0 )
-      x->pushAwayFrom(xlow, *v, tol, amount, &*ixlow);
+      v->pushAwayFromZero(tol, amount, &*ixlow);
    if( nxupp > 0 )
-      x->pushAwayFrom(xupp, *w, tol, amount, &*ixupp);
+      w->pushAwayFromZero(tol, amount, &*ixupp);
 }
 
 

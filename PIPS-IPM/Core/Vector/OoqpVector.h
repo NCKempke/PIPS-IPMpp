@@ -36,7 +36,7 @@ public:
   OoqpVectorBase( int n_ = 0 );
   virtual ~OoqpVectorBase();
 
-  virtual void pushAwayFrom( const OoqpVectorBase<T>& vec, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select = nullptr)
+  virtual void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select = nullptr)
      { assert( 0 && "Not implemented here" ); };
 
   /** Set all elements of this OoqpVector to zero. */
@@ -290,9 +290,8 @@ public:
   /** Copy the absolute values of elements of v_in into this OoqpVector object. */
   virtual void copyFromAbs(const OoqpVectorBase<T>& v) = 0;
 
-  /** Compute the average distance to the given bounds if one is already as close as convergence_tol */
-  virtual void getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp,
-        const OoqpVectorBase<T>& xlow, const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const
+  /** compute the sum of all entries smaller considered zero with tol and count how many*/
+  virtual void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
   { assert( 0 && "not implemented here" ); };
 
   virtual OoqpVectorBase<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };

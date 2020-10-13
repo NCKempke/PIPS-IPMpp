@@ -182,25 +182,23 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
 }
 
 template<typename T>
-void SimpleVectorBase<T>::pushAwayFrom( const OoqpVectorBase<T>& other, OoqpVectorBase<T>& slack, double tol, double amount, const OoqpVectorBase<T>* select )
+void SimpleVectorBase<T>::pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select )
 {
-   const SimpleVectorBase<T>& others = dynamic_cast<const SimpleVectorBase<T>&>(other);
-   SimpleVectorBase<T>& slacks = dynamic_cast<SimpleVectorBase<T>&>(slack);
-   assert( this->n == others.n );
+   assert( 0 < amount );
+   assert( 0 < tol );
 
    const SimpleVectorBase<T>* selects = dynamic_cast<const SimpleVectorBase<T>*>(select);
-   assert( this->n == selects->n );
+
+   if( selects )
+      assert( this->n == selects->n );
 
    for( int i = 0 ; i < this->n ; ++i )
    {
       if( selects && (*selects)[i] == 0 )
             continue;
 
-      if( std::abs( v[i] - others.v[i] ) < std::abs(tol) )
-      {
+      if( PIPSisZero( v[i], tol ) )
          v[i] += amount;
-         slacks[i] += amount;
-      }
    }
 }
 
@@ -1051,41 +1049,24 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
 }
 
 template<typename T>
-void SimpleVectorBase<T>::getAverageDistanceToBoundIfClose( const OoqpVectorBase<T>& xupp, const OoqpVectorBase<T>& ixupp, const OoqpVectorBase<T>& xlow,
-      const OoqpVectorBase<T>& ixlow, double convergence_tol, double& sum_dist, int& n_close ) const
+void SimpleVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
 {
    if( this->n == 0 )
       return;
 
-   assert( this->n == xupp.n );
-   assert( this->n == xlow.n );
-   assert( this->n == ixupp.n );
-   assert( this->n == ixlow.n );
 
-   const SimpleVectorBase<T>& xupps = dynamic_cast<const SimpleVectorBase<T>&>(xupp);
-   const SimpleVectorBase<T>& ixupps = dynamic_cast<const SimpleVectorBase<T>&>(ixupp);
-   const SimpleVectorBase<T>& xlows = dynamic_cast<const SimpleVectorBase<T>&>(xlow);
-   const SimpleVectorBase<T>& ixlows = dynamic_cast<const SimpleVectorBase<T>&>(ixlow);
+   const SimpleVectorBase<T>* selects = dynamic_cast<const SimpleVectorBase<T>*>(select);
+   if( selects )
+      assert( this->n == selects->n );
 
    for( int i = 0; i < this->n; ++i )
    {
-      const bool upper_close = PIPSisEQ(ixupps[i], 1) ? PIPSisEQ( xupps[i], this->v[i], convergence_tol ) : false;
-      const bool lower_close = PIPSisEQ(ixlows[i], 1) ? PIPSisEQ( xlows[i], this->v[i], convergence_tol ) : false;
+      const bool small = PIPSisZero( v[i], tol ) &&
+            ( (selects && PIPSisEQ( (*selects)[i], 1.0 )) || selects == nullptr );
 
-      if( upper_close && lower_close)
-         continue;
-      else if( upper_close )
+      if( small )
       {
-         const double dist = xupps[i] - v[i];
-         assert( 0 <= dist );
-         sum_dist += dist;
-         ++n_close;
-      }
-      else if( lower_close )
-      {
-         const double dist = v[i] - xlows[i];
-         assert( 0 <= dist );
-         sum_dist += dist;
+         sum_small += v[i];
          ++n_close;
       }
    }
