@@ -500,7 +500,11 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
-   const double tolb = max(n2b * tol, outer_bicg_eps);
+   const double n2b1 = stepx.twonorm();
+   const double n2b2 = stepy.twonorm();
+   const double n2b3 = stepz.twonorm();
+
+   const double tolb = max( (n2b1+ n2b2+ n2b3) / 3.0 * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
    bicg_niterations = 0;
