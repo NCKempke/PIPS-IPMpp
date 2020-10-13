@@ -424,6 +424,13 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   {
      residual = rhs->cloneFull();
      this->joinRHS(*residual, stepx, stepy, stepz);
+
+     const double xinf = stepx.infnorm();
+     const double yinf = stepx.infnorm();
+     const double zinf = stepz.infnorm();
+
+     if( PIPS_MPIgetRank() == 0 )
+        std::cout << "rhsx norm : " << xinf << ",\trhsy norm : " << yinf << ",\trhsz norm : " << zinf << std::endl;
   }
 
   if( outerSolve == 1 ) {
@@ -508,7 +515,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    //solution to the approx. system
    solveCompressed(x);
 
-   //initial residual: res=res-A*x
+   //initial residual: res = b - Ax
    r.copyFrom(b);
    matXYZMult(1.0, r, -1.0, x, data, stepx, stepy, stepz);
 
