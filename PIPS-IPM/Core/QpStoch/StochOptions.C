@@ -54,7 +54,7 @@ namespace pips_options
       bool_options["GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE"] = false;
 
       /** should relatively early converged variables be pushed away artificially from their bounds */
-      bool_options["GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND"] = true;
+      bool_options["GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND"] = false;
       /** at which frequency should converged variables be pushed away from their bounds */
       int_options["GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS"] = 4;
       /** starting with which mu should the pushing be done */
