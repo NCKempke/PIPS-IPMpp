@@ -1081,9 +1081,9 @@ void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp,
 
    finalizeZ0Hierarchical(*buffer, A0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
 
-
-
    // TODO : solve with Schur Complement
+
+
 
    // TODO : check that in hierarchical mode Schur Complement gets allreduced
 
