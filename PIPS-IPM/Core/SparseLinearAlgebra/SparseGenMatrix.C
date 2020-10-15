@@ -1044,7 +1044,7 @@ void SparseGenMatrix::addColToRow( double coeff, int col, int row )
 SparseGenMatrix* SparseGenMatrix::shaveLeft(int n_cols)
 {
    assert( !hasDynamicStorage() );
-   assert( n_cols < mStorage->n );
+   assert( n_cols <= mStorage->n );
 
    SparseStorage* border = mStorage->shaveLeft( n_cols );
 
@@ -1060,7 +1060,7 @@ SparseGenMatrix* SparseGenMatrix::shaveLeft(int n_cols)
 SparseGenMatrix* SparseGenMatrix::shaveBottom(int n_rows)
 {
    assert( !hasDynamicStorage() );
-   assert( n_rows < mStorage->m );
+   assert( n_rows <= mStorage->m );
 
    SparseStorage* border = mStorage->shaveBottom( n_rows );
 

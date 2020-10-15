@@ -413,18 +413,18 @@ void SparseSymMatrix::deleteZeroRowsCols(int*& new2orgIdx)
 
 SparseGenMatrix* SparseSymMatrix::shaveSymLeftBottom( int n_vars )
 {
-   assert( n_vars < mStorage->n );
+   assert( n_vars <= mStorage->n );
    assert( n_vars >= 0 );
    //   SparseStorage* border = mStorage->shaveSymLeftBottom( n_vars );
    // TODO : not implemented properly ..
-   assert(mStorage->len == 0);
-   assert(mStorage->m == mStorage->n);
+   assert( mStorage->len == 0 );
+   assert( mStorage->m == mStorage->n );
 
    mStorage->m -= n_vars;
    mStorage->n -= n_vars;
 
    SparseStorage* m_border = new SparseStorage(mStorage->m, n_vars, 0);
-   SparseGenMatrix* border= new SparseGenMatrix( m_border );
+   SparseGenMatrix* border = new SparseGenMatrix( m_border );
 
    return border;
 }
