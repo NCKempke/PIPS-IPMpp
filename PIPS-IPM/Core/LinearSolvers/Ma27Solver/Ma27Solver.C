@@ -157,7 +157,9 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
          done = true;
-      else if ( thresholdPivoting() >= threshold_pivoting_max || n_iter_ref > max_n_iter_refinement)
+
+      ++n_iter_ref;
+      if ( thresholdPivoting() >= threshold_pivoting_max )
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
