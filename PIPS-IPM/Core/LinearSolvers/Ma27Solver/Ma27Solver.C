@@ -178,7 +178,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       }
    }
 
-   if( !rnorm < precision * (1.0 + rhsnorm ) )
+   if( rnorm >= precision * (1.0 + rhsnorm ) )
       std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << std::endl;
 }
 
