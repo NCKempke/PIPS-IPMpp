@@ -508,8 +508,8 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
    assert( parent == nullptr );
    assert( border == nullptr );
 
-   SparseGenMatrix* const border_left = diag->shaveSymLeftBottom(n_vars);
-   StringGenMatrix* const border_vertical = new StringGenMatrix(id, true, border_left, nullptr, mpiComm);
+   SparseGenMatrix* const border_top_left = diag->shaveSymLeftBottom(n_vars);
+   StringGenMatrix* const border_vertical = new StringGenMatrix(id, true, border_top_left, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
