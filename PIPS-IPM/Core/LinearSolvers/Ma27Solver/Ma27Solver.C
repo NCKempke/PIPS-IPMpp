@@ -28,12 +28,12 @@ void Ma27Solver::init()
 
    FNAME(ma27id)(icntl, cntl);
 
-//   this->setThresholdPivoting( default_threshold_pivoting );
-//   cntl[1] = default_fratio;
-//   this->setSmallPivot( default_small_pivot );
-//
-//   icntl[0] = 0;
-//   icntl[1] = 0;
+   this->setThresholdPivoting( default_threshold_pivoting );
+   cntl[1] = default_fratio;
+   this->setSmallPivot( default_small_pivot );
+
+   icntl[0] = 0;
+   icntl[1] = 0;
 }
 
 void Ma27Solver::firstCall()
@@ -142,6 +142,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    int n_iter_ref = 0;
 
    double rnorm = -1.0;
+   double res_last = -1.0;
    /* iterative refinement loop */
    while( !done && n_iter_ref < max_n_iter_refinement )
    {
@@ -157,9 +158,11 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       /* res = res - A * drhs where A * drhs_out = drhs_in */
       rnorm = residual->twonorm();
 
-      // TODO detect stalling ..
-//      std::cout << "ITER: " << n_iter_ref << "\trnorm: " << rnorm << ", bnorm: " << rhsnorm << ", relrnorm: " << rnorm / (1.0 + rhsnorm) << ", precision: "
-//            << precision << std::endl;
+      if( PIPSisEQ(rnorm, res_last) || rnorm > 100 * best_resid )
+         done = true;
+      else
+         res_last = rnorm;
+
       if( rnorm < best_resid )
       {
          best_resid = rnorm;
@@ -172,26 +175,27 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       ++n_iter_ref;
    }
 
-//   if( n_iter_ref == max_n_iter_refinement )
-//   {
-//      if ( thresholdPivoting() >= threshold_pivoting_max )
-//      {
-//         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-//            std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
-//      }
-//      else
-//      {
-//         setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
-//
-//         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-//            std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
-//      }
-//   }
+   if( n_iter_ref == max_n_iter_refinement )
+   {
+      if ( thresholdPivoting() >= threshold_pivoting_max )
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
+      }
+      else
+      {
+         setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
+
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
+      }
+   }
 
    rnorm = best_resid;
-//   if( rnorm >= precision * (1.0 + rhsnorm ) )
-//   {
-//      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
+   if( rnorm >= precision * (1.0 + rhsnorm ) )
+   {
+      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
+   }
 //
 //      mat->writeToStreamDense(std::cout);
 //      std::cout << " b " << std::endl;
@@ -206,7 +210,6 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 //      std::cout << " resid " << std::endl;
 //      residual->writeToStreamAll(std::cout);
 ////      assert(false);
-//   }
    rhs.copyFrom(*best_iter);
 }
 

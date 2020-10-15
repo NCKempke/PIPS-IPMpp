@@ -216,7 +216,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 #endif
 
 #ifdef TIMING
-  if(mype==0) printf("data created\n");
+  if( mype == 0 ) printf("data created\n");
 #endif
 
   dataUnperm = data->cloneFull();
