@@ -15,6 +15,16 @@
 
 class BorderedSymMatrix;
 
+
+/*
+ * [ Q0  R1^T ... RN^T ]
+ * [ R1  Q1            ]
+ * [ R2     Q2         ]
+ * [ .         .       ]
+ * [ .           .     ]
+ * [ RN            QN  ]
+ */
+
 class StochSymMatrix : public SymMatrix {
 
 private:
@@ -33,7 +43,6 @@ public:
 		  int diag_n, int diag_nnz, 
 		  int border_n, int border_nnz,
 		  MPI_Comm mpiComm_);
-  //StochSymMatrix(const vector<StochSymMatrix*> &blocks); -- not needed anymore; petra
   virtual ~StochSymMatrix();
 
   std::vector<StochSymMatrix*> children;
