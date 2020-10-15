@@ -33,8 +33,8 @@ extern double g_iterNumber;
 
 int sleepFlag=0;
 
-MehrotraStochSolver::MehrotraStochSolver( ProblemFormulation * opt, Data * prob )
-  : MehrotraSolver(opt, prob)
+MehrotraStochSolver::MehrotraStochSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler )
+  : MehrotraSolver(opt, prob, scaler)
 {
 
 }
@@ -51,7 +51,7 @@ int MehrotraStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid
   sFactory* stochFactory = reinterpret_cast<sFactory*>(factory);
   gmu = 1000;
   //  grnorm = 1000;
-  dnorm = prob->datanorm();
+  setDnorm( *prob );
   // initialization of (x,y,z) and factorization routine.
   sys = factory->makeLinsys( prob );
 

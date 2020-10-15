@@ -103,6 +103,8 @@ public:
    bool componentEqual( const OoqpVectorBase<T>& v , T tol) const override;
    bool componentNotEqual( const T val, T const tol ) const override;
 
+   void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
+
    void scalarMult( T num ) override;
    void writeToStream(std::ostream& out) const override;
    void writeToStreamAll(std::ostream& out) const override;
@@ -170,6 +172,9 @@ public:
    virtual bool isRootNodeInSync() const;
 
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
+
+   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
+   void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
 };
 
 /** DUMMY VERSION
@@ -239,6 +244,8 @@ public:
    bool componentEqual( const OoqpVectorBase<T>& v, T tol) const override { if(!v.isKindOf(kStochDummy)) std::cout << "one should never end up here"
      << std::endl; return v.isKindOf(kStochDummy); };
    bool componentNotEqual( const T val, const T tol ) const override { return true; };
+   void setNotIndicatedEntriesToVal(T val, const OoqpVectorBase<T>& ind ) override {};
+
    void scalarMult( T num) override {};
    void writeToStream(std::ostream& out) const override {};
    void writeToStreamAll(std::ostream& out) const override {};
@@ -305,6 +312,9 @@ public:
    bool isRootNodeInSync() const override { return true; };
 
    StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
+
+   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override {};
+   void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override {};
 };
 
 #endif

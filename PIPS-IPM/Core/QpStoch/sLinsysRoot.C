@@ -8,6 +8,7 @@
 #include "sData.h"
 #include "sDummyLinsys.h"
 #include "sLinsysLeaf.h"
+#include "StochOptions.h"
 #include "math.h"
 
 #include "pipsport.h"
@@ -22,7 +23,6 @@ double g_scenNum;
 
 extern double g_iterNumber;
 extern bool ipStartFound;
-extern int gOuterSolve;
 
 sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
   : sLinsys(factory_, prob_, is_hierarchy_root), sparseKktBuffer(nullptr)
@@ -47,9 +47,9 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
      std::cout << "Rank 0: children created" << std::endl;
 #endif
 
-  precondSC = SCsparsifier(-1.0, mpiComm);
+  precondSC = SCsparsifier(mpiComm);
 
-  if( gOuterSolve )
+  if( outerSolve )
   {
     // stuff for iterative refimenent and BiCG
     sol  = factory_->tree->newRhs();
@@ -58,31 +58,30 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
     resy = factory_->tree->newDualYVector();
     resz = factory_->tree->newDualZVector();
 
-    if( gOuterSolve == 2 )
+    if( outerSolve == 2 )
     {
       //BiCGStab; additional vectors needed
       sol2 = factory_->tree->newRhs();
+      sol3 = factory_->tree->newRhs();
       res2 = factory_->tree->newRhs();
       res3 = factory_->tree->newRhs();
       res4 = factory_->tree->newRhs();
       res5 = factory_->tree->newRhs();
     }
     else
-      sol2 = res2 = res3 = res4 = res5 = nullptr;
+    {
+      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
+    }
   }
   else
   {
     sol  = res  = resx = resy = resz = nullptr;
-    sol2 = res2 = res3 = res4 = res5 = nullptr;
+    sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
   }
 
-#ifdef DIST_PRECOND
-  usePrecondDist = true;
-#else
-  usePrecondDist = false;
-#endif
+  usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
 
-  // use sparse KKT if link structure is present
+   // use sparse KKT if link structure is present
   hasSparseKkt = prob_->exploitingLinkStructure();
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
@@ -106,35 +105,32 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 
   createChildren(prob_);
 
-  precondSC = SCsparsifier(-1.0, mpiComm);
+  precondSC = SCsparsifier(mpiComm);
 
-  if(gOuterSolve) {
+  if( outerSolve ) {
       // stuff for iterative refimenent and BiCG 
       sol  = factory_->tree->newRhs();
       res  = factory_->tree->newRhs();
       resx = factory_->tree->newPrimalVector();
       resy = factory_->tree->newDualYVector();
       resz = factory_->tree->newDualZVector();
-    if(gOuterSolve==2) {
+    if( outerSolve == 2 ) {
       //BiCGStab; additional vectors needed
       sol2 = factory_->tree->newRhs();
+      sol3 = factory_->tree->newRhs();
       res2 = factory_->tree->newRhs();
       res3 = factory_->tree->newRhs();
       res4 = factory_->tree->newRhs();
       res5 = factory_->tree->newRhs();
     } else {
-      sol2 = res2 = res3 = res4 = res5 = nullptr;
+      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
     }
   } else {
       sol  = res  = resx = resy = resz = nullptr;
-      sol2 = res2 = res3 = res4 = res5 = nullptr;
+      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
   }
 
-#ifdef DIST_PRECOND
-  usePrecondDist = true;
-#else
-  usePrecondDist = false;
-#endif
+  usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
 
   // use sparse KKT if (enough) 2 links are present
   hasSparseKkt = prob_->exploitingLinkStructure();
@@ -1117,7 +1113,8 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
    std::vector<MatrixEntryTriplet> packedEntries(0);
 
    // add dummy value
-   packedEntries.push_back({-1.0, -1, -1});
+   const MatrixEntryTriplet entry_zero = {-1.0, -1, -1};
+   packedEntries.push_back(entry_zero);
 
    if( childStart > 0 )
    {
@@ -1141,7 +1138,8 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
                   if( PIPSisZero(val) )
                      continue;
 
-                  packedEntries.push_back({val, r, col});
+                  const MatrixEntryTriplet entry = {val, r, col};
+                  packedEntries.push_back(entry);
                }
             }
          }
@@ -1160,7 +1158,8 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
                if( PIPSisZero(val) )
                   continue;
 
-               packedEntries.push_back({val, r, col});
+               const MatrixEntryTriplet entry = {val, r, col};
+               packedEntries.push_back(entry);
             }
          }
       }
@@ -1203,6 +1202,7 @@ void sLinsysRoot::reduceKKTdist(sData* prob)
    // add B_0, F_0, G_0 and diagonals (all scattered)
    this->finalizeKKTdist(prob);
 
+   precondSC.updateDiagDomBound();
    precondSC.unmarkDominatedSCdistLocals(*prob, kkts);
 
    // compute row lengths
@@ -1426,6 +1426,9 @@ void sLinsysRoot::factorizeKKT(sData* prob)
      if( myRank == 0)
         precondSC.getSparsifiedSC_fortran(*prob, *kktDist);
 
+     // todo do that properly
+     precondSC.updateStats();
+
 #if 0
       {
          ofstream myfile;
@@ -1500,24 +1503,27 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
 
 void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
 {
-   // todo bad hack, should be removed once user parameters are available (along all global variables)
-   ipIterations = ipStartFound ? static_cast<int>(g_iterNumber) : -1;
-
    assert(childindex < prob->children.size());
-#ifdef PARDISO_BLOCKSC
-   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
-#else
-   if( hasSparseKkt )
+
+   if( computeBlockwiseSC )
    {
-      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
-      children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
+//	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, true, *kkt);
+	   children[childindex]->addTermToSchurComplBlockedParallelSolvers(prob->children[childindex], hasSparseKkt, true, *kkt);
    }
    else
    {
-      DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
-      children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
+	   if( hasSparseKkt )
+	   {
+	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+
+	      children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
+	   }
+	   else
+	   {
+		  DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
+		  children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
+	   }
    }
-#endif
 }
 
 void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A,

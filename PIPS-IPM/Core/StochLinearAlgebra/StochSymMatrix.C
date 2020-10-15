@@ -226,16 +226,17 @@ void StochSymMatrix::transMult ( double beta,  OoqpVector& y_,
    */
 double StochSymMatrix::abmaxnorm() const
 {
-  double maxNorm=0.0, localMaxNorm, childMaxNorm;
+  double maxNorm = 0.0, localMaxNorm, childMaxNorm;
 
   //!parallel stuff needed
 
   localMaxNorm = diag->abmaxnorm();
   maxNorm = max(localMaxNorm, maxNorm);
   
-  for (size_t it=0; it<children.size(); it++) {
+  for (size_t it = 0; it < children.size(); it++)
+  {
     childMaxNorm = children[it]->abmaxnorm();
-    maxNorm = max(childMaxNorm, maxNorm);
+    maxNorm = std::max(childMaxNorm, maxNorm);
   }
 
   return maxNorm;

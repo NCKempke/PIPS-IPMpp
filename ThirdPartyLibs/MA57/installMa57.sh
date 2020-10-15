@@ -10,6 +10,11 @@ name=`basename ${fn} .tar.gz`
 tar -zxvf $fn
 ln -s ./${name} ./src
 
+FULLPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
 cd src
-./configure FFLAGS=-fPIC --with-metis=../../METIS/src/libmetis.a --prefix=`pwd`
-make -j$1 install
+./configure FFLAGS=-fPIC --with-metis=${FULLPATH}/../METIS_4/src/libmetis.a --prefix=`pwd`
+
+make clean
+make install
+make check

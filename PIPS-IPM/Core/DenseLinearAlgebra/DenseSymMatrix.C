@@ -185,8 +185,9 @@ double DenseSymMatrix::abmaxnorm() const
 
   for ( i = 0; i < m; i++ ) {
     for ( j = 0; j <= i; j++ ) {
-      eltNorm = fabs( M[i][j] );
-      if ( eltNorm > norm ) norm = eltNorm;
+      eltNorm = std::fabs( M[i][j] );
+      if ( eltNorm > norm )
+        norm = eltNorm;
     }
   }
   return norm;

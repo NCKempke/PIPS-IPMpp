@@ -47,6 +47,7 @@ public:
   virtual void columnScale ( const OoqpVector& vec ) = 0;
   virtual void rowScale ( const OoqpVector& vec ) = 0;
   virtual void scalarMult( double num) = 0;
+  virtual double abmaxnorm() const = 0;
   virtual ~DoubleStorage() {};
 };
 

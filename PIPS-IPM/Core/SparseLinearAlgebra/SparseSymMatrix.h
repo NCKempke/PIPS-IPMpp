@@ -21,12 +21,15 @@ class SparseSymMatrix : public SymMatrix {
   SparseStorageHandle mStorage;
 public:
   SparseSymMatrix();
+  SparseSymMatrix( const SparseSymMatrix& mat );
+
   SparseSymMatrix( int size, int nnz, bool isLower = true );
   SparseSymMatrix( int size, int nnz,
 		   int krowM[], int jcolM[], double M[], int deleteElts = 0, bool isLower = true);
   SparseSymMatrix( SparseStorage* m_storage, bool is_lower_ );
 
   SparseStorage&  getStorageRef() { return *mStorage; }
+  const SparseStorage&  getStorageRef() const { return *mStorage; }
   SparseStorageHandle  getStorageHandle() { return mStorage; }
 
   // is lower part of matrix stored? (otherwise upper part is stored)

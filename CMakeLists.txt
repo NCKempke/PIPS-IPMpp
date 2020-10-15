@@ -66,29 +66,18 @@ message(STATUS "WITH_MUMPS_LEAF=${WITH_MUMPS_LEAF}")
 option(WITH_MUMPS_ROOT "Use MUMPS (if available) for (global) Schur complement at root" OFF)
 message(STATUS "WITH_MUMPS_ROOT=${WITH_MUMPS_ROOT}")
 
-#use sparse preconditioner for global Schur complement
-option(WITH_DIST_PRECOND "use sparse preconditioner for global Schur complement" ON)
-message(STATUS "WITH_DIST_PRECOND=${WITH_DIST_PRECOND}")
-
-#use conserative step lengths in interior point algorithm
-option(WITH_STEPLENGTH_CONSERVATIVE "use conserative step lengths in interior point algorithm" OFF)
-message(STATUS "WITH_STEPLENGTH_CONSERVATIVE=${WITH_STEPLENGTH_CONSERVATIVE}")
-
-option(WITH_SPARSE_PRECOND "use sparse preconditioner for global Schur complement" ON)
-message(STATUS "WITH_SPARSE_PRECOND=${WITH_SPARSE_PRECOND}")
-
-option(WITH_REDUCED_ACCURACY "reduce accuracy for accepting solution" OFF)
-message(STATUS "WITH_REDUCED_ACCURACY=${WITH_REDUCED_ACCURACY}")
-
-option(WITH_INNER_BICGSTAB "use inner bicgstab" OFF)
-message(STATUS "WITH_INNER_BICGSTAB=${WITH_INNER_BICGSTAB}")
-
+#compute local schur complement blockwise with pardiso
 option(WITH_PARDISO_BLOCKSC "Use Pardiso (if available) for comuting the Schur complement in blocks" OFF)
 message(STATUS "WITH_PARDISO_BLOCKSC=${WITH_PARDISO_BLOCKSC}")
 
 option(BUILD_GDX_SOURCE "Build GDX Source" OFF)
 message(STATUS "BUILD_GDX_SOURCE=${BUILD_GDX_SOURCE}")
 
+option(USE_MA27 "Use MA27 solver for global and local Schur complement" OFF)
+message(STATUS "USE_MA27=${USE_MA27}")
+
+option(USE_MA57 "Use MA57 solver for global and local Schur complement" OFF)
+message(STATUS "USE_MA25=${USE_MA57}")
 
 #with timing for PIPS-IPM
 
@@ -306,7 +295,7 @@ else()
 endif(AMPL_LIBRARY)
 
 if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
-  #HSL Solver and METIS
+  #HSL Solver and METIS_4
   set(MA27_DIR ${SHARED_DIR}/MA27/src)
   set(MA57_DIR ${SHARED_DIR}/MA57/src)
   find_library(MA27_LIBRARY libma27.a PATHS ${MA27_DIR}/lib)
@@ -318,22 +307,34 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
     set(HAVE_MA27 TRUE)
     message(STATUS "MA27_LIBRARY = ${MA27_LIBRARY}")
   endif(MA27_LIBRARY)
-  set(METIS_DIR ${SHARED_DIR}/METIS)
-  find_library(PARMETIS_LIBRARY NAME libparmetis.a HINTS ${METIS_DIR}/lib PATHS ${METIS_DIR}/lib)
-  find_library(METIS_LIBRARY NAME libmetis.a HINTS ${METIS_DIR}/lib PATHS ${METIS_DIR})
-  find_path(METIS_INCLUDE_DIR NAME metis.h HINTS ${METIS_DIR}/include)
-  if(METIS_INCLUDE_DIR AND METIS_LIBRARY)
-    message(STATUS "METIS_INCLUDE_DIR = ${METIS_INCLUDE_DIR}")
-    include_directories(${METIS_INCLUDE_DIR})
+  
+  set(METIS_DIR ${SHARED_DIR}/METIS_4)
+  set(PARMETIS_DIR ${SHARED_DIR}/METIS)
+  
+  find_library(PARMETIS_LIBRARY NAME libparmetis.a HINTS ${PARMETIS_DIR}/lib PATHS ${PARMETIS_DIR}/lib)
+  find_library(METIS_5_LIBRARY NAME libmetis.a HINTS ${PARMETIS_DIR}/lib PATHS ${PARMETIS_DIR}/lib)
+  
+  find_library(METIS_4_LIBRARY NAME libmetis.a HINTS ${METIS_DIR}/src PATHS ${METIS_DIR})
+#  find_path(METIS_INCLUDE_DIR NAME metis.h HINTS ${METIS_DIR}/include)
+  if( METIS_4_LIBRARY )
+#    message(STATUS "METIS_INCLUDE_DIR = ${METIS_INCLUDE_DIR}")
+#    include_directories(${METIS_INCLUDE_DIR})
     set(HAVE_METIS TRUE)
-  else()
-    message(FATAL_ERROR "METIS not found! METIS is required for PIPS-IPM and PIPS-NLP. Please run ./wgetMETIS.sh in ${SHARED_DIR}/METIS")
-  endif(METIS_INCLUDE_DIR AND METIS_LIBRARY)
+  else( METIS_4_LIBRARY )
+    message(FATAL_ERROR "METIS not found! METIS is required for PIPS-IPM and PIPS-NLP. Please run ./wgetMETIS.sh in ${METIS_DIR}")
+  endif( METIS_4_LIBRARY )
+  
+  if( PARMETIS_LIBRARY AND METIS_5_LIBRARY )
+     set( HAVE_PARMETIS TRUE )
+  else( PARMETIS_LIBRARY AND METIS_5_LIBRARY )
+     message(STATUS "PARMETIS not found! Parmetis is required for PIPS-IPM and MUMPS. Please run ./wgetMETIS.sh in ${PARMETIS_DIR}")
+  endif( PARMETIS_LIBRARY AND METIS_5_LIBRARY )
+  
   if(MA57_LIBRARY)
     message(STATUS "MA57_LIBRARY = ${MA57_LIBRARY}")
     include_directories(${METIS_DIR}/Lib)
     set(HAVE_MA57 TRUE)
-  else()
+  else(MA57_LIBRARY)
     set(HAVE_MA57 FALSE)
   endif(MA57_LIBRARY)
 
@@ -343,16 +344,19 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
   #MUMPS Solver REMARK: Identical to the one from PIPS Master, so can simply be replaced if this branch is merged into master
   if(WITH_MUMPS_LEAF OR WITH_MUMPS_ROOT)
     set(MUMPS_DIR ${SHARED_DIR}/MUMPS)
+    
     find_library(MUMPS_D_LIBRARY libdmumps.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
     find_library(MUMPS_COMMON_LIBRARY libmumps_common.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
     find_library(MUMPS_PORD_LIBRARY libpord.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
+    
     find_path(MUMPS_INCLUDE_DIR NAME dmumps_c.h HINTS ${MUMPS_DIR}/include NO_DEFAULT_PATH)
+    
     if(NOT MUMPS_D_LIBRARY OR NOT MUMPS_COMMON_LIBRARY OR NOT MUMPS_PORD_LIBRARY OR NOT MUMPS_INCLUDE_DIR)
       message(WARNING "even though WITH_MUMPS_LEAF/WITH_MUMPS_ROOT was specified : no MUMPS was found under ${MUMPS_DIR}/lib")
    endif(NOT MUMPS_D_LIBRARY OR NOT MUMPS_COMMON_LIBRARY OR NOT MUMPS_PORD_LIBRARY OR NOT MUMPS_INCLUDE_DIR)
   endif(WITH_MUMPS_LEAF OR WITH_MUMPS_ROOT)
 
-  if(MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND PARMETIS_LIBRARY)
+  if( MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND HAVE_PARMETIS )
     # we assume the other libraries are in there
     set(HAVE_MUMPS TRUE)
     message(STATUS "FOUND MUMPS")
@@ -364,17 +368,12 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
     # - put all the  mumps libraries: -ldmumps -lmumps_common -lpord
     # - scalapack should be set in ${SCALAPACK_LIBRARIES} using Toolchain.cmake (or hardcoded here)
     # - mpifort also needed
-    # - parmetis 5.0 or later required by mumps but no need to specify it here: it should be detected by the build system at this point
-    # NOTE: the version of METIS recieved with wgetMETIS in ThirdPartyLibs/METIS does not export all necessary symbols for parmetis and MumpsSolver
-    #    use either the metis shipped together with permetis or download seperately and link against it
-    #    related ERROR looks like: ... undefined reference to `metis_setdefaultoptions_'
+    # - parmetis 4.3.0 or later required by mumps but no need to specify it here: it should be detected by the build system at this point
+    # NOTE: METIS 4 is no longer sufficient to link MUMPS against - needs METIS 5...
     if(NOT SCALAPACK_LIBRARIES)
       MESSAGE(STATUS "SCALAPACK_LIBRARIES for MUMPS not set. Default linking for Ubuntu.")
-      find_library(SCALAPACK_OMPI_LIBRARY NAMES scalapack-openmpi)
-      find_library(BLACS_LIBRARY blacs-openmpi)
-      find_library(BLACSF77_LIBRARY blacsF77init-openmpi)
-      find_library(BLACS_CINIT_LIBRARY blacsCinit-openmpi)
-      set(SCALAPACK_LIBRARIES "${SCALAPACK_OMPI_LIBRARY} ${BLACS_LIBRARY} ${BLACSF77_LIBRARY} ${BLACS_CINIT_LIBRARY}")
+      find_library(SCALAPACK_OMPI_LIBRARY NAMES scalapack-openmpi REQUIRED)
+      set(SCALAPACK_LIBRARIES "${SCALAPACK_OMPI_LIBRARY} ")
     endif(NOT SCALAPACK_LIBRARIES)
     message(STATUS "SCALAPACK_LIBRARIES:=${SCALAPACK_LIBRARIES}")
     find_library(BLACS_LIBRARY NAMES blacs-openmpi)
@@ -385,16 +384,17 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
       MESSAGE(STATUS "MUMPS_FORT_LIB not set for linking the Fortran MPI interface library required by MUMPS. Using OpenMPI Fortran interface -lmpi_mpifh")
       find_library(MUMPS_FORT_LIB mpi_mpifh)
     endif(NOT MUMPS_FORT_LIB)
-   set(MUMPS_LIBRARY "-Wl,--start-group ${MUMPS_D_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_FORT_LIB} ${MUMPS_PORD_LIBRARY} ${SCALAPACK_LIBRARIES} ${METIS_LIBRARY} \
+   set(MUMPS_LIBRARY "-Wl,--start-group ${MUMPS_D_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_FORT_LIB} ${MUMPS_PORD_LIBRARY} ${SCALAPACK_LIBRARIES} ${METIS_5_LIBRARY} \
    ${PARMETIS_LIBRARY} -Wl,--end-group")
     message(STATUS "MUMPS_LIBRARIES:=${MUMPS_LIBRARY}")
     include_directories(${MUMPS_INCLUDE_DIR})
-  else ()
-     set(HAVE_MUMPS FALSE)
-    message(STATUS "MUMPS library and/or headers are not present. Will build PIPS without MUMPS")
+  else( MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND HAVE_PARMETIS )
+    set(HAVE_MUMPS FALSE)
+    message(STATUS "MUMPS/Parmets library and/or headers are not present. Will build PIPS without MUMPS")
+    set(WITH_MUMPS_LEAF FALSE)
+    set(WITH_MUMPS_ROOT FALSE)
     set(MUMPS_LIBRARY "")
-  endif(MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND PARMETIS_LIBRARY)
-
+  endif( MUMPS_INCLUDE_DIR AND MUMPS_D_LIBRARY AND HAVE_PARMETIS )
 
   #MKL_PARDISO Solver
   set(HAVE_MKL_PARDISO FALSE)
@@ -464,6 +464,46 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
   message(STATUS "Pardiso lib: ${PARDISO_LIBRARY} and HAVE_PARDISO is ${HAVE_PARDISO}")
 
   #setting CXX_FLAGS
+  
+   #### switch for using MA27 over all other available solvers - since MA27 has no augmented schur complement appoach 
+   #### implemented we have to set -DPARDISO_BLOCKSC
+   if( USE_MA27 )
+      if( !HAVE_MA27 )
+         message(FATAL_ERROR "specified WITH_MA27 but could not find MA27..")
+      endif( !HAVE_MA27 )
+      
+      if( USE_MA57 )
+         message(WARNING "specified WITH_MA27 AND WITH_MA57 - only using MA57...")
+         set( HAVE_MA27 false )
+         set( MA27_LIBRARY  "")
+      endif( USE_MA57 )
+      
+      if( HAVE_MA27 )
+         set( HAVE_MA57 false )
+         set( HAVE_MUMPS false )
+         set( HAVE_PARDISO false )
+         set( WITH_MKL_PARDISO false )
+         set( HAVE_MKL_PARDISO false )
+         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPARDISO_BLOCKSC")
+      endif( HAVE_MA27 )
+   endif( USE_MA27 )
+   
+   
+   #### switch for using MA57 over all other available solvers - since MA27 has no augmented schur complement appoach 
+   #### implemented we have to set -DPARDISO_BLOCKSC
+   if( USE_MA57 )
+      if( !HAVE_MA57 )
+         message(FATAL_ERROR "specified WITH_MA57 but could not find MA57..")
+      endif( !HAVE_MA57 )
+      
+      set( HAVE_MA27 false )
+      set( HAVE_MUMPS false )
+      set( HAVE_PARDISO false )
+      set( WITH_MKL_PARDISO false )
+      set( HAVE_MKL_PARDISO false )
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPARDISO_BLOCKSC")
+   endif( USE_MA57 )     
+   
   if(HAVE_MA27)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_MA27")
   else(HAVE_MA27)
@@ -482,42 +522,18 @@ if(BUILD_PIPS_IPM OR BUILD_PIPS_NLP)
   #  set(MA86_LIBRARY "")
   #endif(HAVE_MA86)
 
-  if(WITH_STEPLENGTH_CONSERVATIVE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTEPLENGTH_CONSERVATIVE")
-  endif(WITH_STEPLENGTH_CONSERVATIVE)
-
-  if(WITH_SPARSE_PRECOND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPARSE_PRECOND")
-  endif(WITH_SPARSE_PRECOND)
-
-  if(WITH_DIST_PRECOND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDIST_PRECOND")
-  endif(WITH_DIST_PRECOND)
-
-  if(WITH_REDUCED_ACCURACY)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DREDUCED_ACCURACY")
-  endif(WITH_REDUCED_ACCURACY)
-
   if(WITH_HIERARCHICAL)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHIERARCHICAL -DPARDISO_BLOCKSC")
   endif(WITH_HIERARCHICAL)
-	
-  if(WITH_INNER_BICGSTAB)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DINNER_BICGSTAB")
-  endif(WITH_INNER_BICGSTAB)
-
 
   if(HAVE_PARDISO)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PARDISO")
-    if(WITH_PARDISOINDEF)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_PARDISOINDEF")
-    endif(WITH_PARDISOINDEF)
     if(WITH_PARDISO_BLOCKSC)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPARDISO_BLOCKSC")
-    endif(WITH_PARDISO_BLOCKSC)
-  else(HAVE_PARDISO)
+    endif(WITH_PARDISO_BLOCKSC)    
+ else(HAVE_PARDISO)
     set(PARDISO_LIBRARY "")
-  endif(HAVE_PARDISO)
+ endif(HAVE_PARDISO)
 
   if(HAVE_MUMPS)
     if(WITH_MUMPS_LEAF)

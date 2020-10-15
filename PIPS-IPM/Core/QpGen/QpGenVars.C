@@ -15,6 +15,7 @@
 
 #include <iostream> 
 #include <fstream>
+#include <limits>
 using namespace std;
 
 QpGenVars::QpGenVars( OoqpVector * x_in, OoqpVector * s_in,
@@ -172,6 +173,31 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
+double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, double tol ) const
+{
+   assert( 0 < tol );
+
+   double sum_small_distance = 0.0;
+   int n_close = 0;
+   v->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixlow );
+   w->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixupp );
+
+   if( n_close == 0 )
+      return std::numeric_limits<double>::infinity();
+   else
+      return sum_small_distance / (double) n_close;
+}
+
+
+void QpGenVars::pushSlacksFromBound( double tol, double amount )
+{
+   if( nxlow > 0 )
+      v->pushAwayFromZero(tol, amount, &*ixlow);
+   if( nxupp > 0 )
+      w->pushAwayFromZero(tol, amount, &*ixupp);
+}
+
+
 double QpGenVars::mu()
 {
   double mu  = 0.0;
@@ -189,9 +215,9 @@ double QpGenVars::mu()
   }
 }
 
-double QpGenVars::mustep(Variables * step_in, double alpha)
+double QpGenVars::mustep(const Variables * step_in, double alpha)
 {
-	QpGenVars * step = (QpGenVars *) step_in;
+	const QpGenVars * step = (const QpGenVars *) step_in;
 	double mu = 0.0;
 	if (nComplementaryVariables == 0) {
 		return 0.0;
@@ -217,9 +243,9 @@ double QpGenVars::mustep(Variables * step_in, double alpha)
 	}
 }
 
-double QpGenVars::mustep_pd( Variables *step_in, double alpha_primal, double alpha_dual )
+double QpGenVars::mustep_pd( const Variables *step_in, double alpha_primal, double alpha_dual )
 {
-	QpGenVars * step = (QpGenVars *) step_in;
+	const QpGenVars * step = (const QpGenVars *) step_in;
 	double mu = 0.0;
 	if (nComplementaryVariables == 0) {
 		return 0.0;
@@ -245,9 +271,9 @@ double QpGenVars::mustep_pd( Variables *step_in, double alpha_primal, double alp
 	}
 }
 
-void QpGenVars::saxpy( Variables *b_in, double alpha )
+void QpGenVars::saxpy( const Variables *b_in, double alpha )
 {
-	QpGenVars * b = (QpGenVars *) b_in;
+	const QpGenVars * b = (const QpGenVars *) b_in;
 
 	x->axpy(alpha, *b->x);
 	y->axpy(alpha, *b->y);
@@ -287,9 +313,9 @@ void QpGenVars::saxpy( Variables *b_in, double alpha )
 	}
 }
 
-void QpGenVars::saxpy_pd( Variables *b_in, double alpha_primal, double alpha_dual)
+void QpGenVars::saxpy_pd( const Variables *b_in, double alpha_primal, double alpha_dual)
 {
-	QpGenVars * b = (QpGenVars *) b_in;
+	const QpGenVars * b = ( const QpGenVars *) b_in;
 
 	x->axpy(alpha_primal, *b->x);
 	y->axpy(alpha_dual, *b->y);
@@ -354,9 +380,9 @@ void QpGenVars::negate()
   }
 }
 
-double QpGenVars::stepbound( Variables * b_in )
+double QpGenVars::stepbound( const Variables * b_in )
 {
-	QpGenVars * b = (QpGenVars *) b_in;
+	const QpGenVars * b = (const QpGenVars *) b_in;
 	double maxStep;
 
 	maxStep = 1.0;
@@ -396,9 +422,9 @@ double QpGenVars::stepbound( Variables * b_in )
 	return maxStep;
 }
 
-void QpGenVars::stepbound_pd( Variables *b_in, double & alpha_primal, double & alpha_dual )
+void QpGenVars::stepbound_pd( const Variables *b_in, double & alpha_primal, double & alpha_dual )
 {
-	QpGenVars * b = (QpGenVars *) b_in;
+	const QpGenVars * b = (const QpGenVars *) b_in;
 	double maxStep_primal, maxStep_dual;
 
 	maxStep_primal = 1.0;
@@ -470,7 +496,7 @@ int QpGenVars::isInteriorPoint()
   return interior;
 }
 
-double QpGenVars::findBlocking( Variables * step, 
+double QpGenVars::findBlocking( const Variables * step,
 				double & primalValue,
 				double & primalStep,
 				double & dualValue,
@@ -480,7 +506,7 @@ double QpGenVars::findBlocking( Variables * step,
   double alpha = 1.0;
   firstOrSecond = 0;
 
-  QpGenVars * d = (QpGenVars *) step;
+  const QpGenVars * d = (const QpGenVars *) step;
 
   if( mclow > 0 ) {
     alpha = t->findBlocking( *d->t, *lambda, *d->lambda, alpha,
@@ -513,7 +539,7 @@ double QpGenVars::findBlocking( Variables * step,
   return alpha;
 }
 
-void QpGenVars::findBlocking_pd( Variables * step,
+void QpGenVars::findBlocking_pd( const Variables * step,
 				double & primalValue,
 				double & primalStep,
 				double & dualValue,
@@ -525,7 +551,7 @@ void QpGenVars::findBlocking_pd( Variables * step,
   alphaPrimal = 1.0, alphaDual = 1.0;
   primalBlocking = false, dualBlocking = false;
 
-  QpGenVars * d = (QpGenVars *) step;
+  const QpGenVars * d = (const QpGenVars *) step;
 
   if( mclow > 0 ) {
     t->findBlocking_pd( *d->t, *lambda, *d->lambda, alphaPrimal, alphaDual,
@@ -865,9 +891,9 @@ void QpGenVars::print()
   */
 }
   
-void QpGenVars::copy(Variables *b_in)
+void QpGenVars::copy(const Variables *b_in)
 {
-  QpGenVars * b = (QpGenVars *) b_in;
+  const QpGenVars * b = (const QpGenVars *) b_in;
   
   s->copyFrom( *b->s );
   if( nxlow > 0 ) {
@@ -892,7 +918,7 @@ void QpGenVars::copy(Variables *b_in)
   
 }
 
-double QpGenVars::onenorm()
+double QpGenVars::onenorm() const
 {
   double norm;
   norm  = x->onenorm();
@@ -913,7 +939,7 @@ double QpGenVars::onenorm()
 }
 
 
-double QpGenVars::infnorm()
+double QpGenVars::infnorm() const
 {
   double norm, temp;
   norm = 0.0;
@@ -948,6 +974,26 @@ double QpGenVars::infnorm()
   if(temp > norm) norm = temp;
 
   return norm;
+}
+
+void QpGenVars::setToZero()
+{
+   x->setToZero();
+   s->setToZero();
+   y->setToZero();
+   z->setToZero();
+
+   v->setToZero();
+   gamma->setToZero();
+
+   w->setToZero();
+   phi->setToZero();
+
+   t->setToZero();
+   lambda->setToZero();
+
+   u->setToZero();
+   pi->setToZero();
 }
 
 QpGenVars::~QpGenVars()
@@ -1100,3 +1146,118 @@ void QpGenVars::printSolution( MpsReader * reader, QpGenData * data,
   delete [] cxlow;
   delete [] cxupp;
 }
+
+void QpGenVars::printNorms() const
+{
+   const int my_rank = PIPS_MPIgetRank();
+
+   const double infnorm = this->infnorm();
+
+   if( my_rank == 0 )
+      std::cout << "||vars||_INF = " << infnorm << std::endl;
+
+   double temp_inf = x->infnorm();
+   double temp_2 = x->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_x||_INF = " << temp_inf << "\t||vars_x||_2 = " << temp_2 << std::endl;
+
+   temp_inf = s->infnorm();
+   temp_2 = s->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_s||_INF = " << temp_inf << "\t||vars_s||_2 = " << temp_2 << std::endl;
+
+   temp_inf = y->infnorm();
+   temp_2 = y->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_y||_INF = " << temp_inf << "\t||vars_y||_2 = " << temp_2 << std::endl;
+
+   temp_inf = z->infnorm();
+   temp_2 = z->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_z||_INF = " << temp_inf << "\t||vars_z||_2 = " << temp_2 << std::endl;
+
+   temp_inf = v->infnorm();
+   temp_2 = v->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_v||_INF = " << temp_inf << "\t||vars_v||_2 = " << temp_2 << std::endl;
+   temp_inf = phi->infnorm();
+   temp_2 = phi->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_phi||_INF = " << temp_inf << "\t||vars_phi||_2 = " << temp_2 << std::endl;
+
+   temp_inf = w->infnorm();
+   temp_2 = w->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_w||_INF = " << temp_inf << "\t||vars_w||_2 = " << temp_2 << std::endl;
+   temp_inf = gamma->infnorm();
+   temp_2 = gamma->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_gamma||_INF = " << temp_inf << "\t||vars_gamma||_2 = " << temp_2 << std::endl;
+
+   temp_inf = t->infnorm();
+   temp_2 = t->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_t||_INF = " << temp_inf << "\t||vars_t||_2 = " << temp_2 << std::endl;
+   temp_inf = lambda->infnorm();
+   temp_2 = lambda->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_lambda||_INF = " << temp_inf << "\t||vars_lambda||_2 = " << temp_2 << std::endl;
+
+   temp_inf = u->infnorm();
+   temp_2 = u->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_u||_INF = " << temp_inf << "\t||vars_u||_2 = " << temp_2 << std::endl;
+   temp_inf = pi->infnorm();
+   temp_2 = pi->twonorm();
+   if( my_rank == 0 )
+      std::cout << "||vars_pi||_INF = " << temp_inf << "\t||vars_pi||_2 = " << temp_2 << std::endl;
+}
+
+void QpGenVars::setNotIndicatedBoundsTo( Data& data, double value )
+{
+   value = std::fabs(value);
+   QpGenData& qpdata = dynamic_cast<QpGenData&>(data);
+
+   const double x_inf = x->infnorm();
+   const double xlow_inf = std::min( -10.0 * x_inf, -value );
+   const double xupp_inf = std::min( 10.0 * x_inf, value );
+
+   /* change original bounds and set ixlow ixupp */
+   qpdata.xlowerBound().setNotIndicatedEntriesToVal( xlow_inf, *qpdata.ixlow );
+   qpdata.xupperBound().setNotIndicatedEntriesToVal( xupp_inf, *qpdata.ixupp );
+
+   OoqpVector* ixupp_inv = qpdata.ixupp->clone();
+   ixupp_inv->setToZero();
+   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *qpdata.ixupp);
+
+   OoqpVector* ixlow_inv = qpdata.ixlow->clone();
+   ixlow_inv->setToZero();
+   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *qpdata.ixlow);
+
+   qpdata.ixlow->setToConstant(1);
+   qpdata.ixupp->setToConstant(1);
+
+   /* adjust slacks */
+   OoqpVector* x_copy = x->cloneFull();
+
+   /* x - lx */
+   x_copy->axpy(-1.0, qpdata.xlowerBound() );
+   /* v = x - lx */
+   v->axzpy(1.0, *ixlow_inv, *x_copy);
+
+   x_copy->copyFrom(*x);
+   /* x - ux */
+   x_copy->axpy(-1.0, qpdata.xupperBound() );
+   /* w = -( x - ux ) = ux - x */
+   w->axzpy(-1.0, *ixupp_inv, *x_copy);
+
+   /* set duals for new variable bounds to something small */
+   x_copy->setToConstant(1e-10);
+   phi->axzpy(1.0, *ixupp_inv, *x_copy);
+   gamma->axzpy(1.0, *ixlow_inv, *x_copy);
+
+   delete x_copy;
+   delete ixlow_inv;
+   delete ixupp_inv;
+}
+

@@ -14,9 +14,6 @@
 
 #define LINKING_CONS 1
 
-extern int gOuterSolve;
-extern int gInnerSCsolve;
-
 extern "C" typedef int (*FNNZ)(void* user_data, int id, int* nnz);
 
 /* Row-major format */
@@ -577,8 +574,7 @@ int main(int argc, char ** argv) {
      cout << "Using a total of " << size << " MPI processes." << endl;
 
   /* use BiCGStab for outer solve */
-  gOuterSolve = 2;
-  gInnerSCsolve = 0;
+  pips_options::setIntParameter("INNER_SC_SOLVE", 0);
 #if defined(HIERARCHICAL)
   if( rank == 0 )
      std::cout << "Using hierarchical approach" << std::endl;

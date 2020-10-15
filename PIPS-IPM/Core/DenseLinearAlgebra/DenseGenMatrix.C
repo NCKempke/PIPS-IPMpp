@@ -207,7 +207,7 @@ double DenseGenMatrix::abmaxnorm() const
 
   for ( i = 0; i < m; i++ ) {
     for ( j = 0; j < n; j++ ) {
-      eltNorm = fabs( M[i][j] );
+      eltNorm = std::fabs( M[i][j] );
       if ( eltNorm > norm ) norm = eltNorm;
     }
   }

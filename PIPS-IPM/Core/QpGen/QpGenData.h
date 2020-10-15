@@ -102,42 +102,44 @@ public:
 
   /** y = beta * y + alpha * Q * x */
   virtual void Qmult( double beta,  OoqpVector& y,
-		      double alpha, OoqpVector& x );
+		      double alpha, const OoqpVector& x ) const;
 
   /** y = beta * y + alpha * A * x */
   virtual void Amult( double beta,  OoqpVector& y,
-		      double alpha, OoqpVector& x);
+		      double alpha, const OoqpVector& x) const;
 
   /** y = beta * y + alpha * C * x   */
   virtual void Cmult( double beta,  OoqpVector& y,
-		      double alpha, OoqpVector& x );
+		      double alpha, const OoqpVector& x ) const;
 
   /** y = beta * y + alpha * A\T * x */
   virtual void ATransmult( double beta,  OoqpVector& y,
-			   double alpha, OoqpVector& x );
+			   double alpha, const OoqpVector& x ) const;
 
   /** y = beta * y + alpha * C\T * x */
   virtual void CTransmult( double beta,  OoqpVector& y,
-			   double alpha, OoqpVector& x );
+			   double alpha, const OoqpVector& x ) const;
 
   //  virtual void addSymProdCRowToAt(double alpha, int i,
   //				  SymMatrix& M, int rowcol );
 
-  virtual void getg(  OoqpVector& cout );
-  virtual void getbA( OoqpVector& bout );
+  virtual void getg(  OoqpVector& cout ) const;
+  virtual void getbA( OoqpVector& bout ) const;
 
   /** extract the diagonal of Q and put it in the OoqpVector dQ */
   virtual void getDiagonalOfQ( OoqpVector& dQ );
 
-  virtual OoqpVector&  xupperBound() { return *bux; };
+  virtual OoqpVector& xupperBound() { return *bux; };
+  virtual const OoqpVector& xupperBound() const { return *bux; };
   virtual OoqpVector& ixupperBound() { return *ixupp; };
-  virtual OoqpVector&  xlowerBound() { return *blx; };
+  virtual OoqpVector& xlowerBound() { return *blx; };
+  virtual const OoqpVector& xlowerBound() const { return *blx; };
   virtual OoqpVector& ixlowerBound() { return *ixlow; };
   virtual OoqpVector&  supperBound() { return *bu; };
   virtual OoqpVector& isupperBound() { return *icupp; };
   virtual OoqpVector&  slowerBound() { return *bl; };
   virtual OoqpVector& islowerBound() { return *iclow; };
-  virtual OoqpVector& scale(){ return *sc; };
+  virtual OoqpVector& scale() { return *sc; };
 
   virtual void createScaleFromQ();
   virtual void scaleQ();
@@ -150,7 +152,7 @@ public:
   virtual void flipg();
   virtual void flipQ();
 
-  virtual double datanorm();
+  double datanorm() const override;
   virtual void datainput() {};
   virtual void datainput( MpsReader * reader, int& iErr );
   /** Create a random problem
@@ -160,7 +162,7 @@ public:
 			    OoqpVector & z, OoqpVector & s );
   virtual void print();
 
-  virtual double objectiveValue( QpGenVars * vars );
+  virtual double objectiveValue( const QpGenVars * vars ) const;
 
   virtual ~QpGenData();
 };

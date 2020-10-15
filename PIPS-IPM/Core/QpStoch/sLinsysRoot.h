@@ -105,6 +105,8 @@ class sLinsysRoot : public sLinsys {
             int substart, int subsize,
             MPI_Comm comm);
 
+  SCsparsifier precondSC;
+
  protected: //buffers
 
   SparseSymMatrix* kktDist;
@@ -115,7 +117,6 @@ class sLinsysRoot : public sLinsys {
 
   double* sparseKktBuffer;
 
-  SCsparsifier precondSC;
 
   int childrenProperStart; // first non-dummy child
   int childrenProperEnd;   // end of non-dummy children range (not included)

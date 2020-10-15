@@ -99,6 +99,9 @@ class sLinsys : public QpGenLinsys
         SparseGenMatrix& R_right, SparseGenMatrix& A_right, SparseGenMatrix& C_right,
         SparseGenMatrix& F_right, SparseGenMatrix& G_right, DoubleMatrix& result);
  public:
+
+  virtual void addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparseSC, bool symSC, SymMatrix& SC);
+
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
 					
@@ -138,6 +141,8 @@ class sLinsys : public QpGenLinsys
   int nThreads;
 
   /* members for blockwise schur complement computation */
+  bool computeBlockwiseSC;
+
   int blocksizemax;
   double* colsBlockDense;
   int* colId;
@@ -146,8 +151,14 @@ class sLinsys : public QpGenLinsys
   /* is this linsys the overall root */
   const bool is_hierarchy_root;
 
+  // TODO: remove and use only nThreads? What if a solver supports more than one thread?
+  int n_solvers = nThreads;
+  DoubleLinearSolver** solvers_blocked = nullptr;
+  SparseSymMatrix** problems_blocked = nullptr;
+
   void multLeftSchurComplBlocked( /*const*/ sData* prob, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, bool sparseSC, bool symSC, DoubleMatrix& SC);
+
 
   void multLeftSparseSchurComplBlocked( /*const*/ sData* prob, /*const*/ double* colsBlockDense,
         const int* colId, int blocksize, SparseSymMatrix& SC);

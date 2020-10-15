@@ -36,6 +36,9 @@ public:
   OoqpVectorBase( int n_ = 0 );
   virtual ~OoqpVectorBase();
 
+  virtual void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select = nullptr)
+     { assert( 0 && "Not implemented here" ); };
+
   /** Set all elements of this OoqpVector to zero. */
   virtual void setToZero() = 0;
   /** Check if all elemens in the vector are equal to zero. */
@@ -72,6 +75,9 @@ public:
   virtual bool componentNotEqual( const T val, const T tol = pips_eps0 ) const = 0;
   /** Multiply the components of this OoqpVector by num. */
   virtual void scalarMult( T num ) = 0;
+
+  /** sets entries for which in[i] = zero to val */
+  virtual void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) = 0;
 
   /** Write the components of this OoqpVector, one element per line, to
    *  the stream out.
@@ -283,6 +289,10 @@ public:
 
   /** Copy the absolute values of elements of v_in into this OoqpVector object. */
   virtual void copyFromAbs(const OoqpVectorBase<T>& v) = 0;
+
+  /** compute the sum of all entries smaller considered zero with tol and count how many*/
+  virtual void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
+  { assert( 0 && "not implemented here" ); };
 
   virtual OoqpVectorBase<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };
   virtual OoqpVectorBase<T>* cloneFull() const { assert(0 && "not implemented here"); return nullptr; };

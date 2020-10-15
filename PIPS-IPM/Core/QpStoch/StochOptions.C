@@ -1,5 +1,5 @@
 /*
- * StochOptions.h
+ * StochOptions.C
  *
  *  Created on: 03.04.2020
  *      Author: bzfkempk
@@ -14,23 +14,86 @@ namespace pips_options
 {
    StochOptions::StochOptions()
    {
+      /* initialize base class options first (QpGenOptions) */
+      QpGenOptions::getInstance();
+
+      /* now override with own set of options */
       setDefaults();
    }
 
    void StochOptions::setDefaults()
    {
-      // TODO
-      /* default bool values */
-      bool_options["dummy"] = false;
-      bool_options["POSTSOLVE"] = true;
+      /// LINEAR SOLVERS
+      bool_options["PARDISO_FOR_GLOBAL_SC"] = true;
+      bool_options["PARDISO_SPARSE_RHS_LEAF"] = false;
+      /** -1 is choose default */
+      int_options["PARDISO_SYMB_INTERVAL"] = -1;
+      int_options["PARDISO_PIVOT_PERTURBATION"] = -1;
+      int_options["PARDISO_NITERATIVE_REFINS"] = -1;
+      int_options["PARDISO_PIVOT_PERTURBATION_ROOT"] = -1;
+      int_options["PARDISO_NITERATIVE_REFINS_ROOT"] = -1;
 
-      /* default int values */
-      int_options["dummy"] = 1;
+      /// PRECONDITIONERS
+#ifdef PARDISO_BLOCKSC
+      bool_options["PRECONDITION_DISTRIBUTED"] = false;
+#else
+      bool_options["PRECONDITION_DISTRIBUTED"] = true;
+#endif
+      bool_options["PRECONDITION_SPARSE"] = true;
+
+      /// GONDZIO SOLVERS
+      /** should adaptive linesearch be applied in the GondzioStoch solvers - overwritten in gmspips.cpp */
+      bool_options["GONDZIO_STOCH_ADAPTIVE_LINESEARCH"] = false;
+      /** if GONDZIO adaptive linesearch is true determines number of linesearch points */
+      int_options["GONDZIO_STOCH_N_LINESEARCH"] = 10;
+      /** should additional corrector steps for small complementarity pairs be applied */
+      bool_options["GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS"] = true;
+      /** how many additional steps should be applied at most (in addition to the still existing gondzio corrector limit) */
+      int_options["GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX"] = 1;
+      /** first iteration at which to look for small corrector steps */
+      int_options["GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS"] = 10;
+      /** alpha must be lower equal to this value for the IPM to try and apply small corrector steps */
+      double_options["GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS"] = 0.95;
+      /** should the amount of gondzio correctors be scheduled dynamically - invalidates the max correctors setting */
+      bool_options["GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE"] = false;
+
+      /** should relatively early converged variables be pushed away artificially from their bounds */
+      bool_options["GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND"] = false;
+      /** at which frequency should converged variables be pushed away from their bounds */
+      int_options["GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS"] = 4;
+      /** starting with which mu should the pushing be done */
+      double_options["GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS"] = 1e-3;
+
+      /// SOLVER CONTROLS
 
       int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 64;
 
-      /* default double values */
-      double_options["dummy"] = 1.0;
+      /// ERROR ABSORBTION / ITERATIVE REFINEMENT
+      // controls the type of error absorbtion at the outer level of the linear system
+      // - 0:no error absortion (OOQP works just fine)
+      // - 1:iterative refinement (used when error absortion is
+      // also done at a lower level, for example in the solve with
+      // the dense Schur complement
+      // - 2:BiCGStab with the factorization as preconditioner
+      int_options["OUTER_SOLVE"] = 0;
+      // controls the type of error absortion/correction at the inner level when solving
+      //with the dense Schur complement
+      // - 0: no error correction
+      // - 1: iter. refin.
+      // - 2: BiCGStab
+      int_options["INNER_SC_SOLVE"] = 0;
+
+      /// OUTER BIGCSTAB
+      double_options["OUTER_BICG_TOL"] = 1e-10;
+      double_options["OUTER_BICG_EPSILON"] = 1e-15;
+
+      bool_options["OUTER_BICG_PRINT_STATISTICS"] = false;
+
+      int_options["OUTER_BICG_MAX_ITER"] = 75;
+      int_options["OUTER_BICG_MAX_NORMR_DIVERGENCES"] = 4;
+      int_options["OUTER_BICG_MAX_STAGNATIONS"] = 4;
+
+      bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
 
       setPresolveDefaults();
    }
@@ -89,6 +152,7 @@ namespace pips_options
       /// PRESOLVE DATA
       /** absolute maximum for newly found bounds accepted by presolve */
       double_options["PRESOLVE_MAX_BOUND_ACCEPTED"] = 1e10;
+
       /** track row/column through presolve */
       bool_options["PRESOLVE_TRACK_ROW"] = false;
       bool_options["PRESOLVE_TRACK_COL"] = false;
@@ -102,8 +166,14 @@ namespace pips_options
       int_options["PRESOLVE_TRACK_COL_NODE"] = -1;
 
       /// POSTSOLVE
+      /** should postsolve be applied */
+      bool_options["POSTSOLVE"] = true;
+
       /** tolerance used for checking residuals after postsolve */
       double_options["POSTSOLVE_TOLERANCE"] = feastol * 1e2;
+
+      /** should the residuals before unscaling, after unscaling before postsolve, after postsolve be printed */
+      bool_options["POSTSOLVE_PRINT_RESIDS"] = true;
    }
 
 }

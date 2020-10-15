@@ -23,6 +23,14 @@ SparseSymMatrix::SparseSymMatrix()
   mStorage = nullptr;
 }
 
+SparseSymMatrix::SparseSymMatrix( const SparseSymMatrix& mat ) :
+      isLower( mat.isLower )
+{
+   mStorage = SparseStorageHandle(new SparseStorage( mat.mStorage->m, mat.mStorage->n, mat.mStorage->len ));
+   mat.getStorageRef().copyFrom( mStorage->krowM, mStorage->jcolM, mStorage->M );
+}
+
+
 SparseSymMatrix::SparseSymMatrix( int size, int nnz, bool isLower )
 : isLower(isLower)
 {

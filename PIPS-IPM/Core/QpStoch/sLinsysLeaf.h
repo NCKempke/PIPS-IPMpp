@@ -15,6 +15,8 @@
 
 #include "pipsport.h"
 
+#include "omp.h"
+
 /** This class solves the linear system corresponding to a leaf node.
  *  It just redirects the call to QpGenSparseLinsys.
  */
@@ -55,6 +57,12 @@ class sLinsysLeaf : public sLinsys
   static void mySymAtPutSubmatrix(SymMatrix& kkt, 
 				  GenMatrix& B, GenMatrix& D, 
 				  int locnx, int locmy, int locmz);
+
+  template<class LINSOLVER>
+  void initBlockedSolvers();
+
+  void freeBlockedSolvers();
+
 }; 
 
 template<class LINSOLVER>
@@ -112,7 +120,15 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
 #endif
 
   // create the solver for the linear system
-  solver = new LINSOLVER(kktsp);
+  if( computeBlockwiseSC )
+  {
+     initBlockedSolvers<LINSOLVER>();
+     assert(solvers_blocked);
+
+     solver = solvers_blocked[0];
+  }
+  else
+     solver = new LINSOLVER(kktsp);
 
 #ifdef TIMING
   const double t1 = MPI_Wtime() - t0;
@@ -122,6 +138,24 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   mpiComm = (dynamic_cast<StochVector*>(dd_))->mpiComm;
 }
 
+template<class LINSOLVER>
+void sLinsysLeaf::initBlockedSolvers()
+{
+   assert( solvers_blocked == nullptr );
 
+   solvers_blocked = new DoubleLinearSolver*[n_solvers];
+   problems_blocked = new SparseSymMatrix*[n_solvers];
+
+   #pragma omp parallel num_threads(n_solvers)
+   {
+      const int id = omp_get_thread_num();
+
+      SparseSymMatrix* kktsp_cpy = new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt) );
+      DoubleLinearSolver* solver = new LINSOLVER(kktsp_cpy);
+
+      problems_blocked[id] = kktsp_cpy;
+      solvers_blocked[id] = solver;
+   }
+}
 
 #endif
