@@ -762,7 +762,7 @@ void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy,
       SparseSymMatrix* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC);
       assert(CtDC_sp);
 
-      CtDC_sp->mult(1.0,&rxy[0],1, -alpha,&x[0],1);
+      CtDC_sp->mult(1.0, &rxy[0], 1, -alpha,&x[0], 1);
     }
 
     SimpleVector& xDiagv = dynamic_cast<SimpleVector&>(*xDiag);

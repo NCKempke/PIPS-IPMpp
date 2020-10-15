@@ -171,6 +171,9 @@ protected:
   void init();
   void freeWorkingArrays();
   bool checkErrorsAndReact();
+
+  void scaleMatrix(); // TODO : implement..
+  void orderMatrix(); // TODO : implement..
 public:
   /** base class constructor. Allocates values for kTreatAsZero,
    * kThresholdPivoting, kThresholdPivotingMax,

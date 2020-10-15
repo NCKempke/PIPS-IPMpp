@@ -1055,12 +1055,16 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
 
    assert(nThreads >= 1);
 
+#if 0
    // indicating whether a right hand side is zero
    if( colSparsity == nullptr )
    {
       colSparsity = new int[N * blocksize * n_solvers];
       memset(colSparsity, 0, N * blocksize * n_solvers * sizeof(int));
    }
+#else
+   colSparsity = nullptr;
+#endif
 
    if( colsBlockDense == nullptr )
       colsBlockDense = new double[N * blocksize * n_solvers];
@@ -1102,7 +1106,7 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
       double* colsBlockDense_loc = colsBlockDense + id * N * blocksize;
       memset(colsBlockDense_loc, 0, blocksize * N * sizeof(double));
 
-      int* colSparsity_loc = colSparsity + id * N * blocksize;
+      int* colSparsity_loc = colSparsity;// + id * N * blocksize;
 
       R.fromGetColsBlock(colId_loc, nrhs, N, 0, colsBlockDense_loc, colSparsity_loc);
       A.fromGetColsBlock(colId_loc, nrhs, N, locnx, colsBlockDense_loc, colSparsity_loc);
@@ -1157,7 +1161,7 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
          double* colsBlockDense_loc = colsBlockDense + id * N * blocksize;
          memset(colsBlockDense_loc, 0, blocksize * N * sizeof(double));
 
-         int* colSparsity_loc = colSparsity + id * N * blocksize;
+         int* colSparsity_loc = colSparsity;// + id * N * blocksize;
 
          // get column block from Ft (i.e., row block from F)
          F.fromGetRowsBlock(colId_loc, nrhs, N, 0, colsBlockDense_loc, colSparsity_loc);
@@ -1208,7 +1212,7 @@ void sLinsys::addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparse
          double* colsBlockDense_loc = colsBlockDense + id * N * blocksize;
          memset(colsBlockDense_loc, 0, blocksize * N * sizeof(double));
 
-         int* colSparsity_loc = colSparsity + id * N * blocksize;
+         int* colSparsity_loc = colSparsity;// + id * N * blocksize;
 
          G.fromGetRowsBlock(colId_loc, nrhs, N, 0, colsBlockDense_loc, colSparsity_loc);
 
