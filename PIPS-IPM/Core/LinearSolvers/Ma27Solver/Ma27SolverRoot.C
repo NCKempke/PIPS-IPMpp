@@ -34,7 +34,7 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       mat_storage = matrixNewSym.getStorageHandle();
 
       for( int i = 0; i < mat_storage->len; ++i )
-         if( std::fabs(mat_storage->M[i]) < 1e-12 )
+         if( std::fabs(mat_storage->M[i]) < 1e-8 )
             mat_storage->M[i] = 0.0;
 
       init();
