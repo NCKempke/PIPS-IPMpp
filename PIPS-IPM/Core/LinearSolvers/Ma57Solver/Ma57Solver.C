@@ -54,19 +54,19 @@ void Ma57Solver::init()
 
    FNAME(ma57id)( cntl, icntl );
 
-   //icntl[1] = -1; // don't print warning messages
+   icntl[1] = -1; // don't print warning messages
    icntl[8] = n_iterative_refinement;
 
    // 1 -> use pivot order in KEEP, 0 -> AMD ordering using MC47 (no dense rows), 2 -> AMD using MC47,
    // 3 -> min degree MA27, 4 -> METIS ordering, 5 -> auto choice (default)
-   icntl[5] = 5;
+   icntl[5] = 4;
    // default 1 -> scale using symmetrized MC64 version, if != 1 no sclaing
    //icntl[14] = 1;
    // if 0 nothing (default) if 1 remove small entries cntl[1] and place corresponding pivots at the end of factorization -> for highly rank deficient matrices ..
-   icntl[15] = 1;
+   icntl[15] = 0;
 
    // set initial value of "Treat As Zero" parameter
-   cntl[1] = treat_pivot_as_zero; // for Ma57BD
+//   cntl[1] = treat_pivot_as_zero; // for Ma57BD
    //   cntl[2] convergence for Ma57DD iterative refinement (norm improvement by factor..) default 0.5
    //   cntl[3] Ma57BD (reuse of old factorization)
    //   cntl[4] static pivoting

@@ -74,7 +74,7 @@ protected:
    *  enforce greater stability in the factorization as they insist on
    *  larger pivots. Smaller values preserve sparsity at the cost of
    *  using smaller pivots.  */
-  double threshold_pivoting = 1e-5;
+  double threshold_pivoting = 0.01;
 
   /** the Threshold Pivoting parameter may need to be increased during
    * the algorithm if poor precision is obtained from the linear
@@ -96,7 +96,7 @@ protected:
    * attained on the first solve, we use iterative refinement and
    * possibly refactorization with a higher value of
    * kThresholdPivoting. */
-  double precision = 1e-9;
+  double precision = 1e-7;
 
   /** index array for the factorization */
   int *irowM = nullptr;
