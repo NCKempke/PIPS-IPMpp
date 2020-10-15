@@ -149,9 +149,16 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
             &nsteps, icntl, info);
 
+
       /* res = res - A * drhs where A * drhs_out = drhs_in */
       mStorage->mult(-1.0, dresid, 1, 1.0, drhs, 1);
       const double rnorm = resid->infnorm();
+      bool print_residual = true;
+
+      if( print_residual )
+      {
+         std::cout << "LEAF_SOLVE residual = " << rnorm / (1.0 + rhsnorm ) << std::endl;
+      }
     
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
          done = true;
