@@ -64,27 +64,35 @@ protected:
   int minimumRealWorkspace() { return info[4]; }
   int minimumIntWorkspace() { return info[5]; }
 
-  const int max_tries;
+  const int max_tries = 8;
 
-  const int max_n_iter_refinement;
+  const int max_n_iter_refinement = 10;
 
-  const int ooqp_print_level_warnings;
+  const int ooqp_print_level_warnings = 10000;
 
   /** precision we demand from the linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
    * possibly refactorization with a higher value of
    * kThresholdPivoting. */
-  const double precision;
+  const double precision = 1e-7;
 
   /** the Threshold Pivoting parameter may need to be increased during
    * the algorithm if poor precision is obtained from the linear
    * solves.  kThresholdPivoting indicates the largest value we are
    * willing to tolerate.  */
-  const double threshold_pivoting_max = 1.e-1;
+  const double threshold_pivoting_max = 0.5;
+
+  /** During factorization entries smaller than small pivot will not
+   * be accepted as pivots and the matrix will be treated as singular.
+   *
+   * This is the max we are willing to go with our pivots.
+   */
+  const double threshold_pivtol = 1e-12;
+  const double threshold_pivtol_factor = 0.1;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is
    * increased when it is found to be inadequate.  */
-  const double threshold_pivoting_factor;
+  const double threshold_pivoting_factor = 10;
 
   /** index array for the factorization */
   int *irowM, *jcolM;
@@ -120,19 +128,23 @@ protected:
 
 public:
   /** the Threshold Pivoting parameter, stored as U in the ma27dd
-   *  common block. Takes values in the range [0,1]. Larger values
-   *  enforce greater stability in the factorization as they insist on
+   *  common block. Takes values in the range [-0.5,0.5]. If negative no
+   *  numerical pivoting will be performed - if positive numerical pivoting
+   *  will be performed. If no pivoting is applied the subroutine will fail when
+   *  a zero pivot is encountered. Larger values enforce greater stability in the
+   *  factorization as they insist on
    *  larger pivots. Smaller values preserve sparsity at the cost of
-   *  using smaller pivots.  */
+   *  using smaller pivots.
+   */
   double thresholdPivoting() const { return cntl[0]; }
   void setThresholdPivoting( double piv  ) { cntl[0] = piv; }
 
-  /** the "Treat As Zero" parameter, stored as pivtol in the common
+  /** the "small pivot" parameter, stored as pivtol in the common
    * block ma27td. The factorization will not accept a pivot whose
    * absolute value is less than this parameter as a 1x1 pivot or as
    * the off-diagonal in a 2x2 pivot.  */
-  double treatAsZero() const { return cntl[2]; }
-  void setTreatAsZero( double tol ) { cntl[2] = tol; }
+  double getSmallPivot() const { return cntl[2]; }
+  void setSmallPivot( double tol ) { cntl[2] = tol; }
 
   /** copy elements from matrix into the fact data structure, in
    * preparation for factorization (or refactorization).  */

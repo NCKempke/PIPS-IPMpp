@@ -11,9 +11,7 @@
 extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(SparseSymMatrix *sgm) :
-      max_tries(8), max_n_iter_refinement(10), ooqp_print_level_warnings(
-            10000), precision(1e-7), threshold_pivoting_max(1.e-2), threshold_pivoting_factor(
-            10.0), irowM(nullptr), jcolM(nullptr), fact(nullptr), ipessimism(
+       irowM(nullptr), jcolM(nullptr), fact(nullptr), ipessimism(
             2.0), rpessimism(2.0)
 {
    mStorage = sgm->getStorageHandle();
@@ -22,14 +20,19 @@ Ma27Solver::Ma27Solver(SparseSymMatrix *sgm) :
 
 void Ma27Solver::init()
 {
+   const double default_small_pivot = 1.0e-12;
+   const double default_threshold_pivoting = 0.01;
+   /* detecting dense rows during the factorization to preserve sparsity */
+   const double default_fratio = 0.5;
    assert( mStorage->n == mStorage->m );
    n = mStorage->n;
    nnz = mStorage->numberOfNonZeros();
 
    FNAME(ma27id)(icntl, cntl);
 
-   this->setTreatAsZero( 1.0e-12 );
-   this->setThresholdPivoting( 1.0e-8 );
+   this->setThresholdPivoting( default_threshold_pivoting );
+   cntl[1] = default_fratio;
+   this->setSmallPivot( default_small_pivot );
 
    icntl[0] = 0;
    icntl[1] = 0;
@@ -296,9 +299,20 @@ bool Ma27Solver::checkErrorsAndReact()
       case -5:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-         {
             std::cout << "WARNING MA27: matrix apparently numerically singular, detected at stage " << error_info << std::endl;
-            std::cout << " accepting factorization anyway" << std::endl;
+
+         if( getSmallPivot() <= threshold_pivtol )
+         {
+            std::cout << " cannot decrease pivtol anymore -- accepting factorization anyway" << std::endl;
+            assert( getSmallPivot() == threshold_pivtol );
+         }
+         else
+         {
+            const double curr_pivtol = getSmallPivot();
+            const double new_pivtol = std::max( threshold_pivtol, curr_pivtol * threshold_pivtol_factor );
+            std::cout << " decreasing pivtol from " << curr_pivtol << " to " << new_pivtol << std::endl;
+
+            setSmallPivot( new_pivtol );
          }
       }; break;
       case -6:
