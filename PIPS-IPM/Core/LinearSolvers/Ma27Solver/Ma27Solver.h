@@ -68,7 +68,7 @@ protected:
 
   const int max_n_iter_refinement = 10;
 
-  const int ooqp_print_level_warnings = 10000;
+  const int ooqp_print_level_warnings = 1000;
 
   /** precision we demand from the linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
@@ -120,7 +120,8 @@ protected:
   /** amounts by which to increase allocated factorization space when
    * inadequate space is detected. ipessimism is for array "iw",
    * rpessimism is for the array "fact". */
-  double ipessimism, rpessimism;
+  double ipessimism = 2.0;
+  double rpessimism = 2.0;
 
   /** called the very first time a matrix is factored. Allocates space
    * for the factorization and performs ordering */
@@ -164,7 +165,8 @@ public:
   virtual void matrixChanged();
 
 protected:
-  SparseStorageHandle mStorage;
+  const SparseSymMatrix* mat;
+  SparseStorageHandle mat_storage;
 
   void init();
   void freeWorkingArrays();
@@ -173,7 +175,7 @@ public:
   /** base class constructor. Allocates values for kTreatAsZero,
    * kThresholdPivoting, kThresholdPivotingMax,
    * kThresholdPivotingFactor, kPrecision, ipessimism,rpessimism */
-  Ma27Solver( SparseSymMatrix * sgm );
+  Ma27Solver( const SparseSymMatrix * sgm );
 
   virtual ~Ma27Solver();
 

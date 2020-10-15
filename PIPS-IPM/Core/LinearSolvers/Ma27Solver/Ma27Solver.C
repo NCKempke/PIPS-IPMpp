@@ -10,11 +10,9 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(SparseSymMatrix *sgm) :
-       irowM(nullptr), jcolM(nullptr), fact(nullptr), ipessimism(
-            2.0), rpessimism(2.0)
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) :
+       irowM(nullptr), jcolM(nullptr), fact(nullptr), mat(sgm), mat_storage(sgm->getStorageHandle())
 {
-   mStorage = sgm->getStorageHandle();
    init();
 }
 
@@ -24,18 +22,18 @@ void Ma27Solver::init()
    const double default_threshold_pivoting = 0.01;
    /* detecting dense rows during the factorization to preserve sparsity */
    const double default_fratio = 0.5;
-   assert( mStorage->n == mStorage->m );
-   n = mStorage->n;
-   nnz = mStorage->numberOfNonZeros();
+   assert( mat_storage->n == mat_storage->m );
+   n = mat_storage->n;
+   nnz = mat_storage->numberOfNonZeros();
 
    FNAME(ma27id)(icntl, cntl);
 
-   this->setThresholdPivoting( default_threshold_pivoting );
-   cntl[1] = default_fratio;
-   this->setSmallPivot( default_small_pivot );
-
-   icntl[0] = 0;
-   icntl[1] = 0;
+//   this->setThresholdPivoting( default_threshold_pivoting );
+//   cntl[1] = default_fratio;
+//   this->setSmallPivot( default_small_pivot );
+//
+//   icntl[0] = 0;
+//   icntl[1] = 0;
 }
 
 void Ma27Solver::firstCall()
@@ -129,63 +127,93 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
 
    // define structures to save rhs and store residuals
-   SimpleVectorHandle resid(new SimpleVector(n));
-   SimpleVectorHandle rhsSave(new SimpleVector(n));
+   SimpleVectorHandle iter(new SimpleVector(n));
+   iter->setToZero();
 
-   double *drhs = rhs.elements();
-   double *dresid = resid->elements();
+   SimpleVectorHandle best_iter(new SimpleVector(n));
+   double best_resid = std::numeric_limits<double>::infinity();
 
-   rhsSave->copyFrom(rhs);
-   resid->copyFrom(rhs);
+   SimpleVectorHandle residual(new SimpleVector(n));
+   residual->copyFrom( rhs );
 
-   const double rhsnorm = rhs.infnorm();
+   const double rhsnorm = rhs.twonorm();
 
    bool done = false;
    int n_iter_ref = 0;
 
    double rnorm = -1.0;
- // TODO rollback to best iterate
    /* iterative refinement loop */
    while( !done && n_iter_ref < max_n_iter_refinement )
    {
-      FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
+      /* solve Ax = residual */
+      FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl, info);
+      iter->axpy(1.0, *residual);
+
+      residual->copyFrom(rhs);
+      /* calculate residual and possibly new rhs */
+      mat->mult( 1.0, *residual, -1.0, *iter);
 
       /* res = res - A * drhs where A * drhs_out = drhs_in */
-      mStorage->mult(-1.0, dresid, 1, 1.0, drhs, 1);
-      rnorm = resid->infnorm();
+      rnorm = residual->twonorm();
+
+      // TODO detect stalling ..
+//      std::cout << "ITER: " << n_iter_ref << "\trnorm: " << rnorm << ", bnorm: " << rhsnorm << ", relrnorm: " << rnorm / (1.0 + rhsnorm) << ", precision: "
+//            << precision << std::endl;
+      if( rnorm < best_resid )
+      {
+         best_resid = rnorm;
+         best_iter->copyFrom(*iter);
+      }
 
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
          done = true;
 
       ++n_iter_ref;
-      if ( thresholdPivoting() >= threshold_pivoting_max )
-      {
-         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
-      }
-      else
-      {
-         setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
-
-         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
-
-         this->matrixChanged();
-
-         resid->copyFrom(*rhsSave);
-         rhs.copyFrom(*rhsSave);
-      }
    }
 
-   if( rnorm >= precision * (1.0 + rhsnorm ) )
-      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
+//   if( n_iter_ref == max_n_iter_refinement )
+//   {
+//      if ( thresholdPivoting() >= threshold_pivoting_max )
+//      {
+//         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+//            std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
+//      }
+//      else
+//      {
+//         setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
+//
+//         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+//            std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
+//      }
+//   }
+
+   rnorm = best_resid;
+//   if( rnorm >= precision * (1.0 + rhsnorm ) )
+//   {
+//      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
+//
+//      mat->writeToStreamDense(std::cout);
+//      std::cout << " b " << std::endl;
+//      rhs.writeToStreamAll(std::cout);
+//      std::cout << " x " << std::endl;
+//      best_iter->writeToStreamAll(std::cout);
+//
+//      residual->copyFrom(rhs);
+//      /* calculate residual and possibly new rhs */
+//      mat->mult( 1.0, *residual, -1.0, *best_iter);
+//
+//      std::cout << " resid " << std::endl;
+//      residual->writeToStreamAll(std::cout);
+////      assert(false);
+//   }
+   rhs.copyFrom(*best_iter);
 }
 
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
 {
    assert( lafact >= nnz );
-   const double * M = mStorage->M;
+   const double * M = mat_storage->M;
    std::copy( M, M + nnz, afact );
 
    if( lafact > nnz )
@@ -195,10 +223,10 @@ void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
 // TODO same as the one in MA57 - move somewhere else, some common MA_Solver thing maybe..
 void Ma27Solver::getIndices( int irow[], int jcol[] ) const
 {
-   const int* krowM = mStorage->krowM;
-   for( int i = 0; i < mStorage->n; i++ )
+   const int *krowM = mat_storage->krowM;
+   for( int i = 0; i < mat_storage->n; i++ )
    {
-      if( mStorage->fortranIndexed() )
+      if( mat_storage->fortranIndexed() )
       {
          assert(krowM[i] - 1 >= 0);
          for( int k = krowM[i] - 1; k < krowM[i + 1] - 1; k++ )
@@ -211,10 +239,10 @@ void Ma27Solver::getIndices( int irow[], int jcol[] ) const
 
    for( int k = 0; k < nnz; k++ )
    {
-      if( !mStorage->fortranIndexed() )
-         jcolM[k] = mStorage->jcolM[k] + 1;
+      if( !mat_storage->fortranIndexed() )
+         jcolM[k] = mat_storage->jcolM[k] + 1;
       else
-         jcolM[k] = mStorage->jcolM[k];
+         jcolM[k] = mat_storage->jcolM[k];
    }
 }
 

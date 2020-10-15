@@ -31,6 +31,7 @@ public:
   SparseStorage&  getStorageRef() { return *mStorage; }
   const SparseStorage&  getStorageRef() const { return *mStorage; }
   SparseStorageHandle  getStorageHandle() { return mStorage; }
+  const SparseStorageHandle  getStorageHandle() const { return mStorage; }
 
   // is lower part of matrix stored? (otherwise upper part is stored)
   const bool isLower;

@@ -31,7 +31,7 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       printf("\n Schur complement factorization is starting ...\n ");
 
       freeWorkingArrays();
-      mStorage = matrixNewSym.getStorageHandle();
+      mat_storage = matrixNewSym.getStorageHandle();
 
       init();
       matrixChanged();
