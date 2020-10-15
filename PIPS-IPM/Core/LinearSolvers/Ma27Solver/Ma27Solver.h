@@ -68,7 +68,7 @@ protected:
 
   int max_n_iter_refinement;
 
-  const int ooqp_print_level_warnings = 1000;
+  const int ooqp_print_level_warnings = 10000;
 
   /** precision we demand from the linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
