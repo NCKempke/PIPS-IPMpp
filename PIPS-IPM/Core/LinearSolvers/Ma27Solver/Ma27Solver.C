@@ -212,7 +212,8 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    rnorm = best_resid;
    if( rnorm >= precision * (1.0 + rhsnorm ) )
    {
-      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
+      std::cout << "WARNING MA27: big residual after " << n_iter_ref << "iterative refinement steps in solve : "
+            << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
       std::ofstream file("mat.out");
 
       mat->writeToStreamDense(file);
