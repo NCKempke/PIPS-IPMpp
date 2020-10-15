@@ -66,7 +66,7 @@ protected:
 
   const int max_tries = 8;
 
-  const int max_n_iter_refinement = 10;
+  const int max_n_iter_refinement = 20;
 
   const int ooqp_print_level_warnings = 1000;
 
