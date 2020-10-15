@@ -172,7 +172,6 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
             std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
 
          this->matrixChanged();
-         n_iter_ref++;
 
          resid->copyFrom(*rhsSave);
          rhs.copyFrom(*rhsSave);
