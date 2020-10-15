@@ -211,8 +211,22 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 
    rnorm = best_resid;
 
-   rhs.copyFrom(*best_iter);
 
+   if( rnorm >= precision * (1.0 + rhsnorm) )
+   {
+      std::ofstream file("mat.out");
+
+      file << "mat" << std::endl;
+      mat->writeToStream(file);
+      file << "x" << std::endl;
+      best_iter->writeToStreamAll(file);
+      file << "b" << std::endl;
+      rhs.writeToStreamAll(file);
+
+      file.close();
+   }
+
+   rhs.copyFrom(*best_iter);
 //   /* sparsify rhs */
 //   for( int i = 0; i < rhs.length(); ++i )
 //      if( std::fabs(rhs[i]) < 1e-16 )
