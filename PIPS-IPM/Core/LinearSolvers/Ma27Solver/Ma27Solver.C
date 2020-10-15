@@ -12,7 +12,7 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) : max_n_iter_refinement(15), precision(1e-10), threshold_pivoting_max(0.5),
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) : max_n_iter_refinement(10), precision(1e-7), threshold_pivoting_max(0.1),
        irowM(nullptr), jcolM(nullptr), fact(nullptr), mat(sgm), mat_storage(sgm->getStorageHandle())
 {
    init();
@@ -128,10 +128,10 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 {
    SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
 
-   /* sparsify rhs */
-   for( int i = 0; i < rhs.length(); ++i )
-      if( std::fabs(rhs[i]) < precision )
-         rhs[i] = 0.0;
+//   /* sparsify rhs */
+//   for( int i = 0; i < rhs.length(); ++i )
+//      if( std::fabs(rhs[i]) < precision )
+//         rhs[i] = 0.0;
 
    // define structures to save rhs and store residuals
    SimpleVectorHandle iter(new SimpleVector(n));
@@ -210,32 +210,13 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    }
 
    rnorm = best_resid;
-   if( rnorm >= precision * (1.0 + rhsnorm ) && false)
-   {
-      std::cout << "WARNING MA27: big residual after " << n_iter_ref << "iterative refinement steps in solve : "
-            << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
-      std::ofstream file("mat.out");
-
-      mat->writeToStreamDense(file);
-      file << " rhs ";
-      rhs.writeToStreamAll(file);
-      file << " x ";
-      best_iter->writeToStreamAll(file);
-      residual->copyFrom(rhs);
-      file << " resid ";
-      mat->mult( 1.0, *residual, -1.0, *best_iter);
-      residual->writeToStreamAll(file);
-
-      file.close();
-      assert(false);
-   }
 
    rhs.copyFrom(*best_iter);
 
-   /* sparsify rhs */
-   for( int i = 0; i < rhs.length(); ++i )
-      if( std::fabs(rhs[i]) < 1e-16 )
-         rhs[i] = 0.0;
+//   /* sparsify rhs */
+//   for( int i = 0; i < rhs.length(); ++i )
+//      if( std::fabs(rhs[i]) < 1e-16 )
+//         rhs[i] = 0.0;
 }
 
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
