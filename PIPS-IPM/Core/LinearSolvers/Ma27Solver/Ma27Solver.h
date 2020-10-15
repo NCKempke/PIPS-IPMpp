@@ -66,7 +66,7 @@ protected:
 
   const int max_tries = 8;
 
-  const int max_n_iter_refinement = 10;
+  int max_n_iter_refinement;
 
   const int ooqp_print_level_warnings = 1000;
 
@@ -74,20 +74,20 @@ protected:
    * attained on the first solve, we use iterative refinement and
    * possibly refactorization with a higher value of
    * kThresholdPivoting. */
-  const double precision = 1e-7;
+  double precision;
 
   /** the Threshold Pivoting parameter may need to be increased during
    * the algorithm if poor precision is obtained from the linear
    * solves.  kThresholdPivoting indicates the largest value we are
    * willing to tolerate.  */
-  const double threshold_pivoting_max = 0.5;
+  double threshold_pivoting_max;
 
   /** During factorization entries smaller than small pivot will not
    * be accepted as pivots and the matrix will be treated as singular.
    *
    * This is the max we are willing to go with our pivots.
    */
-  const double threshold_pivtol = 1e-15;
+  const double threshold_pivtol = 1e-10;
   const double threshold_pivtol_factor = 0.1;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is

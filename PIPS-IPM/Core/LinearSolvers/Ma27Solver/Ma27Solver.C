@@ -12,7 +12,7 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) :
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) : max_n_iter_refinement(15), precision(1e-10), threshold_pivoting_max(0.5),
        irowM(nullptr), jcolM(nullptr), fact(nullptr), mat(sgm), mat_storage(sgm->getStorageHandle())
 {
    init();
@@ -97,10 +97,6 @@ void Ma27Solver::matrixChanged()
    {
       // copy M to fact
       this->copyMatrixElements(fact, la);
-
-      for( int i = 0; i < la; ++i )
-         if( std::fabs(fact[i]) < 1e-8 )
-            fact[i] = 0.0;
 
       FNAME(ma27bd)(&n, &nnz, irowM, jcolM, fact, &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl, cntl, info);
@@ -214,7 +210,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    }
 
    rnorm = best_resid;
-   if( rnorm >= precision * (1.0 + rhsnorm ) )
+   if( rnorm >= precision * (1.0 + rhsnorm ) && false)
    {
       std::cout << "WARNING MA27: big residual after " << n_iter_ref << "iterative refinement steps in solve : "
             << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;

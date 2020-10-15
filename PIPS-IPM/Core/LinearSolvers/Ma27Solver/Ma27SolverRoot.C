@@ -14,6 +14,9 @@
 Ma27SolverRoot::Ma27SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm )
  : Ma27Solver(sgm), comm(mpiComm)
 {
+   threshold_pivoting_max = 0.1;
+   max_n_iter_refinement = 10;
+   precision = 1e-7;
    assert(mpiComm != MPI_COMM_NULL);
 }
 
