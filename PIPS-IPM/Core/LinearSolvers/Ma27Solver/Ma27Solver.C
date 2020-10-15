@@ -211,17 +211,14 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       std::fstream file("mat.out");
 
       mat->writeToStreamDense(file);
-      file << " B ";
+      file << " rhs ";
       rhs.writeToStreamAll(file);
       file << " x ";
       best_iter->writeToStreamAll(file);
       residual->copyFrom(rhs);
       file << " resid ";
       mat->mult( 1.0, *residual, -1.0, *best_iter);
-
-      std::cout << " resid " << std::endl;
-      residual->writeToStreamAll(std::cout);
-      rhs.writeToStreamAll(file);
+      residual->writeToStreamAll(file);
       assert(false);
    }
 
