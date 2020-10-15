@@ -128,6 +128,11 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 {
    SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
 
+   /* sparsify rhs */
+   for( int i = 0; i < rhs.length(); ++i )
+      if( std::fabs(rhs[i]) < precision )
+         rhs[i] = 0.0;
+
    // define structures to save rhs and store residuals
    SimpleVectorHandle iter(new SimpleVector(n));
    iter->setToZero();
