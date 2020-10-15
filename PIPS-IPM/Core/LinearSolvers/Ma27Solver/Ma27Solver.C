@@ -8,6 +8,8 @@
 #include "SimpleVector.h"
 #include "SimpleVectorHandle.h"
 
+#include <fstream>
+
 extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) :
@@ -206,21 +208,23 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    if( rnorm >= precision * (1.0 + rhsnorm ) )
    {
       std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
+      std::fstream file("mat.out");
+
+      mat->writeToStreamDense(file);
+      file << " B ";
+      rhs.writeToStreamAll(file);
+      file << " x ";
+      best_iter->writeToStreamAll(file);
+      residual->copyFrom(rhs);
+      file << " resid ";
+      mat->mult( 1.0, *residual, -1.0, *best_iter);
+
+      std::cout << " resid " << std::endl;
+      residual->writeToStreamAll(std::cout);
+      rhs.writeToStreamAll(file);
+      assert(false);
    }
-//
-//      mat->writeToStreamDense(std::cout);
-//      std::cout << " b " << std::endl;
-//      rhs.writeToStreamAll(std::cout);
-//      std::cout << " x " << std::endl;
-//      best_iter->writeToStreamAll(std::cout);
-//
-//      residual->copyFrom(rhs);
-//      /* calculate residual and possibly new rhs */
-//      mat->mult( 1.0, *residual, -1.0, *best_iter);
-//
-//      std::cout << " resid " << std::endl;
-//      residual->writeToStreamAll(std::cout);
-////      assert(false);
+
    rhs.copyFrom(*best_iter);
 }
 
