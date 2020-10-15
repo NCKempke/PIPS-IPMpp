@@ -58,6 +58,11 @@ bool StochPresolverModelCleanup::applyPresolving()
    int n_removed_entries_ineq = removeTinyEntriesFromSystem(INEQUALITY_SYSTEM);
    n_removed_entries = n_removed_entries_eq + n_removed_entries_ineq;
 
+   int local_count_empty_brows = presData.countEmptyRowsBDmat();
+   PIPS_MPIgetSumInPlace(local_count_empty_brows);
+   if( my_rank == 0 )
+      std::cout << "empty brows " << local_count_empty_brows << std::endl;
+
    presData.allreduceAndApplyNnzChanges();
 
    n_fixed_empty_columns = fixEmptyColumns();

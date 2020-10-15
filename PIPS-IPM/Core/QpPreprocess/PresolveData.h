@@ -336,6 +336,8 @@ private:
 public:
       void writeRowLocalToStreamDense(std::ostream& out, const INDEX& row) const;
       void printRowColStats() const;
+      int countEmptyRowsBDmat() const;
+
 private:
       void writeMatrixRowToStreamDense(std::ostream& out, const SparseGenMatrix& mat, int node, int row, const SimpleVector& ixupp, const SimpleVector& xupp,
             const SimpleVector& ixlow, const SimpleVector& xlow) const;

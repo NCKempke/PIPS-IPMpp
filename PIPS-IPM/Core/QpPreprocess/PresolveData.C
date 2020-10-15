@@ -4142,3 +4142,32 @@ void PresolveData::printRowColStats() const
       std::cout << cols << " cols\t" << rows_A << " rows A\t" << rows_C << " rows C " << std::endl;
    }
 }
+
+int PresolveData::countEmptyRowsBDmat() const
+{
+   int count = 0;
+   for( int child = 0; child < nChildren; ++child )
+   {
+      if( nodeIsDummy(child) )
+         continue;
+      const SparseStorageDynamic& bmat = getSparseGenMatrixFromStochMat( getSystemMatrix(EQUALITY_SYSTEM), child, B_MAT)->getStorageDynamicRef();
+      const SparseStorageDynamic& dmat = getSparseGenMatrixFromStochMat( getSystemMatrix(INEQUALITY_SYSTEM), child, B_MAT)->getStorageDynamicRef();
+
+      for( int row = 0; row < bmat.getM(); ++row )
+      {
+         const INDEX row_INDEX(ROW, child, row, false, EQUALITY_SYSTEM);
+         if( bmat.getRowPtr(row).start == bmat.getRowPtr(row).end && getNnzsRow(row_INDEX) != 0 )
+            ++count;
+      }
+
+      for( int row = 0; row < dmat.getM(); ++row )
+      {
+         const INDEX row_INDEX(ROW, child, row, false, INEQUALITY_SYSTEM);
+         if( dmat.getRowPtr(row).start == dmat.getRowPtr(row).end && getNnzsRow(row_INDEX) != 0 )
+            ++count;
+      }
+   }
+
+   return count;
+}
+
