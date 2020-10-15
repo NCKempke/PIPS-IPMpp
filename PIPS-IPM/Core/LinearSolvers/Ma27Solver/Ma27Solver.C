@@ -219,6 +219,8 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       file << " resid ";
       mat->mult( 1.0, *residual, -1.0, *best_iter);
       residual->writeToStreamAll(file);
+
+      file.close();
       assert(false);
    }
 
