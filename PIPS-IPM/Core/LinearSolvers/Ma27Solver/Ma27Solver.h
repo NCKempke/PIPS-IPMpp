@@ -87,7 +87,7 @@ protected:
    *
    * This is the max we are willing to go with our pivots.
    */
-  const double threshold_pivtol = 1e-12;
+  const double threshold_pivtol = 1e-15;
   const double threshold_pivtol_factor = 0.1;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is

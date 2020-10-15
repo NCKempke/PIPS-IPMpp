@@ -18,7 +18,7 @@ Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) :
 
 void Ma27Solver::init()
 {
-   const double default_small_pivot = 1.0e-12;
+   const double default_small_pivot = 1.0e-10;
    const double default_threshold_pivoting = 0.01;
    /* detecting dense rows during the factorization to preserve sparsity */
    const double default_fratio = 0.5;
