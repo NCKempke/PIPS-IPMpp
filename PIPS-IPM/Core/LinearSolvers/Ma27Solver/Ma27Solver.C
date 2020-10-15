@@ -173,22 +173,33 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          done = true;
 
       ++n_iter_ref;
-   }
 
-   if( n_iter_ref == max_n_iter_refinement )
-   {
-      if ( thresholdPivoting() >= threshold_pivoting_max )
+      /* refactorize */
+      if( done && rnorm >= precision * (1.0 + rhsnorm ) )
       {
-         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
-      }
-      else
-      {
-         setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
+         if ( thresholdPivoting() >= threshold_pivoting_max )
+         {
+            if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            {
+               std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
+               std::cout << " did not converge but still keeping the iterate" << std::endl;
+            }
+         }
+         else
+         {
+            setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
 
-         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
+            if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+               std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing" << std::endl;
+
+            done = false;
+            n_iter_ref = 0;
+
+            residual->copyFrom(rhs);
+            iter->setToZero();
+         }
       }
+
    }
 
    rnorm = best_resid;
