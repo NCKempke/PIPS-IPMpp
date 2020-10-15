@@ -55,7 +55,11 @@ void Ma27SolverRoot::solve(OoqpVector& rhs)
    assert(n == rhs.length());
 
    if( PIPS_MPIgetRank() == 0 )
+   {
+      std::cout << "SchurSolve" << std::endl;
       Ma27Solver::solve(sv);
+      std::cout << "SchurSolveDone" << std::endl;
+   }
 
    if( PIPS_MPIgetSize() > 0 )
       MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, comm);
