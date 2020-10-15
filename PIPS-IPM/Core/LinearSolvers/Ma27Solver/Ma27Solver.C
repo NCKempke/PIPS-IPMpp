@@ -230,6 +230,11 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    }
 
    rhs.copyFrom(*best_iter);
+
+   /* sparsify rhs */
+   for( int i = 0; i < rhs.length(); ++i )
+      if( std::fabs(rhs[i]) < 1e-16 )
+         rhs[i] = 0.0;
 }
 
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
