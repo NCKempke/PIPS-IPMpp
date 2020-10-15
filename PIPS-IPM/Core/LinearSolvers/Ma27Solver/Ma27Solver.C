@@ -143,23 +143,18 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    bool done = false;
    int refactorizations = 0;
 
+   double rnorm = -1.0;
+
    /* iterative refinement loop */
    while( !done && refactorizations < max_n_iter_refinement )
    {
       FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
             &nsteps, icntl, info);
 
-
       /* res = res - A * drhs where A * drhs_out = drhs_in */
       mStorage->mult(-1.0, dresid, 1, 1.0, drhs, 1);
-      const double rnorm = resid->infnorm();
-      bool print_residual = true;
+      rnorm = resid->infnorm();
 
-      if( print_residual )
-      {
-         std::cout << "LEAF_SOLVE residual = " << rnorm / (1.0 + rhsnorm ) << std::endl;
-      }
-    
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
          done = true;
       else if ( thresholdPivoting() >= threshold_pivoting_max || refactorizations > max_n_iter_refinement)
@@ -182,6 +177,9 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          rhs.copyFrom(*rhsSave);
       }
    }
+
+   if( !rnorm < precision * (1.0 + rhsnorm ) )
+      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << std::endl;
 }
 
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
