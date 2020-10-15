@@ -141,12 +141,12 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    const double rhsnorm = rhs.infnorm();
 
    bool done = false;
-   int refactorizations = 0;
+   int n_iter_ref = 0;
 
    double rnorm = -1.0;
-
+ // TODO rollback to best iterate
    /* iterative refinement loop */
-   while( !done && refactorizations < max_n_iter_refinement )
+   while( !done && n_iter_ref < max_n_iter_refinement )
    {
       FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, drhs, iw1,
             &nsteps, icntl, info);
@@ -157,11 +157,10 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
          done = true;
-      else if ( thresholdPivoting() >= threshold_pivoting_max || refactorizations > max_n_iter_refinement)
+      else if ( thresholdPivoting() >= threshold_pivoting_max || n_iter_ref > max_n_iter_refinement)
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
-         done = true;
       }
       else
       {
@@ -171,7 +170,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
             std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " for future factorizations" << std::endl;
 
          this->matrixChanged();
-         refactorizations++;
+         n_iter_ref++;
 
          resid->copyFrom(*rhsSave);
          rhs.copyFrom(*rhsSave);
@@ -179,7 +178,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    }
 
    if( rnorm >= precision * (1.0 + rhsnorm ) )
-      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << std::endl;
+      std::cout << "WARNING MA27: big residual after solve : " << rnorm / (1.0 + rhsnorm ) << " > " << precision << std::endl;
 }
 
 void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
