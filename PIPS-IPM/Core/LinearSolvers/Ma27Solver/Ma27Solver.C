@@ -98,6 +98,10 @@ void Ma27Solver::matrixChanged()
       // copy M to fact
       this->copyMatrixElements(fact, la);
 
+      for( int i = 0; i < la; ++i )
+         if( std::fabs(fact[i]) < 1e-8 )
+            fact[i] = 0.0;
+
       FNAME(ma27bd)(&n, &nnz, irowM, jcolM, fact, &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl, cntl, info);
 
