@@ -149,7 +149,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
       const QpGenVars& vars = dynamic_cast<const QpGenVars&>(*iterate);
       const double max = vars.x->infnorm();
       double min = -1;
-      vars.x->absminNonZero(min, 1e-8);
+      vars.x->absminNonZero(min, 1e-3);
 
       if( PIPS_MPIgetRank() == 0 )
          std::cout << "X abs min : " << min << ", X abs max: " << max << std::endl;
