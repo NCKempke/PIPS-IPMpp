@@ -124,19 +124,19 @@ Data* StochPresolver::presolve()
    sData* finalPresData = presData->finalize();
 
    /* change original bounds and set ixlow ixupp */
-   finalPresData->xlowerBound().setNotIndicatedEntriesToVal( -1e10, *finalPresData->ixlow );
-   finalPresData->xupperBound().setNotIndicatedEntriesToVal( 1e10, *finalPresData->ixupp );
-
-   OoqpVector* ixupp_inv = finalPresData->ixupp->clone();
-   ixupp_inv->setToZero();
-   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixupp);
-
-   OoqpVector* ixlow_inv = finalPresData->ixlow->clone();
-   ixlow_inv->setToZero();
-   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixlow);
-
-   finalPresData->ixlow->setToConstant(1);
-   finalPresData->ixupp->setToConstant(1);
+//   finalPresData->xlowerBound().setNotIndicatedEntriesToVal( -1e10, *finalPresData->ixlow );
+//   finalPresData->xupperBound().setNotIndicatedEntriesToVal( 1e10, *finalPresData->ixupp );
+//
+//   OoqpVector* ixupp_inv = finalPresData->ixupp->clone();
+//   ixupp_inv->setToZero();
+//   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixupp);
+//
+//   OoqpVector* ixlow_inv = finalPresData->ixlow->clone();
+//   ixlow_inv->setToZero();
+//   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixlow);
+//
+//   finalPresData->ixlow->setToConstant(1);
+//   finalPresData->ixupp->setToConstant(1);
 
    assert( finalPresData );
    assert( finalPresData->isRootNodeInSync() );
