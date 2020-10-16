@@ -1730,7 +1730,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
 
       /* recover primal value */
       x_val = (rhs - value_row) / col_coeff;
-      assert( PIPSisZero(x_val * col_coeff + value_row - rhs) );
+      assert( PIPSisZeroFeas(x_val * col_coeff + value_row - rhs) );
 
       /* compute slacks and set duals for bounds to zero */
       double& slack_lower = local_col_change ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col);
@@ -1741,7 +1741,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
       else
       {
          assert( PIPSisLE(xlow, x_val) );
-         slack_lower = xlow - x_val;
+         slack_lower = x_val - xlow;
       }
 
       if( xupp == INF_POS )
