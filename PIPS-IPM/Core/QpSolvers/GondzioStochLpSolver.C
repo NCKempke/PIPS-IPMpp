@@ -146,6 +146,14 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
    {
       iter++;
 
+      const QpGenVars& vars = dynamic_cast<const QpGenVars&>(*iterate);
+      const double max = vars.x->infnorm();
+      double min = -1;
+      vars.x->absminNonZero(min, 1e-8);
+
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "X abs min : " << min << ", X abs max: " << max << std::endl;
+
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
       pushConvergedVarsAwayFromBounds(*prob, *iterate);
