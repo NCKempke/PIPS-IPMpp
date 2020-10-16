@@ -259,6 +259,10 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 			  *vars->w, *vars->phi );
   if( nxlow + nxupp > 0 ) this->putXDiagonal( *dd );
 
+  dd->pushAwayFromZero(1e-8, 1e-8, nullptr);
+
+  nomegaInv->pushAwayFromZero(1e-8, 1e-8, nullptr);
+
   nomegaInv->invert();
   nomegaInv->negate();
 
