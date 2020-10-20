@@ -216,7 +216,7 @@ public:
    void absminVecUpdate(OoqpVectorBase<T>& absminvec) const override {};
    void absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const override {};
    void absmin( T& m) const override {};
-   void absminNonZero(T& m, T zero_eps) const override {m=-1.0;};
+   void absminNonZero(T& m, T zero_eps) const override { m = std::numeric_limits<T>::infinity(); };
    T stepbound( const OoqpVectorBase<T> & v, T maxStep ) const override { return maxStep; }
    T findBlocking(const OoqpVectorBase<T> & wstep_vec,
 			      const OoqpVectorBase<T> & u_vec,

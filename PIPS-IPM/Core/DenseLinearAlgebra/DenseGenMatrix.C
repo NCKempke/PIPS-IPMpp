@@ -198,22 +198,14 @@ void DenseGenMatrix::matTransDinvMultMat(OoqpVector& d, SymMatrix** res)
 
 double DenseGenMatrix::abmaxnorm() const
 {
-  double norm = 0;
-  
-  int i, j;
-  double ** M = mStorage->M;
-  int m = mStorage->m, n = mStorage->n;
-  double eltNorm;
-
-  for ( i = 0; i < m; i++ ) {
-    for ( j = 0; j < n; j++ ) {
-      eltNorm = std::fabs( M[i][j] );
-      if ( eltNorm > norm ) norm = eltNorm;
-    }
-  }
-  return norm;
+   assert( mStorage.notNil() );
+   return mStorage->abmaxnorm();
 }
-
+double DenseGenMatrix::abminnormNonZero( double tol ) const
+{
+   assert( mStorage.notNil() );
+   return mStorage->abminnormNonZero(tol);
+}
 
 void DenseGenMatrix::writeToStream( std::ostream& out ) const
 {

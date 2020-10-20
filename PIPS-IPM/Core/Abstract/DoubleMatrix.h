@@ -48,6 +48,7 @@ public:
   virtual void RowScale ( OoqpVector& vec ) = 0;
   virtual void scalarMult( double num) = 0;
   virtual double abmaxnorm() const = 0;
+  virtual double abminnormNonZero( double tol = 1e-30 ) const = 0;
   virtual ~DoubleStorage() {};
 };
 
@@ -113,6 +114,10 @@ public:
   /** the magnitude of the element in this matrix with largest absolute value.
    */
   virtual double abmaxnorm() const = 0;
+
+  /** the magnitude of the element in this matrix with smallest absolute value != 0.
+   */
+  virtual double abminnormNonZero( double tol = 1e-30) const = 0;
 
   /** Write this element to a C++ stream */
   virtual void writeToStream( std::ostream& out ) const = 0;

@@ -88,27 +88,22 @@ void SimpleVectorBase<T>::absmin(T& min) const
 }
 
 /** Compute the min absolute value that is larger than zero_eps.
- * If there is no such value, return -1.0 */
+ * If there is no such value, return inf */
  template<typename T>
 void SimpleVectorBase<T>::absminNonZero(T& m, T zero_eps) const
 {
    assert(zero_eps >= 0.0);
 
-   m = -1.0;
+   m = std::numeric_limits<T>::infinity();
 
    if( this->n == 0 )
       return;
 
-   T min = std::numeric_limits<T>::max();
-
    for( int i = 0; i < this->n; i++ )
    {
-      if( fabs(v[i]) < min && fabs(v[i]) > zero_eps )
-         min = fabs(v[i]);
+      if( std::fabs(v[i]) < m && std::fabs(v[i]) > zero_eps )
+         m = std::fabs(v[i]);
    }
-
-   if( min < std::numeric_limits<T>::max() )
-      m = min;
 }
 
 template<typename T>

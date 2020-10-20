@@ -153,6 +153,7 @@ public:
                            double alpha,  const OoqpVector& x ) const override;
 
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
@@ -317,6 +318,7 @@ public:
 		    OoqpVector& yvecParent ) override {};
 
   double abmaxnorm() const override { return 0.0; };
+  double abminnormNonZero( double tol = 1e-30 ) const override { return std::numeric_limits<double>::infinity(); };
 
   void permuteLinkingVarsChild(const std::vector<unsigned int>& permvec)  override {};
   void getLinkVarsNnzChild(std::vector<int>& vec) const override {};

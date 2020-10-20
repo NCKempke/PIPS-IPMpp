@@ -54,6 +54,7 @@ public:
 			     int rowExtent, int& info );
 
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   virtual void ColumnScale( OoqpVector& vec );
   virtual void RowScale( OoqpVector& vec );
