@@ -1252,13 +1252,11 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
 
       if( 0.0 < coeff )
       {
-         assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
          const double implied_upperbound = (rhs - min_act) / coeff;
          upper_implied = PIPSisLE(implied_upperbound, xupp);
       }
       else
       {
-         assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
          const double implied_upperbound = (lhs - max_act) / coeff;
          upper_implied = PIPSisLE(implied_upperbound, xupp);
       }
@@ -1273,13 +1271,11 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
 
       if( 0.0 < coeff )
       {
-         assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
          const double implied_lowerbound = (lhs - max_act) / coeff;
          lower_implied = PIPSisLE(xlow, implied_lowerbound);
       }
       else
       {
-         assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
          const double implied_lowerbound = (rhs - min_act) / coeff;
          lower_implied = PIPSisLE(xlow, implied_lowerbound);
       }
