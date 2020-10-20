@@ -593,11 +593,11 @@ void GondzioStochSolver::pushSmallComplementarityProducts( const Data& prob_in, 
    QpGenVars& iterate = dynamic_cast<QpGenVars&>(iterate_in);
    const QpGenData& prob = dynamic_cast<const QpGenData&>(prob_in);
 
-   const double tol_small_comp = 1e-3 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / prob.nx );
+   const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / prob.nx );
 
    const double relative_duality_gap = residuals.dualityGap() / (1 + residuals.primalObjective() + residuals.dualObjective() ) ;
-   const double tol_small_variable = std::max(1e-12, 1e-4 * relative_duality_gap );
-   const double tol_small_dual = std::min( tol_small_variable, 1e-6 );
+   const double tol_small_variable = 1e-12; //std::max(1e-12, 1e-4 * relative_duality_gap );
+   const double tol_small_dual = 1e-6;//std::min( tol_small_variable, 1e-6 );
 
    iterate.t->pushSmallComplementarityPairs( *iterate.lambda, *prob.iclow , tol_small_variable, tol_small_dual, tol_small_comp );
    iterate.u->pushSmallComplementarityPairs( *iterate.pi, *prob.icupp , tol_small_variable, tol_small_dual, tol_small_comp );
