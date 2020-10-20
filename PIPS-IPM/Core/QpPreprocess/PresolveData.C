@@ -2501,13 +2501,6 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRow( const INDEX& row
 void PresolveData::adaptObjectiveSubstitutedRow( const INDEX& row, const INDEX& col, double obj_coeff, double col_coeff )
 {
    assert(row.isRow());
-   if( tracked_row == row )
-   {
-      INDEX col1(COL, 118, 4514);
-      std::cout << col1 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col1 ) << std::endl;
-      INDEX col2(COL, 118, 4587);
-      std::cout << col2 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col2 ) << std::endl;
-   }
 
    if( !col.isEmpty() )
    {
@@ -2638,11 +2631,6 @@ void PresolveData::adaptObjectiveSubstitutedRow( const INDEX& row, const INDEX& 
       else
          obj_offset_chgs += obj_coeff * rhs / col_coeff;
 
-      if( tracked_row == row )
-      {
-         std::cout << "obj_coeff : " << obj_coeff << ", rhs : " << rhs << ", col_coeff : " << col_coeff << std::endl;
-         writeRowLocalToStreamDense(std::cout, row);
-      }
    /* if a liking column in a local row gets removed we have to communicate the changes */
    if( col.isCol() && col.isLinkingCol() && row.getNode() != -1 )
    {
@@ -2652,15 +2640,6 @@ void PresolveData::adaptObjectiveSubstitutedRow( const INDEX& row, const INDEX& 
    else if( col.isCol() )
       getSimpleVecFromColStochVec( *presProb->g, col) = 0.0;
    }
-
-   if( tracked_row == row )
-   {
-      INDEX col1(COL, 118, 4514);
-      std::cout << col1 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col1 ) << std::endl;
-      INDEX col2(COL, 118, 4587);
-      std::cout << col2 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col2 ) << std::endl;
-   }
-
 }
 
 /** adds coeff * col to row */
