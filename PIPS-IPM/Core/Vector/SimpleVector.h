@@ -156,6 +156,8 @@ public:
 
   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
 
+  void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs ) override;
+
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };
 };

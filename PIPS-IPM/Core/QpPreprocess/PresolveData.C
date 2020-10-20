@@ -1172,24 +1172,13 @@ bool PresolveData::varBoundImpliedFreeBy( bool upper, const INDEX& col, const IN
    if( 0 == getNnzsRow(row) )
       return false;
 
-   bool res = false;
-   if( upper )
-      res = (row == getRowMarkedAsImplyingColumnBound(col, true));
-   else
-      res = (row == getRowMarkedAsImplyingColumnBound(col, false));
-
    /* check whether bounds is actually still implied by the row -- also checks whether col is still in that row */
-   if( res == true )
-   {
-      bool upper_implied, lower_implied;
-      varboundImpliedFreeFullCheck(upper_implied, lower_implied, col, row);
-      if(upper)
-         return upper_implied;
-      else
-         return lower_implied;
-   }
-
-   return res;
+   bool upper_implied, lower_implied;
+   varboundImpliedFreeFullCheck(upper_implied, lower_implied, col, row);
+   if(upper)
+      return upper_implied;
+   else
+      return lower_implied;
 }
 
 /* uses current activities (non-updated) to check whether said column's bounds are implied by row */
@@ -1230,7 +1219,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
 
    /* coefficient of col in row */
    const double coeff = mat.getMat(col_ptr);
-   assert(!PIPSisZero(coeff));
+   assert( !PIPSisZero(coeff) );
 
    /* current bounds */
    double xupp, xlow;
@@ -1241,7 +1230,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
       min_act -= coeff * xlow;
       max_act -= coeff * xupp;
    }
-   else
+   else if (coeff < 0 )
    {
       min_act -= coeff * xupp;
       max_act -= coeff * xlow;
@@ -1257,6 +1246,10 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
    /* calculate an check implied upper bound */
    if( max_ubndd == 0 && xupp != INF_POS )
    {
+      /* lhs <= ax + y */
+      /* lhs - max(y) <= lhs - y <= ax */
+      assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
+
       if( 0.0 < coeff )
       {
          assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
@@ -1274,7 +1267,11 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
    /* calculate an check implied lower bound */
    if( min_ubndd == 0 && xlow != INF_NEG )
    {
-      if( coeff < 0.0 )
+      /* ax + y <= rhs */
+      /* ax <= rhs - y <= rhs - min(y) */
+      assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
+
+      if( 0.0 < coeff )
       {
          assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
          const double implied_lowerbound = (lhs - max_act) / coeff;
@@ -2508,6 +2505,13 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRow( const INDEX& row
 void PresolveData::adaptObjectiveSubstitutedRow( const INDEX& row, const INDEX& col, double obj_coeff, double col_coeff )
 {
    assert(row.isRow());
+   if( tracked_row == row )
+   {
+      INDEX col1(COL, 118, 4514);
+      std::cout << col1 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col1 ) << std::endl;
+      INDEX col2(COL, 118, 4587);
+      std::cout << col2 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col2 ) << std::endl;
+   }
 
    if( !col.isEmpty() )
    {
@@ -2638,6 +2642,11 @@ void PresolveData::adaptObjectiveSubstitutedRow( const INDEX& row, const INDEX& 
       else
          obj_offset_chgs += obj_coeff * rhs / col_coeff;
 
+      if( tracked_row == row )
+      {
+         std::cout << "obj_coeff : " << obj_coeff << ", rhs : " << rhs << ", col_coeff : " << col_coeff << std::endl;
+         writeRowLocalToStreamDense(std::cout, row);
+      }
    /* if a liking column in a local row gets removed we have to communicate the changes */
    if( col.isCol() && col.isLinkingCol() && row.getNode() != -1 )
    {
@@ -2647,6 +2656,15 @@ void PresolveData::adaptObjectiveSubstitutedRow( const INDEX& row, const INDEX& 
    else if( col.isCol() )
       getSimpleVecFromColStochVec( *presProb->g, col) = 0.0;
    }
+
+   if( tracked_row == row )
+   {
+      INDEX col1(COL, 118, 4514);
+      std::cout << col1 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col1 ) << std::endl;
+      INDEX col2(COL, 118, 4587);
+      std::cout << col2 << " obj : " << getSimpleVecFromColStochVec( *presProb->g, col2 ) << std::endl;
+   }
+
 }
 
 /** adds coeff * col to row */

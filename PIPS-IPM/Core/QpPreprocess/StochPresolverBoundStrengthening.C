@@ -309,30 +309,49 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock( SystemType syste
 
          if(system_type == EQUALITY_SYSTEM)
          {
+            /* ax = b - y */
+
+            /* ax <= b - min(y) */
+            /* b - max(y) <= ax */
             if( PIPSisLT(0.0, a_ik) )
             {
+               /* x <= [b - min(y)] / a */
                ubx_new = (rhs[row] - actmin_row_without_curr) / a_ik;
+
+               /* [b - max(y)] / a <= x */
                lbx_new = (rhs[row] - actmax_row_without_curr) / a_ik;
             }
             else
             {
+               /* [b - min(y)] / a <= x */
                lbx_new = (rhs[row] - actmin_row_without_curr) / a_ik;
+
+               /* x <= [b - max(y)] / a */
                ubx_new = (rhs[row] - actmax_row_without_curr) / a_ik;
             }
          }
          else
          {
+            /* l - y <= ax <= u - y */
+
+            /* ax <= u - min(y) */
+            /* l - max(y) <= ax */
             if( PIPSisLT(0.0, a_ik) )
             {
+               /* x <= [u - min(y)] / a */
                if( !PIPSisZero(icupp[row]) )
                   ubx_new = (cupp[row] - actmin_row_without_curr) / a_ik;
+
+               /* [l - max(y)] / a <= x */
                if( !PIPSisZero(iclow[row]) )
                   lbx_new = (clow[row] - actmax_row_without_curr) / a_ik;
             }
             else
             {
+               /* [u - min(y)] / a <= x */
                if( !PIPSisZero(icupp[row]) )
                   lbx_new = (cupp[row] - actmin_row_without_curr) / a_ik;
+               /* x <= [l - max(y)] / a */
                if( !PIPSisZero(iclow[row]) )
                   ubx_new = (clow[row] - actmax_row_without_curr) / a_ik;
             }

@@ -294,6 +294,9 @@ public:
   virtual void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
   { assert( 0 && "not implemented here" ); };
 
+  virtual void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs )
+  { assert( 0 && "not implemented here" ); };
+
   virtual OoqpVectorBase<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };
   virtual OoqpVectorBase<T>* cloneFull() const { assert(0 && "not implemented here"); return nullptr; };
 };

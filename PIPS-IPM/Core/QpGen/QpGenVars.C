@@ -181,9 +181,22 @@ double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, d
    int n_close = 0;
    v->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixlow );
    w->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixupp );
+   u->getSumCountIfSmall( tol, sum_small_distance, n_close, &*icupp );
+   t->getSumCountIfSmall( tol, sum_small_distance, n_close, &*iclow );
+
+   double min_v, min_w, min_u, min_t;
+
+   v->absminNonZero(min_v, 1e-19);
+   w->absminNonZero(min_w, 1e-19);
+   u->absminNonZero(min_u, 1e-19);
+   t->absminNonZero(min_t, 1e-19);
 
    if( n_close == 0 )
+   {
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "v_min : " << min_v << " w_min " << min_w << " u_min : " << min_u << " t_min : " << min_t << std::endl;
       return std::numeric_limits<double>::infinity();
+   }
    else
       return sum_small_distance / (double) n_close;
 }
@@ -195,6 +208,10 @@ void QpGenVars::pushSlacksFromBound( double tol, double amount )
       v->pushAwayFromZero(tol, amount, &*ixlow);
    if( nxupp > 0 )
       w->pushAwayFromZero(tol, amount, &*ixupp);
+   if( mclow > 0 )
+      t->pushAwayFromZero(tol, amount, &*iclow);
+   if( mcupp > 0 )
+      u->pushAwayFromZero(tol, amount, &*icupp);
 }
 
 
@@ -419,6 +436,7 @@ double QpGenVars::stepbound( const Variables * b_in )
 		maxStep = phi->stepbound(*b->phi, maxStep);
 	}
 
+	assert( maxStep <= 1.0 );
 	return maxStep;
 }
 
@@ -461,6 +479,9 @@ void QpGenVars::stepbound_pd( const Variables *b_in, double & alpha_primal, doub
 		maxStep_primal = w->stepbound(*b->w, maxStep_primal);
 		maxStep_dual = phi->stepbound(*b->phi, maxStep_dual);
 	}
+
+	assert( maxStep_primal <= 1.0 );
+	assert( maxStep_dual <= 1.0 );
 
 	alpha_primal = maxStep_primal;
 	alpha_dual = maxStep_dual;
