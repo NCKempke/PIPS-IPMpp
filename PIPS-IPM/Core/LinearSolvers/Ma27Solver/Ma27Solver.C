@@ -212,47 +212,47 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    rnorm = best_resid;
 
 
-   if( rnorm >= precision * (1.0 + rhsnorm) )
-   {
-      std::cout << "Writing K of local schur complement computation..." << std::endl;
-      std::ofstream myfile("../test.prb");
-
-      myfile << "n: " << n << std::endl;
-      myfile << "nnz: " << nnz << std::endl;
-
-      myfile << "ia: ";
-      for( int i = 0; i <= n; i++ )
-         myfile << mat->getStorageRef().krowM[i] << ", ";
-      myfile << std::endl;
-
-      myfile << "ja: ";
-      for( int i = 0; i < nnz; i++ )
-         myfile << mat->getStorageRef().jcolM[i] << ", ";
-      myfile << std::endl;
-
-      myfile << "a: ";
-      for( int i = 0; i < nnz; i++ )
-         myfile << mat->getStorageRef().M[i] << ", ";
-      myfile << std::endl;
-
-      myfile.close();
-
-      std::cout << "Writing rhs from local schur complement computation..." << std::endl;
-      myfile.open("../test.rhs");
-
-      std::cout << "sizerhs " << size_t(1) * size_t(n) <<  std::endl;
-
-      myfile << "nrhs: " << 1 << std::endl;
-
-      myfile << "rhs: ";
-      for( int i = 0; i < n; i++ )
-         myfile << rhs[i] << ", ";
-      myfile << std::endl;
-
-      myfile.close();
-
-      assert(false);
-   }
+//   if( rnorm >= precision * (1.0 + rhsnorm) )
+//   {
+//      std::cout << "Writing K of local schur complement computation..." << std::endl;
+//      std::ofstream myfile("../test.prb");
+//
+//      myfile << "n: " << n << std::endl;
+//      myfile << "nnz: " << nnz << std::endl;
+//
+//      myfile << "ia: ";
+//      for( int i = 0; i <= n; i++ )
+//         myfile << mat->getStorageRef().krowM[i] << ", ";
+//      myfile << std::endl;
+//
+//      myfile << "ja: ";
+//      for( int i = 0; i < nnz; i++ )
+//         myfile << mat->getStorageRef().jcolM[i] << ", ";
+//      myfile << std::endl;
+//
+//      myfile << "a: ";
+//      for( int i = 0; i < nnz; i++ )
+//         myfile << mat->getStorageRef().M[i] << ", ";
+//      myfile << std::endl;
+//
+//      myfile.close();
+//
+//      std::cout << "Writing rhs from local schur complement computation..." << std::endl;
+//      myfile.open("../test.rhs");
+//
+//      std::cout << "sizerhs " << size_t(1) * size_t(n) <<  std::endl;
+//
+//      myfile << "nrhs: " << 1 << std::endl;
+//
+//      myfile << "rhs: ";
+//      for( int i = 0; i < n; i++ )
+//         myfile << rhs[i] << ", ";
+//      myfile << std::endl;
+//
+//      myfile.close();
+//
+//      assert(false);
+//   }
 
    rhs.copyFrom(*best_iter);
 //   /* sparsify rhs */

@@ -1354,8 +1354,6 @@ void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp,
 
    // TODO : solve with Schur Complement
 
-
-
    // TODO : check that in hierarchical mode Schur Complement gets allreduced
 
    // TODO : each process only solves a part of the hat{B}0 rhs with the Schur Complement -> then allreduce
