@@ -42,7 +42,8 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
                            double *, int *);
 #endif
 
-PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm )
+PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, bool solve_in_parallel ) :
+      solve_in_parallel(solve_in_parallel)
 {
   mStorage = dm->getStorageHandle();
   mStorageSparse = nullptr;
@@ -55,7 +56,8 @@ PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm )
 }
 
 
-PardisoIndefSolver::PardisoIndefSolver( SparseSymMatrix * sm )
+PardisoIndefSolver::PardisoIndefSolver( SparseSymMatrix * sm, bool solve_in_parallel ) :
+      solve_in_parallel(solve_in_parallel)
 {
   mStorage = nullptr;
   mStorageSparse = sm->getStorageHandle();
@@ -164,7 +166,7 @@ bool PardisoIndefSolver::iparmUnchanged()
 
 void PardisoIndefSolver::initPardiso()
 {
-   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+   const int myRank = PIPS_MPIgetRank();
 
    deleteCSRpointers = false;
    mtype = -2;
@@ -249,7 +251,13 @@ void PardisoIndefSolver::initPardiso()
    setIparm(iparm);
 
    if( myRank == 0 )
+   {
       printf("PARDISO root: using %d threads \n", iparm[2]);
+      if( solve_in_parallel )
+         printf("PARDISO root: allreducing SC and solving on every process ");
+      else
+         printf("PARDISO root: only rank 0 does the SC solve");
+   }
 
    maxfct = 1; /* Maximum number of numerical factorizations.  */
    mnum = 1; /* Which factorization to use. */
@@ -267,39 +275,42 @@ void PardisoIndefSolver::initPardiso()
 
 void PardisoIndefSolver::matrixChanged()
 {
-   int myrank; MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   const int my_rank = PIPS_MPIgetRank();
 
-   if( myrank == 0 )
+   if( solve_in_parallel || my_rank == 0 )
    {
-      printf("\n Schur complement factorization is starting ...\n ");
+      if( my_rank == 0 )
+         printf("\n Schur complement factorization is starting ...\n ");
 
       if( mStorageSparse )
          factorizeFromSparse();
       else
          factorizeFromDense();
 
-      printf("\n Schur complement factorization completed \n ");
+      if( my_rank == 0 )
+         printf("\n Schur complement factorization completed \n ");
    }
 }
 
 
 void PardisoIndefSolver::matrixRebuild( DoubleMatrix& matrixNew )
 {
-   int myrank; MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-
-   if( myrank == 0 )
+   const int my_rank = PIPS_MPIgetRank();
+   if( solve_in_parallel || my_rank == 0 )
    {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
-      printf("\n Schur complement factorization is starting ...\n ");
+      if( my_rank == 0 )
+         printf("\n Schur complement factorization is starting ...\n ");
 
       assert(mStorageSparse);
 
       factorizeFromSparse(matrixNewSym);
 
-      printf("\n Schur complement factorization completed \n ");
+      if( my_rank == 0 )
+         printf("\n Schur complement factorization completed \n ");
    }
 }
 
@@ -423,8 +434,6 @@ void PardisoIndefSolver::factorizeFromSparse()
 
 void PardisoIndefSolver::factorizeFromDense()
 {
-   int myrank; MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-
    assert(mStorage);
 
 #ifndef NDEBUG
@@ -435,7 +444,7 @@ void PardisoIndefSolver::factorizeFromDense()
   }
 #endif
 #ifdef TIMING
-  if( myrank == 0 )
+  if( PIPS_MPIgetRank() == 0 )
      std::cout << "from dense, starting factorization" << std::endl;
 #endif
 
@@ -485,7 +494,7 @@ void PardisoIndefSolver::factorizeFromDense()
 void PardisoIndefSolver::factorize()
 {
    int error;
-   int myrank; MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   const int my_rank = PIPS_MPIgetRank();
 
    assert(ia && ja && a);
 
@@ -535,14 +544,14 @@ else
       exit(1);
    }
 
-   if( myrank == 0 )
+   if( my_rank == 0 )
    {
       printf("\nReordering completed: ");
       printf("\nNumber of nonzeros in factors  = %d", iparm[17]);
    }
 
    phase = 22;
-   assert(iparmUnchanged());
+   assert( iparmUnchanged() );
 
    pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs,
          iparm, &msglvl, &ddum, &ddum, &error
@@ -560,10 +569,10 @@ else
 
 void PardisoIndefSolver::solve ( OoqpVector& v )
 {
-   assert(iparmUnchanged());
+   assert( iparmUnchanged() );
 
-   int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
-   int myrank; MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   const int size = PIPS_MPIgetSize();
+   const int my_rank = PIPS_MPIgetRank();
 
    phase = 33;
    SimpleVector& sv = dynamic_cast<SimpleVector&>(v);
@@ -575,7 +584,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
 #ifdef TIMING_FLOPS
    HPM_Start("DSYTRSSolve");
 #endif
-   if( myrank == 0 )
+   if( solve_in_parallel || my_rank == 0 )
    {
       int* rhsSparsity = nullptr;
 
@@ -635,7 +644,8 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
       const double res2norm = sv.twonorm();
       const double resinfnorm = sv.infnorm();
 
-      std::cout << "GLOBAL SCHUR: res.2norm=" << res2norm << " rel.res2norm=" << res2norm / b2norm  <<
+      if( my_rank == 0 )
+         std::cout << "GLOBAL SCHUR: res.2norm=" << res2norm << " rel.res2norm=" << res2norm / b2norm  <<
             " res.infnorm=" << resinfnorm << " rel.resinfnorm=" << resinfnorm / binfnorm  << " b2norm=" << b2norm <<
             " abs.mat.elem.=" << mat_max << std::endl;
 #endif
@@ -643,7 +653,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
       for( int i = 0; i < n; i++ )
          b[i] = x[i];
 
-      if( size > 0 )
+      if( size > 0 && !solve_in_parallel )
          MPI_Bcast(b, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
       delete[] rhsSparsity;
@@ -654,6 +664,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
    }
    else
    {
+      assert( !solve_in_parallel );
       assert(size > 0);
       MPI_Bcast(b, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
    }

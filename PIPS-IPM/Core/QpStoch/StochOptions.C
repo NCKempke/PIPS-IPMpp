@@ -41,6 +41,14 @@ namespace pips_options
 #endif
       bool_options["PRECONDITION_SPARSE"] = true;
 
+      /// SCHUR COMPLEMENT
+      /** should the schur complement be allreduced to all processes or to a single one */
+#ifdef HIERARCHICAL
+      bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = true;
+#else
+      bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = false;
+#endif
+
       /// GONDZIO SOLVERS
       /** should adaptive linesearch be applied in the GondzioStoch solvers - overwritten in gmspips.cpp */
       bool_options["GONDZIO_STOCH_ADAPTIVE_LINESEARCH"] = false;

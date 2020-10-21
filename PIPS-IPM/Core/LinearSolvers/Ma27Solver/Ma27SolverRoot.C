@@ -11,8 +11,8 @@
 #include "SimpleVector.h"
 #include "SparseSymMatrix.h"
 
-Ma27SolverRoot::Ma27SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm )
- : Ma27Solver(sgm), comm(mpiComm)
+Ma27SolverRoot::Ma27SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm )
+ : Ma27Solver(sgm), solve_in_parallel(solve_in_parallel), comm(mpiComm)
 {
    threshold_pivoting_max = 0.1;
    max_n_iter_refinement = 10;
@@ -26,12 +26,16 @@ Ma27SolverRoot::~Ma27SolverRoot()
 
 void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 {
-   if( PIPS_MPIgetRank() == 0 )
+   const int rank = PIPS_MPIgetRank( comm );
+
+   if( solve_in_parallel || rank == 0 )
    {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
 
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
-      printf("\n Schur complement factorization is starting ...\n ");
+
+      if( rank == 0 )
+         printf("\n Schur complement factorization is starting ...\n ");
 
       freeWorkingArrays();
       mat_storage = matrixNewSym.getStorageHandle();
@@ -39,13 +43,14 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       init();
       matrixChanged();
 
-      printf("\n Schur complement factorization completed \n ");
+      if( rank == 0 )
+         printf("\n Schur complement factorization completed \n ");
    }
 }
 
 void Ma27SolverRoot::matrixChanged()
 {
-   if( PIPS_MPIgetRank() == 0 )
+   if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
       Ma27Solver::matrixChanged();
 }
 
@@ -57,13 +62,9 @@ void Ma27SolverRoot::solve(OoqpVector& rhs)
 
    assert(n == rhs.length());
 
-   if( PIPS_MPIgetRank() == 0 )
-   {
-      std::cout << "SchurSolve" << std::endl;
+   if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
       Ma27Solver::solve(sv);
-      std::cout << "SchurSolveDone" << std::endl;
-   }
 
-   if( PIPS_MPIgetSize() > 0 )
+   if( !solve_in_parallel && PIPS_MPIgetSize() > 0 )
       MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, comm);
 }

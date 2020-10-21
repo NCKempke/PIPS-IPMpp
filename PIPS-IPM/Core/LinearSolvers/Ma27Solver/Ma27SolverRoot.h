@@ -24,7 +24,7 @@ class Ma27SolverRoot : public Ma27Solver
 {
 
  public:
-  Ma27SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm = MPI_COMM_WORLD );
+  Ma27SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD );
 
   ~Ma27SolverRoot();
 
@@ -36,6 +36,7 @@ class Ma27SolverRoot : public Ma27Solver
   void solve( OoqpVector& rhs ) override;
 
  private:
+  const bool solve_in_parallel;
   const MPI_Comm comm;
 
   void factorize();

@@ -117,11 +117,11 @@ class sLinsysRoot : public sLinsys {
 
   double* sparseKktBuffer;
 
-
   int childrenProperStart; // first non-dummy child
   int childrenProperEnd;   // end of non-dummy children range (not included)
   bool hasSparseKkt;
   bool usePrecondDist;
+  bool allreduce_kkt;
 
  private:
   void initProperChildrenRange();
@@ -130,6 +130,7 @@ class sLinsysRoot : public sLinsys {
   void reduceKKTdense();
   void reduceKKTsparse();
   void reduceToProc0(int size, double* values);
+  void reduceToAllProcs(int size, double* values);
   void syncKKTdistLocalEntries(sData* prob);
   void sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const;
   std::vector<MatrixEntryTriplet> receiveKKTdistLocalEntries() const;

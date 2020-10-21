@@ -23,8 +23,8 @@
 class MumpsSolverRoot : public MumpsSolverBase {
 
  public:
-  MumpsSolverRoot( SparseSymMatrix * sgm );
-  MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm );
+  MumpsSolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel );
+  MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool solve_in_parallel );
 
   ~MumpsSolverRoot();
 
@@ -33,6 +33,8 @@ class MumpsSolverRoot : public MumpsSolverBase {
   void solve( OoqpVector& rhs ) override;
 
  private:
+  /* indicated wether every process solves or only rank 0 */
+  const bool solve_in_parallel;
   void factorize();
 };
 

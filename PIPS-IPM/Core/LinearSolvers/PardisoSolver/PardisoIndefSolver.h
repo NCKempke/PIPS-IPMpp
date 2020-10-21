@@ -60,8 +60,8 @@ class PardisoIndefSolver : public DoubleLinearSolver
       bool factorizationTwoLevel;
 
    public:
-      PardisoIndefSolver(DenseSymMatrix * storage);
-      PardisoIndefSolver(SparseSymMatrix * storage);
+      PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel);
+      PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel);
       void diagonalChanged(int idiag, int extent) override;
       void matrixChanged() override;
       void matrixRebuild( DoubleMatrix& matrixNew ) override;
@@ -83,6 +83,7 @@ class PardisoIndefSolver : public DoubleLinearSolver
 
       bool useSparseRhs;
       bool deleteCSRpointers;
+      const bool solve_in_parallel;
 };
 
 #endif /* _PARDISOINDEFSOLVER_H_ */

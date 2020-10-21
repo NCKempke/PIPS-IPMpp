@@ -132,19 +132,19 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
 #ifdef WITH_MUMPS_ROOT
       if( 0 == my_rank )
          std::cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << std::endl;
-      return new MumpsSolverRoot(mpiComm, kktmat);
+      return new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt);
 #elif defined(WITH_PARDISO)
       if( 0 == my_rank )
          std::cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << std::endl;
-      return new PardisoIndefSolver(kktmat);
+      return new PardisoIndefSolver(kktmat, allreduce_kkt);
 #elif defined(WITH_MA57)
       if( 0 == my_rank )
          std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << std::endl;
-      return new Ma57SolverRoot(kktmat);
+      return new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm);
 #elif defined(WITH_MA27)
       if( 0 == my_rank )
          std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << std::endl;
-      return new Ma27SolverRoot(kktmat);
+      return new Ma27SolverRoot(kktmat, allreduce_kkt, mpiComm);
 #else
       assert( false && "No sparse solver available for sparse Schur complement -sLinsysRootAug" );
       return nullptr;
@@ -1739,24 +1739,18 @@ void sLinsysRootAug::solveReducedBlocked( DenseGenMatrix& rhs_mat_transp)
   const int n_blockrhs = static_cast<int>( m / size );
   const int leftover = m % size;
 
+  const int n_rhs = (my_rank < leftover ) ? n_blockrhs + 1 : n_blockrhs;
+  const int rhs_start = my_rank < leftover ? (n_blockrhs + 1) * my_rank :
+        (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
+
   // TODO : also parallelize via omp and many schur complement solvers...
-  for( int rhs_i = my_rank * n_blockrhs; rhs_i < my_rank * (n_blockrhs + 1); ++rhs_i )
+  for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
   {
      assert( rhs_i < m );
      assert( !data->isHierarchieRoot() );
 
      // create alias
      SimpleVector b( rhs_mat_transp[rhs_i], n );
-     solveReducedLinkCons( data, b );
-  }
-
-  /* some procs take care of the leftovers */
-  if( my_rank < leftover )
-  {
-     const int rhs_leftover_i = size * n_blockrhs + my_rank;
-     assert( rhs_leftover_i < m );
-
-     SimpleVector b( rhs_mat_transp[rhs_leftover_i], n );
      solveReducedLinkCons( data, b );
   }
 

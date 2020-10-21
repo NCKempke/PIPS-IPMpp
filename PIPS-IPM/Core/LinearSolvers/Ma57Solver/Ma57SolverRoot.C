@@ -11,8 +11,8 @@
 #include "SimpleVector.h"
 #include "SparseSymMatrix.h"
 
-Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, MPI_Comm mpiComm )
- : Ma57Solver(sgm), comm(mpiComm)
+Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm )
+ : Ma57Solver(sgm), solve_in_parallel(solve_in_parallel), comm(mpiComm)
 {
    assert(mpiComm != MPI_COMM_NULL);
 }
@@ -23,12 +23,15 @@ Ma57SolverRoot::~Ma57SolverRoot()
 
 void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 {
-   if( PIPS_MPIgetRank() == 0 )
+   const int my_rank = PIPS_MPIgetRank(comm);
+   if( solve_in_parallel || my_rank == 0 )
    {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
 
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
-      printf("\n Schur complement factorization is starting ...\n ");
+
+      if( my_rank == 0 )
+         printf("\n Schur complement factorization is starting ...\n ");
 
       freeWorkingArrays();
       mStorage = matrixNewSym.getStorageHandle();
@@ -36,13 +39,14 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       init();
       matrixChanged();
 
-      printf("\n Schur complement factorization completed \n ");
+      if( my_rank == 0 )
+         printf("\n Schur complement factorization completed \n ");
    }
 }
 
 void Ma57SolverRoot::matrixChanged()
 {
-   if( PIPS_MPIgetRank() == 0 )
+   if( solve_in_parallel || PIPS_MPIgetRank() == 0 )
       Ma57Solver::matrixChanged();
 }
 
@@ -54,9 +58,9 @@ void Ma57SolverRoot::solve(OoqpVector& rhs)
 
    assert(n == rhs.length());
 
-   if( PIPS_MPIgetRank() == 0 )
+   if( solve_in_parallel && PIPS_MPIgetRank() == 0 )
       Ma57Solver::solve(sv);
 
-   if( PIPS_MPIgetSize() > 0 )
+   if( !solve_in_parallel && PIPS_MPIgetSize() > 0 )
       MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, comm);
 }

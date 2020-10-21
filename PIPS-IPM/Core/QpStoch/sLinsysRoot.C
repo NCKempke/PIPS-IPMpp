@@ -83,6 +83,10 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
 
    // use sparse KKT if link structure is present
   hasSparseKkt = prob_->exploitingLinkStructure();
+  allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
+#ifdef HIERARCHICAL
+  assert( allreduce_kkt );
+#endif
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
@@ -134,6 +138,10 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 
   // use sparse KKT if (enough) 2 links are present
   hasSparseKkt = prob_->exploitingLinkStructure();
+  allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
+#ifdef HIERARCHICAL
+  assert( allreduce_kkt );
+#endif
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
@@ -857,7 +865,40 @@ void sLinsysRoot::reduceKKTsparse()
    assert(kkts.size() == sizeKkt);
    assert(!kkts.isLower);
 
-   reduceToProc0(nnzKkt, MKkt);
+   if( allreduce_kkt )
+      reduceToAllProcs(nnzKkt, MKkt);
+   else
+      reduceToProc0(nnzKkt, MKkt);
+}
+
+#define CHUNK_SIZE (1024*1024*64) //doubles = 128 MBytes (maximum)
+void sLinsysRoot::reduceToAllProcs(int size, double* values)
+{
+   assert(values && values != sparseKktBuffer);
+   assert(size > 0);
+
+   if( sparseKktBuffer == nullptr )
+      sparseKktBuffer = new double[CHUNK_SIZE];
+
+   const int reps = size / CHUNK_SIZE;
+   const int res = size - CHUNK_SIZE * reps;
+   assert(res >= 0 && res < CHUNK_SIZE);
+
+   for( int i = 0; i < reps; i++ )
+   {
+      double* const start = &values[i * CHUNK_SIZE];
+      MPI_Allreduce(start, sparseKktBuffer, CHUNK_SIZE, MPI_DOUBLE, MPI_SUM, mpiComm);
+
+      memcpy(start, sparseKktBuffer, size_t(CHUNK_SIZE) * sizeof(double));
+   }
+
+   if( res > 0 )
+   {
+      double* const start = &values[reps * CHUNK_SIZE];
+      MPI_Allreduce(start, sparseKktBuffer, res, MPI_DOUBLE, MPI_SUM, mpiComm);
+
+         memcpy(start, sparseKktBuffer, size_t(res) * sizeof(double));
+   }
 }
 
 #define CHUNK_SIZE (1024*1024*64) //doubles = 128 MBytes (maximum)
@@ -892,16 +933,6 @@ void sLinsysRoot::reduceToProc0(int size, double* values)
       if( myRank == 0 )
          memcpy(start, sparseKktBuffer, size_t(res) * sizeof(double));
    }
-
-#if 0
-   if( myRank == 0 && sparseKktBuffer == nullptr )
-      sparseKktBuffer = new double[nnzKkt];
-
-   MPI_Reduce(MKkt, sparseKktBuffer, nnzKkt, MPI_DOUBLE, MPI_SUM, 0, mpiComm);
-
-   if( myRank == 0 )
-      memcpy(MKkt, sparseKktBuffer, size_t(nnzKkt) * sizeof(double));
-#endif
 }
 
 
@@ -1396,7 +1427,10 @@ void sLinsysRoot::reduceKKTdist(sData* prob)
 
    assert(kktDist->getStorageRef().isValid());
 
-   reduceToProc0(nnzDist, MDist);
+   if( allreduce_kkt )
+      reduceToAllProcs(nnzDist, MDist);
+   else
+      reduceToProc0(nnzDist, MDist);
 
    assert(kktDist->getStorageRef().isValid());
    assert(kktDist->getStorageRef().isSorted());
@@ -1423,7 +1457,7 @@ void sLinsysRoot::factorizeKKT(sData* prob)
      assert(kktDist);
      assert(prob);
 
-     if( myRank == 0)
+     if( allreduce_kkt || myRank == 0)
         precondSC.getSparsifiedSC_fortran(*prob, *kktDist);
 
      // todo do that properly
@@ -1471,8 +1505,6 @@ void sLinsysRoot::factorizeKKT(sData* prob)
     printf("  rank %d 1stSTAGE FACT %g SEC ITER %d\n", mype, st, (int)g_iterNumber);
 #endif
 }
-
- 
 
 //faster than DenseSymMatrix::atPutZeros
 void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat, 

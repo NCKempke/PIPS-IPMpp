@@ -11,15 +11,21 @@
 #include <stdlib.h>
 
 
-MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm )
- : MumpsSolverBase(mpiComm, mpiComm, sgm)
+MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool solve_in_parallel)
+ : MumpsSolverBase(mpiComm, mpiComm, sgm), solve_in_parallel( solve_in_parallel )
 {
+   if( solve_in_parallel )
+   {
+      assert( false && "TODO : MUMPS NOT AVAILABLE FOR HIERARCHICAL APPROACH !! ");
+      MPI_Abort(MPI_COMM_WORDL);
+   }
+
    assert(rankMumps == rankPips);
 }
 
 
-MumpsSolverRoot::MumpsSolverRoot( SparseSymMatrix * sgm )
- : MumpsSolverBase(sgm)
+MumpsSolverRoot::MumpsSolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel )
+ : MumpsSolverBase(sgm), solve_in_parallel(solve_in_parallel)
 {
 }
 
