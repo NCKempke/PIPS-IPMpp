@@ -1307,64 +1307,6 @@ void sLinsys::addColsToDenseSchurCompl(sData *prob,
   }
 }
 
-/* solve own linear system with border data
- *
- * rhs-block^T looks like
- *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [  0   A0 (C0) F0V G0V ]
- *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ F0C  0  (0 )  0   0  ]
- *  [ C1  0   0  ]         [ CN  0   0  ]   [ G0C  0  (0 )  0   0  ]
- *
- */
-void sLinsys::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border )
-{
-   /* only called in sLinsysRootAug */
-   assert( !is_hierarchy_root );
-
-   /* get right hand side parts */
-   StringGenMatrix& R_border = *dynamic_cast<BorderedSymMatrix&>(*data_border->Q).border_vertical;
-   StringGenMatrix& A_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left;
-   StringGenMatrix& C_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left;
-
-   StringGenMatrix& F_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom;
-   StringGenMatrix& G_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom;
-
-   /* compute Schur Complement right hand sides SUM_i Bi_{inner} K^-1 Bi_{border}
-    * (keep in mind that in Bi_{inner} and the SC we projected C0 Omega0 out)
-    */
-   int nx_border, myl_border, mzl_border, dummy;
-   A_border.getSize(dummy, nx_border);
-   F_border.getSize(myl_border, dummy);
-   G_border.getSize(mzl_border, dummy);
-
-   const int m_buffer = nx_border + myl_border + mzl_border;
-   const int n_buffer = locnx + locmy + locmyl + locmzl;
-
-   // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
-   DenseGenMatrix* buffer = new DenseGenMatrix(m_buffer, n_buffer);
-   LsolveHierarchyBorder(*buffer, R_border, A_border, C_border, F_border, G_border);
-
-   SparseGenMatrix& A0_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat;
-   SparseGenMatrix& F0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat_link;
-   SparseGenMatrix& F0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom->mat;
-
-   SparseGenMatrix& G0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat_link;
-   SparseGenMatrix& G0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom->mat;
-
-   finalizeZ0Hierarchical(*buffer, A0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
-
-   // TODO : solve with Schur Complement
-
-   // TODO : check that in hierarchical mode Schur Complement gets allreduced
-
-   // TODO : each process only solves a part of the hat{B}0 rhs with the Schur Complement -> then allreduce
-
-   // TODO : for each child solve Xi = Ki^-1 (Bi_{outer} - Bi_{inner} X0)
-
-   // TODO : for each child multiply and add Bi_{outer}^T X_i to Schur Complement
-
-   assert( false && "TODO : implement" );
-}
-
 // adds only lower triangular elements to out
 
 void sLinsys::symAddColsToDenseSchurCompl(sData *prob,

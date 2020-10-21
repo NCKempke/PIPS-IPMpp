@@ -34,6 +34,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void assembleLocalKKT( sData* prob ) override;
   void solveReduced( sData *prob, SimpleVector& b) override;
   void solveReducedLinkCons( sData *prob, SimpleVector& b) override;
+  void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border ) override;
 
  private:
   void finalizeKKTdense( sData* prob, Variables* vars);
