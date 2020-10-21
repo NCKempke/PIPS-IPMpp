@@ -501,10 +501,50 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix
    }
 }
 
+/* compute SUM_i Bi_{outer}^T X_i = SUM_i Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
+void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
+      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border )
+{
+   /* X0 is still in transposed form */
+
+   assert( this->children.size() == R_border.children.size() );
+   assert( !R_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !A_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !C_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !F_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( !G_border.isKindOf( kStringGenDummyMatrix ) );
+
+   assert( false && "TODO: implement");
+
+   /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
+
+   // TODO Bi = compute Bi_{outer} - Bi_{inner} X0
+   // TODO : reuse an make member
+//   DenseGenMatrix& Bi = new DenseGenMatrix( )
+
+   // TODO compute Bi_{outer}^T Ki^-1 Bi and add to SC
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+//      children[it]->addLniZiHierarchyBorder(result, *R_border.children[it], *A_border.children[it], *C_border.children[it],
+//            *F_border.children[it], *G_border.children[it]);
+   }
+
+   /* allreduce the final SC result */
+   // TODO : optimize -> do not reduce A_0 part ( all zeros... )
+   if( iAmDistrib )
+   {
+      int m, n;
+      SC.getSize(m, n);
+      submatrixAllReduceFull(&SC, 0, 0, m, n, mpiComm);
+   }
+
+   // TODO : finalize SC?
+}
+
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
-   assert( false );
+  assert( false && "never called" );
   StochVector& b   = dynamic_cast<StochVector&>(x);
   SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
 

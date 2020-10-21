@@ -128,6 +128,15 @@ class sLinsys : public QpGenLinsys
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
   { assert( false && "not implemented here" ); };
 
+  /* solve with SC and comput X_0 = SC^-1 B_0 */
+  virtual void DsolveHierarchyBorder( DenseGenMatrix& buffer_b0 )
+  { assert( false && "not implemented here" ); };
+
+  /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
+  virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
+        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
+  { assert( false && "not implemented here" ); };
+
   /* compute B0_{outer} - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
         SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border)

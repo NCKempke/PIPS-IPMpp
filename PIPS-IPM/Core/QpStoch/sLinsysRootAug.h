@@ -42,7 +42,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void solveWithIterRef( sData *prob, SimpleVector& b);
   void solveWithBiCGStab( sData *prob, SimpleVector& b);
 
-  void solveReducedBlocked( DenseGenMatrix& b );
+  void DsolveHierarchyBorder( DenseGenMatrix& b );
 
   // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
   void addLinkConsBlock0Matrix( sData *prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);

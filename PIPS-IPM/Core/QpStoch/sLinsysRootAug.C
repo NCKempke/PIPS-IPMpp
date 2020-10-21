@@ -1717,7 +1717,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables* vars)
    //myAtPutZeros(kktd, locnx, locnx, locmy, locmy);
 }
 
-void sLinsysRootAug::solveReducedBlocked( DenseGenMatrix& rhs_mat_transp)
+void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp)
 {
    /* b holds all rhs in transposed form - C part from schu complement is already missing in b */
    const int my_rank = PIPS_MPIgetRank( mpiComm );
@@ -1744,6 +1744,12 @@ void sLinsysRootAug::solveReducedBlocked( DenseGenMatrix& rhs_mat_transp)
         (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
 
   // TODO : also parallelize via omp and many schur complement solvers...
+  for( int rhs_i = 0; rhs_i < rhs_start; ++rhs_i )
+  {
+     SimpleVector b( rhs_mat_transp[rhs_i], n );
+     b.setToZero();
+  }
+
   for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
   {
      assert( rhs_i < m );
@@ -1754,9 +1760,18 @@ void sLinsysRootAug::solveReducedBlocked( DenseGenMatrix& rhs_mat_transp)
      solveReducedLinkCons( data, b );
   }
 
-  // TODO allreduce result
+  for( int rhs_i = rhs_start + n_rhs; rhs_i < m; ++rhs_i )
+  {
+     SimpleVector b( rhs_mat_transp[rhs_i], n );
+     b.setToZero();
+  }
 
-  assert(false && "TODO : implment allreduce");
+  if( iAmDistrib )
+  {
+     int m, n;
+     rhs_mat_transp.getSize(m, n);
+     submatrixAllReduceFull(&rhs_mat_transp, 0, 0, m, n, mpiComm);
+  }
 }
 
 /* solve own linear system with border data
@@ -1793,8 +1808,8 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
 
    // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
-   DenseGenMatrix* buffer = new DenseGenMatrix(m_buffer, n_buffer);
-   LsolveHierarchyBorder(*buffer, R_border, A_border, C_border, F_border, G_border);
+   DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
+   LsolveHierarchyBorder(*buffer_b0, R_border, A_border, C_border, F_border, G_border);
 
    SparseGenMatrix& A0_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat;
    SparseGenMatrix& F0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat_link;
@@ -1803,18 +1818,15 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
    SparseGenMatrix& G0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat_link;
    SparseGenMatrix& G0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom->mat;
 
-   finalizeZ0Hierarchical(*buffer, A0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
+   finalizeZ0Hierarchical(*buffer_b0, A0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer} (stored in transposed form!
-   solveReducedBlocked( *buffer );
+   DsolveHierarchyBorder( *buffer_b0 );
 
-   // TODO : check that in hierarchical mode Schur Complement gets allreduced
-
-   // TODO : each process only solves a part of the hat{B}0 rhs with the Schur Complement -> then allreduce
-
+   // TODO : for each child multiply and add to Schur Complement
    // TODO : for each child solve Xi = Ki^-1 (Bi_{outer} - Bi_{inner} X0)
+   LtsolveHierarchyBorder( schur_comp, *buffer_b0, R_border, A_border, C_border, F_border, G_border );
 
-   // TODO : for each child multiply and add Bi_{outer}^T X_i to Schur Complement
-
+   // TODO : finalize Schur Complement
    assert( false && "TODO : implement" );
 }
