@@ -74,7 +74,7 @@ class sLinsysRoot : public sLinsys {
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
   void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override;
+        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border ) override;
 
   virtual void putXDiagonal( OoqpVector& xdiag_ );
   virtual void putZDiagonal( OoqpVector& zdiag );

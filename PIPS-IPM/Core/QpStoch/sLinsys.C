@@ -377,6 +377,180 @@ void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& 
    addTermToSchurComplBlocked(data, false, false, R, A, C, F, G, result);
 }
 
+/* calculate res += X_i * B_i^T */
+void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz )
+{
+   /*          locnx locmy locmz
+    *        [  RiT   AiT   CiT ] pnx
+    *        [   0     0     0  ] pmy
+    * Bi^T = [   0     0     0  ] pmz
+    *        [   Fi    0     0  ] locmyl
+    *        [   Gi    0     0  ] locmzl
+    */
+
+#ifndef NDEBUG
+   int mX, nX; X.getSize(mX, nX);
+   int mRes, nRes; result.getSize(mRes, nRes);
+   assert( locnx + locmy + locmz == nRes );
+   assert( mX == mRes );
+   assert( parent_nx + parent_my + parent_mz + locmyl + locmzl == nX );
+#endif
+
+   SparseGenMatrix& A = prob->getLocalA();
+   SparseGenMatrix& C = prob->getLocalC();
+   SparseGenMatrix& F = prob->getLocalF();
+   SparseGenMatrix& G = prob->getLocalG();
+   SparseGenMatrix& R = prob->getLocalCrossHessian();
+
+#ifndef NDEBUG
+   int mR, nR; R.getSize(mR, nR);
+   assert( nR == parent_nx );
+   assert( mR == locnx );
+
+   int mA, nA; A.getSize( mA, nA );
+   assert( nA == parent_nx );
+   assert( mA == locmy );
+
+   int mC, nC; C.getSize( mC, nC );
+   assert( nC == parent_nx );
+   assert( mC == locmz );
+
+   int mF, dummy; F.getSize( mF, dummy );
+   assert( locmyl == mF );
+
+   int mG; G.getSize( mG, dummy );
+   assert( locmzl == mG );
+#endif
+
+   // X from the right with each column of Bi^T todo add OMP to submethods
+   /*            [ RiT ]
+    *            [  0  ]
+    * res += X * [  0  ]
+    *            [  Fi ]
+    *            [  Gi ]
+    */
+   X.multMatAt( 0, 1.0, 0, result, 1.0, R.getTranspose() );
+
+   X.multMatAt( parent_nx + parent_my + parent_mz, 1.0, 0, result, 1.0, F );
+
+   X.multMatAt( parent_nx + parent_my + parent_mz + locmyl, 1.0, 0, result, 1.0, G );
+
+   /*            [ AiT ]
+    *            [  0  ]
+    * res += X * [  0  ]
+    *            [  0  ]
+    *            [  0  ]
+    */
+   X.multMatAt( 0, 1.0, locnx, result, 1.0, A.getTranspose() );
+
+   /*            [ CiT ]
+    *            [  0  ]
+    * res += X * [  0  ]
+    *            [  0  ]
+    *            [  0  ]
+    */
+   X.multMatAt( 0, 1.0, locnx + locmy, result, 1.0, C.getTranspose() );
+}
+
+void sLinsys::addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const
+{
+   int mres, nres; res.getSize( mres, nres );
+   int mmat, nmat; mat.getSize( mmat, nmat );
+
+   assert( 0 <= row_0 && row_0 + mmat <= mres );
+   assert( 0 <= col_0 && col_0 + nmat <= nres );
+
+   for( int row = 0; row < mmat; ++row )
+   {
+      const int row_start = mat.krowM()[row];
+      const int row_end = mat.krowM()[row + 1];
+
+      for( int j = row_start; j < row_end; ++j )
+      {
+         const int col = mat.jcolM()[j];
+         const double val = mat.M()[j];
+
+         assert( col_0 + col < nres );
+         res[row_0 + row][col_0 + col] += val;
+      }
+   }
+
+}
+
+void sLinsys::addBiTBorder( DenseGenMatrix& res, const SparseGenMatrix& Rt_border, const SparseGenMatrix& At_border,
+        const SparseGenMatrix& Ct_border, const SparseGenMatrix& F_border, const SparseGenMatrix& G_border ) const
+{
+   int mRt, nRt; Rt_border.getSize(mRt, nRt);
+   int mAt, nAt; At_border.getSize(mAt, nAt);
+   int mCt, nCt; Ct_border.getSize(mCt, nCt);
+   int mF, nF; F_border.getSize(mF, nF);
+   int mG, nG; G_border.getSize(mG, nG);
+
+#ifndef NDEBUG
+   int mres, nres; res.getSize(mres, nres);
+
+   assert( mres == mRt + mF + mG );
+   assert( nF == nG );
+   assert( nF == nRt );
+   assert( nRt + nAt + nCt == nres );
+#endif
+
+   addMatAt( res, Rt_border, 0, 0 );
+   addMatAt( res, At_border, 0, nRt );
+   addMatAt( res, Ct_border, 0, nRt + nAt );
+
+   addMatAt( res, F_border, mRt, 0 );
+   addMatAt( res, G_border, mRt + mF, 0 );
+}
+
+/* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
+void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
+      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border, int parent_nx, int parent_my, int parent_mz )
+{
+   int nx_border, myl_border, mzl_border, dummy;
+
+   R_border.getSize(dummy, nx_border);
+   F_border.getSize(myl_border, dummy);
+   G_border.getSize(mzl_border, dummy);
+
+   /* buffer for (Bi_{outer} - Bi_{inner} X0)^T = Bi_{outer}^T - X0^T Bi_{inner}^T */
+   // TODO : reuse an make member
+   DenseGenMatrix* Bi_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, locnx + locmy + locmz );
+
+   /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
+   int m, n; Bi_buffer->getSize(m, n);
+   Bi_buffer->atPutZeros(0, 0, m, n );
+
+   /* put (Bi_{outer})^T into buffer
+    *
+    *                  nxb myb mzb
+    *                [ RiT AiT CiT ]
+    * Bi_{outer}^T = [  Fi  0   0  ]
+    *                [  Gi  0   0  ]
+    */
+   assert( R_border.mat );
+   assert( A_border.mat );
+   assert( C_border.mat );
+   assert( F_border.mat );
+   assert( G_border.mat );
+
+   addBiTBorder( *Bi_buffer, R_border.mat->getTranspose(), A_border.mat->getTranspose(), C_border.mat->getTranspose(), *F_border.mat, *G_border.mat );
+
+   /* compute (Bi_{outer} - Bi_{inner} * X0)^T = Bi_{outer}^T - X0^T * Bi_{inner}^T
+    *
+    *                     [ Ri 0 0 FiT GiT ]^T
+    * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
+    *                     [ Ci 0 0  0   0  ]
+    */
+   multRightDenseSchurComplBlocked( data, X0, *Bi_buffer, parent_nx, parent_my, parent_mz );
+
+
+   /* solve blockwise Ki X = Bi_buffer and multiply from left with Bi_{outer} and add to SC */
+
+
+   assert( false && "TODO : implement");
+}
+
 void sLinsys::solveCompressed( OoqpVector& rhs_ )
 {
   StochVector& rhs = dynamic_cast<StochVector&>(rhs_);

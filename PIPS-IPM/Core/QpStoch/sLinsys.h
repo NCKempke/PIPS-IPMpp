@@ -74,6 +74,18 @@ class sLinsys : public QpGenLinsys
   virtual void addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
         StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border);
 
+  /* adds mat to res starting at row_0 col_0 */
+  void addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const;
+
+  /* add Bi_{outer}^T to res */
+  virtual void addBiTBorder( DenseGenMatrix& res, const SparseGenMatrix& Rt_border, const SparseGenMatrix& At_border,
+        const SparseGenMatrix& Ct_border, const SparseGenMatrix& F_border, const SparseGenMatrix& G_border ) const;
+
+  /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
+  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0,
+        StringGenMatrix& R_border, StringGenMatrix& A_border, StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border,
+        int parent_nx, int parent_my, int parent_mz );
+
   /** y += alpha * Lni^T * x */
   void LniTransMult(sData *prob, 
 		    SimpleVector& y, 
@@ -166,9 +178,9 @@ class sLinsys : public QpGenLinsys
   DoubleLinearSolver** solvers_blocked = nullptr;
   SparseSymMatrix** problems_blocked = nullptr;
 
+
   void multLeftSchurComplBlocked( /*const*/ sData* prob, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, bool sparseSC, bool symSC, DoubleMatrix& SC);
-
 
   void multLeftSparseSchurComplBlocked( /*const*/ sData* prob, /*const*/ double* colsBlockDense,
         const int* colId, int blocksize, SparseSymMatrix& SC);
@@ -176,6 +188,8 @@ class sLinsys : public QpGenLinsys
   void multLeftDenseSchurComplBlocked( /*const*/sData* prob, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, int ncolsSC, double** SC);
 
+  /* calculate res += X_i * B_i^T */
+  void multRightDenseSchurComplBlocked( /* const */ sData* prob, DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz );
 };
 
 #endif

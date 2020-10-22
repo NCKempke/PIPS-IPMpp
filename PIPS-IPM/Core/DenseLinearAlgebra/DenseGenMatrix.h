@@ -10,6 +10,7 @@
 #include "DenseGenMatrixHandle.h"
 
 class DoubleLinearSolver;
+class SparseGenMatrix;
 
 /** A class of dense, non-symmetric, possibly non-square, matrices.
  *  @ingroup DenseLinearAlgebra
@@ -112,6 +113,10 @@ public:
 		       DenseGenMatrix& A, int transA,
 		       DenseGenMatrix& B, int transB,
 		       double beta);
+
+  /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
+   * starting at mul_start and the results gets added starting at res_start */
+  void multMatAt( int mul_start, double beta, int res_start, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const;
 
 };
 

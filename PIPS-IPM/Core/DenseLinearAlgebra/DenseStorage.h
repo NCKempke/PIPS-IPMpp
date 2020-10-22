@@ -46,9 +46,9 @@ public:
   virtual void atAddOuterProductOf( int row, int col, double alpha,
 				    double * x, int incx, int nx );
 
-
   virtual void addToDiagonalAt( double alpha, double x[], int incx,
 				int idiag, int extent );
+
   virtual void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int irowA[], int& nnz,
 			     int rowExtent, int& info );

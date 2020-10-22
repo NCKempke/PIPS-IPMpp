@@ -14,6 +14,7 @@
 #include "SimpleVector.h"
 
 #include "DoubleMatrixTypes.h"
+#include "SparseGenMatrix.h"
 
 int DenseGenMatrix::isKindOf( int type ) const
 {
@@ -359,5 +360,40 @@ void DenseGenMatrix::matMult(double alpha,
   //  if( n != 0 && m != 0 ) {
   //  dgemv_( &fortranTrans, &n, &m, &alpha, &C[0][0], &n,
   //	    &x[0], &incx, &beta, &y[0], &incy );
+
+}
+
+// TODO : probably move to some utility class..
+void DenseGenMatrix::multMatAt( int mul_start, double beta, int res_start, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const
+{
+   assert( mul_start >= 0 );
+   int mat_m, mat_n; mat.getSize( mat_m, mat_n );
+
+   assert( mul_start <= mStorage->n && mul_start + mat_m <= mStorage->n );
+
+   assert( res_start >= 0 );
+   assert( res_start <= res.mStorage->n && res_start + mat_n <= res.mStorage->n );
+   assert( res.mStorage->m == mStorage->m );
+
+   SparseStorage& mat_tp = mat.getTranspose().getStorageRef();
+   for( int j = 0; j < mStorage->m; ++j )
+   {
+      for( int i = 0; i < mat_n; ++i )
+      {
+         const int col_start = mat_tp.krowM[i];
+         const int col_end = mat_tp.krowM[i + 1];
+
+         for( int k = col_start; k < col_end; ++k )
+         {
+            const int row = mat_tp.jcolM[k];
+            const double val = mat_tp.M[k];
+
+            assert( res_start + i < res.mStorage->n );
+            assert( row < mat_m );
+            assert( row + mul_start < mStorage->n );
+            res[j][res_start + i] += mStorage->M[j][row + mul_start] * val;
+         }
+      }
+   }
 
 }

@@ -502,11 +502,12 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix
 }
 
 /* compute SUM_i Bi_{outer}^T X_i = SUM_i Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
+void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
       StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border )
 {
-   /* X0 is still in transposed form */
+   assert( !is_hierarchy_root );
 
+   /* X0 is still in transposed form */
    assert( this->children.size() == R_border.children.size() );
    assert( !R_border.isKindOf( kStringGenDummyMatrix ) );
    assert( !A_border.isKindOf( kStringGenDummyMatrix ) );
@@ -514,20 +515,18 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0
    assert( !F_border.isKindOf( kStringGenDummyMatrix ) );
    assert( !G_border.isKindOf( kStringGenDummyMatrix ) );
 
-   assert( false && "TODO: implement");
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-
-   // TODO Bi = compute Bi_{outer} - Bi_{inner} X0
-   // TODO : reuse an make member
-//   DenseGenMatrix& Bi = new DenseGenMatrix( )
-
    // TODO compute Bi_{outer}^T Ki^-1 Bi and add to SC
    for( size_t it = 0; it < children.size(); it++ )
    {
-//      children[it]->addLniZiHierarchyBorder(result, *R_border.children[it], *A_border.children[it], *C_border.children[it],
-//            *F_border.children[it], *G_border.children[it]);
+      // TODO Bi = compute Bi_{outer} - Bi_{inner} X0
+      children[it]->LniTransMultHierarchyBorder( SC, X0, *R_border.children[it], *A_border.children[it], *C_border.children[it],
+            *F_border.children[it], *G_border.children[it], locnx, locmy, locmz );
    }
+   MPI_Barrier( mpiComm );
+
+   assert( false && "TODO: implement");
 
    /* allreduce the final SC result */
    // TODO : optimize -> do not reduce A_0 part ( all zeros... )
@@ -540,7 +539,6 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0
 
    // TODO : finalize SC?
 }
-
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
