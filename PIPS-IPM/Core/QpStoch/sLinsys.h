@@ -67,23 +67,42 @@ class sLinsys : public QpGenLinsys
   sData* data;
   
  public:
+
+  template<typename T>
+  struct RFGAC_BLOCK
+  {
+     /* represents a block like
+      * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
+      * [ A_i   0     0   ] or possibly [  F_i    0     0   ]
+      * [ C_i   0     0   ]             [  G_i    0     0   ]
+      */
+     T& R;
+     T& A;
+     T& C;
+     T& F;
+     T& G;
+
+     RFGAC_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
+        R(R), A(A), C(C), F(F), G(G) {};
+  };
+
+  typedef RFGAC_BLOCK<StringGenMatrix> BorderLinsys;
+  typedef RFGAC_BLOCK<SparseGenMatrix> BorderBiBlock;
+
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
 
   virtual void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz);
 
-  virtual void addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border);
+  virtual void addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border );
 
   /* adds mat to res starting at row_0 col_0 */
   void addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const;
 
   /* add Bi_{outer}^T to res */
-  virtual void addBiTBorder( DenseGenMatrix& res, const SparseGenMatrix& Rt_border, const SparseGenMatrix& At_border,
-        const SparseGenMatrix& Ct_border, const SparseGenMatrix& F_border, const SparseGenMatrix& G_border ) const;
+  virtual void addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT) const;
 
   /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0,
-        StringGenMatrix& R_border, StringGenMatrix& A_border, StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border,
+  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border,
         int parent_nx, int parent_my, int parent_mz );
 
   /** y += alpha * Lni^T * x */
@@ -107,11 +126,11 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
         SymMatrix& SC) { assert( 0 && "not implemented here" ); };
  protected:
-  virtual void addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bool symSC,
-        SparseGenMatrix& R_right, SparseGenMatrix& A_right, SparseGenMatrix& C_right,
-        SparseGenMatrix& F_right, SparseGenMatrix& G_right, DoubleMatrix& result);
+  virtual void addBiTLeftKiBiRightToResBlocked(/*const*/sData* prob, bool sparse_res, bool sym_res, BorderBiBlock &border_right, DoubleMatrix& result);
+
  public:
 
+  // TODO : refactor and make only function - rename
   virtual void addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparseSC, bool symSC, SymMatrix& SC);
 
   virtual void addTermToSparseSchurCompl(sData *prob,
@@ -136,8 +155,7 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here"); }
 
   /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */
-  virtual void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border)
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
@@ -145,13 +163,12 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
+  virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, BorderLinsys& border_outer)
   { assert( false && "not implemented here" ); };
 
   /* compute B0_{outer} - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
-        SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border)
+        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
   { assert( false && "not implemented here"); };
 
  public:
@@ -178,7 +195,7 @@ class sLinsys : public QpGenLinsys
   DoubleLinearSolver** solvers_blocked = nullptr;
   SparseSymMatrix** problems_blocked = nullptr;
 
-
+  // TODO rename
   void multLeftSchurComplBlocked( /*const*/ sData* prob, /*const*/double* colsBlockDense,
         const int* colId, int blocksize, bool sparseSC, bool symSC, DoubleMatrix& SC);
 

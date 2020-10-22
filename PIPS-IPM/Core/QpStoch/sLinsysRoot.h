@@ -66,15 +66,13 @@ class sLinsysRoot : public sLinsys {
 
   /* compute B0_{outer} - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
-        SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border) override;
+        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border ) override;
 
   /* compute B0_{outer} - SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-  void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border ) override;
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border ) override;
+  void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, BorderLinsys& border ) override;
 
   virtual void putXDiagonal( OoqpVector& xdiag_ );
   virtual void putZDiagonal( OoqpVector& zdiag );

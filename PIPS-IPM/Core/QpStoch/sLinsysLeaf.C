@@ -123,13 +123,11 @@ void sLinsysLeaf::deleteChildren()
 
 void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC)
 {
-   SparseGenMatrix& A = prob->getLocalA();
-   SparseGenMatrix& C = prob->getLocalC();
-   SparseGenMatrix& F = prob->getLocalF();
-   SparseGenMatrix& G = prob->getLocalG();
-   SparseGenMatrix& R = prob->getLocalCrossHessian();
+   const bool sc_is_sym = true;
 
-   addTermToSchurComplBlocked(prob, sparseSC, true, R, A, C, F, G, SC);
+   BorderBiBlock Bi( prob->getLocalC(), prob->getLocalA(), prob->getLocalC(), prob->getLocalF(), prob->getLocalG() );
+
+   addBiTLeftKiBiRightToResBlocked(prob, sparseSC, sc_is_sym, Bi, SC);
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 

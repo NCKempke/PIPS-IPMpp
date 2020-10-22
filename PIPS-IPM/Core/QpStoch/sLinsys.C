@@ -358,23 +358,17 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   }
 }
 
-void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
+void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border )
 {
-   assert( R_border.children.size() == 0 );
-   assert( A_border.mat );
-   assert( C_border.mat );
-   assert( F_border.mat );
-   assert( G_border.mat );
-   assert( R_border.mat );
+   assert( border.R.children.size() == 0 );
+   assert( border.A.mat );
+   assert( border.C.mat );
+   assert( border.F.mat );
+   assert( border.G.mat );
+   assert( border.R.mat );
 
-   SparseGenMatrix& A = *A_border.mat;
-   SparseGenMatrix& C = *C_border.mat;
-   SparseGenMatrix& F = *F_border.mat;
-   SparseGenMatrix& G = *G_border.mat;
-   SparseGenMatrix& R = *R_border.mat;
-
-   addTermToSchurComplBlocked(data, false, false, R, A, C, F, G, result);
+   BorderBiBlock Bi( *border.R.mat, *border.A.mat, *border.C.mat, *border.F.mat, *border.G.mat );
+   addBiTLeftKiBiRightToResBlocked(data, false, false, Bi, result);
 }
 
 /* calculate res += X_i * B_i^T */
@@ -477,14 +471,13 @@ void sLinsys::addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row
 
 }
 
-void sLinsys::addBiTBorder( DenseGenMatrix& res, const SparseGenMatrix& Rt_border, const SparseGenMatrix& At_border,
-        const SparseGenMatrix& Ct_border, const SparseGenMatrix& F_border, const SparseGenMatrix& G_border ) const
+void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) const
 {
-   int mRt, nRt; Rt_border.getSize(mRt, nRt);
-   int mAt, nAt; At_border.getSize(mAt, nAt);
-   int mCt, nCt; Ct_border.getSize(mCt, nCt);
-   int mF, nF; F_border.getSize(mF, nF);
-   int mG, nG; G_border.getSize(mG, nG);
+   int mRt, nRt; BiT.R.getSize(mRt, nRt);
+   int mAt, nAt; BiT.A.getSize(mAt, nAt);
+   int mCt, nCt; BiT.C.getSize(mCt, nCt);
+   int mF, nF; BiT.F.getSize(mF, nF);
+   int mG, nG; BiT.G.getSize(mG, nG);
 
 #ifndef NDEBUG
    int mres, nres; res.getSize(mres, nres);
@@ -495,23 +488,22 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const SparseGenMatrix& Rt_borde
    assert( nRt + nAt + nCt == nres );
 #endif
 
-   addMatAt( res, Rt_border, 0, 0 );
-   addMatAt( res, At_border, 0, nRt );
-   addMatAt( res, Ct_border, 0, nRt + nAt );
+   addMatAt( res, BiT.R, 0, 0 );
+   addMatAt( res, BiT.A, 0, nRt );
+   addMatAt( res, BiT.C, 0, nRt + nAt );
 
-   addMatAt( res, F_border, mRt, 0 );
-   addMatAt( res, G_border, mRt + mF, 0 );
+   addMatAt( res, BiT.F, mRt, 0 );
+   addMatAt( res, BiT.G, mRt + mF, 0 );
 }
 
 /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
-      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border, int parent_nx, int parent_my, int parent_mz )
+void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz )
 {
    int nx_border, myl_border, mzl_border, dummy;
 
-   R_border.getSize(dummy, nx_border);
-   F_border.getSize(myl_border, dummy);
-   G_border.getSize(mzl_border, dummy);
+   border.R.getSize(dummy, nx_border);
+   border.F.getSize(myl_border, dummy);
+   border.G.getSize(mzl_border, dummy);
 
    /* buffer for (Bi_{outer} - Bi_{inner} X0)^T = Bi_{outer}^T - X0^T Bi_{inner}^T */
    // TODO : reuse an make member
@@ -528,13 +520,14 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ Dense
     * Bi_{outer}^T = [  Fi  0   0  ]
     *                [  Gi  0   0  ]
     */
-   assert( R_border.mat );
-   assert( A_border.mat );
-   assert( C_border.mat );
-   assert( F_border.mat );
-   assert( G_border.mat );
+   assert( border.R.mat );
+   assert( border.A.mat );
+   assert( border.C.mat );
+   assert( border.F.mat );
+   assert( border.G.mat );
 
-   addBiTBorder( *Bi_buffer, R_border.mat->getTranspose(), A_border.mat->getTranspose(), C_border.mat->getTranspose(), *F_border.mat, *G_border.mat );
+   const BorderBiBlock BiT_outer( border.R.mat->getTranspose(), border.A.mat->getTranspose(), border.C.mat->getTranspose(), *border.F.mat, *border.G.mat);
+   addBiTBorder( *Bi_buffer, BiT_outer);
 
    /* compute (Bi_{outer} - Bi_{inner} * X0)^T = Bi_{outer}^T - X0^T * Bi_{inner}^T
     *
@@ -956,9 +949,7 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
  *
  * computes (B^T K^{-1} B_right)^T and adds it to the SC
  */
-void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bool symSC,
-      SparseGenMatrix& R_right, SparseGenMatrix& A_right, SparseGenMatrix& C_right,
-      SparseGenMatrix& F_right, SparseGenMatrix& G_right, DoubleMatrix& result)
+void sLinsys::addBiTLeftKiBiRightToResBlocked(/*const*/sData* prob, bool sparse_res, bool sym_res, BorderBiBlock& border_right, DoubleMatrix& result)
 {
    int tmp;
 
@@ -967,26 +958,26 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
    assert( m_res >= 0 && n_res >= 0 );
 
    int nxl_right, nx_right;
-   R_right.getSize(nxl_right, nx_right);
+   border_right.R.getSize(nxl_right, nx_right);
    assert( nx_right >= 0 && nxl_right >= 0 );
 
    int my_right;
-   A_right.getSize(my_right, tmp);
+   border_right.A.getSize(my_right, tmp);
    assert( nx_right == tmp );
    assert( my_right >= 0 );
 
    int mz_right;
-   C_right.getSize(mz_right, tmp);
+   border_right.C.getSize(mz_right, tmp);
    assert( nx_right == tmp );
    assert( mz_right >= 0 );
 
    int myl_right, mzl_right;
 
-   F_right.getSize(myl_right, tmp);
+   border_right.F.getSize(myl_right, tmp);
    assert( tmp == nxl_right );
    assert( myl_right >= 0 );
 
-   G_right.getSize(mzl_right, tmp);
+   border_right.G.getSize(mzl_right, tmp);
    assert( tmp == nxl_right );
    assert( mzl_right >= 0 );
 
@@ -999,9 +990,9 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
 
    SimpleVectorBase<int> nnzPerColRAC(nx_right);
 
-   R_right.addNnzPerCol(nnzPerColRAC);
-   A_right.addNnzPerCol(nnzPerColRAC);
-   C_right.addNnzPerCol(nnzPerColRAC);
+   border_right.R.addNnzPerCol(nnzPerColRAC);
+   border_right.A.addNnzPerCol(nnzPerColRAC);
+   border_right.C.addNnzPerCol(nnzPerColRAC);
 
    const int withF = (locmyl > 0);
    const int withG = (locmzl > 0);
@@ -1053,13 +1044,13 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
       if( colSparsity )
          memset(colSparsity, 0, N * sizeof(int));
 
-      R_right.fromGetColsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
-      A_right.fromGetColsBlock(colId, blocksize, N, nxl_right, colsBlockDense, colSparsity);
-      C_right.fromGetColsBlock(colId, blocksize, N, (nxl_right + my_right), colsBlockDense, colSparsity);
+      border_right.R.fromGetColsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
+      border_right.A.fromGetColsBlock(colId, blocksize, N, nxl_right, colsBlockDense, colSparsity);
+      border_right.C.fromGetColsBlock(colId, blocksize, N, (nxl_right + my_right), colsBlockDense, colSparsity);
 
       solver->solve(blocksize, colsBlockDense, colSparsity);
 
-      multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparseSC, symSC, result);
+      multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparse_res, sym_res, result);
    }
 
 #ifdef TIME_SCHUR
@@ -1076,7 +1067,7 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
       //                       (0  )
 
       SimpleVectorBase<int> nnzPerColFt(myl_right);
-      F_right.addNnzPerRow(nnzPerColFt);
+      border_right.F.addNnzPerRow(nnzPerColFt);
 
       const int nxMySC = m_res - myl_right - mzl_right;
 
@@ -1099,14 +1090,14 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
          memset(colsBlockDense, 0, blocksize * N * sizeof(double));
 
          // get column block from Ft (i.e., row block from F)
-         F_right.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
+         border_right.F.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
 
          solver->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
             colId[i] += nxMySC;
 
-         multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparseSC, symSC, result);
+         multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparse_res, sym_res, result);
       }
    }
 
@@ -1118,7 +1109,7 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
       //                       (0  )
 
       SimpleVectorBase<int> nnzPerColGt(mzl_right);
-      G_right.addNnzPerRow(nnzPerColGt);
+      border_right.G.addNnzPerRow(nnzPerColGt);
       const int nxMyMzSC = m_res - mzl_right;
 
       colpos = 0;
@@ -1140,14 +1131,14 @@ void sLinsys::addTermToSchurComplBlocked(/*const*/sData* prob, bool sparseSC, bo
 
          memset(colsBlockDense, 0, blocksize * N * sizeof(double));
 
-         G_right.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
+         border_right.G.fromGetRowsBlock(colId, blocksize, N, 0, colsBlockDense, colSparsity);
 
          solver->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
              colId[i] += nxMyMzSC;
 
-          multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparseSC, symSC, result);
+          multLeftSchurComplBlocked( prob, colsBlockDense, colId, blocksize, sparse_res, sym_res, result);
       }
    }
 

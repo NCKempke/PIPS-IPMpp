@@ -301,12 +301,12 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
  * [ G0V  0     0    ]
  */
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
-      SparseGenMatrix& F0con_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0con_border)
+      SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
 {
    int nx_border, myl_border, mzl_border, dummy;
    A0_border.getSize(dummy, nx_border);
-   F0con_border.getSize(myl_border, dummy);
-   G0con_border.getSize(mzl_border, dummy);
+   F0cons_border.getSize(myl_border, dummy);
+   G0cons_border.getSize(mzl_border, dummy);
 
    /* add A0^T, F0V^T, G0V^T */
    for( int row = 0; row < nx_border; ++row )
@@ -412,14 +412,14 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
       {
 #ifndef NDEBUG
          int m,n;
-         F0con_border.getSize(m, n);
+         F0cons_border.getSize(m, n);
          assert( locnx == n );
          assert( myl_border == m );
 #endif
 
-         const double* MF0C = F0con_border.M();
-         const int* krowF0C = F0con_border.krowM();
-         const int* jcolF0C = F0con_border.jcolM();
+         const double* MF0C = F0cons_border.M();
+         const int* krowF0C = F0cons_border.krowM();
+         const int* jcolF0C = F0cons_border.jcolM();
 
          const int rowF0C_start = krowF0C[rowF];
          const int rowF0C_end = krowF0C[rowF + 1];
@@ -445,14 +445,14 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
       {
 #ifndef NDEBUG
          int m,n;
-         G0con_border.getSize(m, n);
+         G0cons_border.getSize(m, n);
          assert( locnx == n );
          assert( mzl_border == m );
 #endif
 
-         const double* MG0C = G0con_border.M();
-         const int* krowG0C = G0con_border.krowM();
-         const int* jcolG0C = G0con_border.jcolM();
+         const double* MG0C = G0cons_border.M();
+         const int* krowG0C = G0cons_border.krowM();
+         const int* jcolG0C = G0cons_border.jcolM();
 
          const int rowG0C_start = krowG0C[rowG];
          const int rowG0C_end = krowG0C[rowG + 1];
@@ -474,21 +474,21 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
 
 
 /* compute SUM_i Bi_{inner}^T Ki^{-1} Bi_{border} */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border)
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border )
 {
-   assert( this->children.size() == R_border.children.size() );
-   assert( !R_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !A_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !C_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !F_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !G_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( this->children.size() == border.R.children.size() );
+   assert( !border.R.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.A.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.C.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.F.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.G.isKindOf( kStringGenDummyMatrix ) );
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->addLniZiHierarchyBorder(result, *R_border.children[it], *A_border.children[it], *C_border.children[it],
-            *F_border.children[it], *G_border.children[it]);
+      BorderLinsys border_child( *border.R.children[it], *border.A.children[it], *border.C.children[it],
+                  *border.F.children[it], *border.G.children[it]);
+      children[it]->addLniZiHierarchyBorder(result, border_child );
    }
 
    /* allreduce the result */
@@ -502,27 +502,27 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix
 }
 
 /* compute SUM_i Bi_{outer}^T X_i = SUM_i Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
-      StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border )
+void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border )
 {
    assert( !is_hierarchy_root );
 
    /* X0 is still in transposed form */
-   assert( this->children.size() == R_border.children.size() );
-   assert( !R_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !A_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !C_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !F_border.isKindOf( kStringGenDummyMatrix ) );
-   assert( !G_border.isKindOf( kStringGenDummyMatrix ) );
+   assert( this->children.size() == border.R.children.size() );
+   assert( !border.R.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.A.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.C.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.F.isKindOf( kStringGenDummyMatrix ) );
+   assert( !border.G.isKindOf( kStringGenDummyMatrix ) );
 
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    // TODO compute Bi_{outer}^T Ki^-1 Bi and add to SC
    for( size_t it = 0; it < children.size(); it++ )
    {
+      BorderLinsys border_child( *border.R.children[it], *border.A.children[it], *border.C.children[it],
+                  *border.F.children[it], *border.G.children[it]);
       // TODO Bi = compute Bi_{outer} - Bi_{inner} X0
-      children[it]->LniTransMultHierarchyBorder( SC, X0, *R_border.children[it], *A_border.children[it], *C_border.children[it],
-            *F_border.children[it], *G_border.children[it], locnx, locmy, locmz );
+      children[it]->LniTransMultHierarchyBorder( SC, X0, border_child, locnx, locmy, locmz );
    }
    MPI_Barrier( mpiComm );
 

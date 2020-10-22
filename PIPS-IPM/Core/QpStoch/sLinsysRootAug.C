@@ -1789,27 +1789,26 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
    assert( data_border->children.size() == 1 );
 
    /* get right hand side parts */
-   StringGenMatrix& R_border = *dynamic_cast<BorderedSymMatrix&>(*data_border->Q).border_vertical;
-   StringGenMatrix& A_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left;
-   StringGenMatrix& C_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left;
-
-   StringGenMatrix& F_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom;
-   StringGenMatrix& G_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom;
+   BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data_border->Q).border_vertical,
+         *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left,
+         *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left,
+         *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom,
+         *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom);
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} K^-1 Bi_{border}
     * (keep in mind that in Bi_{inner} and the SC we projected C0 Omega0 out)
     */
    int nx_border, myl_border, mzl_border, dummy;
-   A_border.getSize(dummy, nx_border);
-   F_border.getSize(myl_border, dummy);
-   G_border.getSize(mzl_border, dummy);
+   border.A.getSize(dummy, nx_border);
+   border.F.getSize(myl_border, dummy);
+   border.G.getSize(mzl_border, dummy);
 
    const int m_buffer = nx_border + myl_border + mzl_border;
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
 
    // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
-   LsolveHierarchyBorder(*buffer_b0, R_border, A_border, C_border, F_border, G_border);
+   LsolveHierarchyBorder(*buffer_b0, border);
 
    SparseGenMatrix& A0_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat;
    SparseGenMatrix& F0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat_link;
@@ -1825,7 +1824,7 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
 
    // TODO : for each child multiply and add to Schur Complement
    // TODO : for each child solve Xi = Ki^-1 (Bi_{outer} - Bi_{inner} X0)
-   LtsolveHierarchyBorder( schur_comp, *buffer_b0, R_border, A_border, C_border, F_border, G_border );
+   LtsolveHierarchyBorder( schur_comp, *buffer_b0, border );
 
    // TODO : finalize Schur Complement
    assert( false && "TODO : implement" );

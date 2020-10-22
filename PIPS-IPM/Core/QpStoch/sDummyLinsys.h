@@ -45,12 +45,9 @@ class sDummyLinsys : public sLinsys
 
   void addTermToSchurResidual(sData* prob, SimpleVector& res, SimpleVector& x) override {};
 
-  void LsolveHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override {};
-  void addLniZiHierarchyBorder( DenseGenMatrix& result, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border) override {};
-  void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, StringGenMatrix& R_border, StringGenMatrix& A_border,
-        StringGenMatrix& C_border, StringGenMatrix& F_border, StringGenMatrix& G_border, int parent_nx, int parent_my, int parent_mz ) override {};
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border) override {};
+  void addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border) override {};
+  void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz ) override {};
 
   void allocU(DenseGenMatrix ** Ut, int np) override {};
   void allocV (DenseGenMatrix ** V, int np) override {};
