@@ -126,12 +126,12 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
         SymMatrix& SC) { assert( 0 && "not implemented here" ); };
  protected:
-  virtual void addBiTLeftKiBiRightToResBlocked(/*const*/sData* prob, bool sparse_res, bool sym_res, BorderBiBlock &border_right, DoubleMatrix& result);
+  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
+        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
 
  public:
-
-  // TODO : refactor and make only function - rename
-  virtual void addTermToSchurComplBlockedParallelSolvers(sData *prob, bool sparseSC, bool symSC, SymMatrix& SC);
+  virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
+        /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
 
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
@@ -195,15 +195,14 @@ class sLinsys : public QpGenLinsys
   DoubleLinearSolver** solvers_blocked = nullptr;
   SparseSymMatrix** problems_blocked = nullptr;
 
-  // TODO rename
-  void multLeftSchurComplBlocked( /*const*/ sData* prob, /*const*/double* colsBlockDense,
-        const int* colId, int blocksize, bool sparseSC, bool symSC, DoubleMatrix& SC);
+  void addLeftBorderTimesDenseColsToRes( const BorderBiBlock& border_left, const double* cols,
+        const int* cols_id, int blocksize, bool sparse_res, bool sym_res, DoubleMatrix& res) const;
 
-  void multLeftSparseSchurComplBlocked( /*const*/ sData* prob, /*const*/ double* colsBlockDense,
-        const int* colId, int blocksize, SparseSymMatrix& SC);
+  void addLeftBorderTimesDenseColsToResSparse( const BorderBiBlock& border_left, const double* cols,
+        const int* cols_id, int n_cols, SparseSymMatrix& res) const;
 
-  void multLeftDenseSchurComplBlocked( /*const*/sData* prob, /*const*/double* colsBlockDense,
-        const int* colId, int blocksize, int ncolsSC, double** SC);
+  void addLeftBorderTimesDenseColsToResDense( const BorderBiBlock& border_left, const double* cols,
+        const int* cols_id, int n_cols, int n_cols_res, double** res) const;
 
   /* calculate res += X_i * B_i^T */
   void multRightDenseSchurComplBlocked( /* const */ sData* prob, DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz );

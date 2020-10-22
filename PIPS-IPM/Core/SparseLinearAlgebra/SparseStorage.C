@@ -932,7 +932,7 @@ void SparseStorage::transMultMat( double beta,  double* Y, int ny, int ldy,
 // adds this * x to the part of row yrow of y that is in the upper half of y
 // y is assumed to be symmetric and sorted!
 void SparseStorage::multMatSymUpper( double beta, SparseStorage& y,
-              double alpha, double x[], int yrow, int ycolstart ) const
+              double alpha, const double x[], int yrow, int ycolstart ) const
 {
    assert(yrow >= 0 && yrow < y.m);
    assert(ycolstart >= 0 && ycolstart < y.n);

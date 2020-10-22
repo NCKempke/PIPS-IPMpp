@@ -516,20 +516,15 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseG
 
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-   // TODO compute Bi_{outer}^T Ki^-1 Bi and add to SC
    for( size_t it = 0; it < children.size(); it++ )
    {
       BorderLinsys border_child( *border.R.children[it], *border.A.children[it], *border.C.children[it],
                   *border.F.children[it], *border.G.children[it]);
-      // TODO Bi = compute Bi_{outer} - Bi_{inner} X0
       children[it]->LniTransMultHierarchyBorder( SC, X0, border_child, locnx, locmy, locmz );
    }
    MPI_Barrier( mpiComm );
 
-   assert( false && "TODO: implement");
-
-   /* allreduce the final SC result */
-   // TODO : optimize -> do not reduce A_0 part ( all zeros... )
+   /* allreduce the border SC */
    if( iAmDistrib )
    {
       int m, n;
@@ -538,6 +533,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseG
    }
 
    // TODO : finalize SC?
+   assert( false && "TODO: implement");
 }
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
@@ -1578,7 +1574,7 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
    if( computeBlockwiseSC )
    {
 //	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, true, *kkt);
-	   children[childindex]->addTermToSchurComplBlockedParallelSolvers(prob->children[childindex], hasSparseKkt, true, *kkt);
+	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
    }
    else
    {

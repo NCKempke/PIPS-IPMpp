@@ -85,9 +85,9 @@ public:
   void setToDiagonal( const OoqpVector& vec ) override;
 
   void mult ( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
-  virtual void mult ( double beta, double y[], int incy, double alpha, double x[], int incx ) const;
+  virtual void mult ( double beta, double y[], int incy, double alpha, const double x[], int incx ) const;
 
-  virtual void multMatSymUpper( double beta, SymMatrix& y, double alpha, double x[], int yrowstart, int ycolstart ) const;
+  virtual void multMatSymUpper( double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart ) const;
 
   virtual void transmultMatSymUpper( double beta, SymMatrix& y, double alpha, double x[], int yrowstart, int ycolstart ) const;
 

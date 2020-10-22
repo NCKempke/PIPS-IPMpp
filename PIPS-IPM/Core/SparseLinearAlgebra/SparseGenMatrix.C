@@ -348,13 +348,13 @@ void SparseGenMatrix::mult ( double beta,  OoqpVector& y_in,
 }
 
 void SparseGenMatrix::mult ( double beta,  double y[], int incy,
-			     double alpha, double x[], int incx ) const
+			     double alpha, const double x[], int incx ) const
 {
   mStorage->mult( beta, y, incy, alpha, x, incx);
 }
 
 void SparseGenMatrix::multMatSymUpper( double beta, SymMatrix& y,
-      double alpha, double x[], int yrowstart, int ycolstart ) const
+      double alpha, const double x[], int yrowstart, int ycolstart ) const
 {
   SparseSymMatrix& y_sparse = dynamic_cast<SparseSymMatrix &>(y);
   assert(!y_sparse.isLower);

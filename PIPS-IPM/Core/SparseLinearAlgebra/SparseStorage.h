@@ -153,7 +153,7 @@ public:
   void reduceToLower();
 
   void multMatSymUpper( double beta, SparseStorage& y,
-                double alpha, double x[], int yrow, int ycolstart ) const;
+                double alpha, const double x[], int yrow, int ycolstart ) const;
 
   void transMultLower( double beta,  double y[],
 			       double alpha, double x[], int firstrow );
