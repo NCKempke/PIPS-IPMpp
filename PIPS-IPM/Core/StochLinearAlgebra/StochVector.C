@@ -167,48 +167,46 @@ void StochVectorBase<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase
       this->children[node]->setNotIndicatedEntriesToVal(val, *ind_vec.children[node] );
 }
 
-
-template<typename T>
-void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& v1, const StochVectorBase<T>& v2, const StochVectorBase<T>& v3)
-{
-  SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
-  SimpleVectorBase<T>& sv1 = dynamic_cast<SimpleVectorBase<T>&>(*v1.vec);
-  SimpleVectorBase<T>& sv2 = dynamic_cast<SimpleVectorBase<T>&>(*v2.vec);
-  SimpleVectorBase<T>& sv3 = dynamic_cast<SimpleVectorBase<T>&>(*v3.vec);
-
-  int n1 = sv1.length();
-  int n2 = sv2.length();
-  int n3 = sv3.length();
-
-  assert( n1 + n2 + n3 == sv.length() );
-
-  if( n1 > 0 )
-    memcpy(&sv[0], &sv1[0], n1 * sizeof(T));
-
-  if( n2 > 0 )
-    memcpy(&sv[n1], &sv2[0], n2 * sizeof(T));
-
-  if( n3 > 0 )
-    memcpy(&sv[n1 + n2], &sv3[0], n3 * sizeof(T));
-
-  for(size_t it = 0; it < children.size(); it++) {
-    children[it]->jointCopyFrom(*v1.children[it],
-				*v2.children[it],
-				*v3.children[it]);
-  }
-
-}
+//
+//template<typename T>
+//void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& v1, const StochVectorBase<T>& v2, const StochVectorBase<T>& v3)
+//{
+//  SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
+//  SimpleVectorBase<T>& sv1 = dynamic_cast<SimpleVectorBase<T>&>(*v1.vec);
+//  SimpleVectorBase<T>& sv2 = dynamic_cast<SimpleVectorBase<T>&>(*v2.vec);
+//  SimpleVectorBase<T>& sv3 = dynamic_cast<SimpleVectorBase<T>&>(*v3.vec);
+//
+//  int n1 = sv1.length();
+//  int n2 = sv2.length();
+//  int n3 = sv3.length();
+//
+//  assert( n1 + n2 + n3 == sv.length() );
+//
+//  if( n1 > 0 )
+//    memcpy(&sv[0], &sv1[0], n1 * sizeof(T));
+//
+//  if( n2 > 0 )
+//    memcpy(&sv[n1], &sv2[0], n2 * sizeof(T));
+//
+//  if( n3 > 0 )
+//    memcpy(&sv[n1 + n2], &sv3[0], n3 * sizeof(T));
+//
+//  for(size_t it = 0; it < children.size(); it++) {
+//    children[it]->jointCopyFrom(*v1.children[it],
+//				*v2.children[it],
+//				*v3.children[it]);
+//  }
+//
+//}
 
 template<typename T>
 void StochVectorBase<T>::jointCopyFromLinkCons(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz)
 {
-#ifdef HIERARCHICAL
-   assert( false && "Not currently working : TODO : implement");
-#endif
-  SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
-  SimpleVectorBase<T>& svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
-  SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
-  SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
+
+   SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
+   SimpleVectorBase<T>& svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
+   SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
+   SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
 
   int n1 = svx.length();
   int n2 = svy.length();
@@ -255,39 +253,43 @@ void StochVectorBase<T>::jointCopyFromLinkCons(const StochVectorBase<T>& vx, con
 				*vy.children[it],
 				*vz.children[it]);
   }
+
+#ifdef HIERARCHICAL
+   assert( false && "Not currently working : TODO : implement");
+#endif
 }
 
 
-template<typename T>
-void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& v1, StochVectorBase<T>& v2, StochVectorBase<T>& v3) const
-{
-  const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
-  SimpleVectorBase<T>& sv1 = dynamic_cast<SimpleVectorBase<T>&>(*v1.vec);
-  SimpleVectorBase<T>& sv2 = dynamic_cast<SimpleVectorBase<T>&>(*v2.vec);
-  SimpleVectorBase<T>& sv3 = dynamic_cast<SimpleVectorBase<T>&>(*v3.vec);
-
-  int n1 = sv1.length();
-  int n2 = sv2.length();
-  int n3 = sv3.length();
-
-  assert(n1+n2+n3 == sv.length());
-
-  if(n1 > 0)
-    memcpy(&sv1[0], &sv[0], n1 * sizeof(T));
-
-  if(n2 > 0)
-    memcpy(&sv2[0], &sv[n1], n2 * sizeof(T));
-
-  if(n3 > 0)
-    memcpy(&sv3[0], &sv[n1+n2], n3 * sizeof(T));
-
-
-  for(size_t it = 0; it < children.size(); it++) {
-    children[it]->jointCopyTo(*v1.children[it],
-			      *v2.children[it],
-			      *v3.children[it]);
-  }
-}
+//template<typename T>
+//void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& v1, StochVectorBase<T>& v2, StochVectorBase<T>& v3) const
+//{
+//  const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
+//  SimpleVectorBase<T>& sv1 = dynamic_cast<SimpleVectorBase<T>&>(*v1.vec);
+//  SimpleVectorBase<T>& sv2 = dynamic_cast<SimpleVectorBase<T>&>(*v2.vec);
+//  SimpleVectorBase<T>& sv3 = dynamic_cast<SimpleVectorBase<T>&>(*v3.vec);
+//
+//  int n1 = sv1.length();
+//  int n2 = sv2.length();
+//  int n3 = sv3.length();
+//
+//  assert(n1+n2+n3 == sv.length());
+//
+//  if(n1 > 0)
+//    memcpy(&sv1[0], &sv[0], n1 * sizeof(T));
+//
+//  if(n2 > 0)
+//    memcpy(&sv2[0], &sv[n1], n2 * sizeof(T));
+//
+//  if(n3 > 0)
+//    memcpy(&sv3[0], &sv[n1+n2], n3 * sizeof(T));
+//
+//
+//  for(size_t it = 0; it < children.size(); it++) {
+//    children[it]->jointCopyTo(*v1.children[it],
+//			      *v2.children[it],
+//			      *v3.children[it]);
+//  }
+//}
 
 template<typename T>
 void StochVectorBase<T>::jointCopyToLinkCons(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const
