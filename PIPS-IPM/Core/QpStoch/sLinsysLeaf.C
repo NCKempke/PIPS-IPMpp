@@ -127,9 +127,9 @@ void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatr
 
    BorderBiBlock border_right( prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(), prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
    BorderBiBlock border_left_transp( prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
-         prob->getLocalG(), prob->getLocalF() );
+         prob->getLocalF(), prob->getLocalG() );
 
-   addBiTLeftKiBiRightToResBlocked( sparseSC, sc_is_sym, border_left_transp, border_right, SC);
+   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 

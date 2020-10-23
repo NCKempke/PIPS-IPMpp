@@ -136,13 +136,6 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
 					
-  virtual void addColsToDenseSchurCompl(sData *prob, 
-					DenseGenMatrix& out, 
-					int startcol, int endcol);
-
-  virtual void symAddColsToDenseSchurCompl(sData *prob, 
-				       double *out, 
-				       int startcol, int endcol);
   /** Used in the iterative refinement for the dense Schur complement systems
    * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
    */
@@ -195,14 +188,14 @@ class sLinsys : public QpGenLinsys
   DoubleLinearSolver** solvers_blocked = nullptr;
   SparseSymMatrix** problems_blocked = nullptr;
 
-  void addLeftBorderTimesDenseColsToRes( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int blocksize, bool sparse_res, bool sym_res, DoubleMatrix& res) const;
+  void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& border_left, const double* cols,
+        const int* cols_id, int length_col, int n_cols, bool sparse_res, bool sym_res, DoubleMatrix& res) const;
 
-  void addLeftBorderTimesDenseColsToResSparse( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int n_cols, SparseSymMatrix& res) const;
+  void addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock& border_left, const double* cols,
+        const int* cols_id, int length_col, int n_cols, SparseSymMatrix& res) const;
 
-  void addLeftBorderTimesDenseColsToResDense( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int n_cols, int n_cols_res, double** res) const;
+  void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& border_left, const double* cols,
+        const int* cols_id, int length_col, int n_cols, int m_rows_res, int n_cols_res, double** res) const;
 
   /* calculate res += X_i * B_i^T */
   void multRightDenseSchurComplBlocked( /* const */ sData* prob, DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz );
