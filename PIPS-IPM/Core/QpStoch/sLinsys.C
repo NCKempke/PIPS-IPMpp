@@ -378,7 +378,7 @@ void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& bor
 }
 
 /* calculate res += X_i * B_i^T */
-void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz )
+void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, const DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz )
 {
    /*          locnx locmy locmz
     *        [  RiT   AiT   CiT ] pnx
@@ -503,7 +503,7 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
 }
 
 /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz )
+void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz )
 {
    int nx_border, myl_border, mzl_border, dummy;
 

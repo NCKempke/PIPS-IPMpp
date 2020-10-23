@@ -297,30 +297,41 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
  *
  * [  0 F0C^T  G0C^T ]^T
  * [ A0   0     0    ]
+ * [ C0   0     0    ]
  * [ F0V  0     0    ]   - buffer
  * [ G0V  0     0    ]
  */
-void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
+void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
       SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
 {
-   int nx_border, myl_border, mzl_border, dummy;
-   A0_border.getSize(dummy, nx_border);
-   F0cons_border.getSize(myl_border, dummy);
-   G0cons_border.getSize(mzl_border, dummy);
+   int mA0, nA0; A0_border.getSize(mA0, nA0);
+   int mC0, nC0; C0_border.getSize(mC0, nC0);
+   int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
+   int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
 
-   /* add A0^T, F0V^T, G0V^T */
-   for( int row = 0; row < nx_border; ++row )
+   int mF0CT, nF0CT; F0cons_border.getSize(nF0CT, mF0CT);
+   int mG0CT, nG0CT; G0cons_border.getSize(nG0CT, mG0CT);
+
+   int mB, nB; buffer.getSize(mB, nB);
+
+   assert( mA0 == locmy );
+   assert( mC0 == locmz );
+   assert( mF0V == locmyl );
+   assert( mG0V == locmzl );
+   assert( mF0CT == locnx );
+
+   assert( mA0 + mC0 + mF0V + mG0V + mF0CT == nB );
+   assert( nA0 == nC0 && nC0 == nF0V && nF0V == nG0V );
+   assert( mF0CT == mG0CT );
+   assert( nA0 + nF0CT + nG0CT == mB );
+
+   /* add A0^T, C0^T, F0V^T, G0V^T */
+   for( int row = 0; row < nA0; ++row )
    {
       /* A0^T */
-      if( locmy > 0 )
+      if( mA0 > 0 )
       {
          const SparseGenMatrix& A0_transp = A0_border.getTranspose();
-#ifndef NDEBUG
-         int m,n;
-         A0_transp.getSize(m, n);
-         assert( locmy == n );
-         assert( nx_border == m );
-#endif
 
          const double* MAt = A0_transp.M();
          const int* krowAt = A0_transp.krowM();
@@ -329,7 +340,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
          const int rowAt_start = krowAt[row];
          const int rowAt_end = krowAt[row + 1];
 
-         const int col_buffer_start = locnx;
+         const int col_buffer_start = mF0CT;
          for( int k = rowAt_start; k < rowAt_end; ++k )
          {
             const int col_At = jcolAt[k];
@@ -337,21 +348,40 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
 
             const int col_buffer = col_buffer_start + col_At;
 
-            assert( locnx <= col_buffer && col_buffer < locnx + locmy );
+            assert( mF0CT <= col_buffer && col_buffer < mF0CT + mA0 );
             buffer[row][col_buffer] += val_At;
          }
       }
 
+      /* C0^T */
+      if( mC0 > 0 )
+      {
+         const SparseGenMatrix& C0_transp = C0_border.getTranspose();
+
+         const double* MCt = C0_transp.M();
+         const int* krowCt = C0_transp.krowM();
+         const int* jcolCt = C0_transp.jcolM();
+
+         const int rowCt_start = krowCt[row];
+         const int rowCt_end = krowCt[row + 1];
+
+         const int col_buffer_start = mF0CT + mA0;
+         for( int k = rowCt_start; k < rowCt_end; ++k )
+         {
+            const int col_At = jcolCt[k];
+            const double val_Ct = MCt[k];
+
+            const int col_buffer = col_buffer_start + col_At;
+
+            assert( mF0CT + mA0 <= col_buffer && col_buffer < mF0CT + mA0 + mC0 );
+            buffer[row][col_buffer] += val_Ct;
+         }
+      }
+
       /* F0V^T */
-      if( locmyl > 0 )
+      if( mF0V > 0 )
       {
          const SparseGenMatrix& F0V_transp = F0vec_border.getTranspose();
-#ifndef NDEBUG
-         int m,n;
-         F0V_transp.getSize(m, n);
-         assert( locmyl == n );
-         assert( nx_border == m );
-#endif
 
          const double* MF0Vt = F0V_transp.M();
          const int* krowF0Vt = F0V_transp.krowM();
@@ -360,7 +390,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
          const int rowF0Vt_start = krowF0Vt[row];
          const int rowF0Vt_end = krowF0Vt[row + 1];
 
-         const int col_buffer_start = locnx + locmy;
+         const int col_buffer_start = mF0CT + mA0 + mC0;
          for( int k = rowF0Vt_start; k < rowF0Vt_end; ++k )
          {
             const int col_F0Vt = jcolF0Vt[k];
@@ -368,21 +398,15 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
 
             const int col_buffer = col_buffer_start + col_F0Vt;
 
-            assert( locnx + locmy <= col_buffer && col_buffer < locnx + locmy + locmyl );
+            assert( mF0CT + mA0 + mC0 <= col_buffer && col_buffer < mF0CT + mA0 + mC0 + mF0V );
             buffer[row][col_buffer] += val_F0Vt;
          }
       }
 
       /* G0V^T */
-      if( locmzl > 0 )
+      if( mG0V > 0 )
       {
          const SparseGenMatrix& G0V_transp = G0vec_border.getTranspose();
-#ifndef NDEBUG
-         int m,n;
-         G0V_transp.getSize(m, n);
-         assert( locmzl == n );
-         assert( nx_border == m );
-#endif
 
          const double* MG0Vt = G0V_transp.M();
          const int* krowG0Vt = G0V_transp.krowM();
@@ -391,7 +415,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
          const int rowG0Vt_start = krowG0Vt[row];
          const int rowG0Vt_end = krowG0Vt[row + 1];
 
-         const int col_buffer_start = locnx + locmy + locmyl;
+         const int col_buffer_start = mF0CT + mA0 + mC0 + mF0V;
          for( int k = rowG0Vt_start; k < rowG0Vt_end; ++k )
          {
             const int col_G0Vt = jcolG0Vt[k];
@@ -399,24 +423,17 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
 
             const int col_buffer = col_buffer_start + col_G0Vt;
 
-            assert( locnx + locmy + locmyl <= col_buffer && col_buffer < locnx + locmy + locmyl + locmzl );
+            assert( mF0CT + mA0 + mC0 + mF0V <= col_buffer && col_buffer < mF0CT + mA0 + mC0 + mF0V + mG0V );
             buffer[row][col_buffer] += val_G0Vt;
          }
       }
    }
 
    /* F0C */
-   if( myl_border > 0 )
+   if( nF0CT > 0 )
    {
-      for( int rowF = 0; rowF < myl_border; ++rowF )
+      for( int rowF = 0; rowF < nF0CT; ++rowF )
       {
-#ifndef NDEBUG
-         int m,n;
-         F0cons_border.getSize(m, n);
-         assert( locnx == n );
-         assert( myl_border == m );
-#endif
-
          const double* MF0C = F0cons_border.M();
          const int* krowF0C = F0cons_border.krowM();
          const int* jcolF0C = F0cons_border.jcolM();
@@ -429,9 +446,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
             const int col = jcolF0C[k];
             const double val_F0C = MF0C[k];
 
-            const int row_buffer = rowF + nx_border;
+            const int row_buffer = rowF + nA0;
 
-            assert( nx_border <= row_buffer && row_buffer < nx_border + myl_border );
+            assert( nA0 <= row_buffer && row_buffer < nA0 + nF0CT );
             assert( 0 <= col && col < locnx );
             buffer[row_buffer][col] += val_F0C;
          }
@@ -439,17 +456,10 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
    }
 
    /* G0C */
-   if( mzl_border > 0 )
+   if( nG0CT > 0 )
    {
-      for( int rowG = 0; rowG < mzl_border; ++rowG )
+      for( int rowG = 0; rowG < nG0CT; ++rowG )
       {
-#ifndef NDEBUG
-         int m,n;
-         G0cons_border.getSize(m, n);
-         assert( locnx == n );
-         assert( mzl_border == m );
-#endif
-
          const double* MG0C = G0cons_border.M();
          const int* krowG0C = G0cons_border.krowM();
          const int* jcolG0C = G0cons_border.jcolM();
@@ -462,14 +472,21 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
             const int col = jcolG0C[k];
             const double val_G0C = MG0C[k];
 
-            const int row_buffer = rowG + nx_border + myl_border;
+            const int row_buffer = rowG + nA0 + nF0CT;
 
-            assert( nx_border + myl_border <= row_buffer && row_buffer < nx_border + myl_border + mzl_border );
+            assert( nA0 + nF0CT <= row_buffer && row_buffer < nA0 + nF0CT + nG0CT );
             assert( 0 <= col && col < locnx );
             buffer[row_buffer][col] += val_G0C;
          }
       }
    }
+}
+
+
+void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
+      SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0 )
+{
+   assert( false && "TODO : implement");
 }
 
 
@@ -502,7 +519,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& b
 }
 
 /* compute SUM_i Bi_{outer}^T X_i = SUM_i Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border )
+void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border )
 {
    assert( !is_hierarchy_root );
 
@@ -527,13 +544,9 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseG
    /* allreduce the border SC */
    if( iAmDistrib )
    {
-      int m, n;
-      SC.getSize(m, n);
+      int m, n; SC.getSize(m, n);
       submatrixAllReduceFull(&SC, 0, 0, m, n, mpiComm);
    }
-
-   // TODO : finalize SC?
-   assert( false && "TODO: implement");
 }
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)

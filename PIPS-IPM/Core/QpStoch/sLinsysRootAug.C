@@ -1717,7 +1717,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables* vars)
    //myAtPutZeros(kktd, locnx, locnx, locmy, locmy);
 }
 
-void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp)
+void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 {
    /* b holds all rhs in transposed form - C part from schu complement is already missing in b */
    const int my_rank = PIPS_MPIgetRank( mpiComm );
@@ -1732,7 +1732,7 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp)
 
   /* for every right hand side one of the processes now does the SC solve operation and puts it at the corresponding
    * position in b
-   * Every process has to do n_rhs / n_procs righ hand sides while the first few might have to solve with one additional one
+   * Every process has to do n_rhs / n_procs right hand sides while the first few might have to solve with one additional one
    */
 
   const int size = PIPS_MPIgetSize( mpiComm );
@@ -1808,24 +1808,28 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
 
    // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
+
+   // buffer_b0 = SUM_I Bi_{inner}^T Ki^{-1} Bi_{outer}
    LsolveHierarchyBorder(*buffer_b0, border);
 
    SparseGenMatrix& A0_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat;
+   SparseGenMatrix& C0_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat;
    SparseGenMatrix& F0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat_link;
    SparseGenMatrix& F0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom->mat;
 
    SparseGenMatrix& G0vec_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat_link;
    SparseGenMatrix& G0cons_border = *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom->mat;
 
-   finalizeZ0Hierarchical(*buffer_b0, A0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
+   // buffer_b0 = B0_{outer} - buffer_b0
+   finalizeZ0Hierarchical(*buffer_b0, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
 
-   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer} (stored in transposed form!
+   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer} (stored in transposed form!)
+   // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
-   // TODO : for each child multiply and add to Schur Complement
-   // TODO : for each child solve Xi = Ki^-1 (Bi_{outer} - Bi_{inner} X0)
+   // compute SC = SUM_i Bi_{outer}^T Ki^{-1} (Bi_{outer} - Bi_{inner} X0 ) = SUM_i Bi_{outer}^T Xi
    LtsolveHierarchyBorder( schur_comp, *buffer_b0, border );
 
-   // TODO : finalize Schur Complement
-   assert( false && "TODO : implement" );
+   // compute SC_{outer} += B0_{outer}^T X0
+   finalizeInnerSchurComplementContribution( schur_comp, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0 );
 }

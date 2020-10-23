@@ -47,7 +47,7 @@ class sDummyLinsys : public sLinsys
 
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border) override {};
   void addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border) override {};
-  void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz ) override {};
+  void LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz ) override {};
 
   void allocU(DenseGenMatrix ** Ut, int np) override {};
   void allocV (DenseGenMatrix ** V, int np) override {};

@@ -65,14 +65,18 @@ class sLinsysRoot : public sLinsys {
   virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
   /* compute B0_{outer} - buffer */
-  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
-        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border ) override;
+  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
+        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border );
+
+  /* compute SC += B0_{outer}^T X0 */
+  virtual void finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
+        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0 );
 
   /* compute B0_{outer} - SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border ) override;
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, BorderLinsys& border ) override;
+  void LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border ) override;
 
   virtual void putXDiagonal( OoqpVector& xdiag_ );
   virtual void putZDiagonal( OoqpVector& zdiag );

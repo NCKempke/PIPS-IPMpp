@@ -102,7 +102,7 @@ class sLinsys : public QpGenLinsys
   virtual void addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT) const;
 
   /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ DenseGenMatrix& X0, BorderLinsys& border,
+  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border,
         int parent_nx, int parent_my, int parent_mz );
 
   /** y += alpha * Lni^T * x */
@@ -160,13 +160,8 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, DenseGenMatrix& X0, BorderLinsys& border_outer)
+  virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border_outer)
   { assert( false && "not implemented here" ); };
-
-  /* compute B0_{outer} - buffer */
-  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& F0vec_border,
-        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
-  { assert( false && "not implemented here"); };
 
  public:
   MPI_Comm mpiComm;
@@ -202,7 +197,7 @@ class sLinsys : public QpGenLinsys
         const int* cols_id, int length_col, int n_cols, int m_rows_res, int n_cols_res, double** res) const;
 
   /* calculate res += X_i * B_i^T */
-  void multRightDenseSchurComplBlocked( /* const */ sData* prob, DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz );
+  void multRightDenseSchurComplBlocked( /* const */ sData* prob, const DenseGenMatrix& X, DenseGenMatrix& result, int parent_nx, int parent_my, int parent_mz );
 };
 
 #endif
