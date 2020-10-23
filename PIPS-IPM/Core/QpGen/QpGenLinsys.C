@@ -337,7 +337,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     uInvPi.divideSome( *vars->u, *icupp );
 
     /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-    step->s-> axzpy(  1.0, uInvPi, *res->ru );
+    step->s->axzpy(  1.0, uInvPi, *res->ru );
     /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
     step->s->axdzpy( -1.0, *res->rpi, *vars->u, *icupp );
   }

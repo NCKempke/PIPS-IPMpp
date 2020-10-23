@@ -1626,7 +1626,6 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
 	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
    else
    {
-      assert( false && "never used");
 	   if( hasSparseKkt )
 	   {
 	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
