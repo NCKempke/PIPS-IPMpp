@@ -151,7 +151,7 @@ void sLinsys::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
   StochVector& rhs2 = dynamic_cast<StochVector&>(rhs2_in);
   StochVector& rhs3 = dynamic_cast<StochVector&>(rhs3_in);
 
-  rhs.jointCopyFromLinkCons(rhs1, rhs2, rhs3);
+  rhs.jointCopyFrom(rhs1, rhs2, rhs3);
 }
 
 void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
@@ -162,7 +162,7 @@ void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
   StochVector& z    = dynamic_cast<StochVector&>(z_in);
   StochVector& vars = dynamic_cast<StochVector&>(vars_in);
 
-  vars.jointCopyToLinkCons(x, y, z);
+  vars.jointCopyTo(x, y, z);
 }
 
 void sLinsys::factor(Data *prob_, Variables *vars)

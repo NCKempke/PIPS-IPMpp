@@ -58,8 +58,8 @@ public:
   /* copy vector entries as well */
   OoqpVectorBase<T>* cloneFull() const override;
 
-  virtual void jointCopyFromLinkCons(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz);
-  virtual void jointCopyToLinkCons(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const;
+  virtual void jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz);
+  virtual void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const;
 
   bool isKindOf( int kind ) const override;
   void setToZero() override;
@@ -199,8 +199,8 @@ public:
    StochVectorBase<T>* clone() const override { return new StochDummyVectorBase<T>();}
    StochVectorBase<T>* cloneFull() const override { return new StochDummyVectorBase<T>();}
 
-   void jointCopyFromLinkCons(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz) override {};
-   void jointCopyToLinkCons(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const override {};
+   void jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz) override {};
+   void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const override {};
 
    bool isKindOf( int kind ) const override {return kind == kStochDummy;}
    bool isZero() const override { return true; };
