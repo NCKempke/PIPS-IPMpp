@@ -48,7 +48,6 @@ class sLinsysRoot : public sLinsys {
   virtual void initializeKKT(sData* prob, Variables* vars);
   virtual void assembleLocalKKT( sData* prob ) = 0;
   void addTermToSchurCompl(sData* prob, size_t childindex);
-  virtual void reduceKKT();
   virtual void reduceKKT(sData *prob);
   virtual void factorizeKKT(); 
   virtual void factorizeKKT(sData *prob);

@@ -40,6 +40,10 @@ public:
   int * jcolM() { return mStorage->jcolM; }
   double * M() { return mStorage->M; }
 
+  const int* krowM() const { return mStorage->krowM; }
+  const int* jcolM() const { return mStorage->jcolM; }
+  const double* M() const { return mStorage->M; }
+
   virtual int isKindOf( int type ) const;
 
   virtual void putSparseTriple( int irow[], int len, int jcol[], double A[],

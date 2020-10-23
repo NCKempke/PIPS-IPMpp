@@ -301,6 +301,7 @@ void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
  * [ F0V  0     0    ]   - buffer
  * [ G0V  0     0    ]
  */
+// TODO : refactor! ..
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
       SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
 {
@@ -482,11 +483,53 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
    }
 }
 
-
+/* compute SC -= B0_{outer}^T X0
+ *                [  0  A0T C0T F0VT G0VT ]
+ * B0_{outer}^T = [ F0C  0   0   0    0   ]
+ *                [ G0C  0   0   0    0   ]
+ *
+ */
 void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
       SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0 )
 {
-   assert( false && "TODO : implement");
+   int mA0T, nA0T; A0_border.getSize(nA0T, mA0T);
+   int mC0T, nC0T; C0_border.getSize(nC0T, mC0T);
+   int mF0VT, nF0VT; F0vec_border.getSize(nF0VT, mF0VT);
+   int mG0VT, nG0VT; G0vec_border.getSize(nG0VT, mG0VT);
+
+   int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
+   int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
+
+   int mX0, nX0; X0.getSize(mX0, nX0);
+   int mSC, nSC; SC.getSize(mSC, nSC);
+
+   assert( mA0T == mC0T && mC0T == mF0VT && mF0VT == mG0VT );
+   assert( nF0C == nG0C );
+   assert( nX0 == nF0C + nA0T + nC0T + nF0VT + nG0VT );
+   assert( mX0 == mA0T + mF0C + mG0C );
+   assert( nSC == mSC );
+   assert( mX0 == nSC );
+
+   // multiply each column with B_{outer]}^T and add if to res
+   // todo: #pragma omp parallel for schedule(dynamic, 10)
+   for( int i = 0; i < mX0; i++ )
+   {
+      const double* const col = X0[i];
+
+      A0_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C], 1);
+
+      C0_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + nA0T], 1);
+
+      F0vec_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + nA0T + nC0T], 1);
+
+      G0vec_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + nA0T + nC0T + nF0VT], 1);
+
+      F0cons_border.mult(1.0, &SC[i][0], 1, -1.0, &col[0], 1);
+
+      G0cons_border.mult(1.0, &SC[i][0], 1, -1.0, &col[0], 1);
+   }
+
+   // TODO does this even work?? where do we take care of the fact that the SC is symmetric here?
 }
 
 
@@ -845,11 +888,6 @@ void sLinsysRoot::initializeKKT(sData* prob, Variables* vars)
       DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt);
       myAtPutZeros(kktd);
    }
-}
-
-void sLinsysRoot::reduceKKT()
-{
-   reduceKKT(nullptr);
 }
 
 void sLinsysRoot::reduceKKT(sData* prob)
@@ -1588,6 +1626,7 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
 	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
    else
    {
+      assert( false && "never used");
 	   if( hasSparseKkt )
 	   {
 	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);

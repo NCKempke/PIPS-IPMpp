@@ -2255,13 +2255,13 @@ int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
       assert(Abd.border_left->mat);
       assert(Abd.border_left->mat_link);
       Abd.border_left->mat->getSize(my_loc, nx_loc);
-      Abd.border_left->mat_link->getSize(myl_loc, nx_loc);
+      Abd.bottom_left_block->getSize(myl_loc, nx_loc);
 
       const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
       assert(Cbd.border_left->mat);
       assert(Cbd.border_left->mat_link);
       Cbd.border_left->mat->getSize(mz_loc, nx_loc);
-      Cbd.border_left->mat_link->getSize(mzl_loc, nx_loc);
+      Cbd.bottom_left_block->getSize(mzl_loc, nx_loc);
    }
    else
    {

@@ -202,6 +202,9 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& v1, const Stoch
 template<typename T>
 void StochVectorBase<T>::jointCopyFromLinkCons(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz)
 {
+#ifdef HIERARCHICAL
+   assert( false && "Not currently working : TODO : implement");
+#endif
   SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
   SimpleVectorBase<T>& svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
   SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);

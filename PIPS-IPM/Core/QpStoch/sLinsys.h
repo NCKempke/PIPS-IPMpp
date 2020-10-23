@@ -118,10 +118,9 @@ class sLinsys : public QpGenLinsys
   virtual void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V);
 
   /** Method(s) that use a memory-friendly mechanism for computing
-   *  the terms from the Schur Complement 
+   *  the terms from the Schur Complement
    */
-  virtual void addTermToDenseSchurCompl(sData *prob, 
-					DenseSymMatrix& SC);
+  virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
         SymMatrix& SC) { assert( 0 && "not implemented here" ); };
