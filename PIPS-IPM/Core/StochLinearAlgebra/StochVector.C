@@ -170,116 +170,176 @@ void StochVectorBase<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase
 template<typename T>
 void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz)
 {
-
+   assert( this->vec );
    SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
-   SimpleVectorBase<T>& svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
-   SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
-   SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
+   assert( sizeof(T) == sizeof(sv[0]) );
 
-  int n1 = svx.length();
-  int n2 = svy.length();
-  int n3 = svz.length();
-  int n4 = 0;
-  int n5 = 0;
 
-  assert(n1+n2+n3 <= sv.length());
-  assert( sizeof(T) == sizeof(sv[0]) );
+   const int N = sv.length();
+   int n1 = 0;
+   int n2 = 0;
+   int n3 = 0;
+   int n4 = 0;
+   int n5 = 0;
+   int n6 = 0;
 
-  if( n1 > 0 )
-    memcpy(&sv[0], &svx[0], n1 * sizeof(T));
+   if( vx.vec )
+   {
+      const SimpleVectorBase<T>& svx = dynamic_cast<const SimpleVectorBase<T>&>(*vx.vec);
+      n1 = svx.length();
+      assert( n1 >= 0 );
 
-  if( n2 > 0 )
-    memcpy(&sv[n1], &svy[0], n2 * sizeof(T));
+      assert( n1 <= N );
+      if( n1 > 0 )
+         memcpy(&sv[0], &svx[0], n1 * sizeof(T));
+   }
 
-  if( n3 > 0 )
-    memcpy(&sv[n1 + n2], &svz[0], n3 * sizeof(T));
+   if( vy.vec )
+   {
+      const SimpleVectorBase<T>& svy = dynamic_cast<const SimpleVectorBase<T>&>(*vy.vec);
+      n2 = svy.length();
+      assert( n2 >= 0 );
 
-  if( vy.vecl )
-  {
-    SimpleVectorBase<T>& svyl = dynamic_cast<SimpleVectorBase<T>&>(*vy.vecl);
-    n4 = svyl.length();
-    assert( n4 >= 0 );
+      assert( n1 + n2 <= N );
+      if( n2 > 0 )
+         memcpy(&sv[n1], &svy[0], n2 * sizeof(T));
+   }
 
-    if( n4 > 0 )
-      memcpy(&sv[n1 + n2 + n3], &svyl[0], n4 * sizeof(T));
-  }
+   if( vz.vec )
+   {
+      const SimpleVectorBase<T>& svz = dynamic_cast<const SimpleVectorBase<T>&>(*vz.vec);
+      n3 = svz.length();
+      assert( n3 >= 0 );
 
-  if( vz.vecl )
-  {
-    SimpleVectorBase<T>& svzl = dynamic_cast<SimpleVectorBase<T>&>(*vz.vecl);
-    n5 = svzl.length();
-    assert( n5 >= 0 );
+      assert( n1 + n2 + n3 <= N );
+      if( n3 > 0 )
+         memcpy(&sv[n1 + n2], &svz[0], n3 * sizeof(T));
+   }
 
-    if( n5 > 0 )
-      memcpy(&sv[n1 + n2 + n3 + n4], &svzl[0], n5 * sizeof(T));
-  }
+   if( vx.vecl )
+   {
+      const SimpleVectorBase<T>& svxl = dynamic_cast<const SimpleVectorBase<T>&>(*vx.vecl);
+      n4 = svxl.length();
+      assert( n4 >= 0 );
 
-  assert(n1+n2+n3+n4+n5 == sv.length());
+      assert( n1 + n2 + n3 + n4 <= N );
+      if( n4 > 0 )
+         memcpy(&sv[n1 + n2 + n3], &svxl[0], n4 * sizeof(T) );
+   }
 
-  for(size_t it = 0; it < children.size(); it++) {
-    children[it]->jointCopyFrom(*vx.children[it],
-				*vy.children[it],
-				*vz.children[it]);
-  }
+   if( vy.vecl )
+   {
+      const SimpleVectorBase<T>& svyl = dynamic_cast<const SimpleVectorBase<T>&>(*vy.vecl);
+      n5 = svyl.length();
+      assert( n5 >= 0 );
 
-#ifdef HIERARCHICAL
-   assert( false && "Not currently working : TODO : implement");
-#endif
+      assert( n1 + n2 + n3 + n4 + n5 <= N );
+      if( n5 > 0 )
+         memcpy(&sv[n1 + n2 + n3 + n4], &svyl[0], n5 * sizeof(T));
+   }
+
+   if( vz.vecl )
+   {
+      const SimpleVectorBase<T>& svzl = dynamic_cast<const SimpleVectorBase<T>&>(*vz.vecl);
+      n6 = svzl.length();
+      assert( n6 >= 0 );
+
+      assert( n1 + n2 + n3 + n4 + n5 + n6 <= N );
+      if( n6 > 0 )
+         memcpy(&sv[n1 + n2 + n3 + n4 + n5], &svzl[0], n6 * sizeof(T));
+   }
+
+   assert( n1 + n2 + n3 + n4 + n5 + n6 == N );
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->jointCopyFrom(*vx.children[it], *vy.children[it], *vz.children[it]);
 }
 
 template<typename T>
 void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const
 {
-  const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
-  SimpleVectorBase<T>& svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
-  SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
-  SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
+   assert( this->vec );
+   const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
+   assert( sizeof(T) == sizeof(sv[0]) );
 
-  int n1 = svx.length();
-  int n2 = svy.length();
-  int n3 = svz.length();
-  int n4 = 0;
-  int n5 = 0;
+   const int N = sv.length();
+   int n1 = 0;
+   int n2 = 0;
+   int n3 = 0;
+   int n4 = 0;
+   int n5 = 0;
+   int n6 = 0;
 
-  assert( n1 + n2 + n3 <= sv.length() );
-  assert( sizeof(T) == sizeof(sv[0]) );
+   if( vx.vec )
+   {
+      SimpleVectorBase<T> &svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
+      n1 = svx.length();
+      assert(n1 >= 0);
 
-  if(n1 > 0)
-    memcpy(&svx[0], &sv[0], n1 * sizeof(T));
+      assert(n1 <= N);
+      if( n1 > 0 )
+         memcpy(&svx[0], &sv[0], n1 * sizeof(T));
+   }
 
-  if(n2 > 0)
-    memcpy(&svy[0], &sv[n1], n2 * sizeof(T));
+   if( vy.vec )
+   {
+      SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
+      int n2 = svy.length();
+      assert( n2 >= 0 );
 
-  if(n3 > 0)
-    memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
+      assert( n1 + n2 <= N );
+      if( n2 > 0 )
+         memcpy(&svy[0], &sv[n1], n2 * sizeof(T));
+   }
 
-  if( vy.vecl )
-  {
-     SimpleVectorBase<T>& svyl = dynamic_cast<SimpleVectorBase<T>&>(*vy.vecl);
-     n4 = svyl.length();
-     assert(n4 >= 0);
+   if( vz.vec )
+   {
+      SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
+      n3 = svz.length();
+      assert( n3 >= 0 );
 
-     if( n4 > 0 )
-       memcpy(&svyl[0], &sv[n1 + n2 + n3], n4 * sizeof(T));
-  }
+      assert( n1 + n2 + n3 <= N );
+     if( n3 > 0 )
+        memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
+   }
 
-  if( vz.vecl )
-  {
-     SimpleVectorBase<T>& svzl = dynamic_cast<SimpleVectorBase<T>&>(*vz.vecl);
-     n5 = svzl.length();
-     assert(n5>= 0);
+   if( vx.vecl )
+   {
+      SimpleVectorBase<T>& svxl = dynamic_cast<SimpleVectorBase<T>&>(*vx.vecl);
+      n4 = svxl.length();
+      assert( n4 >= 0 );
 
-     if( n5 > 0 )
-       memcpy(&svzl[0], &sv[n1 + n2 + n3 + n4], n5 * sizeof(T));
-  }
+      assert( n1 + n2 + n3 + n4 <= N );
+      if( n4 > 0 )
+         memcpy(&svxl[0], &sv[n1 + n2 + n3], n4 * sizeof(T) );
+   }
 
-  assert(n1 + n2 + n3 + n4 + n5 == sv.length());
+   if( vy.vecl )
+   {
+      SimpleVectorBase<T>& svyl = dynamic_cast<SimpleVectorBase<T>&>(*vy.vecl);
+      n5 = svyl.length();
+      assert(n5 >= 0);
 
-  for(size_t it = 0; it < children.size(); it++) {
-    children[it]->jointCopyTo(*vx.children[it],
-			      *vy.children[it],
-			      *vz.children[it]);
-  }
+      assert( n1 + n2 + n3 + n4 + n5 <= N );
+      if( n5 > 0 )
+         memcpy(&svyl[0], &sv[n1 + n2 + n3 + n4], n5 * sizeof(T));
+   }
+
+   if( vz.vecl )
+   {
+      SimpleVectorBase<T>& svzl = dynamic_cast<SimpleVectorBase<T>&>(*vz.vecl);
+      n6 = svzl.length();
+      assert(n6 >= 0);
+
+      assert( n1 + n2 + n3 + n4 + n5 +n6 <= N );
+      if( n6 > 0 )
+         memcpy(&svzl[0], &sv[n1 + n2 + n3 + n4 + n5], n6 * sizeof(T));
+   }      assert( n1 + n2 + n3 + n4 + n5 <= N );
+
+   assert( n1 + n2 + n3 + n4 + n5 + n6 == N );
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->jointCopyTo(*vx.children[it], *vy.children[it], *vz.children[it]);
 }
 
 
