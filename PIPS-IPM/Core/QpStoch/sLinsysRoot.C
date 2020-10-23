@@ -1572,10 +1572,7 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-   {
-//	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, true, *kkt);
 	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
-   }
    else
    {
 	   if( hasSparseKkt )
