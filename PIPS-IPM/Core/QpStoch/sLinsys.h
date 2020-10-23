@@ -133,6 +133,10 @@ class sLinsys : public QpGenLinsys
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
 
+  void addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
+        /* const */ DenseGenMatrix& BT, DoubleMatrix& result);
+
+
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
 					

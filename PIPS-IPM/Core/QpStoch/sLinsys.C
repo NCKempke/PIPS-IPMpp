@@ -513,11 +513,11 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ Dense
 
    /* buffer for (Bi_{outer} - Bi_{inner} X0)^T = Bi_{outer}^T - X0^T Bi_{inner}^T */
    // TODO : reuse an make member
-   DenseGenMatrix* Bi_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, locnx + locmy + locmz );
+   DenseGenMatrix* BiT_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, locnx + locmy + locmz );
 
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
-   int m, n; Bi_buffer->getSize(m, n);
-   Bi_buffer->atPutZeros(0, 0, m, n );
+   int m, n; BiT_buffer->getSize(m, n);
+   BiT_buffer->atPutZeros(0, 0, m, n );
 
    /* put (Bi_{outer})^T into buffer
     *
@@ -533,7 +533,7 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ Dense
    assert( border.G.mat );
 
    const BorderBiBlock BiT_outer( border.R.mat->getTranspose(), border.A.mat->getTranspose(), border.C.mat->getTranspose(), *border.F.mat, *border.G.mat);
-   addBiTBorder( *Bi_buffer, BiT_outer);
+   addBiTBorder( *BiT_buffer, BiT_outer);
 
    /* compute (Bi_{outer} - Bi_{inner} * X0)^T = Bi_{outer}^T - X0^T * Bi_{inner}^T
     *
@@ -541,13 +541,10 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, /* const */ Dense
     * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
     *                     [ Ci 0 0  0   0  ]
     */
-   multRightDenseSchurComplBlocked( data, X0, *Bi_buffer, parent_nx, parent_my, parent_mz );
-
+   multRightDenseSchurComplBlocked( data, X0, *BiT_buffer, parent_nx, parent_my, parent_mz );
 
    /* solve blockwise Ki X = Bi_buffer and multiply from left with Bi_{outer} and add to SC */
-//   addBiTLeftKiBiRightToResBlocked()
-
-   assert( false && "TODO : implement");
+   addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BiT_outer, *BiT_buffer, SC );
 }
 
 void sLinsys::solveCompressed( OoqpVector& rhs_ )
@@ -1147,6 +1144,56 @@ void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, co
    assert(0);
 #endif
 }
+
+void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
+      /* const */ DenseGenMatrix& BT, DoubleMatrix& result)
+{
+   int m_res, n_res; result.getSize(m_res, n_res);
+   assert( m_res >= 0 && n_res >= 0 );
+   if( sym_res )
+      assert( m_res == n_res );
+
+   int mB, nB; BT.getSize(mB, nB);
+
+   assert(nThreads >= 1);
+
+   int * col_id_cont = new int[blocksizemax * n_solvers];
+
+#ifdef TIME_SCHUR
+   const double t_start = omp_get_wtime();
+#endif
+
+   //
+   //     res +=  B^T  K^-1 B
+   //
+   const int chunks = std::ceil( static_cast<double>(mB) / blocksizemax );
+
+   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
+   for( int i = 0; i < chunks; i++ )
+   {
+      const int actual_blocksize = std::min( (i + 1) * blocksizemax, mB) - i * blocksizemax;
+
+      const int id = omp_get_thread_num();
+
+      int * colId_loc = col_id_cont + id * blocksizemax;
+
+      for( int j = 0; j < actual_blocksize; ++j )
+            colId_loc[j] = j + i * blocksizemax;
+
+      double* colsBlockDense_loc = BT[ i * blocksizemax ];
+
+      solvers_blocked[id]->solve(actual_blocksize, colsBlockDense_loc, nullptr);
+
+      addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId_loc, nB, actual_blocksize, sparse_res, sym_res, result);
+   }
+
+#ifdef TIME_SCHUR
+   const double t_end = omp_get_wtime();
+   std::cout << "t_end - t_start:" << (t_end - t_start) << std::endl;
+   assert(0);
+#endif
+}
+
 
 void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result)
