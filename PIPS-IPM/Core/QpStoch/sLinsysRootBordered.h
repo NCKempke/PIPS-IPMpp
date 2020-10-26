@@ -21,6 +21,7 @@ class sLinsysRootBordered : public sLinsysRoot
 
       void Lsolve(sData *prob, OoqpVector& x) override;
       void Dsolve(sData *prob, OoqpVector& x) override;
+      void Ltsolve(sData *prob, OoqpVector& v) override;
 
    protected:
       SymMatrix* createKKT(sData* prob) override;
@@ -30,7 +31,7 @@ class sLinsysRootBordered : public sLinsysRoot
       DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) override;
 
    private:
-      void computeSchurCompRightHandSide( StochVector& rhs );
+      void computeSchurCompRightHandSide( StochVector& rhs, SimpleVector& b0 );
 };
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_ */

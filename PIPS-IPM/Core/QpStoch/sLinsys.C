@@ -552,9 +552,9 @@ void sLinsys::solveCompressed( OoqpVector& rhs_ )
 #ifdef TIMING
   //double tTot=MPI_Wtime();
 #endif
-  Lsolve(data,rhs);
-  Dsolve(data,rhs);
-  Ltsolve(data,rhs);
+  Lsolve(data, rhs);
+  Dsolve(data, rhs);
+  Ltsolve(data, rhs);
 #ifdef TIMING
   //cout << "SolveCompressed took: " << (MPI_Wtime()-tTot) << endl;
 #endif

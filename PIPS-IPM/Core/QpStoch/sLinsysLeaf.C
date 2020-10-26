@@ -62,17 +62,9 @@ void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
   kkt->atPutDiagonal( locnx+locmy, *zdiag.vec );
 }
 
-// TODO : solves must be adapted to solver array in case of blockwise ? not sure..
 void sLinsysLeaf::Lsolve (  sData *prob, OoqpVector& x_in )
 {
-   // Lsolve is empty
    return;
-//   StochVector& x = dynamic_cast<StochVector&>(x_in);
-//   assert(x.children.size()==0);
-//
-//   stochNode->resMon.recLsolveTmChildren_start();
-//   solver->Lsolve(*x.vec);
-//   stochNode->resMon.recLsolveTmChildren_stop();
 }
 
 void sLinsysLeaf::Dsolve( sData *prob, OoqpVector& x_in )
@@ -86,31 +78,25 @@ void sLinsysLeaf::Dsolve( sData *prob, OoqpVector& x_in )
 
 void sLinsysLeaf::Ltsolve (  sData *prob, OoqpVector& x_in )
 {
-   // Ltsolve is empty
    return;
-//  StochVector& x = dynamic_cast<StochVector&>(x_in);
-//  assert(x.children.size()==0);
-//  stochNode->resMon.recLtsolveTmChildren_start();
-//  solver->Ltsolve(*x.vec);
-//  stochNode->resMon.recLtsolveTmChildren_stop();
 }
 
 void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
-  StochVector& b   = dynamic_cast<StochVector&>(x);
-  SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
-  assert(0==b.children.size());
+   StochVector& b = dynamic_cast<StochVector&>(x);
+   SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
+   assert( 0 == b.children.size() );
 
 #ifdef TIMING
-  stochNode->resMon.eLtsolve.clear();
-  stochNode->resMon.recLtsolveTmLocal_start();
+   stochNode->resMon.eLtsolve.clear();
+   stochNode->resMon.recLtsolveTmLocal_start();
 #endif
 
-  //b_i -= Lni^T x0
-  this->LniTransMult(prob, bi, -1.0, xp);
-  //  solver->Ltsolve(bi); -> empty
+   //b_i -= Lni^T x0
+   this->LniTransMult(prob, bi, -1.0, xp);
+   //  solver->Ltsolve(bi); -> empty
 #ifdef TIMING
-  stochNode->resMon.recLtsolveTmChildren_stop();
+   stochNode->resMon.recLtsolveTmChildren_stop();
 #endif
 }
 
@@ -168,6 +154,7 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
 {
    assert( border.A.children.size() == 0 );
+   assert( rhs.children.size() == 0 );
 
    assert( border.R.mat );
    assert( border.A.mat );

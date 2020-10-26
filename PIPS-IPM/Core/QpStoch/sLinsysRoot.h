@@ -54,9 +54,6 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKT(sData* prob, Variables* vars) = 0;
   virtual void finalizeKKTdist(sData* prob) {assert("not implemented here \n" && 0);};
 
-  virtual void Dsolve ( sData *prob, OoqpVector& x ) = 0;
-  virtual void Ltsolve( sData *prob, OoqpVector& x );
-
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
 
   virtual void solveReduced( sData *prob, SimpleVector& b) = 0;

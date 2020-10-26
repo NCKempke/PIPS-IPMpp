@@ -30,6 +30,7 @@ class sLinsysRootAug : public sLinsysRoot {
 
   void Lsolve(sData *prob, OoqpVector& x) override;
   void Dsolve(sData *prob, OoqpVector& x) override;
+  void Ltsolve(sData *prob, OoqpVector& x) override;
 
  protected:
   virtual SymMatrix* createKKT (sData* prob);

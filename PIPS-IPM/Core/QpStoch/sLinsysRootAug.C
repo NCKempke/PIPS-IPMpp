@@ -62,6 +62,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
   kkt = createKKT(prob_);
   solver = createSolver(prob_, kkt);
   redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl);
+  redRhs->setToZero();
 }
 
 sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
@@ -81,6 +82,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
    kkt = createKKT(prob_);
    solver = createSolver(prob_, kkt);
    redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl );
+   redRhs->setToZero();
 }
 
 sLinsysRootAug::~sLinsysRootAug()
@@ -460,6 +462,7 @@ void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
   //dumpRhs(0, "rhs",  b0);
 }
 
+/* does Schur Complement solve */
 void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
 {
   /* Ki^-1 bi has already been computed in Lsolve */
@@ -476,6 +479,55 @@ void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
 
 #ifdef TIMING
   stochNode->resMon.recDsolveTmLocal_stop();
+#endif
+}
+
+void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
+{
+   StochVector& b = dynamic_cast<StochVector&>(x);
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+
+   //dumpRhs(0, "sol",  b0);
+   SimpleVector& z0 = b0; //just another name, for clarity
+
+   // Adds for each child i. The backsolve needs z0
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->Ltsolve2(prob->children[it], *b.children[it], z0);
+
+#ifdef TIMING
+   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
+   if( 256 * ( myRank / 256 ) == myRank )
+   {
+      double tTotResChildren=0.0;
+      for( size_t it = 0; it < children.size(); it++)
+      {
+         if( children[it]->mpiComm == MPI_COMM_NULL )
+            continue;
+         tTotResChildren += children[it]->stochNode->resMon.eLsolve.tmChildren;
+         tTotResChildren += children[it]->stochNode->resMon.eLsolve.tmLocal;
+      }
+      double tComm = stochNode->resMon.eReduce.tmLocal;
+
+      //double tTotChildren = 0.0;
+      //for( size_t it = 0; it < children.size(); it++)
+      //{
+      //   tTotChildren += children[it]->stochNode->resMon.eDsolve.tmChildren;
+      //   tTotChildren += children[it]->stochNode->resMon.eDsolve.tmLocal;
+      //}
+      double tStg1 = stochNode->resMon.eDsolve.tmLocal;
+
+      double tTotStg2Children = 0.0;
+      for( size_t it = 0; it < children.size(); it++)
+      {
+         if( children[it]->mpiComm == MPI_COMM_NULL )
+            continue;
+         tTotStg2Children += children[it]->stochNode->resMon.eLtsolve.tmChildren;
+         tTotStg2Children += children[it]->stochNode->resMon.eLtsolve.tmLocal;
+      }
+      std::cout << "  rank " << myRank << " " << "Resid comp " << tTotResChildren << " " << "reduce " << tComm << " "
+            << "1stStage solve " << tStg1 << " " << "2ndStage solve " << tTotStg2Children << std::endl;
+   }
 #endif
 }
 

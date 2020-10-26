@@ -134,16 +134,13 @@ void sLinsysRootBordered::solveReduced( sData *prob, SimpleVector& b)
    assert( 0 && "TODO: implement..");
 }
 
-void sLinsysRootBordered::computeSchurCompRightHandSide( StochVector& rhs )
+void sLinsysRootBordered::computeSchurCompRightHandSide( StochVector& rhs, SimpleVector& b0 )
 {
    /* solve inner system */
-   this->children[0]->solveCompressed( *rhs.children[0] );
-
-   assert( rhs.vec );
-   assert( !rhs.vecl );
+   this->children[0]->solveCompressed( rhs );
 
    if( PIPS_MPIgetRank(mpiComm) != 0 )
-      rhs.vec->setToZero();
+      b0.setToZero();
 
    BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_left,
@@ -151,12 +148,18 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( StochVector& rhs )
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
-   this->children[0]->addBorderTimesRhsToB0( *rhs.children[0], dynamic_cast<SimpleVector&>(*rhs.vec), border );
+   this->children[0]->addBorderTimesRhsToB0( rhs, b0, border );
 
-   PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector&>(*rhs.vec).elements(), rhs.vec->length(), mpiComm );
+   PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
 
 
+/*  The solve :
+ *    [  K  B  ] [  x  ] = [  b  ]
+ *    [ B^T K0 ] [ x_0 ] = [ b_0 ]
+ */
+
+/* forms right hand side for schur system \tilda{b_0} = b_0 - B^T * K^-1 b and in doing so solves K^-1 b */
 void sLinsysRootBordered::Lsolve(sData *prob, OoqpVector& x)
 {
    assert( is_hierarchy_root );
@@ -166,15 +169,31 @@ void sLinsysRootBordered::Lsolve(sData *prob, OoqpVector& x)
    StochVector& xs = dynamic_cast<StochVector&>(x);
    assert( xs.children.size() == 1 );
    assert( data->children.size() == 1 );
-   assert( xs.vec );
+   StochVector& b = *dynamic_cast<StochVector&>(x).children[0];
 
-   computeSchurCompRightHandSide( xs );
-   solver->solve( *xs.vec );
+   assert( xs.vec );
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.vec);
+
+   computeSchurCompRightHandSide( b, b0 );
 }
 
+/* does Schur Complement solve and computes SC x_0 = \tilda{b_0} = ( K0 - B^T K B ) x_0 */
 void sLinsysRootBordered::Dsolve(sData *prob, OoqpVector& x)
 {
-   assert( false && "TODO: implement" );
+   StochVector& b = dynamic_cast<StochVector&>(x);
+   assert( b.children.size() == 1 );
+   assert( data->children.size() == 1 );
+   assert( b.vec );
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+
+   solver->solve( b0 );
+}
+
+/* back substitute x_0 : K x = b - B x_0 */
+void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
+{
+//   computeInnerSystemRightHandSide()
+   assert( false && "todo : implement");
 }
 
 /* create kkt used to store Schur Complement of border layer */
