@@ -25,7 +25,7 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 
 sLinsysRootBordered::~sLinsysRootBordered()
 {
-   assert( children.size() == 0 );
+   assert( children.size() == 1 );
    delete children[0];
 }
 
