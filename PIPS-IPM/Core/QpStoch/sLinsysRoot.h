@@ -75,6 +75,8 @@ class sLinsysRoot : public sLinsys {
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
+  void addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLinsys& border ) override;
+
   virtual void putXDiagonal( OoqpVector& xdiag_ );
   virtual void putZDiagonal( OoqpVector& zdiag );
  

@@ -527,6 +527,68 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatr
    }
 }
 
+void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLinsys& border )
+{
+   assert( rhs.children.size() == this->children.size() );
+   assert( border.A.children.size() == this->children.size() );
+
+   for( size_t i = 0; i < this->children.size(); ++i )
+   {
+      BorderLinsys child_border(*border.R.children[i], *border.A.children[i], *border.C.children[i],
+            *border.F.children[i], *border.G.children[i] );
+      this->children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
+   }
+
+   /* add schur complement part */
+   assert( border.A.mat );
+   assert( border.C.mat );
+
+   SparseGenMatrix& A0_border = *border.A.mat;
+   int mA0, nA0; A0_border.getSize(mA0, nA0);
+
+   SparseGenMatrix& C0_border = *border.C.mat;
+   int mC0, nC0; C0_border.getSize(mC0, nC0);
+
+   assert( border.F.mat );
+   assert( border.A.mat_link );
+   SparseGenMatrix& F0vec_border = *border.A.mat_link;
+   int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
+   SparseGenMatrix& F0cons_border = *border.F.mat;
+   int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
+
+   assert( border.C.mat_link );
+   assert( border.G.mat );
+   SparseGenMatrix& G0vec_border = *border.C.mat_link;
+   int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
+   SparseGenMatrix& G0cons_border = *border.G.mat;
+   int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
+
+   assert( rhs.vec );
+   assert( rhs.vec->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
+   assert( x0.length() == nA0 + mF0C + mG0C );
+
+   SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+
+   SimpleVector zi1 (&zi[0], nF0C);
+   SimpleVector zi2 (&zi[nF0C], mA0 );
+   SimpleVector zi3 (&zi[nF0C + mA0], mC0);
+   SimpleVector zi4 (&zi[nF0C + mA0 + mC0], mF0V);
+   SimpleVector zi5 (&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
+
+   SimpleVector x1( &x0[0], nA0 );
+   SimpleVector x2( &x0[nA0], mF0C );
+   SimpleVector x3( &x0[nA0 + mF0C], mG0C );
+
+   A0_border.mult(1.0, zi2, -1.0, x1);
+   C0_border.mult(1.0, zi3, -1.0, x1);
+   F0vec_border.mult(1.0, zi4, -1.0, x1);
+   G0vec_border.mult(1.0, zi5, -1.0, x1);
+
+   F0cons_border.transMult(1.0, zi1, -1.0, x2);
+   G0cons_border.transMult(1.0, zi1, -1.0, x3);
+}
+
+
 void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
 {
    assert( rhs.children.size() == this->children.size() );
