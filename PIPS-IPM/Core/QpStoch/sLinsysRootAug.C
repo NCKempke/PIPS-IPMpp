@@ -418,6 +418,68 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
    }
 }
 
+/* forms right hand side for schur system and solves K_i^-1 bi for all children */
+void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
+{
+   assert( !is_hierarchy_root );
+
+   StochVector& b = dynamic_cast<StochVector&>(x);
+   assert(children.size() == b.children.size() );
+
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+   assert(!b.vecl);
+
+   if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
+      b0.setToZero();
+
+   // compute B_i^T rhs_i and add it up
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+#ifdef TIMING
+      children[it]->stochNode->resMon.eLsolve.clear();
+      children[it]->stochNode->resMon.recLsolveTmChildren_start();
+#endif
+      SimpleVector& zi = dynamic_cast<SimpleVector&>(*b.children[it]->vec);
+      children[it]->addLniziLinkCons(prob->children[it], b0, zi, locmy, locmz);
+
+#ifdef TIMING
+      children[it]->stochNode->resMon.recLsolveTmChildren_stop();
+#endif
+   }
+
+#ifdef TIMING
+   MPI_Barrier(MPI_COMM_WORLD);
+   stochNode->resMon.eReduce.clear();//reset
+   stochNode->resMon.recReduceTmLocal_start();
+#endif
+   if(iAmDistrib)
+      PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
+#ifdef TIMING
+   stochNode->resMon.recReduceTmLocal_stop();
+#endif
+  //dumpRhs(0, "rhs",  b0);
+}
+
+void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
+{
+  /* Ki^-1 bi has already been computed in Lsolve */
+
+  /* children have already computed Li^T\Di\Li\bi in Lsolve() */
+  StochVector& b = dynamic_cast<StochVector&>(x);
+  SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+#ifdef TIMING
+  stochNode->resMon.eDsolve.clear();
+  stochNode->resMon.recDsolveTmLocal_start();
+#endif
+
+  solveReducedLinkCons(prob, b0);
+
+#ifdef TIMING
+  stochNode->resMon.recDsolveTmLocal_stop();
+#endif
+}
+
+
 extern int gLackOfAccuracy;
 void sLinsysRootAug::solveReduced( sData *prob, SimpleVector& b)
 {

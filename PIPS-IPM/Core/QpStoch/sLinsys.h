@@ -40,6 +40,7 @@ class sLinsys : public QpGenLinsys
   void factor (Data *prob, Variables *vars) override;
   virtual void factor2(sData *prob, Variables *vars) = 0;
 
+
   virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
@@ -129,12 +130,15 @@ class sLinsys : public QpGenLinsys
         /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
 
  public:
+  /* add you part of the border times rhs to b0 */
+  virtual void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
+  { assert( false && "not implemented here" ); };
+
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
 
   void addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ DenseGenMatrix& BT, DoubleMatrix& result);
-
 
   virtual void addTermToSparseSchurCompl(sData *prob,
                SparseSymMatrix& SC) { assert(0 && "not implemented here"); };

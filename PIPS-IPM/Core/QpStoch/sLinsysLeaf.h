@@ -63,6 +63,8 @@ class sLinsysLeaf : public sLinsys
 
   void freeBlockedSolvers();
 
+  void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
+
 }; 
 
 template<class LINSOLVER>

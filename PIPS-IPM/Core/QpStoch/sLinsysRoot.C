@@ -224,71 +224,6 @@ void sLinsysRoot::afterFactor()
 }
 #endif
 
-/* forms right hand side for schur system and solves K_i^-1 bi for all children */
-void sLinsysRoot::Lsolve(sData *prob, OoqpVector& x)
-{
-  StochVector& b = dynamic_cast<StochVector&>(x);
-  assert(children.size() == b.children.size() );
-
-  // children compute their part -> does nothing
-  //  for(size_t it = 0; it < children.size(); it++) {
-  //    children[it]->Lsolve(prob->children[it], *b.children[it]);
-  //  }
-
-  SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
-  assert(!b.vecl);
-
-  if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
-     b0.setToZero();
-
-  // compute B_i^T rhs_i and add it up
-
-  for(size_t it = 0; it < children.size(); it++)
-  {
-#ifdef TIMING
-    children[it]->stochNode->resMon.eLsolve.clear();
-    children[it]->stochNode->resMon.recLsolveTmChildren_start();
-#endif
-    SimpleVector& zi = dynamic_cast<SimpleVector&>(*b.children[it]->vec);
-    children[it]->addLniziLinkCons(prob->children[it], b0, zi, locmy, locmz);
-
-#ifdef TIMING
-    children[it]->stochNode->resMon.recLsolveTmChildren_stop();
-#endif
-  }
-
-#ifdef TIMING  
-  MPI_Barrier(MPI_COMM_WORLD);
-  stochNode->resMon.eReduce.clear();//reset
-  stochNode->resMon.recReduceTmLocal_start();
-#endif
-  if (iAmDistrib)
-  {
-    double* buffer = new double[b0.length()];
-    MPI_Allreduce(b0.elements(), buffer, b0.length(),
-		  MPI_DOUBLE, MPI_SUM, mpiComm);
-
-    b0.copyFromArray(buffer);
-
-    delete[] buffer;
-  }
-#ifdef TIMING 
-  stochNode->resMon.recReduceTmLocal_stop();
-#endif
-  //dumpRhs(0, "rhs",  b0);
-
-#ifdef TIMING
-  stochNode->resMon.eLsolve.clear();
-  stochNode->resMon.recLsolveTmLocal_start();
-#endif
-//  solver->Lsolve(b0); -> empty
-#ifdef TIMING
-  stochNode->resMon.recLsolveTmLocal_stop();
-#endif
-
-}
-
-
 /* compute
  *              locnx locmy locmyl locmzl
  * nx_border  [   0    A0T   F0VT   G0VT ]
@@ -592,6 +527,71 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatr
    }
 }
 
+void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
+{
+   assert( rhs.children.size() == this->children.size() );
+   assert( border.A.children.size() == this->children.size() );
+
+   for( size_t i = 0; i < this->children.size(); ++i )
+   {
+      BorderLinsys child_border(*border.R.children[i], *border.A.children[i], *border.C.children[i],
+            *border.F.children[i], *border.G.children[i] );
+      this->children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
+   }
+
+   /* add schur complement part */
+   if( PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      assert( border.A.mat );
+      assert( border.C.mat );
+
+      SparseGenMatrix& A0_border = *border.A.mat;
+      int mA0, nA0; A0_border.getSize(mA0, nA0);
+
+      SparseGenMatrix& C0_border = *border.C.mat;
+      int mC0, nC0; C0_border.getSize(mC0, nC0);
+
+      assert( border.F.mat );
+      assert( border.A.mat_link );
+      SparseGenMatrix& F0vec_border = *border.A.mat_link;
+      int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
+      SparseGenMatrix& F0cons_border = *border.F.mat;
+      int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
+
+      assert( border.C.mat_link );
+      assert( border.G.mat );
+      SparseGenMatrix& G0vec_border = *border.C.mat_link;
+      int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
+      SparseGenMatrix& G0cons_border = *border.G.mat;
+      int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
+
+      assert( rhs.vec );
+      assert( rhs.vec->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
+      assert( b0.length() == nA0 + mF0C + mG0C );
+
+      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+
+      SimpleVector zi1 (&zi[0], nF0C);
+      SimpleVector zi2 (&zi[nF0C], mA0 );
+      SimpleVector zi3 (&zi[nF0C + mA0], mC0);
+      SimpleVector zi4 (&zi[nF0C + mA0 + mC0], mF0V);
+      SimpleVector zi5 (&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
+
+      SimpleVector b1( &b0[0], nA0 );
+      SimpleVector b2( &b0[nA0], mF0C );
+      SimpleVector b3( &b0[nA0 + mF0C], mG0C );
+
+      A0_border.transMult(1.0, b1, -1.0, zi2);
+      C0_border.transMult(1.0, b1, -1.0, zi3);
+      F0vec_border.transMult(1.0, b1, -1.0, zi4);
+      G0vec_border.transMult(1.0, b1, -1.0, zi5);
+
+      F0cons_border.mult(1.0, b2, -1.0, zi1);
+      G0cons_border.mult(1.0, b3, -1.0, zi1);
+   }
+}
+
+
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
   assert( false && "never called" );
@@ -675,27 +675,6 @@ void sLinsysRoot::Ltsolve( sData *prob, OoqpVector& x )
 
 
 }
-
-void sLinsysRoot::Dsolve( sData *prob, OoqpVector& x )
-{
-  /* Ki^-1 bi has already been computed in Lsolve */
-
-  /* children have already computed Li^T\Di\Li\bi in Lsolve() */
-  StochVector& b = dynamic_cast<StochVector&>(x);
-  SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
-#ifdef TIMING
-  stochNode->resMon.eDsolve.clear();
-  stochNode->resMon.recDsolveTmLocal_start();
-#endif
-
-  solveReducedLinkCons(prob, b0);
-
-#ifdef TIMING
-  stochNode->resMon.recDsolveTmLocal_stop();
-#endif
-}
-
-
 
 void sLinsysRoot::createChildren(sData *prob)
 {

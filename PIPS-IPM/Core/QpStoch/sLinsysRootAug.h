@@ -28,6 +28,9 @@ class sLinsysRootAug : public sLinsysRoot {
   void finalizeKKT( sData* prob, Variables* vars) override;
   void finalizeKKTdist(sData* prob) override;
 
+  void Lsolve(sData *prob, OoqpVector& x) override;
+  void Dsolve(sData *prob, OoqpVector& x) override;
+
  protected:
   virtual SymMatrix* createKKT (sData* prob);
   virtual DoubleLinearSolver* createSolver (sData* prob, SymMatrix* kktmat);

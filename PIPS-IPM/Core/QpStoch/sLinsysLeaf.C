@@ -165,4 +165,49 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
   assert(locmz==0);
 }
 
+void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
+{
+   assert( border.A.children.size() == 0 );
+
+   assert( border.R.mat );
+   assert( border.A.mat );
+   assert( border.C.mat );
+
+   SparseGenMatrix& Ri_border = *border.R.mat;
+   int mRi, nRi; Ri_border.getSize(mRi, nRi);
+
+   SparseGenMatrix& Ai_border = *border.A.mat;
+   int mAi, nAi; Ai_border.getSize(mAi, nAi);
+
+   SparseGenMatrix& Ci_border = *border.C.mat;
+   int mCi, nCi; Ci_border.getSize(mCi, nCi);
+
+   assert( border.F.mat );
+   assert( border.G.mat );
+   SparseGenMatrix& Fi_border = *border.F.mat;
+   int mFi, nFi; Fi_border.getSize(mFi, nFi);
+   SparseGenMatrix& Gi_border = *border.G.mat;
+   int mGi, nGi; Gi_border.getSize(mGi, nGi);
+
+   assert( rhs.vec );
+   assert( rhs.vec->length() == mRi + mAi + mCi );
+   assert( b0.length() == nRi + mFi + mGi );
+
+   SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+
+   SimpleVector zi1 (&zi[0], mRi);
+   SimpleVector zi2 (&zi[mRi], mAi );
+   SimpleVector zi3 (&zi[mRi + mAi], mCi);
+
+   SimpleVector b1( &b0[0], nRi );
+   SimpleVector b2( &b0[nRi], mFi );
+   SimpleVector b3( &b0[nRi + mFi], mGi );
+
+   Ri_border.transMult(1.0, b1, -1.0, zi1);
+   Ai_border.transMult(1.0, b1, -1.0, zi2);
+   Ci_border.transMult(1.0, b1, -1.0, zi3);
+
+   Fi_border.mult(1.0, b2, -1.0, zi1);
+   Gi_border.mult(1.0, b3, -1.0, zi1);
+}
 

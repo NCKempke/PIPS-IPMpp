@@ -54,8 +54,7 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKT(sData* prob, Variables* vars) = 0;
   virtual void finalizeKKTdist(sData* prob) {assert("not implemented here \n" && 0);};
 
-  virtual void Lsolve ( sData *prob, OoqpVector& x );
-  virtual void Dsolve ( sData *prob, OoqpVector& x );
+  virtual void Dsolve ( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve( sData *prob, OoqpVector& x );
 
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
@@ -76,6 +75,8 @@ class sLinsysRoot : public sLinsys {
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
   void LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border ) override;
+
+  void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
   virtual void putXDiagonal( OoqpVector& xdiag_ );
   virtual void putZDiagonal( OoqpVector& zdiag );

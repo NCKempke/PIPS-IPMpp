@@ -313,7 +313,6 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
 
   solver->Dsolve(zi);
-//  solver->Ltsolve(zi); -> empty
 
   SparseGenMatrix& A = prob->getLocalA();
   SparseGenMatrix& C = prob->getLocalC();
@@ -553,8 +552,8 @@ void sLinsys::solveCompressed( OoqpVector& rhs_ )
 #ifdef TIMING
   //double tTot=MPI_Wtime();
 #endif
-  Lsolve (data,rhs); 
-  Dsolve (data,rhs);
+  Lsolve(data,rhs);
+  Dsolve(data,rhs);
   Ltsolve(data,rhs);
 #ifdef TIMING
   //cout << "SolveCompressed took: " << (MPI_Wtime()-tTot) << endl;
