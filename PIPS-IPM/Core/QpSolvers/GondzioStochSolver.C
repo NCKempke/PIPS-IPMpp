@@ -84,7 +84,11 @@ GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Data * prob, c
 void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Variables* predictor_step, Variables* corrector_step,
       double alpha_predictor, double& alpha_candidate, double& weight_candidate)
 {
-   assert(alpha_predictor > 0.0 && alpha_predictor <= 1.0);
+   assert( corrector_step );
+   assert( predictor_step );
+   assert( temp_step );
+
+   assert( alpha_predictor > 0.0 && alpha_predictor <= 1.0);
 
    double alpha_best = -1.0;
    double weight_best = -1.0;
@@ -96,7 +100,7 @@ void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Varia
    {
       double weight_curr = weight_min + (weight_intervallength / (n_linesearch_points)) * n;
 
-      weight_curr = min(weight_curr, 1.0);
+      weight_curr = std::min(weight_curr, 1.0);
 
       assert(weight_curr > 0.0 && weight_curr <= 1.0);
 

@@ -1922,6 +1922,7 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
 
    // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
+   buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
    // buffer_b0 = SUM_I Bi_{inner}^T Ki^{-1} Bi_{outer}
    LsolveHierarchyBorder(*buffer_b0, border);
