@@ -284,7 +284,7 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
    if( vy.vec )
    {
       SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
-      int n2 = svy.length();
+      n2 = svy.length();
       assert( n2 >= 0 );
 
       assert( n1 + n2 <= N );
@@ -299,8 +299,8 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       assert( n3 >= 0 );
 
       assert( n1 + n2 + n3 <= N );
-     if( n3 > 0 )
-        memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
+      if( n3 > 0 )
+         memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
    }
 
    if( vx.vecl )
