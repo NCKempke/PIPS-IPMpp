@@ -456,3 +456,14 @@ void StringGenMatrix::writeToStreamDense(std::ostream& out) const
    assert( 0 && "TODO: implement...");
 }
 
+std::string StringGenMatrix::writeToStreamDenseRowChildren(int row) const
+{
+   std::string str_all;
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      std::string str = children[it]->mat->writeToStreamDenseRow(row);
+      str_all.append(str);
+   }
+   return str_all;
+}
+

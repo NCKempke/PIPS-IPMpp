@@ -83,7 +83,7 @@ namespace pips_options
       // also done at a lower level, for example in the solve with
       // the dense Schur complement
       // - 2:BiCGStab with the factorization as preconditioner
-      int_options["OUTER_SOLVE"] = 0;
+      int_options["OUTER_SOLVE"] = 2;
       // controls the type of error absortion/correction at the inner level when solving
       //with the dense Schur complement
       // - 0: no error correction

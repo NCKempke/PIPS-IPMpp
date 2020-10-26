@@ -108,6 +108,7 @@ public:
   virtual void getLinkVarsNnzChild(std::vector<int>& vec) const;
 
   virtual void writeToStreamDenseChild(stringstream& out, int offset) const;
+  virtual void writeToStreamDenseChildBordered(stringstream& out, int offset, const SparseGenMatrix& border) const;
   virtual std::string writeToStreamDenseRowLink(int rowidx) const;
 
 
@@ -160,6 +161,7 @@ public:
   virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
   void writeToStream(ostream& out) const override;
+  void writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out ) const;
   void writeToStreamDense(ostream& out) const override;
   void writeMPSformatRows(ostream& out, int rowType, OoqpVector* irhs) const override;
 
@@ -338,8 +340,8 @@ public:
 
  private:
   void writeToStreamDenseChild(stringstream& out, int offset) const override {};
+  void writeToStreamDenseChildBordered(stringstream& out, int offset, const SparseGenMatrix& border) const override {};
   std::string writeToStreamDenseRowLink(int rowidx) const override { return 0; };
-
  public:
   /** Make the elements in this matrix symmetric. The elements of interest
    *  must be in the lower triangle, and the upper triangle must be empty.

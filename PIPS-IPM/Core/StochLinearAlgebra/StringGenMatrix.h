@@ -49,6 +49,7 @@ class StringGenMatrix : public GenMatrix
       void scalarMult( double num ) override;
 
       void writeToStreamDense(std::ostream& out) const override; // TODO : implement
+      virtual std::string writeToStreamDenseRowChildren(int row) const;
 
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
@@ -115,6 +116,8 @@ class StringGenDummyMatrix : public StringGenMatrix
       double abmaxnorm() const override {return -std::numeric_limits<double>::infinity();};
       void scalarMult( double num ) override {};
       void writeToStream( std::ostream& out ) const override {};
+      std::string writeToStreamDenseRowChildren(int row) const override { return ""; };
+
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override {};
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override {};
       void columnScale( const OoqpVector& vec ) override {};

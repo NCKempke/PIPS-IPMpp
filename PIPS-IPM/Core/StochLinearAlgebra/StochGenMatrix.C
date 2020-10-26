@@ -603,13 +603,175 @@ void StochGenMatrix::writeToStream(ostream& out) const
   assert( "Has not been yet implemented" && 0 );
 }
 
-void
-StochGenMatrix::writeToStreamDense(ostream& out) const
+void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out ) const
 {
-   int rank;
-   MPI_Comm_rank(mpiComm, &rank);
-   int world_size;
-   MPI_Comm_size(mpiComm, &world_size);
+   assert( border_left.children.size() == this->children.size() );
+
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
+   const int world_size = PIPS_MPIgetSize(mpiComm);
+
+   int offset = 0;
+   stringstream sout;
+   MPI_Status status;
+   int l;
+
+   if( iAmDistrib )
+      MPI_Barrier(mpiComm);
+
+   if( iAmDistrib && my_rank > 0 )  // receive offset from previous process
+      MPI_Recv(&offset, 1, MPI_INT, (my_rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
+   else  //  !iAmDistrib || (iAmDistrib && rank == 0)
+   {
+      assert( border_left.mat );
+      assert( this->Bmat );
+
+      int mBmat, nBmat; this->Bmat->getSize(mBmat, nBmat);
+      int mBd, nBd; border_left.mat->getSize(mBd, nBd);
+
+      assert( mBmat == mBd );
+      for( int i = 0; i < mBmat; ++i )
+      {
+         border_left.mat->writeToStreamDenseRow(sout, i);
+         sout << "|\t";
+         this->Bmat->writeToStreamDenseRow(sout, i);
+         sout << endl;
+      }
+   }
+
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      const StringGenMatrix& border_child = *border_left.children[it];
+
+      children[it]->writeToStreamDenseChildBordered(sout, offset, *border_child.mat);
+      int mBmat, nBmat; children[it]->Bmat->getSize(mBmat, nBmat);
+      offset += nBmat;
+   }
+
+   if( iAmDistrib && my_rank > 0 )
+   {
+      std::string str = sout.str();
+      // send string to rank ZERO to print it there:
+      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, my_rank, mpiComm);
+      // send offset to next process:
+      if( my_rank < world_size - 1 )
+         MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
+   }
+   else if( !iAmDistrib )
+      out << sout.str();
+   else if( iAmDistrib && my_rank == 0 )
+   {
+      out << sout.str();
+      MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
+
+      for( int p = 1; p < world_size; p++ )
+      {
+         MPI_Probe(p, p, mpiComm, &status);
+         MPI_Get_count(&status, MPI_CHAR, &l);
+         char *buf = new char[l];
+         MPI_Recv(buf, l, MPI_CHAR, p, p, mpiComm, &status);
+         std::string rowPartFromP(buf, l);
+         out << rowPartFromP;
+         delete[] buf;
+      }
+
+   }
+
+   // linking contraints ?
+   int mlink, nlink;
+   this->Blmat->getSize(mlink, nlink);
+   if( mlink > 0 )
+   {
+      if( iAmDistrib )
+         MPI_Barrier(mpiComm);
+
+      assert( border_left.mat_link );
+      int mBdl, nBdl; border_left.mat_link->getSize(mBdl, nBdl);
+      assert( mBdl == mlink );
+
+      // for each row r do:
+      for( int r = 0; r < mlink; r++ )
+      {
+         if( iAmDistrib )
+         {
+            MPI_Barrier(mpiComm);
+
+            // process Zero collects all the information and then prints it.
+            if( my_rank == 0 )
+            {
+               out << border_left.mat_link->writeToStreamDenseRow(r);
+               out << "|\t";
+               out << this->Blmat->writeToStreamDenseRow(r);
+
+               out << writeToStreamDenseRowLink(r);
+
+               for( int p = 1; p < world_size; p++ )
+               {
+                  MPI_Probe(p, r + 1, mpiComm, &status);
+                  MPI_Get_count(&status, MPI_CHAR, &l);
+                  char *buf = new char[l];
+                  MPI_Recv(buf, l, MPI_CHAR, p, r + 1, mpiComm, &status);
+                  std::string rowPartFromP(buf, l);
+                  out << rowPartFromP;
+                  delete[] buf;
+               }
+               out << std::endl;
+
+            }
+            else // rank != 0
+            {
+               std::string str = writeToStreamDenseRowLink(r);
+               MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, r + 1, mpiComm);
+            }
+         }
+         else // not distributed
+         {
+            std::stringstream sout;
+            border_left.mat_link->writeToStreamDenseRow(sout, r);
+            sout << "|\t";
+            this->Blmat->writeToStreamDenseRow(sout, r);
+
+            for( size_t it = 0; it < children.size(); it++ )
+               children[it]->Blmat->writeToStreamDenseRow(sout, r);
+
+            out << sout.rdbuf() << std::endl;
+         }
+      }
+   }
+
+   assert( this->Bmat );
+   int mBd, nBd; border_left.getSize(mBd, nBd);
+   int mB0mat, nB0mat; this->Bmat->getSize(mB0mat, nB0mat);
+
+   if( iAmDistrib )
+   {
+      // send offset to next process:
+      if( my_rank == world_size - 1 )
+         MPI_Ssend(&offset, 1, MPI_INT, 0, 0, mpiComm);
+      else if( my_rank == 0 )
+      {
+         MPI_Recv(&offset, 1, MPI_INT, world_size - 1, 0, mpiComm, MPI_STATUS_IGNORE);
+
+         for( int i = 0; i < offset + nBd + nB0mat + 1; ++i )
+            out << "_\t";
+         out << std::endl;
+      }
+   }
+   else
+   {
+      for( int i = 0; i < offset + nBd + nB0mat + 1; ++i )
+         out << "_\t";
+      out << std::endl;
+   }
+
+   if( iAmDistrib )
+      MPI_Barrier(mpiComm);
+}
+
+void StochGenMatrix::writeToStreamDense(ostream& out) const
+{
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
+   const int world_size = PIPS_MPIgetSize(mpiComm);
+
    int m, n;
    int offset = 0;
    stringstream sout;
@@ -617,10 +779,10 @@ StochGenMatrix::writeToStreamDense(ostream& out) const
    int l;
 
    if( iAmDistrib )
-            MPI_Barrier(mpiComm);
+      MPI_Barrier(mpiComm);
 
-   if( iAmDistrib && rank > 0 )  // receive offset from previous process
-      MPI_Recv(&offset, 1, MPI_INT, (rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
+   if( iAmDistrib && my_rank > 0 )  // receive offset from previous process
+      MPI_Recv(&offset, 1, MPI_INT, (my_rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
 
    else  //  !iAmDistrib || (iAmDistrib && rank == 0)
       this->Bmat->writeToStreamDense(out);
@@ -632,23 +794,23 @@ StochGenMatrix::writeToStreamDense(ostream& out) const
       offset += n;
    }
 
-   if( iAmDistrib && rank > 0 )
+   if( iAmDistrib && my_rank > 0 )
    {
       std::string str = sout.str();
       // send string to rank ZERO to print it there:
-      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, rank, mpiComm);
+      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, my_rank, mpiComm);
       // send offset to next process:
-      if( rank < world_size - 1 )
-         MPI_Ssend(&offset, 1, MPI_INT, rank + 1, 0, mpiComm);
+      if( my_rank < world_size - 1 )
+         MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
    }
 
    else if( !iAmDistrib )
       out << sout.str();
 
-   else if( iAmDistrib && rank == 0 )
+   else if( iAmDistrib && my_rank == 0 )
    {
       out << sout.str();
-      MPI_Ssend(&offset, 1, MPI_INT, rank + 1, 0, mpiComm);
+      MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
 
       for( int p = 1; p < world_size; p++ )
       {
@@ -679,7 +841,7 @@ StochGenMatrix::writeToStreamDense(ostream& out) const
             MPI_Barrier(mpiComm);
 
             // process Zero collects all the information and then prints it.
-            if( rank == 0 )
+            if( my_rank == 0 )
             {
                out << this->Blmat->writeToStreamDenseRow(r);
 
@@ -733,6 +895,30 @@ void StochGenMatrix::writeToStreamDenseChild(stringstream& out, int offset) cons
          out <<'\t';
       this->Bmat->writeToStreamDenseRow(out, r);
       out << endl;
+   }
+}
+
+void StochGenMatrix::writeToStreamDenseChildBordered(stringstream& out, int offset, const SparseGenMatrix& border) const
+{
+   int mA, mB, mBd, n;
+   this->Amat->getSize(mA, n);
+   this->Bmat->getSize(mB, n);
+   border.getSize(mBd, n);
+
+   assert( mBd == mA );
+   assert( mA == mB );
+
+   for(int r = 0; r < mA; r++)
+   {
+      border.writeToStreamDenseRow(out, r);
+      out << "|\t";
+
+      this->Amat->writeToStreamDenseRow(out, r);
+      for(int i = 0; i < offset; i++)
+         out <<'\t';
+
+      this->Bmat->writeToStreamDenseRow(out, r);
+      out << std::endl;
    }
 }
 
@@ -1321,7 +1507,7 @@ void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) co
       }
 
    if( iAmDistrib )
-      MPI_Allreduce(MPI_IN_PLACE, &link_block_count[0], n, MPI_INT, MPI_SUM, mpiComm);
+      PIPS_MPIsumArrayInPlace( link_block_count, mpiComm );
 }
 
 void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_start, std::vector<int>& block_count) const

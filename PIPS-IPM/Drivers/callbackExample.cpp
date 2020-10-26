@@ -571,7 +571,7 @@ int main(int argc, char ** argv) {
   }
 
   if( rank == 0 )
-     cout << "Using a total of " << size << " MPI processes." << endl;
+     std::cout << "Using a total of " << size << " MPI processes." << std::endl;
 
   /* use BiCGStab for outer solve */
   pips_options::setIntParameter("INNER_SC_SOLVE", 0);
@@ -588,16 +588,16 @@ int main(int argc, char ** argv) {
 #endif
 
   if( rank == 0 )
-     cout << "PIPSIpmInterface created" << endl;
+     std::cout << "PIPSIpmInterface created" << std::endl;
 
   if( rank == 0 )
-     cout << "solving..." << endl;
+     std::cout << "solving..." << std::endl;
 
   pipsIpm.go();
 
   const double objective = pipsIpm.getObjective();
   if( rank == 0 )
-     cout << "solving finished ... objective value: " << objective << endl;
+     std::cout << "solving finished ... objective value: " << objective << std::endl;
 
   delete root;
 

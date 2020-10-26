@@ -279,3 +279,75 @@ bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVector& vec, bo
 
    return true;
 }
+
+void BorderedGenMatrix::writeToStreamDense( std::ostream& out ) const
+{
+   MPI_Status status;
+
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
+   const int size = PIPS_MPIgetSize(mpi_comm);
+   const bool iAmDistrib = ( size != 0 );
+   this->inner_matrix->writeToStreamDenseBordered( *border_left, out );
+
+   int mL, nL; this->bottom_left_block->getSize(mL, nL);
+   if( mL > 0 )
+   {
+      if( iAmDistrib )
+         MPI_Barrier(mpi_comm);
+
+      // for each row r do:
+      for( int r = 0; r < mL; r++ )
+      {
+         if( iAmDistrib )
+         {
+            MPI_Barrier(mpi_comm);
+
+            // process Zero collects all the information and then prints it.
+            if( my_rank == 0 )
+            {
+               out << bottom_left_block->writeToStreamDenseRow(r);
+               out << "|\t";
+
+               out << this->border_bottom->mat->writeToStreamDenseRow(r);
+
+               out << border_bottom->writeToStreamDenseRowChildren(r);
+
+               for( int p = 1; p < size; p++ )
+               {
+                  int l;
+                  MPI_Probe(p, r + 1, mpi_comm, &status);
+                  MPI_Get_count(&status, MPI_CHAR, &l);
+                  char *buf = new char[l];
+                  MPI_Recv(buf, l, MPI_CHAR, p, r + 1, mpi_comm, &status);
+                  std::string rowPartFromP(buf, l);
+                  out << rowPartFromP;
+                  delete[] buf;
+               }
+               out << std::endl;
+
+            }
+            else // rank != 0
+            {
+               std::string str = border_bottom->writeToStreamDenseRowChildren(r);
+               MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, r + 1, mpi_comm);
+            }
+         }
+         else // not distributed
+         {
+            std::stringstream sout;
+            bottom_left_block->writeToStreamDenseRow(sout, r);
+            sout << "|\t";
+
+            this->border_bottom->mat->writeToStreamDenseRow(sout, r);
+
+            for( size_t it = 0; it < border_bottom->children.size(); it++ )
+               border_bottom->children[it]->mat->writeToStreamDenseRow(sout, r);
+
+            out << sout.rdbuf() << std::endl;
+         }
+      }
+   }
+   if( iAmDistrib )
+      MPI_Barrier(mpi_comm);
+}
+
