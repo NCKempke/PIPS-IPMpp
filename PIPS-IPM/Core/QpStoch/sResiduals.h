@@ -43,7 +43,9 @@ public:
         OoqpVectorHandle iclow_, OoqpVectorHandle icupp_ );
 
   virtual void sync();
- private:
+
+  bool isRootNodeInSync() const;
+private:
   std::vector<sResiduals*> children;
   void createChildren();
   void destroyChildren();

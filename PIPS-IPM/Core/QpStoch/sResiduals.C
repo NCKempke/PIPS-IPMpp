@@ -216,6 +216,92 @@ void sResiduals::sync()
   stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*rphi));
 }
 
+bool sResiduals::isRootNodeInSync() const
+{
+   bool in_sync = true;
+   const int my_rank = PIPS_MPIgetRank( MPI_COMM_WORLD );
+   if( !dynamic_cast<const StochVector&>(*rQ).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rQ not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rC).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rC not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rA).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rA not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rz).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rz not in sync" << std::endl;
+      in_sync = false;
+   }
+
+   if( !dynamic_cast<const StochVector&>(*rt).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rt not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rlambda).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rlambda not in sync" << std::endl;
+      in_sync = false;
+   }
+
+   if( !dynamic_cast<const StochVector&>(*ru).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "ru not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rpi).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rpi not in sync" << std::endl;
+      in_sync = false;
+   }
+
+   if( !dynamic_cast<const StochVector&>(*rv).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rv not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rgamma).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rgamma not in sync" << std::endl;
+      in_sync = false;
+   }
+
+   if( !dynamic_cast<const StochVector&>(*rw).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rw not in sync" << std::endl;
+      in_sync = false;
+   }
+   if( !dynamic_cast<const StochVector&>(*rphi).isRootNodeInSync() )
+   {
+      if( my_rank == 0 )
+         std::cout << "rphi not in sync" << std::endl;
+      in_sync = false;
+   }
+
+   MPI_Barrier(MPI_COMM_WORLD);
+   return in_sync;
+
+}
+
 void sResiduals::destroyChildren()
 {
   //int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
