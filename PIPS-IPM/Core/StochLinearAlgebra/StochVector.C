@@ -714,7 +714,15 @@ T StochVectorBase<T>::stepbound(const OoqpVectorBase<T> & v_, T maxStep ) const
 {
   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
 
-  T step = this->vec->stepbound(*v.vec, maxStep);
+  T step = 1.0;
+
+  if( vec )
+  {
+     assert( v.vec );
+     T stepvec = this->vec->stepbound(*v.vec, maxStep);
+     if( stepvec < step )
+        step = stepvec;
+  }
 
   if( vecl )
   {
@@ -730,10 +738,9 @@ T StochVectorBase<T>::stepbound(const OoqpVectorBase<T> & v_, T maxStep ) const
   for(size_t it = 0; it < children.size(); it++)
     step = children[it]->stepbound(*v.children[it], step);
 
-  if(iAmDistrib == 1) {
-    T stepG = PIPS_MPIgetMin(step, mpiComm);
-    step = stepG;
-  }
+  if(iAmDistrib == 1)
+     PIPS_MPIgetMinInPlace(step, mpiComm);
+
   return step;
 }
 
@@ -769,23 +776,27 @@ T StochVectorBase<T>::findBlocking(const OoqpVectorBase<T> & wstep_vec,
                  first_or_second);
   }
 
-  step = w.vec->findBlocking(*wstep.vec, *u.vec, *ustep.vec, step,
-			      w_elt, wstep_elt, u_elt, ustep_elt,
-			      first_or_second);
+  if( w.vec )
+  {
+     assert(wstep.vec);
+     assert(u.vec);
+     assert(ustep.vec);
 
-  int nChildren=w.children.size();
+     step = w.vec->findBlocking(*wstep.vec, *u.vec, *ustep.vec, step,
+                  w_elt, wstep_elt, u_elt, ustep_elt,
+                  first_or_second);
+  }
+
+  const int nChildren = w.children.size();
   //check tree compatibility
   assert( nChildren - u.children.size() == 0);
   assert( wstep.children.size() == ustep.children.size() );
   assert( nChildren - ustep.children.size() == 0);
 
-  for(int it = 0; it < nChildren; it++) {
-    step = w.children[it]->findBlocking(*wstep.children[it],
-			       *u.children[it],
-			       *ustep.children[it],
-			       step,
-			       w_elt,
-			       wstep_elt,u_elt,ustep_elt, first_or_second);
+  for(int it = 0; it < nChildren; it++)
+  {
+     step = w.children[it]->findBlocking(*wstep.children[it], *u.children[it], *ustep.children[it], step,
+           w_elt, wstep_elt, u_elt,ustep_elt, first_or_second);
   }
 
   if(iAmDistrib == 1) {
@@ -886,10 +897,17 @@ void StochVectorBase<T>::findBlocking_pd(const OoqpVectorBase<T> & wstep_vec,
                  primalBlocking, dualBlocking);
   }
 
-  w.vec->findBlocking_pd(*wstep.vec, *u.vec, *ustep.vec, maxStepPri, maxStepDual,
+  if( w.vec )
+  {
+     assert( wstep.vec );
+     assert( u.vec );
+     assert( ustep.vec );
+
+     w.vec->findBlocking_pd(*wstep.vec, *u.vec, *ustep.vec, maxStepPri, maxStepDual,
 		  	  	  w_elt_p, wstep_elt_p, u_elt_p, ustep_elt_p,
 				  w_elt_d, wstep_elt_d, u_elt_d, ustep_elt_d,
 				  primalBlocking, dualBlocking);
+  }
 
   int nChildren=w.children.size();
   //check tree compatibility
