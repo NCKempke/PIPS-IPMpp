@@ -443,11 +443,11 @@ void QpGenResiduals::writeToStream(std::ostream& out)
   rA->writeToStream(out);printf("---------------------------\n");
   */
   printf("rC\n");
-  rC->writeToStream(out);printf("---------------------------\n");
+  rC->writeToStreamAll(out);printf("---------------------------\n");
 
 
   printf("rz\n");
-  rz->writeToStream(out);printf("---------------------------\n");
+  rz->writeToStreamAll(out);printf("---------------------------\n");
   /*  
   if ( mclow > 0 ) {
     printf("rt\n");
