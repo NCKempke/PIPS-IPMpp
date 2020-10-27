@@ -461,6 +461,11 @@ std::string StringGenMatrix::writeToStreamDenseRowChildren(int row) const
    std::string str_all;
    for( size_t it = 0; it < children.size(); it++ )
    {
+      if( children[it]->isKindOf(kStringGenDummyMatrix) )
+         continue;
+      else
+         assert( children[it]->mat );
+
       std::string str = children[it]->mat->writeToStreamDenseRow(row);
       str_all.append(str);
    }
