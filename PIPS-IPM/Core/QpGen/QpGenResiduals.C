@@ -345,7 +345,8 @@ void QpGenResiduals::add_r3_xz_alpha(const Variables *vars_in, double alpha)
   if( nxlow > 0 ) rgamma ->axzpy( 1.0, *vars->v, *vars->gamma );
   if( nxupp > 0 ) rphi   ->axzpy( 1.0, *vars->w, *vars->phi );
 
-  if( alpha != 0.0 ) {
+  if( alpha != 0.0 )
+  {
     if( mclow > 0 ) rlambda->addSomeConstants( alpha, *iclow );
     if( mcupp > 0 ) rpi    ->addSomeConstants( alpha, *icupp );
     if( nxlow > 0 ) rgamma ->addSomeConstants( alpha, *ixlow );
