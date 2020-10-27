@@ -1292,12 +1292,16 @@ void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int&
 template<typename T>
 void StochVectorBase<T>::writeToStream( std::ostream& out ) const
 {
-  out << "---" << std::endl;
-  vec->writeToStream(out);
-  if( vecl ) vecl->writeToStream(out);
-  out << "~~~" << std::endl;
-  //for(size_t it=0; it<children.size(); it++)
-  //  children[it]->writeToStream(out);
+   if( vec && PIPS_MPIgetRank() == 0 )
+   {
+      out << "---vec---" << std::endl;
+      vec->writeToStream(out);
+   }
+   if( vecl && PIPS_MPIgetRank() == 0 )
+   {
+      vecl->writeToStream(out);
+      out << "~~~" << std::endl;
+   }
 }
 
 template<typename T>
