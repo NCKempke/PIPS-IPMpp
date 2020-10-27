@@ -233,7 +233,7 @@ void sLinsysRoot::afterFactor()
  * [  0 F0C^T  G0C^T ]^T
  * [ A0   0     0    ]
  * [ C0   0     0    ]
- * [ F0V  0     0    ]   - buffer
+ * [ F0V  0     0    ]   + buffer
  * [ G0V  0     0    ]
  */
 // TODO : refactor! ..
@@ -468,7 +468,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, 
 }
 
 
-/* compute SUM_i Bi_{inner}^T Ki^{-1} Bi_{border} */
+/* compute -SUM_i Bi_{inner}^T Ki^{-1} Bi_{border} */
 void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border )
 {
    assert( this->children.size() == border.R.children.size() );

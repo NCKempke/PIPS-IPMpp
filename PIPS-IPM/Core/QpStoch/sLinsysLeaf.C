@@ -59,7 +59,7 @@ void sLinsysLeaf::putXDiagonal( OoqpVector& xdiag_ )
 void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
 {
   StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
-  kkt->atPutDiagonal( locnx+locmy, *zdiag.vec );
+  kkt->atPutDiagonal( locnx + locmy, *zdiag.vec );
 }
 
 void sLinsysLeaf::Lsolve (  sData *prob, OoqpVector& x_in )
