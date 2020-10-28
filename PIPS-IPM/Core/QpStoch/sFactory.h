@@ -25,12 +25,12 @@ class sLinsysLeaf;
 
 class sFactory : public QpGen {
  public:
-  sFactory( stochasticInput&, MPI_Comm comm=MPI_COMM_WORLD );
+  sFactory( stochasticInput&, MPI_Comm comm = MPI_COMM_WORLD );
 
   /** This is a obsolete constructor since it uses sTreeCallbacks to create
    *   data objects
    */
-  sFactory( StochInputTree*, MPI_Comm comm=MPI_COMM_WORLD );
+  sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
 
  protected:
   sFactory();
@@ -56,7 +56,7 @@ class sFactory : public QpGen {
 			     OoqpVector& z_in, OoqpVector& vars_in );
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
-  virtual sLinsysRoot* newLinsysRoot(sData* prob,
+  virtual sLinsysRoot* newLinsysRoot(sData* prob, sTree* tree_,
 				     OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
 

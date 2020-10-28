@@ -19,6 +19,7 @@ class sLinsysRootAug : public sLinsysRoot {
 
   sLinsysRootAug(sFactory * factory_, sData * prob_);
   sLinsysRootAug(sFactory* factory,
+       sTree* tree_,
 		 sData* prob_,				    
 		 OoqpVector* dd_, OoqpVector* dq_, 
 		 OoqpVector* nomegaInv_,

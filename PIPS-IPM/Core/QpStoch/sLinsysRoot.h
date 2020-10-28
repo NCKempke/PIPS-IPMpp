@@ -39,6 +39,7 @@ class sLinsysRoot : public sLinsys {
 
   sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
   sLinsysRoot(sFactory* factory,
+         sTree* tree_,
 	      sData* prob_,				    
 	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 	      OoqpVector* rhs_);

@@ -21,6 +21,7 @@ class sLinsysRootAugComm2 : public sLinsysRootComm2 {
 
   sLinsysRootAugComm2(sFactory * factory_, sData * prob_);
   sLinsysRootAugComm2(sFactory* factory,
+       sTree* tree_,
 		 sData* prob_,				    
 		 OoqpVector* dd_, OoqpVector* dq_, 
 		 OoqpVector* nomegaInv_,

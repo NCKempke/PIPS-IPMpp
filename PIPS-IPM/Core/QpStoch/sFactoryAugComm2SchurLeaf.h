@@ -22,6 +22,7 @@ class sFactoryAugComm2SchurLeaf : public sFactory {
 
   virtual sLinsysRoot* newLinsysRoot();
   virtual sLinsysRoot* newLinsysRoot(sData* prob,
+                 sTree* tree_,
 				     OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 };

@@ -20,6 +20,7 @@ class sLinsysRootComm2 : public sLinsysRoot {
  public:
   sLinsysRootComm2(sFactory * factory_, sData * prob_);
   sLinsysRootComm2(sFactory* factory,
+         sTree* tree_,
 	      sData* prob_,
 	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 	      OoqpVector* rhs_);

@@ -57,21 +57,25 @@ static void biCGStabCommunicateStatus(int flag, int it)
 sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
   : sLinsysRoot(factory_, prob_), CtDC(nullptr)
 { 
-  assert(locmyl >= 0 && locmzl >= 0);
+#ifdef HIERARCHICAL
+   assert( false && "should not end up here");
+#endif
+   assert(locmyl >= 0 && locmzl >= 0);
 
-  kkt = createKKT(prob_);
-  solver = createSolver(prob_, kkt);
-  redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl);
-  redRhs->setToZero();
+   kkt = createKKT(prob_);
+   solver = createSolver(prob_, kkt);
+   redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl);
+   redRhs->setToZero();
 }
 
 sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
+		          sTree* tree_,
 			       sData* prob_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
 			       OoqpVector* rhs_)
-  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
+  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
 #ifdef HIERARCHICAL
    assert(locmyl >= 0 && locmzl >= 0);
@@ -408,7 +412,6 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 #ifdef STOCH_TESTING
       g_scenNum = c;
 #endif
-
       if( children[c]->mpiComm == MPI_COMM_NULL )
          continue;
 
@@ -476,7 +479,6 @@ void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
 #endif
 
   solveReducedLinkCons(prob, b0);
-
 #ifdef TIMING
   stochNode->resMon.recDsolveTmLocal_stop();
 #endif
@@ -1120,9 +1122,9 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
   //////////////////////////////////////////////////////////////////
 
   n2b = b.twonorm();
-  tolb = n2b*tol;
+  tolb = n2b * tol;
 
-  tolb = max(tolb, EPS);
+  tolb = std::max(tolb, EPS);
 
 #ifdef TIMING
   double relres;
@@ -1152,7 +1154,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
 
   normr = r.twonorm(); normr_act = normr;
 
-  if( normr<=tolb ) {
+  if( normr <= tolb ) {
     //initial guess is good enough
     b.copyFrom(x); flag=0; return;
   }
@@ -1472,7 +1474,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables* vars)
       const int* krowCtDC = CtDCsp->krowM();
       const int* jcolCtDC = CtDCsp->jcolM();
       const double* dCtDC = CtDCsp->M();
-
       for( int i = 0; i < locnx; i++ )
       {
          const int pend = krowCtDC[i + 1];
@@ -1661,7 +1662,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables* vars)
    assert(0);
 
 #endif
-
 }
 
 void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables* vars)
@@ -1944,7 +1944,6 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
 
    // compute SC = SUM_i Bi_{outer}^T Ki^{-1} (Bi_{outer} - Bi_{inner} X0 ) = SUM_i Bi_{outer}^T Xi
    LtsolveHierarchyBorder( schur_comp, *buffer_b0, border );
-
    // compute SC_{outer} += B0_{outer}^T X0
    finalizeInnerSchurComplementContribution( schur_comp, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0 );
 }

@@ -27,6 +27,10 @@ extern bool ipStartFound;
 sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
   : sLinsys(factory_, prob_, is_hierarchy_root), sparseKktBuffer(nullptr)
 {
+
+#ifdef HIERARCHICAL
+   assert( is_hierarchy_root );
+#endif
   assert( dd!=nullptr );
   assert( prob_ );
   xDiag = nullptr;
@@ -49,7 +53,7 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
 
   precondSC = SCsparsifier(mpiComm);
 
-  if( outerSolve )
+  if( outerSolve || xyzs_solve_print_residuals )
   {
     // stuff for iterative refimenent and BiCG
     sol  = factory_->tree->newRhs();
@@ -67,6 +71,7 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
       res3 = factory_->tree->newRhs();
       res4 = factory_->tree->newRhs();
       res5 = factory_->tree->newRhs();
+      // TODO : deleted where? -> factory?
     }
     else
     {
@@ -90,11 +95,11 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
-
   initProperChildrenRange();
 }
 
 sLinsysRoot::sLinsysRoot(sFactory* factory_,
+          sTree* tree_,
 			 sData* prob_,
 			 OoqpVector* dd_, 
 			 OoqpVector* dq_,
@@ -111,21 +116,21 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 
   precondSC = SCsparsifier(mpiComm);
 
-  if( outerSolve ) {
+  if( outerSolve || xyzs_solve_print_residuals ) {
       // stuff for iterative refimenent and BiCG 
-      sol  = factory_->tree->newRhs();
-      res  = factory_->tree->newRhs();
-      resx = factory_->tree->newPrimalVector();
-      resy = factory_->tree->newDualYVector();
-      resz = factory_->tree->newDualZVector();
+      sol  = tree_->newRhs();
+      res  = tree_->newRhs();
+      resx = tree_->newPrimalVector();
+      resy = tree_->newDualYVector();
+      resz = tree_->newDualZVector();
     if( outerSolve == 2 ) {
       //BiCGStab; additional vectors needed
-      sol2 = factory_->tree->newRhs();
-      sol3 = factory_->tree->newRhs();
-      res2 = factory_->tree->newRhs();
-      res3 = factory_->tree->newRhs();
-      res4 = factory_->tree->newRhs();
-      res5 = factory_->tree->newRhs();
+      sol2 = tree_->newRhs();
+      sol3 = tree_->newRhs();
+      res2 = tree_->newRhs();
+      res3 = tree_->newRhs();
+      res4 = tree_->newRhs();
+      res5 = tree_->newRhs();
     } else {
       sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
     }
@@ -463,7 +468,6 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, 
 
       G0cons_border.mult(1.0, &SC[i][0], 1, -1.0, &col[0], 1);
    }
-
    // TODO does this even work?? where do we take care of the fact that the SC is symmetric here?
 }
 
@@ -723,7 +727,9 @@ void sLinsysRoot::createChildren(sData *prob)
          else
          {
             assert(prob->children[it]);
+            assert(stochNode->children[it]);
             child = stochFactory->newLinsysRoot(prob->children[it],
+                  stochNode->children[it],
                   ddst.children[it], dqst.children[it],
                   nomegaInvst.children[it], rhsst.children[it]);
          }

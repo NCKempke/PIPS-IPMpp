@@ -25,12 +25,13 @@ sLinsysRootComm2::sLinsysRootComm2(sFactory * factory_, sData * prob_)
 {}
 
 sLinsysRootComm2::sLinsysRootComm2(sFactory* factory_,
+			 sTree* tree_,
 			 sData* prob_,
 			 OoqpVector* dd_, 
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_)
-  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_)
+  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_)
 {}
 
 sLinsysRootComm2::~sLinsysRootComm2()

@@ -36,13 +36,14 @@ sLinsysRoot* sFactoryAugComm2SchurLeaf::newLinsysRoot()
 
 sLinsysRoot* 
 sFactoryAugComm2SchurLeaf::newLinsysRoot(sData* prob,
+                  sTree* tree_,
 					   OoqpVector* dd,
 					   OoqpVector* dq,
 					   OoqpVector* nomegaInv, 
 					   OoqpVector* rhs)
 {
     //cout << "sFactoryAugComm2SchurLeaf::newLinsysRoot(arguments)" << endl;
-  return new sLinsysRootAugComm2(this, prob, dd, dq, nomegaInv, rhs);
+  return new sLinsysRootAugComm2(this, tree_, prob, dd, dq, nomegaInv, rhs);
 }
 
 /*sFactoryAugComm2Schur32Leaf::sFactoryAugComm2Schur32Leaf( StochInputTree* inputTree)

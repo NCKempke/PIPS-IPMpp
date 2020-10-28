@@ -33,9 +33,9 @@ sLinsysRoot* sFactoryAug::newLinsysRoot()
 }
 
 sLinsysRoot* 
-sFactoryAug::newLinsysRoot(sData* prob,
+sFactoryAug::newLinsysRoot(sData* prob, sTree* tree_,
 			   OoqpVector* dd,OoqpVector* dq,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
-   return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
+   return new sLinsysRootAug(this, tree_, prob, dd, dq, nomegaInv, rhs);
 }

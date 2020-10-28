@@ -28,12 +28,13 @@ sLinsysRootAugComm2::sLinsysRootAugComm2(sFactory * factory_, sData * prob_)
 };
 
 sLinsysRootAugComm2::sLinsysRootAugComm2(sFactory* factory_,
+                sTree* tree_,
 			       sData* prob_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
 			       OoqpVector* rhs_)
-  : sLinsysRootComm2(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
+  : sLinsysRootComm2(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
   kkt = createKKT(prob_);
   solver = createSolver(prob_, kkt);
