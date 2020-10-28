@@ -174,7 +174,6 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
    SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
    assert( sizeof(T) == sizeof(sv[0]) );
 
-   std::cout << this->children.size() << " vs " << vx.children.size() << std::endl;
    assert( this->children.size() == vx.children.size() );
    assert( this->children.size() == vy.children.size() );
    assert( this->children.size() == vz.children.size() );
