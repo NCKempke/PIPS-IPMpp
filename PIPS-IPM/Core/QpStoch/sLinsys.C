@@ -21,6 +21,11 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
         blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
         colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr), is_hierarchy_root(is_hierarchy_root)
 {
+
+#ifdef HIERARCHICAL
+  assert( is_hierarchy_root );
+#endif
+
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
   factory = factory_;
 
@@ -546,7 +551,7 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
    addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BiT_outer, *BiT_buffer, SC );
 }
 
-void sLinsys::solveCompressed( OoqpVector& rhs_ )
+void sLinsys::solveCompressed( OoqpVector& rhs_)
 {
   StochVector& rhs = dynamic_cast<StochVector&>(rhs_);
 #ifdef TIMING
