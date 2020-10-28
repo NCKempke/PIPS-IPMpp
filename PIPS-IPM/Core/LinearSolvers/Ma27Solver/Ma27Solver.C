@@ -128,6 +128,13 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 {
    SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
 
+#ifndef NDEBUG
+   for( int i = 0; i < rhs.length(); ++i )
+      if( std::fabs(rhs[i]) > 1e50 )
+         assert( false && "Big entry in right hand side vector..." );
+#endif
+//   SimpleVector* rhs_cpy = dynamic_cast<SimpleVector*>(rhs_in.cloneFull());
+
 //   /* sparsify rhs */
 //   for( int i = 0; i < rhs.length(); ++i )
 //      if( std::fabs(rhs[i]) < precision )
@@ -211,9 +218,13 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 
    rnorm = best_resid;
 
-
-//   if( rnorm >= precision * (1.0 + rhsnorm) )
-//   {
+   if( rnorm >= precision * (1.0 + rhsnorm) )
+   {
+//      rhs_cpy->writeToStreamAll(std::cout);
+      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required " << std::endl;
+//      best_iter->writeToStreamAll(std::cout);
+//      mat->writeToStreamDense(std::cout);
+//      assert( false );
 //      std::cout << "Writing K of local schur complement computation..." << std::endl;
 //      std::ofstream myfile("../test.prb");
 //
@@ -246,15 +257,21 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 //
 //      myfile << "rhs: ";
 //      for( int i = 0; i < n; i++ )
-//         myfile << rhs[i] << ", ";
+//         myfile << (*rhs_cpy)[i] << ", ";
 //      myfile << std::endl;
 //
 //      myfile.close();
 //
 //      assert(false);
-//   }
+   }
 
    rhs.copyFrom(*best_iter);
+
+#ifndef NDEBUG
+   for( int i = 0; i < rhs.length(); ++i )
+      if( std::fabs(rhs[i]) > 1e50 )
+         assert( false && "Big entry in solution vector..." );
+#endif
 //   /* sparsify rhs */
 //   for( int i = 0; i < rhs.length(); ++i )
 //      if( std::fabs(rhs[i]) < 1e-16 )
