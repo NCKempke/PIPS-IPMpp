@@ -246,7 +246,7 @@ void sLinsys::allocU(DenseGenMatrix ** U, int n0)
 {
   int lines,cols;
   if(*U==nullptr) {
-    *U = new DenseGenMatrix(locnx+locmy+locmz, n0);
+    *U = new DenseGenMatrix(locnx + locmy + locmz, n0);
   } else {
     (*U)->getSize(lines,cols);
     
@@ -269,12 +269,10 @@ void sLinsys::allocV(DenseGenMatrix ** V, int n0)
     if(lines!=locnx+locmy+locmz || cols != n0) {
       
       delete (*V);
-      *V = new DenseGenMatrix(locnx+locmy+locmz, n0);
+      *V = new DenseGenMatrix(locnx + locmy + locmz, n0);
     }
   }
 }
-
-
 
 /**
  *       [ R^i^T Ai^T Ci^T ]          [    ]
