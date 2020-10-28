@@ -177,7 +177,7 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPacka
   nomegaInv   = la->newVector( mz );
   rhs         = la->newVector( len_x );
 
-  if( outerSolve )
+  if( outerSolve || xyzs_solve_print_residuals )
   {
     //for iterative refinement or BICGStab
     sol  = la->newVector( len_x );
@@ -346,7 +346,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
   step->z->copyFrom( *res->rC );
 
   {
-    // Unfortunately, we need a temporary  OoqpVector for the solve,
+    // Unfortunately, we need a temporary OoqpVector for the solve,
     // Use step->lambda or step->pi
     OoqpVectorHandle ztemp;
     if( mclow > 0 ) {
@@ -445,6 +445,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
+    assert( rhs );
     this->joinRHS( *rhs, stepx, stepy, stepz );
     this->solveCompressed( *rhs );
     this->separateVars( stepx, stepy, stepz, *rhs );
@@ -462,6 +463,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
   if( xyzs_solve_print_residuals )
   {
+     assert( sol );
      const double bnorm = residual->infnorm();
      this->joinRHS(*sol, stepx, stepy, stepz);
      this->matXYZMult(1.0, *residual, -1.0, *sol, prob, stepx, stepy, stepz);
@@ -743,6 +745,12 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
 			     OoqpVector& soly, 
 			     OoqpVector& solz)
 {
+  assert( resx );
+  assert( resy );
+  assert( resz );
+  assert( nomegaInv );
+  assert( dd );
+
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);
 
