@@ -174,7 +174,10 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
    SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
    assert( sizeof(T) == sizeof(sv[0]) );
 
-
+   std::cout << this->children.size() << " vs " << vx.children.size() << std::endl;
+   assert( this->children.size() == vx.children.size() );
+   assert( this->children.size() == vy.children.size() );
+   assert( this->children.size() == vz.children.size() );
    const int N = sv.length();
    int n1 = 0;
    int n2 = 0;
@@ -1425,12 +1428,18 @@ void StochVectorBase<T>::axzpy( T alpha, const OoqpVectorBase<T>& x_, const Ooqp
   assert(x.children.size() == children.size());
   assert(z.children.size() == children.size());
 
+  if( x.vec || z.vec )
+     assert( vec );
+
   if( vec )
   {
      assert( x.vec );
      assert( z.vec );
      vec->axzpy(alpha, *x.vec, *z.vec);
   }
+
+  if( x.vecl || z.vecl )
+     assert( vecl );
 
   if( vecl )
   {
