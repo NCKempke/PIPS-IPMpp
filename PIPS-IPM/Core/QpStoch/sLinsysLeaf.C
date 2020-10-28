@@ -198,7 +198,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    Gi_border.mult(1.0, b3, -1.0, zi1);
 }
 
-void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLinsys& border )
+void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
 {
    assert( border.A.children.size() == 0 );
    assert( rhs.children.size() == 0 );
@@ -227,20 +227,26 @@ void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLi
    assert( rhs.vec->length() == mRi + mAi + mCi );
    assert( x0.length() == nRi + mFi + mGi );
 
-   SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+   SimpleVector& rhsi = dynamic_cast<SimpleVector&>(*rhs.vec);
 
-   SimpleVector zi1 (&zi[0], mRi);
-   SimpleVector zi2 (&zi[mRi], mAi );
-   SimpleVector zi3 (&zi[mRi + mAi], mCi);
+   double* rhsi1 = &rhsi[0];
+   double* rhsi2 = &rhsi[mRi];
+   double* rhsi3 = &rhsi[mRi + mAi];
 
-   SimpleVector x1( &x0[0], nRi );
-   SimpleVector x2( &x0[nRi], mFi );
-   SimpleVector x3( &x0[nRi + mFi], mGi );
+   const double* x1 = &x0[0];
+   const double* x2 = &x0[nRi];
+   const double* x3 = &x0[nRi + mFi];
 
-   Ri_border.mult(1.0, zi1, -1.0, x1);
-   Ai_border.mult(1.0, zi2, -1.0, x1);
-   Ci_border.mult(1.0, zi3, -1.0, x1);
+   //   Ri_border.mult(1.0, rhsi1, -1.0, x1);
+   Ri_border.mult( 1.0, rhsi1, 1, -1.0, x1, 1 );
+   //   Ai_border.mult(1.0, rhsi2, -1.0, x1);
+   Ai_border.mult( 1.0, rhsi2, 1, -1.0, x1, 1 );
+   //   Ci_border.mult(1.0, rhsi3, -1.0, x1);
+   Ci_border.mult( 1.0, rhsi3, 1, -1.0, x1, 1 );
 
-   Fi_border.transMult(1.0, zi1, -1.0, x2);
-   Gi_border.transMult(1.0, zi1, -1.0, x3);
+
+   //   Fi_border.transMult(1.0, rhsi1, -1.0, x2);
+   Fi_border.transMult( 1.0, rhsi1, 1, -1.0, x2, 1 );
+   //   Gi_border.transMult(1.0, rhsi1, -1.0, x3);
+   Gi_border.transMult( 1.0, rhsi1, 1, -1.0, x3, 1 );
 }

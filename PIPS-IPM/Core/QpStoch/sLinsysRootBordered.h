@@ -17,7 +17,8 @@ class sLinsysRootBordered : public sLinsysRoot
       virtual ~sLinsysRootBordered();
 
       void finalizeKKT(sData* prob, Variables* vars) override;
-      void solveReduced( sData *prob, SimpleVector& b) override;
+      void solveReduced( sData *prob, SimpleVector& b) override
+      { assert ( false && "should not end up here" ); };
 
       void Lsolve(sData *prob, OoqpVector& x) override;
       void Dsolve(sData *prob, OoqpVector& x) override;
@@ -32,7 +33,7 @@ class sLinsysRootBordered : public sLinsysRoot
 
    private:
       void computeSchurCompRightHandSide( StochVector& rhs_inner, SimpleVector& b0 );
-      void computeInnerSystemRightHandSide( StochVector& rhs_inner, SimpleVector& b0 );
+      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0 );
 };
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_ */

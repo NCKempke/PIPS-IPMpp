@@ -59,7 +59,7 @@ class sDummyLinsys : public sLinsys
   bool isDummy() const override { return true; };
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override {};
-  void addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLinsys& border ) override {};
+  void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override {};
 
 };
 

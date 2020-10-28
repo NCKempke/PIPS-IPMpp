@@ -135,7 +135,7 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   /* add you part of the border times rhs to b0 */
-  virtual void addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLinsys& border )
+  virtual void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
   { assert( false && "not implemented here" ); };
 
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,

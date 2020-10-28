@@ -531,7 +531,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatr
    }
 }
 
-void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLinsys& border )
+void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
 {
    assert( rhs.children.size() == this->children.size() );
    assert( border.A.children.size() == this->children.size() );
@@ -571,25 +571,25 @@ void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, SimpleVector& x0, BorderLi
    assert( rhs.vec->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
    assert( x0.length() == nA0 + mF0C + mG0C );
 
-   SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+   SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.vec);
 
-   SimpleVector zi1 (&zi[0], nF0C);
-   SimpleVector zi2 (&zi[nF0C], mA0 );
-   SimpleVector zi3 (&zi[nF0C + mA0], mC0);
-   SimpleVector zi4 (&zi[nF0C + mA0 + mC0], mF0V);
-   SimpleVector zi5 (&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
+   double* rhs01 = &rhs0[0];
+   double* rhs02 = &rhs0[nF0C];
+   double* rhs03 = &rhs0[nF0C + mA0];
+   double* rhs04 = &rhs0[nF0C + mA0 + mC0];
+   double* rhs05 = &rhs0[nF0C + mA0 + mC0 + mF0V];
 
-   SimpleVector x1( &x0[0], nA0 );
-   SimpleVector x2( &x0[nA0], mF0C );
-   SimpleVector x3( &x0[nA0 + mF0C], mG0C );
+   const double* x01 = &x0[0];
+   const double* x02 = &x0[nA0];
+   const double* x03 = &x0[nA0 + mF0C];
 
-   A0_border.mult(1.0, zi2, -1.0, x1);
-   C0_border.mult(1.0, zi3, -1.0, x1);
-   F0vec_border.mult(1.0, zi4, -1.0, x1);
-   G0vec_border.mult(1.0, zi5, -1.0, x1);
+   A0_border.mult(1.0, rhs02, 1, -1.0, x01, 1);
+   C0_border.mult(1.0, rhs03, 1, -1.0, x01, 1);
+   F0vec_border.mult(1.0, rhs04, 1, -1.0, x01, 1);
+   G0vec_border.mult(1.0, rhs05, 1, -1.0, x01, 1);
 
-   F0cons_border.transMult(1.0, zi1, -1.0, x2);
-   G0cons_border.transMult(1.0, zi1, -1.0, x3);
+   F0cons_border.transMult(1.0, rhs01, 1, -1.0, x02, 1 );
+   G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1 );
 }
 
 
