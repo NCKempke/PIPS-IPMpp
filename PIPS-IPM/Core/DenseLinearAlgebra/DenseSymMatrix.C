@@ -196,20 +196,13 @@ double DenseSymMatrix::abmaxnorm() const
 
 void DenseSymMatrix::writeToStream(ostream& out) const
 {
-  int i, j;
-  int n = mStorage->n;
-  double ** M = mStorage->M;
+   for( int i = 0; i < mStorage->m; i++ )
+   {
+      for( int j = 0; j < mStorage->n; j++ )
+         out << mStorage->M[i][j] << "\t";
 
-  for( i = 0; i < n; i++ ) {
-    for( j = 0; j <= i && j < n - 1; j++ ) {
-      out << M[i][j] << "   ";
-    }
-    for(      ; j < n - 1; j++ ) {
-      out << M[j][i] << "   ";
-    }
-    if ( j < n )     out << M[j][i];
-    if ( i < n - 1 ) out << endl;
-  }
+      out << std::endl;
+   }
 }
 
 void DenseSymMatrix::writeToStreamDense(std::ostream& out) const

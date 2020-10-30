@@ -218,17 +218,13 @@ double DenseGenMatrix::abmaxnorm() const
 
 void DenseGenMatrix::writeToStream( std::ostream& out ) const
 {
-  int i, j;
-  int m = mStorage->m, n = mStorage->n;
-  double ** M = mStorage->M;
+   for( int i = 0; i < mStorage->m; i++ )
+   {
+      for( int j = 0; j < mStorage->n; j++ )
+         out << mStorage->M[i][j] << "\t";
 
-  for( i = 0; i < m; i++ ) {
-    for( j = 0; j < n - 1; j++ ) {
-      out << M[i][j] << "\t";
-    }
-    if ( j < n )     out << M[i][j];
-    if ( i < m - 1 ) out << endl;
-  }
+      out << std::endl;
+   }
 }
 
 void DenseGenMatrix::writeToStreamDense( std::ostream& out ) const
@@ -364,6 +360,8 @@ void DenseGenMatrix::matMult(double alpha,
 }
 
 // TODO : probably move to some utility class..
+/* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
+ * starting at mul_start and the results gets added starting at res_start */
 void DenseGenMatrix::multMatAt( int mul_start, double beta, int res_start, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const
 {
    assert( mul_start >= 0 );
@@ -380,6 +378,9 @@ void DenseGenMatrix::multMatAt( int mul_start, double beta, int res_start, Dense
    {
       for( int i = 0; i < mat_n; ++i )
       {
+         if( beta != 1.0 )
+            res[j][res_start + i] *= beta;
+
          const int col_start = mat_tp.krowM[i];
          const int col_end = mat_tp.krowM[i + 1];
 
@@ -391,7 +392,7 @@ void DenseGenMatrix::multMatAt( int mul_start, double beta, int res_start, Dense
             assert( res_start + i < res.mStorage->n );
             assert( row < mat_m );
             assert( row + mul_start < mStorage->n );
-            res[j][res_start + i] += mStorage->M[j][row + mul_start] * val;
+            res[j][res_start + i] += mStorage->M[j][row + mul_start] * val * alpha;
          }
       }
    }
