@@ -31,6 +31,7 @@ sLinsysRootBordered::~sLinsysRootBordered()
 
 void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
 {
+
    /* Add corner block
     * [ Q0 F0T G0T  ]
     * [ F0  0   0   ]
@@ -43,7 +44,8 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
    const SparseSymMatrix& Q0 = dynamic_cast<const SparseSymMatrix&>(*dynamic_cast<const BorderedSymMatrix&>(*prob->Q).top_left_block);
 
    DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(*kkt);
-   //   SC.symAtPutDense()
+   int mSC, nSC; SC.getSize(mSC, nSC);
+   assert( mSC == nSC );
 
    /////////////////////////////////////////////////////////////
    // update the KKT with Q (DO NOT PUT DIAG)
@@ -96,6 +98,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
 
             const double valF0 = MF0[k];
             SC[locnx + rowF0][colF0] += valF0;
+            SC[colF0][locnx + rowF0] += valF0;
          }
       }
    }
@@ -124,20 +127,19 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
 
             const double valG0 = MG0[k];
             SC[locnx + locmyl + rowG0][colG0] += valG0;
+            SC[colG0][locnx + locmyl + rowG0] += valG0;
          }
       }
    }
 }
 
-void sLinsysRootBordered::solveReduced( sData *prob, SimpleVector& b)
+void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 )
 {
-   assert( 0 && "TODO: implement..");
-}
+   // TODO : make member
+   StochVector* sol_inner = dynamic_cast<StochVector*>(rhs_inner.cloneFull());
 
-void sLinsysRootBordered::computeSchurCompRightHandSide( StochVector& rhs_inner, SimpleVector& b0 )
-{
    /* solve inner system */
-   this->children[0]->solveCompressed( rhs_inner );
+   this->children[0]->solveCompressed( *sol_inner );
 
    if( PIPS_MPIgetRank(mpiComm) != 0 )
       b0.setToZero();
@@ -148,12 +150,14 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( StochVector& rhs_inner,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
-   this->children[0]->addBorderTimesRhsToB0( rhs_inner, b0, border );
+   this->children[0]->addBorderTimesRhsToB0( *sol_inner, b0, border );
+
+   delete sol_inner;
 
    PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
 
-void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inner, SimpleVector& b0 )
+void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0 )
 {
    BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_left,
@@ -169,7 +173,6 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inne
  *    [  K  B  ] [  x  ] = [  b  ]
  *    [ B^T K0 ] [ x_0 ] = [ b_0 ]
  */
-
 /* forms right hand side for schur system \tilda{b_0} = b_0 - B^T * K^-1 b and in doing so solves K^-1 b */
 void sLinsysRootBordered::Lsolve(sData *prob, OoqpVector& x)
 {
@@ -183,6 +186,7 @@ void sLinsysRootBordered::Lsolve(sData *prob, OoqpVector& x)
    StochVector& b = *dynamic_cast<StochVector&>(x).children[0];
 
    assert( xs.vec );
+   assert( !xs.vecl );
    SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.vec);
 
    computeSchurCompRightHandSide( b, b0 );
@@ -207,6 +211,7 @@ void sLinsysRootBordered::Dsolve(sData *prob, OoqpVector& x)
 /* back substitute x_0 : K x = b - B x_0 and solve for x */
 void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
 {
+   std::cout << "Ltsolve Hierarchical" << std::endl;
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
    assert( prob );
@@ -222,6 +227,13 @@ void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
    computeInnerSystemRightHandSide( b, b0 );
 
    this->children[0]->solveCompressed( b );
+   std::cout << "Ltsolve Hierarchical ... done " << std::endl;
+
+//   std::cout << "final solution" << std::endl;
+//   x.writeToStreamAll(std::cout);
+//   std::cout << std::endl;
+//   MPI_Barrier(mpiComm);
+//   assert(false);
 }
 
 /* create kkt used to store Schur Complement of border layer */

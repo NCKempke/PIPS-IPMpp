@@ -32,7 +32,7 @@ class sLinsysRootBordered : public sLinsysRoot
       DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) override;
 
    private:
-      void computeSchurCompRightHandSide( StochVector& rhs_inner, SimpleVector& b0 );
+      void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );
       void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0 );
 };
 
