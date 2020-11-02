@@ -209,7 +209,6 @@ void sLinsysRootBordered::Dsolve(sData *prob, OoqpVector& x)
 /* back substitute x_0 : K x = b - B x_0 and solve for x */
 void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
 {
-   std::cout << "Ltsolve Hierarchical" << std::endl;
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
    assert( prob );
@@ -225,7 +224,6 @@ void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
    computeInnerSystemRightHandSide( b, b0 );
 
    this->children[0]->solveCompressed( b );
-   std::cout << "Ltsolve Hierarchical ... done " << std::endl;
 }
 
 /* create kkt used to store Schur Complement of border layer */
