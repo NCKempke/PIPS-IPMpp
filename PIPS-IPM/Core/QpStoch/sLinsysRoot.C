@@ -156,7 +156,7 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 
 sLinsysRoot::~sLinsysRoot()
 {
-  for(size_t c=0; c<children.size(); c++)
+  for(size_t c = 0; c < children.size(); c++)
     delete children[c];
 
   delete kktDist;
@@ -428,14 +428,24 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
  * B0_{outer}^T = [ F0C  0   0   0    0   ]
  *                [ G0C  0   0   0    0   ]
  *
+ * SC is still stored in transposed form as well as X0
+ *
+ * SC -= X0^T B0_{outer} instead
+ *
+ * B0_{outer} = [  0  F0CT G0CT ]
+ *              [  A   0    0   ]
+ *              [  C   0    0   ]
+ *              [ F0V  0    0   ]
+ *              [ G0V  0    0   ]
+ *
  */
 void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
       SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0 )
 {
-   int mA0T, nA0T; A0_border.getSize(nA0T, mA0T);
-   int mC0T, nC0T; C0_border.getSize(nC0T, mC0T);
-   int mF0VT, nF0VT; F0vec_border.getSize(nF0VT, mF0VT);
-   int mG0VT, nG0VT; G0vec_border.getSize(nG0VT, mG0VT);
+   int mA0, nA0; A0_border.getSize(mA0, nA0);
+   int mC0, nC0; C0_border.getSize(mC0, nC0);
+   int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
+   int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
 
    int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
    int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
@@ -443,14 +453,14 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, 
    int mX0, nX0; X0.getSize(mX0, nX0);
    int mSC, nSC; SC.getSize(mSC, nSC);
 
-   assert( mA0T == mC0T && mC0T == mF0VT && mF0VT == mG0VT );
+   assert( nA0 == nC0 && nC0 == nF0V && nF0V == nG0V );
    assert( nF0C == nG0C );
-   assert( nX0 == nF0C + nA0T + nC0T + nF0VT + nG0VT );
-   assert( mX0 == mA0T + mF0C + mG0C );
+   assert( nX0 == nF0C + mA0 + mC0 + mF0V + mG0V );
+   assert( mX0 == nA0 + mF0C + mG0C );
    assert( nSC == mSC );
    assert( mX0 == nSC );
 
-   // multiply each column with B_{outer]}^T and add if to res
+   // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
    for( int i = 0; i < mX0; i++ )
    {
@@ -458,17 +468,16 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, 
 
       A0_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C], 1);
 
-      C0_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + nA0T], 1);
+      C0_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + mA0], 1);
 
-      F0vec_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + nA0T + nC0T], 1);
+      F0vec_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + mA0 + mC0], 1);
 
-      G0vec_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + nA0T + nC0T + nF0VT], 1);
+      G0vec_border.transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + mA0 + mC0 + mF0V], 1);
 
-      F0cons_border.mult(1.0, &SC[i][0], 1, -1.0, &col[0], 1);
+      F0cons_border.mult(1.0, &SC[i][nA0], 1, -1.0, &col[0], 1);
 
-      G0cons_border.mult(1.0, &SC[i][0], 1, -1.0, &col[0], 1);
+      G0cons_border.mult(1.0, &SC[i][nA0 + mF0C], 1, -1.0, &col[0], 1);
    }
-   // TODO does this even work?? where do we take care of the fact that the SC is symmetric here?
 }
 
 
@@ -521,7 +530,6 @@ void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatr
                   *border.F.children[it], *border.G.children[it]);
       children[it]->LniTransMultHierarchyBorder( SC, X0, border_child, locnx, locmy, locmz );
    }
-   MPI_Barrier( mpiComm );
 
    /* allreduce the border SC */
    if( iAmDistrib )
@@ -606,7 +614,7 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 
    /* add schur complement part */
-   if( PIPS_MPIgetRank(mpiComm) == 0 )
+   if( PIPS_MPIgetSize() == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
    {
       assert( border.A.mat );
       assert( border.C.mat );
@@ -740,7 +748,7 @@ void sLinsysRoot::createChildren(sData *prob)
 
 void sLinsysRoot::deleteChildren()
 {
-  for(size_t it=0; it<children.size(); it++) {
+  for(size_t it=0; it < children.size(); it++) {
     children[it]->deleteChildren();
     delete children[it];
   }
@@ -1521,6 +1529,8 @@ void sLinsysRoot::factorizeKKT(sData* prob)
   extern double g_iterNumber;
   double st=MPI_Wtime();
 #endif
+  if( is_hierarchy_root )
+     assert( !usePrecondDist );
 
   if( usePrecondDist )
   {
