@@ -459,6 +459,7 @@ void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
 #endif
    if(iAmDistrib)
       PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
+
 #ifdef TIMING
    stochNode->resMon.recReduceTmLocal_stop();
 #endif
@@ -1942,7 +1943,7 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
-   // compute SC = SUM_i Bi_{outer}^T Ki^{-1} (Bi_{outer} - Bi_{inner} X0 ) = SUM_i Bi_{outer}^T Xi
+   // compute SC = -SUM_i Bi_{outer}^T Ki^{-1} (Bi_{outer} - Bi_{inner} X0 ) = -SUM_i Bi_{outer}^T Xi
    LtsolveHierarchyBorder( schur_comp, *buffer_b0, border );
    // compute SC_{outer} += B0_{outer}^T X0
    finalizeInnerSchurComplementContribution( schur_comp, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0 );
