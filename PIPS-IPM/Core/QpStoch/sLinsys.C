@@ -427,31 +427,31 @@ void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, const Dense
    // X from the right with each column of Bi^T todo add OMP to submethods
    /*            [ RiT ]
     *            [  0  ]
-    * res += X * [  0  ]
+    * res -= X * [  0  ]
     *            [  Fi ]
     *            [  Gi ]
     */
-   X.multMatAt( 0, 1.0, 0, result, 1.0, R.getTranspose() );
+   X.multMatAt( 0, 1.0, 0, result, -1.0, R.getTranspose() );
 
-   X.multMatAt( parent_nx + parent_my + parent_mz, 1.0, 0, result, 1.0, F );
+   X.multMatAt( parent_nx + parent_my + parent_mz, 1.0, 0, result, -1.0, F );
 
-   X.multMatAt( parent_nx + parent_my + parent_mz + locmyl, 1.0, 0, result, 1.0, G );
+   X.multMatAt( parent_nx + parent_my + parent_mz + locmyl, 1.0, 0, result, -1.0, G );
 
    /*            [ AiT ]
     *            [  0  ]
-    * res += X * [  0  ]
+    * res -= X * [  0  ]
     *            [  0  ]
     *            [  0  ]
     */
-   X.multMatAt( 0, 1.0, locnx, result, 1.0, A.getTranspose() );
+   X.multMatAt( 0, 1.0, locnx, result, -1.0, A.getTranspose() );
 
    /*            [ CiT ]
     *            [  0  ]
-    * res += X * [  0  ]
+    * res -= X * [  0  ]
     *            [  0  ]
     *            [  0  ]
     */
-   X.multMatAt( 0, 1.0, locnx + locmy, result, 1.0, C.getTranspose() );
+   X.multMatAt( 0, 1.0, locnx + locmy, result, -1.0, C.getTranspose() );
 }
 
 void sLinsys::addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const
@@ -545,7 +545,7 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
     */
    multRightDenseSchurComplBlocked( data, X0, *BiT_buffer, parent_nx, parent_my, parent_mz );
 
-   /* solve blockwise Ki X = Bi_buffer and multiply from left with Bi_{outer} and add to SC */
+   /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bi_{outer}^T - X0^T * Bi_{inner}^T) and multiply from right with Bi_{outer}^T and add to SC */
    addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BiT_outer, *BiT_buffer, SC );
 }
 
@@ -1383,6 +1383,7 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
    int mC, nC; border_left.C.getSize(mC, nC);
    int mF, nF; border_left.F.getSize(mF, nF);
    int mG, nG; border_left.G.getSize(mG, nG);
+
    assert( mR == mA && mA == mC );
    assert( nF == nG && nF == nR );
    assert( length_col == nR + nA + nC );
@@ -1398,13 +1399,10 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
       assert( row_res < m_rows_res );
 
       border_left.R.mult(1.0, &res[row_res][0], 1, -1.0, &col[0], 1);
-
       border_left.A.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR], 1);
-
       border_left.C.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR + nA], 1);
 
       border_left.F.mult(1.0, &res[row_res][n_cols_res - mF - mG], 1, -1.0, &col[0], 1);
-
       border_left.G.mult(1.0, &res[row_res][n_cols_res - mG], 1, -1.0, &col[0], 1);
    }
 }
