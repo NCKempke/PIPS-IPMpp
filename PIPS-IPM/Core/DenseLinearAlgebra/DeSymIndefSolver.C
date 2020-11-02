@@ -93,6 +93,8 @@ void DeSymIndefSolver::matrixChanged()
   int info;
 
   int n = mStorage->n;
+  if( n == 0 )
+     return;
 
   if (sparseMat) {
     std::fill(mStorage->M[0],mStorage->M[0]+n*n,0.);
@@ -154,7 +156,11 @@ void DeSymIndefSolver::solve ( OoqpVector& v )
   int info;
   int one = 1;
 
-  int n = mStorage->n; SimpleVector &  sv = dynamic_cast<SimpleVector &>(v);
+  int n = mStorage->n;
+  SimpleVector & sv = dynamic_cast<SimpleVector &>(v);
+
+  if( n == 0 )
+     return;
 #ifdef TIMING_FLOPS
   HPM_Start("DSYTRSSolve");
 #endif
