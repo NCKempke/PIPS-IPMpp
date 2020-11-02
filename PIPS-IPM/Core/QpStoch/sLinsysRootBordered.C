@@ -25,8 +25,6 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 
 sLinsysRootBordered::~sLinsysRootBordered()
 {
-   assert( children.size() == 1 );
-   delete children[0];
 }
 
 void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
@@ -228,12 +226,6 @@ void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
 
    this->children[0]->solveCompressed( b );
    std::cout << "Ltsolve Hierarchical ... done " << std::endl;
-
-//   std::cout << "final solution" << std::endl;
-//   x.writeToStreamAll(std::cout);
-//   std::cout << std::endl;
-//   MPI_Barrier(mpiComm);
-//   assert(false);
 }
 
 /* create kkt used to store Schur Complement of border layer */
