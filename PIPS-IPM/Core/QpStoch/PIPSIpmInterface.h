@@ -177,6 +177,11 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   if(mype==0) printf("prefactory created\n");
 #endif
 
+#ifdef HIERARCHICAL
+  assert( presolver_type == PRESOLVER_NONE );
+  // TODO : get original variables/solution etc from hierarchical data and postsolve
+#endif
+
   // presolving activated?
   if( presolver_type != PRESOLVER_NONE )
   {
