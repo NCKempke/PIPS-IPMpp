@@ -1,12 +1,12 @@
 * ./gamsexample.sh -NP=4 -BLOCKS=5 -GAMSFILE=./hier_approach_4blocks_2by2
 
-Set i rows    / i1*i20 /
+Set i rows    / i1*i18 /
     j columns / j1*j13 /;
 
 parameter g(j) obj coefficients / j1 -1, j2 -1, j3 -1, j4 1, j5 1, j6 1, j7 1, j8 1, j9 1, j10 1, j11 1, j12 1, j13 1 /
-          bA(i) right hand side  / i1 4, i2 8, i3 4, i4 13, i5 4, i6 6, i7 4, i8 13, i9 4, i10 13, i11 3, i12 3, i13 3, i14 3, i15 3, i16 10, i17 3, i18 10, i19 0, i20 7 /
+          bA(i) right hand side  / i1 4, i2 8, i3 4, i4 13, i5 4, i6 6, i7 4, i8 13, i9 4, i10 13, i11 3, i12 3, i13 3, i14 10, i15 3, i16 10, i17 0, i18 7 /
 *          clow(i) c left hand side   / i1 0, i2 1, i3 -1, i4 -100, i5 -100, i6 -100, i7 -100, i8 -100, i9 -100, i10 -100, i11 1, i12 -100, i13 -100, i14 -100, i15 -100, i16 -100, i17 -100, i18 -100, i19 -100/
-          cupp(i) c right hand side   / i1 1, i2 8, i3 2, i4 9, i5 10, i6 8, i7 10, i8 10, i9 2, i10 9, i11 100, i12 4, i13 10, i14 50, i15 13, i16 113, i17 1, i18 4, i19 10, i20 1000 /
+          cupp(i) c right hand side   / i1 1, i2 8, i3 2, i4 9, i5 10, i6 8, i7 10, i8 10, i9 2, i10 9, i11 10, i12 50, i13 13, i14 113, i15 1, i16 4, i17 10, i18 1000 /
 
 
 * in this example the singletonColumnPresolver should substitute j1 (free) and put it into the objective
@@ -22,16 +22,14 @@ i7                                                         2     1
 i8         1                                              -2     4                  
 i9                                                                     2     1
 i10        1                                                          -2     4
-i11                          1     1
-i12                          2    -1
-i13                                      1     1
-i14                                      2    -1
-i15                                                  1     1
-i16        1                                         2    -1
-i17                                                              1     1
-i18        1                                                     2    -1
-i19       -1           1    -1           1           1           1           1
-i20                    1                 1                       1           1
+i11                                      1     1
+i12                                      2    -1
+i13                                                  1     1
+i14        1                                         2    -1
+i15                                                              1     1
+i16        1                                                     2    -1
+i17       -1           1    -1           1           1           1           1
+i18                    1                 1                       1           1
 ; 
 *   -2     7     2     1     2     1     2     1     2     1     2     1     2
 * expected values for x full determined by Ax=b
@@ -48,16 +46,14 @@ i7   1                                                     1     1
 i8   1                                                     2     4
 i9   1                                                                 1     1
 i10  1                                                                 2     4
-i11  1                       1     1
-i12  1                       1     4
-i13  1                                   1     1     
-i14  1                                   1     4
-i15  1                                               1     1                                          
-i16  1                                               1     4
-i17  1                                                           1     1
-i18  1                                                           1     4
-i19  1                                         1           1     1
-i20  1     1     1     1     1     1     1     1     1     1     1     1     1
+i11  1                                   1     1     
+i12  1                                   1     4
+i13  1                                               1     1                                          
+i14  1                                               1     4
+i15  1                                                           1     1
+i16  1                                                           1     4
+i17  1                                         1           1     1
+i18  1     1     1     1     1     1     1     1     1     1     1     1     1
 ;
 
 Variables          x(j) * / j4.lo -5 /
@@ -104,8 +100,6 @@ $ifthen %METHOD%==PIPS
   e.stage('i16') = 6;
   e.stage('i17') = 6;
   e.stage('i18') = 6;
-  e.stage('i19') = 6;
-  e.stage('i20') = 6;
 *  ge.stage('i1') = 1;
 *  ge.stage('i2') = 1;
 *  ge.stage('i3') = 1;
@@ -138,8 +132,6 @@ $ifthen %METHOD%==PIPS
   le.stage('i16') = 6;
   le.stage('i17') = 6;
   le.stage('i18') = 6;
-  le.stage('i19') = 6;
-  le.stage('i20') = 6;
   defobj.stage  = 6;
 
 
