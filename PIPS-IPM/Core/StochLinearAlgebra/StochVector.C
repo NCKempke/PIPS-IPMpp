@@ -1178,14 +1178,12 @@ template<typename T>
 void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
 {
    // TODO modify for hierarchical approach
-   int rank;
-   MPI_Comm_rank(mpiComm, &rank);
-   int world_size;
-   MPI_Comm_size(mpiComm, &world_size);
+   const int rank = PIPS_MPIgetRank(mpiComm);
+   const int world_size = PIPS_MPIgetSize(mpiComm);
+
    MPI_Status status;
    int l;
    std::stringstream sout;
-
    if( rank == 0)
    {
       sout << "--vec--" << std::endl;
