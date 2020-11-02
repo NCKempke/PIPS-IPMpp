@@ -224,9 +224,8 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
   if( pips_options::getBoolParameter("PARDISO_FOR_GLOBAL_SC") )
      data->activateLinkStructureExploitation();
-//  data->writeToStreamDense(std::cout);
 
-  // todo->save old data somewhere?
+  // TODO : save "old" data somewhere?
 #ifdef HIERARCHICAL
   data = dynamic_cast<sData*>(factory->switchToHierarchicalData( data ));
 //  data->writeToStreamDense(std::cout);
