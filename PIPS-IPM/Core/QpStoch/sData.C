@@ -1010,7 +1010,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
       assert( count <= back_count );
       assert( link_vars_n_blocks[i] >= 0 );
 
-      if( link_vars_n_blocks[i] > threshold_global_cons )
+      if( link_vars_n_blocks[i] > threshold_global_vars )
       {
          ++n_globals;
          permvec[count++] = i;
@@ -1021,7 +1021,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
 
    for( size_t i = 0; i < n_link_vars; ++i )
    {
-      if( link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_cons )
+      if( link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars )
       {
          assert( count <= back_count );
          permvec[count++] = i;
@@ -1038,7 +1038,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
    {
       if( phase == 0 )
       {
-         if( link_vars_n_blocks[i] <= threshold_global_cons )
+         if( link_vars_n_blocks[i] <= threshold_global_vars )
          {
             ++phase;
             --i;
@@ -1056,7 +1056,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
          else
          {
             assert( 0 < link_vars_n_blocks[i] );
-            assert( link_vars_n_blocks[i] <= threshold_global_cons );
+            assert( link_vars_n_blocks[i] <= threshold_global_vars );
          }
       }
       else if( phase == 2 )

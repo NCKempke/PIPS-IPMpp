@@ -145,6 +145,7 @@ public:
   int n0LinkVars;
 
   constexpr static int threshold_global_cons = 2;
+  constexpr static int threshold_global_vars = 4;
   constexpr static int nLinkStats = 6;
   constexpr static double minStructuredLinksRatio = 0.5;
   static std::vector<unsigned int> get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
