@@ -17,8 +17,8 @@ class StochVectorBase : public OoqpVectorBase<T> {
 public:
   StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm);
 
-  StochVectorBase( int n, MPI_Comm mpiComm, int isDistributed = -1);
-  StochVectorBase( int n, int nl, MPI_Comm mpiComm, int isDistributed);
+  StochVectorBase( int n, MPI_Comm mpiComm );
+  StochVectorBase( int n, int nl, MPI_Comm mpiComm );
   virtual ~StochVectorBase();
 
   virtual void AddChild(StochVectorBase<T>* child);
@@ -40,9 +40,9 @@ public:
 
 
   /* MPI communicator */
-  MPI_Comm mpiComm;
+  const MPI_Comm mpiComm;
   /* flag used to indicate if the children are distributed or not. */
-  int iAmDistrib;
+  const bool iAmDistrib;
 
   OoqpVectorBase<T>* clone() const override;
   /* copy vector entries as well */

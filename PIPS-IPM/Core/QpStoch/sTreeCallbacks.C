@@ -730,7 +730,7 @@ StochVector* sTreeCallbacks::createb() const
 
   int yl = (np == -1) ? myl() : -1;
 
-  StochVector* b = new StochVector(my(), yl, commWrkrs, -1);
+  StochVector* b = new StochVector(my(), yl, commWrkrs);
 
   double* vData = ((SimpleVector*)b->vec)->elements();
   double* vDataLinkCons = nullptr;
@@ -900,7 +900,7 @@ StochVector* sTreeCallbacks::createclow() const
 
   int zl = (np == -1) ? mzl() : -1;
 
-  StochVector* clow = new StochVector(mz(), zl, commWrkrs, -1);
+  StochVector* clow = new StochVector(mz(), zl, commWrkrs);
   double* vData = ((SimpleVector*)clow->vec)->elements();
   double* vDataLinkCons = nullptr;
 
@@ -950,7 +950,7 @@ StochVector* sTreeCallbacks::createiclow() const
 
   int zl = (np == -1) ? mzl() : -1;
 
-  StochVector* iclow = new StochVector(mz(), zl, commWrkrs, -1);
+  StochVector* iclow = new StochVector(mz(), zl, commWrkrs);
   double* vData = ((SimpleVector*)iclow->vec)->elements();  
   double* vDataLinkCons = nullptr;
 
@@ -999,7 +999,7 @@ StochVector* sTreeCallbacks::createcupp() const
 
   int zl = (np == -1) ? mzl() : -1;
 
-  StochVector* cupp = new StochVector(mz(), zl, commWrkrs, -1);
+  StochVector* cupp = new StochVector(mz(), zl, commWrkrs);
   double* vData = ((SimpleVector*)cupp->vec)->elements();  
   double* vDataLinkCons = nullptr;
 
@@ -1049,7 +1049,7 @@ StochVector* sTreeCallbacks::createicupp() const
 
   int zl = (np == -1) ? mzl() : -1;
 
-  StochVector* icupp = new StochVector(mz(), zl, commWrkrs, -1);
+  StochVector* icupp = new StochVector(mz(), zl, commWrkrs);
   double* vData = ((SimpleVector*)icupp->vec)->elements();
   double* vDataLinkCons = nullptr;
 
@@ -1111,7 +1111,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    assert( rankMe == PIPS_MPIgetRank() );
    assert( numProcs == PIPS_MPIgetSize() );
 
-   // make sure distributed presonditioner is deactivated
+   // make sure distributed preconditioner is deactivated
    assert( rankZeroW == 0 );
    assert( rankPrcnd == -1 );
    assert( commP2ZeroW == MPI_COMM_NULL );

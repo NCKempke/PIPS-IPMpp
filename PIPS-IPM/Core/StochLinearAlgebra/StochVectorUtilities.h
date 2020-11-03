@@ -13,7 +13,7 @@
 #include <string>
 #include <iostream>
 #include <limits>
-
+// TODO : Hierarchical approach cannot use any of these...
 
 /* Utility functions to return for a given StochVectorBase<T> a certain SimpleVectorBase<T> 
  *	either from one of the children (node = 0, ..., nChildren - 1 )
@@ -114,7 +114,7 @@ inline StochVectorBase<U>* cloneStochVector(const StochVectorBase<T>& svec)
     return new StochDummyVectorBase<U>();
 
   if( svec.vecl )
-    clone = new StochVectorBase<U>( svec.vec->length(), svec.vecl->length(), svec.mpiComm, -1);
+    clone = new StochVectorBase<U>( svec.vec->length(), svec.vecl->length(), svec.mpiComm);
   else
     clone = new StochVectorBase<U>( svec.vec->length(), svec.mpiComm);
 

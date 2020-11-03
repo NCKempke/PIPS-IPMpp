@@ -25,22 +25,18 @@ StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<
 }
 
 template<typename T>
-StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_, int isDistributed/*=-1*/)
-  : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_),
-    iAmDistrib( isDistributed )
+StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_ )
+  : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
    assert( n_ >= 0 );
+
    vec = new SimpleVectorBase<T>(n_);
    vecl = nullptr;
-
-   if( -1 == iAmDistrib )
-      iAmDistrib = PIPS_MPIgetDistributed( mpiComm );
 }
 
 template<typename T>
-StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_, int isDistributed)
-  : OoqpVectorBase<T>(0), parent(nullptr), mpiComm(mpiComm_),
-    iAmDistrib(isDistributed)
+StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_ )
+  : OoqpVectorBase<T>(0), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
    this->n = 0;
 
@@ -59,9 +55,6 @@ StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_, int isDi
    }
    else
       vecl = nullptr;
-
-   if( -1 == iAmDistrib )
-      PIPS_MPIgetDistributed( mpiComm );
 }
 
 template<typename T>
@@ -99,7 +92,7 @@ StochVectorBase<T>::clone() const
 {
    assert( vec || vecl );
    StochVectorBase<T> *clone;
-   clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm, -1);
+   clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
       clone->AddChild(children[it]->clone());
@@ -111,7 +104,7 @@ template<typename T>
 OoqpVectorBase<T>* StochVectorBase<T>::cloneFull() const
 {
    assert( vec || vecl );
-   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm, -1);
+   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
 
    if( vec )
       clone->vec->copyFrom(*vec);
