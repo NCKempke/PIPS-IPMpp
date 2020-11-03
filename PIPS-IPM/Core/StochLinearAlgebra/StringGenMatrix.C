@@ -475,7 +475,7 @@ void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in )
 {
    assert( is_vertical );
 
-   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+   StochVector& vec = dynamic_cast<StochVector&>(vec_in);
 
    assert( vec.vec );
    assert( vec.children.size() == children.size() );
@@ -534,7 +534,7 @@ void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in )
 {
    assert( !is_vertical );
 
-   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+   StochVector& vec = dynamic_cast<StochVector&>(vec_in);
 
    assert( vec.vec );
    assert( vec.children.size() == children.size() );
