@@ -74,11 +74,8 @@ class BorderedGenMatrix : public GenMatrix
 
       void writeToStreamDense( std::ostream& out ) const;
 
-      // TODO which of the following are necessary?
-      void getNnzPerRow(OoqpVectorBase<int>& nnzVec) override; // TODO : implement
-      void getNnzPerCol(OoqpVectorBase<int>& nnzVec) override; // TODO : implement
-      void addRowSums( OoqpVector& vec ) override; // TODO : implement
-      void addColSums( OoqpVector& vec ) override; // TODO : implement
+      void addRowSums( OoqpVector& vec ) override;
+      void addColSums( OoqpVector& vec ) override;
 
       /* methods not needed for Hierarchical approach */
       void writeToStream( std::ostream& out ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
@@ -90,6 +87,8 @@ class BorderedGenMatrix : public GenMatrix
       void matTransDMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
       void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
 
+      void getNnzPerRow(OoqpVectorBase<int>& nnzVec) override { assert( 0 && "not implemented"); };
+      void getNnzPerCol(OoqpVectorBase<int>& nnzVec) override { assert( 0 && "not implemented"); };
       void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
       void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override { assert(0 && "not implemented"); };
       void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info ) override { assert(0 && "not implemented"); };
@@ -100,7 +99,8 @@ class BorderedGenMatrix : public GenMatrix
       void randomize(double alpha, double beta, double * seed) override { assert(0 && "not implemented"); };
    private:
 
-      bool hasVecStructureForBorderedMat( const OoqpVector& vec, bool row_vec ) const;
+      template<typename T>
+      bool hasVecStructureForBorderedMat( const OoqpVectorBase<T>& vec, bool row_vec ) const;
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDGENMATRIX_H_ */

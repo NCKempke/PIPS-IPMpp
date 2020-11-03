@@ -471,6 +471,107 @@ void StringGenMatrix::rowScale ( const OoqpVector& vec )
       rowScaleHorizontal(vec);
 }
 
+void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in )
+{
+   assert( is_vertical );
+
+   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+
+   assert( vec.vec );
+   assert( vec.children.size() == children.size() );
+   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+
+   mat->addRowSums(*vec.vec);
+
+   for( size_t i = 0; i < children.size(); i++ )
+   {
+      assert( vec.children[i] );
+      if( children[i]->isKindOf(kStringGenDummyMatrix) )
+         assert( vec.children[i]->isKindOf(kStochDummy) );
+
+      children[i]->addRowSumsVertical(*vec.children[i]);
+   }
+
+   if( mat_link )
+      mat_link->addRowSums(*vec.vecl);
+}
+
+void StringGenMatrix::addRowSumsHorizontal( OoqpVector& vec_in )
+{
+   assert( !is_vertical );
+   SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
+
+   for( size_t i = 0; i < children.size(); i++ )
+      children[i]->addRowSumsHorizontal(vec);
+
+   if( distributed )
+      PIPS_MPIsumArrayInPlace( vec.elements(), vec.length(), mpi_comm);
+
+   mat->addRowSums(vec);
+
+   if( mat_link )
+      mat_link->addRowSums(vec);
+}
+
+void StringGenMatrix::addColSumsVertical( OoqpVector& vec_in )
+{
+   assert( is_vertical );
+   SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
+
+   for( size_t i = 0; i < children.size(); i++ )
+      children[i]->addColSumsVertical(vec);
+
+   if( distributed )
+      PIPS_MPIsumArrayInPlace( vec.elements(), vec.length(), mpi_comm);
+
+   mat->addColSums(vec);
+
+   if( mat_link )
+      mat_link->addColSums(vec);
+}
+
+void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in )
+{
+   assert( !is_vertical );
+
+   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+
+   assert( vec.vec );
+   assert( vec.children.size() == children.size() );
+   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+
+   mat->addColSums(*vec.vec);
+
+   for( size_t i = 0; i < children.size(); i++ )
+   {
+      assert( vec.children[i] );
+      if( children[i]->isKindOf(kStringGenDummyMatrix) )
+         assert( vec.children[i]->isKindOf(kStochDummy) );
+
+      children[i]->addColSumsVertical(*vec.children[i]);
+   }
+
+   if( mat_link )
+      mat_link->addColSums(*vec.vecl);
+}
+
+void StringGenMatrix::addRowSums( OoqpVector& vec )
+{
+   if( is_vertical )
+      addRowSumsVertical( vec );
+   else
+      addRowSumsHorizontal( vec );
+}
+
+void StringGenMatrix::addColSums( OoqpVector& vec )
+{
+   if( is_vertical )
+      addColSumsVertical( vec );
+   else
+      addColSumsHorizontal( vec );
+}
+
+
 void StringGenMatrix::writeToStreamDense(std::ostream& out) const
 {
    assert( 0 && "TODO: implement...");

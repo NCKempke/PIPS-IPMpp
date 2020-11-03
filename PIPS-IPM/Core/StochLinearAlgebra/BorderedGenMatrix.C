@@ -191,29 +191,36 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, *minmax.children[0]);
 }
 
-void BorderedGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec)
+void BorderedGenMatrix::addRowSums( OoqpVector& vec_ )
 {
-   assert( 0 && "todo: implement");
+  assert( hasVecStructureForBorderedMat(vec_, true) );
+
+  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+
+  border_left->addRowSums( *vec.children[0] );
+  inner_matrix->addRowSums( *vec.children[0] );
+
+  bottom_left_block->addRowSums( *vec.vecl );
+  border_bottom->addRowSums( *vec.vecl );
 }
 
-void BorderedGenMatrix::getNnzPerCol(OoqpVectorBase<int>& nnzVec)
+void BorderedGenMatrix::addColSums( OoqpVector& vec_ )
 {
-   assert( 0 && "todo: implement");
+   assert( hasVecStructureForBorderedMat( vec_, false ) );
+
+   StochVector& vec = dynamic_cast<StochVector&>(vec_);
+
+   border_left->addRowSums( *vec.vec );
+   bottom_left_block->addRowSums( *vec.vec );
+
+   inner_matrix->addRowSums( *vec.children[0] );
+   border_bottom->addRowSums( *vec.children[0] );
 }
 
-void BorderedGenMatrix::addRowSums( OoqpVector& vec )
+template<typename T>
+bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVectorBase<T>& vec, bool row_vec ) const
 {
-   assert( 0 && "todo: implement");
-}
-
-void BorderedGenMatrix::addColSums( OoqpVector& vec )
-{
-   assert( 0 && "todo: implement");
-}
-
-bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVector& vec, bool row_vec ) const
-{
-   const StochVector& vecs = dynamic_cast<const StochVector&>(vec);
+   const StochVectorBase<T>& vecs = dynamic_cast<const StochVectorBase<T>&>(vec);
 
    if( vecs.children.size() != 1 )
    {
