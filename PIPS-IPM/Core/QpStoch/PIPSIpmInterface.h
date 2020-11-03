@@ -178,7 +178,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 #endif
 
 #ifdef HIERARCHICAL
-  assert( presolver_type == PRESOLVER_NONE );
+//  assert( presolver_type == PRESOLVER_NONE );
   // TODO : get original variables/solution etc from hierarchical data and postsolve
 #endif
 

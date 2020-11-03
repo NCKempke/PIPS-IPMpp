@@ -2052,7 +2052,7 @@ std::vector<T> StochVectorBase<T>::gatherStochVector() const
 {
 #ifdef HIERARCHICAL
    // TODO adapt for hier approach
-   assert( false && "TODO : implement" );
+//   assert( false && "TODO : implement" );
 #endif
    const SimpleVectorBase<T>& firstvec = dynamic_cast<const SimpleVectorBase<T>&>(*vec);
    const size_t nChildren = children.size();
@@ -2132,7 +2132,7 @@ bool StochVectorBase<T>::isRootNodeInSync() const
 {
 #ifdef HIERARCHICAL
    // TODO adapt for hier approach
-   assert( false && "TODO : implement" );
+//   assert( false && "TODO : implement" );
 #endif
 
    assert(vec);
