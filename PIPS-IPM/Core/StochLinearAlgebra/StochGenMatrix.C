@@ -14,54 +14,36 @@ StochGenMatrix::StochGenMatrix(int id,
 			       int B_m, int B_n, int B_nnz,
 			       MPI_Comm mpiComm_)
   : id(id), m(global_m), n(global_n), 
-    mpiComm(mpiComm_), iAmDistrib(0),
-    workPrimalVec(nullptr)
+    mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
-  Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
-  Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
-  Blmat = new SparseGenMatrix(0, 0, 0);
-
-  if(mpiComm!=MPI_COMM_NULL) {
-    int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
-    if(size>1) iAmDistrib=1;
-  }
+   Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
+   Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
+   Blmat = new SparseGenMatrix(0, 0, 0);
 }
 
 StochGenMatrix::StochGenMatrix(int id,
 			       long long global_m, long long global_n,
 			       int A_m, int A_n, int A_nnz,
 			       int B_m, int B_n, int B_nnz,
-				   int Bl_m, int Bl_n, int Bl_nnz,
+			       int Bl_m, int Bl_n, int Bl_nnz,
 			       MPI_Comm mpiComm_)
   : id(id), m(global_m), n(global_n),
-    mpiComm(mpiComm_), iAmDistrib(0),
-    workPrimalVec(nullptr)
+    mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
-  Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
-  Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
-  Blmat = new SparseGenMatrix(Bl_m, Bl_n, Bl_nnz);
-
-  if(mpiComm!=MPI_COMM_NULL) {
-    int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
-    if(size>1) iAmDistrib=1;
-  }
+   Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
+   Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
+   Blmat = new SparseGenMatrix(Bl_m, Bl_n, Bl_nnz);
 }
 
 StochGenMatrix::StochGenMatrix(int id,
                 long long global_m, long long global_n,
                 MPI_Comm mpiComm_)
   : id(id), m(global_m), n(global_n),
-    mpiComm(mpiComm_), iAmDistrib(0),
-    workPrimalVec(nullptr)
+    mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
-  Amat = nullptr;
-  Bmat = nullptr;
-  Blmat = nullptr;
-
-  if(mpiComm!=MPI_COMM_NULL) {
-    int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
-    if(size>1) iAmDistrib=1;
-  }
+   Amat = nullptr;
+   Bmat = nullptr;
+   Blmat = nullptr;
 }
 
 StochGenMatrix::~StochGenMatrix()
@@ -77,9 +59,6 @@ StochGenMatrix::~StochGenMatrix()
 
   if (Blmat)
     delete Blmat;
-
-  if(workPrimalVec)
-    delete workPrimalVec;
 }
 
 
@@ -117,15 +96,6 @@ StochGenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) cons
 void StochGenMatrix::AddChild(StochGenMatrix* child)
 {
   children.push_back(child);
-}
-
-OoqpVector* StochGenMatrix::getWorkPrimalVec(const StochVector& origin)
-{
-  if(nullptr == workPrimalVec)
-    workPrimalVec = origin.dataClone();
-  else
-    assert(workPrimalVec->length() == origin.vec->length());
-  return workPrimalVec;
 }
 
 int StochGenMatrix::isKindOf( int type ) const

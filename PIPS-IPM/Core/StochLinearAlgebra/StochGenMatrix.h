@@ -60,9 +60,6 @@ public:
   MPI_Comm mpiComm;
   int iAmDistrib;
  private:
-  OoqpVector* workPrimalVec;
-  OoqpVector* getWorkPrimalVec(const StochVector& origin);
-
   /** trans mult method for children with linking constraints */
   virtual void transMult2 ( double beta,   StochVector& y,
 		    double alpha,  StochVector& x,
