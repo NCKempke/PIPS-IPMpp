@@ -249,7 +249,6 @@ void StringGenMatrix::getColMinMaxVecHorizontal( bool get_min, bool initialize_v
    assert( minmax.children.size() == children.size());
    assert( (minmax.vecl && mat_link) || (minmax.vecl == nullptr && mat_link == nullptr) );
 
-   mat->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vec);
 
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -260,21 +259,24 @@ void StringGenMatrix::getColMinMaxVecHorizontal( bool get_min, bool initialize_v
       children[i]->getColMinMaxVecHorizontal(get_min, initialize_vec, row_scale, *minmax.children[i]);
    }
 
+   mat->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vec);
+
    if( mat_link )
       mat_link->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vecl);
 }
 
-void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax ) const
+void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_ ) const
 {
    assert( is_vertical );
    const bool has_rowscale = (row_scale_in != nullptr);
 
    const StochVector* row_scale = dynamic_cast<const StochVector*>(row_scale_in);
+   SimpleVector& minmax = dynamic_cast<SimpleVector&>(minmax_);
+
    assert( !has_rowscale || row_scale->children.size() == children.size() );
    if( has_rowscale )
       assert( (row_scale->vecl && mat_link) || ( row_scale->vecl == nullptr && mat_link == nullptr) );
 
-   mat->getColMinMaxVec( get_min, initialize_vec, has_rowscale ? row_scale->vec : nullptr, minmax );
 
    for( size_t i = 0; i < children.size(); i++ )
    {
@@ -285,22 +287,32 @@ void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec
       children[i]->getColMinMaxVecVertical(get_min, false, has_rowscale ? row_scale->children[i] : nullptr, minmax);
    }
 
+   if( distributed )
+   {
+      if( get_min )
+         PIPS_MPIminArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
+      else
+         PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
+   }
+
+   mat->getColMinMaxVec( get_min, initialize_vec, has_rowscale ? row_scale->vec : nullptr, minmax );
+
    if( mat_link )
       mat_link->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, minmax);
 }
 
 /** StochVector colScaleVec, SimpleVector minmaxVec */
-void StringGenMatrix::getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax) const
+void StringGenMatrix::getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax_) const
 {
    assert( !is_vertical );
    const bool has_colscale = (col_scale_in != nullptr);
 
    const StochVector* col_scale = dynamic_cast<const StochVector*>(col_scale_in);
+   SimpleVector& minmax = dynamic_cast<SimpleVector&>(minmax_);
    assert( !has_colscale || col_scale->children.size() == children.size() );
    if( has_colscale )
       assert( (col_scale->vecl && mat_link) || ( col_scale->vecl == nullptr && mat_link == nullptr) );
 
-   mat->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, minmax);
 
    for( size_t i = 0; i < children.size(); i++ )
    {
@@ -310,6 +322,16 @@ void StringGenMatrix::getRowMinMaxVecHorizontal( bool get_min, bool initialize_v
 
       children[i]->getRowMinMaxVecHorizontal(get_min, false, has_colscale ? col_scale->children[i] : nullptr, minmax);
    }
+
+   if( distributed )
+   {
+      if( get_min )
+         PIPS_MPIminArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
+      else
+         PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
+   }
+
+   mat->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, minmax);
 
    if( mat_link )
       mat_link->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->vecl : nullptr, minmax);
