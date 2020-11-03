@@ -81,6 +81,7 @@ void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
    border_bottom->mult(1.0, *y.vecl, alpha, *x.children[0]);
 }
 
+/** y = beta * y + alpha * this^T * x */
 void BorderedGenMatrix::transMult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    /* x column, y row shaped */
