@@ -611,9 +611,9 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
          else
             nstags = 0;
 
-         // x = x + alpha*dx (x=x+alpha*ph)
+         // x = x + alpha * dx ( x = x + alpha * ph)
          x.axpy(alpha, dx);
-         // r = r-alpha*v (s=r-alpha*v)
+         // r = r - alpha * v ( s = r - alpha * v)
          r.axpy(-alpha, v);
 
          //check for convergence
