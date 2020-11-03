@@ -193,7 +193,7 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
 
 void BorderedGenMatrix::addRowSums( OoqpVector& vec_ )
 {
-  assert( hasVecStructureForBorderedMat(vec_, true) );
+  assert( hasVecStructureForBorderedMat( vec_, false ) );
 
   StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
@@ -206,7 +206,7 @@ void BorderedGenMatrix::addRowSums( OoqpVector& vec_ )
 
 void BorderedGenMatrix::addColSums( OoqpVector& vec_ )
 {
-   assert( hasVecStructureForBorderedMat( vec_, false ) );
+   assert( hasVecStructureForBorderedMat( vec_, true ) );
 
    StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
