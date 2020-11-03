@@ -210,11 +210,11 @@ void BorderedGenMatrix::addColSums( OoqpVector& vec_ )
 
    StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
-   border_left->addRowSums( *vec.vec );
-   bottom_left_block->addRowSums( *vec.vec );
+   border_left->addColSums( *vec.vec );
+   bottom_left_block->addColSums( *vec.vec );
 
-   inner_matrix->addRowSums( *vec.children[0] );
-   border_bottom->addRowSums( *vec.children[0] );
+   inner_matrix->addColSums( *vec.children[0] );
+   border_bottom->addColSums( *vec.children[0] );
 }
 
 template<typename T>
