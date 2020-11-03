@@ -1271,38 +1271,61 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
   n0LinkVars = 0;
 }
 
-void sData::writeToStreamDense(ostream& out) const
+void sData::writeToStreamDense( std::ostream& out ) const
 {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   if( myRank == 0 ) out <<  "A: " << std::endl;
+   if( myRank == 0 )
+      out <<  "A: " << std::endl;
    (*A).writeToStreamDense(out);
-   if( myRank == 0 ) out <<  "C: " << std::endl;
+
+   if( myRank == 0 )
+      out <<  "C: " << std::endl;
    (*C).writeToStreamDense(out);
-   if( myRank == 0 ) out <<  "obj: " << std::endl;
-   (*g).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "bA: " << std::endl;
-   (*bA).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "xupp: " << std::endl;
-   (*bux).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "ixupp: " << std::endl;
-   (*ixupp).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "xlow: " << std::endl;
-   (*blx).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "ixlow: " << std::endl;
-   (*ixlow).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "cupp: " << std::endl;
-   (*bu).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "icupp: " << std::endl;
-   (*icupp).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "clow: " << std::endl;
-   (*bl).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "iclow: " << std::endl;
-   (*iclow).writeToStreamAll(out);
+
+   if( myRank == 0 )
+      out <<  "obj: " << std::endl;
+   (*g).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "bA: " << std::endl;
+   (*bA).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "xupp: " << std::endl;
+   (*bux).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "ixupp: " << std::endl;
+   (*ixupp).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "xlow: " << std::endl;
+   (*blx).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "ixlow: " << std::endl;
+   (*ixlow).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "cupp: " << std::endl;
+   (*bu).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "icupp: " << std::endl;
+   (*icupp).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "clow: " << std::endl;
+   (*bl).writeToStream(out);
+
+   if( myRank == 0 )
+      out <<  "iclow: " << std::endl;
+   (*iclow).writeToStream(out);
 }
 
 /** Write the LP in MPS format. Only works if not distributed. */
-void sData::writeMPSformat(ostream& out)
+void sData::writeMPSformat( std::ostream& out)
 {
    // Note: only write the inequalities that have a finite rhs
    // (because no specified rhs of a row implies rhs=0).

@@ -81,13 +81,11 @@ public:
 
   /** Write the components of this OoqpVector, one element per line, to
    *  the stream out.
+   *
+   *  Offsets are used to visualize the StochVector structure (if any)
    */
-  virtual void writeToStreamAll( std::ostream& out ) const {assert(0 && "not implemented here");};
-  virtual void writeToStreamAllStringStream( std::stringstream& sout ) const {assert(0 && "not implemented here");};
-  virtual void writeToStreamAllChild( std::stringstream& sout ) const {assert(0 && "not implemented here");};
+  virtual void writeToStream( std::ostream& out, int offset = 0) const = 0;
 
-
-  virtual void writeToStream( std::ostream& out) const = 0;
   /** Write the components of this OoqpVector to a stream, subject to
    *  a format.
    *  @param out a C++-style output stream

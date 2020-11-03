@@ -13,9 +13,6 @@ class StochTree;
 
 template <typename T>
 class StochVectorBase : public OoqpVectorBase<T> {
-private:
-
-  void writeToStreamAllChild( std::stringstream& sout ) const override;
 
 public:
   StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm);
@@ -104,10 +101,9 @@ public:
    void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
 
    void scalarMult( T num ) override;
-   void writeToStream(std::ostream& out) const override;
-   void writeToStreamAll(std::ostream& out) const override;
-   void writefToStream( std::ostream& out,
-			       const char format[] ) const override;
+   void writeToStream(std::ostream& out, int offset = 0 ) const override;
+   void writefToStream( std::ostream& out, const char format[] ) const override;
+
    void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const override {};
    void writeMPSformatRhs(std::ostream& out, int rowType, const OoqpVectorBase<T>* irhs) const override;
    void writeMPSformatBounds(std::ostream& out, const OoqpVectorBase<T>* ix, bool upperBound) const override;
@@ -239,17 +235,15 @@ public:
 
    void componentMult( const OoqpVectorBase<T>& v ) override {};
    void componentDiv ( const OoqpVectorBase<T>& v ) override {};
-   bool componentEqual( const OoqpVectorBase<T>& v, T tol) const override { if(!v.isKindOf(kStochDummy)) std::cout << "one should never end up here"
-     << std::endl; return v.isKindOf(kStochDummy); };
+   bool componentEqual( const OoqpVectorBase<T>& v, T tol) const override
+      { if(!v.isKindOf(kStochDummy)) std::cout << "one should never end up here" << std::endl; return v.isKindOf(kStochDummy); };
    bool componentNotEqual( const T val, const T tol ) const override { return true; };
    void setNotIndicatedEntriesToVal(T val, const OoqpVectorBase<T>& ind ) override {};
 
-   void scalarMult( T num) override {};
-   void writeToStream(std::ostream& out) const override {};
-   void writeToStreamAll(std::ostream& out) const override {};
-   void writeToStreamAllChild( std::stringstream& sout ) const override {};
-   void writefToStream( std::ostream& out,
-			       const char format[] ) const override {};
+   void scalarMult( T num ) override {};
+   void writeToStream( std::ostream& out, int offset ) const override {};
+   void writefToStream( std::ostream& out, const char format[] ) const override {};
+
    void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const override {};
    void writeMPSformatRhs(std::ostream& out, int rowType, const OoqpVectorBase<T>* irhs) const override {};
    void writeMPSformatBounds(std::ostream& out, const OoqpVectorBase<T>* ix, bool upperBound) const override {};

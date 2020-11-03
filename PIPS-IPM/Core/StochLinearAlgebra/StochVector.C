@@ -1175,7 +1175,7 @@ void StochVectorBase<T>::scalarMult( T num )
 }
 
 template<typename T>
-void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
+void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
 {
    // TODO modify for hierarchical approach
    const int rank = PIPS_MPIgetRank(mpiComm);
@@ -1184,17 +1184,25 @@ void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
    MPI_Status status;
    int l;
    std::stringstream sout;
-   if( rank == 0)
+   if( rank == 0 )
    {
+      for( int i = 0; i < offset; ++i )
+         sout << "\t";
       sout << "--vec--" << std::endl;
       if( vec )
-         vec->writeToStreamAllStringStream(sout);
+         vec->writeToStream( sout, offset );
+      for( int i = 0; i < offset; ++i )
+         sout << "\t";
+      sout << "-------" << std::endl;
+   }
 
+   if( rank == 0 )
+   {
       for( size_t it = 0; it < children.size(); it++ )
-         children[it]->writeToStreamAllChild(sout);
+         children[it]->writeToStream( sout, offset + 1 );
 
       out << sout.str();
-      sout.str(std::string());
+      sout.str( std::string() );
 
       for( int p = 1; p < world_size; p++ )
       {
@@ -1206,44 +1214,35 @@ void StochVectorBase<T>::writeToStreamAll( std::ostream& out ) const
          out << rowPartFromP;
          delete[] buf;
       }
-      if( vecl )
-      {
-         sout << "--vecl--" << std::endl;
-         vecl->writeToStreamAllStringStream(sout);
-      }
-      sout << "----" << std::endl;
-      out << sout.str();
    }
-   else if( iAmDistrib==1 )
-   { // rank != 0
+   else if( iAmDistrib == 1 )
+   {
+      // rank != 0
       for( size_t it = 0; it < children.size(); it++ )
-         children[it]->writeToStreamAllChild(sout);
+         children[it]->writeToStream( sout, offset + 1 );
 
       std::string str = sout.str();
       MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, rank, mpiComm);
+   }
 
+   if( rank == 0 )
+   {
+      for( int i = 0; i < offset; ++i )
+         sout << "\t";
+      sout << "--vecl-" << std::endl;
+
+      if( vecl )
+         vecl->writeToStream( sout, offset );
+
+      for( int i = 0; i < offset; ++i )
+         sout << "\t";
+      sout << "-------" << std::endl;
+
+      out << sout.str();
    }
 
    if( iAmDistrib == 1 )
-      MPI_Barrier(mpiComm);
-}
-
-template<typename T>
-void StochVectorBase<T>::writeToStreamAllChild( std::stringstream& sout ) const
-{
-   sout << "--" << std::endl;
-   vec->writeToStreamAllStringStream(sout);
-
-   for( size_t it = 0; it < children.size(); it++ ){
-      sout << "-- " << std::endl;
-      children[it]->writeToStreamAllChild(sout);
-   }
-
-   if( vecl )
-   {
-      sout << "---" << std::endl;
-      vecl->writeToStreamAllStringStream(sout);
-   }
+      MPI_Barrier( mpiComm );
 }
 
 template<typename T>
@@ -1285,22 +1284,6 @@ void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int&
       if( selects )
          assert(selects->vecl);
       vecl->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vecl : nullptr );
-   }
-}
-
-
-template<typename T>
-void StochVectorBase<T>::writeToStream( std::ostream& out ) const
-{
-   if( vec && PIPS_MPIgetRank() == 0 )
-   {
-      out << "---vec---" << std::endl;
-      vec->writeToStream(out);
-   }
-   if( vecl && PIPS_MPIgetRank() == 0 )
-   {
-      vecl->writeToStream(out);
-      out << "~~~" << std::endl;
    }
 }
 

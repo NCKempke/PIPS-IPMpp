@@ -423,23 +423,14 @@ void SimpleVectorBase<T>::componentDiv ( const OoqpVectorBase<T>& vec )
 }
 
 template<typename T>
-void SimpleVectorBase<T>::writeToStream(std::ostream& out) const
-{
-  this->writefToStream( out, "%{value}" );
-}
-
-template<typename T>
-void SimpleVectorBase<T>::writeToStreamAll(std::ostream& out) const
+void SimpleVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
 {
    for( int i = 0; i < this->n; i++ )
+   {
+      for( int j = 0; j < offset; ++j )
+         out << "\t";
       out << v[i] << "\n";
-}
-
-template<typename T>
-void SimpleVectorBase<T>::writeToStreamAllStringStream(std::stringstream& sout) const
-{
-   for( int i = 0; i < this->n; i++ )
-      sout << v[i] << "\n";
+   }
 }
 
 template<typename T>

@@ -80,10 +80,9 @@ public:
   bool componentNotEqual( const T val, const T tol ) const override;
   void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
 
-  void writeToStream( std::ostream& out ) const override;
-  void writeToStreamAll( std::ostream& out ) const override;
-  void writeToStreamAllStringStream( std::stringstream& sout ) const override;
+  void writeToStream( std::ostream& out, int offset = 0 ) const override;
   void writefToStream( std::ostream& out, const char format[] ) const override;
+
   void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const override;
   void writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const OoqpVectorBase<T>* ix, bool upperBound) const override;
 
