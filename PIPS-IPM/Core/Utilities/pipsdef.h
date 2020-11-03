@@ -532,8 +532,9 @@ template <typename T>
 inline bool PIPS_MPIisValueEqual(const T& val, MPI_Comm mpiComm = MPI_COMM_WORLD)
 {
    // todo make one vec and + - val
-   const int max = PIPS_MPIgetMax(val, MPI_COMM_WORLD);;
-   const int min = PIPS_MPIgetMin(val, MPI_COMM_WORLD);
+   const T max = PIPS_MPIgetMax(val, mpiComm);
+   const T min = PIPS_MPIgetMin(val, mpiComm);
+
    return (max == min);
 }
 
