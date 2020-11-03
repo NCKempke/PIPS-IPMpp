@@ -14,7 +14,7 @@
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
-   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( mpi_comm != MPI_COMM_NULL )
+   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpi_comm) )
 {
    assert( vec || vecl );
 
@@ -27,17 +27,14 @@ StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<
 template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_, int isDistributed/*=-1*/)
   : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_),
-    iAmDistrib(isDistributed)
+    iAmDistrib( isDistributed )
 {
    assert( n_ >= 0 );
    vec = new SimpleVectorBase<T>(n_);
    vecl = nullptr;
 
-   if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm)
-   {
-      const int size = PIPS_MPIgetSize(mpiComm);
-      iAmDistrib = (size == 1) ? 0 : 1;
-   }
+   if( -1 == iAmDistrib )
+      iAmDistrib = PIPS_MPIgetDistributed( mpiComm);
 }
 
 template<typename T>
@@ -63,11 +60,8 @@ StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_, int isDi
    else
       vecl = nullptr;
 
-   if( -1 == iAmDistrib && MPI_COMM_NULL != mpiComm)
-   {
-      const int size = PIPS_MPIgetSize(mpiComm);
-      iAmDistrib = (size == 1) ? 0 : 1;
-   }
+   if( -1 == iAmDistrib )
+      PIPS_MPIgetDistributed( mpiComm );
 }
 
 template<typename T>
@@ -97,24 +91,6 @@ StochVectorBase<T>::~StochVectorBase()
 
   if( vecl )
 	 delete vecl;
-}
-
-template<typename T>
-OoqpVectorBase<T>* StochVectorBase<T>::dataClone() const
-{
-  assert(!vecl);
-  assert( vec );
-
-  OoqpVectorBase<T>* clone = new SimpleVectorBase<T>(vec->length());
-  return clone;
-}
-
-template<typename T>
-OoqpVectorBase<T>* StochVectorBase<T>::dataCloneLinkCons() const
-{
-  assert(vecl);
-  OoqpVectorBase<T>* clone = new SimpleVectorBase<T>(vecl->length());
-  return clone;
 }
 
 template<typename T>
@@ -490,7 +466,7 @@ double StochVectorBase<T>::twonorm() const
   if( PIPSisZero(scale) )
      return 0.0;
 
-  return scale * sqrt(this->dotProductSelf(1 / scale));
+  return scale * std::sqrt( this->dotProductSelf( 1.0 / scale ) );
 }
 
 template<typename T>
@@ -502,12 +478,10 @@ T StochVectorBase<T>::onenorm() const
      onenrm += children[it]->onenorm();
 
   if( iAmDistrib == 1 )
-  {
-     T sum = PIPS_MPIgetSum(onenrm, mpiComm);
-     onenrm = sum;
-  }
+     PIPS_MPIgetSumInPlace(onenrm, mpiComm);
 
-  onenrm += vec->onenorm();
+  if( vec )
+     onenrm += vec->onenorm();
 
   if( vecl )
      onenrm += vecl->onenorm();
@@ -1526,7 +1500,7 @@ T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
    for(size_t it = 0; it < children.size(); it++)
       dot_product += children[it]->dotProductSelf(scaleFactor);
 
-   if( iAmDistrib == 1 )
+   if( iAmDistrib )
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    if( vec )

@@ -44,13 +44,6 @@ public:
   /* flag used to indicate if the children are distributed or not. */
   int iAmDistrib;
 
-  /** Creates and returns a vector of the type used to store data in this node,
-      i.e., same type as 'vec'.
-      NO data is copied, for this use one of the 'copy...' functions.
-  */
-  virtual OoqpVectorBase<T>* dataClone() const;
-  virtual OoqpVectorBase<T>* dataCloneLinkCons() const;
-
   OoqpVectorBase<T>* clone() const override;
   /* copy vector entries as well */
   OoqpVectorBase<T>* cloneFull() const override;
@@ -187,11 +180,6 @@ public:
   void AddChild(StochVectorBase<T>* child) override {};
   void AddChild(OoqpVectorBase<T>* child) override {};
 
-  /** Creates and returns a vector of the type used to store data in this node,
-      i.e., same type as 'vec'.
-      NO data is copied, for this use one of the 'copy...' functions.
-  */
-   OoqpVectorBase<T>* dataClone() const override { return new SimpleVectorBase<T>(0);}
    StochVectorBase<T>* clone() const override { return new StochDummyVectorBase<T>();}
    StochVectorBase<T>* cloneFull() const override { return new StochDummyVectorBase<T>();}
 
