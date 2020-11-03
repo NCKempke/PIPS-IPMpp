@@ -509,31 +509,34 @@ void StochVectorBase<T>::min( T& m, int& index ) const
 {
    // index is broken for StochVector
    index = -1;
-   if( !parent )
-      m = std::numeric_limits<T>::max();
+
+   m = std::numeric_limits<T>::max();
 
    if( vec )
    {
-      T lMin;
-      vec->min( lMin, index );
+      T min_tmp;
+      vec->min( min_tmp, index );
 
-      if( lMin < m )
-         m = lMin;
+      m = std::min( min_tmp, m );
    }
 
    if( vecl )
    {
-      T lMin;
-      vecl->min(lMin, index);
+      T min_tmp;
+      vecl->min(min_tmp, index);
 
-      if( lMin < m )
-         m = lMin;
+      m = std::min( min_tmp, m );
    }
 
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->min(m, index);
+   {
+      T min_tmp;
+      children[it]->min(min_tmp, index);
 
-   if( iAmDistrib == 1 )
+      m = std::min( min_tmp, m );
+   }
+
+   if( iAmDistrib )
       PIPS_MPIgetMinInPlace(m, mpiComm);
 }
 
@@ -542,31 +545,33 @@ void StochVectorBase<T>::max( T& m, int& index ) const
 {
    // index is broken for StochVector
    index = -1;
-   if( !parent )
-      m = -std::numeric_limits<T>::max();
 
+   m = -std::numeric_limits<T>::max();
    if( vec )
    {
-      T lMax = -std::numeric_limits<T>::max();
-      vec->max( lMax, index );
+      T max_tmp;
+      vec->max( max_tmp, index );
 
-      if( m < lMax )
-         m = lMax;
+      m = std::max( m, max_tmp );
    }
 
    if( vecl )
    {
-      T lMax = -std::numeric_limits<T>::max();
-      vecl->max(lMax, index);
+      T max_tmp;
+      vecl->max(max_tmp, index);
 
-      if( m < lMax )
-         m = lMax;
+      m = std::max( m, max_tmp );
    }
 
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->max(m, index);
+   for( size_t it = 0; it < children.size(); it++ )
+   {
+      T max_tmp;
+      children[it]->max(max_tmp, index);
 
-   if( iAmDistrib == 1 )
+      m = std::max( m, max_tmp );
+   }
+
+   if( iAmDistrib )
       PIPS_MPIgetMaxInPlace(m, mpiComm);
 }
 
