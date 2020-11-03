@@ -27,7 +27,7 @@ class StringGenMatrix : public GenMatrix
    protected:
       long long m, n;
       const int id;
-      MPI_Comm mpi_comm;
+      const MPI_Comm mpi_comm;
       const bool distributed;
       const int rank;
 
