@@ -176,6 +176,7 @@ void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, cons
 void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_in )
 {
    assert( hasVecStructureForBorderedMat(minmax_in, true) );
+
    const bool has_rowscale = (row_scale_in != nullptr);
    if( has_rowscale )
       assert( hasVecStructureForBorderedMat(*row_scale_in, false) );
