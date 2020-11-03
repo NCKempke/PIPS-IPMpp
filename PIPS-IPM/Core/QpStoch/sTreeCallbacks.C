@@ -433,7 +433,8 @@ StochGenMatrix* sTreeCallbacks::createA() const
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL) {
+  if( commWrkrs == MPI_COMM_NULL )
+  {
     return new StochGenDummyMatrix(id());
   }
 
