@@ -19,7 +19,7 @@ StringGenMatrix::StringGenMatrix() : mat(nullptr), mat_link(nullptr), is_vertica
 }
 
 StringGenMatrix::StringGenMatrix(int id_, bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_)
-   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), id(id_), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetSize(mpi_comm) > 1 ), rank( PIPS_MPIgetRank(mpi_comm) )
+   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), id(id_), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
    assert(mat);
 
@@ -61,7 +61,7 @@ void StringGenMatrix::addChild(StringGenMatrix* child)
 
    assert( child->is_vertical == this->is_vertical || child->isKindOf( kStringGenDummyMatrix ) );
 
-   if( ! child->isKindOf( kStringGenDummyMatrix ) )
+   if( !child->isKindOf( kStringGenDummyMatrix ) )
    {
       if( is_vertical )
       {
