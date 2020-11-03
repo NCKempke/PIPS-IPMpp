@@ -19,7 +19,7 @@ StringGenMatrix::StringGenMatrix() : mat(nullptr), mat_link(nullptr), is_vertica
 }
 
 StringGenMatrix::StringGenMatrix(int id_, bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_)
-   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), id(id_), mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL), rank(PIPS_MPIgetRank(mpi_comm))
+   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), id(id_), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetSize(mpi_comm) > 1 ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
    assert(mat);
 
@@ -132,8 +132,8 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
    const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
-   assert(y.children.size() == children.size());
    assert(is_vertical);
+   assert( y.children.size() == children.size() );
    if( y.vecl )
       assert( mat_link );
    else
@@ -141,7 +141,6 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
 
    mat->mult(beta, *y.vec, alpha, x);
 
-   /* linking matrix present? */
    if( mat_link )
       mat_link->mult(beta, *y.vecl, alpha, x);
 
@@ -185,7 +184,6 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
 
 void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
-
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
