@@ -132,7 +132,7 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
    const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
-   assert(is_vertical);
+   assert( is_vertical );
    assert( y.children.size() == children.size() );
    if( y.vecl )
       assert( mat_link );
