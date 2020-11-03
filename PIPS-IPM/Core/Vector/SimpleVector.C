@@ -67,49 +67,38 @@ void SimpleVectorBase<T>::absmaxVecUpdate( OoqpVectorBase<T>& absmaxvec) const
 
    for( int i = 0; i < this->n; i++ )
    {
-      const T abs = fabs(v[i]);
+      const T abs = std::abs(v[i]);
       if( abs > absmaxvecArr[i] )
          absmaxvecArr[i] = abs;
    }
 }
 
 template<typename T>
-void SimpleVectorBase<T>::absmin(T& min) const
+void SimpleVectorBase<T>::absmin(T& m) const
 {
-   if (this->n == 0) {
-     min = std::numeric_limits<T>::max();
-     return;
-   }
-   min = fabs(v[0]);
-   for( int i = 0; i < this->n; i++ ) {
-     if( fabs(v[i]) < min ) {
-        min = fabs(v[i]);
-     }
-   }
-}
-
-/** Compute the min absolute value that is larger than zero_eps.
- * If there is no such value, return -1.0 */
- template<typename T>
-void SimpleVectorBase<T>::absminNonZero(T& m, T zero_eps) const
-{
-   assert(zero_eps >= 0.0);
-
-   m = -1.0;
+   m = std::numeric_limits<T>::infinity();
 
    if( this->n == 0 )
       return;
 
-   T min = std::numeric_limits<T>::max();
+   for( int i = 0; i < this->n; ++i )
+      m = std::min( m, std::abs(v[i]) );
+}
+
+/** Compute the min absolute value that is larger than zero_eps.
+ * If there is no such value, return -1.0 */
+template<typename T>
+void SimpleVectorBase<T>::absminNonZero(T& m, T zero_eps) const
+{
+   assert(zero_eps >= 0.0);
+
+   m = std::numeric_limits<T>::infinity();
+   if( this->n == 0 )
+      return;
 
    for( int i = 0; i < this->n; i++ )
-   {
-      if( fabs(v[i]) < min && fabs(v[i]) > zero_eps )
-         min = fabs(v[i]);
-   }
-
-   if( min < std::numeric_limits<T>::max() )
-      m = min;
+      if( std::abs(v[i]) < m && std::abs(v[i]) > zero_eps )
+         m = std::abs(v[i]);
 }
 
 template<typename T>

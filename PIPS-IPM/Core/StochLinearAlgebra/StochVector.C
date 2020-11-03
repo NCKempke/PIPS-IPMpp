@@ -14,7 +14,7 @@
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
-   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpi_comm) )
+   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
    assert( vec || vecl );
 
@@ -34,7 +34,7 @@ StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_, int isDistributed
    vecl = nullptr;
 
    if( -1 == iAmDistrib )
-      iAmDistrib = PIPS_MPIgetDistributed( mpiComm);
+      iAmDistrib = PIPS_MPIgetDistributed( mpiComm );
 }
 
 template<typename T>
@@ -324,34 +324,44 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
 template<typename T>
 bool StochVectorBase<T>::isKindOf( int kind ) const
 {
-  return kind==kStochVector;
+  return (kind == kStochVector);
 }
 
 template<typename T>
 void StochVectorBase<T>::scale( T alpha )
 {
-  vec->scale(alpha);
+   if( vec )
+      vec->scale(alpha);
 
-  if( vecl ) vecl->scale(alpha);
+   if( vecl )
+      vecl->scale(alpha);
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->scale(alpha);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->scale(alpha);
 }
 
 template<typename T>
 bool StochVectorBase<T>::isZero() const
 {
-   assert( vec || vecl );
 	bool is_zero = true;
 
 	if( vec )
-	   is_zero = (is_zero && dynamic_cast<SimpleVectorBase<T>&>(*vec).isZero());
+	{
+	   const bool is_zero_tmp = dynamic_cast<SimpleVectorBase<T>&>(*vec).isZero();
+	   is_zero = is_zero && is_zero_tmp;
+	}
 
 	if( vecl )
-		is_zero = (is_zero && dynamic_cast<SimpleVectorBase<T>&>(*vecl).isZero());
+   {
+	   const bool is_zero_tmp = dynamic_cast<SimpleVectorBase<T>&>(*vecl).isZero();
+	   is_zero = is_zero && is_zero_tmp;
+   }
 
 	for( size_t node = 0; node < children.size(); ++node )
-		is_zero = (is_zero && children[node]->isZero());
+	{
+	   const bool is_zero_tmp = children[node]->isZero();
+		is_zero = ( is_zero && is_zero_tmp );
+	}
 
 	return is_zero;
 }
@@ -359,8 +369,6 @@ bool StochVectorBase<T>::isZero() const
 template<typename T>
 void StochVectorBase<T>::setToZero()
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->setToZero();
 
@@ -374,8 +382,6 @@ void StochVectorBase<T>::setToZero()
 template<typename T>
 void StochVectorBase<T>::setToConstant( T c)
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->setToConstant(c);
 
@@ -396,7 +402,6 @@ void StochVectorBase<T>::randomize( T alpha, T beta, T *ix )
 template<typename T>
 void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
 {
-   assert( vec || vecl );
    const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
 
    if( this->vec )
@@ -404,16 +409,18 @@ void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
       assert( v.vec );
       this->vec->copyFrom(*v.vec);
    }
+   else
+      assert( v.vec == nullptr );
 
    if( this->vecl )
    {
       assert( v.vecl );
       this->vecl->copyFrom(*v.vecl);
    }
+   else
+      assert( v.vecl == nullptr );
 
-   //assert tree compatibility
    assert( children.size() == v.children.size() );
-
    for(size_t it = 0; it < children.size(); it++)
       children[it]->copyFrom(*v.children[it]);
 }
@@ -423,17 +430,23 @@ void StochVectorBase<T>::copyFromAbs(const OoqpVectorBase<T>& v_ )
 {
   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
 
-  this->vec->copyFromAbs(*v.vec);
+  if( this->vec )
+  {
+     assert( v.vec );
+     this->vec->copyFromAbs(*v.vec);
+  }
+  else
+     assert( v.vec == nullptr );
 
   if( this->vecl )
   {
      assert(v.vecl);
      this->vecl->copyFromAbs(*v.vecl);
   }
+  else
+     assert( v.vecl == nullptr );
 
-  //assert tree compatibility
   assert(children.size() == v.children.size());
-
   for(size_t it = 0; it < children.size(); it++)
     children[it]->copyFromAbs(*v.children[it]);
 }
@@ -454,6 +467,7 @@ T StochVectorBase<T>::infnorm() const
 
    if( vecl )
       infnrm = std::max(vecl->infnorm(), infnrm);
+
    return infnrm;
 }
 
@@ -472,21 +486,21 @@ double StochVectorBase<T>::twonorm() const
 template<typename T>
 T StochVectorBase<T>::onenorm() const
 {
-  T onenrm = 0.0;
+  T onenorm = 0.0;
 
   for( size_t it = 0; it < children.size(); it++ )
-     onenrm += children[it]->onenorm();
+     onenorm += children[it]->onenorm();
 
-  if( iAmDistrib == 1 )
-     PIPS_MPIgetSumInPlace(onenrm, mpiComm);
+  if( iAmDistrib )
+     PIPS_MPIgetSumInPlace(onenorm, mpiComm);
 
   if( vec )
-     onenrm += vec->onenorm();
+     onenorm += vec->onenorm();
 
   if( vecl )
-     onenrm += vecl->onenorm();
+     onenorm += vecl->onenorm();
 
-  return onenrm;
+  return onenorm;
 }
 
 
@@ -527,6 +541,7 @@ template<typename T>
 void StochVectorBase<T>::max( T& m, int& index ) const
 {
    // index is broken for StochVector
+   index = -1;
    if( !parent )
       m = -std::numeric_limits<T>::max();
 
@@ -559,129 +574,112 @@ template<typename T>
 void StochVectorBase<T>::absminVecUpdate(OoqpVectorBase<T>& absminvec) const
 {
    StochVectorBase<T>& absminvecStoch = dynamic_cast<StochVectorBase<T>&>(absminvec);
-   assert(absminvecStoch.children.size() == children.size());
+
+   if( vec )
+   {
+      assert( absminvecStoch.vec );
+      vec->absminVecUpdate(*(absminvecStoch.vec));
+   }
+   else
+      assert( absminvecStoch.vec == nullptr );
 
    if( vecl )
    {
-      assert(absminvecStoch.vecl);
-      vecl->absminVecUpdate(*(absminvecStoch.vecl));
+      assert( absminvecStoch.vecl );
+      vecl->absminVecUpdate( *absminvecStoch.vecl );
    }
+   else
+      assert( absminvecStoch.vecl == nullptr );
 
-   vec->absminVecUpdate(*(absminvecStoch.vec));
-
+   assert( absminvecStoch.children.size() == children.size() );
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->absminVecUpdate(*(absminvecStoch.children[it]));
+      children[it]->absminVecUpdate( *absminvecStoch.children[it] );
 }
 
 template<typename T>
 void StochVectorBase<T>::absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const
 {
    StochVectorBase<T>& absmaxvecStoch = dynamic_cast<StochVectorBase<T>&>(absmaxvec);
-   assert(absmaxvecStoch.children.size() == children.size());
+
+   if( vec )
+   {
+      assert( absmaxvecStoch.vec );
+      vec->absmaxVecUpdate( *absmaxvecStoch.vec);
+   }
+   else
+      assert( absmaxvecStoch.vec == nullptr );
 
    if( vecl )
    {
-      assert(absmaxvecStoch.vecl);
-      vecl->absmaxVecUpdate(*(absmaxvecStoch.vecl));
+      assert( absmaxvecStoch.vecl );
+      vecl->absmaxVecUpdate( *absmaxvecStoch.vecl );
    }
+   else
+      assert( absmaxvecStoch.vecl == nullptr );
 
-   vec->absmaxVecUpdate(*(absmaxvecStoch.vec));
-
+   assert( absmaxvecStoch.children.size() == children.size() );
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->absmaxVecUpdate(*(absmaxvecStoch.children[it]));
+      children[it]->absmaxVecUpdate( *absmaxvecStoch.children[it] );
 }
 
 template<typename T>
 void StochVectorBase<T>::absmin(T& m) const
 {
-   T lMin;
+   T min_tmp = std::numeric_limits<T>::infinity();
 
-   if(nullptr==parent) {
-     vec->absmin(m);
-     if( vecl )
-     {
-        vecl->absmin(lMin);
-        if( lMin < m )
-           m = lMin;
-     }
-   } else {
-     vec->absmin(lMin);
-
-     if( vecl )
-     {
-        T lMinlink;
-        vecl->absmin(lMinlink);
-        if( lMinlink < lMin )
-           lMin = lMinlink;
-     }
-
-     if(lMin < m)
-       m = lMin;
+   if( vec )
+   {
+      vec->absmin( min_tmp );
+      m = std::min( m, min_tmp );
    }
 
-   for(size_t it=0; it<children.size(); it++) {
-     children[it]->absmin(m);
+   if( vecl )
+   {
+      vecl->absmin( min_tmp );
+      m = std::min( m, min_tmp );
    }
 
-   if(iAmDistrib == 1) {
-     T minG = PIPS_MPIgetMin(m, mpiComm);
-     m = minG;
+   for( size_t it = 0; it < children.size(); ++it )
+   {
+      children[it]->absmin( min_tmp );
+      m = std::min( m, min_tmp );
    }
+
+   if( iAmDistrib )
+      PIPS_MPIgetMinInPlace(m, mpiComm);
+
    assert( m >= 0.0 );
 }
 
 template<typename T>
 void StochVectorBase<T>::absminNonZero(T& m, T zero_eps) const
 {
-   T min;
-
    assert(zero_eps >= 0.0);
+   m = std::numeric_limits<T>::infinity();
+   T min_tmp = std::numeric_limits<T>::infinity();
 
-   vec->absminNonZero(m, zero_eps);
-
-   assert(m >= zero_eps || m == -1.0);
-
+   if( vec )
+   {
+      vec->absminNonZero(min_tmp, zero_eps);
+      m = std::min( min_tmp, m );
+   }
 
    if( vecl )
    {
-      vecl->absminNonZero(min, zero_eps);
-      if( min >= 0.0 && (min < m  || m < 0.0) )
-      {
-         m = min;
-         assert(m >= zero_eps || m == -1.0);
-      }
+      vecl->absminNonZero(min_tmp, zero_eps);
+      m = std::min( min_tmp, m );
    }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->absminNonZero(min, zero_eps);
-
-      if( min >= 0.0 && (min < m  || m < 0.0) )
-      {
-         m = min;
-         assert(m >= zero_eps || m == -1.0);
-      }
+      children[it]->absminNonZero(min_tmp, zero_eps);
+      m = std::min( min_tmp, m );
    }
 
-   if( iAmDistrib == 1 )
-   {
-      T minG;
-      if( m < 0.0 )
-         min = std::numeric_limits<T>::max();
-      else
-      {
-         min = m;
-         assert(min >= zero_eps);
-      }
+   if( iAmDistrib )
+      PIPS_MPIgetMinInPlace(m, mpiComm);
 
-      minG = PIPS_MPIgetMin(min, mpiComm);
-
-      if( minG < std::numeric_limits<T>::max() )
-         m = minG;
-      else
-         m = -1.0;
-   }
-   assert(m >= zero_eps || m == -1.0);
+   assert( m >= zero_eps );
 }
 
 
@@ -709,12 +707,12 @@ T StochVectorBase<T>::stepbound(const OoqpVectorBase<T> & v_, T maxStep ) const
   }
 
   //check tree compatibility
-  assert(children.size() == v.children.size());
+  assert( children.size() == v.children.size() );
 
   for(size_t it = 0; it < children.size(); it++)
     step = children[it]->stepbound(*v.children[it], step);
 
-  if(iAmDistrib == 1)
+  if(iAmDistrib )
      PIPS_MPIgetMinInPlace(step, mpiComm);
 
   return step;
@@ -1023,44 +1021,52 @@ template<typename T>
 void StochVectorBase<T>::componentMult( const OoqpVectorBase<T>& v_ )
 {
    const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-   assert(v.children.size() == children.size());
 
    if( vec )
    {
       assert( v.vec );
-     vec->componentMult(*v.vec);
+      vec->componentMult( *v.vec );
    }
+   else
+      assert( v.vec == nullptr );
 
    if( vecl )
    {
       assert( v.vecl );
-      vecl->componentMult(*v.vecl);
+      vecl->componentMult( *v.vecl );
    }
+   else
+      assert( v.vecl == nullptr );
 
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->componentMult(*v.children[it]);
+   assert( v.children.size() == children.size() );
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->componentMult( *v.children[it] );
 }
 
 template<typename T>
 void StochVectorBase<T>::componentDiv ( const OoqpVectorBase<T>& v_ )
 {
    const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-   assert(v.children.size() == children.size());
 
    if( vec )
    {
       assert( v.vec );
-      vec->componentDiv(*v.vec);
+      vec->componentDiv( *v.vec );
    }
+   else
+      assert( v.vec == nullptr );
 
    if( vecl )
    {
       assert( v.vecl );
-      vecl->componentDiv(*v.vecl);
+      vecl->componentDiv( *v.vecl );
    }
+   else
+      assert( v.vecl == nullptr );
 
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->componentDiv(*v.children[it]);
+   assert( v.children.size() == children.size() );
+   for( size_t it = 0; it < children.size(); ++it )
+      children[it]->componentDiv( *v.children[it] );
 }
 
 template<typename T>
@@ -1072,31 +1078,43 @@ bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol) con
    bool component_equal = true;
 
    if( vec )
-      component_equal = (component_equal && vec->componentEqual(*v.vec, tol));
-   if( !component_equal )
    {
-      if(parent == NULL)
-        std::cout << "not equal in root node non-link" << std::endl;
-      return component_equal;
+      assert( v.vec );
+      const bool component_equal_tmp = vec->componentEqual(*v.vec, tol);
+      component_equal = component_equal && component_equal_tmp;
    }
+   else
+      assert( v.vec == nullptr );
+
+   if( !component_equal )
+      if( parent == NULL )
+        std::cout << "not equal in root node non-link" << std::endl;
 
    if( vecl )
-      component_equal = (component_equal && vecl->componentEqual(*v.vecl, tol));
-   if( !component_equal )
    {
-      std::cout << "not equal in root node link" << std::endl;
-      return component_equal;
+      assert( v.vecl );
+      const bool component_equal_tmp = vecl->componentEqual(*v.vecl, tol);
+      component_equal = component_equal && component_equal_tmp;
    }
+   else
+      assert( v.vecl == nullptr );
+
+   if( !component_equal )
+      if( parent == NULL )
+         std::cout << "not equal in root node link" << std::endl;
 
    for(size_t child = 0; child < children.size(); child++)
    {
-      component_equal = (component_equal && children[child]->componentEqual(*v.children[child], tol));
+      const bool component_equal_tmp = children[child]->componentEqual(*v.children[child], tol);
+      component_equal = component_equal_tmp && component_equal;
+
       if( !component_equal )
-      {
          std::cout << "not equal in root child node " << child << std::endl;
-         return component_equal;
-      }
    }
+
+   if( iAmDistrib )
+      PIPS_MPIgetLogicAndInPlace(component_equal, mpiComm);
+
    return component_equal;
 }
 
@@ -1106,46 +1124,49 @@ bool StochVectorBase<T>::componentNotEqual( const T val, const T tol ) const
    bool not_equal = true;
 
    if( vec )
-      not_equal = (not_equal && vec->componentNotEqual( val, tol ) );
-   if( !not_equal )
    {
-      if(parent == NULL)
-        std::cout << "equal in root node non-link" << std::endl;
-      return not_equal;
+      const bool not_equal_tmp = vec->componentNotEqual( val, tol );
+      not_equal = not_equal_tmp && not_equal;
    }
 
-   if( vecl )
-      not_equal = (not_equal && vecl->componentNotEqual(val, tol));
    if( !not_equal )
+      if( parent == NULL )
+        std::cout << "equal in root node non-link" << std::endl;
+
+   if( vecl )
    {
-      std::cout << "equal in root node link" << std::endl;
-      return not_equal;
+      const bool not_equal_tmp = vecl->componentNotEqual(val, tol);
+      not_equal = not_equal_tmp && not_equal;
    }
+
+   if( !not_equal )
+      std::cout << "equal in root node link" << std::endl;
 
    for(size_t child = 0; child < children.size(); child++)
    {
-      not_equal = (not_equal && children[child]->componentNotEqual(val, tol));
+      const bool not_equal_tmp = children[child]->componentNotEqual(val, tol);
+      not_equal = not_equal && not_equal_tmp;
+
       if( !not_equal )
-      {
          std::cout << "equal in root child node " << child << std::endl;
-         return not_equal;
-      }
    }
+
+   if( iAmDistrib )
+      PIPS_MPIgetLogicAndInPlace(not_equal, mpiComm);
+
    return not_equal;
 }
 
 template<typename T>
 void StochVectorBase<T>::scalarMult( T num )
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->scalarMult(num);
    if( vecl )
       vecl->scalarMult(num);
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->scalarMult(num);
+  for( size_t it = 0; it < children.size(); ++it )
+     children[it]->scalarMult( num );
 }
 
 template<typename T>
@@ -1349,28 +1370,30 @@ void StochVectorBase<T>::writeMPSformatBounds(std::ostream& out, const OoqpVecto
 template<typename T>
 void StochVectorBase<T>::axpy ( T alpha, const OoqpVectorBase<T>& x_ )
 {
-   assert( vec || vecl );
-
    const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
-   assert(x.children.size() == children.size());
 
-   if( alpha == 0.0)
+   if( alpha == 0.0 )
       return;
 
    if( vec )
    {
       assert( x.vec );
-      vec->axpy(alpha, *x.vec);
+      vec->axpy( alpha, *x.vec );
    }
+   else
+      assert( x.vec == nullptr );
 
    if( vecl )
    {
-      assert(x.vecl);
-      vecl->axpy(alpha, *x.vecl);
+      assert( x.vecl );
+      vecl->axpy( alpha, *x.vecl );
    }
+   else
+      assert( x.vecl == nullptr );
 
-   for(size_t it = 0; it<children.size(); it++)
-      children[it]->axpy(alpha, *x.children[it]);
+   assert( x.children.size() == children.size() );
+   for( size_t it = 0; it < children.size(); ++it )
+      children[it]->axpy( alpha, *x.children[it] );
 }
 
 /** this += alpha * x * z */
@@ -1379,85 +1402,99 @@ void StochVectorBase<T>::axzpy( T alpha, const OoqpVectorBase<T>& x_, const Ooqp
 {
   const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
   const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
-  assert(x.children.size() == children.size());
-  assert(z.children.size() == children.size());
-
-  if( x.vec || z.vec )
-     assert( vec );
 
   if( vec )
   {
      assert( x.vec );
      assert( z.vec );
-     vec->axzpy(alpha, *x.vec, *z.vec);
+     vec->axzpy( alpha, *x.vec, *z.vec );
   }
-
-  if( x.vecl || z.vecl )
-     assert( vecl );
+  else
+  {
+     assert( x.vec == nullptr );
+     assert( z.vec == nullptr );
+  }
 
   if( vecl )
   {
-     assert(x.vecl);
-     assert(z.vecl);
-     vecl->axzpy(alpha, *x.vecl, *z.vecl);
+     assert( x.vecl );
+     assert( z.vecl );
+     vecl->axzpy( alpha, *x.vecl, *z.vecl );
+  }
+  else
+  {
+     assert( x.vecl == nullptr );
+     assert( z.vecl == nullptr );
   }
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->axzpy(alpha, *x.children[it], *z.children[it]);
+  assert( x.children.size() == children.size() );
+  assert( z.children.size() == children.size() );
+  for( size_t it = 0; it < children.size(); ++it )
+     children[it]->axzpy( alpha, *x.children[it], *z.children[it] );
 }
 
 /** this += alpha * x / z */
 template<typename T>
 void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_ )
 {
-   assert( vec || vecl );
    const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
    const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
-   assert(x.children.size() == children.size());
-   assert(z.children.size() == children.size());
 
    if( vec )
    {
       assert( x.vec );
       assert( z.vec );
-      vec->axdzpy(alpha, *x.vec, *z.vec);
+      vec->axdzpy( alpha, *x.vec, *z.vec );
+   }
+   else
+   {
+      assert( x.vec == nullptr );
+      assert( z.vec == nullptr );
    }
 
    if( vecl )
    {
       assert(x.vecl);
       assert(z.vecl);
-      vecl->axdzpy(alpha, *x.vecl, *z.vecl);
+      vecl->axdzpy(alpha, *x.vecl, *z.vecl );
+   }
+   else
+   {
+      assert( x.vecl == nullptr );
+      assert( z.vecl == nullptr );
    }
 
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->axdzpy(alpha, *x.children[it], *z.children[it]);
+   assert( x.children.size() == children.size() );
+   assert( z.children.size() == children.size() );
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->axdzpy( alpha, *x.children[it], *z.children[it] );
 }
 
 
 template<typename T>
 void StochVectorBase<T>::addConstant( T c )
 {
-  vec->addConstant(c);
+   if( vec )
+      vec->addConstant(c);
 
-  if( vecl ) vecl->addConstant(c);
+   if( vecl )
+      vecl->addConstant(c);
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->addConstant(c);
+  for( size_t it = 0; it < children.size(); it++ )
+     children[it]->addConstant(c);
 }
 
 
 template<typename T>
 void StochVectorBase<T>::gondzioProjection( T rmin, T rmax )
 {
-   assert( vec || vecl );
    if( vec )
       vec->gondzioProjection( rmin, rmax );
 
    if( vecl )
       vecl->gondzioProjection( rmin, rmax );
 
-   for(size_t it = 0; it < children.size(); it++)
+   for( size_t it = 0; it < children.size(); it++ )
       children[it]->gondzioProjection( rmin, rmax );
 }
 
@@ -1465,29 +1502,31 @@ template<typename T>
 T StochVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& v_ ) const
 {
    const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-   assert(v.children.size() == children.size());
 
    T dot_product = 0.0;
 
+   assert( v.children.size() == children.size() );
    for(size_t it = 0; it < children.size(); it++)
-      dot_product += children[it]->dotProductWith(*v.children[it]);
+      dot_product += children[it]->dotProductWith( *v.children[it] );
 
-   assert(!vecl || v.vecl);
-
-   if(iAmDistrib == 1)
+   if( iAmDistrib )
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    if( vec )
    {
       assert( v.vec );
-      dot_product += vec->dotProductWith(*v.vec);
+      dot_product += vec->dotProductWith( *v.vec );
    }
+   else
+      assert( v.vec == nullptr );
 
    if( vecl )
    {
       assert( v.vecl );
-      dot_product += vecl->dotProductWith(*v.vecl);
+      dot_product += vecl->dotProductWith( *v.vecl );
    }
+   else
+      assert( v.vecl == nullptr );
 
   return dot_product;
 }
@@ -1497,17 +1536,17 @@ T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
 {
    T dot_product = 0.0;
 
-   for(size_t it = 0; it < children.size(); it++)
-      dot_product += children[it]->dotProductSelf(scaleFactor);
+   for( size_t it = 0; it < children.size(); it++ )
+      dot_product += children[it]->dotProductSelf( scaleFactor );
 
    if( iAmDistrib )
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    if( vec )
-      dot_product += vec->dotProductSelf(scaleFactor);
+      dot_product += vec->dotProductSelf( scaleFactor );
 
    if( vecl )
-      dot_product += vecl->dotProductSelf(scaleFactor);
+      dot_product += vecl->dotProductSelf( scaleFactor );
 
    return dot_product;
 }
@@ -1523,10 +1562,14 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
    const StochVectorBase<T>& yvec   = dynamic_cast<const StochVectorBase<T>&>(yvec_);
    const StochVectorBase<T>& ystep  = dynamic_cast<const StochVectorBase<T>&>(ystep_);
 
-
    T dot_product = 0.0;
-   for(size_t it = 0; it < children.size(); it++)
-      dot_product += children[it]->shiftedDotProductWith(alpha, *mystep.children[it], *yvec.children[it], beta, *ystep.children[it]);
+
+   assert( this->children.size() == mystep.children.size() );
+   assert( this->children.size() == yvec.children.size() );
+   assert( this->children.size() == ystep.children.size() );
+
+   for( size_t it = 0; it < children.size(); it++ )
+      dot_product += children[it]->shiftedDotProductWith( alpha, *mystep.children[it], *yvec.children[it], beta, *ystep.children[it] );
 
    if( iAmDistrib )
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
@@ -1536,15 +1579,27 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
       assert( mystep.vec );
       assert( yvec.vec );
       assert( ystep.vec );
-      dot_product += vec->shiftedDotProductWith(alpha, *mystep.vec, *yvec.vec, beta, *ystep.vec);
+      dot_product += vec->shiftedDotProductWith( alpha, *mystep.vec, *yvec.vec, beta, *ystep.vec );
+   }
+   else
+   {
+      assert( mystep.vec == nullptr );
+      assert( yvec.vec == nullptr );
+      assert( ystep.vec == nullptr );
    }
 
    if( vecl )
    {
-      assert(mystep.vecl);
-      assert(yvec.vecl);
-      assert(ystep.vecl);
-      dot_product += vecl->shiftedDotProductWith(alpha, *mystep.vecl,  *yvec.vecl, beta, *ystep.vecl);
+      assert( mystep.vecl );
+      assert( yvec.vecl );
+      assert( ystep.vecl );
+      dot_product += vecl->shiftedDotProductWith( alpha, *mystep.vecl, *yvec.vecl, beta, *ystep.vecl );
+   }
+   else
+   {
+      assert( mystep.vecl == nullptr );
+      assert( yvec.vecl == nullptr );
+      assert( ystep.vecl == nullptr );
    }
 
    return dot_product;
@@ -1553,37 +1608,31 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
 template<typename T>
 void StochVectorBase<T>::negate()
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->negate();
    if( vecl )
       vecl->negate();
 
-   for(size_t it = 0; it < children.size(); it++)
+   for( size_t it = 0; it < children.size(); it++ )
       children[it]->negate();
 }
 
 template<typename T>
 void StochVectorBase<T>::invert()
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->invert();
 
    if( vecl )
       vecl->invert();
 
-   for(size_t it = 0; it < children.size(); it++)
+   for( size_t it = 0; it < children.size(); it++ )
       children[it]->invert();
 }
 
 template<typename T>
 void StochVectorBase<T>::invertSave(T zeroReplacementVal)
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->invertSave( zeroReplacementVal );
 
@@ -1591,14 +1640,12 @@ void StochVectorBase<T>::invertSave(T zeroReplacementVal)
       vecl->invertSave( zeroReplacementVal );
 
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->invertSave(zeroReplacementVal);
+      children[it]->invertSave( zeroReplacementVal );
 }
 
 template<typename T>
 void StochVectorBase<T>::applySqrt()
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->applySqrt();
 
@@ -1612,7 +1659,6 @@ void StochVectorBase<T>::applySqrt()
 template<typename T>
 void StochVectorBase<T>::roundToPow2()
 {
-   assert(vec || vecl);
    if( vec )
       vec->roundToPow2();
 
@@ -1626,22 +1672,29 @@ void StochVectorBase<T>::roundToPow2()
 template<typename T>
 bool StochVectorBase<T>::allPositive() const
 {
-   assert( vec || vecl );
    bool all_pos = true;
 
    if( vec )
-      all_pos = all_pos && vec->allPositive();
+   {
+      const bool all_pos_tmp = vec->allPositive();
+      all_pos = all_pos && all_pos_tmp;
+   }
 
    if( vecl )
-      all_pos = all_pos && vecl->allPositive();
+   {
+      const bool all_pos_tmp = vecl->allPositive();
+      all_pos = all_pos && all_pos_tmp;
+   }
 
    for(size_t it = 0; it < children.size(); it++)
-      all_pos = all_pos && children[it]->allPositive();
+   {
+      const bool all_pos_tmp = children[it]->allPositive();
+      all_pos = all_pos && all_pos_tmp;
+   }
 
    if( iAmDistrib )
       PIPS_MPIgetLogicAndInPlace( all_pos, mpiComm );
 
-   assert( false );
    return all_pos;
 }
 
@@ -1649,26 +1702,36 @@ template<typename T>
 bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_ ) const
 {
   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-  assert(children.size() == select.children.size());
 
   bool match = true;
+
   if( vec )
   {
      assert( select.vec );
-     match = match && vec->matchesNonZeroPattern(*select.vec);
+     const bool match_tmp = vec->matchesNonZeroPattern( *select.vec );
+     match = match && match_tmp;
   }
+  else
+     assert( select.vec == nullptr );
 
   if( vecl )
   {
      assert(select.vecl);
-     match = match && vecl->matchesNonZeroPattern(*select.vecl);
+     const bool match_tmp = vecl->matchesNonZeroPattern( *select.vecl );
+     match = match && match_tmp;
+  }
+  else
+     assert( select.vecl == nullptr );
+
+  assert( children.size() == select.children.size() );
+  for( size_t it = 0; it < children.size() && match; it++ )
+  {
+     const bool match_tmp = children[it]->matchesNonZeroPattern( *select.children[it] );
+     match = match && match_tmp;
   }
 
-  if( !match )
-     return false;
-
-  for(size_t it = 0; it < children.size() && match; it++)
-    match = children[it]->matchesNonZeroPattern(*select.children[it]);
+  if( iAmDistrib )
+     PIPS_MPIgetLogicAndInPlace( match, mpiComm );
 
   return match;
 }
@@ -1676,31 +1739,31 @@ bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_
 template<typename T>
 void StochVectorBase<T>::selectNonZeros( const OoqpVectorBase<T>& select_ )
 {
-   assert( vec || vecl );
    const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-   assert(children.size() == select.children.size());
 
    if( vec )
    {
       assert( select.vec );
-      vec->selectNonZeros(*select.vec);
+      vec->selectNonZeros( *select.vec );
    }
-
+   else
+      assert( select.vec == nullptr );
    if( vecl )
    {
-      assert(select.vecl);
-      vecl->selectNonZeros(*select.vecl);
+      assert( select.vecl );
+      vecl->selectNonZeros( *select.vecl );
    }
+   else
+      assert( select.vecl == nullptr );
 
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->selectNonZeros(*select.children[it]);
+   assert(children.size() == select.children.size());
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->selectNonZeros( *select.children[it] );
 }
 
 template<typename T>
 void StochVectorBase<T>::selectPositive()
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->selectPositive();
 
@@ -1714,8 +1777,6 @@ void StochVectorBase<T>::selectPositive()
 template<typename T>
 void StochVectorBase<T>::selectNegative()
 {
-   assert( vec || vecl );
-
    if( vec )
       vec->selectNegative();
 
@@ -1729,19 +1790,15 @@ void StochVectorBase<T>::selectNegative()
 template<typename T>
 long long StochVectorBase<T>::numberOfNonzeros() const
 {
-   assert( vec || vecl );
    //!opt - store the number of nnz to avoid communication
   long long nnz = 0;
 
   for(size_t it = 0; it < children.size(); it++)
-    nnz += children[it]->numberOfNonzeros();
+     nnz += children[it]->numberOfNonzeros();
 
   if( iAmDistrib )
-  {
-    long long nnzG = 0;
-    nnzG = PIPS_MPIgetSum(nnz, mpiComm);
-    nnz = nnzG;
-  }
+     PIPS_MPIgetSumInPlace( nnz, mpiComm );
+
   if( vec )
      nnz += vec->numberOfNonzeros();
 
@@ -1755,7 +1812,6 @@ template<typename T>
 void
 StochVectorBase<T>::addSomeConstants(T c, const OoqpVectorBase<T> &select_)
 {
-   assert( vec || vecl );
    const StochVectorBase<T> &select = dynamic_cast<const StochVectorBase<T>&>(select_);
    assert(children.size() == select.children.size());
 
@@ -1764,12 +1820,16 @@ StochVectorBase<T>::addSomeConstants(T c, const OoqpVectorBase<T> &select_)
       assert( select.vec );
       vec->addSomeConstants(c, *select.vec);
    }
+   else
+      assert( select.vec == nullptr );
 
    if( vecl )
    {
       assert(select.vecl);
       vecl->addSomeConstants(c, *select.vecl);
    }
+   else
+      assert( select.vecl == nullptr );
 
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->addSomeConstants(c, *select.children[it]);
@@ -1780,14 +1840,13 @@ void StochVectorBase<T>::writefSomeToStream( std::ostream& out,
 			 const char format[],
 			 const OoqpVectorBase<T>& select_ ) const
 {
-   assert( "Have not been yet implemented" && 0 );
+   assert( "Not yet implemented" && 0 );
 }
 
 template<typename T>
 void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
 		       const OoqpVectorBase<T>& z_, const OoqpVectorBase<T>& select_ )
 {
-   assert( vec || vecl );
    const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
    const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
    const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
@@ -1803,6 +1862,12 @@ void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
       assert( select.vec );
       vec->axdzpy(alpha, *x.vec, *z.vec, *select.vec);
    }
+   else
+   {
+      assert( x.vec == nullptr );
+      assert( z.vec == nullptr );
+      assert( select.vec == nullptr );
+   }
 
    if( vecl )
    {
@@ -1810,6 +1875,12 @@ void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
       assert( z.vecl );
       assert( select.vecl );
       vecl->axdzpy(alpha, *x.vecl, *z.vecl, *select.vecl);
+   }
+   else
+   {
+      assert( x.vecl == nullptr );
+      assert( z.vecl == nullptr );
+      assert( select.vecl == nullptr );
    }
 
    for(size_t it = 0; it < children.size(); it++)
@@ -1819,28 +1890,39 @@ void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
 template<typename T>
 bool StochVectorBase<T>::somePositive( const OoqpVectorBase<T>& select_ ) const
 {
-   assert( vec || vecl );
    const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
    assert( children.size() == select.children.size() );
 
    bool some_positive = true;;
+
+   for(size_t it = 0; it < children.size(); it++)
+   {
+      const bool some_pos_tmp = children[it]->somePositive( *select.children[it] );
+      some_positive = some_positive && some_pos_tmp;
+   }
+
+   if( iAmDistrib )
+      PIPS_MPIgetLogicAndInPlace( some_positive, mpiComm );
+
    if( vec )
    {
       assert( select.vec );
-      some_positive = some_positive && vec->somePositive(*select.vec);
+      const bool some_pos_tmp = vec->somePositive(*select.vec);
+      some_positive = some_positive && some_pos_tmp;
    }
+   else
+      assert( select.vec == nullptr );
 
    if( vecl )
    {
       assert(select.vecl);
-      some_positive = some_positive && vecl->somePositive(*select.vecl);
+      const bool some_pos_tmp = vecl->somePositive(*select.vecl);
+      some_positive = some_positive && some_pos_tmp;
    }
+   else
+      assert( select.vecl == nullptr );
 
-   for(size_t it = 0; it < children.size(); it++)
-      some_positive = children[it]->somePositive(*select.children[it]);
-
-   // ! parallel..
-   return some_positive ;
+   return some_positive;
 }
 
 template<typename T>
@@ -1851,14 +1933,17 @@ void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVe
 
    assert(children.size() == div.children.size());
    assert(children.size() == select.children.size());
-   assert(vec || vecl);
 
    if( vec )
    {
       assert(div.vec);
       assert(select.vec);
       vec->divideSome(*div.vec, *select.vec);
-
+   }
+   else
+   {
+      assert( div.vec == nullptr );
+      assert( select.vec == nullptr );
    }
 
    if( vecl )
@@ -1866,6 +1951,11 @@ void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVe
       assert(div.vecl);
       assert(select.vecl);
       vecl->divideSome(*div.vecl, *select.vecl);
+   }
+   else
+   {
+      assert( div.vecl == nullptr );
+      assert( select.vecl == nullptr );
    }
 
    for( size_t it = 0; it < children.size(); it++ )
@@ -1891,35 +1981,39 @@ void StochVectorBase<T>::copyFromArray( const char v[] )
 }
 
 template<typename T>
-void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select )
+void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
 {
-   assert( vec || vecl );
-   const StochVectorBase<int>& selectStoch = dynamic_cast<const StochVectorBase<int>&>(select);
-   assert(children.size() == selectStoch.children.size());
+   const StochVectorBase<int>& select = dynamic_cast<const StochVectorBase<int>&>(select_);
+   assert(children.size() == select.children.size());
 
    this->n = 0;
 
    if( vec )
    {
-      assert( selectStoch.vec );
-      vec->removeEntries(*selectStoch.vec);
+      assert( select.vec );
+      vec->removeEntries(*select.vec);
       this->n = vec->n;
    }
+   else
+      assert( select.vec == nullptr );
 
    if( vecl )
    {
-      assert( selectStoch.vecl );
-      vecl->removeEntries(*selectStoch.vecl);
+      assert( select.vecl );
+      vecl->removeEntries(*select.vecl);
       this->n += vecl->n;
    }
+   else
+      assert( select.vecl == nullptr );
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->removeEntries(*selectStoch.children[it]);
+      children[it]->removeEntries(*select.children[it]);
       this->n += children[it]->n;
    }
 }
 
+/* uses PIPSisZero() as check instead of == 0.0 */
 template<typename T>
 int StochVectorBase<T>::getNnzs() const
 {
@@ -1958,7 +2052,10 @@ void StochVectorBase<T>::permuteLinkingEntries(const std::vector<unsigned int>& 
 template<typename T>
 std::vector<T> StochVectorBase<T>::gatherStochVector() const
 {
+#ifdef HIERARCHICAL
    // TODO adapt for hier approach
+   assert( false && "TODO : implement" );
+#endif
    const SimpleVectorBase<T>& firstvec = dynamic_cast<const SimpleVectorBase<T>&>(*vec);
    const size_t nChildren = children.size();
 
@@ -2035,7 +2132,12 @@ std::vector<T> StochVectorBase<T>::gatherStochVector() const
 template<typename T>
 bool StochVectorBase<T>::isRootNodeInSync() const
 {
-   assert( vec);
+#ifdef HIERARCHICAL
+   // TODO adapt for hier approach
+   assert( false && "TODO : implement" );
+#endif
+
+   assert(vec);
    assert(mpiComm);
 
    bool in_sync = true;
