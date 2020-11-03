@@ -2290,6 +2290,9 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& bor
    border_bottom = new StringGenMatrix(id, false, border_bl_mat, nullptr, mpiComm);
    border_left = new StringGenMatrix(id, true, border_a_mat, nullptr, mpiComm);
 
+   if( children.size() == 0 )
+      assert( PIPS_MPIgetSize( mpiComm ) == 1 );
+
    for( size_t it = 0; it < children.size(); it++ )
    {
       assert(" should not end up here! : todo implement?");
