@@ -548,7 +548,7 @@ void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in )
       if( children[i]->isKindOf(kStringGenDummyMatrix) )
          assert( vec.children[i]->isKindOf(kStochDummy) );
 
-      children[i]->addColSumsVertical(*vec.children[i]);
+      children[i]->addColSumsHorizontal(*vec.children[i]);
    }
 
    if( mat_link )
