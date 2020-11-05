@@ -391,7 +391,7 @@ int Solver::defaultStatus( const Data * /* data */, const Variables * /* vars */
   if( scaler )
      resids_unscaled = scaler->getResidualsUnscaled(*resids);
 
-  const double gap   = std::fabs( resids_unscaled->dualityGap() );
+  const double gap = std::fabs( resids_unscaled->dualityGap() );
   const double rnorm = resids_unscaled->residualNorm();
 
   if( scaler )
