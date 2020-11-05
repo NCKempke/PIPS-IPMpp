@@ -234,7 +234,7 @@ public:
 #ifdef HAVE_EXPLICIT
   explicit
 #endif
-	SmartPointer( T * t ) { obj = t; }
+	SmartPointer( T * t ) { assert(t); obj = t; }
 protected:
   /** a traditional pointer to the object being referenced. */
   T * obj;
