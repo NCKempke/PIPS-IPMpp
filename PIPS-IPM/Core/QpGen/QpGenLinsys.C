@@ -262,10 +262,25 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 
   if( nxlow + nxupp > 0 ) this->putXDiagonal( *dd );
 
+  const double infnormdd = dd->infnorm();
+  double mindd; int dummy;
+  dd->min(mindd, dummy);
+
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "Diagonal dd : inf " << infnormdd << ", min " << mindd << std::endl;
+
   nomegaInv->invert();
   nomegaInv->negate();
 
   if( mclow + mcupp > 0 ) this->putZDiagonal( *nomegaInv );
+
+  const double infnormomegainv = nomegaInv->infnorm();
+  double minomegainv;
+  dd->min(minomegainv, dummy);
+
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "Diagonal omegaInv: inf " << infnormomegainv << ", min " << minomegainv << std::endl;
+
 }
 
 void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
