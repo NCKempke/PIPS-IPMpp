@@ -26,6 +26,7 @@ void Ma27Solver::init()
    const double default_fratio = 0.5;
    assert( mat_storage->n == mat_storage->m );
    n = mat_storage->n;
+   assert( n > 0 );
    nnz = mat_storage->numberOfNonZeros();
 
    FNAME(ma27id)(icntl, cntl);
