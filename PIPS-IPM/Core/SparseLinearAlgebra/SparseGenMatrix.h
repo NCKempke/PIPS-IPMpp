@@ -107,6 +107,7 @@ public:
   virtual void matMultTrans(SymMatrix** res);
 
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   virtual void writeToStream(ostream& out) const;
   virtual void writeToStreamDense(ostream& out) const;

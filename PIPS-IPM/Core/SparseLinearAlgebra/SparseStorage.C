@@ -1207,6 +1207,18 @@ double SparseStorage::abmaxnorm() const
   return norm;
 }
 
+double SparseStorage::abminnormNonZero( double tol ) const
+{
+  double norm = std::numeric_limits<double>::infinity();
+  int nnz = this->numberOfNonZeros();
+
+  for( int i = 0; i < nnz; i++ ) {
+    const double fabsMi = std::fabs( M[i] );
+    if ( fabsMi < norm && tol < fabsMi )
+       norm = fabsMi;
+  }
+  return norm;
+}
 
 void SparseStorage::atPutDiagonal( int idiag, OoqpVector& vvec )
 {

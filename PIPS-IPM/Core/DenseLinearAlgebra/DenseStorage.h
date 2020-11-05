@@ -58,6 +58,7 @@ public:
   void symmetricScale( const OoqpVector& vec ) override;
   void scalarMult( double num) override;
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   virtual void atPutSpRow( int col, double A[], int lenA, int irowA[],
 			   int& info );

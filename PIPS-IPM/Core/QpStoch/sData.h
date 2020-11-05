@@ -219,6 +219,8 @@ public:
 
   void permuteLinkingVars();
   void permuteLinkingCons();
+public:
+  void printRanges() const;
 };
 
 

@@ -464,6 +464,20 @@ double SparseStorageDynamic::abmaxnorm() const
    return max;
 }
 
+double SparseStorageDynamic::abminnormNonZero( double tol ) const
+{
+   double min = std::numeric_limits<double>::infinity();
+   for( int i = 0; i < m; ++i )
+   {
+      for( int j = rowptr[m].start; j < rowptr[m].end; ++j )
+      {
+         if( std::fabs(M[j]) < min && tol < std::fabs(M[j]) )
+            min = std::fabs(M[j]);
+      }
+   }
+   return min;
+}
+
 void SparseStorageDynamic::restoreOrder()
 {
    for(int i = 0; i < m; i++)  // row i

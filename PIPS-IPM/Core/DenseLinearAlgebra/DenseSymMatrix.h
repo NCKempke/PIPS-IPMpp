@@ -39,6 +39,7 @@ public:
   void getSize( int& m, int& n ) const override;
 
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
   void writeToStream(ostream& out) const override;
   void writeToStreamDense(std::ostream& out) const override;
   virtual void randomizePSD(double * seed);

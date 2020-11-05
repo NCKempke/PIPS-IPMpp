@@ -122,6 +122,7 @@ public:
 
   virtual void symmetrize( int& info);
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   /** Computes the sparsity pattern of MtM = M^T * D * M 
    *  where D=diag(d) is a diagonal matrix and M=this.

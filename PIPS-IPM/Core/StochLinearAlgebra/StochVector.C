@@ -665,25 +665,28 @@ void StochVectorBase<T>::absminNonZero(T& m, T zero_eps) const
    if( vec )
    {
       vec->absminNonZero(min_tmp, zero_eps);
+      assert( min_tmp > zero_eps );
       m = std::min( min_tmp, m );
    }
 
    if( vecl )
    {
       vecl->absminNonZero(min_tmp, zero_eps);
+      assert( min_tmp > zero_eps );
       m = std::min( min_tmp, m );
    }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
       children[it]->absminNonZero(min_tmp, zero_eps);
+      assert( min_tmp > zero_eps );
       m = std::min( min_tmp, m );
    }
 
    if( iAmDistrib )
       PIPS_MPIgetMinInPlace(m, mpiComm);
 
-   assert( m >= zero_eps );
+   assert(m > zero_eps );
 }
 
 

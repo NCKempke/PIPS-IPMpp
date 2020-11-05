@@ -226,20 +226,34 @@ void StochSymMatrix::transMult ( double beta,  OoqpVector& y_,
    */
 double StochSymMatrix::abmaxnorm() const
 {
-  double maxNorm = 0.0, localMaxNorm, childMaxNorm;
+  double maxNorm = 0.0;
 
-  //!parallel stuff needed
+  for(size_t it = 0; it < children.size(); it++)
+    maxNorm = std::max( maxNorm, children[it]->abmaxnorm() );
 
-  localMaxNorm = diag->abmaxnorm();
-  maxNorm = max(localMaxNorm, maxNorm);
-  
-  for (size_t it = 0; it < children.size(); it++)
-  {
-    childMaxNorm = children[it]->abmaxnorm();
-    maxNorm = std::max(childMaxNorm, maxNorm);
-  }
+  if( iAmDistrib )
+     PIPS_MPIgetMaxInPlace( maxNorm, mpiComm );
 
+  maxNorm = std::max( maxNorm, diag->abmaxnorm() );
+  if( border )
+     maxNorm = std::max( maxNorm, border->abmaxnorm() );
   return maxNorm;
+}
+
+double StochSymMatrix::abminnormNonZero( double tol ) const
+{
+  double min = std::numeric_limits<double>::infinity();
+
+  for(size_t it = 0; it < children.size(); it++)
+    min = std::min( min, children[it]->abminnormNonZero(tol) );
+
+  if( iAmDistrib )
+     PIPS_MPIgetMinInPlace( min, mpiComm );
+
+  min = std::min( min, diag->abminnormNonZero(tol) );
+  if( border )
+     min = std::min( min, diag->abminnormNonZero(tol) );
+  return min;
 }
 
 void StochSymMatrix::writeToStream(ostream& out) const

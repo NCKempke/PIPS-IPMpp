@@ -51,6 +51,7 @@ class BorderedSymMatrix : public SymMatrix
       long long size() const override;
 
       // ignored methods
+      double abminnormNonZero( double tol = 1e-30) const override { assert( false && "TODO: implement" ); return 0.0; };
       void writeToStreamDense(ostream& out) const override
          {assert( "Not implemented" && 0 );};
       void symAtPutSpRow( int col, double A[], int lenA, int irowA[], int& info ) override
