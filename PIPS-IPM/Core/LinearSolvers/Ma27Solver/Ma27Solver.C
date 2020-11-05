@@ -224,7 +224,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    if( rnorm >= precision * (1.0 + rhsnorm) )
    {
 //      rhs_cpy->writeToStreamAll(std::cout);
-      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required " << std::endl;
+//      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required " << std::endl;
 //      best_iter->writeToStreamAll(std::cout);
 //      mat->writeToStreamDense(std::cout);
 //      assert( false );
