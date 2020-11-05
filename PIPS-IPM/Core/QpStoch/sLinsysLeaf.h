@@ -6,7 +6,6 @@
 #define STOCHLEAFLINSYS
 
 #include "sLinsys.h"
-#include "Ma57Solver.h"
 #include "sTree.h"
 #include "sFactory.h"
 #include "sData.h"

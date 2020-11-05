@@ -41,7 +41,7 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
 
    if( computeBlockwiseSC )
       if( PIPS_MPIgetRank() == 0 )
-         std::cout << "Using " << nThreads << " solvers parallely for blockwise SC computation" << std::endl;
+         std::cout << "Using " << nThreads << " solvers in parallel for blockwise SC computation - sLinsys" << std::endl;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
@@ -93,14 +93,10 @@ sLinsys::sLinsys(sFactory* factory_,
 #else
   computeBlockwiseSC = false;
 #endif
-  // compute schur complement blockkwise when neiher MUMPS nor PARDISO are available
+  // compute schur complement blockwise when neither MUMPS nor PARDISO are available
 #if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
    computeBlockwiseSC = true;
 #endif
-
-   if( computeBlockwiseSC )
-      if( PIPS_MPIgetRank() == 0 )
-         std::cout << "Using " << nThreads << " solvers parallely for blockwise SC computation" << std::endl;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;

@@ -75,26 +75,29 @@ sFactory::newLinsysLeaf(sData* prob,
 			OoqpVector* dd, OoqpVector* dq,
 			OoqpVector* nomegaInv, OoqpVector* rhs)
 {
+   static bool printed = false;
 #ifdef WITH_PARDISO
-   if( PIPS_MPIgetRank() == 0 )
-       std::cout << "Using Pardiso for the leaf schur complement computation" << std::endl;
+   if( PIPS_MPIgetRank() == 0 && !printed )
+       std::cout << "Using Pardiso for the leaf schur complement computation - sFactory" << std::endl;
    PardisoSolver* s = nullptr;
 #elif defined(WITH_MA57)
-   if( PIPS_MPIgetRank() == 0 )
-      std::cout << "Using MA57 for the blocked leaf schur complement computation" << std::endl;
+   if( PIPS_MPIgetRank() == 0 && !printed )
+      std::cout << "Using MA57 for the blocked leaf schur complement computation - sFactory" << std::endl;
    Ma57Solver* s = nullptr;
 #elif defined(WITH_MA27)
-   if( PIPS_MPIgetRank() == 0 )
-      std::cout << "Using M27 for the blocked leaf schur complement computation" << std::endl;
+   if( PIPS_MPIgetRank() == 0 && !printed )
+      std::cout << "Using M27 for the blocked leaf schur complement computation - sFactory" << std::endl;
    Ma27Solver* s = nullptr;
 #else
+   Solver* s = nullptr;
    if( PIPS_MPIgetRank() == 0 )
       std::cerr << "ERROR, no solver available/specified..." << std::endl;
    MPI_Barrier(MPI_COMM_WORLD);
    MPI_Abort(MPI_COMM_WORLD, -1);
 #endif
 
-  return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, s);
+   printed = true;
+   return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, s);
 }
 
 
