@@ -131,7 +131,10 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 #ifndef NDEBUG
    for( int i = 0; i < rhs.length(); ++i )
       if( std::fabs(rhs[i]) > 1e50 )
-         assert( false && "Big entry in right hand side vector..." );
+      {
+         std::cout << "Big entry in right hand side vector..." << std::endl;
+         break;
+      }
 #endif
 //   SimpleVector* rhs_cpy = dynamic_cast<SimpleVector*>(rhs_in.cloneFull());
 
