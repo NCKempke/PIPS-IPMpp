@@ -14,7 +14,8 @@
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
-   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
+     iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
    assert( vec || vecl );
 
@@ -26,7 +27,8 @@ StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_ )
-  : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+  : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
+    iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
    assert( n_ >= 0 );
 
@@ -36,7 +38,8 @@ StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_ )
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_ )
-  : OoqpVectorBase<T>(0), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+  : OoqpVectorBase<T>(0), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
+    iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
    this->n = 0;
 
@@ -338,6 +341,14 @@ bool StochVectorBase<T>::isZero() const
 {
 	bool is_zero = true;
 
+	for( size_t node = 0; node < children.size(); ++node )
+	{
+	   const bool is_zero_tmp = children[node]->isZero();
+		is_zero = ( is_zero && is_zero_tmp );
+	}
+
+	PIPS_MPIgetLogicAndInPlace(is_zero, mpiComm);
+
 	if( vec )
 	{
 	   const bool is_zero_tmp = dynamic_cast<SimpleVectorBase<T>&>(*vec).isZero();
@@ -349,12 +360,6 @@ bool StochVectorBase<T>::isZero() const
 	   const bool is_zero_tmp = dynamic_cast<SimpleVectorBase<T>&>(*vecl).isZero();
 	   is_zero = is_zero && is_zero_tmp;
    }
-
-	for( size_t node = 0; node < children.size(); ++node )
-	{
-	   const bool is_zero_tmp = children[node]->isZero();
-		is_zero = ( is_zero && is_zero_tmp );
-	}
 
 	return is_zero;
 }
@@ -373,7 +378,7 @@ void StochVectorBase<T>::setToZero()
 }
 
 template<typename T>
-void StochVectorBase<T>::setToConstant( T c)
+void StochVectorBase<T>::setToConstant(T c)
 {
    if( vec )
       vec->setToConstant(c);
@@ -414,8 +419,9 @@ void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
       assert( v.vecl == nullptr );
 
    assert( children.size() == v.children.size() );
+
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->copyFrom(*v.children[it]);
+      children[it]->copyFrom( *v.children[it] );
 }
 
 template<typename T>
@@ -484,14 +490,14 @@ T StochVectorBase<T>::onenorm() const
   for( size_t it = 0; it < children.size(); it++ )
      onenorm += children[it]->onenorm();
 
-  if( iAmDistrib )
-     PIPS_MPIgetSumInPlace(onenorm, mpiComm);
-
-  if( vec )
+  if( iAmSpecial && vec )
      onenorm += vec->onenorm();
 
-  if( vecl )
+  if( iAmSpecial && vecl )
      onenorm += vecl->onenorm();
+
+  if( iAmDistrib && parent == nullptr )
+     PIPS_MPIgetSumInPlace(onenorm, mpiComm);
 
   return onenorm;
 }
@@ -1085,7 +1091,7 @@ bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol) con
       assert( v.vec == nullptr );
 
    if( !component_equal )
-      if( parent == NULL )
+      if( parent == nullptr )
         std::cout << "not equal in root node non-link" << std::endl;
 
    if( vecl )
@@ -1098,7 +1104,7 @@ bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol) con
       assert( v.vecl == nullptr );
 
    if( !component_equal )
-      if( parent == NULL )
+      if( parent == nullptr )
          std::cout << "not equal in root node link" << std::endl;
 
    for(size_t child = 0; child < children.size(); child++)
@@ -1128,7 +1134,7 @@ bool StochVectorBase<T>::componentNotEqual( const T val, const T tol ) const
    }
 
    if( !not_equal )
-      if( parent == NULL )
+      if( parent == nullptr )
         std::cout << "equal in root node non-link" << std::endl;
 
    if( vecl )
@@ -1261,10 +1267,7 @@ void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int&
    for( size_t i = 0; i < this->children.size(); ++i )
       this->children[i]->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->children[i] : nullptr );
 
-   PIPS_MPIgetSumInPlace(sum_small, mpiComm);
-   PIPS_MPIgetSumInPlace(n_close, mpiComm);
-
-   if( vec )
+   if( iAmSpecial && vec )
    {
       if( selects )
          assert(selects->vec);
@@ -1272,11 +1275,17 @@ void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int&
       vec->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vec : nullptr );
    }
 
-   if( vecl )
+   if( iAmSpecial && vecl )
    {
       if( selects )
          assert(selects->vecl);
       vecl->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vecl : nullptr );
+   }
+
+   if( iAmDistrib && parent == nullptr )
+   {
+      PIPS_MPIgetSumInPlace(sum_small, mpiComm);
+      PIPS_MPIgetSumInPlace(n_close, mpiComm);
    }
 }
 
@@ -1507,26 +1516,26 @@ T StochVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& v_ ) const
    for(size_t it = 0; it < children.size(); it++)
       dot_product += children[it]->dotProductWith( *v.children[it] );
 
-   if( iAmDistrib )
-      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
-
-   if( vec )
+   if( iAmSpecial && vec )
    {
       assert( v.vec );
       dot_product += vec->dotProductWith( *v.vec );
    }
-   else
+   else if( !vec )
       assert( v.vec == nullptr );
 
-   if( vecl )
+   if( iAmSpecial && vecl )
    {
       assert( v.vecl );
       dot_product += vecl->dotProductWith( *v.vecl );
    }
-   else
+   else if( !vecl )
       assert( v.vecl == nullptr );
 
-  return dot_product;
+   if( iAmDistrib && parent == nullptr )
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
+
+   return dot_product;
 }
 
 template<typename T>
@@ -1537,14 +1546,14 @@ T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
    for( size_t it = 0; it < children.size(); it++ )
       dot_product += children[it]->dotProductSelf( scaleFactor );
 
-   if( iAmDistrib )
-      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
-
-   if( vec )
+   if( iAmSpecial && vec )
       dot_product += vec->dotProductSelf( scaleFactor );
 
-   if( vecl )
+   if( iAmSpecial && vecl )
       dot_product += vecl->dotProductSelf( scaleFactor );
+
+   if( iAmDistrib && parent == nullptr )
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    return dot_product;
 }
@@ -1569,36 +1578,36 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
    for( size_t it = 0; it < children.size(); it++ )
       dot_product += children[it]->shiftedDotProductWith( alpha, *mystep.children[it], *yvec.children[it], beta, *ystep.children[it] );
 
-   if( iAmDistrib )
-      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
-
-   if( vec )
+   if( iAmSpecial && vec )
    {
       assert( mystep.vec );
       assert( yvec.vec );
       assert( ystep.vec );
       dot_product += vec->shiftedDotProductWith( alpha, *mystep.vec, *yvec.vec, beta, *ystep.vec );
    }
-   else
+   else if( !vec )
    {
       assert( mystep.vec == nullptr );
       assert( yvec.vec == nullptr );
       assert( ystep.vec == nullptr );
    }
 
-   if( vecl )
+   if( iAmSpecial && vecl )
    {
       assert( mystep.vecl );
       assert( yvec.vecl );
       assert( ystep.vecl );
       dot_product += vecl->shiftedDotProductWith( alpha, *mystep.vecl, *yvec.vecl, beta, *ystep.vecl );
    }
-   else
+   else if( !vecl )
    {
       assert( mystep.vecl == nullptr );
       assert( yvec.vecl == nullptr );
       assert( ystep.vecl == nullptr );
    }
+
+   if( iAmDistrib && parent == nullptr )
+      PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    return dot_product;
 }
@@ -1794,14 +1803,14 @@ long long StochVectorBase<T>::numberOfNonzeros() const
   for(size_t it = 0; it < children.size(); it++)
      nnz += children[it]->numberOfNonzeros();
 
-  if( iAmDistrib )
-     PIPS_MPIgetSumInPlace( nnz, mpiComm );
-
-  if( vec )
+  if( iAmSpecial && vec )
      nnz += vec->numberOfNonzeros();
 
-  if( vecl )
+  if( iAmSpecial && vecl )
      nnz += vecl->numberOfNonzeros();
+
+  if( iAmDistrib && parent == nullptr )
+     PIPS_MPIgetSumInPlace( nnz, mpiComm );
 
   return nnz;
 }
@@ -2015,20 +2024,19 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
 template<typename T>
 int StochVectorBase<T>::getNnzs() const
 {
-   assert( vec || vecl );
    int non_zeros = 0;
 
    for( size_t it = 0; it < children.size(); it++ )
       non_zeros += children[it]->getNnzs();
 
-   if( iAmDistrib )
-      PIPS_MPIgetSumInPlace(non_zeros, mpiComm);
-
-   if( vec )
+   if( iAmSpecial && vec )
       non_zeros += vec->getNnzs();
 
-   if( vecl )
+   if( iAmSpecial && vecl )
       non_zeros += vecl->getNnzs();
+
+   if( iAmDistrib && parent == nullptr )
+      PIPS_MPIgetSumInPlace(non_zeros, mpiComm);
 
    return non_zeros;
 }

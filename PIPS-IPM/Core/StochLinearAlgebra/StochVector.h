@@ -43,6 +43,7 @@ public:
   const MPI_Comm mpiComm;
   /* flag used to indicate if the children are distributed or not. */
   const bool iAmDistrib;
+  const bool iAmSpecial;
 
   OoqpVectorBase<T>* clone() const override;
   /* copy vector entries as well */
