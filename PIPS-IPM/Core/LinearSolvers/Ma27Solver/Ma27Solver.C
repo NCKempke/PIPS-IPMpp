@@ -113,8 +113,8 @@ void Ma27Solver::matrixChanged()
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
-   assert( nsteps > 0 );
-   assert( maxfrt > 0 );
+   assert( 0 < nsteps && nsteps < n );
+   assert( 0 < maxfrt && nsteps < n );
    iw2 = new int[nsteps];
    w = new double[maxfrt];
 
@@ -169,6 +169,10 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    /* iterative refinement loop */
    while( !done && n_iter_ref < max_n_iter_refinement )
    {
+      assert( maxfrt > 0 );
+      assert( nsteps > 0 );
+      assert( w );
+
       /* solve Ax = residual */
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl, info);
