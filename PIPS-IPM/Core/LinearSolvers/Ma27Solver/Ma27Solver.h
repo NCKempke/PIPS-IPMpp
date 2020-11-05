@@ -87,7 +87,7 @@ protected:
    *
    * This is the max we are willing to go with our pivots.
    */
-  const double threshold_pivtol = 1e-10;
+  const double threshold_pivtol = 1e-14;
   const double threshold_pivtol_factor = 0.1;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is
@@ -120,8 +120,8 @@ protected:
   /** amounts by which to increase allocated factorization space when
    * inadequate space is detected. ipessimism is for array "iw",
    * rpessimism is for the array "fact". */
-  double ipessimism = 2.0;
-  double rpessimism = 2.0;
+  double ipessimism = 3.0;
+  double rpessimism = 3.0;
 
   /** called the very first time a matrix is factored. Allocates space
    * for the factorization and performs ordering */
