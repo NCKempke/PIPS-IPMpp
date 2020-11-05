@@ -1253,7 +1253,7 @@ void StochVectorBase<T>::pushAwayFromZero( double tol, double amount, const Ooqp
       vec->pushAwayFromZero( tol, amount, selects ? selects->vec : nullptr );
 
    if( vecl )
-      vec->pushAwayFromZero( tol, amount, selects ? selects->vecl : nullptr );
+      vecl->pushAwayFromZero( tol, amount, selects ? selects->vecl : nullptr );
 
    for( size_t i = 0; i < this->children.size(); ++i )
       this->children[i]->pushAwayFromZero( tol, amount, selects ? selects->children[i] : nullptr );
