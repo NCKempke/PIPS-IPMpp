@@ -168,6 +168,7 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
   assert(this->n >= 0);
   preserveVec = 0;
   v = new T[this->n];
+  assert(v);
   memset(v, 0, this->n * sizeof(T));
 }
 
