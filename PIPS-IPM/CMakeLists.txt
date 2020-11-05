@@ -53,7 +53,7 @@ if(HAVE_PARDISO OR (HAVE_MKL_PARDISO AND WITH_MKL_PARDISO) )
     add_executable(qpgen-sparse-mehrotra.exe Core/QpGen/QpGenSparseMehrotraDriver.C)
     target_link_libraries(qpgen-sparse-mehrotra.exe
       ooqpgensparse ooqpsparse ooqpbase ooqpmehrotra
-    ${MA27_LIBRARY} ${MATH_LIBS})
+   ${MA27_LIBRARY} ${MATH_LIBS})
   endif(HAVE_MA27)
 
   if(HAVE_MA57 AND HAVE_METIS)

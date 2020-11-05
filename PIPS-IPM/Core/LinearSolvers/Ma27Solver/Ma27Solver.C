@@ -37,14 +37,58 @@ void Ma27Solver::init()
 
    icntl[0] = 0;
    icntl[1] = 0;
+
+   scaling_output_control = 10000;
+   scaling_error = 0;
+}
+
+void Ma27Solver::scaleMatrix()
+{
+   /* compute the log scaling factors */
+   FNAME(mc30ad)( &n, &nnz, fact.data(), irowM.data(), jcolM.data(),
+         scaling_factors.data(), scaling_workspace.data(), &scaling_output_control, &scaling_error);
+   assert( scaling_error == 0 );
+
+   /* compute the scaling factors */
+   for( size_t i = 0; i < scaling_factors.size(); ++i )
+      scaling_factors[i] = std::exp(scaling_factors[i]);
+
+   /* do the actual scaling */
+   for( int i = 0; i < nnz; ++i )
+   {
+      const double scale_ai = scaling_factors[irowM[i] - 1] * scaling_factors[jcolM[i] - 1];
+      fact[i] *= scale_ai;
+   }
+}
+
+void Ma27Solver::scaleVector( OoqpVector& vec_in ) const
+{
+   SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
+   assert( vec.length() == n );
+
+   for( int i = 0; i < n; ++i )
+      vec[i] *= scaling_factors[i];
+}
+
+void Ma27Solver::unscaleVector( OoqpVector& vec_in ) const
+{
+   SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
+   assert( vec.length() == n );
+
+   for( int i = 0; i < n; ++i )
+      vec[i] /= scaling_factors[i];
 }
 
 void Ma27Solver::firstCall()
 {
+  /* convert to MA27 format */
   irowM.resize(nnz);
   jcolM.resize(nnz);
-
   this->getIndices( irowM, jcolM );
+
+  /* set working arrays for scaling */
+  scaling_factors.resize(n);
+  scaling_workspace.resize(4 * n);
 
   liw = static_cast<int>(ipessimism * (2 * nnz + 3 * n + 1));
   iw = new int[liw];
@@ -98,6 +142,7 @@ void Ma27Solver::matrixChanged()
    {
       // copy M to fact
       this->copyMatrixElements(fact, la);
+      this->scaleMatrix();
 
       FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl, cntl, info);
@@ -175,9 +220,13 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       assert( residual->elements() );
       assert( iw1 );
 
-      /* solve Ax = residual */
+      /* solve DAD y = D*residual */
+      scaleVector(*residual);
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl, info);
+      /* Dy = x */
+      scaleVector(*residual);
+
       iter->axpy(1.0, *residual);
 
       residual->copyFrom(rhs);
@@ -339,6 +388,8 @@ void Ma27Solver::freeWorkingArrays()
    irowM.clear();
    jcolM.clear();
    fact.clear();
+   scaling_factors.clear();
+   scaling_workspace.clear();
 
    if( ikeep )
       delete[] ikeep;

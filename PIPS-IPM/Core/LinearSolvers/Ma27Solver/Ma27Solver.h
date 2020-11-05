@@ -50,6 +50,9 @@ extern "C"
       double rhs[],
       int iw2[],      int * nsteps,
       int icntl[],    int info[] );
+
+  void FNAME(mc30ad)( int* n, int* ne, double a[], int irn[], int icn[],
+        double s[], double w[], int* lp, int* ifail);
 }
 
 /** implements the linear solver class using the HSL MA27 solver
@@ -176,7 +179,15 @@ protected:
   void freeWorkingArrays();
   bool checkErrorsAndReact();
 
-  void scaleMatrix(); // TODO : implement..
+  std::vector<double> scaling_factors;
+  std::vector<double> scaling_workspace;
+  int scaling_output_control;
+  int scaling_error;
+
+  void scaleMatrix();
+  void scaleVector( OoqpVector& vec_in ) const;
+  void unscaleVector( OoqpVector& vec_in ) const;
+
   void orderMatrix(); // TODO : implement..
 public:
   /** base class constructor. Allocates values for kTreatAsZero,
