@@ -11,6 +11,7 @@
 #include "OoqpVectorHandle.h"
 #include "pipsport.h"
 
+#include <vector>
 
 #ifndef FNAME
 #ifndef __bg__
@@ -95,10 +96,10 @@ protected:
   const double threshold_pivoting_factor = 10;
 
   /** index array for the factorization */
-  int *irowM, *jcolM;
+  std::vector<int> irowM, jcolM;
 
   /** nonzero element of the factors */
-  double *fact;
+  std::vector<double> fact;
 
   /** dimension of the whole matrix */
   int n;
@@ -149,7 +150,7 @@ public:
 
   /** copy elements from matrix into the fact data structure, in
    * preparation for factorization (or refactorization).  */
-  virtual void copyMatrixElements ( double fact[], int lfact ) const;
+  virtual void copyMatrixElements ( std::vector<double>& afact, int lfact ) const;
 
   /** change format for row/column index matrices, in preparation for
    * call to MA27 FORTRAN routines
@@ -159,7 +160,7 @@ public:
    *
    * @param jcolM array of nnz elements indicating col index (in range
    * 1..n) of the corresponding matrix element */
-  virtual void getIndices( int irowM[], int jcolM[] ) const ;
+  virtual void getIndices( std::vector<int>& irow, std::vector<int>& jcol ) const ;
 
   virtual void diagonalChanged( int idiag, int extent );
   virtual void matrixChanged();

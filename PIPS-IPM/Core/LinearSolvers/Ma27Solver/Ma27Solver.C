@@ -13,7 +13,7 @@
 extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) : max_n_iter_refinement(10), precision(1e-7), threshold_pivoting_max(0.1),
-       irowM(nullptr), jcolM(nullptr), fact(nullptr), mat(sgm), mat_storage(sgm->getStorageHandle())
+       mat(sgm), mat_storage(sgm->getStorageHandle())
 {
    init();
 }
@@ -40,8 +40,8 @@ void Ma27Solver::init()
 
 void Ma27Solver::firstCall()
 {
-  irowM = new int[nnz];
-  jcolM = new int[nnz];
+  irowM.resize(nnz);
+  jcolM.resize(nnz);
 
   this->getIndices( irowM, jcolM );
 
@@ -57,7 +57,7 @@ void Ma27Solver::firstCall()
   int tries = 0;
   do
   {
-     FNAME(ma27ad)( &n, &nnz, irowM, jcolM, iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl, cntl, info, &ops);
+     FNAME(ma27ad)( &n, &nnz, irowM.data(), jcolM.data(), iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl, cntl, info, &ops);
      done = !checkErrorsAndReact();
      ++tries;
   }
@@ -73,7 +73,7 @@ void Ma27Solver::firstCall()
   delete [] iw1;
 
   la = rpessimism *  this->minimumRealWorkspace();
-  fact = new double[la];
+  fact.resize(la);
 
   // set iw and iw1 in prep for calls to ma27bd and ma27cd
   liw = ipessimism *  this->minimumIntWorkspace();
@@ -88,7 +88,7 @@ void Ma27Solver::diagonalChanged( int /* idiag */, int /* extent */ )
 
 void Ma27Solver::matrixChanged()
 {
-   if( !fact )
+   if( fact.size() == 0 )
       this->firstCall();
 
    bool done = false;
@@ -98,7 +98,7 @@ void Ma27Solver::matrixChanged()
       // copy M to fact
       this->copyMatrixElements(fact, la);
 
-      FNAME(ma27bd)(&n, &nnz, irowM, jcolM, fact, &la, iw, &liw, ikeep, &nsteps,
+      FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl, cntl, info);
 
       done = !checkErrorsAndReact();
@@ -164,7 +164,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    while( !done && n_iter_ref < max_n_iter_refinement )
    {
       /* solve Ax = residual */
-      FNAME(ma27cd)(&n, fact, &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
+      FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl, info);
       iter->axpy(1.0, *residual);
 
@@ -281,18 +281,18 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 //         rhs[i] = 0.0;
 }
 
-void Ma27Solver::copyMatrixElements( double afact[], int lafact ) const
+void Ma27Solver::copyMatrixElements( std::vector<double>& afact, int lafact ) const
 {
    assert( lafact >= nnz );
    const double * M = mat_storage->M;
-   std::copy( M, M + nnz, afact );
+   std::copy( M, M + nnz, afact.begin() );
 
    if( lafact > nnz )
-      std::fill( afact + nnz, afact + (lafact - nnz), 0.0 );
+      std::fill( afact.begin() + nnz, afact.begin() + (lafact - nnz), 0.0 );
 }
 
 // TODO same as the one in MA57 - move somewhere else, some common MA_Solver thing maybe..
-void Ma27Solver::getIndices( int irow[], int jcol[] ) const
+void Ma27Solver::getIndices( std::vector<int>& irowM, std::vector<int>& jcolM ) const
 {
    const int *krowM = mat_storage->krowM;
    for( int i = 0; i < mat_storage->n; i++ )
@@ -324,12 +324,10 @@ Ma27Solver::~Ma27Solver()
 
 void Ma27Solver::freeWorkingArrays()
 {
-   if( irowM )
-      delete[] irowM;
-   if( jcolM )
-      delete[] jcolM;
-   if( fact )
-      delete[] fact;
+   irowM.clear();
+   jcolM.clear();
+   fact.clear();
+
    if( ikeep )
       delete[] ikeep;
    if( iw )
@@ -341,8 +339,8 @@ void Ma27Solver::freeWorkingArrays()
    if( w )
       delete[] w;
 
-   irowM = jcolM = ikeep = iw = iw1 = iw2 = nullptr;
-   fact = w = nullptr;
+   ikeep = iw = iw1 = iw2 = nullptr;
+   w = nullptr;
 }
 
 bool Ma27Solver::checkErrorsAndReact()
@@ -388,11 +386,8 @@ bool Ma27Solver::checkErrorsAndReact()
             std::cout << "WARNING MA27: insufficient factorization space: " << la << std::endl;;
          rpessimism *= 1.1;
 
-         assert( fact );
-         delete[] fact;
-
          la = std::max( error_info, static_cast<int>(1.1 * la) );
-         fact = new double[la];
+         fact.resize(la);
 
          this->copyMatrixElements(fact, la);
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
