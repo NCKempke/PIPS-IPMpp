@@ -1247,7 +1247,7 @@ void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
 template<typename T>
 void StochVectorBase<T>::pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select )
 {
-   const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
+   const StochVectorBase<T>* selects = select ? dynamic_cast<const StochVectorBase<T>*>(select) : nullptr;
 
    if( vec )
       vec->pushAwayFromZero( tol, amount, selects ? selects->vec : nullptr );
