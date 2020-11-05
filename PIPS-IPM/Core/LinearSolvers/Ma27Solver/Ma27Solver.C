@@ -385,7 +385,7 @@ bool Ma27Solver::checkErrorsAndReact()
          assert( iw );
          delete[] iw;
 
-         liw = std::max( error_info, static_cast<int>(1.1 * liw) );
+         liw = std::max( static_cast<int>(ipessimism * error_info), static_cast<int>(ipessimism * liw) );
          iw = new int[ liw ];
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             std::cout << " resetting to " << liw << std::endl;
@@ -398,7 +398,7 @@ bool Ma27Solver::checkErrorsAndReact()
             std::cout << "WARNING MA27 " << name << ": insufficient factorization space: " << la << std::endl;;
          rpessimism *= 1.1;
 
-         la = std::max( error_info, static_cast<int>(1.1 * la) );
+         la = std::max( static_cast<int>(rpessimism * error_info), static_cast<int>(rpessimism * la) );
          fact.resize(la);
 
          this->copyMatrixElements(fact, la);
