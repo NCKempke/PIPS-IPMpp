@@ -74,7 +74,7 @@ namespace pips_options
 
       /// SOLVER CONTROLS
 
-      int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 64;
+      int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
 
       /// ERROR ABSORBTION / ITERATIVE REFINEMENT
       // controls the type of error absorbtion at the outer level of the linear system

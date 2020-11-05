@@ -12,8 +12,8 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm) : max_n_iter_refinement(10), precision(1e-7), threshold_pivoting_max(0.1),
-       mat(sgm), mat_storage(sgm->getStorageHandle())
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) : max_n_iter_refinement(10), precision(1e-7), threshold_pivoting_max(0.1),
+       mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ )
 {
    init();
 }
@@ -109,7 +109,7 @@ void Ma27Solver::matrixChanged()
 
    if ( !done && tries > max_tries )
    {
-      std::cerr << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << std::endl;
+      std::cout << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << std::endl;
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
@@ -172,6 +172,8 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       assert( maxfrt > 0 );
       assert( nsteps > 0 );
       assert( w );
+      assert( residual->elements() );
+      assert( iw1 );
 
       /* solve Ax = residual */
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
@@ -366,18 +368,18 @@ bool Ma27Solver::checkErrorsAndReact()
          break;
       case -1 :
       {
-         std::cerr << "ERROR MA27: N out of range or < -1: " << n << std::endl;
+         std::cerr << "ERROR MA27 " << name << ": N out of range or < -1: " << n << std::endl;
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -2 :
       {
-         std::cerr << "ERROR MA27: NNZ out of range or < -1 : " << nnz << std::endl;
+         std::cerr << "ERROR MA27 " << name << ": NNZ out of range or < -1 : " << nnz << std::endl;
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -3 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: insufficient space in iw: " << liw << " suggest reset to " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": insufficient space in iw: " << liw << " suggest reset to " << error_info << std::endl;
          ipessimism *= 1.1;
 
          assert( iw );
@@ -393,7 +395,7 @@ bool Ma27Solver::checkErrorsAndReact()
       case -4 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: insufficient factorization space: " << la << std::endl;;
+            std::cout << "WARNING MA27 " << name << ": insufficient factorization space: " << la << std::endl;;
          rpessimism *= 1.1;
 
          la = std::max( error_info, static_cast<int>(1.1 * la) );
@@ -408,7 +410,7 @@ bool Ma27Solver::checkErrorsAndReact()
       case -5:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: matrix apparently numerically singular, detected at stage " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": matrix apparently numerically singular, detected at stage " << error_info << std::endl;
 
          if( getSmallPivot() <= threshold_pivtol )
          {
@@ -427,27 +429,27 @@ bool Ma27Solver::checkErrorsAndReact()
       case -6:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: change of sign of pivots detected at stage " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": change of sign of pivots detected at stage " << error_info << std::endl;
       }; break;
       case -7:
       {
-         std::cerr << "ERROR MA27: value of NSTEPS out of range " << nsteps << " (should not happen..) " << std::endl;
+         std::cerr << "ERROR MA27 " << name << ": value of NSTEPS out of range " << nsteps << " (should not happen..) " << std::endl;
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case 1 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: detected " << error_info << " entries out of range in irowM and jcolM; ignored" << std::endl;
+            std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored" << std::endl;
       }; break;
       case 2 :
       {
-         std::cerr << "ERROR MA27: change of sign in pivots detected when matrix is supposedly definite" << std::endl;
+         std::cerr << "ERROR MA27 " << name << ": change of sign in pivots detected when matrix is supposedly definite" << std::endl;
          MPI_Abort(MPI_COMM_WORLD, -1);
       } break;
       case 3:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27: rank deficient matrix detected; apparent rank is " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << std::endl;
       }; break;
       default :
       {

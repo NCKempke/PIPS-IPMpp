@@ -12,6 +12,7 @@
 #include "pipsport.h"
 
 #include <vector>
+#include <string>
 
 #ifndef FNAME
 #ifndef __bg__
@@ -169,6 +170,8 @@ protected:
   const SparseSymMatrix* mat;
   SparseStorageHandle mat_storage;
 
+  const std::string name;
+
   void init();
   void freeWorkingArrays();
   bool checkErrorsAndReact();
@@ -179,7 +182,7 @@ public:
   /** base class constructor. Allocates values for kTreatAsZero,
    * kThresholdPivoting, kThresholdPivotingMax,
    * kThresholdPivotingFactor, kPrecision, ipessimism,rpessimism */
-  Ma27Solver( const SparseSymMatrix * sgm );
+  Ma27Solver(const SparseSymMatrix * sgm, const std::string& name_ = "leaf");
 
   virtual ~Ma27Solver();
 

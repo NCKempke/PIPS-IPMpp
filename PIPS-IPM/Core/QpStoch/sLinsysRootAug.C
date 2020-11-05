@@ -150,7 +150,7 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
 #elif defined(WITH_MA27)
       if( 0 == my_rank )
          std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << std::endl;
-      return new Ma27SolverRoot(kktmat, allreduce_kkt, mpiComm);
+      return new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm);
 #else
       assert( false && "No sparse solver available for sparse Schur complement -sLinsysRootAug" );
       return nullptr;
