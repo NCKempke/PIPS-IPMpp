@@ -113,8 +113,13 @@ void Ma27Solver::matrixChanged()
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
+   assert( nsteps > 0 );
+   assert( maxfrt > 0 );
    iw2 = new int[nsteps];
    w = new double[maxfrt];
+
+   assert( iw2 );
+   assert( w );
 }
 
 void Ma27Solver::solve( int nrhss, double* rhss, int* colSparsity )
