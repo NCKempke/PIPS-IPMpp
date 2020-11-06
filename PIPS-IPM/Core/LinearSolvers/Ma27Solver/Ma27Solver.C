@@ -90,6 +90,11 @@ void Ma27Solver::firstCall()
   scaling_factors.resize(n);
   scaling_workspace.resize(4 * n);
 
+  /* set working arrays for iterative refinement */
+  w_ma60.resize(3 * n);
+  iw_ma60.resize(2 * n);
+
+  /* set working stuff for factorization routine */
   liw = static_cast<int>(ipessimism * (2 * nnz + 3 * n + 1));
   iw = new int[liw];
   iw1 = new int[2 * n];
@@ -98,6 +103,7 @@ void Ma27Solver::firstCall()
   int iflag = 0; // set to 1 if ikeep contains pivot order
   double ops;
 
+  /* do ordering */
   bool done = false;
   int tries = 0;
   do
@@ -171,8 +177,71 @@ void Ma27Solver::solve( int nrhss, double* rhss, int* colSparsity )
 {
    for (int i = 0; i < nrhss; i++) {
      SimpleVector v(rhss + i * n, n);
+
      solve(v);
+     //solveIterRef(v); slower for some reason
    }
+}
+
+void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
+{
+   SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
+
+   SimpleVectorHandle x(new SimpleVector(n));
+   SimpleVectorHandle y(new SimpleVector(n));
+   x->copyFrom( rhs );
+
+   /* init iterative refinement process */
+   FNAME(ma60id)(icntl_ma60, keep_ma60, rkeep_ma60);
+
+   /* obtain initial solution */
+   scaleVector(*x);
+   FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, x->elements(), iw1,
+         &nsteps, icntl, info);
+   scaleVector(*x);
+
+   /* start of iterative refinement */
+
+   /* job[0] <= 0 -> only do backward error estimate
+    * job[1] = 1 -> matrix is symmetric
+    */
+   int job[2] = { 0, 1 };
+   int kase = 0;
+   double omega[2];
+   double error_x;
+   double cond[2];
+   int n_iters_needed;
+
+   // icntl[0] -> output -> 0 to suppress
+   icntl[1] = max_n_iter_refinement; // default 16
+
+   bool done = false;
+   while( !done )
+   {
+      FNAME(ma60ad)( &n, &nnz, mat_storage->M, irowM.data(), jcolM.data(), rhs.elements(), x->elements(), y->elements(),
+            scaling_factors.data(), w_ma60.data(), iw_ma60.data(),
+            &kase, omega, &error_x, job, cond, &n_iters_needed, icntl_ma60, keep_ma60, rkeep_ma60 );
+      assert( kase <= 2 );
+      assert( kase >= 0 || kase == -3 );
+      if( kase == -3 )
+      {
+         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
+            std::cout << "WARNING MA27 " << name << ": large residual " << error_x <<
+               " even after (" << icntl[1] << "/" << max_n_iter_refinement << ") iterative refinement steps" << std::endl;
+         done = true;
+      }
+      else if( kase == 0 )
+      {
+         done = true;
+      }
+      else if( kase == 1 || kase == 2 )
+      {
+         FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, y->elements(), iw1,
+               &nsteps, icntl, info);
+      }
+   }
+
+   rhs.copyFrom( *x );
 }
 
 void Ma27Solver::solve( OoqpVector& rhs_in )
@@ -259,7 +328,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          {
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             {
-               std::cout << "WARNING MA27: threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
+               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
                std::cout << " did not converge but still keeping the iterate" << std::endl;
             }
          }
@@ -268,7 +337,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
             setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
 
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-               std::cout << "STATUS Ma27: Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing" << std::endl;
+               std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing" << std::endl;
 
             done = false;
             n_iter_ref = 0;
@@ -419,12 +488,12 @@ bool Ma27Solver::checkErrorsAndReact()
          break;
       case -1 :
       {
-         std::cerr << "ERROR MA27 " << name << ": N out of range or < -1: " << n << std::endl;
+         std::cout << "ERROR MA27 " << name << ": N out of range or < -1: " << n << std::endl;
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -2 :
       {
-         std::cerr << "ERROR MA27 " << name << ": NNZ out of range or < -1 : " << nnz << std::endl;
+         std::cout << "ERROR MA27 " << name << ": NNZ out of range or < -1 : " << nnz << std::endl;
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -3 :

@@ -53,6 +53,11 @@ extern "C"
 
   void FNAME(mc30ad)( int* n, int* ne, double a[], int irn[], int icn[],
         double s[], double w[], int* lp, int* ifail);
+
+  void FNAME(ma60id)( int icntl[], int keep[], double rkeep[] );
+
+  void FNAME(ma60ad)( int* n, int* nnz, double a[], int irn[], int icn[], double rhs[], double x[], double y[], double d[], double w[],
+        int iw[], int* kase, double omega[], double* errorx, int* job, double cond[], int* niters_used, int icntl[], int keep[], double rkeep[] );
 }
 
 /** implements the linear solver class using the HSL MA27 solver
@@ -179,6 +184,8 @@ protected:
   void freeWorkingArrays();
   bool checkErrorsAndReact();
 
+
+  /* stuff for mc30 (kurtis reid) scaling */
   std::vector<double> scaling_factors;
   std::vector<double> scaling_workspace;
   int scaling_output_control;
@@ -187,6 +194,14 @@ protected:
   void scaleMatrix();
   void scaleVector( OoqpVector& vec_in ) const;
   void unscaleVector( OoqpVector& vec_in ) const;
+
+  /* stuff for MA60 iterative refinement */
+  int icntl_ma60[5];
+  int keep_ma60[10];
+  double rkeep_ma60[10];
+
+  std::vector<double> w_ma60;
+  std::vector<int> iw_ma60;
 
   void orderMatrix(); // TODO : implement..
 public:
@@ -198,6 +213,7 @@ public:
   virtual ~Ma27Solver();
 
   using DoubleLinearSolver::solve;
+  void solveIterRef( OoqpVector& rhs );
   void solve( OoqpVector& rhs ) override;
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
 
