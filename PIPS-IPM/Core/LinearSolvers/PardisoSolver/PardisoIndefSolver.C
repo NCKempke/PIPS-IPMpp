@@ -402,7 +402,8 @@ void PardisoIndefSolver::factorizeFromSparse()
       ia[r + 1] = nnznew + 1;
    }
 
-   std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")" << std::endl;
+   if( !solve_in_parallel || PIPS_MPIgetRank(MPI_COMM_WORLD) == 0 )
+      std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")" << std::endl;
 
 #if 0
    {
