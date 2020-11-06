@@ -409,7 +409,7 @@ int main(int argc, char ** argv)
 #if defined(HIERARCHICAL)
 	   if( gmsRank == 0 )
 	      std::cout << "Using hierarchical approach" << std::endl;
-	   PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
+	   PIPSIpmInterface<sFactoryHierarchical, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
 	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 #elif defined(WITH_MUMPS_LEAF)
       PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
