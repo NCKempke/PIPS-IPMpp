@@ -11,7 +11,7 @@ add_library(ooqpbase Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer
   Utilities/drand.C Utilities/sort.C Utilities/pipschecks.C)
 
 if(HAVE_MA27)
-	set(solvers LinearSolvers/Ma27Solver/Ma27Solver.C LinearSolvers/Ma27Solver/Ma27SolverRoot.C QpGen/QpGenSparseMa27.C )
+	set(solvers LinearSolvers/Mc30Scaler/Mc30Scaler.C LinearSolvers/Ma27Solver/Ma27Solver.C LinearSolvers/Ma27Solver/Ma27SolverRoot.C QpGen/QpGenSparseMa27.C )
 endif(HAVE_MA27)
 if(HAVE_MA57)
 	set(solvers ${solvers} LinearSolvers/Ma57Solver/Ma57Solver.C LinearSolvers/Ma57Solver/Ma57SolverRoot.C QpGen/QpGenSparseMa57.C)

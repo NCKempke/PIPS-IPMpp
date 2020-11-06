@@ -3,6 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "Ma27Solver.h"
+#include "Mc30Scaler.h"
 #include "SparseStorage.h"
 #include "SparseSymMatrix.h"
 #include "SimpleVector.h"
@@ -13,7 +14,7 @@
 extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) : max_n_iter_refinement(10), precision(1e-7), threshold_pivoting_max(0.1),
-       mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ )
+       mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
 {
    init();
 }
@@ -37,46 +38,6 @@ void Ma27Solver::init()
 
    icntl[0] = 0;
    icntl[1] = 0;
-
-   scaling_output_control = 10000;
-   scaling_error = 0;
-}
-
-void Ma27Solver::scaleMatrix()
-{
-   /* compute the log scaling factors */
-   FNAME(mc30ad)( &n, &nnz, fact.data(), irowM.data(), jcolM.data(),
-         scaling_factors.data(), scaling_workspace.data(), &scaling_output_control, &scaling_error);
-   assert( scaling_error == 0 );
-
-   /* compute the scaling factors */
-   for( size_t i = 0; i < scaling_factors.size(); ++i )
-      scaling_factors[i] = std::exp(scaling_factors[i]);
-
-   /* do the actual scaling */
-   for( int i = 0; i < nnz; ++i )
-   {
-      const double scale_ai = scaling_factors[irowM[i] - 1] * scaling_factors[jcolM[i] - 1];
-      fact[i] *= scale_ai;
-   }
-}
-
-void Ma27Solver::scaleVector( OoqpVector& vec_in ) const
-{
-   SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
-   assert( vec.length() == n );
-
-   for( int i = 0; i < n; ++i )
-      vec[i] *= scaling_factors[i];
-}
-
-void Ma27Solver::unscaleVector( OoqpVector& vec_in ) const
-{
-   SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
-   assert( vec.length() == n );
-
-   for( int i = 0; i < n; ++i )
-      vec[i] /= scaling_factors[i];
 }
 
 void Ma27Solver::firstCall()
@@ -85,10 +46,6 @@ void Ma27Solver::firstCall()
   irowM.resize(nnz);
   jcolM.resize(nnz);
   this->getIndices( irowM, jcolM );
-
-  /* set working arrays for scaling */
-  scaling_factors.resize(n);
-  scaling_workspace.resize(4 * n);
 
   /* set working arrays for iterative refinement */
   w_ma60.resize(3 * n);
@@ -148,7 +105,7 @@ void Ma27Solver::matrixChanged()
    {
       // copy M to fact
       this->copyMatrixElements(fact, la);
-      this->scaleMatrix();
+      scaler->scaleMatrixTripletFormat( n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
 
       FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl, cntl, info);
@@ -195,10 +152,10 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
    FNAME(ma60id)(icntl_ma60, keep_ma60, rkeep_ma60);
 
    /* obtain initial solution */
-   scaleVector(*x);
+   scaler->scaleVector(*x);
    FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, x->elements(), iw1,
          &nsteps, icntl, info);
-   scaleVector(*x);
+   scaler->scaleVector(*x);
 
    /* start of iterative refinement */
 
@@ -219,7 +176,7 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
    while( !done )
    {
       FNAME(ma60ad)( &n, &nnz, mat_storage->M, irowM.data(), jcolM.data(), rhs.elements(), x->elements(), y->elements(),
-            scaling_factors.data(), w_ma60.data(), iw_ma60.data(),
+            scaler->getScaling(), w_ma60.data(), iw_ma60.data(),
             &kase, omega, &error_x, job, cond, &n_iters_needed, icntl_ma60, keep_ma60, rkeep_ma60 );
       assert( kase <= 2 );
       assert( kase >= 0 || kase == -3 );
@@ -290,11 +247,11 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       assert( iw1 );
 
       /* solve DAD y = D*residual */
-      scaleVector(*residual);
+      scaler->scaleVector(*residual);
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl, info);
       /* Dy = x */
-      scaleVector(*residual);
+      scaler->scaleVector(*residual);
 
       iter->axpy(1.0, *residual);
 
@@ -449,6 +406,9 @@ void Ma27Solver::getIndices( std::vector<int>& irowM, std::vector<int>& jcolM ) 
 
 Ma27Solver::~Ma27Solver()
 {
+   if( scaler )
+      delete scaler;
+
    freeWorkingArrays();
 }
 
@@ -457,8 +417,6 @@ void Ma27Solver::freeWorkingArrays()
    irowM.clear();
    jcolM.clear();
    fact.clear();
-   scaling_factors.clear();
-   scaling_workspace.clear();
 
    if( ikeep )
       delete[] ikeep;

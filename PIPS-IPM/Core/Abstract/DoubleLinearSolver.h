@@ -58,6 +58,25 @@ public:
   virtual ~DoubleLinearSolver() {};
 };
 
+class SymmetricLinearScaler
+{
+   public:
+      /** compute scaling for a symmetric indefinite matrix and scale it */
+      virtual void scaleMatrixTripletFormat( int n, int nnz, double* M, const int* rowM, const int* colM, bool fortran_indexed ) = 0;
+
+      virtual void scaleMatrixCSRFormat( int n, int nnz, double* M, const int* krowM, const int* jcolM, bool fortran_indexed ) = 0;
+
+      virtual const double* getScaling() const = 0;
+
+      /* unscale a vector */
+      virtual void scaleVector( OoqpVector& vec_in ) const = 0;
+
+      /* scale a vector */
+      virtual void unscaleVector( OoqpVector& vec_in ) const = 0;
+
+      virtual ~SymmetricLinearScaler() {};
+};
+
 /**
  * The abstract  interface to a mat-vec operation required by
  * the iterative solvers.
