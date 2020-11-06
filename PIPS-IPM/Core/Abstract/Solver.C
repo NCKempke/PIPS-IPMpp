@@ -219,6 +219,8 @@ double Solver::finalStepLength( Variables *iterate, Variables *step )
 	  assert( 0 && "Can't get here" );
           break;
 	}
+   // safeguard against numerical troubles in the above computations
+	alpha = std::min( maxAlpha, alpha );
 
 	// make it at least gamma_f * maxStep
 	if( alpha < gamma_f * maxAlpha ) alpha = gamma_f * maxAlpha;
@@ -303,6 +305,10 @@ void Solver::finalStepLength_PD( Variables *iterate, Variables *step,
 
 	assert(alpha_primal <= 1.0);
    assert(alpha_dual <= 1.0);
+
+	// safeguard against numerical troubles in the above computations
+	alpha_primal = std::min( alpha_primal, maxAlpha_p );
+	alpha_dual = std::min( alpha_dual, maxAlpha_d );
 
 	// make it at least gamma_f * maxAlpha and no bigger than 1
 	if( alpha_primal < gamma_f * maxAlpha_p ) alpha_primal = gamma_f * maxAlpha_p;
@@ -397,15 +403,14 @@ int Solver::defaultStatus(Data * /* data */, Variables * /* vars */,
   int stop_code = NOT_FINISHED;
   int idx;
 
-  double gap   = fabs( resids->dualityGap() );
-  double rnorm = resids->residualNorm();
+  const double gap   = fabs( resids->dualityGap() );
+  const double rnorm = resids->residualNorm();
 
-  int myrank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  const int myrank = PIPS_MPIgetRank();
 
-  idx = iterate-1;
-  if(idx <  0     ) idx=0;
-  if(idx >= maxit ) idx=maxit-1;
+  idx = iterate - 1;
+  if( idx <  0     ) idx = 0;
+  if( idx >= maxit ) idx = maxit-1;
 
   // store the historical record
   mu_history[idx] = mu;
@@ -413,16 +418,15 @@ int Solver::defaultStatus(Data * /* data */, Variables * /* vars */,
   phi = (rnorm + gap) / dnorm;
   phi_history[idx] = phi;
 
-
   if(idx > 0) {
-    phi_min_history[idx] = phi_min_history[idx-1];
+    phi_min_history[idx] = phi_min_history[idx - 1];
     if(phi < phi_min_history[idx]) phi_min_history[idx] = phi;
   } else
     phi_min_history[idx] = phi;
 
   if ( iterate >= maxit ) {
     stop_code = MAX_ITS_EXCEEDED;
-  } else if ( mu <= mutol && rnorm <= artol*dnorm ) {
+  } else if ( mu <= mutol && rnorm <= artol * dnorm ) {
     stop_code = SUCCESSFUL_TERMINATION;
   }
 
@@ -440,7 +444,7 @@ int Solver::defaultStatus(Data * /* data */, Variables * /* vars */,
   if(stop_code != NOT_FINISHED)  return stop_code;
 
   // check infeasibility condition
-  if(idx >= 10 && phi >= 1.e-8 && phi >= 1.e4*phi_min_history[idx]) {
+  if(idx >= 10 && phi >= 1.e-8 && phi >= 1.e4 * phi_min_history[idx]) {
 #ifdef TIMING
     if( myrank == 0 )
        std::cout << "possible INFEASIBLITY detected, phi: " << phi << std::endl;
@@ -450,25 +454,25 @@ int Solver::defaultStatus(Data * /* data */, Variables * /* vars */,
   if(stop_code != NOT_FINISHED)  return stop_code;
 
   // check for unknown status: slow convergence first
-  if(idx >= 350 && phi_min_history[idx] >= .5 * phi_min_history[idx-30]) {
+  if(idx >= 350 && phi_min_history[idx] >= 0.5 * phi_min_history[idx - 30]) {
     stop_code = UNKNOWN;
     printf("hehe dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm, artol);
   }
 
-  if(idx >= 350 && rnorm / dnorm > artol &&
-     (rnorm_history[idx]/mu_history[idx]) / (rnorm_history[0]/mu_history[0]) 
-     >= 1.e8) {
+  if(idx >= 350 && rnorm > artol * dnorm &&
+     rnorm_history[idx] * mu_history[0] >= 1.e8 * mu_history[idx] * rnorm_history[0])
+  {
     stop_code = UNKNOWN;
     printf("dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm, artol);
   }
 
-  //if(mu<50*rnorm/dnorm || mu<1e-5) {
-  if(mu<1.0e5*rnorm/dnorm) {
+  //if(dnorm * mu < 50 * rnorm || mu < 1e-5) {
+  if( mu * dnorm < 1.0e5 * rnorm) {
     //if(!onSafeSolver) {
     gLackOfAccuracy=1;
     //cout << "Lack of accuracy detected ---->" << mu << ":" << rnorm/dnorm << endl;
   } else {
-      //if(mu>1e7*rnorm/dnorm && mu>1.0e4)
+      //if(dnorm * mu > 1e7 * rnorm && mu > 1.0e4)
       //gLackOfAccuracy=-1;
       //else
       gLackOfAccuracy=1;

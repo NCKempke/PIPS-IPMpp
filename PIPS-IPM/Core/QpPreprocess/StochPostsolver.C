@@ -619,8 +619,8 @@ void StochPostsolver::endBoundTightening( const std::vector<int>& store_linking_
 void StochPostsolver::notifyRowPropagatedBound( const INDEX& row, const INDEX& col, double old_bound, double new_bound, bool is_upper_bound, const StochGenMatrix& matrix_row)
 {
    assert(!PIPSisEQ(old_bound, new_bound));
-   assert(row.isRow());
-   assert(col.isCol());
+   assert( row.isRow() || row.isEmpty() );
+   assert( col.isCol() );
 
    if(is_upper_bound)
       assert( PIPSisLT(new_bound, old_bound) );
@@ -647,7 +647,7 @@ void StochPostsolver::notifyRowPropagatedBound( const INDEX& row, const INDEX& c
    indices.push_back( row );
    indices.push_back( col );
 
-   int index_stored_row = storeRow( row, matrix_row );
+   const int index_stored_row = row.isEmpty() ? -1 : storeRow( row, matrix_row );
 
    int_values.push_back(is_upper_bound);
    int_values.push_back(index_stored_row);
@@ -1073,9 +1073,7 @@ bool StochPostsolver::postsolveBoundsTightened(sVars& original_vars, int reducti
 
    /* adjust slack v/w */
    if( std::fabs(old_bound) == INF_POS )
-   {
       slack = 0.0;
-   }
    else
    {
       if( is_upper_bound )
@@ -1281,10 +1279,11 @@ bool StochPostsolver::postsolveFixedEmptyColumn(sVars& original_vars, int reduct
    assert( reductions.at(reduction_idx) == FIXED_EMPTY_COLUMN );
 
    const unsigned int first_float_val = start_idx_float_values.at(reduction_idx);
-   const unsigned int first_int_val = start_idx_int_values.at(reduction_idx);
    const unsigned int first_index = start_idx_indices.at(reduction_idx);
 
 #ifndef NDEBUG
+   const unsigned int first_int_val = start_idx_int_values.at(reduction_idx);
+
    const unsigned int next_first_float_val = start_idx_float_values.at(reduction_idx + 1);
    const unsigned int next_first_int_val = start_idx_int_values.at(reduction_idx + 1);
    const unsigned int next_first_index = start_idx_indices.at(reduction_idx + 1);
