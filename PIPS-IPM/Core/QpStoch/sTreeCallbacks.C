@@ -1318,38 +1318,52 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
       child.MZL = two_links_children_ineq[i];
       child.mzl_active = two_links_children_ineq[i];
+
+      child.nx_active = -1;
+      child.my_active = -1;
+      child.mz_active = -1;
+      child.np = -1;
+
+      int nx = 0;
+      int my = 0;
+      int mz = 0;
+
+      for( size_t j = 0; j < child.children.size(); ++j )
+      {
+         const sTreeCallbacks& childchild = dynamic_cast<const sTreeCallbacks&>(*child.children[i]);
+         nx += childchild.N;
+         my += childchild.MY;
+         mz += childchild.MZ;
+      }
+
+      child.N = nx;
+      child.MY = my;
+      child.MZ = mz;
+
+      // TODO : the ID breaks here - but I anyway don't see a use for it anywhere
+      child.data = new StochInputTree::StochInputNode( 100000 );
    }
 
+
+#ifndef NEDBUG
+   int nx = 0;
+   int my = 0;
+   int mz = 0;
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      sTreeCallbacks& child = dynamic_cast<sTreeCallbacks&>(*children[i]);
+      nx += child.N;
+      my += child.MY;
+      mz += child.MZ;
+   }
+
+   assert( this->N = nx + this->nx_active );
+   assert( this->MY = my + this->my_active );
+   assert( this->MZ = mz + this->mz_active );
+#endif
+
    assert(false);
-//   for( size_t i = 0; i < children.size(); ++i )
-//   {
-//      sTreeCallbacks& child = *children[i];
-//
-//      child.N = N;
-//      this->N -= nx_to_shave;
-//      top_layer->MY = MY;
-//      top_layer->MZ = MZ;
-//      this->np = -1;
-//
-//      assert( IPMIterExecTIME == -1 );
-//
-//      top_layer->nx_active = nx_to_shave;
-//      this->nx_active -= nx_to_shave;
-//
-//      top_layer->my_active = -1;
-//      top_layer->mz_active = -1;
-//
-//      top_layer->myl_active = myl_to_shave;
-//      this->myl_active -= myl_to_shave;
-//
-//      top_layer->mzl_active = mzl_to_shave;
-//      this->mzl_active -= mzl_to_shave;
-//
-//      /* dummy data - should not except for querying the id */
-//      top_layer->data = new StochInputTree::StochInputNode( data->id );
-//      top_layer->tree = nullptr;
-//   }
-//
 }
 
 
