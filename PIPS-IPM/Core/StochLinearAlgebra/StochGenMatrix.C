@@ -6,7 +6,6 @@
 #include "pipsport.h"
 #include <limits>
 #include <algorithm>
-using namespace std;
 
 StochGenMatrix::StochGenMatrix(int id, 
 			       long long global_m, long long global_n,
