@@ -1648,6 +1648,11 @@ sData::destroyChildren()
 
 sData* sData::switchToHierarchicalData( const sTree* tree )
 {
+   // TODO : split lower levels according to tree structure
+   // TODO : make method for top layer and split operation
+
+   assert( false && "TODO: implement");
+
    assert( tree->isHierarchicalRoot() );
    assert( tree->children.size() == 1 );
 
