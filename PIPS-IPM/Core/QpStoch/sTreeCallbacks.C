@@ -1127,10 +1127,6 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->mzl_active = mzl_to_shave;
    this->mzl_active -= mzl_to_shave;
 
-   /* dummy data - should not except for querying the id */
-   top_layer->data = new StochInputTree::StochInputNode( data->id );
-   top_layer->tree = nullptr;
-
    return top_layer;
 }
 
@@ -1237,10 +1233,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assert( static_cast<int>(map_proc_subcomm.size()) == numProcs );
    /* children should now be created and an additional layer in the tree should exist */
 
-   /* */
    this->is_hierarchical_inner = true;
-   // TODO : adapt this->myl this->mzl
-   // TODO :
 
    /* count how many 2 links will stay at this */
    int two_links_root_eq;
@@ -1263,7 +1256,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
       {
          sTreeCallbacks& childchild = dynamic_cast<sTreeCallbacks&>(*child.children[i]);
 
-         // TODO : remove once splitting works fine
+         /* do not allow splitting of inner nodes yet */
          assert( childchild.children.size() == 0 );
 
          if( childchild.children.size() == 0 )
@@ -1331,9 +1324,6 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
       child.N = nx;
       child.MY = my;
       child.MZ = mz;
-
-      // TODO : the ID breaks here - but I anyway don't see a use for it anywhere
-      child.data = new StochInputTree::StochInputNode( 100000 );
    }
 
 #ifndef NEDBUG
@@ -1377,9 +1367,9 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    assert( rankPrcnd == -1 );
    assert( commP2ZeroW == MPI_COMM_NULL );
 
-   sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
+   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
-   top_layer->children[0]->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+   sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
    return top_layer;
 }
