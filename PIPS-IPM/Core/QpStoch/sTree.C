@@ -91,7 +91,6 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
 #endif
    //**** solve the assignment problem ****
    vector<vector<int> > map_child_nodes_to_procs(children.size());
-   //  map_child_nodes_to_procs.resize(children.size());
 
    const int n_children_per_process = children.size() / n_procs;
    const int n_unassigned = children.size() % n_procs;
@@ -147,7 +146,8 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
    MPI_Group mpiWorldGroup;
    ierr = MPI_Comm_group(commWrkrs, &mpiWorldGroup);
    (void) ierr;
-   assert(ierr == MPI_SUCCESS);
+   assert( ierr == MPI_SUCCESS );
+
    for( size_t i = 0; i < children.size(); i++ )
    {
      const int n_ranks_4_this_child = map_child_nodes_to_procs[i].size();
@@ -535,13 +535,14 @@ void sTree::syncStochVector(StochVector& stVec) const
 StochVector* sTree::newPrimalVector() const
 {
   //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
+  if( commWrkrs == MPI_COMM_NULL )
     return new StochDummyVector();
 
   StochVector* x = new StochVector(nx(), commWrkrs);
-  assert(x!=nullptr);
+  assert( x != nullptr );
 
-  for(size_t it=0; it<children.size(); it++) {
+  for(size_t it = 0; it < children.size(); it++)
+  {
     StochVector* child = children[it]->newPrimalVector();
     x->AddChild(child);
   }

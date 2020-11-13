@@ -26,9 +26,11 @@ Data* sFactoryHierarchical::switchToHierarchicalData( Data* prob_in )
    const int myl_to_shave = data->getNGlobalEQConss();
    const int mzl_to_shave = data->getNGlobalINEQConss();
 
-   // TODO : lower hierarchy missing
    // adjust tree
-   tree = tree->switchToHierarchicalTree(nx_to_shave, myl_to_shave, mzl_to_shave);
+   const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
+   const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
+
+   tree = tree->switchToHierarchicalTree( nx_to_shave, myl_to_shave, mzl_to_shave, twoLinksStartBlockA, twoLinksStartBlockC );
 
    assert( tree->children.size() == 1 );
    assert( tree->isHierarchicalRoot() );

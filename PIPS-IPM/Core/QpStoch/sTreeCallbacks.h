@@ -74,7 +74,14 @@ class sTreeCallbacks : public sTree
   virtual void writeSizes(ostream& sout) const;
 
   // TODO : make sure that none of the not suitable methods get called...
-  sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+ private:
+  void createSubcommunicatorsAndChildren( std::vector<int>& map_my_procs_to_sub_comm );
+
+  void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
+  sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+ public:
+  sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
+        const std::vector<int>& twoLinksStartBlockC ) override;
 
  protected:
   bool isDataPresolved;
@@ -82,9 +89,13 @@ class sTreeCallbacks : public sTree
 
   sTreeCallbacks();
   StochInputTree::StochInputNode* data; //input data
+
   // in POOLSCEN case, only root node has non-null data
   StochInputTree* tree;
   std::vector<StochInputTree::StochInputNode*> scens;
+
+
+  // TODO : remove
   StochInputTree::StochInputNode* fakedata; //convenient struct for holding n,my,mz etc
   // holds stoch trees for each of the scenarios that are combined at this node
   // this is just a convenience to reuse the create* and newVector* functions

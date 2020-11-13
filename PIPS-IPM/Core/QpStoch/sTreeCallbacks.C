@@ -20,7 +20,7 @@
 
 sTreeCallbacks::~sTreeCallbacks()
 {
-   for(size_t it=0; it<children.size(); it++)
+   for(size_t it = 0; it < children.size(); it++)
       if (fakedata) delete fakedata;
    for(size_t i = 0; i < real_children.size(); i++)
       delete real_children[i];
@@ -44,16 +44,18 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
     isDataPresolved(false), hasPresolvedData(false), tree(nullptr), fakedata(nullptr)
 {
-  if(-1==rankMe) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
-  if(-1==numProcs) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+   if( -1 == rankMe )
+      MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
+   if( -1 == numProcs )
+      MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
   data = inputTree->nodeInput;
 
 #ifndef POOLSCEN
-  for(size_t it=0; it<inputTree->children.size(); it++)
-    children.push_back(new sTreeCallbacks(inputTree->children[it]));
+  for(size_t it = 0; it < inputTree->children.size(); it++)
+     children.push_back(new sTreeCallbacks(inputTree->children[it]));
 #else
   assert( false && "should not end up here..." );
-	tree = inputTree;
+  tree = inputTree;
 #endif
 }
 
@@ -1089,32 +1091,17 @@ StochVector* sTreeCallbacks::createicupp() const
   return icupp;
 }
 
-sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave)
+sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave )
 {
-   assert( !is_hierarchical_root );
-   assert( np == -1 );
-
-   assert( nx_to_shave >= 0 );
-   assert( myl_to_shave >=0 );
-   assert( mzl_to_shave >= 0 );
-
-   assert( nx_to_shave <= nx_active );
-   assert( myl_to_shave <= myl_active );
-   assert( mzl_to_shave <= mzl_active );
-
    sTreeCallbacks* top_layer = new sTreeCallbacks();
 
    /* sTree members */
    top_layer->commWrkrs = commWrkrs;
    top_layer->myProcs = myProcs;
 
+   /* this must happen at MPI_COMM_WORLD level */
    assert( rankMe == PIPS_MPIgetRank() );
    assert( numProcs == PIPS_MPIgetSize() );
-
-   // make sure distributed preconditioner is deactivated
-   assert( rankZeroW == 0 );
-   assert( rankPrcnd == -1 );
-   assert( commP2ZeroW == MPI_COMM_NULL );
 
    top_layer->N = N;
    this->N -= nx_to_shave;
@@ -1136,22 +1123,6 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    top_layer->is_hierarchical_root = true;
 
    /* sTreeCallbacks members */
-   /* inactive counters are from a different data (the original not presolved one) object which does not have the root layer - set to -1 and false */
-   top_layer->isDataPresolved = false;
-   top_layer->hasPresolvedData = false;
-
-   top_layer->nx_inactive = -1;
-   top_layer->my_inactive = -1;
-   top_layer->mz_inactive = -1;
-   top_layer->myl_inactive = -1;
-   top_layer->mzl_inactive = -1;
-
-   top_layer->N_INACTIVE = -1;
-   top_layer->MY_INACTIVE = -1;
-   top_layer->MZ_INACTIVE = -1;
-   top_layer->MYL_INACTIVE = -1;
-   top_layer->MZL_INACTIVE = -1;
-
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
 
@@ -1167,6 +1138,243 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* dummy data - should not except for querying the id */
    top_layer->data = new StochInputTree::StochInputNode( data->id );
    top_layer->tree = nullptr;
+
+   return top_layer;
+}
+
+void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<int>& map_my_procs_to_sub_comm )
+{
+   const int size_comm = PIPS_MPIgetSize(commWrkrs);
+   assert( size_comm == static_cast<int>(myProcs.size()) );
+
+   if( size_comm < 3 )
+      assert( false && "need at least 4 MPI_COMMS to split a root linsys");
+
+   /* we will split the current communicator into sqrt(size) (rounded) new ones */
+   const int n_split_comms = std::floor(std::sqrt(size_comm));
+   const int leftover_comms = size_comm % n_split_comms;
+
+   if( PIPS_MPIgetRank(commWrkrs) == 0 )
+      std::cout << "Splitting communicator of size " << size_comm << " into " << n_split_comms << " new ones" << std::endl;
+
+   int my_comm = -1;
+   int current_comm_until = 0;
+
+   map_my_procs_to_sub_comm.clear();
+   map_my_procs_to_sub_comm.resize(size_comm);
+
+   const int my_rank = PIPS_MPIgetRank(commWrkrs);
+   for( int i = 0; i < n_split_comms; ++i )
+   {
+      const int current_comm_start = current_comm_until;
+
+      if( current_comm_until < leftover_comms * (n_split_comms + 1) )
+         current_comm_until += (n_split_comms + 1);
+      else
+         current_comm_until += n_split_comms;
+
+      assert( current_comm_until <= size_comm );
+
+      for( int j = current_comm_start; j < current_comm_until; ++j )
+      {
+         map_my_procs_to_sub_comm[j] = i;
+
+         if( my_rank == j )
+            my_comm = i;
+      }
+   }
+   assert( 0 <= my_comm && my_comm < n_split_comms );
+
+   MPI_Comm comm_my_subsystem;
+   MPI_Comm_split(commWrkrs, my_comm, my_rank, &comm_my_subsystem);
+
+
+   std::vector<sTreeCallbacks*> sub_roots(n_split_comms);
+
+   /* create new sub-roots */
+   for( int i = 0; i < n_split_comms; ++i )
+   {
+      sub_roots[i] = new sTreeCallbacks();
+
+      if( i == my_comm )
+      {
+         sub_roots[i]->numProcs = PIPS_MPIgetSize(comm_my_subsystem);
+         sub_roots[i]->commWrkrs = comm_my_subsystem;
+      }
+      else
+      {
+         sub_roots[i]->numProcs = -1;
+         sub_roots[i]->commWrkrs = MPI_COMM_NULL;
+      }
+   }
+
+   /* assign children to sub_comm systems and assign processes to them  */
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      assert( children[i]->myProcs.size() == 1 );
+      const int child_proc = children[i]->myProcs[0];
+
+      const int assigned_sub_comm = map_my_procs_to_sub_comm[ child_proc ];
+      sub_roots[assigned_sub_comm]->children.push_back( children[i] );
+      sub_roots[assigned_sub_comm]->myProcs.push_back(child_proc);
+
+      sub_roots[assigned_sub_comm]->numProcs++;
+   }
+
+   /* add sub_roots as this new children */
+   children.clear();
+   children.insert( this->children.begin(), sub_roots.begin(), sub_roots.end() );
+}
+
+
+void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+{
+   assert( commWrkrs != MPI_COMM_NULL );
+   assert( !is_hierarchical_root );
+
+   assert( twoLinksStartBlockA.size() == twoLinksStartBlockC.size() );
+   assert( twoLinksStartBlockA.size() == children.size() );
+
+   assert( rankMe == PIPS_MPIgetRank(commWrkrs) );
+   assert( numProcs == PIPS_MPIgetSize(commWrkrs) );
+
+   const size_t n_leafs = children.size();
+   std::vector<int> map_proc_subcomm;
+
+   createSubcommunicatorsAndChildren(map_proc_subcomm);
+   assert( static_cast<int>(map_proc_subcomm.size()) == numProcs );
+   /* children should now be created and an additional layer in the tree should exist */
+
+   /* */
+   this->is_hierarchical_inner = true;
+   // TODO : adapt this->myl this->mzl
+   // TODO :
+
+   /* count how many 2 links will stay at this */
+   int two_links_root_eq;
+   int two_links_root_ineq;
+   int two_links_children_eq_sum = 0;
+   int two_links_children_ineq_sum = 0;
+   std::vector<int> two_links_children_eq(children.size(), 0);
+   std::vector<int> two_links_children_ineq(children.size(), 0);
+
+   /* count two links for all new sub-communicators */
+   size_t block = 0;
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      sTreeCallbacks& child = dynamic_cast<sTreeCallbacks&>(*children[i]);
+
+      const std::vector<int>& child_procs = child.myProcs;
+      assert( is_sorted(child_procs.begin(), child_procs.end()) );
+
+      for( size_t j = 0; j < child.children.size(); ++j )
+      {
+         sTreeCallbacks& childchild = dynamic_cast<sTreeCallbacks&>(*child.children[i]);
+
+         // TODO : remove once splitting works fine
+         assert( childchild.children.size() == 0 );
+
+         if( childchild.children.size() == 0 )
+         {
+            assert( childchild.commWrkrs == MPI_COMM_NULL );
+            assert( childchild.MYL == 0 );
+            assert( childchild.MZL == 0 );
+
+            childchild.is_hierarchical_leaf = true;
+         }
+
+         assert( block < twoLinksStartBlockA.size() );
+         /* the two links from our last child will stay linking in the root node */
+         if( j == child.children.size() - 1 )
+         {
+            two_links_root_eq += twoLinksStartBlockA[block];
+            two_links_root_ineq += twoLinksStartBlockC[block];
+         }
+         else
+         {
+            two_links_children_eq_sum += twoLinksStartBlockA[block];
+            two_links_children_ineq_sum += twoLinksStartBlockC[block];
+            two_links_children_eq[i] += twoLinksStartBlockA[block];
+            two_links_children_ineq[i] += twoLinksStartBlockC[block];
+         }
+
+         ++block;
+      }
+   }
+
+   assert( block == n_leafs );
+
+
+   /* now set the linking sizes of all children am this */
+   this->myl_active -= two_links_children_eq_sum;
+   this->mzl_active -= two_links_children_ineq_sum;
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      sTreeCallbacks& child = dynamic_cast<sTreeCallbacks&>(*children[i]);
+
+      child.MYL = two_links_children_eq[i];
+      child.myl_active = two_links_children_eq[i];
+
+      child.MZL = two_links_children_ineq[i];
+      child.mzl_active = two_links_children_ineq[i];
+   }
+
+   assert(false);
+//   for( size_t i = 0; i < children.size(); ++i )
+//   {
+//      sTreeCallbacks& child = *children[i];
+//
+//      child.N = N;
+//      this->N -= nx_to_shave;
+//      top_layer->MY = MY;
+//      top_layer->MZ = MZ;
+//      this->np = -1;
+//
+//      assert( IPMIterExecTIME == -1 );
+//
+//      top_layer->nx_active = nx_to_shave;
+//      this->nx_active -= nx_to_shave;
+//
+//      top_layer->my_active = -1;
+//      top_layer->mz_active = -1;
+//
+//      top_layer->myl_active = myl_to_shave;
+//      this->myl_active -= myl_to_shave;
+//
+//      top_layer->mzl_active = mzl_to_shave;
+//      this->mzl_active -= mzl_to_shave;
+//
+//      /* dummy data - should not except for querying the id */
+//      top_layer->data = new StochInputTree::StochInputNode( data->id );
+//      top_layer->tree = nullptr;
+//   }
+//
+}
+
+
+sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
+      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+{
+   assert( !is_hierarchical_root );
+   assert( np == -1 );
+
+   assert( nx_to_shave >= 0 );
+   assert( myl_to_shave >=0 );
+   assert( mzl_to_shave >= 0 );
+
+   assert( nx_to_shave <= nx_active );
+   assert( myl_to_shave <= myl_active );
+   assert( mzl_to_shave <= mzl_active );
+
+   /* distributed preconditioner must be deactivated */
+   assert( rankZeroW == 0 );
+   assert( rankPrcnd == -1 );
+   assert( commP2ZeroW == MPI_COMM_NULL );
+
+   sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
+
+   top_layer->children[0]->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    return top_layer;
 }

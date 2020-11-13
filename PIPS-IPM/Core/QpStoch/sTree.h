@@ -108,6 +108,9 @@ class sTree
   int isInVector(int elem, const vector<int>& vec);
 
   bool is_hierarchical_root = false;
+  bool is_hierarchical_inner = false;
+  bool is_hierarchical_leaf = false;
+
  public:
   /* global sizes - global meaning on this process - so the sum of all local matrices - MY, MZ do not include linking constraints */
   long long N, MY, MZ, MYL, MZL;//global sizes
@@ -140,8 +143,16 @@ class sTree
   virtual void loadLocalSizes() = 0;
 
   bool isHierarchicalRoot() const { return is_hierarchical_root; };
+  bool isHierarchicalInner() const { return is_hierarchical_inner; };
+
+  /* shave tree and add an additional top layer */
+  virtual sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
+  /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
+  virtual void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) = 0;
+
   // TODO : make sure that none of the not suitable methods get called...
-  virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
+  virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
+        const std::vector<int>& twoLinksStartBlockC ) = 0;
 };
 
 #endif 

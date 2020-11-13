@@ -204,6 +204,13 @@ public:
   std::vector<int> linkStartBlockIdC;
   std::vector<int> n_blocks_per_link_row_C;
 
+ public:
+  const std::vector<int>& getTwoLinksStartBlockA()
+  { return linkStartBlockLengthsA; }
+  const std::vector<int>& getTwoLinksStartBlockC()
+  { return linkStartBlockLengthsC; }
+
+ private:
   /* how many two-links start in block i */
   std::vector<int> linkStartBlockLengthsA;
   std::vector<int> linkStartBlockLengthsC;
