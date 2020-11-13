@@ -17,9 +17,9 @@
  * 'AddChild' method correctly sets the parent and (re)creates an EMPTY
  * border with correct sizes.
  */
-StochSymMatrix::StochSymMatrix(int id, long long global_n, int local_n, int local_nnz, 
+StochSymMatrix::StochSymMatrix(long long global_n, int local_n, int local_nnz,
 			       MPI_Comm mpiComm_)
-  :id(id), n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
+  :n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
 {
   diag = new SparseSymMatrix(local_n, local_nnz);
   // the cross Hessian is nullptr for the root node; it may be also nullptr for 
@@ -29,11 +29,11 @@ StochSymMatrix::StochSymMatrix(int id, long long global_n, int local_n, int loca
   border = nullptr;
 }
 
-StochSymMatrix::StochSymMatrix( int id, long long global_n, 
+StochSymMatrix::StochSymMatrix( long long global_n,
 				int nrows, int diag_nnz, 
 				int nbordercols, int border_nnz,
 				MPI_Comm mpiComm_)
-  :id(id), n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
+  :n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
 {
    diag = new SparseSymMatrix(nrows, diag_nnz);
    border = new SparseGenMatrix(nrows, nbordercols, border_nnz);
@@ -66,7 +66,7 @@ StochSymMatrix* StochSymMatrix::clone() const
    const int local_n = diag->getStorageRef().n;
    const int local_nnz = diag->getStorageRef().len;
 
-   StochSymMatrix* clone = new StochSymMatrix(id, n, local_n, local_nnz, mpiComm);
+   StochSymMatrix* clone = new StochSymMatrix(n, local_n, local_nnz, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -523,7 +523,7 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
    assert( border == nullptr );
 
    SparseGenMatrix* const border_top_left = diag->shaveSymLeftBottom(n_vars);
-   StringGenMatrix* const border_vertical = new StringGenMatrix(id, true, border_top_left, nullptr, mpiComm);
+   StringGenMatrix* const border_vertical = new StringGenMatrix(true, border_top_left, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -534,7 +534,7 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 
    n -= n_vars;
 
-   BorderedSymMatrix* const border_layer = new BorderedSymMatrix(id, this, border_vertical, new SparseSymMatrix(n_vars, 0, false), mpiComm);
+   BorderedSymMatrix* const border_layer = new BorderedSymMatrix(this, border_vertical, new SparseSymMatrix(n_vars, 0, false), mpiComm);
 
    assert(n >= 0);
 
@@ -545,7 +545,7 @@ void StochSymMatrix::shaveBorder(int n_vars, StringGenMatrix*& border_vertical)
 {
    assert( border );
    SparseGenMatrix* const border_block = border->shaveLeft(n_vars);
-   border_vertical = new StringGenMatrix(id, true, border_block, nullptr, mpiComm);
+   border_vertical = new StringGenMatrix(true, border_block, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {

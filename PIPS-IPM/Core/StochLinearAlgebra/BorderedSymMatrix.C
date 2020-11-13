@@ -11,8 +11,8 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-BorderedSymMatrix::BorderedSymMatrix(int id_, StochSymMatrix* inner_matrix_, StringGenMatrix* border_vertical_, SymMatrix* top_left_block_,
-            MPI_Comm mpiComm_) : inner_matrix(inner_matrix_), border_vertical(border_vertical_), top_left_block(top_left_block_), id(id_), mpiComm( mpiComm_ ),
+BorderedSymMatrix::BorderedSymMatrix(StochSymMatrix* inner_matrix_, StringGenMatrix* border_vertical_, SymMatrix* top_left_block_,
+            MPI_Comm mpiComm_) : inner_matrix(inner_matrix_), border_vertical(border_vertical_), top_left_block(top_left_block_), mpiComm( mpiComm_ ),
             iAmDistrib( mpiComm == MPI_COMM_NULL )
 {
    assert( inner_matrix );

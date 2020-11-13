@@ -29,7 +29,7 @@ class StochSymMatrix;
 class BorderedSymMatrix : public SymMatrix
 {
    public:
-      BorderedSymMatrix(int id, StochSymMatrix* inner_matrix, StringGenMatrix* border_vertical,
+      BorderedSymMatrix(StochSymMatrix* inner_matrix, StringGenMatrix* border_vertical,
             SymMatrix* bottom_block, MPI_Comm mpiComm_);
 
       virtual ~BorderedSymMatrix();
@@ -89,7 +89,6 @@ class BorderedSymMatrix : public SymMatrix
 
    protected:
 
-      int id;
       MPI_Comm mpiComm;
       const int iAmDistrib;
 

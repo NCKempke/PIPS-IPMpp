@@ -7,38 +7,28 @@
 #include <limits>
 #include <algorithm>
 
-StochGenMatrix::StochGenMatrix(int id, 
-			       long long global_m, long long global_n,
-			       int A_m, int A_n, int A_nnz,
-			       int B_m, int B_n, int B_nnz,
-			       MPI_Comm mpiComm_)
-  : id(id), m(global_m), n(global_n), 
-    mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
+      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
 {
    Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
    Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
    Blmat = new SparseGenMatrix(0, 0, 0);
 }
 
-StochGenMatrix::StochGenMatrix(int id,
-			       long long global_m, long long global_n,
-			       int A_m, int A_n, int A_nnz,
-			       int B_m, int B_n, int B_nnz,
-			       int Bl_m, int Bl_n, int Bl_nnz,
-			       MPI_Comm mpiComm_)
-  : id(id), m(global_m), n(global_n),
-    mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
+      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n,
+      int Bl_nnz, MPI_Comm mpiComm_) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
 {
    Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
    Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
    Blmat = new SparseGenMatrix(Bl_m, Bl_n, Bl_nnz);
 }
 
-StochGenMatrix::StochGenMatrix(int id,
-                long long global_m, long long global_n,
-                MPI_Comm mpiComm_)
-  : id(id), m(global_m), n(global_n),
-    mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+StochGenMatrix::StochGenMatrix(long long global_m, long long global_n,
+      MPI_Comm mpiComm_) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
 {
    Amat = nullptr;
    Bmat = nullptr;
@@ -63,7 +53,7 @@ StochGenMatrix::~StochGenMatrix()
 
 StochGenMatrix* StochGenMatrix::cloneFull(bool switchToDynamicStorage) const
 {
-   StochGenMatrix* clone = new StochGenMatrix(id, m, n, mpiComm);
+   StochGenMatrix* clone = new StochGenMatrix(m, n, mpiComm);
 
    // clone submatrices
    clone->Amat = Amat->cloneFull(switchToDynamicStorage);
@@ -79,7 +69,7 @@ StochGenMatrix* StochGenMatrix::cloneFull(bool switchToDynamicStorage) const
 /* creates an empty copy of the matrix with n = 0 for all submatrices and m (cols) as before */
 StochGenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const
 {
-   StochGenMatrix* clone = new StochGenMatrix(id, m, n, mpiComm);
+   StochGenMatrix* clone = new StochGenMatrix(m, n, mpiComm);
 
    // clone submatrices
    clone->Amat = Amat->cloneEmptyRows(switchToDynamicStorage);
@@ -2245,8 +2235,8 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 
    SparseGenMatrix* const Bl_right_bottom = Blmat->shaveBottom(m_conss);
 
-   StringGenMatrix* const border_bottom = new StringGenMatrix(id, false, Bl_right_bottom, nullptr, mpiComm);
-   StringGenMatrix* const border_left = new StringGenMatrix(id, true, A_left, Bl_left_top, mpiComm);
+   StringGenMatrix* const border_bottom = new StringGenMatrix(false, Bl_right_bottom, nullptr, mpiComm);
+   StringGenMatrix* const border_left = new StringGenMatrix(true, A_left, Bl_left_top, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -2262,7 +2252,7 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    m -= m_conss;
    n -= n_vars;
 
-   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(id, this, border_left, border_bottom, bottom_left_block, mpiComm);
+   BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
 
    assert(m >= 0 && n >= 0);
 
@@ -2271,12 +2261,11 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 
 void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom )
 {
-   // TODO further pass id?
    SparseGenMatrix* const border_a_mat = Amat->shaveLeft(n_vars);
    SparseGenMatrix* const border_bl_mat = Blmat->shaveBottom(m_conss);
 
-   border_bottom = new StringGenMatrix(id, false, border_bl_mat, nullptr, mpiComm);
-   border_left = new StringGenMatrix(id, true, border_a_mat, nullptr, mpiComm);
+   border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
+   border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
 
    if( children.size() == 0 )
       assert( PIPS_MPIgetSize( mpiComm ) == 1 );

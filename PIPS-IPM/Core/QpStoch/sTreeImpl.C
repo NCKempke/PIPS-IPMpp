@@ -30,7 +30,7 @@ sTreeImpl::sTreeImpl( stochasticInput &in_, MPI_Comm comm /*=MPI_COMM_WORLD*/)
 }
 
 sTreeImpl::sTreeImpl(int id, stochasticInput &in_)
-  : sTree(), m_id(id), in(in_)
+  : sTree(), m_id(id), in(in_), parent(nullptr)
 { 
    assert( false && "not used" );
   m_nx=0; m_my=0; m_mz=0;
@@ -66,7 +66,7 @@ StochSymMatrix* sTreeImpl::createQ() const
 {
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
-    return new StochSymDummyMatrix(m_id);
+    return new StochSymDummyMatrix();
 
   StochSymMatrix* Q = nullptr;
 
@@ -76,7 +76,7 @@ StochSymMatrix* sTreeImpl::createQ() const
     CoinPackedMatrix Q0;
     Q0.reverseOrderedCopyOf( in.getFirstStageHessian() );
 
-    Q = new StochSymMatrix(m_id, N, m_nx, Q0.getNumElements(), commWrkrs);
+    Q = new StochSymMatrix(N, m_nx, Q0.getNumElements(), commWrkrs);
 
     memcpy( Q->diag->krowM(), 
 	    Q0.getVectorStarts(),
@@ -93,7 +93,7 @@ StochSymMatrix* sTreeImpl::createQ() const
     Ri.reverseOrderedCopyOf( in.getSecondStageCrossHessian(m_id-1) );
 			     
     Q = new 
-      StochSymMatrix( m_id,N, 
+      StochSymMatrix( N,
 		      m_nx, Qi.getNumElements(), //size and nnz of the diag block
 		      parent->m_nx, Ri.getNumElements(), //num of cols and nnz of the border
 		      commWrkrs);
@@ -295,7 +295,7 @@ StochGenMatrix* sTreeImpl::createA() const
 {
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
-    return new StochGenDummyMatrix(m_id);
+    return new StochGenDummyMatrix();
 
   StochGenMatrix* A = nullptr;
   if (m_id==0) {
@@ -309,7 +309,7 @@ StochGenMatrix* sTreeImpl::createA() const
 		       in.getFirstStageRowUB(), 
 		       eq_comp());
     //printf("%d  -- 1st stage my=%lu nx=%lu nnzB=%d\n", commie, m_my, m_nx, nnzB);
-    A = new StochGenMatrix( m_id, N, MZ, 
+    A = new StochGenMatrix(N, MZ,
 			    m_my, 0,   0,    // A does not exist for the root
 			    m_my, m_nx, nnzB, // B is 1st stage eq matrix
 			    commWrkrs );
@@ -328,7 +328,7 @@ StochGenMatrix* sTreeImpl::createA() const
     int nnzB=countNNZ( Brow, in.getSecondStageRowLB(scen), 
 		       in.getSecondStageRowUB(scen), eq_comp() );
 
-    A = new StochGenMatrix( m_id, N, MZ, 
+    A = new StochGenMatrix(N, MZ,
 			    m_my, parent->m_nx, nnzA, 
 			    m_my, m_nx,         nnzB,
 			    commWrkrs );
@@ -356,7 +356,7 @@ StochGenMatrix* sTreeImpl::createC() const
 {
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
-    return new StochGenDummyMatrix(m_id);
+    return new StochGenDummyMatrix();
 
   StochGenMatrix* C = nullptr;
   if (m_id==0) {
@@ -368,7 +368,7 @@ StochGenMatrix* sTreeImpl::createC() const
 		       in.getFirstStageRowLB(), 
 		       in.getFirstStageRowUB(), 
 		       ineq_comp());
-    C = new StochGenMatrix( m_id, N, MZ, 
+    C = new StochGenMatrix(N, MZ,
 			    m_mz, -1,   0,    // C does not exist for the root
 			    m_mz, m_nx, nnzD, // D is 1st stage ineq matrix
 			    commWrkrs );
@@ -387,7 +387,7 @@ StochGenMatrix* sTreeImpl::createC() const
     int nnzD=countNNZ( Drow, in.getSecondStageRowLB(scen), 
 		       in.getSecondStageRowUB(scen), ineq_comp() );
 
-    C = new StochGenMatrix( m_id, N, MZ, 
+    C = new StochGenMatrix(N, MZ,
 			    m_mz, parent->m_nx, nnzC, 
 			    m_mz, m_nx,         nnzD,
 			    commWrkrs );
@@ -747,29 +747,3 @@ void sTreeImpl::splitConstraints_stage2(int scen)
     }
   //printf("splitConstraints_stg2: found %d eq constr and %d ineq constr\n", m_my, m_mz);
 }
-
-/* replaced by splitConstraints_stage1 and 2
-int sTreeImpl::compute_nFirstStageEq()
-{
-  int num=0;
-  vector<double> lb=in.getFirstStageRowLB();
-  vector<double> ub=in.getFirstStageRowUB();
-
-  for (size_t i=0;i<lb.size(); i++)
-    if (lb[i]==ub[i]) num++;
-
-  return num;
-}
-
-int sTreeImpl::compute_nSecondStageEq(int scen)
-{
-  int num=0;
-  vector<double> lb=in.getSecondStageRowLB(scen);
-  vector<double> ub=in.getSecondStageRowUB(scen);
-
-  for (size_t i=0;i<lb.size(); i++)
-    if (lb[i]==ub[i]) num++;
-
-  return num;
-}
-*/

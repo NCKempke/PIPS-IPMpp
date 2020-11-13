@@ -55,7 +55,7 @@ class sTreeImpl : public sTree
         const std::vector<int>& twoLinksStartBlockC ) override { assert( 0 && "not implemented here"); return nullptr; };
   void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override
   { assert( 0 && "not implemented here" ); };
-  sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override { assert( 0 && "not implemented here" ); };
+  sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override { assert( 0 && "not implemented here" ); return nullptr; };
 
  private:
   int m_id;

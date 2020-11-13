@@ -38,8 +38,8 @@ public:
       and set the global size and the id to to 'global_n' and 'id', respectively.
       The parameter 'id' is used for output/debug purposes only.
       The created matrix will have no children.*/
-  StochSymMatrix( int id, long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm );
-  StochSymMatrix( int id, long long global_n, 
+  StochSymMatrix( long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm );
+  StochSymMatrix( long long global_n,
 		  int diag_n, int diag_nnz, 
 		  int border_n, int border_nnz,
 		  MPI_Comm mpiComm_);
@@ -48,7 +48,7 @@ public:
   std::vector<StochSymMatrix*> children;
   SparseSymMatrix* diag;
   SparseGenMatrix* border;
-  int id;
+
   long long n;
   MPI_Comm mpiComm;
   int iAmDistrib;
@@ -143,12 +143,12 @@ protected:
 
 public:
 
-  StochSymDummyMatrix(int id_)
-    : StochSymMatrix(id_, 0, 0, 0, MPI_COMM_NULL) {};
+  StochSymDummyMatrix()
+    : StochSymMatrix(0, 0, 0, MPI_COMM_NULL) {};
 
   virtual ~StochSymDummyMatrix(){};
 
-  StochSymDummyMatrix* clone() const override { return new StochSymDummyMatrix(id); };
+  StochSymDummyMatrix* clone() const override { return new StochSymDummyMatrix(); };
 
   void AddChild(StochSymMatrix* child) override {};
 

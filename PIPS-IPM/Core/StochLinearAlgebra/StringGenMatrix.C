@@ -14,12 +14,12 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix() : mat(nullptr), mat_link(nullptr), is_vertical(false), m(0), n(0), id(-1), mpi_comm(MPI_COMM_NULL), distributed(false), rank(-1)
+StringGenMatrix::StringGenMatrix() : mat(nullptr), mat_link(nullptr), is_vertical(false), m(0), n(0), mpi_comm(MPI_COMM_NULL), distributed(false), rank(-1)
 {
 }
 
-StringGenMatrix::StringGenMatrix(int id_, bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_)
-   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), id(id_), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
+StringGenMatrix::StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_)
+   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
    assert(mat);
 

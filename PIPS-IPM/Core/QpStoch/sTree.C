@@ -304,11 +304,11 @@ void sTree::syncStochSymMatrix(StochSymMatrix& mat) const
 
 	if(mat.children.size() == children.size()) {
 	  delete mat.children[it];
-	  mat.children[it] = new StochSymMatrix(children[it]->id(), dims[2], dims[0], dims[1],
+	  mat.children[it] = new StochSymMatrix(dims[2], dims[0], dims[1],
 						children[it]->commWrkrs);
 	} else {
 	  assert(mat.children.size()==it);
-	  mat.AddChild( new StochSymMatrix(children[it]->id(), dims[2], dims[0], dims[1],
+	  mat.AddChild( new StochSymMatrix(dims[2], dims[0], dims[1],
 					   children[it]->commWrkrs) );
 	}
 
@@ -331,8 +331,7 @@ void sTree::syncStochSymMatrix(StochSymMatrix& mat) const
   for(size_t it=0; it<children.size(); it++) {
     if( marked4Del[it]==1) {
       delete mat.children[it];
-      mat.children[it] = new StochSymDummyMatrix(children[it]->id());
-      //printf(">>>>>>>>>> id %d deleted -> dummy\n", children[it]->id());
+      mat.children[it] = new StochSymDummyMatrix();
     }
   }
   delete[] marked4Del;
@@ -395,13 +394,13 @@ void sTree::syncStochGenMatrix(StochGenMatrix& mat) const
 
 	if(mat.children.size() == children.size()) {
 	  delete mat.children[it];
-	  mat.children[it] = new StochGenMatrix(children[it]->id(), dims[6], dims[7], 
+	  mat.children[it] = new StochGenMatrix(dims[6], dims[7],
 						dims[0], dims[1], dims[2],
 						dims[3], dims[4], dims[5],
 						children[it]->commWrkrs);
 	} else {
 	  assert(mat.children.size()==it);
-	  mat.AddChild( new StochGenMatrix(children[it]->id(), dims[6], dims[7], 
+	  mat.AddChild( new StochGenMatrix(dims[6], dims[7],
 					   dims[0], dims[1], dims[2],
 					   dims[3], dims[4], dims[5],
 					   children[it]->commWrkrs) );
@@ -433,7 +432,7 @@ void sTree::syncStochGenMatrix(StochGenMatrix& mat) const
   for(size_t it=0; it<children.size(); it++) {
     if( marked4Del[it]==1) {
       delete mat.children[it];
-      mat.children[it] = new StochGenDummyMatrix(children[it]->id());
+      mat.children[it] = new StochGenDummyMatrix();
     }
   }
   delete[] marked4Del;

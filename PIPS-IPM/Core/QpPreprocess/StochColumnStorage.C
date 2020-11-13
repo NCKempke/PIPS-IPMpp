@@ -52,7 +52,7 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Stoch
    b0_block_storage = SparseGenMatrixHandle(sys_matrix.Bmat->cloneEmptyRowsTransposed(true));
 
    // todo : n, m are wrong here but the counters are broken anyways?
-   col_storage = StochGenMatrixHandle(new StochGenMatrix(sys_matrix.id, sys_matrix.n, sys_matrix.m, sys_matrix.mpiComm));
+   col_storage = StochGenMatrixHandle(new StochGenMatrix(sys_matrix.n, sys_matrix.m, sys_matrix.mpiComm));
 
 
    /* the rest of the matrix is going to get transposed - note that this would noramlly reverse the dummy non-dummy structure of the matrix
@@ -79,9 +79,9 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Stoch
       /* create child */
       StochGenMatrix* child_clone;
       if( child.isKindOf( kStochGenDummyMatrix ) )
-         child_clone = new StochGenDummyMatrix(child.id);
+         child_clone = new StochGenDummyMatrix();
       else
-         child_clone = new StochGenMatrix(child.id, child.m, child.n, child.mpiComm);
+         child_clone = new StochGenMatrix(child.m, child.n, child.mpiComm);
 
       /* clone submatrices */
       delete child_clone->Amat;

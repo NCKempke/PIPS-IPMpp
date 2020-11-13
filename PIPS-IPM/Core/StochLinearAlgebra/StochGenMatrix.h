@@ -18,29 +18,25 @@ protected:
 
 public:
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by  
-      A_m, A_n, A_nnz and B_m, B_n, B_nnz.
-      Also sets the global sizes to 'global_m' and 'global_n'. The 'id' parameter is used 
-      for output/debug purposes only.
-      The matrix that will be created  has no children, just local data.*/
-  StochGenMatrix(int id, 
-		 long long global_m, long long global_n,
+   *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
+   *  Also sets the global sizes to 'global_m' and 'global_n'.
+   *  The matrix that will be created  has no children, just local data.
+   */
+  StochGenMatrix(long long global_m, long long global_n,
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
 		 MPI_Comm mpiComm_);
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
       A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz. Otherwise, identical to the above constructor */
-  StochGenMatrix(int id,
-		 long long global_m, long long global_n,
+  StochGenMatrix(long long global_m, long long global_n,
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
 		 int Bl_m, int Bl_n, int Bl_nnz,
 		 MPI_Comm mpiComm_);
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
-  StochGenMatrix(int id,
-       long long global_m, long long global_n,
-       MPI_Comm mpiComm_);
+  StochGenMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
 
   // constructor for combining scenarios
   virtual ~StochGenMatrix();
@@ -55,7 +51,6 @@ public:
   SparseGenMatrix* Bmat;
   SparseGenMatrix* Blmat;
 
-  int id;
   long long m, n;
   MPI_Comm mpiComm;
   int iAmDistrib;
@@ -258,8 +253,8 @@ protected:
 
 public:
 
-  StochGenDummyMatrix(int id)
-    : StochGenMatrix(id, 0, 0, 0, 0, 0, 0, 0, 0, MPI_COMM_NULL) {};
+  StochGenDummyMatrix()
+    : StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, MPI_COMM_NULL) {};
 
   virtual ~StochGenDummyMatrix(){};
 
@@ -271,8 +266,8 @@ public:
   void getSize( int& m, int& n ) const override { m = 0; n = 0; }
   void getSize( long long& m, long long& n ) const override { m = 0; n = 0; }
 
-  StochGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const override { return new StochGenDummyMatrix(id); };
-  StochGenMatrix* cloneFull(bool switchToDynamicStorage = false) const  override { return new StochGenDummyMatrix(id); };
+  StochGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const override { return new StochGenDummyMatrix(); };
+  StochGenMatrix* cloneFull(bool switchToDynamicStorage = false) const  override { return new StochGenDummyMatrix(); };
 
 
   /** The actual number of structural non-zero elements in this sparse

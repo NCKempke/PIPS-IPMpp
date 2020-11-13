@@ -394,14 +394,14 @@ StochSymMatrix* sTreeCallbacks::createQ() const
 
    //is this node a dead-end for this process?
    if( commWrkrs == MPI_COMM_NULL )
-      return new StochSymDummyMatrix(id());
+      return new StochSymDummyMatrix();
   
    if( !fakedata )
    {
       if( data->nnzQ < 0 )
          data->fnnzQ(data->user_data, data->id, &data->nnzQ);
 
-      StochSymMatrix *Q = new StochSymMatrix(data->id, N, data->n, data->nnzQ,
+      StochSymMatrix *Q = new StochSymMatrix(N, data->n, data->nnzQ,
             commWrkrs);
 
       data->fQ(data->user_data, data->id, Q->diag->krowM(), Q->diag->jcolM(),
@@ -437,7 +437,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
    //is this node a dead-end for this process?
   if( commWrkrs == MPI_COMM_NULL )
   {
-    return new StochGenDummyMatrix(id());
+    return new StochGenDummyMatrix();
   }
 
   StochGenMatrix* A = nullptr;
@@ -459,8 +459,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       {
     	// populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
     	// (i.e. the first block of linking constraints)
-        A = new StochGenMatrix(data->id,
-             MY + MYL, N,
+        A = new StochGenMatrix(MY + MYL, N,
              data->my, np, data->nnzB,
              data->my, data->n,  data->nnzA,
              data->myl, data->n,  data->nnzBl,
@@ -469,8 +468,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       else
       {
     	// populate B with A's data B_0 is the A_0 from the theoretical form
-        A = new StochGenMatrix(data->id,
-             MY + MYL, N,
+        A = new StochGenMatrix(MY + MYL, N,
              data->my, np, data->nnzB,
              data->my, data->n,  data->nnzA,
              commWrkrs);
@@ -490,8 +488,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       // are there linking constraints?
       if (data->fnnzBl)
       {
-        A = new StochGenMatrix(data->id,
-             MY + MYL, N,
+        A = new StochGenMatrix(MY + MYL, N,
              data->my, np, data->nnzA,
              data->my, data->n,  data->nnzB,
 	  	       data->myl, data->n,  data->nnzBl,
@@ -499,8 +496,7 @@ StochGenMatrix* sTreeCallbacks::createA() const
       }
       else
       {
-        A = new StochGenMatrix(data->id,
-             MY + MYL, N,
+        A = new StochGenMatrix(MY + MYL, N,
              data->my, np, data->nnzA,
              data->my, data->n,  data->nnzB,
              commWrkrs);
@@ -534,7 +530,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
-    return new StochGenDummyMatrix(id());
+    return new StochGenDummyMatrix();
 
   StochGenMatrix* C = nullptr;
   if (!fakedata) {
@@ -555,8 +551,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       {
       // populate D with C's data D_0 is the C_0 from the theoretical form; also fill Dl
       // (i.e. the first block of linking constraints)
-        C = new StochGenMatrix(data->id,
-             MZ + MZL, N,
+        C = new StochGenMatrix(MZ + MZL, N,
              data->mz, np, data->nnzD,
              data->mz, data->n, data->nnzC,
              data->mzl, data->n, data->nnzDl,
@@ -566,8 +561,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       {
         //populate D with C's data
         //D_0 is the C_0 from the theoretical form
-        C = new StochGenMatrix(data->id,
-             MZ + MZL, N,
+        C = new StochGenMatrix(MZ + MZL, N,
              data->mz, np, data->nnzD,
              data->mz, data->n,  data->nnzC,
              commWrkrs);
@@ -586,8 +580,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       // are there linking constraints?
       if (data->fnnzDl)
       {
-        C = new StochGenMatrix(data->id,
-             MZ + MZL, N,
+        C = new StochGenMatrix(MZ + MZL, N,
              data->mz, np, data->nnzC,
              data->mz, data->n, data->nnzD,
              data->mzl, data->n, data->nnzDl,
@@ -595,8 +588,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
       }
       else
       {
-        C = new StochGenMatrix(data->id,
-             MZ + MZL, N,
+        C = new StochGenMatrix(MZ + MZL, N,
              data->mz, np, data->nnzC,
              data->mz, data->n, data->nnzD,
              commWrkrs);
@@ -1343,7 +1335,6 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
       // TODO : the ID breaks here - but I anyway don't see a use for it anywhere
       child.data = new StochInputTree::StochInputNode( 100000 );
    }
-
 
 #ifndef NEDBUG
    int nx = 0;
