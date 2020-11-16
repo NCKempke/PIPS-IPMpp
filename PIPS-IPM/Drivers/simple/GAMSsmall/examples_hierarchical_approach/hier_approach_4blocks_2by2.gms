@@ -1,62 +1,56 @@
 * ./gamsexample.sh -NP=4 -BLOCKS=5 -GAMSFILE=./hier_approach_4blocks_2by2
 
-Set i rows    / i1*i18 /
-    j columns / j1*j13 /;
+Set i rows    / i1*i15 /
+    j columns / j1*j14 /;
 
-parameter g(j) obj coefficients / j1 -1, j2 -1, j3 -1, j4 1, j5 1, j6 1, j7 1, j8 1, j9 1, j10 1, j11 1, j12 1, j13 1 /
-          bA(i) right hand side  / i1 4, i2 8, i3 4, i4 13, i5 4, i6 6, i7 4, i8 13, i9 4, i10 13, i11 3, i12 3, i13 3, i14 10, i15 3, i16 10, i17 0, i18 7 /
-*          clow(i) c left hand side   / i1 0, i2 1, i3 -1, i4 -100, i5 -100, i6 -100, i7 -100, i8 -100, i9 -100, i10 -100, i11 1, i12 -100, i13 -100, i14 -100, i15 -100, i16 -100, i17 -100, i18 -100, i19 -100/
-          cupp(i) c right hand side   / i1 1, i2 8, i3 2, i4 9, i5 10, i6 8, i7 10, i8 10, i9 2, i10 9, i11 10, i12 50, i13 13, i14 113, i15 1, i16 4, i17 10, i18 1000 /
+parameter g(j) obj coefficients / j1 1, j2 1, j3 1, j4 1, j5 1, j6 1, j7 1, j8 1, j9 1, j10 1, j11 1, j12 1, j13 1, j14 1 /
+          bA(i) right hand side  / i1 5, i2 2, i3 3, i4 0, i5 3, i6 0, i7 3, i8 0, i9 3, i10 0, i11 7, i12 2, i13 2, i14 8, i15 12 /
+*          clow(i) c left hand side   / i1 9, i2 3, i3 5, i4 -0.5, i5 5, i6 -05, i7 5, i8 -0.5, i9 13.5, i10 3, i11 11, i12 18 /
+          cupp(i) c right hand side   / i1 11, i2 5, i3 7, i4 0.5, i5 7, i6 0.5, i7 7, i8 0.5, i9 6.5, i10 0.3, i11 14.5, i12 5, i13 10.1, i14 16, i15 26 /
 
 
 * in this example the singletonColumnPresolver should substitute j1 (free) and put it into the objective
 Table A(i,j)
-    j1    j2    j3    j4    j5    j6    j7    j8    j9   j10   j11   j12   j13
-i1   1           1     2     1
-i2               1    -2     4
-i3                                 2     1
-i4         1                      -2     4
-i5                                             2     1
-i6                                            -2     4
-i7                                                         2     1
-i8         1                                              -2     4                  
-i9                                                                     2     1
-i10        1                                                          -2     4
-i11                                      1     1
-i12                                      2    -1
-i13                                                  1     1
-i14        1                                         2    -1
-i15                                                              1     1
-i16        1                                                     2    -1
-i17       -1           1    -1           1           1           1           1
-i18                    1                 1                       1           1
+    j1    j2    j3    j4    j5    j6    j7    j8    j9   j10   j11   j12   j13   j14
+i1   1     1     1           1     1
+i2         1           1    -1     1
+i3   1    -1                 1           1     1
+i4         1                -1          -1     1
+i5   1    -1                       1                 1     1
+i6         1                      -1                -1     1
+i7   1    -1                 1                                   1     1
+i8         1                -1                                  -1     1
+i9   1    -1                       1                                         1     1
+i10        1                      -1                                        -1     1
+i11  1     1     1           1     1           1     1
+i12 -1                 1    -1     1                       1     1
+i13 -1    -1     1     1                                               1     1
+i14  1    -1                 1    -1     1     1     1     1     1     1     1     1
+i15  1     1                 1     1           2           2           2           2
 ; 
-*   -2     7     2     1     2     1     2     1     2     1     2     1     2
+*    1     1     1     1     1     1     1     1     1     1     1     1     1     1
 * expected values for x full determined by Ax=b
-* objective = 2 - 7 - 2 + 1 + 2 + 1 + 2 + 1 + 2 + 1 + 2 + 1 + 2 = 8 
+* objective = 14
 Table C(i,j)
-    j1    j2    j3    j4    j5    j6    j7    j8    j9   j10   j11   j12   j13   
-i1   1                 1     1
-i2   1                 2     4
-i3   1                             1     1
-i4   1                             2     4
-i5   1                                         1     1
-i6   1                                         2     4
-i7   1                                                     1     1
-i8   1                                                     2     4
-i9   1                                                                 1     1
-i10  1                                                                 2     4
-i11  1                                   1     1     
-i12  1                                   1     4
-i13  1                                               1     1                                          
-i14  1                                               1     4
-i15  1                                                           1     1
-i16  1                                                           1     4
-i17  1                                         1           1     1
-i18  1     1     1     1     1     1     1     1     1     1     1     1     1
+    j1    j2    j3    j4    j5    j6    j7    j8    j9   j10   j11   j12   j13   j14
+i1   2     2     2           2     2
+i2         2           2    -2     2
+i3   2    -2                 2           2     2
+i4         2                -2          -2     2
+i5   2    -2                       2                 2     2
+i6         2                      -2                -2     2
+i7   2    -2                 2                                   2     2
+i8         2                -2                                  -2     2
+i9   2    -2                       2                                         2     2
+i10        2                      -2                                        -2     2
+i11  2     2     2           2     2           2     2
+i12 -2                 2    -2     2                       2     2
+i13  2    -2     2           2     2                                   2     2
+i14  2    -2                 2    -2     2     2     2     2     2     2     2     2
+i15  2     2                 2     2           4           4           4           4
 ;
 
-Variables          x(j) * / j4.lo -5 /
+Variables          x(j) * / j4.lo -5, j4.up 5 /
 Variable           z      objective variable
 Equations          e(i)   equality equations
 *                   ge(i)  greater than inequality equations
@@ -65,7 +59,7 @@ Equations          e(i)   equality equations
 
 defobj.. z =e= sum(j, g(j)*x(j));
 e(i)..   sum(j, A(i,j)*x(j)) =e= bA(i);
-*ge(i)..  sum(j, C(i,j)*x(j)) =g= clow(i);
+* ge(i)..  sum(j, C(i,j)*x(j)) =g= clow(i);
 le(i)..  sum(j, C(i,j)*x(j)) =l= cupp(i);
 
 Model m /all/ ;
@@ -73,14 +67,14 @@ Model m /all/ ;
 
 $ifthen %METHOD%==PIPS
 *annotations for variables:
-  x.stage('j6') = 2;
   x.stage('j7') = 2;
-  x.stage('j8') = 3;
+  x.stage('j8') = 2;
   x.stage('j9') = 3;
-  x.stage('j10') = 4;
+  x.stage('j10') = 3;
   x.stage('j11') = 4;
-  x.stage('j12') = 5;
+  x.stage('j12') = 4;
   x.stage('j13') = 5;
+  x.stage('j14') = 5;
 *annotations for equations:
   e.stage('i1') = 1;
   e.stage('i2') = 1;
@@ -97,23 +91,18 @@ $ifthen %METHOD%==PIPS
   e.stage('i13') = 6;
   e.stage('i14') = 6;
   e.stage('i15') = 6;
-  e.stage('i16') = 6;
-  e.stage('i17') = 6;
-  e.stage('i18') = 6;
 *  ge.stage('i1') = 1;
 *  ge.stage('i2') = 1;
-*  ge.stage('i3') = 1;
+*  ge.stage('i3') = 2;
 *  ge.stage('i4') = 2;
-*  ge.stage('i5') = 2;
-*  ge.stage('i6') = 2;
-*  ge.stage('i7') = 3;
-*  ge.stage('i8') = 3;
-*  ge.stage('i9') = 3;
-*  ge.stage('i10') = 4;
-*  ge.stage('i11') = 4;
-*  ge.stage('i12') = 4;
-*  ge.stage('i13') = 5;
-*  ge.stage('i14') = 5;
+*  ge.stage('i5') = 3;
+*  ge.stage('i6') = 3;
+*  ge.stage('i7') = 4;
+*  ge.stage('i8') = 4;
+*  ge.stage('i9') = 5;
+*  ge.stage('i10') = 5;
+*  ge.stage('i11') = 5;
+*  ge.stage('i12') = 5;
   le.stage('i1') = 1;
   le.stage('i2') = 1;
   le.stage('i3') = 2;
@@ -129,9 +118,6 @@ $ifthen %METHOD%==PIPS
   le.stage('i13') = 6;
   le.stage('i14') = 6;
   le.stage('i15') = 6;
-  le.stage('i16') = 6;
-  le.stage('i17') = 6;
-  le.stage('i18') = 6;
   defobj.stage  = 6;
 
 

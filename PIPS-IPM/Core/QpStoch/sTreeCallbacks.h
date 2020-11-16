@@ -53,7 +53,7 @@ class sTreeCallbacks : public sTree
   int myl() const;
   int mz() const; 
   int mzl() const;
-  int id() const; 
+  int id() const override;
 
   void computeGlobalSizes();
  public:

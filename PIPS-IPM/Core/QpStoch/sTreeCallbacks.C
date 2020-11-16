@@ -344,6 +344,7 @@ void sTreeCallbacks::computeGlobalSizes()
       N = MY = MZ = MYL = MZL = 0;
    }
 
+   // at root ?
    if (tree && np == -1)
    {
       for(size_t it = 0; it < tree->children.size();it++)
@@ -352,30 +353,6 @@ void sTreeCallbacks::computeGlobalSizes()
          MY += tree->children[it]->nodeInput->my;
          MZ += tree->children[it]->nodeInput->mz;
       }
-   }
-   else if (fakedata)
-   {
-      assert( false );
-      fakedata->n = fakedata->my = fakedata->mz = fakedata->nnzQ = fakedata->nnzA = fakedata->nnzB = fakedata->nnzC = fakedata->nnzD = 0;
-      for(size_t it = 0; it < scens.size();it++)
-      {
-         fakedata->n += scens[it]->n;
-         fakedata->my += scens[it]->my;
-         fakedata->mz += scens[it]->mz;
-         fakedata->nnzQ += scens[it]->nnzQ;
-         fakedata->nnzA += scens[it]->nnzA;
-         fakedata->nnzB += scens[it]->nnzB;
-         fakedata->nnzBl += scens[it]->nnzBl;
-         fakedata->nnzC += scens[it]->nnzC;
-         fakedata->nnzD += scens[it]->nnzD;
-         fakedata->nnzDl += scens[it]->nnzDl;
-         real_children[it]->np = np;
-      }
-      N += fakedata->n;
-      MY += fakedata->my;
-      MZ += fakedata->mz;
-      MYL += fakedata->myl;
-      MZL += fakedata->mzl;
    }
 
    for(size_t it = 0; it < children.size(); it++)
@@ -386,6 +363,32 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
+
+//   else if (fakedata)
+//   {
+//      assert( false );
+//      fakedata->n = fakedata->my = fakedata->mz = fakedata->nnzQ = fakedata->nnzA = fakedata->nnzB = fakedata->nnzC = fakedata->nnzD = 0;
+//      for(size_t it = 0; it < scens.size();it++)
+//      {
+//         fakedata->n += scens[it]->n;
+//         fakedata->my += scens[it]->my;
+//         fakedata->mz += scens[it]->mz;
+//         fakedata->nnzQ += scens[it]->nnzQ;
+//         fakedata->nnzA += scens[it]->nnzA;
+//         fakedata->nnzB += scens[it]->nnzB;
+//         fakedata->nnzBl += scens[it]->nnzBl;
+//         fakedata->nnzC += scens[it]->nnzC;
+//         fakedata->nnzD += scens[it]->nnzD;
+//         fakedata->nnzDl += scens[it]->nnzDl;
+//         real_children[it]->np = np;
+//      }
+//      N += fakedata->n;
+//      MY += fakedata->my;
+//      MZ += fakedata->mz;
+//      MYL += fakedata->myl;
+//      MZL += fakedata->mzl;
+//   }
+
 }
 
 StochSymMatrix* sTreeCallbacks::createQ() const
@@ -657,7 +660,6 @@ int sTreeCallbacks::mzl() const
       return fakedata->mzl;
 }
 
-// not sure what this is used for
 int sTreeCallbacks::id() const
 {
    if( data )
@@ -1185,15 +1187,9 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<int>& map_my
       sub_roots[i] = new sTreeCallbacks();
 
       if( i == my_comm )
-      {
-         sub_roots[i]->numProcs = PIPS_MPIgetSize(comm_my_subsystem);
          sub_roots[i]->commWrkrs = comm_my_subsystem;
-      }
       else
-      {
-         sub_roots[i]->numProcs = -1;
          sub_roots[i]->commWrkrs = MPI_COMM_NULL;
-      }
    }
 
    /* assign children to sub_comm systems and assign processes to them  */
@@ -1205,13 +1201,13 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<int>& map_my
       const int assigned_sub_comm = map_my_procs_to_sub_comm[ child_proc ];
       sub_roots[assigned_sub_comm]->children.push_back( children[i] );
       sub_roots[assigned_sub_comm]->myProcs.push_back(child_proc);
-
-      sub_roots[assigned_sub_comm]->numProcs++;
    }
 
    /* add sub_roots as this new children */
    children.clear();
    children.insert( this->children.begin(), sub_roots.begin(), sub_roots.end() );
+
+   assert( children[my_comm]->myProcs.size() == static_cast<const size_t>(PIPS_MPIgetSize(comm_my_subsystem)) );
 }
 
 
@@ -1224,13 +1220,15 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assert( twoLinksStartBlockA.size() == children.size() );
 
    assert( rankMe == PIPS_MPIgetRank(commWrkrs) );
+
+   // assert commWrkrs is MPI_COMM_WORLD
    assert( numProcs == PIPS_MPIgetSize(commWrkrs) );
 
    const size_t n_leafs = children.size();
    std::vector<int> map_proc_subcomm;
 
    createSubcommunicatorsAndChildren(map_proc_subcomm);
-   assert( static_cast<int>(map_proc_subcomm.size()) == numProcs );
+   assert( map_proc_subcomm.size() == this->myProcs.size() );
    /* children should now be created and an additional layer in the tree should exist */
 
    this->is_hierarchical_inner = true;
@@ -1261,10 +1259,14 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
          if( childchild.children.size() == 0 )
          {
-            assert( childchild.commWrkrs == MPI_COMM_NULL );
-            assert( childchild.MYL == 0 );
-            assert( childchild.MZL == 0 );
+            /* assert - either my child or not assigned to me */
+            assert( childchild.commWrkrs == MPI_COMM_SELF || childchild.commWrkrs == MPI_COMM_NULL );
 
+            if( childchild.commWrkrs == MPI_COMM_NULL )
+            {
+               assert( childchild.MYL == 0 );
+               assert( childchild.MZL == 0 );
+            }
             childchild.is_hierarchical_leaf = true;
          }
 
@@ -1315,10 +1317,25 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
       for( size_t j = 0; j < child.children.size(); ++j )
       {
-         const sTreeCallbacks& childchild = dynamic_cast<const sTreeCallbacks&>(*child.children[i]);
+         sTreeCallbacks& childchild = dynamic_cast<sTreeCallbacks&>(*child.children[i]);
          nx += childchild.N;
          my += childchild.MY;
          mz += childchild.MZ;
+
+         if( childchild.commWrkrs == MPI_COMM_SELF )
+         {
+            childchild.MYL = child.MYL;
+            childchild.myl_active = child.myl_active;
+            childchild.MZL = child.MZL;
+            childchild.mzl_active = child.mzl_active;
+         }
+         else
+         {
+            assert( childchild.MYL == 0 );
+            assert( childchild.myl_active == 0 );
+            assert( childchild.MZL == 0 );
+            assert( childchild.mzl_active == 0 );
+         }
       }
 
       child.N = nx;
@@ -1343,8 +1360,6 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assert( this->MY = my + this->my_active );
    assert( this->MZ = mz + this->mz_active );
 #endif
-
-   assert(false);
 }
 
 

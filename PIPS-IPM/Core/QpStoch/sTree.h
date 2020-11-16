@@ -88,7 +88,7 @@ class sTree
   virtual int myl() const;
   virtual int mzl() const;
   virtual int mz() const = 0; 
-  virtual int id() const = 0; 
+  virtual int id() const = 0;
 
   //returns the global load, i.e. statistic based on the NNZs and
   //dimensions of the node (and subnodes) subproblem before any iteration or the CPU
@@ -116,9 +116,10 @@ class sTree
   long long N, MY, MZ, MYL, MZL;//global sizes
   int np; //n for the parent
 
-  double IPMIterExecTIME; // not used since we currentyl do not compute loads for nodes and processes...
+  double IPMIterExecTIME; // not used since we currently do not compute loads for nodes and processes...
   std::vector<sTree*> children;
 
+  /* global number of all processes available */
   static int numProcs;
 
   StochNodeResourcesMonitor resMon;

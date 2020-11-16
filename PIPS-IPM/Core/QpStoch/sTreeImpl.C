@@ -694,7 +694,7 @@ int sTreeImpl::id() const
 {
   return m_id;
 }
- 
+
 
 void sTreeImpl::computeGlobalSizes()
 {

@@ -46,7 +46,7 @@ class sTreeImpl : public sTree
   int nx() const;
   int my() const; 
   int mz() const; 
-  int id() const; 
+  int id() const;
 
   void computeGlobalSizes();
   void loadLocalSizes();
