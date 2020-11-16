@@ -28,7 +28,7 @@ sTreeCallbacks::sTreeCallbacks()
    : N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr)
+    isDataPresolved(false), hasPresolvedData(false), data(nullptr)
 
 {
    if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
@@ -40,7 +40,7 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
     N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), tree(nullptr)
+    isDataPresolved(false), hasPresolvedData(false)
 {
    if( -1 == rankMe )
       MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
@@ -48,13 +48,8 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
       MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
   data = inputTree->nodeInput;
 
-#ifndef POOLSCEN
   for(size_t it = 0; it < inputTree->children.size(); it++)
      children.push_back(new sTreeCallbacks(inputTree->children[it]));
-#else
-  assert( false && "should not end up here..." );
-  tree = inputTree;
-#endif
 }
 
 sTreeCallbacks::sTreeCallbacks(InputNode* data_)
@@ -62,7 +57,7 @@ sTreeCallbacks::sTreeCallbacks(InputNode* data_)
     N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(data_->n),  my_active(data_->my),  mz_active(data_->mz),  myl_active(data_->myl),  mzl_active(data_->mzl),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), data(data_), tree(nullptr)
+    isDataPresolved(false), hasPresolvedData(false), data(data_)
 {
    assert( 0 && "Not used currently" );
    if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
@@ -168,8 +163,6 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    assert(mzVec.children.size() == children.size());
    assert(A.children.size() == children.size());
    assert(C.children.size() == children.size());
-
-   assert(tree == nullptr);
 
    const SimpleVector& nxVecSimple = dynamic_cast<const SimpleVector&>(*nxVec.vec);
    const SimpleVector& myVecSimple = dynamic_cast<const SimpleVector&>(*myVec.vec);
@@ -321,17 +314,6 @@ void sTreeCallbacks::computeGlobalSizes()
    else
    {
       N = MY = MZ = MYL = MZL = 0;
-   }
-
-   // at root ?
-   if (tree && np == -1)
-   {
-      for(size_t it = 0; it < tree->children.size();it++)
-      {
-         N += tree->children[it]->nodeInput->n;
-         MY += tree->children[it]->nodeInput->my;
-         MZ += tree->children[it]->nodeInput->mz;
-      }
    }
 
    for(size_t it = 0; it < children.size(); it++)

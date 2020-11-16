@@ -24,88 +24,75 @@ class sTreeCallbacks : public sTree
    using DATA_NNZ = FNNZ InputNode::*;
    using DATA_INT = int InputNode::*;
 
+public:
+   sTreeCallbacks(StochInputTree* root);
+   sTreeCallbacks(StochInputTree::StochInputNode* data_);
+   ~sTreeCallbacks();
+
+   StochSymMatrix*   createQ() const;
+
+   StochGenMatrix* createA() const override;
+   StochGenMatrix* createC() const override;
+
+   StochVector* createc() const override;
+
+   StochVector* createxlow() const override;
+   StochVector* createixlow() const override;
+   StochVector* createxupp() const override;
+   StochVector* createixupp() const override;
+
+   StochVector* createb() const override;
+   StochVector* createclow() const override;
+   StochVector* createiclow() const override;
+   StochVector* createcupp() const override;
+   StochVector* createicupp() const override;
+
+   int nx() const override;
+   int my() const override;
+   int myl() const override;
+   int mz() const override;
+   int mzl() const override;
+   int id() const override;
+
+   void computeGlobalSizes() override;
+   void loadLocalSizes();
+
+   virtual void switchToPresolvedData();
+   virtual void switchToOriginalData();
+   virtual bool isPresolved();
+   virtual bool hasPresolved();
+   virtual void initPresolvedData(const sData& presolved_data);
+
+   virtual void writeSizes( std::ostream& sout ) const;
+
+   sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
+         const std::vector<int>& twoLinksStartBlockC ) override;
 private:
-  virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
-        const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
+   virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
+         const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
- public:
-  sTreeCallbacks(StochInputTree* root);
-  sTreeCallbacks(StochInputTree::StochInputNode* data_);
-  ~sTreeCallbacks();
+   StochGenMatrix* createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
+         DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
+         DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
+         DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
+   StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
 
-  StochSymMatrix*   createQ() const;
+   void createSubcommunicatorsAndChildren( std::vector<int>& map_my_procs_to_sub_comm );
+   void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
+   sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 
- private:
-  StochGenMatrix* createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
-        DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
-        DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
-        DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
+   /* inactive sizes store the original state of the tree when switching to the presolved data */
+   long long N_INACTIVE, MY_INACTIVE, MZ_INACTIVE, MYL_INACTIVE, MZL_INACTIVE; //global inactive sizes
 
-  StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
- public:
+   int nx_active, my_active, mz_active, myl_active, mzl_active;
+   int nx_inactive, my_inactive, mz_inactive, myl_inactive, mzl_inactive;
 
-  StochGenMatrix* createA() const override;
-  StochGenMatrix* createC() const override;
+   bool isDataPresolved;
+   bool hasPresolvedData;
 
-  StochVector* createc() const override;
-
-  StochVector* createxlow() const override;
-  StochVector* createixlow() const override;
-  StochVector* createxupp() const override;
-  StochVector* createixupp() const override;
-
-  StochVector* createb() const override;
-  StochVector* createclow() const override;
-  StochVector* createiclow() const override;
-  StochVector* createcupp() const override;
-  StochVector* createicupp() const override;
-
-  int nx() const override;
-  int my() const override;
-  int myl() const override;
-  int mz() const override;
-  int mzl() const override;
-  int id() const override;
-
-  void computeGlobalSizes() override;
- public:
-  /* inactive sizes store the original state of the tree when switching to the presolved data */
-  long long N_INACTIVE, MY_INACTIVE, MZ_INACTIVE, MYL_INACTIVE, MZL_INACTIVE; //global inactive sizes
-
-  int nx_active, my_active, mz_active, myl_active, mzl_active;
-  int nx_inactive, my_inactive, mz_inactive, myl_inactive, mzl_inactive;
-
-  void loadLocalSizes();
-
-  virtual void switchToPresolvedData();
-  virtual void switchToOriginalData();
-  virtual bool isPresolved();
-  virtual bool hasPresolved();
-  virtual void initPresolvedData(const sData& presolved_data);
-
-  virtual void writeSizes(ostream& sout) const;
-
-  // TODO : make sure that none of the not suitable methods get called...
- private:
-  void createSubcommunicatorsAndChildren( std::vector<int>& map_my_procs_to_sub_comm );
-
-  void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
-  sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
- public:
-  sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
-        const std::vector<int>& twoLinksStartBlockC ) override;
-
- protected:
-  bool isDataPresolved;
-  bool hasPresolvedData;
-
-  sTreeCallbacks();
-  InputNode* data; //input data
-
-  // in POOLSCEN case, only root node has non-null data
-  StochInputTree* tree;
-  std::vector<InputNode*> scens;
+   sTreeCallbacks();
+   InputNode* data; //input data
 };
 
 
