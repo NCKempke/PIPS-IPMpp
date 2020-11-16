@@ -15,10 +15,16 @@
 
 class sData;
 
+
 class sTreeCallbacks : public sTree
 {
+   using InputNode = StochInputTree::StochInputNode;
+   using DATA_MAT = FMAT InputNode::*;
+   using DATA_VEC = FVEC InputNode::*;
+   using DATA_NNZ = FNNZ InputNode::*;
+   using DATA_INT = int InputNode::*;
 
- private:
+private:
   virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
         const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
@@ -32,8 +38,14 @@ class sTreeCallbacks : public sTree
   StochSymMatrix*   createQ() const;
 
  private:
-  StochVector* createVector( int StochInputTree::StochInputNode::* n_vec, FVEC StochInputTree::StochInputNode::* vec,
-        int StochInputTree::StochInputNode::* n_linking_vec, FVEC StochInputTree::StochInputNode::* linking_vec ) const;
+  StochGenMatrix* createMatrix( DATA_INT m_Amat, DATA_INT n_Amat,
+        DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
+        DATA_INT m_Bmat, DATA_INT n_Bmat, DATA_INT nnzBmat,
+        DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat,
+        DATA_INT n_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat,
+        DATA_MAT Blmat );
+
+  StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
  public:
   StochVector*      createc() const;
 
@@ -93,15 +105,15 @@ class sTreeCallbacks : public sTree
   bool hasPresolvedData;
 
   sTreeCallbacks();
-  StochInputTree::StochInputNode* data; //input data
+  InputNode* data; //input data
 
   // in POOLSCEN case, only root node has non-null data
   StochInputTree* tree;
-  std::vector<StochInputTree::StochInputNode*> scens;
+  std::vector<InputNode*> scens;
 
 
   // TODO : remove
-  StochInputTree::StochInputNode* fakedata; //convenient struct for holding n,my,mz etc
+  InputNode* fakedata; //convenient struct for holding n,my,mz etc
   // holds stoch trees for each of the scenarios that are combined at this node
   // this is just a convenience to reuse the create* and newVector* functions
   std::vector<sTreeCallbacks*> real_children;

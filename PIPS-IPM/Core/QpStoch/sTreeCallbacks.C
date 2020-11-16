@@ -62,7 +62,7 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
 }
 
 // np==-1 is used to indicate the root node. these can't be root nodes
-sTreeCallbacks::sTreeCallbacks(const vector<StochInputTree::StochInputNode*> &localscens)
+sTreeCallbacks::sTreeCallbacks(const vector<InputNode*> &localscens)
   : sTree(), 
     N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
@@ -73,13 +73,13 @@ sTreeCallbacks::sTreeCallbacks(const vector<StochInputTree::StochInputNode*> &lo
    if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
    if( -1 == numProcs ) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-   fakedata = new StochInputTree::StochInputNode();
+   fakedata = new InputNode();
    real_children.reserve(scens.size());
    for(size_t i = 0; i < scens.size(); i++)
       real_children.push_back(new sTreeCallbacks(scens[i]));
 }
 
-sTreeCallbacks::sTreeCallbacks(StochInputTree::StochInputNode* data_)
+sTreeCallbacks::sTreeCallbacks(InputNode* data_)
   : sTree(), 
     N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(data_->n),  my_active(data_->my),  mz_active(data_->mz),  myl_active(data_->myl),  mzl_active(data_->mzl),
@@ -436,17 +436,103 @@ StochSymMatrix* sTreeCallbacks::createQ() const
    }
 }
 
-StochGenMatrix* sTreeCallbacks::createA() const
+StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_Amat, DATA_INT n_Amat,
+      DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
+      DATA_INT m_Bmat, DATA_INT n_Bmat, DATA_INT nnzBmat,
+      DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat,
+      DATA_INT n_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat,
+      DATA_MAT Blmat )
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   //is this node a dead-end for this process?
-  if( commWrkrs == MPI_COMM_NULL )
-  {
-    return new StochGenDummyMatrix();
-  }
+   assert( !fakedata );
+
+   if( commWrkrs == MPI_COMM_NULL )
+      return new StochGenDummyMatrix();
+
+   if( data->*fnnzBlmat && data->*nnzBlmat < 0 )
+      (data->*fnnzBlmat)(data->user_data, data->id, &(data->*nnzBlmat));
+//
+//   if (data->nnzA<0)
+//     data->fnnzA(data->user_data, data->id, &data->nnzA);
+//
+//  // are we at the root?
+//   if (np==-1) {
+//
+//     data->nnzB=0;
+//
+//     // are there linking constraints?
+//     if (data->fnnzBl)
+//     {
+//     // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
+//     // (i.e. the first block of linking constraints)
+//       A = new StochGenMatrix(MY + MYL, N,
+//            data->my, np, data->nnzB,
+//            data->my, data->n,  data->nnzA,
+//            data->myl, data->n,  data->nnzBl,
+//            commWrkrs);
+//     }
+//     else
+//     {
+//     // populate B with A's data B_0 is the A_0 from the theoretical form
+//       A = new StochGenMatrix(MY + MYL, N,
+//            data->my, np, data->nnzB,
+//            data->my, data->n,  data->nnzA,
+//            commWrkrs);
+//     }
+//
+//     //populate submatrix B
+//     data->fA(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+//
+//
+//     printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+//       data->my, data->myl, data->n,  np, data->nnzA, data->nnzB, data->nnzBl);
+//   } else {
+//
+//     if (data->nnzB<0)
+//       data->fnnzB(data->user_data, data->id, &data->nnzB);
+//
+//     // are there linking constraints?
+//     if (data->fnnzBl)
+//     {
+//       A = new StochGenMatrix(MY + MYL, N,
+//            data->my, np, data->nnzA,
+//            data->my, data->n,  data->nnzB,
+//            data->myl, data->n,  data->nnzBl,
+//            commWrkrs);
+//     }
+//     else
+//     {
+//       A = new StochGenMatrix(MY + MYL, N,
+//            data->my, np, data->nnzA,
+//            data->my, data->n,  data->nnzB,
+//            commWrkrs);
+//     }
+//     //populate the submatrices A, B
+//     data->fA(data->user_data, data->id, A->Amat->krowM(), A->Amat->jcolM(), A->Amat->M());
+//     data->fB(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+//
+//     printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+//       data->my, data->myl, data->n,  np, data->nnzA, data->nnzB, data->nnzBl);
+//   }
+//
+//   // populate Bl if existent
+//   if (data->fBl)
+//     data->fBl(data->user_data, data->id, A->Blmat->krowM(), A->Blmat->jcolM(), A->Blmat->M());
+//
+//   for(size_t it=0; it<children.size(); it++) {
+//     StochGenMatrix* child = children[it]->createA();
+//     A->AddChild(child);
+//   }
+
+   return nullptr;
+
+
+}
+
+StochGenMatrix* sTreeCallbacks::createA() const
+{
 
   StochGenMatrix* A = nullptr;
-  if (!fakedata) {
 
 	 if (data->fnnzBl && data->nnzBl < 0)
        data->fnnzBl(data->user_data, data->id, &data->nnzBl);
@@ -522,11 +608,6 @@ StochGenMatrix* sTreeCallbacks::createA() const
       StochGenMatrix* child = children[it]->createA();
       A->AddChild(child);
     }
-  } else {
-    assert(false);
-    return nullptr;
-
-  }
   return A;
 }
 
@@ -670,8 +751,7 @@ int sTreeCallbacks::id() const
       return 0;
 }
 
-StochVector* sTreeCallbacks::createVector( int StochInputTree::StochInputNode::* n_vec, FVEC StochInputTree::StochInputNode::* vec,
-      int StochInputTree::StochInputNode::* n_linking_vec, FVEC StochInputTree::StochInputNode::* linking_vec ) const
+StochVector* sTreeCallbacks::createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const
 {
    assert( n_vec );
    assert( vec );
@@ -712,95 +792,95 @@ StochVector* sTreeCallbacks::createVector( int StochInputTree::StochInputNode::*
 
 StochVector* sTreeCallbacks::createc() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fc;
+   DATA_INT n_func = &InputNode::n;
+   DATA_VEC func = &InputNode::fc;
 
    return createVector( n_func, func, nullptr, nullptr );
 }
 
 StochVector* sTreeCallbacks::createxlow() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxlow;
+   DATA_INT n_func = &InputNode::n;
+   DATA_VEC func = &InputNode::fxlow;
 
    return createVector( n_func, func, nullptr, nullptr );
 }
 
 StochVector* sTreeCallbacks::createixlow() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixlow;
+   DATA_INT n_func = &InputNode::n;
+   DATA_VEC func = &InputNode::fixlow;
 
    return createVector( n_func, func, nullptr, nullptr );
 }
 
 StochVector* sTreeCallbacks::createxupp() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxupp;
+   DATA_INT n_func = &InputNode::n;
+   DATA_VEC func = &InputNode::fxupp;
 
    return createVector( n_func, func, nullptr, nullptr );
 }
 
 StochVector* sTreeCallbacks::createixupp() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixupp;
+   DATA_INT n_func = &InputNode::n;
+   DATA_VEC func = &InputNode::fixupp;
 
    return createVector( n_func, func, nullptr, nullptr );
 }
 
 StochVector* sTreeCallbacks::createb() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::my;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fb;
+   DATA_INT n_func = &InputNode::my;
+   DATA_VEC func = &InputNode::fb;
 
-   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::myl;
-   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fbl;
+   DATA_INT n_func_link = &InputNode::myl;
+   DATA_VEC func_link = &InputNode::fbl;
 
    return createVector( n_func, func, n_func_link, func_link );
 }
 
 StochVector* sTreeCallbacks::createclow() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fclow;
+   DATA_INT n_func = &InputNode::mz;
+   DATA_VEC func = &InputNode::fclow;
 
-   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
-   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fdllow;
+   DATA_INT n_func_link = &InputNode::mzl;
+   DATA_VEC func_link = &InputNode::fdllow;
 
    return createVector( n_func, func, n_func_link, func_link );
 }
 
 StochVector* sTreeCallbacks::createiclow() const
 {
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::ficlow;
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
+   DATA_VEC func = &InputNode::ficlow;
+   DATA_INT n_func = &InputNode::mz;
 
-   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fidllow;
-   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
+   DATA_VEC func_link = &InputNode::fidllow;
+   DATA_INT n_func_link = &InputNode::mzl;
 
    return createVector( n_func, func, n_func_link, func_link );
 }
 
 StochVector* sTreeCallbacks::createcupp() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fcupp;
+   DATA_INT n_func = &InputNode::mz;
+   DATA_VEC func = &InputNode::fcupp;
 
-   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
-   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fdlupp;
+   DATA_INT n_func_link = &InputNode::mzl;
+   DATA_VEC func_link = &InputNode::fdlupp;
 
    return createVector( n_func, func, n_func_link, func_link );
 }
 
 StochVector* sTreeCallbacks::createicupp() const
 {
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::ficupp;
+   DATA_INT n_func = &InputNode::mz;
+   DATA_VEC func = &InputNode::ficupp;
 
-   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
-   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fidlupp;
+   DATA_INT n_func_link = &InputNode::mzl;
+   DATA_VEC func_link = &InputNode::fidlupp;
 
    return createVector( n_func, func, n_func_link, func_link );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
