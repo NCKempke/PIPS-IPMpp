@@ -22,17 +22,13 @@
 
 sTreeCallbacks::~sTreeCallbacks()
 {
-   for(size_t it = 0; it < children.size(); it++)
-      if (fakedata) delete fakedata;
-   for(size_t i = 0; i < real_children.size(); i++)
-      delete real_children[i];
 }
 
 sTreeCallbacks::sTreeCallbacks() 
    : N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr), fakedata(nullptr)
+    isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr)
 
 {
    if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
@@ -44,7 +40,7 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
     N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), tree(nullptr), fakedata(nullptr)
+    isDataPresolved(false), hasPresolvedData(false), tree(nullptr)
 {
    if( -1 == rankMe )
       MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
@@ -61,30 +57,12 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
 #endif
 }
 
-// np==-1 is used to indicate the root node. these can't be root nodes
-sTreeCallbacks::sTreeCallbacks(const vector<InputNode*> &localscens)
-  : sTree(), 
-    N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
-    nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
-    nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), data(nullptr), tree(nullptr), scens(localscens)
-{
-   assert( 0 && "Not used currently" );
-   if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
-   if( -1 == numProcs ) MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-
-   fakedata = new InputNode();
-   real_children.reserve(scens.size());
-   for(size_t i = 0; i < scens.size(); i++)
-      real_children.push_back(new sTreeCallbacks(scens[i]));
-}
-
 sTreeCallbacks::sTreeCallbacks(InputNode* data_)
   : sTree(), 
     N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(data_->n),  my_active(data_->my),  mz_active(data_->mz),  myl_active(data_->myl),  mzl_active(data_->mzl),
     nx_inactive(-1),  my_inactive(-1),  mz_inactive(-1),  myl_inactive(-1),  mzl_inactive(-1),
-    isDataPresolved(false), hasPresolvedData(false), data(data_), tree(nullptr), fakedata(nullptr)
+    isDataPresolved(false), hasPresolvedData(false), data(data_), tree(nullptr)
 {
    assert( 0 && "Not used currently" );
    if( -1 == rankMe ) MPI_Comm_rank(MPI_COMM_WORLD, &rankMe);
@@ -191,7 +169,6 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    assert(A.children.size() == children.size());
    assert(C.children.size() == children.size());
 
-   assert(fakedata == nullptr);
    assert(tree == nullptr);
 
    const SimpleVector& nxVecSimple = dynamic_cast<const SimpleVector&>(*nxVec.vec);
@@ -365,37 +342,10 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
-
-//   else if (fakedata)
-//   {
-//      assert( false );
-//      fakedata->n = fakedata->my = fakedata->mz = fakedata->nnzQ = fakedata->nnzA = fakedata->nnzB = fakedata->nnzC = fakedata->nnzD = 0;
-//      for(size_t it = 0; it < scens.size();it++)
-//      {
-//         fakedata->n += scens[it]->n;
-//         fakedata->my += scens[it]->my;
-//         fakedata->mz += scens[it]->mz;
-//         fakedata->nnzQ += scens[it]->nnzQ;
-//         fakedata->nnzA += scens[it]->nnzA;
-//         fakedata->nnzB += scens[it]->nnzB;
-//         fakedata->nnzBl += scens[it]->nnzBl;
-//         fakedata->nnzC += scens[it]->nnzC;
-//         fakedata->nnzD += scens[it]->nnzD;
-//         fakedata->nnzDl += scens[it]->nnzDl;
-//         real_children[it]->np = np;
-//      }
-//      N += fakedata->n;
-//      MY += fakedata->my;
-//      MZ += fakedata->mz;
-//      MYL += fakedata->myl;
-//      MZL += fakedata->mzl;
-//   }
-
 }
 
 StochSymMatrix* sTreeCallbacks::createQ() const
 {
-   assert( !fakedata );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
    //is this node a dead-end for this process?
@@ -425,7 +375,6 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
       DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   assert( !fakedata );
 
    if( commWrkrs == MPI_COMM_NULL )
       return new StochGenDummyMatrix();
@@ -556,57 +505,38 @@ StochGenMatrix* sTreeCallbacks::createC() const
 
 int sTreeCallbacks::nx() const
 {
-   if( data )
-      return nx_active;
-   else
-      return fakedata->n;
+   return nx_active;
 }
 
 int sTreeCallbacks::my() const
 {
-   if( data )
-      return my_active;
-   else
-      return fakedata->my;
+   return my_active;
 }
 
 int sTreeCallbacks::myl() const
 {
-   if( data )
-      return myl_active;
-   else
-      return fakedata->myl;
+   return myl_active;
 }
 
 int sTreeCallbacks::mz() const
 {
-   if( data )
-      return mz_active;
-   else
-      return fakedata->mz;
+   return mz_active;
 }
 
 int sTreeCallbacks::mzl() const
 {
-   if( data )
-      return mzl_active;
-   else
-      return fakedata->mzl;
+   return mzl_active;
 }
 
 int sTreeCallbacks::id() const
 {
-   if( data )
-      return data->id;
-   else
-      return 0;
+   return data->id;
 }
 
 StochVector* sTreeCallbacks::createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const
 {
    assert( n_vec );
    assert( vec );
-   assert( !fakedata ); // not supported and to be removed
 
    assert( !(is_hierarchical_root || is_hierarchical_inner || is_hierarchical_leaf)
          || (false && "cannot be used with hierarchical data") );

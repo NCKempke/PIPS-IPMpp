@@ -31,7 +31,6 @@ private:
 
  public:
   sTreeCallbacks(StochInputTree* root);
-  sTreeCallbacks(const std::vector<StochInputTree::StochInputNode*> &localscens);
   sTreeCallbacks(StochInputTree::StochInputNode* data_);
   ~sTreeCallbacks();
 
@@ -45,32 +44,31 @@ private:
 
   StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
  public:
-  StochVector*      createc() const;
 
-  StochVector*      createxlow()  const;
-  StochVector*      createixlow() const;
-  StochVector*      createxupp()  const;
-  StochVector*      createixupp() const;
+  StochGenMatrix* createA() const override;
+  StochGenMatrix* createC() const override;
 
+  StochVector* createc() const override;
 
-  StochGenMatrix*   createA() const;
-  StochVector*      createb() const;
+  StochVector* createxlow() const override;
+  StochVector* createixlow() const override;
+  StochVector* createxupp() const override;
+  StochVector* createixupp() const override;
 
+  StochVector* createb() const override;
+  StochVector* createclow() const override;
+  StochVector* createiclow() const override;
+  StochVector* createcupp() const override;
+  StochVector* createicupp() const override;
 
-  StochGenMatrix*   createC() const;
-  StochVector*      createclow()  const;
-  StochVector*      createiclow() const;
-  StochVector*      createcupp()  const;
-  StochVector*      createicupp() const;
-
-  int nx() const;
-  int my() const;
-  int myl() const;
-  int mz() const; 
-  int mzl() const;
+  int nx() const override;
+  int my() const override;
+  int myl() const override;
+  int mz() const override;
+  int mzl() const override;
   int id() const override;
 
-  void computeGlobalSizes();
+  void computeGlobalSizes() override;
  public:
   /* inactive sizes store the original state of the tree when switching to the presolved data */
   long long N_INACTIVE, MY_INACTIVE, MZ_INACTIVE, MYL_INACTIVE, MZL_INACTIVE; //global inactive sizes
@@ -108,13 +106,6 @@ private:
   // in POOLSCEN case, only root node has non-null data
   StochInputTree* tree;
   std::vector<InputNode*> scens;
-
-
-  // TODO : remove
-  InputNode* fakedata; //convenient struct for holding n,my,mz etc
-  // holds stoch trees for each of the scenarios that are combined at this node
-  // this is just a convenience to reuse the create* and newVector* functions
-  std::vector<sTreeCallbacks*> real_children;
 };
 
 
