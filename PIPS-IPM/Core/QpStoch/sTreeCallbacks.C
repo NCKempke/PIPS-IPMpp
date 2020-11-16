@@ -670,253 +670,6 @@ int sTreeCallbacks::id() const
       return 0;
 }
 
-static double RESCALE=1.0;
-StochVector* sTreeCallbacks::createc() const
-{
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fc;
-
-   return createVector( n_func, func, nullptr, nullptr );
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();  
-
-  StochVector* c = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)c->vec)->elements();  
-  if (!fakedata) {
-    // populate the node's data with data from user.
-    //if(children.size()>0) RESCALE=0.001/1000;//children.size();
-#if 0
-    if(0==rankMe)
-      cout << "RESCALE set to " << RESCALE << endl;
-#endif
-
-    data->fc(data->user_data, data->id, 
-       vData, data->n);
-    
-    for(int i=0; i<data->n; i++) vData[i]*=RESCALE;
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createc();
-      c->AddChild(child);
-    }
-  } else {
-#ifdef UCTRANS
-    int n = scens[0]->n;
-    scens[0]->fc(scens[0]->user_data,scens[0]->id,
-        vData, scens[0]->n);
-    for(size_t i = 1; i < scens.size(); i++) {
-      memcpy(vData+i*n,vData,n*sizeof(double));
-    }
-#else
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fc(scens[i]->user_data,scens[i]->id,
-        vData+pos, scens[i]->n);
-      pos += scens[i]->n;
-    }
-#endif
-  }
-
-  return c;
-}
-
-StochVector* sTreeCallbacks::createb() const
-{
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::my;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fb;
-
-   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::myl;
-   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fbl;
-
-   return createVector( n_func, func, n_func_link, func_link );
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  int yl = (np == -1) ? myl() : -1;
-
-  StochVector* b = new StochVector(my(), yl, commWrkrs);
-
-  double* vData = ((SimpleVector*)b->vec)->elements();
-  double* vDataLinkCons = nullptr;
-
-  if (np == -1 && b->vecl )
-     vDataLinkCons = ((SimpleVector*)b->vecl)->elements();
-
-  if (!fakedata) {
-    data->fb(data->user_data, data->id, 
-       vData, data->my);
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fbl)
-    {
-      assert(vDataLinkCons);
-      data->fbl(data->user_data, data->id, vDataLinkCons, data->myl);
-    }
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createb();
-      b->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fb(scens[i]->user_data,scens[i]->id,
-        vData+pos, scens[i]->my);
-      pos += scens[i]->my;
-    }
-
-    pos = 0;
-    // at root and with linking constraints?
-    if (np == -1 && data->fbl) {
-        assert(vDataLinkCons);
-        scens[0]->fbl(scens[0]->user_data, scens[0]->id, vDataLinkCons, scens[0]->myl);
-    }
-  }
-
-  return b;
-}
-
-StochVector* sTreeCallbacks::createxlow() const
-{
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxlow;
-
-   return createVector( n_func, func, nullptr, nullptr );
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  StochVector* xlow = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)xlow->vec)->elements();  
-  if (!fakedata) {
-    data->fxlow(data->user_data, data->id, 
-       vData, data->n);
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createxlow();
-      xlow->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fxlow(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->n);
-      pos += scens[i]->n;
-    }
-  }
-  return xlow;
-}
-
-StochVector* sTreeCallbacks::createixlow() const
-{
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixlow;
-
-   return createVector( n_func, func, nullptr, nullptr );
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  StochVector* ixlow = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)ixlow->vec)->elements();  
-  if (!fakedata) {
-    data->fixlow(data->user_data, data->id, 
-       vData, data->n);
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createixlow();
-      ixlow->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fixlow(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->n);
-      pos += scens[i]->n;
-    }
-  }
-  return ixlow;
-}
-
-StochVector* sTreeCallbacks::createxupp() const
-{
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxupp;
-
-   return createVector( n_func, func, nullptr, nullptr );
-
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  StochVector* xupp = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)xupp->vec)->elements();  
-  if (!fakedata) {
-    data->fxupp(data->user_data, data->id, 
-       vData, data->n);
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createxupp();
-      xupp->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fxupp(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->n);
-      pos += scens[i]->n;
-    }
-  }
-  return xupp;
-}
-
-StochVector* sTreeCallbacks::createixupp() const
-{
-   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
-   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixupp;
-
-   return createVector( n_func, func, nullptr, nullptr );
-
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  StochVector* ixupp = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)ixupp->vec)->elements();  
-  if (!fakedata) {
-    data->fixupp(data->user_data, data->id, 
-       vData, data->n);
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createixupp();
-      ixupp->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fixupp(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->n);
-      pos += scens[i]->n;
-    }
-
-  }
-
-  return ixupp;
-}
-
 StochVector* sTreeCallbacks::createVector( int StochInputTree::StochInputNode::* n_vec, FVEC StochInputTree::StochInputNode::* vec,
       int StochInputTree::StochInputNode::* n_linking_vec, FVEC StochInputTree::StochInputNode::* linking_vec ) const
 {
@@ -957,9 +710,59 @@ StochVector* sTreeCallbacks::createVector( int StochInputTree::StochInputNode::*
    return svec;
 }
 
+StochVector* sTreeCallbacks::createc() const
+{
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fc;
+
+   return createVector( n_func, func, nullptr, nullptr );
+}
+
+StochVector* sTreeCallbacks::createxlow() const
+{
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxlow;
+
+   return createVector( n_func, func, nullptr, nullptr );
+}
+
+StochVector* sTreeCallbacks::createixlow() const
+{
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixlow;
+
+   return createVector( n_func, func, nullptr, nullptr );
+}
+
+StochVector* sTreeCallbacks::createxupp() const
+{
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxupp;
+
+   return createVector( n_func, func, nullptr, nullptr );
+}
+
+StochVector* sTreeCallbacks::createixupp() const
+{
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixupp;
+
+   return createVector( n_func, func, nullptr, nullptr );
+}
+
+StochVector* sTreeCallbacks::createb() const
+{
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::my;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fb;
+
+   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::myl;
+   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fbl;
+
+   return createVector( n_func, func, n_func_link, func_link );
+}
+
 StochVector* sTreeCallbacks::createclow() const
 {
-//   std::function<void(Foo*)> f = &Foo::doSomething;
    int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
    FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fclow;
 
@@ -967,53 +770,6 @@ StochVector* sTreeCallbacks::createclow() const
    FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fdllow;
 
    return createVector( n_func, func, n_func_link, func_link );
-
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  int zl = (np == -1) ? mzl() : -1;
-
-  StochVector* clow = new StochVector(mz(), zl, commWrkrs);
-  double* vData = ((SimpleVector*)clow->vec)->elements();
-  double* vDataLinkCons = nullptr;
-
-  if (np == -1 && clow->vecl )
-     vDataLinkCons = ((SimpleVector*)clow->vecl)->elements();
-
-  if (!fakedata) {  
-    data->fclow(data->user_data, data->id, vData, data->mz);
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fdllow)
-    {
-      assert(vDataLinkCons);
-      data->fdllow(data->user_data, data->id, vDataLinkCons, data->mzl);
-    }
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createclow();
-      clow->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fclow(scens[i]->user_data, scens[i]->id,
-            vData+pos, scens[i]->mz);
-      pos += scens[i]->mz;
-    }
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fdllow)
-    {
-        assert(vDataLinkCons);
-        scens[0]->fdllow(scens[0]->user_data, scens[0]->id, vDataLinkCons, scens[0]->mzl);
-    }
-
-  }
-  return clow;
 }
 
 StochVector* sTreeCallbacks::createiclow() const
@@ -1025,52 +781,6 @@ StochVector* sTreeCallbacks::createiclow() const
    int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
 
    return createVector( n_func, func, n_func_link, func_link );
-
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  int zl = (np == -1) ? mzl() : -1;
-
-  StochVector* iclow = new StochVector(mz(), zl, commWrkrs);
-  double* vData = ((SimpleVector*)iclow->vec)->elements();  
-  double* vDataLinkCons = nullptr;
-
-  if (np == -1 && iclow->vecl )
-    vDataLinkCons = ((SimpleVector*)iclow->vecl)->elements();
-
-  if (!fakedata) {
-    data->ficlow(data->user_data, data->id,  vData, data->mz);
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fidllow)
-    {
-      assert(vDataLinkCons);
-      data->fidllow(data->user_data, data->id, vDataLinkCons, data->mzl);
-    }
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createiclow();
-      iclow->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->ficlow(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->mz);
-      pos += scens[i]->mz;
-    }
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fidllow)
-    {
-        assert(vDataLinkCons);
-        scens[0]->fidllow(scens[0]->user_data, scens[0]->id, vDataLinkCons, scens[0]->mzl);
-    }
-  }
-  return iclow;
 }
 
 StochVector* sTreeCallbacks::createcupp() const
@@ -1082,53 +792,6 @@ StochVector* sTreeCallbacks::createcupp() const
    FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fdlupp;
 
    return createVector( n_func, func, n_func_link, func_link );
-
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  int zl = (np == -1) ? mzl() : -1;
-
-  StochVector* cupp = new StochVector(mz(), zl, commWrkrs);
-  double* vData = ((SimpleVector*)cupp->vec)->elements();  
-  double* vDataLinkCons = nullptr;
-
-  if (np == -1 && cupp->vecl)
-    vDataLinkCons = ((SimpleVector*)cupp->vecl)->elements();
-
-  if (!fakedata) {
-    data->fcupp(data->user_data, data->id, vData, data->mz);
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fdlupp)
-    {
-      assert(vDataLinkCons);
-      data->fdlupp(data->user_data, data->id, vDataLinkCons, data->mzl);
-    }
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createcupp();
-      cupp->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->fcupp(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->mz);
-      pos += scens[i]->mz;
-    }
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fdlupp)
-    {
-      assert(vDataLinkCons);
-      scens[0]->fdlupp(scens[0]->user_data, scens[0]->id, vDataLinkCons, scens[0]->mzl);
-    }
-
-  }
-  return cupp;
 }
 
 StochVector* sTreeCallbacks::createicupp() const
@@ -1141,51 +804,6 @@ StochVector* sTreeCallbacks::createicupp() const
 
    return createVector( n_func, func, n_func_link, func_link );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  int zl = (np == -1) ? mzl() : -1;
-
-  StochVector* icupp = new StochVector(mz(), zl, commWrkrs);
-  double* vData = ((SimpleVector*)icupp->vec)->elements();
-  double* vDataLinkCons = nullptr;
-
-  if (np == -1 && icupp->vecl)
-     vDataLinkCons = ((SimpleVector*)icupp->vecl)->elements();
-
-  if (!fakedata) {
-    data->ficupp(data->user_data, data->id, 
-       vData, data->mz);
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fidlupp)
-    {
-      assert(vDataLinkCons);
-      data->fidlupp(data->user_data, data->id, vDataLinkCons, data->mzl);
-    }
-
-    for(size_t it=0; it<children.size(); it++) {
-      StochVector* child = children[it]->createicupp();
-      icupp->AddChild(child);
-    }
-  } else {
-    int pos = 0;
-    for(size_t i = 0; i < scens.size(); i++) {
-      scens[i]->ficupp(scens[i]->user_data, scens[i]->id,
-        vData+pos, scens[i]->mz);
-      pos += scens[i]->mz;
-    }
-
-    // at root and with linking constraints?
-    if (np == -1 && data->fidlupp)
-    {
-      assert(vDataLinkCons);
-      scens[0]->fidlupp(scens[0]->user_data, scens[0]->id, vDataLinkCons, scens[0]->mzl);
-    }
-  }
-  return icupp;
 }
 
 sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave )
