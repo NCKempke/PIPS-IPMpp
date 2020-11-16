@@ -9,6 +9,9 @@
 #include "StochGenMatrix.h"
 #include "StochVector.h"
 #include "DoubleMatrixHandle.h"
+
+#include "sTreeCallbacks.h"
+
 #include "pipschecks.h"
 #include "pipsport.h"
 #include <vector>
@@ -93,6 +96,11 @@ public:
 
   void sync();
   bool isRootNodeInSync() const;
+
+private:
+  void getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C);
+  void reorderLinkingConstraintsAccordingToSplit( const sTreeCallbacks& tree );
+  void splitDataAccordingToTree( const sTreeCallbacks& tree );
 
  public:
   // Hierarchical Stuff
@@ -224,8 +232,8 @@ public:
   void initDistMarker(int blocksStart, int blocksEnd);
 
 
-  void permuteLinkingVars();
-  void permuteLinkingCons();
+  void permuteLinkingVars( const std::vector<unsigned int>& perm );
+  void permuteLinkingCons( const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC );
 public:
   void printRanges() const;
 };

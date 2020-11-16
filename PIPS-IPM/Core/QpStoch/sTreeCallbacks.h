@@ -67,8 +67,13 @@ public:
 
    sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
          const std::vector<int>& twoLinksStartBlockC ) override;
-private:
 
+   void splitDataAccordingToTree( sData& data ) const;
+   const std::vector<unsigned int>& getMapProcsSubcomms() const
+      { assert( is_hierarchical_inner ); return map_proc_subcomm; };
+   const std::vector<unsigned int>& getMapBlockSubcomms() const
+      { assert( is_hierarchical_inner ); return map_proc_subcomm; };
+private:
    virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
@@ -78,7 +83,11 @@ private:
          DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
    StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
 
-   void createSubcommunicatorsAndChildren( std::vector<int>& map_my_procs_to_sub_comm );
+   void splitMatrixAccordingToTree( StochSymMatrix& mat ) const;
+   void splitMatrixAccordingToTree( StochGenMatrix& mat ) const;
+   void splitVectorAccordingToTree( StochVector& vec ) const;
+
+   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm );
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 
@@ -90,6 +99,10 @@ private:
 
    bool isDataPresolved;
    bool hasPresolvedData;
+
+   /* after this node has been split this will indicate how the procs were split */
+   std::vector<unsigned int> map_proc_subcomm;
+   std::vector<unsigned int> map_block_subcomm;
 
    sTreeCallbacks();
    InputNode* data; //input data

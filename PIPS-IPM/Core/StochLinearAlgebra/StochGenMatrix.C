@@ -1496,8 +1496,8 @@ void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_sta
    if( Blmat == nullptr )
       return;
 
-   int m, n;
-   Blmat->getSize(m, n);
+   int m, n; Blmat->getSize(m, n);
+
    if( m == 0 )
       return;
    assert( m > 0 );

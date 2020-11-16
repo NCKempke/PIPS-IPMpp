@@ -696,7 +696,7 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    return top_layer;
 }
 
-void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<int>& map_my_procs_to_sub_comm )
+void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm )
 {
    const int size_comm = PIPS_MPIgetSize(commWrkrs);
    assert( size_comm == static_cast<int>(myProcs.size()) );
@@ -764,7 +764,11 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<int>& map_my
 
       const int assigned_sub_comm = map_my_procs_to_sub_comm[ child_proc ];
       sub_roots[assigned_sub_comm]->children.push_back( children[i] );
-      sub_roots[assigned_sub_comm]->myProcs.push_back(child_proc);
+
+      // TODO : inefficient..
+      if( std::find(sub_roots[assigned_sub_comm]->myProcs.begin(), sub_roots[assigned_sub_comm]->myProcs.end(), child_proc) ==
+            sub_roots[assigned_sub_comm]->myProcs.end() )
+         sub_roots[assigned_sub_comm]->myProcs.push_back( child_proc );
    }
 
    /* add sub_roots as this new children */
@@ -789,7 +793,6 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assert( numProcs == PIPS_MPIgetSize(commWrkrs) );
 
    const size_t n_leafs = children.size();
-   std::vector<int> map_proc_subcomm;
 
    createSubcommunicatorsAndChildren(map_proc_subcomm);
    assert( map_proc_subcomm.size() == this->myProcs.size() );
@@ -806,6 +809,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    std::vector<int> two_links_children_ineq(children.size(), 0);
 
    /* count two links for all new sub-communicators */
+   map_block_subcomm.resize( n_leafs );
    size_t block = 0;
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -849,12 +853,12 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
             two_links_children_ineq[i] += twoLinksStartBlockC[block];
          }
 
+         map_block_subcomm[block] = i;
          ++block;
       }
    }
 
    assert( block == n_leafs );
-
 
    /* now set the linking sizes of all children am this */
    this->myl_active -= two_links_children_eq_sum;
@@ -919,9 +923,10 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
       mz += child.MZ;
    }
 
-   assert( this->N = nx + this->nx_active );
-   assert( this->MY = my + this->my_active );
-   assert( this->MZ = mz + this->mz_active );
+   std::cout << this->N << " " << nx << " " << this->nx_active << std::endl;
+   assert( this->N == nx + this->nx_active );
+   assert( this->MY == my + this->my_active );
+   assert( this->MZ == mz + this->mz_active );
 #endif
 }
 
@@ -952,4 +957,29 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    return top_layer;
 }
 
+void sTreeCallbacks::splitDataAccordingToTree( sData& data ) const
+{
+   assert( false && "TODO : implement " );
+//   splitMatrixAccordingToTree(dynamic_cast<StochSymMatrix&>(*data.Q));
+//
+//   BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).split(n_global_linking_vars);
+//
+//   BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
+//   BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
+//
+//   /* we ordered global linking vars first and global linking rows to the end */
+//   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true);
+//   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true);
+//   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true);
+//   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true);
+//   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true);
+//
+//   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
+//
+//   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false);
+//   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false);
+//   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false);
+//   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false);
+//
 
+}
