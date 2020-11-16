@@ -10,8 +10,10 @@
 #include "StochVector.h"
 #include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
+
 #include <cmath>
 #include <algorithm>    // std::swap
+
 #include "pipsport.h"
 
 #ifndef UCTRANS // see note in smlParDriver.C
@@ -671,6 +673,10 @@ int sTreeCallbacks::id() const
 static double RESCALE=1.0;
 StochVector* sTreeCallbacks::createc() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fc;
+
+   return createVector( n_func, func, nullptr, nullptr );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)
@@ -718,6 +724,13 @@ StochVector* sTreeCallbacks::createc() const
 
 StochVector* sTreeCallbacks::createb() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::my;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fb;
+
+   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::myl;
+   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fbl;
+
+   return createVector( n_func, func, n_func_link, func_link );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -770,6 +783,10 @@ StochVector* sTreeCallbacks::createb() const
 
 StochVector* sTreeCallbacks::createxlow() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxlow;
+
+   return createVector( n_func, func, nullptr, nullptr );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -799,6 +816,10 @@ StochVector* sTreeCallbacks::createxlow() const
 
 StochVector* sTreeCallbacks::createixlow() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixlow;
+
+   return createVector( n_func, func, nullptr, nullptr );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -828,6 +849,11 @@ StochVector* sTreeCallbacks::createixlow() const
 
 StochVector* sTreeCallbacks::createxupp() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fxupp;
+
+   return createVector( n_func, func, nullptr, nullptr );
+
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -857,6 +883,11 @@ StochVector* sTreeCallbacks::createxupp() const
 
 StochVector* sTreeCallbacks::createixupp() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::n;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fixupp;
+
+   return createVector( n_func, func, nullptr, nullptr );
+
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -886,8 +917,57 @@ StochVector* sTreeCallbacks::createixupp() const
   return ixupp;
 }
 
+StochVector* sTreeCallbacks::createVector( int StochInputTree::StochInputNode::* n_vec, FVEC StochInputTree::StochInputNode::* vec,
+      int StochInputTree::StochInputNode::* n_linking_vec, FVEC StochInputTree::StochInputNode::* linking_vec ) const
+{
+   assert( n_vec );
+   assert( vec );
+   assert( !fakedata ); // not supported and to be removed
+
+   assert( !(is_hierarchical_root || is_hierarchical_inner || is_hierarchical_leaf)
+         || (false && "cannot be used with hierarchical data") );
+
+   if( commWrkrs == MPI_COMM_NULL )
+      return new StochDummyVector();
+
+   const int nlinking = (np == - 1 && linking_vec != nullptr) ? data->*n_linking_vec : -1;
+
+   StochVector* svec = new StochVector( data->*n_vec, nlinking, commWrkrs );
+
+   assert( svec->vec );
+   double* elems = dynamic_cast<SimpleVector*>(svec->vec)->elements();
+   double* elems_link = (nlinking != -1) ? dynamic_cast<SimpleVector*>(svec->vecl)->elements() : nullptr;
+
+   (data->*vec)(data->user_data, data->id, elems, data->*n_vec);
+
+   // at root and with linking constraints?
+   if( nlinking != -1 )
+   {
+      assert( n_linking_vec );
+      assert( linking_vec );
+      (data->*linking_vec)(data->user_data, data->id, elems_link, data->*n_linking_vec);
+   }
+
+   for( const sTree* child_tree : children )
+   {
+      StochVector* child_vec = dynamic_cast<const sTreeCallbacks*>(child_tree)->createVector( n_vec, vec, n_linking_vec, linking_vec );
+      svec->AddChild( child_vec );
+    }
+
+   return svec;
+}
+
 StochVector* sTreeCallbacks::createclow() const
 {
+//   std::function<void(Foo*)> f = &Foo::doSomething;
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fclow;
+
+   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
+   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fdllow;
+
+   return createVector( n_func, func, n_func_link, func_link );
+
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -938,6 +1018,14 @@ StochVector* sTreeCallbacks::createclow() const
 
 StochVector* sTreeCallbacks::createiclow() const
 {
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::ficlow;
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
+
+   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fidllow;
+   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
+
+   return createVector( n_func, func, n_func_link, func_link );
+
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -987,6 +1075,14 @@ StochVector* sTreeCallbacks::createiclow() const
 
 StochVector* sTreeCallbacks::createcupp() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::fcupp;
+
+   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
+   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fdlupp;
+
+   return createVector( n_func, func, n_func_link, func_link );
+
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?
@@ -1037,6 +1133,13 @@ StochVector* sTreeCallbacks::createcupp() const
 
 StochVector* sTreeCallbacks::createicupp() const
 {
+   int StochInputTree::StochInputNode::* n_func = &StochInputTree::StochInputNode::mz;
+   FVEC StochInputTree::StochInputNode::* func = &StochInputTree::StochInputNode::ficupp;
+
+   int StochInputTree::StochInputNode::* n_func_link = &StochInputTree::StochInputNode::mzl;
+   FVEC StochInputTree::StochInputNode::* func_link = &StochInputTree::StochInputNode::fidlupp;
+
+   return createVector( n_func, func, n_func_link, func_link );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
   //is this node a dead-end for this process?

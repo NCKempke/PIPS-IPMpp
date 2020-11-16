@@ -7,7 +7,7 @@
 
 #include "sTree.h"
 #include "StochInputTree.h"
-
+#include <functional>
 /** This class creates objects when  the problem is specified by C callbacks.
  *  Obsolete and present only to ensure compatibility with older versions of the code.
  *  The new sTree implementation, C++-like is sTreeImpl.
@@ -30,6 +30,11 @@ class sTreeCallbacks : public sTree
   ~sTreeCallbacks();
 
   StochSymMatrix*   createQ() const;
+
+ private:
+  StochVector* createVector( int StochInputTree::StochInputNode::* n_vec, FVEC StochInputTree::StochInputNode::* vec,
+        int StochInputTree::StochInputNode::* n_linking_vec, FVEC StochInputTree::StochInputNode::* linking_vec ) const;
+ public:
   StochVector*      createc() const;
 
   StochVector*      createxlow()  const;
