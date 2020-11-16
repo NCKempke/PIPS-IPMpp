@@ -436,12 +436,10 @@ StochSymMatrix* sTreeCallbacks::createQ() const
    }
 }
 
-StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_Amat, DATA_INT n_Amat,
-      DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
-      DATA_INT m_Bmat, DATA_INT n_Bmat, DATA_INT nnzBmat,
-      DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat,
-      DATA_INT n_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat,
-      DATA_MAT Blmat )
+StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
+      DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
+      DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
+      DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    assert( !fakedata );
@@ -449,88 +447,107 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_Amat, DATA_INT n_Amat,
    if( commWrkrs == MPI_COMM_NULL )
       return new StochGenDummyMatrix();
 
-   if( data->*fnnzBlmat && data->*nnzBlmat < 0 )
+   const bool root = (np == -1);
+   const bool has_linking = (data->*fnnzBlmat != nullptr);
+
+   if( has_linking && data->*nnzBlmat < 0 )
       (data->*fnnzBlmat)(data->user_data, data->id, &(data->*nnzBlmat));
-//
-//   if (data->nnzA<0)
-//     data->fnnzA(data->user_data, data->id, &data->nnzA);
-//
-//  // are we at the root?
-//   if (np==-1) {
-//
-//     data->nnzB=0;
-//
-//     // are there linking constraints?
-//     if (data->fnnzBl)
-//     {
-//     // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
-//     // (i.e. the first block of linking constraints)
-//       A = new StochGenMatrix(MY + MYL, N,
-//            data->my, np, data->nnzB,
-//            data->my, data->n,  data->nnzA,
-//            data->myl, data->n,  data->nnzBl,
-//            commWrkrs);
-//     }
-//     else
-//     {
-//     // populate B with A's data B_0 is the A_0 from the theoretical form
-//       A = new StochGenMatrix(MY + MYL, N,
-//            data->my, np, data->nnzB,
-//            data->my, data->n,  data->nnzA,
-//            commWrkrs);
-//     }
-//
-//     //populate submatrix B
-//     data->fA(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
-//
-//
-//     printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-//       data->my, data->myl, data->n,  np, data->nnzA, data->nnzB, data->nnzBl);
-//   } else {
-//
-//     if (data->nnzB<0)
-//       data->fnnzB(data->user_data, data->id, &data->nnzB);
-//
-//     // are there linking constraints?
-//     if (data->fnnzBl)
-//     {
-//       A = new StochGenMatrix(MY + MYL, N,
-//            data->my, np, data->nnzA,
-//            data->my, data->n,  data->nnzB,
-//            data->myl, data->n,  data->nnzBl,
-//            commWrkrs);
-//     }
-//     else
-//     {
-//       A = new StochGenMatrix(MY + MYL, N,
-//            data->my, np, data->nnzA,
-//            data->my, data->n,  data->nnzB,
-//            commWrkrs);
-//     }
-//     //populate the submatrices A, B
-//     data->fA(data->user_data, data->id, A->Amat->krowM(), A->Amat->jcolM(), A->Amat->M());
-//     data->fB(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
-//
-//     printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-//       data->my, data->myl, data->n,  np, data->nnzA, data->nnzB, data->nnzBl);
-//   }
-//
-//   // populate Bl if existent
-//   if (data->fBl)
-//     data->fBl(data->user_data, data->id, A->Blmat->krowM(), A->Blmat->jcolM(), A->Blmat->M());
-//
-//   for(size_t it=0; it<children.size(); it++) {
-//     StochGenMatrix* child = children[it]->createA();
-//     A->AddChild(child);
-//   }
 
-   return nullptr;
+   if ( data->*nnzAmat < 0 )
+      (data->*fnnzAmat)(data->user_data, data->id, &(data->*nnzAmat));
 
+   StochGenMatrix* A = nullptr;
 
+   if( root )
+   {
+      data->*nnzBmat = 0;
+
+      if( data->*fnnzBlmat > 0 )
+      {
+         // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
+         // (i.e. the first block of linking constraints)
+         A = new StochGenMatrix(MY + MYL, N,
+               data->*m_ABmat, np, data->*nnzBmat,
+               data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
+               data->*m_Blmat, data->*n_Mat, data->*nnzBlmat,
+               commWrkrs);
+      }
+      else
+      {
+         // populate B with A's data B_0 is the A_0 from the theoretical form
+         A = new StochGenMatrix(MY + MYL, N,
+               data->*m_ABmat, np, data->*nnzBmat,
+               data->*m_ABmat, data->*n_Mat,  data->*nnzAmat,
+               commWrkrs);
+      }
+
+      //populate submatrix B
+      (data->*Amat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+
+      printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+            data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+   }
+   else
+   {
+      if( data->*nnzBmat < 0 )
+         (data->*fnnzBmat)(data->user_data, data->id, &(data->*nnzBmat));
+
+      if( data->fnnzBl > 0 )
+      {
+         A = new StochGenMatrix(MY + MYL, N,
+               data->*m_ABmat, np, data->*nnzAmat,
+               data->*m_ABmat, data->*n_Mat, data->*nnzBmat,
+               data->*m_Blmat, data->*n_Mat, data->*nnzBlmat,
+               commWrkrs);
+      }
+      else
+      {
+         A = new StochGenMatrix(MY + MYL, N,
+               data->*m_ABmat, np, data->*nnzAmat,
+               data->*m_ABmat, data->*n_Mat,  data->*nnzBmat,
+               commWrkrs);
+      }
+
+      //populate the submatrices A, B
+      (data->*Amat)(data->user_data, data->id, A->Amat->krowM(), A->Amat->jcolM(), A->Amat->M());
+      (data->*Bmat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+
+      printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+            data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+   }
+
+   // populate Bl if existent
+   if( data->*Blmat )
+      (data->*Blmat)(data->user_data, data->id, A->Blmat->krowM(), A->Blmat->jcolM(), A->Blmat->M());
+
+   for(size_t it = 0; it < children.size(); it++)
+   {
+      StochGenMatrix* child = dynamic_cast<sTreeCallbacks*>(children[it])->createMatrix( m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat,
+            nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
+      A->AddChild(child);
+   }
+   return A;
 }
 
 StochGenMatrix* sTreeCallbacks::createA() const
 {
+   DATA_INT m_ABmat = &InputNode::my;
+   DATA_INT n_Mat = &InputNode::n;
+   DATA_INT nnzAmat = &InputNode::nnzA;
+   DATA_NNZ fnnzAmat = &InputNode::fnnzA;
+   DATA_MAT Amat = &InputNode::fA;
+
+   DATA_INT nnzBmat = &InputNode::nnzB;
+   DATA_NNZ fnnzBmat = &InputNode::fnnzB;
+   DATA_MAT Bmat = &InputNode::fB;
+
+   DATA_INT m_Blmat = &InputNode::myl;
+   DATA_INT nnzBlmat = &InputNode::nnzBl;
+   DATA_NNZ fnnzBlmat = &InputNode::fnnzBl;
+   DATA_MAT Blmat = &InputNode::fBl;
+
+   return createMatrix( m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
+         fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
 
   StochGenMatrix* A = nullptr;
 
@@ -613,6 +630,24 @@ StochGenMatrix* sTreeCallbacks::createA() const
 
 StochGenMatrix* sTreeCallbacks::createC() const
 {
+   DATA_INT m_CDmat = &InputNode::mz;
+   DATA_INT n_Mat = &InputNode::n;
+   DATA_INT nnzCmat = &InputNode::nnzC;
+   DATA_NNZ fnnzCmat = &InputNode::fnnzC;
+   DATA_MAT Cmat = &InputNode::fC;
+
+   DATA_INT nnzDmat = &InputNode::nnzD;
+   DATA_NNZ fnnzDmat = &InputNode::fnnzD;
+   DATA_MAT Dmat = &InputNode::fD;
+
+   DATA_INT m_Dlmat = &InputNode::mzl;
+   DATA_INT nnzDlmat = &InputNode::nnzDl;
+   DATA_NNZ fnnzDlmat = &InputNode::fnnzDl;
+   DATA_MAT Dlmat = &InputNode::fDl;
+
+   return createMatrix( m_CDmat, n_Mat, nnzCmat, fnnzCmat, Cmat, nnzDmat,
+         fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat );
+
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
   //is this node a dead-end for this process?
   if(commWrkrs==MPI_COMM_NULL)

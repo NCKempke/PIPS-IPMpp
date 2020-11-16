@@ -38,12 +38,10 @@ private:
   StochSymMatrix*   createQ() const;
 
  private:
-  StochGenMatrix* createMatrix( DATA_INT m_Amat, DATA_INT n_Amat,
-        DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
-        DATA_INT m_Bmat, DATA_INT n_Bmat, DATA_INT nnzBmat,
-        DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat,
-        DATA_INT n_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat,
-        DATA_MAT Blmat );
+  StochGenMatrix* createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
+        DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
+        DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
+        DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
 
   StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
  public:
