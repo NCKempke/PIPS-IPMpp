@@ -268,18 +268,18 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
    const int myRank = PIPS_MPIgetRank(commWrkrs);
 
    MPI_Barrier(commWrkrs);
-    if( myRank == 0 )
-    {
-       sout << "N          : "  <<  N           << "\n";
-       sout << "MY         : "  <<  MY          << "\n";
-       sout << "MZ         : "  <<  MZ          << "\n";
-       sout << "MYL        : "  <<  MYL         << "\n";
-       sout << "MZL        : "  <<  MZL         << "\n";
-       sout << "nx_active  : "  <<  nx_active    << "\n";
-       sout << "my_active  : "  <<  my_active    << "\n";
-       sout << "mz_active  : "  <<  mz_active    << "\n";
-       sout << "myl_active : "  <<  myl_active   << "\n";
-       sout << "mzl_active : "  <<  mzl_active   << "\n";
+   if( myRank == 0 )
+   {
+      sout << "N          : "  <<  N           << "\n";
+      sout << "MY         : "  <<  MY          << "\n";
+      sout << "MZ         : "  <<  MZ          << "\n";
+      sout << "MYL        : "  <<  MYL         << "\n";
+      sout << "MZL        : "  <<  MZL         << "\n";
+      sout << "nx_active  : "  <<  nx_active    << "\n";
+      sout << "my_active  : "  <<  my_active    << "\n";
+      sout << "mz_active  : "  <<  mz_active    << "\n";
+      sout << "myl_active : "  <<  myl_active   << "\n";
+      sout << "mzl_active : "  <<  mzl_active   << "\n";
    }
 
 
@@ -395,45 +395,28 @@ void sTreeCallbacks::computeGlobalSizes()
 
 StochSymMatrix* sTreeCallbacks::createQ() const
 {
+   assert( !fakedata );
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
 
    //is this node a dead-end for this process?
    if( commWrkrs == MPI_COMM_NULL )
       return new StochSymDummyMatrix();
   
-   if( !fakedata )
+   if( data->nnzQ < 0 )
+      data->fnnzQ(data->user_data, data->id, &data->nnzQ);
+
+   StochSymMatrix *Q = new StochSymMatrix(N, data->n, data->nnzQ,
+         commWrkrs);
+
+   data->fQ(data->user_data, data->id, Q->diag->krowM(), Q->diag->jcolM(),
+         Q->diag->M());
+
+   for( size_t it = 0; it < children.size(); it++ )
    {
-      if( data->nnzQ < 0 )
-         data->fnnzQ(data->user_data, data->id, &data->nnzQ);
-
-      StochSymMatrix *Q = new StochSymMatrix(N, data->n, data->nnzQ,
-            commWrkrs);
-
-      data->fQ(data->user_data, data->id, Q->diag->krowM(), Q->diag->jcolM(),
-            Q->diag->M());
-
-      for( size_t it = 0; it < children.size(); it++ )
-      {
-         StochSymMatrix *child = children[it]->createQ();
-         Q->AddChild(child);
-      }
-      return Q;
+      StochSymMatrix *child = children[it]->createQ();
+      Q->AddChild(child);
    }
-   else
-   {
-      assert(false);
-      return nullptr;
-      /*
-       assert(real_children.size() > 0);
-       vector<StochSymMatrix*> v(real_children.size());
-       for(size_t i = 0; i<real_children.size(); i++) {
-       v[i] = real_children[i]->createQ();
-       }
-       StochSymMatrix *out = new StochSymMatrix(v);
-       for(size_t i = 0; i<real_children.size(); i++) delete v[i];
-       return out;
-       */
-   }
+   return Q;
 }
 
 StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
@@ -1006,7 +989,6 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
             assert( childchild.mzl_active == 0 );
          }
       }
-
       child.N = nx;
       child.MY = my;
       child.MZ = mz;
