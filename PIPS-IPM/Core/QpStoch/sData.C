@@ -1683,6 +1683,7 @@ void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std:
          {
             assert( 0 <= linkStartBlockIdA[i] );
             const size_t start_block_link_i = static_cast<size_t>(linkStartBlockIdA[i]);
+
             assert( start_block_link_i < map_block_subcomm.size() );
 
             if( start_block_link_i == map_block_subcomm.size() - 1 )

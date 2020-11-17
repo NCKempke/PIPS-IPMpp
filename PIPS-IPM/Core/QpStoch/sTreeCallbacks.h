@@ -72,7 +72,7 @@ public:
    const std::vector<unsigned int>& getMapProcsSubcomms() const
       { assert( is_hierarchical_inner ); return map_proc_subcomm; };
    const std::vector<unsigned int>& getMapBlockSubcomms() const
-      { assert( is_hierarchical_inner ); return map_proc_subcomm; };
+      { assert( is_hierarchical_inner ); return map_block_subcomm; };
 private:
    virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
