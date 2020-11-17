@@ -986,22 +986,46 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    return top_layer;
 }
 
-void sTreeCallbacks::splitDataAccordingToTree( sData& data ) const
+void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& mat ) const
+{
+
+   assert( false && "TODO : implement " );
+
+}
+
+void sTreeCallbacks::splitMatrixAccordingToTree( StochGenMatrix& mat ) const
 {
    assert( false && "TODO : implement " );
-//   splitMatrixAccordingToTree(dynamic_cast<StochSymMatrix&>(*data.Q));
-//
-//   BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).split(n_global_linking_vars);
-//
-//   BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
-//   BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
-//
-//   /* we ordered global linking vars first and global linking rows to the end */
-//   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true);
-//   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true);
-//   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true);
-//   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true);
-//   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true);
+
+}
+
+void sTreeCallbacks::splitVectorAccordingToTree( StochVector& vec ) const
+{
+   assert( map_block_subcomm.size() == vec.children.size() );
+
+   std::vector<StochVector*> sub_roots(this->children.size());
+
+   for( size_t i = 0; i < this->children.size(); ++i )
+   {
+      sub_roots = new StochVector( , , this->children[i]->commWrkrs);
+   }
+
+   assert( false && "TODO : implement " );
+
+}
+
+void sTreeCallbacks::splitDataAccordingToTree( sData& data ) const
+{
+   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.g) );
+   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.bux) );
+   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.ixupp) );
+   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.blx) );
+   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.ixlow) );
+
+   //   /* we ordered global linking vars first and global linking rows to the end */
+
+   assert( false && "TODO : implement " );
+   splitMatrixAccordingToTree(dynamic_cast<StochSymMatrix&>(*data.Q));
 //
 //   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
 //
