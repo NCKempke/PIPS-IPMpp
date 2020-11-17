@@ -82,6 +82,8 @@ Data* StochPresolver::presolve()
    presData->printRowColStats();
 
    const sData* sorigprob = dynamic_cast<const sData*>(origprob);
+   sorigprob->printRanges();
+
    assert( sorigprob->isRootNodeInSync() );
    assert( presData->getPresProb().isRootNodeInSync() );
 
@@ -122,6 +124,22 @@ Data* StochPresolver::presolve()
       resetFreeVariables();
 
    sData* finalPresData = presData->finalize();
+
+   /* change original bounds and set ixlow ixupp */
+//   finalPresData->xlowerBound().setNotIndicatedEntriesToVal( -1e10, *finalPresData->ixlow );
+//   finalPresData->xupperBound().setNotIndicatedEntriesToVal( 1e10, *finalPresData->ixupp );
+//
+//   OoqpVector* ixupp_inv = finalPresData->ixupp->clone();
+//   ixupp_inv->setToZero();
+//   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixupp);
+//
+//   OoqpVector* ixlow_inv = finalPresData->ixlow->clone();
+//   ixlow_inv->setToZero();
+//   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixlow);
+//
+//   finalPresData->ixlow->setToConstant(1);
+//   finalPresData->ixupp->setToConstant(1);
+
    assert( finalPresData );
    assert( finalPresData->isRootNodeInSync() );
 
@@ -142,6 +160,7 @@ Data* StochPresolver::presolve()
    if( my_rank == 0 )
       std::cout << "end stoch presolving" << std::endl;
    presData->printRowColStats();
+   finalPresData->printRanges();
 
    return finalPresData;
 }

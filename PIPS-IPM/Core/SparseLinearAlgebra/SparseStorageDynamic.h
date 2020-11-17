@@ -123,7 +123,10 @@ public:
 
   void restoreOrder();
 
-  bool isTransposedOf( const SparseStorageDynamic& mat_tp) const; //todo!
+  double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
+
+  bool isTransposedOf( const SparseStorageDynamic& mat_tp) const; // TODO..
 
   SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;
   SparseStorageDynamic* getTranspose() const;

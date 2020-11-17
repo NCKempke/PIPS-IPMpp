@@ -138,7 +138,7 @@ void sLinsys::factor(Data *prob_, Variables *vars)
   double tTot=MPI_Wtime();
 #endif
   // the call to the the parent's method takes care of all necessary updates
-  // to the KKT system (updating diagonals mainly). This is done reccursevely,
+  // to the KKT system (updating diagonals mainly). This is done recursively,
   // we don't have to worry about it anymore. 
   QpGenLinsys::factor(prob_, vars);
 
@@ -718,24 +718,6 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
       G.mult( 1.0, &SC[it + nxMyMzP][nxMyMzP],   1,  -1.0, &col[0],  1);
     }
   }
-
-#if 0
-  // debug stuff
-  int myrank;
-  static int iteration = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-  ofstream myfile;
-  char filename[50];
-  sprintf(filename, "../old_%d_%d.txt", myrank, iteration);
-  myfile.open(filename);
-  iteration++;
-  SC.writeToStream(myfile); // todo write out in each iteration with global counter and MPI rank!
-
-  std::cout << "iteration " << iteration << std::endl;
-  myfile.close();
-
-  //assert(0);
-#endif
 }
  
 //#define TIME_SCHUR
@@ -777,7 +759,6 @@ void sLinsys::addTermToSchurComplBlocked(sData *prob, bool sparseSC,
    C.getSize(N2, nxP2);
    const bool withC = (nxP2 != -1);
 
-   // TODO : is this correct?
    if( nxP == -1 )
       nxP = NP;
 

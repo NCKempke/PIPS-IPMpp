@@ -121,7 +121,8 @@ public:
   virtual void writeToStreamDenseRow( stringstream& out, int rowidx) const;
 
   virtual void symmetrize( int& info);
-  virtual double abmaxnorm();
+  double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   /** Computes the sparsity pattern of MtM = M^T * D * M 
    *  where D=diag(d) is a diagonal matrix and M=this.

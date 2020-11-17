@@ -176,24 +176,15 @@ void DenseSymMatrix::transMult ( double beta,  double y[], int incy,
 }
 
 
-double DenseSymMatrix::abmaxnorm()
+double DenseSymMatrix::abmaxnorm() const
 {
-  double norm = 0;
-  
-  int i, j;
-  double ** M = mStorage->M;
-  int m = mStorage->m;
-  double eltNorm;
-
-  for ( i = 0; i < m; i++ ) {
-    for ( j = 0; j <= i; j++ ) {
-      eltNorm = fabs( M[i][j] );
-      if ( eltNorm > norm ) norm = eltNorm;
-    }
-  }
-  return norm;
+   return mStorage->abmaxnorm();
 }
 
+double DenseSymMatrix::abminnormNonZero( double tol ) const
+{
+   return mStorage->abminnormNonZero( tol );
+}
 
 void DenseSymMatrix::writeToStream(ostream& out) const
 {

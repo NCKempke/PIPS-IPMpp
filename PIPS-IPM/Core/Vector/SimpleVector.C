@@ -88,27 +88,22 @@ void SimpleVectorBase<T>::absmin(T& min) const
 }
 
 /** Compute the min absolute value that is larger than zero_eps.
- * If there is no such value, return -1.0 */
+ * If there is no such value, return inf */
  template<typename T>
 void SimpleVectorBase<T>::absminNonZero(T& m, T zero_eps) const
 {
    assert(zero_eps >= 0.0);
 
-   m = -1.0;
+   m = std::numeric_limits<T>::infinity();
 
    if( this->n == 0 )
       return;
 
-   T min = std::numeric_limits<T>::max();
-
    for( int i = 0; i < this->n; i++ )
    {
-      if( fabs(v[i]) < min && fabs(v[i]) > zero_eps )
-         min = fabs(v[i]);
+      if( std::fabs(v[i]) < m && std::fabs(v[i]) > zero_eps )
+         m = std::fabs(v[i]);
    }
-
-   if( min < std::numeric_limits<T>::max() )
-      m = min;
 }
 
 template<typename T>
@@ -179,6 +174,27 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
   preserveVec = 0;
   v = new T[this->n];
   memset(v, 0, this->n * sizeof(T));
+}
+
+template<typename T>
+void SimpleVectorBase<T>::pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select )
+{
+   assert( 0 < amount );
+   assert( 0 < tol );
+
+   const SimpleVectorBase<T>* selects = dynamic_cast<const SimpleVectorBase<T>*>(select);
+
+   if( selects )
+      assert( this->n == selects->n );
+
+   for( int i = 0 ; i < this->n ; ++i )
+   {
+      if( selects && (*selects)[i] == 0 )
+            continue;
+
+      if( PIPSisZero( v[i], tol ) )
+         v[i] += amount;
+   }
 }
 
 template<typename T>
@@ -355,6 +371,20 @@ bool SimpleVectorBase<T>::componentNotEqual( const T val, const T tol ) const
 }
 
 template<typename T>
+void SimpleVectorBase<T>::setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind )
+{
+   const SimpleVectorBase<T>& ind_vec = dynamic_cast<const SimpleVectorBase<T>&>(ind);
+   assert( ind_vec.length() == this->length() );
+
+   for( int i = 0; i < ind_vec.length(); ++i )
+   {
+      if( ind_vec[i] == 0 )
+         this->v[i] = val;
+   }
+}
+
+
+template<typename T>
 void SimpleVectorBase<T>::scalarMult( T num)
 {
   int i;
@@ -409,7 +439,7 @@ void SimpleVectorBase<T>::writeToStreamAllStringStream(std::stringstream& sout) 
 template<typename T>
 void SimpleVectorBase<T>::writefToStream( std::ostream& out, const char format[] ) const
 {
-  SmartPointer<SimpleVectorBase<T>> empty( new SimpleVectorBase<T>(0) );
+  SmartPointer<SimpleVectorBase<T> > empty( new SimpleVectorBase<T>(0) );
   this->writefSomeToStream( out, format, *empty );
 }
 
@@ -593,6 +623,7 @@ void SimpleVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& xvec,
   int i;
   for( i = 0; i < this->n; i++ ) {
     //if(x[i] > 0 && z[i] > 0)
+     assert( z[i] != 0 );
       v[i] += alpha * x[i] / z[i];
   }
 }
@@ -735,7 +766,7 @@ void SimpleVectorBase<T>::invert()
   for( int i = 0; i < this->n; i++ )
   {
     assert(v[i] != 0.0);
-    v[i] = 1 / v[i];
+    v[i] = 1.0 / v[i];
   }
 }
 
@@ -1010,6 +1041,30 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
    std::swap(v, buffer);
 
    delete[] buffer;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
+{
+   if( this->n == 0 )
+      return;
+
+
+   const SimpleVectorBase<T>* selects = dynamic_cast<const SimpleVectorBase<T>*>(select);
+   if( selects )
+      assert( this->n == selects->n );
+
+   for( int i = 0; i < this->n; ++i )
+   {
+      const bool small = PIPSisZero( v[i], tol ) &&
+            ( (selects && PIPSisEQ( (*selects)[i], 1.0 )) || selects == nullptr );
+
+      if( small )
+      {
+         sum_small += v[i];
+         ++n_close;
+      }
+   }
 }
 
 template class SimpleVectorBase<int>;

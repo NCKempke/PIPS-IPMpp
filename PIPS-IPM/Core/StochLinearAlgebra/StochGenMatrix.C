@@ -555,21 +555,34 @@ void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
 }
 
 
-double StochGenMatrix::abmaxnorm()
+double StochGenMatrix::abmaxnorm() const
 {
   double nrm = 0.0;
   
-  for(size_t it=0; it<children.size(); it++)
-    nrm = max(nrm, children[it]->abmaxnorm());
+  for(size_t it = 0; it < children.size(); it++)
+    nrm = std::max(nrm, children[it]->abmaxnorm());
 
-  if(iAmDistrib) {
-    double nrmG=0;
-    MPI_Allreduce(&nrm, &nrmG, 1, MPI_DOUBLE, MPI_MAX, mpiComm);
-    nrm=nrmG;
-  }
+  if(iAmDistrib)
+     PIPS_MPIgetMaxInPlace( nrm, mpiComm );
 
-  nrm = max(nrm, max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
-  nrm = max(nrm, Blmat->abmaxnorm());
+  nrm = std::max(nrm, max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
+  nrm = std::max(nrm, Blmat->abmaxnorm());
+
+  return nrm;
+}
+
+double StochGenMatrix::abminnormNonZero( double tol ) const
+{
+  double nrm = std::numeric_limits<double>::infinity();
+
+  for(size_t it = 0; it < children.size(); it++)
+    nrm = std::min(nrm, children[it]->abminnormNonZero( tol ) );
+
+  if( iAmDistrib )
+     PIPS_MPIgetMinInPlace( nrm, mpiComm );
+
+  nrm = std::min(nrm, std::min(Amat->abminnormNonZero( tol ), Bmat->abminnormNonZero( tol )));
+  nrm = std::min(nrm, Blmat->abminnormNonZero( tol ));
 
   return nrm;
 }

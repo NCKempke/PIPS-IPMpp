@@ -411,12 +411,21 @@ void SparseGenMatrix::transMult( double beta,  double yv[], int incy,
   mStorage->transMult( beta, yv, incy, alpha, xv, incx );
 }
 
-
-double SparseGenMatrix::abmaxnorm()
+double SparseGenMatrix::abmaxnorm() const
 {
-  return mStorage->abmaxnorm();
+   if( mStorage.notNil() )
+      return mStorage->abmaxnorm();
+   else
+      return 0.0;
 }
 
+double SparseGenMatrix::abminnormNonZero( double tol ) const
+{
+   if( mStorage.notNil() )
+      return mStorage->abminnormNonZero(tol);
+   else
+      return std::numeric_limits<double>::infinity();
+}
 
 void SparseGenMatrix::atPutDiagonal( int idiag, OoqpVector& vvec )
 {

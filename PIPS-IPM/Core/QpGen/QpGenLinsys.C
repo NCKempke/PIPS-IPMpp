@@ -16,19 +16,68 @@
 #include "QpGen.h"
 #include "mpi.h"
 #include "pipsport.h"
+#include "QpGenOptions.h"
+
 #include <limits>
 #include <vector>
 #include <algorithm>
-
 #include <fstream>
-using namespace std;
 
-extern int gOuterSolve;
 extern int gOuterBiCGIter;
+extern double gOuterBiCGIterAvg;
+extern double g_iterNumber;
 extern int gOuterBiCGFails;
 
+static std::vector<int> bicgIters;
 
-// todo provide statistics vector, print if TIMING
+
+int QpGenLinsys::getIntValue(const std::string& s) const
+{
+   if( s.compare("BICG_NITERATIONS") == 0 )
+      return bicg_niterations;
+   else if( s.compare("BICG_CONV_FLAG") )
+      return bicg_conv_flag;
+   else
+   {
+      std::cout << "Unknown observer int request in QpGenLinsys.C: " << s << std::endl;
+      return -1;
+   }
+}
+
+bool QpGenLinsys::getBoolValue(const std::string& s) const
+{
+   if( s.compare("BICG_CONVERGED") == 0 )
+      return bicg_conv_flag == 0;
+   else if( s.compare("BICG_SKIPPED") == 0 )
+      return bicg_conv_flag == 1;
+   else if( s.compare("BICG_DIVERGED") == 0 )
+      return bicg_conv_flag == 5;
+   else if( s.compare("BICG_BREAKDOWN") == 0 )
+      return bicg_conv_flag == 4;
+   else if( s.compare("BICG_STAGNATION") == 0 )
+      return bicg_conv_flag == 3;
+   else if( s.compare("BICG_EXCEED_MAX_ITER") == 0 )
+      return bicg_conv_flag == -1;
+   else
+   {
+      std::cout << "Unknown observer bool request in QpGenLinsys.C: " << s << std::endl;
+      return false;
+   }
+}
+
+double QpGenLinsys::getDoubleValue(const std::string& s) const
+{
+   if( s.compare("BICG_RESNORM") == 0 )
+      return bicg_resnorm;
+   else if( s.compare("BICG_RELRESNORM") == 0 )
+      return bicg_relresnorm;
+   else
+   {
+      std::cout << "Unknown observer double request in QpGenLinsys.C: " << s << std::endl;
+      return 0.0;
+   }
+}
+
 static void biCGStabPrintStatus(int flag, int it, double resnorm, double rnorm)
 {
    int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -36,7 +85,7 @@ static void biCGStabPrintStatus(int flag, int it, double resnorm, double rnorm)
    if( myRank != 0 )
       return;
 
-   std::cout << "BiCGStab (it=" << it << ", rel.res.norm=" << resnorm << ", rel.r.norm=" << rnorm  << ")";
+   std::cout << "BiCGStab (it=" << it << ", rel.res.norm=" << resnorm << ", rel.r.norm=" << rnorm  << ", avg.iter=" << gOuterBiCGIterAvg << ")";
 
    if( flag == 5 )
       std::cout << " diverged" << std::endl;
@@ -46,6 +95,8 @@ static void biCGStabPrintStatus(int flag, int it, double resnorm, double rnorm)
       std::cout << " stagnation occurred" << std::endl;
    else if( flag == -1 )
       std::cout << " not converged in max iterations" << std::endl;
+   else if( flag == 1 )
+      std::cout << " skipped" << std::endl;
    else if( flag == 0 )
       std::cout << " converged" << std::endl;
    else
@@ -53,32 +104,32 @@ static void biCGStabPrintStatus(int flag, int it, double resnorm, double rnorm)
 
 }
 
-static double biCGStabGetTolerance(int ipIterations)
-{
-   double tolerance;
-   assert(ipIterations >= -1);
-
-   if( ipIterations == -1 )
-      tolerance = 1e-10;
-   else if( ipIterations <= 4 )
-      tolerance = 1e-8;
-   else if( ipIterations <= 8 )
-      tolerance = 1e-9;
-   else
-      tolerance = 1e-10;
-
-   return tolerance;
-}
-
 static void biCGStabCommunicateStatus(int flag, int it)
 {
+   double iterAvg = 0.0;
+
+	/* IP algorithm started? */
+   if( g_iterNumber >= 0.5 )
+   {
+	   bicgIters.push_back(it);
+
+	   for( size_t i = 0; i < bicgIters.size(); i++ )
+	     iterAvg += double(bicgIters[i]);
+
+	   iterAvg /= bicgIters.size();
+   }
+   else
+   {
+	   iterAvg = it;
+   }
+
+   gOuterBiCGIterAvg = iterAvg;
    gOuterBiCGIter = it;
 
-   if( flag != 0 )
+   if( flag != 0 && flag != 1 )
       gOuterBiCGFails++;
 
 }
-
 
 static bool isZero(double val, int& flag)
 {
@@ -91,13 +142,21 @@ static bool isZero(double val, int& flag)
    return false;
 }
 
-QpGenLinsys::QpGenLinsys( QpGen * factory_,
-			  QpGenData * prob,
-			  LinearAlgebraPackage * la ) 
-: factory( factory_), rhs(nullptr), dd(nullptr), dq(nullptr), useRefs(0)
+QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPackage * la ) :
+  bicg_conv_flag(-2), bicg_niterations(-1), bicg_resnorm(0.0), bicg_relresnorm(0.0),
+  factory( factory_), rhs(nullptr), dd(nullptr), dq(nullptr), useRefs(0),
+  outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
+  innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
+  outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+  outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
+  outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
+  outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
+  outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+  xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL") )
 {
-
   nx = prob->nx; my = prob->my; mz = prob->mz;
+  const int len_x = nx + my + mz;
+
   ixlow = prob->ixlow;
   ixupp = prob->ixupp;
   iclow = prob->iclow;
@@ -114,67 +173,60 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_,
     prob->getDiagonalOfQ( *dq );
   }
   nomegaInv   = la->newVector( mz );
-  rhs         = la->newVector( nx + my + mz );
+  rhs         = la->newVector( len_x );
 
-  if(gOuterSolve) {
+  if( outerSolve )
+  {
     //for iterative refinement or BICGStab
-    sol  = la->newVector( nx + my + mz );
-    res  = la->newVector( nx + my + mz );
+    sol  = la->newVector( len_x );
+    res  = la->newVector( len_x );
     resx = la->newVector( nx );
     resy = la->newVector( my );
     resz = la->newVector( mz );
-    if(gOuterSolve==2) {
+
+    if( outerSolve == 2 )
+    {
       //BiCGStab; additional vectors needed
-      sol2 = la->newVector( nx + my + mz );
-      res2 = la->newVector( nx + my + mz );
-      res3  = la->newVector( nx + my + mz );
-      res4  = la->newVector( nx + my + mz );
-      res5  = la->newVector( nx + my + mz );
-    } else {
-      sol2 = res2 = res3 = res4 = res5 = nullptr;
+      sol2 = la->newVector( len_x );
+      sol3 = la->newVector( len_x );
+      res2 = la->newVector( len_x );
+      res3  = la->newVector( len_x );
+      res4  = la->newVector( len_x );
+      res5  = la->newVector( len_x );
     }
-  } else {
-    sol = res = resx = resy = resz = nullptr;
-    sol2 = res2 = res3 = res4 = res5 = nullptr;
+    else
+    {
+      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
+    }
   }
-
-  printStatistics = false;
-
-  // todo user parameter!
-  char* var = getenv("PIPS_PRINT_STATISTICS");
-  if( var != nullptr )
+  else
   {
-     int print = -1;
-     sscanf(var, "%d", &print);
-     if( print == 0 )
-        printStatistics = false;
-     else if( print == 1 )
-        printStatistics = true;
+    sol = res = resx = resy = resz = nullptr;
+    sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
   }
-  ipIterations = -2;
 }
 
 QpGenLinsys::QpGenLinsys()
- : factory( nullptr), rhs(nullptr), dd(nullptr), dq(nullptr), useRefs(0),
-   sol(nullptr), res(nullptr), resx(nullptr), resy(nullptr), resz(nullptr),
-   sol2(nullptr), res2(nullptr), res3(nullptr), res4(nullptr), res5(nullptr), printStatistics(false), ipIterations(-2)
+ : bicg_conv_flag(-2), bicg_niterations(-1), bicg_resnorm(0.0), bicg_relresnorm(0.0), nomegaInv(nullptr), factory(nullptr),
+   rhs(nullptr), nx(-1), my(-1), mz(-1), dd(nullptr), dq(nullptr), ixupp(nullptr), icupp(nullptr), ixlow(nullptr), iclow(nullptr),
+   nxupp(-1), nxlow(-1), mcupp(-1), mclow(-1),
+   useRefs(0), sol(nullptr), res(nullptr), resx(nullptr), resy(nullptr), resz(nullptr),
+   sol2(nullptr), sol3(nullptr), res2(nullptr), res3(nullptr), res4(nullptr), res5(nullptr),
+   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
+   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
+   outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+   outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
+   outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
+   outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
+   outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+   xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL") )
 {
-   // todo user parameter!
-   char* var = getenv("PIPS_PRINT_STATISTICS");
-   if( var != nullptr )
-   {
-      int print = -1;
-      sscanf(var, "%d", &print);
-      if( print == 0 )
-         printStatistics = false;
-      else if( print == 1 )
-         printStatistics = true;
-   }
 }
 
 QpGenLinsys::~QpGenLinsys()
 {
-  if(!useRefs) {
+  if(!useRefs)
+  {
     delete dd; delete dq;
     delete rhs;
     delete nomegaInv;
@@ -186,6 +238,7 @@ QpGenLinsys::~QpGenLinsys()
   if(resy) delete resy;
   if(resz) delete resz;
   if(sol2) delete sol2;
+  if(sol3) delete sol3;
   if(res2) delete res2;
   if(res3) delete res3;
   if(res4) delete res4;
@@ -210,9 +263,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   nomegaInv->negate();
 
   if( mclow + mcupp > 0 ) this->putZDiagonal( *nomegaInv );
- 
 }
-
 
 void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
 				    OoqpVector& t,  OoqpVector& lambda,
@@ -242,13 +293,16 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
   assert( vars->validNonZeroPattern() );
   assert( res ->validNonZeroPattern() );
   
+  /* x = rQ */
   step->x->copyFrom( *res->rQ );
   if( nxlow > 0 ) {
     OoqpVector & vInvGamma = *step->v;
     vInvGamma.copyFrom( *vars->gamma );
     vInvGamma.divideSome( *vars->v, *ixlow );
 	
+    /* x = rQ + Gamma/V * rv */
     step->x->axzpy ( 1.0, vInvGamma, *res->rv );
+    /* x = rQ + Gamma/V * rv + rGamma/V */
     step->x->axdzpy( 1.0, *res->rgamma, *vars->v, *ixlow );
   }
   if( nxupp > 0 ) {
@@ -256,28 +310,33 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     wInvPhi.copyFrom( *vars->phi );
     wInvPhi.divideSome( *vars->w, *ixupp );
 	  
+    /* x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
     step->x->axzpy (  1.0, wInvPhi,   *res->rw );
+    /* x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
     step->x->axdzpy( -1.0, *res->rphi, *vars->w, *ixupp );
   }
   // start by partially computing step->s
+  /* step->s = rz */
   step->s->copyFrom( *res->rz );
   if( mclow > 0 ) {
     OoqpVector & tInvLambda = *step->t;
-	
     tInvLambda.copyFrom( *vars->lambda );
     tInvLambda.divideSome( *vars->t, *iclow );
 
+    /* step->s = rz + Lambda/T * rt */
     step->s->axzpy( 1.0, tInvLambda, *res->rt );
+    /* step->s = rz + Lambda/T * rt + rlambda/T */
     step->s->axdzpy( 1.0, *res->rlambda, *vars->t, *iclow );
   }
 
   if( mcupp > 0 ) {
     OoqpVector & uInvPi = *step->u;
-	
     uInvPi.copyFrom( *vars->pi );
     uInvPi.divideSome( *vars->u, *icupp );
 
+    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
     step->s-> axzpy(  1.0, uInvPi, *res->ru );
+    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
     step->s->axdzpy( -1.0, *res->rpi, *vars->u, *icupp );
   }
 
@@ -352,15 +411,35 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 			       OoqpVector& /* ztemp */,
 			       QpGenData* prob )
 {
+  /* step->x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
+  /* step->y = rA */
+  /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
+  /* step->z = rC */
+
+   /* rz = rC - */
   stepz.axzpy( -1.0, *nomegaInv, steps );
- 
-  if(gOuterSolve==1) {
+
+  OoqpVector * residual = nullptr;
+  if( xyzs_solve_print_residuals )
+  {
+     residual = rhs->cloneFull();
+     this->joinRHS(*residual, stepx, stepy, stepz);
+
+     const double xinf = stepx.infnorm();
+     const double yinf = stepy.infnorm();
+     const double zinf = stepz.infnorm();
+
+     if( PIPS_MPIgetRank() == 0 )
+        std::cout << "rhsx norm : " << xinf << ",\trhsy norm : " << yinf << ",\trhsz norm : " << zinf << std::endl;
+  }
+
+  if( outerSolve == 1 ) {
     ///////////////////////////////////////////////////////////////
     // Iterative refinement
     ///////////////////////////////////////////////////////////////
     solveCompressedIterRefin(stepx,stepy,stepz,prob);
 
-  } else if(gOuterSolve==0) {
+  } else if( outerSolve == 0 ) {
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
@@ -369,12 +448,37 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     this->separateVars( stepx, stepy, stepz, *rhs );
 
   } else {
-    assert(gOuterSolve==2);
+    assert( outerSolve == 2 );
     ///////////////////////////////////////////////////////////////
     // BiCGStab
     ///////////////////////////////////////////////////////////////
     solveCompressedBiCGStab(stepx,stepy,stepz,prob);
+    /* notify observers about result of BiCGStab */
+    notifyObservers();
+
   }
+
+  if( xyzs_solve_print_residuals )
+  {
+     const double bnorm = residual->infnorm();
+     this->joinRHS(*sol, stepx, stepy, stepz);
+     this->matXYZMult(1.0, *residual, -1.0, *sol, prob, stepx, stepy, stepz);
+
+     this->separateVars( *resx, *resy, *resz, *residual );
+     const double resxnorm = resx->infnorm();
+     const double resynorm = resy->infnorm();
+     const double resznorm = resz->infnorm();
+
+     if( PIPS_MPIgetRank() == 0 )
+     {
+        cout << "bnorm " << bnorm << std::endl;
+        cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << endl;
+        cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << endl;
+        cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << std::endl;
+     }
+     delete residual;
+  }
+
   stepy.negate();
   stepz.negate();
 	
@@ -383,7 +487,6 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   steps.negate();
 }
 
-#if 1
 void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
                  OoqpVector& stepy,
                  OoqpVector& stepz,
@@ -392,22 +495,19 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    this->joinRHS(*rhs, stepx, stepy, stepz);
 
    //aliases
-   OoqpVector &r0 = *res2, &dx = *sol2, &v = *res3, &t = *res4, &p = *res5;
+   OoqpVector &r0 = *res2, &dx = *sol2, &best_x = *sol3, &v = *res3, &t = *res4, &p = *res5;
    OoqpVector &x = *sol, &r = *res, &b = *rhs;
 
-   const double tol = biCGStabGetTolerance(ipIterations);
-   const double eps = 1e-15;
+   const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
-   const double tolb = max(n2b * tol, eps);
-   const int maxit = 75;
-   const int normrDivLimit = 4; // todo user parameter
-   const int stagsLimit = 4;
+   const double tolb = max(n2b * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
+   bicg_niterations = 0;
 
    assert(n2b >= 0);
 
-   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    //starting guess/point
    x.copyFrom(b);
@@ -415,44 +515,29 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    //solution to the approx. system
    solveCompressed(x);
 
-   //initial residual: res=res-A*x
+   //initial residual: res = b - Ax
    r.copyFrom(b);
    matXYZMult(1.0, r, -1.0, x, data, stepx, stepy, stepz);
 
-   double normr = r.twonorm(), normr_min = normr, normr_act = normr;
+   double normr = r.twonorm(), normr_min = normr;
+   best_x.copyFrom(x);
 
-#ifdef TIMING
-#ifndef NDEBUG
-   double nmin;
-   double tolmin;
-
-   MPI_Allreduce(&normr, &nmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-   MPI_Allreduce(&tolb, &tolmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-
-   if( normr != nmin )
-   {
-      cout << "rtwonorm not consistent " << normr << " " << nmin << "\n";
-      MPI_Abort(MPI_COMM_WORLD, 1);
-
-   }
-   if( tolb != tolmin )
-   {
-      cout << "tolb not consistent " << tolb << " " << tolmin << "\n";
-      MPI_Abort(MPI_COMM_WORLD, 1);
-   }
-#endif
-#endif
+   bicg_resnorm = normr;
+   bicg_relresnorm = bicg_resnorm / n2b;
 
    //quick return if solve is accurate enough
    if( normr <= tolb )
    {
       this->separateVars(stepx, stepy, stepz, x);
-      if( myRank == 0 )
-         std::cout << "outer BiCGStab skipped: " << normr << " <= " << tolb <<  std::endl;
+
+      bicg_conv_flag = 1;
+      biCGStabCommunicateStatus(bicg_conv_flag, bicg_niterations);
+      biCGStabPrintStatus(bicg_conv_flag, bicg_niterations, bicg_relresnorm, normr / n2b);
+
       return;
    }
 
-   if( printStatistics )
+   if( outer_bicg_print_statistics )
    {
       const double infb = b.infnorm();
       const double glbinfnorm = matXYZinfnorm(data, stepx, stepy, stepz);
@@ -470,35 +555,31 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    //normalize
    r0.scale(1 / normr);
 
-   int flag = -1;
+   bicg_conv_flag = -1;
    int normrNDiv = 0;
    int nstags = 0;
    double rho = 1., omega = 1., alpha = 1.;
 
-
-   // todo save x_best and use it to check for stagnation and rollback!
-
    //main loop
-   int it;
-   for( it = 0; it < maxit; it++ )
+   for( bicg_niterations = 0; bicg_niterations  < outer_bicg_max_iter; bicg_niterations ++ )
    {
-      assert(flag == -1);
+      assert(bicg_conv_flag == -1);
       const double rho1 = rho;
 
       rho = r0.dotProductWith(r);
 
-      if( isZero(rho, flag) )
+      if( isZero(rho, bicg_conv_flag) )
          break;
 
       //first half of the iterate
       {
-         if( it == 0 )
+         if( bicg_niterations == 0 )
             p.copyFrom(r);
          else
          {
             const double beta = (rho / rho1) * (alpha / omega);
 
-            if( isZero(beta, flag) )
+            if( isZero(beta, bicg_conv_flag) )
                break;
 
             //-------- p = r + beta*(p - omega*v) --------
@@ -516,12 +597,12 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
 
          const double rtv = r0.dotProductWith(v);
 
-         if( isZero(rtv, flag) )
+         if( isZero(rtv, bicg_conv_flag) )
             break;
 
          alpha = rho / rtv;
 
-         if( (std::fabs(alpha) * dx.twonorm()) <= eps * x.twonorm() )
+         if( (std::fabs(alpha) * dx.twonorm()) <= outer_bicg_eps * x.twonorm() )
             nstags++;
          else
             nstags = 0;
@@ -534,18 +615,18 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
          //check for convergence
          normr = r.twonorm();
 
-         if( normr <= tolb || nstags >= stagsLimit )
+         if( normr <= tolb || nstags >= outer_bicg_max_stagnations )
          {
             //compute the actual residual
             OoqpVector& res = dx; //use dx
             res.copyFrom(b);
             matXYZMult(1.0, res, -1.0, x, data, stepx, stepy, stepz);
 
-            normr_act = res.twonorm();
-            if( normr_act <= tolb )
+            bicg_resnorm = res.twonorm();
+            if( bicg_resnorm <= tolb )
             {
                //converged
-               flag = 0;
+               bicg_conv_flag = 0;
                break;
             }
          } //~end of convergence test
@@ -562,12 +643,12 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
 
          const double tt = t.dotProductSelf(1.0);
 
-         if( isZero(tt, flag) )
+         if( isZero(tt, bicg_conv_flag) )
             break;
 
          omega = t.dotProductWith(r) / tt;
 
-         if( (std::fabs(omega) * dx.twonorm()) <= eps * x.twonorm() )
+         if( (std::fabs(omega) * dx.twonorm()) <= outer_bicg_eps * x.twonorm() )
             nstags++;
          else
             nstags = 0;
@@ -579,19 +660,19 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
          //check for convergence
          normr = r.twonorm();
 
-         if( normr <= tolb || nstags >= stagsLimit )
+         if( normr <= tolb || nstags >= outer_bicg_max_stagnations )
          {
             //compute the actual residual
             OoqpVector& res = dx; //use dx
             res.copyFrom(b);
             matXYZMult(1.0, res, -1.0, x, data, stepx, stepy, stepz);
 
-            normr_act = res.twonorm();
+            bicg_resnorm = res.twonorm();
 
-            if( normr_act <= tolb )
+            if( bicg_resnorm <= tolb )
             {
                //converged
-               flag = 0;
+               bicg_conv_flag = 0;
                break;
             }
          }
@@ -600,366 +681,57 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
             if( normr >= normr_min )
                normrNDiv++;
             else
-            {
                normrNDiv = 0;
-               normr_min = normr;
-            }
 
-            // todo rollback to normr_min iterate!
-            if( normrNDiv > normrDivLimit )
+            if( normrNDiv > outer_bicg_max_normr_divergences )
             {
-               flag = 5;
+               // rollback to best iterate
+               x.copyFrom(best_x);
+               normr = normr_min;
+
+               bicg_conv_flag = 5;
                break;
             }
          } //~end of convergence test
 
-#if 0
          if( normr < normr_min )
          {
             // update best for rollback
-
+            normr_min = normr;
+            best_x.copyFrom(x);
          }
-#endif
       } //~end of scoping
 
-      if( nstags >= stagsLimit )
+      if( nstags >= outer_bicg_max_stagnations )
       {
-         flag = 3;
+         // rollback to best iterate
+         if( normr_min < normr )
+         {
+            normr = normr_min;
+            x.copyFrom(best_x);
+         }
+
+         bicg_conv_flag = 3;
          break;
       }
 
-      if( isZero(omega, flag) )
+      if( isZero(omega, bicg_conv_flag) )
          break;
 
    } //~ end of BiCGStab loop
 
-   biCGStabPrintStatus(flag, it, normr_act/n2b, normr/n2b);
-   biCGStabCommunicateStatus(flag, it);
+   bicg_relresnorm = bicg_resnorm / n2b;
+   biCGStabCommunicateStatus(bicg_conv_flag, std::max(bicg_niterations, 1));
+   biCGStabPrintStatus(bicg_conv_flag, std::max(bicg_niterations, 1), bicg_relresnorm, normr / n2b);
 
    this->separateVars(stepx, stepy, stepz, x);
 }
-
-
-
-#else
-void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
-					  OoqpVector& stepy,
-					  OoqpVector& stepz,
-					  QpGenData* data)
-{
-#ifdef TIMING
-   vector<double> histRelResid;
-   double tTot=MPI_Wtime(), tSlv=0., tResid=0., tTmp;
-#endif
-
-   this->joinRHS(*rhs, stepx, stepy, stepz);
-
-   //aliases
-   OoqpVector &r0 = *res2, &dx = *sol2, &v = *res3, &t = *res4, &p = *res5;
-   OoqpVector &x = *sol, &r = *res, &b = *rhs;
-
-   const double tol = 1e-10;
-   const double eps = 1e-40;
-   const double n2b = b.twonorm();
-   const double tolb = max(n2b * tol, eps);    // todo this should be done properly
-   const int maxit = 500;
-
-   assert(n2b >= 0);
-
-   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-#ifdef TIMING
-   double iter=0.0;
-   gOuterBiCGIter=0;
-   tTmp=MPI_Wtime();
-
-   if( myRank == 0 )
-      std::cout << "Outer BiCGStab - tolb: " << tolb << std::endl;
-#endif
-   //starting guess/point
-   x.copyFrom(b);
-
-   //solution to the approx. system
-   solveCompressed(x);
-#ifdef TIMING
-   tSlv += (MPI_Wtime()-tTmp);
-   tTmp=MPI_Wtime();
-   gOuterBiCGIter++;
-#endif
-   //initial residual: res=res-A*x
-   r.copyFrom(b);
-   matXYZMult(1.0, r, -1.0, x, data, stepx, stepy, stepz);
-#ifdef TIMING
-   tResid += (MPI_Wtime()-tTmp);
-#endif  
-   double normr = r.twonorm(), normr_min = normr, normr_act = normr;
-#ifdef TIMING
-   histRelResid.push_back(normr/n2b);
-#endif
-
-#ifdef TIMING
-#ifndef NDEBUG
-   double nmin;
-   double tolmin;
-
-   MPI_Allreduce(&normr, &nmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-   MPI_Allreduce(&tolb, &tolmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-
-   if( normr != nmin )
-   {
-      cout << "rtwonorm not consistent " << normr << " " << nmin << "\n";
-      MPI_Abort(MPI_COMM_WORLD, 1);
-
-   }
-   if( tolb != tolmin )
-   {
-      cout << "tolb not consistent " << tolb << " " << tolmin << "\n";
-      MPI_Abort(MPI_COMM_WORLD, 1);
-   }
-#endif
-#endif
-
-
-   //quick return if solve is accurate enough
-   if( normr <= tolb )
-   {
-      this->separateVars(stepx, stepy, stepz, x);
-#ifdef TIMING
-      tTot = MPI_Wtime() - tTot;
-      if(0==myRank)
-      {
-         cout << "Outer BiCGStab 0 iterations. Rel.res.nrm:" << normr/n2b << endl;
-         cout << "solveXYZS w/ BiCGStab times: solve " << tSlv
-         << "  matvec " << tResid
-         << "  total " << tTot << endl;
-      }
-#endif
-      return;
-   }
-
-   //arbitrary vector
-   r0.copyFrom(b);
-
-   int flag;
-   double rho = 1., omega = 1., alpha;
-
-   //main loop
-   for( int it = 0; it < maxit; it++ )
-   {
-      flag = -1; //reset flag
-      const double rho1 = rho;
-
-      rho = r0.dotProductWith(r);
-      if( 0.0 == rho )
-      {
-         flag = 4;
-         break;
-      }
-
-      //first half of the iterate
-      {
-         if( it == 0 )
-            p.copyFrom(r);
-         else
-         {
-            const double beta = (rho / rho1) * (alpha / omega);
-            if( beta == 0.0 )
-            {
-               flag = 4;
-               break;
-            }
-
-            //-------- p = r + beta*(p - omega*v) --------
-            p.axpy(-omega, v);
-            p.scale(beta);
-            p.axpy(1.0, r);
-         }
-#ifdef TIMING
-         tTmp = MPI_Wtime();
-#endif
-         //precond: ph = \tilde{K}^{-1} p
-         dx.copyFrom(p);
-         solveCompressed(dx);
-#ifdef TIMING
-         tSlv += (MPI_Wtime()-tTmp);
-         tTmp = MPI_Wtime();
-         gOuterBiCGIter++;
-#endif
-         //mat-vec: v = K*ph
-         matXYZMult(0.0, v, 1.0, dx, data, stepx, stepy, stepz);
-#ifdef TIMING
-         tResid += (MPI_Wtime()-tTmp);
-#endif
-
-         const double rtv = r0.dotProductWith(v);
-         if( rtv == 0.0 )
-         {
-            flag = 4;
-            break;
-         }
-
-         alpha = rho / rtv;
-         // x = x + alpha*dx (x=x+alpha*ph)
-         x.axpy(alpha, dx);
-         // r = r-alpha*v (s=r-alpha*v)
-         r.axpy(-alpha, v);
-
-         //check for convergence
-         normr = r.twonorm();
-
-#ifdef TIMING
-         histRelResid.push_back(normr/n2b);
-         if( myRank == 0 )
-              std::cout << "Outer BiCGStab - iteration: " << it << " normr: " << normr << std::endl;
-#endif
-         if( normr <= tolb )
-         {
-#ifdef TIMING
-            tTmp=MPI_Wtime();
-#endif
-            //compute the actual residual
-            OoqpVector& res = dx; //use dx
-            res.copyFrom(b);
-            matXYZMult(1.0, res, -1.0, x, data, stepx, stepy, stepz);
-#ifdef TIMING
-            tResid += (MPI_Wtime()-tTmp);
-#endif
-
-            normr_act = res.twonorm();
-            if( normr_act <= tolb )
-            {
-               //converged
-#ifdef TIMING
-               histRelResid[histRelResid.size()-1]=normr_act/n2b;
-               iter=it+0.5;
-#endif
-               flag = 0;
-               break;
-            }
-         } //~end of convergence test
-      }
-
-      //second half of the iterate now
-      {
-#ifdef TIMING
-         tTmp=MPI_Wtime();
-#endif
-         //preconditioner
-         dx.copyFrom(r);
-         solveCompressed(dx);
-#ifdef TIMING
-         tSlv += (MPI_Wtime()-tTmp);
-         tTmp=MPI_Wtime();
-         gOuterBiCGIter++;
-#endif
-         //mat-vec
-         matXYZMult(0.0, t, 1.0, dx, data, stepx, stepy, stepz);
-#ifdef TIMING
-         tResid += (MPI_Wtime()-tTmp);
-#endif
-         const double tt = t.dotProductWith(t);
-         if( tt == 0.0 )
-         {
-            flag = 4;
-            break;
-         }
-
-         omega = t.dotProductWith(r);
-
-         assert(omega != 0);
-
-         omega /= tt;
-
-         // x=x+omega*dx  (x=x+omega*sh)
-         x.axpy(omega, dx);
-         // r = r-omega*t (r=s-omega*sh)
-         r.axpy(-omega, t);
-         //check for convergence
-         normr = r.twonorm();
-#ifdef TIMING
-         histRelResid.push_back(normr/n2b);
-#endif
-
-         if( normr <= tolb )
-         {
-#ifdef TIMING
-            tTmp=MPI_Wtime();
-#endif
-            //compute the actual residual
-            OoqpVector& res = dx; //use dx
-            res.copyFrom(b);
-            matXYZMult(1.0, res, -1.0, x, data, stepx, stepy, stepz);
-#ifdef TIMING
-            tResid += (MPI_Wtime()-tTmp);
-#endif
-
-            normr_act = res.twonorm();
-            //cout << "Outer BiCG - actual rel.res.nrm: " << normr_act/n2b << endl;
-            if( normr_act <= tolb )
-            {
-               //converged
-#ifdef TIMING 
-               histRelResid[histRelResid.size()-1]=normr_act/n2b;
-               iter=it+1.;
-#endif
-               flag = 0;
-               break;
-            } // else continue - To Do: detect stagnation (flag==3)
-         }
-         else
-         {
-            //To Do: detect stagnation/divergence and rollback to min.norm. iterate
-            //for now we print a warning and exit in case residual increases.
-            if( normr > normr_min )
-            {
-#ifdef TIMING
-               if(0==myRank)
-               cout << "Outer BiCG - Increase in BiCGStab residual. Old=" << normr_min
-               << "  New=" << normr << endl;
-               iter=it+1.;
-#endif
-
-               flag = 5;
-               break;
-            }
-            else
-               normr_min = normr;
-         } //~end of convergence test
-      } //~end of scoping
-   } //~ end of BiCGStab loop
-
-   //warning/error messaging
-   if( flag != 0 )
-   {
-      if( myRank == 0 )
-         cout << "BiCGStab FAIL " << flag << "\n";
-#ifdef TIMING
-      if(0==myRank)
-      cout << "Outer BiCG - convergence issues: flag=" << flag << ". "
-      << iter << " iterations"
-      << " rel.res.norm=" << normr_act/n2b << endl;
-#endif
-   }
-   this->separateVars(stepx, stepy, stepz, x);
-
-#ifdef TIMING
-   tTot = MPI_Wtime()-tTot;
-   if(0==myRank)
-   {
-      cout << "Outer BiCGStab " << iter << " iterations. Rel.res.nrm:";
-      for(size_t it=0; it<histRelResid.size(); it++)
-      cout << histRelResid[it] << " | ";
-      cout << endl;
-      cout << "solveXYZS w/ BiCGStab times: solve=" << tSlv
-      << "  matvec=" << tResid
-      << "  total=" << tTot << endl;
-   }
-#endif  
-
-}
-#endif
 
 /**
- * res = beta*res - alpha*mat*sol
+ * res = beta * res + alpha * mat * sol
+ *       [ Q + dq + gamma/ v + phi/w     AT           CT          ]
+ * mat = [            A                  0            0           ]
+ *       [            C                  0  -(lambda/V + pi/u)^-1 ]
  * stepx, stepy, stepz are used as temporary buffers
  */
 void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res, 
@@ -972,13 +744,18 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);
 
+  /* resx = beta resx + alpha Q solx + alpha dd solx */
   data->Qmult(beta, *resx, alpha, solx);
   resx->axzpy(alpha, *dd, solx);
+
+  /* resx = beta resx + alpha Q solx + alpha dd solx + alpha AT soly + alpha CT solz */
   data->ATransmult(1.0, *resx, alpha, soly);
   data->CTransmult(1.0, *resx, alpha, solz);
 
+  /* resy = beta resy + alpha A solx */
   data->Amult(beta, *resy, alpha, solx);
   //cout << "resy norm: " << resy->twonorm() << endl;
+  /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
   data->Cmult(beta, *resz, alpha, solx);
   resz->axzpy(alpha, *nomegaInv, solz);
   //cout << "resz norm: " << resz->twonorm() << endl;
@@ -1065,7 +842,7 @@ void QpGenLinsys::solveCompressedIterRefin(OoqpVector& stepx,
       //		 << "rhs.nrm xyz: " << bnorm << endl;
 #endif      
       
-      if(resNorm/bnorm<1e-9)
+      if( resNorm / bnorm < 1e-9)
 	break;
 
     } while(true);

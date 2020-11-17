@@ -7,6 +7,7 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
 #include <iostream>
+#include <iomanip>
 #include "pipsport.h"
 
 static
@@ -1695,10 +1696,9 @@ void sData::AddChild(sData* child)
    children.push_back(child);
 }
 
-double
-sData::objectiveValue(QpGenVars * vars)
+double sData::objectiveValue(const QpGenVars * vars) const
 {
-   StochVector& x = dynamic_cast<StochVector&>(*vars->x);
+   const StochVector& x = dynamic_cast<const StochVector&>(*vars->x);
    OoqpVectorHandle temp(x.clone());
 
    this->getg(*temp);
@@ -2455,4 +2455,58 @@ bool sData::isRootNodeInSync() const
    // todo
 
    return in_sync;
+}
+
+void sData::printRanges() const
+{
+   /* objective */
+   double absmin_objective; g->absminNonZero( absmin_objective, 0.0 );
+   assert( absmin_objective >= 0 );
+   const double absmax_objective = g->infnorm();
+   assert( absmax_objective >= 0 );
+
+   /* matrix range */
+   const double absmax_A = A->abmaxnorm();
+   const double absmax_C = C->abmaxnorm();
+
+   const double absmin_A = A->abminnormNonZero();
+   const double absmin_C = C->abminnormNonZero();
+
+   const double mat_min = std::min( absmin_A, absmin_C );
+   const double mat_max = std::max( absmax_A, absmax_C );
+
+   /* rhs range */
+   double absmin_bA; bA->absminNonZero( absmin_bA, 0.0 );
+   double absmin_bl; bl->absminNonZero( absmin_bl, 0.0 );
+   double absmin_bu; bu->absminNonZero( absmin_bu, 0.0 );
+
+   const double absmax_bA = bA->infnorm();
+   const double absmax_bl = bl->infnorm();
+   const double absmax_bu = bu->infnorm();
+
+   const double rhs_min = std::min( absmin_bA, std::min( absmin_bl, absmin_bu ) );
+   const double rhs_max = std::max( absmax_bA, std::max( absmax_bl, absmax_bu ) );
+
+   /* bounds range */
+   double absmin_blx; blx->absminNonZero( absmin_blx, 0.0 );
+   double absmin_bux; bux->absminNonZero( absmin_bux, 0.0 );
+
+   const double absmax_blx = blx->infnorm();
+   const double absmax_bux = bux->infnorm();
+
+   const double bounds_min = std::min( absmin_blx, absmin_bux );
+   const double bounds_max = std::max( absmax_blx, absmax_bux );
+
+   if( PIPS_MPIgetRank() == 0 )
+   {
+      const double inf = std::numeric_limits<double>::infinity();
+
+      const std::streamsize pre_old = std::cout.precision();
+      std::cout << std::setprecision(0) << std::scientific;
+      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]" << std::endl;
+      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]" << std::endl;
+      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]" << std::endl;
+      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]" << std::endl;
+      std::cout << std::setprecision(pre_old) << std::defaultfloat;
+   }
 }

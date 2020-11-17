@@ -1211,7 +1211,7 @@ void SparseStorage::randomize( double alpha, double beta, double * seed )
 
 }
 
-double SparseStorage::abmaxnorm()
+double SparseStorage::abmaxnorm() const
 {
   double norm = 0.0;
   int nnz = this->numberOfNonZeros();
@@ -1225,6 +1225,18 @@ double SparseStorage::abmaxnorm()
   return norm;
 }
 
+double SparseStorage::abminnormNonZero( double tol ) const
+{
+  double norm = std::numeric_limits<double>::infinity();
+  int nnz = this->numberOfNonZeros();
+
+  for( int i = 0; i < nnz; i++ ) {
+    const double fabsMi = std::fabs( M[i] );
+    if ( fabsMi < norm && tol < fabsMi )
+       norm = fabsMi;
+  }
+  return norm;
+}
 
 void SparseStorage::atPutDiagonal( int idiag, OoqpVector& vvec )
 {

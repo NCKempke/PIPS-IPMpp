@@ -101,6 +101,8 @@ public:
    bool componentEqual( const OoqpVectorBase<T>& v , T tol) const override;
    bool componentNotEqual( const T val, T const tol ) const override;
 
+   void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
+
    void scalarMult( T num ) override;
    void writeToStream(std::ostream& out) const override;
    void writeToStreamAll(std::ostream& out) const override;
@@ -167,6 +169,9 @@ public:
 
    virtual bool isRootNodeInSync() const;
 
+   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
+   void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
+
 };
 
 /** DUMMY VERSION
@@ -211,7 +216,7 @@ public:
    void absminVecUpdate(OoqpVectorBase<T>& absminvec) const override {};
    void absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const override {};
    void absmin( T& m) const override {};
-   void absminNonZero(T& m, T zero_eps) const override {m=-1.0;};
+   void absminNonZero(T& m, T zero_eps) const override { m = std::numeric_limits<T>::infinity(); };
    T stepbound( const OoqpVectorBase<T> & v, T maxStep ) const override { return maxStep; }
    T findBlocking(const OoqpVectorBase<T> & wstep_vec,
 			      const OoqpVectorBase<T> & u_vec,
@@ -236,6 +241,8 @@ public:
    bool componentEqual( const OoqpVectorBase<T>& v, T tol) const override { if(!v.isKindOf(kStochDummy)) std::cout << "one should never end up here"
      << std::endl; return v.isKindOf(kStochDummy); };
    bool componentNotEqual( const T val, const T tol ) const override { return true; };
+   void setNotIndicatedEntriesToVal(T val, const OoqpVectorBase<T>& ind ) override {};
+
    void scalarMult( T num) override {};
    void writeToStream(std::ostream& out) const override {};
    void writeToStreamAll(std::ostream& out) const override {};
@@ -300,6 +307,8 @@ public:
    int getNnzs() const override { return 0; };
 
    bool isRootNodeInSync() const override { return true; };
+   void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override {};
+   void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override {};
 };
 
 #endif

@@ -121,6 +121,25 @@ OoqpVectorBase<T>* StochVectorBase<T>::cloneFull() const
    return clone;
 }
 
+template<typename T>
+void StochVectorBase<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase<T>& ind )
+{
+   const StochVectorBase<T>& ind_vec = dynamic_cast<const StochVectorBase<T>&>(ind);
+
+   assert(this->children.size() == ind_vec.children.size());
+   assert( (this->vec && ind_vec.vec) || (this->vec == nullptr && ind_vec.vec == nullptr) );
+   assert( (this->vecl && ind_vec.vecl) || (this->vecl == nullptr && ind_vec.vecl == nullptr) );
+
+   if( this->vec )
+      this->vec->setNotIndicatedEntriesToVal(val, *ind_vec.vec);
+
+   if( this->vecl )
+      this->vecl->setNotIndicatedEntriesToVal(val, *ind_vec.vecl);
+
+   for( size_t node = 0; node < children.size(); ++node )
+      this->children[node]->setNotIndicatedEntriesToVal(val, *ind_vec.children[node] );
+}
+
 
 template<typename T>
 void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& v1, const StochVectorBase<T>& v2, const StochVectorBase<T>& v3)
@@ -637,57 +656,40 @@ void StochVectorBase<T>::absmin(T& m) const
 template<typename T>
 void StochVectorBase<T>::absminNonZero(T& m, T zero_eps) const
 {
-   T min;
-
    assert(zero_eps >= 0.0);
+   m = std::numeric_limits<T>::infinity();
 
-   vec->absminNonZero(m, zero_eps);
+   if( vec )
+   {
+      T min_vec; vec->absminNonZero(min_vec, zero_eps);
+      assert( min_vec > zero_eps );
 
-   assert(m >= zero_eps || m == -1.0);
-
+      if( min_vec < m )
+         m = min_vec;
+   }
 
    if( vecl )
    {
-      vecl->absminNonZero(min, zero_eps);
-      if( min >= 0.0 && (min < m  || m < 0.0) )
-      {
-         m = min;
-         assert(m >= zero_eps || m == -1.0);
-      }
+      T min_vecl; vecl->absminNonZero(min_vecl, zero_eps);
+      assert( min_vecl > zero_eps );
+
+      if( min_vecl < m )
+         m = min_vecl;
    }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->absminNonZero(min, zero_eps);
+      T min_child; children[it]->absminNonZero(min_child, zero_eps);
+      assert( min_child > zero_eps );
 
-      if( min >= 0.0 && (min < m  || m < 0.0) )
-      {
-         m = min;
-         assert(m >= zero_eps || m == -1.0);
-      }
+      if( min_child < m )
+         m = min_child;
    }
 
-   if( iAmDistrib == 1 )
-   {
-      T minG;
-      if( m < 0.0 )
-      {
-         min = std::numeric_limits<T>::max();
-      }
-      else
-      {
-         min = m;
-         assert(min >= zero_eps);
-      }
+   if( iAmDistrib )
+      PIPS_MPIgetMinInPlace(m, mpiComm);
 
-      minG = PIPS_MPIgetMin(min, mpiComm);
-
-      if( minG < std::numeric_limits<T>::max() )
-         m = minG;
-      else
-         m = -1.0;
-   }
-   assert(m >= zero_eps || m == -1.0);
+   assert(m > zero_eps );
 }
 
 
@@ -1181,6 +1183,49 @@ void StochVectorBase<T>::writeToStreamAllChild( std::stringstream& sout ) const
       vecl->writeToStreamAllStringStream(sout);
    }
 }
+
+template<typename T>
+void StochVectorBase<T>::pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select )
+{
+   const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
+
+   if( vec )
+      vec->pushAwayFromZero( tol, amount, selects ? selects->vec : nullptr );
+
+   if( vecl )
+      vec->pushAwayFromZero( tol, amount, selects ? selects->vecl : nullptr );
+
+   for( size_t i = 0; i < this->children.size(); ++i )
+      this->children[i]->pushAwayFromZero( tol, amount, selects ? selects->children[i] : nullptr );
+}
+
+template<typename T>
+void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
+{
+   const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
+
+   for( size_t i = 0; i < this->children.size(); ++i )
+      this->children[i]->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->children[i] : nullptr );
+
+   PIPS_MPIgetSumInPlace(sum_small, mpiComm);
+   PIPS_MPIgetSumInPlace(n_close, mpiComm);
+
+   if( vec )
+   {
+      if( selects )
+         assert(selects->vec);
+
+      vec->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vec : nullptr );
+   }
+
+   if( vecl )
+   {
+      if( selects )
+         assert(selects->vecl);
+      vecl->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->vecl : nullptr );
+   }
+}
+
 
 template<typename T>
 void StochVectorBase<T>::writeToStream( std::ostream& out ) const
