@@ -87,7 +87,7 @@ private:
    void splitMatrixAccordingToTree( StochGenMatrix& mat ) const;
    void splitVectorAccordingToTree( StochVector& vec ) const;
 
-   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm );
+   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm, std::vector<unsigned int>& map_child_to_sub_comm );
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 
