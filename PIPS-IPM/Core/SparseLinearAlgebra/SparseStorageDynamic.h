@@ -124,6 +124,7 @@ public:
   void restoreOrder();
 
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   bool isTransposedOf( const SparseStorageDynamic& mat_tp) const; // TODO..
 

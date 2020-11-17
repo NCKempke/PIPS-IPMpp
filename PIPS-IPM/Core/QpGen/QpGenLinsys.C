@@ -175,7 +175,7 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPacka
   nomegaInv   = la->newVector( mz );
   rhs         = la->newVector( len_x );
 
-  if( outerSolve )
+  if( outerSolve || xyzs_solve_print_residuals )
   {
     //for iterative refinement or BICGStab
     sol  = la->newVector( len_x );

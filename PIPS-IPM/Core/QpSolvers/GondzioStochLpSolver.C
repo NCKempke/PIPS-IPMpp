@@ -142,9 +142,26 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
    NumberGondzioCorrections = 0;
    mu = iterate->mu();
 
+
+   const QpGenData& qpgendata = dynamic_cast<const QpGenData&>(*prob);
+
+   double min_obj = -1;
+   qpgendata.g->absminNonZero(min_obj, 1e-14);
+   const double max_obj = qpgendata.g->infnorm();
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "Objective absmin != 0 : " << min_obj << ", max : " << max_obj << std::endl;
+
    while( true )
    {
       iter++;
+
+      const QpGenVars& vars = dynamic_cast<const QpGenVars&>(*iterate);
+      const double max = vars.x->infnorm();
+      double min = -1;
+      vars.x->absminNonZero(min, 1e-3);
+
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "X abs min : " << min << ", X abs max: " << max << std::endl;
 
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );

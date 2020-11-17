@@ -76,6 +76,7 @@ public:
                            double alpha,  const OoqpVector& x ) const override;
 
   double abmaxnorm() const override;
+  double abminnormNonZero( double tol = 1e-30 ) const override;
 
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamDense( std::ostream& out ) const override;

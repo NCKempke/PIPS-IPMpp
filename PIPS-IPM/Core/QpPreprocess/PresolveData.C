@@ -1166,9 +1166,6 @@ bool PresolveData::varBoundImpliedFreeBy( bool upper, const INDEX& col, const IN
    assert( col.isCol() );
    assert( row.isRow() );
 
-   // todo : not sure whether there is an instance that ever calls this
-   // todo : theoretically there might be nnzs changes in some buffers somewhere - should not happen but how to check?
-   // todo : should this be only one method varBoundsImpliedFree?
    if( 0 == getNnzsRow(row) )
       return false;
 
@@ -1192,7 +1189,8 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
    upper_implied = false;
    lower_implied = false;
 
-   /* calculate implied bounds again and check whether the col bounds are actually still implied */
+   /* calculate implied bounds and check whether the col bounds are actually still implied */
+
    /* get activities */
    double max_act, min_act;
    int max_ubndd, min_ubndd;
@@ -1214,7 +1212,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
    }
 
    /* if nothing was found the column has already been removed from that row and nothing is implied anymore */
-   if(col_ptr == row_end)
+   if( col_ptr == row_end )
       return;
 
    /* coefficient of col in row */
@@ -1227,13 +1225,27 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
 
    if( coeff > 0 )
    {
-      min_act -= coeff * xlow;
-      max_act -= coeff * xupp;
+      if( xlow != INF_NEG )
+         min_act -= coeff * xlow;
+      else
+         --min_ubndd;
+
+      if( xupp != INF_POS )
+         max_act -= coeff * xupp;
+      else
+         --max_ubndd;
    }
    else if (coeff < 0 )
    {
-      min_act -= coeff * xupp;
-      max_act -= coeff * xlow;
+      if( xupp != INF_POS )
+         min_act -= coeff * xupp;
+      else
+         --min_ubndd;
+
+      if( xlow != INF_NEG )
+         max_act -= coeff * xlow;
+      else
+         --max_ubndd;
    }
 
    const double rhs = row.inEqSys() ? getSimpleVecFromRowStochVec(*presProb->bA, row) :
@@ -1242,40 +1254,41 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
       getSimpleVecFromRowStochVec(*presProb->bl, row);
 
    /* check bound implied by row */
-
    /* calculate an check implied upper bound */
-   if( max_ubndd == 0 && xupp != INF_POS )
+   if( max_ubndd == 0 && lhs != INF_NEG )
    {
       /* lhs <= ax + y */
-      /* lhs - max(y) <= lhs - y <= ax */
       assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->iclow, row)));
 
       if( 0.0 < coeff )
       {
-         const double implied_upperbound = (rhs - min_act) / coeff;
-         upper_implied = PIPSisLE(implied_upperbound, xupp);
+         /* [lhs - max(y)] / a <= x */
+         const double implied_lowerbound = (lhs - max_act) / coeff;
+         lower_implied = PIPSisLE(xlow, implied_lowerbound);
       }
-      else
+      else if( coeff < 0.0 )
       {
+         /* [lhs - max(y)] / a >= x */
          const double implied_upperbound = (lhs - max_act) / coeff;
          upper_implied = PIPSisLE(implied_upperbound, xupp);
       }
    }
 
    /* calculate an check implied lower bound */
-   if( min_ubndd == 0 && xlow != INF_NEG )
+   if( min_ubndd == 0 && rhs != INF_POS )
    {
       /* ax + y <= rhs */
-      /* ax <= rhs - y <= rhs - min(y) */
       assert( row.inEqSys() || !PIPSisZero(getSimpleVecFromRowStochVec(*presProb->icupp, row)));
 
       if( 0.0 < coeff )
       {
-         const double implied_lowerbound = (lhs - max_act) / coeff;
-         lower_implied = PIPSisLE(xlow, implied_lowerbound);
+         /* x <= [rhs - min(y)] / a */
+         const double implied_upperbound = (rhs - min_act) / coeff;
+         upper_implied = PIPSisLE(implied_upperbound, xupp);
       }
-      else
+      else if( coeff < 0.0 )
       {
+         /* x >= [rhs - min(y)] / a */
          const double implied_lowerbound = (rhs - min_act) / coeff;
          lower_implied = PIPSisLE(xlow, implied_lowerbound);
       }

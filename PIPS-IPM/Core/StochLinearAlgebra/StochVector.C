@@ -656,57 +656,40 @@ void StochVectorBase<T>::absmin(T& m) const
 template<typename T>
 void StochVectorBase<T>::absminNonZero(T& m, T zero_eps) const
 {
-   T min;
-
    assert(zero_eps >= 0.0);
+   m = std::numeric_limits<T>::infinity();
 
-   vec->absminNonZero(m, zero_eps);
+   if( vec )
+   {
+      T min_vec; vec->absminNonZero(min_vec, zero_eps);
+      assert( min_vec > zero_eps );
 
-   assert(m >= zero_eps || m == -1.0);
-
+      if( min_vec < m )
+         m = min_vec;
+   }
 
    if( vecl )
    {
-      vecl->absminNonZero(min, zero_eps);
-      if( min >= 0.0 && (min < m  || m < 0.0) )
-      {
-         m = min;
-         assert(m >= zero_eps || m == -1.0);
-      }
+      T min_vecl; vecl->absminNonZero(min_vecl, zero_eps);
+      assert( min_vecl > zero_eps );
+
+      if( min_vecl < m )
+         m = min_vecl;
    }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->absminNonZero(min, zero_eps);
+      T min_child; children[it]->absminNonZero(min_child, zero_eps);
+      assert( min_child > zero_eps );
 
-      if( min >= 0.0 && (min < m  || m < 0.0) )
-      {
-         m = min;
-         assert(m >= zero_eps || m == -1.0);
-      }
+      if( min_child < m )
+         m = min_child;
    }
 
-   if( iAmDistrib == 1 )
-   {
-      T minG;
-      if( m < 0.0 )
-      {
-         min = std::numeric_limits<T>::max();
-      }
-      else
-      {
-         min = m;
-         assert(min >= zero_eps);
-      }
+   if( iAmDistrib )
+      PIPS_MPIgetMinInPlace(m, mpiComm);
 
-      minG = PIPS_MPIgetMin(min, mpiComm);
-
-      if( minG < std::numeric_limits<T>::max() )
-         m = minG;
-      else
-         m = -1.0;
-   }
-   assert(m >= zero_eps || m == -1.0);
+   assert(m > zero_eps );
 }
 
 

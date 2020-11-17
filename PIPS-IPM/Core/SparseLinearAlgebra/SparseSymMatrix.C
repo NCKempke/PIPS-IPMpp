@@ -286,6 +286,14 @@ double SparseSymMatrix::abmaxnorm() const
   return mStorage->abmaxnorm();
 }
 
+double SparseSymMatrix::abminnormNonZero( double tol ) const
+{
+   if( mStorage.notNil() )
+      return mStorage->abminnormNonZero( tol );
+   else
+      return std::numeric_limits<double>::infinity();
+}
+
 void SparseSymMatrix::writeToStream( std::ostream& out ) const
 {
   mStorage->writeToStream( out );
