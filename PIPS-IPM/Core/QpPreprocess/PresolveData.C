@@ -2130,11 +2130,32 @@ void PresolveData::removeRedundantParallelRow( const INDEX& rm_row, const INDEX&
    removeRow( rm_row );
 }
 
+void PresolveData::removeRedundantSide( const INDEX& row, bool is_upper_side )
+{
+   assert( row.isRow() );
+   assert( row.inInEqSys() );
+
+   if( postsolver )
+   {
+      assert( !wasRowRemoved(row) );
+
+      assert( PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->icupp, row)) );
+      assert( PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->iclow, row)) );
+
+      postsolver->notifyRedundantSide(row, is_upper_side, getSimpleVecFromRowStochVec(*presProb->bl, row),
+            getSimpleVecFromRowStochVec(*presProb->bu, row) );
+   }
+
+   if( track_row && tracked_row == row )
+      std::cout << "TRACKING_ROW: removal of " << (is_upper_side ? "rhs" : "lhs") << "of tracked row as redundant" << std::endl;
+
+}
+
 void PresolveData::removeRedundantRow( const INDEX& row )
 {
    assert( row.isRow() );
 
-   if(postsolver)
+   if( postsolver )
    {
       assert( !wasRowRemoved( row ) );
 

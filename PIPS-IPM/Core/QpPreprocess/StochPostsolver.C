@@ -550,6 +550,26 @@ void StochPostsolver::notifyFixedEmptyColumn( const INDEX& col, double value, do
    finishNotify();
 }
 
+void StochPostsolver::notifyRedundantSide( const INDEX& row, bool is_upper_side, double lhs, double rhs )
+{
+   assert( row.isRow() );
+   assert( row.inInEqSys() );
+   assert( !wasRowRemoved(row) );
+
+   if( row.isLinkingRow() )
+      assert( PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD) );
+
+   reductions.push_back(REDUNDANT_SIDE);
+   indices.push_back(row);
+
+   int_values.push_back(is_upper_side);
+   float_values.push_back(lhs);
+   float_values.push_back(rhs);
+
+   finishNotify();
+}
+
+
 void StochPostsolver::notifyRedundantRow( const INDEX& row, int iclow, int icupp, double lhs, double rhs, const StochGenMatrix& matrix_row )
 {
    assert(row.isRow());
@@ -755,6 +775,12 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
       {
          break;
       }
+      case REDUNDANT_SIDE:
+      {
+         const bool success = postsolveRedundantSide(stoch_original_sol, i);
+         postsolve_success = postsolve_success && success;
+         break;
+      }
       case REDUNDANT_ROW:
       {
          const bool success = postsolveRedundantRow(stoch_original_sol, i);
@@ -877,6 +903,51 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
       return PRESOLVE_FAIL;
 }
 
+bool StochPostsolver::postsolveRedundantSide(sVars& original_vars, int reduction_idx) const
+{
+   assert( reductions.at(reduction_idx) == REDUNDANT_SIDE );
+
+   const unsigned int first_int_val = start_idx_int_values.at(reduction_idx);
+   const unsigned int first_index = start_idx_indices.at(reduction_idx);
+   const unsigned int first_float_val = start_idx_float_values.at(reduction_idx);
+
+#ifndef NDEBUG
+   const unsigned int next_first_float_val = start_idx_float_values.at(reduction_idx + 1);
+   const unsigned int next_first_int_val = start_idx_int_values.at(reduction_idx + 1);
+   const unsigned int next_first_index = start_idx_indices.at(reduction_idx + 1);
+
+   assert(first_index + 1 == next_first_index);
+   assert(first_float_val + 2 == next_first_float_val);
+   assert(first_int_val + 1 == next_first_int_val);
+#endif
+
+   const INDEX& row = indices.at(first_index);
+   const bool is_upper_side = int_values.at(first_int_val);
+   const double lhs = float_values.at(first_float_val);
+   const double rhs = float_values.at(first_float_val + 1);
+
+   assert( row.inInEqSys() );
+
+   if( is_upper_side )
+   {
+      assert( getSimpleVecFromRowStochVec(*original_vars.u, row) == 0 );
+      double value_row = lhs + getSimpleVecFromRowStochVec(*original_vars.t, row);
+
+      assert( PIPSisLTFeas(value_row, rhs) );
+      getSimpleVecFromRowStochVec(*original_vars.u, row) = rhs - value_row;
+   }
+   else
+   {
+      assert( getSimpleVecFromRowStochVec(*original_vars.t, row) == 0 );
+      double value_row = rhs - getSimpleVecFromRowStochVec(*original_vars.u, row);
+
+      assert( PIPSisLTFeas(lhs, value_row) );
+      getSimpleVecFromRowStochVec(*original_vars.t, row) = value_row - lhs;
+   }
+
+   return true;
+}
+
 /**
  * postsolve for a redundant row is to set all dual variables to zero - the row itself has no primal impact
  * for linking rows:
@@ -977,12 +1048,12 @@ bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_
       }
 
       /* set correct slacks */
-      if( iclow == 1)
+      if( iclow == 1 )
          getSimpleVecFromRowStochVec(original_vars.t, row) = value_row - lhs;
       else
          getSimpleVecFromRowStochVec(original_vars.t, row) = 0;
 
-      if( icupp == 1)
+      if( icupp == 1 )
          getSimpleVecFromRowStochVec(original_vars.u, row) = rhs - value_row;
       else
          getSimpleVecFromRowStochVec(original_vars.u, row) = 0;

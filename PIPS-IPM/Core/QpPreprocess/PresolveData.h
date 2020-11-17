@@ -207,6 +207,7 @@ public :
 
       void removeRedundantParallelRow( const INDEX& rm_row, const INDEX& par_row );
       void removeRedundantRow( const INDEX& row );
+      void removeRedundantSide( const INDEX& row, bool is_upper_side );
 
       void startSingletonColumnPresolve();
       void fixColumnInequalitySingleton( const INDEX& col, const INDEX& row, double value, double coeff );

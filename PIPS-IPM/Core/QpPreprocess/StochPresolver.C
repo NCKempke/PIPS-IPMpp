@@ -108,11 +108,10 @@ Data* StochPresolver::presolve()
          bool presolver_success = presolvers[i]->applyPresolving();
          success = success || presolver_success;
       }
+
+      presolverCleanup.applyPresolving();
    }
 
-   // before the finalize call fix all empty rows and columns not yet fixed
-   presolverCleanup.applyPresolving();
-   
    if( my_rank == 0 && verbosity > 1 )
       std::cout << "--- After Presolving:" << std::endl;
    presolverCleanup.countRowsCols();
