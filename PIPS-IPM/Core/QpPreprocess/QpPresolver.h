@@ -26,11 +26,11 @@ class Postsolver;
 class QpPresolver : public Presolver
 {
    protected:
-      const Data* const origprob;
+      const Data& origprob;
       Postsolver* const postsolver;
 
    public:
-      QpPresolver(const Data* prob, Postsolver* postsolver = nullptr);
+      QpPresolver(const Data& prob, Postsolver* postsolver = nullptr);
       virtual ~QpPresolver();
 
       virtual Data* presolve() = 0;

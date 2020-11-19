@@ -136,7 +136,7 @@ private:
 
 public :
 
-      PresolveData(const sData* sorigprob, StochPostsolver* postsolver);
+      PresolveData(const sData& sorigprob, StochPostsolver* postsolver);
       ~PresolveData();
 
       const sData& getPresProb() const { return *presProb; };

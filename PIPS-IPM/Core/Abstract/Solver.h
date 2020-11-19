@@ -180,9 +180,9 @@ public:
    *  class */
   LinearSystem * getLinearSystem() const { return sys; };
 protected:
-  LinearSystem *sys;
-  bool printTimeStamp;
-  double startTime;
+  LinearSystem *sys = nullptr;
+  bool printTimeStamp = false;
+  double startTime = 0.0;
 };
 
 //@}

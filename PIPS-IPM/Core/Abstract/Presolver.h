@@ -27,7 +27,7 @@ class Postsolver;
 class Presolver
 {
 public:
-  Presolver(const Data * prob, Postsolver* postsolver = nullptr) {};
+  Presolver(const Data& prob, Postsolver* postsolver = nullptr) {};
   virtual ~Presolver() {};
 
   /** presolve and return pointer to presolved data */

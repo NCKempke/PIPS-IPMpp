@@ -31,7 +31,7 @@ bool PresolveData::iTrackRow() const
    return track_row && ( !nodeIsDummy(tracked_row.getNode()) && (my_rank == 0 || tracked_row.isLinkingRow() || tracked_row.getNode() != -1) );
 }
 
-PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) :
+PresolveData::PresolveData(const sData& sorigprob, StochPostsolver* postsolver) :
       postsolver(postsolver),
       limit_max_bound_accepted( pips_options::getDoubleParameter("PRESOLVE_MAX_BOUND_ACCEPTED") ),
       length_array_outdated_indicators(6),
@@ -43,9 +43,9 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       outdated_obj_vector(array_outdated_indicators[4]),
       postsolve_linking_row_propagation_needed(array_outdated_indicators[5]),
       linking_rows_need_act_computation(0),
-      nnzs_row_A(cloneStochVector<double,int>(*sorigprob->bA)),
-      nnzs_row_C(cloneStochVector<double,int>(*sorigprob->icupp)),
-      nnzs_col(cloneStochVector<double,int>(*sorigprob->g)),
+      nnzs_row_A(cloneStochVector<double,int>(*sorigprob.bA)),
+      nnzs_row_C(cloneStochVector<double,int>(*sorigprob.icupp)),
+      nnzs_col(cloneStochVector<double,int>(*sorigprob.g)),
       actmax_eq_part(cloneStochVector<int,double>(*nnzs_row_A)),
       actmin_eq_part(dynamic_cast<StochVector*>(actmax_eq_part->clone())),
       actmax_eq_ubndd(dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->clone())),
@@ -75,8 +75,8 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       upper_bound_implied_by_system(dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())),
       upper_bound_implied_by_row(dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())),
       upper_bound_implied_by_node(dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())),
-      absmin_col(dynamic_cast<StochVector*>(sorigprob->g->clone())),
-      absmax_col(dynamic_cast<StochVector*>(sorigprob->g->clone())),
+      absmin_col(dynamic_cast<StochVector*>(sorigprob.g->clone())),
+      absmax_col(dynamic_cast<StochVector*>(sorigprob.g->clone())),
       in_bound_tightening(false),
       store_linking_row_boundTightening_A(nnzs_row_A->vecl->length(), 0),
       store_linking_row_boundTightening_C(nnzs_row_C->vecl->length(), 0)
@@ -95,7 +95,7 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
    absmax_col->setToZero();
    objective_vec_chgs->setToZero();
 
-   presProb = sorigprob->cloneFull(true);
+   presProb = sorigprob.cloneFull(true);
 
    const int n_linking_vars = (nnzs_col->vec) ? nnzs_col->vec->n : 0;
 

@@ -8,7 +8,7 @@
 #include "QpPresolver.h"
 
 
-QpPresolver::QpPresolver(const Data* prob, Postsolver* postsolver)
+QpPresolver::QpPresolver(const Data& prob, Postsolver* postsolver)
  : Presolver(prob), origprob(prob), postsolver(postsolver)
 {
 }

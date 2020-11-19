@@ -41,10 +41,11 @@ public:
 
       static Presolver* makePresolver(const Data* data, PresolverType type, Postsolver* postsolver = nullptr)
       {
+         assert( data );
          switch( type )
             {
             case PRESOLVER_STOCH:
-               return new StochPresolver(data, postsolver);
+               return new StochPresolver(*data, postsolver);
             default:
                return 0;
             }
