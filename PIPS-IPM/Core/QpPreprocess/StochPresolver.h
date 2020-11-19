@@ -14,7 +14,6 @@
 #include <memory>
 
 class Data;
-class sData;
 class Postsolver;
 class StochPresolverBase;
 
@@ -55,8 +54,5 @@ public:
 };
 
 //@}
-
-
-
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVER_H_ */

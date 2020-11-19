@@ -70,9 +70,6 @@ StochPresolver::StochPresolver(const Data& prob, Postsolver* postsolver = nullpt
 
 StochPresolver::~StochPresolver()
 {
-//   for( unsigned int i = 0; i < presolvers.size(); ++i )
-//      delete presolvers[i];
-//   delete presData;
 }
 
 Data* StochPresolver::presolve()
