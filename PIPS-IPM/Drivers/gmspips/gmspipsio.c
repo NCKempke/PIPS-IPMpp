@@ -1038,6 +1038,7 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
    int* rowstage = NULL;
    int* isE = NULL;
    int intMaxBlock = 0;
+   INT64 size;
 
 
    assert(numBlocks>0);
@@ -1133,6 +1134,7 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
       if( rc < 0 )  abort();
       gdxOpenWrite (bGDX[k], fileName, "gdxSplitter", &rc);
       assert(!rc);
+	  gdxStoreDomainSetsSet(bGDX[k],0);
 
       if ( !skipStrings )
       {
@@ -1274,15 +1276,28 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
   }
    
    /* Copy symbols */
+   printf("\n\n ### version without gdxDataWriteRaw \n\n");
+   
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("size before %ld\n", size);
+   
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"i",      gdxM,offset,rowstage,NULL,     NULL,    numBlocks,0,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after i %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"j",      gdxM,offset,varstage,NULL,     NULL,    0        ,3,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after j %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"jobj",   gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after jobj %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"iobj",   gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after iobj %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"objcoef",gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after objcoef %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"e",      gdxM,offset,rowstage,NULL,     NULL,    numBlocks,0,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after e %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"x",      gdxM,offset,varstage,NULL,     NULL,    0        ,3,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after x %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"A",      gdxM,offset,NULL,    varstage, rowstage,0        ,2,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after A %ld\n", size);
    copyGDXSymbol(numBlocks,actBlock,bGDX,fGDX,"ANl",    gdxM,offset,NULL,    NULL,     NULL,    0        ,1,objVarUel,objRowUel);
+   size = 0; for (k=(actBlock < 0)? 0:actBlock;k<numBlocks; k++) size += gdxGetMemoryUsed(bGDX[k]); printf("after ANl %ld\n", size);
   
    if (actBlock <= 0)
 	   printf("gmspipscall: gmspips %d %s %s [scale] ...\n",numBlocks,bFileStem,GAMSSysDir);

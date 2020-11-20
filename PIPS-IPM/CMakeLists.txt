@@ -194,7 +194,7 @@ if (BUILD_GDX_SOURCE)
      
    link_directories(PIPS-IPM)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c)
-   add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR -DGDXSOURCE -fno-strict-aliasing -fwrapv ) # -DGMS_LOG
+   add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR -DGDXSOURCE -fno-strict-aliasing -fwrapv -DGC_NO_MUTEX) # -DGMS_LOG
    target_include_directories(gmspips PUBLIC Drivers/statgdx Drivers/gmspips/)
    target_link_libraries(gmspips
        dl 
@@ -205,12 +205,13 @@ if (BUILD_GDX_SOURCE)
        ${MA27_LIBRARY} ${MA57_LIBRARY} ${MUMPS_LIBRARY} ${PARMETIS_LIBRARY} ${METIS_LIBRARY} ${PARDISO_LIBRARY_CHOSEN} ${MATH_LIBS} ${COIN_LIBS})
        
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c)
+   add_definitions(-DGC_NO_MUTEX) 
    target_include_directories(gmschk PUBLIC Drivers/statgdx Drivers/gmspips/)
    target_link_libraries(gmschk dl statgdx)
 else()
    set(GAMSDIR Drivers/gams)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)
-   add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR) # -DGMS_LOG
+   add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR -DGC_NO_MUTEX) # -DGMS_LOG
    target_include_directories(gmspips PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
    target_link_libraries(gmspips
        dl
@@ -220,6 +221,7 @@ else()
        ${MA27_LIBRARY} ${MA57_LIBRARY} ${MUMPS_LIBRARY} ${PARMETIS_LIBRARY} ${METIS_LIBRARY} ${PARDISO_LIBRARY_CHOSEN} ${MATH_LIBS} ${COIN_LIBS})
    
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)
+   add_definitions(-DGC_NO_MUTEX) 
    target_include_directories(gmschk PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
    target_link_libraries(gmschk dl)
 endif(BUILD_GDX_SOURCE)
