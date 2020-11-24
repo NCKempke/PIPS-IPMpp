@@ -83,7 +83,7 @@ void StochMonitor::doItStoch( const Solver * solver, const Data * data, const Va
       printf(" mu = %16.12e  rel.res.norm=%16.12e\n",
              mu, rnorm / dnorm);
     //cout << " mu = " << mu << " relative residual norm = " 
-    //cout << resids->residualNorm() / dnorm << endl;
+    //cout << resids->residualNorm() / dnorm << "\n";
     std::cout << " Duality Gap:  " << gap << "\n";
     if( i > 1 )
     {
