@@ -200,7 +200,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      MPI_Barrier(comm);
      const double t_presolve = MPI_Wtime();
      if( mype == 0 )
-        std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << std::endl;
+        std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << "\n";
   }
   else
   {
@@ -262,7 +262,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      MPI_Barrier(comm);
      const double t_scaling = MPI_Wtime();
      if( mype == 0 )
-        std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << std::endl;
+        std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
   }
 
   solver  = new IPMSOLVER( factory, data, scaler );
@@ -275,7 +275,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   MPI_Barrier(comm);
   const double t1 = MPI_Wtime();
   if( mype == 0 )
-     std::cout << "---reading time (in sec.): " << t1 - t0 << std::endl;
+     std::cout << "---reading time (in sec.): " << t1 - t0 << "\n";
 }
 
 
@@ -285,26 +285,26 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
    const int mype = PIPS_MPIgetRank(comm);
 
   if( 0 == mype )
-     std::cout << "solving ..." << std::endl;
+     std::cout << "solving ..." << "\n";
 
   // TODO : use unlifted data....
   if( mype == 0 )
   {
 #ifndef HIERARCHICAL
      std::cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
-	       << " equality constraints, " << data->getLocalmz() << " inequality constraints." << std::endl;
+	       << " equality constraints, " << data->getLocalmz() << " inequality constraints." << "\n";
 
     const int nscens = data->children.size();
     if( nscens )
     {
        std::cout << "2nd stage " << data->children[0]->getLocalnx() << " variables, "
              << data->children[0]->getLocalmy() << " equality constraints, "
-             << data->children[0]->getLocalmz() << " inequality constraints." << std::endl;
+             << data->children[0]->getLocalmz() << " inequality constraints." << "\n";
 
-       std::cout << nscens << " scenarios." << std::endl;
+       std::cout << nscens << " scenarios." << "\n";
        std::cout << "Total " << data->getLocalnx() + nscens * data->children[0]->getLocalnx() << " variables, "
              << data->getLocalmy() + nscens * data->children[0]->getLocalmy()  << " equality constraints, "
-             << data->getLocalmz() + nscens * data->children[0]->getLocalmz() << " inequality constraints." << std::endl;
+             << data->getLocalmz() + nscens * data->children[0]->getLocalmz() << " inequality constraints." << "\n";
     }
 #endif
   }
@@ -321,7 +321,7 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
 #endif
 
   if( result != 0 && mype == 0 )
-     std::cout << "failed to solve instance, result code: " << result << std::endl;
+     std::cout << "failed to solve instance, result code: " << result << "\n";
   
   ran_solver = true;
 
@@ -779,11 +779,11 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::printComplementarityResiduals(con
 
   if( my_rank == 0 )
   {
-     std::cout << " rl norm = " << rlambda_infnorm << std::endl;
-     std::cout << " rp norm = " << rpi_infnorm << std::endl;
-     std::cout << " rg norm = " << rgamma_infnorm << std::endl;
-     std::cout << " rf norm = " << rphi_infnorm << std::endl;
-     std::cout << std::endl;
+     std::cout << " rl norm = " << rlambda_infnorm << "\n";
+     std::cout << " rp norm = " << rpi_infnorm << "\n";
+     std::cout << " rg norm = " << rgamma_infnorm << "\n";
+     std::cout << " rf norm = " << rphi_infnorm << "\n";
+     std::cout << "\n";
   }
 }
 
@@ -820,12 +820,12 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   if( print_residuals )
   {
      if( my_rank == 0 )
-        std::cout << std::endl << "Residuals before postsolve:" << std::endl;
+        std::cout << "\n" << "Residuals before postsolve:" << "\n";
      resids->calcresids(data, vars, print_residuals);
      printComplementarityResiduals(*vars);
 
      if( my_rank == 0 )
-        std::cout << "Residuals after unscaling/permuting:" << std::endl;
+        std::cout << "Residuals after unscaling/permuting:" << "\n";
      unscaleUnpermResids->calcresids(dataUnperm, unscaleUnpermVars, print_residuals);
      printComplementarityResiduals(*unscaleUnpermVars);
   }
@@ -850,15 +850,15 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 
   if( my_rank == 0 )
   {
-     std::cout << "---postsolve time (in sec.): " << t_postsolve - t0_postsolve << std::endl;
-     std::cout << "Objective value after postsolve: " << obj_postsolved << std::endl;
+     std::cout << "---postsolve time (in sec.): " << t_postsolve - t0_postsolve << "\n";
+     std::cout << "Objective value after postsolve: " << obj_postsolved << "\n";
   }
 
   /* compute residuals for postprocessed solution and check for feasibility */
   if( print_residuals )
   {
      if( my_rank == 0 )
-        std::cout << std::endl << "Residuals after postsolve:" << std::endl;
+        std::cout << "\n" << "Residuals after postsolve:" << "\n";
      postsolvedResids->calcresids(origData, postsolvedVars, print_residuals);
 
      printComplementarityResiduals(*postsolvedVars);
