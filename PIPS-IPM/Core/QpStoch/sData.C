@@ -1278,51 +1278,51 @@ void sData::writeToStreamDense( std::ostream& out ) const
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    if( myRank == 0 )
-      out <<  "A: " << std::endl;
+      out <<  "A: " << "\n";
    (*A).writeToStreamDense(out);
 
    if( myRank == 0 )
-      out <<  "C: " << std::endl;
+      out <<  "C: " << "\n";
    (*C).writeToStreamDense(out);
 
    if( myRank == 0 )
-      out <<  "obj: " << std::endl;
+      out <<  "obj: " << "\n";
    (*g).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "bA: " << std::endl;
+      out <<  "bA: " << "\n";
    (*bA).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "xupp: " << std::endl;
+      out <<  "xupp: " << "\n";
    (*bux).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "ixupp: " << std::endl;
+      out <<  "ixupp: " << "\n";
    (*ixupp).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "xlow: " << std::endl;
+      out <<  "xlow: " << "\n";
    (*blx).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "ixlow: " << std::endl;
+      out <<  "ixlow: " << "\n";
    (*ixlow).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "cupp: " << std::endl;
+      out <<  "cupp: " << "\n";
    (*bu).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "icupp: " << std::endl;
+      out <<  "icupp: " << "\n";
    (*icupp).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "clow: " << std::endl;
+      out <<  "clow: " << "\n";
    (*bl).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "iclow: " << std::endl;
+      out <<  "iclow: " << "\n";
    (*iclow).writeToStream(out);
 }
 
@@ -1789,7 +1789,7 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    assert( tree->isHierarchicalRoot() );
    assert( tree->children.size() == 1 );
 
-   this->splitDataAccordingToTree( dynamic_cast<const sTreeCallbacks&>(*tree->children[0]) );
+//   this->splitDataAccordingToTree( dynamic_cast<const sTreeCallbacks&>(*tree->children[0]) );
 
    // TODO : split lower levels according to tree structure
    // TODO : make method for top layer and split operation
@@ -1797,9 +1797,9 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    const int my_rank = PIPS_MPIgetRank();
    if( my_rank == 0 )
    {
-      std::cout << "Switching to hierarchical data ..." << std::endl;
+      std::cout << "Switching to hierarchical data ..." << "\n";
       std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
-            n_global_ineq_linking_conss << " inequalities for the border" << std::endl;
+            n_global_ineq_linking_conss << " inequalities for the border" << "\n";
    }
 
    BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars);
@@ -1885,7 +1885,7 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    //   this->splitIntoMultiple();
 
    if( my_rank == 0 )
-      std::cout << "Hierarchical data built" << std::endl;
+      std::cout << "Hierarchical data built" << "\n";
 
    return hierarchical_top;
 }
@@ -2004,12 +2004,12 @@ void sData::activateLinkStructureExploitation()
    {
 #ifdef HIERARCHICAL
       if( myrank == 0 )
-         std::cout << "No linking constraints found - hierarchical approach cannot be used" << std::endl;
+         std::cout << "No linking constraints found - hierarchical approach cannot be used" << "\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
 #endif
       useLinkStructure = false;
       if( myrank == 0 )
-         std::cout << "no linking constraints so no linking structure found" << std::endl;
+         std::cout << "no linking constraints so no linking structure found" << "\n";
       return;
    }
 
@@ -2036,7 +2036,7 @@ void sData::activateLinkStructureExploitation()
    {
       assert( linkStart_A2[i] == linkStartBlockIdA[i] );
       if( linkStart_A2[i] != linkStartBlockIdA[i] && myrank == 0)
-         std::cout << "New : " << linkStart_A2[i] << " != " << linkStartBlockIdA[i] << " old" << std::endl;
+         std::cout << "New : " << linkStart_A2[i] << " != " << linkStartBlockIdA[i] << " old" << "\n";
    }
 
    std::vector<int> linkStart_C2 = Cstoch.get2LinkStartBlocks();
@@ -2045,7 +2045,7 @@ void sData::activateLinkStructureExploitation()
    {
       assert( linkStart_C2[i] == linkStartBlockIdC[i] );
       if( linkStart_C2[i] != linkStartBlockIdC[i] && myrank == 0)
-         std::cout << "New : " << linkStart_C2[i] << " != " << linkStartBlockIdC[i] << " old" << std::endl;
+         std::cout << "New : " << linkStart_C2[i] << " != " << linkStartBlockIdC[i] << " old" << "\n";
    }
 #endif
 
@@ -2076,14 +2076,14 @@ void sData::activateLinkStructureExploitation()
    if( myrank == 0 )
    {
       std::cout << "number of 0-link variables: " << n0LinkVars << " (out of "
-            << nx0 << " link variables) " << std::endl;
+            << nx0 << " link variables) " << "\n";
       std::cout << "number of equality 2-links: " << n2LinksEq << " (out of "
-            << linkStartBlockIdA.size() << " equalities) " << std::endl;
+            << linkStartBlockIdA.size() << " equalities) " << "\n";
       std::cout << "number of inequality 2-links: " << n2LinksIneq << " (out of "
-            << linkStartBlockIdC.size() << " equalities) " << std::endl;
+            << linkStartBlockIdC.size() << " equalities) " << "\n";
 
       std::cout << "ratio: "
-            << (n2LinksEq + n2LinksIneq) / ((double) linkStartBlockIdA.size() + linkStartBlockIdC.size()) << std::endl;
+            << (n2LinksEq + n2LinksIneq) / ((double) linkStartBlockIdA.size() + linkStartBlockIdC.size()) << "\n";
    }
 
 
@@ -2091,7 +2091,7 @@ void sData::activateLinkStructureExploitation()
    if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
    {
       if( myrank == 0 )
-         std::cout << "not enough linking structure found" << std::endl;
+         std::cout << "not enough linking structure found" << "\n";
       useLinkStructure = false;
    }
 #endif
@@ -2229,15 +2229,15 @@ void sData::printLinkVarsStats()
          if( linkSizes[i] != 0 )
          {
             nlocal += linkSizes[i];
-            std::cout << i << "-link vars: " << linkSizes[i] << std::endl;
+            std::cout << i << "-link vars: " << linkSizes[i] << "\n";
          }
 
       assert(n - nlocal >= 0);
-      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")" <<   std::endl;
+      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")" <<   "\n";
 
-      std::cout << "   Block0 exclusive vars " << count0 << std::endl;
-      std::cout << "   LC exclusive vars " << countLC << std::endl;
-      std::cout << "   Block0 or LC vars " << count0LC  << std::endl;
+      std::cout << "   Block0 exclusive vars " << count0 << "\n";
+      std::cout << "   LC exclusive vars " << countLC << "\n";
+      std::cout << "   Block0 or LC vars " << count0LC  << "\n";
    }
 }
 
@@ -2270,9 +2270,9 @@ void sData::printLinkConsStats()
             if( linkSizes[i] != 0 )
             {
                nlocal += linkSizes[i];
-               std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << std::endl;
+               std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")" <<   std::endl;
+         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")" <<   "\n";
 
       }
    }
@@ -2299,9 +2299,9 @@ void sData::printLinkConsStats()
             if( linkSizes[i] != 0 )
             {
                nlocal += linkSizes[i];
-               std::cout << "inequality " <<  i << "-link cons: " << linkSizes[i] << std::endl;
+               std::cout << "inequality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")" <<   std::endl;
+         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")" <<   "\n";
       }
    }
 }
@@ -2966,84 +2966,84 @@ bool sData::isRootNodeInSync() const
    /* matrix A */
    if(!dynamic_cast<const StochGenMatrix&>(*A).isRootNodeInSync())
    {
-      std::cout << "ERROR: matrix A corrupted!" << std::endl;
+      std::cout << "ERROR: matrix A corrupted!" << "\n";
       in_sync = false;
    }
 
    /* matrix C */
    if( !dynamic_cast<const StochGenMatrix&>(*C).isRootNodeInSync() )
    {
-      std::cout << "ERROR: matrix C corrupted!" << std::endl;
+      std::cout << "ERROR: matrix C corrupted!" << "\n";
       in_sync = false;
    }
 
    /* objective g */
    if( !dynamic_cast<const StochVector&>(*g).isRootNodeInSync() )
    {
-      std::cout << "ERROR: objective vector corrupted!" << std::endl;
+      std::cout << "ERROR: objective vector corrupted!" << "\n";
       in_sync = false;
    }
 
    /* rhs equality bA */
    if( !dynamic_cast<const StochVector&>(*bA).isRootNodeInSync() )
    {
-      std::cout << "ERROR: rhs of A corrupted!" << std::endl;
+      std::cout << "ERROR: rhs of A corrupted!" << "\n";
       in_sync = false;
    }
 
    /* upper bounds x bux */
    if( !dynamic_cast<const StochVector&>(*bux).isRootNodeInSync() )
    {
-      std::cout << "ERROR: upper bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: upper bounds x corrupted!" << "\n";
       in_sync = false;
    }
 
    /* index for upper bounds x ixupp */
    if( !dynamic_cast<const StochVector&>(*ixupp).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index upper bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: index upper bounds x corrupted!" << "\n";
       in_sync = false;
    }
 
    /* lower bounds x blx */
    if( !dynamic_cast<const StochVector&>(*blx).isRootNodeInSync() )
    {
-      std::cout << "ERROR: lower bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: lower bounds x corrupted!" << "\n";
       in_sync = false;
    }
 
    /* index for lower bounds x ixlow */
    if( !dynamic_cast<const StochVector&>(*ixlow).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index lower bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: index lower bounds x corrupted!" << "\n";
       in_sync = false;
    }
 
    /* upper bounds C bu */
    if( !dynamic_cast<const StochVector&>(*bu).isRootNodeInSync() )
    {
-      std::cout << "ERROR: rhs C corrupted!" << std::endl;
+      std::cout << "ERROR: rhs C corrupted!" << "\n";
       in_sync = false;
    }
 
    /* index upper bounds C icupp */
    if( !dynamic_cast<const StochVector&>(*icupp).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index rhs C corrupted!" << std::endl;
+      std::cout << "ERROR: index rhs C corrupted!" << "\n";
       in_sync = false;
    }
 
    /* lower bounds C bl */
    if( !dynamic_cast<const StochVector&>(*bl).isRootNodeInSync() )
    {
-      std::cout << "ERROR: lower bounds C corrupted!" << std::endl;
+      std::cout << "ERROR: lower bounds C corrupted!" << "\n";
       in_sync = false;
    }
 
    /* index for lower bounds C iclow */
    if( !dynamic_cast<const StochVector&>(*iclow).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index lower bounds C corrupted!" << std::endl;
+      std::cout << "ERROR: index lower bounds C corrupted!" << "\n";
       in_sync = false;
    }
 
@@ -3099,10 +3099,10 @@ void sData::printRanges() const
 
       const std::streamsize pre_old = std::cout.precision();
       std::cout << std::setprecision(0) << std::scientific;
-      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]" << std::endl;
-      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]" << std::endl;
-      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]" << std::endl;
-      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]" << std::endl;
+      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]" << "\n";
+      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]" << "\n";
+      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]" << "\n";
+      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]" << "\n";
       std::cout << std::setprecision(pre_old) << std::defaultfloat;
    }
 }

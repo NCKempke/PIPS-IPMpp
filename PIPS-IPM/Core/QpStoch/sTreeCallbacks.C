@@ -979,7 +979,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    assert( rankPrcnd == -1 );
    assert( commP2ZeroW == MPI_COMM_NULL );
 
-   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
@@ -1007,7 +1007,7 @@ void sTreeCallbacks::splitVectorAccordingToTree( StochVector& vec ) const
 
    for( size_t i = 0; i < this->children.size(); ++i )
    {
-      sub_roots = new StochVector( , , this->children[i]->commWrkrs);
+//      sub_roots = new StochVector( , , this->children[i]->commWrkrs);
    }
 
    assert( false && "TODO : implement " );
@@ -1024,8 +1024,8 @@ void sTreeCallbacks::splitDataAccordingToTree( sData& data ) const
 
    //   /* we ordered global linking vars first and global linking rows to the end */
 
-   assert( false && "TODO : implement " );
    splitMatrixAccordingToTree(dynamic_cast<StochSymMatrix&>(*data.Q));
+   assert( false && "TODO : implement " );
 //
 //   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
 //
