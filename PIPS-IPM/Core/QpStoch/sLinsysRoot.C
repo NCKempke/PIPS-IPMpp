@@ -116,7 +116,8 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 
   precondSC = SCsparsifier(mpiComm);
 
-  if( outerSolve || xyzs_solve_print_residuals ) {
+  if( outerSolve || xyzs_solve_print_residuals )
+  {
       // stuff for iterative refimenent and BiCG 
       sol  = tree_->newRhs();
       res  = tree_->newRhs();

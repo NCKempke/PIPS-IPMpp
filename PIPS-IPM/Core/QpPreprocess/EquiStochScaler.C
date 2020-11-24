@@ -19,7 +19,7 @@ EquiStochScaler::EquiStochScaler(Data* prob, bool bitshifting)
    int myRank = 0;
    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-   if( myRank == 0) std::cout<<"Creating EquiStochScaler..."<<endl;
+   if( myRank == 0) std::cout<<"Creating EquiStochScaler..."<< "\n";
 }
 
 void EquiStochScaler::doObjScaling()

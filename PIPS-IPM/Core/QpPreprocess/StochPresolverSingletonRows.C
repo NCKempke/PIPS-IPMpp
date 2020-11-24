@@ -37,8 +37,8 @@ bool StochPresolverSingletonRows::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
    {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-      std::cout << "--- Before singleton Row Presolving:" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "--- Before singleton Row Presolving:" << "\n";
    }
    countRowsCols();
 #endif
@@ -76,14 +76,14 @@ bool StochPresolverSingletonRows::applyPresolving()
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "\tRemoved singleton rows during singleton row elimination: " << removed_rows << std::endl;
+      std::cout << "\tRemoved singleton rows during singleton row elimination: " << removed_rows << "\n";
    else if( my_rank == 0 && verbosity == 1 )
-      std::cout << "SinRow:\t removed " << removed_rows_local << " rows" << std::endl;
+      std::cout << "SinRow:\t removed " << removed_rows_local << " rows" << "\n";
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After singleton row presolving:" << std::endl;
+      std::cout << "--- After singleton row presolving:" << "\n";
    countRowsCols();
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
    assert(presData.reductionsEmpty());
@@ -144,7 +144,7 @@ bool StochPresolverSingletonRows::removeSingletonRow( const INDEX& row )
          if(my_rank == 0)
             presData.writeRowLocalToStreamDense(std::cout, row);
          MPI_Barrier(MPI_COMM_WORLD);
-         std::cout << "[" << xlow_new << ", " << xupp_new << "] !C [" << buffer_xlows[col_idx] << ", " << buffer_xupps[col_idx] << "]" << std::endl;
+         std::cout << "[" << xlow_new << ", " << xupp_new << "] !C [" << buffer_xlows[col_idx] << ", " << buffer_xupps[col_idx] << "]" << "\n";
          PIPS_MPIabortInfeasible("Found non-matching bounds on linking variables", "StochPresolverSingletonRows.C", "removeSingletonRow");
       }
 
