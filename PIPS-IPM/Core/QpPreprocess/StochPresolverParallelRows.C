@@ -84,8 +84,8 @@ bool StochPresolverParallelRows::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
    {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-      std::cout << "--- Before parallel row presolving:" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "--- Before parallel row presolving:" << "\n";
    }
    countRowsCols();
 #endif
@@ -200,16 +200,16 @@ bool StochPresolverParallelRows::applyPresolving()
 
    n_rows_removed += n_removed_run;
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "\tRemoved rows during parallel row detection: " << n_rows_removed << std::endl;
+      std::cout << "\tRemoved rows during parallel row detection: " << n_rows_removed << "\n";
    else if( my_rank == 0 && verbosity == 1)
-      std::cout << "ParRow:\t removed " << n_rows_removed << " rows" << std::endl;
+      std::cout << "ParRow:\t removed " << n_rows_removed << " rows" << "\n";
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After parallel row presolving:" << std::endl;
+      std::cout << "--- After parallel row presolving:" << "\n";
    countRowsCols();
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
    assert(presData.reductionsEmpty());
