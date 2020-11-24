@@ -154,13 +154,13 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       double xupp, xlow;
       getColBounds(tracked_col, xlow, xupp);
 
-      std::cout << "TRACKING_COLUMN: " << tracked_col << std::endl;
-      std::cout << "\tbound x € [" << xlow << ", " << xupp << "]" << std::endl;
+      std::cout << "TRACKING_COLUMN: " << tracked_col << "\n";
+      std::cout << "\tbound x € [" << xlow << ", " << xupp << "]" << "\n";
    }
 
    if( iTrackRow() )
    {
-      std::cout << "TRACKING_ROW: " << tracked_row << std::endl;
+      std::cout << "TRACKING_ROW: " << tracked_row << "\n";
       writeRowLocalToStreamDense(std::cout, tracked_row);
    }
 }
@@ -530,8 +530,8 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
       int act_min_ubndd, act_max_ubndd;
       getRowActivities(tracked_row, act_max, act_min, act_max_ubndd, act_min_ubndd);
 
-      std::cout << "TRACKING_ROW: Recomputed activity of tracked row" << std::endl;
-      std::cout << "\tnew min/max activity is: " << act_min << "/" << act_max << ", min/max unbounded counters are " << act_min_ubndd << "/" << act_max_ubndd << std::endl;
+      std::cout << "TRACKING_ROW: Recomputed activity of tracked row" << "\n";
+      std::cout << "\tnew min/max activity is: " << act_min << "/" << act_max << ", min/max unbounded counters are " << act_min_ubndd << "/" << act_max_ubndd << "\n";
    }
 }
 
@@ -947,17 +947,17 @@ bool PresolveData::reductionsEmpty()
       recv = PIPS_MPIgetSum(obj_offset_chgs);
    }
    if( outdated_obj_vector && my_rank == 0 )
-      std::cout << "Error: objective vector is outdated!" << std::endl;
+      std::cout << "Error: objective vector is outdated!" << "\n";
    if( outdated_activities && my_rank == 0 )
-      std::cout << "Error: activities are outdated!" << std::endl;
+      std::cout << "Error: activities are outdated!" << "\n";
    if( outdated_lhsrhs && my_rank == 0 )
-      std::cout << "Error: lhs_rhs outdated!" << std::endl;
+      std::cout << "Error: lhs_rhs outdated!" << "\n";
    if( outdated_linking_var_bounds && my_rank == 0 )
-      std::cout << "Error: linking var bounds outdated!" << std::endl;
+      std::cout << "Error: linking var bounds outdated!" << "\n";
    if( outdated_nnzs && my_rank == 0 )
-      std::cout << "Error: non-zeros outdated!" << std::endl;
+      std::cout << "Error: non-zeros outdated!" << "\n";
    if( recv != 0.0 && my_rank == 0 )
-      std::cout << "Error: objcetive offset not synced!" << std::endl;
+      std::cout << "Error: objcetive offset not synced!" << "\n";
 
    return !outdated_obj_vector && !outdated_activities && !outdated_lhsrhs && !outdated_linking_var_bounds && !outdated_nnzs && (recv == 0.0) && !postsolve_linking_row_propagation_needed;
 }
@@ -1032,7 +1032,7 @@ void PresolveData::resetOriginallyFreeVarsBounds(const sData& orig_prob)
 #ifndef NDEBUG
    PIPS_MPIgetSumInPlace(n);
    if(my_rank == 0)
-      std::cout << "Reset " << n << " bounds" << std::endl;
+      std::cout << "Reset " << n << " bounds" << "\n";
 #endif
 }
 
@@ -1075,7 +1075,7 @@ long PresolveData::resetOriginallyFreeVarsBounds(const SimpleVector& ixlow_orig,
          if( PIPSisZero(ixupp_orig[col]) && PIPSisEQ(ixupp[col], 1.0) )
          {
             if( !(0 <= sys_row_upper && sys_row_upper <= 1) )
-               std::cout << sys_row_upper << std::endl;
+               std::cout << sys_row_upper << "\n";
             assert( 0 <= sys_row_upper && sys_row_upper <= 1);
             assert(row_upper != -10);
             assert(node_row_upper != -10);
@@ -1337,7 +1337,7 @@ void PresolveData::fixColumn( const INDEX& col, double value)
       assert( PIPS_MPIisValueEqual(col.getIndex()) );
 
    if( track_col && tracked_col == col )
-      std::cout << "TRACKING_COLUMN: " << col << " got fixed to " << value << std::endl;
+      std::cout << "TRACKING_COLUMN: " << col << " got fixed to " << value << "\n";
    
    /* current upper and lower bound as well as column - linking variables have to be done by all processes simultaneously because communication in postsolve is required */
    if(postsolver)
@@ -1490,8 +1490,8 @@ bool PresolveData::rowPropagatedBounds( const INDEX& row, const INDEX& col, doub
    if( track_col && tracked_col == col )
    {
       std::cout << "TRACKING_COLUMN: new bounds [" << xlow_new << ", " << xupp_new << "] propagated for column " << col
-         << " from row " << row << ":" << std::endl;
-      std::cout << "\tbounds were [" << xlow_old << ", " << xupp_old << "]" << std::endl;
+         << " from row " << row << ":" << "\n";
+      std::cout << "\tbounds were [" << xlow_old << ", " << xupp_old << "]" << "\n";
    }
 
    checkBoundsInfeasible(col, xlow_new, xupp_new);
@@ -1593,7 +1593,7 @@ void PresolveData::checkBoundsInfeasible(const INDEX& col, double xlow_new, doub
 
    if( !PIPSisLE( std::max(xlow_new, xlow), std::min(xupp_new, xupp)) )
    {
-      std::cout << "[" << std::max(xlow_new, xlow) << ", " << std::min(xupp_new, xupp) << "] not in [" << xlow << ", " << xupp << "] for " << col << std::endl;
+      std::cout << "[" << std::max(xlow_new, xlow) << ", " << std::min(xupp_new, xupp) << "] not in [" << xlow << ", " << xupp << "] for " << col << "\n";
       PIPS_MPIabortInfeasible("Detected infeasible new bounds!", "PresolveData.C", "checkBoundsInfeasible");
    }
 }
@@ -1624,7 +1624,7 @@ void PresolveData::tightenRowBoundsParallelRow(const INDEX& row1, const INDEX& r
 
    if( track_row && tracked_row == row1 )
    {
-      std::cout << "TRACKING_ROW: before RHS LHS adjustment" << std::endl;
+      std::cout << "TRACKING_ROW: before RHS LHS adjustment" << "\n";
       writeRowLocalToStreamDense(std::cout, row1 );
    }
 
@@ -1654,7 +1654,7 @@ void PresolveData::tightenRowBoundsParallelRow(const INDEX& row1, const INDEX& r
 
    if( track_row && tracked_row == row1 )
    {
-      std::cout << "TRACKING_ROW: after RHS LHS adjustment " << std::endl;
+      std::cout << "TRACKING_ROW: after RHS LHS adjustment " << "\n";
       writeRowLocalToStreamDense(std::cout, row1);
    }
 }
@@ -1666,7 +1666,7 @@ void PresolveData::adjustMatrixRhsLhsBy(const INDEX& row, double value, bool at_
    assert( row.hasValidNode(nChildren) );
    if( track_row && tracked_row == row )
    {
-      std::cout << "TRACKING_ROW: RHS LHS of row " << row << " being adjusted by " << value << std::endl;
+      std::cout << "TRACKING_ROW: RHS LHS of row " << row << " being adjusted by " << value << "\n";
       writeRowLocalToStreamDense(std::cout, row );
    }
 
@@ -1695,7 +1695,7 @@ void PresolveData::adjustMatrixRhsLhsBy(const INDEX& row, double value, bool at_
 
    if( track_row && tracked_row == row )
    {
-      std::cout << "TRACKING_ROW: after RHS LHS adjustment " << std::endl;
+      std::cout << "TRACKING_ROW: after RHS LHS adjustment " << "\n";
       writeRowLocalToStreamDense(std::cout, row);
    }
 }
@@ -1883,7 +1883,7 @@ void PresolveData::removeColumnFromMatrix(const INDEX& dummy_row, const INDEX& c
       assert( !PIPSisEQ(0.0, coeff) );
 
       if( track_row && tracked_row == row )
-         std::cout << "TRACKING_ROW: fixation of " << col << " in " << row << std::endl;
+         std::cout << "TRACKING_ROW: fixation of " << col << " in " << row << "\n";
 
       /* remove the entry, adjust activity and row counters and rhs/lhs */
       if( postsolver )
@@ -1900,15 +1900,15 @@ void PresolveData::removeColumnFromMatrix(const INDEX& dummy_row, const INDEX& c
 
       if( track_row && tracked_row == row )
       {
-         std::cout << "TRACKING_ROW: after removal of column" << std::endl;
+         std::cout << "TRACKING_ROW: after removal of column" << "\n";
          writeRowLocalToStreamDense(std::cout, row);
 
          double act_min, act_max;
          int act_min_ubndd, act_max_ubndd;
          getRowActivities(row, act_max, act_min, act_max_ubndd, act_min_ubndd);
 
-         std::cout << "TRACKING_ROW: New activity of row " << row << std::endl;
-         std::cout << "\tnew min/max activity is: " << act_min << "/" << act_max << ", min/max unbounded counters are " << act_min_ubndd << "/" << act_max_ubndd << std::endl;
+         std::cout << "TRACKING_ROW: New activity of row " << row << "\n";
+         std::cout << "\tnew min/max activity is: " << act_min << "/" << act_max << ", min/max unbounded counters are " << act_min_ubndd << "/" << act_max_ubndd << "\n";
       }
    }
 
@@ -2125,7 +2125,7 @@ void PresolveData::removeRedundantParallelRow( const INDEX& rm_row, const INDEX&
    }
 
    if( track_row && tracked_row == rm_row )
-      std::cout << "TRACKING_ROW: removal of tracked row as parallel and redundant row to " << par_row << std::endl;
+      std::cout << "TRACKING_ROW: removal of tracked row as parallel and redundant row to " << par_row << "\n";
 
    removeRow( rm_row );
 }
@@ -2183,7 +2183,7 @@ void PresolveData::removeRedundantRow( const INDEX& row )
    }
  
    if( track_row && tracked_row == row )
-      std::cout << "TRACKING_ROW: removal of tracked row as redundant row" << std::endl;
+      std::cout << "TRACKING_ROW: removal of tracked row as redundant row" << "\n";
 
    removeRow( row );
 }
@@ -2246,9 +2246,9 @@ void PresolveData::removeFreeColumnSingletonInequalityRow( const INDEX& row, con
    const double rhs = (clow != INF_NEG ) ? -clow : cupp;
 
    if( track_col && tracked_col == col )
-     std::cout << "TRACKING_COLUMN: tracked column removed as free column singleton" << std::endl;
+     std::cout << "TRACKING_COLUMN: tracked column removed as free column singleton" << "\n";
    if( track_row && tracked_row == row )
-      std::cout << "TRACKING_ROW: removal of " << row << " since it contained a free column singleton" << std::endl;
+      std::cout << "TRACKING_ROW: removal of " << row << " since it contained a free column singleton" << "\n";
 
    double& ixlow = getSimpleVecFromColStochVec(*(presProb->ixlow), col);
    double& xlow = getSimpleVecFromColStochVec(*(presProb->blx), col);
@@ -2310,9 +2310,9 @@ void PresolveData::removeFreeColumnSingletonInequalityRowSynced( const INDEX& ro
    if( col.isCol() )
    {
       if( track_col && tracked_col == col )
-         std::cout << "TRACKING_COLUMN: tracked column removed as free column singleton" << std::endl;
+         std::cout << "TRACKING_COLUMN: tracked column removed as free column singleton" << "\n";
       if( track_row && tracked_row == row )
-         std::cout << "TRACKING_ROW: removal of " << row << " since it contained a free column singleton" << std::endl;
+         std::cout << "TRACKING_ROW: removal of " << row << " since it contained a free column singleton" << "\n";
    }
 
    PIPS_MPIgetSumInPlace(coeff, MPI_COMM_WORLD);
@@ -2377,12 +2377,12 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRowSynced( const INDE
       assert( getSimpleVecFromColStochVec(*nnzs_col, col) == 1);
 
       if( track_col && tracked_col == col )
-        std::cout << "TRACKING_COLUMN: tracked column removed as (implied) free column singleton" << std::endl;
+        std::cout << "TRACKING_COLUMN: tracked column removed as (implied) free column singleton" << "\n";
    }
 
    if( track_row && tracked_row == row )
    {
-      std::cout << "TRACKING_ROW: removal of " << row << " since it contained an (implied) free column singleton" << std::endl;
+      std::cout << "TRACKING_ROW: removal of " << row << " since it contained an (implied) free column singleton" << "\n";
       writeRowLocalToStreamDense(std::cout, row);
    }
 
@@ -2461,11 +2461,11 @@ void PresolveData::removeImpliedFreeColumnSingletonEqualityRow( const INDEX& row
    assert( !wasColumnRemoved(col) );
 
    if( track_col && tracked_col == col )
-      std::cout << "TRACKING_COLUMN: tracked column removed as (implied) free column singleton" << std::endl;
+      std::cout << "TRACKING_COLUMN: tracked column removed as (implied) free column singleton" << "\n";
 
    if( track_row && tracked_row == row )
    {
-      std::cout << "TRACKING_ROW: removal of " << row << " since it contained an (implied) free column singleton" << std::endl;
+      std::cout << "TRACKING_ROW: removal of " << row << " since it contained an (implied) free column singleton" << "\n";
       writeRowLocalToStreamDense(std::cout, row);
    }
 
@@ -2881,56 +2881,56 @@ bool PresolveData::verifyActivities() const
    if( !actmax_eq_part_new->componentEqual(*actmax_eq_part, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmax_eq_part not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmax_eq_part not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmin_eq_part_new->componentEqual(*actmin_eq_part, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmin_eq_part not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmin_eq_part not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmax_eq_ubndd_new->componentEqual(*actmax_eq_ubndd, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmax_eq_ubndd not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmax_eq_ubndd not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmin_eq_ubndd_new->componentEqual(*actmin_eq_ubndd, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmin_eq_ubndd not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmin_eq_ubndd not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmax_ineq_part_new->componentEqual(*actmax_ineq_part, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmax_ineq_part not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmax_ineq_part not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmin_ineq_part_new->componentEqual(*actmin_ineq_part, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmin_ineq_part not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmin_ineq_part not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmax_ineq_ubndd_new->componentEqual(*actmax_ineq_ubndd, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmax_ineq_ubndd not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmax_ineq_ubndd not correct" << "\n";
       activities_correct = false;
    }
 
    if( !actmin_ineq_ubndd_new->componentEqual(*actmin_ineq_ubndd, feastol))
    {
       if(my_rank == tracked_rank)
-         std::cout << "on rank " << my_rank << " found actmin_ineq_ubndd not correct" << std::endl;
+         std::cout << "on rank " << my_rank << " found actmin_ineq_ubndd not correct" << "\n";
       activities_correct = false;
    }
 
@@ -2964,7 +2964,7 @@ bool PresolveData::verifyNnzcounters() const
       if( (*nColUpdatedSimple)[i] != (*nColOrigSimple)[i])
       {
          std::cout << "Nnz Counter linking column " << i << " not correct: "
-               << (*nColUpdatedSimple)[i] << " vs. " << (*nColOrigSimple)[i] << std::endl;
+               << (*nColUpdatedSimple)[i] << " vs. " << (*nColOrigSimple)[i] << "\n";
          nnzCorrect = false;
          break;
       }
@@ -2980,7 +2980,7 @@ bool PresolveData::verifyNnzcounters() const
          if( (*nColUpdatedSimple)[i] != (*nColOrigSimple)[i])
          {
             std::cout << "Nnz Counter non-linking column " << i << " of child " << it << " not correct: "
-                  << (*nColUpdatedSimple)[i] << " vs. " << (*nColOrigSimple)[i] << std::endl;
+                  << (*nColUpdatedSimple)[i] << " vs. " << (*nColOrigSimple)[i] << "\n";
             nnzCorrect = false;
             break;
          }
@@ -2996,7 +2996,7 @@ bool PresolveData::verifyNnzcounters() const
       if( (*nRowAUpdatedSimple)[i] != (*nRowAOrigSimple)[i])
       {
          std::cout << "Nnz Counter root A row " << i << " not correct: " << (*nRowAUpdatedSimple)[i] << " vs. "
-               << (*nRowAOrigSimple)[i] << std::endl;
+               << (*nRowAOrigSimple)[i] << "\n";
          nnzCorrect = false;
          break;
       }
@@ -3012,7 +3012,7 @@ bool PresolveData::verifyNnzcounters() const
          if( (*nRowAUpdatedSimple)[i] != (*nRowAOrigSimple)[i])
          {
             std::cout << "Nnz Counter non-linking A row " << i << " of child " << it << " not correct: "
-                  << (*nRowAUpdatedSimple)[i] << " vs. " << (*nRowAOrigSimple)[i] << std::endl;
+                  << (*nRowAUpdatedSimple)[i] << " vs. " << (*nRowAOrigSimple)[i] << "\n";
             nnzCorrect = false;
             break;
          }
@@ -3028,7 +3028,7 @@ bool PresolveData::verifyNnzcounters() const
          if( (*nRowAUpdatedSimple)[i] != (*nRowAOrigSimple)[i])
          {
             std::cout << "Nnz Counter linking row of A " << i << " not correct: " << (*nRowAUpdatedSimple)[i] << " vs. "
-                  << (*nRowAOrigSimple)[i] << std::endl;
+                  << (*nRowAOrigSimple)[i] << "\n";
             nnzCorrect = false;
             break;
          }
@@ -3043,7 +3043,7 @@ bool PresolveData::verifyNnzcounters() const
       if( (*nRowCUpdatedSimple)[i] != (*nRowCOrigSimple)[i])
       {
          std::cout << "Nnz Counter root C row " << i << " not correct: " << (*nRowCUpdatedSimple)[i] << " vs. "
-               << (*nRowCOrigSimple)[i] << std::endl;
+               << (*nRowCOrigSimple)[i] << "\n";
          nnzCorrect = false;
          break;
       }
@@ -3059,7 +3059,7 @@ bool PresolveData::verifyNnzcounters() const
          if( (*nRowCUpdatedSimple)[i] != (*nRowCOrigSimple)[i])
          {
             std::cout << "Nnz Counter non-linking C row " << i << " of child "<< it <<" not correct: "
-                  << (*nRowCUpdatedSimple)[i] << " vs. " << (*nRowCOrigSimple)[i] << std::endl;
+                  << (*nRowCUpdatedSimple)[i] << " vs. " << (*nRowCOrigSimple)[i] << "\n";
             nnzCorrect = false;
             break;
          }
@@ -3075,7 +3075,7 @@ bool PresolveData::verifyNnzcounters() const
          if( (*nRowCUpdatedSimple)[i] != (*nRowCOrigSimple)[i])
          {
             std::cout << "Nnz Counter linking row of C " << i << " not correct: " << (*nRowCUpdatedSimple)[i]
-                  << " vs. " << (*nRowCOrigSimple)[i] << std::endl;
+                  << " vs. " << (*nRowCOrigSimple)[i] << "\n";
             nnzCorrect = false;
             break;
          }
@@ -3312,9 +3312,9 @@ void PresolveData::computeRowMinOrMaxActivity(const INDEX& row, bool upper)
    if( track_row && tracked_row == row )
    {
       if( row.isLinkingRow() )
-         std::cout << "TRACKING_ROW: " << row << " is linking constraint and needs " << (upper ? "upper" : "lower") << " activity recomputation " << std::endl;
+         std::cout << "TRACKING_ROW: " << row << " is linking constraint and needs " << (upper ? "upper" : "lower") << " activity recomputation " << "\n";
       else
-         std::cout << "TRACKING_ROW: computing " << (upper ? "upper" : "lower") << " activity of " << row << std::endl;
+         std::cout << "TRACKING_ROW: computing " << (upper ? "upper" : "lower") << " activity of " << row << "\n";
    }
 
    /* single linking rows that have to be computed for the first time */
@@ -3410,7 +3410,7 @@ void PresolveData::computeRowMinOrMaxActivity(const INDEX& row, bool upper)
    }
 
    if( track_row && tracked_row == row )
-         std::cout << "TRACKING_ROW: new " << (upper ? "upper" : "lower") << " activity is " << act_part << std::endl;
+         std::cout << "TRACKING_ROW: new " << (upper ? "upper" : "lower") << " activity is " << act_part << "\n";
 }
 
 /** goes through given column and adjusts activities by a_ij * (old_ubx - ubx)
@@ -3427,15 +3427,15 @@ void PresolveData::updateRowActivities(const INDEX& col, double xlow_new, double
 
    if( track_col && tracked_col == col )
    {
-      std::cout << "TRACKING_COLUMN: " << col << " gets it's activities updated" << std::endl;
-      std::cout << "\t bounds changed from [" << xlow_old << ", " << xupp_old << "] to [" << std::max(xlow_new, xlow_old) << ", " << std::min(xupp_old, xupp_new) << "]" << std::endl;
+      std::cout << "TRACKING_COLUMN: " << col << " gets it's activities updated" << "\n";
+      std::cout << "\t bounds changed from [" << xlow_old << ", " << xupp_old << "] to [" << std::max(xlow_new, xlow_old) << ", " << std::min(xupp_old, xupp_new) << "]" << "\n";
    }
 
    /* if node == -1 go through all linking var blocks of both systems */
    if( col.isLinkingCol() )
    {
       if( track_col && tracked_col == col )
-         std::cout << "TRACKING_COLUMN: the column is linking (root node)" << std::endl;
+         std::cout << "TRACKING_COLUMN: the column is linking (root node)" << "\n";
       /* B0 and D0block */
       updateRowActivitiesBlock(INDEX(ROW, -1, dummy_index, false, EQUALITY_SYSTEM), col, xlow_new, xupp_new, xlow_old, xupp_old);
       updateRowActivitiesBlock(INDEX(ROW, -1, dummy_index, false, INEQUALITY_SYSTEM), col, xlow_new, xupp_new, xlow_old, xupp_old);
@@ -3457,7 +3457,7 @@ void PresolveData::updateRowActivities(const INDEX& col, double xlow_new, double
    else
    {
       if( track_col && tracked_col == col )
-         std::cout << "TRACKING_COLUMN: the column is non-linking (non-root)" << std::endl;
+         std::cout << "TRACKING_COLUMN: the column is non-linking (non-root)" << "\n";
       /* Bmat, Blmat */
       /* Bmat */
       updateRowActivitiesBlock(INDEX(ROW, col.getNode(), dummy_index, false, EQUALITY_SYSTEM), col, xlow_new, xupp_new, xlow_old, xupp_old);
@@ -3532,7 +3532,7 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
 
    if( track_col && tracked_col == col )
       std::cout << "TRACKING_COLUMN: updating activities of " << col << " in " << row <<
-         " with new " << ( upper ? "upper" : "lower" ) << " bound " << bound << " from " << old_bound << std::endl;
+         " with new " << ( upper ? "upper" : "lower" ) << " bound " << bound << " from " << old_bound << "\n";
 
    for( int j = mat_transp.getRowPtr(col.getIndex()).start; j < mat_transp.getRowPtr(col.getIndex()).end; ++j )
    {
@@ -3554,16 +3554,16 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
 
       if( track_row && tracked_row == row_INDEX )
       {
-         std::cout << "TRACKING_ROW: activities of " << row_INDEX << " are getting updated. Current state:" << std::endl;
+         std::cout << "TRACKING_ROW: activities of " << row_INDEX << " are getting updated. Current state:" << "\n";
          if( row_INDEX.isLinkingRow() )
          {
             std::cout << "\twas linking row with " << ( switch_upperlower ? "upper" : "lower" ) << " activity " << act_part[row_index] << " + " << act_part_chgs[row_index] << "(changes) and " <<
-                  (switch_upperlower ? "upper" : "lower" ) << " unbounded counters " << act_ubndd[row_index] << " + " << act_ubndd_chgs[row_index] << "(changes)" << std::endl;
+                  (switch_upperlower ? "upper" : "lower" ) << " unbounded counters " << act_ubndd[row_index] << " + " << act_ubndd_chgs[row_index] << "(changes)" << "\n";
          }
          else
          {
             std::cout << "\twas non-linking row with " << ( switch_upperlower ? "upper" : "lower" ) << " activity " << act_part[row_index] << " and " << (switch_upperlower ? "upper" : "lower" ) <<
-                  " unbounded counters " << act_ubndd[row_index] << std::endl;
+                  " unbounded counters " << act_ubndd[row_index] << "\n";
          }
       }
 
@@ -3571,7 +3571,7 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
       if( old_bound == INF_NEG || old_bound == INF_POS )
       {
          if( track_row && tracked_row == row_INDEX )
-               std::cout << "TRACKING_ROW: ubndd counters are being changed" << std::endl;
+               std::cout << "TRACKING_ROW: ubndd counters are being changed" << "\n";
 
          /* every process works the root node - even in the linking row case */
          if( !col.isLinkingCol() && row_INDEX.isLinkingRow() )
@@ -3598,9 +3598,9 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
             if( track_row && tracked_row == row_INDEX )
             {
                if( row_INDEX.isLinkingRow()  )
-                  std::cout << "TRACKING_ROW: " << ( switch_upperlower ? "upper" : "lower" ) << " now needs act computation " << std::endl;
+                  std::cout << "TRACKING_ROW: " << ( switch_upperlower ? "upper" : "lower" ) << " now needs act computation " << "\n";
                else
-                  std::cout << "TRACKING_ROW: first time computation of " << ( switch_upperlower ? "upper" : "lower" ) << " activity " << std::endl;
+                  std::cout << "TRACKING_ROW: first time computation of " << ( switch_upperlower ? "upper" : "lower" ) << " activity " << "\n";
             }
 
             if( row_INDEX.isLinkingRow() )
@@ -3613,7 +3613,7 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
                (!row_INDEX.isLinkingRow() && act_ubndd[row_index] == 0) )
          {
             if( track_row && tracked_row == row_INDEX )
-                  std::cout << "TRACKING_ROW: adjusting activities " << std::endl;
+                  std::cout << "TRACKING_ROW: adjusting activities " << "\n";
 
             if( !col.isLinkingCol() && row_INDEX.isLinkingRow() )
             {
@@ -3629,7 +3629,7 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
          assert( old_bound != INF_NEG && old_bound != INF_POS );
 
          if( track_row && tracked_row == row_INDEX )
-            std::cout << "TRACKING_ROW: " << " no changes in ubndd counters - only adjust activities" << std::endl;
+            std::cout << "TRACKING_ROW: " << " no changes in ubndd counters - only adjust activities" << "\n";
 
          /* better bound was found */
          if( (row_INDEX.isLinkingRow() && act_ubndd[row_index] + act_ubndd_chgs[row_index] <= 1) ||
@@ -3648,19 +3648,19 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
 
       if( track_row && tracked_row == row_INDEX )
       {
-         std::cout << "TRACKING_ROW: activities of tracked row have been updated: " << std::endl;
+         std::cout << "TRACKING_ROW: activities of tracked row have been updated: " << "\n";
          if( row_INDEX.isLinkingRow() )
          {
             std::cout << "\tnow linking row with " << ( switch_upperlower ? "upper" : "lower" ) <<
                " activity " << act_part[row_index] << " + " << act_part_chgs[row_index] << "(changes) and " <<
                (switch_upperlower ? "upper" : "lower" ) << " unbounded counters " << 
-               act_ubndd[row_index] << " + " << act_ubndd_chgs[row_index] << "(changes)" << std::endl;
+               act_ubndd[row_index] << " + " << act_ubndd_chgs[row_index] << "(changes)" << "\n";
          }
          else
          {
             std::cout << "\tnow non-linking row with " << ( switch_upperlower ? "upper" : "lower" ) <<
             " activity " << act_part[row_index] << " and " << (switch_upperlower ? "upper" : "lower" ) <<
-            " unbounded counters " << act_ubndd[row_index] << std::endl;
+            " unbounded counters " << act_ubndd[row_index] << "\n";
          }
       }
    }
@@ -3880,7 +3880,7 @@ bool PresolveData::updateColBounds( const INDEX& col, double xlow, double xupp)
 
    if( track_col && tracked_col == col )
       std::cout << "TRACKING_COLUMN: updating column bounds from [" << xlow_old << ", " << xupp_old << "] for " << col << " to [" <<
-         std::max(xlow, xlow_old) << ", " << std::min(xupp, xupp_old) << "]" << std::endl;
+         std::max(xlow, xlow_old) << ", " << std::min(xupp, xupp_old) << "]" << "\n";
 
    checkBoundsInfeasible(col, xlow, xupp);
 
@@ -3905,15 +3905,15 @@ bool PresolveData::updateColBounds( const INDEX& col, double xlow, double xupp)
    {
       if(  track_col && tracked_col == col )
       {
-         std::cout << "TRACKING_COLUMN: bounds are now [" << xlow << ", " << xupp << "]" << std::endl;
-         std::cout << "TRACKING_COLUMN: moving on to update activities" << std::endl;
+         std::cout << "TRACKING_COLUMN: bounds are now [" << xlow << ", " << xupp << "]" << "\n";
+         std::cout << "TRACKING_COLUMN: moving on to update activities" << "\n";
       }
       updateRowActivities(col, xlow, xupp, xlow_old, xupp_old);
    }
    else
    {
       if( track_col && tracked_col == col )
-         std::cout << "TRACKING_COLUMN: " << col << " was not updated" << std::endl;
+         std::cout << "TRACKING_COLUMN: " << col << " was not updated" << "\n";
    }
 
 #ifndef NDEBUG
@@ -4002,7 +4002,7 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
    if( node == -1 && my_rank != 0)
       return;
 
-   out << "SystemType: " << system_type << "\tnode: " << node << "\tLinkingCons: " << linking << "\trow: " << row_index << std::endl;
+   out << "SystemType: " << system_type << "\tnode: " << node << "\tLinkingCons: " << linking << "\trow: " << row_index << "\n";
 
    if( row.inEqSys() )
       out << getSimpleVecFromRowStochVec(*presProb->bA, row) << " = ";
@@ -4047,7 +4047,7 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
 
       out << " <= " << cupp;
    }
-   out << std::endl;
+   out << "\n";
 }
 
 void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseGenMatrix& mat, int node, int row, const SimpleVector& ixupp, const SimpleVector& xupp,
@@ -4105,28 +4105,28 @@ void PresolveData::printVarBoundStatistics(std::ostream& out) const
 
    if(distributed && my_rank == 0)
    {
-      std::cout << "_____________________________________________________" << std::endl;
-      std::cout << "____________________Stats__Bounds____________________" << std::endl;
-      std::cout << "_____________________________________________________" << std::endl;
+      std::cout << "_____________________________________________________" << "\n";
+      std::cout << "____________________Stats__Bounds____________________" << "\n";
+      std::cout << "_____________________________________________________" << "\n";
 
-      std::cout << "xlow:" << std::endl;
-      std::cout << "nr_bounds\t" << nr_bounds_lower << std::endl;
-      std::cout << "twonorm  \t" << xlow_twonorm << std::endl;
-      std::cout << "onenorm  \t" << xlow_onenorm << std::endl;
-      std::cout << "infnorm  \t" << xlow_infnorm << std::endl;
-      std::cout << "min      \t" << max_low << std::endl; 
-      std::cout << "max      \t" << max_low << std::endl;
-      std::cout << std::endl;
-      std::cout << "xupp:" << std::endl;
-      std::cout << "nr_bounds\t" << nr_bounds_upper << std::endl;
-      std::cout << "twonorm  \t" << xupp_twonorm << std::endl;
-      std::cout << "onenorm  \t" << xupp_onenorm << std::endl;
-      std::cout << "infnorm  \t" << xupp_infnorm << std::endl;
-      std::cout << "min      \t" << min_upp << std::endl;
-      std::cout << "max      \t" << max_upp << std::endl;
+      std::cout << "xlow:" << "\n";
+      std::cout << "nr_bounds\t" << nr_bounds_lower << "\n";
+      std::cout << "twonorm  \t" << xlow_twonorm << "\n";
+      std::cout << "onenorm  \t" << xlow_onenorm << "\n";
+      std::cout << "infnorm  \t" << xlow_infnorm << "\n";
+      std::cout << "min      \t" << max_low << "\n";
+      std::cout << "max      \t" << max_low << "\n";
+      std::cout << "\n";
+      std::cout << "xupp:" << "\n";
+      std::cout << "nr_bounds\t" << nr_bounds_upper << "\n";
+      std::cout << "twonorm  \t" << xupp_twonorm << "\n";
+      std::cout << "onenorm  \t" << xupp_onenorm << "\n";
+      std::cout << "infnorm  \t" << xupp_infnorm << "\n";
+      std::cout << "min      \t" << min_upp << "\n";
+      std::cout << "max      \t" << max_upp << "\n";
 
-      std::cout << "_____________________________________________________" << std::endl;
-      std::cout << "_____________________________________________________" << std::endl;
+      std::cout << "_____________________________________________________" << "\n";
+      std::cout << "_____________________________________________________" << "\n";
    }
 }
 
@@ -4147,8 +4147,8 @@ void PresolveData::printRowColStats() const
 
    if( my_rank == 0 )
    {
-      std::cout << "Problem Dimensions:" << std::endl;
-      std::cout << nnzs_cols << " non-zeros" << std::endl;
-      std::cout << cols << " cols\t" << rows_A << " rows A\t" << rows_C << " rows C " << std::endl;
+      std::cout << "Problem Dimensions:" << "\n";
+      std::cout << nnzs_cols << " non-zeros" << "\n";
+      std::cout << cols << " cols\t" << rows_A << " rows A\t" << rows_C << " rows C " << "\n";
    }
 }
