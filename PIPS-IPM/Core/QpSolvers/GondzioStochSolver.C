@@ -133,7 +133,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    double alpha_target, alpha_enhanced;
    int status_code;
    double alpha = 1, sigma = 1;
-   sFactory* stochFactory = reinterpret_cast<sFactory*>(factory);
+   sFactory* stochFactory = dynamic_cast<sFactory*>(factory);
    g_iterNumber = 0.0;
 
    bool pure_centering_step = false;
