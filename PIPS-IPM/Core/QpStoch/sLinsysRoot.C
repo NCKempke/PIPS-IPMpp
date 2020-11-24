@@ -96,6 +96,9 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
   initProperChildrenRange();
+
+  if( is_hierarchy_root )
+     assert( !usePrecondDist && !hasSparseKkt );
 }
 
 sLinsysRoot::sLinsysRoot(sFactory* factory_,
@@ -153,6 +156,9 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
 
   initProperChildrenRange();
+
+  if( is_hierarchy_root )
+     assert( !usePrecondDist && !hasSparseKkt );
 }
 
 sLinsysRoot::~sLinsysRoot()

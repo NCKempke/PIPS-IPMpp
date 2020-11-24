@@ -7,16 +7,15 @@
 #ifndef PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_
 #define PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_
 
-#include "sLinsysRoot.h"
+#include "sLinsysRootAug.h"
 
-class sLinsysRootBordered : public sLinsysRoot
+class sLinsysRootBordered : public sLinsysRootAug
 {
    public:
       sLinsysRootBordered(sFactory * factory_, sData * prob_);
 
       virtual ~sLinsysRootBordered();
 
-      void finalizeKKT(sData* prob, Variables* vars) override;
       void solveReduced( sData *prob, SimpleVector& b) override
       { assert ( false && "should not end up here" ); };
 
@@ -25,11 +24,8 @@ class sLinsysRootBordered : public sLinsysRoot
       void Ltsolve(sData *prob, OoqpVector& v) override;
 
    protected:
-      SymMatrix* createKKT(sData* prob) override;
       void assembleLocalKKT(sData* prob) override;
       void reduceKKT(sData* prob) override;
-
-      DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) override;
 
    private:
       void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );

@@ -17,7 +17,8 @@ class sLinsysRootAug : public sLinsysRoot {
 
  public:
 
-  sLinsysRootAug(sFactory * factory_, sData * prob_);
+  sLinsysRootAug(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
+
   sLinsysRootAug(sFactory* factory,
        sTree* tree_,
 		 sData* prob_,				    
@@ -34,8 +35,8 @@ class sLinsysRootAug : public sLinsysRoot {
   void Ltsolve(sData *prob, OoqpVector& x) override;
 
  protected:
-  virtual SymMatrix* createKKT (sData* prob);
-  virtual DoubleLinearSolver* createSolver (sData* prob, SymMatrix* kktmat);
+  SymMatrix* createKKT (sData* prob) override;
+  DoubleLinearSolver* createSolver (sData* prob, SymMatrix* kktmat) override;
   void assembleLocalKKT( sData* prob ) override;
   void solveReduced( sData *prob, SimpleVector& b) override;
   void solveReducedLinkCons( sData *prob, SimpleVector& b) override;
@@ -55,8 +56,8 @@ class sLinsysRootAug : public sLinsysRoot {
   /** y = beta*y - alpha* SC * x */
   void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, sData* prob);
 
-  SymMatrix* CtDC;
-  SimpleVector* redRhs;
+  SymMatrix* CtDC{};
+  SimpleVector* redRhs{};
 };
 
 #endif
