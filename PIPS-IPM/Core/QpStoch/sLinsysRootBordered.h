@@ -8,13 +8,14 @@
 #define PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_
 
 #include "sLinsysRootAug.h"
+#include <memory>
 
 class sLinsysRootBordered : public sLinsysRootAug
 {
    public:
       sLinsysRootBordered(sFactory * factory_, sData * prob_);
 
-      virtual ~sLinsysRootBordered();
+      virtual ~sLinsysRootBordered() = default;
 
       void solveReduced( sData *prob, SimpleVector& b) override
       { assert ( false && "should not end up here" ); };
@@ -30,6 +31,8 @@ class sLinsysRootBordered : public sLinsysRootAug
    private:
       void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );
       void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0 );
+
+      std::unique_ptr<StochVector> sol_inner{};
 };
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_ */

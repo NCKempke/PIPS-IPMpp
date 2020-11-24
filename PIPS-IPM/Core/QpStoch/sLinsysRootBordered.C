@@ -19,14 +19,12 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 {
 }
 
-sLinsysRootBordered::~sLinsysRootBordered()
-{
-}
-
 void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 )
 {
-   // TODO : make member
-   StochVector* sol_inner = dynamic_cast<StochVector*>(rhs_inner.cloneFull());
+   if( !sol_inner )
+      sol_inner.reset(dynamic_cast<StochVector*>(rhs_inner.cloneFull()));
+   else
+      sol_inner->copyFrom(rhs_inner);
 
    /* solve inner system */
    this->children[0]->solveCompressed( *sol_inner );
@@ -41,8 +39,6 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
    this->children[0]->addBorderTimesRhsToB0( *sol_inner, b0, border );
-
-   delete sol_inner;
 
    PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
