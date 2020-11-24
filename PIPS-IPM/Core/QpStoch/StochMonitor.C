@@ -75,7 +75,7 @@ void StochMonitor::doItStoch( const Solver * solver, const Data * data, const Va
 
   switch( level ) {
      case 0 : case 1: {
-        std::cout << " --- Iteration " << i << " --- (rank " << myGlobRank << ")" << std::endl;
+        std::cout << " --- Iteration " << i << " --- (rank " << myGlobRank << ")" << "\n";
     if( i == 1 )
       printf(" mu = %16.12e  rel.res.norm=%16.12e  datanorm=%16.12e\n", 
 	     mu, rnorm / dnorm, dnorm);
@@ -84,33 +84,33 @@ void StochMonitor::doItStoch( const Solver * solver, const Data * data, const Va
              mu, rnorm / dnorm);
     //cout << " mu = " << mu << " relative residual norm = " 
     //cout << resids->residualNorm() / dnorm << endl;
-    std::cout << " Duality Gap:  " << gap << std::endl;
+    std::cout << " Duality Gap:  " << gap << "\n";
     if( i > 1 )
     {
        if( alpha_dual != -1.0 )
        {
-          std::cout << " alpha primal = " << alpha_primal << std::endl;
-          std::cout << " alpha dual = " << alpha_dual << std::endl;
+          std::cout << " alpha primal = " << alpha_primal << "\n";
+          std::cout << " alpha dual = " << alpha_dual << "\n";
        }
        else
-          std::cout << " alpha = " << alpha_primal << std::endl;
+          std::cout << " alpha = " << alpha_primal << "\n";
     }
-    std::cout << " Objective: " << objective << std::endl;
-    std::cout << std::endl;
+    std::cout << " Objective: " << objective << "\n";
+    std::cout << "\n";
     if( level == 1) { 
       // Termination has been detected by the status check; print
       // appropriate message
       switch( status_code ) {
       case SUCCESSFUL_TERMINATION:
-	std::cout << std::endl << " *** SUCCESSFUL TERMINATION ***" << std::endl;
+	std::cout << "\n" << " *** SUCCESSFUL TERMINATION ***" << "\n";
 	break;
       case MAX_ITS_EXCEEDED:
-	std::cout << std::endl << " *** MAXIMUM ITERATIONS REACHED *** " << std::endl;
+	std::cout << "\n" << " *** MAXIMUM ITERATIONS REACHED *** " << "\n";
 	break;
       case INFEASIBLE:
-	std::cout << std::endl << " *** TERMINATION: PROBABLY INFEASIBLE *** " << std::endl;
+	std::cout << "\n" << " *** TERMINATION: PROBABLY INFEASIBLE *** " << "\n";
       case UNKNOWN:
-	std::cout << std::endl << " *** TERMINATION: STATUS UNKNOWN *** " << std::endl;
+	std::cout << "\n" << " *** TERMINATION: STATUS UNKNOWN *** " << "\n";
 	break;
       } // end switch(statusCode)
     }
