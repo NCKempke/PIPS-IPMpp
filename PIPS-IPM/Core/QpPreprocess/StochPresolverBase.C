@@ -121,14 +121,14 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
 
       std::cout << "#linking_vars:\t\t" << n_cols << "\t(#empty: n_cols_empty " << n_cols_empty << ", #singleton: " << n_cols_singleton << 
          ", #free: " << n_cols_free << ", #onesided: " << n_cols_onesided << ", #boxed: " << n_cols_boxed << " #orig_free_non_empty: " << 
-         n_cols_orig_free - n_cols_orig_free_removed << ")" << std::endl;
+         n_cols_orig_free - n_cols_orig_free_removed << ")" << "\n";
 
-      std::cout << "#rows B0:\t\t" << n_rows_eq << "\t(#empty: n_rows_empty " << n_rows_empty_eq << ", #singleton: " << n_rows_singleton_eq << ")" << std::endl;
+      std::cout << "#rows B0:\t\t" << n_rows_eq << "\t(#empty: n_rows_empty " << n_rows_empty_eq << ", #singleton: " << n_rows_singleton_eq << ")" << "\n";
       std::cout << "#rows Bl_0:\t\t" << n_rows_linking_eq << "\t(#empty: n_rows_empty " << n_rows_empty_linking_eq << ", #singleton: " <<
-         n_rows_singleton_linking_eq << ")" << std::endl;
-      std::cout << "#rows D0:\t\t" << n_rows_ineq << "\t(#empty: n_rows_empty " << n_rows_empty_ineq << ", #singleton: " << n_rows_singleton_ineq << ")" << std::endl;
+         n_rows_singleton_linking_eq << ")" << "\n";
+      std::cout << "#rows D0:\t\t" << n_rows_ineq << "\t(#empty: n_rows_empty " << n_rows_empty_ineq << ", #singleton: " << n_rows_singleton_ineq << ")" << "\n";
       std::cout << "#rows Dl_0:\t\t" << n_rows_linking_ineq << "\t(#empty: n_rows_empty " << n_rows_empty_linking_ineq << ", #singleton: " << 
-         n_rows_singleton_linking_ineq << ")" << std::endl;
+         n_rows_singleton_linking_ineq << ")" << "\n";
 
       n_rows_eq += n_rows_linking_eq;
       n_rows_empty_eq += n_rows_empty_linking_eq;
@@ -182,14 +182,14 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
    {
       std::cout << "#rows_total:\t\t" << n_rows_eq + n_rows_ineq << "\t(#empty: " << n_rows_empty_eq + n_rows_empty_ineq << ", #fixed: " << 
          n_rows_fixed_eq + n_rows_fixed_ineq << ", #boxed: " << n_rows_boxed_ineq << ", #onesided: " << n_rows_onsided_ineq << ", #singleton: " << 
-         n_rows_singleton_eq + n_rows_singleton_ineq << ")" << std::endl;
-      std::cout << "#rows non-empty A:\t" << n_rows_eq - n_rows_empty_eq << "\t(#singleton: " << n_rows_singleton_eq << ")" << std::endl;
-      std::cout << "#rows non-empty C:\t" << n_rows_ineq - n_rows_empty_ineq << "\t(#singleton: " << n_rows_singleton_ineq << ")" << std::endl;
+         n_rows_singleton_eq + n_rows_singleton_ineq << ")" << "\n";
+      std::cout << "#rows non-empty A:\t" << n_rows_eq - n_rows_empty_eq << "\t(#singleton: " << n_rows_singleton_eq << ")" << "\n";
+      std::cout << "#rows non-empty C:\t" << n_rows_ineq - n_rows_empty_ineq << "\t(#singleton: " << n_rows_singleton_ineq << ")" << "\n";
       
       std::cout << "#vars_total:\t\t" << n_cols << "\t(#empty: " << n_cols_empty << ", #free: " << n_cols_free << ", #onesided: " << n_cols_onesided << 
          ", #boxed: " << n_cols_boxed << ", #singleton: " << n_cols_singleton << ", #orig_free_non_empty: " << n_cols_orig_free - n_cols_orig_free_removed << 
-         ")" << std::endl;
-         std::cout << "#vars non_empty:\t" << n_cols - n_cols_empty << std::endl;
+         ")" << "\n";
+         std::cout << "#vars non_empty:\t" << n_cols - n_cols_empty << "\n";
    }
 }
 
