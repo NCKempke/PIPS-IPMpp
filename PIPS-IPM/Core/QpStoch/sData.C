@@ -27,21 +27,18 @@ std::vector<unsigned int> getInversePermutation(const std::vector<unsigned int>&
    return perm_inv;
 }
 
-static inline
-bool blockIsInRange(int block, int blocksStart, int blocksEnd)
+static bool blockIsInRange(int block, int blocksStart, int blocksEnd)
 {
    return ((block >= (blocksStart - 1) && block < blocksEnd) || block == -1);
 }
 
-static inline
-int nnzTriangular(int size)
+static int nnzTriangular(int size)
 {
    assert(size >= 0);
    return ((1 + size) * size) / 2;
 }
 
-static
-void appendRowDense(int start, int end, int& nnz, int* jcolM)
+static void appendRowDense(int start, int end, int& nnz, int* jcolM)
 {
    assert(jcolM);
    assert(nnz >= 0);
@@ -51,8 +48,7 @@ void appendRowDense(int start, int end, int& nnz, int* jcolM)
       jcolM[nnz++] = i;
 }
 
-static
-void appendRowSparse(int startColIdx, int endColIdx, int colOffset, const int* jcolM_append, int& nnz, int* jcolM)
+static void appendRowSparse(int startColIdx, int endColIdx, int colOffset, const int* jcolM_append, int& nnz, int* jcolM)
 {
    assert(jcolM);
    assert(nnz >= 0);
@@ -63,8 +59,7 @@ void appendRowSparse(int startColIdx, int endColIdx, int colOffset, const int* j
 }
 
 
-static
-int appendDiagBlocks(const std::vector<int>& linkStartBlockId, const std::vector<int>& linkStartBlockLengths, int borderstart, int bordersize, int rowSC,
+static int appendDiagBlocks(const std::vector<int>& linkStartBlockId, const std::vector<int>& linkStartBlockLengths, int borderstart, int bordersize, int rowSC,
                                           int rowBlock, int& blockStartrow, int& nnz, int* jcolM)
 {
    assert(rowBlock >= blockStartrow && blockStartrow >= 0 && borderstart >= 0 && bordersize >= 0 && nnz >= 0);
@@ -107,8 +102,7 @@ int appendDiagBlocks(const std::vector<int>& linkStartBlockId, const std::vector
    return rownnz;
 }
 
-static
-void appendDiagBlocksDist(const std::vector<int>& linkStartBlockId, const std::vector<int>& linkStartBlockLengths, int borderstart, int bordersize, int rowSC,
+static void appendDiagBlocksDist(const std::vector<int>& linkStartBlockId, const std::vector<int>& linkStartBlockLengths, int borderstart, int bordersize, int rowSC,
                                           int rowBlock, int blocksStart, int blocksEnd, int& blockStartrow, int& nnz, int* jcolM)
 {
    assert(rowBlock >= blockStartrow && blockStartrow >= 0 && borderstart >= 0 && bordersize >= 0 && nnz >= 0);
@@ -162,8 +156,7 @@ void appendDiagBlocksDist(const std::vector<int>& linkStartBlockId, const std::v
 }
 
 
-static
-int appendMixedBlocks(const std::vector<int>& linkStartBlockId_Left,
+static int appendMixedBlocks(const std::vector<int>& linkStartBlockId_Left,
       const std::vector<int>& linkStartBlockId_Right,
       const std::vector<int>& linkStartBlockLengths_Left,
       const std::vector<int>& linkStartBlockLengths_Right,
@@ -257,8 +250,7 @@ int appendMixedBlocks(const std::vector<int>& linkStartBlockId_Left,
 }
 
 
-static
-void appendMixedBlocksDist(const std::vector<int>& linkStartBlockId_Left,
+static void appendMixedBlocksDist(const std::vector<int>& linkStartBlockId_Left,
       const std::vector<int>& linkStartBlockId_Right,
       const std::vector<int>& linkStartBlockLengths_Left,
       const std::vector<int>& linkStartBlockLengths_Right,
