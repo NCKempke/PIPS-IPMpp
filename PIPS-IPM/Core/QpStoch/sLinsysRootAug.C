@@ -102,7 +102,7 @@ SymMatrix* sLinsysRootAug::createKKT(sData* prob)
       SparseSymMatrix* sparsekkt;
 
       if( PIPS_MPIgetRank(mpiComm) == 0)
-         std::cout << "getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << std::endl;
+         std::cout << "getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
 
       if( usePrecondDist )
       {
@@ -135,19 +135,19 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
 
 #ifdef WITH_MUMPS_ROOT
       if( 0 == my_rank )
-         std::cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << std::endl;
+         std::cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << "\n";
       return new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt);
 #elif defined(WITH_PARDISO)
       if( 0 == my_rank )
-         std::cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << std::endl;
+         std::cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << "\n";
       return new PardisoIndefSolver(kktmat, allreduce_kkt);
 #elif defined(WITH_MA57)
       if( 0 == my_rank )
-         std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << std::endl;
+         std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << "\n";
       return new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm);
 #elif defined(WITH_MA27)
       if( 0 == my_rank )
-         std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << std::endl;
+         std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << "\n";
       return new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm);
 #else
       assert( false && "No sparse solver available for sparse Schur complement -sLinsysRootAug" );
@@ -157,7 +157,7 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
    else
    {
       if( 0 == my_rank )
-         std::cout << "Using LAPACK dsytrf for dense summed Schur complement - sLinsysRootAug" << std::endl;
+         std::cout << "Using LAPACK dsytrf for dense summed Schur complement - sLinsysRootAug" << "\n";
 
       DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
 
@@ -533,7 +533,7 @@ void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
          tTotStg2Children += children[it]->stochNode->resMon.eLtsolve.tmLocal;
       }
       std::cout << "  rank " << myRank << " " << "Resid comp " << tTotResChildren << " " << "reduce " << tComm << " "
-            << "1stStage solve " << tStg1 << " " << "2ndStage solve " << tTotStg2Children << std::endl;
+            << "1stStage solve " << tStg1 << " " << "2ndStage solve " << tTotStg2Children << "\n";
    }
 #endif
 }
@@ -716,7 +716,7 @@ void sLinsysRootAug::solveReducedLinkCons( sData *prob, SimpleVector& b_vec)
 #ifdef TIMING
   if( myRank == 0 && innerSCSolve >= 1 )
     std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-       << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << std::endl;
+       << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
 #endif
 }
 
@@ -1135,7 +1135,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
   double relres;
   double iter=0.0;
   if( myRank == 0 )
-     std::cout << "initial norm of b " << n2b << std::endl;
+     std::cout << "initial norm of b " << n2b << "\n";
   taux = MPI_Wtime();
 #endif
   //initial guess
@@ -1165,7 +1165,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
   }
 
   if( myRank == 0 )
-      std::cout << "innerBICG starts: " << normr << " > " << tolb << std::endl;
+      std::cout << "innerBICG starts: " << normr << " > " << tolb << "\n";
 
   rt.copyFrom(r); //Shadow residual
   double* resvec = new double[2*maxit+1];
@@ -1390,7 +1390,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
 
   if( myRank == 0 )
      std::cout << "innerBICG: " << "ii=" << ii << " flag=" << flag << " normr=" << normr << " normr_act="
-        << normr_act << " tolb=" << tolb << std::endl;
+        << normr_act << " tolb=" << tolb << "\n";
 
   biCGStabCommunicateStatus(flag, ii);
 
@@ -1432,7 +1432,7 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables* vars)
 
       zDiagLinkCons->writefToStreamStats(std::cout, "zDiagLinkCons");
 
-      std::cout << "zDiagLinkCons zeroes: " << zerocount << std::endl;
+      std::cout << "zDiagLinkCons zeroes: " << zerocount << "\n";
    }
 #endif
 
@@ -1654,13 +1654,13 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables* vars)
          const double val = MKkt[i];
          const double col = jcolKkt[i];
          if( val != 0.0 )
-            myfile << r << " " << col << " " << val << std::endl;
+            myfile << r << " " << col << " " << val << "\n";
          else
             zerocount++;
       }
    }
 
-   std::cout << "zero-count " << zerocount << " of " << krowKkt[sizeKkt] << std::endl;
+   std::cout << "zero-count " << zerocount << " of " << krowKkt[sizeKkt] << "\n";
 
    myfile.close();
 
@@ -1822,7 +1822,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables* vars)
    for( int col = 0; col < msize; col++ )
       for( int row = col; row < msize; row++ )
          if( dKkt[row][col] != 0.0 )
-            myfile << col << " " << row << " " << dKkt[row][col] << std::endl;
+            myfile << col << " " << row << " " << dKkt[row][col] << "\n";
 
    myfile.close();
 
