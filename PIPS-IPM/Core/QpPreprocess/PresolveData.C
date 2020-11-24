@@ -1018,7 +1018,7 @@ void PresolveData::resetOriginallyFreeVarsBounds(const sData& orig_prob)
 
 #ifndef NDEBUG
    if(my_rank == 0)
-      std::cout << "Resetting all presolved variable bounds of originally free variables" <<::endl; 
+      std::cout << "Resetting all presolved variable bounds of originally free variables" << "\n";
 #endif
 
    long long n = 0;
