@@ -50,6 +50,8 @@ class Mc30Scaler : public SymmetricLinearScaler
       void unscaleVector( OoqpVector& vec_in ) const override;
 
    private:
+      void getFortranIndex(const int* rowM, const int* colM, int length, int max_index);
+
       std::vector<int> rowM_ft_indexed;
       std::vector<int> colM_ft_indexed;
 
@@ -58,8 +60,6 @@ class Mc30Scaler : public SymmetricLinearScaler
 
       int scaling_output_control;
       int scaling_error;
-
-      void getFortranIndex(const int* rowM, const int* colM, int length, int max_index);
 };
 
 #endif /* PIPSIPM_CORE_LINEARSOLVERS_MC30SCALER_H */
