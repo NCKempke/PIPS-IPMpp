@@ -15,8 +15,116 @@
 #include "sFactory.h"
 
 sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
-  : sLinsysRootAug(factory_, prob_, true)
+  : sLinsysRoot(factory_, prob_, true)
 {
+   assert(locmyl >= 0 && locmzl >= 0);
+
+   kkt = createKKT(prob_);
+   solver = createSolver(prob_, kkt);
+}
+
+void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
+{
+
+   /* Add corner block
+    * [ Q0 F0T G0T  ]
+    * [ F0  0   0   ]
+    * [ G0  0 OmN+1 ]
+    */
+   assert( prob->isHierarchieRoot() );
+
+   const SparseGenMatrix& F0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->A).bottom_left_block;
+   const SparseGenMatrix& G0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->C).bottom_left_block;
+   const SparseSymMatrix& Q0 = dynamic_cast<const SparseSymMatrix&>(*dynamic_cast<const BorderedSymMatrix&>(*prob->Q).top_left_block);
+
+   DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(*kkt);
+   int mSC, nSC; SC.getSize(mSC, nSC);
+   assert( mSC == nSC );
+
+   /////////////////////////////////////////////////////////////
+   // update the KKT with Q (DO NOT PUT DIAG)
+   /////////////////////////////////////////////////////////////
+   const int* krowQ0 = Q0.krowM();
+   const int* jcolQ0 = Q0.jcolM();
+   const double* MQ = Q0.M();
+
+   for( int rowQ = 0; rowQ < locnx; rowQ++)
+   {
+      for( int k = krowQ0[rowQ]; k < krowQ0[rowQ + 1]; ++k)
+      {
+         const int colQ = jcolQ0[k];
+         if( rowQ == colQ )
+            continue;
+         double val = MQ[k];
+         SC[rowQ][colQ] += val;
+         SC[colQ][rowQ] += val;
+
+         assert(0 && "non-empty Q currently not supported");
+      }
+   }
+
+   /////////////////////////////////////////////////////////////
+   // update the KKT with the diagonals
+   // xDiag is in fact diag(Q) + X^{-1} S
+   /////////////////////////////////////////////////////////////
+   if( xDiag )
+   {
+      SimpleVector& sxDiag = dynamic_cast<SimpleVector&>(*xDiag);
+      for( int i = 0; i < locnx; i++)
+         SC[i][i] += sxDiag[i];
+   }
+
+   /////////////////////////////////////////////////////////////
+   // update the KKT with F
+   /////////////////////////////////////////////////////////////
+   if( locmyl > 0 )
+   {
+      const double* MF0 = F0.M();
+      const int* krowF0 = F0.krowM();
+      const int* jcolF0 = F0.jcolM();
+
+      for( int rowF0 = 0; rowF0 < locmyl; ++rowF0)
+      {
+         for( int k = krowF0[rowF0]; k < krowF0[rowF0 + 1]; ++k )
+         {
+            const int colF0 = jcolF0[k];
+            assert(colF0 < locnx);
+
+            const double valF0 = MF0[k];
+            SC[locnx + rowF0][colF0] += valF0;
+            SC[colF0][locnx + rowF0] += valF0;
+         }
+      }
+   }
+
+
+   /////////////////////////////////////////////////////////////
+   // update the KKT with G and put z diagonal
+   /////////////////////////////////////////////////////////////
+   if( locmzl > 0 )
+   {
+      assert(zDiagLinkCons);
+      SimpleVector& szDiagLinkCons = dynamic_cast<SimpleVector&>(*zDiagLinkCons);
+
+      const double* MG0 = G0.M();
+      const int* krowG0 = G0.krowM();
+      const int* jcolG0 = G0.jcolM();
+
+      for( int rowG0 = 0; rowG0 < locmzl; ++rowG0 )
+      {
+         SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += szDiagLinkCons[rowG0];
+
+         for( int k = krowG0[rowG0]; k < krowG0[rowG0 + 1]; ++k )
+         {
+            const int colG0 = jcolG0[k];
+            assert( colG0 < locnx);
+
+            const double valG0 = MG0[k];
+            SC[locnx + locmyl + rowG0][colG0] += valG0;
+            SC[colG0][locnx + locmyl + rowG0] += valG0;
+         }
+      }
+   }
 }
 
 void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 )
@@ -114,6 +222,14 @@ void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
    this->children[0]->solveCompressed( b );
 }
 
+/* create kkt used to store Schur Complement of border layer */
+SymMatrix* sLinsysRootBordered::createKKT(sData* prob)
+{
+   const int n = locnx + locmyl + locmzl;
+
+   return new DenseSymMatrix(n);
+}
+
 void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 {
    assert( is_hierarchy_root );
@@ -130,4 +246,12 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 void sLinsysRootBordered::reduceKKT(sData* prob)
 {
    return;
+}
+
+DoubleLinearSolver* sLinsysRootBordered::createSolver(sData* prob, SymMatrix* kktmat_)
+{
+   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
+   return new DeSymIndefSolver(kktmat);
+   //return new DeSymIndefSolver2(kktmat, locnx); // saddle point solver
+   //return new DeSymPSDSolver(kktmat);
 }

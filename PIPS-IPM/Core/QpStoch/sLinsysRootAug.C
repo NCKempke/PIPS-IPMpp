@@ -54,9 +54,12 @@ static void biCGStabCommunicateStatus(int flag, int it)
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
-  : sLinsysRoot(factory_, prob_, is_hierarchy_root)
+sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
+  : sLinsysRoot(factory_, prob_), CtDC(nullptr)
 { 
+#ifdef HIERARCHICAL
+   assert( false && "should not end up here");
+#endif
    assert(locmyl >= 0 && locmzl >= 0);
 
    kkt = createKKT(prob_);
@@ -72,7 +75,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
 			       OoqpVector* rhs_)
-  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_)
+  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
 #ifdef HIERARCHICAL
    assert(locmyl >= 0 && locmzl >= 0);
@@ -92,13 +95,13 @@ sLinsysRootAug::~sLinsysRootAug()
   delete redRhs;
 }
 
-SymMatrix* sLinsysRootAug::createKKT(sData* prob)
+SymMatrix* 
+sLinsysRootAug::createKKT(sData* prob)
 {
    const int n = locnx + locmy + locmyl + locmzl;
 
    if( hasSparseKkt )
    {
-      assert( !is_hierarchy_root );
       SparseSymMatrix* sparsekkt;
 
       if( PIPS_MPIgetRank(mpiComm) == 0)
@@ -130,7 +133,6 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
 
    if( hasSparseKkt )
    {
-      assert( !is_hierarchy_root );
       SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
 
 #ifdef WITH_MUMPS_ROOT
@@ -175,9 +177,6 @@ static double t_start, troot_total, taux, tchild_total, tcomm_total;
 
 void sLinsysRootAug::finalizeKKT(sData* prob, Variables* vars)
 {
-   if( is_hierarchy_root )
-      assert( !hasSparseKkt );
-
   stochNode->resMon.recFactTmLocal_start();
   stochNode->resMon.recSchurMultLocal_start();
 
@@ -200,10 +199,7 @@ void sLinsysRootAug::finalizeKKT(sData* prob, Variables* vars)
 
 void sLinsysRootAug::finalizeKKTdist(sData* prob)
 {
-#ifdef HIERARCHICAL
-   assert( false && "not available in hierarchical mode ");
-#endif
-   assert(kkt && hasSparseKkt && prob );
+   assert(kkt && hasSparseKkt && prob);
 
    SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
