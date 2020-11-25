@@ -15,7 +15,6 @@ Ma27SolverRoot::Ma27SolverRoot( SparseSymMatrix * sgm, const std::string& name, 
  : Ma27Solver(sgm, name), solve_in_parallel(solve_in_parallel), comm(mpiComm)
 {
    threshold_pivoting_max = 0.1;
-   max_n_iter_refinement = 15;
    precision = 1e-10;
    assert(mpiComm != MPI_COMM_NULL);
 }
@@ -34,24 +33,26 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
 
-      if( rank == 0 )
-         printf("\n Schur complement factorization is starting ...\n ");
-
       freeWorkingArrays();
       mat_storage = matrixNewSym.getStorageHandle();
 
       init();
       matrixChanged();
 
-      if( rank == 0 )
-         printf("\n Schur complement factorization completed \n ");
    }
 }
 
 void Ma27SolverRoot::matrixChanged()
 {
+   if( PIPS_MPIgetRank() == 0 )
+      printf("\n Schur complement factorization is starting ...\n ");
+
    if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
       Ma27Solver::matrixChanged();
+
+   if( PIPS_MPIgetRank() == 0 )
+      printf("\n Schur complement factorization completed \n ");
+
 }
 
 void Ma27SolverRoot::solve(OoqpVector& rhs)
