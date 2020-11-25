@@ -200,7 +200,7 @@ template<typename T>
 SimpleVectorBase<T>::SimpleVectorBase( const SimpleVectorBase<T>& other )
    : SimpleVectorBase<T>( other.n )
 {
-   std::copy( other.v, other.v + n, v );
+   std::copy( other.v, other.v + this->n, v );
 }
 
 template<typename T>
