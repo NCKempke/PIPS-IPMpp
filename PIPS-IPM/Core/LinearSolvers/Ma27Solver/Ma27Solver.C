@@ -10,10 +10,11 @@
 #include "SimpleVectorHandle.h"
 
 #include <fstream>
+#include <algorithm>
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) : max_n_iter_refinement(10), precision(1e-7), threshold_pivoting_max(0.1),
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) :
        mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
 {
    init();
@@ -21,7 +22,7 @@ Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) : m
 
 void Ma27Solver::init()
 {
-   const double default_small_pivot = 1.0e-10;
+   const double default_small_pivot = 1e-10;
    const double default_threshold_pivoting = 0.5;
    /* detecting dense rows during the factorization to preserve sparsity */
    const double default_fratio = 0.5;
@@ -30,7 +31,7 @@ void Ma27Solver::init()
    assert( n > 0 );
    nnz = mat_storage->numberOfNonZeros();
 
-   FNAME(ma27id)(icntl, cntl);
+   FNAME(ma27id)(icntl.data(), cntl.data());
 
    this->setThresholdPivoting( default_threshold_pivoting );
    cntl[1] = default_fratio;
@@ -65,7 +66,7 @@ void Ma27Solver::firstCall()
   int tries = 0;
   do
   {
-     FNAME(ma27ad)( &n, &nnz, irowM.data(), jcolM.data(), iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl, cntl, info, &ops);
+     FNAME(ma27ad)( &n, &nnz, irowM.data(), jcolM.data(), iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl.data(), cntl.data(), info.data(), &ops);
      done = !checkErrorsAndReact();
      ++tries;
   }
@@ -73,18 +74,18 @@ void Ma27Solver::firstCall()
 
   if ( !done && tries > max_tries )
   {
-     std::cerr << "ERROR MA27: could not get ordering of matrix after max " << max_tries << " tries" << std::endl;
+     std::cerr << "ERROR MA27: could not get ordering of matrix after max " << max_tries << " tries" << "\n";
      MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
   delete [] iw;
   delete [] iw1;
 
-  la = rpessimism *  this->minimumRealWorkspace();
+  la = rpessimism * this->minimumRealWorkspace();
   fact.resize(la);
 
   // set iw and iw1 in prep for calls to ma27bd and ma27cd
-  liw = ipessimism *  this->minimumIntWorkspace();
+  liw = ipessimism * this->minimumIntWorkspace();
   iw = new int[liw];
   iw1 = new int[n];
 }  
@@ -94,6 +95,7 @@ void Ma27Solver::diagonalChanged( int /* idiag */, int /* extent */ )
   this->matrixChanged();
 }
 
+bool new_factor;
 void Ma27Solver::matrixChanged()
 {
    if( fact.size() == 0 )
@@ -101,6 +103,7 @@ void Ma27Solver::matrixChanged()
 
    bool done = false;
    int tries = 0;
+   new_factor = true;
    do
    {
       // copy M to fact
@@ -108,7 +111,7 @@ void Ma27Solver::matrixChanged()
       scaler->scaleMatrixTripletFormat( n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
 
       FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps,
-            &maxfrt, iw1, icntl, cntl, info);
+            &maxfrt, iw1, icntl.data(), cntl.data(), info.data());
 
       done = !checkErrorsAndReact();
       tries++;
@@ -117,7 +120,7 @@ void Ma27Solver::matrixChanged()
 
    if ( !done && tries > max_tries )
    {
-      std::cout << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << std::endl;
+      std::cout << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << "\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
@@ -154,7 +157,7 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
    /* obtain initial solution */
    scaler->scaleVector(*x);
    FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, x->elements(), iw1,
-         &nsteps, icntl, info);
+         &nsteps, icntl.data(), info.data());
    scaler->scaleVector(*x);
 
    /* start of iterative refinement */
@@ -184,7 +187,7 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             std::cout << "WARNING MA27 " << name << ": large residual " << error_x <<
-               " even after (" << icntl[1] << "/" << max_n_iter_refinement << ") iterative refinement steps" << std::endl;
+               " even after (" << icntl[1] << "/" << max_n_iter_refinement << ") iterative refinement steps" << "\n";
          done = true;
       }
       else if( kase == 0 )
@@ -194,7 +197,7 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
       else if( kase == 1 || kase == 2 )
       {
          FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, y->elements(), iw1,
-               &nsteps, icntl, info);
+               &nsteps, icntl.data(), info.data());
       }
    }
 
@@ -209,7 +212,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    for( int i = 0; i < rhs.length(); ++i )
       if( std::fabs(rhs[i]) > 1e50 )
       {
-         std::cout << "Big entry in right hand side vector..." << std::endl;
+         std::cout << "Big entry in right hand side vector..." << "\n";
          break;
       }
 #endif
@@ -249,7 +252,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       /* solve DAD y = D*residual */
       scaler->scaleVector(*residual);
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
-            &nsteps, icntl, info);
+            &nsteps, icntl.data(), info.data());
       /* Dy = x */
       scaler->scaleVector(*residual);
 
@@ -262,7 +265,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       /* res = res - A * drhs where A * drhs_out = drhs_in */
       rnorm = residual->twonorm();
 
-      if( PIPSisEQ(rnorm, res_last) || rnorm > 100 * best_resid )
+      if( PIPSisEQ(rnorm, res_last, 1e-7) || rnorm > 100 * best_resid )
          done = true;
       else
          res_last = rnorm;
@@ -285,8 +288,10 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          {
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             {
-               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << std::endl;
-               std::cout << " did not converge but still keeping the iterate" << std::endl;
+               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << "\n";
+               std::cout << " did not converge but still keeping the iterate" << "\n";
+
+               std::cout << "Error is " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required.. \n";
             }
          }
          else
@@ -294,61 +299,63 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
             setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
 
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-               std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing" << std::endl;
+               std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing" << "\n";
 
             done = false;
             n_iter_ref = 0;
 
             residual->copyFrom(rhs);
             iter->setToZero();
+            matrixChanged();
          }
-      }
 
+      }
    }
 
    rnorm = best_resid;
 
    if( rnorm >= precision * (1.0 + rhsnorm) )
    {
+      std::cout << "ERROR " << rnorm/(1.0 + rhsnorm) << " > " << precision << " (after " << n_iter_ref << " iter refs)\n";
 //      rhs_cpy->writeToStreamAll(std::cout);
-//      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required " << std::endl;
+//      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required " << "\n";
 //      best_iter->writeToStreamAll(std::cout);
 //      mat->writeToStreamDense(std::cout);
 //      assert( false );
-//      std::cout << "Writing K of local schur complement computation..." << std::endl;
+//      std::cout << "Writing K of local schur complement computation..." << "\n";
 //      std::ofstream myfile("../test.prb");
 //
-//      myfile << "n: " << n << std::endl;
-//      myfile << "nnz: " << nnz << std::endl;
+//      myfile << "n: " << n << "\n";
+//      myfile << "nnz: " << nnz << "\n";
 //
 //      myfile << "ia: ";
 //      for( int i = 0; i <= n; i++ )
 //         myfile << mat->getStorageRef().krowM[i] << ", ";
-//      myfile << std::endl;
+//      myfile << "\n";
 //
 //      myfile << "ja: ";
 //      for( int i = 0; i < nnz; i++ )
 //         myfile << mat->getStorageRef().jcolM[i] << ", ";
-//      myfile << std::endl;
+//      myfile << "\n";
 //
 //      myfile << "a: ";
 //      for( int i = 0; i < nnz; i++ )
 //         myfile << mat->getStorageRef().M[i] << ", ";
-//      myfile << std::endl;
+//      myfile << "\n";
 //
 //      myfile.close();
 //
-//      std::cout << "Writing rhs from local schur complement computation..." << std::endl;
+//      std::cout << "Writing rhs from local schur complement computation..." << "\n";
 //      myfile.open("../test.rhs");
 //
-//      std::cout << "sizerhs " << size_t(1) * size_t(n) <<  std::endl;
+//      std::cout << "sizerhs " << size_t(1) * size_t(n) <<  "\n";
 //
-//      myfile << "nrhs: " << 1 << std::endl;
+//      myfile << "nrhs: " << 1 << "\n";
 //
 //      myfile << "rhs: ";
 //      for( int i = 0; i < n; i++ )
 //         myfile << (*rhs_cpy)[i] << ", ";
-//      myfile << std::endl;
+//      myfile << "\n";
 //
 //      myfile.close();
 //
@@ -358,14 +365,19 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    rhs.copyFrom(*best_iter);
 
 #ifndef NDEBUG
-   for( int i = 0; i < rhs.length(); ++i )
-      if( std::fabs(rhs[i]) > 1e50 )
-         assert( false && "Big entry in solution vector..." );
+   auto pos = std::find_if( rhs.elements(), rhs.elements() + rhs.length(), []( double el ) { return std::fabs(el) > 1e50; });
+   if( pos != rhs.elements() + rhs.length() )
+   {
+      std::cout << *pos << "\n";
+      assert( false && "Big entry in solution vector... " );
+
+   }
 #endif
-//   /* sparsify rhs */
-//   for( int i = 0; i < rhs.length(); ++i )
-//      if( std::fabs(rhs[i]) < 1e-16 )
-//         rhs[i] = 0.0;
+
+   /* sparsify rhs */
+   std::transform( rhs.elements(), rhs.elements() + n, rhs.elements(), []( double el ){
+      return std::fabs(el) < 1e-16 ? 0 : el;
+   });
 }
 
 void Ma27Solver::copyMatrixElements( std::vector<double>& afact, int lafact ) const
@@ -446,18 +458,18 @@ bool Ma27Solver::checkErrorsAndReact()
          break;
       case -1 :
       {
-         std::cout << "ERROR MA27 " << name << ": N out of range or < -1: " << n << std::endl;
+         std::cout << "ERROR MA27 " << name << ": N out of range or < -1: " << n << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -2 :
       {
-         std::cout << "ERROR MA27 " << name << ": NNZ out of range or < -1 : " << nnz << std::endl;
+         std::cout << "ERROR MA27 " << name << ": NNZ out of range or < -1 : " << nnz << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -3 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": insufficient space in iw: " << liw << " suggest reset to " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": insufficient space in iw: " << liw << " suggest reset to " << error_info << "\n";
          ipessimism *= 1.1;
 
          assert( iw );
@@ -466,14 +478,14 @@ bool Ma27Solver::checkErrorsAndReact()
          liw = std::max( static_cast<int>(ipessimism * error_info), static_cast<int>(ipessimism * liw) );
          iw = new int[ liw ];
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << " resetting to " << liw << std::endl;
+            std::cout << " resetting to " << liw << "\n";
 
          error = true;
       }; break;
       case -4 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": insufficient factorization space: " << la << std::endl;;
+            std::cout << "WARNING MA27 " << name << ": insufficient factorization space: " << la << "\n";;
          rpessimism *= 1.1;
 
          la = std::max( static_cast<int>(rpessimism * error_info), static_cast<int>(rpessimism * la) );
@@ -481,25 +493,25 @@ bool Ma27Solver::checkErrorsAndReact()
 
          this->copyMatrixElements(fact, la);
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << " resetting to " << la << std::endl;
+            std::cout << " resetting to " << la << "\n";
 
          error = true;
       } break;
       case -5:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": matrix apparently numerically singular, detected at stage " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": matrix apparently numerically singular, detected at stage " << error_info << "\n";
 
          if( getSmallPivot() <= threshold_pivtol )
          {
-            std::cout << " cannot decrease pivtol anymore -- accepting factorization anyway" << std::endl;
+            std::cout << " cannot decrease pivtol anymore -- accepting factorization anyway" << "\n";
             assert( getSmallPivot() == threshold_pivtol );
          }
          else
          {
             const double curr_pivtol = getSmallPivot();
             const double new_pivtol = std::max( threshold_pivtol, curr_pivtol * threshold_pivtol_factor );
-            std::cout << " decreasing pivtol from " << curr_pivtol << " to " << new_pivtol << std::endl;
+            std::cout << " decreasing pivtol from " << curr_pivtol << " to " << new_pivtol << "\n";
 
             setSmallPivot( new_pivtol );
          }
@@ -507,27 +519,50 @@ bool Ma27Solver::checkErrorsAndReact()
       case -6:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": change of sign of pivots detected at stage " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": change of sign of pivots detected at stage " << error_info << "\n";
       }; break;
       case -7:
       {
-         std::cerr << "ERROR MA27 " << name << ": value of NSTEPS out of range " << nsteps << " (should not happen..) " << std::endl;
+         std::cerr << "ERROR MA27 " << name << ": value of NSTEPS out of range " << nsteps << " (should not happen..) " << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case 1 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored" << std::endl;
+            std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored" << "\n";
       }; break;
       case 2 :
       {
-         std::cerr << "ERROR MA27 " << name << ": change of sign in pivots detected when matrix is supposedly definite" << std::endl;
+         std::cerr << "ERROR MA27 " << name << ": change of sign in pivots detected when matrix is supposedly definite" << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       } break;
       case 3:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << std::endl;
+            std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << " != n : " << this->n << "\n";
+
+         static double last_pert = 1e-14;
+
+         double pert = 0;
+         if( new_factor )
+            pert = last_pert;
+         else
+            pert *= 10;
+
+         int n,m; mat_storage->getSize(m,n);
+         assert( m == n );
+         std::cout << "PERTURBATION! " << pert << "\n";
+         for ( int i = 0; i < m; i++ )
+         {
+            for( int k = mat_storage->krowM[i]; k < mat_storage->krowM[i+1]; k++ )
+            {
+               int j = mat_storage->jcolM[k];
+               if ( i == j )
+                  mat_storage->M[k] += pert;
+            }
+         }
+         error = true;
+
       }; break;
       default :
       {

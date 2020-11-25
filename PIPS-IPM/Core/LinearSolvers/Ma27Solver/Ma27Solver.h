@@ -64,37 +64,41 @@ extern "C"
 class Ma27Solver : public DoubleLinearSolver {
 
 protected:
-  int     icntl[30];
-  int     info[20];
-  double  cntl[5];
-
   int minimumRealWorkspace() { return info[4]; }
   int minimumIntWorkspace() { return info[5]; }
 
-  const int max_tries = 8;
+  /**
+   * control structures for MA27
+   */
+  std::vector<int> icntl = std::vector<int>(30);
+  std::vector<int> info = std::vector<int>(20);
+  std::vector<double> cntl = std::vector<double>(5);
 
-  int max_n_iter_refinement;
-
-  const int ooqp_print_level_warnings = 10000;
-
-  /** precision we demand from the linear system solver. If it isn't
+  /** Precision required from linear system solver. If it isn't
    * attained on the first solve, we use iterative refinement and
-   * possibly refactorization with a higher value of
-   * kThresholdPivoting. */
-  double precision;
+   * possibly refactorization (with regularization) and a higher value of
+   * kThresholdPivoting.
+   */
+  double precision = 1e-7;
 
   /** the Threshold Pivoting parameter may need to be increased during
    * the algorithm if poor precision is obtained from the linear
    * solves.  kThresholdPivoting indicates the largest value we are
    * willing to tolerate.  */
-  double threshold_pivoting_max;
+  double threshold_pivoting_max = 0.01;
+
+  const int max_tries = 8;
+
+  const int max_n_iter_refinement = 10;
+
+  const int ooqp_print_level_warnings = 1000;
 
   /** During factorization entries smaller than small pivot will not
    * be accepted as pivots and the matrix will be treated as singular.
    *
    * This is the max we are willing to go with our pivots.
    */
-  const double threshold_pivtol = 1e-14;
+  const double threshold_pivtol = 1e-8;
   const double threshold_pivtol_factor = 0.1;
 
   /** the factor in the range (1,inf) by which kThresholdPivoting is
