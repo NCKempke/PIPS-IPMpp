@@ -6,6 +6,7 @@
  */
 #include "Mc30Scaler.h"
 #include "SimpleVector.h"
+#include <algorithm>
 
 Mc30Scaler::Mc30Scaler() : scaling_output_control(1), scaling_error(0)
 {
@@ -24,16 +25,13 @@ void Mc30Scaler::getFortranIndex(const int* rowM, const int* colM, int length, i
       colM_ft_indexed.resize(length);
    }
 
-   for( int i = 0; i < length; ++i )
-   {
-      assert( rowM[i] + 1 <= max_index );
-      assert( colM[i] + 1 <= max_index );
-      assert( 0 <= rowM[i] );
-      assert( 0 <= colM[i] );
+   auto transform_index = [max_index]( int c_idx ){
+      assert( c_idx + 1 < max_index );
+      return c_idx + 1;
+   };
 
-      rowM_ft_indexed[i] = rowM[i] + 1;
-      colM_ft_indexed[i] = colM[i] + 1;
-   }
+   std::transform( rowM, rowM + length, rowM_ft_indexed.begin(), transform_index );
+   std::transform( colM, colM + length, colM_ft_indexed.begin(), transform_index );
 }
 
 void Mc30Scaler::scaleMatrixTripletFormat( int n, int nnz, double* M, const int* rowM, const int* colM, bool fortran_indexed )
