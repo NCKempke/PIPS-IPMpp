@@ -27,6 +27,7 @@ protected:
 public:
   SimpleVectorBase( int nx = 0 );
   SimpleVectorBase( T * v, int nx );
+  SimpleVectorBase( const SimpleVectorBase<T>& other );
   //@{
   /**
    * Access the individual elements of this vector.

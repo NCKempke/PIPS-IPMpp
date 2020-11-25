@@ -168,11 +168,11 @@ void SimpleVectorBase<T>::copyFromArray( const char w[] )
 template<typename T>
 SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
 {
-  assert(this->n >= 0);
   preserveVec = 0;
   v = new T[this->n];
-  assert(v);
-  memset(v, 0, this->n * sizeof(T));
+
+  std::uninitialized_fill(v, v + this->n, T{} );
+//  memset(v, 0, this->n * sizeof(T));
 }
 
 template<typename T>
@@ -194,6 +194,13 @@ void SimpleVectorBase<T>::pushAwayFromZero( double tol, double amount, const Ooq
       if( PIPSisZero( v[i], tol ) )
          v[i] += amount;
    }
+}
+
+template<typename T>
+SimpleVectorBase<T>::SimpleVectorBase( const SimpleVectorBase<T>& other )
+   : SimpleVectorBase<T>( other.n )
+{
+   std::copy( other.v, other.v + n, v );
 }
 
 template<typename T>
