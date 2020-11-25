@@ -34,8 +34,8 @@ bool StochPresolverSingletonColumns::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
    {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-      std::cout << "--- Before singleton columns presolving:" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "--- Before singleton columns presolving:" << "\n";
    }
    countRowsCols();
 #endif
@@ -44,7 +44,7 @@ bool StochPresolverSingletonColumns::applyPresolving()
    if( presData.getSingletonCols().empty() )
    {
       if( my_rank == 0 && verbosity > 1 )
-         std::cout << "No more singletons left - exiting" << std::endl;
+         std::cout << "No more singletons left - exiting" << "\n";
    }
 #endif
 
@@ -135,15 +135,15 @@ bool StochPresolverSingletonColumns::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
    {
-      std::cout << "--- After singleton columns presolving:" << std::endl;
-      std::cout << "\tRemoved columns during singleton column elimination: " << removed_cols << std::endl;
+      std::cout << "--- After singleton columns presolving:" << "\n";
+      std::cout << "\tRemoved columns during singleton column elimination: " << removed_cols << "\n";
    }
    else if( my_rank == 0 && verbosity == 1 )
-      std::cout << "SinCol:\t removed " << removed_cols << " cols" << std::endl;
+      std::cout << "SinCol:\t removed " << removed_cols << " cols" << "\n";
 
    countRowsCols();
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
    assert(presData.reductionsEmpty());

@@ -94,7 +94,7 @@ public:
       }
       else
       {
-         out << "INDEX(EMPTY_INDEX)" << std::endl;
+         out << "INDEX(EMPTY_INDEX)";
       }
       return out;
    }

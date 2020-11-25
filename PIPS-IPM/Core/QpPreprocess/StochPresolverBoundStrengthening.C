@@ -56,14 +56,14 @@ bool StochPresolverBoundStrengthening::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1)
    {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-      std::cout << "--- Before Bound Strengthening Presolving:" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "--- Before Bound Strengthening Presolving:" << "\n";
    }
    countRowsCols();
 #endif
 
    if( my_rank == 0 && verbosity > 1)
-      std::cout << "Start Bound Strengthening Presolving..." << std::endl;
+      std::cout << "Start Bound Strengthening Presolving..." << "\n";
 
 
    int iter = 0;
@@ -117,12 +117,12 @@ bool StochPresolverBoundStrengthening::applyPresolving()
 #ifndef NDEBUG
    tightenings = PIPS_MPIgetSum(tightenings, MPI_COMM_WORLD);
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After " << iter << " rounds of bound strengthening and " << tightenings << " times of tightening bounds:" << std::endl;
+      std::cout << "--- After " << iter << " rounds of bound strengthening and " << tightenings << " times of tightening bounds:" << "\n";
    if( my_rank == 0 && verbosity == 1 )
-      std::cout << "Tight:\t tightened " << tightenings << std::endl;
+      std::cout << "Tight:\t tightened " << tightenings << "\n";
    countRowsCols();
    if( my_rank == 0 && verbosity > 1)
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
 
