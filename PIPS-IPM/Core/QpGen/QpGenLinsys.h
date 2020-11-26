@@ -10,6 +10,8 @@
 #include "OoqpVector.h"
 #include "Observer.h"
 
+#include <functional>
+
 class Data;
 class QpGenData;
 class QpGen;
@@ -190,10 +192,8 @@ public:
                OoqpVector& soly,
                OoqpVector& solz);
 
-  virtual void solveCompressedBiCGStab(OoqpVector& stepx,
-				       OoqpVector& stepy,
-				       OoqpVector& stepz,
-				       QpGenData* data);
+  void solveCompressedBiCGStab( const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm );
+
   virtual void solveCompressedIterRefin(OoqpVector& stepx,
 					OoqpVector& stepy,
 					OoqpVector& stepz,

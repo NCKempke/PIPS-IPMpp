@@ -21,6 +21,7 @@
 #include <limits>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <fstream>
 
 extern int gOuterBiCGIter;
@@ -477,7 +478,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     solveCompressedIterRefin(stepx,stepy,stepz,prob);
 
-  } else if( true || outerSolve == 0 ) {
+  } else if( false || outerSolve == 0 ) {
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
@@ -491,8 +492,18 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     // BiCGStab
     ///////////////////////////////////////////////////////////////
-    solveCompressedBiCGStab(stepx,stepy,stepz,prob);
+
+    auto matMult = std::bind( &QpGenLinsys::matXYZMult, this, std::placeholders::_1, std::placeholders::_2,
+          std::placeholders::_3, std::placeholders::_4, prob, std::ref(stepx), std::ref(stepy), std::ref(stepz) );
+
+    auto matInfnorm = std::bind( &QpGenLinsys::matXYZinfnorm, this, std::ref(prob), std::ref(stepx), std::ref(stepy), std::ref(stepz) );
+
+    this->joinRHS( *rhs, stepx, stepy, stepz );
+    solveCompressedBiCGStab( matMult, matInfnorm );
+    this->separateVars( stepx, stepy, stepz, *sol );
+
     /* notify observers about result of BiCGStab */
+
     notifyObservers();
 
   }
@@ -528,13 +539,8 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   steps.negate();
 }
 
-void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
-                 OoqpVector& stepy,
-                 OoqpVector& stepz,
-                 QpGenData* data)
+void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm )
 {
-   this->joinRHS(*rhs, stepx, stepy, stepz);
-
    //aliases
    OoqpVector &r0 = *res2, &dx = *sol2, &best_x = *sol3, &v = *res3, &t = *res4, &p = *res5;
    OoqpVector &x = *sol, &r = *res, &b = *rhs;
@@ -558,7 +564,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
 
    //initial residual: res = b - Ax
    r.copyFrom(b);
-   matXYZMult(1.0, r, -1.0, x, data, stepx, stepy, stepz);
+   matMult( 1.0, r, -1.0, x );
 
    double normr = r.twonorm(), normr_min = normr;
    best_x.copyFrom(x);
@@ -569,7 +575,6 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    //quick return if solve is accurate enough
    if( normr <= tolb )
    {
-      this->separateVars(stepx, stepy, stepz, x);
 
       bicg_conv_flag = 1;
       biCGStabCommunicateStatus(bicg_conv_flag, bicg_niterations);
@@ -581,7 +586,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    if( outer_bicg_print_statistics )
    {
       const double infb = b.infnorm();
-      const double glbinfnorm = matXYZinfnorm(data, stepx, stepy, stepz);
+      const double glbinfnorm = matInfnorm();
       const double xonenorm = x.onenorm();
 
       if( myRank == 0 )
@@ -634,7 +639,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
          solveCompressed(dx);
 
          //mat-vec: v = K*ph
-         matXYZMult(0.0, v, 1.0, dx, data, stepx, stepy, stepz);
+         matMult(0.0, v, 1.0, dx);
 
          const double rtv = r0.dotProductWith(v);
 
@@ -661,7 +666,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
             //compute the actual residual
             OoqpVector& res = dx; //use dx
             res.copyFrom(b);
-            matXYZMult(1.0, res, -1.0, x, data, stepx, stepy, stepz);
+            matMult(1.0, res, -1.0, x);
 
             bicg_resnorm = res.twonorm();
             if( bicg_resnorm <= tolb )
@@ -680,7 +685,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
          solveCompressed(dx);
 
          //mat-vec
-         matXYZMult(0.0, t, 1.0, dx, data, stepx, stepy, stepz);
+         matMult(0.0, t, 1.0, dx);
 
          const double tt = t.dotProductSelf(1.0);
 
@@ -706,7 +711,7 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
             //compute the actual residual
             OoqpVector& res = dx; //use dx
             res.copyFrom(b);
-            matXYZMult(1.0, res, -1.0, x, data, stepx, stepy, stepz);
+            matMult(1.0, res, -1.0, x);
 
             bicg_resnorm = res.twonorm();
 
@@ -764,8 +769,6 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
    bicg_relresnorm = bicg_resnorm / n2b;
    biCGStabCommunicateStatus(bicg_conv_flag, std::max(bicg_niterations, 1));
    biCGStabPrintStatus(bicg_conv_flag, std::max(bicg_niterations, 1), bicg_relresnorm, normr / n2b);
-
-   this->separateVars(stepx, stepy, stepz, x);
 }
 
 /**
