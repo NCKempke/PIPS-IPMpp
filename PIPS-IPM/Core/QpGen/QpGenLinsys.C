@@ -289,11 +289,13 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
 				    OoqpVector& v,  OoqpVector& gamma,
 				    OoqpVector& w,  OoqpVector& phi )
 {
+  /*** dd = dQ + Gamma/V + Phi/W ***/
   if( nxupp + nxlow > 0 ) {
     if( nxlow > 0 ) dd_.axdzpy( 1.0, gamma, v, *ixlow );
     if( nxupp > 0 ) dd_.axdzpy( 1.0, phi  , w, *ixupp );
   }
   omega.setToZero();
+  /*** omega = Lambda/T + Pi/U ***/
   if ( mclow > 0 ) omega.axdzpy( 1.0, lambda, t, *iclow );
   if ( mcupp > 0 ) omega.axdzpy( 1.0, pi,     u, *icupp );
   // assert( omega.allPositive() );
@@ -311,54 +313,61 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
   assert( vars->validNonZeroPattern() );
   assert( res ->validNonZeroPattern() );
   
-  /* x = rQ */
+  /*** compute rX ***/
+  /* rx = rQ */
   step->x->copyFrom( *res->rQ );
-  if( nxlow > 0 ) {
-    OoqpVector & vInvGamma = *step->v;
-    vInvGamma.copyFrom( *vars->gamma );
-    vInvGamma.divideSome( *vars->v, *ixlow );
+  if( nxlow > 0 )
+  {
+    OoqpVector& gamma_by_v = *step->v;
+    gamma_by_v.copyFrom( *vars->gamma );
+    gamma_by_v.divideSome( *vars->v, *ixlow );
 	
-    /* x = rQ + Gamma/V * rv */
-    step->x->axzpy ( 1.0, vInvGamma, *res->rv );
-    /* x = rQ + Gamma/V * rv + rGamma/V */
+    /* rx = rQ + Gamma/V rv */
+    step->x->axzpy ( 1.0, gamma_by_v, *res->rv );
+    /* rx = rQ + Gamma/V rv + rGamma/V */
     step->x->axdzpy( 1.0, *res->rgamma, *vars->v, *ixlow );
   }
+
   if( nxupp > 0 ) {
-    OoqpVector & wInvPhi   = *step->w;
-    wInvPhi.copyFrom( *vars->phi );
-    wInvPhi.divideSome( *vars->w, *ixupp );
+    OoqpVector& phi_by_w = *step->w;
+    phi_by_w.copyFrom( *vars->phi );
+    phi_by_w.divideSome( *vars->w, *ixupp );
 	  
-    /* x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
-    step->x->axzpy (  1.0, wInvPhi,   *res->rw );
-    /* x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
+    /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
+    step->x->axzpy ( 1.0, phi_by_w, *res->rw );
+    /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
     step->x->axdzpy( -1.0, *res->rphi, *vars->w, *ixupp );
   }
+
   // start by partially computing step->s
+  /*** compute rs ***/
   /* step->s = rz */
   step->s->copyFrom( *res->rz );
   if( mclow > 0 ) {
-    OoqpVector & tInvLambda = *step->t;
-    tInvLambda.copyFrom( *vars->lambda );
-    tInvLambda.divideSome( *vars->t, *iclow );
+    OoqpVector & lambda_by_t = *step->t;
+    lambda_by_t.copyFrom( *vars->lambda );
+    lambda_by_t.divideSome( *vars->t, *iclow );
 
     /* step->s = rz + Lambda/T * rt */
-    step->s->axzpy( 1.0, tInvLambda, *res->rt );
+    step->s->axzpy( 1.0, lambda_by_t, *res->rt );
     /* step->s = rz + Lambda/T * rt + rlambda/T */
     step->s->axdzpy( 1.0, *res->rlambda, *vars->t, *iclow );
   }
 
   if( mcupp > 0 ) {
-    OoqpVector & uInvPi = *step->u;
-    uInvPi.copyFrom( *vars->pi );
-    uInvPi.divideSome( *vars->u, *icupp );
+    OoqpVector & pi_by_u = *step->u;
+    pi_by_u.copyFrom( *vars->pi );
+    pi_by_u.divideSome( *vars->u, *icupp );
 
     /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-    step->s->axzpy(  1.0, uInvPi, *res->ru );
+    step->s->axzpy(  1.0, pi_by_u, *res->ru );
     /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
     step->s->axdzpy( -1.0, *res->rpi, *vars->u, *icupp );
   }
 
+  /*** ry = rA ***/
   step->y->copyFrom( *res->rA );
+  /*** rz = rC ***/
   step->z->copyFrom( *res->rC );
 
   {
@@ -376,43 +385,54 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
   }
 
   if( mclow > 0 ) {
+    /* Dt = Ds - rt */
     step->t->copyFrom( *step->s );
     step->t->axpy( -1.0, *res->rt );
     step->t->selectNonZeros( *iclow );
 
+    /* Dlambda = T^-1 (rlambda - Lambda * Dt ) */
     step->lambda->copyFrom( *res->rlambda );
     step->lambda->axzpy( -1.0, *vars->lambda, *step->t );
     step->lambda->divideSome( *vars->t, *iclow );
     //!
     step->lambda->selectNonZeros( *iclow );
   }
+
   if( mcupp > 0 ) {
+    /* Du = ru - Ds */
     step->u->copyFrom( *res->ru );
     step->u->axpy( -1.0, *step->s );
     step->u->selectNonZeros( *icupp );
 
+    /* Dpi = U^-1 ( rpi - Pi * Du ) */
     step->pi->copyFrom( *res->rpi );
     step->pi->axzpy( -1.0, *vars->pi, *step->u );
     step->pi->divideSome( *vars->u, *icupp );
     //!
     step->pi->selectNonZeros( *icupp );
   }
+
   if( nxlow > 0 ) {
+    /* Dv = Dx - rv */
     step->v->copyFrom( *step->x );
     step->v->axpy( -1.0, *res->rv );
     step->v->selectNonZeros( *ixlow );
 	
+    /* Dgamma = V^-1 ( rgamma - Gamma * Dv ) */
     step->gamma->copyFrom( *res->rgamma );
     step->gamma->axzpy( -1.0, *vars->gamma, *step->v );
     step->gamma->divideSome( *vars->v, *ixlow );
     //!
     step->gamma->selectNonZeros( *ixlow );
   }
+
   if( nxupp > 0 ) {
+    /* Dw = rw - Dx */
     step->w->copyFrom( *res->rw );
     step->w->axpy( -1.0, *step->x );
     step->w->selectNonZeros( *ixupp );
 	
+    /* Dphi = W^-1 ( rphi - Phi * Dw ) */
     step->phi->copyFrom( *res->rphi );
     step->phi->axzpy( -1.0, *vars->phi, *step->w );
     step->phi->divideSome( *vars->w, *ixupp );
@@ -429,12 +449,12 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 			       OoqpVector& /* ztemp */,
 			       QpGenData* prob )
 {
-  /* step->x = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
-  /* step->y = rA */
-  /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
   /* step->z = rC */
+  /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
-   /* rz = rC - */
+  /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
+  /* ry = rA */
+  /* rz = rC + Omega^-1 ( rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U ) */
   stepz.axzpy( -1.0, *nomegaInv, steps );
 
   OoqpVector * residual = nullptr;
@@ -457,7 +477,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     solveCompressedIterRefin(stepx,stepy,stepz,prob);
 
-  } else if( outerSolve == 0 ) {
+  } else if( true || outerSolve == 0 ) {
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
@@ -502,6 +522,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   stepy.negate();
   stepz.negate();
 	
+  /* Ds = Omega^-1 (rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U - Dz ) */
   steps.axpy( -1.0, stepz );
   steps.componentMult( *nomegaInv );
   steps.negate();
