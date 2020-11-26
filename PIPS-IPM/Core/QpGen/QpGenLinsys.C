@@ -472,22 +472,30 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
         std::cout << "rhsx norm : " << xinf << ",\trhsy norm : " << yinf << ",\trhsz norm : " << zinf << std::endl;
   }
 
-  if( outerSolve == 1 ) {
+  assert( rhs );
+  this->joinRHS( *rhs, stepx, stepy, stepz );
+
+  if( outerSolve == 1 )
+  {
     ///////////////////////////////////////////////////////////////
     // Iterative refinement
     ///////////////////////////////////////////////////////////////
     solveCompressedIterRefin(stepx,stepy,stepz,prob);
 
-  } else if( false || outerSolve == 0 ) {
+    this->separateVars(stepx, stepy, stepz, *sol);
+
+  }
+  else if( false || outerSolve == 0 )
+  {
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
-    assert( rhs );
-    this->joinRHS( *rhs, stepx, stepy, stepz );
     this->solveCompressed( *rhs );
     this->separateVars( stepx, stepy, stepz, *rhs );
 
-  } else {
+  }
+  else
+  {
     assert( outerSolve == 2 );
     ///////////////////////////////////////////////////////////////
     // BiCGStab
@@ -498,8 +506,8 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
     auto matInfnorm = std::bind( &QpGenLinsys::matXYZinfnorm, this, std::ref(prob), std::ref(stepx), std::ref(stepy), std::ref(stepz) );
 
-    this->joinRHS( *rhs, stepx, stepy, stepz );
     solveCompressedBiCGStab( matMult, matInfnorm );
+
     this->separateVars( stepx, stepy, stepz, *sol );
 
     /* notify observers about result of BiCGStab */
@@ -848,54 +856,64 @@ void QpGenLinsys::solveCompressedIterRefin(OoqpVector& stepx,
 					   OoqpVector& stepz,
 					   QpGenData* prob)
 {
-  this->joinRHS( *rhs, stepx, stepy, stepz );
 #ifdef TIMING
     int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     vector<double> histRelResid;
 
     double tTot=MPI_Wtime(), tSlv=0., tResid=0., tTmp;
 #endif
-    res->copyFrom(*rhs);
-    sol->setToZero();
-    double bnorm=rhs->twonorm();
-    int refinSteps=-1;  double resNorm;
+   assert( res );
+   assert( sol );
 
-    do{
+   res->copyFrom(*rhs);
+   sol->setToZero();
+
+   const double bnorm = rhs->twonorm();
+   const double tol_iter_ref = 1e-9;
+   const int max_iter_ref_steps = 20;
+
+   int n_refin_steps = -1;
+
+   do
+   {
 #ifdef TIMING
       tTmp=MPI_Wtime();
 #endif
-      this->solveCompressed( *res );
+
+      this->solveCompressed(*res);
+
 #ifdef TIMING
       tSlv += (MPI_Wtime()-tTmp);
 #endif
 
-      //x = x+dx
+      //x = x + dx
       sol->axpy(1.0, *res);
-      refinSteps++;
-      
+      n_refin_steps++;
 
 #ifdef TIMING
       tTmp=MPI_Wtime();
 #endif
-      res->copyFrom(*rhs);    
+      res->copyFrom(*rhs);
+
       //  stepx, stepy, stepz are used as temporary buffers
-      computeResidualXYZ( *sol, *res, stepx, stepy, stepz, prob );
+      computeResidualXYZ(*sol, *res, stepx, stepy, stepz, prob);
 #ifdef TIMING
       tResid += (MPI_Wtime()-tTmp);
 #endif 
 
-      resNorm=res->twonorm(); 
+      const double rel_res_norm = res->twonorm() / bnorm;
 #ifdef TIMING
       histRelResid.push_back(resNorm/bnorm);
       //histRelResidInf.push_back(res->infnorm()/bnorm);
       //if(0==myRank) cout << "resid.nrm xyz: " << resNorm << "   "
       //		 << "rhs.nrm xyz: " << bnorm << endl;
 #endif      
-      
-      if( resNorm / bnorm < 1e-9)
-	break;
 
-    } while(true);
+      if( rel_res_norm < tol_iter_ref || n_refin_steps < max_iter_ref_steps )
+         break;
+   }
+   while( true );
+
 #ifdef TIMING
     tTot = MPI_Wtime() - tTot;
     if(0==myRank) {// && refinSteps>0)  {
@@ -909,7 +927,6 @@ void QpGenLinsys::solveCompressedIterRefin(OoqpVector& stepx,
 	   << "  total=" << tTot << endl; 
     }
 #endif
-    this->separateVars( stepx, stepy, stepz, *sol );
 }
 
 /**
