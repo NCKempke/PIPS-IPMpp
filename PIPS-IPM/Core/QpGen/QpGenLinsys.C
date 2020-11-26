@@ -814,11 +814,11 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
 
   /* resy = beta resy + alpha A solx */
   data->Amult(beta, *resy, alpha, solx);
-  //cout << "resy norm: " << resy->twonorm() << endl;
+
   /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
   data->Cmult(beta, *resz, alpha, solx);
   resz->axzpy(alpha, *nomegaInv, solz);
-  //cout << "resz norm: " << resz->twonorm() << endl;
+
   this->joinRHS( res, *resx, *resy, *resz );
 }
 
