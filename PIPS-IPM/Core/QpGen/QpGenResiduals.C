@@ -98,6 +98,20 @@ QpGenResiduals::QpGenResiduals( const QpGenResiduals& res) : Residuals(res)
   rphi = OoqpVectorHandle(res.rphi->cloneFull());
 }
 
+double updateNormAndPrint( double norm, const OoqpVector& vec, bool print, std::string&& name )
+{
+   const double infnorm = vec.infnorm();
+
+   if( print )
+   {
+      const double twonorm = vec.twonorm();
+
+      if( 0 == PIPS_MPIgetRank() )
+         std::cout << name << " infnorm = " << infnorm << " | twonorm = " << twonorm << "\n";
+   }
+
+   return std::max( norm, infnorm );
+}
 
 void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_resids)
 {
@@ -108,13 +122,13 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   QpGenVars * vars = (QpGenVars *) vars_in;
   QpGenData * prob = (QpGenData *) prob_in;
 
-  double componentNorm, norm = 0.0, gap = 0.0;
+  double norm = 0.0, gap = 0.0;
  
-  /* rQ = g + Qx - y - z - gamma - phi */
+  /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
   prob->getg( *rQ );
   prob->Qmult( 1.0, *rQ,  1.0, *vars->x );
 
-  /* calculate x^T (g + Qx) - contribution to the duality gap */
+  // contribution calculate x^T (g + Qx) to duality gap */
   gap += rQ->dotProductWith(*vars->x); 
 
   prob->ATransmult( 1.0, *rQ, -1.0, *vars->y );
@@ -125,163 +139,88 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   if( nxlow > 0 ) rQ->axpy( -1.0, *vars->gamma );
   if( nxupp > 0 ) rQ->axpy(  1.0, *vars->phi );
 
-  componentNorm = rQ->infnorm();
+  norm = updateNormAndPrint( norm, *rQ, print_resids, "rQ");
 
-  if( print_resids )
-  {
-     const double rQtwonorm=rQ->twonorm();
-     if( 0 == myRank )
-     {
-//        std::cout << gap << std::endl;
-        std::cout << " rQ infnorm = " << componentNorm << " | twonorm = " << rQtwonorm << std::endl;
-     }
-  }
-
-  if( componentNorm > norm ) norm = componentNorm;
-
+  /*** rA = Ax - b ***/
   prob->getbA( *rA );
   prob->Amult( -1.0, *rA, 1.0, *vars->x );
 
-  //printf("gap2=%20.16f\n", gap);
-  
-  // contribution -d^T y to duality gap
+  norm = updateNormAndPrint( norm, *rA, print_resids, "rA");
+
+  // contribution -b^T y to duality gap
   gap -= prob->bA->dotProductWith(*vars->y);
 
-  componentNorm = rA->infnorm();
-  if( print_resids )
-  {
-     if( 0 == myRank )
-     {
-//        std::cout << gap << std::endl;
-        std::cout << " rA norm = " << componentNorm << std::endl;
-     }
-  }
-  if( componentNorm > norm ) norm = componentNorm;
-
+  /*** rC = Cx - s ***/
   rC->copyFrom( *vars->s );
   prob->Cmult( -1.0, *rC, 1.0, *vars->x );
 
-  componentNorm = rC->infnorm();
-  if( print_resids )
-  {
-     if( 0 == myRank )
-        std::cout << " rC norm = " << componentNorm << std::endl;
-  }
-  if( componentNorm > norm ) norm = componentNorm;
+  norm = updateNormAndPrint( norm, *rC, print_resids, "rC");
 
+  /*** rz = z - lambda + pi ***/
   rz->copyFrom( *vars->z );
 
-  if( mclow > 0 ) {
+  if( mclow > 0 )
     rz->axpy( -1.0, *vars->lambda );
-
-#ifdef TIMING
-    componentNorm =  (vars->lambda)->infnorm();
-    if( 0 == myRank )
-       std::cout << "lambda norm " << componentNorm << std::endl;
-#endif
-
-
-    rt->copyFrom( *vars->s );
-    rt->axpy( -1.0, prob->slowerBound() );
-    rt->selectNonZeros( *iclow );
-    rt->axpy( -1.0, *vars->t );
-    gap -= prob->bl->dotProductWith(*vars->lambda);
-
-    componentNorm = rt->infnorm();
-    if( print_resids )
-    {
-       if( 0 == myRank )
-       {
-//          std::cout << gap << std::endl;
-          std::cout << " rt norm = " << componentNorm << std::endl;
-       }
-    }
-    if( componentNorm > norm ) norm = componentNorm;
-  }
   if( mcupp > 0 )
-  {
     rz->axpy(  1.0, *vars->pi );
-#ifdef TIMING
-    componentNorm = (vars->pi)->infnorm();
-    if( 0 == myRank )
-       std::cout << "pi norm " << componentNorm << std::endl;
-#endif
 
-    ru->copyFrom( *vars->s );
-    ru->axpy( -1.0, prob->supperBound() );
-    ru->selectNonZeros( *icupp );
-    ru->axpy( 1.0, *vars->u );
+  // contribution - d^T lambda to duality gap
+  gap -= prob->bl->dotProductWith(*vars->lambda);
 
-    gap += prob->bu->dotProductWith(*vars->pi);
+  norm = updateNormAndPrint( norm, *rz, print_resids, "rz");
 
-    componentNorm = ru->infnorm();
-    if( print_resids )
-    {
-       if( 0 == myRank )
-       {
-//          std::cout << gap << std::endl;
-          std::cout << " ru norm = " << componentNorm << std::endl;
-       }
-    }
-    if( componentNorm > norm ) norm = componentNorm;
-  }
-  componentNorm = rz->infnorm();
-  if( print_resids )
-  {
-     if( 0 == myRank )
-        std::cout << " rz norm = " << componentNorm << std::endl;
+  /*** rt = s - d - t ***/
+  rt->copyFrom( *vars->s );
+  rt->axpy( -1.0, prob->slowerBound() );
+  rt->selectNonZeros( *iclow );
+  rt->axpy( -1.0, *vars->t );
 
-  }
-  if( componentNorm > norm ) norm = componentNorm;
+  norm = updateNormAndPrint( norm, *rt, print_resids, "rt");
+
+  /*** ru = s - f + u ***/
+  ru->copyFrom( *vars->s );
+  ru->axpy( -1.0, prob->supperBound() );
+  ru->selectNonZeros( *icupp );
+  ru->axpy( 1.0, *vars->u );
+
+  gap += prob->bu->dotProductWith(*vars->pi);
+
+  norm = updateNormAndPrint( norm, *ru, print_resids, "ru");
 
   if( nxlow > 0 )
   {
+    /*** rv = x - lx - v ***/
     rv->copyFrom( *vars->x );
     rv->axpy( -1.0, prob->xlowerBound() );
     rv->selectNonZeros( *ixlow );
     rv->axpy( -1.0, *vars->v );
 
-    gap -= prob->blx->dotProductWith(*vars->gamma);
+    norm = updateNormAndPrint( norm, *rv, print_resids, "rv");
 
-    componentNorm = rv->infnorm();
-    if( print_resids )
-    {
-       if( 0 == myRank )
-       {
-//          std::cout << gap << std::endl;
-          std::cout << " rv norm = " << componentNorm << std::endl;
-       }
-    }
-    if( componentNorm > norm ) norm = componentNorm;
+    // contribution - lx^T gamma to duality gap
+    gap -= prob->blx->dotProductWith(*vars->gamma);
   }
+
   if( nxupp > 0 )
   {
+    /*** rw = x - ux + w ***/
     rw->copyFrom( *vars->x );
     rw->axpy( -1.0, prob->xupperBound() );
     rw->selectNonZeros( *ixupp );
     rw->axpy(  1.0, *vars->w );
 
-    gap += prob->bux->dotProductWith(*vars->phi);
+    norm = updateNormAndPrint( norm, *rw, print_resids, "rw");
 
-    componentNorm = rw->infnorm();
-    if( print_resids )
-    {
-       if( 0 == myRank )
-       {
-//          std::cout << gap << std::endl;
-          std::cout << " rw norm = " << componentNorm << std::endl;
-       }
-    }
-    if( componentNorm > norm ) norm = componentNorm;
+    // contribution + bu^T phi to duality gap
+    gap += prob->bux->dotProductWith(*vars->phi);
   }
    
   mDualityGap = gap;
   mResidualNorm = norm;
 
-  if( print_resids && myRank == 0)
-  {
-     std::cout << "Norm residuals: " << mResidualNorm << "\tduality gap: " << mDualityGap << std::endl;
-  }
+  if( print_resids && myRank == 0 )
+    std::cout << "Norm residuals: " << mResidualNorm << "\tduality gap: " << mDualityGap << "\n";
+
 }
 
 double QpGenResiduals::recomputeResidualNorm()
