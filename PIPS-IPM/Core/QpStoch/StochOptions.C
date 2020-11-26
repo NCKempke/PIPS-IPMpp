@@ -39,7 +39,7 @@ namespace pips_options
 #else
       bool_options["PRECONDITION_DISTRIBUTED"] = true;
 #endif
-      bool_options["PRECONDITION_SPARSE"] = false;
+      bool_options["PRECONDITION_SPARSE"] = true;
 
       /// SCHUR COMPLEMENT
       /** should the schur complement be allreduced to all processes or to a single one */
