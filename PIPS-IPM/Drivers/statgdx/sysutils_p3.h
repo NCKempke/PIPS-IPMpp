@@ -1,7 +1,7 @@
 #ifndef _P3___sysutils_p3___H
 #define _P3___sysutils_p3___H
 
-/**** C code included from sysutils_p3.pas(45:1): 3 lines ****/
+/**** C code included from sysutils_p3.pas(61:1): 3 lines ****/
 #if defined(_WIN32)
 #  define snprintf _snprintf
 #endif
@@ -172,7 +172,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_inttohex(
   SYSTEM_ansichar *result,
   SYSTEM_uint8 _len_ret,
   SYSTEM_int64 v,
-  SYSTEM_integer d);
+  SYSTEM_integer w);
 
 Function(SYSTEM_integer ) SYSUTILS_P3_strtoint(
   const SYSTEM_ansichar *s);

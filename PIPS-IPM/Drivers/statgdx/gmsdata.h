@@ -14,55 +14,34 @@ typedef GMSDATA_tgadatabuffer *GMSDATA_pgadatabuffer;
 typedef SYSTEM_uint32 _sub_2GMSDATA;
 typedef GMSDATA_pgadatabuffer GMSDATA_tgadataarray[268435455];
 typedef GMSDATA_tgadataarray *GMSDATA_pgadataarray;
-typedef struct GMSDATA_tgrowarray_OD_S* GMSDATA_tgrowarray; /* sy_class */
-typedef struct GMSDATA_tgrowarray_OD_S {  /* Objects of 'tgrowarray' */
-  SYSTEM_classreference_t CD;  /* = &GMSDATA_tgrowarray_CD */
-  GMSDATA_pgadataarray GMSDATA_tgrowarray_DOT_pbase;
-  SYSTEM_integer GMSDATA_tgrowarray_DOT_baseallocated;
-  SYSTEM_integer GMSDATA_tgrowarray_DOT_baseused;
-  GMSDATA_pgadatabuffer GMSDATA_tgrowarray_DOT_pcurrentbuf;
-} GMSDATA_tgrowarray_OD;
-
-
-Constructor(GMSDATA_tgrowarray ) GMSDATA_tgrowarray_DOT_create(
-  GMSDATA_tgrowarray self);
-
-Destructor(GMSDATA_tgrowarray ) GMSDATA_tgrowarray_DOT_destroy(
-  GMSDATA_tgrowarray self);
-
-Procedure GMSDATA_tgrowarray_DOT_clear(
-  GMSDATA_tgrowarray self);
-
-Function(SYSTEM_pointer ) GMSDATA_tgrowarray_DOT_reservemem(
-  GMSDATA_tgrowarray self,
-  SYSTEM_integer l);
-
-Function(SYSTEM_pointer ) GMSDATA_tgrowarray_DOT_reserveandclear(
-  GMSDATA_tgrowarray self,
-  SYSTEM_integer l);
-
-Function(SYSTEM_int64 ) GMSDATA_tgrowarray_DOT_memoryused(
-  GMSDATA_tgrowarray self);
-extern void * const GMSDATA_tgrowarray_VT[];
-extern const SYSTEM_classdescriptor_t GMSDATA_tgrowarray_CD;
-
-
 typedef struct GMSDATA_tgrowarrayfxd_OD_S* GMSDATA_tgrowarrayfxd; /* sy_class */
 typedef struct GMSDATA_tgrowarrayfxd_OD_S {  /* Objects of 'tgrowarrayfxd' */
   SYSTEM_classreference_t CD;  /* = &GMSDATA_tgrowarrayfxd_CD */
-  GMSDATA_pgadataarray GMSDATA_tgrowarray_DOT_pbase;
-  SYSTEM_integer GMSDATA_tgrowarray_DOT_baseallocated;
-  SYSTEM_integer GMSDATA_tgrowarray_DOT_baseused;
-  GMSDATA_pgadatabuffer GMSDATA_tgrowarray_DOT_pcurrentbuf;
+  GMSDATA_pgadataarray GMSDATA_tgrowarrayfxd_DOT_pbase;
+  GMSDATA_pgadatabuffer GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf;
+  SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_baseallocated;
+  SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_baseused;
   SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_fsize;
   SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_fstorefact;
-  SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_fcount;
+  SYSTEM_int64 GMSDATA_tgrowarrayfxd_DOT_fcount;
 } GMSDATA_tgrowarrayfxd_OD;
 
 
 Constructor(GMSDATA_tgrowarrayfxd ) GMSDATA_tgrowarrayfxd_DOT_create(
   GMSDATA_tgrowarrayfxd self,
   SYSTEM_integer asize);
+
+Destructor(GMSDATA_tgrowarrayfxd ) GMSDATA_tgrowarrayfxd_DOT_destroy(
+  GMSDATA_tgrowarrayfxd self);
+
+Procedure GMSDATA_tgrowarrayfxd_DOT_clear(
+  GMSDATA_tgrowarrayfxd self);
+
+Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_reservemem(
+  GMSDATA_tgrowarrayfxd self);
+
+Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_reserveandclear(
+  GMSDATA_tgrowarrayfxd self);
 
 Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_additem(
   GMSDATA_tgrowarrayfxd self,
@@ -78,7 +57,7 @@ Procedure GMSDATA_tgrowarrayfxd_DOT_getitem(
   SYSTEM_integer n,
   SYSTEM_untyped *r);
 
-Procedure GMSDATA_tgrowarrayfxd_DOT_clear(
+Function(SYSTEM_int64 ) GMSDATA_tgrowarrayfxd_DOT_memoryused(
   GMSDATA_tgrowarrayfxd self);
 extern void * const GMSDATA_tgrowarrayfxd_VT[];
 extern const SYSTEM_classdescriptor_t GMSDATA_tgrowarrayfxd_CD;
@@ -87,13 +66,13 @@ extern const SYSTEM_classdescriptor_t GMSDATA_tgrowarrayfxd_CD;
 typedef struct GMSDATA_txintlist_OD_S* GMSDATA_txintlist; /* sy_class */
 typedef struct GMSDATA_txintlist_OD_S {  /* Objects of 'txintlist' */
   SYSTEM_classreference_t CD;  /* = &GMSDATA_txintlist_CD */
-  GMSDATA_pgadataarray GMSDATA_tgrowarray_DOT_pbase;
-  SYSTEM_integer GMSDATA_tgrowarray_DOT_baseallocated;
-  SYSTEM_integer GMSDATA_tgrowarray_DOT_baseused;
-  GMSDATA_pgadatabuffer GMSDATA_tgrowarray_DOT_pcurrentbuf;
+  GMSDATA_pgadataarray GMSDATA_tgrowarrayfxd_DOT_pbase;
+  GMSDATA_pgadatabuffer GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf;
+  SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_baseallocated;
+  SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_baseused;
   SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_fsize;
   SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_fstorefact;
-  SYSTEM_integer GMSDATA_tgrowarrayfxd_DOT_fcount;
+  SYSTEM_int64 GMSDATA_tgrowarrayfxd_DOT_fcount;
 } GMSDATA_txintlist_OD;
 
 

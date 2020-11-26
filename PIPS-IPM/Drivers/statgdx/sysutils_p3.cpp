@@ -91,28 +91,6 @@ typedef SYSTEM_ansichar SYSUTILS_P3_tchararray[1000001];
 typedef SYSUTILS_P3_tchararray *SYSUTILS_P3_pchararray;
 static _P3STR_3 SYSUTILS_P3_filestopper, SYSUTILS_P3_extstopper;
 
-#if 0
-static Procedure SYSUTILS_P3_pcharconcatpchar(
-  SYSTEM_P3_pansichar pdest,
-  SYSTEM_integer *w,
-  SYSTEM_P3_pansichar psrc)
-{
-  SYSTEM_integer k;
-
-  if (psrc != NULL) {
-    k = 0;
-    while ((*ValueCast(SYSUTILS_P3_pchararray,psrc))[k] != _P3char('\000')) {
-      (*ValueCast(SYSUTILS_P3_pchararray,pdest))[*w] = (*ValueCast(
-        SYSUTILS_P3_pchararray,psrc))[k];
-      _P3inc0(*w);
-      _P3inc0(k);
-    
-}
-    (*ValueCast(SYSUTILS_P3_pchararray,pdest))[*w] = _P3char('\000');
-  } 
-}  /* pcharconcatpchar */
-#endif
-
 static Procedure SYSUTILS_P3_divmod(
   SYSTEM_integer dividend,
   SYSTEM_word divisor,
@@ -144,7 +122,7 @@ Function(SYSTEM_pointer ) SYSUTILS_P3_allocmem(
   SYSTEM_pointer result;
 
   _P3getmem(result,sz);
-  /**** C code included from sysutils_p3.pas(487:1): 1 lines ****/
+  /**** C code included from sysutils_p3.pas(471:1): 1 lines ****/
   (void) memset(result, 0, (size_t)sz);
   return result;
 }  /* allocmem */
@@ -161,8 +139,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_uppercase(
   while (l > 0) {
     result[l] = SYSTEM_upcase(s[l]);
     _P3dec0(l);
-  
-}
+  }
   return result;
 }  /* uppercase */
 
@@ -180,8 +157,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_lowercase(
     if (result[l] >= _P3char('A') && result[l] <= _P3char('Z')) 
       _P3inc1(result[l],32);
     _P3dec0(l);
-  
-}
+  }
   return result;
 }  /* lowercase */
 
@@ -278,7 +254,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_trim(
       _P3dec0(l);
 }
     SYSTEM_copy(result,_len_ret,s,i,l - i + 1);
-  } 
+  }
   return result;
 }  /* trim */
 
@@ -325,7 +301,6 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_inttostr(
   w2 = 0;
   if (n < 0) {
     result[1] = _P3char('-');
-    n = -n;
     w2 = 1;
   } else 
     n = -n;
@@ -339,8 +314,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_inttostr(
     _P3inc0(w2);
     _P3inc0(w);
     result[w2] = result[w];
-  
-}
+  }
   _P3setlength(result,w2,255);
   return result;
 }  /* inttostr */
@@ -421,8 +395,7 @@ Function(SYSTEM_int64 ) SYSUTILS_P3_strtoint64(
           } else 
             error = SYSTEM_true;
       _P3inc0(i);
-    
-}
+    }
   } else 
     while (i <= ValueCast(SYSTEM_int32,SYSTEM_length(s))) {
       if (_P3SET_in_3(s[i],_P3char('0'),_P3char('9'))) { 
@@ -430,8 +403,7 @@ Function(SYSTEM_int64 ) SYSUTILS_P3_strtoint64(
       } else 
         error = SYSTEM_true;
       _P3inc0(i);
-    
-}
+    }
   if (error) { 
     res = SYSTEM_minint64;
   } else 
@@ -453,7 +425,7 @@ Function(SYSTEM_integer ) SYSUTILS_P3_fileage(
   len = ValueCast(SYSTEM_uint8,filename[0]);
   SYSTEM_move(&filename[1],fname,len);
   fname[len] = _P3char('\000');
-  /**** C code included from sysutils_p3.pas(774:1): 32 lines ****/
+  /**** C code included from sysutils_p3.pas(758:1): 32 lines ****/
 #if defined(_WIN32)
 {
   HANDLE          handle;
@@ -494,7 +466,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_fileexists(
 {
   SYSTEM_boolean result;
 
-  /**** C code included from sysutils_p3.pas(860:1): 12 lines ****/
+  /**** C code included from sysutils_p3.pas(829:1): 12 lines ****/
 char buf[256];
 unsigned char len;
 /* */
@@ -515,7 +487,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_directoryexists(
 {
   SYSTEM_boolean result;
 
-  /**** C code included from sysutils_p3.pas(887:1): 25 lines ****/
+  /**** C code included from sysutils_p3.pas(856:1): 25 lines ****/
 char dirBuf[256];
 unsigned char len;
 /* */
@@ -549,7 +521,7 @@ static Function(SYSTEM_integer ) SYSUTILS_P3_findmatchingfile(
 {
   SYSTEM_integer result;
 
-  /**** C code included from sysutils_p3.pas(1023:1): 129 lines ****/
+  /**** C code included from sysutils_p3.pas(921:1): 100 lines ****/
 #if defined(_WIN32)
 {
   int len;
@@ -577,16 +549,8 @@ static Function(SYSTEM_integer ) SYSUTILS_P3_findmatchingfile(
 }
 #else
 {
-#if ! defined(NAME_MAX)  /* go for something safe */
-# define NAME_MAX 512
-#endif
   int attr;
-  /* the struct dirent contains a field d_name, astring;
-   * on SGI, they declare char d_name[1] but write as much as they like to it,
-   * limited only by NAME_MAX */
-  char hackingbuf[sizeof(struct dirent)+NAME_MAX];
-  struct dirent * const entryPtr = (struct dirent *) hackingbuf;
-  struct dirent *readdirResult;
+  struct dirent *dirEntry;
   DIR *dp;
   struct stat statbuf;
   struct stat linkstatbuf;
@@ -596,36 +560,26 @@ static Function(SYSTEM_integer ) SYSUTILS_P3_findmatchingfile(
   mode_t mode;
   /* */
   result = -1;
-  readdirResult = NULL;
+  dirEntry = NULL;
   dp = (DIR *) f->findhandle;
   /*  readdir_r(F.FindHandle, @Scratch, PtrDirEnt); */
-#if defined(SOL)
-  /* I have read that avoiding the reentrant (_r) calls in Solaris
-   * will help maintain compatibility with older Solaris systems */
-  readdirResult = readdir (dp);
-  if (NULL != readdirResult) {
-    len = readdirResult->d_reclen;
-    if (len > sizeof(hackingbuf)) len = sizeof(hackingbuf); /* this is exceptional */
-    memcpy (entryPtr, readdirResult, len);
-  }
-#else
-  rc = readdir_r (dp, entryPtr, &readdirResult);
-#endif
-  if (readdirResult != NULL) {
+  /* readdir_r is deprecated in GNU libc.  readdir is preferred,
+   * and is thread-safe if the threads do not share the DIR stream dp
+   * the case is similar for Solaris */
+  dirEntry = readdir (dp);
+  if (dirEntry != NULL) {
     len = f->pattern[0];
     memcpy(pattern, f->pattern + 1, len);
     pattern[len] = '\0';
   }
-  else {
-  }
-  while (readdirResult != NULL) {
-    rc = fnmatch(pattern, entryPtr->d_name, 0);
+  while (dirEntry != NULL) {
+    rc = fnmatch(pattern, dirEntry->d_name, 0);
     if (0 == rc) {
       /* F.PathOnly must include trailing backslash */
       /* FName := F.PathOnly + ShortString(PtrDirEnt.d_name) + #0; */
       len = f->pathonly[0];
       memcpy(fname, f->pathonly + 1, len);
-      strcpy(fname + len, entryPtr->d_name);
+      strcpy(fname + len, dirEntry->d_name);
       rc = lstat(fname, &statbuf);
       if (0 == rc) {
         attr = 0;
@@ -642,8 +596,8 @@ static Function(SYSTEM_integer ) SYSUTILS_P3_findmatchingfile(
           }
           attr |= SYSUTILS_P3_fasysfile;
         }
-        if (entryPtr->d_name[0] == '.' && entryPtr->d_name[1] != '\0')
-          if (!  (entryPtr->d_name[1] == '.' && entryPtr->d_name[2] == '\0'))
+        if (dirEntry->d_name[0] == '.' && dirEntry->d_name[1] != '\0')
+          if (!  (dirEntry->d_name[1] == '.' && dirEntry->d_name[2] == '\0'))
             attr |= SYSUTILS_P3_fahidden;
         /* if (euidaccess(fname, W_OK) != 0) */
         if (access(fname, W_OK) != 0)
@@ -652,10 +606,10 @@ static Function(SYSTEM_integer ) SYSUTILS_P3_findmatchingfile(
           f->size = statbuf.st_size;
           f->attr = attr;
           f->mode = statbuf.st_mode;
-          /* f->name = entryPtr->d_name; */
-          len = strlen(entryPtr->d_name);
+          /* f->name = dirEntry->d_name; */
+          len = strlen(dirEntry->d_name);
           if (len > 255) len = 255;
-          strncpy((char*) f->name + 1, entryPtr->d_name, len);
+          strncpy((char*) f->name + 1, dirEntry->d_name, len);
           f->name[0] = len;
           f->time = statbuf.st_mtime;
           result = 0;
@@ -663,18 +617,7 @@ static Function(SYSTEM_integer ) SYSUTILS_P3_findmatchingfile(
         } /* matching file found */
       } /* lstat returns OK */
     } /* matches desired pattern */
-# if defined(SOL)
-    /* I have read that avoiding the reentrant (_r) calls in Solaris
-     * will help maintain compatibility with older Solaris systems */
-    readdirResult = readdir (dp);
-    if (NULL != readdirResult) {
-      len = readdirResult->d_reclen;
-      if (len > sizeof(hackingbuf)) len = sizeof(hackingbuf); /* this is exceptional */
-      memcpy (entryPtr, readdirResult, len);
-    }
-# else
-    rc = readdir_r (dp, entryPtr, &readdirResult);
-# endif
+    dirEntry = readdir (dp);
     result = -1;
   } /* readdir loop */
 } /* end C#### block */
@@ -713,7 +656,7 @@ Function(SYSTEM_integer ) SYSUTILS_P3_findfirst(
         SYSUTILS_P3_includetrailingpathdelimiter(_t1,255,
         SYSUTILS_P3_getcurrentdir(_t2,255)));
     }
-  /**** C code included from sysutils_p3.pas(1211:1): 39 lines ****/
+  /**** C code included from sysutils_p3.pas(1057:1): 39 lines ****/
 #if defined(_WIN32)
 {
   char pathbuf[256];
@@ -761,7 +704,7 @@ Function(SYSTEM_integer ) SYSUTILS_P3_findnext(
 {
   SYSTEM_integer result;
 
-  /**** C code included from sysutils_p3.pas(1266:1): 10 lines ****/
+  /**** C code included from sysutils_p3.pas(1109:1): 10 lines ****/
 #if defined(_WIN32)
   if (FindNextFile((HANDLE)f->findhandle, (PWIN32_FIND_DATA) &(f->finddata))) {
     result = SYSUTILS_P3_findmatchingfile(f);
@@ -778,7 +721,7 @@ Function(SYSTEM_integer ) SYSUTILS_P3_findnext(
 Procedure SYSUTILS_P3_findclose(
   SYSUTILS_P3_tsearchrec *f)
 {
-  /**** C code included from sysutils_p3.pas(1302:1): 13 lines ****/
+  /**** C code included from sysutils_p3.pas(1138:1): 13 lines ****/
 #if defined(_WIN32)
   if (INVALID_HANDLE_VALUE != (HANDLE) f->findhandle) {
     FindClose((HANDLE) f->findhandle);
@@ -805,7 +748,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_deletefile(
 
   p = ValueCast(SYSTEM_P3_pansichar,&fname[0]);
   SYSUTILS_P3_strpcopy(p,filename);
-  /**** C code included from sysutils_p3.pas(1339:1): 5 lines ****/
+  /**** C code included from sysutils_p3.pas(1172:1): 5 lines ****/
 #if defined(_WIN32)
   result = DeleteFile((char *)p);
 #else
@@ -828,7 +771,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_renamefile(
   SYSUTILS_P3_strpcopy(palt,oldname);
   pneu = ValueCast(SYSTEM_P3_pansichar,&neu[0]);
   SYSUTILS_P3_strpcopy(pneu,newname);
-  /**** C code included from sysutils_p3.pas(1371:1): 5 lines ****/
+  /**** C code included from sysutils_p3.pas(1201:1): 5 lines ****/
 #if defined(_WIN32)
   result = MoveFileA((char *)palt, (char *)pneu);
 #else
@@ -854,8 +797,7 @@ Function(SYSTEM_integer ) SYSUTILS_P3_lastdelimiter(
 
     }
     _P3dec0(result);
-  
-}
+  }
   return result;
 }  /* lastdelimiter */
 
@@ -965,7 +907,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_extractshortpathname(
   SYSTEM_uint8 _len_ret,
   const SYSTEM_ansichar *filename)
 {
-  /**** C code included from sysutils_p3.pas(1467:1): 17 lines ****/
+  /**** C code included from sysutils_p3.pas(1294:1): 17 lines ****/
 #if defined(_WIN32)
   {
   char inbuf[256], outbuf[MAX_PATH];
@@ -1006,7 +948,7 @@ Function(SYSTEM_P3_tdatetime ) SYSUTILS_P3_filedatetodatetime(
       SYSUTILS_P3_encodetime(hour,minu,sec,0);
     return result;
   } 
-  /**** C code included from sysutils_p3.pas(1509:1): 11 lines ****/
+  /**** C code included from sysutils_p3.pas(1336:1): 11 lines ****/
 {
 #if ! defined(_WIN32)
   struct tm ut;
@@ -1043,13 +985,13 @@ Function(SYSTEM_integer ) SYSUTILS_P3_datetimetofiledate(
       rec._u._c1.lo = lo;
       rec._u._c1.hi = hi;
       SYSTEM_move(&rec,&result,sizeof(SYSTEM_int32));
-    } 
+    }
   } else 
     if (year < 1970 || year > 2038) { 
       result = 0;
     } else {
       SYSUTILS_P3_decodetime(datetime,&hour,&minu,&sec,&msec);
-      /**** C code included from sysutils_p3.pas(1576:1): 17 lines ****/
+      /**** C code included from sysutils_p3.pas(1395:1): 17 lines ****/
 #if defined(_WIN32)
       result = -1;
 #else
@@ -1067,7 +1009,7 @@ Function(SYSTEM_integer ) SYSUTILS_P3_datetimetofiledate(
       result = mktime(&tm);
 }
 #endif
-    } 
+    }
   return result;
 }  /* datetimetofiledate */
 
@@ -1080,7 +1022,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_getcurrentdir(
 
   isok = SYSTEM_true;
   _P3strclr(emsg);
-  /**** C code included from sysutils_p3.pas(1653:1): 57 lines ****/
+  /**** C code included from sysutils_p3.pas(1445:1): 57 lines ****/
 {
   /* this implementation assumes the return is a ShortString, */
   /* i.e. char buf[256] or less */
@@ -1155,7 +1097,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_setcurrentdir(
 
   p = ValueCast(SYSTEM_P3_pansichar,&_dirname[0]);
   SYSUTILS_P3_strpcopy(p,dir);
-  /**** C code included from sysutils_p3.pas(1743:1): 5 lines ****/
+  /**** C code included from sysutils_p3.pas(1532:1): 5 lines ****/
 #if defined(_WIN32)
   result = SetCurrentDirectory((char *)p);
 #else
@@ -1187,7 +1129,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_removedir(
 
   p = ValueCast(SYSTEM_P3_pansichar,&_dirname[0]);
   SYSUTILS_P3_strpcopy(p,dir);
-  /**** C code included from sysutils_p3.pas(1776:1): 5 lines ****/
+  /**** C code included from sysutils_p3.pas(1562:1): 5 lines ****/
 #if defined(_WIN32)
   result = RemoveDirectory((char *)p);
 #else
@@ -1201,7 +1143,7 @@ Function(SYSTEM_cardinal ) SYSUTILS_P3_strlen(
 {
   SYSTEM_cardinal result;
 
-  /**** C code included from sysutils_p3.pas(1790:1): 1 lines ****/
+  /**** C code included from sysutils_p3.pas(1576:1): 1 lines ****/
   result = strlen((char *)str);
   return result;
 }  /* strlen */
@@ -1215,7 +1157,7 @@ Function(SYSTEM_P3_pansichar ) SYSUTILS_P3_strpcopy(
 
   len = SYSTEM_length(src);
   SYSTEM_move(&src[1],dest,len);
-  /**** C code included from sysutils_p3.pas(1810:1): 1 lines ****/
+  /**** C code included from sysutils_p3.pas(1596:1): 1 lines ****/
   dest[len] = '\0';
   result = dest;
   return result;
@@ -1265,9 +1207,9 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_floattostr(
             if (i == j + e + 1) 
               s[j + e] = _P3char(' ');
           } else 
-            SYSTEM_break(BRK_2);
+            SYSTEM_break(BRK_1);
         } while (i-- !=  _stop);
-BRK_2:;
+BRK_1:;
 
       }
     } else {
@@ -1293,12 +1235,12 @@ BRK_2:;
           if (s[i] == _P3char('0')) { 
             s[i] = _P3char(' ');
           } else 
-            SYSTEM_break(BRK_3);
+            SYSTEM_break(BRK_2);
         } while (i-- !=  _stop);
-BRK_3:;
+BRK_2:;
 
       }
-    } 
+    }
   } else {
     if (s[k] == _P3char('+')) 
       s[k] = _P3char(' ');
@@ -1309,9 +1251,9 @@ BRK_3:;
           if (i == ValueCast(SYSTEM_int32,SYSTEM_length(s))) 
             s[k - 1] = _P3char(' ');
         } else 
-          SYSTEM_break(BRK_4);
+          SYSTEM_break(BRK_3);
       } while (i++ !=  _stop);
-BRK_4:;
+BRK_3:;
 
     }
     { register SYSTEM_int32 _stop = j + 1;
@@ -1321,12 +1263,12 @@ BRK_4:;
           if (i == j + 1) 
             s[j] = _P3char(' ');
         } else 
-          SYSTEM_break(BRK_5);
+          SYSTEM_break(BRK_4);
       } while (i-- !=  _stop);
-BRK_5:;
+BRK_4:;
 
     }
-  } 
+  }
   j = 0;
   { register SYSTEM_int32 _stop = SYSTEM_length(s);
     if ((i = 1) <=  _stop) do {
@@ -1485,11 +1427,11 @@ Function(SYSTEM_P3_tdatetime ) SYSUTILS_P3_encodedate(
     } else {
       month = ValueCast(SYSTEM_int32,month) + 9;
       year = ValueCast(SYSTEM_int32,year) - 1;
-    } 
+    }
     yr = ValueCast(SYSTEM_int32,year) - 1600;
     result = yr /  100 * 146097 /  4 + yr % 100 * 1461 /  4 + (153 * 
       month + 2) /  5 + day + 59 - 109572 + 1;
-  } 
+  }
   return result;
 }  /* encodedate */
 
@@ -1527,8 +1469,7 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_decodedatefully(
     while (t >= d400) {
       _P3dec1(t,d400);
       _P3inc1(y,400);
-    
-}
+    }
     SYSUTILS_P3_divmod(t,d100,&i,&d);
     if (i == 4) {
       _P3dec0(i);
@@ -1550,16 +1491,15 @@ Function(SYSTEM_boolean ) SYSUTILS_P3_decodedatefully(
     while (SYSTEM_true) {
       i = (*daytable)[m - 1];
       if (d < i) 
-        SYSTEM_break(BRK_6);
+        SYSTEM_break(BRK_5);
       _P3dec1(d,i);
       _P3inc0(m);
-    
-}
-BRK_6:;
+    }
+BRK_5:;
     *year = y;
     *month = m;
     *day = ValueCast(SYSTEM_int32,d) + 1;
-  } 
+  }
   return result;
 }  /* decodedatefully */
 
@@ -1578,7 +1518,7 @@ Function(SYSTEM_P3_tdatetime ) SYSUTILS_P3_date(void)
 {
   SYSTEM_P3_tdatetime result;
 
-  /**** C code included from sysutils_p3.pas(2114:1): 19 lines ****/
+  /**** C code included from sysutils_p3.pas(1900:1): 19 lines ****/
 int rc;
 #if defined(_WIN32)
 SYSTEMTIME st;
@@ -1605,7 +1545,7 @@ Function(SYSTEM_P3_tdatetime ) SYSUTILS_P3_time(void)
 {
   SYSTEM_P3_tdatetime result;
 
-  /**** C code included from sysutils_p3.pas(2148:1): 21 lines ****/
+  /**** C code included from sysutils_p3.pas(1934:1): 21 lines ****/
 int rc;
 #if defined(_WIN32)
 SYSTEMTIME st;
@@ -1634,7 +1574,7 @@ Function(SYSTEM_P3_tdatetime ) SYSUTILS_P3_now(void)
 {
   SYSTEM_P3_tdatetime result;
 
-  /**** C code included from sysutils_p3.pas(2183:1): 30 lines ****/
+  /**** C code included from sysutils_p3.pas(1969:1): 30 lines ****/
 int rc;
 double dnow, tnow;
 #if defined(_WIN32)
@@ -1673,7 +1613,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_syserrormessage(
   SYSTEM_uint8 _len_ret,
   SYSTEM_integer errorcode)
 {
-  /**** C code included from sysutils_p3.pas(2228:1): 15 lines ****/
+  /**** C code included from sysutils_p3.pas(2014:1): 15 lines ****/
 {
   int i;
   char *errMsg = strerror(errorcode);
@@ -1725,7 +1665,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_excludetrailingpathdelimiter(
 Procedure SYSUTILS_P3_sleep(
   SYSTEM_cardinal milliseconds)
 {
-  /**** C code included from sysutils_p3.pas(2286:1): 14 lines ****/
+  /**** C code included from sysutils_p3.pas(2069:1): 14 lines ****/
 #if defined(_WIN32)
   Sleep(milliseconds);
 #else
@@ -1757,7 +1697,7 @@ Function(SYSTEM_ansichar *) SYSUTILS_P3_getenvironmentvariable(
   SYSTEM_uint8 _len_ret,
   const SYSTEM_ansichar *name)
 {
-  /**** C code included from sysutils_p3.pas(2325:1): 40 lines ****/
+  /**** C code included from sysutils_p3.pas(2108:1): 40 lines ****/
 {
   char buf[256];
   char *s;
