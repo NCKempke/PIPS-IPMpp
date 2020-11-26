@@ -480,7 +480,10 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     // Iterative refinement
     ///////////////////////////////////////////////////////////////
-    solveCompressedIterRefin(stepx,stepy,stepz,prob);
+     auto computeResiduals = std::bind( &QpGenLinsys::computeResidualXYZ, this, std::placeholders::_1,
+           std::placeholders::_2, std::ref(stepx), std::ref(stepy), std::ref(stepz), prob );
+
+    solveCompressedIterRefin( computeResiduals );
 
     this->separateVars(stepx, stepy, stepz, *sol);
 
@@ -827,18 +830,13 @@ double QpGenLinsys::matXYZinfnorm(
              OoqpVector& soly,
              OoqpVector& solz)
 {
-   double infnorm;
-
    assert(data);
 
    solx.copyFromAbs(*dd);
 
-   //std::cout << "infnorm dd=" << dd->infnorm() << std::endl;
-   //std::cout << "infnorm nomegaInv=" << nomegaInv->infnorm() << std::endl;
-
    data->A->addColSums(solx);
    data->C->addColSums(solx);
-   infnorm = solx.infnorm();
+   double infnorm = solx.infnorm();
 
    soly.setToZero();
    data->A->addRowSums(soly);
@@ -851,10 +849,7 @@ double QpGenLinsys::matXYZinfnorm(
    return infnorm;
 }
 
-void QpGenLinsys::solveCompressedIterRefin(OoqpVector& stepx,
-					   OoqpVector& stepy,
-					   OoqpVector& stepz,
-					   QpGenData* prob)
+void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual )
 {
 #ifdef TIMING
     int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -896,7 +891,7 @@ void QpGenLinsys::solveCompressedIterRefin(OoqpVector& stepx,
       res->copyFrom(*rhs);
 
       //  stepx, stepy, stepz are used as temporary buffers
-      computeResidualXYZ(*sol, *res, stepx, stepy, stepz, prob);
+      computeResidual(*sol, *res );
 #ifdef TIMING
       tResid += (MPI_Wtime()-tTmp);
 #endif 
