@@ -173,20 +173,20 @@ public:
 				 OoqpVector& v,  OoqpVector& gamma,
 				 OoqpVector& w,  OoqpVector& phi );
  protected:
-  virtual void computeResidualXYZ(OoqpVector& sol, 
+  void computeResidualXYZ(OoqpVector& sol,
 				  OoqpVector& res, 
 				  OoqpVector& solx, 
 				  OoqpVector& soly, 
 				  OoqpVector& solz,
 				  QpGenData* data);
-  virtual void matXYZMult( double beta,  OoqpVector& res, 
+  void matXYZMult( double beta,  OoqpVector& res,
 			   double alpha, OoqpVector& sol, 
 			   QpGenData* data,
 			   OoqpVector& solx, 
 			   OoqpVector& soly, 
 			   OoqpVector& solz);
 
-  virtual double matXYZinfnorm(
+  double matXYZinfnorm(
                QpGenData* data,
                OoqpVector& solx,
                OoqpVector& soly,
