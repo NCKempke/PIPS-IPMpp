@@ -444,7 +444,6 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
 
 }
 
-
 void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 			       OoqpVector& stepz, OoqpVector& steps,
 			       OoqpVector& /* ztemp */,
@@ -925,7 +924,12 @@ void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector&
 }
 
 /**
- * res = res - mat*sol
+ * res = res - mat * sol
+ *
+ * [ resx ]   [ resx ]   [ Q + dd  AT      CT     ] [ solx ]
+ * [ resy ] = [ resy ] - [   A     0       0      ] [ soly ]
+ * [ resz ]   [ resz ]   [   C     0   nOmegaInv  ] [ solz ]
+ *
  * stepx, stepy, stepz are used as temporary buffers
  */
 void QpGenLinsys::computeResidualXYZ(OoqpVector& sol, 
@@ -938,17 +942,19 @@ void QpGenLinsys::computeResidualXYZ(OoqpVector& sol,
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);
 
+  /* resx += - Q solx - ddT solx - AT soly - CT solz */
   data->Qmult(1.0, *resx, -1.0, solx);
   resx->axzpy(-1.0, *dd, solx);
   data->ATransmult(1.0, *resx, -1.0, soly);
   data->CTransmult(1.0, *resx, -1.0, solz);
-  //cout << "resx norm: " << resx->twonorm() << endl;
-  
+
+  /* resy += - A soly */
   data->Amult(1.0, *resy, -1.0, solx);
-  //cout << "resy norm: " << resy->twonorm() << endl;
+
+  /* resz += - C solx - nOmegaInvT solz */
   data->Cmult(1.0, *resz, -1.0, solx);
   resz->axzpy(-1.0, *nomegaInv, solz);
-  //cout << "resz norm: " << resz->twonorm() << endl;
+
   this->joinRHS( res, *resx, *resy, *resz );
 }
 
