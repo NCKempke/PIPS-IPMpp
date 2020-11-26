@@ -937,7 +937,7 @@ void QpGenLinsys::computeResidualXYZ(OoqpVector& sol,
 				     OoqpVector& solx, 
 				     OoqpVector& soly, 
 				     OoqpVector& solz, 
-				     QpGenData* data)
+				     const QpGenData data)
 {
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);

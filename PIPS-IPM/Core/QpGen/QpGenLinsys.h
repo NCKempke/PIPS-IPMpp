@@ -172,25 +172,23 @@ public:
 				 OoqpVector& u,  OoqpVector& pi,
 				 OoqpVector& v,  OoqpVector& gamma,
 				 OoqpVector& w,  OoqpVector& phi );
- protected:
-  void computeResidualXYZ(OoqpVector& sol,
-				  OoqpVector& res, 
-				  OoqpVector& solx, 
-				  OoqpVector& soly, 
-				  OoqpVector& solz,
-				  QpGenData* data);
-  void matXYZMult( double beta,  OoqpVector& res,
-			   double alpha, OoqpVector& sol, 
-			   QpGenData* data,
-			   OoqpVector& solx, 
-			   OoqpVector& soly, 
-			   OoqpVector& solz);
+   protected:
+      void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
+            OoqpVector& soly, OoqpVector& solz, const QpGenData& data);
+      void computeResidualsReducedSlacks( const QpGenData& data );
+      void computeResidualsFull( const QpGenData& data );
 
-  double matXYZinfnorm(
-               QpGenData* data,
-               OoqpVector& solx,
-               OoqpVector& soly,
-               OoqpVector& solz);
+      void matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol,
+            const QpGenData& data, OoqpVector& solx, OoqpVector& soly,
+            OoqpVector& solz);
+      void matReducedSlacksMult( const QpGenData& data );
+      void matFullMult( const QpGenData& data );
+
+      double matXYZinfnorm(const QpGenData& data, OoqpVector &solx, OoqpVector &soly,
+            OoqpVector &solz);
+      void matReducedInfnorm( const QpGenData& data );
+      void matFullInfnorm( const QpGenData& data );
+
 
   // TODO : move to LinearSystem level
   void solveCompressedBiCGStab( const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm );
