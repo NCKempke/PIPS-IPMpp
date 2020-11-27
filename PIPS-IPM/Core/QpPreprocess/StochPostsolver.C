@@ -1388,7 +1388,8 @@ bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(sVars& origina
 
    double& v = local_linking_col ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col);
    double& w = local_linking_col ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.w, col);
-   assert( PIPSisZero(v) && PIPSisZero(w) );
+   
+   assert( PIPSisZeroFeas(v) && PIPSisZeroFeas(w) );
    v = (xlow_old == INF_NEG) ? 0 : value - xlow_old;
    w = (xupp_old == INF_POS) ? 0 : xupp_old - value;
 
