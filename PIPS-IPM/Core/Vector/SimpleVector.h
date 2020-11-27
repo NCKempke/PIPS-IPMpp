@@ -113,6 +113,8 @@ public:
    void applySqrt() override;
    void roundToPow2() override;
    bool allPositive() const override;
+   bool allOf( const std::function<bool(const T&)>& pred ) const override;
+
    long long numberOfNonzeros() const override;
 
   bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override;

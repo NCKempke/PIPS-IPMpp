@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <functional>
 
 #include "OoqpVector_fwd.h"
 
@@ -167,6 +168,8 @@ public:
 
   /** True if all elements of this OoqpVector are positive. */
   virtual bool allPositive() const = 0;
+
+  virtual bool allOf( const std::function<bool(const T&)>& pred ) const = 0;
 
   /** Return the number of non-zero elements in this OoqpVector. */
   virtual long long numberOfNonzeros() const = 0;

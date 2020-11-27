@@ -1709,6 +1709,33 @@ bool StochVectorBase<T>::allPositive() const
 }
 
 template<typename T>
+bool StochVectorBase<T>::allOf( const std::function<bool(const T&)>& pred ) const
+{
+   bool all = true;
+
+   if( vec )
+   {
+      const bool all_vec = vec->allOf( pred );
+      all = all && all_vec;
+   }
+
+   if( vecl )
+   {
+      const bool all_vecl = vecl->allOf( pred );
+      all = all && all_vecl;
+   }
+
+   for( const auto& child : children )
+   {
+      const bool all_child = child->allOf( pred );
+      all = all && all_child;
+   }
+
+   return all;
+}
+
+
+template<typename T>
 bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_ ) const
 {
   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);

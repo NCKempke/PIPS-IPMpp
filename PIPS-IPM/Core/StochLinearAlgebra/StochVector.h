@@ -129,6 +129,7 @@ public:
    void roundToPow2() override;
 
    bool allPositive() const override;
+   bool allOf( const std::function<bool(const T&)>& pred ) const override;
 
    bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override;
    void selectNonZeros( const OoqpVectorBase<T>& select ) override;
@@ -262,7 +263,8 @@ public:
    void invertSave( T zeroReplacementVal = 0.0 ) override {};
    void applySqrt() override {};
    void roundToPow2() override {};
-   bool allPositive() const override {return true;}
+   bool allPositive() const override { return true; };
+   bool allOf( const std::function<bool(const T&)>& pred ) const override { return true; };
 
    bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override {return true;}
    void selectNonZeros( const OoqpVectorBase<T>& select ) override {};

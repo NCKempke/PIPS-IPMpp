@@ -13,6 +13,7 @@
 #include <limits>
 #include <iomanip>
 #include <algorithm>
+#include <functional>
 
 
 template <typename T>
@@ -818,6 +819,13 @@ bool SimpleVectorBase<T>::allPositive() const
   }
   return true;
 }
+
+template<typename T>
+bool SimpleVectorBase<T>::allOf( const std::function<bool(const T&)>& pred ) const
+{
+   return std::all_of(v, v + this->n, pred );
+}
+
 
 template<typename T>
 T SimpleVectorBase<T>::stepbound( const OoqpVectorBase<T> & pvec, T maxStep ) const
