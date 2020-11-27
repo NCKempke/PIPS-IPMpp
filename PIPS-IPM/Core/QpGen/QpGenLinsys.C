@@ -292,13 +292,29 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
 {
   /*** dd = dQ + Gamma/V + Phi/W ***/
   if( nxupp + nxlow > 0 ) {
-    if( nxlow > 0 ) dd_.axdzpy( 1.0, gamma, v, *ixlow );
-    if( nxupp > 0 ) dd_.axdzpy( 1.0, phi  , w, *ixupp );
+    if( nxlow > 0 )
+    {
+       dd_.axdzpy( 1.0, gamma, v, *ixlow );
+       dd_.axpy( 1e-8, *ixupp );
+    }
+    if( nxupp > 0 )
+    {
+       dd_.axpy( 1e-8, *ixupp );
+       dd_.axdzpy( 1.0, phi  , w, *ixupp );
+    }
   }
   omega.setToZero();
   /*** omega = Lambda/T + Pi/U ***/
-  if ( mclow > 0 ) omega.axdzpy( 1.0, lambda, t, *iclow );
-  if ( mcupp > 0 ) omega.axdzpy( 1.0, pi,     u, *icupp );
+  if ( mclow > 0 )
+  {
+     omega.axdzpy( 1.0, lambda, t, *iclow );
+     omega.axpy( 1e-8, *iclow );
+  }
+  if ( mcupp > 0 )
+  {
+     omega.axdzpy( 1.0, pi,     u, *icupp );
+     omega.axpy( 1e-8, *icupp );
+  }
   // assert( omega.allPositive() );
 }
 
