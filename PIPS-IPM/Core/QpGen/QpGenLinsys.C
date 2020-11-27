@@ -480,7 +480,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     // Iterative refinement
     ///////////////////////////////////////////////////////////////
      auto computeResiduals = std::bind( &QpGenLinsys::computeResidualXYZ, this, std::placeholders::_1,
-           std::placeholders::_2, std::ref(stepx), std::ref(stepy), std::ref(stepz), prob );
+           std::placeholders::_2, std::ref(stepx), std::ref(stepy), std::ref(stepz), std::ref(*prob) );
 
     solveCompressedIterRefin( computeResiduals );
 
@@ -504,9 +504,9 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
 
     auto matMult = std::bind( &QpGenLinsys::matXYZMult, this, std::placeholders::_1, std::placeholders::_2,
-          std::placeholders::_3, std::placeholders::_4, prob, std::ref(stepx), std::ref(stepy), std::ref(stepz) );
+          std::placeholders::_3, std::placeholders::_4, std::ref(*prob), std::ref(stepx), std::ref(stepy), std::ref(stepz) );
 
-    auto matInfnorm = std::bind( &QpGenLinsys::matXYZinfnorm, this, std::ref(prob), std::ref(stepx), std::ref(stepy), std::ref(stepz) );
+    auto matInfnorm = std::bind( &QpGenLinsys::matXYZinfnorm, this, std::ref(*prob), std::ref(stepx), std::ref(stepy), std::ref(stepz) );
 
     solveCompressedBiCGStab( matMult, matInfnorm );
 
@@ -523,7 +523,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
      assert( sol );
      const double bnorm = residual->infnorm();
      this->joinRHS(*sol, stepx, stepy, stepz);
-     this->matXYZMult(1.0, *residual, -1.0, *sol, prob, stepx, stepy, stepz);
+     this->matXYZMult(1.0, *residual, -1.0, *sol, *prob, stepx, stepy, stepz);
 
      this->separateVars( *resx, *resy, *resz, *residual );
      const double resxnorm = resx->infnorm();
@@ -789,8 +789,8 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
  * stepx, stepy, stepz are used as temporary buffers
  */
 void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res, 
-			     double alpha, OoqpVector& sol, 
-			     QpGenData* data,
+			     double alpha, const OoqpVector& sol,
+			     const QpGenData& data,
 			     OoqpVector& solx, 
 			     OoqpVector& soly, 
 			     OoqpVector& solz)
@@ -805,18 +805,18 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
   this->separateVars( *resx, *resy, *resz, res);
 
   /* resx = beta resx + alpha Q solx + alpha dd solx */
-  data->Qmult(beta, *resx, alpha, solx);
+  data.Qmult(beta, *resx, alpha, solx);
   resx->axzpy(alpha, *dd, solx);
 
   /* resx = beta resx + alpha Q solx + alpha dd solx + alpha AT soly + alpha CT solz */
-  data->ATransmult(1.0, *resx, alpha, soly);
-  data->CTransmult(1.0, *resx, alpha, solz);
+  data.ATransmult(1.0, *resx, alpha, soly);
+  data.CTransmult(1.0, *resx, alpha, solz);
 
   /* resy = beta resy + alpha A solx */
-  data->Amult(beta, *resy, alpha, solx);
+  data.Amult(beta, *resy, alpha, solx);
 
   /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
-  data->Cmult(beta, *resz, alpha, solx);
+  data.Cmult(beta, *resz, alpha, solx);
   resz->axzpy(alpha, *nomegaInv, solz);
 
   this->joinRHS( res, *resx, *resy, *resz );
@@ -824,25 +824,23 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
 double QpGenLinsys::matXYZinfnorm(
-             QpGenData* data,
+             const QpGenData& data,
              OoqpVector& solx,
              OoqpVector& soly,
              OoqpVector& solz)
 {
-   assert(data);
-
    solx.copyFromAbs(*dd);
 
-   data->A->addColSums(solx);
-   data->C->addColSums(solx);
+   data.A->addColSums(solx);
+   data.C->addColSums(solx);
    double infnorm = solx.infnorm();
 
    soly.setToZero();
-   data->A->addRowSums(soly);
+   data.A->addRowSums(soly);
    infnorm = std::max(infnorm, soly.infnorm());
 
    solz.copyFromAbs(*nomegaInv);
-   data->C->addRowSums(solz);
+   data.C->addRowSums(solz);
    infnorm = std::max(infnorm, solz.infnorm());
 
    return infnorm;
@@ -932,35 +930,35 @@ void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector&
  *
  * stepx, stepy, stepz are used as temporary buffers
  */
-void QpGenLinsys::computeResidualXYZ(OoqpVector& sol, 
+void QpGenLinsys::computeResidualXYZ(const OoqpVector& sol,
 				     OoqpVector& res, 
 				     OoqpVector& solx, 
 				     OoqpVector& soly, 
 				     OoqpVector& solz, 
-				     const QpGenData data)
+				     const QpGenData& data)
 {
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);
 
   /* resx += - Q solx - ddT solx - AT soly - CT solz */
-  data->Qmult(1.0, *resx, -1.0, solx);
+  data.Qmult(1.0, *resx, -1.0, solx);
   resx->axzpy(-1.0, *dd, solx);
-  data->ATransmult(1.0, *resx, -1.0, soly);
-  data->CTransmult(1.0, *resx, -1.0, solz);
+  data.ATransmult(1.0, *resx, -1.0, soly);
+  data.CTransmult(1.0, *resx, -1.0, solz);
 
   /* resy += - A soly */
-  data->Amult(1.0, *resy, -1.0, solx);
+  data.Amult(1.0, *resy, -1.0, solx);
 
   /* resz += - C solx - nOmegaInvT solz */
-  data->Cmult(1.0, *resz, -1.0, solx);
+  data.Cmult(1.0, *resz, -1.0, solx);
   resz->axzpy(-1.0, *nomegaInv, solz);
 
   this->joinRHS( res, *resx, *resy, *resz );
 }
 
 
-void QpGenLinsys::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-			     OoqpVector& rhs2_in, OoqpVector& rhs3_in )
+void QpGenLinsys::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+			     const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
 {
   // joinRHS has to be delegated to the factory. This is true because
   // the rhs may be distributed across processors, so the factory is the
@@ -969,7 +967,7 @@ void QpGenLinsys::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 }
 
 void QpGenLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				  OoqpVector& z_in, OoqpVector& vars_in )
+				  OoqpVector& z_in, const OoqpVector& vars_in ) const
 {
   // separateVars has to be delegated to the factory. This is true because
   // the rhs may be distributed across processors, so the factory is the

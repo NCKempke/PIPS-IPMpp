@@ -144,24 +144,24 @@ sLinsys::~sLinsys()
   if (kkt)    delete kkt;
 }
 
-void sLinsys::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-				OoqpVector& rhs2_in, OoqpVector& rhs3_in )
+void sLinsys::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+				const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
 {
   StochVector& rhs  = dynamic_cast<StochVector&>(rhs_in);
-  StochVector& rhs1 = dynamic_cast<StochVector&>(rhs1_in);
-  StochVector& rhs2 = dynamic_cast<StochVector&>(rhs2_in);
-  StochVector& rhs3 = dynamic_cast<StochVector&>(rhs3_in);
+  const StochVector& rhs1 = dynamic_cast<const StochVector&>(rhs1_in);
+  const StochVector& rhs2 = dynamic_cast<const StochVector&>(rhs2_in);
+  const StochVector& rhs3 = dynamic_cast<const StochVector&>(rhs3_in);
 
   rhs.jointCopyFrom(rhs1, rhs2, rhs3);
 }
 
 void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				     OoqpVector& z_in, OoqpVector& vars_in )
+				     OoqpVector& z_in, const OoqpVector& vars_in ) const
 {
-  StochVector& x    = dynamic_cast<StochVector&>(x_in);
-  StochVector& y    = dynamic_cast<StochVector&>(y_in);
-  StochVector& z    = dynamic_cast<StochVector&>(z_in);
-  StochVector& vars = dynamic_cast<StochVector&>(vars_in);
+  StochVector& x = dynamic_cast<StochVector&>(x_in);
+  StochVector& y = dynamic_cast<StochVector&>(y_in);
+  StochVector& z = dynamic_cast<StochVector&>(z_in);
+  const StochVector& vars = dynamic_cast<const StochVector&>(vars_in);
 
   vars.jointCopyTo(x, y, z);
 }

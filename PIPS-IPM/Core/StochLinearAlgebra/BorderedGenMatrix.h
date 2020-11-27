@@ -73,8 +73,8 @@ class BorderedGenMatrix : public GenMatrix
 
       void writeToStreamDense( std::ostream& out ) const;
 
-      void addRowSums( OoqpVector& vec ) override;
-      void addColSums( OoqpVector& vec ) override;
+      void addRowSums( OoqpVector& vec ) const override;
+      void addColSums( OoqpVector& vec ) const override;
 
       /* methods not needed for Hierarchical approach */
       double abminnormNonZero( double tol = 1e-30) const override { assert( false && "TODO: implement" ); return 0.0; };

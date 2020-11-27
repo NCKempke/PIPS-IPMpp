@@ -127,8 +127,8 @@ public:
    * @param rhs2 (input) middle part of rhs
    * @param rhs3 (input) last part of rhs
    */
-  virtual void joinRHS( OoqpVector& rhs,  OoqpVector& rhs1,
-			OoqpVector& rhs2, OoqpVector& rhs3 );
+  virtual void joinRHS( OoqpVector& rhs, const OoqpVector& rhs1,
+			const OoqpVector& rhs2, const OoqpVector& rhs3 ) const;
 
   /** extracts three component vectors from a given aggregated vector.
    *
@@ -138,7 +138,7 @@ public:
    * @param vars3 (output) last part of vars
    */
   virtual void separateVars( OoqpVector& vars1, OoqpVector& vars2,
-			     OoqpVector& vars3, OoqpVector& vars );
+			     OoqpVector& vars3, const OoqpVector& vars ) const;
 
   /** assemble right-hand side of augmented system and call
       solveCompressed to solve it */

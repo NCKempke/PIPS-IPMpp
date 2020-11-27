@@ -628,8 +628,7 @@ SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
    }
 }
 
-void
-SparseGenMatrix::addRowSums(OoqpVector& sumVec)
+void SparseGenMatrix::addRowSums(OoqpVector& sumVec) const
 {
    SimpleVector& vec = dynamic_cast<SimpleVector&>(sumVec);
 
@@ -639,15 +638,12 @@ SparseGenMatrix::addRowSums(OoqpVector& sumVec)
    mStorage->addRowSums(vec.elements());
 }
 
-void
-SparseGenMatrix::addColSums(OoqpVector& sumVec)
+void SparseGenMatrix::addColSums(OoqpVector& sumVec) const
 {
-   SimpleVector& vec = dynamic_cast<SimpleVector&>(sumVec);
-
-   if( !m_Mt )
-      initTransposed();
-
+   assert( m_Mt );
    assert(m_Mt->mStorageDynamic == nullptr && m_Mt->mStorage != nullptr);
+
+   SimpleVector& vec = dynamic_cast<SimpleVector&>(sumVec);
    assert(vec.length() == m_Mt->mStorage->m);
 
    m_Mt->mStorage->addRowSums(vec.elements());

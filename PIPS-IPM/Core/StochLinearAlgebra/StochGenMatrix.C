@@ -1270,7 +1270,7 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
 }
 
 
-void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent )
+void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) const
 {
    StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
    SimpleVector* mvecl = nullptr;
@@ -1319,7 +1319,7 @@ void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent )
    }
 }
 
-void StochGenMatrix::addColSums( OoqpVector& sumVec, OoqpVector* linkParent )
+void StochGenMatrix::addColSums( OoqpVector& sumVec, OoqpVector* linkParent ) const
 {
    StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
 

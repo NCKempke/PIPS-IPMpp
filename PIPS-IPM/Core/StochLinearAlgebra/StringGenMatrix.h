@@ -56,8 +56,8 @@ class StringGenMatrix : public GenMatrix
       void columnScale ( const OoqpVector& vec ) override;
       void rowScale ( const OoqpVector& vec ) override;
 
-      void addRowSums( OoqpVector& vec ) override;
-      void addColSums( OoqpVector& vec ) override;
+      void addRowSums( OoqpVector& vec ) const override;
+      void addColSums( OoqpVector& vec ) const override;
 
       void getSize( long long& m_, long long& n_ ) const override { m_ = m; n_ = n; };
       void getSize( int& m_, int& n_ ) const override { m_ = m; n_ = n; };
@@ -103,11 +103,11 @@ class StringGenMatrix : public GenMatrix
       virtual void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
       virtual void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const;
 
-      virtual void addRowSumsVertical( OoqpVector& vec );
-      virtual void addRowSumsHorizontal( OoqpVector& vec );
+      virtual void addRowSumsVertical( OoqpVector& vec ) const;
+      virtual void addRowSumsHorizontal( OoqpVector& vec ) const;
 
-      virtual void addColSumsVertical( OoqpVector& vec );
-      virtual void addColSumsHorizontal( OoqpVector& vec );
+      virtual void addColSumsVertical( OoqpVector& vec ) const;
+      virtual void addColSumsHorizontal( OoqpVector& vec ) const;
 };
 
 /**
@@ -133,8 +133,8 @@ class StringGenDummyMatrix : public StringGenMatrix
       void columnScale( const OoqpVector& vec ) override {};
       void rowScale( const OoqpVector& vec ) override {};
 
-      void addRowSums( OoqpVector& vec ) override {};
-      void addColSums( OoqpVector& vec ) override {};
+      void addRowSums( OoqpVector& vec ) const override {};
+      void addColSums( OoqpVector& vec ) const override {};
 
    protected:
       void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
@@ -155,11 +155,11 @@ class StringGenDummyMatrix : public StringGenMatrix
       void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const override {};
       void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const override {};
 
-      void addRowSumsVertical( OoqpVector& vec ) override {};
-      void addRowSumsHorizontal( OoqpVector& vec ) override {};
+      void addRowSumsVertical( OoqpVector& vec ) const override {};
+      void addRowSumsHorizontal( OoqpVector& vec ) const override {};
 
-      void addColSumsVertical( OoqpVector& vec ) override {};
-      void addColSumsHorizontal( OoqpVector& vec ) override {};
+      void addColSumsVertical( OoqpVector& vec ) const override {};
+      void addColSumsHorizontal( OoqpVector& vec ) const override {};
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_ */

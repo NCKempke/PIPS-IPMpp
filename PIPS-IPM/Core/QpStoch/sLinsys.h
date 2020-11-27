@@ -50,11 +50,11 @@ class sLinsys : public QpGenLinsys
   virtual void solveCompressed( OoqpVector& rhs );
   virtual void putXDiagonal( OoqpVector& xdiag_ )=0;
 
-  void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-		OoqpVector& rhs2_in, OoqpVector& rhs3_in );
+  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, OoqpVector& vars_in );
+		     OoqpVector& z_in, const OoqpVector& vars_in ) const;
   
   virtual void sync()=0;
   virtual void deleteChildren()=0;

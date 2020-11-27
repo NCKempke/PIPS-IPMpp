@@ -15,13 +15,13 @@ Data * QpGenSparseSeq::makeData()
   return new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );
 }
 
-void QpGenSparseSeq::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-				   OoqpVector& rhs2_in, OoqpVector& rhs3_in )
+void QpGenSparseSeq::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+				   const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
 {
   SimpleVector & rhs  = dynamic_cast<SimpleVector &>(rhs_in);
-  SimpleVector & rhs1 = dynamic_cast<SimpleVector &>(rhs1_in);
-  SimpleVector & rhs2 = dynamic_cast<SimpleVector &>(rhs2_in);
-  SimpleVector & rhs3 = dynamic_cast<SimpleVector &>(rhs3_in);
+  const SimpleVector & rhs1 = dynamic_cast<const SimpleVector&>(rhs1_in);
+  const SimpleVector & rhs2 = dynamic_cast<const SimpleVector&>(rhs2_in);
+  const SimpleVector & rhs3 = dynamic_cast<const SimpleVector&>(rhs3_in);
 
   memcpy( &rhs[0], &rhs1[0], nx * sizeof( double ) );
   if( my > 0 ) memcpy( &rhs[nx],      &rhs2[0], my * sizeof( double ) );
@@ -30,9 +30,9 @@ void QpGenSparseSeq::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 
 void
 QpGenSparseSeq::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				   OoqpVector& z_in, OoqpVector& vars_in )
+				   OoqpVector& z_in, const OoqpVector& vars_in ) const
 {
-  SimpleVector & vars  = dynamic_cast<SimpleVector &>(vars_in);
+  const SimpleVector & vars  = dynamic_cast<const SimpleVector &>(vars_in);
   SimpleVector & x = dynamic_cast<SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
   SimpleVector & z = dynamic_cast<SimpleVector &>(z_in);
