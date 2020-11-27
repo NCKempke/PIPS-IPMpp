@@ -261,6 +261,8 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 			  *vars->v, *vars->gamma,
 			  *vars->w, *vars->phi );
 
+  dd->addConstant( 1e-8 );
+
   if( nxlow + nxupp > 0 ) this->putXDiagonal( *dd );
 
   const double infnormdd = dd->infnorm();
@@ -272,6 +274,9 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 
   nomegaInv->invert();
   nomegaInv->negate();
+
+  nomegaInv->addConstant( -1e-8 );
+
 
   if( mclow + mcupp > 0 ) this->putZDiagonal( *nomegaInv );
 
@@ -293,29 +298,22 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
   /*** dd = dQ + Gamma/V + Phi/W ***/
   if( nxupp + nxlow > 0 ) {
     if( nxlow > 0 )
-    {
        dd_.axdzpy( 1.0, gamma, v, *ixlow );
-       dd_.axpy( 1e-8, *ixlow );
-    }
     if( nxupp > 0 )
-    {
-       dd_.axpy( 1e-8, *ixupp );
        dd_.axdzpy( 1.0, phi  , w, *ixupp );
-    }
   }
+  assert( dd_.allOf( [](const double& d ) {
+     return d >= 0; } ) );
+
   omega.setToZero();
   /*** omega = Lambda/T + Pi/U ***/
   if ( mclow > 0 )
-  {
      omega.axdzpy( 1.0, lambda, t, *iclow );
-     omega.axpy( 1e-8, *iclow );
-  }
   if ( mcupp > 0 )
-  {
      omega.axdzpy( 1.0, pi,     u, *icupp );
-     omega.axpy( 1e-8, *icupp );
-  }
-  // assert( omega.allPositive() );
+
+  assert( omega.allOf( [](const double& d ) {
+     return d >= 0; } ) );
 }
 
 void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,

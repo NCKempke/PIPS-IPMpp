@@ -2,7 +2,7 @@
 #include "sTree.h"
 #include "StochVector.h"
 
-sResiduals::sResiduals( sTree* tree, 
+sResiduals::sResiduals( const sTree* tree,
 			OoqpVector * rQ_,    OoqpVector * rA_, 
 			OoqpVector * rC_,    OoqpVector * rz_, 
 			OoqpVector * rt_,    OoqpVector * rlambda_, 
@@ -15,7 +15,6 @@ sResiduals::sResiduals( sTree* tree,
 			OoqpVector * icupp_, double mcuppGlobal)
   :QpGenResiduals()
 {
-  assert( false && "not used" );
   SpReferTo( ixlow, ixlow_ );
   nxlow = nxlowGlobal;
 
@@ -46,7 +45,7 @@ sResiduals::sResiduals( sTree* tree,
 }
 
 
-sResiduals::sResiduals( sTree* tree,
+sResiduals::sResiduals( const sTree* tree,
 			OoqpVector * ixlow_, OoqpVector * ixupp_,
 			OoqpVector * iclow_, OoqpVector * icupp_ )
   : QpGenResiduals()
@@ -138,7 +137,6 @@ void sResiduals::AddChild(sResiduals* child)
 
 void sResiduals::createChildren()
 {
-  assert(false);
   StochVector& rQSt = dynamic_cast<StochVector&>(*rQ);
 
   StochVector& rASt = dynamic_cast<StochVector&>(*rA); 
@@ -193,6 +191,37 @@ void sResiduals::createChildren()
   }
 }
 
+void sResiduals::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+      OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
+{
+   dynamic_cast<StochVector&>(*rQ).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rv).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rw).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rgamma).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rphi).collapseHierarchicalStructure();
+
+   dynamic_cast<StochVector&>(*rA).collapseHierarchicalStructure();
+
+   dynamic_cast<StochVector&>(*rC).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rt).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*ru).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rz).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rlambda).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rpi).collapseHierarchicalStructure();
+
+   stochNode = stochNode_;
+
+   ixlow = ixlow_;
+   ixupp = ixupp_;
+   iclow = iclow_;
+   icupp = icupp_;
+
+   for (size_t c = 0; c < children.size(); c++)
+     delete children[c];
+
+   children.clear();
+   createChildren();
+}
 
 void sResiduals::sync()
 {

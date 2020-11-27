@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <functional>
+#include <memory>
 
 
 template <typename T>
@@ -356,7 +357,7 @@ bool SimpleVectorBase<T>::componentEqual( const OoqpVectorBase<T>& vec, T tol) c
       /* two comparisons - a numerical one and one for stuff like infinity/nan/max/min */
       if( !PIPSisRelEQ(v[i], sv[i], tol) && v[i] != sv[i])
       {
-//         std::cout << v[i] << " != " << sv[i] << std::endl;
+//         std::cout << v[i] << " != " << sv[i] << "\n";
          return false;
       }
    }
@@ -406,9 +407,9 @@ void SimpleVectorBase<T>::printSolutionToStdErr( OoqpVectorBase<T> &vec)
   int i;
   for( i = 0; i < 10; i++ )
   {
-     std::cerr << v[i] << std::endl;
+     std::cerr << v[i] << "\n";
    }
-  std::cerr << "******" << std::endl;
+  std::cerr << "******" << "\n";
 }
 
 template<typename T>
@@ -475,7 +476,7 @@ void SimpleVectorBase<T>::writefSomeToStream( std::ostream& out,
 	}
 	j++;
       }
-      out << std::endl;
+      out << "\n";
     }
   }
 }
@@ -977,7 +978,7 @@ bool SimpleVectorBase<T>::somePositive( const OoqpVectorBase<T>& select ) const
   int i;
   for( i = 0; i < this->n; i++ ) {
     if( 0.0 != map[i] && v[i] <= 0 ) {
-      std::cout << "Element " << i << " is nonpositive: " << v[i] << std::endl;
+      std::cout << "Element " << i << " is nonpositive: " << v[i] << "\n";
       return false;
     }
   }
@@ -1046,6 +1047,42 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
    std::swap(v, buffer);
 
    delete[] buffer;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::moveToFront( SimpleVectorBase<T>& other )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + other.n;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_copy( other.v, other.v + other.n, new_v );
+   std::uninitialized_copy( this->v, this->v + this->n, new_v + other.n );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::moveToBack( SimpleVectorBase<T>& other )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + other.n;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_copy( this->v, this->v + this->n, new_v );
+   std::uninitialized_copy( other.v, other.v + other.n, new_v + this->n );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
 }
 
 template<typename T>

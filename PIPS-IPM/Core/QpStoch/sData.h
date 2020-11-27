@@ -91,6 +91,7 @@ public:
   void printLinkConsStats();
 
   void activateLinkStructureExploitation();
+
   sResiduals* getResidsUnperm(const sResiduals& resids, const sData& unpermData) const;
   sVars* getVarsUnperm(const sVars& vars, const sData& unpermData) const;
 

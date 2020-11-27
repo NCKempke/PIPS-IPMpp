@@ -739,9 +739,10 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   const double t0_postsolve = MPI_Wtime();
 
   sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*dynamic_cast<sFactory&>(*factory).tree);
-  callbackTree.switchToOriginalData();
+  dynamic_cast<sTreeCallbacks*>(callbackTree.children[0])->switchToOriginalData();
 
   factory->data = origData;
+  factory->tree = callbackTree.children[0];
 
   postsolvedVars = dynamic_cast<sVars*>( factory->makeVariables( origData ) );
 

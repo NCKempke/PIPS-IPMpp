@@ -161,6 +161,7 @@ public:
    virtual bool isRootNodeInSync() const;
 
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
+   virtual void collapseHierarchicalStructure();
 
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
@@ -295,6 +296,7 @@ public:
    bool isRootNodeInSync() const override { return true; };
 
    StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
+   void collapseHierarchicalStructure() override {};
 
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override {};
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override {};

@@ -1921,15 +1921,18 @@ void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
    dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(linkVarsPermutation);
 }
 
-
 sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 {
-   assert( !is_hierarchy_root );
+   sVars* unperm_vars = new sVars(vars, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
+
+   if( is_hierarchy_root )
+      unperm_vars->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+
+   assert( unperm_vars->children.size() == unpermData.children.size() );
+
    const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
-
-   sVars* unperm_vars = new sVars(vars, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
 
    if( perm_inv_link_vars.size() != 0 )
    {
@@ -1960,11 +1963,16 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 
 sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unpermData) const
 {
+   sResiduals* unperm_resids = new sResiduals(resids, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+
+   if( is_hierarchy_root )
+      unperm_resids->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+
    const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
 
-   sResiduals* unperm_resids = new sResiduals(resids, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+   assert( unperm_resids->children.size() == unpermData.children.size() );
 
    if( perm_inv_link_vars.size() != 0 )
    {

@@ -2254,5 +2254,80 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
    return top_layer;
 }
 
+template<typename T>
+void StochVectorBase<T>::collapseHierarchicalStructure()
+{
+   if( parent == nullptr )
+   {
+      assert( children.size() == 1 );
+      StochVectorBase<T>& root = *this->children[0];
+
+      if( vec )
+      {
+         assert( root.vec );
+         dynamic_cast<SimpleVectorBase<T>*>(vec)->moveToBack( dynamic_cast<SimpleVectorBase<T>&>(*root.vec) );
+      }
+      else
+      {
+         vec = dynamic_cast<SimpleVectorBase<T>*>(root.vec);
+         root.vec = nullptr;
+      }
+
+      if( vecl )
+      {
+         assert( root.vecl );
+         dynamic_cast<SimpleVectorBase<T>*>(vecl)->moveToFront( dynamic_cast<SimpleVectorBase<T>&>(*root.vecl) );
+      }
+      else
+      {
+         vecl = dynamic_cast<SimpleVectorBase<T>*>(root.vecl);
+         root.vecl = nullptr;
+      }
+
+      children = std::move(root.children);
+
+      for( auto child : children )
+         child->parent = this;
+
+      delete &root;
+
+      for( auto child : children )
+      {
+         assert( child->children.size() == 0 );
+//         child->collapseHierarchicalStructure();
+      }
+   }
+   else
+   {
+//      assert( children.size() > 0 );
+//
+//      std::vector<StochVector*> new_children();
+//
+//      // TODO : I think we have to go through our children backwards and append the vecl part to our vecl
+//      for( size_t i = children.size() - 1; i >= 0; i-- )
+//      {
+//         assert( false && " TODO - should not be active yet.. " );
+//
+//         StochVector& child = *children[i];
+//
+//         /* if our children have children then we first need to tell our children to collapse */
+//         if( child.children.size() != 0 )
+//         {
+//            assert( !child.vec );
+//            child.collapseHierarchicalStructure();
+//         }
+//
+//         if( vecl )
+//         {
+//            assert( child.vecl );
+//            vecl->appendFront(child);
+//         }
+//
+//         child = new_children;
+//      }
+   }
+}
+
+
 template class StochVectorBase<int>;
 template class StochVectorBase<double>;

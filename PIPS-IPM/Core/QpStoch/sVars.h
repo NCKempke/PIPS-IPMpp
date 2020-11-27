@@ -12,13 +12,13 @@ class sTree;
 
 class sVars : public QpGenVars {
 public:
-  sVars( sTree* tree,
+  sVars( const sTree* tree,
 	 OoqpVector * ixlow_in, OoqpVector * ixupp_in,
 	 OoqpVector * iclow_in, OoqpVector * icupp_in);
 
   /** constructor in which the data and variable pointers are set to
       point to the given arguments */
-  sVars( sTree* tree,
+  sVars( const sTree* tree,
 	 OoqpVector * x_in, OoqpVector * s_in,
 	 OoqpVector * y_in, OoqpVector * z_in,
 	 OoqpVector * v_in, OoqpVector * gamma_in,
@@ -39,12 +39,15 @@ public:
   
   bool isRootNodeInSync() const;
   virtual void sync();
+  std::vector<sVars*> children;
+
+  void collapseHierarchicalStructure(const sTree* stochNode, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+        OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 protected:
   void createChildren();
-  std::vector<sVars*> children;
   void AddChild(sVars* child);
 
-  sTree* stochNode;
+  const sTree* stochNode;
 };
 #endif
 
