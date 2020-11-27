@@ -477,7 +477,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     solveCompressedIterRefin(stepx,stepy,stepz,prob);
 
-  } else if( true || outerSolve == 0 ) {
+  } else if( outerSolve == 0 ) {
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
