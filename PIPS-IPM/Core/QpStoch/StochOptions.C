@@ -125,11 +125,11 @@ namespace pips_options
       int_options["PRESOLVE_VERBOSITY"] = 1;
 
       /** turn respective presolvers on/off */
-      bool_options["PRESOLVE_BOUND_STRENGTHENING"] = false;
-      bool_options["PRESOLVE_PARALLEL_ROWS"] = false;
+      bool_options["PRESOLVE_BOUND_STRENGTHENING"] = true;
+      bool_options["PRESOLVE_PARALLEL_ROWS"] = true;
       bool_options["PRESOLVE_COLUMN_FIXATION"] = true;
       bool_options["PRESOLVE_SINGLETON_ROWS"] = true;
-      bool_options["PRESOLVE_SINGLETON_COLUMNS"] = false;
+      bool_options["PRESOLVE_SINGLETON_COLUMNS"] = true;
 
       /// BOUND STRENGTHENING
       /** limit for rounds of bound strengthening per call of presolver */
