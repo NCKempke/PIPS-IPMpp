@@ -64,8 +64,11 @@ class PIPSIpmInterface
   std::vector<double> getSecondStageDualRowSolution(int scen) const;
 
   void postsolveComputedSolution();
+
 private:
   void printComplementarityResiduals(const sVars& vars) const;
+  std::vector<double> gatherFromSolution( OoqpVectorHandle sVars::* member_to_gather );
+
 public:
   std::vector<double> gatherEqualityConsValues();
   std::vector<double> gatherInequalityConsValues();
@@ -77,26 +80,27 @@ public:
   static bool isDistributed() { return true; }
 
  protected:
-  FORMULATION * factory;
-  PreprocessFactory * prefactory;
-  sData *        data;       // possibly presolved data
-  sData *        dataUnperm; // data after presolve before permutation and scaling
-  sData *        origData;   // original data
-  sVars *        vars;
-  sVars *        unscaleUnpermVars;
-  sVars *        postsolvedVars;
+  FORMULATION * factory{};
+  PreprocessFactory * prefactory{};
+  sData *        data{};       // possibly presolved data
+  sData *        dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
+  sData *        origData{};   // original data
+  sVars *        vars{};
+  sVars *        unscaleUnpermNotHierVars{};
+  sVars *        postsolvedVars{};
 
-  sResiduals *   resids;
-  sResiduals *   unscaleUnpermResids;
-  sResiduals *   postsolvedResids;
+  sResiduals *   resids{};
+  sResiduals *   unscaleUnpermNotHierResids{};
+  sResiduals *   postsolvedResids{};
 
-  Presolver*    presolver;
-  Postsolver* postsolver;
-  Scaler *      scaler;
-  IPMSOLVER *   solver;
+  Presolver*    presolver{};
+  Postsolver* postsolver{};
+  Scaler *      scaler{};
+  IPMSOLVER *   solver{};
 
-  MPI_Comm comm;
-  bool ran_solver;
+  MPI_Comm comm = MPI_COMM_NULL;
+  const int my_rank = -1;
+  bool ran_solver = false;
 };
 
 //----------------------------------------------------------------------
@@ -105,50 +109,33 @@ public:
 
 
 template<class FORMULATION, class IPMSOLVER>
-PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(stochasticInput &in, MPI_Comm comm) : prefactory(nullptr), dataUnperm(nullptr), origData(nullptr),
-   unscaleUnpermVars(nullptr), postsolvedVars(nullptr), unscaleUnpermResids(nullptr), postsolvedResids(nullptr), presolver(nullptr),
-   postsolver(nullptr), comm(comm), ran_solver(false)
+PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(stochasticInput &in, MPI_Comm comm) :comm(comm), my_rank( PIPS_MPIgetRank(comm) )
 {
-#ifdef TIMING
-  int mype;
-  MPI_Comm_rank(comm,&mype);
-#endif
-
   factory = new FORMULATION( in, comm);
 #ifdef TIMING
-  if(mype==0) printf("factory created\n");
+  if( my_rank == 0 ) printf("factory created\n");
+  if( my_rank == 0 ) printf("prefactory created\n");
 #endif
 
-  prefactory = nullptr;
-  origData = nullptr;
-  postsolver = nullptr;
-  presolver = nullptr;
-
+  data   = dynamic_cast<sData*>( factory->makeData() );
 #ifdef TIMING
-  if(mype==0) printf("prefactory created\n");
+  if( my_rank == 0 ) printf("data created\n");
 #endif
 
-  data   = dynamic_cast<sData*>     ( factory->makeData() );
+  vars   = dynamic_cast<sVars*>( factory->makeVariables( data ) );
 #ifdef TIMING
-  if(mype==0) printf("data created\n");
-#endif
-
-  vars   = dynamic_cast<sVars*>     ( factory->makeVariables( data ) );
-#ifdef TIMING
-  if(mype==0) printf("variables created\n");
+  if( my_rank == 0 ) printf("variables created\n");
 #endif
 
   resids = dynamic_cast<sResiduals*>( factory->makeResiduals( data ) );
 #ifdef TIMING
-  if(mype==0) printf("resids created\n");
+  if( my_rank == 0 ) printf("resids created\n");
 #endif
 
-  scaler = nullptr;
-
-  solver  = new IPMSOLVER( factory, data, scaler );
+  solver = new IPMSOLVER( factory, data, scaler );
   solver->addMonitor(new StochMonitor( factory ));
 #ifdef TIMING
-  if(mype==0) printf("solver created\n");
+  if( my_rank == 0 ) printf("solver created\n");
   //solver->monitorSelf();
 #endif
 
@@ -156,30 +143,22 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(stochasticInput &in, 
 
 template<class FORMULATION, class IPMSOLVER>
 PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm, ScalerType scaler_type,
-      PresolverType presolver_type, std::string settings) : unscaleUnpermVars(nullptr), postsolvedVars(nullptr), unscaleUnpermResids(nullptr), postsolvedResids(nullptr), comm(comm), ran_solver(false)
+      PresolverType presolver_type, std::string settings) : comm(comm), my_rank( PIPS_MPIgetRank() )
 {
   pips_options::setOptions(settings);
   const bool postsolve = pips_options::getBoolParameter("POSTSOLVE");
-
-  int mype;
-  MPI_Comm_rank(comm,&mype);
 
   MPI_Barrier(comm);
   const double t0 = MPI_Wtime();
 
   factory = new FORMULATION( in, comm);
 #ifdef TIMING
-  if(mype==0) printf("factory created\n");
+  if( my_rank == 0 ) printf("factory created\n");
 #endif
 
   prefactory = new PreprocessFactory();
 #ifdef TIMING
-  if(mype==0) printf("prefactory created\n");
-#endif
-
-#ifdef HIERARCHICAL
-//  assert( presolver_type == PRESOLVER_NONE );
-  // TODO : get original variables/solution etc from hierarchical data and postsolve
+  if( my_rank == 0 ) printf("prefactory created\n");
 #endif
 
   // presolving activated?
@@ -199,7 +178,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
      MPI_Barrier(comm);
      const double t_presolve = MPI_Wtime();
-     if( mype == 0 )
+     if( my_rank == 0 )
         std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << "\n";
   }
   else
@@ -221,10 +200,10 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 #endif
 
 #ifdef TIMING
-  if( mype == 0 ) printf("data created\n");
+  if( my_rank == 0 ) printf("data created\n");
 #endif
 
-  dataUnperm = data->cloneFull();
+  dataUnpermNotHier = data->cloneFull();
 
   // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
   if( pips_options::getBoolParameter("PARDISO_FOR_GLOBAL_SC") )
@@ -238,18 +217,18 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
   vars   = dynamic_cast<sVars*>( factory->makeVariables( data ) );
 #ifdef TIMING
-  if(mype==0) printf("variables created\n");
+  if( my_rank == 0 ) printf("variables created\n");
 #endif
 
   resids = dynamic_cast<sResiduals*>( factory->makeResiduals( data ) );
 #ifdef TIMING
-  if(mype==0) printf("resids created\n");
+  if( my_rank == 0 ) printf("resids created\n");
 #endif
 
   scaler = prefactory->makeScaler(data, scaler_type);
 
 #ifdef TIMING
-  if(mype==0) printf("scaler created\n");
+  if( my_rank == 0 ) printf("scaler created\n");
 #endif
 
   if( scaler )
@@ -261,34 +240,32 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
      MPI_Barrier(comm);
      const double t_scaling = MPI_Wtime();
-     if( mype == 0 )
+     if( my_rank == 0 )
         std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
   }
 
   solver  = new IPMSOLVER( factory, data, scaler );
   solver->addMonitor(new StochMonitor( factory, scaler ));
 #ifdef TIMING
-  if(mype==0) printf("solver created\n");
+  if( my_rank == 0 ) printf("solver created\n");
   //solver->monitorSelf();
 #endif
 
   MPI_Barrier(comm);
   const double t1 = MPI_Wtime();
-  if( mype == 0 )
+  if( my_rank == 0 )
      std::cout << "---reading time (in sec.): " << t1 - t0 << "\n";
 }
 
 
 template<typename FORMULATION, typename IPMSOLVER>
-void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
-
-   const int mype = PIPS_MPIgetRank(comm);
-
-  if( 0 == mype )
+void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
+{
+  if( my_rank == 0 )
      std::cout << "solving ..." << "\n";
 
   // TODO : use unlifted data....
-  if( mype == 0 )
+  if( my_rank == 0 )
   {
 #ifndef HIERARCHICAL
      std::cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
@@ -320,7 +297,7 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
   //---------------------------------------------
 #endif
 
-  if( result != 0 && mype == 0 )
+  if( result != 0 && my_rank == 0 )
      std::cout << "failed to solve instance, result code: " << result << "\n";
   
   ran_solver = true;
@@ -333,20 +310,20 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
 
    const double objective = getObjective();
 
-   if( 0 == mype ) {
-    //cout << " " << data->nx << " variables, " << data->my
+   if( my_rank == 0 ) {
+    //std::cout << " " << data->nx << " variables, " << data->my
     // << " equality constraints, " << data->mz << " inequality constraints.\n";
 
-    cout << " Iterates: " << solver->iter <<",    Optimal Solution:  "
+    std::cout << " Iterates: " << solver->iter <<",    Optimal Solution:  "
 	 << objective << endl;
 
-    cout << "Solve time: " << tmElapsed << " seconds." << endl;
+    std::cout << "Solve time: " << tmElapsed << " seconds." << endl;
 
     char *var = getenv("OMP_NUM_THREADS");
     if(var != nullptr) {
       int num_threads;
       sscanf( var, "%d", &num_threads );
-      cout << "Num threads: " << num_threads << endl;
+      std::cout << "Num threads: " << num_threads << endl;
     }
   }
 #endif
@@ -387,20 +364,18 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getFirstStageObjective() const
   return c.dotProductWith(x);
 }
 
-
-
 template<class FORMULATION, class IPMSOLVER>
 PIPSIpmInterface<FORMULATION, IPMSOLVER>::~PIPSIpmInterface()
 {
   delete solver;
   delete scaler;
   delete postsolvedResids;
-  delete unscaleUnpermResids;
+  delete unscaleUnpermNotHierResids;
   delete resids;
   delete postsolvedVars;
-  delete unscaleUnpermVars;
+  delete unscaleUnpermNotHierVars;
   delete vars;
-  delete dataUnperm;
+  delete dataUnpermNotHier;
   delete data;
   delete postsolver;
   delete presolver;
@@ -412,45 +387,44 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::~PIPSIpmInterface()
 template<class FORMULATION, class IPMSOLVER>
 void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm()
 {
-  assert(unscaleUnpermVars == nullptr);
-  assert(dataUnperm);
+  assert(unscaleUnpermNotHierVars == nullptr);
+  assert(dataUnpermNotHier);
 
   if(!ran_solver)
     throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermutated solution");
   if( scaler )
   {
     sVars* unscaled_vars = dynamic_cast<sVars*>(scaler->getVariablesUnscaled(*vars));
-    unscaleUnpermVars = data->getVarsUnperm(*unscaled_vars, *dataUnperm);
+    unscaleUnpermNotHierVars = data->getVarsUnperm(*unscaled_vars, *dataUnpermNotHier);
     delete unscaled_vars;
   }
   else
-    unscaleUnpermVars = data->getVarsUnperm(*vars, *dataUnperm);
+    unscaleUnpermNotHierVars = data->getVarsUnperm(*vars, *dataUnpermNotHier);
 
 }
 
 template<class FORMULATION, class IPMSOLVER>
 void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm()
 {
-  assert(unscaleUnpermResids == nullptr);
-  assert(dataUnperm);
+  assert(unscaleUnpermNotHierResids == nullptr);
+  assert(dataUnpermNotHier);
 
   if(!ran_solver)
     throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermutated residuals");
   if( scaler )
   {
     sResiduals* unscaled_resids = dynamic_cast<sResiduals*>(scaler->getResidualsUnscaled(*resids));
-    unscaleUnpermResids = data->getResidsUnperm(*unscaled_resids, *dataUnperm);
+    unscaleUnpermNotHierResids = data->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier);
     delete unscaled_resids;
   }
   else
-    unscaleUnpermResids = data->getResidsUnperm(*resids, *dataUnperm);
+    unscaleUnpermNotHierResids = data->getResidsUnperm(*resids, *dataUnpermNotHier);
 }
 
-
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherPrimalSolution()
+std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution( OoqpVectorHandle sVars::* member_to_gather )
 {
-  if( unscaleUnpermVars == nullptr)
+  if( unscaleUnpermNotHierVars == nullptr)
     this->getVarsUnscaledUnperm();
 
   if( postsolver != nullptr && postsolvedVars == nullptr)
@@ -458,83 +432,42 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherPrimalSoluti
 
   std::vector<double> vec;
   if( postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->x).gatherStochVector();
+    vec = dynamic_cast<const StochVector&>(*(unscaleUnpermNotHierVars->*member_to_gather)).gatherStochVector();
   else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->x).gatherStochVector();
+    vec = dynamic_cast<const StochVector&>(*(postsolvedVars->*member_to_gather)).gatherStochVector();
 
   return vec;
+
+}
+
+template<class FORMULATION, class IPMSOLVER>
+std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherPrimalSolution()
+{
+  return gatherFromSolution( &sVars::x );
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionEq()
 {
-  if( unscaleUnpermVars == nullptr)
-    this->getVarsUnscaledUnperm();
-
-  if( postsolver != nullptr && postsolvedVars == nullptr )
-    this->postsolveComputedSolution();
-
-  std::vector<double> vec;
-  if(postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->y).gatherStochVector();
-  else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->y).gatherStochVector();
-
-  return vec;
+  return gatherFromSolution( &sVars::y );
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionIneq()
 {
-  if( unscaleUnpermVars == nullptr)
-    this->getVarsUnscaledUnperm();
-
-  if( postsolver != nullptr && postsolvedVars == nullptr )
-    this->postsolveComputedSolution();
-  
-  std::vector<double> vec;
-  if( postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->z).gatherStochVector();
-  else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->z).gatherStochVector();
-
-  return vec;
+  return gatherFromSolution( &sVars::z );
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionIneqUpp()
 {
-  if( unscaleUnpermVars == nullptr)
-    this->getVarsUnscaledUnperm();
-
-  if( postsolver != nullptr && postsolvedVars == nullptr )
-    this->postsolveComputedSolution();
-
-  std::vector<double> vec;
-  if( postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->pi).gatherStochVector();
-  else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->pi).gatherStochVector();
-
-  return vec;
+  return gatherFromSolution( &sVars::pi );
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionIneqLow()
 {
-  if( unscaleUnpermVars == nullptr)
-    this->getVarsUnscaledUnperm();
-
-  if( postsolver != nullptr && postsolvedVars == nullptr )
-    this->postsolveComputedSolution();
-  
-  std::vector<double> vec;
-  if( postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->lambda).gatherStochVector();
-  else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->lambda).gatherStochVector();
-
-  return vec;
+  return gatherFromSolution( &sVars::lambda );
 }
 
 template<class FORMULATION, class IPMSOLVER>
@@ -556,49 +489,25 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolution
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionVarBoundsUpp()
 {
-  if( unscaleUnpermVars == nullptr)
-    this->getVarsUnscaledUnperm();
-
-  if( postsolver != nullptr && postsolvedVars == nullptr )
-    this->postsolveComputedSolution();
-
-  std::vector<double> vec;
-  if( postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->phi).gatherStochVector();
-  else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->phi).gatherStochVector();
-
-  return vec;
+  return gatherFromSolution( &sVars::phi );
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionVarBoundsLow()
 {
-  if( unscaleUnpermVars == nullptr)
-    this->getVarsUnscaledUnperm();
-
-  if( postsolver != nullptr && postsolvedVars == nullptr )
-    this->postsolveComputedSolution();
-
-  std::vector<double> vec;
-  if( postsolver == nullptr)
-    vec = dynamic_cast<const StochVector&>(*unscaleUnpermVars->gamma).gatherStochVector();
-  else
-    vec = dynamic_cast<const StochVector&>(*postsolvedVars->gamma).gatherStochVector();
-
-  return vec;
+  return gatherFromSolution( &sVars::gamma );
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityConsValues()
 {
-  if( unscaleUnpermResids == nullptr)
+  if( unscaleUnpermNotHierResids == nullptr)
     this->getResidsUnscaledUnperm();
 
   if( postsolver != nullptr && postsolvedVars == nullptr )
     this->postsolveComputedSolution();
 
-  StochVector* eq_vals = (postsolvedVars == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermResids->rA->cloneFull()) : 
+  StochVector* eq_vals = (postsolvedVars == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermNotHierResids->rA->cloneFull()) :
     dynamic_cast<StochVector*>(postsolvedResids->rA->cloneFull());
 
   if( origData == nullptr || postsolvedVars == nullptr )
@@ -617,20 +526,20 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityCons
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityConsValues()
 {
-  if( unscaleUnpermVars == nullptr)
+  if( unscaleUnpermNotHierVars == nullptr)
     this->getVarsUnscaledUnperm();
 
-  if( unscaleUnpermResids == nullptr)
+  if( unscaleUnpermNotHierResids == nullptr)
     this->getResidsUnscaledUnperm();
 
   if( postsolver != nullptr && postsolvedVars == nullptr )
     this->postsolveComputedSolution();
 
-  StochVector* ineq_vals = (postsolvedVars == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermResids->rC->cloneFull()) : 
+  StochVector* ineq_vals = (postsolvedVars == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermNotHierResids->rC->cloneFull()) :
     dynamic_cast<StochVector*>(postsolvedResids->rC->cloneFull());
 
   if( postsolvedVars == nullptr )
-    ineq_vals->axpy(1.0, *unscaleUnpermVars->s);
+    ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->s);
   else
     ineq_vals->axpy(1.0, *postsolvedVars->s);
 
@@ -651,10 +560,6 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStagePrima
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrimalColSolution(int scen) const {
 	SimpleVector const &v = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->x).children[scen]->vec);
-	//int mype;
-	//MPI_Comm_rank(comm,&mype);
-	//if (!v.length()) printf("oops, asked for scen %d on proc %d\n", scen, mype);
-	//assert(v.length());
 	if(!v.length())
 	  return std::vector<double>(); //this vector is not on this processor
 	else
@@ -802,10 +707,10 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   resids->calcresids(data, vars);
 #endif
 
-  if( unscaleUnpermVars == nullptr)
+  if( unscaleUnpermNotHierVars == nullptr)
     this->getVarsUnscaledUnperm();
 
-  if( unscaleUnpermResids == nullptr)
+  if( unscaleUnpermNotHierResids == nullptr)
     this->getResidsUnscaledUnperm();
 
   if( postsolvedVars != nullptr || postsolvedResids != nullptr )
@@ -826,8 +731,8 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
-     unscaleUnpermResids->calcresids(dataUnperm, unscaleUnpermVars, print_residuals);
-     printComplementarityResiduals(*unscaleUnpermVars);
+     unscaleUnpermNotHierResids->calcresids(dataUnpermNotHier, unscaleUnpermNotHierVars, print_residuals);
+     printComplementarityResiduals(*unscaleUnpermNotHierVars);
   }
 
   MPI_Barrier(comm);
@@ -841,7 +746,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   postsolvedVars = dynamic_cast<sVars*>( factory->makeVariables( origData ) );
 
   postsolvedResids = dynamic_cast<sResiduals*>( factory->makeResiduals( origData ) );
-  postsolver->postsolve(*unscaleUnpermVars, *postsolvedVars);
+  postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars);
 
   double obj_postsolved = origData->objectiveValue(postsolvedVars);
 
