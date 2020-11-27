@@ -1882,11 +1882,21 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    return hierarchical_top;
 }
 
+//void sData::fromHierarchicalToOriginal( sVars& hier_vars ) const
+//{
+//
+//}
+//void sData::fromHierarchicalToOriginal( sVars& hier_vars ) const
+//{
+//
+//}
+
 
 void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC)
 {
    assert( permutationIsValid(linkConsPermutationA) );
    assert( permutationIsValid(linkConsPermutationC) );
+   assert( !is_hierarchy_root );
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(linkConsPermutationA);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(linkConsPermutationC);
@@ -1900,6 +1910,7 @@ void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std
 void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
 {
    assert( permutationIsValid(linkVarsPermutation) );
+   assert( !is_hierarchy_root );
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(linkVarsPermutation);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(linkVarsPermutation);
@@ -1913,6 +1924,7 @@ void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
 
 sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 {
+   assert( !is_hierarchy_root );
    const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
