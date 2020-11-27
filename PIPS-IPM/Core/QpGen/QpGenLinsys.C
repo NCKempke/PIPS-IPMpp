@@ -295,7 +295,7 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
     if( nxlow > 0 )
     {
        dd_.axdzpy( 1.0, gamma, v, *ixlow );
-       dd_.axpy( 1e-8, *ixupp );
+       dd_.axpy( 1e-8, *ixlow );
     }
     if( nxupp > 0 )
     {
