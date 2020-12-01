@@ -253,7 +253,6 @@ Variables* sFactory::makeVariables( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
 
-  assert( !tree->isHierarchicalRoot() && !tree->isHierarchicalInner() );
   OoqpVectorHandle x      = OoqpVectorHandle( tree->newPrimalVector() );
   OoqpVectorHandle s      = OoqpVectorHandle( tree->newDualZVector() );
   OoqpVectorHandle y      = OoqpVectorHandle( tree->newDualYVector() );
@@ -266,18 +265,6 @@ Variables* sFactory::makeVariables( Data * prob_in )
   OoqpVectorHandle lambda = OoqpVectorHandle( tree->newDualZVector() );
   OoqpVectorHandle u      = OoqpVectorHandle( tree->newDualZVector() );
   OoqpVectorHandle pi     = OoqpVectorHandle( tree->newDualZVector() );
-
-  // OoqpVector * s      = tree->newDualZVector();
-  // OoqpVector * y      = tree->newDualYVector();
-  // OoqpVector * z      = tree->newDualZVector();
-  // OoqpVector * v      = tree->newPrimalVector();
-  // OoqpVector * gamma  = tree->newPrimalVector();
-  // OoqpVector * w      = tree->newPrimalVector();
-  // OoqpVector * phi    = tree->newPrimalVector();
-  // OoqpVector * t      = tree->newDualZVector();
-  // OoqpVector * lambda = tree->newDualZVector();
-  // OoqpVector * u      = tree->newDualZVector();
-  // OoqpVector * pi     = tree->newDualZVector();
 
   sVars* vars = new sVars( tree, x, s, y, z,
 			   v, gamma, w, phi,
