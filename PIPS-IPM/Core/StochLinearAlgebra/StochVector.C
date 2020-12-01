@@ -94,8 +94,7 @@ OoqpVectorBase<T>*
 StochVectorBase<T>::clone() const
 {
    assert( vec || vecl );
-   StochVectorBase<T> *clone;
-   clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
+   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
       clone->AddChild(children[it]->clone());
