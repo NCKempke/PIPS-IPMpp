@@ -992,7 +992,6 @@ void sTreeCallbacks::collapseDenseBorder()
    assert( is_hierarchical_root );
    assert( rankMe == PIPS_MPIgetRank() );
    assert( numProcs == PIPS_MPIgetSize() );
-   assert( IPMIterExecTIME != -1 );
    assert( children.size() == 1 );
 
 
