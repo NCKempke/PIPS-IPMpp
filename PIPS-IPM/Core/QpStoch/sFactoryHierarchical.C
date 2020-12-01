@@ -42,3 +42,12 @@ Data* sFactoryHierarchical::switchToHierarchicalData( Data* prob_in )
 
    return data;
 }
+
+void sFactoryHierarchical::collapseHierarchicalTree()
+{
+   sTree* new_top = tree->collapseHierarchicalTree();
+   assert( tree->children.size() == 0 );
+   delete( tree );
+   tree = new_top;
+
+}

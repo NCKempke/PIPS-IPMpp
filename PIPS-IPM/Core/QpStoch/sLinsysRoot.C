@@ -828,43 +828,6 @@ void sLinsysRoot::AddChild(sLinsys* child)
   children.push_back(child);
 }
 
-
-void sLinsysRoot::sync()
-{
-  //delete children
-  deleteChildren();
-  //assert(false);
-
-  //delete local stuff
-  if( nxupp + nxlow > 0 ) {
-    delete dd; 
-    delete dq; 
-  }
-  delete nomegaInv;
-  delete rhs;
-  if (solver) delete solver;
-  if (kkt)    delete kkt;
-
-
-  //allocate
-  if( nxupp + nxlow > 0 ) {
-    //dd      = OoqpVectorHandle(stochNode->newPrimalVector());
-    //dq      = OoqpVectorHandle(stochNode->newPrimalVector());
-    dd = stochNode->newPrimalVector();
-    dq = stochNode->newPrimalVector();
-    data->getDiagonalOfQ( *dq );
-  }
-  nomegaInv   = stochNode->newDualZVector();
-  rhs         = stochNode->newRhs();
-
-
-  data->getLocalSizes(locnx, locmy, locmz);
-  createChildren(data);
-
-  kkt = createKKT(data);
-  solver = createSolver(data, kkt);
-}
-
 ///////////////////////////////////////////////////////////
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
@@ -875,10 +838,7 @@ void sLinsysRoot::initializeKKT(sData* prob, Variables* vars)
       assert( !hasSparseKkt );
 
    if( hasSparseKkt )
-   {
-      SparseSymMatrix* kkts = dynamic_cast<SparseSymMatrix*>(kkt);
-      kkts->symPutZeroes();
-   }
+      dynamic_cast<SparseSymMatrix*>(kkt)->symPutZeroes();
    else
    {
       DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt);

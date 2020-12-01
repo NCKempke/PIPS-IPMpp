@@ -25,6 +25,8 @@ class sFactoryHierarchical : public sFactoryAug {
       sLinsysRoot* newLinsysRootHierarchical() override;
 
       Data* switchToHierarchicalData(Data* prob_in) override;
+      void collapseHierarchicalTree() override;
+
 };
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_SFACTORYHIERARCHICAL_H_ */

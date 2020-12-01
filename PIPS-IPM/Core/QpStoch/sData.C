@@ -1882,16 +1882,6 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    return hierarchical_top;
 }
 
-//void sData::fromHierarchicalToOriginal( sVars& hier_vars ) const
-//{
-//
-//}
-//void sData::fromHierarchicalToOriginal( sVars& hier_vars ) const
-//{
-//
-//}
-
-
 void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC)
 {
    assert( permutationIsValid(linkConsPermutationA) );

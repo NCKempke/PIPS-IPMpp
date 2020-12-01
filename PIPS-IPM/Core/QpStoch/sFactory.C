@@ -236,18 +236,6 @@ Data * sFactory::makeData()
   return data;
 }
 
-Data* sFactory::switchToHierarchicalData( Data* prob_in )
-{
-   assert( 0 && "not implemented here" );
-   return nullptr;
-}
-
-sLinsysRoot* sFactory::newLinsysRootHierarchical()
-{
-   assert( 0 && "not implemented here" );
-   return nullptr;
-}
-
 // TODO adjust this for hierarchical approach
 Variables* sFactory::makeVariables( Data * prob_in )
 {
@@ -321,15 +309,15 @@ void sFactory::iterateEnded()
   tree->stopMonitors();
 
   if(tree->balanceLoad()) {
-    // balance needed
-    data->sync();
-
-    for(size_t i=0; i< registeredVars.size(); i++)
-      registeredVars[i]->sync();
-
-    resid->sync();
-
-    linsys->sync();
+//    // balance needed
+//    data->sync();
+//
+//    for(size_t i=0; i< registeredVars.size(); i++)
+//      registeredVars[i]->sync();
+//
+//    resid->sync();
+//
+//    linsys->sync();
 
     printf("Should not get here! OMG OMG OMG\n");
   }

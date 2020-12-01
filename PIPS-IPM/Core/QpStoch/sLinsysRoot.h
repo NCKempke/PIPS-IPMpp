@@ -85,8 +85,6 @@ class sLinsysRoot : public sLinsys {
 
   virtual bool usingSparseKkt() {return hasSparseKkt;};
 
-  void sync();
-
   virtual ~sLinsysRoot();
 
   //utilities

@@ -62,8 +62,12 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
 #endif
    assert(locmyl >= 0 && locmzl >= 0);
 
-   kkt = createKKT(prob_);
-   solver = createSolver(prob_, kkt);
+   problems_blocked[0].reset( createKKT(prob_) );
+   kkt = problems_blocked[0].get();
+
+   solvers_blocked[0].reset( createSolver(prob_, kkt) );
+   solver = solvers_blocked[0].get();
+
    redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl);
    redRhs->setToZero();
 }
@@ -83,8 +87,12 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
    assert(locmyl == 0 && locmzl == 0);
 #endif
 
-   kkt = createKKT(prob_);
-   solver = createSolver(prob_, kkt);
+   problems_blocked[0].reset( createKKT(prob_) );
+   kkt = problems_blocked[0].get();
+
+   solvers_blocked[0].reset( createSolver(prob_, kkt) );
+   solver = solvers_blocked[0].get();
+
    redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl );
    redRhs->setToZero();
 }
@@ -1669,7 +1677,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables* vars)
 {
    int j, p, pend;
 
-   DenseSymMatrix * const kktd = dynamic_cast<DenseSymMatrix*>(kkt);
+   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt);
 
    //alias for internal buffer of kkt
    double** const dKkt = kktd->Mat();

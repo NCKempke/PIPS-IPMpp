@@ -28,7 +28,7 @@ sTree::sTree()
 
 sTree::~sTree() 
 {
-  for(size_t it=0; it<children.size(); it++)
+  for(size_t it = 0; it < children.size(); it++)
     delete children[it];
 }
 

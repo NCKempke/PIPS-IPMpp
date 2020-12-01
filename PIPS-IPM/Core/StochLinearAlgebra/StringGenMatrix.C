@@ -45,7 +45,7 @@ StringGenMatrix::StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseG
 
 StringGenMatrix::~StringGenMatrix()
 {
-   for( auto& child : children )
+   for( StringGenMatrix* child : children )
       delete child;
 
    delete mat;

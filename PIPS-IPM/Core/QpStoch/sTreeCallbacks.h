@@ -27,7 +27,7 @@ class sTreeCallbacks : public sTree
 public:
    sTreeCallbacks(StochInputTree* root);
    sTreeCallbacks(StochInputTree::StochInputNode* data_);
-   ~sTreeCallbacks();
+   ~sTreeCallbacks() = default;
 
    StochSymMatrix*   createQ() const;
 
@@ -67,7 +67,7 @@ public:
 
    sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
          const std::vector<int>& twoLinksStartBlockC ) override;
-   void collapseHierarchicalTree() override;
+   sTree* collapseHierarchicalTree() override;
 
    void splitDataAccordingToTree( sData& data ) const;
    const std::vector<unsigned int>& getMapProcsSubcomms() const
@@ -92,7 +92,7 @@ private:
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
-   void collapseDenseBorder();
+   sTree* collapseDenseBorder();
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE, MY_INACTIVE, MZ_INACTIVE, MYL_INACTIVE, MZL_INACTIVE; //global inactive sizes

@@ -21,10 +21,6 @@
 #define UCTRANS
 #endif
 
-sTreeCallbacks::~sTreeCallbacks()
-{
-}
-
 sTreeCallbacks::sTreeCallbacks() 
    : N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
@@ -694,6 +690,9 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->mzl_active = mzl_to_shave;
    this->mzl_active -= mzl_to_shave;
 
+   assert( myl_active >= 0 );
+   assert( mzl_active >= 0 );
+
    return top_layer;
 }
 
@@ -986,7 +985,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    return top_layer;
 }
 
-void sTreeCallbacks::collapseDenseBorder()
+sTree* sTreeCallbacks::collapseDenseBorder()
 {
    /* this must happen at MPI_COMM_WORLD level */
    assert( is_hierarchical_root );
@@ -994,28 +993,39 @@ void sTreeCallbacks::collapseDenseBorder()
    assert( numProcs == PIPS_MPIgetSize() );
    assert( children.size() == 1 );
 
-
-   sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(children[0]);
+   sTreeCallbacks* new_top = dynamic_cast<sTreeCallbacks*>(children[0]);
    children.clear();
 
-   children.insert( children.end(), child->children.begin(), child->children.end() );
+   commWrkrs = MPI_COMM_NULL;
+   myProcs.clear();
 
-   this->is_hierarchical_root = false;
+   new_top->N = N;
+   N = -1;
+   MY = -1;
+   new_top->MYL = MYL;
+   MYL = -1;
+   MZ = -1;
+   new_top->MZL = MZL;
+   MZL = -1;
 
-   /* sTreeCallbacks members */
-   nx_active += child->nx_active;
-   my_active = child->my_active;
-   mz_active = child->mz_active;
+   numProcs = -1;
 
-   myl_active = child->myl_active;
-   mzl_active = child->mzl_active;
+   new_top->nx_active += nx_active;
+   nx_active = -1;
+   assert( my_active == - 1 );
+   assert( mz_active == - 1 );
 
-   delete child;
+   new_top->myl_active += myl_active;
+   myl_active = -1;
+   new_top->mzl_active += mzl_active;
+   mzl_active = -1;
+
+   return new_top;
 }
 
-void sTreeCallbacks::collapseHierarchicalTree()
+sTree* sTreeCallbacks::collapseHierarchicalTree()
 {
-   collapseDenseBorder();
+   return collapseDenseBorder();
 }
 
 void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& mat ) const

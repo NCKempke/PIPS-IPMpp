@@ -53,7 +53,6 @@ class sDummyLinsys : public sLinsys
   void allocU(DenseGenMatrix ** Ut, int np) override {};
   void allocV (DenseGenMatrix ** V, int np) override {};
   void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V) override {};
-  void sync() override {};
   void deleteChildren() override {};
 
   bool isDummy() const override { return true; };
