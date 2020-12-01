@@ -378,10 +378,6 @@ int QpGenResiduals::validNonZeroPattern()
   return 1;
 }
 
-QpGenResiduals::~QpGenResiduals()
-{
-}
-
 void QpGenResiduals::writeToStream(std::ostream& out)
 {
   /*

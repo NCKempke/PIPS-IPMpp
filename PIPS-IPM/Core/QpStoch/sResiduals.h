@@ -38,6 +38,8 @@ public:
   
   sResiduals( const sResiduals& res );
 
+  ~sResiduals();
+
   void sync();
 
   void permuteVec0Entries( const std::vector<unsigned int>& perm );
@@ -51,9 +53,7 @@ public:
   std::vector<sResiduals*> children;
 private:
   void createChildren();
-  void destroyChildren();
   void AddChild(sResiduals* child);
-
   
  protected:
   const sTree* stochNode;

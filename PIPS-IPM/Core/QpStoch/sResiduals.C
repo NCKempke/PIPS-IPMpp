@@ -115,6 +115,12 @@ sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
    }
 }
 
+sResiduals::~sResiduals()
+{
+   for( sResiduals* child : children )
+      delete child;
+}
+
 void sResiduals::AddChild(sResiduals* child)
 {
   children.push_back(child);
@@ -344,20 +350,4 @@ bool sResiduals::isRootNodeInSync() const
    MPI_Barrier(MPI_COMM_WORLD);
    return in_sync;
 
-}
-
-void sResiduals::destroyChildren()
-{
-  //int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  for (size_t it=0; it<children.size(); it++) {
-    //printf("CPU[%d] destroy %d\n", myRank, it);
-    children[it]->destroyChildren(); 
-  }
-  
-  for (size_t it=0; it<children.size(); it++) {
-    
-    delete children[it];
-    //printf("deleted %d\n", it);
-  }
-  children.clear();
 }
