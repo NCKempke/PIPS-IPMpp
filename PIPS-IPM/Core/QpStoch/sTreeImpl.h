@@ -53,9 +53,9 @@ class sTreeImpl : public sTree
 
   sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
         const std::vector<int>& twoLinksStartBlockC ) override { assert( 0 && "not implemented here"); return nullptr; };
-  void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override
-  { assert( 0 && "not implemented here" ); };
+  void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override { assert( 0 && "not implemented here" ); };
   sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override { assert( 0 && "not implemented here" ); return nullptr; };
+  void collapseHierarchicalTree() override { assert( false && "not implemented here"); };
 
  private:
   int m_id;

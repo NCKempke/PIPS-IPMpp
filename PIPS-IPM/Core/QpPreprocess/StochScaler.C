@@ -34,7 +34,8 @@ Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const
 
 Residuals* StochScaler::getResidualsUnscaled(const Residuals& resids) const
 {
-   Residuals* s_resids = new sResiduals(dynamic_cast<const sResiduals&>(resids));
+   sResiduals* s_resids = new sResiduals(dynamic_cast<const sResiduals&>(resids));
+   std::cout << "Hi " << s_resids->children.size() << " and " << dynamic_cast<const sResiduals&>(resids).children.size() << std::endl;
    assert(s_resids);
 
    unscaleResids(*s_resids);

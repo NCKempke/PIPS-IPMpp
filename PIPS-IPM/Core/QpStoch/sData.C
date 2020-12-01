@@ -1953,11 +1953,12 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    if( is_hierarchy_root )
       unperm_resids->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
+   assert( unperm_resids->children.size() == unpermData.children.size() );
+
    const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
    const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
 
-   assert( unperm_resids->children.size() == unpermData.children.size() );
 
    if( perm_inv_link_vars.size() != 0 )
       unperm_resids->permuteVec0Entries( perm_inv_link_vars );

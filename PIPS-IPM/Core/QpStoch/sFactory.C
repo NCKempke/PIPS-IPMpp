@@ -253,6 +253,7 @@ Variables* sFactory::makeVariables( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
 
+  assert( !tree->isHierarchicalRoot() && !tree->isHierarchicalInner() );
   OoqpVectorHandle x      = OoqpVectorHandle( tree->newPrimalVector() );
   OoqpVectorHandle s      = OoqpVectorHandle( tree->newDualZVector() );
   OoqpVectorHandle y      = OoqpVectorHandle( tree->newDualYVector() );

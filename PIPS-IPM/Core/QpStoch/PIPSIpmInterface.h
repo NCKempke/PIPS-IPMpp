@@ -738,11 +738,11 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   MPI_Barrier(comm);
   const double t0_postsolve = MPI_Wtime();
 
-  sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*dynamic_cast<sFactory&>(*factory).tree);
-  dynamic_cast<sTreeCallbacks*>(callbackTree.children[0])->switchToOriginalData();
-
   factory->data = origData;
-  factory->tree = callbackTree.children[0];
+#ifdef HIERARCHICAL
+  factory->tree->collapseHierarchicalTree();
+#endif
+  dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
 
   postsolvedVars = dynamic_cast<sVars*>( factory->makeVariables( origData ) );
 

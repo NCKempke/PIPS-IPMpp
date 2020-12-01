@@ -986,6 +986,39 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    return top_layer;
 }
 
+void sTreeCallbacks::collapseDenseBorder()
+{
+   /* this must happen at MPI_COMM_WORLD level */
+   assert( is_hierarchical_root );
+   assert( rankMe == PIPS_MPIgetRank() );
+   assert( numProcs == PIPS_MPIgetSize() );
+   assert( IPMIterExecTIME != -1 );
+   assert( children.size() == 1 );
+
+
+   sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(children[0]);
+   children.clear();
+
+   children.insert( children.end(), child->children.begin(), child->children.end() );
+
+   this->is_hierarchical_root = false;
+
+   /* sTreeCallbacks members */
+   nx_active += child->nx_active;
+   my_active = child->my_active;
+   mz_active = child->mz_active;
+
+   myl_active = child->myl_active;
+   mzl_active = child->mzl_active;
+
+   delete child;
+}
+
+void sTreeCallbacks::collapseHierarchicalTree()
+{
+   collapseDenseBorder();
+}
+
 void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& mat ) const
 {
 

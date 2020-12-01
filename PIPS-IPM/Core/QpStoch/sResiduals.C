@@ -101,6 +101,8 @@ sResiduals::sResiduals( const sTree* tree,
   }
   
   stochNode = tree;
+
+  createChildren();
 }
 
 sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
@@ -109,7 +111,7 @@ sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
 
    for(unsigned int i = 0; i < res.children.size(); ++i)
    {
-       children.push_back( new sResiduals(*res.children[i]) );
+       children.push_back( new sResiduals( *res.children[i]) );
    }
 }
 
@@ -140,7 +142,7 @@ void sResiduals::createChildren()
 
   //copy the structure of one of the vectors and create children of
   //this
-  size_t nChildren=rQSt.children.size();
+  size_t nChildren=rASt.children.size();
   for (size_t it=0; it<nChildren; it++) {
 
     assert(nChildren==stochNode->children.size());

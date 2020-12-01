@@ -67,6 +67,7 @@ public:
 
    sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
          const std::vector<int>& twoLinksStartBlockC ) override;
+   void collapseHierarchicalTree() override;
 
    void splitDataAccordingToTree( sData& data ) const;
    const std::vector<unsigned int>& getMapProcsSubcomms() const
@@ -89,7 +90,9 @@ private:
 
    void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm, std::vector<unsigned int>& map_child_to_sub_comm );
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
+
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+   void collapseDenseBorder();
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE, MY_INACTIVE, MZ_INACTIVE, MYL_INACTIVE, MZL_INACTIVE; //global inactive sizes
