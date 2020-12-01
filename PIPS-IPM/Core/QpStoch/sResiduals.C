@@ -110,7 +110,7 @@ sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
 
    for(unsigned int i = 0; i < res.children.size(); ++i)
    {
-       children.push_back( new sResiduals(*children[i]) );
+       children.push_back( new sResiduals(*res.children[i]) );
    }
 }
 
