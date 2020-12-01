@@ -137,7 +137,7 @@ sVars::sVars( const sTree* tree, OoqpVector * x_in, OoqpVector * s_in,
 sVars::sVars(const sVars& vars) : QpGenVars(vars)
 {
   stochNode = vars.stochNode;
-  for(unsigned int i = 0; i < children.size(); ++i)
+  for(unsigned int i = 0; i < vars.children.size(); ++i)
   {
     children.push_back( new sVars(*vars.children[i]));
   }
