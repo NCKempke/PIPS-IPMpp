@@ -1955,4 +1955,5 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
    LtsolveHierarchyBorder( schur_comp, *buffer_b0, border );
    // compute SC_{outer} += B0_{outer}^T X0
    finalizeInnerSchurComplementContribution( schur_comp, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0 );
+   delete buffer_b0;
 }

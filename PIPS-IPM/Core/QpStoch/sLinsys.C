@@ -538,6 +538,8 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
 
    /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bi_{outer}^T - X0^T * Bi_{inner}^T) and multiply from right with Bi_{outer}^T and add to SC */
    addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BiT_outer, *BiT_buffer, SC );
+
+   delete BiT_buffer;
 }
 
 void sLinsys::solveCompressed( OoqpVector& rhs_)
@@ -1059,7 +1061,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
    assert(nThreads >= 1);
 
-   int * col_id_cont = new int[blocksizemax * n_solvers];
+   std::vector<int> col_id_cont(blocksizemax * n_solvers);
 
 #ifdef TIME_SCHUR
    const double t_start = omp_get_wtime();
@@ -1077,7 +1079,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
       const int id = omp_get_thread_num();
 
-      int * colId_loc = col_id_cont + id * blocksizemax;
+      int* colId_loc = col_id_cont.data() + id * blocksizemax;
 
       for( int j = 0; j < actual_blocksize; ++j )
             colId_loc[j] = j + i * blocksizemax;
