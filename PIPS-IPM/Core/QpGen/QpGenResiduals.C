@@ -79,23 +79,23 @@ QpGenResiduals::QpGenResiduals( const QpGenResiduals& res) : Residuals(res)
   icupp = OoqpVectorHandle( res.icupp->cloneFull() );
   mcupp = res.mcupp;
 
-  rQ = OoqpVectorHandle(res.rQ->cloneFull());
-  rA = OoqpVectorHandle(res.rA->cloneFull());
-  rC = OoqpVectorHandle(res.rC->cloneFull());
+  rQ = OoqpVectorHandle( res.rQ->cloneFull() );
+  rA = OoqpVectorHandle( res.rA->cloneFull() );
+  rC = OoqpVectorHandle( res.rC->cloneFull() );
 
-  rz = OoqpVectorHandle(res.rz->cloneFull());
+  rz = OoqpVectorHandle( res.rz->cloneFull() );
 
-  rt = OoqpVectorHandle(res.rt->cloneFull());
-  rlambda = OoqpVectorHandle(res.rlambda->cloneFull());
+  rt = OoqpVectorHandle( res.rt->cloneFull() );
+  rlambda = OoqpVectorHandle( res.rlambda->cloneFull() );
 
-  ru = OoqpVectorHandle(res.ru->cloneFull());
-  rpi = OoqpVectorHandle(res.rpi->cloneFull());
+  ru = OoqpVectorHandle( res.ru->cloneFull() );
+  rpi = OoqpVectorHandle( res.rpi->cloneFull() );
 
-  rv = OoqpVectorHandle(res.rv->cloneFull());
-  rgamma = OoqpVectorHandle(res.rgamma->cloneFull());
+  rv = OoqpVectorHandle( res.rv->cloneFull() );
+  rgamma = OoqpVectorHandle( res.rgamma->cloneFull() );
   
-  rw = OoqpVectorHandle(res.rw->cloneFull());
-  rphi = OoqpVectorHandle(res.rphi->cloneFull());
+  rw = OoqpVectorHandle( res.rw->cloneFull() );
+  rphi = OoqpVectorHandle( res.rphi->cloneFull() );
 }
 
 double updateNormAndPrint( double norm, const OoqpVector& vec, bool print, std::string&& name )

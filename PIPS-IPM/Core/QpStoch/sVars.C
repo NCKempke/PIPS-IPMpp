@@ -143,21 +143,6 @@ sVars::sVars(const sVars& vars) : QpGenVars(vars)
   }
 }
 
-sVars::sVars(const sVars& vars, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
-      OoqpVectorHandle iclow_, OoqpVectorHandle icupp_) : QpGenVars(vars)
-{
-   stochNode = vars.stochNode;
-   for(unsigned int i = 0; i < children.size(); ++i)
-   {
-      children.push_back( new sVars(*vars.children[i]));
-   }
-
-   ixlow = ixlow_;
-   ixupp = ixupp_;
-   iclow = iclow_;
-   icupp = icupp_;
-}
-
 sVars::~sVars()
 { 
   for (size_t c = 0; c < children.size(); c++)
@@ -236,6 +221,36 @@ void sVars::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHan
 
    children.clear();
    createChildren();
+}
+
+void sVars::permuteVec0Entries( const std::vector<unsigned int>& perm )
+{
+   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+
+   dynamic_cast<StochVector&>(*x).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*v).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*w).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*phi).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*gamma).permuteVec0Entries(perm);
+}
+
+void sVars::permuteEqLinkingEntries( const std::vector<unsigned int>& perm )
+{
+   dynamic_cast<StochVector&>(*y).permuteLinkingEntries(perm);
+}
+
+void sVars::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm )
+{
+   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+
+   dynamic_cast<StochVector&>(*s).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*z).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*t).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*u).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*pi).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*lambda).permuteLinkingEntries(perm);
 }
 
 void sVars::sync()

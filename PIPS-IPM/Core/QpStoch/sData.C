@@ -1923,7 +1923,7 @@ void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
 
 sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 {
-   sVars* unperm_vars = new sVars(vars, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
+   sVars* unperm_vars = new sVars(vars);
 
    if( is_hierarchy_root )
       unperm_vars->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
@@ -1935,35 +1935,20 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
    const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
 
    if( perm_inv_link_vars.size() != 0 )
-   {
-      dynamic_cast<StochVector&>(*unperm_vars->x).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_vars->v).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_vars->w).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_vars->phi).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_vars->gamma).permuteVec0Entries(perm_inv_link_vars);   
-   }
+      unperm_vars->permuteVec0Entries( perm_inv_link_vars );
 
    if( perm_inv_link_cons_eq.size() != 0 )
-   {
-      dynamic_cast<StochVector&>(*unperm_vars->y).permuteLinkingEntries(perm_inv_link_cons_eq);
-   }
+      unperm_vars->permuteEqLinkingEntries( perm_inv_link_cons_eq );
 
    if( perm_inv_link_cons_ineq.size() != 0 )
-   {
-      dynamic_cast<StochVector&>(*unperm_vars->s).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-      dynamic_cast<StochVector&>(*unperm_vars->z).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-      dynamic_cast<StochVector&>(*unperm_vars->t).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-      dynamic_cast<StochVector&>(*unperm_vars->u).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-      dynamic_cast<StochVector&>(*unperm_vars->pi).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-      dynamic_cast<StochVector&>(*unperm_vars->lambda).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-   }
+      unperm_vars->permuteIneqLinkingEntries( perm_inv_link_cons_ineq );
 
    return unperm_vars;
 }
 
 sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unpermData) const
 {
-   sResiduals* unperm_resids = new sResiduals(resids, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+   sResiduals* unperm_resids = new sResiduals(resids);
 
    if( is_hierarchy_root )
       unperm_resids->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
@@ -1975,28 +1960,13 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    assert( unperm_resids->children.size() == unpermData.children.size() );
 
    if( perm_inv_link_vars.size() != 0 )
-   {
-      dynamic_cast<StochVector&>(*unperm_resids->rQ).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_resids->rv).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_resids->rw).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_resids->rgamma).permuteVec0Entries(perm_inv_link_vars);   
-      dynamic_cast<StochVector&>(*unperm_resids->rphi).permuteVec0Entries(perm_inv_link_vars);   
-   }
+      unperm_resids->permuteVec0Entries( perm_inv_link_vars );
 
    if( perm_inv_link_cons_eq.size() != 0 )
-   {
-      dynamic_cast<StochVector&>(*unperm_resids->rA).permuteLinkingEntries(perm_inv_link_cons_eq);
-   }
+      unperm_resids->permuteEqLinkingEntries( perm_inv_link_cons_eq );
 
    if( perm_inv_link_cons_ineq.size() != 0 )
-   {
-      dynamic_cast<StochVector&>(*unperm_resids->rC).permuteLinkingEntries(perm_inv_link_cons_ineq); 
-      dynamic_cast<StochVector&>(*unperm_resids->rt).permuteLinkingEntries(perm_inv_link_cons_ineq);   
-      dynamic_cast<StochVector&>(*unperm_resids->ru).permuteLinkingEntries(perm_inv_link_cons_ineq);   
-      dynamic_cast<StochVector&>(*unperm_resids->rz).permuteLinkingEntries(perm_inv_link_cons_ineq);
-      dynamic_cast<StochVector&>(*unperm_resids->rlambda).permuteLinkingEntries(perm_inv_link_cons_ineq);   
-      dynamic_cast<StochVector&>(*unperm_resids->rpi).permuteLinkingEntries(perm_inv_link_cons_ineq);   
-   }
+      unperm_resids->permuteIneqLinkingEntries( perm_inv_link_cons_ineq );
 
    return unperm_resids;
 }

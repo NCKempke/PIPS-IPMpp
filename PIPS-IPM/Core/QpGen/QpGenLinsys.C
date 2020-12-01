@@ -500,9 +500,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
     this->separateVars(stepx, stepy, stepz, *sol);
 
-  }
-  else if( false || outerSolve == 0 )
-  {
+  } else if( outerSolve == 0 ) {
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////

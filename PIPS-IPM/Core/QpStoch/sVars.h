@@ -32,17 +32,21 @@ public:
 
   sVars(const sVars& vars);
 
-  sVars(const sVars& vars, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
-        OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
-
   virtual ~sVars();
   
   bool isRootNodeInSync() const;
-  virtual void sync();
+
   std::vector<sVars*> children;
 
   void collapseHierarchicalStructure(const sTree* stochNode, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
         OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
+
+  void permuteVec0Entries( const std::vector<unsigned int>& perm );
+  void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
+  void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm );
+
+  void sync();
+
 protected:
   void createChildren();
   void AddChild(sVars* child);
