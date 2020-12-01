@@ -341,11 +341,3 @@ void QpScaler::scaleObjVector(double scaling_factor)
    scaling_applied = true;
 }
 
-QpScaler::~QpScaler()
-{
-   delete vec_rowscaleQ;
-   delete vec_rowscaleA;
-   delete vec_rowscaleC;
-   delete vec_colscale;
-
-}

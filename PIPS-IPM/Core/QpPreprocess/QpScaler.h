@@ -13,6 +13,8 @@
 #include "OoqpVector.h"
 #include "DoubleMatrix.h"
 
+#include <memory>
+
 /**  * @defgroup QpPreprocess
  *
  * QP scaler
@@ -36,10 +38,10 @@ protected:
   bool scaling_applied;
 
   // scaling vector
-  OoqpVector* vec_rowscaleQ;
-  OoqpVector* vec_rowscaleA;
-  OoqpVector* vec_rowscaleC;
-  OoqpVector* vec_colscale;
+  std::unique_ptr<OoqpVector> vec_rowscaleQ{};
+  std::unique_ptr<OoqpVector> vec_rowscaleA{};
+  std::unique_ptr<OoqpVector> vec_rowscaleC{};
+  std::unique_ptr<OoqpVector> vec_colscale{};
 
   // problem data
   SymMatrixHandle Q;
@@ -71,7 +73,7 @@ protected:
 public:
 
   QpScaler(Data* prob, bool bitshifting = false);
-  virtual ~QpScaler();
+  virtual ~QpScaler() = default;
 
   /** scale */
   virtual void scale() override = 0;
