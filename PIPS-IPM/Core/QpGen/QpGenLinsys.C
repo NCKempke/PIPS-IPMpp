@@ -261,7 +261,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 			  *vars->v, *vars->gamma,
 			  *vars->w, *vars->phi );
 
-  dd->addConstant( 1e-8 );
+//  dd->addConstant( 1e-8 );
 
   if( nxlow + nxupp > 0 ) this->putXDiagonal( *dd );
 
@@ -275,7 +275,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   nomegaInv->invert();
   nomegaInv->negate();
 
-  nomegaInv->addConstant( -1e-8 );
+//  nomegaInv->addConstant( -1e-8 );
 
 
   if( mclow + mcupp > 0 ) this->putZDiagonal( *nomegaInv );
