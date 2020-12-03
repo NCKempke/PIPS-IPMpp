@@ -567,4 +567,5 @@ void QpGenData::flipQ()
 }
 
 QpGenData::~QpGenData()
-{ }
+{
+}

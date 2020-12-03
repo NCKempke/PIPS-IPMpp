@@ -72,7 +72,7 @@ void StochVectorBase<T>::AddChild(StochVectorBase<T>* child)
 template<typename T>
 void StochVectorBase<T>::AddChild(OoqpVectorBase<T>* child_)
 {
-  StochVectorBase<T>* child = reinterpret_cast<StochVectorBase<T>*>(child_);
+  StochVectorBase<T>* child = dynamic_cast<StochVectorBase<T>*>(child_);
   AddChild(child);
 }
 
@@ -2283,15 +2283,12 @@ void StochVectorBase<T>::collapseHierarchicalStructure()
          root.vecl = nullptr;
       }
 
-      children = std::move(root.children);
-
-      for( auto child : children )
-         child->parent = this;
-
-      delete &root;
+      children.insert( children.end(), root.children.begin(), root.children.end() );
+      root.children.clear();
 
       for( auto child : children )
       {
+         child->parent = this;
          assert( child->children.size() == 0 );
 //         child->collapseHierarchicalStructure();
       }

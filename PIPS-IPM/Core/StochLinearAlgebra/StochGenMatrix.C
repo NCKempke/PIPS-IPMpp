@@ -8,6 +8,15 @@
 #include <algorithm>
 
 StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
+      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
+{
+   Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
+   Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
+   Blmat = new SparseGenMatrix(0, 0, 0);
+}
+
+StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
       int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n,
       int Bl_nnz, MPI_Comm mpiComm_) :
       m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))

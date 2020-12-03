@@ -1794,32 +1794,32 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
             n_global_ineq_linking_conss << " inequalities for the border" << "\n";
    }
 
-   BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars);
+   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars) );
 
-   BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
-   BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
+   GenMatrixHandle A_hier( dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars) );
+   GenMatrixHandle C_hier( dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars) );
 
    /* we ordered global linking vars first and global linking rows to the end */
-   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true);
+   StochVectorHandle g_hier( dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle bux_hier( dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle ixupp_hier( dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle blx_hier( dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle ixlow_hier( dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true) );
 
-   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
+   StochVectorHandle bA_hier( dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false) );
 
-   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false);
-   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false);
-   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false);
-   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false);
+   StochVectorHandle bu_hier( dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle icupp_hier( dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle bl_hier( dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle iclow_hier( dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false) );
 
    // TODO what is this?
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
-   sData* hierarchical_top = new sData(tree, g_hier, Q_hier, blx_hier,
-         ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
-         A_hier, bA_hier, C_hier, bl_hier,
-         iclow_hier, mclow, bu_hier, icupp_hier, mcupp,
+   sData* hierarchical_top = new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
+         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
+         A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
+         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
          false, true);
 
    assert( ixlow_hier->vec );
