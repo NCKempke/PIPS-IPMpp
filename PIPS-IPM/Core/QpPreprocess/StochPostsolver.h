@@ -163,28 +163,25 @@ private:
 
       /* local changes in linking variables */
       bool& outdated_linking_vars;
-      int length_array_linking_var_changes;
-      double* array_linking_var_changes;
-      SimpleVectorHandle x_changes;
-      SimpleVectorHandle v_changes;
-      SimpleVectorHandle w_changes;
-      SimpleVectorHandle gamma_changes;
-      SimpleVectorHandle phi_changes;
+      std::vector<double> array_linking_var_changes;
+      std::unique_ptr<SimpleVector> x_changes{};
+      std::unique_ptr<SimpleVector> v_changes{};
+      std::unique_ptr<SimpleVector> w_changes{};
+      std::unique_ptr<SimpleVector> gamma_changes{};
+      std::unique_ptr<SimpleVector> phi_changes{};
 
       /* local changes in equality linking rows */
       bool& outdated_equality_linking_rows;
-      int length_array_eq_linking_row_changes;
-      double* array_eq_linking_row_changes;
-      SimpleVectorHandle y_changes;
+      std::vector<double> array_eq_linking_row_changes;
+      std::unique_ptr<SimpleVector> y_changes{};
 
       /* local changes in inequality rows */
       bool& outdated_inequality_linking_rows;
-      int length_array_ineq_linking_row_changes;
-      double* array_ineq_linking_row_changes;
-      SimpleVectorHandle z_changes;
-      SimpleVectorHandle s_changes;
-      SimpleVectorHandle t_changes;
-      SimpleVectorHandle u_changes;
+      std::vector<double> array_ineq_linking_row_changes;
+      std::unique_ptr<SimpleVector> z_changes{};
+      std::unique_ptr<SimpleVector> s_changes{};
+      std::unique_ptr<SimpleVector> t_changes{};
+      std::unique_ptr<SimpleVector> u_changes{};
 
       void finishNotify();
 
