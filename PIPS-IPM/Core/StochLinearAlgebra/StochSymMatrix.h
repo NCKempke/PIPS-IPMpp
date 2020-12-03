@@ -46,8 +46,8 @@ public:
   virtual ~StochSymMatrix();
 
   std::vector<StochSymMatrix*> children;
-  SparseSymMatrix* diag;
-  SparseGenMatrix* border;
+  SparseSymMatrix* diag{};
+  SparseGenMatrix* border{};
 
   long long n;
   MPI_Comm mpiComm;

@@ -105,47 +105,47 @@ private:
 
    /** tolerance for comparing two double values in two different rows and for them being considered equal */
    const double limit_tol_compare_entries;
-   int n_rows_removed;
+   int n_rows_removed{0};
 
    /// extension to the pointer set from StochPresolverBase to point to C and A at the same moment rather than
    /// distinguishing between EQUALITY and INEQUALITY constraints
-   const SparseStorageDynamic* currCmat;
-   const SparseStorageDynamic* currCmatTrans;
-   const SparseStorageDynamic* currDmat;
-   const SparseStorageDynamic* currDmatTrans;
-   const SimpleVectorBase<int>* currNnzRowC;
+   const SparseStorageDynamic* currCmat{};
+   const SparseStorageDynamic* currCmatTrans{};
+   const SparseStorageDynamic* currDmat{};
+   const SparseStorageDynamic* currDmatTrans{};
+   const SimpleVectorBase<int>* currNnzRowC{};
 
    // pointers to the normalized and copied matrix blocks
-   SparseStorageDynamic* norm_Amat;
-   SparseStorageDynamic* norm_Bmat;
-   SparseStorageDynamic* norm_Cmat;
-   SparseStorageDynamic* norm_Dmat;
-   SimpleVector* norm_b;
-   SimpleVector* norm_clow;
-   SimpleVector* norm_cupp;
-   SimpleVector* norm_iclow;
-   SimpleVector* norm_icupp;
-   SimpleVector* norm_factorC;
-   SimpleVector* norm_factorA;
+   std::unique_ptr<SparseStorageDynamic> norm_Amat{};
+   std::unique_ptr<SparseStorageDynamic> norm_Bmat{};
+   std::unique_ptr<SparseStorageDynamic> norm_Cmat{};
+   std::unique_ptr<SparseStorageDynamic> norm_Dmat{};
+   std::unique_ptr<SimpleVector> norm_b{};
+   std::unique_ptr<SimpleVector> norm_clow{};
+   std::unique_ptr<SimpleVector> norm_cupp{};
+   std::unique_ptr<SimpleVector> norm_iclow{};
+   std::unique_ptr<SimpleVector> norm_icupp{};
+   std::unique_ptr<SimpleVector> norm_factorC{};
+   std::unique_ptr<SimpleVector> norm_factorA{};
 
    // data for the nearly parallel row case
-   SimpleVectorBase<int>* rowContainsSingletonVariableA;
-   SimpleVectorBase<int>* rowContainsSingletonVariableC;
-   SimpleVector* singletonCoeffsColParent;
-   SimpleVector* singletonCoeffsColChild;
-   SimpleVectorBase<int>* normNnzRowA;
-   SimpleVectorBase<int>* normNnzRowC;
-   SimpleVectorBase<int>* normNnzColParent;
-   SimpleVectorBase<int>* normNnzColChild;
-   SparseStorageDynamic* norm_AmatTrans;
-   SparseStorageDynamic* norm_BmatTrans;
-   SparseStorageDynamic* norm_CmatTrans;
-   SparseStorageDynamic* norm_DmatTrans;
+   std::unique_ptr<SimpleVectorBase<int>> rowContainsSingletonVariableA{};
+   std::unique_ptr<SimpleVectorBase<int>> rowContainsSingletonVariableC{};
+   std::unique_ptr<SimpleVector> singletonCoeffsColParent{};
+   std::unique_ptr<SimpleVector> singletonCoeffsColChild{};
+   std::unique_ptr<SimpleVectorBase<int>> normNnzRowA{};
+   std::unique_ptr<SimpleVectorBase<int>> normNnzRowC{};
+   std::unique_ptr<SimpleVectorBase<int>> normNnzColParent{};
+   std::unique_ptr<SimpleVectorBase<int>> normNnzColChild{};
+   std::unique_ptr<SparseStorageDynamic> norm_AmatTrans{};
+   std::unique_ptr<SparseStorageDynamic> norm_BmatTrans{};
+   std::unique_ptr<SparseStorageDynamic> norm_CmatTrans{};
+   std::unique_ptr<SparseStorageDynamic> norm_DmatTrans{};
 
    // number of rows of the A or B block
-   int mA;
+   int mA{0};
    // number of columns of the A or C block
-   int nA;
+   int nA{0};
 
    // unordered set?
    boost::unordered_set<rowlib::rowWithColInd, boost::hash<rowlib::rowWithColInd> > row_support_hashtable;
@@ -158,10 +158,6 @@ private:
    void setNormalizedSingletonFlags(int node);
    void setNormalizedReductionPointers(int node);
    void updateExtendedPointersForCurrentNode(int node);
-   void deleteNormalizedTransposedMatrices(int node);
-   void deleteNormalizedPointers(int node);
-
-   void setExtendedPointersToNull();
 
    void removeSingletonVars();
    void removeEntry(int colIdx, SimpleVectorBase<int>& rowContainsSingletonVar,
