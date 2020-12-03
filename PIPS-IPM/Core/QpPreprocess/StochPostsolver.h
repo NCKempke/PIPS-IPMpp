@@ -85,8 +85,8 @@ public:
       PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution) override;
 private:
 
-      const int my_rank{ PIPS_MPIgetRank(MPI_COMM_WORLD) };
-      const bool distributed{ PIPS_MPIgetDistributed(MPI_COMM_WORLD) };
+      const int my_rank{ PIPS_MPIgetRank() };
+      const bool distributed{ PIPS_MPIgetDistributed() };
 
       const double postsolve_tol;
       const double INF_NEG;

@@ -12,11 +12,13 @@
 #include "StochVector.h"
 #include "SystemType.h"
 
+#include <memory>
+
 class StochColumnStorage
 {
 public:
    StochColumnStorage( const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);
-   ~StochColumnStorage();
+   ~StochColumnStorage() = default;
 
    int storeCol( const INDEX& col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);
 
@@ -32,13 +34,13 @@ private:
    // todo : assert that transposed is initalized
    /// all columns get stored as rows
    /// for a linking column the additional block B0 is stored in the additional associated SparseGenMatrix
-   SparseGenMatrixHandle B0_eq;
-   StochGenMatrixHandle stored_cols_eq;
+   std::unique_ptr<SparseGenMatrix> B0_eq{};
+   std::unique_ptr<StochGenMatrix> stored_cols_eq{};
 
-   SparseGenMatrixHandle B0_ineq;
-   StochGenMatrixHandle stored_cols_ineq;
+   std::unique_ptr<SparseGenMatrix> B0_ineq{};
+   std::unique_ptr<StochGenMatrix> stored_cols_ineq{};
 
-   unsigned int nChildren;
+   const unsigned int nChildren;
 
    int storeLinkingCol(int col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);
    int storeLocalCol( const INDEX& col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);

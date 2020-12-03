@@ -9,14 +9,10 @@
 #include "StochMatrixUtilities.h"
 
 StochRowStorage::StochRowStorage(const StochGenMatrix& system_matrix) :
-   row_storage(system_matrix.cloneEmptyRows(true))
+   row_storage{ system_matrix.cloneEmptyRows(true) }
 {
 }
 
-
-StochRowStorage::~StochRowStorage()
-{
-}
 
 int StochRowStorage::storeRow( const INDEX& row, const StochGenMatrix& matrix_row)
 {
