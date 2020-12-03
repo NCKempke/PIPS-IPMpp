@@ -17,22 +17,15 @@ class StochGenMatrix : public GenMatrix {
 protected:
 
 public:
-  /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by  
-   *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
+  /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
+   *  A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz.
    *  Also sets the global sizes to 'global_m' and 'global_n'.
    *  The matrix that will be created  has no children, just local data.
    */
   StochGenMatrix(long long global_m, long long global_n,
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
-		 MPI_Comm mpiComm_);
-
-  /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
-      A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz. Otherwise, identical to the above constructor */
-  StochGenMatrix(long long global_m, long long global_n,
-		 int A_m, int A_n, int A_nnz,
-		 int B_m, int B_n, int B_nnz,
-		 int Bl_m, int Bl_n, int Bl_nnz,
+		 int Bl_m = 0, int Bl_n = 0, int Bl_nnz = 0,
 		 MPI_Comm mpiComm_);
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
