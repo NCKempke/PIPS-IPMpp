@@ -585,10 +585,10 @@ void PresolveData::allreduceLinkingVarBounds()
       SimpleVector& ixupp_new_vec = getSimpleVecFromColStochVec(*presProb->ixupp, -1);
 
       /* copy old values for later compairson */
-      SimpleVector* xlow_old_vec = dynamic_cast<SimpleVector*>(xlow_new_vec.cloneFull());
-      SimpleVector* xupp_old_vec = dynamic_cast<SimpleVector*>(xupp_new_vec.cloneFull());
-      SimpleVector* ixlow_old_vec = dynamic_cast<SimpleVector*>(ixlow_new_vec.cloneFull());
-      SimpleVector* ixupp_old_vec = dynamic_cast<SimpleVector*>(ixupp_new_vec.cloneFull());
+      std::unique_ptr<SimpleVector> xlow_old_vec{ dynamic_cast<SimpleVector*>(xlow_new_vec.cloneFull()) };
+      std::unique_ptr<SimpleVector> xupp_old_vec{ dynamic_cast<SimpleVector*>(xupp_new_vec.cloneFull()) };
+      std::unique_ptr<SimpleVector> ixlow_old_vec{ dynamic_cast<SimpleVector*>(ixlow_new_vec.cloneFull()) };
+      std::unique_ptr<SimpleVector> ixupp_old_vec{ dynamic_cast<SimpleVector*>(ixupp_new_vec.cloneFull()) };
 
       PIPS_MPImaxArrayInPlace(xlow_new_vec.elements(), xlow_new_vec.length());
       PIPS_MPImaxArrayInPlace(ixlow_new_vec.elements(), ixlow_new_vec.length());
@@ -617,11 +617,6 @@ void PresolveData::allreduceLinkingVarBounds()
          if(xupp_new != INF_POS || xlow_new != INF_NEG)
             updateRowActivities(col_idx, xlow_new, xupp_new, xlow_old, xupp_old);
       }
-      
-      delete xlow_old_vec;
-      delete xupp_old_vec;
-      delete ixlow_old_vec;
-      delete ixupp_old_vec;
    }
    outdated_linking_var_bounds = false;
 }
