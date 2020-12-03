@@ -18,26 +18,24 @@
 
 StochPostsolver::StochPostsolver(const sData& original_problem) :
    QpPostsolver(original_problem),
-   my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
-   distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)),
    postsolve_tol( pips_options::getDoubleParameter("POSTSOLVE_TOLERANCE") ),
    INF_NEG( -pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
    INF_POS( pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
-   n_rows_original(original_problem.my + original_problem.mz),
-   n_cols_original(original_problem.nx),
-   padding_origcol( cloneStochVector<double, int>(*original_problem.g) ),
-   padding_origrow_equality( cloneStochVector<double, int>(*original_problem.bA) ),
-   padding_origrow_inequality( cloneStochVector<double, int>(*original_problem.bu) ),
-   eq_row_marked_modified( dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) ),
-   ineq_row_marked_modified( dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) ),
-   column_marked_modified( dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) ),
+   n_rows_original( original_problem.my + original_problem.mz ),
+   n_cols_original( original_problem.nx ),
+   padding_origcol{ cloneStochVector<double, int>(*original_problem.g) },
+   padding_origrow_equality{ cloneStochVector<double, int>(*original_problem.bA) },
+   padding_origrow_inequality{ cloneStochVector<double, int>(*original_problem.bu) },
+   eq_row_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) },
+   ineq_row_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) },
+   column_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) },
    row_storage( dynamic_cast<const StochGenMatrix&>(*original_problem.A) ),
    col_storage( dynamic_cast<const StochGenMatrix&>(*original_problem.A), dynamic_cast<const StochGenMatrix&>(*original_problem.C) ),
-   eq_row_stored_last_at( dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) ),
-   ineq_row_stored_last_at( dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) ),
-   col_stored_last_at( dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) ),
-   last_upper_bound_tightened( dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) ),
-   last_lower_bound_tightened( dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) ),
+   eq_row_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) },
+   ineq_row_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) },
+   col_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) },
+   last_upper_bound_tightened{ dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) },
+   last_lower_bound_tightened{ dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) },
    length_array_outdated_indicators(3),
    array_outdated_indicators(new bool[length_array_outdated_indicators]),
    outdated_linking_vars(array_outdated_indicators[0]),
@@ -104,17 +102,6 @@ StochPostsolver::StochPostsolver(const sData& original_problem) :
 
 StochPostsolver::~StochPostsolver()
 {
-   delete last_lower_bound_tightened;
-   delete last_upper_bound_tightened;
-   delete col_stored_last_at;
-   delete ineq_row_stored_last_at;
-   delete eq_row_stored_last_at;
-   delete column_marked_modified;
-   delete ineq_row_marked_modified;
-   delete eq_row_marked_modified;
-   delete padding_origrow_inequality;
-   delete padding_origrow_equality;
-   delete padding_origcol;
    delete[] array_outdated_indicators;
    delete[] array_linking_var_changes;
    delete[] array_eq_linking_row_changes;
