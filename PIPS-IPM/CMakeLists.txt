@@ -10,7 +10,7 @@ set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}")
 
 add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
 target_link_libraries(pipsipmCallbackExample
-    stochInput ${COIN_LIBS}
+    ${COIN_LIBS}
     ooqpstoch ooqpstochla ooqpgondziostoch ooqpqpscaler ooqpequistochscaler
     ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
 ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY} ${MATH_LIBS} ${COIN_LIBS})
@@ -63,7 +63,6 @@ if (BUILD_GDX_SOURCE)
    target_link_libraries(gmspips
        dl 
        statgdx
-       stochInput ${COIN_LIBS}
        ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
        ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
        ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY} ${MATH_LIBS} ${COIN_LIBS})
@@ -78,7 +77,6 @@ else()
    target_include_directories(gmspips PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
    target_link_libraries(gmspips
        dl
-       stochInput ${COIN_LIBS}
        ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
        ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
        ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY} ${MATH_LIBS} ${COIN_LIBS} gfortran)
