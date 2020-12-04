@@ -693,7 +693,7 @@ if (WITH_MAKETEST)
 enable_testing()
 
 if(BUILD_PIPS_IPM)
-  add_test(NAME PIPS-IPM-multipleTests COMMAND sh ${PROJECT_SOURCE_DIR}/PIPS-IPM/Test/pipsipmMultiTests.sh $<TARGET_FILE:pipsipmFromRaw> ${PROJECT_SOURCE_DIR}/PIPS-S/Test/rawInput)
+#  add_test(NAME PIPS-IPM-multipleTests COMMAND sh ${PROJECT_SOURCE_DIR}/PIPS-IPM/Test/pipsipmMultiTests.sh $<TARGET_FILE:pipsipmFromRaw> ${PROJECT_SOURCE_DIR}/PIPS-S/Test/rawInput)
   add_test(NAME PIPS-IPM-linkingConsTest COMMAND sh ${PROJECT_SOURCE_DIR}/PIPS-IPM/Test/pipsipmLinkConsTest.sh $<TARGET_FILE:pipsipmCallbackExample> )
 endif(BUILD_PIPS_IPM)
 
