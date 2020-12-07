@@ -2242,11 +2242,13 @@ void SparseStorage::fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdx
     }
 }
 
-SparseStorage*  SparseStorage::shaveLeft( int n_cols )
+SparseStorage* SparseStorage::shaveLeft( int n_cols )
 {
    assert( n_cols <= n );
    assert( 0 <= n_cols );
 
+   if( n_cols == 0 )
+      return new SparseStorage( m, 0, 0 );
 
    // TODO : adjust for when n_cols == n
    const int n_border = n_cols;
@@ -2331,8 +2333,10 @@ SparseStorage*  SparseStorage::shaveBottom( int n_rows )
    assert( n_rows <= m );
    assert( 0 <= n_rows );
 
-   // TODO : adjust for n_rows == m
+   if( n_rows ==  0 )
+      return new SparseStorage( 0, n, 0 );
 
+   // TODO : adjust for n_rows == m
    const int n_border = n;
    const int m_border = n_rows;
    const int len_border = krowM[m] - krowM[ m - n_rows ];
