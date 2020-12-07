@@ -2253,6 +2253,8 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    n -= n_vars;
 
    BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
+   StochGenMatrix* me = this;
+   IotrAddRef( &me );
 
    assert(m >= 0 && n >= 0);
 

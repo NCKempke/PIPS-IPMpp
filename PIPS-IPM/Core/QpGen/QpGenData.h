@@ -41,7 +41,6 @@ private:
 				       double percentBound );
 protected:
   LinearAlgebraPackage * la;
-  QpGenData();
 public:
   SymMatrixHandle Q;
   GenMatrixHandle A;

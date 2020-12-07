@@ -536,6 +536,9 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 
    BorderedSymMatrix* const border_layer = new BorderedSymMatrix(this, border_vertical, new SparseSymMatrix(n_vars, 0, false), mpiComm);
 
+   StochSymMatrix* me = this;
+   IotrAddRef(&me);
+
    assert(n >= 0);
 
    return border_layer;

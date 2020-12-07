@@ -75,11 +75,6 @@ QpGenData::QpGenData( LinearAlgebraPackage * la_in,
   C->getSize( mz, dummy );
 }
 
-QpGenData::QpGenData( )
-{
-  printf("QPGenData ----");  
-}
-
 void QpGenData::Qmult( double beta,  OoqpVector& y,
 		       double alpha, const OoqpVector& x ) const
 {

@@ -2250,6 +2250,9 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
    this->parent = top_layer;
    top_layer->AddChild(this);
 
+   StochVectorBase<T>* me = this;
+   IotrAddRef(&me);
+
    return top_layer;
 }
 
