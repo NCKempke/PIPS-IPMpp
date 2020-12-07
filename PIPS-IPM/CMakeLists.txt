@@ -12,7 +12,6 @@ add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
 target_link_libraries(pipsipmCallbackExample PRIVATE
    ooqpstoch ooqpstochla ooqpgondziostoch ooqpqpscaler ooqpequistochscaler
    ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
-   ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY}
 )
   
 if (BUILD_GDX_SOURCE)
