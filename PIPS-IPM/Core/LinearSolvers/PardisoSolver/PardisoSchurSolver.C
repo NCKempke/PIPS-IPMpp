@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <iostream>
 #include <iomanip>
-using namespace std;
 #include <unistd.h>
 
 #include "pipschecks.h"
@@ -22,30 +21,29 @@ using namespace std;
 #include <algorithm>
 #include "pipsport.h"
 
-#include "Ma57Solver.h"
-
 #include "mpi.h"
 #include "omp.h"
 
-#ifdef HAVE_GETRUSAGE
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
+extern double g_iterNumber;
+extern int gOuterBiCGIter;
+
+#ifdef STOCH_TESTING
+extern double g_scenNum;
+static int rhsCount=0;
+#endif
+
+#ifndef FNAME
+#ifndef __bg__
+#define FNAME(f) f ## _
+#else
+#define FNAME(f) f // no underscores for fortran names on bgp
+#endif
 #endif
 
 #ifdef WITH_MKL_PARDISO
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 #endif
-
-extern int gOoqpPrintLevel;
-extern double g_iterNumber;
-extern int gOuterBiCGIter;
-#ifdef STOCH_TESTING
-extern double g_scenNum;
-static int rhsCount=0;
-#endif
-using namespace std;
 
 #ifndef WITH_MKL_PARDISO
 extern "C" void pardisoinit (void   *, int    *,   int *, int *, double *, int *);

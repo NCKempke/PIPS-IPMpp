@@ -5,8 +5,8 @@
 #include "sFactory.h"
 
 #include "sData.h"
-#include "stochasticInput.hpp"
-#include "sTreeImpl.h"
+//#include "stochasticInput.hpp"
+//#include "sTreeImpl.h"
 #include "sTreeCallbacks.h"
 #include "StochInputTree.h"
 #include "StochSymMatrix.h"
@@ -38,16 +38,16 @@
 #include <stdlib.h>
 
 
-sFactory::sFactory( stochasticInput& in, MPI_Comm comm)
-  : QpGen(0,0,0), tree( new sTreeImpl(in, comm) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
-{
-   assert( 0 && " Not used currently " );
-   //tree->computeGlobalSizes();
-   //tree->GetGlobalSizes(nx, my, mz);
-   //decide how the CPUs are assigned
-   tree->assignProcesses(comm);
-   tree->loadLocalSizes();
-}
+//sFactory::sFactory( stochasticInput& in, MPI_Comm comm)
+//  : QpGen(0,0,0), tree( new sTreeImpl(in, comm) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
+//{
+//  assert( 0 && " Not used currently " );
+//   //tree->computeGlobalSizes();
+//   //tree->GetGlobalSizes(nx, my, mz);
+//   //decide how the CPUs are assigned
+//   tree->assignProcesses(comm);
+//   tree->loadLocalSizes();
+//}
 
 
 sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)

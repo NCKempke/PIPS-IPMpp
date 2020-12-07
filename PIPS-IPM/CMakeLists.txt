@@ -9,11 +9,11 @@ add_subdirectory(Core)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}")
 
 add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
-target_link_libraries(pipsipmCallbackExample
-    ${COIN_LIBS}
-    ooqpstoch ooqpstochla ooqpgondziostoch ooqpqpscaler ooqpequistochscaler
-    ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
-${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY} ${MATH_LIBS} ${COIN_LIBS})
+target_link_libraries(pipsipmCallbackExample PRIVATE
+   ooqpstoch ooqpstochla ooqpgondziostoch ooqpqpscaler ooqpequistochscaler
+   ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
+   ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY}
+)
   
 if (BUILD_GDX_SOURCE)
    add_definitions(-D_P3_DllExport= -DSTDCALL= -DGDX_CALLCONV=unwanted -DLEG)
@@ -56,32 +56,29 @@ if (BUILD_GDX_SOURCE)
      Drivers/statgdx/xcompress.cpp
      Drivers/statgdx/gclgms.c )
      
-   link_directories(PIPS-IPM)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c)
    add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR -DGDXSOURCE -fno-strict-aliasing -fwrapv ) # -DGMS_LOG
    target_include_directories(gmspips PUBLIC Drivers/statgdx Drivers/gmspips/)
-   target_link_libraries(gmspips
-       dl 
+   target_link_libraries(gmspips PRIVATE
        statgdx
        ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
        ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
-       ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY} ${MATH_LIBS} ${COIN_LIBS})
+   )
        
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c)
    target_include_directories(gmschk PUBLIC Drivers/statgdx Drivers/gmspips/)
-   target_link_libraries(gmschk dl statgdx)
+   target_link_libraries(gmschk PRIVATE dl statgdx)
 else()
    set(GAMSDIR Drivers/gams)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)
    add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR) # -DGMS_LOG
    target_include_directories(gmspips PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
-   target_link_libraries(gmspips
-       dl
+   target_link_libraries(gmspips PRIVATE
        ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
-       ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
-       ${MA27_LIBRARY} ${MA57_LIBRARY} ${METIS_4_LIBRARY} ${MATH_LIBS} ${COIN_LIBS} gfortran)
+       ooqpgensparse  ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
+   )
    
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)
    target_include_directories(gmschk PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
-   target_link_libraries(gmschk dl)
+   target_link_libraries(gmschk PRIVATE dl)
 endif(BUILD_GDX_SOURCE)

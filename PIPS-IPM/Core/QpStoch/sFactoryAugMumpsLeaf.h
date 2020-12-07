@@ -15,8 +15,8 @@ class sFactoryAugMumpsLeaf : public sFactoryAug {
   sFactoryAugMumpsLeaf( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD )
    : sFactoryAug(inputTree, comm) {};
 
-  sFactoryAugMumpsLeaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD )
-   : sFactoryAug(in,comm) {};
+//  sFactoryAugMumpsLeaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD )
+//   : sFactoryAug(in,comm) {};
 
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,

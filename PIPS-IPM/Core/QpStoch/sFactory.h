@@ -13,7 +13,7 @@ class sData;
 
 class QpGenVars;
 class StochInputTree;
-class stochasticInput;
+//class stochasticInput;
 class sTree;
 class StochSymMatrix;
 class sResiduals;
@@ -25,7 +25,7 @@ class sLinsysLeaf;
 
 class sFactory : public QpGen {
  public:
-  sFactory( stochasticInput&, MPI_Comm comm = MPI_COMM_WORLD );
+//  sFactory( stochasticInput&, MPI_Comm comm = MPI_COMM_WORLD );
 
   /** This is a obsolete constructor since it uses sTreeCallbacks to create
    *   data objects

@@ -16,10 +16,10 @@ set(LIBRARY_OOQPSTOCH_SOURCES sFactory.C
    StochOptions.C
    sResiduals.C
    sTree.C
-   sTreeImpl.C
+#   sTreeImpl.C
    sTreeCallbacks.C
-   sInterfaceCallbacks.C)
-
+#   sInterfaceCallbacks.C)
+)
 if(HAVE_MUMPS AND WITH_MUMPS_LEAF)
    set(LIBRARY_OOQPSTOCH_SOURCES ${LIBRARY_OOQPSTOCH_SOURCES}
    sFactoryAugMumpsLeaf.C
@@ -31,4 +31,4 @@ if( WITH_HIERARCHICAL )
    sFactoryHierarchical.C
    sLinsysRootBordered.C )
 endif( WITH_HIERARCHICAL )
-add_library(ooqpstoch ${LIBRARY_OOQPSTOCH_SOURCES})
+add_library(ooqpstoch STATIC ${LIBRARY_OOQPSTOCH_SOURCES})
