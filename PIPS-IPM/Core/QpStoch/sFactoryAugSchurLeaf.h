@@ -14,8 +14,8 @@ class sFactoryAugSchurLeaf : public sFactoryAug
  sFactoryAugSchurLeaf( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD)
    : sFactoryAug(inputTree, comm) {};
 
- sFactoryAugSchurLeaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
-   : sFactoryAug(in,comm) {};
+// sFactoryAugSchurLeaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
+//   : sFactoryAug(in,comm) {};
 
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
@@ -30,8 +30,8 @@ class sFactoryAugSchur32Leaf : public sFactoryAug
 
   sFactoryAugSchur32Leaf( StochInputTree* in)
     : sFactoryAug(in) {};
- sFactoryAugSchur32Leaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
-   : sFactoryAug(in,comm) {};
+// sFactoryAugSchur32Leaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
+//   : sFactoryAug(in,comm) {};
 
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,

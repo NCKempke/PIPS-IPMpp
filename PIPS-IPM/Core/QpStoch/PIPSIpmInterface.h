@@ -7,18 +7,18 @@
 
 #include <algorithm>
 #include <functional>
+#include <cstdlib>
+#include <stdexcept>
+#include <memory>
 
-#include "stochasticInput.hpp"
-#include "sTreeImpl.h"
+//#include "stochasticInput.hpp"
+//#include "sTreeImpl.h"
 
 #include "sTree.h"
 #include "sData.h"
 #include "sResiduals.h"
 #include "sVars.h"
 #include "StochMonitor.h"
-#include <cstdlib>
-#include <stdexcept>
-#include <algorithm>
 
 
 #include "PreprocessFactory.h"
@@ -37,7 +37,6 @@ template<class FORMULATION, class IPMSOLVER>
 class PIPSIpmInterface 
 {
  public:
-  PIPSIpmInterface(stochasticInput &in, MPI_Comm = MPI_COMM_WORLD);
   PIPSIpmInterface(StochInputTree* in, MPI_Comm = MPI_COMM_WORLD,
         ScalerType scaler_type = SCALER_NONE, PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
   ~PIPSIpmInterface();
@@ -107,40 +106,6 @@ public:
 //----------------------------------------------------------------------
 // IMPLEMENTATION
 //----------------------------------------------------------------------
-
-
-template<class FORMULATION, class IPMSOLVER>
-PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(stochasticInput &in, MPI_Comm comm) :comm(comm), my_rank( PIPS_MPIgetRank(comm) )
-{
-  factory.reset( new FORMULATION( in, comm) );
-#ifdef TIMING
-  if( my_rank == 0 ) printf("factory created\n");
-  if( my_rank == 0 ) printf("prefactory created\n");
-#endif
-
-  data.reset( dynamic_cast<sData*>( factory->makeData() ) );
-#ifdef TIMING
-  if( my_rank == 0 ) printf("data created\n");
-#endif
-
-  vars.reset( dynamic_cast<sVars*>( factory->makeVariables( data.get() ) ) );
-#ifdef TIMING
-  if( my_rank == 0 ) printf("variables created\n");
-#endif
-
-  resids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals( data.get() ) ) );
-#ifdef TIMING
-  if( my_rank == 0 ) printf("resids created\n");
-#endif
-
-  solver.reset( new IPMSOLVER( factory.get(), data.get(), scaler.get() ) );
-  solver->addMonitor(new StochMonitor( factory.get() ));
-#ifdef TIMING
-  if( my_rank == 0 ) printf("solver created\n");
-  //solver->monitorSelf();
-#endif
-
-}
 
 template<class FORMULATION, class IPMSOLVER>
 PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm, ScalerType scaler_type,
@@ -547,89 +512,6 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrim
 	  return std::vector<double>(); //this vector is not on this processor
 	else
 	  return std::vector<double>( &v[0], &v[0] + v.length() );
-}
-
-template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStageDualRowSolution() const
-{
-  assert( false && "not in use - can only be called when using sTreeImpl - we use sTreeCallbacks ...");
-  SimpleVector const &y =
-        *dynamic_cast<SimpleVector const*>((dynamic_cast<StochVector const&>(*vars->y)).vec);
-  SimpleVector const &z =
-        *dynamic_cast<SimpleVector const*>((dynamic_cast<StochVector const&>(*vars->z)).vec);
-
-  if( !y.length() && !z.length() )
-     return std::vector<double>(); //this vector is not on this processor
-  else
-  {
-     std::vector<int> const &map = dynamic_cast<sTreeImpl*>(factory->tree)->idx_EqIneq_Map;
-
-     std::vector<double> multipliers(map.size());
-     for( size_t i = 0; i < map.size(); i++ )
-     {
-        int idx = map[i];
-        if( idx < 0 )
-        {
-           //equality
-           idx = -idx - 1;
-           assert(idx >= 0);
-           multipliers[i] = y[idx];
-        }
-        else
-        {
-           //inequality - since, we have z-\lambda+\pi=0, where \lambda is the multiplier for low and
-           //\pi is the multiplier for upp, therefore z containts the right multiplier for this row.
-#ifndef NDEBUG
-           SimpleVector const &iclow = *dynamic_cast<SimpleVector const*>((dynamic_cast<StochVector const&>(*vars->iclow)).vec);
-           SimpleVector const &icupp = *dynamic_cast<SimpleVector const*>((dynamic_cast<StochVector const&>(*vars->icupp)).vec);
-           assert(iclow[idx] > 0 || icupp[idx] > 0);
-#endif
-           multipliers[i] = z[idx];
-        }
-     }
-     return multipliers;
-  }
-}
-
-template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStageDualRowSolution(int scen) const 
-{
-  assert( false && "not in use - can only be called when using sTreeImpl - we use sTreeCallbacks ...");
-  SimpleVector const &y = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->y).children[scen]->vec);
-  SimpleVector const &z = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->z).children[scen]->vec);
-  SimpleVector const &iclow = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->iclow).children[scen]->vec);
-  SimpleVector const &icupp = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->icupp).children[scen]->vec);
-  //assert(v.length());
-  if( !y.length() && !z.length() )
-    return std::vector<double>(); //this vector is not on this processor
-  else 
-  {
-    std::vector<int> const &map= dynamic_cast<sTreeImpl*>(factory->tree->children[scen])->idx_EqIneq_Map;
-
-    std::vector<double> multipliers(map.size());
-    for(size_t i = 0; i < map.size(); i++)
-    {
-      int idx = map[i];
-      if(idx<0) 
-      {
-	      //equality
-	      idx =- idx - 1;
-        assert( idx >= 0 );
-        multipliers[i] = y[idx];
-      } 
-      else
-      {
-	      //inequality - since, we have z-\lambda+\pi=0, where \lambda is the multiplier for low and
-	      //\pi is the multiplier for upp, therefore z containts the right multiplier for this row.
-#ifndef NDEBUG
-	      assert(iclow[idx] > 0 || icupp[idx] > 0);
-	      multipliers[i] = z[idx];
-#endif
-      }
-    }
-    return multipliers;
-  }
-  //return std::vector<double>(&v[0],&v[0]+v.length());
 }
 
 template<class FORMULATION, class IPMSOLVER>

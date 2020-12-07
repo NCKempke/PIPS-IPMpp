@@ -10,7 +10,7 @@
 class sFactoryAug : public sFactory {
  public:
   sFactoryAug( StochInputTree*, MPI_Comm comm=MPI_COMM_WORLD );
-  sFactoryAug( stochasticInput&, MPI_Comm comm=MPI_COMM_WORLD );
+//  sFactoryAug( stochasticInput&, MPI_Comm comm=MPI_COMM_WORLD );
  private:
   sFactoryAug();
  public:
