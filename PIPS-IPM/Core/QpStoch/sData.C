@@ -1197,47 +1197,6 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    return permvec;
 }
 
-sData::sData(const sTree* tree) : is_hierarchy_root(false)
-{
-   assert( false && " not in use " );
-   stochNode = tree;
-   Q = SymMatrixHandle(tree->createQ());
-   g = OoqpVectorHandle(tree->createc());
-
-   blx = OoqpVectorHandle(tree->createxlow());
-   ixlow = OoqpVectorHandle(tree->createixlow());
-   bux = OoqpVectorHandle(tree->createxupp());
-   ixupp = OoqpVectorHandle(tree->createixupp());
-
-   A = GenMatrixHandle(tree->createA());
-   bA = OoqpVectorHandle(tree->createb());
-
-   C = GenMatrixHandle(tree->createC());
-   bl = OoqpVectorHandle(tree->createclow());
-   iclow = OoqpVectorHandle(tree->createiclow());
-   bu = OoqpVectorHandle(tree->createcupp());
-   icupp = OoqpVectorHandle(tree->createicupp());
-
-   sc = OoqpVectorHandle(tree->newPrimalVector());
-
-   nxlow = ixlow->numberOfNonzeros();
-   nxupp = ixupp->numberOfNonzeros();
-   mclow = iclow->numberOfNonzeros();
-   mcupp = icupp->numberOfNonzeros();
-
-   sc = OoqpVectorHandle ( tree->newPrimalVector() );
-
-   nxlow = ixlow->numberOfNonzeros();
-   nxupp = ixupp->numberOfNonzeros();
-   mclow = iclow->numberOfNonzeros();
-   mcupp = icupp->numberOfNonzeros();
-
-   createChildren();
-
-   useLinkStructure = false;
-   n0LinkVars = 0;
-}
-
 sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         OoqpVector * xlow_in, OoqpVector * ixlow_in, long long nxlow_,
         OoqpVector * xupp_in, OoqpVector * ixupp_in, long long nxupp_,

@@ -21,9 +21,6 @@ class LinearAlgebraPackage;
 
 class sData : public QpGenData {
  public:
-  /** constructor that makes data objects of the specified dimensions */
-  sData( const sTree* tree);
-
   /** constructor that sets up pointers to the data objects that are
       passed as arguments */
   sData( const sTree* stochNode,

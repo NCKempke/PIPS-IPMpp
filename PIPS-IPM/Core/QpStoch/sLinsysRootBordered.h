@@ -15,7 +15,7 @@ class sLinsysRootBordered : public sLinsysRoot
    public:
       sLinsysRootBordered(sFactory * factory_, sData * prob_);
 
-      virtual ~sLinsysRootBordered() = default;
+      ~sLinsysRootBordered() override = default;
 
       void finalizeKKT(sData* prob, Variables* vars) override;
       void solveReduced( sData *prob, SimpleVector& b) override

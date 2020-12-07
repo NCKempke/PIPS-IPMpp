@@ -85,7 +85,7 @@ class sLinsysRoot : public sLinsys {
 
   virtual bool usingSparseKkt() {return hasSparseKkt;};
 
-  virtual ~sLinsysRoot();
+  ~sLinsysRoot() override;
 
   //utilities
   void myAtPutZeros(DenseSymMatrix* mat);
