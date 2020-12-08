@@ -13,7 +13,3 @@ Scaler::Scaler(Data* prob, bool bitshifting, bool usesides)
   dnorm_orig(prob->datanorm())
 {
 }
-
-Scaler::~Scaler()
-{
-}

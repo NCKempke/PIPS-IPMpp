@@ -37,7 +37,7 @@ protected:
 
 public:
   Scaler(Data * prob, bool bitshifting = false, bool usesides = false);
-  virtual ~Scaler();
+  virtual ~Scaler() = default;
 
   /** scale */
   virtual void scale() = 0;
