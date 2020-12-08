@@ -1049,7 +1049,7 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
 }
 
 template<typename T>
-void SimpleVectorBase<T>::moveToFront( SimpleVectorBase<T>& other )
+void SimpleVectorBase<T>::appendToFront( const SimpleVectorBase<T>& other )
 {
    assert( !preserveVec );
 
@@ -1067,7 +1067,7 @@ void SimpleVectorBase<T>::moveToFront( SimpleVectorBase<T>& other )
 }
 
 template<typename T>
-void SimpleVectorBase<T>::moveToBack( SimpleVectorBase<T>& other )
+void SimpleVectorBase<T>::appendToBack( const SimpleVectorBase<T>& other )
 {
    assert( !preserveVec );
 

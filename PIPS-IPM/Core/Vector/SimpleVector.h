@@ -161,8 +161,8 @@ public:
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };
 
-  void moveToFront( SimpleVectorBase<T>& other );
-  void moveToBack( SimpleVectorBase<T>& other );
+  void appendToFront( const SimpleVectorBase<T>& other );
+  void appendToBack( const SimpleVectorBase<T>& other );
 
   virtual SimpleVectorBase<T>* shaveBorder( int n_shave, bool shave_top );
 };
