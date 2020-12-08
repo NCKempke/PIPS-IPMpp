@@ -145,6 +145,7 @@ void Ma27Solver::solve( int nrhss, double* rhss, int* colSparsity )
 
 void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
 {
+   assert( false && "currently not in use because we cannot compile ma60 with mkl" );
    SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
 
    SimpleVectorHandle x(new SimpleVector(n));
@@ -152,7 +153,7 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
    x->copyFrom( rhs );
 
    /* init iterative refinement process */
-   FNAME(ma60id)(icntl_ma60, keep_ma60, rkeep_ma60);
+//   FNAME(ma60id)(icntl_ma60, keep_ma60, rkeep_ma60);
 
    /* obtain initial solution */
    scaler->scaleVector(*x);
@@ -165,12 +166,12 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
    /* job[0] <= 0 -> only do backward error estimate
     * job[1] = 1 -> matrix is symmetric
     */
-   int job[2] = { 0, 1 };
+//   int job[2] = { 0, 1 };
    int kase = 0;
-   double omega[2];
+//   double omega[2];
    double error_x;
-   double cond[2];
-   int n_iters_needed;
+//   double cond[2];
+//   int n_iters_needed;
 
    // icntl[0] -> output -> 0 to suppress
    icntl[1] = max_n_iter_refinement; // default 16
@@ -178,9 +179,9 @@ void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
    bool done = false;
    while( !done )
    {
-      FNAME(ma60ad)( &n, &nnz, mat_storage->M, irowM.data(), jcolM.data(), rhs.elements(), x->elements(), y->elements(),
-            scaler->getScaling(), w_ma60.data(), iw_ma60.data(),
-            &kase, omega, &error_x, job, cond, &n_iters_needed, icntl_ma60, keep_ma60, rkeep_ma60 );
+//      FNAME(ma60ad)( &n, &nnz, mat_storage->M, irowM.data(), jcolM.data(), rhs.elements(), x->elements(), y->elements(),
+//            scaler->getScaling(), w_ma60.data(), iw_ma60.data(),
+//            &kase, omega, &error_x, job, cond, &n_iters_needed, icntl_ma60, keep_ma60, rkeep_ma60 );
       assert( kase <= 2 );
       assert( kase >= 0 || kase == -3 );
       if( kase == -3 )

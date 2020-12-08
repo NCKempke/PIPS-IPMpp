@@ -51,10 +51,10 @@ extern "C"
       int iw2[],      int * nsteps,
       int icntl[],    int info[] );
 
-  void FNAME(ma60id)( int icntl[], int keep[], double rkeep[] );
-
-  void FNAME(ma60ad)( int* n, int* nnz, double a[], int irn[], int icn[], double rhs[], double x[], double y[], const double d[], double w[],
-        int iw[], int* kase, double omega[], double* errorx, int* job, double cond[], int* niters_used, int icntl[], int keep[], double rkeep[] );
+//  void FNAME(ma60id)( int icntl[], int keep[], double rkeep[] );
+//
+//  void FNAME(ma60ad)( int* n, int* nnz, double a[], int irn[], int icn[], double rhs[], double x[], double y[], const double d[], double w[],
+//        int iw[], int* kase, double omega[], double* errorx, int* job, double cond[], int* niters_used, int icntl[], int keep[], double rkeep[] );
 }
 
 /** implements the linear solver class using the HSL MA27 solver
