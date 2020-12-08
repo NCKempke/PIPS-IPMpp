@@ -466,6 +466,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
 
    if( linkParent != nullptr )
    {
+      assert( border );
       assert( children.size() == 0 );
      // adapt border
       assert(dynamic_cast<const SimpleVectorBase<int>*>(linkParent));
