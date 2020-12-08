@@ -17,10 +17,7 @@ class sFactoryHierarchical : public sFactoryAug {
       sFactoryHierarchical( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD )
       : sFactoryAug(inputTree, comm) {};
 
-//      sFactoryHierarchical( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD )
-//      : sFactoryAug(in, comm) {};
-
-      virtual ~sFactoryHierarchical() {};
+      ~sFactoryHierarchical() override = default;
 
       sLinsysRoot* newLinsysRootHierarchical() override;
 
