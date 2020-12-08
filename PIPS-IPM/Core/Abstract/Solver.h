@@ -6,10 +6,10 @@
 #define ALGORITHM_H
 
 #include "Scaler.h"
+#include "Residuals.h"
 
 class Data;
 class Variables;
-class Residuals;
 class LinearSystem;
 class Status;
 class OoqpMonitor;
