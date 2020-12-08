@@ -73,8 +73,8 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       upper_bound_implied_by_node{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       absmin_col{ dynamic_cast<StochVector*>(sorigprob->g->clone()) },
       absmax_col{ dynamic_cast<StochVector*>(sorigprob->g->clone()) },
-      store_linking_row_boundTightening_A{ nnzs_row_A->vecl->length(), 0 },
-      store_linking_row_boundTightening_C{ nnzs_row_C->vecl->length(), 0 }
+      store_linking_row_boundTightening_A( nnzs_row_A->vecl->length(), 0 ),
+      store_linking_row_boundTightening_C( nnzs_row_C->vecl->length(), 0 )
 {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool) );
    outdated_activities = true;
