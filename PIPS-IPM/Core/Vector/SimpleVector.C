@@ -174,7 +174,6 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
   v = new T[this->n];
 
   std::uninitialized_fill(v, v + this->n, T{} );
-//  memset(v, 0, this->n * sizeof(T));
 }
 
 template<typename T>
@@ -1091,24 +1090,25 @@ SimpleVectorBase<T>* SimpleVectorBase<T>::shaveBorder( int n_shave, bool shave_t
    // TODO : adjust for n_shave == this->n
    assert( n_shave <= this->n );
    assert( 0 <= n_shave );
-   T* vec_new = new T[n_shave];
+   SimpleVectorBase<T>* vec_new = new SimpleVectorBase<T>(n_shave);
+
    T* vec_shaved = new T[this->n - n_shave];
 
    if( shave_top )
    {
-      std::copy( v, v + n_shave, vec_new );
+      std::copy( v, v + n_shave, vec_new->v );
       std::copy( v + n_shave, v + this->n, vec_shaved );
    }
    else
    {
-      std::copy( v + this->n - n_shave, v + this->n, vec_new );
+      std::copy( v + this->n - n_shave, v + this->n, vec_new->v );
       std::copy( v, v + this->n - n_shave, vec_shaved );
    }
    delete[] v;
    v = vec_shaved;
    this->n -= n_shave;
 
-   return new SimpleVectorBase<T>( vec_new, n_shave );
+   return vec_new;
 }
 
 
