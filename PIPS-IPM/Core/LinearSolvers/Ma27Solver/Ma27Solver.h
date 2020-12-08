@@ -91,7 +91,7 @@ protected:
 
   const int max_n_iter_refinement = 10;
 
-  const int ooqp_print_level_warnings = 1000;
+  const int ooqp_print_level_warnings = 10000;
 
   /** During factorization entries smaller than small pivot will not
    * be accepted as pivots and the matrix will be treated as singular.
