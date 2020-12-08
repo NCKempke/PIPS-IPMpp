@@ -11,11 +11,6 @@ OoqpVectorBase<T>::OoqpVectorBase( int n_ )
 }
 
 template<typename T>
-OoqpVectorBase<T>::~OoqpVectorBase()
-{
-}
-
-template<typename T>
 void OoqpVectorBase<T>::writefToStreamStats( std::ostream& out, std::string prestring)
 {
    T min;

@@ -35,7 +35,7 @@ public:
   int length() const { return n; }
 
   OoqpVectorBase( int n_ = 0 );
-  virtual ~OoqpVectorBase();
+  ~OoqpVectorBase() override = default;
 
   virtual void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select = nullptr)
      { assert( 0 && "Not implemented here" ); };
