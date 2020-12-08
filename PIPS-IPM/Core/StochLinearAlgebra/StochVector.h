@@ -165,6 +165,9 @@ public:
 
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
+
+private:
+   void appendOnlyChildToThis();
 };
 
 /** DUMMY VERSION

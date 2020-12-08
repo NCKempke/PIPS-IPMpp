@@ -2257,45 +2257,52 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
 }
 
 template<typename T>
+void StochVectorBase<T>::appendOnlyChildToThis()
+{
+   assert( children.size() == 1 );
+   StochVectorBase<T>* only_child = children[0];
+   children.clear();
+
+   if( only_child->vec )
+   {
+      if( vec )
+         dynamic_cast<SimpleVectorBase<T>*>(vec)->appendToBack( dynamic_cast<const SimpleVectorBase<T>&>(*only_child->vec) );
+      else
+      {
+         vec = dynamic_cast<SimpleVectorBase<T>*>(only_child->vec);
+         only_child->vec = nullptr;
+      }
+   }
+
+   if( only_child->vecl )
+   {
+      if( vecl )
+         dynamic_cast<SimpleVectorBase<T>*>(vecl)->appendToFront( dynamic_cast<const SimpleVectorBase<T>&>(*only_child->vecl) );
+      else
+      {
+         vecl = dynamic_cast<SimpleVectorBase<T>*>(only_child->vecl);
+         only_child->vecl = nullptr;
+      }
+   }
+
+   children.insert( children.end(), only_child->children.begin(), only_child->children.end() );
+   only_child->children.clear();
+
+   for( auto child : children )
+   {
+      child->parent = this;
+      assert( child->children.size() == 0 );
+//         child->collapseHierarchicalStructure();
+   }
+   delete only_child;
+}
+
+template<typename T>
 void StochVectorBase<T>::collapseHierarchicalStructure()
 {
    if( parent == nullptr )
    {
-      assert( children.size() == 1 );
-      StochVectorBase<T>& root = *this->children[0];
-
-      if( vec )
-      {
-         assert( root.vec );
-         dynamic_cast<SimpleVectorBase<T>*>(vec)->moveToBack( dynamic_cast<SimpleVectorBase<T>&>(*root.vec) );
-      }
-      else
-      {
-         vec = dynamic_cast<SimpleVectorBase<T>*>(root.vec);
-         root.vec = nullptr;
-      }
-
-      if( vecl )
-      {
-         assert( root.vecl );
-         dynamic_cast<SimpleVectorBase<T>*>(vecl)->moveToFront( dynamic_cast<SimpleVectorBase<T>&>(*root.vecl) );
-      }
-      else
-      {
-         vecl = dynamic_cast<SimpleVectorBase<T>*>(root.vecl);
-         root.vecl = nullptr;
-      }
-
-      children.insert( children.end(), root.children.begin(), root.children.end() );
-      root.children.clear();
-
-      for( auto child : children )
-      {
-         child->parent = this;
-         assert( child->children.size() == 0 );
-//         child->collapseHierarchicalStructure();
-      }
-   }
+      appendOnlyChildToThis();   }
    else
    {
 //      assert( children.size() > 0 );
