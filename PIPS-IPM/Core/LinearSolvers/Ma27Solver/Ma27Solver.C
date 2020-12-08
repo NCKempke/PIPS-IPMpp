@@ -541,7 +541,7 @@ bool Ma27Solver::checkErrorsAndReact()
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << " != n : " << this->n << "\n";
 
-         static double last_pert = 1e-5;
+         static double last_pert = 1e-14;
 
          double pert = 0;
          if( new_factor )

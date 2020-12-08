@@ -48,7 +48,6 @@ Solver::Solver(const Scaler* scaler) : scaler{ scaler }
       artol = 1.e-3;
       mutol = 1.e-5;
    }
-   else
 
    if( base_options::getBoolParameter("IP_PRINT_TIMESTAMP") )
    {

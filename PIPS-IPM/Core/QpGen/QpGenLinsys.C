@@ -568,7 +568,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
    OoqpVector &x = *sol, &r = *res, &b = *rhs;
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
-   const double n2b = b.infnorm();
+   const double n2b = b.twonorm();
    const double tolb = max(n2b * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
@@ -588,7 +588,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
    r.copyFrom(b);
    matMult( 1.0, r, -1.0, x );
 
-   double normr = r.infnorm(), normr_min = normr;
+   double normr = r.twonorm(), normr_min = normr;
    best_x.copyFrom(x);
 
    bicg_resnorm = normr;
@@ -670,7 +670,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
 
          alpha = rho / rtv;
 
-         if( (std::fabs(alpha) * dx.infnorm()) <= outer_bicg_eps * x.infnorm() )
+         if( (std::fabs(alpha) * dx.twonorm()) <= outer_bicg_eps * x.twonorm() )
             nstags++;
          else
             nstags = 0;
@@ -681,7 +681,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
          r.axpy(-alpha, v);
 
          //check for convergence
-         normr = r.infnorm();
+         normr = r.twonorm();
 
          if( normr <= tolb || nstags >= outer_bicg_max_stagnations )
          {
@@ -690,7 +690,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
             res.copyFrom(b);
             matMult(1.0, res, -1.0, x);
 
-            bicg_resnorm = res.infnorm();
+            bicg_resnorm = res.twonorm();
             if( bicg_resnorm <= tolb )
             {
                //converged
@@ -716,7 +716,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
 
          omega = t.dotProductWith(r) / tt;
 
-         if( (std::fabs(omega) * dx.infnorm()) <= outer_bicg_eps * x.infnorm() )
+         if( (std::fabs(omega) * dx.twonorm()) <= outer_bicg_eps * x.twonorm() )
             nstags++;
          else
             nstags = 0;
@@ -726,7 +726,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
          // r = r-omega*t (r=s-omega*sh)
          r.axpy(-omega, t);
          //check for convergence
-         normr = r.infnorm();
+         normr = r.twonorm();
 
          if( normr <= tolb || nstags >= outer_bicg_max_stagnations )
          {
@@ -735,7 +735,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
             res.copyFrom(b);
             matMult(1.0, res, -1.0, x);
 
-            bicg_resnorm = res.infnorm();
+            bicg_resnorm = res.twonorm();
 
             if( bicg_resnorm <= tolb )
             {

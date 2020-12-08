@@ -415,7 +415,6 @@ void QpGenResiduals::copyFrom( const Residuals& other_in )
    rpi->copyFrom( *other.rpi );
 }
 
-
 void QpGenResiduals::writeToStream(std::ostream& out)
 {
   /*
