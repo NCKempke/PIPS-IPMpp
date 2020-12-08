@@ -188,6 +188,11 @@ public:
   {
     return obj;
   }
+  operator T*() const
+  {
+     return obj;
+  }
+
   /** Converts a traditional
    *  pointer to a smart pointer, destroying the original pointer. */
   static void bind( SmartPointer<T>& sp, T ** obj )

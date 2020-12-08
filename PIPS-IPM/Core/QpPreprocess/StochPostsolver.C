@@ -18,26 +18,24 @@
 
 StochPostsolver::StochPostsolver(const sData& original_problem) :
    QpPostsolver(original_problem),
-   my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
-   distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)),
    postsolve_tol( pips_options::getDoubleParameter("POSTSOLVE_TOLERANCE") ),
    INF_NEG( -pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
    INF_POS( pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
-   n_rows_original(original_problem.my + original_problem.mz),
-   n_cols_original(original_problem.nx),
-   padding_origcol( cloneStochVector<double, int>(*original_problem.g) ),
-   padding_origrow_equality( cloneStochVector<double, int>(*original_problem.bA) ),
-   padding_origrow_inequality( cloneStochVector<double, int>(*original_problem.bu) ),
-   eq_row_marked_modified( dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) ),
-   ineq_row_marked_modified( dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) ),
-   column_marked_modified( dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) ),
+   n_rows_original( original_problem.my + original_problem.mz ),
+   n_cols_original( original_problem.nx ),
+   padding_origcol{ cloneStochVector<double, int>(*original_problem.g) },
+   padding_origrow_equality{ cloneStochVector<double, int>(*original_problem.bA) },
+   padding_origrow_inequality{ cloneStochVector<double, int>(*original_problem.bu) },
+   eq_row_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) },
+   ineq_row_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) },
+   column_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) },
    row_storage( dynamic_cast<const StochGenMatrix&>(*original_problem.A) ),
    col_storage( dynamic_cast<const StochGenMatrix&>(*original_problem.A), dynamic_cast<const StochGenMatrix&>(*original_problem.C) ),
-   eq_row_stored_last_at( dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) ),
-   ineq_row_stored_last_at( dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) ),
-   col_stored_last_at( dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) ),
-   last_upper_bound_tightened( dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) ),
-   last_lower_bound_tightened( dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) ),
+   eq_row_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) },
+   ineq_row_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) },
+   col_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) },
+   last_upper_bound_tightened{ dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) },
+   last_lower_bound_tightened{ dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) },
    length_array_outdated_indicators(3),
    array_outdated_indicators(new bool[length_array_outdated_indicators]),
    outdated_linking_vars(array_outdated_indicators[0]),
@@ -53,32 +51,29 @@ StochPostsolver::StochPostsolver(const sData& original_problem) :
 
    assert( 5.0 * n_linking_vars < std::numeric_limits<int>::max() );
 
-   length_array_linking_var_changes = 5 * n_linking_vars;
-   array_linking_var_changes = new double[length_array_linking_var_changes];
-   std::memset(array_linking_var_changes, 0, length_array_linking_var_changes * sizeof(double));
+   const int length_array_linking_var_changes = 5 * n_linking_vars;
+   array_linking_var_changes.resize( length_array_linking_var_changes, 0.0);
 
-   x_changes = SimpleVectorHandle(new SimpleVector(array_linking_var_changes, n_linking_vars));
-   v_changes = SimpleVectorHandle(new SimpleVector(array_linking_var_changes + n_linking_vars, n_linking_vars));
-   w_changes = SimpleVectorHandle(new SimpleVector(array_linking_var_changes + 2 * n_linking_vars, n_linking_vars));
-   gamma_changes = SimpleVectorHandle(new SimpleVector(array_linking_var_changes + 3 * n_linking_vars, n_linking_vars));
-   phi_changes = SimpleVectorHandle(new SimpleVector(array_linking_var_changes + 4 * n_linking_vars, n_linking_vars));
+   x_changes.reset( new SimpleVector(array_linking_var_changes.data(), n_linking_vars) );
+   v_changes.reset( new SimpleVector(array_linking_var_changes.data() + n_linking_vars, n_linking_vars) );
+   w_changes.reset( new SimpleVector(array_linking_var_changes.data() + 2 * n_linking_vars, n_linking_vars) );
+   gamma_changes.reset( new SimpleVector(array_linking_var_changes.data() + 3 * n_linking_vars, n_linking_vars) );
+   phi_changes.reset( new SimpleVector(array_linking_var_changes.data() + 4 * n_linking_vars, n_linking_vars) );
 
-   length_array_eq_linking_row_changes = n_linking_A;
-   array_eq_linking_row_changes = new double[length_array_eq_linking_row_changes];
-   std::memset(array_eq_linking_row_changes, 0, length_array_eq_linking_row_changes * sizeof(double));
+   const int length_array_eq_linking_row_changes = n_linking_A;
+   array_eq_linking_row_changes.resize( length_array_eq_linking_row_changes, 0.0);
 
-   y_changes = SimpleVectorHandle(new SimpleVector(array_eq_linking_row_changes, n_linking_A));
+   y_changes.reset( new SimpleVector(array_eq_linking_row_changes.data(), n_linking_A) );
 
    assert( 4.0 * n_linking_C < std::numeric_limits<int>::max() );
 
-   length_array_ineq_linking_row_changes = 4 * n_linking_C;
-   array_ineq_linking_row_changes = new double[length_array_ineq_linking_row_changes];
-   std::memset(array_ineq_linking_row_changes, 0, length_array_ineq_linking_row_changes * sizeof(double));
+   const int length_array_ineq_linking_row_changes = 4 * n_linking_C;
+   array_ineq_linking_row_changes.resize( length_array_ineq_linking_row_changes, 0.0);
 
-   z_changes = SimpleVectorHandle(new SimpleVector(array_ineq_linking_row_changes, n_linking_C));
-   s_changes = SimpleVectorHandle(new SimpleVector(array_ineq_linking_row_changes + n_linking_C, n_linking_C));
-   t_changes = SimpleVectorHandle(new SimpleVector(array_ineq_linking_row_changes + 2 * n_linking_C, n_linking_C));
-   u_changes = SimpleVectorHandle(new SimpleVector(array_ineq_linking_row_changes + 3 * n_linking_C, n_linking_C));
+   z_changes.reset( new SimpleVector(array_ineq_linking_row_changes.data(), n_linking_C) );
+   s_changes.reset( new SimpleVector(array_ineq_linking_row_changes.data() + n_linking_C, n_linking_C) );
+   t_changes.reset( new SimpleVector(array_ineq_linking_row_changes.data() + 2 * n_linking_C, n_linking_C) );
+   u_changes.reset( new SimpleVector(array_ineq_linking_row_changes.data() + 3 * n_linking_C, n_linking_C) );
 
    padding_origcol->setToConstant(1);
    padding_origrow_equality->setToConstant(1);
@@ -104,21 +99,7 @@ StochPostsolver::StochPostsolver(const sData& original_problem) :
 
 StochPostsolver::~StochPostsolver()
 {
-   delete last_lower_bound_tightened;
-   delete last_upper_bound_tightened;
-   delete col_stored_last_at;
-   delete ineq_row_stored_last_at;
-   delete eq_row_stored_last_at;
-   delete column_marked_modified;
-   delete ineq_row_marked_modified;
-   delete eq_row_marked_modified;
-   delete padding_origrow_inequality;
-   delete padding_origrow_equality;
-   delete padding_origcol;
    delete[] array_outdated_indicators;
-   delete[] array_linking_var_changes;
-   delete[] array_eq_linking_row_changes;
-   delete[] array_ineq_linking_row_changes;
 }
 
 void StochPostsolver::notifyRowModified( const INDEX& row )
@@ -511,7 +492,7 @@ void StochPostsolver::notifyFixedColumn( const INDEX& col, double value, double 
    assert( !wasColumnRemoved(col) );
    markColumnRemoved(col);
    if( col.isLinkingCol() )
-      assert( PIPS_MPIisValueEqual(col.getIndex(), MPI_COMM_WORLD) );
+      assert( PIPS_MPIisValueEqual(col.getIndex() ) );
 
    /* store current upper and lower bounds of x and the local column */
    const int col_index = col_storage.storeCol(col, eq_mat, ineq_mat);
@@ -533,7 +514,7 @@ void StochPostsolver::notifyFixedEmptyColumn( const INDEX& col, double value, do
    assert(col.isCol());
    assert( !wasColumnRemoved(col) );
    if( col.isLinkingCol() )
-      assert( PIPS_MPIisValueEqual(col.getNode(), MPI_COMM_WORLD) );
+      assert( PIPS_MPIisValueEqual(col.getNode()) );
 
    markColumnRemoved(col);
 
@@ -563,7 +544,7 @@ void StochPostsolver::notifyRedundantRow( const INDEX& row, int iclow, int icupp
    markRowRemoved(row);
 
    if( row.isLinkingRow() )
-      assert(PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD) );
+      assert(PIPS_MPIisValueEqual(row.getIndex()) );
 
    /* save row for postsolve */
    reductions.push_back(REDUNDANT_ROW);
@@ -906,7 +887,7 @@ bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_
    const INDEX& row = indices.at(first_index);
    assert( row.isRow() );
    if( row.isLinkingRow() )
-      assert(PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD));
+      assert(PIPS_MPIisValueEqual(row.getIndex()));
 
    const double lhs = float_values.at(first_float_val);
    const double rhs = float_values.at(first_float_val + 1);
@@ -928,14 +909,14 @@ bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_
 
    if( row.isLinkingRow() )
    {
-      assert(PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD));
+      assert(PIPS_MPIisValueEqual(row.getIndex()));
 
       if(my_rank == 0)
          value_row = row_storage.multRowTimesVec( stored_row, x_vec );
       else
          value_row = row_storage.multLinkingRowTimesVecWithoutBl0(index_stored_row, x_vec);
       /* this might get very expensive if there is many redundant linking rows */
-      PIPS_MPIgetSumInPlace(value_row, MPI_COMM_WORLD);
+      PIPS_MPIgetSumInPlace(value_row);
    }
    else
       value_row = row_storage.multRowTimesVec( stored_row, x_vec );
@@ -1223,7 +1204,7 @@ bool StochPostsolver::postsolveFixedColumn(sVars& original_vars, int reduction_i
    double col_times_duals = 0.0;
    if( col.isLinkingCol() )
    {
-      assert( PIPS_MPIisValueEqual(col.getIndex(), MPI_COMM_WORLD) );
+      assert( PIPS_MPIisValueEqual(col.getIndex()) );
       /* we need to synchronize the column times duals in this case */
       if( my_rank == 0 )
          col_times_duals = col_storage.multColTimesVec(stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
@@ -1232,7 +1213,7 @@ bool StochPostsolver::postsolveFixedColumn(sVars& original_vars, int reduction_i
          col_times_duals = col_storage.multColTimesVecWithoutRootNode(stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
                dynamic_cast<const StochVector&>(*original_vars.z));
 
-      PIPS_MPIgetSumInPlace(col_times_duals, MPI_COMM_WORLD);
+      PIPS_MPIgetSumInPlace(col_times_duals);
    }
    else
    {
@@ -1249,7 +1230,7 @@ bool StochPostsolver::postsolveFixedColumn(sVars& original_vars, int reduction_i
    else
    {
       outdated_inequality_linking_rows = true;
-      col_storage.axpyAtCol( 1.0, nullptr, &dynamic_cast<StochVector&>(*original_vars.s), nullptr, s_changes, value, stored_col );
+      col_storage.axpyAtCol( 1.0, nullptr, &dynamic_cast<StochVector&>(*original_vars.s), nullptr, s_changes.get(), value, stored_col );
    }
 
    /* set duals of bounds of x */
@@ -1297,7 +1278,7 @@ bool StochPostsolver::postsolveFixedEmptyColumn(sVars& original_vars, int reduct
    assert( col.isCol() );
    assert( wasColumnRemoved(col) );
    if( col.isLinkingCol() )
-      assert( PIPS_MPIisValueEqual(col.getIndex(), MPI_COMM_WORLD) );
+      assert( PIPS_MPIisValueEqual(col.getIndex()) );
 
    const double value = float_values.at(first_float_val);
    const double obj_coeff = float_values.at(first_float_val + 1);
@@ -1659,10 +1640,10 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
    /* assert that linking columns and rows are done by all processes simultaneously */
    if( !col.isEmpty() )
       if( col.isLinkingCol() && row.getNode() == -1 )
-         assert(PIPS_MPIisValueEqual(col.getIndex(), MPI_COMM_WORLD));
+         assert(PIPS_MPIisValueEqual(col.getIndex()));
 
    if( row.isLinkingRow() )
-      assert(PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD));
+      assert(PIPS_MPIisValueEqual(row.getIndex()));
 
    /* reintroduce row on all processes */
    if( row.inEqSys() )
@@ -1673,7 +1654,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
    const double dual_value_row = obj_coeff / col_coeff;
 
    if( row.isLinkingRow() )
-      assert( PIPS_MPIisValueEqual(dual_value_row, MPI_COMM_WORLD) );
+      assert( PIPS_MPIisValueEqual(dual_value_row) );
 
    /* set duals of row depending on equality/inequality row */
    if( row.inEqSys() )
@@ -1703,13 +1684,13 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
 
    if( row.isLinkingRow() )
    {
-      assert(PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD));
+      assert(PIPS_MPIisValueEqual(row.getIndex()));
 
       if(my_rank == 0)
          value_row = row_storage.multRowTimesVec( stored_row, dynamic_cast<const StochVector&>(*original_vars.x));
       else
          value_row = row_storage.multLinkingRowTimesVecWithoutBl0( stored_row_idx, dynamic_cast<const StochVector&>(*original_vars.x));
-      PIPS_MPIgetSumInPlace(value_row, MPI_COMM_WORLD);
+      PIPS_MPIgetSumInPlace(value_row);
    }
    else
       value_row = row_storage.multRowTimesVec(stored_row, dynamic_cast<const StochVector&>(*original_vars.x));
@@ -2331,14 +2312,14 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( sVars& original
 
    if( row.isLinkingRow() )
    {
-      assert( PIPS_MPIisValueEqual(row.getIndex(), MPI_COMM_WORLD) );
+      assert( PIPS_MPIisValueEqual(row.getIndex()) );
 
       if( col.isCol() && (!col.isLinkingCol() || my_rank == 0) )
          row_value = row_storage.multRowTimesVec( row_stored, dynamic_cast<const StochVector&>(*original_vars.x) );
       else
          row_value = row_storage.multLinkingRowTimesVecWithoutBl0( index_stored_row, dynamic_cast<const StochVector&>(*original_vars.x) );
 
-      PIPS_MPIgetSumInPlace(row_value, MPI_COMM_WORLD);
+      PIPS_MPIgetSumInPlace(row_value);
    }
    else
       row_value = row_storage.multRowTimesVec(row_stored, dynamic_cast<const StochVector&>(*original_vars.x));
@@ -2392,7 +2373,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( sVars& original
       if( row.isLinkingRow() && !col.isLinkingCol() )
       {
 #ifndef NDEBUG
-         const double row_slack_recieve = PIPS_MPIgetSum( row_slack, MPI_COMM_WORLD );
+         const double row_slack_recieve = PIPS_MPIgetSum( row_slack);
          assert( row_slack_recieve == row_slack );
 #endif
          /* we just recomputed the slack */
@@ -2405,7 +2386,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( sVars& original
    {
       assert( row.isLinkingRow() );
 
-      const double row_slack = PIPS_MPIgetSum( 0.0, MPI_COMM_WORLD );
+      const double row_slack = PIPS_MPIgetSum(0.0);
       getSimpleVecFromRowStochVec(original_vars.s, row) = row_slack;
 
       /* we just recomputed the slack */
@@ -2534,13 +2515,13 @@ bool StochPostsolver::syncLinkingVarChanges(sVars& original_vars)
    assert( dynamic_cast<const StochVector&>(*original_vars.gamma).isRootNodeInSync() );
    assert( dynamic_cast<const StochVector&>(*original_vars.phi).isRootNodeInSync() );
 
-   PIPS_MPIgetLogicOrInPlace(outdated_linking_vars, MPI_COMM_WORLD);
+   PIPS_MPIgetLogicOrInPlace(outdated_linking_vars);
 
    if( !outdated_linking_vars || x_changes->length() == 0)
       return true;
 
-   PIPS_MPIsumArrayInPlace( array_linking_var_changes, length_array_linking_var_changes, MPI_COMM_WORLD );
-   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->vec)->elements(), dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->vec)->length(), MPI_COMM_WORLD );
+   PIPS_MPIsumArrayInPlace( array_linking_var_changes );
+   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->vec)->elements(), dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->vec)->length() );
 
    SimpleVector& linking_x = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.x).vec);
    SimpleVector& linking_v = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.v).vec);
@@ -2576,7 +2557,7 @@ bool StochPostsolver::syncLinkingVarChanges(sVars& original_vars)
       }
    }
 
-   std::memset( array_linking_var_changes, 0, length_array_linking_var_changes );
+   std::fill( array_linking_var_changes.begin(), array_linking_var_changes.end(), 0.0 );
    outdated_linking_vars = false;
 
    assert( dynamic_cast<const StochVector&>(*original_vars.x).isRootNodeInSync() );
@@ -2590,14 +2571,14 @@ bool StochPostsolver::syncLinkingVarChanges(sVars& original_vars)
 
 bool StochPostsolver::syncEqLinkingRowChanges(sVars& original_vars)
 {
-   PIPS_MPIgetLogicOrInPlace(outdated_equality_linking_rows, MPI_COMM_WORLD);
+   PIPS_MPIgetLogicOrInPlace(outdated_equality_linking_rows );
 
    if( !outdated_equality_linking_rows || y_changes->length() == 0)
       return true;
 
-   PIPS_MPIsumArrayInPlace( array_eq_linking_row_changes, length_array_eq_linking_row_changes, MPI_COMM_WORLD );
+   PIPS_MPIsumArrayInPlace( array_eq_linking_row_changes );
    PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->vecl)->elements(),
-         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->vecl)->length(), MPI_COMM_WORLD );
+         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->vecl)->length() );
 
    SimpleVector& linking_y = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.y).vecl);
 
@@ -2612,7 +2593,7 @@ bool StochPostsolver::syncEqLinkingRowChanges(sVars& original_vars)
          linking_y[i] += (*y_changes)[i];
    }
 
-   std::memset( array_eq_linking_row_changes, 0, length_array_eq_linking_row_changes );
+   std::fill(array_eq_linking_row_changes.begin(), array_ineq_linking_row_changes.end(), 0.0);
    outdated_equality_linking_rows = false;
 
    assert( dynamic_cast<const StochVector&>(*original_vars.y).isRootNodeInSync() );
@@ -2629,14 +2610,14 @@ bool StochPostsolver::syncIneqLinkingRowChanges(sVars& original_vars)
    assert( dynamic_cast<const StochVector&>(*original_vars.pi).isRootNodeInSync() );
    assert( dynamic_cast<const StochVector&>(*original_vars.lambda).isRootNodeInSync() );
 
-   PIPS_MPIgetLogicOrInPlace(outdated_inequality_linking_rows, MPI_COMM_WORLD);
+   PIPS_MPIgetLogicOrInPlace(outdated_inequality_linking_rows );
 
    if( !outdated_inequality_linking_rows || z_changes->length() == 0)
       return true;
 
-   PIPS_MPIsumArrayInPlace( array_ineq_linking_row_changes, length_array_ineq_linking_row_changes, MPI_COMM_WORLD );
+   PIPS_MPIsumArrayInPlace( array_ineq_linking_row_changes );
    PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->vecl)->elements(),
-         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->vecl)->length(), MPI_COMM_WORLD );
+         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->vecl)->length() );
 
    SimpleVector& linking_z = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.z).vecl);
    SimpleVector& linking_lambda = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.lambda).vecl);
@@ -2676,7 +2657,7 @@ bool StochPostsolver::syncIneqLinkingRowChanges(sVars& original_vars)
       }
    }
 
-   std::memset( array_ineq_linking_row_changes, 0, length_array_ineq_linking_row_changes );
+   std::fill( array_ineq_linking_row_changes.begin(), array_ineq_linking_row_changes.end(), 0.0);
    outdated_inequality_linking_rows = false;
 
    assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
@@ -2689,6 +2670,7 @@ bool StochPostsolver::syncIneqLinkingRowChanges(sVars& original_vars)
    return true;
 }
 
+// TODO : who sets these to 0.0 after applying the changes?
 bool StochPostsolver::syncLinkingRowsAfterBoundTightening(sVars& original_vars, int i)
 {
    assert( dynamic_cast<const StochVector&>(*original_vars.y).isRootNodeInSync() );
@@ -2716,7 +2698,7 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(sVars& original_vars, 
    /* gather all z and y changes if any */
    if( outdated_equality_linking_rows )
    {
-      PIPS_MPIsumArrayInPlace(array_eq_linking_row_changes, length_array_eq_linking_row_changes);
+      PIPS_MPIsumArrayInPlace(array_eq_linking_row_changes);
 
       for( int row = 0; row < y_changes->length(); ++row )
       {
@@ -2737,7 +2719,7 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(sVars& original_vars, 
 
    if( outdated_inequality_linking_rows )
    {
-      PIPS_MPIsumArrayInPlace(array_ineq_linking_row_changes, length_array_ineq_linking_row_changes);
+      PIPS_MPIsumArrayInPlace(array_ineq_linking_row_changes);
 
       for( int row = 0; row < z_changes->length(); ++row )
       {
@@ -2882,7 +2864,7 @@ bool StochPostsolver::sameNonZeroPatternDistributed(const SimpleVector& vec) con
 
    const std::vector<double> ref_vec(v.begin(), v.end());
 
-   PIPS_MPIminArrayInPlace(v, MPI_COMM_WORLD);
+   PIPS_MPIminArrayInPlace(v);
 
    for( unsigned i = 0; i < v.size(); ++i )
    {
@@ -2892,7 +2874,7 @@ bool StochPostsolver::sameNonZeroPatternDistributed(const SimpleVector& vec) con
       }
    }
 
-   return PIPS_MPIgetLogicAnd( result, MPI_COMM_WORLD );
+   return PIPS_MPIgetLogicAnd( result );
 }
 
 

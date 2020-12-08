@@ -16,15 +16,10 @@ class StochScaler : public QpScaler
 {
 public:
 	StochScaler(Data* prob, bool bitshifting);
-	virtual ~StochScaler();
-
-	virtual void scale() = 0;
+	~StochScaler() override = default;
 
 	Variables* getVariablesUnscaled(const Variables& vars) const override;
   	Residuals* getResidualsUnscaled(const Residuals& resids) const override;
-
-protected:
-	virtual void doObjScaling() override = 0;
 };
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHSCALER_H_ */

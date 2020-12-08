@@ -4,28 +4,6 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::~sLinsysLeaf()
-{
-   if( computeBlockwiseSC )
-      freeBlockedSolvers();
-}
-
-void sLinsysLeaf::freeBlockedSolvers()
-{
-   assert( solvers_blocked != nullptr );
-
-   #pragma omp parallel num_threads(n_solvers)
-   {
-      const int id = omp_get_thread_num();
-
-      delete solvers_blocked[id];
-      delete problems_blocked[id];
-   }
-
-   delete[] solvers_blocked;
-   delete[] problems_blocked;
-}
-
 void sLinsysLeaf::factor2(sData *prob, Variables *vars)
 {
    // Diagonals were already updated, so
@@ -39,7 +17,7 @@ void sLinsysLeaf::factor2(sData *prob, Variables *vars)
          const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
          const int id = omp_get_thread_num();
 
-         SparseSymMatrix& my_kkt = *problems_blocked[id];
+         SparseSymMatrix& my_kkt = dynamic_cast<SparseSymMatrix&>(*problems_blocked[id].get());
          kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
          solvers_blocked[id]->matrixChanged();
       }

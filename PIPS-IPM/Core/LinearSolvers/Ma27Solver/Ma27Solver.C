@@ -22,7 +22,7 @@ Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) :
 
 void Ma27Solver::init()
 {
-   const double default_small_pivot = 1e-10;
+   const double default_small_pivot = 1.0e-10;
    const double default_threshold_pivoting = 0.5;
    /* detecting dense rows during the factorization to preserve sparsity */
    const double default_fratio = 0.5;
@@ -289,10 +289,10 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          {
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             {
-               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << "\n";
-               std::cout << " did not converge but still keeping the iterate" << "\n";
+//               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << "\n";
+//               std::cout << " did not converge but still keeping the iterate" << "\n";
 
-               std::cout << "Error is " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required.. \n";
+//               std::cout << "Error is " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required.. \n";
             }
          }
          else

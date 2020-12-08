@@ -185,6 +185,8 @@ protected:
   void freeWorkingArrays();
   bool checkErrorsAndReact();
 
+  void regularizeMatrix();
+
   /* scaler */
   SymmetricLinearScaler* scaler;
 

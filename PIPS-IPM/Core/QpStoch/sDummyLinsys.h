@@ -30,11 +30,11 @@ class sDummyLinsys : public sLinsys
   void solveCompressed( OoqpVector& rhs ) override {};
   void putXDiagonal( OoqpVector& xdiag_ ) override {};
 
-  void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-		OoqpVector& rhs2_in, OoqpVector& rhs3_in ) override {};
+  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override {};
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, OoqpVector& vars_in ) override {};
+		     OoqpVector& z_in, const OoqpVector& vars_in ) const override {};
   
 
   void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi) override {};
@@ -53,7 +53,6 @@ class sDummyLinsys : public sLinsys
   void allocU(DenseGenMatrix ** Ut, int np) override {};
   void allocV (DenseGenMatrix ** V, int np) override {};
   void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V) override {};
-  void sync() override {};
   void deleteChildren() override {};
 
   bool isDummy() const override { return true; };

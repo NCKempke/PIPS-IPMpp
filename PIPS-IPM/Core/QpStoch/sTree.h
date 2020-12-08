@@ -154,6 +154,8 @@ class sTree
   // TODO : make sure that none of the not suitable methods get called...
   virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
         const std::vector<int>& twoLinksStartBlockC ) = 0;
+  virtual sTree * collapseHierarchicalTree() = 0;
+
 };
 
 #endif 

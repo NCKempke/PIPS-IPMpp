@@ -45,7 +45,7 @@ StringGenMatrix::StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseG
 
 StringGenMatrix::~StringGenMatrix()
 {
-   for( auto& child : children )
+   for( StringGenMatrix* child : children )
       delete child;
 
    delete mat;
@@ -471,7 +471,7 @@ void StringGenMatrix::rowScale ( const OoqpVector& vec )
       rowScaleHorizontal(vec);
 }
 
-void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in )
+void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in ) const
 {
    assert( is_vertical );
 
@@ -496,7 +496,7 @@ void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in )
       mat_link->addRowSums(*vec.vecl);
 }
 
-void StringGenMatrix::addRowSumsHorizontal( OoqpVector& vec_in )
+void StringGenMatrix::addRowSumsHorizontal( OoqpVector& vec_in ) const
 {
    assert( !is_vertical );
    SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
@@ -513,7 +513,7 @@ void StringGenMatrix::addRowSumsHorizontal( OoqpVector& vec_in )
       mat_link->addRowSums(vec);
 }
 
-void StringGenMatrix::addColSumsVertical( OoqpVector& vec_in )
+void StringGenMatrix::addColSumsVertical( OoqpVector& vec_in ) const
 {
    assert( is_vertical );
    SimpleVector& vec = dynamic_cast<SimpleVector&>(vec_in);
@@ -530,7 +530,7 @@ void StringGenMatrix::addColSumsVertical( OoqpVector& vec_in )
       mat_link->addColSums(vec);
 }
 
-void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in )
+void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in ) const
 {
    assert( !is_vertical );
 
@@ -555,7 +555,7 @@ void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in )
       mat_link->addColSums(*vec.vecl);
 }
 
-void StringGenMatrix::addRowSums( OoqpVector& vec )
+void StringGenMatrix::addRowSums( OoqpVector& vec ) const
 {
    if( is_vertical )
       addRowSumsVertical( vec );
@@ -563,7 +563,7 @@ void StringGenMatrix::addRowSums( OoqpVector& vec )
       addRowSumsHorizontal( vec );
 }
 
-void StringGenMatrix::addColSums( OoqpVector& vec )
+void StringGenMatrix::addColSums( OoqpVector& vec ) const
 {
    if( is_vertical )
       addColSumsVertical( vec );

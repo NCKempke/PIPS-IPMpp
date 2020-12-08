@@ -6,15 +6,17 @@
 #define ALGORITHM_H
 
 #include "Scaler.h"
+#include "Residuals.h"
 
 class Data;
 class Variables;
-class Residuals;
 class LinearSystem;
 class Status;
 class OoqpMonitor;
 class OoqpStartStrategy;
 class ProblemFormulation;
+
+#include <memory>
 
 /**  * @defgroup QpSolvers
  *
@@ -28,55 +30,64 @@ class ProblemFormulation;
 class Solver
 {
 protected:
-  OoqpMonitor * itsMonitors;
-  Status *status;
-  OoqpStartStrategy * startStrategy;
-  const Scaler *scaler;
+  OoqpMonitor* itsMonitors{};
+  Status* status{};
+  OoqpStartStrategy* startStrategy{};
+  const Scaler* scaler{};
+
+  std::unique_ptr<Residuals> residuals_unscaled{};
 
   /** norm of problem data */
-  double dnorm;
+  double dnorm{0.0};
 
   /** norm of original unscaled problem */
-  double dnorm_orig;
+  double dnorm_orig{0.0};
 
  /** termination parameters */
-  double     mutol, artol;
+  double mutol{1.e-6};
+  double artol{1.e-4};
 
   /** number in (0,1) with which the step length is multiplied */
-  double steplength_factor;
+  double steplength_factor{0.99999999};
 
   /** parameters associated with the step length heuristic */
-  double gamma_f, gamma_a;
+  double gamma_f{0.99};
+  double gamma_a{1.0 / (1.0 - 0.99)};
 
   /** merit function, defined as the sum of the complementarity gap
       the residual norms, divided by (1+norm of problem data) */
-  double phi;
+  double phi{0.0};
 
   /** maximum number of  iterations allowed */
-  int        maxit;
+  int maxit{0};
 
   /** history of values of mu obtained on all iterations to date */
-  double *mu_history;
+  double* mu_history{};
 
   /** history of values of residual norm obtained on all iterations to
       date */
-  double *rnorm_history;
+  double* rnorm_history{};
   
   /** history of values of phi obtained on all iterations to date */
-  double *phi_history;
+  double* phi_history{};
 
   /** the i-th entry of this array contains the minimum value of phi
    *  encountered by the algorithm on or before iteration i */
-  double *phi_min_history;
+  double* phi_min_history{};
+
+  bool printTimeStamp{false};
+
+  double startTime{-1.0};
+
+  LinearSystem *sys{};
+
+  /** iteration counter */
+  int iter{0};
 
   /** initialize dnorm and dnorm_orig */
   void setDnorm( const Data& data );
 
 public:
-
-  /** iteration counter */
-  int iter;
-
   Solver( const Scaler* scaler = nullptr );
   virtual ~Solver();
 
@@ -179,10 +190,11 @@ public:
   /** returns a pointed to the linear system object stored in this
    *  class */
   LinearSystem * getLinearSystem() const { return sys; };
-protected:
-  bool printTimeStamp;
-  double startTime;
-  LinearSystem *sys;
+
+private:
+  std::pair<double,double> computeUnscaledGapAndResidualNorm( const Residuals& );
+
+
 };
 
 //@}

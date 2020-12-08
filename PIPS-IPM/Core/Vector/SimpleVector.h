@@ -113,6 +113,8 @@ public:
    void applySqrt() override;
    void roundToPow2() override;
    bool allPositive() const override;
+   bool allOf( const std::function<bool(const T&)>& pred ) const override;
+
    long long numberOfNonzeros() const override;
 
   bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override;
@@ -158,6 +160,9 @@ public:
 
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };
+
+  void appendToFront( const SimpleVectorBase<T>& other );
+  void appendToBack( const SimpleVectorBase<T>& other );
 
   virtual SimpleVectorBase<T>* shaveBorder( int n_shave, bool shave_top );
 };

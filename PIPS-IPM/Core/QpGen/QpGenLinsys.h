@@ -10,6 +10,8 @@
 #include "OoqpVector.h"
 #include "Observer.h"
 
+#include <functional>
+
 class Data;
 class QpGenData;
 class QpGen;
@@ -125,8 +127,8 @@ public:
    * @param rhs2 (input) middle part of rhs
    * @param rhs3 (input) last part of rhs
    */
-  virtual void joinRHS( OoqpVector& rhs,  OoqpVector& rhs1,
-			OoqpVector& rhs2, OoqpVector& rhs3 );
+  virtual void joinRHS( OoqpVector& rhs, const OoqpVector& rhs1,
+			const OoqpVector& rhs2, const OoqpVector& rhs3 ) const;
 
   /** extracts three component vectors from a given aggregated vector.
    *
@@ -136,7 +138,7 @@ public:
    * @param vars3 (output) last part of vars
    */
   virtual void separateVars( OoqpVector& vars1, OoqpVector& vars2,
-			     OoqpVector& vars3, OoqpVector& vars );
+			     OoqpVector& vars3, const OoqpVector& vars ) const;
 
   /** assemble right-hand side of augmented system and call
       solveCompressed to solve it */
@@ -170,34 +172,28 @@ public:
 				 OoqpVector& u,  OoqpVector& pi,
 				 OoqpVector& v,  OoqpVector& gamma,
 				 OoqpVector& w,  OoqpVector& phi );
- protected:
-  virtual void computeResidualXYZ(OoqpVector& sol, 
-				  OoqpVector& res, 
-				  OoqpVector& solx, 
-				  OoqpVector& soly, 
-				  OoqpVector& solz,
-				  QpGenData* data);
-  virtual void matXYZMult( double beta,  OoqpVector& res, 
-			   double alpha, OoqpVector& sol, 
-			   QpGenData* data,
-			   OoqpVector& solx, 
-			   OoqpVector& soly, 
-			   OoqpVector& solz);
+   protected:
+      void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
+            OoqpVector& soly, OoqpVector& solz, const QpGenData& data);
+      void computeResidualsReducedSlacks( const QpGenData& data );
+      void computeResidualsFull( const QpGenData& data );
 
-  virtual double matXYZinfnorm(
-               QpGenData* data,
-               OoqpVector& solx,
-               OoqpVector& soly,
-               OoqpVector& solz);
+      void matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol,
+            const QpGenData& data, OoqpVector& solx, OoqpVector& soly,
+            OoqpVector& solz);
+      void matReducedSlacksMult( const QpGenData& data );
+      void matFullMult( const QpGenData& data );
 
-  virtual void solveCompressedBiCGStab(OoqpVector& stepx,
-				       OoqpVector& stepy,
-				       OoqpVector& stepz,
-				       QpGenData* data);
-  virtual void solveCompressedIterRefin(OoqpVector& stepx,
-					OoqpVector& stepy,
-					OoqpVector& stepz,
-					QpGenData* data);
+      double matXYZinfnorm(const QpGenData& data, OoqpVector &solx, OoqpVector &soly,
+            OoqpVector &solz);
+      void matReducedInfnorm( const QpGenData& data );
+      void matFullInfnorm( const QpGenData& data );
+
+
+  // TODO : move to LinearSystem level
+  void solveCompressedBiCGStab( const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm );
+
+  void solveCompressedIterRefin( const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual );
 
 };
 

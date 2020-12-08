@@ -15,6 +15,7 @@
 #include "StochVector.h"
 
 #include <vector>
+#include <memory>
 
 #include "mpi.h"
 
@@ -50,24 +51,45 @@ class sLinsys : public QpGenLinsys
   virtual void solveCompressed( OoqpVector& rhs );
   virtual void putXDiagonal( OoqpVector& xdiag_ )=0;
 
-  void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-		OoqpVector& rhs2_in, OoqpVector& rhs3_in );
+  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, OoqpVector& vars_in );
+		     OoqpVector& z_in, const OoqpVector& vars_in ) const;
   
-  virtual void sync()=0;
-  virtual void deleteChildren()=0;
+  virtual void deleteChildren() = 0;
 
   virtual bool isDummy() const { return false; };
 
  protected:
-  SymMatrix* kkt;
-  DoubleLinearSolver* solver;
   int locnx, locmy, locmyl, locmz, locmzl;
   sData* data;
   
+  int iAmDistrib;
+  int nThreads;
+
+  /* members for blockwise schur complement computation */
+  bool computeBlockwiseSC;
+
+  int blocksizemax;
+  double* colsBlockDense{};
+  int* colId{};
+  int* colSparsity{};
+
+  /* is this linsys the overall root */
+  const bool is_hierarchy_root;
+
+  // TODO: remove and use only nThreads? What if a solver supports more than one thread?
+  int n_solvers = nThreads;
+  std::vector<std::unique_ptr<DoubleLinearSolver>> solvers_blocked{1};
+  std::vector<std::unique_ptr<SymMatrix>> problems_blocked{1};
+
+  SymMatrix* kkt{};
+  DoubleLinearSolver* solver{};
+
  public:
+  MPI_Comm mpiComm;
+  sTree* stochNode;
 
   template<typename T>
   struct RFGAC_BLOCK
@@ -170,30 +192,7 @@ class sLinsys : public QpGenLinsys
   virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border_outer)
   { assert( false && "not implemented here" ); };
 
- public:
-  MPI_Comm mpiComm;
-  sTree* stochNode;
-
  protected:
-  int iAmDistrib;
-  int nThreads;
-
-  /* members for blockwise schur complement computation */
-  bool computeBlockwiseSC;
-
-  int blocksizemax;
-  double* colsBlockDense;
-  int* colId;
-  int* colSparsity;
-
-  /* is this linsys the overall root */
-  const bool is_hierarchy_root;
-
-  // TODO: remove and use only nThreads? What if a solver supports more than one thread?
-  int n_solvers = nThreads;
-  DoubleLinearSolver** solvers_blocked = nullptr;
-  SparseSymMatrix** problems_blocked = nullptr;
-
   void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& border_left, const double* cols,
         const int* cols_id, int length_col, int n_cols, bool sparse_res, bool sym_res, DoubleMatrix& res) const;
 

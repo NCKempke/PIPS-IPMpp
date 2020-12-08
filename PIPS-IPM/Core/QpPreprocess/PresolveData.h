@@ -19,6 +19,7 @@
 #include <list>
 #include <limits>
 #include <queue>
+#include <memory>
 
 class PresolveData
 {
@@ -29,7 +30,7 @@ private:
 
       const double limit_max_bound_accepted;
 
-      const int length_array_outdated_indicators;
+      const int length_array_outdated_indicators{6};
       bool* array_outdated_indicators;
       bool& outdated_lhsrhs;
       bool& outdated_nnzs;
@@ -39,19 +40,18 @@ private:
       bool& postsolve_linking_row_propagation_needed;
 
       /* counter to indicate how many linking row bounds got changed locally and thus need activity recomputation */
-      int linking_rows_need_act_computation;
+      int linking_rows_need_act_computation{0};
 
       /* number of non-zero elements of each row / column */
-      SmartPointer<StochVectorBase<int> > nnzs_row_A;
-      SmartPointer<StochVectorBase<int> > nnzs_row_C;
-      SmartPointer<StochVectorBase<int> > nnzs_col;
+      std::unique_ptr<StochVectorBase<int>> nnzs_row_A;
+      std::unique_ptr<StochVectorBase<int>> nnzs_row_C;
+      std::unique_ptr<StochVectorBase<int>> nnzs_col;
 
       /* size of non-zero changes array = #linking rows A + #linking rows C + # linking variables */
-      int length_array_nnz_chgs;
-      int* array_nnz_chgs;
-      SmartPointer<SimpleVectorBase<int> > nnzs_row_A_chgs;
-      SmartPointer<SimpleVectorBase<int> > nnzs_row_C_chgs;
-      SmartPointer<SimpleVectorBase<int> > nnzs_col_chgs;
+      std::vector<int> array_nnz_chgs;
+      std::unique_ptr<SimpleVectorBase<int>> nnzs_row_A_chgs{};
+      std::unique_ptr<SimpleVectorBase<int>> nnzs_row_C_chgs{};
+      std::unique_ptr<SimpleVectorBase<int>> nnzs_col_chgs{};
 
       /* In the constructor all unbounded entries will be counted.
        * Unbounded entries mean variables with non-zero multiplier that are unbounded in either upper or lower direction.
@@ -59,44 +59,42 @@ private:
        * that bound strengthening becomes possible.
        */
       /* StochVecs for upper and lower activities and unbounded entries */
-      StochVectorHandle actmax_eq_part;
-      StochVectorHandle actmin_eq_part;
+      std::unique_ptr<StochVector> actmax_eq_part{};
+      std::unique_ptr<StochVector> actmin_eq_part{};
 
-      SmartPointer<StochVectorBase<int> > actmax_eq_ubndd;
-      SmartPointer<StochVectorBase<int> > actmin_eq_ubndd;
+      std::unique_ptr<StochVectorBase<int>> actmax_eq_ubndd{};
+      std::unique_ptr<StochVectorBase<int>> actmin_eq_ubndd{};
 
-      StochVectorHandle actmax_ineq_part;
-      StochVectorHandle actmin_ineq_part;
+      std::unique_ptr<StochVector> actmax_ineq_part{};
+      std::unique_ptr<StochVector> actmin_ineq_part{};
 
-      SmartPointer<StochVectorBase<int> > actmax_ineq_ubndd;
-      SmartPointer<StochVectorBase<int> > actmin_ineq_ubndd;
+      std::unique_ptr<StochVectorBase<int>> actmax_ineq_ubndd{};
+      std::unique_ptr<StochVectorBase<int>> actmin_ineq_ubndd{};
 
       /// changes in boundedness and activities of linking rows get stored and synchronized
-      int lenght_array_act_chgs;
-      double* array_act_chgs;
-      SimpleVectorHandle actmax_eq_chgs;
-      SimpleVectorHandle actmin_eq_chgs;
-      SimpleVectorHandle actmax_ineq_chgs;
-      SimpleVectorHandle actmin_ineq_chgs;
+      std::vector<double> array_act_chgs;
+      std::unique_ptr<SimpleVector> actmax_eq_chgs{};
+      std::unique_ptr<SimpleVector> actmin_eq_chgs{};
+      std::unique_ptr<SimpleVector> actmax_ineq_chgs{};
+      std::unique_ptr<SimpleVector> actmin_ineq_chgs{};
 
-      int* array_act_unbounded_chgs;
-      SmartPointer<SimpleVectorBase<int> > actmax_eq_ubndd_chgs;
-      SmartPointer<SimpleVectorBase<int> > actmin_eq_ubndd_chgs;
-      SmartPointer<SimpleVectorBase<int> > actmax_ineq_ubndd_chgs;
-      SmartPointer<SimpleVectorBase<int> > actmin_ineq_ubndd_chgs;
+      std::vector<int> array_act_unbounded_chgs;
+      std::unique_ptr<SimpleVectorBase<int>> actmax_eq_ubndd_chgs{};
+      std::unique_ptr<SimpleVectorBase<int>> actmin_eq_ubndd_chgs{};
+      std::unique_ptr<SimpleVectorBase<int>> actmax_ineq_ubndd_chgs{};
+      std::unique_ptr<SimpleVectorBase<int>> actmin_ineq_ubndd_chgs{};
 
       /* handling changes in bounds */
-      int lenght_array_bound_chgs;
-      double* array_bound_chgs;
-      SimpleVectorHandle bound_chgs_A;
-      SimpleVectorHandle bound_chgs_C;
+      std::vector<double> array_bound_chgs;
+      std::unique_ptr<SimpleVector> bound_chgs_A{};
+      std::unique_ptr<SimpleVector> bound_chgs_C{};
 
       /* storing so far found singleton rows and columns */
       std::queue<INDEX> singleton_rows;
       std::queue<INDEX> singleton_cols;
 
-      const int my_rank;
-      const bool distributed;
+      const int my_rank{ PIPS_MPIgetRank() };
+      const bool distributed{ PIPS_MPIgetDistributed() };
 
       const double INF_NEG;
       const double INF_POS;
@@ -112,25 +110,25 @@ private:
       const INDEX tracked_col;
 
       // objective offset created by presolving
-      double objOffset;
-      double obj_offset_chgs;
-      SimpleVectorHandle objective_vec_chgs;
+      double objOffset{ 0.0 };
+      double obj_offset_chgs{ 0.0 };
+      std::unique_ptr<SimpleVector> objective_vec_chgs{};
 
       // store free variables which bounds are only implied by bound tightening to remove bounds later again
-      SmartPointer<StochVectorBase<int> > lower_bound_implied_by_system;
-      SmartPointer<StochVectorBase<int> > lower_bound_implied_by_row;
-      SmartPointer<StochVectorBase<int> > lower_bound_implied_by_node;
+      std::unique_ptr<StochVectorBase<int>> lower_bound_implied_by_system{};
+      std::unique_ptr<StochVectorBase<int>> lower_bound_implied_by_row{};
+      std::unique_ptr<StochVectorBase<int>> lower_bound_implied_by_node{};
 
       // TODO a vector of INDEX would be nicer
-      SmartPointer<StochVectorBase<int> > upper_bound_implied_by_system;
-      SmartPointer<StochVectorBase<int> > upper_bound_implied_by_row;
-      SmartPointer<StochVectorBase<int> > upper_bound_implied_by_node;
+      std::unique_ptr<StochVectorBase<int>> upper_bound_implied_by_system{};
+      std::unique_ptr<StochVectorBase<int>> upper_bound_implied_by_row{};
+      std::unique_ptr<StochVectorBase<int>> upper_bound_implied_by_node{};
 
       /* storing biggest and smallest absolute nonzero-coefficient in system matrix (including objective vector) */
-      StochVectorHandle absmin_col;
-      StochVectorHandle absmax_col;
+      std::unique_ptr<StochVector> absmin_col{};
+      std::unique_ptr<StochVector> absmax_col{};
 
-      bool in_bound_tightening;
+      bool in_bound_tightening{ false };
       std::vector<int> store_linking_row_boundTightening_A;
       std::vector<int> store_linking_row_boundTightening_C;
 

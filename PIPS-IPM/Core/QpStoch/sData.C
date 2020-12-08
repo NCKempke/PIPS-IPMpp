@@ -1197,47 +1197,6 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    return permvec;
 }
 
-sData::sData(const sTree* tree) : is_hierarchy_root(false)
-{
-   assert( false && " not in use " );
-   stochNode = tree;
-   Q = SymMatrixHandle(tree->createQ());
-   g = OoqpVectorHandle(tree->createc());
-
-   blx = OoqpVectorHandle(tree->createxlow());
-   ixlow = OoqpVectorHandle(tree->createixlow());
-   bux = OoqpVectorHandle(tree->createxupp());
-   ixupp = OoqpVectorHandle(tree->createixupp());
-
-   A = GenMatrixHandle(tree->createA());
-   bA = OoqpVectorHandle(tree->createb());
-
-   C = GenMatrixHandle(tree->createC());
-   bl = OoqpVectorHandle(tree->createclow());
-   iclow = OoqpVectorHandle(tree->createiclow());
-   bu = OoqpVectorHandle(tree->createcupp());
-   icupp = OoqpVectorHandle(tree->createicupp());
-
-   sc = OoqpVectorHandle(tree->newPrimalVector());
-
-   nxlow = ixlow->numberOfNonzeros();
-   nxupp = ixupp->numberOfNonzeros();
-   mclow = iclow->numberOfNonzeros();
-   mcupp = icupp->numberOfNonzeros();
-
-   sc = OoqpVectorHandle ( tree->newPrimalVector() );
-
-   nxlow = ixlow->numberOfNonzeros();
-   nxupp = ixupp->numberOfNonzeros();
-   mclow = iclow->numberOfNonzeros();
-   mcupp = icupp->numberOfNonzeros();
-
-   createChildren();
-
-   useLinkStructure = false;
-   n0LinkVars = 0;
-}
-
 sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         OoqpVector * xlow_in, OoqpVector * ixlow_in, long long nxlow_,
         OoqpVector * xupp_in, OoqpVector * ixupp_in, long long nxupp_,
@@ -1794,32 +1753,32 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
             n_global_ineq_linking_conss << " inequalities for the border" << "\n";
    }
 
-   BorderedSymMatrix* Q_hier = dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars);
+   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars) );
 
-   BorderedGenMatrix* A_hier = dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars);
-   BorderedGenMatrix* C_hier = dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars);
+   GenMatrixHandle A_hier( dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars) );
+   GenMatrixHandle C_hier( dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars) );
 
    /* we ordered global linking vars first and global linking rows to the end */
-   StochVector* g_hier = dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* bux_hier = dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* ixupp_hier = dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* blx_hier = dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true);
-   StochVector* ixlow_hier = dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true);
+   StochVectorHandle g_hier( dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle bux_hier( dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle ixupp_hier( dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle blx_hier( dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle ixlow_hier( dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true) );
 
-   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
+   StochVectorHandle bA_hier( dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false) );
 
-   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false);
-   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false);
-   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false);
-   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false);
+   StochVectorHandle bu_hier( dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle icupp_hier( dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle bl_hier( dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle iclow_hier( dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false) );
 
    // TODO what is this?
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
-   sData* hierarchical_top = new sData(tree, g_hier, Q_hier, blx_hier,
-         ixlow_hier, nxlow, bux_hier, ixupp_hier, nxupp,
-         A_hier, bA_hier, C_hier, bl_hier,
-         iclow_hier, mclow, bu_hier, icupp_hier, mcupp,
+   sData* hierarchical_top = new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
+         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
+         A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
+         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
          false, true);
 
    assert( ixlow_hier->vec );
@@ -1882,11 +1841,11 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    return hierarchical_top;
 }
 
-
 void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC)
 {
    assert( permutationIsValid(linkConsPermutationA) );
    assert( permutationIsValid(linkConsPermutationC) );
+   assert( !is_hierarchy_root );
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(linkConsPermutationA);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(linkConsPermutationC);
@@ -1900,6 +1859,7 @@ void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std
 void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
 {
    assert( permutationIsValid(linkVarsPermutation) );
+   assert( !is_hierarchy_root );
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(linkVarsPermutation);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(linkVarsPermutation);
@@ -1910,43 +1870,53 @@ void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
    dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(linkVarsPermutation);
 }
 
-
 sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 {
-   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
-
    sVars* unperm_vars = new sVars(vars);
 
+   if( is_hierarchy_root )
+      unperm_vars->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+
+   assert( unperm_vars->children.size() == unpermData.children.size() );
+
+   const std::vector<unsigned int> perm_inv_link_vars = getLinkVarsPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_eq = getLinkConsEqPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
+
    if( perm_inv_link_vars.size() != 0 )
-      unperm_vars->permuteVec0Entries( perm_inv_link_vars );
+      unperm_vars->permuteVec0Entries( perm_inv_link_vars, true );
 
    if( perm_inv_link_cons_eq.size() != 0 )
       unperm_vars->permuteEqLinkingEntries( perm_inv_link_cons_eq );
 
    if( perm_inv_link_cons_ineq.size() != 0 )
-      unperm_vars->permuteIneqLinkingEntries( perm_inv_link_cons_ineq );
+      unperm_vars->permuteIneqLinkingEntries( perm_inv_link_cons_ineq, true );
 
    return unperm_vars;
 }
 
 sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unpermData) const
 {
-   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
-
    sResiduals* unperm_resids = new sResiduals(resids);
 
+   if( is_hierarchy_root )
+      unperm_resids->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+
+   assert( unperm_resids->children.size() == unpermData.children.size() );
+
+   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
+
+
    if( perm_inv_link_vars.size() != 0 )
-      unperm_resids->permuteVec0Entries( perm_inv_link_vars );
+      unperm_resids->permuteVec0Entries( perm_inv_link_vars, true );
 
    if( perm_inv_link_cons_eq.size() != 0 )
       unperm_resids->permuteEqLinkingEntries( perm_inv_link_cons_eq );
 
    if( perm_inv_link_cons_ineq.size() != 0 )
-      unperm_resids->permuteIneqLinkingEntries( perm_inv_link_cons_ineq );
+      unperm_resids->permuteIneqLinkingEntries( perm_inv_link_cons_ineq, true );
 
    return unperm_resids;
 }
@@ -2294,22 +2264,26 @@ sData::~sData()
       delete children[it];
 }
 
-std::vector<unsigned int> sData::getLinkVarsPerm() const
-{
-   std::vector<unsigned int> copy = linkVarsPermutation;
-   return copy;
-}
 std::vector<unsigned int> sData::getLinkVarsPermInv() const
 {
-   return getInversePermutation(linkVarsPermutation);
+   if( is_hierarchy_root )
+      return this->children[0]->getLinkVarsPermInv();
+   else
+      return getInversePermutation(linkVarsPermutation);
 }
 std::vector<unsigned int> sData::getLinkConsEqPermInv() const
 {
-   return getInversePermutation(linkConsPermutationA);
+   if( is_hierarchy_root )
+      return this->children[0]->getLinkConsEqPermInv();
+   else
+      return getInversePermutation(linkConsPermutationA);
 }
 std::vector<unsigned int> sData::getLinkConsIneqPermInv() const
 {
-   return getInversePermutation(linkConsPermutationC);
+   if( is_hierarchy_root )
+      return this->children[0]->getLinkConsIneqPermInv();
+   else
+      return getInversePermutation(linkConsPermutationC);
 }
 
 int sData::getLocalnx() const
@@ -2773,7 +2747,6 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
       const StochVectorBase<int>& colNnzVec)
 {
    StochSymMatrix& Q_stoch = dynamic_cast<StochSymMatrix&>(*Q);
-
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
 

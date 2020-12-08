@@ -12,11 +12,13 @@
 #include "StochVector.h"
 #include "SystemType.h"
 
+#include <memory>
+
 class StochRowStorage
 {
 public:
    StochRowStorage(const StochGenMatrix& system_matrix);
-   ~StochRowStorage();
+   ~StochRowStorage() = default;
 
    int storeRow( const INDEX& row, const StochGenMatrix& matrix_row);
 
@@ -31,7 +33,7 @@ public:
 
    // todo : deleteRowFromStorage
 private:
-   StochGenMatrixHandle row_storage;
+   std::unique_ptr<StochGenMatrix> row_storage{};
 
 };
 

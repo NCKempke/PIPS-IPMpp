@@ -48,11 +48,11 @@ public:
   virtual Residuals * makeResiduals( Data * prob_in );
   virtual Variables * makeVariables( Data * prob_in );
 
-  virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-			OoqpVector& rhs2_in, OoqpVector& rhs3_in ) = 0;
+  virtual void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const = 0;
 
   virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, OoqpVector& vars_in ) = 0;
+			     OoqpVector& z_in, const OoqpVector& vars_in ) const = 0;
 
   void writeProblemToStream(std::ostream& out) const;
 

@@ -22,8 +22,13 @@ sLinsysRootAugComm2::sLinsysRootAugComm2(sFactory * factory_, sData * prob_)
   : sLinsysRootComm2(factory_, prob_), CtDC(nullptr)
 { 
   prob_->getLocalSizes(locnx, locmy, locmz);
-  kkt = createKKT(prob_);
-  solver = createSolver(prob_, kkt);
+
+  problems_blocked[0].reset( createKKT(prob_) );
+  kkt = problems_blocked[0].get();
+
+  solvers_blocked[0].reset( createSolver(prob_, kkt) );
+  solver = solvers_blocked[0].get();
+
   redRhs = new SimpleVector(locnx+locmy+locmz);
 };
 
@@ -36,8 +41,12 @@ sLinsysRootAugComm2::sLinsysRootAugComm2(sFactory* factory_,
 			       OoqpVector* rhs_)
   : sLinsysRootComm2(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
-  kkt = createKKT(prob_);
-  solver = createSolver(prob_, kkt);
+  problems_blocked[0].reset( createKKT(prob_) );
+  kkt = problems_blocked[0].get();
+
+  solvers_blocked[0].reset( createSolver(prob_, kkt) );
+  solver = solvers_blocked[0].get();
+
   redRhs = new SimpleVector(locnx+locmy+locmz);
 };
 
@@ -690,7 +699,7 @@ void sLinsysRootAugComm2::finalizeKKT(sData* prob, Variables* vars)
   stochNode->resMon.recFactTmLocal_start();
   stochNode->resMon.recSchurMultLocal_start();
 
-  DenseSymMatrix * kktd = (DenseSymMatrix*) kkt;
+  DenseSymMatrix * kktd = dynamic_cast<DenseSymMatrix*>(kkt);
   //alias for internal buffer of kkt
   double** dKkt = kktd->Mat();
  

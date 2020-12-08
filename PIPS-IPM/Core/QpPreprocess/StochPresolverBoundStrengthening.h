@@ -15,7 +15,7 @@ class StochPresolverBoundStrengthening : public StochPresolverBase
 public:
    StochPresolverBoundStrengthening(PresolveData& presData, const sData& origProb);
 
-   virtual ~StochPresolverBoundStrengthening();
+   ~StochPresolverBoundStrengthening() override = default;
 
    bool applyPresolving() override;
 

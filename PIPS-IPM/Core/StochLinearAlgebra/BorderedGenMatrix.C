@@ -191,7 +191,7 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, *minmax.children[0]);
 }
 
-void BorderedGenMatrix::addRowSums( OoqpVector& vec_ )
+void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
 {
   assert( hasVecStructureForBorderedMat( vec_, false ) );
 
@@ -204,7 +204,7 @@ void BorderedGenMatrix::addRowSums( OoqpVector& vec_ )
   border_bottom->addRowSums( *vec.vecl );
 }
 
-void BorderedGenMatrix::addColSums( OoqpVector& vec_ )
+void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
 {
    assert( hasVecStructureForBorderedMat( vec_, true ) );
 

@@ -9,6 +9,7 @@
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHPOSTSOLVER_H_
 
 #include <vector>
+#include <memory>
 
 #include "QpPostsolver.h"
 #include "StochVector.h"
@@ -84,8 +85,8 @@ public:
       PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution) override;
 private:
 
-      const int my_rank;
-      const bool distributed;
+      const int my_rank{ PIPS_MPIgetRank() };
+      const bool distributed{ PIPS_MPIgetDistributed() };
 
       const double postsolve_tol;
       const double INF_NEG;
@@ -121,16 +122,16 @@ private:
 
       /// for now mapping will contain a dummy value for columns that have not been fixed and the value the columns has been fixed to otherwise
       /// 1 indicates that the row / col has not been removed from the problem - -1 indicates the row / col has been removed */
-      StochVectorBase<int>* padding_origcol;
-      StochVectorBase<int>* padding_origrow_equality;
-      StochVectorBase<int>* padding_origrow_inequality;
+      std::unique_ptr<StochVectorBase<int>> padding_origcol{};
+      std::unique_ptr<StochVectorBase<int>> padding_origrow_equality{};
+      std::unique_ptr<StochVectorBase<int>> padding_origrow_inequality{};
 
       /// has a row been modified since last storing it
       /// 1 if yes, -1 if not
-      StochVectorBase<int>* eq_row_marked_modified;
-      StochVectorBase<int>* ineq_row_marked_modified;
+      std::unique_ptr<StochVectorBase<int>> eq_row_marked_modified{};
+      std::unique_ptr<StochVectorBase<int>> ineq_row_marked_modified{};
       /// has a column been modified
-      StochVectorBase<int>* column_marked_modified;
+      std::unique_ptr<StochVectorBase<int>> column_marked_modified{};
 
       /// vectors for storing ints and doubles containting information needed by postsolve
       std::vector<ReductionType> reductions;
@@ -148,13 +149,13 @@ private:
       StochColumnStorage col_storage;
 
       /// stores the index for a row/col indicating where in stored_rows/cols that row/col was stored last
-      StochVectorBase<int>* eq_row_stored_last_at;
-      StochVectorBase<int>* ineq_row_stored_last_at;
-      StochVectorBase<int>* col_stored_last_at;
+      std::unique_ptr<StochVectorBase<int>> eq_row_stored_last_at{};
+      std::unique_ptr<StochVectorBase<int>> ineq_row_stored_last_at{};
+      std::unique_ptr<StochVectorBase<int>> col_stored_last_at{};
 
       /// stores which reduction is last bound-tightening on variable
-      StochVectorBase<int>* last_upper_bound_tightened;
-      StochVectorBase<int>* last_lower_bound_tightened;
+      std::unique_ptr<StochVectorBase<int>> last_upper_bound_tightened{};
+      std::unique_ptr<StochVectorBase<int>> last_lower_bound_tightened{};
 
       /// stuff for synchronization in-between processes
       const int length_array_outdated_indicators;
@@ -162,28 +163,25 @@ private:
 
       /* local changes in linking variables */
       bool& outdated_linking_vars;
-      int length_array_linking_var_changes;
-      double* array_linking_var_changes;
-      SimpleVectorHandle x_changes;
-      SimpleVectorHandle v_changes;
-      SimpleVectorHandle w_changes;
-      SimpleVectorHandle gamma_changes;
-      SimpleVectorHandle phi_changes;
+      std::vector<double> array_linking_var_changes;
+      std::unique_ptr<SimpleVector> x_changes{};
+      std::unique_ptr<SimpleVector> v_changes{};
+      std::unique_ptr<SimpleVector> w_changes{};
+      std::unique_ptr<SimpleVector> gamma_changes{};
+      std::unique_ptr<SimpleVector> phi_changes{};
 
       /* local changes in equality linking rows */
       bool& outdated_equality_linking_rows;
-      int length_array_eq_linking_row_changes;
-      double* array_eq_linking_row_changes;
-      SimpleVectorHandle y_changes;
+      std::vector<double> array_eq_linking_row_changes;
+      std::unique_ptr<SimpleVector> y_changes{};
 
       /* local changes in inequality rows */
       bool& outdated_inequality_linking_rows;
-      int length_array_ineq_linking_row_changes;
-      double* array_ineq_linking_row_changes;
-      SimpleVectorHandle z_changes;
-      SimpleVectorHandle s_changes;
-      SimpleVectorHandle t_changes;
-      SimpleVectorHandle u_changes;
+      std::vector<double> array_ineq_linking_row_changes;
+      std::unique_ptr<SimpleVector> z_changes{};
+      std::unique_ptr<SimpleVector> s_changes{};
+      std::unique_ptr<SimpleVector> t_changes{};
+      std::unique_ptr<SimpleVector> u_changes{};
 
       void finishNotify();
 

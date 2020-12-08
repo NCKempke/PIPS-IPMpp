@@ -378,8 +378,41 @@ int QpGenResiduals::validNonZeroPattern()
   return 1;
 }
 
-QpGenResiduals::~QpGenResiduals()
+void QpGenResiduals::copyFrom( const Residuals& other_in )
 {
+   const QpGenResiduals& other = dynamic_cast<const QpGenResiduals&>(other_in);
+
+   mResidualNorm = other.mResidualNorm;
+   mDualityGap = other.mDualityGap;
+   m = other.m; n = other.n;
+
+   nx = other.nx; my = other.my; mz = other.mz;
+
+   nxupp = other.nxupp;
+   ixupp->copyFrom(*other.ixupp);
+
+   nxlow = other.nxlow;
+   ixlow->copyFrom( *other.ixlow );
+
+   mcupp = other.mcupp;
+   icupp->copyFrom( *other.icupp );
+
+   mclow = other.mclow;
+   iclow->copyFrom( *other.iclow );
+
+   rQ->copyFrom( *other.rQ );
+   rA->copyFrom( *other.rA );
+   rC->copyFrom( *other.rC );
+
+   rz->copyFrom( *other.rz );
+   rv->copyFrom( *other.rv );
+   rw->copyFrom( *other.rw );
+   rt->copyFrom( *other.rt );
+   ru->copyFrom( *other.ru );
+   rgamma->copyFrom( *other.rgamma );
+   rphi->copyFrom( *other.rphi );
+   rlambda->copyFrom( *other.rlambda );
+   rpi->copyFrom( *other.rpi );
 }
 
 void QpGenResiduals::writeToStream(std::ostream& out)

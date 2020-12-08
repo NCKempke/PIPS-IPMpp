@@ -19,8 +19,11 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 {
    assert(locmyl >= 0 && locmzl >= 0);
 
-   kkt = createKKT(prob_);
-   solver = createSolver(prob_, kkt);
+   problems_blocked[0].reset( createKKT(prob_) );
+   kkt = problems_blocked[0].get();
+
+   solvers_blocked[0].reset( createSolver(prob_, kkt) );
+   solver = solvers_blocked[0].get();
 }
 
 void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)

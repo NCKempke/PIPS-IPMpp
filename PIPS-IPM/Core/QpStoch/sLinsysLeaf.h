@@ -29,7 +29,7 @@ class sLinsysLeaf : public sLinsys
 		OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 		OoqpVector* rhs_, LINSOLVER *linsolver=nullptr);
 
-  virtual ~sLinsysLeaf();
+  virtual ~sLinsysLeaf() = default;
 
   virtual void factor2( sData *prob, Variables *vars);
   virtual void Lsolve ( sData *prob, OoqpVector& x );
@@ -101,37 +101,43 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
    *
    * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
    */
-  SparseSymMatrix* kktsp = new SparseSymMatrix(n, n + nnzQ + nnzB + nnzD);
-  kkt = kktsp;
+
+  SparseSymMatrix* kkt_sp = new SparseSymMatrix(n, n + nnzQ + nnzB + nnzD);
 
   SimpleVectorHandle v( new SimpleVector(n) );
   v->setToZero();
-  kkt->setToDiagonal(*v);
+  kkt_sp->setToDiagonal(*v);
 
-  kkt->symAtPutSubmatrix( 0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
+  kkt_sp->symAtPutSubmatrix( 0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
 
   if( locmz > 0 )
   {
-    kkt->symAtPutSubmatrix( locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
-    kkt->symAtPutSubmatrix( locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
+     kkt_sp->symAtPutSubmatrix( locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
+     kkt_sp->symAtPutSubmatrix( locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
   }
   else
-    mySymAtPutSubmatrix(*kkt, prob->getLocalB(), prob->getLocalD(), locnx, locmy, locmz);
+    mySymAtPutSubmatrix(*kkt_sp, prob->getLocalB(), prob->getLocalD(), locnx, locmy, locmz);
 
 #ifdef TIMING
   if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
 #endif
 
-  // create the solver for the linear system
-  if( computeBlockwiseSC )
-  {
-     initBlockedSolvers<LINSOLVER>();
-     assert(solvers_blocked);
+  assert( n_solvers >= 1 );
 
-     solver = solvers_blocked[0];
+  solvers_blocked.resize(n_solvers);
+  problems_blocked.resize(n_solvers);
+
+  #pragma omp parallel num_threads(n_solvers)
+  {
+     const int id = omp_get_thread_num();
+
+     problems_blocked[id].reset( new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt_sp) ) );
+     solvers_blocked[id].reset( new LINSOLVER( dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get()) ) );
   }
-  else
-     solver = new LINSOLVER(kktsp);
+
+  delete kkt_sp;
+  kkt = problems_blocked[0].get();
+  solver = solvers_blocked[0].get();
 
 #ifdef TIMING
   const double t1 = MPI_Wtime() - t0;
@@ -139,26 +145,6 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
 #endif
 
   mpiComm = (dynamic_cast<StochVector*>(dd_))->mpiComm;
-}
-
-template<class LINSOLVER>
-void sLinsysLeaf::initBlockedSolvers()
-{
-   assert( solvers_blocked == nullptr );
-
-   solvers_blocked = new DoubleLinearSolver*[n_solvers];
-   problems_blocked = new SparseSymMatrix*[n_solvers];
-
-   #pragma omp parallel num_threads(n_solvers)
-   {
-      const int id = omp_get_thread_num();
-
-      SparseSymMatrix* kktsp_cpy = new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt) );
-      DoubleLinearSolver* solver = new LINSOLVER(kktsp_cpy);
-
-      problems_blocked[id] = kktsp_cpy;
-      solvers_blocked[id] = solver;
-   }
 }
 
 #endif

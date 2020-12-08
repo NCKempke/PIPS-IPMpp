@@ -2,7 +2,7 @@
 #include "sTree.h"
 #include "StochVector.h"
 
-sResiduals::sResiduals( sTree* tree, 
+sResiduals::sResiduals( const sTree* tree,
 			OoqpVector * rQ_,    OoqpVector * rA_, 
 			OoqpVector * rC_,    OoqpVector * rz_, 
 			OoqpVector * rt_,    OoqpVector * rlambda_, 
@@ -15,7 +15,6 @@ sResiduals::sResiduals( sTree* tree,
 			OoqpVector * icupp_, double mcuppGlobal)
   :QpGenResiduals()
 {
-  assert( false && "not used" );
   SpReferTo( ixlow, ixlow_ );
   nxlow = nxlowGlobal;
 
@@ -32,7 +31,8 @@ sResiduals::sResiduals( sTree* tree,
   SpReferTo( rA, rA_ );
   SpReferTo( rC, rC_ );
   SpReferTo( rz, rz_ );
-  SpReferTo( rt     , rt_ );
+  SpReferTo( rt , rt_ );
+
   SpReferTo( rlambda, rlambda_ );
   SpReferTo( ru    , ru_ );
   SpReferTo( rpi   , rpi_ );
@@ -46,7 +46,7 @@ sResiduals::sResiduals( sTree* tree,
 }
 
 
-sResiduals::sResiduals( sTree* tree,
+sResiduals::sResiduals( const sTree* tree,
 			OoqpVector * ixlow_, OoqpVector * ixupp_,
 			OoqpVector * iclow_, OoqpVector * icupp_ )
   : QpGenResiduals()
@@ -102,6 +102,8 @@ sResiduals::sResiduals( sTree* tree,
   }
   
   stochNode = tree;
+
+  createChildren();
 }
 
 sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
@@ -110,8 +112,14 @@ sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
 
    for(unsigned int i = 0; i < res.children.size(); ++i)
    {
-       children.push_back( new sResiduals(*res.children[i]) );
+       children.push_back( new sResiduals( *res.children[i]) );
    }
+}
+
+sResiduals::~sResiduals()
+{
+   for( sResiduals* child : children )
+      delete child;
 }
 
 void sResiduals::AddChild(sResiduals* child)
@@ -121,7 +129,6 @@ void sResiduals::AddChild(sResiduals* child)
 
 void sResiduals::createChildren()
 {
-  assert(false);
   StochVector& rQSt = dynamic_cast<StochVector&>(*rQ);
 
   StochVector& rASt = dynamic_cast<StochVector&>(*rA); 
@@ -140,10 +147,8 @@ void sResiduals::createChildren()
   StochVector& iclowSt = dynamic_cast<StochVector&>(*iclow);
   StochVector& icuppSt = dynamic_cast<StochVector&>(*icupp);
 
-  //copy the structure of one of the vectors and create children of
-  //this
-  size_t nChildren=rQSt.children.size();
-  for (size_t it=0; it<nChildren; it++) {
+  const size_t nChildren = rASt.children.size();
+  for (size_t it = 0; it < nChildren; it++) {
 
     assert(nChildren==stochNode->children.size());
     assert(nChildren==rASt.children.size());
@@ -176,10 +181,45 @@ void sResiduals::createChildren()
   }
 }
 
-void sResiduals::permuteVec0Entries( const std::vector<unsigned int>& perm )
+void sResiduals::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+      OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
-   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*rQ).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rv).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rw).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rgamma).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rphi).collapseHierarchicalStructure();
+
+   dynamic_cast<StochVector&>(*rA).collapseHierarchicalStructure();
+
+   dynamic_cast<StochVector&>(*rC).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rt).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*ru).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rz).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rlambda).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rpi).collapseHierarchicalStructure();
+
+   stochNode = stochNode_;
+
+   ixlow = ixlow_;
+   ixupp = ixupp_;
+   iclow = iclow_;
+   icupp = icupp_;
+
+   for (size_t c = 0; c < children.size(); c++)
+     delete children[c];
+
+   children.clear();
+   createChildren();
+}
+
+void sResiduals::permuteVec0Entries( const std::vector<unsigned int>& perm, bool resids_only )
+{
+   if( !resids_only )
+   {
+      dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
+      dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   }
 
    dynamic_cast<StochVector&>(*rQ).permuteVec0Entries(perm);
    dynamic_cast<StochVector&>(*rv).permuteVec0Entries(perm);
@@ -193,10 +233,13 @@ void sResiduals::permuteEqLinkingEntries( const std::vector<unsigned int>& perm 
    dynamic_cast<StochVector&>(*rA).permuteLinkingEntries(perm);
 }
 
-void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm )
+void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool resids_only )
 {
-   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+   if( !resids_only )
+   {
+      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
+      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+   }
 
    dynamic_cast<StochVector&>(*rC).permuteLinkingEntries(perm);
    dynamic_cast<StochVector&>(*rt).permuteLinkingEntries(perm);
@@ -312,20 +355,4 @@ bool sResiduals::isRootNodeInSync() const
    MPI_Barrier(MPI_COMM_WORLD);
    return in_sync;
 
-}
-
-void sResiduals::destroyChildren()
-{
-  //int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  for (size_t it=0; it<children.size(); it++) {
-    //printf("CPU[%d] destroy %d\n", myRank, it);
-    children[it]->destroyChildren(); 
-  }
-  
-  for (size_t it=0; it<children.size(); it++) {
-    
-    delete children[it];
-    //printf("deleted %d\n", it);
-  }
-  children.clear();
 }

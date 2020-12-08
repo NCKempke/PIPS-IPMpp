@@ -21,9 +21,6 @@ class LinearAlgebraPackage;
 
 class sData : public QpGenData {
  public:
-  /** constructor that makes data objects of the specified dimensions */
-  sData( const sTree* tree);
-
   /** constructor that sets up pointers to the data objects that are
       passed as arguments */
   sData( const sTree* stochNode,
@@ -45,8 +42,9 @@ public:
 
   
 private: 
-  // returns permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkVarsPerm() const;
+//  std::vector<unsigned int> getCollapsedHierarchicalLinkVarsPerm() const;
+//  std::vector<unsigned int> getCollapsedHierarchicalLinkConsPerm( const std::vector<unsigned int> sData::* cons_permutation ) const;
+
   // returns inverse permutation vector or empty vector if no permutation has been performed
   std::vector<unsigned int> getLinkVarsPermInv() const;
   // returns inverse permutation vector or empty vector if no permutation has been performed
@@ -91,6 +89,7 @@ public:
   void printLinkConsStats();
 
   void activateLinkStructureExploitation();
+
   sResiduals* getResidsUnperm(const sResiduals& resids, const sData& unpermData) const;
   sVars* getVarsUnperm(const sVars& vars, const sData& unpermData) const;
 
@@ -143,7 +142,7 @@ private:
 
   bool isHierarchieRoot() const { return is_hierarchy_root; };
 
-  virtual ~sData();
+  ~sData() override;
 
  protected:
   void createChildren();
@@ -153,7 +152,7 @@ private:
   int n0LinkVars;
 
   constexpr static int threshold_global_cons = 2;
-  constexpr static int threshold_global_vars = 4;
+  constexpr static int threshold_global_vars = 0;
   constexpr static int nLinkStats = 6;
   constexpr static double minStructuredLinksRatio = 0.5;
   static std::vector<unsigned int> get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);

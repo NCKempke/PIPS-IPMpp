@@ -72,7 +72,7 @@ void StochVectorBase<T>::AddChild(StochVectorBase<T>* child)
 template<typename T>
 void StochVectorBase<T>::AddChild(OoqpVectorBase<T>* child_)
 {
-  StochVectorBase<T>* child = reinterpret_cast<StochVectorBase<T>*>(child_);
+  StochVectorBase<T>* child = dynamic_cast<StochVectorBase<T>*>(child_);
   AddChild(child);
 }
 
@@ -94,8 +94,7 @@ OoqpVectorBase<T>*
 StochVectorBase<T>::clone() const
 {
    assert( vec || vecl );
-   StochVectorBase<T> *clone;
-   clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
+   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
       clone->AddChild(children[it]->clone());
@@ -1709,6 +1708,33 @@ bool StochVectorBase<T>::allPositive() const
 }
 
 template<typename T>
+bool StochVectorBase<T>::allOf( const std::function<bool(const T&)>& pred ) const
+{
+   bool all = true;
+
+   if( vec )
+   {
+      const bool all_vec = vec->allOf( pred );
+      all = all && all_vec;
+   }
+
+   if( vecl )
+   {
+      const bool all_vecl = vecl->allOf( pred );
+      all = all && all_vecl;
+   }
+
+   for( const auto& child : children )
+   {
+      const bool all_child = child->allOf( pred );
+      all = all && all_child;
+   }
+
+   return all;
+}
+
+
+template<typename T>
 bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_ ) const
 {
   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
@@ -2224,8 +2250,90 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
    this->parent = top_layer;
    top_layer->AddChild(this);
 
+   StochVectorBase<T>* me = this;
+   IotrAddRef(&me);
+
    return top_layer;
 }
+
+template<typename T>
+void StochVectorBase<T>::appendOnlyChildToThis()
+{
+   assert( children.size() == 1 );
+   StochVectorBase<T>* only_child = children[0];
+   children.clear();
+
+   if( only_child->vec )
+   {
+      if( vec )
+         dynamic_cast<SimpleVectorBase<T>*>(vec)->appendToBack( dynamic_cast<const SimpleVectorBase<T>&>(*only_child->vec) );
+      else
+      {
+         vec = dynamic_cast<SimpleVectorBase<T>*>(only_child->vec);
+         only_child->vec = nullptr;
+      }
+   }
+
+   if( only_child->vecl )
+   {
+      if( vecl )
+         dynamic_cast<SimpleVectorBase<T>*>(vecl)->appendToFront( dynamic_cast<const SimpleVectorBase<T>&>(*only_child->vecl) );
+      else
+      {
+         vecl = dynamic_cast<SimpleVectorBase<T>*>(only_child->vecl);
+         only_child->vecl = nullptr;
+      }
+   }
+
+   children.insert( children.end(), only_child->children.begin(), only_child->children.end() );
+   only_child->children.clear();
+
+   for( auto child : children )
+   {
+      child->parent = this;
+      assert( child->children.size() == 0 );
+//         child->collapseHierarchicalStructure();
+   }
+   delete only_child;
+}
+
+template<typename T>
+void StochVectorBase<T>::collapseHierarchicalStructure()
+{
+   if( parent == nullptr )
+   {
+      appendOnlyChildToThis();   }
+   else
+   {
+//      assert( children.size() > 0 );
+//
+//      std::vector<StochVector*> new_children();
+//
+//      // TODO : I think we have to go through our children backwards and append the vecl part to our vecl
+//      for( size_t i = children.size() - 1; i >= 0; i-- )
+//      {
+//         assert( false && " TODO - should not be active yet.. " );
+//
+//         StochVector& child = *children[i];
+//
+//         /* if our children have children then we first need to tell our children to collapse */
+//         if( child.children.size() != 0 )
+//         {
+//            assert( !child.vec );
+//            child.collapseHierarchicalStructure();
+//         }
+//
+//         if( vecl )
+//         {
+//            assert( child.vecl );
+//            vecl->appendFront(child);
+//         }
+//
+//         child = new_children;
+//      }
+   }
+}
+
 
 template class StochVectorBase<int>;
 template class StochVectorBase<double>;

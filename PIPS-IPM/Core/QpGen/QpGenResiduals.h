@@ -38,7 +38,7 @@ protected:
   long long mclow;
   OoqpVectorHandle iclow;
 
-  QpGenResiduals() {};
+  QpGenResiduals() {};// TODO
 
 public:
   OoqpVectorHandle rQ;
@@ -66,7 +66,7 @@ public:
   const long long& getMcupp() { return mcupp; };
   const long long& getMclow() { return mclow; };
 
-  virtual ~QpGenResiduals();
+  virtual ~QpGenResiduals() = default;
   
   void calcresids(Data *problem, Variables *vars, bool print_resids = false) override;
 
@@ -85,6 +85,8 @@ public:
   virtual int  validNonZeroPattern();
   
   virtual void writeToStream(std::ostream& out);
+
+  void copyFrom( const Residuals& other ) override;
 };
 
 #endif

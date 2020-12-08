@@ -53,7 +53,7 @@ double QpScaler::getObjUnscaled(double objval) const
 Variables* QpScaler::getVariablesUnscaled(const Variables& vars) const
 {
    QpGenVars* qp_vars = new QpGenVars(dynamic_cast<const QpGenVars&>(vars)); 
-   unscaleVars(*qp_vars);
+   unscaleVariables(*qp_vars);
 
    return qp_vars;
 };
@@ -61,12 +61,12 @@ Variables* QpScaler::getVariablesUnscaled(const Variables& vars) const
 Residuals* QpScaler::getResidualsUnscaled(const Residuals& resids) const
 {
    QpGenResiduals* qp_resids = new QpGenResiduals(dynamic_cast<const QpGenResiduals&>(resids));
-   unscaleResids(*qp_resids);
+   unscaleResiduals(*qp_resids);
 
    return qp_resids;
 };
 
-void QpScaler::unscaleVars( Variables& vars ) const
+void QpScaler::unscaleVariables( Variables& vars ) const
 {
    if( !scaling_applied )
       return;
@@ -94,7 +94,7 @@ void QpScaler::unscaleVars( Variables& vars ) const
    qp_vars.pi->componentMult(*vec_rowscaleC);
 }
 
-void QpScaler::unscaleResids( Residuals& resids ) const
+void QpScaler::unscaleResiduals( Residuals& resids ) const
 {
    if( !scaling_applied )
       return;
@@ -341,11 +341,3 @@ void QpScaler::scaleObjVector(double scaling_factor)
    scaling_applied = true;
 }
 
-QpScaler::~QpScaler()
-{
-   delete vec_rowscaleQ;
-   delete vec_rowscaleA;
-   delete vec_rowscaleC;
-   delete vec_colscale;
-
-}

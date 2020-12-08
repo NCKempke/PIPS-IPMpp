@@ -13,6 +13,8 @@
 #include <limits>
 #include <iomanip>
 #include <algorithm>
+#include <functional>
+#include <memory>
 
 
 template <typename T>
@@ -172,7 +174,6 @@ SimpleVectorBase<T>::SimpleVectorBase( int n_ ) : OoqpVectorBase<T>( n_ )
   v = new T[this->n];
 
   std::uninitialized_fill(v, v + this->n, T{} );
-//  memset(v, 0, this->n * sizeof(T));
 }
 
 template<typename T>
@@ -355,7 +356,7 @@ bool SimpleVectorBase<T>::componentEqual( const OoqpVectorBase<T>& vec, T tol) c
       /* two comparisons - a numerical one and one for stuff like infinity/nan/max/min */
       if( !PIPSisRelEQ(v[i], sv[i], tol) && v[i] != sv[i])
       {
-//         std::cout << v[i] << " != " << sv[i] << std::endl;
+//         std::cout << v[i] << " != " << sv[i] << "\n";
          return false;
       }
    }
@@ -405,9 +406,9 @@ void SimpleVectorBase<T>::printSolutionToStdErr( OoqpVectorBase<T> &vec)
   int i;
   for( i = 0; i < 10; i++ )
   {
-     std::cerr << v[i] << std::endl;
+     std::cerr << v[i] << "\n";
    }
-  std::cerr << "******" << std::endl;
+  std::cerr << "******" << "\n";
 }
 
 template<typename T>
@@ -474,7 +475,7 @@ void SimpleVectorBase<T>::writefSomeToStream( std::ostream& out,
 	}
 	j++;
       }
-      out << std::endl;
+      out << "\n";
     }
   }
 }
@@ -820,6 +821,13 @@ bool SimpleVectorBase<T>::allPositive() const
 }
 
 template<typename T>
+bool SimpleVectorBase<T>::allOf( const std::function<bool(const T&)>& pred ) const
+{
+   return std::all_of(v, v + this->n, pred );
+}
+
+
+template<typename T>
 T SimpleVectorBase<T>::stepbound( const OoqpVectorBase<T> & pvec, T maxStep ) const
 {
   assert( this->n == pvec.length() );
@@ -969,7 +977,7 @@ bool SimpleVectorBase<T>::somePositive( const OoqpVectorBase<T>& select ) const
   int i;
   for( i = 0; i < this->n; i++ ) {
     if( 0.0 != map[i] && v[i] <= 0 ) {
-      std::cout << "Element " << i << " is nonpositive: " << v[i] << std::endl;
+      std::cout << "Element " << i << " is nonpositive: " << v[i] << "\n";
       return false;
     }
   }
@@ -1041,29 +1049,66 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
 }
 
 template<typename T>
+void SimpleVectorBase<T>::appendToFront( const SimpleVectorBase<T>& other )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + other.n;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_copy( other.v, other.v + other.n, new_v );
+   std::uninitialized_copy( this->v, this->v + this->n, new_v + other.n );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::appendToBack( const SimpleVectorBase<T>& other )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + other.n;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_copy( this->v, this->v + this->n, new_v );
+   std::uninitialized_copy( other.v, other.v + other.n, new_v + this->n );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
+}
+
+template<typename T>
 SimpleVectorBase<T>* SimpleVectorBase<T>::shaveBorder( int n_shave, bool shave_top )
 {
    // TODO : adjust for n_shave == this->n
    assert( n_shave <= this->n );
    assert( 0 <= n_shave );
-   T* vec_new = new T[n_shave];
+   SimpleVectorBase<T>* vec_new = new SimpleVectorBase<T>(n_shave);
+
    T* vec_shaved = new T[this->n - n_shave];
 
    if( shave_top )
    {
-      std::copy( v, v + n_shave, vec_new );
+      std::copy( v, v + n_shave, vec_new->v );
       std::copy( v + n_shave, v + this->n, vec_shaved );
    }
    else
    {
-      std::copy( v + this->n - n_shave, v + this->n, vec_new );
+      std::copy( v + this->n - n_shave, v + this->n, vec_new->v );
       std::copy( v, v + this->n - n_shave, vec_shaved );
    }
    delete[] v;
    v = vec_shaved;
    this->n -= n_shave;
 
-   return new SimpleVectorBase<T>( vec_new, n_shave );
+   return vec_new;
 }
 
 

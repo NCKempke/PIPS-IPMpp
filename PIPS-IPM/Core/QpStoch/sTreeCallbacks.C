@@ -21,10 +21,6 @@
 #define UCTRANS
 #endif
 
-sTreeCallbacks::~sTreeCallbacks()
-{
-}
-
 sTreeCallbacks::sTreeCallbacks() 
    : N_INACTIVE(-1), MY_INACTIVE(-1), MZ_INACTIVE(-1), MYL_INACTIVE(-1), MZL_INACTIVE(-1),
     nx_active(0),  my_active(0),  mz_active(0),  myl_active(0),  mzl_active(0),
@@ -694,6 +690,9 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->mzl_active = mzl_to_shave;
    this->mzl_active -= mzl_to_shave;
 
+   assert( myl_active >= 0 );
+   assert( mzl_active >= 0 );
+
    return top_layer;
 }
 
@@ -984,6 +983,49 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
    return top_layer;
+}
+
+sTree* sTreeCallbacks::collapseDenseBorder()
+{
+   /* this must happen at MPI_COMM_WORLD level */
+   assert( is_hierarchical_root );
+   assert( rankMe == PIPS_MPIgetRank() );
+   assert( numProcs == PIPS_MPIgetSize() );
+   assert( children.size() == 1 );
+
+   sTreeCallbacks* new_top = dynamic_cast<sTreeCallbacks*>(children[0]);
+   children.clear();
+
+   commWrkrs = MPI_COMM_NULL;
+   myProcs.clear();
+
+   new_top->N = N;
+   N = -1;
+   MY = -1;
+   new_top->MYL = MYL;
+   MYL = -1;
+   MZ = -1;
+   new_top->MZL = MZL;
+   MZL = -1;
+
+   numProcs = -1;
+
+   new_top->nx_active += nx_active;
+   nx_active = -1;
+   assert( my_active == - 1 );
+   assert( mz_active == - 1 );
+
+   new_top->myl_active += myl_active;
+   myl_active = -1;
+   new_top->mzl_active += mzl_active;
+   mzl_active = -1;
+
+   return new_top;
+}
+
+sTree* sTreeCallbacks::collapseHierarchicalTree()
+{
+   return collapseDenseBorder();
 }
 
 void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& mat ) const

@@ -17,9 +17,9 @@
 extern int gOuterIterRefin;
 
 sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
-  : QpGenLinsys(), kkt(nullptr), solver(nullptr), nThreads(PIPSgetnOMPthreads()),
+  : QpGenLinsys(), nThreads(PIPSgetnOMPthreads()),
         blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-        colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr), is_hierarchy_root(is_hierarchy_root)
+        is_hierarchy_root(is_hierarchy_root)
 {
 
 #ifdef HIERARCHICAL
@@ -80,9 +80,9 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_)
-  : QpGenLinsys(), kkt(nullptr), solver(nullptr), nThreads(PIPSgetnOMPthreads()),
+  : QpGenLinsys(), nThreads(PIPSgetnOMPthreads()),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-    colsBlockDense(nullptr), colId(nullptr), colSparsity(nullptr), is_hierarchy_root(false)
+    is_hierarchy_root(false)
 {
   assert( prob );
 
@@ -137,31 +137,26 @@ sLinsys::~sLinsys()
   if( colSparsity ) delete[] colSparsity;
   if( colId ) delete[] colId;
   if( colsBlockDense ) delete[] colsBlockDense;
-  if( !computeBlockwiseSC )
-  {
-     if (solver) delete solver;
-  }
-  if (kkt)    delete kkt;
 }
 
-void sLinsys::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-				OoqpVector& rhs2_in, OoqpVector& rhs3_in )
+void sLinsys::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+				const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
 {
   StochVector& rhs  = dynamic_cast<StochVector&>(rhs_in);
-  StochVector& rhs1 = dynamic_cast<StochVector&>(rhs1_in);
-  StochVector& rhs2 = dynamic_cast<StochVector&>(rhs2_in);
-  StochVector& rhs3 = dynamic_cast<StochVector&>(rhs3_in);
+  const StochVector& rhs1 = dynamic_cast<const StochVector&>(rhs1_in);
+  const StochVector& rhs2 = dynamic_cast<const StochVector&>(rhs2_in);
+  const StochVector& rhs3 = dynamic_cast<const StochVector&>(rhs3_in);
 
   rhs.jointCopyFrom(rhs1, rhs2, rhs3);
 }
 
 void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				     OoqpVector& z_in, OoqpVector& vars_in )
+				     OoqpVector& z_in, const OoqpVector& vars_in ) const
 {
-  StochVector& x    = dynamic_cast<StochVector&>(x_in);
-  StochVector& y    = dynamic_cast<StochVector&>(y_in);
-  StochVector& z    = dynamic_cast<StochVector&>(z_in);
-  StochVector& vars = dynamic_cast<StochVector&>(vars_in);
+  StochVector& x = dynamic_cast<StochVector&>(x_in);
+  StochVector& y = dynamic_cast<StochVector&>(y_in);
+  StochVector& z = dynamic_cast<StochVector&>(z_in);
+  const StochVector& vars = dynamic_cast<const StochVector&>(vars_in);
 
   vars.jointCopyTo(x, y, z);
 }
@@ -282,7 +277,7 @@ void sLinsys::addLnizi(sData *prob, OoqpVector& z0_, OoqpVector& zi_)
   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
   SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
 
-  solver->Dsolve (zi);  
+  solver->Dsolve(zi);
   solver->Ltsolve(zi);
 
   SparseGenMatrix& A = prob->getLocalA();
@@ -543,6 +538,8 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
 
    /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bi_{outer}^T - X0^T * Bi_{inner}^T) and multiply from right with Bi_{outer}^T and add to SC */
    addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BiT_outer, *BiT_buffer, SC );
+
+   delete BiT_buffer;
 }
 
 void sLinsys::solveCompressed( OoqpVector& rhs_)
@@ -861,6 +858,7 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
 void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result)
 {
+   // TODO : parallel
    int m_res, n_res; result.getSize(m_res, n_res);
    assert( m_res >= 0 && n_res >= 0 );
    if( sym_res )
@@ -943,7 +941,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, co
       border_right.A.fromGetColsBlock(colId, blocksize, length_col, mR_right, colsBlockDense, colSparsity);
       border_right.C.fromGetColsBlock(colId, blocksize, length_col, (mR_right + mA_right), colsBlockDense, colSparsity);
 
-      solver->solve(blocksize, colsBlockDense, colSparsity);
+      solvers_blocked[0]->solve(blocksize, colsBlockDense, colSparsity);
 
       addLeftBorderTimesDenseColsToResTransp( border_left_transp, colsBlockDense, colId, length_col, blocksize, sparse_res, sym_res, result);
    }
@@ -985,7 +983,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, co
          // get column block from Ft (i.e., row block from F)
          border_right.F.fromGetColsBlock(colId, blocksize, length_col, 0, colsBlockDense, colSparsity);
 
-         solver->solve(blocksize, colsBlockDense, colSparsity);
+         solvers_blocked[0]->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
             colId[i] += (m_res - nF_right - nG_right);
@@ -1025,7 +1023,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, co
 
          border_right.G.fromGetColsBlock(colId, blocksize, length_col, 0, colsBlockDense, colSparsity);
 
-         solver->solve(blocksize, colsBlockDense, colSparsity);
+         solvers_blocked[0]->solve(blocksize, colsBlockDense, colSparsity);
 
          for( int i = 0; i < blocksize; i++ )
              colId[i] += (m_res - nG_right);
@@ -1063,7 +1061,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
    assert(nThreads >= 1);
 
-   int * col_id_cont = new int[blocksizemax * n_solvers];
+   std::vector<int> col_id_cont(blocksizemax * n_solvers);
 
 #ifdef TIME_SCHUR
    const double t_start = omp_get_wtime();
@@ -1081,7 +1079,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
       const int id = omp_get_thread_num();
 
-      int * colId_loc = col_id_cont + id * blocksizemax;
+      int* colId_loc = col_id_cont.data() + id * blocksizemax;
 
       for( int j = 0; j < actual_blocksize; ++j )
             colId_loc[j] = j + i * blocksizemax;

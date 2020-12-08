@@ -251,7 +251,7 @@ void sLinsysRootComm2::Ltsolve( sData *prob, OoqpVector& x )
 
 void sLinsysRootComm2::reduceKKT()
 {
-  DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt); 
+  DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt);
 
   //parallel communication
   if(iAmDistrib) submatrixReduce(kktd, 0, 0, locnx, locnx, mpiComm);

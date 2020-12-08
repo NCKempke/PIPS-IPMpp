@@ -1270,7 +1270,7 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
 }
 
 
-void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent )
+void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) const
 {
    StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
    SimpleVector* mvecl = nullptr;
@@ -1319,7 +1319,7 @@ void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent )
    }
 }
 
-void StochGenMatrix::addColSums( OoqpVector& sumVec, OoqpVector* linkParent )
+void StochGenMatrix::addColSums( OoqpVector& sumVec, OoqpVector* linkParent ) const
 {
    StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
 
@@ -2253,6 +2253,8 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    n -= n_vars;
 
    BorderedGenMatrix* const bordered_matrix = new BorderedGenMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
+   StochGenMatrix* me = this;
+   IotrAddRef( &me );
 
    assert(m >= 0 && n >= 0);
 

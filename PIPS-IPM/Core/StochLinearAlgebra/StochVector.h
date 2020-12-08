@@ -19,7 +19,7 @@ public:
 
   StochVectorBase( int n, MPI_Comm mpiComm );
   StochVectorBase( int n, int nl, MPI_Comm mpiComm );
-  virtual ~StochVectorBase();
+  ~StochVectorBase() override;
 
   virtual void AddChild(StochVectorBase<T>* child);
   virtual void AddChild(OoqpVectorBase<T>* child);
@@ -129,6 +129,7 @@ public:
    void roundToPow2() override;
 
    bool allPositive() const override;
+   bool allOf( const std::function<bool(const T&)>& pred ) const override;
 
    bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override;
    void selectNonZeros( const OoqpVectorBase<T>& select ) override;
@@ -160,9 +161,13 @@ public:
    virtual bool isRootNodeInSync() const;
 
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
+   virtual void collapseHierarchicalStructure();
 
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
+
+private:
+   void appendOnlyChildToThis();
 };
 
 /** DUMMY VERSION
@@ -262,7 +267,8 @@ public:
    void invertSave( T zeroReplacementVal = 0.0 ) override {};
    void applySqrt() override {};
    void roundToPow2() override {};
-   bool allPositive() const override {return true;}
+   bool allPositive() const override { return true; };
+   bool allOf( const std::function<bool(const T&)>& pred ) const override { return true; };
 
    bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override {return true;}
    void selectNonZeros( const OoqpVectorBase<T>& select ) override {};
@@ -293,6 +299,7 @@ public:
    bool isRootNodeInSync() const override { return true; };
 
    StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
+   void collapseHierarchicalStructure() override {};
 
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override {};
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override {};

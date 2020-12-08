@@ -13,6 +13,8 @@
 #include "OoqpVector.h"
 #include "DoubleMatrix.h"
 
+#include <memory>
+
 /**  * @defgroup QpPreprocess
  *
  * QP scaler
@@ -36,10 +38,10 @@ protected:
   bool scaling_applied;
 
   // scaling vector
-  OoqpVector* vec_rowscaleQ;
-  OoqpVector* vec_rowscaleA;
-  OoqpVector* vec_rowscaleC;
-  OoqpVector* vec_colscale;
+  std::unique_ptr<OoqpVector> vec_rowscaleQ{};
+  std::unique_ptr<OoqpVector> vec_rowscaleA{};
+  std::unique_ptr<OoqpVector> vec_rowscaleC{};
+  std::unique_ptr<OoqpVector> vec_colscale{};
 
   // problem data
   SymMatrixHandle Q;
@@ -55,30 +57,33 @@ protected:
   // scaling factor for objective
   double factor_objscale;
 
-  virtual void applyScaling();
-  virtual void unscaleVars( Variables& vars ) const;
-  virtual void unscaleResids( Residuals& vars ) const;
+  void applyScaling();
 
   virtual void doObjScaling() = 0;
 
   /** get maximum absolute row ratio and write maximum row entries into vectors */
-  virtual double maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVector& minvecA, OoqpVector& minvecC, const OoqpVector* colScalevec);
+  double maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVector& minvecA, OoqpVector& minvecC, const OoqpVector* colScalevec);
 
   /** get maximum absolute column ratio and write maximum column entries into vectors */
-  virtual double maxColRatio(OoqpVector& maxvec, OoqpVector& minvec, const OoqpVector* rowScaleVecA,  const OoqpVector* rowScaleVecC);
+  double maxColRatio(OoqpVector& maxvec, OoqpVector& minvec, const OoqpVector* rowScaleVecA,  const OoqpVector* rowScaleVecC);
 
   void scaleObjVector(double scaling_factor);
 public:
 
   QpScaler(Data* prob, bool bitshifting = false);
-  virtual ~QpScaler();
+  ~QpScaler() override = default;
 
   /** scale */
-  virtual void scale() override = 0;
+  void scale() override = 0;
 
   double getObjUnscaled(double objval) const override;
+
   Variables* getVariablesUnscaled(const Variables& vars) const override;
   Residuals* getResidualsUnscaled(const Residuals& resids) const override;
+
+  void unscaleVariables( Variables& vars ) const override;
+  void unscaleResiduals( Residuals& resids ) const override;
+
   OoqpVector* getPrimalUnscaled(const OoqpVector& solprimal) const override;
   OoqpVector* getDualEqUnscaled(const OoqpVector& soldual) const override;
   OoqpVector* getDualIneqUnscaled(const OoqpVector& soldual) const override;

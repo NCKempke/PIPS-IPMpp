@@ -7,6 +7,7 @@
 
 #include "QpGen.h"
 #include "mpi.h"
+#include <cassert>
 
 class QpGenData;
 class sData;
@@ -21,6 +22,7 @@ class sVars;
 class sLinsys;
 class sLinsysRoot;
 class sLinsysLeaf;
+
 #include "StochResourcesMonitor.h"
 
 class sFactory : public QpGen {
@@ -40,20 +42,21 @@ class sFactory : public QpGen {
   virtual ~sFactory();
 
   virtual Data* makeData();
-
   virtual Residuals * makeResiduals( Data * prob_in );
   virtual Variables * makeVariables( Data * prob_in );
-
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
-  virtual Data* switchToHierarchicalData( Data* prob_in );
-  virtual sLinsysRoot* newLinsysRootHierarchical();
+  virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
+  virtual Data* switchToHierarchicalData( Data* prob_in ) { assert( 0 && "not implemented here" ); return nullptr; }
 
-  virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-			OoqpVector& rhs2_in, OoqpVector& rhs3_in );
+  virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
 
-  virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, OoqpVector& vars_in );
+
+  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
+
+  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
+	      OoqpVector& z_in, const OoqpVector& vars_in ) const override;
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
   virtual sLinsysRoot* newLinsysRoot(sData* prob, sTree* tree_,

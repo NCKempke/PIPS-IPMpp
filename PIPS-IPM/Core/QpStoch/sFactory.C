@@ -236,18 +236,6 @@ Data * sFactory::makeData()
   return data;
 }
 
-Data* sFactory::switchToHierarchicalData( Data* prob_in )
-{
-   assert( 0 && "not implemented here" );
-   return nullptr;
-}
-
-sLinsysRoot* sFactory::newLinsysRootHierarchical()
-{
-   assert( 0 && "not implemented here" );
-   return nullptr;
-}
-
 // TODO adjust this for hierarchical approach
 Variables* sFactory::makeVariables( Data * prob_in )
 {
@@ -265,18 +253,6 @@ Variables* sFactory::makeVariables( Data * prob_in )
   OoqpVectorHandle lambda = OoqpVectorHandle( tree->newDualZVector() );
   OoqpVectorHandle u      = OoqpVectorHandle( tree->newDualZVector() );
   OoqpVectorHandle pi     = OoqpVectorHandle( tree->newDualZVector() );
-
-  // OoqpVector * s      = tree->newDualZVector();
-  // OoqpVector * y      = tree->newDualYVector();
-  // OoqpVector * z      = tree->newDualZVector();
-  // OoqpVector * v      = tree->newPrimalVector();
-  // OoqpVector * gamma  = tree->newPrimalVector();
-  // OoqpVector * w      = tree->newPrimalVector();
-  // OoqpVector * phi    = tree->newPrimalVector();
-  // OoqpVector * t      = tree->newDualZVector();
-  // OoqpVector * lambda = tree->newDualZVector();
-  // OoqpVector * u      = tree->newDualZVector();
-  // OoqpVector * pi     = tree->newDualZVector();
 
   sVars* vars = new sVars( tree, x, s, y, z,
 			   v, gamma, w, phi,
@@ -309,15 +285,14 @@ LinearSystem* sFactory::makeLinsys( Data * prob_in )
    return linsys;
 }
 
-void sFactory::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-			  OoqpVector& rhs2_in, OoqpVector& rhs3_in )
+void sFactory::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+			  const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
 {
   assert(0 && "not implemented here");
 }
 
-void
-sFactory::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			OoqpVector& z_in, OoqpVector& vars_in )
+void sFactory::separateVars( OoqpVector& x_in, OoqpVector& y_in,
+			OoqpVector& z_in, const OoqpVector& vars_in ) const
 {
   assert(0 && "not implemented here");
 }
@@ -334,15 +309,15 @@ void sFactory::iterateEnded()
   tree->stopMonitors();
 
   if(tree->balanceLoad()) {
-    // balance needed
-    data->sync();
-
-    for(size_t i=0; i< registeredVars.size(); i++)
-      registeredVars[i]->sync();
-
-    resid->sync();
-
-    linsys->sync();
+//    // balance needed
+//    data->sync();
+//
+//    for(size_t i=0; i< registeredVars.size(); i++)
+//      registeredVars[i]->sync();
+//
+//    resid->sync();
+//
+//    linsys->sync();
 
     printf("Should not get here! OMG OMG OMG\n");
   }
