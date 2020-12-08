@@ -73,10 +73,10 @@ protected:
 public:
 
   QpScaler(Data* prob, bool bitshifting = false);
-  virtual ~QpScaler() = default;
+  ~QpScaler() override = default;
 
   /** scale */
-  virtual void scale() override = 0;
+  void scale() override = 0;
 
   double getObjUnscaled(double objval) const override;
   Variables* getVariablesUnscaled(const Variables& vars) const override;
