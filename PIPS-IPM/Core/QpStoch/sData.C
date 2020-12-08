@@ -1879,18 +1879,18 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 
    assert( unperm_vars->children.size() == unpermData.children.size() );
 
-   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
+   const std::vector<unsigned int> perm_inv_link_vars = getLinkVarsPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_eq = getLinkConsEqPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
 
    if( perm_inv_link_vars.size() != 0 )
-      unperm_vars->permuteVec0Entries( perm_inv_link_vars );
+      unperm_vars->permuteVec0Entries( perm_inv_link_vars, true );
 
    if( perm_inv_link_cons_eq.size() != 0 )
       unperm_vars->permuteEqLinkingEntries( perm_inv_link_cons_eq );
 
    if( perm_inv_link_cons_ineq.size() != 0 )
-      unperm_vars->permuteIneqLinkingEntries( perm_inv_link_cons_ineq );
+      unperm_vars->permuteIneqLinkingEntries( perm_inv_link_cons_ineq, true );
 
    return unperm_vars;
 }
@@ -1904,19 +1904,19 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
    assert( unperm_resids->children.size() == unpermData.children.size() );
 
-   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();   
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();   
+   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
+   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
 
    if( perm_inv_link_vars.size() != 0 )
-      unperm_resids->permuteVec0Entries( perm_inv_link_vars );
+      unperm_resids->permuteVec0Entries( perm_inv_link_vars, true );
 
    if( perm_inv_link_cons_eq.size() != 0 )
       unperm_resids->permuteEqLinkingEntries( perm_inv_link_cons_eq );
 
    if( perm_inv_link_cons_ineq.size() != 0 )
-      unperm_resids->permuteIneqLinkingEntries( perm_inv_link_cons_ineq );
+      unperm_resids->permuteIneqLinkingEntries( perm_inv_link_cons_ineq, true );
 
    return unperm_resids;
 }
@@ -2264,22 +2264,26 @@ sData::~sData()
       delete children[it];
 }
 
-std::vector<unsigned int> sData::getLinkVarsPerm() const
-{
-   std::vector<unsigned int> copy = linkVarsPermutation;
-   return copy;
-}
 std::vector<unsigned int> sData::getLinkVarsPermInv() const
 {
-   return getInversePermutation(linkVarsPermutation);
+   if( is_hierarchy_root )
+      return this->children[0]->getLinkVarsPermInv();
+   else
+      return getInversePermutation(linkVarsPermutation);
 }
 std::vector<unsigned int> sData::getLinkConsEqPermInv() const
 {
-   return getInversePermutation(linkConsPermutationA);
+   if( is_hierarchy_root )
+      return this->children[0]->getLinkConsEqPermInv();
+   else
+      return getInversePermutation(linkConsPermutationA);
 }
 std::vector<unsigned int> sData::getLinkConsIneqPermInv() const
 {
-   return getInversePermutation(linkConsPermutationC);
+   if( is_hierarchy_root )
+      return this->children[0]->getLinkConsIneqPermInv();
+   else
+      return getInversePermutation(linkConsPermutationC);
 }
 
 int sData::getLocalnx() const

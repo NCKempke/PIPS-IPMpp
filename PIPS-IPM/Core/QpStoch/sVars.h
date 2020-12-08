@@ -41,9 +41,9 @@ public:
   void collapseHierarchicalStructure(const sTree* stochNode, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
         OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 
-  void permuteVec0Entries( const std::vector<unsigned int>& perm );
+  void permuteVec0Entries( const std::vector<unsigned int>& perm, bool vars_only = false );
   void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
-  void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm );
+  void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool vars_only = false );
 
   void sync();
 

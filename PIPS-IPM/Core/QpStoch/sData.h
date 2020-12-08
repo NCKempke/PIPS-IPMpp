@@ -42,8 +42,9 @@ public:
 
   
 private: 
-  // returns permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkVarsPerm() const;
+//  std::vector<unsigned int> getCollapsedHierarchicalLinkVarsPerm() const;
+//  std::vector<unsigned int> getCollapsedHierarchicalLinkConsPerm( const std::vector<unsigned int> sData::* cons_permutation ) const;
+
   // returns inverse permutation vector or empty vector if no permutation has been performed
   std::vector<unsigned int> getLinkVarsPermInv() const;
   // returns inverse permutation vector or empty vector if no permutation has been performed

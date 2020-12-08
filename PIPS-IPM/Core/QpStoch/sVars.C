@@ -223,10 +223,13 @@ void sVars::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHan
    createChildren();
 }
 
-void sVars::permuteVec0Entries( const std::vector<unsigned int>& perm )
+void sVars::permuteVec0Entries( const std::vector<unsigned int>& perm, bool vars_only )
 {
-   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   if( !vars_only )
+   {
+      dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
+      dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   }
 
    dynamic_cast<StochVector&>(*x).permuteVec0Entries(perm);
    dynamic_cast<StochVector&>(*v).permuteVec0Entries(perm);
@@ -240,10 +243,13 @@ void sVars::permuteEqLinkingEntries( const std::vector<unsigned int>& perm )
    dynamic_cast<StochVector&>(*y).permuteLinkingEntries(perm);
 }
 
-void sVars::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm )
+void sVars::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool vars_only )
 {
-   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+   if( !vars_only )
+   {
+      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
+      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+   }
 
    dynamic_cast<StochVector&>(*s).permuteLinkingEntries(perm);
    dynamic_cast<StochVector&>(*z).permuteLinkingEntries(perm);

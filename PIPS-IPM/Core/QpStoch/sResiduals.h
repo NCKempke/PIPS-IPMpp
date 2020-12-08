@@ -42,9 +42,9 @@ public:
 
   void sync();
 
-  void permuteVec0Entries( const std::vector<unsigned int>& perm );
+  void permuteVec0Entries( const std::vector<unsigned int>& perm, bool resids_only = false );
   void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
-  void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm );
+  void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool resids_only = false );
 
   bool isRootNodeInSync() const;
   void collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,

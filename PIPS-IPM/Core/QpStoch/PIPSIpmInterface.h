@@ -226,6 +226,8 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 template<typename FORMULATION, typename IPMSOLVER>
 void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
 {
+
+//   data->writeToStreamDense(std::cout);
   if( my_rank == 0 )
      std::cout << "solving ...\n";
 
@@ -336,7 +338,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm()
   assert(dataUnpermNotHier);
 
   if(!ran_solver)
-    throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermutated solution");
+    throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted solution");
   if( scaler )
   {
     std::unique_ptr<sVars> unscaled_vars{ dynamic_cast<sVars*>(scaler->getVariablesUnscaled(*vars)) };
@@ -354,7 +356,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm()
   assert(dataUnpermNotHier);
 
   if(!ran_solver)
-    throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermutated residuals");
+    throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted residuals");
   if( scaler )
   {
     std::unique_ptr<sResiduals> unscaled_resids{ dynamic_cast<sResiduals*>(scaler->getResidualsUnscaled(*resids)) };

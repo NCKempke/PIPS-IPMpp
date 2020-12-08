@@ -31,7 +31,8 @@ sResiduals::sResiduals( const sTree* tree,
   SpReferTo( rA, rA_ );
   SpReferTo( rC, rC_ );
   SpReferTo( rz, rz_ );
-  SpReferTo( rt     , rt_ );
+  SpReferTo( rt , rt_ );
+
   SpReferTo( rlambda, rlambda_ );
   SpReferTo( ru    , ru_ );
   SpReferTo( rpi   , rpi_ );
@@ -146,10 +147,8 @@ void sResiduals::createChildren()
   StochVector& iclowSt = dynamic_cast<StochVector&>(*iclow);
   StochVector& icuppSt = dynamic_cast<StochVector&>(*icupp);
 
-  //copy the structure of one of the vectors and create children of
-  //this
-  size_t nChildren=rASt.children.size();
-  for (size_t it=0; it<nChildren; it++) {
+  const size_t nChildren = rASt.children.size();
+  for (size_t it = 0; it < nChildren; it++) {
 
     assert(nChildren==stochNode->children.size());
     assert(nChildren==rASt.children.size());
@@ -214,10 +213,13 @@ void sResiduals::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVect
    createChildren();
 }
 
-void sResiduals::permuteVec0Entries( const std::vector<unsigned int>& perm )
+void sResiduals::permuteVec0Entries( const std::vector<unsigned int>& perm, bool resids_only )
 {
-   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   if( !resids_only )
+   {
+      dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
+      dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   }
 
    dynamic_cast<StochVector&>(*rQ).permuteVec0Entries(perm);
    dynamic_cast<StochVector&>(*rv).permuteVec0Entries(perm);
@@ -231,10 +233,13 @@ void sResiduals::permuteEqLinkingEntries( const std::vector<unsigned int>& perm 
    dynamic_cast<StochVector&>(*rA).permuteLinkingEntries(perm);
 }
 
-void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm )
+void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool resids_only )
 {
-   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+   if( !resids_only )
+   {
+      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
+      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+   }
 
    dynamic_cast<StochVector&>(*rC).permuteLinkingEntries(perm);
    dynamic_cast<StochVector&>(*rt).permuteLinkingEntries(perm);

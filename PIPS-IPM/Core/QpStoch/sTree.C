@@ -594,7 +594,7 @@ StochVector* sTree::newPrimalVectorEmpty() const
   StochVector* x = new StochVector(0, commWrkrs);
 
   for(size_t it=0; it<children.size(); it++) {
-    StochVector* child = children[it]->newPrimalVector();
+    StochVector* child = children[it]->newPrimalVectorEmpty();
     x->AddChild(child);
   }
   return x;
@@ -612,7 +612,7 @@ StochVector* sTree::newDualYVectorEmpty() const
   StochVector* y = new StochVector(std::min(my(), 0), std::min(0, yl), commWrkrs);
 
   for(size_t it = 0; it < children.size(); it++) {
-    StochVector* child = children[it]->newDualYVector();
+    StochVector* child = children[it]->newDualYVectorEmpty();
     y->AddChild(child);
   }
   return y;
@@ -630,7 +630,7 @@ StochVector* sTree::newDualZVectorEmpty() const
   StochVector* z = new StochVector(std::min(mz(), 0), std::min(zl, 0), commWrkrs);
 
   for(size_t it = 0; it < children.size(); it++) {
-    StochVector* child = children[it]->newDualZVector();
+    StochVector* child = children[it]->newDualZVectorEmpty();
     z->AddChild(child);
   }
   return z;
