@@ -19,7 +19,7 @@ public:
 
   StochVectorBase( int n, MPI_Comm mpiComm );
   StochVectorBase( int n, int nl, MPI_Comm mpiComm );
-  virtual ~StochVectorBase();
+  ~StochVectorBase() override;
 
   virtual void AddChild(StochVectorBase<T>* child);
   virtual void AddChild(OoqpVectorBase<T>* child);
