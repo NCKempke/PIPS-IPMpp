@@ -561,6 +561,3 @@ void QpGenData::flipQ()
   Q->scalarMult( -1.0);
 }
 
-QpGenData::~QpGenData()
-{
-}

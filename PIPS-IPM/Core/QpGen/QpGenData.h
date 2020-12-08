@@ -45,17 +45,17 @@ public:
   SymMatrixHandle Q;
   GenMatrixHandle A;
   GenMatrixHandle C;
-  OoqpVectorHandle    g; // objective
-  OoqpVectorHandle    bA; // rhs equality
-  OoqpVectorHandle    bux; // upper bounds x
-  OoqpVectorHandle    ixupp; // index for upper bounds
-  OoqpVectorHandle    blx; // lower bounds x
-  OoqpVectorHandle    ixlow; // index for lower bounds
-  OoqpVectorHandle    bu; // upper bounds C
-  OoqpVectorHandle    icupp; // index upper bounds
-  OoqpVectorHandle    bl; // lower bounds C
-  OoqpVectorHandle    iclow; // index lower bounds
-  OoqpVectorHandle    sc; // scale
+  OoqpVectorHandle g; // objective
+  OoqpVectorHandle bA; // rhs equality
+  OoqpVectorHandle bux; // upper bounds x
+  OoqpVectorHandle ixupp; // index for upper bounds
+  OoqpVectorHandle blx; // lower bounds x
+  OoqpVectorHandle ixlow; // index for lower bounds
+  OoqpVectorHandle bu; // upper bounds C
+  OoqpVectorHandle icupp; // index upper bounds
+  OoqpVectorHandle bl; // lower bounds C
+  OoqpVectorHandle iclow; // index lower bounds
+  OoqpVectorHandle sc; // scale
 
   long long nx, my, mz;
 
@@ -163,7 +163,7 @@ public:
 
   virtual double objectiveValue( const QpGenVars * vars ) const;
 
-  virtual ~QpGenData();
+  ~QpGenData() override = default;
 };
 
 #endif
