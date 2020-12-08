@@ -38,7 +38,7 @@ public:
   
   sResiduals( const sResiduals& res );
 
-  ~sResiduals();
+  ~sResiduals() override;
 
   void sync();
 

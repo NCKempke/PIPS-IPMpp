@@ -39,10 +39,7 @@ public:
       The parameter 'id' is used for output/debug purposes only.
       The created matrix will have no children.*/
   StochSymMatrix( long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm );
-  StochSymMatrix( long long global_n,
-		  int diag_n, int diag_nnz, 
-		  int border_n, int border_nnz,
-		  MPI_Comm mpiComm_);
+
   virtual ~StochSymMatrix();
 
   std::vector<StochSymMatrix*> children;
@@ -104,13 +101,13 @@ public:
   virtual void atPutDiagonal( int idiag, OoqpVector& v );
   virtual void fromGetDiagonal( int idiag, OoqpVector& x );
 
-  virtual void putSparseTriple( int irow[], int len, int jcol[], double A[], 
-				int& info );
+  void putSparseTriple( int irow[], int len, int jcol[], double A[],
+				int& info ) override;
 
   void symmetricScale ( const OoqpVector& vec ) override;
   void columnScale ( const OoqpVector& vec ) override;
   void rowScale ( const OoqpVector& vec ) override;
-  virtual void scalarMult( double num );
+  void scalarMult( double num ) override;
 
   // note: also used for dummy class!
   virtual void deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec)
@@ -134,10 +131,8 @@ public:
 class StochSymDummyMatrix : public StochSymMatrix
 {
 
-
 private:
    void writeToStreamDenseChild(stringstream& out, int offset) const override {};
-
 
 protected:
 
@@ -146,11 +141,11 @@ public:
   StochSymDummyMatrix()
     : StochSymMatrix(0, 0, 0, MPI_COMM_NULL) {};
 
-  virtual ~StochSymDummyMatrix(){};
+  ~StochSymDummyMatrix() override = default;
 
   StochSymDummyMatrix* clone() const override { return new StochSymDummyMatrix(); };
 
-  void AddChild(StochSymMatrix* child) override {};
+  void AddChild(StochSymMatrix* child) override { assert( false && "Should never be called" ); };
 
   int isKindOf( int type ) const override;
 

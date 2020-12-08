@@ -19,31 +19,21 @@
  */
 StochSymMatrix::StochSymMatrix(long long global_n, int local_n, int local_nnz,
 			       MPI_Comm mpiComm_)
-  :n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
+  : n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
 {
   diag = new SparseSymMatrix(local_n, local_nnz);
   // the cross Hessian is nullptr for the root node; it may be also nullptr for 
   // children in the case when the Hessian does not have cross terms and
   // the children are created with this constructor. The border will be 
   // set up to correct sizes later for this case.
-  border = nullptr;
-}
-
-StochSymMatrix::StochSymMatrix( long long global_n,
-				int nrows, int diag_nnz, 
-				int nbordercols, int border_nnz,
-				MPI_Comm mpiComm_)
-  :n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
-{
-   diag = new SparseSymMatrix(nrows, diag_nnz);
-   border = new SparseGenMatrix(nrows, nbordercols, border_nnz);
 }
 
 void StochSymMatrix::AddChild(StochSymMatrix* child)
 {
-  child->parent=this;
+  child->parent = this;
+  assert( this->border == nullptr );
 
-  if( !border )
+  if( !child->border )
     child->border = new SparseGenMatrix(child->diag->size(), this->diag->size(), 0);
 
   children.push_back(child);
@@ -453,10 +443,11 @@ void StochSymMatrix::scalarMult( double num )
 
 void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent)
 {
+   MPI_Barrier(MPI_COMM_WORLD);
    const StochVectorBase<int>& nnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(nnzVec);
    assert(children.size() == nnzVecStoch.children.size());
 
-   const SimpleVectorBase<int>* const vec = dynamic_cast<const SimpleVectorBase<int>*>(nnzVecStoch.vec);
+   const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>(nnzVecStoch.vec);
    assert(vec);
 
    const int n_old = n;
@@ -473,7 +464,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
       border->deleteEmptyRowsCols(*vec, *linkParent);
    }
    else
-      assert( border == nullptr );
+      assert( !border );
 
    diag->deleteEmptyRowsCols(*vec);
 
@@ -500,23 +491,6 @@ int StochSymDummyMatrix::isKindOf( int type ) const
 { 
   return type==kStochSymDummyMatrix;
 }
-
-/*StochSymMatrix::StochSymMatrix(const vector<StochSymMatrix*> &blocks) 
-{
-  mpiComm = blocks[0]->mpiComm;
-  n = blocks[0]->n;
-  id = blocks[0]->id;
-
-  vector<SparseSymMatrix*> v(blocks.size());
-  for(size_t i = 0; i < blocks.size(); i++) 
-    v[i] = blocks[i]->mat;
-
-  mat = new SparseSymMatrix(v);
-
-  border = nullptr;
-
-}
-*/
 
 BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 {

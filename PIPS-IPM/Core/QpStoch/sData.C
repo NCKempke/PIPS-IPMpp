@@ -2743,7 +2743,6 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
       const StochVectorBase<int>& colNnzVec)
 {
    StochSymMatrix& Q_stoch = dynamic_cast<StochSymMatrix&>(*Q);
-
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
 
