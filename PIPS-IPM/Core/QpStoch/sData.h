@@ -141,7 +141,7 @@ private:
 
   bool isHierarchieRoot() const { return is_hierarchy_root; };
 
-  virtual ~sData();
+  ~sData() override;
 
  protected:
   void createChildren();
