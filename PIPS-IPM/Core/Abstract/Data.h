@@ -17,8 +17,8 @@ class Data
 {
 public:
   
-  Data();    
-  virtual ~Data();
+  Data() = default;
+  virtual ~Data() = default;
   
   /** compute the norm of the problem data */
   virtual double datanorm() const = 0;
