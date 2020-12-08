@@ -16,8 +16,6 @@ class Variables;
 class Data
 {
 public:
-  
-  Data() = default;
   virtual ~Data() = default;
   
   /** compute the norm of the problem data */
