@@ -54,6 +54,12 @@ public:
   /** compute original residuals from given ones */
   virtual Residuals* getResidualsUnscaled(const Residuals& resids) const = 0;
 
+  /** compute original residuals from given ones */
+  virtual void unscaleResiduals(Residuals& resids) const = 0;
+
+  /** compute original residuals from given ones */
+  virtual void unscaleVariables(Variables& resids) const = 0;
+
   /** compute original vector from given primal vector */
   virtual OoqpVector* getPrimalUnscaled(const OoqpVector& solprimal) const = 0;
 

@@ -14,11 +14,6 @@
 StochScaler::StochScaler(Data* prob, bool bitshifting)
 	: QpScaler(prob, bitshifting)
 {
-
-}
-
-StochScaler::~StochScaler()
-{
 }
 
 Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const
@@ -27,7 +22,7 @@ Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const
    assert(s_vars);
    assert( dynamic_cast<sVars*>(s_vars)->x);
 
-   unscaleVars(*s_vars);
+   unscaleVariables(*s_vars);
 
    return s_vars;
 };
@@ -37,7 +32,7 @@ Residuals* StochScaler::getResidualsUnscaled(const Residuals& resids) const
    sResiduals* s_resids = new sResiduals(dynamic_cast<const sResiduals&>(resids));
    assert(s_resids);
 
-   unscaleResids(*s_resids);
+   unscaleResiduals(*s_resids);
 
    return s_resids;
 };

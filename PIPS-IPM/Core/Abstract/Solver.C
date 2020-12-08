@@ -33,22 +33,14 @@ int gInnerBiCGFails=0;
 //number of iterative refinements in the 2nd stage sparse systems
 //int gInnerStg2solve=3; not used
 
-Solver::Solver(const Scaler* scaler) : itsMonitors(0), status(0), startStrategy(0), scaler(scaler), dnorm(0.0),
-      dnorm_orig(dnorm), mutol(1.e-6), artol(1.e-4), phi(0.0), maxit(0), mu_history(0), rnorm_history(0),
-      phi_history(0), phi_min_history(0), iter(0), printTimeStamp(false), startTime(-1.0), sys(nullptr)
+Solver::Solver(const Scaler* scaler) : scaler{ scaler }
 {
-  // define parameters associated with the step length heuristic
-
    if( base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE") )
    {
       steplength_factor = 0.99;
       gamma_f = 0.95;
    }
-   else
-   {
-      steplength_factor = 0.99999999;
-      gamma_f = 0.99;
-   }
+
    gamma_a = 1.0 / (1.0 - gamma_f);
 
    if( base_options::getBoolParameter("IP_ACCURACY_REDUCED")  )
@@ -57,10 +49,6 @@ Solver::Solver(const Scaler* scaler) : itsMonitors(0), status(0), startStrategy(
       mutol = 1.e-5;
    }
    else
-   {
-      artol = 1.e-4;
-      mutol = 1.e-6;
-   }
 
    if( base_options::getBoolParameter("IP_PRINT_TIMESTAMP") )
    {
@@ -81,9 +69,6 @@ void Solver::start( ProblemFormulation * formulation,
     //this->dumbstart( formulation, iterate, prob, resid, step );
   }
 }
-//#ifdef TIMING
-//#include "mpi.h"
-//#endif
 
 void Solver::defaultStart( ProblemFormulation * /* formulation */,
 			   Variables * iterate, Data * prob,
@@ -377,6 +362,24 @@ Solver::~Solver()
   }
 }
 
+std::pair<double,double> Solver::computeUnscaledGapAndResidualNorm( const Residuals& residuals )
+{
+   if( !scaler )
+      return std::make_pair( std::fabs( residuals.dualityGap() ), residuals.residualNorm() );
+   else
+   {
+      if( !residuals_unscaled )
+         residuals_unscaled.reset( scaler->getResidualsUnscaled(residuals) );
+      else
+      {
+         residuals_unscaled->copyFrom( residuals );
+         scaler->unscaleResiduals( *residuals_unscaled );
+      }
+
+      return std::make_pair( std::fabs( residuals_unscaled->dualityGap() ), residuals_unscaled->residualNorm() );
+   }
+}
+
 
 int Solver::defaultStatus( const Data * /* data */, const Variables * /* vars */,
 				 const Residuals * resids,
@@ -387,15 +390,9 @@ int Solver::defaultStatus( const Data * /* data */, const Variables * /* vars */
   int stop_code = NOT_FINISHED;
   int idx;
 
-  const Residuals* resids_unscaled = resids;
-  if( scaler )
-     resids_unscaled = scaler->getResidualsUnscaled(*resids);
-
-  const double gap = std::fabs( resids_unscaled->dualityGap() );
-  const double rnorm = resids_unscaled->residualNorm();
-
-  if( scaler )
-     delete resids_unscaled;
+  const std::pair<double,double> gap_norm = computeUnscaledGapAndResidualNorm( *resids );
+  const double gap = gap_norm.first;
+  const double rnorm = gap_norm.second;
 
   idx = iterate - 1;
   if( idx <  0     ) idx = 0;

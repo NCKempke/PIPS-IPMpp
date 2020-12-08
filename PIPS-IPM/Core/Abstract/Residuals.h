@@ -73,7 +73,9 @@ public:
    * @see SimpleVector::gondzioProjection */
   virtual void project_r3(double rmin, double rmax) = 0;
 
-  virtual ~Residuals() {};
+  virtual void copyFrom( const Residuals& ) = 0;
+
+  virtual ~Residuals() = default;
 };
 
 #endif

@@ -85,6 +85,8 @@ public:
   virtual int  validNonZeroPattern();
   
   virtual void writeToStream(std::ostream& out);
+
+  void copyFrom( const Residuals& other ) override;
 };
 
 #endif
