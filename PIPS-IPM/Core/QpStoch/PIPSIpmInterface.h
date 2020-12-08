@@ -39,7 +39,7 @@ class PIPSIpmInterface
  public:
   PIPSIpmInterface(StochInputTree* in, MPI_Comm = MPI_COMM_WORLD,
         ScalerType scaler_type = SCALER_NONE, PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
-  ~PIPSIpmInterface();
+  ~PIPSIpmInterface() = default;
 
   void go();
   double getObjective();
@@ -330,11 +330,6 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getFirstStageObjective() const
 }
 
 template<class FORMULATION, class IPMSOLVER>
-PIPSIpmInterface<FORMULATION, IPMSOLVER>::~PIPSIpmInterface()
-{
-}
-
-template<class FORMULATION, class IPMSOLVER>
 void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm()
 {
   assert(unscaleUnpermNotHierVars == nullptr);
@@ -517,7 +512,7 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrim
 template<class FORMULATION, class IPMSOLVER>
 void PIPSIpmInterface<FORMULATION, IPMSOLVER>::printComplementarityResiduals(const sVars& svars) const
 {
-  const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
+  const int my_rank = PIPS_MPIgetRank();
 
   /* complementarity residuals before postsolve */
   std::unique_ptr<OoqpVectorBase<double>> t_clone{ svars.t->cloneFull() };
