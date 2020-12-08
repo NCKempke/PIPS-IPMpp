@@ -33,10 +33,6 @@ StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(
 {
 }
 
-StochPresolverBoundStrengthening::~StochPresolverBoundStrengthening()
-{
-}
-
 void StochPresolverBoundStrengthening::resetArrays()
 {
    /* upper bounds are stored inverted */
