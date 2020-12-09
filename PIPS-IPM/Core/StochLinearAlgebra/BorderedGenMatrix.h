@@ -31,21 +31,21 @@ class SparseGenMatrix;
 class BorderedGenMatrix : public GenMatrix
 {
    public:
-      StochGenMatrix* inner_matrix;
-      StringGenMatrix* border_left;
-      StringGenMatrix* border_bottom;
+      StochGenMatrix * const inner_matrix{};
+      StringGenMatrix * const border_left{};
+      StringGenMatrix * const border_bottom{};
 	
       // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-      SparseGenMatrix* bottom_left_block;
+      SparseGenMatrix * const bottom_left_block{};
 
    protected:
 
-      MPI_Comm mpi_comm;
-      const bool distributed;
-      const int rank;
+      MPI_Comm mpi_comm{MPI_COMM_NULL};
+      const bool distributed{false};
+      const int rank{-1};
 
-      long long m; // number rows in border
-      long long n; // number cols in border
+      long long m{0};
+      long long n{0};
 
    public:
       BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
