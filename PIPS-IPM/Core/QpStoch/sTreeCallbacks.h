@@ -23,6 +23,7 @@ class sTreeCallbacks : public sTree
    using DATA_VEC = FVEC InputNode::*;
    using DATA_NNZ = FNNZ InputNode::*;
    using DATA_INT = int InputNode::*;
+   using TREE_SIZE = long long sTree::*;
 
 public:
    sTreeCallbacks(StochInputTree* root);
@@ -78,7 +79,7 @@ private:
    virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
-   StochGenMatrix* createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
+   StochGenMatrix* createMatrix( TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat,
          DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
          DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
          DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;

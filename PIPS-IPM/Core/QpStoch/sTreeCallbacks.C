@@ -348,7 +348,7 @@ StochSymMatrix* sTreeCallbacks::createQ() const
    return Q;
 }
 
-StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
+StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat,
       DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
       DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
       DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const
@@ -377,7 +377,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
       {
          // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
          // (i.e. the first block of linking constraints)
-         A = new StochGenMatrix(MY + MYL, N,
+         A = new StochGenMatrix(this->*MY + this->*MYL, N,
                data->*m_ABmat, np, data->*nnzBmat,
                data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
                data->*m_Blmat, data->*n_Mat, data->*nnzBlmat,
@@ -386,7 +386,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
       else
       {
          // populate B with A's data B_0 is the A_0 from the theoretical form
-         A = new StochGenMatrix(MY + MYL, N,
+         A = new StochGenMatrix(this->*MY + this->*MYL, N,
                data->*m_ABmat, np, data->*nnzBmat,
                data->*m_ABmat, data->*n_Mat,  data->*nnzAmat,
                commWrkrs);
@@ -405,7 +405,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
 
       if( data->fnnzBl > 0 )
       {
-         A = new StochGenMatrix(MY + MYL, N,
+         A = new StochGenMatrix(this->*MY, N,
                data->*m_ABmat, np, data->*nnzAmat,
                data->*m_ABmat, data->*n_Mat, data->*nnzBmat,
                data->*m_Blmat, data->*n_Mat, data->*nnzBlmat,
@@ -413,7 +413,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
       }
       else
       {
-         A = new StochGenMatrix(MY + MYL, N,
+         A = new StochGenMatrix(this->*MY, N,
                data->*m_ABmat, np, data->*nnzAmat,
                data->*m_ABmat, data->*n_Mat,  data->*nnzBmat,
                commWrkrs);
@@ -433,7 +433,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
 
    for(size_t it = 0; it < children.size(); it++)
    {
-      StochGenMatrix* child = dynamic_cast<sTreeCallbacks*>(children[it])->createMatrix( m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat,
+      StochGenMatrix* child = dynamic_cast<sTreeCallbacks*>(children[it])->createMatrix( MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat,
             nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
       A->AddChild(child);
    }
@@ -442,6 +442,9 @@ StochGenMatrix* sTreeCallbacks::createMatrix( DATA_INT m_ABmat, DATA_INT n_Mat,
 
 StochGenMatrix* sTreeCallbacks::createA() const
 {
+   TREE_SIZE MY = &sTree::MY;
+   TREE_SIZE MYL = &sTree::MYL;
+
    DATA_INT m_ABmat = &InputNode::my;
    DATA_INT n_Mat = &InputNode::n;
    DATA_INT nnzAmat = &InputNode::nnzA;
@@ -457,12 +460,15 @@ StochGenMatrix* sTreeCallbacks::createA() const
    DATA_NNZ fnnzBlmat = &InputNode::fnnzBl;
    DATA_MAT Blmat = &InputNode::fBl;
 
-   return createMatrix( m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
+   return createMatrix( MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
          fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
 }
 
 StochGenMatrix* sTreeCallbacks::createC() const
 {
+   TREE_SIZE MZ= &sTree::MZ;
+   TREE_SIZE MZL = &sTree::MZL;
+
    DATA_INT m_CDmat = &InputNode::mz;
    DATA_INT n_Mat = &InputNode::n;
    DATA_INT nnzCmat = &InputNode::nnzC;
@@ -478,7 +484,7 @@ StochGenMatrix* sTreeCallbacks::createC() const
    DATA_NNZ fnnzDlmat = &InputNode::fnnzDl;
    DATA_MAT Dlmat = &InputNode::fDl;
 
-   return createMatrix( m_CDmat, n_Mat, nnzCmat, fnnzCmat, Cmat, nnzDmat,
+   return createMatrix( MZ, MZL, m_CDmat, n_Mat, nnzCmat, fnnzCmat, Cmat, nnzDmat,
          fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat );
 }
 
