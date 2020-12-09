@@ -1055,7 +1055,7 @@ SparseGenMatrix* SparseGenMatrix::shaveLeft(int n_cols)
 
    SparseStorage* border = mStorage->shaveLeft( n_cols );
 
-   if( m_Mt )
+   if( n_cols != 0 && m_Mt )
    {
       delete m_Mt;
       this->initTransposed(false);
@@ -1071,7 +1071,7 @@ SparseGenMatrix* SparseGenMatrix::shaveBottom(int n_rows)
 
    SparseStorage* border = mStorage->shaveBottom( n_rows );
 
-   if( m_Mt )
+   if( n_rows != 0 && m_Mt )
    {
       delete m_Mt;
       this->initTransposed(false);
