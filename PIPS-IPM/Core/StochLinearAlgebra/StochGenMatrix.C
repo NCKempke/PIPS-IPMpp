@@ -96,15 +96,16 @@ int StochGenDummyMatrix::isKindOf( int type ) const
 {
   return type == kStochGenDummyMatrix;
 }
+
 void StochGenMatrix::getSize( long long& m_out, long long& n_out ) const
 {
-  m_out = m; n_out=n;
-}
-void StochGenMatrix::getSize( int& m_out, int& n_out ) const
-{
-  m_out = m; n_out=n;
+  m_out = m; n_out = n;
 }
 
+void StochGenMatrix::getSize( int& m_out, int& n_out ) const
+{
+  m_out = m; n_out = n;
+}
 
 void StochGenMatrix::atPutDense( int row, int col, double * A, int lda,
 				 int rowExtent, int colExtent )
@@ -2266,8 +2267,8 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& bor
    SparseGenMatrix* const border_a_mat = Amat->shaveLeft(n_vars);
    SparseGenMatrix* const border_bl_mat = Blmat->shaveBottom(m_conss);
 
-   border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
    border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
+   border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
 
    if( children.size() == 0 )
       assert( PIPS_MPIgetSize( mpiComm ) == 1 );
