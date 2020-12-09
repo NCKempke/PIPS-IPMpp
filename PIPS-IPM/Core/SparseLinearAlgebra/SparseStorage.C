@@ -2328,7 +2328,7 @@ SparseStorage* SparseStorage::shaveLeft( int n_cols )
    return border;
 }
 
-SparseStorage*  SparseStorage::shaveBottom( int n_rows )
+SparseStorage* SparseStorage::shaveBottom( int n_rows )
 {
    assert( n_rows <= m );
    assert( 0 <= n_rows );
