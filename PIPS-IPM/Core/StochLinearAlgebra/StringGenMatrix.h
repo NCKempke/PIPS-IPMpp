@@ -20,20 +20,21 @@ class StringGenMatrix : public GenMatrix
       // TODO : keep public? ...
       // like stoch gen matrix possibly infinite but we will only have one layer of children at all times...
       std::vector<StringGenMatrix*> children;
-      SparseGenMatrix* mat; // never null
-      SparseGenMatrix* mat_link; // possibly null
-      bool is_vertical;
+      SparseGenMatrix* mat{}; // never null
+      SparseGenMatrix* mat_link{}; // possibly null
+      bool is_vertical{false};
 
    protected:
-      long long m, n;
-      const MPI_Comm mpi_comm;
-      const bool distributed;
-      const int rank;
+      long long m{0};
+      long long n{0};
+      const MPI_Comm mpi_comm{MPI_COMM_NULL};
+      const bool distributed{false};
+      const int rank{-1};
 
    public:
       StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_);
 
-      virtual ~StringGenMatrix();
+      ~StringGenMatrix() override;
 
       virtual void addChild(StringGenMatrix* child);
 
@@ -83,7 +84,7 @@ class StringGenMatrix : public GenMatrix
 
 
    protected:
-      StringGenMatrix();
+      StringGenMatrix() = default;
 
       virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
       virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
@@ -116,9 +117,9 @@ class StringGenMatrix : public GenMatrix
 class StringGenDummyMatrix : public StringGenMatrix
 {
    public:
-      StringGenDummyMatrix() {};
+      StringGenDummyMatrix() = default;
+      ~StringGenDummyMatrix() override = default;
 
-      virtual ~StringGenDummyMatrix() {};
       void addChild(StringGenMatrix* child) override {};
       int isKindOf( int type ) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
       void mult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override {};
