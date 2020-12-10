@@ -200,8 +200,8 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
    else if( strcmp(paramname, "hierarchical") == 0 )
       hierarchical = true;
 }
-#endif
 
+#endif
 int main(int argc, char ** argv)
 {
 
@@ -218,14 +218,15 @@ int main(int argc, char ** argv)
 #if defined(GMS_PIPS)
    ScalerType scaler_type = SCALER_NONE;
 #endif
+
    bool stepDiffLp = false;
    bool presolve = false;
    bool printsol = false;
    bool hierarchical = false;
 
-   if ( (argc<3) || (argc>8) )
+   if ( (argc<3) || (argc>9) )
    {
-      std::cout << "Usage: " << argv[0] << " numBlocks all.gdx|blockstem [GDXLibDir] [scale] [stepLp] [presolve] [printsol]" << std::endl;
+      std::cout << "Usage: " << argv[0] << " numBlocks all.gdx|blockstem [GDXLibDir] [scale] [stepLp] [presolve] [printsol] [hierarchical_approach]\n";
       exit(1);
    }
 

@@ -12,6 +12,11 @@
 
 namespace pips_options
 {
+   enum SolverType
+   {
+         SOLVER_DEFAULT = 0, SOLVER_MA27 = 1, SOLVER_MA57 = 2, SOLVER_PARDISO = 3, SOLVER_MKL_PARDISO = 4, SOLVER_MUMPS = 5
+   };
+
    void StochOptions::setHierarchical()
    {
       bool_options["HIERARCHICAL"] = true;
@@ -34,6 +39,9 @@ namespace pips_options
    void StochOptions::setDefaults()
    {
       /// LINEAR SOLVERS
+      int_options["LINEAR_LEAF_SOLVER"] = SolverType::SOLVER_DEFAULT;
+      int_options["LINEAR_ROOT_SOLVER"] = SolverType::SOLVER_DEFAULT;
+
       bool_options["PARDISO_FOR_GLOBAL_SC"] = true;
       bool_options["PARDISO_SPARSE_RHS_LEAF"] = false;
       /** -1 is choose default */
