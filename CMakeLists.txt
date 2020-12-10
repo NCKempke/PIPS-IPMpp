@@ -62,7 +62,7 @@ option(USE_MA27 "Use MA27 solver for global and local Schur complement" OFF)
 message(STATUS "USE_MA27=${USE_MA27}")
 
 option(USE_MA57 "Use MA57 solver for global and local Schur complement" OFF)
-message(STATUS "USE_MA25=${USE_MA57}")
+message(STATUS "USE_MA57=${USE_MA57}")
 
 #with timing for PIPS-IPM
 option(WITH_TIMING "Build with timing recording and reporting for PIPS-IPM" OFF)
@@ -165,11 +165,30 @@ endif(MATH_LIBS)
 set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdPartyLibs)
 
 # HSL Solver and METIS_4
-set(MA27_DIR ${SHARED_DIR}/MA27/src)
-set(MC30_DIR ${SHARED_DIR}/MC30/src)
+# MA27
+if(DEFINED ENV{MA27_DIR})
+    set(MA27_DIR "$ENV{MA27_DIR}")
+else(DEFINED ENV{MA27_DIR})
+    set(MA27_DIR ${SHARED_DIR}/MA27/src)
+endif(DEFINED ENV{MA27_DIR})
+
+# MC30
+if(DEFINED ENV{MC30_DIR})
+    set(MC30_DIR "$ENV{MC30_DIR}")
+else(DEFINED ENV{MC30_DIR})
+    set(MC30_DIR ${SHARED_DIR}/MC30/src)
+endif(DEFINED ENV{MC30_DIR})
+
+# MA60
 #set(MA60_DIR ${SHARED_DIR}/MA60/src)
   
-set(MA57_DIR ${SHARED_DIR}/MA57/src)
+# MA57
+if(DEFINED ENV{MA57_DIR})
+    set(MA57_DIR "$ENV{MA57_DIR}")
+else(DEFINED ENV{MA57_DIR})
+    set(MA57_DIR ${SHARED_DIR}/MA57/src)
+endif(DEFINED ENV{MA57_DIR})
+
 find_library(MA27_LIBRARY libma27.a PATHS ${MA27_DIR}/lib)
 find_library(MA57_LIBRARY libma57.a PATHS ${MA57_DIR}/lib)
 
@@ -195,8 +214,15 @@ endif(MA27_LIBRARY)
 if(NOT MA27_LIBRARY AND NOT MA57_LIBRARY)
   message(FATAL_ERROR "Could not find MA27 nor MA57. We need one HSL solver")
 endif(NOT MA27_LIBRARY AND NOT MA57_LIBRARY)
-  
-set(METIS_DIR ${SHARED_DIR}/METIS_4)
+
+# METIS
+if(DEFINED ENV{METIS_DIR})
+    set(METIS_DIR "$ENV{METIS_DIR}")
+else(DEFINED ENV{METIS_DIR})
+    set(METIS_DIR ${SHARED_DIR}/METIS_4)
+endif(DEFINED ENV{METIS_DIR})
+
+# PARMETIS
 set(PARMETIS_DIR ${SHARED_DIR}/METIS)
   
 find_library(PARMETIS_LIBRARY NAME libparmetis.a HINTS ${PARMETIS_DIR}/lib PATHS ${PARMETIS_DIR}/lib)
@@ -204,6 +230,7 @@ find_library(METIS_5_LIBRARY NAME libmetis.a HINTS ${PARMETIS_DIR}/lib PATHS ${P
   
 find_library(METIS_4_LIBRARY NAME libmetis.a HINTS ${METIS_DIR}/src PATHS ${METIS_DIR})
 if( METIS_4_LIBRARY )
+   message(STATUS "METIS_4_LIBRARY = ${METIS_4_LIBRARY}")
    set(HAVE_METIS TRUE)
 else( METIS_4_LIBRARY )
    message(FATAL_ERROR "METIS not found! METIS is required for PIPS-IPM. Please run ./wgetMETIS.sh in ${METIS_DIR}")
@@ -435,3 +462,4 @@ get_property(inc_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
 message(STATUS "${inc_dirs}")
 get_property(link_dirs DIRECTORY PROPERTY LINK_DIRECTORIES)
 message(STATUS "${link_dirs}")
+
