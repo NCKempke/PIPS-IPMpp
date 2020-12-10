@@ -119,8 +119,8 @@ int writeSolution(const char* gdxFileStem,  /** < GDX file stem */
 {
    FILE *fmap;
    int* p2gvmap=NULL;
-   double* p2gvlo=NULL;
-   double* p2gvup=NULL;
+   //double* p2gvlo=NULL;
+   //double* p2gvup=NULL;
    int* p2gemap=NULL;
    int* p2isE=NULL;
    char fileName[GMS_SSSIZE];
@@ -319,7 +319,7 @@ int writeSolution(const char* gdxFileStem,  /** < GDX file stem */
    wvals[GMS_VAL_SCALE] = 1.0;
 
    /* Now walk dictionary and variable and equation vector side-by-side */
-   if (equEl && equIl || equEm && equIm)
+   if ( (equEl && equIl) || (equEm && equIm) )
    {
       for(; symStart<=symCnt; symStart++ )
       {
@@ -1032,7 +1032,7 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
    int dimFirst=0, numUels;
    gdxValues_t  vals;
    gdxUelIndex_t keyInt;
-   int i=0,j=0,k=0;
+   int /*i=0,j=0,*/k=0;
    char bFileStem[GMS_SSSIZE], fileName[GMS_SSSIZE];
    int* varstage = NULL;
    int* rowstage = NULL;
@@ -1137,7 +1137,10 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
       if ( !skipStrings )
       {
          if (0==k)
-            printf("#UELs: %d\n",numUels);fflush(stdout);
+         {
+            printf("#UELs: %d\n",numUels);
+            fflush(stdout);
+         }
 
          printf("UEL Registration block %d\n",k);fflush(stdout);
          GDXSAVECALLX(bGDX[k],gdxUELRegisterRawStart(bGDX[k]));
@@ -1511,7 +1514,8 @@ int readBlock(const int numBlocks,       /** < total number of blocks n in probl
       blk->ni = blk->n0;
 
    if ( 0==blk->ni )
-	   if ( 0==actBlock )
+   {
+      if ( 0==actBlock )
        {
           printf("Zero joint variable count!\n");
 		  zjv = 1;
@@ -1521,6 +1525,7 @@ int readBlock(const int numBlocks,       /** < total number of blocks n in probl
           printf("Zero variable count for block %d!\n", actBlock);
           return 1;
        }
+   }
 
    if (!zjv)
    {
