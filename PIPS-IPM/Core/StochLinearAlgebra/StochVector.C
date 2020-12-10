@@ -3,6 +3,7 @@
 #include "VectorUtilities.h"
 #include "StochVector.h"
 #include "pipsport.h"
+#include "StochOptions.h"
 
 #include <cassert>
 #include <cstring>
@@ -2087,10 +2088,12 @@ void StochVectorBase<T>::permuteLinkingEntries(const std::vector<unsigned int>& 
 template<typename T>
 std::vector<T> StochVectorBase<T>::gatherStochVector() const
 {
-#ifdef HIERARCHICAL
-   // TODO adapt for hier approach
-//   assert( false && "TODO : implement" );
-#endif
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+   {
+      // TODO adapt for hier approach
+      // assert( false && "TODO : implement" );
+   }
+
    const SimpleVectorBase<T>& firstvec = dynamic_cast<const SimpleVectorBase<T>&>(*vec);
    const size_t nChildren = children.size();
 
@@ -2167,10 +2170,11 @@ std::vector<T> StochVectorBase<T>::gatherStochVector() const
 template<typename T>
 bool StochVectorBase<T>::isRootNodeInSync() const
 {
-#ifdef HIERARCHICAL
-   // TODO adapt for hier approach
-//   assert( false && "TODO : implement" );
-#endif
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+   {
+      // TODO adapt for hier approach
+      // assert( false && "TODO : implement" );
+   }
 
    assert(vec);
    assert(mpiComm);
@@ -2302,7 +2306,8 @@ void StochVectorBase<T>::collapseHierarchicalStructure()
 {
    if( parent == nullptr )
    {
-      appendOnlyChildToThis();   }
+      appendOnlyChildToThis();
+   }
    else
    {
 //      assert( children.size() > 0 );

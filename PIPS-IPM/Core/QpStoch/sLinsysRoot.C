@@ -21,16 +21,12 @@
 double g_scenNum;
 #endif
 
-extern double g_iterNumber;
-extern bool ipStartFound;
-
 sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
   : sLinsys(factory_, prob_, is_hierarchy_root), sparseKktBuffer(nullptr)
 {
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+    assert( is_hierarchy_root );
 
-#ifdef HIERARCHICAL
-   assert( is_hierarchy_root );
-#endif
   assert( dd!=nullptr );
   assert( prob_ );
   xDiag = nullptr;
@@ -89,9 +85,9 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
    // use sparse KKT if link structure is present
   hasSparseKkt = prob_->exploitingLinkStructure();
   allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
-#ifdef HIERARCHICAL
-  assert( allreduce_kkt );
-#endif
+
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+     assert( allreduce_kkt );
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
@@ -145,9 +141,8 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   // use sparse KKT if (enough) 2 links are present
   hasSparseKkt = prob_->exploitingLinkStructure();
   allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
-#ifdef HIERARCHICAL
-  assert( allreduce_kkt );
-#endif
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+     assert( allreduce_kkt );
 
   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;

@@ -44,10 +44,6 @@ message(STATUS "WITH_MAKETEST=${WITH_MAKETEST}")
 option(WITH_MKL_PARDISO "Use mkl_pardiso from Intel for PIPS-IPM" OFF)
 message(STATUS "WITH_MKL_PARDISO=${WITH_MKL_PARDISO}")
 
-#use mkl_pardiso solver instead of schenk solver
-option(WITH_HIERARCHICAL "Use hierarchical approach for solving" OFF)
-message(STATUS "WITH_HIERARCHICAL=${WITH_HIERARCHICAL}")
-
 #use (sparse) MUMPS solver for local Schur complement
 option(WITH_MUMPS_LEAF "Use MUMPS (if available) for (local) Schur complement at each leaf" OFF)
 message(STATUS "WITH_MUMPS_LEAF=${WITH_MUMPS_LEAF}")
@@ -55,10 +51,6 @@ message(STATUS "WITH_MUMPS_LEAF=${WITH_MUMPS_LEAF}")
 #use (sparse) MUMPS solver for global Schur complement
 option(WITH_MUMPS_ROOT "Use MUMPS (if available) for (global) Schur complement at root" OFF)
 message(STATUS "WITH_MUMPS_ROOT=${WITH_MUMPS_ROOT}")
-
-#compute local schur complement blockwise with pardiso
-option(WITH_PARDISO_BLOCKSC "Use Pardiso (if available) for comuting the Schur complement in blocks" OFF)
-message(STATUS "WITH_PARDISO_BLOCKSC=${WITH_PARDISO_BLOCKSC}")
 
 option(BUILD_GDX_SOURCE "Build GDX Source" ON)
 message(STATUS "BUILD_GDX_SOURCE=${BUILD_GDX_SOURCE}")
@@ -374,7 +366,6 @@ endif( USE_MA57 AND !HAVE_MA57 )
 ########################################
 if( USE_MA27 )
    message(STATUS "Using MA27 as linear solver")
-   set(WITH_PARDISO_BLOCKSC TRUE)
    
    set( USE_MA57 false )
    set( HAVE_MA57 false )
@@ -397,7 +388,6 @@ endif( HAVE_MA27)
 ########################################
 if( USE_MA57 )
    message(STATUS "Using MA57 as linear solver")
-   set(WITH_PARDISO_BLOCKSC TRUE)
    
    set( HAVE_MUMPS false )
    set( WITH_MUMPS_LEAF false )
@@ -443,19 +433,6 @@ if( HAVE_PARDISO )
    message( STATUS "Using Schenk PARDISO as default linear solver")
    add_definitions(-DWITH_PARDISO)
 endif(HAVE_PARDISO)
-
-if( WITH_HIERARCHICAL )
-   message(STATUS "Using Hierarchical approach")
-   add_definitions(-DHIERARCHICAL)
-   SET( WITH_PARDISO_BLOCKSC TRUE )
-endif(WITH_HIERARCHICAL)
-
-if(WITH_PARDISO_BLOCKSC)
-   message(STATUS "Blockwise Schur Complement computation enabled")
-   add_definitions( -DPARDISO_BLOCKSC)
-else(WITH_PARDISO_BLOCKSC)
-   message(STATUS "Augmented approach for Schur Complement computation")
-endif(WITH_PARDISO_BLOCKSC)
 
 ###############################################################################
 ###############################################################################

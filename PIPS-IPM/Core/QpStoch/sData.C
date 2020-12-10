@@ -8,6 +8,7 @@
 #include "mpi.h"
 
 #include "pipsport.h"
+#include "StochOptions.h"
 #include "BorderedSymMatrix.h"
 
 #include <iomanip>
@@ -1934,11 +1935,13 @@ void sData::activateLinkStructureExploitation()
    /* don't attempt to use linking structure when there actually is no linking constraints */
    if( stochNode->myl() == 0 && stochNode->mzl() == 0 )
    {
-#ifdef HIERARCHICAL
-      if( myrank == 0 )
-         std::cout << "No linking constraints found - hierarchical approach cannot be used" << "\n";
-      MPI_Abort(MPI_COMM_WORLD, -1);
-#endif
+      if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+      {
+         if( myrank == 0 )
+            std::cout << "No linking constraints found - hierarchical approach cannot be used" << "\n";
+         MPI_Abort(MPI_COMM_WORLD, -1);
+      }
+
       useLinkStructure = false;
       if( myrank == 0 )
          std::cout << "no linking constraints so no linking structure found" << "\n";
@@ -2039,14 +2042,15 @@ void sData::activateLinkStructureExploitation()
    }
 
 
-#ifndef HIERARCHICAL
-   if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
+   if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
    {
-      if( myrank == 0 )
-         std::cout << "not enough linking structure found" << "\n";
-      useLinkStructure = false;
+      if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
+      {
+         if( myrank == 0 )
+            std::cout << "not enough linking structure found" << "\n";
+         useLinkStructure = false;
+      }
    }
-#endif
 
    if( useLinkStructure )
    {

@@ -44,17 +44,18 @@ namespace pips_options
       int_options["PARDISO_NITERATIVE_REFINS_ROOT"] = -1;
 
       /// Schur Complement Computation
+#if !defined(WTIH_MUMPS_LEAF) && !defined(WITH_PARDISO)
+      bool_options["SC_COMPUTE_BLOCKWISE"] = true;
+      bool_options["PRECONDITION_DISTRIBUTED"] = false;
+#endif
+
       bool_options["SC_COMPUTE_BLOCKWISE"] = false;
       int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
 
       bool_options["HIERARCHICAL"] = false;
 
       /// PRECONDITIONERS
-#ifdef PARDISO_BLOCKSC
-      bool_options["PRECONDITION_DISTRIBUTED"] = false;
-#else
       bool_options["PRECONDITION_DISTRIBUTED"] = true;
-#endif
       bool_options["PRECONDITION_SPARSE"] = true;
 
       /// SCHUR COMPLEMENT
@@ -115,9 +116,6 @@ namespace pips_options
 
       setPresolveDefaults();
 
-#ifdef HIERARCHICAL
-      setHierarchical();
-#endif
    }
 
    void StochOptions::setPresolveDefaults()

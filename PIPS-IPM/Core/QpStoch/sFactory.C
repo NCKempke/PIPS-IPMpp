@@ -47,6 +47,7 @@
 #include "DeSymIndefSolver.h"
 
 #include "pipsport.h"
+#include "StochOptions.h"
 #include "mpi.h"
 
 #include <stdio.h>
@@ -82,38 +83,49 @@ sFactory::newLinsysLeaf(sData* prob,
 
 #if defined(WITH_MUMPS_LEAF)
    if( PIPS_MPIgetRank() == 0 && !printed )
-       std::cout << "Using MUMPS for the leaf schur complement computation - sFactory" << std::endl;
+       std::cout << "Using MUMPS for the leaf schur complement computation - sFactory\n";
+   printed = true;
    MumpsSolverLeaf* linSolver = nullptr;
    return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, linSolver);
 #endif
 
-#if defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
-   if( PIPS_MPIgetRank() == 0 && !printed )
-       std::cout << "Using Schenk PardisoSchurSolver for leaf schur complement computation - sFactory" << std::endl;
-   PardisoSchurSolver* linSolver = nullptr;
-   return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
+#if defined(WITH_PARDISO)
+   if( !pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) )
+   {
+      if( PIPS_MPIgetRank() == 0 && !printed )
+          std::cout << "Using Schenk PardisoSchurSolver for leaf schur complement computation - sFactory\n";
+      printed = true;
+      PardisoSchurSolver* linSolver = nullptr;
+      return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
+   }
 #endif
+
+
+   assert( pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) );
+   if( PIPS_MPIgetRank() == 0 && !printed )
+      std::cout << "Using blockwise Schur Complement computation - deactivating distributed preconditioner - sFactory\n";
+   pips_options::setBoolParameter("PRECONDITION_DISTRIBUTED", false);
 
 #ifdef WITH_PARDISO
    if( PIPS_MPIgetRank() == 0 && !printed )
-       std::cout << "Using Schenk Pardiso for the leaf schur complement computation - sFactory" << std::endl;
+      std::cout << "Using Schenk Pardiso for the leaf schur complement computation - sFactory\n";
    PardisoProjectSolver* s = nullptr;
 #elif defined(WITH_MKL_PARDISO)
    if( PIPS_MPIgetRank() == 0 && !printed )
-       std::cout << "Using MKL Pardiso for the leaf schur complement computation - sFactory" << std::endl;
+       std::cout << "Using MKL Pardiso for the leaf schur complement computation - sFactory\n";
    PardisoMKLSolver* s = nullptr;
 #elif defined(WITH_MA57)
    if( PIPS_MPIgetRank() == 0 && !printed )
-      std::cout << "Using MA57 for the blocked leaf schur complement computation - sFactory" << std::endl;
+      std::cout << "Using MA57 for the blocked leaf schur complement computation - sFactory\n";
    Ma57Solver* s = nullptr;
 #elif defined(WITH_MA27)
    if( PIPS_MPIgetRank() == 0 && !printed )
-      std::cout << "Using M27 for the blocked leaf schur complement computation - sFactory" << std::endl;
+      std::cout << "Using M27 for the blocked leaf schur complement computation - sFactory\n";
    Ma27Solver* s = nullptr;
 #else
    Solver* s = nullptr;
    if( PIPS_MPIgetRank() == 0 )
-      std::cerr << "ERROR, no solver available/specified..." << std::endl;
+      std::cerr << "ERROR, no solver available/specified...\n";
    MPI_Barrier(MPI_COMM_WORLD);
    MPI_Abort(MPI_COMM_WORLD, -1);
 #endif
@@ -298,12 +310,11 @@ Residuals* sFactory::makeResiduals( Data * prob_in )
 
 LinearSystem* sFactory::makeLinsys( Data * prob_in )
 {
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+      linsys = newLinsysRootHierarchical();
+   else
+      linsys = newLinsysRoot();
 
-#ifdef HIERARCHICAL
-   linsys = newLinsysRootHierarchical();
-#else
-   linsys = newLinsysRoot();
-#endif
    return linsys;
 }
 

@@ -175,13 +175,14 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
      data->activateLinkStructureExploitation();
 
   // TODO : save "old" data somewhere?
-#ifdef HIERARCHICAL
-  if( my_rank == 0 )
-     std::cout << "Using hierarchical approach!" << std::endl;
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+  {
+     if( my_rank == 0 )
+        std::cout << "Using hierarchical approach!" << std::endl;
 
-  data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
+     data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
 //  data->writeToStreamDense(std::cout);
-#endif
+  }
 
   vars.reset( dynamic_cast<sVars*>( factory->makeVariables( data.get() ) ) );
 #ifdef TIMING
@@ -230,30 +231,31 @@ template<typename FORMULATION, typename IPMSOLVER>
 void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
 {
 
-//   data->writeToStreamDense(std::cout);
   if( my_rank == 0 )
      std::cout << "solving ...\n";
 
-  // TODO : use unlifted data....
   if( my_rank == 0 )
   {
-#ifndef HIERARCHICAL
-     std::cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
-	       << " equality constraints, " << data->getLocalmz() << " inequality constraints.\n";
 
-    const int nscens = data->children.size();
-    if( nscens )
-    {
-       std::cout << "2nd stage " << data->children[0]->getLocalnx() << " variables, "
-             << data->children[0]->getLocalmy() << " equality constraints, "
-             << data->children[0]->getLocalmz() << " inequality constraints.\n";
+     // TODO : use unlifted data....
+     if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
+     {
+        std::cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
+	             << " equality constraints, " << data->getLocalmz() << " inequality constraints.\n";
 
-       std::cout << nscens << " scenarios." << "\n";
-       std::cout << "Total " << data->getLocalnx() + nscens * data->children[0]->getLocalnx() << " variables, "
-             << data->getLocalmy() + nscens * data->children[0]->getLocalmy()  << " equality constraints, "
-             << data->getLocalmz() + nscens * data->children[0]->getLocalmz() << " inequality constraints.\n";
-    }
-#endif
+        const int nscens = data->children.size();
+        if( nscens )
+        {
+           std::cout << "2nd stage " << data->children[0]->getLocalnx() << " variables, "
+                 << data->children[0]->getLocalmy() << " equality constraints, "
+                 << data->children[0]->getLocalmz() << " inequality constraints.\n";
+
+           std::cout << nscens << " scenarios." << "\n";
+           std::cout << "Total " << data->getLocalnx() + nscens * data->children[0]->getLocalnx() << " variables, "
+                 << data->getLocalmy() + nscens * data->children[0]->getLocalmy()  << " equality constraints, "
+                 << data->getLocalmz() + nscens * data->children[0]->getLocalmz() << " inequality constraints.\n";
+        }
+     }
   }
 #ifdef TIMING
   double tmElapsed=MPI_Wtime();
@@ -598,9 +600,10 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   MPI_Barrier(comm);
   const double t0_postsolve = MPI_Wtime();
 
-#ifdef HIERARCHICAL
-  factory->collapseHierarchicalTree();
-#endif
+
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+     factory->collapseHierarchicalTree();
+
   dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
   factory->data = origData.get();
 

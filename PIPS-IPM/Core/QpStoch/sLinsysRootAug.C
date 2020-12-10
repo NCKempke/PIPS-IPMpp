@@ -35,6 +35,7 @@
 #endif
 
 #include "pipsport.h"
+#include "StochOptions.h"
 #include <unistd.h>
 #include "math.h"
 
@@ -57,9 +58,10 @@ static void biCGStabCommunicateStatus(int flag, int it)
 sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
   : sLinsysRoot(factory_, prob_), CtDC(nullptr)
 { 
-#ifdef HIERARCHICAL
-   assert( false && "should not end up here");
-#endif
+
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+      assert( false && "should not end up here");
+
    assert(locmyl >= 0 && locmzl >= 0);
 
    problems_blocked[0].reset( createKKT(prob_) );
@@ -81,11 +83,10 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* rhs_)
   : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
 { 
-#ifdef HIERARCHICAL
-   assert(locmyl >= 0 && locmzl >= 0);
-#else
-   assert(locmyl == 0 && locmzl == 0);
-#endif
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+      assert(locmyl >= 0 && locmzl >= 0);
+   else
+      assert(locmyl == 0 && locmzl == 0);
 
    problems_blocked[0].reset( createKKT(prob_) );
    kkt = problems_blocked[0].get();

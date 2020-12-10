@@ -14,34 +14,22 @@
 #include "pipsport.h"
 #include "omp.h"
 
-extern int gOuterIterRefin;
-
 sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
   : QpGenLinsys(), nThreads(PIPSgetnOMPthreads()),
-        blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-        is_hierarchy_root(is_hierarchy_root)
+    computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
+     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
+     is_hierarchy_root(is_hierarchy_root)
 {
 
-#ifdef HIERARCHICAL
-  assert( is_hierarchy_root );
-#endif
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+    assert( is_hierarchy_root );
 
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
   factory = factory_;
 
-#ifdef PARDISO_BLOCKSC
-  computeBlockwiseSC = true;
-#else
-  computeBlockwiseSC = false;
-#endif
-  // compute schur complement blcokwise when neiher MUMPS nor PARDISO are available
-#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
-   computeBlockwiseSC = true;
-#endif
-
-   if( computeBlockwiseSC )
-      if( PIPS_MPIgetRank() == 0 )
-         std::cout << "Using " << nThreads << " solvers in parallel for blockwise SC computation - sLinsys" << std::endl;
+  if( computeBlockwiseSC )
+     if( PIPS_MPIgetRank() == 0 )
+        std::cout << "Using " << nThreads << " solvers in parallel for blockwise SC computation - sLinsys" << std::endl;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
@@ -81,6 +69,7 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_)
   : QpGenLinsys(), nThreads(PIPSgetnOMPthreads()),
+    computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     is_hierarchy_root(false)
 {
@@ -88,15 +77,6 @@ sLinsys::sLinsys(sFactory* factory_,
 
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
   factory = factory_;
-#ifdef PARDISO_BLOCKSC
-  computeBlockwiseSC = true;
-#else
-  computeBlockwiseSC = false;
-#endif
-  // compute schur complement blockwise when neither MUMPS nor PARDISO are available
-#if !defined(WTIH_MUMPS_ROOT) && !defined(WITH_PARDISO)
-   computeBlockwiseSC = true;
-#endif
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;

@@ -69,7 +69,7 @@ class sLinsys : public QpGenLinsys
   int nThreads;
 
   /* members for blockwise schur complement computation */
-  bool computeBlockwiseSC;
+  bool computeBlockwiseSC{false};
 
   int blocksizemax;
   double* colsBlockDense{};
