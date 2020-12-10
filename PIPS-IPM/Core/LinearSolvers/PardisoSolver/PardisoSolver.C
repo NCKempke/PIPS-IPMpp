@@ -7,8 +7,6 @@
 #include <iomanip>
 #include <algorithm>
 
-using namespace std;
-
 #include "PardisoSolver.h"
 #include "SparseStorage.h"
 #include "SparseSymMatrix.h"
@@ -21,37 +19,8 @@ using namespace std;
 
 #include "mpi.h"
 
-#ifdef HAVE_GETRUSAGE
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
-#endif
-
-extern int gOoqpPrintLevel;
-
-#ifdef WITH_MKL_PARDISO
-#include "mkl_pardiso.h"
-#include "mkl_types.h"
-#else
-extern "C" void pardisoinit (void   *, int    *,   int *, int *, double *, int *);
-extern "C" void pardiso     (void   *, int    *,   int *, int *,    int *, int *, 
-                  double *, int    *,    int *, int *,   int *, int *,
-                     int *, double *, double *, int *, double *);
-
-
-extern "C" void pardiso_chkmatrix  (int *, int *, double *, int *, int *, int *);
-extern "C" void pardiso_chkvec     (int *, int *, double *, int *);
-extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
-                           double *, int *);
-#endif
-
 PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
 {
-#ifdef TIMING
-   const int myRank = PIPS_MPIgetRank();
-   if( myRank == 0 )
-	  std::cout << "PardisoSolver::PardisoSolver (sparse input)" << std::endl;
-#endif
   Msys = sgm;
   Mdsys = nullptr;
   n = sgm->size();
@@ -65,12 +34,7 @@ PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
   sz_sol = 0;
 
   first = true;
-  nvec=new double[n];
-
-#ifndef WITH_MKL_PARDISO
-  num_threads = PIPSgetnOMPthreads();
-  solver = 0; /* sparse direct solver */
-#endif
+  nvec = new double[n];
 
   mtype = -2;
   error = 0;
@@ -84,11 +48,6 @@ PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
 
 PardisoSolver::PardisoSolver( DenseSymMatrix * m )
 {
-#ifdef TIMING
-   const int myRank = PIPS_MPIgetRank();
-   if( myRank == 0 )
-	  std::cout << "PardisoSolver created (dense input)" << std::endl;
-#endif
   Msys = nullptr;
   Mdsys = m;
   n = m->size();
@@ -103,12 +62,7 @@ PardisoSolver::PardisoSolver( DenseSymMatrix * m )
   sz_sol = 0;
 
   first = true;
-  nvec=new double[n];
-
-#ifndef WITH_MKL_PARDISO
-  num_threads = PIPSgetnOMPthreads();
-  solver = 0; /* sparse direct solver */
-#endif
+  nvec = new double[n];
 
   mtype = -2;
   error = 0;
@@ -119,26 +73,36 @@ PardisoSolver::PardisoSolver( DenseSymMatrix * m )
   msglvl = 0; // messaging level (0 = no output, 1 = statistical info to screen)
 }
 
-void PardisoSolver::firstCall()
+bool PardisoSolver::iparmUnchanged() const
 {
-   iparm[0] = 0;
+   bool same = true;
+   bool print = true;
 
-#ifndef WITH_MKL_PARDISO
-   int error = 0;
+   std::vector<int> iparm_compare(64, 0);
+   setIparm( iparm_compare.data() );
 
-   pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
+   static const std::vector<int> to_compare{ 1, 7, 10, 12 };
 
-   if( error != 0 )
+   for(int i = 0; i < 64; ++i)
    {
-      std::cout << "PardisoSolver ERROR during pardisoinit:" << error << "." << std::endl;
-      assert(false);
+      // if entry should be compared
+      if(std::find(to_compare.begin(), to_compare.end(), i) != to_compare.end())
+      {
+         if(iparm[i] != iparm_compare[i])
+         {
+            if(print)
+               std::cout << "ERROR - PardisoSolver: elements in iparm changed at " << i << ": "
+                  << iparm[i] << " != " << iparm_compare[i] << "(new)" << std::endl;
+            same = false;
+         }
+      }
+
    }
-#else
-   pardisoinit(pt, &mtype, iparm);
-#endif
+   return same;
+}
 
-   setIparm(iparm);
-
+void PardisoSolver::initSystem()
+{
    if( Msys )
    {
       //get the matrix in upper triangular
@@ -231,69 +195,6 @@ void PardisoSolver::firstCall()
 
 } 
 
-
-/*
- * iparm[30] has to be set depending on the circumstances!
- */
-void PardisoSolver::setIparm(int* iparm){
-
-   iparm[1] = 2; // 2 is for metis, 0 for min degree
-
-#ifndef WITH_MKL_PARDISO
-   iparm[2] = num_threads;
-   iparm[7] = 2; // max number of iterative refinements
-   iparm[10] = 1; // scaling for IPM KKT; used with IPARM(13)=1 or 2
-   iparm[12] = 2; // improved accuracy for IPM KKT; used with IPARM(11)=1;
-                  // if needed, use 2 for advanced matchings and higher accuracy.
-
-#else
-   /* From INTEL (instead of iparm[2] which is not defined there):
-   *  You can control the parallel execution of the solver by explicitly setting the MKL_NUM_THREADS environment variable.
-   *  If fewer OpenMP threads are available than specified, the execution may slow down instead of speeding up.
-   *  If MKL_NUM_THREADS is not defined, then the solver uses all available processors.
-   */
-   iparm[7] = 0; // mkl runs into numerical problems when setting iparm[7] too high
-   iparm[10] = 1; // default, scaling for IPM KKT used with either mtype=11/13 or mtype=-2/-4/6 and iparm[12]=1
-   iparm[12] = 1; // 0 disable matching, 1 enable matching, no other settings
-
-   #ifndef NDEBUG
-   // enable matrix checker - mkl pardiso has no chkmatrix method
-   iparm[26] = 1;
-   #endif
-#endif
-
-}
-
-bool PardisoSolver::iparmUnchanged()
-{
-
-   bool same = true;
-   bool print = true;
-
-   int iparm_compare[64];
-   setIparm(iparm_compare);
-
-   static const int arr[] = { 1, 7, 10, 12 };
-   vector<int> to_compare(arr, arr + sizeof(arr) / sizeof(arr[0]) );
-
-   for(int i = 0; i < 64; ++i)
-   {
-      // if entry should be compared
-      if(std::find(to_compare.begin(), to_compare.end(), i) != to_compare.end())
-      {
-         if(iparm[i] != iparm_compare[i])
-         {
-            if(print)
-               std::cout << "ERROR - PardisoSolver: elements in iparm changed at " << i << ": "
-                  << iparm[i] << " != " << iparm_compare[i] << "(new)" << std::endl;
-            same = false;
-         }
-      }
-
-   }
-   return same;
-}
- 
 void PardisoSolver::diagonalChanged( int /* idiag */, int /* extent */ )
 {
   this->matrixChanged();
@@ -365,22 +266,16 @@ void PardisoSolver::matrixChanged()
 
    assert(iparmUnchanged());
 
-     pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr, &nrhs,
-         iparm, &msglvl, nullptr, nullptr, &error
-#ifndef WITH_MKL_PARDISO
-         ,dparm
-#endif
-   );
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
+         &nrhs, iparm, &msglvl, nullptr, nullptr, &error);
 
    if( error != 0 )
    {
       printf("PardisoSolver - ERROR during factorization: %d\n", error);
-      assert(false);
+      MPI_Abort(MPI_COMM_WORLD, -1);
    }
-
 }
 
-extern int gLackOfAccuracy; 
 void PardisoSolver::solve( OoqpVector& rhs_in )
 {
    SimpleVector & rhs = dynamic_cast<SimpleVector &>(rhs_in);
@@ -395,12 +290,8 @@ void PardisoSolver::solve( OoqpVector& rhs_in )
 
    assert(iparmUnchanged());
 
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM,
-         nullptr, &nrhs, iparm, &msglvl, rhs.elements(), sol_local, &error
-#ifndef WITH_MKL_PARDISO
-         ,dparm
-#endif
-   );
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
+         &nrhs, iparm, &msglvl, rhs.elements(), sol_local, &error);
 
    if( error != 0 )
    {
@@ -430,26 +321,18 @@ void PardisoSolver::solve( GenMatrix& rhs_in )
   iparm[30] = 0;
   assert(iparmUnchanged());
 
-  pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-	   &n, M, krowM, jcolM, 
-	   nullptr, &nrhs ,
-	   iparm, &msglvl, 
-	   &rhs[0][0], sol,
-	   &error
-#ifndef WITH_MKL_PARDISO
-	   , dparm
-#endif
-  );
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
+         &nrhs, iparm, &msglvl, &rhs[0][0], sol, &error);
 
-  if ( error != 0) {
+  if ( error != 0)
     printf ("PardisoSolver - ERROR during solve: %d", error ); 
-  }
+
   memcpy(&rhs[0][0], sol, sz_sol*sizeof(double));
 }
 
 void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
 {
-  std::cout << "PardisoSolver - using sparse rhs but might lead to numerical troubles .. " << std::endl;
+  std::cout << "PardisoSolver - using sparse rhs but might lead to numerical troubles .. \n";
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
 
   int nrows,ncols; rhs.getSize(ncols,nrows);
@@ -466,20 +349,12 @@ void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
 
    nrhs = ncols;
 
-   pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-	   &n, M, krowM, jcolM, 
-	   colSparsity, &nrhs,
-	   iparm, &msglvl, 
-	   &rhs[0][0], sol,
-	   &error
-#ifndef WITH_MKL_PARDISO
-	   , dparm
-#endif
-  );
- 
-  if ( error != 0) {
-    printf ("PardisoSolver - ERROR during solve: %d", error ); 
-  }
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM,
+         colSparsity, &nrhs, iparm, &msglvl, &rhs[0][0], sol, &error);
+
+  if ( error != 0)
+    printf ("PardisoSolver - ERROR during solve: %d", error );
+
   memcpy(&rhs[0][0], sol, sz_sol*sizeof(double));
 }
 
@@ -532,12 +407,8 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* colSparsity )
 
    assert(pt); assert(M); assert(krowM); assert(jcolM); assert(rhss); assert(sol);
 
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
-         &nrhss_local, iparm, &msglvl, rhss, sol, &error
-#ifndef WITH_MKL_PARDISO
-         , dparm
-#endif
-   );
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
+         &nrhss_local, iparm, &msglvl, rhss, sol, &error);
 
    if( error != 0 )
    {
@@ -548,28 +419,11 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* colSparsity )
    memcpy(rhss, sol, n * nrhss * sizeof(double));
 }
 
-
 PardisoSolver::~PardisoSolver()
 {
-
-  phase = -1; // release internal memory
-  nrhs = 1;
-
-  pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-	   &n, nullptr, krowM, jcolM, nullptr, &nrhs,
-	   iparm, &msglvl, nullptr, nullptr, &error
-#ifndef WITH_MKL_PARDISO
-	   , dparm
-#endif
-  );
-
-
-  if ( error != 0) {
-    printf ("PardisoSolver - ERROR in pardiso release: %d", error ); 
-  }
-  delete[] jcolM;
-  delete[] krowM;
-  delete[] M;
-  delete[] nvec;
-  if(sol) delete[] sol;
+   delete[] jcolM;
+   delete[] krowM;
+   delete[] M;
+   delete[] nvec;
+   if(sol) delete[] sol;
 }

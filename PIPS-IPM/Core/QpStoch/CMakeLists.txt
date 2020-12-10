@@ -16,10 +16,9 @@ set(LIBRARY_OOQPSTOCH_SOURCES sFactory.C
    StochOptions.C
    sResiduals.C
    sTree.C
-#   sTreeImpl.C
    sTreeCallbacks.C
-#   sInterfaceCallbacks.C)
 )
+
 if(HAVE_MUMPS AND WITH_MUMPS_LEAF)
    set(LIBRARY_OOQPSTOCH_SOURCES ${LIBRARY_OOQPSTOCH_SOURCES}
    sFactoryAugMumpsLeaf.C

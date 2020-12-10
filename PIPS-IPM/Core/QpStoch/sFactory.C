@@ -5,8 +5,6 @@
 #include "sFactory.h"
 
 #include "sData.h"
-//#include "stochasticInput.hpp"
-//#include "sTreeImpl.h"
 #include "sTreeCallbacks.h"
 #include "StochInputTree.h"
 #include "StochSymMatrix.h"
@@ -28,7 +26,14 @@
 #include "Ma27Solver.h"
 #endif
 
-#include "PardisoSolver.h"
+#ifdef WITH_PARDISO
+#include "PardisoProjectSolver.h"
+#endif
+
+#ifdef WITH_MKL_PARDISO
+#include "PardisoMKLSolver.h"
+#endif
+
 #include "DeSymIndefSolver.h"
 
 #include "pipsport.h"
@@ -36,19 +41,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-
-//sFactory::sFactory( stochasticInput& in, MPI_Comm comm)
-//  : QpGen(0,0,0), tree( new sTreeImpl(in, comm) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
-//{
-//  assert( 0 && " Not used currently " );
-//   //tree->computeGlobalSizes();
-//   //tree->GetGlobalSizes(nx, my, mz);
-//   //decide how the CPUs are assigned
-//   tree->assignProcesses(comm);
-//   tree->loadLocalSizes();
-//}
-
 
 sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
   : QpGen(0,0,0), tree( new sTreeCallbacks(inputTree) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
@@ -78,8 +70,12 @@ sFactory::newLinsysLeaf(sData* prob,
    static bool printed = false;
 #ifdef WITH_PARDISO
    if( PIPS_MPIgetRank() == 0 && !printed )
-       std::cout << "Using Pardiso for the leaf schur complement computation - sFactory" << std::endl;
-   PardisoSolver* s = nullptr;
+       std::cout << "Using Schenk Pardiso for the leaf schur complement computation - sFactory" << std::endl;
+   PardisoProjectSolver* s = nullptr;
+#elif defined(WITH_MKL_PARDISO)
+   if( PIPS_MPIgetRank() == 0 && !printed )
+       std::cout << "Using MKL Pardiso for the leaf schur complement computation - sFactory" << std::endl;
+   PardisoMKLSolver* s = nullptr;
 #elif defined(WITH_MA57)
    if( PIPS_MPIgetRank() == 0 && !printed )
       std::cout << "Using MA57 for the blocked leaf schur complement computation - sFactory" << std::endl;

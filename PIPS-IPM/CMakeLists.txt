@@ -1,4 +1,3 @@
-#add_definitions(-DTIMING -DSTOCH_TESTING) # timing output
 include_directories(Core/Abstract Core/Vector Core/Utilities Core/QpSolvers Core/QpPreprocess Core/QpGen
   Core/SparseLinearAlgebra Core/DenseLinearAlgebra Core/Readers
   Core/LinearSolvers/Ma27Solver Core/LinearSolvers/Ma57Solver Core/LinearSolvers/Mc30Scaler Core/LinearSolvers/Preconditioners
@@ -10,8 +9,8 @@ set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}")
 
 add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
 target_link_libraries(pipsipmCallbackExample PRIVATE
-   ooqpstoch ooqpstochla ooqpgondziostoch ooqpqpscaler ooqpequistochscaler
-   ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
+   ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
+   ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqpstochpresolver
 )
   
 if (BUILD_GDX_SOURCE)
@@ -61,12 +60,12 @@ if (BUILD_GDX_SOURCE)
    target_link_libraries(gmspips PRIVATE
        statgdx
        ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
-       ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
+       ooqpgensparse ooqpbase ooqpsparse ooqpdense ooqpqpstochpresolver OpenMP::OpenMP_CXX
    )
        
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c)
-   target_include_directories(gmschk PUBLIC Drivers/statgdx Drivers/gmspips/)
-   target_link_libraries(gmschk PRIVATE dl statgdx)
+   target_include_directories(gmschk PRIVATE Drivers/statgdx Drivers/gmspips/)
+   target_link_libraries(gmschk PRIVATE statgdx gfortran dl )
 else()
    set(GAMSDIR Drivers/gams)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)
@@ -74,7 +73,7 @@ else()
    target_include_directories(gmspips PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
    target_link_libraries(gmspips PRIVATE
        ooqpstoch ooqpstochla ooqpgondziostoch ooqpequistochscaler
-       ooqpgensparse  ooqpbase ooqpsparse ooqpdense ooqpqppresolver ooqpqpstochpresolver
+       ooqpgensparse  ooqpbase ooqpsparse ooqpdense ooqpqpstochpresolver OpenMP::OpenMP_CXX
    )
    
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)

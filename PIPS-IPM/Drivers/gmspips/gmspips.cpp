@@ -399,7 +399,7 @@ int main(int argc, char ** argv)
 
    double objective = 0.0;
 
-	if (stepDiffLp)
+	if( stepDiffLp )
 	{
 	   pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 

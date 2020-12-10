@@ -6,34 +6,18 @@
 #define PARDISOLINSYS_H
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
-#include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
-#include "SparseStorage.h"
 #include "DenseSymMatrix.h"
 #include "pipsport.h"
 
 #include <map>
 
-
-#ifndef FNAME
-#ifndef __bg__
-#define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
-#endif
-
-
 /** implements the linear solver class using the Pardiso solver
  */
 
 class PardisoSolver : public DoubleLinearSolver {
-private:
-  PardisoSolver() {};
 
- public:
-  virtual void firstCall();
+public:
+  virtual void firstCall() = 0;
 
   /** sets mStorage to refer to the argument sgm */
   PardisoSolver( SparseSymMatrix * sgm );
@@ -47,16 +31,17 @@ private:
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
   void solve( GenMatrix& rhs, int *colSparsity);
 
- // virtual void Lsolve( OoqpVector& x );
- // virtual void Dsolve( OoqpVector& x );
- // virtual void Ltsolve( OoqpVector& x );
+protected:
+  virtual void setIparm(int* iparm) const = 0;
+  virtual void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
+        int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error) = 0;
 
- private:
-  //Helper functions for when the input is a dense matrix
-  void setIparm(int* iparm);
-  bool iparmUnchanged();
+  void initSystem();
+  bool iparmUnchanged() const;
 
- private:
+
+  ~PardisoSolver();
+
   SparseSymMatrix* Msys;
   DenseSymMatrix* Mdsys;
   bool first;
@@ -64,15 +49,10 @@ private:
   int iparm[64];
   int n;
 
-  int maxfct, mnum, phase, msglvl, solver, mtype;
+  int maxfct, mnum, phase, msglvl, mtype;
 
   int nrhs;
   int error;
-
-#ifndef WITH_MKL_PARDISO
-  int num_threads;
-  double dparm[64];
-#endif
 
   /** storage for the upper triangular (in row-major format) */
   int     *krowM,    *jcolM;
@@ -89,7 +69,6 @@ private:
   double* nvec; //temporary vec
   double* sol; //solution
   int sz_sol; //allocated size
-  virtual ~PardisoSolver();
 };
 
 #endif
