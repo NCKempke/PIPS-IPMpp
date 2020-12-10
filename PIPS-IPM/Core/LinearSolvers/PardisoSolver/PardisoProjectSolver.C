@@ -45,7 +45,11 @@ void PardisoProjectSolver::firstCall()
 
    int error = 0;
 
-   pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
+   // the licence file read seems to be critical..
+   #pragma omp critical
+   {
+      pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
+   }
 
    if( error != 0 )
    {
