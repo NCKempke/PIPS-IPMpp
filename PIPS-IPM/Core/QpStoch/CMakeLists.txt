@@ -1,14 +1,14 @@
 
 set(LIBRARY_OOQPSTOCH_SOURCES sFactory.C
    sFactoryAug.C
-   sFactoryAugSchurLeaf.C
-   sFactoryAugComm2SchurLeaf.C
+#   sFactoryAugSchurLeaf.C
+#   sFactoryAugComm2SchurLeaf.C
    sData.C
    sLinsys.C
    sLinsysRoot.C
    sLinsysRootAug.C
-   sLinsysRootComm2.C
-   sLinsysRootAugComm2.C
+#   sLinsysRootComm2.C
+#   sLinsysRootAugComm2.C
    sLinsysLeaf.C
    sLinsysLeafSchurSlv.C
    sVars.C
@@ -17,6 +17,7 @@ set(LIBRARY_OOQPSTOCH_SOURCES sFactory.C
    sResiduals.C
    sTree.C
    sTreeCallbacks.C
+   sLinsysRootBordered.C
 )
 
 if(HAVE_MUMPS AND WITH_MUMPS_LEAF)
@@ -25,9 +26,4 @@ if(HAVE_MUMPS AND WITH_MUMPS_LEAF)
    sLinsysLeafMumps.C)
 endif(HAVE_MUMPS AND WITH_MUMPS_LEAF)
 
-if( WITH_HIERARCHICAL )
-   set(LIBRARY_OOQPSTOCH_SOURCES ${LIBRARY_OOQPSTOCH_SOURCES}
-   sFactoryHierarchical.C
-   sLinsysRootBordered.C )
-endif( WITH_HIERARCHICAL )
 add_library(ooqpstoch STATIC ${LIBRARY_OOQPSTOCH_SOURCES})

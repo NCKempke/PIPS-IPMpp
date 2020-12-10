@@ -5,8 +5,8 @@
 #include "GondzioStochSolver.h"
 #include "GondzioStochLpSolver.h"
 #include "sFactoryAug.h"
-#include "sFactoryAugMumpsLeaf.h"
-#include "sFactoryAugSchurLeaf.h"
+//#include "sFactoryAugMumpsLeaf.h"
+//#include "sFactoryAugSchurLeaf.h"
 #endif
 #if defined(GMS_MPI)
 #include "mpi.h"
@@ -20,10 +20,6 @@
 
 #include <iostream>
 #include <fstream>
-
-#if defined(HIERARCHICAL)
-#include "sFactoryHierarchical.h"
-#endif
 
 extern "C" typedef int (*FNNZ)(void* user_data, int id, int* nnz);
 
@@ -187,7 +183,7 @@ int fmatQ(void* user_data, int id, int* krowM, int* jcolM, double* M)
 }
 
 #if defined(GMS_PIPS)
-static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, const char* paramname)
+static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname)
 {
    if( strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0 )
       scaler_type = SCALER_EQUI_STOCH;
@@ -201,6 +197,8 @@ static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve,
       presolve = true;
    else if( strcmp(paramname, "printsol") == 0 )
       printsol = true;
+   else if( strcmp(paramname, "hierarchical") == 0 )
+      hierarchical = true;
 }
 #endif
 
@@ -223,6 +221,7 @@ int main(int argc, char ** argv)
    bool stepDiffLp = false;
    bool presolve = false;
    bool printsol = false;
+   bool hierarchical = false;
 
    if ( (argc<3) || (argc>8) )
    {
@@ -241,7 +240,7 @@ int main(int argc, char ** argv)
 
 #if defined(GMS_PIPS)
    for( int i = 5; i <= argc; i++ )
-      setParams(scaler_type, stepDiffLp, presolve, printsol, argv[i - 1]);
+      setParams(scaler_type, stepDiffLp, presolve, printsol, hierarchical, argv[i - 1]);
 #endif
 
    blocks = (GMSPIPSBlockData_t**) calloc(numBlocks,sizeof(GMSPIPSBlockData_t*));
@@ -377,13 +376,21 @@ int main(int argc, char ** argv)
    if( gmsRank == 0 )
       std::cout << "Using a total of " << size << " MPI processes." << std::endl;
 
+
 #if defined(GMS_PIPS)
+   if( hierarchical )
+   {
+      if( gmsRank == 0 )
+         std::cout << "Using Hierarchical approach\n";
+      pips_options::activateHierarchialApproach();
+   }
+
    pips_options::setIntParameter("OUTER_SOLVE", 2);
    if( gmsRank == 0 )
-      std::cout << "using outer BICGSTAB" << std::endl;
+      std::cout << "Using outer BICGSTAB" << std::endl;
 
    if( gmsRank == 0 && pips_options::getIntParameter("INNER_SC_SOLVE") == 2 )
-      std::cout << "using inner BICGSTAB" << std::endl;
+      std::cout << "Using inner BICGSTAB" << std::endl;
 
    std::vector<double> primalSolVec;
    std::vector<double> dualSolEqVec;
@@ -406,21 +413,8 @@ int main(int argc, char ** argv)
 	   if( gmsRank == 0 )
 	      std::cout << "Different steplengths in primal and dual direction are used." << std::endl;
 
-#if defined(HIERARCHICAL)
-	   if( gmsRank == 0 )
-	      std::cout << "Using hierarchical approach" << std::endl;
-	   PIPSIpmInterface<sFactoryHierarchical, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
+	   PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
 	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
-#elif defined(WITH_MUMPS_LEAF)
-      PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
-#elif defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
-      PIPSIpmInterface<sFactoryAugSchurLeaf, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
-#else
-      PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
-#endif
 
 		if( gmsRank == 0 )
 		   std::cout << "PIPSIpmInterface created" << std::endl;
@@ -450,21 +444,8 @@ int main(int argc, char ** argv)
 	else
 	{
       pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", true);
-#if defined(HIERARCHICAL)
-      if( gmsRank == 0 )
-         std::cout << "Using hierarchical approach" << std::endl;
-      PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
-#elif defined(WITH_MUMPS_LEAF)
-      PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
-#elif defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
-      PIPSIpmInterface<sFactoryAugSchurLeaf, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
-#else
       PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
             scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
-#endif
 
 		if( gmsRank == 0 )
 		   cout << "PIPSIpmInterface created" << endl;

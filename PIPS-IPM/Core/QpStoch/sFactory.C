@@ -34,6 +34,16 @@
 #include "PardisoMKLSolver.h"
 #endif
 
+#ifdef WITH_MUMPS_LEAF
+#include "../LinearSolvers/MumpsSolver/MumpsSolverLeaf.h"
+#include "sLinsysLeafMumps.h"
+#endif
+
+#ifdef WITH_PARDISO
+#include "sLinsysLeafSchurSlv.h"
+#include "../LinearSolvers/PardisoSolver/PardisoSchurSolver.h"
+#endif
+
 #include "DeSymIndefSolver.h"
 
 #include "pipsport.h"
@@ -67,7 +77,23 @@ sFactory::newLinsysLeaf(sData* prob,
 			OoqpVector* dd, OoqpVector* dq,
 			OoqpVector* nomegaInv, OoqpVector* rhs)
 {
+   assert( prob );
    static bool printed = false;
+
+#if defined(WITH_MUMPS_LEAF)
+   if( PIPS_MPIgetRank() == 0 && !printed )
+       std::cout << "Using MUMPS for the leaf schur complement computation - sFactory" << std::endl;
+   MumpsSolverLeaf* linSolver = nullptr;
+   return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, linSolver);
+#endif
+
+#if defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
+   if( PIPS_MPIgetRank() == 0 && !printed )
+       std::cout << "Using Schenk PardisoSchurSolver for leaf schur complement computation - sFactory" << std::endl;
+   PardisoSchurSolver* linSolver = nullptr;
+   return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
+#endif
+
 #ifdef WITH_PARDISO
    if( PIPS_MPIgetRank() == 0 && !printed )
        std::cout << "Using Schenk Pardiso for the leaf schur complement computation - sFactory" << std::endl;

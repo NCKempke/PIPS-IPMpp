@@ -1,14 +1,10 @@
 #include "StochInputTree.h"
 #include "PIPSIpmInterface.h"
 #include "sFactoryAug.h"
-#include "sFactoryAugSchurLeaf.h"
-#include "sFactoryAugMumpsLeaf.h"
+//#include "sFactoryAugSchurLeaf.h"
+//#include "sFactoryAugMumpsLeaf.h"
 //#include "MehrotraStochSolver.h"
 #include "GondzioStochSolver.h"
-
-#ifdef HIERARCHICAL
-#include "sFactoryHierarchical.h"
-#endif
 
 #include "mpi.h"
 
@@ -575,17 +571,7 @@ int main(int argc, char ** argv) {
 
   /* use BiCGStab for outer solve */
   pips_options::setIntParameter("INNER_SC_SOLVE", 0);
-#if defined(HIERARCHICAL)
-  if( rank == 0 )
-     std::cout << "Using hierarchical approach" << std::endl;
-  PIPSIpmInterface<sFactoryHierarchical, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
-#elif defined(WITH_MUMPS_LEAF)
-  PIPSIpmInterface<sFactoryAugMumpsLeaf, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_EQUI_STOCH, PRESOLVER_NONE);
-#elif defined(WITH_PARDISO) && !defined(PARDISO_BLOCKSC)
-  PIPSIpmInterface<sFactoryAugSchurLeaf, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_EQUI_STOCH, PRESOLVER_NONE);
-#else
   PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
-#endif
 
   if( rank == 0 )
      std::cout << "PIPSIpmInterface created" << std::endl;

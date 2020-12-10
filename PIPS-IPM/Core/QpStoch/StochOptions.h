@@ -20,6 +20,8 @@
 
 namespace pips_options
 {
+   void activateHierarchialApproach();
+
    void setOptions(const std::string& opt_file);
    void setIntParameter(const std::string& identifier, int value);
    void setDoubleParameter(const std::string& identifier, double value);
@@ -37,6 +39,7 @@ namespace pips_options
       friend void setDoubleParameter(const std::string& identifier, double value);
       friend void setBoolParameter(const std::string& identifier, bool value);
       friend void pips_options::setOptions(const std::string& opt_file);
+      friend void pips_options::activateHierarchialApproach();
       friend int pips_options::getIntParameter(const std::string& identifier);
       friend double pips_options::getDoubleParameter(const std::string& identifier);
       friend bool pips_options::getBoolParameter(const std::string& identifier);
@@ -47,12 +50,18 @@ namespace pips_options
          return opt;
       }
 
+      void setHierarchical();
       void setDefaults() override;
       void setPresolveDefaults();
       StochOptions();
 
-      virtual ~StochOptions() {};
+      ~StochOptions() override = default;
    };
+
+   inline void activateHierarchialApproach()
+   {
+      StochOptions::getInstance().setHierarchical();
+   }
 
    inline void setOptions(const std::string& opt_file)
    {

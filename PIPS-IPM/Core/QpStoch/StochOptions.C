@@ -12,6 +12,16 @@
 
 namespace pips_options
 {
+   void StochOptions::setHierarchical()
+   {
+      bool_options["HIERARCHICAL"] = true;
+
+      bool_options["SC_COMPUTE_BLOCKWISE"] = true;
+      bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = true;
+      bool_options["PRECONDITION_DISTRIBUTED"] = false;
+
+   }
+
    StochOptions::StochOptions()
    {
       /* initialize base class options first (QpGenOptions) */
@@ -33,6 +43,12 @@ namespace pips_options
       int_options["PARDISO_PIVOT_PERTURBATION_ROOT"] = -1;
       int_options["PARDISO_NITERATIVE_REFINS_ROOT"] = -1;
 
+      /// Schur Complement Computation
+      bool_options["SC_COMPUTE_BLOCKWISE"] = false;
+      int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
+
+      bool_options["HIERARCHICAL"] = false;
+
       /// PRECONDITIONERS
 #ifdef PARDISO_BLOCKSC
       bool_options["PRECONDITION_DISTRIBUTED"] = false;
@@ -43,11 +59,7 @@ namespace pips_options
 
       /// SCHUR COMPLEMENT
       /** should the schur complement be allreduced to all processes or to a single one */
-#ifdef HIERARCHICAL
-      bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = true;
-#else
       bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = false;
-#endif
 
       /// GONDZIO SOLVERS
       /** should adaptive linesearch be applied in the GondzioStoch solvers - overwritten in gmspips.cpp */
@@ -73,8 +85,6 @@ namespace pips_options
       double_options["GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS"] = 1e-3;
 
       /// SOLVER CONTROLS
-
-      int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
 
       /// ERROR ABSORBTION / ITERATIVE REFINEMENT
       // controls the type of error absorbtion at the outer level of the linear system
@@ -104,6 +114,10 @@ namespace pips_options
       bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
 
       setPresolveDefaults();
+
+#ifdef HIERARCHICAL
+      setHierarchical();
+#endif
    }
 
    void StochOptions::setPresolveDefaults()

@@ -31,7 +31,7 @@ if( HAVE_MA57 )
 endif( HAVE_MA57 )
 
 #if(HAVE_MUMPS)
-#   target_compile_definitions( ooqpgensparse PUBLIC -DWITH_MA27 )
+#   target_compile_definitions( ooqpgensparse PUBLIC -DWITH_MUMPS )
 #   target_link_libraries(ooqpgensparse PRIVATE mumps_solver)
 #endif(HAVE_MUMPS)
 
