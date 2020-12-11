@@ -254,9 +254,9 @@ void PardisoIndefSolver::initPardiso()
    {
       printf("PARDISO root: using %d threads \n", iparm[2]);
       if( solve_in_parallel )
-         printf("PARDISO root: allreducing SC and solving on every process ");
+         printf("PARDISO root: allreducing SC and solving on every process \n");
       else
-         printf("PARDISO root: only rank 0 does the SC solve");
+         printf("PARDISO root: only rank 0 does the SC solve \n");
    }
 
    maxfct = 1; /* Maximum number of numerical factorizations.  */
