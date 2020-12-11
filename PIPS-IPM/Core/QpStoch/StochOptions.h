@@ -12,14 +12,35 @@
 #include "pipsport.h"
 
 #include <cassert>
-
+#include <vector>
+#include <ostream>
 /**
  * The getInstanceMethod must be specified in this BaseClass.
  * Defines default options for StochPIPS.
  */
 
+
+enum SolverType
+{
+   SOLVER_NONE = 0, SOLVER_MA27 = 1, SOLVER_MA57 = 2, SOLVER_PARDISO = 3, SOLVER_MKL_PARDISO = 4, SOLVER_MUMPS = 5
+};
+
+enum SolverTypeDense
+{
+   SOLVER_DENSE_SYM_INDEF = 0, SOLVER_DENSE_SYM_INDEF_SADDLE_POINT = 1, SOLVER_DENSE_SYM_PSD = 2
+};
+
+std::ostream& operator<<(std::ostream& os, const SolverType solver);
+std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver);
+
+
 namespace pips_options
 {
+   bool isSolverAvailable(SolverType solver);
+   SolverType getSolverRoot();
+   SolverType getSolverLeaf();
+   SolverTypeDense getSolverDense();
+
    void activateHierarchialApproach();
 
    void setOptions(const std::string& opt_file);
@@ -57,46 +78,6 @@ namespace pips_options
 
       ~StochOptions() override = default;
    };
-
-   inline void activateHierarchialApproach()
-   {
-      StochOptions::getInstance().setHierarchical();
-   }
-
-   inline void setOptions(const std::string& opt_file)
-   {
-      return StochOptions::getInstance().fillOptionsFromFile(opt_file);
-   }
-
-   inline void setIntParameter(const std::string& identifier, int value)
-   {
-      StochOptions::getInstance().setIntParam(identifier, value);
-   }
-
-   inline void setDoubleParameter(const std::string& identifier, double value)
-   {
-      StochOptions::getInstance().setDoubleParam(identifier, value);
-   }
-
-   inline void setBoolParameter(const std::string& identifier, bool value)
-   {
-      StochOptions::getInstance().setBoolParam(identifier, value);
-   }
-
-   inline int getIntParameter(const std::string& identifier)
-   {
-      return StochOptions::getInstance().getIntParam(identifier);
-   }
-
-   inline bool getBoolParameter(const std::string& identifier)
-   {
-      return StochOptions::getInstance().getBoolParam(identifier);
-   }
-
-   inline double getDoubleParameter(const std::string& identifier)
-   {
-      return StochOptions::getInstance().getDoubleParam(identifier);
-   }
 }
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_STOCHOPTIONS_H_ */

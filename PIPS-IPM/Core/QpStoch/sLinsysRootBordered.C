@@ -8,9 +8,12 @@
 #include "sLinsysRootBordered.h"
 
 #include "BorderedSymMatrix.h"
+
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
+#include "StochOptions.h"
+
 #include "sLinsysRootAug.h"
 #include "sFactory.h"
 
@@ -253,8 +256,21 @@ void sLinsysRootBordered::reduceKKT(sData* prob)
 
 DoubleLinearSolver* sLinsysRootBordered::createSolver(sData* prob, SymMatrix* kktmat_)
 {
+   const SolverTypeDense solver = pips_options::getSolverDense();
    DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
-   return new DeSymIndefSolver(kktmat);
-   //return new DeSymIndefSolver2(kktmat, locnx); // saddle point solver
-   //return new DeSymPSDSolver(kktmat);
+
+   static bool printed = false;
+   if( !printed && 0 == PIPS_MPIgetRank() )
+      std::cout << "Using LAPACK dsytrf and " << solver << " for dense border Schur complement - sLinsysRootAug\n";
+   printed = true;
+
+   if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF )
+      return new DeSymIndefSolver(kktmat);
+   else if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT )
+      return new DeSymIndefSolver2(kktmat, locnx);
+   else
+   {
+      assert( solver == SolverTypeDense::SOLVER_DENSE_SYM_PSD );
+      return new DeSymPSDSolver(kktmat);
+   }
 }

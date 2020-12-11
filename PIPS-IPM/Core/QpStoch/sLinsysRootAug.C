@@ -8,8 +8,10 @@
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
 
+#ifdef WITH_PARDISO
 #include "PardisoSolver.h"
 #include "PardisoIndefSolver.h"
+#endif
 
 #ifdef WITH_MA57
 #include "Ma57SolverRoot.h"
@@ -26,19 +28,19 @@
 #include "sData.h"
 #include "sTree.h"
 #include "BorderedSymMatrix.h"
+
+
+#include "pipsport.h"
+#include "StochOptions.h"
 #include <limits>
+#include <unistd.h>
+#include "math.h"
 
 //#define DUMPKKT
 #ifdef DUMPKKT
 #include <iostream>
 #include <fstream>
 #endif
-
-#include "pipsport.h"
-#include "StochOptions.h"
-#include <unistd.h>
-#include "math.h"
-
 #ifdef STOCH_TESTING
 extern double g_iterNumber;
 #endif
@@ -140,43 +142,63 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
 {
    const int my_rank = PIPS_MPIgetRank(mpiComm);
 
+   const SolverType solver_root = pips_options::getSolverRoot();
+   static bool printed = false;
+
    if( hasSparseKkt )
    {
       SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
-
-#ifdef WITH_MUMPS_ROOT
-      if( 0 == my_rank )
-         std::cout << "Using MUMPS for summed Schur complement - sLinsysRootAug" << "\n";
-      return new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt);
-#elif defined(WITH_PARDISO)
-      if( 0 == my_rank )
-         std::cout << "Using Pardiso for summed Schur complement - sLinsysRootAug" << "\n";
-      return new PardisoIndefSolver(kktmat, allreduce_kkt);
-#elif defined(WITH_MA57)
-      if( 0 == my_rank )
-         std::cout << "Using MA57 for summed Schur complement - sLinsysRootAug" << "\n";
-      return new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm);
-#elif defined(WITH_MA27)
-      if( 0 == my_rank )
-         std::cout << "Using MA27 for summed Schur complement - sLinsysRootAug" << "\n";
-      return new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm);
-#else
-      assert( false && "No sparse solver available for sparse Schur complement -sLinsysRootAug" );
-      return nullptr;
+      if( !printed && 0 == my_rank )
+         std::cout << "Using " << solver_root << " for summed Schur complement - sLinsysRootAug\n";
+      printed = true;
+      if( solver_root == SolverType::SOLVER_MUMPS )
+      {
+#ifdef WITH_MUMPS
+         return new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt);
 #endif
+      }
+      else if( solver_root == SolverType::SOLVER_PARDISO )
+      {
+#ifdef WITH_PARDISO
+         return new PardisoIndefSolver(kktmat, allreduce_kkt);
+#endif
+      }
+      else if( solver_root == SolverType::SOLVER_MA57 )
+      {
+#ifdef WITH_MA57
+         return new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm);
+#endif
+      }
+      else
+      {
+         assert( solver_root == SolverType::SOLVER_MA27 );
+#ifdef WITH_MA27
+         return new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm);
+#endif
+      }
    }
    else
    {
-      if( 0 == my_rank )
-         std::cout << "Using LAPACK dsytrf for dense summed Schur complement - sLinsysRootAug" << "\n";
-
+      const SolverTypeDense solver = pips_options::getSolverDense();
       DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
 
-      return new DeSymIndefSolver(kktmat);
-      //return new DeSymIndefSolver2(kktmat, locnx); // saddle point solver
-      //return new DeSymPSDSolver(kktmat);
-      //return new PardisoSolver(kktmat);
+      if( !printed && 0 == my_rank )
+         std::cout << "Using LAPACK dsytrf and " << solver << " for dense summed Schur complement - sLinsysRootAug\n";
+      printed = true;
+
+      if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF )
+         return new DeSymIndefSolver(kktmat);
+      else if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT )
+         return new DeSymIndefSolver2(kktmat, locnx);
+      else
+      {
+         assert( solver == SolverTypeDense::SOLVER_DENSE_SYM_PSD );
+         return new DeSymPSDSolver(kktmat);
+      }
    }
+
+   assert( false && "Cannot end up here.. ");
+   return nullptr;
 }
 
 #ifdef TIMING

@@ -8,14 +8,157 @@
 #include "StochOptions.h"
 
 #include <limits>
+#include <vector>
+#include <algorithm>
+
 #include "pipsdef.h"
+
+std::ostream& operator<<(std::ostream& os, const SolverType solver)
+{
+  switch(solver)
+  {
+    case SolverType::SOLVER_NONE:
+      os << "SOLVER_NONE";
+    break;
+    case SolverType::SOLVER_MA27:
+      os << "SOLVER_MA27";
+    break;
+    case SolverType::SOLVER_MA57:
+      os << "SOLVER_MA57";
+    break;
+    case SolverType::SOLVER_PARDISO:
+      os << "SOLVER_PARDISO";
+    break;
+    case SolverType::SOLVER_MKL_PARDISO:
+      os << "SOLVER_MKL_PARDISO";
+    break;
+    case SolverType::SOLVER_MUMPS:
+      os << "SOLVER_MUMPS";
+    break;
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver)
+{
+  switch(solver)
+  {
+    case SolverTypeDense::SOLVER_DENSE_SYM_INDEF:
+      os << "SOLVER_DENSE_SYM_INDEF";
+    break;
+    case SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT:
+      os << "SOLVER_DENSE_SYM_INDEF_SADDLE_POINT";
+    break;
+    case SolverTypeDense::SOLVER_DENSE_SYM_PSD:
+      os << "SOLVER_DENSE_SYM_PSD";
+    break;
+  }
+  return os;
+}
 
 namespace pips_options
 {
-   enum SolverType
-   {
-         SOLVER_DEFAULT = 0, SOLVER_MA27 = 1, SOLVER_MA57 = 2, SOLVER_PARDISO = 3, SOLVER_MKL_PARDISO = 4, SOLVER_MUMPS = 5
+   const std::vector<SolverType> solvers_available{
+   #ifdef WITH_PARDISO
+      SolverType::SOLVER_PARDISO,
+   #endif
+   #ifdef WITH_MKL_PARDISO
+      SolverType::SOLVER_MKL_PARDISO,
+   #endif
+   #ifdef WITH_MA57
+      SolverType::SOLVER_MA57,
+   #endif
+   #ifdef WITH_MA27
+      SolverType::SOLVER_MA27,
+   #endif
+   #ifdef WITH_MUMPS
+      SolverType::SOLVER_MUMPS,
+   #endif
+      SolverType::SOLVER_NONE
    };
+
+   bool isSolverAvailable(SolverType solver)
+   {
+      return std::find( solvers_available.begin(), solvers_available.end(), solver ) != solvers_available.end();
+   }
+
+   void printAvailableSolvers()
+   {
+      std::cout << "Available solvers are ";
+      for( SolverType s : solvers_available )
+      {
+         if( s != SolverType::SOLVER_NONE )
+            std::cout << s << "\t";
+      }
+      std::cout << "\n";
+   }
+
+   SolverType getSolverRoot()
+   {
+      const int solver_int = getIntParameter("LINEAR_ROOT_SOLVER");
+      if( solver_int < 0 || solver_int > 5 )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+            std::cout << "Error: unknown solver type LINEAR_ROOT_SOLVER: " << solver_int << "\n";
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      SolverType solver_root = static_cast<SolverType>(solver_int);
+      if( !isSolverAvailable(solver_root) )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+         {
+            std::cout << "Error: sprecified root solver \"" << solver_root << "\" is not available\n";
+            printAvailableSolvers();
+         }
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      return solver_root;
+   }
+
+   SolverTypeDense getSolverDense()
+   {
+      const int solver_int = getIntParameter("LINEAR_DENSE_SOLVER");
+      if( solver_int < 0 || solver_int > 2 )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+            std::cout << "Error: unknown solver type LINEAR_DENSE_SOLVER: " << solver_int << "\n";
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      SolverTypeDense solver_dense = static_cast<SolverTypeDense>(solver_int);
+      return solver_dense;
+   }
+
+   SolverType getSolverLeaf()
+   {
+      const int solver_int = getIntParameter("LINEAR_LEAF_SOLVER");
+      if( solver_int < 0 || solver_int > 5 )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+            std::cout << "Error: unknown solver type LINEAR_LEAF_SOLVER: " << solver_int << "\n";
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      SolverType solver_leaf = static_cast<SolverType>(solver_int);
+      if( !isSolverAvailable(solver_leaf) )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+         {
+            std::cout << "Error: sprecified leaf solver \"" << solver_leaf << "\" is not available\n";
+            printAvailableSolvers();
+         }
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      return solver_leaf;
+   }
 
    void StochOptions::setHierarchical()
    {
@@ -24,7 +167,6 @@ namespace pips_options
       bool_options["SC_COMPUTE_BLOCKWISE"] = true;
       bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = true;
       bool_options["PRECONDITION_DISTRIBUTED"] = false;
-
    }
 
    StochOptions::StochOptions()
@@ -39,8 +181,14 @@ namespace pips_options
    void StochOptions::setDefaults()
    {
       /// LINEAR SOLVERS
-      int_options["LINEAR_LEAF_SOLVER"] = SolverType::SOLVER_DEFAULT;
-      int_options["LINEAR_ROOT_SOLVER"] = SolverType::SOLVER_DEFAULT;
+      assert( solvers_available.size() > 1 );
+
+      const SolverType default_solver = solvers_available[0];
+
+      int_options["LINEAR_LEAF_SOLVER"] = default_solver;
+      int_options["LINEAR_ROOT_SOLVER"] = default_solver;
+
+      int_options["LINEAR_DENSE_SOLVER"] = SolverTypeDense::SOLVER_DENSE_SYM_INDEF;
 
       bool_options["PARDISO_FOR_GLOBAL_SC"] = true;
       bool_options["PARDISO_SPARSE_RHS_LEAF"] = false;
@@ -52,19 +200,22 @@ namespace pips_options
       int_options["PARDISO_NITERATIVE_REFINS_ROOT"] = -1;
 
       /// Schur Complement Computation
-#if !defined(WTIH_MUMPS_LEAF) && !defined(WITH_PARDISO)
-      bool_options["SC_COMPUTE_BLOCKWISE"] = true;
-      bool_options["PRECONDITION_DISTRIBUTED"] = false;
-#endif
-
-      bool_options["SC_COMPUTE_BLOCKWISE"] = false;
-      int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
-
-      bool_options["HIERARCHICAL"] = false;
-
       /// PRECONDITIONERS
-      bool_options["PRECONDITION_DISTRIBUTED"] = true;
+
+      if( default_solver != SolverType::SOLVER_PARDISO && default_solver != SolverType::SOLVER_MUMPS )
+      {
+         bool_options["SC_COMPUTE_BLOCKWISE"] = true;
+         bool_options["PRECONDITION_DISTRIBUTED"] = false;
+      }
+      else
+      {
+         bool_options["SC_COMPUTE_BLOCKWISE"] = false;
+         bool_options["PRECONDITION_DISTRIBUTED"] = true;
+      }
       bool_options["PRECONDITION_SPARSE"] = true;
+
+      int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
+      bool_options["HIERARCHICAL"] = false;
 
       /// SCHUR COMPLEMENT
       /** should the schur complement be allreduced to all processes or to a single one */
@@ -202,6 +353,47 @@ namespace pips_options
 
       /** should the residuals before unscaling, after unscaling before postsolve, after postsolve be printed */
       bool_options["POSTSOLVE_PRINT_RESIDS"] = true;
+   }
+
+
+   void activateHierarchialApproach()
+   {
+      StochOptions::getInstance().setHierarchical();
+   }
+
+   void setOptions(const std::string& opt_file)
+   {
+      return StochOptions::getInstance().fillOptionsFromFile(opt_file);
+   }
+
+   void setIntParameter(const std::string& identifier, int value)
+   {
+      StochOptions::getInstance().setIntParam(identifier, value);
+   }
+
+   void setDoubleParameter(const std::string& identifier, double value)
+   {
+      StochOptions::getInstance().setDoubleParam(identifier, value);
+   }
+
+   void setBoolParameter(const std::string& identifier, bool value)
+   {
+      StochOptions::getInstance().setBoolParam(identifier, value);
+   }
+
+   int getIntParameter(const std::string& identifier)
+   {
+      return StochOptions::getInstance().getIntParam(identifier);
+   }
+
+   bool getBoolParameter(const std::string& identifier)
+   {
+      return StochOptions::getInstance().getBoolParam(identifier);
+   }
+
+   double getDoubleParameter(const std::string& identifier)
+   {
+      return StochOptions::getInstance().getDoubleParam(identifier);
    }
 
 }
