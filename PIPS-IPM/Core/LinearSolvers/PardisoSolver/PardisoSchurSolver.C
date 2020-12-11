@@ -133,8 +133,11 @@ PardisoSchurSolver::PardisoSchurSolver( SparseSymMatrix * sgm )
 
   factorizationTwoLevel = factorizationTwoLevelDefault;
 
-  if( myRank == 0 )
+  static bool printed = false;
+
+  if( myRank == 0 && !printed )
   {
+     printed = true;
      printf(" using pivot perturbation 10^-%d \n", pivotPerturbationExp);
 
      printf(" using maximum of %d iterative refinements  \n", nIterativeRefins);
