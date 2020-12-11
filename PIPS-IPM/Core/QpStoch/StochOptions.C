@@ -88,7 +88,7 @@ namespace pips_options
       for( SolverType s : solvers_available )
       {
          if( s != SolverType::SOLVER_NONE )
-            std::cout << s << "\t";
+            std::cout << s << " = " << static_cast<int>(s) << "\t";
       }
       std::cout << "\n";
    }
@@ -96,10 +96,11 @@ namespace pips_options
    SolverType getSolverRoot()
    {
       const int solver_int = getIntParameter("LINEAR_ROOT_SOLVER");
-      if( solver_int < 0 || solver_int > 5 )
+      if( solver_int < 1 || solver_int > 5 )
       {
          if( PIPS_MPIgetRank() == 0 )
             std::cout << "Error: unknown solver type LINEAR_ROOT_SOLVER: " << solver_int << "\n";
+         printAvailableSolvers();
          MPI_Barrier(MPI_COMM_WORLD);
          MPI_Abort( MPI_COMM_WORLD, -1 );
       }
@@ -137,10 +138,11 @@ namespace pips_options
    SolverType getSolverLeaf()
    {
       const int solver_int = getIntParameter("LINEAR_LEAF_SOLVER");
-      if( solver_int < 0 || solver_int > 5 )
+      if( solver_int < 1 || solver_int > 5 )
       {
          if( PIPS_MPIgetRank() == 0 )
             std::cout << "Error: unknown solver type LINEAR_LEAF_SOLVER: " << solver_int << "\n";
+         printAvailableSolvers();
          MPI_Barrier(MPI_COMM_WORLD);
          MPI_Abort( MPI_COMM_WORLD, -1 );
       }

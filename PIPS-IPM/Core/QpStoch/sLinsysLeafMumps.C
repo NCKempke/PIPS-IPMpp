@@ -3,8 +3,8 @@
  *
  *      Author: bzfrehfe
  */
-#include "sLinsysLeafMumps.h"
 #include <algorithm>
+#include "sLinsysLeafMumps.h"
 #include "../LinearSolvers/MumpsSolver/MumpsSolverLeaf.h"
 
 
@@ -224,16 +224,23 @@ void sLinsysLeafMumps::addTermToSchurComplMumps(sData *prob, bool sparseSC,
    //
    //     SC +=  B^T K^-1 B
    //
+   const BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(),
+      data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
+
    for( int i = 0; i < nRuns; i++ )
    {
+
       solverMumps->solve(*schurRightMatrix_csc, i * bufferNrhs, bufferNrhs, buffer);
-      multLeftSchurComplBlocked(prob, buffer, schurRightNzColId + i * bufferNrhs, bufferNrhs, sparseSC, SC);
+      addLeftBorderTimesDenseColsToResTransp( border_left_transp, buffer, schurRightNzColId + i * bufferNrhs, mSchurRight, bufferNrhs, sparseSC, true, SC);
+
+//      multLeftSchurComplBlocked(prob, buffer, schurRightNzColId + i * bufferNrhs, bufferNrhs, sparseSC, SC);
    }
 
    if( leftoverNrhs > 0 )
    {
       solverMumps->solve(*schurRightMatrix_csc, nRuns * bufferNrhs, leftoverNrhs, buffer);
-      multLeftSchurComplBlocked(prob, buffer, schurRightNzColId + nRuns * bufferNrhs, leftoverNrhs, sparseSC, SC);
+      addLeftBorderTimesDenseColsToResTransp( border_left_transp, buffer, schurRightNzColId + nRuns * bufferNrhs, mSchurRight, leftoverNrhs, sparseSC, true, SC);
+//      multLeftSchurComplBlocked(prob, buffer, schurRightNzColId + nRuns * bufferNrhs, leftoverNrhs, sparseSC, SC);
    }
 
 

@@ -5,7 +5,6 @@
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_MumpsSolverLeaf_MumpsSolverLeafLEAF_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_MumpsSolverLeaf_MumpsSolverLeafLEAF_H_
 
-#include "dmumps_c.h"
 #include "mpi.h"
 #include "MumpsSolverBase.h"
 #include "SparseSymMatrix.h"
@@ -18,6 +17,7 @@
 class MumpsSolverLeaf : public MumpsSolverBase {
 
  public:
+  using DoubleLinearSolver::solve;
   MumpsSolverLeaf( SparseSymMatrix * sgm );
 
   ~MumpsSolverLeaf();

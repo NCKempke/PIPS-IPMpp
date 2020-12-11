@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "SimpleVector.h"
 #include "SparseGenMatrix.h"
-
+#include "dmumps_c.h"
 
 MumpsSolverLeaf::MumpsSolverLeaf( SparseSymMatrix * sgm )
  : MumpsSolverBase(sgm)

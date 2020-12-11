@@ -9,8 +9,13 @@
 #include "DeSymPSDSolver.h"
 
 #ifdef WITH_PARDISO
-#include "PardisoSolver.h"
-#include "PardisoIndefSolver.h"
+#include "PardisoProjectSolver.h"
+#include "PardisoProjectIndefSolver.h"
+#endif
+
+#ifdef WITH_MKL_PARDISO
+#include "PardisoMKLSolver.h"
+#include "PardisoMKLIndefSolver.h"
 #endif
 
 #ifdef WITH_MA57
@@ -21,7 +26,7 @@
 #include "Ma27SolverRoot.h"
 #endif
 
-#ifdef WITH_MUMPS_ROOT
+#ifdef WITH_MUMPS
 #include "MumpsSolverRoot.h"
 #endif
 
@@ -148,6 +153,7 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
    if( hasSparseKkt )
    {
       SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kktmat_);
+
       if( !printed && 0 == my_rank )
          std::cout << "Using " << solver_root << " for summed Schur complement - sLinsysRootAug\n";
       printed = true;
@@ -160,7 +166,13 @@ DoubleLinearSolver* sLinsysRootAug::createSolver(sData* prob, SymMatrix* kktmat_
       else if( solver_root == SolverType::SOLVER_PARDISO )
       {
 #ifdef WITH_PARDISO
-         return new PardisoIndefSolver(kktmat, allreduce_kkt);
+         return new PardisoProjectIndefSolver(kktmat, allreduce_kkt);
+#endif
+      }
+      else if( solver_root == SolverType::SOLVER_MKL_PARDISO )
+      {
+#ifdef WITH_MKL_PARDISO
+         return new PardisoMKLIndefSolver(kktmat, allreduce_kkt);
 #endif
       }
       else if( solver_root == SolverType::SOLVER_MA57 )

@@ -14,8 +14,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Mo
 ### TODO : this will not work cross compiler / cross platform.. G++ only
 ### TODO : introduce Wextra/pedantic -Wno-zero-as-null-pointer-const maybe
 #add_compile_options( -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual )
-set(c_flags -Wall -Wno-long-long)
-set(cxx_flags -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual -fopenmp)
+set(c_flags -Wall -Wno-long-long -fPIC)
+set(cxx_flags -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual -fopenmp -fPIC)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:C>:${c_flags}>"
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"
@@ -40,26 +40,8 @@ endif()
 option(WITH_MAKETEST "Enable 'make test'" ON)
 message(STATUS "WITH_MAKETEST=${WITH_MAKETEST}")
 
-#use mkl_pardiso solver instead of schenk solver
-option(WITH_MKL_PARDISO "Use mkl_pardiso from Intel for PIPS-IPM" OFF)
-message(STATUS "WITH_MKL_PARDISO=${WITH_MKL_PARDISO}")
-
-#use (sparse) MUMPS solver for local Schur complement
-option(WITH_MUMPS_LEAF "Use MUMPS (if available) for (local) Schur complement at each leaf" OFF)
-message(STATUS "WITH_MUMPS_LEAF=${WITH_MUMPS_LEAF}")
-
-#use (sparse) MUMPS solver for global Schur complement
-option(WITH_MUMPS_ROOT "Use MUMPS (if available) for (global) Schur complement at root" OFF)
-message(STATUS "WITH_MUMPS_ROOT=${WITH_MUMPS_ROOT}")
-
 option(BUILD_GDX_SOURCE "Build GDX Source" ON)
 message(STATUS "BUILD_GDX_SOURCE=${BUILD_GDX_SOURCE}")
-
-option(USE_MA27 "Use MA27 solver for global and local Schur complement" OFF)
-message(STATUS "USE_MA27=${USE_MA27}")
-
-option(USE_MA57 "Use MA57 solver for global and local Schur complement" OFF)
-message(STATUS "USE_MA57=${USE_MA57}")
 
 option(WITH_TIMING "Build with timing recording and reporting for PIPS-IPM" OFF)
 message(STATUS "WITH_TIMING=${WITH_TIMING}")
@@ -142,6 +124,7 @@ endif(NOT Boost_FOUND)
 ########################################
 set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdPartyLibs)
 
+set(SOLVERS_FOUND "")
 ########################################
 # MA27
 ########################################
@@ -171,6 +154,7 @@ if(MA27_LIBRARY)
       set(HAVE_MA27 FALSE)
    else(NOT MC30_LIBRARY)
       set(HAVE_MA27 TRUE)
+      set(SOLVERS_FOUND "${SOLVERS_FOUND} MA27")
       message(STATUS "MA27_LIBRARY = ${MA27_LIBRARY}")
       message(STATUS "MC30_LIBRARY = ${MC30_LIBRARY}")
       set(MA27_LIBRARY ${MA27_LIBRARY} ${MC30_LIBRARY})
@@ -210,9 +194,9 @@ if(MA57_LIBRARY)
       set(HAVE_MA57 FALSE)
    else(NOT METIS_4_LIBRARY)
       set(HAVE_MA57 TRUE)
+      set(SOLVERS_FOUND "${SOLVERS_FOUND} MA57")
       message(STATUS "MA57_LIBRARY = ${MA57_LIBRARY}")
       message(STATUS "METIS_4_LIBRARY = ${METIS_4_LIBRARY}")
-      set(MA57_LIBRARY ${MA57_LIBRARY} ${METIS_4_LIBRARY})
    endif(NOT METIS_4_LIBRARY)
 else(MA57_LIBRARY)
    set(HAVE_MA57 FALSE)
@@ -239,9 +223,9 @@ else(DEFINED ENV{PARMETIS_DIR})
    set(PARMETIS_DIR ${SHARED_DIR}/METIS)
 endif(DEFINED ENV{PARMETIS_DIR})
      
-find_library(MUMPS_D_LIBRARY libdmumps.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
-find_library(MUMPS_COMMON_LIBRARY libmumps_common.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
-find_library(MUMPS_PORD_LIBRARY libpord.a PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
+find_library(MUMPS_D_LIBRARY libdmumps.so PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
+find_library(MUMPS_COMMON_LIBRARY libmumps_common.so PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
+find_library(MUMPS_PORD_LIBRARY libpord.so PATHS ${MUMPS_DIR}/lib NO_DEFAULT_PATH)
 
 find_path(MUMPS_INCLUDE_DIR NAME dmumps_c.h HINTS ${MUMPS_DIR}/include NO_DEFAULT_PATH)
 
@@ -265,15 +249,16 @@ if( MUMPS_D_LIBRARY AND MUMPS_COMMON_LIBRARY AND MUMPS_PORD_LIBRARY AND MUMPS_IN
       set(HAVE_MUMPS FALSE)
    else( NOT PARMETIS_LIBRARY OR NOT METIS_5_LIBRARY OR NOT SCALAPACK_LIBRARIES OR NOT MUMPS_FORT_LIB )
       set(HAVE_MUMPS TRUE)
-      set(MUMPS_LIBRARY "-Wl,--start-group ${MUMPS_D_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_FORT_LIB} ${MUMPS_PORD_LIBRARY} ${SCALAPACK_LIBRARIES} ${METIS_5_LIBRARY} \
-      ${PARMETIS_LIBRARY} -Wl,--end-group")
-
+      set(SOLVERS_FOUND "${SOLVERS_FOUND} MUMPS")
+      #set(MUMPS_LIBRARY "-Wl,--start-group ${MUMPS_D_LIBRARY} ${MUMPS_COMMON_LIBRARY} ${MUMPS_FORT_LIB} ${MUMPS_PORD_LIBRARY} ${SCALAPACK_LIBRARIES} ${METIS_5_LIBRARY} \
+      #${PARMETIS_LIBRARY} -Wl,--end-group")
       message(STATUS "MUMPS_D_LIBRARY = ${MUMPS_D_LIBRARY}")
       message(STATUS "MUMPS_COMMON_LIBRARY = ${MUMPS_COMMON_LIBRARY}")
       message(STATUS "MUMPS_PORD_LIBRARY = ${MUMPS_PORD_LIBRARY}")
       message(STATUS "MUMPS_INCLUDE_DIR = ${MUMPS_INCLUDE_DIR}")
    endif( NOT PARMETIS_LIBRARY OR NOT METIS_5_LIBRARY OR NOT SCALAPACK_LIBRARIES OR NOT MUMPS_FORT_LIB )
 
+   message(STATUS "MUMPS_FORT_LIB = ${MUMPS_FORT_LIB}")
    message(STATUS "PARMETIS_LIBRARY = ${PARMETIS_LIBRARY}")
    message(STATUS "METIS_5_LIBRARY = ${METIS_5_LIBRARY}")
    message(STATUS "SCALAPACK_LIBRARIES = ${SCALAPACK_LIBRARIES}")
@@ -299,6 +284,7 @@ if(IS_DIRECTORY $ENV{MKLROOT})
       set( HAVE_MKL_PARDISO FALSE )
    else( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
       set( HAVE_MKL_PARDISO TRUE )
+      set(SOLVERS_FOUND "${SOLVERS_FOUND} MKL_PARDISO")
       set(MKL_PARDISO_LIBS "-Wl,--start-group ${MKL_INTEL_LP64_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_SEQUENTIAL_LIBRARY} -Wl,--end-group -lgfortran -lpthread -lm")
       message(STATUS "MKL_INTEL_LP64_LIBRARY = ${MKL_INTEL_LP64_LIBRARY}")
       message(STATUS "MKL_CORE_LIBRARY = ${MKL_CORE_LIBRARY}")
@@ -325,115 +311,41 @@ find_library(PARDISO_LIBRARY NAME libpardiso.so HINTS ${PARDISO_DIR})
 
 if( PARDISO_LIBRARY )
    set(HAVE_PARDISO TRUE)
+   set(SOLVERS_FOUND "${SOLVERS_FOUND} SCHENK_PARDISO")
    message( STATUS "PARDISO_LIBRARY = ${PARDISO_LIBRARY}")
 else( PARDISO_LIBRARY )
    set(HAVE_PARDISO FALSE)
    message(STATUS "Did not find Schenk PARDSIO")
 endif( PARDISO_LIBRARY )
 
+########################################
+# print solvers found or abort if none
+########################################
 if( !HAVE_MA27 AND !HAVE_MA57 AND !HAVE_MUMPS AND !HAVE_MKL_PARDISO AND !HAVE_PARDISO )
    message( FATAL_ERROR "Did not find any of the supported linear solvers - cannot build PIPSIPMpp..")
+else( !HAVE_MA27 AND !HAVE_MA57 AND !HAVE_MUMPS AND !HAVE_MKL_PARDISO AND !HAVE_PARDISO )
+   message( STATUS "Found the following solvers: ${SOLVERS_FOUND}")
 endif( !HAVE_MA27 AND !HAVE_MA57 AND !HAVE_MUMPS AND !HAVE_MKL_PARDISO AND !HAVE_PARDISO )
 
-########################################
-# check solver settings
-########################################
-if( WITH_MKL_PARDISO AND !HAVE_MKL_PARDISO )
-   message( WARNING "Specified WITH_MKL_PARDISO but did not find it - using different solver")
-   set( WITH_MKL_PARDISO FALSE )
-endif( WITH_MKL_PARDISO AND !HAVE_MKL_PARDISO )
-
-if( WITH_MUMPS_LEAF OR WITH_MUMPS_ROOT ) 
-   if( NOT HAVE_MUMPS )  
-      message( WARNING "Specified MUMPS as linear solver but did not find it - using different solver")
-      set( WITH_MUMPS_LEAF FALSE )
-      set( WITH_MUMPS_ROOT FALSE )
-   endif( NOT HAVE_MUMPS )  
-endif( WITH_MUMPS_LEAF OR WITH_MUMPS_ROOT )   
-   
-if( USE_MA27 AND !HAVE_MA27 )   
-   message( WARNING "Specified USE_MA27 but did not find it - using different solver")
-   set( USE_MA27 FALSE )
-endif( USE_MA27 AND !HAVE_MA27 )   
-
-if( USE_MA57 AND !HAVE_MA57 )   
-   message( WARNING "Specified USE_MA57 but did not find it - using different solver")
-   set( USE_MA57 FALSE )
-endif( USE_MA57 AND !HAVE_MA57 )   
-   
-########################################
-# user specified MA27
-########################################
-if( USE_MA27 )
-   message(STATUS "Using MA27 as linear solver")
-   
-   set( USE_MA57 false )
-   set( HAVE_MA57 false )
-   
-   set( HAVE_MUMPS false )
-   set( WITH_MUMPS_LEAF false )
-   set( WITH_MUMPS_ROOT false )
-   
-   set( HAVE_MKL_PARDISO false )
-   set( WITH_MKL_PARDISO false )
-   
-   set( HAVE_PARDISO false )
-endif( USE_MA27 )
 if( HAVE_MA27 )
-   add_definitions(-DWITH_MA27)
-endif( HAVE_MA27)
+   add_definitions( -DWITH_MA27 )
+endif( HAVE_MA27 )
 
-########################################
-# user specified MA57
-########################################
-if( USE_MA57 )
-   message(STATUS "Using MA57 as linear solver")
-   
-   set( HAVE_MUMPS false )
-   set( WITH_MUMPS_LEAF false )
-   set( WITH_MUMPS_ROOT false )
-   
-   set( HAVE_MKL_PARDISO false )
-   set( WITH_MKL_PARDISO false )
-   
-   set( HAVE_PARDISO false )
-endif( USE_MA57 )
 if( HAVE_MA57 )
-   add_definitions(-DWITH_MA57)
-endif( HAVE_MA57)
-########################################
-# user specified MUMPS
-########################################
-if( HAVE_MUMPS )
-   if( WITH_MUMPS_LEAF )
-      message( STATUS "Using MUMPS for leaf computations")
-      add_definitions(-DWITH_MUMPS_LEAF)
-   endif(WITH_MUMPS_LEAF)
-   if(WITH_MUMPS_ROOT)
-      message( STATUS "Using MUMPS for root computations")
-      add_definitions(-DWITH_MUMPS_ROOT)
-   endif(WITH_MUMPS_ROOT)
-   
-   if( WITH_MUMPS_LEAF AND WITH_MUMPS_ROOT )
-      set( HAVE_MKL_PARDISO false )
-      set( WITH_MKL_PARDISO false )
-      
-      set( HAVE_PARDISO false )
-   endif( WITH_MUMPS_LEAF AND WITH_MUMPS_ROOT )
-endif(HAVE_MUMPS)
+   add_definitions( -DWITH_MA57 )
+endif( HAVE_MA57 ) 
 
-if( WITH_MKL_PARDISO )
-   message( STATUS "Using MKL_PARDISO as linear solver")
-   add_definitions(-DWITH_PARDISO)
-   
-   set( HAVE_PARDISO false )
-endif( WITH_MKL_PARDISO )
+if( HAVE_MUMPS )
+   add_definitions( -DWITH_MUMPS )
+endif( HAVE_MUMPS )
+
+if( HAVE_MKL_PARDISO )
+   add_definitions( -DWITH_MKL_PARDISO )
+endif( HAVE_MKL_PARDISO )
 
 if( HAVE_PARDISO )
-   message( STATUS "Using Schenk PARDISO as default linear solver")
-   add_definitions(-DWITH_PARDISO)
-endif(HAVE_PARDISO)
-
+   add_definitions( -DWITH_PARDISO )
+endif( HAVE_PARDISO )
 ###############################################################################
 ###############################################################################
 

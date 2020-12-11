@@ -11,6 +11,10 @@
 #include "SparseGenMatrix.h"
 #include "pipsport.h"
 
+static MUMPS_INT getFortranMPIComm(MPI_Comm mpiComm_c)
+{
+   return MUMPS_INT(MPI_Comm_c2f(mpiComm_c));
+};
 
 MumpsSolverBase::MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix * sgm )
  : verbosity(defaultVerbosity), maxNiterRefinments(defaultMaxNiterRefinments)

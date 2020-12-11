@@ -17,7 +17,7 @@ MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool 
    if( solve_in_parallel )
    {
       assert( false && "TODO : MUMPS NOT AVAILABLE FOR HIERARCHICAL APPROACH !! ");
-      MPI_Abort(MPI_COMM_WORLD);
+      MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
    assert(rankMumps == rankPips);

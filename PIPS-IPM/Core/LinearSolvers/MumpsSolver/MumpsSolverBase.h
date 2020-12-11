@@ -8,8 +8,6 @@
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_MUMPSSOLVER_MUMPSSOLVERBASE_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_MUMPSSOLVER_MUMPSSOLVERBASE_H_
 
-
-
 #include "dmumps_c.h"
 #include "mpi.h"
 
@@ -18,11 +16,11 @@
 #include "OoqpVector.h"
 #include "pipsport.h"
 
+enum MumpsVerbosity{verb_mute, verb_standard, verb_high};
+
 #define ICNTL(I) icntl[(I)-1] // macro s.t. indices match documentation
 #define INFOG(I) infog[(I)-1]
 #define RINFOG(I) rinfog[(I)-1]
-
-enum MumpsVerbosity{verb_mute, verb_standard, verb_high};
 
 /** implements linear solver class that uses the MUMPS solver
  */
@@ -48,11 +46,6 @@ class MumpsSolverBase : public DoubleLinearSolver {
   static constexpr int maxNreallocs = 5;
 
  protected:
-
-  static MUMPS_INT getFortranMPIComm(MPI_Comm mpiComm_c)
-  {
-     return MUMPS_INT(MPI_Comm_c2f(mpiComm_c));
-  };
 
   void setUpMpiData(MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c);
   void setUpMumps();

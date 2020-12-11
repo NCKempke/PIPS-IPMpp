@@ -26,9 +26,6 @@ class PardisoSchurSolver : public DoubleLinearSolver {
  constexpr static bool factorizationTwoLevelDefault = true;
 
 
-protected:
-  PardisoSchurSolver() {};
-
  public:
   virtual void firstCall(); //first factorization call
   void firstSolveCall(SparseGenMatrix& R,
@@ -46,7 +43,7 @@ protected:
   virtual void matrixChanged();
 
   using DoubleLinearSolver::solve;
-  void solve( OoqpVector& rhs ) override;
+  virtual void solve( OoqpVector& rhs ) = 0;
   void solve( GenMatrix& rhs) override;
 
   /** Functions specific to the Schur approach. The last argument is the Schur first
@@ -73,21 +70,16 @@ protected:
             SparseSymMatrix& SC);
 
  protected:
-  SparseSymMatrix* Msys; // this is the (1,1) block in the augmented system
-  bool first;
-  bool firstSolve;
+
+  SparseSymMatrix* Msys{}; // this is the (1,1) block in the augmented system
+  bool first{true};
+  bool firstSolve{true};
   void  *pt[64];
   int iparm[64];
-  bool useSparseRhs;
+  bool useSparseRhs{true};
   int symbFactorInterval;
 
-
-#ifndef WITH_MKL_PARDISO
-  int num_threads;
-  double dparm[64];
-#endif
-
-  int* shrinked2orgSC;
+  int* shrinked2orgSC{};
 
   int pivotPerturbationExp; // 10^-exp
   int nIterativeRefins;
@@ -95,55 +87,45 @@ protected:
   bool factorizationTwoLevel;
 
   /* pardiso params */
-  int maxfct, mnum, phase, msglvl, solver, mtype, nrhs;
+  int maxfct{1};
+  int mnum{1};
+  int phase{0};
+  int msglvl{0};
+  int mtype{-2};
+  int nrhs{1};
 
   /** dimension of the PARDISO augmented system */
-  int n;
+  int n{-1};
   /** dimension of the Schur complement (# of rhs) */
-  int nSC;
+  int nSC{-1};
   /** number of nonzeros in the PARDISO augmented matrix */
-  int nnz;
+  int nnz{-1};
   /** storage for the upper triangular (in row-major format) */
-  int *rowptrAug, *colidxAug;
-  double *eltsAug;
+  int *rowptrAug{};
+  int *colidxAug{};
+  double *eltsAug{};
   /** mapping from from the diagonals of the PIPS linear systems to
       the diagonal elements of the (1,1) block  in the augmented system */
   map<int,int> diagMap;
 
   //temporary vector of size n
-  double* nvec;
-  double* nvec2;
-  int nvec_size; // to be save
+  double* nvec{};
+  double* nvec2{};
+  int nvec_size{-1}; // to be save
 
-
-  void setIparm(int* iparm);
+  virtual void initPardiso() = 0;
+  virtual void setIparm(int* iparm) const = 0;
   bool iparmUnchanged();
 
-  virtual void computeSC(
-            int nSCO,
-            /*const*/ SparseGenMatrix& R,
-            /*const*/ SparseGenMatrix& A,
-            /*const*/ SparseGenMatrix& C,
-            /*const*/ SparseGenMatrix& F,
-            /*const*/ SparseGenMatrix& G,
-            int*& rowptrSC,
-            int*& colidxSC,
-            double*& eltsSC
-  );
+  virtual void computeSC(int nSCO,
+      /*const*/SparseGenMatrix &R,
+      /*const*/SparseGenMatrix &A,
+      /*const*/SparseGenMatrix &C,
+      /*const*/SparseGenMatrix &F,
+      /*const*/SparseGenMatrix &G, int *&rowptrSC, int *&colidxSC,
+            double *&eltsSC) = 0;
 
-  virtual ~PardisoSchurSolver();
-};
-
-class PardisoSchur32Solver : public PardisoSchurSolver
-{
- public:
-    PardisoSchur32Solver( SparseSymMatrix * sgm );
- private:
-    PardisoSchur32Solver () {};
- public:
-    virtual void firstCall(); //first factorization call
-    using PardisoSchurSolver::solve;
-    virtual void solve (OoqpVector& rhs );
+  ~PardisoSchurSolver() override;
 };
 
 #endif

@@ -62,11 +62,6 @@ void PardisoMKLSolver::setIparm(int* iparm) const
    #endif
 }
 
-void PardisoSolver::diagonalChanged( int /* idiag */, int /* extent */ )
-{
-  this->matrixChanged();
-}
-
 void PardisoMKLSolver::pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
       int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error)
 {

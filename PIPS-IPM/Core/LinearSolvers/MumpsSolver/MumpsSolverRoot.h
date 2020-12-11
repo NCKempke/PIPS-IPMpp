@@ -30,6 +30,8 @@ class MumpsSolverRoot : public MumpsSolverBase {
 
   void matrixRebuild( DoubleMatrix& matrixNew ) override;
   void matrixChanged() override;
+
+  using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
 
  private:

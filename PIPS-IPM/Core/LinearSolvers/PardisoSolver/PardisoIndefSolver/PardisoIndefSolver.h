@@ -31,34 +31,43 @@ class PardisoIndefSolver : public DoubleLinearSolver
       constexpr static bool factorizationTwoLevelDefault = true;
 
 
-      double* x; /* solution vector */
+      double* x{}; /* solution vector */
 
-      int mtype;
+      int mtype{-2};
+
 
       int n; /* size of the matrix */
 
-      int nrhs; /* Number of right hand sides. */
+      int nrhs{1}; /* Number of right hand sides. */
 
       void *pt[64];  /* Internal solver memory pointer pt */
 
       /* Pardiso control parameters. */
       int iparm[64];
-#ifndef WITH_PARDISO_SOLVER
-      double dparm[64];
-#endif
-      int maxfct, mnum, phase, msglvl, solver;
-      int* ia;
-      int* ja;
-      double* a;
-      int idum;
-      double ddum;
-      int pivotPerturbationExp; // 10^-exp
-      int nThreads;
-      int nIterativeRefins;
-      bool highAccuracy;
-      bool parallelForwardBackward;
-      bool factorizationTwoLevel;
 
+      int maxfct{1};
+      int mnum{1};
+      int phase{11};
+      int msglvl{0};
+      int* ia{};
+      int* ja{};
+      double* a{};
+      int idum{-1};
+      double ddum{-1.0};
+      int pivotPerturbationExp; // 10^-exp
+      int nIterativeRefins;
+      bool highAccuracy{highAccuracyDefault};
+      bool parallelForwardBackward {parallelForwardBackwardDefault};
+      bool factorizationTwoLevel{factorizationTwoLevelDefault};
+      bool useSparseRhs{useSparseRhsDefault};
+      bool deleteCSRpointers{false};
+      const bool solve_in_parallel;
+
+
+      virtual void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
+            int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error) = 0;
+      virtual void checkMatrix() = 0;
+      virtual void getIparm( int* iparm ) const = 0;
    public:
       PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel);
       PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel);
@@ -69,7 +78,7 @@ class PardisoIndefSolver : public DoubleLinearSolver
       using DoubleLinearSolver::solve;
       void solve ( OoqpVector& vec ) override;
       void solve ( GenMatrix& vec ) override;
-      virtual ~PardisoIndefSolver();
+      ~PardisoIndefSolver() override;
 
    private:
       void initPardiso();
@@ -78,12 +87,8 @@ class PardisoIndefSolver : public DoubleLinearSolver
       void factorizeFromDense();
       void factorize();
 
-      void setIparm(int* iparm);
       bool iparmUnchanged();
 
-      bool useSparseRhs;
-      bool deleteCSRpointers;
-      const bool solve_in_parallel;
 };
 
 #endif /* _PARDISOINDEFSOLVER_H_ */

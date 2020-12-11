@@ -47,11 +47,12 @@ class Ma57Solver;
 
 #ifdef WITH_PARDISO
 #include "PardisoProjectSolver.h"
-#include "../LinearSolvers/PardisoSolver/PardisoSchurSolver.h"
+#include "../LinearSolvers/PardisoSolver/PardisoSchurSolver/PardisoProjectSchurSolver.h"
 #endif
 
 #ifdef WITH_MKL_PARDISO
 #include "PardisoMKLSolver.h"
+#include "../LinearSolvers/PardisoSolver/PardisoSchurSolver/PardisoMKLSchurSolver.h"
 #endif
 
 #ifdef WITH_MUMPS
@@ -105,7 +106,14 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
       else if( leaf_solver == SolverType::SOLVER_PARDISO )
       {
 #ifdef WITH_PARDISO
-         PardisoSchurSolver* linSolver = nullptr;
+         PardisoProjectSchurSolver* linSolver = nullptr;
+         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
+      {
+#ifdef WITH_MKL_PARDISO
+         PardisoMKLSchurSolver* linSolver = nullptr;
          return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, linSolver);
 #endif
       }
