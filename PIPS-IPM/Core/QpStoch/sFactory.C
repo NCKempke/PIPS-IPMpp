@@ -162,6 +162,13 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
       return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, s);
 #endif
    }
+   else if( leaf_solver == SolverType::SOLVER_MUMPS )
+   {
+#ifdef WITH_MUMPS
+         MumpsSolverLeaf* linSolver = nullptr;
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, linSolver);
+#endif
+   }
 
    return nullptr;
 }

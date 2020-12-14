@@ -738,6 +738,7 @@ void sLinsysRoot::createChildren(sData *prob)
                   nomegaInvst.children[it], rhsst.children[it]);
          }
       }
+      assert( child != nullptr );
       AddChild(child);
    }
 }

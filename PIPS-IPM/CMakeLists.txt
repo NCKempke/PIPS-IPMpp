@@ -28,7 +28,7 @@ target_link_libraries(pipsipmCallbackExample
   
 if (BUILD_GDX_SOURCE)
    add_definitions(-D_P3_DllExport= -DSTDCALL= -DGDX_CALLCONV=unwanted -DLEG)
-   add_library(statgdx
+   add_library(statgdx STATIC
      Drivers/statgdx/clibtypes.cpp
      Drivers/statgdx/datastorage.cpp
      Drivers/statgdx/gdlaudit.cpp

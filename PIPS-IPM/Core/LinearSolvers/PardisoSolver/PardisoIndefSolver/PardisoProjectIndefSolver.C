@@ -74,23 +74,6 @@ void PardisoProjectIndefSolver::initPardiso()
    int error = 0;
    solver = 0; /* use sparse direct solver */
 
-   num_threads = PIPSgetnOMPthreads();
-   char* var = getenv("OMP_NUM_THREADS_PIPS_ROOT");
-   if( var != nullptr )
-   {
-      int n = -1;
-      sscanf(var, "%d", &n);
-
-      assert(n >= 1);
-
-      num_threads = n;
-   }
-
-   if( PIPS_MPIgetRank() == 0 )
-   {
-      printf("PARDISO root: using %d threads \n", iparm[2]);
-   }
-
    #pragma omp critical
    {
       pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
@@ -110,6 +93,11 @@ void PardisoProjectIndefSolver::initPardiso()
       printf("[PARDISO]: License check was successful ... \n");
 
    setIparm(iparm);
+
+   if( PIPS_MPIgetRank() == 0 )
+   {
+      printf("PARDISO root: using %d threads \n", iparm[2]);
+   }
 }
 
 void PardisoProjectIndefSolver::getIparm( int* iparm ) const

@@ -40,8 +40,11 @@ endif()
 option(WITH_MAKETEST "Enable 'make test'" ON)
 message(STATUS "WITH_MAKETEST=${WITH_MAKETEST}")
 
-option(BUILD_GDX_SOURCE "Build GDX Source" ON)
+option(BUILD_GDX_SOURCE "Build GDX Source" OFF)
 message(STATUS "BUILD_GDX_SOURCE=${BUILD_GDX_SOURCE}")
+
+option(WITH_MKL_PARDISO "Building with MKL PARDISO (if available) instead of Schenk PARDISO" OFF)
+message(STATUS "WITH_MKL_PARDISO=${WITH_MKL_PARDISO}")
 
 option(WITH_TIMING "Build with timing recording and reporting for PIPS-IPM" OFF)
 message(STATUS "WITH_TIMING=${WITH_TIMING}")
@@ -206,6 +209,7 @@ endif(MA57_LIBRARY)
 ########################################
 # MUMPS
 ########################################
+if( FALSE )
 message(STATUS "Looking for MUMPS")
 if(DEFINED ENV{MUMPS_DIR})
    set(MUMPS_DIR "$ENV{MUMPS_DIR}")
@@ -267,56 +271,69 @@ else( MUMPS_D_LIBRARY AND MUMPS_COMMON_LIBRARY AND MUMPS_PORD_LIBRARY AND MUMPS_
    set(HAVE_MUMPS FALSE)
    message(STATUS "Did not find MUMPS")
 endif( MUMPS_D_LIBRARY AND MUMPS_COMMON_LIBRARY AND MUMPS_PORD_LIBRARY AND MUMPS_INCLUDE_DIR )
-
+else( FALSE )
+   set(HAVE_MUMPS FALSE)
+endif( FALSE )
 ########################################
 # MKL_PARDISO Solver
 ########################################
-message(STATUS "Looking for MKL_PARDISO")
+if( WITH_MKL_PARDISO ) 
+   message(STATUS "Looking for MKL_PARDISO")
 
-if(IS_DIRECTORY $ENV{MKLROOT})
-   find_library(MKL_INTEL_LP64_LIBRARY NAME libmkl_intel_lp64.a HINTS $ENV{MKLROOT}/lib/intel64)
-   find_library(MKL_CORE_LIBRARY NAME libmkl_core.a HINTS $ENV{MKLROOT}/lib/intel64)
-   find_library(MKL_SEQUENTIAL_LIBRARY NAME libmkl_sequential.a HINTS $ENV{MKLROOT}/lib/intel64)
-   find_path(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
-   
-   if( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
-      message(STATUS "Did not find MKL_PARDISO" )
+   if( IS_DIRECTORY $ENV{MKLROOT} )
+      find_library(MKL_INTEL_LP64_LIBRARY NAME libmkl_intel_lp64.a HINTS $ENV{MKLROOT}/lib/intel64)
+      find_library(MKL_CORE_LIBRARY NAME libmkl_core.a HINTS $ENV{MKLROOT}/lib/intel64)
+      find_library(MKL_SEQUENTIAL_LIBRARY NAME libmkl_sequential.a HINTS $ENV{MKLROOT}/lib/intel64)
+      find_path(MKL_INCLUDE_DIR $ENV{MKLROOT}/include)
+      
+      if( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
+         message(STATUS "Did not find MKL_PARDISO" )
+         set( HAVE_MKL_PARDISO FALSE )
+      else( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
+         set( HAVE_MKL_PARDISO TRUE )
+         set(SOLVERS_FOUND "${SOLVERS_FOUND} MKL_PARDISO")
+         set(MKL_PARDISO_LIBS "-Wl,--start-group ${MKL_INTEL_LP64_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_SEQUENTIAL_LIBRARY} -Wl,--end-group -lgfortran -lpthread -lm")
+         message(STATUS "MKL_INTEL_LP64_LIBRARY = ${MKL_INTEL_LP64_LIBRARY}")
+         message(STATUS "MKL_CORE_LIBRARY = ${MKL_CORE_LIBRARY}")
+         message(STATUS "MKL_SEQUENTIAL_LIBRARY = ${MKL_SEQUENTIAL_LIBRARY}")
+         message(STATUS "MKL_INCLUDE_DIR = ${MKL_INCLUDE_DIR}")
+      endif( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
+   else( IS_DIRECTORY $ENV{MKLROOT} )
+      message( STATUS "Did not find MKL_PARDISO")
       set( HAVE_MKL_PARDISO FALSE )
-   else( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
-      set( HAVE_MKL_PARDISO TRUE )
-      set(SOLVERS_FOUND "${SOLVERS_FOUND} MKL_PARDISO")
-      set(MKL_PARDISO_LIBS "-Wl,--start-group ${MKL_INTEL_LP64_LIBRARY} ${MKL_CORE_LIBRARY} ${MKL_SEQUENTIAL_LIBRARY} -Wl,--end-group -lgfortran -lpthread -lm")
-      message(STATUS "MKL_INTEL_LP64_LIBRARY = ${MKL_INTEL_LP64_LIBRARY}")
-      message(STATUS "MKL_CORE_LIBRARY = ${MKL_CORE_LIBRARY}")
-      message(STATUS "MKL_SEQUENTIAL_LIBRARY = ${MKL_SEQUENTIAL_LIBRARY}")
-      message(STATUS "MKL_INCLUDE_DIR = ${MKL_INCLUDE_DIR}")
-   endif( !MKL_INTEL_LP64_LIBRARY OR !MKL_CORE_LIBRARY OR !MKL_SEQUENTIAL_LIBRARY OR !MKL_INCLUDE_DIR )
-else(IS_DIRECTORY $ENV{MKLROOT})
-   message( STATUS "Did not find MKL_PARDISO")
+   endif( IS_DIRECTORY $ENV{MKLROOT} )
+else( WITH_MKL_PARDISO )
+   message( STATUS "NOT looking for MKL_PARDISO")
    set( HAVE_MKL_PARDISO FALSE )
-endif(IS_DIRECTORY $ENV{MKLROOT})
-   
+endif( WITH_MKL_PARDISO )
+
 ########################################
 # Schenk PARDISO
 ########################################
-message(STATUS "Looking for Schenk PARDISO")
+if( NOT WITH_MKL_PARDISO )
+   message(STATUS "Looking for Schenk PARDISO")
 
-if(DEFINED ENV{PARDISO_DIR})
-   set(PARDISO_DIR "$ENV{PARDISO_DIR}")
-else(DEFINED ENV{PARDISO_DIR})
-   set(PARDISO_DIR ${SHARED_DIR}/PARDISO/src)
-endif(DEFINED ENV{PARDISO_DIR})
+   if(DEFINED ENV{PARDISO_DIR})
+      set(PARDISO_DIR "$ENV{PARDISO_DIR}")
+   else(DEFINED ENV{PARDISO_DIR})
+      set(PARDISO_DIR ${SHARED_DIR}/PARDISO/src)
+   endif(DEFINED ENV{PARDISO_DIR})
 
-find_library(PARDISO_LIBRARY NAME libpardiso.so HINTS ${PARDISO_DIR})
+   find_library(PARDISO_LIBRARY NAME libpardiso.so HINTS ${PARDISO_DIR})
 
-if( PARDISO_LIBRARY )
-   set(HAVE_PARDISO TRUE)
-   set(SOLVERS_FOUND "${SOLVERS_FOUND} SCHENK_PARDISO")
-   message( STATUS "PARDISO_LIBRARY = ${PARDISO_LIBRARY}")
-else( PARDISO_LIBRARY )
+   if( PARDISO_LIBRARY )
+      set(HAVE_PARDISO TRUE)
+      set(SOLVERS_FOUND "${SOLVERS_FOUND} SCHENK_PARDISO")
+      message( STATUS "PARDISO_LIBRARY = ${PARDISO_LIBRARY}")
+   else( PARDISO_LIBRARY )
+      set(HAVE_PARDISO FALSE)
+      message(STATUS "Did not find Schenk PARDSIO")
+   endif( PARDISO_LIBRARY )
+else( NOT WITH_MKL_PARDISO )
+   message(STATUS "NOT looking for Schenk PARDISO")
    set(HAVE_PARDISO FALSE)
-   message(STATUS "Did not find Schenk PARDSIO")
-endif( PARDISO_LIBRARY )
+endif( NOT WITH_MKL_PARDISO )
+   
 
 ########################################
 # print solvers found or abort if none
