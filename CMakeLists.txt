@@ -1,17 +1,25 @@
-cmake_minimum_required(VERSION 3.9)
+project(PIPSIPMpp LANGUAGES CXX C)
 
-project(PIPSIPMpp VERSION 1.0 LANGUAGES CXX C)
-
-message("Default C++ compiler flags: ${CMAKE_CXX_FLAGS}")
+cmake_minimum_required(VERSION 3.10)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
-# For debugging build, set CMAKE_BUILD_TYPE to DEBUG
-# For optimized build, set CMAKE_BUILD_TYPE to RELEASE
-# For optimized build with debug info, set CMAKE_BUILD_TYPE to RELWITHDEBINFO
-# CMAKE_BUILD_TYPE should be set at the command line or in a toolchain file
+find_package(MPI REQUIRED)
+message(STATUS "MPI_C_COMPILER=${MPI_C_COMPILER}")
+message(STATUS "MPI_C_WORKS=${MPI_C_WORKS}")
+message(STATUS "MPI_C_LIBRARIES=${MPI_C_LIBRARIES}")
+message(STATUS "MPI_C_INCLUDE_DIRS=${MPI_C_INCLUDE_DIRS}")
+message(STATUS "MPI_C_LINK_FLAGS=${MPI_C_LINK_FLAGS}")
+message(STATUS "MPI_CXX_COMPILER=${MPI_CXX_COMPILER}")
+message(STATUS "MPI_CXX_WORKS=${MPI_CXX_WORKS}")
+message(STATUS "MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
+message(STATUS "MPI_CXX_INCLUDE_DIRS=${MPI_CXX_INCLUDE_DIRS}")
+message(STATUS "MPI_CXX_LINK_FLAGS=${MPI_CXX_LINK_FLAGS}")
 
-### TODO : this will not work cross compiler / cross platform.. G++ only
+include_directories(${MPI_CXX_INCLUDE_DIRS})
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
+
 ### TODO : introduce Wextra/pedantic -Wno-zero-as-null-pointer-const maybe
 #add_compile_options( -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual )
 set(c_flags -Wall -Wno-long-long -fPIC)

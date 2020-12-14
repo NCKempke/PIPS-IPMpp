@@ -1,34 +1,54 @@
-include_directories(Core/Abstract Core/Vector Core/Utilities Core/QpSolvers Core/QpPreprocess Core/QpGen
-  Core/SparseLinearAlgebra Core/DenseLinearAlgebra Core/Readers
-  Core/LinearSolvers/Ma27Solver Core/LinearSolvers/Ma57Solver Core/LinearSolvers/Mc30Scaler Core/LinearSolvers/Preconditioners
-  Core/LinearSolvers/Ma86Solver 
-  Core/LinearSolvers/PardisoSolver/PardisoSolver 
-  Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
-  Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
-  Core/LinearSolvers/BiCGStabSolver Core/LinearSolvers/MumpsSolver)
-include_directories(Core/StochLinearAlgebra Core/QpStoch)
-include_directories( ${MUMPS_INCLUDE_DIR} )
+#add_definitions(-DTIMING -DSTOCH_TESTING) # timing output
+include_directories(
+   Core/Abstract 
+   Core/Vector 
+   Core/Utilities 
+   Core/QpSolvers 
+   Core/QpPreprocess 
+   Core/QpGen
+   Core/SparseLinearAlgebra 
+   Core/DenseLinearAlgebra 
+   Core/Readers
+   Core/LinearSolvers/Ma27Solver 
+   Core/LinearSolvers/Ma57Solver 
+   Core/LinearSolvers/Mc30Scaler 
+   Core/LinearSolvers/Preconditioners
+   #Core/LinearSolvers/Ma86Solver 
+   Core/LinearSolvers/PardisoSolver/PardisoSolver
+   Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
+   Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
+   Core/LinearSolvers/BiCGStabSolver 
+   Core/StochLinearAlgebra 
+   Core/QpStoch
+)
+
+if( HAVE_MUMPS )
+   include_directories(Core/LinearSolvers/MumpsSolver)
+endif( HAVE_MUMPS )
 
 add_subdirectory(Core)
 
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}")
 
 add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
+target_compile_options(pipsipmCallbackExample PRIVATE -Wall ${OpenMP_CXX_FLAGS})
 target_link_libraries(pipsipmCallbackExample 
-   PRIVATE ooqpstoch
+   PRIVATE ooqpstoch 
    PRIVATE ooqpstochla 
    PRIVATE ooqpgondziostoch 
    PRIVATE ooqpequistochscaler
-   PRIVATE ooqpgensparse
-   PRIVATE ooqpbase
-   PRIVATE ooqpsparse
-   PRIVATE ooqpdense
+   PRIVATE ooqpgensparse 
+   PRIVATE ooqpbase 
+   PRIVATE ooqpsparse 
+   PRIVATE ooqpdense 
    PRIVATE ooqpqpstochpresolver
+   PRIVATE OpenMP::OpenMP_CXX
+   PRIVATE MPI::MPI_CXX
 )
   
 if (BUILD_GDX_SOURCE)
    add_definitions(-D_P3_DllExport= -DSTDCALL= -DGDX_CALLCONV=unwanted -DLEG)
-   add_library(statgdx STATIC
+   add_library(statgdx
      Drivers/statgdx/clibtypes.cpp
      Drivers/statgdx/datastorage.cpp
      Drivers/statgdx/gdlaudit.cpp
@@ -70,43 +90,48 @@ if (BUILD_GDX_SOURCE)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c)
    add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR -DGDXSOURCE -fno-strict-aliasing -fwrapv ) # -DGMS_LOG
    target_include_directories(gmspips PUBLIC Drivers/statgdx Drivers/gmspips/)
-   target_link_libraries(gmspips 
-      PRIVATE statgdx
-      PRIVATE ooqpstoch
-      PRIVATE ooqpstochla
-      PRIVATE ooqpgondziostoch
-      PRIVATE ooqpequistochscaler
-      PRIVATE ooqpgensparse
-      PRIVATE ooqpbase
-      PRIVATE ooqpsparse
-      PRIVATE ooqpdense
-      PRIVATE ooqpqpstochpresolver
-      PRIVATE OpenMP::OpenMP_CXX
+   target_link_libraries(gmspips
+       PRIVATE statgdx
+       PRIVATE ooqpstoch 
+       PRIVATE ooqpstochla
+       PRIVATE ooqpgondziostoch
+       PRIVATE ooqpequistochscaler
+       PRIVATE ooqpgensparse
+       PRIVATE ooqpbase
+       PRIVATE ooqpsparse
+       PRIVATE ooqpdense
+       PRIVATE ooqpqpstochpresolver
+       PRIVATE OpenMP::OpenMP_CXX 
+       PRIVATE MPI::MPI_CXX
    )
-       
+
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c)
-   target_include_directories(gmschk PRIVATE Drivers/statgdx Drivers/gmspips/)
+   target_include_directories(gmschk 
+      PUBLIC Drivers/statgdx
+      PRIVATE Drivers/gmspips/
+   )
    target_link_libraries(gmschk 
-      PRIVATE statgdx
-      PRIVATE gfortran
       PRIVATE dl
+      PRIVATE statgdx
    )
 else()
    set(GAMSDIR Drivers/gams)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)
    add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR) # -DGMS_LOG
+   target_compile_options(gmspips PRIVATE -Wall ${OpenMP_CXX_FLAGS})
    target_include_directories(gmspips PUBLIC ${GAMSDIR}/apifiles/C/api/ Drivers/gmspips/)
-   target_link_libraries(gmspips 
-      PRIVATE ooqpstoch
-      PRIVATE ooqpstochla
-      PRIVATE ooqpgondziostoch
-      PRIVATE ooqpequistochscaler
-      PRIVATE ooqpgensparse
-      PRIVATE ooqpbase
-      PRIVATE ooqpsparse
-      PRIVATE ooqpdense
-      PRIVATE ooqpqpstochpresolver
-      PRIVATE OpenMP::OpenMP_CXX
+   target_link_libraries(gmspips
+       PRIVATE ooqpstoch
+       PRIVATE ooqpstochla
+       PRIVATE ooqpgondziostoch
+       PRIVATE ooqpequistochscaler
+       PRIVATE ooqpgensparse
+       PRIVATE ooqpbase
+       PRIVATE ooqpsparse
+       PRIVATE ooqpdense
+       PRIVATE ooqpqpstochpresolver
+       PRIVATE OpenMP::OpenMP_CXX
+       PRIVATE MPI::MPI_CXX
    )
    
    add_executable(gmschk Drivers/gmspips/gmspipschk.cpp Drivers/gmspips/gmspipsio.c ${GAMSDIR}/apifiles/C/api/gmomcc.c ${GAMSDIR}/apifiles/C/api/gevmcc.c ${GAMSDIR}/apifiles/C/api/gdxcc.c)

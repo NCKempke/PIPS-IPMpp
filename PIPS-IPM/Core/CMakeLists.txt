@@ -38,7 +38,6 @@ add_library(ooqpstoch STATIC
    QpStoch/sTree.C
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C
-   QpStoch/sLinsysLeafMumps.C
 )
 
 if( HAVE_MA27 )
@@ -52,6 +51,7 @@ if( HAVE_MA57 )
 endif( HAVE_MA57 )
 
 if(HAVE_MUMPS)
+   target_sources( ooqpstoch QpStoch/sLinsysLeafMumps.C)
    target_compile_definitions( ooqpstoch PUBLIC -DWITH_MUMPS )
    target_link_libraries(ooqpstoch PRIVATE mumps_solver)
 endif(HAVE_MUMPS)
