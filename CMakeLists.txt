@@ -4,6 +4,20 @@ cmake_minimum_required(VERSION 3.4)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
+find_package(MPI REQUIRED)
+message(STATUS "MPI_C_COMPILER=${MPI_C_COMPILER}")
+message(STATUS "MPI_C_WORKS=${MPI_C_WORKS}")
+message(STATUS "MPI_C_LIBRARIES=${MPI_C_LIBRARIES}")
+message(STATUS "MPI_C_INCLUDE_DIRS=${MPI_C_INCLUDE_DIRS}")
+message(STATUS "MPI_C_LINK_FLAGS=${MPI_C_LINK_FLAGS}")
+message(STATUS "MPI_CXX_COMPILER=${MPI_CXX_COMPILER}")
+message(STATUS "MPI_CXX_WORKS=${MPI_CXX_WORKS}")
+message(STATUS "MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
+message(STATUS "MPI_C_INCLUDE_DIRS=${MPI_C_INCLUDE_DIRS}")
+message(STATUS "MPI_CXX_LINK_FLAGS=${MPI_CXX_LINK_FLAGS}")
+
+include_directories(${MPI_INCLUDE_PATH})
+
 # For debugging build, set CMAKE_BUILD_TYPE to DEBUG
 # For optimized build, set CMAKE_BUILD_TYPE to RELEASE
 # For optimized build with debug info, set CMAKE_BUILD_TYPE to RELWITHDEBINFO
@@ -78,7 +92,7 @@ if(WITH_VERBOSE)
 endif(WITH_VERBOSE)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   set(CMAKE_CXX_COMPILER "mpicxx")
+   #set(CMAKE_CXX_COMPILER "mpicxx")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fpermissive")
 else(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    message( FATAL_ERROR "Operating system not supported")
@@ -89,21 +103,23 @@ find_library(GFORTRAN_LIBRARY NAMES libgfortran.so REQUIRED)
 find_library(DL_LIBRARY NAMES dl REQUIRED)
 
 find_package(OpenMP REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 if(MATH_LIBS)
 	message(STATUS "Using user-defined MATH_LIBS=${MATH_LIBS}")
 elseif(IS_DIRECTORY $ENV{EBROOTGCC})
     message(STATUS "Using GNU Compiler MKL")
     #try mkl_avx2 /512
-    set(MATH_LIBS "-Wl,--start-group -Wl,--no-as-needed -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -lgfortran -fopenmp -lpthread -lm -Wl,--end-group -std=c++11")
+    set(MATH_LIBS "-Wl,--start-group -Wl,--no-as-needed -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -lgfortran -lpthread -lm -ldl -Wl,--end-group -std=c++11")
+    ## mkl advisor                                               -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+
     ####set(MATH_LIBS "-Wl,--start-group -Wl,--no-as-needed -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lmkl_avx -lmkl_def -lgomp -lgfortran -lpthread -lm -ldl -Wl,--end-group")
     message(STATUS "Using MKLROOT:$ENV{MKLROOT} MATH_LIBS=${MATH_LIBS}")
 elseif(IS_DIRECTORY $ENV{EBROOTICCIFORT})
     message(STATUS "Using Intel Compiler MKL")
     #try mkl_avx2 / 512
-    set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -liomp5 -lgfortran -qopenmp -lpthread -lm -Wl,--end-group -std=c++11")
+    set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -liomp5 -lgfortran -lpthread -lm -ldl -Wl,--end-group -std=c++11")
     ###set(MATH_LIBS "-Wl,--start-group -Wl,--no-as-needed -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -liomp5 -lgfortran -fopenmp -lpthread -lm -Wl,--end-group -std=c++11")
     ###set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lmkl_avx -lmkl_def -liomp5 -lpthread -lgfortran -lm -ldl -Wl,--end-group")
     message(STATUS "Using MKLROOT:$ENV{MKLROOT} MATH_LIBS=${MATH_LIBS}")
