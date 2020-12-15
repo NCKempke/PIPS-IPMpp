@@ -38,9 +38,9 @@ target_link_libraries(pipsipmCallbackExample
    PRIVATE ooqpgondziostoch 
    PRIVATE ooqpequistochscaler
    PRIVATE ooqpgensparse 
-   PRIVATE ooqpbase 
    PRIVATE ooqpsparse 
    PRIVATE ooqpdense 
+   PRIVATE ooqpbase 
    PRIVATE ooqpqpstochpresolver
    PRIVATE OpenMP::OpenMP_CXX
    PRIVATE MPI::MPI_CXX

@@ -3,7 +3,6 @@
 #include "VectorUtilities.h"
 #include "StochVector.h"
 #include "pipsport.h"
-#include "StochOptions.h"
 
 #include <cassert>
 #include <cstring>

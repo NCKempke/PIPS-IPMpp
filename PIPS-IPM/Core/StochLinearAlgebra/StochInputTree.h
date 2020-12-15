@@ -3,7 +3,6 @@
 
 #include <vector>
 
-
 /**
  * The following types define callback functions passed by user to pass 
  * data for each node to the solver.
@@ -20,17 +19,18 @@ typedef int (*FVEC)(void* user_data, int id, double* vec, int len);
 extern "C"
 typedef int (*FLEN)(void* user_data, int id, int* len);
 
-using namespace std;
 
-class StochInputTree {
-  friend class sTreeCallbacks;
- public:
+class StochInputTree
+{
+      friend class sTreeCallbacks;
+   public:
 
-  /** 
-   * Inner class that contains the node related data.
-   */
-  class StochInputNode {
-    friend class StochInputTree; friend class StochTree; friend class sTreeCallbacks;
+      /**
+       * Inner class that contains the node related data.
+       */
+      class StochInputNode
+      {
+         friend class StochInputTree; friend class StochTree; friend class sTreeCallbacks;
   public:
     StochInputNode(int id_ = -1);
 
@@ -77,8 +77,7 @@ class StochInputTree {
 
   protected:
     //callback functions
-
-    //callback functions nCall, myCall, mzCall, mylCall, mzlCall can be nullptr if data is provided through int n,my,mz,myl,mzl
+    //callback functions nCall, myCall, mzCall, mylCall, mzlCall can be nullptr if data is provided through int n, my, mz, myl, mzl
     FNNZ nCall, myCall, mzCall, mylCall, mzlCall;
     FNNZ fnnzQ, fnnzA, fnnzB, fnnzBl, fnnzC, fnnzD, fnnzDl;
     FMAT fQ, fA, fB, fBl, fC, fD, fDl;
@@ -96,30 +95,20 @@ class StochInputTree {
 
   friend class StochTree;
 
-  ////////////////////////////
-  // CONSTRUCTOR & DESTRUCTOR
-  ////////////////////////////
  public:
+
   StochInputTree(const StochInputNode& root);
   StochInputTree(StochInputNode* root);
   virtual ~StochInputTree();
- protected:
-  StochInputTree();
-  /////////////////////////
-  // METHODS
-  /////////////////////////
- public:
+
   void AddChild(const StochInputNode  &node);
   void AddChild(StochInputTree *subTree);
 
-  /////////////////////////
-  // DATA members
-  /////////////////////////
- public:
-  vector<StochInputTree*> children;
+  std::vector<StochInputTree*> children;
  protected:
-  StochInputNode* nodeInput;
+  StochInputTree();
 
+  StochInputNode* nodeInput;
 };
 
 #endif

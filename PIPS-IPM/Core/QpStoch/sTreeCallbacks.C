@@ -702,88 +702,122 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    return top_layer;
 }
 
-void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm, std::vector<unsigned int>& map_child_to_sub_comm )
+void sTreeCallbacks::mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees )
 {
-   // TODO : maybe adjust the split at some point - the first n_leftovers procs have one additional block assigned to them .. this will lead to some inbalance in the tree here..
-   const int size_comm = PIPS_MPIgetSize(commWrkrs);
-   assert( size_comm == static_cast<int>(myProcs.size()) );
+   map_child_to_sub_tree.clear();
+   map_child_to_sub_tree.reserve(n_children);
 
-   if( size_comm < 3 )
-      assert( false && "need at least 4 MPI_COMMS to split a root linsys");
+   if( n_subtrees == 0 )
+      return;
 
-   /* we will split the current communicator into sqrt(size) (rounded) new ones */
-   const int n_split_comms = std::floor(std::sqrt(size_comm));
-   const int leftover_comms = size_comm % n_split_comms;
+   const unsigned int everyone_gets = std::floor(n_children / n_subtrees);
+   const unsigned int n_leftovers = n_children % n_subtrees;
 
-   if( PIPS_MPIgetRank(commWrkrs) == 0 )
-      std::cout << "Splitting communicator of size " << size_comm << " into " << n_split_comms << " new ones" << std::endl;
+   std::vector<unsigned int> children_per_tree( n_subtrees, everyone_gets );
 
-   int my_comm = -1;
-   int current_comm_until = 0;
-
-   map_my_procs_to_sub_comm.clear();
-   map_my_procs_to_sub_comm.resize(size_comm);
-
-   const int my_rank = PIPS_MPIgetRank(commWrkrs);
-   for( int i = 0; i < n_split_comms; ++i )
+   if( n_leftovers > 0 )
    {
-      const int current_comm_start = current_comm_until;
+      const unsigned int free_in_leftover_row = n_subtrees - n_leftovers;
 
-      if( current_comm_until < leftover_comms * (n_split_comms + 1) )
-         current_comm_until += (n_split_comms + 1);
-      else
-         current_comm_until += n_split_comms;
+      const unsigned int free_after_each_leftover = std::floor(free_in_leftover_row / n_leftovers);
+      const unsigned int additional_frees = free_in_leftover_row % n_leftovers;
 
-      assert( current_comm_until <= size_comm );
-
-      for( int j = current_comm_start; j < current_comm_until; ++j )
+      unsigned int additional_frees_assigned = 0;
+      for( unsigned int i = 0; i < n_subtrees; i += free_after_each_leftover )
       {
-         map_my_procs_to_sub_comm[j] = i;
+         ++children_per_tree[i];
+         ++i;
 
-         if( my_rank == j )
-            my_comm = i;
+         if( additional_frees != additional_frees_assigned )
+         {
+            ++i; ++additional_frees_assigned;
+         }
       }
+      assert( additional_frees_assigned == additional_frees );
    }
-   assert( 0 <= my_comm && my_comm < n_split_comms );
 
-   MPI_Comm comm_my_subsystem;
-   MPI_Comm_split(commWrkrs, my_comm, my_rank, &comm_my_subsystem);
+   assert( std::accumulate( children_per_tree.begin(), children_per_tree.end(), unsigned(0) ) == n_children );
 
+   for( unsigned int i = 0; i < children_per_tree.size(); ++i )
+   {
+      for( unsigned int j = 0; j < children_per_tree[i]; ++j )
+         map_child_to_sub_tree.push_back( i );
+   }
+}
 
-   std::vector<sTreeCallbacks*> sub_roots(n_split_comms);
+unsigned int sTreeCallbacks::getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
+{
+   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
+
+   mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
+   return n_new_roots;
+}
+
+void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree )
+{
+   // TODO : maybe adjust the split at some point - the first n_leftovers procs have one additional block assigned to them .. this will lead to some imbalance in the tree here..
+   PIPS_MPIabortIf( children.size() < 3, "Need at lest 4 child tree nodes to split a root node");
+
+   const unsigned int n_new_roots = getMapChildrenToSqrtNSubTrees( map_child_to_sub_tree, children.size() );
+   assert( map_child_to_sub_tree.size() == children.size() );
 
    /* create new sub-roots */
-   for( int i = 0; i < n_split_comms; ++i )
-   {
-      sub_roots[i] = new sTreeCallbacks();
+   std::vector<sTreeCallbacks*> new_roots(n_new_roots);
+   for( auto& root : new_roots )
+      root = new sTreeCallbacks();
 
-      if( i == my_comm )
-         sub_roots[i]->commWrkrs = comm_my_subsystem;
-      else
-         sub_roots[i]->commWrkrs = MPI_COMM_NULL;
+   /* determine processes for each subtree and assign children */
+   for( size_t child = 0; child < children.size(); ++child )
+   {
+      const auto& child_procs = children[child]->myProcs;
+      assert( child_procs.size() >= 1 );
+
+      const unsigned int assigned_sub_root_for_child = map_child_to_sub_tree[ child ];
+      assert( assigned_sub_root_for_child < new_roots.size() );
+      sTreeCallbacks* assigned_root = new_roots[ assigned_sub_root_for_child ];
+
+      for( int process : child_procs )
+      {
+         // assuming sorted..
+         if( assigned_root->myProcs.empty() || assigned_root->myProcs.back() != process )
+         {
+            if( !assigned_root->myProcs.empty() )
+            {
+               assert( process > assigned_root->myProcs.back() );
+               assert( !isInVector( process, assigned_root->myProcs ) );
+            }
+
+            assigned_root->myProcs.push_back( process );
+         }
+      }
+
+      assigned_root->children.push_back( children[child] );
    }
 
-   map_child_to_sub_comm.resize(children.size());
-
-   /* assign children to sub_comm systems and assign processes to them  */
-   for( size_t i = 0; i < children.size(); ++i )
+   /* create all sub-communicators */
+   for( auto new_root : new_roots )
    {
-      assert( children[i]->myProcs.size() == 1 );
-      const int child_proc = children[i]->myProcs[0];
-      const unsigned int assigned_sub_comm = map_my_procs_to_sub_comm[ child_proc ];
-      sub_roots[assigned_sub_comm]->children.push_back( children[i] );
-      map_child_to_sub_comm[i] = assigned_sub_comm;
+      new_root->commWrkrs = PIPS_MPIcreateGroupFromRanks( new_root->myProcs );
 
-      // TODO : inefficient..
-      if( !isInVector(child_proc, sub_roots[assigned_sub_comm]->myProcs) )
-         sub_roots[assigned_sub_comm]->myProcs.push_back( child_proc );
-      assert( isInVector( child_proc, sub_roots[assigned_sub_comm]->myProcs ) );
+      if( !isInVector( rankMe, new_root->myProcs) )
+         assert( new_root->commWrkrs == MPI_COMM_NULL );
    }
+
+#ifndef NDEBUG
+   for( size_t child = 0; child < children.size(); ++child )
+   {
+      if( isInVector(rankMe, children[child]->myProcs ) )
+      {
+         auto child_new_root = new_roots[map_child_to_sub_tree[child]];
+         assert( isInVector(rankMe, child_new_root->myProcs) );
+         assert( child_new_root->commWrkrs != MPI_COMM_NULL );
+      }
+   }
+#endif
 
    /* add sub_roots as this new children */
    children.clear();
-   children.insert( this->children.begin(), sub_roots.begin(), sub_roots.end() );
-   assert( children[my_comm]->myProcs.size() == static_cast<const size_t>(PIPS_MPIgetSize(comm_my_subsystem)) );
+   children.insert( this->children.begin(), new_roots.begin(), new_roots.end() );
 }
 
 
@@ -802,10 +836,12 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
    const size_t n_leafs = children.size();
 
-   createSubcommunicatorsAndChildren( map_proc_subcomm, map_block_subcomm );
+   createSubcommunicatorsAndChildren( map_node_sub_root );
    /* children should now be created and an additional layer in the tree should exist */
-   assert( map_proc_subcomm.size() == this->myProcs.size() );
-   assert( map_block_subcomm.size() == n_leafs );
+   assert( map_node_sub_root.size() == n_leafs );
+
+   PIPS_MPIabortIf( true, "TODO : Implement");
+
 
    this->is_hierarchical_inner = true;
 
@@ -984,7 +1020,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    assert( rankPrcnd == -1 );
    assert( commP2ZeroW == MPI_COMM_NULL );
 
-//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
@@ -1049,7 +1085,7 @@ void sTreeCallbacks::splitMatrixAccordingToTree( StochGenMatrix& mat ) const
 
 void sTreeCallbacks::splitVectorAccordingToTree( StochVector& vec ) const
 {
-   assert( map_block_subcomm.size() == vec.children.size() );
+   assert( map_node_sub_root.size() == vec.children.size() );
 
    std::vector<StochVector*> sub_roots(this->children.size());
 

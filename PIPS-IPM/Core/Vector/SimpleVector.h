@@ -9,6 +9,7 @@
 #include "SimpleVector_fwd.h"
 #include "SimpleVectorHandle.h"
 #include "pipsdef.h"
+#include "StochOptions.h"
 
 #include <vector>
 

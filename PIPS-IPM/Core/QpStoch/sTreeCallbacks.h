@@ -16,6 +16,8 @@
 class sData;
 
 
+
+
 class sTreeCallbacks : public sTree
 {
    using InputNode = StochInputTree::StochInputNode;
@@ -71,11 +73,11 @@ public:
    sTree* collapseHierarchicalTree() override;
 
    void splitDataAccordingToTree( sData& data ) const;
-   const std::vector<unsigned int>& getMapProcsSubcomms() const
-      { assert( is_hierarchical_inner ); return map_proc_subcomm; };
    const std::vector<unsigned int>& getMapBlockSubcomms() const
       { assert( is_hierarchical_inner ); return map_block_subcomm; };
-private:
+protected:
+   static unsigned int getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
+
    virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
@@ -89,7 +91,7 @@ private:
    void splitMatrixAccordingToTree( StochGenMatrix& mat ) const;
    void splitVectorAccordingToTree( StochVector& vec ) const;
 
-   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_my_procs_to_sub_comm, std::vector<unsigned int>& map_child_to_sub_comm );
+   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree );
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
@@ -104,12 +106,14 @@ private:
    bool isDataPresolved;
    bool hasPresolvedData;
 
-   /* after this node has been split this will indicate how the procs were split */
-   std::vector<unsigned int> map_proc_subcomm;
-   std::vector<unsigned int> map_block_subcomm;
+   /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */
+   std::vector<unsigned int> map_node_sub_root;
 
    sTreeCallbacks();
    InputNode* data; //input data
+
+private:
+   static void mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees );
 };
 
 

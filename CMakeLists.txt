@@ -69,8 +69,8 @@ if(WITH_VERBOSE)
 endif(WITH_VERBOSE)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   set(CMAKE_CXX_COMPILER "mpicxx")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+   #set(CMAKE_CXX_COMPILER "mpicxx")
+   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 else(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    message( FATAL_ERROR "Operating system not supported")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -383,7 +383,10 @@ add_subdirectory(PIPS-IPM)
 if(WITH_MAKETEST)
    enable_testing()
 
-   add_test(NAME PIPS-IPM-linkingConsTest COMMAND sh ${PROJECT_SOURCE_DIR}/PIPS-IPM/Test/pipsipmLinkConsTest.sh $<TARGET_FILE:pipsipmCallbackExample> )
+   include(GoogleTest)
+   add_subdirectory(PIPS-IPM/Test/)
+   
+   #add_test(NAME PIPS-IPM-linkingConsTest COMMAND sh ${PROJECT_SOURCE_DIR}/PIPS-IPM/Test/pipsipmLinkConsTest.sh $<TARGET_FILE:pipsipmCallbackExample> )
 endif(WITH_MAKETEST)
 
 

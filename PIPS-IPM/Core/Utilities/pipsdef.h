@@ -145,6 +145,24 @@ inline int PIPSgetnOMPthreads()
    return num_procs;
 }
 
+inline MPI_Comm PIPS_MPIcreateGroupFromRanks( const int* chosen_ranks, unsigned int n_chosen_ranks, MPI_Comm mpi_comm_all = MPI_COMM_WORLD )
+{
+   MPI_Group all_group;
+   MPI_Comm_group(MPI_COMM_WORLD, &all_group);
+
+   MPI_Group sub_group;
+   MPI_Group_incl( all_group, n_chosen_ranks, chosen_ranks, &sub_group );
+
+   MPI_Comm sub_comm;
+   MPI_Comm_create( mpi_comm_all, sub_group, &sub_comm);
+
+   return sub_comm;
+}
+
+inline MPI_Comm PIPS_MPIcreateGroupFromRanks( const std::vector<int> chosen_ranks, MPI_Comm mpi_comm_all = MPI_COMM_WORLD )
+{
+   return PIPS_MPIcreateGroupFromRanks( chosen_ranks.data(), chosen_ranks.size(), mpi_comm_all );
+}
 
 inline bool PIPS_MPIiAmSpecial(int iAmDistrib, MPI_Comm mpiComm = MPI_COMM_WORLD)
 {
@@ -196,6 +214,16 @@ void inline PIPS_MPIabortInfeasible(std::string message, std::string file, std::
    std::cerr << "Aborting now." << std::endl;
    MPI_Abort(comm, 1);
 }
+
+void inline _PIPS_MPIabortIf( bool cond, const std::string& message, const char* file, int line )
+{
+   if( cond )
+   {
+      std::cerr << "Called MPI_Abort in " << file << " at " << line << " saying " << message << "\n";
+      MPI_Abort(MPI_COMM_WORLD, 1);
+   }
+}
+#define PIPS_MPIabortIf(cond, message) _PIPS_MPIabortIf( cond, message, __FILE__, __LINE__ )
 
 inline std::vector<int> PIPSallgathervInt(const std::vector<int>& vecLocal, MPI_Comm mpiComm)
 {
