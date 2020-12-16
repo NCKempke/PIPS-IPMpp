@@ -73,9 +73,11 @@ public:
    sTree* collapseHierarchicalTree() override;
 
    void splitDataAccordingToTree( sData& data ) const;
-   const std::vector<unsigned int>& getMapBlockSubcomms() const
-      { assert( is_hierarchical_inner ); return map_block_subcomm; };
+   const std::vector<unsigned int>& getMapBlockSubTrees() const
+      { assert( is_hierarchical_inner ); return map_node_sub_root; };
 protected:
+   void assertTreeStructureCorrect() const;
+
    static unsigned int getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
 
    virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
@@ -92,25 +94,43 @@ protected:
    void splitVectorAccordingToTree( StochVector& vec ) const;
 
    void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree );
+   void countTwoLinksForChildTrees(const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC,
+         std::vector<int>& two_links_children_eq, std::vector<int>& two_links_children_ineq,
+         int& two_links_root_eq, int& two_links_root_ineq ) const;
+
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
    sTree* collapseDenseBorder();
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
-   long long N_INACTIVE, MY_INACTIVE, MZ_INACTIVE, MYL_INACTIVE, MZL_INACTIVE; //global inactive sizes
+   long long N_INACTIVE{-1};
+   long long MY_INACTIVE{-1};
+   long long MZ_INACTIVE{-1};
+   long long MYL_INACTIVE{-1};
+   long long MZL_INACTIVE{-1};
 
-   int nx_active, my_active, mz_active, myl_active, mzl_active;
-   int nx_inactive, my_inactive, mz_inactive, myl_inactive, mzl_inactive;
 
-   bool isDataPresolved;
-   bool hasPresolvedData;
+   int nx_active{0};
+   int my_active{0};
+   int mz_active{0};
+   int myl_active{0};
+   int mzl_active{0};
+
+   int nx_inactive{-1};
+   int my_inactive{-1};
+   int mz_inactive{-1};
+   int myl_inactive{-1};
+   int mzl_inactive{-1};
+
+   bool isDataPresolved{false};
+   bool hasPresolvedData{false};
 
    /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */
    std::vector<unsigned int> map_node_sub_root;
 
    sTreeCallbacks();
-   InputNode* data; //input data
+   InputNode* data{}; //input data
 
 private:
    static void mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees );

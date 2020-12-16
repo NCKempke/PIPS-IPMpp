@@ -31,13 +31,39 @@ class sTree
   void assignProcesses( MPI_Comm, vector<int>&);
 
  public:
-  MPI_Comm commWrkrs, myOldMpiComm; //workers only
+  MPI_Comm commWrkrs{ MPI_COMM_NULL };
+  MPI_Comm myOldMpiComm{ MPI_COMM_NULL }; //workers only
   std::vector<int> myProcs, myOldProcs;
 
-  MPI_Comm commP2ZeroW;   // preconditioner (rank P+1) and special (rank 0) worker
+  MPI_Comm commP2ZeroW{MPI_COMM_NULL};   // preconditioner (rank P+1) and special (rank 0) worker
   static int rankPrcnd;   // rank of preconditioner
   static int rankZeroW;   // rank of the "special" worker (the root, or 0-rank process)
-  static int rankMe;      // rank of the running process 
+  static int rankMe;      // rank of the running process
+
+  /* global sizes - global meaning on this process - so the sum of all local matrices - MY, MZ do not include linking constraints */
+  long long N{0};
+  long long MY{0};
+  long long MZ{0};
+  long long MYL{0};
+  long long MZL{0};
+  int np{-1}; //n for the parent
+
+  double IPMIterExecTIME{-1.0}; // not used since we currently do not compute loads for nodes and processes...
+  std::vector<sTree*> children;
+
+  /* global number of all processes available */
+  static int numProcs;
+
+  StochNodeResourcesMonitor resMon;
+  static StochIterateResourcesMonitor iterMon;
+
+protected:
+  bool is_hierarchical_root = false;
+  bool is_hierarchical_inner = false;
+  bool is_hierarchical_leaf = false;
+
+public:
+  bool distributedPreconditionerActive() const;
 
   void startMonitors(); void startNodeMonitors();
   void stopMonitors();  void stopNodeMonitors();
@@ -96,7 +122,7 @@ class sTree
   double processLoad() const;
 
  protected:
-  sTree();
+  sTree() = default;
 
   void toMonitorsList( std::list<NodeExecEntry>& );
   void fromMonitorsList( std::list<NodeExecEntry>& );
@@ -105,25 +131,8 @@ class sTree
 
   void saveCurrentCPUState();
 
-  int isInVector(int elem, const vector<int>& vec);
-
-  bool is_hierarchical_root = false;
-  bool is_hierarchical_inner = false;
-  bool is_hierarchical_leaf = false;
-
- public:
-  /* global sizes - global meaning on this process - so the sum of all local matrices - MY, MZ do not include linking constraints */
-  long long N, MY, MZ, MYL, MZL;//global sizes
-  int np; //n for the parent
-
-  double IPMIterExecTIME; // not used since we currently do not compute loads for nodes and processes...
-  std::vector<sTree*> children;
-
-  /* global number of all processes available */
-  static int numProcs;
-
-  StochNodeResourcesMonitor resMon;
-  static StochIterateResourcesMonitor iterMon;
+  int isInVector(int elem, const vector<int>& vec) const;
+public:
 #ifdef STOCH_TESTING
   void displayProcessInfo(int onWhichRank=0);
   void displayProcessInfo(char* tab);

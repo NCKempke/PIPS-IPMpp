@@ -15,16 +15,10 @@
 #include <cmath>
 
 StochIterateResourcesMonitor sTree::iterMon;
-
 int sTree::rankMe    =-1;
 int sTree::rankZeroW = 0;
 int sTree::rankPrcnd =-1;
 int sTree::numProcs  =-1;
-
-sTree::sTree()
-: commWrkrs(MPI_COMM_NULL), myOldMpiComm(MPI_COMM_NULL), commP2ZeroW(MPI_COMM_NULL), N(0), MY(0), MZ(0), MYL(0), MZL(0), np(-1), IPMIterExecTIME(-1)
-{}
-
 
 sTree::~sTree() 
 {
@@ -41,6 +35,14 @@ int sTree::mzl() const
 {
    return -1;
 }
+
+bool sTree::distributedPreconditionerActive() const
+{
+   return ( rankZeroW != 0 ) && ( rankPrcnd != -1 ) &&
+         ( commP2ZeroW != MPI_COMM_NULL ) && ( rankMe != -1 );
+}
+
+
 
 void sTree::assignProcesses(MPI_Comm comm)
 {
@@ -846,7 +848,7 @@ void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromC
   }
 }
 
-int sTree::isInVector(int elem, const vector<int>& vec)
+int sTree::isInVector(int elem, const vector<int>& vec) const
 {
   for(size_t i=0; i<vec.size(); i++)
     if(elem==vec[i]) return 1;

@@ -1614,8 +1614,8 @@ void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std:
    assert( linkStartBlockIdC.size() >= static_cast<size_t>(n_global_links_ineq_after_split + n_global_ineq_linking_conss) );
 
    int last_map_block = -1;
-   const std::vector<unsigned int>& map_block_subcomm = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubcomms();
-
+   const std::vector<unsigned int>& map_block_subcomm = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   assert( false && "TODO: check..");
    {
       size_t pos_local_twolinks_A = 0;
       const size_t end_local_twolinks_A = static_cast<size_t>(linkStartBlockIdA.size() - n_global_links_eq_after_split - n_global_eq_linking_conss);
