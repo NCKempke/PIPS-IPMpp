@@ -328,6 +328,8 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
       }
    }
 
+   assert( is_sorted(myProcs.begin(), myProcs.end()) );
+
    if( commWrkrs == MPI_COMM_NULL )
    {
       assert( !sTree::isInVector(rankMe, myProcs) );
@@ -883,16 +885,14 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
    this->is_hierarchical_inner = true;
 }
 
-void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_block_A, const std::vector<int>& two_links_start_in_block_C,
+void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
       std::vector<int>& two_links_children_eq, std::vector<int>& two_links_children_ineq, int& two_links_root_eq, int& two_links_root_ineq ) const
 {
    const unsigned int n_children = children.size();
+   const unsigned int n_leafs = map_node_sub_root.size();
    assert( is_hierarchical_inner );
-   assert( map_node_sub_root.size() == two_links_start_in_block_A.size() );
-   assert( two_links_start_in_block_A.size() == two_links_start_in_block_C.size() );
-
-   int two_links_children_eq_sum = 0;
-   int two_links_children_ineq_sum = 0;
+   assert( n_leafs == two_links_start_in_child_A.size() );
+   assert( n_leafs == two_links_start_in_child_C.size() );
 
    two_links_children_eq.clear();
    two_links_children_eq.resize(n_children);
@@ -900,55 +900,31 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
    two_links_children_ineq.resize(n_children);
 
    /* count two links for all new sub-communicators */
-   size_t block = 0;
-   for( size_t i = 0; i < children.size(); ++i )
+   unsigned int leaf = 0;
+   for( unsigned int i = 0; i < n_children; ++i )
    {
-      sTreeCallbacks& child = dynamic_cast<sTreeCallbacks&>( *children[i] );
+      const sTreeCallbacks& sub_root = dynamic_cast<const sTreeCallbacks&>( *children[i] );
 
-      const std::vector<int>& child_procs = child.myProcs;
-      assert( is_sorted(child_procs.begin(), child_procs.end()) );
-
-      for( size_t j = 0; j < child.children.size(); ++j )
+      for( size_t j = 0; j < sub_root.children.size(); ++j )
       {
-         sTreeCallbacks& childchild = dynamic_cast<sTreeCallbacks&>(*child.children[i]);
+         assert( leaf < n_leafs );
 
-         /* do not allow splitting of inner nodes yet */
-         assert( childchild.children.size() == 0 );
-
-         if( childchild.children.size() == 0 )
+         /* the two links of each last child will stay in the root node */
+         if( j == sub_root.children.size() - 1 )
          {
-            /* assert - either my child or not assigned to me */
-            assert( childchild.commWrkrs == MPI_COMM_SELF || childchild.commWrkrs == MPI_COMM_NULL );
-
-            if( childchild.commWrkrs == MPI_COMM_NULL )
-            {
-               assert( childchild.MYL == 0 );
-               assert( childchild.MZL == 0 );
-            }
-            childchild.is_hierarchical_leaf = true;
+            two_links_root_eq += two_links_start_in_child_A[leaf];
+            two_links_root_ineq += two_links_start_in_child_C[leaf];
+         }
+         else
+         {
+            two_links_children_eq[i] += two_links_start_in_child_A[leaf];
+            two_links_children_ineq[i] += two_links_start_in_child_C[leaf];
          }
 
-//         assert( block < twoLinksStartBlockA.size() );
-//         /* the two links from our last child will stay linking in the root node */
-//         if( j == child.children.size() - 1 )
-//         {
-//            two_links_root_eq += twoLinksStartBlockA[block];
-//            two_links_root_ineq += twoLinksStartBlockC[block];
-//         }
-//         else
-//         {
-//            two_links_children_eq_sum += twoLinksStartBlockA[block];
-//            two_links_children_ineq_sum += twoLinksStartBlockC[block];
-//            two_links_children_eq[i] += twoLinksStartBlockA[block];
-//            two_links_children_ineq[i] += twoLinksStartBlockC[block];
-//         }
-
-         ++block;
+         ++leaf;
       }
    }
-
-   assert( std::accumulate(two_links_children_eq.begin(), two_links_children_eq.end(), 0) == two_links_children_eq_sum );
-   assert( std::accumulate(two_links_children_ineq.begin(), two_links_children_ineq.end(), 0) == two_links_children_ineq_sum );
+   assert( leaf == n_leafs );
 }
 
 
@@ -958,33 +934,32 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assert( !is_hierarchical_root );
 
    const size_t n_old_leafs = children.size();
-   createSubcommunicatorsAndChildren( map_node_sub_root );
 
-   /* children should now be created and an additional layer in the tree should exist */
+   createSubcommunicatorsAndChildren( map_node_sub_root );
    assert( map_node_sub_root.size() == n_old_leafs );
 
    std::vector<int> two_links_children_eq, two_links_children_ineq;
-   int two_links_root_eq{-1};
-   int two_links_root_ineq{-1};
+   int two_links_root_eq{-1}; int two_links_root_ineq{-1};
 
    countTwoLinksForChildTrees(twoLinksStartBlockA, twoLinksStartBlockC, two_links_children_eq,
          two_links_children_ineq, two_links_root_eq, two_links_root_ineq );
 
-   PIPS_MPIabortIf( true, "TODO : Implement");
-//   if( rankMe == 0 )
-//   {
-//      std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq <<
-//            " equality two-links into " << two_links_root_eq << " root and " << two_links_children_eq_sum << " child links" << std::endl;
-//      std::cout << "Splitting " << two_links_children_ineq_sum + two_links_root_ineq <<
-//            " inequality two-links into " << two_links_root_ineq << " root and " << two_links_children_ineq_sum << " child links" << std::endl;
-//   }
-//
-//   assert( block == n_leafs );
-//
-//   /* now set the linking sizes of all children and this */
-//   this->myl_active -= two_links_children_eq_sum;
-//   this->mzl_active -= two_links_children_ineq_sum;
+   const unsigned int two_links_children_eq_sum = std::accumulate( two_links_children_eq.begin(), two_links_children_eq.end(), unsigned(0) );
+   const unsigned int two_links_children_ineq_sum = std::accumulate( two_links_children_ineq.begin(), two_links_children_ineq.end(), unsigned(0) );
 
+   if( rankMe == 0 )
+   {
+      std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq
+            << " root and " << two_links_children_eq_sum << " child links" << std::endl;
+      std::cout << "Splitting " << two_links_children_ineq_sum + two_links_root_ineq << " inequality two-links into " << two_links_root_ineq
+            << " root and " << two_links_children_ineq_sum << " child links" << std::endl;
+   }
+
+   /* now set the linking sizes of all children and this */
+   this->myl_active -= two_links_children_eq_sum;
+   this->mzl_active -= two_links_children_ineq_sum;
+
+   PIPS_MPIabortIf( true, "TODO : Implement");
    /* recompute sizes for the children */
    for( size_t i = 0; i < children.size(); ++i )
    {
