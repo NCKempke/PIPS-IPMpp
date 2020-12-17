@@ -105,24 +105,6 @@ sLinsys::sLinsys(sFactory* factory_,
   useRefs = 1;
   data = prob;
   stochNode = factory_->tree;
-
-  static bool printed = false;
-  const int n_omp_threads = PIPSgetnOMPthreads();
-  if( pips_options::getIntParameter("LINEAR_ROOT_SOLVER") == SolverType::SOLVER_PARDISO )
-  {
-     n_solvers = std::max( 1, n_omp_threads / 2 );
-     n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
-  }
-  else
-  {
-     n_solvers = n_omp_threads;
-     n_threads_solvers = 1;
-  }
-
-  if( computeBlockwiseSC )
-     if( PIPS_MPIgetRank() == 0 && !printed )
-        std::cout << "Using " << n_solvers << " solvers in parallel (with " << n_threads_solvers << " threads each) for blockwise SC computation - sLinsys" << std::endl;
-
 }
 
 
