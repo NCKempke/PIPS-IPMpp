@@ -310,13 +310,15 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
+   assertTreeStructureCorrect();
 }
 
 
 
 void sTreeCallbacks::assertTreeStructureCorrect() const
 {
-   assert( myProcs.size() <= children.size() );
+   assert( myProcs.size() <= children.size() || children.size() == 0 );
+   assert( is_sorted(myProcs.begin(), myProcs.end()) );
 
    for( const sTree* child : children )
    {
@@ -326,9 +328,9 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
          assert( sTree::isInVector(rankMe, child->myProcs) );
          assert( child->np == nx_active );
       }
+      assert( std::includes(myProcs.begin(), myProcs.end(), child->myProcs.begin(), child->myProcs.end()) );
    }
 
-   assert( is_sorted(myProcs.begin(), myProcs.end()) );
 
    if( commWrkrs == MPI_COMM_NULL )
    {
@@ -886,7 +888,8 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
 }
 
 void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
-      std::vector<int>& two_links_children_eq, std::vector<int>& two_links_children_ineq, int& two_links_root_eq, int& two_links_root_ineq ) const
+      std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
+      unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const
 {
    const unsigned int n_children = children.size();
    const unsigned int n_leafs = map_node_sub_root.size();
@@ -927,6 +930,72 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
    assert( leaf == n_leafs );
 }
 
+void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
+      const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum)
+{
+   assert( myl_active >= two_links_children_eq_sum );
+   assert( mzl_active >= two_links_children_ineq_sum );
+
+   myl_active -= two_links_children_eq_sum;
+   mzl_active -= two_links_children_ineq_sum;
+
+   /* recompute sizes for the children */
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      sTreeCallbacks& sub_root = dynamic_cast<sTreeCallbacks&>(*children[i]);
+
+      if( isInVector(rankMe, sub_root.myProcs) )
+      {
+         sub_root.MYL = two_links_children_eq[i];
+         sub_root.myl_active = two_links_children_eq[i];
+
+         sub_root.MZL = two_links_children_ineq[i];
+         sub_root.mzl_active = two_links_children_ineq[i];
+
+         sub_root.np = this->nx_active;
+
+         int nx{0};
+         int my{0};
+         int myl{0};
+         int mz{0};
+         int mzl{0};
+
+         for( size_t j = 0; j < sub_root.children.size(); ++j )
+         {
+            const sTreeCallbacks& leaf = dynamic_cast<const sTreeCallbacks&>(*sub_root.children[j]);
+
+            if( leaf.commWrkrs != MPI_COMM_NULL )
+            {
+//               nx += childchild.N;
+//               my += childchild.MY;
+//               mz += childchild.MZ;
+//               childchild.MYL = sub_root.MYL;
+//               childchild.myl_active = sub_root.myl_active;
+//               childchild.MZL = sub_root.MZL;
+//               childchild.mzl_active = sub_root.mzl_active;
+//            }
+//            else
+//            {
+//               assert( childchild.MYL == 0 );
+//               assert( childchild.myl_active == 0 );
+//               assert( childchild.MZL == 0 );
+//               assert( childchild.mzl_active == 0 );
+            }
+         }
+         sub_root.N = nx;
+         sub_root.MY = my;
+         sub_root.MZ = mz;
+
+      }
+      else
+      {
+         sub_root.N = sub_root.MY = sub_root.MZ = sub_root.MYL = sub_root.MZL = 0;
+         sub_root.nx_active = sub_root.my_active = sub_root.mz_active = sub_root.myl_active = sub_root.mzl_active = 0;
+      }
+
+   }
+}
+
 
 void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
@@ -938,8 +1007,8 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    createSubcommunicatorsAndChildren( map_node_sub_root );
    assert( map_node_sub_root.size() == n_old_leafs );
 
-   std::vector<int> two_links_children_eq, two_links_children_ineq;
-   int two_links_root_eq{-1}; int two_links_root_ineq{-1};
+   std::vector<unsigned int> two_links_children_eq, two_links_children_ineq;
+   unsigned int two_links_root_eq{0}; unsigned int two_links_root_ineq{0};
 
    countTwoLinksForChildTrees(twoLinksStartBlockA, twoLinksStartBlockC, two_links_children_eq,
          two_links_children_ineq, two_links_root_eq, two_links_root_ineq );
@@ -955,89 +1024,8 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
             << " root and " << two_links_children_ineq_sum << " child links" << std::endl;
    }
 
-   /* now set the linking sizes of all children and this */
-   this->myl_active -= two_links_children_eq_sum;
-   this->mzl_active -= two_links_children_ineq_sum;
-
-   PIPS_MPIabortIf( true, "TODO : Implement");
-   /* recompute sizes for the children */
-   for( size_t i = 0; i < children.size(); ++i )
-   {
-      sTreeCallbacks& child = dynamic_cast<sTreeCallbacks&>(*children[i]);
-
-      child.MYL = two_links_children_eq[i];
-      child.myl_active = two_links_children_eq[i];
-
-      child.MZL = two_links_children_ineq[i];
-      child.mzl_active = two_links_children_ineq[i];
-
-      child.nx_active = 0;
-      child.my_active = 0;
-      child.mz_active = 0;
-      child.np = this->nx_active;
-
-      /* if we are part of the child we compute the sizes - else they get set to 0 */
-      if( isInVector(rankMe, child.myProcs) )
-      {
-         int nx = 0;
-         int my = 0;
-         int mz = 0;
-
-         for( size_t j = 0; j < child.children.size(); ++j )
-         {
-
-            sTreeCallbacks& childchild = dynamic_cast<sTreeCallbacks&>(*child.children[j]);
-            assert( childchild.myProcs.size() == 1 );
-            assert( isInVector( childchild.myProcs[0], child.myProcs ) );
-
-            if( childchild.commWrkrs == MPI_COMM_SELF )
-            {
-               assert( isInVector(rankMe, childchild.myProcs ) );
-               nx += childchild.N;
-               my += childchild.MY;
-               mz += childchild.MZ;
-               childchild.MYL = child.MYL;
-               childchild.myl_active = child.myl_active;
-               childchild.MZL = child.MZL;
-               childchild.mzl_active = child.mzl_active;
-            }
-            else
-            {
-               assert( childchild.MYL == 0 );
-               assert( childchild.myl_active == 0 );
-               assert( childchild.MZL == 0 );
-               assert( childchild.mzl_active == 0 );
-            }
-         }
-         child.N = nx;
-         child.MY = my;
-         child.MZ = mz;
-
-      }
-      else
-      {
-         child.N = child.MY = child.MZ = child.MYL = child.MZL = 0;
-         child.nx_active = child.my_active = child.mz_active = child.myl_active = child.mzl_active = 0;
-      }
-
-   }
-#ifndef NEDBUG
-   int nx = 0;
-   int my = 0;
-   int mz = 0;
-
-   for( size_t i = 0; i < children.size(); ++i )
-   {
-      sTreeCallbacks& child = dynamic_cast<sTreeCallbacks&>(*children[i]);
-      nx += child.N;
-      my += child.MY;
-      mz += child.MZ;
-   }
-
-   assert( this->N == nx + this->nx_active );
-   assert( this->MY == my + this->my_active );
-   assert( this->MZ == mz + this->mz_active );
-#endif
+   adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq, two_links_children_eq_sum, two_links_children_ineq_sum);
+   assertTreeStructureCorrect();
 }
 
 

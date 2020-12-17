@@ -95,8 +95,10 @@ protected:
 
    void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree );
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
-         std::vector<int>& two_links_children_eq, std::vector<int>& two_links_children_ineq,
-         int& two_links_root_eq, int& two_links_root_ineq ) const;
+         std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
+         unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
+   void adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
+         const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum);
 
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
 
