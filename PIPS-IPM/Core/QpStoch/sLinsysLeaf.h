@@ -60,8 +60,6 @@ class sLinsysLeaf : public sLinsys
   template<class LINSOLVER>
   void initBlockedSolvers();
 
-  void freeBlockedSolvers();
-
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
@@ -155,11 +153,14 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
      omp_set_num_threads(n_threads_solvers);
      const int id = omp_get_thread_num();
 
-     problems_blocked[id].reset( new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt_sp) ) );
+     if( id == 0 )
+        problems_blocked[id].reset( kkt_sp );
+     else
+        problems_blocked[id].reset( new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt_sp) ) );
+
      solvers_blocked[id].reset( new LINSOLVER( dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get()) ) );
   }
 
-  delete kkt_sp;
   kkt = problems_blocked[0].get();
   solver = solvers_blocked[0].get();
 

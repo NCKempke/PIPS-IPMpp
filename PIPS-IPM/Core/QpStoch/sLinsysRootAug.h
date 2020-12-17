@@ -34,11 +34,14 @@ class sLinsysRootAug : public sLinsysRoot {
   void Ltsolve(sData *prob, OoqpVector& x) override;
 
  protected:
-  virtual SymMatrix* createKKT (sData* prob);
-  virtual DoubleLinearSolver* createSolver (sData* prob, SymMatrix* kktmat);
+  SymMatrix* createKKT (sData* prob) const;
+  void createSolversAndKKts(sData* prob);
+  void createReducedRhss();
+
   void assembleLocalKKT( sData* prob ) override;
-  void solveReduced( sData *prob, SimpleVector& b) override;
-  void solveReducedLinkCons( sData *prob, SimpleVector& b) override;
+  void solveReduced( sData *prob, SimpleVector& b);
+  void solveReducedLinkCons( sData *prob, SimpleVector& b);
+  void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
   void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border ) override;
 
  private:
@@ -56,6 +59,8 @@ class sLinsysRootAug : public sLinsysRoot {
   void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, sData* prob);
 
   SymMatrix* CtDC;
+
+  std::vector<std::unique_ptr<SimpleVector>> reduced_rhss_blocked;
   SimpleVector* redRhs;
 };
 

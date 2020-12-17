@@ -31,9 +31,6 @@ class sLinsysRoot : public sLinsys {
   void createChildren(sData* prob);
   void deleteChildren() override;
 
-  virtual SymMatrix* createKKT(sData* prob) = 0;
-  virtual DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat) = 0;
-
  public:
   std::vector<sLinsys*> children;
 
@@ -56,9 +53,6 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKTdist(sData* prob) {assert("not implemented here \n" && 0);};
 
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
-
-  virtual void solveReduced( sData *prob, SimpleVector& b) = 0;
-  virtual void solveReducedLinkCons( sData *prob, SimpleVector& b) {assert("not implemented here \n" && 0);};
 
   /* compute B0_{outer} - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
