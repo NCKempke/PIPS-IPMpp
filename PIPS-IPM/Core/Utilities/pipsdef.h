@@ -131,7 +131,7 @@ inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>&
 
 inline int PIPSgetnOMPthreads()
 {
-   return omp_get_num_threads();
+   return omp_get_max_threads();
 //   int num_procs;
 //
 //   /* Numbers of processors, value of OMP_NUM_THREADS */
