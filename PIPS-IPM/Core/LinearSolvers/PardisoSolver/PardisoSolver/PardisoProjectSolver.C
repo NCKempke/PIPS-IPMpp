@@ -25,6 +25,7 @@ PardisoProjectSolver::PardisoProjectSolver( SparseSymMatrix * sgm ) : PardisoSol
 #endif
 
    num_threads = PIPSgetnOMPthreads();
+   std::cout << "running on " << num_threads << "threads" << std::endl;
    solver = 0; /* sparse direct solver */
 }
 
@@ -36,6 +37,7 @@ PardisoProjectSolver::PardisoProjectSolver( DenseSymMatrix * m ) : PardisoSolver
 #endif
 
    num_threads = PIPSgetnOMPthreads();
+   std::cout << "running on " << num_threads << "threads" << std::endl;
    solver = 0; /* sparse direct solver */
 }
 
