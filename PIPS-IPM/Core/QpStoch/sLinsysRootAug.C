@@ -69,6 +69,29 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
       assert( false && "should not end up here");
 
+   static bool printed = false;
+   const int n_omp_threads = PIPSgetnOMPthreads();
+   if( pips_options::getIntParameter("LINEAR_ROOT_SOLVER") == SolverType::SOLVER_PARDISO )
+   {
+      n_solvers = std::max( 1, n_omp_threads / 2 );
+      n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
+   }
+   else
+   {
+      n_solvers = n_omp_threads;
+      n_threads_solvers = 1;
+   }
+
+   if( computeBlockwiseSC )
+   {
+      if( PIPS_MPIgetRank() == 0 && !printed )
+      {
+         printed = true;
+         std::cout << "Using " << n_solvers << " solvers in parallel (with "
+            << n_threads_solvers << " threads each) for root SC computations - sLinsysRootAug\n";
+      }
+   }
+
    assert(locmyl >= 0 && locmzl >= 0);
 
    problems_blocked[0].reset( createKKT(prob_) );

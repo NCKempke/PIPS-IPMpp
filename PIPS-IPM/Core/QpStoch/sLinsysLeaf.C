@@ -14,6 +14,8 @@ void sLinsysLeaf::factor2(sData *prob, Variables *vars)
    {
       #pragma omp parallel num_threads(n_solvers)
       {
+         omp_set_num_threads(n_threads_solvers);
+
          const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
          const int id = omp_get_thread_num();
 

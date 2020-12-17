@@ -66,7 +66,6 @@ class sLinsys : public QpGenLinsys
   sData* data;
   
   int iAmDistrib;
-  int nThreads;
 
   /* members for blockwise schur complement computation */
   bool computeBlockwiseSC{false};
@@ -79,8 +78,8 @@ class sLinsys : public QpGenLinsys
   /* is this linsys the overall root */
   const bool is_hierarchy_root;
 
-  // TODO: remove and use only nThreads? What if a solver supports more than one thread?
-  int n_solvers = nThreads;
+  int n_solvers{-1};
+  int n_threads_solvers{-1};
   std::vector<std::unique_ptr<DoubleLinearSolver>> solvers_blocked{1};
   std::vector<std::unique_ptr<SymMatrix>> problems_blocked{1};
 

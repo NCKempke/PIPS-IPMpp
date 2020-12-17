@@ -15,7 +15,7 @@
 #include "omp.h"
 
 sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
-  : QpGenLinsys(), nThreads(PIPSgetnOMPthreads()),
+  : QpGenLinsys(),
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
      blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
      is_hierarchy_root(is_hierarchy_root)
@@ -26,10 +26,6 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
 
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
   factory = factory_;
-
-  if( computeBlockwiseSC )
-     if( PIPS_MPIgetRank() == 0 )
-        std::cout << "Using " << nThreads << " solvers in parallel for blockwise SC computation - sLinsys" << std::endl;
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
   ixlow = prob->ixlow;
@@ -68,7 +64,7 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_)
-  : QpGenLinsys(), nThreads(PIPSgetnOMPthreads()),
+  : QpGenLinsys(),
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     is_hierarchy_root(false)
@@ -109,6 +105,24 @@ sLinsys::sLinsys(sFactory* factory_,
   useRefs = 1;
   data = prob;
   stochNode = factory_->tree;
+
+  static bool printed = false;
+  const int n_omp_threads = PIPSgetnOMPthreads();
+  if( pips_options::getIntParameter("LINEAR_ROOT_SOLVER") == SolverType::SOLVER_PARDISO )
+  {
+     n_solvers = std::max( 1, n_omp_threads / 2 );
+     n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
+  }
+  else
+  {
+     n_solvers = n_omp_threads;
+     n_threads_solvers = 1;
+  }
+
+  if( computeBlockwiseSC )
+     if( PIPS_MPIgetRank() == 0 && !printed )
+        std::cout << "Using " << n_solvers << " solvers in parallel (with " << n_threads_solvers << " threads each) for blockwise SC computation - sLinsys" << std::endl;
+
 }
 
 
@@ -347,7 +361,7 @@ void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& bor
    BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(),
          data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
 
-   addBiTLeftKiBiRightToResBlocked( result_sparse, result_sym, border_left_transp, border_right, result);
+   addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
 }
 
 /* calculate res += X_i * B_i^T */
@@ -838,7 +852,6 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
 void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result)
 {
-   // TODO : parallel
    int m_res, n_res; result.getSize(m_res, n_res);
    assert( m_res >= 0 && n_res >= 0 );
    if( sym_res )
@@ -870,8 +883,6 @@ void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, co
    const int withF = ( nF_right > 0 );
    const int withG = ( nG_right > 0 );
    const int length_col = mR_right + mA_right + mC_right;
-
-   assert(nThreads >= 1);
 
    if( colsBlockDense == nullptr )
       colsBlockDense = new double[blocksizemax * length_col];
@@ -1039,7 +1050,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
    int mB, nB; BT.getSize(mB, nB);
 
-   assert(nThreads >= 1);
+   assert( n_solvers >= 1 && n_threads_solvers >= 1 );
 
    std::vector<int> col_id_cont(blocksizemax * n_solvers);
 
@@ -1055,6 +1066,8 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
    #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
    for( int i = 0; i < chunks; i++ )
    {
+      omp_set_num_threads(n_threads_solvers);
+
       const int actual_blocksize = std::min( (i + 1) * blocksizemax, mB) - i * blocksizemax;
 
       const int id = omp_get_thread_num();
@@ -1113,7 +1126,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    const int withG = ( nG_right > 0 );
    const int length_col = mR_right + mA_right + mC_right;
 
-   assert(nThreads >= 1);
+   assert( n_solvers >= 1 && n_threads_solvers >= 1 );
 
    if( colsBlockDense == nullptr )
       colsBlockDense = new double[blocksizemax * length_col * n_solvers];
@@ -1142,6 +1155,8 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
    for( int i = 0; i < chunks_RAC; i++ )
    {
+      omp_set_num_threads(n_threads_solvers);
+
       const int actual_blocksize = std::min( (i + 1) * blocksizemax, nR_right) - i * blocksizemax;
 
       int nrhs = 0;
@@ -1194,6 +1209,8 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
       for(int i = 0; i < chunks_F; ++i )
       {
+         omp_set_num_threads(n_threads_solvers);
+
          const int actual_blocksize = std::min( (i + 1) * blocksizemax, nF_right) - i * blocksizemax;
 
          int nrhs = 0;
@@ -1243,6 +1260,8 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
       for( int i = 0; i < chunks_G; ++i )
       {
+         omp_set_num_threads(n_threads_solvers);
+
          const int actual_blocksize = std::min( (i + 1) * blocksizemax, nG_right) - i * blocksizemax;
 
          int nrhs = 0;
