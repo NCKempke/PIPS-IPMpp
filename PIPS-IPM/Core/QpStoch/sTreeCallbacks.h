@@ -127,6 +127,7 @@ protected:
 
    bool isDataPresolved{false};
    bool hasPresolvedData{false};
+   bool print_tree_sizes_on_reading{false};
 
    /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */
    std::vector<unsigned int> map_node_sub_root;

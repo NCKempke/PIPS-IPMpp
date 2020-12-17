@@ -21,7 +21,8 @@
 #define UCTRANS
 #endif
 
-sTreeCallbacks::sTreeCallbacks() 
+sTreeCallbacks::sTreeCallbacks()
+   : print_tree_sizes_on_reading{ pips_options::getBoolParameter( "PRINT_TREESIZES_ON_READ" ) }
 {
    if( -1 == rankMe )
       rankMe = PIPS_MPIgetRank();
@@ -30,7 +31,8 @@ sTreeCallbacks::sTreeCallbacks()
 }
 
 sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
-  : sTree(), data{ inputTree->nodeInput }
+  : sTree(), print_tree_sizes_on_reading{ pips_options::getBoolParameter( "PRINT_TREESIZES_ON_READ" ) },
+    data{ inputTree->nodeInput }
 {
    if( -1 == rankMe )
       rankMe = PIPS_MPIgetRank();
@@ -43,7 +45,9 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
 
 sTreeCallbacks::sTreeCallbacks(InputNode* data_)
   : sTree(), nx_active(data_->n), my_active(data_->my), mz_active(data_->mz),
-    myl_active(data_->myl), mzl_active(data_->mzl), data(data_)
+    myl_active(data_->myl), mzl_active(data_->mzl),
+    print_tree_sizes_on_reading{ pips_options::getBoolParameter( "PRINT_TREESIZES_ON_READ" ) },
+    data(data_)
 {
    assert( false && "Not used currently" );
    if( -1 == rankMe )
@@ -464,8 +468,9 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       //populate submatrix B
       (data->*Amat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
 
-      printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-            data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+      if( print_tree_sizes_on_reading )
+         printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+               data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
    }
    else
    {
@@ -492,8 +497,9 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       (data->*Amat)(data->user_data, data->id, A->Amat->krowM(), A->Amat->jcolM(), A->Amat->M());
       (data->*Bmat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
 
-      printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-            data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+      if( print_tree_sizes_on_reading )
+         printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+               data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
    }
 
    // populate Bl if existent

@@ -182,6 +182,9 @@ namespace pips_options
 
    void StochOptions::setDefaults()
    {
+      /// GENERAL
+      bool_options["PRINT_TREESIZES_ON_READ"] = false;
+
       /// LINEAR SOLVERS
       assert( solvers_available.size() > 1 );
 
