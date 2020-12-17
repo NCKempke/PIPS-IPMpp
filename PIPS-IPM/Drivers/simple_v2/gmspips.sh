@@ -6,7 +6,7 @@ regions="12"
 to="0.02"
 tbsize="8"
 np="1"
-scale=""
+scale="scaleGeo"
 stepLp=""
 presolve=""
 mins="60"
@@ -49,15 +49,15 @@ case $i in
     memcheck="${i#*=}"
     shift # past argument=value
     ;;
-    -STEPLP=*|--STEPLP=*)
-    stepLp="${i#*=}"
+    -STEPLP|--STEPLP)
+    stepLp="stepLp"
     shift # past argument=value
     ;;
     -HIERARCHICAL|--HIERARCHICAL)
     hierarchical="hierarchical"
     ;;
-    -PRESOLVE=*|--PRESOLVE=*)
-    presolve="${i#*=}"
+    -PRESOLVE|--PRESOLVE)
+    presolve="presolve"
     shift # past argument=value
     ;;
     *)
@@ -90,18 +90,6 @@ echo "Splitting ..."
 echo "Calling $DIR/../../../build_pips/gmschk -g $GAMSSYSDIR -T -X $nblocks allblocks_noVEnames.gdx"
 $DIR/../../../build_pips/gmschk -g $GAMSSYSDIR -T -X $nblocks allblocks_noVEnames.gdx > /dev/null
 echo "Splitting success"
-
-if [ "$stepLp" = "true" ]; then
-  stepLp="stepLp"
-else
-  stepLp=""
-fi
-
-if [ "$presolve" = "true" ]; then
-  presolve="presolve"
-else
-  presolve=""
-fi
 
 if [ "$scale" = "true" ]; then
   scale="scale"
