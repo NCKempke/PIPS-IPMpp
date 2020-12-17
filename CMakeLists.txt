@@ -43,7 +43,7 @@ if(DUMP)
 endif()
 
 #with testing of (selected) executables
-option(WITH_MAKETEST "Enable 'make test'" ON)
+option(WITH_MAKETEST "Enable 'make test'" OFF)
 message(STATUS "WITH_MAKETEST=${WITH_MAKETEST}")
 
 option(BUILD_GDX_SOURCE "Build GDX Source" OFF)
