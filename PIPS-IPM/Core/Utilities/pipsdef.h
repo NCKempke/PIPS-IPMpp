@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <mpi.h>
+#include "omp.h"
 #include <limits>
 #include <assert.h>
 #include "pipsport.h"
@@ -130,19 +131,20 @@ inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>&
 
 inline int PIPSgetnOMPthreads()
 {
-   int num_procs;
-
-   /* Numbers of processors, value of OMP_NUM_THREADS */
-   char* var = getenv("OMP_NUM_THREADS");
-   if( var != nullptr )
-      sscanf(var, "%d", &num_procs);
-   else
-   {
-      printf("Set environment OMP_NUM_THREADS to 1");
-      exit(1);
-   }
-
-   return num_procs;
+   return omp_get_num_threads();
+//   int num_procs;
+//
+//   /* Numbers of processors, value of OMP_NUM_THREADS */
+//   char* var = getenv("OMP_NUM_THREADS");
+//   if( var != nullptr )
+//      sscanf(var, "%d", &num_procs);
+//   else
+//   {
+//      printf("Set environment OMP_NUM_THREADS to 1");
+//      exit(1);
+//   }
+//
+//   return num_procs;
 }
 
 inline MPI_Comm PIPS_MPIcreateGroupFromRanks( const int* chosen_ranks, unsigned int n_chosen_ranks, MPI_Comm mpi_comm_all = MPI_COMM_WORLD )
