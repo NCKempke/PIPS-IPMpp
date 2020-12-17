@@ -75,29 +75,24 @@ void PardisoProjectIndefSolver::initPardiso()
    solver = 0; /* use sparse direct solver */
 
    #pragma omp critical
-   {
-      pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
-   }
+   pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
 
    if( error != 0 )
    {
       if( error == -10 )
-         printf("No license file found \n");
+         printf("PARDISO: No license file found \n");
       if( error == -11 )
-         printf("License is expired \n");
+         printf("PARDISO: License is expired \n");
       if( error == -12 )
-         printf("Wrong username or hostname \n");
-      exit(1);
+         printf("PARDISO: Wrong username or hostname \n");
+
+      PIPS_MPIabortIf(true, "Error in pardisoinit");
    }
-   else if( PIPS_MPIgetRank() == 0 )
-      printf("[PARDISO]: License check was successful ... \n");
 
    setIparm(iparm);
 
    if( PIPS_MPIgetRank() == 0 )
-   {
       printf("PARDISO root: using %d threads \n", iparm[2]);
-   }
 }
 
 void PardisoProjectIndefSolver::getIparm( int* iparm ) const

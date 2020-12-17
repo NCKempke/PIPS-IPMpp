@@ -175,14 +175,17 @@ void PardisoProjectSchurSolver::initPardiso()
    int error = 0;
 
    #pragma omp critical
-   {
-      pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
-   }
-
+   pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
    if( error != 0 )
    {
-      cout << "PardisoSolver ERROR during pardisoinit:" << error << ".\n";
-      MPI_Abort(MPI_COMM_WORLD, 1);
+      if( error == -10 )
+         printf("PARDISO: No license file found \n");
+      if( error == -11 )
+         printf("PARDISO: License is expired \n");
+      if( error == -12 )
+         printf("PARDISO: Wrong username or hostname \n");
+
+      PIPS_MPIabortIf(true, "Error in pardisoinit");
    }
 }
 

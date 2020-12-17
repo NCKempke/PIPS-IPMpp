@@ -47,14 +47,18 @@ void PardisoProjectSolver::firstCall()
 
    // the licence file read seems to be critical..
    #pragma omp critical
-   {
-      pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
-   }
+   pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
 
    if( error != 0 )
    {
-      std::cout << "PardisoSolver ERROR during pardisoinit:" << error << "." << std::endl;
-      assert(false);
+      if( error == -10 )
+         printf("PARDISO: No license file found \n");
+      if( error == -11 )
+         printf("PARDISO: License is expired \n");
+      if( error == -12 )
+         printf("PARDISO: Wrong username or hostname \n");
+
+      PIPS_MPIabortIf(true, "Error in pardisoinit");
    }
 
    setIparm(iparm);

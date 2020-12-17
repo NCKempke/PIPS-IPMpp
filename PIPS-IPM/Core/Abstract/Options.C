@@ -10,7 +10,6 @@
 
 namespace base_options
 {
-   /// initialize static options storages
    std::map<std::string, double> Options::double_options;
    std::map<std::string, int> Options::int_options;
    std::map<std::string, bool> Options::bool_options;
@@ -77,6 +76,16 @@ namespace base_options
       double_options[param] = value;
    }
 
+   bool isComment(std::string& line)
+   {
+      if( line.size() > 1 && line[0] == '#' )
+         return true;
+      else if( line.size() > 2 && line[0] == '/' && line[1] == '/')
+         return true;
+      else
+         return false;
+   }
+
    void Options::fillOptionsFromFile(const std::string& filename)
    {
       std::ifstream params;
@@ -96,8 +105,10 @@ namespace base_options
       std::string line;
       while( std::getline(params, line) )
       {
-         /* skip empty line */
          if( line.compare("") == 0 )
+            continue;
+
+         if( isComment(line) )
             continue;
 
          std::istringstream iss(line);

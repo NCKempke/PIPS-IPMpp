@@ -39,7 +39,6 @@ protected:
   void initSystem();
   bool iparmUnchanged() const;
 
-
   ~PardisoSolver();
 
   SparseSymMatrix* Msys;

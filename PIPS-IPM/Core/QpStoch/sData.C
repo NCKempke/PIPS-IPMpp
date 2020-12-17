@@ -1909,7 +1909,7 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
    const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
-   /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already*/
+   /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already */
    const bool do_not_permut_bounds = is_hierarchy_root ? true : false;
 
    if( perm_inv_link_vars.size() != 0 )
