@@ -233,6 +233,9 @@ SymMatrix* sLinsysRootBordered::createKKT(sData* prob)
 {
    const int n = locnx + locmyl + locmzl;
 
+   if( PIPS_MPIgetRank(mpiComm) == 0 )
+      std::cout << "sLinsysRootBordered: getSchurCompMaxNnz " << n*n << "\n";
+
    return new DenseSymMatrix(n);
 }
 
@@ -260,7 +263,7 @@ DoubleLinearSolver* sLinsysRootBordered::createSolver(sData* prob, SymMatrix* kk
    DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
 
    static bool printed = false;
-   if( !printed && 0 == PIPS_MPIgetRank() )
+   if( !printed && 0 == PIPS_MPIgetRank(mpiComm) )
       std::cout << "Using LAPACK dsytrf and " << solver << " for dense border Schur complement - sLinsysRootAug\n";
    printed = true;
 

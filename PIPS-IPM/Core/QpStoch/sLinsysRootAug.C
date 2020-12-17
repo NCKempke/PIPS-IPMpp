@@ -121,7 +121,7 @@ sLinsysRootAug::createKKT(sData* prob)
       SparseSymMatrix* sparsekkt;
 
       if( PIPS_MPIgetRank(mpiComm) == 0)
-         std::cout << "getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
+         std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
 
       if( usePrecondDist )
       {

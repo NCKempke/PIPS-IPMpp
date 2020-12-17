@@ -1911,7 +1911,7 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
 
    if( perm_inv_link_vars.size() != 0 )
-      unperm_resids->permuteVec0Entries( perm_inv_link_vars );
+      unperm_resids->permuteVec0Entries( perm_inv_link_vars, true);
 
    if( perm_inv_link_cons_eq.size() != 0 )
       unperm_resids->permuteEqLinkingEntries( perm_inv_link_cons_eq );
