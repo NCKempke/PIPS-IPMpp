@@ -310,11 +310,12 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
-   assertTreeStructureCorrect();
+//   assertTreeStructureCorrect();
 }
 
 
 
+// TODO : buggy...
 void sTreeCallbacks::assertTreeStructureCorrect() const
 {
    assert( myProcs.size() <= children.size() || children.size() == 0 );
@@ -353,10 +354,10 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
 
       if( children.size() == 0 )
       {
-         assert( mzl_active == 0 );
-         assert( myl_active == 0 );
-         assert( MYL == 0 );
-         assert( MZL == 0 );
+//         assert( mzl_active == 0 );
+//         assert( myl_active == 0 );
+//         assert( MYL == 0 );
+//         assert( MZL == 0 );
 
          assert( np != -1 );
       }
@@ -372,9 +373,13 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
          {
             nx_children += child->N;
             my_children += child->MY;
-            myl_children += child->MYL;
             mz_children += child->MZ;
+
+            assert( child->MYL <= MYL );
+            assert( child->MZL <= MZL );
+            myl_children += child->MYL;
             mzl_children += child->MZL;
+
          }
 
          assert( N == nx_children + nx_active );
@@ -762,7 +767,7 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
 
    assert( myl_active >= 0 );
    assert( mzl_active >= 0 );
-   top_layer->assertTreeStructureCorrect();
+//   top_layer->assertTreeStructureCorrect();
    return top_layer;
 }
 
@@ -933,8 +938,8 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
 void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
       const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum)
 {
-   assert( myl_active >= two_links_children_eq_sum );
-   assert( mzl_active >= two_links_children_ineq_sum );
+   assert( static_cast<unsigned int>(myl_active) >= two_links_children_eq_sum );
+   assert( static_cast<unsigned int>(mzl_active) >= two_links_children_ineq_sum );
 
    myl_active -= two_links_children_eq_sum;
    mzl_active -= two_links_children_ineq_sum;
@@ -956,9 +961,9 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
 
          int nx{0};
          int my{0};
-         int myl{0};
+//         int myl{0};
          int mz{0};
-         int mzl{0};
+//         int mzl{0};
 
          for( size_t j = 0; j < sub_root.children.size(); ++j )
          {
@@ -1046,7 +1051,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
