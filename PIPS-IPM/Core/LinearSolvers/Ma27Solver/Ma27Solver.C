@@ -376,9 +376,9 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 #endif
 
    /* sparsify rhs */
-   std::transform( rhs.elements(), rhs.elements() + n, rhs.elements(), []( double el ){
-      return std::fabs(el) < 1e-16 ? 0 : el;
-   });
+   //std::transform( rhs.elements(), rhs.elements() + n, rhs.elements(), []( double el ){
+   //   return std::fabs(el) < 1e-16 ? 0 : el;
+   //});
 }
 
 void Ma27Solver::copyMatrixElements( std::vector<double>& afact, int lafact ) const
