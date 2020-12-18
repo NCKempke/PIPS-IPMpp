@@ -2030,26 +2030,27 @@ void sData::activateLinkStructureExploitation()
    assert(n2LinksIneq == n2linkRowsIneq());
 #endif
 
+   const double ratio = (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size());
    if( myrank == 0 )
    {
       std::cout << "number of 0-link variables: " << n0LinkVars << " (out of "
-            << nx0 << " link variables) " << "\n";
+            << nx0 << " link variables)\n";
       std::cout << "number of equality 2-links: " << n2LinksEq << " (out of "
-            << linkStartBlockIdA.size() << " equalities) " << "\n";
+            << linkStartBlockIdA.size() << " equalities)\n";
       std::cout << "number of inequality 2-links: " << n2LinksIneq << " (out of "
-            << linkStartBlockIdC.size() << " equalities) " << "\n";
+            << linkStartBlockIdC.size() << " equalities)\n";
 
-      std::cout << "ratio: "
-            << (n2LinksEq + n2LinksIneq) / ((double) linkStartBlockIdA.size() + linkStartBlockIdC.size()) << "\n";
+      std::cout << "ratio: " << ratio << "\n";
    }
 
 
    if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
    {
+
       if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
       {
          if( myrank == 0 )
-            std::cout << "not enough linking structure found" << "\n";
+            std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << "\n";
          useLinkStructure = false;
       }
    }
