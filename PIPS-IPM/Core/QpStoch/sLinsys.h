@@ -147,8 +147,8 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
         SymMatrix& SC) { assert( 0 && "not implemented here" ); };
  protected:
-  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
+//  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
+//        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
 
  public:
   /* add you part of the border times rhs to b0 */

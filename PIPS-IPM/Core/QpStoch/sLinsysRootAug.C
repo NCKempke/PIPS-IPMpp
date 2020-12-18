@@ -65,7 +65,6 @@ static void biCGStabCommunicateStatus(int flag, int it)
 sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
   : sLinsysRoot(factory_, prob_), CtDC(nullptr)
 { 
-
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
       assert( false && "should not end up here");
 
@@ -114,8 +113,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 
    createSolversAndKKts(data);
 
-   redRhs = new SimpleVector(locnx + locmy + locmz + locmyl + locmzl );
-   redRhs->setToZero();
+   createReducedRhss();
 }
 
 sLinsysRootAug::~sLinsysRootAug()
@@ -163,7 +161,7 @@ void sLinsysRootAug::createReducedRhss()
       reduced_rhss_blocked[id]->setToZero();
    }
 
-   redRhs = reduced_rhss_blocked[0];
+   redRhs = reduced_rhss_blocked[0].get();
 }
 
 
@@ -176,7 +174,7 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
 
    assert( n_solvers >= 1 );
 
-   SymMatrix* kkt = createKKT(prob);
+   kkt = createKKT(prob);
 
    solvers_blocked.resize(n_solvers);
    problems_blocked.resize(n_solvers);
@@ -813,15 +811,6 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
    t_start = MPI_Wtime();
    troot_total = tchild_total = tcomm_total = 0.0;
 #endif
-//   for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
-//   {
-//      assert( rhs_i < m );
-//      assert( !data->isHierarchieRoot() );
-//
-//      // create alias
-//      SimpleVector b( rhs_mat_transp[rhs_i], n );
-//      solveReducedLinkCons( data, b );
-//   }
 
    assert( n_solvers >= 1 );
    int m, length_rhs; rhs_mat_transp.getSize( m, length_rhs);
@@ -834,88 +823,99 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
    ///////////////////////////////////////////////////////////////////////
    SparseGenMatrix &C = data->getLocalD();
 
-   double *rhs_reduced = redRhs->elements();
-   assert( redRhs->length() >= b_vec.length() );
-
-   ///////////////////////////////////////////////////////////////////////
-   // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
-   // the new rhs should be
-   //           r = [b1-C^T*(zDiag)^{-1}*b3; b2; b4; b5]
-   ///////////////////////////////////////////////////////////////////////
-   double *b = b_vec.elements();
-   // TODO !!!
-   //copy all elements from b into r except for the the residual values corresponding to z0 = b3
-   // copy b1, b2
-   std::copy(b, b + locnx + locmy, rhs_reduced);
-   // copy b4, b5
-   std::copy(b + locnx + locmy + locmz, b + locnx + locmy + locmz + locmyl + locmzl, rhs_reduced + locnx + locmy);
-   // copy b3 to the end - used as buffer for reduction computations
-   std::copy(b + locnx + locmy, b + locnx + locmy + locmz, rhs_reduced + locnx + locmy + locmyl + locmzl);
-   // rhs_reduced now : [ b1; b2; b4; b5; b3]
-
-   // alias to r1 part (no mem allocations)
-   SimpleVector rhs1(&rhs_reduced[0], locnx);
-   SimpleVector b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
-
-   ///////////////////////////////////////////////////////////////////////
-   // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
-   ///////////////////////////////////////////////////////////////////////
-   // if we have C part
-   if( locmz > 0 )
+   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
+   for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
    {
-      assert(b3.length() == zDiag->length());
-      b3.componentDiv(*zDiag);
-      C.transMult(1.0, rhs1, -1.0, b3);
+      assert( rhs_i < m );
+
+      omp_set_num_threads(n_threads_solvers);
+      const int id = omp_get_thread_num();
+
+      double *rhs_reduced = reduced_rhss_blocked[id]->elements();
+      assert( reduced_rhss_blocked[id]->length() >= length_rhs );
+
+      SimpleVector b_vec( rhs_mat_transp[rhs_i], length_rhs );
+
+      ///////////////////////////////////////////////////////////////////////
+      // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
+      // the new rhs should be
+      //           r = [b1-C^T*(zDiag)^{-1}*b3; b2; b4; b5]
+      ///////////////////////////////////////////////////////////////////////
+
+      double *b = b_vec.elements();
+
+      //copy all elements from b into r except for the the residual values corresponding to z0 = b3
+      // copy b1, b2
+      std::copy(b, b + locnx + locmy, rhs_reduced);
+      // copy b4, b5
+      std::copy(b + locnx + locmy + locmz, b + locnx + locmy + locmz + locmyl + locmzl, rhs_reduced + locnx + locmy);
+      // copy b3 to the end - used as buffer for reduction computations
+      std::copy(b + locnx + locmy, b + locnx + locmy + locmz, rhs_reduced + locnx + locmy + locmyl + locmzl);
+      // rhs_reduced now : [ b1; b2; b4; b5; b3]
+      // alias to r1 part (no mem allocations)
+      SimpleVector rhs1(&rhs_reduced[0], locnx);
+      SimpleVector b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
+
+      ///////////////////////////////////////////////////////////////////////
+      // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
+      ///////////////////////////////////////////////////////////////////////
+      // if we have C part
+      if( locmz > 0 )
+      {
+         assert(b3.length() == zDiag->length());
+         b3.componentDiv(*zDiag);
+         C.transMult(1.0, rhs1, -1.0, b3);
+      }
+
+      ///////////////////////////////////////////////////////////////////////
+      // rhs_reduced now contains all components -> solve for it
+      ///////////////////////////////////////////////////////////////////////
+
+      // we do not need the last locmz elements of r since they were buffer only
+      SimpleVector rhs_short(rhs_reduced, locnx + locmy + locmyl + locmzl);
+
+      if( innerSCSolve == 0 )
+      {
+         // Option 1. - solve with the factors
+         solver->Dsolve(rhs_short);
+      }
+      else if( innerSCSolve == 1 )
+      {
+         PIPS_MPIabortIf( true, "innserSCSolve 1 not supported for parallel SC computations .. TODO");
+         // Option 2 - solve with the factors and perform iter. ref.
+         solveWithIterRef(data, rhs_short);
+      }
+      else
+      {
+         PIPS_MPIabortIf( true, "innserSCSolve 2 not supported for parallel SC computations .. TODO");
+         assert(innerSCSolve == 2);
+         // Option 3 - use the factors as preconditioner and apply BiCGStab
+         solveWithBiCGStab(data, rhs_short);
+      }
+
+      ///////////////////////////////////////////////////////////////////////
+      // rhs_small is now the solution to the reduced system
+      // the solution to the augmented system can now be computed as
+      //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
+      ///////////////////////////////////////////////////////////////////////
+
+      // copy the solution components and calculate r3
+      // copy rhs1 and rhs2
+      std::copy(rhs_reduced, rhs_reduced + locnx + locmy, b);
+      // compute x3
+      if( locmz > 0 )
+      {
+         SimpleVector rhs1(rhs_reduced, locnx);
+         SimpleVector b3(b + locnx + locmy, locmz);
+         C.mult(1.0, b3, -1.0, rhs1);
+         b3.componentDiv(*zDiag);
+      }
+
+      // copy rhs3 and rhs4
+      std::copy(rhs_reduced + locnx + locmy,
+            rhs_reduced + locnx + locmy + locmyl + locmzl,
+            b + locnx + locmy + locmz);
    }
-
-   ///////////////////////////////////////////////////////////////////////
-   // rhs_reduced now contains all components -> solve for it
-   ///////////////////////////////////////////////////////////////////////
-
-   // we do not need the last locmz elements of r since they were buffer only
-   SimpleVector rhs_short(rhs_reduced, locnx + locmy + locmyl + locmzl);
-
-   if( innerSCSolve == 0 )
-   {
-      // Option 1. - solve with the factors
-      solver->Dsolve(rhs_short);
-   }
-   else if( innerSCSolve == 1 )
-   {
-      // Option 2 - solve with the factors and perform iter. ref.
-      solveWithIterRef(data, rhs_short);
-   }
-   else
-   {
-      assert(innerSCSolve == 2);
-      // Option 3 - use the factors as preconditioner and apply BiCGStab
-      solveWithBiCGStab(data, rhs_short);
-   }
-
-   ///////////////////////////////////////////////////////////////////////
-   // rhs_small is now the solution to the reduced system
-   // the solution to the augmented system can now be computed as
-   //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
-   ///////////////////////////////////////////////////////////////////////
-
-   // copy the solution components and calculate r3
-   // copy rhs1 and rhs2
-   std::copy(rhs_reduced, rhs_reduced + locnx + locmy, b);
-   // compute x3
-   if( locmz > 0 )
-   {
-      SimpleVector rhs1(rhs_reduced, locnx);
-      SimpleVector b3(b + locnx + locmy, locmz);
-      C.mult(1.0, b3, -1.0, rhs1);
-      b3.componentDiv(*zDiag);
-   }
-
-   // copy rhs3 and rhs4
-   std::copy(rhs_reduced + locnx + locmy,
-         rhs_reduced + locnx + locmy + locmyl + locmzl,
-         b + locnx + locmy + locmz);
-
-
 #ifdef TIMING
    // TODO
   if( myRank == 0 && innerSCSolve >= 1 )
@@ -2050,50 +2050,49 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 #ifdef TIMING
    // TODO
 #endif
-  assert(locmyl >= 0 && locmzl >= 0);
+   assert(locmyl >= 0 && locmzl >= 0);
 
-  int m,n; rhs_mat_transp.getSize(m, n);
-  assert( locnx + locmy + locmz + locmyl + locmzl == n );
+   int m,n; rhs_mat_transp.getSize(m, n);
+   assert( locnx + locmy + locmz + locmyl + locmzl == n );
 
-  /* for every right hand side one of the processes now does the SC solve operation and puts it at the corresponding
-   * position in b
-   * Every process has to do n_rhs / n_procs right hand sides while the first few might have to solve with one additional one
-   */
+   /* for every right hand side one of the processes now does the SC solve operation and puts it at the corresponding
+    * position in b
+    * Every process has to do n_rhs / n_procs right hand sides while the first few might have to solve with one additional one
+    */
 
-  const int size = PIPS_MPIgetSize( mpiComm );
-  const int n_blockrhs = static_cast<int>( m / size );
-  const int leftover = m % size;
+   const int size = PIPS_MPIgetSize( mpiComm );
+   const int n_blockrhs = static_cast<int>( m / size );
+   const int leftover = m % size;
 
-  const int n_rhs = (my_rank < leftover ) ? n_blockrhs + 1 : n_blockrhs;
-  const int rhs_start = my_rank < leftover ? (n_blockrhs + 1) * my_rank :
-        (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
+   const int n_rhs = (my_rank < leftover ) ? n_blockrhs + 1 : n_blockrhs;
+   const int rhs_start = my_rank < leftover ? (n_blockrhs + 1) * my_rank :
+         (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
 
-  // TODO : also parallelize via omp and many schur complement solvers...
-  #pragma omp parallel for
-  for( int rhs_i = 0; rhs_i < rhs_start; ++rhs_i )
-  {
-     SimpleVector b( rhs_mat_transp[rhs_i], n );
-     b.setToZero();
-  }
+   #pragma omp parallel for schedule(dynamic, 1)
+   for( int rhs_i = 0; rhs_i < rhs_start; ++rhs_i )
+   {
+      SimpleVector b( rhs_mat_transp[rhs_i], n );
+      b.setToZero();
+   }
 
-  assert( rhs_start < m );
-  assert( rhs_start + n_rhs < m );
+   assert( rhs_start < m );
+   assert( rhs_start + n_rhs <= m );
 
-  solveReducedLinkConsBlocked( data, rhs_mat_transp, rhs_start, n );
+   solveReducedLinkConsBlocked( data, rhs_mat_transp, rhs_start, n_rhs );
 
-  #pragma omp parallel for
-  for( int rhs_i = rhs_start + n_rhs; rhs_i < m; ++rhs_i )
-  {
-     SimpleVector b( rhs_mat_transp[rhs_i], n );
-     b.setToZero();
-  }
+   #pragma omp parallel for schedule(dynamic, 1)
+   for( int rhs_i = rhs_start + n_rhs; rhs_i < m; ++rhs_i )
+   {
+      SimpleVector b( rhs_mat_transp[rhs_i], n );
+      b.setToZero();
+   }
 
-  if( iAmDistrib )
-  {
-     int m, n;
-     rhs_mat_transp.getSize(m, n);
-     submatrixAllReduceFull(&rhs_mat_transp, 0, 0, m, n, mpiComm);
-  }
+   if( iAmDistrib )
+   {
+      int m, n;
+      rhs_mat_transp.getSize(m, n);
+      submatrixAllReduceFull(&rhs_mat_transp, 0, 0, m, n, mpiComm);
+   }
 }
 
 /* solve own linear system with border data

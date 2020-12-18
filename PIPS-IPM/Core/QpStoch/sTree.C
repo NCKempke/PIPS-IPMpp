@@ -236,6 +236,7 @@ int sTree::innerSize(int which) const
   return mz();
 }
 
+// TODO: unused but move them to StochVector anyway
 void sTree::syncPrimalVector(StochVector& stVec) const
 {
    assert( !is_hierarchical_root );
