@@ -83,6 +83,7 @@ QpGenVars::QpGenVars( LinearAlgebraPackage * la,
   SpReferTo( iclow, iclow_in );
   SpReferTo( icupp, icupp_in );
 
+  assert( false && "Not used anymore");
   nx = nx_;
   my = my_;
   mz = mz_;

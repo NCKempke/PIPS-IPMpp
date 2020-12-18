@@ -125,23 +125,7 @@ public:
 
   int isInVector(int elem, const vector<int>& vec) const;
 public:
-#ifdef STOCH_TESTING
-  void displayProcessInfo(int onWhichRank=0);
-  void displayProcessInfo(char* tab);
-  void runTestNGP();
-  void displayExecTimes(int onWhichRank=0);
-  void displayExecTimes(char* szTabbing);
-
-  void displayVectorVsTreeStructure(StochVector& stVec, int rank, char* szTab);
-  void displayVectorVsTreeStructure(StochVector& stVec, int rank);
-
-  void displayMatVsTreeStructure(StochGenMatrix& stVec, int myRank, char* tab);
-  void displayMatVsTreeStructure(StochGenMatrix& stVec, int myRank);
-
-  void displayMatVsTreeStructure(StochSymMatrix& stVec, int myRank, char* tab);
-  void displayMatVsTreeStructure(StochSymMatrix& stVec, int myRank);
-#endif
-//to be called after assignProcesses
+  //to be called after assignProcesses
   virtual void loadLocalSizes() = 0;
 
   bool isHierarchicalRoot() const { return is_hierarchical_root; };
