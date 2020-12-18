@@ -30,7 +30,7 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
 
-      if( my_rank == 0 )
+      if( my_rank == 0 && omp_get_thread_num() == 0 )
          printf("\n Schur complement factorization is starting ...\n ");
 
       freeWorkingArrays();
@@ -39,7 +39,7 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       init();
       matrixChanged();
 
-      if( my_rank == 0 )
+      if( my_rank == 0 && omp_get_thread_num() == 0 )
          printf("\n Schur complement factorization completed \n ");
    }
 }
@@ -52,8 +52,6 @@ void Ma57SolverRoot::matrixChanged()
 
 void Ma57SolverRoot::solve(OoqpVector& rhs)
 {
-   PIPSdebugMessage("MA57 solver: solve (single rhs) \n");
-
    SimpleVector& sv = dynamic_cast<SimpleVector &>(rhs);
 
    assert(n == rhs.length());

@@ -135,7 +135,8 @@ void PardisoIndefSolver::matrixChanged()
 
    if( solve_in_parallel || my_rank == 0 )
    {
-      if( my_rank == 0 )
+      const int id = omp_get_thread_num();
+      if( my_rank == 0 && id == 0 )
          printf("\n Schur complement factorization is starting ...\n ");
 
       if( mStorageSparse )
@@ -143,7 +144,7 @@ void PardisoIndefSolver::matrixChanged()
       else
          factorizeFromDense();
 
-      if( my_rank == 0 )
+      if( my_rank == 0 && id == 0 )
          printf("\n Schur complement factorization completed \n ");
    }
 }
@@ -158,14 +159,15 @@ void PardisoIndefSolver::matrixRebuild( DoubleMatrix& matrixNew )
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
-      if( my_rank == 0 )
+      const int id = omp_get_thread_num();
+      if( my_rank == 0 && id == 0 )
          printf("\n Schur complement factorization is starting ...\n ");
 
       assert(mStorageSparse);
 
       factorizeFromSparse(matrixNewSym);
 
-      if( my_rank == 0 )
+      if( my_rank == 0 && id == 0 )
          printf("\n Schur complement factorization completed \n ");
    }
 }
@@ -258,7 +260,7 @@ void PardisoIndefSolver::factorizeFromSparse()
       ia[r + 1] = nnznew + 1;
    }
 
-   if( !solve_in_parallel || PIPS_MPIgetRank(MPI_COMM_WORLD) == 0 )
+   if( (!solve_in_parallel || PIPS_MPIgetRank(MPI_COMM_WORLD) == 0) && omp_get_thread_num() == 0 )
       std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")" << std::endl;
 
 #if 0
@@ -389,7 +391,7 @@ else
       exit(1);
    }
 
-   if( my_rank == 0 )
+   if( my_rank == 0 && omp_get_thread_num() == 0 )
    {
       printf("\nReordering completed: ");
       printf("\nNumber of nonzeros in factors  = %d", iparm[17]);
