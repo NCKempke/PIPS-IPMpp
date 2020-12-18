@@ -39,7 +39,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void createReducedRhss();
 
   void assembleLocalKKT( sData* prob ) override;
-  void solveReduced( sData *prob, SimpleVector& b);
+//  void solveReduced( sData *prob, SimpleVector& b);
   void solveReducedLinkCons( sData *prob, SimpleVector& b);
   void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
   void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border ) override;

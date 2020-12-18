@@ -408,6 +408,16 @@ else
    }
 }
 
+void PardisoIndefSolver::solveSynchronized( OoqpVector& vec )
+{
+   solve_in_parallel = false;
+
+   solve( vec );
+
+   solve_in_parallel = true;
+}
+
+
 void PardisoIndefSolver::solve ( OoqpVector& v )
 {
    assert( iparmUnchanged() );

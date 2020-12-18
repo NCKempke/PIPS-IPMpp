@@ -61,7 +61,7 @@ class PardisoIndefSolver : public DoubleLinearSolver
       bool factorizationTwoLevel{factorizationTwoLevelDefault};
       bool useSparseRhs{useSparseRhsDefault};
       bool deleteCSRpointers{false};
-      const bool solve_in_parallel;
+      bool solve_in_parallel;
 
 
       virtual void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
@@ -78,6 +78,7 @@ class PardisoIndefSolver : public DoubleLinearSolver
       using DoubleLinearSolver::solve;
       void solve ( OoqpVector& vec ) override;
       void solve ( GenMatrix& vec ) override;
+      void solveSynchronized( OoqpVector& vec ) override;
       ~PardisoIndefSolver() override;
 
    private:

@@ -43,6 +43,9 @@ public:
    *           On exit, the solution.  */
    virtual void solve ( OoqpVector& x ) = 0;
 
+   /* override if necessary */
+   virtual void solveSynchronized( OoqpVector& x ) { solve(x); };
+
    // solve with multiple RHS
    virtual void solve ( GenMatrix& rhs ) { assert(0 && "Not implemented"); }
 
