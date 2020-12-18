@@ -2074,7 +2074,7 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
       b.setToZero();
    }
 
-   assert( rhs_start < m );
+   assert( rhs_start <= m );
    assert( rhs_start + n_rhs <= m );
 
    solveReducedLinkConsBlocked( data, rhs_mat_transp, rhs_start, n_rhs );
