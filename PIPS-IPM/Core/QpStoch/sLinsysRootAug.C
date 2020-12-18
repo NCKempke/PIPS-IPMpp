@@ -874,7 +874,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       if( innerSCSolve == 0 )
       {
          // Option 1. - solve with the factors
-         solver[id]->Dsolve(rhs_short);
+         solvers_blocked[id]->Dsolve(rhs_short);
       }
       else if( innerSCSolve == 1 )
       {
