@@ -552,7 +552,7 @@ bool Ma27Solver::checkErrorsAndReact()
 
          int n,m; mat_storage->getSize(m,n);
          assert( m == n );
-         std::cout << "PERTURBATION! " << pert << "\n";
+         //std::cout << "PERTURBATION! " << pert << "\n";
          for ( int i = 0; i < m; i++ )
          {
             for( int k = mat_storage->krowM[i]; k < mat_storage->krowM[i+1]; k++ )
