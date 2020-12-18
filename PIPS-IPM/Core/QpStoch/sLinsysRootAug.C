@@ -825,10 +825,10 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
    #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
    for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
    {
-      assert( rhs_i < m );
-
       omp_set_num_threads(n_threads_solvers);
       const int id = omp_get_thread_num();
+      assert( rhs_i < m );
+
 
       double *rhs_reduced = reduced_rhss_blocked[id]->elements();
       assert( reduced_rhss_blocked[id]->length() >= length_rhs );
@@ -874,7 +874,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       if( innerSCSolve == 0 )
       {
          // Option 1. - solve with the factors
-         solver->Dsolve(rhs_short);
+         solver[id]->Dsolve(rhs_short);
       }
       else if( innerSCSolve == 1 )
       {
