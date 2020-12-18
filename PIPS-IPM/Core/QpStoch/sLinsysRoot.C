@@ -1491,6 +1491,7 @@ void sLinsysRoot::factorizeKKT(sData* prob)
 
   if( usePrecondDist )
   {
+     assert( n_solvers == 1 );
      const int myRank = PIPS_MPIgetRank(mpiComm);
 
      assert(kktDist);
@@ -1530,8 +1531,22 @@ void sLinsysRoot::factorizeKKT(sData* prob)
   }
   else
   {
-     // in solver allocate memory once and only reallocate if more memory needed?
-     solver->matrixChanged();
+     if( hasSparseKkt )
+     {
+       #pragma omp parallel num_threads(n_solvers)
+       {
+         omp_set_num_threads(n_threads_solvers);
+
+         const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
+         const int id = omp_get_thread_num();
+
+         SparseSymMatrix& my_kkt = dynamic_cast<SparseSymMatrix&>(*problems_blocked[id].get());
+         kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
+         solvers_blocked[id]->matrixChanged();
+       }
+     }
+     else
+        solver->matrixChanged();
   }
 
   //stochNode->resMon.recFactTmLocal_stop(); 
