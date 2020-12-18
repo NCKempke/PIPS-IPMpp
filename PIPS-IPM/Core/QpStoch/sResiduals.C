@@ -64,6 +64,7 @@ sResiduals::sResiduals( const sTree* tree,
   SpReferTo( icupp, icupp_ );
   mcupp = icupp->numberOfNonzeros();
 
+  const bool empty_vector = true;
   rQ = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector() );
   rA = OoqpVectorHandle( (OoqpVector*) tree->newDualYVector() );
   rC = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector() );
@@ -73,32 +74,32 @@ sResiduals::sResiduals( const sTree* tree,
     rt      = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector() );
     rlambda = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector() );
   } else {
-    rt      = OoqpVectorHandle( (OoqpVector*) tree->newDualZVectorEmpty() );
-    rlambda = OoqpVectorHandle( (OoqpVector*) tree->newDualZVectorEmpty() );
+    rt      = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector(empty_vector) );
+    rlambda = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector(empty_vector) );
   }
 
   if ( mcupp > 0 ) {
     ru     = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector() );
     rpi    = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector() );
   } else {
-    ru     = OoqpVectorHandle( (OoqpVector*) tree->newDualZVectorEmpty() );
-    rpi    = OoqpVectorHandle( (OoqpVector*) tree->newDualZVectorEmpty() );
+    ru     = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector(empty_vector) );
+    rpi    = OoqpVectorHandle( (OoqpVector*) tree->newDualZVector(empty_vector) );
   }
 
   if( nxlow > 0 ) {
     rv     = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector() );
     rgamma = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector() );
   } else {
-    rv     = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVectorEmpty() );
-    rgamma = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVectorEmpty() );
+    rv     = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector(empty_vector) );
+    rgamma = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector(empty_vector) );
   }
 
   if( nxupp > 0 ) {
     rw   = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector() );
     rphi = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector() );
   } else {
-    rw   = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVectorEmpty() );
-    rphi = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVectorEmpty() );
+    rw   = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector(empty_vector) );
+    rphi = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector(empty_vector) );
   }
   
   stochNode = tree;

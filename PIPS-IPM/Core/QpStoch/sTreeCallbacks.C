@@ -232,16 +232,16 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
    MPI_Barrier(commWrkrs);
    if( myRank == 0 )
    {
-      sout << "N          : "  <<  N           << "\n";
-      sout << "MY         : "  <<  MY          << "\n";
-      sout << "MZ         : "  <<  MZ          << "\n";
-      sout << "MYL        : "  <<  MYL         << "\n";
-      sout << "MZL        : "  <<  MZL         << "\n";
-      sout << "nx_active  : "  <<  nx_active    << "\n";
-      sout << "my_active  : "  <<  my_active    << "\n";
-      sout << "mz_active  : "  <<  mz_active    << "\n";
-      sout << "myl_active : "  <<  myl_active   << "\n";
-      sout << "mzl_active : "  <<  mzl_active   << "\n";
+      sout << "N          : " << N << "\n";
+      sout << "MY         : " << MY << "\n";
+      sout << "MZ         : " << MZ << "\n";
+      sout << "MYL        : " << MYL << "\n";
+      sout << "MZL        : " << MZL << "\n";
+      sout << "nx_active  : " << nx_active << "\n";
+      sout << "my_active  : " << my_active << "\n";
+      sout << "mz_active  : " << mz_active << "\n";
+      sout << "myl_active : " << myl_active << "\n";
+      sout << "mzl_active : " << mzl_active << "\n";
    }
 
 

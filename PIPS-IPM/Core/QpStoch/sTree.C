@@ -236,115 +236,60 @@ int sTree::innerSize(int which) const
   return mz();
 }
 
-StochVector* sTree::newPrimalVector() const
+StochVector* sTree::newPrimalVector(bool empty) const
 {
-  //is this node a dead-end for this process?
-  if( commWrkrs == MPI_COMM_NULL )
-    return new StochDummyVector();
+   if( commWrkrs == MPI_COMM_NULL )
+      return new StochDummyVector();
 
-  StochVector* x = new StochVector(nx(), commWrkrs);
-  assert( x != nullptr );
+   StochVector* x = new StochVector( empty ? 0 : nx(), commWrkrs);
 
-  for(size_t it = 0; it < children.size(); it++)
-  {
-    StochVector* child = children[it]->newPrimalVector();
-    x->AddChild(child);
-  }
-  return x;
+   for(size_t it = 0; it < children.size(); it++)
+   {
+      StochVector* child = children[it]->newPrimalVector();
+      x->AddChild(child);
+   }
+   return x;
 }
 
-StochVector* sTree::newDualYVector() const
+StochVector* sTree::newDualYVector(bool empty) const
 {
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
+   if( commWrkrs == MPI_COMM_NULL )
+      return new StochDummyVector();
 
-  int yl = (np == -1) ? myl() : -1;
+   const int yl = (np == -1) ? myl() : -1;
 
-  StochVector* y = new StochVector(my(), yl, commWrkrs);
+   StochVector* y = new StochVector(empty ? std::min(0, my()) : my(),
+         empty ? std::min(yl, 0) : yl, commWrkrs);
 
-  for(size_t it=0; it<children.size(); it++) {
-    StochVector* child = children[it]->newDualYVector();
-    y->AddChild(child);
-  }
-  return y;
+   for(size_t it = 0; it < children.size(); it++)
+   {
+      StochVector* child = children[it]->newDualYVector();
+      y->AddChild(child);
+   }
+   return y;
 }
 
-StochVector* sTree::newDualZVector() const
+StochVector* sTree::newDualZVector(bool empty) const
 {
-  //is this node a dead-end for this process?
-  if(commWrkrs == MPI_COMM_NULL)
-    return new StochDummyVector();
+   if( commWrkrs == MPI_COMM_NULL )
+      return new StochDummyVector();
 
-  //length of linking part
-  int zl = (np == -1) ? mzl() : -1;
+   const int zl = (np == -1) ? mzl() : -1;
 
-  StochVector* z = new StochVector(mz(), zl, commWrkrs);
+   StochVector* z = new StochVector( empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
 
-  for(size_t it=0; it<children.size(); it++) {
-    StochVector* child = children[it]->newDualZVector();
-    z->AddChild(child);
-  }
-  return z;
+   for( size_t it = 0; it < children.size(); it++)
+   {
+      StochVector* child = children[it]->newDualZVector();
+      z->AddChild(child);
+   }
+   return z;
 }
-
-
-StochVector* sTree::newPrimalVectorEmpty() const
-{
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  StochVector* x = new StochVector(0, commWrkrs);
-
-  for(size_t it=0; it<children.size(); it++) {
-    StochVector* child = children[it]->newPrimalVectorEmpty();
-    x->AddChild(child);
-  }
-  return x;
-}
-
-StochVector* sTree::newDualYVectorEmpty() const
-{
-  //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  //length of linking part
-  int yl = (np == -1) ? myl() : -1;
-
-  StochVector* y = new StochVector(std::min(my(), 0), std::min(0, yl), commWrkrs);
-
-  for(size_t it = 0; it < children.size(); it++) {
-    StochVector* child = children[it]->newDualYVectorEmpty();
-    y->AddChild(child);
-  }
-  return y;
-}
-
-StochVector* sTree::newDualZVectorEmpty() const
-{
-  //is this node a dead-end for this process?
-  if(commWrkrs == MPI_COMM_NULL)
-    return new StochDummyVector();
-
-  //length of linking part
-  int zl = (np == -1) ? mzl() : -1;
-
-  StochVector* z = new StochVector(std::min(mz(), 0), std::min(zl, 0), commWrkrs);
-
-  for(size_t it = 0; it < children.size(); it++) {
-    StochVector* child = children[it]->newDualZVectorEmpty();
-    z->AddChild(child);
-  }
-  return z;
-}
-
 
 StochVector* sTree::newRhs()
 {
   //is this node a dead-end for this process?
-  if(commWrkrs==MPI_COMM_NULL)
+  if( commWrkrs == MPI_COMM_NULL )
     return new StochDummyVector();
 
   int locmyl = (np == -1) ? myl() : 0;

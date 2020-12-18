@@ -73,31 +73,27 @@ public:
 
   void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU );
 
-  virtual StochSymMatrix*   createQ() const = 0;
-  virtual StochVector*      createc() const = 0;
+  virtual StochSymMatrix* createQ() const = 0;
+  virtual StochVector* createc() const = 0;
 
-  virtual StochVector*      createxlow()  const = 0;
-  virtual StochVector*      createixlow() const = 0;
-  virtual StochVector*      createxupp()  const = 0;
-  virtual StochVector*      createixupp() const = 0;
+  virtual StochVector* createxlow()  const = 0;
+  virtual StochVector* createixlow() const = 0;
+  virtual StochVector* createxupp()  const = 0;
+  virtual StochVector* createixupp() const = 0;
+
+  virtual StochGenMatrix* createA() const = 0;
+  virtual StochVector* createb() const = 0;
 
 
-  virtual StochGenMatrix*   createA() const = 0;
-  virtual StochVector*      createb() const = 0;
+  virtual StochGenMatrix* createC() const = 0;
+  virtual StochVector* createclow()  const = 0;
+  virtual StochVector* createiclow() const = 0;
+  virtual StochVector* createcupp()  const = 0;
+  virtual StochVector* createicupp() const = 0;
 
-
-  virtual StochGenMatrix*   createC() const = 0;
-  virtual StochVector*      createclow()  const = 0;
-  virtual StochVector*      createiclow() const = 0;
-  virtual StochVector*      createcupp()  const = 0;
-  virtual StochVector*      createicupp() const = 0;
-
-  StochVector*      newPrimalVector() const;
-  StochVector*      newDualYVector()  const;
-  StochVector*      newDualZVector()  const;
-  StochVector*      newPrimalVectorEmpty() const;
-  StochVector*      newDualYVectorEmpty()  const;
-  StochVector*      newDualZVectorEmpty()  const;
+  StochVector* newPrimalVector(bool empty = false) const;
+  StochVector* newDualYVector(bool empty = false)  const;
+  StochVector* newDualZVector(bool empty = false)  const;
 
   StochVector*      newRhs();
 
