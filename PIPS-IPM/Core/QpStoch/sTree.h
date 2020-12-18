@@ -72,13 +72,6 @@ public:
   bool balanceLoadPrecond();
 
   void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU );
-  void syncPrimalVector(StochVector& vec) const;
-  void syncDualYVector(StochVector& vec) const;
-  void syncDualZVector(StochVector& vec) const;
-  void syncStochVector(StochVector& vec) const;
-
-  void syncStochGenMatrix(StochGenMatrix& mat) const;
-  void syncStochSymMatrix(StochSymMatrix& mat) const;
 
   virtual StochSymMatrix*   createQ() const = 0;
   virtual StochVector*      createc() const = 0;

@@ -381,16 +381,6 @@ void sFactory::iterateEnded()
   tree->stopMonitors();
 
   if(tree->balanceLoad()) {
-//    // balance needed
-//    data->sync();
-//
-//    for(size_t i=0; i< registeredVars.size(); i++)
-//      registeredVars[i]->sync();
-//
-//    resid->sync();
-//
-//    linsys->sync();
-
     printf("Should not get here! OMG OMG OMG\n");
   }
   //logging and monitoring

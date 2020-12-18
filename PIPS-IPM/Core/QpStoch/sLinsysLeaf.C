@@ -80,10 +80,6 @@ void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 #endif
 }
 
-void sLinsysLeaf::sync()
-{ assert(false); }
-
-
 void sLinsysLeaf::deleteChildren()
 { }
 

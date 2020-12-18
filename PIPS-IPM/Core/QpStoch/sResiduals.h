@@ -40,8 +40,6 @@ public:
 
   ~sResiduals() override;
 
-  void sync();
-
   void permuteVec0Entries( const std::vector<unsigned int>& perm, bool resids_only = false );
   void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
   void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool resids_only = false );

@@ -314,7 +314,7 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
-//   assertTreeStructureCorrect();
+   assertTreeStructureCorrect();
 }
 
 
@@ -357,14 +357,7 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
       assert( sTree::isInVector(rankMe, myProcs) );
 
       if( children.size() == 0 )
-      {
-//         assert( mzl_active == 0 );
-//         assert( myl_active == 0 );
-//         assert( MYL == 0 );
-//         assert( MZL == 0 );
-
          assert( np != -1 );
-      }
       else
       {
          int nx_children = 0;
@@ -381,16 +374,24 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
 
             assert( child->MYL <= MYL );
             assert( child->MZL <= MZL );
-            myl_children += child->MYL;
-            mzl_children += child->MZL;
-
+            if( this->is_hierarchical_inner || this->is_hierarchical_root )
+            {
+               myl_children += child->MYL;
+               mzl_children += child->MZL;
+            }
+            else
+            {
+               assert( child->MYL == MYL );
+               assert( child->MZL == MZL );
+            }
          }
 
          assert( N == nx_children + nx_active );
          assert( MY == my_children + my_active );
          assert( MYL == myl_children + myl_active );
          assert( MZ == mz_children + mz_active );
-         assert( MZL == mzl_children + mzl_active );
+         if( this->is_hierarchical_inner || this->is_hierarchical_root )
+            assert( MZL == mzl_children + mzl_active );
       }
 
    }
@@ -773,7 +774,7 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
 
    assert( myl_active >= 0 );
    assert( mzl_active >= 0 );
-//   top_layer->assertTreeStructureCorrect();
+   top_layer->assertTreeStructureCorrect();
    return top_layer;
 }
 
@@ -991,6 +992,7 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
 //               assert( childchild.myl_active == 0 );
 //               assert( childchild.MZL == 0 );
 //               assert( childchild.mzl_active == 0 );
+//            leaf.np = nx;
             }
          }
          sub_root.N = nx;
@@ -1057,7 +1059,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 

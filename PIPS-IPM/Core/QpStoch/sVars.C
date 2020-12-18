@@ -259,34 +259,6 @@ void sVars::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bo
    dynamic_cast<StochVector&>(*lambda).permuteLinkingEntries(perm);
 }
 
-void sVars::sync()
-{
-  stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*x));
-
-  stochNode->syncDualYVector(dynamic_cast<StochVector&>(*y));
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*z));
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*s));
-
-  if ( mclow > 0 ) {
-    stochNode->syncDualZVector(dynamic_cast<StochVector&>(*t));
-    stochNode->syncDualZVector(dynamic_cast<StochVector&>(*lambda));
-  }
-  if( mcupp > 0 ) {
-    stochNode->syncDualZVector(dynamic_cast<StochVector&>(*u));
-    stochNode->syncDualZVector(dynamic_cast<StochVector&>(*pi));
-  }
-  if( nxlow > 0 ) {
-    stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*v));
-    stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*gamma));
-  }
-  if( nxupp > 0 ) {
-    stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*w));
-    stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*phi));
-  }
-  //stochNode->syncDualZVector(dynamic_cast<StochVector&>(*));
-
-}
-
 bool sVars::isRootNodeInSync() const
 {
    bool in_sync = true;

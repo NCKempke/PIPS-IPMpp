@@ -45,7 +45,6 @@ class sLinsysLeaf : public sLinsys
   virtual void putXDiagonal( OoqpVector& xdiag_ );
 
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
-  void sync();
   virtual void deleteChildren();
 
   using sLinsys::addTermToSchurComplBlocked;

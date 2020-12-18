@@ -249,28 +249,6 @@ void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& per
    dynamic_cast<StochVector&>(*rpi).permuteLinkingEntries(perm);
 }
 
-void sResiduals::sync()
-{
-  //int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*rQ));
-  //stochNode->displayVectorVsTreeStructure(dynamic_cast<StochVector&>(*rQ),
-  //					  myRank);
-
-  stochNode->syncDualYVector(dynamic_cast<StochVector&>(*rC));
-  stochNode->syncDualYVector(dynamic_cast<StochVector&>(*rA));
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*rz));
-
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*rt));
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*rlambda));
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*ru));
-  stochNode->syncDualZVector(dynamic_cast<StochVector&>(*rpi));
-
-  stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*rv));
-  stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*rgamma));
-  stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*rw));
-  stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*rphi));
-}
-
 bool sResiduals::isRootNodeInSync() const
 {
    bool in_sync = true;

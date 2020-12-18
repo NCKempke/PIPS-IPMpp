@@ -93,7 +93,6 @@ public:
   sResiduals* getResidsUnperm(const sResiduals& resids, const sData& unpermData) const;
   sVars* getVarsUnperm(const sVars& vars, const sData& unpermData) const;
 
-  void sync();
   bool isRootNodeInSync() const;
 
 private:

@@ -2807,41 +2807,6 @@ void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const S
    mcupp = icupp_stoch.numberOfNonzeros();
 }
 
-void
-sData::sync()
-{
-
-   destroyChildren();
-
-   stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*g));
-
-//   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-//   printf("vec -----------------------------------------------------\n");sleep(myRank+1);  
-//   stochNode->displayVectorVsTreeStructure(dynamic_cast<StochVector&>(*g), myRank);
-//   printf("vec done ----------------------\n"); usleep(10000);
-
-   stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*blx));
-   stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*ixlow));
-   stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*bux));
-   stochNode->syncPrimalVector(dynamic_cast<StochVector&>(*ixupp));
-   stochNode->syncDualYVector(dynamic_cast<StochVector&>(*bA));
-   stochNode->syncDualZVector(dynamic_cast<StochVector&>(*bl));
-   stochNode->syncDualZVector(dynamic_cast<StochVector&>(*bu));
-   stochNode->syncDualZVector(dynamic_cast<StochVector&>(*iclow));
-   stochNode->syncDualZVector(dynamic_cast<StochVector&>(*icupp));
-
-   stochNode->syncStochSymMatrix(dynamic_cast<StochSymMatrix&>(*Q));
-   stochNode->syncStochGenMatrix(dynamic_cast<StochGenMatrix&>(*A));
-
-   //sleep(myRank);printf("A mat------------------------------------------------\n");
-   //stochNode->displayMatVsTreeStructure(dynamic_cast<StochGenMatrix&>(*A), myRank);
-
-   stochNode->syncStochGenMatrix(dynamic_cast<StochGenMatrix&>(*C));
-
-   createChildren();
-}
-
-
 void sData::initDistMarker(int blocksStart, int blocksEnd)
 {
    assert(isSCrowLocal.size() == 0);

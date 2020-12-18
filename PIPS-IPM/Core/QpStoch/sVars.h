@@ -45,8 +45,6 @@ public:
   void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
   void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool vars_only = false );
 
-  void sync();
-
 protected:
   void createChildren();
   void AddChild(sVars* child);
