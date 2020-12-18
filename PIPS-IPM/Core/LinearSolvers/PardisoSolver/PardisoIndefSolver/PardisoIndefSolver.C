@@ -410,18 +410,28 @@ else
 
 void PardisoIndefSolver::solveSynchronized( OoqpVector& vec )
 {
+   std::cout << "solve_sync" << std::endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   const bool solve_in_parallel_old = solve_in_parallel;
    solve_in_parallel = false;
 
    solve( vec );
 
-   solve_in_parallel = true;
+   std::cout << "solve_syncdone" << std::endl;
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   solve_in_parallel = solve_in_parallel_old;
 }
 
 
 void PardisoIndefSolver::solve ( OoqpVector& v )
 {
+   std::cout << "solve" << std::endl;
+   MPI_Barrier(MPI_COMM_WORLD);
    assert( iparmUnchanged() );
 
+   // TODO : need mpiComms
    const int size = PIPS_MPIgetSize();
    const int my_rank = PIPS_MPIgetRank();
 
@@ -515,6 +525,10 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
       assert(size > 0);
       MPI_Bcast(b, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
    }
+
+
+   std::cout << "solve_done" << std::endl;
+   MPI_Barrier(MPI_COMM_WORLD);
 #ifdef TIMING_FLOPS
    HPM_Stop("DSYTRSSolve");
 #endif
