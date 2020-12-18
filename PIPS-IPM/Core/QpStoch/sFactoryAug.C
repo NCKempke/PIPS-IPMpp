@@ -50,7 +50,7 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 
    tree = tree->switchToHierarchicalTree( nx_to_shave, myl_to_shave, mzl_to_shave, twoLinksStartBlockA, twoLinksStartBlockC );
 
-   assert( tree->children.size() == 1 );
+   assert( tree->nChildren() == 1 );
    assert( tree->isHierarchicalRoot() );
 
    // adjust data
@@ -64,7 +64,7 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 void sFactoryAug::collapseHierarchicalTree()
 {
    sTree* new_top = tree->collapseHierarchicalTree();
-   assert( tree->children.size() == 0 );
+   assert( tree->nChildren() == 0 );
    delete( tree );
    tree = new_top;
 

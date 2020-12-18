@@ -20,7 +20,7 @@ public:
   /**
    * Constructor
    */
-  sResiduals( const sTree* tree,OoqpVector * rQ,
+  sResiduals( OoqpVector * rQ,
 	      OoqpVector * rA, OoqpVector * rC, 
 	      OoqpVector * rz, 
 	      OoqpVector * rt, OoqpVector * rlambda, 
@@ -32,9 +32,7 @@ public:
 	      OoqpVector * iclow, double mclowGlobal, 
 	      OoqpVector * icupp, double mcuppGlobal );
   
-  sResiduals( const sTree* tree,
-	      OoqpVector * ixlow_, OoqpVector * ixupp_,
-	      OoqpVector * iclow_, OoqpVector * icupp_ );
+  sResiduals( const sTree* tree, OoqpVector * ixlow_, OoqpVector * ixupp_, OoqpVector * iclow_, OoqpVector * icupp_ );
   
   sResiduals( const sResiduals& res );
 
@@ -45,16 +43,12 @@ public:
   void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool resids_only = false );
 
   bool isRootNodeInSync() const;
-  void collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
-        OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
+  void collapseHierarchicalStructure( OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 
   std::vector<sResiduals*> children;
 private:
   void createChildren();
   void AddChild(sResiduals* child);
-  
- protected:
-  const sTree* stochNode;
 };
 
 #endif

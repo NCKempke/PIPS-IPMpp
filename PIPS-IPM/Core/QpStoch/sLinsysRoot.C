@@ -731,9 +731,9 @@ void sLinsysRoot::createChildren(sData *prob)
          else
          {
             assert(prob->children[it]);
-            assert(stochNode->children[it]);
+            assert(stochNode->getChildren()[it]);
             child = stochFactory->newLinsysRoot(prob->children[it],
-                  stochNode->children[it],
+                  stochNode->getChildren()[it],
                   ddst.children[it], dqst.children[it],
                   nomegaInvst.children[it], rhsst.children[it]);
          }

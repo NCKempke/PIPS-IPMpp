@@ -24,21 +24,23 @@ class LinearAlgebraPackage;
 
 class QpGenResiduals : public Residuals {
 protected:
-  long long nx, my, mz;
+  long long nx{0};
+  long long my{0};
+  long long mz{0};
 
-  long long nxupp;
+  long long nxupp{0};
   OoqpVectorHandle ixupp;
 
-  long long nxlow;
+  long long nxlow{0};
   OoqpVectorHandle ixlow;
 
-  long long mcupp;
+  long long mcupp{0};
   OoqpVectorHandle icupp;
 
-  long long mclow;
+  long long mclow{0};
   OoqpVectorHandle iclow;
 
-  QpGenResiduals() {};// TODO
+  QpGenResiduals() = default;
 
 public:
   OoqpVectorHandle rQ;

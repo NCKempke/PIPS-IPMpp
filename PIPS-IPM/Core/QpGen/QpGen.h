@@ -33,20 +33,19 @@ class LinearAlgebraPackage;
 */
 class QpGen : public ProblemFormulation {
 protected:
-  LinearAlgebraPackage * la;
+  LinearAlgebraPackage * la{};
   /** number of elements in x */
-  long long nx;
+  long long nx{0};
 
   /** number of rows in A and b including linking rows (sFactory..) */
-  long long my;
+  long long my{0};
 
   /** number of rows in C including linking rows */
-  long long mz;
+  long long mz{0};
 
+  QpGen() = default;
   QpGen( int nx_, int my_, int mz_ );
 public:
-  virtual Residuals * makeResiduals( Data * prob_in );
-  virtual Variables * makeVariables( Data * prob_in );
 
   virtual void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
 			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const = 0;
@@ -54,9 +53,7 @@ public:
   virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
 			     OoqpVector& z_in, const OoqpVector& vars_in ) const = 0;
 
-  void writeProblemToStream(std::ostream& out) const;
-
-  virtual ~QpGen(){};
+  ~QpGen() override = default;
 };
 
 #endif

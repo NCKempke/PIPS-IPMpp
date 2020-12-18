@@ -1575,7 +1575,7 @@ sData::createChildren()
   StochVector& icuppSt = dynamic_cast<StochVector&>(*icupp); 
   
   for(size_t it=0; it<gSt.children.size(); it++) {
-    AddChild(new sData(stochNode->children[it],
+    AddChild(new sData(stochNode->getChildren()[it],
 	       gSt.children[it], QSt.children[it],
 	       xlowSt.children[it], ixlowSt.children[it], nxlow,
 	       xuppSt.children[it], ixuppSt.children[it], nxupp,
@@ -1738,7 +1738,7 @@ void sData::splitDataAccordingToTree( const sTreeCallbacks& tree )
 sData* sData::switchToHierarchicalData( const sTree* tree )
 {
    assert( tree->isHierarchicalRoot() );
-   assert( tree->children.size() == 1 );
+   assert( tree->nChildren() == 1 );
 
 //   this->splitDataAccordingToTree( dynamic_cast<const sTreeCallbacks&>(*tree->children[0]) );
 
@@ -1830,7 +1830,7 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    hierarchical_top->useLinkStructure = false;
 
    hierarchical_top->children.push_back(this);
-   stochNode = tree->children[0];
+   stochNode = tree->getChildren()[0];
 
    // TODO: implement recursive layering of linear system
    //   this->splitIntoMultiple();
@@ -1900,7 +1900,7 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    sResiduals* unperm_resids = new sResiduals(resids);
 
    if( is_hierarchy_root )
-      unperm_resids->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+      unperm_resids->collapseHierarchicalStructure( unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
    assert( unperm_resids->children.size() == unpermData.children.size() );
 
@@ -1985,8 +1985,8 @@ void sData::activateLinkStructureExploitation()
    }
 #endif
 
-   linkStartBlockLengthsA = get2LinkLengthsVec(linkStartBlockIdA, stochNode->children.size());
-   linkStartBlockLengthsC = get2LinkLengthsVec(linkStartBlockIdC, stochNode->children.size());
+   linkStartBlockLengthsA = get2LinkLengthsVec(linkStartBlockIdA, stochNode->nChildren());
+   linkStartBlockLengthsC = get2LinkLengthsVec(linkStartBlockIdC, stochNode->nChildren());
 
    printLinkConsStats();
    printLinkVarsStats();

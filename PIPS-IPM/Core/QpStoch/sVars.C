@@ -11,7 +11,6 @@
 
 #include <iostream> 
 #include <fstream>
-using namespace std;
 
 sVars::sVars( const sTree* tree,
 	     OoqpVector * ixlow_in, OoqpVector * ixupp_in,
@@ -176,7 +175,7 @@ void sVars::createChildren()
     
 
   for (size_t it=0; it<xst.children.size(); it++) {
-    AddChild( new sVars( stochNode->children[it],
+    AddChild( new sVars( stochNode->getChildren()[it],
 			 xst.children[it],     sst.children[it],
 			 yst.children[it],     zst.children[it],
 			 vst.children[it],     gammast.children[it],

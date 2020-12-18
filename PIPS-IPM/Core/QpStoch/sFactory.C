@@ -61,7 +61,7 @@ class Ma57Solver;
 
 
 sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
-  : QpGen(0,0,0), tree( new sTreeCallbacks(inputTree) ), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
+  : tree( new sTreeCallbacks(inputTree) )
 {
   //decide how the CPUs are assigned
   tree->assignProcesses(comm);
@@ -70,10 +70,6 @@ sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
   //now the sizes of the problem are available, set them for the parent class
   tree->getGlobalSizes(nx, my, mz);
 }
-
-sFactory::sFactory()
-  : QpGen( 0,0,0 ), tree(nullptr), data(nullptr), resid(nullptr), linsys(nullptr), m_tmTotal(0.0)
-{ };
 
 sFactory::~sFactory()
 {
@@ -341,9 +337,7 @@ Variables* sFactory::makeVariables( Data * prob_in )
 Residuals* sFactory::makeResiduals( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
-  resid =  new sResiduals(tree,
-			  prob->ixlow, prob->ixupp,
-			  prob->iclow, prob->icupp);
+  resid =  new sResiduals( tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
   return resid;
 }
 
@@ -387,7 +381,8 @@ void sFactory::iterateEnded()
   iterTmMonitor.recIterateTm_stop();
   m_tmTotal += iterTmMonitor.tmIterate;
 
-  if(tree->rankMe==tree->rankZeroW) {
+  if( PIPS_MPIgetRank() == 0 )
+  {
 #ifdef TIMING
     extern double g_iterNumber;
     printf("TIME %g SOFAR %g ITER %d\n", iterTmMonitor.tmIterate, m_tmTotal, (int)g_iterNumber);
@@ -395,83 +390,4 @@ void sFactory::iterateEnded()
     //printf("ITERATION WALLTIME: iter=%g  Total=%g\n", iterTmMonitor.tmIterate, m_tmTotal);
 #endif
   }
-}
-
-void sFactory::writeProblemToStream(ostream& out, bool printRhs) const{
-	int rank;
-	MPI_Comm_rank(tree->commWrkrs, &rank);
-	int world_size;
-	MPI_Comm_size(tree->commWrkrs, &world_size);
-	bool iAmDistrib = (world_size>1);
-
-	if (!iAmDistrib) {
-		out << "--------- Matrix A --------- " << endl;
-		data->A->writeToStreamDense(out);
-		if (printRhs) {
-			out << "--------- Rhs b --------- " << endl;
-			data->bA->writeToStream(out);
-		}
-		out << "--------- Matrix C --------- " << endl;
-		data->C->writeToStreamDense(out);
-		if (printRhs) {
-			out << "--------- Rhs clow --------- " << endl;
-			data->bl->writeToStream(out);
-			out << "--------- Rhs cupp --------- " << endl;
-			data->bu->writeToStream(out);
-		}
-	}
-	else {	// distributed case
-		int token;
-
-		if (rank == 0) {
-			out << "--------- Matrix A --------- " << endl;
-			token = 2;
-		}
-		data->A->writeToStreamDense(out);
-		if (rank == world_size - 1) {
-			MPI_Send(&token, 1, MPI_INT, 0, 1, tree->commWrkrs);
-		}
-
-		if (printRhs) {
-			if (rank == 0) {
-				MPI_Recv(&token, 1, MPI_INT, (world_size - 1), 1, tree->commWrkrs, MPI_STATUS_IGNORE);
-				out << "---------- Rhs b ----------- " << endl;
-				data->bA->writeToStream(out);
-			}
-			if (rank == world_size - 1) {
-				MPI_Send(&token, 1, MPI_INT, 0, 1, tree->commWrkrs);
-			}
-		}
-		if (rank == 0) {
-			MPI_Recv(&token, 1, MPI_INT, (world_size - 1), 1, tree->commWrkrs, MPI_STATUS_IGNORE);
-			out << "--------- Matrix C --------- " << endl;
-		}
-		data->C->writeToStreamDense(out);
-		if (rank == world_size - 1) {
-			MPI_Send(&token, 1, MPI_INT, 0, 2, tree->commWrkrs);
-		}
-		if (printRhs) {
-			if (rank == 0) {
-				MPI_Recv(&token, 1, MPI_INT, (world_size - 1), 1, tree->commWrkrs, MPI_STATUS_IGNORE);
-				out << "---------- Rhs clow ----------- " << endl;
-				// todo: verify if bl is clow
-				data->bl->writeToStream(out);
-			}
-			if (rank == world_size - 1) {
-				MPI_Send(&token, 1, MPI_INT, 0, 1, tree->commWrkrs);
-			}
-			if (rank == 0) {
-				MPI_Recv(&token, 1, MPI_INT, (world_size - 1), 1, tree->commWrkrs, MPI_STATUS_IGNORE);
-				out << "---------- Rhs cupp ----------- " << endl;
-				// todo: verify if bu is cupp
-				data->bu->writeToStream(out);
-			}
-			if (rank == world_size - 1) {
-				MPI_Send(&token, 1, MPI_INT, 0, 1, tree->commWrkrs);
-			}
-		}
-
-	}
-
-
 }

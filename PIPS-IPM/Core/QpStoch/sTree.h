@@ -14,25 +14,26 @@
 
 #include "mpi.h"
 
+class sTreeCallbacks;
+
 class sTree
 {
  public:
-  virtual ~sTree();
-
-  int NumberOfChildren() const { return children.size(); }
-
   // global sizes are still local to each MPI process - they just sum all local data
   virtual void computeGlobalSizes() = 0;
   void getGlobalSizes(long long& n, long long& my, long long& mz);
 
   void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
 
+  StochNodeResourcesMonitor resMon;
+  static StochIterateResourcesMonitor iterMon;
+
+  virtual ~sTree();
  protected:
+
   void assignProcesses( MPI_Comm, vector<int>&);
 
- public:
   MPI_Comm commWrkrs{ MPI_COMM_NULL };
-  MPI_Comm myOldMpiComm{ MPI_COMM_NULL }; //workers only
   std::vector<int> myProcs, myOldProcs;
 
   MPI_Comm commP2ZeroW{MPI_COMM_NULL};   // preconditioner (rank P+1) and special (rank 0) worker
@@ -54,8 +55,6 @@ class sTree
   /* global number of all processes available */
   static int numProcs;
 
-  StochNodeResourcesMonitor resMon;
-  static StochIterateResourcesMonitor iterMon;
 
 protected:
   bool is_hierarchical_root = false;
@@ -95,7 +94,11 @@ public:
   StochVector* newDualYVector(bool empty = false)  const;
   StochVector* newDualZVector(bool empty = false)  const;
 
-  StochVector*      newRhs();
+  StochVector* newRhs();
+
+  const std::vector<sTree*>& getChildren() const { return children; };
+  int nChildren() const { return children.size(); }
+  MPI_Comm getCommWorkers() const { return commWrkrs; };
 
   int innerSize(int which) const;
   virtual int nx() const = 0;
@@ -154,6 +157,8 @@ public:
         const std::vector<int>& twoLinksStartBlockC ) = 0;
   virtual sTree * collapseHierarchicalTree() = 0;
 
+private:
+  friend sTreeCallbacks;
 };
 
 #endif 

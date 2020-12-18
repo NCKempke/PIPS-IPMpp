@@ -2,8 +2,7 @@
 #include "sTree.h"
 #include "StochVector.h"
 
-sResiduals::sResiduals( const sTree* tree,
-			OoqpVector * rQ_,    OoqpVector * rA_, 
+sResiduals::sResiduals( OoqpVector * rQ_,    OoqpVector * rA_,
 			OoqpVector * rC_,    OoqpVector * rz_, 
 			OoqpVector * rt_,    OoqpVector * rlambda_, 
 			OoqpVector * ru_,    OoqpVector * rpi_, 
@@ -13,7 +12,6 @@ sResiduals::sResiduals( const sTree* tree,
 			OoqpVector * ixupp_, double nxuppGlobal,
 			OoqpVector * iclow_, double mclowGlobal, 
 			OoqpVector * icupp_, double mcuppGlobal)
-  :QpGenResiduals()
 {
   SpReferTo( ixlow, ixlow_ );
   nxlow = nxlowGlobal;
@@ -41,15 +39,11 @@ sResiduals::sResiduals( const sTree* tree,
   SpReferTo( rw  , rw_ );
   SpReferTo( rphi, rphi_ );
 
-  stochNode = tree;
   createChildren();
 }
 
 
-sResiduals::sResiduals( const sTree* tree,
-			OoqpVector * ixlow_, OoqpVector * ixupp_,
-			OoqpVector * iclow_, OoqpVector * icupp_ )
-  : QpGenResiduals()
+sResiduals::sResiduals( const sTree* tree, OoqpVector * ixlow_, OoqpVector * ixupp_, OoqpVector * iclow_, OoqpVector * icupp_ )
 {
 
   SpReferTo( ixlow, ixlow_ );
@@ -102,15 +96,11 @@ sResiduals::sResiduals( const sTree* tree,
     rphi = OoqpVectorHandle( (OoqpVector*) tree->newPrimalVector(empty_vector) );
   }
   
-  stochNode = tree;
-
   createChildren();
 }
 
 sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
 {
-   stochNode = res.stochNode;
-
    for(unsigned int i = 0; i < res.children.size(); ++i)
    {
        children.push_back( new sResiduals( *res.children[i]) );
@@ -151,25 +141,23 @@ void sResiduals::createChildren()
   const size_t nChildren = rASt.children.size();
   for (size_t it = 0; it < nChildren; it++) {
 
-    assert(nChildren==stochNode->children.size());
-    assert(nChildren==rASt.children.size());
-    assert(nChildren==rzSt.children.size());
-    assert(nChildren==rCSt.children.size());
-    assert(nChildren==rtSt.children.size());
-    assert(nChildren==rlambdaSt.children.size());
-    assert(nChildren==ruSt.children.size());
-    assert(nChildren==rpiSt.children.size());
-    assert(nChildren==rvSt.children.size());
-    assert(nChildren==rgammaSt.children.size());
-    assert(nChildren==rwSt.children.size());
-    assert(nChildren==rphiSt.children.size());
-    assert(nChildren==ixlowSt.children.size());
-    assert(nChildren==ixuppSt.children.size());
-    assert(nChildren==iclowSt.children.size());
-    assert(nChildren==icuppSt.children.size());
+      assert(nChildren == rASt.children.size());
+      assert(nChildren == rzSt.children.size());
+      assert(nChildren == rCSt.children.size());
+      assert(nChildren == rtSt.children.size());
+      assert(nChildren == rlambdaSt.children.size());
+      assert(nChildren == ruSt.children.size());
+      assert(nChildren == rpiSt.children.size());
+      assert(nChildren == rvSt.children.size());
+      assert(nChildren == rgammaSt.children.size());
+      assert(nChildren == rwSt.children.size());
+      assert(nChildren == rphiSt.children.size());
+      assert(nChildren == ixlowSt.children.size());
+      assert(nChildren == ixuppSt.children.size());
+      assert(nChildren == iclowSt.children.size());
+      assert(nChildren == icuppSt.children.size());
  
-    AddChild(new sResiduals(stochNode->children[it], 
-			    rQSt.children[it],    rASt.children[it], 
+    AddChild(new sResiduals(rQSt.children[it],    rASt.children[it],
 			    rCSt.children[it],    rzSt.children[it], 
 			    rtSt.children[it],    rlambdaSt.children[it], 
 			    ruSt.children[it],    rpiSt.children[it], 
@@ -182,7 +170,7 @@ void sResiduals::createChildren()
   }
 }
 
-void sResiduals::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+void sResiduals::collapseHierarchicalStructure(OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
    dynamic_cast<StochVector&>(*rQ).collapseHierarchicalStructure();
@@ -199,8 +187,6 @@ void sResiduals::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVect
    dynamic_cast<StochVector&>(*rz).collapseHierarchicalStructure();
    dynamic_cast<StochVector&>(*rlambda).collapseHierarchicalStructure();
    dynamic_cast<StochVector&>(*rpi).collapseHierarchicalStructure();
-
-   stochNode = stochNode_;
 
    ixlow = ixlow_;
    ixupp = ixupp_;

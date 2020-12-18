@@ -519,7 +519,6 @@ void sTree::computeNodeTotal()
 
 void sTree::saveCurrentCPUState()
 {
-  myOldMpiComm = commWrkrs;
   myOldProcs = myProcs;
 
   for(size_t i=0; i<children.size(); i++)

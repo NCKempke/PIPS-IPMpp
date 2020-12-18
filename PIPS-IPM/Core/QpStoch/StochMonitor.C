@@ -21,7 +21,7 @@ StochMonitor::StochMonitor(QpGenStoch* qp_, Scaler* scaler)
 StochMonitor::StochMonitor(sFactory* qp_, Scaler* scaler)
   : qp(nullptr), scaler(scaler)
 {
-  mpiComm = qp_->tree->commWrkrs;
+  mpiComm = qp_->tree->getCommWorkers();
   MPI_Comm_rank(mpiComm, &myRank);
   MPI_Comm_rank(MPI_COMM_WORLD, &myGlobRank);
 }

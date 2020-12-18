@@ -25,23 +25,19 @@ class sLinsysLeaf;
 
 #include "StochResourcesMonitor.h"
 
-class sFactory : public QpGen {
- public:
-//  sFactory( stochasticInput&, MPI_Comm comm = MPI_COMM_WORLD );
+class sFactory : public QpGen
+{
+   public:
 
-  /** This is a obsolete constructor since it uses sTreeCallbacks to create
-   *   data objects
-   */
-  sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
+      sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
 
- protected:
-  sFactory();
+   protected:
+      sFactory() = default;
+      ~sFactory() override;
 
  public:
 
-  virtual ~sFactory();
-
-  virtual Data* makeData();
+      virtual Data* makeData();
   virtual Residuals * makeResiduals( Data * prob_in );
   virtual Variables * makeVariables( Data * prob_in );
   virtual LinearSystem* makeLinsys( Data * prob_in );
@@ -68,20 +64,19 @@ class sFactory : public QpGen {
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 
 
-  sTree * tree;
-  sData * data;
+  sTree * tree{};
+  sData * data{};
 
   virtual void iterateStarted();
   virtual void iterateEnded();
-  void writeProblemToStream(ostream& out, bool printRhs) const;
 
-  sResiduals *resid;
+  sResiduals *resid{};
   vector<sVars*> registeredVars;
 
-  sLinsysRoot* linsys;
+  sLinsysRoot* linsys{};
 
   StochIterateResourcesMonitor iterTmMonitor;
-  double m_tmTotal;
+  double m_tmTotal{0.0};
 };
 
 #endif
