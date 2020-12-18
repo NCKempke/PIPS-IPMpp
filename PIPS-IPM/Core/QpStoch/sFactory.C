@@ -73,7 +73,8 @@ sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
 
 sFactory::~sFactory()
 {
-  if(tree) delete tree;
+   if(tree)
+      delete tree;
 }
 
 sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
@@ -170,15 +171,6 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 }
 
 
-#ifdef TIMING
-#define TIM t = MPI_Wtime();
-#define REP(s) t = MPI_Wtime()-t;if (p) printf("makeData: %s took %f sec\n",s,t);
-#else
-#define TIM
-#define REP(s)
-#endif
-
-
 void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 
     long long my, mz, nx_1, nx_2;
@@ -234,75 +226,40 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 
 }
 
-Data * sFactory::makeData()
+Data* sFactory::makeData()
 {
 #ifdef TIMING
-  double t2=MPI_Wtime();
-  int mype; MPI_Comm_rank(tree->commWrkrs,&mype);
+   double t2 = MPI_Wtime();
 #endif
 
-  // use the tree to get the data from user and to create OOQP objects
+   StochGenMatrixHandle A(tree->createA());
+   StochVectorHandle b(tree->createb());
 
-  //TIM;
-  StochGenMatrixHandle     A( tree->createA() );
-  //REP("A");
-  //TIM;
-  StochVectorHandle        b( tree->createb() );
-  //REP("b");
-  //TIM;
-  StochGenMatrixHandle     C( tree->createC() );
-  //REP("C");
-  //TIM;
-  StochVectorHandle     clow( tree->createclow()  );
-  //REP("clow");
-  //TIM;
-  StochVectorHandle    iclow( tree->createiclow() );
-  //REP("iclow");
-  //TIM;
-  StochVectorHandle     cupp( tree->createcupp()  );
-  //REP("cupp");
-  //TIM;
-  StochVectorHandle    icupp( tree->createicupp() );
-  //REP("icupp");
+   StochGenMatrixHandle C(tree->createC());
+   StochVectorHandle clow(tree->createclow());
+   StochVectorHandle iclow(tree->createiclow());
+   StochVectorHandle cupp(tree->createcupp());
+   StochVectorHandle icupp(tree->createicupp());
 
-  //dumpaug(((sTreeImpl*)tree)->nx(), *(A->children[1]->Amat), *(C->children[1]->Amat));
+   StochSymMatrixHandle Q(tree->createQ());
+   StochVectorHandle c(tree->createc());
 
-  //TIM;
-  StochSymMatrixHandle     Q( tree->createQ() );
-  //REP("Q");
-  //TIM;
-  StochVectorHandle        c( tree->createc() );
-  //REP("c");
-  //TIM;
-  StochVectorHandle     xlow( tree->createxlow()  );
-  //REP("xlow");
-  //TIM;
-  StochVectorHandle    ixlow( tree->createixlow() );
-  //REP("ixlow");
-  //TIM;
-  StochVectorHandle     xupp( tree->createxupp()  );
-  //REP("xupp");
-  //TIM;
-  StochVectorHandle    ixupp( tree->createixupp() );
-  //REP("ixupp");
+   StochVectorHandle xlow(tree->createxlow());
+   StochVectorHandle ixlow(tree->createixlow());
+   StochVectorHandle xupp(tree->createxupp());
+   StochVectorHandle ixupp(tree->createixupp());
 
 #ifdef TIMING
-  MPI_Barrier(tree->commWrkrs);
-  t2 = MPI_Wtime() - t2;
-  if (mype == 0) {
-    cout << "IO second part took " << t2 << " sec\n";
-  }
+   MPI_Barrier( tree->getCommWrkrs() );
+   t2 = MPI_Wtime() - t2;
+   if ( PIPS_MPIgetRank(tree->getCommWorkers() == 0) )
+         std::cout << "IO second part took " << t2 << " sec\n";
 #endif
 
-
-  data = new sData( tree,
-		    c, Q,
-		    xlow, ixlow, ixlow->numberOfNonzeros(),
-		    xupp, ixupp, ixupp->numberOfNonzeros(),
-		    A, b,
-		    C, clow, iclow, iclow->numberOfNonzeros(),
-		    cupp, icupp, icupp->numberOfNonzeros());
-  return data;
+   data = new sData(tree, c, Q, xlow, ixlow, ixlow->numberOfNonzeros(), xupp,
+         ixupp, ixupp->numberOfNonzeros(), A, b, C, clow, iclow,
+         iclow->numberOfNonzeros(), cupp, icupp, icupp->numberOfNonzeros());
+   return data;
 }
 
 // TODO adjust this for hierarchical approach

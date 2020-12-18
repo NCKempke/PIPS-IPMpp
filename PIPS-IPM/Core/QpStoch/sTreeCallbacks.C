@@ -56,11 +56,6 @@ sTreeCallbacks::sTreeCallbacks(InputNode* data_)
       numProcs = PIPS_MPIgetSize();
 }
 
-void sTreeCallbacks::loadLocalSizes()
-{
-  //already in data structure
-}
-
 void sTreeCallbacks::switchToPresolvedData()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );

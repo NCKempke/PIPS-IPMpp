@@ -126,8 +126,6 @@ public:
   int isInVector(int elem, const vector<int>& vec) const;
 public:
   //to be called after assignProcesses
-  virtual void loadLocalSizes() = 0;
-
   bool isHierarchicalRoot() const { return is_hierarchical_root; };
   bool isHierarchicalInner() const { return is_hierarchical_inner; };
 

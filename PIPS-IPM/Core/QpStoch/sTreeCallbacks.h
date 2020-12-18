@@ -58,7 +58,6 @@ public:
    int id() const override;
 
    void computeGlobalSizes() override;
-   void loadLocalSizes();
 
    virtual void switchToPresolvedData();
    virtual void switchToOriginalData();
