@@ -1093,10 +1093,9 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
       n_two_links += w[i];
       w[i] = n_two_links;
    }
-   const size_t n_non_2_links = w[0];
-   w[0] = 0;
 
-   assert( n_two_links + n_non_2_links == n_links);
+   assert( n_two_links + w[0] == n_links);
+   w[0] = 0; // former n non 2-links
 
    /* sort 2-links ascending to front */
    for( size_t i = 0; i < n_links; ++i )
