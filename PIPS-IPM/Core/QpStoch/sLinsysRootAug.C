@@ -181,9 +181,6 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
 
    if( hasSparseKkt )
    {
-
-      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(kkt);
-
       if( !printed && 0 == my_rank )
          std::cout << "Using " << solver_root << " for summed Schur complement - sLinsysRootAug\n";
       printed = true;
@@ -196,7 +193,9 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
          if( id == 0 )
             problems_blocked[id].reset( kkt );
          else
-            problems_blocked[id].reset( new SparseSymMatrix( *kktmat ) );
+            problems_blocked[id].reset( new SparseSymMatrix( dynamic_cast<SparseSymMatrix&>(*kkt) ) );
+
+         SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get());
 
          if( solver_root == SolverType::SOLVER_MUMPS )
          {
