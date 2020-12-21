@@ -38,7 +38,7 @@ public:
   OoqpVectorBase( int n_ );
 
   OoqpVectorBase() = default;
-  virtual ~OoqpVectorBase() = default;
+  ~OoqpVectorBase() override = default;
 
   virtual void pushAwayFromZero( double /*tol*/, double /*amount*/, const OoqpVectorBase<T>* /*select */ )
      { assert( 0 && "Not implemented here" ); };
