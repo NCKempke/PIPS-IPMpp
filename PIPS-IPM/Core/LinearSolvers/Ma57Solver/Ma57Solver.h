@@ -149,7 +149,7 @@ public:
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;
-  void solve ( int nrhss, double* rhss, int* colSparsity ) override;
+  void solve ( int nrhss, double* rhss, int* ) override;
 
   //virtual void Lsolve  ( OoqpVector& x );
   //virtual void Dsolve  ( OoqpVector& x );

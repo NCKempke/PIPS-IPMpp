@@ -14,11 +14,8 @@
 #include <cassert>
 
 extern double g_iterNumber;
-extern int gOuterBiCGFails;
 extern int gOuterBiCGIter;
 extern double gOuterBiCGIterAvg;
-extern int gInnerBiCGIter;
-extern int gInnerBiCGFails;
 
 
 SCsparsifier::SCsparsifier(MPI_Comm mpiComm_)
@@ -33,12 +30,6 @@ SCsparsifier::SCsparsifier(MPI_Comm mpiComm_)
    nDeletedLocal = 0;
    ratioAvg = 0.0;
 #endif
-}
-
-
-SCsparsifier::~SCsparsifier()
-{
-
 }
 
 
@@ -228,7 +219,7 @@ SCsparsifier::resetSCdistEntries(SparseSymMatrix& sc) const
       if( jcolM[i] < 0 )
          jcolM[i] = -jcolM[i] - 1;
 
-   assert(sc.getStorageRef().isValid(false));
+   assert(sc.getStorageRef().isValid());
 }
 
 

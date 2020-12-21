@@ -14,7 +14,7 @@
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
-   : OoqpVectorBase<T>(0), vec(vec), vecl(vecl), parent(nullptr), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
+   : vec(vec), vecl(vecl), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
      iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
    assert( vec || vecl );
@@ -27,37 +27,29 @@ StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, MPI_Comm mpiComm_ )
-  : OoqpVectorBase<T>(n_), vecl(nullptr), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
+  : OoqpVectorBase<T>(n_), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
     iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
-   assert( n_ >= 0 );
-
    vec = new SimpleVectorBase<T>(n_);
    vecl = nullptr;
 }
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_ )
-  : OoqpVectorBase<T>(0), parent(nullptr), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
-    iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
+  : mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
+    iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm ) )
 {
-   this->n = 0;
-
    if( n_ >= 0)
    {
       vec = new SimpleVectorBase<T>(n_);
       this->n += n_;
    }
-   else
-      vec = nullptr;
 
    if( nl_ >= 0 )
    {
       vecl = new SimpleVectorBase<T>(nl_);
       this->n += nl_;
    }
-   else
-      vecl = nullptr;
 }
 
 template<typename T>
@@ -388,13 +380,6 @@ void StochVectorBase<T>::setToConstant(T c)
    for(size_t it = 0; it < children.size(); it++)
       children[it]->setToConstant(c);
 }
-
-template<typename T>
-void StochVectorBase<T>::randomize( T alpha, T beta, T *ix )
-{
-  assert( "Not implemented" && 0 );
-}
-
 
 template<typename T>
 void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
@@ -1872,14 +1857,6 @@ StochVectorBase<T>::addSomeConstants(T c, const OoqpVectorBase<T> &select_)
 }
 
 template<typename T>
-void StochVectorBase<T>::writefSomeToStream( std::ostream& out,
-			 const char format[],
-			 const OoqpVectorBase<T>& select_ ) const
-{
-   assert( "Not yet implemented" && 0 );
-}
-
-template<typename T>
 void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
 		       const OoqpVectorBase<T>& z_, const OoqpVectorBase<T>& select_ )
 {
@@ -1999,24 +1976,6 @@ void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVe
 }
 
 template<typename T>
-void StochVectorBase<T>::copyIntoArray( T v[] ) const
-{
-  assert( "Not supported" && 0 );
-}
-
-template<typename T>
-void StochVectorBase<T>::copyFromArray( const T v[] )
-{
-  assert( "Not supported" && 0 );
-}
-
-template<typename T>
-void StochVectorBase<T>::copyFromArray( const char v[] )
-{
-  assert( "Not supported" && 0 );
-}
-
-template<typename T>
 void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
 {
    const StochVectorBase<int>& select = dynamic_cast<const StochVectorBase<int>&>(select_);
@@ -2028,7 +1987,7 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
    {
       assert( select.vec );
       vec->removeEntries(*select.vec);
-      this->n = vec->n;
+      this->n = vec->length();
    }
    else
       assert( select.vec == nullptr );
@@ -2037,7 +1996,7 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
    {
       assert( select.vecl );
       vecl->removeEntries(*select.vecl);
-      this->n += vecl->n;
+      this->n += vecl->length();
    }
    else
       assert( select.vecl == nullptr );
@@ -2045,7 +2004,7 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
    for( size_t it = 0; it < children.size(); it++ )
    {
       children[it]->removeEntries(*select.children[it]);
-      this->n += children[it]->n;
+      this->n += children[it]->length();
    }
 }
 

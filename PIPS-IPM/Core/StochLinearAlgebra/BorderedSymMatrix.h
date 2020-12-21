@@ -51,35 +51,21 @@ class BorderedSymMatrix : public SymMatrix
       long long size() const override;
 
       // ignored methods
-      double abminnormNonZero( double tol = 1e-30) const override { assert( false && "TODO: implement" ); return 0.0; };
-      void writeToStreamDense(ostream& out) const override
-         {assert( "Not implemented" && 0 );};
-      void symAtPutSpRow( int col, double A[], int lenA, int irowA[], int& info ) override
-         {assert( "Not implemented" && 0 );};
-      void randomizePSD(double * seed) override
-         {assert( "Not implemented" && 0 );};
-      void symAtPutSubmatrix( int destRow, int destCol,  DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent ) override
-         {assert( "Not implemented" && 0 );};
-      void atPutDiagonal( int idiag, OoqpVector& x ) override
-         {assert( "Not implemented" && 0 );};
-      void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override
-         {assert( "Not implemented" && 0 );};
-      void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override
-         {assert( "Not implemented" && 0 );};
-      void getDiagonal( OoqpVector& vec ) override
-         {assert( "Not implemented" && 0 );};
-      void setToDiagonal( const OoqpVector& vec ) override
-         {assert( "Not implemented" && 0 );};
-      void symmetricScale ( const OoqpVector& vec ) override
-         {assert( "Not implemented" && 0 );};
-      void columnScale ( const OoqpVector& vec ) override
-         {assert( "Not implemented" && 0 );};
-      void rowScale ( const OoqpVector& vec ) override
-         {assert( "Not implemented" && 0 );};
-      void writeToStream(ostream& out) const override
-         {assert( "Not implemented" && 0 );};
-      void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info ) override
-         {assert( "Not implemented" && 0 );};
+      double abminnormNonZero( double ) const override { assert( false && "TODO: implement" ); return 0.0; };
+      void writeToStreamDense( std::ostream& ) const override { assert( "Not implemented" && 0 ); };
+      void symAtPutSpRow( int, double[], int, int[], int& ) override { assert( "Not implemented" && 0 ); };
+      void randomizePSD( double* ) override { assert( "Not implemented" && 0 ); };
+      void symAtPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert( "Not implemented" && 0 ); };
+      void atPutDiagonal( int, OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void fromGetDense( int, int, double*, int, int, int) override { assert( "Not implemented" && 0 ); };
+      void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override { assert( "Not implemented" && 0 ); };
+      void getDiagonal( OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void setToDiagonal( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void symmetricScale( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void columnScale( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void rowScale( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void writeToStream( std::ostream& ) const override { assert( "Not implemented" && 0 ); };
+      void putSparseTriple( int[], int, int[], double[], int& ) override { assert( "Not implemented" && 0 ); };
 
       // TODO could be more general..
       StochSymMatrix* inner_matrix;

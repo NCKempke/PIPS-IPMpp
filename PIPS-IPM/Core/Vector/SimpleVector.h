@@ -60,7 +60,7 @@ public:
   bool isZero() const override;
   void setToZero() override;
   void setToConstant( T c ) override;
-  void randomize( T alpha, T beta, T *ix ) override;
+  void randomize( T , T , T* ) override { assert( 0 && "not implemented here" ); };
   void copyFrom( const OoqpVectorBase<T>& v ) override;
   void copyFromAbs(const OoqpVectorBase<T>& v) override;
   double twonorm() const override;
@@ -75,8 +75,8 @@ public:
   int getNnzs() const override;
 
   void componentMult( const OoqpVectorBase<T>& v ) override;
-  void scalarMult( T num) override;
-  virtual void printSolutionToStdErr( OoqpVectorBase<T>& v );
+  void scalarMult( T num ) override;
+  void printSolutionToStdErr() const ;
   void componentDiv( const OoqpVectorBase<T>& v ) override;
   bool componentEqual( const OoqpVectorBase<T>& vec, T tol) const override;
   bool componentNotEqual( const T val, const T tol ) const override;

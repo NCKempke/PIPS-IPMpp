@@ -131,7 +131,7 @@ protected:
 			    char line[], int& ierr );
   virtual int acceptHeader2( int kindOfLine, const char expectName[],
 			    char line[], int& ierr );
-  virtual int ParseDataLine2( char line[], char code[], char name1[], 
+  virtual int ParseDataLine2( char line[], char[], char name1[],
                              char name2[], double * val1, int& hasSecondValue,
                              char name3[], double * val2);
 

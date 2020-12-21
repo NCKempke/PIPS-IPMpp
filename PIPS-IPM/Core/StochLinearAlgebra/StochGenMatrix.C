@@ -107,18 +107,6 @@ void StochGenMatrix::getSize( int& m_out, int& n_out ) const
   m_out = m; n_out = n;
 }
 
-void StochGenMatrix::atPutDense( int row, int col, double * A, int lda,
-				 int rowExtent, int colExtent )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochGenMatrix::fromGetDense( int row, int col, double * A, int lda,
-				   int rowExtent, int colExtent )
-{
-  assert( "Not implemented" && 0 );
-}
-
 void StochGenMatrix::columnScale2( const OoqpVector& vec, const OoqpVector& parentvec )
 {
    const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
@@ -177,11 +165,6 @@ void StochGenMatrix::rowScale( const OoqpVector& vec )
       children[it]->rowScale2(*(scalevec.children[it]), vecl);
 }
 
-void StochGenMatrix::symmetricScale( const OoqpVector &vec)
-{
-  assert( "Has not been yet implemented" && 0 );
-}
-
 void StochGenMatrix::scalarMult( double num)
 {
   Amat->scalarMult(num);
@@ -190,34 +173,6 @@ void StochGenMatrix::scalarMult( double num)
 
   for (size_t it = 0; it < children.size(); it++) 
     children[it]->scalarMult(num);
-}
-
-void StochGenMatrix::fromGetSpRow( int row, int col,
-				   double A[], int lenA, int jcolA[], int& nnz,
-				   int colExtent, int& info )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochGenMatrix::atPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
-				     int srcRow, int srcCol,
-				     int rowExtent, int colExtent )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochGenMatrix::atPutSpRow( int col, 
-				 double A[], int lenA, int jcolA[],
-				 int& info )
-{
-  assert( "Not implemented" && 0 );
-}
-
-
-void StochGenMatrix::putSparseTriple( int irow[], int len, int jcol[], double A[], 
-				      int& info )
-{
-  assert( "Not implemented" && 0 );
 }
 
 void StochGenMatrix::getDiagonal( OoqpVector& vec_ )
@@ -575,11 +530,6 @@ void StochGenMatrix::getLinkVarsNnzChild(std::vector<int>& vec) const
    assert(children.size() == 0);
 
    Amat->getLinkVarsNnz(vec);
-}
-
-void StochGenMatrix::writeToStream(ostream& out) const
-{
-  assert( "Has not been yet implemented" && 0 );
 }
 
 void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out ) const
@@ -965,22 +915,6 @@ void StochGenMatrix::writeMPSformatRows(ostream& out, int rowType, OoqpVector* i
    }
 }
 
-/* Make the elements in this matrix symmetric. The elements of interest
- *  must be in the lower triangle, and the upper triangle must be empty.
- *  @param info zero if the operation succeeded. Otherwise, insufficient
- *  space was allocated to symmetrize the matrix.
- */
-void StochGenMatrix::symmetrize( int& info )
-{
-  assert( "Has not been yet implemented" && 0 );
-}
-
-
-void StochGenMatrix::randomize( double alpha, double beta, double * seed )
-{
-  assert( "Has not been yet implemented" && 0 );
-}
-
 void StochGenMatrix::initTransposed(bool dynamic)
 {
    Bmat->initTransposed(dynamic);
@@ -1009,17 +943,6 @@ void StochGenMatrix::initTransposedChild(bool dynamic)
       Blmat->initTransposed(dynamic);
 }
 
-
-void StochGenMatrix::atPutDiagonal( int idiag, OoqpVector& v )
-{
-  assert( "Has not been yet implemented" && 0 );
-}
-
-void StochGenMatrix::fromGetDiagonal( int idiag, OoqpVector& v )
-{
-  assert( "Has not been yet implemented" && 0 );
-}
-
 int StochGenMatrix::numberOfNonZeros()
 {
   int nnz = 0;
@@ -1036,15 +959,6 @@ int StochGenMatrix::numberOfNonZeros()
   nnz += Amat->numberOfNonZeros() + Bmat->numberOfNonZeros() + Blmat->numberOfNonZeros();
 
   return nnz;
-}
-
-void StochGenMatrix::matTransDMultMat(OoqpVector& d, SymMatrix** res)
-{
-  assert( "Has not been yet implemented" && 0 );
-}
-void StochGenMatrix::matTransDinvMultMat(OoqpVector& d, SymMatrix** res)
-{
-  assert( "Has not been yet implemented" && 0 );
 }
 
 void StochGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<int>* linkParent)

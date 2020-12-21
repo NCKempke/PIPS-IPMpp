@@ -29,10 +29,10 @@ namespace qpgen_options
    {
 
       protected :
-         friend void qpgen_options::setOptions(const std::string& opt_file);
-         friend int qpgen_options::getIntParameter(const std::string& identifier);
-         friend double qpgen_options::getDoubleParameter(const std::string& identifier);
-         friend bool qpgen_options::getBoolParameter(const std::string& identifier);
+         friend void setOptions(const std::string& opt_file);
+         friend int getIntParameter(const std::string& identifier);
+         friend double getDoubleParameter(const std::string& identifier);
+         friend bool getBoolParameter(const std::string& identifier);
 
          static QpGenOptions& getInstance()
          {

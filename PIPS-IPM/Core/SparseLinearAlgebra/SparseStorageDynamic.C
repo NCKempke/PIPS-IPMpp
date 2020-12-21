@@ -156,13 +156,13 @@ const ROWPTRS SparseStorageDynamic::getRowPtr(int i) const
    return rowptr[i];
 }
 
-const int SparseStorageDynamic::getJcolM(int i) const
+int SparseStorageDynamic::getJcolM(int i) const
 {
    assert( 0 <= i && i < len );
    return jcolM[i];
 }
 
-const double& SparseStorageDynamic::getMat(int i) const
+double SparseStorageDynamic::getMat(int i) const
 {
    assert( 0 <= i && i < len );
    return M[i];

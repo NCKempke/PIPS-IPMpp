@@ -66,7 +66,7 @@ class QpGenStoch : public QpGen {
   virtual void iterateEnded();
 
   QpGenResiduals2 *resid;
-  vector<QpGenStochVars*> registeredVars;
+  std::vector<QpGenStochVars*> registeredVars;
 
   QpGenStochLinsys* linsys;
 

@@ -46,74 +46,87 @@ void StochMonitor::doItPd( const Solver * solver, const Data * data, const Varia
    StochMonitor::doItStoch(solver, data, vars, resids, alpha_primal, alpha_dual, sigma, i, mu, status_code, level);
 }
 
-void StochMonitor::doItStoch( const Solver * solver, const Data * data, const Variables * vars,
-              const Residuals * resids,
-              double alpha_primal, double alpha_dual, double sigma,
-              int i, double mu,
-              int status_code,
-              int level ) const
+void
+StochMonitor::doItStoch(const Solver *solver, const Data *data,
+      const Variables *vars, const Residuals *resids, double alpha_primal,
+      double alpha_dual, double, int i, double mu, int status_code,
+      int level) const
 {
-  double objective = dynamic_cast<const QpGenData*>(data)->objectiveValue(dynamic_cast<const QpGenVars*>(vars));
+   double objective = dynamic_cast<const QpGenData*>(data)->objectiveValue(
+         dynamic_cast<const QpGenVars*>(vars));
 
-  const Residuals* resids_unscaled = resids;
-  if( scaler )
-  {
-     objective = scaler->getObjUnscaled(objective);
-     resids_unscaled = scaler->getResidualsUnscaled(*resids);
-  }
+   const Residuals *resids_unscaled = resids;
+   if( scaler )
+   {
+      objective = scaler->getObjUnscaled(objective);
+      resids_unscaled = scaler->getResidualsUnscaled(*resids);
+   }
 
-  const double dnorm = solver->dataNormOrig();
-  const double rnorm = resids_unscaled->residualNorm();
-  const double gap = resids_unscaled->dualityGap();
+   const double dnorm = solver->dataNormOrig();
+   const double rnorm = resids_unscaled->residualNorm();
+   const double gap = resids_unscaled->dualityGap();
 
-  if( scaler )
-     delete resids_unscaled;
+   if( scaler )
+      delete resids_unscaled;
 
-  // log only on the first proc
+   // log only on the first proc
    if( myRank > 0 )
       return;
 
-  switch( level ) {
-     case 0 : case 1: {
-        std::cout << " --- Iteration " << i << " --- (rank " << myGlobRank << ")" << "\n";
-    if( i == 1 )
-      printf(" mu = %16.12e  rel.res.norm=%16.12e  datanorm=%16.12e\n", 
-	     mu, rnorm / dnorm, dnorm);
-    else
-      printf(" mu = %16.12e  rel.res.norm=%16.12e\n",
-             mu, rnorm / dnorm);
-    //cout << " mu = " << mu << " relative residual norm = " 
-    //cout << resids->residualNorm() / dnorm << "\n";
-    std::cout << " Duality Gap:  " << gap << "\n";
-    if( i > 1 )
-    {
-       if( alpha_dual != -1.0 )
-       {
-          std::cout << " alpha primal = " << alpha_primal << "\n";
-          std::cout << " alpha dual = " << alpha_dual << "\n";
-       }
-       else
-          std::cout << " alpha = " << alpha_primal << "\n";
-    }
-    std::cout << " Objective: " << objective << "\n";
-    std::cout << "\n";
-    if( level == 1) { 
-      // Termination has been detected by the status check; print
-      // appropriate message
-      switch( status_code ) {
-      case SUCCESSFUL_TERMINATION:
-	std::cout << "\n" << " *** SUCCESSFUL TERMINATION ***" << "\n";
-	break;
-      case MAX_ITS_EXCEEDED:
-	std::cout << "\n" << " *** MAXIMUM ITERATIONS REACHED *** " << "\n";
-	break;
-      case INFEASIBLE:
-	std::cout << "\n" << " *** TERMINATION: PROBABLY INFEASIBLE *** " << "\n";
-      case UNKNOWN:
-	std::cout << "\n" << " *** TERMINATION: STATUS UNKNOWN *** " << "\n";
-	break;
-      } // end switch(statusCode)
-    }
-  } break; // end case 0: case 1:
-  } // end switch(level)
+   switch( level )
+      {
+      case 0:
+      case 1:
+         {
+            std::cout << " --- Iteration " << i << " --- (rank " << myGlobRank
+                  << ")" << "\n";
+            if( i == 1 )
+               printf(" mu = %16.12e  rel.res.norm=%16.12e  datanorm=%16.12e\n",
+                     mu, rnorm / dnorm, dnorm);
+            else
+               printf(" mu = %16.12e  rel.res.norm=%16.12e\n", mu,
+                     rnorm / dnorm);
+            //cout << " mu = " << mu << " relative residual norm = "
+            //cout << resids->residualNorm() / dnorm << "\n";
+            std::cout << " Duality Gap:  " << gap << "\n";
+            if( i > 1 )
+            {
+               if( alpha_dual != -1.0 )
+               {
+                  std::cout << " alpha primal = " << alpha_primal << "\n";
+                  std::cout << " alpha dual = " << alpha_dual << "\n";
+               }
+               else
+                  std::cout << " alpha = " << alpha_primal << "\n";
+            }
+            std::cout << " Objective: " << objective << "\n";
+            std::cout << "\n";
+            if( level == 1 )
+            {
+               // Termination has been detected by the status check; print
+               // appropriate message
+               switch( status_code )
+                  {
+                  case SUCCESSFUL_TERMINATION:
+                     std::cout << "\n" << " *** SUCCESSFUL TERMINATION ***"
+                           << "\n";
+                     break;
+                  case MAX_ITS_EXCEEDED:
+                     std::cout << "\n" << " *** MAXIMUM ITERATIONS REACHED *** "
+                           << "\n";
+                     break;
+                  case INFEASIBLE:
+                     std::cout << "\n"
+                           << " *** TERMINATION: PROBABLY INFEASIBLE *** "
+                           << "\n";
+                     break;
+                  case UNKNOWN:
+                     std::cout << "\n"
+                           << " *** TERMINATION: STATUS UNKNOWN *** " << "\n";
+                     break;
+                  } // end switch(statusCode)
+            }
+         }
+         break; // end case 0: case 1:
+      } // end switch(level)
 }

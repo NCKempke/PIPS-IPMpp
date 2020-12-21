@@ -584,11 +584,6 @@ void PardisoSchurSolver::schur_solve_sparse(SparseGenMatrix& R,
   delete[] rowptrSC; delete[] colidxSC; delete[] eltsSC;
 }
 
-void PardisoSchurSolver::solve(GenMatrix& rhs_in)
-{
-  assert(false && "Function not supported. Use PardisoSolver for this functionality.");
-}
-
 PardisoSchurSolver::~PardisoSchurSolver()
 {
   delete[] rowptrAug;

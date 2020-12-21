@@ -34,7 +34,7 @@ sResiduals::sResiduals( OoqpVector * rQ_,    OoqpVector * rA_,
   SpReferTo( rlambda, rlambda_ );
   SpReferTo( ru    , ru_ );
   SpReferTo( rpi   , rpi_ );
-  SpReferTo( rv    , rpi_ );
+  SpReferTo( rv    , rv_ );
   SpReferTo( rgamma, rgamma_ );
   SpReferTo( rw  , rw_ );
   SpReferTo( rphi, rphi_ );

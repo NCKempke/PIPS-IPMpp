@@ -77,7 +77,7 @@ public:
 
   virtual ~QpGenVars();
   
-  double getAverageDistanceToBoundForConvergedVars( const Data& data, double tol ) const;
+  double getAverageDistanceToBoundForConvergedVars( const Data&, double tol ) const;
 
   void pushSlacksFromBound( double tol, double amount );
 

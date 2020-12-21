@@ -1345,7 +1345,7 @@ void sData::writeMPSColumns(ostream& out)
    SparseGenMatrix& CSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.Bmat)->getTranspose();
 
    SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.vec);
-   n = gSimple->n;
+   n = gSimple->length();
 
    std::stringstream sstmCol;
    std::stringstream sstmRow;
@@ -1446,7 +1446,7 @@ void sData::writeMPSColumns(ostream& out)
    for( size_t it = 0; it < children.size(); it++ )
    {
       SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.children[it]->vec);
-      n = gSimple->n;
+      n = gSimple->length();
 
       for( int col = 0; col<n; col++ )
       {
@@ -1843,17 +1843,17 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
 
 void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC)
 {
-   assert( permutationIsValid(linkConsPermutationA) );
-   assert( permutationIsValid(linkConsPermutationC) );
+   assert( permutationIsValid(permA) );
+   assert( permutationIsValid(permC) );
    assert( !is_hierarchy_root );
 
-   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(linkConsPermutationA);
-   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(linkConsPermutationC);
-   dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(linkConsPermutationA);
-   dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(linkConsPermutationC);
-   dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(linkConsPermutationC);
-   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(linkConsPermutationC);
-   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(linkConsPermutationC);
+   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
+   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
+   dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(permA);
+   dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(permC);
+   dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(permC);
+   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(permC);
+   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
 }
 
 void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
@@ -1861,13 +1861,13 @@ void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
    assert( permutationIsValid(linkVarsPermutation) );
    assert( !is_hierarchy_root );
 
-   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(linkVarsPermutation);
-   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(linkVarsPermutation);
-   dynamic_cast<StochVector&>(*g).permuteVec0Entries(linkVarsPermutation);
-   dynamic_cast<StochVector&>(*bux).permuteVec0Entries(linkVarsPermutation);
-   dynamic_cast<StochVector&>(*blx).permuteVec0Entries(linkVarsPermutation);
-   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(linkVarsPermutation);
-   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(linkVarsPermutation);
+   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(perm);
+   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(perm);
+   dynamic_cast<StochVector&>(*g).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*bux).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*blx).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
 }
 
 sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const

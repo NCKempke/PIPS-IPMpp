@@ -163,13 +163,13 @@ matCB(D,C)
 matCB(BL,BL)
 matCB(DL,DL)
 
-int fnonzeroQ(void* user_data, int id, int* nnz)
+int fnonzeroQ(void*, int, int* nnz)
 {
 	*nnz = 0;
 	return 0;
 }
 
-int fmatQ(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int fmatQ(void* user_data, int id, int* krowM, int*, double*)
 {
    GMSPIPSBlockData_t* blk = ((GMSPIPSBlockData_t**) user_data)[id];
    assert(blk);

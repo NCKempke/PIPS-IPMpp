@@ -98,7 +98,7 @@ DeSymIndefSolverMagma::DeSymIndefSolverMagma( DenseSymMatrix * dm )
   cout << "MAGMA: size of matrix is " << size << "done with MAGMA constructor" << endl;
 }
 
-DeSymIndefSolverMagma::DeSymIndefSolverMagma( SparseSymMatrix * sm )
+DeSymIndefSolverMagma::DeSymIndefSolverMagma( SparseSymMatrix * )
 {
   assert(false && "Not available! Can be implemented though :)");
   /*
@@ -158,7 +158,7 @@ void DeSymIndefSolverMagma::solve ( OoqpVector& v )
   cout << "MAGMA : solve done" << endl;
 }
 
-void DeSymIndefSolverMagma::solve ( GenMatrix& rhs_in )
+void DeSymIndefSolverMagma::solve ( GenMatrix& )
 {
   assert(false && "Not implemented");
   /*

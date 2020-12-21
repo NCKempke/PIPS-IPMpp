@@ -120,7 +120,7 @@ void StochNodeResourcesMonitor::recSchurCom_start(double size, stCommType type)
   tmOpStart = MPI_Wtime();
 }
 
-void StochNodeResourcesMonitor::recSchurCom_stop(double size, stCommType type)
+void StochNodeResourcesMonitor::recSchurCom_stop(double, stCommType)
 {
   double tmOpEnd = MPI_Wtime();
   vcSchur[vcSchur.size()-1].time = tmOpEnd-tmOpStart;
@@ -133,7 +133,7 @@ void StochNodeResourcesMonitor::recLsolveCom_start(double size, stCommType type)
   tmOpStart = MPI_Wtime();
 }
 
-void StochNodeResourcesMonitor::recLsolveCom_stop(double size, stCommType type)
+void StochNodeResourcesMonitor::recLsolveCom_stop(double, stCommType)
 {
   double tmOpEnd = MPI_Wtime();
   vcLsolve[vcSchur.size()-1].time = tmOpEnd-tmOpStart;
@@ -222,27 +222,27 @@ StochIterateResourcesMonitor::recIterateTm_stop()
 // during the execution of this process
 unsigned long StochIterateResourcesMonitor::getMaxMemUsage()
 {
-  ifstream fd("/proc/self/status");
-  string line;
-  const string numbers("0123456789");
-  size_t pos;
-  unsigned long hwm, rss, *toset;
-  while (!fd.eof()) {
+   std::ifstream fd("/proc/self/status");
+   std::string line;
+   const std::string numbers("0123456789");
+   size_t pos;
+   unsigned long hwm, rss, *toset;
+   while (!fd.eof()) {
     toset = 0;
     getline(fd, line);
-    string numstr;
+    std::string numstr;
     pos = line.find("VmHWM");
-    if (pos != string::npos) {
+    if (pos != std::string::npos) {
 	    toset = &hwm;
     } 
     pos = line.find("VmRSS");
-    if (pos != string::npos) {
+    if (pos != std::string::npos) {
 	    toset = &rss;
     }
     if (toset) {
 	    numstr = line.substr(
 			    line.find_first_of(numbers),line.find_last_of(numbers)+1);
-	    istringstream s(numstr);
+	    std::istringstream s(numstr);
 	    s >> *toset;
     }
   }

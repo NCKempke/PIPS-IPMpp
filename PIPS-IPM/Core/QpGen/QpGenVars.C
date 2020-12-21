@@ -174,7 +174,7 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
-double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, double tol ) const
+double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data&, double tol ) const
 {
    assert( 0 < tol );
 

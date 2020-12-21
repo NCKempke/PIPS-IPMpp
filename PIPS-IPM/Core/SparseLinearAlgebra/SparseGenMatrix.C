@@ -81,7 +81,7 @@ SparseGenMatrix* SparseGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) co
   if( m_Mt )
   {
      assert(clone->m_Mt == NULL);
-     clone->m_Mt = new SparseGenMatrix(0, m_Mt->getStorageRef().n, 0);
+     clone->m_Mt = new SparseGenMatrix(0, m_Mt->getStorageRef().length(), 0);
   }
 
   return clone;
@@ -130,7 +130,7 @@ SparseGenMatrix* SparseGenMatrix::cloneFull(bool switchToDynamicStorage) const
       assert(clone->m_Mt == nullptr);
 
       SparseStorage& storage_t = m_Mt->getStorageRef();
-      clone->m_Mt = new SparseGenMatrix(storage_t.m, storage_t.n, storage_t.len);
+      clone->m_Mt = new SparseGenMatrix(storage_t.m, storage_t.length(), storage_t.len);
 
       SparseGenMatrix* clone_t = clone->m_Mt;
 
@@ -336,13 +336,13 @@ void SparseGenMatrix::mult ( double beta,  OoqpVector& y_in,
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-  assert( x.n == mStorage->n && y.n == mStorage->m );
+  assert( x.length() == mStorage->n && y.length() == mStorage->m );
 
   const double *xv = 0;
   double *yv = 0;
 
-  if( x.n > 0 ) xv = &x[0];
-  if( y.n > 0 ) yv = &y[0];
+  if( x.length() > 0 ) xv = &x[0];
+  if( y.length() > 0 ) yv = &y[0];
 
   mStorage->mult( beta, yv, 1, alpha, xv, 1 );
 }
@@ -379,14 +379,14 @@ void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-//  std::cout << " x.n " << x.n << " mStorage->m " << mStorage->m << ", y.n " << y.n << " mStorage->n " << mStorage->n << std::endl;
-  assert( x.n == mStorage->m && y.n == mStorage->n );
+//  std::cout << " x.length() " << x.length() << " mStorage->m " << mStorage->m << ", y.length() " << y.length() << " mStorage->n " << mStorage->n << std::endl;
+  assert( x.length() == mStorage->m && y.length() == mStorage->n );
 
   const double* xv = 0;
   double* yv = 0;
 
-  if( x.n > 0 ) xv = &x[0];
-  if( y.n > 0 ) yv = &y[0];
+  if( x.length() > 0 ) xv = &x[0];
+  if( y.length() > 0 ) yv = &y[0];
 
   mStorage->transMult( beta, yv, 1, alpha, xv, 1 );
 }
@@ -396,16 +396,16 @@ void SparseGenMatrix::transMult( double beta,  OoqpVector& y_in, int incy, doubl
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-  assert( x.n > 0 && y.n > 0 );
-  assert( x.n >= incx * mStorage->m );
-  assert( y.n >= incy * mStorage->n );
+  assert( x.length() > 0 && y.length() > 0 );
+  assert( x.length() >= incx * mStorage->m );
+  assert( y.length() >= incy * mStorage->n );
 
   const double* xv = 0;
   double* yv = 0;
 
-  if( x.n > 0 )
+  if( x.length() > 0 )
      xv = &x[0];
-  if( y.n > 0 )
+  if( y.length() > 0 )
      yv = &y[0];
 
   mStorage->transMult( beta, yv, incy, alpha, xv, incx );
@@ -436,7 +436,7 @@ void SparseGenMatrix::atPutDiagonal( int idiag, OoqpVector& vvec )
 {
   SimpleVector & v = dynamic_cast<SimpleVector &>(vvec);
 
-  mStorage->atPutDiagonal( idiag, &v[0], 1, v.n );
+  mStorage->atPutDiagonal( idiag, &v[0], 1, v.length() );
 
   assert(m_Mt == nullptr);
 }

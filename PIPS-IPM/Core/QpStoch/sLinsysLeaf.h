@@ -31,10 +31,10 @@ class sLinsysLeaf : public sLinsys
 
   ~sLinsysLeaf() override = default;
 
-  virtual void factor2( sData *prob, Variables *vars);
-  virtual void Lsolve ( sData *prob, OoqpVector& x );
-  virtual void Dsolve ( sData *prob, OoqpVector& x );
-  virtual void Ltsolve( sData *prob, OoqpVector& x );
+  void factor2( sData *prob, Variables *vars) override;
+  void Lsolve( sData*, OoqpVector& ) override {};
+  void Dsolve( sData*, OoqpVector& x ) override;
+  void Ltsolve( sData*, OoqpVector& ) override {};
 
   //virtual void Lsolve2 ( OoqpVector& x );
   //virtual void Dsolve2 ( OoqpVector& x );
@@ -52,9 +52,7 @@ class sLinsysLeaf : public sLinsys
 
  protected:
 
-  static void mySymAtPutSubmatrix(SymMatrix& kkt, 
-				  GenMatrix& B, GenMatrix& D, 
-				  int locnx, int locmy, int locmz);
+  static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int locmz);
 
   template<class LINSOLVER>
   void initBlockedSolvers();
@@ -71,7 +69,7 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_,
-			 LINSOLVER* thesolver)
+			 LINSOLVER* /*thesolver*/)
   : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_)
 {
    static bool printed = false;

@@ -40,7 +40,7 @@ class SCsparsifier
       constexpr static double epsilonZero = 1e-15;
 
       SCsparsifier(MPI_Comm mpiComm = MPI_COMM_NULL);
-      ~SCsparsifier();
+      ~SCsparsifier() = default;
 
       // returns sparsification bound
       double getDiagDomBound() const;

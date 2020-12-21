@@ -63,8 +63,9 @@ public:
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
 
-  virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res);
-  virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res);
+  void matTransDMultMat( OoqpVector&, SymMatrix** ) override { assert(false && "not implemented"); };
+  void matTransDinvMultMat(OoqpVector&, SymMatrix** ) override { assert(false && "not implemented"); };
+
 
   virtual void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent );

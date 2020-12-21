@@ -8,10 +8,6 @@
 #include "QpPostsolver.h"
 
 QpPostsolver::QpPostsolver(const Data& prob)
- : Postsolver(prob), original_problem(prob)
-{
-}
-
-QpPostsolver::~QpPostsolver()
+ : original_problem(prob)
 {
 }

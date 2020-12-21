@@ -40,7 +40,7 @@ public:
   /** compute the complementarity gap resulting from a step of length
    * "alpha_primal" along primal direction of "step" and
    * "alpha_dual" along dual direction of "step" */
-  virtual double mustep_pd( const Variables *step, double alpha_primal, double alpha_dual )
+  virtual double mustep_pd( const Variables* /*step*/, double /*alpha_primal*/, double /*alpha_dual*/ )
   {
     assert(0 && "not implemented here");
     return 0;
@@ -58,7 +58,7 @@ public:
    *
    *  @see saxpy
    */
-  virtual void saxpy_pd( const Variables *b, double alpha_primal, double alpha_dual)
+  virtual void saxpy_pd( const Variables* /*b*/, double /*alpha_primal*/, double /*alpha_dual*/)
   {
     assert(0 && "not implemented here");
   }
@@ -79,7 +79,7 @@ public:
      *
      * @see stepbound
      */
-  virtual void stepbound_pd( const Variables *b, double & alpha_primal, double & alpha_dual )
+  virtual void stepbound_pd( const Variables* /*b*/, double& /*alpha_primal*/, double& /*alpha_dual*/ )
   {
     assert(0 && "not implemented here");
   }
@@ -114,14 +114,11 @@ public:
 			       double & dualStep,
 			       int& firstOrSecond ) = 0;
 
-  virtual void findBlocking_pd( const Variables * step,
-  				double & primalValue,
-  				double & primalStep,
-  				double & dualValue,
-  				double & dualStep,
-  				double & primalValue_d, double & primalStep_d, double & dualValue_d, double & dualStep_d,
-  				double& alphaPrimal, double& alphaDual,
-				bool& primalBlocking, bool& dualBlocking )
+  virtual void findBlocking_pd( const Variables* /*step*/, double& /*primalValue*/, double& /*primalStep*/,
+  				double& /*dualValue*/, double& /*dualStep*/, double& /*primalValue_d*/, double& /*primalStep_d*/,
+  				double& /*dualValue_d*/, double& /*dualStep_d*/,
+  				double& /*alphaPrimal*/, double& /*alphaDual*/,
+				bool& /*primalBlocking*/, bool& /*dualBlocking*/ )
   {
     assert(0 && "not implemented here");
   }
@@ -159,12 +156,12 @@ public:
   }
 
   /** set not indicated bounds to +- value or 10 * the current max of the x variables */
-  virtual void setNotIndicatedBoundsTo( Data& data, double value )
+  virtual void setNotIndicatedBoundsTo( Data& /*data*/, double /*value*/ )
   {
      assert(0 && "not implemented here");
   }
 
-  virtual ~Variables() {};
+  virtual ~Variables() = default;
 };
 
 #endif

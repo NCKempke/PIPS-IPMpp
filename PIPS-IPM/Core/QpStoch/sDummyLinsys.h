@@ -17,48 +17,46 @@ class sDummyLinsys : public sLinsys
     };
 
 
-  virtual ~sDummyLinsys(){};
+  ~sDummyLinsys() override = default;
 
-  void factor2( sData *prob, Variables *vars) override {};
-  void Lsolve ( sData *prob, OoqpVector& x ) override {};
-  void Dsolve ( sData *prob, OoqpVector& x ) override {};
-  void Ltsolve( sData *prob, OoqpVector& x ) override {};
+  void factor2( sData*, Variables*) override {};
+  void Lsolve ( sData*, OoqpVector& ) override {};
+  void Dsolve ( sData*, OoqpVector& ) override {};
+  void Ltsolve( sData*, OoqpVector& ) override {};
 
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override {};
+  virtual void Ltsolve2( sData*, StochVector&, SimpleVector& ) override {};
 
-  void putZDiagonal( OoqpVector& zdiag ) override {};
-  void solveCompressed( OoqpVector& rhs ) override {};
-  void putXDiagonal( OoqpVector& xdiag_ ) override {};
+  void putZDiagonal( OoqpVector& ) override {};
+  void solveCompressed( OoqpVector& ) override {};
+  void putXDiagonal( OoqpVector& ) override {};
 
-  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override {};
+  void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
 
-  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, const OoqpVector& vars_in ) const override {};
+  void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override {};
   
 
-  void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi) override {};
-  void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz) override {};
+  void addLnizi(sData*, OoqpVector&, OoqpVector& ) override {};
+  void addLniziLinkCons(sData*, OoqpVector&, OoqpVector&, int, int ) override {};
 
   /** y += alpha * Lni^T * x */
   //  void LniTransMult(sData *prob, SimpleVector& y, double alpha, SimpleVector& x) {};
 
-  void addTermToSchurResidual(sData* prob, SimpleVector& res, SimpleVector& x) override {};
+  void addTermToSchurResidual( sData*, SimpleVector&, SimpleVector& ) override {};
 
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border) override {};
-  void addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border) override {};
-  void LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz ) override {};
+  void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys& ) override {};
+  void addLniZiHierarchyBorder( DenseGenMatrix&, BorderLinsys& ) override {};
+  void LniTransMultHierarchyBorder( DenseSymMatrix&, const DenseGenMatrix&, BorderLinsys&, int, int, int ) override {};
 
 
-  void allocU(DenseGenMatrix ** Ut, int np) override {};
-  void allocV (DenseGenMatrix ** V, int np) override {};
-  void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V) override {};
+  void allocU( DenseGenMatrix**, int ) override {};
+  void allocV( DenseGenMatrix**, int ) override {};
+  void computeU_V( sData*, DenseGenMatrix*, DenseGenMatrix* ) override {};
   void deleteChildren() override {};
 
   bool isDummy() const override { return true; };
 
-  void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override {};
-  void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override {};
+  void addBorderTimesRhsToB0( StochVector&, SimpleVector&, BorderLinsys& ) override {};
+  void addBorderX0ToRhs( StochVector&, const SimpleVector&, BorderLinsys& ) override {};
 
 };
 

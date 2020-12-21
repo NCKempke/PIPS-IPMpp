@@ -29,7 +29,7 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
    solver = solvers_blocked[0].get();
 }
 
-void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables* vars)
+void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
 {
 
    /* Add corner block
@@ -229,7 +229,7 @@ void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
 }
 
 /* create kkt used to store Schur Complement of border layer */
-SymMatrix* sLinsysRootBordered::createKKT(sData* prob)
+SymMatrix* sLinsysRootBordered::createKKT(sData*)
 {
    const int n = locnx + locmyl + locmzl;
 
@@ -252,12 +252,12 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 }
 
 /* since we have only one child we will not allreduce anything */
-void sLinsysRootBordered::reduceKKT(sData* prob)
+void sLinsysRootBordered::reduceKKT(sData*)
 {
    return;
 }
 
-DoubleLinearSolver* sLinsysRootBordered::createSolver(sData* prob, SymMatrix* kktmat_)
+DoubleLinearSolver* sLinsysRootBordered::createSolver(sData*, SymMatrix* kktmat_)
 {
    const SolverTypeDense solver = pips_options::getSolverDense();
    DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);

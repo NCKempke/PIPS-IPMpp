@@ -9,10 +9,6 @@
 
 
 QpPresolver::QpPresolver(const Data* prob, Postsolver* postsolver)
- : Presolver(prob), origprob(prob), postsolver(postsolver)
-{
-}
-
-QpPresolver::~QpPresolver()
+ : origprob(prob), postsolver(postsolver)
 {
 }

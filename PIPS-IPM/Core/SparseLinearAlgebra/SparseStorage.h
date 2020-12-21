@@ -68,7 +68,7 @@ public:
   int rows() const { return m; }
   int cols() const { return n; }
 
-  bool isValid(bool verbose = false) const;
+  bool isValid() const;
   bool isSorted() const;
 
 
@@ -132,8 +132,8 @@ public:
    *  Also allocates, builds and returns this^T since it is needed later for
    *   numerical multiplication.
    */
-  void matTransDSymbMultMat(double* d, 
-			    int* krowMt, int* jcolMt, double* dMt,
+  void matTransDSymbMultMat(double* /*d*/,
+			    int* krowMt, int* jcolMt, double* /*dMt*/,
 			    int** krowMtM, int** jcolMtM, double** dMtM); 
 			    
 

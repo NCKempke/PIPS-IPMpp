@@ -30,17 +30,16 @@ extern "C"
 class Mc30Scaler : public SymmetricLinearScaler
 {
    public:
-      Mc30Scaler();
+      Mc30Scaler() = default;
 
-      virtual ~Mc30Scaler();
+      ~Mc30Scaler() override = default;
 
-      const double* getScaling() const override
-      { return scaling_factors.data(); }
+      const double* getScaling() const override { return scaling_factors.data(); }
 
       /** compute scaling for a symmetric indefinite matrix and scale it */
       void scaleMatrixTripletFormat( int n, int nnz, double* M, const int* rowM, const int* colM, bool fortran_indexed ) override;
 
-      void scaleMatrixCSRFormat( int n, int nnz, double* M, const int* krowM, const int* jcolM, bool fortran_indexed ) override
+      void scaleMatrixCSRFormat( int, int, double*, const int*, const int*, bool) override
       { assert( false && "TODO : implement" ); };
 
       /* scale a vector */
@@ -58,8 +57,8 @@ class Mc30Scaler : public SymmetricLinearScaler
       std::vector<double> scaling_factors;
       std::vector<double> scaling_workspace;
 
-      int scaling_output_control;
-      int scaling_error;
+      int scaling_output_control{1};
+      int scaling_error{0};
 };
 
 #endif /* PIPSIPM_CORE_LINEARSOLVERS_MC30SCALER_H */

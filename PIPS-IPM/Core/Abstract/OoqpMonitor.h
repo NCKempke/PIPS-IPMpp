@@ -17,9 +17,10 @@ class Residuals;
  */
 class OoqpMonitor {
 public:
-  OoqpMonitor * nextMonitor;
+  OoqpMonitor* nextMonitor{};
 
-  OoqpMonitor() { nextMonitor = 0; };
+  OoqpMonitor() = default;
+  virtual ~OoqpMonitor() = default;
 
   virtual void doIt( const Solver * solver, const Data * data, const Variables * vars,
 					 const Residuals * resids,
@@ -28,14 +29,9 @@ public:
                      int status_code,
 					 int level ) = 0;
 
-  virtual void doItPd( const Solver * solver, const Data * data, const Variables * vars,
-                const Residuals * resids,
-                double alpha_primal, double alpha_dual, double sigma,
-                int i, double mu,
-                     int status_code,
-                int level ) { assert(0 && "not implemented here"); };
-
-  virtual ~OoqpMonitor() {};
+  virtual void doItPd( const Solver* /*solver*/, const Data* /*data*/, const Variables* /*vars*/, const Residuals* /*resids*/,
+        double /*alpha_primal*/, double /*alpha_dual*/, double /*sigma*/, int /*i*/, double /*mu*/, int /*status_code*/,
+                int /*level*/ ) { assert(0 && "not implemented here"); };
 };  
 
 

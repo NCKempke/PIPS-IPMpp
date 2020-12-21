@@ -828,7 +828,7 @@ void sLinsysRoot::AddChild(sLinsys* child)
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
-void sLinsysRoot::initializeKKT(sData* prob, Variables* vars)
+void sLinsysRoot::initializeKKT(sData*, Variables*)
 {
    if( is_hierarchy_root )
       assert( !hasSparseKkt );
@@ -1164,7 +1164,7 @@ void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>&
    MPI_Send(&prevEntries[0], nEntries, MatrixEntryTriplet_mpi, prevRank, 0, mpiComm);
 }
 
-std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(sData* prob, int childStart, int childEnd) const
+std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(sData* prob, int childStart, int) const
 {
    assert(kkt && hasSparseKkt);
 

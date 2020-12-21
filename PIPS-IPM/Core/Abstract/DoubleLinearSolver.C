@@ -8,21 +8,6 @@ DoubleIterativeLinearSolver( MatTimesVec* Ain, MatTimesVec* M1in, MatTimesVec* M
 
 }
 
-DoubleIterativeLinearSolver::DoubleIterativeLinearSolver()
-  : A(nullptr), ML(nullptr), MR(nullptr)
-{ }
-
-DoubleIterativeLinearSolver::~DoubleIterativeLinearSolver()
-{ }
-
-void
-DoubleIterativeLinearSolver::diagonalChanged( int idiag, int extent )
-{ }
-
-void
-DoubleIterativeLinearSolver::matrixChanged()
-{ }
-
 void DoubleIterativeLinearSolver::applyA (double beta, OoqpVector& res,
 					  double alpha, OoqpVector& x)
 {

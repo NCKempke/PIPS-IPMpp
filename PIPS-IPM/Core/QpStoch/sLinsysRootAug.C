@@ -532,8 +532,7 @@ void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
       children[it]->stochNode->resMon.eLsolve.clear();
       children[it]->stochNode->resMon.recLsolveTmChildren_start();
 #endif
-      SimpleVector& zi = dynamic_cast<SimpleVector&>(*b.children[it]->vec);
-      children[it]->addLniziLinkCons(prob->children[it], b0, zi, locmy, locmz);
+      children[it]->addLniziLinkCons(prob->children[it], b0, *b.children[it]->vec, locmy, locmz);
 
 #ifdef TIMING
       children[it]->stochNode->resMon.recLsolveTmChildren_stop();
@@ -701,7 +700,7 @@ extern int gLackOfAccuracy;
 //#endif
 //}
 
-void sLinsysRootAug::solveReducedLinkCons( sData *prob, SimpleVector& b_vec)
+void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
 {
 #ifdef TIMING
    t_start = MPI_Wtime();
@@ -1603,7 +1602,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
   delete[] resvec;
 }
 
-void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables* vars)
+void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
 {
    SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
@@ -1874,7 +1873,7 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables* vars)
 #endif
 }
 
-void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables* vars)
+void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
 {
    int j, p, pend;
 

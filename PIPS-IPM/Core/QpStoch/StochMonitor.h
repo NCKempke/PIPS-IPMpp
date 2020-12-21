@@ -17,7 +17,7 @@ class StochMonitor : public OoqpMonitor
  private:
   void doItStoch( const Solver * solver, const Data * data, const Variables * vars,
         const Residuals * resids,
-        double alpha_primal, double alpha_dual, double sigma,
+        double alpha_primal, double alpha_dual, double,
         int i, double mu,
                   int status_code,
         int level ) const;

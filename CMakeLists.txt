@@ -16,12 +16,12 @@ message(STATUS "MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
 message(STATUS "MPI_CXX_INCLUDE_DIRS=${MPI_CXX_INCLUDE_DIRS}")
 message(STATUS "MPI_CXX_LINK_FLAGS=${MPI_CXX_LINK_FLAGS}")
 
-include_directories(${MPI_CXX_INCLUDE_DIRS})
+include_directories(SYSTEM ${MPI_CXX_INCLUDE_DIRS})
 
 ### TODO : introduce Wextra/pedantic -Wconversion -Wno-zero-as-null-pointer-const maybe
 #add_compile_options( -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual )
 set(c_flags -Wall -Wno-long-long -fPIC)
-set(cxx_flags -Wall -Wno-long-long -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
+set(cxx_flags -Wall -Wextra -Werror -Wno-long-long -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:C>:${c_flags}>"
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"

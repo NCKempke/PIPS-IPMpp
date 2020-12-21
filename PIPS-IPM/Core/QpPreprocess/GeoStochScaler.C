@@ -259,7 +259,7 @@ void GeoStochScaler::setScalingVecsToOne()
  * */
 void GeoStochScaler::applyGeoMean(OoqpVector& maxvec, OoqpVector& minvec)
 {
-   assert( maxvec.n == minvec.n );
+   assert( maxvec.length() == minvec.length() );
 
    maxvec.componentMult(minvec);
    maxvec.applySqrt();

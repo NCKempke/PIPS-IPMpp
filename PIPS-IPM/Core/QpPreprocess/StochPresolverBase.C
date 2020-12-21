@@ -212,21 +212,21 @@ void StochPresolverBase::countRowsBlock(int& n_rows_total, int& n_rows_empty, in
    if(system_type == EQUALITY_SYSTEM)
    {
       assert(rhs); assert(lhs == nullptr); assert(iclow == nullptr); assert(icupp == nullptr);
-      assert( nnz_row->n == rhs->n );
+      assert( nnz_row->length() == rhs->length() );
    }
    else
    {
       assert(lhs); assert(rhs); assert(iclow); assert(icupp);
-      assert( lhs->n == rhs->n );
-      assert( iclow->n == icupp->n );
-      assert( lhs->n == nnz_row->n );
-      assert( iclow->n == nnz_row->n );
+      assert( lhs->length() == rhs->length() );
+      assert( iclow->length() == icupp->length() );
+      assert( lhs->length() == nnz_row->length() );
+      assert( iclow->length() == nnz_row->length() );
    }
 #endif
 
-   n_rows_total += rhs->n;
+   n_rows_total += rhs->length();
 
-   for(int i = 0; i < rhs->n; ++i)
+   for(int i = 0; i < rhs->length(); ++i)
    {
       if( (*nnz_row)[i] != 0)
       {
@@ -271,15 +271,15 @@ void StochPresolverBase::countBoxedColumns( int& n_cols_total, int& n_cols_empty
 #ifndef NDEBUG
    const SimpleVector& xupp = (at_root_node) ? *currxuppParent : *currxuppChild;
    const SimpleVector& xlow = (at_root_node) ? *currxlowParent : *currxlowChild;
-   assert( ixlow.n == ixupp.n );
-   assert( ixlow.n == xlow.n );
-   assert( xlow.n == xupp.n );
-   assert( ixlow.n == curr_nnz.n );
+   assert( ixlow.length() == ixupp.length() );
+   assert( ixlow.length() == xlow.length() );
+   assert( xlow.length() == xupp.length() );
+   assert( ixlow.length() == curr_nnz.length() );
 #endif
 
-   n_cols_total += ixlow.n;
+   n_cols_total += ixlow.length();
 
-   for( int i = 0; i < ixlow.n; i++ )
+   for( int i = 0; i < ixlow.length(); i++ )
    {
       if( PIPSisZero(ixupp_orig[i]) && PIPSisZero(ixlow_orig[i]) )
          ++n_cols_orig_free;

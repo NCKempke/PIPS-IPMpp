@@ -35,8 +35,6 @@ class NodeCommEntry
   stCommType type;
 };
 
-using namespace std;
-
 class StochNodeResourcesMonitor
 {
  public:
@@ -67,10 +65,10 @@ class StochNodeResourcesMonitor
   virtual void recLtsolveTmChildren_stop();
 
   virtual void recSchurCom_start(double size, stCommType type);
-  virtual void recSchurCom_stop(double size, stCommType type);
+  virtual void recSchurCom_stop(double, stCommType);
 
   virtual void recLsolveCom_start(double size, stCommType type);
-  virtual void recLsolveCom_stop(double size, stCommType type);
+  virtual void recLsolveCom_stop(double, stCommType);
 
   //record the dense matrix multiplication within Schur complement computation
   //the recorded time is part of the recFactTmChildren kept in eFact.tmChildren
@@ -95,7 +93,7 @@ class StochNodeResourcesMonitor
   NodeExecEntry eTotal;
   NodeExecEntry eMult;
   NodeExecEntry eReduce, eReduceScatter, eBcast;
-  vector<NodeCommEntry> vcSchur, vcLsolve;
+  std::vector<NodeCommEntry> vcSchur, vcLsolve;
 
  private:
   double tmOpStart;
@@ -116,7 +114,7 @@ class StochIterateResourcesMonitor
  protected:
   double tmIterateStart;
 
-  vector<double> tmHistory;
+  std::vector<double> tmHistory;
 
 };
 #endif

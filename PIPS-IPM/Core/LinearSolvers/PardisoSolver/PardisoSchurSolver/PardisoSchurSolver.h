@@ -44,7 +44,7 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 
   using DoubleLinearSolver::solve;
   virtual void solve( OoqpVector& rhs ) = 0;
-  void solve( GenMatrix& rhs) override;
+  void solve( GenMatrix& ) override { assert(false && "Function not supported. Use PardisoSolver for this functionality."); };
 
   /** Functions specific to the Schur approach. The last argument is the Schur first
    * stage matrix that will be updated.

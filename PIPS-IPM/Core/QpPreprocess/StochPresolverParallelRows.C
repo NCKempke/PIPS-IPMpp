@@ -454,7 +454,7 @@ void StochPresolverParallelRows::removeSingletonVars()
       *normNnzColChild;
    
    /* Bmat */
-   for( int col = 0; col < nnzs_bmat.n; col++ )
+   for( int col = 0; col < nnzs_bmat.length(); col++ )
    {
       if( nnzs_bmat[col] == 1 )
       {
@@ -477,7 +477,7 @@ void StochPresolverParallelRows::removeSingletonVars()
    // if there is an a_mat == we are not in the root node
    if( !at_root_node )
    {
-   for( int col = 0; col < normNnzColParent->n; col++ )
+   for( int col = 0; col < normNnzColParent->length(); col++ )
       {
          if( (*normNnzColParent)[col] == 1 )
          {
@@ -508,15 +508,15 @@ void StochPresolverParallelRows::removeEntry(int col, SimpleVectorBase<int>& row
 {
    assert( 0 <= col && col < matrixTrans.getM() );
    assert( matrixTrans.getRowPtr(col).start + 1 == matrixTrans.getRowPtr(col).end );
-   assert( nnzRow.n == matrix.getM() );
-   assert( matrix.getN() == nnzCol.n );
-   assert( nnzCol.n == matrixTrans.getM() );
+   assert( nnzRow.length() == matrix.getM() );
+   assert( matrix.getN() == nnzCol.length() );
+   assert( nnzCol.length() == matrixTrans.getM() );
    assert( PIPSisEQ( nnzCol[col], 1.0 ) );
 
    // get indices of the singleton entry int mat_trans
    const int row = matrixTrans.getJcolM(matrixTrans.getRowPtr(col).start);
 
-   assert( row < nnzRow.n );
+   assert( row < nnzRow.length() );
 
    // check if there are no more than one singleton entry in this row
    // if so the row is neither parallel nor nearly parallel to any other row
@@ -568,14 +568,14 @@ void StochPresolverParallelRows::normalizeBlocksRowwise( SystemType system_type,
 {
    assert(b_mat);
    assert(cupp);
-   assert( b_mat->getM() == cupp->n );
+   assert( b_mat->getM() == cupp->length() );
    if( a_mat )
       assert( a_mat->getM() == b_mat->getM());
 
    if( system_type == INEQUALITY_SYSTEM )
    {
       assert( clow && iclow && icupp);
-      assert( clow->n == cupp->n && iclow->n == clow->n && iclow->n == clow->n );
+      assert( clow->length() == cupp->length() && iclow->length() == clow->length() && iclow->length() == clow->length() );
    }
 
    const int n_rows = b_mat->getM();
@@ -980,7 +980,7 @@ void StochPresolverParallelRows::tightenOriginalBoundsOfRow1(const INDEX& row1, 
    const int row2_index = row2.getIndex();
 
    assert( row1_index < currCmat->getM() && row2_index < currCmat->getM() );
-   assert( norm_factorC && norm_factorC->n == currCmat->getM() );
+   assert( norm_factorC && norm_factorC->length() == currCmat->getM() );
 
    const double norm_factor_row1 = (*norm_factorC)[row1_index];
    const double norm_factor_row2 = (*norm_factorC)[row2_index];
@@ -1043,12 +1043,12 @@ double StochPresolverParallelRows::getSingletonCoefficient( const INDEX& col) co
    if( !col.isLinkingCol() )
    {
       assert( singletonCoeffsColChild );
-      assert( col.getIndex() < singletonCoeffsColChild->n );
+      assert( col.getIndex() < singletonCoeffsColChild->length() );
    }
    else
    {
       assert( singletonCoeffsColParent );
-      assert( col.getIndex() < singletonCoeffsColParent->n );
+      assert( col.getIndex() < singletonCoeffsColParent->length() );
    }
 
    return col.isLinkingCol() ? (*singletonCoeffsColParent)[col.getIndex()] :
@@ -1063,7 +1063,7 @@ INDEX StochPresolverParallelRows::getRowSingletonVariable( const INDEX& row ) co
    if( row.inEqSys() )
    {
       assert( rowContainsSingletonVariableA );
-      assert( row_index < rowContainsSingletonVariableA->n );
+      assert( row_index < rowContainsSingletonVariableA->length() );
       const int col_index = (*rowContainsSingletonVariableA)[row_index];
 
       if( col_index == -1 )
@@ -1077,7 +1077,7 @@ INDEX StochPresolverParallelRows::getRowSingletonVariable( const INDEX& row ) co
    else
    {
       assert( rowContainsSingletonVariableC );
-      assert( row_index < rowContainsSingletonVariableC->n );
+      assert( row_index < rowContainsSingletonVariableC->length() );
       const int col_index = (*rowContainsSingletonVariableC)[row_index];
 
       if(col_index == -1)
@@ -1099,13 +1099,13 @@ bool StochPresolverParallelRows::rowContainsSingletonVariable( const INDEX& row 
    if( row.inEqSys() )
    {
       assert( rowContainsSingletonVariableA );
-      assert( row_index < rowContainsSingletonVariableA->n );
+      assert( row_index < rowContainsSingletonVariableA->length() );
       return (*rowContainsSingletonVariableA)[row_index] != -1;
    }
    else
    {
       assert( rowContainsSingletonVariableC );
-      assert( row_index < rowContainsSingletonVariableC->n );
+      assert( row_index < rowContainsSingletonVariableC->length() );
       return (*rowContainsSingletonVariableC)[row_index] != -1;
    }
 }

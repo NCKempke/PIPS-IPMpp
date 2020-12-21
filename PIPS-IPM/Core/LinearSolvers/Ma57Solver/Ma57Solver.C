@@ -18,7 +18,7 @@ extern int gOoqpPrintLevel;
 
 #include <mpi.h>
 
-void dumpdata(int* irow, int* jcol, double*M, int n, int nnz)
+void dumpdata(int* irow, int* jcol, double* M, int, int nnz)
 {
   printf("======================================================\n");
   for(int i = 0; i < nnz; i++)
@@ -297,7 +297,7 @@ void Ma57Solver::solve(GenMatrix& rhs_in)
   }
 }
 
-void Ma57Solver::solve( int nrhss, double* rhss, int* colSparsity )
+void Ma57Solver::solve( int nrhss, double* rhss, int* )
 {
    for (int i = 0; i < nrhss; i++) {
      SimpleVector v(rhss + i * n, n);

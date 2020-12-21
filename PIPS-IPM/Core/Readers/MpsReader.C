@@ -444,8 +444,8 @@ void MpsReader::readRangesSection( SimpleVector& clow, SimpleVector& cupp,
 {
   double *dclow = 0, *dcupp = 0;
   
-  if( clow.n > 0 ) dclow = &clow[0];
-  if( cupp.n > 0 ) dcupp = &cupp[0];
+  if( clow.length() > 0 ) dclow = &clow[0];
+  if( cupp.length() > 0 ) dcupp = &cupp[0];
 
   this->readRangesSection( dclow, dcupp, line, iErr, kindOfLine );
 }
@@ -2372,7 +2372,7 @@ int MpsReader::ParseDataLine( char line[],  char code[],
   return mpsok;
 }
 
-int MpsReader::ParseDataLine2( char line[],  char code[],
+int MpsReader::ParseDataLine2( char line[],  char[],
                               char name1[], char name2[], double * val1,
                               int& hasSecondValue,
                               char name3[], double * val2)

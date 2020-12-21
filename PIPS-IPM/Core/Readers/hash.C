@@ -53,7 +53,7 @@ void OutOfSpace()
 
 extern "C"
 char  *
-StrDup(char *s1, const char *message)
+StrDup(char *s1, const char*)
 {
   int ls1 = strlen(s1) + 1;
   char * ptr = new char[ls1];

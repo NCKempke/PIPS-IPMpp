@@ -36,7 +36,7 @@ public: //methods
 extern "C" {
 
 
-int nSize(void* user_data, int id, int* nnz)
+int nSize(void*, int id, int* nnz)
 {
    if( id == 2 )
      *nnz = 4;
@@ -46,14 +46,14 @@ int nSize(void* user_data, int id, int* nnz)
    return 0;
 }
 
-int mySize(void* user_data, int id, int* nnz)
+int mySize(void*, int, int* nnz)
 {
    *nnz = 2;
 
    return 0;
 }
 
-int mzSize(void* user_data, int id, int* nnz)
+int mzSize(void*, int, int* nnz)
 {
    *nnz = 1;
 
@@ -61,7 +61,7 @@ int mzSize(void* user_data, int id, int* nnz)
 }
 
 
-int mylSize(void* user_data, int id, int* nnz)
+int mylSize(void*, int, int* nnz)
 {
 
    *nnz = 2;
@@ -69,7 +69,7 @@ int mylSize(void* user_data, int id, int* nnz)
    return 0;
 }
 
-int mzlSize(void* user_data, int id, int* nnz)
+int mzlSize(void*, int, int* nnz)
 {
    *nnz = 1;
 
@@ -77,7 +77,7 @@ int mzlSize(void* user_data, int id, int* nnz)
 }
 
 
-int nnzMatEqStage1(void* user_data, int id, int* nnz)
+int nnzMatEqStage1(void*, int id, int* nnz)
 {
    if( id == 0 )
       *nnz = 2;
@@ -88,7 +88,7 @@ int nnzMatEqStage1(void* user_data, int id, int* nnz)
 }
 
 
-int nnzMatIneqStage1(void* user_data, int id, int* nnz)
+int nnzMatIneqStage1(void*, int id, int* nnz)
 {
    if( id == 0 )
       *nnz = 1;
@@ -98,7 +98,7 @@ int nnzMatIneqStage1(void* user_data, int id, int* nnz)
    return 0;
 }
 
-int nnzMatEqStage2(void* user_data, int id, int* nnz)
+int nnzMatEqStage2(void*, int id, int* nnz)
 {
    if( id == 0 )
       *nnz = 0;
@@ -108,7 +108,7 @@ int nnzMatEqStage2(void* user_data, int id, int* nnz)
 }
 
 
-int nnzMatIneqStage2(void* user_data, int id, int* nnz)
+int nnzMatIneqStage2(void*, int id, int* nnz)
 {
    if( id == 0 )
       *nnz = 0;
@@ -117,7 +117,7 @@ int nnzMatIneqStage2(void* user_data, int id, int* nnz)
    return 0;
 }
 
-int nnzMatEqLink(void* user_data, int id, int* nnz)
+int nnzMatEqLink(void*, int id, int* nnz)
 {
    *nnz = 3;
 
@@ -127,7 +127,7 @@ int nnzMatEqLink(void* user_data, int id, int* nnz)
    return 0;
 }
 
-int nnzMatIneqLink(void* user_data, int id, int* nnz)
+int nnzMatIneqLink(void*, int, int* nnz)
 {
    *nnz = 1;
 
@@ -135,22 +135,21 @@ int nnzMatIneqLink(void* user_data, int id, int* nnz)
 }
 
 
-int nnzAllZero(void* user_data, int id, int* nnz)
+int nnzAllZero(void*, int, int* nnz)
 {
    *nnz = 0;
    return 0;
 }
 
-int vecAllZero(void* user_data, int id, double* vec, int len)
+int vecAllZero(void*, int, double* vec, int len)
 {
-   int i;
-   for( i = 0; i < len; i++ )
+   for( int i = 0; i < len; i++ )
       vec[i] = 0.0;
 
    return 0;
 }
 
-int vecEqRhs(void* user_data, int id, double* vec, int len)
+int vecEqRhs(void*, int id, double* vec, int )
 {
    if( id == 0 )
    {
@@ -171,18 +170,15 @@ int vecEqRhs(void* user_data, int id, double* vec, int len)
    return 0;
 }
 
-int vecIneqRhs(void* user_data, int id, double* vec, int len)
+int vecIneqRhs(void*, int, double* vec, int len)
 {
-
-   int i;
-
-      for( i = 0; i < len; i++ )
-         vec[i] = 5.0;
+   for( int i = 0; i < len; i++ )
+      vec[i] = 5.0;
 
    return 0;
 }
 
-int vecIneqRhsLink(void* user_data, int id, double* vec, int len)
+int vecIneqRhsLink(void*, int, double* vec, int)
 {
    vec[0] = 4.0;
 
@@ -190,63 +186,57 @@ int vecIneqRhsLink(void* user_data, int id, double* vec, int len)
 }
 
 
-int vecIneqRhsActive(void* user_data, int id, double* vec, int len)
+int vecIneqRhsActive(void*, int, double* vec, int len)
 {
-   int i;
-   for( i = 0; i < len; i++ )
+   for( int i = 0; i < len; i++ )
       vec[i] = 1.0;
 
    return 0;
 }
 
-int vecIneqRhsActiveLink(void* user_data, int id, double* vec, int len)
+int vecIneqRhsActiveLink(void*, int, double* vec, int)
 {
    vec[0] = 1.0;
-
    return 0;
 }
 
-int vecObj(void* user_data, int id, double* vec, int len)
+int vecObj(void*, int, double* vec, int len)
 {
-   int i;
-   for( i = 0; i < len; i++ )
+   for( int i = 0; i < len; i++ )
       vec[i] = 2.0;
 
    return 0;
 }
 
-int vecXlb(void* user_data, int id, double* vec, int len)
+int vecXlb(void*, int, double* vec, int len)
 {
-   int i;
-   for( i = 0; i < len; i++ )
+   for( int i = 0; i < len; i++ )
       vec[i] = 0.0;
 
    return 0;
 }
 
-int vecXlbActive(void* user_data, int id, double* vec, int len)
+int vecXlbActive(void*, int, double* vec, int len)
 {
-   int i;
-   for( i = 0; i < len; i++ )
+   for( int i = 0; i < len; i++ )
       vec[i] = 1.0;
 
    return 0;
 }
 
-
-int vecLinkRhs(void* user_data, int id, double* vec, int len)
+int vecLinkRhs(void*, int, double* vec, int)
 {
    vec[0] = 6.0;
    vec[1] = 4.0;
    return 0;
 }
 
-int matAllZero(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matAllZero(void*, int, int*, int*, double*)
 {
     return 0;
 }
 
-int matEqStage1(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matEqStage1(void*, int id, int* krowM, int* jcolM, double* M)
 {
    if( id == 0 )
    {
@@ -291,10 +281,7 @@ int matEqStage1(void* user_data, int id, int* krowM, int* jcolM, double* M)
    return 0;
 }
 
-
-
-
-int matIneqLink(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matIneqLink(void*, int, int* krowM, int* jcolM, double* M)
 {
     M[0] = 1.0;
 
@@ -305,7 +292,7 @@ int matIneqLink(void* user_data, int id, int* krowM, int* jcolM, double* M)
     return 0;
 }
 
-int matIneqStage1(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matIneqStage1(void*, int, int* krowM, int* jcolM, double* M)
 {
     M[0] = 2.0;
 
@@ -317,7 +304,7 @@ int matIneqStage1(void* user_data, int id, int* krowM, int* jcolM, double* M)
     return 0;
 }
 
-int matEqStage2(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matEqStage2(void*, int id, int* krowM, int* jcolM, double* M)
 {
     if( id == 0 )
     {
@@ -352,7 +339,7 @@ int matEqStage2(void* user_data, int id, int* krowM, int* jcolM, double* M)
     return 0;
 }
 
-int matIneqStage2(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matIneqStage2(void*, int id, int* krowM, int* jcolM, double* M)
 {
    if( id == 0 )
    {
@@ -372,7 +359,7 @@ int matIneqStage2(void* user_data, int id, int* krowM, int* jcolM, double* M)
     return 0;
 }
 
-int matEqLink(void* user_data, int id, int* krowM, int* jcolM, double* M)
+int matEqLink(void*, int id, int* krowM, int* jcolM, double* M)
 {
    if( id == 2 )
    {

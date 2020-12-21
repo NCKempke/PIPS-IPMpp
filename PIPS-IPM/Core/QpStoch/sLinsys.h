@@ -144,19 +144,18 @@ class sLinsys : public QpGenLinsys
    */
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
-  virtual void addTermToSchurComplBlocked(sData *prob, bool sparseSC,
-        SymMatrix& SC) { assert( 0 && "not implemented here" ); };
+  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/) { assert( 0 && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
 
  public:
   /* add you part of the border times rhs to b0 */
-  virtual void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
+  virtual void addBorderTimesRhsToB0( StochVector& /*rhs*/, SimpleVector& /*b0*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here" ); };
 
   /* add you part of the border times rhs to b0 */
-  virtual void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
+  virtual void addBorderX0ToRhs( StochVector& /*rhs*/, const SimpleVector& /*x0*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here" ); };
 
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
@@ -165,8 +164,7 @@ class sLinsys : public QpGenLinsys
   void addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ DenseGenMatrix& BT, DoubleMatrix& result);
 
-  virtual void addTermToSparseSchurCompl(sData *prob,
-               SparseSymMatrix& SC) { assert(0 && "not implemented here"); };
+  virtual void addTermToSparseSchurCompl(sData* /*prob*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
 					
   /** Used in the iterative refinement for the dense Schur complement systems
    * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
@@ -176,19 +174,19 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& x);
 
   /* solve for all border rhs -> calculate SC = Bborder^T K^-1 Bborder */
-  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* prob )
+  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& /*schur_comp*/, sData* /*prob*/ )
   { assert( false && "not implemented here"); }
 
   /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */
-  virtual void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border)
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
-  virtual void DsolveHierarchyBorder( DenseGenMatrix& buffer_b0 )
+  virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/ )
   { assert( false && "not implemented here" ); };
 
   /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  virtual void LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border_outer)
+  virtual void LtsolveHierarchyBorder( DenseSymMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*border_outer*/ )
   { assert( false && "not implemented here" ); };
 
  protected:

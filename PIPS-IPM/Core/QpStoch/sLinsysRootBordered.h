@@ -17,18 +17,18 @@ class sLinsysRootBordered : public sLinsysRoot
 
       ~sLinsysRootBordered() override = default;
 
-      void finalizeKKT(sData* prob, Variables* vars) override;
+      void finalizeKKT(sData* prob, Variables* ) override;
 
       void Lsolve(sData *prob, OoqpVector& x) override;
       void Dsolve(sData *prob, OoqpVector& x) override;
       void Ltsolve(sData *prob, OoqpVector& v) override;
 
    protected:
-      SymMatrix* createKKT(sData* prob);
+      SymMatrix* createKKT(sData*);
       void assembleLocalKKT(sData* prob) override;
-      void reduceKKT(sData* prob) override;
+      void reduceKKT(sData*) override;
 
-      DoubleLinearSolver* createSolver(sData* prob, SymMatrix* kktmat);
+      DoubleLinearSolver* createSolver(sData*, SymMatrix* kktmat);
 
    private:
       void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );

@@ -44,10 +44,10 @@ StochPostsolver::StochPostsolver(const sData& original_problem) :
 {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool) );
 
-   const int n_linking_vars = (padding_origcol->vec) ? padding_origcol->vec->n : 0;
+   const int n_linking_vars = (padding_origcol->vec) ? padding_origcol->vec->length() : 0;
 
-   const int n_linking_A = (padding_origrow_equality->vecl) ? padding_origrow_equality->vecl->n : 0;
-   const int n_linking_C = (padding_origrow_inequality->vecl) ? padding_origrow_inequality->vecl->n : 0;
+   const int n_linking_A = (padding_origrow_equality->vecl) ? padding_origrow_equality->vecl->length() : 0;
+   const int n_linking_C = (padding_origrow_inequality->vecl) ? padding_origrow_inequality->vecl->length() : 0;
 
    assert( 5.0 * n_linking_vars < std::numeric_limits<int>::max() );
 
@@ -639,7 +639,7 @@ void StochPostsolver::notifyRowPropagatedBound( const INDEX& row, const INDEX& c
    finishNotify();
 }
 
-void StochPostsolver::notifyDeletedRow( SystemType system_type, int node, int row, bool linking_constraint)
+void StochPostsolver::notifyDeletedRow( SystemType, int, int, bool )
 {
    throw std::runtime_error("Not yet implemented");
 }

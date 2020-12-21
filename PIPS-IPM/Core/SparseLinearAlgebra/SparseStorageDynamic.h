@@ -65,10 +65,10 @@ public:
   const ROWPTRS getRowPtr(int i) const;
 
   const int* getJcolM() const { return jcolM; };
-  const int getJcolM(int i) const;
+  int getJcolM(int i) const;
   
   const double* getMat() const { return M; };
-  const double& getMat(int i) const;
+  double getMat(int i) const;
   void setMat(int i, double val);
 
   SparseStorageDynamic( const SparseStorage& storage, double spareRatio = 0.2 );
@@ -77,28 +77,21 @@ public:
 
   ~SparseStorageDynamic();
 
-  virtual void atPutDense( int row, int col, double * A, int lda,
-            int rowExtent, int colExtent ) override { assert(0 && "not implemented here"); };
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-              int rowExtent, int colExtent ) override { assert(0 && "not implemented here"); };
-  virtual void atPutSpRow( int row, double A[], int lenA, int jcolA[],
-                           int& info ) override { assert(0 && "not implemented here"); };
-
-  virtual void fromGetSpRow( int row, int col,
-                             double A[], int lenA, int jcolA[], int& nnz,
-                             int colExtent, int& info ) override { assert(0 && "not implemented here"); };
+  void atPutDense( int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
+  void fromGetDense( int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
+  void atPutSpRow( int, double*, int, int*, int&) override { assert(0 && "not implemented here"); };
+  void fromGetSpRow( int, int, double*, int, int*, int&, int, int& ) override { assert(0 && "not implemented here"); };
+  void getDiagonal( OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void atPutDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void columnScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void rowScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void scalarMult( double ) override { assert(0 && "not implemented here"); };
 
   void getSize( int& m, int& n ) const override;
 
-  void getDiagonal( OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void setToDiagonal( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-
-  void atPutDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented here"); };
-  void fromGetDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented here"); };
-  void symmetricScale ( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void columnScale ( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void rowScale ( const OoqpVector& vec ) override { assert(0 && "not implemented here"); };
-  void scalarMult( double num ) override { assert(0 && "not implemented here"); };
 
   void removeEntryAtIndex(int row, int col_idx);
   void removeEntryAtRowCol(int row, int col);

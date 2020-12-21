@@ -47,7 +47,7 @@ bool StochPresolverColumnFixation::applyPresolving()
    updatePointersForCurrentNode(-1, EQUALITY_SYSTEM);
 
    /* linking variables */
-   for( int col = 0; col < currgParent->n; ++col )
+   for( int col = 0; col < currgParent->length(); ++col )
    {
       const INDEX col_index = INDEX(COL, -1, col);
 
@@ -94,7 +94,7 @@ bool StochPresolverColumnFixation::applyPresolving()
       updatePointersForCurrentNode(node, EQUALITY_SYSTEM);
 
       /* linking variables */
-      for( int col = 0; col < currgChild->n; ++col )
+      for( int col = 0; col < currgChild->length(); ++col )
       {
          // TODO : make criterion numerically more stable
          // if the column is fixed to a value I want abs(xlow - xupp) to be low enough such that

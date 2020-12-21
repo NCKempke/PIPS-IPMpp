@@ -251,32 +251,32 @@ public:
   virtual void randomize(double alpha, double beta, double * seed) = 0;
 
   /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
-  virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res)=0;
+  virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res) = 0;
 
   /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
-  virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res)=0;
+  virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) = 0;
 
-  virtual void writeMPSformatRows(ostream& out, int rowType, OoqpVector* irhs) const {}
+  virtual void writeMPSformatRows(ostream& /*out*/, int /*rowType*/, OoqpVector* /*irhs*/) const {}
 
   /** get number of elements per row to given vector */
-  virtual void getNnzPerRow(OoqpVectorBase<int>& nnzVec) { assert(0 && "not implemented"); };
+  virtual void getNnzPerRow(OoqpVectorBase<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
 
   /** get number of elements per column to given vector */
-  virtual void getNnzPerCol(OoqpVectorBase<int>& nnzVec) { assert(0 && "not implemented"); };
+  virtual void getNnzPerCol(OoqpVectorBase<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
 
   /** fill vector with absolute minimum/maximum value of each row */
-  virtual void getRowMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) { assert(0 && "not implemented"); };
+  virtual void getRowMinMaxVec( bool /*getMin*/, bool /*initializeVec*/,
+        const OoqpVector* /*colScaleVec*/, OoqpVector& /*minmaxVec*/ ) { assert(0 && "not implemented"); };
 
   /** fill vector with absolute minimum/maximum value of each column */
-  virtual void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) { assert(0 && "not implemented"); };
+  virtual void getColMinMaxVec( bool /*getMin*/, bool /*initializeVec*/,
+        const OoqpVector* /*rowScaleVec*/, OoqpVector& /*minmaxVec*/ ) { assert(0 && "not implemented"); };
 
   /** add absolute value sum of each row to vector */
-  virtual void addRowSums( OoqpVector& vec ) const { assert(0 && "not implemented"); };
+  virtual void addRowSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
 
   /** add absolute value sum of each column to vector */
-  virtual void addColSums( OoqpVector& vec ) const { assert(0 && "not implemented"); };
+  virtual void addColSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
 
 };
 

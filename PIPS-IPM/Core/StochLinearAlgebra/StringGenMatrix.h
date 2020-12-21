@@ -48,7 +48,8 @@ class StringGenMatrix : public GenMatrix
       double abmaxnorm() const override;
       void scalarMult( double num ) override;
 
-      void writeToStreamDense(std::ostream& out) const override; // TODO : implement
+      void writeToStreamDense( std::ostream& ) const override { assert( 0 && "TODO: implement..."); };
+
       virtual std::string writeToStreamDenseRowChildren(int row) const;
 
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
@@ -65,22 +66,22 @@ class StringGenMatrix : public GenMatrix
 
 
       /* methods not needed for Hierarchical approach */
-      double abminnormNonZero( double tol = 1e-30) const override { assert( false && "TODO: implement" ); return 0.0; };
-      void atPutDiagonal( int idiag, OoqpVector& x ) override { assert( "not implemented" && 0 ); };
-      void fromGetDiagonal( int idiag, OoqpVector& x ) override { assert( "not implemented" && 0 ); };
-      void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert( "not implemented" && 0 ); };
-      void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override { assert( "not implemented" && 0 ); };
-      void getDiagonal( OoqpVector& vec ) override { assert( "not implemented" && 0 ); };
-      void setToDiagonal( const OoqpVector& vec ) override { assert( "not implemented" && 0 ); };
-      void matTransDMultMat(OoqpVector& d, SymMatrix** res) override { assert( "not implemented" && 0 ); };
-      void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override { assert( "not implemented" && 0 ); };
-      void symmetricScale ( const OoqpVector& vec ) override { assert( "not implemented" && 0 ); };
-      void writeToStream(ostream& out) const override { assert( "not implemented" && 0 ); };
-      void atPutSubmatrix( int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent ) override { assert( "not implemented" && 0 ); };
-      void atPutDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert( "not implemented" && 0 ); };
-      void atPutSpRow( int col, double A[], int lenA, int jcolA[], int& info ) override { assert( "not implemented" && 0 ); };
-      void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info ) override { assert( "not implemented" && 0 ); };
-      void randomize(double alpha, double beta, double * seed) override { assert( "not implemented" && 0 ); };
+      double abminnormNonZero( double) const override { assert( false && "TODO: implement" ); return 0.0; };
+      void atPutDiagonal( int, OoqpVector& ) override { assert( "not implemented" && 0 ); };
+      void fromGetDiagonal( int, OoqpVector& ) override { assert( "not implemented" && 0 ); };
+      void fromGetDense( int, int, double*, int, int, int ) override { assert( "not implemented" && 0 ); };
+      void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override { assert( "not implemented" && 0 ); };
+      void getDiagonal( OoqpVector& ) override { assert( "not implemented" && 0 ); };
+      void setToDiagonal( const OoqpVector& ) override { assert( "not implemented" && 0 ); };
+      void matTransDMultMat(OoqpVector&, SymMatrix** ) override { assert( "not implemented" && 0 ); };
+      void matTransDinvMultMat(OoqpVector&, SymMatrix** ) override { assert( "not implemented" && 0 ); };
+      void symmetricScale ( const OoqpVector& ) override { assert( "not implemented" && 0 ); };
+      void writeToStream( std::ostream& ) const override { assert( "not implemented" && 0 ); };
+      void atPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert( "not implemented" && 0 ); };
+      void atPutDense( int, int, double*, int, int, int ) override { assert( "not implemented" && 0 ); };
+      void atPutSpRow( int, double[], int, int[], int& ) override { assert( "not implemented" && 0 ); };
+      void putSparseTriple( int[], int, int[], double[], int& ) override { assert( "not implemented" && 0 ); };
+      void randomize( double, double, double* ) override { assert( "not implemented" && 0 ); };
 
 
    protected:
@@ -120,47 +121,47 @@ class StringGenDummyMatrix : public StringGenMatrix
       StringGenDummyMatrix() = default;
       ~StringGenDummyMatrix() override = default;
 
-      void addChild(StringGenMatrix* child) override {};
+      void addChild( StringGenMatrix* ) override {};
       int isKindOf( int type ) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
-      void mult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override {};
-      void transMult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override {};
-      double abmaxnorm() const override {return -std::numeric_limits<double>::infinity();};
-      void scalarMult( double num ) override {};
-      void writeToStream( std::ostream& out ) const override {};
-      std::string writeToStreamDenseRowChildren(int row) const override { return ""; };
+      void mult( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void transMult( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      double abmaxnorm() const override { return -std::numeric_limits<double>::infinity(); };
+      void scalarMult( double ) override {};
+      void writeToStream( std::ostream& ) const override {};
+      std::string writeToStreamDenseRowChildren( int ) const override { return ""; };
 
-      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override {};
-      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override {};
-      void columnScale( const OoqpVector& vec ) override {};
-      void rowScale( const OoqpVector& vec ) override {};
+      void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
+      void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
+      void columnScale( const OoqpVector& ) override {};
+      void rowScale( const OoqpVector& ) override {};
 
-      void addRowSums( OoqpVector& vec ) const override {};
-      void addColSums( OoqpVector& vec ) const override {};
+      void addRowSums( OoqpVector& ) const override {};
+      void addColSums( OoqpVector& ) const override {};
 
    protected:
-      void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
-      void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
+      void multVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void multHorizontal( double, OoqpVector&, double, const OoqpVector& ) const override {};
 
-      void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
-      void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override {};
+      void transMultVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void transMultHorizontal( double, OoqpVector&, double, const OoqpVector& ) const override {};
 
-      void columnScaleVertical( const OoqpVector& vec ) override {};
-      void columnScaleHorizontal( const OoqpVector& vec ) override {};
+      void columnScaleVertical( const OoqpVector& ) override {};
+      void columnScaleHorizontal( const OoqpVector& ) override {};
 
-      void rowScaleVertical( const OoqpVector& vec ) override {};
-      void rowScaleHorizontal( const OoqpVector& vec ) override {};
+      void rowScaleVertical( const OoqpVector& ) override {};
+      void rowScaleHorizontal( const OoqpVector& ) override {};
 
-      void getRowMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const override {};
-      void getRowMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax) const override {};
+      void getRowMinMaxVecVertical( bool, bool, const OoqpVector*, OoqpVector& ) const override {};
+      void getRowMinMaxVecHorizontal( bool, bool, const OoqpVector*, OoqpVector& ) const override {};
 
-      void getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const override {};
-      void getColMinMaxVecHorizontal( bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax) const override {};
+      void getColMinMaxVecVertical( bool, bool, const OoqpVector*, OoqpVector& ) const override {};
+      void getColMinMaxVecHorizontal( bool, bool, const OoqpVector*, OoqpVector& ) const override {};
 
-      void addRowSumsVertical( OoqpVector& vec ) const override {};
-      void addRowSumsHorizontal( OoqpVector& vec ) const override {};
+      void addRowSumsVertical( OoqpVector& ) const override {};
+      void addRowSumsHorizontal( OoqpVector& ) const override {};
 
-      void addColSumsVertical( OoqpVector& vec ) const override {};
-      void addColSumsHorizontal( OoqpVector& vec ) const override {};
+      void addColSumsVertical( OoqpVector& ) const override {};
+      void addColSumsHorizontal( OoqpVector& ) const override {};
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_ */

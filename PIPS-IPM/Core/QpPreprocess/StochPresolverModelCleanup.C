@@ -158,7 +158,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
    const SimpleVector& iclow = (linking == false) ? *currIclow : *currIclowLink;
    const SimpleVector& icupp = (linking == false) ? *currIcupp : *currIcuppLink;
 
-   for( int row_index = 0; row_index < nnzs.n; ++row_index)
+   for( int row_index = 0; row_index < nnzs.length(); ++row_index)
    {
       const INDEX row(ROW, node, row_index, linking, system_type);
       if( presData.wasRowRemoved( row ) )
@@ -414,7 +414,7 @@ int StochPresolverModelCleanup::fixEmptyColumns()
       const SimpleVector& xlow = (node == -1) ? *currxlowParent : *currxlowChild;
       const SimpleVectorBase<int>& nnzs_col = (node == -1) ? *currNnzColParent : *currNnzColChild;
 
-      for(int col_index = 0; col_index < nnzs_col.n; ++col_index)
+      for(int col_index = 0; col_index < nnzs_col.length(); ++col_index)
       {
          const INDEX col(COL, node, col_index);
 

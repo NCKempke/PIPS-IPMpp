@@ -4,7 +4,7 @@
 
 #include "sLinsysLeaf.h"
 
-void sLinsysLeaf::factor2(sData *prob, Variables *vars)
+void sLinsysLeaf::factor2(sData*, Variables*)
 {
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
@@ -42,23 +42,13 @@ void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
   kkt->atPutDiagonal( locnx + locmy, *zdiag.vec );
 }
 
-void sLinsysLeaf::Lsolve (  sData *prob, OoqpVector& x_in )
-{
-   return;
-}
-
-void sLinsysLeaf::Dsolve( sData *prob, OoqpVector& x_in )
+void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )
 {
    StochVector& x = dynamic_cast<StochVector&>(x_in);
    assert(x.children.size()==0);
    stochNode->resMon.recDsolveTmChildren_start();
    solver->Dsolve(*x.vec);
    stochNode->resMon.recDsolveTmChildren_stop();
-}
-
-void sLinsysLeaf::Ltsolve (  sData *prob, OoqpVector& x_in )
-{
-   return;
 }
 
 void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
@@ -95,11 +85,11 @@ void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatr
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
-					     GenMatrix& B_, GenMatrix& D_, 
+					     GenMatrix& B_, GenMatrix&,
 					     int locnx, int locmy, int locmz)
 {
-  SparseSymMatrix& kkt = reinterpret_cast<SparseSymMatrix&>(kkt_);
-  SparseGenMatrix& B   = reinterpret_cast<SparseGenMatrix&>(B_);
+  SparseSymMatrix& kkt = dynamic_cast<SparseSymMatrix&>(kkt_);
+  SparseGenMatrix& B   = dynamic_cast<SparseGenMatrix&>(B_);
   //SparseGenMatrix& D   = reinterpret_cast<SparseGenMatrix&>(D_);
 
   int* jcolK = kkt.jcolM(); int* jcolB = B.jcolM(); //int* jcolD = D.jcolM(); 

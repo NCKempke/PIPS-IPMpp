@@ -24,8 +24,8 @@ enum PostsolveStatus
 class Postsolver
 {
 public:
-  Postsolver(const Data& prob) {};
-  virtual ~Postsolver() {};
+  Postsolver() = default;
+  virtual ~Postsolver() = default;
 
   /** postsolve reduced solution and set original solution accordingly */
   virtual PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution) = 0;

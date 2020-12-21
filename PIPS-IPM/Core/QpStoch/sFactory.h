@@ -37,22 +37,23 @@ class sFactory : public QpGen
 
  public:
 
-      virtual Data* makeData();
+  virtual Data* makeData();
   virtual Residuals * makeResiduals( Data * prob_in );
   virtual Variables * makeVariables( Data * prob_in );
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
-  virtual Data* switchToHierarchicalData( Data* prob_in ) { assert( 0 && "not implemented here" ); return nullptr; }
+  virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 
   virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
 
 
-  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
+  void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override
+  { assert(0 && "not implemented here"); };
 
-  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-	      OoqpVector& z_in, const OoqpVector& vars_in ) const override;
+
+  void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override
+  { assert(0 && "not implemented here"); };
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
   virtual sLinsysRoot* newLinsysRoot(sData* prob, sTree* tree_,
@@ -71,7 +72,7 @@ class sFactory : public QpGen
   virtual void iterateEnded();
 
   sResiduals *resid{};
-  vector<sVars*> registeredVars;
+  std::vector<sVars*> registeredVars;
 
   sLinsysRoot* linsys{};
 

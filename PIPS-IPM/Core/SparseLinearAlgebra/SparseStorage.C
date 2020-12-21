@@ -190,7 +190,7 @@ void SparseStorage::setToDiagonal( const OoqpVector& vec_in )
   }
 }
 
-bool SparseStorage::isValid(bool verbose) const
+bool SparseStorage::isValid() const
 {
    assert(krowM && jcolM && M);
 
@@ -225,7 +225,7 @@ bool SparseStorage::isValid(bool verbose) const
 
 bool SparseStorage::isSorted() const
 {
-   assert(isValid(false));
+   assert(isValid());
 
    for( int i = 0; i < m; i++ )
    {
@@ -1223,7 +1223,7 @@ double SparseStorage::abminnormNonZero( double tol ) const
 void SparseStorage::atPutDiagonal( int idiag, OoqpVector& vvec )
 {
   SimpleVector & v = dynamic_cast<SimpleVector &>(vvec);
-  this->atPutDiagonal( idiag, &v[0], 1, v.n );
+  this->atPutDiagonal( idiag, &v[0], 1, v.length() );
 }
 
 void SparseStorage::atPutDiagonal( int idiag,
@@ -1388,8 +1388,8 @@ void SparseStorage::clear()
       M[i] = 0.0;
 }
 
-void SparseStorage::matTransDSymbMultMat(double* d,
-					 int* krowMt,  int* jcolMt,  double* Mt, 
+void SparseStorage::matTransDSymbMultMat(double*,
+					 int* krowMt,  int* jcolMt,  double*,
 					 int** krowAtDA, int** jcolAtDA, double** AtDA)
 					 
 {
@@ -2371,7 +2371,7 @@ SparseStorage* SparseStorage::shaveBottom( int n_rows )
    return border;
 }
 
-SparseStorage* SparseStorage::shaveSymLeftBottom( int n )
+SparseStorage* SparseStorage::shaveSymLeftBottom( int )
 {
    assert( 0 && "TODO : implement" );
    // TODO : assert is symmetric - either upper or lower?? then shave of elements from left and top at the same time

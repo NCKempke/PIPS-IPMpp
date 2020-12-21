@@ -255,12 +255,12 @@ void SparseSymMatrix::mult ( double beta,  OoqpVector& y_in,
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
   
-  assert( x.n == mStorage->n &&  y.n == mStorage->m );
+  assert( x.length() == mStorage->n &&  y.length() == mStorage->m );
   
   const double *xv = nullptr;
   double* yv = nullptr;
-  if( x.n > 0 ) xv = &x[0];
-  if( y.n > 0 ) yv = &y[0];
+  if( x.length() > 0 ) xv = &x[0];
+  if( y.length() > 0 ) yv = &y[0];
 
   this->mult( beta, yv, 1, alpha, xv, 1 );
 }
@@ -271,12 +271,12 @@ void SparseSymMatrix::transMult ( double beta,   OoqpVector& y_in,
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
   
-  assert( x.n == mStorage->n &&  y.n == mStorage->m );
+  assert( x.length() == mStorage->n &&  y.length() == mStorage->m );
   
   const double *xv = nullptr;
   double *yv = nullptr;
-  if( x.n > 0 ) xv = &x[0];
-  if( y.n > 0 ) yv = &y[0];
+  if( x.length() > 0 ) xv = &x[0];
+  if( y.length() > 0 ) yv = &y[0];
 
   this->mult( beta, yv, 1, alpha, xv, 1 );
 }

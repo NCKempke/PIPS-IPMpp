@@ -298,7 +298,7 @@ Residuals* sFactory::makeResiduals( Data * prob_in )
   return resid;
 }
 
-LinearSystem* sFactory::makeLinsys( Data * prob_in )
+LinearSystem* sFactory::makeLinsys( Data* )
 {
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
       linsys = newLinsysRootHierarchical();
@@ -306,18 +306,6 @@ LinearSystem* sFactory::makeLinsys( Data * prob_in )
       linsys = newLinsysRoot();
 
    return linsys;
-}
-
-void sFactory::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-			  const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
-{
-  assert(0 && "not implemented here");
-}
-
-void sFactory::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			OoqpVector& z_in, const OoqpVector& vars_in ) const
-{
-  assert(0 && "not implemented here");
 }
 
 void sFactory::iterateStarted()

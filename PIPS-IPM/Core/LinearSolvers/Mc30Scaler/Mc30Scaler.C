@@ -8,14 +8,6 @@
 #include "SimpleVector.h"
 #include <algorithm>
 
-Mc30Scaler::Mc30Scaler() : scaling_output_control(1), scaling_error(0)
-{
-}
-
-Mc30Scaler::~Mc30Scaler()
-{
-}
-
 void Mc30Scaler::getFortranIndex(const int* rowM, const int* colM, int length, int max_index)
 {
    assert( length > 0 );

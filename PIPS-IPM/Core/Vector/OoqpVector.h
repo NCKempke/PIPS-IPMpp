@@ -29,15 +29,18 @@
  */
 template<typename T>
 class OoqpVectorBase : public IotrRefCount {
+protected:
+      int n{0};
 public:
-  int n;
   /** Return the length of this vector. */
   int length() const { return n; }
 
-  OoqpVectorBase( int n_ = 0 );
+  OoqpVectorBase( int n_ );
+
+  OoqpVectorBase() = default;
   ~OoqpVectorBase() override = default;
 
-  virtual void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select = nullptr)
+  virtual void pushAwayFromZero( double /*tol*/, double /*amount*/, const OoqpVectorBase<T>* /*select */ )
      { assert( 0 && "Not implemented here" ); };
 
   /** Set all elements of this OoqpVector to zero. */
@@ -97,10 +100,10 @@ public:
    */
   virtual void writefToStream( std::ostream& out, const char format[] ) const = 0;
 
-  virtual void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const {assert(0 && "not implemented here");};
-  virtual void writeMPSformatRhs(std::ostream& out, int rowType, const OoqpVectorBase<T>* irhs) const {assert(0 && "not implemented here");};
-  virtual void writeMPSformatBounds(std::ostream& out, const OoqpVectorBase<T>* ix, bool upperBound) const {assert(0 && "not implemented here");};
-  virtual void writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const OoqpVectorBase<T>* ix, bool upperBound) const {assert(0 && "not implemented here");};
+  virtual void writeMPSformatOnlyRhs( std::ostream&, const std::string, const OoqpVectorBase<T>* ) const { assert(0 && "not implemented here"); };
+  virtual void writeMPSformatRhs( std::ostream&, int, const OoqpVectorBase<T>* ) const { assert(0 && "not implemented here"); };
+  virtual void writeMPSformatBounds( std::ostream&, const OoqpVectorBase<T>*, bool ) const { assert(0 && "not implemented here"); };
+  virtual void writeMPSformatBoundsWithVar( std::ostream&, const std::string, const OoqpVectorBase<T>*, bool ) const { assert(0 && "not implemented here"); };
   void writefToStreamStats( std::ostream& out, const std::string prestring);
 
   /** Scale each element of this OoqpVector by the constant alpha */
@@ -286,13 +289,13 @@ public:
   virtual void copyFromArray( const char v[] ) = 0;
 
   /** remove entries i for which select[i] == 0 */
-  virtual void removeEntries( const OoqpVectorBase<int>& select ) { assert(0 && "not implemented here"); };
+  virtual void removeEntries( const OoqpVectorBase<int>& ) { assert(0 && "not implemented here"); };
 
   /** Copy the absolute values of elements of v_in into this OoqpVector object. */
-  virtual void copyFromAbs(const OoqpVectorBase<T>& v) = 0;
+  virtual void copyFromAbs(const OoqpVectorBase<T> &v) = 0;
 
   /** compute the sum of all entries smaller considered zero with tol and count how many*/
-  virtual void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const
+  virtual void getSumCountIfSmall( double, double&, int&, const OoqpVectorBase<T>*) const
   { assert( 0 && "not implemented here" ); };
 
   virtual OoqpVectorBase<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };

@@ -4,10 +4,9 @@
 #include "OoqpVector.h"
 
 template<typename T>
-OoqpVectorBase<T>::OoqpVectorBase( int n_ )
+OoqpVectorBase<T>::OoqpVectorBase( int n_ ) : n{n_}
 {
    assert( n_ >= 0 );
-   n = n_;
 }
 
 template<typename T>
@@ -20,8 +19,7 @@ void OoqpVectorBase<T>::writefToStreamStats( std::ostream& out, std::string pres
    this->min(min, dummy);
    this->max(max, dummy);
 
-   std::cout << prestring << " length=" << n << " min=" << min <<  " max=" <<
-      max << " infnorm=" << this->infnorm() << std::endl;
+   out << prestring << " length=" << n << " min=" << min <<  " max=" << max << " infnorm=" << this->infnorm() << "\n";
 }
 
 

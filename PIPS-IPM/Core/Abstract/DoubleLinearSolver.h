@@ -35,7 +35,7 @@ public:
   virtual void matrixChanged() = 0;
 
   /** called if new matrix (but same dimension) is to be used. Triggers factorization  */
-  virtual void matrixRebuild( DoubleMatrix& matrixNew ) { assert(0 && "Not implemented"); }
+  virtual void matrixRebuild( DoubleMatrix& /*matrixNew*/ ) { assert(0 && "Not implemented"); }
 
   /** solves a linear system.
    *
@@ -47,18 +47,19 @@ public:
    virtual void solveSynchronized( OoqpVector& x ) { solve(x); };
 
    // solve with multiple RHS
-   virtual void solve ( GenMatrix& rhs ) { assert(0 && "Not implemented"); }
+   virtual void solve ( GenMatrix& /*rhs*/ ) { assert(0 && "Not implemented"); }
 
    // solve with multiple RHS and column sparsity array (can be nullptr)
-   virtual void solve ( int nrhss, double* rhss, int* colSparsity ) { assert(0 && "Not implemented"); }
+   virtual void solve ( int /*nrhss*/, double* /*rhss*/, int* /*colSparsity*/ ) { assert(0 && "Not implemented"); }
 
-   void Lsolve( OoqpVector& x ) { assert(false && "is always empty.. "); }
-   virtual void Lsolve( GenMatrix& mat ) { assert(0 && "Not implemented"); }
+   // TODO: remove and only use solve
+   void Lsolve( OoqpVector& /*x*/ ) { assert(false && "is always empty.. "); }
+   virtual void Lsolve( GenMatrix& /*mat*/ ) { assert(0 && "Not implemented"); }
    void Dsolve( OoqpVector& x ) { solve(x);}
-   void Ltsolve( OoqpVector& x ){ assert(false && "is always empty.. "); }
+   void Ltsolve( OoqpVector& /*x*/ ){ assert(false && "is always empty.. "); }
 
   /** Destructor  */
-  virtual ~DoubleLinearSolver() {};
+  virtual ~DoubleLinearSolver() = default;
 };
 
 class SymmetricLinearScaler
@@ -105,17 +106,17 @@ class DoubleIterativeLinearSolver : public DoubleLinearSolver {
  public:
   DoubleIterativeLinearSolver( MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2=nullptr );
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int, int ) override {};
+  void matrixChanged() override {};
 
-  virtual ~DoubleIterativeLinearSolver();
+  virtual ~DoubleIterativeLinearSolver() = default;
  protected:
-  DoubleIterativeLinearSolver();
+  DoubleIterativeLinearSolver() = default;
   /** MatVec operation involving system matrix*/
-  MatTimesVec *A;
+  MatTimesVec* A{};
 
   /** MatVec ops for left and right preconditioner */
-  MatTimesVec *ML, *MR;
+  MatTimesVec *ML{}, *MR{};
 
   /** Actual mat-vec operations */
   void applyA (double beta, OoqpVector& res, double alpha, OoqpVector& x);

@@ -434,7 +434,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
 
    double* b = sv.elements();
 
-   assert(sv.n == n);
+   assert(sv.length() == n);
 
 #ifdef TIMING_FLOPS
    HPM_Start("DSYTRSSolve");
@@ -524,11 +524,6 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
 #ifdef TIMING_FLOPS
    HPM_Stop("DSYTRSSolve");
 #endif
-}
-
-void PardisoIndefSolver::solve ( GenMatrix& rhs_in )
-{
-   assert(0 && "not supported");
 }
 
 void PardisoIndefSolver::diagonalChanged( int /* idiag */, int /* extent */ )

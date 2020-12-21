@@ -133,7 +133,7 @@ void Ma27Solver::matrixChanged()
    assert( w );
 }
 
-void Ma27Solver::solve( int nrhss, double* rhss, int* colSparsity )
+void Ma27Solver::solve( int nrhss, double* rhss, int*)
 {
    for (int i = 0; i < nrhss; i++) {
      SimpleVector v(rhss + i * n, n);

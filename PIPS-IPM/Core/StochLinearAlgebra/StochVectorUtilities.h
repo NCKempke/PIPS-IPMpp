@@ -80,7 +80,7 @@ inline T& getSimpleVecFromRowStochVec(const OoqpVectorBase<T>& ooqpvec, const IN
    assert(row.isRow());
    SimpleVectorBase<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const StochVectorBase<T>&>(ooqpvec), row.getNode(), row.getLinking());
    const int index = row.getIndex();
-   assert(0 <= index && index < vec.n);
+   assert( 0 <= index && index < vec.length() );
 
    return vec[index];
 }
@@ -99,7 +99,7 @@ inline T& getSimpleVecFromColStochVec(const OoqpVectorBase<T>& ooqpvec, const IN
    assert(col.isCol());
    SimpleVectorBase<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const StochVectorBase<T>&>(ooqpvec), col.getNode(), false);
    const int index = col.getIndex();
-   assert(0 <= index && index < vec.n);
+   assert(0 <= index && index < vec.length() );
 
    return vec[index];
 }
@@ -125,7 +125,7 @@ inline StochVectorBase<U>* cloneStochVector(const StochVectorBase<T>& svec)
 }
 
 template<typename T, typename U>
-inline StochDummyVectorBase<U>* cloneStochVector(const StochDummyVectorBase<T>& dummyvec)
+inline StochDummyVectorBase<U>* cloneStochVector(const StochDummyVectorBase<T>& )
 {
   return new StochDummyVectorBase<U>();
 }

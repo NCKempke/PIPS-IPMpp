@@ -16,8 +16,8 @@ class DeSymIndefSolverMagma : public DoubleLinearSolver {
 public:
   DenseStorageHandle mStorage;
 protected:
-  int *ipiv;
-  SparseSymMatrix *sparseMat;
+  int *ipiv{};
+  SparseSymMatrix *sparseMat{};
 #ifdef GPUCODE
   double* mFact_gpu;
   double* mRhs_gpu;
@@ -30,7 +30,7 @@ public:
   using DoubleLinearSolver::solve;
   void solve ( OoqpVector& vec ) override;
   void solve ( GenMatrix& vec ) override;
-  virtual ~DeSymIndefSolverMagma();
+  ~DeSymIndefSolverMagma() override;
 };
 
 #endif

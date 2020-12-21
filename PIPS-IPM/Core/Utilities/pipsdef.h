@@ -366,17 +366,17 @@ inline MPI_Datatype get_mpi_datatype_t<unsigned int>::get()
 };
 
 template <typename T>
-inline MPI_Datatype get_mpi_datatype(const T& arg) {
+inline MPI_Datatype get_mpi_datatype(const T&) {
    return get_mpi_datatype_t<T>::get();
 };
 
 template <typename T>
-inline MPI_Datatype get_mpi_datatype(T* arg) {
+inline MPI_Datatype get_mpi_datatype(T*) {
    return get_mpi_datatype_t<T>::get();
 };
 
 template <typename T>
-inline MPI_Datatype get_mpi_datatype(const T* const arg) {
+inline MPI_Datatype get_mpi_datatype(const T* const) {
    return get_mpi_datatype_t<T>::get();
 };
 
@@ -423,19 +423,19 @@ inline MPI_Datatype get_mpi_locdatatype_t<long double>::get()
 };
 
 template <typename T>
-inline MPI_Datatype get_mpi_locdatatype(const T& arg)
+inline MPI_Datatype get_mpi_locdatatype(const T&)
 {
    return get_mpi_locdatatype_t<T>::get();
 };
 
 template <typename T>
-inline MPI_Datatype get_mpi_locdatatype(const T* const arg)
+inline MPI_Datatype get_mpi_locdatatype(const T* const)
 {
    return get_mpi_locdatatype_t<T>::get();
 };
 
 template <typename T>
-inline MPI_Datatype get_mpi_locdatatype(T* arg)
+inline MPI_Datatype get_mpi_locdatatype(T*)
 {
    return get_mpi_locdatatype_t<T>::get();
 };

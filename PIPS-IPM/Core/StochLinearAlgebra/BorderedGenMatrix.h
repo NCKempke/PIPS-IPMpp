@@ -77,26 +77,26 @@ class BorderedGenMatrix : public GenMatrix
       void addColSums( OoqpVector& vec ) const override;
 
       /* methods not needed for Hierarchical approach */
-      double abminnormNonZero( double tol = 1e-30) const override { assert( false && "TODO: implement" ); return 0.0; };
-      void writeToStream( std::ostream& out ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
-      void getDiagonal( OoqpVector& vec ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void setToDiagonal( const OoqpVector& vec ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void atPutDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void fromGetDiagonal( int idiag, OoqpVector& x ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      double abminnormNonZero( double ) const override { assert( false && "TODO: implement" ); return 0.0; };
+      void writeToStream( std::ostream& ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
+      void getDiagonal( OoqpVector& ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void atPutDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
 
-      void matTransDMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
-      void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override { assert(0 && "not implemented"); }; // TODO : needed?
+      void matTransDMultMat(OoqpVector&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
+      void matTransDinvMultMat(OoqpVector&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
 
-      void getNnzPerRow(OoqpVectorBase<int>& nnzVec) override { assert( 0 && "not implemented"); };
-      void getNnzPerCol(OoqpVectorBase<int>& nnzVec) override { assert( 0 && "not implemented"); };
-      void fromGetDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
-      void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info ) override { assert(0 && "not implemented"); };
-      void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info ) override { assert(0 && "not implemented"); };
-      void symmetricScale ( const OoqpVector& vec ) override { assert(0 && "not implemented"); };
-      void atPutSubmatrix( int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
-      void atPutDense( int row, int col, double * A, int lda, int rowExtent, int colExtent ) override { assert(0 && "not implemented"); };
-      void atPutSpRow( int col, double A[], int lenA, int jcolA[], int& info ) override { assert(0 && "not implemented"); };
-      void randomize(double alpha, double beta, double * seed) override { assert(0 && "not implemented"); };
+      void getNnzPerRow( OoqpVectorBase<int>& ) override { assert( 0 && "not implemented"); };
+      void getNnzPerCol( OoqpVectorBase<int>& ) override { assert( 0 && "not implemented"); };
+      void fromGetDense( int, int, double*, int, int, int ) override { assert(0 && "not implemented"); };
+      void fromGetSpRow( int, int, double*, int, int*, int&, int, int& ) override { assert(0 && "not implemented"); };
+      void putSparseTriple( int*, int, int*, double*, int& ) override { assert(0 && "not implemented"); };
+      void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented"); };
+      void atPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert(0 && "not implemented"); };
+      void atPutDense( int, int, double*, int, int, int ) override { assert(0 && "not implemented"); };
+      void atPutSpRow( int, double*, int, int*, int& ) override { assert(0 && "not implemented"); };
+      void randomize(double, double, double* ) override { assert(0 && "not implemented"); };
    private:
 
       template<typename T>

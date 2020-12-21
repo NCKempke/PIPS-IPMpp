@@ -188,15 +188,6 @@ void DenseGenMatrix::transMult ( double beta,  OoqpVector& y_in,
   }
 }
 
-void DenseGenMatrix::matTransDMultMat(OoqpVector& d, SymMatrix** res)
-{
-  assert(false && "not implemented");
-}
-void DenseGenMatrix::matTransDinvMultMat(OoqpVector& d, SymMatrix** res)
-{
-  assert(false && "not implemented");
-}
-
 double DenseGenMatrix::abmaxnorm() const
 {
    assert( mStorage.notNil() );

@@ -258,7 +258,7 @@ void DenseStorage::atPutDiagonal( int idiag,
 {
   SimpleVector & v = (SimpleVector &) vvec;
   
-  this->atPutDiagonal( idiag, &v[0], 1, v.n  );
+  this->atPutDiagonal( idiag, &v[0], 1, v.length() );
 }
 
 void DenseStorage::atPutDiagonal( int idiag,

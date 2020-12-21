@@ -72,34 +72,6 @@ int StochSymMatrix::isKindOf( int type ) const
   return type == kStochSymMatrix || type == kSymMatrix;
 }
 
-void StochSymMatrix::atPutDense( int /* row */, int /* col */,
-				 double * /* A */, int /* lda */,
-				 int /* rowExtent */,
-				 int /* colExtent */ )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochSymMatrix::fromGetDense( int row, int col, double * A, int lda,
-		   int rowExtent, int colExtent )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochSymMatrix::symAtPutSpRow( int row, 
-				    double A[], int lenA, int jcolA[],
-				    int& info )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochSymMatrix::fsymAtPutSpRow( int row, 
-				     double A[], int lenA, int jcolA[],
-				     int& info )
-{
-  assert( "Not implemented" && 0 );
-}
-
 void StochSymMatrix::getSize( long long& m_, long long& n_ ) const
 {
   m_=n; n_=n;
@@ -114,26 +86,6 @@ void StochSymMatrix::getSize( int& m_, int& n_ ) const
 long long StochSymMatrix::size() const
 {
   return n;
-}
-
-void StochSymMatrix::symAtPutSubmatrix( int destRow, int destCol,
-					DoubleMatrix& M,
-					int srcRow, int srcCol,
-					int rowExtent, int colExtent )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochSymMatrix::fromGetSpRow( int row, int col,
-				   double A[], int lenA, int irowA[], int& nnz,
-				   int rowExtent, int& info )
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochSymMatrix::atPutZeros( int row, int col, int rowExtent, int colExtent )
-{
-  assert( "Not implemented" && 0 );
 }
 
 /** y = beta * y + alpha * this * x 
@@ -244,16 +196,6 @@ double StochSymMatrix::abminnormNonZero( double tol ) const
   if( border )
      min = std::min( min, diag->abminnormNonZero(tol) );
   return min;
-}
-
-void StochSymMatrix::writeToStream(ostream& out) const
-{
-  assert( "Not implemented" && 0 );
-}
-
-void StochSymMatrix::randomizePSD(double * seed)
-{
-  assert( "Not implemented" && 0 );
 }
 
 void StochSymMatrix::writeToStreamDense(std::ostream& out) const
@@ -393,12 +335,6 @@ void StochSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_ )
       children[it]->getDiagonal(*x.children[it]);
 }
 
-void StochSymMatrix::putSparseTriple( int irow[], int len, int jcol[], 
-				      double A[], int& info )
-{
-  assert("Not implemented!" && 0);
-}
-
 void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
 {
   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
@@ -448,7 +384,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
    assert(children.size() == nnzVecStoch.children.size());
 
    const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>(nnzVecStoch.vec);
-   assert(vec);
+   assert( vec );
 
    const int n_old = n;
 

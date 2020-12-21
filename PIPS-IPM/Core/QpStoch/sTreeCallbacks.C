@@ -157,9 +157,9 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    const SimpleVector* const myVecSimpleLink = dynamic_cast<const SimpleVector*>(myVec.vecl);
    const SimpleVector* const mzVecSimpleLink = dynamic_cast<const SimpleVector*>(mzVec.vecl);
 
-   N_INACTIVE = nxVecSimple.n;
-   MY_INACTIVE = myVecSimple.n;
-   MZ_INACTIVE = mzVecSimple.n;
+   N_INACTIVE = nxVecSimple.length();
+   MY_INACTIVE = myVecSimple.length();
+   MZ_INACTIVE = mzVecSimple.length();
 
    nx_inactive = N_INACTIVE;
    my_inactive = MY_INACTIVE;
@@ -168,7 +168,7 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    if( myVecSimpleLink != nullptr )
    {
       assert(np == -1);
-      MYL_INACTIVE = myVecSimpleLink->n;
+      MYL_INACTIVE = myVecSimpleLink->length();
       myl_inactive = MYL_INACTIVE;
    }
    else
@@ -179,7 +179,7 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    if( mzVecSimpleLink != nullptr )
    {
       assert(np == -1);
-      MZL_INACTIVE = mzVecSimpleLink->n;
+      MZL_INACTIVE = mzVecSimpleLink->length();
       mzl_inactive = MZL_INACTIVE;
    }
    else
@@ -442,7 +442,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
    {
       data->*nnzBmat = 0;
 
-      if( data->*fnnzBlmat > 0 )
+      if( data->*fnnzBlmat != nullptr )
       {
          // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
          // (i.e. the first block of linking constraints)
@@ -473,7 +473,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       if( data->*nnzBmat < 0 )
          (data->*fnnzBmat)(data->user_data, data->id, &(data->*nnzBmat));
 
-      if( data->fnnzBl > 0 )
+      if( data->fnnzBl != nullptr )
       {
          A = new StochGenMatrix(this->*MY, N,
                data->*m_ABmat, np, data->*nnzAmat,
@@ -1038,7 +1038,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
-      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+      const std::vector<int>& /*twoLinksStartBlockA*/, const std::vector<int>& /*twoLinksStartBlockC*/ )
 {
    assert( !is_hierarchical_root );
    assert( np == -1 );
@@ -1104,14 +1104,14 @@ sTree* sTreeCallbacks::collapseHierarchicalTree()
    return collapseDenseBorder();
 }
 
-void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& mat ) const
+void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& /*mat*/ ) const
 {
 
    assert( false && "TODO : implement " );
 
 }
 
-void sTreeCallbacks::splitMatrixAccordingToTree( StochGenMatrix& mat ) const
+void sTreeCallbacks::splitMatrixAccordingToTree( StochGenMatrix& /*mat*/ ) const
 {
    assert( false && "TODO : implement " );
 

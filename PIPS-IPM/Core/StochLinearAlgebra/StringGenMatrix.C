@@ -567,12 +567,6 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
       addColSumsHorizontal( vec );
 }
 
-
-void StringGenMatrix::writeToStreamDense(std::ostream& out) const
-{
-   assert( 0 && "TODO: implement...");
-}
-
 std::string StringGenMatrix::writeToStreamDenseRowChildren(int row) const
 {
    std::string str_all;

@@ -77,7 +77,7 @@ class PardisoIndefSolver : public DoubleLinearSolver
 
       using DoubleLinearSolver::solve;
       void solve ( OoqpVector& vec ) override;
-      void solve ( GenMatrix& vec ) override;
+      void solve ( GenMatrix& ) override { assert(0 && "not supported"); };
       void solveSynchronized( OoqpVector& vec ) override;
       ~PardisoIndefSolver() override;
 

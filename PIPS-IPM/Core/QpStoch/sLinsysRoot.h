@@ -48,9 +48,9 @@ class sLinsysRoot : public sLinsys {
   void addTermToSchurCompl(sData* prob, size_t childindex);
   virtual void reduceKKT(sData *prob);
   virtual void factorizeKKT(); 
-  virtual void factorizeKKT(sData *prob);
-  virtual void finalizeKKT(sData* prob, Variables* vars) = 0;
-  virtual void finalizeKKTdist(sData* prob) {assert("not implemented here \n" && 0);};
+  virtual void factorizeKKT( sData* prob );
+  virtual void finalizeKKT( sData* prob, Variables* vars ) = 0;
+  virtual void finalizeKKTdist( sData* /*prob*/ ) {assert("not implemented here \n" && 0);};
 
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
 

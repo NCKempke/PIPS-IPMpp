@@ -277,13 +277,6 @@ void SimpleVectorBase<double>::randomize( double alpha, double beta, double *ix 
 }
 
 template<typename T>
-void SimpleVectorBase<T>::randomize( T alpha, T beta, T *ix )
-{
-  assert( 0 && "not implemented here" );
-  return;
-}
-
-template<typename T>
 void SimpleVectorBase<T>::copyFrom( const OoqpVectorBase<T>& vec )
 {
   assert( vec.length() == this->n );
@@ -401,7 +394,7 @@ void SimpleVectorBase<T>::scalarMult( T num)
 // Print first 10 entries of solution vector to stderr.
 // Useful for debugging purposes...
 template<typename T>
-void SimpleVectorBase<T>::printSolutionToStdErr( OoqpVectorBase<T> &vec)
+void SimpleVectorBase<T>::printSolutionToStdErr() const
 {
   int i;
   for( i = 0; i < 10; i++ )
@@ -484,7 +477,7 @@ template<typename T>
 void SimpleVectorBase<T>::writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const
 {
    if( irhs )
-      assert( this->n == irhs->n );
+      assert( this->length() == irhs->length() );
 
    for( int i = 0; i < this->n; i++ )
    {
@@ -518,7 +511,7 @@ void SimpleVectorBase<double>::scale( double alpha )
 
 // generic implementation without boost 
 template<typename T>
-void SimpleVectorBase<T>::scale( T alpha )
+void SimpleVectorBase<T>::scale( T )
 {
   assert(0 && "not implemented here");
    // std::transform( this->v, this->v + this->n, this->v, [alpha](T a)->T { return alpha * a; } );
