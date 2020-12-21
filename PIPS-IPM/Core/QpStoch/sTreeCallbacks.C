@@ -309,7 +309,7 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
-   assertTreeStructureCorrect();
+//   assertTreeStructureCorrect();
 }
 
 
@@ -769,7 +769,7 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
 
    assert( myl_active >= 0 );
    assert( mzl_active >= 0 );
-   top_layer->assertTreeStructureCorrect();
+//   top_layer->assertTreeStructureCorrect();
    return top_layer;
 }
 
@@ -1054,7 +1054,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
