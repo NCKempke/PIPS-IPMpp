@@ -36,12 +36,12 @@ namespace base_options
       static std::map<std::string, int> int_options;
       static std::map<std::string, bool> bool_options;
 
-      friend int base_options::getIntParameter(const std::string& identifier);
-      friend double base_options::getDoubleParameter(const std::string& identifier);
-      friend bool base_options::getBoolParameter(const std::string& identifier);
+      friend int getIntParameter(const std::string& identifier);
+      friend double getDoubleParameter(const std::string& identifier);
+      friend bool getBoolParameter(const std::string& identifier);
 
       Options();
-      virtual ~Options() {};
+      virtual ~Options() = default;
 
       static Options& getInstance()
       {

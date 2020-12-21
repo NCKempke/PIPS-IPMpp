@@ -59,11 +59,11 @@ namespace pips_options
       friend void setIntParameter(const std::string& identifier, int value);
       friend void setDoubleParameter(const std::string& identifier, double value);
       friend void setBoolParameter(const std::string& identifier, bool value);
-      friend void pips_options::setOptions(const std::string& opt_file);
-      friend void pips_options::activateHierarchialApproach();
-      friend int pips_options::getIntParameter(const std::string& identifier);
-      friend double pips_options::getDoubleParameter(const std::string& identifier);
-      friend bool pips_options::getBoolParameter(const std::string& identifier);
+      friend void setOptions(const std::string& opt_file);
+      friend void activateHierarchialApproach();
+      friend int getIntParameter(const std::string& identifier);
+      friend double getDoubleParameter(const std::string& identifier);
+      friend bool getBoolParameter(const std::string& identifier);
 
       static StochOptions& getInstance()
       {
