@@ -143,68 +143,6 @@ void Ma27Solver::solve( int nrhss, double* rhss, int*)
    }
 }
 
-void Ma27Solver::solveIterRef( OoqpVector& rhs_in )
-{
-   assert( false && "currently not in use because we cannot compile ma60 with mkl" );
-   SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);
-
-   SimpleVectorHandle x(new SimpleVector(n));
-   SimpleVectorHandle y(new SimpleVector(n));
-   x->copyFrom( rhs );
-
-   /* init iterative refinement process */
-//   FNAME(ma60id)(icntl_ma60, keep_ma60, rkeep_ma60);
-
-   /* obtain initial solution */
-   scaler->scaleVector(*x);
-   FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, x->elements(), iw1,
-         &nsteps, icntl.data(), info.data());
-   scaler->scaleVector(*x);
-
-   /* start of iterative refinement */
-
-   /* job[0] <= 0 -> only do backward error estimate
-    * job[1] = 1 -> matrix is symmetric
-    */
-//   int job[2] = { 0, 1 };
-   int kase = 0;
-//   double omega[2];
-   double error_x;
-//   double cond[2];
-//   int n_iters_needed;
-
-   // icntl[0] -> output -> 0 to suppress
-   icntl[1] = max_n_iter_refinement; // default 16
-
-   bool done = false;
-   while( !done )
-   {
-//      FNAME(ma60ad)( &n, &nnz, mat_storage->M, irowM.data(), jcolM.data(), rhs.elements(), x->elements(), y->elements(),
-//            scaler->getScaling(), w_ma60.data(), iw_ma60.data(),
-//            &kase, omega, &error_x, job, cond, &n_iters_needed, icntl_ma60, keep_ma60, rkeep_ma60 );
-      assert( kase <= 2 );
-      assert( kase >= 0 || kase == -3 );
-      if( kase == -3 )
-      {
-         if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": large residual " << error_x <<
-               " even after (" << icntl[1] << "/" << max_n_iter_refinement << ") iterative refinement steps" << "\n";
-         done = true;
-      }
-      else if( kase == 0 )
-      {
-         done = true;
-      }
-      else if( kase == 1 || kase == 2 )
-      {
-         FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, y->elements(), iw1,
-               &nsteps, icntl.data(), info.data());
-      }
-   }
-
-   rhs.copyFrom( *x );
-}
-
 void Ma27Solver::solve( OoqpVector& rhs_in )
 {
    SimpleVector &rhs = dynamic_cast<SimpleVector&>(rhs_in);

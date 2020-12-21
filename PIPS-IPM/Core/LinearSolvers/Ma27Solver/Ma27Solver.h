@@ -204,7 +204,6 @@ public:
   virtual ~Ma27Solver();
 
   using DoubleLinearSolver::solve;
-  void solveIterRef( OoqpVector& rhs );
   void solve( OoqpVector& rhs ) override;
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
 
