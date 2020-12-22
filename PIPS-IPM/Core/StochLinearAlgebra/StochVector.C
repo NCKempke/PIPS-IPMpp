@@ -13,7 +13,7 @@
 #include "StochVector_fwd.h"
 
 template<typename T>
-StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
+StochVectorBase<T>::StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm)
    : vec(vec), vecl(vecl), mpiComm( mpi_comm ), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ),
      iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
@@ -140,7 +140,6 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
    assert( this->children.size() == vx.children.size() );
    assert( this->children.size() == vy.children.size() );
    assert( this->children.size() == vz.children.size() );
-   const int N = sv.length();
    int n1 = 0;
    int n2 = 0;
    int n3 = 0;
@@ -154,7 +153,7 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
       n1 = svx.length();
       assert( n1 >= 0 );
 
-      assert( n1 <= N );
+      assert( n1 <= sv.length() );
       if( n1 > 0 )
          memcpy(&sv[0], &svx[0], n1 * sizeof(T));
    }
@@ -165,7 +164,7 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
       n2 = svy.length();
       assert( n2 >= 0 );
 
-      assert( n1 + n2 <= N );
+      assert( n1 + n2 <= sv.length() );
       if( n2 > 0 )
          memcpy(&sv[n1], &svy[0], n2 * sizeof(T));
    }
@@ -176,7 +175,7 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
       n3 = svz.length();
       assert( n3 >= 0 );
 
-      assert( n1 + n2 + n3 <= N );
+      assert( n1 + n2 + n3 <= sv.length() );
       if( n3 > 0 )
          memcpy(&sv[n1 + n2], &svz[0], n3 * sizeof(T));
    }
@@ -187,7 +186,7 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
       n4 = svxl.length();
       assert( n4 >= 0 );
 
-      assert( n1 + n2 + n3 + n4 <= N );
+      assert( n1 + n2 + n3 + n4 <= sv.length() );
       if( n4 > 0 )
          memcpy(&sv[n1 + n2 + n3], &svxl[0], n4 * sizeof(T) );
    }
@@ -198,7 +197,7 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
       n5 = svyl.length();
       assert( n5 >= 0 );
 
-      assert( n1 + n2 + n3 + n4 + n5 <= N );
+      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
       if( n5 > 0 )
          memcpy(&sv[n1 + n2 + n3 + n4], &svyl[0], n5 * sizeof(T));
    }
@@ -209,12 +208,12 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
       n6 = svzl.length();
       assert( n6 >= 0 );
 
-      assert( n1 + n2 + n3 + n4 + n5 + n6 <= N );
+      assert( n1 + n2 + n3 + n4 + n5 + n6 <= sv.length() );
       if( n6 > 0 )
          memcpy(&sv[n1 + n2 + n3 + n4 + n5], &svzl[0], n6 * sizeof(T));
    }
 
-   assert( n1 + n2 + n3 + n4 + n5 + n6 == N );
+   assert( n1 + n2 + n3 + n4 + n5 + n6 == sv.length() );
 
    for(size_t it = 0; it < children.size(); it++)
       children[it]->jointCopyFrom(*vx.children[it], *vy.children[it], *vz.children[it]);
@@ -226,8 +225,6 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
    assert( this->vec );
    const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
    assert( sizeof(T) == sizeof(sv[0]) );
-
-   const int N = sv.length();
    int n1 = 0;
    int n2 = 0;
    int n3 = 0;
@@ -241,7 +238,7 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       n1 = svx.length();
       assert(n1 >= 0);
 
-      assert(n1 <= N);
+      assert(n1 <= sv.length());
       if( n1 > 0 )
          memcpy(&svx[0], &sv[0], n1 * sizeof(T));
    }
@@ -252,7 +249,7 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       n2 = svy.length();
       assert( n2 >= 0 );
 
-      assert( n1 + n2 <= N );
+      assert( n1 + n2 <= sv.length() );
       if( n2 > 0 )
          memcpy(&svy[0], &sv[n1], n2 * sizeof(T));
    }
@@ -263,7 +260,7 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       n3 = svz.length();
       assert( n3 >= 0 );
 
-      assert( n1 + n2 + n3 <= N );
+      assert( n1 + n2 + n3 <= sv.length() );
       if( n3 > 0 )
          memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
    }
@@ -274,7 +271,7 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       n4 = svxl.length();
       assert( n4 >= 0 );
 
-      assert( n1 + n2 + n3 + n4 <= N );
+      assert( n1 + n2 + n3 + n4 <= sv.length() );
       if( n4 > 0 )
          memcpy(&svxl[0], &sv[n1 + n2 + n3], n4 * sizeof(T) );
    }
@@ -285,7 +282,7 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       n5 = svyl.length();
       assert(n5 >= 0);
 
-      assert( n1 + n2 + n3 + n4 + n5 <= N );
+      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
       if( n5 > 0 )
          memcpy(&svyl[0], &sv[n1 + n2 + n3 + n4], n5 * sizeof(T));
    }
@@ -296,12 +293,12 @@ void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>&
       n6 = svzl.length();
       assert(n6 >= 0);
 
-      assert( n1 + n2 + n3 + n4 + n5 +n6 <= N );
+      assert( n1 + n2 + n3 + n4 + n5 +n6 <= sv.length() );
       if( n6 > 0 )
          memcpy(&svzl[0], &sv[n1 + n2 + n3 + n4 + n5], n6 * sizeof(T));
-   }      assert( n1 + n2 + n3 + n4 + n5 <= N );
+   }      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
 
-   assert( n1 + n2 + n3 + n4 + n5 + n6 == N );
+   assert( n1 + n2 + n3 + n4 + n5 + n6 == sv.length() );
 
    for(size_t it = 0; it < children.size(); it++)
       children[it]->jointCopyTo(*vx.children[it], *vy.children[it], *vz.children[it]);

@@ -15,7 +15,7 @@ template <typename T>
 class StochVectorBase : public OoqpVectorBase<T> {
 
 public:
-  StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm);
+  StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm);
 
   StochVectorBase( int n, MPI_Comm mpiComm );
   StochVectorBase( int n, int nl, MPI_Comm mpiComm );
