@@ -322,9 +322,9 @@ void StochSymMatrix::atPutDiagonal( int idiag, OoqpVector& v_ )
     children[it]->atPutDiagonal( idiag, *v.children[it]);
 }
 
-void StochSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_ )
+void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
 {
-   assert("The value of the parameter is not supported!" && idiag==0);
+   assert( "The value of the parameter is not supported!" );
 
    StochVector& x = dynamic_cast<StochVector&>(x_);
    assert(x.children.size() == children.size());

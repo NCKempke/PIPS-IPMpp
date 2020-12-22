@@ -2818,23 +2818,6 @@ void StochPostsolver::addIneqRowDual(double& z, double& lambda, double& pi, doub
    assert( PIPSisEQ(z, lambda - pi, postsolve_tol) );
 }
 
-void StochPostsolver::addIneqRowSlack(double& s, double& t, double& u, double clow, double cupp, double value) const
-{
-   assert( PIPSisZero( s - clow - t, postsolve_tol) );
-   assert( PIPSisZero( s - cupp + u, postsolve_tol) );
-   assert( PIPSisLT( 0.0, t, postsolve_tol) );
-   assert( PIPSisLT( 0.0, u, postsolve_tol) );
-
-   s += value;
-   t += value;
-   u += value;
-
-   assert( PIPSisLT( 0.0, t, postsolve_tol) );
-   assert( PIPSisLT( 0.0, u, postsolve_tol) );
-   assert( PIPSisZero( s - clow - t, postsolve_tol) );
-   assert( PIPSisZero( s - cupp + u, postsolve_tol) );
-}
-
 bool StochPostsolver::sameNonZeroPatternDistributed(const StochVector& vec) const
 {
    assert(vec.vec);

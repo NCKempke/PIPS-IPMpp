@@ -810,9 +810,9 @@ void SparseStorageDynamic::rebuildSpareStructure(int guaranteed_spare)
 
    assert( rowptr[m].start == rowptr[m].end );
 #ifndef NDEBUG
-#ifndef PRE_CPP11
-   assert( len_free == len - std::accumulate(rowptr, rowptr + m, 0, [](int a, ROWPTRS rp)->int { return a + (rp.end - rp.start); }));
-#endif
+   assert( len_free == len - std::accumulate(rowptr, rowptr + m, 0, [](int a, ROWPTRS rp)->int {
+      return a + (rp.end - rp.start); })
+   );
 #endif
 }
 
@@ -820,6 +820,9 @@ double SparseStorageDynamic::rowTimesVec( const double* vec, int length, int row
 {
    assert(0 <= row && row < m);
    assert(length == n);
+
+   if( length == 0 )
+      return 0.0;
 
    double res = 0.0;
    for( int i = rowptr[row].start; i < rowptr[row].end; ++i)
@@ -836,6 +839,8 @@ void SparseStorageDynamic::axpyWithRowAt( double alpha, double* y, int length, i
    assert(y);
    assert(0 <= row && row < m);
    assert(length == n);
+   if( length == 0 )
+      return;
 
    for(int i = rowptr[row].start; i < rowptr[row].end; ++i)
    {
@@ -849,6 +854,8 @@ void SparseStorageDynamic::axpyWithRowAtPosNeg( double alpha, double * y_pos, do
    assert(y_pos);
    assert(0 <= row && row < m);
    assert(length == n);
+   if( length == 0 )
+      return;
 
    for(int i = rowptr[row].start; i < rowptr[row].end; ++i)
    {

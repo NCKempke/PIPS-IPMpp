@@ -81,8 +81,8 @@ public:
 
   virtual void getDiagonal( OoqpVector& vec );
   void setToDiagonal( const OoqpVector& vec ) override;
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& x );
+  void atPutDiagonal( int idiag, OoqpVector& v ) override;
+  void fromGetDiagonal( int, OoqpVector& x ) override;
 
   void putSparseTriple( int[], int, int[], double[], int& ) override { assert( false && "Not implemented" ); };
 

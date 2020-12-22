@@ -206,7 +206,6 @@ private:
       int findNextRowInStored(int pos_reduction, unsigned int& start, const INDEX& row) const;
 
       void addIneqRowDual(double& z, double& lambda, double& pi, double value) const;
-      void addIneqRowSlack(double& s, double& t, double& u, double clow, double cupp, double value) const;
 
       void setOriginalVarsFromReduced(const sVars& reduced_vars, sVars& original_vars) const;
       bool allVariablesSet(const sVars& vars) const;

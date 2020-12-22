@@ -97,8 +97,8 @@ public:
 
 private:
   void getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C);
-  void reorderLinkingConstraintsAccordingToSplit( const sTreeCallbacks& tree );
-  void splitDataAccordingToTree( const sTreeCallbacks& tree );
+  void reorderLinkingConstraintsAccordingToSplit();
+  void splitDataAccordingToTree();
 
  public:
   // Hierarchical Stuff

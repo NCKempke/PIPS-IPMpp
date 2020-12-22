@@ -1612,7 +1612,9 @@ void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std:
    assert( linkStartBlockIdA.size() >= static_cast<size_t>(n_global_links_eq_after_split + n_global_eq_linking_conss) );
    assert( linkStartBlockIdC.size() >= static_cast<size_t>(n_global_links_ineq_after_split + n_global_ineq_linking_conss) );
 
+#ifndef NDEBUG
    int last_map_block = -1;
+#endif
    const std::vector<unsigned int>& map_block_subcomm = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    assert( false && "TODO: check..");
    {
@@ -1697,14 +1699,13 @@ void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std:
    }
 }
 
-void sData::reorderLinkingConstraintsAccordingToSplit( const sTreeCallbacks& tree )
+void sData::reorderLinkingConstraintsAccordingToSplit()
 {
    /* assert that distributed Schur complement has not yet been initialized */
    assert( isSCrowLocal.size() == 0 );
    assert( isSCrowMyLocal.size() == 0 );
 
    // TODO assert tree compatibility (one split at exactly this node)
-   assert( this->stochNode == &tree );
 
    std::vector<unsigned int> perm_A;
    std::vector<unsigned int> perm_C;
@@ -1725,12 +1726,12 @@ void sData::reorderLinkingConstraintsAccordingToSplit( const sTreeCallbacks& tre
    permuteVector(perm_C, linkConsPermutationC);
 }
 
-void sData::splitDataAccordingToTree( const sTreeCallbacks& tree )
+void sData::splitDataAccordingToTree()
 {
-   assert( tree.isHierarchicalInner() );
-   reorderLinkingConstraintsAccordingToSplit(tree);
+   assert( stochNode->isHierarchicalInner() );
+   reorderLinkingConstraintsAccordingToSplit();
 
-   tree.splitDataAccordingToTree(*this);
+   splitDataAccordingToTree();
 
    assert( false && "TODO: implement");
 }

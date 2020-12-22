@@ -52,7 +52,7 @@ class sLinsysLeaf : public sLinsys
 
  protected:
 
-  static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int locmz);
+  static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
 
   template<class LINSOLVER>
   void initBlockedSolvers();

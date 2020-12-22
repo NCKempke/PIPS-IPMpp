@@ -86,7 +86,7 @@ void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatr
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
 					     GenMatrix& B_, GenMatrix&,
-					     int locnx, int locmy, int locmz)
+					     int locnx, int locmy, int)
 {
   SparseSymMatrix& kkt = dynamic_cast<SparseSymMatrix&>(kkt_);
   SparseGenMatrix& B   = dynamic_cast<SparseGenMatrix&>(B_);
@@ -114,7 +114,6 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 
     krowK[i+locnx+1]=itK;
   }
-  assert(locmz==0);
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )

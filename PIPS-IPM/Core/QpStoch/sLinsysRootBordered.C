@@ -174,11 +174,10 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inne
  *    [ B^T K0 ] [ x_0 ] = [ b_0 ]
  */
 /* forms right hand side for schur system \tilda{b_0} = b_0 - B^T * K^-1 b and in doing so solves K^-1 b */
-void sLinsysRootBordered::Lsolve(sData *prob, OoqpVector& x)
+void sLinsysRootBordered::Lsolve(sData* , OoqpVector& x)
 {
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
-   assert( prob );
 
    StochVector& xs = dynamic_cast<StochVector&>(x);
    assert( xs.children.size() == 1 );
@@ -193,11 +192,10 @@ void sLinsysRootBordered::Lsolve(sData *prob, OoqpVector& x)
 }
 
 /* does Schur Complement solve and computes SC x_0 = \tilda{b_0} = ( K0 - B^T K B ) x_0 */
-void sLinsysRootBordered::Dsolve(sData *prob, OoqpVector& x)
+void sLinsysRootBordered::Dsolve(sData*, OoqpVector& x)
 {
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
-   assert( prob );
 
    StochVector& xs = dynamic_cast<StochVector&>(x);
    assert( xs.children.size() == 1 );
@@ -209,11 +207,10 @@ void sLinsysRootBordered::Dsolve(sData *prob, OoqpVector& x)
 }
 
 /* back substitute x_0 : K x = b - B x_0 and solve for x */
-void sLinsysRootBordered::Ltsolve(sData* prob, OoqpVector& x)
+void sLinsysRootBordered::Ltsolve(sData*, OoqpVector& x)
 {
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
-   assert( prob );
 
    StochVector& xs = dynamic_cast<StochVector&>(x);
    assert( xs.children.size() == 1 );

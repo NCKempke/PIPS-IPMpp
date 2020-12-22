@@ -899,7 +899,9 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
       unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const
 {
    const unsigned int n_children = children.size();
+#ifndef NDEBUG
    const unsigned int n_leafs = map_node_sub_root.size();
+#endif
    assert( is_hierarchical_inner );
    assert( n_leafs == two_links_start_in_child_A.size() );
    assert( n_leafs == two_links_start_in_child_C.size() );
@@ -1010,7 +1012,9 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assert( commWrkrs != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
 
+#ifndef NDEBUG
    const size_t n_old_leafs = children.size();
+#endif
 
    createSubcommunicatorsAndChildren( map_node_sub_root );
    assert( map_node_sub_root.size() == n_old_leafs );

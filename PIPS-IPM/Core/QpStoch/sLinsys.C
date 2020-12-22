@@ -277,12 +277,16 @@ void sLinsys::addLnizi(sData *prob, OoqpVector& z0_, OoqpVector& zi_)
 }
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
+#ifndef NDEBUG
 void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, int parentmy, int parentmz)
+#else
+void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, int, int)
+#endif
 {
   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
   SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
 
-  solver->Dsolve(zi);
+  solver->solve(zi);
 
   SparseGenMatrix& A = prob->getLocalA();
   SparseGenMatrix& C = prob->getLocalC();
@@ -291,11 +295,9 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   int dummy, nx0;
   A.getSize(dummy, nx0);
 
-  // zi2, zi3 are just references to fragments of zi
-  SimpleVector zi1 (&zi[0],           locnx);
-  SimpleVector zi2 (&zi[locnx],       locmy);
+  SimpleVector zi1 (&zi[0], locnx);
+  SimpleVector zi2 (&zi[locnx], locmy);
   SimpleVector zi3 (&zi[locnx+locmy], locmz);
-  // same for z01 (only the first n0 entries in the output z0 are computed)
   SimpleVector z01 (&z0[0], nx0);
 
   R.transMult(1.0, z01, -1.0, zi1);
@@ -1342,7 +1344,7 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
 }
 
 void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& border_left, const double* cols,
-      const int* cols_id, int length_col, int n_cols, int m_rows_res, int n_cols_res, double** res) const
+      const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const
 {
    /*                  [ R A C ]
     * compute res^T += [ 0 0 0 ] * colsBlockDense = border_left * colsBlockDense
@@ -1371,7 +1373,6 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
    {
       const double* const col = &cols[it_col * length_col];
       const int row_res = cols_id[it_col];
-      assert( row_res < m_rows_res );
 
       border_left.R.mult(1.0, &res[row_res][0], 1, -1.0, &col[0], 1);
       border_left.A.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR], 1);
@@ -1397,24 +1398,30 @@ void sLinsys::addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& borde
    {
       double** res_array;
       int res_ncols;
+#ifndef NDEBUG
       int res_mrows;
+      if( sym_res )
+         res_mrows = dynamic_cast<DenseSymMatrix&>(res).size();
+      else
+         res_mrows = dynamic_cast<DenseGenMatrix&>(res).mStorage->m;
+      for( int i = 0; i < blocksize; ++i )
+         assert( cols_id[i] < res_mrows );
+#endif
 
       if( sym_res )
       {
          DenseSymMatrix& res_dense = dynamic_cast<DenseSymMatrix&>(res);
          res_array = res_dense.mStorage->M;
          res_ncols = res_dense.size();
-         res_mrows = res_dense.size();
       }
       else
       {
          DenseGenMatrix& res_dense = dynamic_cast<DenseGenMatrix&>(res);
          res_array = res_dense.mStorage->M;
          res_ncols = res_dense.mStorage->n;
-         res_mrows = res_dense.mStorage->m;
       }
 
-      addLeftBorderTimesDenseColsToResTranspDense(border_left, cols, cols_id, length_col, blocksize, res_mrows, res_ncols, res_array);
+      addLeftBorderTimesDenseColsToResTranspDense(border_left, cols, cols_id, length_col, blocksize, res_ncols, res_array);
    }
 
 }

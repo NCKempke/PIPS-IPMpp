@@ -19,9 +19,9 @@ class sLinsysRootBordered : public sLinsysRoot
 
       void finalizeKKT(sData* prob, Variables* ) override;
 
-      void Lsolve(sData *prob, OoqpVector& x) override;
-      void Dsolve(sData *prob, OoqpVector& x) override;
-      void Ltsolve(sData *prob, OoqpVector& v) override;
+      void Lsolve(sData*, OoqpVector& x) override;
+      void Dsolve(sData*, OoqpVector& x) override;
+      void Ltsolve(sData*, OoqpVector& v) override;
 
    protected:
       SymMatrix* createKKT(sData*);
