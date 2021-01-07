@@ -217,16 +217,16 @@ double sTree::processLoad() const
   return IPMIterExecTIME;
 }
 
-void sTree::getGlobalSizes(long long& n, long long& my, long long& mz)
+void sTree::getGlobalSizes(long long& n, long long& my, long long& mz) const
 {
    n = N; my = MY; mz = MZ;
 }
 
-/*void sTree::GetLocalSizes(int& nOut, int& myOut, int& mzOut)
+void sTree::getGlobalSizes(long long& n, long long& my, long long& myl, long long& mz, long long& mzl) const
 {
-  nOut=nx(); myOut=my(); mzOut=mz();
+   n = N; my = MY; mz = MZ; myl = MYL, mzl = MZL;
 }
-*/
+
 int sTree::innerSize(int which) const
 {
    assert( false );

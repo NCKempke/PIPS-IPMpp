@@ -56,7 +56,8 @@ class sTree
 public:
   // global sizes are still local to each MPI process - they just sum all local data
   virtual void computeGlobalSizes() = 0;
-  void getGlobalSizes(long long& n, long long& my, long long& mz);
+  void getGlobalSizes(long long& n, long long& my, long long& mz) const;
+  void getGlobalSizes(long long& n, long long& my, long long& myl, long long& mzlong, long long& mzl) const;
 
   void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
 
@@ -96,6 +97,7 @@ public:
 
   StochVector* newRhs();
 
+  const sTree* getSubRoot() const { return sub_root; };
   const std::vector<sTree*>& getChildren() const { return children; };
   int nChildren() const { return children.size(); }
   MPI_Comm getCommWorkers() const { return commWrkrs; };
