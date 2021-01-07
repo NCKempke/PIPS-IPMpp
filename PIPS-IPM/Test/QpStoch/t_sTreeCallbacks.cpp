@@ -159,10 +159,19 @@ TEST_F(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
       child->getGlobalSizes(dummy, dummy, MYL_child, dummy, MZL_child);
       child->getSubRoot()->getGlobalSizes(dummy, dummy, MYL_subroot, dummy, MZL_subroot);
 
+      EXPECT_EQ( MYL_subroot, child->getSubRoot()->myl() );
+      EXPECT_EQ( MZL_subroot, child->getSubRoot()->mzl() );
+
       /// check sub-roots
       for( auto& childchild : child->getSubRoot()->getChildren() )
       {
-         // TODO
+         long long MYL_childchild, MZL_childchild;
+         childchild->getGlobalSizes(dummy, dummy, MYL_childchild, dummy, MZL_childchild);
+         EXPECT_EQ( MYL_childchild, childchild->myl() );
+         EXPECT_EQ( MZL_childchild, childchild->mzl() );
+
+         EXPECT_EQ( MYL_childchild, MYL_subroot );
+         EXPECT_EQ( MZL_childchild, MZL_subroot );
       }
 
       EXPECT_EQ( MYL_subroot, MYL_child - child->myl() );
