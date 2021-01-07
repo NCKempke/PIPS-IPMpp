@@ -103,17 +103,77 @@ sTreeCallbacks* HierarchicalSplittingTest::createTestTree( int nChildren, int n_
 
 TEST_F(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
 {
-   sTreeCallbacks* test_tree = createTestTree(10, 20, 30);
+   const int two_links_eq_per_block = 2;
+   const int two_links_ineq_per_block = 3;
+
+   const unsigned int global_eq_links = 10;
+   const unsigned int global_ineq_links = 12;
+
+   const int shave_n_eqs = 0;
+   const int shave_n_ineqs = 0;
+   const int shave_n_vars = 0;
+
+   const int n_children = 10;
+   const int n_eq_links = (n_children - 1) * two_links_eq_per_block + global_eq_links;
+   const int n_ineq_links = (n_children - 1) * two_links_ineq_per_block + global_ineq_links;
+
+   sTreeCallbacks* test_tree = createTestTree( n_children, n_eq_links, n_ineq_links);
    test_tree->assertTreeStructureCorrect();
 
-   // say every block has 2 two_links to the next
-   std::vector<int> twoLinksStartBlockA(10, 2);
+   std::vector<int> twoLinksStartBlockA(10, two_links_eq_per_block);
    twoLinksStartBlockA[9] = 0;
 
-   std::vector<int> twoLinksStartBlockC(10, 3);
-   twoLinksStartBlockA[9] = 0;
+   std::vector<int> twoLinksStartBlockC(10, two_links_ineq_per_block);
+   twoLinksStartBlockC[9] = 0;
 
-   sTreeCallbacks* test_tree_split = dynamic_cast<sTreeCallbacks*>(test_tree->switchToHierarchicalTree(0, 0, 0, twoLinksStartBlockA, twoLinksStartBlockC ));
+   sTreeCallbacks* test_tree_split = dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) );
+
+   /// check root for right amount of linking constraints
+   long long dummy, MYL, MZL;
+   test_tree_split->getGlobalSizes(dummy, dummy, MYL, dummy, MZL);
+   EXPECT_EQ( MYL, n_eq_links );
+   EXPECT_EQ( MZL, n_ineq_links );
+
+   EXPECT_EQ( test_tree_split->myl(), shave_n_eqs );
+   EXPECT_EQ( test_tree_split->mzl(), shave_n_ineqs );
+
+   EXPECT_EQ( test_tree_split->nChildren(), 1 );
+
+   /// check inner root node
+   const sTreeCallbacks* inner_root = dynamic_cast<const sTreeCallbacks*>(test_tree_split->getChildren()[0]);
+   inner_root->getGlobalSizes(dummy, dummy, MYL, dummy, MZL);
+   EXPECT_EQ( MYL, n_eq_links - shave_n_eqs );
+   EXPECT_EQ( MZL, n_ineq_links - shave_n_ineqs );
+
+   EXPECT_EQ( inner_root->myl(), global_eq_links - shave_n_eqs + two_links_eq_per_block * (inner_root->nChildren() - 1) );
+   EXPECT_EQ( inner_root->mzl(), global_ineq_links - shave_n_ineqs + two_links_ineq_per_block * (inner_root->nChildren() - 1) );
+
+   int sum_children_exclusive_eq_links = 0;
+   int sum_children_exclusive_ineq_links = 0;
+   for( auto& child : inner_root->getChildren() )
+   {
+      EXPECT_EQ( child->myl(), inner_root->myl() );
+      EXPECT_EQ( child->mzl(), inner_root->mzl() );
+
+      long long MYL_child, MZL_child, MYL_subroot, MZL_subroot;
+      child->getGlobalSizes(dummy, dummy, MYL_child, dummy, MZL_child);
+      child->getSubRoot()->getGlobalSizes(dummy, dummy, MYL_subroot, dummy, MZL_subroot);
+
+      /// check sub-roots
+      for( auto& childchild : child->getSubRoot()->getChildren() )
+      {
+         // TODO
+      }
+
+      EXPECT_EQ( MYL_subroot, MYL_child - child->myl() );
+      EXPECT_EQ( MZL_subroot, MZL_child - child->mzl() );
+
+      sum_children_exclusive_eq_links += MYL_child - child->myl();
+      sum_children_exclusive_ineq_links += MZL_child - child->mzl();
+   }
+
+   EXPECT_EQ( sum_children_exclusive_eq_links + inner_root->myl(), MYL );
+   EXPECT_EQ( sum_children_exclusive_ineq_links + inner_root->mzl(), MZL );
 
    delete test_tree_split;
 }

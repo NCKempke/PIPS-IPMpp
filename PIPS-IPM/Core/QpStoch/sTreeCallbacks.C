@@ -267,6 +267,11 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
       sout << "mzl_active : " << mzl_active << "\n";
    }
 
+   if( sub_root )
+   {
+      sout << "subroot: \n";
+      dynamic_cast<sTreeCallbacks*>(sub_root)->writeSizes(sout);
+   }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -408,15 +413,27 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
 
          assert( child->MYL <= MYL );
          assert( child->MZL <= MZL );
-         if( is_hierarchical_root )
+         if( is_hierarchical_root || is_hierarchical_inner_root )
          {
-            MYL_children += child->MYL;
-            MZL_children += child->MZL;
+            assert( child->MYL >= myl_active );
+            assert( child->MZL >= mzl_active );
+
+            MYL_children += child->MYL - myl_active;
+            MZL_children += child->MZL - mzl_active;
          }
          else
          {
-            assert( MZL == child->MZL );
-            assert( MYL == child->MYL );
+            if( child->is_hierarchical_inner_leaf )
+            {
+               assert( MZL >= child->MZL );
+               assert( MYL >= child->MYL );
+            }
+            else
+            {
+               assert( MZL == child->MZL );
+               assert( MYL == child->MYL );
+            }
+
 
             assert( myl_active <= child->MYL );
             assert( mzl_active <= child->MZL );
@@ -440,7 +457,6 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const
    assert( sub_root->np = -1 );
    assert( is_hierarchical_inner_leaf );
 
-   std::cout << MYL << " " << myl_active << " " << sub_root->MYL << std::endl;
    assert( MYL == myl_active + sub_root->MYL );
    assert( MZL == mzl_active + sub_root->MZL );
    assert( nx_active == sub_root->N );
@@ -838,8 +854,8 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
 
-   top_layer->my_active = -1;
-   top_layer->mz_active = -1;
+   top_layer->my_active = 0;
+   top_layer->mz_active = 0;
 
    top_layer->myl_active = myl_to_shave;
    this->myl_active -= myl_to_shave;
@@ -1090,14 +1106,12 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
          inner_leaf.myl_active = myl_active;
 
          if( MYL >= 0 )
-            sub_root.adjustActiveMylBy( -myl_active + two_links_children_eq[i] );
-         assert( MYL = myl_active + sub_root.MYL );
+            sub_root.adjustActiveMylBy( -myl_active - (two_links_children_eq_sum - two_links_children_eq[i]) );
 
          inner_leaf.MZL = mzl_active + two_links_children_ineq[i];
          inner_leaf.mzl_active = mzl_active;
          if( MZL >= 0 )
-            sub_root.adjustActiveMzlBy( -mzl_active + two_links_children_ineq[i] );
-         assert( MZL = mzl_active + sub_root.MZL );
+            sub_root.adjustActiveMzlBy( -mzl_active - (two_links_children_ineq_sum - two_links_children_ineq[i]) );
 
          inner_leaf.np = nx_active;
 
@@ -1122,6 +1136,7 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
 
 void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
+
    assert( commWrkrs != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
 
@@ -1143,13 +1158,15 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
    if( rankMe == 0 )
    {
+      std::cout << "Splitting node into " << this->children.size() << " subroots\n";
       std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq
-            << " root and " << two_links_children_eq_sum << " child links" << std::endl;
+            << " root and " << two_links_children_eq_sum << " child links\n";
       std::cout << "Splitting " << two_links_children_ineq_sum + two_links_root_ineq << " inequality two-links into " << two_links_root_ineq
-            << " root and " << two_links_children_ineq_sum << " child links" << std::endl;
+            << " root and " << two_links_children_ineq_sum << " child links\n";
    }
 
    adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq, two_links_children_eq_sum, two_links_children_ineq_sum);
+
    assertTreeStructureCorrect();
 }
 
