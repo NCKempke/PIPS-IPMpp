@@ -1143,7 +1143,7 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
 }
 
 
-void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC, bool silent )
+void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
 
    assert( commWrkrs != MPI_COMM_NULL );
@@ -1165,7 +1165,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    const unsigned int two_links_children_eq_sum = std::accumulate( two_links_children_eq.begin(), two_links_children_eq.end(), unsigned(0) );
    const unsigned int two_links_children_ineq_sum = std::accumulate( two_links_children_ineq.begin(), two_links_children_ineq.end(), unsigned(0) );
 
-   if( rankMe == 0 && silent )
+   if( rankMe == 0 && !pips_options::getBoolParameter("SILENT") )
    {
       std::cout << "Splitting node into " << this->children.size() << " subroots\n";
       std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq
@@ -1181,7 +1181,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
-      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC, bool silent )
+      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
    assert( !is_hierarchical_root );
    assert( np == -1 );
@@ -1198,7 +1198,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC, silent);
+   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 

@@ -59,6 +59,7 @@ class HierarchicalSplittingTest : public sTreeCallbacks, public ::testing::TestW
          sTree::rankPrcnd = -1;
          sTree::rankZeroW = 0;
          sTree::rankMe = 0;
+         pips_options::setBoolParameter("SILENT", true);
       }
 
       void TearDown() override
@@ -137,7 +138,8 @@ TEST_P(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
    std::vector<int> twoLinksStartBlockC(n_children, two_links_ineq_per_block);
    twoLinksStartBlockC[n_children - 1] = 0;
 
-   sTreeCallbacks* test_tree_split = dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) );
+   sTreeCallbacks* test_tree_split =
+         dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) );
 
    /// check root for right amount of linking constraints
    long long dummy, MYL, MZL;

@@ -126,11 +126,11 @@ public:
   /* shave tree and add an additional top layer */
   virtual sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
   /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
-  virtual void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC, bool silent = false ) = 0;
+  virtual void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) = 0;
 
   // TODO : make sure that none of the not suitable methods get called...
   virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
-        const std::vector<int>& twoLinksStartBlockC, bool silent = false ) = 0;
+        const std::vector<int>& twoLinksStartBlockC ) = 0;
   virtual sTree * collapseHierarchicalTree() = 0;
 
 protected:

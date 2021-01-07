@@ -55,7 +55,7 @@ public:
   OoqpVectorHandle icupp; // index upper bounds
   OoqpVectorHandle bl; // lower bounds C
   OoqpVectorHandle iclow; // index lower bounds
-  OoqpVectorHandle sc; // scale
+  OoqpVectorHandle sc; // scale (and diag of Q) -> not maiintained currently
 
   long long nx, my, mz;
 
