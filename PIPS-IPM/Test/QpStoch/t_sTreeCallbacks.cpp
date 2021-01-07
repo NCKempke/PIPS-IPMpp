@@ -51,7 +51,7 @@ INSTANTIATE_TEST_SUITE_P(
       testing::ValuesIn(maps_expected)
 );
 
-class HierarchicalSplittingTest : public sTreeCallbacks, public ::testing::Test
+class HierarchicalSplittingTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>>
 {
       void SetUp() override
       {
@@ -101,30 +101,41 @@ sTreeCallbacks* HierarchicalSplittingTest::createTestTree( int nChildren, int n_
    return tree;
 }
 
-TEST_F(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
+const std::vector<std::vector<unsigned int>> paramsets_tree_splitting {
+   { 2, 3, 10, 12, 1, 3, 1, 10},
+   { 1, 1, 10, 12, 1, 1, 1, 15 },
+   { 5, 0, 10, 12, 1, 1, 1, 15 },
+   { 3, 2, 5, 7, 5, 0, 0, 7 },
+   { 3, 2, 5, 7, 5, 7, 2, 5 },
+   { 3, 2, 5, 7, 0, 7, 2, 5 }
+};
+
+TEST_P(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
 {
-   const int two_links_eq_per_block = 2;
-   const int two_links_ineq_per_block = 3;
+   std::vector<unsigned int> params = GetParam();
+   ASSERT_EQ( params.size(), 8 );
+   const int two_links_eq_per_block = params[0];
+   const int two_links_ineq_per_block = params[1];
 
-   const unsigned int global_eq_links = 10;
-   const unsigned int global_ineq_links = 12;
+   const unsigned int global_eq_links = params[2];
+   const unsigned int global_ineq_links = params[3];
 
-   const int shave_n_eqs = 1;
-   const int shave_n_ineqs = 3;
-   const int shave_n_vars = 1;
+   const int shave_n_eqs = params[4];
+   const int shave_n_ineqs = params[5];
+   const int shave_n_vars = params[6];
 
-   const int n_children = 10;
+   const int n_children = params[7];
    const int n_eq_links = (n_children - 1) * two_links_eq_per_block + global_eq_links;
    const int n_ineq_links = (n_children - 1) * two_links_ineq_per_block + global_ineq_links;
 
    sTreeCallbacks* test_tree = createTestTree( n_children, n_eq_links, n_ineq_links);
    test_tree->assertTreeStructureCorrect();
 
-   std::vector<int> twoLinksStartBlockA(10, two_links_eq_per_block);
-   twoLinksStartBlockA[9] = 0;
+   std::vector<int> twoLinksStartBlockA(n_children, two_links_eq_per_block);
+   twoLinksStartBlockA[n_children - 1] = 0;
 
-   std::vector<int> twoLinksStartBlockC(10, two_links_ineq_per_block);
-   twoLinksStartBlockC[9] = 0;
+   std::vector<int> twoLinksStartBlockC(n_children, two_links_ineq_per_block);
+   twoLinksStartBlockC[n_children - 1] = 0;
 
    sTreeCallbacks* test_tree_split = dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) );
 
@@ -145,7 +156,7 @@ TEST_F(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
    EXPECT_EQ( MYL, n_eq_links - shave_n_eqs );
    EXPECT_EQ( MZL, n_ineq_links - shave_n_ineqs );
 
-   EXPECT_EQ( inner_root->myl(), global_eq_links - shave_n_eqs + two_links_eq_per_block * (inner_root->nChildren() - 1) );
+   EXPECT_EQ( inner_root->myl(), global_eq_links - shave_n_eqs + two_links_eq_per_block * ( inner_root->nChildren() - 1) );
    EXPECT_EQ( inner_root->mzl(), global_ineq_links - shave_n_ineqs + two_links_ineq_per_block * (inner_root->nChildren() - 1) );
 
    int sum_children_exclusive_eq_links = 0;
@@ -187,3 +198,8 @@ TEST_F(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
    delete test_tree_split;
 }
 
+INSTANTIATE_TEST_SUITE_P(
+      CorrectTreeSplitAndSizeAdjustment,
+      HierarchicalSplittingTest,
+      testing::ValuesIn(paramsets_tree_splitting)
+);

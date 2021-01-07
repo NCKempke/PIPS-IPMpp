@@ -66,7 +66,7 @@ public:
    virtual void writeSizes( std::ostream& sout ) const;
 
    sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
-         const std::vector<int>& twoLinksStartBlockC ) override;
+         const std::vector<int>& twoLinksStartBlockC, bool silent = false ) override;
    sTree* collapseHierarchicalTree() override;
 
    void splitDataAccordingToTree( sData& data ) const;
@@ -106,7 +106,7 @@ protected:
    void adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
          const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum);
 
-   void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
+   void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC, bool silent = false ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
    sTree* collapseDenseBorder();

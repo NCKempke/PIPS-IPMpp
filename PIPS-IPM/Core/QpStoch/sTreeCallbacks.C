@@ -442,8 +442,8 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
          }
          else
          {
-            assert( child->MYL < MYL );
-            assert( child->MZL < MZL );
+            assert( child->MYL <= MYL );
+            assert( child->MZL <= MZL );
 
             MYL_children += child->MYL;
             MZL_children += child->MZL;
@@ -454,7 +454,6 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
    assert( N == NX_children + nx_active );
    assert( MY == MY_children + my_active );
    assert( MZ == MZ_children + mz_active );
-   std::cout << MYL << " " << MYL_children << " " << myl_active << std::endl;
    assert( MYL == MYL_children + myl_active );
    assert( MZL == MZL_children + mzl_active );
 }
@@ -873,7 +872,6 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    for( auto& child : children )
       dynamic_cast<sTreeCallbacks*>(child)->np = nx_active;
 
-   top_layer->writeSizes(std::cout);
    assert( myl_active >= 0 );
    assert( mzl_active >= 0 );
    top_layer->assertTreeStructureCorrect();
@@ -1145,7 +1143,7 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
 }
 
 
-void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC, bool silent )
 {
 
    assert( commWrkrs != MPI_COMM_NULL );
@@ -1167,7 +1165,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    const unsigned int two_links_children_eq_sum = std::accumulate( two_links_children_eq.begin(), two_links_children_eq.end(), unsigned(0) );
    const unsigned int two_links_children_ineq_sum = std::accumulate( two_links_children_ineq.begin(), two_links_children_ineq.end(), unsigned(0) );
 
-   if( rankMe == 0 )
+   if( rankMe == 0 && silent )
    {
       std::cout << "Splitting node into " << this->children.size() << " subroots\n";
       std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq
@@ -1183,7 +1181,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
-      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC, bool silent )
 {
    assert( !is_hierarchical_root );
    assert( np == -1 );
@@ -1200,7 +1198,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC, silent);
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
