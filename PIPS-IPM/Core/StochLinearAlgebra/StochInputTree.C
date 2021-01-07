@@ -38,6 +38,11 @@ void StochInputTree::AddChild(StochInputTree *subTree)
 //************************** NODE ***************************
 //***********************************************************
 StochInputTree::StochInputNode::
+StochInputNode( int id_, int n_, int my_, int myl_, int mz_, int mzl_)
+  : id{id_}, n{n_}, my{my_}, myl{myl_}, mz{mz_}, mzl{mzl_}
+{}
+
+StochInputTree::StochInputNode::
 StochInputNode(void* user_data_, int id_, 
 	       int n_, int my_, int mz_,
 	       FMAT fQ_, FNNZ fnnzQ_, FVEC fc_, 
@@ -57,7 +62,7 @@ StochInputNode(void* user_data_, int id_,
     fxlow(fxlow_), fxupp(fxupp_), fixlow(fixlow_), fixupp(fixupp_), 
     user_data(user_data_), 
     deleteUserData(deleteUserData_)
-{ }
+{}
 
 
 // full callback constructor without constraints

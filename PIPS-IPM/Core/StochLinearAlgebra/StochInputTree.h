@@ -34,6 +34,8 @@ class StochInputTree
   public:
     StochInputNode(int id_ = -1);
 
+    StochInputNode( int id_, int n_, int my_, int myl_, int mz_, int mzl_);
+
 	StochInputNode(void* user_data, int id, 
 	   int n, int my, int mz,
 	   FMAT fQ, FNNZ fnnzQ, FVEC fc,  
