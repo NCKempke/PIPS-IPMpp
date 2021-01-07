@@ -109,9 +109,9 @@ TEST_F(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
    const unsigned int global_eq_links = 10;
    const unsigned int global_ineq_links = 12;
 
-   const int shave_n_eqs = 0;
-   const int shave_n_ineqs = 0;
-   const int shave_n_vars = 0;
+   const int shave_n_eqs = 1;
+   const int shave_n_ineqs = 3;
+   const int shave_n_vars = 1;
 
    const int n_children = 10;
    const int n_eq_links = (n_children - 1) * two_links_eq_per_block + global_eq_links;

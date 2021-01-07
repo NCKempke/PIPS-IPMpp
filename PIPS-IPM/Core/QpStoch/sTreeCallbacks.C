@@ -413,7 +413,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
 
          assert( child->MYL <= MYL );
          assert( child->MZL <= MZL );
-         if( is_hierarchical_root || is_hierarchical_inner_root )
+         if( is_hierarchical_inner_root )
          {
             assert( child->MYL >= myl_active );
             assert( child->MZL >= mzl_active );
@@ -421,7 +421,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
             MYL_children += child->MYL - myl_active;
             MZL_children += child->MZL - mzl_active;
          }
-         else
+         else if( !is_hierarchical_root )
          {
             if( child->is_hierarchical_inner_leaf )
             {
@@ -440,12 +440,21 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
             assert( child->myl_active == myl_active );
             assert( child->mzl_active == mzl_active );
          }
+         else
+         {
+            assert( child->MYL < MYL );
+            assert( child->MZL < MZL );
+
+            MYL_children += child->MYL;
+            MZL_children += child->MZL;
+         }
       }
    }
 
    assert( N == NX_children + nx_active );
    assert( MY == MY_children + my_active );
    assert( MZ == MZ_children + mz_active );
+   std::cout << MYL << " " << MYL_children << " " << myl_active << std::endl;
    assert( MYL == MYL_children + myl_active );
    assert( MZL == MZL_children + mzl_active );
 }
@@ -836,11 +845,9 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
 
    top_layer->MY = MY;
    top_layer->MYL = MYL;
-   this->MYL -= myl_to_shave;
 
    top_layer->MZ = MZ;
    top_layer->MZL = MZL;
-   this->MZL -= mzl_to_shave;
    top_layer->np = -1;
 
    assert( IPMIterExecTIME == -1 );
@@ -858,11 +865,15 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->mz_active = 0;
 
    top_layer->myl_active = myl_to_shave;
-   this->myl_active -= myl_to_shave;
+   this->adjustActiveMylBy(-myl_to_shave);
 
    top_layer->mzl_active = mzl_to_shave;
-   this->mzl_active -= mzl_to_shave;
+   this->adjustActiveMzlBy(-mzl_to_shave);
 
+   for( auto& child : children )
+      dynamic_cast<sTreeCallbacks*>(child)->np = nx_active;
+
+   top_layer->writeSizes(std::cout);
    assert( myl_active >= 0 );
    assert( mzl_active >= 0 );
    top_layer->assertTreeStructureCorrect();
