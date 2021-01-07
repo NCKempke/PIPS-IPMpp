@@ -18,20 +18,12 @@ class sTreeCallbacks;
 
 class sTree
 {
+  friend sTreeCallbacks;
  public:
-  // global sizes are still local to each MPI process - they just sum all local data
-  virtual void computeGlobalSizes() = 0;
-  void getGlobalSizes(long long& n, long long& my, long long& mz);
-
-  void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
-
   StochNodeResourcesMonitor resMon;
   static StochIterateResourcesMonitor iterMon;
 
-  virtual ~sTree();
  protected:
-
-  void assignProcesses( MPI_Comm, vector<int>&);
 
   MPI_Comm commWrkrs{ MPI_COMM_NULL };
   std::vector<int> myProcs, myOldProcs;
@@ -51,17 +43,25 @@ class sTree
 
   double IPMIterExecTIME{-1.0}; // not used since we currently do not compute loads for nodes and processes...
   std::vector<sTree*> children;
+  /* used for hierarchical approach - implies sub structure inside the current Bmat */
+  sTree* sub_root{};
 
   /* global number of all processes available */
   static int numProcs;
 
-
-protected:
   bool is_hierarchical_root = false;
-  bool is_hierarchical_inner = false;
-  bool is_hierarchical_leaf = false;
+  bool is_hierarchical_inner_root = false;
+  bool is_hierarchical_inner_leaf = false;
 
 public:
+  // global sizes are still local to each MPI process - they just sum all local data
+  virtual void computeGlobalSizes() = 0;
+  void getGlobalSizes(long long& n, long long& my, long long& mz);
+
+  void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
+
+  virtual ~sTree();
+
   bool distributedPreconditionerActive() const;
 
   void startMonitors(); void startNodeMonitors();
@@ -113,21 +113,13 @@ public:
   //time of this node and its subnodes  after the first iteration.
   double processLoad() const;
 
- protected:
-  sTree() = default;
-
-  void toMonitorsList( std::list<NodeExecEntry>& );
-  void fromMonitorsList( std::list<NodeExecEntry>& );
-
-  void computeNodeTotal();
-
-  void saveCurrentCPUState();
-
-  int isInVector(int elem, const vector<int>& vec) const;
-public:
-  //to be called after assignProcesses
   bool isHierarchicalRoot() const { return is_hierarchical_root; };
-  bool isHierarchicalInner() const { return is_hierarchical_inner; };
+
+  void setHierarchicalInnerRoot() { is_hierarchical_inner_root = true; };
+  bool isHierarchicalInnerRoot() const { return is_hierarchical_inner_root; };
+
+  void setHierarchicalInnerLeaf() { is_hierarchical_inner_leaf = true; };
+  bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
 
   /* shave tree and add an additional top layer */
   virtual sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
@@ -139,8 +131,20 @@ public:
         const std::vector<int>& twoLinksStartBlockC ) = 0;
   virtual sTree * collapseHierarchicalTree() = 0;
 
-private:
-  friend sTreeCallbacks;
+protected:
+  void assignProcesses( MPI_Comm, vector<int>&);
+
+  sTree() = default;
+
+  void toMonitorsList( std::list<NodeExecEntry>& );
+  void fromMonitorsList( std::list<NodeExecEntry>& );
+
+  void computeNodeTotal();
+
+  void saveCurrentCPUState();
+
+  int isInVector(int elem, const vector<int>& vec) const;
+
 };
 
 #endif 

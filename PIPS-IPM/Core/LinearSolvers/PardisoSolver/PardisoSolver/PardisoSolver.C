@@ -358,7 +358,7 @@ void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
   memcpy(&rhs[0][0], sol, sz_sol*sizeof(double));
 }
 
-void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
+void PardisoSolver::solve( int nrhss, double* rhss, int* colSparsity )
 {
    assert(rhss);
    assert(nrhss >= 1);
@@ -371,7 +371,6 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
       sol = new double[sz_sol];
    }
 
-#ifndef NDEBUG
    if( colSparsity )
    {
       for( int nr = 0; nr < nrhss; nr++ )
@@ -386,7 +385,6 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
          }
       }
    }
-#endif
 
    /* same for mkl_pardiso and pardiso */
    phase = 33; // solve and iterative refinement

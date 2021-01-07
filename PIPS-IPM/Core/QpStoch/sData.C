@@ -1728,7 +1728,7 @@ void sData::reorderLinkingConstraintsAccordingToSplit()
 
 void sData::splitDataAccordingToTree()
 {
-   assert( stochNode->isHierarchicalInner() );
+   assert( stochNode->isHierarchicalInnerRoot() );
    reorderLinkingConstraintsAccordingToSplit();
 
    splitDataAccordingToTree();

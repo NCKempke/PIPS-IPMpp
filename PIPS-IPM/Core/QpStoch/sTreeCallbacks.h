@@ -1,7 +1,6 @@
 /* PIPS-IPM                                                           *
  * Author:  Cosmin G. Petra                                           *
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
-
 #ifndef STOCH_TREE_CALLBACKS
 #define STOCH_TREE_CALLBACKS
 
@@ -14,9 +13,6 @@
  */
 
 class sData;
-
-
-
 
 class sTreeCallbacks : public sTree
 {
@@ -32,7 +28,9 @@ public:
    sTreeCallbacks(StochInputTree::StochInputNode* data_);
    ~sTreeCallbacks() = default;
 
-   StochSymMatrix*   createQ() const;
+   void addChild( sTreeCallbacks* child );
+
+   StochSymMatrix* createQ() const;
 
    StochGenMatrix* createA() const override;
    StochGenMatrix* createC() const override;
@@ -73,13 +71,20 @@ public:
 
    void splitDataAccordingToTree( sData& data ) const;
    const std::vector<unsigned int>& getMapBlockSubTrees() const
-      { assert( is_hierarchical_inner ); return map_node_sub_root; };
-protected:
+      { assert( is_hierarchical_inner_root ); return map_node_sub_root; };
+
    void assertTreeStructureCorrect() const;
+protected:
+   void assertTreeStructureChildren() const;
+   void assertSubRoot() const;
+   void assertTreeStructureIsNotMyNode() const;
+   void assertTreeStructureIsMyNodeChildren() const;
+   void assertTreeStructureIsMyNodeSubRoot() const;
+   void assertTreeStructureIsMyNode()const;
 
    static unsigned int getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
 
-   virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
+   void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
    StochGenMatrix* createMatrix( TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat,
@@ -96,6 +101,8 @@ protected:
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
          std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
          unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
+   void adjustActiveMylBy( int adjustment );
+   void adjustActiveMzlBy( int adjustment );
    void adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
          const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum);
 

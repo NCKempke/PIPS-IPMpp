@@ -46,6 +46,7 @@ bool sTree::distributedPreconditionerActive() const
 
 void sTree::assignProcesses(MPI_Comm comm)
 {
+   assert( comm != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
    const int size = PIPS_MPIgetSize(comm);
 
@@ -69,7 +70,6 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
    myProcs = processes;
 
    const int n_procs = processes.size();
-
    /* if we are at a leaf only one proc should be left */
    if( children.size() == 0 )
    {

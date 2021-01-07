@@ -5,8 +5,6 @@
 #include "GondzioStochSolver.h"
 #include "GondzioStochLpSolver.h"
 #include "sFactoryAug.h"
-//#include "sFactoryAugMumpsLeaf.h"
-//#include "sFactoryAugSchurLeaf.h"
 #endif
 #if defined(GMS_MPI)
 #include "mpi.h"
