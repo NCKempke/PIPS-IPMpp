@@ -1204,24 +1204,24 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         GenMatrix  * C_in,
         OoqpVector * clow_in, OoqpVector * iclow_in, long long mclow_,
         OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_,
-        bool add_children, bool is_hierarchy_root
+        bool add_children, bool is_hierarchy_root, bool is_hierarchy_inner_root,
+        bool is_hierarchy_inner_leaf
         )
-  : QpGenData(SparseLinearAlgebraPackage::soleInstance(),
-         c_in, Q_in,
-         xlow_in, ixlow_in, xupp_in, ixupp_in,
-         A_in, bA_in,
-         C_in,
-         clow_in, iclow_in, cupp_in, icupp_in),
-         is_hierarchy_root( is_hierarchy_root ),
+  : QpGenData(SparseLinearAlgebraPackage::soleInstance(), c_in, Q_in,
+         xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in,
+         C_in, clow_in, iclow_in, cupp_in, icupp_in),
+         stochNode{ tree_ },
+         nxlow{ nxlow_ },
+         nxupp{ nxupp_ },
+         mclow{ mclow_ },
+         mcupp{ mcupp_ },
+         is_hierarchy_root{ is_hierarchy_root },
+         is_hierarchy_inner_root{ is_hierarchy_inner_root },
+         is_hierarchy_inner_leaf{ is_hierarchy_inner_leaf },
          useLinkStructure( false )
 {
-  nxlow = nxlow_; nxupp = nxupp_;
-  mclow = mclow_; mcupp = mcupp_;
-  stochNode = tree_;
-
   if( add_children )
      createChildren();
-  n0LinkVars = 0;
 }
 
 void sData::writeToStreamDense( std::ostream& out ) const
@@ -1229,51 +1229,51 @@ void sData::writeToStreamDense( std::ostream& out ) const
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    if( myRank == 0 )
-      out <<  "A: " << "\n";
+      out << "A:\n";
    (*A).writeToStreamDense(out);
 
    if( myRank == 0 )
-      out <<  "C: " << "\n";
+      out << "C:\n";
    (*C).writeToStreamDense(out);
 
    if( myRank == 0 )
-      out <<  "obj: " << "\n";
+      out << "obj:\n";
    (*g).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "bA: " << "\n";
+      out << "bA:\n";
    (*bA).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "xupp: " << "\n";
+      out << "xupp:\n";
    (*bux).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "ixupp: " << "\n";
+      out << "ixupp:\n";
    (*ixupp).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "xlow: " << "\n";
+      out << "xlow:\n";
    (*blx).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "ixlow: " << "\n";
+      out << "ixlow:\n";
    (*ixlow).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "cupp: " << "\n";
+      out << "cupp:\n";
    (*bu).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "icupp: " << "\n";
+      out << "icupp:\n";
    (*icupp).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "clow: " << "\n";
+      out << "clow:\n";
    (*bl).writeToStream(out);
 
    if( myRank == 0 )
-      out <<  "iclow: " << "\n";
+      out << "iclow:\n";
    (*iclow).writeToStream(out);
 }
 
@@ -1290,14 +1290,14 @@ void sData::writeMPSformat( std::ostream& out)
 
    if( world_size > 1 )
    {
-      cout<<"MPS format writer only available using one Process!"<<"\n";
+      std::cout << "MPS format writer only available using one Process!\n";
       return;
    }
-   cout<<"Writing MPS format..."<<"\n";
+   std::cout << "Writing MPS format...\n";
 
-   out <<  "NAME PIPS_to_MPS " << "\n";
-   out << "ROWS" <<"\n";
-   out << " N COST" <<"\n";
+   out << "NAME PIPS_to_MPS\n";
+   out << "ROWS\n";
+   out << " N COST\n";
 
    // write all row names and if they are E, L or G
    (*A).writeMPSformatRows(out, 0, nullptr);
@@ -1305,24 +1305,24 @@ void sData::writeMPSformat( std::ostream& out)
    (*C).writeMPSformatRows(out, 2, iclow);
 
    // write all variable names
-   out <<  "COLUMNS " << "\n";
+   out << "COLUMNS\n";
    writeMPSColumns(out);
 
    // write all rhs / lhs
-   out <<  "RHS " << "\n";
+   out << "RHS\n";
 
    (*bA).writeMPSformatRhs(out, 0, nullptr);
    (*bu).writeMPSformatRhs(out, 1, icupp);
    (*bl).writeMPSformatRhs(out, 2, iclow);
 
    // write all variable bounds
-   out <<  "BOUNDS " << "\n";
+   out << "BOUNDS\n";
    (*bux).writeMPSformatBounds(out, ixupp, true);
    (*blx).writeMPSformatBounds(out, ixlow, false);
 
-   out <<  "ENDATA " << "\n";
+   out << "ENDATA\n";
 
-   cout<<"Finished writing MPS format."<<"\n";
+   std::cout << "Finished writing MPS format.\n";
 }
 
 void sData::writeMPSColumns(ostream& out)
@@ -1596,6 +1596,106 @@ void sData::destroyChildren()
    children.clear();
 }
 
+sData* sData::shaveBorderFromDataAndCreateNewTop( const sTree* tree )
+{
+   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars) );
+
+   GenMatrixHandle A_hier( dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars) );
+   GenMatrixHandle C_hier( dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars) );
+
+   /* we ordered global linking vars first and global linking rows to the end */
+   StochVectorHandle g_hier( dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle bux_hier( dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle ixupp_hier( dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle blx_hier( dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true) );
+   StochVectorHandle ixlow_hier( dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true) );
+
+   StochVectorHandle bA_hier( dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false) );
+
+   StochVectorHandle bu_hier( dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle icupp_hier( dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle bl_hier( dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false) );
+   StochVectorHandle iclow_hier( dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false) );
+
+   // TODO what is this?
+   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+
+   return new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
+         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
+         A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
+         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
+         false, true);
+}
+
+sData* sData::shaveDenseBorder( const sTree* tree )
+{
+   if( PIPS_MPIgetRank() == 0 )
+   {
+      std::cout << "Switching to hierarchical data ...\n";
+      std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
+            n_global_ineq_linking_conss << " inequalities for the border\n";
+   }
+
+   sData* hierarchical_top = shaveBorderFromDataAndCreateNewTop( tree );
+
+   const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
+   const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
+   assert( ixlow.vec );
+   assert( ixupp.vec );
+   this->nxlow -= ixlow.vec->numberOfNonzeros();
+   this->nxupp -= ixupp.vec->numberOfNonzeros();
+
+   const StochVector& iclow = dynamic_cast<const StochVector&>(*hierarchical_top->iclow);
+   const StochVector& icupp = dynamic_cast<const StochVector&>(*hierarchical_top->icupp);
+   assert( iclow.vecl );
+   assert( icupp.vecl );
+   this->mclow -= iclow.vecl->numberOfNonzeros();
+   this->mcupp -= icupp.vecl->numberOfNonzeros();
+
+   long long dummy;
+   nx = g->length();
+   A->getSize( my, dummy );
+   C->getSize( mz, dummy );
+
+   /* adapt vectors and global link sizes - we pushed these up */
+
+   /* global linking variables have been ordered to the front, global linking constraints to the end of the matrices */
+   /* linking vars */
+   hierarchical_top->n_blocks_per_link_var = this->n_blocks_per_link_var;
+   this->n_blocks_per_link_var.erase(n_blocks_per_link_var.begin(), n_blocks_per_link_var.begin() + n_global_linking_vars);
+
+   /* Amat linking cons */
+   hierarchical_top->linkStartBlockIdA = this->linkStartBlockIdA;
+   this->linkStartBlockIdA.erase(linkStartBlockIdA.end() - n_global_eq_linking_conss, linkStartBlockIdA.end() );
+   hierarchical_top->n_blocks_per_link_row_A = this->n_blocks_per_link_row_A;
+   this->n_blocks_per_link_row_A.erase(n_blocks_per_link_row_A.end() - n_global_eq_linking_conss, n_blocks_per_link_row_A.end());
+
+   /* Cmat linking cons */
+   hierarchical_top->linkStartBlockIdC = this->linkStartBlockIdC;
+   this->linkStartBlockIdC.erase(linkStartBlockIdC.end() - n_global_ineq_linking_conss, linkStartBlockIdC.end() );
+   hierarchical_top->n_blocks_per_link_row_C = this->n_blocks_per_link_row_C;
+   this->n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.end() - n_global_ineq_linking_conss, n_blocks_per_link_row_C.end() );
+
+   assert( isSCrowLocal.size() == 0 );
+   assert( isSCrowMyLocal.size() == 0 );
+
+   hierarchical_top->n_global_eq_linking_conss = n_global_eq_linking_conss;
+   this->n_global_eq_linking_conss = 0;
+
+   hierarchical_top->n_global_ineq_linking_conss = n_global_ineq_linking_conss;
+   this->n_global_ineq_linking_conss = 0;
+
+   hierarchical_top->n_global_linking_vars = n_global_linking_vars;
+   this->n_global_linking_vars = 0;
+
+   hierarchical_top->useLinkStructure = false;
+
+   hierarchical_top->children.push_back(this);
+   stochNode = tree->getChildren()[0];
+
+   return hierarchical_top;
+}
+
 void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C)
 {
    perm_A.resize( linkConsPermutationA.size() );
@@ -1728,10 +1828,18 @@ void sData::reorderLinkingConstraintsAccordingToSplit()
 
 void sData::splitDataAccordingToTree()
 {
-   assert( stochNode->isHierarchicalInnerRoot() );
-   reorderLinkingConstraintsAccordingToSplit();
+   /* we came to a leaf and stop here */
+   if( !stochNode->isHierarchicalInnerRoot() )
+      return;
 
+   reorderLinkingConstraintsAccordingToSplit();
    splitDataAccordingToTree();
+
+   for( auto& child : children )
+   {
+      assert(child->is_hierarchy_inner_leaf);
+//      child->
+   }
 
    assert( false && "TODO: implement");
 }
@@ -1741,102 +1849,11 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    assert( tree->isHierarchicalRoot() );
    assert( tree->nChildren() == 1 );
 
-//   this->splitDataAccordingToTree( dynamic_cast<const sTreeCallbacks&>(*tree->children[0]) );
+   sData* hierarchical_top = shaveDenseBorder( tree );
 
-   // TODO : split lower levels according to tree structure
-   // TODO : make method for top layer and split operation
+   this->splitDataAccordingToTree();
 
-   const int my_rank = PIPS_MPIgetRank();
-   if( my_rank == 0 )
-   {
-      std::cout << "Switching to hierarchical data ..." << "\n";
-      std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
-            n_global_ineq_linking_conss << " inequalities for the border" << "\n";
-   }
-
-   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars) );
-
-   GenMatrixHandle A_hier( dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars) );
-   GenMatrixHandle C_hier( dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars) );
-
-   /* we ordered global linking vars first and global linking rows to the end */
-   StochVectorHandle g_hier( dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true) );
-   StochVectorHandle bux_hier( dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true) );
-   StochVectorHandle ixupp_hier( dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true) );
-   StochVectorHandle blx_hier( dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true) );
-   StochVectorHandle ixlow_hier( dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true) );
-
-   StochVectorHandle bA_hier( dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false) );
-
-   StochVectorHandle bu_hier( dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false) );
-   StochVectorHandle icupp_hier( dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false) );
-   StochVectorHandle bl_hier( dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false) );
-   StochVectorHandle iclow_hier( dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false) );
-
-   // TODO what is this?
-   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
-
-   sData* hierarchical_top = new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
-         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
-         A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
-         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
-         false, true);
-
-   assert( ixlow_hier->vec );
-   assert( ixupp_hier->vec );
-   this->nxlow -= ixlow_hier->vec->numberOfNonzeros();
-   this->nxupp -= ixupp_hier->vec->numberOfNonzeros();
-
-   assert( iclow_hier->vecl );
-   assert( icupp_hier->vecl );
-   this->mclow -= iclow_hier->vecl->numberOfNonzeros();
-   this->mcupp -= icupp_hier->vecl->numberOfNonzeros();
-
-   long long dummy;
-   nx = g->length();
-   A->getSize( my, dummy );
-   C->getSize( mz, dummy );
-
-   /* adapt vectors and global link sizes - we pushed these up */
-
-   /* global linking variables have been ordered to the front, global linking constraints to the end of the matrices */
-   /* linking vars */
-   hierarchical_top->n_blocks_per_link_var = this->n_blocks_per_link_var;
-   this->n_blocks_per_link_var.erase(n_blocks_per_link_var.begin(), n_blocks_per_link_var.begin() + n_global_linking_vars);
-
-   /* Amat linking cons */
-   hierarchical_top->linkStartBlockIdA = this->linkStartBlockIdA;
-   this->linkStartBlockIdA.erase(linkStartBlockIdA.end() - n_global_eq_linking_conss, linkStartBlockIdA.end() );
-   hierarchical_top->n_blocks_per_link_row_A = this->n_blocks_per_link_row_A;
-   this->n_blocks_per_link_row_A.erase(n_blocks_per_link_row_A.end() - n_global_eq_linking_conss, n_blocks_per_link_row_A.end());
-
-   /* Cmat linking cons */
-   hierarchical_top->linkStartBlockIdC = this->linkStartBlockIdC;
-   this->linkStartBlockIdC.erase(linkStartBlockIdC.end() - n_global_ineq_linking_conss, linkStartBlockIdC.end() );
-   hierarchical_top->n_blocks_per_link_row_C = this->n_blocks_per_link_row_C;
-   this->n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.end() - n_global_ineq_linking_conss, n_blocks_per_link_row_C.end() );
-
-   assert( isSCrowLocal.size() == 0 );
-   assert( isSCrowMyLocal.size() == 0 );
-
-   hierarchical_top->n_global_eq_linking_conss = n_global_eq_linking_conss;
-   this->n_global_eq_linking_conss = 0;
-
-   hierarchical_top->n_global_ineq_linking_conss = n_global_ineq_linking_conss;
-   this->n_global_ineq_linking_conss = 0;
-
-   hierarchical_top->n_global_linking_vars = n_global_linking_vars;
-   this->n_global_linking_vars = 0;
-
-   hierarchical_top->useLinkStructure = false;
-
-   hierarchical_top->children.push_back(this);
-   stochNode = tree->getChildren()[0];
-
-   // TODO: implement recursive layering of linear system
-   //   this->splitIntoMultiple();
-
-   if( my_rank == 0 )
+   if( PIPS_MPIgetRank() == 0 )
       std::cout << "Hierarchical data built" << "\n";
 
    return hierarchical_top;

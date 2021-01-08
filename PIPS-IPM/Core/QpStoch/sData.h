@@ -21,29 +21,30 @@ class LinearAlgebraPackage;
 
 class sData : public QpGenData {
  public:
-  /** constructor that sets up pointers to the data objects that are
-      passed as arguments */
-  sData( const sTree* stochNode,
-	 OoqpVector * c, SymMatrix * Q,
-	 OoqpVector * xlow, OoqpVector * ixlow, long long nxlow,
+
+   sData() = default;
+   sData( const sTree* stochNode,
+    OoqpVector * c, SymMatrix * Q,
+    OoqpVector * xlow, OoqpVector * ixlow, long long nxlow,
 	 OoqpVector * xupp, OoqpVector * ixupp, long long nxupp,
 	 GenMatrix * A, OoqpVector * bA,
 	 GenMatrix * C,
 	 OoqpVector * clow, OoqpVector * iclow, long long mclow,
 	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp,
-	 bool add_children = true, bool is_hierarchy_root = false );
+	 bool add_children = true, bool is_hierarchy_root = false,
+	 bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false );
 
   std::vector<sData*> children;
+  sData* sub_root{};
   void AddChild(sData* child);
-  const sTree* stochNode;
+  const sTree* stochNode{};
 
-public:
-  long long nxlow, nxupp, mclow, mcupp;
-
+  long long nxlow{0};
+  long long nxupp{0};
+  long long mclow{0};
+  long long mcupp{0};
   
 private: 
-//  std::vector<unsigned int> getCollapsedHierarchicalLinkVarsPerm() const;
-//  std::vector<unsigned int> getCollapsedHierarchicalLinkConsPerm( const std::vector<unsigned int> sData::* cons_permutation ) const;
 
   // returns inverse permutation vector or empty vector if no permutation has been performed
   std::vector<unsigned int> getLinkVarsPermInv() const;
@@ -100,6 +101,9 @@ private:
   void reorderLinkingConstraintsAccordingToSplit();
   void splitDataAccordingToTree();
 
+  sData* shaveBorderFromDataAndCreateNewTop( const sTree* tree );
+  sData* shaveDenseBorder( const sTree* tree );
+
  public:
   // Hierarchical Stuff
   sData* switchToHierarchicalData( const sTree* tree );
@@ -148,12 +152,12 @@ private:
   void destroyChildren();
 
  private:
-  int n0LinkVars;
+  int n0LinkVars{0};
 
-  constexpr static int threshold_global_cons = 2;
-  constexpr static int threshold_global_vars = 0;
-  constexpr static int nLinkStats = 6;
-  constexpr static double minStructuredLinksRatio = 0.5;
+  constexpr static int threshold_global_cons{2};
+  constexpr static int threshold_global_vars{0};
+  constexpr static int nLinkStats{6};
+  constexpr static double minStructuredLinksRatio{0.5};
   static std::vector<unsigned int> get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
   static std::vector<unsigned int> getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
         std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals);
@@ -193,12 +197,14 @@ private:
   static std::vector<int> get2LinkLengthsVec(const std::vector<int>& linkStartBlocks, const size_t nBlocks);
 
   /* a two link must be in two blocks directly after one another */
-  const bool is_hierarchy_root;
-  bool useLinkStructure;
+  const bool is_hierarchy_root{false};
+  const bool is_hierarchy_inner_root{false};
+  const bool is_hierarchy_inner_leaf{false};
+  bool useLinkStructure{false};
 
-  int n_global_linking_vars = -1;
-  int n_global_eq_linking_conss = -1;
-  int n_global_ineq_linking_conss = -1;
+  int n_global_linking_vars{-1};
+  int n_global_eq_linking_conss{-1};
+  int n_global_ineq_linking_conss{-1};
 
   /* number non-empty of blocks for each linking column */
   std::vector<int> n_blocks_per_link_var;

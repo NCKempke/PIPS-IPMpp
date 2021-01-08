@@ -3,9 +3,9 @@
 
 #include "mpi.h"
 
-class MPIDummyTestingEnvironment : public testing::Environment {
+class MPITestingEnvironment : public testing::Environment {
  public:
-  ~MPIDummyTestingEnvironment() override = default;
+  ~MPITestingEnvironment() override = default;
 
   void SetUp() override
   {
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
 //  testing::FLAGS_gtest_death_test_style = "fast";
 
-  testing::AddGlobalTestEnvironment(new MPIDummyTestingEnvironment);
+  testing::AddGlobalTestEnvironment(new MPITestingEnvironment);
 
   return RUN_ALL_TESTS();
 }

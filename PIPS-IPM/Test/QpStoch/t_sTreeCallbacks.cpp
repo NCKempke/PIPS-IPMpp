@@ -7,12 +7,6 @@
 class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>>
 {};
 
-// Tests factorial of 0.
-TEST_F(HierarchicalMappingParametersTest, DummyEquals)
-{
-   EXPECT_EQ(1, 1);
-}
-
 TEST_P(HierarchicalMappingParametersTest, CorrectMappingChildrenToNewRoots )
 {
    const std::vector<unsigned int>& param = GetParam();

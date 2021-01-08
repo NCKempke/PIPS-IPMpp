@@ -40,7 +40,9 @@ private:
 				       double percentUpperOnly,
 				       double percentBound );
 protected:
-  LinearAlgebraPackage * la;
+
+  QpGenData() = default;
+  LinearAlgebraPackage * la{};
 public:
   SymMatrixHandle Q;
   GenMatrixHandle A;
@@ -57,7 +59,9 @@ public:
   OoqpVectorHandle iclow; // index lower bounds
   OoqpVectorHandle sc; // scale (and diag of Q) -> not maiintained currently
 
-  long long nx, my, mz;
+  long long nx{0};
+  long long my{0};
+  long long mz{0};
 
   /** constructor that makes data objects of the specified dimensions */
   QpGenData(LinearAlgebraPackage * la,
@@ -119,37 +123,34 @@ public:
   virtual void CTransmult( double beta,  OoqpVector& y,
 			   double alpha, const OoqpVector& x ) const;
 
-  //  virtual void addSymProdCRowToAt(double alpha, int i,
-  //				  SymMatrix& M, int rowcol );
-
-  virtual void getg(  OoqpVector& cout ) const;
-  virtual void getbA( OoqpVector& bout ) const;
+  void getg(  OoqpVector& cout ) const;
+  void getbA( OoqpVector& bout ) const;
 
   /** extract the diagonal of Q and put it in the OoqpVector dQ */
-  virtual void getDiagonalOfQ( OoqpVector& dQ );
+  void getDiagonalOfQ( OoqpVector& dQ );
 
-  virtual OoqpVector& xupperBound() { return *bux; };
-  virtual const OoqpVector& xupperBound() const { return *bux; };
-  virtual OoqpVector& ixupperBound() { return *ixupp; };
-  virtual OoqpVector& xlowerBound() { return *blx; };
-  virtual const OoqpVector& xlowerBound() const { return *blx; };
-  virtual OoqpVector& ixlowerBound() { return *ixlow; };
-  virtual OoqpVector&  supperBound() { return *bu; };
-  virtual OoqpVector& isupperBound() { return *icupp; };
-  virtual OoqpVector&  slowerBound() { return *bl; };
-  virtual OoqpVector& islowerBound() { return *iclow; };
-  virtual OoqpVector& scale() { return *sc; };
+  OoqpVector& xupperBound() { return *bux; };
+  const OoqpVector& xupperBound() const { return *bux; };
+  OoqpVector& ixupperBound() { return *ixupp; };
+  OoqpVector& xlowerBound() { return *blx; };
+  const OoqpVector& xlowerBound() const { return *blx; };
+  OoqpVector& ixlowerBound() { return *ixlow; };
+  OoqpVector&  supperBound() { return *bu; };
+  OoqpVector& isupperBound() { return *icupp; };
+  OoqpVector&  slowerBound() { return *bl; };
+  OoqpVector& islowerBound() { return *iclow; };
+  OoqpVector& scale() { return *sc; };
 
-  virtual void createScaleFromQ();
-  virtual void scaleQ();
-  virtual void scaleA();
-  virtual void scaleC();
-  virtual void scaleg();
-  virtual void scalexupp();
-  virtual void scalexlow();
+  void createScaleFromQ();
+  void scaleQ();
+  void scaleA();
+  void scaleC();
+  void scaleg();
+  void scalexupp();
+  void scalexlow();
 
-  virtual void flipg();
-  virtual void flipQ();
+  void flipg();
+  void flipQ();
 
   double datanorm() const override;
   virtual void datainput() {};
