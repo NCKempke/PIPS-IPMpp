@@ -20,6 +20,9 @@
 #include <assert.h>
 #include "pipsport.h"
 
+
+using PERMUTATION = std::vector<unsigned int>;
+
 const double pips_eps = 1e-13;
 const double pips_eps0 = 1e-40;
 
@@ -117,9 +120,8 @@ inline bool PIPSisZeroFeas(double val)
 }
 
 template<typename T>
-inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>& vec)
+inline void permuteVector(const PERMUTATION& perm, std::vector<T>& vec)
 {
-//   assert( permutationIsValid(perm) ); TODO...
    assert( perm.size() == vec.size() );
 
    std::vector<T> tmp(vec.size());
@@ -127,6 +129,17 @@ inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>&
    for( size_t i = 0; i < vec.size(); ++i )
       tmp[i] = vec[perm[i]];
    vec = tmp;
+}
+
+inline PERMUTATION getInversePermutation(const PERMUTATION& perm)
+{
+   size_t size = perm.size();
+   PERMUTATION perm_inv(size, 0);
+
+   for( size_t i = 0; i < size; i++ )
+      perm_inv[perm[i]] = i;
+
+   return perm_inv;
 }
 
 inline int PIPSgetnOMPthreads()

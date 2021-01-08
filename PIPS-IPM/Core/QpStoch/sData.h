@@ -46,12 +46,9 @@ class sData : public QpGenData {
   
 private: 
 
-  // returns inverse permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkVarsPermInv() const;
-  // returns inverse permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkConsEqPermInv () const;
-  // returns inverse permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkConsIneqPermInv() const;
+  PERMUTATION getLinkVarsPermInv() const;
+  PERMUTATION getLinkConsEqPermInv () const;
+  PERMUTATION getLinkConsIneqPermInv() const;
 
 public:
   int getLocalnx() const;
@@ -96,8 +93,10 @@ public:
 
   bool isRootNodeInSync() const;
 
-private:
-  void getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C);
+protected:
+  static PERMUTATION getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
+        const std::vector<int>& linkStartBlockId, int n_links_after_split );
+
   void reorderLinkingConstraintsAccordingToSplit();
   void splitDataAccordingToTree();
 
@@ -158,8 +157,8 @@ private:
   constexpr static int threshold_global_vars{0};
   constexpr static int nLinkStats{6};
   constexpr static double minStructuredLinksRatio{0.5};
-  static std::vector<unsigned int> get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
-  static std::vector<unsigned int> getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
+  static PERMUTATION get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
+  static PERMUTATION getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
         std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals);
 
   // returns number of block rows
@@ -227,17 +226,17 @@ private:
   std::vector<int> linkStartBlockLengthsA;
   std::vector<int> linkStartBlockLengthsC;
 
-  std::vector<unsigned int> linkVarsPermutation;
-  std::vector<unsigned int> linkConsPermutationA;
-  std::vector<unsigned int> linkConsPermutationC;
+  PERMUTATION linkVarsPermutation;
+  PERMUTATION linkConsPermutationA;
+  PERMUTATION linkConsPermutationC;
   std::vector<bool> isSCrowLocal;
   std::vector<bool> isSCrowMyLocal;
 
   void initDistMarker(int blocksStart, int blocksEnd);
 
-
-  void permuteLinkingVars( const std::vector<unsigned int>& perm );
-  void permuteLinkingCons( const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC );
+  void permuteLinkStructureDetection( const PERMUTATION& perm_A, const PERMUTATION& perm_C );
+  void permuteLinkingVars( const PERMUTATION& perm );
+  void permuteLinkingCons( const PERMUTATION& permA, const PERMUTATION& permC );
 public:
   void printRanges() const;
 };

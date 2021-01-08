@@ -17,18 +17,6 @@
 #include <numeric>
 #include <functional>
 
-static
-std::vector<unsigned int> getInversePermutation(const std::vector<unsigned int>& perm)
-{
-   size_t size = perm.size();
-   std::vector<unsigned int> perm_inv(size, 0);
-
-   for( size_t i = 0; i < size; i++ )
-      perm_inv[perm[i]] = i;
-
-   return perm_inv;
-}
-
 static bool blockIsInRange(int block, int blocksStart, int blocksEnd)
 {
    return ((block >= (blocksStart - 1) && block < blocksEnd) || block == -1);
@@ -988,15 +976,15 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpperDist(int blocksStart, int 
    return (new SparseSymMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
 }
 
-std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals)
+PERMUTATION sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals)
 {
    const size_t n_link_vars = link_vars_n_blocks.size();
    n_globals = 0;
 
    if( n_link_vars == 0 )
-      return std::vector<unsigned int>();
+      return PERMUTATION();
 
-   std::vector<unsigned int> permvec(n_link_vars, 0);
+   PERMUTATION permvec(n_link_vars, 0);
 
    int count = 0;
    int back_count = n_link_vars - 1;
@@ -1064,7 +1052,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
    return permvec;
 }
 
-std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
+PERMUTATION sData::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
       std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals)
 {
    assert( linkStartBlockId.size() == n_blocks_per_row.size() );
@@ -1072,9 +1060,9 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    n_globals = 0;
 
    if( n_links == 0 )
-      return std::vector<unsigned int>();
+      return PERMUTATION();
 
-   std::vector<unsigned int> permvec(n_links, 0);
+   PERMUTATION permvec(n_links, 0);
    std::vector<int> w(nBlocks + 1, 0);
 
    /* count the 2-links per block - the ones starting at block -1 are no 2-links and are counted in w[0] */
@@ -1696,107 +1684,61 @@ sData* sData::shaveDenseBorder( const sTree* tree )
    return hierarchical_top;
 }
 
-void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C)
+PERMUTATION sData::getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
+      const std::vector<int>& linkStartBlockId, int n_links_after_split )
 {
-   perm_A.resize( linkConsPermutationA.size() );
-   perm_C.resize( linkConsPermutationC.size() );
+   /* assuming that global links have already been ordered last */
+   PERMUTATION perm( linkStartBlockId.size() );
 
-   assert( linkStartBlockIdA.size() == linkConsPermutationA.size() );
-   assert( linkStartBlockIdC.size() == linkConsPermutationC.size() );
-
-   assert( stochNode->myl() >= 0 );
-   assert( stochNode->mzl() >= 0 );
-   const int n_global_links_eq_after_split = stochNode->myl();
-   const int n_global_links_ineq_after_split = stochNode->mzl();
-
-   assert( linkStartBlockIdA.size() >= static_cast<size_t>(n_global_links_eq_after_split + n_global_eq_linking_conss) );
-   assert( linkStartBlockIdC.size() >= static_cast<size_t>(n_global_links_ineq_after_split + n_global_ineq_linking_conss) );
+   assert( n_links_after_split >= 0 );
 
 #ifndef NDEBUG
    int last_map_block = -1;
 #endif
-   const std::vector<unsigned int>& map_block_subcomm = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
-   assert( false && "TODO: check..");
+
+   size_t pos_child_twolinks = 0;
+   const size_t end_child_twolinks = static_cast<size_t>(linkStartBlockId.size() - n_links_after_split);
+   size_t pos_remaining_links = end_child_twolinks;
+
+   for( size_t i = 0; i < linkStartBlockId.size(); ++i )
    {
-      size_t pos_local_twolinks_A = 0;
-      const size_t end_local_twolinks_A = static_cast<size_t>(linkStartBlockIdA.size() - n_global_links_eq_after_split - n_global_eq_linking_conss);
-      size_t pos_global_linksA = end_local_twolinks_A;
+      assert( last_map_block <= linkStartBlockId[i] );
 
-      for( size_t i = 0; i < linkStartBlockIdA.size(); ++i )
+      /* we arrived at the global links which will all stay at this node */
+      if( linkStartBlockId[i] == - 1 )
       {
-         assert( last_map_block <= linkStartBlockIdA[i] );
+         assert( pos_child_twolinks == end_child_twolinks );
+         perm[i] = pos_remaining_links;
+         ++pos_remaining_links;
+      }
+      else
+      {
+         assert( 0 <= linkStartBlockId[i] );
+         const size_t start_block_link_i = static_cast<size_t>(linkStartBlockId[i]);
+         assert( start_block_link_i < map_block_subtree.size() );
 
-         if( linkStartBlockIdA[i] == - 1 )
+         if( start_block_link_i == map_block_subtree.size() - 1 )
          {
-            assert( pos_local_twolinks_A == end_local_twolinks_A );
-            perm_A[pos_global_linksA] = i;
-            ++pos_global_linksA;
+            perm[i] = pos_child_twolinks;
+            ++pos_child_twolinks;
+         }
+         else if( map_block_subtree[start_block_link_i] != map_block_subtree[start_block_link_i + 1] )
+         {
+            perm[i] = pos_remaining_links;
+            ++pos_remaining_links;
          }
          else
          {
-            assert( 0 <= linkStartBlockIdA[i] );
-            const size_t start_block_link_i = static_cast<size_t>(linkStartBlockIdA[i]);
-
-            assert( start_block_link_i < map_block_subcomm.size() );
-
-            if( start_block_link_i == map_block_subcomm.size() - 1 )
-               perm_A[pos_local_twolinks_A] = i;
-            else if( map_block_subcomm[start_block_link_i] != map_block_subcomm[start_block_link_i + 1] )
-            {
-               perm_A[pos_global_linksA] = i;
-               ++pos_global_linksA;
-            }
-            else
-            {
-               assert( map_block_subcomm[start_block_link_i] == map_block_subcomm[start_block_link_i + 1] );
-               perm_A[pos_local_twolinks_A] = i;
-               ++pos_local_twolinks_A;
-            }
+            assert( map_block_subtree[start_block_link_i] == map_block_subtree[start_block_link_i + 1] );
+            perm[i] = pos_child_twolinks;
+            ++pos_child_twolinks;
          }
       }
-      assert( pos_local_twolinks_A == end_local_twolinks_A );
-      assert( pos_global_linksA == linkStartBlockIdA.size() );
    }
-
-   {
-      size_t pos_local_twolinks_C = 0;
-      const size_t end_local_twolinks_C = static_cast<size_t>(linkStartBlockIdC.size() - n_global_links_ineq_after_split - n_global_ineq_linking_conss);
-      size_t pos_global_linksC = end_local_twolinks_C;
-
-      for( size_t i = 0; i < linkStartBlockIdC.size(); ++i )
-      {
-         assert( last_map_block <= linkStartBlockIdC[i] );
-
-         if( linkStartBlockIdC[i] == - 1 )
-         {
-            assert( pos_local_twolinks_C == end_local_twolinks_C );
-            perm_C[pos_global_linksC] = i;
-            ++pos_global_linksC;
-         }
-         else
-         {
-            assert( 0 <= linkStartBlockIdC[i] );
-            const size_t start_block_link_i = static_cast<size_t>(linkStartBlockIdC[i]);
-            assert( start_block_link_i < map_block_subcomm.size() );
-
-            if( start_block_link_i == map_block_subcomm.size() - 1 )
-               perm_C[pos_local_twolinks_C] = i;
-            else if( map_block_subcomm[start_block_link_i] != map_block_subcomm[start_block_link_i + 1] )
-            {
-               perm_C[pos_global_linksC] = i;
-               ++pos_global_linksC;
-            }
-            else
-            {
-               assert( map_block_subcomm[start_block_link_i] == map_block_subcomm[start_block_link_i + 1] );
-               perm_C[pos_local_twolinks_C] = i;
-               ++pos_local_twolinks_C;
-            }
-         }
-      }
-      assert( pos_local_twolinks_C == end_local_twolinks_C );
-      assert( pos_global_linksC == linkStartBlockIdC.size() );
-   }
+   assert( pos_child_twolinks == end_child_twolinks );
+   assert( pos_remaining_links == linkStartBlockId.size() );
+   assert( permutationIsValid(perm) );
+   return perm;
 }
 
 void sData::reorderLinkingConstraintsAccordingToSplit()
@@ -1807,23 +1749,14 @@ void sData::reorderLinkingConstraintsAccordingToSplit()
 
    // TODO assert tree compatibility (one split at exactly this node)
 
-   std::vector<unsigned int> perm_A;
-   std::vector<unsigned int> perm_C;
-   getLinkConsSplitPermutations(perm_A, perm_C);
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
-   assert( permutationIsValid(perm_A) );
-   assert( permutationIsValid(perm_C) );
+   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdA, stochNode->myl() );
+   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdC, stochNode->mzl() );
 
    /* which blocks do the individual two-links start in */
    permuteLinkingCons(perm_A, perm_C);
-   permuteVector(perm_A, linkStartBlockIdA);
-   permuteVector(perm_A, n_blocks_per_link_row_A);
-
-   permuteVector(perm_C, linkStartBlockIdC);
-   permuteVector(perm_C, n_blocks_per_link_row_C);
-
-   permuteVector(perm_A, linkConsPermutationA);
-   permuteVector(perm_C, linkConsPermutationC);
+   permuteLinkStructureDetection(perm_A, perm_C);
 }
 
 void sData::splitDataAccordingToTree()
@@ -1859,7 +1792,22 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    return hierarchical_top;
 }
 
-void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC)
+void sData::permuteLinkStructureDetection( const PERMUTATION& perm_A, const PERMUTATION& perm_C )
+{
+   assert( isSCrowLocal.empty() );
+   assert( isSCrowMyLocal.empty() );
+
+   permuteVector(perm_A, linkStartBlockIdA);
+   permuteVector(perm_A, n_blocks_per_link_row_A);
+
+   permuteVector(perm_C, linkStartBlockIdC);
+   permuteVector(perm_C, n_blocks_per_link_row_C);
+
+   permuteVector(perm_A, linkConsPermutationA);
+   permuteVector(perm_C, linkConsPermutationC);
+}
+
+void sData::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATION& permC)
 {
    assert( permutationIsValid(permA) );
    assert( permutationIsValid(permC) );
@@ -1874,7 +1822,7 @@ void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std
    dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
 }
 
-void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
+void sData::permuteLinkingVars(const PERMUTATION& perm)
 {
    assert( permutationIsValid(linkVarsPermutation) );
    assert( !is_hierarchy_root );
@@ -1897,9 +1845,9 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
 
    assert( unperm_vars->children.size() == unpermData.children.size() );
 
-   const std::vector<unsigned int> perm_inv_link_vars = getLinkVarsPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_eq = getLinkConsEqPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
+   const PERMUTATION perm_inv_link_vars = getLinkVarsPermInv();
+   const PERMUTATION perm_inv_link_cons_eq = getLinkConsEqPermInv();
+   const PERMUTATION perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
 
    if( perm_inv_link_vars.size() != 0 )
       unperm_vars->permuteVec0Entries( perm_inv_link_vars, true );
@@ -1922,9 +1870,9 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
    assert( unperm_resids->children.size() == unpermData.children.size() );
 
-   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
+   const PERMUTATION perm_inv_link_vars = this->getLinkVarsPermInv();
+   const PERMUTATION perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
+   const PERMUTATION perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
    /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already */
    const bool do_not_permut_bounds = is_hierarchy_root ? true : false;
@@ -2209,7 +2157,7 @@ void sData::printLinkVarsStats()
          }
 
       assert(n - nlocal >= 0);
-      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")" <<   "\n";
+      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")\n";
 
       std::cout << "   Block0 exclusive vars " << count0 << "\n";
       std::cout << "   LC exclusive vars " << countLC << "\n";
@@ -2248,7 +2196,7 @@ void sData::printLinkConsStats()
                nlocal += linkSizes[i];
                std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")" <<   "\n";
+         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")\n";
 
       }
    }
@@ -2277,7 +2225,7 @@ void sData::printLinkConsStats()
                nlocal += linkSizes[i];
                std::cout << "inequality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")" <<   "\n";
+         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")\n";
       }
    }
 }
@@ -2288,21 +2236,23 @@ sData::~sData()
       delete children[it];
 }
 
-std::vector<unsigned int> sData::getLinkVarsPermInv() const
+PERMUTATION sData::getLinkVarsPermInv() const
 {
    if( is_hierarchy_root )
       return this->children[0]->getLinkVarsPermInv();
    else
       return getInversePermutation(linkVarsPermutation);
 }
-std::vector<unsigned int> sData::getLinkConsEqPermInv() const
+
+PERMUTATION sData::getLinkConsEqPermInv() const
 {
    if( is_hierarchy_root )
       return this->children[0]->getLinkConsEqPermInv();
    else
       return getInversePermutation(linkConsPermutationA);
 }
-std::vector<unsigned int> sData::getLinkConsIneqPermInv() const
+
+PERMUTATION sData::getLinkConsIneqPermInv() const
 {
    if( is_hierarchy_root )
       return this->children[0]->getLinkConsIneqPermInv();
