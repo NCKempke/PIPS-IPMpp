@@ -53,6 +53,13 @@ public:
   virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
 			     OoqpVector& z_in, const OoqpVector& vars_in ) const = 0;
 
+  /** create x shaped vector using LinearAlgebraPackage */
+  virtual OoqpVector* makePrimalVector() const;
+  /** create dual A shaped vector using LinearAlgebraPackage */
+  virtual OoqpVector* makeDualYVector() const;
+  /** create dual C shaped vector using LinearAlgebraPackage */
+  virtual OoqpVector* makeDualZVector() const;
+
   ~QpGen() override = default;
 };
 

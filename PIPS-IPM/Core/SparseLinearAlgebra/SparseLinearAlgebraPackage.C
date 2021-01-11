@@ -16,23 +16,23 @@ SparseLinearAlgebraPackage * SparseLinearAlgebraPackage::soleInstance()
   return la.ptr_unsave();
 }
 
-SymMatrix * SparseLinearAlgebraPackage::newSymMatrix( int size, int nnz)
+SymMatrix * SparseLinearAlgebraPackage::newSymMatrix( int size, int nnz) const
 {
   return new SparseSymMatrix( size, nnz );
 }
 
 GenMatrix * SparseLinearAlgebraPackage::newGenMatrix( int m, int n,
-							  int nnz )
+							  int nnz ) const
 {
   return new SparseGenMatrix( m, n, nnz );
 }
   
-OoqpVector * SparseLinearAlgebraPackage::newVector( int n )
+OoqpVector * SparseLinearAlgebraPackage::newVector( int n ) const
 {
   return new SimpleVector(n);
 }
  
-void SparseLinearAlgebraPackage::whatami( char type[32] )
+void SparseLinearAlgebraPackage::whatami( char type[32] ) const
 {
   char type_[] = "SparseLinearAlgebraPackage";
 

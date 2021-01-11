@@ -20,23 +20,23 @@ DenseLinearAlgebraPackage * DenseLinearAlgebraPackage::soleInstance()
 }
 
 SymMatrix *
-DenseLinearAlgebraPackage::newSymMatrix( int size, int /* nnz */ )
+DenseLinearAlgebraPackage::newSymMatrix( int size, int /* nnz */ ) const
 {
   return new DenseSymMatrix( size );
 }
 
 GenMatrix *
-DenseLinearAlgebraPackage::newGenMatrix( int m, int n, int /* nnz */)
+DenseLinearAlgebraPackage::newGenMatrix( int m, int n, int /* nnz */) const
 {
   return new DenseGenMatrix( m, n );
 }
   
-OoqpVector * DenseLinearAlgebraPackage::newVector( int n )
+OoqpVector * DenseLinearAlgebraPackage::newVector( int n ) const
 {
   return new SimpleVector(n);
 }
  
-void DenseLinearAlgebraPackage::whatami( char type[32] )
+void DenseLinearAlgebraPackage::whatami( char type[32] ) const
 {
   char type_[] = "DenseLinearAlgebraPackage";
 
