@@ -372,20 +372,20 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
    }
 
 #ifndef NDEBUG
-   if( colSparsity )
-   {
-      for( int nr = 0; nr < nrhss; nr++ )
-      {
-         for( int i = 0; i < n; i++ )
-         {
-            const int rhspos = nr * n + i;
-            if( rhss[rhspos] != 0.0 )
-               assert(colSparsity[i] == 1);
-            else if( nrhss == 1 ) // does not work with zeroes in matrix, e.g. callback example
-               assert(colSparsity[i] == 0);
-         }
-      }
-   }
+//   if( colSparsity )
+//   {
+//      for( int nr = 0; nr < nrhss; nr++ )
+//      {
+//         for( int i = 0; i < n; i++ )
+//         {
+//            const int rhspos = nr * n + i;
+//            if( rhss[rhspos] != 0.0 )
+//               assert(colSparsity[i] == 1);
+//            else if( nrhss == 1 ) // does not work with zeroes in matrix, e.g. callback example
+//               assert(colSparsity[i] == 0);
+//         }
+//      }
+//   }
 #endif
 
    /* same for mkl_pardiso and pardiso */
