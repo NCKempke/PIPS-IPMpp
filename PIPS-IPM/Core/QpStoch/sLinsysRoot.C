@@ -25,96 +25,29 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
 {
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
     assert( is_hierarchy_root );
-
-  assert( dd!=nullptr );
-  assert( prob_ );
-
-#ifdef TIMING
-  int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  if( myRank == 0 )
-     std::cout << "Rank 0: create LinSys children ..." << std::endl;
-#endif
-
-  createChildren(prob_);
-
-#ifdef TIMING
-  if( myRank == 0 )
-     std::cout << "Rank 0: children created" << std::endl;
-#endif
-
-  precondSC = SCsparsifier(mpiComm);
-
-  if( outerSolve || xyzs_solve_print_residuals )
-  {
-    // stuff for iterative refimenent and BiCG
-    sol  = factory->makeRhs();
-    res  = factory->makeRhs();
-    resx = factory->makePrimalVector();
-    resy = factory->makeDualYVector();
-    resz = factory->makeDualZVector();
-
-    if( outerSolve == 2 )
-    {
-      //BiCGStab; additional vectors needed
-      sol2 = factory->makeRhs();
-      sol3 = factory->makeRhs();
-      res2 = factory->makeRhs();
-      res3 = factory->makeRhs();
-      res4 = factory->makeRhs();
-      res5 = factory->makeRhs();
-      // TODO : deleted where? -> factory?
-    }
-  }
-
-  usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
-
-   // use sparse KKT if link structure is present
-  hasSparseKkt = prob_->exploitingLinkStructure();
-  allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
-
-  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     assert( allreduce_kkt );
-
-  usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
-  MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
-  initProperChildrenRange();
+  init();
 }
 
 sLinsysRoot::sLinsysRoot(sFactory* factory_,
 			 sData* prob_,
-			 OoqpVector* dd_, 
+			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_)
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_)
+  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, true)
 {
-  createChildren(prob_);
+   init();
+}
+
+void sLinsysRoot::init()
+{
+  createChildren(data);
 
   precondSC = SCsparsifier(mpiComm);
-
-  if( outerSolve || xyzs_solve_print_residuals )
-  {
-      // stuff for iterative refimenent and BiCG 
-      sol  = factory->makeRhs();
-      res  = factory->makeRhs();
-      resx = factory->makePrimalVector();
-      resy = factory->makeDualYVector();
-      resz = factory->makeDualZVector();
-    if( outerSolve == 2 ) {
-      //BiCGStab; additional vectors needed
-      sol2 = factory->makeRhs();
-      sol3 = factory->makeRhs();
-      res2 = factory->makeRhs();
-      res3 = factory->makeRhs();
-      res4 = factory->makeRhs();
-      res5 = factory->makeRhs();
-    }
-  }
-
   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
 
   // use sparse KKT if (enough) 2 links are present
-  hasSparseKkt = prob_->exploitingLinkStructure();
+  hasSparseKkt = data->exploitingLinkStructure();
   allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
      assert( allreduce_kkt );
@@ -123,6 +56,7 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
 
   initProperChildrenRange();
+
 }
 
 sLinsysRoot::~sLinsysRoot()

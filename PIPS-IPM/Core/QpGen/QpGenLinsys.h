@@ -53,7 +53,7 @@ protected:
   /** right-hand side of the system */
   OoqpVector* rhs{};
 
-  QpGenLinsys();
+  QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs );
 
   /** dimensions of the vectors in the general QP formulation */
   long long nx{0};
@@ -110,6 +110,8 @@ protected:
 
 public:
   QpGenLinsys( QpGen* factory, QpGenData* data );
+  QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
+        OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs );
 
   ~QpGenLinsys() override;
 

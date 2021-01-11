@@ -256,9 +256,8 @@ Data* sFactory::makeData()
          std::cout << "IO second part took " << t2 << " sec\n";
 #endif
 
-   data = new sData(tree, c, Q, xlow, ixlow, ixlow->numberOfNonzeros(), xupp,
-         ixupp, ixupp->numberOfNonzeros(), A, b, C, clow, iclow,
-         iclow->numberOfNonzeros(), cupp, icupp, icupp->numberOfNonzeros());
+   data = new sData(tree, c, Q, xlow, ixlow, xupp, ixupp,
+         A, b, C, clow, iclow, cupp, icupp );
    return data;
 }
 

@@ -17,6 +17,7 @@ QpGenData::QpGenData(LinearAlgebraPackage * la_,
 		     long long nx_, long long my_, long long mz_,
 		     long long nnzQ, long long nnzA, long long nnzC)
 {
+   assert( false && "never called" );
   la = la_;
 
   nx = nx_;
@@ -49,7 +50,12 @@ QpGenData::QpGenData( LinearAlgebraPackage * la_in,
 		      GenMatrix  * A_in, OoqpVector * bA_in,
 		      GenMatrix  * C_in,
 		      OoqpVector * clow_in, OoqpVector * iclow_in,
-		      OoqpVector * cupp_in, OoqpVector * icupp_in )
+		      OoqpVector * cupp_in, OoqpVector * icupp_in ) :
+        nxlow{ ixlow_in->numberOfNonzeros() },
+        nxupp{ ixupp_in->numberOfNonzeros() },
+        mclow{ iclow_in->numberOfNonzeros() },
+        mcupp{ icupp_in->numberOfNonzeros() }
+
 {
   SpReferTo( g,     c_in  );
   SpReferTo( bA,    bA_in );

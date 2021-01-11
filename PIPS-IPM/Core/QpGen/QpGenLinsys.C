@@ -143,7 +143,7 @@ static bool isZero(double val, int& flag)
    return false;
 }
 
-QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) :
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs ) :
   factory( factory_ ),
   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
@@ -154,60 +154,65 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) :
   outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
   xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL") )
 {
-  assert( false && " currently never called .. " );
+   assert( factory_ );
+   assert( prob );
 
-  nx = prob->nx; my = prob->my; mz = prob->mz;
+   nx = prob->nx; my = prob->my; mz = prob->mz;
+   ixlow = prob->ixlow;
+   ixupp = prob->ixupp;
+   iclow = prob->iclow;
+   icupp = prob->icupp;
 
-  ixlow = prob->ixlow;
-  ixupp = prob->ixupp;
-  iclow = prob->iclow;
-  icupp = prob->icupp;
+   nxlow = prob->nxlow;
+   nxupp = prob->nxupp;
+   mclow = prob->mclow;
+   mcupp = prob->mcupp;
 
-  nxlow = ixlow->numberOfNonzeros();
-  nxupp = ixupp->numberOfNonzeros();
-  mclow = iclow->numberOfNonzeros();
-  mcupp = icupp->numberOfNonzeros();
+   if( create_iter_ref_vecs )
+   {
+      if( outerSolve || xyzs_solve_print_residuals )
+      {
+        //for iterative refinement or BICGStab
+        sol  = factory->makeRhs();
+        res  = factory->makeRhs();
+        resx = factory->makePrimalVector();
+        resy = factory->makeDualYVector();
+        resz = factory->makeDualZVector();
 
-  if( nxupp + nxlow > 0 ) {
-    dd      = factory->makePrimalVector();
-    dq      = factory->makePrimalVector();
-    prob->getDiagonalOfQ( *dq );
-  }
-  nomegaInv   = factory->makeDualZVector();
-  rhs         = factory->makeRhs();
+        if( outerSolve == 2 )
+        {
+          //BiCGStab; additional vectors needed
+          sol2 = factory->makeRhs();
+          sol3 = factory->makeRhs();
+          res2 = factory->makeRhs();
+          res3  = factory->makeRhs();
+          res4  = factory->makeRhs();
+          res5  = factory->makeRhs();
+        }
+      }
+   }
+};
 
-  if( outerSolve || xyzs_solve_print_residuals )
-  {
-    //for iterative refinement or BICGStab
-    sol  = factory->makeRhs();
-    res  = factory->makeRhs();
-    resx = factory->makePrimalVector();
-    resy = factory->makeDualYVector();
-    resz = factory->makeDualZVector();
-
-    if( outerSolve == 2 )
-    {
-      //BiCGStab; additional vectors needed
-      sol2 = factory->makeRhs();
-      sol3 = factory->makeRhs();
-      res2 = factory->makeRhs();
-      res3  = factory->makeRhs();
-      res4  = factory->makeRhs();
-      res5  = factory->makeRhs();
-    }
-  }
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
+      OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, prob, create_iter_ref_vecs )
+{
+   dd = dd_;
+   dq = dq_;
+   nomegaInv = nomegaInv_;
+   rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys()
- : outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
-   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
-   outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
-   outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
-   outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
-   outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-   outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-   xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL") )
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) : QpGenLinsys( factory_, prob, true )
 {
+  if( nxupp + nxlow > 0 )
+  {
+     dd = factory->makePrimalVector();
+     dq = factory->makePrimalVector();
+     prob->getDiagonalOfQ( *dq );
+  }
+
+  nomegaInv = factory->makeDualZVector();
+  rhs = factory->makeRhs();
 }
 
 QpGenLinsys::~QpGenLinsys()

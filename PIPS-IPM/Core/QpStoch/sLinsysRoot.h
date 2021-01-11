@@ -31,6 +31,8 @@ class sLinsysRoot : public sLinsys {
   void createChildren(sData* prob);
   void deleteChildren() override;
 
+ private:
+  void init();
  public:
   std::vector<sLinsys*> children;
 

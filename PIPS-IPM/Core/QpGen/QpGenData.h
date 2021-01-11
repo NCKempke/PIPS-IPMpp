@@ -57,7 +57,14 @@ public:
   OoqpVectorHandle iclow; // index lower bounds
   OoqpVectorHandle sc; // scale
 
-  long long nx, my, mz;
+  long long nx{0};
+  long long my{0};
+  long long mz{0};
+
+  long long nxlow{0};
+  long long nxupp{0};
+  long long mclow{0};
+  long long mcupp{0};
 
   /** constructor that makes data objects of the specified dimensions */
   QpGenData(LinearAlgebraPackage * la,

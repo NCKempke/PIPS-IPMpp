@@ -25,21 +25,17 @@ class sData : public QpGenData {
       passed as arguments */
   sData( const sTree* stochNode,
 	 OoqpVector * c, SymMatrix * Q,
-	 OoqpVector * xlow, OoqpVector * ixlow, long long nxlow,
-	 OoqpVector * xupp, OoqpVector * ixupp, long long nxupp,
+	 OoqpVector * xlow, OoqpVector * ixlow,
+	 OoqpVector * xupp, OoqpVector * ixupp,
 	 GenMatrix * A, OoqpVector * bA,
 	 GenMatrix * C,
-	 OoqpVector * clow, OoqpVector * iclow, long long mclow,
-	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp,
+	 OoqpVector * clow, OoqpVector * iclow,
+	 OoqpVector * cupp, OoqpVector * ciupp,
 	 bool add_children = true, bool is_hierarchy_root = false );
 
   std::vector<sData*> children;
   void AddChild(sData* child);
   const sTree* stochNode;
-
-public:
-  long long nxlow, nxupp, mclow, mcupp;
-
   
 private: 
 //  std::vector<unsigned int> getCollapsedHierarchicalLinkVarsPerm() const;

@@ -1198,25 +1198,20 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
 }
 
 sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
-        OoqpVector * xlow_in, OoqpVector * ixlow_in, long long nxlow_,
-        OoqpVector * xupp_in, OoqpVector * ixupp_in, long long nxupp_,
+        OoqpVector * xlow_in, OoqpVector * ixlow_in,
+        OoqpVector * xupp_in, OoqpVector * ixupp_in,
         GenMatrix  * A_in, OoqpVector * bA_in,
         GenMatrix  * C_in,
-        OoqpVector * clow_in, OoqpVector * iclow_in, long long mclow_,
-        OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_,
+        OoqpVector * clow_in, OoqpVector * iclow_in,
+        OoqpVector * cupp_in, OoqpVector * icupp_in,
         bool add_children, bool is_hierarchy_root
         )
   : QpGenData(SparseLinearAlgebraPackage::soleInstance(),
-         c_in, Q_in,
-         xlow_in, ixlow_in, xupp_in, ixupp_in,
-         A_in, bA_in,
-         C_in,
-         clow_in, iclow_in, cupp_in, icupp_in),
+         c_in, Q_in, xlow_in, ixlow_in, xupp_in, ixupp_in,
+         A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in),
          is_hierarchy_root( is_hierarchy_root ),
          useLinkStructure( false )
 {
-  nxlow = nxlow_; nxupp = nxupp_;
-  mclow = mclow_; mcupp = mcupp_;
   stochNode = tree_;
 
   if( add_children )
@@ -1545,10 +1540,10 @@ sData* sData::cloneFull(bool switchToDynamicStorage) const
 
    const sTree* tree_clone = stochNode;
 
+   // TODO : proper copy ctor..
    sData* clone = new sData(tree_clone, c_clone, Q_clone, xlow_clone,
-         ixlow_clone, nxlow, xupp_clone, ixupp_clone, nxupp, A_clone, bA_clone,
-         C_clone, clow_clone, iclow_clone, mclow, cupp_clone, icupp_clone,
-         mcupp);
+         ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
+         C_clone, clow_clone, iclow_clone, cupp_clone, icupp_clone );
 
    return clone;
 }
@@ -1577,12 +1572,13 @@ sData::createChildren()
   for(size_t it=0; it<gSt.children.size(); it++) {
     AddChild(new sData(stochNode->getChildren()[it],
 	       gSt.children[it], QSt.children[it],
-	       xlowSt.children[it], ixlowSt.children[it], nxlow,
-	       xuppSt.children[it], ixuppSt.children[it], nxupp,
+	       xlowSt.children[it], ixlowSt.children[it],
+	       xuppSt.children[it], ixuppSt.children[it],
 	       ASt.children[it], bASt.children[it],
 	       CSt.children[it],
-	       clowSt.children[it], iclowSt.children[it], mclow,
-	       cuppSt.children[it], icuppSt.children[it], mcupp ));
+	       clowSt.children[it], iclowSt.children[it],
+	       cuppSt.children[it], icuppSt.children[it] )
+    );
   }
 }
 
@@ -1777,9 +1773,9 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
    sData* hierarchical_top = new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
-         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
+         ixlow_hier.ptr_unsave(), bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(),
          A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
-         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
+         iclow_hier.ptr_unsave(), bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(),
          false, true);
 
    assert( ixlow_hier->vec );
