@@ -326,6 +326,12 @@ OoqpVector* sFactory::makeDualZVector() const
    return tree->newDualZVector();
 }
 
+OoqpVector* sFactory::makeRhs() const
+{
+   assert( !la );
+   return tree->newRhs();
+}
+
 void sFactory::iterateStarted()
 {
   iterTmMonitor.recIterateTm_start();

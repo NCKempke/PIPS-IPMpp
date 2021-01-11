@@ -48,6 +48,8 @@ class sFactory : public QpGen
   OoqpVector* makeDualYVector() const override;
   /** create dual C shaped vector using tree */
   OoqpVector* makeDualZVector() const override;
+  /** create rhs for augmented system using tree */
+  OoqpVector* makeRhs() const override;
 
 
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
