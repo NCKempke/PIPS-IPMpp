@@ -1761,7 +1761,9 @@ void sData::splitDataAndAddAsChildLayer()
 {
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
-   GenMatrixHandle A_hier( dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockIdA, map_block_subtree) );
+
+   StochGenMatrix& amat = dynamic_cast<StochGenMatrix&>(*A);
+   amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree);
 //
 //
 //   assert( false );
@@ -1816,9 +1818,10 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    assert( tree->isHierarchicalRoot() );
    assert( tree->nChildren() == 1 );
 
-   sData* hierarchical_top = shaveDenseBorder( tree );
-
    this->splitDataAccordingToTree();
+
+   assert( false && "TODO :: check.." );
+   sData* hierarchical_top = shaveDenseBorder( tree );
 
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Hierarchical data built\n";

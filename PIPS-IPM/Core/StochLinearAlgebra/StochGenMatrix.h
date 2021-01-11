@@ -15,7 +15,7 @@
 
 class StochGenMatrix : public GenMatrix {
 protected:
-
+  StochGenMatrix() = default;
 public:
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
    *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
@@ -44,16 +44,17 @@ public:
   virtual StochGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const;
   virtual StochGenMatrix* cloneFull(bool switchToDynamicStorage = false) const;
 
-  virtual void AddChild(StochGenMatrix* child);
+  virtual void AddChild( StochGenMatrix* child );
 
   std::vector<StochGenMatrix*> children;
-  GenMatrix* Amat;
-  GenMatrix* Bmat;
-  GenMatrix* Blmat;
+  GenMatrix* Amat{};
+  GenMatrix* Bmat{};
+  GenMatrix* Blmat{};
 
-  long long m, n;
-  MPI_Comm mpiComm;
-  int iAmDistrib;
+  long long m{-1};
+  long long n{-1};
+  MPI_Comm mpiComm{MPI_COMM_NULL};
+  int iAmDistrib{false};
  private:
   bool hasSparseMatrices() const;
 
@@ -225,7 +226,7 @@ public:
   virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const;
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
-  virtual StochGenMatrix* splitMatrix( const std::vector<int>& linkcons_startblock_id, const std::vector<unsigned int>& map_blocks_children );
+  virtual void splitMatrix( const std::vector<int>& twolinks_startin_block_id, const std::vector<unsigned int>& map_blocks_children );
 
 protected:
   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
@@ -362,8 +363,8 @@ public:
   void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector*, StochVector*, SimpleVector*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
-  StochGenMatrix* splitMatrix( const std::vector<int>&, const std::vector<unsigned int>& ) override
-     { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
+  void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>& ) override
+     { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); };
 
   void recomputeSize( StochGenMatrix* ) override {};
  protected:

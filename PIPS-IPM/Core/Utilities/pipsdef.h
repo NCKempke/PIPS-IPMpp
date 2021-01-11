@@ -14,10 +14,12 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <set>
 #include <mpi.h>
-#include "omp.h"
 #include <limits>
 #include <assert.h>
+
+#include "omp.h"
 #include "pipsport.h"
 
 
@@ -140,6 +142,12 @@ inline PERMUTATION getInversePermutation(const PERMUTATION& perm)
       perm_inv[perm[i]] = i;
 
    return perm_inv;
+}
+
+template <typename T>
+inline int getNDistinctValues( const std::vector<T>& values )
+{
+   return std::set<T>(values.begin(), values.end()).size();
 }
 
 inline int PIPSgetnOMPthreads()

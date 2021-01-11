@@ -4,6 +4,8 @@
 #include "mpi.h"
 #include "sTreeCallbacks.h"
 
+#include <memory>
+
 class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>>
 {};
 
@@ -132,8 +134,8 @@ TEST_P(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
    std::vector<int> twoLinksStartBlockC(n_children, two_links_ineq_per_block);
    twoLinksStartBlockC[n_children - 1] = 0;
 
-   sTreeCallbacks* test_tree_split =
-         dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) );
+   std::unique_ptr<sTreeCallbacks> test_tree_split(
+         dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) ) );
 
    /// check root for right amount of linking constraints
    long long dummy, MYL, MZL;
@@ -190,8 +192,6 @@ TEST_P(HierarchicalSplittingTest, CorrectTreeSplitAndSizeAdjustment)
 
    EXPECT_EQ( sum_children_exclusive_eq_links + inner_root->myl(), MYL );
    EXPECT_EQ( sum_children_exclusive_ineq_links + inner_root->mzl(), MZL );
-
-   delete test_tree_split;
 }
 
 INSTANTIATE_TEST_SUITE_P(

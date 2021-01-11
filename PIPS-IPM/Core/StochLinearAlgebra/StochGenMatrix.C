@@ -2238,14 +2238,15 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& bor
    }
 }
 
-StochGenMatrix* StochGenMatrix::splitMatrix( const std::vector<int>& linkcons_startblock_id, const std::vector<unsigned int>& map_blocks_children )
+void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_startin_block_id, const std::vector<unsigned int>& map_blocks_children )
 {
    assert( children.size() == map_blocks_children.size() );
+   assert( twolinks_startin_block_id.size() == children.size() );
+   assert( twolinks_startin_block_id[children.size() - 1] == 0 );
 
    int dummy, m_links;
    Blmat->getSize(m_links, dummy);
-   assert( unsigned(m_links) == linkcons_startblock_id.size() );
-
+   assert( unsigned(m_links) >= twolinks_startin_block_id.size() );
 
 }
 
