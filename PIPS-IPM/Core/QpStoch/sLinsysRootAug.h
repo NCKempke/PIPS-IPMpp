@@ -22,7 +22,11 @@ class sLinsysRootAug : public sLinsysRoot {
 		 sData* prob_,
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
-		 OoqpVector* rhs_);
+		 OoqpVector* rhs_,
+       OoqpVector* primal_reg,
+       OoqpVector* dual_y_reg,
+       OoqpVector* dual_z_reg
+       );
   virtual ~sLinsysRootAug();
 
   void finalizeKKT( sData* prob, Variables* vars) override;

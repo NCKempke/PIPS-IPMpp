@@ -82,8 +82,12 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
-			       OoqpVector* rhs_)
-  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_)
+			       OoqpVector* rhs_,
+			       OoqpVector* primal_reg,
+			       OoqpVector* dual_y_reg,
+			       OoqpVector* dual_z_reg
+             )
+  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg)
 { 
    assert( pips_options::getBoolParameter( "HIERARCHICAL" ) );
    assert(locmyl >= 0 && locmzl >= 0);

@@ -33,8 +33,12 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
-			 OoqpVector* rhs_)
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, true)
+			 OoqpVector* rhs_,
+          OoqpVector* primal_reg,
+          OoqpVector* dual_y_reg,
+          OoqpVector* dual_z_reg
+)
+  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg, true)
 {
    init();
 }
@@ -609,6 +613,9 @@ void sLinsysRoot::createChildren(sData *prob)
    StochVector &dqst = dynamic_cast<StochVector&>(*dq);
    StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
    StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
+   StochVector &pregst = dynamic_cast<StochVector&>(*primal_reg);
+   StochVector &pyregst = dynamic_cast<StochVector&>(*dual_y_reg);
+   StochVector &pzregst = dynamic_cast<StochVector&>(*dual_z_reg);
 
    for( size_t it = 0; it < prob->children.size(); it++ )
    {
@@ -635,7 +642,9 @@ void sLinsysRoot::createChildren(sData *prob)
          {
             child = stochFactory->newLinsysLeaf(prob->children[it],
                   ddst.children[it], dqst.children[it],
-                  nomegaInvst.children[it], rhsst.children[it]);
+                  nomegaInvst.children[it], rhsst.children[it],
+                  pregst.children[it],
+                  pyregst.children[it], pzregst.children[it]);
          }
          else
          {
@@ -643,7 +652,9 @@ void sLinsysRoot::createChildren(sData *prob)
             assert(stochNode->getChildren()[it]);
             child = stochFactory->newLinsysRoot(prob->children[it],
                   ddst.children[it], dqst.children[it],
-                  nomegaInvst.children[it], rhsst.children[it]);
+                  nomegaInvst.children[it], rhsst.children[it],
+                  pregst.children[it],
+                  pyregst.children[it], pzregst.children[it]);
          }
       }
       assert( child != nullptr );

@@ -35,6 +35,9 @@ class sLinsys : public QpGenLinsys
 		   OoqpVector* dq,
 		   OoqpVector* nomegaInv,
 		   OoqpVector* rhs,
+		   OoqpVector* primal_reg,
+		   OoqpVector* dual_y_reg,
+		   OoqpVector* dual_z_reg,
 		   bool create_iter_ref_vecs
   );
 

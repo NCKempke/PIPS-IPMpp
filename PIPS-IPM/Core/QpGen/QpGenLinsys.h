@@ -11,6 +11,7 @@
 #include "Observer.h"
 
 #include <functional>
+#include <memory>
 
 class Data;
 class QpGenData;
@@ -52,6 +53,11 @@ protected:
 
   /** right-hand side of the system */
   OoqpVector* rhs{};
+
+  /** regularization parameters */
+  OoqpVector* primal_reg{};
+  OoqpVector* dual_y_reg{};
+  OoqpVector* dual_z_reg{};
 
   QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs );
 
@@ -111,7 +117,8 @@ protected:
 public:
   QpGenLinsys( QpGen* factory, QpGenData* data );
   QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
-        OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs );
+        OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
+        OoqpVector* dual_z_reg_, bool create_iter_ref_vecs );
 
   ~QpGenLinsys() override;
 

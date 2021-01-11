@@ -38,6 +38,7 @@ class sLinsysRoot : public sLinsys {
 
   sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
   sLinsysRoot(sFactory* factory, sData* prob_, OoqpVector* dd_, OoqpVector* dq_,
+        OoqpVector* primal_reg, OoqpVector* dual_y_reg, OoqpVector* dual_z_reg,
         OoqpVector* nomegaInv_, OoqpVector* rhs_);
 
   virtual void factor2(sData *prob, Variables *vars);

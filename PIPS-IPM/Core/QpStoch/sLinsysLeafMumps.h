@@ -25,10 +25,12 @@ class sLinsysLeafMumps : public sLinsysLeaf
         sData* prob_,
         OoqpVector* dd_, OoqpVector* dq_,
         OoqpVector* nomegaInv_,
-        OoqpVector* rhs_, LINSOLVER* solver)
-        : sLinsysLeaf(factory, prob_, dd_, dq_, nomegaInv_, rhs_, solver),
-          schurRightMatrix_csc(nullptr), schurRightNzColId(nullptr), nSC(-1), mSchurRight(-1), nSchurRight(-1),
-          buffer(nullptr), bufferSize(-1) {};
+        OoqpVector* rhs_,
+        OoqpVector* primal_reg,
+        OoqpVector* dual_y_reg,
+        OoqpVector* dual_z_reg,
+        LINSOLVER* solver)
+        : sLinsysLeaf(factory, prob_, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg, solver) {};
 
   ~sLinsysLeafMumps();
 
@@ -40,20 +42,19 @@ class sLinsysLeafMumps : public sLinsysLeaf
 
  private:
 
-  void addTermToSchurComplMumps(sData *prob, bool sparseSC,
-            SymMatrix& SC);
+  void addTermToSchurComplMumps(sData *prob, bool sparseSC, SymMatrix& SC);
 
   /* build right matrix for Schur complement; Fortran indexed, CSC, and without empty columns */
   void buildSchurRightMatrix(sData *prob, SymMatrix& SC);
 
-  SparseGenMatrix* schurRightMatrix_csc;
-  int* schurRightNzColId;
-  int nSC;
-  int mSchurRight;
-  int nSchurRight;
+  SparseGenMatrix* schurRightMatrix_csc{};
+  int* schurRightNzColId{};
+  int nSC{-1};
+  int mSchurRight{-1};
+  int nSchurRight{-1};
 
-  double* buffer;
-  int bufferSize;
+  double* buffer{};
+  int bufferSize{-1};
 };
 
 

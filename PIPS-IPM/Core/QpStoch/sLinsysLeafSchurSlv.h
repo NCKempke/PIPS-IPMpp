@@ -22,7 +22,12 @@ class sLinsysLeafSchurSlv : public sLinsysLeaf
 		      sData* prob_,				    
 		      OoqpVector* dd_, OoqpVector* dq_, 
 		      OoqpVector* nomegaInv_,
-		      OoqpVector* rhs_, LINSOLVER* solver);
+		      OoqpVector* rhs_,
+            OoqpVector* primal_reg,
+            OoqpVector* dual_y_reg,
+            OoqpVector* dual_z_reg,
+            LINSOLVER* solver
+         );
 
   void factor2(sData *prob, Variables *vars);
   void addTermToDenseSchurCompl(sData *prob, 
@@ -41,13 +46,13 @@ sLinsysLeafSchurSlv::sLinsysLeafSchurSlv(sFactory* factory,
 					 OoqpVector* dq_, 
 					 OoqpVector* nomegaInv_,
 					 OoqpVector* rhs_,
+					 OoqpVector* primal_reg,
+					 OoqpVector* dual_y_reg,
+					 OoqpVector* dual_z_reg,
 					 LINSOLVER* s)
-: sLinsysLeaf(factory, prob, dd_, dq_, nomegaInv_, rhs_, s), 
+: sLinsysLeaf(factory, prob, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg, s),
   switchedToSafeSlv(false)
-{
-  
-  
-}
+{}
 
 
 #endif

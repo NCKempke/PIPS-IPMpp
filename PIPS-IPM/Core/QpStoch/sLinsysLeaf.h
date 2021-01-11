@@ -27,7 +27,9 @@ class sLinsysLeaf : public sLinsys
     sLinsysLeaf(sFactory* factory,
 		sData* prob_,				    
 		OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-		OoqpVector* rhs_, LINSOLVER *linsolver=nullptr);
+		OoqpVector* rhs_, OoqpVector* primal_reg,
+      OoqpVector* dual_y_reg, OoqpVector* dual_z_reg,
+      LINSOLVER *linsolver = nullptr);
 
   ~sLinsysLeaf() override = default;
 
@@ -69,8 +71,11 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_,
+			 OoqpVector* primal_reg,
+			 OoqpVector* dual_y_reg,
+			 OoqpVector* dual_z_reg,
 			 LINSOLVER* /*thesolver*/)
-  : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_, false)
+  : sLinsys(factory_, prob, dd_, dq_, primal_reg, dual_y_reg, dual_z_reg, nomegaInv_, rhs_, false)
 {
    static bool printed = false;
    const int n_omp_threads = PIPSgetnOMPthreads();

@@ -38,14 +38,17 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_,
+		 OoqpVector* primal_reg,
+		 OoqpVector* dual_y_reg,
+		 OoqpVector* dual_z_reg,
 		 bool create_iter_ref_vecs
 		 )
-  : QpGenLinsys( factory_, prob, dd_, dq_, nomegaInv_, rhs_, create_iter_ref_vecs ),
+  : QpGenLinsys( factory_, prob, dd_, dq_, nomegaInv_, primal_reg, dual_y_reg, dual_z_reg, rhs_, create_iter_ref_vecs ),
     data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     is_hierarchy_root(false),
-    stochNode{factory_->tree}
+    stochNode{ factory_->tree }
 {
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 

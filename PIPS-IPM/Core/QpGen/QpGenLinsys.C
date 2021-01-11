@@ -194,12 +194,17 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref
 };
 
 QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
-      OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, prob, create_iter_ref_vecs )
+      OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
+      OoqpVector* dual_z_reg_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, prob, create_iter_ref_vecs )
 {
    dd = dd_;
    dq = dq_;
    nomegaInv = nomegaInv_;
    rhs = rhs_;
+
+   primal_reg = primal_reg_;
+   dual_y_reg = dual_y_reg_;
+   dual_z_reg = dual_z_reg_;
 }
 
 QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) : QpGenLinsys( factory_, prob, true )
@@ -213,12 +218,19 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) : QpGenLinsys( fact
 
   nomegaInv = factory->makeDualZVector();
   rhs = factory->makeRhs();
+
+  primal_reg = factory->makePrimalVector();
+  dual_y_reg = factory->makeDualYVector();
+  dual_z_reg = factory->makeDualZVector();
 }
 
 QpGenLinsys::~QpGenLinsys()
 {
   if(!useRefs)
   {
+    delete dual_z_reg;
+    delete dual_y_reg;
+    delete primal_reg;
     delete dd; delete dq;
     delete rhs;
     delete nomegaInv;

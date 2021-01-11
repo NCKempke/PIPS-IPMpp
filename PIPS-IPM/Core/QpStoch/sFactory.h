@@ -67,9 +67,14 @@ class sFactory : public QpGen
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
   virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
+        OoqpVector* nomegaInv, OoqpVector* rhs, OoqpVector* primal_reg,
+        OoqpVector* dual_y_reg,
+        OoqpVector* dual_z_reg
+        ) = 0;
   virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs);
+				     OoqpVector* nomegaInv, OoqpVector* rhs, OoqpVector* primal_reg,
+				     OoqpVector* dual_y_reg, OoqpVector* dual_z_reg
+				     );
 
 
   sTree * tree{};
