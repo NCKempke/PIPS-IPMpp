@@ -17,8 +17,8 @@
 
 extern double g_iterNumber;
 
-PardisoMKLSchurSolver::PardisoMKLSchurSolver( SparseSymMatrix * sm ) :
-   PardisoSchurSolver( sm )
+PardisoMKLSchurSolver::PardisoMKLSchurSolver( SparseSymMatrix * sm, OoqpVector* regularization ) :
+   PardisoSchurSolver( sm, regularization )
 {}
 
 

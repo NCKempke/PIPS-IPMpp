@@ -90,7 +90,6 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 
    const SolverType leaf_solver = pips_options::getSolverLeaf();
 
-
    if( !pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) )
    {
       if( PIPS_MPIgetRank() == 0 && !printed )

@@ -52,7 +52,8 @@ extern "C" {
 
 #define SHRINK_SC
 
-PardisoSchurSolver::PardisoSchurSolver( SparseSymMatrix * sgm ) :
+PardisoSchurSolver::PardisoSchurSolver( SparseSymMatrix * sgm, OoqpVector* regularization ) :
+      DoubleLinearSolver(regularization),
       Msys{ sgm }
 {
   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);

@@ -16,8 +16,8 @@ class PardisoMKLSolver : public PardisoSolver {
 public:
    void firstCall() override;
 
-   PardisoMKLSolver( SparseSymMatrix * sgm );
-   PardisoMKLSolver( DenseSymMatrix* m);
+   PardisoMKLSolver( SparseSymMatrix * sgm, OoqpVector* regularization );
+   PardisoMKLSolver( DenseSymMatrix* m, OoqpVector* regularization );
 
 
 protected:

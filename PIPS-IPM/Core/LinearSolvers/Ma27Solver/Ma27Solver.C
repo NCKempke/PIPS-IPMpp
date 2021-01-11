@@ -14,8 +14,8 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) :
-       mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, OoqpVector* regularization, const std::string& name_) :
+      DoubleLinearSolver(regularization), mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
 {
    init();
 }
@@ -120,7 +120,7 @@ void Ma27Solver::matrixChanged()
 
    if ( !done && tries > max_tries )
    {
-      std::cout << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << "\n";
+      std::cout << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 

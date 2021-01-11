@@ -13,7 +13,7 @@
 class PardisoMKLSchurSolver : public PardisoSchurSolver
 {
 public:
-   PardisoMKLSchurSolver( SparseSymMatrix * sgm );
+   PardisoMKLSchurSolver( SparseSymMatrix * sgm, OoqpVector* regularization );
    void solve( OoqpVector& rhs ) override;
    using DoubleLinearSolver::solve;
 

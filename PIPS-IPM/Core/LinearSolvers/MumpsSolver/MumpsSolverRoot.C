@@ -11,8 +11,8 @@
 #include <stdlib.h>
 
 
-MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool solve_in_parallel)
- : MumpsSolverBase(mpiComm, mpiComm, sgm), solve_in_parallel( solve_in_parallel )
+MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel)
+ : MumpsSolverBase(mpiComm, mpiComm, sgm, regularization), solve_in_parallel( solve_in_parallel )
 {
    if( solve_in_parallel )
    {
@@ -24,12 +24,8 @@ MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool 
 }
 
 
-MumpsSolverRoot::MumpsSolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel )
- : MumpsSolverBase(sgm), solve_in_parallel(solve_in_parallel)
-{
-}
-
-MumpsSolverRoot::~MumpsSolverRoot()
+MumpsSolverRoot::MumpsSolverRoot( SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel )
+ : MumpsSolverBase(sgm, regularization), solve_in_parallel(solve_in_parallel)
 {
 }
 

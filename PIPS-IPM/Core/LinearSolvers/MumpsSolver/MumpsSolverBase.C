@@ -16,8 +16,8 @@ static MUMPS_INT getFortranMPIComm(MPI_Comm mpiComm_c)
    return MUMPS_INT(MPI_Comm_c2f(mpiComm_c));
 };
 
-MumpsSolverBase::MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix * sgm )
- : verbosity(defaultVerbosity), maxNiterRefinments(defaultMaxNiterRefinments)
+MumpsSolverBase::MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix * sgm, OoqpVector* regularization )
+ : DoubleLinearSolver(regularization), verbosity(defaultVerbosity), maxNiterRefinments(defaultMaxNiterRefinments)
 {
    PIPSdebugMessage("creating MUMPS solver \n");
 
@@ -34,10 +34,9 @@ MumpsSolverBase::MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_
    setUpMumps();
 }
 
-MumpsSolverBase::MumpsSolverBase( SparseSymMatrix * sgm )
- : MumpsSolverBase(MPI_COMM_WORLD, MPI_COMM_SELF, sgm)
+MumpsSolverBase::MumpsSolverBase( SparseSymMatrix * sgm, OoqpVector* regularization )
+ : MumpsSolverBase(MPI_COMM_WORLD, MPI_COMM_SELF, sgm, regularization )
 {
-
 }
 
 MumpsSolverBase::~MumpsSolverBase()

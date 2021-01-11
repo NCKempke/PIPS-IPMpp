@@ -36,8 +36,7 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 		      int nSC0); //first solve call
 
   /** sets mStorage to refer to the argument sgm */
-  PardisoSchurSolver( SparseSymMatrix * sgm );
-
+  PardisoSchurSolver( SparseSymMatrix * sgm, OoqpVector* regularization );
 
   virtual void diagonalChanged( int idiag, int extent );
   virtual void matrixChanged();

@@ -18,8 +18,8 @@ class PardisoProjectSolver : public PardisoSolver
 public:
   void firstCall() override;
 
-  PardisoProjectSolver( SparseSymMatrix * sgm );
-  PardisoProjectSolver( DenseSymMatrix* m);
+  PardisoProjectSolver( SparseSymMatrix * sgm, OoqpVector* regularization );
+  PardisoProjectSolver( DenseSymMatrix* m, OoqpVector* regularization );
 
  protected:
   void setIparm(int* iparm) const override;

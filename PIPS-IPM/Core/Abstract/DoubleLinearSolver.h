@@ -21,7 +21,6 @@
  */
 class DoubleLinearSolver {
 public:
-
   /** called if the diagonal elements of the matrix have
    *  changed. Triggers a refactorization of the matrix, if necessary.
    *
@@ -58,8 +57,12 @@ public:
    void Dsolve( OoqpVector& x ) { solve(x);}
    void Ltsolve( OoqpVector& /*x*/ ){ assert(false && "is always empty.. "); }
 
+protected:
   /** Destructor  */
   virtual ~DoubleLinearSolver() = default;
+
+  DoubleLinearSolver(OoqpVector* reg) : regularization{reg} { assert(reg); };
+  OoqpVector* regularization{};
 };
 
 class SymmetricLinearScaler

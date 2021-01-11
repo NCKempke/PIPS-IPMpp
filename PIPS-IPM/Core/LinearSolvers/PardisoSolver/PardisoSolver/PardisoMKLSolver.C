@@ -12,7 +12,7 @@
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 
-PardisoMKLSolver::PardisoMKLSolver( SparseSymMatrix * sgm ) : PardisoSolver( sgm )
+PardisoMKLSolver::PardisoMKLSolver( SparseSymMatrix * sgm, OoqpVector* regularization ) : PardisoSolver( sgm, regularization )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
@@ -20,7 +20,7 @@ PardisoMKLSolver::PardisoMKLSolver( SparseSymMatrix * sgm ) : PardisoSolver( sgm
 #endif
 }
 
-PardisoMKLSolver::PardisoMKLSolver( DenseSymMatrix * m ) : PardisoSolver( m )
+PardisoMKLSolver::PardisoMKLSolver( DenseSymMatrix * m, OoqpVector* regularization ) : PardisoSolver( m, regularization )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )

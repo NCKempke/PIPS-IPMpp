@@ -10,16 +10,10 @@
 #include "SparseGenMatrix.h"
 #include "dmumps_c.h"
 
-MumpsSolverLeaf::MumpsSolverLeaf( SparseSymMatrix * sgm )
- : MumpsSolverBase(sgm)
+MumpsSolverLeaf::MumpsSolverLeaf( SparseSymMatrix * sgm, OoqpVector* regularization )
+ : MumpsSolverBase(sgm, regularization)
 {
 }
-
-
-MumpsSolverLeaf::~MumpsSolverLeaf()
-{
-}
-
 
 void
 MumpsSolverLeaf::matrixChanged()

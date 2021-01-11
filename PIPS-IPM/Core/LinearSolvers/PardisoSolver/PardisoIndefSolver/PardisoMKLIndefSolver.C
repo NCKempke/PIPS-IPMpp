@@ -15,15 +15,15 @@
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 
-PardisoMKLIndefSolver::PardisoMKLIndefSolver( DenseSymMatrix * dm, bool solve_in_parallel ) :
-   PardisoIndefSolver( dm, solve_in_parallel )
+PardisoMKLIndefSolver::PardisoMKLIndefSolver( DenseSymMatrix * dm, OoqpVector* regularization, bool solve_in_parallel ) :
+   PardisoIndefSolver( dm, regularization, solve_in_parallel )
 {
   initPardiso();
 }
 
 
-PardisoMKLIndefSolver::PardisoMKLIndefSolver( SparseSymMatrix * sm, bool solve_in_parallel ) :
-   PardisoIndefSolver( sm, solve_in_parallel )
+PardisoMKLIndefSolver::PardisoMKLIndefSolver( SparseSymMatrix * sm, OoqpVector* regularization, bool solve_in_parallel ) :
+   PardisoIndefSolver( sm, regularization, solve_in_parallel )
 {
   initPardiso();
 }

@@ -11,14 +11,10 @@
 #include "SimpleVector.h"
 #include "SparseSymMatrix.h"
 
-Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm )
- : Ma57Solver(sgm), solve_in_parallel(solve_in_parallel), comm(mpiComm)
+Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel, MPI_Comm mpiComm )
+ : Ma57Solver(sgm, regularization), solve_in_parallel(solve_in_parallel), comm(mpiComm)
 {
    assert(mpiComm != MPI_COMM_NULL);
-}
-
-Ma57SolverRoot::~Ma57SolverRoot()
-{
 }
 
 void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )

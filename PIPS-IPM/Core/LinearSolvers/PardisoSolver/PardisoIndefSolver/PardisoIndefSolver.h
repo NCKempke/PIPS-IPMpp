@@ -69,8 +69,8 @@ class PardisoIndefSolver : public DoubleLinearSolver
       virtual void checkMatrix() = 0;
       virtual void getIparm( int* iparm ) const = 0;
    public:
-      PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel);
-      PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel);
+      PardisoIndefSolver(DenseSymMatrix * storage, OoqpVector* regularization, bool solve_in_parallel);
+      PardisoIndefSolver(SparseSymMatrix * storage, OoqpVector* regularization, bool solve_in_parallel);
       void diagonalChanged(int idiag, int extent) override;
       void matrixChanged() override;
       void matrixRebuild( DoubleMatrix& matrixNew ) override;

@@ -23,10 +23,10 @@
 class MumpsSolverRoot : public MumpsSolverBase {
 
  public:
-  MumpsSolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel );
-  MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool solve_in_parallel );
+  MumpsSolverRoot( SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel );
+  MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel );
 
-  ~MumpsSolverRoot();
+  ~MumpsSolverRoot() = default;
 
   void matrixRebuild( DoubleMatrix& matrixNew ) override;
   void matrixChanged() override;

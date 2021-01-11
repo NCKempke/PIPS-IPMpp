@@ -76,7 +76,6 @@ class sFactory : public QpGen
 				     OoqpVector* dual_y_reg, OoqpVector* dual_z_reg
 				     );
 
-
   sTree * tree{};
   sData * data{};
 

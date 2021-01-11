@@ -47,7 +47,8 @@ void dumpdata(int* irow, int* jcol, double*M, int n, int nnz)
 Ma27Solver* ma27=nullptr;
 SparseSymMatrix * sgm_=nullptr;
 
-Ma57Solver::Ma57Solver( SparseSymMatrix * sgm )
+Ma57Solver::Ma57Solver( SparseSymMatrix * sgm, OoqpVector* regularization ) :
+      DoubleLinearSolver( regularization )
 {
   irowM = 0;
   jcolM = 0;

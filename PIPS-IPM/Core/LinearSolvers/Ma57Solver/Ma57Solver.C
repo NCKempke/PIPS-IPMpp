@@ -27,8 +27,8 @@ void dumpdata(int* irow, int* jcol, double* M, int, int nnz)
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
-Ma57Solver::Ma57Solver( SparseSymMatrix * sgm ) :
-      n( sgm->getStorageRef().n)
+Ma57Solver::Ma57Solver( SparseSymMatrix * sgm, OoqpVector* regularization ) :
+      DoubleLinearSolver(regularization), n( sgm->getStorageRef().n)
 {
 
   iworkn  = nullptr; dworkn = nullptr;

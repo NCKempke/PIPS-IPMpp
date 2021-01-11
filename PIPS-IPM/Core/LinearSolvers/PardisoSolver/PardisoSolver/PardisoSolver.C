@@ -19,7 +19,7 @@
 
 #include "mpi.h"
 
-PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
+PardisoSolver::PardisoSolver( SparseSymMatrix * sgm, OoqpVector* regularization ) : DoubleLinearSolver( regularization )
 {
   Msys = sgm;
   Mdsys = nullptr;
@@ -46,7 +46,7 @@ PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
 }
 
 
-PardisoSolver::PardisoSolver( DenseSymMatrix * m )
+PardisoSolver::PardisoSolver( DenseSymMatrix * m, OoqpVector* regularization ) : DoubleLinearSolver( regularization )
 {
   Msys = nullptr;
   Mdsys = m;

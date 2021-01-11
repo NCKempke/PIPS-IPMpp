@@ -141,7 +141,7 @@ protected:
   virtual void firstCall();
 public:
   /** sets mStorage to refer to the argument sgm */
-  Ma57Solver( SparseSymMatrix * sgm );
+  Ma57Solver( SparseSymMatrix * sgm, OoqpVector* regularization );
 
   virtual void diagonalChanged( int idiag, int extent );
   void matrixChanged() override;
