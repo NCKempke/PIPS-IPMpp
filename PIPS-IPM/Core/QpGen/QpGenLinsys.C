@@ -143,8 +143,8 @@ static bool isZero(double val, int& flag)
    return false;
 }
 
-QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPackage * la ) :
-  factory( factory_),
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) :
+  factory( factory_ ),
   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
   outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
@@ -157,7 +157,6 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPacka
   assert( false && " currently never called .. " );
 
   nx = prob->nx; my = prob->my; mz = prob->mz;
-  const int len_x = nx + my + mz;
 
   ixlow = prob->ixlow;
   ixupp = prob->ixupp;
@@ -170,41 +169,32 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPacka
   mcupp = icupp->numberOfNonzeros();
 
   if( nxupp + nxlow > 0 ) {
-    dd      = la->newVector( nx );
-    dq      = la->newVector( nx );
+    dd      = factory->makePrimalVector();
+    dq      = factory->makePrimalVector();
     prob->getDiagonalOfQ( *dq );
   }
-  nomegaInv   = la->newVector( mz );
-  rhs         = la->newVector( len_x );
+  nomegaInv   = factory->makeDualZVector();
+  rhs         = factory->makeRhs();
 
   if( outerSolve || xyzs_solve_print_residuals )
   {
     //for iterative refinement or BICGStab
-    sol  = la->newVector( len_x );
-    res  = la->newVector( len_x );
-    resx = la->newVector( nx );
-    resy = la->newVector( my );
-    resz = la->newVector( mz );
+    sol  = factory->makeRhs();
+    res  = factory->makeRhs();
+    resx = factory->makePrimalVector();
+    resy = factory->makeDualYVector();
+    resz = factory->makeDualZVector();
 
     if( outerSolve == 2 )
     {
       //BiCGStab; additional vectors needed
-      sol2 = la->newVector( len_x );
-      sol3 = la->newVector( len_x );
-      res2 = la->newVector( len_x );
-      res3  = la->newVector( len_x );
-      res4  = la->newVector( len_x );
-      res5  = la->newVector( len_x );
+      sol2 = factory->makeRhs();
+      sol3 = factory->makeRhs();
+      res2 = factory->makeRhs();
+      res3  = factory->makeRhs();
+      res4  = factory->makeRhs();
+      res5  = factory->makeRhs();
     }
-    else
-    {
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
-    }
-  }
-  else
-  {
-    sol = res = resx = resy = resz = nullptr;
-    sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
   }
 }
 

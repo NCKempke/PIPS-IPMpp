@@ -38,15 +38,15 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
   mclow = prob->mclow;
   mcupp = prob->mcupp;
 
-  dd = factory_->tree->newPrimalVector();
+  dd = factory->makePrimalVector();
   assert( dd != nullptr );
   
-  dq = factory_->tree->newPrimalVector();
+  dq = factory->makePrimalVector();
   assert(dq != nullptr);
   prob->getDiagonalOfQ( *dq );
 
-  nomegaInv = factory_->tree->newDualZVector();
-  rhs = factory_->tree->newRhs();
+  nomegaInv = factory->makeDualZVector();
+  rhs = factory->makeRhs();
 
   //get the communicator from one of the vectors
   StochVector& dds = dynamic_cast<StochVector&>(*dd);

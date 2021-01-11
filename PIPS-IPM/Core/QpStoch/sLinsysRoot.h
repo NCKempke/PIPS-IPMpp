@@ -107,13 +107,13 @@ class sLinsysRoot : public sLinsys {
 
  protected: //buffers
 
-  SparseSymMatrix* kktDist;
+  SparseSymMatrix* kktDist{};
 
-  OoqpVector* zDiag;
-  OoqpVector* zDiagLinkCons;
-  OoqpVector* xDiag;
+  OoqpVector* zDiag{};
+  OoqpVector* zDiagLinkCons{};
+  OoqpVector* xDiag{};
 
-  double* sparseKktBuffer;
+  double* sparseKktBuffer{};
 
   int childrenProperStart; // first non-dummy child
   int childrenProperEnd;   // end of non-dummy children range (not included)

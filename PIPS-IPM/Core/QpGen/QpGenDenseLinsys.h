@@ -6,14 +6,12 @@
 #define QPGENDELINSYS
 
 #include "QpGenLinsys.h"
+#include "DenseSymMatrixHandle.h"
+#include "OoqpVectorHandle.h"
 
 class QpGen;
 class QpGenData;
-class LinearAlgebraPackage;
-#include "DenseSymMatrixHandle.h"
 class DoubleLinearSolver;
-#include "OoqpVectorHandle.h"
-
 
 /** 
  * implements the aspects of the solvers for dense general QP
@@ -29,7 +27,7 @@ protected:
 public:
   QpGenDenseLinsys( QpGen * factory,
 		 QpGenData * data,
-		 LinearAlgebraPackage * la, DenseSymMatrix * Mat,
+		 DenseSymMatrix * Mat,
 		 DoubleLinearSolver * solver );
 
   /** perform the actual solve using the factors produced in factor.

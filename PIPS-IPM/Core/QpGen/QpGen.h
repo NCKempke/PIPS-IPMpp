@@ -59,6 +59,8 @@ public:
   virtual OoqpVector* makeDualYVector() const;
   /** create dual C shaped vector using LinearAlgebraPackage */
   virtual OoqpVector* makeDualZVector() const;
+  /** create a rhs vector for the augmented system */
+  virtual OoqpVector* makeRhs() const;
 
   ~QpGen() override = default;
 };

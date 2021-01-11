@@ -63,7 +63,7 @@ static void biCGStabCommunicateStatus(int flag, int it)
 }
 
 sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
-  : sLinsysRoot(factory_, prob_), CtDC(nullptr)
+  : sLinsysRoot(factory_, prob_)
 { 
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
       assert( false && "should not end up here");
@@ -85,7 +85,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
 			       OoqpVector* rhs_)
-  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_), CtDC(nullptr)
+  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_)
 { 
    assert( pips_options::getBoolParameter( "HIERARCHICAL" ) );
    assert(locmyl >= 0 && locmzl >= 0);

@@ -58,7 +58,7 @@ class sLinsysRootAug : public sLinsysRoot {
   /** y = beta*y - alpha* SC * x */
   void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, sData* prob);
 
-  SymMatrix* CtDC;
+  SymMatrix* CtDC{};
 
   std::vector<std::unique_ptr<SimpleVector>> reduced_rhss_blocked;
   SimpleVector* redRhs;

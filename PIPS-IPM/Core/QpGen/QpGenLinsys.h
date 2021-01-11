@@ -18,8 +18,6 @@ class QpGen;
 class Variables;
 class Residuals;
 class DoubleLinearSolver;
-class LinearAlgebraPackage;
-
 
 /** 
  * Linear System solvers for the general QP formulation. This class
@@ -111,11 +109,9 @@ protected:
   const bool xyzs_solve_print_residuals;
 
 public:
-  QpGenLinsys(  QpGen * factory,
-		QpGenData * data,
-		LinearAlgebraPackage * la );
+  QpGenLinsys( QpGen* factory, QpGenData* data );
 
-  virtual ~QpGenLinsys();
+  ~QpGenLinsys() override;
 
 
   /** sets up the matrix for the main linear system in "augmented

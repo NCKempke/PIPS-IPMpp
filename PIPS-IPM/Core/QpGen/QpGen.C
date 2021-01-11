@@ -32,3 +32,10 @@ OoqpVector* QpGen::makeDualZVector() const
    assert(la);
    return la->newVector( mz );
 }
+
+OoqpVector* QpGen::makeRhs() const
+{
+   assert(la);
+   return la->newVector( nx + my + mz );
+}
+

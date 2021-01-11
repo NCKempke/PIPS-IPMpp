@@ -22,17 +22,13 @@ double g_scenNum;
 #endif
 
 sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
-  : sLinsys(factory_, prob_, is_hierarchy_root), sparseKktBuffer(nullptr)
+  : sLinsys(factory_, prob_, is_hierarchy_root)
 {
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
     assert( is_hierarchy_root );
 
   assert( dd!=nullptr );
   assert( prob_ );
-  xDiag = nullptr;
-  zDiag = nullptr;
-  zDiagLinkCons = nullptr;
-  kktDist = nullptr;
 
 #ifdef TIMING
   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -52,32 +48,23 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
   if( outerSolve || xyzs_solve_print_residuals )
   {
     // stuff for iterative refimenent and BiCG
-    sol  = factory_->tree->newRhs();
-    res  = factory_->tree->newRhs();
-    resx = factory_->tree->newPrimalVector();
-    resy = factory_->tree->newDualYVector();
-    resz = factory_->tree->newDualZVector();
+    sol  = factory->makeRhs();
+    res  = factory->makeRhs();
+    resx = factory->makePrimalVector();
+    resy = factory->makeDualYVector();
+    resz = factory->makeDualZVector();
 
     if( outerSolve == 2 )
     {
       //BiCGStab; additional vectors needed
-      sol2 = factory_->tree->newRhs();
-      sol3 = factory_->tree->newRhs();
-      res2 = factory_->tree->newRhs();
-      res3 = factory_->tree->newRhs();
-      res4 = factory_->tree->newRhs();
-      res5 = factory_->tree->newRhs();
+      sol2 = factory->makeRhs();
+      sol3 = factory->makeRhs();
+      res2 = factory->makeRhs();
+      res3 = factory->makeRhs();
+      res4 = factory->makeRhs();
+      res5 = factory->makeRhs();
       // TODO : deleted where? -> factory?
     }
-    else
-    {
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
-    }
-  }
-  else
-  {
-    sol  = res  = resx = resy = resz = nullptr;
-    sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
   }
 
   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
@@ -101,13 +88,8 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_)
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), sparseKktBuffer(nullptr)
+  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_)
 {
-  xDiag = nullptr;
-  zDiag = nullptr;
-  zDiagLinkCons = nullptr;
-  kktDist = nullptr;
-
   createChildren(prob_);
 
   precondSC = SCsparsifier(mpiComm);
@@ -115,25 +97,20 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   if( outerSolve || xyzs_solve_print_residuals )
   {
       // stuff for iterative refimenent and BiCG 
-      sol  = tree_->newRhs();
-      res  = tree_->newRhs();
-      resx = tree_->newPrimalVector();
-      resy = tree_->newDualYVector();
-      resz = tree_->newDualZVector();
+      sol  = factory->makeRhs();
+      res  = factory->makeRhs();
+      resx = factory->makePrimalVector();
+      resy = factory->makeDualYVector();
+      resz = factory->makeDualZVector();
     if( outerSolve == 2 ) {
       //BiCGStab; additional vectors needed
-      sol2 = tree_->newRhs();
-      sol3 = tree_->newRhs();
-      res2 = tree_->newRhs();
-      res3 = tree_->newRhs();
-      res4 = tree_->newRhs();
-      res5 = tree_->newRhs();
-    } else {
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
+      sol2 = factory->makeRhs();
+      sol3 = factory->makeRhs();
+      res2 = factory->makeRhs();
+      res3 = factory->makeRhs();
+      res4 = factory->makeRhs();
+      res5 = factory->makeRhs();
     }
-  } else {
-      sol  = res  = resx = resy = resz = nullptr;
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
   }
 
   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
