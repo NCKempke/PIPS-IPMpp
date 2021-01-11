@@ -68,7 +68,7 @@ double StochRowStorage::multRowTimesVec( const INDEX& row, const StochVector& ve
 double StochRowStorage::multLinkingRowTimesVecWithoutBl0( int row, const StochVector& vec) const
 {
    const double res_full = row_storage->localRowTimesVec(vec, -1, row, true);
-   const double res_bl0 = row_storage->Blmat->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.vec), row);
+   const double res_bl0 = dynamic_cast<const SparseGenMatrix*>(row_storage->Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.vec), row);
 
    return res_full - res_bl0;
 }

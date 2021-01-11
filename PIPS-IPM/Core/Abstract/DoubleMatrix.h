@@ -11,7 +11,6 @@
 
 #include <cstring>
 #include <iostream>
-using namespace std;
 #include "OoqpVectorHandle.h"
 #include "DoubleMatrixHandle.h"
 
@@ -256,7 +255,7 @@ public:
   /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
   virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) = 0;
 
-  virtual void writeMPSformatRows(ostream& /*out*/, int /*rowType*/, OoqpVector* /*irhs*/) const {}
+  virtual void writeMPSformatRows( std::ostream& /*out*/, int /*rowType*/, OoqpVector* /*irhs*/) const {}
 
   /** get number of elements per row to given vector */
   virtual void getNnzPerRow(OoqpVectorBase<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
@@ -277,6 +276,9 @@ public:
 
   /** add absolute value sum of each column to vector */
   virtual void addColSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
+
+  /** return nonzeros in matrix */
+  virtual int numberOfNonZeros() const { assert( false && "not implmented"); };
 
 };
 

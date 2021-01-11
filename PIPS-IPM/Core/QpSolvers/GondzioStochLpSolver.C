@@ -73,7 +73,7 @@ void GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables *iterate, V
       double weight_curr = weight_min
             + (weight_intervallength / (n_linesearch_points)) * n;
 
-      weight_curr = min(weight_curr, 1.0);
+      weight_curr = std::min(weight_curr, 1.0);
 
       assert(weight_curr > 0.0 && weight_curr <= 1.0);
 

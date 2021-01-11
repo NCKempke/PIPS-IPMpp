@@ -1628,7 +1628,7 @@ void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A,
   assert(n >= endCol);
 
   int chunk_size = (CHUNK_SIZE / n) * n;
-  chunk_size = min(chunk_size, n*nRows);
+  chunk_size = std::min(chunk_size, n*nRows);
 
   double* chunk = new double[chunk_size];
 

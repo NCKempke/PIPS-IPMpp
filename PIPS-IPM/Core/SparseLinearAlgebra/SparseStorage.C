@@ -503,7 +503,7 @@ void SparseStorage:: atPutDense( int row, int col, double * A, int lda,
       info = 0;
     }
     if ( info != 0 ) { 
-      cout << "bing\n"; return;
+      std::cout << "bing\n"; return;
     }
 	
     km = km_f;
@@ -646,18 +646,18 @@ void SparseStorage::fromGetSpRow( int row, int col,
   nnz = ka;
 }
 
-void SparseStorage::writeToStream(ostream& out) const
+void SparseStorage::writeToStream(std::ostream& out) const
 {
   int i, k;
 
   for( i = 0; i < m; i++ ) {
     for ( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      out << i << '\t' << jcolM[k] << '\t' << M[k] << endl;
+      out << i << '\t' << jcolM[k] << '\t' << M[k] << "\n";
     }
   }
 }
 
-void SparseStorage::writeToStreamDense( ostream& out) const
+void SparseStorage::writeToStreamDense(std::ostream& out) const
 {
    int i, k;
    //todo: instead of \t, use length of longest value in M
@@ -686,11 +686,11 @@ void SparseStorage::writeToStreamDense( ostream& out) const
          out << 0 << '\t';
          j++;
       }
-      out << endl;
+      out << "\n";
    }
 }
 
-void SparseStorage::writeToStreamDenseRow( stringstream& out, int rowidx) const
+void SparseStorage::writeToStreamDenseRow( std::stringstream& out, int rowidx) const
 {
    int j = 0; // Column j
    for( int k = krowM[rowidx]; k < krowM[rowidx + 1]; k++ )
@@ -1565,22 +1565,22 @@ void SparseStorage::reduceToLower()
   //for(int k=krowC
 }
 
-void SparseStorage::dump(const string& filename)
+void SparseStorage::dump(const std::string& filename)
 {
-  ofstream fd(filename.c_str());
-  fd << scientific; 
+  std::ofstream fd(filename.c_str());
+  fd << std::scientific;
   fd.precision(16);
-  fd << m << " " << n << " " << len << endl;
+  fd << m << " " << n << " " << len << "\n";
 
   int i;
   for (i = 0; i <= m; i++) {
     fd << krowM[i] << " ";
   }
-  fd << endl;
+  fd << "\n";
   for (i = 0; i < len; i++) {
     fd << jcolM[i] << " ";
   }
-  fd << endl;
+  fd << "\n";
   for (i = 0; i < len; i++) {
     fd << M[i] << " ";
   }

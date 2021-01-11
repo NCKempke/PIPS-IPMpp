@@ -59,7 +59,7 @@ bool PardisoIndefSolver::iparmUnchanged()
    int iparm_compare[64];
    getIparm(iparm_compare);
 
-   vector<int> to_compare(check_iparm,
+   std::vector<int> to_compare(check_iparm,
          check_iparm + sizeof(check_iparm) / sizeof(check_iparm[0]));
 
    for( int i = 0; i < 64; ++i )

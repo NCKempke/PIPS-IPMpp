@@ -61,7 +61,7 @@ void sTree::assignProcesses(MPI_Comm comm)
 #define MIN(a,b) ( (a>b) ? b : a )
 #endif
 
-void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
+void sTree::assignProcesses(MPI_Comm world, std::vector<int>& processes)
 {
    assert( !is_hierarchical_root );
 
@@ -92,7 +92,7 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
       child_nodes_load[i] = children[i]->processLoad();
 #endif
    //**** solve the assignment problem ****
-   vector<vector<int> > map_child_nodes_to_procs(children.size());
+   std::vector<std::vector<int> > map_child_nodes_to_procs(children.size());
 
    const int n_children_per_process = children.size() / n_procs;
    const int n_unassigned = children.size() % n_procs;
@@ -164,7 +164,7 @@ void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
            isChildInThisProcess = true;
      }
 
-     vector<int> childRanks(n_ranks_4_this_child);
+     std::vector<int> childRanks(n_ranks_4_this_child);
      for( int c = 0; c < n_ranks_4_this_child; c++ )
         childRanks[c] = ranksToKeep[c];
 
@@ -335,7 +335,7 @@ void sTree::stopNodeMonitors()
   resMon.computeTotal();
 }
 
-void sTree::toMonitorsList(list<NodeExecEntry>& lstExecTm)
+void sTree::toMonitorsList(std::list<NodeExecEntry>& lstExecTm)
 {
   lstExecTm.push_back(resMon.eTotal);
 
@@ -343,7 +343,7 @@ void sTree::toMonitorsList(list<NodeExecEntry>& lstExecTm)
     children[i]->toMonitorsList(lstExecTm);
 }
 
-void sTree::fromMonitorsList(list<NodeExecEntry>& lstExecTm)
+void sTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm)
 {
   resMon.eTotal = lstExecTm.front();
   lstExecTm.pop_front();
@@ -352,10 +352,10 @@ void sTree::fromMonitorsList(list<NodeExecEntry>& lstExecTm)
     children[i]->fromMonitorsList(lstExecTm);
 }
 
-void sTree::syncMonitoringData(vector<double>& vCPUTotal)
+void sTree::syncMonitoringData(std::vector<double>& vCPUTotal)
 {
 
-  list<NodeExecEntry> lstExecTm;
+  std::list<NodeExecEntry> lstExecTm;
   this->toMonitorsList(lstExecTm);
 
   int noNodes = lstExecTm.size(); 
@@ -364,7 +364,7 @@ void sTree::syncMonitoringData(vector<double>& vCPUTotal)
   double* recvBuf = new double[noNodes+nCPUs];
   double* sendBuf = new double[noNodes+nCPUs];
   
-  list<NodeExecEntry>::iterator iter = lstExecTm.begin();
+  std::list<NodeExecEntry>::iterator iter = lstExecTm.begin();
   for(int it=0; it<noNodes; it++) { sendBuf[it] = iter->tmChildren; iter++; }
   for(int it=noNodes; it<noNodes+nCPUs; it++) sendBuf[it] = vCPUTotal[it-noNodes];
 
@@ -403,7 +403,7 @@ bool sTree::balanceLoad()
   computeNodeTotal();
 
   int nCPUs; MPI_Comm_size(commWrkrs, &nCPUs);
-  vector<double> cpuExecTm(nCPUs, 0.0);
+  std::vector<double> cpuExecTm(nCPUs, 0.0);
   cpuExecTm[rankMe] = this->IPMIterExecTIME;
 
   //if(sleepFlag && rankMe==1) {cpuExecTm[1] += 4.0;}
@@ -430,7 +430,7 @@ bool sTree::balanceLoad()
 
   if(maxLoad<1.0) return 0;
 
-  double balance = max(maxLoad/total*nCPUs, total/nCPUs/minLoad);
+  double balance = std::max(maxLoad/total*nCPUs, total/nCPUs/minLoad);
   if(balance<1.3) { //it is OK, no balancing
 
     //decide if balancing is needed due to the 'fat' nodes
@@ -460,7 +460,7 @@ bool sTree::balanceLoad()
 
   cpuExecTm.clear();
 
-  vector<int> ranks(nCPUs);
+  std::vector<int> ranks(nCPUs);
   for(int i=0; i<nCPUs; i++) ranks[i]=i; 
   assignProcesses(MPI_COMM_WORLD, ranks);
   return 1;
@@ -495,7 +495,8 @@ void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromC
   }
 }
 
-int sTree::isInVector(int elem, const vector<int>& vec) const
+// todo move....
+int sTree::isInVector(int elem, const std::vector<int>& vec) const
 {
   for(size_t i=0; i<vec.size(); i++)
     if(elem==vec[i]) return 1;

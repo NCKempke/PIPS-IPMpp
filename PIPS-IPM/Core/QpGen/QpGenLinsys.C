@@ -544,10 +544,10 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
      if( PIPS_MPIgetRank() == 0 )
      {
-        cout << "bnorm " << bnorm << std::endl;
-        cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << endl;
-        cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << endl;
-        cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << std::endl;
+        std::cout << "bnorm " << bnorm << "\n";
+        std::cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << "\n";
+        std::cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << "\n";
+        std::cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << "\n";
      }
      delete residual;
   }
@@ -569,7 +569,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
-   const double tolb = max(n2b * tol, outer_bicg_eps);
+   const double tolb = std::max(n2b * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
    bicg_niterations = 0;

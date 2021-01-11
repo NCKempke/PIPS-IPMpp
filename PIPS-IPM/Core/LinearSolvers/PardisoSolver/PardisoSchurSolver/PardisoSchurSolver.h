@@ -106,7 +106,7 @@ class PardisoSchurSolver : public DoubleLinearSolver {
   double *eltsAug{};
   /** mapping from from the diagonals of the PIPS linear systems to
       the diagonal elements of the (1,1) block  in the augmented system */
-  map<int,int> diagMap;
+  std::map<int,int> diagMap;
 
   //temporary vector of size n
   double* nvec{};

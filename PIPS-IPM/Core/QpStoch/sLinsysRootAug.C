@@ -1256,9 +1256,9 @@ void sLinsysRootAug::solveWithIterRef( sData *prob, SimpleVector& r)
       if(relResNorm>prevRelResNorm) {
 	// diverging; restore iteration
 	if(myRank==0) {
-	  cout << "1st stg - iter refinement diverges relResNorm=" << relResNorm 
-	       << "  before was " << prevRelResNorm << endl;
-	  cout << "Restoring iterate." << endl;
+	   std::cout << "1st stg - iter refinement diverges relResNorm=" << relResNorm
+	       << "  before was " << prevRelResNorm << "\n";
+	   std::cout << "Restoring iterate.\n";
 	}
 	x.copyFrom(x_prev);
 	break;
@@ -1280,8 +1280,8 @@ void sLinsysRootAug::solveWithIterRef( sData *prob, SimpleVector& r)
       }
       histResid.push_back(relResNorm);
       if(myRank==0)
-	cout << "1st stg - sol does NOT  have enough accuracy (" << relResNorm << ") after " 
-	     << refinSteps << " refinement steps" << endl;
+         std::cout << "1st stg - sol does NOT  have enough accuracy (" << relResNorm << ") after "
+         << refinSteps << " refinement steps\n";
     }
     refinSteps++;
   }while(refinSteps<=maxRefinSteps);
@@ -1376,7 +1376,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
   double* resvec = new double[2*maxit+1];
   resvec[0] = normr; normrmin=normr;
   rho=1.0; omega=1.0;
-  stag=0; maxmsteps=min(min(n/50, 5), n-maxit); 
+  stag=0; maxmsteps=std::min(std::min(n/50, 5), n-maxit);
   maxstagsteps=3; moresteps=0;
 
   //////////////////////////////////////////////////////////////////

@@ -67,7 +67,7 @@ public:
 
   void startMonitors(); void startNodeMonitors();
   void stopMonitors();  void stopNodeMonitors();
-  void syncMonitoringData(vector<double>& vCPUTotal);
+  void syncMonitoringData(std::vector<double>& vCPUTotal);
   bool balanceLoad();
   bool balanceLoadPrecond();
 
@@ -134,7 +134,7 @@ public:
   virtual sTree * collapseHierarchicalTree() = 0;
 
 protected:
-  void assignProcesses( MPI_Comm, vector<int>&);
+  void assignProcesses( MPI_Comm, std::vector<int>&);
 
   sTree() = default;
 
@@ -145,7 +145,7 @@ protected:
 
   void saveCurrentCPUState();
 
-  int isInVector(int elem, const vector<int>& vec) const;
+  int isInVector(int elem, const std::vector<int>& vec) const;
 
 };
 

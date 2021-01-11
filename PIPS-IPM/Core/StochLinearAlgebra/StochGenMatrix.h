@@ -47,14 +47,16 @@ public:
   virtual void AddChild(StochGenMatrix* child);
 
   std::vector<StochGenMatrix*> children;
-  SparseGenMatrix* Amat;
-  SparseGenMatrix* Bmat;
-  SparseGenMatrix* Blmat;
+  GenMatrix* Amat;
+  GenMatrix* Bmat;
+  GenMatrix* Blmat;
 
   long long m, n;
   MPI_Comm mpiComm;
   int iAmDistrib;
  private:
+  bool hasSparseMatrices() const;
+
   /** trans mult method for children with linking constraints */
   virtual void transMult2 ( double beta,   StochVector& y,
 		    double alpha,  StochVector& x,
@@ -114,7 +116,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */  
-  virtual int numberOfNonZeros();
+  int numberOfNonZeros() const override;
 
   int isKindOf( int matType ) const override;
 
@@ -223,6 +225,7 @@ public:
   virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const;
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
+  virtual StochGenMatrix* splitMatrix( const std::vector<int>& linkcons_startblock_id, const std::vector<unsigned int>& map_blocks_children );
 
 protected:
   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
@@ -260,7 +263,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */  
-  int numberOfNonZeros() override { return 0; }
+  int numberOfNonZeros() const override { return 0; }
 
   int isKindOf( int matType ) const override;
 
@@ -359,6 +362,8 @@ public:
   void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector*, StochVector*, SimpleVector*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
+  StochGenMatrix* splitMatrix( const std::vector<int>&, const std::vector<unsigned int>& ) override
+     { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
 
   void recomputeSize( StochGenMatrix* ) override {};
  protected:

@@ -45,7 +45,7 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Stoch
 
    /* extra storage for b0mat entries in linking variable column we want to store */
    assert( sys_matrix.Bmat );
-   b0_block_storage.reset( sys_matrix.Bmat->cloneEmptyRowsTransposed(true) );
+   b0_block_storage.reset( dynamic_cast<const SparseGenMatrix*>(sys_matrix.Bmat)->cloneEmptyRowsTransposed(true) );
 
    // todo : n, m are wrong here but the counters are broken anyways?
    col_storage.reset( new StochGenMatrix(sys_matrix.n, sys_matrix.m, sys_matrix.mpiComm) );
@@ -63,10 +63,10 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Stoch
    assert( col_storage->Amat == nullptr );
    assert( col_storage->Bmat == nullptr );
    assert( col_storage->Blmat == nullptr );
-   col_storage->Amat = sys_matrix.Amat->cloneEmptyRows(true);
+   col_storage->Amat = dynamic_cast<const SparseGenMatrix*>(sys_matrix.Amat)->cloneEmptyRows(true);
    /* B0mat will not be used and stay empty */
-   col_storage->Bmat = sys_matrix.Blmat->cloneEmptyRowsTransposed(true);
-   col_storage->Blmat = sys_matrix.Blmat->cloneEmptyRowsTransposed(true);
+   col_storage->Bmat = dynamic_cast<const SparseGenMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
+   col_storage->Blmat = dynamic_cast<const SparseGenMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
 
    for( size_t it = 0; it < sys_matrix.children.size(); it++ )
    {
@@ -84,9 +84,9 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Stoch
       delete child_clone->Bmat;
       delete child_clone->Blmat;
 
-      child_clone->Amat = child.Blmat->cloneEmptyRowsTransposed(true);
-      child_clone->Bmat = child.Bmat->cloneEmptyRowsTransposed(true);
-      child_clone->Blmat = child.Amat->cloneEmptyRowsTransposed(true);
+      child_clone->Amat = dynamic_cast<const SparseGenMatrix*>(child.Blmat)->cloneEmptyRowsTransposed(true);
+      child_clone->Bmat = dynamic_cast<const SparseGenMatrix*>(child.Bmat)->cloneEmptyRowsTransposed(true);
+      child_clone->Blmat = dynamic_cast<const SparseGenMatrix*>(child.Amat)->cloneEmptyRowsTransposed(true);
 
       col_storage->children.push_back(child_clone);
    }

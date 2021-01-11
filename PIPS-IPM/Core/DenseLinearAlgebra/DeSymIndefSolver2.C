@@ -80,7 +80,7 @@ void DeSymIndefSolver2::matrixChanged()
 
   FNAME(dpotrf)(&fortranUplo,&nx,mat,&n,&info);
   if (info != 0) {
-    cerr << "error factoring Q block: info = " << info << endl;
+     std::cerr << "error factoring Q block: info = " << info << "\n";
   }
   assert(info==0);
   if (ny == 0) return;
@@ -100,7 +100,7 @@ void DeSymIndefSolver2::matrixChanged()
 
   FNAME(dpotrf)(&fortranUplo,&ny,mat+nx*n+nx,&n,&info);
   if (info != 0) {
-    cerr << "error factoring AQ^-1A^T block: info = " << info << endl;
+    std::cerr << "error factoring AQ^-1A^T block: info = " << info << "\n";
   }
   assert(info==0);
 

@@ -368,12 +368,12 @@ int main(int argc, char ** argv)
 #endif
    if( gmsRank == 0 )
 #if defined(LINKCONSTR)
-      cout << "Using version with linking constraint." << endl;
+      std::cout << "Using version with linking constraint.\n";
 #else
-      std::cout << "Using version without linking constraint." << std::endl;
+      std::cout << "Using version without linking constraint.\n";
 #endif
    if( gmsRank == 0 )
-      std::cout << "Using a total of " << size << " MPI processes." << std::endl;
+      std::cout << "Using a total of " << size << " MPI processes.\n";
 
 
 #if defined(GMS_PIPS)
@@ -386,10 +386,10 @@ int main(int argc, char ** argv)
 
    pips_options::setIntParameter("OUTER_SOLVE", 2);
    if( gmsRank == 0 )
-      std::cout << "Using outer BICGSTAB" << std::endl;
+      std::cout << "Using outer BICGSTAB\n";
 
    if( gmsRank == 0 && pips_options::getIntParameter("INNER_SC_SOLVE") == 2 )
-      std::cout << "Using inner BICGSTAB" << std::endl;
+      std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
    std::vector<double> dualSolEqVec;
@@ -410,16 +410,16 @@ int main(int argc, char ** argv)
 	   pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
 	   if( gmsRank == 0 )
-	      std::cout << "Different steplengths in primal and dual direction are used." << std::endl;
+	      std::cout << "Different steplengths in primal and dual direction are used.\n";
 
 	   PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
 	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 
 		if( gmsRank == 0 )
-		   std::cout << "PIPSIpmInterface created" << std::endl;
+		   std::cout << "PIPSIpmInterface created\n";
 
 		if( gmsRank == 0 )
-		   std::cout << "solving..." << std::endl;
+		   std::cout << "solving...\n";
 
 		pipsIpm.go();
       objective = pipsIpm.getObjective();
@@ -447,10 +447,10 @@ int main(int argc, char ** argv)
             scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
 
 		if( gmsRank == 0 )
-		   cout << "PIPSIpmInterface created" << endl;
+		   std::cout << "PIPSIpmInterface created\n";
 
 		if( gmsRank == 0 )
-		   cout << "solving..." << endl;
+		   std::cout << "solving...\n";
 
 		pipsIpm.go();
       objective = pipsIpm.getObjective();
@@ -474,7 +474,7 @@ int main(int argc, char ** argv)
       }
 	}
    if( gmsRank == 0 )
-      cout << "solving finished. \n ---Objective value: " << objective  << endl;
+      std::cout << "solving finished. \n ---Objective value: " << objective  << "\n";
 
    if( printsol && gmsRank == 0 )
    {
@@ -493,11 +493,11 @@ int main(int argc, char ** argv)
 						 &dualSolIneqVec[0],
 						 pGDXDirectory);
       if (0 == rc)
-         std::cout << "Solution written to " << fileName << "_sol.gdx" << std::endl;
+         std::cout << "Solution written to " << fileName << "_sol.gdx\n";
       else if (-1 == rc)
-         std::cout << "Could not access " << fileName << ".map" << std::endl;
+         std::cout << "Could not access " << fileName << ".map\n";
       else
-         std::cout << "Other error writing solution: rc=" << rc << std::endl;
+         std::cout << "Other error writing solution: rc=" << rc << "\n";
    }
 
    // free memory
@@ -518,7 +518,7 @@ int main(int argc, char ** argv)
   const double t1 = MPI_Wtime();
 
   if( gmsRank == 0 )
-     std::cout << "---total time (in sec.): " << t1 - t0 << std::endl;
+     std::cout << "---total time (in sec.): " << t1 - t0 << "\n";
 
   MPI_Finalize();
 #endif

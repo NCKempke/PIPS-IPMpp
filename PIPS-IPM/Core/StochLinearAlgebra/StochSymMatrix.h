@@ -31,7 +31,7 @@ private:
 
   // note: also used for dummy class!
   virtual void deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent);
-  virtual void writeToStreamDenseChild(stringstream& out, int offset) const;
+  virtual void writeToStreamDenseChild(std::stringstream& out, int offset) const;
 
 public:
   /** Constructs a matrix with local size 'local_n' having 'local_nnz' local nonzeros

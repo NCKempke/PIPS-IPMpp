@@ -98,6 +98,7 @@ protected:
         const std::vector<int>& linkStartBlockId, int n_links_after_split );
 
   void reorderLinkingConstraintsAccordingToSplit();
+  void splitDataAndAddAsChildLayer();
   void splitDataAccordingToTree();
 
   sData* shaveBorderFromDataAndCreateNewTop( const sTree* tree );

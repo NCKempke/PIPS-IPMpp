@@ -150,7 +150,7 @@ void Ma57Solver::matrixChanged()
 
    if ( !done && tries > max_tries )
    {
-      std::cerr << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries" << std::endl;
+      std::cerr << "ERROR MA27: could not get factorization of matrix after max " << max_tries << " tries\n";
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
@@ -209,7 +209,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
                cntl[0] = threshold_pivoting;
 
                if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-                  std::cout << "Setting ThresholdPivoting parameter to " << threshold_pivoting << " for future factorizations" << endl;
+                  std::cout << "Setting ThresholdPivoting parameter to " << threshold_pivoting << " for future factorizations\n";
             }
          }
          else if ( threshold_pivoting == threshold_pivoting_max )
@@ -217,7 +217,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
          else
          {
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-               std::cout << "Refactoring with Threshold Pivoting parameter " << threshold_pivoting << std::endl;
+               std::cout << "Refactoring with Threshold Pivoting parameter " << threshold_pivoting << "\n";
 
             this->matrixChanged();
 
@@ -351,18 +351,18 @@ bool Ma57Solver::checkErrorsAndReact()
          break;
       case -1 :
       {
-         std::cerr << "ERROR MA57: N out of range or < -1: " << error_info << std::endl;
+         std::cerr << "ERROR MA57: N out of range or < -1: " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -2 :
       {
-         std::cerr << "ERROR MA57: NNZ out of range or < -1 : " << error_info << std::endl;
+         std::cerr << "ERROR MA57: NNZ out of range or < -1 : " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -3 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: insufficient space in fact: " << info[1] << " suggest reset to " << info[16] << std::endl;
+            std::cout << "WARNING MA57: insufficient space in fact: " << info[1] << " suggest reset to " << info[16] << "\n";
          rpessimism *= 1.1;
 
          assert( fact );
@@ -374,7 +374,7 @@ bool Ma57Solver::checkErrorsAndReact()
          int dummy = lifact + 1;
 
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << " resetting to " << lnew << std::endl;
+            std::cout << " resetting to " << lnew << "\n";
 
          int N = n;
          FNAME(ma57ed)( &N, &copy_real_array, keep, fact, &lfact, newfac, &lnew, ifact, &lifact,
@@ -389,7 +389,7 @@ bool Ma57Solver::checkErrorsAndReact()
       case -4 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: insufficient factorization space in ifact: " << info[1] << " suggest reset to " << info[17] << std::endl;;
+            std::cout << "WARNING MA57: insufficient factorization space in ifact: " << info[1] << " suggest reset to " << info[17] << "\n";;
          ipessimism *= 1.1;
 
          assert( ifact );
@@ -401,7 +401,7 @@ bool Ma57Solver::checkErrorsAndReact()
          int dummy = lfact + 1;
 
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << " resetting to " << linew << std::endl;
+            std::cout << " resetting to " << linew << "\n";
 
          int N = n;
          FNAME(ma57ed)( &N, &copy_int_array, keep, fact, &lfact, nullptr, &dummy, ifact, &lifact,
@@ -415,109 +415,109 @@ bool Ma57Solver::checkErrorsAndReact()
       } break;
       case -5:
       {
-         std::cerr << "WARNING MA57: Small pivot found when pivoting disabled" << std::endl;
+         std::cerr << "WARNING MA57: Small pivot found when pivoting disabled\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -6:
       {
-         std::cerr << "ERROR M527: change of sign of pivots detected at stage even though matrix supposedly definiet" << error_info << std::endl;
+         std::cerr << "ERROR M527: change of sign of pivots detected at stage even though matrix supposedly definiet" << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -7:
       {
-         std::cerr << "ERROR MA57: value new int/real array not bigger than old value in MA57ED " << error_info << std::endl;
+         std::cerr << "ERROR MA57: value new int/real array not bigger than old value in MA57ED " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -8:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: iterative refinement failed to converge" << std::endl;
+            std::cout << "WARNING MA57: iterative refinement failed to converge\n";
          error = true;
       }; break;
       case -9:
       {
-         std::cerr << "ERROR MA57: error in permutation array pos " << error_info << std::endl;
+         std::cerr << "ERROR MA57: error in permutation array pos " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -10:
       {
-         std::cerr << "ERROR MA57: icntl[6] " << error_info << " is out of range" << std::endl;
+         std::cerr << "ERROR MA57: icntl[6] " << error_info << " is out of range\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -11:
       {
-         std::cerr << "ERROR MA57: LRHS " << error_info << " smaller than n " << n << " on solve call" << std::endl;
+         std::cerr << "ERROR MA57: LRHS " << error_info << " smaller than n " << n << " on solve call\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -12:
       {
-         std::cerr << "ERROR MA57: invalid value " << error_info << " for job" << std::endl;
+         std::cerr << "ERROR MA57: invalid value " << error_info << " for job\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -13:
       {
-         std::cerr << "ERROR MA57: invalid value " << error_info << " for icntl[8]" << std::endl;
+         std::cerr << "ERROR MA57: invalid value " << error_info << " for icntl[8]\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -14:
       {
-         std::cerr << "ERROR MA57: MC71AD (icntl > 10) failed inside of MA57DD" << std::endl;
+         std::cerr << "ERROR MA57: MC71AD (icntl > 10) failed inside of MA57DD\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -15:
       {
-         std::cerr << "ERROR MA57: lkeep " << error_info << " less than required" << error_info << std::endl;
+         std::cerr << "ERROR MA57: lkeep " << error_info << " less than required" << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -16:
       {
-         std::cerr << "ERROR MA57: NRHS " << error_info << " less than one"<< std::endl;
+         std::cerr << "ERROR MA57: NRHS " << error_info << " less than one"<< "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -17:
       {
-         std::cerr << "ERROR MA57: lwork too small: " << error_info << std::endl;
+         std::cerr << "ERROR MA57: lwork too small: " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case -18:
       {
-         std::cerr << "ERROR MA57: METIS ordering requested but METIS was not linked" << std::endl;
+         std::cerr << "ERROR MA57: METIS ordering requested but METIS was not linked\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case 1 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: detected " << info[2] << " entries out of range in irowM and jcolM; ignored" << std::endl;
+            std::cout << "WARNING MA57: detected " << info[2] << " entries out of range in irowM and jcolM; ignored\n";
       }; break;
       case 2 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout<< "WARNING M57: detected " << info[3] << " duplicate entries in user supplied matrix detected - summing them up" << std::endl;
+            std::cout<< "WARNING M57: detected " << info[3] << " duplicate entries in user supplied matrix detected - summing them up\n";
       } break;
       case 3:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: out of range etries and duplicates detected .. ignoring/summing them up" << std::endl;
+            std::cout << "WARNING MA57: out of range etries and duplicates detected .. ignoring/summing them up\n";
       }; break;
       case 4:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: rank deficient matrix detected; apparent rank is " << info[24] << std::endl;
+            std::cout << "WARNING MA57: rank deficient matrix detected; apparent rank is " << info[24] << "\n";
       }; break;
       case 5:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: pivots have different sign when factorizing supposedly definite matrix; " << info[25] << " sign changes detected" << std::endl;
+            std::cout << "WARNING MA57: pivots have different sign when factorizing supposedly definite matrix; " << info[25] << " sign changes detected\n";
       }; break;
       case 8:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: inf norm of computed solution was zero" << std::endl;
+            std::cout << "WARNING MA57: inf norm of computed solution was zero\n";
       }; break;
       case 10:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: insufficient space in fact: " << lfact << std::endl;
+            std::cout << "WARNING MA57: insufficient space in fact: " << lfact << "\n";
          rpessimism *= 1.5;
 
          assert( fact );
@@ -529,7 +529,7 @@ bool Ma57Solver::checkErrorsAndReact()
          int dummy = lifact + 1;
 
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << " resetting to " << lnew << std::endl;
+            std::cout << " resetting to " << lnew << "\n";
 
          int N = n;
          FNAME(ma57ed)( &N, &copy_real_array, keep, fact, &lfact, newfac, &lnew, ifact, &lifact,
@@ -544,7 +544,7 @@ bool Ma57Solver::checkErrorsAndReact()
       case 11:
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA57: insufficient factorization space in ifact: " << lifact << std::endl;
+            std::cout << "WARNING MA57: insufficient factorization space in ifact: " << lifact << "\n";
          ipessimism *= 1.5;
 
          assert( ifact );
@@ -556,7 +556,7 @@ bool Ma57Solver::checkErrorsAndReact()
          int dummy = lfact + 1;
 
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << " resetting to " << linew << std::endl;
+            std::cout << " resetting to " << linew << "\n";
 
          int N = n;
          FNAME(ma57ed)( &N, &copy_int_array, keep, fact, &lfact, nullptr, &dummy, ifact, &lifact,
@@ -600,7 +600,7 @@ void Ma57Solver::Refine( OoqpVector& x_in, OoqpVector& rhs_in )
       dresid,      dwork,    iwork,  icntl,    cntl,    info, rinfo );
 
   if(info[0]!=0)
-     std::cout << "ma57dd: info[0]=: " << info[0] << std::endl;
+     std::cout << "ma57dd: info[0]=: " << info[0];
 
   delete[] dwork; delete[] dresid;
 

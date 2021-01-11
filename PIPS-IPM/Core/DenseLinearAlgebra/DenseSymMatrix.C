@@ -184,14 +184,14 @@ double DenseSymMatrix::abminnormNonZero( double tol ) const
    return mStorage->abminnormNonZero( tol );
 }
 
-void DenseSymMatrix::writeToStream(ostream& out) const
+void DenseSymMatrix::writeToStream(std::ostream& out) const
 {
    for( int i = 0; i < mStorage->m; i++ )
    {
       for( int j = 0; j < mStorage->n; j++ )
          out << mStorage->M[i][j] << "\t";
 
-      out << std::endl;
+      out << "\n";
    }
 }
 

@@ -257,10 +257,10 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const
 
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
-   std::cout << " done " << std::endl;
+   std::cout << " done\n";
 }
 
-void StochSymMatrix::writeToStreamDenseChild(stringstream& out, int offset) const
+void StochSymMatrix::writeToStreamDenseChild(std::stringstream& out, int offset) const
 {
    assert( border != nullptr );
    int m_diag, m_border, n;

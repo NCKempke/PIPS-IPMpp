@@ -498,7 +498,7 @@ void sTreeCallbacks::assertTreeStructureCorrect() const
 
 StochSymMatrix* sTreeCallbacks::createQ() const
 {
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf );
 
    //is this node a dead-end for this process?
    if( commWrkrs == MPI_COMM_NULL )
@@ -526,7 +526,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
       DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const
 {
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf );
 
    if( commWrkrs == MPI_COMM_NULL )
       return new StochGenDummyMatrix();
@@ -566,7 +566,8 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       }
 
       //populate submatrix B
-      (data->*Amat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Bmat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
 
       if( print_tree_sizes_on_reading )
          printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
@@ -594,8 +595,10 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       }
 
       //populate the submatrices A, B
-      (data->*Amat)(data->user_data, data->id, A->Amat->krowM(), A->Amat->jcolM(), A->Amat->M());
-      (data->*Bmat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Amat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Amat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Amat)->M());
+      (data->*Bmat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Bmat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
 
       if( print_tree_sizes_on_reading )
          printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
@@ -604,7 +607,8 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
 
    // populate Bl if existent
    if( data->*Blmat )
-      (data->*Blmat)(data->user_data, data->id, A->Blmat->krowM(), A->Blmat->jcolM(), A->Blmat->M());
+      (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Blmat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Blmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Blmat)->M());
 
    for(size_t it = 0; it < children.size(); it++)
    {

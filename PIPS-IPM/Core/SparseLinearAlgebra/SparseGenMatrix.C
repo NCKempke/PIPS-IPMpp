@@ -175,12 +175,12 @@ void SparseGenMatrix::putSparseTriple( int irow[], int len,
 }
 
 
-void SparseGenMatrix::writeToStream(ostream& out) const
+void SparseGenMatrix::writeToStream(std::ostream& out) const
 {
   mStorage->writeToStream( out );
 }
 
-void SparseGenMatrix::writeToStreamDense(ostream& out) const
+void SparseGenMatrix::writeToStreamDense(std::ostream& out) const
 {
    if( mStorageDynamic != nullptr )
       mStorageDynamic->writeToStreamDense( out );
@@ -191,7 +191,7 @@ void SparseGenMatrix::writeToStreamDense(ostream& out) const
 }
 
 void
-SparseGenMatrix::writeToStreamDenseRow(stringstream& out, int rowidx) const
+SparseGenMatrix::writeToStreamDenseRow(std::stringstream& out, int rowidx) const
 {
    if( mStorageDynamic != nullptr )
    {
@@ -213,7 +213,7 @@ SparseGenMatrix::writeToStreamDenseRow(stringstream& out, int rowidx) const
 
 std::string SparseGenMatrix::writeToStreamDenseRow(int rowidx) const
 {
-   stringstream out;
+   std::stringstream out;
    if( mStorageDynamic != nullptr )
    {
       if( mStorageDynamic->getN() > 0 )
@@ -262,7 +262,7 @@ void SparseGenMatrix::atPutSpRow( int row, double A[],
 }
 
 
-int SparseGenMatrix::numberOfNonZeros()
+int SparseGenMatrix::numberOfNonZeros() const
 {
   return mStorage->numberOfNonZeros();
 }

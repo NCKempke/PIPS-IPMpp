@@ -116,9 +116,9 @@ public:
   virtual void atPutDiagonal( int idiag,
 			      double x[], int incx, int extent );
 
-  virtual void writeToStream(ostream& out) const;
-  virtual void writeToStreamDense(ostream& out) const;
-  virtual void writeToStreamDenseRow( stringstream& out, int rowidx) const;
+  virtual void writeToStream(std::ostream& out) const;
+  virtual void writeToStreamDense(std::ostream& out) const;
+  virtual void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
 
   virtual void symmetrize( int& info);
   double abmaxnorm() const override;
@@ -193,7 +193,7 @@ public:
 
   void sortCols();
 
-  void dump(const string& filename);
+  void dump(const std::string& filename);
 
   void deleteEmptyRowsCols(const int* nnzRowVec, const int* nnzColVec);
 

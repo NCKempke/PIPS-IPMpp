@@ -134,7 +134,7 @@ void PardisoSolver::initSystem()
             }
          assert(idxDiagAug>=0);
 
-         diagMap.insert(pair<int, int>(idxDiagMsys, idxDiagAug));
+         diagMap.insert(std::pair<int, int>(idxDiagMsys, idxDiagAug));
       }
    }
    else if( Mdsys )
@@ -213,7 +213,7 @@ void PardisoSolver::matrixChanged()
       {
          //update diagonal entries in the PARDISO aug sys (if the input is sparse)
          double* eltsMsys = Msys->getStorageRef().M;
-         map<int, int>::iterator it;
+         std::map<int, int>::iterator it;
          for( it = diagMap.begin(); it != diagMap.end(); it++ )
             M[it->second] = eltsMsys[it->first];
       }

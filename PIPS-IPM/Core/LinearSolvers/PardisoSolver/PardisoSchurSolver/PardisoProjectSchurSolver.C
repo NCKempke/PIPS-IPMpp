@@ -209,7 +209,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
    {
       //update diagonal entries in the PARDISO aug sys
       const double* eltsMsys = Msys->getStorageRef().M;
-      map<int, int>::iterator it;
+      std::map<int, int>::iterator it;
 
 #if 0
       double max = -1e20;
@@ -241,7 +241,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
    pardiso_chkmatrix(&mtype, &n, eltsAug, rowptrAug, colidxAug, &error);
    if( error != 0 )
    {
-      cout << "PARDISO matrix error " << error << endl;
+      std::cout << "PARDISO matrix error " << error << "\n";
       exit(1);
    }
 #endif

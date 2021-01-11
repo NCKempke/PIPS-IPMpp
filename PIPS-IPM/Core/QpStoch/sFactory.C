@@ -184,8 +184,8 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
     std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << std::endl
               << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << std::endl;
 
-	vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
-	vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
+	std::vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
+	std::vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
 	A.getStorageRef().transpose(&colptrA[0],&rowidxA[0],&eltsA[0]);
 	C.getStorageRef().transpose(&colptrC[0],&rowidxC[0],&eltsC[0]);
 
@@ -207,7 +207,7 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 	assert(nnz == nnzA + nnzC);
 
 	std::ofstream fd("augdump.dat");
-	fd << scientific;
+	fd << std::scientific;
 	fd.precision(16);
 	fd << (nx + my + mz) << std::endl;
 	fd << nx_1 << std::endl;

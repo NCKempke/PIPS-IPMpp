@@ -57,7 +57,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */
-  virtual int numberOfNonZeros();
+  int numberOfNonZeros() const override;
 
   virtual int isKindOf( int matType ) const;
 
@@ -109,9 +109,9 @@ public:
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
-  virtual void writeToStream(ostream& out) const;
-  virtual void writeToStreamDense(ostream& out) const;
-  virtual void writeToStreamDenseRow( stringstream& out, int rowidx) const;
+  virtual void writeToStream(std::ostream& out) const;
+  virtual void writeToStreamDense(std::ostream& out) const;
+  virtual void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
   virtual std::string writeToStreamDenseRow( int rowidx) const;
 
   /** Make the elements in this matrix symmetric. The elements of interest
