@@ -42,6 +42,14 @@ class sFactory : public QpGen
   virtual Variables * makeVariables( Data * prob_in );
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
+  /** create x shaped vector using tree */
+  OoqpVector* makePrimalVector() const override;
+  /** create dual A shaped vector using tree */
+  OoqpVector* makeDualYVector() const override;
+  /** create dual C shaped vector using tree */
+  OoqpVector* makeDualZVector() const override;
+
+
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
   virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 

@@ -267,18 +267,18 @@ Variables* sFactory::makeVariables( Data * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
 
-  OoqpVectorHandle x      = OoqpVectorHandle( tree->newPrimalVector() );
-  OoqpVectorHandle s      = OoqpVectorHandle( tree->newDualZVector() );
-  OoqpVectorHandle y      = OoqpVectorHandle( tree->newDualYVector() );
-  OoqpVectorHandle z      = OoqpVectorHandle( tree->newDualZVector() );
-  OoqpVectorHandle v      = OoqpVectorHandle( tree->newPrimalVector() );
-  OoqpVectorHandle gamma  = OoqpVectorHandle( tree->newPrimalVector() );
-  OoqpVectorHandle w      = OoqpVectorHandle( tree->newPrimalVector() );
-  OoqpVectorHandle phi    = OoqpVectorHandle( tree->newPrimalVector() );
-  OoqpVectorHandle t      = OoqpVectorHandle( tree->newDualZVector() );
-  OoqpVectorHandle lambda = OoqpVectorHandle( tree->newDualZVector() );
-  OoqpVectorHandle u      = OoqpVectorHandle( tree->newDualZVector() );
-  OoqpVectorHandle pi     = OoqpVectorHandle( tree->newDualZVector() );
+  OoqpVectorHandle x      = OoqpVectorHandle( makePrimalVector() );
+  OoqpVectorHandle s      = OoqpVectorHandle( makeDualZVector() );
+  OoqpVectorHandle y      = OoqpVectorHandle( makeDualYVector() );
+  OoqpVectorHandle z      = OoqpVectorHandle( makeDualZVector() );
+  OoqpVectorHandle v      = OoqpVectorHandle( makePrimalVector() );
+  OoqpVectorHandle gamma  = OoqpVectorHandle( makePrimalVector() );
+  OoqpVectorHandle w      = OoqpVectorHandle( makePrimalVector() );
+  OoqpVectorHandle phi    = OoqpVectorHandle( makePrimalVector() );
+  OoqpVectorHandle t      = OoqpVectorHandle( makeDualZVector() );
+  OoqpVectorHandle lambda = OoqpVectorHandle( makeDualZVector() );
+  OoqpVectorHandle u      = OoqpVectorHandle( makeDualZVector() );
+  OoqpVectorHandle pi     = OoqpVectorHandle( makeDualZVector() );
 
   sVars* vars = new sVars( tree, x, s, y, z,
 			   v, gamma, w, phi,
@@ -306,6 +306,24 @@ LinearSystem* sFactory::makeLinsys( Data* )
       linsys = newLinsysRoot();
 
    return linsys;
+}
+
+OoqpVector* sFactory::makePrimalVector() const
+{
+   assert( !la );
+   return tree->newPrimalVector();
+}
+
+OoqpVector* sFactory::makeDualYVector() const
+{
+   assert( !la );
+   return tree->newDualYVector();
+}
+
+OoqpVector* sFactory::makeDualZVector() const
+{
+   assert( !la );
+   return tree->newDualZVector();
 }
 
 void sFactory::iterateStarted()
