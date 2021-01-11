@@ -371,6 +371,7 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
       sol = new double[sz_sol];
    }
 
+#ifndef NDEBUG
 //   if( colSparsity )
 //   {
 //      for( int nr = 0; nr < nrhss; nr++ )
@@ -385,6 +386,7 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
 //         }
 //      }
 //   }
+#endif
 
    /* same for mkl_pardiso and pardiso */
    phase = 33; // solve and iterative refinement
