@@ -31,7 +31,6 @@
 #endif
 
 #include "sData.h"
-#include "sTree.h"
 #include "BorderedSymMatrix.h"
 
 
@@ -79,13 +78,12 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
 }
 
 sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
-		          sTree* tree_,
 			       sData* prob_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
 			       OoqpVector* rhs_)
-  : sLinsysRoot(factory_, tree_, prob_, dd_, dq_, nomegaInv_, rhs_)
+  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_)
 { 
    assert( pips_options::getBoolParameter( "HIERARCHICAL" ) );
    assert(locmyl >= 0 && locmzl >= 0);

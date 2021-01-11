@@ -3,7 +3,6 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRoot.h"
-#include "sTree.h"
 #include "sFactory.h"
 #include "sData.h"
 #include "sDummyLinsys.h"
@@ -82,7 +81,6 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
 }
 
 sLinsysRoot::sLinsysRoot(sFactory* factory_,
-          sTree* tree_,
 			 sData* prob_,
 			 OoqpVector* dd_, 
 			 OoqpVector* dq_,
@@ -710,7 +708,6 @@ void sLinsysRoot::createChildren(sData *prob)
             assert(prob->children[it]);
             assert(stochNode->getChildren()[it]);
             child = stochFactory->newLinsysRoot(prob->children[it],
-                  stochNode->getChildren()[it],
                   ddst.children[it], dqst.children[it],
                   nomegaInvst.children[it], rhsst.children[it]);
          }

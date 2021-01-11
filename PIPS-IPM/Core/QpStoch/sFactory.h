@@ -66,12 +66,9 @@ class sFactory : public QpGen
   { assert(0 && "not implemented here"); };
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
-  virtual sLinsysRoot* newLinsysRoot(sData* prob, sTree* tree_,
-				     OoqpVector* dd,OoqpVector* dq,
+  virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
-
-  virtual sLinsysLeaf* newLinsysLeaf(sData* prob,
-				     OoqpVector* dd,OoqpVector* dq,
+  virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 
 

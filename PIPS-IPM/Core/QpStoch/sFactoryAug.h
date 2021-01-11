@@ -16,8 +16,7 @@ public:
   sLinsysRoot* newLinsysRoot() override;
   sLinsysRoot* newLinsysRootHierarchical() override;
 
-  sLinsysRoot* newLinsysRoot(sData* prob, sTree* tree_,
-				     OoqpVector* dd,OoqpVector* dq,
+  sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
   Data* switchToHierarchicalData(Data* prob_in) override;

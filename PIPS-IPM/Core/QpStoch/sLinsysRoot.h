@@ -35,11 +35,8 @@ class sLinsysRoot : public sLinsys {
   std::vector<sLinsys*> children;
 
   sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(sFactory* factory,
-         sTree* tree_,
-	      sData* prob_,				    
-	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-	      OoqpVector* rhs_);
+  sLinsysRoot(sFactory* factory, sData* prob_, OoqpVector* dd_, OoqpVector* dq_,
+        OoqpVector* nomegaInv_, OoqpVector* rhs_);
 
   virtual void factor2(sData *prob, Variables *vars);
   /* Atoms methods of FACTOR2 for a non-leaf linear system */

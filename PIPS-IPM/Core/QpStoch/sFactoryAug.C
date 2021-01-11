@@ -22,12 +22,12 @@ sLinsysRoot* sFactoryAug::newLinsysRoot()
    return new sLinsysRootAug(this, data);
 }
 
-sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob, sTree* tree_,
+sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
 			   OoqpVector* dd,OoqpVector* dq,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
 
-   return new sLinsysRootAug(this, tree_, prob, dd, dq, nomegaInv, rhs);
+   return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
 }
 
 sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()
