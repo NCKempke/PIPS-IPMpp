@@ -40,7 +40,7 @@ int QpGenLinsys::getIntValue(const std::string& s) const
       return bicg_conv_flag;
    else
    {
-      std::cout << "Unknown observer int request in QpGenLinsys.C: " << s << std::endl;
+      std::cout << "Unknown observer int request in QpGenLinsys.C: " << s << "\n";
       return -1;
    }
 }
@@ -61,7 +61,7 @@ bool QpGenLinsys::getBoolValue(const std::string& s) const
       return bicg_conv_flag == -1;
    else
    {
-      std::cout << "Unknown observer bool request in QpGenLinsys.C: " << s << std::endl;
+      std::cout << "Unknown observer bool request in QpGenLinsys.C: " << s << "\n";
       return false;
    }
 }
@@ -74,7 +74,7 @@ double QpGenLinsys::getDoubleValue(const std::string& s) const
       return bicg_relresnorm;
    else
    {
-      std::cout << "Unknown observer double request in QpGenLinsys.C: " << s << std::endl;
+      std::cout << "Unknown observer double request in QpGenLinsys.C: " << s << "\n";
       return 0.0;
    }
 }
@@ -89,19 +89,19 @@ static void biCGStabPrintStatus(int flag, int it, double resnorm, double rnorm)
    std::cout << "BiCGStab (it=" << it << ", rel.res.norm=" << resnorm << ", rel.r.norm=" << rnorm  << ", avg.iter=" << gOuterBiCGIterAvg << ")";
 
    if( flag == 5 )
-      std::cout << " diverged" << std::endl;
+      std::cout << " diverged\n";
    else if( flag == 4 )
-      std::cout << " break-down occurred" << std::endl;
+      std::cout << " break-down occurred\n";
    else if( flag == 3 )
-      std::cout << " stagnation occurred" << std::endl;
+      std::cout << " stagnation occurred\n";
    else if( flag == -1 )
-      std::cout << " not converged in max iterations" << std::endl;
+      std::cout << " not converged in max iterations\n";
    else if( flag == 1 )
-      std::cout << " skipped" << std::endl;
+      std::cout << " skipped\n";
    else if( flag == 0 )
-      std::cout << " converged" << std::endl;
+      std::cout << " converged\n";
    else
-      std::cout << std::endl;
+      std::cout << "\n";
 
 }
 
@@ -144,8 +144,7 @@ static bool isZero(double val, int& flag)
 }
 
 QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPackage * la ) :
-  bicg_conv_flag(-2), bicg_niterations(-1), bicg_resnorm(0.0), bicg_relresnorm(0.0),
-  factory( factory_), rhs(nullptr), dd(nullptr), dq(nullptr), useRefs(0),
+  factory( factory_),
   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
   outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
@@ -210,12 +209,7 @@ QpGenLinsys::QpGenLinsys( QpGen * factory_, QpGenData * prob, LinearAlgebraPacka
 }
 
 QpGenLinsys::QpGenLinsys()
- : bicg_conv_flag(-2), bicg_niterations(-1), bicg_resnorm(0.0), bicg_relresnorm(0.0), nomegaInv(nullptr), factory(nullptr),
-   rhs(nullptr), nx(-1), my(-1), mz(-1), dd(nullptr), dq(nullptr), ixupp(nullptr), icupp(nullptr), ixlow(nullptr), iclow(nullptr),
-   nxupp(-1), nxlow(-1), mcupp(-1), mclow(-1),
-   useRefs(0), sol(nullptr), res(nullptr), resx(nullptr), resy(nullptr), resz(nullptr),
-   sol2(nullptr), sol3(nullptr), res2(nullptr), res3(nullptr), res4(nullptr), res5(nullptr),
-   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
+ : outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
    innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
    outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
    outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
@@ -270,7 +264,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   dd->min(mindd, dummy);
 
   if( PIPS_MPIgetRank() == 0 )
-     std::cout << "Diagonal dd : inf " << infnormdd << ", min " << mindd << std::endl;
+     std::cout << "Diagonal dd : inf " << infnormdd << ", min " << mindd << "\n";
 
   nomegaInv->invert();
   nomegaInv->negate();
@@ -285,7 +279,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   dd->min(minomegainv, dummy);
 
   if( PIPS_MPIgetRank() == 0 )
-     std::cout << "Diagonal omegaInv: inf " << infnormomegainv << ", min " << minomegainv << std::endl;
+     std::cout << "Diagonal omegaInv: inf " << infnormomegainv << ", min " << minomegainv << "\n";
 
 }
 
@@ -482,7 +476,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
      const double zinf = stepz.infnorm();
 
      if( PIPS_MPIgetRank() == 0 )
-        std::cout << "rhsx norm : " << xinf << ",\trhsy norm : " << yinf << ",\trhsz norm : " << zinf << std::endl;
+        std::cout << "rhsx norm : " << xinf << ",\trhsy norm : " << yinf << ",\trhsz norm : " << zinf << "\n";
   }
 
   assert( rhs );
@@ -544,10 +538,10 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
      if( PIPS_MPIgetRank() == 0 )
      {
-        cout << "bnorm " << bnorm << std::endl;
+        cout << "bnorm " << bnorm << "\n";
         cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << endl;
         cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << endl;
-        cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << std::endl;
+        cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << "\n";
      }
      delete residual;
   }
@@ -613,8 +607,8 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
 
       if( myRank == 0 )
       {
-          std::cout << "global system infnorm=" << glbinfnorm << " x 1norm=" <<  xonenorm << " tolb/tolnew: "<< tolb << " " <<  (tol * xonenorm * glbinfnorm )  <<  std::endl;
-          std::cout << "outer BiCGStab starts: " << normr << " > " << tolb <<  " normb2=" << n2b << " normbinf=" << infb << " (tolerance=" << tol << ")" <<  std::endl;
+          std::cout << "global system infnorm=" << glbinfnorm << " x 1norm=" <<  xonenorm << " tolb/tolnew: "<< tolb << " " <<  (tol * xonenorm * glbinfnorm )  <<  "\n";
+          std::cout << "outer BiCGStab starts: " << normr << " > " << tolb <<  " normb2=" << n2b << " normbinf=" << infb << " (tolerance=" << tol << ")" <<  "\n";
       }
    }
 
