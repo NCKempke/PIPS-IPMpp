@@ -216,6 +216,7 @@ public:
 
   virtual SparseGenMatrix* shaveLeft(int n_cols);
   virtual SparseGenMatrix* shaveBottom(int n_rows);
+  virtual void dropNEmptyRowsBottom( int n_rows );
 
   virtual ~SparseGenMatrix();
 };

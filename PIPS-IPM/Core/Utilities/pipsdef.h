@@ -145,7 +145,7 @@ inline PERMUTATION getInversePermutation(const PERMUTATION& perm)
 }
 
 template <typename T>
-inline int getNDistinctValues( const std::vector<T>& values )
+inline unsigned int getNDistinctValues( const std::vector<T>& values )
 {
    return std::set<T>(values.begin(), values.end()).size();
 }

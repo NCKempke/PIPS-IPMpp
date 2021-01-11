@@ -2371,6 +2371,19 @@ SparseStorage* SparseStorage::shaveBottom( int n_rows )
    return border;
 }
 
+void SparseStorage::dropNEmptyRowsBottom( int n_rows )
+{
+   assert( n_rows <= m );
+   assert( 0 <= n_rows );
+
+   if( n_rows == 0 )
+      return;
+
+   // assert rows are empty
+   assert( krowM[m] - krowM[ m - n_rows ] == 0 );
+   m = m - n_rows;
+}
+
 SparseStorage* SparseStorage::shaveSymLeftBottom( int )
 {
    assert( 0 && "TODO : implement" );

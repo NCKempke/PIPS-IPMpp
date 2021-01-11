@@ -7,6 +7,7 @@
 #include "SparseGenMatrix.h"
 #include "BorderedGenMatrix.h"
 #include "StringGenMatrix.h"
+#include "sTree.h"
 
 #include "pipsport.h"
 #include "mpi.h"
@@ -17,6 +18,9 @@ class StochGenMatrix : public GenMatrix {
 protected:
   StochGenMatrix() = default;
 public:
+
+//  StochGenMatrix( long long global_m, long long global_n, GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_);
+
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
    *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
    *  Also sets the global sizes to 'global_m' and 'global_n'.
@@ -226,7 +230,9 @@ public:
   virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const;
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
-  virtual void splitMatrix( const std::vector<int>& twolinks_startin_block_id, const std::vector<unsigned int>& map_blocks_children );
+
+  StringGenMatrix* shaveLinkingConstraints( unsigned int n_conss );
+  virtual void splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root );
 
 protected:
   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
@@ -363,7 +369,8 @@ public:
   void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector*, StochVector*, SimpleVector*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
-  void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>& ) override
+  StringGenMatrix* shaveLinkingConstraints( unsigned int ) { return new StringGenDummyMatrix(); };
+  void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>&, unsigned int ) override
      { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); };
 
   void recomputeSize( StochGenMatrix* ) override {};

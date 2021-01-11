@@ -1079,3 +1079,18 @@ SparseGenMatrix* SparseGenMatrix::shaveBottom(int n_rows)
 
    return new SparseGenMatrix(border);
 }
+
+void SparseGenMatrix::dropNEmptyRowsBottom( int n_rows )
+{
+   assert( !hasDynamicStorage() );
+   assert( n_rows <= mStorage->m );
+
+   mStorage->dropNEmptyRowsBottom( n_rows );
+
+   if( n_rows != 0 && m_Mt )
+   {
+      delete m_Mt;
+      this->initTransposed(false);
+   }
+}
+

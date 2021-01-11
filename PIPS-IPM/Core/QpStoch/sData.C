@@ -1763,7 +1763,8 @@ void sData::splitDataAndAddAsChildLayer()
 //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
 
    StochGenMatrix& amat = dynamic_cast<StochGenMatrix&>(*A);
-   amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree);
+   amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl());
+//   amat.setMpiComms();
 //
 //
 //   assert( false );
