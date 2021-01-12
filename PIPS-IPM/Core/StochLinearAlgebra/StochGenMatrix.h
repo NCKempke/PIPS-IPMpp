@@ -19,7 +19,7 @@ protected:
   StochGenMatrix() = default;
 public:
 
-//  StochGenMatrix( long long global_m, long long global_n, GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_);
+  StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_);
 
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
    *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
@@ -232,7 +232,8 @@ public:
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
 
   StringGenMatrix* shaveLinkingConstraints( unsigned int n_conss );
-  virtual void splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root );
+  virtual void splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
+        const std::vector<MPI_Comm>& child_comms );
 
 protected:
   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
@@ -370,7 +371,7 @@ public:
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
   StringGenMatrix* shaveLinkingConstraints( unsigned int ) { return new StringGenDummyMatrix(); };
-  void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>&, unsigned int ) override
+  void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>&, unsigned int, const std::vector<MPI_Comm>& ) override
      { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); };
 
   void recomputeSize( StochGenMatrix* ) override {};

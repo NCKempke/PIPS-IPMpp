@@ -1252,6 +1252,16 @@ sTree* sTreeCallbacks::collapseHierarchicalTree()
    return collapseDenseBorder();
 }
 
+std::vector<MPI_Comm> sTreeCallbacks::getChildComms() const
+{
+   std::vector<MPI_Comm> comms(children.size(), MPI_COMM_NULL);
+
+   for( unsigned int i = 0; i < children.size(); ++i )
+      comms[i] = children[i]->commWrkrs;
+
+   return comms;
+}
+
 void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& /*mat*/ ) const
 {
 

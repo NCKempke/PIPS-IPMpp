@@ -64,6 +64,8 @@ class StringGenMatrix : public GenMatrix
       void getSize( long long& m_, long long& n_ ) const override { m_ = m; n_ = n; };
       void getSize( int& m_, int& n_ ) const override { m_ = m; n_ = n; };
 
+      /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
+      void combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms );
 
       /* methods not needed for Hierarchical approach */
       double abminnormNonZero( double) const override { assert( false && "TODO: implement" ); return 0.0; };

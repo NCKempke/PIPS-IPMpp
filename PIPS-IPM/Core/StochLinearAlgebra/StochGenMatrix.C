@@ -11,6 +11,16 @@
 #include <numeric>
 #include <memory>
 
+StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_ )
+   : Amat{Amat}, Bmat{Bmat}, Blmat{Blmat}, mpiComm{mpiComm_}, iAmDistrib{ PIPS_MPIgetDistributed(mpiComm) }
+{
+   assert( Amat );
+   assert( Bmat );
+   assert( Blmat );
+
+   recomputeSize();
+}
+
 StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
       int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_) :
       m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
@@ -34,9 +44,6 @@ StochGenMatrix::StochGenMatrix(long long global_m, long long global_n,
       MPI_Comm mpiComm_) :
       m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
 {
-   Amat = nullptr;
-   Bmat = nullptr;
-   Blmat = nullptr;
 }
 
 StochGenMatrix::~StochGenMatrix()
@@ -44,14 +51,9 @@ StochGenMatrix::~StochGenMatrix()
   for(size_t it = 0; it < children.size(); it++)
     delete children[it];
 
-  if (Amat)
-    delete Amat;
-
-  if (Bmat)
-    delete Bmat;
-
-  if (Blmat)
-    delete Blmat;
+  delete Amat;
+  delete Bmat;
+  delete Blmat;
 }
 
 bool StochGenMatrix::hasSparseMatrices() const
@@ -2260,7 +2262,8 @@ StringGenMatrix* StochGenMatrix::shaveLinkingConstraints( unsigned int n_conss )
    return border;
 }
 
-void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root )
+void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
+      const std::vector<MPI_Comm>& child_comms )
 {
    const unsigned int n_curr_children = children.size();
 
@@ -2277,6 +2280,8 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
    std::vector<StochGenMatrix*> new_children(n_new_children);
 
    StringGenMatrix* Blmat_new = shaveLinkingConstraints( n_links_in_root );
+   Blmat_new->combineChildrenInNewChildren( map_blocks_children, child_comms );
+
    SparseGenMatrix* Blmat_leftover = dynamic_cast<SparseGenMatrix*>(Blmat);
 
 #ifndef NDEBUG
@@ -2295,27 +2300,23 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       while( end_curr_child_blocks != (n_curr_children - 1) &&
             map_blocks_children[end_curr_child_blocks] == map_blocks_children[end_curr_child_blocks + 1] )
       {
-         std::cout << map_blocks_children[end_curr_child_blocks] << " " << map_blocks_children[end_curr_child_blocks + 1] << "\n";
+         assert( child_comms[end_curr_child_blocks] == child_comms[end_curr_child_blocks + 1] );
          ++end_curr_child_blocks;
       }
 
       const int n_links_for_child = std::accumulate( twolinks_start_in_block.begin() + begin_curr_child_blocks,
             twolinks_start_in_block.begin() + end_curr_child_blocks, 0 );
       const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
-      std::cout << n_links_for_child << std::endl;
+
 #ifndef NDEBUG
       n_child_links_sum += n_links_for_child;
 #endif
-
-      int a,b;
-      Blmat_leftover->getSize(a,b);
-      std::cout << "m: " << a << " n: " << b << std::endl;
-      /* create new root node with only Blmat */
+      /* combine children in new StochGenMatrix Bmat */
+      /* create root node with only Blmat */
       SparseGenMatrix* Blmat_child = Blmat_leftover;
       Blmat_leftover = Blmat_child->shaveBottom(m_links_left - n_links_for_child);
 
-      new_children[i] = new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), MPI_COMM_NULL );
-
+      StochGenMatrix* Bmat = new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[begin_curr_child_blocks] );
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
       {
@@ -2327,23 +2328,34 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
          if( !child->isKindOf(kStochDummy) )
             dynamic_cast<SparseGenMatrix*>(child->Blmat)->dropNEmptyRowsBottom( m_links_left - n_links_for_child );
 
-         new_children[i]->AddChild(child);
+         Bmat->AddChild(child);
       }
+      Bmat->recomputeSize();
+
+      /* create child holding the new Bmat and it's Blmat part */
+      int mb, nb;
+      Bmat->getSize(mb, nb);
+      new_children[i] = new StochGenMatrix( new SparseGenMatrix(mb, 0, 0), Bmat, Blmat_new->children[i], child_comms[begin_curr_child_blocks]);
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;
       m_links_left -= n_links_for_child;
    }
+
    assert( n_child_links_sum + n_links_in_root == n_links_orig );
    assert( children.size() == 0 );
+   assert( m_links_left == 0 );
 
    /* exchange children and recompute sizes */
    children.insert(children.end(), new_children.begin(), new_children.end());
-   Blmat = Blmat_new;
+
+   Blmat_new->children.clear();
+   Blmat = Blmat_new->mat;
+   Blmat_new->mat = nullptr;
+   delete Blmat_new;
    delete Blmat_leftover;
 
    for( auto& child : children )
       child->recomputeSize();
    this->recomputeSize();
 }
-

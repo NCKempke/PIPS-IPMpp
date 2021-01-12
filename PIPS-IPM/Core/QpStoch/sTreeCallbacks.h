@@ -72,8 +72,10 @@ public:
    void splitDataAccordingToTree( sData& data ) const;
    const std::vector<unsigned int>& getMapBlockSubTrees() const
       { assert( is_hierarchical_inner_root ); return map_node_sub_root; };
+   std::vector<MPI_Comm> getChildComms() const;
 
    void assertTreeStructureCorrect() const;
+
 protected:
    void assertTreeStructureChildren() const;
    void assertSubRoot() const;

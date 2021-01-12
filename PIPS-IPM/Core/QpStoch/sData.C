@@ -1760,10 +1760,12 @@ void sData::reorderLinkingConstraintsAccordingToSplit()
 void sData::splitDataAndAddAsChildLayer()
 {
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
-//   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
+   const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
+   assert( child_comms.size() == map_block_subtree.size() );
+   //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
 
    StochGenMatrix& amat = dynamic_cast<StochGenMatrix&>(*A);
-   amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl());
+   amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
 //   amat.setMpiComms();
 //
 //

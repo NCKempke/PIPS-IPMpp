@@ -567,6 +567,31 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
       addColSumsHorizontal( vec );
 }
 
+void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms )
+{
+   const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
+
+   for( unsigned int i = 0; i < map_child_subchild.size(); ++i )
+   {
+      SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
+      StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[i]);
+
+      /* will not change size of StringGenMat since new_child is of size zero */
+      addChild(new_child);
+      new_child->addChild( children[i] );
+
+      while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i+1] )
+      {
+         assert( child_comms[i] == child_comms[i + 1] );
+         ++i;
+         new_child->addChild(children[i]);
+      }
+   }
+
+   assert( children.size() == n_new_children + map_child_subchild.size() );
+   children.erase( children.begin(), children.begin() + map_child_subchild.size() );
+}
+
 std::string StringGenMatrix::writeToStreamDenseRowChildren(int row) const
 {
    std::string str_all;
