@@ -15,34 +15,6 @@ Data * QpGenSparseSeq::makeData()
   return new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );
 }
 
-void QpGenSparseSeq::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-				   const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
-{
-  SimpleVector & rhs  = dynamic_cast<SimpleVector &>(rhs_in);
-  const SimpleVector & rhs1 = dynamic_cast<const SimpleVector&>(rhs1_in);
-  const SimpleVector & rhs2 = dynamic_cast<const SimpleVector&>(rhs2_in);
-  const SimpleVector & rhs3 = dynamic_cast<const SimpleVector&>(rhs3_in);
-
-  memcpy( &rhs[0], &rhs1[0], nx * sizeof( double ) );
-  if( my > 0 ) memcpy( &rhs[nx],      &rhs2[0], my * sizeof( double ) );
-  if( mz > 0 ) memcpy( &rhs[nx + my], &rhs3[0], mz * sizeof( double ) );
-}
-
-void
-QpGenSparseSeq::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				   OoqpVector& z_in, const OoqpVector& vars_in ) const
-{
-  const SimpleVector & vars  = dynamic_cast<const SimpleVector &>(vars_in);
-  SimpleVector & x = dynamic_cast<SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
-  SimpleVector & z = dynamic_cast<SimpleVector &>(z_in);
-
-  memcpy( &x[0], &vars[0], nx * sizeof( double ) );
-  if ( my > 0 ) memcpy( &y[0], &vars[nx],      my * sizeof( double ) );
-  if ( mz > 0 ) memcpy( &z[0], &vars[nx + my], mz * sizeof( double ) );
-}
-
-
 Data         * 
 QpGenSparseSeq::makeData( double    c_[],
 			     int    krowQ[],  int  jcolQ[],  double dQ[],

@@ -57,14 +57,6 @@ class sFactory : public QpGen
 
   virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
 
-
-  void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override
-  { assert(0 && "not implemented here"); };
-
-
-  void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override
-  { assert(0 && "not implemented here"); };
-
   virtual sLinsysRoot* newLinsysRoot() = 0;
   virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
         OoqpVector* nomegaInv, OoqpVector* rhs, OoqpVector* primal_reg,

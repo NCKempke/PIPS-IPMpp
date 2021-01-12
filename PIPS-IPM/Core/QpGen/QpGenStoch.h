@@ -41,13 +41,6 @@ class QpGenStoch : public QpGen {
 
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
-
-  void joinRHS( OoqpVector& rhs_in, const  OoqpVector& rhs1_in,
-			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
-
-  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, const OoqpVector& vars_in ) const;
-
   virtual QpGenStochLinsysRoot* newLinsysRoot() = 0;
   virtual QpGenStochLinsysRoot* newLinsysRoot(QpGenStochData* prob,
 					      OoqpVector* dd,OoqpVector* dq,

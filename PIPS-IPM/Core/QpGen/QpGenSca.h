@@ -45,12 +45,6 @@ public:
 			    double clow[], char iclow[],
 			    double cupp[], char icupp[] );
 */
-
-  virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-			OoqpVector& rhs2_in, OoqpVector& rhs3_in );
-
-  virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, OoqpVector& vars_in );
 };
 
 #endif

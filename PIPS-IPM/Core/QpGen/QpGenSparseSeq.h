@@ -45,11 +45,6 @@ public:
 			    double clow[], char iclow[],
 			    double cupp[], char icupp[] );
 
-  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
-
-  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, const OoqpVector& vars_in ) const;
 };
 
 #endif

@@ -55,6 +55,7 @@ protected:
   OoqpVector* rhs{};
 
   /** regularization parameters */
+  OoqpVector* reg{};
   OoqpVector* primal_reg{};
   OoqpVector* dual_y_reg{};
   OoqpVector* dual_z_reg{};

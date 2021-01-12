@@ -300,6 +300,12 @@ public:
 
   virtual OoqpVectorBase<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };
   virtual OoqpVectorBase<T>* cloneFull() const { assert(0 && "not implemented here"); return nullptr; };
+
+  /** copy [this] = [vx, vy, vz] */
+  virtual void jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpVectorBase<T>& vy, const OoqpVectorBase<T>& vz) = 0;
+  /** copy [vx, vy, vz] = [this] */
+  virtual void jointCopyTo(OoqpVectorBase<T>& vx, OoqpVectorBase<T>& vy, OoqpVectorBase<T>& vz) const = 0;
+
 };
 
 

@@ -165,6 +165,9 @@ public:
   void appendToFront( const SimpleVectorBase<T>& other );
   void appendToBack( const SimpleVectorBase<T>& other );
 
+  void jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpVectorBase<T>& vy, const OoqpVectorBase<T>& vz) override;
+  void jointCopyTo(OoqpVectorBase<T>& vx, OoqpVectorBase<T>& vy, OoqpVectorBase<T>& vz) const override;
+
   virtual SimpleVectorBase<T>* shaveBorder( int n_shave, bool shave_top );
 };
 

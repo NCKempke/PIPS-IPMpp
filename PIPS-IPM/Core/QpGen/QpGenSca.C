@@ -32,30 +32,6 @@ Data * QpGenSca::makeData()
   return new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );
 }
 
-void QpGenSca::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-				   OoqpVector& rhs2_in, OoqpVector& rhs3_in )
-{
-  ScaVector & rhs  = dynamic_cast<ScaVector &>(rhs_in);
-  SimpleVector & rhs1 = dynamic_cast<SimpleVector &>(rhs1_in);
-  SimpleVector & rhs2 = dynamic_cast<SimpleVector &>(rhs2_in);
-  SimpleVector & rhs3 = dynamic_cast<SimpleVector &>(rhs3_in);
-
-  rhs.joinRHS(rhs1, nx, rhs2, my, rhs3, mz);
-}
-
-void
-QpGenSca::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				   OoqpVector& z_in, OoqpVector& vars_in )
-{
-  ScaVector & vars  = dynamic_cast<ScaVector &>(vars_in);
-  SimpleVector & x = dynamic_cast<SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
-  SimpleVector & z = dynamic_cast<SimpleVector &>(z_in);
-
-  vars.separateVars(x, nx, y, my, z, mz);
-}
-
-
 Data         * 
 QpGenSca::makeData( double    c_[],
 			     int    krowQ[],  int  jcolQ[],  double dQ[],

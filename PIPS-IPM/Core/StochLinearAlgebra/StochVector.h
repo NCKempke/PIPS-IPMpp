@@ -49,8 +49,8 @@ public:
   /* copy vector entries as well */
   OoqpVectorBase<T>* cloneFull() const override;
 
-  virtual void jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz);
-  virtual void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const;
+  void jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpVectorBase<T>& vy, const OoqpVectorBase<T>& vz) override;
+  void jointCopyTo(OoqpVectorBase<T>& vx, OoqpVectorBase<T>& vy, OoqpVectorBase<T>& vz) const override;
 
   bool isKindOf( int kind ) const override;
   void setToZero() override;

@@ -83,35 +83,6 @@ QpGenData *  QpGenDense::makeData()
   return new QpGenData( la, nx, my, mz, nx * nx, my * nx, mz * nx );
 }
 
-
-
-void QpGenDense::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-			  OoqpVector& rhs2_in, OoqpVector& rhs3_in )
-{
-  SimpleVector & rhs  = (SimpleVector &) rhs_in;
-  SimpleVector & rhs1 = (SimpleVector &) rhs1_in;
-  SimpleVector & rhs2 = (SimpleVector &) rhs2_in;
-  SimpleVector & rhs3 = (SimpleVector &) rhs3_in;
-
-  memcpy( &rhs[0], &rhs1[0], nx * sizeof( double ) );
-  if( my > 0 ) memcpy( &rhs[nx],      &rhs2[0], my * sizeof( double ) );
-  if( mz > 0 ) memcpy( &rhs[nx + my], &rhs3[0], mz * sizeof( double ) );
-}
-
-void
-QpGenDense::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			      OoqpVector& z_in, OoqpVector& vars_in )
-{
-  SimpleVector & vars  = (SimpleVector &) vars_in;
-  SimpleVector & x = (SimpleVector &) x_in;
-  SimpleVector & y = (SimpleVector &) y_in;
-  SimpleVector & z = (SimpleVector &) z_in;
-
-  memcpy( &x[0], &vars[0], nx * sizeof( double ) );
-  if ( my > 0 ) memcpy( &y[0], &vars[nx],      my * sizeof( double ) );
-  if ( mz > 0 ) memcpy( &z[0], &vars[nx + my], mz * sizeof( double ) );
-}
-
 void QpGenDense::makeRandomData( QpGenData *& data, QpGenVars *& soln )
 {
   data =
