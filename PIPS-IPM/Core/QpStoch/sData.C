@@ -1796,7 +1796,21 @@ void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
    if( !stochNode->isHierarchicalInnerRoot() )
       return;
 
+   std::cout <<"\n-------------------------\n";
+   for( auto& child : dynamic_cast<StochGenMatrix&>(*A).children )
+   {
+      child->Blmat->writeToStream(std::cout);
+      std::cout <<"\n-------------------------\n";
+   }
    reorderLinkingConstraintsAccordingToSplit( myl_from_border, mzl_from_border );
+   std::cout <<"\n-------------------------\n";
+   std::cout <<"\n-------------------------\n";
+   std::cout <<"\n-------------------------\n";
+   for( auto& child : dynamic_cast<StochGenMatrix&>(*A).children )
+   {
+      child->Blmat->writeToStream(std::cout);
+      std::cout <<"\n-------------------------\n";
+   }
    splitDataAndAddAsChildLayer( myl_from_border, mzl_from_border );
 
    for( auto& child : children )
