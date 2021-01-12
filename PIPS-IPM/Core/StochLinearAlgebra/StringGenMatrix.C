@@ -570,24 +570,26 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
 void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms )
 {
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
+   assert( child_comms.size() == n_new_children );
 
+   unsigned int n_children{0};
    for( unsigned int i = 0; i < map_child_subchild.size(); ++i )
    {
       SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
-      StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[i]);
-
+      StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
+      ++n_children;
       /* will not change size of StringGenMat since new_child is of size zero */
       addChild(new_child);
       new_child->addChild( children[i] );
 
       while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i+1] )
       {
-         assert( child_comms[i] == child_comms[i + 1] );
          ++i;
          new_child->addChild(children[i]);
       }
    }
 
+   assert( n_children == n_new_children );
    assert( children.size() == n_new_children + map_child_subchild.size() );
    children.erase( children.begin(), children.begin() + map_child_subchild.size() );
 }

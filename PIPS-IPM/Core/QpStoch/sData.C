@@ -1617,13 +1617,6 @@ sData* sData::shaveBorderFromDataAndCreateNewTop( const sTree* tree )
 
 sData* sData::shaveDenseBorder( const sTree* tree )
 {
-   if( PIPS_MPIgetRank() == 0 )
-   {
-      std::cout << "Switching to hierarchical data ...\n";
-      std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
-            n_global_ineq_linking_conss << " inequalities for the border\n";
-   }
-
    sData* hierarchical_top = shaveBorderFromDataAndCreateNewTop( tree );
 
    const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
@@ -1741,7 +1734,7 @@ PERMUTATION sData::getChildLinkConsFirstOwnLinkConsLastPermutation( const std::v
    return perm;
 }
 
-void sData::reorderLinkingConstraintsAccordingToSplit()
+void sData::reorderLinkingConstraintsAccordingToSplit(int myl_from_border , int mzl_from_border )
 {
    /* assert that distributed Schur complement has not yet been initialized */
    assert( isSCrowLocal.size() == 0 );
@@ -1749,28 +1742,27 @@ void sData::reorderLinkingConstraintsAccordingToSplit()
 
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
-   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdA, stochNode->myl() );
-   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdC, stochNode->mzl() );
+   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdA, stochNode->myl() + myl_from_border );
+   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdC, stochNode->mzl() + mzl_from_border );
 
    /* which blocks do the individual two-links start in */
    permuteLinkingCons(perm_A, perm_C);
    permuteLinkStructureDetection(perm_A, perm_C);
 }
 
-void sData::splitDataAndAddAsChildLayer()
+void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_border)
 {
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
-   assert( child_comms.size() == map_block_subtree.size() );
+   assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
    //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
 
-   StochGenMatrix& amat = dynamic_cast<StochGenMatrix&>(*A);
-   amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
-//   amat.setMpiComms();
-//
-//
-//   assert( false );
-//   GenMatrixHandle C_hier( dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars) );
+   StochGenMatrix& Amat = dynamic_cast<StochGenMatrix&>(*A);
+   Amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
+   StochGenMatrix& Cmat = dynamic_cast<StochGenMatrix&>(*C);
+   Cmat.splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
+
+   assert( false && "TODO: implement" );
 //
 //   /* we ordered global linking vars first and global linking rows to the end */
 //   StochVectorHandle g_hier( dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true) );
@@ -1798,14 +1790,14 @@ void sData::splitDataAndAddAsChildLayer()
 
 }
 
-void sData::splitDataAccordingToTree()
+void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
 {
    /* we came to a leaf and stop here */
    if( !stochNode->isHierarchicalInnerRoot() )
       return;
 
-   reorderLinkingConstraintsAccordingToSplit();
-   splitDataAndAddAsChildLayer();
+   reorderLinkingConstraintsAccordingToSplit( myl_from_border, mzl_from_border );
+   splitDataAndAddAsChildLayer( myl_from_border, mzl_from_border );
 
    for( auto& child : children )
    {
@@ -1821,10 +1813,11 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    assert( tree->isHierarchicalRoot() );
    assert( tree->nChildren() == 1 );
 
-   this->splitDataAccordingToTree();
+   this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
+   sData* hierarchical_top = shaveDenseBorder( tree );
 
    assert( false && "TODO :: check.." );
-   sData* hierarchical_top = shaveDenseBorder( tree );
+
 
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Hierarchical data built\n";
@@ -2055,7 +2048,7 @@ void sData::activateLinkStructureExploitation()
       if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
       {
          if( myrank == 0 )
-            std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << "\n";
+            std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << ")\n";
          useLinkStructure = false;
       }
    }

@@ -833,6 +833,10 @@ StochVector* sTreeCallbacks::createicupp() const
 
 sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave )
 {
+   if( PIPS_MPIgetRank() == 0 && !pips_options::getBoolParameter("SILENT") )
+      std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " <<
+         mzl_to_shave << " inequalities for the border\n";
+
    sTreeCallbacks* top_layer = new sTreeCallbacks();
 
    /* sTree members */
@@ -1117,7 +1121,6 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
       {
          inner_leaf.MYL = myl_active + two_links_children_eq[i];
          inner_leaf.myl_active = myl_active;
-
          if( MYL >= 0 )
             sub_root.adjustActiveMylBy( -myl_active - (two_links_children_eq_sum - two_links_children_eq[i]) );
 
@@ -1149,7 +1152,6 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
 
 void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
-
    assert( commWrkrs != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
 

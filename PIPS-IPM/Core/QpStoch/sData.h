@@ -97,9 +97,9 @@ protected:
   static PERMUTATION getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
         const std::vector<int>& linkStartBlockId, int n_links_after_split );
 
-  void reorderLinkingConstraintsAccordingToSplit();
-  void splitDataAndAddAsChildLayer();
-  void splitDataAccordingToTree();
+  void reorderLinkingConstraintsAccordingToSplit( int myl_from_border = 0, int mzl_from_border = 0 );
+  void splitDataAndAddAsChildLayer( int myl_from_border = 0, int mzl_from_border = 0 );
+  void splitDataAccordingToTree( int myl_from_border = 0, int mzl_from_border = 0 );
 
   sData* shaveBorderFromDataAndCreateNewTop( const sTree* tree );
   sData* shaveDenseBorder( const sTree* tree );

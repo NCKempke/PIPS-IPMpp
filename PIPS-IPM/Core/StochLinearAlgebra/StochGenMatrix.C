@@ -2280,6 +2280,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
    std::vector<StochGenMatrix*> new_children(n_new_children);
 
    StringGenMatrix* Blmat_new = shaveLinkingConstraints( n_links_in_root );
+
    Blmat_new->combineChildrenInNewChildren( map_blocks_children, child_comms );
 
    SparseGenMatrix* Blmat_leftover = dynamic_cast<SparseGenMatrix*>(Blmat);
@@ -2299,10 +2300,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
    {
       while( end_curr_child_blocks != (n_curr_children - 1) &&
             map_blocks_children[end_curr_child_blocks] == map_blocks_children[end_curr_child_blocks + 1] )
-      {
-         assert( child_comms[end_curr_child_blocks] == child_comms[end_curr_child_blocks + 1] );
          ++end_curr_child_blocks;
-      }
 
       const int n_links_for_child = std::accumulate( twolinks_start_in_block.begin() + begin_curr_child_blocks,
             twolinks_start_in_block.begin() + end_curr_child_blocks, 0 );
@@ -2316,7 +2314,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       SparseGenMatrix* Blmat_child = Blmat_leftover;
       Blmat_leftover = Blmat_child->shaveBottom(m_links_left - n_links_for_child);
 
-      StochGenMatrix* Bmat = new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[begin_curr_child_blocks] );
+      StochGenMatrix* Bmat = new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[i] );
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
       {
@@ -2335,7 +2333,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       /* create child holding the new Bmat and it's Blmat part */
       int mb, nb;
       Bmat->getSize(mb, nb);
-      new_children[i] = new StochGenMatrix( new SparseGenMatrix(mb, 0, 0), Bmat, Blmat_new->children[i], child_comms[begin_curr_child_blocks]);
+      new_children[i] = new StochGenMatrix( new SparseGenMatrix(mb, 0, 0), Bmat, Blmat_new->children[i], child_comms[i]);
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;

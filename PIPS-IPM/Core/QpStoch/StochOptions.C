@@ -184,6 +184,8 @@ namespace pips_options
    {
       /// GENERAL
       bool_options["PRINT_TREESIZES_ON_READ"] = false;
+      /* surpresses some of the output */
+      bool_options["SILENT"] = false;
 
       /// LINEAR SOLVERS
       assert( solvers_available.size() > 1 );

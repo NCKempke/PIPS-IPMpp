@@ -10,11 +10,16 @@ class HierarchicalDataSplittingTest : public sData, public ::testing::TestWithPa
 
 TEST_P(HierarchicalDataSplittingTest, TestPermutationOfLinkingConstraintsForSplit )
 {
-   PERMUTATION result = getChildLinkConsFirstOwnLinkConsLastPermutation( std::get<0>(GetParam()),
-         std::get<1>(GetParam()), std::get<2>(GetParam()) );
+   const std::vector<unsigned int> map_block_subtree = std::get<0>(GetParam());
+   const std::vector<int> link_start_block_id = std::get<1>(GetParam());
+   const int n_links_after_split =  std::get<2>(GetParam());
+   const std::vector<unsigned int>& expected_permutation = std::get<3>(GetParam());
 
-   EXPECT_EQ( result.size(), std::get<3>(GetParam()).size() );
-   EXPECT_THAT( result, ::testing::ContainerEq(std::get<3>(GetParam())) );
+   PERMUTATION result = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree,
+         link_start_block_id, n_links_after_split);
+
+   EXPECT_EQ( result.size(), expected_permutation.size() );
+   EXPECT_THAT( result, ::testing::ContainerEq(expected_permutation) );
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -38,6 +43,12 @@ INSTANTIATE_TEST_CASE_P(
                     std::vector<int>{0,0,1,1,2,2,3,3,4,4,5,5,5,6,6},
                     4,
                     std::vector<unsigned int>{0,1,2,3,4,5,11,12,13,14,6,7,8,9,10}
+              ),
+              std::make_tuple(
+                    std::vector<unsigned int>{0,0,0,1,1,2,2,2},
+                    std::vector<int>{-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
+                    14,
+                    std::vector<unsigned int>{0,1,2,3,4,5,6,7,8,9,10,11,12,13}
               )
         )
 );
