@@ -358,7 +358,7 @@ void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
   memcpy(&rhs[0][0], sol, sz_sol*sizeof(double));
 }
 
-void PardisoSolver::solve( int nrhss, double* rhss, int* colSparsity )
+void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
 {
    assert(rhss);
    assert(nrhss >= 1);
@@ -371,20 +371,20 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* colSparsity )
       sol = new double[sz_sol];
    }
 
-   if( colSparsity )
-   {
-      for( int nr = 0; nr < nrhss; nr++ )
-      {
-         for( int i = 0; i < n; i++ )
-         {
-            const int rhspos = nr * n + i;
-            if( rhss[rhspos] != 0.0 )
-               assert(colSparsity[i] == 1);
-            else if( nrhss == 1 ) // does not work with zeroes in matrix, e.g. callback example
-               assert(colSparsity[i] == 0);
-         }
-      }
-   }
+//   if( colSparsity )
+//   {
+//      for( int nr = 0; nr < nrhss; nr++ )
+//      {
+//         for( int i = 0; i < n; i++ )
+//         {
+//            const int rhspos = nr * n + i;
+//            if( rhss[rhspos] != 0.0 )
+//               assert(colSparsity[i] == 1);
+//            else if( nrhss == 1 ) // does not work with zeroes in matrix, e.g. callback example
+//               assert(colSparsity[i] == 0);
+//         }
+//      }
+//   }
 
    /* same for mkl_pardiso and pardiso */
    phase = 33; // solve and iterative refinement
