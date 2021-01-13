@@ -71,6 +71,7 @@ void sTreeCallbacks::addChild( sTreeCallbacks* child )
 
    if( child->commWrkrs != MPI_COMM_NULL )
    {
+//      assert( child->myProcs )
       assert( child->myl_active <= child->MYL );
       assert( child->mzl_active <= child->MZL );
    }
@@ -980,6 +981,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
             }
 
             assigned_leaf->myProcs.push_back( process );
+            assigned_leaf->sub_root->myProcs.push_back( process );
          }
       }
 
@@ -1007,12 +1009,18 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
          assert( isInVector(rankMe, child_new_root->myProcs) );
          assert( child_new_root->commWrkrs != MPI_COMM_NULL );
       }
+      else
+      {
+         auto child_new_root = new_leafs[map_child_to_sub_tree[child]];
+         assert( !isInVector(rankMe, child_new_root->myProcs) );
+         assert( child_new_root->commWrkrs == MPI_COMM_NULL );
+      }
    }
 #endif
 
    /* add sub_roots as this new children */
    children.clear();
-   children.insert( this->children.begin(), new_leafs.begin(), new_leafs.end() );
+   children.insert( children.begin(), new_leafs.begin(), new_leafs.end() );
    is_hierarchical_inner_root = true;
 }
 
