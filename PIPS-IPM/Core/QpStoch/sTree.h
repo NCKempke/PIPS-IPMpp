@@ -145,8 +145,6 @@ protected:
 
   void saveCurrentCPUState();
 
-  int isInVector(int elem, const std::vector<int>& vec) const;
-
 };
 
 #endif 

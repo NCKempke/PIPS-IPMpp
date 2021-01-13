@@ -295,7 +295,7 @@ void sTreeCallbacks::computeGlobalSizes()
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    assert( !isDataPresolved );
 
-   if( data && sTree::isInVector( rankMe, myProcs ) )
+   if( data && isInVector( rankMe, myProcs ) )
    {
       // callbacks can be used for sizes
       assert( data->nCall || data->n != -1 );
@@ -357,7 +357,7 @@ void sTreeCallbacks::assertTreeStructureChildren() const
 
       if( child->commWrkrs != MPI_COMM_NULL )
       {
-         assert( sTree::isInVector(rankMe, child->myProcs) );
+         assert( isInVector(rankMe, child->myProcs) );
          if( !is_hierarchical_root )
             assert( child->np == nx_active );
       }
@@ -377,7 +377,7 @@ void sTreeCallbacks::assertSubRoot() const
 
 void sTreeCallbacks::assertTreeStructureIsNotMyNode() const
 {
-   assert( !sTree::isInVector(rankMe, myProcs) );
+   assert( !isInVector(rankMe, myProcs) );
 
    assert( nx_active == 0 );
    assert( my_active == 0 );
@@ -406,7 +406,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
    {
       const sTreeCallbacks* child = dynamic_cast<const sTreeCallbacks*>(child_);
 
-      if( sTree::isInVector(rankMe, child->myProcs) )
+      if( isInVector(rankMe, child->myProcs) )
       {
          NX_children += child->N;
          MY_children += child->MY;
@@ -462,7 +462,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
 void sTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const
 {
    assert( sub_root );
-   assert( sTree::isInVector(rankMe, myProcs) );
+   assert( isInVector(rankMe, myProcs) );
    assert( sub_root->np = -1 );
    assert( is_hierarchical_inner_leaf );
 
@@ -475,7 +475,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const
 
 void sTreeCallbacks::assertTreeStructureIsMyNode() const
 {
-   assert( sTree::isInVector(rankMe, myProcs) );
+   assert( isInVector(rankMe, myProcs) );
 
    if( children.size() != 0 )
       assertTreeStructureIsMyNodeChildren();

@@ -472,9 +472,9 @@ bool sTree::balanceLoad()
 void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromCPU )
 {
   // was this node previously assigned to cpu 'rank'?
-  int  wasAssigned=isInVector(rank, myOldProcs);
+  int wasAssigned = isInVector(rank, myOldProcs);
   // is currently assigned to cpu 'rank'?
-  int  isAssigned=isInVector(rank, myProcs);
+  int isAssigned = isInVector(rank, myProcs);
 
   //if(0==wasAssigned && 0==isAssigned) return;
   //if(1==wasAssigned && 1==isAssigned) return;
@@ -493,14 +493,6 @@ void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromC
       sendOrRecv = maRecv;
     }
   }
-}
-
-// todo move....
-int sTree::isInVector(int elem, const std::vector<int>& vec) const
-{
-  for(size_t i=0; i<vec.size(); i++)
-    if(elem==vec[i]) return 1;
-  return 0;
 }
 
 void sTree::computeNodeTotal()
