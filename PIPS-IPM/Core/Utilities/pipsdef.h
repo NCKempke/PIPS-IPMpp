@@ -123,6 +123,12 @@ inline bool PIPSisZeroFeas(double val)
 }
 
 template<typename T>
+inline bool isInVector( const T& elem, const std::vector<T>& vec )
+{
+   return std::find(vec.begin(), vec.end(), elem) != vec.end();
+}
+
+template<typename T>
 inline bool containsSorted( const std::vector<T>& subset, const std::vector<T>& vec )
 {
    assert( std::is_sorted(subset.begin(), subset.end() ) );
