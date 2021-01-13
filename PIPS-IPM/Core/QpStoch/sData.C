@@ -1701,7 +1701,7 @@ PERMUTATION sData::getChildLinkConsFirstOwnLinkConsLastPermutation( const std::v
       if( linkStartBlockId[i] == - 1 )
       {
          assert( pos_child_twolinks == end_child_twolinks );
-         perm[i] = pos_remaining_links;
+         perm[pos_remaining_links] = i;
          ++pos_remaining_links;
       }
       else
@@ -1712,18 +1712,18 @@ PERMUTATION sData::getChildLinkConsFirstOwnLinkConsLastPermutation( const std::v
 
          if( start_block_link_i == map_block_subtree.size() - 1 )
          {
-            perm[i] = pos_child_twolinks;
+            perm[pos_child_twolinks] = i;
             ++pos_child_twolinks;
          }
          else if( map_block_subtree[start_block_link_i] != map_block_subtree[start_block_link_i + 1] )
          {
-            perm[i] = pos_remaining_links;
+            perm[pos_remaining_links] = i;
             ++pos_remaining_links;
          }
          else
          {
             assert( map_block_subtree[start_block_link_i] == map_block_subtree[start_block_link_i + 1] );
-            perm[i] = pos_child_twolinks;
+            perm[pos_child_twolinks] = i;
             ++pos_child_twolinks;
          }
       }
@@ -1796,21 +1796,7 @@ void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
    if( !stochNode->isHierarchicalInnerRoot() )
       return;
 
-   std::cout <<"\n-------------------------\n";
-   for( auto& child : dynamic_cast<StochGenMatrix&>(*A).children )
-   {
-      child->Blmat->writeToStream(std::cout);
-      std::cout <<"\n-------------------------\n";
-   }
    reorderLinkingConstraintsAccordingToSplit( myl_from_border, mzl_from_border );
-   std::cout <<"\n-------------------------\n";
-   std::cout <<"\n-------------------------\n";
-   std::cout <<"\n-------------------------\n";
-   for( auto& child : dynamic_cast<StochGenMatrix&>(*A).children )
-   {
-      child->Blmat->writeToStream(std::cout);
-      std::cout <<"\n-------------------------\n";
-   }
    splitDataAndAddAsChildLayer( myl_from_border, mzl_from_border );
 
    for( auto& child : children )

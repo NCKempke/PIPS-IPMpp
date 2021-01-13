@@ -2380,9 +2380,6 @@ void SparseStorage::dropNEmptyRowsBottom( int n_rows )
       return;
 
    // assert rows are empty
-   this->writeToStream(std::cout);
-   std::cout << "m " << m << " nrows: " << n_rows << "\n";
-   std::cout << krowM[m] << " " << krowM[m - n_rows] << "\n\n";
    assert( krowM[m] - krowM[ m - n_rows ] == 0 );
    m = m - n_rows;
    assert( this->isValid() );

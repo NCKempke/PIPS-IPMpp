@@ -30,19 +30,19 @@ INSTANTIATE_TEST_CASE_P(
                     std::vector<unsigned int>{0,0,1,1},
                     std::vector<int>{0,0,0,1,1,2,2,2,2,-1,-1,-1,-1},
                     6,
-                    std::vector<unsigned int>{0,1,2,7,8,3,4,5,6,9,10,11,12}
+                    std::vector<unsigned int>{0,1,2,5,6,7,8,3,4,9,10,11,12}
               ),
               std::make_tuple(
                     std::vector<unsigned int>{0,0,1,1,1,2,2,3,3,3},
                     std::vector<int>{0,0,0,1,1,1,1,2,2,2,4,4,5,5,5,6,7,8,8,8,-1,-1,-1},
                     10,
-                    std::vector<unsigned int>{0,1,2,13,14,15,16,3,4,5,17,18,6,7,8,19,9,10,11,12,20,21,22}
+                    std::vector<unsigned int>{0,1,2,7,8,9,12,13,14,16,17,18,19,3,4,5,6,10,11,15,20,21,22}
               ),
               std::make_tuple(
                     std::vector<unsigned int>{0,0,0,0,1,2,2,2},
                     std::vector<int>{0,0,1,1,2,2,3,3,4,4,5,5,5,6,6},
                     4,
-                    std::vector<unsigned int>{0,1,2,3,4,5,11,12,13,14,6,7,8,9,10}
+                    std::vector<unsigned int>{0,1,2,3,4,5,10,11,12,13,14,6,7,8,9}
               ),
               std::make_tuple(
                     std::vector<unsigned int>{0,0,0,1,1,2,2,2},
