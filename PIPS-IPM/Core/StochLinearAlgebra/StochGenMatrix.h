@@ -231,7 +231,7 @@ public:
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
 
-  StringGenMatrix* shaveLinkingConstraints( unsigned int n_conss );
+  virtual StringGenMatrix* shaveLinkingConstraints( unsigned int n_conss );
   virtual void splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
         const std::vector<MPI_Comm>& child_comms );
 
@@ -370,7 +370,7 @@ public:
   void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector*, StochVector*, SimpleVector*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
-  StringGenMatrix* shaveLinkingConstraints( unsigned int ) { return new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveLinkingConstraints( unsigned int ) override { return new StringGenDummyMatrix(); };
   void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>&, unsigned int, const std::vector<MPI_Comm>& ) override
      { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); };
 

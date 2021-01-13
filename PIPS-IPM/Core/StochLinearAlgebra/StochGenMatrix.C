@@ -2314,7 +2314,9 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       SparseGenMatrix* Blmat_child = Blmat_leftover;
       Blmat_leftover = Blmat_child->shaveBottom(m_links_left - n_links_for_child);
 
-      StochGenMatrix* Bmat = new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[i] );
+      StochGenMatrix* Bmat = (child_comms[i] == MPI_COMM_NULL) ? new StochGenDummyMatrix() :
+            new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[i] );
+
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
       {
@@ -2323,7 +2325,10 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
          StochGenMatrix* child = children.front();
          children.erase(children.begin());
 
-         if( !child->isKindOf(kStochDummy) )
+         if( Bmat->mpiComm == MPI_COMM_NULL )
+            assert( child->mpiComm == MPI_COMM_NULL );
+
+         if( child->mpiComm != MPI_COMM_NULL )
             dynamic_cast<SparseGenMatrix*>(child->Blmat)->dropNEmptyRowsBottom( m_links_left - n_links_for_child );
 
          Bmat->AddChild(child);

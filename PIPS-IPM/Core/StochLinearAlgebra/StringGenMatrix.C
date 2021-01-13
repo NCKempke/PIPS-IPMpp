@@ -575,18 +575,28 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
    unsigned int n_children{0};
    for( unsigned int i = 0; i < map_child_subchild.size(); ++i )
    {
-      SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
-      StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
-      ++n_children;
-      /* will not change size of StringGenMat since new_child is of size zero */
-      addChild(new_child);
-      new_child->addChild( children[i] );
-
-      while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i+1] )
+      if( child_comms[n_children] == MPI_COMM_NULL )
       {
-         ++i;
-         new_child->addChild(children[i]);
+         addChild( new StringGenDummyMatrix() );
+         while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1])
+            ++i;
       }
+      else
+      {
+         SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
+         StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
+         /* will not change size of StringGenMat since new_child is of size zero */
+         addChild(new_child);
+         new_child->addChild( children[i] );
+
+         while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1] )
+         {
+            ++i;
+            new_child->addChild(children[i]);
+         }
+      }
+
+      ++n_children;
    }
 
    assert( n_children == n_new_children );
