@@ -2381,8 +2381,25 @@ void SparseStorage::dropNEmptyRowsBottom( int n_rows )
 
    // assert rows are empty
    assert( krowM[m] - krowM[ m - n_rows ] == 0 );
-   m = m - n_rows;
+   m -= n_rows;
    assert( this->isValid() );
+}
+
+void SparseStorage::dropNEmptyRowsTop( int n_rows )
+{
+   assert( n_rows <= m );
+   assert( 0 <= n_rows );
+   assert( isValid() );
+
+   if( n_rows == 0 )
+      return;
+
+   assert( krowM[0] - krowM[n_rows] == 0 );
+
+   std::move( krowM + n_rows, krowM + m + 1, krowM );
+   m -= n_rows;
+
+   assert( isValid() );
 }
 
 SparseStorage* SparseStorage::shaveSymLeftBottom( int )

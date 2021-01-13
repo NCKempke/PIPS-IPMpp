@@ -226,6 +226,7 @@ public:
   virtual SparseStorage* shaveSymLeftBottom( int n );
   virtual SparseStorage* shaveBottom( int n_rows );
   virtual void dropNEmptyRowsBottom( int n_rows );
+  virtual void dropNEmptyRowsTop( int n_rows );
 
   virtual ~SparseStorage();
 

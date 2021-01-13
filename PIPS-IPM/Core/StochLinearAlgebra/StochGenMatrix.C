@@ -214,107 +214,89 @@ void StochGenMatrix::setToDiagonal( const OoqpVector& vec_ )
 }
 
 /* y = beta * y + alpha * this * x */
-void StochGenMatrix::mult( double beta,  OoqpVector& y_,
+void StochGenMatrix::mult( double beta, OoqpVector& y_,
 			   double alpha, const OoqpVector& x_ ) const
 {
-  const StochVector & x = dynamic_cast<const StochVector&>(x_);
-  StochVector & y = dynamic_cast<StochVector&>(y_);
+   const StochVector & x = dynamic_cast<const StochVector&>(x_);
+   StochVector& y = dynamic_cast<StochVector&>(y_);
 
-  //assert tree compatibility
-  assert(y.children.size() - children.size() == 0);
-  assert(x.children.size() - children.size() == 0);
+   assert( y.children.size() == children.size() );
+   assert( x.children.size() == children.size() );
 
-  const SimpleVector& xvec = dynamic_cast<const SimpleVector&>(*x.vec);
-  SimpleVector& yvec = dynamic_cast<SimpleVector&>(*y.vec);
+   if(0.0 == alpha)
+   {
+      y.scale( beta );
+      return;
+   }
 
-  if (0.0 == alpha) {
-    y.vec->scale( beta );
+   /// Bmat
+   assert( Bmat->isKindOf(kSparseGenMatrix) );
+   Bmat->mult(beta, *y.vec, alpha, *x.getLinkingVecNotHierarchicalTop() );
 
-    for(size_t it = 0; it < children.size(); it++)
-      children[it]->mult(beta, *y.children[it], alpha, *x.children[it]);
+   /// Amat
+   // assert not at root
+   long long mA, nA;
+   Amat->getSize(mA , nA);
+   assert( nA <= 0 );
 
-    return;
-  } else {
-    //if( alpha != 1.0 || beta != 1.0 ) {
-    //  y.vec->scale( beta/alpha );
-    //}
+   /// Blmat
+   int blm, bln;
+   Blmat->getSize(blm, bln);
+   const bool has_linking = blm > 0;
 
-    Bmat->mult(beta, yvec, alpha, xvec);
+   SimpleVector* yvecl = dynamic_cast<SimpleVector*>(y.vecl);
+   if( has_linking )
+      assert( yvecl );
 
-    long long mA, nA; 
-    Amat->getSize(mA,nA);
+   if( has_linking )
+   {
+      if( iAmSpecial(iAmDistrib, mpiComm) )
+         Blmat->mult(beta, *yvecl, alpha, *x.getLinkingVecNotHierarchicalTop());
+      else
+         yvecl->setToZero();
+   }
 
-    // not at root?
-    if(nA>0) {
-      Amat->mult(1.0, yvec, alpha, *x.parent->vec);
+   /* hand down x.vec and y.vecl */
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], yvecl);
 
-    }
-
-    //if( 1.0 != alpha ) {
-    //  y.vec->scale(alpha);
-    //}
-  }
-
-  int blm, bln;
-  Blmat->getSize(blm, bln);
-
-  /* linking constraints present? */
-  if( blm > 0 )
-  {
-	SimpleVector& yvecl = dynamic_cast<SimpleVector&>(*y.vecl);
-
-	if( iAmSpecial(iAmDistrib, mpiComm) )
-	  Blmat->mult(beta, yvecl, alpha, xvec);
-	else
-	  yvecl.setToZero();
-
-    for(size_t it = 0; it < children.size(); it++)
-	   children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], yvecl);
-
-	if(iAmDistrib) {
-	  // sum up linking constraints vectors
-	  int locn = yvecl.length();
-	  double* buffer = new double[locn];
-
-	  MPI_Allreduce(yvecl.elements(), buffer, locn, MPI_DOUBLE, MPI_SUM, mpiComm);
-	  yvecl.copyFromArray(buffer);
-
-	  delete[] buffer;
-    }
-  }
-  else
-  {
-    for(size_t it=0; it<children.size(); it++)
-      children[it]->mult(beta, *y.children[it], alpha, *x.children[it]);
-  }
+   if( iAmDistrib && blm > 0 )
+      PIPS_MPIsumArrayInPlace( yvecl->elements(), yvecl->length(), mpiComm);
 }
 
 
 /* mult method for children; needed only for linking constraints */
 void StochGenMatrix::mult2( double beta,  OoqpVector& y_,
-			   double alpha, OoqpVector& x_, OoqpVector& yparentl_ )
+			   double alpha, OoqpVector& x_, OoqpVector* yparentl_ )
 {
-  StochVector & x = dynamic_cast<StochVector&>(x_);
-  StochVector & y = dynamic_cast<StochVector&>(y_);
+   assert( alpha != 0.0 );
 
-  //assert tree compatibility
-  assert(y.children.size() - children.size() == 0);
-  assert(x.children.size() - children.size() == 0);
+   StochVector& x = dynamic_cast<StochVector&>(x_);
+   StochVector& y = dynamic_cast<StochVector&>(y_);
 
-  if( 0.0 == alpha ) {
-    y.vec->scale( beta );
-    return;
-  }
+   assert( y.children.size() == children.size() );
+   assert( x.children.size() == children.size() );
+   assert( x.vec );
+   assert( y.vec );
 
-  SimpleVector& xvec = dynamic_cast<SimpleVector&>(*x.vec);
-  SimpleVector& yvec = dynamic_cast<SimpleVector&>(*y.vec);
+   Bmat->mult(beta, *y.vec, alpha, *x.vec);
 
-  Bmat->mult(beta, yvec, alpha, xvec);
-  Blmat->mult(1.0, yparentl_, alpha, xvec);
-  Amat->mult(1.0, *y.vec, alpha, *x.parent->vec);
+   if( yparentl_ )
+      Blmat->mult(1.0, *yparentl_, alpha, *x.vec);
+   else
+   {
+      int mbl, nbl;
+      Blmat->getSize(mbl, nbl);
+      assert( mbl == 0 );
+   }
 
-  // not implemented
-  assert(children.size() == 0);
+   int mA, nA;
+   Amat->getSize(mA, nA);
+   if( nA > 0 )
+   {
+      const OoqpVector* link_vec = x.getLinkingVecNotHierarchicalTop();
+      Amat->mult(1.0, *y.vec, alpha, *link_vec);
+   }
 }
 
 
@@ -384,8 +366,8 @@ void StochGenMatrix::transMult ( double beta,   OoqpVector& y_,
 }
 
 
-void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
-				  double alpha,  StochVector& x,
+void StochGenMatrix::transMult2 ( double beta, StochVector& y,
+				  double alpha, StochVector& x,
 				  OoqpVector& yvecParent, const OoqpVector& xvecl) const
 {
   //assert tree compatibility
@@ -2290,10 +2272,10 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
    const unsigned int n_links_orig = m_links_left;
 #endif
    m_links_left -= n_links_in_root;
-
    /* for each future new child collect its children and add them to the new child
     * then shave off the linking constraints that stay at the new child's level
     */
+   unsigned int m_links_so_far{0};
    unsigned int begin_curr_child_blocks{0};
    unsigned int end_curr_child_blocks{0};
    for( unsigned int i = 0; i < n_new_children; ++i )
@@ -2315,7 +2297,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       Blmat_leftover = Blmat_child->shaveBottom(m_links_left - n_links_for_child);
 
       StochGenMatrix* Bmat = (child_comms[i] == MPI_COMM_NULL) ? new StochGenDummyMatrix() :
-            new StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[i] );
+            new StochGenMatrix(0, 0, 0, 0, 0, 0, nBl, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[i] );
 
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
@@ -2329,8 +2311,19 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
             assert( child->mpiComm == MPI_COMM_NULL );
 
          if( child->mpiComm != MPI_COMM_NULL )
+         {
+            dynamic_cast<SparseGenMatrix*>(child->Blmat)->dropNEmptyRowsTop( m_links_so_far );
             dynamic_cast<SparseGenMatrix*>(child->Blmat)->dropNEmptyRowsBottom( m_links_left - n_links_for_child );
+         }
 
+#ifndef NDEBUG
+         if( child->mpiComm != MPI_COMM_NULL )
+         {
+            int blm,bln;
+            child->Blmat->getSize(blm, bln);
+            assert( blm == n_links_for_child );
+         }
+#endif
          Bmat->AddChild(child);
       }
       Bmat->recomputeSize();
@@ -2343,6 +2336,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;
       m_links_left -= n_links_for_child;
+      m_links_so_far += n_links_for_child;
    }
 
    assert( n_child_links_sum + n_links_in_root == n_links_orig );

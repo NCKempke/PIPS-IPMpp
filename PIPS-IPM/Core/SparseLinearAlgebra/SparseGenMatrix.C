@@ -333,8 +333,8 @@ void SparseGenMatrix::atPutSubmatrix( int destRow, int destCol,
 void SparseGenMatrix::mult ( double beta,  OoqpVector& y_in,
 				 double alpha, const OoqpVector& x_in ) const
 {
-  const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
+  const SimpleVector& x = dynamic_cast<const SimpleVector &>(x_in);
+  SimpleVector& y = dynamic_cast<SimpleVector &>(y_in);
 
   assert( x.length() == mStorage->n && y.length() == mStorage->m );
 
@@ -1094,3 +1094,16 @@ void SparseGenMatrix::dropNEmptyRowsBottom( int n_rows )
    }
 }
 
+void SparseGenMatrix::dropNEmptyRowsTop( int n_rows )
+{
+   assert( !hasDynamicStorage() );
+   assert( n_rows <= mStorage->m );
+
+   mStorage->dropNEmptyRowsTop( n_rows );
+
+   if( n_rows != 0 && m_Mt )
+   {
+      delete m_Mt;
+      this->initTransposed(false);
+   }
+}

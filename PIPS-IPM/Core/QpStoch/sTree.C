@@ -241,13 +241,25 @@ StochVector* sTree::newPrimalVector(bool empty) const
    if( commWrkrs == MPI_COMM_NULL )
       return new StochDummyVector();
 
-   StochVector* x = new StochVector( empty ? 0 : nx(), commWrkrs);
-
-   for(size_t it = 0; it < children.size(); it++)
+   StochVector* x{};
+   if( !sub_root )
    {
-      StochVector* child = children[it]->newPrimalVector();
-      x->AddChild(child);
+      x = new StochVector( empty ? 0 : nx(), commWrkrs);
+
+      for(size_t it = 0; it < children.size(); it++)
+      {
+         StochVector* child = children[it]->newPrimalVector(empty);
+         x->AddChild(child);
+      }
    }
+   else
+   {
+      assert( children.size() == 0 );
+      StochVector* x_vec = sub_root->newPrimalVector(empty);
+      x = new StochVector( x_vec, nullptr, commWrkrs );
+      x_vec->parent = x;
+   }
+
    return x;
 }
 
@@ -256,15 +268,28 @@ StochVector* sTree::newDualYVector(bool empty) const
    if( commWrkrs == MPI_COMM_NULL )
       return new StochDummyVector();
 
+   StochVector* y{};
    const int yl = (np == -1) ? myl() : -1;
 
-   StochVector* y = new StochVector(empty ? std::min(0, my()) : my(),
-         empty ? std::min(yl, 0) : yl, commWrkrs);
-
-   for(size_t it = 0; it < children.size(); it++)
+   if( !sub_root )
    {
-      StochVector* child = children[it]->newDualYVector();
-      y->AddChild(child);
+      y = new StochVector(empty ? std::min(0, my()) : my(),
+            empty ? std::min(yl, 0) : yl, commWrkrs);
+
+      for(size_t it = 0; it < children.size(); it++)
+      {
+         StochVector* child = children[it]->newDualYVector(empty);
+         y->AddChild(child);
+      }
+   }
+   else
+   {
+      assert( children.size() == 0 );
+      StochVector* y_vec = sub_root->newDualYVector( empty );
+      SimpleVector* y_vecl = yl < 0 ? nullptr : new SimpleVector( empty ? std::min(yl, 0) : yl );
+
+      y = new StochVector( y_vec, y_vecl, commWrkrs );
+      y_vec->parent = y;
    }
    return y;
 }
@@ -274,15 +299,29 @@ StochVector* sTree::newDualZVector(bool empty) const
    if( commWrkrs == MPI_COMM_NULL )
       return new StochDummyVector();
 
+   StochVector* z{};
    const int zl = (np == -1) ? mzl() : -1;
 
-   StochVector* z = new StochVector( empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
-
-   for( size_t it = 0; it < children.size(); it++)
+   if( !sub_root )
    {
-      StochVector* child = children[it]->newDualZVector();
-      z->AddChild(child);
+
+      z = new StochVector( empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
+      for( size_t it = 0; it < children.size(); it++)
+      {
+         StochVector* child = children[it]->newDualZVector(empty);
+         z->AddChild(child);
+      }
    }
+   else
+   {
+      assert( children.size() == 0 );
+      StochVector* z_vec = sub_root->newDualZVector(empty);
+      SimpleVector* z_vecl = zl < 0 ? nullptr : new SimpleVector( empty ? std::min(zl, 0) : zl );
+
+      z = new StochVector( z_vec, z_vecl, commWrkrs );
+      z_vec->parent = z;
+   }
+
    return z;
 }
 
@@ -292,17 +331,29 @@ StochVector* sTree::newRhs()
   if( commWrkrs == MPI_COMM_NULL )
     return new StochDummyVector();
 
-  int locmyl = (np == -1) ? myl() : 0;
-  int locmzl = (np == -1) ? mzl() : 0;
+  StochVector* rhs{};
+  if( !sub_root )
+  {
+     int locmyl = (np == -1) ? myl() : 0;
+     int locmzl = (np == -1) ? mzl() : 0;
 
-  locmyl = std::max(locmyl, 0);
-  locmzl = std::max(locmzl, 0);
+     locmyl = std::max(locmyl, 0);
+     locmzl = std::max(locmzl, 0);
 
-  StochVector* rhs = new StochVector(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
+     rhs = new StochVector(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
 
-  for(size_t it=0; it<children.size(); it++) {
-    StochVector* child = children[it]->newRhs();
-    rhs->AddChild(child);
+     for(size_t it = 0; it < children.size(); it++)
+     {
+        StochVector* child = children[it]->newRhs();
+        rhs->AddChild(child);
+     }
+  }
+  else
+  {
+     assert( children.size() == 0 );
+     assert( false && "TODO : implement" );
+//     StochVector* rhs_vec = sub_root->newRhs();
+//     SimpleVector* rhs_vecl = new SimpleVector( )
   }
 
   return rhs;

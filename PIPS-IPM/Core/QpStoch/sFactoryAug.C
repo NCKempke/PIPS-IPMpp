@@ -48,7 +48,7 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
    const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
    const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
 
-   tree = tree->switchToHierarchicalTree( nx_to_shave, myl_to_shave, mzl_to_shave, twoLinksStartBlockA, twoLinksStartBlockC );
+   tree = tree->switchToHierarchicalTree( 0 ,0, 0,/*nx_to_shave, myl_to_shave, mzl_to_shave, */twoLinksStartBlockA, twoLinksStartBlockC );
 
    assert( tree->nChildren() == 1 );
    assert( tree->isHierarchicalRoot() );

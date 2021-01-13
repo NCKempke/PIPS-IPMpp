@@ -72,10 +72,8 @@ public:
 		    double alpha,  StochVector& x,
 		    OoqpVector& yvecParent );
 
-  /** mult method for children; needed only for linking constraints */
-  virtual void mult2 ( double beta,  OoqpVector& y,
-                        double alpha, OoqpVector& x,
-						   OoqpVector& yvecParent );
+  virtual void mult2( double beta,  OoqpVector& y, double alpha, OoqpVector& x,
+						   OoqpVector* yparentl_ );
 
   /** column scale method for children */
   virtual void columnScale2( const OoqpVector& vec, const OoqpVector& parentvec );
@@ -294,9 +292,7 @@ public:
 
   /** y = beta * y + alpha * this * x */
   void mult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-
-  /** mult method for children; needed only for linking constraints */
-  void mult2 ( double, OoqpVector&, double, OoqpVector&, OoqpVector& ) override {};
+  void mult2 ( double, OoqpVector&, double, OoqpVector&, OoqpVector* ) override {};
 
   void transMult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
 

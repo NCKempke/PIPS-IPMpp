@@ -1160,7 +1160,7 @@ void StochVectorBase<T>::scalarMult( T num )
 template<typename T>
 void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
 {
-   // TODO modify for hierarchical approach
+   // TODO modify for hierarchical approach : gets stuck apparently
    const int rank = PIPS_MPIgetRank(mpiComm);
    const int world_size = PIPS_MPIgetSize(mpiComm);
 
@@ -1171,12 +1171,12 @@ void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
    {
       for( int i = 0; i < offset; ++i )
          sout << "\t";
-      sout << "--vec--" << std::endl;
+      sout << "--vec--\n";
       if( vec )
-         vec->writeToStream( sout, offset );
+         vec->writeToStream( sout, offset + 1 );
       for( int i = 0; i < offset; ++i )
          sout << "\t";
-      sout << "-------" << std::endl;
+      sout << "-------\n";
    }
 
    if( rank == 0 )
@@ -1215,7 +1215,7 @@ void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
       sout << "--vecl-" << std::endl;
 
       if( vecl )
-         vecl->writeToStream( sout, offset );
+         vecl->writeToStream( sout, offset + 1 );
 
       for( int i = 0; i < offset; ++i )
          sout << "\t";
@@ -2294,6 +2294,24 @@ void StochVectorBase<T>::collapseHierarchicalStructure()
    }
 }
 
+template<typename T>
+OoqpVectorBase<T>* StochVectorBase<T>::getLinkingVecNotHierarchicalTop() const
+{
+   const StochVectorBase<T>* curr_par = parent;
+   /* we are the top */
+   if( curr_par == nullptr )
+      return vec;
+
+   while( curr_par->parent != nullptr )
+      curr_par = curr_par->parent;
+
+   /* the current parent is the hierarchical top */
+   if( curr_par->children.size() == 1 && curr_par->children[0]->children.size() != 0 )
+      return curr_par->children[0]->vec;
+   else
+   /* the current parent is a normal top */
+      return curr_par->vec;
+}
 
 template class StochVectorBase<int>;
 template class StochVectorBase<double>;

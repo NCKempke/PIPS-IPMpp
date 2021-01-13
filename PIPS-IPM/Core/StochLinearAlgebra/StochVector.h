@@ -33,12 +33,12 @@ public:
   /** Children of this node */
   std::vector<StochVectorBase<T>*> children;
 
-  /** Link to the parent of this node. Needed when we multiply a matrix
-      with this vector
-  */
+  /** Links to this vectors parent.
+   *  Needed when we multiply a matrix with this vector to get the appropriate linking vec part.
+   */
   StochVectorBase<T>* parent{};
 
-
+public:
   /* MPI communicator */
   const MPI_Comm mpiComm{MPI_COMM_NULL};
   /* flag used to indicate if the children are distributed or not. */
@@ -160,6 +160,8 @@ public:
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
    virtual void collapseHierarchicalStructure();
 
+   virtual OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const;
+
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
 protected:
@@ -278,6 +280,8 @@ public:
 
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
    void collapseHierarchicalStructure() override {};
+
+   OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const override { assert( false && "Should not end up here"); return nullptr; };
 
    void pushAwayFromZero( double, double, const OoqpVectorBase<T>* ) override {};
    void getSumCountIfSmall( double, double&, int&, const OoqpVectorBase<T>* ) const override {};

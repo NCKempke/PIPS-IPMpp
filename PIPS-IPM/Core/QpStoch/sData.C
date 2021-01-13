@@ -1762,6 +1762,14 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    StochGenMatrix& Cmat = dynamic_cast<StochGenMatrix&>(*C);
    Cmat.splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
 
+   StochVector* vec = stochNode->newPrimalVector();
+   StochVector* vecy = stochNode->newDualYVector();
+   vec->setToConstant(1);
+   vecy->setToConstant(2);
+
+   /* y = beta * y + alpha * this * x */
+   Amat.mult( 2.0, *vecy, 2.0, *vec );
+
    assert( false && "TODO: implement" );
 //
 //   /* we ordered global linking vars first and global linking rows to the end */
