@@ -105,8 +105,8 @@ protected:
          unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
    void adjustActiveMylBy( int adjustment );
    void adjustActiveMzlBy( int adjustment );
-   void adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
-         const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum);
+   void adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
+         const std::vector<unsigned int>& two_links_children_ineq );
 
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
 
