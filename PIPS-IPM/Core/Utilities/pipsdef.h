@@ -21,6 +21,7 @@
 
 #include "omp.h"
 #include "pipsport.h"
+#include <algorithm>
 
 
 using PERMUTATION = std::vector<unsigned int>;
@@ -119,6 +120,27 @@ inline bool PIPSisZero(double val, double eps0 = pips_eps0)
 inline bool PIPSisZeroFeas(double val)
 {
    return (std::fabs(val) < feastol);
+}
+
+template<typename T>
+inline bool containsSorted( const std::vector<T>& subset, const std::vector<T>& vec )
+{
+   assert( std::is_sorted(subset.begin(), subset.end() ) );
+   assert( std::is_sorted(vec.begin(), vec.end() ) );
+
+   return std::includes( vec.begin(), vec.end(), subset.begin(), subset.end() );
+}
+
+template<typename T>
+inline bool contains( const std::vector<T>& subset, const std::vector<T>& vec )
+{
+   std::vector<T> subset_cpy(subset);
+   std::vector<T> vec_cpy(vec);
+
+   std::sort(subset_cpy.begin(), subset_cpy.end());
+   std::sort(vec_cpy.begin(), vec_cpy.end());
+
+   return containsSorted( subset_cpy, vec_cpy );
 }
 
 template<typename T>
