@@ -190,7 +190,7 @@ public:
    void jointCopyFrom(const StochVectorBase<T>&, const StochVectorBase<T>&, const StochVectorBase<T>&) override {};
    void jointCopyTo(StochVectorBase<T>&, StochVectorBase<T>&, StochVectorBase<T>&) const override {};
 
-   bool isKindOf( int kind ) const override {return kind == kStochDummy;}
+   bool isKindOf( int kind ) const override {return kind == kStochDummy || kind == kStochVector;}
    bool isZero() const override { return true; };
    void setToZero() override {};
    void setToConstant( T ) override {};

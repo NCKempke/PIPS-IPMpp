@@ -1755,29 +1755,13 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
+
    //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
-
-   g->setToConstant(1);
-   bA->setToConstant(2);
-//
-   A->mult( 2.0, *bA, 2.0, *g );
-   const double dd = bA->twonorm();
-   std::cout << "dd " << dd << std::endl;
-
    StochGenMatrix& Amat = dynamic_cast<StochGenMatrix&>(*A);
    Amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
    StochGenMatrix& Cmat = dynamic_cast<StochGenMatrix&>(*C);
    Cmat.splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
 
-   StochVector* vec = stochNode->newPrimalVector();
-   StochVector* vecy = stochNode->newDualYVector();
-   vec->setToConstant(1);
-   vecy->setToConstant(2);
-
-   /* y = beta * y + alpha * this * x */
-   Amat.mult( 2.0, *vecy, 2.0, *vec );
-   const double d = vecy->twonorm();
-   std::cout << "d " << d << std::endl;
    assert( false && "TODO: implement" );
 //
 //   /* we ordered global linking vars first and global linking rows to the end */

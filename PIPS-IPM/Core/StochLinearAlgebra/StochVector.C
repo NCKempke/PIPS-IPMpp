@@ -123,16 +123,18 @@ void StochVectorBase<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase
 template<typename T>
 void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz)
 {
-   assert( this->vec );
-
-   if( vec->isKindOf(kStochVector) )
+   if( vx.vec->isKindOf(kStochVector) )
    {
+      assert( vy.vec->isKindOf(kStochVector) && vz.vec->isKindOf(kStochVector) );
       assert( !vecl );
-      assert( children.size() == 0 );
-      dynamic_cast<StochVectorBase<T>&>(*vec).jointCopyFrom( vx, vy, vz );
+      assert( children.size() == dynamic_cast<const StochVectorBase&>(*vy.vec).children.size() );
+
+      this->jointCopyFrom( dynamic_cast<const StochVectorBase&>(*vx.vec), dynamic_cast<const StochVectorBase&>(*vy.vec),
+            dynamic_cast<const StochVectorBase&>(*vz.vec) );
    }
    else
    {
+      assert( this->vec );
       SimpleVectorBase<T>& sv = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
 
       int n1 = 0;
@@ -222,16 +224,18 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
 template<typename T>
 void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const
 {
-   assert( this->vec );
-
-   if( vec->isKindOf(kStochVector) )
+   if( vx.vec->isKindOf(kStochVector) )
    {
+      assert( vy.vec->isKindOf(kStochVector) && vz.vec->isKindOf(kStochVector) );
       assert( !vecl );
-      assert( children.size() == 0 );
-      dynamic_cast<const StochVectorBase<T>&>(*vec).jointCopyTo( vx, vy, vz );
+      assert( children.size() == dynamic_cast<StochVectorBase&>(*vy.vec).children.size() );
+
+      this->jointCopyTo( dynamic_cast<StochVectorBase&>(*vx.vec), dynamic_cast<StochVectorBase&>(*vy.vec),
+            dynamic_cast<StochVectorBase&>(*vz.vec) );
    }
    else
    {
+      assert( this->vec );
       const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
       int n1 = 0;
       int n2 = 0;
