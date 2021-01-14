@@ -22,7 +22,6 @@ public:
   virtual ~StochVectorBase() override;
 
   virtual void AddChild(StochVectorBase<T>* child);
-  virtual void AddChild(OoqpVectorBase<T>* child);
 
   /** The data for this node. */
   OoqpVectorBase<T>* vec{};
@@ -183,7 +182,6 @@ public:
   ~StochDummyVectorBase() override = default;
 
   void AddChild(StochVectorBase<T>* ) override {};
-  void AddChild(OoqpVectorBase<T>* ) override {};
 
    StochVectorBase<T>* clone() const override { return new StochDummyVectorBase<T>();}
    StochVectorBase<T>* cloneFull() const override { return new StochDummyVectorBase<T>();}

@@ -62,13 +62,6 @@ void StochVectorBase<T>::AddChild(StochVectorBase<T>* child)
 }
 
 template<typename T>
-void StochVectorBase<T>::AddChild(OoqpVectorBase<T>* child_)
-{
-  StochVectorBase<T>* child = dynamic_cast<StochVectorBase<T>*>(child_);
-  AddChild(child);
-}
-
-template<typename T>
 StochVectorBase<T>::~StochVectorBase()
 {
   for (size_t it = 0; it < children.size(); it++)
@@ -86,11 +79,12 @@ OoqpVectorBase<T>*
 StochVectorBase<T>::clone() const
 {
    assert( vec || vecl );
-   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
+   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->clone() : nullptr, vecl ? vecl->clone() : nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
-      clone->AddChild(children[it]->clone());
+      clone->AddChild( dynamic_cast<StochVectorBase<T>*>(children[it]->clone()) );
 
+   assert( this->n == clone->n );
    return clone;
 }
 
@@ -98,16 +92,12 @@ template<typename T>
 OoqpVectorBase<T>* StochVectorBase<T>::cloneFull() const
 {
    assert( vec || vecl );
-   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->length() : -1, vecl ? vecl->length() : -1, mpiComm);
-
-   if( vec )
-      clone->vec->copyFrom(*vec);
-   if( vecl )
-      clone->vecl->copyFrom(*vecl);
+   StochVectorBase<T>* clone = new StochVectorBase<T>(vec ? vec->cloneFull() : nullptr, vecl ? vecl->cloneFull() : nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
-      clone->AddChild(children[it]->cloneFull());
+      clone->AddChild(dynamic_cast<StochVectorBase<T>*>(children[it]->cloneFull()));
 
+   assert( this->n == clone->n );
    return clone;
 }
 
@@ -1530,7 +1520,7 @@ T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
    for( size_t it = 0; it < children.size(); it++ )
       dot_product += children[it]->dotProductSelf( scaleFactor );
 
-   if( iAmSpecial && vec )
+   if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
       dot_product += vec->dotProductSelf( scaleFactor );
 
    if( iAmSpecial && vecl )
