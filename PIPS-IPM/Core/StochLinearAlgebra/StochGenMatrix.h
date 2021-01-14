@@ -273,7 +273,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */  
-  int numberOfNonZeros() const override { return 0; }
+  int numberOfNonZeros() const override { return 0; };
 
   int isKindOf( int matType ) const override;
 
