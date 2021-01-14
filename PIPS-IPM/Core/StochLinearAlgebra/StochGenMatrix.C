@@ -1347,8 +1347,6 @@ void StochGenMatrix::freeDynamicStorage()
 
 void StochGenMatrix::recomputeSize( StochGenMatrix* parent )
 {
-   assert( hasSparseMatrices() );
-
    m = 0;
    n = 0;
 

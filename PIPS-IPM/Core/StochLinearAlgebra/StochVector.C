@@ -9,7 +9,8 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <math.h>
+#include <numeric>
+
 #include "StochVector_fwd.h"
 
 template<typename T>
@@ -2216,12 +2217,75 @@ bool StochVectorBase<T>::isRootNodeInSync() const
 }
 
 template<typename T>
-void StochVectorBase<T>::split( const std::vector<unsigned int>& map_block_subtree, const std::vector<MPI_Comm>& child_comms)
+void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
+      const std::vector<int>& twolinks_start_in_block, int n_links_in_root )
 {
+   const unsigned int n_curr_children = children.size();
+   assert( n_curr_children == map_blocks_children.size() );
 
-   assert( false && "TODO : implement");
+   if( vecl )
+   {
+      assert( n_curr_children == twolinks_start_in_block.size() );
+      assert( std::accumulate( twolinks_start_in_block.begin(), twolinks_start_in_block.end(), 0 ) <= vecl->length() );
+      assert( twolinks_start_in_block.back() == 0 );
+   }
+   else
+   {
+      assert( twolinks_start_in_block.empty() );
+      n_links_in_root = -1;
+   }
+
+   const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
+   std::vector<StochVectorBase<T>*> new_children(n_new_children);
+
+   SimpleVectorBase<T>* vecl_leftover = dynamic_cast<SimpleVectorBase<T>*>(vecl);
+
+   unsigned int begin_curr_child_blocks{0};
+   unsigned int end_curr_child_blocks{0};
+
+   for( unsigned int i = 0; i < n_new_children; ++i )
+   {
+      while( end_curr_child_blocks != (n_curr_children - 1) &&
+            map_blocks_children[end_curr_child_blocks] == map_blocks_children[end_curr_child_blocks + 1] )
+         ++end_curr_child_blocks;
+
+      const int n_links_for_child = vecl ? std::accumulate( twolinks_start_in_block.begin() + begin_curr_child_blocks,
+            twolinks_start_in_block.begin() + end_curr_child_blocks, 0 ) : -1;
+      const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
+
+      SimpleVectorBase<T>* vecl_child = vecl ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr;
+
+      StochVectorBase<T>* vec = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() :
+            new StochVectorBase<T>( new SimpleVectorBase<T>(0), vecl_child, child_comms[i] );
+
+      for( unsigned int j = 0; j < n_blocks_for_child; ++j )
+      {
+         StochVectorBase<T>* child = children.front();
+         assert( !child->vecl );
+         children.erase(children.begin());
+
+         if( vec->mpiComm == MPI_COMM_NULL )
+            assert( child->mpiComm == MPI_COMM_NULL );
+
+         vec->AddChild(child);
+      }
+
+      /* create child holding the new StochVector as it's vec part */
+      new_children[i] = new StochVectorBase<T>( vec, nullptr, child_comms[i] );
+      vec->parent = new_children[i];
+
+      ++end_curr_child_blocks;
+      begin_curr_child_blocks = end_curr_child_blocks;
+   }
+
+   if( vecl )
+      assert( vecl_leftover->length() == n_links_in_root );
+   assert( children.empty() );
+
+   /* add new children */
+   for( auto& child : new_children )
+      AddChild( child );
 }
-
 
 template<typename T>
 StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_part, bool shave_top )

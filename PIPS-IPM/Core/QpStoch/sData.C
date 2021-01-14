@@ -1757,31 +1757,30 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
 
    //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
+   dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
+   dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
 
-   StochGenMatrix& Amat = dynamic_cast<StochGenMatrix&>(*A);
-   Amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
-   StochGenMatrix& Cmat = dynamic_cast<StochGenMatrix&>(*C);
-   Cmat.splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
+   dynamic_cast<StochVector&>(*g).split(map_block_subtree, child_comms);
 
-   StochVector& gs = dynamic_cast<StochVector&>(*g);
-   gs.split(map_block_subtree, child_comms);
+   dynamic_cast<StochVector&>(*bux).split(map_block_subtree, child_comms);
+   dynamic_cast<StochVector&>(*ixupp).split(map_block_subtree, child_comms);
+   dynamic_cast<StochVector&>(*blx).split(map_block_subtree, child_comms);
+   dynamic_cast<StochVector&>(*ixlow).split(map_block_subtree, child_comms);
 
-//   StochVectorHandle bux_hier( dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true) );
-//   StochVectorHandle ixupp_hier( dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true) );
-//   StochVectorHandle blx_hier( dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true) );
-//   StochVectorHandle ixlow_hier( dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true) );
-//
-//   StochVectorHandle bA_hier( dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false) );
-//
-//   StochVectorHandle bu_hier( dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false) );
-//   StochVectorHandle icupp_hier( dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false) );
-//   StochVectorHandle bl_hier( dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false) );
-//   StochVectorHandle iclow_hier( dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false) );
-//
+   dynamic_cast<StochVector&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl() + myl_from_border);
+
+   dynamic_cast<StochVector&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
+   dynamic_cast<StochVector&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
+   dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
+   dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
+
+
+   // TODO : implement splitting for Q and implement trans mult !!
    assert( false && "TODO: implement" );
-//   // TODO what is this?
-//   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
-//
+   // TODO what is this?
+   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+
+   // for each new child make a new sData object - probably also need to adjust many members of this
 //   new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
 //         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
 //         A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
