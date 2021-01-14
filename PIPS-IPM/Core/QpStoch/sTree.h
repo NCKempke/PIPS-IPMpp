@@ -95,7 +95,7 @@ public:
   StochVector* newDualYVector(bool empty = false)  const;
   StochVector* newDualZVector(bool empty = false)  const;
 
-  StochVector* newRhs();
+  StochVector* newRhs() const;
 
   const sTree* getSubRoot() const { return sub_root; };
   const std::vector<sTree*>& getChildren() const { return children; };

@@ -325,7 +325,7 @@ StochVector* sTree::newDualZVector(bool empty) const
    return z;
 }
 
-StochVector* sTree::newRhs()
+StochVector* sTree::newRhs() const
 {
   //is this node a dead-end for this process?
   if( commWrkrs == MPI_COMM_NULL )
