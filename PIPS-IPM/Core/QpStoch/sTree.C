@@ -286,9 +286,9 @@ StochVector* sTree::newDualYVector(bool empty) const
    {
       assert( children.size() == 0 );
       StochVector* y_vec = sub_root->newDualYVector( empty );
-      SimpleVector* y_vecl = yl < 0 ? nullptr : new SimpleVector( empty ? std::min(yl, 0) : yl );
+      assert( yl == -1 );
 
-      y = new StochVector( y_vec, y_vecl, commWrkrs );
+      y = new StochVector( y_vec, nullptr, commWrkrs );
       y_vec->parent = y;
    }
    return y;
@@ -316,9 +316,9 @@ StochVector* sTree::newDualZVector(bool empty) const
    {
       assert( children.size() == 0 );
       StochVector* z_vec = sub_root->newDualZVector(empty);
-      SimpleVector* z_vecl = zl < 0 ? nullptr : new SimpleVector( empty ? std::min(zl, 0) : zl );
+      assert( zl == -1 );
 
-      z = new StochVector( z_vec, z_vecl, commWrkrs );
+      z = new StochVector( z_vec, nullptr, commWrkrs );
       z_vec->parent = z;
    }
 
