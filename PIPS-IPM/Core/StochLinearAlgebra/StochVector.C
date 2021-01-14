@@ -124,174 +124,197 @@ template<typename T>
 void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz)
 {
    assert( this->vec );
-   SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
-   assert( sizeof(T) == sizeof(sv[0]) );
 
-   assert( this->children.size() == vx.children.size() );
-   assert( this->children.size() == vy.children.size() );
-   assert( this->children.size() == vz.children.size() );
-   int n1 = 0;
-   int n2 = 0;
-   int n3 = 0;
-   int n4 = 0;
-   int n5 = 0;
-   int n6 = 0;
-
-   if( vx.vec )
+   if( vec->isKindOf(kStochVector) )
    {
-      const SimpleVectorBase<T>& svx = dynamic_cast<const SimpleVectorBase<T>&>(*vx.vec);
-      n1 = svx.length();
-      assert( n1 >= 0 );
-
-      assert( n1 <= sv.length() );
-      if( n1 > 0 )
-         memcpy(&sv[0], &svx[0], n1 * sizeof(T));
+      assert( !vecl );
+      assert( children.size() == 0 );
+      dynamic_cast<StochVectorBase<T>&>(*vec).jointCopyFrom( vx, vy, vz );
    }
-
-   if( vy.vec )
+   else
    {
-      const SimpleVectorBase<T>& svy = dynamic_cast<const SimpleVectorBase<T>&>(*vy.vec);
-      n2 = svy.length();
-      assert( n2 >= 0 );
+      SimpleVectorBase<T>& sv = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
 
-      assert( n1 + n2 <= sv.length() );
-      if( n2 > 0 )
-         memcpy(&sv[n1], &svy[0], n2 * sizeof(T));
+      int n1 = 0;
+      int n2 = 0;
+      int n3 = 0;
+      int n4 = 0;
+      int n5 = 0;
+      int n6 = 0;
+
+      if( vx.vec )
+      {
+         const SimpleVectorBase<T>& svx = dynamic_cast<const SimpleVectorBase<T>&>(*vx.vec);
+         n1 = svx.length();
+         assert( n1 >= 0 );
+
+         assert( n1 <= sv.length() );
+         if( n1 > 0 )
+            memcpy(&sv[0], &svx[0], n1 * sizeof(T));
+      }
+
+      if( vy.vec )
+      {
+         const SimpleVectorBase<T>& svy = dynamic_cast<const SimpleVectorBase<T>&>(*vy.vec);
+         n2 = svy.length();
+         assert( n2 >= 0 );
+
+         assert( n1 + n2 <= sv.length() );
+         if( n2 > 0 )
+            memcpy(&sv[n1], &svy[0], n2 * sizeof(T));
+      }
+
+      if( vz.vec )
+      {
+         const SimpleVectorBase<T>& svz = dynamic_cast<const SimpleVectorBase<T>&>(*vz.vec);
+         n3 = svz.length();
+         assert( n3 >= 0 );
+
+         assert( n1 + n2 + n3 <= sv.length() );
+         if( n3 > 0 )
+            memcpy(&sv[n1 + n2], &svz[0], n3 * sizeof(T));
+      }
+
+      if( vx.vecl )
+      {
+         const SimpleVectorBase<T>& svxl = dynamic_cast<const SimpleVectorBase<T>&>(*vx.vecl);
+         n4 = svxl.length();
+         assert( n4 >= 0 );
+
+         assert( n1 + n2 + n3 + n4 <= sv.length() );
+         if( n4 > 0 )
+            memcpy(&sv[n1 + n2 + n3], &svxl[0], n4 * sizeof(T) );
+      }
+
+      if( vy.vecl )
+      {
+         const SimpleVectorBase<T>& svyl = dynamic_cast<const SimpleVectorBase<T>&>(*vy.vecl);
+         n5 = svyl.length();
+         assert( n5 >= 0 );
+
+         assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
+         if( n5 > 0 )
+            memcpy(&sv[n1 + n2 + n3 + n4], &svyl[0], n5 * sizeof(T));
+      }
+
+      if( vz.vecl )
+      {
+         const SimpleVectorBase<T>& svzl = dynamic_cast<const SimpleVectorBase<T>&>(*vz.vecl);
+         n6 = svzl.length();
+         assert( n6 >= 0 );
+
+         assert( n1 + n2 + n3 + n4 + n5 + n6 <= sv.length() );
+         if( n6 > 0 )
+            memcpy(&sv[n1 + n2 + n3 + n4 + n5], &svzl[0], n6 * sizeof(T));
+      }
+
+      assert( n1 + n2 + n3 + n4 + n5 + n6 == sv.length() );
+
+      assert( children.size() == vx.children.size() );
+      assert( children.size() == vy.children.size() );
+      assert( children.size() == vz.children.size() );
+
+      for(size_t it = 0; it < children.size(); it++)
+         children[it]->jointCopyFrom(*vx.children[it], *vy.children[it], *vz.children[it]);
    }
-
-   if( vz.vec )
-   {
-      const SimpleVectorBase<T>& svz = dynamic_cast<const SimpleVectorBase<T>&>(*vz.vec);
-      n3 = svz.length();
-      assert( n3 >= 0 );
-
-      assert( n1 + n2 + n3 <= sv.length() );
-      if( n3 > 0 )
-         memcpy(&sv[n1 + n2], &svz[0], n3 * sizeof(T));
-   }
-
-   if( vx.vecl )
-   {
-      const SimpleVectorBase<T>& svxl = dynamic_cast<const SimpleVectorBase<T>&>(*vx.vecl);
-      n4 = svxl.length();
-      assert( n4 >= 0 );
-
-      assert( n1 + n2 + n3 + n4 <= sv.length() );
-      if( n4 > 0 )
-         memcpy(&sv[n1 + n2 + n3], &svxl[0], n4 * sizeof(T) );
-   }
-
-   if( vy.vecl )
-   {
-      const SimpleVectorBase<T>& svyl = dynamic_cast<const SimpleVectorBase<T>&>(*vy.vecl);
-      n5 = svyl.length();
-      assert( n5 >= 0 );
-
-      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
-      if( n5 > 0 )
-         memcpy(&sv[n1 + n2 + n3 + n4], &svyl[0], n5 * sizeof(T));
-   }
-
-   if( vz.vecl )
-   {
-      const SimpleVectorBase<T>& svzl = dynamic_cast<const SimpleVectorBase<T>&>(*vz.vecl);
-      n6 = svzl.length();
-      assert( n6 >= 0 );
-
-      assert( n1 + n2 + n3 + n4 + n5 + n6 <= sv.length() );
-      if( n6 > 0 )
-         memcpy(&sv[n1 + n2 + n3 + n4 + n5], &svzl[0], n6 * sizeof(T));
-   }
-
-   assert( n1 + n2 + n3 + n4 + n5 + n6 == sv.length() );
-
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->jointCopyFrom(*vx.children[it], *vy.children[it], *vz.children[it]);
 }
 
 template<typename T>
 void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const
 {
    assert( this->vec );
-   const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
-   assert( sizeof(T) == sizeof(sv[0]) );
-   int n1 = 0;
-   int n2 = 0;
-   int n3 = 0;
-   int n4 = 0;
-   int n5 = 0;
-   int n6 = 0;
 
-   if( vx.vec )
+   if( vec->isKindOf(kStochVector) )
    {
-      SimpleVectorBase<T> &svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
-      n1 = svx.length();
-      assert(n1 >= 0);
-
-      assert(n1 <= sv.length());
-      if( n1 > 0 )
-         memcpy(&svx[0], &sv[0], n1 * sizeof(T));
+      assert( !vecl );
+      assert( children.size() == 0 );
+      dynamic_cast<const StochVectorBase<T>&>(*vec).jointCopyTo( vx, vy, vz );
    }
-
-   if( vy.vec )
+   else
    {
-      SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
-      n2 = svy.length();
-      assert( n2 >= 0 );
+      const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
+      int n1 = 0;
+      int n2 = 0;
+      int n3 = 0;
+      int n4 = 0;
+      int n5 = 0;
+      int n6 = 0;
 
-      assert( n1 + n2 <= sv.length() );
-      if( n2 > 0 )
-         memcpy(&svy[0], &sv[n1], n2 * sizeof(T));
+      if( vx.vec )
+      {
+         SimpleVectorBase<T> &svx = dynamic_cast<SimpleVectorBase<T>&>(*vx.vec);
+         n1 = svx.length();
+         assert(n1 >= 0);
+
+         assert(n1 <= sv.length());
+         if( n1 > 0 )
+            memcpy(&svx[0], &sv[0], n1 * sizeof(T));
+      }
+
+      if( vy.vec )
+      {
+         SimpleVectorBase<T>& svy = dynamic_cast<SimpleVectorBase<T>&>(*vy.vec);
+         n2 = svy.length();
+         assert( n2 >= 0 );
+
+         assert( n1 + n2 <= sv.length() );
+         if( n2 > 0 )
+            memcpy(&svy[0], &sv[n1], n2 * sizeof(T));
+      }
+
+      if( vz.vec )
+      {
+         SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
+         n3 = svz.length();
+         assert( n3 >= 0 );
+
+         assert( n1 + n2 + n3 <= sv.length() );
+         if( n3 > 0 )
+            memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
+      }
+
+      if( vx.vecl )
+      {
+         SimpleVectorBase<T>& svxl = dynamic_cast<SimpleVectorBase<T>&>(*vx.vecl);
+         n4 = svxl.length();
+         assert( n4 >= 0 );
+
+         assert( n1 + n2 + n3 + n4 <= sv.length() );
+         if( n4 > 0 )
+            memcpy(&svxl[0], &sv[n1 + n2 + n3], n4 * sizeof(T) );
+      }
+
+      if( vy.vecl )
+      {
+         SimpleVectorBase<T>& svyl = dynamic_cast<SimpleVectorBase<T>&>(*vy.vecl);
+         n5 = svyl.length();
+         assert(n5 >= 0);
+
+         assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
+         if( n5 > 0 )
+            memcpy(&svyl[0], &sv[n1 + n2 + n3 + n4], n5 * sizeof(T));
+      }
+
+      if( vz.vecl )
+      {
+         SimpleVectorBase<T>& svzl = dynamic_cast<SimpleVectorBase<T>&>(*vz.vecl);
+         n6 = svzl.length();
+         assert(n6 >= 0);
+
+         assert( n1 + n2 + n3 + n4 + n5 +n6 <= sv.length() );
+         if( n6 > 0 )
+            memcpy(&svzl[0], &sv[n1 + n2 + n3 + n4 + n5], n6 * sizeof(T));
+      }      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
+
+      assert( n1 + n2 + n3 + n4 + n5 + n6 == sv.length() );
+
+      assert( children.size() == vx.children.size() );
+      assert( children.size() == vy.children.size() );
+      assert( children.size() == vz.children.size() );
+
+      for(size_t it = 0; it < children.size(); it++)
+         children[it]->jointCopyTo(*vx.children[it], *vy.children[it], *vz.children[it]);
    }
-
-   if( vz.vec )
-   {
-      SimpleVectorBase<T>& svz = dynamic_cast<SimpleVectorBase<T>&>(*vz.vec);
-      n3 = svz.length();
-      assert( n3 >= 0 );
-
-      assert( n1 + n2 + n3 <= sv.length() );
-      if( n3 > 0 )
-         memcpy(&svz[0], &sv[n1 + n2], n3 * sizeof(T));
-   }
-
-   if( vx.vecl )
-   {
-      SimpleVectorBase<T>& svxl = dynamic_cast<SimpleVectorBase<T>&>(*vx.vecl);
-      n4 = svxl.length();
-      assert( n4 >= 0 );
-
-      assert( n1 + n2 + n3 + n4 <= sv.length() );
-      if( n4 > 0 )
-         memcpy(&svxl[0], &sv[n1 + n2 + n3], n4 * sizeof(T) );
-   }
-
-   if( vy.vecl )
-   {
-      SimpleVectorBase<T>& svyl = dynamic_cast<SimpleVectorBase<T>&>(*vy.vecl);
-      n5 = svyl.length();
-      assert(n5 >= 0);
-
-      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
-      if( n5 > 0 )
-         memcpy(&svyl[0], &sv[n1 + n2 + n3 + n4], n5 * sizeof(T));
-   }
-
-   if( vz.vecl )
-   {
-      SimpleVectorBase<T>& svzl = dynamic_cast<SimpleVectorBase<T>&>(*vz.vecl);
-      n6 = svzl.length();
-      assert(n6 >= 0);
-
-      assert( n1 + n2 + n3 + n4 + n5 +n6 <= sv.length() );
-      if( n6 > 0 )
-         memcpy(&svzl[0], &sv[n1 + n2 + n3 + n4 + n5], n6 * sizeof(T));
-   }      assert( n1 + n2 + n3 + n4 + n5 <= sv.length() );
-
-   assert( n1 + n2 + n3 + n4 + n5 + n6 == sv.length() );
-
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->jointCopyTo(*vx.children[it], *vy.children[it], *vz.children[it]);
 }
 
 
@@ -305,13 +328,13 @@ template<typename T>
 void StochVectorBase<T>::scale( T alpha )
 {
    if( vec )
-      vec->scale(alpha);
+      vec->scale( alpha );
 
    if( vecl )
-      vecl->scale(alpha);
+      vecl->scale( alpha );
 
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->scale(alpha);
+      children[it]->scale( alpha );
 }
 
 template<typename T>
@@ -345,14 +368,7 @@ bool StochVectorBase<T>::isZero() const
 template<typename T>
 void StochVectorBase<T>::setToZero()
 {
-   if( vec )
-      vec->setToZero();
-
-   if( vecl )
-      vecl->setToZero();
-
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->setToZero();
+   setToConstant( T{} );
 }
 
 template<typename T>
@@ -373,18 +389,18 @@ void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
 {
    const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
 
-   if( this->vec )
+   if( vec )
    {
       assert( v.vec );
-      this->vec->copyFrom(*v.vec);
+      vec->copyFrom(*v.vec);
    }
    else
       assert( v.vec == nullptr );
 
-   if( this->vecl )
+   if( vecl )
    {
       assert( v.vecl );
-      this->vecl->copyFrom(*v.vecl);
+      vecl->copyFrom(*v.vecl);
    }
    else
       assert( v.vecl == nullptr );
@@ -400,23 +416,24 @@ void StochVectorBase<T>::copyFromAbs(const OoqpVectorBase<T>& v_ )
 {
   const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
 
-  if( this->vec )
+  if( vec )
   {
      assert( v.vec );
-     this->vec->copyFromAbs(*v.vec);
+     vec->copyFromAbs(*v.vec);
   }
   else
      assert( v.vec == nullptr );
 
-  if( this->vecl )
+  if( vecl )
   {
      assert(v.vecl);
-     this->vecl->copyFromAbs(*v.vecl);
+     vecl->copyFromAbs(*v.vecl);
   }
   else
      assert( v.vecl == nullptr );
 
   assert(children.size() == v.children.size());
+
   for(size_t it = 0; it < children.size(); it++)
     children[it]->copyFromAbs(*v.children[it]);
 }
@@ -429,14 +446,14 @@ T StochVectorBase<T>::infnorm() const
    for(size_t it = 0; it < children.size(); it++)
       infnrm = std::max(infnrm, children[it]->infnorm());
 
-   if( iAmDistrib )
-      PIPS_MPIgetMaxInPlace(infnrm, mpiComm);
-
    if( vec )
       infnrm = std::max(vec->infnorm(), infnrm);
 
    if( vecl )
       infnrm = std::max(vecl->infnorm(), infnrm);
+
+   if( iAmDistrib )
+      PIPS_MPIgetMaxInPlace(infnrm, mpiComm);
 
    return infnrm;
 }
@@ -461,7 +478,7 @@ T StochVectorBase<T>::onenorm() const
   for( size_t it = 0; it < children.size(); it++ )
      onenorm += children[it]->onenorm();
 
-  if( iAmSpecial && vec )
+  if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
      onenorm += vec->onenorm();
 
   if( iAmSpecial && vecl )
@@ -567,6 +584,7 @@ void StochVectorBase<T>::absminVecUpdate(OoqpVectorBase<T>& absminvec) const
       assert( absminvecStoch.vecl == nullptr );
 
    assert( absminvecStoch.children.size() == children.size() );
+
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->absminVecUpdate( *absminvecStoch.children[it] );
 }
@@ -671,7 +689,7 @@ T StochVectorBase<T>::stepbound(const OoqpVectorBase<T> & v_, T maxStep ) const
   if( vec )
   {
      assert( v.vec );
-     T stepvec = this->vec->stepbound(*v.vec, maxStep);
+     T stepvec = vec->stepbound(*v.vec, maxStep);
      if( stepvec < step )
         step = stepvec;
   }
@@ -1017,6 +1035,7 @@ void StochVectorBase<T>::componentMult( const OoqpVectorBase<T>& v_ )
       assert( v.vecl == nullptr );
 
    assert( v.children.size() == children.size() );
+
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->componentMult( *v.children[it] );
 }
@@ -1043,15 +1062,15 @@ void StochVectorBase<T>::componentDiv ( const OoqpVectorBase<T>& v_ )
       assert( v.vecl == nullptr );
 
    assert( v.children.size() == children.size() );
+
    for( size_t it = 0; it < children.size(); ++it )
       children[it]->componentDiv( *v.children[it] );
 }
 
 template<typename T>
-bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol) const
+bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol ) const
 {
    const StochVectorBase<T>& v = dynamic_cast<const StochVectorBase<T>&>(v_);
-   assert(v.children.size() == children.size());
 
    bool component_equal = true;
 
@@ -1080,6 +1099,8 @@ bool StochVectorBase<T>::componentEqual( const OoqpVectorBase<T>& v_, T tol) con
    if( !component_equal )
       if( parent == nullptr )
          std::cout << "not equal in root node link" << std::endl;
+
+   assert(v.children.size() == children.size());
 
    for(size_t child = 0; child < children.size(); child++)
    {
@@ -1139,9 +1160,9 @@ template<typename T>
 void StochVectorBase<T>::scalarMult( T num )
 {
    if( vec )
-      vec->scalarMult(num);
+      vec->scalarMult( num );
    if( vecl )
-      vecl->scalarMult(num);
+      vecl->scalarMult( num );
 
   for( size_t it = 0; it < children.size(); ++it )
      children[it]->scalarMult( num );
@@ -1229,6 +1250,9 @@ void StochVectorBase<T>::pushAwayFromZero( double tol, double amount, const Ooqp
    if( vecl )
       vecl->pushAwayFromZero( tol, amount, selects ? selects->vecl : nullptr );
 
+   if( selects )
+      assert( children.size() == selects->children.size() );
+
    for( size_t i = 0; i < this->children.size(); ++i )
       this->children[i]->pushAwayFromZero( tol, amount, selects ? selects->children[i] : nullptr );
 }
@@ -1238,10 +1262,13 @@ void StochVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int&
 {
    const StochVectorBase<T>* selects = dynamic_cast<const StochVectorBase<T>*>(select);
 
-   for( size_t i = 0; i < this->children.size(); ++i )
+   if( selects )
+      assert( children.size() == selects->children.size() );
+
+   for( size_t i = 0; i < children.size(); ++i )
       this->children[i]->getSumCountIfSmall( tol, sum_small, n_close, selects ? selects->children[i] : nullptr );
 
-   if( iAmSpecial && vec )
+   if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
    {
       if( selects )
          assert(selects->vec);
@@ -1267,16 +1294,20 @@ template<typename T>
 void StochVectorBase<T>::writefToStream( std::ostream& out,
 				  const char format[] ) const
 {
-  vec->writefToStream(out, format);
-  if( vecl ) vecl->writefToStream(out, format);
+   if( vec )
+      vec->writefToStream(out, format);
 
-  for(size_t it=0; it<children.size(); it++)
-    children[it]->writefToStream(out, format);
+   if( vecl )
+      vecl->writefToStream(out, format);
+
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->writefToStream(out, format);
 }
 
 template<typename T>
 void StochVectorBase<T>::writeMPSformatRhs( std::ostream& out, int rowType, const OoqpVectorBase<T>* irhs) const
 {
+   // TODO : will not work with hierarchical data
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
    std::string rt;
@@ -1328,6 +1359,7 @@ void StochVectorBase<T>::writeMPSformatRhs( std::ostream& out, int rowType, cons
 template<typename T>
 void StochVectorBase<T>::writeMPSformatBounds(std::ostream& out, const OoqpVectorBase<T>* ix, bool upperBound) const
 {
+   // TODO : will not work with hierarchical data
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
 
@@ -1373,6 +1405,7 @@ void StochVectorBase<T>::axpy ( T alpha, const OoqpVectorBase<T>& x_ )
       assert( x.vecl == nullptr );
 
    assert( x.children.size() == children.size() );
+
    for( size_t it = 0; it < children.size(); ++it )
       children[it]->axpy( alpha, *x.children[it] );
 }
@@ -1410,6 +1443,7 @@ void StochVectorBase<T>::axzpy( T alpha, const OoqpVectorBase<T>& x_, const Ooqp
 
   assert( x.children.size() == children.size() );
   assert( z.children.size() == children.size() );
+
   for( size_t it = 0; it < children.size(); ++it )
      children[it]->axzpy( alpha, *x.children[it], *z.children[it] );
 }
@@ -1447,6 +1481,7 @@ void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_, const Ooq
 
    assert( x.children.size() == children.size() );
    assert( z.children.size() == children.size() );
+
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->axdzpy( alpha, *x.children[it], *z.children[it] );
 }
@@ -1487,10 +1522,11 @@ T StochVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& v_ ) const
    T dot_product = 0.0;
 
    assert( v.children.size() == children.size() );
+
    for(size_t it = 0; it < children.size(); it++)
       dot_product += children[it]->dotProductWith( *v.children[it] );
 
-   if( iAmSpecial && vec )
+   if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
    {
       assert( v.vec );
       dot_product += vec->dotProductWith( *v.vec );
@@ -1545,14 +1581,14 @@ T StochVectorBase<T>::shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& m
 
    T dot_product = 0.0;
 
-   assert( this->children.size() == mystep.children.size() );
-   assert( this->children.size() == yvec.children.size() );
-   assert( this->children.size() == ystep.children.size() );
+   assert( children.size() == mystep.children.size() );
+   assert( children.size() == yvec.children.size() );
+   assert( children.size() == ystep.children.size() );
 
    for( size_t it = 0; it < children.size(); it++ )
       dot_product += children[it]->shiftedDotProductWith( alpha, *mystep.children[it], *yvec.children[it], beta, *ystep.children[it] );
 
-   if( iAmSpecial && vec )
+   if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
    {
       assert( mystep.vec );
       assert( yvec.vec );
@@ -1732,6 +1768,7 @@ bool StochVectorBase<T>::matchesNonZeroPattern( const OoqpVectorBase<T>& select_
      assert( select.vecl == nullptr );
 
   assert( children.size() == select.children.size() );
+
   for( size_t it = 0; it < children.size() && match; it++ )
   {
      const bool match_tmp = children[it]->matchesNonZeroPattern( *select.children[it] );
@@ -1765,6 +1802,7 @@ void StochVectorBase<T>::selectNonZeros( const OoqpVectorBase<T>& select_ )
       assert( select.vecl == nullptr );
 
    assert(children.size() == select.children.size());
+
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->selectNonZeros( *select.children[it] );
 }
@@ -1804,7 +1842,7 @@ long long StochVectorBase<T>::numberOfNonzeros() const
   for(size_t it = 0; it < children.size(); it++)
      nnz += children[it]->numberOfNonzeros();
 
-  if( iAmSpecial && vec )
+  if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
      nnz += vec->numberOfNonzeros();
 
   if( iAmSpecial && vecl )
@@ -1851,9 +1889,6 @@ void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
    const StochVectorBase<T>& x = dynamic_cast<const StochVectorBase<T>&>(x_);
    const StochVectorBase<T>& z = dynamic_cast<const StochVectorBase<T>&>(z_);
 
-   assert(children.size() == select.children.size());
-   assert(children.size() == x.children.size());
-   assert(children.size() == z.children.size());
 
    if( vec )
    {
@@ -1883,6 +1918,10 @@ void StochVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& x_,
       assert( select.vecl == nullptr );
    }
 
+   assert(children.size() == select.children.size());
+   assert(children.size() == x.children.size());
+   assert(children.size() == z.children.size());
+
    for(size_t it = 0; it < children.size(); it++)
       children[it]->axdzpy(alpha, *x.children[it], *z.children[it], *select.children[it]);
 }
@@ -1891,9 +1930,10 @@ template<typename T>
 bool StochVectorBase<T>::somePositive( const OoqpVectorBase<T>& select_ ) const
 {
    const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_);
-   assert( children.size() == select.children.size() );
 
    bool some_positive = true;;
+
+   assert( children.size() == select.children.size() );
 
    for(size_t it = 0; it < children.size(); it++)
    {
@@ -1931,9 +1971,6 @@ void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVe
    const StochVectorBase<T> &div = dynamic_cast<const StochVectorBase<T>&>(div_);
    const StochVectorBase<T> &select = dynamic_cast<const StochVectorBase<T>&>(select_);
 
-   assert(children.size() == div.children.size());
-   assert(children.size() == select.children.size());
-
    if( vec )
    {
       assert(div.vec);
@@ -1958,6 +1995,9 @@ void StochVectorBase<T>::divideSome( const OoqpVectorBase<T>& div_, const OoqpVe
       assert( select.vecl == nullptr );
    }
 
+   assert(children.size() == div.children.size());
+   assert(children.size() == select.children.size());
+
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->divideSome(*div.children[it], *select.children[it]);
 }
@@ -1966,7 +2006,6 @@ template<typename T>
 void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
 {
    const StochVectorBase<int>& select = dynamic_cast<const StochVectorBase<int>&>(select_);
-   assert(children.size() == select.children.size());
 
    this->n = 0;
 
@@ -1988,6 +2027,7 @@ void StochVectorBase<T>::removeEntries( const OoqpVectorBase<int>& select_ )
    else
       assert( select.vecl == nullptr );
 
+   assert(children.size() == select.children.size());
    for( size_t it = 0; it < children.size(); it++ )
    {
       children[it]->removeEntries(*select.children[it]);
@@ -2004,7 +2044,7 @@ int StochVectorBase<T>::getNnzs() const
    for( size_t it = 0; it < children.size(); it++ )
       non_zeros += children[it]->getNnzs();
 
-   if( iAmSpecial && vec )
+   if( vec && (iAmSpecial || vec->isKindOf(kStochVector)) )
       non_zeros += vec->getNnzs();
 
    if( iAmSpecial && vecl )

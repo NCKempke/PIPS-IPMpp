@@ -23,6 +23,7 @@ public:
 
   virtual void AddChild(StochVectorBase<T>* child);
 
+  // TODO : use unique pointers
   /** The data for this node. */
   OoqpVectorBase<T>* vec{};
 
@@ -49,7 +50,7 @@ public:
   OoqpVectorBase<T>* cloneFull() const override;
 
   virtual void jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz);
-  virtual void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const;
+  virtual void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const;
 
   bool isKindOf( int kind ) const override;
   void setToZero() override;
@@ -187,7 +188,7 @@ public:
    StochVectorBase<T>* cloneFull() const override { return new StochDummyVectorBase<T>();}
 
    void jointCopyFrom(const StochVectorBase<T>&, const StochVectorBase<T>&, const StochVectorBase<T>&) override {};
-   void jointCopyTo(StochVectorBase<T>&, StochVectorBase<T>&,StochVectorBase<T>&) const override {};
+   void jointCopyTo(StochVectorBase<T>&, StochVectorBase<T>&, StochVectorBase<T>&) const override {};
 
    bool isKindOf( int kind ) const override {return kind == kStochDummy;}
    bool isZero() const override { return true; };
