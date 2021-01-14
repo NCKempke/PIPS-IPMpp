@@ -65,7 +65,7 @@ SparseGenMatrix::~SparseGenMatrix()
 }
 
 /* create a matrix with the same amount of columns but no rows in it */
-SparseGenMatrix* SparseGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const
+GenMatrix* SparseGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const
 {
   SparseGenMatrix* clone;
 
@@ -109,7 +109,7 @@ SparseGenMatrix* SparseGenMatrix::cloneEmptyRowsTransposed(bool switchToDynamicS
   return clone;
 }
 
-SparseGenMatrix* SparseGenMatrix::cloneFull(bool switchToDynamicStorage) const
+GenMatrix* SparseGenMatrix::cloneFull(bool switchToDynamicStorage) const
 {
    SparseGenMatrix* clone;
 

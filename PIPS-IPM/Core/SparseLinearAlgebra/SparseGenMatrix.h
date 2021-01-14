@@ -46,9 +46,9 @@ public:
 		   int deleteElts=0);
   SparseGenMatrix( SparseStorage* m_storage );
 
-  virtual SparseGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const;
+  GenMatrix* cloneFull(bool switchToDynamicStorage = false) const override;
+  GenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const override;
   virtual SparseGenMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
-  virtual SparseGenMatrix* cloneFull(bool switchToDynamicStorage = false) const;
 
   virtual void getSize( long long& m, long long& n ) const;
   virtual void getSize( int& m, int& n ) const;

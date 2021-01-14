@@ -1517,8 +1517,8 @@ sData* sData::cloneFull(bool switchToDynamicStorage) const
 {
    // todo Q is empty!
    StochSymMatrixHandle Q_clone(dynamic_cast<const StochSymMatrix&>(*Q).clone());
-   StochGenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
-   StochGenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
+   GenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
+   GenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
    StochVectorHandle c_clone (dynamic_cast<StochVector*>(g->cloneFull()));
    StochVectorHandle bA_clone ( dynamic_cast<StochVector*>(bA->cloneFull()));
@@ -1757,6 +1757,13 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
    //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
 
+   g->setToConstant(1);
+   bA->setToConstant(2);
+//
+   A->mult( 2.0, *bA, 2.0, *g );
+   const double dd = bA->twonorm();
+   std::cout << "dd " << dd << std::endl;
+
    StochGenMatrix& Amat = dynamic_cast<StochGenMatrix&>(*A);
    Amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
    StochGenMatrix& Cmat = dynamic_cast<StochGenMatrix&>(*C);
@@ -1769,7 +1776,8 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
 
    /* y = beta * y + alpha * this * x */
    Amat.mult( 2.0, *vecy, 2.0, *vec );
-
+   const double d = vecy->twonorm();
+   std::cout << "d " << d << std::endl;
    assert( false && "TODO: implement" );
 //
 //   /* we ordered global linking vars first and global linking rows to the end */

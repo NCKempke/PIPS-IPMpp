@@ -61,35 +61,35 @@ bool StochGenMatrix::hasSparseMatrices() const
    return Amat->isKindOf(kSparseGenMatrix) && Bmat->isKindOf(kSparseGenMatrix)
       && Blmat->isKindOf(kSparseGenMatrix);
 }
-StochGenMatrix* StochGenMatrix::cloneFull(bool switchToDynamicStorage) const
+GenMatrix* StochGenMatrix::cloneFull(bool switchToDynamicStorage) const
 {
    StochGenMatrix* clone = new StochGenMatrix(m, n, mpiComm);
    assert( hasSparseMatrices() );
 
    // clone submatrices
-   clone->Amat = dynamic_cast<const SparseGenMatrix*>(Amat)->cloneFull(switchToDynamicStorage);
-   clone->Bmat = dynamic_cast<const SparseGenMatrix*>(Bmat)->cloneFull(switchToDynamicStorage);
-   clone->Blmat = dynamic_cast<const SparseGenMatrix*>(Blmat)->cloneFull(switchToDynamicStorage);
+   clone->Amat = Amat->cloneFull(switchToDynamicStorage);
+   clone->Bmat = Bmat->cloneFull(switchToDynamicStorage);
+   clone->Blmat = Blmat->cloneFull(switchToDynamicStorage);
 
    for( size_t it = 0; it < children.size(); it++ )
-      clone->children.push_back(children[it]->cloneFull(switchToDynamicStorage));
+      clone->children.push_back( dynamic_cast<StochGenMatrix*>( children[it]->cloneFull(switchToDynamicStorage) ) );
 
    return clone;	
 }
 
 /* creates an empty copy of the matrix with n = 0 for all submatrices and m (cols) as before */
-StochGenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const
+GenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const
 {
    StochGenMatrix* clone = new StochGenMatrix(m, n, mpiComm);
    assert( hasSparseMatrices() );
 
    // clone submatrices
-   clone->Amat = dynamic_cast<const SparseGenMatrix*>(Amat)->cloneEmptyRows(switchToDynamicStorage);
-   clone->Bmat = dynamic_cast<const SparseGenMatrix*>(Bmat)->cloneEmptyRows(switchToDynamicStorage);
-   clone->Blmat = dynamic_cast<const SparseGenMatrix*>(Blmat)->cloneEmptyRows(switchToDynamicStorage);
+   clone->Amat = Amat->cloneEmptyRows(switchToDynamicStorage);
+   clone->Bmat = Bmat->cloneEmptyRows(switchToDynamicStorage);
+   clone->Blmat = Blmat->cloneEmptyRows(switchToDynamicStorage);
 
    for( size_t it = 0; it < children.size(); it++ )
-      clone->children.push_back(children[it]->cloneEmptyRows(switchToDynamicStorage));
+      clone->children.push_back( dynamic_cast<StochGenMatrix*>( children[it]->cloneEmptyRows(switchToDynamicStorage) ) );
 
    return clone;
 }

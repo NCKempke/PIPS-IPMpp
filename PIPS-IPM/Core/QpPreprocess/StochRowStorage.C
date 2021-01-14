@@ -9,7 +9,7 @@
 #include "StochMatrixUtilities.h"
 
 StochRowStorage::StochRowStorage(const StochGenMatrix& system_matrix) :
-   row_storage{ system_matrix.cloneEmptyRows(true) }
+   row_storage{ dynamic_cast<StochGenMatrix*>(system_matrix.cloneEmptyRows(true)) }
 {
 }
 

@@ -45,8 +45,8 @@ public:
   // constructor for combining scenarios
   virtual ~StochGenMatrix();
 
-  virtual StochGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const;
-  virtual StochGenMatrix* cloneFull(bool switchToDynamicStorage = false) const;
+  GenMatrix* cloneEmptyRows( bool switchToDynamicStorage = false ) const override;
+  GenMatrix* cloneFull( bool switchToDynamicStorage = false ) const override;
 
   virtual void AddChild( StochGenMatrix* child );
 
@@ -261,8 +261,8 @@ public:
   void getSize( int& m, int& n ) const override { m = 0; n = 0; }
   void getSize( long long& m, long long& n ) const override { m = 0; n = 0; }
 
-  StochGenMatrix* cloneEmptyRows( bool ) const override { return new StochGenDummyMatrix(); };
-  StochGenMatrix* cloneFull( bool ) const  override { return new StochGenDummyMatrix(); };
+  GenMatrix* cloneEmptyRows( bool ) const override { return new StochGenDummyMatrix(); };
+  GenMatrix* cloneFull( bool ) const  override { return new StochGenDummyMatrix(); };
 
 
   /** The actual number of structural non-zero elements in this sparse

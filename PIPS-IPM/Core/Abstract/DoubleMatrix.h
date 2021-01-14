@@ -278,7 +278,13 @@ public:
   virtual void addColSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
 
   /** return nonzeros in matrix */
-  virtual int numberOfNonZeros() const { assert( false && "not implmented"); };
+  virtual int numberOfNonZeros() const { assert( false && "not implmented"); return -1; };
+
+  /** clone of matrix with n = 0 - possibly with underlying dynamic sparse storage */
+  virtual GenMatrix* cloneEmptyRows(bool /*s witchToDynamicStorage = false*/ ) const { assert( false && "not implmented"); return nullptr; };
+
+  /** full clone of matrix - possibly with underlying dynamic sparse storage */
+  virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage = false */) const { assert( false && "not implmented"); return nullptr; };
 
 };
 
