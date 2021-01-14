@@ -2216,6 +2216,14 @@ bool StochVectorBase<T>::isRootNodeInSync() const
 }
 
 template<typename T>
+void StochVectorBase<T>::split( const std::vector<unsigned int>& map_block_subtree, const std::vector<MPI_Comm>& child_comms)
+{
+
+   assert( false && "TODO : implement");
+}
+
+
+template<typename T>
 StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_part, bool shave_top )
 {
    assert( parent == nullptr );

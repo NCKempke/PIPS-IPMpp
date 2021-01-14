@@ -1757,15 +1757,15 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
 
    //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
+
    StochGenMatrix& Amat = dynamic_cast<StochGenMatrix&>(*A);
    Amat.splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
    StochGenMatrix& Cmat = dynamic_cast<StochGenMatrix&>(*C);
    Cmat.splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
 
-   assert( false && "TODO: implement" );
-//
-//   /* we ordered global linking vars first and global linking rows to the end */
-//   StochVectorHandle g_hier( dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true) );
+   StochVector& gs = dynamic_cast<StochVector&>(*g);
+   gs.split(map_block_subtree, child_comms);
+
 //   StochVectorHandle bux_hier( dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true) );
 //   StochVectorHandle ixupp_hier( dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true) );
 //   StochVectorHandle blx_hier( dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true) );
@@ -1778,6 +1778,7 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
 //   StochVectorHandle bl_hier( dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false) );
 //   StochVectorHandle iclow_hier( dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false) );
 //
+   assert( false && "TODO: implement" );
 //   // TODO what is this?
 //   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 //

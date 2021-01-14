@@ -157,6 +157,7 @@ public:
 
    virtual bool isRootNodeInSync() const;
 
+   virtual void split( const std::vector<unsigned int>& map_block_subtree, const std::vector<MPI_Comm>& child_comms);
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
    virtual void collapseHierarchicalStructure();
 
@@ -277,6 +278,7 @@ public:
 
    bool isRootNodeInSync() const override { return true; };
 
+   void split( const std::vector<unsigned int>&, const std::vector<MPI_Comm>& ) override {};
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
    void collapseHierarchicalStructure() override {};
 
