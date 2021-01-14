@@ -17,51 +17,30 @@ int SparseGenMatrix::isKindOf( int type ) const
   return type == kSparseGenMatrix || type == kGenMatrix;
 }
 
-
-SparseGenMatrix::SparseGenMatrix( )
-  : mStorageDynamic(nullptr), m_Mt(nullptr)
-{
-   SpNil(mStorage);
-}
-
 SparseGenMatrix::SparseGenMatrix( int rows, int cols, int nnz )
-  : mStorageDynamic(nullptr), m_Mt(nullptr)
 {
-  mStorage = SparseStorageHandle( new SparseStorage( rows, cols, nnz ) );
+   mStorage = SparseStorageHandle( new SparseStorage( rows, cols, nnz ) );
 }
 
 
 SparseGenMatrix::SparseGenMatrix( int rows, int cols, int nnz,
 				  int krowM[], int jcolM[],  double M[],
 				  int deleteElts)
-  : mStorageDynamic(nullptr), m_Mt(nullptr)
 {
   mStorage = SparseStorageHandle( new SparseStorage( rows, cols,nnz,
 						     krowM, jcolM, M,
 						     deleteElts) );
 }
 
-SparseGenMatrix::SparseGenMatrix( SparseStorage* m_storage ) : mStorageDynamic(nullptr), m_Mt(nullptr)
+SparseGenMatrix::SparseGenMatrix( SparseStorage* m_storage )
 {
    mStorage = SparseStorageHandle( m_storage );
 }
 
-
-/*SparseGenMatrix::SparseGenMatrix(const std::vector<SparseGenMatrix*> &blocks, bool diagonal)
-  : m_Mt(nullptr)
-{
-  vector<SparseStorage*> v(blocks.size());
-  for (size_t i = 0; i < blocks.size(); i++) v[i] = blocks[i]->mStorage;
-  mStorage = SparseStorageHandle(new SparseStorage(v,diagonal));
-}
-*/
-
 SparseGenMatrix::~SparseGenMatrix()
 {
-  //cout << "~~~~~~~~~SparseGenMatrix " << mStorage->mRefs  << endl;
-  if(m_Mt) delete m_Mt;
-
-  delete mStorageDynamic;
+   delete m_Mt;
+   delete mStorageDynamic;
 }
 
 /* create a matrix with the same amount of columns but no rows in it */

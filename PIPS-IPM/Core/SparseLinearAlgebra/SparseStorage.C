@@ -17,43 +17,36 @@
 
 int SparseStorage::instances = 0;
 
-SparseStorage::SparseStorage( int m_, int n_, int len_ )
+SparseStorage::SparseStorage( int m_, int n_, int len_ ) :
+      m{m_}, n{n_}, len{len_}
 {
-  int i;
-  
-  neverDeleteElts = 0;
-  m      = m_;
-  n      = n_;
-  len    = len_;
-  jcolM  = new int[len];
-  krowM  = new int[m+1];
-  for( i = 0; i <= m; i++ ) {
-    krowM[i] = 0;
-  }
-  M      = new double[len];
+   assert( m_ >= 0 );
+//   assert( n_ >= 0 );
+   assert( len_ >= 0 );
 
-  isFortranIndexed = false;
+   neverDeleteElts = 0;
 
-  SparseStorage::instances++;
+   jcolM = new int[len];
+   krowM = new int[m+1];
+   M = new double[len];
+
+   std::fill( krowM, krowM + m + 1, 0 );
+   std::fill( jcolM, jcolM + len, 0 );
+   std::fill( M, M + len, 0 );
+
+   SparseStorage::instances++;
 }
 
-SparseStorage::SparseStorage( int m_, int n_, int len_,
-			      int * krowM_, int * jcolM_, double * M_,
-			      int deleteElts)
+SparseStorage::SparseStorage(int m_, int n_, int len_, int *krowM_, int *jcolM_,
+      double *M_, int deleteElts) :
+         neverDeleteElts{!deleteElts}, m { m_ }, n{n_}, len{len_}, jcolM{jcolM_}, krowM{krowM_}, M{M_}
+
 {
-  neverDeleteElts = (!deleteElts);
+   assert( m_ >= 0 );
+   assert( n_ >= 0 );
+   assert( len_ >= 0 );
 
-  //neverDeleteElts = 1;
-  m               = m_;
-  n               = n_;
-  len             = len_;
-  jcolM           = jcolM_;
-  krowM           = krowM_;
-  M               = M_;
-
-  isFortranIndexed = false;
-
-  SparseStorage::instances++;
+   SparseStorage::instances++;
 }
 
 SparseStorage::~SparseStorage()
@@ -825,19 +818,19 @@ void indexedLexSort( int first[], int n, int swapFirst,
 void SparseStorage::mult( double beta,  double y[], int incy,
 			      double alpha, const double x[], int incx ) const
 {
-  int i, j, k;
-  double temp;
-  for( i = 0; i < m; i++ ) {
-    temp = 0;
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      j = jcolM[k];
-      temp += M[k] * x[j * incx];
+   int i, j, k;
+   double temp;
+   for( i = 0; i < m; i++ ) {
+      temp = 0;
+      for( k = krowM[i]; k < krowM[i+1]; k++ ) {
+         j = jcolM[k];
+         temp += M[k] * x[j * incx];
 #ifndef NDEBUG
-      assert(j < n);
+         assert(j < n);
 #endif
-    }
-    y[i * incy] = beta * y[i * incy] + alpha * temp;
-  }
+      }
+      y[i * incy] = beta * y[i * incy] + alpha * temp;
+   }
 }
 
 void SparseStorage::transMult( double beta,  double y[], int incy,

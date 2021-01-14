@@ -28,14 +28,14 @@ private:
         const SparseStorageDynamic* storage_dynamic, const OoqpVector* coScaleVec, OoqpVector& minmaxVec );
 protected:
   SparseStorageHandle mStorage;
-  SparseStorageDynamic* mStorageDynamic;
+  SparseStorageDynamic* mStorageDynamic{};
 
   // in the case of A'*A we internally form the transpose only once
-  SparseGenMatrix* m_Mt;
+  SparseGenMatrix* m_Mt{};
 
 public:
 
-  SparseGenMatrix();
+  SparseGenMatrix() = default;
 
   void updateTransposed();
   void deleteTransposed();

@@ -11,9 +11,10 @@
 #include <numeric>
 #include <memory>
 
-StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_ )
-   : Amat{Amat}, Bmat{Bmat}, Blmat{Blmat}, mpiComm{mpiComm_}, iAmDistrib{ PIPS_MPIgetDistributed(mpiComm) }
+StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_matrix )
+   : Amat{Amat}, Bmat{Bmat}, Blmat{Blmat}, mpiComm{mpiComm_}, iAmDistrib{ PIPS_MPIgetDistributed(mpiComm) }, inner_matrix{inner_matrix}
 {
+   // TODO : assert correct sizes
    assert( Amat );
    assert( Bmat );
    assert( Blmat );
@@ -22,21 +23,23 @@ StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blm
 }
 
 StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
-      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_) :
-      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
+      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_, bool inner_matrix) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), inner_matrix{inner_matrix}
 {
    Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
    Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
-   Blmat = new SparseGenMatrix(0, 0, 0);
+   Blmat = new SparseGenMatrix(0, B_n, 0);
 }
 
 StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
       int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n,
-      int Bl_nnz, MPI_Comm mpiComm_) :
-      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
+      int Bl_nnz, MPI_Comm mpiComm_, bool inner_matrix ) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), inner_matrix{inner_matrix}
 {
    Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
    Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
+
+   assert( B_n == Bl_n );
    Blmat = new SparseGenMatrix(Bl_m, Bl_n, Bl_nnz);
 }
 
@@ -54,6 +57,14 @@ StochGenMatrix::~StochGenMatrix()
   delete Amat;
   delete Bmat;
   delete Blmat;
+}
+
+
+bool StochGenMatrix::amatEmpty() const
+{
+   int mA,nA;
+   Amat->getSize(mA, nA);
+   return mA <= 0 || nA <= 0;
 }
 
 bool StochGenMatrix::hasSparseMatrices() const
@@ -119,29 +130,35 @@ void StochGenMatrix::getSize( int& m_out, int& n_out ) const
   m_out = m; n_out = n;
 }
 
-void StochGenMatrix::columnScale2( const OoqpVector& vec, const OoqpVector& parentvec )
+void StochGenMatrix::columnScale2( const OoqpVector& vec )
 {
    const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
-   const SimpleVector& scalevecparent = dynamic_cast<const SimpleVector&>(parentvec);
 
    assert(scalevec.children.size() == 0 && children.size() == 0);
+   assert( !amatEmpty() );
 
-   Amat->columnScale(scalevecparent);
-   Bmat->columnScale(*scalevec.vec);
-   Blmat->columnScale(*scalevec.vec);
+   Amat->columnScale( *scalevec.getLinkingVecNotHierarchicalTop() );
+   Bmat->columnScale( *scalevec.vec );
+   Blmat->columnScale( *scalevec.vec );
 }
 
 void StochGenMatrix::columnScale( const OoqpVector& vec )
 {
    const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
 
+   assert( amatEmpty() );
+
+   Bmat->columnScale( *scalevec.vec );
+   Blmat->columnScale( *scalevec.getLinkingVecNotHierarchicalTop() );
+
    assert(children.size() == scalevec.children.size());
-
-   Bmat->columnScale(*scalevec.vec);
-   Blmat->columnScale(*scalevec.vec);
-
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->columnScale2(*(scalevec.children[it]), *scalevec.vec);
+   {
+      if( children[it]->inner_matrix )
+         children[it]->columnScale( *(scalevec.children[it]) );
+      else
+         children[it]->columnScale2( *(scalevec.children[it]) );
+   }
 }
 
 void StochGenMatrix::rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec )
@@ -150,31 +167,27 @@ void StochGenMatrix::rowScale2( const OoqpVector& vec, const OoqpVector* linking
 
    assert(scalevec.children.size() == 0 && children.size() == 0);
 
-   Amat->rowScale(*scalevec.vec);
+   if( !amatEmpty() )
+      Amat->rowScale(*scalevec.vec);
+
    Bmat->rowScale(*scalevec.vec);
 
    if( linkingvec )
-   {
-      const SimpleVector* vecl = dynamic_cast<const SimpleVector*>(linkingvec);
-      Blmat->rowScale(*vecl);
-   }
+      Blmat->rowScale(*linkingvec);
 }
 
 void StochGenMatrix::rowScale( const OoqpVector& vec )
 {
    const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
 
+   Bmat->rowScale(*scalevec.vec);
+   if( scalevec.vecl )
+      Blmat->rowScale(*scalevec.vecl);
+
    assert(children.size() == scalevec.children.size());
 
-   Bmat->rowScale(*scalevec.vec);
-
-   const SimpleVector* vecl = dynamic_cast<const SimpleVector*>(scalevec.vecl);
-
-   if( vecl )
-      Blmat->rowScale(*vecl);
-
    for( size_t it = 0; it < children.size(); it++ )
-      children[it]->rowScale2(*(scalevec.children[it]), vecl);
+      children[it]->rowScale2(*(scalevec.children[it]), scalevec.vecl);
 }
 
 void StochGenMatrix::scalarMult( double num)
@@ -191,25 +204,23 @@ void StochGenMatrix::getDiagonal( OoqpVector& vec_ )
 {
   StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
-  //check compatibility
-  assert( children.size() == vec.children.size() );
-
-  // only local B gives the diagonal
   Bmat->getDiagonal(*vec.vec);
 
-  //do it recursively
-  for(size_t it=0; it<children.size(); it++)
+  assert( children.size() == vec.children.size() );
+
+  for( size_t it = 0; it < children.size(); it++ )
     children[it]->getDiagonal(*vec.children[it]);
 }
  
 void StochGenMatrix::setToDiagonal( const OoqpVector& vec_ )
 {
   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+
+  Bmat->setToDiagonal(*vec.vec);
+
   assert(children.size() == vec.children.size());
 
-  Bmat->setToDiagonal( *vec.vec);
-
-  for(size_t it=0; it<children.size(); it++)
+  for(size_t it = 0; it < children.size(); it++)
     children[it]->setToDiagonal(*vec.children[it]);
 }
 
@@ -217,29 +228,18 @@ void StochGenMatrix::setToDiagonal( const OoqpVector& vec_ )
 void StochGenMatrix::mult( double beta, OoqpVector& y_,
 			   double alpha, const OoqpVector& x_ ) const
 {
-   const StochVector & x = dynamic_cast<const StochVector&>(x_);
-   StochVector& y = dynamic_cast<StochVector&>(y_);
-
-   assert( y.children.size() == children.size() );
-   assert( x.children.size() == children.size() );
-
-   if(0.0 == alpha)
+   if( 0.0 == alpha )
    {
-      y.scale( beta );
+      y_.scale( beta );
       return;
    }
 
-   /// Bmat
+   const StochVector & x = dynamic_cast<const StochVector&>(x_);
+   StochVector& y = dynamic_cast<StochVector&>(y_);
+
    assert( Bmat->isKindOf(kSparseGenMatrix) );
    Bmat->mult(beta, *y.vec, alpha, *x.getLinkingVecNotHierarchicalTop() );
 
-   /// Amat
-   // assert not at root
-   long long mA, nA;
-   Amat->getSize(mA , nA);
-   assert( nA <= 0 );
-
-   /// Blmat
    int blm, bln;
    Blmat->getSize(blm, bln);
    const bool has_linking = blm > 0;
@@ -256,7 +256,9 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
          yvecl->setToZero();
    }
 
-   /* hand down x.vec and y.vecl */
+   assert( y.children.size() == children.size() );
+   assert( x.children.size() == children.size() );
+
    for(size_t it = 0; it < children.size(); it++)
       children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], yvecl);
 
@@ -2331,7 +2333,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       /* create child holding the new Bmat and it's Blmat part */
       int mb, nb;
       Bmat->getSize(mb, nb);
-      new_children[i] = new StochGenMatrix( new SparseGenMatrix(mb, 0, 0), Bmat, Blmat_new->children[i], child_comms[i]);
+      new_children[i] = new StochGenMatrix( new SparseGenMatrix(0, 0, 0), Bmat, Blmat_new->children[i], child_comms[i], true);
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;

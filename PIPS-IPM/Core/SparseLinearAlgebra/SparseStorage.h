@@ -48,18 +48,17 @@ protected:
 public:
   static int instances;
 
-  int m;
-  int n;
-  int len;
-  int * jcolM;
-  int * krowM;
-  double * M;
+  int m{};
+  int n{};
+  int len{};
+  int* jcolM{};
+  int* krowM{};
+  double* M{};
 
   SparseStorage( int m_, int n_, int len_ );
   SparseStorage( int m_, int n_, int len_,
 		 int * krowM_, int * jcolM_, double * M_,
 		 int deleteElts=0);
-  //SparseStorage(const vector<SparseStorage*> &blocks, bool diagonal); -- not needed anymore; cpetra
 
   void copyFrom(int * krowM_, int * jcolM_, double * M_) const;
 
@@ -231,7 +230,7 @@ public:
   virtual ~SparseStorage();
 
 private:
-  bool isFortranIndexed;
+  bool isFortranIndexed{false};
 };
 
 #endif

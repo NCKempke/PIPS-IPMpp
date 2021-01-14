@@ -19,7 +19,7 @@ protected:
   StochGenMatrix() = default;
 public:
 
-  StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_);
+  StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_matrix = false);
 
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
    *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
@@ -29,7 +29,7 @@ public:
   StochGenMatrix(long long global_m, long long global_n,
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
-		 MPI_Comm mpiComm_);
+		 MPI_Comm mpiComm_, bool inner_matrix = false);
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
       A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz. Otherwise, identical to the above constructor */
@@ -37,7 +37,7 @@ public:
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
 		 int Bl_m, int Bl_n, int Bl_nnz,
-		 MPI_Comm mpiComm_);
+		 MPI_Comm mpiComm_, bool inner_matrix = false);
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
   StochGenMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
@@ -59,6 +59,9 @@ public:
   long long n{-1};
   MPI_Comm mpiComm{MPI_COMM_NULL};
   int iAmDistrib{false};
+
+  /* is this matrix an inner matrix of the matrix hierarchy - if not, then its children hold the local Amat, Bmat and Blmat */
+  bool inner_matrix{false};
  private:
   bool hasSparseMatrices() const;
 
@@ -76,7 +79,7 @@ public:
 						   OoqpVector* yparentl_ );
 
   /** column scale method for children */
-  virtual void columnScale2( const OoqpVector& vec, const OoqpVector& parentvec );
+  virtual void columnScale2( const OoqpVector& vec );
 
   /** row scale method for children */
   virtual void rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec );
@@ -234,6 +237,7 @@ public:
         const std::vector<MPI_Comm>& child_comms );
 
 protected:
+  bool amatEmpty() const;
   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
 };
 
@@ -323,7 +327,7 @@ public:
 
   void initTransposedChild( bool ) override {};
 
-  void columnScale2( const OoqpVector&, const OoqpVector& ) override {};
+  void columnScale2( const OoqpVector& ) override {};
   void rowScale2( const OoqpVector&, const OoqpVector* ) override {};
 
   void initTransposed( bool ) override {};
