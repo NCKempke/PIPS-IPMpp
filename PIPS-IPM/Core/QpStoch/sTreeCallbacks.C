@@ -578,6 +578,8 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
    }
    else
    {
+      assert( commWrkrs == MPI_COMM_SELF );
+
       if( data->*nnzBmat < 0 )
          (data->*fnnzBmat)(data->user_data, data->id, &(data->*nnzBmat));
 

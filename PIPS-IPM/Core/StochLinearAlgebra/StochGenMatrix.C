@@ -148,7 +148,7 @@ void StochGenMatrix::columnScale( const OoqpVector& vec )
 
    assert( amatEmpty() );
 
-   Bmat->columnScale( *scalevec.vec );
+   Bmat->columnScale( *scalevec.getLinkingVecNotHierarchicalTop() );
    Blmat->columnScale( *scalevec.getLinkingVecNotHierarchicalTop() );
 
    assert(children.size() == scalevec.children.size());
@@ -237,33 +237,27 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
    const StochVector & x = dynamic_cast<const StochVector&>(x_);
    StochVector& y = dynamic_cast<StochVector&>(y_);
 
-   assert( Bmat->isKindOf(kSparseGenMatrix) );
+   assert( amatEmpty() );
    Bmat->mult(beta, *y.vec, alpha, *x.getLinkingVecNotHierarchicalTop() );
-
-   int blm, bln;
-   Blmat->getSize(blm, bln);
-   const bool has_linking = blm > 0;
-
-   SimpleVector* yvecl = dynamic_cast<SimpleVector*>(y.vecl);
-   if( has_linking )
-      assert( yvecl );
-
-   if( has_linking )
-   {
-      if( iAmSpecial(iAmDistrib, mpiComm) )
-         Blmat->mult(beta, *yvecl, alpha, *x.getLinkingVecNotHierarchicalTop());
-      else
-         yvecl->setToZero();
-   }
 
    assert( y.children.size() == children.size() );
    assert( x.children.size() == children.size() );
 
-   for(size_t it = 0; it < children.size(); it++)
-      children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], yvecl);
 
-   if( iAmDistrib && blm > 0 )
-      PIPS_MPIsumArrayInPlace( yvecl->elements(), yvecl->length(), mpiComm);
+   if( y.vecl )
+   {
+      if(iAmSpecial(iAmDistrib, mpiComm) )
+         Blmat->mult(beta, *y.vecl, alpha, *x.getLinkingVecNotHierarchicalTop() );
+      else
+         y.vecl->setToZero();
+   }
+
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], y.vecl);
+
+   if( iAmDistrib && y.vecl )
+      PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vecl)->elements(),
+            dynamic_cast<SimpleVector*>(y.vecl)->length(), mpiComm);
 }
 
 
@@ -284,17 +278,13 @@ void StochGenMatrix::mult2( double beta,  OoqpVector& y_,
    Bmat->mult(beta, *y.vec, alpha, *x.vec);
 
    if( yparentl_ )
-      Blmat->mult(1.0, *yparentl_, alpha, *x.vec);
-   else
    {
-      int mbl, nbl;
-      Blmat->getSize(mbl, nbl);
-      assert( mbl == 0 );
+      Blmat->mult(1.0, *yparentl_, alpha, *x.vec);
+      if( !iAmSpecial(iAmDistrib, mpiComm) )
+         yparentl_->setToZero();
    }
 
-   int mA, nA;
-   Amat->getSize(mA, nA);
-   if( nA > 0 )
+   if( !amatEmpty() )
    {
       const OoqpVector* link_vec = x.getLinkingVecNotHierarchicalTop();
       Amat->mult(1.0, *y.vec, alpha, *link_vec);

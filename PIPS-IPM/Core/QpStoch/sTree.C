@@ -81,7 +81,7 @@ void sTree::assignProcesses(MPI_Comm world, std::vector<int>& processes)
    if( 1 == n_procs )
    {
       for( size_t c = 0; c < children.size(); c++)
-         children[c]->assignProcesses(world, processes);
+         children[c]->assignProcesses(MPI_COMM_SELF, processes);
       return;
    }
 
