@@ -349,12 +349,7 @@ StochVector* sTree::newRhs()
      }
   }
   else
-  {
-     assert( children.size() == 0 );
-     assert( false && "TODO : implement" );
-//     StochVector* rhs_vec = sub_root->newRhs();
-//     SimpleVector* rhs_vecl = new SimpleVector( )
-  }
+     rhs = sub_root->newRhs();
 
   return rhs;
 }
