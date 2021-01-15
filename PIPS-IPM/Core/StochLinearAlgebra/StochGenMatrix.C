@@ -240,10 +240,6 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
    assert( amatEmpty() );
    Bmat->mult(beta, *y.vec, alpha, *x.getLinkingVecNotHierarchicalTop() );
 
-   assert( y.children.size() == children.size() );
-   assert( x.children.size() == children.size() );
-
-
    if( y.vecl )
    {
       if(iAmSpecial(iAmDistrib, mpiComm) )
@@ -251,6 +247,9 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
       else
          y.vecl->setToZero();
    }
+
+   assert( y.children.size() == children.size() );
+   assert( x.children.size() == children.size() );
 
    for(size_t it = 0; it < children.size(); it++)
       children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], y.vecl);
@@ -295,7 +294,6 @@ void StochGenMatrix::mult2( double beta,  OoqpVector& y_,
 void StochGenMatrix::transMult ( double beta,   OoqpVector& y_,
 				 double alpha,  const OoqpVector& x_ ) const
 {
-   assert( false && "TODO : hierarchical version");
   const StochVector & x = dynamic_cast<const StochVector&>(x_);
   StochVector & y = dynamic_cast<StochVector&>(y_);
 
@@ -328,9 +326,6 @@ void StochGenMatrix::transMult ( double beta,   OoqpVector& y_,
       yvec.setToZero();
     }
 
-    //!opt alloc buffer here and send it through the tree to be used by
-    //!children when MPI_Allreduce
-    //let the children compute their contribution
     for(size_t it = 0; it < children.size(); it++) {
       children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], yvec, xvecl);
     }
@@ -347,15 +342,8 @@ void StochGenMatrix::transMult ( double beta,   OoqpVector& y_,
     }
   }
 
-  if(iAmDistrib) {
-    int locn=yvec.length();
-    double* buffer = new double[locn];
-
-    MPI_Allreduce(yvec.elements(), buffer, locn, MPI_DOUBLE, MPI_SUM, mpiComm);
-    yvec.copyFromArray(buffer);
-
-    delete[] buffer;
-  }
+  if(iAmDistrib)
+     PIPS_MPIsumArrayInPlace( yvec.elements, yvec.length(), mpiComm);
 }
 
 
@@ -401,15 +389,8 @@ void StochGenMatrix::transMult2 ( double beta, StochVector& y,
 #endif
 
 
-  if(iAmDistrib) {
-    int locn=yvec.length();
-    double* buffer = new double[locn];
-
-    MPI_Allreduce(yvec.elements(), buffer, locn, MPI_DOUBLE, MPI_SUM, mpiComm);
-    yvec.copyFromArray(buffer);
-
-    delete[] buffer;
-  }
+  if(iAmDistrib)
+     PIPS_MPIsumArrayInPlace( yvec.elements(), yvec.length(), mpiComm );
 }
 
 void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
@@ -449,15 +430,8 @@ void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
 			     alpha, *x.children[it],
 			     yvec);
 
-  if(iAmDistrib) {
-    int locn=yvec.length();
-    double* buffer = new double[locn];
-
-    MPI_Allreduce(yvec.elements(), buffer, locn, MPI_DOUBLE, MPI_SUM, mpiComm);
-    yvec.copyFromArray(buffer);
-
-    delete[] buffer;
-  }
+  if(iAmDistrib)
+     PIPS_MPIsumArrayInPlace(yvec.elements(), yvec.length(), mpiComm);
 }
 
 
