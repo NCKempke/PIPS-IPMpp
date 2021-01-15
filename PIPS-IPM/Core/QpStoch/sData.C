@@ -1929,11 +1929,9 @@ void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
 
    for( auto& child : children )
    {
-      assert(child->is_hierarchy_inner_leaf);
-//      child->
+      assert( child->is_hierarchy_inner_leaf );
+      child->splitDataAccordingToTree(0,0);
    }
-
-   assert( false && "TODO: implement");
 }
 
 sData* sData::switchToHierarchicalData( const sTree* tree )
@@ -1942,10 +1940,8 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    assert( tree->nChildren() == 1 );
 
    this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
-   sData* hierarchical_top = shaveDenseBorder( tree );
-
    assert( false && "TODO :: check.." );
-
+   sData* hierarchical_top = shaveDenseBorder( tree );
 
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Hierarchical data built\n";
