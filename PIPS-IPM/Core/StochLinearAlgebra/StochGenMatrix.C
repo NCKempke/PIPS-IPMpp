@@ -255,20 +255,16 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
       children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], y.vecl);
 
    if( iAmDistrib && y.vecl )
-      PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vecl)->elements(),
-            dynamic_cast<SimpleVector*>(y.vecl)->length(), mpiComm);
+      PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vecl)->elements(), y.vecl->length(), mpiComm);
 }
 
 
 /* mult method for children; needed only for linking constraints */
-void StochGenMatrix::mult2( double beta,  OoqpVector& y_,
-			   double alpha, OoqpVector& x_, OoqpVector* yparentl_ )
+void StochGenMatrix::mult2( double beta,  StochVector& y,
+			   double alpha, StochVector& x, OoqpVector* yparentl_ )
 {
    assert( alpha != 0.0 );
-
-   StochVector& x = dynamic_cast<StochVector&>(x_);
-   StochVector& y = dynamic_cast<StochVector&>(y_);
-
+   assert( children.size() == 0 );
    assert( y.children.size() == children.size() );
    assert( x.children.size() == children.size() );
    assert( x.vec );
@@ -291,149 +287,63 @@ void StochGenMatrix::mult2( double beta,  OoqpVector& y_,
 }
 
 
-void StochGenMatrix::transMult ( double beta,   OoqpVector& y_,
-				 double alpha,  const OoqpVector& x_ ) const
+void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
+				 double alpha, const OoqpVector& x_ ) const
 {
-  const StochVector & x = dynamic_cast<const StochVector&>(x_);
-  StochVector & y = dynamic_cast<StochVector&>(y_);
+   if( 0.0 == alpha )
+   {
+      y_.scale(beta);
+      return;
+   }
 
-  // assert tree compatibility
-  assert(y.children.size() == children.size());
-  assert(x.children.size() == children.size());
+   const StochVector& x = dynamic_cast<const StochVector&>(x_);
+   StochVector& y = dynamic_cast<StochVector&>(y_);
+   assert( y.vec );
+   assert( x.vec );
 
-  const SimpleVector& xvec = dynamic_cast<const SimpleVector&>(*x.vec);
-  SimpleVector& yvec = dynamic_cast<SimpleVector&>(*y.vec);
+   if( iAmSpecial(iAmDistrib, mpiComm) )
+   {
+      Bmat->transMult(beta, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
 
-  int blm, bln;
-  Blmat->getSize(blm, bln);
+      if( x.vecl )
+         Blmat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vecl);
+   }
+   else
+      y.vec->setToZero();
 
-  // with linking constraints?
-  if( blm > 0 )
-  {
-    assert(x.vecl);
-    const SimpleVector& xvecl = dynamic_cast<const SimpleVector&>(*x.vecl);
+   assert(y.children.size() == children.size());
+   assert(x.children.size() == children.size());
 
-    if( iAmSpecial(iAmDistrib, mpiComm) )
-    {
-      //y_i = beta* y_i  +  alpha* B_i^T* x_i
-      Bmat->transMult(beta, yvec, alpha, xvec);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], x.vecl);
 
-	   //y_i = y_i  +  alpha* Bl_0^T* xl_i
-	   Blmat->transMult(1.0, yvec, alpha, xvecl);
-    }
-    else
-    {
-      yvec.setToZero();
-    }
-
-    for(size_t it = 0; it < children.size(); it++) {
-      children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], yvec, xvecl);
-    }
-  }
-  else // no linking constraints
-  {
-    if( iAmSpecial(iAmDistrib, mpiComm) )
-      Bmat->transMult(beta, yvec, alpha, xvec);
-    else
-      yvec.setToZero();
-
-    for(size_t it=0; it<children.size(); it++) {
-      children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], yvec);
-    }
-  }
-
-  if(iAmDistrib)
-     PIPS_MPIsumArrayInPlace( yvec.elements, yvec.length(), mpiComm);
+   if( iAmDistrib )
+      PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vec)->elements(), y.vec->length(), mpiComm);
 }
-
 
 void StochGenMatrix::transMult2 ( double beta, StochVector& y,
-				  double alpha, StochVector& x,
-				  OoqpVector& yvecParent, const OoqpVector& xvecl) const
+				  double alpha, StochVector& x, const OoqpVector* xvecl) const
 {
-   assert( false && "TODO : hierarchical version");
+   assert( alpha != 0.0 );
+   assert( x.vec );
+   assert( y.vec );
+   assert(y.children.size() - children.size() == 0);
+   assert(x.children.size() - children.size() == 0);
+   assert(children.size() == 0);
 
-  //assert tree compatibility
-  assert(y.children.size() - children.size() == 0);
-  assert(x.children.size() - children.size() == 0);
+   if( !amatEmpty() )
+      Amat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
 
-  const SimpleVector& xvec = dynamic_cast<const SimpleVector&>(*x.vec);
-  SimpleVector& yvec = dynamic_cast<SimpleVector&>(*y.vec);
+   if( iAmSpecial(iAmDistrib, mpiComm) )
+   {
+      Bmat->transMult(beta, *y.vec, alpha, *x.vec);
 
-#ifdef STOCH_TESTING
-  int nA, mA;
-  Amat->getSize(mA, nA);
-  // this should NOT be the root
-  assert(nA>0);
-#endif
-
-  //do A_i^T x_i and add it to yvecParent which already contains B_0^T x_0
-  Amat->transMult(1.0, yvecParent, alpha, *x.vec);
-
-  if( iAmSpecial(iAmDistrib, mpiComm) )
-  {
-    Bmat->transMult(beta, yvec, alpha, xvec);
-
-	 //y_i = y_i  +  alpha* Bl_i^T* xl_i
-	 Blmat->transMult(1.0, yvec, alpha, xvecl);
-  }
-  else
-    yvec.setToZero();
-  
-  assert(children.size() == 0);
-#if 0
-  for(size_t it=0; it<children.size(); it++)
-    children[it]->transMult2(beta, *y.children[it], 
-			     alpha, *x.children[it],
-			     yvec);
-#endif
-
-
-  if(iAmDistrib)
-     PIPS_MPIsumArrayInPlace( yvec.elements(), yvec.length(), mpiComm );
+      if( xvecl )
+         Blmat->transMult(1.0, *y.vec, alpha, *xvecl );
+   }
+   else
+      y.vec->setToZero();
 }
-
-void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
-				  double alpha,  StochVector& x,
-				  OoqpVector& yvecParent)
-{
-   assert( false && "TODO : hierarchical version");
-
-  //assert tree compatibility
-  assert(y.children.size() - children.size() == 0);
-  assert(x.children.size() - children.size() == 0);
-
-  SimpleVector& xvec = dynamic_cast<SimpleVector&>(*x.vec);
-  SimpleVector& yvec = dynamic_cast<SimpleVector&>(*y.vec);
-
-#ifdef STOCH_TESTING
-  int nA, mA;
-  Amat->getSize(mA, nA);
-  // this should NOT be the root
-  assert(nA>0);
-#endif
-
-  //do A_i^T x_i and add it to yvecParent which already contains B_0^T x_0
-  Amat->transMult(1.0, yvecParent, alpha, *x.vec);
-
-  if( iAmSpecial(iAmDistrib, mpiComm) )
-  {
-    //do A_i^T x_i and add it to yvecParent which already contains
-    //B_0^T x_0
-    Bmat->transMult(beta, yvec, alpha, xvec);
-  }
-  else
-    yvec.setToZero();
-
-  for(size_t it=0; it<children.size(); it++)
-    children[it]->transMult2(beta, *y.children[it],
-			     alpha, *x.children[it],
-			     yvec);
-
-  if(iAmDistrib)
-     PIPS_MPIsumArrayInPlace(yvec.elements(), yvec.length(), mpiComm);
-}
-
 
 double StochGenMatrix::abmaxnorm() const
 {

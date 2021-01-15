@@ -66,17 +66,9 @@ public:
   bool hasSparseMatrices() const;
 
   /** trans mult method for children with linking constraints */
-  virtual void transMult2 ( double beta,   StochVector& y,
-		    double alpha,  StochVector& x,
-		    OoqpVector& yvecParent, const OoqpVector& xvecl ) const;
+  virtual void transMult2( double beta, StochVector& y, double alpha, StochVector& x, const OoqpVector* xvecl ) const;
 
-  /** trans mult method for children; does not support linking constraints */
-  virtual void transMult2 ( double beta,   StochVector& y,
-		    double alpha,  StochVector& x,
-		    OoqpVector& yvecParent );
-
-  virtual void mult2( double beta,  OoqpVector& y, double alpha, OoqpVector& x,
-						   OoqpVector* yparentl_ );
+  virtual void mult2( double beta,  StochVector& y, double alpha, StochVector& x, OoqpVector* yparentl_ );
 
   /** column scale method for children */
   virtual void columnScale2( const OoqpVector& vec );
@@ -294,15 +286,11 @@ public:
   void getDiagonal( OoqpVector& ) override {};
   void setToDiagonal( const OoqpVector& ) override {};
 
-  /** y = beta * y + alpha * this * x */
   void mult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-  void mult2 ( double, OoqpVector&, double, OoqpVector&, OoqpVector* ) override {};
+  void mult2 ( double, StochVector&, double, StochVector&, OoqpVector* ) override {};
 
   void transMult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-
-  void transMult2 ( double, StochVector&, double, StochVector&, OoqpVector&, const OoqpVector& ) const override {};
-
-  void transMult2 ( double, StochVector&, double, StochVector&, OoqpVector& ) override {};
+  void transMult2 ( double, StochVector&, double, StochVector&, const OoqpVector* ) const override {};
 
   double abmaxnorm() const override { return 0.0; };
   double abminnormNonZero( double ) const override { return std::numeric_limits<double>::infinity(); };
