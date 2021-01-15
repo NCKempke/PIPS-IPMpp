@@ -961,7 +961,6 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
       leaf->setHierarchicalInnerLeaf();
 
       leaf->sub_root = new sTreeCallbacks();
-      leaf->sub_root->setHierarchicalInnerRoot();
    }
 
    /* determine processes for each subtree and assign children */
