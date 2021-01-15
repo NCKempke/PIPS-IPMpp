@@ -400,10 +400,15 @@ void SparseSymMatrix::reduceToLower()
   mStorage->reduceToLower();
 }
 
-
 void SparseSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec)
 {
    const SimpleVectorBase<int>& vec = dynamic_cast<const SimpleVectorBase<int>&>(nnzVec);
+#ifndef NDEBUG
+   int m,n;
+   mStorage->getSize(m,n);
+   assert( nnzVec.length() == m );
+   assert( nnzVec.length() == n );
+#endif
    mStorage->deleteEmptyRowsCols(vec.elements(), vec.elements());
 }
 

@@ -66,15 +66,16 @@ SymMatrix* StochSymMatrix::clone() const
    {
       StochSymMatrix* child = dynamic_cast<StochSymMatrix*>(children[it]->clone());
       clone->AddChild(child);
+      clone->n += child->n;
    }
 
+   assert( size() == clone->size() );
    return clone;
 }
 
 void StochSymMatrix::recomputeSize()
 {
    assert( diag );
-
    n = 0;
    for( auto& child : children )
    {
@@ -394,15 +395,13 @@ void StochSymMatrix::scalarMult( double num )
 
 void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent)
 {
-   MPI_Barrier(MPI_COMM_WORLD);
    const StochVectorBase<int>& nnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(nnzVec);
-   assert(children.size() == nnzVecStoch.children.size());
+   assert( children.size() == nnzVecStoch.children.size() );
 
-   const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>(nnzVecStoch.vec);
+   const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>( nnzVecStoch.vec );
    assert( vec );
 
    const int n_old = n;
-
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->deleteEmptyRowsCols(*nnzVecStoch.children[it], vec);
 
@@ -418,7 +417,6 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
       assert( !border );
 
    assert( diag->isKindOf(kSparseSymMatrix) );
-
    dynamic_cast<SparseSymMatrix&>(*diag).deleteEmptyRowsCols(*vec);
 
    const int nnzs = vec->getNnzs();
