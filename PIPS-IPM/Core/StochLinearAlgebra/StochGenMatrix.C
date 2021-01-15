@@ -929,8 +929,6 @@ void StochGenMatrix::getNnzPerCol(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
 void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
       const OoqpVector* colScaleVec, const OoqpVector* colScaleParent, OoqpVector& minmaxVec, OoqpVector* linkParent)
 {
-   assert( false && "TODO : hierarchical version");
-   assert( hasSparseMatrices() );
 
    StochVector& minmaxVecStoch = dynamic_cast<StochVector&>(minmaxVec);
    const StochVector* const colScaleVecStoch = dynamic_cast<const StochVector*>(colScaleVec);
@@ -939,9 +937,6 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
    const SimpleVector* const covecparent = dynamic_cast<const SimpleVector*>(colScaleParent);
    const SimpleVector* const covec = colScaleVecStoch != nullptr ?
          dynamic_cast<SimpleVector*>(colScaleVecStoch->vec) : nullptr;
-
-   // assert tree compatibility
-   assert(minmaxVecStoch.children.size() == children.size());
 
    Bmat->getRowMinMaxVec(getMin, initializeVec, covec, *(minmaxVecStoch.vec));
 
@@ -976,6 +971,8 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
          Blmat->getRowMinMaxVec(getMin, false, covec, *mvecl);
    }
 
+   assert(minmaxVecStoch.children.size() == children.size());
+
    if( colScaleVec != nullptr )
    {
       for( size_t it = 0; it < children.size(); it++ )
@@ -1005,7 +1002,7 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
 void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
         const OoqpVector* rowScaleVec, const OoqpVector* rowScaleLink, OoqpVector& minmaxVec, OoqpVector* minmaxParent)
 {
-   assert( false && "TODO : hierarchical version");
+//   assert( false && "TODO : hierarchical version");
    assert( hasSparseMatrices() );
 
    StochVector& minmaxVecStoch = dynamic_cast<StochVector&>(minmaxVec);

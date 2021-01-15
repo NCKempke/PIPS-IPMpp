@@ -35,7 +35,6 @@ class sData : public QpGenData {
 	 bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false );
 
   std::vector<sData*> children;
-  sData* sub_root{};
   void AddChild(sData* child);
   const sTree* stochNode{};
 
@@ -97,6 +96,8 @@ protected:
   static PERMUTATION getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
         const std::vector<int>& linkStartBlockId, int n_links_after_split );
 
+  void addChildrenForSplit();
+  void splitData( int myl_from_border, int mzl_from_border );
   void reorderLinkingConstraintsAccordingToSplit( int myl_from_border = 0, int mzl_from_border = 0 );
   void splitDataAndAddAsChildLayer( int myl_from_border = 0, int mzl_from_border = 0 );
   void splitDataAccordingToTree( int myl_from_border = 0, int mzl_from_border = 0 );
@@ -198,7 +199,7 @@ protected:
 
   /* a two link must be in two blocks directly after one another */
   const bool is_hierarchy_root{false};
-  const bool is_hierarchy_inner_root{false};
+  bool is_hierarchy_inner_root{false};
   const bool is_hierarchy_inner_leaf{false};
   bool useLinkStructure{false};
 

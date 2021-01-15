@@ -1750,12 +1750,145 @@ void sData::reorderLinkingConstraintsAccordingToSplit(int myl_from_border , int 
    permuteLinkStructureDetection(perm_A, perm_C);
 }
 
-void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_border)
+void sData::addChildrenForSplit()
+{
+   this->is_hierarchy_inner_root = true;
+
+   assert( isSCrowLocal.size() == 0 );
+   assert( isSCrowMyLocal.size() == 0 );
+
+   const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
+
+   const sTreeCallbacks& tree = dynamic_cast<const sTreeCallbacks&>(*stochNode);
+   std::vector<sData*> new_children(n_new_children);
+
+   unsigned int childchild_pos{0};
+   for( unsigned int i = 0; i < n_new_children; ++i )
+   {
+      StochSymMatrix* Q_child = dynamic_cast<StochSymMatrix&>(*Q).children[i];
+      StochGenMatrix* A_child = dynamic_cast<StochGenMatrix&>(*A).children[i];
+      StochGenMatrix* C_child = dynamic_cast<StochGenMatrix&>(*C).children[i];
+
+      StochVector* g_child = dynamic_cast<StochVector&>(*g).children[i];
+      StochVector* blx_child = dynamic_cast<StochVector&>(*blx).children[i];
+      StochVector* ixlow_child = dynamic_cast<StochVector&>(*ixlow).children[i];
+      StochVector* bux_child = dynamic_cast<StochVector&>(*bux).children[i];
+      StochVector* ixupp_child = dynamic_cast<StochVector&>(*ixupp).children[i];
+
+      StochVector* bA_child = dynamic_cast<StochVector&>(*bA).children[i];
+
+      StochVector* bl_child = dynamic_cast<StochVector&>(*bl).children[i];
+      StochVector* iclow_child = dynamic_cast<StochVector&>(*iclow).children[i];
+      StochVector* bu_child = dynamic_cast<StochVector&>(*bu).children[i];
+      StochVector* icupp_child = dynamic_cast<StochVector&>(*icupp).children[i];
+
+      const int nxlow = ixlow->numberOfNonzeros();
+      const int nxupp = ixupp->numberOfNonzeros();
+
+      const int mclow = iclow->numberOfNonzeros();
+      const int mcupp = icupp->numberOfNonzeros();
+
+      assert( dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf() );
+      const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
+
+      sData* child = new sData(tree_child, g_child, Q_child, blx_child, ixlow_child, nxlow, bux_child, ixupp_child, nxupp,
+               A_child, bA_child, C_child, bl_child, iclow_child, mclow, bu_child, icupp_child, mcupp,
+            false, false, false, true);
+      new_children[i] = child;
+
+      const int myl = tree_child->myl();
+      const int mzl = tree_child->mzl();
+
+      child->linkConsPermutationA.resize(myl);
+      std::iota(child->linkConsPermutationA.begin(), child->linkConsPermutationA.end(), 0);
+
+      child->linkConsPermutationC.resize(mzl);
+      std::iota(child->linkConsPermutationC.begin(), child->linkConsPermutationC.end(), 0);
+
+      /// A
+      child->linkStartBlockIdA.insert(child->linkStartBlockIdA.begin(), linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + myl);
+      std::transform(child->linkStartBlockIdA.begin(), child->linkStartBlockIdA.end(), child->linkStartBlockIdA.begin(),
+            [&childchild_pos](const int& a){ return a - childchild_pos; } );
+      linkStartBlockIdA.erase(linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + myl);
+
+      child->n_blocks_per_link_row_A.insert(child->n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin() + myl);
+      n_blocks_per_link_row_A.erase(n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin() + myl);
+
+      /// C
+      child->linkStartBlockIdC.insert(child->linkStartBlockIdC.begin(), linkStartBlockIdC.begin(), linkStartBlockIdC.begin() + mzl);
+      std::transform(child->linkStartBlockIdC.begin(), child->linkStartBlockIdC.end(), child->linkStartBlockIdC.begin(),
+            [&childchild_pos](const int& a){ return a - childchild_pos; } );
+
+      linkStartBlockIdC.erase(linkStartBlockIdC.begin(), linkStartBlockIdC.begin() + mzl);
+
+      child->n_blocks_per_link_row_C.insert(child->n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin() + mzl);
+      n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin() + mzl);
+
+
+      while( childchild_pos < map_blocks_children.size() && map_blocks_children[childchild_pos] == i )
+      {
+         child->children.push_back(children[childchild_pos]);
+
+         if( childchild_pos + 1 == map_blocks_children.size()
+               || map_blocks_children[childchild_pos + 1] != i )
+         {
+            child->linkStartBlockLengthsA.push_back( -1 );
+            child->linkStartBlockLengthsC.push_back( -1 );
+         }
+         else
+         {
+            child->linkStartBlockLengthsA.push_back( linkStartBlockLengthsA[childchild_pos] );
+            linkStartBlockLengthsA[childchild_pos] = -20;
+
+            child->linkStartBlockLengthsC.push_back( linkStartBlockLengthsC[childchild_pos] );
+            linkStartBlockLengthsC[childchild_pos] = -20;
+         }
+         ++childchild_pos;
+      }
+
+      assert( child->linkStartBlockLengthsA.size() == child->children.size() );
+      assert( child->linkStartBlockLengthsA.back() == -1 );
+
+      // Leaving child->linkVarsPermutation, child->n_blocks_per_link_var empty for now - not sure if ever needed
+
+      child->useLinkStructure = true;
+   }
+
+   linkStartBlockLengthsA.erase( std::remove_if(linkStartBlockLengthsA.begin(),
+         linkStartBlockLengthsA.end(),
+         [](int a){ return a == -20; }),
+         linkStartBlockLengthsA.end()
+   );
+
+   linkStartBlockLengthsC.erase( std::remove_if(linkStartBlockLengthsC.begin(),
+         linkStartBlockLengthsC.end(),
+         [](int a){ return a == -20; }),
+         linkStartBlockLengthsC.end()
+   );
+
+   for( unsigned int i = 0; i < linkStartBlockIdA.size(); ++i )
+      if( linkStartBlockIdA[i] >= 0 )
+         linkStartBlockIdA[i] = map_blocks_children[linkStartBlockIdA[i]];
+
+   for( unsigned int i = 0; i < linkStartBlockIdC.size(); ++i )
+      if( linkStartBlockIdC[i] >= 0 )
+         linkStartBlockIdC[i] = map_blocks_children[linkStartBlockIdC[i]];
+
+   children.clear();
+   children.insert( children.begin(), new_children.begin(), new_children.end() );
+
+   assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
+   assert( linkStartBlockLengthsA.size() == new_children.size() );
+}
+
+void sData::splitData( int myl_from_border, int mzl_from_border )
 {
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
 
+   // TODO : implement splitting for Q
    //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
    dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
    dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
@@ -1774,20 +1907,17 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
    dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
 
-
-   // TODO : implement splitting for Q and implement trans mult !!
-   assert( false && "TODO: implement" );
-   // TODO what is this?
+   // TODO : ??
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+}
 
-   // for each new child make a new sData object - probably also need to adjust many members of this
-//   new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
-//         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
-//         A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
-//         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
-//         false, true);
+void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_border)
+{
 
+   splitData( myl_from_border, mzl_from_border );
+   addChildrenForSplit();
 
+   assert( false && "TODO: implement" );
 }
 
 void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
