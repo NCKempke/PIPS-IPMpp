@@ -672,14 +672,14 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
 
          for( int i = 0; i < offset + nBd + nB0mat + 1; ++i )
             out << "_\t";
-         out << std::endl;
+         out << "\n";
       }
    }
    else
    {
       for( int i = 0; i < offset + nBd + nB0mat + 1; ++i )
          out << "_\t";
-      out << std::endl;
+      out << "\n";
    }
 
    if( iAmDistrib )
@@ -1777,7 +1777,7 @@ bool StochGenMatrix::isRootNodeInSync() const
          {
             /* someone else had a higher value here */
             if(my_rank == 0)
-               std::cout << "matrix entries out of sync" << std::endl;
+               std::cout << "matrix entries out of sync\n";
             in_sync = false;
             break;
          }
@@ -1789,7 +1789,7 @@ bool StochGenMatrix::isRootNodeInSync() const
          {
             /* someone else had a higher value here */
             if(my_rank == 0)
-               std::cout << "matrix indices (col or row) out of sync" << std::endl;
+               std::cout << "matrix indices (col or row) out of sync\n";
             in_sync = false;
          }
       }
@@ -1919,7 +1919,7 @@ bool StochGenMatrix::isRootNodeInSync() const
          {
             /* someone else had a higher value here */
             if(my_rank == 0)
-               std::cout << "matrix entries in dynamic storage out of sync" << std::endl;
+               std::cout << "matrix entries in dynamic storage out of sync\n";
             in_sync = false;
          }
       }
@@ -1929,7 +1929,7 @@ bool StochGenMatrix::isRootNodeInSync() const
          {
             /* someone else had a higher value here */
             if(my_rank == 0)
-               std::cout << "matrix indices in dynamic storage out of sync" << std::endl;
+               std::cout << "matrix indices in dynamic storage out of sync\n";
             in_sync = false;
          }
       }
