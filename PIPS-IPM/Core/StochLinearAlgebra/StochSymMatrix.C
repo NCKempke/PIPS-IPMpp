@@ -7,6 +7,13 @@
 
 #include <cassert>
 
+StochSymMatrix::StochSymMatrix( SymMatrix* diag_, SparseGenMatrix* border_, MPI_Comm mpiComm_ ) :
+   diag{ diag_ }, border{ border_ }, mpiComm{ mpiComm_ }, iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
+{
+   assert( diag );
+   recomputeSize();
+}
+
 /**
  * This the constructor is usually called for the root node. In this case
  * parent is set to nullptr; the cross Hessian does not exist, so
@@ -19,7 +26,7 @@
  */
 StochSymMatrix::StochSymMatrix(long long global_n, int local_n, int local_nnz,
 			       MPI_Comm mpiComm_)
-  : n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) ), parent(nullptr)
+  : n(global_n), mpiComm(mpiComm_), iAmDistrib( PIPS_MPIgetDistributed(mpiComm) )
 {
   diag = new SparseSymMatrix(local_n, local_nnz);
   // the cross Hessian is nullptr for the root node; it may be also nullptr for 
@@ -30,13 +37,13 @@ StochSymMatrix::StochSymMatrix(long long global_n, int local_n, int local_nnz,
 
 void StochSymMatrix::AddChild(StochSymMatrix* child)
 {
-  child->parent = this;
-  assert( this->border == nullptr );
+   child->parent = this;
+   assert( this->border == nullptr );
 
-  if( !child->border )
-    child->border = new SparseGenMatrix(child->diag->size(), this->diag->size(), 0);
+   if( !child->border )
+      child->border = new SparseGenMatrix(child->diag->size(), this->diag->size(), 0);
 
-  children.push_back(child);
+   children.push_back(child);
 }
 
 StochSymMatrix::~StochSymMatrix()
@@ -44,28 +51,44 @@ StochSymMatrix::~StochSymMatrix()
    for(size_t it = 0; it < children.size(); it++)
       delete children[it];
 
-   if( diag )
-      delete diag;
-   if( border )
-      delete border;
+   delete diag;
+   delete border;
 }
 
-// TODO : does not clone the border..
-StochSymMatrix* StochSymMatrix::clone() const
+SymMatrix* StochSymMatrix::clone() const
 {
-   const int local_n = diag->getStorageRef().n;
-   const int local_nnz = diag->getStorageRef().len;
+   SymMatrix* diag_clone = diag->clone();
+   SparseGenMatrix* border_clone = border ? dynamic_cast<SparseGenMatrix*>(border->cloneFull()) : nullptr;
 
-   StochSymMatrix* clone = new StochSymMatrix(n, local_n, local_nnz, mpiComm);
+   StochSymMatrix* clone = new StochSymMatrix( diag_clone, border_clone, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      StochSymMatrix* child = children[it]->clone();
+      StochSymMatrix* child = dynamic_cast<StochSymMatrix*>(children[it]->clone());
       clone->AddChild(child);
    }
 
    return clone;
 }
+
+void StochSymMatrix::recomputeSize()
+{
+   assert( diag );
+
+   n = 0;
+   for( auto& child : children )
+   {
+      child->recomputeSize();
+
+      n += child->size();
+   }
+
+   if( diag->isKindOf(kStochSymMatrix) )
+      dynamic_cast<StochSymMatrix*>(diag)->recomputeSize();
+
+   n += diag->size();
+}
+
 
 int StochSymMatrix::isKindOf( int type ) const
 {
@@ -104,56 +127,42 @@ void StochSymMatrix::mult( double beta,  OoqpVector& y_,
    const StochVector & x = dynamic_cast<const StochVector&>(x_);
    StochVector & y = dynamic_cast<StochVector&>(y_);
 
-   size_t nChildren = children.size();
-   assert(y.children.size() == nChildren );
-   assert(x.children.size() == nChildren );
-
-   assert(this->diag->size() == y.vec->length());
-   assert(this->diag->size() == x.vec->length());
-
-   SimpleVector & yvec = dynamic_cast<SimpleVector&>(*y.vec);
-   const SimpleVector & xvec = dynamic_cast<const SimpleVector&>(*x.vec);
-
-   if(0.0 == alpha)
+   if( 0.0 == alpha)
    {
       y.vec->scale( beta );
       return;
    }
 
-   const bool iAmRoot = (parent == nullptr);
-   const int my_rank = PIPS_MPIgetRank( mpiComm );
-   const bool iAmSpecial = (my_rank == 0);
-
-   if( iAmRoot )
+   if( !parent )
    {
-      // y0 = beta * y0 + alpha * Q0 * x0
-      if(iAmSpecial)
-         diag->mult( beta, yvec, alpha, xvec );
+      if( PIPS_MPIiAmSpecial(iAmDistrib, mpiComm) )
+         diag->mult( beta, *y.vec, alpha, *x.vec );
       else
-         yvec.setToZero();
+         y.vec->setToZero();
    }
    else
-      // yi = beta * yi + alpha * Qi * xi
-      diag->mult( beta, yvec, alpha, xvec );
+      diag->mult( beta, *y.vec, alpha, *x.vec );
 
    // y0 = y0 + alpha * border^T * xi
    if( border )
    {
-      assert( !iAmRoot );
+      assert( parent );
       assert( x.parent );
       assert( y.parent );
 
-      border->transMult( 1.0, *x.parent->vec, alpha, xvec );
-      border->mult(1.0, yvec, alpha, *x.parent->vec);
+      border->transMult( 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec );
+      border->mult(1.0, *y.vec, alpha, *x.getLinkingVecNotHierarchicalTop() );
    }
 
+   assert(y.children.size() == children.size() );
+   assert(x.children.size() == children.size() );
+
    // recursively multiply the children
-   for (size_t it = 0; it < nChildren; it++)
+   for (size_t it = 0; it < children.size(); it++)
       children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
 
-   if( iAmDistrib && nChildren > 0 )
-      PIPS_MPIsumArrayInPlace( yvec.elements(), yvec.length(), mpiComm );
-
+   if( iAmDistrib && !parent )
+      PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vec)->elements(), y.vec->length(), mpiComm );
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -262,23 +271,22 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const
 
 void StochSymMatrix::writeToStreamDenseChild(std::stringstream& out, int offset) const
 {
-   assert( border != nullptr );
-   int m_diag, m_border, n;
-   this->diag->getSize(m_diag, n);
-   this->border->getSize(m_border, n);
-
-   assert( m_diag == m_border );
-
-   for(int r = 0; r < m_diag; r++)
+   if( diag->isKindOf(kSparseSymMatrix) )
    {
-      this->border->writeToStreamDenseRow(out, r);
+      for( int r = 0; r < diag->size(); r++)
+      {
+         if( border )
+            border->writeToStreamDenseRow(out, r);
 
-      for(int i = 0; i < offset; i++)
-         out <<'\t';
+         for(int i = 0; i < offset; i++)
+            out <<'\t';
 
-      this->diag->writeToStreamDenseRow(out, r);
-      out << std::endl;
+         dynamic_cast<const SparseSymMatrix&>(*diag).writeToStreamDenseRow(out, r);
+         out << "\n";
+      }
    }
+   else
+      dynamic_cast<const StochSymMatrix&>(*diag).writeToStreamDense(out);
 }
 
 
@@ -348,32 +356,39 @@ void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
 
 void StochSymMatrix::columnScale( const OoqpVector& vec_ )
 {
-  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
-  assert(children.size() == vec.children.size());
+   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+   assert(children.size() == vec.children.size());
 
-  diag->columnScale(*vec.vec);
+   diag->columnScale(*vec.vec);
 
-  for (size_t it = 0; it < children.size(); it++)
-    children[it]->columnScale(*vec.children[it]);
+   if( border )
+      border->columnScale( *vec.getLinkingVecNotHierarchicalTop() );
+
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->columnScale(*vec.children[it]);
 }
 
 void StochSymMatrix::rowScale ( const OoqpVector& vec_ )
 {
-  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
-  assert(children.size() == vec.children.size());
+   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+   assert(children.size() == vec.children.size());
 
-  diag->rowScale(*vec.vec);
+   diag->rowScale( *vec.vec );
+   if( border )
+      border->rowScale( *vec.vec );
 
-  for (size_t it=0; it<children.size(); it++) 
-    children[it]->rowScale(*vec.children[it]);
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->rowScale(*vec.children[it]);
 }
 
 
 void StochSymMatrix::scalarMult( double num )
 {
-  diag->scalarMult(num);
-  for (size_t it=0; it<children.size(); it++) 
-    children[it]->scalarMult(num);
+   diag->scalarMult(num);
+   if( border )
+      border->scalarMult(num);
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->scalarMult(num);
 }
 
 
@@ -402,7 +417,9 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
    else
       assert( !border );
 
-   diag->deleteEmptyRowsCols(*vec);
+   assert( diag->isKindOf(kSparseSymMatrix) );
+
+   dynamic_cast<SparseSymMatrix&>(*diag).deleteEmptyRowsCols(*vec);
 
    const int nnzs = vec->getNnzs();
    const int length = vec->length();
@@ -425,7 +442,57 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
 
 int StochSymDummyMatrix::isKindOf( int type ) const
 { 
-  return type==kStochSymDummyMatrix;
+  return type == kStochSymDummyMatrix || type == kStochSymMatrix;
+}
+
+void StochSymMatrix::splitMatrix( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms )
+{
+   const unsigned int n_curr_children = children.size();
+   assert( n_curr_children == map_blocks_children.size() );
+
+   const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
+   std::vector<StochSymMatrix*> new_children(n_new_children);
+
+   unsigned int begin_curr_child_blocks{0};
+   unsigned int end_curr_child_blocks{0};
+   for( unsigned int i = 0; i < n_new_children; ++i )
+   {
+      while( end_curr_child_blocks != (n_curr_children - 1) &&
+            map_blocks_children[end_curr_child_blocks] == map_blocks_children[end_curr_child_blocks + 1] )
+         ++end_curr_child_blocks;
+
+      const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
+
+      StochSymMatrix* diag = (child_comms[i] == MPI_COMM_NULL) ? new StochSymDummyMatrix() :
+            new StochSymMatrix( 0, 0, 0, child_comms[i] );
+
+      /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
+      for( unsigned int j = 0; j < n_blocks_for_child; ++j )
+      {
+         StochSymMatrix* child = children.front();
+         children.erase(children.begin());
+
+         if( diag->mpiComm == MPI_COMM_NULL )
+            assert( child->mpiComm == MPI_COMM_NULL );
+
+         diag->AddChild(child);
+      }
+      diag->recomputeSize();
+
+      /* create child holding the new Bmat and it's Blmat part */
+      new_children[i] = new StochSymMatrix( diag, nullptr, child_comms[i] );
+
+      ++end_curr_child_blocks;
+      begin_curr_child_blocks = end_curr_child_blocks;
+   }
+   assert( children.size() == 0 );
+
+   /* exchange children and recompute sizes */
+   children.insert(children.end(), new_children.begin(), new_children.end());
+
+   for( auto& child : children )
+      child->recomputeSize();
+   this->recomputeSize();
 }
 
 BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
@@ -433,7 +500,8 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
    assert( parent == nullptr );
    assert( border == nullptr );
 
-   SparseGenMatrix* const border_top_left = diag->shaveSymLeftBottom(n_vars);
+   assert( diag->isKindOf(kSparseSymMatrix) );
+   SparseGenMatrix* const border_top_left = dynamic_cast<SparseSymMatrix*>(diag)->shaveSymLeftBottom(n_vars);
    StringGenMatrix* const border_vertical = new StringGenMatrix(true, border_top_left, nullptr, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
@@ -457,17 +525,26 @@ BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)
 
 void StochSymMatrix::shaveBorder(int n_vars, StringGenMatrix*& border_vertical)
 {
-   assert( border );
-   SparseGenMatrix* const border_block = border->shaveLeft(n_vars);
-   border_vertical = new StringGenMatrix(true, border_block, nullptr, mpiComm);
-
-   for( size_t it = 0; it < children.size(); it++ )
+   if( border )
    {
-      assert("deactivated for now" && 0);
+      SparseGenMatrix* const border_block = border->shaveLeft(n_vars);
+      border_vertical = new StringGenMatrix(true, border_block, nullptr, mpiComm);
+   }
+   else
+   {
+      assert( children.size() == 0 );
 
-      StringGenMatrix* border_child;
-      children[it]->shaveBorder(n_vars, border_child);
+      SparseGenMatrix* empty_filler = new SparseGenMatrix( 0, n_vars , 0 );
+      border_vertical = new StringGenMatrix(true, empty_filler, nullptr, mpiComm);
 
-      border_vertical->addChild(border_child);
+      assert( diag->isKindOf(kStochSymMatrix) );
+      StochSymMatrix& diags = dynamic_cast<StochSymMatrix&>(*diag);
+
+      for( unsigned int i = 0; i < diags.children.size(); ++i )
+      {
+         StringGenMatrix* border_child;
+         diags.children[i]->shaveBorder(n_vars, border_child);
+         border_vertical->addChild(border_child);
+      }
    }
 }

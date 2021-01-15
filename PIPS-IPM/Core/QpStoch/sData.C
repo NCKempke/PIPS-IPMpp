@@ -1516,7 +1516,7 @@ void sData::writeMPSColumns(std::ostream& out)
 sData* sData::cloneFull(bool switchToDynamicStorage) const
 {
    // todo Q is empty!
-   StochSymMatrixHandle Q_clone(dynamic_cast<const StochSymMatrix&>(*Q).clone());
+   SymMatrixHandle Q_clone(Q->clone());
    GenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
    GenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
@@ -1888,8 +1888,7 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
 
-   // TODO : implement splitting for Q
-   //   SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).split() );
+   dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
    dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
    dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
 
@@ -1917,7 +1916,6 @@ void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_borde
    splitData( myl_from_border, mzl_from_border );
    addChildrenForSplit();
 
-   assert( false && "TODO: implement" );
 }
 
 void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
@@ -2578,7 +2576,7 @@ int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
    const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
    const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
 
-   nnzQ = Qst.diag->getStorageRef().len + Qst.border->getStorageRef().len;
+   nnzQ = dynamic_cast<const SparseSymMatrix*>(Qst.diag)->getStorageRef().len + Qst.border->getStorageRef().len;
    nnzB = dynamic_cast<const SparseGenMatrix*>(Ast.Bmat)->getStorageRef().len;
    nnzD = dynamic_cast<const SparseGenMatrix*>(Cst.Bmat)->getStorageRef().len;
    return 0;
@@ -2792,7 +2790,7 @@ SparseSymMatrix& sData::getLocalQ()
 {
    assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
-   return *Qst.diag;
+   return dynamic_cast<SparseSymMatrix&>(*Qst.diag);
 }
 
 SparseGenMatrix&
@@ -2813,7 +2811,7 @@ sData::getLocalA()
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
    assert( Ast.Amat->isKindOf(kSparseGenMatrix) );
 
-   return *dynamic_cast<SparseGenMatrix*>(Ast.Amat);
+   return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
 }
 
 // This is W_i:
@@ -2824,7 +2822,7 @@ sData::getLocalB()
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
    assert( Ast.Bmat->isKindOf(kSparseGenMatrix) );
 
-   return *dynamic_cast<SparseGenMatrix*>(Ast.Bmat);
+   return dynamic_cast<SparseGenMatrix&>(*Ast.Bmat);
 }
 
 // This is F_i (linking equality matrix):
@@ -2835,7 +2833,7 @@ sData::getLocalF()
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
    assert( Ast.Blmat->isKindOf(kSparseGenMatrix) );
 
-   return *dynamic_cast<SparseGenMatrix*>(Ast.Blmat);
+   return dynamic_cast<SparseGenMatrix&>(*Ast.Blmat);
 }
 
 // low_i <= C_i x_0 + D_i x_i <= upp_i
@@ -2847,7 +2845,7 @@ sData::getLocalC()
    assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
    assert( Cst.Amat->isKindOf(kSparseGenMatrix) );
-   return *dynamic_cast<SparseGenMatrix*>(Cst.Amat);
+   return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
 }
 
 // This is D_i
@@ -2858,7 +2856,7 @@ sData::getLocalD()
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
    assert( Cst.Bmat->isKindOf(kSparseGenMatrix) );
 
-   return *dynamic_cast<SparseGenMatrix*>(Cst.Bmat);
+   return dynamic_cast<SparseGenMatrix&>(*Cst.Bmat);
 }
 
 // This is G_i (linking inequality matrix):
@@ -2869,7 +2867,7 @@ sData::getLocalG()
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
    assert( Cst.Blmat->isKindOf(kSparseGenMatrix) );
 
-   return *dynamic_cast<SparseGenMatrix*>(Cst.Blmat);
+   return dynamic_cast<SparseGenMatrix&>(*Cst.Blmat);
 }
 
 void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC,

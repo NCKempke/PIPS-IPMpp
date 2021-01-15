@@ -91,7 +91,7 @@ public:
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamDense( std::ostream& out ) const override;
   virtual std::string writeToStreamDenseRow(int row) const;
-  virtual void writeToStreamDenseRow( std::stringstream& out, int row ) const;
+  void writeToStreamDenseRow( std::stringstream& out, int row ) const;
 
   virtual void randomizePSD(double *);
 
@@ -118,6 +118,8 @@ public:
 
   virtual SparseGenMatrix* shaveSymLeftBottom( int n_vars );
 
-  virtual ~SparseSymMatrix() {};
+  ~SparseSymMatrix() override = default;
+
+  SymMatrix* clone() const override;
 };
 #endif

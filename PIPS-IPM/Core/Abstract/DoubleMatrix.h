@@ -56,7 +56,7 @@ public:
  */
 class DoubleMatrix : public IotrRefCount {
 public:
-  DoubleMatrix() {}
+  DoubleMatrix() = default;
 
   /** True if this matrix identifies itself to be of type matrixType. */
   virtual int isKindOf( int matrixType ) const = 0;
@@ -158,7 +158,7 @@ public:
   virtual void getSize( long long& m, long long& n ) const = 0;
   virtual void getSize( int& m, int& n ) const = 0;
 
-  virtual ~DoubleMatrix() {};
+  virtual ~DoubleMatrix() = default;
 };
 
 /** Parent of all Symmetric matrices. 
@@ -204,6 +204,10 @@ public:
 			      int& info ) = 0;
   /** the size of this square matrix */
   virtual long long size() const = 0;
+
+  /** deep clone matrix */
+  virtual SymMatrix* clone() const { assert( false && "not implmented"); return nullptr; };
+
 };
 
 /** Parent of all non-symmetric, possibly non-square, matrices.

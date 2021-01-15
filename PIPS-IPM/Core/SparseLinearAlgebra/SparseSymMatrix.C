@@ -30,7 +30,6 @@ SparseSymMatrix::SparseSymMatrix( const SparseSymMatrix& mat ) :
    mat.getStorageRef().copyFrom( mStorage->krowM, mStorage->jcolM, mStorage->M );
 }
 
-
 SparseSymMatrix::SparseSymMatrix( int size, int nnz, bool isLower )
 : isLower(isLower)
 {
@@ -60,6 +59,10 @@ void SparseSymMatrix::putSparseTriple( int irow[], int len,
   mStorage->putSparseTriple( irow, len, jcol, A, info );
 }
 
+SymMatrix* SparseSymMatrix::clone() const
+{
+   return new SparseSymMatrix( *this );
+}
 
 void SparseSymMatrix::fromGetDense( int row, int col, double * A, int lda,
 					int rowExtent, int colExtent )

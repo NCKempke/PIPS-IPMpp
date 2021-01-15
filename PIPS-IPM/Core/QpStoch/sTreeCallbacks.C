@@ -513,8 +513,9 @@ StochSymMatrix* sTreeCallbacks::createQ() const
    StochSymMatrix *Q = new StochSymMatrix(N, data->n, data->nnzQ,
          commWrkrs);
 
-   data->fQ(data->user_data, data->id, Q->diag->krowM(), Q->diag->jcolM(),
-         Q->diag->M());
+   data->fQ(data->user_data, data->id, dynamic_cast<SparseSymMatrix*>(Q->diag)->krowM(),
+         dynamic_cast<SparseSymMatrix*>(Q->diag)->jcolM(),
+         dynamic_cast<SparseSymMatrix*>(Q->diag)->M());
 
    for( size_t it = 0; it < children.size(); it++ )
    {

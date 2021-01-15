@@ -107,7 +107,7 @@ GenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const
 
 void StochGenMatrix::AddChild(StochGenMatrix* child)
 {
-  children.push_back(child);
+   children.push_back(child);
 }
 
 int StochGenMatrix::isKindOf( int type ) const
