@@ -2404,19 +2404,28 @@ template<typename T>
 OoqpVectorBase<T>* StochVectorBase<T>::getLinkingVecNotHierarchicalTop() const
 {
    const StochVectorBase<T>* curr_par = parent;
-   /* we are the top */
    if( curr_par == nullptr )
+   {
+      /* we are the top */
+      assert(vec);
       return vec;
+   }
 
    while( curr_par->parent != nullptr )
       curr_par = curr_par->parent;
 
-   /* the current parent is the hierarchical top */
    if( curr_par->children.size() == 1 && curr_par->children[0]->children.size() != 0 )
+   {
+      /* the current parent is the hierarchical top */
+      assert( curr_par->children[0]->vec );
       return curr_par->children[0]->vec;
+   }
    else
-   /* the current parent is a normal top */
+   {
+      /* the current parent is a normal top */
+      assert( curr_par->vec );
       return curr_par->vec;
+   }
 }
 
 template class StochVectorBase<int>;
