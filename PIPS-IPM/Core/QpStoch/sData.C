@@ -1884,27 +1884,25 @@ void sData::addChildrenForSplit()
 
 void sData::splitData( int myl_from_border, int mzl_from_border )
 {
-   writeToStreamDense(std::cout);
-
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
 
-   OoqpVector* x_bef = g;
-   OoqpVector* y_bef = bA;
-   OoqpVector* z_bef = bl;
-   x_bef->setToConstant(2.0);
-   y_bef->setToConstant(2.0);
-   z_bef->setToConstant(2.0);
-
-   A->mult(2.0, *y_bef, 3.0, *x_bef);
-   C->mult(2.0, *z_bef, 3.0, *x_bef);
-
-   const double A2norm_bef = y_bef->twonorm();
-   const double A1norm_bef = y_bef->onenorm();
-
-   const double C2norm_bef = z_bef->twonorm();
-   const double C1norm_bef = z_bef->onenorm();
+//   OoqpVector* x_bef = g;
+//   OoqpVector* y_bef = bA;
+//   OoqpVector* z_bef = bl;
+//   x_bef->setToConstant(2.0);
+//   y_bef->setToConstant(2.0);
+//   z_bef->setToConstant(2.0);
+//
+//   A->mult(2.0, *y_bef, 3.0, *x_bef);
+//   C->mult(2.0, *z_bef, 3.0, *x_bef);
+//
+//   const double A2norm_bef = y_bef->twonorm();
+//   const double A1norm_bef = y_bef->onenorm();
+//
+//   const double C2norm_bef = z_bef->twonorm();
+//   const double C1norm_bef = z_bef->onenorm();
 
 
    dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
@@ -1926,32 +1924,32 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
 
 
-   OoqpVector* x_after = g;
-   OoqpVector* x_after2 = stochNode->newPrimalVector();
-   x_after2->setToConstant(2.0);
-   OoqpVector* y_after = bA;
-   OoqpVector* z_after = bl;
-   x_after->setToConstant(2.0);
-   y_after->setToConstant(2.0);
-   z_after->setToConstant(2.0);
-
-   A->writeToStreamDense(std::cout);
-   x_after->writeToStream(std::cout);
-   x_after2->writeToStream(std::cout);
-   A->mult(2.0, *y_after, 3.0, *x_after);
-   C->mult(2.0, *z_after, 3.0, *x_after);
-
-   const double A2norm_after = y_after->twonorm();
-   const double A1norm_after = y_after->onenorm();
-
-   const double C2norm_after = z_after->twonorm();
-   const double C1norm_after = z_after->onenorm();
-
-   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
-   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
-   std::cout << "\n";
-   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
-   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
+//   OoqpVector* x_after = g;
+//   OoqpVector* x_after2 = stochNode->newPrimalVector();
+//   x_after2->setToConstant(2.0);
+//   OoqpVector* y_after = bA;
+//   OoqpVector* z_after = bl;
+//   x_after->setToConstant(2.0);
+//   y_after->setToConstant(2.0);
+//   z_after->setToConstant(2.0);
+//
+//   A->writeToStreamDense(std::cout);
+//   x_after->writeToStream(std::cout);
+//   x_after2->writeToStream(std::cout);
+//   A->mult(2.0, *y_after, 3.0, *x_after);
+//   C->mult(2.0, *z_after, 3.0, *x_after);
+//
+//   const double A2norm_after = y_after->twonorm();
+//   const double A1norm_after = y_after->onenorm();
+//
+//   const double C2norm_after = z_after->twonorm();
+//   const double C1norm_after = z_after->onenorm();
+//
+//   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
+//   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
+//   std::cout << "\n";
+//   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
+//   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
 
 
    MPI_Barrier(MPI_COMM_WORLD);
