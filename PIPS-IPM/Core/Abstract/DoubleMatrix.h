@@ -125,6 +125,8 @@ public:
 
   virtual void writeToStreamDenseRow( std::ostream&, int) const { assert( false && "not implemented" ); };
 
+  virtual void writeDashedLineToStream( std::ostream& ) const { assert( false && "not implemented" ); };
+
   /** Place the diagonal elements of this matrix in the vector vec */
   virtual void getDiagonal( OoqpVector& vec ) = 0;
   /** Set the matrix to the diagoanl matrix whose diagonal is vec */

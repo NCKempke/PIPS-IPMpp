@@ -147,7 +147,10 @@ public:
   void writeToStreamDense( std::ostream& out ) const override
   { writeToStreamDense( out, 0 ); };
   virtual void writeToStreamDense( std::ostream& out, int offset ) const;
-  virtual void writeToStreamDenseBordered( const StringGenMatrix& border, std::ostream& out, int offset = 0 )const;
+  virtual void writeToStreamDenseBordered( const StringGenMatrix& border, std::ostream& out, int offset = 0 ) const;
+  void writeDashedLineToStream( std::ostream& out ) const override
+  { writeDashedLineToStream( out, 0 ); };
+  virtual void writeDashedLineToStream( std::ostream& out, int offset) const;
 
   void writeMPSformatRows( std::ostream& out, int rowType, OoqpVector* irhs) const override;
 
@@ -228,8 +231,8 @@ public:
   virtual void splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
         const std::vector<MPI_Comm>& child_comms );
 
-protected:
 
+protected:
   virtual void writeToStreamDenseChild( std::ostream& out, int offset) const;
   virtual void writeToStreamDenseBorderedChild( const StringGenMatrix& border_left, std::ostream& out, int offset = 0 ) const;
 
@@ -312,6 +315,8 @@ public:
   void writeToStreamDense( std::ostream& ) const override {};
   void writeToStreamDense( std::ostream&, int ) const override{};
   void writeToStreamDenseBordered( const StringGenMatrix&, std::ostream&, int) const override{};
+  void writeDashedLineToStream( std::ostream& ) const override {};
+  void writeDashedLineToStream( std::ostream&, int ) const override {};
 
   void writeMPSformatRows( std::ostream&, int, OoqpVector* ) const override {};
 

@@ -190,6 +190,21 @@ SparseGenMatrix::writeToStreamDenseRow(std::ostream& out, int rowidx) const
    }
 }
 
+void SparseGenMatrix::writeDashedLineToStream( std::ostream& out ) const
+{
+   if( mStorageDynamic != nullptr )
+   {
+      for( int i = 0; i < mStorageDynamic->getN(); ++i )
+         out << "-\t";
+   }
+   else
+   {
+      for( int i = 0; i < mStorage->n; ++i )
+         out << "-\t";
+   }
+}
+
+
 void SparseGenMatrix::randomize( double alpha, double beta, double * seed )
 {
   mStorage->randomize( alpha, beta, seed );

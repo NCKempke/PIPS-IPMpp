@@ -74,6 +74,7 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 
    data->writeToStreamDense(std::cout);
 
+   MPI_Barrier(MPI_COMM_WORLD);
    assert( data->isHierarchieRoot() );
 
    OoqpVector* x_after = tree->newPrimalVector();

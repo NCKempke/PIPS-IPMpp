@@ -628,21 +628,44 @@ GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
    return border;
 }
 
-void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row, int offset ) const
+void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const
+{
+   assert( !is_vertical );
+
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
+
+   std::ostringstream row_stream{};
+   mat->writeToStreamDenseRow( row_stream, row );
+
+   if( my_rank != 0 )
+      row_stream.clear();
+
+   for( auto& child : children )
+      child->writeToStreamDenseRow( row_stream, row );
+
+   const std::string my_row_part = row_stream.str();
+   const std::string full_row = PIPS_MPIallgatherString( my_row_part, mpi_comm );
+
+   if( my_rank == 0 )
+      out << full_row;
+
+   if( mat_link && my_rank == 0 )
+      mat_link->writeToStreamDenseRow( out, row );
+}
+
+void StringGenMatrix::writeDashedLineToStream( std::ostream& out ) const
 {
    assert( !is_vertical );
 
    std::stringstream row_stream{};
 
-   mat->writeToStreamDenseRow( row_stream, row );
-   for( int i = 0; i < offset; ++i )
-      row_stream << "\t";
+   mat->writeDashedLineToStream( row_stream );
 
    if( PIPS_MPIgetRank(mpi_comm) != 0 )
       row_stream.clear();
 
    for( auto& child : children )
-      child->writeToStreamDenseRow( row_stream, row, 0 );
+      child->writeDashedLineToStream( row_stream );
 
    const std::string my_row_part = row_stream.str();
    const std::string full_row = PIPS_MPIallgatherString( my_row_part, mpi_comm );
@@ -651,5 +674,6 @@ void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row, int off
       out << full_row;
 
    if( mat_link && PIPS_MPIgetRank(mpi_comm) == 0 )
-      mat_link->writeToStreamDenseRow( out, row );
+      mat_link->writeDashedLineToStream( out );
+
 }

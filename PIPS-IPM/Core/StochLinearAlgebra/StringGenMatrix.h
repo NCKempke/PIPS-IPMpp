@@ -49,9 +49,8 @@ class StringGenMatrix : public GenMatrix
       void scalarMult( double num ) override;
 
       void writeToStreamDense( std::ostream& ) const override { assert( 0 && "TODO: implement..."); };
-      void writeToStreamDenseRow( std::ostream& out, int row ) const override
-      { writeToStreamDenseRow(out, row, 0); };
-      virtual void writeToStreamDenseRow( std::ostream& out, int row, int offset) const;
+      void writeToStreamDenseRow( std::ostream& out, int row ) const override;
+      void writeDashedLineToStream( std::ostream& out ) const override;
 
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
@@ -133,7 +132,7 @@ class StringGenDummyMatrix : public StringGenMatrix
       void scalarMult( double ) override {};
       void writeToStream( std::ostream& ) const override {};
       void writeToStreamDenseRow( std::ostream&, int ) const override {};
-      void writeToStreamDenseRow( std::ostream&, int, int ) const override {};
+      void writeDashedLineToStream( std::ostream& ) const override {};
 
       void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
       void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};

@@ -314,6 +314,11 @@ void BorderedGenMatrix::writeToStreamDense( std::ostream& out ) const
             out << "|\t";
          }
          border_bottom->writeToStreamDenseRow(out, r);
+
+         if( my_rank == 0 )
+            out << "\n";
+
+         MPI_Barrier(mpi_comm);
       }
    }
    if( iAmDistrib )

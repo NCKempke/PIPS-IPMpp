@@ -484,6 +484,7 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
       for( int i = 0; i < mBmat; ++i )
       {
          dynamic_cast<const SparseGenMatrix&>(*border_left.mat).writeToStreamDenseRow(out, i);
+         out << "|\t";
          dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
          out << "\n";
       }
@@ -511,7 +512,8 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
 
    const std::string children_string = child_stream.str();
    const std::string all_children = PIPS_MPIallgatherString( children_string, mpiComm );
-   out << all_children;
+   if( my_rank == 0 )
+      out << all_children;
 
    /// border.bl_mat | Blmat | offset | children ///
    int mlink, nlink;
@@ -531,6 +533,7 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
          if( my_rank == 0 )
          {
             dynamic_cast<const SparseGenMatrix&>(*border_left.mat_link).writeToStreamDenseRow(link_row_stream, r);
+            link_row_stream << "|\t";
             dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
             for( int i = 0; i < original_offset; ++i )
                link_row_stream << "\t";
@@ -542,13 +545,59 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
          const std::string children_link_row = link_row_stream.str();
          const std::string link_row = PIPS_MPIallgatherString( children_link_row, mpiComm );
 
-         out << link_row;
-         out << "\n";
+         if( my_rank == 0 )
+         {
+            out << link_row;
+            out << "\n";
+         }
          MPI_Barrier(mpiComm);
+      }
+
+      std::ostringstream dashed_line_stream;
+      if( my_rank == 0 )
+      {
+         dynamic_cast<const SparseGenMatrix&>(*border_left.mat_link).writeDashedLineToStream(dashed_line_stream);
+         dashed_line_stream << "|\t";
+      }
+      writeDashedLineToStream( dashed_line_stream, original_offset );
+
+      if( my_rank == 0 )
+      {
+         const std::string dashed_line = dashed_line_stream.str();
+         out << dashed_line << "\n";
       }
    }
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
+}
+
+void StochGenMatrix::writeDashedLineToStream( std::ostream& out, int offset ) const
+{
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
+
+   MPI_Barrier(mpiComm);
+   std::ostringstream link_row_stream;
+
+   if( my_rank == 0 )
+   {
+      dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeDashedLineToStream(link_row_stream);
+      for( int i = 0; i < offset; ++i )
+         link_row_stream << "-\t";
+   }
+
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->Blmat->writeDashedLineToStream( link_row_stream );
+
+   const std::string children_link_row = link_row_stream.str();
+   const std::string link_row = PIPS_MPIallgatherString( children_link_row, mpiComm );
+
+   if( my_rank == 0 )
+   {
+      out << link_row;
+      out << "\n";
+   }
+   MPI_Barrier(mpiComm);
+
 }
 
 void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const
