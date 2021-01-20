@@ -1925,15 +1925,19 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
    dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
 
-   writeToStreamDense(std::cout);
 
    OoqpVector* x_after = g;
+   OoqpVector* x_after2 = stochNode->newPrimalVector();
+   x_after2->setToConstant(2.0);
    OoqpVector* y_after = bA;
    OoqpVector* z_after = bl;
    x_after->setToConstant(2.0);
    y_after->setToConstant(2.0);
    z_after->setToConstant(2.0);
 
+   A->writeToStreamDense(std::cout);
+   x_after->writeToStream(std::cout);
+   x_after2->writeToStream(std::cout);
    A->mult(2.0, *y_after, 3.0, *x_after);
    C->mult(2.0, *z_after, 3.0, *x_after);
 

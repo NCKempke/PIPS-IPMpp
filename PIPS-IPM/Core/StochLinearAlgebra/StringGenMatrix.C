@@ -154,6 +154,8 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( !is_vertical );
+   x.writeToStream(std::cout);
+   this->writeToStreamDenseRow(std::cout, 0);
    std::cout << "xchild " << x.children.size() << " thischild " << children.size() << "\n";
    assert( x.children.size() == children.size() );
    if( children.size() == 0 )
@@ -585,22 +587,18 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
       else
       {
          SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
-         StringGenMatrix* new_child_mat = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
+         StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
 
          /* will not change size of StringGenMat since new_child is of size zero */
-         StringGenMatrix* new_child = new StringGenMatrix(is_vertical, new_child_mat, nullptr, child_comms[n_children]);
          addChild(new_child);
 
-         new_child_mat->addChild( children[i] );
+         new_child->addChild( children[i] );
 
          while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1] )
          {
             ++i;
-            new_child_mat->addChild(children[i]);
+            new_child->addChild(children[i]);
          }
-
-         new_child->m = new_child_mat->m;
-         new_child->n = new_child_mat->n;
       }
 
       ++n_children;
