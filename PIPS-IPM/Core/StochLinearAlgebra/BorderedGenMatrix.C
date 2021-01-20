@@ -68,8 +68,8 @@ int BorderedGenMatrix::isKindOf( int type ) const
 void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    /* x row, y column shaped */
-   assert( hasVecStructureForBorderedMat(x_in, true) );
-   assert( hasVecStructureForBorderedMat(y_in, false) );
+//   assert( hasVecStructureForBorderedMat(x_in, true) );
+//   assert( hasVecStructureForBorderedMat(y_in, false) );
 
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
@@ -85,8 +85,8 @@ void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
 void BorderedGenMatrix::transMult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    /* x column, y row shaped */
-   assert( hasVecStructureForBorderedMat(x_in, false) );
-   assert( hasVecStructureForBorderedMat(y_in, true) );
+//   assert( hasVecStructureForBorderedMat(x_in, false) );
+//   assert( hasVecStructureForBorderedMat(y_in, true) );
 
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
@@ -112,7 +112,7 @@ double BorderedGenMatrix::abmaxnorm() const
 
 void BorderedGenMatrix::columnScale( const OoqpVector& vec )
 {
-   assert( hasVecStructureForBorderedMat(vec, true) );
+//   assert( hasVecStructureForBorderedMat(vec, true) );
 
    const StochVector& svec = dynamic_cast<const StochVector&>(vec);
 
@@ -125,7 +125,7 @@ void BorderedGenMatrix::columnScale( const OoqpVector& vec )
 
 void BorderedGenMatrix::rowScale ( const OoqpVector& vec )
 {
-   assert( hasVecStructureForBorderedMat(vec, false) );
+//   assert( hasVecStructureForBorderedMat(vec, false) );
 
    const StochVector& svec = dynamic_cast<const StochVector&>(vec);
 
@@ -158,10 +158,10 @@ void BorderedGenMatrix::getSize( int& m_, int& n_ ) const
 
 void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax_in )
 {
-   assert( hasVecStructureForBorderedMat(minmax_in, false) );
+//   assert( hasVecStructureForBorderedMat(minmax_in, false) );
    const bool has_colscale = (col_scale_in != nullptr);
-   if( has_colscale )
-      assert( hasVecStructureForBorderedMat(*col_scale_in, true) );
+//   if( has_colscale )
+//      assert( hasVecStructureForBorderedMat(*col_scale_in, true) );
 
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
    const StochVector* col_scale = has_colscale ? dynamic_cast<const StochVector*>(col_scale_in) : nullptr;
@@ -175,11 +175,11 @@ void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, cons
 
 void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_in )
 {
-   assert( hasVecStructureForBorderedMat(minmax_in, true) );
+//   assert( hasVecStructureForBorderedMat(minmax_in, true) );
 
    const bool has_rowscale = (row_scale_in != nullptr);
-   if( has_rowscale )
-      assert( hasVecStructureForBorderedMat(*row_scale_in, false) );
+//   if( has_rowscale )
+//      assert( hasVecStructureForBorderedMat(*row_scale_in, false) );
 
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
    const StochVector* row_scale = has_rowscale ? dynamic_cast<const StochVector*>(row_scale_in) : nullptr;
@@ -193,7 +193,7 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
 
 void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
 {
-  assert( hasVecStructureForBorderedMat( vec_, false ) );
+//  assert( hasVecStructureForBorderedMat( vec_, false ) );
 
   StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
@@ -206,7 +206,7 @@ void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
 
 void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
 {
-   assert( hasVecStructureForBorderedMat( vec_, true ) );
+//   assert( hasVecStructureForBorderedMat( vec_, true ) );
 
    StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
@@ -291,12 +291,10 @@ bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVectorBase<T>& 
 
 void BorderedGenMatrix::writeToStreamDense( std::ostream& out ) const
 {
-   MPI_Status status;
-
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    const int size = PIPS_MPIgetSize(mpi_comm);
    const bool iAmDistrib = ( size != 0 );
-   this->inner_matrix->writeToStreamDenseBordered( *border_left, out );
+   inner_matrix->writeToStreamDenseBordered( *border_left, out );
 
    int mL, nL; this->bottom_left_block->getSize(mL, nL);
    if( mL > 0 )
@@ -307,53 +305,15 @@ void BorderedGenMatrix::writeToStreamDense( std::ostream& out ) const
       // for each row r do:
       for( int r = 0; r < mL; r++ )
       {
-         if( iAmDistrib )
+         MPI_Barrier(mpi_comm);
+
+         // process Zero collects all the information and then prints it.
+         if( my_rank == 0 )
          {
-            MPI_Barrier(mpi_comm);
-
-            // process Zero collects all the information and then prints it.
-            if( my_rank == 0 )
-            {
-               out << bottom_left_block->writeToStreamDenseRow(r);
-               out << "|\t";
-
-               out << this->border_bottom->mat->writeToStreamDenseRow(r);
-
-               out << border_bottom->writeToStreamDenseRowChildren(r);
-
-               for( int p = 1; p < size; p++ )
-               {
-                  int l;
-                  MPI_Probe(p, r + 1, mpi_comm, &status);
-                  MPI_Get_count(&status, MPI_CHAR, &l);
-                  char *buf = new char[l];
-                  MPI_Recv(buf, l, MPI_CHAR, p, r + 1, mpi_comm, &status);
-                  std::string rowPartFromP(buf, l);
-                  out << rowPartFromP;
-                  delete[] buf;
-               }
-               out << std::endl;
-
-            }
-            else // rank != 0
-            {
-               std::string str = border_bottom->writeToStreamDenseRowChildren(r);
-               MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, r + 1, mpi_comm);
-            }
+            bottom_left_block->writeToStreamDenseRow(out, r);
+            out << "|\t";
          }
-         else // not distributed
-         {
-            std::stringstream sout;
-            bottom_left_block->writeToStreamDenseRow(sout, r);
-            sout << "|\t";
-
-            this->border_bottom->mat->writeToStreamDenseRow(sout, r);
-
-            for( size_t it = 0; it < border_bottom->children.size(); it++ )
-               border_bottom->children[it]->mat->writeToStreamDenseRow(sout, r);
-
-            out << sout.rdbuf() << std::endl;
-         }
+         border_bottom->writeToStreamDenseRow(out, r);
       }
    }
    if( iAmDistrib )

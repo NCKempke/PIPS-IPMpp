@@ -612,11 +612,10 @@ void PIPS_MPIgetMinInPlace(T& min, MPI_Comm mpiComm = MPI_COMM_WORLD)
 template <typename T>
 inline bool PIPS_MPIisValueEqual(const T& val, MPI_Comm mpiComm = MPI_COMM_WORLD)
 {
-   // todo make one vec and + - val
-   const T max = PIPS_MPIgetMax(val, mpiComm);
-   const T min = PIPS_MPIgetMin(val, mpiComm);
+   std::vector<T> minmax{val, -val};
+   PIPS_MPImaxArrayInPlace(minmax, mpiComm);
 
-   return (max == min);
+   return (minmax[0] == -minmax[1]);
 }
 
 template <typename T>
@@ -780,6 +779,47 @@ inline void PIPS_MPIminArray(const std::vector<T>& source, std::vector<T>& dest,
       return;
 
    MPI_Allreduce(&source[0], &dest[0], source.size(), get_mpi_datatype(&source[0]), MPI_MIN, mpiComm = MPI_COMM_WORLD);
+}
+
+template <typename T>
+inline void PIPS_MPIallgather( const T* vec, int n_vec, int& n_res, T*& res, MPI_Comm mpiComm = MPI_COMM_WORLD )
+{
+   const int size = PIPS_MPIgetSize(mpiComm);
+   if( size > 1 )
+   {
+      std::vector<int> recieve_sizes( size );
+      std::vector<int> recieve_offsets( size );
+
+      MPI_Allgather( &n_vec, 1, MPI_INT, recieve_sizes.data(), 1, MPI_INT, mpiComm );
+
+      recieve_offsets[0] = 0;
+      for( int i = 1; i < size; ++i )
+         recieve_offsets[i] = recieve_offsets[i - 1] + recieve_sizes[i - 1];
+
+      n_res = recieve_offsets.back() + recieve_sizes.back();
+
+      delete res;
+      res = new T[n_res];
+
+      MPI_Allgatherv(vec, n_vec, get_mpi_datatype(vec), res, recieve_sizes.data(), recieve_offsets.data(), get_mpi_datatype(res), mpiComm );
+   }
+   else
+   {
+      delete res;
+      n_res = n_vec;
+      res = new T[n_res];
+      std::uninitialized_copy( vec, vec + n_vec, res );
+   }
+}
+
+inline std::string PIPS_MPIallgatherString( const std::string& str, MPI_Comm mpiComm = MPI_COMM_WORLD )
+{
+   const char* send = str.c_str();
+   char* res{};
+   int n_res{0};
+
+   PIPS_MPIallgather( send, str.size(), n_res, res, mpiComm );
+   return std::string( res, n_res );
 }
 
 template <typename T>

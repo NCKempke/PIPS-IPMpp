@@ -112,7 +112,7 @@ public:
   void addNnzPerRow(int* vec) const;
 
   void writeToStreamDense( std::ostream& out) const;
-  void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
+  void writeToStreamDenseRow( std::ostream& out, int rowidx) const;
 
   void restoreOrder();
 

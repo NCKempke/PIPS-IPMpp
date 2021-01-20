@@ -117,7 +117,7 @@ public:
 
   virtual void writeToStream(std::ostream& out) const;
   virtual void writeToStreamDense(std::ostream& out) const;
-  virtual void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
+  virtual void writeToStreamDenseRow( std::ostream& out, int rowidx) const;
 
   virtual void symmetrize( int& info);
   double abmaxnorm() const override;

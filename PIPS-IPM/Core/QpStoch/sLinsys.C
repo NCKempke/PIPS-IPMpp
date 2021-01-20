@@ -341,7 +341,10 @@ void sLinsys::addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& bor
    const bool result_sparse = false;
    const bool result_sym = false;
 
-   BorderBiBlock border_right( *border.R.mat, *border.A.mat, *border.C.mat, border.F.mat->getTranspose(), border.G.mat->getTranspose() );
+   BorderBiBlock border_right( dynamic_cast<SparseGenMatrix&>(*border.R.mat), dynamic_cast<SparseGenMatrix&>(*border.A.mat),
+         dynamic_cast<SparseGenMatrix&>(*border.C.mat), dynamic_cast<SparseGenMatrix&>(*border.F.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*border.G.mat).getTranspose() );
+
    BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(),
          data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
 
@@ -503,7 +506,9 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
    assert( border.F.mat );
    assert( border.G.mat );
 
-   const BorderBiBlock BiT_outer( border.R.mat->getTranspose(), border.A.mat->getTranspose(), border.C.mat->getTranspose(), *border.F.mat, *border.G.mat);
+   const BorderBiBlock BiT_outer( dynamic_cast<SparseGenMatrix&>(*border.R.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*border.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*border.C.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) );
    addBiTBorder( *BiT_buffer, BiT_outer);
 
    /* compute (Bi_{outer} - Bi_{inner} * X0)^T = Bi_{outer}^T - X0^T * Bi_{inner}^T

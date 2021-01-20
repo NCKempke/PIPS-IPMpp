@@ -425,7 +425,7 @@ void SparseStorageDynamic::writeToStreamDense( std::ostream& out) const
    }
 }
 
-void SparseStorageDynamic::writeToStreamDenseRow( std::stringstream& out, int rowidx) const
+void SparseStorageDynamic::writeToStreamDenseRow( std::ostream& out, int rowidx) const
 {
    int j = 0; // Column j
 

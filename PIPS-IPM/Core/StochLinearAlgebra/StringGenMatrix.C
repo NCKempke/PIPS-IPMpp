@@ -14,7 +14,7 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_)
+StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_)
    : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
    assert(mat);
@@ -129,16 +129,15 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
    assert( is_vertical );
-   assert( y.children.size() == children.size() );
-   if( y.vecl )
-      assert( mat_link );
-   else
-      assert( mat_link == nullptr );
+   assert( y.children.size() == children.size());
 
    mat->mult(beta, *y.vec, alpha, x);
 
    if( mat_link )
+   {
+      assert( y.vecl );
       mat_link->mult(beta, *y.vecl, alpha, x);
+   }
 
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -155,6 +154,7 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( !is_vertical );
+   std::cout << "xchild " << x.children.size() << " thischild " << children.size() << "\n";
    assert( x.children.size() == children.size() );
    if( children.size() == 0 )
    {
@@ -571,6 +571,7 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
 {
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
    assert( child_comms.size() == n_new_children );
+   assert( children.size() == map_child_subchild.size() );
 
    unsigned int n_children{0};
    for( unsigned int i = 0; i < map_child_subchild.size(); ++i )
@@ -584,16 +585,22 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
       else
       {
          SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
-         StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
+         StringGenMatrix* new_child_mat = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
+
          /* will not change size of StringGenMat since new_child is of size zero */
+         StringGenMatrix* new_child = new StringGenMatrix(is_vertical, new_child_mat, nullptr, child_comms[n_children]);
          addChild(new_child);
-         new_child->addChild( children[i] );
+
+         new_child_mat->addChild( children[i] );
 
          while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1] )
          {
             ++i;
-            new_child->addChild(children[i]);
+            new_child_mat->addChild(children[i]);
          }
+
+         new_child->m = new_child_mat->m;
+         new_child->n = new_child_mat->n;
       }
 
       ++n_children;
@@ -604,19 +611,50 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
    children.erase( children.begin(), children.begin() + map_child_subchild.size() );
 }
 
-std::string StringGenMatrix::writeToStreamDenseRowChildren(int row) const
+GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
 {
-   std::string str_all;
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      if( children[it]->isKindOf(kStringGenDummyMatrix) )
-         continue;
-      else
-         assert( children[it]->mat );
+   assert( !is_vertical );
 
-      std::string str = children[it]->mat->writeToStreamDenseRow(row);
-      str_all.append(str);
-   }
-   return str_all;
+   assert( mat );
+   GenMatrix* mat_border = mat->shaveBottom( n_rows );
+   GenMatrix* matlink_border = mat_link ? mat_link->shaveBottom( n_rows ) : nullptr;
+
+   StringGenMatrix* border = new StringGenMatrix( false, mat_border, matlink_border, mpi_comm );
+
+#ifndef NDEBUG
+   int mB, nB;
+   border->getSize(mB,nB);
+   assert( mB == n_rows );
+#endif
+   for( auto& child : children )
+      border->addChild( dynamic_cast<StringGenMatrix*>(child->shaveBottom(n_rows) ) );
+
+   m -= n_rows;
+   return border;
 }
 
+void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row, int offset ) const
+{
+   assert( !is_vertical );
+
+   std::stringstream row_stream{};
+
+   mat->writeToStreamDenseRow( row_stream, row );
+   for( int i = 0; i < offset; ++i )
+      row_stream << "\t";
+
+   if( PIPS_MPIgetRank(mpi_comm) != 0 )
+      row_stream.clear();
+
+   for( auto& child : children )
+      child->writeToStreamDenseRow( row_stream, row, 0 );
+
+   const std::string my_row_part = row_stream.str();
+   const std::string full_row = PIPS_MPIallgatherString( my_row_part, mpi_comm );
+
+   if( PIPS_MPIgetRank(mpi_comm) == 0 )
+      out << full_row;
+
+   if( mat_link && PIPS_MPIgetRank(mpi_comm) == 0 )
+      mat_link->writeToStreamDenseRow( out, row );
+}

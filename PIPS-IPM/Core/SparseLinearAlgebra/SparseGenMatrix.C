@@ -170,7 +170,7 @@ void SparseGenMatrix::writeToStreamDense(std::ostream& out) const
 }
 
 void
-SparseGenMatrix::writeToStreamDenseRow(std::stringstream& out, int rowidx) const
+SparseGenMatrix::writeToStreamDenseRow(std::ostream& out, int rowidx) const
 {
    if( mStorageDynamic != nullptr )
    {
@@ -188,29 +188,6 @@ SparseGenMatrix::writeToStreamDenseRow(std::stringstream& out, int rowidx) const
          mStorage->writeToStreamDenseRow(out, rowidx);
       }
    }
-}
-
-std::string SparseGenMatrix::writeToStreamDenseRow(int rowidx) const
-{
-   std::stringstream out;
-   if( mStorageDynamic != nullptr )
-   {
-      if( mStorageDynamic->getN() > 0 )
-      {
-         assert(rowidx < mStorageDynamic->getM());
-         mStorageDynamic->writeToStreamDenseRow(out, rowidx);
-      }
-   }
-   else
-   {
-      if( mStorage->n > 0 )
-      {
-         assert(rowidx < mStorage->m);
-         mStorage->writeToStreamDenseRow(out, rowidx);
-      }
-
-   }
-   return out.str();
 }
 
 void SparseGenMatrix::randomize( double alpha, double beta, double * seed )
@@ -1043,7 +1020,7 @@ SparseGenMatrix* SparseGenMatrix::shaveLeft(int n_cols)
    return new SparseGenMatrix(border);
 }
 
-SparseGenMatrix* SparseGenMatrix::shaveBottom(int n_rows)
+GenMatrix* SparseGenMatrix::shaveBottom(int n_rows)
 {
    assert( !hasDynamicStorage() );
    assert( n_rows <= mStorage->m );

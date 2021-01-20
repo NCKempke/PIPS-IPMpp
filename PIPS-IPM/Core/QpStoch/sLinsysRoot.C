@@ -551,24 +551,24 @@ void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    assert( border.A.mat );
    assert( border.C.mat );
 
-   SparseGenMatrix& A0_border = *border.A.mat;
+   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
    int mA0, nA0; A0_border.getSize(mA0, nA0);
 
-   SparseGenMatrix& C0_border = *border.C.mat;
+   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
    int mC0, nC0; C0_border.getSize(mC0, nC0);
 
    assert( border.F.mat );
    assert( border.A.mat_link );
-   SparseGenMatrix& F0vec_border = *border.A.mat_link;
+   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
    int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
-   SparseGenMatrix& F0cons_border = *border.F.mat;
+   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
    int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
 
    assert( border.C.mat_link );
    assert( border.G.mat );
-   SparseGenMatrix& G0vec_border = *border.C.mat_link;
+   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
    int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
-   SparseGenMatrix& G0cons_border = *border.G.mat;
+   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
    int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
 
    assert( rhs.vec );
@@ -615,24 +615,24 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
       assert( border.A.mat );
       assert( border.C.mat );
 
-      SparseGenMatrix& A0_border = *border.A.mat;
+      SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
       int mA0, nA0; A0_border.getSize(mA0, nA0);
 
-      SparseGenMatrix& C0_border = *border.C.mat;
+      SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
       int mC0, nC0; C0_border.getSize(mC0, nC0);
 
       assert( border.F.mat );
       assert( border.A.mat_link );
-      SparseGenMatrix& F0vec_border = *border.A.mat_link;
+      SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
       int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
-      SparseGenMatrix& F0cons_border = *border.F.mat;
+      SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
       int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
 
       assert( border.C.mat_link );
       assert( border.G.mat );
-      SparseGenMatrix& G0vec_border = *border.C.mat_link;
+      SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
       int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
-      SparseGenMatrix& G0cons_border = *border.G.mat;
+      SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
       int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
 
       assert( rhs.vec );

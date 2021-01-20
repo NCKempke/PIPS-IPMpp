@@ -683,7 +683,7 @@ void SparseStorage::writeToStreamDense(std::ostream& out) const
    }
 }
 
-void SparseStorage::writeToStreamDenseRow( std::stringstream& out, int rowidx) const
+void SparseStorage::writeToStreamDenseRow( std::ostream& out, int rowidx) const
 {
    int j = 0; // Column j
    for( int k = krowM[rowidx]; k < krowM[rowidx + 1]; k++ )

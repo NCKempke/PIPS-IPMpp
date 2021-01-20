@@ -255,9 +255,14 @@ StochVector* sTree::newPrimalVector(bool empty) const
    else
    {
       assert( children.size() == 0 );
-      StochVector* x_vec = sub_root->newPrimalVector(empty);
-      x = new StochVector( x_vec, nullptr, commWrkrs );
-      x_vec->parent = x;
+      if( sub_root->commWrkrs == MPI_COMM_NULL )
+         x = new StochDummyVector();
+      else
+      {
+         StochVector* x_vec = sub_root->newPrimalVector(empty);
+         x = new StochVector( x_vec, nullptr, commWrkrs );
+         x_vec->parent = x;
+      }
    }
 
    return x;
@@ -285,11 +290,17 @@ StochVector* sTree::newDualYVector(bool empty) const
    else
    {
       assert( children.size() == 0 );
-      StochVector* y_vec = sub_root->newDualYVector( empty );
-      assert( yl == -1 );
 
-      y = new StochVector( y_vec, nullptr, commWrkrs );
-      y_vec->parent = y;
+      if( sub_root->commWrkrs == MPI_COMM_NULL )
+         y = new StochDummyVector();
+      else
+      {
+         StochVector* y_vec = sub_root->newDualYVector( empty );
+         assert( yl == -1 );
+
+         y = new StochVector( y_vec, nullptr, commWrkrs );
+         y_vec->parent = y;
+      }
    }
    return y;
 }
@@ -315,11 +326,16 @@ StochVector* sTree::newDualZVector(bool empty) const
    else
    {
       assert( children.size() == 0 );
-      StochVector* z_vec = sub_root->newDualZVector(empty);
-      assert( zl == -1 );
+      if( sub_root->commWrkrs == MPI_COMM_NULL )
+         z = new StochDummyVector();
+      else
+      {
+         StochVector* z_vec = sub_root->newDualZVector(empty);
+         assert( zl == -1 );
 
-      z = new StochVector( z_vec, nullptr, commWrkrs );
-      z_vec->parent = z;
+         z = new StochVector( z_vec, nullptr, commWrkrs );
+         z_vec->parent = z;
+      }
    }
 
    return z;

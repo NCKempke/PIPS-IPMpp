@@ -2266,8 +2266,8 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
 
          if( vec->mpiComm == MPI_COMM_NULL )
             assert( child->mpiComm == MPI_COMM_NULL );
-
-         vec->AddChild(child);
+         if( vec->mpiComm != MPI_COMM_NULL )
+            vec->AddChild(child);
       }
 
       /* create child holding the new StochVector as it's vec part */

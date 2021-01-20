@@ -20,8 +20,8 @@ class StringGenMatrix : public GenMatrix
       // TODO : keep public? ...
       // like stoch gen matrix possibly infinite but we will only have one layer of children at all times...
       std::vector<StringGenMatrix*> children;
-      SparseGenMatrix* mat{}; // never null
-      SparseGenMatrix* mat_link{}; // possibly null
+      GenMatrix* mat{}; // never null
+      GenMatrix* mat_link{}; // possibly null
       bool is_vertical{false};
 
    protected:
@@ -32,7 +32,7 @@ class StringGenMatrix : public GenMatrix
       const int rank{-1};
 
    public:
-      StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_);
+      StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_);
 
       ~StringGenMatrix() override;
 
@@ -49,8 +49,9 @@ class StringGenMatrix : public GenMatrix
       void scalarMult( double num ) override;
 
       void writeToStreamDense( std::ostream& ) const override { assert( 0 && "TODO: implement..."); };
-
-      virtual std::string writeToStreamDenseRowChildren(int row) const;
+      void writeToStreamDenseRow( std::ostream& out, int row ) const override
+      { writeToStreamDenseRow(out, row, 0); };
+      virtual void writeToStreamDenseRow( std::ostream& out, int row, int offset) const;
 
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
@@ -66,6 +67,8 @@ class StringGenMatrix : public GenMatrix
 
       /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
       void combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms );
+
+      GenMatrix* shaveBottom( int n_rows ) override;
 
       /* methods not needed for Hierarchical approach */
       double abminnormNonZero( double) const override { assert( false && "TODO: implement" ); return 0.0; };
@@ -84,7 +87,6 @@ class StringGenMatrix : public GenMatrix
       void atPutSpRow( int, double[], int, int[], int& ) override { assert( "not implemented" && 0 ); };
       void putSparseTriple( int[], int, int[], double[], int& ) override { assert( "not implemented" && 0 ); };
       void randomize( double, double, double* ) override { assert( "not implemented" && 0 ); };
-
 
    protected:
       StringGenMatrix() = default;
@@ -130,7 +132,8 @@ class StringGenDummyMatrix : public StringGenMatrix
       double abmaxnorm() const override { return -std::numeric_limits<double>::infinity(); };
       void scalarMult( double ) override {};
       void writeToStream( std::ostream& ) const override {};
-      std::string writeToStreamDenseRowChildren( int ) const override { return ""; };
+      void writeToStreamDenseRow( std::ostream&, int ) const override {};
+      void writeToStreamDenseRow( std::ostream&, int, int ) const override {};
 
       void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
       void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
@@ -139,6 +142,8 @@ class StringGenDummyMatrix : public StringGenMatrix
 
       void addRowSums( OoqpVector& ) const override {};
       void addColSums( OoqpVector& ) const override {};
+
+      GenMatrix* shaveBottom( int ) override { return new StringGenDummyMatrix(); };
 
    protected:
       void multVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};

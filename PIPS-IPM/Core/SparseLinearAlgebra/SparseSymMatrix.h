@@ -90,8 +90,7 @@ public:
 
   void writeToStream( std::ostream& out ) const override;
   void writeToStreamDense( std::ostream& out ) const override;
-  virtual std::string writeToStreamDenseRow(int row) const;
-  void writeToStreamDenseRow( std::stringstream& out, int row ) const;
+  void writeToStreamDenseRow( std::ostream& out, int row) const override;
 
   virtual void randomizePSD(double *);
 

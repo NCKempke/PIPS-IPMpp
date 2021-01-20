@@ -314,26 +314,13 @@ void SparseSymMatrix::writeToStreamDense( std::ostream& out ) const
 }
 
 
-void SparseSymMatrix::writeToStreamDenseRow( std::stringstream& out, int row ) const
+void SparseSymMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const
 {
    if( mStorage->n > 0 )
    {
       assert(row < mStorage->m);
       mStorage->writeToStreamDenseRow(out, row);
    }
-}
-
-std::string SparseSymMatrix::writeToStreamDenseRow( int row ) const
-{
-   std::stringstream out;
-
-   if( mStorage->n > 0 )
-   {
-      assert(row < mStorage->m);
-      mStorage->writeToStreamDenseRow(out, row);
-   }
-
-   return out.str();
 }
 
 void SparseSymMatrix::mult ( double beta,  double y[], int incy,

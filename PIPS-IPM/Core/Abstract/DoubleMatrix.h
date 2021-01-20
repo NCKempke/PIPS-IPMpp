@@ -22,7 +22,7 @@ class DoubleLinearSolver;
  */
 class DoubleStorage : public IotrRefCount {
 public:
-  DoubleStorage() { };
+  DoubleStorage() = default;
 
   virtual void atPutDense( int row, int col, double * A, int lda,
 			   int rowExtent, int colExtent ) = 0;
@@ -48,7 +48,7 @@ public:
   virtual void scalarMult( double num) = 0;
   virtual double abmaxnorm() const = 0;
   virtual double abminnormNonZero( double tol = 1e-30 ) const = 0;
-  virtual ~DoubleStorage() {};
+  virtual ~DoubleStorage() = default;
 };
 
 /** Parent of all matrix classes
@@ -122,6 +122,8 @@ public:
   virtual void writeToStream( std::ostream& out ) const = 0;
 
   virtual void writeToStreamDense( std::ostream& out ) const = 0;
+
+  virtual void writeToStreamDenseRow( std::ostream&, int) const { assert( false && "not implemented" ); };
 
   /** Place the diagonal elements of this matrix in the vector vec */
   virtual void getDiagonal( OoqpVector& vec ) = 0;
@@ -290,6 +292,8 @@ public:
   /** full clone of matrix - possibly with underlying dynamic sparse storage */
   virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage = false */) const { assert( false && "not implmented"); return nullptr; };
 
+  /** shave of bottom n constraints and return them in a new matrix */
+  virtual GenMatrix* shaveBottom( int ) { assert( false && "not implemented"); return nullptr; };
 };
 
 #endif

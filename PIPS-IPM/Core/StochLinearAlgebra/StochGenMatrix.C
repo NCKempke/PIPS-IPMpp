@@ -11,20 +11,38 @@
 #include <numeric>
 #include <memory>
 
-StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_matrix )
-   : Amat{Amat}, Bmat{Bmat}, Blmat{Blmat}, mpiComm{mpiComm_}, iAmDistrib{ PIPS_MPIgetDistributed(mpiComm) }, inner_matrix{inner_matrix}
+StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf, bool inner_root )
+   : Amat{Amat}, Bmat{Bmat}, Blmat{Blmat}, mpiComm{mpiComm_}, iAmDistrib{ PIPS_MPIgetDistributed(mpiComm) },
+     inner_leaf{inner_leaf}, inner_root{inner_root}
 {
-   // TODO : assert correct sizes
    assert( Amat );
    assert( Bmat );
    assert( Blmat );
+
+#ifndef NDEBUG
+   int mA, nA;
+   Amat->getSize(mA, nA);
+   int mB, nB;
+   Bmat->getSize(mB, nB);
+   int mBl, nBl;
+   Blmat->getSize(mBl, nBl);
+
+   if( nA == 0 && mA == 0 )
+      assert( nBl == nB );
+   else
+   {
+      assert( mA == mB );
+      assert( nB == nBl );
+   }
+#endif
+
 
    recomputeSize();
 }
 
 StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
-      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_, bool inner_matrix) :
-      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), inner_matrix{inner_matrix}
+      int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_ ) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
 {
    Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
    Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
@@ -33,13 +51,11 @@ StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
 
 StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m,
       int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n,
-      int Bl_nnz, MPI_Comm mpiComm_, bool inner_matrix ) :
-      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), inner_matrix{inner_matrix}
+      int Bl_nnz, MPI_Comm mpiComm_ ) :
+      m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm))
 {
    Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
    Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
-
-   assert( B_n == Bl_n );
    Blmat = new SparseGenMatrix(Bl_m, Bl_n, Bl_nnz);
 }
 
@@ -117,7 +133,7 @@ int StochGenMatrix::isKindOf( int type ) const
 
 int StochGenDummyMatrix::isKindOf( int type ) const
 {
-  return type == kStochGenDummyMatrix;
+  return type == kStochGenDummyMatrix || type == kGenMatrix || type == kStochGenMatrix;
 }
 
 void StochGenMatrix::getSize( long long& m_out, long long& n_out ) const
@@ -154,7 +170,7 @@ void StochGenMatrix::columnScale( const OoqpVector& vec )
    assert(children.size() == scalevec.children.size());
    for( size_t it = 0; it < children.size(); it++ )
    {
-      if( children[it]->inner_matrix )
+      if( children[it]->inner_leaf )
          children[it]->columnScale( *(scalevec.children[it]) );
       else
          children[it]->columnScale2( *(scalevec.children[it]) );
@@ -403,90 +419,105 @@ void StochGenMatrix::getLinkVarsNnzChild(std::vector<int>& vec) const
    dynamic_cast<const SparseGenMatrix*>(Amat)->getLinkVarsNnz(vec);
 }
 
-void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out ) const
+void StochGenMatrix::writeToStreamDenseBorderedChild( const StringGenMatrix& border_left, std::ostream& out, int offset ) const
 {
-   assert( false && "TODO : hierarchical version");
+   assert( border_left.children.size() == this->children.size() );
 
+   if( Bmat->isKindOf(kStochGenMatrix) )
+   {
+      assert( border_left.mat->isKindOf(kStringGenMatrix) );
+      dynamic_cast<StochGenMatrix*>(Bmat)->writeToStreamDenseBordered( dynamic_cast<StringGenMatrix&>(*border_left.mat), out, offset);
+   }
+   /// Border.mat | Amat | offset | Bmat ///
+   else
+   {
+      assert( border_left.mat->isKindOf(kSparseGenMatrix) );
+      assert( hasSparseMatrices() );
+      assert( PIPS_MPIgetRank() == 0 );
+
+      int nB, mB;
+      Bmat->getSize(mB, nB);
+      int nA, mA;
+      Amat->getSize(mA, nA);
+      int nBd, mBd;
+      border_left.mat->getSize(mBd, nBd);
+
+      assert( mB == mA && mA == mBd );
+
+      for( int row = 0; row < mB; ++row )
+      {
+         border_left.mat->writeToStreamDenseRow( out, row );
+         out << "|\t";
+         Amat->writeToStreamDenseRow(out, row);
+
+         for( int i = 0; i < offset; ++i )
+            out << "\t";
+         Bmat->writeToStreamDenseRow(out, row);
+         out << "\n";
+      }
+   }
+}
+
+
+void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out, int offset ) const
+{
    assert( border_left.children.size() == this->children.size() );
    assert( hasSparseMatrices() );
+   assert( children.size() != 0 );
 
+   const int original_offset = offset;
    const int my_rank = PIPS_MPIgetRank(mpiComm);
-   const int world_size = PIPS_MPIgetSize(mpiComm);
-
-   int offset = 0;
-   std::stringstream sout;
-   MPI_Status status;
-   int l;
 
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
 
-   if( iAmDistrib && my_rank > 0 )  // receive offset from previous process
-      MPI_Recv(&offset, 1, MPI_INT, (my_rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
-   else  //  !iAmDistrib || (iAmDistrib && rank == 0)
+   int mBmat, nBmat; this->Bmat->getSize(mBmat, nBmat);
+   int mBd, nBd; border_left.mat->getSize(mBd, nBd);
+   assert( mBmat == mBd );
+
+   assert( Bmat->isKindOf(kSparseGenMatrix) );
+   assert( border_left.mat->isKindOf(kSparseGenMatrix) );
+
+   /// Border.mat | Bmat ///
+   if( my_rank == 0 )
    {
-      assert( border_left.mat );
-      assert( this->Bmat );
-
-      int mBmat, nBmat; this->Bmat->getSize(mBmat, nBmat);
-      int mBd, nBd; border_left.mat->getSize(mBd, nBd);
-
-      assert( mBmat == mBd );
       for( int i = 0; i < mBmat; ++i )
       {
-         border_left.mat->writeToStreamDenseRow(sout, i);
-         sout << "|\t";
-         dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(sout, i);
-         sout << "\n";
+         dynamic_cast<const SparseGenMatrix&>(*border_left.mat).writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
+         out << "\n";
       }
    }
+
+   /// write children ///
+   /// BorderChild | offset | Child ///
+   std::ostringstream child_stream{};
+   if( !amatEmpty() )
+      assert( children.size() ==  0 );
 
    for( size_t it = 0; it < children.size(); it++ )
    {
+      MPI_Barrier(mpiComm);
       const StringGenMatrix& border_child = *border_left.children[it];
 
-      children[it]->writeToStreamDenseChildBordered(sout, offset, *border_child.mat);
-      int mBmat, nBmat; children[it]->Bmat->getSize(mBmat, nBmat);
-      offset += nBmat;
+      children[it]->writeToStreamDenseBorderedChild( border_child, child_stream, offset );
+
+      int mChild, nChild;
+      children[it]->getSize(mChild, nChild);
+      offset += PIPS_MPIgetMax( nChild, mpiComm );
+
+      MPI_Barrier(mpiComm);
    }
 
-   if( iAmDistrib && my_rank > 0 )
-   {
-      std::string str = sout.str();
-      // send string to rank ZERO to print it there:
-      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, my_rank, mpiComm);
-      // send offset to next process:
-      if( my_rank < world_size - 1 )
-         MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
-   }
-   else if( !iAmDistrib )
-      out << sout.str();
-   else if( iAmDistrib && my_rank == 0 )
-   {
-      out << sout.str();
-      MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
+   const std::string children_string = child_stream.str();
+   const std::string all_children = PIPS_MPIallgatherString( children_string, mpiComm );
+   out << all_children;
 
-      for( int p = 1; p < world_size; p++ )
-      {
-         MPI_Probe(p, p, mpiComm, &status);
-         MPI_Get_count(&status, MPI_CHAR, &l);
-         char *buf = new char[l];
-         MPI_Recv(buf, l, MPI_CHAR, p, p, mpiComm, &status);
-         std::string rowPartFromP(buf, l);
-         out << rowPartFromP;
-         delete[] buf;
-      }
-
-   }
-
-   // linking contraints ?
+   /// border.bl_mat | Blmat | offset | children ///
    int mlink, nlink;
    this->Blmat->getSize(mlink, nlink);
    if( mlink > 0 )
    {
-      if( iAmDistrib )
-         MPI_Barrier(mpiComm);
-
       assert( border_left.mat_link );
       int mBdl, nBdl; border_left.mat_link->getSize(mBdl, nBdl);
       assert( mBdl == mlink );
@@ -494,192 +525,112 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
       // for each row r do:
       for( int r = 0; r < mlink; r++ )
       {
-         if( iAmDistrib )
+         MPI_Barrier(mpiComm);
+         std::ostringstream link_row_stream;
+
+         if( my_rank == 0 )
          {
-            MPI_Barrier(mpiComm);
-
-            // process Zero collects all the information and then prints it.
-            if( my_rank == 0 )
-            {
-               out << border_left.mat_link->writeToStreamDenseRow(r);
-               out << "|\t";
-               out << dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(r);
-
-               out << writeToStreamDenseRowLink(r);
-
-               for( int p = 1; p < world_size; p++ )
-               {
-                  MPI_Probe(p, r + 1, mpiComm, &status);
-                  MPI_Get_count(&status, MPI_CHAR, &l);
-                  char *buf = new char[l];
-                  MPI_Recv(buf, l, MPI_CHAR, p, r + 1, mpiComm, &status);
-                  std::string rowPartFromP(buf, l);
-                  out << rowPartFromP;
-                  delete[] buf;
-               }
-               out << "\n";
-
-            }
-            else // rank != 0
-            {
-               std::string str = writeToStreamDenseRowLink(r);
-               MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, r + 1, mpiComm);
-            }
+            dynamic_cast<const SparseGenMatrix&>(*border_left.mat_link).writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
+            for( int i = 0; i < original_offset; ++i )
+               link_row_stream << "\t";
          }
-         else // not distributed
-         {
-            std::stringstream sout;
-            border_left.mat_link->writeToStreamDenseRow(sout, r);
-            sout << "|\t";
-            dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(sout, r);
 
-            for( size_t it = 0; it < children.size(); it++ )
-               dynamic_cast<const SparseGenMatrix*>(children[it]->Blmat)->writeToStreamDenseRow(sout, r);
+         for( size_t it = 0; it < children.size(); it++ )
+            children[it]->Blmat->writeToStreamDenseRow( link_row_stream, r );
 
-            out << sout.rdbuf() << "\n";
-         }
-      }
-   }
+         const std::string children_link_row = link_row_stream.str();
+         const std::string link_row = PIPS_MPIallgatherString( children_link_row, mpiComm );
 
-   assert( this->Bmat );
-   int mBd, nBd; border_left.getSize(mBd, nBd);
-   int mB0mat, nB0mat; this->Bmat->getSize(mB0mat, nB0mat);
-
-   if( iAmDistrib )
-   {
-      // send offset to next process:
-      if( my_rank == world_size - 1 )
-         MPI_Ssend(&offset, 1, MPI_INT, 0, 0, mpiComm);
-      else if( my_rank == 0 )
-      {
-         MPI_Recv(&offset, 1, MPI_INT, world_size - 1, 0, mpiComm, MPI_STATUS_IGNORE);
-
-         for( int i = 0; i < offset + nBd + nB0mat + 1; ++i )
-            out << "_\t";
+         out << link_row;
          out << "\n";
+         MPI_Barrier(mpiComm);
       }
    }
-   else
-   {
-      for( int i = 0; i < offset + nBd + nB0mat + 1; ++i )
-         out << "_\t";
-      out << "\n";
-   }
-
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
 }
 
-void StochGenMatrix::writeToStreamDense(std::ostream& out) const
+void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const
 {
    assert( hasSparseMatrices() );
+   assert( children.size() != 0 );
 
+   const int original_offset = offset;
    const int my_rank = PIPS_MPIgetRank(mpiComm);
-   const int world_size = PIPS_MPIgetSize(mpiComm);
-
-   int m, n;
-   int offset = 0;
-   std::stringstream sout;
-   MPI_Status status;
-   int l;
 
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
 
-   if( iAmDistrib && my_rank > 0 )  // receive offset from previous process
-      MPI_Recv(&offset, 1, MPI_INT, (my_rank - 1), 0, mpiComm, MPI_STATUS_IGNORE);
+   int mBmat, nBmat; this->Bmat->getSize(mBmat, nBmat);
 
-   else  //  !iAmDistrib || (iAmDistrib && rank == 0)
-      this->Bmat->writeToStreamDense(out);
+   assert( Bmat->isKindOf(kSparseGenMatrix) );
+
+   /// Bmat ///
+   if( my_rank == 0 )
+   {
+      for( int i = 0; i < mBmat; ++i )
+      {
+         for( int i = 0; i < offset; ++i )
+            out << "\t";
+         dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
+         out << "\n";
+      }
+   }
+
+   /// write children ///
+   /// offset | Child ///
+   std::ostringstream child_stream{};
+   if( !amatEmpty() )
+      assert( children.size() ==  0 );
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      children[it]->writeToStreamDenseChild(sout, offset);
-      children[it]->Bmat->getSize(m, n);
-      offset += n;
+      MPI_Barrier(mpiComm);
+      children[it]->writeToStreamDenseChild( child_stream, offset );
+
+      int mChild, nChild;
+      children[it]->getSize(mChild, nChild);
+      offset += PIPS_MPIgetMax( nChild, mpiComm );
+
+      MPI_Barrier(mpiComm);
    }
 
-   if( iAmDistrib && my_rank > 0 )
-   {
-      std::string str = sout.str();
-      // send string to rank ZERO to print it there:
-      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, my_rank, mpiComm);
-      // send offset to next process:
-      if( my_rank < world_size - 1 )
-         MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
-   }
+   const std::string children_string = child_stream.str();
+   const std::string all_children = PIPS_MPIallgatherString( children_string, mpiComm );
+   if( my_rank == 0 )
+      out << all_children;
 
-   else if( !iAmDistrib )
-      out << sout.str();
-
-   else if( iAmDistrib && my_rank == 0 )
-   {
-      out << sout.str();
-      MPI_Ssend(&offset, 1, MPI_INT, my_rank + 1, 0, mpiComm);
-
-      for( int p = 1; p < world_size; p++ )
-      {
-         MPI_Probe(p, p, mpiComm, &status);
-         MPI_Get_count(&status, MPI_CHAR, &l);
-         char *buf = new char[l];
-         MPI_Recv(buf, l, MPI_CHAR, p, p, mpiComm, &status);
-         std::string rowPartFromP(buf, l);
-         out << rowPartFromP;
-         delete[] buf;
-      }
-
-   }
-
-   // linking contraints ?
+   /// Blmat | offset | children ///
    int mlink, nlink;
    this->Blmat->getSize(mlink, nlink);
    if( mlink > 0 )
    {
-      if( iAmDistrib )
-         MPI_Barrier(mpiComm);
-
       // for each row r do:
       for( int r = 0; r < mlink; r++ )
       {
-         if( iAmDistrib )
+         MPI_Barrier(mpiComm);
+         std::ostringstream link_row_stream;
+
+         if( my_rank == 0 )
          {
-            MPI_Barrier(mpiComm);
-
-            // process Zero collects all the information and then prints it.
-            if( my_rank == 0 )
-            {
-               out << dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(r);
-
-               out << writeToStreamDenseRowLink(r);
-
-               for( int p = 1; p < world_size; p++ )
-               {
-                  MPI_Probe(p, r + 1, mpiComm, &status);
-                  MPI_Get_count(&status, MPI_CHAR, &l);
-                  char *buf = new char[l];
-                  MPI_Recv(buf, l, MPI_CHAR, p, r + 1, mpiComm, &status);
-                  std::string rowPartFromP(buf, l);
-                  out << rowPartFromP;
-                  delete[] buf;
-               }
-               out << "\n";
-
-            }
-            else // rank != 0
-            {
-               std::string str = writeToStreamDenseRowLink(r);
-               MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, r + 1, mpiComm);
-            }
+            dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
+            for( int i = 0; i < original_offset; ++i )
+               link_row_stream << "\t";
          }
-         else // not distributed
+
+         for( size_t it = 0; it < children.size(); it++ )
+            children[it]->Blmat->writeToStreamDenseRow( link_row_stream, r );
+
+         const std::string children_link_row = link_row_stream.str();
+         const std::string link_row = PIPS_MPIallgatherString( children_link_row, mpiComm );
+
+         if( my_rank == 0 )
          {
-            std::stringstream sout;
-            dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(sout, r);
-            for( size_t it = 0; it < children.size(); it++ )
-               dynamic_cast<const SparseGenMatrix*>(children[it]->Blmat)->writeToStreamDenseRow(sout, r);
-
-            out << sout.rdbuf() << "\n";
+            out << link_row;
+            out << "\n";
          }
+         MPI_Barrier(mpiComm);
       }
    }
    if( iAmDistrib )
@@ -687,64 +638,38 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out) const
 }
 
 /** writes child matrix blocks, offset indicates the offset between A and B block. */
-void StochGenMatrix::writeToStreamDenseChild(std::stringstream& out, int offset) const
+void StochGenMatrix::writeToStreamDenseChild(std::ostream& out, int offset) const
 {
-   assert(hasSparseMatrices());
-
-   int mA, mB, n;
-   this->Amat->getSize(mA, n);
-   this->Bmat->getSize(mB, n);
-   assert(mA == mB );
-   for(int r=0; r < mA; r++)
+   if( Bmat->isKindOf(kStochGenMatrix) )
+      dynamic_cast<StochGenMatrix*>(Bmat)->writeToStreamDense( out, offset);
+   /// Border.mat | Amat | offset | Bmat ///
+   else
    {
-      dynamic_cast<const SparseGenMatrix*>(this->Amat)->writeToStreamDenseRow(out, r);
-      for(int i=0; i<offset; i++)
-         out <<'\t';
-      dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, r);
-      out << "\n";
-   }
-}
+      assert( hasSparseMatrices() );
+      assert( PIPS_MPIgetRank(mpiComm) == 0 );
 
-void StochGenMatrix::writeToStreamDenseChildBordered(std::stringstream& out, int offset, const SparseGenMatrix& border) const
-{
-   assert( false && "TODO : hierarchical version");
-   assert( hasSparseMatrices() );
+      int nB, mB;
+      Bmat->getSize(mB, nB);
+      int nA, mA;
+      Amat->getSize(mA, nA);
+      assert( mB == mA );
 
-   int mA, mB, mBd, n;
-   this->Amat->getSize(mA, n);
-   this->Bmat->getSize(mB, n);
-   border.getSize(mBd, n);
-
-   assert( mBd == mA );
-   assert( mA == mB );
-
-   for(int r = 0; r < mA; r++)
-   {
-      border.writeToStreamDenseRow(out, r);
-      out << "|\t";
-
-      dynamic_cast<const SparseGenMatrix*>(this->Amat)->writeToStreamDenseRow(out, r);
-      for(int i = 0; i < offset; i++)
-         out <<'\t';
-
-      dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, r);
-      out << "\n";
+      for( int row = 0; row < mB; ++row )
+      {
+         Amat->writeToStreamDenseRow(out, row);
+         for( int i = 0; i < offset; ++i )
+            out << "\t";
+         Bmat->writeToStreamDenseRow(out, row);
+         out << "\n";
+      }
    }
 }
 
 /** returns a string containing the linking-row rowidx of the children. */
-std::string StochGenMatrix::writeToStreamDenseRowLink(int rowidx) const
+void StochGenMatrix::writeToStreamDenseRowLink(std::ostream& out, int rowidx) const
 {
-   assert( false && "TODO : hierarchical version");
-   assert( hasSparseMatrices() );
-
-   std::string str_all;
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      std::string str = dynamic_cast<const SparseGenMatrix*>(children[it]->Blmat)->writeToStreamDenseRow(rowidx);
-      str_all.append(str);
-   }
-   return str_all;
+   assert( !Blmat->isKindOf(kStringGenMatrix) );
+   dynamic_cast<const SparseGenMatrix&>(*Blmat).writeToStreamDenseRow( out, rowidx );
 }
 
 void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVector* irhs) const
@@ -1231,35 +1156,37 @@ void StochGenMatrix::recomputeSize( StochGenMatrix* parent )
    m = 0;
    n = 0;
 
-   if( parent )
-      Amat->getSize(m,n);
+   if( Bmat->isKindOf(kStochGenMatrix) )
+   {
+      assert( children.empty() );
+      assert( inner_leaf );
+
+      dynamic_cast<StochGenMatrix*>(Bmat)->recomputeSize();
+   }
+
+   if( !inner_root )
+      Bmat->getSize(m, n);
 
    assert( m >= 0 );
    assert( n >= 0 );
 
-   int b_mat_m = 0;
-   int b_mat_n = 0;
-   Bmat->getSize(b_mat_m, b_mat_n);
-   assert( b_mat_m >= 0 );
-   assert( b_mat_n >= 0 );
-
-   if( !parent )
-      m += b_mat_m;
-   n += b_mat_n;
-
-   if( parent != nullptr )
-   {
-      parent->m += b_mat_m;
-      parent->n += b_mat_n;
-   }
-
    for( size_t it = 0; it < children.size(); it++ )
+   {
       children[it]->recomputeSize( this );
 
-   int bl_mat_m = 0; int bl_mat_n = 0;
-   Blmat->getSize(bl_mat_m, bl_mat_n);
+      int m_child, n_child;
+      children[it]->getSize(m_child, n_child);
 
-   m += bl_mat_m;
+      m += m_child;
+      n += n_child;
+   }
+
+   if( !parent )
+   {
+      int bl_mat_m = 0; int bl_mat_n = 0;
+      Blmat->getSize(bl_mat_m, bl_mat_n);
+      m += bl_mat_m;
+   }
 }
 
 void StochGenMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const
@@ -2053,8 +1980,6 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
 // TODO specify border and left from sData...
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
-   assert( false && "TODO : hierarchical version");
-   assert( hasSparseMatrices() );
 
 #ifndef NDEBUG
    int m_link, n_link;
@@ -2065,23 +1990,15 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    SparseGenMatrix* const A_left = dynamic_cast<SparseGenMatrix*>(Bmat)->shaveLeft(n_vars);
 
    SparseGenMatrix* const Bl_left_top = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveLeft(n_vars);
-   SparseGenMatrix* const bottom_left_block = Bl_left_top->shaveBottom(m_conss);
+   SparseGenMatrix* const bottom_left_block = dynamic_cast<SparseGenMatrix*>(Bl_left_top->shaveBottom(m_conss));
 
-   SparseGenMatrix* const Bl_right_bottom = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(m_conss);
+   SparseGenMatrix* const Bl_right_bottom = dynamic_cast<SparseGenMatrix*>(Blmat->shaveBottom(m_conss));
 
    StringGenMatrix* const border_bottom = new StringGenMatrix(false, Bl_right_bottom, nullptr, mpiComm);
    StringGenMatrix* const border_left = new StringGenMatrix(true, A_left, Bl_left_top, mpiComm);
 
    for( size_t it = 0; it < children.size(); it++ )
-   {
-      StringGenMatrix* border_left_child = nullptr;
-      StringGenMatrix* border_bottom_child = nullptr;
-
-      children[it]->shaveBorder(m_conss, n_vars, border_left_child, border_bottom_child);
-
-      border_left->addChild(border_left_child);
-      border_bottom->addChild(border_bottom_child);
-   }
+      children[it]->shaveBorder(m_conss, n_vars, border_left, border_bottom);
 
    m -= m_conss;
    n -= n_vars;
@@ -2095,31 +2012,56 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
    return bordered_matrix;
 }
 
-void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom )
+void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix* border_left, StringGenMatrix* border_bottom )
 {
-   assert( false && "TODO : hierarchical version");
-   assert( hasSparseMatrices() );
-
-   SparseGenMatrix* const border_a_mat = dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
-   SparseGenMatrix* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(m_conss);
-
-   border_left = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
-   border_bottom = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
-
-   if( children.size() == 0 )
+   if( Bmat->isKindOf(kStochGenMatrix) )
+   {
+      border_left->addChild( new StringGenMatrix( true, dynamic_cast<StringGenMatrix*>(dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder( n_vars ) ), nullptr, mpiComm ) );
+      border_bottom->addChild( dynamic_cast<StringGenMatrix*>(Blmat->shaveBottom( m_conss )) );
+   }
+   else
+   {
+      assert( hasSparseMatrices() );
+      assert( children.size() == 0 );
       assert( PIPS_MPIgetSize( mpiComm ) == 1 );
 
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      assert(" should not end up here! : todo implement?");
+      SparseGenMatrix* const border_a_mat = dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
+      SparseGenMatrix* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(m_conss));
 
-      StringGenMatrix* border_left_child;
-      StringGenMatrix* border_bottom_child;
-
-      children[it]->shaveBorder(m_conss, n_vars, border_left_child, border_bottom_child);
+      StringGenMatrix* border_left_child = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
+      StringGenMatrix* border_bottom_child = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
 
       border_left->addChild(border_left_child);
       border_bottom->addChild(border_bottom_child);
+   }
+}
+
+StringGenMatrix* StochGenMatrix::shaveLeftBorder( int n_vars )
+{
+   assert( children.size() > 0 );
+   assert( hasSparseMatrices() );
+
+   SparseGenMatrix* const border_a_mat = amatEmpty() ? new SparseGenMatrix( 0, n_vars, 0 ) : dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
+   SparseGenMatrix* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveLeft(n_vars);
+
+   StringGenMatrix* border = new StringGenMatrix( true, border_a_mat, border_bl_mat, mpiComm );
+
+   for( auto& child : children )
+      border->addChild( dynamic_cast<StringGenMatrix*>( child->shaveLeftBorderChild(n_vars) ) );
+
+   return border;
+}
+
+StringGenMatrix* StochGenMatrix::shaveLeftBorderChild( int n_vars )
+{
+   assert( children.empty() );
+
+   if( Bmat->isKindOf(kStochGenMatrix) )
+      return new StringGenMatrix( true, dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder(n_vars), nullptr, mpiComm );
+   else
+   {
+      assert( !amatEmpty() );
+      return new StringGenMatrix( true, dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars), nullptr, mpiComm );
    }
 }
 
@@ -2127,7 +2069,7 @@ StringGenMatrix* StochGenMatrix::shaveLinkingConstraints( unsigned int n_conss )
 {
    assert( hasSparseMatrices() );
 
-   SparseGenMatrix* border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(n_conss);
+   SparseGenMatrix* border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat->shaveBottom(n_conss));
    StringGenMatrix* border = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
 
    if( children.size() == 0 )
@@ -2191,10 +2133,10 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       /* combine children in new StochGenMatrix Bmat */
       /* create root node with only Blmat */
       SparseGenMatrix* Blmat_child = Blmat_leftover;
-      Blmat_leftover = Blmat_child->shaveBottom(m_links_left - n_links_for_child);
+      Blmat_leftover = dynamic_cast<SparseGenMatrix*>(Blmat_child->shaveBottom(m_links_left - n_links_for_child));
 
-      StochGenMatrix* Bmat = (child_comms[i] == MPI_COMM_NULL) ? new StochGenDummyMatrix() :
-            new StochGenMatrix(0, 0, 0, 0, 0, 0, nBl, 0, n_links_for_child, nBl, Blmat_child->numberOfNonZeros(), child_comms[i] );
+      StochGenMatrix* Bmat = (child_comms[i] == MPI_COMM_NULL) ? nullptr :
+            new StochGenMatrix( new SparseGenMatrix(0, 0, 0), new SparseGenMatrix(0, nBl, 0), Blmat_child, child_comms[i], false, true );
 
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
@@ -2204,7 +2146,7 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
          StochGenMatrix* child = children.front();
          children.erase(children.begin());
 
-         if( Bmat->mpiComm == MPI_COMM_NULL )
+         if( child_comms[i] == MPI_COMM_NULL )
             assert( child->mpiComm == MPI_COMM_NULL );
 
          if( child->mpiComm != MPI_COMM_NULL )
@@ -2221,14 +2163,20 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
             assert( blm == n_links_for_child );
          }
 #endif
-         Bmat->AddChild(child);
+         if( Bmat )
+            Bmat->AddChild(child);
       }
-      Bmat->recomputeSize();
+      if( Bmat )
+         Bmat->recomputeSize();
 
       /* create child holding the new Bmat and it's Blmat part */
-      int mb, nb;
-      Bmat->getSize(mb, nb);
-      new_children[i] = new StochGenMatrix( new SparseGenMatrix(0, 0, 0), Bmat, Blmat_new->children[i], child_comms[i], true);
+      if( child_comms[i] == MPI_COMM_NULL )
+         assert( Blmat_new->children[i]->isKindOf(kStringGenDummyMatrix));
+      else
+         assert( Blmat_new->children[i]->isKindOf(kStringGenMatrix) );
+
+      new_children[i] = (child_comms[i] != MPI_COMM_NULL) ? new StochGenMatrix( new SparseGenMatrix(0, 0, 0), Bmat, Blmat_new->children[i], child_comms[i], true, false) :
+            new StochGenDummyMatrix();
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;

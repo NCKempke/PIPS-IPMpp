@@ -19,7 +19,7 @@ protected:
   StochGenMatrix() = default;
 public:
 
-  StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_matrix = false);
+  StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf = false, bool inner_root = false );
 
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
    *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
@@ -29,7 +29,7 @@ public:
   StochGenMatrix(long long global_m, long long global_n,
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
-		 MPI_Comm mpiComm_, bool inner_matrix = false);
+		 MPI_Comm mpiComm_ );
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
       A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz. Otherwise, identical to the above constructor */
@@ -37,7 +37,7 @@ public:
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
 		 int Bl_m, int Bl_n, int Bl_nnz,
-		 MPI_Comm mpiComm_, bool inner_matrix = false);
+		 MPI_Comm mpiComm_ );
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
   StochGenMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
@@ -61,7 +61,8 @@ public:
   int iAmDistrib{false};
 
   /* is this matrix an inner matrix of the matrix hierarchy - if not, then its children hold the local Amat, Bmat and Blmat */
-  bool inner_matrix{false};
+  const bool inner_leaf{false};
+  const bool inner_root{false};
  private:
   bool hasSparseMatrices() const;
 
@@ -98,11 +99,6 @@ public:
   virtual void permuteLinkingVarsChild(const std::vector<unsigned int>& permvec);
 
   virtual void getLinkVarsNnzChild(std::vector<int>& vec) const;
-
-  virtual void writeToStreamDenseChild( std::stringstream& out, int offset) const;
-  virtual void writeToStreamDenseChildBordered( std::stringstream& out, int offset, const SparseGenMatrix& border) const;
-  virtual std::string writeToStreamDenseRowLink(int rowidx) const;
-
 
  public:
   virtual void updateTransposed();
@@ -147,9 +143,13 @@ public:
   virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
   void writeToStream( std::ostream& ) const override { assert( "Not implemented" && 0 ); };
-  void writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out ) const;
-  void writeToStreamDense( std::ostream& out ) const override;
-  void writeMPSformatRows( std::ostream& out , int rowType, OoqpVector* irhs) const override;
+
+  void writeToStreamDense( std::ostream& out ) const override
+  { writeToStreamDense( out, 0 ); };
+  virtual void writeToStreamDense( std::ostream& out, int offset ) const;
+  virtual void writeToStreamDenseBordered( const StringGenMatrix& border, std::ostream& out, int offset = 0 )const;
+
+  void writeMPSformatRows( std::ostream& out, int rowType, OoqpVector* irhs) const override;
 
   void randomize( double, double, double* ) override { assert( "Not implemented" && 0 ); };
 
@@ -229,8 +229,16 @@ public:
         const std::vector<MPI_Comm>& child_comms );
 
 protected:
+
+  virtual void writeToStreamDenseChild( std::ostream& out, int offset) const;
+  virtual void writeToStreamDenseBorderedChild( const StringGenMatrix& border_left, std::ostream& out, int offset = 0 ) const;
+
+  virtual void writeToStreamDenseRowLink( std::ostream& out, int rowidx) const;
+
   bool amatEmpty() const;
-  virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
+  virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix* border_left, StringGenMatrix* border_bottom);
+  virtual StringGenMatrix* shaveLeftBorder( int n_vars );
+  virtual StringGenMatrix* shaveLeftBorderChild( int n_vars );
 };
 
 
@@ -300,13 +308,19 @@ public:
 
   void getLinkVarsNnz( std::vector<int>& ) const override {};
   void writeToStream( std::ostream& ) const override {};
+
   void writeToStreamDense( std::ostream& ) const override {};
+  void writeToStreamDense( std::ostream&, int ) const override{};
+  void writeToStreamDenseBordered( const StringGenMatrix&, std::ostream&, int) const override{};
+
   void writeMPSformatRows( std::ostream&, int, OoqpVector* ) const override {};
 
- private:
-  void writeToStreamDenseChild( std::stringstream&, int ) const override {};
-  void writeToStreamDenseChildBordered( std::stringstream&, int, const SparseGenMatrix& ) const override {};
-  std::string writeToStreamDenseRowLink( int ) const override { return 0; };
+ protected:
+  void writeToStreamDenseChild( std::ostream&, int ) const override {};
+  void writeToStreamDenseBorderedChild( const StringGenMatrix&, std::ostream&, int ) const override {};
+
+  void writeToStreamDenseRowLink( std::ostream&, int ) const override {};
+
  public:
   void randomize( double, double, double* ) override {};
 
@@ -364,8 +378,10 @@ public:
 
   void recomputeSize( StochGenMatrix* ) override {};
  protected:
-  void shaveBorder( int, int, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom) override
-  { border_left = new StringGenDummyMatrix(); border_bottom = new StringGenDummyMatrix(); };
+  void shaveBorder( int, int, StringGenMatrix* border_left, StringGenMatrix* border_bottom) override
+  { border_left->addChild(new StringGenDummyMatrix()); border_bottom->addChild(new StringGenDummyMatrix()); };
+  StringGenMatrix* shaveLeftBorder( int ) override { return new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveLeftBorderChild( int ) override { return new StringGenDummyMatrix(); };
 
 };
 

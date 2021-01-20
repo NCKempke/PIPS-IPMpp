@@ -109,10 +109,9 @@ public:
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
-  virtual void writeToStream(std::ostream& out) const;
-  virtual void writeToStreamDense(std::ostream& out) const;
-  virtual void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
-  virtual std::string writeToStreamDenseRow( int rowidx) const;
+  void writeToStream(std::ostream& out) const override;
+  void writeToStreamDense(std::ostream& out) const override;
+  void writeToStreamDenseRow( std::ostream& out, int rowidx) const override;
 
   /** Make the elements in this matrix symmetric. The elements of interest
    *  must be in the lower triangle, and the upper triangle must be empty.
@@ -215,7 +214,7 @@ public:
   virtual void addColToRow( double coeff, int col, int row );
 
   virtual SparseGenMatrix* shaveLeft(int n_cols);
-  virtual SparseGenMatrix* shaveBottom(int n_rows);
+  GenMatrix* shaveBottom(int n_rows) override;
   virtual void dropNEmptyRowsBottom( int n_rows );
   virtual void dropNEmptyRowsTop( int n_rows );
 
