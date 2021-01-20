@@ -154,9 +154,6 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( !is_vertical );
-   x.writeToStream(std::cout);
-   this->writeToStreamDenseRow(std::cout, 0);
-   std::cout << "xchild " << x.children.size() << " thischild " << children.size() << "\n";
    assert( x.children.size() == children.size() );
    if( children.size() == 0 )
    {

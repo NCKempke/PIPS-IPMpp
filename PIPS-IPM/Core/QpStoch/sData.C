@@ -1954,6 +1954,7 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
 
 
+   MPI_Barrier(MPI_COMM_WORLD);
    // TODO : ??
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 }

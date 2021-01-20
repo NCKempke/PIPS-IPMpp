@@ -433,7 +433,7 @@ void StochGenMatrix::writeToStreamDenseBorderedChild( const StringGenMatrix& bor
    {
       assert( border_left.mat->isKindOf(kSparseGenMatrix) );
       assert( hasSparseMatrices() );
-      assert( PIPS_MPIgetRank() == 0 );
+      assert( PIPS_MPIgetRank(mpiComm) == 0 );
 
       int nB, mB;
       Bmat->getSize(mB, nB);
