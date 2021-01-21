@@ -39,21 +39,22 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 {
    data = dynamic_cast<sData*>(prob_in);
 
-   OoqpVector* x_bef = tree->newPrimalVector();
-   OoqpVector* y_bef = tree->newDualYVector();
-   OoqpVector* z_bef = tree->newDualZVector();
-   x_bef->setToConstant(2.0);
-   y_bef->setToConstant(2.0);
-   z_bef->setToConstant(2.0);
-
-   data->A->mult(2.0, *y_bef, 3.0, *x_bef);
-   data->C->mult(2.0, *z_bef, 3.0, *x_bef);
-
-   const double A2norm_bef = y_bef->twonorm();
-   const double A1norm_bef = y_bef->onenorm();
-
-   const double C2norm_bef = z_bef->twonorm();
-   const double C1norm_bef = z_bef->onenorm();
+   // TODO : DELETEME
+//   OoqpVector* x_bef = tree->newPrimalVector();
+//   OoqpVector* y_bef = tree->newDualYVector();
+//   OoqpVector* z_bef = tree-   >newDualZVector();
+//   x_bef->setToConstant(2.0);
+//   y_bef->setToConstant(2.0);
+//   z_bef->setToConstant(2.0);
+//
+//   data->A->mult(2.0, *y_bef, 3.0, *x_bef);
+//   data->C->mult(2.0, *z_bef, 3.0, *x_bef);
+//
+//   const double A2norm_bef = y_bef->twonorm();
+//   const double A1norm_bef = y_bef->onenorm();
+//
+//   const double C2norm_bef = z_bef->twonorm();
+//   const double C1norm_bef = z_bef->onenorm();
 
    assert( data->exploitingLinkStructure() );
    const int nx_to_shave = data->getNGlobalVars();
@@ -72,32 +73,28 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
    // adjust data
    data = data->switchToHierarchicalData( tree );
 
-   data->writeToStreamDense(std::cout);
-
-   MPI_Barrier(MPI_COMM_WORLD);
    assert( data->isHierarchieRoot() );
 
-   OoqpVector* x_after = tree->newPrimalVector();
-   OoqpVector* y_after = tree->newDualYVector();
-   OoqpVector* z_after = tree->newDualZVector();
-   x_after->setToConstant(2.0);
-   y_after->setToConstant(2.0);
-   z_after->setToConstant(2.0);
-
-   data->A->mult(2.0, *y_after, 3.0, *x_after);
-   data->C->mult(2.0, *z_after, 3.0, *x_after);
-
-   const double A2norm_after = y_after->twonorm();
-   const double A1norm_after = y_after->onenorm();
-
-   const double C2norm_after = z_after->twonorm();
-   const double C1norm_after = z_after->onenorm();
-
-   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
-   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
-   std::cout << "\n";
-   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
-   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
+// TODO : DELETEME
+//   OoqpVector* x_after = tree->newPrimalVector();
+//   OoqpVector* y_after = tree->newDualYVector();
+//   OoqpVector* z_after = tree->newDualZVector();
+//   x_after->setToConstant(2.0);
+//   y_after->setToConstant(2.0);
+//   z_after->setToConstant(2.0);
+//   data->A->mult(2.0, *y_after, 3.0, *x_after);
+//   data->C->mult(2.0, *z_after, 3.0, *x_after);
+//   const double A2norm_after = y_after->twonorm();
+//   const double A1norm_after = y_after->onenorm();
+//
+//   const double C2norm_after = z_after->twonorm();
+//   const double C1norm_after = z_after->onenorm();
+//
+//   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
+//   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
+//   std::cout << "\n";
+//   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
+//   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
 
    return data;
 }
