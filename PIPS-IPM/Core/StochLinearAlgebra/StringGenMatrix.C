@@ -681,5 +681,4 @@ void StringGenMatrix::writeDashedLineToStream( std::ostream& out ) const
 
    if( mat_link && PIPS_MPIgetRank(mpi_comm) == 0 )
       mat_link->writeDashedLineToStream( out );
-
 }

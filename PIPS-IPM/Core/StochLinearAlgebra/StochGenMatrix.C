@@ -2065,6 +2065,7 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix* bord
 {
    if( Bmat->isKindOf(kStochGenMatrix) )
    {
+      assert( amatEmpty() );
       border_left->addChild( new StringGenMatrix( true, dynamic_cast<StringGenMatrix*>(dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder( n_vars ) ), nullptr, mpiComm ) );
       border_bottom->addChild( dynamic_cast<StringGenMatrix*>(Blmat->shaveBottom( m_conss )) );
    }
@@ -2073,6 +2074,7 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix* bord
       assert( hasSparseMatrices() );
       assert( children.size() == 0 );
       assert( PIPS_MPIgetSize( mpiComm ) == 1 );
+      assert( !amatEmpty() );
 
       SparseGenMatrix* const border_a_mat = dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
       SparseGenMatrix* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(m_conss));
@@ -2089,11 +2091,12 @@ StringGenMatrix* StochGenMatrix::shaveLeftBorder( int n_vars )
 {
    assert( children.size() > 0 );
    assert( hasSparseMatrices() );
+   assert( amatEmpty() );
 
-   SparseGenMatrix* const border_a_mat = amatEmpty() ? new SparseGenMatrix( 0, n_vars, 0 ) : dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
+   SparseGenMatrix* const border_b_mat = dynamic_cast<SparseGenMatrix*>(Bmat)->shaveLeft(n_vars);
    SparseGenMatrix* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveLeft(n_vars);
 
-   StringGenMatrix* border = new StringGenMatrix( true, border_a_mat, border_bl_mat, mpiComm );
+   StringGenMatrix* border = new StringGenMatrix( true, border_b_mat, border_bl_mat, mpiComm );
 
    for( auto& child : children )
       border->addChild( dynamic_cast<StringGenMatrix*>( child->shaveLeftBorderChild(n_vars) ) );
@@ -2106,7 +2109,10 @@ StringGenMatrix* StochGenMatrix::shaveLeftBorderChild( int n_vars )
    assert( children.empty() );
 
    if( Bmat->isKindOf(kStochGenMatrix) )
+   {
+      assert(amatEmpty());
       return new StringGenMatrix( true, dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder(n_vars), nullptr, mpiComm );
+   }
    else
    {
       assert( !amatEmpty() );

@@ -1953,7 +1953,7 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
 
 
    MPI_Barrier(MPI_COMM_WORLD);
-   // TODO : ??
+   // TODO : when Q is used we also need this here..
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 }
 
