@@ -2067,7 +2067,7 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix* bord
    {
       assert( amatEmpty() );
       border_left->addChild( new StringGenMatrix( true, dynamic_cast<StringGenMatrix*>(dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder( n_vars ) ), nullptr, mpiComm ) );
-      border_bottom->addChild( dynamic_cast<StringGenMatrix*>(Blmat->shaveBottom( m_conss )) );
+      border_bottom->addChild( new StringGenMatrix( false, dynamic_cast<StringGenMatrix*>(Blmat->shaveBottom( m_conss )), nullptr, mpiComm) );
    }
    else
    {
