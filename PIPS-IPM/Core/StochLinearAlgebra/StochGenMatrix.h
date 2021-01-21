@@ -89,7 +89,7 @@ public:
         const OoqpVector* colScaleVec, const OoqpVector* colScaleParent, OoqpVector& minmaxVec, OoqpVector* linkParent);
 
   virtual void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleParent, OoqpVector& minmaxVec, OoqpVector* minmaxParent );
+        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleParent, OoqpVector& minmaxVec );
 
 
   virtual void initTransposedChild(bool dynamic);
@@ -186,7 +186,7 @@ public:
   void getColMinMaxVec( bool getMin, bool initializeVec,
         const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override
   {
-     getColMinMaxVec(getMin, initializeVec, rowScaleVec, nullptr, minmaxVec, nullptr);
+     getColMinMaxVec(getMin, initializeVec, rowScaleVec, nullptr, minmaxVec );
   };
 
   void addRowSums( OoqpVector& sumVec ) const override
@@ -346,7 +346,7 @@ public:
   void getNnzPerCol( OoqpVectorBase<int>& ) override {};
 
   void getRowMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector&, OoqpVector* )override {};
-  void getColMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector&, OoqpVector* )override {};
+  void getColMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector& )override {};
   void getRowMinMaxVec( bool , bool, const OoqpVector*, OoqpVector& )override {};
 
   void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& )override {};

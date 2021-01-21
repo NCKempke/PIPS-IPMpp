@@ -915,7 +915,7 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
    Bmat->getRowMinMaxVec(getMin, initializeVec, covec, *(minmaxVecStoch.vec));
 
    // not at root?
-   if( linkParent != nullptr )
+   if( linkParent != nullptr && !Bmat->isKindOf(kStochGenMatrix) )
       Amat->getRowMinMaxVec(getMin, false, covecparent, *(minmaxVecStoch.vec));
 
    /* with linking constraints? */
@@ -974,22 +974,19 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
 }
 
 void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleLink, OoqpVector& minmaxVec, OoqpVector* minmaxParent)
+        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleLink, OoqpVector& minmaxVec )
 {
-//   assert( false && "TODO : hierarchical version");
-   assert( hasSparseMatrices() );
-
    StochVector& minmaxVecStoch = dynamic_cast<StochVector&>(minmaxVec);
    const StochVector* rowScaleVecStoch = dynamic_cast<const StochVector*>(rowScaleVec);
-
-   // assert tree compatibility
    assert(minmaxVecStoch.children.size() == children.size());
 
-   SimpleVector* const mvec = dynamic_cast<SimpleVector*>(minmaxVecStoch.vec);
-   const SimpleVector* const covec = rowScaleVecStoch != nullptr ?
-         dynamic_cast<SimpleVector*>(rowScaleVecStoch->vec) : nullptr;
+   const OoqpVector* const covec = rowScaleVecStoch ? rowScaleVecStoch->vec : nullptr;
 
-   Bmat->getColMinMaxVec(getMin, initializeVec, covec, *(mvec));
+   assert( minmaxVecStoch.vec );
+   if( Bmat->isKindOf(kStochGenMatrix) )
+      Bmat->getColMinMaxVec(getMin, initializeVec, covec, *minmaxVecStoch.vec);
+   else
+      Bmat->getColMinMaxVec(getMin, initializeVec, covec, *minmaxVecStoch.getLinkingVecNotHierarchicalTop());
 
    int blm, bln;
    Blmat->getSize(blm, bln);
@@ -999,11 +996,9 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
    /* with linking constraints? */
    if( blm > 0 )
    {
-      // with rowScale vector?
-      if( rowScaleVecStoch != nullptr )
+      if( rowScaleVecStoch )
       {
-         // at root?
-         if( minmaxParent == nullptr )
+         if( !rowScaleLink )
             covecl = dynamic_cast<SimpleVector*>(rowScaleVecStoch->vecl);
          else
             covecl = dynamic_cast<const SimpleVector*>(rowScaleLink);
@@ -1011,42 +1006,32 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
          assert(covecl != nullptr);
       }
 
-      if( iAmSpecial(iAmDistrib, mpiComm) || minmaxParent != nullptr )
-         Blmat->getColMinMaxVec(getMin, false, covecl, *mvec);
+      Blmat->getColMinMaxVec(getMin, false, covecl, *minmaxVecStoch.vec);
    }
 
-   // not at root?
-   if( minmaxParent != nullptr )
-      Amat->getColMinMaxVec(getMin, false, covec, *(minmaxParent));
+   if( !amatEmpty() )
+      Amat->getColMinMaxVec(getMin, false, covec, *minmaxVecStoch.getLinkingVecNotHierarchicalTop() );
    else
    {
       if( rowScaleVecStoch )
       {
          for( size_t it = 0; it < children.size(); it++ )
-            children[it]->getColMinMaxVec(getMin, initializeVec, rowScaleVecStoch->children[it], covecl, *(minmaxVecStoch.children[it]), mvec);
+            children[it]->getColMinMaxVec(getMin, initializeVec, rowScaleVecStoch->children[it], covecl, *(minmaxVecStoch.children[it]) );
       }
       else
       {
          for( size_t it = 0; it < children.size(); it++ )
-            children[it]->getColMinMaxVec(getMin, initializeVec, nullptr, nullptr, *(minmaxVecStoch.children[it]), mvec);
+            children[it]->getColMinMaxVec(getMin, initializeVec, nullptr, nullptr, *(minmaxVecStoch.children[it]) );
       }
    }
 
-   // distributed and at root?
-   if( iAmDistrib && minmaxParent == nullptr )
+   if( iAmDistrib && !rowScaleLink )
    {
-      const int locn = mvec->length();
-      double* const entries = mvec->elements();
-      double* buffer = new double[locn];
-
+      SimpleVector& mvec = dynamic_cast<SimpleVector&>(*minmaxVecStoch.vec);
       if( getMin )
-         MPI_Allreduce(entries, buffer, locn, MPI_DOUBLE, MPI_MIN, mpiComm);
+         PIPS_MPIminArrayInPlace( mvec.elements(), mvec.length(), mpiComm );
       else
-         MPI_Allreduce(entries, buffer, locn, MPI_DOUBLE, MPI_MAX, mpiComm);
-
-      mvec->copyFromArray(buffer);
-
-      delete[] buffer;
+         PIPS_MPImaxArrayInPlace( mvec.elements(), mvec.length(), mpiComm );
    }
 }
 

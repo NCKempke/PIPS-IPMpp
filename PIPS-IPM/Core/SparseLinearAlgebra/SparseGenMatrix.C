@@ -658,6 +658,7 @@ SparseGenMatrix::getMinMaxVec( bool getMin, bool initializeVec,
 {
    SimpleVector& mvec = dynamic_cast<SimpleVector&>(minmaxVec);
 
+   std::cout << mvec.length() << " " << storage->m << "\n";
    assert(mvec.length() == storage->m);
 
    if( initializeVec )
