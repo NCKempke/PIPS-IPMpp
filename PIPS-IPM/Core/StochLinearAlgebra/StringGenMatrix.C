@@ -638,7 +638,10 @@ void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const
    mat->writeToStreamDenseRow( row_stream, row );
 
    if( my_rank != 0 )
+   {
+      row_stream.str("");
       row_stream.clear();
+   }
 
    for( auto& child : children )
       child->writeToStreamDenseRow( row_stream, row );
@@ -662,7 +665,10 @@ void StringGenMatrix::writeDashedLineToStream( std::ostream& out ) const
    mat->writeDashedLineToStream( row_stream );
 
    if( PIPS_MPIgetRank(mpi_comm) != 0 )
+   {
+      row_stream.str("");
       row_stream.clear();
+   }
 
    for( auto& child : children )
       child->writeDashedLineToStream( row_stream );

@@ -294,6 +294,7 @@ void BorderedGenMatrix::writeToStreamDense( std::ostream& out ) const
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    const int size = PIPS_MPIgetSize(mpi_comm);
    const bool iAmDistrib = ( size != 0 );
+
    inner_matrix->writeToStreamDenseBordered( *border_left, out );
 
    int mL, nL; this->bottom_left_block->getSize(mL, nL);
