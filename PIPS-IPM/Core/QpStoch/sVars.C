@@ -107,10 +107,10 @@ sVars::sVars( const sTree* tree, OoqpVector * x_in, OoqpVector * s_in,
   mz = z->length();
 
   assert( nx == ixlow->length() || 0 == ixlow->length() );
-  assert( nx == ixlow->length() || 0 == ixlow->length() );
+  assert( nx == ixupp->length() || 0 == ixupp->length() );
   assert( mz == iclow->length() || 0 == iclow->length() );
   assert( mz == icupp->length() || 0 == icupp->length() );
-  
+
   nxlow = nxlowGlobal; 
   nxupp = nxuppGlobal; 
   mclow = mclowGlobal;

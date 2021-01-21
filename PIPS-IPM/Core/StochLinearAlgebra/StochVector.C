@@ -2282,7 +2282,12 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
       assert( vecl_leftover->length() == n_links_in_root );
    assert( children.empty() );
 
-   /* add new children */
+   this->n = 0;
+   if( vec )
+      this->n += vec->length();
+   if( vecl )
+      this->n += vecl->length();
+
    for( auto& child : new_children )
       AddChild( child );
 }
