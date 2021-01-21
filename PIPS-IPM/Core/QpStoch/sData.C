@@ -1888,6 +1888,7 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
    assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
 
+// TODO : DELETEME
 //   OoqpVector* x_bef = g;
 //   OoqpVector* y_bef = bA;
 //   OoqpVector* z_bef = bl;
@@ -1924,6 +1925,7 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
 
 
+// TODO : DELETEME
 //   OoqpVector* x_after = g;
 //   OoqpVector* x_after2 = stochNode->newPrimalVector();
 //   x_after2->setToConstant(2.0);
