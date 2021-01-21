@@ -456,8 +456,8 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
    }
 
    assert( N == NX_children + nx_active );
-   assert( MY == MY_children + my_active );
-   assert( MZ == MZ_children + mz_active );
+   assert( MY == MY_children + std::max(0, my_active) );
+   assert( MZ == MZ_children + std::max(0, mz_active) );
    assert( MYL == MYL_children + myl_active );
    assert( MZL == MZL_children + mzl_active );
 }
@@ -874,8 +874,8 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
 
-   top_layer->my_active = 0;
-   top_layer->mz_active = 0;
+   top_layer->my_active = -1;
+   top_layer->mz_active = -1;
 
    top_layer->myl_active = myl_to_shave;
    this->adjustActiveMylBy(-myl_to_shave);
