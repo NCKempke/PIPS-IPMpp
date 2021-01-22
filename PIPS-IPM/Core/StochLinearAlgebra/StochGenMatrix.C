@@ -149,12 +149,13 @@ void StochGenMatrix::getSize( int& m_out, int& n_out ) const
 void StochGenMatrix::columnScale2( const OoqpVector& vec )
 {
    const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
-
    assert(scalevec.children.size() == 0 && children.size() == 0);
-   assert( !amatEmpty() );
 
-   Amat->columnScale( *scalevec.getLinkingVecNotHierarchicalTop() );
    Bmat->columnScale( *scalevec.vec );
+
+   if( !amatEmpty() )
+      Amat->columnScale( *scalevec.getLinkingVecNotHierarchicalTop() );
+
    Blmat->columnScale( *scalevec.vec );
 }
 
@@ -169,12 +170,7 @@ void StochGenMatrix::columnScale( const OoqpVector& vec )
 
    assert(children.size() == scalevec.children.size());
    for( size_t it = 0; it < children.size(); it++ )
-   {
-      if( children[it]->inner_leaf )
-         children[it]->columnScale( *(scalevec.children[it]) );
-      else
-         children[it]->columnScale2( *(scalevec.children[it]) );
-   }
+      children[it]->columnScale2( *(scalevec.children[it]) );
 }
 
 void StochGenMatrix::rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec )
@@ -900,140 +896,136 @@ void StochGenMatrix::getNnzPerCol(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
    }
 }
 
-void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
-      const OoqpVector* colScaleVec, const OoqpVector* colScaleParent, OoqpVector& minmaxVec, OoqpVector* linkParent)
+void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const OoqpVector* colScaleVec_,
+      OoqpVector& minmaxVec_ )
 {
+   assert( amatEmpty() );
 
-   StochVector& minmaxVecStoch = dynamic_cast<StochVector&>(minmaxVec);
-   const StochVector* const colScaleVecStoch = dynamic_cast<const StochVector*>(colScaleVec);
+   StochVector& minmaxVec = dynamic_cast<StochVector&>(minmaxVec_);
 
-   SimpleVector* mvecl = nullptr;
-   const SimpleVector* const covecparent = dynamic_cast<const SimpleVector*>(colScaleParent);
-   const SimpleVector* const covec = colScaleVecStoch != nullptr ?
-         dynamic_cast<SimpleVector*>(colScaleVecStoch->vec) : nullptr;
+   const bool scale = colScaleVec_;
+   const bool has_linking = minmaxVec.vecl;
 
-   Bmat->getRowMinMaxVec(getMin, initializeVec, covec, *(minmaxVecStoch.vec));
+   const StochVector* const col_scale = scale ? dynamic_cast<const StochVector*>(colScaleVec_) : nullptr;
+   const OoqpVector* const col_scale_vec = scale ? col_scale->getLinkingVecNotHierarchicalTop() : nullptr;
 
-   // not at root?
-   if( linkParent != nullptr && !Bmat->isKindOf(kStochGenMatrix) )
-      Amat->getRowMinMaxVec(getMin, false, covecparent, *(minmaxVecStoch.vec));
+   Bmat->getRowMinMaxVec(getMin, initializeVec, col_scale_vec, *minmaxVec.vec);
 
-   /* with linking constraints? */
-   if( minmaxVecStoch.vecl || linkParent )
+   if( has_linking )
    {
-      assert(minmaxVecStoch.vecl == nullptr || linkParent == nullptr);
-
-      // at root?
-      if( linkParent == nullptr )
+      if( initializeVec )
       {
-         mvecl = dynamic_cast<SimpleVector*>(minmaxVecStoch.vecl);
-
-         if( initializeVec )
-         {
-            if( getMin )
-               mvecl->setToConstant(std::numeric_limits<double>::max());
-            else
-               mvecl->setToZero();
-         }
-      }
-      else
-      {
-         mvecl = dynamic_cast<SimpleVector*>(linkParent);
+         if( getMin )
+            minmaxVec.vecl->setToConstant(std::numeric_limits<double>::max());
+         else
+            minmaxVec.vecl->setToZero();
       }
 
-      if( linkParent != nullptr || iAmSpecial(iAmDistrib, mpiComm) )
-         Blmat->getRowMinMaxVec(getMin, false, covec, *mvecl);
+      if( iAmSpecial(iAmDistrib, mpiComm) )
+         Blmat->getRowMinMaxVec(getMin, false, col_scale_vec, *minmaxVec.vecl);
    }
 
-   assert(minmaxVecStoch.children.size() == children.size());
+   assert( minmaxVec.children.size() == children.size() );
 
-   if( colScaleVec != nullptr )
-   {
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->getRowMinMaxVec(getMin, initializeVec, colScaleVecStoch->children[it], covec,
-               *(minmaxVecStoch.children[it]), mvecl);
-   }
-   else
-   {
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->getRowMinMaxVec(getMin, initializeVec, nullptr, nullptr,
-               *(minmaxVecStoch.children[it]), mvecl);
-   }
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->getRowMinMaxVecChild(getMin, initializeVec, scale ? col_scale->children[it] : nullptr, *(minmaxVec.children[it]), minmaxVec.vecl);
 
-   // distributed, with linking constraints, and at root?
-   if( iAmDistrib && minmaxVecStoch.vecl != nullptr && linkParent == nullptr )
+   if( iAmDistrib )
    {
-      assert(mvecl != nullptr);
-
-      // sum up linking constraints vectors
       if( getMin )
-        PIPS_MPIminArrayInPlace(mvecl->elements(), mvecl->length(), mpiComm);
+        PIPS_MPIminArrayInPlace(dynamic_cast<SimpleVector&>(*minmaxVec.vecl).elements(), minmaxVec.vecl->length(), mpiComm);
       else
-        PIPS_MPImaxArrayInPlace(mvecl->elements(), mvecl->length(), mpiComm);
+        PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector&>(*minmaxVec.vecl).elements(), minmaxVec.vecl->length(), mpiComm);
    }
 }
 
-void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleLink, OoqpVector& minmaxVec )
+void StochGenMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const OoqpVector* colScaleVec_,
+      OoqpVector& minmaxVec_, OoqpVector* minmax_link_parent)
 {
-   StochVector& minmaxVecStoch = dynamic_cast<StochVector&>(minmaxVec);
-   const StochVector* rowScaleVecStoch = dynamic_cast<const StochVector*>(rowScaleVec);
-   assert(minmaxVecStoch.children.size() == children.size());
+   assert( children.empty() );
+   StochVector& minmaxVec = dynamic_cast<StochVector&>(minmaxVec_);
 
-   const OoqpVector* const covec = rowScaleVecStoch ? rowScaleVecStoch->vec : nullptr;
+   const bool scale = colScaleVec_;
+   const bool has_linking = minmax_link_parent;
 
-   assert( minmaxVecStoch.vec );
-   if( Bmat->isKindOf(kStochGenMatrix) )
-      Bmat->getColMinMaxVec(getMin, initializeVec, covec, *minmaxVecStoch.vec);
-   else
-      Bmat->getColMinMaxVec(getMin, initializeVec, covec, *minmaxVecStoch.getLinkingVecNotHierarchicalTop());
+   const StochVector* const col_scale = dynamic_cast<const StochVector*>(colScaleVec_);
+
+   const OoqpVector* const col_scale_vec = scale ? col_scale->vec : nullptr;
+   const OoqpVector* const col_scale_linkingvar_vec = scale ? col_scale->getLinkingVecNotHierarchicalTop() : nullptr;
+
+   Bmat->getRowMinMaxVec(getMin, initializeVec, col_scale_vec, *(minmaxVec.vec));
+
+   if( !amatEmpty() )
+   {
+      assert( !Bmat->isKindOf(kStochGenMatrix) );
+      Amat->getRowMinMaxVec(getMin, false, col_scale_linkingvar_vec, *(minmaxVec.vec));
+   }
+
+   if( has_linking )
+      Blmat->getRowMinMaxVec(getMin, false, col_scale_vec, *minmax_link_parent);
+}
+
+
+void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const OoqpVector* rowScaleVec_, OoqpVector& minmaxVec_ )
+{
+   assert( amatEmpty() );
+   StochVector& minmaxVec = dynamic_cast<StochVector&>(minmaxVec_);
+   const StochVector* rowScaleVec = dynamic_cast<const StochVector*>(rowScaleVec_);
 
    int blm, bln;
    Blmat->getSize(blm, bln);
+   const bool scale = rowScaleVec;
+   const bool has_linking = blm > 0;
 
-   const SimpleVector* covecl = nullptr;
+   const OoqpVector* row_scale_vec = scale ? rowScaleVec->vec : nullptr;
+   const OoqpVector* row_scale_link = scale ? rowScaleVec->vecl : nullptr;
 
-   /* with linking constraints? */
-   if( blm > 0 )
+   Bmat->getColMinMaxVec(getMin, initializeVec, row_scale_vec, *minmaxVec.getLinkingVecNotHierarchicalTop() );
+
+   if( has_linking )
+      Blmat->getColMinMaxVec(getMin, false, row_scale_link, *minmaxVec.getLinkingVecNotHierarchicalTop() );
+
+   assert(minmaxVec.children.size() == children.size());
+
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->getColMinMaxVecChild(getMin, initializeVec, scale ? rowScaleVec->children[it] : nullptr, row_scale_link, *(minmaxVec.children[it]) );
+
+   if( iAmDistrib )
    {
-      if( rowScaleVecStoch )
-      {
-         if( !rowScaleLink )
-            covecl = dynamic_cast<SimpleVector*>(rowScaleVecStoch->vecl);
-         else
-            covecl = dynamic_cast<const SimpleVector*>(rowScaleLink);
-
-         assert(covecl != nullptr);
-      }
-
-      Blmat->getColMinMaxVec(getMin, false, covecl, *minmaxVecStoch.vec);
-   }
-
-   if( !amatEmpty() )
-      Amat->getColMinMaxVec(getMin, false, covec, *minmaxVecStoch.getLinkingVecNotHierarchicalTop() );
-   else
-   {
-      if( rowScaleVecStoch )
-      {
-         for( size_t it = 0; it < children.size(); it++ )
-            children[it]->getColMinMaxVec(getMin, initializeVec, rowScaleVecStoch->children[it], covecl, *(minmaxVecStoch.children[it]) );
-      }
-      else
-      {
-         for( size_t it = 0; it < children.size(); it++ )
-            children[it]->getColMinMaxVec(getMin, initializeVec, nullptr, nullptr, *(minmaxVecStoch.children[it]) );
-      }
-   }
-
-   if( iAmDistrib && !rowScaleLink )
-   {
-      SimpleVector& mvec = dynamic_cast<SimpleVector&>(*minmaxVecStoch.vec);
+      SimpleVector& mvec = dynamic_cast<SimpleVector&>(*minmaxVec.vec);
       if( getMin )
          PIPS_MPIminArrayInPlace( mvec.elements(), mvec.length(), mpiComm );
       else
          PIPS_MPImaxArrayInPlace( mvec.elements(), mvec.length(), mpiComm );
    }
 }
+
+void StochGenMatrix::getColMinMaxVecChild( bool getMin, bool initializeVec, const OoqpVector* rowScale_, const OoqpVector* rowScaleParent,
+      OoqpVector& minmaxVec_ )
+{
+   assert( children.empty() );
+   StochVector& minmaxVec = dynamic_cast<StochVector&>(minmaxVec_);
+
+   int blm, bln;
+   Blmat->getSize(blm, bln);
+   const bool scale = rowScale_;
+   const bool has_linking = blm > 0;
+
+   const StochVector* rowScale = dynamic_cast<const StochVector*>(rowScale_);
+   const OoqpVector* row_scale_vec = scale ? rowScale->vec : nullptr;
+
+   Bmat->getColMinMaxVec(getMin, initializeVec, row_scale_vec, *minmaxVec.vec);
+
+   if( !amatEmpty() )
+   {
+      assert( !Bmat->isKindOf(kStochGenMatrix) );
+      Amat->getColMinMaxVec(getMin, false, row_scale_vec, *minmaxVec.getLinkingVecNotHierarchicalTop() );
+   }
+
+   if( has_linking )
+      Blmat->getColMinMaxVec(getMin, false, rowScaleParent, *minmaxVec.vec );
+}
+
 
 
 void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) const
@@ -2205,6 +2197,8 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
 #endif
          if( Bmat )
             Bmat->AddChild(child);
+         else
+            delete child;
       }
       if( Bmat )
          Bmat->recomputeSize();

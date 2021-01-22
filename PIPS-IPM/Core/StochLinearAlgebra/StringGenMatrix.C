@@ -349,7 +349,15 @@ void StringGenMatrix::getRowMinMaxVecVertical( bool get_min, bool initialize_vec
    {
       assert( minmax.children[i]);
       if( children[i]->isKindOf(kStringGenDummyMatrix) )
+      {
+         if( !minmax.children[i]->isKindOf(kStochDummy) )
+         {
+            std::cout << i << "\n";
+            minmax.children[i]->writeToStream(std::cout);
+            std::cout << minmax.children[i]->isKindOf(kStochDummy) << " " << minmax.children[i]->vec->isKindOf(kStochDummy) << "\n";
+         }
          assert( minmax.children[i]->isKindOf(kStochDummy) );
+      }
 
       children[i]->getRowMinMaxVecVertical(get_min, initialize_vec, col_scale, *minmax.children[i]);
    }
@@ -578,8 +586,12 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
       if( child_comms[n_children] == MPI_COMM_NULL )
       {
          addChild( new StringGenDummyMatrix() );
+         delete children[i];
          while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1])
+         {
             ++i;
+            delete children[i];
+         }
       }
       else
       {

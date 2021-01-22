@@ -493,7 +493,7 @@ inline MPI_Datatype get_mpi_locdatatype(T*)
 inline int PIPS_MPIgetRank(MPI_Comm mpiComm = MPI_COMM_WORLD)
 {
    if( mpiComm == MPI_COMM_NULL )
-      return -1;
+      return 0;
    int myrank;
    MPI_Comm_rank(mpiComm, &myrank);
    return myrank;

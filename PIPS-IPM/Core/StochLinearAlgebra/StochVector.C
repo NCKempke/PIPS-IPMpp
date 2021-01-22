@@ -56,10 +56,13 @@ StochVectorBase<T>::StochVectorBase(int n_, int nl_, MPI_Comm mpiComm_ )
 template<typename T>
 void StochVectorBase<T>::AddChild(StochVectorBase<T>* child)
 {
-  child->parent = this;
-  children.push_back(child);
+   child->parent = this;
+   if( child->vec->isKindOf(kStochVector) )
+      dynamic_cast<StochVectorBase<T>*>(child->vec)->parent = this;
 
-  this->n += child->n;
+   children.push_back(child);
+
+   this->n += child->n;
 }
 
 template<typename T>
@@ -1224,7 +1227,7 @@ void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
       MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, rank, mpiComm);
    }
 
-   if( rank == 0 )
+   if( rank == 0 && vecl )
    {
       for( int i = 0; i < offset; ++i )
          sout << "\t";
@@ -2255,7 +2258,7 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
 
       SimpleVectorBase<T>* vecl_child = vecl ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr;
 
-      StochVectorBase<T>* vec = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() :
+      StochVectorBase<T>* vec = (child_comms[i] == MPI_COMM_NULL) ? nullptr :
             new StochVectorBase<T>( new SimpleVectorBase<T>(0), vecl_child, child_comms[i] );
 
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
@@ -2264,15 +2267,18 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
          assert( !child->vecl );
          children.erase(children.begin());
 
-         if( vec->mpiComm == MPI_COMM_NULL )
+         if( child_comms[i] == MPI_COMM_NULL )
             assert( child->mpiComm == MPI_COMM_NULL );
-         if( vec->mpiComm != MPI_COMM_NULL )
+         if( child_comms[i] != MPI_COMM_NULL )
             vec->AddChild(child);
+         else
+            delete child;
       }
 
       /* create child holding the new StochVector as it's vec part */
-      new_children[i] = new StochVectorBase<T>( vec, nullptr, child_comms[i] );
-      vec->parent = new_children[i];
+      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() : new StochVectorBase<T>( vec, nullptr, child_comms[i] );
+      if( vec )
+         vec->parent = new_children[i];
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;

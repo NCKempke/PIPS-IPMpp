@@ -84,14 +84,6 @@ public:
   virtual void addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) const;
   virtual void addColSums( OoqpVector& sumVec, OoqpVector* linkParent ) const;
 
-  /** internal method needed for handling linking constraints */
-  virtual void getRowMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* colScaleVec, const OoqpVector* colScaleParent, OoqpVector& minmaxVec, OoqpVector* linkParent);
-
-  virtual void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleParent, OoqpVector& minmaxVec );
-
-
   virtual void initTransposedChild(bool dynamic);
   virtual void initStaticStorageFromDynamic(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>& colNnzVec,
     const OoqpVectorBase<int>* rowLinkVec, const OoqpVectorBase<int>* colParentVec);
@@ -176,18 +168,9 @@ public:
   };
 
   /** fill vector with absolute minimum/maximum value of each row */
-  void getRowMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override
-  {
-     getRowMinMaxVec(getMin, initializeVec, colScaleVec, nullptr, minmaxVec, nullptr);
-  };
-
+ void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
   /** fill vector with absolute minimum/maximum value of each column */
-  void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override
-  {
-     getColMinMaxVec(getMin, initializeVec, rowScaleVec, nullptr, minmaxVec );
-  };
+  void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
 
   void addRowSums( OoqpVector& sumVec ) const override
      { addRowSums(sumVec, nullptr); };
@@ -237,6 +220,12 @@ protected:
   virtual void writeToStreamDenseBorderedChild( const StringGenMatrix& border_left, std::ostream& out, int offset = 0 ) const;
 
   virtual void writeToStreamDenseRowLink( std::ostream& out, int rowidx) const;
+
+  /* internal methods for linking cons and hierarchical structure */
+  virtual void getRowMinMaxVecChild(bool getMin, bool initializeVec, const OoqpVector* colScaleVec_,
+        OoqpVector& minmaxVec_, OoqpVector* minmax_link_parent);
+  virtual void getColMinMaxVecChild( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, const OoqpVector* rowScaleParent,
+        OoqpVector& minmaxVec );
 
   bool amatEmpty() const;
   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix* border_left, StringGenMatrix* border_bottom);
@@ -345,10 +334,7 @@ public:
   void getNnzPerRow( OoqpVectorBase<int>& ) override {};
   void getNnzPerCol( OoqpVectorBase<int>& ) override {};
 
-  void getRowMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector&, OoqpVector* )override {};
-  void getColMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector& )override {};
-  void getRowMinMaxVec( bool , bool, const OoqpVector*, OoqpVector& )override {};
-
+  void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& )override {};
   void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& )override {};
 
   void addRowSums( OoqpVector&, OoqpVector* ) const override {};
@@ -383,6 +369,9 @@ public:
 
   void recomputeSize( StochGenMatrix* ) override {};
  protected:
+  void getRowMinMaxVecChild( bool, bool, const OoqpVector*, OoqpVector&, OoqpVector* )override {};
+  void getColMinMaxVecChild( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector& )override {};
+
   void shaveBorder( int, int, StringGenMatrix* border_left, StringGenMatrix* border_bottom) override
   { border_left->addChild(new StringGenDummyMatrix()); border_bottom->addChild(new StringGenDummyMatrix()); };
   StringGenMatrix* shaveLeftBorder( int ) override { return new StringGenDummyMatrix(); };
