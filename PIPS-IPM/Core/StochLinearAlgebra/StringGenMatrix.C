@@ -183,6 +183,8 @@ void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double a
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( is_vertical );
+   std::cout << " x.children.size() " << x.children.size() << " children.size() " << children.size() << "\n";
+   std::cout << " xstochdum? " << x.isKindOf(kStochDummy) << "\n";
    assert(x.children.size() == children.size());
    if( children.size() == 0 )
    {

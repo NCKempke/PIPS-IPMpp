@@ -36,7 +36,6 @@ StochGenMatrix::StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blm
    }
 #endif
 
-
    recomputeSize();
 }
 
