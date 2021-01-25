@@ -37,7 +37,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
     * [ F0  0   0   ]
     * [ G0  0 OmN+1 ]
     */
-   assert( prob->isHierarchieRoot() );
+   assert( prob->isHierarchyRoot() );
 
    const SparseGenMatrix& F0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->A).bottom_left_block;
    const SparseGenMatrix& G0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->C).bottom_left_block;

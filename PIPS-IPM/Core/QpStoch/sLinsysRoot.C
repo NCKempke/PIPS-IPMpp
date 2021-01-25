@@ -681,21 +681,15 @@ void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 #endif
   SimpleVector& xi = bi;
   //recursive call in order to get the children to do their part
-  for(size_t it=0; it<children.size(); it++) {
-    children[it]->Ltsolve2(prob->children[it], *b.children[it], xi);
-  }
+  for(size_t it = 0; it < children.size(); it++)
+     children[it]->Ltsolve2(prob->children[it], *b.children[it], xi);
 }
 
 void sLinsysRoot::createChildren(sData *prob)
 {
-   sLinsys *child = nullptr;
-   assert( dd != nullptr );
-   assert( dq != nullptr );
-   assert( nomegaInv != nullptr );
-   assert( rhs != nullptr );
+   sLinsys* child{};
+   assert( dd && dq && nomegaInv && rhs && prob );
 
-   assert( prob );
-   assert( dynamic_cast<StochVector*>(dd) != nullptr );
    StochVector &ddst = dynamic_cast<StochVector&>(*dd);
    StochVector &dqst = dynamic_cast<StochVector&>(*dq);
    StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
@@ -715,6 +709,7 @@ void sLinsysRoot::createChildren(sData *prob)
          sFactory *stochFactory = dynamic_cast<sFactory*>(factory);
          if( is_hierarchy_root )
          {
+            assert( prob->isHierarchyRoot() );
             assert( prob->children.size() == 1 );
             assert( prob->children[0] );
             assert( ddst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1

@@ -73,7 +73,7 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
    // adjust data
    data = data->switchToHierarchicalData( tree );
 
-   assert( data->isHierarchieRoot() );
+   assert( data->isHierarchyRoot() );
 
 // TODO : DELETEME
 //   OoqpVector* x_after = tree->newPrimalVector();

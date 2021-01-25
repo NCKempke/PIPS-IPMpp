@@ -144,7 +144,9 @@ protected:
   void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
         int& local2linksStartIneq, int& local2linksEndIneq);
 
-  bool isHierarchieRoot() const { return is_hierarchy_root; };
+  bool isHierarchyRoot() const { return is_hierarchy_root; };
+  bool isHierarchyInnerRoot() const { return is_hierarchy_inner_root; };
+  bool isHierarchyInnerLeaf() const { return is_hierarchy_inner_leaf; };
 
   ~sData() override;
 
