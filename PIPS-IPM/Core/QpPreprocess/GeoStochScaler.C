@@ -19,10 +19,7 @@ static const double maxobjscale = 100.0;
 GeoStochScaler::GeoStochScaler(Data* prob, bool equiScaling, bool bitshifting)
   : StochScaler(prob, bitshifting)
 {
-   int myRank = 0;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-   if( myRank == 0 && scaling_output )
+   if( PIPS_MPIgetRank() == 0 && scaling_output )
       std::cout << "Creating GeoStochScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
    equilibrate = equiScaling;
 
@@ -94,10 +91,9 @@ void GeoStochScaler::scale()
 
    if( myRank == 0 && scaling_output )
    {
-      std::cout << "rowratio before scaling " << rowratio << "\n";
-      std::cout << "colratio before scaling " << colratio << "\n";
+      printf("rowratio before scaling %f \n", rowratio);
+      printf("colratio before scaling %f \n", colratio);
    }
-
 
    double p0start, p1start;
    if( colratio < rowratio && !with_sides )
@@ -140,7 +136,6 @@ void GeoStochScaler::scale()
          {
             p0 = maxColRatio(*vec_colscale, *colmin, vec_rowscaleA.get(), vec_rowscaleC.get());
             applyGeoMean(*vec_colscale, *colmin);
-
             invertAndRound(do_bitshifting, *vec_colscale);
 
             p1 = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, vec_colscale.get());
@@ -149,10 +144,12 @@ void GeoStochScaler::scale()
 
             invertAndRound(do_bitshifting, *vec_rowscaleA);
             invertAndRound(do_bitshifting, *vec_rowscaleC);
+
             PIPSdebugMessage("Geometric Scaling round %d. colratio=%f, rowratio=%f \n", i, p0, p1);
          }
          else // row first
          {
+
             p0 = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, vec_colscale.get());
             applyGeoMean(*vec_rowscaleA, *rowminA);
             applyGeoMean(*vec_rowscaleC, *rowminC);
@@ -163,6 +160,7 @@ void GeoStochScaler::scale()
             applyGeoMean(*vec_colscale, *colmin);
 
             invertAndRound(do_bitshifting, *vec_colscale);
+
             PIPSdebugMessage("Geometric Scaling round %d. colratio=%f, rowratio=%f \n", i, p1, p0);
          }
          // if ratio improvement is not good enough, then break:
@@ -232,7 +230,7 @@ void GeoStochScaler::scale()
  * Multiply maxvec and minvec componentwise and take the square root of the result.
  * Return result in maxvec.
  * */
-void GeoStochScaler::applyGeoMean(OoqpVector& maxvec, OoqpVector& minvec)
+void GeoStochScaler::applyGeoMean(OoqpVector& maxvec, const OoqpVector& minvec)
 {
    assert( maxvec.length() == minvec.length() );
 

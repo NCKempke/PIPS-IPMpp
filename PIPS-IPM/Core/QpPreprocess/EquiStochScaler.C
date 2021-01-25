@@ -57,8 +57,8 @@ void EquiStochScaler::scale()
 
    if( myRank == 0 && scaling_output )
    {
-      std::cout << "rowratio before scaling " << rowratio << "\n";
-      std::cout << "colratio before scaling " << colratio << "\n";
+      printf("rowratio before scaling %f \n", rowratio);
+      printf("colratio before scaling %f \n", colratio);
    }
 
    // column scaling first?
