@@ -28,7 +28,7 @@ public:
   virtual void solve(Data *prob, Variables *vars, Residuals *resids,
 		     Variables *step) = 0;
   
-  virtual ~LinearSystem() {};
+  virtual ~LinearSystem() = default;
 };
   
 

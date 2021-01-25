@@ -42,6 +42,16 @@ class sFactory : public QpGen
   virtual Variables * makeVariables( Data * prob_in );
   virtual LinearSystem* makeLinsys( Data * prob_in );
 
+  /** create x shaped vector using tree */
+  OoqpVector* makePrimalVector() const override;
+  /** create dual A shaped vector using tree */
+  OoqpVector* makeDualYVector() const override;
+  /** create dual C shaped vector using tree */
+  OoqpVector* makeDualZVector() const override;
+  /** create rhs for augmented system using tree */
+  OoqpVector* makeRhs() const override;
+
+
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
   virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 
@@ -56,12 +66,9 @@ class sFactory : public QpGen
   { assert(0 && "not implemented here"); };
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
-  virtual sLinsysRoot* newLinsysRoot(sData* prob, sTree* tree_,
-				     OoqpVector* dd,OoqpVector* dq,
+  virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
-
-  virtual sLinsysLeaf* newLinsysLeaf(sData* prob,
-				     OoqpVector* dd,OoqpVector* dq,
+  virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 
 

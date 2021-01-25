@@ -20,33 +20,30 @@ class sTree;
 class LinearAlgebraPackage;
 
 class sData : public QpGenData {
- public:
-
-   sData() = default;
-   sData( const sTree* stochNode,
-    OoqpVector * c, SymMatrix * Q,
-    OoqpVector * xlow, OoqpVector * ixlow, long long nxlow,
-	 OoqpVector * xupp, OoqpVector * ixupp, long long nxupp,
+   protected:
+      sData() = default;
+   public:
+  /** constructor that sets up pointers to the data objects that are
+      passed as arguments */
+  sData( const sTree* stochNode,
+	 OoqpVector * c, SymMatrix * Q,
+	 OoqpVector * xlow, OoqpVector * ixlow,
+	 OoqpVector * xupp, OoqpVector * ixupp,
 	 GenMatrix * A, OoqpVector * bA,
 	 GenMatrix * C,
-	 OoqpVector * clow, OoqpVector * iclow, long long mclow,
-	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp,
-	 bool add_children = true, bool is_hierarchy_root = false,
-	 bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false );
+	 OoqpVector * clow, OoqpVector * iclow,
+	 OoqpVector * cupp, OoqpVector * ciupp,
+	 bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
+    bool is_hierarchy_inner_leaf = false );
 
   std::vector<sData*> children;
   void AddChild(sData* child);
   const sTree* stochNode{};
-
-  long long nxlow{0};
-  long long nxupp{0};
-  long long mclow{0};
-  long long mcupp{0};
   
 private: 
 
   PERMUTATION getLinkVarsPermInv() const;
-  PERMUTATION getLinkConsEqPermInv () const;
+  PERMUTATION getLinkConsEqPermInv() const;
   PERMUTATION getLinkConsIneqPermInv() const;
 
 public:

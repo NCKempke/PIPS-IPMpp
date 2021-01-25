@@ -31,15 +31,14 @@ class sLinsysRoot : public sLinsys {
   void createChildren(sData* prob);
   void deleteChildren() override;
 
+ private:
+  void init();
  public:
   std::vector<sLinsys*> children;
 
   sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(sFactory* factory,
-         sTree* tree_,
-	      sData* prob_,				    
-	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-	      OoqpVector* rhs_);
+  sLinsysRoot(sFactory* factory, sData* prob_, OoqpVector* dd_, OoqpVector* dq_,
+        OoqpVector* nomegaInv_, OoqpVector* rhs_);
 
   virtual void factor2(sData *prob, Variables *vars);
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
@@ -107,13 +106,13 @@ class sLinsysRoot : public sLinsys {
 
  protected: //buffers
 
-  SparseSymMatrix* kktDist;
+  SparseSymMatrix* kktDist{};
 
-  OoqpVector* zDiag;
-  OoqpVector* zDiagLinkCons;
-  OoqpVector* xDiag;
+  OoqpVector* zDiag{};
+  OoqpVector* zDiagLinkCons{};
+  OoqpVector* xDiag{};
 
-  double* sparseKktBuffer;
+  double* sparseKktBuffer{};
 
   int childrenProperStart; // first non-dummy child
   int childrenProperEnd;   // end of non-dummy children range (not included)

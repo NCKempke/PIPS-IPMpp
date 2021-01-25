@@ -15,47 +15,21 @@
 #include "omp.h"
 
 sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
-  : QpGenLinsys(),
+  : QpGenLinsys(factory_, prob), data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
-     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-     is_hierarchy_root(is_hierarchy_root)
+    blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
+    is_hierarchy_root(is_hierarchy_root),
+    stochNode{ factory_->tree }
 {
-
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
     assert( is_hierarchy_root );
 
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
-  factory = factory_;
-
-  nx = prob->nx; my = prob->my; mz = prob->mz;
-  ixlow = prob->ixlow;
-  ixupp = prob->ixupp;
-  iclow = prob->iclow;
-  icupp = prob->icupp;
-
-  nxlow = prob->nxlow;
-  nxupp = prob->nxupp;
-  mclow = prob->mclow;
-  mcupp = prob->mcupp;
-
-  dd = factory_->tree->newPrimalVector();
-  assert( dd != nullptr );
-  
-  dq = factory_->tree->newPrimalVector();
-  assert(dq != nullptr);
-  prob->getDiagonalOfQ( *dq );
-
-  nomegaInv = factory_->tree->newDualZVector();
-  rhs = factory_->tree->newRhs();
 
   //get the communicator from one of the vectors
   StochVector& dds = dynamic_cast<StochVector&>(*dd);
   this->mpiComm = dds.mpiComm;
   this->iAmDistrib = dds.iAmDistrib;
-
-  useRefs=0;
-  data = prob;
-  stochNode = factory_->tree;
 }
 
 sLinsys::sLinsys(sFactory* factory_,
@@ -63,32 +37,17 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* dd_, 
 		 OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
-		 OoqpVector* rhs_)
-  : QpGenLinsys(),
+		 OoqpVector* rhs_,
+		 bool create_iter_ref_vecs
+		 )
+  : QpGenLinsys( factory_, prob, dd_, dq_, nomegaInv_, rhs_, create_iter_ref_vecs ),
+    data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-    is_hierarchy_root(false)
+    is_hierarchy_root(false),
+    stochNode{factory_->tree}
 {
-  assert( prob );
-
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
-  factory = factory_;
-
-  nx = prob->nx; my = prob->my; mz = prob->mz;
-  ixlow = prob->ixlow;
-  ixupp = prob->ixupp;
-  iclow = prob->iclow;
-  icupp = prob->icupp;
-
-  nxlow = prob->nxlow;
-  nxupp = prob->nxupp;
-  mclow = prob->mclow;
-  mcupp = prob->mcupp;
-
-  dd = dd_;
-  dq = dq_;
-  nomegaInv = nomegaInv_;
-  rhs = rhs_;
 
   if( dd )
   {
@@ -103,8 +62,6 @@ sLinsys::sLinsys(sFactory* factory_,
   }
 
   useRefs = 1;
-  data = prob;
-  stochNode = factory_->tree;
 }
 
 

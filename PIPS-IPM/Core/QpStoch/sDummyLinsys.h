@@ -11,11 +11,10 @@ class sDummyLinsys : public sLinsys
 {
  public:
   sDummyLinsys(sFactory* factory, sData* prob)
-    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr) 
-    {
-      mpiComm = MPI_COMM_NULL;
-    };
-
+    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, false)
+ {
+     mpiComm = MPI_COMM_NULL;
+ };
 
   ~sDummyLinsys() override = default;
 

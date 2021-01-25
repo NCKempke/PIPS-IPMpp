@@ -3,7 +3,6 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRoot.h"
-#include "sTree.h"
 #include "sFactory.h"
 #include "sData.h"
 #include "sDummyLinsys.h"
@@ -22,124 +21,33 @@ double g_scenNum;
 #endif
 
 sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
-  : sLinsys(factory_, prob_, is_hierarchy_root), sparseKktBuffer(nullptr)
+  : sLinsys(factory_, prob_, is_hierarchy_root)
 {
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
     assert( is_hierarchy_root );
-
-  assert( dd!=nullptr );
-  assert( prob_ );
-  xDiag = nullptr;
-  zDiag = nullptr;
-  zDiagLinkCons = nullptr;
-  kktDist = nullptr;
-
-#ifdef TIMING
-  int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  if( myRank == 0 )
-     std::cout << "Rank 0: create LinSys children ..." << std::endl;
-#endif
-
-  createChildren(prob_);
-
-#ifdef TIMING
-  if( myRank == 0 )
-     std::cout << "Rank 0: children created" << std::endl;
-#endif
-
-  precondSC = SCsparsifier(mpiComm);
-
-  if( outerSolve || xyzs_solve_print_residuals )
-  {
-    // stuff for iterative refimenent and BiCG
-    sol  = factory_->tree->newRhs();
-    res  = factory_->tree->newRhs();
-    resx = factory_->tree->newPrimalVector();
-    resy = factory_->tree->newDualYVector();
-    resz = factory_->tree->newDualZVector();
-
-    if( outerSolve == 2 )
-    {
-      //BiCGStab; additional vectors needed
-      sol2 = factory_->tree->newRhs();
-      sol3 = factory_->tree->newRhs();
-      res2 = factory_->tree->newRhs();
-      res3 = factory_->tree->newRhs();
-      res4 = factory_->tree->newRhs();
-      res5 = factory_->tree->newRhs();
-      // TODO : deleted where? -> factory?
-    }
-    else
-    {
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
-    }
-  }
-  else
-  {
-    sol  = res  = resx = resy = resz = nullptr;
-    sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
-  }
-
-  usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
-
-   // use sparse KKT if link structure is present
-  hasSparseKkt = prob_->exploitingLinkStructure();
-  allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
-
-  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     assert( allreduce_kkt );
-
-  usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
-  MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
-  initProperChildrenRange();
+  init();
 }
 
 sLinsysRoot::sLinsysRoot(sFactory* factory_,
-          sTree* tree_,
 			 sData* prob_,
-			 OoqpVector* dd_, 
+			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_)
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_), sparseKktBuffer(nullptr)
+  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, true)
 {
-  xDiag = nullptr;
-  zDiag = nullptr;
-  zDiagLinkCons = nullptr;
-  kktDist = nullptr;
+   init();
+}
 
-  createChildren(prob_);
+void sLinsysRoot::init()
+{
+  createChildren(data);
 
   precondSC = SCsparsifier(mpiComm);
-
-  if( outerSolve || xyzs_solve_print_residuals )
-  {
-      // stuff for iterative refimenent and BiCG 
-      sol  = tree_->newRhs();
-      res  = tree_->newRhs();
-      resx = tree_->newPrimalVector();
-      resy = tree_->newDualYVector();
-      resz = tree_->newDualZVector();
-    if( outerSolve == 2 ) {
-      //BiCGStab; additional vectors needed
-      sol2 = tree_->newRhs();
-      sol3 = tree_->newRhs();
-      res2 = tree_->newRhs();
-      res3 = tree_->newRhs();
-      res4 = tree_->newRhs();
-      res5 = tree_->newRhs();
-    } else {
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
-    }
-  } else {
-      sol  = res  = resx = resy = resz = nullptr;
-      sol2 = sol3 = res2 = res3 = res4 = res5 = nullptr;
-  }
-
   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
 
   // use sparse KKT if (enough) 2 links are present
-  hasSparseKkt = prob_->exploitingLinkStructure();
+  hasSparseKkt = data->exploitingLinkStructure();
   allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
      assert( allreduce_kkt );
@@ -148,6 +56,7 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
 
   initProperChildrenRange();
+
 }
 
 sLinsysRoot::~sLinsysRoot()
@@ -728,7 +637,6 @@ void sLinsysRoot::createChildren(sData *prob)
             assert(prob->children[it]);
             assert(stochNode->getChildren()[it]);
             child = stochFactory->newLinsysRoot(prob->children[it],
-                  stochNode->getChildren()[it],
                   ddst.children[it], dqst.children[it],
                   nomegaInvst.children[it], rhsst.children[it]);
          }

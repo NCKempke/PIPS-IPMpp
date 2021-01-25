@@ -34,9 +34,11 @@ class sLinsys : public QpGenLinsys
 		   OoqpVector* dd, 
 		   OoqpVector* dq,
 		   OoqpVector* nomegaInv,
-		   OoqpVector* rhs);
+		   OoqpVector* rhs,
+		   bool create_iter_ref_vecs
+  );
 
-  virtual ~sLinsys();
+  ~sLinsys() override;
 
   void factor (Data *prob, Variables *vars) override;
   virtual void factor2(sData *prob, Variables *vars) = 0;
@@ -76,7 +78,7 @@ class sLinsys : public QpGenLinsys
   int* colSparsity{};
 
   /* is this linsys the overall root */
-  const bool is_hierarchy_root;
+  const bool is_hierarchy_root{false};
 
   int n_solvers{-1};
   int n_threads_solvers{-1};

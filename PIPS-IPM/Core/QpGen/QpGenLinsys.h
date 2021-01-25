@@ -18,8 +18,6 @@ class QpGen;
 class Variables;
 class Residuals;
 class DoubleLinearSolver;
-class LinearAlgebraPackage;
-
 
 /** 
  * Linear System solvers for the general QP formulation. This class
@@ -37,43 +35,63 @@ class LinearAlgebraPackage;
 class QpGenLinsys : public LinearSystem, public Subject {
 protected:
   /** observer pattern for convergence status of BiCGStab when calling solve */
-  int bicg_conv_flag;
-  int bicg_niterations;
+  int bicg_conv_flag{-2};
+  int bicg_niterations{-1};
 
-  double bicg_resnorm;
-  double bicg_relresnorm;
+  double bicg_resnorm{0.0};
+  double bicg_relresnorm{0.0};
 
   int getIntValue(const std::string& s) const override;
   double getDoubleValue(const std::string& s) const override;
   bool getBoolValue(const std::string& s) const override;
 
   /** stores a critical diagonal matrix as a vector */
-  OoqpVector* nomegaInv;
+  OoqpVector* nomegaInv{};
 
-  QpGen * factory;
+  QpGen* factory{};
 
   /** right-hand side of the system */
-  OoqpVector* rhs;
+  OoqpVector* rhs{};
 
-  QpGenLinsys();
+  QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs );
 
   /** dimensions of the vectors in the general QP formulation */
-  long long nx, my, mz;
+  long long nx{0};
+  long long my{0};
+  long long mz{0};
 
   /** temporary storage vectors */
-  OoqpVector* dd, *dq;
+  OoqpVector* dd{};
+  OoqpVector* dq{};
 
   /** index matrices for the upper and lower bounds on x and Cx */
-  OoqpVector* ixupp, *icupp, *ixlow, *iclow;
+  OoqpVector* ixupp{};
+  OoqpVector* icupp{};
+  OoqpVector* ixlow{};
+  OoqpVector* iclow{};
 
   /** dimensions of the upper and lower bound vectors */
-  long long nxupp, nxlow, mcupp, mclow;
-  int useRefs;
+  long long nxupp{0};
+  long long nxlow{0};
+  long long mcupp{0};
+  long long mclow{0};
+
+  int useRefs{0};
 
   /** Work vectors for iterative refinement of the XYZ linear system */
-  OoqpVector *sol, *res, *resx, *resy, *resz;
+  OoqpVector* sol{};
+  OoqpVector* res{};
+  OoqpVector* resx{};
+  OoqpVector* resy{};
+  OoqpVector* resz{};
+
   /** Work vectors for BiCGStab */
-  OoqpVector *sol2, *sol3, *res2, *res3, *res4, *res5;
+  OoqpVector* sol2{};
+  OoqpVector* sol3{};
+  OoqpVector* res2{};
+  OoqpVector* res3{};
+  OoqpVector* res4{};
+  OoqpVector* res5{};
 
   /// error absorbtion in linear system outer level
   const int outerSolve;
@@ -91,11 +109,11 @@ protected:
   const bool xyzs_solve_print_residuals;
 
 public:
-  QpGenLinsys(  QpGen * factory,
-		QpGenData * data,
-		LinearAlgebraPackage * la );
+  QpGenLinsys( QpGen* factory, QpGenData* data );
+  QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
+        OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs );
 
-  virtual ~QpGenLinsys();
+  ~QpGenLinsys() override;
 
 
   /** sets up the matrix for the main linear system in "augmented

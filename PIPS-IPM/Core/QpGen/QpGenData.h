@@ -63,6 +63,11 @@ public:
   long long my{0};
   long long mz{0};
 
+  long long nxlow{0};
+  long long nxupp{0};
+  long long mclow{0};
+  long long mcupp{0};
+
   /** constructor that makes data objects of the specified dimensions */
   QpGenData(LinearAlgebraPackage * la,
 	    long long nx_, long long my_, long long mz_,

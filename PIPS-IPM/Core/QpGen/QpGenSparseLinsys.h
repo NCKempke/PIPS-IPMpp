@@ -23,7 +23,7 @@ protected:
 public:
   QpGenSparseLinsys(  QpGen * factory,
 		QpGenData * data,
-		LinearAlgebraPackage * la, SparseSymMatrix * Mat,
+		SparseSymMatrix * Mat,
 		DoubleLinearSolver * solver );
 
   /** perform the actual solve using the factors produced in factor.

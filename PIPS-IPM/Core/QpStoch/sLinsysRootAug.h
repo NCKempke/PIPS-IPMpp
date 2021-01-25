@@ -19,9 +19,8 @@ class sLinsysRootAug : public sLinsysRoot {
 
   sLinsysRootAug(sFactory * factory_, sData * prob_);
   sLinsysRootAug(sFactory* factory,
-       sTree* tree_,
-		 sData* prob_,				    
-		 OoqpVector* dd_, OoqpVector* dq_, 
+		 sData* prob_,
+		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_);
   virtual ~sLinsysRootAug();
@@ -58,7 +57,7 @@ class sLinsysRootAug : public sLinsysRoot {
   /** y = beta*y - alpha* SC * x */
   void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, sData* prob);
 
-  SymMatrix* CtDC;
+  SymMatrix* CtDC{};
 
   std::vector<std::unique_ptr<SimpleVector>> reduced_rhss_blocked;
   SimpleVector* redRhs;

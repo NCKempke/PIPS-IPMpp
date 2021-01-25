@@ -18,6 +18,8 @@ QpGenData::QpGenData(LinearAlgebraPackage * la_,
 		     long long nnzQ, long long nnzA, long long nnzC )
    :  la{la_}, nx{nx_}, my{my_}, mz{mz_}
 {
+  assert( false && "never called" );
+
   Q = SymMatrixHandle( la->newSymMatrix( nx,     nnzQ ) );
   A = GenMatrixHandle( la->newGenMatrix( my, nx, nnzA ) );
   C = GenMatrixHandle( la->newGenMatrix( mz, nx, nnzC ) );
@@ -44,8 +46,12 @@ QpGenData::QpGenData( LinearAlgebraPackage * la_in,
 		      GenMatrix  * A_in, OoqpVector * bA_in,
 		      GenMatrix  * C_in,
 		      OoqpVector * clow_in, OoqpVector * iclow_in,
-		      OoqpVector * cupp_in, OoqpVector * icupp_in )
-   :  la{la_in}
+		      OoqpVector * cupp_in, OoqpVector * icupp_in ) :
+        la{la_in},
+        nxlow{ ixlow_in->numberOfNonzeros() },
+        nxupp{ ixupp_in->numberOfNonzeros() },
+        mclow{ iclow_in->numberOfNonzeros() },
+        mcupp{ icupp_in->numberOfNonzeros() }
 {
   SpReferTo( g,     c_in  );
   SpReferTo( bA,    bA_in );

@@ -70,7 +70,7 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
 			 OoqpVector* nomegaInv_,
 			 OoqpVector* rhs_,
 			 LINSOLVER* /*thesolver*/)
-  : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_)
+  : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_, false)
 {
    static bool printed = false;
    const int n_omp_threads = PIPSgetnOMPthreads();

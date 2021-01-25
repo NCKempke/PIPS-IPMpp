@@ -9,9 +9,9 @@
 
 QpGenDenseLinsys::QpGenDenseLinsys( QpGen * qpgen,
 			      QpGenData * data,
-			      LinearAlgebraPackage * la, DenseSymMatrix * Mat,
+			      DenseSymMatrix * Mat,
 			      DoubleLinearSolver * solver_in ) :
-  QpGenLinsys( qpgen, data, la ), solver(solver_in)
+  QpGenLinsys( qpgen, data ), solver(solver_in)
 {
   SpReferTo( kkt, Mat );
 }
