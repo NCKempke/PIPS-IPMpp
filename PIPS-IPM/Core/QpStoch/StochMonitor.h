@@ -2,7 +2,6 @@
 #define STOCH_MONITOR
 
 #include "OoqpMonitor.h"
-#include "QpGenStoch.h"
 #include "sFactory.h"
 #include "Scaler.h"
 #include "pipsport.h"
@@ -23,7 +22,7 @@ class StochMonitor : public OoqpMonitor
         int level ) const;
 
  public:  
-  StochMonitor(QpGenStoch* qp, Scaler* scaler = nullptr);
+  StochMonitor(Scaler* scaler = nullptr);
   StochMonitor(sFactory* qp, Scaler* scaler = nullptr);
   void doIt( const Solver * solver, const Data * data, const Variables * vars,
 		     const Residuals * resids,
@@ -40,11 +39,11 @@ class StochMonitor : public OoqpMonitor
                 int level ) override;
 
  protected:
-  QpGenStoch* qp;
-  Scaler* scaler;
+  Scaler* scaler{};
 
   MPI_Comm mpiComm;
-  int myRank, myGlobRank;
+  int myRank{-1};
+  int myGlobRank{-1};
 };
 
 #endif

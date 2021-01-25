@@ -116,7 +116,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 
 sLinsysRootAug::~sLinsysRootAug()
 {
-   if(CtDC) delete CtDC;
+   delete CtDC;
 }
 
 SymMatrix* sLinsysRootAug::createKKT(sData* prob) const

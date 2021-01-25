@@ -26,8 +26,12 @@ sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
 			   OoqpVector* dd,OoqpVector* dq,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
-
-   return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
+   if( prob->isHierarchyInnerLeaf() )
+      return new sLinsysRootAug(this, prob, dynamic_cast<StochVector*>(dd)->vec,
+            dynamic_cast<StochVector*>(dq)->vec, dynamic_cast<StochVector*>(nomegaInv)->vec,
+            dynamic_cast<StochVector*>(rhs)->vec );
+   else
+      return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
 }
 
 sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()

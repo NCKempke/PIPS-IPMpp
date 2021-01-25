@@ -56,7 +56,6 @@ void sLinsysRoot::init()
   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
 
   initProperChildrenRange();
-
 }
 
 sLinsysRoot::~sLinsysRoot()
@@ -626,7 +625,7 @@ void sLinsysRoot::createChildren(sData *prob)
             assert( MPI_COMM_NULL != ddst.children[0]->mpiComm);
          }
 
-         if( prob->children[it]->children.size() == 0 )
+         if( prob->children[it]->children.empty() )
          {
             child = stochFactory->newLinsysLeaf(prob->children[it],
                   ddst.children[it], dqst.children[it],
@@ -634,8 +633,7 @@ void sLinsysRoot::createChildren(sData *prob)
          }
          else
          {
-            assert(prob->children[it]);
-            assert(stochNode->getChildren()[it]);
+            assert( prob->children[it] );
             child = stochFactory->newLinsysRoot(prob->children[it],
                   ddst.children[it], dqst.children[it],
                   nomegaInvst.children[it], rhsst.children[it]);
