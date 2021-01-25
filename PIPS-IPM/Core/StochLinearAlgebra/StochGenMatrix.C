@@ -364,11 +364,11 @@ double StochGenMatrix::abmaxnorm() const
   for(size_t it = 0; it < children.size(); it++)
     nrm = std::max(nrm, children[it]->abmaxnorm());
 
-  if(iAmDistrib)
+  if( iAmDistrib )
      PIPS_MPIgetMaxInPlace( nrm, mpiComm );
 
-  nrm = std::max(nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
-  nrm = std::max(nrm, Blmat->abmaxnorm());
+  nrm = std::max( nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()) );
+  nrm = std::max( nrm, Blmat->abmaxnorm() );
 
   return nrm;
 }
@@ -980,7 +980,10 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Ooqp
    const OoqpVector* row_scale_vec = scale ? rowScaleVec->vec : nullptr;
    const OoqpVector* row_scale_link = scale ? rowScaleVec->vecl : nullptr;
 
-   Bmat->getColMinMaxVec(getMin, initializeVec, row_scale_vec, *minmaxVec.getLinkingVecNotHierarchicalTop() );
+   if( minmaxVec.vec == minmaxVec.getLinkingVecNotHierarchicalTop() )
+      Bmat->getColMinMaxVec(getMin, initializeVec, row_scale_vec, *minmaxVec.getLinkingVecNotHierarchicalTop() );
+   else
+      Bmat->getColMinMaxVec(getMin, false, row_scale_vec, *minmaxVec.getLinkingVecNotHierarchicalTop() );
 
    if( has_linking )
       Blmat->getColMinMaxVec(getMin, false, row_scale_link, *minmaxVec.getLinkingVecNotHierarchicalTop() );

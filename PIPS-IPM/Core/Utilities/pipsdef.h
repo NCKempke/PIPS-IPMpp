@@ -23,6 +23,7 @@
 #include "pipsport.h"
 #include <algorithm>
 
+//#define PIPS_DEBUG
 
 using PERMUTATION = std::vector<unsigned int>;
 

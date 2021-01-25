@@ -1043,7 +1043,6 @@ void StochVectorBase<T>::componentMult( const OoqpVectorBase<T>& v_ )
       assert( v.vecl == nullptr );
 
    assert( v.children.size() == children.size() );
-
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->componentMult( *v.children[it] );
 }
