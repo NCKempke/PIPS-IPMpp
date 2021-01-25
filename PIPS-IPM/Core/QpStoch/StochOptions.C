@@ -187,6 +187,9 @@ namespace pips_options
       /* surpresses some of the output */
       bool_options["SILENT"] = false;
 
+      /// SCALER
+      bool_options["SCALER_OUTPUT"] = true;
+
       /// LINEAR SOLVERS
       assert( solvers_available.size() > 1 );
 

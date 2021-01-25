@@ -17,10 +17,8 @@
 EquiStochScaler::EquiStochScaler(Data* prob, bool bitshifting)
   : StochScaler(prob, bitshifting)
 {
-   int myRank = 0;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-   if( myRank == 0) std::cout<<"Creating EquiStochScaler..."<< "\n";
+   if( PIPS_MPIgetRank() == 0 && scaling_output )
+      std::cout << "Creating EquiStochScaler...\n";
 }
 
 void EquiStochScaler::doObjScaling()
@@ -40,24 +38,28 @@ void EquiStochScaler::doObjScaling()
 // todo scale Q
 void EquiStochScaler::scale()
 {
+   assert( !vec_rowscaleA && !vec_rowscaleC && !vec_colscale );
 
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-   assert(vec_rowscaleA == nullptr && vec_rowscaleC == nullptr && vec_colscale == nullptr);
-
    vec_rowscaleA.reset( dynamic_cast<StochVector*>(bA->clone()) );
    std::unique_ptr<StochVector> rowminA{ dynamic_cast<StochVector*>(bA->clone()) };
    vec_rowscaleC.reset( dynamic_cast<StochVector*>(rhsC->clone()) );
-   std::unique_ptr<StochVector> rowminC{  dynamic_cast<StochVector*>(rhsC->clone()) };
+   std::unique_ptr<StochVector> rowminC{ dynamic_cast<StochVector*>(rhsC->clone()) };
    vec_colscale.reset( dynamic_cast<StochVector*>(bux->clone()) );
    std::unique_ptr<StochVector> colmin{ dynamic_cast<StochVector*>(bux->clone()) };
 
    const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);
 
-   PIPSdebugMessage("rowratio %f \n", rowratio);
-   PIPSdebugMessage("colratio %f \n", colratio);
+   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
+
+   if( myRank == 0 && scaling_output )
+   {
+      std::cout << "rowratio before scaling " << rowratio << "\n";
+      std::cout << "colratio before scaling " << colratio << "\n";
+   }
 
    // column scaling first?
    if( colratio < rowratio && !with_sides )
@@ -81,34 +83,13 @@ void EquiStochScaler::scale()
       invertAndRound(do_bitshifting, *vec_colscale);
    }
 
-   PIPSdebugMessage("before scaling: \n "
-         "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-        obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
-
    applyScaling();
 
-   PIPSdebugMessage("after scaling: \n "
-         "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-         obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
-
-#ifdef PIPS_DEBUG
-   std::unique_ptr<StochVector> xrowmaxA(dynamic_cast<StochVector*>(bA->clone()));
-   std::unique_ptr<StochVector> xrowminA(dynamic_cast<StochVector*>(bA->clone()));
-   std::unique_ptr<StochVector> xrowmaxC(dynamic_cast<StochVector*>(rhsC->clone()));
-   std::unique_ptr<StochVector> xrowminC(dynamic_cast<StochVector*>(rhsC->clone()));
-   std::unique_ptr<StochVector> xcolmax(dynamic_cast<StochVector*>(bux->clone()));
-   std::unique_ptr<StochVector> xcolmin(dynamic_cast<StochVector*>(bux->clone()));
-
-   const double xrowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
-   const double xcolratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);
-
-   PIPSdebugMessage("rowratio after scaling %f \n", xrowratio);
-   PIPSdebugMessage("colratio after scaling %f \n", xcolratio);
-#endif
+   printRowColRatio();
 
    if( !scaling_applied )
    {
-      //setScalingVecsToOne();
+      setScalingVecsToOne();
 #ifndef NDEBUG
       vec_rowscaleA->setToConstant(NAN);
       vec_rowscaleC->setToConstant(NAN);
@@ -117,9 +98,4 @@ void EquiStochScaler::scale()
    }
 
    assert(A->abmaxnorm() <= 2.0 && C->abmaxnorm() <= 2.0);
-}
-
-
-EquiStochScaler::~EquiStochScaler()
-{
 }

@@ -35,8 +35,6 @@ protected:
   
   void applyGeoMean(OoqpVector& maxvec, OoqpVector& minvec);
   void postEquiScale();
-  void setScalingVecsToOne();
-
 public:
 
   GeoStochScaler(Data * prob, bool equiScaling, bool bitshifting = false);

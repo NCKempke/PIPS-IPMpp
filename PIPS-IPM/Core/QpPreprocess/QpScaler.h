@@ -34,8 +34,10 @@ protected:
         vector.roundToPow2();
   }
 
+  const bool scaling_output{false};
+
   // has scaling been applied
-  bool scaling_applied;
+  bool scaling_applied{false};
 
   // scaling vector
   std::unique_ptr<OoqpVector> vec_rowscaleQ{};
@@ -68,6 +70,11 @@ protected:
   double maxColRatio(OoqpVector& maxvec, OoqpVector& minvec, const OoqpVector* rowScaleVecA,  const OoqpVector* rowScaleVecC);
 
   void scaleObjVector(double scaling_factor);
+
+  /** print row col ratios */
+  void printRowColRatio();
+
+  void setScalingVecsToOne();
 public:
 
   QpScaler(Data* prob, bool bitshifting = false);

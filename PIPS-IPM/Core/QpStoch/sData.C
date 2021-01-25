@@ -1987,7 +1987,8 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    assert( tree->isHierarchicalRoot() );
    assert( tree->nChildren() == 1 );
 
-   std::cout << "Building hierarchical data...\n";
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "Building hierarchical data...\n";
 
    this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
    sData* hierarchical_top = shaveDenseBorder( tree );

@@ -20,6 +20,9 @@ namespace qpgen_options
 
    void QpGenOptions::setDefaults()
    {
+      /// SCALER
+      bool_options["SCALER_OUTPUT"] = true;
+
       /// INTERIOR-POINT ALGORITHM
       bool_options["IP_ACCURACY_REDUCED"] = false;
       bool_options["IP_PRINT_TIMESTAMP"] = false;

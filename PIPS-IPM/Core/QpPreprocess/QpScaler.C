@@ -17,14 +17,9 @@
 #include "pipsport.h"
 
 QpScaler::QpScaler(Data * prob, bool bitshifting)
-: Scaler(prob, bitshifting), scaling_applied(false)
+: Scaler(prob, bitshifting), scaling_output{ pips_options::getBoolParameter("SCALER_OUTPUT") }
 {
    QpGenData* qpprob = dynamic_cast<QpGenData*>(prob);
-
-   vec_rowscaleQ = nullptr;
-   vec_rowscaleA = nullptr;
-   vec_rowscaleC = nullptr;
-   vec_colscale = nullptr;
 
    Q = qpprob->Q;
    A = qpprob->A;
@@ -192,6 +187,10 @@ OoqpVector* QpScaler::getDualVarBoundsLowUnscaled(const OoqpVector& soldual) con
 
 void QpScaler::applyScaling()
 {
+   PIPSdebugMessage("before scaling: \n "
+         "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
+        obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
+
    // todo scale Q
    doObjScaling();
 
@@ -211,6 +210,10 @@ void QpScaler::applyScaling()
    blx->componentDiv(*vec_colscale);
 
    scaling_applied = true;
+
+   PIPSdebugMessage("after scaling: \n "
+         "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
+         obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
 }
 
 double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVector& minvecA, OoqpVector& minvecC, const OoqpVector* colScalevec)
@@ -341,3 +344,32 @@ void QpScaler::scaleObjVector(double scaling_factor)
    scaling_applied = true;
 }
 
+void QpScaler::printRowColRatio()
+{
+   if( scaling_output )
+   {
+      std::unique_ptr<StochVector> xrowmaxA(dynamic_cast<StochVector*>(bA->clone()));
+      std::unique_ptr<StochVector> xrowminA(dynamic_cast<StochVector*>(bA->clone()));
+      std::unique_ptr<StochVector> xrowmaxC(dynamic_cast<StochVector*>(rhsC->clone()));
+      std::unique_ptr<StochVector> xrowminC(dynamic_cast<StochVector*>(rhsC->clone()));
+      std::unique_ptr<StochVector> xcolmax(dynamic_cast<StochVector*>(bux->clone()));
+      std::unique_ptr<StochVector> xcolmin(dynamic_cast<StochVector*>(bux->clone()));
+
+      const double xrowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
+      const double xcolratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);
+
+      if( PIPS_MPIgetRank() == 0 )
+      {
+         std::cout << "rowratio after scaling " << xrowratio << "\n";
+         std::cout << "colratio after scaling " << xcolratio << "\n";
+      }
+   }
+}
+
+void QpScaler::setScalingVecsToOne()
+{
+   assert( vec_rowscaleA && vec_rowscaleC && vec_colscale );
+   vec_rowscaleA->setToConstant(1.0);
+   vec_rowscaleC->setToConstant(1.0);
+   vec_colscale->setToConstant(1.0);
+}
