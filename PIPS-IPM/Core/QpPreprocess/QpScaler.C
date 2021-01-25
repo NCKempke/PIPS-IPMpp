@@ -355,13 +355,13 @@ void QpScaler::printRowColRatio()
       std::unique_ptr<StochVector> xcolmax(dynamic_cast<StochVector*>(bux->clone()));
       std::unique_ptr<StochVector> xcolmin(dynamic_cast<StochVector*>(bux->clone()));
 
-      const double xrowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
-      const double xcolratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);
+      const double rowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
+      const double colratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);
 
       if( PIPS_MPIgetRank() == 0 )
       {
-         std::cout << "rowratio after scaling " << xrowratio << "\n";
-         std::cout << "colratio after scaling " << xcolratio << "\n";
+         printf("rowratio after scaling %f \n", rowratio);
+         printf("colratio after scaling %f \n", colratio);
       }
    }
 }
