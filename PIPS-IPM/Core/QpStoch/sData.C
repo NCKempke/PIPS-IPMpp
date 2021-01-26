@@ -1801,7 +1801,6 @@ void sData::addChildrenForSplit()
       child->linkStartBlockIdA.insert(child->linkStartBlockIdA.begin(), linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + myl);
       std::transform(child->linkStartBlockIdA.begin(), child->linkStartBlockIdA.end(), child->linkStartBlockIdA.begin(),
             [&childchild_pos](const int& a){ return a - childchild_pos; } );
-      linkStartBlockIdA.erase(linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + myl);
 
       child->n_blocks_per_link_row_A.insert(child->n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin() + myl);
       n_blocks_per_link_row_A.erase(n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin() + myl);
@@ -1811,15 +1810,13 @@ void sData::addChildrenForSplit()
       std::transform(child->linkStartBlockIdC.begin(), child->linkStartBlockIdC.end(), child->linkStartBlockIdC.begin(),
             [&childchild_pos](const int& a){ return a - childchild_pos; } );
 
-      linkStartBlockIdC.erase(linkStartBlockIdC.begin(), linkStartBlockIdC.begin() + mzl);
-
       child->n_blocks_per_link_row_C.insert(child->n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin() + mzl);
       n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin() + mzl);
 
-
+      const int first_child = childchild_pos;
       while( childchild_pos < map_blocks_children.size() && map_blocks_children[childchild_pos] == i )
       {
-         child->children.push_back(children[childchild_pos]);
+         child->AddChild(children[childchild_pos]);
 
          if( childchild_pos + 1 == map_blocks_children.size()
                || map_blocks_children[childchild_pos + 1] != i )
@@ -1837,6 +1834,21 @@ void sData::addChildrenForSplit()
          }
          ++childchild_pos;
       }
+      const int last_child = childchild_pos;
+
+      int eq_to_erase{0};
+      while( first_child <= *(linkStartBlockIdA.begin() + eq_to_erase) && *(linkStartBlockIdA.begin() + eq_to_erase) < last_child )
+         ++eq_to_erase;
+
+      int ineq_to_erase{0};
+      while( first_child <= *(linkStartBlockIdC.begin() + ineq_to_erase) &&
+            *(linkStartBlockIdC.begin() + ineq_to_erase) < last_child )
+         ++ineq_to_erase;
+      assert( myl == 0 || myl == eq_to_erase );
+      assert( mzl == 0 || mzl == ineq_to_erase );
+
+      linkStartBlockIdA.erase(linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + eq_to_erase);
+      linkStartBlockIdC.erase(linkStartBlockIdC.begin(), linkStartBlockIdC.begin() + ineq_to_erase);
 
       assert( child->linkStartBlockLengthsA.size() == child->children.size() );
       assert( child->linkStartBlockLengthsA.back() == 0 );
@@ -1868,6 +1880,9 @@ void sData::addChildrenForSplit()
 
    children.clear();
    children.insert( children.begin(), new_children.begin(), new_children.end() );
+
+   assert( linkStartBlockIdA.size() == n_global_eq_linking_conss + static_cast<unsigned int>(stochNode->myl()) );
+   assert( linkStartBlockIdC.size() == n_global_ineq_linking_conss + static_cast<unsigned int>(stochNode->mzl()) );
 
    assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
    assert( linkStartBlockLengthsA.size() == new_children.size() );
