@@ -314,12 +314,15 @@ void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
 
    if( iAmSpecial(iAmDistrib, mpiComm) )
    {
-      Bmat->transMult(beta, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
+      if( iAmDistrib && y.vec == y.getLinkingVecNotHierarchicalTop() )
+         Bmat->transMult(beta, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
+      else
+         Bmat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
 
       if( x.vecl )
          Blmat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vecl);
    }
-   else
+   else if( y.vec == y.getLinkingVecNotHierarchicalTop() )
       y.vec->setToZero();
 
    assert(y.children.size() == children.size());
@@ -328,7 +331,7 @@ void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
    for(size_t it = 0; it < children.size(); it++)
       children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], x.vecl);
 
-   if( iAmDistrib )
+   if( iAmDistrib && y.vec == y.getLinkingVecNotHierarchicalTop() )
       PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vec)->elements(), y.vec->length(), mpiComm);
 }
 

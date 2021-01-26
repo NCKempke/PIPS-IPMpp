@@ -1902,15 +1902,14 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
 //   y_bef->setToConstant(2.0);
 //   z_bef->setToConstant(2.0);
 //
-//   A->mult(2.0, *y_bef, 3.0, *x_bef);
-//   C->mult(2.0, *z_bef, 3.0, *x_bef);
+//   A->transMult(2.0, *x_bef, 3.0, *y_bef);
+//   x_bef->writeToStream(std::cout);
+//   const double A2norm_bef = x_bef->twonorm();
+//   const double A1norm_bef = x_bef->onenorm();
 //
-//   const double A2norm_bef = y_bef->twonorm();
-//   const double A1norm_bef = y_bef->onenorm();
-//
-//   const double C2norm_bef = z_bef->twonorm();
-//   const double C1norm_bef = z_bef->onenorm();
-
+//   C->transMult(2.0, *x_bef, 3.0, *z_bef);
+//   const double C2norm_bef = x_bef->twonorm();
+//   const double C1norm_bef = x_bef->onenorm();
 
    dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
    dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
@@ -1930,28 +1929,22 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
    dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
 
-
 // TODO : DELETEME
 //   OoqpVector* x_after = g;
-//   OoqpVector* x_after2 = stochNode->newPrimalVector();
-//   x_after2->setToConstant(2.0);
 //   OoqpVector* y_after = bA;
 //   OoqpVector* z_after = bl;
 //   x_after->setToConstant(2.0);
 //   y_after->setToConstant(2.0);
 //   z_after->setToConstant(2.0);
 //
-//   A->writeToStreamDense(std::cout);
+//   A->transMult(2.0, *x_after, 3.0, *y_after);
+//   const double A2norm_after = x_after->twonorm();
+//   const double A1norm_after = x_after->onenorm();
 //   x_after->writeToStream(std::cout);
-//   x_after2->writeToStream(std::cout);
-//   A->mult(2.0, *y_after, 3.0, *x_after);
-//   C->mult(2.0, *z_after, 3.0, *x_after);
 //
-//   const double A2norm_after = y_after->twonorm();
-//   const double A1norm_after = y_after->onenorm();
-//
-//   const double C2norm_after = z_after->twonorm();
-//   const double C1norm_after = z_after->onenorm();
+//   C->transMult(2.0, *x_after, 3.0, *z_after);
+//   const double C2norm_after = x_after->twonorm();
+//   const double C1norm_after = x_after->onenorm();
 //
 //   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
 //   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
