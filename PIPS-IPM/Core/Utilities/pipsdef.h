@@ -248,15 +248,7 @@ inline int PIPS_MPIgetSize(MPI_Comm comm = MPI_COMM_WORLD)
 
 inline bool PIPS_MPIgetDistributed(MPI_Comm comm = MPI_COMM_WORLD)
 {
-   if( comm == MPI_COMM_NULL )
-      return false;
-
-   const int world_size = PIPS_MPIgetSize(comm);
-
-   if( world_size > 1)
-      return true;
-   else
-      return false;
+   return PIPS_MPIgetSize(comm) > 1;
 }
 
 void inline PIPS_MPIabortInfeasible(std::string message, std::string file, std::string function, MPI_Comm comm = MPI_COMM_WORLD)

@@ -112,18 +112,18 @@ void StringGenMatrix::mult(double beta, OoqpVector& y, double alpha, const OoqpV
    if( is_vertical )
       multVertical(beta, y, alpha, x);
    else
-      multHorizontal(beta, y, alpha, x);
+      multHorizontal(beta, y, alpha, x, true);
 }
 
 void StringGenMatrix::transMult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const
 {
    if( is_vertical )
-      transMultVertical(beta, y, alpha, x);
+      transMultVertical(beta, y, alpha, x, true);
    else
       transMultHorizontal(beta, y, alpha, x);
 }
 
-void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const
+void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
@@ -148,66 +148,75 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
    }
 }
 
-void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in, bool root ) const
 {
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( !is_vertical );
    assert( x.children.size() == children.size() );
-   if( children.size() == 0 )
-   {
-      assert( !distributed );
-      assert( rank == 0 );
-   }
    assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
 
-   if( rank == 0 )
-      mat->mult(beta, y, alpha, *x.vec);
+   if( mat->isKindOf(kStringGenMatrix) )
+   {
+      assert( !mat_link );
+      assert( children.empty() );
+      assert( !root );
+      dynamic_cast<const StringGenMatrix*>(mat)->multHorizontal(1.0, y, alpha, *x.vec, false);
+   }
    else
-      y.setToZero();
+   {
+      if( PIPS_MPIiAmSpecial( distributed, mpi_comm ) )
+      {
+         mat->mult( root ? beta : 1.0, y, alpha, *x.vec);
+         if( mat_link )
+            mat_link->mult(1.0, y, alpha, *x.vecl);
+      }
+      else if( root )
+         y.setToZero();
 
-   for( size_t i = 0; i < children.size(); ++i )
-      children[i]->multHorizontal(1.0, y, alpha, *x.children[i]);
+      for( size_t i = 0; i < children.size(); ++i )
+         children[i]->multHorizontal(1.0, y, alpha, *x.children[i], false);
 
-   if( distributed )
-      PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
-
-   if( mat_link )
-      mat->mult(1.0, y, alpha, *x.vecl);
+      if( distributed && root )
+         PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
+   }
 }
 
-void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in, bool root ) const
 {
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( is_vertical );
-   std::cout << " x.children.size() " << x.children.size() << " children.size() " << children.size() << "\n";
-   std::cout << " xstochdum? " << x.isKindOf(kStochDummy) << "\n";
    assert(x.children.size() == children.size());
-   if( children.size() == 0 )
-   {
-      assert( !distributed );
-      assert( rank == 0 );
-   }
-
    assert( x.vec && mat );
    assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
 
-   if( rank == 0 )
-      mat->transMult(beta, y, alpha, *x.vec);
+   if( mat->isKindOf(kStringGenMatrix) )
+   {
+      assert( !mat_link );
+      assert( children.empty() );
+      assert( !root );
+      dynamic_cast<StringGenMatrix*>(mat)->transMultVertical(1.0, y, alpha, *x.vec, false);
+   }
    else
-      y.setToZero();
+   {
+      if( rank == 0 )
+      {
+         mat->transMult( root ? beta : 1.0, y, alpha, *x.vec);
+         if( mat_link )
+            mat_link->transMult(1.0, y, alpha, *x.vecl);
+      }
+      else if( root )
+         y.setToZero();
 
-   for( size_t i = 0; i < children.size(); i++ )
-      children[i]->transMultVertical(1.0, y, alpha, *x.children[i]);
+      for( size_t i = 0; i < children.size(); i++ )
+         children[i]->transMultVertical(1.0, y, alpha, *x.children[i], false);
 
-   if( distributed )
-      PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
-
-   if( mat_link )
-      mat_link->transMult(1.0, y, alpha, *x.vecl);
+      if( distributed && root )
+         PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
+   }
 }
 
 void StringGenMatrix::transMultHorizontal ( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const

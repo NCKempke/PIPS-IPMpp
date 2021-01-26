@@ -492,7 +492,7 @@ T StochVectorBase<T>::onenorm() const
   if( iAmSpecial && vecl )
      onenorm += vecl->onenorm();
 
-  if( iAmDistrib && parent == nullptr )
+  if( iAmDistrib && !parent )
      PIPS_MPIgetSumInPlace(onenorm, mpiComm);
 
   return onenorm;
@@ -1569,7 +1569,7 @@ T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
    if( iAmSpecial && vecl )
       dot_product += vecl->dotProductSelf( scaleFactor );
 
-   if( iAmDistrib && parent == nullptr )
+   if( iAmDistrib && !parent )
       PIPS_MPIgetSumInPlace(dot_product, mpiComm);
 
    return dot_product;

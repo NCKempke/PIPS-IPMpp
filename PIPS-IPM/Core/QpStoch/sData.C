@@ -1902,14 +1902,23 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
 //   y_bef->setToConstant(2.0);
 //   z_bef->setToConstant(2.0);
 //
+//   const double norm2_bef = g->twonorm();
+//   const double norm1_bef = g->onenorm();
+//
 //   A->transMult(2.0, *x_bef, 3.0, *y_bef);
-//   x_bef->writeToStream(std::cout);
 //   const double A2norm_bef = x_bef->twonorm();
 //   const double A1norm_bef = x_bef->onenorm();
 //
-//   C->transMult(2.0, *x_bef, 3.0, *z_bef);
-//   const double C2norm_bef = x_bef->twonorm();
-//   const double C1norm_bef = x_bef->onenorm();
+//   C->mult(2.0, *z_bef, 3.0, *x_bef);
+//   const double C2norm_bef = z_bef->twonorm();
+//   const double C1norm_bef = z_bef->onenorm();
+//
+//   OoqpVector* x_bef2 = g->clone();
+//   x_bef2->setToConstant(2.0);
+//   Q->transMult(2.0, *x_bef2, 3.0, *x_bef);
+//
+//   const double Q2norm_bef = x_bef2->twonorm();
+//   const double Q1norm_bef = x_bef2->onenorm();
 
    dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
    dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
@@ -1937,21 +1946,33 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
 //   y_after->setToConstant(2.0);
 //   z_after->setToConstant(2.0);
 //
+//   const double norm2_after = g->twonorm();
+//   const double norm1_after = g->onenorm();
+//
 //   A->transMult(2.0, *x_after, 3.0, *y_after);
 //   const double A2norm_after = x_after->twonorm();
 //   const double A1norm_after = x_after->onenorm();
-//   x_after->writeToStream(std::cout);
+//   C->mult(2.0, *z_after, 3.0, *x_after);
+//   const double C2norm_after = z_after->twonorm();
+//   const double C1norm_after = z_after->onenorm();
 //
-//   C->transMult(2.0, *x_after, 3.0, *z_after);
-//   const double C2norm_after = x_after->twonorm();
-//   const double C1norm_after = x_after->onenorm();
+//   OoqpVector* x_after2 = g->clone();
+//   x_after2->setToConstant(2.0);
+//   Q->transMult(2.0, *x_after2, 3.0, *x_after);
+//
+//   const double Q2norm_after = x_after2->twonorm();
+//   const double Q1norm_after = x_after2->onenorm();
+//
+//   std::cout << "normg1 before : " << norm1_bef << " vs normg1 after : " << norm1_after << " difference " << norm1_bef - norm1_after << "\n";
+//   std::cout << "normg2 before : " << norm2_bef << " vs normg2 after : " << norm2_after << " difference " << norm2_bef - norm2_after << "\n";
 //
 //   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
 //   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
+//   std::cout << "Q2norm before : " << Q2norm_bef << " vs Q2norm after : " << Q2norm_after << " difference " << Q2norm_bef - Q2norm_after << "\n";
 //   std::cout << "\n";
 //   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
 //   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
-
+//   std::cout << "Q1norm before : " << Q1norm_bef << " vs Q1norm after : " << Q1norm_after << " difference " << Q1norm_bef - Q1norm_after << "\n";
 
    MPI_Barrier(MPI_COMM_WORLD);
    // TODO : when Q is used we also need this here..

@@ -90,11 +90,11 @@ class StringGenMatrix : public GenMatrix
    protected:
       StringGenMatrix() = default;
 
-      virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-      virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const;
+      virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x, bool root) const;
 
-      virtual void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-      virtual void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x, bool root ) const;
+      virtual void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const;
 
       virtual void columnScaleVertical( const OoqpVector& vec );
       virtual void columnScaleHorizontal( const OoqpVector& vec );
@@ -146,9 +146,9 @@ class StringGenDummyMatrix : public StringGenMatrix
 
    protected:
       void multVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};
-      void multHorizontal( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void multHorizontal( double, OoqpVector&, double, const OoqpVector&, bool ) const override {};
 
-      void transMultVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void transMultVertical( double, OoqpVector&, double, const OoqpVector&, bool ) const override {};
       void transMultHorizontal( double, OoqpVector&, double, const OoqpVector& ) const override {};
 
       void columnScaleVertical( const OoqpVector& ) override {};

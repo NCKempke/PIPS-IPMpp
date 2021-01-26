@@ -104,7 +104,8 @@ public:
   virtual void splitMatrix( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms );
 
  protected:
-  virtual void shaveBorder(int n_vars, StringGenMatrix*& border_vertical);
+  virtual StringGenMatrix* shaveBorder(int n_vars);
+  virtual StringGenMatrix* shaveBorder2(int n_vars);
   virtual void recomputeSize();
 
   StochSymMatrix* parent{};
@@ -169,8 +170,8 @@ public:
   void splitMatrix( const std::vector<unsigned int>&, const std::vector<MPI_Comm>& ) override {};
 
  protected:
-  void shaveBorder( int, StringGenMatrix*& border_vertical ) override
-     { border_vertical = new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveBorder( int ) override { return new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveBorder2( int ) override { return new StringGenDummyMatrix(); };
 
   void recomputeSize() override {};
 };

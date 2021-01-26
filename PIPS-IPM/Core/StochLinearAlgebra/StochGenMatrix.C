@@ -253,7 +253,7 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
 
    if( y.vecl )
    {
-      if(iAmSpecial(iAmDistrib, mpiComm) )
+      if( iAmSpecial(iAmDistrib, mpiComm ) )
          Blmat->mult(beta, *y.vecl, alpha, *x.getLinkingVecNotHierarchicalTop() );
       else
          y.vecl->setToZero();
@@ -293,6 +293,7 @@ void StochGenMatrix::mult2( double beta,  StochVector& y,
    if( !amatEmpty() )
    {
       const OoqpVector* link_vec = x.getLinkingVecNotHierarchicalTop();
+      assert( link_vec != x.vec );
       Amat->mult(1.0, *y.vec, alpha, *link_vec);
    }
 }
@@ -309,20 +310,19 @@ void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
 
    const StochVector& x = dynamic_cast<const StochVector&>(x_);
    StochVector& y = dynamic_cast<StochVector&>(y_);
+
+   const bool at_root = y.vec == y.getLinkingVecNotHierarchicalTop();
    assert( y.vec );
    assert( x.vec );
 
    if( iAmSpecial(iAmDistrib, mpiComm) )
    {
-      if( iAmDistrib && y.vec == y.getLinkingVecNotHierarchicalTop() )
-         Bmat->transMult(beta, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
-      else
-         Bmat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
+      Bmat->transMult(at_root ? beta : 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
 
       if( x.vecl )
          Blmat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vecl);
    }
-   else if( y.vec == y.getLinkingVecNotHierarchicalTop() )
+   else if( at_root )
       y.vec->setToZero();
 
    assert(y.children.size() == children.size());
@@ -341,22 +341,16 @@ void StochGenMatrix::transMult2 ( double beta, StochVector& y,
    assert( alpha != 0.0 );
    assert( x.vec );
    assert( y.vec );
-   assert(y.children.size() - children.size() == 0);
-   assert(x.children.size() - children.size() == 0);
-   assert(children.size() == 0);
+   assert( y.children.size() - children.size() == 0 );
+   assert( x.children.size() - children.size() == 0 );
+   assert( children.size() == 0 );
 
    if( !amatEmpty() )
       Amat->transMult(1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec);
 
-   if( iAmSpecial(iAmDistrib, mpiComm) )
-   {
-      Bmat->transMult(beta, *y.vec, alpha, *x.vec);
-
-      if( xvecl )
-         Blmat->transMult(1.0, *y.vec, alpha, *xvecl );
-   }
-   else
-      y.vec->setToZero();
+   Bmat->transMult(beta, *y.vec, alpha, *x.vec);
+   if( xvecl )
+      Blmat->transMult(1.0, *y.vec, alpha, *xvecl );
 }
 
 double StochGenMatrix::abmaxnorm() const
