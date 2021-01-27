@@ -181,7 +181,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
         std::cout << "Using hierarchical approach!" << std::endl;
 
      data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
-//  data->writeToStreamDense(std::cout);
+     data->writeToStreamDense(std::cout);
   }
 
   vars.reset( dynamic_cast<sVars*>( factory->makeVariables( data.get() ) ) );

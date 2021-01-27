@@ -13,4 +13,35 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
             dynamic_cast<StochVector*>(dq_)->vec,
             dynamic_cast<StochVector*>(nomegaInv_)->vec, rhs_)
 {
+   assert( locnx == 0 );
+   assert( locmy == 0 );
+}
+
+
+void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )
+{
+  assert( dynamic_cast<StochVector&>(xdiag_).vec->isKindOf(kStochVector) );
+  StochVector& xdiag = dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(xdiag_).vec);
+
+  assert(children.size() == xdiag.children.size());
+
+  xDiag = xdiag.vec;
+
+  for(size_t it = 0; it < children.size(); it++)
+    children[it]->putXDiagonal(*xdiag.children[it]);
+}
+
+
+void sLinsysRootAugHierInner::putZDiagonal( OoqpVector& zdiag_ )
+{
+  assert( dynamic_cast<StochVector&>(zdiag_).vec->isKindOf(kStochVector) );
+  StochVector& zdiag = dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(zdiag_).vec);
+
+  assert(children.size() == zdiag.children.size());
+
+  zDiag = zdiag.vec;
+  zDiagLinkCons = zdiag.vecl;
+
+  for(size_t it = 0; it < children.size(); it++)
+    children[it]->putZDiagonal(*zdiag.children[it]);
 }

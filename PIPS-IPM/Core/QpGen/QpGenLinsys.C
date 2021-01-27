@@ -224,18 +224,17 @@ QpGenLinsys::~QpGenLinsys()
     delete nomegaInv;
   }
 
-  if(sol)  delete sol;
-  if(res)  delete res;
-  if(resx) delete resx;
-  if(resy) delete resy;
-  if(resz) delete resz;
-  if(sol2) delete sol2;
-  if(sol3) delete sol3;
-  if(res2) delete res2;
-  if(res3) delete res3;
-  if(res4) delete res4;
-  if(res5) delete res5;
-  
+  delete sol;
+  delete res;
+  delete resx;
+  delete resy;
+  delete resz;
+  delete sol2;
+  delete sol3;
+  delete res2;
+  delete res3;
+  delete res4;
+  delete res5;
 }
 void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 {
@@ -250,6 +249,11 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
         *vars->v, *vars->gamma,
         *vars->w, *vars->phi );
 
+  if( pips_options::getBoolParameter("HIERARCHICAL") )
+  {
+     std::cout << "Setting diags to 1.0 fore debugging\n";
+     dd->setToConstant(1.0);
+  }
 //  dd->addConstant( 1e-8 );
 
   if( nxlow + nxupp > 0 )
@@ -265,6 +269,8 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   nomegaInv->invert();
   nomegaInv->negate();
 
+  if( pips_options::getBoolParameter("HIERARCHICAL") )
+     nomegaInv->setToConstant(1.0);
 //  nomegaInv->addConstant( -1e-8 );
 
 

@@ -122,7 +122,6 @@ sLinsysRootAug::~sLinsysRootAug()
 SymMatrix* sLinsysRootAug::createKKT(sData* prob) const
 {
    const int n = locnx + locmy + locmyl + locmzl;
-
    if( hasSparseKkt )
    {
       SparseSymMatrix* sparsekkt;
@@ -504,9 +503,11 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
       children[c]->stochNode->resMon.recFactTmChildren_start();
       //---------------------------------------------
       addTermToSchurCompl(prob, c);
+      kkt->writeToStreamDense(std::cout);
       //---------------------------------------------
       children[c]->stochNode->resMon.recFactTmChildren_stop();
    }
+   assert( false );
 }
 
 /* forms right hand side for schur system and solves K_i^-1 bi for all children */
@@ -1616,10 +1617,13 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
    assert(!kkts.isLower);
    assert(locmyl >= 0 && locmzl >= 0);
 
-#if 0
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
+#ifndef NDEBUG
+   if( pips_options::getBoolParameter("HIERACHICAL") )
+      assert( locnx == locmy && locmy == locmz && locmz == 0 );
 
-   if( myRank == 0)
+#endif
+#if 0
+   if( PIPS_MPIgetRank(mpiComm) == 0)
    {
       xDiag->writefToStreamStats(std::cout, "xDiag");
       zDiag->writefToStreamStats(std::cout, "zDiag");
@@ -1638,7 +1642,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
       std::cout << "zDiagLinkCons zeroes: " << zerocount << "\n";
    }
 #endif
-
    //////////////////////////////////////////////////////
    // compute Q+diag(xdiag) - C' * diag(zDiag) * C
    // and update the KKT

@@ -693,7 +693,6 @@ std::vector<int> sData::get2LinkLengthsVec(const std::vector<int>& linkStartBloc
 SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
 {
    assert(children.size() > 0);
-
    const int nx0 = getLocalnx();
    const int my0 = getLocalmy();
    const int myl = getLocalmyl();
@@ -716,9 +715,17 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
    int* const colidxBtrans = Btrans.jcolM();
 
 #ifndef NDEBUG
+   if( !is_hierarchy_inner_leaf )
+   {
       int bm, bn;
       Btrans.getSize(bm, bn);
       assert(bm == nx0 && bn == my0);
+   }
+   else
+   {
+      assert( nx0 == 0 );
+      assert( my0 == 0 );
+   }
 #endif
 
    const int nx0NonZero = nx0 - n0LinkVars;
@@ -2496,11 +2503,8 @@ int sData::getLocalnx() const
    long long nx{0};
    const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
 
-   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
-   {
+   if( is_hierarchy_inner_leaf )
       assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
-      dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Bmat->getSize(my, nx);
-   }
    else
       Ast.Bmat->getSize(my, nx);
 
@@ -2515,11 +2519,8 @@ int sData::getLocalmy() const
    long long nx{0};
    const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
 
-   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
-   {
+   if( is_hierarchy_inner_leaf )
       assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
-      dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Bmat->getSize(my, nx);
-   }
    else
       Ast.Bmat->getSize(my, nx);
 
@@ -2556,14 +2557,9 @@ int sData::getLocalmz() const
    const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
 
    if( is_hierarchy_root )
-   {
       assert( 0 && "TODO : implement");
-   }
    else if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
-   {
       assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
-      dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Bmat->getSize(mz, nx);
-   }
    else
       Cst.Bmat->getSize(mz, nx);
 
@@ -2593,7 +2589,11 @@ int sData::getLocalmzl() const
 
 int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
 {
-   long long nx_loc, my_loc, mz_loc, myl_loc, mzl_loc;
+   long long nx_loc{0};
+   long long my_loc{0};
+   long long mz_loc{0};
+   long long myl_loc{0};
+   long long mzl_loc{0};
 
    if( is_hierarchy_root )
    {
@@ -2618,10 +2618,8 @@ int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
       assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
 
       dynamic_cast<const StochGenMatrix&>(*Ast.Bmat).Blmat->getSize(myl_loc, nx_loc);
-      dynamic_cast<const StochGenMatrix&>(*Ast.Bmat).Bmat->getSize(my_loc, nx_loc);
-
       dynamic_cast<const StochGenMatrix&>(*Cst.Bmat).Blmat->getSize(mzl_loc, nx_loc);
-      dynamic_cast<const StochGenMatrix&>(*Cst.Bmat).Bmat->getSize(mz_loc, nx_loc);
+      nx_loc = 0;
    }
    else
    {
@@ -2781,10 +2779,16 @@ int sData::getSchurCompMaxNnz()
    const int mzl = getLocalmzl();
 
 #ifndef NDEBUG
+   if( !is_hierarchy_inner_leaf )
    {
       int mB, nB;
       getLocalB().getSize(mB, nB);
       assert(mB == my && nB == n0);
+   }
+   else
+   {
+      assert( my == 0 );
+      assert( n0 == 0 );
    }
 #endif
 
@@ -2902,16 +2906,27 @@ int sData::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd)
 
 SparseSymMatrix& sData::getLocalQ()
 {
-   assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
-   return dynamic_cast<SparseSymMatrix&>(*Qst.diag);
+   assert( !is_hierarchy_inner_root && !is_hierarchy_root );
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Qst.diag->isKindOf(kStochSymMatrix) );
+      return dynamic_cast<SparseSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Qst.diag).diag);
+   }
+   else
+   {
+      assert( Qst.diag->isKindOf(kSparseSymMatrix) );
+      return dynamic_cast<SparseSymMatrix&>(*Qst.diag);
+   }
 }
 
 SparseGenMatrix&
 sData::getLocalCrossHessian()
 {
-   assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
+   assert( !is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
+
    return *Qst.border;
 }
 

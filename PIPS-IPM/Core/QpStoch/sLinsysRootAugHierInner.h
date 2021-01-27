@@ -17,6 +17,8 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       ~sLinsysRootAugHierInner() override = default;
 
+      void putXDiagonal( OoqpVector& xdiag ) override;
+      void putZDiagonal( OoqpVector& zdiag ) override;
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_SLINSYSROOTAUGHIERINNER */

@@ -728,7 +728,7 @@ void sLinsysRoot::AddChild(sLinsys* child)
 ///////////////////////////////////////////////////////////
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
-  /* Atoms methods of FACTOR2 for a non-leaf linear system */
+/* Atoms methods of FACTOR2 for a non-leaf linear system */
 void sLinsysRoot::initializeKKT(sData*, Variables*)
 {
    if( is_hierarchy_root )
