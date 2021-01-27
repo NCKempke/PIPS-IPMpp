@@ -73,6 +73,11 @@ The interested user can find a load of parameters and some short descriptions in
  
 3. The three optional command line arguments turn on certain features. The argument presolve activates PIPS-IPM++ presolving, scaleGeo activates PIPS-IPM++ geometric scaling and stepLp activates the use of primal and dual step lengths in the interior point method. We recommend to activate all of them.
 
+4. The number of threads used by each MPI process in PIPS-IPM++ can be controlled by setting the environment variable OMP_NUM_THREADS. PIPS-IPM++ will complain if it is not set. Best performance (from our point of view) can currently be achieved by setting
+```
+export OMP_NUM_THREADS=2
+```
+
 ### Profiling and timing for HPC 
 PIPS-IPM + Pardiso offers best-in-class HPC performance. PIPS has built-in parallel performance profiling (mostly in the form of detailed timing and extended convergence reporting). To enable this feature, build PIPS with the -DWITH_TIMING option, for example, a typical build command would be
 ```{r, engine='bash', withtiming}
