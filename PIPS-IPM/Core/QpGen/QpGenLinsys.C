@@ -173,8 +173,8 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref
       if( outerSolve || xyzs_solve_print_residuals )
       {
         //for iterative refinement or BICGStab
-        sol  = factory->makeRhs();
-        res  = factory->makeRhs();
+        sol = factory->makeRhs();
+        res = factory->makeRhs();
         resx = factory->makePrimalVector();
         resy = factory->makeDualYVector();
         resz = factory->makeDualZVector();
@@ -185,9 +185,9 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref
           sol2 = factory->makeRhs();
           sol3 = factory->makeRhs();
           res2 = factory->makeRhs();
-          res3  = factory->makeRhs();
-          res4  = factory->makeRhs();
-          res5  = factory->makeRhs();
+          res3 = factory->makeRhs();
+          res4 = factory->makeRhs();
+          res5 = factory->makeRhs();
         }
       }
    }
@@ -244,15 +244,16 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   assert( vars->validNonZeroPattern() );
 
   if( nxlow + nxupp > 0 ) dd->copyFrom(*dq);
-  this->computeDiagonals( *dd, *nomegaInv,
-			  *vars->t, *vars->lambda,
-			  *vars->u, *vars->pi,
-			  *vars->v, *vars->gamma,
-			  *vars->w, *vars->phi );
+  computeDiagonals( *dd, *nomegaInv,
+        *vars->t, *vars->lambda,
+        *vars->u, *vars->pi,
+        *vars->v, *vars->gamma,
+        *vars->w, *vars->phi );
 
 //  dd->addConstant( 1e-8 );
 
-  if( nxlow + nxupp > 0 ) this->putXDiagonal( *dd );
+  if( nxlow + nxupp > 0 )
+     putXDiagonal( *dd );
 
   const double infnormdd = dd->infnorm();
   double mindd; int dummy;
@@ -267,7 +268,8 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 //  nomegaInv->addConstant( -1e-8 );
 
 
-  if( mclow + mcupp > 0 ) this->putZDiagonal( *nomegaInv );
+  if( mclow + mcupp > 0 )
+     putZDiagonal( *nomegaInv );
 
   const double infnormomegainv = nomegaInv->infnorm();
   double minomegainv;
@@ -275,7 +277,6 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 
   if( PIPS_MPIgetRank() == 0 )
      std::cout << "Diagonal omegaInv: inf " << infnormomegainv << ", min " << minomegainv << "\n";
-
 }
 
 void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
