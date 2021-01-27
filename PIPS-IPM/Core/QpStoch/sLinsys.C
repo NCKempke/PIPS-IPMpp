@@ -44,7 +44,6 @@ sLinsys::sLinsys(sFactory* factory_,
     data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
-    is_hierarchy_root(false),
     stochNode{factory_->tree}
 {
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
@@ -52,13 +51,13 @@ sLinsys::sLinsys(sFactory* factory_,
   if( dd )
   {
      StochVector& dds = dynamic_cast<StochVector&>(*dd);
-     this->mpiComm = dds.mpiComm;
-     this->iAmDistrib = dds.iAmDistrib;
+     mpiComm = dds.mpiComm;
+     iAmDistrib = dds.iAmDistrib;
   }
   else
   {
-     this->mpiComm = MPI_COMM_NULL;
-     this->iAmDistrib = false;
+     mpiComm = MPI_COMM_NULL;
+     iAmDistrib = false;
   }
 
   useRefs = 1;
