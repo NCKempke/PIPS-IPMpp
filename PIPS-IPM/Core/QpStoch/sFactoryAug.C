@@ -10,6 +10,7 @@
 #include "StochInputTree.h"
 
 #include "sLinsysRootAug.h"
+#include "sLinsysRootAugHierInner.h"
 #include "sLinsysRootBordered.h"
 
 sFactoryAug::sFactoryAug( StochInputTree* inputTree, MPI_Comm comm)
@@ -27,8 +28,7 @@ sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
    if( prob->isHierarchyInnerLeaf() )
-      return new sLinsysRootAug(this, prob, dynamic_cast<StochVector*>(dd)->vec,
-            dynamic_cast<StochVector*>(dq)->vec, dynamic_cast<StochVector*>(nomegaInv)->vec, rhs );
+      return new sLinsysRootAugHierInner(this, prob, dd, dq, nomegaInv, rhs );
    else
       return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
 }

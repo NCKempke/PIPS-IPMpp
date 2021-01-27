@@ -28,6 +28,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sLinsys.C
    QpStoch/sLinsysRoot.C
    QpStoch/sLinsysRootAug.C
+   QpStoch/sLinsysRootAugHierInner.C
    #   sLinsysRootComm2.C
    #   sLinsysRootAugComm2.C
    QpStoch/sLinsysLeaf.C

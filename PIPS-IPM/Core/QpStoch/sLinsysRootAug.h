@@ -16,14 +16,13 @@ class sData;
 class sLinsysRootAug : public sLinsysRoot {
 
  public:
-
   sLinsysRootAug(sFactory * factory_, sData * prob_);
   sLinsysRootAug(sFactory* factory,
 		 sData* prob_,
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_);
-  virtual ~sLinsysRootAug();
+  ~sLinsysRootAug() override;
 
   void finalizeKKT( sData* prob, Variables* vars) override;
   void finalizeKKTdist(sData* prob) override;
