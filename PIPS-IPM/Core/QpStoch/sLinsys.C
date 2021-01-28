@@ -432,16 +432,16 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
    addMatAt( res, BiT.G, mRt + mF, 0 );
 }
 
-/* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border, int parent_nx, int parent_my, int parent_mz )
+/* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
+void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz )
 {
    int nx_border, myl_border, mzl_border, dummy;
 
-   border.R.getSize(dummy, nx_border);
-   border.F.getSize(myl_border, dummy);
-   border.G.getSize(mzl_border, dummy);
+   Br.R.getSize(dummy, nx_border);
+   Br.F.getSize(myl_border, dummy);
+   Br.G.getSize(mzl_border, dummy);
 
-   /* buffer for (Bi_{outer} - Bi_{inner} X0)^T = Bi_{outer}^T - X0^T Bi_{inner}^T */
+   /* buffer for (Bri - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T */
    // TODO : reuse an make member
    DenseGenMatrix* BiT_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, locnx + locmy + locmz );
 
@@ -449,25 +449,23 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
    int m, n; BiT_buffer->getSize(m, n);
    BiT_buffer->atPutZeros(0, 0, m, n );
 
-   /* put (Bi_{outer})^T into buffer
+   /* put (Bri)^T into buffer
     *
     *                  nxb myb mzb
     *                [ RiT AiT CiT ]
-    * Bi_{outer}^T = [  Fi  0   0  ]
+    * Bri^T        = [  Fi  0   0  ]
     *                [  Gi  0   0  ]
     */
-   assert( border.R.mat );
-   assert( border.A.mat );
-   assert( border.C.mat );
-   assert( border.F.mat );
-   assert( border.G.mat );
 
-   const BorderBiBlock BiT_outer( dynamic_cast<SparseGenMatrix&>(*border.R.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*border.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*border.C.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) );
-   addBiTBorder( *BiT_buffer, BiT_outer);
+   const BorderBiBlock BriT( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) );
+   const BorderBiBlock BliT( dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) );
+   addBiTBorder( *BiT_buffer, BriT);
 
-   /* compute (Bi_{outer} - Bi_{inner} * X0)^T = Bi_{outer}^T - X0^T * Bi_{inner}^T
+   /* compute (Bri - Bi_{inner} * X0)^T = Bri^T - X0^T * Bi_{inner}^T
     *
     *                     [ Ri 0 0 FiT GiT ]^T
     * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
@@ -475,8 +473,8 @@ void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMat
     */
    multRightDenseSchurComplBlocked( data, X0, *BiT_buffer, parent_nx, parent_my, parent_mz );
 
-   /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bi_{outer}^T - X0^T * Bi_{inner}^T) and multiply from right with Bi_{outer}^T and add to SC */
-   addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BiT_outer, *BiT_buffer, SC );
+   /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bri^T - X0^T * Bi_{inner}^T) and multiply from right with Bli^T and add to SC */
+   addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BliT, *BiT_buffer, SC );
 
    delete BiT_buffer;
 }

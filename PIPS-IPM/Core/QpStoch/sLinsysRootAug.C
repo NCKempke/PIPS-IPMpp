@@ -2088,55 +2088,50 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
    }
 }
 
-/* solve own linear system with border data
- *
- * rhs-block^T looks like
- *  [ R1 F1T G1T ]^T       [ RN FNT GNT ]^T [  0   A0 (C0) F0V G0V ]
- *  [ A1  0   0  ]    ...  [ AN  0   0  ]   [ F0C  0  (0 )  0   0  ]
- *  [ C1  0   0  ]         [ CN  0   0  ]   [ G0C  0  (0 )  0   0  ]
- *
- */
-void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, BorderLinsys& border)
+/* compute SC += Bl^T Ki^-1 Br */
+void sLinsysRootAug::addBTKiInvBToSC( SymMatrix& schur_comp, BorderLinsys& Bl, BorderLinsys& Br )
 {
-   /* only called in sLinsysRootAug */
+   /* Bi_{inner} is our own border, Ki are our own diagonals */
+   /* only called in sLinsysRootAug and sLinsysRootAugHierInner */
    assert( !is_hierarchy_root );
 
-   /* compute Schur Complement right hand sides SUM_i Bi_{inner} K^-1 Bi_{border}
-    * (keep in mind that in Bi_{inner} and the SC we projected C0 Omega0 out)
-    */
+   /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 Bri
+    * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */
+
    int nx_border, myl_border, mzl_border, dummy;
-   border.A.getSize(dummy, nx_border);
-   border.F.getSize(myl_border, dummy);
-   border.G.getSize(mzl_border, dummy);
+   Br.A.getSize(dummy, nx_border);
+   Br.F.getSize(myl_border, dummy);
+   Br.G.getSize(mzl_border, dummy);
 
    const int m_buffer = nx_border + myl_border + mzl_border;
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
 
-   // buffer for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}, stored in transposed form (for quick access of cols in solve)
+   // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} Bri, stored in transposed form (for quick access of cols in solve)
+   // dense since we have no clue about any structure in the system
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
-   // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}
-   LsolveHierarchyBorder(*buffer_b0, border);
+   // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
+   LsolveHierarchyBorder(*buffer_b0, Br);
 
-   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
-   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
-   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
-   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
+   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*Br.A.mat);
+   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*Br.C.mat);
+   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*Br.A.mat_link);
+   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.F.mat);
 
-   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
-   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
+   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*Br.C.mat_link);
+   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.G.mat);
 
-   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}
+   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}
    finalizeZ0Hierarchical(*buffer_b0, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
 
-   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer} (stored in transposed form!)
+   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri (stored in transposed form!)
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
-   // compute SC = -SUM_i Bi_{outer}^T Ki^{-1} (Bi_{outer} - Bi_{inner} X0 ) = -SUM_i Bi_{outer}^T Xi
-   LtsolveHierarchyBorder( schur_comp, *buffer_b0, border );
-   // compute SC_{outer} += B0_{outer}^T X0
+   // compute SC = -SUM_i Bli^T Ki^{-1} (Bri - Bi_{inner} X0 ) = -SUM_i Bli^T Xi
+   LtsolveHierarchyBorder( schur_comp, *buffer_b0, Bl, Br );
+   // compute SC_{outer} += Bl0^T X0
    finalizeInnerSchurComplementContribution( schur_comp, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0 );
    delete buffer_b0;
 }

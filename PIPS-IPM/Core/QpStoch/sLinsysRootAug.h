@@ -40,7 +40,7 @@ class sLinsysRootAug : public sLinsysRoot {
 //  void solveReduced( sData *prob, SimpleVector& b);
   void solveReducedLinkCons( sData *prob, SimpleVector& b);
   void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
-  void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, BorderLinsys& border ) override;
+  void addBTKiInvBToSC( SymMatrix& schur_comp, BorderLinsys& Bl, BorderLinsys& Br ) override;
 
  private:
   void finalizeKKTdense( sData* prob, Variables* vars);

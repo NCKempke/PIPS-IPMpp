@@ -126,7 +126,7 @@ class sLinsys : public QpGenLinsys
   virtual void addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT) const;
 
   /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border,
+  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
         int parent_nx, int parent_my, int parent_mz );
 
   /** y += alpha * Lni^T * x */
@@ -178,8 +178,8 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& res, 
 				      SimpleVector& x);
 
-  /* solve for all border rhs -> calculate SC = Bborder^T K^-1 Bborder */
-  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& /*schur_comp*/, BorderLinsys& /*border*/ )
+  /* compute SC = Bl^T K^-1 Br where K is our own linear system */
+  virtual void addBTKiInvBToSC( SymMatrix& /*schur_comp*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/)
   { assert( false && "not implemented here"); }
 
   /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */
@@ -190,8 +190,8 @@ class sLinsys : public QpGenLinsys
   virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/ )
   { assert( false && "not implemented here" ); };
 
-  /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  virtual void LtsolveHierarchyBorder( DenseSymMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*border_outer*/ )
+  /* compute SUM_i Bli_^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
+  virtual void LtsolveHierarchyBorder( SymMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/ )
   { assert( false && "not implemented here" ); };
 
  protected:

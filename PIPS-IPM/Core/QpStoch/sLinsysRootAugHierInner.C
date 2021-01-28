@@ -39,6 +39,8 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 {
    for( unsigned int i = 0; i < children.size(); ++i )
    {
+//      BorderLinsys B(  children[i]->)
+//      addBTKiInvBToSC(SC, )
 //      children
    }
 }

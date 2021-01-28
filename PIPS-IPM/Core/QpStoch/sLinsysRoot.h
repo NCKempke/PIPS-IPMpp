@@ -64,8 +64,8 @@ class sLinsysRoot : public sLinsys {
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border ) override;
 
-  /* compute SUM_i Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border ) override;
+  /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
+  void LtsolveHierarchyBorder( SymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 

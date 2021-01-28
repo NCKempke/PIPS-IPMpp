@@ -413,26 +413,26 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& b
    }
 }
 
-/* compute SUM_i Bi_{outer}^T X_i = SUM_i Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& border )
+/* compute SUM_i Bli^T X_i = SUM_i Bli_^T Ki^-1 (Bri - Bi_{inner} X0) */
+void sLinsysRoot::LtsolveHierarchyBorder( SymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br )
 {
    assert( !is_hierarchy_root );
 
    /* X0 is still in transposed form */
-   assert( this->children.size() == border.R.children.size() );
-   assert( !border.R.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.A.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.C.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.F.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.G.isKindOf( kStringGenDummyMatrix ) );
-
+   assert( children.size() == Br.R.children.size() );
+   assert( children.size() == Bl.R.children.size() );
+   assert( !Br.R.isKindOf( kStringGenDummyMatrix ) );
+   assert( !Bl.R.isKindOf( kStringGenDummyMatrix ) );
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      BorderLinsys border_child( *border.R.children[it], *border.A.children[it], *border.C.children[it],
-                  *border.F.children[it], *border.G.children[it]);
-      children[it]->LniTransMultHierarchyBorder( SC, X0, border_child, locnx, locmy, locmz );
+      BorderLinsys bl_child( *Bl.R.children[it], *Bl.A.children[it], *Bl.C.children[it],
+                  *Bl.F.children[it], *Bl.G.children[it]);
+      BorderLinsys br_child( *Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
+                  *Br.F.children[it], *Br.G.children[it]);
+
+      children[it]->LniTransMultHierarchyBorder( SC, X0, Bl, Br, locnx, locmy, locmz );
    }
 
    /* allreduce the border SC */
