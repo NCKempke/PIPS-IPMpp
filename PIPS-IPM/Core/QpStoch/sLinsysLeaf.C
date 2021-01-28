@@ -73,15 +73,24 @@ void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 void sLinsysLeaf::deleteChildren()
 { }
 
-void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC)
+void sLinsysLeaf::addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC, bool linking_only )
 {
    const bool sc_is_sym = true;
 
-   BorderBiBlock border_right( prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(), prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
-   BorderBiBlock border_left_transp( prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
+   if( linking_only && !dummy_mat )
+         dummy_mat.reset( new SparseGenMatrix(0,0,0) );
+
+   BorderBiBlock border_right( linking_only ? *dummy_mat : prob->getLocalCrossHessian(),
+         linking_only ? *dummy_mat : prob->getLocalA(), linking_only ? *dummy_mat : prob->getLocalC(),
+         prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
+   BorderBiBlock border_left_transp( linking_only ? *dummy_mat : prob->getLocalCrossHessian().getTranspose(),
+         linking_only ? *dummy_mat : prob->getLocalA().getTranspose(), linking_only ? *dummy_mat : prob->getLocalC().getTranspose(),
          prob->getLocalF(), prob->getLocalG() );
 
-   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
+   if( linking_only )
+      addBiTLeftKiBiRightToResBlockedParallelSolversLinkingOnly( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
+   else
+      addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 

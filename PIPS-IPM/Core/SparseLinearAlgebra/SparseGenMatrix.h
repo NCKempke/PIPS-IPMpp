@@ -61,6 +61,8 @@ public:
 
   virtual int isKindOf( int matType ) const;
 
+  virtual bool isEmpty() const { return mStorage->n == 0 && mStorage->m == 0 && mStorage->len == 0; };
+
   virtual void atPutDense( int row, int col, double * A, int lda,
 			   int rowExtent, int colExtent );
   virtual void fromGetDense( int row, int col, double * A, int lda,

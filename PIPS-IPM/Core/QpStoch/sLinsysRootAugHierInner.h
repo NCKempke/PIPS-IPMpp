@@ -17,6 +17,7 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       ~sLinsysRootAugHierInner() override = default;
 
+      void assembleLocalKKT( sData* prob ) override;
       void putXDiagonal( OoqpVector& xdiag ) override;
       void putZDiagonal( OoqpVector& zdiag ) override;
 };

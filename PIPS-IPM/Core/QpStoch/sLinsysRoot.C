@@ -1488,14 +1488,16 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
   myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
+void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool linking_only)
 {
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
+	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, linking_only);
    else
    {
+      assert( !linking_only );
+
 	   if( hasSparseKkt )
 	   {
 	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);

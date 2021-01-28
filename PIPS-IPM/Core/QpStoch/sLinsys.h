@@ -146,7 +146,7 @@ class sLinsys : public QpGenLinsys
    */
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
-  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/) { assert( 0 && "not implemented here" ); };
+  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*linking_only*/ ) { assert( 0 && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
@@ -159,6 +159,9 @@ class sLinsys : public QpGenLinsys
   /* add you part of the border times rhs to b0 */
   virtual void addBorderX0ToRhs( StochVector& /*rhs*/, const SimpleVector& /*x0*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here" ); };
+
+  virtual void addBiTLeftKiBiRightToResBlockedParallelSolversLinkingOnly( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
+        /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
 
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
@@ -193,10 +196,10 @@ class sLinsys : public QpGenLinsys
 
  protected:
   void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int length_col, int n_cols, bool sparse_res, bool sym_res, DoubleMatrix& res) const;
+        const int* cols_id, int length_col, int n_cols, bool sparse_res, bool sym_res, DoubleMatrix& res, bool linking_only ) const;
 
   void addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int length_col, int n_cols, SparseSymMatrix& res) const;
+        const int* cols_id, int length_col, int n_cols, SparseSymMatrix& res, bool linking_only) const;
 
   void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& border_left, const double* cols,
         const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const;

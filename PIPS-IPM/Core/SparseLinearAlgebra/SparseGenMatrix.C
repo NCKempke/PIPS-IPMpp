@@ -510,9 +510,11 @@ void SparseGenMatrix::initTransposed(bool dynamic)
 void SparseGenMatrix::matTransDinvMultMat(OoqpVector& d_, SymMatrix** res)
 {
   SimpleVector& d = dynamic_cast<SimpleVector &>(d_);
-  int m=mStorage->m; int n=mStorage->n; int nnz=mStorage->numberOfNonZeros();
+  const int m = mStorage->m;
+  const int n = mStorage->n;
+  const int nnz = mStorage->numberOfNonZeros();
 
-  if(*res==nullptr) {
+  if(!*res) {
 
     // we need to form the transpose
     if(!m_Mt) {

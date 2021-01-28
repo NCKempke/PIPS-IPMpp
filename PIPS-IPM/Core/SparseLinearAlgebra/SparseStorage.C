@@ -1420,6 +1420,10 @@ void SparseStorage::matTransDSymbMultMat(double*,
   *krowAtDA = new int[n+1];
   *jcolAtDA = new int[nnzAtA];
   *AtDA     = new double[nnzAtA];
+
+  std::uninitialized_fill(*krowAtDA, *krowAtDA + n + 1, 0 );
+  std::uninitialized_fill(*jcolAtDA, *jcolAtDA + nnzAtA, 0 );
+  std::uninitialized_fill(*AtDA, *AtDA + nnzAtA, 0 );
 }
 
 
@@ -1518,7 +1522,7 @@ void SparseStorage::matTransDinvMultMat(double* d,
       W[j]=0.0;
     }
   }
-  krowAtDA[n] =nnzAtA;
+  krowAtDA[n] = nnzAtA;
   delete[] W;
   delete[] flag;
 }

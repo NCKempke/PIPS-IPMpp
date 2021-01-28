@@ -17,6 +17,24 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
    assert( locmy == 0 );
 }
 
+void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
+{
+   for(size_t c = 0; c < children.size(); c++)
+   {
+#ifdef STOCH_TESTING
+      g_scenNum = c;
+#endif
+      if( children[c]->mpiComm == MPI_COMM_NULL )
+         continue;
+
+      children[c]->stochNode->resMon.recFactTmChildren_start();
+      //---------------------------------------------
+      addTermToSchurCompl(prob, c, true);
+      //---------------------------------------------
+      children[c]->stochNode->resMon.recFactTmChildren_stop();
+   }
+}
+
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )
 {

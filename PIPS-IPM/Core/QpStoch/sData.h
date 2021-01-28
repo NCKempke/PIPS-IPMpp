@@ -42,8 +42,6 @@ class sData : public QpGenData {
   void AddChild(sData* child);
   const sTree* stochNode{};
 
-  /* empty dummy matrix to give back when in hierarchy mode leaf and someone asks for the local Amat/Cmat/Blmat/Dlmat */
-   std::unique_ptr<SparseGenMatrix> dummy_mat{};
 private: 
 
   PERMUTATION getLinkVarsPermInv() const;

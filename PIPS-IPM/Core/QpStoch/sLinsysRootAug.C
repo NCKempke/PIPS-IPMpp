@@ -502,12 +502,10 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 
       children[c]->stochNode->resMon.recFactTmChildren_start();
       //---------------------------------------------
-      addTermToSchurCompl(prob, c);
-      kkt->writeToStreamDense(std::cout);
+      addTermToSchurCompl(prob, c, false);
       //---------------------------------------------
       children[c]->stochNode->resMon.recFactTmChildren_stop();
    }
-   assert( false );
 }
 
 /* forms right hand side for schur system and solves K_i^-1 bi for all children */
@@ -1617,11 +1615,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
    assert(!kkts.isLower);
    assert(locmyl >= 0 && locmzl >= 0);
 
-#ifndef NDEBUG
-   if( pips_options::getBoolParameter("HIERACHICAL") )
-      assert( locnx == locmy && locmy == locmz && locmz == 0 );
-
-#endif
 #if 0
    if( PIPS_MPIgetRank(mpiComm) == 0)
    {

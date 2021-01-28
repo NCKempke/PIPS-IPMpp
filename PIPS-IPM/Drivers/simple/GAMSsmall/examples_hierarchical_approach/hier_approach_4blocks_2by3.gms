@@ -1,12 +1,12 @@
-* ./gamsexample.sh -NP=4 -BLOCKS=5 -GAMSFILE=./hier_approach_4blocks_2by2
+* ./gamsexample.sh -NP=4 -BLOCKS=5 -GAMSFILE=./hier_approach_4blocks_2by3
 
 Set i rows    / i1*i15 /
     j columns / j1*j19 /;
 
 parameter g(j) obj coefficients / j1 1, j2 1, j3 1, j4 1, j5 1, j6 1, j7 1, j8 1, j9 1, j10 1, j11 1, j12 1, j13 1, j14 1 , j15 1, j16 1, j17 1, j18 1, j19 1 /
-          bA(i) right hand side  / i1 6, i2 3, i3 4, i4 1, i5 4, i6 1, i7 4, i8 1, i9 4, i10 1, i11 8, i12 3, i13 3, i14 8, i15 17 /
-*          clow(i) c left hand side   / i1 9, i2 3, i3 5, i4 -0.5, i5 5, i6 -05, i7 5, i8 -0.5, i9 13.5, i10 3, i11 11, i12 18 /
-          cupp(i) c right hand side   / i1 13, i2 7, i3 9, i4 2.5, i5 9, i6 2.5, i7 9, i8 2.5, i9 8.5, i10 2.3, i11 16.5, i12 7, i13 10.1, i14 16, i15 34.1 /
+          bA(i) right hand side       / i1 6, i2 3, i3 4, i4 1, i5 4, i6 1, i7 4, i8 1, i9 4, i10 1, i11 9, i12 4, i13 4, i14 8, i15 17 /
+*          clow(i) c left hand side   / i1 9, i2 3, i3 5, i4 -0.5, i5 5, i6 -0.5, i7 5, i8 -0.5, i9 13.5, i10 3, i11 11, i12 18 /
+          cupp(i) c right hand side   / i1 13, i2 7, i3 9, i4 2.5, i5 9, i6 2.5, i7 9, i8 2.5, i9 8.5, i10 2.3, i11 18.5, i12 9, i13 10.1, i14 16, i15 34.1 /
 
 
 * in this example the singletonColumnPresolver should substitute j1 (free) and put it into the objective
@@ -22,9 +22,9 @@ i7   1    -1                 1                                                  
 i8         1                -1                                                    -1     1     1
 i9   1    -1                       1                                                                 1     1     1
 i10        1                      -1                                                                -1     1     1
-i11  1     1     1           1     1                 1     1     1            
-i12 -1                 1    -1     1                                   1     1     1      
-i13 -1    -1     1     1                                                                 1     1     1
+i11  1     1     1           1     1                 1     2     1            
+i12 -1                 1    -1     1                                   1     2     1      
+i13 -1    -1     1     1                                                                 1     2     1
 i14  1    -1                 1    -1           1     1           1     1           1     1           1     1
 i15  1     1                 1     1     1           2     1           2     1           2     1           2     1
 ;                         
@@ -43,9 +43,9 @@ i7   2    -2                 2                                                  
 i8         2                -2                                                    -2     2     2
 i9   2    -2                       2                                                                 2     2     2
 i10        1                      -1                                                                -1     1     1
-i11  2     2     2           2     2                 2     2     2            
-i12 -2                 2    -2     2                                   2     2     2      
-i13 -2    -2     2     2                                                                 2     2     2
+i11  2     2     2           2     2                 2     4     2            
+i12 -2                 2    -2     2                                   2     4     2      
+i13 -2    -2     2     2                                                                 2     4     2
 i14  2    -2                 2    -2           2     2           2     2           2     2           2     2
 i15  2     2                 2     2     2           4     2           4     2           4     2           4     2;
 
@@ -125,7 +125,7 @@ $ifthen %METHOD%==PIPS
 
 
 * For creation of gdx files:
-$ echo jacobian hier_approach_4blocks_2by2.gdx > convertd.opt
+$ echo jacobian hier_approach_4blocks_2by3.gdx > convertd.opt
   option lp=convertd;
   m.optfile = 1;
   solve m use lp min z;

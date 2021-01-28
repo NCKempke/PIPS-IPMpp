@@ -1212,9 +1212,6 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
          is_hierarchy_inner_root{ is_hierarchy_inner_root },
          is_hierarchy_inner_leaf{ is_hierarchy_inner_leaf }
 {
-   if( is_hierarchy_inner_leaf )
-      dummy_mat.reset( new SparseGenMatrix(0,0,0) );
-
    if( add_children )
       createChildren();
 }
