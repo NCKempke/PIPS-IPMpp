@@ -245,7 +245,16 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
    // assemble complete inner KKT from children
    DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(*kkt);
 
-   this->children[0]->addInnerToHierarchicalSchurComplement(SC, prob);
+   assert( prob->children.size() == 1 );
+
+   /* get right hand side parts */
+   BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*prob->Q).border_vertical,
+         *dynamic_cast<BorderedGenMatrix&>(*prob->A).border_left,
+         *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_left,
+         *dynamic_cast<BorderedGenMatrix&>(*prob->A).border_bottom,
+         *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_bottom);
+
+   this->children[0]->addInnerToHierarchicalSchurComplement(SC, border);
 }
 
 /* since we have only one child we will not allreduce anything */

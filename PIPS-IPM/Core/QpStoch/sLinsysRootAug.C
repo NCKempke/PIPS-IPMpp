@@ -2096,18 +2096,10 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
  *  [ C1  0   0  ]         [ CN  0   0  ]   [ G0C  0  (0 )  0   0  ]
  *
  */
-void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border )
+void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, BorderLinsys& border)
 {
    /* only called in sLinsysRootAug */
    assert( !is_hierarchy_root );
-   assert( data_border->children.size() == 1 );
-
-   /* get right hand side parts */
-   BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data_border->Q).border_vertical,
-         *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left,
-         *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left,
-         *dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom,
-         *dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom);
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} K^-1 Bi_{border}
     * (keep in mind that in Bi_{inner} and the SC we projected C0 Omega0 out)
@@ -2127,13 +2119,13 @@ void sLinsysRootAug::addInnerToHierarchicalSchurComplement( DenseSymMatrix& schu
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}
    LsolveHierarchyBorder(*buffer_b0, border);
 
-   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat);
-   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat);
-   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_left->mat_link);
-   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<BorderedGenMatrix&>(*data_border->A).border_bottom->mat);
+   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
+   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
+   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
+   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
 
-   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_left->mat_link);
-   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<BorderedGenMatrix&>(*data_border->C).border_bottom->mat);
+   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
+   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
 
    // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bi_{outer}
    finalizeZ0Hierarchical(*buffer_b0, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);

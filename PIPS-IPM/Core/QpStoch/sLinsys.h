@@ -179,7 +179,7 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& x);
 
   /* solve for all border rhs -> calculate SC = Bborder^T K^-1 Bborder */
-  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& /*schur_comp*/, sData* /*prob*/ )
+  virtual void addInnerToHierarchicalSchurComplement( DenseSymMatrix& /*schur_comp*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here"); }
 
   /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */

@@ -35,6 +35,14 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
    }
 }
 
+void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool linking_only )
+{
+   for( unsigned int i = 0; i < children.size(); ++i )
+   {
+//      children
+   }
+}
+
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )
 {

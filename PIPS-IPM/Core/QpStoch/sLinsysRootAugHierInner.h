@@ -17,6 +17,8 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       ~sLinsysRootAugHierInner() override = default;
 
+      void addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool linking_only ) override;
+
       void assembleLocalKKT( sData* prob ) override;
       void putXDiagonal( OoqpVector& xdiag ) override;
       void putZDiagonal( OoqpVector& zdiag ) override;
