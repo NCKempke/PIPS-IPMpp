@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -16,10 +16,6 @@
 #include "gmsobj.h"
 #include "gmsheapnew.h"
 
-/* NEEDED? (g++ doesn't like) -> 
-SYSTEM_classdescriptor ** from sy_fwd_class(1) ** 
-  GMSHEAPNEW_theapmgr_CD;
-  */
 
 void * const GMSHEAPNEW_tbigblockmgr_VT[] = {(void*)&
   GMSHEAPNEW_tbigblockmgr_DOT_destroy};
@@ -40,64 +36,6 @@ const SYSTEM_classdescriptor_t GMSHEAPNEW_theapmgr_CD = {
   &SYSTEM_tobject_CD, NULL, 0, 
   sizeof(GMSHEAPNEW_theapmgr_OD), GMSHEAPNEW_theapmgr_VT, NULL};
 
-GMSHEAPNEW_tbigblockmgr GMSHEAPNEW_bbmgr = NULL;
-GMSHEAPNEW_theapmgr GMSHEAPNEW_gheap = NULL;
-static SYSTEM_double GMSHEAPNEW_memorylimit, GMSHEAPNEW_totalmemory, 
-  GMSHEAPNEW_totalhighmark;
-static GMSHEAPNEW_tmemoryreportproc GMSHEAPNEW_memoryreportproc;
-
-Procedure GMSHEAPNEW_gmscreatedefaultheap(void)
-{
-  if (!_P3assigned(GMSHEAPNEW_bbmgr)) {
-    GMSHEAPNEW_bbmgr = ValueCast(GMSHEAPNEW_tbigblockmgr,
-      GMSHEAPNEW_tbigblockmgr_DOT_create(ValueCast(
-      GMSHEAPNEW_tbigblockmgr,_P3alloc_object(&
-      GMSHEAPNEW_tbigblockmgr_CD)),_P3str1("\005BBMgr")));
-    GMSHEAPNEW_gheap = ValueCast(GMSHEAPNEW_theapmgr,
-      GMSHEAPNEW_theapmgr_DOT_create(ValueCast(GMSHEAPNEW_theapmgr,
-      _P3alloc_object(&GMSHEAPNEW_theapmgr_CD)),GMSHEAPNEW_bbmgr,_P3str1("\005gheap")));
-  } 
-}  /* gmscreatedefaultheap */
-
-Procedure GMSHEAPNEW_gmsreleasedefaultheap(void)
-{
-  if (_P3assigned(GMSHEAPNEW_bbmgr)) {
-    SYSUTILS_P3_freeandnil(&GMSHEAPNEW_bbmgr);
-    GMSHEAPNEW_gheap = NULL;
-  } 
-}  /* gmsreleasedefaultheap */
-
-Procedure GMSHEAPNEW_setmemoryreportproc(
-  GMSHEAPNEW_tmemoryreportproc f)
-{
-  GMSHEAPNEW_memoryreportproc = f;
-}  /* setmemoryreportproc */
-
-Function(SYSTEM_double ) GMSHEAPNEW_gmsmemoryused(void)
-{
-  SYSTEM_double result;
-
-  result = GMSHEAPNEW_totalmemory /  1000000.0;
-  return result;
-}  /* gmsmemoryused */
-
-Function(SYSTEM_boolean ) GMSHEAPNEW_setmemorylimit(
-  SYSTEM_double limit)
-{
-  SYSTEM_boolean result;
-
-  GMSHEAPNEW_memorylimit = limit;
-  result = limit >= GMSHEAPNEW_totalmemory;
-  return result;
-}  /* setmemorylimit */
-
-Function(SYSTEM_double ) GMSHEAPNEW_getmemorylimit(void)
-{
-  SYSTEM_double result;
-
-  result = GMSHEAPNEW_memorylimit /  1e6;
-  return result;
-}  /* getmemorylimit */
 
 Constructor(GMSHEAPNEW_tbigblockmgr ) 
   GMSHEAPNEW_tbigblockmgr_DOT_create(
@@ -106,15 +44,17 @@ Constructor(GMSHEAPNEW_tbigblockmgr )
 {
   ValueCast(GMSHEAPNEW_tbigblockmgr,SYSTEM_tobject_DOT_create(ValueCast(
     SYSTEM_tobject,self)));
+  self->GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc = NULL;
   _P3getmem(self->GMSHEAPNEW_tbigblockmgr_DOT_spname,ValueCast(
     SYSTEM_int32,SYSTEM_length(name)) + 1);
   _P3strcpy(*self->GMSHEAPNEW_tbigblockmgr_DOT_spname,255,name);
   self->GMSHEAPNEW_tbigblockmgr_DOT_freelist = ValueCast(GMSOBJ_txlist,
     SYSTEM_tobject_DOT_create(ValueCast(SYSTEM_tobject,_P3alloc_object(&
     GMSOBJ_txlist_CD))));
-  self->GMSHEAPNEW_tbigblockmgr_DOT_mgrlist = ValueCast(GMSOBJ_txlist,
-    SYSTEM_tobject_DOT_create(ValueCast(SYSTEM_tobject,_P3alloc_object(&
-    GMSOBJ_txlist_CD))));
+  self->GMSHEAPNEW_tbigblockmgr_DOT_memorylimit = 1e200;
+  self->GMSHEAPNEW_tbigblockmgr_DOT_totalhighmark = 0.0;
+  self->GMSHEAPNEW_tbigblockmgr_DOT_totalmemory = 0.0;
+  self->GMSHEAPNEW_tbigblockmgr_DOT_showosmem = 0;
   return self;
 }  /* create */
 
@@ -122,36 +62,19 @@ Destructor(GMSHEAPNEW_tbigblockmgr )
   GMSHEAPNEW_tbigblockmgr_DOT_destroy(
   GMSHEAPNEW_tbigblockmgr self)
 {
-  GMSHEAPNEW_tbigblockmgr_DOT_clear(self);
+  GMSHEAPNEW_tbigblockmgr_DOT_xclear(self);
   _P3freemem(self->GMSHEAPNEW_tbigblockmgr_DOT_spname);
-  while (self->GMSHEAPNEW_tbigblockmgr_DOT_mgrlist->
-    GMSOBJ_txlist_DOT_fcount > 0) {
-
-    SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,
-      GMSOBJ_txlist_DOT_get(self->GMSHEAPNEW_tbigblockmgr_DOT_mgrlist,0)));
-}
-  SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
-    GMSHEAPNEW_tbigblockmgr_DOT_mgrlist));
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
     GMSHEAPNEW_tbigblockmgr_DOT_freelist));
   SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
   return self;
 }  /* destroy */
 
-Procedure GMSHEAPNEW_tbigblockmgr_DOT_clear(
+Procedure GMSHEAPNEW_tbigblockmgr_DOT_xclear(
   GMSHEAPNEW_tbigblockmgr self)
 {
   SYSTEM_integer n;
 
-  { register SYSTEM_int32 _stop = self->
-      GMSHEAPNEW_tbigblockmgr_DOT_mgrlist->GMSOBJ_txlist_DOT_fcount - 1;
-    if ((n = 0) <=  _stop) do {
-      GMSHEAPNEW_theapmgr_DOT_clear(ValueCast(GMSHEAPNEW_theapmgr,
-        GMSOBJ_txlist_DOT_get(self->
-        GMSHEAPNEW_tbigblockmgr_DOT_mgrlist,n)));
-    } while (n++ !=  _stop);
-
-  }
   { register SYSTEM_int32 _stop = self->
       GMSHEAPNEW_tbigblockmgr_DOT_freelist->GMSOBJ_txlist_DOT_fcount - 1;
     if ((n = 0) <=  _stop) do {
@@ -165,7 +88,7 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_clear(
     GMSHEAPNEW_tbigblockmgr_DOT_freelist->GMSOBJ_txlist_DOT_fcount * 
     GMSHEAPNEW_bigblocksize);
   GMSOBJ_txlist_DOT_clear(self->GMSHEAPNEW_tbigblockmgr_DOT_freelist);
-}  /* clear */
+}  /* xclear */
 
 Procedure GMSHEAPNEW_tbigblockmgr_DOT_reducememorysize(
   GMSHEAPNEW_tbigblockmgr self,
@@ -173,16 +96,19 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_reducememorysize(
 {
   self->GMSHEAPNEW_tbigblockmgr_DOT_othermemory = self->
     GMSHEAPNEW_tbigblockmgr_DOT_othermemory - delta;
-  GMSHEAPNEW_totalmemory = GMSHEAPNEW_totalmemory - delta;
-  if (_P3assigned(GMSHEAPNEW_memoryreportproc)) 
-    (*GMSHEAPNEW_memoryreportproc)(GMSHEAPNEW_gmsmemoryused());
+  self->GMSHEAPNEW_tbigblockmgr_DOT_totalmemory = self->
+    GMSHEAPNEW_tbigblockmgr_DOT_totalmemory - delta;
+  if (_P3assigned(self->GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc)) 
+    (*self->GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc)(
+      GMSHEAPNEW_tbigblockmgr_DOT_memoryusedmb(self));
 }  /* reducememorysize */
 
 Procedure GMSHEAPNEW_tbigblockmgr_DOT_increasememorysize(
   GMSHEAPNEW_tbigblockmgr self,
   SYSTEM_int64 delta)
 {
-  if (GMSHEAPNEW_totalmemory + delta > GMSHEAPNEW_memorylimit) 
+  if (self->GMSHEAPNEW_tbigblockmgr_DOT_totalmemory + delta > self->
+    GMSHEAPNEW_tbigblockmgr_DOT_memorylimit) 
     _P3_RAISE(ValueCast(EXCEPTIONS_eoutofmemory,
       SYSTEM_exception_DOT_create(ValueCast(SYSTEM_exception,
       _P3alloc_object(&EXCEPTIONS_eoutofmemory_CD)),_P3str1("\053Requested memory exceeds assigned HeapLimit"))));
@@ -192,12 +118,42 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_increasememorysize(
     GMSHEAPNEW_tbigblockmgr_DOT_highmark) 
     self->GMSHEAPNEW_tbigblockmgr_DOT_highmark = self->
       GMSHEAPNEW_tbigblockmgr_DOT_othermemory;
-  GMSHEAPNEW_totalmemory = GMSHEAPNEW_totalmemory + delta;
-  if (GMSHEAPNEW_totalmemory > GMSHEAPNEW_totalhighmark) 
-    GMSHEAPNEW_totalhighmark = GMSHEAPNEW_totalmemory;
-  if (_P3assigned(GMSHEAPNEW_memoryreportproc)) 
-    (*GMSHEAPNEW_memoryreportproc)(GMSHEAPNEW_gmsmemoryused());
+  self->GMSHEAPNEW_tbigblockmgr_DOT_totalmemory = self->
+    GMSHEAPNEW_tbigblockmgr_DOT_totalmemory + delta;
+  if (self->GMSHEAPNEW_tbigblockmgr_DOT_totalmemory > self->
+    GMSHEAPNEW_tbigblockmgr_DOT_totalhighmark) 
+    self->GMSHEAPNEW_tbigblockmgr_DOT_totalhighmark = self->
+      GMSHEAPNEW_tbigblockmgr_DOT_totalmemory;
+  if (_P3assigned(self->GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc)) 
+    (*self->GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc)(
+      GMSHEAPNEW_tbigblockmgr_DOT_memoryusedmb(self));
 }  /* increasememorysize */
+
+Function(SYSTEM_double ) GMSHEAPNEW_tbigblockmgr_DOT_memorylimitmb(
+  GMSHEAPNEW_tbigblockmgr self)
+{
+  SYSTEM_double result;
+
+  result = self->GMSHEAPNEW_tbigblockmgr_DOT_memorylimit /  1e6;
+  return result;
+}  /* memorylimitmb */
+
+Function(SYSTEM_double ) GMSHEAPNEW_tbigblockmgr_DOT_memoryusedmb(
+  GMSHEAPNEW_tbigblockmgr self)
+{
+  SYSTEM_double result;
+  SYSTEM_int64 rss, vss;
+
+  result = self->GMSHEAPNEW_tbigblockmgr_DOT_totalmemory /  1e6;
+  if (self->GMSHEAPNEW_tbigblockmgr_DOT_showosmem == 1 && 
+    P3UTILS_p3getmemoryinfo(&rss,&vss)) { 
+    result = rss /  1e6;
+  } else 
+    if (self->GMSHEAPNEW_tbigblockmgr_DOT_showosmem == 2 && 
+      P3UTILS_p3getmemoryinfo(&rss,&vss)) 
+      result = vss /  1e6;
+  return result;
+}  /* memoryusedmb */
 
 Function(SYSTEM_pointer ) GMSHEAPNEW_tbigblockmgr_DOT_getbigblock(
   GMSHEAPNEW_tbigblockmgr self)
@@ -214,7 +170,7 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_tbigblockmgr_DOT_getbigblock(
     GMSHEAPNEW_tbigblockmgr_DOT_increasememorysize(self,
       GMSHEAPNEW_bigblocksize);
     _P3getmem(result,GMSHEAPNEW_bigblocksize);
-  } 
+  }
   return result;
 }  /* getbigblock */
 
@@ -224,41 +180,6 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_releasebigblock(
 {
   GMSOBJ_txlist_DOT_add(self->GMSHEAPNEW_tbigblockmgr_DOT_freelist,p);
 }  /* releasebigblock */
-
-Procedure GMSHEAPNEW_tbigblockmgr_DOT_registerheapmgr(
-  GMSHEAPNEW_tbigblockmgr self,
-  GMSHEAPNEW_theapmgr h)
-{
-  GMSOBJ_txlist_DOT_add(self->GMSHEAPNEW_tbigblockmgr_DOT_mgrlist,h);
-}  /* registerheapmgr */
-
-Procedure GMSHEAPNEW_tbigblockmgr_DOT_removeheapmgr(
-  GMSHEAPNEW_tbigblockmgr self,
-  GMSHEAPNEW_theapmgr h)
-{
-  GMSOBJ_txlist_DOT_remove(self->GMSHEAPNEW_tbigblockmgr_DOT_mgrlist,h);
-}  /* removeheapmgr */
-
-Function(SYSTEM_integer ) GMSHEAPNEW_tbigblockmgr_DOT_count(
-  GMSHEAPNEW_tbigblockmgr self)
-{
-  SYSTEM_integer result;
-
-  result = self->GMSHEAPNEW_tbigblockmgr_DOT_mgrlist->
-    GMSOBJ_txlist_DOT_fcount;
-  return result;
-}  /* count */
-
-Function(GMSHEAPNEW_theapmgr ) GMSHEAPNEW_tbigblockmgr_DOT_getheapmgr(
-  GMSHEAPNEW_tbigblockmgr self,
-  SYSTEM_integer n)
-{
-  GMSHEAPNEW_theapmgr result;
-
-  result = ValueCast(GMSHEAPNEW_theapmgr,GMSOBJ_txlist_DOT_get(self->
-    GMSHEAPNEW_tbigblockmgr_DOT_mgrlist,n));
-  return result;
-}  /* getheapmgr */
 
 Function(SYSTEM_ansichar *) GMSHEAPNEW_tbigblockmgr_DOT_getname(
   SYSTEM_ansichar *result,
@@ -281,25 +202,7 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_getbigstats(
     GMSOBJ_txlist_DOT_fcount;
 }  /* getbigstats */
 
-Function(SYSTEM_int64 ) GMSHEAPNEW_tbigblockmgr_DOT_getfreeslotspace(
-  GMSHEAPNEW_tbigblockmgr self)
-{
-  SYSTEM_int64 result;
-  SYSTEM_integer n;
-
-  result = 0;
-  { register SYSTEM_int32 _stop = GMSHEAPNEW_tbigblockmgr_DOT_count(
-      self) - 1;
-    if ((n = 0) <=  _stop) do {
-      result = result + GMSHEAPNEW_theapmgr_DOT_getfreeslotspace(
-        GMSHEAPNEW_tbigblockmgr_DOT_getheapmgr(self,n));
-    } while (n++ !=  _stop);
-
-  }
-  return result;
-}  /* getfreeslotspace */
-
-Procedure GMSHEAPNEW_theapmgr_DOT_clear(
+Procedure GMSHEAPNEW_theapmgr_DOT_prvclear(
   GMSHEAPNEW_theapmgr self)
 {
   SYSTEM_integer n;
@@ -344,44 +247,53 @@ Procedure GMSHEAPNEW_theapmgr_DOT_clear(
   self->GMSHEAPNEW_theapmgr_DOT_reallocused = 0;
   self->GMSHEAPNEW_theapmgr_DOT_realloccnt64 = 0;
   self->GMSHEAPNEW_theapmgr_DOT_reallocused64 = 0;
+}  /* prvclear */
+
+Procedure GMSHEAPNEW_theapmgr_DOT_clear(
+  GMSHEAPNEW_theapmgr self)
+{
+  GMSHEAPNEW_theapmgr_DOT_prvclear(self);
 }  /* clear */
 
 Constructor(GMSHEAPNEW_theapmgr ) GMSHEAPNEW_theapmgr_DOT_create(
   GMSHEAPNEW_theapmgr self,
-  GMSHEAPNEW_tbigblockmgr m,
   const SYSTEM_ansichar *name)
 {
   ValueCast(GMSHEAPNEW_theapmgr,SYSTEM_tobject_DOT_create(ValueCast(
     SYSTEM_tobject,self)));
-  self->GMSHEAPNEW_theapmgr_DOT_blockmgr = m;
+  {
+    _P3STR_255 _t1;
+
+    self->GMSHEAPNEW_theapmgr_DOT_blockmgr = ValueCast(
+      GMSHEAPNEW_tbigblockmgr,GMSHEAPNEW_tbigblockmgr_DOT_create(ValueCast(
+      GMSHEAPNEW_tbigblockmgr,_P3alloc_object(&
+      GMSHEAPNEW_tbigblockmgr_CD)),_P3strcat(_t1,255,_P3str1("\006BBMgr_"),
+      name)));
+  }
   _P3getmem(self->GMSHEAPNEW_theapmgr_DOT_spname,ValueCast(
     SYSTEM_int32,SYSTEM_length(name)) + 1);
   _P3strcpy(*self->GMSHEAPNEW_theapmgr_DOT_spname,255,name);
-  GMSHEAPNEW_tbigblockmgr_DOT_registerheapmgr(self->
-    GMSHEAPNEW_theapmgr_DOT_blockmgr,ValueCast(GMSHEAPNEW_theapmgr,
-    self));
   self->GMSHEAPNEW_theapmgr_DOT_wrkbuffs = ValueCast(GMSOBJ_txlist,
     SYSTEM_tobject_DOT_create(ValueCast(SYSTEM_tobject,_P3alloc_object(&
     GMSOBJ_txlist_CD))));
   self->GMSHEAPNEW_theapmgr_DOT_active = ValueCast(GMSOBJ_txlist,
     SYSTEM_tobject_DOT_create(ValueCast(SYSTEM_tobject,_P3alloc_object(&
     GMSOBJ_txlist_CD))));
-  GMSHEAPNEW_theapmgr_DOT_clear(self);
+  GMSHEAPNEW_theapmgr_DOT_prvclear(self);
   return self;
 }  /* create */
 
 Destructor(GMSHEAPNEW_theapmgr ) GMSHEAPNEW_theapmgr_DOT_destroy(
   GMSHEAPNEW_theapmgr self)
 {
-  GMSHEAPNEW_theapmgr_DOT_clear(self);
+  GMSHEAPNEW_theapmgr_DOT_prvclear(self);
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
     GMSHEAPNEW_theapmgr_DOT_wrkbuffs));
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
     GMSHEAPNEW_theapmgr_DOT_active));
   _P3freemem(self->GMSHEAPNEW_theapmgr_DOT_spname);
-  GMSHEAPNEW_tbigblockmgr_DOT_removeheapmgr(self->
-    GMSHEAPNEW_theapmgr_DOT_blockmgr,ValueCast(GMSHEAPNEW_theapmgr,
-    self));
+  SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
+    GMSHEAPNEW_theapmgr_DOT_blockmgr));
   SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
   return self;
 }  /* destroy */
@@ -415,7 +327,7 @@ Procedure GMSHEAPNEW_theapmgr_DOT_releaseworkbuffer(
   _P3freemem(p);
 }  /* releaseworkbuffer */
 
-Procedure GMSHEAPNEW_theapmgr_DOT_gmsfreemem(
+Procedure GMSHEAPNEW_theapmgr_DOT_prvgmsfreemem(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_pointer p,
   SYSTEM_word slot)
@@ -429,9 +341,17 @@ Procedure GMSHEAPNEW_theapmgr_DOT_gmsfreemem(
     _W2->firstfree = ValueCast(GMSHEAPNEW_psmallblock,p);
 
   }
+}  /* prvgmsfreemem */
+
+Procedure GMSHEAPNEW_theapmgr_DOT_gmsfreemem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_pointer p,
+  SYSTEM_word slot)
+{
+  GMSHEAPNEW_theapmgr_DOT_prvgmsfreemem(self,p,slot);
 }  /* gmsfreemem */
 
-Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_gmsgetmem(
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvgmsgetmem(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_word slot)
 {
@@ -483,16 +403,26 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_gmsgetmem(
 
   }
   return result;
+}  /* prvgmsgetmem */
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_gmsgetmem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_word slot)
+{
+  SYSTEM_pointer result;
+
+  result = GMSHEAPNEW_theapmgr_DOT_prvgmsgetmem(self,slot);
+  return result;
 }  /* gmsgetmem */
 
-Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem(
+Procedure GMSHEAPNEW_theapmgr_DOT_prvxfreemem(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_pointer p,
   SYSTEM_integer size)
 {
-  if (size > 0) {
+  if (size > 0) 
     if (size <= 256) { 
-      GMSHEAPNEW_theapmgr_DOT_gmsfreemem(self,p,(size - 1) /  
+      GMSHEAPNEW_theapmgr_DOT_prvgmsfreemem(self,p,(size - 1) /  
         GMSHEAPNEW_heapgranularity + 1);
     } else {
       _P3inc0(self->GMSHEAPNEW_theapmgr_DOT_otherfree);
@@ -500,7 +430,14 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem(
       GMSHEAPNEW_theapmgr_DOT_reducememorysize(self,size);
       _P3freemem0(p);
     }
-  }
+}  /* prvxfreemem */
+
+Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_pointer p,
+  SYSTEM_integer size)
+{
+  GMSHEAPNEW_theapmgr_DOT_prvxfreemem(self,p,size);
 }  /* xfreemem */
 
 Procedure GMSHEAPNEW_theapmgr_DOT_xfreememnc(
@@ -520,7 +457,7 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xfreememandnil(
   SYSTEM_pointer *p,
   SYSTEM_integer size)
 {
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(self,*p,size);
+  GMSHEAPNEW_theapmgr_DOT_prvxfreemem(self,*p,size);
   *p = NULL;
 }  /* xfreememandnil */
 
@@ -529,18 +466,18 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem64andnil(
   SYSTEM_pointer *p,
   SYSTEM_int64 size)
 {
-  GMSHEAPNEW_theapmgr_DOT_xfreemem64(self,*p,size);
+  GMSHEAPNEW_theapmgr_DOT_prvxfreemem64(self,*p,size);
   *p = NULL;
 }  /* xfreemem64andnil */
 
-Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem64(
+Procedure GMSHEAPNEW_theapmgr_DOT_prvxfreemem64(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_pointer p,
   SYSTEM_int64 size)
 {
-  if (size > 0) {
+  if (size > 0) 
     if (size <= 256) { 
-      GMSHEAPNEW_theapmgr_DOT_gmsfreemem(self,p,(size - 1) /  
+      GMSHEAPNEW_theapmgr_DOT_prvgmsfreemem(self,p,(size - 1) /  
         GMSHEAPNEW_heapgranularity + 1);
     } else {
       _P3inc0(self->GMSHEAPNEW_theapmgr_DOT_otherfree64);
@@ -548,10 +485,17 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem64(
       GMSHEAPNEW_theapmgr_DOT_reducememorysize(self,size);
       P3UTILS_p3freemem64(&p,size);
     }
-  }
+}  /* prvxfreemem64 */
+
+Procedure GMSHEAPNEW_theapmgr_DOT_xfreemem64(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_pointer p,
+  SYSTEM_int64 size)
+{
+  GMSHEAPNEW_theapmgr_DOT_prvxfreemem64(self,p,size);
 }  /* xfreemem64 */
 
-Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem(
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvxgetmem(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_integer size)
 {
@@ -561,7 +505,7 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem(
     result = NULL;
   } else 
     if (size <= 256) { 
-      result = GMSHEAPNEW_theapmgr_DOT_gmsgetmem(self,(size - 1) /  
+      result = GMSHEAPNEW_theapmgr_DOT_prvgmsgetmem(self,(size - 1) /  
         GMSHEAPNEW_heapgranularity + 1);
     } else {
       _P3inc0(self->GMSHEAPNEW_theapmgr_DOT_otherget);
@@ -569,11 +513,21 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem(
       _P3getmem(result,size);
       GMSOBJ_txlist_DOT_add(self->GMSHEAPNEW_theapmgr_DOT_active,
         result);
-    } 
+    }
+  return result;
+}  /* prvxgetmem */
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_integer size)
+{
+  SYSTEM_pointer result;
+
+  result = GMSHEAPNEW_theapmgr_DOT_prvxgetmem(self,size);
   return result;
 }  /* xgetmem */
 
-Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmemnc(
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvxgetmemnc(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_integer size)
 {
@@ -585,7 +539,17 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmemnc(
     _P3inc0(self->GMSHEAPNEW_theapmgr_DOT_otherget);
     GMSHEAPNEW_theapmgr_DOT_increasememorysize(self,size);
     _P3getmem(result,size);
-  } 
+  }
+  return result;
+}  /* prvxgetmemnc */
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmemnc(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_integer size)
+{
+  SYSTEM_pointer result;
+
+  result = GMSHEAPNEW_theapmgr_DOT_prvxgetmemnc(self,size);
   return result;
 }  /* xgetmemnc */
 
@@ -595,7 +559,7 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xallocmem(
 {
   SYSTEM_pointer result;
 
-  result = GMSHEAPNEW_theapmgr_DOT_xgetmem(self,size);
+  result = GMSHEAPNEW_theapmgr_DOT_prvxgetmem(self,size);
   if (result != NULL) 
     SYSTEM_P3_fillchar(ValueCast(SYSTEM_P3_pbyte,result),size,0);
   return result;
@@ -607,13 +571,13 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xallocmemnc(
 {
   SYSTEM_pointer result;
 
-  result = GMSHEAPNEW_theapmgr_DOT_xgetmemnc(self,size);
+  result = GMSHEAPNEW_theapmgr_DOT_prvxgetmemnc(self,size);
   if (result != NULL) 
     SYSTEM_P3_fillchar(ValueCast(SYSTEM_P3_pbyte,result),size,0);
   return result;
 }  /* xallocmemnc */
 
-Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem64(
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvxgetmem64(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_int64 size)
 {
@@ -623,7 +587,7 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem64(
     result = NULL;
   } else 
     if (size <= 256) { 
-      result = GMSHEAPNEW_theapmgr_DOT_gmsgetmem(self,(size - 1) /  
+      result = GMSHEAPNEW_theapmgr_DOT_prvgmsgetmem(self,(size - 1) /  
         GMSHEAPNEW_heapgranularity + 1);
     } else {
       _P3inc0(self->GMSHEAPNEW_theapmgr_DOT_otherget64);
@@ -631,9 +595,31 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem64(
       P3UTILS_p3getmem64(&result,size);
       GMSOBJ_txlist_DOT_add(self->GMSHEAPNEW_theapmgr_DOT_active,
         result);
-    } 
+    }
+  return result;
+}  /* prvxgetmem64 */
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem64(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_int64 size)
+{
+  SYSTEM_pointer result;
+
+  result = GMSHEAPNEW_theapmgr_DOT_prvxgetmem64(self,size);
   return result;
 }  /* xgetmem64 */
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xallocmem64(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_int64 size)
+{
+  SYSTEM_pointer result;
+
+  result = GMSHEAPNEW_theapmgr_DOT_prvxgetmem64(self,size);
+  if (result != NULL) 
+    P3UTILS_p3fillchar64(ValueCast(SYSTEM_P3_pbyte,result),size,0);
+  return result;
+}  /* xallocmem64 */
 
 Procedure GMSHEAPNEW_theapmgr_DOT_xreallocmem(
   GMSHEAPNEW_theapmgr self,
@@ -648,11 +634,11 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xreallocmem(
   _P3inc1(self->GMSHEAPNEW_theapmgr_DOT_reallocused,newsize);
   if (newsize <= 0) {
     if (oldsize > 0 && *p != NULL) 
-      GMSHEAPNEW_theapmgr_DOT_xfreemem(self,*p,oldsize);
+      GMSHEAPNEW_theapmgr_DOT_prvxfreemem(self,*p,oldsize);
     pnew = NULL;
   } else 
     if (*p == NULL || oldsize <= 0) { 
-      pnew = GMSHEAPNEW_theapmgr_DOT_xgetmem(self,newsize);
+      pnew = GMSHEAPNEW_theapmgr_DOT_prvxgetmem(self,newsize);
     } else 
       if (oldsize == newsize) { 
         pnew = *p;
@@ -671,15 +657,15 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xreallocmem(
             GMSHEAPNEW_theapmgr_DOT_reducememorysize(self,oldsize - 
               newsize);
         } else {
-          pnew = GMSHEAPNEW_theapmgr_DOT_xgetmem(self,newsize);
+          pnew = GMSHEAPNEW_theapmgr_DOT_prvxgetmem(self,newsize);
           if (oldsize <= newsize) { 
             SYSTEM_move(ValueCast(SYSTEM_P3_pbyte,*p),ValueCast(
               SYSTEM_P3_pbyte,pnew),oldsize);
           } else 
             SYSTEM_move(ValueCast(SYSTEM_P3_pbyte,*p),ValueCast(
               SYSTEM_P3_pbyte,pnew),newsize);
-          GMSHEAPNEW_theapmgr_DOT_xfreemem(self,*p,oldsize);
-        } 
+          GMSHEAPNEW_theapmgr_DOT_prvxfreemem(self,*p,oldsize);
+        }
   *p = pnew;
 }  /* xreallocmem */
 
@@ -708,11 +694,11 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xreallocmem64(
   _P3inc1(self->GMSHEAPNEW_theapmgr_DOT_reallocused64,newsize);
   if (newsize <= 0) {
     if (oldsize > 0 && *p != NULL) 
-      GMSHEAPNEW_theapmgr_DOT_xfreemem64(self,*p,oldsize);
+      GMSHEAPNEW_theapmgr_DOT_prvxfreemem64(self,*p,oldsize);
     pnew = NULL;
   } else 
     if (*p == NULL || oldsize <= 0) { 
-      pnew = GMSHEAPNEW_theapmgr_DOT_xgetmem64(self,newsize);
+      pnew = GMSHEAPNEW_theapmgr_DOT_prvxgetmem64(self,newsize);
     } else 
       if (oldsize == newsize) { 
         pnew = *p;
@@ -731,26 +717,17 @@ Procedure GMSHEAPNEW_theapmgr_DOT_xreallocmem64(
             GMSHEAPNEW_theapmgr_DOT_reducememorysize(self,oldsize - 
               newsize);
         } else {
-          pnew = GMSHEAPNEW_theapmgr_DOT_xgetmem64(self,newsize);
+          pnew = GMSHEAPNEW_theapmgr_DOT_prvxgetmem64(self,newsize);
           if (oldsize <= newsize) { 
             SYSTEM_move(ValueCast(SYSTEM_P3_pbyte,*p),ValueCast(
               SYSTEM_P3_pbyte,pnew),oldsize);
           } else 
             SYSTEM_move(ValueCast(SYSTEM_P3_pbyte,*p),ValueCast(
               SYSTEM_P3_pbyte,pnew),newsize);
-          GMSHEAPNEW_theapmgr_DOT_xfreemem64(self,*p,oldsize);
-        } 
+          GMSHEAPNEW_theapmgr_DOT_prvxfreemem64(self,*p,oldsize);
+        }
   *p = pnew;
 }  /* xreallocmem64 */
-
-Function(SYSTEM_double ) GMSHEAPNEW_gmsmemoryfree(void)
-{
-  SYSTEM_double result;
-
-  result = GMSHEAPNEW_tbigblockmgr_DOT_getfreeslotspace(
-    GMSHEAPNEW_bbmgr) /  1e6;
-  return result;
-}  /* gmsmemoryfree */
 
 Procedure GMSHEAPNEW_theapmgr_DOT_increasememorysize(
   GMSHEAPNEW_theapmgr self,
@@ -776,7 +753,7 @@ Procedure GMSHEAPNEW_theapmgr_DOT_reducememorysize(
     GMSHEAPNEW_theapmgr_DOT_othermemory - delta;
 }  /* reducememorysize */
 
-Procedure GMSHEAPNEW_theapmgr_DOT_getslotcnts(
+Procedure GMSHEAPNEW_theapmgr_DOT_prvgetslotcnts(
   GMSHEAPNEW_theapmgr self,
   GMSHEAPNEW_theapslotnr slot,
   SYSTEM_int64 *cntget,
@@ -790,6 +767,17 @@ Procedure GMSHEAPNEW_theapmgr_DOT_getslotcnts(
     *cntavail = _W2->listcount;
 
   }
+}  /* prvgetslotcnts */
+
+Procedure GMSHEAPNEW_theapmgr_DOT_getslotcnts(
+  GMSHEAPNEW_theapmgr self,
+  GMSHEAPNEW_theapslotnr slot,
+  SYSTEM_int64 *cntget,
+  SYSTEM_int64 *cntfree,
+  SYSTEM_int64 *cntavail)
+{
+  GMSHEAPNEW_theapmgr_DOT_prvgetslotcnts(self,slot,cntget,cntfree,
+    cntavail);
 }  /* getslotcnts */
 
 Procedure GMSHEAPNEW_theapmgr_DOT_getblockstats(
@@ -825,7 +813,7 @@ Procedure GMSHEAPNEW_theapmgr_DOT_getotherstats(
     *cntfree = self->GMSHEAPNEW_theapmgr_DOT_otherfree;
     *cntrealloc = self->GMSHEAPNEW_theapmgr_DOT_realloccnt;
     *sizerused = self->GMSHEAPNEW_theapmgr_DOT_reallocused;
-  } 
+  }
 }  /* getotherstats */
 
 Function(SYSTEM_int64 ) GMSHEAPNEW_theapmgr_DOT_getfreeslotspace(
@@ -838,11 +826,10 @@ Function(SYSTEM_int64 ) GMSHEAPNEW_theapmgr_DOT_getfreeslotspace(
 
   result = 0;
   for (slot = 1;slot <= 32;++slot) {
-    GMSHEAPNEW_theapmgr_DOT_getslotcnts(self,slot,&cntget,&cntfree,&
+    GMSHEAPNEW_theapmgr_DOT_prvgetslotcnts(self,slot,&cntget,&cntfree,&
       cntavail);
     sizefree = cntavail * slot * GMSHEAPNEW_heapgranularity;
     _P3inc1(result,sizefree);
-  
   }
   return result;
 }  /* getfreeslotspace */
@@ -856,18 +843,33 @@ Function(SYSTEM_ansichar *) GMSHEAPNEW_theapmgr_DOT_getname(
   return result;
 }  /* getname */
 
+Function(SYSTEM_boolean ) GMSHEAPNEW_theapmgr_DOT_setmemorylimit(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_double limit)
+{
+  SYSTEM_boolean result;
+
+  self->GMSHEAPNEW_theapmgr_DOT_blockmgr->
+    GMSHEAPNEW_tbigblockmgr_DOT_memorylimit = limit;
+  result = limit >= self->GMSHEAPNEW_theapmgr_DOT_blockmgr->
+    GMSHEAPNEW_tbigblockmgr_DOT_totalmemory;
+  return result;
+}  /* setmemorylimit */
+
+Procedure GMSHEAPNEW_theapmgr_DOT_setmemoryreportproc(
+  GMSHEAPNEW_theapmgr self,
+  GMSHEAPNEW_tmemoryreportproc f)
+{
+  self->GMSHEAPNEW_theapmgr_DOT_blockmgr->
+    GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc = f;
+}  /* setmemoryreportproc */
+
 /* unit gmsheapnew */
 void _Init_Module_gmsheapnew(void)
 {
-  GMSHEAPNEW_memoryreportproc = NULL;
-  GMSHEAPNEW_memorylimit = 1e200;
-  GMSHEAPNEW_totalhighmark = 0.0;
-  GMSHEAPNEW_totalmemory = 0.0;
-  GMSHEAPNEW_gmscreatedefaultheap();
 } /* _Init_Module_gmsheapnew */
 
 void _Final_Module_gmsheapnew(void)
 {
-  GMSHEAPNEW_gmsreleasedefaultheap();
 } /* _Final_Module_gmsheapnew */
 

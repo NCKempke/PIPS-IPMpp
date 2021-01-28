@@ -1,4 +1,4 @@
-/* $Id: p3Custom2.cpp 52165 2015-05-19 13:33:37Z sdirkse $
+/* $Id$
  * This code is sensitive to the order of the #defines, so inlining is not OK
  */
 
@@ -223,7 +223,7 @@ int xGetExecName (unsigned char *execName, unsigned char *msg)
 int xGetLibName (unsigned char *libName, unsigned char *msg)
 {
   char libBuf[4096];
-  char msgBuf[2048+20];
+  char msgBuf[2048+32];
   char tmpBuf[2048];
   int rc, k;
 

@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -34,7 +34,7 @@ Function(SYSTEM_P3_pansichar ) PCHUTIL_strtopchar(
 
     }
     (*ValueCast(GMSGEN_pansichararray,result))[l] = _P3char('\000');
-  } 
+  }
   return result;
 }  /* strtopchar */
 
@@ -71,7 +71,7 @@ Function(SYSTEM_ansichar *) PCHUTIL_pchartostr(
       } 
     } while (SYSTEM_true);
 BRK_1:;
-  } 
+  }
   return result;
 }  /* pchartostr */
 
@@ -98,7 +98,7 @@ Procedure PCHUTIL_convertpchar(
       } 
     } while (SYSTEM_true);
 BRK_2:;
-  } 
+  }
 }  /* convertpchar */
 
 Function(SYSTEM_integer ) PCHUTIL_pcharlen(
@@ -129,8 +129,7 @@ Procedure PCHUTIL_pcharconcatpchar(
         GMSGEN_pansichararray,psrc))[k];
       _P3inc0(*w);
       _P3inc0(k);
-    
-}
+    }
     (*ValueCast(GMSGEN_pansichararray,pdest))[*w] = _P3char('\000');
   } 
 }  /* pcharconcatpchar */

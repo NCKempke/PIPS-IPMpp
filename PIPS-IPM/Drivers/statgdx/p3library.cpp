@@ -6,7 +6,7 @@
 #include "p3platform.h"
 #include "p3library.h"
 
-/**** C code included from p3library.pas(47:1): 23 lines ****/
+/**** C code included from p3library.pas(57:1): 23 lines ****/
 #if ! defined(_WIN32)
 # include <dlfcn.h>
 #endif
@@ -38,16 +38,16 @@ Function(P3LIBRARY_tlibhandle ) P3LIBRARY_p3loadlibrary(
   P3LIBRARY_tlibhandle result;
   P3PRIVATE_shortstrbuf libbuf;
   SYSTEM_P3_pansichar libptr;
+  P3PRIVATE_shortstrbuf errmsgbuf;
   SYSTEM_P3_pansichar dlerrmsg;
 
   libptr = P3PRIVATE_strtostrbuf(lib,libbuf);
   dlerrmsg = NULL;
-  /**** C code included from p3library.pas(120:1): 31 lines ****/
+  /**** C code included from p3library.pas(129:1): 32 lines ****/
 #if defined(_WIN32)
 {
   UINT oldMode;
   SYSTEM_integer lasterr;
-  P3PRIVATE_shortstrbuf errmsgbuf;
 
   oldMode = SetErrorMode(SEM_FAILCRITICALERRORS);
   result = (SYSTEM_pointer) LoadLibrary((char *)libptr);
@@ -61,7 +61,7 @@ Function(P3LIBRARY_tlibhandle ) P3LIBRARY_p3loadlibrary(
     }
     else
       dlerrmsg = (SYSTEM_P3_pansichar)
-                 winLastErr2Buf(GetLastError(),(char *)errmsgbuf,256);
+                 winLastErr2Buf(lasterr,(char *)errmsgbuf,256);
   }
 }
 #else
@@ -95,7 +95,7 @@ Function(SYSTEM_pointer ) P3LIBRARY_p3getprocaddress(
   SYSTEM_P3_pansichar nameptr;
 
   nameptr = P3PRIVATE_strtostrbuf(name,namebuf);
-  /**** C code included from p3library.pas(183:1): 12 lines ****/
+  /**** C code included from p3library.pas(192:1): 12 lines ****/
 #if defined(_WIN32)
 result = GetProcAddress((HMODULE)handle, (char *)nameptr);
 #else
@@ -116,7 +116,7 @@ Function(SYSTEM_boolean ) P3LIBRARY_p3freelibrary(
 {
   SYSTEM_boolean result;
 
-  /**** C code included from p3library.pas(210:1): 17 lines ****/
+  /**** C code included from p3library.pas(220:1): 17 lines ****/
 #if defined(_WIN32)
   result = FreeLibrary((HMODULE)handle);
 #else
@@ -173,8 +173,9 @@ Function(SYSTEM_ansichar *) P3LIBRARY_p3makelibname(
       SYSTEM_shortstring _t7;
 
       _P3strcat(result,_len_ret,_P3strcat(_t6,255,_P3strcat(_t5,255,
-        _P3strcat(_t3,255,SYSUTILS_P3_excludetrailingpathdelimiter(
-        _t1,255,path),_P3ch2str(_t2,1,SYSUTILS_P3_pathdelim)),
+        _P3strcat(_t3,255,VariableCast(SYSTEM_shortstring,
+        SYSUTILS_P3_excludetrailingpathdelimiter(_t1,255,path),
+        SYSTEM_shortstring),_P3ch2str(_t2,1,SYSUTILS_P3_pathdelim)),
         P3LIBRARY_p3libraryprefix(_t4,255)),base),
         P3LIBRARY_p3libraryext(_t7,255));
     }

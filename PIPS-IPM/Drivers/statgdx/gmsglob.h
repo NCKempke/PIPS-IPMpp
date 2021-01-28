@@ -19,12 +19,13 @@ typedef SYSTEM_byte GMSGLOB_tssymbol; /* Anonymous */ enum{GMSGLOB_ssyeq,GMSGLOB
   GMSGLOB_ssysetm,GMSGLOB_ssysets,GMSGLOB_ssydisp,GMSGLOB_ssyabort,
   GMSGLOB_ssyexec,GMSGLOB_ssyload,GMSGLOB_ssyunload,
   GMSGLOB_ssyloadpoint,GMSGLOB_ssyloadhandle,GMSGLOB_ssyloaddc,
-  GMSGLOB_ssyunloaddi,GMSGLOB_ssyunloadidx,GMSGLOB_ssyput,
-  GMSGLOB_ssyptl,GMSGLOB_ssyphd,GMSGLOB_ssypclear,GMSGLOB_ssyppg,
-  GMSGLOB_ssypcl,GMSGLOB_ssyround,GMSGLOB_ssysquare,GMSGLOB_ssycurly,
-  GMSGLOB_ssyimp,GMSGLOB_ssyeqv,GMSGLOB_ssypbruce,GMSGLOB_ssyundf,
-  GMSGLOB_ssyother};
-typedef _P3STR_15 _arr_0GMSGLOB[86];
+  GMSGLOB_ssyunloaddi,GMSGLOB_ssyunloadidx,GMSGLOB_ssybreak,
+  GMSGLOB_ssycontinue,GMSGLOB_ssyembinit,GMSGLOB_ssyembfree,
+  GMSGLOB_ssyput,GMSGLOB_ssyptl,GMSGLOB_ssyphd,GMSGLOB_ssypclear,
+  GMSGLOB_ssyppg,GMSGLOB_ssypcl,GMSGLOB_ssyround,GMSGLOB_ssysquare,
+  GMSGLOB_ssycurly,GMSGLOB_ssyimp,GMSGLOB_ssyeqv,GMSGLOB_ssypbruce,
+  GMSGLOB_ssyundf,GMSGLOB_ssyother};
+typedef _P3STR_15 _arr_0GMSGLOB[90];
 extern _arr_0GMSGLOB GMSGLOB_ssymboltext;
 typedef GMSSPECS_tvarreca _arr_1GMSGLOB[10];
 extern _arr_1GMSGLOB GMSGLOB_defrecvar;

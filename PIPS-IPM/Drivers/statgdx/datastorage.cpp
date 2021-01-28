@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -236,6 +236,7 @@ const SYSTEM_classdescriptor_t DATASTORAGE_tgamsdatahashedsearcher_CD = {
   sizeof(DATASTORAGE_tgamsdatahashedsearcher_OD), 
     DATASTORAGE_tgamsdatahashedsearcher_VT, NULL};
 
+static GMSHEAPNEW_theapmgr DATASTORAGE_myheap;
 
 static Function(SYSTEM_boolean ) DATASTORAGE_dataequal(
   const SYSTEM_untyped *adata,
@@ -267,7 +268,7 @@ Function(GMSGEN_pintegerarrayone )
   GMSGEN_pintegerarrayone result;
 
   result = ValueCast(GMSGEN_pintegerarrayone,
-    GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,self->
+    GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,self->
     DATASTORAGE_tgamsdatastore_DOT_fkeysize));
   return result;
 }  /* allocindex */
@@ -276,7 +277,7 @@ Procedure DATASTORAGE_tgamsdatastore_DOT_freeindex(
   DATASTORAGE_tgamsdatastore self,
   GMSGEN_pintegerarrayone p)
 {
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,p,self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,p,self->
     DATASTORAGE_tgamsdatastore_DOT_fkeysize);
 }  /* freeindex */
 
@@ -287,7 +288,7 @@ Function(SYSTEM_P3_ppointerarray )
   SYSTEM_P3_ppointerarray result;
 
   result = ValueCast(SYSTEM_P3_ppointerarray,
-    GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,(self->
+    GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,(self->
     DATASTORAGE_tgamsdatastore_DOT_fdimension + 1) * sizeof(
     SYSTEM_pointer)));
   return result;
@@ -297,7 +298,7 @@ Procedure DATASTORAGE_tgamsdatastore_DOT_freeptrs(
   DATASTORAGE_tgamsdatastore self,
   SYSTEM_P3_ppointerarray p)
 {
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,p,(self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,p,(self->
     DATASTORAGE_tgamsdatastore_DOT_fdimension + 1) * sizeof(
     SYSTEM_pointer));
 }  /* freeptrs */
@@ -345,11 +346,12 @@ Constructor(DATASTORAGE_tgamsdatastore )
   } else {
     self->DATASTORAGE_tgamsdatastore_DOT_pdefrec = ValueCast(
       GMSGEN_pbytedataarray,GMSHEAPNEW_theapmgr_DOT_xgetmem(
-      GMSHEAPNEW_gheap,self->DATASTORAGE_tgamsdatastore_DOT_fdatasize));
+      DATASTORAGE_myheap,self->
+      DATASTORAGE_tgamsdatastore_DOT_fdatasize));
     GMSOBJ_cmove(adefrec,&(*self->
       DATASTORAGE_tgamsdatastore_DOT_pdefrec)[0],self->
       DATASTORAGE_tgamsdatastore_DOT_fdatasize);
-  } 
+  }
   return self;
 }  /* create */
 
@@ -358,7 +360,7 @@ Destructor(DATASTORAGE_tgamsdatastore )
   DATASTORAGE_tgamsdatastore self)
 {
   if (self->DATASTORAGE_tgamsdatastore_DOT_fdatasize > 0) 
-    GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,self->
+    GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,self->
       DATASTORAGE_tgamsdatastore_DOT_pdefrec,self->
       DATASTORAGE_tgamsdatastore_DOT_fdatasize);
   SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
@@ -502,8 +504,7 @@ Procedure DATASTORAGE_tgamsdatastore_DOT_verify(
         } while (d++ !=  _stop);
 
       }
-    
-}
+    }
   } 
   DATASTORAGE_tgamsdatastore_DOT_freeindex(self,keys);
   DATASTORAGE_tgamsdatastore_DOT_freeindex(self,keysx);
@@ -597,7 +598,7 @@ Function(SYSTEM_P3_pbyte ) DATASTORAGE_tgamsdatatable_DOT_getnextkey(
       DATASTORAGE_tgamsdatastore_DOT_fkeysize);
     result = ValueCast(SYSTEM_P3_pbyte,&(*p)[self->
       DATASTORAGE_tgamsdatastore_DOT_fkeysize]);
-  } 
+  }
   return result;
 }  /* getnextkey */
 
@@ -798,7 +799,7 @@ Constructor(DATASTORAGE_tgamsdatafull )
     DATASTORAGE_tgamsdatastore,self));
   self->DATASTORAGE_tgamsdatafull_DOT_finxmap = ValueCast(
     DATASTORAGE_pintegermappingarray,GMSHEAPNEW_theapmgr_DOT_xgetmem(
-    GMSHEAPNEW_gheap,self->DATASTORAGE_tgamsdatastore_DOT_fdimension * sizeof(
+    DATASTORAGE_myheap,self->DATASTORAGE_tgamsdatastore_DOT_fdimension * sizeof(
     DATASTORAGE_tintegermappingarray)));
   { register SYSTEM_int32 _stop = self->
       DATASTORAGE_tgamsdatastore_DOT_fdimension;
@@ -872,7 +873,6 @@ Constructor(DATASTORAGE_tgamsdatafull )
         DATASTORAGE_tgamsdatafull_DOT_xcnt)[d + 1 - 1];
     (*self->DATASTORAGE_tgamsdatafull_DOT_xmult)[d - 1] = self->
       DATASTORAGE_tgamsdatafull_DOT_fallocsize;
-  
   }
   if ((*self->DATASTORAGE_tgamsdatafull_DOT_xcnt)[0] != 0) 
     self->DATASTORAGE_tgamsdatafull_DOT_fallocsize = self->
@@ -890,7 +890,7 @@ Destructor(DATASTORAGE_tgamsdatafull )
 {
   SYSTEM_integer d;
 
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,self->
     DATASTORAGE_tgamsdatafull_DOT_pdata,self->
     DATASTORAGE_tgamsdatafull_DOT_fallocsize);
   DATASTORAGE_tgamsdatastore_DOT_freeindex(ValueCast(
@@ -966,8 +966,9 @@ Procedure DATASTORAGE_tgamsdatafull_DOT_allocatememory(
 
   if (self->DATASTORAGE_tgamsdatafull_DOT_pdata == NULL) {
     self->DATASTORAGE_tgamsdatafull_DOT_pdata = ValueCast(
-      SYSTEM_P3_pbyte,GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,
-      self->DATASTORAGE_tgamsdatafull_DOT_fallocsize));
+      SYSTEM_P3_pbyte,GMSHEAPNEW_theapmgr_DOT_xgetmem(
+      DATASTORAGE_myheap,self->
+      DATASTORAGE_tgamsdatafull_DOT_fallocsize));
     VirtMethodCall(ValueCast(DATASTORAGE_tgamsdatastore,self), 
       DATASTORAGE_tgamsdatastore_DOT_clear_T, 2, (ValueCast(
       DATASTORAGE_tgamsdatastore,self)));
@@ -976,7 +977,7 @@ Procedure DATASTORAGE_tgamsdatafull_DOT_allocatememory(
       key = DATASTORAGE_tgamsdatastore_DOT_allocindex(ValueCast(
         DATASTORAGE_tgamsdatastore,self));
       data = ValueCast(GMSGEN_pbytedataarray,
-        GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,self->
+        GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,self->
         DATASTORAGE_tgamsdatastore_DOT_fdatasize));
       while (DATASTORAGE_tgamsdatastore_DOT_getnextrecord(ds,key,&(*
         data)[0])) {
@@ -989,7 +990,7 @@ Procedure DATASTORAGE_tgamsdatafull_DOT_allocatememory(
         ds));
       DATASTORAGE_tgamsdatastore_DOT_freeindex(ValueCast(
         DATASTORAGE_tgamsdatastore,self),key);
-      GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,data,self->
+      GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,data,self->
         DATASTORAGE_tgamsdatastore_DOT_fdatasize);
     } 
   } 
@@ -1008,8 +1009,7 @@ Procedure DATASTORAGE_tgamsdatafull_DOT_clear(
       p,self->DATASTORAGE_tgamsdatastore_DOT_fdatasize);
     _P3inc1(p,self->DATASTORAGE_tgamsdatastore_DOT_fdatasize);
     _P3inc1(cnt,self->DATASTORAGE_tgamsdatastore_DOT_fdatasize);
-  
-}
+  }
 }  /* clear */
 
 Function(SYSTEM_integer ) DATASTORAGE_tgamsdatafull_DOT_memoryused(
@@ -1069,14 +1069,9 @@ Destructor(DATASTORAGE_tintegermapping )
   DATASTORAGE_tintegermapping_DOT_destroy(
   DATASTORAGE_tintegermapping self)
 {
-  if (self->DATASTORAGE_tintegermapping_DOT_pmap != NULL)  {
-#if 0
+  if (self->DATASTORAGE_tintegermapping_DOT_pmap != NULL) 
     SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
       DATASTORAGE_tintegermapping_DOT_pmap),0);
-#else
-    SYSTEM_reallocmem((void **) &self->DATASTORAGE_tintegermapping_DOT_pmap,0);
-#endif
-  }
   SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
   return self;
 }  /* destroy */
@@ -1127,15 +1122,10 @@ Procedure DATASTORAGE_tintegermapping_DOT_setmapping(
             DATASTORAGE_tintegermapping_DOT_fcapacity /  4);
     } while (!(f < self->DATASTORAGE_tintegermapping_DOT_fcapacity + 
       delta));
-#if 0
     SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
       DATASTORAGE_tintegermapping_DOT_pmap),(self->
       DATASTORAGE_tintegermapping_DOT_fcapacity + delta) * sizeof(
       SYSTEM_longint));
-#else
-    SYSTEM_reallocmem((void **) &self->DATASTORAGE_tintegermapping_DOT_pmap,
-                      (self->DATASTORAGE_tintegermapping_DOT_fcapacity + delta) * sizeof(SYSTEM_longint));
-#endif
     { register SYSTEM_int32 _stop = self->
         DATASTORAGE_tintegermapping_DOT_fcapacity + delta - 1;
       if ((n = self->DATASTORAGE_tintegermapping_DOT_fcapacity) <=  _stop) do {
@@ -1220,8 +1210,7 @@ static Procedure freenode(
     pn = p->pcelldown;
     DATASTORAGE_tgamsdatasparse_DOT_freecell(*_2self,p,d);
     p = pn;
-  
-}
+  }
 }  /* freenode */
 
 Procedure DATASTORAGE_tgamsdatasparse_DOT_clear(
@@ -1370,7 +1359,7 @@ Function(SYSTEM_P3_pbyte ) DATASTORAGE_tgamsdatasparse_DOT_getnextkey(
         SYSTEM_break(BRK_2);
       } 
     }
-BRK_2:;
+    BRK_2:;
     if (d2 >= 1) 
       { register SYSTEM_int32 _stop = self->
           DATASTORAGE_tgamsdatastore_DOT_fdimension - 1;
@@ -1381,7 +1370,7 @@ BRK_2:;
         } while (d++ !=  _stop);
 
       }
-  } 
+  }
   return result;
 }  /* getnextkey */
 
@@ -1450,7 +1439,7 @@ Procedure DATASTORAGE_tgamsdatasparse_DOT_insertrecord(
           } else {
             pn->pcelldown = pdown;
             pc->pcelldown = pn;
-          } 
+          }
           (*_W2->DATASTORAGE_tgamsdatasparsesearcher_DOT_fsearchptrs)[
             d] = pn;
           { register SYSTEM_int32 _stop = self->
@@ -1474,6 +1463,7 @@ Procedure DATASTORAGE_tgamsdatasparse_DOT_insertrecord(
 
           }
           SYSTEM_break(BRK_3);
+        
         } while (d++ !=  _stop);
 BRK_3:;
 
@@ -1521,13 +1511,12 @@ static Function(DATASTORAGE_psparsecell ) cleanup(
       } else {
         pp->pcelldown = ps;
         pp = ps;
-      } 
+      }
       if (d < (*_2self)->DATASTORAGE_tgamsdatastore_DOT_fdimension) 
         ps->pcellright = pr;
-    } 
+    }
     ps = pdown;
-  
-}
+  }
   if (result != NULL) 
     pp->pcelldown = NULL;
   return result;
@@ -1555,15 +1544,15 @@ Function(SYSTEM_pointer ) DATASTORAGE_tgamsdatasparse_DOT_getcell(
   if (d < self->DATASTORAGE_tgamsdatastore_DOT_fdimension) {
     self->DATASTORAGE_tgamsdatasparse_DOT_fcellcount = self->
       DATASTORAGE_tgamsdatasparse_DOT_fcellcount + 1;
-    result = GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,
+    result = GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,
       DATASTORAGE_szcell);
   } else {
     self->DATASTORAGE_tgamsdatasparse_DOT_fcelldatacount = self->
       DATASTORAGE_tgamsdatasparse_DOT_fcelldatacount + 1;
-    result = GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,
+    result = GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,
       DATASTORAGE_szdatacell + self->
       DATASTORAGE_tgamsdatastore_DOT_fdatasize);
-  } 
+  }
   return result;
 }  /* getcell */
 
@@ -1573,17 +1562,17 @@ Procedure DATASTORAGE_tgamsdatasparse_DOT_freecell(
   SYSTEM_integer d)
 {
   if (d < self->DATASTORAGE_tgamsdatastore_DOT_fdimension) {
-    GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,p,
+    GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,p,
       DATASTORAGE_szcell);
     self->DATASTORAGE_tgamsdatasparse_DOT_fcellcount = self->
       DATASTORAGE_tgamsdatasparse_DOT_fcellcount - 1;
   } else {
-    GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,p,
+    GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,p,
       DATASTORAGE_szdatacell + self->
       DATASTORAGE_tgamsdatastore_DOT_fdatasize);
     self->DATASTORAGE_tgamsdatasparse_DOT_fcelldatacount = self->
       DATASTORAGE_tgamsdatasparse_DOT_fcelldatacount - 1;
-  } 
+  }
 }  /* freecell */
 
 Function(SYSTEM_integer ) DATASTORAGE_tgamsdatasparse_DOT_memoryused(
@@ -1839,7 +1828,6 @@ Function(SYSTEM_boolean )
           self->DATASTORAGE_tgamsdatatablesearcher_DOT_flastindex = l;
           return result;
         } 
-      
       }
     } else 
       for (i = 1;i <= (SYSTEM_int32)close_search;++i) {
@@ -1863,7 +1851,6 @@ Function(SYSTEM_boolean )
           self->DATASTORAGE_tgamsdatatablesearcher_DOT_flastindex = h + 1;
           return result;
         } 
-      
       }
     while (l <= h) {
       self->DATASTORAGE_tgamsdatatablesearcher_DOT_flastindex = ValueCast(
@@ -1881,9 +1868,8 @@ Function(SYSTEM_boolean )
         if (c == 0) 
           goto _Lfound_76;
         h = self->DATASTORAGE_tgamsdatatablesearcher_DOT_flastindex - 1;
-      } 
-    
-}
+      }
+    }
     self->DATASTORAGE_tgamsdatatablesearcher_DOT_flastindex = l;
     return result;
     _Lfound_76:;
@@ -1969,7 +1955,7 @@ Function(SYSTEM_boolean )
         DATASTORAGE_tgamsdatasparsesearcher_DOT_fsearchptrs)[d]);
       if (pc->cellkey == key) {
         self->DATASTORAGE_tgamsdatasparsesearcher_DOT_flastvalid = d;
-        SYSTEM_continue(CNT_4);
+        SYSTEM_continue(CNT_1);
       } 
       if (key < pc->cellkey) 
         pc = (ValueCast(DATASTORAGE_psparsecell,(*self->
@@ -1980,8 +1966,7 @@ Function(SYSTEM_boolean )
         cellkey) {
         pc = pdown;
         pdown = pc->pcelldown;
-      
-}
+      }
       if ((*self->DATASTORAGE_tgamsdatasparsesearcher_DOT_fsearchptrs)[
         d] != ValueCast(SYSTEM_pointer,pc)) {
         (*self->DATASTORAGE_tgamsdatasparsesearcher_DOT_fsearchptrs)[d] = 
@@ -2000,12 +1985,13 @@ Function(SYSTEM_boolean )
       } 
       if (pc->cellkey == key) {
         self->DATASTORAGE_tgamsdatasparsesearcher_DOT_flastvalid = d;
-        SYSTEM_continue(CNT_4);
+        SYSTEM_continue(CNT_1);
       } 
       return result;
     
-CNT_4:;
+CNT_1:;
     } while (d++ !=  _stop);
+
   }
   *apdata = ValueCast(SYSTEM_pointer,&(ValueCast(
     DATASTORAGE_psparsedatacell,(*self->
@@ -2112,7 +2098,7 @@ Function(SYSTEM_boolean ) DATASTORAGE_tgamshashlist_DOT_additem(
         DATASTORAGE_tgamshashlist_DOT_fdatasize);
       result = SYSTEM_false;
       return result;
-    } 
+    }
 }
   prec = ValueCast(DATASTORAGE_plinkeddatarec,
     DATASTORAGE_tlinkeddata_DOT_additem(self->
@@ -2158,7 +2144,7 @@ Procedure DATASTORAGE_tgamshashlist_DOT_clearhashlist(
   DATASTORAGE_tgamshashlist self)
 {
   if (self->DATASTORAGE_tgamshashlist_DOT_phashtable != NULL) {
-    GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,self->
+    GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,self->
       DATASTORAGE_tgamshashlist_DOT_phashtable,self->
       DATASTORAGE_tgamshashlist_DOT_hashsize * sizeof(SYSTEM_pointer));
     self->DATASTORAGE_tgamshashlist_DOT_phashtable = NULL;
@@ -2202,8 +2188,9 @@ Function(SYSTEM_integer ) DATASTORAGE_tgamshashlist_DOT_hash(
   { register SYSTEM_int32 _stop = self->
       DATASTORAGE_tgamshashlist_DOT_fdimension;
     if ((d = 2) <=  _stop) do {
-      v = (1234593 * v + (*akey)[d - 1]) & 2147483647;
+      v = 1234593 * v + (*akey)[d - 1] & 2147483647;
     } while (d++ !=  _stop);
+
   }
   result = v % self->DATASTORAGE_tgamshashlist_DOT_hashsize;
   return result;
@@ -2230,8 +2217,7 @@ Procedure DATASTORAGE_tgamshashlist_DOT_hashall(
         DATASTORAGE_tgamshashlist_DOT_phashtable)[hv]);
       (*self->DATASTORAGE_tgamshashlist_DOT_phashtable)[hv] = prec;
       prec = prec->recnext;
-    
-}
+    }
 
   }
 }  /* hashall */
@@ -2270,7 +2256,7 @@ static Function(SYSTEM_integer ) DATASTORAGE_calcnexthashsize(
         } else {
           result = hashsize_1;
           *nxt = next_1;
-        } 
+        }
   return result;
 }  /* calcnexthashsize */
 
@@ -2285,7 +2271,7 @@ Procedure DATASTORAGE_tgamshashlist_DOT_hashtablereset(
     DATASTORAGE_tgamshashlist_DOT_rehashcnt);
   self->DATASTORAGE_tgamshashlist_DOT_phashtable = ValueCast(
     SYSTEM_P3_ppointerarray,GMSHEAPNEW_theapmgr_DOT_xgetmem(
-    GMSHEAPNEW_gheap,self->DATASTORAGE_tgamshashlist_DOT_hashsize * sizeof(
+    DATASTORAGE_myheap,self->DATASTORAGE_tgamshashlist_DOT_hashsize * sizeof(
     SYSTEM_pointer)));
   { register SYSTEM_int32 _stop = self->
       DATASTORAGE_tgamshashlist_DOT_hashsize - 1;
@@ -2317,7 +2303,7 @@ Function(SYSTEM_pointer ) DATASTORAGE_tgamshashlist_DOT_indexof(
       result = ValueCast(SYSTEM_pointer,&prec->_u._c1.recdata[self->
         DATASTORAGE_tgamshashlist_DOT_fkeysize]);
       return result;
-    } 
+    }
 }
   result = NULL;
   return result;
@@ -2396,12 +2382,8 @@ Destructor(DATASTORAGE_treclist ) DATASTORAGE_treclist_DOT_destroy(
   DATASTORAGE_treclist self)
 {
   DATASTORAGE_treclist_DOT_clear(self);
-#if 0
   SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
     DATASTORAGE_treclist_DOT_flist),0);
-#else
-  SYSTEM_reallocmem((void **) &self->DATASTORAGE_treclist_DOT_flist,0);
-#endif
   SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
   return self;
 }  /* destroy */
@@ -2413,14 +2395,9 @@ Procedure DATASTORAGE_treclist_DOT_setcapacity(
   if (newcapacity != self->DATASTORAGE_treclist_DOT_fcapacity) {
     if (newcapacity < self->DATASTORAGE_treclist_DOT_fcount) 
       newcapacity = self->DATASTORAGE_treclist_DOT_fcount;
-#if 0
     SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
       DATASTORAGE_treclist_DOT_flist),newcapacity * sizeof(
       SYSTEM_pointer));
-#else
-    SYSTEM_reallocmem((void **) &self->DATASTORAGE_treclist_DOT_flist,
-                      newcapacity * sizeof(SYSTEM_pointer));
-#endif
     self->DATASTORAGE_treclist_DOT_fcapacity = newcapacity;
   } 
 }  /* setcapacity */
@@ -2449,7 +2426,7 @@ Function(SYSTEM_pointer ) DATASTORAGE_treclist_DOT_additem(
   if (self->DATASTORAGE_treclist_DOT_fcount == self->
     DATASTORAGE_treclist_DOT_fcapacity) 
     VirtMethodCall(self, DATASTORAGE_treclist_DOT_grow_T, 1, (self));
-  result = GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,self->
+  result = GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,self->
     DATASTORAGE_treclist_DOT_frecsize);
   (*self->DATASTORAGE_treclist_DOT_flist)[self->
     DATASTORAGE_treclist_DOT_fcount] = result;
@@ -2465,7 +2442,7 @@ Procedure DATASTORAGE_treclist_DOT_clear(
   { register SYSTEM_int32 _stop = self->
       DATASTORAGE_treclist_DOT_fcount - 1;
     if ((n = 0) <=  _stop) do {
-      GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,(*self->
+      GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,(*self->
         DATASTORAGE_treclist_DOT_flist)[n],self->
         DATASTORAGE_treclist_DOT_frecsize);
     } while (n++ !=  _stop);
@@ -2492,7 +2469,7 @@ Procedure DATASTORAGE_treclist_DOT_freeitem(
   DATASTORAGE_treclist self,
   SYSTEM_integer index)
 {
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,(*self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,(*self->
     DATASTORAGE_treclist_DOT_flist)[index],self->
     DATASTORAGE_treclist_DOT_frecsize);
 }  /* freeitem */
@@ -2520,7 +2497,7 @@ Function(SYSTEM_pointer ) DATASTORAGE_treclist_DOT_insert(
     SYSTEM_move(&(*self->DATASTORAGE_treclist_DOT_flist)[index],&(*
       self->DATASTORAGE_treclist_DOT_flist)[index + 1],(self->
       DATASTORAGE_treclist_DOT_fcount - index) * sizeof(SYSTEM_pointer));
-  result = GMSHEAPNEW_theapmgr_DOT_xgetmem(GMSHEAPNEW_gheap,self->
+  result = GMSHEAPNEW_theapmgr_DOT_xgetmem(DATASTORAGE_myheap,self->
     DATASTORAGE_treclist_DOT_frecsize);
   (*self->DATASTORAGE_treclist_DOT_flist)[index] = result;
   _P3inc0(self->DATASTORAGE_treclist_DOT_fcount);
@@ -2531,7 +2508,7 @@ Procedure DATASTORAGE_treclist_DOT_remove(
   DATASTORAGE_treclist self,
   SYSTEM_integer index)
 {
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(GMSHEAPNEW_gheap,(*self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem(DATASTORAGE_myheap,(*self->
     DATASTORAGE_treclist_DOT_flist)[index],self->
     DATASTORAGE_treclist_DOT_frecsize);
   (*self->DATASTORAGE_treclist_DOT_flist)[index] = NULL;
@@ -2569,8 +2546,7 @@ Constructor(DATASTORAGE_tlinkeddata )
     SYSTEM_tobject,self)));
   self->DATASTORAGE_tlinkeddata_DOT_myheap = ValueCast(
     GMSHEAPNEW_theapmgr,GMSHEAPNEW_theapmgr_DOT_create(ValueCast(
-    GMSHEAPNEW_theapmgr,_P3alloc_object(&GMSHEAPNEW_theapmgr_CD)),
-    GMSHEAPNEW_bbmgr,_P3str1("\013TLinkedData")));
+    GMSHEAPNEW_theapmgr,_P3alloc_object(&GMSHEAPNEW_theapmgr_CD)),_P3str1("\013TLinkedData")));
   self->DATASTORAGE_tlinkeddata_DOT_fdimension = adimension;
   self->DATASTORAGE_tlinkeddata_DOT_fkeysize = adimension * sizeof(
     SYSTEM_longint);
@@ -2609,8 +2585,7 @@ Procedure DATASTORAGE_tlinkeddata_DOT_clear(
       DATASTORAGE_tlinkeddata_DOT_myheap,p,self->
       DATASTORAGE_tlinkeddata_DOT_ftotalsize);
     p = pn;
-  
-}
+  }
   self->DATASTORAGE_tlinkeddata_DOT_fcount = 0;
   self->DATASTORAGE_tlinkeddata_DOT_fhead = NULL;
   self->DATASTORAGE_tlinkeddata_DOT_ftail = NULL;
@@ -2683,6 +2658,7 @@ static Function(SYSTEM_boolean ) issorted(
   SYSTEM_integer kd;
   DATASTORAGE_plinkeddatarec r;
 
+  kd = 0;
   r = ValueCast(DATASTORAGE_plinkeddatarec,(*_2self)->
     DATASTORAGE_tlinkeddata_DOT_fhead);
   prevkey = ValueCast(GMSGEN_pintegerarrayone,r->_u._c2.reckeys);
@@ -2694,18 +2670,20 @@ static Function(SYSTEM_boolean ) issorted(
       if ((d = 1) <=  _stop) do {
         kd = r->_u._c2.reckeys[d - 1] - (*prevkey)[d - 1];
         if (kd != 0) 
-          SYSTEM_break(BRK_5);
+          SYSTEM_break(BRK_4);
+      
       } while (d++ !=  _stop);
-BRK_5:;
+BRK_4:;
+
     }
     if (kd < 0) {
       result = SYSTEM_false;
-      SYSTEM_break(BRK_6);
+      SYSTEM_break(BRK_5);
     } 
     prevkey = ValueCast(GMSGEN_pintegerarrayone,r->_u._c2.reckeys);
     r = r->recnext;
   }
-BRK_6:;
+BRK_5:;
   return result;
 }  /* issorted */
 
@@ -2715,7 +2693,7 @@ Procedure DATASTORAGE_tlinkeddata_DOT_sort(
 {
   SYSTEM_P3_ppointerarray head, tail;
   SYSTEM_integer key;
-  SYSTEM_integer allocsize;
+  SYSTEM_int64 allocsize;
   SYSTEM_integer keybase;
   SYSTEM_integer d;
   DATASTORAGE_plinkeddatarec r;
@@ -2724,14 +2702,15 @@ Procedure DATASTORAGE_tlinkeddata_DOT_sort(
     return;
   if (issorted(&self)) 
     return;
-  allocsize = (self->DATASTORAGE_tlinkeddata_DOT_fmaxkey - self->
+  allocsize = (ValueCast(SYSTEM_int64,self->
+    DATASTORAGE_tlinkeddata_DOT_fmaxkey) - self->
     DATASTORAGE_tlinkeddata_DOT_fminkey + 1) * sizeof(
     SYSTEM_pointer);
   head = ValueCast(SYSTEM_P3_ppointerarray,
-    GMSHEAPNEW_theapmgr_DOT_xgetmem(self->
+    GMSHEAPNEW_theapmgr_DOT_xgetmem64(self->
     DATASTORAGE_tlinkeddata_DOT_myheap,allocsize));
   tail = ValueCast(SYSTEM_P3_ppointerarray,
-    GMSHEAPNEW_theapmgr_DOT_xgetmem(self->
+    GMSHEAPNEW_theapmgr_DOT_xgetmem64(self->
     DATASTORAGE_tlinkeddata_DOT_myheap,allocsize));
   keybase = self->DATASTORAGE_tlinkeddata_DOT_fminkey;
   { register SYSTEM_int32 _stop = self->
@@ -2758,8 +2737,7 @@ Procedure DATASTORAGE_tlinkeddata_DOT_sort(
           r;
       (*tail)[key] = r;
       r = r->recnext;
-    
-}
+    }
     r = NULL;
     for (key = self->DATASTORAGE_tlinkeddata_DOT_fmaxkey - keybase;key >= (
       SYSTEM_int32)0;--key) {
@@ -2771,12 +2749,11 @@ Procedure DATASTORAGE_tlinkeddata_DOT_sort(
       } 
     }
     self->DATASTORAGE_tlinkeddata_DOT_fhead = r;
-  
   }
   self->DATASTORAGE_tlinkeddata_DOT_ftail = NULL;
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem64(self->
     DATASTORAGE_tlinkeddata_DOT_myheap,head,allocsize);
-  GMSHEAPNEW_theapmgr_DOT_xfreemem(self->
+  GMSHEAPNEW_theapmgr_DOT_xfreemem64(self->
     DATASTORAGE_tlinkeddata_DOT_myheap,tail,allocsize);
 }  /* sort */
 
@@ -2793,7 +2770,7 @@ Function(SYSTEM_boolean ) DATASTORAGE_tlinkeddata_DOT_startread(
   } else {
     DATASTORAGE_tlinkeddata_DOT_sort(self,amap);
     *p = self->DATASTORAGE_tlinkeddata_DOT_fhead;
-  } 
+  }
   return result;
 }  /* startread */
 
@@ -2883,8 +2860,7 @@ Procedure DATASTORAGE_tlinkeddata_DOT_createlist(
     n = n + 1;
     (**alist)[n] = ValueCast(SYSTEM_pointer,&prec->_u._c2.reckeys[0]);
     prec = prec->recnext;
-  
-}
+  }
 }  /* createlist */
 
 Function(SYSTEM_boolean ) DATASTORAGE_tlinkeddata_DOT_removedefaults(
@@ -2923,7 +2899,7 @@ Function(SYSTEM_boolean ) DATASTORAGE_tlinkeddata_DOT_removedefaults(
       self->DATASTORAGE_tlinkeddata_DOT_fcount = self->
         DATASTORAGE_tlinkeddata_DOT_fcount - 1;
       prec = pnext;
-    } 
+    }
 }
   if (prevrec != NULL) 
     prevrec->recnext = NULL;
@@ -2934,9 +2910,13 @@ Function(SYSTEM_boolean ) DATASTORAGE_tlinkeddata_DOT_removedefaults(
 /* unit datastorage */
 void _Init_Module_datastorage(void)
 {
+  DATASTORAGE_myheap = ValueCast(GMSHEAPNEW_theapmgr,
+    GMSHEAPNEW_theapmgr_DOT_create(ValueCast(GMSHEAPNEW_theapmgr,
+    _P3alloc_object(&GMSHEAPNEW_theapmgr_CD)),_P3str1("\006myheap")));
 } /* _Init_Module_datastorage */
 
 void _Final_Module_datastorage(void)
 {
+  SYSUTILS_P3_freeandnil(&DATASTORAGE_myheap);
 } /* _Final_Module_datastorage */
 

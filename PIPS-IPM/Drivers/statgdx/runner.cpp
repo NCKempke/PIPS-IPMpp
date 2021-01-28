@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -68,7 +68,7 @@ static Procedure addstrtop(
   } else {
     SYSTEM_move(&s[1],*_2p,SYSTEM_length(s));
     _P3inc1(*_2p,SYSTEM_length(s));
-  } 
+  }
 }  /* addstrtop */
 
 Function(SYSTEM_P3_pansichar ) RUNNER_trunner_DOT_commandline(
@@ -92,7 +92,7 @@ Function(SYSTEM_P3_pansichar ) RUNNER_trunner_DOT_commandline(
     } else {
       _P3getmem(p,l);
       result = p;
-    } 
+    }
     if (SYSTEM_pos(_P3str1("\001 "),self->
       RUNNER_trunner_DOT_fexecutable) == 0) { 
       addstrtop(self->RUNNER_trunner_DOT_fexecutable,&p,&l,&f,&self);
@@ -143,7 +143,6 @@ Function(SYSTEM_P3_pansichar ) RUNNER_trunner_DOT_commandline(
 
     }
     addstrtop(_P3str1("\001\000"),&p,&l,&f,&self);
-  
   }
   _P3dec1(p,l);
   SYSTEM_assert(result == p,_P3str1("\006Length"));
@@ -285,26 +284,6 @@ Procedure RUNNER_trunner_DOT_setvisible(
   self->RUNNER_trunner_DOT_fvisible = v;
 }  /* setvisible */
 
-static Function(SYSTEM_P3_pansichar ) RUNNER_strtopchar(
-  const SYSTEM_ansichar *s)
-{
-  SYSTEM_P3_pansichar result;
-  SYSTEM_P3_pansichar p;
-  SYSTEM_integer l;
-
-  l = SYSTEM_length(s);
-  if (l == 0) { 
-    result = NULL;
-  } else {
-    _P3getmem(p,l + 1);
-    result = p;
-    SYSTEM_move(&s[1],p,l);
-    _P3inc1(p,l);
-    *p = _P3char('\000');
-  } 
-  return result;
-}  /* strtopchar */
-
 static Function(SYSTEM_ansichar *) RUNNER_pchartostr(
   SYSTEM_ansichar *result,
   SYSTEM_uint8 _len_ret,
@@ -317,8 +296,7 @@ static Function(SYSTEM_ansichar *) RUNNER_pchartostr(
     w = w + 1;
     result[w] = *p;
     _P3inc0(p);
-  
-}
+  }
   result[0] = ValueCast(SYSTEM_ansichar,w);
   return result;
 }  /* pchartostr */
@@ -378,7 +356,7 @@ Function(SYSTEM_integer ) RUNNER_trunner_DOT_startandwait(
         SYSUTILS_P3_inttostr(_t4,255,self->
         RUNNER_trunner_DOT_fprogrc)));
     }
-  } 
+  }
   return result;
 }  /* startandwait */
 

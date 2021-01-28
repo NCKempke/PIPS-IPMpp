@@ -8,11 +8,11 @@ typedef SYSTEM_byte GMSGLOBX_tsycsetconstants; /* Anonymous */ enum{GMSGLOBX_syc
   GMSGLOBX_sycempty,GMSGLOBX_sycpredefinedsymbols,
   GMSGLOBX_sycgussmodelattributes,GMSGLOBX_sycsetconstants,
   GMSGLOBX_sycsolvernames,GMSGLOBX_sycplatforms,GMSGLOBX_sycvendors,
-  GMSGLOBX_syccomponents,GMSGLOBX_sycclipcodes,
+  GMSGLOBX_syctllicense,GMSGLOBX_syccomponents,GMSGLOBX_sycclipcodes,
   GMSGLOBX_sycgamslicenses,GMSGLOBX_sycgamslicensetypes,
   GMSGLOBX_syccomponentsolvermap,GMSGLOBX_sycclipcomponentmap,
   GMSGLOBX_sycsolverplatformmap,GMSGLOBX_sycsolvertypeplatformmap};
-cnstdef {GMSGLOBX_maxsetconstants = 22};
+cnstdef {GMSGLOBX_maxsetconstants = 23};
 cnstdef {GMSGLOBX_maxsetconstantslength = 23};
 
 Function(SYSTEM_ansichar *) GMSGLOBX_setconstantskey(
@@ -27,8 +27,8 @@ Function(SYSTEM_ansichar *) GMSGLOBX_setconstantstext(
 
 Function(SYSTEM_integer ) GMSGLOBX_setconstantslookup(
   const SYSTEM_ansichar *_ftmp1);
-cnstdef {GMSGLOBX_maxsolvernames = 145};
-cnstdef {GMSGLOBX_maxsolvernameslength = 12};
+cnstdef {GMSGLOBX_maxsolvernames = 153};
+cnstdef {GMSGLOBX_maxsolvernameslength = 13};
 
 Function(SYSTEM_ansichar *) GMSGLOBX_solvernameskey(
   SYSTEM_ansichar *result,
@@ -42,7 +42,7 @@ Function(SYSTEM_ansichar *) GMSGLOBX_solvernamestext(
 
 Function(SYSTEM_integer ) GMSGLOBX_solvernameslookup(
   const SYSTEM_ansichar *_ftmp1);
-cnstdef {GMSGLOBX_maxplatforms = 13};
+cnstdef {GMSGLOBX_maxplatforms = 14};
 cnstdef {GMSGLOBX_maxplatformslength = 3};
 
 Function(SYSTEM_ansichar *) GMSGLOBX_platformskey(
@@ -77,7 +77,22 @@ Function(SYSTEM_ansichar *) GMSGLOBX_vendorstext(
 
 Function(SYSTEM_integer ) GMSGLOBX_vendorslookup(
   const SYSTEM_ansichar *_ftmp1);
-cnstdef {GMSGLOBX_maxcomponents = 47};
+cnstdef {GMSGLOBX_maxtllicense = 6};
+cnstdef {GMSGLOBX_maxtllicenselength = 15};
+
+Function(SYSTEM_ansichar *) GMSGLOBX_tllicensekey(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  SYSTEM_integer n);
+
+Function(SYSTEM_ansichar *) GMSGLOBX_tllicensetext(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  SYSTEM_integer n);
+
+Function(SYSTEM_integer ) GMSGLOBX_tllicenselookup(
+  const SYSTEM_ansichar *_ftmp1);
+cnstdef {GMSGLOBX_maxcomponents = 46};
 cnstdef {GMSGLOBX_maxcomponentslength = 14};
 
 Function(SYSTEM_ansichar *) GMSGLOBX_componentskey(
@@ -107,7 +122,7 @@ Function(SYSTEM_ansichar *) GMSGLOBX_clipcodestext(
 
 Function(SYSTEM_integer ) GMSGLOBX_clipcodeslookup(
   const SYSTEM_ansichar *_ftmp1);
-cnstdef {GMSGLOBX_maxgamslicenses = 5};
+cnstdef {GMSGLOBX_maxgamslicenses = 6};
 cnstdef {GMSGLOBX_maxgamslicenseslength = 2};
 
 Function(SYSTEM_ansichar *) GMSGLOBX_gamslicenseskey(
@@ -152,7 +167,7 @@ Function(SYSTEM_ansichar *) GMSGLOBX_modeltypesxtext(
 
 Function(SYSTEM_integer ) GMSGLOBX_modeltypesxlookup(
   const SYSTEM_ansichar *_ftmp1);
-cnstdef {GMSGLOBX_maxcomponentsolvermap = 162};
+cnstdef {GMSGLOBX_maxcomponentsolvermap = 170};
 
 Function(SYSTEM_integer ) GMSGLOBX_componentsolvermapmap(
   SYSTEM_integer i,
@@ -162,12 +177,12 @@ cnstdef {GMSGLOBX_maxclipcomponentmap = 51};
 Function(SYSTEM_integer ) GMSGLOBX_clipcomponentmapmap(
   SYSTEM_integer i,
   SYSTEM_integer j);
-cnstdef {GMSGLOBX_maxsolverplatformmap = 815};
+cnstdef {GMSGLOBX_maxsolverplatformmap = 413};
 
 Function(SYSTEM_integer ) GMSGLOBX_solverplatformmapmap(
   SYSTEM_integer i,
   SYSTEM_integer j);
-cnstdef {GMSGLOBX_maxsolvertypeplatformmap = 2831};
+cnstdef {GMSGLOBX_maxsolvertypeplatformmap = 1387};
 
 Function(SYSTEM_integer ) GMSGLOBX_solvertypeplatformmapmap(
   SYSTEM_integer i,
