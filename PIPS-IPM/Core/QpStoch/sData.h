@@ -14,7 +14,9 @@
 
 #include "pipschecks.h"
 #include "pipsport.h"
+
 #include <vector>
+#include <memory>
 
 class sTree;
 class LinearAlgebraPackage;
@@ -39,7 +41,9 @@ class sData : public QpGenData {
   std::vector<sData*> children;
   void AddChild(sData* child);
   const sTree* stochNode{};
-  
+
+  /* empty dummy matrix to give back when in hierarchy mode leaf and someone asks for the local Amat/Cmat/Blmat/Dlmat */
+   std::unique_ptr<SparseGenMatrix> dummy_mat{};
 private: 
 
   PERMUTATION getLinkVarsPermInv() const;

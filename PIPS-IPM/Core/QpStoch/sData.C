@@ -706,6 +706,7 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
    int* krowM = new int[sizeSC + 1];
    int* jcolM = new int[nnz];
    double* M = new double[nnz];
+   std::uninitialized_fill(M, M + nnz, 0);
 
    krowM[0] = 0;
 
@@ -853,6 +854,7 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpperDist(int blocksStart, int 
    int* const krowM = new int[sizeSC + 1];
    int* const jcolM = new int[nnz];
    double* const M = new double[nnz];
+   std::uninitialized_fill(M, M + nnz, 0);
 
    krowM[0] = 0;
 
@@ -1210,9 +1212,11 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
          is_hierarchy_inner_root{ is_hierarchy_inner_root },
          is_hierarchy_inner_leaf{ is_hierarchy_inner_leaf }
 {
+   if( is_hierarchy_inner_leaf )
+      dummy_mat.reset( new SparseGenMatrix(0,0,0) );
 
-  if( add_children )
-     createChildren();
+   if( add_children )
+      createChildren();
 }
 
 void sData::writeToStreamDense( std::ostream& out ) const
@@ -2834,7 +2838,6 @@ int sData::getSchurCompMaxNnz()
       const int* startRowGtrans = Gt.krowM();
       nnz += startRowGtrans[n0] - startRowGtrans[n0 - n0LinkVars];
    }
-
    return nnz;
 }
 
