@@ -238,23 +238,23 @@ void PardisoIndefSolver::factorizeFromSparse()
       {
          if( aStorage[j] != 0.0 || jaStorage[j] == r )
          {
-        	if( usePrecondSparse )
-        	{
-				if( (fabs(aStorage[j]) >= diag[r] || fabs(aStorage[j]) >= diag[jaStorage[j]]) )
-				{
-				   ja[nnznew] = jaStorage[j] + 1;
-				   a[nnznew++] = aStorage[j];
-				}
-				else
-				{
-				   assert(jaStorage[j] != r);
-				}
-        	}
-        	else
-        	{
+            if( usePrecondSparse )
+            {
+               if( (fabs(aStorage[j]) >= diag[r] || fabs(aStorage[j]) >= diag[jaStorage[j]]) )
+               {
+                  ja[nnznew] = jaStorage[j] + 1;
+                  a[nnznew++] = aStorage[j];
+               }
+               else
+               {
+                  assert(jaStorage[j] != r);
+               }
+            }
+            else
+            {
                ja[nnznew] = jaStorage[j] + 1;
                a[nnznew++] = aStorage[j];
-        	}
+            }
          }
       }
       ia[r + 1] = nnznew + 1;
