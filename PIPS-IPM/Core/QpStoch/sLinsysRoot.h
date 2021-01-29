@@ -44,7 +44,7 @@ class sLinsysRoot : public sLinsys {
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   virtual void initializeKKT(sData* prob, Variables* vars);
   virtual void assembleLocalKKT( sData* prob ) = 0;
-  void addTermToSchurCompl(sData* prob, size_t childindex, bool linking_only );
+  void addTermToSchurCompl(sData* prob, size_t childindex);
   virtual void reduceKKT(sData *prob);
   virtual void factorizeKKT(); 
   virtual void factorizeKKT( sData* prob );
@@ -58,25 +58,28 @@ class sLinsysRoot : public sLinsys {
         SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border );
 
   /* compute SC += B0_{outer}^T X0 */
-  virtual void finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
-        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0 );
+  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
+        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0, bool is_sym, bool is_sparse );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br ) override;
 
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( SymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br ) override;
+  void LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
+
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br ) override;
+
 
   void putXDiagonal( OoqpVector& xdiag ) override;
   void putZDiagonal( OoqpVector& zdiag ) override;
  
   virtual void AddChild(sLinsys* child);
 
-  virtual bool usingSparseKkt() {return hasSparseKkt;};
+  virtual bool usingSparseKkt() { return hasSparseKkt; };
 
   ~sLinsysRoot() override;
 

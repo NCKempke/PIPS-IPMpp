@@ -1824,6 +1824,7 @@ void sData::addChildrenForSplit()
       const int first_child = childchild_pos;
       while( childchild_pos < map_blocks_children.size() && map_blocks_children[childchild_pos] == i )
       {
+         children[childchild_pos]->has_RAC = false;
          child->AddChild(children[childchild_pos]);
 
          if( childchild_pos + 1 == map_blocks_children.size()
@@ -2927,7 +2928,10 @@ sData::getLocalCrossHessian()
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
    assert( !is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
 
-   return *Qst.border;
+   if( has_RAC )
+      return *Qst.border;
+   else
+      return *dummy_matrix;
 }
 
 // T_i x_0 + W_i x_i = b_i
@@ -2947,7 +2951,10 @@ sData::getLocalA()
    else
    {
       assert( Ast.Amat->isKindOf(kSparseGenMatrix) );
-      return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
+      if( has_RAC )
+         return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
+      else
+         return *dummy_matrix;
    }
 }
 
@@ -2995,10 +3002,22 @@ sData::getLocalF()
 SparseGenMatrix&
 sData::getLocalC()
 {
-   assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
+   assert( !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   assert( Cst.Amat->isKindOf(kSparseGenMatrix) );
-   return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Cst.Amat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Amat).Amat);
+   }
+   else
+   {
+      assert( Cst.Amat->isKindOf(kSparseGenMatrix) );
+      if( has_RAC )
+         return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
+      else
+         return *dummy_matrix;
+   }
 }
 
 // This is D_i

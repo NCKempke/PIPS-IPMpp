@@ -47,7 +47,9 @@ class sLinsysLeaf : public sLinsys
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
   virtual void deleteChildren();
 
-  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool linking_only ) override;
+  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC ) override;
+
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br ) override;
 
  protected:
 
@@ -59,8 +61,6 @@ class sLinsysLeaf : public sLinsys
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
-private:
-  std::unique_ptr<SparseGenMatrix> dummy_mat{};
 }; 
 
 template<class LINSOLVER>

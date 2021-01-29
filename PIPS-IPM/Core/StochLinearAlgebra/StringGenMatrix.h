@@ -32,6 +32,8 @@ class StringGenMatrix : public GenMatrix
       const int rank{-1};
 
    public:
+      StringGenMatrix() = default;
+
       StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_);
 
       ~StringGenMatrix() override;
@@ -88,8 +90,6 @@ class StringGenMatrix : public GenMatrix
       void randomize( double, double, double* ) override { assert( "not implemented" && 0 ); };
 
    protected:
-      StringGenMatrix() = default;
-
       virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const;
       virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x, bool root) const;
 

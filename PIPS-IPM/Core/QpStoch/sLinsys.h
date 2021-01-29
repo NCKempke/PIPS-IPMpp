@@ -117,7 +117,6 @@ class sLinsys : public QpGenLinsys
 
   virtual void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz);
 
-  virtual void addLniZiHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border );
 
   /* adds mat to res starting at row_0 col_0 */
   void addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const;
@@ -146,7 +145,7 @@ class sLinsys : public QpGenLinsys
    */
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
-  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*linking_only*/ ) { assert( 0 && "not implemented here" ); };
+  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/) { assert( 0 && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
@@ -159,9 +158,6 @@ class sLinsys : public QpGenLinsys
   /* add you part of the border times rhs to b0 */
   virtual void addBorderX0ToRhs( StochVector& /*rhs*/, const SimpleVector& /*x0*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here" ); };
-
-  virtual void addBiTLeftKiBiRightToResBlockedParallelSolversLinkingOnly( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-        /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
 
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ BorderBiBlock& border_right, DoubleMatrix& result);
@@ -178,30 +174,34 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& res, 
 				      SimpleVector& x);
 
-  /* compute SC = Bl^T K^-1 Br where K is our own linear system */
-  virtual void addBTKiInvBToSC( SymMatrix& /*schur_comp*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/)
+  /* compute result += Bl^T K^-1 Br where K is our own linear system */
+  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/)
   { assert( false && "not implemented here"); }
 
-  /* compute B_{inner}^T K^{-1} B_{outer} and add it up in result */
-  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*border*/ )
+  /* compute Bi_{inner}^T Ki^{-1} Bri and add it up in result */
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/ )
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
   virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/ )
   { assert( false && "not implemented here" ); };
 
-  /* compute SUM_i Bli_^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
-  virtual void LtsolveHierarchyBorder( SymMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/ )
+  /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
+  virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/)
   { assert( false && "not implemented here" ); };
 
+  /* compute Bi_{inner}^T Ki^{-1} Bri and add it to result */
+  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br ) = 0;
+
  protected:
-  void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int length_col, int n_cols, bool sparse_res, bool sym_res, DoubleMatrix& res, bool linking_only ) const;
+  void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& Bl, const double* cols,
+        const int* cols_id, int length_col, int n_cols, bool sparse_res, bool sym_res, DoubleMatrix& res ) const;
 
-  void addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock& border_left, const double* cols,
-        const int* cols_id, int length_col, int n_cols, SparseSymMatrix& res, bool linking_only) const;
+  void addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock& Bl, const double* cols,
+        const int* cols_id, int length_col, int n_cols, SparseSymMatrix& res ) const;
 
-  void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& border_left, const double* cols,
+  void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& Bl, const double* cols,
         const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const;
 
   /* calculate res += X_i * B_i^T */

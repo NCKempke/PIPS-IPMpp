@@ -343,9 +343,12 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatri
  *              [ G0V  0    0   ]
  *
  */
-void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
-      SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0 )
+void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
+      SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0, bool is_sym, bool is_sparse )
 {
+   assert( is_sym && !is_sparse );
+   DenseGenMatrix& SC = dynamic_cast<DenseGenMatrix&>(SC_);
+
    int mA0, nA0; A0_border.getSize(mA0, nA0);
    int mC0, nC0; C0_border.getSize(mC0, nC0);
    int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
@@ -385,22 +388,18 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DenseSymMatrix& SC, 
 }
 
 
-/* compute -SUM_i Bi_{inner}^T Ki^{-1} Bi_{border} */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& border )
+/* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br )
 {
-   assert( this->children.size() == border.R.children.size() );
-   assert( !border.R.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.A.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.C.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.F.isKindOf( kStringGenDummyMatrix ) );
-   assert( !border.G.isKindOf( kStringGenDummyMatrix ) );
+   assert( children.size() == Br.R.children.size() );
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      BorderLinsys border_child( *border.R.children[it], *border.A.children[it], *border.C.children[it],
-                  *border.F.children[it], *border.G.children[it]);
-      children[it]->addLniZiHierarchyBorder(result, border_child );
+      BorderLinsys border_child( *Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
+                  *Br.F.children[it], *Br.G.children[it]);
+
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child);
    }
 
    /* allreduce the result */
@@ -414,9 +413,12 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& b
 }
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli_^T Ki^-1 (Bri - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( SymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br )
+void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res )
 {
    assert( !is_hierarchy_root );
+   // TODO need method for sparse sc and non-sym here - we need to fork here if our children are not leafs...
+   assert( sym_res );
+   assert( !sparse_res );
 
    /* X0 is still in transposed form */
    assert( children.size() == Br.R.children.size() );
@@ -432,14 +434,15 @@ void sLinsysRoot::LtsolveHierarchyBorder( SymMatrix& SC, const DenseGenMatrix& X
       BorderLinsys br_child( *Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
                   *Br.F.children[it], *Br.G.children[it]);
 
-      children[it]->LniTransMultHierarchyBorder( SC, X0, Bl, Br, locnx, locmy, locmz );
+      assert( SC.isKindOf(kDenseSymMatrix) );
+      children[it]->LniTransMultHierarchyBorder( dynamic_cast<DenseSymMatrix&>(SC), X0, Bl, Br, locnx, locmy, locmz );
    }
 
    /* allreduce the border SC */
    if( iAmDistrib )
    {
       int m, n; SC.getSize(m, n);
-      submatrixAllReduceFull(&SC, 0, 0, m, n, mpiComm);
+      submatrixAllReduceFull(&dynamic_cast<DenseSymMatrix&>(SC), 0, 0, m, n, mpiComm);
    }
 }
 
@@ -569,6 +572,18 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
+void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br )
+{
+   assert( data->isHierarchyInnerLeaf() );
+   assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
+   assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
+
+   std::unique_ptr<StringGenMatrix> dummy{ new StringGenMatrix() };
+   BorderLinsys Bl( *dummy, *dummy, *dummy, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
+
+   addBTKiInvBToSC( result, Bl, Br, false, false );
+}
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
@@ -1488,16 +1503,14 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
   myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool linking_only)
+void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
 {
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, linking_only);
+	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
    else
    {
-      assert( !linking_only );
-
 	   if( hasSparseKkt )
 	   {
 	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
