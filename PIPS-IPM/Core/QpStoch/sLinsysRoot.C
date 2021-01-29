@@ -435,7 +435,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix
                   *Br.F.children[it], *Br.G.children[it]);
 
       assert( SC.isKindOf(kDenseSymMatrix) );
-      children[it]->LniTransMultHierarchyBorder( dynamic_cast<DenseSymMatrix&>(SC), X0, Bl, Br, locnx, locmy, locmz );
+      children[it]->LniTransMultHierarchyBorder( dynamic_cast<DenseSymMatrix&>(SC), X0, bl_child, br_child, locnx, locmy, locmz );
    }
 
    /* allreduce the border SC */
