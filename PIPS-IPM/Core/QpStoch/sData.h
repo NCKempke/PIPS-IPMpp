@@ -80,6 +80,9 @@ public:
   SparseGenMatrix& getLocalC();
   SparseGenMatrix& getLocalD();
   SparseGenMatrix& getLocalG();
+  StringGenMatrix& getLocalGBorder();
+  StringGenMatrix& getLocalFBorder();
+
 
   void printLinkVarsStats();
   void printLinkConsStats();

@@ -391,12 +391,17 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, S
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
 void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br )
 {
-   assert( children.size() == Br.R.children.size() );
+   const bool has_RAC = !( Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
+
+   if( has_RAC )
+      assert( children.size() == Br.R.children.size() );
+   else
+      assert( children.size() == Br.F.children.size() );
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      BorderLinsys border_child( *Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
+      BorderLinsys border_child( has_RAC ? *Br.R.children[it] : Br.R, has_RAC ? *Br.A.children[it] : Br.A, has_RAC ? *Br.C.children[it] : Br.C,
                   *Br.F.children[it], *Br.G.children[it]);
 
       children[it]->addInnerBorderKiInvBrToRes(result, border_child);

@@ -249,12 +249,12 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
         *vars->v, *vars->gamma,
         *vars->w, *vars->phi );
 
-//  if( pips_options::getBoolParameter("HIERARCHICAL") )
-//  {
-//     std::cout << "Setting diags to 1.0 fore debugging\n";
-//     dd->setToConstant(1.0);
-//  }
-//  dd->addConstant( 1e-8 );
+  if( pips_options::getBoolParameter("HIERARCHICAL") )
+  {
+     std::cout << "Setting diags to 1.0 fore debugging\n";
+     dd->setToConstant(1.0);
+  }
+  dd->addConstant( 1e-8 );
 
   if( nxlow + nxupp > 0 )
      putXDiagonal( *dd );
@@ -269,9 +269,9 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   nomegaInv->invert();
   nomegaInv->negate();
 
-//  if( pips_options::getBoolParameter("HIERARCHICAL") )
-//     nomegaInv->setToConstant(1.0);
-//  nomegaInv->addConstant( -1e-8 );
+  if( pips_options::getBoolParameter("HIERARCHICAL") )
+     nomegaInv->setToConstant(1.0);
+  nomegaInv->addConstant( -1e-8 );
 
 
   if( mclow + mcupp > 0 )

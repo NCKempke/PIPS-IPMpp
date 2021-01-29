@@ -40,6 +40,7 @@ class StringGenMatrix : public GenMatrix
 
       virtual void addChild(StringGenMatrix* child);
 
+      bool isEmpty() const;
       int isKindOf( int matrix ) const override;
 
       /** y = beta * y + alpha * this * x */
@@ -50,7 +51,7 @@ class StringGenMatrix : public GenMatrix
       double abmaxnorm() const override;
       void scalarMult( double num ) override;
 
-      void writeToStreamDense( std::ostream& ) const override { assert( 0 && "TODO: implement..."); };
+      void writeToStreamDense( std::ostream& ) const override;
       void writeToStreamDenseRow( std::ostream& out, int row ) const override;
       void writeDashedLineToStream( std::ostream& out ) const override;
 

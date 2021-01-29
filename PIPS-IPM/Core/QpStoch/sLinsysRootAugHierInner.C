@@ -19,11 +19,12 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC )
 {
+   std::unique_ptr<StringGenMatrix> dummy( new StringGenMatrix() );
    for( unsigned int i = 0; i < children.size(); ++i )
    {
-//      BorderLinsys B(  children[i]->)
-//      addBTKiInvBToSC(SC, )
-//      children
+      BorderLinsys Bl( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
+      BorderLinsys Br( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
+      addBTKiInvBToSC(SC, Bl, Br, true, sparseSC );
    }
 }
 

@@ -120,18 +120,18 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 /* compute result += B_inner K^-1 Br */
 void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br )
 {
-   assert( Br.R.children.size() == 0 );
-   assert( Br.A.mat );
-   assert( Br.C.mat );
-   assert( Br.F.mat );
-   assert( Br.G.mat );
-   assert( Br.R.mat );
+   assert( Br.A.children.size() == 0 );
 
    const bool result_sparse = false;
    const bool result_sym = false;
 
-   BorderBiBlock border_right( dynamic_cast<SparseGenMatrix&>(*Br.R.mat), dynamic_cast<SparseGenMatrix&>(*Br.A.mat),
-         dynamic_cast<SparseGenMatrix&>(*Br.C.mat), dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+   const bool has_RAC = !( Br.R.isEmpty() && Br.A.isEmpty() && Br.C.isEmpty() );
+
+   std::unique_ptr<SparseGenMatrix> dummy( new SparseGenMatrix(0,0,0) );
+   BorderBiBlock border_right( has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.R.mat) : *dummy,
+         has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy,
+         has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy,
+         dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
          dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
 
    BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(),

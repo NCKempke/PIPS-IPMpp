@@ -72,6 +72,11 @@ void StringGenMatrix::addChild(StringGenMatrix* child)
    }
 }
 
+bool StringGenMatrix::isEmpty() const
+{
+   return !mat && !mat_link && children.empty() && m == 0 && n == 0;
+}
+
 int StringGenMatrix::isKindOf( int type ) const
 {
    return (type == kStringGenMatrix || type == kStringMatrix || type == kGenMatrix);
@@ -649,6 +654,13 @@ GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
 
    m -= n_rows;
    return border;
+}
+
+void StringGenMatrix::writeToStreamDense( std::ostream& out ) const
+{
+   assert( !is_vertical );
+   for( int i = 0; i < m; ++i )
+      writeToStreamDenseRow( out, i );
 }
 
 void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const

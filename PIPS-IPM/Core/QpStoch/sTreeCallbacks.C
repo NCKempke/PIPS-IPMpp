@@ -1257,7 +1257,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 

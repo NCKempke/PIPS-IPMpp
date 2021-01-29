@@ -2019,7 +2019,7 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Building hierarchical data...\n";
 
-//   this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
+   this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
    sData* hierarchical_top = shaveDenseBorder( tree );
 
    if( PIPS_MPIgetRank() == 0 )
@@ -2994,6 +2994,26 @@ sData::getLocalF()
       assert( Ast.Blmat->isKindOf(kSparseGenMatrix) );
       return dynamic_cast<SparseGenMatrix&>(*Ast.Blmat);
    }
+}
+
+StringGenMatrix&
+sData::getLocalFBorder()
+{
+   assert( is_hierarchy_inner_leaf );
+   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+
+   assert( Ast.Blmat->isKindOf(kStringGenMatrix) );
+   return dynamic_cast<StringGenMatrix&>(*Ast.Blmat);
+}
+
+StringGenMatrix&
+sData::getLocalGBorder()
+{
+   assert( is_hierarchy_inner_leaf );
+   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+
+   assert( Cst.Blmat->isKindOf(kStringGenMatrix) );
+   return dynamic_cast<StringGenMatrix&>(*Cst.Blmat);
 }
 
 // low_i <= C_i x_0 + D_i x_i <= upp_i

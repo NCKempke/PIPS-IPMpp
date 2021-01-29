@@ -1042,8 +1042,6 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    }
    else
    {
-      assert( sparse_res );
-
       assert( nF_right + nG_right == m_res);
       assert( mF_right == mG_right );
       assert( mF_right < length_col );
@@ -1262,6 +1260,7 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
    int mRes, nRes; res.getSize(mRes, nRes);
    assert( mRes == nRes );
    assert( nRes >= mR + mF + mG );
+   assert( mR == mA && mA == mC );
 
    const bool with_RAC = !( Bl.R.isEmpty() && Bl.A.isEmpty() && Bl.C.isEmpty() );
    const bool with_F = mF > 0;
@@ -1269,17 +1268,11 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
 
    if( with_RAC )
    {
-      assert( mR == mA && mA == mC );
       assert( nF == nG && nF == nR );
       assert( length_col == nR + nA + nC );
    }
    else
-   {
-      assert( Bl.R.isEmpty() );
-      assert( Bl.A.isEmpty() );
-      assert( Bl.C.isEmpty() );
       assert( nRes == mF + mG );
-   }
 
    // multiply each column with left_border and add if to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
@@ -1304,7 +1297,7 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
    }
 }
 
-void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& border_left, const double* cols,
+void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& Bl, const double* cols,
       const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const
 {
    /*                  [ R A C ]
@@ -1316,15 +1309,22 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
     *  the size of the zero rows in border_left is determined by res and can be zero
     */
 
-   int mR, nR; border_left.R.getSize(mR, nR);
-   int mA, nA; border_left.A.getSize(mA, nA);
-   int mC, nC; border_left.C.getSize(mC, nC);
-   int mF, nF; border_left.F.getSize(mF, nF);
-   int mG, nG; border_left.G.getSize(mG, nG);
-
+   int mR, nR; Bl.R.getSize(mR, nR);
+   int mA, nA; Bl.A.getSize(mA, nA);
+   int mC, nC; Bl.C.getSize(mC, nC);
+   int mF, nF; Bl.F.getSize(mF, nF);
+   int mG, nG; Bl.G.getSize(mG, nG);
    assert( mR == mA && mA == mC );
-   assert( nF == nG && nF == nR );
-   assert( length_col == nR + nA + nC );
+
+   const bool with_RAC = !( Bl.R.isEmpty() && Bl.A.isEmpty() && Bl.C.isEmpty() );
+   const bool with_F = mF > 0;
+   const bool with_G = mG > 0;
+
+   if( with_RAC )
+   {
+      assert( nF == nG && nF == nR );
+      assert( length_col == nR + nA + nC );
+   }
 
    assert( n_cols_res >= 1 );
    assert( n_cols_res >= mR + mF + mG );
@@ -1335,12 +1335,17 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
       const double* const col = &cols[it_col * length_col];
       const int row_res = cols_id[it_col];
 
-      border_left.R.mult(1.0, &res[row_res][0], 1, -1.0, &col[0], 1);
-      border_left.A.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR], 1);
-      border_left.C.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR + nA], 1);
+      if( with_RAC )
+      {
+         Bl.R.mult(1.0, &res[row_res][0], 1, -1.0, &col[0], 1);
+         Bl.A.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR], 1);
+         Bl.C.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR + nA], 1);
+      }
 
-      border_left.F.mult(1.0, &res[row_res][n_cols_res - mF - mG], 1, -1.0, &col[0], 1);
-      border_left.G.mult(1.0, &res[row_res][n_cols_res - mG], 1, -1.0, &col[0], 1);
+      if( with_F )
+         Bl.F.mult(1.0, &res[row_res][n_cols_res - mF - mG], 1, -1.0, &col[0], 1);
+      if( with_G )
+         Bl.G.mult(1.0, &res[row_res][n_cols_res - mG], 1, -1.0, &col[0], 1);
    }
 }
 
