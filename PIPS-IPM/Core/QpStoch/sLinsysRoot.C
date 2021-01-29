@@ -347,7 +347,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, S
       SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0, bool is_sym, bool is_sparse )
 {
    assert( is_sym && !is_sparse );
-   DenseGenMatrix& SC = dynamic_cast<DenseGenMatrix&>(SC_);
+   DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(SC_);
 
    int mA0, nA0; A0_border.getSize(mA0, nA0);
    int mC0, nC0; C0_border.getSize(mC0, nC0);
