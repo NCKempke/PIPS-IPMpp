@@ -252,7 +252,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   if( pips_options::getBoolParameter("HIERARCHICAL") )
   {
      std::cout << "Setting diags to 1.0 fore debugging\n";
-     dd->setToConstant(1.0);
+//     dd->setToConstant(1.0);
   }
   dd->addConstant( 1e-8 );
 

@@ -2113,9 +2113,8 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
    LsolveHierarchyBorder(*buffer_b0, Br);
-
    buffer_b0->writeToStreamDense(std::cout);
-
+   assert(false);
    // TODO : A and C might not be present in the border..
    SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*Br.A.mat);
    SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*Br.C.mat);

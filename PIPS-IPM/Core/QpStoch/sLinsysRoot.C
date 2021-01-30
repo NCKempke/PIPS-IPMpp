@@ -396,7 +396,10 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
    if( has_RAC )
       assert( children.size() == Br.R.children.size() );
    else
+   {
+      Br.F.writeToStreamDense(std::cout);
       assert( children.size() == Br.F.children.size() );
+   }
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
