@@ -1064,9 +1064,9 @@ void SimpleVectorBase<T>::jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpV
 {
    assert( this->length() == vx.length() + vy.length() + vz.length() );
 
-   const SimpleVectorBase<T>& x = dynamic_cast<SimpleVectorBase<T>&>(vx);
-   const SimpleVectorBase<T>& y = dynamic_cast<SimpleVectorBase<T>&>(vy);
-   const SimpleVectorBase<T>& z = dynamic_cast<SimpleVectorBase<T>&>(vz);
+   const SimpleVectorBase<T>& x = dynamic_cast<const SimpleVectorBase<T>&>(vx);
+   const SimpleVectorBase<T>& y = dynamic_cast<const SimpleVectorBase<T>&>(vy);
+   const SimpleVectorBase<T>& z = dynamic_cast<const SimpleVectorBase<T>&>(vz);
 
    std::copy(x.v, x.v + x.length(), v );
    std::copy(y.v, y.v + y.length(), v + x.length());
@@ -1083,8 +1083,8 @@ void SimpleVectorBase<T>::jointCopyTo(OoqpVectorBase<T>& vx, OoqpVectorBase<T>& 
    SimpleVectorBase<T>& z = dynamic_cast<SimpleVectorBase<T>&>(vz);
 
    std::copy( v, v + x.length(), x.v );
-   std::copy( v + x.length(), v + x.length() + y.lenght(), y.v );
-   std::copy( v + x.length() + y.lenght(), v + x.length() + y.length() + z.length(), z.v );
+   std::copy( v + x.length(), v + x.length() + y.length(), y.v );
+   std::copy( v + x.length() + y.length(), v + x.length() + y.length() + z.length(), z.v );
 }
 
 template<typename T>

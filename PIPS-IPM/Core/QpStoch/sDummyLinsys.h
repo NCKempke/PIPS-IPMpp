@@ -11,7 +11,7 @@ class sDummyLinsys : public sLinsys
 {
  public:
   sDummyLinsys(sFactory* factory, sData* prob)
-    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false)
+    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false)
  {
      mpiComm = MPI_COMM_NULL;
  };

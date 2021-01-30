@@ -80,6 +80,7 @@ sFactory::~sFactory()
 sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 			OoqpVector* dd, OoqpVector* dq,
 			OoqpVector* nomegaInv, OoqpVector* rhs,
+			OoqpVector* reg,
 			OoqpVector* primal_reg,
 			OoqpVector* dual_y_reg,
 			OoqpVector* dual_z_reg
@@ -100,21 +101,21 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
       {
 #ifdef WITH_MUMPS
          MumpsSolverLeaf* linSolver = nullptr;
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
 #endif
       }
       else if( leaf_solver == SolverType::SOLVER_PARDISO )
       {
 #ifdef WITH_PARDISO
          PardisoProjectSchurSolver* linSolver = nullptr;
-         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
 #endif
       }
       else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
       {
 #ifdef WITH_MKL_PARDISO
          PardisoMKLSchurSolver* linSolver = nullptr;
-         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
 #endif
       }
       else
@@ -138,35 +139,35 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
    {
 #ifdef WITH_PARDISO
       PardisoProjectSolver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
    {
 #ifdef WITH_MKL_PARDISO
       PardisoMKLSolver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MA57 )
    {
 #ifdef WITH_MA57
       Ma57Solver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MA27 )
    {
 #ifdef WITH_MA27
       Ma27Solver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MUMPS )
    {
 #ifdef WITH_MUMPS
          MumpsSolverLeaf* linSolver = nullptr;
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
 #endif
    }
 

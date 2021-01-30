@@ -194,7 +194,7 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref
 };
 
 QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
-      OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
+      OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* reg_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
       OoqpVector* dual_z_reg_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, prob, create_iter_ref_vecs )
 {
    dd = dd_;
@@ -202,6 +202,7 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, Ooq
    nomegaInv = nomegaInv_;
    rhs = rhs_;
 
+   reg = reg_;
    primal_reg = primal_reg_;
    dual_y_reg = dual_y_reg_;
    dual_z_reg = dual_z_reg_;
@@ -219,7 +220,7 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) : QpGenLinsys( fact
   nomegaInv = factory->makeDualZVector();
   rhs = factory->makeRhs();
 
-  reg->
+  reg = factory->makeRhs();
   primal_reg = factory->makePrimalVector();
   dual_y_reg = factory->makeDualYVector();
   dual_z_reg = factory->makeDualZVector();
@@ -232,6 +233,7 @@ QpGenLinsys::~QpGenLinsys()
     delete dual_z_reg;
     delete dual_y_reg;
     delete primal_reg;
+    delete reg;
     delete dd; delete dq;
     delete rhs;
     delete nomegaInv;
@@ -264,6 +266,11 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 			  *vars->w, *vars->phi );
 
   if( nxlow + nxupp > 0 ) this->putXDiagonal( *dd );
+
+  primal_reg->setToConstant(1e-8);
+  dual_y_reg->setToConstant(1e-8);
+  dual_z_reg->setToConstant(1e-8);
+  reg->setToConstant(1e-8);
 
   const double infnormdd = dd->infnorm();
   double mindd; int dummy;
@@ -972,7 +979,7 @@ void QpGenLinsys::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
   // joinRHS has to be delegated to the factory. This is true because
   // the rhs may be distributed across processors, so the factory is the
   // only object that knows with certainly how to scatter the elements.
-  rhs_in. factory->joinRHS( rhs_in, rhs1_in, rhs2_in, rhs3_in );
+  rhs_in.jointCopyFrom( rhs1_in, rhs2_in, rhs3_in );
 }
 
 void QpGenLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
@@ -981,6 +988,6 @@ void QpGenLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
   // separateVars has to be delegated to the factory. This is true because
   // the rhs may be distributed across processors, so the factory is the
   // only object that knows with certainly how to scatter the elements.
-  factory->separateVars( x_in, y_in, z_in, vars_in );
+  vars_in.jointCopyTo( x_in, y_in, z_in );
 }
 

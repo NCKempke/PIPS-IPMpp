@@ -26,11 +26,12 @@ class sLinsysLeafMumps : public sLinsysLeaf
         OoqpVector* dd_, OoqpVector* dq_,
         OoqpVector* nomegaInv_,
         OoqpVector* rhs_,
+        OoqpVector* reg,
         OoqpVector* primal_reg,
         OoqpVector* dual_y_reg,
         OoqpVector* dual_z_reg,
         LINSOLVER* solver)
-        : sLinsysLeaf(factory, prob_, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg, solver) {};
+        : sLinsysLeaf(factory, prob_, dd_, dq_, nomegaInv_, rhs_, reg, primal_reg, dual_y_reg, dual_z_reg, solver) {};
 
   ~sLinsysLeafMumps();
 

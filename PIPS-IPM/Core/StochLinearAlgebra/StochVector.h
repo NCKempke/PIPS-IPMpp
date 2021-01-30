@@ -186,8 +186,8 @@ public:
    StochVectorBase<T>* clone() const override { return new StochDummyVectorBase<T>();}
    StochVectorBase<T>* cloneFull() const override { return new StochDummyVectorBase<T>();}
 
-   void jointCopyFrom(const StochVectorBase<T>&, const StochVectorBase<T>&, const StochVectorBase<T>&) override {};
-   void jointCopyTo(StochVectorBase<T>&, StochVectorBase<T>&,StochVectorBase<T>&) const override {};
+   void jointCopyFrom(const OoqpVectorBase<T>&, const OoqpVectorBase<T>&, const OoqpVectorBase<T>&) override {};
+   void jointCopyTo(OoqpVectorBase<T>&, OoqpVectorBase<T>&, OoqpVectorBase<T>&) const override {};
 
    bool isKindOf( int kind ) const override {return kind == kStochDummy;}
    bool isZero() const override { return true; };

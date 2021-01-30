@@ -23,6 +23,7 @@ class sLinsysLeafSchurSlv : public sLinsysLeaf
 		      OoqpVector* dd_, OoqpVector* dq_, 
 		      OoqpVector* nomegaInv_,
 		      OoqpVector* rhs_,
+		      OoqpVector* reg,
             OoqpVector* primal_reg,
             OoqpVector* dual_y_reg,
             OoqpVector* dual_z_reg,
@@ -46,11 +47,12 @@ sLinsysLeafSchurSlv::sLinsysLeafSchurSlv(sFactory* factory,
 					 OoqpVector* dq_, 
 					 OoqpVector* nomegaInv_,
 					 OoqpVector* rhs_,
+					 OoqpVector* reg,
 					 OoqpVector* primal_reg,
 					 OoqpVector* dual_y_reg,
 					 OoqpVector* dual_z_reg,
 					 LINSOLVER* s)
-: sLinsysLeaf(factory, prob, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg, s),
+: sLinsysLeaf(factory, prob, dd_, dq_, nomegaInv_, rhs_, reg, primal_reg, dual_y_reg, dual_z_reg, s),
   switchedToSafeSlv(false)
 {}
 

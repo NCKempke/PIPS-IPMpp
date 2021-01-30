@@ -1,7 +1,6 @@
-#include "SimpleVector.h"
-#include "SimpleVectorHandle.h"
-#include "VectorUtilities.h"
 #include "StochVector.h"
+
+#include "VectorUtilities.h"
 #include "pipsport.h"
 
 #include <cassert>
@@ -10,7 +9,6 @@
 #include <iomanip>
 #include <limits>
 #include <math.h>
-#include "StochVector_fwd.h"
 
 template<typename T>
 StochVectorBase<T>::StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm)
@@ -131,15 +129,19 @@ void StochVectorBase<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase
 }
 
 template<typename T>
-void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz)
+void StochVectorBase<T>::jointCopyFrom(const OoqpVectorBase<T>& vx_, const OoqpVectorBase<T>& vy_, const OoqpVectorBase<T>& vz_)
 {
-   assert( this->vec );
+   assert( vec );
    SimpleVectorBase<T>& sv  = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
    assert( sizeof(T) == sizeof(sv[0]) );
 
-   assert( this->children.size() == vx.children.size() );
-   assert( this->children.size() == vy.children.size() );
-   assert( this->children.size() == vz.children.size() );
+   const StochVectorBase<T>& vx = dynamic_cast<const StochVectorBase&>(vx_);
+   const StochVectorBase<T>& vy = dynamic_cast<const StochVectorBase&>(vy_);
+   const StochVectorBase<T>& vz = dynamic_cast<const StochVectorBase&>(vz_);
+
+   assert( children.size() == vx.children.size() );
+   assert( children.size() == vy.children.size() );
+   assert( children.size() == vz.children.size() );
    const int N = sv.length();
    int n1 = 0;
    int n2 = 0;
@@ -221,9 +223,13 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
 }
 
 template<typename T>
-void StochVectorBase<T>::jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const
+void StochVectorBase<T>::jointCopyTo(OoqpVectorBase<T>& vx_, OoqpVectorBase<T>& vy_, OoqpVectorBase<T>& vz_) const
 {
-   assert( this->vec );
+   const StochVectorBase<T>& vx = dynamic_cast<const StochVectorBase&>(vx_);
+   const StochVectorBase<T>& vy = dynamic_cast<const StochVectorBase&>(vy_);
+   const StochVectorBase<T>& vz = dynamic_cast<const StochVectorBase&>(vz_);
+
+   assert( vec );
    const SimpleVectorBase<T>& sv  = dynamic_cast<const SimpleVectorBase<T>&>(*this->vec);
    assert( sizeof(T) == sizeof(sv[0]) );
 

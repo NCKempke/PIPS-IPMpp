@@ -118,7 +118,7 @@ protected:
 public:
   QpGenLinsys( QpGen* factory, QpGenData* data );
   QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
-        OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
+        OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* reg_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
         OoqpVector* dual_z_reg_, bool create_iter_ref_vecs );
 
   ~QpGenLinsys() override;

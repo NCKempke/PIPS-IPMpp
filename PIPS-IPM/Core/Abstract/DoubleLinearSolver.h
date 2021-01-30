@@ -57,12 +57,12 @@ public:
    void Dsolve( OoqpVector& x ) { solve(x);}
    void Ltsolve( OoqpVector& /*x*/ ){ assert(false && "is always empty.. "); }
 
-protected:
   /** Destructor  */
   virtual ~DoubleLinearSolver() = default;
-
+protected:
+  DoubleLinearSolver() = default;
   DoubleLinearSolver(OoqpVector* reg) : regularization{reg} { assert(reg); };
-  OoqpVector* regularization{};
+  const OoqpVector* regularization{};
 };
 
 class SymmetricLinearScaler

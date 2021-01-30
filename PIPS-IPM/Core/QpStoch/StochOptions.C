@@ -227,7 +227,7 @@ namespace pips_options
       bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = false;
 
       /// GONDZIO SOLVERS
-      /** should adaptive linesearch be applied in the GondzioStoch solvers - overwritten in gmspips.cpp */
+      /** should adaptive linesearch be applied in the GondzioStoch solvers */
       bool_options["GONDZIO_STOCH_ADAPTIVE_LINESEARCH"] = false;
       /** if GONDZIO adaptive linesearch is true determines number of linesearch points */
       int_options["GONDZIO_STOCH_N_LINESEARCH"] = 10;

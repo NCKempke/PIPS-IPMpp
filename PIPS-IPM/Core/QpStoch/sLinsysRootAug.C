@@ -83,11 +83,12 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
 			       OoqpVector* rhs_,
+			       OoqpVector* reg,
 			       OoqpVector* primal_reg,
 			       OoqpVector* dual_y_reg,
 			       OoqpVector* dual_z_reg
              )
-  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, primal_reg, dual_y_reg, dual_z_reg)
+  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, reg, primal_reg, dual_y_reg, dual_z_reg)
 { 
    assert( pips_options::getBoolParameter( "HIERARCHICAL" ) );
    assert(locmyl >= 0 && locmzl >= 0);
@@ -202,32 +203,32 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
          if( solver_root == SolverType::SOLVER_MUMPS )
          {
 #ifdef WITH_MUMPS
-            solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt) );
+            solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, reg, allreduce_kkt) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_PARDISO )
          {
 #ifdef WITH_PARDISO
-            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt) );
+            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, reg, allreduce_kkt) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_MKL_PARDISO )
          {
 #ifdef WITH_MKL_PARDISO
-            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt) );
+            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, reg, allreduce_kkt) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_MA57 )
          {
 #ifdef WITH_MA57
-            solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm) );
+            solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, reg, allreduce_kkt, mpiComm) );
 #endif
          }
          else
          {
             assert( solver_root == SolverType::SOLVER_MA27 );
 #ifdef WITH_MA27
-            solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm) );
+            solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, reg, "sLinsysRootAug", allreduce_kkt, mpiComm) );
 #endif
          }
       }

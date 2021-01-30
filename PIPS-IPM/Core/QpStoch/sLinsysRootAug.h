@@ -23,6 +23,7 @@ class sLinsysRootAug : public sLinsysRoot {
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_,
+		 OoqpVector* reg,
        OoqpVector* primal_reg,
        OoqpVector* dual_y_reg,
        OoqpVector* dual_z_reg
