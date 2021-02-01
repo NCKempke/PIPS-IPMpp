@@ -2089,7 +2089,7 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 }
 
 /* compute res += Bl^T Ki^-1 Br */
-void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res )
+void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_RAC_inner_border )
 {
    const bool has_RAC = !(Bl.A.isEmpty() && Bl.C.isEmpty() && Bl.R.isEmpty() );
 
@@ -2117,7 +2117,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    buffer_b0->writeToStreamDense(std::cout);
 
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
-   LsolveHierarchyBorder(*buffer_b0, Br);
+   LsolveHierarchyBorder(*buffer_b0, Br, use_RAC_inner_border);
 
    std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
 

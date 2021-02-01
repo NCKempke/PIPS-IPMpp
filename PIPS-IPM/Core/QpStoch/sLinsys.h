@@ -145,7 +145,7 @@ class sLinsys : public QpGenLinsys
    */
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
-  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/) { assert( 0 && "not implemented here" ); };
+  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_RAC_inner_border*/) { assert( 0 && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
@@ -175,11 +175,12 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& x);
 
   /* compute result += Bl^T K^-1 Br where K is our own linear system */
-  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/)
+  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_RAC_inner_border*/)
   { assert( false && "not implemented here"); }
 
-  /* compute Bi_{inner}^T Ki^{-1} Bri and add it up in result */
-  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/ )
+  /* compute Bi_{inner}^T Ki^{-1} Bri and add it up in result - use_RAC_inner_border tells the children to use ACR stored in the leafs
+   * since we are solving with the inner border */
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, bool /*use_RAC_inner_border*/ )
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
@@ -192,7 +193,7 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   /* compute Bi_{inner}^T Ki^{-1} Bri and add it to result */
-  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br ) = 0;
+  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_RAC_border ) = 0;
 
  protected:
   void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& Bl, const double* cols,
