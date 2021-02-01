@@ -47,9 +47,9 @@ class sLinsysLeaf : public sLinsys
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
   virtual void deleteChildren();
 
-  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_RAC_inner_border ) override;
+  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC ) override;
 
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_RAC_inner_border ) override;
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br ) override;
 
  protected:
 

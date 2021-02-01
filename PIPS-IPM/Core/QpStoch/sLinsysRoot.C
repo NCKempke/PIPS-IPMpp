@@ -391,7 +391,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, S
 
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_RAC_inner_border )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br )
 {
    const bool has_RAC = !( Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
 
@@ -406,7 +406,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
       BorderLinsys border_child( has_RAC ? *Br.R.children[it] : Br.R, has_RAC ? *Br.A.children[it] : Br.A, has_RAC ? *Br.C.children[it] : Br.C,
                   *Br.F.children[it], *Br.G.children[it]);
 
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_RAC_inner_border );
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child);
    }
 
    /* allreduce the result */
@@ -579,7 +579,7 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_RAC_inner_border )
+void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br )
 {
    assert( data->isHierarchyInnerLeaf() );
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
@@ -589,7 +589,7 @@ void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
    BorderLinsys Bl( *dummy, *dummy, *dummy, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
 
-   addBTKiInvBToSC( result, Bl, Br, false, false, use_RAC_inner_border );
+   addBTKiInvBToSC( result, Bl, Br, false, false );
 }
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
@@ -1515,10 +1515,7 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-   {
-      const bool use_border_RAC = data->isHierarchyInnerRoot();
-      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_border_RAC);
-   }
+      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
    else
    {
 	   if( hasSparseKkt )

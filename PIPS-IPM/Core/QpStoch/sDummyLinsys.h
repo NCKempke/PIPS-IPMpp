@@ -42,8 +42,8 @@ class sDummyLinsys : public sLinsys
 
   void addTermToSchurResidual( sData*, SimpleVector&, SimpleVector& ) override {};
 
-  void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, bool ) override {};
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys&, bool ) override {};
+  void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys& ) override {};
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys& ) override {};
   void LniTransMultHierarchyBorder( DenseSymMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, int, int, int ) override {};
 
 

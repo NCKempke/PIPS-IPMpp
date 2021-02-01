@@ -17,14 +17,14 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
    assert( locmy == 0 );
 }
 
-void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_RAC_inner_border )
+void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC )
 {
    std::unique_ptr<StringGenMatrix> dummy( new StringGenMatrix() );
    for( unsigned int i = 0; i < children.size(); ++i )
    {
       BorderLinsys Bl( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
       BorderLinsys Br( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
-      addBTKiInvBToSC(SC, Bl, Br, true, sparseSC, use_RAC_inner_border );
+      addBTKiInvBToSC(SC, Bl, Br, true, sparseSC );
    }
 }
 

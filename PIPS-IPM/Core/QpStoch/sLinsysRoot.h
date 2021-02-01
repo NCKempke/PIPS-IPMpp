@@ -62,7 +62,7 @@ class sLinsysRoot : public sLinsys {
         SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0, bool is_sym, bool is_sparse );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_RAC_inner_border  ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br ) override;
 
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
   void LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res ) override;
@@ -71,7 +71,7 @@ class sLinsysRoot : public sLinsys {
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_RAC_inner_border ) override;
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br ) override;
 
 
   void putXDiagonal( OoqpVector& xdiag ) override;
