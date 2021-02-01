@@ -502,7 +502,7 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 
       children[c]->stochNode->resMon.recFactTmChildren_start();
       //---------------------------------------------
-      addTermToSchurCompl(prob, c);
+      addTermToSchurCompl(prob, c, true);
       //---------------------------------------------
       children[c]->stochNode->resMon.recFactTmChildren_stop();
    }
@@ -2089,9 +2089,11 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 }
 
 /* compute res += Bl^T Ki^-1 Br */
-void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res )
+void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
-   const bool has_RAC = !(Bl.A.isEmpty() && Bl.C.isEmpty() && Bl.R.isEmpty() );
+   const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
+   if( use_local_RAC_mat )
+      assert( !has_RAC );
 
    result.writeToStreamDense(std::cout);
    /* Bi_{inner} is our own border, Ki are our own diagonals */
@@ -2106,37 +2108,25 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    Br.F.getSize(myl_border, dummy);
    Br.G.getSize(mzl_border, dummy);
 
-   const int m_buffer = nx_border + myl_border + mzl_border;
+//   const int m_buffer = nx_border + myl_border + mzl_border;
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
+   int nr, mr;
+   result.getSize(mr, nr);
+   const int m_buffer = mr;
 
    // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} Bri, stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
-   buffer_b0->writeToStreamDense(std::cout);
-
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
-   LsolveHierarchyBorder(*buffer_b0, Br);
+   LsolveHierarchyBorder( *buffer_b0, Br, use_local_RAC_mat );
 
-   std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
-
-   // TODO : A and C might not be present in the border..
-   SparseGenMatrix& A0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy_mat;
-   SparseGenMatrix& C0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy_mat;
-   SparseGenMatrix& F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat_link) : *dummy_mat;
-   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.F.mat);
-
-   SparseGenMatrix& G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat_link) : *dummy_mat;
-   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.G.mat);
-
-   std::cout << "start" << std::endl;
-   F0cons_border.writeToStreamDense(std::cout);
-   G0cons_border.writeToStreamDense(std::cout);
-   std::cout << "end" << std::endl;
-   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}
-   finalizeZ0Hierarchical(*buffer_b0, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
    buffer_b0->writeToStreamDense(std::cout);
+
+   finalizeZ0Hierarchical(*buffer_b0, Br );
+
+   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}
    assert(false);
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri (stored in transposed form!)
@@ -2147,6 +2137,6 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, sym_res, sparse_res );
 
    // compute result += Bl0^T X0
-   finalizeInnerSchurComplementContribution( result, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0, sym_res, sparse_res );
+//   finalizeInnerSchurComplementContribution( result, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0, sym_res, sparse_res );
    delete buffer_b0;
 }

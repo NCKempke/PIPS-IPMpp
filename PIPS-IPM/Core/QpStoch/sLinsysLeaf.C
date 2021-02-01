@@ -73,7 +73,7 @@ void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 void sLinsysLeaf::deleteChildren()
 { }
 
-void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC )
+void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool  )
 {
    const bool sc_is_sym = true;
 
@@ -118,26 +118,42 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 }
 
 /* compute result += B_inner K^-1 Br */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
 {
    assert( Br.A.children.size() == 0 );
 
    const bool result_sparse = false;
    const bool result_sym = false;
-
    const bool has_RAC = !( Br.R.isEmpty() && Br.A.isEmpty() && Br.C.isEmpty() );
 
-   std::unique_ptr<SparseGenMatrix> dummy( new SparseGenMatrix(0,0,0) );
-   BorderBiBlock border_right( has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.R.mat) : *dummy,
-         has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy,
-         has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy,
-         dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
 
    BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(),
          data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
 
-   addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
+   if( use_local_RAC_mat )
+   {
+      assert( !has_RAC );
+      SparseGenMatrix& amat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Amat);
+      SparseGenMatrix& cmat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Amat);
+      SparseGenMatrix& rmat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochSymMatrix&>(*data->Q).border);
+
+      BorderBiBlock border_right( rmat, amat, cmat, dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+            dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
+
+      dynamic_cast<SparseGenMatrix&>(*Br.F.mat).writeToStreamDense(std::cout);
+      addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
+   }
+   else
+   {
+      std::unique_ptr<SparseGenMatrix> dummy( new SparseGenMatrix(0,0,0) );
+
+      BorderBiBlock border_right( has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.R.mat) : *dummy,
+            has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy,
+            has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy,
+            dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+            dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
+      addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
+   }
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )

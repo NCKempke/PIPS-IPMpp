@@ -146,9 +146,22 @@ void sLinsysRoot::afterFactor()
  * [ G0V  0     0    ]
  */
 // TODO : refactor! ..
-void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
-      SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
+void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br )
 {
+   const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
+//   if( use_local_RAC_mat )
+//      assert( !has_RAC );
+
+   std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
+
+   SparseGenMatrix& A0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy_mat;
+   SparseGenMatrix& C0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy_mat;
+   SparseGenMatrix& F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat_link) : *dummy_mat;
+   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.F.mat);
+
+   SparseGenMatrix& G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat_link) : *dummy_mat;
+   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.G.mat);
+
    assert( !( A0_border.isEmpty() && F0vec_border.isEmpty() && G0vec_border.isEmpty() ) );
 
    int mA0, nA0; A0_border.getSize(mA0, nA0);
@@ -391,9 +404,11 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, S
 
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
 {
    const bool has_RAC = !( Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
+   if( use_local_RAC_mat )
+      assert( !has_RAC );
 
    if( has_RAC )
       assert( children.size() == Br.R.children.size() );
@@ -406,7 +421,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
       BorderLinsys border_child( has_RAC ? *Br.R.children[it] : Br.R, has_RAC ? *Br.A.children[it] : Br.A, has_RAC ? *Br.C.children[it] : Br.C,
                   *Br.F.children[it], *Br.G.children[it]);
 
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child);
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_local_RAC_mat);
    }
 
    /* allreduce the result */
@@ -579,7 +594,7 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br )
+void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
 {
    assert( data->isHierarchyInnerLeaf() );
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
@@ -589,7 +604,7 @@ void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
    BorderLinsys Bl( *dummy, *dummy, *dummy, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
 
-   addBTKiInvBToSC( result, Bl, Br, false, false );
+   addBTKiInvBToSC( result, Bl, Br, false, false, use_local_RAC_mat );
 }
 
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
@@ -1510,14 +1525,20 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
   myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
+void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC_mat)
 {
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
+   {
+      if( !pips_options::getBoolParameter("HIERARCHICAL") )
+         assert( use_local_RAC_mat );
+
+      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC_mat);
+   }
    else
    {
+      assert( use_local_RAC_mat );
 	   if( hasSparseKkt )
 	   {
 	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);

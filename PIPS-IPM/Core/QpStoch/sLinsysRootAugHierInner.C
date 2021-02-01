@@ -17,17 +17,102 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
    assert( locmy == 0 );
 }
 
-void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC )
+
+void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
 {
-   std::unique_ptr<StringGenMatrix> dummy( new StringGenMatrix() );
-   for( unsigned int i = 0; i < children.size(); ++i )
+   for( size_t c = 0; c < children.size(); ++c )
    {
-      BorderLinsys Bl( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
-      BorderLinsys Br( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
-      addBTKiInvBToSC(SC, Bl, Br, true, sparseSC );
+#ifdef STOCH_TESTING
+      g_scenNum = c;
+#endif
+      if( children[c]->mpiComm == MPI_COMM_NULL )
+         continue;
+
+      children[c]->stochNode->resMon.recFactTmChildren_start();
+      //---------------------------------------------
+      addTermToSchurCompl(prob, c, false);
+      //---------------------------------------------
+      children[c]->stochNode->resMon.recFactTmChildren_stop();
    }
 }
 
+/* buffer is still transposed ..*/
+void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& )
+{
+   const SparseGenMatrix& F = data->getLocalF().getTranspose();
+   const SparseGenMatrix& G = data->getLocalG().getTranspose();
+
+   int mF, nF;
+   F.getSize(mF, nF);
+   int mG, nG;
+   G.getSize(mG, nG);
+
+   int mBuf, nBuf;
+   buffer.getSize(mBuf, nBuf);
+
+   assert( nBuf == nF + nG );
+   assert( mF == mG );
+   assert( mBuf >= mF );
+
+   if( mF > 0 )
+   {
+      for( int rowF = 0; rowF < mF; ++rowF )
+      {
+         const double* MF = F.M();
+         const int* krowF = F.krowM();
+         const int* jcolF = F.jcolM();
+
+         const int rowF_start = krowF[rowF];
+         const int rowF_end = krowF[rowF + 1];
+
+         for( int k = rowF_start; k < rowF_end; ++k )
+         {
+            const int col = jcolF[k];
+            const double val_F = MF[k];
+
+            const int row_buffer = rowF;
+
+            assert( 0 <= col && col < nBuf);
+            buffer[row_buffer][col] += val_F;
+         }
+      }
+   }
+
+   if( mG > 0 )
+   {
+      for( int rowG = 0; rowG < mG; ++rowG )
+      {
+         const double* MG = G.M();
+         const int* krowG = G.krowM();
+         const int* jcolG = G.jcolM();
+
+         const int rowG_start = krowG[rowG];
+         const int rowG_end = krowG[rowG + 1];
+
+         for( int k = rowG_start; k < rowG_end; ++k )
+         {
+            const int col = jcolG[k];
+            const double val_G = MG[k];
+
+            const int row_buffer = rowG + mF;
+
+            assert( row_buffer < mBuf );
+            assert( 0 <= col && col < nBuf);
+            buffer[row_buffer][col] += val_G;
+         }
+      }
+   }
+}
+
+
+void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC_mat )
+{
+   std::unique_ptr<StringGenMatrix> dummy( new StringGenMatrix() );
+
+   BorderLinsys Bl( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
+   BorderLinsys Br( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
+   addBTKiInvBToSC(SC, Bl, Br, true, sparseSC, use_local_RAC_mat );
+}
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )
 {

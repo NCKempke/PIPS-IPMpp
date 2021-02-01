@@ -1025,24 +1025,31 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
    int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
 
+
+#ifndef NDEBUG
+   int mR_left, nR_left; border_left_transp.R.getSize(mR_left, nR_left);
+   int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
+   int mG_left, nG_left; border_left_transp.G.getSize(mG_left, nG_left);
+#endif
+
    const bool with_RAC = !(border_right.R.isEmpty() && border_right.A.isEmpty() && border_right.C.isEmpty());
    const bool withF = ( nF_right > 0 );
    const bool withG = ( nG_right > 0 );
 
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
-
    if( with_RAC )
    {
       assert( nR_right == nA_right);
       assert( nR_right == nC_right);
       assert( mR_right == mF_right );
       assert( mR_right == mG_right );
-      assert( nR_right + nF_right + nG_right <= m_res);
+
+      assert( nR_left + nF_left + nG_left <= m_res);
       assert( length_col == mR_right + mA_right + mC_right);
    }
    else
    {
-      assert( nF_right + nG_right == m_res);
+      assert( mF_left + mG_left == m_res);
       assert( mF_right == mG_right );
       assert( mF_right < length_col );
    }
