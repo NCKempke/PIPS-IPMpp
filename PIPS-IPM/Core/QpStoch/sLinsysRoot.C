@@ -149,6 +149,8 @@ void sLinsysRoot::afterFactor()
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
       SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border )
 {
+   assert( !( A0_border.isEmpty() && F0vec_border.isEmpty() && G0vec_border.isEmpty() ) );
+
    int mA0, nA0; A0_border.getSize(mA0, nA0);
    int mC0, nC0; C0_border.getSize(mC0, nC0);
    int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
@@ -1513,7 +1515,7 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex)
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-	   children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
+      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt);
    else
    {
 	   if( hasSparseKkt )

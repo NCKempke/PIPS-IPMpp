@@ -2091,6 +2091,9 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 /* compute res += Bl^T Ki^-1 Br */
 void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res )
 {
+   const bool has_RAC = !(Bl.A.isEmpty() && Bl.C.isEmpty() && Bl.R.isEmpty() );
+
+   result.writeToStreamDense(std::cout);
    /* Bi_{inner} is our own border, Ki are our own diagonals */
    /* only called in sLinsysRootAug and sLinsysRootAugHierInner */
    assert( !is_hierarchy_root );
@@ -2111,22 +2114,30 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
+   buffer_b0->writeToStreamDense(std::cout);
+
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
    LsolveHierarchyBorder(*buffer_b0, Br);
 
-   buffer_b0->writeToStreamDense(std::cout);
-   assert(false);
+   std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
+
    // TODO : A and C might not be present in the border..
-   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*Br.A.mat);
-   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*Br.C.mat);
-   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*Br.A.mat_link);
+   SparseGenMatrix& A0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy_mat;
+   SparseGenMatrix& C0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy_mat;
+   SparseGenMatrix& F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat_link) : *dummy_mat;
    SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.F.mat);
 
-   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*Br.C.mat_link);
+   SparseGenMatrix& G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat_link) : *dummy_mat;
    SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.G.mat);
 
+   std::cout << "start" << std::endl;
+   F0cons_border.writeToStreamDense(std::cout);
+   G0cons_border.writeToStreamDense(std::cout);
+   std::cout << "end" << std::endl;
    // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}
    finalizeZ0Hierarchical(*buffer_b0, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border);
+   buffer_b0->writeToStreamDense(std::cout);
+   assert(false);
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri (stored in transposed form!)
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
