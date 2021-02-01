@@ -492,7 +492,7 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
 
 void sLinsysRootAug::assembleLocalKKT( sData* prob )
 {
-   for(size_t c = 0; c < children.size(); c++)
+   for( size_t c = 0; c < children.size(); ++c )
    {
 #ifdef STOCH_TESTING
       g_scenNum = c;
@@ -2113,6 +2113,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
    LsolveHierarchyBorder(*buffer_b0, Br);
+
    buffer_b0->writeToStreamDense(std::cout);
    assert(false);
    // TODO : A and C might not be present in the border..
