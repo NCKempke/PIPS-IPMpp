@@ -99,6 +99,7 @@ class sLinsys : public QpGenLinsys
      std::unique_ptr<T> dummy{ new T() };
 
      public:
+     const bool has_RAC{};
      /* represents a block like
       * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
       * [ A_i   0     0   ] or possibly [  F_i    0     0   ]
@@ -111,10 +112,10 @@ class sLinsys : public QpGenLinsys
      T& G;
 
      RFGAC_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
-        R(R), A(A), C(C), F(F), G(G) {};
+        has_RAC{true}, R(R), A(A), C(C), F(F), G(G) {};
 
      RFGAC_BLOCK( T& F, T& G ) :
-        F{F}, G{F}, R{*dummy}, A{*dummy}, C{*dummy} {};
+        has_RAC{false}, F{F}, G{F}, R{*dummy}, A{*dummy}, C{*dummy} {};
   };
 
   typedef RFGAC_BLOCK<StringGenMatrix> BorderLinsys;
