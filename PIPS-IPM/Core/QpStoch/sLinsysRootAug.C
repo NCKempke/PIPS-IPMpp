@@ -2117,19 +2117,20 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
    LsolveHierarchyBorder( *buffer_b0, Br, use_local_RAC_mat );
 
-   finalizeZ0Hierarchical(*buffer_b0, Br );
+   finalizeZ0Hierarchical( *buffer_b0, Br );
 
-   buffer_b0->writeToStreamDense(std::cout);
    // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri (stored in transposed form!)
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
-   assert(false);
+   buffer_b0->writeToStreamDense(std::cout);
 
    // compute result = -SUM_i Bli^T Ki^{-1} (Bri - Bi_{inner} X0 ) = -SUM_i Bli^T Xi
    LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, sym_res, sparse_res );
+
+   assert(false);
 
    // compute result += Bl0^T X0
 //   finalizeInnerSchurComplementContribution( result, A0_border, C0_border, F0vec_border, F0cons_border, G0vec_border, G0cons_border, *buffer_b0, sym_res, sparse_res );

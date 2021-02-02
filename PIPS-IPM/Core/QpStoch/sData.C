@@ -3035,11 +3035,20 @@ sData::getLocalC()
 SparseGenMatrix&
 sData::getLocalD()
 {
-   assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
+   assert( !is_hierarchy_inner_root && !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   assert( Cst.Bmat->isKindOf(kSparseGenMatrix) );
 
-   return dynamic_cast<SparseGenMatrix&>(*Cst.Bmat);
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Bmat);
+   }
+   else
+   {
+      assert( Cst.Bmat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Cst.Bmat);
+   }
+
 }
 
 // This is G_i (linking inequality matrix):
