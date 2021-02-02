@@ -1014,46 +1014,51 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result)
 {
-   int m_res, n_res; result.getSize(m_res, n_res);
-   assert( m_res >= 0 && n_res >= 0 );
-   if( sym_res )
-      assert( m_res == n_res );
+   int m_res, n_res;
+   result.getSize(m_res, n_res);
 
-   int mR_right, nR_right; border_right.R.getSize(mR_right, nR_right);
-   int mA_right, nA_right; border_right.A.getSize(mA_right, nA_right);
-   int mC_right, nC_right; border_right.C.getSize(mC_right, nC_right);
    int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
    int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
-
-#ifndef NDEBUG
-   int mR_left, nR_left; border_left_transp.R.getSize(mR_left, nR_left);
-   int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
-   int mG_left, nG_left; border_left_transp.G.getSize(mG_left, nG_left);
-#endif
 
    const bool with_RAC = border_right.has_RAC;
    const bool withF = ( nF_right > 0 );
    const bool withG = ( nG_right > 0 );
 
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
+
+
+#ifndef NDEBUG
+   assert( n_solvers >= 1 && n_threads_solvers >= 1 );
+   int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
+   int mG_left, nG_left; border_left_transp.G.getSize(mG_left, nG_left);
+
+   if( border_left_transp.has_RAC )
+   {
+      int mR_left, nR_left; border_left_transp.R.getSize(mR_left, nR_left);
+      assert( nR_left + nF_left + nG_left <= n_res);
+   }
+   else
+      assert( mF_left + mG_left == n_res);
+
    if( with_RAC )
    {
+      int mR_right, nR_right; border_right.R.getSize(mR_right, nR_right);
+      int mA_right, nA_right; border_right.A.getSize(mA_right, nA_right);
+      int mC_right, nC_right; border_right.C.getSize(mC_right, nC_right);
       assert( nR_right == nA_right);
       assert( nR_right == nC_right);
       assert( mR_right == mF_right );
       assert( mR_right == mG_right );
 
-      assert( nR_left + nF_left + nG_left <= m_res);
       assert( length_col == mR_right + mA_right + mC_right);
    }
    else
    {
-      assert( mF_left + mG_left == m_res);
       assert( mF_right == mG_right );
       assert( mF_right < length_col );
    }
+#endif
 
-   assert( n_solvers >= 1 && n_threads_solvers >= 1 );
 
    if( !colsBlockDense )
       colsBlockDense = new double[blocksizemax * length_col * n_solvers];
@@ -1079,19 +1084,25 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       //     SC +=  B^T  K^-1  (A)
       //                       (C)
 
-      SimpleVectorBase<int> nnzPerColRAC(nR_right);
+      int nR_r, mR_r;
+      border_right.R.getSize(mR_r, nR_r);
+      int nA_r, mA_r;
+      border_right.A.getSize(mA_r, nA_r);
+
+      SimpleVectorBase<int> nnzPerColRAC(nR_r);
+
       border_right.R.addNnzPerCol(nnzPerColRAC);
       border_right.A.addNnzPerCol(nnzPerColRAC);
       border_right.C.addNnzPerCol(nnzPerColRAC);
 
-      const int chunks_RAC = std::ceil( static_cast<double>(nR_right) / blocksizemax );
+      const int chunks_RAC = std::ceil( static_cast<double>(nR_r) / blocksizemax );
 
       #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
       for( int i = 0; i < chunks_RAC; i++ )
       {
          omp_set_num_threads(n_threads_solvers);
 
-         const int actual_blocksize = std::min( (i + 1) * blocksizemax, nR_right) - i * blocksizemax;
+         const int actual_blocksize = std::min( (i + 1) * blocksizemax, nR_r) - i * blocksizemax;
 
          int nrhs = 0;
          const int id = omp_get_thread_num();
@@ -1113,8 +1124,8 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             colSparsity_loc = colSparsity + id * length_col * blocksizemax;
 
          border_right.R.fromGetColsBlock(colId_loc, nrhs, length_col, 0, colsBlockDense_loc, colSparsity_loc);
-         border_right.A.fromGetColsBlock(colId_loc, nrhs, length_col, mR_right, colsBlockDense_loc, colSparsity_loc);
-         border_right.C.fromGetColsBlock(colId_loc, nrhs, length_col, (mR_right + mA_right), colsBlockDense_loc, colSparsity_loc);
+         border_right.A.fromGetColsBlock(colId_loc, nrhs, length_col, mR_r, colsBlockDense_loc, colSparsity_loc);
+         border_right.C.fromGetColsBlock(colId_loc, nrhs, length_col, (mR_r + mA_r), colsBlockDense_loc, colSparsity_loc);
 
          solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
@@ -1258,27 +1269,29 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
     *                  [ G 0 0 ]
     *  the size of the zero rows in border_left is determined by res and can be zero
     */
-   int mR, nR; Bl.R.getSize(mR, nR);
-   int mA, nA; Bl.A.getSize(mA, nA);
-   int mC, nC; Bl.C.getSize(mC, nC);
    int mF, nF; Bl.F.getSize(mF, nF);
    int mG, nG; Bl.G.getSize(mG, nG);
    int mRes, nRes; res.getSize(mRes, nRes);
-   assert( mRes == nRes );
-   assert( nRes >= mR + mF + mG );
-   assert( mR == mA && mA == mC );
 
    const bool with_RAC = Bl.has_RAC;
    const bool with_F = mF > 0;
    const bool with_G = mG > 0;
 
+#ifndef NDEBUG
+   assert( mRes == nRes );
    if( with_RAC )
    {
+      int mR, nR; Bl.R.getSize(mR, nR);
+      int mA, nA; Bl.A.getSize(mA, nA);
+      int mC, nC; Bl.C.getSize(mC, nC);
       assert( nF == nG && nF == nR );
       assert( length_col == nR + nA + nC );
+      assert( nRes >= mR + mF + mG );
+      assert( mR == mA && mA == mC );
    }
    else
       assert( nRes == mF + mG );
+#endif
 
    // multiply each column with left_border and add if to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
@@ -1290,6 +1303,9 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
       assert( row_res < mRes );
       if( with_RAC )
       {
+         int mR, nR; Bl.R.getSize(mR, nR);
+         int mA, nA; Bl.A.getSize(mA, nA);
+
          Bl.R.multMatSymUpper(1.0, res, -1.0, &col[0], row_res, 0);
          Bl.A.multMatSymUpper(1.0, res, -1.0, &col[nR], row_res, 0);
          Bl.C.multMatSymUpper(1.0, res, -1.0, &col[nR + nA], row_res, 0);
@@ -1314,26 +1330,29 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
     *  cols lie as rows in storage
     *  the size of the zero rows in border_left is determined by res and can be zero
     */
-
-   int mR, nR; Bl.R.getSize(mR, nR);
-   int mA, nA; Bl.A.getSize(mA, nA);
-   int mC, nC; Bl.C.getSize(mC, nC);
    int mF, nF; Bl.F.getSize(mF, nF);
    int mG, nG; Bl.G.getSize(mG, nG);
-   assert( mR == mA && mA == mC );
 
-   const bool with_RAC = !( Bl.R.isEmpty() && Bl.A.isEmpty() && Bl.C.isEmpty() );
+   const bool with_RAC = Bl.has_RAC;
    const bool with_F = mF > 0;
    const bool with_G = mG > 0;
 
+#ifndef NDEBUG
    if( with_RAC )
    {
+      int mR, nR; Bl.R.getSize(mR, nR);
+      int mA, nA; Bl.A.getSize(mA, nA);
+      int mC, nC; Bl.C.getSize(mC, nC);
+      assert( mR == mA && mA == mC );
       assert( nF == nG && nF == nR );
       assert( length_col == nR + nA + nC );
+      assert( n_cols_res >= mR + mF + mG );
    }
+   else
+      assert( n_cols_res >= mF + mG );
 
    assert( n_cols_res >= 1 );
-   assert( n_cols_res >= mR + mF + mG );
+#endif
 
    // multiply each column with left factor of SC todo add OMP
    for( int it_col = 0; it_col < n_cols; it_col++ )
@@ -1343,6 +1362,8 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
 
       if( with_RAC )
       {
+         int mR, nR; Bl.R.getSize(mR, nR);
+         int mA, nA; Bl.A.getSize(mA, nA);
          Bl.R.mult(1.0, &res[row_res][0], 1, -1.0, &col[0], 1);
          Bl.A.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR], 1);
          Bl.C.mult(1.0, &res[row_res][0], 1, -1.0, &col[nR + nA], 1);

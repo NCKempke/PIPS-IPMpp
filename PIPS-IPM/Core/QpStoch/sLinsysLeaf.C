@@ -75,14 +75,26 @@ void sLinsysLeaf::deleteChildren()
 
 void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool  )
 {
+   assert( prob == data );
+
    const bool sc_is_sym = true;
 
-   BorderBiBlock border_right( prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(),
-         prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
-   BorderBiBlock border_left_transp( prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
-         prob->getLocalF(), prob->getLocalG() );
+   if( prob->hasRAC() )
+   {
+      BorderBiBlock border_right( prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(),
+            prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
+      BorderBiBlock border_left_transp( prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
+            prob->getLocalF(), prob->getLocalG() );
 
-   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
+      addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
+   }
+   else
+   {
+      BorderBiBlock border_right( prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
+      BorderBiBlock border_left_transp( prob->getLocalF(), prob->getLocalG() );
+
+      addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
+   }
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
@@ -125,41 +137,36 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
    const bool result_sparse = false;
    const bool result_sym = false;
 
-   BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(),
-         data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
+   std::unique_ptr<BorderBiBlock> border_left_transp{};
+   std::unique_ptr<BorderBiBlock> border_right{};
 
-   if( use_local_RAC_mat )
-   {
-      assert( !Br.has_RAC );
-      SparseGenMatrix& amat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Amat);
-      SparseGenMatrix& cmat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Amat);
-      SparseGenMatrix& rmat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochSymMatrix&>(*data->Q).border);
-
-      BorderBiBlock border_right( rmat, amat, cmat, dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-            dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
-
-      addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
-   }
+   if( data->hasRAC() )
+      border_left_transp.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(),
+         data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() ) );
    else
-   {
-      if( Br.has_RAC )
-      {
-         BorderBiBlock border_right( dynamic_cast<SparseGenMatrix&>(*Br.R.mat),
-               dynamic_cast<SparseGenMatrix&>(*Br.A.mat),
-               dynamic_cast<SparseGenMatrix&>(*Br.C.mat),
-               dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
+      border_left_transp.reset( new BorderBiBlock( data->getLocalF(), data->getLocalG() ) );
 
-         addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
-      }
-      else
-      {
-         BorderBiBlock border_right( dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
+   if( Br.has_RAC )
+      border_right.reset(
+            new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*Br.R.mat),
+                  dynamic_cast<SparseGenMatrix&>(*Br.A.mat),
+                  dynamic_cast<SparseGenMatrix&>(*Br.C.mat),
+                  dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
+   else if( use_local_RAC_mat )
+      border_right.reset(
+            new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
+                  data->getLocalC(),
+                  dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
+   else
+      border_right.reset(
+            new BorderBiBlock(
+                  dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
 
-         addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
-      }
-   }
+
+   addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, *border_left_transp, *border_right, result);
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )

@@ -2928,10 +2928,7 @@ sData::getLocalCrossHessian()
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
    assert( !is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
 
-   if( has_RAC )
-      return *Qst.border;
-   else
-      return *dummy_matrix;
+   return *Qst.border;
 }
 
 // T_i x_0 + W_i x_i = b_i
@@ -2951,10 +2948,7 @@ sData::getLocalA()
    else
    {
       assert( Ast.Amat->isKindOf(kSparseGenMatrix) );
-      if( has_RAC )
-         return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
-      else
-         return *dummy_matrix;
+      return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
    }
 }
 
@@ -3033,10 +3027,7 @@ sData::getLocalC()
    else
    {
       assert( Cst.Amat->isKindOf(kSparseGenMatrix) );
-      if( has_RAC )
-         return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
-      else
-         return *dummy_matrix;
+      return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
    }
 }
 

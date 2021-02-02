@@ -119,10 +119,8 @@ void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, Bo
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC_mat )
 {
-   std::unique_ptr<StringGenMatrix> dummy( new StringGenMatrix() );
-
-   BorderLinsys Bl( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
-   BorderLinsys Br( *dummy, *dummy, *dummy, prob->getLocalFBorder(), prob->getLocalGBorder() );
+   BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder() );
+   BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder() );
    addBTKiInvBToSC(SC, Bl, Br, true, sparseSC, use_local_RAC_mat );
 }
 

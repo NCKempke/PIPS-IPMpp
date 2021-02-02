@@ -149,6 +149,7 @@ protected:
   bool isHierarchyRoot() const { return is_hierarchy_root; };
   bool isHierarchyInnerRoot() const { return is_hierarchy_inner_root; };
   bool isHierarchyInnerLeaf() const { return is_hierarchy_inner_leaf; };
+  bool hasRAC() const { return has_RAC; };
 
   ~sData() override;
 

@@ -2116,8 +2116,8 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
    LsolveHierarchyBorder( *buffer_b0, Br, use_local_RAC_mat );
-
    buffer_b0->writeToStreamDense(std::cout);
+
    finalizeZ0Hierarchical(*buffer_b0, Br );
 
    // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}

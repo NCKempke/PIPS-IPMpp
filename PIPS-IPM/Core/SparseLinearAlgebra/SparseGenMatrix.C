@@ -255,8 +255,16 @@ void SparseGenMatrix::getSize( long long& m, long long& n ) const
    }
    else
    {
-      m = mStorage->m;
-      n = mStorage->n;
+      if( mStorage )
+      {
+         m = mStorage->m;
+         n = mStorage->n;
+      }
+      else
+      {
+         m = -1;
+         n = -1;
+      }
    }
 }
 void SparseGenMatrix::getSize( int& m, int& n ) const
@@ -268,8 +276,16 @@ void SparseGenMatrix::getSize( int& m, int& n ) const
   }
   else
   {
-     m = mStorage->m;
-     n = mStorage->n;
+      if( mStorage )
+      {
+         m = mStorage->m;
+         n = mStorage->n;
+      }
+      else
+      {
+         m = -1;
+         n = -1;
+      }
   }
 }
 
