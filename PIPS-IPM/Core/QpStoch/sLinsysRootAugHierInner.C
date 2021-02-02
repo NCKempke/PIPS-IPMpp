@@ -36,6 +36,19 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
    }
 }
 
+
+void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
+{
+   assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
+   assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
+
+   std::unique_ptr<StringGenMatrix> dummy{ new StringGenMatrix() };
+   BorderLinsys Bl( *dummy, *dummy, *dummy, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
+
+   addBTKiInvBToSC( result, Bl, Br, false, false, use_local_RAC_mat );
+}
+
 /* buffer is still transposed ..*/
 void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& )
 {
@@ -72,7 +85,7 @@ void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, Bo
 
             const int row_buffer = rowF;
 
-            assert( 0 <= col && col < nBuf);
+            assert( 0 <= col && col < nBuf );
             buffer[row_buffer][col] += val_F;
          }
       }

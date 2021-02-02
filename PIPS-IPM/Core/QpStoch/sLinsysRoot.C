@@ -410,10 +410,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
    if( use_local_RAC_mat )
       assert( !has_RAC );
 
-   if( has_RAC )
-      assert( children.size() == Br.R.children.size() );
-   else
-      assert( children.size() == Br.F.children.size() );
+   assert( children.size() == Br.F.children.size() );
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
@@ -594,19 +591,6 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
-{
-   assert( data->isHierarchyInnerLeaf() );
-   assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
-   assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
-
-   std::unique_ptr<StringGenMatrix> dummy{ new StringGenMatrix() };
-   BorderLinsys Bl( *dummy, *dummy, *dummy, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
-         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
-
-   addBTKiInvBToSC( result, Bl, Br, false, false, use_local_RAC_mat );
-}
-
 void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 {
   assert( false && "never called" );
@@ -768,9 +752,6 @@ void sLinsysRoot::AddChild(sLinsys* child)
 /* Atoms methods of FACTOR2 for a non-leaf linear system */
 void sLinsysRoot::initializeKKT(sData*, Variables*)
 {
-   if( is_hierarchy_root )
-      assert( !hasSparseKkt );
-
    if( hasSparseKkt )
       dynamic_cast<SparseSymMatrix*>(kkt)->symPutZeroes();
    else

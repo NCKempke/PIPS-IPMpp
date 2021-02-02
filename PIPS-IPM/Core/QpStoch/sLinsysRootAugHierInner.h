@@ -21,6 +21,8 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& ) override;
 
+      void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat ) override;
+
       void addTermToSchurComplBlocked( sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC_mat ) override;
 
       void putXDiagonal( OoqpVector& xdiag ) override;

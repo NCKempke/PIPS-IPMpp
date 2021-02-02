@@ -69,9 +69,6 @@ class sLinsysRoot : public sLinsys {
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat ) override;
-
-
   void putXDiagonal( OoqpVector& xdiag ) override;
   void putZDiagonal( OoqpVector& zdiag ) override;
  

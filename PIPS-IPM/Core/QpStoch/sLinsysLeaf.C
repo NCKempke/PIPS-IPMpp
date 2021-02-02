@@ -126,7 +126,6 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
    const bool result_sym = false;
    const bool has_RAC = !( Br.R.isEmpty() && Br.A.isEmpty() && Br.C.isEmpty() );
 
-
    BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(),
          data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
 
@@ -152,6 +151,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
             has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy,
             dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
             dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
+
       addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
    }
 }

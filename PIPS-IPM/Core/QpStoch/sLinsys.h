@@ -192,7 +192,8 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   /* compute Bi_{inner}^T Ki^{-1} Bri and add it to result */
-  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat ) = 0;
+  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, bool /*use_local_RAC_mat*/ )
+  { assert( false && "not implemented here" ); };
 
  protected:
   void addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& Bl, const double* cols,
