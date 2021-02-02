@@ -406,19 +406,22 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, S
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
 void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
 {
-   const bool has_RAC = !( Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
-   if( use_local_RAC_mat )
-      assert( !has_RAC );
-
    assert( children.size() == Br.F.children.size() );
 
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      BorderLinsys border_child( has_RAC ? *Br.R.children[it] : Br.R, has_RAC ? *Br.A.children[it] : Br.A, has_RAC ? *Br.C.children[it] : Br.C,
-                  *Br.F.children[it], *Br.G.children[it]);
-
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_local_RAC_mat);
+      if( Br.has_RAC )
+      {
+         BorderLinsys border_child(*Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
+                     *Br.F.children[it], *Br.G.children[it]);
+         children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_local_RAC_mat);
+      }
+      else
+      {
+         BorderLinsys border_child(*Br.F.children[it], *Br.G.children[it]);
+         children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_local_RAC_mat);
+      }
    }
 
    /* allreduce the result */

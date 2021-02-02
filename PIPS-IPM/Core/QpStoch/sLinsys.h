@@ -93,7 +93,7 @@ class sLinsys : public QpGenLinsys
   sTree* stochNode;
 
   template<typename T>
-  struct RFGAC_BLOCK
+  struct RACFG_BLOCK
   {
      private:
      std::unique_ptr<T> dummy{ new T() };
@@ -111,15 +111,15 @@ class sLinsys : public QpGenLinsys
      T& F;
      T& G;
 
-     RFGAC_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
-        has_RAC{true}, R(R), A(A), C(C), F(F), G(G) {};
+     RACFG_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
+        has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G} {};
 
-     RFGAC_BLOCK( T& F, T& G ) :
-        has_RAC{false}, F{F}, G{F}, R{*dummy}, A{*dummy}, C{*dummy} {};
+     RACFG_BLOCK( T& F, T& G ) :
+        has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
   };
 
-  typedef RFGAC_BLOCK<StringGenMatrix> BorderLinsys;
-  typedef RFGAC_BLOCK<SparseGenMatrix> BorderBiBlock;
+  typedef RACFG_BLOCK<StringGenMatrix> BorderLinsys;
+  typedef RACFG_BLOCK<SparseGenMatrix> BorderBiBlock;
 
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
 

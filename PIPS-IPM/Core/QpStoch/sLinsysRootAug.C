@@ -2093,11 +2093,10 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 {
    assert( !is_hierarchy_root );
 
-   const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
    if( use_local_RAC_mat )
    {
       assert( data->isHierarchyInnerLeaf() );
-      assert( !has_RAC );
+      assert( !Br.has_RAC );
    }
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */

@@ -124,14 +124,13 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
 
    const bool result_sparse = false;
    const bool result_sym = false;
-   const bool has_RAC = !( Br.R.isEmpty() && Br.A.isEmpty() && Br.C.isEmpty() );
 
    BorderBiBlock border_left_transp( data->getLocalCrossHessian().getTranspose(),
          data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() );
 
    if( use_local_RAC_mat )
    {
-      assert( !has_RAC );
+      assert( !Br.has_RAC );
       SparseGenMatrix& amat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Amat);
       SparseGenMatrix& cmat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Amat);
       SparseGenMatrix& rmat = dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochSymMatrix&>(*data->Q).border);
@@ -139,20 +138,27 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
       BorderBiBlock border_right( rmat, amat, cmat, dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
             dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
 
-      dynamic_cast<SparseGenMatrix&>(*Br.F.mat).writeToStreamDense(std::cout);
       addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
    }
    else
    {
-      std::unique_ptr<SparseGenMatrix> dummy( new SparseGenMatrix(0,0,0) );
+      if( Br.has_RAC )
+      {
+         BorderBiBlock border_right( dynamic_cast<SparseGenMatrix&>(*Br.R.mat),
+               dynamic_cast<SparseGenMatrix&>(*Br.A.mat),
+               dynamic_cast<SparseGenMatrix&>(*Br.C.mat),
+               dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
 
-      BorderBiBlock border_right( has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.R.mat) : *dummy,
-            has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy,
-            has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy,
-            dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-            dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
+         addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
+      }
+      else
+      {
+         BorderBiBlock border_right( dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() );
 
-      addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
+         addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, border_left_transp, border_right, result);
+      }
    }
 }
 

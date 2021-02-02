@@ -1025,14 +1025,13 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
    int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
 
-
 #ifndef NDEBUG
    int mR_left, nR_left; border_left_transp.R.getSize(mR_left, nR_left);
    int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
    int mG_left, nG_left; border_left_transp.G.getSize(mG_left, nG_left);
 #endif
 
-   const bool with_RAC = !(border_right.R.isEmpty() && border_right.A.isEmpty() && border_right.C.isEmpty());
+   const bool with_RAC = border_right.has_RAC;
    const bool withF = ( nF_right > 0 );
    const bool withG = ( nG_right > 0 );
 
@@ -1269,7 +1268,7 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
    assert( nRes >= mR + mF + mG );
    assert( mR == mA && mA == mC );
 
-   const bool with_RAC = !( Bl.R.isEmpty() && Bl.A.isEmpty() && Bl.C.isEmpty() );
+   const bool with_RAC = Bl.has_RAC;
    const bool with_F = mF > 0;
    const bool with_G = mG > 0;
 
@@ -1371,6 +1370,7 @@ void sLinsys::addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& borde
    {
       double** res_array;
       int res_ncols;
+
 #ifndef NDEBUG
       int res_mrows;
       if( sym_res )
