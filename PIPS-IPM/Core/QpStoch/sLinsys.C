@@ -410,52 +410,6 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
    addMatAt( res, BiT.G, mRt + mF, 0 );
 }
 
-/* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
-void sLinsys::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz )
-{
-   int nx_border, myl_border, mzl_border, dummy;
-
-   Br.R.getSize(dummy, nx_border);
-   Br.F.getSize(myl_border, dummy);
-   Br.G.getSize(mzl_border, dummy);
-
-   /* buffer for (Bri - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T */
-   // TODO : reuse an make member
-   DenseGenMatrix* BiT_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, locnx + locmy + locmz );
-
-   /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
-   int m, n; BiT_buffer->getSize(m, n);
-   BiT_buffer->atPutZeros(0, 0, m, n );
-
-   /* put (Bri)^T into buffer
-    *
-    *                  nxb myb mzb
-    *                [ RiT AiT CiT ]
-    * Bri^T        = [  Fi  0   0  ]
-    *                [  Gi  0   0  ]
-    */
-   const BorderBiBlock BriT( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) );
-   const BorderBiBlock BliT( dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) );
-   addBiTBorder( *BiT_buffer, BriT);
-
-   /* compute (Bri - Bi_{inner} * X0)^T = Bri^T - X0^T * Bi_{inner}^T
-    *
-    *                     [ Ri 0 0 FiT GiT ]^T
-    * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
-    *                     [ Ci 0 0  0   0  ]
-    */
-   multRightDenseSchurComplBlocked( data, X0, *BiT_buffer, parent_nx, parent_my, parent_mz );
-
-   /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bri^T - X0^T * Bi_{inner}^T) and multiply from right with Bli^T and add to SC */
-   addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BliT, *BiT_buffer, SC );
-
-   delete BiT_buffer;
-}
-
 void sLinsys::solveCompressed( OoqpVector& rhs_)
 {
    StochVector& rhs = dynamic_cast<StochVector&>(rhs_);

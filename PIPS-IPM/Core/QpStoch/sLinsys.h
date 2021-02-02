@@ -133,8 +133,8 @@ class sLinsys : public QpGenLinsys
   virtual void addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT) const;
 
   /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-        int parent_nx, int parent_my, int parent_mz );
+  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
+        int /*parent_nx*/, int /*parent_my*/, int /*parent_mz*/ ) { assert( false && "not implemented here"); };
 
   /** y += alpha * Lni^T * x */
   void LniTransMult(sData *prob, 
@@ -196,7 +196,7 @@ class sLinsys : public QpGenLinsys
 
   /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
   virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
-        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/)
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC_mat*/)
   { assert( false && "not implemented here" ); };
 
   /* compute Bi_{inner}^T Ki^{-1} Bri and add it to result */

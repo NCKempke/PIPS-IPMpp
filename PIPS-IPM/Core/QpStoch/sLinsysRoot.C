@@ -435,7 +435,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
 }
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli_^T Ki^-1 (Bri - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res )
+void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
    assert( !is_hierarchy_root );
    // TODO need method for sparse sc and non-sym here - we need to fork here if our children are not leafs...
@@ -810,9 +810,8 @@ void sLinsysRoot::reduceKKTsparse()
    if( !iAmDistrib )
       return;
 
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
-
    assert(kkt);
+   const int myRank = PIPS_MPIgetRank(mpiComm);
 
    SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
