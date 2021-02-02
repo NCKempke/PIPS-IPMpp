@@ -82,10 +82,8 @@ void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, Bo
             const int col = jcolF[k];
             const double val_F = MF[k];
 
-            const int row_buffer = rowF;
-
-            assert( 0 <= col && col < nBuf );
-            buffer[row_buffer][col] += val_F;
+            assert( 0 <= col && col < nBuf - nG );
+            buffer[rowF][col] += val_F;
          }
       }
    }
@@ -103,14 +101,11 @@ void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, Bo
 
          for( int k = rowG_start; k < rowG_end; ++k )
          {
-            const int col = jcolG[k];
+            const int col = jcolG[k] + nF;
             const double val_G = MG[k];
 
-            const int row_buffer = rowG + mF;
-
-            assert( row_buffer < mBuf );
-            assert( 0 <= col && col < nBuf);
-            buffer[row_buffer][col] += val_G;
+            assert( nF <= col && col < nBuf);
+            buffer[rowG][col] += val_G;
          }
       }
    }
