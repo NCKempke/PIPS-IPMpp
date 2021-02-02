@@ -2091,26 +2091,23 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 /* compute res += Bl^T Ki^-1 Br */
 void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
+   assert( !is_hierarchy_root );
+
    const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
    if( use_local_RAC_mat )
+   {
+      assert( data->isHierarchyInnerLeaf() );
       assert( !has_RAC );
+   }
 
-   result.writeToStreamDense(std::cout);
    /* Bi_{inner} is our own border, Ki are our own diagonals */
-   /* only called in sLinsysRootAug and sLinsysRootAugHierInner */
-   assert( !is_hierarchy_root );
+   /* only called on sLinsysRootAug and sLinsysRootAugHierInner */
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 Bri
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */
-
-   int nx_border, myl_border, mzl_border, dummy;
-   Br.A.getSize(dummy, nx_border);
-   Br.F.getSize(myl_border, dummy);
-   Br.G.getSize(mzl_border, dummy);
-
-   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
    int nr, mr;
    result.getSize(mr, nr);
+   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
    const int m_buffer = mr;
 
    // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} Bri, stored in transposed form (for quick access of cols in solve)

@@ -95,6 +95,10 @@ class sLinsys : public QpGenLinsys
   template<typename T>
   struct RFGAC_BLOCK
   {
+     private:
+     std::unique_ptr<T> dummy{ new T() };
+
+     public:
      /* represents a block like
       * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
       * [ A_i   0     0   ] or possibly [  F_i    0     0   ]
@@ -108,6 +112,9 @@ class sLinsys : public QpGenLinsys
 
      RFGAC_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
         R(R), A(A), C(C), F(F), G(G) {};
+
+     RFGAC_BLOCK( T& F, T& G ) :
+        F{F}, G{F}, R{*dummy}, A{*dummy}, C{*dummy} {};
   };
 
   typedef RFGAC_BLOCK<StringGenMatrix> BorderLinsys;
