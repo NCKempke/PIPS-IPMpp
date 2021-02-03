@@ -286,7 +286,7 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
 }
 
 /* calculate res += X_i * B_iT */
-void sLinsys::multRightDenseSchurComplBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result )
+void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result )
 {
    /*
     *        [  RiT   AiT   CiT ]

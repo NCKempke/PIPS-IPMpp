@@ -249,7 +249,7 @@ class sLinsys : public QpGenLinsys
         const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const;
 
   /* calculate res += X_i * B_iT */
-  void multRightDenseSchurComplBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result );
+  void multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result );
 };
 
 #endif
