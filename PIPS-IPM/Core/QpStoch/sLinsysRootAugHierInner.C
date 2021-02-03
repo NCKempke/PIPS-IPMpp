@@ -50,7 +50,7 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
 }
 
 /* buffer is still transposed ..*/
-void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& )
+void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys&, std::vector<BorderMod>& Br_mod_border )
 {
    const SparseGenMatrix& F = data->getLocalF().getTranspose();
    const SparseGenMatrix& G = data->getLocalG().getTranspose();

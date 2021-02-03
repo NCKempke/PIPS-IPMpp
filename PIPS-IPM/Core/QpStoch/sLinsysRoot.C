@@ -146,7 +146,7 @@ void sLinsysRoot::afterFactor()
  * [ G0V  0     0    ]
  */
 // TODO : refactor! ..
-void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br )
+void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
    const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
 //   if( use_local_RAC_mat )
@@ -420,7 +420,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
 
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat )
 {
    assert( children.size() == Br.F.children.size() );
 
@@ -446,8 +446,9 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
       allreduceMatrix( result, false, false, mpiComm );
 }
 
-/* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
+/* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
+void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+      bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
    assert( !is_hierarchy_root );
    // TODO need method for sparse sc and non-sym here - we need to fork here if our children are not leafs...

@@ -187,21 +187,21 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& x);
 
   /* compute result += Bl^T K^-1 Br where K is our own linear system */
-  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*modif_border*/,
+  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
         bool /*sym_res*/, bool /*sparse_res*/, bool /*bool use_local_RAC_mat*/)
   { assert( false && "not implemented here"); }
 
-  /* compute Bi_{inner}^T Ki^{-1} Bri and add it up in result */
-  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, bool /*use_local_RAC_mat*/ )
+  /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) and add it up in result */
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC_mat*/ )
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
   virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/ )
   { assert( false && "not implemented here" ); };
 
-  /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
+  /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
   virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
-        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC_mat*/)
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC_mat*/)
   { assert( false && "not implemented here" ); };
 
   /* compute Bi_{inner}^T Ki^{-1} Bri and add it to result */

@@ -2088,8 +2088,8 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
    }
 }
 
-/* compute res += Bl^T Ki^-1 (Br - sum Bri Xi) = Bl^T Ki^-1 (Br - modif_border) */
-void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& modif_border,
+/* compute res += Bl^T Ki^-1 (Br - sum_j Bmodj Xj) = Bl^T Ki^-1 (Br - modif_border) */
+void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
    assert( !is_hierarchy_root );
@@ -2103,35 +2103,36 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    /* Bi_{inner} is our own border, Ki are our own diagonals */
    /* only called on sLinsysRootAug and sLinsysRootAugHierInner */
 
-   /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 Bri
+   /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */
    int nr, mr;
    result.getSize(mr, nr);
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
    const int m_buffer = mr;
 
-   // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} Bri, stored in transposed form (for quick access of cols in solve)
+   // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
-   // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} Bri
-   LsolveHierarchyBorder( *buffer_b0, Br, use_local_RAC_mat );
+   // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} ( (Bri - sum_j Bmodij Xij) )
+   LsolveHierarchyBorder( *buffer_b0, Br, Br_mod_border, use_local_RAC_mat );
 
-   finalizeZ0Hierarchical( *buffer_b0, Br );
+   finalizeZ0Hierarchical( *buffer_b0, Br, Br_mod_border );
 
-   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri}
+   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
 
-   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} Bri (stored in transposed form!)
+   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form!)
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
 //   buffer_b0->writeToStreamDense(std::cout);
 
-   // compute result = -SUM_i Bli^T Ki^{-1} (Bri - Bi_{inner} X0 ) = -SUM_i Bli^T Xi
-   LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, sym_res, sparse_res, use_local_RAC_mat );
+   // compute result = -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) = -SUM_i Bli^T Xi
+   LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res, use_local_RAC_mat );
 
    // compute result += Bl0^T X0
    finalizeInnerSchurComplementContribution( result, *buffer_b0, Br, sym_res, sparse_res );
+
    delete buffer_b0;
 }

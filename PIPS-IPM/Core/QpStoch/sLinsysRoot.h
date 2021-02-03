@@ -53,16 +53,16 @@ class sLinsysRoot : public sLinsys {
 
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
 
-  /* compute B0_{outer} - buffer */
-  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br );
+  /* compute (Br0 - sum_j Br_mod_border) - buffer */
+  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border );
   /* compute SC += B0_{outer}^T X0 */
   virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat ) override;
 
-  /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat ) override;
+  /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
+  void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC_mat ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
