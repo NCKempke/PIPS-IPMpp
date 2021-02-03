@@ -285,8 +285,31 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   }
 }
 
-/* calculate res += X_i * B_iT */
-void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result )
+void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
+{
+   /* now similarly compute BiT_buffer += X_j^T Bmodj for all j */
+   for( auto& border_mod_block : border_mod )
+   {
+      std::unique_ptr<BorderBiBlock> BiT_mod{};
+
+      BorderLinsys& border = border_mod_block.border;
+
+      if( border.use_local_RAC )
+         BiT_mod.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+      else if( border.has_RAC )
+         BiT_mod.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*border.R.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*border.C.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+      else
+         BiT_mod.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat), false ) );
+
+      multRightDenseBorderBlocked( *BiT_mod, border_mod_block.multiplier, result );
+   }
+}
+
+/* calculate res -= X * BT */
+void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatrix& X, DenseGenMatrix& result )
 {
    /*
     *        [  RiT   AiT   CiT ]
@@ -296,22 +319,22 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMat
     *        [   Gi    0     0  ]
     */
 
-   const bool with_RAC = BiT.has_RAC;
+   const bool with_RAC = BT.has_RAC;
    int mX, nX; X.getSize(mX, nX);
 
 #ifndef NDEBUG
    int mRes, nRes; result.getSize(mRes, nRes);
    assert( mX == mRes );
 
-   int mF, nF; BiT.F.getSize( mF, nF );
-   int mG, nG; BiT.G.getSize( mG, nG );
+   int mF, nF; BT.F.getSize( mF, nF );
+   int mG, nG; BT.G.getSize( mG, nG );
 
    assert( nF == nG );
    if( with_RAC )
    {
-      int mR, nR; BiT.R.getSize( mR, nR);
-      int mA, nA; BiT.A.getSize( mA, nA );
-      int mC, nC; BiT.C.getSize( mC, nC );
+      int mR, nR; BT.R.getSize( mR, nR);
+      int mA, nA; BT.A.getSize( mA, nA );
+      int mC, nC; BT.C.getSize( mC, nC );
       assert( mR == mA );
       assert( mR == mC );
       assert( nR == nF );
@@ -331,11 +354,11 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMat
     *            [  Gi ]
     */
    if( with_RAC )
-      X.multMatAt( 0, 1.0, 0, result, -1.0, BiT.R );
+      X.multMatAt( 0, 1.0, 0, result, -1.0, BT.R );
 
-   X.multMatAt( nX - locmyl - locmzl, 1.0, 0, result, -1.0, BiT.F );
+   X.multMatAt( nX - locmyl - locmzl, 1.0, 0, result, -1.0, BT.F );
 
-   X.multMatAt( nX - locmzl, 1.0, 0, result, -1.0, BiT.G );
+   X.multMatAt( nX - locmzl, 1.0, 0, result, -1.0, BT.G );
 
    if( with_RAC )
    {
@@ -345,7 +368,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMat
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, locnx, result, -1.0, BiT.A );
+      X.multMatAt( 0, 1.0, locnx, result, -1.0, BT.A );
 
       /*            [ CiT ]
        *            [  0  ]
@@ -353,7 +376,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BiT, const DenseGenMat
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, locnx + locmy, result, -1.0, BiT.C );
+      X.multMatAt( 0, 1.0, locnx + locmy, result, -1.0, BT.C );
    }
 }
 
