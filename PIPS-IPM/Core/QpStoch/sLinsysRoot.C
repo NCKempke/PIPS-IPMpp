@@ -466,7 +466,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
       for( auto& bm : Br_mod_border )
          border_mod_child.push_back( getChild( bm, it ) );
 
-      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, locnx, locmy, locmz, sparse_res, sym_res );
+      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res );
    }
 
    /* allreduce the border SC */
