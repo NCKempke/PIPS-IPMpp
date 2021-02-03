@@ -285,47 +285,42 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   }
 }
 
-/* calculate res += X_i * B_i^T */
-void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, const DenseGenMatrix& X, DenseGenMatrix& result )
+/* calculate res += X_i * B_iT */
+void sLinsys::multRightDenseSchurComplBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result )
 {
-   /*          locnx locmy locmz
-    *        [  RiT   AiT   CiT ] pnx
-    *        [   0     0     0  ] pmy
-    * Bi^T = [   0     0     0  ] pmz
-    *        [   Fi    0     0  ] locmyl
-    *        [   Gi    0     0  ] locmzl
+   /*
+    *        [  RiT   AiT   CiT ]
+    *        [   0     0     0  ]
+    * Bi^T = [   0     0     0  ]
+    *        [   Fi    0     0  ]
+    *        [   Gi    0     0  ]
     */
 
-   const bool with_RAC = data->hasRAC();
+   const bool with_RAC = BiT.has_RAC;
    int mX, nX; X.getSize(mX, nX);
 
 #ifndef NDEBUG
    int mRes, nRes; result.getSize(mRes, nRes);
-   assert( locnx + locmy + locmz == nRes );
    assert( mX == mRes );
 
+   int mF, nF; BiT.F.getSize( mF, nF );
+   int mG, nG; BiT.G.getSize( mG, nG );
+
+   assert( nF == nG );
    if( with_RAC )
    {
-      SparseGenMatrix& R = prob->getLocalCrossHessian();
-      SparseGenMatrix& A = prob->getLocalA();
-      SparseGenMatrix& C = prob->getLocalC();
-      int mR, nR; R.getSize(mR, nR);
-      int mA, nA; A.getSize( mA, nA );
-      int mC, nC; C.getSize( mC, nC );
+      int mR, nR; BiT.R.getSize( mR, nR);
+      int mA, nA; BiT.A.getSize( mA, nA );
+      int mC, nC; BiT.C.getSize( mC, nC );
+      assert( mR == mA );
+      assert( mR == mC );
+      assert( nR == nF );
 
-      assert( mR == locnx );
-      assert( mA == locmy );
-      assert( mC == locmz );
-      assert( nR + locmyl + locmzl <= nX );
+      assert( mR + mF + mG <= nX );
    }
    else
-      assert( locmyl + locmzl == nX );
+      assert( mF + mG == nX );
 
-   int mF, dummy; prob->getLocalF().getSize( mF, dummy );
-   assert( locmyl == mF );
-
-   int mG; prob->getLocalG().getSize( mG, dummy );
-   assert( locmzl == mG );
 #endif
    // X from the right with each column of Bi^T todo add OMP to submethods
 
@@ -336,11 +331,11 @@ void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, const Dense
     *            [  Gi ]
     */
    if( with_RAC )
-      X.multMatAt( 0, 1.0, 0, result, -1.0, prob->getLocalCrossHessian().getTranspose() );
+      X.multMatAt( 0, 1.0, 0, result, -1.0, BiT.R );
 
-   X.multMatAt( nX - locmyl - locmzl, 1.0, 0, result, -1.0, prob->getLocalF() );
+   X.multMatAt( nX - locmyl - locmzl, 1.0, 0, result, -1.0, BiT.F );
 
-   X.multMatAt( nX - locmzl, 1.0, 0, result, -1.0, prob->getLocalG() );
+   X.multMatAt( nX - locmzl, 1.0, 0, result, -1.0, BiT.G );
 
    if( with_RAC )
    {
@@ -350,7 +345,7 @@ void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, const Dense
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, locnx, result, -1.0, prob->getLocalA().getTranspose() );
+      X.multMatAt( 0, 1.0, locnx, result, -1.0, BiT.A );
 
       /*            [ CiT ]
        *            [  0  ]
@@ -358,7 +353,7 @@ void sLinsys::multRightDenseSchurComplBlocked( /*const*/sData* prob, const Dense
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, locnx + locmy, result, -1.0, prob->getLocalC().getTranspose() );
+      X.multMatAt( 0, 1.0, locnx + locmy, result, -1.0, BiT.C );
    }
 }
 

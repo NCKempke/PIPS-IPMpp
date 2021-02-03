@@ -248,8 +248,8 @@ class sLinsys : public QpGenLinsys
   void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& Bl, const double* cols,
         const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const;
 
-  /* calculate res += X_i * B_i^T */
-  void multRightDenseSchurComplBlocked( /* const */ sData* prob, const DenseGenMatrix& X, DenseGenMatrix& result );
+  /* calculate res += X_i * B_iT */
+  void multRightDenseSchurComplBlocked( BorderBiBlock& BiT, const DenseGenMatrix& X, DenseGenMatrix& result );
 };
 
 #endif

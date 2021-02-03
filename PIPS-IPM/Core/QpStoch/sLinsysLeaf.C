@@ -136,7 +136,10 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
     * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
     *                     [ Ci 0 0  0   0  ]
     */
-   multRightDenseSchurComplBlocked( data, X0, *BiT_buffer );
+   BorderBiBlock BiT = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
+
+   multRightDenseSchurComplBlocked( BiT, X0, *BiT_buffer );
 
    /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bri^T - X0^T * Bi_{inner}^T) and multiply from right with Bli^T and add to SC */
    addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, *BliT, *BiT_buffer, res );
