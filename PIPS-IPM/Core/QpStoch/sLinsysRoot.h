@@ -56,8 +56,7 @@ class sLinsysRoot : public sLinsys {
   /* compute B0_{outer} - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br );
   /* compute SC += B0_{outer}^T X0 */
-  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
-        SparseGenMatrix& F0cons_border, SparseGenMatrix& G0vec_border, SparseGenMatrix& G0cons_border, DenseGenMatrix& X0, bool is_sym, bool is_sparse );
+  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat ) override;
