@@ -37,7 +37,7 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
 }
 
 
-void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
+void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat )
 {
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
@@ -52,6 +52,8 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
 /* buffer is still transposed ..*/
 void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys&, std::vector<BorderMod>& Br_mod_border )
 {
+   assert( Br_mod_border.empty() );
+
    const SparseGenMatrix& F = data->getLocalF().getTranspose();
    const SparseGenMatrix& G = data->getLocalG().getTranspose();
 
@@ -122,8 +124,9 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 }
 
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
-      BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz, bool sparse_res, bool sym_res )
+      BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int parent_nx, int parent_my, int parent_mz, bool sparse_res, bool sym_res )
 {
+   // TODO add own border to vector and pass on to solve
    assert(false);
 }
 

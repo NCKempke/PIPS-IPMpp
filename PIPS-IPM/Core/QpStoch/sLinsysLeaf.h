@@ -49,9 +49,9 @@ class sLinsysLeaf : public sLinsys
 
   void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool ) override;
 
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat ) override;
-  void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz,
-        bool sparse_res, bool sym_res ) override;
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat ) override;
+  void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+   int parent_nx, int parent_my, int parent_mz, bool sparse_res, bool sym_res ) override;
 
  protected:
 

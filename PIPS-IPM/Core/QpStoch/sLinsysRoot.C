@@ -146,8 +146,11 @@ void sLinsysRoot::afterFactor()
  * [ G0V  0     0    ]
  */
 // TODO : refactor! ..
+// TODO : move to aug..
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
+   assert( Br_mod_border.empty() );
+
    const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
 //   if( use_local_RAC_mat )
 //      assert( !has_RAC );
@@ -427,17 +430,13 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
    /* get contribution to schur_complement from each child */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      if( Br.has_RAC )
-      {
-         BorderLinsys border_child(*Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
-                     *Br.F.children[it], *Br.G.children[it]);
-         children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_local_RAC_mat);
-      }
-      else
-      {
-         BorderLinsys border_child(*Br.F.children[it], *Br.G.children[it]);
-         children[it]->addInnerBorderKiInvBrToRes(result, border_child, use_local_RAC_mat);
-      }
+      std::vector<BorderMod> Br_mod_border_child;
+
+      for( auto& br_mod : Br_mod_border )
+         Br_mod_border_child.push_back( getChild( br_mod, it ) );
+
+      BorderLinsys border_child = getChild( Br, it );
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC_mat);
    }
 
    /* allreduce the result */
@@ -464,12 +463,14 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      BorderLinsys bl_child( *Bl.R.children[it], *Bl.A.children[it], *Bl.C.children[it],
-                  *Bl.F.children[it], *Bl.G.children[it]);
-      BorderLinsys br_child( *Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
-                  *Br.F.children[it], *Br.G.children[it]);
+      BorderLinsys bl_child = getChild( Bl, it );
+      BorderLinsys br_child = getChild( Br, it );
 
-      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, locnx, locmy, locmz, sparse_res, sym_res );
+      std::vector<BorderMod> border_mod_child;
+      for( auto& bm : Br_mod_border )
+         border_mod_child.push_back( getChild( bm, it ) );
+
+      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, locnx, locmy, locmz, sparse_res, sym_res );
    }
 
    /* allreduce the border SC */

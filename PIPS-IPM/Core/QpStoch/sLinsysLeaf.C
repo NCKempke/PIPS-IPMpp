@@ -75,9 +75,10 @@ void sLinsysLeaf::deleteChildren()
 
 
 /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to res */
-void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz,
-      bool sparse_res, bool sym_res )
+void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+      std::vector<BorderMod>& Br_mod_border, int parent_nx, int parent_my, int parent_mz, bool sparse_res, bool sym_res )
 {
+//   assert( Br.)
    int nx_border, myl_border, mzl_border, dummy;
 
    Br.R.getSize(dummy, nx_border);
@@ -182,7 +183,7 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 }
 
 /* compute result += B_inner^T K^-1 Br */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, bool use_local_RAC_mat )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat )
 {
    assert( Br.A.children.size() == 0 );
 

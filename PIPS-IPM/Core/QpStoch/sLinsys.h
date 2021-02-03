@@ -13,6 +13,7 @@
 #include "DenseGenMatrix.h"
 #include "SimpleVector.h"
 #include "StochVector.h"
+#include "StringGenMatrix.h"
 
 #include <vector>
 #include <memory>
@@ -23,7 +24,6 @@
 class sTree;
 class sFactory;
 class sData;
-class StringGenMatrix;
 class StringSymMatrix;
 
 class sLinsys : public QpGenLinsys
@@ -117,13 +117,43 @@ class sLinsys : public QpGenLinsys
 
      RACFG_BLOCK( T& F, T& G ) :
         has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
+
+     RACFG_BLOCK( const RACFG_BLOCK<T>& block ) :
+        has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
+         F{ block.F }, G{ block.G } {};
   };
 
   using BorderLinsys = RACFG_BLOCK<StringGenMatrix>;
   using BorderBiBlock = RACFG_BLOCK<SparseGenMatrix>;
 
-  using BorderMod = std::tuple<BorderLinsys&,DenseGenMatrix&,bool>;
+  static BorderLinsys getChild( BorderLinsys& border , unsigned int i )
+  {
+     assert( i < border.F.children.size() );
+     if( border.has_RAC )
+        return BorderLinsys( *border.R.children[i], *border.A.children[i], *border.C.children[i],
+           *border.F.children[i], *border.G.children[i] );
+     else
+        return BorderLinsys( *border.F.children[i], *border.G.children[i] );
+  }
 
+  struct BorderMod_Block
+  {
+     public:
+        BorderLinsys border;
+        DenseGenMatrix& multiplier;
+        const bool use_local_RAC;
+
+        BorderMod_Block( BorderLinsys& border, DenseGenMatrix& multiplier, bool use_local_RAC ) :
+           border{ border }, multiplier{ multiplier }, use_local_RAC{ use_local_RAC } { if( use_local_RAC ) assert( !border.has_RAC ); };
+  };
+
+  using BorderMod = BorderMod_Block;
+
+  static BorderMod getChild( BorderMod& bordermod, unsigned int i )
+  {
+     BorderLinsys child = getChild( bordermod.border, i );
+     return BorderMod_Block( child, bordermod.multiplier, bordermod.use_local_RAC );
+  }
 
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
 
@@ -138,7 +168,8 @@ class sLinsys : public QpGenLinsys
 
   /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
   virtual void LniTransMultHierarchyBorder( DoubleMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
-        int /*parent_nx*/, int /*parent_my*/, int /*parent_mz*/, bool /*sparse_res*/, bool /*sym_res*/) { assert( false && "not implemented here"); };
+        std::vector<BorderMod>& /*Br_mod_border*/, int /*parent_nx*/, int /*parent_my*/, int /*parent_mz*/,
+        bool /*sparse_res*/, bool /*sym_res*/) { assert( false && "not implemented here"); };
 
   /** y += alpha * Lni^T * x */
   void LniTransMult(sData *prob, 
@@ -204,8 +235,8 @@ class sLinsys : public QpGenLinsys
         BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC_mat*/)
   { assert( false && "not implemented here" ); };
 
-  /* compute Bi_{inner}^T Ki^{-1} Bri and add it to result */
-  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, bool /*use_local_RAC_mat*/ )
+  /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Brmod_ij Xj )and add it to result */
+  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC_mat*/ )
   { assert( false && "not implemented here" ); };
 
  protected:
