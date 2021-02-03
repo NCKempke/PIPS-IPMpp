@@ -228,6 +228,7 @@ namespace pips_options
       bool_options["HIERARCHICAL"] = false;
       bool_options["HIERARCHICAL_APPLY_SPLIT"] = true;
       bool_options["HIERARCHICAL_TESTING"] = false;
+      bool_options["HIERARCHICAL_PRINT_HIER_DATA"] = false;
 
       /// SCHUR COMPLEMENT
       /** should the schur complement be allreduced to all processes or to a single one */
