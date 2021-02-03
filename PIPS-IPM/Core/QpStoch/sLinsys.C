@@ -965,11 +965,17 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 #endif
 }
 
+/* res is in transposed form here */
 void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result)
 {
-   int m_res, n_res;
-   result.getSize(m_res, n_res);
+   if( sparse_res )
+      assert( sym_res );
+
+   int m_res_tp, n_res_tp;
+   result.getSize(n_res_tp, m_res_tp);
+   if( sym_res )
+      assert( m_res_tp == n_res_tp );
 
    int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
    int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
@@ -980,7 +986,6 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
 
-
 #ifndef NDEBUG
    assert( n_solvers >= 1 && n_threads_solvers >= 1 );
    int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
@@ -989,10 +994,22 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    if( border_left_transp.has_RAC )
    {
       int mR_left, nR_left; border_left_transp.R.getSize(mR_left, nR_left);
-      assert( nR_left + nF_left + nG_left <= n_res);
+      int mA_left, nA_left; border_left_transp.A.getSize(mA_left, nA_left);
+      int mC_left, nC_left; border_left_transp.C.getSize(mC_left, nC_left);
+      assert( mR_left == mA_left );
+      assert( mR_left == mC_left );
+      assert( nR_left == nF_left );
+      assert( nR_left == nG_left );
+
+      assert( mR_left + mF_left + mG_left <= m_res_tp);
+      assert( nR_left + nA_left + nC_left == length_col );
    }
    else
-      assert( mF_left + mG_left == n_res);
+   {
+      assert( nF_left == nG_left );
+      assert( mF_left <= length_col );
+      assert( mF_left + mG_left == m_res_tp );
+   }
 
    if( with_RAC )
    {
@@ -1004,12 +1021,14 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       assert( mR_right == mF_right );
       assert( mR_right == mG_right );
 
-      assert( length_col == mR_right + mA_right + mC_right);
+      assert( nR_right + nF_right + nG_right <= n_res_tp );
+      assert( mR_right + mA_right + mC_right == length_col);
    }
    else
    {
       assert( mF_right == mG_right );
-      assert( mF_right < length_col );
+      assert( mF_right <= length_col );
+      assert( nF_right + nG_right == n_res_tp );
    }
 #endif
 
@@ -1138,7 +1157,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
          for( int j = 0; j < nrhs; ++j )
-            colId_loc[j] += m_res - nF_right - nG_right;
+            colId_loc[j] += n_res_tp - nF_right - nG_right;
 
          addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId_loc, length_col, nrhs, sparse_res, sym_res, result);
       }
@@ -1188,7 +1207,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
          for( int j = 0; j < nrhs; ++j )
-            colId_loc[j] += m_res - nG_right;
+            colId_loc[j] += n_res_tp - nG_right;
 
          addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId_loc, length_col, nrhs, sparse_res, sym_res, result);
       }
