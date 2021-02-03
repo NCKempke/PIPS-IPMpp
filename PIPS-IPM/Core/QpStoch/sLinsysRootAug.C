@@ -2088,8 +2088,9 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
    }
 }
 
-/* compute res += Bl^T Ki^-1 Br */
-void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
+/* compute res += Bl^T Ki^-1 (Br - sum Bri Xi) = Bl^T Ki^-1 (Br - modif_border) */
+void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& modif_border,
+      bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
    assert( !is_hierarchy_root );
 

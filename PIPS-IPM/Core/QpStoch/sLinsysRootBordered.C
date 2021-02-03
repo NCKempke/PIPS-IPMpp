@@ -253,8 +253,9 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
          *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_left,
          *dynamic_cast<BorderedGenMatrix&>(*prob->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_bottom);
+   std::vector<BorderMod> border_mod;
 
-   this->children[0]->addBTKiInvBToSC(SC, B, B, true, false, false);
+   this->children[0]->addBTKiInvBToSC(SC, B, B, border_mod, true, false, false);
 }
 
 /* since we have only one child we will not allreduce anything */

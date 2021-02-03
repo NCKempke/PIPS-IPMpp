@@ -44,8 +44,9 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
 
    BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
+   std::vector<BorderMod> border_mod;
 
-   addBTKiInvBToSC( result, Bl, Br, false, false, use_local_RAC_mat );
+   addBTKiInvBToSC( result, Bl, Br, border_mod, false, false, use_local_RAC_mat );
 }
 
 /* buffer is still transposed ..*/
@@ -116,7 +117,8 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 {
    BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder() );
    BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder() );
-   addBTKiInvBToSC(SC, Bl, Br, true, sparseSC, use_local_RAC_mat );
+   std::vector<BorderMod> border_mod;
+   addBTKiInvBToSC(SC, Bl, Br, border_mod, true, sparseSC, use_local_RAC_mat );
 }
 
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,

@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <memory>
+#include <tuple>
 
 #include "mpi.h"
 
@@ -118,8 +119,11 @@ class sLinsys : public QpGenLinsys
         has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
   };
 
-  typedef RACFG_BLOCK<StringGenMatrix> BorderLinsys;
-  typedef RACFG_BLOCK<SparseGenMatrix> BorderBiBlock;
+  using BorderLinsys = RACFG_BLOCK<StringGenMatrix>;
+  using BorderBiBlock = RACFG_BLOCK<SparseGenMatrix>;
+
+  using BorderMod = std::tuple<BorderLinsys&,DenseGenMatrix&,bool>;
+
 
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
 
@@ -183,7 +187,8 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& x);
 
   /* compute result += Bl^T K^-1 Br where K is our own linear system */
-  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*bool use_local_RAC_mat*/)
+  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*modif_border*/,
+        bool /*sym_res*/, bool /*sparse_res*/, bool /*bool use_local_RAC_mat*/)
   { assert( false && "not implemented here"); }
 
   /* compute Bi_{inner}^T Ki^{-1} Bri and add it up in result */
