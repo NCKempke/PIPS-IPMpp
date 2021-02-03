@@ -61,8 +61,13 @@ class sLinsysLeaf : public sLinsys
   void initBlockedSolvers();
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
-
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
+
+  /* compute result += B_inner^T K^-1 Br */
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br );
+
+  /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
+  void addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border );
 }; 
 
 template<class LINSOLVER>

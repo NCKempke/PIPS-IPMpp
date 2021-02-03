@@ -287,7 +287,7 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
 
 void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
 {
-   /* now similarly compute BiT_buffer += X_j^T Bmodj for all j */
+   /* compute BiT_buffer += X_j^T Bmodj for all j */
    for( auto& border_mod_block : border_mod )
    {
       std::unique_ptr<BorderBiBlock> BiT_mod{};
