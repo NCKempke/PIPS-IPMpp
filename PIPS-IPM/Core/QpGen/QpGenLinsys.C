@@ -249,9 +249,9 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
         *vars->v, *vars->gamma,
         *vars->w, *vars->phi );
 
-  if( pips_options::getBoolParameter("HIERARCHICAL") )
+  if( pips_options::getBoolParameter("HIERARCHICAL_TESTING") )
   {
-     std::cout << "Setting diags to 1.0 fore debugging\n";
+     std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
      dd->setToConstant(1.0);
   }
 //  dd->addConstant( 1e-8 );
@@ -269,7 +269,7 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   nomegaInv->invert();
   nomegaInv->negate();
 
-  if( pips_options::getBoolParameter("HIERARCHICAL") )
+  if( pips_options::getBoolParameter("HIERARCHICAL_TESTING") )
      nomegaInv->setToConstant(1.0);
 //  nomegaInv->addConstant( -1e-8 );
 

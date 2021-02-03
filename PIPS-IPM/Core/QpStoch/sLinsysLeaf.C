@@ -86,6 +86,8 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
 
    /* buffer for (Bri - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T */
    // TODO : reuse an make member
+   assert( !sparse_res );
+   assert( sym_res );
    DenseGenMatrix* BiT_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, locnx + locmy + locmz );
 
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */

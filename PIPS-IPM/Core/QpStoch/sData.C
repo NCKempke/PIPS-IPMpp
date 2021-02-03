@@ -2019,7 +2019,9 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Building hierarchical data...\n";
 
-   this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
+   if( pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
+      this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
+
    sData* hierarchical_top = shaveDenseBorder( tree );
 
    if( PIPS_MPIgetRank() == 0 )

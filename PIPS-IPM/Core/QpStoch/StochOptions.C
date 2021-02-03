@@ -226,6 +226,8 @@ namespace pips_options
 
       int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
       bool_options["HIERARCHICAL"] = false;
+      bool_options["HIERARCHICAL_APPLY_SPLIT"] = true;
+      bool_options["HIERARCHICAL_TESTING"] = false;
 
       /// SCHUR COMPLEMENT
       /** should the schur complement be allreduced to all processes or to a single one */
