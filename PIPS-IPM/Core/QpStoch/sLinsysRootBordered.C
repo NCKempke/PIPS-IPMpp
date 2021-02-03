@@ -141,7 +141,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
       sol_inner->copyFrom(rhs_inner);
 
    /* solve inner system */
-   this->children[0]->solveCompressed( *sol_inner );
+   children[0]->solveCompressed( *sol_inner );
 
    if( PIPS_MPIgetRank(mpiComm) != 0 )
       b0.setToZero();
@@ -165,7 +165,7 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inne
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
-   this->children[0]->addBorderX0ToRhs( rhs_inner, b0, border );
+   children[0]->addBorderX0ToRhs( rhs_inner, b0, border );
 }
 
 
@@ -231,7 +231,7 @@ SymMatrix* sLinsysRootBordered::createKKT(sData*)
    const int n = locnx + locmyl + locmzl;
 
    if( PIPS_MPIgetRank(mpiComm) == 0 )
-      std::cout << "sLinsysRootBordered: getSchurCompMaxNnz " << n*n << "\n";
+      std::cout << "sLinsysRootBordered: getSchurCompMaxNnz " << n * n << "\n";
 
    return new DenseSymMatrix(n);
 }
@@ -255,7 +255,7 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
          *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_bottom);
    std::vector<BorderMod> border_mod;
 
-   this->children[0]->addBTKiInvBToSC(SC, B, B, border_mod, true, false);
+   children[0]->addBTKiInvBToSC(SC, B, B, border_mod, true, false);
 }
 
 /* since we have only one child we will not allreduce anything */
