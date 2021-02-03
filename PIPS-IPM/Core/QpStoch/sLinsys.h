@@ -132,9 +132,9 @@ class sLinsys : public QpGenLinsys
   /* add Bi_{outer}^T to res */
   virtual void addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT) const;
 
-  /* compute Bi_{outer}^T X_i = Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) and add it to SC */
-  virtual void LniTransMultHierarchyBorder( DenseSymMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
-        int /*parent_nx*/, int /*parent_my*/, int /*parent_mz*/ ) { assert( false && "not implemented here"); };
+  /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
+  virtual void LniTransMultHierarchyBorder( DoubleMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
+        int /*parent_nx*/, int /*parent_my*/, int /*parent_mz*/, bool /*sparse_res*/, bool /*sym_res*/) { assert( false && "not implemented here"); };
 
   /** y += alpha * Lni^T * x */
   void LniTransMult(sData *prob, 

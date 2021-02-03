@@ -427,15 +427,11 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
    /* allreduce the result */
    // TODO : optimize -> do not reduce A_0 part ( all zeros... )
    if( iAmDistrib )
-   {
-      int m, n;
-      result.getSize(m, n);
-      submatrixAllReduceFull(&result, 0, 0, m, n, mpiComm);
-   }
+      allreduceMatrix( result, false, false, mpiComm );
 }
 
-/* compute SUM_i Bli^T X_i = SUM_i Bli_^T Ki^-1 (Bri - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
+/* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (Bri - Bi_{inner} X0) */
+void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, bool sym_res, bool sparse_res, bool use_local_RAC_mat )
 {
    assert( !is_hierarchy_root );
    // TODO need method for sparse sc and non-sym here - we need to fork here if our children are not leafs...
@@ -456,16 +452,12 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& SC, const DenseGenMatrix
       BorderLinsys br_child( *Br.R.children[it], *Br.A.children[it], *Br.C.children[it],
                   *Br.F.children[it], *Br.G.children[it]);
 
-      assert( SC.isKindOf(kDenseSymMatrix) );
-      children[it]->LniTransMultHierarchyBorder( dynamic_cast<DenseSymMatrix&>(SC), X0, bl_child, br_child, locnx, locmy, locmz );
+      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, locnx, locmy, locmz, sparse_res, sym_res );
    }
 
    /* allreduce the border SC */
    if( iAmDistrib )
-   {
-      int m, n; SC.getSize(m, n);
-      submatrixAllReduceFull(&dynamic_cast<DenseSymMatrix&>(SC), 0, 0, m, n, mpiComm);
-   }
+      allreduceMatrix( res, sparse_res, sym_res, mpiComm );
 }
 
 void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
@@ -809,9 +801,7 @@ void sLinsysRoot::reduceKKTsparse()
 {
    if( !iAmDistrib )
       return;
-
    assert(kkt);
-   const int myRank = PIPS_MPIgetRank(mpiComm);
 
    SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
@@ -1592,6 +1582,45 @@ void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A,
   } while( iRow < endRow );
 
   delete[] chunk;
+}
+
+// TODO: move all this to the respective matrix and storages.......
+void sLinsysRoot::allreduceMatrix( DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm )
+{
+   int n,m; mat.getSize(m,n);
+
+   if( is_sparse )
+   {
+      if( is_sym )
+      {
+         SparseSymMatrix& matsp = dynamic_cast<SparseSymMatrix&>(mat);
+
+         int* const krowKkt = matsp.krowM();
+         double* const MKkt = matsp.M();
+         const int nnzKkt = krowKkt[m];
+
+         assert(!matsp.isLower);
+
+         reduceToAllProcs(nnzKkt, MKkt);
+      }
+      else
+      {
+         SparseGenMatrix& matsp = dynamic_cast<SparseGenMatrix&>(mat);
+
+         int* const krowKkt = matsp.krowM();
+         double* const MKkt = matsp.M();
+         const int nnzKkt = krowKkt[m];
+
+         reduceToAllProcs(nnzKkt, MKkt);
+      }
+   }
+   else
+   {
+      if( is_sym )
+         submatrixAllReduceFull( &dynamic_cast<DenseSymMatrix&>(mat), 0, 0, m, n, comm);
+      else
+         submatrixAllReduceFull( &dynamic_cast<DenseGenMatrix&>(mat), 0, 0, m, n, comm);
+   }
 }
 
 void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm)

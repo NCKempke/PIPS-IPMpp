@@ -119,8 +119,8 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
    addBTKiInvBToSC(SC, Bl, Br, true, sparseSC, use_local_RAC_mat );
 }
 
-void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0,
-      BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz )
+void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
+      BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz, bool sparse_res, bool sym_res )
 {
    assert(false);
 }

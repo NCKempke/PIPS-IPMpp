@@ -74,8 +74,9 @@ void sLinsysLeaf::deleteChildren()
 { }
 
 
-/* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
-void sLinsysLeaf::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz )
+/* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to res */
+void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, int parent_nx, int parent_my, int parent_mz,
+      bool sparse_res, bool sym_res )
 {
    int nx_border, myl_border, mzl_border, dummy;
 
@@ -115,7 +116,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DenseSymMatrix& SC, const DenseGe
    multRightDenseSchurComplBlocked( data, X0, *BiT_buffer, parent_nx, parent_my, parent_mz );
 
    /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bri^T - X0^T * Bi_{inner}^T) and multiply from right with Bli^T and add to SC */
-   addBiTLeftKiDenseToResBlockedParallelSolvers( false, true, BliT, *BiT_buffer, SC );
+   addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, BliT, *BiT_buffer, res );
 
    delete BiT_buffer;
 }
