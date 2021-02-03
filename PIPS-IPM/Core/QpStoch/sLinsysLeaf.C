@@ -92,7 +92,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
    assert( !sparse_res );
    assert( sym_res );
 
-   DenseGenMatrix* BiT_buffer = new DenseGenMatrix( nx_border + myl_border + mzl_border, dynamic_cast<SparseSymMatrix&>(*kkt).size() );
+   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( nx_border + myl_border + mzl_border, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
 
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
    int m, n; BiT_buffer->getSize(m, n);
@@ -106,7 +106,6 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
     *                [  Gi  0   0  ]
     */
    std::unique_ptr<BorderBiBlock> BriT{};
-   std::unique_ptr<BorderBiBlock> BliT{};
 
    if( Br.has_RAC )
       BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
@@ -118,6 +117,41 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
    else
       BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
 
+   addBiTBorder( *BiT_buffer, *BriT);
+
+   /* compute (Bri - Bi_{inner} * X0)^T = Bri^T - X0^T * Bi_{inner}^T
+    *
+    *                     [ Ri 0 0 FiT GiT ]^T
+    * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
+    *                     [ Ci 0 0  0   0  ]
+    */
+   BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
+
+   multRightDenseBorderBlocked( BiT_inner, X0, *BiT_buffer );
+
+   /* now similarly compute BiT_buffer += X_j^T Bmodj for all j */
+   for( auto& border_mod_block : Br_mod_border )
+   {
+      std::unique_ptr<BorderBiBlock> BiT_mod{};
+
+      BorderLinsys& border = border_mod_block.border;
+
+      if( border.use_local_RAC )
+         BiT_mod.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+      else if( border.has_RAC )
+         BiT_mod.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*border.R.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*border.C.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+      else
+         BiT_mod.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat), false ) );
+
+      multRightDenseBorderBlocked( BiT_inner, X0, *BiT_buffer );
+   }
+
+   /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bri^T - X0^T * Bi_{inner}^T) and multiply from right with Bli^T and add to SC */
+   std::unique_ptr<BorderBiBlock> BliT{};
    if( Bl.has_RAC )
       BliT.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(),
          dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(),
@@ -128,23 +162,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
    else
       BliT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false ) );
 
-   addBiTBorder( *BiT_buffer, *BriT);
-
-   /* compute (Bri - Bi_{inner} * X0)^T = Bri^T - X0^T * Bi_{inner}^T
-    *
-    *                     [ Ri 0 0 FiT GiT ]^T
-    * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
-    *                     [ Ci 0 0  0   0  ]
-    */
-   BorderBiBlock BiT = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
-
-   multRightDenseBorderBlocked( BiT, X0, *BiT_buffer );
-
-   /* solve blockwise (Ki^T X = Bi_buffer^T) X = Ki^-1 Bi_buffer = Ki^-1 (Bri^T - X0^T * Bi_{inner}^T) and multiply from right with Bli^T and add to SC */
    addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, *BliT, *BiT_buffer, res );
-
-   delete BiT_buffer;
 }
 
 
