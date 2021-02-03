@@ -110,6 +110,15 @@ void DeSymIndefSolver::matrixChanged()
     }
   }
 
+#if 0
+  for( int row = 0; row < mStorage->m; ++row )
+  {
+     for( int col = 0; col < mStorage->n; ++col )
+        std::cout << mStorage->M[row][col] << "\t";
+     std::cout << "\n";
+  }
+#endif
+
 #ifdef TIMING
   int myrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
