@@ -100,6 +100,7 @@ class sLinsys : public QpGenLinsys
      std::unique_ptr<T> dummy{ new T() };
 
      public:
+     const bool use_local_RAC{};
      const bool has_RAC{};
      /* represents a block like
       * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
@@ -115,11 +116,11 @@ class sLinsys : public QpGenLinsys
      RACFG_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
         has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G} {};
 
-     RACFG_BLOCK( T& F, T& G ) :
-        has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
+     RACFG_BLOCK( T& F, T& G, bool use_local_RAC ) :
+        use_local_RAC{ use_local_RAC }, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
 
      RACFG_BLOCK( const RACFG_BLOCK<T>& block ) :
-        has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
+        use_local_RAC{ use_local_RAC }, has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
          F{ block.F }, G{ block.G } {};
   };
 
@@ -133,7 +134,7 @@ class sLinsys : public QpGenLinsys
         return BorderLinsys( *border.R.children[i], *border.A.children[i], *border.C.children[i],
            *border.F.children[i], *border.G.children[i] );
      else
-        return BorderLinsys( *border.F.children[i], *border.G.children[i] );
+        return BorderLinsys( *border.F.children[i], *border.G.children[i], border.use_local_RAC );
   }
 
   struct BorderMod_Block
@@ -141,10 +142,9 @@ class sLinsys : public QpGenLinsys
      public:
         BorderLinsys border;
         DenseGenMatrix& multiplier;
-        const bool use_local_RAC;
 
-        BorderMod_Block( BorderLinsys& border, DenseGenMatrix& multiplier, bool use_local_RAC ) :
-           border{ border }, multiplier{ multiplier }, use_local_RAC{ use_local_RAC } { if( use_local_RAC ) assert( !border.has_RAC ); };
+        BorderMod_Block( BorderLinsys& border, DenseGenMatrix& multiplier ) :
+           border{ border }, multiplier{ multiplier } {};
   };
 
   using BorderMod = BorderMod_Block;
@@ -152,7 +152,7 @@ class sLinsys : public QpGenLinsys
   static BorderMod getChild( BorderMod& bordermod, unsigned int i )
   {
      BorderLinsys child = getChild( bordermod.border, i );
-     return BorderMod_Block( child, bordermod.multiplier, bordermod.use_local_RAC );
+     return BorderMod_Block( child, bordermod.multiplier );
   }
 
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
@@ -188,7 +188,7 @@ class sLinsys : public QpGenLinsys
    */
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
-  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC_mat*/) { assert( 0 && "not implemented here" ); };
+  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/ ) { assert( 0 && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
@@ -219,11 +219,11 @@ class sLinsys : public QpGenLinsys
 
   /* compute result += Bl^T K^-1 Br where K is our own linear system */
   virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
-        bool /*sym_res*/, bool /*sparse_res*/, bool /*bool use_local_RAC_mat*/)
+        bool /*sym_res*/, bool /*sparse_res*/ )
   { assert( false && "not implemented here"); }
 
   /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) and add it up in result */
-  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC_mat*/ )
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/ )
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
@@ -232,11 +232,11 @@ class sLinsys : public QpGenLinsys
 
   /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
   virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
-        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC_mat*/)
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/)
   { assert( false && "not implemented here" ); };
 
   /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Brmod_ij Xj )and add it to result */
-  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC_mat*/ )
+  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/ )
   { assert( false && "not implemented here" ); };
 
  protected:

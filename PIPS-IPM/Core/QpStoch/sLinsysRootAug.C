@@ -502,7 +502,7 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 
       children[c]->stochNode->resMon.recFactTmChildren_start();
       //---------------------------------------------
-      addTermToSchurCompl(prob, c, true);
+      addTermToSchurCompl( prob, c, true );
       //---------------------------------------------
       children[c]->stochNode->resMon.recFactTmChildren_stop();
    }
@@ -2090,15 +2090,9 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 
 /* compute res += Bl^T Ki^-1 (Br - sum_j Bmodj Xj) = Bl^T Ki^-1 (Br - modif_border) */
 void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, bool use_local_RAC_mat )
+      bool sym_res, bool sparse_res )
 {
    assert( !is_hierarchy_root );
-
-   if( use_local_RAC_mat )
-   {
-      assert( data->isHierarchyInnerLeaf() );
-      assert( !Br.has_RAC );
-   }
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */
    /* only called on sLinsysRootAug and sLinsysRootAugHierInner */
@@ -2111,12 +2105,12 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    const int m_buffer = mr;
 
    // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
-   // dense since we have no clue about any structure in the system
+   // dense since we have no clue about any structure in the system and Xij are dense
    DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} ( (Bri - sum_j Bmodij Xij) )
-   LsolveHierarchyBorder( *buffer_b0, Br, Br_mod_border, use_local_RAC_mat );
+   LsolveHierarchyBorder( *buffer_b0, Br, Br_mod_border );
 
    // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
    finalizeZ0Hierarchical( *buffer_b0, Br, Br_mod_border );
@@ -2128,7 +2122,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    //   buffer_b0->writeToStreamDense(std::cout);
 
    // compute result = -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) = -SUM_i Bli^T Xi
-   LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res, use_local_RAC_mat );
+   LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res );
 
    // compute result += Bl0^T X0
    finalizeInnerSchurComplementContribution( result, *buffer_b0, Br, sym_res, sparse_res );

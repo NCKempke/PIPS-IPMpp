@@ -37,16 +37,16 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
 }
 
 
-void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat )
+void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
 
    BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
-         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat) );
+         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), false );
    std::vector<BorderMod> border_mod;
 
-   addBTKiInvBToSC( result, Bl, Br, border_mod, false, false, use_local_RAC_mat );
+   addBTKiInvBToSC( result, Bl, Br, border_mod, false, false );
 }
 
 /* buffer is still transposed ..*/
@@ -115,12 +115,12 @@ void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, Bo
 }
 
 
-void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC_mat )
+void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
-   BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder() );
-   BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder() );
+   BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    std::vector<BorderMod> border_mod;
-   addBTKiInvBToSC(SC, Bl, Br, border_mod, true, sparseSC, use_local_RAC_mat );
+   addBTKiInvBToSC( SC, Bl, Br, border_mod, true, sparseSC );
 }
 
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,

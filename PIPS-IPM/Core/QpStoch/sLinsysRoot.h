@@ -44,7 +44,7 @@ class sLinsysRoot : public sLinsys {
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   virtual void initializeKKT(sData* prob, Variables* vars);
   virtual void assembleLocalKKT( sData* prob ) = 0;
-  void addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC_mat);
+  void addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC );
   virtual void reduceKKT(sData *prob);
   virtual void factorizeKKT(); 
   virtual void factorizeKKT( sData* prob );
@@ -59,10 +59,10 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
 
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC_mat ) override;
+  void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 

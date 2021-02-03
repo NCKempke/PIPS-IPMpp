@@ -152,8 +152,6 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    assert( Br_mod_border.empty() );
 
    const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
-//   if( use_local_RAC_mat )
-//      assert( !has_RAC );
 
    std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
 
@@ -366,8 +364,6 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
    assert( is_sym && !is_sparse );
 
    const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
-//   if( use_local_RAC_mat )
-//      assert( !has_RAC );
 
    std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
 
@@ -423,7 +419,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
 
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
    assert( children.size() == Br.F.children.size() );
 
@@ -436,7 +432,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
          Br_mod_border_child.push_back( getChild( br_mod, it ) );
 
       BorderLinsys border_child = getChild( Br, it );
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC_mat);
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child);
    }
 
    /* allreduce the result */
@@ -447,7 +443,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
 void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, bool use_local_RAC_mat )
+      bool sym_res, bool sparse_res )
 {
    assert( !is_hierarchy_root );
    // TODO need method for sparse sc and non-sym here - we need to fork here if our children are not leafs...
@@ -1516,20 +1512,14 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
   myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC_mat)
+void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC )
 {
    assert(childindex < prob->children.size());
 
    if( computeBlockwiseSC )
-   {
-      if( !pips_options::getBoolParameter("HIERARCHICAL") )
-         assert( use_local_RAC_mat );
-
-      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC_mat);
-   }
+      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC );
    else
    {
-      assert( use_local_RAC_mat );
 	   if( hasSparseKkt )
 	   {
 	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);

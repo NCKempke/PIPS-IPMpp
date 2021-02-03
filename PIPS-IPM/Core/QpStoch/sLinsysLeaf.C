@@ -78,7 +78,8 @@ void sLinsysLeaf::deleteChildren()
 void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, int parent_nx, int parent_my, int parent_mz, bool sparse_res, bool sym_res )
 {
-//   assert( Br.)
+   assert( Br_mod_border.empty() );
+
    int nx_border, myl_border, mzl_border, dummy;
 
    Br.R.getSize(dummy, nx_border);
@@ -126,14 +127,15 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
 
 
 
-void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool  )
+void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
    assert( prob == data );
 
    const bool sc_is_sym = true;
 
-   if( prob->hasRAC() )
+   if( use_local_RAC )
    {
+      assert( prob->hasRAC() );
       BorderBiBlock border_right( prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(),
             prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
       BorderBiBlock border_left_transp( prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
@@ -143,8 +145,10 @@ void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMat
    }
    else
    {
-      BorderBiBlock border_right( prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose() );
-      BorderBiBlock border_left_transp( prob->getLocalF(), prob->getLocalG() );
+      assert( !prob->hasRAC() );
+
+      BorderBiBlock border_right( prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose(), use_local_RAC );
+      BorderBiBlock border_left_transp( prob->getLocalF(), prob->getLocalG(), use_local_RAC );
 
       addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, border_left_transp, border_right, SC );
    }
@@ -183,7 +187,7 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 }
 
 /* compute result += B_inner^T K^-1 Br */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC_mat )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
    assert( Br.A.children.size() == 0 );
 
@@ -197,7 +201,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
       border_inner_tp.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(),
          data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() ) );
    else
-      border_inner_tp.reset( new BorderBiBlock( data->getLocalF(), data->getLocalG() ) );
+      border_inner_tp.reset( new BorderBiBlock( data->getLocalF(), data->getLocalG(), false ) );
 
    if( Br.has_RAC )
       border_right.reset(
@@ -206,7 +210,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
                   dynamic_cast<SparseGenMatrix&>(*Br.C.mat),
                   dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
                   dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
-   else if( use_local_RAC_mat )
+   else if( Br.use_local_RAC )
       border_right.reset(
             new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
                   data->getLocalC(),
@@ -216,8 +220,8 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
       border_right.reset(
             new BorderBiBlock(
                   dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
-
+                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose(),
+                  false));
 
    addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, *border_inner_tp, *border_right, result);
 }
