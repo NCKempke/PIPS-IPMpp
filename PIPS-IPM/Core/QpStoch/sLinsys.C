@@ -407,18 +407,26 @@ void sLinsys::addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row
 
 void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) const
 {
+   /* add (Bri)^T to res
+    *
+    *                [ RiT AiT CiT ]
+    *                [  0   0   0  ]
+    * Bri^T        = [  Fi  0   0  ]
+    *                [  Gi  0   0  ]
+    */
+
    int mRt, nRt; BiT.R.getSize(mRt, nRt);
    int mAt, nAt; BiT.A.getSize(mAt, nAt);
+   int mCt, nCt; BiT.C.getSize(mCt, nCt);
    int mF, nF; BiT.F.getSize(mF, nF);
+   int mG, nG; BiT.G.getSize(mG, nG);
 
 #ifndef NDEBUG
    int mres, nres; res.getSize(mres, nres);
-   int mG, nG; BiT.G.getSize(mG, nG);
    assert( nF == nG );
    if( BiT.has_RAC )
    {
-      int mCt, nCt; BiT.C.getSize(mCt, nCt);
-      assert( mres == mRt + mF + mG );
+      assert( mRt + mF + mG <= mres );
       assert( nF == nRt );
       assert( nRt + nAt + nCt == nres );
    }
@@ -434,14 +442,10 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
       addMatAt( res, BiT.R, 0, 0 );
       addMatAt( res, BiT.A, 0, nRt );
       addMatAt( res, BiT.C, 0, nRt + nAt );
-      addMatAt( res, BiT.F, mRt, 0 );
-      addMatAt( res, BiT.G, mRt + mF, 0 );
    }
-   else
-   {
-      addMatAt( res, BiT.F, 0, 0 );
-      addMatAt( res, BiT.G, mF, 0 );
-   }
+
+   addMatAt( res, BiT.F, mres - mF - mG, 0 );
+   addMatAt( res, BiT.G, mres - mG, 0 );
 }
 
 void sLinsys::solveCompressed( OoqpVector& rhs_)

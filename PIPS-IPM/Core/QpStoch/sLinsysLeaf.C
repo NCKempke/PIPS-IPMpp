@@ -78,6 +78,9 @@ void sLinsysLeaf::deleteChildren()
 void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res )
 {
+   int mres, nres; res.getSize(mres, nres);
+
+#ifndef NDEBUG
    assert( Br_mod_border.empty() );
 
    int nx_border, myl_border, mzl_border, dummy;
@@ -86,11 +89,12 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
       nx_border = 0;
    Br.F.getSize(myl_border, dummy);
    Br.G.getSize(mzl_border, dummy);
-
+   assert( nx_border + myl_border + mzl_border <= nres );
+#endif
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
    // TODO : reuse and make member ? possible?
 
-   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( nx_border + myl_border + mzl_border, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
+   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( mres, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
 
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
    int m, n; BiT_buffer->getSize(m, n);
@@ -98,8 +102,8 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
 
    /* put (Bri)^T into buffer
     *
-    *                  nxb myb mzb
     *                [ RiT AiT CiT ]
+    *                [  0   0   0  ]
     * Bri^T        = [  Fi  0   0  ]
     *                [  Gi  0   0  ]
     */

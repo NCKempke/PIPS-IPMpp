@@ -361,6 +361,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  */
 void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse )
 {
+   // TODO?
    assert( is_sym && !is_sparse );
 
    const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
@@ -446,15 +447,12 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
       bool sym_res, bool sparse_res )
 {
    assert( !is_hierarchy_root );
-   // TODO need method for sparse sc and non-sym here - we need to fork here if our children are not leafs...
-   assert( sym_res );
-   assert( !sparse_res );
 
    /* X0 is still in transposed form */
-   assert( children.size() == Br.R.children.size() );
-   assert( children.size() == Bl.R.children.size() );
-   assert( !Br.R.isKindOf( kStringGenDummyMatrix ) );
-   assert( !Bl.R.isKindOf( kStringGenDummyMatrix ) );
+   assert( children.size() == Br.F.children.size() );
+   assert( children.size() == Bl.F.children.size() );
+   assert( !Br.F.isKindOf( kStringGenDummyMatrix ) );
+   assert( !Bl.F.isKindOf( kStringGenDummyMatrix ) );
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for( size_t it = 0; it < children.size(); it++ )
