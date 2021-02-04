@@ -650,6 +650,35 @@ void SparseStorage::writeToStream(std::ostream& out) const
   }
 }
 
+void SparseStorage::writeNNZpatternToStreamDense( std::ostream& out ) const
+{
+   for( int row = 0; row < m; row++ )
+   {
+      int col = 0;
+      for( int k = krowM[row]; k < krowM[row + 1]; k++ )
+      {
+#ifndef NDEBUG
+         // assert that columns are ordered
+         assert(k == krowM[row] || jcolM[k - 1] < jcolM[k]);
+#endif
+
+         while( jcolM[k] > col )
+         {
+            out << "   ";
+            col++;
+         }
+         out << " * ";
+         col++;
+      }
+      while( col < n )
+      {
+         out << "   ";
+         col++;
+      }
+      out << "\n";
+   }
+}
+
 void SparseStorage::writeToStreamDense(std::ostream& out) const
 {
    int i, k;

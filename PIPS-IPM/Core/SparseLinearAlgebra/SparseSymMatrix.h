@@ -89,6 +89,7 @@ public:
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
   void writeToStream( std::ostream& out ) const override;
+  void writeNNZpatternToStreamDense( std::ostream& out ) const;
   void writeToStreamDense( std::ostream& out ) const override;
   void writeToStreamDenseRow( std::ostream& out, int row) const override;
 

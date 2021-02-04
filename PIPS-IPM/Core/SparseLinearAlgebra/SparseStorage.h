@@ -116,6 +116,7 @@ public:
 			      double x[], int incx, int extent );
 
   virtual void writeToStream(std::ostream& out) const;
+  void writeNNZpatternToStreamDense( std::ostream& out ) const;
   virtual void writeToStreamDense(std::ostream& out) const;
   virtual void writeToStreamDenseRow( std::ostream& out, int rowidx) const;
 

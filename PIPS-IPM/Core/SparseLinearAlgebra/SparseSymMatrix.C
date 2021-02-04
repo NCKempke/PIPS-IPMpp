@@ -308,6 +308,11 @@ void SparseSymMatrix::writeToStream( std::ostream& out ) const
   mStorage->writeToStream( out );
 }
 
+void SparseSymMatrix::writeNNZpatternToStreamDense( std::ostream& out ) const
+{
+   mStorage->writeNNZpatternToStreamDense( out );
+}
+
 void SparseSymMatrix::writeToStreamDense( std::ostream& out ) const
 {
   mStorage->writeToStreamDense( out );
