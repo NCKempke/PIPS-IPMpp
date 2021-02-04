@@ -742,16 +742,19 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
 
       krowM[i + 1] = krowM[i] + (nx0 - i) + blength + myl + mzl;
 
+      /* dense square block */
       appendRowDense(i, nx0, nnzcount, jcolM);
 
+      /* B0^T */
       appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
 
+      /* dense sum X1^T Fi^T and X1^T Gi^T */
       appendRowDense(nx0 + my0, nx0 + my0 + myl + mzl, nnzcount, jcolM);
 
       assert(nnzcount == krowM[i + 1]);
    }
 
-   // dense square block and rest of B_0, F_0^T, G_0^T
+   // dense square block from 0LinkVars and rest of B_0^T, F_0^T, G_0^T
    for( int i = nx0NonZero; i < nx0; ++i )
    {
       appendRowDense(i, nx0, nnzcount, jcolM);
@@ -1895,6 +1898,8 @@ void sData::addChildrenForSplit()
 
    assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
    assert( linkStartBlockLengthsA.size() == new_children.size() );
+
+   n0LinkVars = 0;
 }
 
 void sData::splitData( int myl_from_border, int mzl_from_border )
