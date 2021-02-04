@@ -343,41 +343,46 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    }
 }
 
-/* compute SC -= B0_{outer}^T X0
- *                [  0  A0T C0T F0VT G0VT ]
- * B0_{outer}^T = [ F0C  0   0   0    0   ]
- *                [ G0C  0   0   0    0   ]
+/* compute SC -= Br0^T X0
+ *         [  0  A0T C0T F0VT G0VT ]
+ * Br0^T = [ F0C  0   0   0    0   ]
+ *         [ G0C  0   0   0    0   ]
  *
  * SC is still stored in transposed form as well as X0
  *
  * SC -= X0^T B0_{outer} instead
  *
- * B0_{outer} = [  0  F0CT G0CT ]
- *              [  A   0    0   ]
- *              [  C   0    0   ]
- *              [ F0V  0    0   ]
- *              [ G0V  0    0   ]
+ * Br0 = [  0  F0CT G0CT ]
+ *       [  A   0    0   ]
+ *       [  C   0    0   ]
+ *       [ F0V  0    0   ]
+ *       [ G0V  0    0   ]
  *
  */
 void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse )
 {
    // TODO?
-   assert( is_sym && !is_sparse );
 
-   const bool has_RAC = !(Br.A.isEmpty() && Br.C.isEmpty() && Br.R.isEmpty() );
+   const bool has_RAC = Br.has_RAC;
 
    std::unique_ptr<SparseGenMatrix> dummy_mat( new SparseGenMatrix(0,0,0) );
 
    SparseGenMatrix& A0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat) : *dummy_mat;
    SparseGenMatrix& C0_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat) : *dummy_mat;
    SparseGenMatrix& F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.A.mat_link) : *dummy_mat;
-   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.F.mat);
-
    SparseGenMatrix& G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix&>(*Br.C.mat_link) : *dummy_mat;
+
+   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.F.mat);
    SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*Br.G.mat);
 
+   F0cons_border.writeToStreamDense(std::cout);
+   G0cons_border.writeToStreamDense(std::cout);
+
+   data->getLocalFBorder();
    assert( !( A0_border.isEmpty() && F0vec_border.isEmpty() && G0vec_border.isEmpty() ) );
 
+   // TODO.....
+   assert( is_sym && !is_sparse );
    DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(SC_);
 
    int mA0, nA0; A0_border.getSize(mA0, nA0);

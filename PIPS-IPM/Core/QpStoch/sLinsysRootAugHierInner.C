@@ -119,8 +119,18 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 {
    BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+
+   GenMatrix* BlFbuf = Bl.F.mat;
+   GenMatrix* BlGbuf = Bl.G.mat;
+
+   Bl.F.mat = &prob->getLocalF();
+   Bl.G.mat = &prob->getLocalG();
+
    std::vector<BorderMod> border_mod;
    addBTKiInvBToSC( SC, Bl, Br, border_mod, true, sparseSC );
+
+   Bl.F.mat = BlFbuf;
+   Bl.G.mat = BlGbuf;
 }
 
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
