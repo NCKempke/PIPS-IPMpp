@@ -9,6 +9,7 @@
 #include "pipsdef.h"
 
 #include "mpi.h"
+
 extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
 extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*, int*, int*, int*,
    int*, int*, double*, double*, int*, double*);
@@ -46,7 +47,7 @@ void PardisoProjectSolver::firstCall()
    int error = 0;
 
    // the licence file read seems to be critical..
-   #pragma omp critical
+//   #pragma omp critical
    pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
 
    if( error != 0 )
