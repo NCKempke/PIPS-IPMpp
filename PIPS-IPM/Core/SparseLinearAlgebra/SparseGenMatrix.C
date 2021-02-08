@@ -354,7 +354,7 @@ void SparseGenMatrix::multMatSymUpper( double beta, SymMatrix& y,
 }
 
 void SparseGenMatrix::transmultMatSymUpper( double beta, SymMatrix& y,
-      double alpha, double x[], int yrowstart, int ycolstart ) const
+      double alpha, const double x[], int yrowstart, int ycolstart ) const
 {
   assert(m_Mt);
 
@@ -370,7 +370,6 @@ void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-//  std::cout << " x.length() " << x.length() << " mStorage->m " << mStorage->m << ", y.length() " << y.length() << " mStorage->n " << mStorage->n << std::endl;
   assert( x.length() == mStorage->m && y.length() == mStorage->n );
 
   const double* xv = 0;

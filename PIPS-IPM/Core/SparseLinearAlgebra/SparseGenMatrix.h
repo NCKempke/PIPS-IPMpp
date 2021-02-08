@@ -91,7 +91,7 @@ public:
 
   virtual void multMatSymUpper( double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart ) const;
 
-  virtual void transmultMatSymUpper( double beta, SymMatrix& y, double alpha, double x[], int yrowstart, int ycolstart ) const;
+  virtual void transmultMatSymUpper( double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart ) const;
 
   void transMult( double beta,   OoqpVector& y, double alpha,  const OoqpVector& x ) const override;
   virtual void transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const;

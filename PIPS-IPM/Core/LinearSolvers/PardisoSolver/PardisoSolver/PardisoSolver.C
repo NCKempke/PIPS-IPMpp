@@ -30,9 +30,6 @@ PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
   jcolM = new int[nnz];
   M = new double[nnz];
 
-  sol = nullptr;
-  sz_sol = 0;
-
   first = true;
   nvec = new double[n];
 
@@ -57,9 +54,6 @@ PardisoSolver::PardisoSolver( DenseSymMatrix * m )
   krowM = nullptr;//new int[n+1];
   jcolM = nullptr;//new int[nnz];
   M = nullptr;//new double[nnz];
-
-  sol = nullptr;
-  sz_sol = 0;
 
   first = true;
   nvec = new double[n];
@@ -105,6 +99,8 @@ void PardisoSolver::initSystem()
 {
    if( Msys )
    {
+      assert( Msys->isLower );
+
       //get the matrix in upper triangular
       Msys->getStorageRef().transpose(krowM, jcolM, M);
 
@@ -306,15 +302,11 @@ void PardisoSolver::solve( GenMatrix& rhs_in )
 {
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
 
-  int nrows,ncols; rhs.getSize(ncols,nrows);
-  if(sz_sol<nrows*ncols) {
-    sz_sol=nrows*ncols;
-    if(sol) delete[] sol;
-    sol = new double[sz_sol];
-  }
+  int nrows, ncols; rhs.getSize(ncols,nrows);
+  assert( nrows == n );
 
-  assert(nrows==n);
-
+  if( static_cast<int>(sol.size()) < nrows * ncols)
+    sol.resize( nrows * ncols );
 
   phase = 33; // solve and iterative refinement
   nrhs = ncols;
@@ -322,12 +314,12 @@ void PardisoSolver::solve( GenMatrix& rhs_in )
   assert(iparmUnchanged());
 
    pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
-         &nrhs, iparm, &msglvl, &rhs[0][0], sol, &error);
+         &nrhs, iparm, &msglvl, &rhs[0][0], sol.data(), &error);
 
   if ( error != 0)
     printf ("PardisoSolver - ERROR during solve: %d", error ); 
 
-  memcpy(&rhs[0][0], sol, sz_sol*sizeof(double));
+  std::copy( &rhs[0][0], &rhs[0][0] + nrows * ncols, sol.begin() );
 }
 
 void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
@@ -336,12 +328,10 @@ void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
 
   int nrows,ncols; rhs.getSize(ncols,nrows);
-  if(sz_sol<nrows*ncols) {
-    sz_sol=nrows*ncols;
-    if(sol) delete[] sol;
-    sol = new double[sz_sol];
-  }
-  assert(nrows==n);
+  assert( nrows == n );
+
+  if( static_cast<int>(sol.size()) < nrows * ncols )
+     sol.resize( nrows * ncols );
 
   /* same for mkl_pardiso and pardiso */
    phase = 33; // solve and iterative refinement
@@ -350,12 +340,12 @@ void PardisoSolver::solve( GenMatrix& rhs_in, int *colSparsity)
    nrhs = ncols;
 
    pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM,
-         colSparsity, &nrhs, iparm, &msglvl, &rhs[0][0], sol, &error);
+         colSparsity, &nrhs, iparm, &msglvl, &rhs[0][0], sol.data(), &error);
 
   if ( error != 0)
     printf ("PardisoSolver - ERROR during solve: %d", error );
 
-  memcpy(&rhs[0][0], sol, sz_sol*sizeof(double));
+  std::copy( &rhs[0][0], &rhs[0][0] + nrows * ncols, sol.begin() );
 }
 
 void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
@@ -363,17 +353,29 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
    assert(rhss);
    assert(nrhss >= 1);
 
-   if( sz_sol < nrhss * n )
-   {
-      sz_sol = nrhss * n;
-      delete[] sol;
+   if( static_cast<int>(sol.size()) < nrhss * n )
+      sol.resize( nrhss * n );
 
-      sol = new double[sz_sol];
+   if( static_cast<int>(rhss_nonzero.size()) < nrhss * n )
+   {
+      rhss_nonzero.resize( nrhss * n );
+      map_rhs_nonzero_original.resize( nrhss );
+   }
+
+   int nrhss_nnz{0};
+   for( int i = 0; i < nrhss; ++i )
+   {
+      if( std::any_of( rhss + i * n, rhss + (i + 1) * n, [](double d){ return !PIPSisZero(d); }) )
+      {
+         std::copy( rhss + i * n, rhss + (i + 1) * n, rhss_nonzero.begin() + nrhss_nnz * n);
+         map_rhs_nonzero_original[nrhss_nnz] = i;
+         ++nrhss_nnz;
+      }
    }
 
 #ifndef NDEBUG
 //   if( colSparsity )
-//   {
+//   {]
 //      for( int nr = 0; nr < nrhss; nr++ )
 //      {
 //         for( int i = 0; i < n; i++ )
@@ -386,6 +388,12 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
 //         }
 //      }
 //   }
+   // PARDISO cannot deal well with all zero rhs
+   for( int i = 0; i < nrhss_nnz; ++i )
+      assert( std::any_of(rhss_nonzero.begin() + i * n, rhss_nonzero.begin() + (i + 1) * n, [](double d){
+               return d != 0.0;
+         })
+      );
 #endif
 
    /* same for mkl_pardiso and pardiso */
@@ -405,10 +413,10 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
       iparm[30] = 0;
    }
 
-   assert(pt); assert(M); assert(krowM); assert(jcolM); assert(rhss); assert(sol);
+   assert(pt); assert(M); assert(krowM); assert(jcolM); assert(rhss);
 
    pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, nullptr,
-         &nrhss_local, iparm, &msglvl, rhss, sol, &error);
+         &nrhss_local, iparm, &msglvl, rhss_nonzero.data(), sol.data(), &error);
 
    if( error != 0 )
    {
@@ -416,7 +424,8 @@ void PardisoSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
       exit(1);
    }
 
-   memcpy(rhss, sol, n * nrhss * sizeof(double));
+   for( int i = 0; i < nrhss_nnz; ++i )
+      std::copy(sol.begin() + i * n, sol.begin() + (i + 1) * n, rhss + map_rhs_nonzero_original[i] * n );
 }
 
 PardisoSolver::~PardisoSolver()
@@ -425,5 +434,4 @@ PardisoSolver::~PardisoSolver()
    delete[] krowM;
    delete[] M;
    delete[] nvec;
-   if(sol) delete[] sol;
 }

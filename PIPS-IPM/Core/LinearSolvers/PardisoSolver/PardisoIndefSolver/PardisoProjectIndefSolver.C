@@ -22,9 +22,10 @@ extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *,
 PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel )
    : PardisoIndefSolver( sgm, solve_in_parallel )
 {
+   assert( !sgm->isLower );
+
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */
-
    initPardiso();
 }
 

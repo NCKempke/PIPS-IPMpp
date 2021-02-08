@@ -337,7 +337,6 @@ void SparseStorage::fromGetRowsBlock(const int* rowIndices, int nRows, int array
       const int r = rowIndices[i];
       assert(r >= 0 && r < m);
 
-      // empty row?
       if( krowM[r] == krowM[r + 1] )
          continue;
 

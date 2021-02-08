@@ -44,9 +44,8 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
 
    BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), false );
-   std::vector<BorderMod> border_mod;
 
-   addBTKiInvBToSC( result, Bl, Br, border_mod, false, false );
+   addBTKiInvBToSC( result, Bl, Br, Br_mod_border, false, false );
 }
 
 /* buffer is still transposed ..*/
@@ -117,6 +116,8 @@ void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, Bo
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
+   assert( data == prob );
+
    BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
 
@@ -136,7 +137,25 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
       BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res )
 {
-   // TODO add own border to vector and pass on to solve
+   BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), false );
+
+   GenMatrix* BlFbuf = Bl.F.mat;
+   GenMatrix* BlGbuf = Bl.G.mat;
+
+   Bl.F.mat = &data->getLocalF();
+   Bl.G.mat = &data->getLocalG();
+
+   BorderMod B_inner_mod(B_inner, X0);
+
+   std::vector<BorderMod> border_mod( Br_mod_border );
+   border_mod.push_back( B_inner_mod );
+
+   addBTKiInvBToSC( res, Bl, Br, border_mod, sym_res, sparse_res );
+
+   Bl.F.mat = BlFbuf;
+   Bl.G.mat = BlGbuf;
+
+
    assert(false);
 }
 

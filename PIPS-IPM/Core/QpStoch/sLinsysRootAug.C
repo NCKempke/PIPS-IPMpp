@@ -9,12 +9,10 @@
 #include "DeSymPSDSolver.h"
 
 #ifdef WITH_PARDISO
-#include "PardisoProjectSolver.h"
 #include "PardisoProjectIndefSolver.h"
 #endif
 
 #ifdef WITH_MKL_PARDISO
-#include "PardisoMKLSolver.h"
 #include "PardisoMKLIndefSolver.h"
 #endif
 
@@ -2106,7 +2104,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 
    // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
-   DenseGenMatrix* buffer_b0 = new DenseGenMatrix(m_buffer, n_buffer);
+   std::unique_ptr<DenseGenMatrix> buffer_b0{ new DenseGenMatrix(m_buffer, n_buffer) };
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
 
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} ( (Bri - sum_j Bmodij Xij) )
@@ -2119,14 +2117,13 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
-
-   // compute result = -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) = -SUM_i Bli^T Xi
+   // compute result += -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) += -SUM_i Bli^T Xi
    LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res );
-
-   result.writeToStreamDense(std::cout);
+   //result.writeToStreamDense(std::cout);
+   //std::cout << std::endl;
 
    // compute result += Bl0^T X0
    finalizeInnerSchurComplementContribution( result, *buffer_b0, Bl, sym_res, sparse_res );
-
-   delete buffer_b0;
+   //result.writeToStreamDense(std::cout);
+   //std::cout << std::endl;
 }

@@ -141,9 +141,9 @@ class sLinsys : public QpGenLinsys
   {
      public:
         BorderLinsys border;
-        DenseGenMatrix& multiplier;
+        const DenseGenMatrix& multiplier;
 
-        BorderMod_Block( BorderLinsys& border, DenseGenMatrix& multiplier ) :
+        BorderMod_Block( BorderLinsys& border, const DenseGenMatrix& multiplier ) :
            border{ border }, multiplier{ multiplier } {};
   };
 

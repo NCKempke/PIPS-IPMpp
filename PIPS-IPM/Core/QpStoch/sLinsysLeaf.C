@@ -118,9 +118,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
             dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
    else
       BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
-
    addBiTBorder( *BiT_buffer, *BriT);
-
    /* compute (Bri - Bi_{inner} * X0)^T = Bri^T - X0^T * Bi_{inner}^T
     *
     *                     [ Ri 0 0 FiT GiT ]^T

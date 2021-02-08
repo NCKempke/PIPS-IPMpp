@@ -74,12 +74,13 @@ void PardisoProjectSolver::firstCall()
 void PardisoProjectSolver::setIparm(int* iparm) const
 {
    iparm[1] = 2; // 2 is for metis, 0 for min degree
-
    iparm[2] = num_threads;
+
    iparm[7] = 2; // max number of iterative refinements
    iparm[10] = 1; // scaling for IPM KKT; used with IPARM(13)=1 or 2
    iparm[12] = 2; // improved accuracy for IPM KKT; used with IPARM(11)=1;
                   // if needed, use 2 for advanced matchings and higher accuracy.
+   iparm[18] = 0; /* don't compute GFLOPS */
 }
 
 void PardisoProjectSolver::pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,

@@ -10,6 +10,7 @@
 #include "pipsport.h"
 
 #include <map>
+#include <vector>
 
 /** implements the linear solver class using the Pardiso solver
  */
@@ -66,8 +67,13 @@ protected:
 
   /** temporary storage for the factorization process */
   double* nvec; //temporary vec
-  double* sol; //solution
-  int sz_sol; //allocated size
+
+  /** buffer for solution of solve phase */
+  std::vector<double> sol;
+  /** buffer for non-zero right hand sides - PARDISO cannot porperly deal with 0 rhs when solving multiple rhss at once */
+  std::vector<double> rhss_nonzero;
+  /** maps a non-zero rhs to its original index */
+  std::vector<int> map_rhs_nonzero_original;
 };
 
 #endif
