@@ -42,75 +42,84 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
 
    BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
-         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), false );
+         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), true );
+
+   GenMatrix* BlFbuf = Bl.F.mat;
+   GenMatrix* BlGbuf = Bl.G.mat;
+
+   Bl.F.mat = &data->getLocalF();
+   Bl.G.mat = &data->getLocalG();
 
    addBTKiInvBToSC( result, Bl, Br, Br_mod_border, false, false );
+
+   Bl.F.mat = BlFbuf;
+   Bl.G.mat = BlGbuf;
 }
 
 /* buffer is still transposed ..*/
-void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys&, std::vector<BorderMod>& Br_mod_border )
-{
-   assert( Br_mod_border.empty() );
-
-   const SparseGenMatrix& F = data->getLocalF().getTranspose();
-   const SparseGenMatrix& G = data->getLocalG().getTranspose();
-
-   int mF, nF;
-   F.getSize(mF, nF);
-   int mG, nG;
-   G.getSize(mG, nG);
-
-   int mBuf, nBuf;
-   buffer.getSize(mBuf, nBuf);
-
-   assert( nBuf == nF + nG );
-   assert( mF == mG );
-   assert( mBuf >= mF );
-
-   if( mF > 0 )
-   {
-      for( int rowF = 0; rowF < mF; ++rowF )
-      {
-         const double* MF = F.M();
-         const int* krowF = F.krowM();
-         const int* jcolF = F.jcolM();
-
-         const int rowF_start = krowF[rowF];
-         const int rowF_end = krowF[rowF + 1];
-
-         for( int k = rowF_start; k < rowF_end; ++k )
-         {
-            const int col = jcolF[k];
-            const double val_F = MF[k];
-
-            assert( 0 <= col && col < nBuf - nG );
-            buffer[rowF][col] += val_F;
-         }
-      }
-   }
-
-   if( mG > 0 )
-   {
-      for( int rowG = 0; rowG < mG; ++rowG )
-      {
-         const double* MG = G.M();
-         const int* krowG = G.krowM();
-         const int* jcolG = G.jcolM();
-
-         const int rowG_start = krowG[rowG];
-         const int rowG_end = krowG[rowG + 1];
-
-         for( int k = rowG_start; k < rowG_end; ++k )
-         {
-            const int col = jcolG[k] + nF;
-            const double val_G = MG[k];
-
-            assert( nF <= col && col < nBuf);
-            buffer[rowG][col] += val_G;
-         }
-      }
-   }
-}
+//void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys&, std::vector<BorderMod>& Br_mod_border )
+//{
+//   assert( Br_mod_border.empty() );
+//
+//   const SparseGenMatrix& F = data->getLocalF().getTranspose();
+//   const SparseGenMatrix& G = data->getLocalG().getTranspose();
+//
+//   int mF, nF;
+//   F.getSize(mF, nF);
+//   int mG, nG;
+//   G.getSize(mG, nG);
+//
+//   int mBuf, nBuf;
+//   buffer.getSize(mBuf, nBuf);
+//
+//   assert( nBuf == nF + nG );
+//   assert( mF == mG );
+//   assert( mBuf >= mF );
+//
+//   if( mF > 0 )
+//   {
+//      for( int rowF = 0; rowF < mF; ++rowF )
+//      {
+//         const double* MF = F.M();
+//         const int* krowF = F.krowM();
+//         const int* jcolF = F.jcolM();
+//
+//         const int rowF_start = krowF[rowF];
+//         const int rowF_end = krowF[rowF + 1];
+//
+//         for( int k = rowF_start; k < rowF_end; ++k )
+//         {
+//            const int col = jcolF[k];
+//            const double val_F = MF[k];
+//
+//            assert( 0 <= col && col < nBuf - nG );
+//            buffer[rowF][col] += val_F;
+//         }
+//      }
+//   }
+//
+//   if( mG > 0 )
+//   {
+//      for( int rowG = 0; rowG < mG; ++rowG )
+//      {
+//         const double* MG = G.M();
+//         const int* krowG = G.krowM();
+//         const int* jcolG = G.jcolM();
+//
+//         const int rowG_start = krowG[rowG];
+//         const int rowG_end = krowG[rowG + 1];
+//
+//         for( int k = rowG_start; k < rowG_end; ++k )
+//         {
+//            const int col = jcolG[k] + nF;
+//            const double val_G = MG[k];
+//
+//            assert( nF <= col && col < nBuf);
+//            buffer[rowG][col] += val_G;
+//         }
+//      }
+//   }
+//}
 
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
