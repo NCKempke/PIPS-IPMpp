@@ -38,6 +38,8 @@ class StringGenMatrix : public GenMatrix
 
       ~StringGenMatrix() override;
 
+      MPI_Comm getComm() const { return mpi_comm; };
+
       virtual void addChild(StringGenMatrix* child);
 
       bool isEmpty() const;

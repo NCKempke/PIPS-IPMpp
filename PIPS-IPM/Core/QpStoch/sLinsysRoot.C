@@ -363,6 +363,9 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
    if( is_sparse )
       assert( is_sym );
 
+   SC_.writeToStreamDense(std::cout);
+   std::cout << std::endl;
+   X0.writeToStreamDense(std::cout);
    const bool has_RAC = Br.has_RAC;
 
    int mX0, nX0; X0.getSize(mX0, nX0);
@@ -528,6 +531,8 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
 void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
+   if( Br.F.mat->isKindOf(kStringGenMatrix) )
+      std::cout << dynamic_cast<StringGenMatrix*>(Br.F.mat)->children.size() << std::endl;
    assert( children.size() == Br.F.children.size() );
 
    /* get contribution to schur_complement from each child */

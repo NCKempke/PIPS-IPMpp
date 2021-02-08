@@ -1178,71 +1178,56 @@ void StochVectorBase<T>::scalarMult( T num )
 template<typename T>
 void StochVectorBase<T>::writeToStream( std::ostream& out, int offset ) const
 {
-   // TODO modify for hierarchical approach : gets stuck apparently
-   const int rank = PIPS_MPIgetRank(mpiComm);
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
    const int world_size = PIPS_MPIgetSize(mpiComm);
 
-   MPI_Status status;
-   int l;
    std::stringstream sout;
-   if( rank == 0 )
+
+   /* print vec and keep only for rank 0 */
+   for( int i = 0; i < offset; ++i )
+      sout << "\t";
+   sout << "--vec--\n";
+   if( vec )
+      vec->writeToStream( sout, offset + 1 );
+   for( int i = 0; i < offset; ++i )
+      sout << "\t";
+   sout << "-------\n";
+
+   if( my_rank != 0 )
    {
-      for( int i = 0; i < offset; ++i )
-         sout << "\t";
-      sout << "--vec--\n";
-      if( vec )
-         vec->writeToStream( sout, offset + 1 );
-      for( int i = 0; i < offset; ++i )
-         sout << "\t";
-      sout << "-------\n";
+      sout.str("");
+      sout.clear();
    }
 
-   if( rank == 0 )
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->writeToStream( sout, offset + 1 );
+
+   const std::string my_row_part = sout.str();
+   const std::string full_row = PIPS_MPIallgatherString( my_row_part, mpiComm );
+
+   if( my_rank == 0 )
+      out << full_row;
+
+   if( my_rank == 0 && vecl )
    {
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->writeToStream( sout, offset + 1 );
+      sout.str("");
+      sout.clear();
 
-      out << sout.str();
-      sout.str( std::string() );
-
-      for( int p = 1; p < world_size; p++ )
-      {
-         MPI_Probe(p, p, mpiComm, &status);
-         MPI_Get_count(&status, MPI_CHAR, &l);
-         char *buf = new char[l];
-         MPI_Recv(buf, l, MPI_CHAR, p, p, mpiComm, &status);
-         std::string rowPartFromP(buf, l);
-         out << rowPartFromP;
-         delete[] buf;
-      }
-   }
-   else if( iAmDistrib == 1 )
-   {
-      // rank != 0
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->writeToStream( sout, offset + 1 );
-
-      std::string str = sout.str();
-      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, rank, mpiComm);
-   }
-
-   if( rank == 0 && vecl )
-   {
       for( int i = 0; i < offset; ++i )
          sout << "\t";
-      sout << "--vecl-" << std::endl;
+      sout << "--vecl--\n";
 
       if( vecl )
          vecl->writeToStream( sout, offset + 1 );
 
       for( int i = 0; i < offset; ++i )
          sout << "\t";
-      sout << "-------" << std::endl;
+      sout << "-------\n";
 
       out << sout.str();
    }
 
-   if( iAmDistrib == 1 )
+   if( world_size > 1 )
       MPI_Barrier( mpiComm );
 }
 
