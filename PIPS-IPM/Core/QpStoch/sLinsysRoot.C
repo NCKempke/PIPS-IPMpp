@@ -100,7 +100,6 @@ void sLinsysRoot::factor2(sData *prob, Variables *vars)
    finalizeKKT(prob, vars);
 
    factorizeKKT(prob);
-
 #ifdef TIMING
    afterFactor();
 #endif

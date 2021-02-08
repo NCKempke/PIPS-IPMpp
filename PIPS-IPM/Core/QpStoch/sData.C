@@ -2915,7 +2915,7 @@ int sData::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd)
 SparseSymMatrix& sData::getLocalQ()
 {
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
-   assert( !is_hierarchy_inner_root && !is_hierarchy_root );
+   assert( !is_hierarchy_root );
 
    if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
    {
@@ -3042,7 +3042,7 @@ sData::getLocalC()
 SparseGenMatrix&
 sData::getLocalD()
 {
-   assert( !is_hierarchy_inner_root && !is_hierarchy_root );
+   assert( !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
 
    if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )

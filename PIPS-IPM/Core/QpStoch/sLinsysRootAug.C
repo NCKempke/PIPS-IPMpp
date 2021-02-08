@@ -2119,11 +2119,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 
    // compute result += -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) += -SUM_i Bli^T Xi
    LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res );
-   //result.writeToStreamDense(std::cout);
-   //std::cout << std::endl;
 
    // compute result += Bl0^T X0
    finalizeInnerSchurComplementContribution( result, *buffer_b0, Bl, sym_res, sparse_res );
-   //result.writeToStreamDense(std::cout);
-   //std::cout << std::endl;
 }

@@ -36,7 +36,6 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
    }
 }
 
-
 void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );

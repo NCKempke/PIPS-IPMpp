@@ -14,8 +14,8 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
    public:
       sLinsysRootAugHierInner(sFactory* factory, sData* prob_, OoqpVector* dd_,
             OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_);
-
       ~sLinsysRootAugHierInner() override = default;
+
 
       void assembleLocalKKT( sData* prob ) override;
 
