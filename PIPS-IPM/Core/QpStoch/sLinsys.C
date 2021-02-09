@@ -380,9 +380,9 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    assert( nF0C == nG0C );
 
    if( has_RAC )
-      assert( mX0 == nF0V + mF0C + mG0C );
+      assert( mX0 == mF0V + mF0C + mG0C );
    else
-      assert( mX0 >= nF0V );
+      assert( mX0 >= mF0V );
 #endif
 
 
@@ -435,19 +435,18 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
 
    const bool with_RAC = BT.has_RAC;
    int mX, nX; X.getSize(mX, nX);
+   int mR, nR; BT.R.getSize( mR, nR);
+   int mA, nA; BT.A.getSize( mA, nA );
+   int mF, nF; BT.F.getSize( mF, nF );
+   int mG, nG; BT.G.getSize( mG, nG );
 
 #ifndef NDEBUG
    int mRes, nRes; result.getSize(mRes, nRes);
    assert( mX == mRes );
 
-   int mF, nF; BT.F.getSize( mF, nF );
-   int mG, nG; BT.G.getSize( mG, nG );
-
    assert( nF == nG );
    if( with_RAC )
    {
-      int mR, nR; BT.R.getSize( mR, nR);
-      int mA, nA; BT.A.getSize( mA, nA );
       int mC, nC; BT.C.getSize( mC, nC );
       assert( mR == mA );
       assert( mR == mC );
@@ -469,9 +468,11 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    if( with_RAC )
       X.multMatAt( 0, 1.0, 0, result, -1.0, BT.R );
 
-   X.multMatAt( nX - locmyl - locmzl, 1.0, 0, result, -1.0, BT.F );
+   if( mF > 0 )
+      X.multMatAt( nX - mF - mG, 1.0, 0, result, -1.0, BT.F );
 
-   X.multMatAt( nX - locmzl, 1.0, 0, result, -1.0, BT.G );
+   if( mG > 0 )
+      X.multMatAt( nX - mG, 1.0, 0, result, -1.0, BT.G );
 
    if( with_RAC )
    {
@@ -481,7 +482,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, locnx, result, -1.0, BT.A );
+      X.multMatAt( 0, 1.0, nR, result, -1.0, BT.A );
 
       /*            [ CiT ]
        *            [  0  ]
@@ -489,7 +490,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, locnx + locmy, result, -1.0, BT.C );
+      X.multMatAt( 0, 1.0, nR + nA, result, -1.0, BT.C );
    }
 }
 

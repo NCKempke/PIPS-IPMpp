@@ -441,8 +441,9 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
       assert( mX0 == nF0V + mF0C + mG0C );
    else
    {
-      std::cout << mX0 << " " << nF0V << std::endl;
-      assert( mX0 >= nF0V );
+      std::cout << mX0 << " " << nF0V << " " << mF0V << std::endl;
+      // TODO :: ::: :: :
+      assert( mX0 >= mF0V );
    }
 
    assert( mX0 == mSC );
