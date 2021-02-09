@@ -56,72 +56,6 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
    Bl.G.mat = BlGbuf;
 }
 
-/* buffer is still transposed ..*/
-//void sLinsysRootAugHierInner::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys&, std::vector<BorderMod>& Br_mod_border )
-//{
-//   assert( Br_mod_border.empty() );
-//
-//   const SparseGenMatrix& F = data->getLocalF().getTranspose();
-//   const SparseGenMatrix& G = data->getLocalG().getTranspose();
-//
-//   int mF, nF;
-//   F.getSize(mF, nF);
-//   int mG, nG;
-//   G.getSize(mG, nG);
-//
-//   int mBuf, nBuf;
-//   buffer.getSize(mBuf, nBuf);
-//
-//   assert( nBuf == nF + nG );
-//   assert( mF == mG );
-//   assert( mBuf >= mF );
-//
-//   if( mF > 0 )
-//   {
-//      for( int rowF = 0; rowF < mF; ++rowF )
-//      {
-//         const double* MF = F.M();
-//         const int* krowF = F.krowM();
-//         const int* jcolF = F.jcolM();
-//
-//         const int rowF_start = krowF[rowF];
-//         const int rowF_end = krowF[rowF + 1];
-//
-//         for( int k = rowF_start; k < rowF_end; ++k )
-//         {
-//            const int col = jcolF[k];
-//            const double val_F = MF[k];
-//
-//            assert( 0 <= col && col < nBuf - nG );
-//            buffer[rowF][col] += val_F;
-//         }
-//      }
-//   }
-//
-//   if( mG > 0 )
-//   {
-//      for( int rowG = 0; rowG < mG; ++rowG )
-//      {
-//         const double* MG = G.M();
-//         const int* krowG = G.krowM();
-//         const int* jcolG = G.jcolM();
-//
-//         const int rowG_start = krowG[rowG];
-//         const int rowG_end = krowG[rowG + 1];
-//
-//         for( int k = rowG_start; k < rowG_end; ++k )
-//         {
-//            const int col = jcolG[k] + nF;
-//            const double val_G = MG[k];
-//
-//            assert( nF <= col && col < nBuf);
-//            buffer[rowG][col] += val_G;
-//         }
-//      }
-//   }
-//}
-
-
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
    assert( data == prob );
@@ -145,13 +79,13 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
       BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res )
 {
-   BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), false );
+   BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), true );
 
-   GenMatrix* BlFbuf = Bl.F.mat;
-   GenMatrix* BlGbuf = Bl.G.mat;
+   GenMatrix* B_inner_Fbuf = Bl.F.mat;
+   GenMatrix* B_inner_Gbuf = Bl.G.mat;
 
-   Bl.F.mat = &data->getLocalF();
-   Bl.G.mat = &data->getLocalG();
+   B_inner.F.mat = &data->getLocalF();
+   B_inner.G.mat = &data->getLocalG();
 
    BorderMod B_inner_mod(B_inner, X0);
 
@@ -160,11 +94,9 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
 
    addBTKiInvBToSC( res, Bl, Br, border_mod, sym_res, sparse_res );
 
-   Bl.F.mat = BlFbuf;
-   Bl.G.mat = BlGbuf;
+   B_inner.F.mat = B_inner_Fbuf;
+   B_inner.G.mat = B_inner_Gbuf;
 
-
-   assert(false);
 }
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )

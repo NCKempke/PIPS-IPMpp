@@ -148,11 +148,12 @@ void sLinsysRoot::afterFactor()
 // TODO : move to aug..
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
-   assert( Br_mod_border.empty() );
+   finalizeDenseBorderModBlocked(Br_mod_border, buffer);
 
-   const bool has_RAC = Br.has_RAC;
 
-   int mX0, nX0; buffer.getSize(mX0, nX0);
+   bool has_RAC = Br.has_RAC;
+
+   int mX0, nX0; buffer.getSize( mX0, nX0 );
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -162,6 +163,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : dynamic_cast<SparseGenMatrix*>(Br.F.mat);
    SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : dynamic_cast<SparseGenMatrix*>(Br.G.mat);
 
+   has_RAC = F0cons_border && G0cons_border && A0_border && C0_border;
+   if( has_RAC )
+      assert( F0cons_border && G0cons_border && A0_border && C0_border );
    assert( F0vec_border );
    assert( G0vec_border );
 
@@ -196,9 +200,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    if( has_RAC )
       assert( nA0 == nF0V );
 
-   assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
    assert( nF0C == nG0C );
-
+   if( mA0 != 0 )
+      assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
    if( has_RAC )
       assert( mX0 == nF0V + mF0C + mG0C );
    else
@@ -206,8 +210,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 #endif
 
    /* add A0^T, C0^T, F0V^T, G0V^T */
-   for( int row = 0; row < nA0; ++row )
+   for( int row = 0; row < nF0V; ++row )
    {
+      // TODO refactor and move somewhere else... TODO use addMatAt
       /* A0^T */
       if( mA0 > 0 )
       {
@@ -435,7 +440,10 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
    if( has_RAC )
       assert( mX0 == nF0V + mF0C + mG0C );
    else
+   {
+      std::cout << mX0 << " " << nF0V << std::endl;
       assert( mX0 >= nF0V );
+   }
 
    assert( mX0 == mSC );
 #endif
@@ -472,6 +480,9 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
    int mF0V{0};
    F0vec_border->getSize(mF0V, dummy);
 
+   int mG0V{0};
+   G0vec_border->getSize(mG0V, dummy);
+
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
    for( int i = 0; i < mX0; i++ )
@@ -483,9 +494,11 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
       if( C0_border )
          C0_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0], i, 0 );
 
-      F0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0], i, 0 );
+      if( mF0V > 0 )
+         F0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0], i, 0 );
 
-      G0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0 + mF0V], i, 0 );
+      if( mG0V > 0 )
+         G0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0 + mF0V], i, 0 );
 
       if( F0cons_border )
          F0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nA0);
@@ -592,10 +605,6 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
 
       children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res );
    }
-
-   /* allreduce the border SC */
-   if( iAmDistrib )
-      allreduceMatrix( res, sparse_res, sym_res, mpiComm );
 }
 
 void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )

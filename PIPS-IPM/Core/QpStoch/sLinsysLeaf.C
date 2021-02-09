@@ -81,8 +81,6 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
    int mres, nres; res.getSize(mres, nres);
 
 #ifndef NDEBUG
-   assert( Br_mod_border.empty() );
-
    int nx_border, myl_border, mzl_border, dummy;
    Br.R.getSize(dummy, nx_border);
    if( !Br.has_RAC )
@@ -131,7 +129,6 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
    multRightDenseBorderBlocked( BiT_inner, X0, *BiT_buffer );
 
    /* now similarly compute BiT_buffer += X_j^T Bmodj for all j */
-
    multRightDenseBorderModBlocked( Br_mod_border, *BiT_buffer );
 
    /* compute Bli^T Ki^-1 Bi_buffe = Bli^T Ki^-1 (Bri^T - X0^T * Bi_{inner}^T - sumj Xj^T Bmodj^T) */
@@ -293,7 +290,6 @@ void sLinsysLeaf::addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, Borde
 
    /* BiT_buffer += X_j^T Bmodj for all j */
    multRightDenseBorderModBlocked( Br_mod_border, *BiT_buffer );
-
 
    /* compute B_{inner}^T Ki^-1 Bi_buffer = B_{inner}^T Ki^-1 (Bri^T - sumj Xj^T Bmodj^T) */
    BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),

@@ -256,6 +256,10 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
    std::vector<BorderMod> border_mod;
 
    children[0]->addBTKiInvBToSC(SC, B, B, border_mod, true, false);
+
+   if( iAmDistrib )
+      allreduceMatrix(SC, false, true, mpiComm );
+   assert(false);
 }
 
 /* since we have only one child we will not allreduce anything */

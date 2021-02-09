@@ -285,6 +285,14 @@ void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, in
   }
 }
 
+void sLinsys::finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
+{
+   /* compute BiT_buffer += X_j^T Bmodj for all j */
+   for( auto& border_mod_block : border_mod )
+      finalizeDenseBorderBlocked( border_mod_block.border, border_mod_block.multiplier, result );
+}
+
+
 void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
 {
    /* compute BiT_buffer += X_j^T Bmodj for all j */
@@ -307,6 +315,112 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
       multRightDenseBorderBlocked( *BiT_mod, border_mod_block.multiplier, result );
    }
 }
+
+/* compute
+ *              locnx locmy     locmyl locmzl
+ * nx_border  [   0    A0T  C0T F0VT G0VT ]
+ * myl_border [  F0C    0    0   0    0   ]
+ * mzl_border [  G0C    0    0   0    0   ]
+ *
+ *               [  0 F0C^T  G0C^T ]^T
+ *               [ A0   0     0    ]
+ *               [ C0   0     0    ]
+ * buffer -= X * [ F0V  0     0    ]
+ *               [ G0V  0     0    ]
+ */
+void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result )
+{
+   const bool has_RAC = B.has_RAC;
+
+   int mX0, nX0; result.getSize( mX0, nX0 );
+
+   SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.F.mat) : nullptr;
+   SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.G.mat) : nullptr;
+
+   SparseGenMatrix* A0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.A.mat) : nullptr;
+   SparseGenMatrix* C0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.C.mat) : nullptr;
+   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.A.mat_link) : dynamic_cast<SparseGenMatrix*>(B.F.mat);
+   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.C.mat_link) : dynamic_cast<SparseGenMatrix*>(B.G.mat);
+
+   assert( F0vec_border );
+   assert( G0vec_border );
+
+   int mA0{0}; int nA0{0};
+   if( A0_border )
+      A0_border->getSize(mA0, nA0);
+
+   int mF0C{0}; int nF0C{0};
+   if( F0cons_border )
+      F0cons_border->getSize( mF0C, nF0C );
+
+   int mF0V{0}; int nF0V{0};
+   F0vec_border->getSize(mF0V, nF0V);
+
+#ifndef NDEBUG
+   int mG0C{0}; int nG0C{0};
+   if( G0cons_border )
+      G0cons_border->getSize( mG0C, nG0C );
+
+
+   int mC0{0}; int nC0{0};
+   if( C0_border )
+      C0_border->getSize(mC0, nC0);
+
+
+   int mG0V{0}; int nG0V{0};
+   G0vec_border->getSize(mG0V, nG0V);
+
+   assert( nA0 == nC0 );
+   assert( nF0V == nG0V );
+
+   if( has_RAC )
+      assert( nA0 == nF0V );
+
+   assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
+   assert( nF0C == nG0C );
+
+   if( has_RAC )
+      assert( mX0 == nF0V + mF0C + mG0C );
+   else
+      assert( mX0 >= nF0V );
+#endif
+
+
+
+   if( has_RAC )
+   {
+      /*            [  0  ]
+       * res -= X * [ F0C ]
+       *            [ G0C ]
+       */
+      X.multMatAt( nF0V, 1.0, 0, result, -1.0, *F0cons_border );
+      X.multMatAt( nF0V + mF0C, 1.0, 0, result, -1.0, *G0cons_border );
+
+      /*            [ A0T ]
+       * res -= X * [  0  ]
+       *            [  0  ]
+       */
+      X.multMatAt( 0, 1.0, nF0C, result, -1.0, A0_border->getTranspose() );
+
+      /*            [ C0T ]
+       * res -= X * [  0  ]
+       *            [  0  ]
+       */
+      X.multMatAt( 0, 1.0, nF0C + mA0, result, -1.0, C0_border->getTranspose() );
+   }
+   /*            [ F0VT ]
+    * res -= X * [  0   ]
+    *            [  0   ]
+    */
+   X.multMatAt( 0, 1.0, nF0C + mA0 + mC0, result, -1.0, F0vec_border->getTranspose() );
+
+   /*            [ G0VT ]
+    * res -= X * [  0   ]
+    *            [  0   ]
+    */
+   X.multMatAt( 0, 1.0, nF0C + mA0 + mC0 + mF0V, result, -1.0, G0vec_border->getTranspose() );
+}
+
 
 /* calculate res -= X * BT */
 void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatrix& X, DenseGenMatrix& result )
@@ -343,7 +457,6 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    }
    else
       assert( mF + mG == nX );
-
 #endif
    // X from the right with each column of Bi^T todo add OMP to submethods
 

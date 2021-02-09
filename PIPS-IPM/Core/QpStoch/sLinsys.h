@@ -120,7 +120,7 @@ class sLinsys : public QpGenLinsys
         use_local_RAC{ use_local_RAC }, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
 
      RACFG_BLOCK( const RACFG_BLOCK<T>& block ) :
-        use_local_RAC{ use_local_RAC }, has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
+        use_local_RAC{ block.use_local_RAC }, has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
          F{ block.F }, G{ block.G } {};
   };
 
@@ -267,11 +267,18 @@ class sLinsys : public QpGenLinsys
   void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& Bl, const double* cols,
         const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const;
 
+  /* calculate res -= BT * X */
+  void finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result );
+
   /* calculate res -= X * BT */
   void multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatrix& X, DenseGenMatrix& result );
 
-  /* calculate res -= (sum_j XjT * BjT )*/
+  /* calculate res -= (sum_j XjT * BjT ) */
   void multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result );
+
+  /* calculate res -= (sum_j X0jT * B0JT ) */
+  void finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result );
+
 };
 
 #endif

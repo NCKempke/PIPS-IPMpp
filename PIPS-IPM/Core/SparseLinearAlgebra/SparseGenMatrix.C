@@ -161,9 +161,9 @@ void SparseGenMatrix::writeToStream(std::ostream& out) const
 
 void SparseGenMatrix::writeToStreamDense(std::ostream& out) const
 {
+   assert( mStorage );
    if( mStorageDynamic != nullptr )
       mStorageDynamic->writeToStreamDense( out );
-
    else
       mStorage->writeToStreamDense( out );
 

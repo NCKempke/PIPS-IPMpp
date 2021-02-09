@@ -2111,20 +2111,17 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} ( (Bri - sum_j Bmodij Xij) )
    LsolveHierarchyBorder( *buffer_b0, Br, Br_mod_border );
 
-   // buffer_b0 = B0_{outer} + buffer_b0 = B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
+   // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
    finalizeZ0Hierarchical( *buffer_b0, Br, Br_mod_border );
-
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form! )
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( *buffer_b0 );
 
-   std::cout << "Dsolved" << std::endl;
-   buffer_b0->writeToStreamDense(std::cout);
-   std::cout << "..." << std::endl;
    // compute result += -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) += -SUM_i Bli^T Xi
    LtsolveHierarchyBorder( result, *buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res );
 
    // compute result += Bl0^T X0
-   finalizeInnerSchurComplementContribution( result, *buffer_b0, Bl, sym_res, sparse_res );
+   if( PIPS_MPIgetRank(mpiComm) == 0 )
+      finalizeInnerSchurComplementContribution( result, *buffer_b0, Bl, sym_res, sparse_res );
 }

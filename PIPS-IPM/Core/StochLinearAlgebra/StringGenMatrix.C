@@ -660,7 +660,10 @@ void StringGenMatrix::writeToStreamDense( std::ostream& out ) const
 {
    assert( !is_vertical );
    for( int i = 0; i < m; ++i )
+   {
       writeToStreamDenseRow( out, i );
+      out << "\n";
+   }
 }
 
 void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const
