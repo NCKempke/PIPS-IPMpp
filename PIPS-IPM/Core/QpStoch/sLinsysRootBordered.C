@@ -257,15 +257,13 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 
    children[0]->addBTKiInvBToSC(SC, B, B, border_mod, true, false);
 
-   if( iAmDistrib )
-      allreduceMatrix(SC, false, true, mpiComm );
-   assert(false);
 }
 
 /* since we have only one child we will not allreduce anything */
 void sLinsysRootBordered::reduceKKT(sData*)
 {
-   return;
+   if( iAmDistrib )
+      allreduceMatrix(*kkt, false, true, mpiComm );
 }
 
 DoubleLinearSolver* sLinsysRootBordered::createSolver(sData*, SymMatrix* kktmat_)
