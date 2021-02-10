@@ -152,7 +152,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
-   this->children[0]->addBorderTimesRhsToB0( *sol_inner, b0, border );
+   children[0]->addBorderTimesRhsToB0( *sol_inner, b0, border );
 
    PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
@@ -222,7 +222,7 @@ void sLinsysRootBordered::Ltsolve(sData*, OoqpVector& x)
 
    computeInnerSystemRightHandSide( b, b0 );
 
-   this->children[0]->solveCompressed( b );
+   children[0]->solveCompressed( b );
 }
 
 /* create kkt used to store Schur Complement of border layer */

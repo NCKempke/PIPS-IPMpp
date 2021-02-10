@@ -113,6 +113,8 @@ class sLinsysRoot : public sLinsys {
 
   double* sparseKktBuffer{};
 
+  std::unique_ptr<StochVector> sol_inner{};
+
   int childrenProperStart; // first non-dummy child
   int childrenProperEnd;   // end of non-dummy children range (not included)
   bool hasSparseKkt;

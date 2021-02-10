@@ -49,6 +49,8 @@ class sLinsysLeaf : public sLinsys
 
   void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC ) override;
 
+  void addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
+
   void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
   void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sparse_res, bool sym_res ) override;
@@ -62,6 +64,11 @@ class sLinsysLeaf : public sLinsys
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
+ private:
+  void addBorderTimesRhsToB0( SimpleVector& rhs, SimpleVector& b0, BorderBiBlock& border );
+  void addBorderX0ToRhs( SimpleVector& rhs, const SimpleVector& x0, BorderBiBlock& border );
+
+protected:
 
   /* compute result += B_inner^T K^-1 Br */
   void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br );

@@ -610,14 +610,13 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
 
 void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
 {
-   assert( rhs.children.size() == this->children.size() );
-   assert( border.A.children.size() == this->children.size() );
+   assert( rhs.children.size() == children.size() );
+   assert( border.A.children.size() == children.size() );
 
-   for( size_t i = 0; i < this->children.size(); ++i )
+   for( size_t i = 0; i < children.size(); ++i )
    {
-      BorderLinsys child_border(*border.R.children[i], *border.A.children[i], *border.C.children[i],
-            *border.F.children[i], *border.G.children[i] );
-      this->children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
+      BorderLinsys child_border = getChild(border, i);
+      children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
    }
 
    /* add schur complement part */
@@ -669,17 +668,15 @@ void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1 );
 }
 
-
 void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
 {
-   assert( rhs.children.size() == this->children.size() );
-   assert( border.A.children.size() == this->children.size() );
+   assert( rhs.children.size() == children.size() );
+   assert( border.A.children.size() == children.size() );
 
-   for( size_t i = 0; i < this->children.size(); ++i )
+   for( size_t i = 0; i < children.size(); ++i )
    {
-      BorderLinsys child_border(*border.R.children[i], *border.A.children[i], *border.C.children[i],
-            *border.F.children[i], *border.G.children[i] );
-      this->children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
+      BorderLinsys child_border = getChild( border, i );
+      children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
    }
 
    /* add schur complement part */
@@ -734,27 +731,35 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
+void sLinsysRoot::Ltsolve2( sData*, StochVector& x, SimpleVector& x0)
 {
-  assert( false && "never called" );
-  StochVector& b   = dynamic_cast<StochVector&>(x);
-  SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
+   assert( false && "not in use");
+   assert( pips_options::getBoolParameter("HIERARCHICAL") );
+   assert( children.size() == x.children.size() );
 
-#ifdef TIMING
-  stochNode->resMon.eLtsolve.clear();
-  stochNode->resMon.recLtsolveTmLocal_start();
-#endif
-  //b_i -= Lni^T x0
-  this->LniTransMult(prob, bi, -1.0, xp);
-  solver->Ltsolve(bi);
+   StochVector& b = dynamic_cast<StochVector&>(x);
 
-#ifdef TIMING
-  stochNode->resMon.recLtsolveTmLocal_stop();
-#endif
-  SimpleVector& xi = bi;
-  //recursive call in order to get the children to do their part
-  for(size_t it = 0; it < children.size(); it++)
-     children[it]->Ltsolve2(prob->children[it], *b.children[it], xi);
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      children[i]->computeInnerSystemRightHandSide( *b.children[i], x0 );
+      children[i]->solveCompressed( *x.children[i] );
+   }
+
+//#ifdef TIMING
+//  stochNode->resMon.eLtsolve.clear();
+//  stochNode->resMon.recLtsolveTmLocal_start();
+//#endif
+//   //b_i -= Lni^T x0
+//   LniTransMult(prob, bi, -1.0, x0);
+//   solver->Ltsolve(bi);
+//
+//#ifdef TIMING
+//  stochNode->resMon.recLtsolveTmLocal_stop();
+//#endif
+//   SimpleVector& xi = bi;
+//   //recursive call in order to get the children to do their part
+//   for(size_t it = 0; it < children.size(); it++)
+//      children[it]->Ltsolve2(prob->children[it], *b.children[it], xi);
 }
 
 void sLinsysRoot::createChildren(sData *prob)

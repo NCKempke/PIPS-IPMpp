@@ -506,7 +506,7 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
    }
 }
 
-/* forms right hand side for schur system and solves K_i^-1 bi for all children */
+/* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
 void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
 {
    assert( !is_hierarchy_root );
@@ -520,20 +520,19 @@ void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
    if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
       b0.setToZero();
 
-   // compute B_i^T rhs_i and add it up
+   // compute Bi^T Ki^-1 rhs_i and sum it up
    for( size_t it = 0; it < children.size(); it++ )
    {
 #ifdef TIMING
       children[it]->stochNode->resMon.eLsolve.clear();
       children[it]->stochNode->resMon.recLsolveTmChildren_start();
 #endif
-      children[it]->addLniziLinkCons(prob->children[it], b0, *b.children[it]->vec, locmy, locmz);
+      children[it]->addLniziLinkCons( prob->children[it], b0, *b.children[it], true );
 
 #ifdef TIMING
       children[it]->stochNode->resMon.recLsolveTmChildren_stop();
 #endif
    }
-
 #ifdef TIMING
    MPI_Barrier(MPI_COMM_WORLD);
    stochNode->resMon.eReduce.clear();//reset
@@ -560,7 +559,6 @@ void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
   stochNode->resMon.eDsolve.clear();
   stochNode->resMon.recDsolveTmLocal_start();
 #endif
-
   solveReducedLinkCons(prob, b0);
 #ifdef TIMING
   stochNode->resMon.recDsolveTmLocal_stop();
@@ -575,7 +573,6 @@ void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
    //dumpRhs(0, "sol",  b0);
    SimpleVector& z0 = b0; //just another name, for clarity
 
-   // Adds for each child i. The backsolve needs z0
    for(size_t it = 0; it < children.size(); it++)
       children[it]->Ltsolve2(prob->children[it], *b.children[it], z0);
 

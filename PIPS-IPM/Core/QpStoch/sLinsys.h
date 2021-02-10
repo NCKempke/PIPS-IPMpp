@@ -29,6 +29,90 @@ class StringSymMatrix;
 class sLinsys : public QpGenLinsys
 {
  public:
+      template<typename T>
+      struct RACFG_BLOCK
+      {
+         private:
+         std::unique_ptr<T> dummy{ new T() };
+
+         public:
+         const bool use_local_RAC{};
+         const bool has_RAC{};
+         /* represents a block like
+          * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
+          * [ A_i   0     0   ] or possibly [  F_i    0     0   ]
+          * [ C_i   0     0   ]             [  G_i    0     0   ]
+          */
+         T& R;
+         T& A;
+         T& C;
+         T& F;
+         T& G;
+
+         RACFG_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
+            has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G} {};
+
+         RACFG_BLOCK( T& F, T& G, bool use_local_RAC ) :
+            use_local_RAC{ use_local_RAC }, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
+
+         RACFG_BLOCK( const RACFG_BLOCK<T>& block ) :
+            use_local_RAC{ block.use_local_RAC }, has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
+             F{ block.F }, G{ block.G } {};
+      };
+
+      using BorderLinsys = RACFG_BLOCK<StringGenMatrix>;
+      using BorderBiBlock = RACFG_BLOCK<SparseGenMatrix>;
+
+      static BorderLinsys getChild( BorderLinsys& border, unsigned int i )
+      {
+         const bool dummy = border.F.children[i]->isKindOf(kStringGenDummyMatrix);
+         assert( i < border.F.children.size() );
+         if( border.has_RAC )
+         {
+            if( !dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix) )
+               return BorderLinsys( dynamic_cast<StringGenMatrix&>(*border.R.children[i]->mat),
+                     dynamic_cast<StringGenMatrix&>(*border.A.children[i]->mat),
+                     dynamic_cast<StringGenMatrix&>(*border.C.children[i]->mat),
+                     dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
+                     dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat)
+                  );
+            else
+               return BorderLinsys( *border.R.children[i], *border.A.children[i], *border.C.children[i],
+                  *border.F.children[i], *border.G.children[i] );
+         }
+         else
+         {
+            if( !dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix) )
+               return BorderLinsys( dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
+                     dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat),
+                     border.use_local_RAC
+                  );
+            else
+               return BorderLinsys( *border.F.children[i], *border.G.children[i], border.use_local_RAC );
+         }
+      }
+
+      template<typename T>
+      struct BorderMod_Block
+      {
+         public:
+            BorderLinsys border;
+            const T& multiplier;
+
+            BorderMod_Block( BorderLinsys& border_, const T& multiplier ) :
+               border{ border_ }, multiplier{ multiplier } {};
+      };
+
+      using BorderMod = BorderMod_Block<DenseGenMatrix>;
+      using BorderModVector = BorderMod_Block<StochVector>;
+
+      template<typename T>
+      static BorderMod_Block<T> getChild( BorderMod_Block<T>& bordermod, unsigned int i )
+      {
+         BorderLinsys child = getChild( bordermod.border, i );
+         return BorderMod_Block<T>( child, bordermod.multiplier );
+      }
+
   sLinsys(sFactory* factory, sData* prob, bool is_hierarchy_root = false);
   sLinsys(sFactory* factory,
 		   sData* prob, 
@@ -93,90 +177,8 @@ class sLinsys : public QpGenLinsys
   MPI_Comm mpiComm;
   sTree* stochNode;
 
-  template<typename T>
-  struct RACFG_BLOCK
-  {
-     private:
-     std::unique_ptr<T> dummy{ new T() };
-
-     public:
-     const bool use_local_RAC{};
-     const bool has_RAC{};
-     /* represents a block like
-      * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
-      * [ A_i   0     0   ] or possibly [  F_i    0     0   ]
-      * [ C_i   0     0   ]             [  G_i    0     0   ]
-      */
-     T& R;
-     T& A;
-     T& C;
-     T& F;
-     T& G;
-
-     RACFG_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
-        has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G} {};
-
-     RACFG_BLOCK( T& F, T& G, bool use_local_RAC ) :
-        use_local_RAC{ use_local_RAC }, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
-
-     RACFG_BLOCK( const RACFG_BLOCK<T>& block ) :
-        use_local_RAC{ block.use_local_RAC }, has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
-         F{ block.F }, G{ block.G } {};
-  };
-
-  using BorderLinsys = RACFG_BLOCK<StringGenMatrix>;
-  using BorderBiBlock = RACFG_BLOCK<SparseGenMatrix>;
-
-  static BorderLinsys getChild( BorderLinsys& border, unsigned int i )
-  {
-     const bool dummy = border.F.children[i]->isKindOf(kStringGenDummyMatrix);
-     assert( i < border.F.children.size() );
-     if( border.has_RAC )
-     {
-        if( !dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix) )
-           return BorderLinsys( dynamic_cast<StringGenMatrix&>(*border.R.children[i]->mat),
-                 dynamic_cast<StringGenMatrix&>(*border.A.children[i]->mat),
-                 dynamic_cast<StringGenMatrix&>(*border.C.children[i]->mat),
-                 dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
-                 dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat)
-              );
-        else
-           return BorderLinsys( *border.R.children[i], *border.A.children[i], *border.C.children[i],
-              *border.F.children[i], *border.G.children[i] );
-     }
-     else
-     {
-        if( !dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix) )
-           return BorderLinsys( dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
-                 dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat),
-                 border.use_local_RAC
-              );
-        else
-           return BorderLinsys( *border.F.children[i], *border.G.children[i], border.use_local_RAC );
-     }
-  }
-
-  struct BorderMod_Block
-  {
-     public:
-        BorderLinsys border;
-        const DenseGenMatrix& multiplier;
-
-        BorderMod_Block( BorderLinsys& border, const DenseGenMatrix& multiplier ) :
-           border{ border }, multiplier{ multiplier } {};
-  };
-
-  using BorderMod = BorderMod_Block;
-
-  static BorderMod getChild( BorderMod& bordermod, unsigned int i )
-  {
-     BorderLinsys child = getChild( bordermod.border, i );
-     return BorderMod_Block( child, bordermod.multiplier );
-  }
-
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
-
-  virtual void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz);
+  virtual void addLniziLinkCons( sData */*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here"); };
 
 
   /* adds mat to res starting at row_0 col_0 */
@@ -207,11 +209,14 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
   virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/ ) { assert( 0 && "not implemented here" ); };
+
+  virtual void computeInnerSystemRightHandSide( StochVector& /*rhs_inner*/, const SimpleVector& /*b0*/ ) { assert( false && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
 
  public:
+
   /* add you part of the border times rhs to b0 */
   virtual void addBorderTimesRhsToB0( StochVector& /*rhs*/, SimpleVector& /*b0*/, BorderLinsys& /*border*/ )
   { assert( false && "not implemented here" ); };

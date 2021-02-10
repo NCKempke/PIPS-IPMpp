@@ -36,6 +36,167 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
    }
 }
 
+void sLinsysRootAugHierInner::Ltsolve2(sData*, StochVector& x, SimpleVector& x0 )
+{
+   assert( pips_options::getBoolParameter("HIERARCHICAL") );
+
+   StochVector& b = dynamic_cast<StochVector&>(x);
+
+   computeInnerSystemRightHandSide( b, x0 );
+   solveCompressed( x );
+}
+
+void sLinsysRootAugHierInner::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0 )
+{
+   // TODO : only works when caller is sLinsysRootAug
+   BorderLinsys Border( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), true );
+
+   GenMatrix* BlFbuf = Border.F.mat;
+   GenMatrix* BlGbuf = Border.G.mat;
+
+   Border.F.mat = &data->getLocalF();
+   Border.G.mat = &data->getLocalG();
+
+   addBorderX0ToRhs( rhs_inner, b0, Border );
+
+   Border.F.mat = BlFbuf;
+   Border.G.mat = BlGbuf;
+}
+
+/* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
+void sLinsysRootAugHierInner::Lsolve(sData *prob, OoqpVector& x)
+{
+   assert( !is_hierarchy_root );
+
+   StochVector& b = dynamic_cast<StochVector&>(x);
+   assert(children.size() == b.children.size() );
+
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+   assert(!b.vecl);
+
+   if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
+      b0.setToZero();
+
+   // compute Bi^T Ki^-1 rhs_i and sum it up
+   for( size_t it = 0; it < children.size(); it++ )
+      children[it]->addLniziLinkCons( prob->children[it], b0, *b.children[it], false);
+
+   if(iAmDistrib)
+      PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
+}
+
+void sLinsysRootAugHierInner::addLniziLinkCons( sData*, OoqpVector& z0_, OoqpVector& zi, bool use_local_RAC )
+{
+   assert( zi.isKindOf(kStochVector) );
+   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
+
+   if( !sol_inner )
+      sol_inner.reset(dynamic_cast<StochVector*>(zi.cloneFull()));
+   else
+      sol_inner->copyFrom(zi);
+
+   /* solve system */
+   solveCompressed( *sol_inner );
+
+   BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
+
+   GenMatrix* BlFbuf = Bl.F.mat;
+   GenMatrix* BlGbuf = Bl.G.mat;
+
+   Bl.F.mat = &data->getLocalF();
+   Bl.G.mat = &data->getLocalG();
+
+   addBorderTimesRhsToB0( *sol_inner, z0, Bl );
+
+   Bl.F.mat = BlFbuf;
+   Bl.G.mat = BlGbuf;
+}
+
+void sLinsysRootAugHierInner::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
+{
+   assert( rhs.children.size() == children.size() );
+   assert( border.F.children.size() == children.size() );
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      BorderLinsys child_border = getChild(border, i);
+      children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
+   }
+
+   /* add schur complement part */
+   if( PIPS_MPIgetSize() == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      if( border.has_RAC )
+      {
+         assert( border.A.mat_link );
+         assert( border.C.mat_link );
+      }
+
+      // TODO : this will not work for a second split... the get transpose should be border specific or something..
+      SparseGenMatrix& F_border = border.has_RAC ? dynamic_cast<SparseGenMatrix&>(*border.A.mat_link).getTranspose() : data->getLocalF().getTranspose();
+      SparseGenMatrix& G_border = border.has_RAC ? dynamic_cast<SparseGenMatrix&>(*border.C.mat_link).getTranspose() : data->getLocalG().getTranspose();
+
+      int mFb, nFb; F_border.getSize(mFb, nFb);
+      int mGb, nGb; G_border.getSize(mGb, nGb);
+
+      assert( mFb == mGb );
+      assert( rhs.vec );
+      assert( rhs.vec->length() == nFb + nGb );
+
+      assert( b0.length() >= mFb );
+
+      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+
+      SimpleVector zi1 (&zi[0], nFb );
+      SimpleVector zi2 (&zi[nFb], nGb );
+
+      SimpleVector b1( &b0[0], mFb );
+
+      F_border.mult( 1.0, b1, -1.0, zi1 );
+      G_border.mult( 1.0, b1, -1.0, zi2 );
+   }
+}
+
+void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
+{
+   assert( rhs.children.size() == children.size() );
+   assert( border.F.children.size() == children.size() );
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      BorderLinsys child_border = getChild(border, i);
+      children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
+   }
+
+   if( border.has_RAC )
+   {
+      assert( border.A.mat_link );
+      assert( border.C.mat_link );
+   }
+
+   /* add schur complement part */
+   SparseGenMatrix& F_border = border.has_RAC ? dynamic_cast<SparseGenMatrix&>(*border.A.mat_link) : data->getLocalF();
+   SparseGenMatrix& G_border = border.has_RAC ? dynamic_cast<SparseGenMatrix&>(*border.C.mat_link) : data->getLocalG();
+   int mFb, nFb; F_border.getSize(mFb, nFb);
+   int mGb, nGb; G_border.getSize(mGb, nGb);
+
+   assert( rhs.vec );
+   assert( rhs.vec->length() == mFb + mGb );
+   assert( nFb == nGb );
+   assert( x0.length() >= nFb );
+
+   SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.vec);
+
+   SimpleVector rhs01 (&rhs0[0], mFb );
+   SimpleVector rhs02 (&rhs0[mFb], mGb );
+
+   SimpleVector x1( (double*)&x0[0], nFb );
+
+   F_border.mult( 1.0, rhs01, -1.0, x1 );
+   G_border.mult( 1.0, rhs02, -1.0, x1 );
+}
+
 void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );

@@ -232,66 +232,12 @@ void sLinsys::addLnizi(sData *prob, OoqpVector& z0_, OoqpVector& zi_)
   C.transMult(1.0, z01, -1.0, zi3);
 }
 
-/** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
-#ifndef NDEBUG
-void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, int parentmy, int parentmz)
-#else
-void sLinsys::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, int, int)
-#endif
-{
-  SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
-  SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
-
-  solver->solve(zi);
-
-  SparseGenMatrix& A = prob->getLocalA();
-  SparseGenMatrix& C = prob->getLocalC();
-  SparseGenMatrix& R = prob->getLocalCrossHessian();
-
-  int dummy, nx0;
-  A.getSize(dummy, nx0);
-
-  SimpleVector zi1 (&zi[0], locnx);
-  SimpleVector zi2 (&zi[locnx], locmy);
-  SimpleVector zi3 (&zi[locnx+locmy], locmz);
-  SimpleVector z01 (&z0[0], nx0);
-
-  R.transMult(1.0, z01, -1.0, zi1);
-  A.transMult(1.0, z01, -1.0, zi2);
-  C.transMult(1.0, z01, -1.0, zi3);
-
-  if( locmyl > 0 )
-  {
-    assert(locmyl >= 0);
-    const int nxMyMz = z0.length() - locmyl - locmzl;
-
-    assert(nxMyMz == nx0 + parentmy + parentmz);
-
-    SimpleVector z0myl (&z0[nxMyMz], locmyl);
-    SparseGenMatrix& F = prob->getLocalF();
-    F.mult(1.0, z0myl, -1.0, zi1);
-  }
-
-  if( locmzl > 0 )
-  {
-    assert(locmyl >= 0);
-    const int nxMyMzMyl = z0.length() - locmzl;
-
-    assert(nxMyMzMyl == nx0 + parentmy + parentmz + locmyl);
-
-    SimpleVector z0mzl (&z0[nxMyMzMyl], locmzl);
-    SparseGenMatrix& G = prob->getLocalG();
-    G.mult(1.0, z0mzl, -1.0, zi1);
-  }
-}
-
 void sLinsys::finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
 {
    /* compute BiT_buffer += X_j^T Bmodj for all j */
    for( auto& border_mod_block : border_mod )
       finalizeDenseBorderBlocked( border_mod_block.border, border_mod_block.multiplier, result );
 }
-
 
 void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
 {
@@ -589,12 +535,11 @@ void sLinsys::LniTransMult(sData *prob,
 			   double alpha, SimpleVector& x)
 {
   SparseGenMatrix& A = prob->getLocalA();
-  SparseGenMatrix& C = prob->getLocalC();
-  SparseGenMatrix& R = prob->getLocalCrossHessian();
-  int N, nx0;
+  int N{0}, nx0{0};
 
   //get nx(parent) from the number of cols of A (or C). Use N as dummy
-  A.getSize(N,nx0);
+  if( data->hasRAC() )
+     A.getSize(N,nx0);
   // a mild assert
   assert(nx0 <= x.length());
 
@@ -607,13 +552,20 @@ void sLinsys::LniTransMult(sData *prob,
   // shortcuts
   SimpleVector x1(&x[0], nx0);
   SimpleVector LniTx1(&LniTx[0], locnx);
-  SimpleVector LniTx2(&LniTx[locnx], locmy);
-  SimpleVector LniTx3(&LniTx[locnx+locmy], locmz);
-  
+
   LniTx1.setToZero();
-  R.mult(0.0, LniTx1, 1.0, x1);
-  A.mult(0.0, LniTx2, 1.0, x1);
-  C.mult(0.0, LniTx3, 1.0, x1);
+  if( data->hasRAC() )
+  {
+     SimpleVector LniTx2(&LniTx[locnx], locmy);
+     SimpleVector LniTx3(&LniTx[locnx+locmy], locmz);
+
+     SparseGenMatrix& C = prob->getLocalC();
+     SparseGenMatrix& R = prob->getLocalCrossHessian();
+     R.mult(0.0, LniTx1, 1.0, x1);
+     A.mult(0.0, LniTx2, 1.0, x1);
+     C.mult(0.0, LniTx3, 1.0, x1);
+
+  }
 
   if( locmyl > 0 )
   {

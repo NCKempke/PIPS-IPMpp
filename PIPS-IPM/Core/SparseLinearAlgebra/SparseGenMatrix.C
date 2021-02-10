@@ -323,10 +323,6 @@ void SparseGenMatrix::mult ( double beta,  OoqpVector& y_in,
   const SimpleVector& x = dynamic_cast<const SimpleVector &>(x_in);
   SimpleVector& y = dynamic_cast<SimpleVector &>(y_in);
 
-  if( x.length() != mStorage->n )
-     std::cout << "xxxx: " << x.length() << " != n " << mStorage->n << " m " <<  mStorage->m << "\n";
-  if( y.length() != mStorage->m )
-     std::cout << "yyyy: " << y.length() << " != m " << mStorage->m << "\n";
   assert( x.length() == mStorage->n && y.length() == mStorage->m );
 
   const double *xv = 0;

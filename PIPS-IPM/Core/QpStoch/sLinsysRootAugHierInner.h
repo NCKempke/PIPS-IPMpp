@@ -19,7 +19,15 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       void assembleLocalKKT( sData* prob ) override;
 
-//      void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys&, std::vector<BorderMod>& Br_mod_border ) override;
+      void Lsolve(sData *prob, OoqpVector& x) override;
+
+      void Ltsolve2(sData*, StochVector& x, SimpleVector& x0 ) override;
+
+      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0 ) override;
+
+      void addLniziLinkCons( sData *prob, OoqpVector& z0, OoqpVector& zi, bool use_local_RAC ) override;
+      void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
+      void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
       void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
 

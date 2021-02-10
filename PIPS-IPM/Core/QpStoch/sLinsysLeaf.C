@@ -63,7 +63,7 @@ void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 #endif
 
    //b_i -= Lni^T x0
-   this->LniTransMult(prob, bi, -1.0, xp);
+   LniTransMult(prob, bi, -1.0, xp);
    //  solver->Ltsolve(bi); -> empty
 #ifdef TIMING
    stochNode->resMon.recLtsolveTmChildren_stop();
@@ -73,6 +73,57 @@ void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
 void sLinsysLeaf::deleteChildren()
 { }
 
+/** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
+void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/ )
+{
+  SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
+  SimpleVector& zi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(zi_).vec);
+
+  solver->solve(zi);
+
+  int dummy{0};
+  int nx0{0};
+
+  SparseGenMatrix& A = prob->getLocalA();
+  if( data->hasRAC() )
+     A.getSize(dummy, nx0);
+
+  SimpleVector z01 (&z0[0], nx0);
+  SimpleVector zi1 (&zi[0], locnx);
+
+  if( data->hasRAC() )
+  {
+     SparseGenMatrix& C = prob->getLocalC();
+     SparseGenMatrix& R = prob->getLocalCrossHessian();
+
+     SimpleVector zi2 (&zi[locnx], locmy);
+     SimpleVector zi3 (&zi[locnx+locmy], locmz);
+
+     R.transMult(1.0, z01, -1.0, zi1);
+     A.transMult(1.0, z01, -1.0, zi2);
+     C.transMult(1.0, z01, -1.0, zi3);
+  }
+
+  if( locmyl > 0 )
+  {
+    assert(locmyl >= 0);
+    const int nxMyMz = z0.length() - locmyl - locmzl;
+
+    SimpleVector z0myl (&z0[nxMyMz], locmyl);
+    SparseGenMatrix& F = prob->getLocalF();
+    F.mult(1.0, z0myl, -1.0, zi1);
+  }
+
+  if( locmzl > 0 )
+  {
+    assert(locmyl >= 0);
+    const int nxMyMzMyl = z0.length() - locmzl;
+
+    SimpleVector z0mzl (&z0[nxMyMzMyl], locmzl);
+    SparseGenMatrix& G = prob->getLocalG();
+    G.mult(1.0, z0mzl, -1.0, zi1);
+  }
+}
 
 /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) and add it to res */
 void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
@@ -309,100 +360,168 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
 {
-   assert( border.A.children.size() == 0 );
+   assert( border.F.children.size() == 0 );
    assert( rhs.children.size() == 0 );
 
-   assert( border.R.mat );
-   assert( border.A.mat );
-   assert( border.C.mat );
-
-   SparseGenMatrix& Ri_border = dynamic_cast<SparseGenMatrix&>(*border.R.mat);
-   int mRi, nRi; Ri_border.getSize(mRi, nRi);
-
-   SparseGenMatrix& Ai_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
-   int mAi, nAi; Ai_border.getSize(mAi, nAi);
-
-   SparseGenMatrix& Ci_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
-   int mCi, nCi; Ci_border.getSize(mCi, nCi);
-
+   assert( rhs.vec );
+   if( border.has_RAC )
+   {
+      assert( border.R.mat );
+      assert( border.A.mat );
+      assert( border.C.mat );
+   }
    assert( border.F.mat );
    assert( border.G.mat );
-   SparseGenMatrix& Fi_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
-   int mFi, nFi; Fi_border.getSize(mFi, nFi);
-   SparseGenMatrix& Gi_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
-   int mGi, nGi; Gi_border.getSize(mGi, nGi);
 
-   assert( rhs.vec );
-   assert( rhs.vec->length() == mRi + mAi + mCi );
-   assert( b0.length() == nRi + mFi + mGi );
+   std::unique_ptr<BorderBiBlock> border_block{};
 
-   SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+   if( border.has_RAC )
+      border_block.reset(
+            new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*border.R.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.A.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.C.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.F.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+   else if( border.use_local_RAC )
+      border_block.reset(
+            new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
+                  data->getLocalC(),
+                  dynamic_cast<SparseGenMatrix&>(*border.F.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
+   else
+      border_block.reset(
+            new BorderBiBlock(
+                  dynamic_cast<SparseGenMatrix&>(*border.F.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.G.mat),
+                  false));
 
-   SimpleVector zi1 (&zi[0], mRi);
-   SimpleVector zi2 (&zi[mRi], mAi );
-   SimpleVector zi3 (&zi[mRi + mAi], mCi);
+   addBorderTimesRhsToB0( dynamic_cast<SimpleVector&>(*rhs.vec), b0, *border_block);
+}
 
-   SimpleVector b1( &b0[0], nRi );
-   SimpleVector b2( &b0[nRi], mFi );
-   SimpleVector b3( &b0[nRi + mFi], mGi );
+void sLinsysLeaf::addBorderTimesRhsToB0( SimpleVector& rhs, SimpleVector& b0, BorderBiBlock& border )
+{
+   int mFi, nFi; border.F.getSize(mFi, nFi);
+   int mGi, nGi; border.G.getSize(mGi, nGi);
 
-   Ri_border.transMult(1.0, b1, -1.0, zi1);
-   Ai_border.transMult(1.0, b1, -1.0, zi2);
-   Ci_border.transMult(1.0, b1, -1.0, zi3);
+   int mRi{0}; int nRi{0};
+   int mAi{0}; int nAi{0};
+   int mCi{0}; int nCi{0};
+   if( border.has_RAC )
+   {
+      border.R.getSize(mRi, nRi);
+      border.A.getSize(mAi, nAi);
+      border.C.getSize(mCi, nCi);
 
-   Fi_border.mult(1.0, b2, -1.0, zi1);
-   Gi_border.mult(1.0, b3, -1.0, zi1);
+      assert( nFi == mRi );
+      assert( rhs.length() == mRi + mAi + mCi );
+   }
+   else
+      assert( rhs.length() >= nFi );
+
+   assert( b0.length() >= nRi + mFi + mGi );
+   const int nb0 = b0.length();
+
+   SimpleVector& zi = dynamic_cast<SimpleVector&>(rhs);
+   SimpleVector zi1 (&zi[0], nFi);
+
+   if( border.has_RAC )
+   {
+      SimpleVector zi2 (&zi[mRi], mAi );
+      SimpleVector zi3 (&zi[mRi + mAi], mCi);
+
+      SimpleVector b1( &b0[0], nRi );
+
+      border.R.transMult(1.0, b1, -1.0, zi1);
+      border.A.transMult(1.0, b1, -1.0, zi2);
+      border.C.transMult(1.0, b1, -1.0, zi3);
+   }
+
+   SimpleVector b2( &b0[nb0 - mFi - mGi], mFi );
+   SimpleVector b3( &b0[nb0 - mGi], mGi );
+
+   border.F.mult(1.0, b2, -1.0, zi1);
+   border.G.mult(1.0, b3, -1.0, zi1);
 }
 
 void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
 {
-   assert( border.A.children.size() == 0 );
+   assert( border.F.children.size() == 0 );
    assert( rhs.children.size() == 0 );
 
-   assert( border.R.mat );
-   assert( border.A.mat );
-   assert( border.C.mat );
-
-   SparseGenMatrix& Ri_border = dynamic_cast<SparseGenMatrix&>(*border.R.mat);
-   int mRi, nRi; Ri_border.getSize(mRi, nRi);
-
-   SparseGenMatrix& Ai_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
-   int mAi, nAi; Ai_border.getSize(mAi, nAi);
-
-   SparseGenMatrix& Ci_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
-   int mCi, nCi; Ci_border.getSize(mCi, nCi);
-
+   assert( rhs.vec );
+   if( border.has_RAC )
+   {
+      assert( border.R.mat );
+      assert( border.A.mat );
+      assert( border.C.mat );
+   }
    assert( border.F.mat );
    assert( border.G.mat );
-   SparseGenMatrix& Fi_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
-   int mFi, nFi; Fi_border.getSize(mFi, nFi);
-   SparseGenMatrix& Gi_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
-   int mGi, nGi; Gi_border.getSize(mGi, nGi);
 
-   assert( rhs.vec );
-   assert( rhs.vec->length() == mRi + mAi + mCi );
-   assert( x0.length() == nRi + mFi + mGi );
+   std::unique_ptr<BorderBiBlock> border_block{};
 
-   SimpleVector& rhsi = dynamic_cast<SimpleVector&>(*rhs.vec);
+   if( border.has_RAC )
+      border_block.reset(
+            new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*border.R.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.A.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.C.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.F.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+   else if( border.use_local_RAC )
+      border_block.reset(
+            new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
+                  data->getLocalC(),
+                  dynamic_cast<SparseGenMatrix&>(*border.F.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
+   else
+      border_block.reset(
+            new BorderBiBlock(
+                  dynamic_cast<SparseGenMatrix&>(*border.F.mat),
+                  dynamic_cast<SparseGenMatrix&>(*border.G.mat),
+                  false));
 
-   double* rhsi1 = &rhsi[0];
-   double* rhsi2 = &rhsi[mRi];
-   double* rhsi3 = &rhsi[mRi + mAi];
+   addBorderX0ToRhs( dynamic_cast<SimpleVector&>(*rhs.vec), x0, *border_block);
+}
 
-   const double* x1 = &x0[0];
-   const double* x2 = &x0[nRi];
-   const double* x3 = &x0[nRi + mFi];
+void sLinsysLeaf::addBorderX0ToRhs( SimpleVector& rhs, const SimpleVector& x0, BorderBiBlock& border )
+{
+   int mFi, nFi; border.F.getSize(mFi, nFi);
+   int mGi, nGi; border.G.getSize(mGi, nGi);
+   int mRi{0}; int nRi{0};
+   int mAi{0}; int nAi{0};
+   int mCi{0}; int nCi{0};
 
-   //   Ri_border.mult(1.0, rhsi1, -1.0, x1);
-   Ri_border.mult( 1.0, rhsi1, 1, -1.0, x1, 1 );
-   //   Ai_border.mult(1.0, rhsi2, -1.0, x1);
-   Ai_border.mult( 1.0, rhsi2, 1, -1.0, x1, 1 );
-   //   Ci_border.mult(1.0, rhsi3, -1.0, x1);
-   Ci_border.mult( 1.0, rhsi3, 1, -1.0, x1, 1 );
+   if( border.has_RAC )
+   {
+      border.R.getSize(mRi, nRi);
+      border.A.getSize(mAi, nAi);
+      border.C.getSize(mCi, nCi);
 
+      assert( nFi == mRi );
+      assert( rhs.length() == mRi + mAi + mCi );
+   }
+   else
+      assert( rhs.length() >= nFi );
 
-   //   Fi_border.transMult(1.0, rhsi1, -1.0, x2);
-   Fi_border.transMult( 1.0, rhsi1, 1, -1.0, x2, 1 );
-   //   Gi_border.transMult(1.0, rhsi1, -1.0, x3);
-   Gi_border.transMult( 1.0, rhsi1, 1, -1.0, x3, 1 );
+   assert( x0.length() >= nRi + mFi + mGi );
+   const int nb0 = x0.length();
+
+   double* rhsi1 = &rhs[0];
+
+   if( border.has_RAC )
+   {
+      const double* x1 = &x0[0];
+
+      double* rhsi2 = &rhs[mRi];
+      double* rhsi3 = &rhs[mRi + mAi];
+      border.R.mult( 1.0, rhsi1, 1, -1.0, x1, 1 );
+      border.A.mult( 1.0, rhsi2, 1, -1.0, x1, 1 );
+      border.C.mult( 1.0, rhsi3, 1, -1.0, x1, 1 );
+   }
+
+   const double* x2 = &x0[nb0 - mFi - mGi];
+   const double* x3 = &x0[nb0 - mGi];
+
+   border.F.transMult( 1.0, rhsi1, 1, -1.0, x2, 1 );
+   border.G.transMult( 1.0, rhsi1, 1, -1.0, x3, 1 );
 }

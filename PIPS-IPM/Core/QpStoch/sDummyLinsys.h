@@ -35,7 +35,7 @@ class sDummyLinsys : public sLinsys
   
 
   void addLnizi(sData*, OoqpVector&, OoqpVector& ) override {};
-  void addLniziLinkCons(sData*, OoqpVector&, OoqpVector&, int, int ) override {};
+  void addLniziLinkCons(sData*, OoqpVector&, OoqpVector&, bool ) override {};
 
   /** y += alpha * Lni^T * x */
   //  void LniTransMult(sData *prob, SimpleVector& y, double alpha, SimpleVector& x) {};
@@ -46,7 +46,6 @@ class sDummyLinsys : public sLinsys
   void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>& ) override {};
   void LniTransMultHierarchyBorder( DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool ) override {};
 
-
   void allocU( DenseGenMatrix**, int ) override {};
   void allocV( DenseGenMatrix**, int ) override {};
   void computeU_V( sData*, DenseGenMatrix*, DenseGenMatrix* ) override {};
@@ -56,7 +55,7 @@ class sDummyLinsys : public sLinsys
 
   void addBorderTimesRhsToB0( StochVector&, SimpleVector&, BorderLinsys& ) override {};
   void addBorderX0ToRhs( StochVector&, const SimpleVector&, BorderLinsys& ) override {};
-
+  void computeInnerSystemRightHandSide( StochVector&, const SimpleVector& ) override {};
 };
 
 #endif
