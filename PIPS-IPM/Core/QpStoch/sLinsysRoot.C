@@ -374,7 +374,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  *
  * SC is still stored in transposed form as well as X0
  *
- * SC -= X0^T Br0 instead
+ * SC -= X0 Br0 instead
  *
  * Br0 = [  0  F0CT G0CT ]
  *       [  A   0    0   ]
@@ -392,6 +392,8 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
 
    int mX0, nX0; X0.getSize(mX0, nX0);
    int mSC, nSC; SC_.getSize(mSC, nSC);
+
+   assert( mSC == mX0 );
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -438,13 +440,9 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
    assert( nF0C == nG0C );
 
    if( has_RAC )
-      assert( mX0 == nF0V + mF0C + mG0C );
+      assert( nSC == nF0V + mF0C + mG0C );
    else
-   {
-      std::cout << mX0 << " " << nF0V << " " << mF0V << std::endl;
-      // TODO :: ::: :: :
-      assert( mX0 >= mF0V );
-   }
+      assert( nSC >= mF0V );
 
    assert( mX0 == mSC );
 #endif

@@ -278,7 +278,9 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
 {
    const bool has_RAC = B.has_RAC;
 
-   int mX0, nX0; result.getSize( mX0, nX0 );
+   int mX0, nX0; X.getSize( mX0, nX0 );
+   int mRes, nRes; result.getSize( mRes, nRes );
+   assert( mX0 == mRes );
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.G.mat) : nullptr;
@@ -322,13 +324,13 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    if( has_RAC )
       assert( nA0 == nF0V );
 
-   assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
+   assert( nF0C + mA0 + mC0 + mF0V + mG0V == nRes );
    assert( nF0C == nG0C );
 
    if( has_RAC )
-      assert( mX0 == mF0V + mF0C + mG0C );
+      assert( nX0 == nF0V + mF0C + mG0C );
    else
-      assert( mX0 >= mF0V );
+      assert( nX0 >= nF0V );
 #endif
 
 
