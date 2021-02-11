@@ -500,7 +500,6 @@ void StochSymMatrix::splitMatrix( const std::vector<unsigned int>& map_blocks_ch
       child->parent = this;
    }
    this->recomputeSize();
-   std::cout << this->n << "\n";
 }
 
 BorderedSymMatrix* StochSymMatrix::raiseBorder(int n_vars)

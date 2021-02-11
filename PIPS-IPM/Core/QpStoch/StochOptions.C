@@ -169,6 +169,9 @@ namespace pips_options
       bool_options["SC_COMPUTE_BLOCKWISE"] = true;
       bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = true;
       bool_options["PRECONDITION_DISTRIBUTED"] = false;
+
+      int_options["GONDZIO_MAX_CORRECTORS"] = 5;
+      int_options["GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX"] = 3;
    }
 
    StochOptions::StochOptions()
