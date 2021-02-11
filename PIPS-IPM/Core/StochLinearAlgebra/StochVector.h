@@ -170,7 +170,7 @@ protected:
    StochVectorBase() = default;
 
 private:
-   void appendOnlyChildToThis();
+   void appendChildrenToThis();
 };
 
 /** DUMMY VERSION
@@ -178,10 +178,11 @@ private:
  */
 template <typename T>
 class StochDummyVectorBase : public StochVectorBase<T> {
-protected:
-
 public:
-  StochDummyVectorBase() : StochVectorBase<T>(0, MPI_COMM_NULL) {};
+   // for hierarchical approach : this dummy vec represents n_dummies child dummies
+   const int n_dummies{0};
+
+   StochDummyVectorBase(int n_dummies_ = 0) : StochVectorBase<T>(0, MPI_COMM_NULL), n_dummies{n_dummies_} {};
   ~StochDummyVectorBase() override = default;
 
   void AddChild(StochVectorBase<T>* ) override {};

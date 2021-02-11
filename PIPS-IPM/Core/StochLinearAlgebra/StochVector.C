@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <limits>
 #include <numeric>
+#include <memory>
 
 #include "StochVector_fwd.h"
 
@@ -2246,6 +2247,7 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
       StochVectorBase<T>* vec = (child_comms[i] == MPI_COMM_NULL) ? nullptr :
             new StochVectorBase<T>( new SimpleVectorBase<T>(0), vecl_child, child_comms[i] );
 
+      int n_dummies{0};
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
       {
          StochVectorBase<T>* child = children.front();
@@ -2254,14 +2256,18 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
 
          if( child_comms[i] == MPI_COMM_NULL )
             assert( child->mpiComm == MPI_COMM_NULL );
+
          if( child_comms[i] != MPI_COMM_NULL )
             vec->AddChild(child);
          else
+         {
+            ++n_dummies;
             delete child;
+         }
       }
 
       /* create child holding the new StochVector as it's vec part */
-      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() : new StochVectorBase<T>( vec, nullptr, child_comms[i] );
+      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>(n_dummies) : new StochVectorBase<T>( vec, nullptr, child_comms[i] );
       if( vec )
          vec->parent = new_children[i];
 
@@ -2318,44 +2324,86 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
 }
 
 template<typename T>
-void StochVectorBase<T>::appendOnlyChildToThis()
+void StochVectorBase<T>::appendChildrenToThis()
 {
-   assert( children.size() == 1 );
-   StochVectorBase<T>* only_child = children[0];
-   children.clear();
+   assert( children.size() > 0 );
 
-   if( only_child->vec )
+   std::vector<StochVectorBase<T>*> new_children{};
+   while( !children.empty() )
    {
-      if( vec )
-         dynamic_cast<SimpleVectorBase<T>*>(vec)->appendToBack( dynamic_cast<const SimpleVectorBase<T>&>(*only_child->vec) );
+      std::unique_ptr<StochVectorBase<T>> child_to_append(children.back());
+
+      // if dummy and representing multiples -> duplicate - else just append again
+      if( child_to_append->isKindOf(kStochDummy) )
+      {
+         assert( false );
+         const int n_dummies = dynamic_cast<StochDummyVectorBase<T>&>(*child_to_append).n_dummies;
+
+         if( n_dummies > 0 )
+         {
+            for( int i = 0; i < n_dummies; ++i )
+               new_children.push_back( new StochDummyVectorBase<T> );
+         }
+         else
+            new_children.push_back( child_to_append.release() );
+      }
       else
       {
-         vec = dynamic_cast<SimpleVectorBase<T>*>(only_child->vec);
-         only_child->vec = nullptr;
+         if( child_to_append->vec )
+         {
+            assert( child_to_append->vec->isKindOf(kSimpleVector) );
+            if( vec )
+               dynamic_cast<SimpleVectorBase<T>*>(vec)->appendToBack( dynamic_cast<const SimpleVectorBase<T>&>(*child_to_append->vec) );
+            else
+            {
+               vec = dynamic_cast<SimpleVectorBase<T>*>(child_to_append->vec);
+               child_to_append->vec = nullptr;
+            }
+         }
+
+         if( child_to_append->vecl )
+         {
+            if( vecl )
+               dynamic_cast<SimpleVectorBase<T>*>(vecl)->appendToFront( dynamic_cast<const SimpleVectorBase<T>&>(*child_to_append->vecl) );
+            else
+            {
+               vecl = dynamic_cast<SimpleVectorBase<T>*>(child_to_append->vecl);
+               child_to_append->vecl = nullptr;
+            }
+         }
+
+         new_children.insert( new_children.begin(), child_to_append->children.begin(), child_to_append->children.end() );
+         child_to_append->children.clear();
+      }
+
+      children.pop_back();
+   }
+
+   children.insert(children.end(), new_children.begin(), new_children.end() );
+
+   bool more_to_do{false};
+   for( unsigned int i = 0; i < children.size(); ++i )
+   {
+      children[i]->parent = this;
+
+      if( !children[i]->isKindOf(kStochDummy) )
+      {
+         if( children[i]->vec->isKindOf(kStochVector) )
+         {
+            std::unique_ptr<StochVectorBase<T>> to_delete( children[i] );
+            assert( !to_delete->vecl );
+            assert( to_delete->children.empty() );
+
+            children[i] = dynamic_cast<StochVectorBase<T>*>(children[i]->vec);
+
+            more_to_do = true;
+            to_delete->vec = nullptr;
+         }
       }
    }
 
-   if( only_child->vecl )
-   {
-      if( vecl )
-         dynamic_cast<SimpleVectorBase<T>*>(vecl)->appendToFront( dynamic_cast<const SimpleVectorBase<T>&>(*only_child->vecl) );
-      else
-      {
-         vecl = dynamic_cast<SimpleVectorBase<T>*>(only_child->vecl);
-         only_child->vecl = nullptr;
-      }
-   }
-
-   children.insert( children.end(), only_child->children.begin(), only_child->children.end() );
-   only_child->children.clear();
-
-   for( auto child : children )
-   {
-      child->parent = this;
-      assert( child->children.size() == 0 );
-//         child->collapseHierarchicalStructure();
-   }
-   delete only_child;
+   if( more_to_do )
+      appendChildrenToThis();
 }
 
 template<typename T>
@@ -2363,18 +2411,19 @@ void StochVectorBase<T>::collapseHierarchicalStructure()
 {
    if( parent == nullptr )
    {
-      appendOnlyChildToThis();
+      appendChildrenToThis();
    }
-   else
+   else if( vec->isKindOf(kStochVector) )
    {
-//      assert( children.size() > 0 );
+//      assert( children.size() == 0 );
+//      assert( !vecl );
+//
 //
 //      std::vector<StochVector*> new_children();
 //
+//
 //      // TODO : I think we have to go through our children backwards and append the vecl part to our vecl
-//      for( size_t i = children.size() - 1; i >= 0; i-- )
-//      {
-//         assert( false && " TODO - should not be active yet.. " );
+//      assert( false && " TODO - should not be active yet.. " );
 //
 //         StochVector& child = *children[i];
 //
