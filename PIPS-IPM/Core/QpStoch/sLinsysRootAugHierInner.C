@@ -125,7 +125,7 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0( StochVector& rhs, SimpleVec
    }
 
    /* add schur complement part */
-   if( PIPS_MPIgetSize() == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
+   if( PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
    {
       if( border.has_RAC )
       {
@@ -242,8 +242,8 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
 {
    BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), true );
 
-   GenMatrix* B_inner_Fbuf = Bl.F.mat;
-   GenMatrix* B_inner_Gbuf = Bl.G.mat;
+   GenMatrix* B_inner_Fbuf = B_inner.F.mat;
+   GenMatrix* B_inner_Gbuf = B_inner.G.mat;
 
    B_inner.F.mat = &data->getLocalF();
    B_inner.G.mat = &data->getLocalG();
@@ -257,7 +257,6 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
 
    B_inner.F.mat = B_inner_Fbuf;
    B_inner.G.mat = B_inner_Gbuf;
-
 }
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )

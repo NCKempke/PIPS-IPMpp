@@ -15,6 +15,7 @@
 #include "DenseStorageHandle.h"
 #include "pipsport.h"
 
+/* root pardiso solver */
 class PardisoIndefSolver : public DoubleLinearSolver
 {
    public:
@@ -30,6 +31,7 @@ class PardisoIndefSolver : public DoubleLinearSolver
       constexpr static bool parallelForwardBackwardDefault = true;
       constexpr static bool factorizationTwoLevelDefault = true;
 
+      MPI_Comm mpi_comm{MPI_COMM_NULL};
 
       double* x{}; /* solution vector */
 
@@ -69,8 +71,8 @@ class PardisoIndefSolver : public DoubleLinearSolver
       virtual void checkMatrix() = 0;
       virtual void getIparm( int* iparm ) const = 0;
    public:
-      PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel);
-      PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel);
+      PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel, MPI_Comm mpi_comm );
+      PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel, MPI_Comm mpi_comm );
       void diagonalChanged(int idiag, int extent) override;
       void matrixChanged() override;
       void matrixRebuild( DoubleMatrix& matrixNew ) override;

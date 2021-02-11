@@ -391,7 +391,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
       ztemp = step->pi;
     }
 
-    this->solveXYZS( *step->x, *step->y, *step->z, *step->s,
+    solveXYZS( *step->x, *step->y, *step->z, *step->s,
 		     *ztemp, prob );
   }
 
@@ -500,8 +500,8 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     ///////////////////////////////////////////////////////////////
     // Default solve - Schur complement based decomposition
     ///////////////////////////////////////////////////////////////
-    this->solveCompressed( *rhs );
-    this->separateVars( stepx, stepy, stepz, *rhs );
+    solveCompressed( *rhs );
+    separateVars( stepx, stepy, stepz, *rhs );
 
   }
   else
@@ -809,8 +809,8 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
   assert( nomegaInv );
   assert( dd );
 
-  this->separateVars( solx, soly, solz, sol );
-  this->separateVars( *resx, *resy, *resz, res);
+  separateVars( solx, soly, solz, sol );
+  separateVars( *resx, *resy, *resz, res);
 
   /* resx = beta resx + alpha Q solx + alpha dd solx */
   data.Qmult(beta, *resx, alpha, solx);

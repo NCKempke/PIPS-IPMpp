@@ -19,8 +19,8 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *, double *, int *);
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel )
-   : PardisoIndefSolver( sgm, solve_in_parallel )
+PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpi_comm )
+   : PardisoIndefSolver( sgm, solve_in_parallel, mpi_comm )
 {
    assert( !sgm->isLower );
 
@@ -29,8 +29,8 @@ PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, boo
    initPardiso();
 }
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver( DenseSymMatrix * m, bool solve_in_parallel )
-   : PardisoIndefSolver( m , solve_in_parallel)
+PardisoProjectIndefSolver::PardisoProjectIndefSolver( DenseSymMatrix * m, bool solve_in_parallel , MPI_Comm mpi_comm )
+   : PardisoIndefSolver( m , solve_in_parallel, mpi_comm )
 {
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */
@@ -92,7 +92,7 @@ void PardisoProjectIndefSolver::initPardiso()
 
    setIparm(iparm);
 
-   if( PIPS_MPIgetRank() == 0 )
+   if( PIPS_MPIgetRank(mpi_comm) == 0 )
       printf("PARDISO root: using %d threads \n", iparm[2]);
 }
 

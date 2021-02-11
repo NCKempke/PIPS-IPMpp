@@ -201,13 +201,13 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
          else if( solver_root == SolverType::SOLVER_PARDISO )
          {
 #ifdef WITH_PARDISO
-            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt) );
+            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt, mpiComm) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_MKL_PARDISO )
          {
 #ifdef WITH_MKL_PARDISO
-            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt) );
+            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt, mpiComm) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_MA57 )

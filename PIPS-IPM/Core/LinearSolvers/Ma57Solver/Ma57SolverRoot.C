@@ -17,10 +17,6 @@ Ma57SolverRoot::Ma57SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, M
    assert(mpiComm != MPI_COMM_NULL);
 }
 
-Ma57SolverRoot::~Ma57SolverRoot()
-{
-}
-
 void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 {
    const int my_rank = PIPS_MPIgetRank(comm);

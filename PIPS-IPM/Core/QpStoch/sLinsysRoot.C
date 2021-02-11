@@ -678,7 +678,7 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 
    /* add schur complement part */
-   if( PIPS_MPIgetSize() == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
+   if( PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
    {
       assert( border.A.mat );
       assert( border.C.mat );

@@ -13,8 +13,8 @@
 class PardisoMKLIndefSolver : public PardisoIndefSolver
 {
 public:
-   PardisoMKLIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel );
-   PardisoMKLIndefSolver( DenseSymMatrix* m, bool solve_in_parallel );
+   PardisoMKLIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpi_comm );
+   PardisoMKLIndefSolver( DenseSymMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm );
 
  protected:
   void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,

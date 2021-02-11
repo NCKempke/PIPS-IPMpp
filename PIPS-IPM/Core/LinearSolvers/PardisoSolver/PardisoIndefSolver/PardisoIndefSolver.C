@@ -21,8 +21,8 @@
 #include "StochOptions.h"
 
 
-PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, bool solve_in_parallel ) :
-      solve_in_parallel(solve_in_parallel)
+PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, bool solve_in_parallel, MPI_Comm mpi_comm ) :
+      mpi_comm{mpi_comm}, solve_in_parallel{solve_in_parallel}
 {
   mStorage = dm->getStorageHandle();
   mStorageSparse = nullptr;
@@ -34,8 +34,8 @@ PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, bool solve_in_paral
   initPardiso();
 }
 
-PardisoIndefSolver::PardisoIndefSolver( SparseSymMatrix * sm, bool solve_in_parallel ) :
-      solve_in_parallel(solve_in_parallel)
+PardisoIndefSolver::PardisoIndefSolver( SparseSymMatrix * sm, bool solve_in_parallel, MPI_Comm mpi_comm ) :
+      mpi_comm{mpi_comm}, solve_in_parallel{solve_in_parallel}
 {
   mStorage = nullptr;
   mStorageSparse = sm->getStorageHandle();
@@ -131,7 +131,7 @@ void PardisoIndefSolver::initPardiso()
 
 void PardisoIndefSolver::matrixChanged()
 {
-   const int my_rank = PIPS_MPIgetRank();
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    if( solve_in_parallel || my_rank == 0 )
    {
@@ -152,7 +152,7 @@ void PardisoIndefSolver::matrixChanged()
 
 void PardisoIndefSolver::matrixRebuild( DoubleMatrix& matrixNew )
 {
-   const int my_rank = PIPS_MPIgetRank();
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
    if( solve_in_parallel || my_rank == 0 )
    {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
@@ -260,13 +260,13 @@ void PardisoIndefSolver::factorizeFromSparse()
       ia[r + 1] = nnznew + 1;
    }
 
-   if( (!solve_in_parallel || PIPS_MPIgetRank(MPI_COMM_WORLD) == 0) && omp_get_thread_num() == 0 )
+   if( (!solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0) && omp_get_thread_num() == 0 )
       std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")" << std::endl;
 
 #if 0
    {
       ofstream myfile;
-      int mype;  MPI_Comm_rank(MPI_COMM_WORLD, &mype);
+      int mype;  MPI_Comm_rank(mpi_comm, &mype);
 
       printf("\n\n ...WRITE OUT! \n\n");
 
@@ -303,7 +303,7 @@ void PardisoIndefSolver::factorizeFromDense()
   }
 #endif
 #ifdef TIMING
-  if( PIPS_MPIgetRank() == 0 )
+  if( PIPS_MPIgetRank(mpi_comm) == 0 )
      std::cout << "from dense, starting factorization" << std::endl;
 #endif
 
@@ -353,7 +353,7 @@ void PardisoIndefSolver::factorizeFromDense()
 void PardisoIndefSolver::factorize()
 {
    int error;
-   const int my_rank = PIPS_MPIgetRank();
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    assert(ia && ja && a);
    checkMatrix();
@@ -425,9 +425,8 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
 {
    assert( iparmUnchanged() );
 
-   // TODO : need mpiComms
-   const int size = PIPS_MPIgetSize();
-   const int my_rank = PIPS_MPIgetRank();
+   const int size = PIPS_MPIgetSize(mpi_comm);
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    phase = 33;
    SimpleVector& sv = dynamic_cast<SimpleVector&>(v);
@@ -505,7 +504,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
          b[i] = x[i];
 
       if( size > 0 && !solve_in_parallel )
-         MPI_Bcast(b, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+         MPI_Bcast(b, n, MPI_DOUBLE, 0, mpi_comm);
 
       delete[] rhsSparsity;
 
@@ -517,7 +516,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
    {
       assert( !solve_in_parallel );
       assert(size > 0);
-      MPI_Bcast(b, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      MPI_Bcast(b, n, MPI_DOUBLE, 0, mpi_comm);
    }
 
 
@@ -528,7 +527,7 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
 
 void PardisoIndefSolver::diagonalChanged( int /* idiag */, int /* extent */ )
 {
-   this->matrixChanged();
+   matrixChanged();
 }
 
 PardisoIndefSolver::~PardisoIndefSolver()

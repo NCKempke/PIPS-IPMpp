@@ -2025,7 +2025,7 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
       std::cout << "Building hierarchical data...\n";
 
    if( pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
-      this->splitDataAccordingToTree( tree->myl(), tree->mzl() );
+      splitDataAccordingToTree( tree->myl(), tree->mzl() );
 
    sData* hierarchical_top = shaveDenseBorder( tree );
 
