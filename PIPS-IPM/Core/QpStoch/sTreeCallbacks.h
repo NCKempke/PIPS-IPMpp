@@ -69,7 +69,6 @@ public:
          const std::vector<int>& twoLinksStartBlockC ) override;
    sTree* collapseHierarchicalTree() override;
 
-   void splitDataAccordingToTree( sData& data ) const;
    const std::vector<unsigned int>& getMapBlockSubTrees() const
       { assert( is_hierarchical_inner_root ); return map_node_sub_root; };
    std::vector<MPI_Comm> getChildComms() const;
@@ -94,10 +93,6 @@ protected:
          DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
          DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
    StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
-
-   void splitMatrixAccordingToTree( StochSymMatrix& mat ) const;
-   void splitMatrixAccordingToTree( StochGenMatrix& mat ) const;
-   void splitVectorAccordingToTree( StochVector& vec ) const;
 
    void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree );
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,

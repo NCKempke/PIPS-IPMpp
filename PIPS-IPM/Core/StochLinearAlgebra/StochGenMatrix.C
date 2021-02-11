@@ -1818,7 +1818,7 @@ int StochGenMatrix::appendRow( const StochGenMatrix& matrix_row, int child, int 
       assert(index_row1 == index_row);
     }
     else
-      index_row = dynamic_cast<SparseGenMatrix&>(Bmat).appendRow( dynamic_cast<const SparseGenMatrix&>(*matrix_row.Bmat), row );
+      index_row = dynamic_cast<SparseGenMatrix&>(*Bmat).appendRow( dynamic_cast<const SparseGenMatrix&>(*matrix_row.Bmat), row );
   }
 
   return index_row;

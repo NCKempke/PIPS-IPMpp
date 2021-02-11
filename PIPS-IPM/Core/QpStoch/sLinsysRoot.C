@@ -173,27 +173,25 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    if( A0_border )
       A0_border->getSize(mA0, nA0);
 
-   int mF0C{0}; int nF0C{0};
-   if( F0cons_border )
-      F0cons_border->getSize( mF0C, nF0C );
-
-   int mF0V{0}; int nF0V{0};
-   F0vec_border->getSize(mF0V, nF0V);
-
-#ifndef NDEBUG
-   int mG0C{0}; int nG0C{0};
-   if( G0cons_border )
-      G0cons_border->getSize( mG0C, nG0C );
-
-
    int mC0{0}; int nC0{0};
    if( C0_border )
       C0_border->getSize(mC0, nC0);
 
+   int mF0C{0}; int nF0C{0};
+   if( F0cons_border )
+      F0cons_border->getSize( mF0C, nF0C );
+
+   int mG0C{0}; int nG0C{0};
+   if( G0cons_border )
+      G0cons_border->getSize( mG0C, nG0C );
+
+   int mF0V{0}; int nF0V{0};
+   F0vec_border->getSize(mF0V, nF0V);
 
    int mG0V{0}; int nG0V{0};
    G0vec_border->getSize(mG0V, nG0V);
 
+#ifndef NDEBUG
    assert( nA0 == nC0 );
    assert( nF0V == nG0V );
 

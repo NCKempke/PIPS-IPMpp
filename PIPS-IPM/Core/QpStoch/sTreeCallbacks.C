@@ -1189,14 +1189,17 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
          inner_leaf.N = inner_leaf.MY = inner_leaf.MZ = inner_leaf.MYL = inner_leaf.MZL = 0;
          inner_leaf.nx_active = inner_leaf.my_active = inner_leaf.mz_active = inner_leaf.myl_active = inner_leaf.mzl_active = 0;
 
+#ifndef NDEBUG
          assert( sub_root.N == 0 && sub_root.MY == 0 && sub_root.MZ == 0 && sub_root.MYL == 0 && sub_root.MZL == 0 );
          assert( sub_root.nx_active == 0 && sub_root.my_active == 0 && sub_root.mz_active == 0 && sub_root.myl_active == 0 && sub_root.mzl_active == 0 );
+
          for( const auto& child_ : sub_root.children )
          {
             const auto& child = dynamic_cast<const sTreeCallbacks*>(child_);
             assert( child->N == 0 && child->MY == 0 && child->MZ == 0 && child->MYL == 0 && child->MZL == 0 );
             assert( child->nx_active == 0 && child->my_active == 0 && child->mz_active == 0 && child->myl_active == 0 && child->mzl_active == 0 );
          }
+#endif
       }
 
    }
@@ -1316,55 +1319,4 @@ std::vector<MPI_Comm> sTreeCallbacks::getChildComms() const
       comms[i] = children[i]->commWrkrs;
 
    return comms;
-}
-
-void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& /*mat*/ ) const
-{
-
-   assert( false && "TODO : implement " );
-
-}
-
-void sTreeCallbacks::splitMatrixAccordingToTree( StochGenMatrix& /*mat*/ ) const
-{
-   assert( false && "TODO : implement " );
-
-}
-
-void sTreeCallbacks::splitVectorAccordingToTree( StochVector& vec ) const
-{
-   assert( map_node_sub_root.size() == vec.children.size() );
-
-   std::vector<StochVector*> sub_roots(this->children.size());
-
-   for( size_t i = 0; i < this->children.size(); ++i )
-   {
-//      sub_roots = new StochVector( , , this->children[i]->commWrkrs);
-   }
-
-   assert( false && "TODO : implement " );
-
-}
-
-void sTreeCallbacks::splitDataAccordingToTree( sData& data ) const
-{
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.g) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.bux) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.ixupp) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.blx) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.ixlow) );
-
-   //   /* we ordered global linking vars first and global linking rows to the end */
-
-   splitMatrixAccordingToTree(dynamic_cast<StochSymMatrix&>(*data.Q));
-   assert( false && "TODO : implement " );
-//
-//   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
-//
-//   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false);
-//   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false);
-//   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false);
-//   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false);
-//
-
 }

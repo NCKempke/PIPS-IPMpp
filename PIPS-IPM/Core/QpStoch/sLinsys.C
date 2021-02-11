@@ -297,6 +297,10 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    if( A0_border )
       A0_border->getSize(mA0, nA0);
 
+   int mC0{0}; int nC0{0};
+   if( C0_border )
+      C0_border->getSize(mC0, nC0);
+
    int mF0C{0}; int nF0C{0};
    if( F0cons_border )
       F0cons_border->getSize( mF0C, nF0C );
@@ -308,12 +312,6 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    int mG0C{0}; int nG0C{0};
    if( G0cons_border )
       G0cons_border->getSize( mG0C, nG0C );
-
-
-   int mC0{0}; int nC0{0};
-   if( C0_border )
-      C0_border->getSize(mC0, nC0);
-
 
    int mG0V{0}; int nG0V{0};
    G0vec_border->getSize(mG0V, nG0V);
@@ -483,8 +481,9 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
    int mF, nF; BiT.F.getSize(mF, nF);
    int mG, nG; BiT.G.getSize(mG, nG);
 
-#ifndef NDEBUG
    int mres, nres; res.getSize(mres, nres);
+
+#ifndef NDEBUG
    assert( nF == nG );
    if( BiT.has_RAC )
    {

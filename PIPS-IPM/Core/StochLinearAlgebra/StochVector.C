@@ -2205,7 +2205,11 @@ bool StochVectorBase<T>::isRootNodeInSync() const
 
 template<typename T>
 void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
-      const std::vector<int>& twolinks_start_in_block, int n_links_in_root )
+      const std::vector<int>& twolinks_start_in_block, int
+#ifndef NDEBUG
+      n_links_in_root
+#endif
+      )
 {
    const unsigned int n_curr_children = children.size();
    assert( n_curr_children == map_blocks_children.size() );
@@ -2217,10 +2221,7 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
       assert( twolinks_start_in_block.back() == 0 );
    }
    else
-   {
       assert( twolinks_start_in_block.empty() );
-      n_links_in_root = -1;
-   }
 
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
    std::vector<StochVectorBase<T>*> new_children(n_new_children);

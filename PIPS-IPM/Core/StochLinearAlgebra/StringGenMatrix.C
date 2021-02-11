@@ -592,9 +592,11 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
 
 void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms )
 {
+#ifndef NDEBUG
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
    assert( child_comms.size() == n_new_children );
    assert( children.size() == map_child_subchild.size() );
+#endif
 
    unsigned int n_children{0};
    for( unsigned int i = 0; i < map_child_subchild.size(); ++i )
