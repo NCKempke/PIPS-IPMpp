@@ -2336,16 +2336,15 @@ void StochVectorBase<T>::appendChildrenToThis()
       // if dummy and representing multiples -> duplicate - else just append again
       if( child_to_append->isKindOf(kStochDummy) )
       {
-         assert( false );
          const int n_dummies = dynamic_cast<StochDummyVectorBase<T>&>(*child_to_append).n_dummies;
 
          if( n_dummies > 0 )
          {
             for( int i = 0; i < n_dummies; ++i )
-               new_children.push_back( new StochDummyVectorBase<T> );
+               new_children.insert(new_children.begin(), new StochDummyVectorBase<T> );
          }
          else
-            new_children.push_back( child_to_append.release() );
+            new_children.insert(new_children.begin(), child_to_append.release() );
       }
       else
       {
@@ -2409,40 +2408,7 @@ void StochVectorBase<T>::appendChildrenToThis()
 template<typename T>
 void StochVectorBase<T>::collapseHierarchicalStructure()
 {
-   if( parent == nullptr )
-   {
-      appendChildrenToThis();
-   }
-   else if( vec->isKindOf(kStochVector) )
-   {
-//      assert( children.size() == 0 );
-//      assert( !vecl );
-//
-//
-//      std::vector<StochVector*> new_children();
-//
-//
-//      // TODO : I think we have to go through our children backwards and append the vecl part to our vecl
-//      assert( false && " TODO - should not be active yet.. " );
-//
-//         StochVector& child = *children[i];
-//
-//         /* if our children have children then we first need to tell our children to collapse */
-//         if( child.children.size() != 0 )
-//         {
-//            assert( !child.vec );
-//            child.collapseHierarchicalStructure();
-//         }
-//
-//         if( vecl )
-//         {
-//            assert( child.vecl );
-//            vecl->appendFront(child);
-//         }
-//
-//         child = new_children;
-//      }
-   }
+   appendChildrenToThis();
 }
 
 template<typename T>
