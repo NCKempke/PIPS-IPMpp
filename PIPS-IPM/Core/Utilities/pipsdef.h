@@ -208,6 +208,7 @@ inline MPI_Comm PIPS_MPIcreateGroupFromRanks( const int* chosen_ranks, unsigned 
    MPI_Comm sub_comm;
    MPI_Comm_create( mpi_comm_all, sub_group, &sub_comm);
 
+   MPI_Group_free( &sub_group );
    return sub_comm;
 }
 

@@ -45,6 +45,7 @@ sTree::~sTree()
 {
   for(size_t it = 0; it < children.size(); it++)
     delete children[it];
+  delete sub_root;
 }
 
 int sTree::myl() const
