@@ -604,7 +604,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 
 
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     factory->collapseHierarchicalTree();
+     factory->switchToOriginalTree();
 
   dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
   factory->data = origData.get();

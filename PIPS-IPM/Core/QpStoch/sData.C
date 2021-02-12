@@ -2086,7 +2086,6 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
    if( is_hierarchy_root )
       unperm_vars->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
-   std::cout << unperm_vars->children.size() << " " << unpermData.children.size() << std::endl;
    assert( unperm_vars->children.size() == unpermData.children.size() );
 
    const PERMUTATION perm_inv_link_vars = getLinkVarsPermInv();
@@ -2110,7 +2109,7 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    sResiduals* unperm_resids = new sResiduals(resids);
 
    if( is_hierarchy_root )
-      unperm_resids->collapseHierarchicalStructure( unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+      unperm_resids->collapseHierarchicalStructure( stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
    assert( unperm_resids->children.size() == unpermData.children.size() );
 

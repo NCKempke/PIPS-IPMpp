@@ -6,6 +6,8 @@
 
 #include "sTree.h"
 #include "StochInputTree.h"
+
+#include <memory>
 #include <functional>
 /** This class creates objects when  the problem is specified by C callbacks.
  *  Obsolete and present only to ensure compatibility with older versions of the code.
@@ -16,6 +18,10 @@ class sData;
 
 class sTreeCallbacks : public sTree
 {
+protected:
+   sTreeCallbacks( const sTreeCallbacks& other );
+public:
+
    using InputNode = StochInputTree::StochInputNode;
    using DATA_MAT = FMAT InputNode::*;
    using DATA_VEC = FVEC InputNode::*;
@@ -23,7 +29,8 @@ class sTreeCallbacks : public sTree
    using DATA_INT = int InputNode::*;
    using TREE_SIZE = long long sTree::*;
 
-public:
+   sTree* clone() const override;
+
    sTreeCallbacks(StochInputTree* root);
    sTreeCallbacks(StochInputTree::StochInputNode* data_);
    ~sTreeCallbacks() = default;
@@ -67,7 +74,6 @@ public:
 
    sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
          const std::vector<int>& twoLinksStartBlockC ) override;
-   sTree* collapseHierarchicalTree() override;
 
    const std::vector<unsigned int>& getMapBlockSubTrees() const
       { assert( is_hierarchical_inner_root ); return map_node_sub_root; };
@@ -106,7 +112,6 @@ protected:
    void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
-   sTree* collapseDenseBorder();
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE{-1};
@@ -137,7 +142,6 @@ protected:
 
    sTreeCallbacks();
    InputNode* data{}; //input data
-
 private:
    static void mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees );
 };

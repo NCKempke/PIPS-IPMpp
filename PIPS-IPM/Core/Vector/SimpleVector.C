@@ -1042,6 +1042,24 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
 }
 
 template<typename T>
+void SimpleVectorBase<T>::appendToFront( unsigned int n_to_add, const T& value )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + n_to_add;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_fill( new_v, new_v + n_to_add, value );
+   std::uninitialized_copy( this->v, this->v + this->n, new_v + n_to_add );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
+}
+
+template<typename T>
 void SimpleVectorBase<T>::appendToFront( const SimpleVectorBase<T>& other )
 {
    assert( !preserveVec );
@@ -1052,6 +1070,24 @@ void SimpleVectorBase<T>::appendToFront( const SimpleVectorBase<T>& other )
 
    std::uninitialized_copy( other.v, other.v + other.n, new_v );
    std::uninitialized_copy( this->v, this->v + this->n, new_v + other.n );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::appendToBack( unsigned int n_to_add, const T& value )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + n_to_add;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_copy( this->v, this->v + this->n, new_v );
+   std::uninitialized_fill( new_v + this->n, new_v + new_len, value );
 
    delete[] this->v;
 

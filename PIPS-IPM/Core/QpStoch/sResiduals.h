@@ -3,6 +3,7 @@
 
 #include "QpGenResiduals.h"
 #include "StochVector_fwd.h"
+#include "StochVector.h"
 #include <vector>
 
 class sTree;
@@ -43,10 +44,11 @@ public:
   void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm, bool resids_only = false );
 
   bool isRootNodeInSync() const;
-  void collapseHierarchicalStructure( OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
+
+  void collapseHierarchicalStructure( const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 
   std::vector<sResiduals*> children;
-private:
+protected:
   void createChildren();
   void AddChild(sResiduals* child);
 };

@@ -3,6 +3,7 @@
 
 #include "QpGenVars.h"
 #include "OoqpVectorHandle.h"
+#include "StochVector.h"
 #include <vector>
 
 class QpGen;

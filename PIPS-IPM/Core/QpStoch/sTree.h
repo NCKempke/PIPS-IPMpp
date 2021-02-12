@@ -11,7 +11,6 @@
 #include "StochSymMatrix.h"
 
 #include "list"
-
 #include "mpi.h"
 
 class sTreeCallbacks;
@@ -23,7 +22,16 @@ class sTree
   StochNodeResourcesMonitor resMon;
   static StochIterateResourcesMonitor iterMon;
 
+  long long getN() const { return N; };
+  long long getMY() const { return MY; };
+  long long getMYL() const { return MYL; };
+  long long getMZ() const { return MZ; };
+  long long getMZL() const { return MZL; };
+
+  virtual sTree* clone() const = 0;
  protected:
+
+  sTree( const sTree& other );
 
   MPI_Comm commWrkrs{ MPI_COMM_NULL };
   std::vector<int> myProcs, myOldProcs;
@@ -49,9 +57,9 @@ class sTree
   /* global number of all processes available */
   static int numProcs;
 
-  bool is_hierarchical_root = false;
-  bool is_hierarchical_inner_root = false;
-  bool is_hierarchical_inner_leaf = false;
+  bool is_hierarchical_root{false};
+  bool is_hierarchical_inner_root{false};
+  bool is_hierarchical_inner_leaf{false};
 
 public:
   // global sizes are still local to each MPI process - they just sum all local data
@@ -99,7 +107,7 @@ public:
 
   const sTree* getSubRoot() const { return sub_root; };
   const std::vector<sTree*>& getChildren() const { return children; };
-  int nChildren() const { return children.size(); }
+  unsigned int nChildren() const { return children.size(); }
   MPI_Comm getCommWorkers() const { return commWrkrs; };
 
   int innerSize(int which) const;
@@ -131,8 +139,6 @@ public:
   // TODO : make sure that none of the not suitable methods get called...
   virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
         const std::vector<int>& twoLinksStartBlockC ) = 0;
-  virtual sTree * collapseHierarchicalTree() = 0;
-
 protected:
   void assignProcesses( MPI_Comm, std::vector<int>&);
 

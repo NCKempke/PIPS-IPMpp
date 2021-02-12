@@ -5,14 +5,18 @@
 #include "SimpleVector.h"
 #include "StochVector_fwd.h"
 #include "StochVectorHandle.h"
+
 #include "mpi.h"
 
 #include <vector>
 
-class StochTree;
+class sTree;
+
+enum class VectorType{ PRIMAL, DUAL_Y, DUAL_Z };
 
 template <typename T>
 class StochVectorBase : public OoqpVectorBase<T> {
+
 
 public:
   StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm);
@@ -160,7 +164,9 @@ public:
    virtual void split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
-   virtual void collapseHierarchicalStructure();
+   virtual void collapseFromHierarchical( const sTree& tree_hier, VectorType type );
+   virtual void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
+         std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type );
 
    virtual OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const;
 
@@ -283,7 +289,10 @@ public:
    void split( const std::vector<unsigned int>&, const std::vector<MPI_Comm>&,
          const std::vector<int>&, int ) override {};
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
-   void collapseHierarchicalStructure() override {};
+
+   void collapseFromHierarchical( const sTree&, VectorType) {};
+   void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl, std::vector<StochVectorBase<T>*>& new_children,
+         const sTree& tree_hier, VectorType type ) override;
 
    OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const override { assert( false && "Should not end up here"); return nullptr; };
 

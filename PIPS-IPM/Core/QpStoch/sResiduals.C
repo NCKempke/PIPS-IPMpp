@@ -170,23 +170,23 @@ void sResiduals::createChildren()
   }
 }
 
-void sResiduals::collapseHierarchicalStructure(OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+void sResiduals::collapseHierarchicalStructure(const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
-   dynamic_cast<StochVector&>(*rQ).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rv).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rw).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rgamma).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rphi).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rQ).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
 
-   dynamic_cast<StochVector&>(*rA).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rA).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Y);
 
-   dynamic_cast<StochVector&>(*rC).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rt).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*ru).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rz).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rlambda).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rpi).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rC).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rz).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
 
    ixlow = ixlow_;
    ixupp = ixupp_;

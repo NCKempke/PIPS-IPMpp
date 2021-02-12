@@ -17,6 +17,35 @@
 
 #include "pipsport.h"
 
+sTreeCallbacks::sTreeCallbacks( const sTreeCallbacks& other ) : sTree( other ),
+   N_INACTIVE{ other.N_INACTIVE },
+   MY_INACTIVE{ other.MY_INACTIVE },
+   MZ_INACTIVE{ other.MZ_INACTIVE },
+   MYL_INACTIVE{ other.MYL_INACTIVE },
+   MZL_INACTIVE{ other.MZL_INACTIVE },
+   nx_active{ other.nx_active },
+   my_active{ other.my_active },
+   mz_active{ other.mz_active },
+   myl_active{ other.myl_active },
+   mzl_active{ other.mzl_active },
+   nx_inactive{ other.nx_inactive },
+   my_inactive{ other.my_inactive },
+   mz_inactive{ other.mz_inactive },
+   myl_inactive{ other.myl_inactive },
+   mzl_inactive{ other.mzl_inactive },
+   isDataPresolved{ other.isDataPresolved },
+   hasPresolvedData{ other.hasPresolvedData },
+   print_tree_sizes_on_reading{ other.print_tree_sizes_on_reading },
+   map_node_sub_root(other.map_node_sub_root.begin(), other.map_node_sub_root.end()),
+   data{ other.data }
+{
+}
+
+sTree* sTreeCallbacks::clone() const
+{
+   return new sTreeCallbacks(*this);
+}
+
 sTreeCallbacks::sTreeCallbacks()
    : print_tree_sizes_on_reading{ pips_options::getBoolParameter( "PRINT_TREESIZES_ON_READ" ) }
 {
@@ -1205,7 +1234,6 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
    }
 }
 
-
 void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
    assert( commWrkrs != MPI_COMM_NULL );
@@ -1241,7 +1269,6 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    assertTreeStructureCorrect();
 }
 
-
 sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
       const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
 {
@@ -1266,49 +1293,6 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 
    return top_layer;
-}
-
-sTree* sTreeCallbacks::collapseDenseBorder()
-{
-   /* this must happen at MPI_COMM_WORLD level */
-   assert( is_hierarchical_root );
-   assert( rankMe == PIPS_MPIgetRank() );
-   assert( numProcs == PIPS_MPIgetSize() );
-   assert( children.size() == 1 );
-
-   sTreeCallbacks* new_top = dynamic_cast<sTreeCallbacks*>(children[0]);
-   children.clear();
-
-   commWrkrs = MPI_COMM_NULL;
-   myProcs.clear();
-
-   new_top->N = N;
-   N = -1;
-   MY = -1;
-   new_top->MYL = MYL;
-   MYL = -1;
-   MZ = -1;
-   new_top->MZL = MZL;
-   MZL = -1;
-
-   numProcs = -1;
-
-   new_top->nx_active += nx_active;
-   nx_active = -1;
-   assert( my_active == - 1 );
-   assert( mz_active == - 1 );
-
-   new_top->myl_active += myl_active;
-   myl_active = -1;
-   new_top->mzl_active += mzl_active;
-   mzl_active = -1;
-
-   return new_top;
-}
-
-sTree* sTreeCallbacks::collapseHierarchicalTree()
-{
-   return collapseDenseBorder();
 }
 
 std::vector<MPI_Comm> sTreeCallbacks::getChildComms() const

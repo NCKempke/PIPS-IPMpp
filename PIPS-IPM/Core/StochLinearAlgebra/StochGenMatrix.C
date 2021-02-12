@@ -2090,10 +2090,7 @@ StringGenMatrix* StochGenMatrix::shaveLeftBorderChild( int n_vars )
       return new StringGenMatrix( true, dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder(n_vars), nullptr, mpiComm );
    }
    else
-   {
-      assert( !amatEmpty() );
       return new StringGenMatrix( true, dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars), nullptr, mpiComm );
-   }
 }
 
 StringGenMatrix* StochGenMatrix::shaveLinkingConstraints( unsigned int n_conss )

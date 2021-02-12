@@ -6,6 +6,7 @@
 #include "QpGenLinsys.h"
 #include "StochVector.h"
 #include "sTree.h"
+#include "sTreeCallbacks.h"
 
 #include "LinearAlgebraPackage.h"
 
@@ -193,22 +194,23 @@ void sVars::createChildren()
 void sVars::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
-   dynamic_cast<StochVector&>(*x).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*v).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*w).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*phi).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*gamma).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*x).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
+
+   dynamic_cast<StochVector&>(*v).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*w).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*phi).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*gamma).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
 
    y->writeToStream(std::cout);
-   dynamic_cast<StochVector&>(*y).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*y).collapseFromHierarchical(*stochNode, VectorType::DUAL_Y);
    y->writeToStream(std::cout);
 
-   dynamic_cast<StochVector&>(*s).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*z).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*t).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*u).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*pi).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*lambda).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*s).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*z).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*t).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*u).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*pi).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*lambda).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
 
    stochNode = stochNode_;
 

@@ -20,7 +20,7 @@ public:
 				     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
   Data* switchToHierarchicalData(Data* prob_in) override;
-  void collapseHierarchicalTree() override;
+  void switchToOriginalTree() override;
 
 };
 #endif

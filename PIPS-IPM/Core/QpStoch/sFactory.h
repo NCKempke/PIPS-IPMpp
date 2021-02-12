@@ -8,13 +8,13 @@
 #include "QpGen.h"
 #include "mpi.h"
 #include <cassert>
+#include <memory>
 
 class QpGenData;
 class sData;
 
 class QpGenVars;
 class StochInputTree;
-//class stochasticInput;
 class sTree;
 class StochSymMatrix;
 class sResiduals;
@@ -55,7 +55,7 @@ class sFactory : public QpGen
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
   virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 
-  virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
+  virtual void switchToOriginalTree() { assert( 0 && "not implemented here" ); }
 
 
   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override
@@ -72,6 +72,7 @@ class sFactory : public QpGen
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 
 
+
   sTree * tree{};
   sData * data{};
 
@@ -85,6 +86,9 @@ class sFactory : public QpGen
 
   StochIterateResourcesMonitor iterTmMonitor;
   double m_tmTotal{0.0};
+
+ protected:
+  std::unique_ptr<sTree> hier_tree_swap{};
 };
 
 #endif

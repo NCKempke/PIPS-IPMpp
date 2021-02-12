@@ -20,6 +20,27 @@ int sTree::rankZeroW = 0;
 int sTree::rankPrcnd =-1;
 int sTree::numProcs  =-1;
 
+sTree::sTree(const sTree& other) : commWrkrs{ other.commWrkrs },
+      myProcs( other.myProcs.begin(), other.myProcs.end() ),
+      myOldProcs( other.myOldProcs.begin(), other.myOldProcs.end() ),
+      commP2ZeroW{ other.commP2ZeroW },
+      N{ other.N },
+      MY{ other.MY },
+      MZ{ other.MZ },
+      MYL{ other.MYL },
+      MZL{ other.MZL },
+      np{ other.np },
+      IPMIterExecTIME{ other.IPMIterExecTIME },
+      is_hierarchical_root{ other.is_hierarchical_root },
+      is_hierarchical_inner_root{ other.is_hierarchical_inner_root },
+      is_hierarchical_inner_leaf{ other.is_hierarchical_inner_leaf }
+{
+   if( other.sub_root )
+      sub_root = other.sub_root->clone();
+   for( auto& child : other.children )
+      children.push_back( child->clone() );
+}
+
 sTree::~sTree() 
 {
   for(size_t it = 0; it < children.size(); it++)
@@ -41,8 +62,6 @@ bool sTree::distributedPreconditionerActive() const
    return ( rankZeroW != 0 ) && ( rankPrcnd != -1 ) &&
          ( commP2ZeroW != MPI_COMM_NULL ) && ( rankMe != -1 );
 }
-
-
 
 void sTree::assignProcesses(MPI_Comm comm)
 {

@@ -74,6 +74,8 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
    const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
    const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
 
+   hier_tree_swap.reset( tree->clone() );
+
    tree = tree->switchToHierarchicalTree( nx_to_shave, myl_to_shave, mzl_to_shave, twoLinksStartBlockA, twoLinksStartBlockC );
 
    assert( tree->getChildren().size() == 1 );
@@ -116,10 +118,12 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
    return data;
 }
 
-void sFactoryAug::collapseHierarchicalTree()
+void sFactoryAug::switchToOriginalTree()
 {
-   sTree* new_top = tree->collapseHierarchicalTree();
-   assert( tree->getChildren().size() == 0 );
-   delete( tree );
-   tree = new_top;
+   assert( hier_tree_swap );
+
+   sTree* tmp = tree;
+   tree = hier_tree_swap.get();
+   hier_tree_swap.release();
+   hier_tree_swap.reset(tmp);
 }
