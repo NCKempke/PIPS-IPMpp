@@ -791,14 +791,12 @@ inline void PIPS_MPIallgather( const T* vec, int n_vec, int& n_res, T*& res, MPI
 
       n_res = recieve_offsets.back() + recieve_sizes.back();
 
-      delete res;
       res = new T[n_res];
 
       MPI_Allgatherv(vec, n_vec, get_mpi_datatype(vec), res, recieve_sizes.data(), recieve_offsets.data(), get_mpi_datatype(res), mpiComm );
    }
    else
    {
-      delete res;
       n_res = n_vec;
       res = new T[n_res];
       std::uninitialized_copy( vec, vec + n_vec, res );
@@ -812,7 +810,10 @@ inline std::string PIPS_MPIallgatherString( const std::string& str, MPI_Comm mpi
    int n_res{0};
 
    PIPS_MPIallgather( send, str.size(), n_res, res, mpiComm );
-   return std::string( res, n_res );
+
+   std::string str_gathered( res, n_res );
+   delete[] res;
+   return str_gathered;
 }
 
 template <typename T>

@@ -119,10 +119,10 @@ protected:
   int la;
 
   /** pivot sequence and temporary storage information */
-  int *ikeep, *iw, liw, *iw1, *iw2, nsteps, maxfrt;
+  int *ikeep{}, *iw{}, liw{}, *iw1{}, *iw2{}, nsteps, maxfrt;
 
   /** temporary storage for the factorization */
-  double *w;
+  double *w{};
 
   /** amounts by which to increase allocated factorization space when
    * inadequate space is detected. ipessimism is for array "iw",
@@ -172,7 +172,7 @@ public:
   virtual void matrixChanged();
 
 protected:
-  const SparseSymMatrix* mat;
+  const SparseSymMatrix* mat{};
   SparseStorageHandle mat_storage;
 
   const std::string name;

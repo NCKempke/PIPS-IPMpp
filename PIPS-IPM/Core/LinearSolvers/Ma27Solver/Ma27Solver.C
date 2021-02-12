@@ -126,6 +126,10 @@ void Ma27Solver::matrixChanged()
 
    assert( 0 < nsteps && nsteps < n );
    assert( 0 < maxfrt && nsteps < n );
+
+   delete[] iw2;
+   delete[] w;
+
    iw2 = new int[nsteps];
    w = new double[maxfrt];
 
