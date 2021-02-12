@@ -593,6 +593,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
      resids->calcresids(data.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
+     MPI_Barrier(MPI_COMM_WORLD);
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
      unscaleUnpermNotHierResids->calcresids(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);

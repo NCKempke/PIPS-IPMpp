@@ -201,9 +201,7 @@ void sVars::collapseHierarchicalStructure(const sTree* stochNode_, OoqpVectorHan
    dynamic_cast<StochVector&>(*phi).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
    dynamic_cast<StochVector&>(*gamma).collapseFromHierarchical(*stochNode, VectorType::PRIMAL);
 
-   y->writeToStream(std::cout);
    dynamic_cast<StochVector&>(*y).collapseFromHierarchical(*stochNode, VectorType::DUAL_Y);
-   y->writeToStream(std::cout);
 
    dynamic_cast<StochVector&>(*s).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
    dynamic_cast<StochVector&>(*z).collapseFromHierarchical(*stochNode, VectorType::DUAL_Z);
