@@ -265,9 +265,9 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
 			  *vars->v, *vars->gamma,
 			  *vars->w, *vars->phi );
 
-  primal_reg->setToConstant(1e-8);
-  dual_y_reg->setToConstant(1e-8);
-  dual_z_reg->setToConstant(1e-8);
+  primal_reg->setToConstant(1e-5);
+  dual_y_reg->setToConstant(1e-5);
+  dual_z_reg->setToConstant(-1e-5);
   reg->setToConstant(1e-8);
 
   dd->axpy(1.0, *primal_reg);
