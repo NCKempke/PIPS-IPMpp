@@ -1631,15 +1631,15 @@ sData* sData::shaveDenseBorder( const sTree* tree )
    const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
    assert( ixlow.vec );
    assert( ixupp.vec );
-   this->nxlow -= ixlow.vec->numberOfNonzeros();
-   this->nxupp -= ixupp.vec->numberOfNonzeros();
+   nxlow -= ixlow.vec->numberOfNonzeros();
+   nxupp -= ixupp.vec->numberOfNonzeros();
 
    const StochVector& iclow = dynamic_cast<const StochVector&>(*hierarchical_top->iclow);
    const StochVector& icupp = dynamic_cast<const StochVector&>(*hierarchical_top->icupp);
    assert( iclow.vecl );
    assert( icupp.vecl );
-   this->mclow -= iclow.vecl->numberOfNonzeros();
-   this->mcupp -= icupp.vecl->numberOfNonzeros();
+   mclow -= iclow.vecl->numberOfNonzeros();
+   mcupp -= icupp.vecl->numberOfNonzeros();
 
    long long dummy;
    nx = g->length();

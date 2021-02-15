@@ -419,8 +419,10 @@ void sTreeCallbacks::assertTreeStructureIsNotMyNode() const
    assert( N == 0 );
    assert( MY == 0 );
    assert( MZ == 0 );
-   assert( MYL == 0 );
-   assert( MZL == 0 );
+
+// might be non-zero in case of hierarchical approach
+//   assert( MYL == 0 );
+//   assert( MZL == 0 );
 }
 
 void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
@@ -1193,12 +1195,12 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
          inner_leaf.MYL = myl_active + two_links_children_eq[i];
          inner_leaf.myl_active = myl_active;
          if( MYL >= 0 )
-            sub_root.adjustActiveMylBy( -myl_active - sum_two_links_children_eq + two_links_children_eq[i] );
+            sub_root.adjustActiveMylBy( - myl_active - sum_two_links_children_eq + two_links_children_eq[i] );
 
          inner_leaf.MZL = mzl_active + two_links_children_ineq[i];
          inner_leaf.mzl_active = mzl_active;
          if( MZL >= 0 )
-            sub_root.adjustActiveMzlBy( -mzl_active - sum_two_links_children_ineq + two_links_children_ineq[i] );
+            sub_root.adjustActiveMzlBy( - mzl_active - sum_two_links_children_ineq + two_links_children_ineq[i] );
 
          inner_leaf.np = nx_active;
 
@@ -1215,11 +1217,17 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
       {
          assert( !isInVector(rankMe, sub_root.myProcs) );
 
-         inner_leaf.N = inner_leaf.MY = inner_leaf.MZ = inner_leaf.MYL = inner_leaf.MZL = 0;
+         // we need to store the info about how many two links we pushed to that child (and forgot about)
+         inner_leaf.MYL = myl_active + two_links_children_eq[i];
+         inner_leaf.MZL = mzl_active + two_links_children_ineq[i];
+         sub_root.MYL = two_links_children_eq[i];
+         sub_root.MZL = two_links_children_ineq[i];
+
+         inner_leaf.N = inner_leaf.MY = inner_leaf.MZ = 0;
          inner_leaf.nx_active = inner_leaf.my_active = inner_leaf.mz_active = inner_leaf.myl_active = inner_leaf.mzl_active = 0;
 
 #ifndef NDEBUG
-         assert( sub_root.N == 0 && sub_root.MY == 0 && sub_root.MZ == 0 && sub_root.MYL == 0 && sub_root.MZL == 0 );
+         assert( sub_root.N == 0 && sub_root.MY == 0 && sub_root.MZ == 0 );
          assert( sub_root.nx_active == 0 && sub_root.my_active == 0 && sub_root.mz_active == 0 && sub_root.myl_active == 0 && sub_root.mzl_active == 0 );
 
          for( const auto& child_ : sub_root.children )
@@ -1257,7 +1265,7 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
 
    if( rankMe == 0 && !pips_options::getBoolParameter("SILENT") )
    {
-      std::cout << "Splitting node into " << this->children.size() << " subroots\n";
+      std::cout << "Splitting node into " << children.size() << " subroots\n";
       std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq
             << " root and " << two_links_children_eq_sum << " child links\n";
       std::cout << "Splitting " << two_links_children_ineq_sum + two_links_root_ineq << " inequality two-links into " << two_links_root_ineq
@@ -1288,7 +1296,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_sha
    assert( !distributedPreconditionerActive() );
 
    if( pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
-      this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+      splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
 
    sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
 

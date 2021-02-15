@@ -208,8 +208,6 @@ protected:
   const bool is_hierarchy_inner_leaf{false};
   /* only for leafs: indicate wether A_mat stroed in this child belongs to the child (true) or is part of the border (false) */
   bool has_RAC{true};
-  /* dummy returned when asked for localA but has_RAC = false */
-  std::unique_ptr<SparseGenMatrix> dummy_matrix{ new SparseGenMatrix(0,0,0) };
 
   bool useLinkStructure{false};
 

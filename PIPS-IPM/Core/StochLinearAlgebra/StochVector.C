@@ -2245,10 +2245,15 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
 
       SimpleVectorBase<T>* vecl_child = vecl ? vecl_leftover->shaveBorder(n_links_for_child, true) : nullptr;
 
+      if( child_comms[i] == MPI_COMM_NULL )
+      {
+         delete vecl_child;
+         vecl_child = nullptr;
+      }
+
       StochVectorBase<T>* vec = (child_comms[i] == MPI_COMM_NULL) ? nullptr :
             new StochVectorBase<T>( new SimpleVectorBase<T>(0), vecl_child, child_comms[i] );
 
-      int n_dummies{0};
       for( unsigned int j = 0; j < n_blocks_for_child; ++j )
       {
          StochVectorBase<T>* child = children.front();
@@ -2260,15 +2265,12 @@ void StochVectorBase<T>::split( const std::vector<unsigned int>& map_blocks_chil
 
          if( child_comms[i] != MPI_COMM_NULL )
             vec->AddChild(child);
-         else
-         {
-            ++n_dummies;
-            delete child;
-         }
+//         else
+//            delete child;
       }
 
       /* create child holding the new StochVector as it's vec part */
-      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>(n_dummies) : new StochVectorBase<T>( vec, nullptr, child_comms[i] );
+      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() : new StochVectorBase<T>( vec, nullptr, child_comms[i] );
       if( vec )
          vec->parent = new_children[i];
 
@@ -2325,7 +2327,7 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
 }
 
 template<typename T>
-void StochVectorBase<T>::collapseFromHierarchical( const sTree& tree_hier, VectorType type )
+void StochVectorBase<T>::collapseFromHierarchical( const sTree& tree_hier, VectorType type, bool empty_vec )
 {
    SimpleVectorBase<T>* new_vec = new SimpleVectorBase<T>();
    SimpleVectorBase<T>* new_vecl{};
@@ -2337,19 +2339,23 @@ void StochVectorBase<T>::collapseFromHierarchical( const sTree& tree_hier, Vecto
    assert( tree_hier.nChildren() == children.size() );
    assert( children.size() == 1 );
 
-   if( vec )
+   /* hierarchical top */
+   if( vec && !empty_vec )
       new_vec->appendToBack( dynamic_cast<SimpleVectorBase<T>&>(*vec));
-   if( vecl )
+   if( vecl && !empty_vec )
       new_vecl->appendToFront(dynamic_cast<SimpleVectorBase<T>&>(*vecl) );
 
    std::vector<StochVectorBase<T>*> new_children;
-   children[0]->appendHierarchicalToThis( new_vec, new_vecl, new_children, *tree_hier.getChildren()[0], type );
+   children[0]->appendHierarchicalToThis( new_vec, new_vecl, new_children, *tree_hier.getChildren()[0], type, empty_vec );
 
    delete children[0];
    children.clear();
-   children.insert( children.begin(), new_children.begin(), new_children.end() );
-   for( auto child : children )
-      child->parent = this;
+
+   this->n = new_vec->length();
+   if( new_vecl )
+      this->n += new_vecl->length();
+   for( auto child : new_children )
+      this->AddChild( child );
 
    delete vec;
    delete vecl;
@@ -2365,14 +2371,14 @@ void StochVectorBase<T>::collapseFromHierarchical( const sTree& tree_hier, Vecto
 
 template<typename T>
 void StochVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
-      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type )
+      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type, bool empty_vec )
 {
    assert( children.size() == tree_hier.nChildren() );
 
-   if( vec )
+   if( vec && !empty_vec)
       new_vec->appendToBack( dynamic_cast<SimpleVectorBase<T>&>(*vec) );
 
-   if( vecl )
+   if( vecl && !empty_vec )
       new_vecl->appendToFront( dynamic_cast<SimpleVectorBase<T>&>(*vecl) );
 
    for( size_t i = 0; i < children.size(); ++i )
@@ -2385,12 +2391,12 @@ void StochVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>* new_vec,
       if( sub_root )
       {
          if( child.isKindOf(kStochDummy) )
-            child.appendHierarchicalToThis( new_vec, new_vecl, new_children, *sub_root, type );
+            child.appendHierarchicalToThis( new_vec, new_vecl, new_children, *sub_root, type, empty_vec );
          else
          {
             assert( child.vec->isKindOf(kStochVector) );
             assert( !child.vecl);
-            dynamic_cast<StochVectorBase<T>&>(*child.vec).appendHierarchicalToThis(new_vec, new_vecl, new_children, *sub_root, type);
+            dynamic_cast<StochVectorBase<T>&>(*child.vec).appendHierarchicalToThis(new_vec, new_vecl, new_children, *sub_root, type, empty_vec);
          }
       }
       else
@@ -2405,21 +2411,18 @@ void StochVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>* new_vec,
 
 template<typename T>
 void StochDummyVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>*, SimpleVectorBase<T>* new_vecl,
-      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type )
+      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type, bool empty_vec )
 {
-   assert( tree_hier.isHierarchicalInnerLeaf() );
-
+   assert( tree_hier.getCommWorkers() == MPI_COMM_NULL );
+   // TODO : will not work with multiple splits
+   const int n_dummies = tree_hier.nChildren();
    /* insert the children this dummy is representing */
    for ( int i = 0; i < n_dummies; ++i )
       new_children.insert(new_children.begin(), new StochDummyVectorBase<T>() );
 
-   assert( tree_hier.getCommWorkers() == MPI_COMM_NULL );
-   if( type == VectorType::PRIMAL )
-      return;
-      // add dummies for the linking constraints that we no longer know about
-   else if ( type == VectorType::DUAL_Y )
+   if ( type == VectorType::DUAL_Y && !empty_vec )
       new_vecl->appendToFront(tree_hier.getMYL(), -std::numeric_limits<T>::infinity() );
-   else if ( type == VectorType::DUAL_Z )
+   else if ( type == VectorType::DUAL_Z && !empty_vec )
       new_vecl->appendToFront(tree_hier.getMZL(), -std::numeric_limits<T>::infinity() );
 }
 

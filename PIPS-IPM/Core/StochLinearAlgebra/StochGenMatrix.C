@@ -2163,6 +2163,12 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
       SparseGenMatrix* Blmat_child = Blmat_leftover;
       Blmat_leftover = dynamic_cast<SparseGenMatrix*>(Blmat_child->shaveBottom(m_links_left - n_links_for_child));
 
+      if( child_comms[i] == MPI_COMM_NULL )
+      {
+         delete Blmat_child;
+         Blmat_child = nullptr;
+      }
+
       StochGenMatrix* Bmat = (child_comms[i] == MPI_COMM_NULL) ? nullptr :
             new StochGenMatrix( new SparseGenMatrix(0, 0, 0), new SparseGenMatrix(0, nBl, 0), Blmat_child, child_comms[i], false, true );
 
@@ -2193,15 +2199,19 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
 #endif
          if( Bmat )
             Bmat->AddChild(child);
-         else
-            delete child;
+//         else
+//            delete child;
       }
       if( Bmat )
          Bmat->recomputeSize();
 
       /* create child holding the new Bmat and it's Blmat part */
       if( child_comms[i] == MPI_COMM_NULL )
+      {
          assert( Blmat_new->children[i]->isKindOf(kStringGenDummyMatrix));
+         delete Blmat_new->children[i];
+         Blmat_new->children[i] = nullptr;
+      }
       else
          assert( Blmat_new->children[i]->isKindOf(kStringGenMatrix) );
 

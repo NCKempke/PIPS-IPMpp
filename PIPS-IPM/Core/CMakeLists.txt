@@ -71,7 +71,10 @@ if( HAVE_PARDISO OR HAVE_MKL_PARDISO )
    target_link_libraries( ooqpstoch PUBLIC pardiso_abstract )
 endif( HAVE_PARDISO OR HAVE_MKL_PARDISO )
 
-target_link_libraries( ooqpstoch PRIVATE ${MATH_LIBS} )
+target_link_libraries( ooqpstoch 
+   PRIVATE MPI::MPI_CXX
+   PRIVATE ${MATH_LIBS}
+)
 
 
 

@@ -178,7 +178,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
   {
      if( my_rank == 0 )
-        std::cout << "Using hierarchical approach!" << std::endl;
+        std::cout << "Using hierarchical approach!\n";
 
      data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
 

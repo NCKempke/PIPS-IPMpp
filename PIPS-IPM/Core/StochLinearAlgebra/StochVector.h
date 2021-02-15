@@ -164,9 +164,9 @@ public:
    virtual void split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
-   virtual void collapseFromHierarchical( const sTree& tree_hier, VectorType type );
+   virtual void collapseFromHierarchical( const sTree& tree_hier, VectorType type, bool empty_vec = false );
    virtual void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
-         std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type );
+         std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, VectorType type, bool empty_vec );
 
    virtual OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const;
 
@@ -185,10 +185,8 @@ private:
 template <typename T>
 class StochDummyVectorBase : public StochVectorBase<T> {
 public:
-   // for hierarchical approach : this dummy vec represents n_dummies child dummies
-   const int n_dummies{0};
 
-   StochDummyVectorBase(int n_dummies_ = 0) : StochVectorBase<T>(0, MPI_COMM_NULL), n_dummies{n_dummies_} {};
+   StochDummyVectorBase() : StochVectorBase<T>(0, MPI_COMM_NULL) {};
   ~StochDummyVectorBase() override = default;
 
   void AddChild(StochVectorBase<T>* ) override {};
@@ -290,9 +288,8 @@ public:
          const std::vector<int>&, int ) override {};
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
 
-   void collapseFromHierarchical( const sTree&, VectorType) {};
    void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl, std::vector<StochVectorBase<T>*>& new_children,
-         const sTree& tree_hier, VectorType type ) override;
+         const sTree& tree_hier, VectorType type, bool empty_vec ) override;
 
    OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const override { assert( false && "Should not end up here"); return nullptr; };
 

@@ -475,8 +475,8 @@ void StochSymMatrix::splitMatrix( const std::vector<unsigned int>& map_blocks_ch
 
          if( diag )
             diag->AddChild(child);
-         else
-            delete child;
+//         else
+//            delete child;
       }
       if( diag )
          diag->recomputeSize();
