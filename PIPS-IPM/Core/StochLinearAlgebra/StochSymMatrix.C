@@ -305,9 +305,9 @@ void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
     children[it]->setToDiagonal(*vec.children[it]);
 }
 
-void StochSymMatrix::atPutDiagonal( int idiag, OoqpVector& v_ )
+void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
 {
-  StochVector& v = dynamic_cast<StochVector&>(v_);
+  const StochVector& v = dynamic_cast<const StochVector&>(v_);
 
   //check the tree compatibility
   int nChildren = children.size();

@@ -90,7 +90,7 @@ public:
   void symmetricScale( const OoqpVector& vec ) override;
   virtual void scalarMult( double num);
 
-  virtual void atPutSpRow( int col, double A[], int lenA, int irowA[],
+  virtual void atPutSpRow( int col, const double A[], int lenA, int irowA[],
 			   int& info );
 
   virtual void fromGetSpRow( int row, int col,
@@ -110,11 +110,11 @@ public:
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
+  virtual void atPutDiagonal( int idiag, const OoqpVector& v );
   virtual void fromGetDiagonal( int idiag, OoqpVector& v );
 
   virtual void atPutDiagonal( int idiag,
-			      double x[], int incx, int extent );
+        const double x[], int incx, int extent );
 
   virtual void writeToStream(ostream& out) const;
   virtual void writeToStreamDense(ostream& out) const;

@@ -362,7 +362,7 @@ void SparseSymMatrix::mult ( double beta,  double y[], int incy,
 }
 
 
-void SparseSymMatrix::atPutDiagonal( int idiag, OoqpVector& v )
+void SparseSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v )
 {
   mStorage->atPutDiagonal( idiag, v );
 }

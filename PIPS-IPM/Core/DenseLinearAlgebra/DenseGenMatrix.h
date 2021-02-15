@@ -85,8 +85,8 @@ public:
   void writeToStreamDense( std::ostream& out ) const override;
   virtual void randomize( double alpha, double beta, double * seed );
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
   /** Get a row of this matrix. */
   virtual void getRow ( int rowIndex, OoqpVector& v_in);
 

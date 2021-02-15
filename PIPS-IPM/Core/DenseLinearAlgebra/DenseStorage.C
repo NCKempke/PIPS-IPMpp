@@ -128,7 +128,7 @@ void DenseStorage::fromGetSpRow( int row, int col,
   nnz = k;
 }
 
-void DenseStorage::atPutSpRow( int row, double A[], int lenA, int jcolA[],
+void DenseStorage::atPutSpRow( int row, const double A[], int lenA, int jcolA[],
 				   int& info )
 {
   info = 0;
@@ -254,7 +254,7 @@ void DenseStorage::addToDiagonalAt( double alpha, double x[], int incx,
 
 
 void DenseStorage::atPutDiagonal( int idiag,
-				      OoqpVector& vvec )
+      const OoqpVector& vvec )
 {
   SimpleVector & v = (SimpleVector &) vvec;
   
@@ -262,7 +262,7 @@ void DenseStorage::atPutDiagonal( int idiag,
 }
 
 void DenseStorage::atPutDiagonal( int idiag,
-				      double x[], int incx, int extent )
+      const double x[], int incx, int extent )
 {
   int i;
   for( i = 0; i < extent; i++ ) {

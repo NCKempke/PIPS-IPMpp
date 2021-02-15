@@ -376,7 +376,7 @@ void SparseStorage::getLinkVarsNnz(std::vector<int>& vec) const
    }
 }
 
-void SparseStorage::atPutSpRow( int row, double A[], int lenA,
+void SparseStorage::atPutSpRow( int row, const double A[], int lenA,
 				    int jcolA[], int& info )
 {
   int ik;
@@ -1220,33 +1220,33 @@ double SparseStorage::abminnormNonZero( double tol ) const
   return norm;
 }
 
-void SparseStorage::atPutDiagonal( int idiag, OoqpVector& vvec )
+void SparseStorage::atPutDiagonal( int idiag, const OoqpVector& vvec )
 {
-  SimpleVector & v = dynamic_cast<SimpleVector &>(vvec);
-  this->atPutDiagonal( idiag, &v[0], 1, v.length() );
+  const SimpleVector & v = dynamic_cast<const SimpleVector &>(vvec);
+  atPutDiagonal( idiag, &v[0], 1, v.length() );
 }
 
-void SparseStorage::atPutDiagonal( int idiag,
-				   double x[], int incx, int extent )
+void SparseStorage::atPutDiagonal(int idiag, const double x[], int incx, int extent)
 {
-  int i;
-  int info;
-  for( i = idiag; i < idiag + extent; i++ ) { // Loop over elts to be put
-    // Search for the diagonal elt.
-    int lastk;
-    lastk = krowM[i+1];
-    for( int k = krowM[i]; k < lastk; k++ ) { // Loop over all elts in row
-      if ( i >= jcolM[k] ) { // Found or past the diagonal
-	if( i == jcolM[k] ) { // Found it, overwrite it.
-	  M[k] = x[incx*(i - idiag)];
-	} else { // Didn't find it, so insert it
-	  this->atPutSpRow( i, &x[incx*(i - idiag)], 1, &i, info );
-	}
-	// Either way, bug out of the loop
-	break;
-      } // end if found or past the diagonal
-    } // end loop over all elts
-  } // end loop over elts to be put
+   int i;
+   int info;
+   for( i = idiag; i < idiag + extent; i++ )
+   {
+      // Search for the diagonal elt.
+      int lastk;
+      lastk = krowM[i + 1];
+      for( int k = krowM[i]; k < lastk; k++ )
+      {
+         if( i >= jcolM[k] )
+         {
+            if( i == jcolM[k] )
+               M[k] = x[incx * (i - idiag)];
+            else
+               atPutSpRow(i, &x[incx * (i - idiag)], 1, &i, info);
+            break;
+         }
+      }
+   }
 }
 
 

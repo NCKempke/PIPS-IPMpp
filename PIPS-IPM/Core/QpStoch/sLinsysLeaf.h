@@ -40,11 +40,14 @@ class sLinsysLeaf : public sLinsys
 
   //virtual void Lsolve2 ( OoqpVector& x );
   //virtual void Dsolve2 ( OoqpVector& x );
+  //virtual void solveCompressed( OoqpVector& rhs );
+
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
 
-  virtual void putZDiagonal( OoqpVector& zdiag );
-  //virtual void solveCompressed( OoqpVector& rhs );
-  virtual void putXDiagonal( OoqpVector& xdiag_ );
+  void putZDiagonal( const OoqpVector& zdiag ) override;
+  void putXDiagonal( const OoqpVector& xdiag_ ) override;
+
+  void regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg ) override;
 
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
   virtual void deleteChildren();

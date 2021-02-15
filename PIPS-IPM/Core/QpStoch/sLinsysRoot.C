@@ -713,9 +713,9 @@ void sLinsysRoot::initProperChildrenRange()
     childrenProperEnd = childEnd;
 }
 
-void sLinsysRoot::putXDiagonal( OoqpVector& xdiag_ )
+void sLinsysRoot::putXDiagonal( const OoqpVector& xdiag_ )
 {
-  StochVector& xdiag = dynamic_cast<StochVector&>(xdiag_);
+  const StochVector& xdiag = dynamic_cast<const StochVector&>(xdiag_);
   assert(children.size() == xdiag.children.size());
 
   //kkt->atPutDiagonal( 0, *xdiag.vec );
@@ -727,9 +727,9 @@ void sLinsysRoot::putXDiagonal( OoqpVector& xdiag_ )
 }
 
 
-void sLinsysRoot::putZDiagonal( OoqpVector& zdiag_ )
+void sLinsysRoot::putZDiagonal( const OoqpVector& zdiag_ )
 {
-  StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
+  const StochVector& zdiag = dynamic_cast<const StochVector&>(zdiag_);
   assert(children.size() == zdiag.children.size());
 
   //kkt->atPutDiagonal( locnx+locmy, *zdiag.vec );
@@ -737,9 +737,15 @@ void sLinsysRoot::putZDiagonal( OoqpVector& zdiag_ )
   zDiagLinkCons = zdiag.vecl;
 
   // propagate it to the subtree
-  for(size_t it=0; it<children.size(); it++)
+  for(size_t it=0; it < children.size(); it++)
     children[it]->putZDiagonal(*zdiag.children[it]);
 }
+
+void sLinsysRoot::regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg )
+{
+   assert( false && "TODO : implement" );
+}
+
 
 void sLinsysRoot::AddChild(sLinsys* child)
 {

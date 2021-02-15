@@ -29,7 +29,7 @@ public:
 			   int rowExtent, int colExtent ) = 0;
   virtual void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent ) = 0;
-  virtual void atPutSpRow( int row, double A[], int lenA, int jcolA[],
+  virtual void atPutSpRow( int row, const double A[], int lenA, int jcolA[],
                            int& info ) = 0;
 
   virtual void fromGetSpRow( int row, int col,
@@ -41,7 +41,7 @@ public:
   virtual void getDiagonal( OoqpVector& vec ) = 0;
   virtual void setToDiagonal( const OoqpVector& vec ) = 0;
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& x ) = 0;
+  virtual void atPutDiagonal( int idiag, const OoqpVector& x ) = 0;
   virtual void fromGetDiagonal( int idiag, OoqpVector& x ) = 0;
   virtual void symmetricScale ( const OoqpVector& vec ) = 0;
   virtual void columnScale ( const OoqpVector& vec ) = 0;
@@ -136,7 +136,7 @@ public:
    * The length of x is the number of diagonal elements to be modified.
    * Typically x will have length less than the length of the diagonal.
    */
-  virtual void atPutDiagonal( int idiag, OoqpVector& x ) = 0;
+  virtual void atPutDiagonal( int idiag, const OoqpVector& x ) = 0;
   /** Get some of the diagonal elements of this matrix.
    * @param idiag the index of the first diagonal element to be read.
    * @param x a vector to hold the diagonal elements

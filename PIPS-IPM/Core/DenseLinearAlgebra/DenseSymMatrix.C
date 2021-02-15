@@ -255,7 +255,7 @@ void DenseSymMatrix::fromGetDense( int row, int col, double * A,
 
 
 void DenseSymMatrix::atPutDiagonal( int idiag,
-					OoqpVector& v )
+					const OoqpVector& v )
 {
   mStorage->atPutDiagonal( idiag, v );
 }

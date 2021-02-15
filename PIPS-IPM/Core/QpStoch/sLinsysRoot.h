@@ -72,9 +72,11 @@ class sLinsysRoot : public sLinsys {
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
-  virtual void putXDiagonal( OoqpVector& xdiag_ );
-  virtual void putZDiagonal( OoqpVector& zdiag );
+  void putXDiagonal( const OoqpVector& xdiag_ ) override;
+  void putZDiagonal( const OoqpVector& zdiag ) override;
  
+  void regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg ) override;
+
   virtual void AddChild(sLinsys* child);
 
   virtual bool usingSparseKkt() {return hasSparseKkt;};

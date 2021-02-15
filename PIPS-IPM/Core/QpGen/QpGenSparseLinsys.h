@@ -34,8 +34,8 @@ public:
    */
   virtual void solveCompressed( OoqpVector& rhs );
 
-  virtual void putXDiagonal( OoqpVector& xdiag );
-  virtual void putZDiagonal( OoqpVector& zdiag );
+  virtual void putXDiagonal( const OoqpVector& xdiag );
+  virtual void putZDiagonal( const OoqpVector& zdiag );
 
   /** calls QpGenLinsys::factor to assemble the augmented system
    * matrix, then calls matrixChanged to factor it

@@ -30,16 +30,21 @@ void sLinsysLeaf::factor2(sData*, Variables*)
    stochNode->resMon.recFactTmLocal_stop();
 }
 
-void sLinsysLeaf::putXDiagonal( OoqpVector& xdiag_ )
+void sLinsysLeaf::putXDiagonal( const OoqpVector& xdiag_ )
 {
-  StochVector& xdiag = dynamic_cast<StochVector&>(xdiag_);
+  const StochVector& xdiag = dynamic_cast<const StochVector&>(xdiag_);
   kkt->atPutDiagonal( 0, *xdiag.vec );
 }
 
-void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
+void sLinsysLeaf::putZDiagonal( const OoqpVector& zdiag_)
 {
-  StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
+  const StochVector& zdiag = dynamic_cast<const StochVector&>(zdiag_);
   kkt->atPutDiagonal( locnx + locmy, *zdiag.vec );
+}
+
+void sLinsysLeaf::regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg )
+{
+   assert( false && "TODO : implement");
 }
 
 void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )

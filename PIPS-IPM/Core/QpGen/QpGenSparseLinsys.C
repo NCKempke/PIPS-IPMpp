@@ -16,13 +16,13 @@ QpGenSparseLinsys::QpGenSparseLinsys(  QpGen * factory_in,
 }
 
 
-void QpGenSparseLinsys::putXDiagonal( OoqpVector& xdiag )
+void QpGenSparseLinsys::putXDiagonal( const OoqpVector& xdiag )
 {
   Mat->atPutDiagonal( 0, xdiag );
 }
 
 
-void QpGenSparseLinsys::putZDiagonal( OoqpVector& zdiag )
+void QpGenSparseLinsys::putZDiagonal( const OoqpVector& zdiag )
 {
   Mat->atPutDiagonal( nx + my, zdiag );
   //zdiag.writeToStream(cout);

@@ -432,9 +432,9 @@ double SparseGenMatrix::abminnormNonZero( double tol ) const
       return std::numeric_limits<double>::infinity();
 }
 
-void SparseGenMatrix::atPutDiagonal( int idiag, OoqpVector& vvec )
+void SparseGenMatrix::atPutDiagonal( int idiag, const OoqpVector& vvec )
 {
-  SimpleVector & v = dynamic_cast<SimpleVector &>(vvec);
+  const SimpleVector &v = dynamic_cast<const SimpleVector &>(vvec);
 
   mStorage->atPutDiagonal( idiag, &v[0], 1, v.length() );
 

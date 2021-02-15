@@ -185,11 +185,14 @@ public:
 
   /** places the diagonal resulting from the bounds on x into the
    * augmented system matrix */
-  virtual void putXDiagonal( OoqpVector& xdiag ) = 0;
+  virtual void putXDiagonal( const OoqpVector& xdiag ) = 0;
 
   /** places the diagonal resulting from the bounds on Cx into the
    * augmented system matrix */
-  virtual void putZDiagonal( OoqpVector& zdiag ) = 0;
+  virtual void putZDiagonal( const OoqpVector& zdiag ) = 0;
+
+  /** addes regularization terms to diagonals */
+  virtual void regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg ) = 0;
 
   /** computes the diagonal matrices in the augmented system from the
       current set of variables */

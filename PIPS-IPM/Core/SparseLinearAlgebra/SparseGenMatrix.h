@@ -123,8 +123,8 @@ public:
 
   virtual void randomize( double alpha, double beta, double * seed );
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   SparseStorageHandle getStorageHandle() { return mStorage; }
   const SparseStorageHandle getStorageHandle() const { return mStorage; }

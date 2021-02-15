@@ -67,7 +67,7 @@ class StringGenMatrix : public GenMatrix
 
       /* methods not needed for Hierarchical approach */
       double abminnormNonZero( double) const override { assert( false && "TODO: implement" ); return 0.0; };
-      void atPutDiagonal( int, OoqpVector& ) override { assert( "not implemented" && 0 ); };
+      void atPutDiagonal( int, const OoqpVector& ) override { assert( "not implemented" && 0 ); };
       void fromGetDiagonal( int, OoqpVector& ) override { assert( "not implemented" && 0 ); };
       void fromGetDense( int, int, double*, int, int, int ) override { assert( "not implemented" && 0 ); };
       void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override { assert( "not implemented" && 0 ); };

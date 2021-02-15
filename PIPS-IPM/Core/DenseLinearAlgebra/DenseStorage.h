@@ -60,15 +60,15 @@ public:
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
-  virtual void atPutSpRow( int col, double A[], int lenA, int irowA[],
+  virtual void atPutSpRow( int col, const double A[], int lenA, int irowA[],
 			   int& info );
 
   virtual void putSparseTriple( int irow[], int len, int jcol[], double A[], 
 				int& info );
 
-  virtual void atPutDiagonal(   int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
-  virtual void atPutDiagonal( int idiag, double x[], int incx, int extent );
+  void atPutDiagonal(   int idiag, const OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+  virtual void atPutDiagonal( int idiag, const double x[], int incx, int extent );
 };
   
 #endif

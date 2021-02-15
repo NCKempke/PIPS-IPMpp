@@ -53,9 +53,7 @@ class sLinsys : public QpGenLinsys
   virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) = 0;
 
-  virtual void putZDiagonal( OoqpVector& zdiag )=0;
   virtual void solveCompressed( OoqpVector& rhs );
-  virtual void putXDiagonal( OoqpVector& xdiag_ )=0;
 
   void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
 		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;

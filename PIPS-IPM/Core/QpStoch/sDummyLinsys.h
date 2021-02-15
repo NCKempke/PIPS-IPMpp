@@ -25,9 +25,11 @@ class sDummyLinsys : public sLinsys
 
   virtual void Ltsolve2( sData*, StochVector&, SimpleVector& ) override {};
 
-  void putZDiagonal( OoqpVector& ) override {};
   void solveCompressed( OoqpVector& ) override {};
-  void putXDiagonal( OoqpVector& ) override {};
+
+  void putZDiagonal( const OoqpVector& ) override {};
+  void putXDiagonal( const OoqpVector& ) override {};
+  void regularize( const OoqpVector&, const OoqpVector&, const OoqpVector& ) override {};
 
   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
 
