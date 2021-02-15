@@ -138,7 +138,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
       nx_border = 0;
    Br.F.getSize(myl_border, dummy);
    Br.G.getSize(mzl_border, dummy);
-   assert( nx_border + myl_border + mzl_border <= nres );
+   assert( nx_border + myl_border + mzl_border <= mres );
 #endif
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
    // TODO : reuse and make member ? possible?
