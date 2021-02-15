@@ -74,7 +74,7 @@ void PardisoProjectIndefSolver::initPardiso()
    int error = 0;
    solver = 0; /* use sparse direct solver */
 
-   #pragma omp critical
+//   #pragma omp critical
    pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
 
    if( error != 0 )

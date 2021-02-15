@@ -174,7 +174,7 @@ void PardisoProjectSchurSolver::initPardiso()
 {
    int error = 0;
 
-   #pragma omp critical
+//   #pragma omp critical
    pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
    if( error != 0 )
    {
