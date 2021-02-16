@@ -84,6 +84,7 @@ public:
   virtual void setToDiagonal( const OoqpVector& vec );
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   static DenseSymMatrix * randomPSD( int n, double * seed );

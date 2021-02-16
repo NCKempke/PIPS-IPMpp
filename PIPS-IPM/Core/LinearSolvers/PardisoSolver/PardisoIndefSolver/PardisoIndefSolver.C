@@ -21,8 +21,8 @@
 #include "StochOptions.h"
 
 
-PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, OoqpVector* regularization, bool solve_in_parallel ) :
-      DoubleLinearSolver(regularization), solve_in_parallel(solve_in_parallel)
+PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, bool solve_in_parallel ) :
+   solve_in_parallel(solve_in_parallel)
 {
   mStorage = dm->getStorageHandle();
   mStorageSparse = nullptr;
@@ -34,8 +34,8 @@ PardisoIndefSolver::PardisoIndefSolver( DenseSymMatrix * dm, OoqpVector* regular
   initPardiso();
 }
 
-PardisoIndefSolver::PardisoIndefSolver( SparseSymMatrix * sm, OoqpVector* regularization, bool solve_in_parallel ) :
-      DoubleLinearSolver(regularization), solve_in_parallel(solve_in_parallel)
+PardisoIndefSolver::PardisoIndefSolver( SparseSymMatrix * sm, bool solve_in_parallel ) :
+      solve_in_parallel(solve_in_parallel)
 {
   mStorage = nullptr;
   mStorageSparse = sm->getStorageHandle();

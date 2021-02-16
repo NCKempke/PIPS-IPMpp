@@ -322,6 +322,22 @@ void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
     children[it]->atPutDiagonal( idiag, *v.children[it]);
 }
 
+void StochSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v_ )
+{
+  const StochVector& v = dynamic_cast<const StochVector&>(v_);
+
+  //check the tree compatibility
+  int nChildren = children.size();
+  assert(v.children.size() - nChildren==0);
+
+  //check the node size compatibility
+  assert(this->diag->size() == v.vec->length());
+
+  diag->atAddDiagonal( idiag, *v.vec);
+
+  for (int it=0; it<nChildren; it++)
+    children[it]->atAddDiagonal( idiag, *v.children[it]);
+}
 void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
 {
    assert( "The value of the parameter is not supported!" );

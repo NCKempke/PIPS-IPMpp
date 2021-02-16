@@ -31,11 +31,10 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 
 void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
 {
-
    /* Add corner block
-    * [ Q0 F0T G0T  ]
-    * [ F0  0   0   ]
-    * [ G0  0 OmN+1 ]
+    * [ Q0   F0T   G0T  ]
+    * [ F0  xReg    0   ]
+    * [ G0    0   OmN+1 ]
     */
    assert( prob->isHierarchieRoot() );
 
@@ -75,9 +74,16 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
    /////////////////////////////////////////////////////////////
    if( xDiag )
    {
-      SimpleVector& sxDiag = dynamic_cast<SimpleVector&>(*xDiag);
+      const SimpleVector& sxDiag = dynamic_cast<const SimpleVector&>(*xDiag);
       for( int i = 0; i < locnx; i++)
          SC[i][i] += sxDiag[i];
+   }
+
+   if( xReg )
+   {
+      const SimpleVector& sxReg = dynamic_cast<const SimpleVector&>(*xReg);
+      for( int i = 0; i < locnx; i++)
+         SC[i][i] += sxReg[i];
    }
 
    /////////////////////////////////////////////////////////////
@@ -85,12 +91,17 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
    /////////////////////////////////////////////////////////////
    if( locmyl > 0 )
    {
+      const SimpleVector* syRegLink = dynamic_cast<const SimpleVector*>(yRegLinkCons);
+
       const double* MF0 = F0.M();
       const int* krowF0 = F0.krowM();
       const int* jcolF0 = F0.jcolM();
 
       for( int rowF0 = 0; rowF0 < locmyl; ++rowF0)
       {
+         if( syRegLink )
+            SC[locnx + rowF0][locnx + rowF0] += (*syRegLink)[rowF0];
+
          for( int k = krowF0[rowF0]; k < krowF0[rowF0 + 1]; ++k )
          {
             const int colF0 = jcolF0[k];
@@ -110,7 +121,8 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
    if( locmzl > 0 )
    {
       assert(zDiagLinkCons);
-      SimpleVector& szDiagLinkCons = dynamic_cast<SimpleVector&>(*zDiagLinkCons);
+      const SimpleVector& szDiagLinkCons = dynamic_cast<const SimpleVector&>(*zDiagLinkCons);
+      const SimpleVector* szRegLinkCons = dynamic_cast<const SimpleVector*>(zRegLinkCons);
 
       const double* MG0 = G0.M();
       const int* krowG0 = G0.krowM();
@@ -118,6 +130,8 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
 
       for( int rowG0 = 0; rowG0 < locmzl; ++rowG0 )
       {
+         if( szRegLinkCons )
+            SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += (*szRegLinkCons)[rowG0];
          SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += szDiagLinkCons[rowG0];
 
          for( int k = krowG0[rowG0]; k < krowG0[rowG0 + 1]; ++k )
@@ -141,7 +155,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
       sol_inner->copyFrom(rhs_inner);
 
    /* solve inner system */
-   this->children[0]->solveCompressed( *sol_inner );
+   children[0]->solveCompressed( *sol_inner );
 
    if( PIPS_MPIgetRank(mpiComm) != 0 )
       b0.setToZero();
@@ -152,7 +166,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
-   this->children[0]->addBorderTimesRhsToB0( *sol_inner, b0, border );
+   children[0]->addBorderTimesRhsToB0( *sol_inner, b0, border );
 
    PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
@@ -231,7 +245,7 @@ SymMatrix* sLinsysRootBordered::createKKT(sData*)
    const int n = locnx + locmyl + locmzl;
 
    if( PIPS_MPIgetRank(mpiComm) == 0 )
-      std::cout << "sLinsysRootBordered: getSchurCompMaxNnz " << n*n << "\n";
+      std::cout << "sLinsysRootBordered: getSchurCompMaxNnz " << n * n << "\n";
 
    return new DenseSymMatrix(n);
 }

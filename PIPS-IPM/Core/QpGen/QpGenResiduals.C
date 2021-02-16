@@ -130,7 +130,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
   // contribution calculate x^T (g + Qx) to duality gap */
   gap += rQ->dotProductWith(*vars->x); 
-
+  std::cout << "gap1 : " << gap << std::endl;
   prob->ATransmult( 1.0, *rQ, -1.0, *vars->y );
   prob->CTransmult( 1.0, *rQ, -1.0, *vars->z );
 
@@ -149,6 +149,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
   // contribution -b^T y to duality gap
   gap -= prob->bA->dotProductWith(*vars->y);
+  std::cout << "gap2 : " << gap << std::endl;
 
   /*** rC = Cx - s ***/
   rC->copyFrom( *vars->s );
@@ -179,6 +180,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
      // contribution - d^T lambda to duality gap
      gap -= prob->bl->dotProductWith(*vars->lambda);
+     std::cout << "gap3 : " << gap << std::endl;
   }
 
 
@@ -194,6 +196,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
      // contribution - f^T pi to duality gap
      gap += prob->bu->dotProductWith(*vars->pi);
+     std::cout << "gap4 : " << gap << std::endl;
   }
 
   if( nxlow > 0 )
@@ -208,6 +211,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
     // contribution - lx^T gamma to duality gap
     gap -= prob->blx->dotProductWith(*vars->gamma);
+    std::cout << "gap5 : " << gap << std::endl;
   }
 
   if( nxupp > 0 )
@@ -222,6 +226,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
     // contribution + bu^T phi to duality gap
     gap += prob->bux->dotProductWith(*vars->phi);
+    std::cout << "gap6 : " << gap << std::endl;
   }
    
   mDualityGap = gap;

@@ -13,46 +13,6 @@
 #include "OoqpVectorHandle.h"
 #include "SparseStorage.h"
 
-
-#ifndef FNAME
-#ifndef __bg__
-#define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
-#endif
-
-extern "C"
-{
-   void FNAME(ma57id)( double cntl[],  int icntl[] );
-
-   void FNAME(ma57ad)( int * n,        int * ne,       int irn[],
-      int jcn[],      int * lkeep,    int keep[],
-      int iwork[],    int icntl[],    int info[],
-      double rinfo[] );
-   void FNAME(ma57bd)( int * n,        int * ne,       double a[],
-      double fact[],  int * lfact,    int ifact[],
-      int * lifact,   int * lkeep,    int keep[],
-      int work[],     int * icntl,    double cntl[],
-      int info[],     double rinfo[] );
-   void FNAME(ma57cd)( int * job,      int * n,        double fact[],
-      int * lfact,    int ifact[],    int * lifact,
-      int * nrhs,     double rhs[],   int * lrhs,
-      double w[],     int * lw,       int iw1[],
-      int icntl[],    int info[]);
-   void FNAME(ma57dd)( int * job,      int * n,        int * ne,
-      double a[],     int irn[],      int jcn[],
-      double fact[],  int * lfact,    int ifact[],
-      int * lifact,   double rhs[],   double x[],
-      double resid[], double w[],     int iw[],
-      int icntl[],    double cntl[],  int info[],
-      double rinfo[] );
-   void FNAME(ma57ed)( int * n,        int * ic,       int keep[],
-      double fact[],  int * lfact,    double * newfac,
-      int * lnew,     int  ifact[],   int * lifact,
-      int newifc[],   int * linew,    int * info );
-}
-
 /** implements the linear solver class using the HSL MA57 solver
  *
  * @ingroup LinearSolvers
@@ -141,7 +101,7 @@ protected:
   virtual void firstCall();
 public:
   /** sets mStorage to refer to the argument sgm */
-  Ma57Solver( SparseSymMatrix * sgm, OoqpVector* regularization );
+  Ma57Solver( SparseSymMatrix * sgm );
 
   virtual void diagonalChanged( int idiag, int extent );
   void matrixChanged() override;

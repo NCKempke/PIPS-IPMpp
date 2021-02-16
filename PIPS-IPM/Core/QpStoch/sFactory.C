@@ -79,12 +79,7 @@ sFactory::~sFactory()
 
 sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 			OoqpVector* dd, OoqpVector* dq,
-			OoqpVector* nomegaInv, OoqpVector* rhs,
-			OoqpVector* reg,
-			OoqpVector* primal_reg,
-			OoqpVector* dual_y_reg,
-			OoqpVector* dual_z_reg
-			)
+			OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs )
 {
    assert( prob );
    static bool printed = false;
@@ -101,21 +96,21 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
       {
 #ifdef WITH_MUMPS
          MumpsSolverLeaf* linSolver = nullptr;
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
 #endif
       }
       else if( leaf_solver == SolverType::SOLVER_PARDISO )
       {
 #ifdef WITH_PARDISO
          PardisoProjectSchurSolver* linSolver = nullptr;
-         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
 #endif
       }
       else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
       {
 #ifdef WITH_MKL_PARDISO
          PardisoMKLSchurSolver* linSolver = nullptr;
-         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
 #endif
       }
       else
@@ -139,35 +134,35 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
    {
 #ifdef WITH_PARDISO
       PardisoProjectSolver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
    {
 #ifdef WITH_MKL_PARDISO
       PardisoMKLSolver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MA57 )
    {
 #ifdef WITH_MA57
       Ma57Solver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MA27 )
    {
 #ifdef WITH_MA27
       Ma27Solver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, s);
+      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
 #endif
    }
    else if( leaf_solver == SolverType::SOLVER_MUMPS )
    {
 #ifdef WITH_MUMPS
          MumpsSolverLeaf* linSolver = nullptr;
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg, linSolver);
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
 #endif
    }
 
@@ -185,8 +180,8 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
     int nnzA = A.numberOfNonZeros();
     int nnzC = C.numberOfNonZeros();
     std::cout << "augdump  nx=" << nx << std::endl;
-    std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << std::endl
-              << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << std::endl;
+    std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << "\n"
+              << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << "\n";
 
 	vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
 	vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
@@ -213,19 +208,19 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 	std::ofstream fd("augdump.dat");
 	fd << scientific;
 	fd.precision(16);
-	fd << (nx + my + mz) << std::endl;
-	fd << nx_1 << std::endl;
-	fd << nnzA+nnzC << std::endl;
+	fd << (nx + my + mz) << "\n";
+	fd << nx_1 << "\n";
+	fd << nnzA+nnzC << "\n";
 
    for( int i = 0; i <= nx_1; i++ )
       fd << colptr[i] << " ";
-   fd << std::endl;
+   fd << "\n";
    for( int i = 0; i < nnz; i++ )
       fd << rowidx[i] << " ";
-   fd << std::endl;
+   fd << "\n";
    for( int i = 0; i < nnz; i++ )
       fd << elts[i] << " ";
-   fd << std::endl;
+   fd << "\n";
    printf("finished dumping aug\n");
 
 }

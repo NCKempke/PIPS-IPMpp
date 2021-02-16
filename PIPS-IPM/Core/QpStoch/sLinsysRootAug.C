@@ -82,16 +82,15 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
-			       OoqpVector* rhs_,
-			       OoqpVector* reg,
-			       OoqpVector* primal_reg,
-			       OoqpVector* dual_y_reg,
-			       OoqpVector* dual_z_reg
+			       OoqpVector* regP,
+			       OoqpVector* regDy,
+			       OoqpVector* regDz,
+			       OoqpVector* rhs_
              )
-  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, reg, primal_reg, dual_y_reg, dual_z_reg)
+  : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, regP, regDy, regDz, rhs_ )
 { 
    assert( pips_options::getBoolParameter( "HIERARCHICAL" ) );
-   assert(locmyl >= 0 && locmzl >= 0);
+   assert( locmyl >= 0 && locmzl >= 0 );
    assert( computeBlockwiseSC );
 
    static bool printed = false;
@@ -121,6 +120,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 
 sLinsysRootAug::~sLinsysRootAug()
 {
+   delete zDiagReg;
    if(CtDC) delete CtDC;
 }
 
@@ -203,32 +203,32 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
          if( solver_root == SolverType::SOLVER_MUMPS )
          {
 #ifdef WITH_MUMPS
-            solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, reg, allreduce_kkt) );
+            solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_PARDISO )
          {
 #ifdef WITH_PARDISO
-            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, reg, allreduce_kkt) );
+            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_MKL_PARDISO )
          {
 #ifdef WITH_MKL_PARDISO
-            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, reg, allreduce_kkt) );
+            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt) );
 #endif
          }
          else if( solver_root == SolverType::SOLVER_MA57 )
          {
 #ifdef WITH_MA57
-            solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, reg, allreduce_kkt, mpiComm) );
+            solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm) );
 #endif
          }
          else
          {
             assert( solver_root == SolverType::SOLVER_MA27 );
 #ifdef WITH_MA27
-            solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, reg, "sLinsysRootAug", allreduce_kkt, mpiComm) );
+            solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm) );
 #endif
          }
       }
@@ -316,7 +316,6 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
    // update the KKT with the diagonals
    // xDiag is in fact diag(Q)+X^{-1}S
    /////////////////////////////////////////////////////////////
-
    if( xDiag && iAmLastRank )
    {
       const SimpleVector& sxDiag = dynamic_cast<const SimpleVector&>(*xDiag);
@@ -330,15 +329,34 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
       }
    }
 
+   if( xReg && iAmLastRank )
+   {
+      const SimpleVector& sxReg = dynamic_cast<const SimpleVector&>(*xReg);
+
+      for( int i = 0; i < locnx; i++ )
+      {
+         const int diagIdx = krowKkt[i];
+         assert(jcolKkt[diagIdx] == i);
+
+         MKkt[diagIdx] += sxReg[i];
+      }
+   }
+
    /////////////////////////////////////////////////////////////
    // update the KKT with   - C' * diag(zDiag) *C
    /////////////////////////////////////////////////////////////
    if( locmz > 0 && iAmLastRank )
    {
       assert(zDiag);
+      if( !zDiagReg )
+         zDiagReg = dynamic_cast<SimpleVector*>(zDiag->cloneFull());
+      else
+         zDiagReg->copyFrom(*zDiag);
+
+      zDiagReg->axpy(1.0, *zReg );
 
       SparseGenMatrix& C = prob->getLocalD();
-      C.matTransDinvMultMat(*zDiag, &CtDC);
+      C.matTransDinvMultMat(*zDiagReg, &CtDC);
       assert(CtDC->size() == locnx);
 
       //aliases for internal buffers of CtDC
@@ -394,6 +412,19 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
             MKkt[blockStart + (p - pstart)] += MAt[p];
          }
       }
+
+      if( yReg )
+      {
+         const SimpleVector& syReg = dynamic_cast<const SimpleVector&>(*yReg);
+
+         for( int i = locnx; i < locmy + locnx; i++ )
+         {
+            const int diagIdx = krowKkt[i];
+            assert(jcolKkt[diagIdx] == i);
+
+            MKkt[diagIdx] += syReg[i];
+         }
+      }
    }
 
    int local2linksStartEq;
@@ -420,16 +451,54 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
       // add locally owned sparse part of Ft
       addLinkConsBlock0Matrix(prob, Ft, locnx + locmy, 0, local2linksStartEq, local2linksEndEq);
 
+      const int n2linksRowsEq = prob->n2linkRowsEq();
+      const int bordersizeEq = locmyl - n2linksRowsEq;
+      const int borderstartEq = locnx + locmy + n2linksRowsEq;
       if( myRank == 0 )
       {
-         const int n2linksRowsEq = prob->n2linkRowsEq();
-         const int bordersizeEq = locmyl - n2linksRowsEq;
-         const int borderstartEq = locnx + locmy + n2linksRowsEq;
-
          PIPSdebugMessage("rank %d FT border columns: %d-%d \n", myRank, borderstartEq, borderstartEq + bordersizeEq);
 
          // add (shared) border part of Ft
          addLinkConsBlock0Matrix(prob, Ft, locnx + locmy, n2linksRowsLocalEq, borderstartEq, borderstartEq + bordersizeEq);
+      }
+
+      if( yRegLinkCons )
+      {
+         const SimpleVector& syRegLinkCons = dynamic_cast<const SimpleVector&>(*yRegLinkCons);
+         assert(local2linksStartEq >= locnx + locmy);
+         assert(local2linksEndEq <= locnx + locmy + locmyl);
+
+         const int syDiagLocalStart = local2linksStartEq - (locnx + locmy);
+         assert(syDiagLocalStart >= 0);
+         assert(syDiagLocalStart < locmyl || (syDiagLocalStart == locmyl && local2linksStartEq == local2linksEndEq) );
+
+         // add locally owned part of y diag (regularization) diagonal
+         for( int i = syDiagLocalStart, iKkt = local2linksStartEq; iKkt < local2linksEndEq; ++i, ++iKkt )
+         {
+            const int idx = krowKkt[iKkt];
+            assert(jcolKkt[idx] == iKkt);
+            assert(i < locmyl);
+
+            MKkt[idx] += syRegLinkCons[i];
+         }
+
+         if( myRank == 0 )
+         {
+            const int syDiagBorderStart = borderstartEq - (locnx + locmy);
+
+            assert(syDiagBorderStart >= 0 && syDiagBorderStart <= locmyl);
+            assert(syDiagBorderStart + bordersizeEq == locmyl);
+
+            // add border part of diagonal
+            for( int i = syDiagBorderStart, iKkt = borderstartEq; iKkt < borderstartEq + bordersizeEq; ++i, ++iKkt )
+            {
+               const int idx = krowKkt[iKkt];
+               assert(jcolKkt[idx] == iKkt);
+               assert(i < locmyl);
+
+               MKkt[idx] += syRegLinkCons[i];
+            }
+         }
       }
    }
 
@@ -458,6 +527,7 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
 
       assert(zDiagLinkCons);
       const SimpleVector& szDiagLinkCons = dynamic_cast<const SimpleVector&>(*zDiagLinkCons);
+      const SimpleVector* szRegLinkCons = dynamic_cast<const SimpleVector*>(zRegLinkCons);
 
       assert(local2linksStartIneq >= locnx + locmy + locmyl);
       assert(local2linksEndIneq <= locnx + locmy + locmyl + locmzl);
@@ -474,6 +544,8 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
          assert(i < locmzl);
 
          MKkt[idx] += szDiagLinkCons[i];
+         if( szRegLinkCons )
+            MKkt[idx] += (*szRegLinkCons)[i];
       }
 
       if( myRank == 0 )
@@ -491,6 +563,8 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
             assert(i < locmzl);
 
             MKkt[idx] += szDiagLinkCons[i];
+            if( szRegLinkCons )
+               MKkt[idx] += (*szRegLinkCons)[i];
          }
       }
    }
@@ -626,83 +700,6 @@ void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
 
 
 extern int gLackOfAccuracy;
-//void sLinsysRootAug::solveReduced( sData *prob, SimpleVector& b)
-//{
-//  int myRank; MPI_Comm_rank(mpiComm, &myRank);
-//  assert( false && "old method never used");
-//#ifdef TIMING
-//  t_start=MPI_Wtime();
-//  troot_total=tchild_total=tcomm_total=0.0;
-//#endif
-//
-//  assert(locnx+locmy+locmz == b.length());
-//  SimpleVector& r = (*redRhs);
-//  assert(r.length() <= b.length());
-//  SparseGenMatrix& C = prob->getLocalD();
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // LOCAL SOLVE
-//  ///////////////////////////////////////////////////////////////////////
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // b=[b1;b2;b3] is a locnx+locmy+locmz vector
-//  // the new rhs should be
-//  //           r = [b1-C^T*(zDiag)^{-1}*b3; b2]
-//  ///////////////////////////////////////////////////////////////////////
-//
-//  r.copyFromArray(b.elements()); //will copy only as many elems as r has
-//
-//  // aliases to parts (no mem allocations)
-//  SimpleVector r3(&r[locnx+locmy], locmz); //r3 is used as a temp
-//                                           //buffer for b3
-//  SimpleVector r2(&r[locnx],       locmy);
-//  SimpleVector r1(&r[0],           locnx);
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // compute r1 = b1 - C^T*(zDiag)^{-1}*b3
-//  ///////////////////////////////////////////////////////////////////////
-//  if(locmz>0) {
-//    assert(r3.length() == zDiag->length());
-//    r3.componentDiv(*zDiag);//r3 is a copy of b3
-//    C.transMult(1.0, r1, -1.0, r3);
-//  }
-//  ///////////////////////////////////////////////////////////////////////
-//  // r contains all the stuff -> solve for it
-//  ///////////////////////////////////////////////////////////////////////
-//  if( innerSCSolve == 0 ) {
-//    // Option 1. - solve with the factors
-//    solver->Dsolve(r);
-//  } else if( innerSCSolve == 1 ) {
-//    // Option 2 - solve with the factors and perform iter. ref.
-//    solveWithIterRef(prob, r);
-//  } else {
-//    assert( innerSCSolve == 2 );
-//    // Option 3 - use the factors as preconditioner and apply BiCGStab
-//    solveWithBiCGStab(prob, r);
-//  }
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // r is the sln to the reduced system
-//  // the sln to the aug system should be
-//  //      x = [r1; r2;  (zDiag)^{-1} * (b3-C*r1);
-//  ///////////////////////////////////////////////////////////////////////
-//  SimpleVector b1(&b[0],           locnx);
-//  SimpleVector b2(&b[locnx],       locmy);
-//  SimpleVector b3(&b[locnx+locmy], locmz);
-//  b1.copyFrom(r1);
-//  b2.copyFrom(r2);
-//
-//  if(locmz>0) {
-//    C.mult(1.0, b3, -1.0, r1);
-//    b3.componentDiv(*zDiag);
-//  }
-//#ifdef TIMING
-//  if( myRank == 0 && innerSCSolve >= 1 )
-//    cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-//	 << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << endl;
-//#endif
-//}
-
 void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
 {
 #ifdef TIMING
@@ -724,7 +721,7 @@ void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
    ///////////////////////////////////////////////////////////////////////
    // b = [b1; b2; b3; b4; b5] is a locnx + locmy + locmz + locmyl + locmz vector
    // the new rhs should be
-   //           r = [b1-C^T*(zDiag)^{-1}*b3; b2; b4; b5]
+   //           r = [b1-C^T*(zDiagReg)^{-1}*b3; b2; b4; b5]
    ///////////////////////////////////////////////////////////////////////
    double *b = b_vec.elements();
 
@@ -742,13 +739,14 @@ void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
    SimpleVector b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
 
    ///////////////////////////////////////////////////////////////////////
-   // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
+   // compute r1 = b1 - C^T * (zDiagReg)^{-1} * b3
    ///////////////////////////////////////////////////////////////////////
    // if we have C part
    if( locmz > 0 )
    {
-      assert(b3.length() == zDiag->length());
-      b3.componentDiv(*zDiag);
+      assert(b3.length() == zDiagReg->length());
+
+      b3.componentDiv(*zDiagReg);
       C.transMult(1.0, rhs1, -1.0, b3);
    }
 
@@ -791,7 +789,7 @@ void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
       SimpleVector rhs1(rhs_reduced, locnx);
       SimpleVector b3(b + locnx + locmy, locmz);
       C.mult(1.0, b3, -1.0, rhs1);
-      b3.componentDiv(*zDiag);
+      b3.componentDiv(*zDiagReg);
    }
 
    // copy rhs3 and rhs4
@@ -861,8 +859,8 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       // if we have C part
       if( locmz > 0 )
       {
-         assert(b3.length() == zDiag->length());
-         b3.componentDiv(*zDiag);
+         assert(b3.length() == zDiagReg->length());
+         b3.componentDiv(*zDiagReg);
          C.transMult(1.0, rhs1, -1.0, b3);
       }
 
@@ -907,7 +905,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
          SimpleVector rhs1(rhs_reduced, locnx);
          SimpleVector b3(b + locnx + locmy, locmz);
          C.mult(1.0, b3, -1.0, rhs1);
-         b3.componentDiv(*zDiag);
+         b3.componentDiv(*zDiagReg);
       }
 
       // copy rhs3 and rhs4
@@ -1057,10 +1055,11 @@ void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy,
               double alpha, SimpleVector& x,
               sData* prob)
 {
+   assert(false && "TODO: implement regularization");
   //if (iAmDistrib) {
   //only one process subtracts [ (Q+Dx0+C'*Dz0*C)*xx + A'*xy + F'*xxl + G'*xyl ] from r
-  //                           [  A*xx                                         ]
-  //                           [  F*xx                                         ]
+  //                           [  A*xx  + xReg*xy                              ]
+  //                           [  F*xx                 yRegLink*xxl            ]
   //                           [  G*xx                           + Omega * xyl ]
 
   int myRank; MPI_Comm_rank(mpiComm, &myRank);
@@ -1671,15 +1670,34 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
       }
    }
 
+   if( xReg )
+   {
+      const SimpleVector& sxDiag = dynamic_cast<const SimpleVector&>(*xDiag);
+
+      for( int i = 0; i < locnx; i++ )
+      {
+         const int diagIdx = krowKkt[i];
+         assert(jcolKkt[diagIdx] == i);
+
+         MKkt[diagIdx] += sxDiag[i];
+      }
+   }
+
    /////////////////////////////////////////////////////////////
    // update the KKT with   - C' * diag(zDiag) *C
    /////////////////////////////////////////////////////////////
    if( locmz > 0 )
    {
       assert(zDiag);
+      if( !zDiagReg )
+         zDiagReg = dynamic_cast<SimpleVector*>(zDiag->cloneFull());
+      else
+         zDiagReg->copyFrom(*zDiag);
+
+      zDiagReg->axpy(1.0, *zReg );
 
       SparseGenMatrix& C = prob->getLocalD();
-      C.matTransDinvMultMat(*zDiag, &CtDC);
+      C.matTransDinvMultMat(*zDiagReg, &CtDC);
       assert(CtDC->size() == locnx);
 
       //aliases for internal buffers of CtDC
@@ -1704,7 +1722,7 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
             }
          }
       }
-   } //~end if locmz>0
+   }
 
    /////////////////////////////////////////////////////////////
    // update the KKT with At (symmetric update forced)
@@ -1733,6 +1751,16 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
 
             MKkt[blockStart + (p - pstart)] += MAt[p];
          }
+      }
+
+      const SimpleVector& syReg = dynamic_cast<const SimpleVector&>(*yReg);
+
+      for( int i = locnx; i < locmy + locnx; i++ )
+      {
+         const int diagIdx = krowKkt[i];
+         assert(jcolKkt[diagIdx] == i);
+
+         MKkt[diagIdx] += syReg[i];
       }
    }
 
@@ -1789,6 +1817,19 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
             }
          }
       }
+
+      if( yRegLinkCons )
+      {
+         const SimpleVector& syRegLinkCons = dynamic_cast<const SimpleVector&>(*yRegLinkCons);
+
+         for( int i = 0, iKkt = locnx + locmy; i < locmyl; ++i, ++iKkt )
+         {
+            const int idx = krowKkt[iKkt];
+            assert(jcolKkt[idx] == iKkt);
+
+            MKkt[idx] += syRegLinkCons[i];
+         }
+      }
    }
 
    /////////////////////////////////////////////////////////////
@@ -1835,9 +1876,8 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
          }
       }
 
-      assert(zDiagLinkCons);
-
       const SimpleVector& szDiagLinkCons = dynamic_cast<const SimpleVector&>(*zDiagLinkCons);
+      const SimpleVector* szRegLinkCons = dynamic_cast<const SimpleVector*>(zRegLinkCons);
 
       for( int i = 0, iKkt = locnx + locmy + locmyl; i < locmzl; ++i, ++iKkt )
       {
@@ -1845,6 +1885,8 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
          assert(jcolKkt[idx] == iKkt);
 
          MKkt[idx] += szDiagLinkCons[i];
+         if( szRegLinkCons )
+            MKkt[idx] += (*szRegLinkCons)[i];
       }
    }
 
@@ -1920,17 +1962,28 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
       SimpleVector& sxDiag = dynamic_cast<SimpleVector&>(*xDiag);
       for(int i=0; i<locnx; i++) dKkt[i][i] += sxDiag[i];
    }
+   if( xReg )
+   {
+      SimpleVector& sxReg = dynamic_cast<SimpleVector&>(*xReg);
+      for(int i=0; i<locnx; i++) dKkt[i][i] += sxReg[i];
+   }
 
    /////////////////////////////////////////////////////////////
    // update the KKT with   - C' * diag(zDiag) *C
    /////////////////////////////////////////////////////////////
-   if(locmz>0) {
-     assert(zDiag);
+   if(locmz > 0) {
+      assert(zDiag);
+      if( !zDiagReg )
+         zDiagReg = dynamic_cast<SimpleVector*>(zDiag->cloneFull());
+      else
+         zDiagReg->copyFrom(*zDiag);
 
-     SparseGenMatrix& C = prob->getLocalD();
-     C.matTransDinvMultMat(*zDiag, &CtDC);
+      zDiagReg->axpy(1.0, *zReg );
 
-     assert(CtDC->size() == locnx);
+      SparseGenMatrix& C = prob->getLocalD();
+      C.matTransDinvMultMat(*zDiagReg, &CtDC);
+
+      assert(CtDC->size() == locnx);
 
      //aliases for internal buffers of CtDC
      SparseSymMatrix* CtDCsp = reinterpret_cast<SparseSymMatrix*>(CtDC);
@@ -1951,7 +2004,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
    /////////////////////////////////////////////////////////////
    // update the KKT with A (symmetric update forced)
    /////////////////////////////////////////////////////////////
-   if(locmy>0)
+   if(locmy > 0)
    {
      SparseGenMatrix& A = prob->getLocalB(); // yes, B
      const double* dA = A.M();
@@ -1968,6 +2021,13 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
          dKkt[iKkt][j] += dA[p];
        }
      }
+
+     if( yReg )
+     {
+        SimpleVector& syReg = dynamic_cast<SimpleVector&>(*yReg);
+           for(int i = locnx; i < locnx + locmy; i++)
+              dKkt[i][i] += syReg[i];
+     }
    }
    //prob->getLocalB().getStorageRef().dump("stage1eqmat2.dump");
 
@@ -1978,12 +2038,17 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
    if( locmyl > 0 )
    {
      SparseGenMatrix& F = prob->getLocalF();
+     SimpleVector* syRegLinkCons = dynamic_cast<SimpleVector*>(yRegLinkCons);
+
      const double* dF = F.M();
      const int* krowF = F.krowM();
      const int* jcolF = F.jcolM();
 
      int iKkt = locnx + locmy;
      for( int i = 0; i < locmyl; ++i, ++iKkt ) {
+
+        if( syRegLinkCons )
+           dKkt[iKkt][iKkt] += (*syRegLinkCons)[i];
        for( p = krowF[i], pend = krowF[i+1]; p < pend; ++p ) {
          j = jcolF[p];
          assert(j < locnx);
@@ -2000,8 +2065,8 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
    if( locmzl > 0 )
    {
      SparseGenMatrix& G = prob->getLocalG();
-     assert(zDiagLinkCons);
      SimpleVector& szDiagLinkCons = dynamic_cast<SimpleVector&>(*zDiagLinkCons);
+     SimpleVector* szRegLinkCons = dynamic_cast<SimpleVector*>(zRegLinkCons);
 
      const double* dG = G.M();
      const int* krowG = G.krowM();
@@ -2010,7 +2075,10 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
      int iKkt = locnx + locmy + locmyl;
      for( int i = 0; i < locmzl; ++i, ++iKkt ) {
 
-       dKkt[iKkt][iKkt] += szDiagLinkCons[i];
+        if( szRegLinkCons )
+          dKkt[iKkt][iKkt] += (*szRegLinkCons)[i];
+
+        dKkt[iKkt][iKkt] += szDiagLinkCons[i];
        for( p = krowG[i], pend = krowG[i+1]; p < pend; ++p ) {
          j = jcolG[p];
          assert(j < locnx);

@@ -33,13 +33,12 @@ sLinsysRoot::sLinsysRoot(sFactory* factory_,
 			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
-			 OoqpVector* rhs_,
-			 OoqpVector* reg,
-          OoqpVector* primal_reg,
-          OoqpVector* dual_y_reg,
-          OoqpVector* dual_z_reg
+			 OoqpVector* primal_reg_,
+			 OoqpVector* dual_y_reg_,
+			 OoqpVector* dual_z_reg_,
+			 OoqpVector* rhs_
 )
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, reg, primal_reg, dual_y_reg, dual_z_reg, true)
+  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, true)
 {
    init();
 }
@@ -613,11 +612,10 @@ void sLinsysRoot::createChildren(sData *prob)
    StochVector &ddst = dynamic_cast<StochVector&>(*dd);
    StochVector &dqst = dynamic_cast<StochVector&>(*dq);
    StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
+   StochVector &regPst = dynamic_cast<StochVector&>(*regP);
+   StochVector &regDyst = dynamic_cast<StochVector&>(*regDy);
+   StochVector &regDzst = dynamic_cast<StochVector&>(*regDz);
    StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
-   StochVector &regst = dynamic_cast<StochVector&>(*reg);
-   StochVector &pregst = dynamic_cast<StochVector&>(*primal_reg);
-   StochVector &pyregst = dynamic_cast<StochVector&>(*dual_y_reg);
-   StochVector &pzregst = dynamic_cast<StochVector&>(*dual_z_reg);
 
    for( size_t it = 0; it < prob->children.size(); it++ )
    {
@@ -643,21 +641,16 @@ void sLinsysRoot::createChildren(sData *prob)
          if( prob->children[it]->children.size() == 0 )
          {
             child = stochFactory->newLinsysLeaf(prob->children[it],
-                  ddst.children[it], dqst.children[it],
-                  nomegaInvst.children[it], rhsst.children[it],
-                  regst.children[it],
-                  pregst.children[it],
-                  pyregst.children[it], pzregst.children[it]);
+                  ddst.children[it], dqst.children[it], nomegaInvst.children[it],
+                  regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it] );
          }
          else
          {
             assert(prob->children[it]);
             assert(stochNode->getChildren()[it]);
             child = stochFactory->newLinsysRoot(prob->children[it],
-                  ddst.children[it], dqst.children[it],
-                  nomegaInvst.children[it], rhsst.children[it],
-                  regst.children[it], pregst.children[it],
-                  pyregst.children[it], pzregst.children[it]);
+                  ddst.children[it], dqst.children[it], nomegaInvst.children[it],
+                  regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it] );
          }
       }
       assert( child != nullptr );
@@ -721,11 +714,9 @@ void sLinsysRoot::putXDiagonal( const OoqpVector& xdiag_ )
   //kkt->atPutDiagonal( 0, *xdiag.vec );
   xDiag = xdiag.vec;
  
-  // propagate it to the subtree
   for(size_t it=0; it<children.size(); it++)
     children[it]->putXDiagonal(*xdiag.children[it]);
 }
-
 
 void sLinsysRoot::putZDiagonal( const OoqpVector& zdiag_ )
 {
@@ -736,16 +727,49 @@ void sLinsysRoot::putZDiagonal( const OoqpVector& zdiag_ )
   zDiag = zdiag.vec;
   zDiagLinkCons = zdiag.vecl;
 
-  // propagate it to the subtree
   for(size_t it=0; it < children.size(); it++)
     children[it]->putZDiagonal(*zdiag.children[it]);
 }
 
-void sLinsysRoot::regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg )
+void sLinsysRoot::addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ )
 {
-   assert( false && "TODO : implement" );
+   const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
+   const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
+   const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
+
+   xReg = regP.vec;
+
+   yReg = regDy.vec;
+   yRegLinkCons = regDy.vecl;
+
+   zReg = regDz.vec;
+   zRegLinkCons = regDz.vecl;
+
+   for(size_t it=0; it < children.size(); it++)
+      children[it]->addRegularizationsToKKTs(*regP.children[it], *regDy.children[it], *regDz.children[it] );
 }
 
+void sLinsysRoot::addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const
+{
+   const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
+   const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
+   const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
+
+   regP.vec->setToConstant(primal_reg_val);
+
+   if( regDy.vec )
+      regDy.vec->setToConstant(dual_y_reg_val);
+   if( regDy.vecl )
+      regDy.vecl->setToConstant(dual_y_reg_val);
+
+   if( regDz.vec )
+      regDz.vec->setToConstant(dual_z_reg_val);
+   if( regDz.vecl )
+      regDz.vecl->setToConstant(dual_z_reg_val);
+
+   for( size_t i = 0; i < children.size(); ++i )
+      children[i]->addRegularization( *regP.children[i], *regDy.children[i], *regDz.children[i] );
+}
 
 void sLinsysRoot::AddChild(sLinsys* child)
 {

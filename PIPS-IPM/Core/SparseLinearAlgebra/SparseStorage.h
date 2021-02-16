@@ -110,11 +110,12 @@ public:
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
 
-  virtual void atPutDiagonal( int idiag, const OoqpVector& v );
+  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
   virtual void fromGetDiagonal( int idiag, OoqpVector& v );
 
-  virtual void atPutDiagonal( int idiag,
-        const double x[], int incx, int extent );
+  void atPutDiagonal( int idiag, const double x[], int incx, int extent );
+  void atAddDiagonal( int idiag, const double x[], int incx, int extent );
 
   virtual void writeToStream(ostream& out) const;
   virtual void writeToStreamDense(ostream& out) const;

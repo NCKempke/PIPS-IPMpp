@@ -27,9 +27,10 @@ class sLinsysLeaf : public sLinsys
     sLinsysLeaf(sFactory* factory,
 		sData* prob_,				    
 		OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-		OoqpVector* rhs_, OoqpVector* reg, OoqpVector* primal_reg,
-      OoqpVector* dual_y_reg, OoqpVector* dual_z_reg,
-      LINSOLVER *linsolver = nullptr);
+      OoqpVector* primal_reg_,
+      OoqpVector* dual_y_reg_,
+      OoqpVector* dual_z_reg_,
+		OoqpVector* rhs_, LINSOLVER *linsolver = nullptr);
 
   ~sLinsysLeaf() override = default;
 
@@ -44,10 +45,12 @@ class sLinsysLeaf : public sLinsys
 
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
 
-  void putZDiagonal( const OoqpVector& zdiag ) override;
   void putXDiagonal( const OoqpVector& xdiag_ ) override;
+  void putZDiagonal( const OoqpVector& zdiag_ ) override;
 
-  void regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg ) override;
+  void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
+  void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
+
 
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
   virtual void deleteChildren();
@@ -73,13 +76,12 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
 			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
+			 OoqpVector* primal_reg_,
+			 OoqpVector* dual_y_reg_,
+			 OoqpVector* dual_z_reg_,
 			 OoqpVector* rhs_,
-			 OoqpVector* reg,
-			 OoqpVector* primal_reg,
-			 OoqpVector* dual_y_reg,
-			 OoqpVector* dual_z_reg,
 			 LINSOLVER* /*thesolver*/)
-  : sLinsys(factory_, prob, dd_, dq_, reg, primal_reg, dual_y_reg, dual_z_reg, nomegaInv_, rhs_, false)
+  : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false)
 {
    static bool printed = false;
    const int n_omp_threads = PIPSgetnOMPthreads();
@@ -164,7 +166,7 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
      else
         problems_blocked[id].reset( new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt_sp) ) );
 
-     solvers_blocked[id].reset( new LINSOLVER( dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get()), reg ) );
+     solvers_blocked[id].reset( new LINSOLVER( dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get()) ) );
   }
 
   kkt = problems_blocked[0].get();

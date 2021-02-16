@@ -37,9 +37,9 @@ class sLinsysRoot : public sLinsys {
   std::vector<sLinsys*> children;
 
   sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(sFactory* factory, sData* prob_, OoqpVector* dd_, OoqpVector* dq_,
-        OoqpVector* reg, OoqpVector* primal_reg, OoqpVector* dual_y_reg, OoqpVector* dual_z_reg,
-        OoqpVector* nomegaInv_, OoqpVector* rhs_);
+  sLinsysRoot(sFactory *factory, sData *prob_, OoqpVector *dd_,
+        OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *primal_reg_,
+        OoqpVector *dual_y_reg_, OoqpVector *dual_z_reg_, OoqpVector *rhs_);
 
   virtual void factor2(sData *prob, Variables *vars);
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
@@ -73,9 +73,10 @@ class sLinsysRoot : public sLinsys {
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
   void putXDiagonal( const OoqpVector& xdiag_ ) override;
-  void putZDiagonal( const OoqpVector& zdiag ) override;
+  void putZDiagonal( const OoqpVector& zdiag_ ) override;
  
-  void regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg ) override;
+  void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
+  void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
 
   virtual void AddChild(sLinsys* child);
 
@@ -111,9 +112,17 @@ class sLinsysRoot : public sLinsys {
 
   SparseSymMatrix* kktDist{};
 
+  OoqpVector* xDiag{};
+
   OoqpVector* zDiag{};
   OoqpVector* zDiagLinkCons{};
-  OoqpVector* xDiag{};
+
+  OoqpVector* xReg{};
+  OoqpVector* yReg{};
+  OoqpVector* yRegLinkCons{};
+
+  OoqpVector* zReg{};
+  OoqpVector* zRegLinkCons{};
 
   double* sparseKktBuffer{};
 

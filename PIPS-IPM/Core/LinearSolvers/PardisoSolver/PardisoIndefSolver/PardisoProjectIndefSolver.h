@@ -13,8 +13,8 @@
 class PardisoProjectIndefSolver : public PardisoIndefSolver
 {
 public:
-  PardisoProjectIndefSolver( SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel );
-  PardisoProjectIndefSolver( DenseSymMatrix* m, OoqpVector* regularization, bool solve_in_parallel );
+  PardisoProjectIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel );
+  PardisoProjectIndefSolver( DenseSymMatrix* m, bool solve_in_parallel );
 
  protected:
   void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,

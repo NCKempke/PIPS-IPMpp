@@ -61,8 +61,6 @@ public:
   virtual ~DoubleLinearSolver() = default;
 protected:
   DoubleLinearSolver() = default;
-  DoubleLinearSolver(OoqpVector* reg) : regularization{reg} { assert(reg); };
-  const OoqpVector* regularization{};
 };
 
 class SymmetricLinearScaler

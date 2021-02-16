@@ -86,6 +86,7 @@ public:
   virtual void randomize( double alpha, double beta, double * seed );
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
   /** Get a row of this matrix. */
   virtual void getRow ( int rowIndex, OoqpVector& v_in);

@@ -18,7 +18,7 @@ class MumpsSolverLeaf : public MumpsSolverBase {
 
  public:
   using DoubleLinearSolver::solve;
-  MumpsSolverLeaf( SparseSymMatrix * sgm, OoqpVector* regularization );
+  MumpsSolverLeaf( SparseSymMatrix * sgm );
 
   ~MumpsSolverLeaf() = default;
 

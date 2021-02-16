@@ -23,8 +23,8 @@
 class MumpsSolverRoot : public MumpsSolverBase {
 
  public:
-  MumpsSolverRoot( SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel );
-  MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel );
+  MumpsSolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel );
+  MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool solve_in_parallel );
 
   ~MumpsSolverRoot() = default;
 

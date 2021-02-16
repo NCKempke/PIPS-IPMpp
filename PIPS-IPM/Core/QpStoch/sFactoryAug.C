@@ -23,15 +23,16 @@ sLinsysRoot* sFactoryAug::newLinsysRoot()
 }
 
 sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
-			   OoqpVector* dd,OoqpVector* dq,
-			   OoqpVector* nomegaInv, OoqpVector* rhs,
-			   OoqpVector* reg,
-			   OoqpVector* primal_reg,
-            OoqpVector* dual_y_reg,
-            OoqpVector* dual_z_reg)
+			   OoqpVector* dd, OoqpVector* dq,
+			   OoqpVector* nomegaInv,
+			   OoqpVector* regP,
+			   OoqpVector* regDy,
+			   OoqpVector* regDz,
+			   OoqpVector* rhs
+			   )
 {
 
-   return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs, reg, primal_reg, dual_y_reg, dual_z_reg);
+   return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs );
 }
 
 sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()

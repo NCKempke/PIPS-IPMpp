@@ -199,7 +199,7 @@ public:
   /** base class constructor. Allocates values for kTreatAsZero,
    * kThresholdPivoting, kThresholdPivotingMax,
    * kThresholdPivotingFactor, kPrecision, ipessimism,rpessimism */
-  Ma27Solver(const SparseSymMatrix * sgm, OoqpVector* regularization, const std::string& name_ = "leaf");
+  Ma27Solver(const SparseSymMatrix * sgm, const std::string& name_ = "leaf");
 
   virtual ~Ma27Solver();
 

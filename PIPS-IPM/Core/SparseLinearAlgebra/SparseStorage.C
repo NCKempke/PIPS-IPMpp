@@ -1226,6 +1226,12 @@ void SparseStorage::atPutDiagonal( int idiag, const OoqpVector& vvec )
   atPutDiagonal( idiag, &v[0], 1, v.length() );
 }
 
+void SparseStorage::atAddDiagonal( int idiag, const OoqpVector& vvec )
+{
+  const SimpleVector & v = dynamic_cast<const SimpleVector &>(vvec);
+  atAddDiagonal( idiag, &v[0], 1, v.length() );
+}
+
 void SparseStorage::atPutDiagonal(int idiag, const double x[], int incx, int extent)
 {
    int i;
@@ -1246,6 +1252,23 @@ void SparseStorage::atPutDiagonal(int idiag, const double x[], int incx, int ext
             break;
          }
       }
+   }
+}
+
+void SparseStorage::atAddDiagonal( int idiag, const double x[], int incx, int extent )
+{
+   assert( idiag + extent <= m );
+   assert( idiag + extent <= n );
+
+   for( int row = idiag; row < idiag + extent; row++ )
+   {
+      int k = krowM[row];
+      while( jcolM[k] != row && k < krowM[row + 1] )
+         ++k;
+      if( row == jcolM[k] )
+         M[k] += x[incx * (row - idiag)];
+      else
+         assert( false );
    }
 }
 

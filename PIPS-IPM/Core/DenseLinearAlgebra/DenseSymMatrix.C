@@ -260,6 +260,11 @@ void DenseSymMatrix::atPutDiagonal( int idiag,
   mStorage->atPutDiagonal( idiag, v );
 }
 
+void DenseSymMatrix::atAddDiagonal( int idiag,
+					const OoqpVector& v )
+{
+  mStorage->atAddDiagonal( idiag, v );
+}
 
 void DenseSymMatrix::fromGetDiagonal( int idiag,
 					  OoqpVector& v )

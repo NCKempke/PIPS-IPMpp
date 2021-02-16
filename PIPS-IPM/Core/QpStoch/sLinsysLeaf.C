@@ -36,15 +36,35 @@ void sLinsysLeaf::putXDiagonal( const OoqpVector& xdiag_ )
   kkt->atPutDiagonal( 0, *xdiag.vec );
 }
 
-void sLinsysLeaf::putZDiagonal( const OoqpVector& zdiag_)
+void sLinsysLeaf::putZDiagonal( const OoqpVector& zdiag_ )
 {
   const StochVector& zdiag = dynamic_cast<const StochVector&>(zdiag_);
   kkt->atPutDiagonal( locnx + locmy, *zdiag.vec );
 }
 
-void sLinsysLeaf::regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg )
+/** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
+void sLinsysLeaf::addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const
 {
-   assert( false && "TODO : implement");
+   if( locnx > 0 )
+      dynamic_cast<StochVector&>(regP_).vec->setToConstant( primal_reg_val );
+
+   if( locmy > 0 )
+      dynamic_cast<StochVector&>(regDy_).vec->setToConstant( dual_y_reg_val );
+
+   if( locmz > 0 )
+      dynamic_cast<StochVector&>(regDz_).vec->setToConstant( dual_z_reg_val );
+}
+
+void sLinsysLeaf::addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ )
+{
+  const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
+  kkt->atAddDiagonal( 0, *regP.vec );
+
+  const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
+  kkt->atPutDiagonal( locnx, *regDy.vec );
+
+  const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
+  kkt->atAddDiagonal( locnx + locmy, *regDz.vec );
 }
 
 void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )

@@ -42,6 +42,8 @@ public:
   virtual void setToDiagonal( const OoqpVector& vec ) = 0;
 
   virtual void atPutDiagonal( int idiag, const OoqpVector& x ) = 0;
+  virtual void atAddDiagonal( int idiag, const OoqpVector& x ) = 0;
+
   virtual void fromGetDiagonal( int idiag, OoqpVector& x ) = 0;
   virtual void symmetricScale ( const OoqpVector& vec ) = 0;
   virtual void columnScale ( const OoqpVector& vec ) = 0;
@@ -137,6 +139,14 @@ public:
    * Typically x will have length less than the length of the diagonal.
    */
   virtual void atPutDiagonal( int idiag, const OoqpVector& x ) = 0;
+  /** Add to some of the diagonal elements of this matrix.
+   * @param idiag the index of the first diagonal element to be modified.
+   * @param x the values to add to the diagonal elements.
+   *
+   * The length of x is the number of diagonal elements to be modified.
+   * Typically x will have length less than the length of the diagonal.
+   */
+  virtual void atAddDiagonal( int idiag, const OoqpVector& x ) = 0;
   /** Get some of the diagonal elements of this matrix.
    * @param idiag the index of the first diagonal element to be read.
    * @param x a vector to hold the diagonal elements

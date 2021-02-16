@@ -58,15 +58,10 @@ class sFactory : public QpGen
   virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
 
   virtual sLinsysRoot* newLinsysRoot() = 0;
-  virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd,OoqpVector* dq,
-        OoqpVector* nomegaInv, OoqpVector* rhs, OoqpVector* reg, OoqpVector* primal_reg,
-        OoqpVector* dual_y_reg,
-        OoqpVector* dual_z_reg
-        ) = 0;
-  virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs, OoqpVector* reg, OoqpVector* primal_reg,
-				     OoqpVector* dual_y_reg, OoqpVector* dual_z_reg
-				     );
+  virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd, OoqpVector* dq,
+        OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs ) = 0;
+  virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd, OoqpVector* dq,
+				     OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs );
 
   sTree * tree{};
   sData * data{};

@@ -28,8 +28,8 @@ enum MumpsVerbosity{verb_mute, verb_standard, verb_high};
 class MumpsSolverBase : public DoubleLinearSolver {
 
  public:
-  MumpsSolverBase( SparseSymMatrix * sgm, OoqpVector* regularization );
-  MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix * sgm, OoqpVector* regularization );
+  MumpsSolverBase( SparseSymMatrix * sgm );
+  MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix * sgm );
 
   ~MumpsSolverBase();
 

@@ -19,8 +19,8 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *, double *, int *);
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, OoqpVector* regularization, bool solve_in_parallel )
-   : PardisoIndefSolver( sgm, regularization, solve_in_parallel )
+PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel )
+   : PardisoIndefSolver( sgm, solve_in_parallel )
 {
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */
@@ -28,8 +28,8 @@ PardisoProjectIndefSolver::PardisoProjectIndefSolver( SparseSymMatrix * sgm, Ooq
    initPardiso();
 }
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver( DenseSymMatrix * m, OoqpVector* regularization, bool solve_in_parallel )
-   : PardisoIndefSolver( m, regularization, solve_in_parallel)
+PardisoProjectIndefSolver::PardisoProjectIndefSolver( DenseSymMatrix * m, bool solve_in_parallel )
+   : PardisoIndefSolver( m, solve_in_parallel)
 {
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */

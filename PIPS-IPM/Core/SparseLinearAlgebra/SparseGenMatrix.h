@@ -95,15 +95,15 @@ public:
   virtual void transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const;
   virtual void transMult( double beta,  double y_in[], int incy, double alpha, const double x_in[], int incx ) const;
 
-  /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
+  /** res = this^T * D * this where D=diag(d) is a diagonal matrix. */
   virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res);
-  /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
+  /** res = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
   virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res);
 
   /** initialize (dynamic) transposed matrix */
   virtual void initTransposed(bool dynamic = false);
 
-  /** C = this * this^T */
+  /** res = this * this^T */
   virtual void matMultTrans(SymMatrix** res);
 
   double abmaxnorm() const override;
@@ -124,6 +124,7 @@ public:
   virtual void randomize( double alpha, double beta, double * seed );
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   SparseStorageHandle getStorageHandle() { return mStorage; }

@@ -84,6 +84,7 @@ public:
   void getDiagonal( OoqpVector& ) override { assert(0 && "not implemented here"); };
   void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented here"); };
   void atPutDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void atAddDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented here"); };
   void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented here"); };
   void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
   void columnScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };

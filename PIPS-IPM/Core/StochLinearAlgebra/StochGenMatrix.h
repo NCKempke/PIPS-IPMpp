@@ -158,6 +158,7 @@ public:
   virtual void deleteTransposed();
 
   void atPutDiagonal( int, const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+  void atAddDiagonal( int, const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
   void fromGetDiagonal( int, OoqpVector& ) override { assert( "Not implemented" && 0 ); };
   void matTransDMultMat( OoqpVector&, SymMatrix** ) override { assert( "Not implemented" && 0 ); };
   void matTransDinvMultMat( OoqpVector&, SymMatrix** ) override { assert( "Not implemented" && 0 ); };
@@ -312,6 +313,7 @@ public:
   void randomize( double, double, double* ) override {};
 
   void atPutDiagonal( int, const OoqpVector& ) override {};
+  void atAddDiagonal( int, const OoqpVector& ) override {};
   void fromGetDiagonal( int, OoqpVector& ) override {};
 
   void initTransposedChild( bool ) override {};

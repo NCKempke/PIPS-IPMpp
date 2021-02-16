@@ -96,6 +96,7 @@ public:
   virtual void randomizePSD(double *);
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
+  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
 
   virtual void fromGetDiagonal( int idiag, OoqpVector& v );
 

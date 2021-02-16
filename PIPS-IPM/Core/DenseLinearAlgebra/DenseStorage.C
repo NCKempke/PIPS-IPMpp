@@ -256,18 +256,29 @@ void DenseStorage::addToDiagonalAt( double alpha, double x[], int incx,
 void DenseStorage::atPutDiagonal( int idiag,
       const OoqpVector& vvec )
 {
-  SimpleVector & v = (SimpleVector &) vvec;
-  
-  this->atPutDiagonal( idiag, &v[0], 1, v.length() );
+   const SimpleVector & v = dynamic_cast<const SimpleVector&>(vvec);
+   atPutDiagonal( idiag, &v[0], 1, v.length() );
+}
+
+void DenseStorage::atAddDiagonal( int idiag,
+      const OoqpVector& vvec )
+{
+   const SimpleVector & v = dynamic_cast<const SimpleVector&>(vvec);
+   atAddDiagonal( idiag, &v[0], 1, v.length() );
 }
 
 void DenseStorage::atPutDiagonal( int idiag,
       const double x[], int incx, int extent )
 {
-  int i;
-  for( i = 0; i < extent; i++ ) {
-    M[i + idiag][i + idiag] = x[i*incx];
-  }
+   for( int i = 0; i < extent; i++ )
+      M[i + idiag][i + idiag] = x[i*incx];
+}
+
+void DenseStorage::atAddDiagonal( int idiag,
+      const double x[], int incx, int extent )
+{
+  for( int i = 0; i < extent; i++ )
+     M[i + idiag][i + idiag] += x[i*incx];
 }
 
 double DenseStorage::abmaxnorm() const

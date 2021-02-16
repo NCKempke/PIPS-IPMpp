@@ -14,8 +14,8 @@
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, OoqpVector* regularization, const std::string& name_) :
-      DoubleLinearSolver(regularization), mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
+Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) :
+      DoubleLinearSolver(), mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
 {
    init();
 }
@@ -74,7 +74,7 @@ void Ma27Solver::firstCall()
 
   if ( !done && tries > max_tries )
   {
-     std::cerr << "ERROR MA27: could not get ordering of matrix after max " << max_tries << " tries" << "\n";
+     std::cerr << "ERROR MA27: could not get ordering of matrix after max " << max_tries << " tries\n";
      MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
@@ -151,7 +151,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    for( int i = 0; i < rhs.length(); ++i )
       if( std::fabs(rhs[i]) > 1e50 )
       {
-         std::cout << "Big entry in right hand side vector..." << "\n";
+         std::cout << "Big entry in right hand side vector...\n";
          break;
       }
 #endif
@@ -227,8 +227,8 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
          {
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             {
-//               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision" << "\n";
-//               std::cout << " did not converge but still keeping the iterate" << "\n";
+//               std::cout << "WARNING MA27 " << name << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision\n";
+//               std::cout << " did not converge but still keeping the iterate\n";
 
 //               std::cout << "Error is " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required.. \n";
             }
@@ -238,7 +238,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
             setThresholdPivoting( std::min( thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max) );
 
             if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-               std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing" << "\n";
+               std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting() << " and refactorizing\n";
 
             done = false;
             n_iter_ref = 0;
@@ -257,11 +257,11 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    {
 //      std::cout << "ERROR " << rnorm/(1.0 + rhsnorm) << " > " << precision << " (after " << n_iter_ref << " iter refs)\n";
 //      rhs_cpy->writeToStreamAll(std::cout);
-//      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required " << "\n";
+//      std::cout << "ERROR " << rnorm << " vs " << precision * (1.0 + rhsnorm) << " required \n";
 //      best_iter->writeToStreamAll(std::cout);
 //      mat->writeToStreamDense(std::cout);
 //      assert( false );
-//      std::cout << "Writing K of local schur complement computation..." << "\n";
+//      std::cout << "Writing K of local schur complement computation...\n";
 //      std::ofstream myfile("../test.prb");
 //
 //      myfile << "n: " << n << "\n";
@@ -284,7 +284,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 //
 //      myfile.close();
 //
-//      std::cout << "Writing rhs from local schur complement computation..." << "\n";
+//      std::cout << "Writing rhs from local schur complement computation...\n";
 //      myfile.open("../test.rhs");
 //
 //      std::cout << "sizerhs " << size_t(1) * size_t(n) <<  "\n";
@@ -443,7 +443,7 @@ bool Ma27Solver::checkErrorsAndReact()
 
          if( getSmallPivot() <= threshold_pivtol )
          {
-            std::cout << " cannot decrease pivtol anymore -- accepting factorization anyway" << "\n";
+            std::cout << " cannot decrease pivtol anymore -- accepting factorization anyway\n";
             assert( getSmallPivot() == threshold_pivtol );
          }
          else
@@ -462,17 +462,17 @@ bool Ma27Solver::checkErrorsAndReact()
       }; break;
       case -7:
       {
-         std::cerr << "ERROR MA27 " << name << ": value of NSTEPS out of range " << nsteps << " (should not happen..) " << "\n";
+         std::cerr << "ERROR MA27 " << name << ": value of NSTEPS out of range " << nsteps << " (should not happen..) \n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }; break;
       case 1 :
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
-            std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored" << "\n";
+            std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored\n";
       }; break;
       case 2 :
       {
-         std::cerr << "ERROR MA27 " << name << ": change of sign in pivots detected when matrix is supposedly definite" << "\n";
+         std::cerr << "ERROR MA27 " << name << ": change of sign in pivots detected when matrix is supposedly definite\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       } break;
       case 3:

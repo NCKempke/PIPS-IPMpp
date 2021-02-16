@@ -441,6 +441,13 @@ void SparseGenMatrix::atPutDiagonal( int idiag, const OoqpVector& vvec )
   assert(m_Mt == nullptr);
 }
 
+void SparseGenMatrix::atAddDiagonal( int idiag, const OoqpVector& vvec )
+{
+  const SimpleVector &v = dynamic_cast<const SimpleVector &>(vvec);
+  mStorage->atAddDiagonal( idiag, &v[0], 1, v.length() );
+
+  assert(m_Mt == nullptr);
+}
 
 void SparseGenMatrix::fromGetDiagonal( int idiag, OoqpVector& vvec )
 {

@@ -57,6 +57,7 @@ class BorderedSymMatrix : public SymMatrix
       void randomizePSD( double* ) override { assert( "Not implemented" && 0 ); };
       void symAtPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert( "Not implemented" && 0 ); };
       void atPutDiagonal( int, const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void atAddDiagonal( int, const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
       void fromGetDense( int, int, double*, int, int, int) override { assert( "Not implemented" && 0 ); };
       void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override { assert( "Not implemented" && 0 ); };
       void getDiagonal( OoqpVector& ) override { assert( "Not implemented" && 0 ); };

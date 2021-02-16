@@ -12,19 +12,19 @@
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 
-PardisoMKLSolver::PardisoMKLSolver( SparseSymMatrix * sgm, OoqpVector* regularization ) : PardisoSolver( sgm, regularization )
+PardisoMKLSolver::PardisoMKLSolver( SparseSymMatrix * sgm ) : PardisoSolver( sgm )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
-     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)" << std::endl;
+     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)\n";
 #endif
 }
 
-PardisoMKLSolver::PardisoMKLSolver( DenseSymMatrix * m, OoqpVector* regularization ) : PardisoSolver( m, regularization )
+PardisoMKLSolver::PardisoMKLSolver( DenseSymMatrix * m ) : PardisoSolver( m )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
-     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)" << std::endl;
+     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)\n";
 #endif
 }
 

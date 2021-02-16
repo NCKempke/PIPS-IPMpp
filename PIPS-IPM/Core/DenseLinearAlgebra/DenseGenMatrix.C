@@ -257,6 +257,11 @@ void DenseGenMatrix::atPutDiagonal( int idiag, const OoqpVector& v )
   mStorage->atPutDiagonal( idiag, v );
 }
 
+void DenseGenMatrix::atAddDiagonal( int idiag, const OoqpVector& v )
+{
+  mStorage->atAddDiagonal( idiag, v );
+}
+
 void DenseGenMatrix::fromGetDiagonal( int idiag, OoqpVector& v )
 {
   mStorage->fromGetDiagonal( idiag, v );

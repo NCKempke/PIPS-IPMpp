@@ -22,11 +22,8 @@ class sLinsysRootAug : public sLinsysRoot {
 		 sData* prob_,
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
-		 OoqpVector* rhs_,
-		 OoqpVector* reg,
-       OoqpVector* primal_reg,
-       OoqpVector* dual_y_reg,
-       OoqpVector* dual_z_reg
+		 OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz,
+		 OoqpVector* rhs_
        );
   virtual ~sLinsysRootAug();
 
@@ -43,7 +40,6 @@ class sLinsysRootAug : public sLinsysRoot {
   void createReducedRhss();
 
   void assembleLocalKKT( sData* prob ) override;
-//  void solveReduced( sData *prob, SimpleVector& b);
   void solveReducedLinkCons( sData *prob, SimpleVector& b);
   void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
   void addInnerToHierarchicalSchurComplement( DenseSymMatrix& schur_comp, sData* data_border ) override;
@@ -66,6 +62,8 @@ class sLinsysRootAug : public sLinsysRoot {
 
   std::vector<std::unique_ptr<SimpleVector>> reduced_rhss_blocked;
   SimpleVector* redRhs;
+
+  SimpleVector* zDiagReg{};
 };
 
 #endif

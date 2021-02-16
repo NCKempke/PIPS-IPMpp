@@ -20,8 +20,8 @@ public:
   virtual void firstCall() = 0;
 
   /** sets mStorage to refer to the argument sgm */
-  PardisoSolver( SparseSymMatrix * sgm, OoqpVector* regularization );
-  PardisoSolver( DenseSymMatrix* m, OoqpVector* regularization );
+  PardisoSolver( SparseSymMatrix * sgm );
+  PardisoSolver( DenseSymMatrix* m );
 
   virtual void diagonalChanged( int idiag, int extent );
   virtual void matrixChanged();

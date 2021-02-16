@@ -55,10 +55,16 @@ protected:
   OoqpVector* rhs{};
 
   /** regularization parameters */
-  OoqpVector* reg{};
-  OoqpVector* primal_reg{};
-  OoqpVector* dual_y_reg{};
-  OoqpVector* dual_z_reg{};
+//  double primal_reg_val{ 1e-6 };
+//  double dual_y_reg_val{ -1e-6 };
+//  double dual_z_reg_val{ 1e-6 };
+  double primal_reg_val{ 0 };
+  double dual_y_reg_val{ 0 };
+  double dual_z_reg_val{ 0 };
+
+  OoqpVector* regP{};
+  OoqpVector* regDy{};
+  OoqpVector* regDz{};
 
   QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs );
 
@@ -67,7 +73,7 @@ protected:
   long long my{0};
   long long mz{0};
 
-  /** temporary storage vectors */
+  /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
   OoqpVector* dd{};
   OoqpVector* dq{};
 
@@ -83,7 +89,7 @@ protected:
   long long mcupp{0};
   long long mclow{0};
 
-  int useRefs{0};
+  bool useRefs{ false };
 
   /** Work vectors for iterative refinement of the XYZ linear system */
   OoqpVector* sol{};
@@ -117,9 +123,10 @@ protected:
 
 public:
   QpGenLinsys( QpGen* factory, QpGenData* data );
-  QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
-        OoqpVector* nomegaInv_, OoqpVector* rhs_, OoqpVector* reg_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_,
-        OoqpVector* dual_z_reg_, bool create_iter_ref_vecs );
+  QpGenLinsys(QpGen *factory_, QpGenData *prob, OoqpVector *dd_,
+        OoqpVector *dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
+        OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_,
+        OoqpVector *rhs_, bool create_iter_ref_vecs);
 
   ~QpGenLinsys() override;
 
@@ -185,14 +192,11 @@ public:
 
   /** places the diagonal resulting from the bounds on x into the
    * augmented system matrix */
-  virtual void putXDiagonal( const OoqpVector& xdiag ) = 0;
+  virtual void putXDiagonal( const OoqpVector& xdiag_ ) = 0;
 
   /** places the diagonal resulting from the bounds on Cx into the
    * augmented system matrix */
-  virtual void putZDiagonal( const OoqpVector& zdiag ) = 0;
-
-  /** addes regularization terms to diagonals */
-  virtual void regularize( const OoqpVector& primal_reg, const OoqpVector& dual_y_reg, const OoqpVector& dual_z_reg ) = 0;
+  virtual void putZDiagonal( const OoqpVector& zdiag_ ) = 0;
 
   /** computes the diagonal matrices in the augmented system from the
       current set of variables */
@@ -201,7 +205,17 @@ public:
 				 OoqpVector& u,  OoqpVector& pi,
 				 OoqpVector& v,  OoqpVector& gamma,
 				 OoqpVector& w,  OoqpVector& phi );
-   protected:
+
+  /** apply regularization to KKTs */
+  virtual void regularizeKKTs();
+
+  /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
+  virtual void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const = 0;
+
+  /** add regularization vectors to KKTs */
+  virtual void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) = 0;
+
+protected:
       void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
             OoqpVector& soly, OoqpVector& solz, const QpGenData& data);
       void computeResidualsReducedSlacks( const QpGenData& data );

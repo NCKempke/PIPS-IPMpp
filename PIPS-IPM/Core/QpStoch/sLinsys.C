@@ -37,14 +37,13 @@ sLinsys::sLinsys(sFactory* factory_,
 		 OoqpVector* dd_, 
 		 OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
+       OoqpVector* primal_reg_,
+       OoqpVector* dual_y_reg_,
+       OoqpVector* dual_z_reg_,
 		 OoqpVector* rhs_,
-		 OoqpVector* reg,
-		 OoqpVector* primal_reg,
-		 OoqpVector* dual_y_reg,
-		 OoqpVector* dual_z_reg,
 		 bool create_iter_ref_vecs
 		 )
-  : QpGenLinsys( factory_, prob, dd_, dq_, nomegaInv_, reg, primal_reg, dual_y_reg, dual_z_reg, rhs_, create_iter_ref_vecs ),
+  : QpGenLinsys( factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, create_iter_ref_vecs ),
     data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
@@ -562,9 +561,9 @@ void sLinsys::LniTransMult(sData *prob,
 
 /*
  * Computes res += [R^T A^T C^T ] * inv(KKT) * [R 0 F^T G^T ] x
- *                 [0         ]              [A             ]
- *                 [F         ]              [C             ]
- *                 [G         ]
+ *                 [0           ]              [A           ]
+ *                 [F           ]              [C           ]
+ *                 [G           ]
  */
 
 void sLinsys::addTermToSchurResidual(sData* prob, 
@@ -782,208 +781,6 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
 }
 
 //#define TIME_SCHUR
-
-/* Solving with
- *  [ Ri 0 FiT GiT]
- *  [ Ai 0  0   0 ]
- *  [ Ci 0  0   0 ]
- *
- * where the size of the zero part depends on the size of the factor K^-1:
- * l = n_K^-1 - nR - nF - nG
- *
- * computes (B_left_transp^T K^{-1} B_right)^T and adds it to the SC
- * matrices in border_left_transp and border_right are already transposed/not depending on what is wanted
- */
-//void sLinsys::addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-//      /* const */ BorderBiBlock& border_right, DoubleMatrix& result)
-//{
-//   int m_res, n_res; result.getSize(m_res, n_res);
-//   assert( m_res >= 0 && n_res >= 0 );
-//   if( sym_res )
-//      assert( m_res == n_res );
-//
-//   int mR_right, nR_right; border_right.R.getSize(mR_right, nR_right);
-//
-//   int mA_right, nA_right; border_right.A.getSize(mA_right, nA_right);
-//   assert( nR_right == nA_right);
-//
-//   int mC_right, nC_right; border_right.C.getSize(mC_right, nC_right);
-//   assert( nR_right == nC_right);
-//
-//   int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
-//   assert( mR_right == mF_right );
-//
-//   int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
-//   assert( mR_right == mG_right );
-//
-//   /* we add to the transposed of res */
-//   assert( nR_right + nF_right + nG_right <= m_res);
-//
-//   SimpleVectorBase<int> nnzPerColRAC(nR_right);
-//
-//   border_right.R.addNnzPerCol(nnzPerColRAC);
-//   border_right.A.addNnzPerCol(nnzPerColRAC);
-//   border_right.C.addNnzPerCol(nnzPerColRAC);
-//
-//   const int withF = ( nF_right > 0 );
-//   const int withG = ( nG_right > 0 );
-//   const int length_col = mR_right + mA_right + mC_right;
-//
-//   if( colsBlockDense == nullptr )
-//      colsBlockDense = new double[blocksizemax * length_col];
-////   else
-////   {
-////      delete[] colsBlockDense;
-////      colsBlockDense = new double[blocksizemax * length_col];
-////   }
-//
-//   if( colId == nullptr )
-//      colId = new int[blocksizemax];
-//
-//   // indicating whether a right hand side is zero - deactivated since problems in Pardiso
-//#if 0
-//   if( colSparsity == nullptr )
-//      colSparsity = new int[length_col * blocksizemax];
-//#else
-//   colSparsity = nullptr;
-//#endif
-//
-//#ifdef TIME_SCHUR
-//   const double t_start = omp_get_wtime();
-//#endif
-//
-//   int colpos = 0;
-//
-//   //                       (R)
-//   //     SC +=  B^T  K^-1  (A)
-//   //                       (C)
-//   while( colpos < nR_right )
-//   {
-//      int blocksize = 0;
-//
-//      for( ; colpos < nR_right && blocksize < blocksizemax; colpos++ )
-//         if( nnzPerColRAC[colpos] != 0 )
-//            colId[blocksize++] = colpos;
-//
-//      if( blocksize == 0 )
-//         break;
-//
-//      memset(colsBlockDense, 0, blocksize * length_col * sizeof(double));
-//
-//      if( colSparsity )
-//         memset(colSparsity, 0, length_col * sizeof(int));
-//
-//      border_right.R.fromGetColsBlock(colId, blocksize, length_col, 0, colsBlockDense, colSparsity);
-//      border_right.A.fromGetColsBlock(colId, blocksize, length_col, mR_right, colsBlockDense, colSparsity);
-//      border_right.C.fromGetColsBlock(colId, blocksize, length_col, (mR_right + mA_right), colsBlockDense, colSparsity);
-//
-//      solvers_blocked[0]->solve(blocksize, colsBlockDense, colSparsity);
-//
-//      addLeftBorderTimesDenseColsToResTransp( border_left_transp, colsBlockDense, colId, length_col, blocksize, sparse_res, sym_res, result);
-//   }
-//
-//#ifdef TIME_SCHUR
-//   const double t_end = omp_get_wtime();
-//   std::cout << "t_end - t_start:" << (t_end - t_start) << std::endl;
-//   assert(0);
-//#endif
-//
-//   // do we have linking equality constraints?
-//   if( withF )
-//   {
-//      //                       (F^T)
-//      //     SC +=  B^T  K^-1  (0  )
-//      //                       (0  )
-//
-//      SimpleVectorBase<int> nnzPerColFt(nF_right);
-//      border_right.F.addNnzPerCol(nnzPerColFt);
-//
-//      colpos = 0;
-//      // do block-wise multiplication for columns of F^T part
-//      while( colpos < nF_right )
-//      {
-//         int blocksize = 0;
-//
-//         for( ; colpos < nF_right && blocksize < blocksizemax; colpos++ )
-//            if( nnzPerColFt[colpos] != 0 )
-//               colId[blocksize++] = colpos;
-//
-//         if( blocksize == 0 )
-//            break;
-//
-//         if( colSparsity )
-//            memset(colSparsity, 0, length_col * sizeof(int));
-//
-//         memset(colsBlockDense, 0, blocksize * length_col * sizeof(double));
-//
-//         // get column block from Ft (i.e., row block from F)
-//         border_right.F.fromGetColsBlock(colId, blocksize, length_col, 0, colsBlockDense, colSparsity);
-//
-//         solvers_blocked[0]->solve(blocksize, colsBlockDense, colSparsity);
-//
-//         for( int i = 0; i < blocksize; i++ )
-//            colId[i] += (m_res - nF_right - nG_right);
-//
-//         addLeftBorderTimesDenseColsToResTransp( border_left_transp, colsBlockDense, colId, length_col, blocksize, sparse_res, sym_res, result);
-//      }
-//   }
-//
-//   // do we have linking inequality constraints?
-//   if( withG )
-//   {
-//      //                       (G^T)
-//      //     SC +=  B^T  K^-1  (0  )
-//      //                       (0  )
-//
-//      SimpleVectorBase<int> nnzPerColGt(nG_right);
-//      border_right.G.addNnzPerCol(nnzPerColGt);
-//
-//      colpos = 0;
-//
-//      // do block-wise multiplication for columns of G^T part
-//      while( colpos < nG_right )
-//      {
-//         int blocksize = 0;
-//
-//         for( ; colpos < nG_right && blocksize < blocksizemax; colpos++ )
-//            if( nnzPerColGt[colpos] != 0 )
-//               colId[blocksize++] = colpos;
-//
-//         if( blocksize == 0 )
-//            break;
-//
-//         if( colSparsity )
-//            memset(colSparsity, 0, length_col * sizeof(int));
-//
-//         memset(colsBlockDense, 0, blocksize * length_col * sizeof(double));
-//
-//         border_right.G.fromGetColsBlock(colId, blocksize, length_col, 0, colsBlockDense, colSparsity);
-//
-//         solvers_blocked[0]->solve(blocksize, colsBlockDense, colSparsity);
-//
-//         for( int i = 0; i < blocksize; i++ )
-//             colId[i] += (m_res - nG_right);
-//
-//         addLeftBorderTimesDenseColsToResTransp( border_left_transp, colsBlockDense, colId, length_col, blocksize, sparse_res, sym_res, result);
-//      }
-//   }
-//
-//#if 0
-//   // debug stuff
-//   int myrank;
-//   static int iteration = 0;
-//   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-//   ofstream myfile;
-//   char filename[50];
-//   sprintf(filename, "../blocked_%d_%d.txt", myrank, iteration);
-//   myfile.open(filename);
-//   iteration++;
-//   SC.writeToStream(myfile); // todo write out in each iteration with global counter and MPI rank!
-//   myfile.close();
-//
-//   assert(0);
-//#endif
-//}
 
 void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ DenseGenMatrix& BT, DoubleMatrix& result)

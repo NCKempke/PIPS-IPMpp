@@ -11,7 +11,7 @@ class sDummyLinsys : public sLinsys
 {
  public:
   sDummyLinsys(sFactory* factory, sData* prob)
-    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false)
+    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false)
  {
      mpiComm = MPI_COMM_NULL;
  };
@@ -27,9 +27,10 @@ class sDummyLinsys : public sLinsys
 
   void solveCompressed( OoqpVector& ) override {};
 
-  void putZDiagonal( const OoqpVector& ) override {};
   void putXDiagonal( const OoqpVector& ) override {};
-  void regularize( const OoqpVector&, const OoqpVector&, const OoqpVector& ) override {};
+  void putZDiagonal( const OoqpVector& ) override {};
+  void addRegularization( OoqpVector&, OoqpVector&, OoqpVector& ) const override {};
+  void addRegularizationsToKKTs( const OoqpVector&, const OoqpVector&, const OoqpVector& ) override {};
 
   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
 

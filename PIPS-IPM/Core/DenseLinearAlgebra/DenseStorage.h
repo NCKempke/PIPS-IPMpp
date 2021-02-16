@@ -67,8 +67,10 @@ public:
 				int& info );
 
   void atPutDiagonal(   int idiag, const OoqpVector& v ) override;
+  void atAddDiagonal(   int idiag, const OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
-  virtual void atPutDiagonal( int idiag, const double x[], int incx, int extent );
+  void atPutDiagonal( int idiag, const double x[], int incx, int extent );
+  void atAddDiagonal( int idiag, const double x[], int incx, int extent );
 };
   
 #endif

@@ -367,6 +367,11 @@ void SparseSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v )
   mStorage->atPutDiagonal( idiag, v );
 }
 
+void SparseSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v )
+{
+  mStorage->atAddDiagonal( idiag, v );
+}
+
 void SparseSymMatrix::fromGetDiagonal( int idiag, OoqpVector& v )
 {
   mStorage->fromGetDiagonal( idiag, v );

@@ -18,7 +18,7 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *, double *, int *);
 
-PardisoProjectSolver::PardisoProjectSolver( SparseSymMatrix * sgm, OoqpVector* regularization ) : PardisoSolver( sgm, regularization )
+PardisoProjectSolver::PardisoProjectSolver( SparseSymMatrix * sgm ) : PardisoSolver( sgm )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
@@ -29,7 +29,7 @@ PardisoProjectSolver::PardisoProjectSolver( SparseSymMatrix * sgm, OoqpVector* r
    solver = 0; /* sparse direct solver */
 }
 
-PardisoProjectSolver::PardisoProjectSolver( DenseSymMatrix* m, OoqpVector* regularization ) : PardisoSolver( m, regularization )
+PardisoProjectSolver::PardisoProjectSolver( DenseSymMatrix* m ) : PardisoSolver( m )
 {
 #ifdef TIMING
    if( myRank == PIPS_MPIgetRank() )
