@@ -1217,10 +1217,10 @@ void sLinsysRoot::reduceKKTdist(sData* prob)
    assert(int(rowIsLocal.size()) == sizeKkt);
 
    // add up locally owned entries
-   this->syncKKTdistLocalEntries(prob);
+   syncKKTdistLocalEntries(prob);
 
    // add B_0, F_0, G_0 and diagonals (all scattered)
-   this->finalizeKKTdist(prob);
+   finalizeKKTdist(prob);
 
    precondSC.updateDiagDomBound();
    precondSC.unmarkDominatedSCdistLocals(*prob, kkts);

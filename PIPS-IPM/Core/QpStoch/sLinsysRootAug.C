@@ -332,7 +332,7 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
    if( xReg && iAmLastRank )
    {
       const SimpleVector& sxReg = dynamic_cast<const SimpleVector&>(*xReg);
-
+      assert( sxReg.length() == locnx );
       for( int i = 0; i < locnx; i++ )
       {
          const int diagIdx = krowKkt[i];
@@ -353,8 +353,10 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
       else
          zDiagReg->copyFrom(*zDiag);
 
-      zDiagReg->axpy(1.0, *zReg );
+      if( zReg )
+         zDiagReg->axpy(1.0, *zReg );
    }
+
    if( locmz > 0 && iAmLastRank )
    {
       SparseGenMatrix& C = prob->getLocalD();
@@ -418,6 +420,7 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
       if( yReg )
       {
          const SimpleVector& syReg = dynamic_cast<const SimpleVector&>(*yReg);
+         assert( syReg.length() == locmy );
 
          for( int i = locnx, k = 0; i < locmy + locnx; ++i, ++k )
          {
@@ -467,6 +470,7 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
       if( yRegLinkCons )
       {
          const SimpleVector& syRegLinkCons = dynamic_cast<const SimpleVector&>(*yRegLinkCons);
+         assert( syRegLinkCons.length() == locmyl );
          assert(local2linksStartEq >= locnx + locmy);
          assert(local2linksEndEq <= locnx + locmy + locmyl);
 
@@ -531,6 +535,8 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
       const SimpleVector& szDiagLinkCons = dynamic_cast<const SimpleVector&>(*zDiagLinkCons);
       const SimpleVector* szRegLinkCons = dynamic_cast<const SimpleVector*>(zRegLinkCons);
 
+      if( szRegLinkCons )
+         assert( szRegLinkCons->length() == locmzl );
       assert(local2linksStartIneq >= locnx + locmy + locmyl);
       assert(local2linksEndIneq <= locnx + locmy + locmyl + locmzl);
 
@@ -1676,14 +1682,14 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
 
    if( xReg )
    {
-      const SimpleVector& sxDiag = dynamic_cast<const SimpleVector&>(*xDiag);
+      const SimpleVector& sxReg = dynamic_cast<const SimpleVector&>(*xReg);
 
       for( int i = 0; i < locnx; i++ )
       {
          const int diagIdx = krowKkt[i];
          assert(jcolKkt[diagIdx] == i);
 
-         MKkt[diagIdx] += sxDiag[i];
+         MKkt[diagIdx] += sxReg[i];
       }
    }
 
@@ -1698,7 +1704,8 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
       else
          zDiagReg->copyFrom(*zDiag);
 
-      zDiagReg->axpy(1.0, *zReg );
+      if( zReg )
+         zDiagReg->axpy(1.0, *zReg );
 
       SparseGenMatrix& C = prob->getLocalD();
       C.matTransDinvMultMat(*zDiagReg, &CtDC);
@@ -1982,7 +1989,8 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
       else
          zDiagReg->copyFrom(*zDiag);
 
-      zDiagReg->axpy(1.0, *zReg );
+      if( zReg )
+         zDiagReg->axpy(1.0, *zReg );
 
       SparseGenMatrix& C = prob->getLocalD();
       C.matTransDinvMultMat(*zDiagReg, &CtDC);
@@ -2028,9 +2036,9 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
 
      if( yReg )
      {
-        SimpleVector& syReg = dynamic_cast<SimpleVector&>(*yReg);
-           for(int iKKt = locnx, i = 0; i < locnx + locmy; i++)
-              dKkt[iKKt][iKKt] += syReg[i];
+        const SimpleVector& syReg = dynamic_cast<const SimpleVector&>(*yReg);
+        for(int iKKt = locnx, i = 0; i < locnx + locmy; i++)
+           dKkt[iKKt][iKKt] += syReg[i];
      }
    }
    //prob->getLocalB().getStorageRef().dump("stage1eqmat2.dump");
@@ -2042,7 +2050,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
    if( locmyl > 0 )
    {
      SparseGenMatrix& F = prob->getLocalF();
-     SimpleVector* syRegLinkCons = dynamic_cast<SimpleVector*>(yRegLinkCons);
+     const SimpleVector* syRegLinkCons = dynamic_cast<const SimpleVector*>(yRegLinkCons);
 
      const double* dF = F.M();
      const int* krowF = F.krowM();
@@ -2070,7 +2078,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
    {
      SparseGenMatrix& G = prob->getLocalG();
      SimpleVector& szDiagLinkCons = dynamic_cast<SimpleVector&>(*zDiagLinkCons);
-     SimpleVector* szRegLinkCons = dynamic_cast<SimpleVector*>(zRegLinkCons);
+     const SimpleVector* szRegLinkCons = dynamic_cast<const SimpleVector*>(zRegLinkCons);
 
      const double* dG = G.M();
      const int* krowG = G.krowM();

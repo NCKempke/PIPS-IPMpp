@@ -587,7 +587,6 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
 
    //solution to the approx. system
    solveCompressed(x);
-
    //initial residual: res = b - Ax
    r.copyFrom(b);
    matMult( 1.0, r, -1.0, x );
@@ -860,7 +859,6 @@ double QpGenLinsys::matXYZinfnorm(
    data.C->addColSums(solx);
    double infnorm = solx.infnorm();
 
-   // TODO : correct? What is the sign of the xDiag
    soly.setToZero();
    if( regDy )
       soly.axpy( dual_y_reg_val > 0 ? 1.0 : -1.0, *regDy );
@@ -868,6 +866,7 @@ double QpGenLinsys::matXYZinfnorm(
    infnorm = std::max(infnorm, soly.infnorm());
 
    solz.copyFromAbs(*nomegaInv);
+   solz.negate();
    if( regDz )
       solz.axpy( dual_z_reg_val > 0 ? 1.0 : -1.0, *regDz );
    data.C->addRowSums(solz);
