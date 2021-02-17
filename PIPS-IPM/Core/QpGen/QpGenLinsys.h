@@ -55,9 +55,9 @@ protected:
   OoqpVector* rhs{};
 
   /** regularization parameters */
-  double primal_reg_val{ -1e-10 };
+  double primal_reg_val{ 1e-10 };
   double dual_y_reg_val{ 1e-10 };
-  double dual_z_reg_val{ 1e-10 };
+  double dual_z_reg_val{ -1e-10 };
 //  double primal_reg_val{ 0 };
 //  double dual_y_reg_val{ 0 };
 //  double dual_z_reg_val{ 0 };
