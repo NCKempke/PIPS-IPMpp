@@ -1285,14 +1285,14 @@ void sData::writeMPSformat( std::ostream& out)
 
    if( world_size > 1 )
    {
-      cout<<"MPS format writer only available using one Process!"<<"\n";
+      std::cout << "MPS format writer only available using one Process!\n";
       return;
    }
-   cout<<"Writing MPS format..."<<"\n";
+   std::cout << "Writing MPS format...\n";
 
-   out <<  "NAME PIPS_to_MPS " << "\n";
-   out << "ROWS" <<"\n";
-   out << " N COST" <<"\n";
+   out <<  "NAME PIPS_to_MPS\n";
+   out << "ROWS\n";
+   out << " N COST\n";
 
    // write all row names and if they are E, L or G
    (*A).writeMPSformatRows(out, 0, nullptr);
