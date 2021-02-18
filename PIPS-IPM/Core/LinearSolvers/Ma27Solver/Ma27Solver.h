@@ -87,7 +87,7 @@ protected:
 
   const int max_n_iter_refinement = 10;
 
-  const int ooqp_print_level_warnings = 10000;
+  const int ooqp_print_level_warnings = 1000;
 
   /** During factorization entries smaller than small pivot will not
    * be accepted as pivots and the matrix will be treated as singular.
@@ -119,10 +119,10 @@ protected:
   int la;
 
   /** pivot sequence and temporary storage information */
-  int *ikeep, *iw, liw, *iw1, *iw2, nsteps, maxfrt;
+  int *ikeep{}, *iw{}, liw{}, *iw1{}, *iw2{}, nsteps, maxfrt;
 
   /** temporary storage for the factorization */
-  double *w;
+  double *w{};
 
   /** amounts by which to increase allocated factorization space when
    * inadequate space is detected. ipessimism is for array "iw",
@@ -184,7 +184,7 @@ protected:
   void regularizeMatrix();
 
   /* scaler */
-  SymmetricLinearScaler* scaler;
+  SymmetricLinearScaler* scaler{};
 
   /* stuff for MA60 iterative refinement */
   int icntl_ma60[5];

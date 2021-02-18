@@ -52,7 +52,6 @@ void Ma27SolverRoot::matrixChanged()
 
    if( PIPS_MPIgetRank() == 0 && omp_get_thread_num() == 0 )
       printf("\n Schur complement factorization completed \n ");
-
 }
 
 void Ma27SolverRoot::solve(OoqpVector& rhs)

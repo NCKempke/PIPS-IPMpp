@@ -15,7 +15,7 @@
 extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) :
-      DoubleLinearSolver(), mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
+      DoubleLinearSolver(), mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ )//, scaler( new Mc30Scaler() )
 {
    init();
 }
@@ -46,7 +46,7 @@ void Ma27Solver::firstCall()
   /* convert to MA27 format */
   irowM.resize(nnz);
   jcolM.resize(nnz);
-  this->getIndices( irowM, jcolM );
+  getIndices( irowM, jcolM );
 
   /* set working arrays for iterative refinement */
   w_ma60.resize(3 * n);
@@ -99,7 +99,7 @@ bool new_factor;
 void Ma27Solver::matrixChanged()
 {
    if( fact.size() == 0 )
-      this->firstCall();
+      firstCall();
 
    bool done = false;
    int tries = 0;
@@ -107,8 +107,10 @@ void Ma27Solver::matrixChanged()
    do
    {
       // copy M to fact
-      this->copyMatrixElements(fact, la);
-      scaler->scaleMatrixTripletFormat( n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
+      copyMatrixElements(fact, la);
+
+      if( scaler )
+         scaler->scaleMatrixTripletFormat( n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
 
       FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl.data(), cntl.data(), info.data());
@@ -189,11 +191,13 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       assert( iw1 );
 
       /* solve DAD y = D*residual */
-      scaler->scaleVector(*residual);
+      if( scaler )
+         scaler->scaleVector(*residual);
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl.data(), info.data());
       /* Dy = x */
-      scaler->scaleVector(*residual);
+      if( scaler )
+         scaler->scaleVector(*residual);
 
       iter->axpy(1.0, *residual);
 
@@ -479,29 +483,7 @@ bool Ma27Solver::checkErrorsAndReact()
       {
          if( gOoqpPrintLevel >= ooqp_print_level_warnings )
             std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << " != n : " << this->n << "\n";
-
-         static double last_pert = 1e-14;
-
-         double pert = 0;
-         if( new_factor )
-            pert = last_pert;
-         else
-            pert *= 10;
-
-         int n,m; mat_storage->getSize(m,n);
-         assert( m == n );
-         //std::cout << "PERTURBATION! " << pert << "\n";
-         for ( int i = 0; i < m; i++ )
-         {
-            for( int k = mat_storage->krowM[i]; k < mat_storage->krowM[i+1]; k++ )
-            {
-               int j = mat_storage->jcolM[k];
-               if ( i == j )
-                  mat_storage->M[k] += pert;
-            }
-         }
-         error = true;
-
+	 // TOOD : somehow report to the outside and increase the regularization terms
       }; break;
       default :
       {
