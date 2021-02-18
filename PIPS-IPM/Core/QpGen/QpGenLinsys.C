@@ -823,8 +823,8 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
   /* resx = beta resx + alpha Q solx + alpha dd solx + alpha regP solx */
   data.Qmult(beta, *resx, alpha, solx);
   resx->axzpy(alpha, *dd, solx);
-//  if( regP )
-//     resx->axzpy(alpha, *regP, solx);
+  if( regP )
+     resx->axzpy(alpha, *regP, solx);
   /* resx = beta resx + alpha Q solx + alpha dd solx + alpha AT soly + alpha CT solz */
   data.ATransmult(1.0, *resx, alpha, soly);
   data.CTransmult(1.0, *resx, alpha, solz);
@@ -832,15 +832,15 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
   /// resy
   /* resy = beta resy + alpha A solx */
   data.Amult(beta, *resy, alpha, solx);
-//  if( regDy )
-//     resy->axzpy(alpha, *regDy, soly);
+  if( regDy )
+     resy->axzpy(alpha, *regDy, soly);
 
   /// resz
   /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
   data.Cmult(beta, *resz, alpha, solx);
   resz->axzpy(alpha, *nomegaInv, solz);
-//  if( regDz )
-//     resz->axzpy(alpha, *regDz, solz);
+  if( regDz )
+     resz->axzpy(alpha, *regDz, solz);
 
   joinRHS( res, *resx, *resy, *resz );
 }
@@ -853,22 +853,22 @@ double QpGenLinsys::matXYZinfnorm(
              OoqpVector& solz)
 {
    solx.copyFromAbs(*dd);
-//   if( regP )
-//      solx.axpy( primal_reg_val > 0 ? 1.0 : -1.0, *regP );
+   if( regP )
+      solx.axpy( primal_reg_val > 0 ? 1.0 : -1.0, *regP );
    data.A->addColSums(solx);
    data.C->addColSums(solx);
    double infnorm = solx.infnorm();
 
    soly.setToZero();
-//   if( regDy )
-//      soly.axpy( dual_y_reg_val > 0 ? 1.0 : -1.0, *regDy );
+   if( regDy )
+      soly.axpy( dual_y_reg_val > 0 ? 1.0 : -1.0, *regDy );
    data.A->addRowSums(soly);
    infnorm = std::max(infnorm, soly.infnorm());
 
    solz.copyFromAbs(*nomegaInv);
    solz.negate();
-//   if( regDz )
-//      solz.axpy( dual_z_reg_val > 0 ? 1.0 : -1.0, *regDz );
+   if( regDz )
+      solz.axpy( dual_z_reg_val > 0 ? 1.0 : -1.0, *regDz );
    data.C->addRowSums(solz);
    infnorm = std::max(infnorm, solz.infnorm());
 
