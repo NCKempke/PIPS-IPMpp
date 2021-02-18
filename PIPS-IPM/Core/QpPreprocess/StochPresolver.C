@@ -116,7 +116,7 @@ Data* StochPresolver::presolve()
    presolverCleanup.applyPresolving();
    
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After Presolving:" << "\n";
+      std::cout << "--- After Presolving:\n";
    presolverCleanup.countRowsCols();
    if( my_rank == 0 )
       std::cout << "Objective offset: " << presData->getObjOffset() << "\n";
@@ -158,17 +158,25 @@ Data* StochPresolver::presolve()
 
    if( write_presolved_problem )
    {
-      std::ofstream of("presolved.mps");
-
-      if( of.is_open() )
-         finalPresData->writeMPSformat(of);
-      else
+      if( PIPS_MPIgetSize() > 1 )
+      {
          if( my_rank == 0 )
-            std::cout << "Could not open presolved.mps to write out presolved problem!!" << "\n";
+            std::cout << "MPS format writer only available using one process!\n";
+      }
+      else
+      {
+         std::ofstream of("presolved.mps");
+
+         if( of.is_open() )
+            finalPresData->writeMPSformat(of);
+         else
+            if( my_rank == 0 )
+               std::cout << "Could not open presolved.mps to write out presolved problem!!\n";
+      }
    }
 
    if( my_rank == 0 )
-      std::cout << "end stoch presolving" << "\n";
+      std::cout << "end stoch presolving\n";
    presData->printRowColStats();
    finalPresData->printRanges();
 
@@ -178,7 +186,7 @@ Data* StochPresolver::presolve()
 void StochPresolver::resetFreeVariables()
 {
    if( my_rank == 0 )
-      std::cout << "Resetting bounds found in bound strengthening" << "\n";
+      std::cout << "Resetting bounds found in bound strengthening\n";
 
    const sData* sorigprob = dynamic_cast<const sData*>(origprob);
 

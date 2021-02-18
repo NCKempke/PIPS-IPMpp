@@ -148,8 +148,8 @@ void sLinsysRoot::afterFactor()
 // TODO : move to aug..
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
+   // TODO : parallelize over MPI porcs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer);
-
 
    bool has_RAC = Br.has_RAC;
 
