@@ -52,19 +52,19 @@ StochMonitor::doItStoch(const Solver *solver, const Data *data,
       double alpha_dual, double, int i, double mu, int status_code,
       int level) const
 {
-   double objective = dynamic_cast<const QpGenData*>(data)->objectiveValue(
+   const double objective_scaled = dynamic_cast<const QpGenData*>(data)->objectiveValue(
          dynamic_cast<const QpGenVars*>(vars));
-
+   const double gap_scaled = resids->dualityGap();
    const Residuals *resids_unscaled = resids;
+
    if( scaler )
-   {
-      objective = scaler->getObjUnscaled(objective);
       resids_unscaled = scaler->getResidualsUnscaled(*resids);
-   }
 
    const double dnorm = solver->dataNormOrig();
    const double rnorm = resids_unscaled->residualNorm();
-   const double gap = resids_unscaled->dualityGap();
+
+   const double gap_unscaled = resids_unscaled->dualityGap();
+   const double objective_unscaled = scaler ? scaler->getObjUnscaled(objective_scaled) : objective_scaled;
 
    if( scaler )
       delete resids_unscaled;
@@ -88,7 +88,8 @@ StochMonitor::doItStoch(const Solver *solver, const Data *data,
                      rnorm / dnorm);
             //cout << " mu = " << mu << " relative residual norm = "
             //cout << resids->residualNorm() / dnorm << "\n";
-            std::cout << " Duality Gap:  " << gap << "\n";
+            std::cout << " Duality Gap (unscaled/scaled):  " << gap_unscaled << "/" << gap_scaled << "\n";
+            std::cout << " Relaitve Duality Gap (unscaled/scaled):  " << gap_unscaled / objective_unscaled << "/" << gap_scaled / objective_scaled << "\n";
             if( i > 1 )
             {
                if( alpha_dual != -1.0 )
@@ -99,7 +100,7 @@ StochMonitor::doItStoch(const Solver *solver, const Data *data,
                else
                   std::cout << " alpha = " << alpha_primal << "\n";
             }
-            std::cout << " Objective: " << objective << "\n";
+            std::cout << " Objective (unscaled/scaled): " << objective_unscaled << "/" << objective_scaled << "\n";
             std::cout << "\n";
             if( level == 1 )
             {
