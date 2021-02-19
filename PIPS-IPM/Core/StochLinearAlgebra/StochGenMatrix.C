@@ -360,11 +360,11 @@ double StochGenMatrix::abmaxnorm() const
   for(size_t it = 0; it < children.size(); it++)
     nrm = std::max(nrm, children[it]->abmaxnorm());
 
-  if( iAmDistrib )
+  if(iAmDistrib)
      PIPS_MPIgetMaxInPlace( nrm, mpiComm );
 
-  nrm = std::max( nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()) );
-  nrm = std::max( nrm, Blmat->abmaxnorm() );
+  nrm = std::max(nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
+  nrm = std::max(nrm, Blmat->abmaxnorm());
 
   return nrm;
 }
