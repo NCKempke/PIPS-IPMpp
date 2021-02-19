@@ -16,7 +16,6 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
             OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_);
       ~sLinsysRootAugHierInner() override = default;
 
-
       void assembleLocalKKT( sData* prob ) override;
 
       void Lsolve(sData *prob, OoqpVector& x) override;
@@ -37,6 +36,9 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       void putXDiagonal( OoqpVector& xdiag ) override;
       void putZDiagonal( OoqpVector& zdiag ) override;
+
+   private:
+    void createSolversAndKKts(sData* prob);
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_SLINSYSROOTAUGHIERINNER */

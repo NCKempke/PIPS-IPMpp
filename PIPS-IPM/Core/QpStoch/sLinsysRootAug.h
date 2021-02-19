@@ -5,6 +5,26 @@
 #ifndef SAUGLINSYS
 #define SAUGLINSYS
 
+#ifdef WITH_PARDISO
+#include "PardisoProjectIndefSolver.h"
+#endif
+
+#ifdef WITH_MKL_PARDISO
+#include "PardisoMKLIndefSolver.h"
+#endif
+
+#ifdef WITH_MA57
+#include "Ma57SolverRoot.h"
+#endif
+
+#ifdef WITH_MA27
+#include "Ma27SolverRoot.h"
+#endif
+
+#ifdef WITH_MUMPS
+#include "MumpsSolverRoot.h"
+#endif
+
 #include "sLinsysRoot.h"
 #include "pipsport.h"
 
@@ -21,7 +41,7 @@ class sLinsysRootAug : public sLinsysRoot {
 		 sData* prob_,
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
-		 OoqpVector* rhs_);
+		 OoqpVector* rhs_, bool creat_solvers);
   ~sLinsysRootAug() override;
 
   void finalizeKKT( sData* prob, Variables* vars) override;
@@ -33,8 +53,10 @@ class sLinsysRootAug : public sLinsysRoot {
 
  protected:
   SymMatrix* createKKT (sData* prob) const;
-  void createSolversAndKKts(sData* prob);
   void createReducedRhss();
+  void setNSolversNThreads( SolverType solver );
+  void createSolversSparse( SolverType solver );
+  void createSolversDense();
 
   void assembleLocalKKT( sData* prob ) override;
 //  void solveReduced( sData *prob, SimpleVector& b);
@@ -44,6 +66,7 @@ class sLinsysRootAug : public sLinsysRoot {
         bool sym_res, bool sparse_res ) override;
 
  private:
+  void createSolversAndKKts(sData* prob);
   void finalizeKKTdense( sData* prob, Variables* vars);
   void finalizeKKTsparse( sData* prob, Variables* vars);
   void solveWithIterRef( sData *prob, SimpleVector& b);

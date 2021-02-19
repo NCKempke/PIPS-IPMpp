@@ -38,6 +38,7 @@ namespace pips_options
 {
    bool isSolverAvailable(SolverType solver);
    SolverType getSolverRoot();
+   SolverType getSolverSubRoot();
    SolverType getSolverLeaf();
    SolverTypeDense getSolverDense();
 

@@ -8,26 +8,6 @@
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
 
-#ifdef WITH_PARDISO
-#include "PardisoProjectIndefSolver.h"
-#endif
-
-#ifdef WITH_MKL_PARDISO
-#include "PardisoMKLIndefSolver.h"
-#endif
-
-#ifdef WITH_MA57
-#include "Ma57SolverRoot.h"
-#endif
-
-#ifdef WITH_MA27
-#include "Ma27SolverRoot.h"
-#endif
-
-#ifdef WITH_MUMPS
-#include "MumpsSolverRoot.h"
-#endif
-
 #include "sData.h"
 #include "BorderedSymMatrix.h"
 
@@ -80,36 +60,19 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
-			       OoqpVector* rhs_)
+			       OoqpVector* rhs_, bool create_solvers)
   : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, rhs_)
 { 
    assert( pips_options::getBoolParameter( "HIERARCHICAL" ) );
    assert(locmyl >= 0 && locmzl >= 0);
    assert( computeBlockwiseSC );
 
-   static bool printed = false;
-   const int n_omp_threads = PIPSgetnOMPthreads();
-   if( pips_options::getIntParameter("LINEAR_ROOT_SOLVER") == SolverType::SOLVER_PARDISO )
-   {
-      n_solvers = std::max( 1, n_omp_threads / 2 );
-      n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
-   }
-   else
-   {
-      n_solvers = n_omp_threads;
-      n_threads_solvers = 1;
-   }
 
-   if( PIPS_MPIgetRank() == 0 && !printed )
+   if( create_solvers )
    {
-      printed = true;
-      std::cout << "Using " << n_solvers << " solvers in parallel (with "
-            << n_threads_solvers << " threads each) for root SC computations - sLinsysRootAug\n";
+      createSolversAndKKts(data);
+      createReducedRhss();
    }
-
-   createSolversAndKKts(data);
-
-   createReducedRhss();
 }
 
 sLinsysRootAug::~sLinsysRootAug()
@@ -123,9 +86,6 @@ SymMatrix* sLinsysRootAug::createKKT(sData* prob) const
    if( hasSparseKkt )
    {
       SparseSymMatrix* sparsekkt;
-
-      if( PIPS_MPIgetRank(mpiComm) == 0)
-         std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
 
       if( usePrecondDist )
          sparsekkt = prob->createSchurCompSymbSparseUpperDist(childrenProperStart, childrenProperEnd);
@@ -159,98 +119,135 @@ void sLinsysRootAug::createReducedRhss()
    redRhs = reduced_rhss_blocked[0].get();
 }
 
-
-void sLinsysRootAug::createSolversAndKKts(sData* prob)
+void sLinsysRootAug::setNSolversNThreads(SolverType solver)
 {
-   const int my_rank = PIPS_MPIgetRank(mpiComm);
+   const int n_omp_threads = PIPSgetnOMPthreads();
 
-   const SolverType solver_root = pips_options::getSolverRoot();
-   static bool printed = false;
-
-   assert( n_solvers >= 1 );
-
-   kkt = createKKT(prob);
-
-   solvers_blocked.resize(n_solvers);
-   problems_blocked.resize(n_solvers);
-
-   if( hasSparseKkt )
+   if( solver == SolverType::SOLVER_PARDISO )
    {
-      if( !printed && 0 == my_rank )
-         std::cout << "Using " << solver_root << " for summed Schur complement - sLinsysRootAug\n";
-      printed = true;
-
-      #pragma omp parallel num_threads(n_solvers)
-      {
-         omp_set_num_threads(n_threads_solvers);
-         const int id = omp_get_thread_num();
-
-         if( id == 0 )
-            problems_blocked[id].reset( kkt );
-         else
-            problems_blocked[id].reset( new SparseSymMatrix( dynamic_cast<SparseSymMatrix&>(*kkt) ) );
-
-         SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get());
-
-         if( solver_root == SolverType::SOLVER_MUMPS )
-         {
-#ifdef WITH_MUMPS
-            solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt) );
-#endif
-         }
-         else if( solver_root == SolverType::SOLVER_PARDISO )
-         {
-#ifdef WITH_PARDISO
-            solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt, mpiComm) );
-#endif
-         }
-         else if( solver_root == SolverType::SOLVER_MKL_PARDISO )
-         {
-#ifdef WITH_MKL_PARDISO
-            solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt, mpiComm) );
-#endif
-         }
-         else if( solver_root == SolverType::SOLVER_MA57 )
-         {
-#ifdef WITH_MA57
-            solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm) );
-#endif
-         }
-         else
-         {
-            assert( solver_root == SolverType::SOLVER_MA27 );
-#ifdef WITH_MA27
-            solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm) );
-#endif
-         }
-      }
+      n_solvers = std::max( 1, n_omp_threads / 2 );
+      n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
    }
    else
    {
-      assert( n_solvers == 1 );
+      n_solvers = n_omp_threads;
+      n_threads_solvers = 1;
+   }
+   assert( n_solvers >= 1 );
+}
 
-      const SolverTypeDense solver = pips_options::getSolverDense();
-      DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kkt);
+void sLinsysRootAug::createSolversSparse(SolverType solver_type)
+{
+   #pragma omp parallel num_threads(n_solvers)
+   {
+      omp_set_num_threads(n_threads_solvers);
+      const int id = omp_get_thread_num();
 
-      if( !printed && 0 == my_rank )
-         std::cout << "Using LAPACK dsytrf and " << solver << " for dense summed Schur complement - sLinsysRootAug\n";
-      printed = true;
+      if( id == 0 )
+         problems_blocked[id].reset( kkt );
+      else
+         problems_blocked[id].reset( new SparseSymMatrix( dynamic_cast<SparseSymMatrix&>(*kkt) ) );
 
-      problems_blocked[0].reset( kktmat );
+      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get());
 
-      if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF )
-         solvers_blocked[0].reset( new DeSymIndefSolver(kktmat) );
-      else if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT )
-         solvers_blocked[0].reset( new DeSymIndefSolver2(kktmat, locnx) );
+      if( solver_type == SolverType::SOLVER_MUMPS )
+      {
+   #ifdef WITH_MUMPS
+         solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt) );
+   #endif
+      }
+      else if( solver_type == SolverType::SOLVER_PARDISO )
+      {
+   #ifdef WITH_PARDISO
+         solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt, mpiComm) );
+   #endif
+      }
+      else if( solver_type == SolverType::SOLVER_MKL_PARDISO )
+      {
+   #ifdef WITH_MKL_PARDISO
+         solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt, mpiComm) );
+   #endif
+      }
+      else if( solver_type == SolverType::SOLVER_MA57 )
+      {
+   #ifdef WITH_MA57
+         solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm) );
+   #endif
+      }
       else
       {
-         assert( solver == SolverTypeDense::SOLVER_DENSE_SYM_PSD );
-         solvers_blocked[0].reset( new DeSymPSDSolver(kktmat) );
+         assert( solver_type == SolverType::SOLVER_MA27 );
+   #ifdef WITH_MA27
+         solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm) );
+   #endif
       }
    }
 
    kkt = problems_blocked[0].get();
    solver = solvers_blocked[0].get();
+}
+
+void sLinsysRootAug::createSolversDense()
+{
+   assert( n_solvers == 1 );
+
+   const SolverTypeDense solver_type = pips_options::getSolverDense();
+   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kkt);
+
+   problems_blocked[0].reset( kktmat );
+
+   if( solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF )
+      solvers_blocked[0].reset( new DeSymIndefSolver(kktmat) );
+   else if( solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT )
+      solvers_blocked[0].reset( new DeSymIndefSolver2(kktmat, locnx) );
+   else
+   {
+      assert( solver_type == SolverTypeDense::SOLVER_DENSE_SYM_PSD );
+      solvers_blocked[0].reset( new DeSymPSDSolver(kktmat) );
+   }
+
+   kkt = problems_blocked[0].get();
+   solver = solvers_blocked[0].get();
+}
+
+void sLinsysRootAug::createSolversAndKKts(sData* prob)
+{
+   const SolverType solver_root = pips_options::getSolverRoot();
+   setNSolversNThreads(solver_root);
+
+   static bool printed = false;
+   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      std::cout << "sLinsysRootAug: using " << n_solvers << " solvers in parallel (with "
+            << n_threads_solvers << " threads each) for root SC computations\n";
+      if( hasSparseKkt )
+         std::cout << "sLinsysRootAug: using " << solver_root << "\n";
+      else
+         std::cout << "sLinsysRootAug: using " << pips_options::getSolverDense() << "\n";
+   }
+
+   kkt = createKKT(prob);
+
+   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      if( hasSparseKkt )
+         std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
+      else
+      {
+         const int n = locnx + locmy + locmyl + locmzl;
+         std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << n * n << "\n";
+      }
+   }
+
+   printed = true;
+
+   solvers_blocked.resize(n_solvers);
+   problems_blocked.resize(n_solvers);
+
+   if( hasSparseKkt )
+      createSolversSparse(solver_root);
+   else
+      createSolversDense();
 }
 
 #ifdef TIMING

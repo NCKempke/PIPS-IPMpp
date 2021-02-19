@@ -120,6 +120,33 @@ namespace pips_options
       return solver_root;
    }
 
+   SolverType getSolverSubRoot()
+   {
+      const int solver_int = getIntParameter("LINEAR_SUB_ROOT_SOLVER");
+      if( solver_int < 1 || solver_int > 5 )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+            std::cout << "Error: unknown solver type LINEAR_SUB_ROOT_SOLVER: " << solver_int << "\n";
+         printAvailableSolvers();
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      SolverType solver_sub_root = static_cast<SolverType>(solver_int);
+      if( !isSolverAvailable(solver_sub_root) )
+      {
+         if( PIPS_MPIgetRank() == 0 )
+         {
+            std::cout << "Error: sprecified sub-root solver \"" << solver_sub_root << "\" is not available\n";
+            printAvailableSolvers();
+         }
+         MPI_Barrier(MPI_COMM_WORLD);
+         MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
+
+      return solver_sub_root;
+   }
+
    SolverTypeDense getSolverDense()
    {
       const int solver_int = getIntParameter("LINEAR_DENSE_SOLVER");
@@ -200,6 +227,7 @@ namespace pips_options
 
       int_options["LINEAR_LEAF_SOLVER"] = default_solver;
       int_options["LINEAR_ROOT_SOLVER"] = default_solver;
+      int_options["LINEAR_SUB_ROOT_SOLVER"] = default_solver;
 
       int_options["LINEAR_DENSE_SOLVER"] = SolverTypeDense::SOLVER_DENSE_SYM_INDEF;
 

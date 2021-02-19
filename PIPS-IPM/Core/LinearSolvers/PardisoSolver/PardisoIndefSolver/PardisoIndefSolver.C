@@ -137,7 +137,7 @@ void PardisoIndefSolver::matrixChanged()
    {
       const int id = omp_get_thread_num();
       if( my_rank == 0 && id == 0 )
-         printf("\n Schur complement factorization is starting ...\n ");
+         printf("\n PardisoIndefSolver: Schur complement factorization is starting ...\n ");
 
       if( mStorageSparse )
          factorizeFromSparse();
@@ -145,7 +145,7 @@ void PardisoIndefSolver::matrixChanged()
          factorizeFromDense();
 
       if( my_rank == 0 && id == 0 )
-         printf("\n Schur complement factorization completed \n ");
+         printf("\n PardisoIndefSolver: Schur complement factorization completed \n ");
    }
 }
 

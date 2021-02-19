@@ -273,7 +273,7 @@ DoubleLinearSolver* sLinsysRootBordered::createSolver(sData*, SymMatrix* kktmat_
 
    static bool printed = false;
    if( !printed && 0 == PIPS_MPIgetRank(mpiComm) )
-      std::cout << "Using LAPACK dsytrf and " << solver << " for dense border Schur complement - sLinsysRootAug\n";
+      std::cout << "sLinsysRootBordered: using " << solver << " for dense border Schur complement\n";
    printed = true;
 
    if( solver == SolverTypeDense::SOLVER_DENSE_SYM_INDEF )

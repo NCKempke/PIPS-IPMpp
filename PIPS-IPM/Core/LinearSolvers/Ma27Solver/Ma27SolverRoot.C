@@ -45,13 +45,13 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 void Ma27SolverRoot::matrixChanged()
 {
    if( PIPS_MPIgetRank() == 0 && omp_get_thread_num() == 0 )
-      printf("\n Schur complement factorization is starting ...\n ");
+      printf("\n MA27root: Schur complement factorization is starting ...\n ");
 
    if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
       Ma27Solver::matrixChanged();
 
    if( PIPS_MPIgetRank() == 0 && omp_get_thread_num() == 0 )
-      printf("\n Schur complement factorization completed \n ");
+      printf("\n MA27root: Schur complement factorization completed \n ");
 
 }
 

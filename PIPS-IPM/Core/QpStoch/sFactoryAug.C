@@ -30,7 +30,7 @@ sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
    if( prob->isHierarchyInnerLeaf() )
       return new sLinsysRootAugHierInner(this, prob, dd, dq, nomegaInv, rhs );
    else
-      return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs);
+      return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs, true);
 }
 
 sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()

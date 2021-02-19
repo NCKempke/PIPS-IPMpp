@@ -11,12 +11,42 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
       sData *prob_, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_) :
       sLinsysRootAug(factory, prob_, dynamic_cast<StochVector*>(dd_)->vec,
             dynamic_cast<StochVector*>(dq_)->vec,
-            dynamic_cast<StochVector*>(nomegaInv_)->vec, rhs_)
+            dynamic_cast<StochVector*>(nomegaInv_)->vec, rhs_, false)
 {
    assert( locnx == 0 );
    assert( locmy == 0 );
+
+   createSolversAndKKts(prob_);
+   createReducedRhss();
 }
 
+void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
+{
+   assert( hasSparseKkt );
+
+   const SolverType solver_sub_root = pips_options::getSolverSubRoot();
+   setNSolversNThreads(solver_sub_root);
+
+   static bool printed = false;
+   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      std::cout << "sLinsysRootAugHierInner: using " << n_solvers << " solvers in parallel (with "
+            << n_threads_solvers << " threads each) for sub-root SC computations\n";
+      std::cout << "sLinsysRootAugHierInner: using " << solver_sub_root << "\n";
+   }
+
+   kkt = createKKT(prob);
+
+   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+      std::cout << "sLinsysRootAugHierInner: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
+   printed = true;
+
+
+   solvers_blocked.resize(n_solvers);
+   problems_blocked.resize(n_solvers);
+
+   createSolversSparse(solver_sub_root);
+}
 
 void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
 {
