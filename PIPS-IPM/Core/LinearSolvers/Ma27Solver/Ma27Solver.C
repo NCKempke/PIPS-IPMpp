@@ -81,11 +81,11 @@ void Ma27Solver::firstCall()
   delete [] iw;
   delete [] iw1;
 
-  la = rpessimism * this->minimumRealWorkspace();
+  la = rpessimism * minimumRealWorkspace() * 10;
   fact.resize(la);
 
   // set iw and iw1 in prep for calls to ma27bd and ma27cd
-  liw = ipessimism * this->minimumIntWorkspace();
+  liw = ipessimism * minimumIntWorkspace();
   iw = new int[liw];
   iw1 = new int[n];
 }  
