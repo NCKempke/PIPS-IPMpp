@@ -36,7 +36,7 @@ void daxpy_ ( int * n, double * alpha, double x[], int * incx,
 	      double y[], int * incy );
 
 extern "C"
-double ddot_ ( int * n, double dx[], int * incx, double dy[], int * incy );
+double ddot_ ( const int* n, const double dx[], const int* incx, const double dy[], const int* incy );
 
 extern "C"
 double dscal_( int * n, double * da, double dx[], int * incx );

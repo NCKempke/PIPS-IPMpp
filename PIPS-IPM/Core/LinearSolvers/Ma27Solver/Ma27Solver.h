@@ -184,7 +184,7 @@ protected:
   void regularizeMatrix();
 
   /* scaler */
-  SymmetricLinearScaler* scaler;
+  SymmetricLinearScaler* scaler{};
 
   /* stuff for MA60 iterative refinement */
   int icntl_ma60[5];

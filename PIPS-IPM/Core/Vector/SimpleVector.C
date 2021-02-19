@@ -648,11 +648,22 @@ void SimpleVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& xvec,
   }
 }
 
+template<>
+double SimpleVectorBase<double>::dotProductWith( const OoqpVectorBase<double>& vec ) const
+{
+  assert( this->n == vec.length() );
+  const SimpleVectorBase<double> & svec = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+
+  const int incx = 1;
+  return ddot_( &this->n, v, &incx, svec.v, &incx );
+}
+
 template<typename T>
 T SimpleVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& vec ) const
 {
   assert( this->n == vec.length() );
   const SimpleVectorBase<T> & svec = dynamic_cast<const SimpleVectorBase<T> &>(vec);
+
   T * vvec = svec.v;
 
   T dot1 = 0.0;

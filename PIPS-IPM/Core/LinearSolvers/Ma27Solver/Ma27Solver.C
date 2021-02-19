@@ -15,7 +15,7 @@
 extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) :
-       mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ), scaler( new Mc30Scaler() )
+       mat(sgm), mat_storage(sgm->getStorageHandle()), name( name_ ) //, scaler( new Mc30Scaler() )
 {
    init();
 }
@@ -107,8 +107,9 @@ void Ma27Solver::matrixChanged()
    do
    {
       // copy M to fact
-      this->copyMatrixElements(fact, la);
-      scaler->scaleMatrixTripletFormat( n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
+      copyMatrixElements(fact, la);
+      if( scaler )
+         scaler->scaleMatrixTripletFormat( n, nnz, fact.data(), irowM.data(), jcolM.data(), true);
 
       FNAME(ma27bd)(&n, &nnz, irowM.data(), jcolM.data(), fact.data(), &la, iw, &liw, ikeep, &nsteps,
             &maxfrt, iw1, icntl.data(), cntl.data(), info.data());
@@ -193,11 +194,13 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       assert( iw1 );
 
       /* solve DAD y = D*residual */
-      scaler->scaleVector(*residual);
+      if( scaler )
+         scaler->scaleVector(*residual);
       FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, w, &maxfrt, residual->elements(), iw1,
             &nsteps, icntl.data(), info.data());
       /* Dy = x */
-      scaler->scaleVector(*residual);
+      if( scaler )
+         scaler->scaleVector(*residual);
 
       iter->axpy(1.0, *residual);
 
