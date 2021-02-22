@@ -166,7 +166,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
 //      pushConvergedVarsAwayFromBounds(*prob, *iterate);
-      pushSmallComplementarityProducts( *prob, *iterate, *resid );
+//      pushSmallComplementarityProducts( *prob, *iterate, *resid );
 
       setBiCGStabTol(iter);
       bool small_corr = false;
@@ -198,8 +198,6 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
          step->setToZero();
 
       iterate->stepbound_pd(step, alpha_pri, alpha_dual);
-      alpha_pri = 0.995 * alpha_pri;
-      alpha_dual = 0.995 * alpha_dual;
 
       // calculate centering parameter
       muaff = iterate->mustep_pd(step, alpha_pri, alpha_dual);

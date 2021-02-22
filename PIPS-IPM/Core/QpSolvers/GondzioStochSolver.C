@@ -163,7 +163,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
       // pushConvergedVarsAwayFromBounds(*prob, *iterate);
-      pushSmallComplementarityProducts( *prob, *iterate, *resid );
+      // pushSmallComplementarityProducts( *prob, *iterate, *resid );
 
       setBiCGStabTol(iter);
       bool small_corr = false;
@@ -585,7 +585,7 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables&
    }
 }
 
-/* initially adapted from hopdm */
+/* initially adapted from hopdm */ // TODO : check some more
 void GondzioStochSolver::pushSmallComplementarityProducts( const Data& prob_in, Variables& iterate_in, Residuals& residuals ) const
 {
    if( PIPS_MPIgetRank() == 0 )

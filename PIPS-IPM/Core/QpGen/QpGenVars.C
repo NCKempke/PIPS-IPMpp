@@ -184,19 +184,8 @@ double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data& data, d
    u->getSumCountIfSmall( tol, sum_small_distance, n_close, &*icupp );
    t->getSumCountIfSmall( tol, sum_small_distance, n_close, &*iclow );
 
-   double min_v, min_w, min_u, min_t;
-
-   v->absminNonZero(min_v, 1e-19);
-   w->absminNonZero(min_w, 1e-19);
-   u->absminNonZero(min_u, 1e-19);
-   t->absminNonZero(min_t, 1e-19);
-
    if( n_close == 0 )
-   {
-      if( PIPS_MPIgetRank() == 0 )
-         std::cout << "v_min : " << min_v << " w_min " << min_w << " u_min : " << min_u << " t_min : " << min_t << std::endl;
       return std::numeric_limits<double>::infinity();
-   }
    else
       return sum_small_distance / (double) n_close;
 }
