@@ -56,14 +56,14 @@ bool StochPresolverBoundStrengthening::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1)
    {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
-      std::cout << "--- Before Bound Strengthening Presolving:" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "--- Before Bound Strengthening Presolving:" << "\n";
    }
    countRowsCols();
 #endif
 
    if( my_rank == 0 && verbosity > 1)
-      std::cout << "Start Bound Strengthening Presolving..." << std::endl;
+      std::cout << "Start Bound Strengthening Presolving..." << "\n";
 
 
    int iter = 0;
@@ -117,12 +117,12 @@ bool StochPresolverBoundStrengthening::applyPresolving()
 #ifndef NDEBUG
    tightenings = PIPS_MPIgetSum(tightenings, MPI_COMM_WORLD);
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After " << iter << " rounds of bound strengthening and " << tightenings << " times of tightening bounds:" << std::endl;
+      std::cout << "--- After " << iter << " rounds of bound strengthening and " << tightenings << " times of tightening bounds:" << "\n";
    if( my_rank == 0 && verbosity == 1 )
-      std::cout << "Tight:\t tightened " << tightenings << std::endl;
+      std::cout << "Tight:\t tightened " << tightenings << "\n";
    countRowsCols();
    if( my_rank == 0 && verbosity > 1)
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
 
@@ -309,30 +309,49 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock( SystemType syste
 
          if(system_type == EQUALITY_SYSTEM)
          {
+            /* ax = b - y */
+
+            /* ax <= b - min(y) */
+            /* b - max(y) <= ax */
             if( PIPSisLT(0.0, a_ik) )
             {
+               /* x <= [b - min(y)] / a */
                ubx_new = (rhs[row] - actmin_row_without_curr) / a_ik;
+
+               /* [b - max(y)] / a <= x */
                lbx_new = (rhs[row] - actmax_row_without_curr) / a_ik;
             }
             else
             {
+               /* [b - min(y)] / a <= x */
                lbx_new = (rhs[row] - actmin_row_without_curr) / a_ik;
+
+               /* x <= [b - max(y)] / a */
                ubx_new = (rhs[row] - actmax_row_without_curr) / a_ik;
             }
          }
          else
          {
+            /* l - y <= ax <= u - y */
+
+            /* ax <= u - min(y) */
+            /* l - max(y) <= ax */
             if( PIPSisLT(0.0, a_ik) )
             {
+               /* x <= [u - min(y)] / a */
                if( !PIPSisZero(icupp[row]) )
                   ubx_new = (cupp[row] - actmin_row_without_curr) / a_ik;
+
+               /* [l - max(y)] / a <= x */
                if( !PIPSisZero(iclow[row]) )
                   lbx_new = (clow[row] - actmax_row_without_curr) / a_ik;
             }
             else
             {
+               /* [u - min(y)] / a <= x */
                if( !PIPSisZero(icupp[row]) )
                   lbx_new = (cupp[row] - actmin_row_without_curr) / a_ik;
+               /* x <= [l - max(y)] / a */
                if( !PIPSisZero(iclow[row]) )
                   ubx_new = (clow[row] - actmax_row_without_curr) / a_ik;
             }

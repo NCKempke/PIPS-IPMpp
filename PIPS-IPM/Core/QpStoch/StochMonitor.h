@@ -25,6 +25,7 @@ class StochMonitor : public OoqpMonitor
  public:  
   StochMonitor(QpGenStoch* qp, Scaler* scaler = nullptr);
   StochMonitor(sFactory* qp, Scaler* scaler = nullptr);
+
   void doIt( const Solver * solver, const Data * data, const Variables * vars,
 		     const Residuals * resids,
 		     double alpha, double sigma,

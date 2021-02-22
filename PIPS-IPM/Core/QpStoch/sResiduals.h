@@ -38,12 +38,14 @@ public:
   
   sResiduals( const sResiduals& res );
 
-  sResiduals( const sResiduals& res,
-        OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
-        OoqpVectorHandle iclow_, OoqpVectorHandle icupp_ );
+  void sync();
 
-  virtual void sync();
- private:
+  void permuteVec0Entries( const std::vector<unsigned int>& perm );
+  void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
+  void permuteIneqLinkingEntries( const std::vector<unsigned int>& perm );
+
+  bool isRootNodeInSync() const;
+private:
   std::vector<sResiduals*> children;
   void createChildren();
   void destroyChildren();

@@ -27,41 +27,41 @@ class sTreeCallbacks : public sTree
   sTreeCallbacks(StochInputTree::StochInputNode* data_);
   ~sTreeCallbacks();
 
-  StochSymMatrix*   createQ() const;
-  StochVector*      createc() const;
+  StochSymMatrix*   createQ() const override;
+  StochVector*      createc() const override;
 
-  StochVector*      createxlow()  const;
-  StochVector*      createixlow() const;
-  StochVector*      createxupp()  const;
-  StochVector*      createixupp() const;
-
-
-  StochGenMatrix*   createA() const;
-  StochVector*      createb() const;
+  StochVector*      createxlow()  const override;
+  StochVector*      createixlow() const override;
+  StochVector*      createxupp()  const override;
+  StochVector*      createixupp() const override;
 
 
-  StochGenMatrix*   createC() const;
-  StochVector*      createclow()  const;
-  StochVector*      createiclow() const;
-  StochVector*      createcupp()  const;
-  StochVector*      createicupp() const;
+  StochGenMatrix*   createA() const override;
+  StochVector*      createb() const override;
 
-  int nx() const;
-  int my() const;
-  int myl() const;
-  int mz() const; 
-  int mzl() const;
-  int id() const; 
 
-  void computeGlobalSizes();
- public:
+  StochGenMatrix*   createC() const override;
+  StochVector*      createclow()  const override;
+  StochVector*      createiclow() const override;
+  StochVector*      createcupp()  const override;
+  StochVector*      createicupp() const override;
+
+  int nx() const override;
+  int my() const override;
+  int myl() const override;
+  int mz() const override; 
+  int mzl() const override;
+  int id() const override; 
+
+  void computeGlobalSizes() override;
+  
   int NNZA,NNZQ,NNZB,NNZBl,NNZC,NNZD,NNZDl; //global nnz
   int NNZA_INACTIVE,NNZQ_INACTIVE,NNZB_INACTIVE,NNZBl_INACTIVE,NNZC_INACTIVE,NNZD_INACTIVE,NNZDl_INACTIVE; //global inactive nnz
   long long N_INACTIVE,MY_INACTIVE,MZ_INACTIVE; //global inactive sizes
   int nx_active, my_active, mz_active, myl_active, mzl_active;
   int nx_inactive, my_inactive, mz_inactive, myl_inactive, mzl_inactive;
 
-  void loadLocalSizes();
+  void loadLocalSizes() override;
 
   virtual void switchToPresolvedData();
   virtual void switchToOriginalData();

@@ -21,8 +21,8 @@ protected:
   int nx, ny, n;
 public:
   DeSymIndefSolver2( DenseSymMatrix * storage, int nx );
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
   using DoubleLinearSolver::solve;
   void solve ( OoqpVector& vec ) override;
   virtual ~DeSymIndefSolver2();

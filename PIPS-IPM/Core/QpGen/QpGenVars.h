@@ -82,17 +82,15 @@ public:
   void pushSlacksFromBound( double tol, double amount );
 
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
-  virtual double mu();
+  double mu() override;
 
-  virtual double mustep( const Variables *step_in, double alpha);
+  double mustep(const Variables *step_in, double alpha) override;
+  double mustep_pd( const Variables *step, double alpha_primal, double alpha_dual ) override;
 
-  virtual double mustep_pd( const Variables *step, double alpha_primal, double alpha_dual );
+  void saxpy( const Variables *b, double alpha ) override;
+  void saxpy_pd( const Variables *b, double alpha_primal, double alpha_dual) override;
 
-  virtual void saxpy( const Variables *b, double alpha );
-
-  virtual void saxpy_pd( const Variables *b, double alpha_primal, double alpha_dual);
-
-  virtual void negate();
+  void negate() override;
   
   /** calculate the largest alpha in (0,1] such that the nonnegative
    * variables stay nonnegative in the given search direction. In the
@@ -101,7 +99,7 @@ public:
    * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
    *
    * @see findBlocking */
-  virtual double stepbound( const Variables *b );
+  double stepbound( const Variables *b ) override;
 
   /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
    * variables stay nonnegative in the given search direction b. In the
@@ -110,7 +108,7 @@ public:
    *
    * @see stepbound
    */
-  virtual void stepbound_pd( const Variables *b, double & alpha_primal, double & alpha_dual );
+  void stepbound_pd( const Variables *b, double & alpha_primal, double & alpha_dual ) override;
 
   /** Performs the same function as stepbound, and supplies additional
    * information about which component of the nonnegative variables is
@@ -134,48 +132,47 @@ public:
    *
    * @see stepbound
    * */
-  virtual double findBlocking( const Variables * step,
+  double findBlocking( const Variables * step,
 			       double & primalValue,
 			       double & primalStep,
 			       double & dualValue,
 			       double & dualStep,
-			       int& firstOrSecond );
+			       int& firstOrSecond ) override;
 
-  virtual void findBlocking_pd( const Variables * step,
+  void findBlocking_pd( const Variables * step,
   				double & primalValue,
   				double & primalStep,
   				double & dualValue,
   				double & dualStep,
   				double & primalValue_d, double & primalStep_d, double & dualValue_d, double & dualStep_d,
   				double& alphaPrimal, double& alphaDual,
-				bool& primalBlocking, bool& dualBlocking );
+				bool& primalBlocking, bool& dualBlocking ) override;
 
   /** sets components of (u,t,v,w) to alpha and of
       (lambda,pi,phi,gamma) to beta */
-  virtual void interiorPoint( double alpha, double beta );
+  void interiorPoint( double alpha, double beta ) override;
 
   /** add alpha to components of (u,t,v,w) and beta to components of
       (lambda,pi,phi,gamma) */
-  virtual void shiftBoundVariables( double alpha, double beta );
+  void shiftBoundVariables( double alpha, double beta ) override;
 
   /** check whether this is an interior point. Useful as a sanity check. */
   virtual int isInteriorPoint();
 
-  virtual double violation();
+  double violation() override;
 
-  virtual void print();
+  void print() override;
   virtual void printSolution( MpsReader * reader, QpGenData * prob,
 			      int& iErr );
 
   virtual void unscaleSolution( QpGenData * data);
   virtual void unscaleBounds  ( QpGenData * data);
 
-  virtual int  validNonZeroPattern();
+  virtual int validNonZeroPattern();
   
-  virtual void copy(const Variables *b);
+  void copy( const Variables *b) override;
 
   double onenorm() const override;
-
   double infnorm() const override;
 
   void setToZero() override;
@@ -183,7 +180,6 @@ public:
   void printNorms() const override;
 
   void setNotIndicatedBoundsTo( Data& data, double value ) override;
-
 };
 
 /** Indicates what type is the blocking variable in the step length

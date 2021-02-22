@@ -42,7 +42,6 @@ public:
 
   int solve( Data *prob, Variables *iterate, Residuals * resids ) override;
 
-
   void defaultMonitor( const Data * data, const Variables * vars,
 			       const Residuals * resids,
 			       double alpha, double sigma,

@@ -30,22 +30,22 @@ class sLinsysLeaf : public sLinsys
 
   virtual ~sLinsysLeaf();
 
-  virtual void factor2( sData *prob, Variables *vars);
-  virtual void Lsolve ( sData *prob, OoqpVector& x );
-  virtual void Dsolve ( sData *prob, OoqpVector& x );
-  virtual void Ltsolve( sData *prob, OoqpVector& x );
+  void factor2( sData *prob, Variables *vars) override;
+  void Lsolve ( sData *prob, OoqpVector& x ) override;
+  void Dsolve ( sData *prob, OoqpVector& x ) override;
+  void Ltsolve( sData *prob, OoqpVector& x ) override;
 
-  //virtual void Lsolve2 ( OoqpVector& x );
-  //virtual void Dsolve2 ( OoqpVector& x );
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
+  //void Lsolve2 ( OoqpVector& x ) override;
+  //void Dsolve2 ( OoqpVector& x ) override;
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
 
-  virtual void putZDiagonal( OoqpVector& zdiag );
-  //virtual void solveCompressed( OoqpVector& rhs );
-  virtual void putXDiagonal( OoqpVector& xdiag_ );
+  void putZDiagonal( OoqpVector& zdiag ) override;
+  //void solveCompressed( OoqpVector& rhs ) override;
+  void putXDiagonal( OoqpVector& xdiag_ ) override;
 
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
-  void sync();
-  virtual void deleteChildren();
+  void sync() override;
+  void deleteChildren() override;
  protected:
   sLinsysLeaf() {};
 

@@ -49,8 +49,8 @@ public:
   virtual SparseGenMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
   virtual SparseGenMatrix* cloneFull(bool switchToDynamicStorage = false) const;
 
-  virtual void getSize( long long& m, long long& n ) const;
-  virtual void getSize( int& m, int& n ) const;
+  void getSize( long long& m, long long& n ) const override;
+  void getSize( int& m, int& n ) const override;
 
   /** The actual number of structural non-zero elements in this sparse
    *  matrix. This includes so-called "accidental" zeros, elements that
@@ -58,30 +58,30 @@ public:
    */
   virtual int numberOfNonZeros();
 
-  virtual int isKindOf( int matType ) const;
+  int isKindOf( int matType ) const override;
 
-  virtual void atPutDense( int row, int col, double * A, int lda,
-			   int rowExtent, int colExtent );
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent );
-  virtual void ColumnScale( OoqpVector& vec );
-  virtual void RowScale( OoqpVector& vec );
-  virtual void SymmetricScale( OoqpVector &vec);
-  virtual void scalarMult( double num);
-  virtual void fromGetSpRow( int row, int col,
+  void atPutDense( int row, int col, double * A, int lda,
+			   int rowExtent, int colExtent ) override;
+  void fromGetDense( int row, int col, double * A, int lda,
+			     int rowExtent, int colExtent ) override;
+  void ColumnScale( OoqpVector& vec ) override;
+  void RowScale( OoqpVector& vec ) override;
+  void SymmetricScale( OoqpVector &vec) override;
+  void scalarMult( double num) override;
+  void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
-			     int colExtent, int& info );
-  virtual void atPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
+			     int colExtent, int& info ) override;
+  void atPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
 			       int srcRow, int srcCol,
-			       int rowExtent, int colExtent );
-  virtual void atPutSpRow( int col, double A[], int lenA, int jcolA[],
-			   int& info );
+			       int rowExtent, int colExtent ) override;
+  void atPutSpRow( int col, double A[], int lenA, int jcolA[],
+			   int& info ) override;
 
-  virtual void putSparseTriple( int irow[], int len, int jcol[], double A[],
-				int& info );
+  void putSparseTriple( int irow[], int len, int jcol[], double A[],
+				int& info ) override;
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( OoqpVector& vec ) override;
 
   void mult ( double beta,  OoqpVector& y,
                       double alpha, const OoqpVector& x ) const override;
@@ -102,9 +102,9 @@ public:
 			  double alpha, double x_in[], int incx );
 
   /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
-  virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res);
+  void matTransDMultMat(OoqpVector& d, SymMatrix** res) override;
   /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
-  virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res);
+  void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) override;
 
   /** initialize (dynamic) transposed matrix */
   virtual void initTransposed(bool dynamic = false);
@@ -115,9 +115,9 @@ public:
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
-  virtual void writeToStream(ostream& out) const;
-  virtual void writeToStreamDense(ostream& out) const;
-  virtual void writeToStreamDenseRow( stringstream& out, int rowidx) const;
+  void writeToStream( std::ostream& out) const override;
+  void writeToStreamDense( std::ostream& out) const override;
+  virtual void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
   virtual std::string writeToStreamDenseRow( int rowidx) const;
 
   /** Make the elements in this matrix symmetric. The elements of interest
@@ -127,10 +127,10 @@ public:
    */
   virtual void symmetrize( int& info );
 
-  virtual void randomize( double alpha, double beta, double * seed );
+  void randomize( double alpha, double beta, double * seed ) override;
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void atPutDiagonal( int idiag, OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   SparseStorageHandle getStorageHandle() { return mStorage; }
   SparseStorage& getStorageRef() { return *mStorage; }
@@ -152,15 +152,15 @@ public:
   virtual void addNnzPerCol(OoqpVectorBase<int>& nnzVec);
 
   /** fill vector with absolute minimum/maximum value of each row */
-  virtual void getRowMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* colScaleVec, OoqpVector& minmaxVec );
+  void getRowMinMaxVec( bool getMin, bool initializeVec,
+        const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
 
   /** fill vector with absolute minimum/maximum value of each column */
-  virtual void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, OoqpVector& minmaxVec );
+  void getColMinMaxVec( bool getMin, bool initializeVec,
+        const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
 
-  virtual void addRowSums( OoqpVector& sumVec );
-  virtual void addColSums( OoqpVector& sumVec );
+  void addRowSums( OoqpVector& sumVec ) override;
+  void addColSums( OoqpVector& sumVec ) override;
 
   void initStaticStorageFromDynamic(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>* colNnzVec);
 

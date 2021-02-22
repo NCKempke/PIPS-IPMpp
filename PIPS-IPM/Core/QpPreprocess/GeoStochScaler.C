@@ -22,7 +22,7 @@ GeoStochScaler::GeoStochScaler(Data* prob, bool equiScaling, bool bitshifting)
    int myRank = 0;
    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-   if( myRank == 0) std::cout<<"Creating GeoStochScaler... bitshifting="<< bitshifting <<endl;
+   if( myRank == 0) std::cout<<"Creating GeoStochScaler... bitshifting="<< bitshifting << "\n";
    equilibrate = equiScaling;
 
    // todo: adjust parameters
@@ -52,7 +52,7 @@ void GeoStochScaler::doObjScaling()
       MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
       if( myRank == 0 )
-         std::cout << "Almost zero objective after geometric scaling!" << std::endl;
+         std::cout << "Almost zero objective after geometric scaling!" << "\n";
    }
    else
    {
@@ -184,7 +184,7 @@ void GeoStochScaler::scale()
    if( !geoscale && !equilibrate )
    {
       if( myRank == 0 )
-         std::cout<< "No geometric scaling done, improvement was not good enough..." << std::endl;
+         std::cout<< "No geometric scaling done, improvement was not good enough..." << "\n";
    }
    else
    {
@@ -213,7 +213,7 @@ void GeoStochScaler::scale()
       absmaxAll = std::max(absmaxAll, rhsC->infnorm());
       absmaxAll = std::max(absmaxAll, lhsC->infnorm());
 
-      std::cout << "absmax: " << absmaxAll <<  "\n\n\n\n\n" <<std::endl;
+      std::cout << "absmax: " << absmaxAll <<  "\n\n\n\n\n" <<"\n";
 
       bA->scalarMult(1.0 / absmaxAll);
       bux->scalarMult(1.0 / absmaxAll);

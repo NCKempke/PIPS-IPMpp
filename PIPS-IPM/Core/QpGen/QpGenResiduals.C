@@ -80,23 +80,23 @@ QpGenResiduals::QpGenResiduals( const QpGenResiduals& res) : Residuals(res)
   icupp = OoqpVectorHandle( res.icupp->cloneFull() );
   mcupp = res.mcupp;
 
-  rQ = OoqpVectorHandle(res.rQ->cloneFull());
-  rA = OoqpVectorHandle(res.rA->cloneFull());
-  rC = OoqpVectorHandle(res.rC->cloneFull());
+  rQ = OoqpVectorHandle( res.rQ->cloneFull() );
+  rA = OoqpVectorHandle( res.rA->cloneFull() );
+  rC = OoqpVectorHandle( res.rC->cloneFull() );
 
-  rz = OoqpVectorHandle(res.rz->cloneFull());
+  rz = OoqpVectorHandle( res.rz->cloneFull() );
 
-  rt = OoqpVectorHandle(res.rt->cloneFull());
-  rlambda = OoqpVectorHandle(res.rlambda->cloneFull());
+  rt = OoqpVectorHandle( res.rt->cloneFull() );
+  rlambda = OoqpVectorHandle( res.rlambda->cloneFull() );
 
-  ru = OoqpVectorHandle(res.ru->cloneFull());
-  rpi = OoqpVectorHandle(res.rpi->cloneFull());
+  ru = OoqpVectorHandle( res.ru->cloneFull() );
+  rpi = OoqpVectorHandle( res.rpi->cloneFull() );
 
-  rv = OoqpVectorHandle(res.rv->cloneFull());
-  rgamma = OoqpVectorHandle(res.rgamma->cloneFull());
+  rv = OoqpVectorHandle( res.rv->cloneFull() );
+  rgamma = OoqpVectorHandle( res.rgamma->cloneFull() );
   
-  rw = OoqpVectorHandle(res.rw->cloneFull());
-  rphi = OoqpVectorHandle(res.rphi->cloneFull());
+  rw = OoqpVectorHandle( res.rw->cloneFull() );
+  rphi = OoqpVectorHandle( res.rphi->cloneFull() );
 }
 
 
@@ -110,6 +110,8 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   QpGenData * prob = (QpGenData *) prob_in;
 
   double componentNorm, norm = 0.0, gap = 0.0;
+  primal_objective = 0.0;
+  dual_objective = 0.0;
  
   /* rQ = g + Qx - y - z - gamma - phi */
   prob->getg( *rQ );
@@ -117,6 +119,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
   // calculate x^T (g+Qx) - contribution to the duality gap
   gap += rQ->dotProductWith(*vars->x); 
+  primal_objective += gap;
 
   prob->ATransmult( 1.0, *rQ, -1.0, *vars->y );
   prob->CTransmult( 1.0, *rQ, -1.0, *vars->z );
@@ -146,7 +149,9 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   //printf("gap2=%20.16f\n", gap);
   
   // contribution -d^T y to duality gap
-  gap -= prob->bA->dotProductWith(*vars->y);
+  const double ba_y = prob->bA->dotProductWith(*vars->y);
+  gap -= ba_y;
+  dual_objective += ba_y;
 
   componentNorm = rA->infnorm();
   if( print_resids )
@@ -186,7 +191,10 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     rt->axpy( -1.0, prob->slowerBound() );
     rt->selectNonZeros( *iclow );
     rt->axpy( -1.0, *vars->t );
-    gap -= prob->bl->dotProductWith(*vars->lambda);
+
+    const double bl_lambda = prob->bl->dotProductWith(*vars->lambda);
+    gap -= bl_lambda;
+    dual_objective += bl_lambda;
 
     componentNorm = rt->infnorm();
     if( print_resids )
@@ -213,7 +221,9 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     ru->selectNonZeros( *icupp );
     ru->axpy( 1.0, *vars->u );
 
-    gap += prob->bu->dotProductWith(*vars->pi);
+    const double bu_pi = prob->bu->dotProductWith(*vars->pi);
+    gap += bu_pi;
+    dual_objective -= bu_pi;
 
     componentNorm = ru->infnorm();
     if( print_resids )
@@ -242,7 +252,9 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     rv->selectNonZeros( *ixlow );
     rv->axpy( -1.0, *vars->v );
 
-    gap -= prob->blx->dotProductWith(*vars->gamma);
+    const double blx_gamma = prob->blx->dotProductWith(*vars->gamma);
+    gap -= blx_gamma;
+    dual_objective += blx_gamma;
 
     componentNorm = rv->infnorm();
     if( print_resids )
@@ -262,7 +274,9 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     rw->selectNonZeros( *ixupp );
     rw->axpy(  1.0, *vars->w );
 
-    gap += prob->bux->dotProductWith(*vars->phi);
+    const double bux_phi = prob->bux->dotProductWith(*vars->phi);
+    gap += bux_phi;
+    dual_objective -= bux_phi;
 
     componentNorm = rw->infnorm();
     if( print_resids )
@@ -275,14 +289,12 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     }
     if( componentNorm > norm ) norm = componentNorm;
   }
-   
+
   mDualityGap = gap;
   mResidualNorm = norm;
 
   if( print_resids && myRank == 0)
-  {
      std::cout << "Norm residuals: " << mResidualNorm << "\tduality gap: " << mDualityGap << std::endl;
-  }
 }
 
 double QpGenResiduals::recomputeResidualNorm()

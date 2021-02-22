@@ -754,7 +754,7 @@ void StochPostsolver::markRowAdded(const INDEX& row)
 PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Variables& original_solution)
 {
    if(my_rank == 0)
-      std::cout << "start postsolving... " << std::endl;
+      std::cout << "start postsolving... " << "\n";
 
    const sVars& stoch_reduced_sol = dynamic_cast<const sVars&>(reduced_solution);
    sVars& stoch_original_sol = dynamic_cast<sVars&>(original_solution);
@@ -895,7 +895,7 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
    assert( stoch_original_sol.isRootNodeInSync() );
    assert( allVariablesSet(stoch_original_sol) );
    if( my_rank == 0 )
-      std::cout << "finished postsolving... " << std::endl;
+      std::cout << "finished postsolving... " << "\n";
 
    if( postsolve_success )
       return PRESOLVE_OK;
@@ -1459,7 +1459,8 @@ bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(sVars& origina
 
    double& v = local_linking_col ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col);
    double& w = local_linking_col ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.w, col);
-   assert( PIPSisZero(v) && PIPSisZero(w) );
+   
+   assert( PIPSisZeroFeas(v) && PIPSisZeroFeas(w) );
    v = (xlow_old == INF_NEG) ? 0 : value - xlow_old;
    w = (xupp_old == INF_POS) ? 0 : xupp_old - value;
 
@@ -3060,7 +3061,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.x->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "x not all set" << std::endl;
+         std::cout << "x not all set" << "\n";
       all_set = false;
    }
 
@@ -3068,7 +3069,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.s->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "s not all set" << std::endl;
+         std::cout << "s not all set" << "\n";
       all_set = false;
    }
 
@@ -3076,7 +3077,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.y->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "y not all set" << std::endl;
+         std::cout << "y not all set" << "\n";
       all_set = false;
    }
 
@@ -3084,7 +3085,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.z->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "z not all set" << std::endl;
+         std::cout << "z not all set" << "\n";
       all_set = false;
    }
 
@@ -3092,7 +3093,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.v->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "v not all set" << std::endl;
+         std::cout << "v not all set" << "\n";
       all_set = false;
    }
 
@@ -3100,7 +3101,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.gamma->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "gamma not all set" << std::endl;
+         std::cout << "gamma not all set" << "\n";
       all_set = false;
    }
 
@@ -3108,7 +3109,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.w->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "w not all set" << std::endl;
+         std::cout << "w not all set" << "\n";
       all_set = false;
    }
 
@@ -3116,7 +3117,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.phi->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "phi not all set" << std::endl;
+         std::cout << "phi not all set" << "\n";
       all_set = false;
    }
 
@@ -3124,7 +3125,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.t->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "t not all set" << std::endl;
+         std::cout << "t not all set" << "\n";
       all_set = false;
    }
 
@@ -3132,7 +3133,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.phi->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "phi not all set" << std::endl;
+         std::cout << "phi not all set" << "\n";
       all_set = false;
    }
 
@@ -3140,7 +3141,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.u->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "u not all set" << std::endl;
+         std::cout << "u not all set" << "\n";
       all_set = false;
    }
 
@@ -3148,7 +3149,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    if( !vars.pi->componentNotEqual(initial_const) )
    {
       if( my_rank == 0 )
-         std::cout << "pi not all set" << std::endl;
+         std::cout << "pi not all set" << "\n";
       all_set = false;
    }
 
@@ -3175,12 +3176,12 @@ bool StochPostsolver::complementarySlackVariablesMet(const sVars& vars, const IN
 
    if( std::fabs(v * gamma) >= tol )
    {
-      std::cout << "rv " << v << " " << gamma << " " << v * gamma << " vs " << tol << std::endl;
+      std::cout << "rv " << v << " " << gamma << " " << v * gamma << " vs " << tol << "\n";
       return true;
    }
    if( std::fabs(w * phi) >= tol )
    {
-      std::cout << "rw " << w << " " << phi << " " << w * phi << " vs " << tol << std::endl;
+      std::cout << "rw " << w << " " << phi << " " << w * phi << " vs " << tol << "\n";
       return true;
    }
    return std::fabs(v * gamma) < tol && std::fabs(w * phi) < tol ;
@@ -3204,19 +3205,19 @@ bool StochPostsolver::complementarySlackRowMet(const sVars& vars, const INDEX& r
 
    if( std::fabs(t * lambda) >= tol )
    {
-      std::cout << "rt " << t << " " << lambda << " " << t * lambda << " vs " << tol << std::endl;
+      std::cout << "rt " << t << " " << lambda << " " << t * lambda << " vs " << tol << "\n";
       return true;
    }
    if( !(std::fabs(t * lambda) < tol) )
    {
-      std::cout << t * lambda << " " << std::fabs(t * lambda) << " " << tol << std::endl;
-      std::cout << "|t * lambda| >= tol => false: " << (std::fabs(t * lambda) >= tol) << std::endl;
-      std::cout << "|t * lambda| < tol => false??: " << (std::fabs(t * lambda) < tol) << std::endl;
+      std::cout << t * lambda << " " << std::fabs(t * lambda) << " " << tol << "\n";
+      std::cout << "|t * lambda| >= tol => false: " << (std::fabs(t * lambda) >= tol) << "\n";
+      std::cout << "|t * lambda| < tol => false??: " << (std::fabs(t * lambda) < tol) << "\n";
    }
    assert( std::fabs(t * lambda) < tol );
    if( std::fabs(u * pi) >= tol )
    {
-      std::cout << "ru " << u << " " << pi << " " << u * pi << " vs " << tol << std::endl;
+      std::cout << "ru " << u << " " << pi << " " << u * pi << " vs " << tol << "\n";
       return true;
    }
    assert( std::fabs( u * pi) < tol );

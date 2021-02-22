@@ -17,6 +17,7 @@
 #include <string>
 #include <cstdlib>
 #include <ctype.h>
+#include <memory>
 
 #include "StochOptions.h"
 #include "PresolveData.h"
@@ -58,14 +59,14 @@ StochPresolver::StochPresolver(const Data& prob, Postsolver* postsolver = nullpt
    if( pips_options::getBoolParameter("PRESOLVE_COLUMN_FIXATION") )
       presolvers.emplace_back( std::make_unique<StochPresolverColumnFixation>( presData, sorigprob ) );
 
-   if( pips_options::getBoolParameter("PRESOLVE_BOUND_STRENGTHENING") )
-      presolvers.emplace_back( std::make_unique<StochPresolverBoundStrengthening>( presData, sorigprob ) );
-
    if( pips_options::getBoolParameter("PRESOLVE_PARALLEL_ROWS") )
       presolvers.emplace_back( std::make_unique<StochPresolverParallelRows>( presData, sorigprob ) );
 
    if( pips_options::getBoolParameter("PRESOLVE_SINGLETON_COLUMNS") )
       presolvers.emplace_back( std::make_unique<StochPresolverSingletonColumns>( presData, sorigprob ) );
+
+   if( pips_options::getBoolParameter("PRESOLVE_BOUND_STRENGTHENING") )
+      presolvers.emplace_back( std::make_unique<StochPresolverBoundStrengthening>( presData, sorigprob ) );
 }
 
 StochPresolver::~StochPresolver()
@@ -75,7 +76,7 @@ StochPresolver::~StochPresolver()
 Data* StochPresolver::presolve()
 {
    if( my_rank == 0 )
-      std::cout << "start stoch presolving" << std::endl;
+      std::cout << "start stoch presolving" << "\n";
    presData.printRowColStats();
 
    const sData& sorigprob = dynamic_cast<const sData&>(origprob);
@@ -91,7 +92,7 @@ Data* StochPresolver::presolve()
    StochPresolverModelCleanup presolverCleanup(presData, sorigprob);
 
    if( my_rank == 0 && verbosity > 1 )
-      std::cout <<"--- Before Presolving: " << std::endl;
+      std::cout <<"--- Before Presolving: " << "\n";
    presolverCleanup.countRowsCols();
 
    // some while iterating over the list over and over until either every presolver says I'm done or some iterlimit is reached?
@@ -110,10 +111,10 @@ Data* StochPresolver::presolve()
    }
 
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After Presolving:" << std::endl;
+      std::cout << "--- After Presolving:\n";
    presolverCleanup.countRowsCols();
    if( my_rank == 0 )
-      std::cout << "Objective offset: " << presData.getObjOffset() << std::endl;
+      std::cout << "Objective offset: " << presData.getObjOffset() << "\n";
    assert( presData.getPresProb().isRootNodeInSync() );
 
    if( reset_free_variables_after_presolve )
@@ -150,11 +151,11 @@ Data* StochPresolver::presolve()
          finalPresData->writeMPSformat(of);
       else
          if( my_rank == 0 )
-            std::cout << "Could not open presolved.mps to write out presolved problem!!" << std::endl;
+            std::cout << "Could not open presolved.mps to write out presolved problem!!" << "\n";
    }
 
    if( my_rank == 0 )
-      std::cout << "end stoch presolving" << std::endl;
+      std::cout << "end stoch presolving" << "\n";
    presData.printRowColStats();
    finalPresData->printRanges();
 
@@ -164,7 +165,7 @@ Data* StochPresolver::presolve()
 void StochPresolver::resetFreeVariables()
 {
    if( my_rank == 0 )
-      std::cout << "Resetting bounds found in bound strengthening" << std::endl;
+      std::cout << "Resetting bounds found in bound strengthening" << "\n";
 
    const sData& sorigprob = dynamic_cast<const sData&>(origprob);
 
