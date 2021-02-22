@@ -5,8 +5,6 @@
  *      Author: bzfuslus
  */
 
-// TODO : should we ever decide to switch to a newer c++ standard - there is stuff that can be optimized
-
 //#define PIPS_DEBUG
 #include "StochPresolverParallelRows.h"
 
@@ -202,14 +200,14 @@ bool StochPresolverParallelRows::applyPresolving()
    if( my_rank == 0 && verbosity > 1 )
       std::cout << "\tRemoved rows during parallel row detection: " << n_rows_removed << "\n";
    else if( my_rank == 0 && verbosity == 1)
-      std::cout << "ParRow:\t removed " << n_rows_removed << " rows" << "\n";
+      std::cout << "ParRow:\t removed " << n_rows_removed << " rows\n";
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "--- After parallel row presolving:" << "\n";
+      std::cout << "--- After parallel row presolving:\n";
    countRowsCols();
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 #endif
 
    assert(presData.reductionsEmpty());
@@ -301,7 +299,6 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node)
 
    if(node == -1)
    {
-
       /* INEQUALITY_SYSTEM */
       currCmat = dynamic_cast<SparseGenMatrix*>(dynamic_cast<const StochGenMatrix&>(*(presData.getPresProb().C)).Bmat)->getStorageDynamic();
       currCmatTrans = dynamic_cast<SparseGenMatrix*>(dynamic_cast<const StochGenMatrix&>(*(presData.getPresProb().C)).Bmat)->getStorageDynamicTransposed();
