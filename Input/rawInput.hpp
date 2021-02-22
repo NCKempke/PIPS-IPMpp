@@ -2,7 +2,13 @@
 #define RAWINPUT_HPP
 
 #include "stochasticInput.hpp"
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include "mpi.h"
+// turn the warnings back on
+#pragma GCC diagnostic pop
 
 // reads format written by dumpSmlModel.cpp
 class rawInput : public stochasticInput {
@@ -11,41 +17,41 @@ public:
   rawInput(const std::string &datarootname, int overrideScenarioNumber = 0, MPI_Comm comm = MPI_COMM_WORLD);
   rawInput(const std::string &datarootname, const std::string& zerodata, int overrideScenarioNumber = 0, MPI_Comm comm = MPI_COMM_SELF);
 
-	virtual int nScenarios() { return nScenarios_; }
-	virtual int nFirstStageVars() { return nFirstStageVars_; }
-	virtual int nFirstStageCons() { return nFirstStageCons_; }
-	virtual int nSecondStageVars(int scen) { return nSecondStageVars_; }
-	virtual int nSecondStageCons(int scen) { return nSecondStageCons_; }
+	int nScenarios() override { return nScenarios_; }
+	int nFirstStageVars() override { return nFirstStageVars_; }
+	int nFirstStageCons() override  { return nFirstStageCons_; }
+	int nSecondStageVars(int scen) override { return nSecondStageVars_; }
+	int nSecondStageCons(int scen) override { return nSecondStageCons_; }
 
-	virtual std::vector<double> getFirstStageColLB() { return firstStageData.collb; }
-	virtual std::vector<double> getFirstStageColUB() { return firstStageData.colub; }
-	virtual std::vector<double> getFirstStageObj() { return firstStageData.obj; }
-	virtual std::vector<std::string> getFirstStageColNames() { return firstStageData.colnames; }
-	virtual std::vector<double> getFirstStageRowLB() { return firstStageData.rowlb; }
-	virtual std::vector<double> getFirstStageRowUB() { return firstStageData.rowub; }
-	virtual std::vector<std::string> getFirstStageRowNames() { return firstStageData.rownames; }
-	virtual bool isFirstStageColInteger(int col) { return false; }
+	std::vector<double> getFirstStageColLB() override { return firstStageData.collb; }
+	std::vector<double> getFirstStageColUB() override { return firstStageData.colub; }
+	std::vector<double> getFirstStageObj() override { return firstStageData.obj; }
+	std::vector<std::string> getFirstStageColNames() override { return firstStageData.colnames; }
+	std::vector<double> getFirstStageRowLB() override { return firstStageData.rowlb; }
+	std::vector<double> getFirstStageRowUB() override { return firstStageData.rowub; }
+	std::vector<std::string> getFirstStageRowNames() override { return firstStageData.rownames; }
+	bool isFirstStageColInteger(int col) override { return false; }
 
-	virtual std::vector<double> getSecondStageColLB(int scen);
-	virtual std::vector<double> getSecondStageColUB(int scen);
-	virtual std::vector<double> getSecondStageObj(int scen);
-	virtual std::vector<std::string> getSecondStageColNames(int scen);
-	virtual std::vector<double> getSecondStageRowUB(int scen);
-	virtual std::vector<double> getSecondStageRowLB(int scen);
-	virtual std::vector<std::string> getSecondStageRowNames(int scen);
-	virtual double scenarioProbability(int scen) { return 1.0/nScenarios_; }
-	virtual bool isSecondStageColInteger(int scen, int col) { return false; }
+	std::vector<double> getSecondStageColLB(int scen) override;
+	std::vector<double> getSecondStageColUB(int scen) override;
+	std::vector<double> getSecondStageObj(int scen) override;
+	std::vector<std::string> getSecondStageColNames(int scen) override;
+	std::vector<double> getSecondStageRowUB(int scen) override;
+	std::vector<double> getSecondStageRowLB(int scen) override;
+	std::vector<std::string> getSecondStageRowNames(int scen) override;
+	double scenarioProbability(int scen) override { return 1.0/nScenarios_; }
+	bool isSecondStageColInteger(int scen, int col) override { return false; }
 
-	virtual CoinPackedMatrix getFirstStageConstraints() { return Amat; }
-	virtual CoinPackedMatrix getSecondStageConstraints(int scen) { return Wmat; }
-	virtual CoinPackedMatrix getLinkingConstraints(int scen) { return Tmat; }
+	CoinPackedMatrix getFirstStageConstraints() override { return Amat; }
+	CoinPackedMatrix getSecondStageConstraints(int scen) override { return Wmat; }
+	CoinPackedMatrix getLinkingConstraints(int scen) override { return Tmat; }
 
 	
 
-	virtual bool scenarioDimensionsEqual() { return true; }
-	virtual bool onlyBoundsVary() { return true; }
-	virtual bool allProbabilitiesEqual() { return true; }
-	virtual bool continuousRecourse() { return true; }
+	bool scenarioDimensionsEqual() override { return true; }
+	bool onlyBoundsVary() override { return true; }
+	bool allProbabilitiesEqual() override { return true; }
+	bool continuousRecourse() override { return true; }
 	
 
 protected:

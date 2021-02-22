@@ -106,8 +106,8 @@ public:
 
   int isKindOf( int matType ) const override;
 
-  void atPutDense( int, int, double*, int, int, int ) { assert( "Not implemented" && 0 ); };
-  void fromGetDense( int, int, double*, int, int, int ) { assert( "Not implemented" && 0 ); };
+  void atPutDense( int, int, double*, int, int, int ) override { assert( "Not implemented" && 0 ); };
+  void fromGetDense( int, int, double*, int, int, int ) override { assert( "Not implemented" && 0 ); };
 
   void columnScale( const OoqpVector& vec ) override;
   void rowScale( const OoqpVector& vec ) override;
@@ -172,10 +172,8 @@ public:
   /** fill vector with absolute minimum/maximum value of each column */
   void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
 
-  void addRowSums( OoqpVector& sumVec ) const override
-     { addRowSums(sumVec, nullptr); };
-  void addColSums( OoqpVector& sumVec ) const override
-     { addColSums(sumVec, nullptr); };
+  void addRowSums( OoqpVector& sumVec ) const override { addRowSums(sumVec, nullptr); };
+  void addColSums( OoqpVector& sumVec ) const override { addColSums(sumVec, nullptr); };
 
   virtual void initStaticStorageFromDynamic(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>& colNnzVec)
   {
@@ -334,8 +332,8 @@ public:
   void getNnzPerRow( OoqpVectorBase<int>& ) override {};
   void getNnzPerCol( OoqpVectorBase<int>& ) override {};
 
-  void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& )override {};
-  void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& )override {};
+  void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
+  void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
 
   void addRowSums( OoqpVector&, OoqpVector* ) const override {};
   void addColSums( OoqpVector&, OoqpVector* ) const override {};
@@ -343,8 +341,9 @@ public:
   void addColSums( OoqpVector& ) const override {};
 
   void freeDynamicStorage() override {};
-  void initStaticStorageFromDynamic( const OoqpVectorBase<int>&, const OoqpVectorBase<int>&) {};
-  void initStaticStorageFromDynamic( const OoqpVectorBase<int>&, const OoqpVectorBase<int>&, const OoqpVectorBase<int>*, const OoqpVectorBase<int>* ) {};
+
+  void initStaticStorageFromDynamic( const OoqpVectorBase<int>&, const OoqpVectorBase<int>&) override {};
+  void initStaticStorageFromDynamic( const OoqpVectorBase<int>&, const OoqpVectorBase<int>&, const OoqpVectorBase<int>*, const OoqpVectorBase<int>* ) override {};
 
   std::vector<int> get2LinkStartBlocks() const override { return std::vector<int>(); };
 

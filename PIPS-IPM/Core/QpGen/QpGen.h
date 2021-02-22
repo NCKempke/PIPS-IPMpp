@@ -48,10 +48,10 @@ protected:
 public:
 
   virtual void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const = 0;
+        const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const = 0;
 
   virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, const OoqpVector& vars_in ) const = 0;
+        OoqpVector& z_in, const OoqpVector& vars_in ) const = 0;
 
   /** create x shaped vector using LinearAlgebraPackage */
   virtual OoqpVector* makePrimalVector() const;

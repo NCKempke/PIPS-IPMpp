@@ -182,6 +182,8 @@ double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data&, double
    int n_close = 0;
    v->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixlow );
    w->getSumCountIfSmall( tol, sum_small_distance, n_close, &*ixupp );
+   u->getSumCountIfSmall( tol, sum_small_distance, n_close, &*icupp );
+   t->getSumCountIfSmall( tol, sum_small_distance, n_close, &*iclow );
 
    if( n_close == 0 )
       return std::numeric_limits<double>::infinity();
@@ -196,6 +198,10 @@ void QpGenVars::pushSlacksFromBound( double tol, double amount )
       v->pushAwayFromZero(tol, amount, &*ixlow);
    if( nxupp > 0 )
       w->pushAwayFromZero(tol, amount, &*ixupp);
+   if( mclow > 0 )
+      t->pushAwayFromZero(tol, amount, &*iclow);
+   if( mcupp > 0 )
+      u->pushAwayFromZero(tol, amount, &*icupp);
 }
 
 
@@ -420,6 +426,7 @@ double QpGenVars::stepbound( const Variables * b_in )
 		maxStep = phi->stepbound(*b->phi, maxStep);
 	}
 
+	assert( maxStep <= 1.0 );
 	return maxStep;
 }
 
@@ -462,6 +469,9 @@ void QpGenVars::stepbound_pd( const Variables *b_in, double & alpha_primal, doub
 		maxStep_primal = w->stepbound(*b->w, maxStep_primal);
 		maxStep_dual = phi->stepbound(*b->phi, maxStep_dual);
 	}
+
+	assert( maxStep_primal <= 1.0 );
+	assert( maxStep_dual <= 1.0 );
 
 	alpha_primal = maxStep_primal;
 	alpha_dual = maxStep_dual;

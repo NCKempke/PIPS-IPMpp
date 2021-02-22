@@ -75,7 +75,7 @@ protected:
    *  encountered by the algorithm on or before iteration i */
   double* phi_min_history{};
 
-  bool printTimeStamp{false};
+  bool printTimeStamp{true};
 
   double startTime{-1.0};
 
@@ -193,8 +193,6 @@ public:
 
 private:
   std::pair<double,double> computeUnscaledGapAndResidualNorm( const Residuals& );
-
-
 };
 
 //@}

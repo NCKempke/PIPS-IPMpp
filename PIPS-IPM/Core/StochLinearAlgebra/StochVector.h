@@ -59,7 +59,7 @@ public:
   bool isKindOf( int kind ) const override;
   void setToZero() override;
   void setToConstant( T c ) override;
-  bool isZero() const;
+  bool isZero() const override;
 
    void randomize( T, T, T* ) override { assert( "Not implemented" && 0 ); };
    void copyFrom( const OoqpVectorBase<T>& v ) override;
@@ -177,6 +177,7 @@ protected:
 
 private:
    void appendChildrenToThis();
+   void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs ) override;
 };
 
 /** DUMMY VERSION
@@ -295,6 +296,8 @@ public:
 
    void pushAwayFromZero( double, double, const OoqpVectorBase<T>* ) override {};
    void getSumCountIfSmall( double, double&, int&, const OoqpVectorBase<T>* ) const override {};
+
+   void pushSmallComplementarityPairs( OoqpVectorBase<T>&, const OoqpVectorBase<T>&, double, double, double) override {};
 };
 
 #endif

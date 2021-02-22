@@ -37,7 +37,7 @@ public:
 
    void addChild( sTreeCallbacks* child );
 
-   StochSymMatrix* createQ() const;
+   StochSymMatrix* createQ() const override;
 
    StochGenMatrix* createA() const override;
    StochGenMatrix* createC() const override;

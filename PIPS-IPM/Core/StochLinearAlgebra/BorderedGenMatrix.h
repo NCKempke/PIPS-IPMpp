@@ -71,7 +71,7 @@ class BorderedGenMatrix : public GenMatrix
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
 
-      void writeToStreamDense( std::ostream& out ) const;
+      void writeToStreamDense( std::ostream& out ) const override;
 
       void addRowSums( OoqpVector& vec ) const override;
       void addColSums( OoqpVector& vec ) const override;

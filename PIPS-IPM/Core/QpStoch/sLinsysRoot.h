@@ -33,6 +33,7 @@ class sLinsysRoot : public sLinsys {
 
  private:
   void init();
+
  public:
   std::vector<sLinsys*> children;
 
@@ -51,7 +52,7 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKT( sData* prob, Variables* vars ) = 0;
   virtual void finalizeKKTdist( sData* /*prob*/ ) {assert("not implemented here \n" && 0);};
 
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
 
   /* compute (Br0 - sum_j Br_mod_border) - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border );

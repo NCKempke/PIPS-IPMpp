@@ -19,11 +19,11 @@ class sDummyLinsys : public sLinsys
   ~sDummyLinsys() override = default;
 
   void factor2( sData*, Variables*) override {};
-  void Lsolve ( sData*, OoqpVector& ) override {};
-  void Dsolve ( sData*, OoqpVector& ) override {};
+  void Lsolve( sData*, OoqpVector& ) override {};
+  void Dsolve( sData*, OoqpVector& ) override {};
   void Ltsolve( sData*, OoqpVector& ) override {};
 
-  virtual void Ltsolve2( sData*, StochVector&, SimpleVector& ) override {};
+  void Ltsolve2( sData*, StochVector&, SimpleVector& ) override {};
 
   void putZDiagonal( OoqpVector& ) override {};
   void solveCompressed( OoqpVector& ) override {};
@@ -32,13 +32,12 @@ class sDummyLinsys : public sLinsys
   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
 
   void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override {};
-  
 
   void addLnizi(sData*, OoqpVector&, OoqpVector& ) override {};
   void addLniziLinkCons(sData*, OoqpVector&, OoqpVector&, bool ) override {};
 
   /** y += alpha * Lni^T * x */
-  //  void LniTransMult(sData *prob, SimpleVector& y, double alpha, SimpleVector& x) {};
+  //  void LniTransMult(sData *prob, SimpleVector& y, double alpha, SimpleVector& x) override {};
 
   void addTermToSchurResidual( sData*, SimpleVector&, SimpleVector& ) override {};
 
