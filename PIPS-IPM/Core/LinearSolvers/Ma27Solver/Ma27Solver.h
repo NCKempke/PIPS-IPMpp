@@ -143,8 +143,8 @@ public:
    * 1..n) of the corresponding matrix element */
   virtual void getIndices( int irowM[], int jcolM[] ) = 0;
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   /** version of the main solve routine that takes argument as an
    * array of doubles
@@ -180,7 +180,7 @@ public:
    * @param fact on exit, contains the nonzero elements of the
    * original matrix, stored as an array of doubles
    */
-  virtual void copyMatrixElements( double fact[], int lfact );
+  void copyMatrixElements( double fact[], int lfact ) override;
 
 /** change format for row/column index matrices, in preparation for
    * call to MA27 FORTRAN routines
@@ -190,7 +190,7 @@ public:
    *
    * @param jcolM array of nnz elements indicating col index (in range
    * 1..n) of the corresponding matrix element */
-  virtual void getIndices( int irowM[], int jcolM[] );
+  void getIndices( int irowM[], int jcolM[] ) override;
 
   /** version of the main solve routine that takes argument as an
    * OoqpVector

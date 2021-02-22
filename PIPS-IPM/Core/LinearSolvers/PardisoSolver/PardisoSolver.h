@@ -39,17 +39,17 @@ private:
   PardisoSolver( SparseSymMatrix * sgm );
   PardisoSolver( DenseSymMatrix* m);
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
   void solve( GenMatrix& rhs, int *colSparsity);
 
- // virtual void Lsolve( OoqpVector& x );
- // virtual void Dsolve( OoqpVector& x );
- // virtual void Ltsolve( OoqpVector& x );
+ // void Lsolve( OoqpVector& x ) override;
+ // void Dsolve( OoqpVector& x ) override;
+ // void Ltsolve( OoqpVector& x ) override;
 
  private:
   //Helper functions for when the input is a dense matrix

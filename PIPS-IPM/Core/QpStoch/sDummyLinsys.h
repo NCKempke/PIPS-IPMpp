@@ -19,42 +19,42 @@ class sDummyLinsys : public sLinsys
 
   virtual ~sDummyLinsys(){};
 
-  virtual void factor2( sData *prob, Variables *vars){};
-  virtual void Lsolve ( sData *prob, OoqpVector& x ){};
-  virtual void Dsolve ( sData *prob, OoqpVector& x ){};
-  virtual void Ltsolve( sData *prob, OoqpVector& x ){};
+  void factor2( sData *prob, Variables *vars) override {};
+  void Lsolve ( sData *prob, OoqpVector& x ) override {};
+  void Dsolve ( sData *prob, OoqpVector& x ) override {};
+  void Ltsolve( sData *prob, OoqpVector& x ) override {};
 
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp){};
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override {};
 
-  virtual void putZDiagonal( OoqpVector& zdiag ){};
-  virtual void solveCompressed( OoqpVector& rhs ){};
-  virtual void putXDiagonal( OoqpVector& xdiag_ ){};
+  void putZDiagonal( OoqpVector& zdiag ) override {};
+  void solveCompressed( OoqpVector& rhs ) override {};
+  void putXDiagonal( OoqpVector& xdiag_ ) override {};
 
   void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
-		OoqpVector& rhs2_in, OoqpVector& rhs3_in ){};
+		OoqpVector& rhs2_in, OoqpVector& rhs3_in ) override {};
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, OoqpVector& vars_in ){};
+		     OoqpVector& z_in, OoqpVector& vars_in ) override {};
   
 
-  virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi){};
-  virtual void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz){};
+  void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi) override {};
+  void addLniziLinkCons(sData *prob, OoqpVector& z0, OoqpVector& zi, int parentmy, int parentmz) override {};
 
   /** y += alpha * Lni^T * x */
   void LniTransMult(sData *prob, 
 		    SimpleVector& y, 
-		    double alpha, SimpleVector& x){};
+		    double alpha, SimpleVector& x) override {};
 
   void addTermToSchurResidual(sData* prob, 
 			      SimpleVector& res, 
-			      SimpleVector& x) {};
+			      SimpleVector& x) override {};
 
 
-  virtual void allocU(DenseGenMatrix ** Ut, int np){};
-  virtual void allocV (DenseGenMatrix ** V, int np){};
-  virtual void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V){};
-  void sync(){};
-  virtual void deleteChildren(){};
+  void allocU(DenseGenMatrix ** Ut, int np) override {};
+  void allocV (DenseGenMatrix ** V, int np) override {};
+  void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V) override {};
+  void sync() override {};
+  void deleteChildren() override {};
 
   bool isDummy() const override { return true; };
 }; 

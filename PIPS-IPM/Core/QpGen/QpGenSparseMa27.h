@@ -11,7 +11,7 @@ class QpGenSparseMa27 : public QpGenSparseSeq {
 public:
   QpGenSparseMa27( int nx, int my, int mz,
 		       int nnzQ, int nnzA, int nnzC );
-  LinearSystem * makeLinsys( Data * prob_in );
+  LinearSystem * makeLinsys( Data * prob_in ) override;
 };
 
 #endif

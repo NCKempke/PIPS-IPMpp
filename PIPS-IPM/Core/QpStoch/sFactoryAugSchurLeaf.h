@@ -10,16 +10,16 @@
 class sFactoryAugSchurLeaf : public sFactoryAug {
  public:
  
- sFactoryAugSchurLeaf( StochInputTree* inputTree, MPI_Comm comm=MPI_COMM_WORLD)
+ sFactoryAugSchurLeaf( StochInputTree* inputTree, MPI_Comm comm = MPI_COMM_WORLD)
    : sFactoryAug(inputTree, comm) {};
 
- sFactoryAugSchurLeaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
+ sFactoryAugSchurLeaf( stochasticInput& in, MPI_Comm comm = MPI_COMM_WORLD)
    : sFactoryAug(in,comm) {};
 
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
 			     OoqpVector* dd,OoqpVector* dq,
-			     OoqpVector* nomegaInv, OoqpVector* rhs);
+			     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
 };
 class sFactoryAugSchur32Leaf : public sFactoryAug {
@@ -27,13 +27,13 @@ class sFactoryAugSchur32Leaf : public sFactoryAug {
 
   sFactoryAugSchur32Leaf( StochInputTree* in)
     : sFactoryAug(in) {};
- sFactoryAugSchur32Leaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
+ sFactoryAugSchur32Leaf( stochasticInput& in, MPI_Comm comm = MPI_COMM_WORLD)
    : sFactoryAug(in,comm) {};
 
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
 			     OoqpVector* dd,OoqpVector* dq,
-			     OoqpVector* nomegaInv, OoqpVector* rhs);
+			     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
 };
 

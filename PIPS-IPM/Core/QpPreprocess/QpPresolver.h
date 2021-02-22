@@ -32,8 +32,6 @@ class QpPresolver : public Presolver
    public:
       QpPresolver(const Data* prob, Postsolver* postsolver = nullptr);
       virtual ~QpPresolver();
-
-      virtual Data* presolve() = 0;
 };
 
 

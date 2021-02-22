@@ -26,26 +26,22 @@ class sLinsysRootComm2 : public sLinsysRoot {
 	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 	      OoqpVector* rhs_);
 
-  virtual SymMatrix*   createKKT     (sData* prob) = 0;
-  virtual DoubleLinearSolver*
-                       createSolver  (sData* prob,
-				      SymMatrix* kktmat) = 0;
+  SymMatrix* createKKT (sData* prob) override = 0;
 
-
-  virtual void factor2(sData *prob, Variables *vars);
+  void factor2(sData *prob, Variables *vars) override;
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   using sLinsysRoot::reduceKKT;
-  virtual void reduceKKT();
+  void reduceKKT() override;
 
   using sLinsysRoot::factorizeKKT;
-  virtual void factorizeKKT();
+  void factorizeKKT() override;
 
-  virtual void finalizeKKT(sData* prob, Variables* vars)=0;
+  void finalizeKKT(sData* prob, Variables* vars) override = 0;
 
-  virtual void Dsolve ( sData *prob, OoqpVector& x);
-  virtual void Lsolve ( sData *prob, OoqpVector& x );
-  virtual void Ltsolve( sData *prob, OoqpVector& x );
-  virtual void solveReduced( sData *prob, SimpleVector& b)=0;
+  void Dsolve ( sData *prob, OoqpVector& x) override;
+  void Lsolve ( sData *prob, OoqpVector& x ) override;
+  void Ltsolve( sData *prob, OoqpVector& x ) override;
+  void solveReduced( sData *prob, SimpleVector& b) override = 0;
  public:
   virtual ~sLinsysRootComm2();
 

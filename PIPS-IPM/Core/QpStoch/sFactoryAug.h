@@ -9,17 +9,17 @@
 
 class sFactoryAug : public sFactory {
  public:
-  sFactoryAug( StochInputTree*, MPI_Comm comm=MPI_COMM_WORLD );
-  sFactoryAug( stochasticInput&, MPI_Comm comm=MPI_COMM_WORLD );
+  sFactoryAug( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
+  sFactoryAug( stochasticInput&, MPI_Comm comm = MPI_COMM_WORLD );
  private:
   sFactoryAug( int nx_, int my_, int mz_, int nnzQ_, int nnzA_, int nnzC_ );
   sFactoryAug();
  public:
   virtual ~sFactoryAug();
 
-  virtual sLinsysRoot* newLinsysRoot();
-  virtual sLinsysRoot* newLinsysRoot(sData* prob,
+  sLinsysRoot* newLinsysRoot() override;
+  sLinsysRoot* newLinsysRoot(sData* prob,
 				     OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs);
+				     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 };
 #endif

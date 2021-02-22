@@ -53,8 +53,8 @@ protected:
   PardisoSchurSolver( SparseSymMatrix * sgm );
 
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
@@ -152,9 +152,9 @@ class PardisoSchur32Solver : public PardisoSchurSolver
  private:
     PardisoSchur32Solver () {};
  public:
-    virtual void firstCall(); //first factorization call
+    void firstCall() override;
     using PardisoSchurSolver::solve;
-    virtual void solve (OoqpVector& rhs );
+    void solve (OoqpVector& rhs ) override;
 };
 
 #endif

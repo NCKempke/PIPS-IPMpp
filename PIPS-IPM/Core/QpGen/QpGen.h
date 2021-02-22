@@ -45,18 +45,18 @@ protected:
 
   QpGen( int nx_, int my_, int mz_ );
 public:
-  virtual Residuals     * makeResiduals( Data * prob_in );
-  virtual Variables     * makeVariables( Data * prob_in );
+   Residuals     * makeResiduals( Data * prob_in ) override;
+   Variables     * makeVariables( Data * prob_in ) override;
 
-  virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
+   virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 			OoqpVector& rhs2_in, OoqpVector& rhs3_in ) = 0;
 
-  virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
+   virtual void separateVars( OoqpVector& x_in, OoqpVector& y_in,
 			     OoqpVector& z_in, OoqpVector& vars_in ) = 0;
 
-  void writeProblemToStream(std::ostream& out) const;
+   void writeProblemToStream(std::ostream& out) const;
 
-  virtual ~QpGen() {};
+   virtual ~QpGen() {};
 };
 
 #endif

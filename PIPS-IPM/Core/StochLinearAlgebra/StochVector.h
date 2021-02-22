@@ -64,7 +64,7 @@ public:
   bool isKindOf( int kind ) const override;
   void setToZero() override;
   void setToConstant( T c ) override;
-  bool isZero() const;
+  bool isZero() const override;
 
    void randomize( T alpha, T beta, T *ix ) override;
    void copyFrom( const OoqpVectorBase<T>& v ) override;

@@ -595,7 +595,7 @@ void GondzioStochSolver::pushSmallComplementarityProducts( const Data& prob_in, 
 
    const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / prob.nx );
 
-   const double relative_duality_gap = residuals.dualityGap() / (1 + residuals.primalObjective() + residuals.dualObjective() ) ;
+//   const double relative_duality_gap = residuals.dualityGap() / (1 + residuals.primalObjective() + residuals.dualObjective() ) ;
    const double tol_small_variable = 1e-12; //std::max(1e-12, 1e-4 * relative_duality_gap );
    const double tol_small_dual = 1e-12;//std::min( tol_small_variable, 1e-6 );
 

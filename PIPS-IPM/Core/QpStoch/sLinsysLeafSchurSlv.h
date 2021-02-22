@@ -24,11 +24,11 @@ class sLinsysLeafSchurSlv : public sLinsysLeaf
 		      OoqpVector* nomegaInv_,
 		      OoqpVector* rhs_, LINSOLVER* solver);
 
-  void factor2(sData *prob, Variables *vars);
+  void factor2(sData *prob, Variables *vars) override;
   void addTermToDenseSchurCompl(sData *prob, 
-				DenseSymMatrix& SC);
+				DenseSymMatrix& SC) override;
   void addTermToSparseSchurCompl(sData *prob,
-            SparseSymMatrix& SC);
+            SparseSymMatrix& SC) override;
 
  private:
   bool switchedToSafeSlv;

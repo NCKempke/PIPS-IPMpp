@@ -12,18 +12,18 @@ class sFactoryAugComm2SchurLeaf : public sFactory {
 
   sFactoryAugComm2SchurLeaf( StochInputTree* in)
     : sFactory(in) {};
- sFactoryAugComm2SchurLeaf( stochasticInput& in, MPI_Comm comm=MPI_COMM_WORLD)
+ sFactoryAugComm2SchurLeaf( stochasticInput& in, MPI_Comm comm = MPI_COMM_WORLD)
    : sFactory(in,comm) {};
 
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
 			     OoqpVector* dd,OoqpVector* dq,
-			     OoqpVector* nomegaInv, OoqpVector* rhs);
+			     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
-  virtual sLinsysRoot* newLinsysRoot();
-  virtual sLinsysRoot* newLinsysRoot(sData* prob,
+  sLinsysRoot* newLinsysRoot() override;
+  sLinsysRoot* newLinsysRoot(sData* prob,
 				     OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs);
+				     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 };
 
 #endif
