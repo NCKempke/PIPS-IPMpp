@@ -554,8 +554,7 @@ void StochPresolverParallelRows::removeSingletonVars()
    assert(normNnzColChild || normNnzColParent);
    const bool at_root_node = (normNnzColChild == nullptr);
    
-   SimpleVectorBase<int>* nnzs_bmat = (at_root_node) ? normNnzColParent :
-      normNnzColChild;
+   SimpleVectorBase<int>* nnzs_bmat = at_root_node ? normNnzColParent : normNnzColChild;
    
    /* Bmat */
    for( int col = 0; col < nnzs_bmat->n; col++ )
