@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <functional>
 #include <fstream>
+#include <type_traits>
 
 extern int gOuterBiCGIter;
 extern double gOuterBiCGIterAvg;
@@ -37,7 +38,7 @@ int QpGenLinsys::getIntValue(const std::string& s) const
    if( s.compare("BICG_NITERATIONS") == 0 )
       return bicg_niterations;
    else if( s.compare("BICG_CONV_FLAG") )
-      return bicg_conv_flag;
+      return static_cast<std::underlying_type<BiCGStabStatus>::type>(bicg_conv_flag);
    else
    {
       std::cout << "Unknown observer int request in QpGenLinsys.C: " << s << "\n";
@@ -48,17 +49,17 @@ int QpGenLinsys::getIntValue(const std::string& s) const
 bool QpGenLinsys::getBoolValue(const std::string& s) const
 {
    if( s.compare("BICG_CONVERGED") == 0 )
-      return bicg_conv_flag == 0;
+      return bicg_conv_flag == BiCGStabStatus::CONVERGED;
    else if( s.compare("BICG_SKIPPED") == 0 )
-      return bicg_conv_flag == 1;
+      return bicg_conv_flag == BiCGStabStatus::SKIPPED;
    else if( s.compare("BICG_DIVERGED") == 0 )
-      return bicg_conv_flag == 5;
+      return bicg_conv_flag == BiCGStabStatus::DIVERGED;
    else if( s.compare("BICG_BREAKDOWN") == 0 )
-      return bicg_conv_flag == 4;
+      return bicg_conv_flag == BiCGStabStatus::BREAKDOWN;
    else if( s.compare("BICG_STAGNATION") == 0 )
-      return bicg_conv_flag == 3;
+      return bicg_conv_flag == BiCGStabStatus::STAGNATION;
    else if( s.compare("BICG_EXCEED_MAX_ITER") == 0 )
-      return bicg_conv_flag == -1;
+      return bicg_conv_flag == BiCGStabStatus::NOT_CONVERGED_MAX_ITERATIONS;
    else
    {
       std::cout << "Unknown observer bool request in QpGenLinsys.C: " << s << "\n";
@@ -77,32 +78,6 @@ double QpGenLinsys::getDoubleValue(const std::string& s) const
       std::cout << "Unknown observer double request in QpGenLinsys.C: " << s << "\n";
       return 0.0;
    }
-}
-
-static void biCGStabPrintStatus(int flag, int it, double resnorm, double rnorm)
-{
-   int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-   if( myRank != 0 )
-      return;
-
-   std::cout << "BiCGStab (it=" << it << ", rel.res.norm=" << resnorm << ", rel.r.norm=" << rnorm  << ", avg.iter=" << gOuterBiCGIterAvg << ")";
-
-   if( flag == 5 )
-      std::cout << " diverged\n";
-   else if( flag == 4 )
-      std::cout << " break-down occurred\n";
-   else if( flag == 3 )
-      std::cout << " stagnation occurred\n";
-   else if( flag == -1 )
-      std::cout << " not converged in max iterations\n";
-   else if( flag == 1 )
-      std::cout << " skipped\n";
-   else if( flag == 0 )
-      std::cout << " converged\n";
-   else
-      std::cout << "\n";
-
 }
 
 static void biCGStabCommunicateStatus(int flag, int it)
@@ -129,14 +104,13 @@ static void biCGStabCommunicateStatus(int flag, int it)
 
    if( flag != 0 && flag != 1 )
       gOuterBiCGFails++;
-
 }
 
-static bool isZero(double val, int& flag)
+static bool isZero(double val, QpGenLinsys::BiCGStabStatus& status)
 {
    if( PIPSisZero(val) )
    {
-      flag = 4;
+      status = QpGenLinsys::BiCGStabStatus::BREAKDOWN;
       return true;
    }
 
@@ -502,7 +476,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
     solveCompressedIterRefin( computeResiduals );
 
-    this->separateVars(stepx, stepy, stepz, *sol);
+    separateVars(stepx, stepy, stepz, *sol);
 
   } else if( outerSolve == 0 ) {
     ///////////////////////////////////////////////////////////////
@@ -529,7 +503,6 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     separateVars( stepx, stepy, stepz, *sol );
 
     /* notify observers about result of BiCGStab */
-
     notifyObservers();
 
   }
@@ -548,10 +521,10 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
      if( PIPS_MPIgetRank() == 0 )
      {
-        cout << "bnorm " << bnorm << "\n";
-        cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << "\n";
-        cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << "\n";
-        cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << "\n";
+        std::cout << "bnorm " << bnorm << "\n";
+        std::cout << "resx norm: " << resxnorm << "\tnorm/bnorm " << resxnorm/bnorm << "\n";
+        std::cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << "\n";
+        std::cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << "\n";
      }
      delete residual;
   }
@@ -573,7 +546,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
-   const double tolb = max(n2b * tol, outer_bicg_eps);
+   const double tolb = std::max(n2b * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
    bicg_niterations = 0;
@@ -601,10 +574,12 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
    if( normr <= tolb )
    {
 
-      bicg_conv_flag = 1;
-      biCGStabCommunicateStatus(bicg_conv_flag, bicg_niterations);
-      biCGStabPrintStatus(bicg_conv_flag, bicg_niterations, bicg_relresnorm, normr / n2b);
+      bicg_conv_flag = BiCGStabStatus::SKIPPED;
+      biCGStabCommunicateStatus( static_cast<std::underlying_type<BiCGStabStatus>::type>(bicg_conv_flag), bicg_niterations);
 
+      if( myRank == 0 )
+         std::cout << "BiCGStab (it=" << bicg_niterations << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" <<
+            normr / n2b  << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
       return;
    }
 
@@ -626,7 +601,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
    //normalize
    r0.scale(1 / normr);
 
-   bicg_conv_flag = -1;
+   bicg_conv_flag = BiCGStabStatus::NOT_CONVERGED_MAX_ITERATIONS;
    int normrNDiv = 0;
    int nstags = 0;
    double rho = 1., omega = 1., alpha = 1.;
@@ -634,7 +609,6 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
    //main loop
    for( bicg_niterations = 0; bicg_niterations  < outer_bicg_max_iter; bicg_niterations ++ )
    {
-      assert(bicg_conv_flag == -1);
       const double rho1 = rho;
 
       rho = r0.dotProductWith(r);
@@ -697,7 +671,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
             if( bicg_resnorm <= tolb )
             {
                //converged
-               bicg_conv_flag = 0;
+               bicg_conv_flag = BiCGStabStatus::CONVERGED;
                break;
             }
          } //~end of convergence test
@@ -743,7 +717,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
             if( bicg_resnorm <= tolb )
             {
                //converged
-               bicg_conv_flag = 0;
+               bicg_conv_flag = BiCGStabStatus::CONVERGED;
                break;
             }
          }
@@ -760,7 +734,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
                x.copyFrom(best_x);
                normr = normr_min;
 
-               bicg_conv_flag = 5;
+               bicg_conv_flag = BiCGStabStatus::DIVERGED;
                break;
             }
          } //~end of convergence test
@@ -782,7 +756,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
             x.copyFrom(best_x);
          }
 
-         bicg_conv_flag = 3;
+         bicg_conv_flag = BiCGStabStatus::STAGNATION;
          break;
       }
 
@@ -792,8 +766,11 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
    } //~ end of BiCGStab loop
 
    bicg_relresnorm = bicg_resnorm / n2b;
-   biCGStabCommunicateStatus(bicg_conv_flag, std::max(bicg_niterations, 1));
-   biCGStabPrintStatus(bicg_conv_flag, std::max(bicg_niterations, 1), bicg_relresnorm, normr / n2b);
+
+   biCGStabCommunicateStatus( static_cast<std::underlying_type<BiCGStabStatus>::type>(bicg_conv_flag), std::max(bicg_niterations, 1));
+   if( myRank == 0 )
+      std::cout << "BiCGStab (it=" << std::max(1, bicg_niterations) << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" <<
+         normr / n2b  << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
 }
 
 /**

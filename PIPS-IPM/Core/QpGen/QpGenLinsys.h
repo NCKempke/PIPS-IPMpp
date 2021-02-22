@@ -34,9 +34,38 @@ class DoubleLinearSolver;
  */
 
 class QpGenLinsys : public LinearSystem, public Subject {
+
+public:
+      enum class BiCGStabStatus : int
+      {
+         DID_NOT_RUN = -2,
+         NOT_CONVERGED_MAX_ITERATIONS = -1,
+         CONVERGED = 0,
+         SKIPPED = 1,
+         STAGNATION = 3,
+         BREAKDOWN = 4,
+         DIVERGED = 5
+      };
+
+      friend std::ostream& operator<<(std::ostream& os, BiCGStabStatus status)
+      {
+          switch (status)
+          {
+              case BiCGStabStatus::DID_NOT_RUN : return os << "did_not_run" ;
+              case BiCGStabStatus::NOT_CONVERGED_MAX_ITERATIONS: return os << "not converged int max iterations";
+              case BiCGStabStatus::CONVERGED: return os << "converged";
+              case BiCGStabStatus::SKIPPED: return os << "skipped";
+              case BiCGStabStatus::STAGNATION: return os << "stagnation occurred";
+              case BiCGStabStatus::BREAKDOWN: return os << "breakdown occurred";
+              case BiCGStabStatus::DIVERGED: return os << "diverged";
+              // omit default case to trigger compiler warning for missing cases
+          };
+          return os << static_cast<std::uint16_t>(status);
+      }
+
 protected:
   /** observer pattern for convergence status of BiCGStab when calling solve */
-  int bicg_conv_flag{-2};
+  BiCGStabStatus bicg_conv_flag{BiCGStabStatus::DID_NOT_RUN};
   int bicg_niterations{-1};
 
   double bicg_resnorm{0.0};
