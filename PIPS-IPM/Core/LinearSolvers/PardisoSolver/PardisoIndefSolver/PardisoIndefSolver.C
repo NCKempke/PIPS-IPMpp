@@ -137,7 +137,7 @@ void PardisoIndefSolver::matrixChanged()
    {
       const int id = omp_get_thread_num();
       if( my_rank == 0 && id == 0 )
-         printf("\n Schur complement factorization is starting ...\n ");
+         printf("\n Schur complement factorization is starting ...\n");
 
       if( mStorageSparse )
          factorizeFromSparse();
@@ -145,7 +145,7 @@ void PardisoIndefSolver::matrixChanged()
          factorizeFromDense();
 
       if( my_rank == 0 && id == 0 )
-         printf("\n Schur complement factorization completed \n ");
+         printf("\n Schur complement factorization completed \n");
    }
 }
 
@@ -161,14 +161,14 @@ void PardisoIndefSolver::matrixRebuild( DoubleMatrix& matrixNew )
 
       const int id = omp_get_thread_num();
       if( my_rank == 0 && id == 0 )
-         printf("\n Schur complement factorization is starting ...\n ");
+         printf("\n Schur complement factorization is starting ...\n");
 
       assert(mStorageSparse);
 
       factorizeFromSparse(matrixNewSym);
 
       if( my_rank == 0 && id == 0 )
-         printf("\n Schur complement factorization completed \n ");
+         printf("\n Schur complement factorization completed \n");
    }
 }
 
@@ -303,7 +303,7 @@ void PardisoIndefSolver::factorizeFromDense()
   }
 #endif
 #ifdef TIMING
-  if( PIPS_MPIgetRank() == 0 )
+  if( PIPS_MPIgetRank() == 0 omp_get_thread_num() == 0 )
      std::cout << "from dense, starting factorization" << std::endl;
 #endif
 

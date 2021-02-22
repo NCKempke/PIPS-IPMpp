@@ -268,12 +268,16 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
    const int nIter = (int) g_iterNumber;
    const int myRank = PIPS_MPIgetRank();
 
+   static bool printed = false;
    if( (nIter % symbFactorInterval) == 0 )
    {
       doSymbFact = true;
-      if( myRank == 0 )
+      if( myRank == 0 && !printed )
          printf("PardisoSchur: starting symbolic analysis ... ");
+      printed = true;
    }
+   else
+      printed = false;
 
    int phase = 22; // numerical factorization
    if( doSymbFact )
