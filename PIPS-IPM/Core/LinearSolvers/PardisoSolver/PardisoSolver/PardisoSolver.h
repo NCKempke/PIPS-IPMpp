@@ -23,8 +23,8 @@ public:
   PardisoSolver( SparseSymMatrix * sgm );
   PardisoSolver( DenseSymMatrix* m );
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;

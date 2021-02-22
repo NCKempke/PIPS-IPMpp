@@ -34,7 +34,7 @@ public:
 
   void makeRandomData( QpGenData *& prob, QpGenVars *& soln );
 
-  Data   *
+  Data*
   copyDataFromSparseTriple( double c[],
 			    int irowQ[], int nnzQ,  int jcolQ[],  double dQ[],
 			    double xlow[],  char ixlow[],
@@ -45,6 +45,11 @@ public:
 			    double clow[], char iclow[],
 			    double cupp[], char icupp[] );
 
+  void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
+			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
+
+  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
+			     OoqpVector& z_in, const OoqpVector& vars_in ) const override;
 };
 
 #endif

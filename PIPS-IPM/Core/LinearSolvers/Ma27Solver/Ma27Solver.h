@@ -154,22 +154,8 @@ public:
   double getSmallPivot() const { return cntl[2]; }
   void setSmallPivot( double tol ) { cntl[2] = tol; }
 
-  /** copy elements from matrix into the fact data structure, in
-   * preparation for factorization (or refactorization).  */
-  virtual void copyMatrixElements ( std::vector<double>& afact, int lfact ) const;
-
-  /** change format for row/column index matrices, in preparation for
-   * call to MA27 FORTRAN routines
-   *
-   * @param irowM array of nnz elements indicating row index (in range
-   * 1..n) of the corresponding matrix element
-   *
-   * @param jcolM array of nnz elements indicating col index (in range
-   * 1..n) of the corresponding matrix element */
-  virtual void getIndices( std::vector<int>& irow, std::vector<int>& jcol ) const ;
-
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
 protected:
   const SparseSymMatrix* mat;
@@ -193,6 +179,19 @@ protected:
 
   std::vector<double> w_ma60;
   std::vector<int> iw_ma60;
+  /** copy elements from matrix into the fact data structure, in
+   * preparation for factorization (or refactorization).  */
+  void copyMatrixElements ( std::vector<double>& afact, int lfact ) const;
+
+  /** change format for row/column index matrices, in preparation for
+   * call to MA27 FORTRAN routines
+   *
+   * @param irowM array of nnz elements indicating row index (in range
+   * 1..n) of the corresponding matrix element
+   *
+   * @param jcolM array of nnz elements indicating col index (in range
+   * 1..n) of the corresponding matrix element */
+  void getIndices( std::vector<int>& irow, std::vector<int>& jcol ) const ;
 
   void orderMatrix(); // TODO : implement..
 public:

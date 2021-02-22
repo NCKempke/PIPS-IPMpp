@@ -32,17 +32,17 @@ public:
    * the augmented system; on output contains the solution in
    * aggregated form
    */
-  virtual void solveCompressed( OoqpVector& rhs );
+  void solveCompressed( OoqpVector& rhs ) override;
 
-  virtual void putXDiagonal( const OoqpVector& xdiag );
-  virtual void putZDiagonal( const OoqpVector& zdiag );
+  void putXDiagonal( const OoqpVector& xdiag ) override;
+  void putZDiagonal( const OoqpVector& zdiag ) override;
 
   /** calls QpGenLinsys::factor to assemble the augmented system
    * matrix, then calls matrixChanged to factor it
    *
    * @see QpGenLinsys::factor 
    */
-  virtual void factor(Data *prob, Variables *vars);
+  void factor(Data *prob, Variables *vars) override;
   
   virtual ~QpGenSparseLinsys();
 };

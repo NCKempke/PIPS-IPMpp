@@ -60,14 +60,14 @@ StochPresolver::StochPresolver(sTree* tree_, const Data* prob, Postsolver* posts
    if( pips_options::getBoolParameter("PRESOLVE_COLUMN_FIXATION") )
       presolvers.push_back( new StochPresolverColumnFixation(*presData, *sorigprob) );
 
-   if( pips_options::getBoolParameter("PRESOLVE_BOUND_STRENGTHENING") )
-      presolvers.push_back( new StochPresolverBoundStrengthening(*presData, *sorigprob) );
-
    if( pips_options::getBoolParameter("PRESOLVE_PARALLEL_ROWS") )
       presolvers.push_back( new StochPresolverParallelRows(*presData, *sorigprob) );
 
    if( pips_options::getBoolParameter("PRESOLVE_SINGLETON_COLUMNS") )
       presolvers.push_back( new StochPresolverSingletonColumns(*presData, *sorigprob) );
+
+   if( pips_options::getBoolParameter("PRESOLVE_BOUND_STRENGTHENING") )
+      presolvers.push_back( new StochPresolverBoundStrengthening(*presData, *sorigprob) );
 }
 
 StochPresolver::~StochPresolver()

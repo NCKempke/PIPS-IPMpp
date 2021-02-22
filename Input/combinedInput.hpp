@@ -8,42 +8,42 @@
 class combinedInput : public stochasticInput {
 public:
 	combinedInput(stochasticInput &inner, std::vector<std::vector<int> > const& scenarioMap);
-	virtual int nScenarios() { return scenarioMap.size(); }
-	virtual int nFirstStageVars() { return inner.nFirstStageVars(); }
-	virtual int nFirstStageCons() { return inner.nFirstStageCons(); }
-	virtual int nSecondStageVars(int scen);
-	virtual int nSecondStageCons(int scen);
+	int nScenarios() override { return scenarioMap.size(); }
+	int nFirstStageVars() override { return inner.nFirstStageVars(); }
+	int nFirstStageCons() override { return inner.nFirstStageCons(); }
+	int nSecondStageVars(int scen) override;
+	int nSecondStageCons(int scen) override;
 
-	virtual std::vector<double> getFirstStageColLB() { return inner.getFirstStageColLB(); }
-	virtual std::vector<double> getFirstStageColUB() { return inner.getFirstStageColUB(); }
-	virtual std::vector<double> getFirstStageObj() { return inner.getFirstStageObj(); }
-	virtual std::vector<std::string> getFirstStageColNames() { return inner.getFirstStageColNames(); }
-	virtual std::vector<double> getFirstStageRowLB() { return inner.getFirstStageRowLB(); }
-	virtual std::vector<double> getFirstStageRowUB() { return inner.getFirstStageRowUB(); }
-	virtual std::vector<std::string> getFirstStageRowNames() { return inner.getFirstStageRowNames(); }
-	virtual bool isFirstStageColInteger(int col) { return inner.isFirstStageColInteger(col); }
+	std::vector<double> getFirstStageColLB() override { return inner.getFirstStageColLB(); }
+	std::vector<double> getFirstStageColUB() override { return inner.getFirstStageColUB(); }
+	std::vector<double> getFirstStageObj() override { return inner.getFirstStageObj(); }
+	std::vector<std::string> getFirstStageColNames() override { return inner.getFirstStageColNames(); }
+	std::vector<double> getFirstStageRowLB() override { return inner.getFirstStageRowLB(); }
+	std::vector<double> getFirstStageRowUB() override { return inner.getFirstStageRowUB(); }
+	std::vector<std::string> getFirstStageRowNames() override { return inner.getFirstStageRowNames(); }
+	bool isFirstStageColInteger(int col) override { return inner.isFirstStageColInteger(col); }
 
-	virtual std::vector<double> getSecondStageColLB(int scen);
-	virtual std::vector<double> getSecondStageColUB(int scen);
-	virtual std::vector<double> getSecondStageObj(int scen);
-	virtual std::vector<std::string> getSecondStageColNames(int scen);
-	virtual std::vector<double> getSecondStageRowUB(int scen);
-	virtual std::vector<double> getSecondStageRowLB(int scen);
-	virtual std::vector<std::string> getSecondStageRowNames(int scen);
-	virtual double scenarioProbability(int scen);
-	virtual bool isSecondStageColInteger(int scen, int col);
+	std::vector<double> getSecondStageColLB(int scen) override;
+	std::vector<double> getSecondStageColUB(int scen) override;
+	std::vector<double> getSecondStageObj(int scen) override;
+	std::vector<std::string> getSecondStageColNames(int scen) override;
+	std::vector<double> getSecondStageRowUB(int scen) override;
+	std::vector<double> getSecondStageRowLB(int scen) override;
+	std::vector<std::string> getSecondStageRowNames(int scen) override;
+	double scenarioProbability(int scen) override;
+	bool isSecondStageColInteger(int scen, int col) override;
 
-	virtual CoinPackedMatrix getFirstStageConstraints() { return inner.getFirstStageConstraints(); }
-	virtual CoinPackedMatrix getSecondStageConstraints(int scen);
-	virtual CoinPackedMatrix getLinkingConstraints(int scen);
-
-	
+	CoinPackedMatrix getFirstStageConstraints() override { return inner.getFirstStageConstraints(); }
+	CoinPackedMatrix getSecondStageConstraints(int scen) override;
+	CoinPackedMatrix getLinkingConstraints(int scen) override;
 
 	
-	virtual bool scenarioDimensionsEqual() { return inner.scenarioDimensionsEqual() && equalScenarios; }
-	virtual bool onlyBoundsVary() { return inner.onlyBoundsVary(); }
-	virtual bool allProbabilitiesEqual() { return equalScenarios && inner.allProbabilitiesEqual(); }
-	virtual bool continuousRecourse() { return inner.continuousRecourse(); }
+
+	
+	bool scenarioDimensionsEqual() override { return inner.scenarioDimensionsEqual() && equalScenarios; }
+	bool onlyBoundsVary() override { return inner.onlyBoundsVary(); }
+	bool allProbabilitiesEqual() override { return equalScenarios && inner.allProbabilitiesEqual(); }
+	bool continuousRecourse() override { return inner.continuousRecourse(); }
 
 private:
 	// map from "fake" scenario index to group of scenarios it represents

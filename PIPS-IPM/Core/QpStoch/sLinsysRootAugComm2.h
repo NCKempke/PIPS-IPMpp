@@ -13,10 +13,8 @@ class sData;
 class sLinsysRootAugComm2 : public sLinsysRootComm2 {
  protected:
 
-  virtual SymMatrix*   createKKT     (sData* prob);
-  virtual DoubleLinearSolver* 
-                       createSolver  (sData* prob, 
-				      SymMatrix* kktmat);
+  SymMatrix* createKKT (sData* prob) override;
+  DoubleLinearSolver* createSolver (sData* prob, SymMatrix* kktmat) override;
  public:
 
   sLinsysRootAugComm2(sFactory * factory_, sData * prob_);
@@ -28,11 +26,10 @@ class sLinsysRootAugComm2 : public sLinsysRootComm2 {
 		 OoqpVector* rhs_);
   virtual ~sLinsysRootAugComm2();
 
- public:
-  virtual void finalizeKKT( sData* prob, Variables* vars);
+  void finalizeKKT( sData* prob, Variables* vars) override;
  protected:
-  virtual void solveReduced( sData *prob, SimpleVector& b);
-  virtual void solveReducedLinkCons( sData *prob, SimpleVector& b);
+  void solveReduced( sData *prob, SimpleVector& b) override;
+  void solveReducedLinkCons( sData *prob, SimpleVector& b) override;
   void solveWithIterRef( sData *prob, SimpleVector& b);
   void solveWithBiCGStab( sData *prob, SimpleVector& b);
 

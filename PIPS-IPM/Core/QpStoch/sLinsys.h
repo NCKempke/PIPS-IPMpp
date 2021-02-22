@@ -46,20 +46,19 @@ class sLinsys : public QpGenLinsys
   void factor (Data *prob, Variables *vars) override;
   virtual void factor2(sData *prob, Variables *vars) = 0;
 
-
   virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) = 0;
 
-  virtual void solveCompressed( OoqpVector& rhs );
+  void solveCompressed( OoqpVector& rhs ) override;
 
   void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
+		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-		     OoqpVector& z_in, const OoqpVector& vars_in ) const;
-  
+		     OoqpVector& z_in, const OoqpVector& vars_in ) const override;
+
   virtual void deleteChildren() = 0;
 
   virtual bool isDummy() const { return false; };
@@ -131,7 +130,7 @@ class sLinsys : public QpGenLinsys
         int parent_nx, int parent_my, int parent_mz );
 
   /** y += alpha * Lni^T * x */
-  void LniTransMult(sData *prob, 
+  virtual void LniTransMult(sData *prob, 
 		    SimpleVector& y, 
 		    double alpha, SimpleVector& x);
 

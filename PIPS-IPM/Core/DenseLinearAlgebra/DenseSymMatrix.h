@@ -23,41 +23,42 @@ public:
   DenseSymMatrix( int size );
   DenseSymMatrix( double Q[], int size );
 
-  virtual int isKindOf( int matrixType ) const;
+  int isKindOf( int matrixType ) const override;
 
   virtual void mult ( double beta,  double y[], int incy,
 		      double alpha, const double x[], int incx ) const;
-  virtual void mult ( double beta,  OoqpVector& y,
-		      double alpha, const OoqpVector& x) const;
+  void mult ( double beta,  OoqpVector& y,
+		      double alpha, const OoqpVector& x) const override;
 
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
-  virtual void transMult ( double beta,  OoqpVector& y,
-			   double alpha, const OoqpVector& x ) const;
+  void transMult ( double beta,  OoqpVector& y,
+			   double alpha, const OoqpVector& x ) const override;
 
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
 
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
+
   void writeToStream(ostream& out) const override;
   void writeToStreamDense(std::ostream& out) const override;
-  virtual void randomizePSD(double * seed);
+  void randomizePSD(double * seed) override;
 
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent );
+  void fromGetDense( int row, int col, double * A, int lda,
+			     int rowExtent, int colExtent ) override;
 
-  virtual void fromGetSpRow( int row, int col,
+  void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
-			     int rowExtent, int& info );
+			     int rowExtent, int& info ) override;
 
   void symmetricScale( const OoqpVector& vec ) override;
   void columnScale( const OoqpVector& vec ) override;
   void rowScale( const OoqpVector& vec ) override;
   void scalarMult( double num ) override;
 
-  virtual void symAtPutSpRow( int col, double A[], int lenA, int irowA[],
-			      int& info );
+  void symAtPutSpRow( int col, double A[], int lenA, int irowA[],
+			      int& info ) override;
 
   /** Insert the dense array symmetrically (the part that winds up
    *  in the lower triangle of this matrix is significant.)
@@ -69,19 +70,19 @@ public:
   virtual void symAtPutZeros( int row, int col,
   			   int rowExtent, int colExtent );
 
-  virtual void putSparseTriple( int irow[], int len, int jcol[], double A[],
-				int& info );
+  void putSparseTriple( int irow[], int len, int jcol[], double A[],
+				int& info ) override;
 
   virtual void atAddOuterProductOf( int row, int col, double alpha,
 				    double * x, int incx, int nx );
 
-  virtual void symAtPutSubmatrix( int destRow, int destCol,
+  void symAtPutSubmatrix( int destRow, int destCol,
 				  DoubleMatrix& M,
 				  int srcRow, int srcCol,
-				  int rowExtent, int colExtent );
+				  int rowExtent, int colExtent ) override;
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( const OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( const OoqpVector& vec ) override;
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
   void atAddDiagonal( int idiag, const OoqpVector& v ) override;

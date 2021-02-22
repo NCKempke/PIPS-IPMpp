@@ -478,16 +478,9 @@ double StochGenMatrix::abmaxnorm() const
     nrm = std::max(nrm, children[it]->abmaxnorm());
 
   if(iAmDistrib)
-  {
-     double nrmG = 0;
-     MPI_Allreduce(&nrm, &nrmG, 1, MPI_DOUBLE, MPI_MAX, mpiComm);
-     nrm = nrmG;
-  }
+     PIPS_MPIgetMaxInPlace( nrm, mpiComm );
 
-  nrm = std::max(nrm, max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
-  nrm = std::max(nrm, Blmat->abmaxnorm());
-
-  nrm = std::max(nrm, max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
+  nrm = std::max(nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
   nrm = std::max(nrm, Blmat->abmaxnorm());
 
   return nrm;
@@ -1098,7 +1091,7 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
    }
 
    // distributed, with linking constraints, and at root?
-   if( iAmDistrib && minmaxVecStoch.vecl != nullptr && linkParent == nullptr )
+   if( iAmDistrib && minmaxVecStoch.vecl && !linkParent )
    {
       assert(mvecl != nullptr);
 

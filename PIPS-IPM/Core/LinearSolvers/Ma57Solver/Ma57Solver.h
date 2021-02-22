@@ -103,9 +103,8 @@ public:
   /** sets mStorage to refer to the argument sgm */
   Ma57Solver( SparseSymMatrix * sgm );
 
-  virtual void diagonalChanged( int idiag, int extent );
+  void diagonalChanged( int idiag, int extent ) override;
   void matrixChanged() override;
-
   using DoubleLinearSolver::solve;
   void solve( OoqpVector& rhs ) override;
   void solve( GenMatrix& rhs) override;

@@ -15,9 +15,6 @@
 
 class sData;
 
-
-
-
 class sTreeCallbacks : public sTree
 {
    using InputNode = StochInputTree::StochInputNode;
@@ -32,7 +29,7 @@ public:
    sTreeCallbacks(StochInputTree::StochInputNode* data_);
    ~sTreeCallbacks() = default;
 
-   StochSymMatrix*   createQ() const;
+   StochSymMatrix* createQ() const override;
 
    StochGenMatrix* createA() const override;
    StochGenMatrix* createC() const override;

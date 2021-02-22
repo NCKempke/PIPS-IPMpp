@@ -43,7 +43,7 @@ class sLinsysLeaf : public sLinsys
   //virtual void Dsolve2 ( OoqpVector& x );
   //virtual void solveCompressed( OoqpVector& rhs );
 
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
 
   void putXDiagonal( const OoqpVector& xdiag_ ) override;
   void putZDiagonal( const OoqpVector& zdiag_ ) override;
@@ -51,9 +51,8 @@ class sLinsysLeaf : public sLinsys
   void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
   void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
 
-
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
-  virtual void deleteChildren();
+  void deleteChildren() override;
 
   using sLinsys::addTermToSchurComplBlocked;
   void addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC) override;

@@ -74,28 +74,28 @@ public:
 
   int length() { return len; };
   int numberOfNonZeros() const {	return krowM[m]; };
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent );
-  virtual void atPutDense( int row, int col, double * A, int lda,
-			   int rowExtent, int colExtent );
+  void fromGetDense( int row, int col, double * A, int lda,
+			     int rowExtent, int colExtent ) override;
+  void atPutDense( int row, int col, double * A, int lda,
+			   int rowExtent, int colExtent ) override;
 
   virtual void putSparseTriple( int irow[], int len, int jcol[], double A[], 
 				int& info );
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( const OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( const OoqpVector& vec ) override;
 
   void columnScale( const OoqpVector& vec ) override;
   void rowScale( const OoqpVector& vec ) override;
   void symmetricScale( const OoqpVector& vec ) override;
-  virtual void scalarMult( double num);
+  void scalarMult( double num ) override;
 
-  virtual void atPutSpRow( int col, const double A[], int lenA, int irowA[],
-			   int& info );
+  void atPutSpRow( int col, const double A[], int lenA, int irowA[],
+			   int& info ) override;
 
-  virtual void fromGetSpRow( int row, int col,
+  void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int irowA[], int& nnz,
-			     int rowExtent, int& info );
+			     int rowExtent, int& info ) override;
 
   virtual void randomize( double alpha, double beta, double * seed );
 
@@ -112,7 +112,7 @@ public:
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
   void atAddDiagonal( int idiag, const OoqpVector& v ) override;
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   void atPutDiagonal( int idiag, const double x[], int incx, int extent );
   void atAddDiagonal( int idiag, const double x[], int incx, int extent );

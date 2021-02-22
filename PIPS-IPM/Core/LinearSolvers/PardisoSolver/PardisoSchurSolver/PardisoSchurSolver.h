@@ -38,11 +38,11 @@ class PardisoSchurSolver : public DoubleLinearSolver {
   /** sets mStorage to refer to the argument sgm */
   PardisoSchurSolver( SparseSymMatrix * sgm );
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
-  virtual void solve( OoqpVector& rhs ) = 0;
+  void solve( OoqpVector& rhs ) override = 0;
   void solve( GenMatrix& ) override { assert(false && "Function not supported. Use PardisoSolver for this functionality."); };
 
   /** Functions specific to the Schur approach. The last argument is the Schur first

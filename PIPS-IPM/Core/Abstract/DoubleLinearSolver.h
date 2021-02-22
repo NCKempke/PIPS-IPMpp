@@ -136,7 +136,7 @@ class StoredMatTimesVec : public MatTimesVec {
   StoredMatTimesVec(DoubleMatrix* mat);
   virtual ~StoredMatTimesVec() {};
 
-  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x);
+  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) override;
  protected:
   DoubleMatrix* mMat;
 };
@@ -151,7 +151,7 @@ class StoredMatTransTimesVec : public MatTimesVec {
   StoredMatTransTimesVec(DoubleMatrix* mat);
   virtual ~StoredMatTransTimesVec() {};
 
-  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x);
+  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) override;
  protected:
   DoubleMatrix* mMat;
 };

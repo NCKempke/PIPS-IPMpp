@@ -2,7 +2,13 @@
 #define SPSTOCHQPGENFACTORY
 
 #include "QpGen.h"
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include "mpi.h"
+// turn the warnings back on
+#pragma GCC diagnostic pop
 
 class QpGenData;
 class QpGenStochData;
@@ -34,12 +40,18 @@ class QpGenStoch : public QpGen {
 
   virtual ~QpGenStoch();
 
-  virtual Data  * makeData();
+  virtual Data * makeData();
 
-  virtual Residuals     * makeResiduals( Data * prob_in );
-  virtual Variables     * makeVariables( Data * prob_in );
+  Residuals * makeResiduals( Data * prob_in ) override;
+  Variables * makeVariables( Data * prob_in ) override;
 
-  virtual LinearSystem* makeLinsys( Data * prob_in );
+  LinearSystem * makeLinsys( Data * prob_in ) override;
+
+  void joinRHS( OoqpVector& rhs_in, const  OoqpVector& rhs1_in,
+			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
+
+  void separateVars( OoqpVector& x_in, OoqpVector& y_in,
+			     OoqpVector& z_in, const OoqpVector& vars_in ) const override;
 
   virtual QpGenStochLinsysRoot* newLinsysRoot() = 0;
   virtual QpGenStochLinsysRoot* newLinsysRoot(QpGenStochData* prob,
