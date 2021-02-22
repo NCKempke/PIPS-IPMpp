@@ -83,13 +83,16 @@ protected:
   /** right-hand side of the system */
   OoqpVector* rhs{};
 
+  // TODO : add parameters
   /** regularization parameters */
-  double primal_reg_val{ 1e-8 };
-  double dual_y_reg_val{ -1e-8 };
-  double dual_z_reg_val{ -1e-8 };
-//  double primal_reg_val{ 0 };
-//  double dual_y_reg_val{ 0 };
-//  double dual_z_reg_val{ 0 };
+  const bool apply_regularization{};
+  bool clean_factorization{false};
+  double primal_reg_val{};
+  double dual_y_reg_val{};
+  double dual_z_reg_val{};
+
+  const double primal_reg_min{};
+  const double dual_reg_min{};
 
   OoqpVector* regP{};
   OoqpVector* regDy{};
@@ -234,6 +237,9 @@ public:
 				 OoqpVector& u,  OoqpVector& pi,
 				 OoqpVector& v,  OoqpVector& gamma,
 				 OoqpVector& w,  OoqpVector& phi );
+
+  /** adjust regularization parameters according to BiCGStab outcome */
+  void adjustRegularization();
 
   /** apply regularization to KKTs */
   virtual void regularizeKKTs();

@@ -1669,7 +1669,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
    /////////////////////////////////////////////////////////////
    if( xDiag )
    {
-      assert( xReg );
       const SimpleVector& sxDiag = dynamic_cast<const SimpleVector&>(*xDiag);
 
       for( int i = 0; i < locnx; i++ )
@@ -1700,7 +1699,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
    if( locmz > 0 )
    {
       assert(zDiag);
-      assert(zReg);
       if( !zDiagReg )
          zDiagReg = dynamic_cast<SimpleVector*>(zDiag->cloneFull());
       else
@@ -1766,7 +1764,6 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
          }
       }
 
-      assert( yReg );
       if( yReg )
       {
          const SimpleVector& syReg = dynamic_cast<const SimpleVector&>(*yReg);
@@ -1833,7 +1830,7 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
             }
          }
       }
-      assert( yRegLinkCons );
+
       if( yRegLinkCons )
       {
          const SimpleVector& syRegLinkCons = dynamic_cast<const SimpleVector&>(*yRegLinkCons);

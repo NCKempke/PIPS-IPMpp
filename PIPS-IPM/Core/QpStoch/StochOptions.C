@@ -278,6 +278,16 @@ namespace pips_options
 
       bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
 
+      /// REGULARIZATION FOR LINEAR SYSTEM
+      bool_options["REGULARIZATION"] = true;
+
+      double_options["REGULARIZATION_INITIAL_PRIMAL"] = 1e-10;
+      double_options["REGULARIZATION_INITIAL_DUAL_Y"] = -1e-10;
+      double_options["REGULARIZATION_INITIAL_DUAL_Z"] = -1e-10;
+
+      double_options["REGULARIZATION_MIN_PRIMAL"] = 1e-20;
+      double_options["REGULARIZATION_MIN_DUAL"] = -1e-20;
+
       setPresolveDefaults();
 
    }

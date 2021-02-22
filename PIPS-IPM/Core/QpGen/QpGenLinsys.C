@@ -24,6 +24,7 @@
 #include <functional>
 #include <fstream>
 #include <type_traits>
+#include <memory>
 
 extern int gOuterBiCGIter;
 extern double gOuterBiCGIterAvg;
@@ -119,7 +120,13 @@ static bool isZero(double val, QpGenLinsys::BiCGStabStatus& status)
 
 QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs ) :
   factory( factory_ ),
-  outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
+  apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION") ),
+  primal_reg_val(qpgen_options::getDoubleParameter("REGULARIZATION_INITIAL_PRIMAL") ),
+  dual_y_reg_val(qpgen_options::getDoubleParameter("REGULARIZATION_INITIAL_DUAL_Y") ),
+  dual_z_reg_val(qpgen_options::getDoubleParameter("REGULARIZATION_INITIAL_DUAL_Z") ),
+  primal_reg_min(qpgen_options::getDoubleParameter("REGULARIZATION_MIN_PRIMAL") ),
+  dual_reg_min(qpgen_options::getDoubleParameter("REGULARIZATION_MIN_DUAL") ),
+  outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE") ),
   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
   outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
   outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
@@ -243,8 +250,8 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
    if( mclow + mcupp > 0 )
       putZDiagonal( *nomegaInv );
 
-   // TODO : add parameter to turn on and off
-   regularizeKKTs();
+   if( apply_regularization )
+      regularizeKKTs();
 
    const double infnormdd = dd->infnorm();
    double mindd; int dummy;
@@ -259,7 +266,62 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
       std::cout << "Diagonal omegaInv: inf " << infnormomegainv << ", min " << minomegainv << "\n";
       std::cout << "Diagonal dd : inf " << infnormdd << ", min " << mindd << "\n";
    }
+
+   clean_factorization = true;
 }
+
+void QpGenLinsys::adjustRegularization()
+{
+   if( !clean_factorization )
+      return;
+
+   switch( bicg_conv_flag ) {
+       case BiCGStabStatus::SKIPPED : {
+          primal_reg_val = std::max( primal_reg_min, primal_reg_val / 1000.0 );
+          dual_y_reg_val = std::min( dual_reg_min, dual_y_reg_val / 1000.0 );
+          dual_z_reg_val = std::min( dual_reg_min, dual_z_reg_val / 1000.0 );
+          if( PIPS_MPIgetRank() == 0 )
+             std::cout << "Decreasing regularization to (P, DY, DZ) = (" << primal_reg_val << ", " << dual_y_reg_val << ", " << dual_z_reg_val << ")\n";
+          break;
+       }
+       case BiCGStabStatus::CONVERGED : {
+          if( bicg_niterations > 15 )
+          {
+             primal_reg_val *= 10;
+             dual_y_reg_val *= 10;
+             dual_z_reg_val *= 10;
+             if( PIPS_MPIgetRank() == 0 )
+                std::cout << "Increasing regularization to (P, DY, DZ) = (" << primal_reg_val << ", " << dual_y_reg_val << ", " << dual_z_reg_val << ")\n";
+          }
+          else
+          {
+             primal_reg_val = std::max( primal_reg_min, primal_reg_val / 10.0 );
+             dual_y_reg_val = std::min( dual_reg_min, dual_y_reg_val / 10.0 );
+             dual_z_reg_val = std::min( dual_reg_min, dual_z_reg_val / 10.0 );
+             if( PIPS_MPIgetRank() == 0 )
+                std::cout << "Decreasing regularization to (P, DY, DZ) = (" << primal_reg_val << ", " << dual_y_reg_val << ", " << dual_z_reg_val << ")\n";
+          }
+          break;
+       }
+       case BiCGStabStatus::DIVERGED :
+       case BiCGStabStatus::BREAKDOWN :
+       case BiCGStabStatus::NOT_CONVERGED_MAX_ITERATIONS :
+       case BiCGStabStatus::STAGNATION : {
+          primal_reg_val *= 100;
+          dual_y_reg_val *= 100;
+          dual_z_reg_val *= 100;
+          if( PIPS_MPIgetRank() == 0 )
+             std::cout << "Increasing regularization to (P, DY, DZ) = (" << primal_reg_val << ", " << dual_y_reg_val << ", " << dual_z_reg_val << ")\n";
+          break;
+       }
+       case BiCGStabStatus::DID_NOT_RUN: {
+          assert(false && "Should not end up here");
+          break;
+       }
+   }
+   clean_factorization = false;
+}
+
 
 void QpGenLinsys::regularizeKKTs()
 {
@@ -449,11 +511,11 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   /* rz = rC + Omega^-1 ( rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U ) */
   stepz.axzpy( -1.0, *nomegaInv, steps );
 
-  OoqpVector * residual = nullptr;
+  std::unique_ptr<OoqpVector> residual;
   if( xyzs_solve_print_residuals )
   {
-     residual = rhs->cloneFull();
-     this->joinRHS(*residual, stepx, stepy, stepz);
+     residual.reset( rhs->cloneFull() );
+     joinRHS(*residual, stepx, stepy, stepz);
 
      const double xinf = stepx.infnorm();
      const double yinf = stepy.infnorm();
@@ -464,7 +526,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   }
 
   assert( rhs );
-  this->joinRHS( *rhs, stepx, stepy, stepz );
+  joinRHS( *rhs, stepx, stepy, stepz );
 
   if( outerSolve == 1 )
   {
@@ -505,6 +567,8 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
     /* notify observers about result of BiCGStab */
     notifyObservers();
 
+    if( apply_regularization )
+       adjustRegularization();
   }
 
   if( xyzs_solve_print_residuals )
@@ -526,7 +590,6 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
         std::cout << "resy norm: " << resynorm << "\tnorm/bnorm " << resynorm/bnorm << "\n";
         std::cout << "resz norm: " << resznorm << "\tnorm/bnorm " << resznorm/bnorm << "\n";
      }
-     delete residual;
   }
 
   stepy.negate();
