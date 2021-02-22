@@ -126,17 +126,16 @@ class sLinsys : public QpGenLinsys
   ~sLinsys() override;
 
   void factor (Data *prob, Variables *vars) override;
+
   virtual void factor2(sData *prob, Variables *vars) = 0;
-
-
   virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) = 0;
+  virtual void putZDiagonal( OoqpVector& zdiag ) = 0;
+  virtual void putXDiagonal( OoqpVector& xdiag_ ) = 0;
 
-  virtual void putZDiagonal( OoqpVector& zdiag )=0;
   virtual void solveCompressed( OoqpVector& rhs );
-  virtual void putXDiagonal( OoqpVector& xdiag_ )=0;
 
   void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
 		const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
@@ -150,14 +149,14 @@ class sLinsys : public QpGenLinsys
 
  protected:
   int locnx, locmy, locmyl, locmz, locmzl;
-  sData* data;
+  sData* data{};
   
   int iAmDistrib;
 
   /* members for blockwise schur complement computation */
   bool computeBlockwiseSC{false};
 
-  int blocksizemax;
+  int blocksizemax{0};
   double* colsBlockDense{};
   int* colId{};
   int* colSparsity{};
@@ -174,8 +173,8 @@ class sLinsys : public QpGenLinsys
   DoubleLinearSolver* solver{};
 
  public:
-  MPI_Comm mpiComm;
-  sTree* stochNode;
+  MPI_Comm mpiComm{MPI_COMM_NULL};
+  sTree* stochNode{};
 
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
   virtual void addLniziLinkCons( sData */*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here"); };

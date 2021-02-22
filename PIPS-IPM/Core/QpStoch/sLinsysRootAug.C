@@ -216,7 +216,7 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
    setNSolversNThreads(solver_root);
 
    static bool printed = false;
-   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   if( !printed && PIPS_MPIgetRank() == 0 )
    {
       std::cout << "sLinsysRootAug: using " << n_solvers << " solvers in parallel (with "
             << n_threads_solvers << " threads each) for root SC computations\n";
@@ -228,7 +228,7 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
 
    kkt = createKKT(prob);
 
-   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   if( !printed && PIPS_MPIgetRank() == 0 )
    {
       if( hasSparseKkt )
          std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";

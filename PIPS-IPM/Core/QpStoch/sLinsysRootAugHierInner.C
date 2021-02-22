@@ -28,7 +28,7 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
    setNSolversNThreads(solver_sub_root);
 
    static bool printed = false;
-   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   if( !printed && PIPS_MPIgetRank() == 0 )
    {
       std::cout << "sLinsysRootAugHierInner: using " << n_solvers << " solvers in parallel (with "
             << n_threads_solvers << " threads each) for sub-root SC computations\n";
@@ -37,7 +37,7 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
 
    kkt = createKKT(prob);
 
-   if( !printed && PIPS_MPIgetRank(mpiComm) == 0 )
+   if( !printed && PIPS_MPIgetRank() == 0 )
       std::cout << "sLinsysRootAugHierInner: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
    printed = true;
 
