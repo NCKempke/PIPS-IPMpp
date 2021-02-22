@@ -42,6 +42,9 @@ class sLinsysRoot : public sLinsys {
         OoqpVector* nomegaInv_, OoqpVector* rhs_);
 
   void factor2(sData *prob, Variables *vars) override;
+  void assembleKKT(sData *prob, Variables *vars) override;
+  void allreduceAndFactorKKT(sData *prob, Variables *vars) override;
+
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   virtual void initializeKKT(sData* prob, Variables* vars);
   virtual void assembleLocalKKT( sData* prob ) = 0;

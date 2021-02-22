@@ -71,9 +71,36 @@ sLinsysRoot::~sLinsysRoot()
 //this variable is just reset in this file; children will default to the "safe" linear solver
 extern int gLackOfAccuracy;
 
+void sLinsysRoot::assembleKKT(sData* prob, Variables* vars)
+{
+   if( is_hierarchy_root )
+      assert( children.size() == 1 );
+
+   /* set kkt to zero */
+   initializeKKT(prob, vars);
+
+   /* important that int separate loops! else block in Allreduce might occur */
+   for(size_t c = 0; c < children.size(); c++)
+      children[c]->assembleKKT(prob->children[c], vars);
+   for(size_t c = 0; c < children.size(); c++)
+      children[c]->allreduceAndFactorKKT(prob->children[c], vars);
+
+   /* build KKT from local children */
+   assembleLocalKKT( prob );
+}
+
+void sLinsysRoot::allreduceAndFactorKKT(sData* prob, Variables* vars)
+{
+   reduceKKT(prob);
+
+   finalizeKKT(prob, vars);
+
+   factorizeKKT(prob);
+}
+
 void sLinsysRoot::factor2(sData *prob, Variables *vars)
 {
-   if( this->is_hierarchy_root )
+   if( is_hierarchy_root )
       assert( children.size() == 1 );
 
    /* set kkt to zero */

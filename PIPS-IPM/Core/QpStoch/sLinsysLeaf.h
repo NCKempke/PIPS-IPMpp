@@ -32,6 +32,9 @@ class sLinsysLeaf : public sLinsys
   ~sLinsysLeaf() override = default;
 
   void factor2( sData *prob, Variables *vars) override;
+  void assembleKKT(sData*, Variables*) override {};
+  void allreduceAndFactorKKT(sData* prob, Variables* vars) override { factor2( prob, vars ); };
+
   void Lsolve( sData*, OoqpVector& ) override {};
   void Dsolve( sData*, OoqpVector& x ) override;
   void Ltsolve( sData*, OoqpVector& ) override {};

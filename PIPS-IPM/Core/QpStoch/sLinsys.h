@@ -128,6 +128,8 @@ class sLinsys : public QpGenLinsys
   void factor (Data *prob, Variables *vars) override;
 
   virtual void factor2(sData *prob, Variables *vars) = 0;
+  virtual void assembleKKT(sData *prob, Variables *vars) = 0;
+  virtual void allreduceAndFactorKKT(sData *prob, Variables *vars) = 0;
 
   virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;

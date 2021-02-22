@@ -18,7 +18,11 @@ class sDummyLinsys : public sLinsys
 
   ~sDummyLinsys() override = default;
 
+
   void factor2( sData*, Variables*) override {};
+  void allreduceAndFactorKKT(sData*, Variables*) override {};
+  void assembleKKT(sData*, Variables*) override {}
+
   void Lsolve( sData*, OoqpVector& ) override {};
   void Dsolve( sData*, OoqpVector& ) override {};
   void Ltsolve( sData*, OoqpVector& ) override {};
