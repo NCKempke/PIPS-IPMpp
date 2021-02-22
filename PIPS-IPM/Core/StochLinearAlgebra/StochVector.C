@@ -140,7 +140,7 @@ void StochVectorBase<T>::jointCopyFrom(const StochVectorBase<T>& vx, const Stoch
    }
    else
    {
-      assert( this->vec );
+      assert( vec );
       SimpleVectorBase<T>& sv = dynamic_cast<SimpleVectorBase<T>&>(*this->vec);
 
       int n1 = 0;
