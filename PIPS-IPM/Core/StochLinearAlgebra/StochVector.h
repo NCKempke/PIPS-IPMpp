@@ -172,6 +172,7 @@ public:
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
 
+   void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs ) override;
 };
 
 /** DUMMY VERSION
@@ -309,6 +310,8 @@ public:
    bool isRootNodeInSync() const override { return true; };
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override {};
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override {};
+
+   void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs ) override {};
 };
 
 #endif

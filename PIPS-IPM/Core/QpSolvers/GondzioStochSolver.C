@@ -162,7 +162,8 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
 
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
-//      pushConvergedVarsAwayFromBounds(*prob, *iterate);
+      // pushConvergedVarsAwayFromBounds(*prob, *iterate);
+      pushSmallComplementarityProducts( *prob, *iterate, *resid );
 
       setBiCGStabTol(iter);
       bool small_corr = false;
@@ -582,6 +583,31 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables&
       else if( PIPS_MPIgetRank() == 0 )
          std::cout << "No push done.. avg was : " << average_dist << std::endl;
    }
+}
+
+/* initially adapted from hopdm */
+void GondzioStochSolver::pushSmallComplementarityProducts( const Data& prob_in, Variables& iterate_in, Residuals& residuals ) const
+{
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "Pushing small complementarity products ... ";
+   QpGenVars& iterate = dynamic_cast<QpGenVars&>(iterate_in);
+   const QpGenData& prob = dynamic_cast<const QpGenData&>(prob_in);
+
+   const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / prob.nx );
+
+   const double relative_duality_gap = residuals.dualityGap() / (1 + residuals.primalObjective() + residuals.dualObjective() ) ;
+   const double tol_small_variable = 1e-12; //std::max(1e-12, 1e-4 * relative_duality_gap );
+   const double tol_small_dual = 1e-12;//std::min( tol_small_variable, 1e-6 );
+
+   iterate.t->pushSmallComplementarityPairs( *iterate.lambda, *prob.iclow , tol_small_variable, tol_small_dual, tol_small_comp );
+   iterate.u->pushSmallComplementarityPairs( *iterate.pi, *prob.icupp , tol_small_variable, tol_small_dual, tol_small_comp );
+   iterate.v->pushSmallComplementarityPairs( *iterate.gamma, *prob.ixlow, tol_small_variable, tol_small_dual, tol_small_comp );
+   iterate.w->pushSmallComplementarityPairs( *iterate.phi, *prob.ixupp, tol_small_variable, tol_small_dual, tol_small_comp );
+
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "done" << std::endl;
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << "Tol small pairs : " << tol_small_comp << " tol small duals : " << tol_small_dual << " tol small variable : " << tol_small_variable << std::endl;
 }
 
 

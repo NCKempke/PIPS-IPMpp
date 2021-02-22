@@ -262,6 +262,9 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
   nomegaInv->invert();
   nomegaInv->negate();
 
+  double norm = nomegaInv->infnorm();
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "||omegaInv|| : " << norm << std::endl;
   if( mclow + mcupp > 0 ) this->putZDiagonal( *nomegaInv );
 }
 
@@ -276,8 +279,47 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
     if( nxupp > 0 ) dd_.axdzpy( 1.0, phi  , w, *ixupp );
   }
   omega.setToZero();
-  if ( mclow > 0 ) omega.axdzpy( 1.0, lambda, t, *iclow );
-  if ( mcupp > 0 ) omega.axdzpy( 1.0, pi,     u, *icupp );
+  if ( mclow > 0 )
+  {
+     double normlambda = lambda.infnorm();
+     double absmin_t;
+     double absmin_lambda;
+     double normt = t.infnorm();
+     t.absminNonZero(absmin_t, 0.0);
+     lambda.absminNonZero(absmin_lambda, 0.0);
+
+     if( PIPS_MPIgetRank() == 0 )
+        std::cout << "||lambda|| : " << normlambda << " absmin(lambda) : " << absmin_lambda << " ||t|| : " << normt << " absmin(t) : " << absmin_t << std::endl;
+     omega.axdzpy( 1.0, lambda, t, *iclow );
+     double norm = omega.infnorm();
+     double normnonzero;
+     omega.absminNonZero(normnonzero, 0.0);
+
+     if( PIPS_MPIgetRank() == 0 )
+        std::cout << "||omega|| : " << norm << " absmin(omega) : " << normnonzero << std::endl;
+  }
+
+  if ( mcupp > 0 )
+  {
+     double normpi = pi.infnorm();
+     double normu = u.infnorm();
+     double absmin_u;
+     double absmin_pi;
+     u.absminNonZero(absmin_u, 0.0);
+     pi.absminNonZero(absmin_pi, 0.0);
+
+     if( PIPS_MPIgetRank() == 0 )
+        std::cout << "||pi|| : " << normpi << " absmin(pi) : " << absmin_pi << " ||u|| : " << normu << " absmin(u) : " << absmin_u << std::endl;
+
+     omega.axdzpy( 1.0, pi,     u, *icupp );
+  }
+
+  double norm = omega.infnorm();
+  double normnonzero;
+  omega.absminNonZero(normnonzero, 0.0);
+
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "||omega|| : " << norm << " absmin(omega) : " << normnonzero << std::endl;
   // assert( omega.allPositive() );
 }
 
@@ -318,15 +360,31 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
   // start by partially computing step->s
   /* step->s = rz */
   step->s->copyFrom( *res->rz );
+  double normrs = res->rz->infnorm();
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "rz norm : " << normrs << std::endl;
   if( mclow > 0 ) {
     OoqpVector & tInvLambda = *step->t;
     tInvLambda.copyFrom( *vars->lambda );
     tInvLambda.divideSome( *vars->t, *iclow );
 
+    double abs_lambda = vars->lambda->infnorm();
+
+    double absmin_t;
+    vars->t->absminNonZero(absmin_t, 0.0);
+
+    if( PIPS_MPIgetRank() == 0 )
+       std::cout << "abs_lambda : " << abs_lambda << " absmin_t : " << absmin_t << std::endl;
     /* step->s = rz + Lambda/T * rt */
     step->s->axzpy( 1.0, tInvLambda, *res->rt );
+  normrs = step->s->infnorm();
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "steps1 norm : " << normrs << std::endl;
     /* step->s = rz + Lambda/T * rt + rlambda/T */
     step->s->axdzpy( 1.0, *res->rlambda, *vars->t, *iclow );
+  normrs = step->s->infnorm();
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "steps2 norm : " << normrs << std::endl;
   }
 
   if( mcupp > 0 ) {
@@ -334,10 +392,27 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     uInvPi.copyFrom( *vars->pi );
     uInvPi.divideSome( *vars->u, *icupp );
 
+    double abs_pi = vars->pi->infnorm();
+
+    double absmin_u;
+    vars->u->absminNonZero(absmin_u, 0.0);
+
+    if( PIPS_MPIgetRank() == 0 )
+       std::cout << "abs_pi : " << abs_pi << " absmin_u : " << absmin_u << std::endl;
     /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
     step->s-> axzpy(  1.0, uInvPi, *res->ru );
+  normrs = step->s->infnorm();
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "steps3 norm : " << normrs << std::endl;
     /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
+  double rpinorm = res->rpi->infnorm();
+  double absminu; vars->u->absminNonZero(absminu, 0.0);
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "rpinorm : " << rpinorm << " absminu : " << absminu << std::endl;
     step->s->axdzpy( -1.0, *res->rpi, *vars->u, *icupp );
+  normrs = step->s->infnorm();
+  if( PIPS_MPIgetRank() == 0 )
+     std::cout << "steps4 norm : " << normrs << std::endl;
   }
 
   step->y->copyFrom( *res->rA );
@@ -417,6 +492,11 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
   /* step->z = rC */
 
    /* rz = rC - */
+   double norm = nomegaInv->infnorm();
+   double norm2 = steps.infnorm();
+
+   if( PIPS_MPIgetRank() == 0 )
+      std::cout << norm << " nomegainv norm..." << norm2 << " stepsnorm ... " << std::endl;
   stepz.axzpy( -1.0, *nomegaInv, steps );
 
   OoqpVector * residual = nullptr;
@@ -500,7 +580,11 @@ void QpGenLinsys::solveCompressedBiCGStab(OoqpVector& stepx,
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
-   const double tolb = max(n2b * tol, outer_bicg_eps);
+   const double n2b1 = stepx.twonorm();
+   const double n2b2 = stepy.twonorm();
+   const double n2b3 = stepz.twonorm();
+
+   const double tolb = max( (n2b1+ n2b2+ n2b3) / 3.0 * tol, outer_bicg_eps);
 
    gOuterBiCGIter = 0;
    bicg_niterations = 0;
