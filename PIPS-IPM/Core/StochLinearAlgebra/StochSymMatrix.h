@@ -79,16 +79,17 @@ public:
 
   void randomizePSD( double* ) override { assert( false && "Not implemented" ); };
 
-  virtual void getDiagonal( OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
   void setToDiagonal( const OoqpVector& vec ) override;
   void atPutDiagonal( int idiag, OoqpVector& v ) override;
-  void fromGetDiagonal( int, OoqpVector& x ) override;
+  void fromGetDiagonal( int idiag, OoqpVector& x ) override;
 
   void putSparseTriple( int[], int, int[], double[], int& ) override { assert( false && "Not implemented" ); };
 
   void symmetricScale ( const OoqpVector& vec ) override;
   void columnScale ( const OoqpVector& vec ) override;
   void rowScale ( const OoqpVector& vec ) override;
+
   void scalarMult( double num ) override;
 
   // note: also used for dummy class!

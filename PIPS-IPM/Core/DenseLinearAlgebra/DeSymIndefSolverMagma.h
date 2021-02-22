@@ -25,8 +25,8 @@ protected:
 public:
   DeSymIndefSolverMagma( DenseSymMatrix * storage );
   DeSymIndefSolverMagma( SparseSymMatrix * storage );
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
   using DoubleLinearSolver::solve;
   void solve ( OoqpVector& vec ) override;
   void solve ( GenMatrix& vec ) override;

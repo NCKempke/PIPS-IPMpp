@@ -123,6 +123,8 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   QpGenData * prob = (QpGenData *) prob_in;
 
   double norm = 0.0, gap = 0.0;
+  primal_objective = 0.0;
+  dual_objective = 0.0;
  
   /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
   prob->getg( *rQ );
@@ -130,6 +132,7 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
 
   // contribution calculate x^T (g + Qx) to duality gap */
   gap += rQ->dotProductWith(*vars->x); 
+  primal_objective += gap;
 
   prob->ATransmult( 1.0, *rQ, -1.0, *vars->y );
   prob->CTransmult( 1.0, *rQ, -1.0, *vars->z );
@@ -146,9 +149,11 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   prob->Amult( -1.0, *rA, 1.0, *vars->x );
 
   norm = updateNormAndPrint( norm, *rA, print_resids, "rA");
-
-  // contribution -b^T y to duality gap
-  gap -= prob->bA->dotProductWith(*vars->y);
+  
+  // contribution -d^T y to duality gap
+  const double ba_y = prob->bA->dotProductWith(*vars->y);
+  gap -= ba_y;
+  dual_objective += ba_y;
 
   /*** rC = Cx - s ***/
   rC->copyFrom( *vars->s );
@@ -164,36 +169,38 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
   if( mcupp > 0 )
     rz->axpy(  1.0, *vars->pi );
 
-
   norm = updateNormAndPrint( norm, *rz, print_resids, "rz");
 
-  /*** rt = s - d - t ***/
   if( mclow > 0 )
   {
-     rt->copyFrom( *vars->s );
-     rt->axpy( -1.0, prob->slowerBound() );
-     rt->selectNonZeros( *iclow );
-     rt->axpy( -1.0, *vars->t );
+    /*** rt = s - d - t ***/
+    rt->copyFrom( *vars->s );
+    rt->axpy( -1.0, prob->slowerBound() );
+    rt->selectNonZeros( *iclow );
+    rt->axpy( -1.0, *vars->t );
 
-     norm = updateNormAndPrint( norm, *rt, print_resids, "rt");
+    // contribution - d^T lambda to duality gap
+    const double bl_lambda = prob->bl->dotProductWith(*vars->lambda);
+    gap -= bl_lambda;
+    dual_objective += bl_lambda;
 
-     // contribution - d^T lambda to duality gap
-     gap -= prob->bl->dotProductWith(*vars->lambda);
+    norm = updateNormAndPrint( norm, *rt, print_resids, "rt");
   }
-
 
   if( mcupp > 0 )
   {
-     /*** ru = s - f + u ***/
-     ru->copyFrom( *vars->s );
-     ru->axpy( -1.0, prob->supperBound() );
-     ru->selectNonZeros( *icupp );
-     ru->axpy( 1.0, *vars->u );
+    /*** ru = s - f + u ***/
+    ru->copyFrom( *vars->s );
+    ru->axpy( -1.0, prob->supperBound() );
+    ru->selectNonZeros( *icupp );
+    ru->axpy( 1.0, *vars->u );
 
-     norm = updateNormAndPrint( norm, *ru, print_resids, "ru");
+    // contribution - f^T pi to duality gap
+    const double bu_pi = prob->bu->dotProductWith(*vars->pi);
+    gap += bu_pi;
+    dual_objective -= bu_pi;
 
-     // contribution - f^T pi to duality gap
-     gap += prob->bu->dotProductWith(*vars->pi);
+    norm = updateNormAndPrint( norm, *ru, print_resids, "ru");
   }
 
   if( nxlow > 0 )
@@ -205,9 +212,11 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     rv->axpy( -1.0, *vars->v );
 
     norm = updateNormAndPrint( norm, *rv, print_resids, "rv");
-
     // contribution - lx^T gamma to duality gap
-    gap -= prob->blx->dotProductWith(*vars->gamma);
+    const double blx_gamma = prob->blx->dotProductWith(*vars->gamma);
+    gap -= blx_gamma;
+    dual_objective += blx_gamma;
+
   }
 
   if( nxupp > 0 )
@@ -221,15 +230,16 @@ void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_re
     norm = updateNormAndPrint( norm, *rw, print_resids, "rw");
 
     // contribution + bu^T phi to duality gap
-    gap += prob->bux->dotProductWith(*vars->phi);
+    const double bux_phi = prob->bux->dotProductWith(*vars->phi);
+    gap += bux_phi;
+    dual_objective -= bux_phi;
   }
-   
+
   mDualityGap = gap;
   mResidualNorm = norm;
 
   if( print_resids && myRank == 0 )
     std::cout << "Norm residuals: " << mResidualNorm << "\tduality gap: " << mDualityGap << "\n";
-
 }
 
 double QpGenResiduals::recomputeResidualNorm()

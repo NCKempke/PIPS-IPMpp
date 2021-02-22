@@ -6,7 +6,14 @@
 #define SPSTOCHFACTORY
 
 #include "QpGen.h"
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include "mpi.h"
+// turn the warnings back 
+#pragma GCC diagnostic pop
+
 #include <cassert>
 
 class QpGenData;
@@ -38,19 +45,17 @@ class sFactory : public QpGen
  public:
 
   virtual Data* makeData();
-  virtual Residuals * makeResiduals( Data * prob_in );
-  virtual Variables * makeVariables( Data * prob_in );
-  virtual LinearSystem* makeLinsys( Data * prob_in );
+  Residuals * makeResiduals( Data * prob_in ) override;
+  Variables * makeVariables( Data * prob_in ) override;
+  LinearSystem* makeLinsys( Data * prob_in ) override;
 
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
   virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 
   virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
 
-
   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override
   { assert(0 && "not implemented here"); };
-
 
   void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override
   { assert(0 && "not implemented here"); };

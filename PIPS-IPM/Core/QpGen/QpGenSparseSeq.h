@@ -46,10 +46,11 @@ public:
 			    double cupp[], char icupp[] );
 
   void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const;
+			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
 
   void separateVars( OoqpVector& x_in, OoqpVector& y_in,
-			     OoqpVector& z_in, const OoqpVector& vars_in ) const;
+			     OoqpVector& z_in, const OoqpVector& vars_in ) const override;
+
 };
 
 #endif

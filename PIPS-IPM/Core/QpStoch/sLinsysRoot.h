@@ -31,6 +31,7 @@ class sLinsysRoot : public sLinsys {
   void createChildren(sData* prob);
   void deleteChildren() override;
 
+
  public:
   std::vector<sLinsys*> children;
 
@@ -41,7 +42,7 @@ class sLinsysRoot : public sLinsys {
 	      OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 	      OoqpVector* rhs_);
 
-  virtual void factor2(sData *prob, Variables *vars);
+  void factor2(sData *prob, Variables *vars) override;
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
   virtual void initializeKKT(sData* prob, Variables* vars);
   virtual void assembleLocalKKT( sData* prob ) = 0;
@@ -52,7 +53,7 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKT( sData* prob, Variables* vars ) = 0;
   virtual void finalizeKKTdist( sData* /*prob*/ ) {assert("not implemented here \n" && 0);};
 
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
 
   /* compute B0_{outer} - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, SparseGenMatrix& A0_border, SparseGenMatrix& C0_border, SparseGenMatrix& F0vec_border,
@@ -72,8 +73,8 @@ class sLinsysRoot : public sLinsys {
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
-  virtual void putXDiagonal( OoqpVector& xdiag_ );
-  virtual void putZDiagonal( OoqpVector& zdiag );
+  void putXDiagonal( OoqpVector& xdiag_ ) override;
+  void putZDiagonal( OoqpVector& zdiag ) override;
  
   virtual void AddChild(sLinsys* child);
 

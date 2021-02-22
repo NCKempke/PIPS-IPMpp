@@ -1129,5 +1129,43 @@ void SimpleVectorBase<T>::getSumCountIfSmall( double tol, double& sum_small, int
    }
 }
 
+template<typename T>
+void SimpleVectorBase<T>::pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs )
+{
+   assert( tol_other > 0 );
+   assert( tol_this > 0 );
+   assert( tol_pairs > 0 );
+   assert( this->n == other_vec_in.length() );
+   assert( this->n == select_in.length() );
+
+   SimpleVectorBase<T>& other_vec = dynamic_cast<SimpleVectorBase<T>&>(other_vec_in);
+   const SimpleVectorBase<T>& select = dynamic_cast<const SimpleVectorBase<T>&>(select_in);
+
+   for( int  i = 0; i < this->n; ++i )
+   {
+      if( PIPSisEQ(1.0, select[i]) )
+      {
+         T& x = this->v[i];
+         T& y = other_vec[i];
+
+         const T complementary_product = x * y;
+         assert( complementary_product >= 0.0 );
+         if( complementary_product < tol_pairs )
+         {
+            if( x < y )
+               x = tol_pairs / y;
+            else
+               y = tol_pairs / x;
+         }
+
+         if( x < tol_this )
+            x += tol_this;
+         if( y < tol_other )
+            y += tol_other;
+      }
+   }
+}
+
+
 template class SimpleVectorBase<int>;
 template class SimpleVectorBase<double>;

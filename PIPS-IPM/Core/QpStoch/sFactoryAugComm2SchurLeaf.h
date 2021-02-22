@@ -18,13 +18,12 @@ class sFactoryAugComm2SchurLeaf : public sFactory {
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
 			     OoqpVector* dd,OoqpVector* dq,
-			     OoqpVector* nomegaInv, OoqpVector* rhs);
+			     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
-  virtual sLinsysRoot* newLinsysRoot();
-  virtual sLinsysRoot* newLinsysRoot(sData* prob,
-                 sTree* tree_,
+  sLinsysRoot* newLinsysRoot() override;
+  sLinsysRoot* newLinsysRoot(sData* prob,
 				     OoqpVector* dd,OoqpVector* dq,
-				     OoqpVector* nomegaInv, OoqpVector* rhs);
+				     OoqpVector* nomegaInv, OoqpVector* rhs) override;
 };
 
 #endif

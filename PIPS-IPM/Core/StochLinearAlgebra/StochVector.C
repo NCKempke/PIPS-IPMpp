@@ -2297,6 +2297,41 @@ void StochVectorBase<T>::collapseHierarchicalStructure()
    }
 }
 
+template<typename T>
+void StochVectorBase<T>::pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs )
+{
+   StochVectorBase<T>& other_vec = dynamic_cast<StochVectorBase<T>&>(other_vec_in);
+   const StochVectorBase<T>& select = dynamic_cast<const StochVectorBase<T>&>(select_in);
+
+   assert(children.size() == other_vec.children.size());
+   assert(children.size() == select.children.size());
+
+   if( vec )
+   {
+      assert( other_vec.vec );
+      assert( select.vec );
+
+      vec->pushSmallComplementarityPairs( *other_vec.vec, *select.vec, tol_this, tol_other, tol_pairs );
+   }
+
+   if( vecl )
+   {
+      assert( other_vec.vecl );
+      assert( select.vecl );
+
+      vecl->pushSmallComplementarityPairs( *other_vec.vecl, *select.vecl, tol_this, tol_other, tol_pairs );
+   }
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      assert( children[i] );
+      assert( other_vec.children[i] );
+      assert( select.children[i] );
+
+      children[i]->pushSmallComplementarityPairs( *other_vec.children[i], *select.children[i], tol_this, tol_other, tol_pairs );
+   }
+
+}
 
 template class StochVectorBase<int>;
 template class StochVectorBase<double>;

@@ -1151,8 +1151,6 @@ bool PresolveData::varBoundImpliedFreeBy( bool upper, const INDEX& col, const IN
    if( 0 == getNnzsRow(row) )
       return false;
 
-   bool res = false;
-
    /* check whether bounds is actually still implied by the row -- also checks whether col is still in that row */
    bool upper_implied, lower_implied;
    varboundImpliedFreeFullCheck(upper_implied, lower_implied, col, row);
@@ -1160,8 +1158,6 @@ bool PresolveData::varBoundImpliedFreeBy( bool upper, const INDEX& col, const IN
       return upper_implied;
    else
       return lower_implied;
-
-   return res;
 }
 
 /* uses current activities (non-updated) to check whether said column's bounds are implied by row */
@@ -1203,7 +1199,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
 
    /* coefficient of col in row */
    const double coeff = mat.getMat(col_ptr);
-   assert(!PIPSisZero(coeff));
+   assert( !PIPSisZero(coeff) );
 
    /* current bounds */
    double xupp, xlow;
@@ -1221,7 +1217,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
       else
          --max_ubndd;
    }
-   else
+   else if (coeff < 0 )
    {
       if( xupp != INF_POS )
          min_act -= coeff * xupp;

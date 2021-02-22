@@ -24,6 +24,9 @@ class Residuals
 protected:
   double mResidualNorm;
   double mDualityGap;
+  double primal_objective;
+  double dual_objective;
+
 public:
   int m, n;
 
@@ -40,6 +43,10 @@ public:
    *  @endcode 
    */
   double dualityGap() const { return mDualityGap; };
+
+  double primalObjective() const { return primal_objective; };
+
+  double dualObjective() const { return dual_objective; };
 
   /** calculate residuals, their norms, and duality/complementarity
    * gap, given a problem and variable set.  */

@@ -36,16 +36,16 @@ class sLinsysLeaf : public sLinsys
   void Dsolve( sData*, OoqpVector& x ) override;
   void Ltsolve( sData*, OoqpVector& ) override {};
 
-  //virtual void Lsolve2 ( OoqpVector& x );
-  //virtual void Dsolve2 ( OoqpVector& x );
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp);
+  //void Lsolve2 ( OoqpVector& x ) override;
+  //void Dsolve2 ( OoqpVector& x ) override;
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
 
-  virtual void putZDiagonal( OoqpVector& zdiag );
-  //virtual void solveCompressed( OoqpVector& rhs );
-  virtual void putXDiagonal( OoqpVector& xdiag_ );
+  void putZDiagonal( OoqpVector& zdiag ) override;
+  //void solveCompressed( OoqpVector& rhs ) override;
+  void putXDiagonal( OoqpVector& xdiag_ ) override;
 
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
-  virtual void deleteChildren();
+  void deleteChildren() override;
 
   using sLinsys::addTermToSchurComplBlocked;
   void addTermToSchurComplBlocked(sData *prob, bool sparseSC, SymMatrix& SC) override;
