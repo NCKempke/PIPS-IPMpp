@@ -241,7 +241,6 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
    Bl.F.mat = &data->getLocalF();
    Bl.G.mat = &data->getLocalG();
 
-   // TODO parallelization over the mpi processes....
    addBTKiInvBToSC( result, Bl, Br, Br_mod_border, false, false );
 
    Bl.F.mat = BlFbuf;
