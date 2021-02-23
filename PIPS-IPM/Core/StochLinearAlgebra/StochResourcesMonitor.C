@@ -1,5 +1,12 @@
 #include "StochResourcesMonitor.h"
+
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include "mpi.h"
+// turn the warnings back on
+#pragma GCC diagnostic pop
+
 #include <assert.h>
 #include <fstream>
 #include <sstream>

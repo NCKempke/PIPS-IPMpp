@@ -83,8 +83,8 @@ class DoubleIterativeLinearSolver : public DoubleLinearSolver {
  public:
   DoubleIterativeLinearSolver( MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2=nullptr );
 
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
+  void diagonalChanged( int idiag, int extent ) override;
+  void matrixChanged() override;
 
   virtual ~DoubleIterativeLinearSolver();
  protected:
@@ -112,7 +112,7 @@ class StoredMatTimesVec : public MatTimesVec {
   StoredMatTimesVec(DoubleMatrix* mat);
   virtual ~StoredMatTimesVec() {};
 
-  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x);
+  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) override;
  protected:
   DoubleMatrix* mMat;
 };
@@ -127,7 +127,7 @@ class StoredMatTransTimesVec : public MatTimesVec {
   StoredMatTransTimesVec(DoubleMatrix* mat);
   virtual ~StoredMatTransTimesVec() {};
 
-  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x);
+  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) override;
  protected:
   DoubleMatrix* mMat;
 };

@@ -8,13 +8,19 @@
 #ifndef PIPS_IPM_CORE_UTILITIES_PIPSDEF_H_
 #define PIPS_IPM_CORE_UTILITIES_PIPSDEF_H_
 
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#include "mpi.h"
+// turn the warnings back on
+#pragma GCC diagnostic pop
+
 #include <stdlib.h>
 #include <sstream>
 #include <iostream>
 #include <cmath>
 #include <string>
 #include <vector>
-#include <mpi.h>
 #include <limits>
 #include <assert.h>
 #include "pipsport.h"

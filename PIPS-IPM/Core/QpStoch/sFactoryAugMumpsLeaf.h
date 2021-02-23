@@ -21,7 +21,7 @@ class sFactoryAugMumpsLeaf : public sFactoryAug {
 
   sLinsysLeaf* newLinsysLeaf(sData* prob,
               OoqpVector* dd,OoqpVector* dq,
-              OoqpVector* nomegaInv, OoqpVector* rhs);
+              OoqpVector* nomegaInv, OoqpVector* rhs) override;
 };
 
 

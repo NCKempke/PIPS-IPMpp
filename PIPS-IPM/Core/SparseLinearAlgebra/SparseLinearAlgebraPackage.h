@@ -30,10 +30,10 @@ public:
   /** Return the sole instance of this class. This instance must not
    * ever be deleted. */
   static SparseLinearAlgebraPackage * soleInstance();
-  virtual SymMatrix * newSymMatrix( int size, int nnz );
-  virtual GenMatrix * newGenMatrix( int m, int n, int nnz );
-  virtual OoqpVector * newVector( int n );
-  virtual void whatami( char type[32] );
+  SymMatrix * newSymMatrix( int size, int nnz ) override;
+  GenMatrix * newGenMatrix( int m, int n, int nnz ) override;
+  OoqpVector * newVector( int n ) override;
+  void whatami( char type[32] ) override;
 
 };
 

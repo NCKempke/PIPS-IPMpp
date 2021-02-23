@@ -22,32 +22,32 @@ class sTreeImpl : public sTree
  public:
   virtual ~sTreeImpl();
 
-  StochSymMatrix*   createQ() const;
-  StochVector*      createc() const;
+  StochSymMatrix*   createQ() const override;
+  StochVector*      createc() const override;
 
-  StochVector*      createxlow()  const;
-  StochVector*      createixlow() const;
-  StochVector*      createxupp()  const;
-  StochVector*      createixupp() const;
-
-
-  StochGenMatrix*   createA() const;
-  StochVector*      createb() const;
+  StochVector*      createxlow()  const override;
+  StochVector*      createixlow() const override;
+  StochVector*      createxupp()  const override;
+  StochVector*      createixupp() const override;
 
 
-  StochGenMatrix*   createC() const;
-  StochVector*      createclow()  const;
-  StochVector*      createiclow() const;
-  StochVector*      createcupp()  const;
-  StochVector*      createicupp() const;
+  StochGenMatrix*   createA() const override;
+  StochVector*      createb() const override;
 
-  int nx() const;
-  int my() const; 
-  int mz() const; 
-  int id() const; 
 
-  void computeGlobalSizes();
-  void loadLocalSizes();
+  StochGenMatrix*   createC() const override;
+  StochVector*      createclow()  const override;
+  StochVector*      createiclow() const override;
+  StochVector*      createcupp()  const override;
+  StochVector*      createicupp() const override;
+
+  int nx() const override;
+  int my() const override; 
+  int mz() const override; 
+  int id() const override; 
+
+  void computeGlobalSizes() override;
+  void loadLocalSizes() override;
  private:
   int m_id;
   stochasticInput& in;

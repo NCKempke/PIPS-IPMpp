@@ -34,35 +34,35 @@ public:
   int * jcolM() { return mStorage->jcolM; }
   double * M() { return mStorage->M; }
 
-  virtual int isKindOf( int type ) const;
+  int isKindOf( int type ) const override;
 
-  virtual void putSparseTriple( int irow[], int len, int jcol[], double A[],
-				int& info );
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent );
-  virtual void fromGetSpRow( int row, int col,
+  void putSparseTriple( int irow[], int len, int jcol[], double A[],
+				int& info ) override;
+  void fromGetDense( int row, int col, double * A, int lda,
+			     int rowExtent, int colExtent ) override;
+  void fromGetSpRow( int row, int col,
 			     double A[], int lenA, int jcolA[], int& nnz,
-			     int colExtent, int& info );
-  virtual void SymmetricScale ( OoqpVector& vec );
-  virtual void ColumnScale ( OoqpVector& vec );
-  virtual void RowScale ( OoqpVector& vec );
-  virtual void scalarMult( double num);
+			     int colExtent, int& info ) override;
+  void SymmetricScale ( OoqpVector& vec ) override;
+  void ColumnScale ( OoqpVector& vec ) override;
+  void RowScale ( OoqpVector& vec ) override;
+  void scalarMult( double num) override;
 
-  virtual void symAtPutSpRow( int col, double A[], int lenA, int jcolA[],
-			      int& info );
+  void symAtPutSpRow( int col, double A[], int lenA, int jcolA[],
+			      int& info ) override;
 
   virtual void symPutZeroes();
 
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
-  virtual long long size();
+  long long size() override;
 
-  virtual void getDiagonal( OoqpVector& vec );
-  virtual void setToDiagonal( OoqpVector& vec );
+  void getDiagonal( OoqpVector& vec ) override;
+  void setToDiagonal( OoqpVector& vec ) override;
 
-  virtual void symAtPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
+  void symAtPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
 				  int srcRow, int srcCol,
-				  int rowExtent, int colExtent );
+				  int rowExtent, int colExtent ) override;
 
   virtual void mult ( double beta,  double y[], int incy,
 		      double alpha, const double x[], int incx ) const;
@@ -83,11 +83,11 @@ public:
   virtual std::string writeToStreamDenseRow(int row) const;
   virtual void writeToStreamDenseRow( std::stringstream& out, int row ) const;
 
-  virtual void randomizePSD(double *);
+  void randomizePSD(double *) override;
 
-  virtual void atPutDiagonal( int idiag, OoqpVector& v );
+  void atPutDiagonal( int idiag, OoqpVector& v ) override;
 
-  virtual void fromGetDiagonal( int idiag, OoqpVector& v );
+  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   /** The actual number of structural non-zero elements in this sparse
    *  matrix. This includes so-called "accidental" zeros, elements that

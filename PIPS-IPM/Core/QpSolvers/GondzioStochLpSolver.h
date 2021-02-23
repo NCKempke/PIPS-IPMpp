@@ -40,7 +40,7 @@ public:
 
   virtual ~GondzioStochLpSolver();
 
-  virtual int solve( Data *prob, Variables *iterate, Residuals * resid );
+  int solve( Data *prob, Variables *iterate, Residuals * resid ) override;
 
 };
 

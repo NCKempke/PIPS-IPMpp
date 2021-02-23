@@ -180,7 +180,7 @@ public:
    *  class */
   LinearSystem * getLinearSystem() const { return sys; };
 protected:
-  LinearSystem *sys;
+  LinearSystem* sys{};
   bool printTimeStamp;
   double startTime;
 };

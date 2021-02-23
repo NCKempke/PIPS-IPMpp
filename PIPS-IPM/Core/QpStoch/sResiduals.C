@@ -110,26 +110,9 @@ sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
 
    for(unsigned int i = 0; i < res.children.size(); ++i)
    {
-       children.push_back( new sResiduals(*children[i]) );
+       children.push_back( new sResiduals(*res.children[i]) );
    }
 }
-
-sResiduals::sResiduals( const sResiduals& res, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
-      OoqpVectorHandle iclow_, OoqpVectorHandle icupp_ ) : QpGenResiduals(res)
-{
-   stochNode = res.stochNode;
-
-   for(unsigned int i = 0; i < res.children.size(); ++i)
-   {
-       children.push_back( new sResiduals(*children[i]) );
-   }
-
-   ixlow = ixlow_;
-   ixupp = ixupp_;
-   iclow = iclow_;
-   icupp = icupp_;
-}
-
 
 void sResiduals::AddChild(sResiduals* child)
 {
@@ -193,6 +176,35 @@ void sResiduals::createChildren()
   }
 }
 
+void sResiduals::permuteVec0Entries( const std::vector<unsigned int>& perm )
+{
+   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+
+   dynamic_cast<StochVector&>(*rQ).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*rv).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*rw).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*rgamma).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*rphi).permuteVec0Entries(perm);
+}
+
+void sResiduals::permuteEqLinkingEntries( const std::vector<unsigned int>& perm )
+{
+   dynamic_cast<StochVector&>(*rA).permuteLinkingEntries(perm);
+}
+
+void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& perm )
+{
+   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+
+   dynamic_cast<StochVector&>(*rC).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*rt).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*ru).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*rz).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*rlambda).permuteLinkingEntries(perm);
+   dynamic_cast<StochVector&>(*rpi).permuteLinkingEntries(perm);
+}
 
 void sResiduals::sync()
 {

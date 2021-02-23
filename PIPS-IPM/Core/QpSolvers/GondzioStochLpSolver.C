@@ -166,6 +166,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
 //      pushConvergedVarsAwayFromBounds(*prob, *iterate);
+//      pushSmallComplementarityProducts( *prob, *iterate, *resid );
 
       setBiCGStabTol(iter);
       bool small_corr = false;
