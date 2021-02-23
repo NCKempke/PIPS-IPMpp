@@ -121,6 +121,13 @@ Function(SYSTEM_integer ) P3PROCESS_p3execl(
   P3PROCESS_texecarglist progparams,
   SYSTEM_integer *progrc);
 
+Function(SYSTEM_integer ) P3PROCESS_p3exexec2(
+  const SYSTEM_ansichar *progname,
+  const SYSTEM_ansichar *progparams,
+  SYSTEM_integer *progrc,
+  SYSTEM_integer *errcode,
+  SYSTEM_ansichar *errmsg);
+
 Function(SYSTEM_integer ) P3PROCESS_p3asyncexecp(
   SYSTEM_P3_pansichar cmdptr,
   SYSTEM_boolean newconsole,
@@ -158,6 +165,23 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocgrouptk(
   const P3PROCESS_tprocinfo *procinfo,
   P3PROCESS_tkillhow how);
 
+Function(SYSTEM_integer ) P3PROCESS_p3signalproctree(
+  SYSTEM_integer signal,
+  SYSTEM_integer *nchildrenpre,
+  SYSTEM_integer *nchildrenpost);
+
+Prototype Procedure (*P3PROCESS_tproctreecb)(
+SYSTEM_cardinal pid,
+SYSTEM_integer level,
+SYSTEM_pointer usermem);
+
+
+Function(SYSTEM_integer ) P3PROCESS_p3walkproctree(
+  SYSTEM_cardinal pid,
+  P3PROCESS_tproctreecb cbfunc,
+  SYSTEM_pointer usermem,
+  SYSTEM_boolean postorder);
+
 Function(SYSTEM_P3_pansichar ) P3PROCESS_p3getcommandline(void);
 cnstdef {P3PROCESS_p3ctrlhandlerok = 0};
 cnstdef {P3PROCESS_p3ctrlhandlerwasempty = 1};
@@ -181,6 +205,12 @@ Procedure P3PROCESS_p3setshowwindow(
 Function(SYSTEM_integer ) P3PROCESS_p3getshowwindow(void);
 
 Function(SYSTEM_integer ) P3PROCESS_p3getnumberofprocessors(void);
+
+Function(SYSTEM_integer ) P3PROCESS_p3getnumberofcores(void);
+
+Function(SYSTEM_boolean ) P3PROCESS_p3getprocinfo(
+  SYSTEM_integer *nphysical,
+  SYSTEM_integer *nlogical);
 
 extern void _Init_Module_p3process(void);
 extern void _Final_Module_p3process(void);

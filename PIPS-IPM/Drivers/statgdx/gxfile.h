@@ -108,8 +108,10 @@ typedef SYSTEM_byte GXFILE_tgdxelemsize; /* Anonymous */ enum{GXFILE_sz_byte,GXF
 typedef struct GXFILE_tintegermapping_OD_S* GXFILE_tintegermapping; /* sy_class */
 typedef struct GXFILE_tintegermapping_OD_S {  /* Objects of 'tintegermapping' */
   SYSTEM_classreference_t CD;  /* = &GXFILE_tintegermapping_CD */
+  SYSTEM_int64 GXFILE_tintegermapping_DOT_fcapacity;
+  SYSTEM_int64 GXFILE_tintegermapping_DOT_fmapbytes;
+  SYSTEM_int64 GXFILE_tintegermapping_DOT_fmaxcapacity;
   SYSTEM_integer GXFILE_tintegermapping_DOT_fhighestindex;
-  SYSTEM_integer GXFILE_tintegermapping_DOT_fcapacity;
   SYSTEM_P3_pintegerarray GXFILE_tintegermapping_DOT_pmap;
 } GXFILE_tintegermapping_OD;
 
@@ -120,6 +122,10 @@ Procedure GXFILE_tintegermapping_DOT_setmapping(
   SYSTEM_integer t);
 
 Function(SYSTEM_integer ) GXFILE_tintegermapping_DOT_getmapping(
+  GXFILE_tintegermapping self,
+  SYSTEM_integer f);
+
+Procedure GXFILE_tintegermapping_DOT_growmapping(
   GXFILE_tintegermapping self,
   SYSTEM_integer f);
 
@@ -142,9 +148,10 @@ typedef struct GXFILE_tueltable_OD_S {  /* Objects of 'tueltable' */
   SYSTEM_classreference_t CD;  /* = &GXFILE_tueltable_CD */
   GMSDATA_tgrowarrayfxd STRHASH_txstrhashlist_DOT_buckets;
   SYSTEM_P3_ppointerarray STRHASH_txstrhashlist_DOT_phashtable;
-  SYSTEM_integer STRHASH_txstrhashlist_DOT_hashsize;
-  SYSTEM_integer STRHASH_txstrhashlist_DOT_rehashcnt;
   GMSDATA_txintlist STRHASH_txstrhashlist_DOT_sortmap;
+  SYSTEM_int64 STRHASH_txstrhashlist_DOT_sizeofhashtable;
+  SYSTEM_integer STRHASH_txstrhashlist_DOT_hashtablesize;
+  SYSTEM_integer STRHASH_txstrhashlist_DOT_rehashcnt;
   SYSTEM_boolean STRHASH_txstrhashlist_DOT_fsorted;
   SYSTEM_integer STRHASH_txstrhashlist_DOT_fcount;
   SYSTEM_boolean STRHASH_txstrhashlist_DOT_onebased;
@@ -290,6 +297,7 @@ typedef struct GXFILE_tgxfileobj_OD_S {  /* Objects of 'tgxfileobj' */
   SYSTEM_integer GXFILE_tgxfileobj_DOT_fcomprlev;
   GXFILE_tueltable GXFILE_tgxfileobj_DOT_ueltable;
   GMSOBJ_txstrpool GXFILE_tgxfileobj_DOT_settextlist;
+  SYSTEM_P3_pintegerarray GXFILE_tgxfileobj_DOT_mapsettext;
   SYSTEM_integer GXFILE_tgxfileobj_DOT_fcurrentdim;
   GMSSPECS_tindex GXFILE_tgxfileobj_DOT_lastelem;
   GMSSPECS_tindex GXFILE_tgxfileobj_DOT_prevelem;
@@ -310,6 +318,7 @@ typedef struct GXFILE_tgxfileobj_OD_S {  /* Objects of 'tgxfileobj' */
   GXFILE_tfilterlist GXFILE_tgxfileobj_DOT_filterlist;
   GXFILE_tdfilter GXFILE_tgxfileobj_DOT_curfilter;
   GXFILE_tdomainlist GXFILE_tgxfileobj_DOT_domainlist;
+  SYSTEM_boolean GXFILE_tgxfileobj_DOT_storedomainsets;
   _arr_1GXFILE GXFILE_tgxfileobj_DOT_intvaluemap,GXFILE_tgxfileobj_DOT_readintvaluemap;
   _enm_2GXFILE GXFILE_tgxfileobj_DOT_tracelevel;
   SYSTEM_shortstring GXFILE_tgxfileobj_DOT_tracestr;
@@ -408,6 +417,11 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_doread(
   SYSTEM_double *avals,
   SYSTEM_integer *afdim);
 
+Procedure GXFILE_tgxfileobj_DOT_addtoerrorlistdomerrs(
+  GXFILE_tgxfileobj self,
+  const SYSTEM_integer *aelements,
+  const SYSTEM_double *avals);
+
 Procedure GXFILE_tgxfileobj_DOT_addtoerrorlist(
   GXFILE_tgxfileobj self,
   const SYSTEM_integer *aelements,
@@ -433,6 +447,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
   GXFILE_tgxfileobj self,
   const SYSTEM_ansichar *afn,
   SYSTEM_integer filemode,
+  SYSTEM_integer readmode,
   SYSTEM_integer *errnr);
 
 Procedure  STDCALL GXFILE_tgxfileobj_DOT_gdxgetdomainelements_dp_fc(
@@ -471,6 +486,12 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenwriteex(
 Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenread(
   GXFILE_tgxfileobj self,
   const SYSTEM_ansichar *filename,
+  SYSTEM_integer *errnr);
+
+Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadex(
+  GXFILE_tgxfileobj self,
+  const SYSTEM_ansichar *filename,
+  SYSTEM_integer readmode,
   SYSTEM_integer *errnr);
 
 Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenappend(
@@ -606,6 +627,12 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorcount(
   GXFILE_tgxfileobj self);
 
 Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorrecord(
+  GXFILE_tgxfileobj self,
+  SYSTEM_integer recnr,
+  SYSTEM_integer *keyint,
+  SYSTEM_double *values);
+
+Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorrecordx(
   GXFILE_tgxfileobj self,
   SYSTEM_integer recnr,
   SYSTEM_integer *keyint,

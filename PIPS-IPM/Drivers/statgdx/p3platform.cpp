@@ -5,7 +5,7 @@ _arr_0P3PLATFORM P3PLATFORM_osfiletypetext = {{3,'W','I','N'}, {4,'U','N','I','X
 _arr_1P3PLATFORM P3PLATFORM_osplatformtext = {{3,'D','O','S'}, {5,'W','i','n','9','5'}, {5,'W','i','n','N','T'}, {8,'W','i','n','6','4','E','M','T'}, {3,'A','I','X'}, {5,'H','P','-','U','X'}, {6,'I','R','I','X','6','4'}, {5,'L','i','n','u','x'}, {13,'S','u','n','O','S','-','s','p','a','r','c','3','2'}, {4,'O','S','F','1'}, {10,'D','a','r','w','i','n','-','p','p','c'}, {10,'L','i','n','u','x','8','6','_','6','4'}, {11,'S','u','n','O','S','-','i','8','6','p','c'}, {13,'S','u','n','O','S','-','s','p','a','r','c','6','4'}, {11,'D','a','r','w','i','n','-','i','3','8','6'}, {10,'D','a','r','w','i','n','-','x','6','4'}, {8,'B','l','u','e','G','e','n','e'}, {7,'M','i','s','s','i','n','g'}};
 _arr_2P3PLATFORM P3PLATFORM_osdllextension = {{4,'.','d','l','l'}, {4,'.','d','l','l'}, {4,'.','d','l','l'}, {4,'.','d','l','l'}, {3,'.','s','o'}, {3,'.','s','l'}, {3,'.','s','o'}, {3,'.','s','o'}, {3,'.','s','o'}, {3,'.','s','o'}, {6,'.','d','y','l','i','b'}, {3,'.','s','o'}, {3,'.','s','o'}, {3,'.','s','o'}, {6,'.','d','y','l','i','b'}, {6,'.','d','y','l','i','b'}, {3,'.','s','o'}, {4,'.','X','X','X'}};
 _arr_3P3PLATFORM P3PLATFORM_osdllprefix = {{0}, {0}, {0}, {0}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}, {3,'l','i','b'}};
-/**** C code included from p3platform.pas(127:1): 24 lines ****/
+/**** C code included from p3platform.pas(134:1): 24 lines ****/
 #if   defined(P3UNIX)
 # include <sys/utsname.h>
 #elif defined(P3DOS)
@@ -113,7 +113,7 @@ void _Init_Module_p3platform(void)
 {
   _P3strcpy(P3PLATFORM_localoslanguagepascal,255,_P3str1("\004P3PC"));
   _P3strcpy(P3PLATFORM_localoslanguagec,255,_P3str1("\007Unknown"));
-  /**** C code included from p3platform.pas(263:1): 17 lines ****/
+  /**** C code included from p3platform.pas(267:1): 17 lines ****/
 #define localosfiletype P3PLATFORM_localosfiletype
 #if   defined(P3DOS)
   localosfiletype = P3PLATFORM_osfilewin;
@@ -132,7 +132,7 @@ void _Init_Module_p3platform(void)
   P3OS_TYPE_not_defined_for_recognized_OS_type__ERROR;
 #endif
   P3PLATFORM_localosplatform = P3PLATFORM_osmissing;
-  /**** C code included from p3platform.pas(285:1): 62 lines ****/
+  /**** C code included from p3platform.pas(289:1): 62 lines ****/
 #define localosplatform P3PLATFORM_localosplatform
 
 #if defined(P3DOS) /* windows */
@@ -184,7 +184,7 @@ void _Init_Module_p3platform(void)
     }
     else if (0==strcmp(uts.sysname,"Darwin")) {
       if (0==strcmp(uts.machine,"i386"))
-        localosplatform  = P3PLATFORM_osdarwin_i386;
+        localosplatform  = P3PLATFORM_osmissing;
       else
         localosplatform  = P3PLATFORM_osdarwin_x64;
     }

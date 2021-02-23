@@ -36,6 +36,7 @@ typedef struct GMSOBJ_txlist_OD_S {  /* Objects of 'txlist' */
   SYSTEM_classreference_t CD;  /* = &GMSOBJ_txlist_CD */
   SYSTEM_boolean GMSOBJ_tquicksortclass_DOT_onebased;
   SYSTEM_integer GMSOBJ_txlist_DOT_fcapacity;
+  SYSTEM_int64 GMSOBJ_txlist_DOT_flistmemory;
   SYSTEM_integer GMSOBJ_txlist_DOT_fcount;
   SYSTEM_P3_ppointerarray GMSOBJ_txlist_DOT_flist;
 } GMSOBJ_txlist_OD;
@@ -122,6 +123,7 @@ typedef struct GMSOBJ_txstrings_OD_S {  /* Objects of 'txstrings' */
   SYSTEM_classreference_t CD;  /* = &GMSOBJ_txstrings_CD */
   SYSTEM_boolean GMSOBJ_tquicksortclass_DOT_onebased;
   SYSTEM_integer GMSOBJ_txlist_DOT_fcapacity;
+  SYSTEM_int64 GMSOBJ_txlist_DOT_flistmemory;
   SYSTEM_integer GMSOBJ_txlist_DOT_fcount;
   SYSTEM_P3_ppointerarray GMSOBJ_txlist_DOT_flist;
   SYSTEM_int64 GMSOBJ_txstrings_DOT_fstrmemory;
@@ -237,6 +239,7 @@ typedef struct GMSOBJ_txcustomstringlist_OD_S {  /* Objects of 'txcustomstringli
   GMSOBJ_pstringitemlist GMSOBJ_txcustomstringlist_DOT_flist;
   SYSTEM_integer GMSOBJ_txcustomstringlist_DOT_fcapacity;
   SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_fstrmemory;
+  SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_flistmemory;
 } GMSOBJ_txcustomstringlist_OD;
 
 
@@ -344,6 +347,7 @@ typedef struct GMSOBJ_txstringlist_OD_S {  /* Objects of 'txstringlist' */
   GMSOBJ_pstringitemlist GMSOBJ_txcustomstringlist_DOT_flist;
   SYSTEM_integer GMSOBJ_txcustomstringlist_DOT_fcapacity;
   SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_fstrmemory;
+  SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_flistmemory;
 } GMSOBJ_txstringlist_OD;
 
 
@@ -370,6 +374,7 @@ typedef struct GMSOBJ_txsortedstringlist_OD_S {  /* Objects of 'txsortedstringli
   GMSOBJ_pstringitemlist GMSOBJ_txcustomstringlist_DOT_flist;
   SYSTEM_integer GMSOBJ_txcustomstringlist_DOT_fcapacity;
   SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_fstrmemory;
+  SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_flistmemory;
   SYSTEM_integer GMSOBJ_txsortedstringlist_DOT_fupdatecount;
   SYSTEM_boolean GMSOBJ_txsortedstringlist_DOT_fsorted;
 } GMSOBJ_txsortedstringlist_OD;
@@ -418,6 +423,7 @@ typedef struct GMSOBJ_txstrstrlist_OD_S {  /* Objects of 'txstrstrlist' */
   GMSOBJ_pstringitemlist GMSOBJ_txcustomstringlist_DOT_flist;
   SYSTEM_integer GMSOBJ_txcustomstringlist_DOT_fcapacity;
   SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_fstrmemory;
+  SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_flistmemory;
   SYSTEM_integer GMSOBJ_txsortedstringlist_DOT_fupdatecount;
   SYSTEM_boolean GMSOBJ_txsortedstringlist_DOT_fsorted;
 } GMSOBJ_txstrstrlist_OD;
@@ -485,6 +491,14 @@ extern const SYSTEM_classdescriptor_t GMSOBJ_txstrstrlist_CD;
 
 
 cnstdef {GMSOBJ_non_empty = _P3char('=')};
+cnstdef {GMSOBJ_hashmult = 31};
+cnstdef {GMSOBJ_hashmult_6 = 887503681};
+cnstdef {GMSOBJ_hashmult2 = 71};
+cnstdef {GMSOBJ_hashmod2 = 32};
+extern SYSTEM_double GMSOBJ_hash2_maxfullratio;
+extern SYSTEM_double GMSOBJ_hash2_nicefullratio;
+cnstdef {GMSOBJ_schash_factor_max = 13};
+cnstdef {GMSOBJ_schash_factor_min = 6};
 typedef struct GMSOBJ_thashrecord_S *GMSOBJ_phashrecord;
 typedef struct GMSOBJ_thashrecord_S {
   GMSOBJ_phashrecord pnext;
@@ -500,18 +514,21 @@ typedef struct GMSOBJ_txhashedstringlist_OD_S {  /* Objects of 'txhashedstringli
   GMSOBJ_pstringitemlist GMSOBJ_txcustomstringlist_DOT_flist;
   SYSTEM_integer GMSOBJ_txcustomstringlist_DOT_fcapacity;
   SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_fstrmemory;
-  SYSTEM_P3_ppointerarray GMSOBJ_txhashedstringlist_DOT_phash;
+  SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_flistmemory;
+  SYSTEM_P3_pintegerarray GMSOBJ_txhashedstringlist_DOT_phashdbl;
   SYSTEM_integer GMSOBJ_txhashedstringlist_DOT_hashcount;
+  SYSTEM_integer GMSOBJ_txhashedstringlist_DOT_trigger;
+  SYSTEM_int64 GMSOBJ_txhashedstringlist_DOT_hashbytes;
 } GMSOBJ_txhashedstringlist_OD;
 
 
-Prototype Function(SYSTEM_boolean ) (*
-  GMSOBJ_txhashedstringlist_DOT_equaltoentry_T)(
+Prototype Function(SYSTEM_integer ) (*
+  GMSOBJ_txhashedstringlist_DOT_compareentry_T)(
   GMSOBJ_txhashedstringlist self,
   const SYSTEM_ansichar *s,
   SYSTEM_integer en);
 
-Function(SYSTEM_boolean ) GMSOBJ_txhashedstringlist_DOT_equaltoentry(
+Function(SYSTEM_integer ) GMSOBJ_txhashedstringlist_DOT_compareentry(
   GMSOBJ_txhashedstringlist self,
   const SYSTEM_ansichar *s,
   SYSTEM_integer en);
@@ -521,16 +538,25 @@ Procedure GMSOBJ_txhashedstringlist_DOT_clearhashlist(
 
 Procedure GMSOBJ_txhashedstringlist_DOT_sethashsize(
   GMSOBJ_txhashedstringlist self,
-  SYSTEM_integer v);
+  SYSTEM_integer newcount);
 
 Prototype Function(SYSTEM_cardinal ) (*
   GMSOBJ_txhashedstringlist_DOT_hashvalue_T)(
   GMSOBJ_txhashedstringlist self,
-  const SYSTEM_ansichar *name);
+  const SYSTEM_ansichar *s);
 
 Function(SYSTEM_cardinal ) GMSOBJ_txhashedstringlist_DOT_hashvalue(
   GMSOBJ_txhashedstringlist self,
-  const SYSTEM_ansichar *name);
+  const SYSTEM_ansichar *s);
+
+Prototype Function(SYSTEM_cardinal ) (*
+  GMSOBJ_txhashedstringlist_DOT_hashval2_T)(
+  GMSOBJ_txhashedstringlist self,
+  const SYSTEM_ansichar *s);
+
+Function(SYSTEM_cardinal ) GMSOBJ_txhashedstringlist_DOT_hashval2(
+  GMSOBJ_txhashedstringlist self,
+  const SYSTEM_ansichar *s);
 
 Constructor(GMSOBJ_txhashedstringlist ) 
   GMSOBJ_txhashedstringlist_DOT_create(
@@ -568,7 +594,9 @@ Procedure GMSOBJ_txhashedstringlist_DOT_hashstats(
   GMSOBJ_txhashedstringlist self,
   SYSTEM_integer *amin,
   SYSTEM_integer *amax,
-  SYSTEM_integer *aavg);
+  SYSTEM_integer *acount,
+  SYSTEM_double *ravg,
+  SYSTEM_int64 *memused);
 extern void * const GMSOBJ_txhashedstringlist_VT[];
 extern const SYSTEM_classdescriptor_t GMSOBJ_txhashedstringlist_CD;
 
@@ -581,15 +609,26 @@ typedef struct GMSOBJ_txstrpool_OD_S {  /* Objects of 'txstrpool' */
   GMSOBJ_pstringitemlist GMSOBJ_txcustomstringlist_DOT_flist;
   SYSTEM_integer GMSOBJ_txcustomstringlist_DOT_fcapacity;
   SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_fstrmemory;
-  SYSTEM_P3_ppointerarray GMSOBJ_txhashedstringlist_DOT_phash;
+  SYSTEM_int64 GMSOBJ_txcustomstringlist_DOT_flistmemory;
+  SYSTEM_P3_pintegerarray GMSOBJ_txhashedstringlist_DOT_phashdbl;
   SYSTEM_integer GMSOBJ_txhashedstringlist_DOT_hashcount;
+  SYSTEM_integer GMSOBJ_txhashedstringlist_DOT_trigger;
+  SYSTEM_int64 GMSOBJ_txhashedstringlist_DOT_hashbytes;
 } GMSOBJ_txstrpool_OD;
 
 
-Function(SYSTEM_boolean ) GMSOBJ_txstrpool_DOT_equaltoentry(
+Function(SYSTEM_integer ) GMSOBJ_txstrpool_DOT_compareentry(
   GMSOBJ_txstrpool self,
   const SYSTEM_ansichar *s,
   SYSTEM_integer en);
+
+Function(SYSTEM_cardinal ) GMSOBJ_txstrpool_DOT_hashvalue(
+  GMSOBJ_txstrpool self,
+  const SYSTEM_ansichar *s);
+
+Function(SYSTEM_cardinal ) GMSOBJ_txstrpool_DOT_hashval2(
+  GMSOBJ_txstrpool self,
+  const SYSTEM_ansichar *s);
 
 Function(SYSTEM_integer ) GMSOBJ_txstrpool_DOT_compare(
   GMSOBJ_txstrpool self,
@@ -668,6 +707,8 @@ Function(SYSTEM_pointer ) GMSOBJ_copyint2ptr(
 
 Function(SYSTEM_integer ) GMSOBJ_copyptr2int(
   SYSTEM_pointer p);
+
+Function(SYSTEM_boolean ) GMSOBJ_gmsobjisok(void);
 
 extern void _Init_Module_gmsobj(void);
 extern void _Final_Module_gmsobj(void);

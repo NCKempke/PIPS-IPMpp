@@ -141,11 +141,6 @@ Function(SYSTEM_integer ) STRUTILX_padmodlength(
   const SYSTEM_ansichar *s,
   SYSTEM_integer m);
 
-Function(SYSTEM_ansichar *) STRUTILX_inttostr(
-  SYSTEM_ansichar *result,
-  SYSTEM_uint8 _len_ret,
-  SYSTEM_integer n);
-
 Function(SYSTEM_ansichar *) STRUTILX_inttostrex(
   SYSTEM_ansichar *result,
   SYSTEM_uint8 _len_ret,
@@ -178,6 +173,12 @@ Function(SYSTEM_ansichar *) STRUTILX_int64tonicestrw(
   SYSTEM_uint8 _len_ret,
   SYSTEM_int64 n,
   SYSTEM_integer width);
+
+Function(SYSTEM_ansichar *) STRUTILX_dbltostrsep(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  SYSTEM_double v,
+  SYSTEM_ansichar decimalsep);
 
 Function(SYSTEM_ansichar *) STRUTILX_dbltostr(
   SYSTEM_ansichar *result,
@@ -252,6 +253,11 @@ Function(SYSTEM_ansichar *) STRUTILX_extracttoken(
   SYSTEM_uint8 _len_ret,
   const SYSTEM_ansichar *s,
   SYSTEM_integer *p);
+
+Function(SYSTEM_ansichar *) STRUTILX_extractshortpathnameexcept(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  const SYSTEM_ansichar *filename);
 
 Function(SYSTEM_integer ) STRUTILX_strasint(
   const SYSTEM_ansichar *s);

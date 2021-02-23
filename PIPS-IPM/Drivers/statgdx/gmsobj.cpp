@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -115,6 +115,8 @@ const SYSTEM_classdescriptor_t GMSOBJ_txstrstrlist_CD = {
   &GMSOBJ_txsortedstringlist_CD, NULL, 0, 
   sizeof(GMSOBJ_txstrstrlist_OD), GMSOBJ_txstrstrlist_VT, NULL};
 
+SYSTEM_double GMSOBJ_hash2_maxfullratio = 0.75;
+SYSTEM_double GMSOBJ_hash2_nicefullratio = 0.55;
 
 void * const GMSOBJ_txhashedstringlist_VT[] = {(void*)&
   GMSOBJ_txhashedstringlist_DOT_destroy, (void*)&
@@ -122,8 +124,9 @@ void * const GMSOBJ_txhashedstringlist_VT[] = {(void*)&
   GMSOBJ_txhashedstringlist_DOT_compare, (void*)&
   GMSOBJ_txcustomstringlist_DOT_grow, (void*)&
   GMSOBJ_txcustomstringlist_DOT_freeobject, (void*)&
-  GMSOBJ_txhashedstringlist_DOT_equaltoentry, (void*)&
-  GMSOBJ_txhashedstringlist_DOT_hashvalue};
+  GMSOBJ_txhashedstringlist_DOT_compareentry, (void*)&
+  GMSOBJ_txhashedstringlist_DOT_hashvalue, (void*)&
+  GMSOBJ_txhashedstringlist_DOT_hashval2};
 
 /* Class descriptor for 'txhashedstringlist' */
 const SYSTEM_classdescriptor_t GMSOBJ_txhashedstringlist_CD = {
@@ -138,8 +141,9 @@ void * const GMSOBJ_txstrpool_VT[] = {(void*)&
   GMSOBJ_txstrpool_DOT_compare, (void*)&
   GMSOBJ_txcustomstringlist_DOT_grow, (void*)&
   GMSOBJ_txcustomstringlist_DOT_freeobject, (void*)&
-  GMSOBJ_txstrpool_DOT_equaltoentry, (void*)&
-  GMSOBJ_txhashedstringlist_DOT_hashvalue};
+  GMSOBJ_txstrpool_DOT_compareentry, (void*)&
+  GMSOBJ_txstrpool_DOT_hashvalue, (void*)&
+  GMSOBJ_txstrpool_DOT_hashval2};
 
 /* Class descriptor for 'txstrpool' */
 const SYSTEM_classdescriptor_t GMSOBJ_txstrpool_CD = {
@@ -200,7 +204,7 @@ Procedure GMSOBJ_cmove(
 
         }
     }
-  } 
+  }
 }  /* cmove */
 typedef struct GMSOBJ_tiprec_S {
   union{
@@ -396,6 +400,7 @@ Function(SYSTEM_pointer ) GMSOBJ_txlist_DOT_get(
 Procedure GMSOBJ_txlist_DOT_grow(
   GMSOBJ_txlist self)
 {
+  SYSTEM_int64 i64;
   SYSTEM_integer delta;
 
   if (self->GMSOBJ_txlist_DOT_fcapacity >= 1048576) { 
@@ -405,8 +410,17 @@ Procedure GMSOBJ_txlist_DOT_grow(
       delta = 16;
     } else 
       delta = 7 * self->GMSOBJ_txlist_DOT_fcapacity;
-  GMSOBJ_txlist_DOT_setcapacity(self,self->GMSOBJ_txlist_DOT_fcapacity + 
-    delta);
+  i64 = self->GMSOBJ_txlist_DOT_fcapacity;
+  _P3inc1(i64,delta);
+  if (i64 <= 2147483647) { 
+    GMSOBJ_txlist_DOT_setcapacity(self,ValueCast(SYSTEM_int32,i64));
+  } else {
+    delta = 2147483647;
+    if (self->GMSOBJ_txlist_DOT_fcapacity < delta) { 
+      GMSOBJ_txlist_DOT_setcapacity(self,delta);
+    } else 
+      SYSTEM_assert(i64 <= 2147483647,_P3str1("\043TXList.grow(): max capacity reached"));
+  }
 }  /* grow */
 
 Function(SYSTEM_integer ) GMSOBJ_txlist_DOT_indexof(
@@ -479,18 +493,15 @@ Procedure GMSOBJ_txlist_DOT_setcapacity(
   GMSOBJ_txlist self,
   SYSTEM_integer newcapacity)
 {
-  if (newcapacity != self->GMSOBJ_txlist_DOT_fcapacity) {
-    if (newcapacity < self->GMSOBJ_txlist_DOT_fcount) 
-      newcapacity = self->GMSOBJ_txlist_DOT_fcount;
-#if 0
-    SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
-      GMSOBJ_txlist_DOT_flist),newcapacity * sizeof(SYSTEM_pointer));
-#else
-    SYSTEM_reallocmem ((void **) & self->GMSOBJ_txlist_DOT_flist,
-		       newcapacity * sizeof(SYSTEM_pointer));
-#endif
-    self->GMSOBJ_txlist_DOT_fcapacity = newcapacity;
-  } 
+  if (newcapacity == self->GMSOBJ_txlist_DOT_fcapacity) 
+    return;
+  if (newcapacity < self->GMSOBJ_txlist_DOT_fcount) 
+    newcapacity = self->GMSOBJ_txlist_DOT_fcount;
+  self->GMSOBJ_txlist_DOT_flistmemory = sizeof(SYSTEM_pointer) * 
+    newcapacity;
+  P3UTILS_p3reallocmem64(&PointerCast(SYSTEM_pointer,&self->
+    GMSOBJ_txlist_DOT_flist),self->GMSOBJ_txlist_DOT_flistmemory);
+  self->GMSOBJ_txlist_DOT_fcapacity = newcapacity;
 }  /* setcapacity */
 
 Procedure GMSOBJ_txlist_DOT_setcount(
@@ -544,7 +555,7 @@ Function(SYSTEM_int64 ) GMSOBJ_txlist_DOT_memoryused(
 {
   SYSTEM_int64 result;
 
-  result = self->GMSOBJ_txlist_DOT_fcapacity * sizeof(SYSTEM_pointer);
+  result = self->GMSOBJ_txlist_DOT_flistmemory;
   return result;
 }  /* memoryused */
 
@@ -588,7 +599,7 @@ Function(SYSTEM_ansichar *) GMSOBJ_txstrings_DOT_extract(
   } else {
     _P3strcpy(result,_len_ret,item);
     GMSOBJ_txlist_DOT_delete(ValueCast(GMSOBJ_txlist,self),n);
-  } 
+  }
   return result;
 }  /* extract */
 
@@ -683,12 +694,14 @@ Constructor(GMSOBJ_txcustomstringlist )
   GMSOBJ_txcustomstringlist_DOT_create(
   GMSOBJ_txcustomstringlist self)
 {
-  (GMSOBJ_txcustomstringlist) SYSTEM_tobject_DOT_create((SYSTEM_tobject)self);
+  ValueCast(GMSOBJ_txcustomstringlist,SYSTEM_tobject_DOT_create(ValueCast(
+    SYSTEM_tobject,self)));
   self->GMSOBJ_txcustomstringlist_DOT_flist = NULL;
   self->GMSOBJ_txcustomstringlist_DOT_fcount = 0;
   self->GMSOBJ_txcustomstringlist_DOT_fcapacity = 0;
   self->GMSOBJ_tquicksortclass_DOT_onebased = SYSTEM_false;
   self->GMSOBJ_txcustomstringlist_DOT_fstrmemory = 0;
+  self->GMSOBJ_txcustomstringlist_DOT_flistmemory = 0;
   return self;
 }  /* create */
 
@@ -841,6 +854,7 @@ Function(SYSTEM_tobject ) GMSOBJ_txcustomstringlist_DOT_getobject(
 Procedure GMSOBJ_txcustomstringlist_DOT_grow(
   GMSOBJ_txcustomstringlist self)
 {
+  SYSTEM_int64 i64;
   SYSTEM_integer delta;
 
   if (self->GMSOBJ_txcustomstringlist_DOT_fcapacity >= 1048576) { 
@@ -850,8 +864,18 @@ Procedure GMSOBJ_txcustomstringlist_DOT_grow(
       delta = 16;
     } else 
       delta = 7 * self->GMSOBJ_txcustomstringlist_DOT_fcapacity;
-  GMSOBJ_txcustomstringlist_DOT_setcapacity(self,self->
-    GMSOBJ_txcustomstringlist_DOT_fcapacity + delta);
+  i64 = self->GMSOBJ_txcustomstringlist_DOT_fcapacity;
+  _P3inc1(i64,delta);
+  if (i64 <= 2147483647) { 
+    GMSOBJ_txcustomstringlist_DOT_setcapacity(self,ValueCast(
+      SYSTEM_int32,i64));
+  } else {
+    delta = 2147483647;
+    if (self->GMSOBJ_txcustomstringlist_DOT_fcapacity < delta) { 
+      GMSOBJ_txcustomstringlist_DOT_setcapacity(self,delta);
+    } else 
+      SYSTEM_assert(i64 < 2147483647,_P3str1("\057TXCustomStringList.grow(): max capacity reached"));
+  }
 }  /* grow */
 
 Function(SYSTEM_integer ) GMSOBJ_txcustomstringlist_DOT_indexof(
@@ -940,16 +964,15 @@ Procedure GMSOBJ_txcustomstringlist_DOT_setcapacity(
   GMSOBJ_txcustomstringlist self,
   SYSTEM_integer newcapacity)
 {
+  if (newcapacity == self->GMSOBJ_txcustomstringlist_DOT_fcapacity) 
+    return;
   if (newcapacity < self->GMSOBJ_txcustomstringlist_DOT_fcount) 
     newcapacity = self->GMSOBJ_txcustomstringlist_DOT_fcount;
-#if 0
-  SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
-    GMSOBJ_txcustomstringlist_DOT_flist),newcapacity * sizeof(
-    GMSOBJ_tstringitem));
-#else
-  SYSTEM_reallocmem((void **) & self->GMSOBJ_txcustomstringlist_DOT_flist,
-		    newcapacity * sizeof(GMSOBJ_tstringitem));
-#endif
+  self->GMSOBJ_txcustomstringlist_DOT_flistmemory = sizeof(
+    GMSOBJ_tstringitem) * newcapacity;
+  P3UTILS_p3reallocmem64(&PointerCast(SYSTEM_pointer,&self->
+    GMSOBJ_txcustomstringlist_DOT_flist),self->
+    GMSOBJ_txcustomstringlist_DOT_flistmemory);
   self->GMSOBJ_txcustomstringlist_DOT_fcapacity = newcapacity;
 }  /* setcapacity */
 
@@ -958,8 +981,7 @@ Function(SYSTEM_int64 ) GMSOBJ_txcustomstringlist_DOT_memoryused(
 {
   SYSTEM_int64 result;
 
-  result = self->GMSOBJ_txcustomstringlist_DOT_fcapacity * sizeof(
-    GMSOBJ_tstringitem) + self->
+  result = self->GMSOBJ_txcustomstringlist_DOT_flistmemory + self->
     GMSOBJ_txcustomstringlist_DOT_fstrmemory;
   return result;
 }  /* memoryused */
@@ -1074,9 +1096,8 @@ Function(SYSTEM_boolean ) GMSOBJ_txsortedstringlist_DOT_find(
         result = SYSTEM_true;
         l = i;
       } 
-    } 
-  
-}
+    }
+  }
   *index = l + SYSTEM_ord(self->GMSOBJ_tquicksortclass_DOT_onebased);
   return result;
 }  /* find */
@@ -1097,38 +1118,32 @@ Function(SYSTEM_integer ) GMSOBJ_txsortedstringlist_DOT_indexof(
 }  /* indexof */
 
 static Procedure GMSOBJ_xhashstats(
-  SYSTEM_P3_ppointerarray ph,
+  SYSTEM_P3_ppointerarray phash,
   SYSTEM_integer hashcount,
   SYSTEM_integer *amin,
-  SYSTEM_integer *amax,
-  SYSTEM_integer *aavg)
+  SYSTEM_integer *amax)
 {
-  SYSTEM_integer n;
+  SYSTEM_integer n, c;
   GMSOBJ_phashrecord p;
-  SYSTEM_integer c;
 
   *amin = SYSTEM_maxint;
   *amax = 0;
-  *aavg = 0;
   { register SYSTEM_int32 _stop = hashcount - 1;
     if ((n = 0) <=  _stop) do {
       c = 0;
-      p = ValueCast(GMSOBJ_phashrecord,(*ph)[n]);
+      p = ValueCast(GMSOBJ_phashrecord,(*phash)[n]);
       while (p != NULL) {
         _P3inc0(c);
         p = p->pnext;
-      
-}
+      }
       if (c < *amin) 
         *amin = c;
       if (c > *amax) 
         *amax = c;
-      _P3inc1(*aavg,c);
     
     } while (n++ !=  _stop);
 
   }
-  *aavg = SYSTEM_round(ValueCast(SYSTEM_double,*aavg) /  (hashcount + 1));
 }  /* xhashstats */
 
 Constructor(GMSOBJ_txhashedstringlist ) 
@@ -1138,8 +1153,10 @@ Constructor(GMSOBJ_txhashedstringlist )
   ValueCast(GMSOBJ_txhashedstringlist,
     GMSOBJ_txcustomstringlist_DOT_create(ValueCast(
     GMSOBJ_txcustomstringlist,self)));
-  self->GMSOBJ_txhashedstringlist_DOT_phash = NULL;
+  self->GMSOBJ_txhashedstringlist_DOT_phashdbl = NULL;
   self->GMSOBJ_txhashedstringlist_DOT_hashcount = 0;
+  self->GMSOBJ_txhashedstringlist_DOT_trigger =  -1;
+  self->GMSOBJ_txhashedstringlist_DOT_hashbytes = 0;
   return self;
 }  /* create */
 
@@ -1166,27 +1183,30 @@ Function(SYSTEM_integer ) GMSOBJ_txhashedstringlist_DOT_indexof(
   const SYSTEM_ansichar *s)
 {
   SYSTEM_integer result;
-  GMSOBJ_phashrecord ph;
+  SYSTEM_integer hv, hv2;
 
-  if (self->GMSOBJ_txhashedstringlist_DOT_phash == NULL) 
+  if (self->GMSOBJ_txhashedstringlist_DOT_phashdbl == NULL) 
     GMSOBJ_txhashedstringlist_DOT_sethashsize(self,self->
       GMSOBJ_txcustomstringlist_DOT_fcount);
-  ph = ValueCast(GMSOBJ_phashrecord,(*self->
-    GMSOBJ_txhashedstringlist_DOT_phash)[VirtMethodCall(self, 
-    GMSOBJ_txhashedstringlist_DOT_hashvalue_T, 6, (self,s))]);
-  while (ph != NULL) {
-    if (VirtMethodCall(self, 
-      GMSOBJ_txhashedstringlist_DOT_equaltoentry_T, 5, (self,s,ph->
-      refnr))) 
+  hv = VirtMethodCall(self, GMSOBJ_txhashedstringlist_DOT_hashvalue_T, 6, (
+    self,s));
+  hv2 =  -1;
+  while ((*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv] !=  -1) {
+    if (0 == VirtMethodCall(self, 
+      GMSOBJ_txhashedstringlist_DOT_compareentry_T, 5, (self,s,(*self->
+      GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv]))) 
       SYSTEM_break(BRK_1);
-    ph = ph->pnext;
+    if (hv2 < 0) 
+      hv2 = VirtMethodCall(self, 
+        GMSOBJ_txhashedstringlist_DOT_hashval2_T, 7, (self,s));
+    hv = (hv + hv2) % self->GMSOBJ_txhashedstringlist_DOT_hashcount;
   }
 BRK_1:;
-  if (ph == NULL) { 
+  if ( -1 == (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv]) { 
     result =  -1;
   } else 
-    result = ph->refnr + SYSTEM_ord(self->
-      GMSOBJ_tquicksortclass_DOT_onebased);
+    result = (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv] + 
+      SYSTEM_ord(self->GMSOBJ_tquicksortclass_DOT_onebased);
   return result;
 }  /* indexof */
 
@@ -1196,41 +1216,39 @@ Function(SYSTEM_integer ) GMSOBJ_txhashedstringlist_DOT_addobject(
   SYSTEM_pointer apointer)
 {
   SYSTEM_integer result;
-  GMSOBJ_phashrecord ph;
   SYSTEM_integer hv;
+  SYSTEM_integer hv2;
 
-  if (self->GMSOBJ_txhashedstringlist_DOT_phash == NULL || self->
-    GMSOBJ_txcustomstringlist_DOT_fcount > 4 * self->
-    GMSOBJ_txhashedstringlist_DOT_hashcount) 
+  if (self->GMSOBJ_txhashedstringlist_DOT_phashdbl == NULL || self->
+    GMSOBJ_txcustomstringlist_DOT_fcount > self->
+    GMSOBJ_txhashedstringlist_DOT_trigger) 
     GMSOBJ_txhashedstringlist_DOT_sethashsize(self,self->
       GMSOBJ_txcustomstringlist_DOT_fcount);
   hv = VirtMethodCall(self, GMSOBJ_txhashedstringlist_DOT_hashvalue_T, 6, (
     self,s));
-  ph = ValueCast(GMSOBJ_phashrecord,(*self->
-    GMSOBJ_txhashedstringlist_DOT_phash)[hv]);
-  while (ph != NULL) {
-    if (VirtMethodCall(self, 
-      GMSOBJ_txhashedstringlist_DOT_equaltoentry_T, 5, (self,s,ph->
-      refnr))) 
+  hv2 =  -1;
+  while ( -1 != (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv]) {
+    if (0 == VirtMethodCall(self, 
+      GMSOBJ_txhashedstringlist_DOT_compareentry_T, 5, (self,s,(*self->
+      GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv]))) 
       SYSTEM_break(BRK_2);
-    ph = ph->pnext;
+    if (hv2 < 0) 
+      hv2 = VirtMethodCall(self, 
+        GMSOBJ_txhashedstringlist_DOT_hashval2_T, 7, (self,s));
+    hv = (hv + hv2) % self->GMSOBJ_txhashedstringlist_DOT_hashcount;
   }
 BRK_2:;
-  if (ph != NULL) { 
-    result = ph->refnr + SYSTEM_ord(self->
-      GMSOBJ_tquicksortclass_DOT_onebased);
+  if ( -1 != (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv]) { 
+    result = (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv] + 
+      SYSTEM_ord(self->GMSOBJ_tquicksortclass_DOT_onebased);
   } else {
     result = self->GMSOBJ_txcustomstringlist_DOT_fcount + SYSTEM_ord(
       self->GMSOBJ_tquicksortclass_DOT_onebased);
     GMSOBJ_txcustomstringlist_DOT_insertitem(ValueCast(
       GMSOBJ_txcustomstringlist,self),result,s,apointer);
-    _P3getmem(ph,sizeof(GMSOBJ_thashrecord));
-    ph->pnext = ValueCast(GMSOBJ_phashrecord,(*self->
-      GMSOBJ_txhashedstringlist_DOT_phash)[hv]);
-    ph->refnr = result - SYSTEM_ord(self->
-      GMSOBJ_tquicksortclass_DOT_onebased);
-    (*self->GMSOBJ_txhashedstringlist_DOT_phash)[hv] = ph;
-  } 
+    (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv] = result - 
+      SYSTEM_ord(self->GMSOBJ_tquicksortclass_DOT_onebased);
+  }
   return result;
 }  /* addobject */
 
@@ -1246,95 +1264,195 @@ Function(SYSTEM_integer ) GMSOBJ_txhashedstringlist_DOT_add(
 
 Function(SYSTEM_cardinal ) GMSOBJ_txhashedstringlist_DOT_hashvalue(
   GMSOBJ_txhashedstringlist self,
-  const SYSTEM_ansichar *name)
+  const SYSTEM_ansichar *s)
+{
+  SYSTEM_cardinal result;
+  SYSTEM_int64 r;
+  SYSTEM_cardinal t;
+  SYSTEM_integer i, n;
+
+  r = 0;
+  i = 1;
+  n = SYSTEM_length(s);
+  while (i + 5 <= n) {
+    t = SYSTEM_ord(SYSTEM_upcase(s[i]));
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(SYSTEM_upcase(s[i]));
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(SYSTEM_upcase(s[i]));
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(SYSTEM_upcase(s[i]));
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(SYSTEM_upcase(s[i]));
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(SYSTEM_upcase(s[i]));
+    _P3inc0(i);
+    r = (GMSOBJ_hashmult_6 * r + t) % self->
+      GMSOBJ_txhashedstringlist_DOT_hashcount;
+  }
+  while (i <= n) {
+    r = (GMSOBJ_hashmult * r + SYSTEM_ord(SYSTEM_upcase(s[i]))) % self->
+      GMSOBJ_txhashedstringlist_DOT_hashcount;
+    _P3inc0(i);
+  }
+  result = ValueCast(SYSTEM_uint32,r);
+  return result;
+}  /* hashvalue */
+
+Function(SYSTEM_cardinal ) GMSOBJ_txhashedstringlist_DOT_hashval2(
+  GMSOBJ_txhashedstringlist self,
+  const SYSTEM_ansichar *s)
 {
   SYSTEM_cardinal result;
   SYSTEM_integer i;
 
   result = 0;
-  { register SYSTEM_int32 _stop = SYSTEM_length(name);
+  { register SYSTEM_int32 _stop = SYSTEM_length(s);
     if ((i = 1) <=  _stop) do {
-      result = 211 * result + SYSTEM_ord(SYSTEM_upcase(name[i]));
+      result = GMSOBJ_hashmult2 * result + SYSTEM_ord(SYSTEM_upcase(s[
+        i]));
     } while (i++ !=  _stop);
 
   }
-  result = (result & 2147483647) % self->
-    GMSOBJ_txhashedstringlist_DOT_hashcount;
+  result = GMSOBJ_hashmod2 - result % GMSOBJ_hashmod2;
   return result;
-}  /* hashvalue */
+}  /* hashval2 */
 
 Procedure GMSOBJ_txhashedstringlist_DOT_clearhashlist(
   GMSOBJ_txhashedstringlist self)
 {
-  SYSTEM_integer n;
-  GMSOBJ_phashrecord p1, p2;
-
-  if (self->GMSOBJ_txhashedstringlist_DOT_phash != NULL) {
-    { register SYSTEM_int32 _stop = self->
-        GMSOBJ_txhashedstringlist_DOT_hashcount - 1;
-      if ((n = 0) <=  _stop) do {
-        p1 = ValueCast(GMSOBJ_phashrecord,(*self->
-          GMSOBJ_txhashedstringlist_DOT_phash)[n]);
-        (*self->GMSOBJ_txhashedstringlist_DOT_phash)[n] = NULL;
-        while (p1 != NULL) {
-          p2 = p1->pnext;
-          _P3freemem2(p1,sizeof(GMSOBJ_thashrecord));
-          p1 = p2;
-        
-}
-      
-      } while (n++ !=  _stop);
-
-    }
-    _P3freemem(self->GMSOBJ_txhashedstringlist_DOT_phash);
-    self->GMSOBJ_txhashedstringlist_DOT_phash = NULL;
+  if (self->GMSOBJ_txhashedstringlist_DOT_phashdbl != NULL) {
+    P3UTILS_p3freemem64(&PointerCast(SYSTEM_pointer,&self->
+      GMSOBJ_txhashedstringlist_DOT_phashdbl),self->
+      GMSOBJ_txhashedstringlist_DOT_hashbytes);
+    self->GMSOBJ_txhashedstringlist_DOT_phashdbl = NULL;
     self->GMSOBJ_txhashedstringlist_DOT_hashcount = 0;
+    self->GMSOBJ_txhashedstringlist_DOT_trigger =  -1;
+    self->GMSOBJ_txhashedstringlist_DOT_hashbytes = 0;
   } 
 }  /* clearhashlist */
+cnstdef {GMSOBJ_schashsize0 = 10007};
+cnstdef {GMSOBJ_schashsize1 = 77317};
+cnstdef {GMSOBJ_schashsize2 = 598363};
+cnstdef {GMSOBJ_schashsize3 = 4631287};
+cnstdef {GMSOBJ_schashsize4 = 35846143};
+cnstdef {GMSOBJ_schashsize5 = 277449127};
+cnstdef {GMSOBJ_schashsize6 = 357913951};
+
+static Function(SYSTEM_integer ) GMSOBJ_getschashsize(
+  SYSTEM_integer itemcount)
+{
+  SYSTEM_integer result;
+  SYSTEM_integer k;
+
+  k = itemcount /  GMSOBJ_schash_factor_min;
+  result = GMSOBJ_schashsize0;
+  if (k >= GMSOBJ_schashsize5) { 
+    result = GMSOBJ_schashsize6;
+  } else 
+    if (k >= GMSOBJ_schashsize4) { 
+      result = GMSOBJ_schashsize5;
+    } else 
+      if (k >= GMSOBJ_schashsize3) { 
+        result = GMSOBJ_schashsize4;
+      } else 
+        if (k >= GMSOBJ_schashsize2) { 
+          result = GMSOBJ_schashsize3;
+        } else 
+          if (k >= GMSOBJ_schashsize1) { 
+            result = GMSOBJ_schashsize2;
+          } else 
+            if (k >= 10007) 
+              result = GMSOBJ_schashsize1;
+  return result;
+}  /* getschashsize */
+cnstdef {GMSOBJ_dblhashsize0 = 13093};
+cnstdef {GMSOBJ_dblhashsize1 = 96779};
+cnstdef {GMSOBJ_dblhashsize2 = 716161};
+cnstdef {GMSOBJ_dblhashsize3 = 5299513};
+cnstdef {GMSOBJ_dblhashsize4 = 39216379};
+cnstdef {GMSOBJ_dblhashsize5 = 290201183};
+cnstdef {GMSOBJ_dblhashsize6 = 2147453047};
+
+static Function(SYSTEM_integer ) GMSOBJ_getdblhashsize(
+  SYSTEM_integer itemcount)
+{
+  SYSTEM_integer result;
+  SYSTEM_int64 sz;
+
+  sz = SYSTEM_round(itemcount /  GMSOBJ_hash2_nicefullratio);
+  result = GMSOBJ_dblhashsize0;
+  if (sz >= GMSOBJ_dblhashsize6) { 
+    result =  -1;
+  } else 
+    if (sz >= GMSOBJ_dblhashsize5) { 
+      result = GMSOBJ_dblhashsize6;
+    } else 
+      if (sz >= GMSOBJ_dblhashsize4) { 
+        result = GMSOBJ_dblhashsize5;
+      } else 
+        if (sz >= GMSOBJ_dblhashsize3) { 
+          result = GMSOBJ_dblhashsize4;
+        } else 
+          if (sz >= GMSOBJ_dblhashsize2) { 
+            result = GMSOBJ_dblhashsize3;
+          } else 
+            if (sz >= GMSOBJ_dblhashsize1) { 
+              result = GMSOBJ_dblhashsize2;
+            } else 
+              if (sz >= 13093) 
+                result = GMSOBJ_dblhashsize1;
+  return result;
+}  /* getdblhashsize */
 
 Procedure GMSOBJ_txhashedstringlist_DOT_sethashsize(
   GMSOBJ_txhashedstringlist self,
-  SYSTEM_integer v)
+  SYSTEM_integer newcount)
 {
-  SYSTEM_integer n;
+  SYSTEM_integer newsiz, n;
   SYSTEM_integer hv;
-  GMSOBJ_phashrecord ph;
+  SYSTEM_shortstring s;
+  SYSTEM_integer hv2;
 
-  if (v <= 9973) { 
-    v = 9973;
-  } else 
-    v = 99991;
-  if (v > 0 && v == self->GMSOBJ_txhashedstringlist_DOT_hashcount) 
+  newsiz = GMSOBJ_getdblhashsize(newcount);
+  SYSTEM_assert(newsiz > 0,_P3str1("\113TXHashedStringList.setHashTableSize for double-hashing: table size overflow"));
+  if (newsiz == self->GMSOBJ_txhashedstringlist_DOT_hashcount) 
     return;
   GMSOBJ_txhashedstringlist_DOT_clearhashlist(self);
-  self->GMSOBJ_txhashedstringlist_DOT_hashcount = v;
-  _P3getmem(self->GMSOBJ_txhashedstringlist_DOT_phash,sizeof(
-    SYSTEM_pointer) * self->GMSOBJ_txhashedstringlist_DOT_hashcount);
+  self->GMSOBJ_txhashedstringlist_DOT_hashcount = newsiz;
+  self->GMSOBJ_txhashedstringlist_DOT_trigger = SYSTEM_round(
+    GMSOBJ_hash2_maxfullratio * self->
+    GMSOBJ_txhashedstringlist_DOT_hashcount);
+  self->GMSOBJ_txhashedstringlist_DOT_hashbytes = sizeof(
+    SYSTEM_longint) * self->GMSOBJ_txhashedstringlist_DOT_hashcount;
+  P3UTILS_p3getmem64(&PointerCast(SYSTEM_pointer,&self->
+    GMSOBJ_txhashedstringlist_DOT_phashdbl),self->
+    GMSOBJ_txhashedstringlist_DOT_hashbytes);
   { register SYSTEM_int32 _stop = self->
       GMSOBJ_txhashedstringlist_DOT_hashcount - 1;
     if ((n = 0) <=  _stop) do {
-      (*self->GMSOBJ_txhashedstringlist_DOT_phash)[n] = NULL;
+      (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[n] =  -1;
     } while (n++ !=  _stop);
 
   }
   { register SYSTEM_int32 _stop = self->
-      GMSOBJ_txcustomstringlist_DOT_fcount - 1 + SYSTEM_ord(self->
-      GMSOBJ_tquicksortclass_DOT_onebased);
-    if ((n = SYSTEM_ord(self->GMSOBJ_tquicksortclass_DOT_onebased)) <=  _stop) do {
-      {
-        SYSTEM_shortstring _t1;
-
-        hv = VirtMethodCall(self, 
-          GMSOBJ_txhashedstringlist_DOT_hashvalue_T, 6, (self,
-          GMSOBJ_txcustomstringlist_DOT_getname(_t1,255,ValueCast(
-          GMSOBJ_txcustomstringlist,self),n)));
+      GMSOBJ_txcustomstringlist_DOT_fcount - 1;
+    if ((n = 0) <=  _stop) do {
+      GMSOBJ_txcustomstringlist_DOT_getname(s,255,ValueCast(
+        GMSOBJ_txcustomstringlist,self),n + SYSTEM_ord(self->
+        GMSOBJ_tquicksortclass_DOT_onebased));
+      hv = VirtMethodCall(self, 
+        GMSOBJ_txhashedstringlist_DOT_hashvalue_T, 6, (self,s));
+      hv2 =  -1;
+      while ( -1 != (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[
+        hv]) {
+        if (hv2 < 1) 
+          hv2 = VirtMethodCall(self, 
+            GMSOBJ_txhashedstringlist_DOT_hashval2_T, 7, (self,s));
+        hv = (hv + hv2) % self->
+          GMSOBJ_txhashedstringlist_DOT_hashcount;
       }
-      _P3getmem(ph,sizeof(GMSOBJ_thashrecord));
-      ph->pnext = ValueCast(GMSOBJ_phashrecord,(*self->
-        GMSOBJ_txhashedstringlist_DOT_phash)[hv]);
-      ph->refnr = n - SYSTEM_ord(self->
-        GMSOBJ_tquicksortclass_DOT_onebased);
-      (*self->GMSOBJ_txhashedstringlist_DOT_phash)[hv] = ph;
+      (*self->GMSOBJ_txhashedstringlist_DOT_phashdbl)[hv] = n;
     
     } while (n++ !=  _stop);
 
@@ -1368,23 +1486,91 @@ Procedure GMSOBJ_txhashedstringlist_DOT_hashstats(
   GMSOBJ_txhashedstringlist self,
   SYSTEM_integer *amin,
   SYSTEM_integer *amax,
-  SYSTEM_integer *aavg)
+  SYSTEM_integer *acount,
+  SYSTEM_double *ravg,
+  SYSTEM_int64 *memused)
 {
-  GMSOBJ_xhashstats(self->GMSOBJ_txhashedstringlist_DOT_phash,self->
-    GMSOBJ_txhashedstringlist_DOT_hashcount,amin,amax,aavg);
+  *amin = 0;
+  *amax = 1;
+  *ravg = self->GMSOBJ_txcustomstringlist_DOT_fcount;
+  *ravg = *ravg /  self->GMSOBJ_txhashedstringlist_DOT_hashcount;
+  *acount = self->GMSOBJ_txhashedstringlist_DOT_hashcount;
+  *memused = self->GMSOBJ_txhashedstringlist_DOT_hashbytes;
 }  /* hashstats */
 
-Function(SYSTEM_boolean ) GMSOBJ_txhashedstringlist_DOT_equaltoentry(
+Function(SYSTEM_integer ) GMSOBJ_txhashedstringlist_DOT_compareentry(
   GMSOBJ_txhashedstringlist self,
   const SYSTEM_ansichar *s,
   SYSTEM_integer en)
 {
-  SYSTEM_boolean result;
+  SYSTEM_integer result;
+  SYSTEM_P3_pshortstring p;
 
-  result = STRUTILX_pstruequal(ValueCast(SYSTEM_P3_pshortstring,s),(*
-    self->GMSOBJ_txcustomstringlist_DOT_flist)[en].fstring);
+  p = (*self->GMSOBJ_txcustomstringlist_DOT_flist)[en].fstring;
+  if (NULL == p) {
+    result = 0;
+    if (SYSTEM_length(s) > 0) 
+      result = 1;
+    return result;
+  } 
+  result = STRUTILX_pstrucmp(ValueCast(SYSTEM_P3_pshortstring,s),p);
   return result;
-}  /* equaltoentry */
+}  /* compareentry */
+
+Function(SYSTEM_cardinal ) GMSOBJ_txstrpool_DOT_hashvalue(
+  GMSOBJ_txstrpool self,
+  const SYSTEM_ansichar *s)
+{
+  SYSTEM_cardinal result;
+  SYSTEM_int64 r;
+  SYSTEM_cardinal t;
+  SYSTEM_integer i, n;
+
+  r = 0;
+  i = 1;
+  n = SYSTEM_length(s);
+  while (i + 5 <= n) {
+    t = SYSTEM_ord(s[i]);
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(s[i]);
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(s[i]);
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(s[i]);
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(s[i]);
+    _P3inc0(i);
+    t = GMSOBJ_hashmult * t + SYSTEM_ord(s[i]);
+    _P3inc0(i);
+    r = (GMSOBJ_hashmult_6 * r + t) % self->
+      GMSOBJ_txhashedstringlist_DOT_hashcount;
+  }
+  while (i <= n) {
+    r = (GMSOBJ_hashmult * r + SYSTEM_ord(s[i])) % self->
+      GMSOBJ_txhashedstringlist_DOT_hashcount;
+    _P3inc0(i);
+  }
+  result = ValueCast(SYSTEM_uint32,r);
+  return result;
+}  /* hashvalue */
+
+Function(SYSTEM_cardinal ) GMSOBJ_txstrpool_DOT_hashval2(
+  GMSOBJ_txstrpool self,
+  const SYSTEM_ansichar *s)
+{
+  SYSTEM_cardinal result;
+  SYSTEM_integer i;
+
+  result = 0;
+  { register SYSTEM_int32 _stop = SYSTEM_length(s);
+    if ((i = 1) <=  _stop) do {
+      result = GMSOBJ_hashmult2 * result + SYSTEM_ord(s[i]);
+    } while (i++ !=  _stop);
+
+  }
+  result = GMSOBJ_hashmod2 - result % GMSOBJ_hashmod2;
+  return result;
+}  /* hashval2 */
 
 Function(SYSTEM_integer ) GMSOBJ_txstrpool_DOT_compare(
   GMSOBJ_txstrpool self,
@@ -1401,17 +1587,24 @@ Function(SYSTEM_integer ) GMSOBJ_txstrpool_DOT_compare(
   return result;
 }  /* compare */
 
-Function(SYSTEM_boolean ) GMSOBJ_txstrpool_DOT_equaltoentry(
+Function(SYSTEM_integer ) GMSOBJ_txstrpool_DOT_compareentry(
   GMSOBJ_txstrpool self,
   const SYSTEM_ansichar *s,
   SYSTEM_integer en)
 {
-  SYSTEM_boolean result;
+  SYSTEM_integer result;
+  SYSTEM_P3_pshortstring p;
 
-  result = STRUTILX_pstrequal(ValueCast(SYSTEM_P3_pshortstring,s),(*
-    self->GMSOBJ_txcustomstringlist_DOT_flist)[en].fstring);
+  p = (*self->GMSOBJ_txcustomstringlist_DOT_flist)[en].fstring;
+  if (NULL == p) {
+    result = 0;
+    if (SYSTEM_length(s) > 0) 
+      result = 1;
+    return result;
+  } 
+  result = STRUTILX_pstrcmp(ValueCast(SYSTEM_P3_pshortstring,s),p);
   return result;
-}  /* equaltoentry */
+}  /* compareentry */
 
 Function(SYSTEM_integer ) GMSOBJ_txstrstrlist_DOT_addobject(
   GMSOBJ_txstrstrlist self,
@@ -1445,7 +1638,12 @@ Function(SYSTEM_boolean ) GMSOBJ_txstrstrlist_DOT_getasboolean(
   SYSTEM_shortstring s2;
 
   _P3strcpy(s1,255,_ftmp1);
-  GMSOBJ_txstrstrlist_DOT_getasstring(s2,255,self,s1);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(s2,255,GMSOBJ_txstrstrlist_DOT_getasstring(_t1,255,
+      self,s1));
+  }
   if (_P3strcmpE(s2,_P3str1("\000"))) { 
     result = SYSTEM_false;
   } else 
@@ -1465,14 +1663,19 @@ Function(SYSTEM_double ) GMSOBJ_txstrstrlist_DOT_getasdouble(
   SYSTEM_shortstring s2;
 
   _P3strcpy(s1,255,_ftmp1);
-  GMSOBJ_txstrstrlist_DOT_getasstring(s2,255,self,s1);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(s2,255,GMSOBJ_txstrstrlist_DOT_getasstring(_t1,255,
+      self,s1));
+  }
   if (_P3strcmpE(s2,_P3str1("\000"))) { 
     result = 0.0;
   } else {
     _P3val_d(s2,result,&n);
     if (n != 0) 
       result = 0.0;
-  } 
+  }
   return result;
 }  /* getasdouble */
 
@@ -1486,14 +1689,19 @@ Function(SYSTEM_integer ) GMSOBJ_txstrstrlist_DOT_getasinteger(
   SYSTEM_shortstring s2;
 
   _P3strcpy(s1,255,_ftmp1);
-  GMSOBJ_txstrstrlist_DOT_getasstring(s2,255,self,s1);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(s2,255,GMSOBJ_txstrstrlist_DOT_getasstring(_t1,255,
+      self,s1));
+  }
   if (_P3strcmpE(s2,_P3str1("\000"))) { 
     result = 0;
   } else {
     _P3val_i(s2,result,&n);
     if (n != 0) 
       result = 0;
-  } 
+  }
   return result;
 }  /* getasinteger */
 
@@ -1515,7 +1723,7 @@ Function(SYSTEM_ansichar *) GMSOBJ_txstrstrlist_DOT_getasstring(
     GMSOBJ_txstrstrlist_DOT_getobject(result,_len_ret,self,n);
     if (_P3stccmpE(result,GMSOBJ_non_empty)) 
       _P3strclr(result);
-  } 
+  }
   return result;
 }  /* getasstring */
 
@@ -1542,20 +1750,10 @@ Procedure GMSOBJ_txstrstrlist_DOT_putobject(
   VirtMethodCall(ValueCast(GMSOBJ_txcustomstringlist,self), 
     GMSOBJ_txcustomstringlist_DOT_freeobject_T, 4, (ValueCast(
     GMSOBJ_txcustomstringlist,self),index));
-#if 0
-  PointerCast(SYSTEM_P3_pshortstring,&(*self->
-    GMSOBJ_txcustomstringlist_DOT_flist)[index - SYSTEM_ord(self->
-    GMSOBJ_tquicksortclass_DOT_onebased)].fobject) = 
-    STRUTILX_newstringm(astr,&self->
-    GMSOBJ_txcustomstringlist_DOT_fstrmemory);
-#else
-  {
-    int k = index - SYSTEM_ord(self->GMSOBJ_tquicksortclass_DOT_onebased);
-    (*self->GMSOBJ_txcustomstringlist_DOT_flist)[k].fobject =
-      ValueCast(SYSTEM_tobject,
-		STRUTILX_newstringm(astr,&self->GMSOBJ_txcustomstringlist_DOT_fstrmemory));
-  }
-#endif
+  (*self->GMSOBJ_txcustomstringlist_DOT_flist)[index - SYSTEM_ord(self->
+    GMSOBJ_tquicksortclass_DOT_onebased)].fobject = ValueCast(
+    SYSTEM_tobject,STRUTILX_newstringm(astr,&self->
+    GMSOBJ_txcustomstringlist_DOT_fstrmemory));
 }  /* putobject */
 
 Procedure GMSOBJ_txstrstrlist_DOT_setasstring(
@@ -1595,7 +1793,7 @@ Procedure GMSOBJ_txstrstrlist_DOT_setasinteger(
     {
       SYSTEM_shortstring _t1;
 
-      GMSOBJ_txstrstrlist_DOT_setasstring(self,s1,STRUTILX_inttostr(
+      GMSOBJ_txstrstrlist_DOT_setasstring(self,s1,SYSUTILS_P3_inttostr(
         _t1,255,v));
     }
 }  /* setasinteger */
@@ -1614,7 +1812,7 @@ Procedure GMSOBJ_txstrstrlist_DOT_setasdouble(
   } else {
     _P3str_d0(v,s2,255);
     GMSOBJ_txstrstrlist_DOT_setasstring(self,s1,s2);
-  } 
+  }
 }  /* setasdouble */
 
 Procedure GMSOBJ_txstrstrlist_DOT_setasboolean(
@@ -1689,7 +1887,7 @@ Function(SYSTEM_boolean ) GMSOBJ_tbooleanbitarray_DOT_getbit(
     GMSOBJ_tbooleanbitarray_DOT_getbitmask(self,n,&p,&m);
     result = (ValueCast(SYSTEM_int32,(*ValueCast(GMSGEN_pbytedataarray,
       self->GMSOBJ_tbooleanbitarray_DOT_pdata))[p]) & m) != 0;
-  } 
+  }
   return result;
 }  /* getbit */
 
@@ -1775,7 +1973,7 @@ Procedure GMSOBJ_tbooleanbitarray_DOT_iterate(
       if ((p = 0) <=  _stop) do {
         m = (*self->GMSOBJ_tbooleanbitarray_DOT_pdata)[p];
         if (m == 0) 
-          SYSTEM_continue(CNT_3);
+          SYSTEM_continue(CNT_1);
         n = p * 8;
         do {
           if ((ValueCast(SYSTEM_int32,m) & 1) != 0) 
@@ -1785,8 +1983,9 @@ Procedure GMSOBJ_tbooleanbitarray_DOT_iterate(
           m = m >> 1;
         } while (!(m == 0));
       
-CNT_3:;
+CNT_1:;
       } while (p++ !=  _stop);
+
     }
   } 
   (*func)( -1);
@@ -1807,7 +2006,7 @@ Procedure GMSOBJ_tbooleanbitarray_DOT_iteratedown(
     for (p = pp;p >= (SYSTEM_int32)0;--p) {
       m = (*self->GMSOBJ_tbooleanbitarray_DOT_pdata)[p];
       if (m == 0) 
-        SYSTEM_continue(CNT_4);
+        SYSTEM_continue(CNT_2);
       n = (p + 1) * 8 - 1;
       do {
         if ((ValueCast(SYSTEM_int32,m) & 128) != 0) 
@@ -1816,8 +2015,7 @@ Procedure GMSOBJ_tbooleanbitarray_DOT_iteratedown(
         n = n - 1;
         m = m << 1;
       } while (!(m == 0));
-    
-    CNT_4:;
+    CNT_2:;
     }
   } 
   (*func)( -1);
@@ -1943,6 +2141,149 @@ Procedure GMSOBJ_txpcharlist_DOT_setonebased(
   self->GMSOBJ_txpcharlist_DOT_flist->
     GMSOBJ_tquicksortclass_DOT_onebased = v;
 }  /* setonebased */
+
+Function(SYSTEM_boolean ) GMSOBJ_gmsobjisok(void)
+{
+  SYSTEM_boolean result;
+  SYSTEM_double tmp;
+  SYSTEM_int64 i64;
+  SYSTEM_integer i, hashsize, newcount;
+
+  result = SYSTEM_false;
+  if (SYSTEM_false) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\037HASHMOD2 must be < DBLHASHSIZE0"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  hashsize = GMSOBJ_getdblhashsize(37);
+  if (hashsize != 13093) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\050getDblHashSize() is broken: initial test"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  for (i = 1;i <= (SYSTEM_int32)6;++i) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\013DBLHASHSIZE"));
+    _P3write_i1(i - 1,0);
+    _P3write_s0(_P3str1("\013 should be "));
+    _P3write_i0(hashsize);
+    _P3writeln();
+    _Iplus_end();
+    newcount = hashsize;
+    hashsize = GMSOBJ_getdblhashsize(newcount);
+  }
+  _Iplus_bgn();
+  _P3write_s0(_P3str1("\027DBLHASHSIZE6 should be "));
+  _P3write_i0(hashsize);
+  _P3writeln();
+  _Iplus_end();
+  if (hashsize != GMSOBJ_dblhashsize6) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\051getDblHashSize() is broken: max-size test"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  i64 = hashsize;
+  _P3inc1(i64,GMSOBJ_hashmod2);
+  if (i64 >= 2147483647) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\060DBLHASHSIZE6 + HASHMOD2 must be <= high(integer)"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  newcount = hashsize - 1;
+  hashsize = GMSOBJ_getdblhashsize(newcount);
+  if (hashsize !=  -1) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\062getDblHashSize() is broken: request-too-large test"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  hashsize = GMSOBJ_getschashsize(37);
+  if (hashsize != 10007) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\047getSCHashSize() is broken: initial test"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  for (i = 1;i <= (SYSTEM_int32)6;++i) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\012SCHASHSIZE"));
+    _P3write_i1(i - 1,0);
+    _P3write_s0(_P3str1("\013 should be "));
+    _P3write_i0(hashsize);
+    _P3writeln();
+    _Iplus_end();
+    tmp = 0.5 * (19);
+    tmp = tmp * hashsize;
+    if (tmp > 2147483647) 
+      tmp = 2147483647;
+    newcount = SYSTEM_round(tmp);
+    hashsize = GMSOBJ_getschashsize(newcount);
+  }
+  _Iplus_bgn();
+  _P3write_s0(_P3str1("\026SCHASHSIZE6 should be "));
+  _P3write_i0(hashsize);
+  _P3writeln();
+  _Iplus_end();
+  if (hashsize != GMSOBJ_schashsize6) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\050getSCHashSize() is broken: max-size test"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  if (newcount != 2147483647) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\077getSCHashSize() is broken: not tested or handling high(integer)"));
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  if (GMSOBJ_hash2_nicefullratio > GMSOBJ_hash2_maxfullratio) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\062Expected HASH2_MAXFULLRATIO >= HASH2_NICEFULLRATIO"));
+    _P3writeln();
+    _Iplus_end();
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\030  HASH2_MAXFULLRATIO  = "));
+    _P3write_d2(GMSOBJ_hash2_maxfullratio,10,6);
+    _P3writeln();
+    _Iplus_end();
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\030  HASH2_NICEFULLRATIO = "));
+    _P3write_d2(GMSOBJ_hash2_nicefullratio,10,6);
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  if (GMSOBJ_hash2_maxfullratio > 0.99) {
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\042Expected HASH2_MAXFULLRATIO < 0.99"));
+    _P3writeln();
+    _Iplus_end();
+    _Iplus_bgn();
+    _P3write_s0(_P3str1("\030  HASH2_MAXFULLRATIO  = "));
+    _P3write_d2(GMSOBJ_hash2_maxfullratio,10,6);
+    _P3writeln();
+    _Iplus_end();
+    return result;
+  } 
+  _Iplus_bgn();
+  _P3write_s0(_P3str1("\027gmsobjIsOK returns true"));
+  _P3writeln();
+  _Iplus_end();
+  result = SYSTEM_true;
+  return result;
+}  /* gmsobjisok */
 
 /* unit gmsobj */
 void _Init_Module_gmsobj(void)

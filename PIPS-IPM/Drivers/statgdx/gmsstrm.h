@@ -362,12 +362,6 @@ Constructor(GMSSTRM_tmibufferedstream )
   SYSTEM_word mode,
   const SYSTEM_ansichar *loadpath);
 
-Procedure GMSSTRM_tmibufferedstream_DOT_reversebytes(
-  GMSSTRM_tmibufferedstream self,
-  SYSTEM_pointer psrc,
-  SYSTEM_pointer pdest,
-  SYSTEM_integer sz);
-
 Function(SYSTEM_integer ) GMSSTRM_tmibufferedstream_DOT_goodbyteorder(
   GMSSTRM_tmibufferedstream self);
 

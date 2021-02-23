@@ -7,13 +7,6 @@ extern _P3STR_15 PALDOORG_cmexliccodes;
 cnstdef {PALDOORG_graceeval = 30};
 cnstdef {PALDOORG_gracemaint = 30};
 cnstdef {PALDOORG_gracebeta = 60};
-cnstdef {PALDOORG_demomaxrow = 300};
-cnstdef {PALDOORG_demomaxcol = 300};
-cnstdef {PALDOORG_demomaxnz = 2000};
-cnstdef {PALDOORG_demomaxnlnz = 1000};
-cnstdef {PALDOORG_demomaxdisc = 50};
-cnstdef {PALDOORG_demoglobalmaxrow = 10};
-cnstdef {PALDOORG_demoglobalmaxcol = 10};
 typedef _P3STR_95 PALDOORG_tlicstring;
 typedef struct PALDOORG_tpalobject_OD_S* PALDOORG_tpalobject; /* sy_class */
 typedef struct PALDOORG_tpalobject_OD_S {  /* Objects of 'tpalobject' */
@@ -43,14 +36,12 @@ typedef struct PALDOORG_tpalobject_OD_S {  /* Objects of 'tpalobject' */
   PALDOORG_tlicstring PALDOORG_tpalobject_DOT_license6;
   SYSTEM_integer PALDOORG_tpalobject_DOT_subsyssecondary;
   _P3STR_31 PALDOORG_tpalobject_DOT_subsyscode;
-  SYSTEM_integer PALDOORG_tpalobject_DOT_checksum,PALDOORG_tpalobject_DOT_isglobal;
+  SYSTEM_shortstring PALDOORG_tpalobject_DOT_sysdir;
+  SYSTEM_integer PALDOORG_tpalobject_DOT_checksum;
   SYSTEM_integer PALDOORG_tpalobject_DOT_rowcnt,PALDOORG_tpalobject_DOT_colcnt,PALDOORG_tpalobject_DOT_nzcnt,PALDOORG_tpalobject_DOT_nlnzcnt,PALDOORG_tpalobject_DOT_disccnt;
   SYSTEM_pointer PALDOORG_tpalobject_DOT_ml;
 } PALDOORG_tpalobject_OD;
 
-
-Procedure PALDOORG_tpalobject_DOT_makedemolicense(
-  PALDOORG_tpalobject self);
 
 Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_licensegetmaxsubsys(
   PALDOORG_tpalobject self);
@@ -61,6 +52,10 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_msgadd(
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_tampercheck(
   PALDOORG_tpalobject self);
+
+Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_lnumtoint(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *s);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_licensecheckv1to3(
   PALDOORG_tpalobject self,
@@ -89,6 +84,15 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_licensegetsubeval(
 
 Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_licensegetsubmaint(
   PALDOORG_tpalobject self);
+
+Function(SYSTEM_boolean ) 
+  PALDOORG_tpalobject_DOT_licenseisgamscheckout(
+  PALDOORG_tpalobject self,
+  SYSTEM_integer m,
+  SYSTEM_integer n,
+  SYSTEM_integer nz,
+  SYSTEM_integer nlnz,
+  SYSTEM_integer ndisc);
 
 Constructor(PALDOORG_tpalobject ) PALDOORG_tpalobject_DOT_create(
   PALDOORG_tpalobject self,
@@ -122,20 +126,8 @@ Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensegetdc(
   SYSTEM_uint8 _len_ret,
   PALDOORG_tpalobject self);
 
-Function(SYSTEM_boolean ) 
-  PALDOORG_tpalobject_DOT_pallicensegetacademic(
+Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensehas6lines(
   PALDOORG_tpalobject self);
-
-Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensemessage(
-  SYSTEM_ansichar *result,
-  SYSTEM_uint8 _len_ret,
-  PALDOORG_tpalobject self);
-
-Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
-  PALDOORG_tpalobject self,
-  const SYSTEM_ansichar *filename,
-  SYSTEM_ansichar *msg,
-  SYSTEM_integer *rc);
 
 Function(SYSTEM_boolean ) 
   PALDOORG_tpalobject_DOT_pallicensevalidateforplatform(
@@ -173,20 +165,7 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensegetjulbase(
 Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensegetjullice(
   PALDOORG_tpalobject self);
 
-Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensechecksize(
-  PALDOORG_tpalobject self,
-  SYSTEM_integer m,
-  SYSTEM_integer n,
-  SYSTEM_integer nz,
-  SYSTEM_integer nlnz,
-  SYSTEM_integer ndisc);
-
 Procedure PALDOORG_tpalobject_DOT_pallicenseclear(
-  PALDOORG_tpalobject self);
-
-Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_palolderlicense3(
-  SYSTEM_ansichar *result,
-  SYSTEM_uint8 _len_ret,
   PALDOORG_tpalobject self);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicenseexist(
@@ -199,9 +178,6 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensewritec1(
 Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensewritec2(
   PALDOORG_tpalobject self,
   SYSTEM_text *f);
-
-Procedure PALDOORG_tpalobject_DOT_pallicensedemo(
-  PALDOORG_tpalobject self);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_paltampercheck(
   PALDOORG_tpalobject self);
@@ -225,6 +201,12 @@ Function(SYSTEM_ansichar *)
   PALDOORG_tpalobject self);
 
 Function(SYSTEM_longint ) PALDOORG_tpalobject_DOT_pallicensegetkey(
+  PALDOORG_tpalobject self);
+
+Function(SYSTEM_ansichar *) 
+  PALDOORG_tpalobject_DOT_pallicensegettltype(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
   PALDOORG_tpalobject self);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_palsecuritycheck(
@@ -282,15 +264,13 @@ Function(SYSTEM_ansichar *)
   SYSTEM_uint8 _len_ret,
   PALDOORG_tpalobject self);
 
-Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensechecksubx(
-  PALDOORG_tpalobject self,
-  const SYSTEM_ansichar *sname,
-  const SYSTEM_ansichar *_ftmp1,
-  SYSTEM_integer *daysleft);
-
 Procedure PALDOORG_tpalobject_DOT_palsetauditline(
   PALDOORG_tpalobject self,
   const SYSTEM_ansichar *auditline);
+
+Procedure PALDOORG_tpalobject_DOT_palsetsystemname(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *sname);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_palauditrun(
   PALDOORG_tpalobject self);
@@ -377,10 +357,22 @@ Function(SYSTEM_ansichar *)
   SYSTEM_uint8 _len_ret,
   PALDOORG_tpalobject self);
 
+Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *filename,
+  SYSTEM_ansichar *msg,
+  SYSTEM_integer *rc);
+
 Procedure PALDOORG_tpalobject_DOT_pallicenseregistergams(
   PALDOORG_tpalobject self,
   SYSTEM_integer linenr,
   const SYSTEM_ansichar *liceline);
+
+Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensegetlline(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  PALDOORG_tpalobject self,
+  SYSTEM_integer linenr);
 
 Procedure PALDOORG_tpalobject_DOT_pallicenseregistergamsdone(
   PALDOORG_tpalobject self);
@@ -389,11 +381,25 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseregistersystem(
   PALDOORG_tpalobject self,
   SYSTEM_integer numcodes,
   const SYSTEM_ansichar *codes,
-  SYSTEM_integer magicnum,
-  SYSTEM_integer globalflag);
+  SYSTEM_integer magicnum);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensevalidation(
   PALDOORG_tpalobject self);
+
+Function(SYSTEM_boolean ) 
+  PALDOORG_tpalobject_DOT_pallicensesolvercheck(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *codes);
+
+Function(SYSTEM_boolean ) 
+  PALDOORG_tpalobject_DOT_pallicensesolverchecksizes(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *codes,
+  SYSTEM_integer m,
+  SYSTEM_integer n,
+  SYSTEM_integer nz,
+  SYSTEM_integer nlnz,
+  SYSTEM_integer ndisc);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensecheck(
   PALDOORG_tpalobject self,
@@ -407,22 +413,13 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensegetmessage(
   PALDOORG_tpalobject self,
   SYSTEM_ansichar *msg);
 
+Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_palprintdemomessage(
+  PALDOORG_tpalobject self,
+  SYSTEM_ansichar *msg);
+
 Function(SYSTEM_boolean ) 
-  PALDOORG_tpalobject_DOT_pallicenseisdemocheckout(
+  PALDOORG_tpalobject_DOT_pallicenseisgamscheckout(
   PALDOORG_tpalobject self);
-
-Procedure PALDOORG_tpalobject_DOT_pallicensedemolimits(
-  PALDOORG_tpalobject self,
-  SYSTEM_integer *m,
-  SYSTEM_integer *n,
-  SYSTEM_integer *nz,
-  SYSTEM_integer *nlnz,
-  SYSTEM_integer *ndisc);
-
-Procedure PALDOORG_tpalobject_DOT_pallicenseglobaldemolimits(
-  PALDOORG_tpalobject self,
-  SYSTEM_integer *m,
-  SYSTEM_integer *n);
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicenseisacademic(
   PALDOORG_tpalobject self);
@@ -431,6 +428,12 @@ Function(SYSTEM_boolean )
   PALDOORG_tpalobject_DOT_pallicensechecksubsys(
   PALDOORG_tpalobject self,
   const SYSTEM_ansichar *codes);
+
+Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensechecksubx(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *sname,
+  const SYSTEM_ansichar *codes,
+  SYSTEM_integer *daysleft);
 
 Function(SYSTEM_ansichar *) 
   PALDOORG_tpalobject_DOT_pallicensegetplatform(

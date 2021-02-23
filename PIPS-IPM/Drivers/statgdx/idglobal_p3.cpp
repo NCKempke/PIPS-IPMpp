@@ -43,7 +43,7 @@ Function(SYSTEM_cardinal ) IDGLOBAL_P3_gettickdiff(
   } else {
     result = 2147483647;
     result = result + 2147483647 + 1 - aoldtickcount + anewtickcount;
-  } 
+  }
   return result;
 }  /* gettickdiff */
 

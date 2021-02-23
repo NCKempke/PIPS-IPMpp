@@ -6,9 +6,10 @@ typedef struct STRHASH_txstrhashlist_OD_S {  /* Objects of 'txstrhashlist' */
   SYSTEM_classreference_t CD;  /* = &STRHASH_txstrhashlist_CD */
   GMSDATA_tgrowarrayfxd STRHASH_txstrhashlist_DOT_buckets;
   SYSTEM_P3_ppointerarray STRHASH_txstrhashlist_DOT_phashtable;
-  SYSTEM_integer STRHASH_txstrhashlist_DOT_hashsize;
-  SYSTEM_integer STRHASH_txstrhashlist_DOT_rehashcnt;
   GMSDATA_txintlist STRHASH_txstrhashlist_DOT_sortmap;
+  SYSTEM_int64 STRHASH_txstrhashlist_DOT_sizeofhashtable;
+  SYSTEM_integer STRHASH_txstrhashlist_DOT_hashtablesize;
+  SYSTEM_integer STRHASH_txstrhashlist_DOT_rehashcnt;
   SYSTEM_boolean STRHASH_txstrhashlist_DOT_fsorted;
   SYSTEM_integer STRHASH_txstrhashlist_DOT_fcount;
   SYSTEM_boolean STRHASH_txstrhashlist_DOT_onebased;
@@ -135,7 +136,7 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_getstringlength(
   STRHASH_txstrhashlist self,
   SYSTEM_integer n);
 
-Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_memoryused(
+Function(SYSTEM_int64 ) STRHASH_txstrhashlist_DOT_memoryused(
   STRHASH_txstrhashlist self);
 
 Procedure STRHASH_txstrhashlist_DOT_renameentry(
@@ -151,9 +152,10 @@ typedef struct STRHASH_txcsstrhashlist_OD_S {  /* Objects of 'txcsstrhashlist' *
   SYSTEM_classreference_t CD;  /* = &STRHASH_txcsstrhashlist_CD */
   GMSDATA_tgrowarrayfxd STRHASH_txstrhashlist_DOT_buckets;
   SYSTEM_P3_ppointerarray STRHASH_txstrhashlist_DOT_phashtable;
-  SYSTEM_integer STRHASH_txstrhashlist_DOT_hashsize;
-  SYSTEM_integer STRHASH_txstrhashlist_DOT_rehashcnt;
   GMSDATA_txintlist STRHASH_txstrhashlist_DOT_sortmap;
+  SYSTEM_int64 STRHASH_txstrhashlist_DOT_sizeofhashtable;
+  SYSTEM_integer STRHASH_txstrhashlist_DOT_hashtablesize;
+  SYSTEM_integer STRHASH_txstrhashlist_DOT_rehashcnt;
   SYSTEM_boolean STRHASH_txstrhashlist_DOT_fsorted;
   SYSTEM_integer STRHASH_txstrhashlist_DOT_fcount;
   SYSTEM_boolean STRHASH_txstrhashlist_DOT_onebased;
