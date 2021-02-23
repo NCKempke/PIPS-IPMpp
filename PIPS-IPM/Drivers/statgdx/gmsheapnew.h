@@ -28,11 +28,6 @@ typedef struct GMSHEAPNEW_tlargeblock_S {
   SYSTEM_P3_pbyte currptr;
 } GMSHEAPNEW_tlargeblock;
 
-typedef struct GMSHEAPNEW_theapmgr_OD_S* GMSHEAPNEW_theapmgr; /* sy_class */
-extern void * const GMSHEAPNEW_theapmgr_VT[];
-extern const SYSTEM_classdescriptor_t GMSHEAPNEW_theapmgr_CD;
-
-
 typedef struct GMSHEAPNEW_tbigblockmgr_OD_S* GMSHEAPNEW_tbigblockmgr; /* sy_class */
 typedef struct GMSHEAPNEW_tbigblockmgr_OD_S {  /* Objects of 'tbigblockmgr' */
   SYSTEM_classreference_t CD;  /* = &GMSHEAPNEW_tbigblockmgr_CD */
@@ -40,7 +35,9 @@ typedef struct GMSHEAPNEW_tbigblockmgr_OD_S {  /* Objects of 'tbigblockmgr' */
   SYSTEM_int64 GMSHEAPNEW_tbigblockmgr_DOT_othermemory;
   SYSTEM_int64 GMSHEAPNEW_tbigblockmgr_DOT_highmark;
   GMSOBJ_txlist GMSHEAPNEW_tbigblockmgr_DOT_freelist;
-  GMSOBJ_txlist GMSHEAPNEW_tbigblockmgr_DOT_mgrlist;
+  SYSTEM_double GMSHEAPNEW_tbigblockmgr_DOT_memorylimit,GMSHEAPNEW_tbigblockmgr_DOT_totalmemory,GMSHEAPNEW_tbigblockmgr_DOT_totalhighmark;
+  GMSHEAPNEW_tmemoryreportproc GMSHEAPNEW_tbigblockmgr_DOT_memoryreportproc;
+  SYSTEM_integer GMSHEAPNEW_tbigblockmgr_DOT_showosmem;
 } GMSHEAPNEW_tbigblockmgr_OD;
 
 
@@ -59,18 +56,6 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_increasememorysize(
   GMSHEAPNEW_tbigblockmgr self,
   SYSTEM_int64 delta);
 
-Procedure GMSHEAPNEW_tbigblockmgr_DOT_registerheapmgr(
-  GMSHEAPNEW_tbigblockmgr self,
-  GMSHEAPNEW_theapmgr h);
-
-Procedure GMSHEAPNEW_tbigblockmgr_DOT_removeheapmgr(
-  GMSHEAPNEW_tbigblockmgr self,
-  GMSHEAPNEW_theapmgr h);
-
-Function(GMSHEAPNEW_theapmgr ) GMSHEAPNEW_tbigblockmgr_DOT_getheapmgr(
-  GMSHEAPNEW_tbigblockmgr self,
-  SYSTEM_integer n);
-
 Function(SYSTEM_ansichar *) GMSHEAPNEW_tbigblockmgr_DOT_getname(
   SYSTEM_ansichar *result,
   SYSTEM_uint8 _len_ret,
@@ -85,10 +70,13 @@ Destructor(GMSHEAPNEW_tbigblockmgr )
   GMSHEAPNEW_tbigblockmgr_DOT_destroy(
   GMSHEAPNEW_tbigblockmgr self);
 
-Procedure GMSHEAPNEW_tbigblockmgr_DOT_clear(
+Function(SYSTEM_double ) GMSHEAPNEW_tbigblockmgr_DOT_memoryusedmb(
   GMSHEAPNEW_tbigblockmgr self);
 
-Function(SYSTEM_integer ) GMSHEAPNEW_tbigblockmgr_DOT_count(
+Function(SYSTEM_double ) GMSHEAPNEW_tbigblockmgr_DOT_memorylimitmb(
+  GMSHEAPNEW_tbigblockmgr self);
+
+Procedure GMSHEAPNEW_tbigblockmgr_DOT_xclear(
   GMSHEAPNEW_tbigblockmgr self);
 
 Procedure GMSHEAPNEW_tbigblockmgr_DOT_getbigstats(
@@ -96,14 +84,12 @@ Procedure GMSHEAPNEW_tbigblockmgr_DOT_getbigstats(
   SYSTEM_int64 *sizeothermemory,
   SYSTEM_int64 *sizehighmark,
   SYSTEM_int64 *cntfree);
-
-Function(SYSTEM_int64 ) GMSHEAPNEW_tbigblockmgr_DOT_getfreeslotspace(
-  GMSHEAPNEW_tbigblockmgr self);
 extern void * const GMSHEAPNEW_tbigblockmgr_VT[];
 extern const SYSTEM_classdescriptor_t GMSHEAPNEW_tbigblockmgr_CD;
 
 
 typedef GMSHEAPNEW_tslotrecord _arr_0GMSHEAPNEW[32];
+typedef struct GMSHEAPNEW_theapmgr_OD_S* GMSHEAPNEW_theapmgr; /* sy_class */
 typedef struct GMSHEAPNEW_theapmgr_OD_S {  /* Objects of 'theapmgr' */
   SYSTEM_classreference_t CD;  /* = &GMSHEAPNEW_theapmgr_CD */
   GMSHEAPNEW_plargeblock GMSHEAPNEW_theapmgr_DOT_workbuffer;
@@ -139,9 +125,49 @@ Function(SYSTEM_ansichar *) GMSHEAPNEW_theapmgr_DOT_getname(
   SYSTEM_uint8 _len_ret,
   GMSHEAPNEW_theapmgr self);
 
+Procedure GMSHEAPNEW_theapmgr_DOT_prvclear(
+  GMSHEAPNEW_theapmgr self);
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvgmsgetmem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_word slot);
+
+Procedure GMSHEAPNEW_theapmgr_DOT_prvgmsfreemem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_pointer p,
+  SYSTEM_word slot);
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvxgetmem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_integer size);
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvxgetmemnc(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_integer size);
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_prvxgetmem64(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_int64 size);
+
+Procedure GMSHEAPNEW_theapmgr_DOT_prvxfreemem(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_pointer p,
+  SYSTEM_integer size);
+
+Procedure GMSHEAPNEW_theapmgr_DOT_prvxfreemem64(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_pointer p,
+  SYSTEM_int64 size);
+
+Procedure GMSHEAPNEW_theapmgr_DOT_prvgetslotcnts(
+  GMSHEAPNEW_theapmgr self,
+  GMSHEAPNEW_theapslotnr slot,
+  SYSTEM_int64 *cntget,
+  SYSTEM_int64 *cntfree,
+  SYSTEM_int64 *cntavail);
+
 Constructor(GMSHEAPNEW_theapmgr ) GMSHEAPNEW_theapmgr_DOT_create(
   GMSHEAPNEW_theapmgr self,
-  GMSHEAPNEW_tbigblockmgr m,
   const SYSTEM_ansichar *name);
 
 Destructor(GMSHEAPNEW_theapmgr ) GMSHEAPNEW_theapmgr_DOT_destroy(
@@ -176,6 +202,10 @@ Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xallocmemnc(
   SYSTEM_integer size);
 
 Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xgetmem64(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_int64 size);
+
+Function(SYSTEM_pointer ) GMSHEAPNEW_theapmgr_DOT_xallocmem64(
   GMSHEAPNEW_theapmgr self,
   SYSTEM_int64 size);
 
@@ -246,28 +276,18 @@ Procedure GMSHEAPNEW_theapmgr_DOT_getotherstats(
 
 Function(SYSTEM_int64 ) GMSHEAPNEW_theapmgr_DOT_getfreeslotspace(
   GMSHEAPNEW_theapmgr self);
+
+Function(SYSTEM_boolean ) GMSHEAPNEW_theapmgr_DOT_setmemorylimit(
+  GMSHEAPNEW_theapmgr self,
+  SYSTEM_double limit);
+
+Procedure GMSHEAPNEW_theapmgr_DOT_setmemoryreportproc(
+  GMSHEAPNEW_theapmgr self,
+  GMSHEAPNEW_tmemoryreportproc f);
 extern void * const GMSHEAPNEW_theapmgr_VT[];
 extern const SYSTEM_classdescriptor_t GMSHEAPNEW_theapmgr_CD;
 
 
-
-Procedure GMSHEAPNEW_gmscreatedefaultheap(void);
-
-Procedure GMSHEAPNEW_gmsreleasedefaultheap(void);
-
-Function(SYSTEM_double ) GMSHEAPNEW_gmsmemoryused(void);
-
-Function(SYSTEM_double ) GMSHEAPNEW_gmsmemoryfree(void);
-
-Function(SYSTEM_boolean ) GMSHEAPNEW_setmemorylimit(
-  SYSTEM_double limit);
-
-Function(SYSTEM_double ) GMSHEAPNEW_getmemorylimit(void);
-
-Procedure GMSHEAPNEW_setmemoryreportproc(
-  GMSHEAPNEW_tmemoryreportproc f);
-extern GMSHEAPNEW_tbigblockmgr GMSHEAPNEW_bbmgr;
-extern GMSHEAPNEW_theapmgr GMSHEAPNEW_gheap;
 
 extern void _Init_Module_gmsheapnew(void);
 extern void _Final_Module_gmsheapnew(void);

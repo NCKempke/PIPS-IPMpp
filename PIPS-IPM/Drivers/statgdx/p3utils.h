@@ -37,8 +37,16 @@ Function(SYSTEM_ansichar *) P3UTILS_paramstrzero(
 Function(SYSTEM_boolean ) P3UTILS_prefixpath(
   const SYSTEM_ansichar *s);
 
+Function(SYSTEM_ansichar *) P3UTILS_loadpathvarname(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret);
+
 Function(SYSTEM_boolean ) P3UTILS_prefixloadpath(
   const SYSTEM_ansichar *dir);
+
+Function(SYSTEM_boolean ) P3UTILS_prefixenv(
+  const SYSTEM_ansichar *dir,
+  const SYSTEM_ansichar *evname);
 
 Function(SYSTEM_boolean ) P3UTILS_p3setenv(
   const SYSTEM_ansichar *name,
@@ -49,6 +57,15 @@ Procedure P3UTILS_p3unsetenv(
 
 Function(SYSTEM_boolean ) P3UTILS_p3issetenv(
   const SYSTEM_ansichar *name);
+
+Function(SYSTEM_boolean ) P3UTILS_p3setenvpc(
+  const SYSTEM_ansichar *name,
+  SYSTEM_P3_pansichar val);
+
+Function(SYSTEM_cardinal ) P3UTILS_p3getenvpc(
+  const SYSTEM_ansichar *name,
+  SYSTEM_P3_pansichar buf,
+  SYSTEM_cardinal bufsiz);
 
 Procedure P3UTILS_p3setconsoletitle(
   const SYSTEM_ansichar *s);
@@ -134,6 +151,9 @@ Procedure P3UTILS_p3getfromurl(
   P3UTILS_thavedatacb havedata,
   SYSTEM_pointer usermem,
   SYSTEM_ansichar *msg);
+
+Function(SYSTEM_boolean ) P3UTILS_p3getfirstmacaddress(
+  SYSTEM_ansichar *mac);
 cnstdef {P3UTILS_os_unknown = 0};
 cnstdef {P3UTILS_os_win9x = 1};
 cnstdef {P3UTILS_os_winnt = 2};
@@ -171,6 +191,33 @@ Function(SYSTEM_integer ) P3UTILS_p3getlibname(
   SYSTEM_ansichar *msg);
 
 Function(SYSTEM_integer ) P3UTILS_p3someioresult(void);
+
+Function(SYSTEM_boolean ) P3UTILS_p3getmemoryinfo(
+  SYSTEM_int64 *rss,
+  SYSTEM_int64 *vss);
+cnstdef {P3UTILS_pid_self =  -1};
+
+Function(SYSTEM_boolean ) P3UTILS_p3getmemoryinfoex(
+  SYSTEM_cardinal pid,
+  SYSTEM_int64 *rss,
+  SYSTEM_int64 *vss);
+typedef SYSTEM_byte P3UTILS_tp3location; /* Anonymous */ enum{P3UTILS_p3config,P3UTILS_p3appconfig,P3UTILS_p3data,
+  P3UTILS_p3appdata,P3UTILS_p3applocaldata,P3UTILS_p3documents};
+cnstdef {P3UTILS_nlocnames = 8};
+typedef SYSTEM_uint8 _sub_0P3UTILS;
+typedef SYSTEM_shortstring P3UTILS_tlocnames[8];
+
+Function(SYSTEM_boolean ) P3UTILS_p3writablelocation(
+  P3UTILS_tp3location loctype,
+  const SYSTEM_ansichar *appname,
+  SYSTEM_ansichar *locname);
+
+Function(SYSTEM_boolean ) P3UTILS_p3standardlocations(
+  P3UTILS_tp3location loctype,
+  const SYSTEM_ansichar *appname,
+  SYSTEM_integer *loccount,
+  SYSTEM_shortstring *locnames,
+  SYSTEM_integer *ecount);
 
 extern void _Init_Module_p3utils(void);
 extern void _Final_Module_p3utils(void);

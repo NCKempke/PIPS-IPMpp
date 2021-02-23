@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -103,7 +103,10 @@ Destructor(STRHASH_txstrhashlist ) STRHASH_txstrhashlist_DOT_destroy(
   STRHASH_txstrhashlist self)
 {
   STRHASH_txstrhashlist_DOT_clear(self);
-  _P3freemem(self->STRHASH_txstrhashlist_DOT_phashtable);
+  if (NULL != self->STRHASH_txstrhashlist_DOT_phashtable) 
+    P3UTILS_p3freemem64(&PointerCast(SYSTEM_pointer,&self->
+      STRHASH_txstrhashlist_DOT_phashtable),self->
+      STRHASH_txstrhashlist_DOT_sizeofhashtable);
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
     STRHASH_txstrhashlist_DOT_sortmap));
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
@@ -158,24 +161,28 @@ Procedure STRHASH_txstrhashlist_DOT_hashtablereset(
   SYSTEM_integer n;
 
   if (acnt >= next_3) {
-    self->STRHASH_txstrhashlist_DOT_hashsize = hashsize_4;
+    self->STRHASH_txstrhashlist_DOT_hashtablesize = hashsize_4;
     self->STRHASH_txstrhashlist_DOT_rehashcnt = next_4;
   } else 
     if (acnt >= 10000) {
-      self->STRHASH_txstrhashlist_DOT_hashsize = hashsize_3;
+      self->STRHASH_txstrhashlist_DOT_hashtablesize = hashsize_3;
       self->STRHASH_txstrhashlist_DOT_rehashcnt = next_3;
     } else 
       if (acnt >= 150) {
-        self->STRHASH_txstrhashlist_DOT_hashsize = hashsize_2;
+        self->STRHASH_txstrhashlist_DOT_hashtablesize = hashsize_2;
         self->STRHASH_txstrhashlist_DOT_rehashcnt = next_2;
       } else {
-        self->STRHASH_txstrhashlist_DOT_hashsize = hashsize_1;
+        self->STRHASH_txstrhashlist_DOT_hashtablesize = hashsize_1;
         self->STRHASH_txstrhashlist_DOT_rehashcnt = next_1;
-      } 
-  _P3getmem(self->STRHASH_txstrhashlist_DOT_phashtable,self->
-    STRHASH_txstrhashlist_DOT_hashsize * sizeof(SYSTEM_pointer));
+      }
+  self->STRHASH_txstrhashlist_DOT_sizeofhashtable = ValueCast(
+    SYSTEM_int64,self->STRHASH_txstrhashlist_DOT_hashtablesize) * sizeof(
+    SYSTEM_pointer);
+  P3UTILS_p3getmem64(&PointerCast(SYSTEM_pointer,&self->
+    STRHASH_txstrhashlist_DOT_phashtable),self->
+    STRHASH_txstrhashlist_DOT_sizeofhashtable);
   { register SYSTEM_int32 _stop = self->
-      STRHASH_txstrhashlist_DOT_hashsize - 1;
+      STRHASH_txstrhashlist_DOT_hashtablesize - 1;
     if ((n = 0) <=  _stop) do {
       (*self->STRHASH_txstrhashlist_DOT_phashtable)[n] = NULL;
     } while (n++ !=  _stop);
@@ -198,7 +205,7 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_hash(
 
   }
   result = (result & 2147483647) % self->
-    STRHASH_txstrhashlist_DOT_hashsize;
+    STRHASH_txstrhashlist_DOT_hashtablesize;
   return result;
 }  /* hash */
 
@@ -231,7 +238,10 @@ Procedure STRHASH_txstrhashlist_DOT_hashall(
   STRHASH_phashbucket pbuck;
   SYSTEM_integer n;
 
-  _P3freemem(self->STRHASH_txstrhashlist_DOT_phashtable);
+  if (NULL != self->STRHASH_txstrhashlist_DOT_phashtable) 
+    P3UTILS_p3freemem64(&PointerCast(SYSTEM_pointer,&self->
+      STRHASH_txstrhashlist_DOT_phashtable),self->
+      STRHASH_txstrhashlist_DOT_sizeofhashtable);
   STRHASH_txstrhashlist_DOT_hashtablereset(self,self->
     STRHASH_txstrhashlist_DOT_fcount);
   { register SYSTEM_int32 _stop = self->
@@ -262,7 +272,11 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_addobject(
   SYSTEM_integer result;
   SYSTEM_integer hv;
   STRHASH_phashbucket pbuck;
+  SYSTEM_boolean txstrhashlist_addobject_count_ok;
 
+  txstrhashlist_addobject_count_ok = self->
+    STRHASH_txstrhashlist_DOT_fcount < SYSTEM_maxint;
+  SYSTEM_assert(txstrhashlist_addobject_count_ok,_P3str1("\055TXstrHashList.AddObject(): max count exceeded"));
   if (self->STRHASH_txstrhashlist_DOT_fcount >= self->
     STRHASH_txstrhashlist_DOT_rehashcnt) 
     STRHASH_txstrhashlist_DOT_hashall(self);
@@ -279,12 +293,11 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_addobject(
       result = pbuck->strnr + SYSTEM_ord(self->
         STRHASH_txstrhashlist_DOT_onebased);
       return result;
-    } 
+    }
 }
   pbuck = ValueCast(STRHASH_phashbucket,
-    GMSDATA_tgrowarray_DOT_reservemem(ValueCast(GMSDATA_tgrowarray,
-    self->STRHASH_txstrhashlist_DOT_buckets),sizeof(
-    STRHASH_thashbucket)));
+    GMSDATA_tgrowarrayfxd_DOT_reservemem(self->
+    STRHASH_txstrhashlist_DOT_buckets));
   { register STRHASH_thashbucket *_W2=pbuck;
     _W2->nxtbuck = ValueCast(STRHASH_phashbucket,(*self->
       STRHASH_txstrhashlist_DOT_phashtable)[hv]);
@@ -319,9 +332,8 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_storeobject(
   if (self->STRHASH_txstrhashlist_DOT_phashtable != NULL) 
     STRHASH_txstrhashlist_DOT_clearhashtable(self);
   pbuck = ValueCast(STRHASH_phashbucket,
-    GMSDATA_tgrowarray_DOT_reservemem(ValueCast(GMSDATA_tgrowarray,
-    self->STRHASH_txstrhashlist_DOT_buckets),sizeof(
-    STRHASH_thashbucket)));
+    GMSDATA_tgrowarrayfxd_DOT_reservemem(self->
+    STRHASH_txstrhashlist_DOT_buckets));
   { register STRHASH_thashbucket *_W2=pbuck;
     _W2->nxtbuck = NULL;
     _W2->strnr = self->STRHASH_txstrhashlist_DOT_fcount;
@@ -366,7 +378,7 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_indexof(
       result = pbuck->strnr + SYSTEM_ord(self->
         STRHASH_txstrhashlist_DOT_onebased);
       return result;
-    } 
+    }
 }
   result =  -1;
   return result;
@@ -554,10 +566,16 @@ static Procedure quicksort(
         _P3dec0(j);
       } 
     } while (!(i > j));
-    if (l < j) 
-      quicksort(l,j,_2self);
-    l = i;
-  } while (!(i >= r));
+    if (j - l > r - i) {
+      if (i < r) 
+        quicksort(i,r,_2self);
+      r = j;
+    } else {
+      if (l < j) 
+        quicksort(l,j,_2self);
+      l = i;
+    }
+  } while (!(l >= r));
 }  /* quicksort */
 
 Procedure STRHASH_txstrhashlist_DOT_sort(
@@ -599,6 +617,7 @@ Procedure STRHASH_txstrhashlist_DOT_sort(
             SYSTEM_break(BRK_1);
           } 
           psn = psn1;
+        
         } while (n++ !=  _stop);
 BRK_1:;
 
@@ -624,9 +643,13 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_getstringlength(
 Procedure STRHASH_txstrhashlist_DOT_clearhashtable(
   STRHASH_txstrhashlist self)
 {
-  _P3freemem(self->STRHASH_txstrhashlist_DOT_phashtable);
+  if (NULL != self->STRHASH_txstrhashlist_DOT_phashtable) 
+    P3UTILS_p3freemem64(&PointerCast(SYSTEM_pointer,&self->
+      STRHASH_txstrhashlist_DOT_phashtable),self->
+      STRHASH_txstrhashlist_DOT_sizeofhashtable);
   self->STRHASH_txstrhashlist_DOT_phashtable = NULL;
-  self->STRHASH_txstrhashlist_DOT_hashsize = 0;
+  self->STRHASH_txstrhashlist_DOT_hashtablesize = 0;
+  self->STRHASH_txstrhashlist_DOT_sizeofhashtable = 0;
   self->STRHASH_txstrhashlist_DOT_rehashcnt = 0;
 }  /* clearhashtable */
 
@@ -636,10 +659,10 @@ Procedure STRHASH_txstrhashlist_DOT_freeitem(
 {
 }  /* freeitem */
 
-Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_memoryused(
+Function(SYSTEM_int64 ) STRHASH_txstrhashlist_DOT_memoryused(
   STRHASH_txstrhashlist self)
 {
-  SYSTEM_integer result;
+  SYSTEM_int64 result;
   SYSTEM_integer n;
 
   result = 0;
@@ -652,14 +675,13 @@ Function(SYSTEM_integer ) STRHASH_txstrhashlist_DOT_memoryused(
     } while (n++ !=  _stop);
 
   }
-  result = result + GMSDATA_tgrowarray_DOT_memoryused(ValueCast(
-    GMSDATA_tgrowarray,self->STRHASH_txstrhashlist_DOT_buckets));
+  result = result + GMSDATA_tgrowarrayfxd_DOT_memoryused(self->
+    STRHASH_txstrhashlist_DOT_buckets);
   if (self->STRHASH_txstrhashlist_DOT_phashtable != NULL) 
-    result = result + self->STRHASH_txstrhashlist_DOT_hashsize * sizeof(
-      SYSTEM_pointer);
+    result = result + self->STRHASH_txstrhashlist_DOT_sizeofhashtable;
   if (self->STRHASH_txstrhashlist_DOT_sortmap != NULL) 
-    result = result + GMSDATA_tgrowarray_DOT_memoryused(ValueCast(
-      GMSDATA_tgrowarray,self->STRHASH_txstrhashlist_DOT_sortmap));
+    result = result + GMSDATA_tgrowarrayfxd_DOT_memoryused(ValueCast(
+      GMSDATA_tgrowarrayfxd,self->STRHASH_txstrhashlist_DOT_sortmap));
   return result;
 }  /* memoryused */
 
@@ -737,7 +759,7 @@ Function(SYSTEM_integer ) STRHASH_txcsstrhashlist_DOT_hash(
 
   }
   result = (result & 2147483647) % self->
-    STRHASH_txstrhashlist_DOT_hashsize;
+    STRHASH_txstrhashlist_DOT_hashtablesize;
   return result;
 }  /* hash */
 

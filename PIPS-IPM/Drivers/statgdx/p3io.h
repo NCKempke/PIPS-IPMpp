@@ -111,6 +111,7 @@ SSN 09/09/97. Major rewrite to new file representation
 #  include <windows.h>
 #  include <winbase.h>
 #  include <direct.h>
+#  include <tlhelp32.h>
 #else
 #  include <unistd.h>
 #  include <pthread.h>
@@ -135,8 +136,9 @@ SSN 09/09/97. Major rewrite to new file representation
 # include <cstddef>
 # include <exception>
 #else
-/* if no C++, EXC_MODEL=1 is broken.  But zero is always broken! */
-# error "NO valid EXC_MODEL without C++"
+/* if no C++, no _P3_EXC_MODEL_=1 */
+# undef  _P3_EXC_MODEL_
+# define _P3_EXC_MODEL_  0
 #endif
 
 #undef P3OSDEFINED
@@ -241,11 +243,24 @@ P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
 #pragma warning(1:178)
 #endif
 
-
 /* This removes an irritating warning message from MS Visual C/C++: */
 /* What's a better flag than _WIN32?                                */
 #if defined(_WIN32)
 #pragma warning(2:4761)
+#endif
+
+/* make some Delphi-implied globals thread-local */
+#if   defined(_WIN32)
+# define _P3_THREAD_LOCAL_  __declspec( thread )
+
+#elif defined(__GNUC__) || defined(__sparc) || defined(__HOS_AIX__)
+/* assume all GCC versions support __thread */
+# define _P3_THREAD_LOCAL_  __thread
+
+#else
+# error "No definition of _P3_THREAD_LOCAL_ supplied"
+/* We either error out or accept that thread-local can really just be global */
+# define _P3_THREAD_LOCAL_
 #endif
 
 /* P3 TYPES: Definitions of Pascal types in C
@@ -323,7 +338,7 @@ typedef unsigned __int64 SYSTEM_uint64;
 #  define FMT_read_y   "%I64u"
 #  define FMT_read_z   "%I64d"
 
-#elif defined(LEG) || defined(LEI)
+#elif defined(__linux__) && (64 == __WORDSIZE)
 typedef   signed long int SYSTEM_int64;
 typedef unsigned long int SYSTEM_uint64;
 #  define FMT_write_y0 "%lu"
@@ -482,7 +497,7 @@ typedef struct _P3err {
   unsigned char nam[257];
 } _P3err_t;
 
-extern _P3err_t _P3_err;
+extern _P3_THREAD_LOCAL_ _P3err_t _P3_err;
 extern void _P3error_check(/*char*, int*/);
 
 #define _Iplus_bgn()  /* I+ state, before I/O */
@@ -593,8 +608,8 @@ extern SYSTEM_char *_P3_pchar2str (SYSTEM_char *dst, SYSTEM_char dstSiz,
                                    const SYSTEM_char *src);
 /* only use this macro with a constant string src!! */
 #define _P3conp2str(dst, dstSiz, src) _P3_pcharn2str(dst, dstSiz, (SYSTEM_char *)(src), sizeof(src)-1)
-extern SYSTEM_char *_P3pa2str(SYSTEM_char *s, SYSTEM_char m,
-                              const SYSTEM_char *p, SYSTEM_char n);
+extern SYSTEM_char *_P3pa2str(SYSTEM_char *str, SYSTEM_char strSiz,
+                              const SYSTEM_char *p, SYSTEM_integer pSiz);
 extern SYSTEM_char *_P3_ch2str(SYSTEM_char *st, SYSTEM_byte max,
                                SYSTEM_char ch);
 /*extern SYSTEM_char *_P3str2pa( SYSTEM_char *p,  SYSTEM_longint m,
@@ -672,6 +687,7 @@ extern SYSTEM_uint64   _P3read_y(_P3file *fil);
 extern SYSTEM_int64    _P3read_z(_P3file *fil);
 extern SYSTEM_char     _P3read_c(_P3file *fil);
 extern SYSTEM_double   _P3read_d(_P3file *fil);
+extern SYSTEM_double   _P3read_dd(_P3file *fil);
 
 extern SYSTEM_boolean _P3_eof(int Iplus, _P3file *fil, const char *File, int Line);
 extern SYSTEM_boolean _P3_eoln(int Iplus, _P3file *fil, const char *File, int Line);
@@ -767,10 +783,10 @@ extern void SYSTEM_chdir(const SYSTEM_char *s);
 #define _P3writefd2(d,m,n) _P3write_ry(_file_temp,d,m,n)
 
 /* Read real */
-#define _P3read__r0(r)    r = _P3read_d(&SYSTEM_input)
-#define _P3read_fr0(r)    r = _P3read_d(_file_temp)
-#define _P3read__d0(d)    d = _P3read_d(&SYSTEM_input)
-#define _P3read_fd0(d)    d = _P3read_d(_file_temp)
+#define _P3read__r0(r)    r = _P3read_dd(&SYSTEM_input)
+#define _P3read_fr0(r)    r = _P3read_dd(_file_temp)
+#define _P3read__d0(d)    d = _P3read_dd(&SYSTEM_input)
+#define _P3read_fd0(d)    d = _P3read_dd(_file_temp)
 
 /* CHAR */
 
@@ -934,6 +950,9 @@ extern void _P3assert(const SYSTEM_char* mess, const char *File, int Line);
 #define SYSTEM_assert(b,w)    {if (!(b)) _P3assert(w, __FILE__, __LINE__);}
 #define SYSTEM_noassert(b,w)  /* ignore assertion */
 
+#define SYSTEM_cassert(b)    {assert(b);}
+#define SYSTEM_nocassert(b)  /* ignore cassert */
+
 /****************** END OF I/O DECLARATIONS AND MACROS *************/
 
 /* SET OPERATIONS. Note: Bit-access operations (in-test,
@@ -1000,16 +1019,27 @@ void _P3_Str_i0(SYSTEM_integer i, SYSTEM_byte *s, SYSTEM_byte sMax);
 void _P3_Str_i1(SYSTEM_integer i, SYSTEM_integer width, SYSTEM_byte *s,
                 SYSTEM_byte sMax);
 void _P3_Str_d0(SYSTEM_double x, SYSTEM_byte *s, SYSTEM_byte sMax);
+void _P3_Str_dd0(SYSTEM_double x, SYSTEM_byte *s, SYSTEM_byte sMax);
 void _P3_Str_d1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte *s,
                 SYSTEM_byte sMax);
+void _P3_Str_dd1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte *s,
+                 SYSTEM_byte sMax);
 void _P3_Str_d2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer
                 decimals, SYSTEM_byte *s, SYSTEM_byte sMax);
+void _P3_Str_dd2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer
+                 decimals, SYSTEM_byte *s, SYSTEM_byte sMax);
 #define _P3str_i0(i,s,L)        _P3_Str_i0(i,s,L)
 #define _P3str_i1(i,w,s,L)      _P3_Str_i1(i,w,s,L)
 #define _P3str_i2(i,w,d,s,L)    _P3_Str_i1(i,w,s,L)
+#ifdef BGP
 #define _P3str_d0(x,s,L)        _P3_Str_d0(x,s,L)
 #define _P3str_d1(x,w,s,L)      _P3_Str_d1(x,w,s,L)
 #define _P3str_d2(x,w,d,s,L)    _P3_Str_d2(x,w,d,s,L)
+#else
+#define _P3str_d0(x,s,L)        _P3_Str_dd0(x,s,L)
+#define _P3str_d1(x,w,s,L)      _P3_Str_dd1(x,w,s,L)
+#define _P3str_d2(x,w,d,s,L)    _P3_Str_dd2(x,w,d,s,L)
+#endif
 
 
 /* EK: VAL variants */
@@ -1019,12 +1049,17 @@ etc */
 SYSTEM_integer _P3_Val_SPD(const SYSTEM_byte *s, SYSTEM_integer *code);
 void _P3_Val_i(const SYSTEM_byte *s, SYSTEM_integer *i, SYSTEM_integer *code);
 void _P3_Val_d(const SYSTEM_byte *s, SYSTEM_double *d, SYSTEM_integer *code);
+void _P3_Val_dd(const SYSTEM_byte *s, SYSTEM_double *d, SYSTEM_integer *code);
 #if 0
 #define _P3val_i(s,i,c) _P3_Val_i(s,i,c)
 #define _P3val_d(s,d,c) _P3_Val_d(s,d,c)
 #else
 #define _P3val_i(s,i,c) i=_P3_Val_SPD(s,c)
+#ifdef BGP
 #define _P3val_d(s,d,c) _P3_Val_d(s,&(d),c)
+#else
+#define _P3val_d(s,d,c) _P3_Val_dd(s,&(d),c)
+#endif
 #endif
 
 /* Block compares. Used for arrays, sets and records.   */
@@ -1238,6 +1273,14 @@ extern void _P3_abstr_cl_call3(SYSTEM_ansichar *result, SYSTEM_uint8 _len_ret,
   typedef void* SYSTEM_handle;
 #endif
 
+extern int
+sigProcTree (int sigNum, int *nChildrenPre, int *nChildrenPost);
+
+typedef void (* pidCB_t)(SYSTEM_cardinal pid, int level, void *userMem);
+extern int
+walkProcTree (SYSTEM_cardinal pid, pidCB_t cbPtr, void *userMem, SYSTEM_boolean postOrder);
+
+
 /*************** NEW EXCEPTIONS - Object-based like Delphi/Kylix.         */
 /***************                  Declarations for SYSTEM_exception class */
 /*************** The following is generated by P3 so it'd better work!    */
@@ -1373,10 +1416,60 @@ class exFinal: public std::exception
 
 #endif  /* if _P3_EXC_MODEL_ == 1 */
 
+#if _P3_EXC_MODEL_ == 0
+/* setjmp/longjmp */
+# include <setjmp.h>
+
+/* We need the ExceptObject function to get access to the raised exception */
+extern SYSTEM_tobject _P3_ExceptObject;
+
+extern jmp_buf *_P3_global_jmp_lnk;  /* Head of jump buffer linked list */
+
+/* Define suitable macros for _P3_TRY, _P3_EXCEPT etc, emitted in c code */
+#define _P3_TRY           { jmp_buf _P3_buf; jmp_buf* _P3_jmp_lnk; \
+                            EXCTST(printf("In _P3_TRY\n");)  \
+                            _P3_jmp_lnk = _P3_global_jmp_lnk;      \
+                            _P3_global_jmp_lnk = &_P3_buf;         \
+                            if (!setjmp(_P3_buf)) {
+
+#define _P3_RERAISE()  _P3_Std_Exception_Handler(NULL); /* NULL means Reraise */
+#define _P3_RAISE(obj) _P3_Std_Exception_Handler((SYSTEM_tobject)obj);
+
+#define _P3_EXCEPT             EXCTST(printf("Unwind(1)\n"));      \
+                              _P3_global_jmp_lnk = _P3_jmp_lnk;    \
+                            } else {                               \
+                              EXCTST(printf("Unwind(2)\n"));       \
+                              _P3_global_jmp_lnk = _P3_jmp_lnk;
+
+#define _P3_END_TRY_EXCEPT   _P3_Free_Exception(); }}
+
+#define _P3_ON_CLAUSE(class_CD)  if (_P3_is(_P3_exceptobject, class_CD))
+#define _P3_END_ON_CLAUSE        else
+#define _P3_ON_ELSE
+#define _P3_END_ON_ELSE
+#define _P3_EMPTY_ELSE_CLAUSE   _P3_RERAISE()
+
+#define _P3_FINALLY(LAB)      EXCTST(printf("Unwind(2)\n"));       \
+                              _P3_Free_Exception();                \
+                              goto LAB;                            \
+                            } else {                               \
+                              LAB: /* jeez */                      \
+                              EXCTST(printf("Unwind(3)\n"));       \
+                              _P3_global_jmp_lnk = _P3_jmp_lnk;
+
+#define _P3_END_TRY_FINALLY  _P3_END_TRY_EXCEPT
+
+/* no outer try/catch used in setjmp/longjmp model */
+#define _P3_PGM_OUTER_TRY
+#define _P3_PGM_OUTER_CATCH
+#define _P3_DLL_OUTER_TRY
+#define _P3_DLL_OUTER_CATCH
+
+#endif  /* if _P3_EXC_MODEL_ == 0 */
+
 /*************** END NEW EXCEPTIONS      ************************************/
 
 #include "exceptions.h"
-
 
 #endif /* ifndef _P3IO_H */
 /* end of p3io.h */

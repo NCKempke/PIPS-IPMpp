@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -17,23 +17,13 @@
 #include "gmsdata.h"
 
 
-void * const GMSDATA_tgrowarray_VT[] = {(void*)&
-  GMSDATA_tgrowarray_DOT_destroy};
-
-/* Class descriptor for 'tgrowarray' */
-const SYSTEM_classdescriptor_t GMSDATA_tgrowarray_CD = {
-  _P3str1("\012tgrowarray"), 
-  &SYSTEM_tobject_CD, NULL, 0, 
-  sizeof(GMSDATA_tgrowarray_OD), GMSDATA_tgrowarray_VT, NULL};
-
-
 void * const GMSDATA_tgrowarrayfxd_VT[] = {(void*)&
-  GMSDATA_tgrowarray_DOT_destroy};
+  GMSDATA_tgrowarrayfxd_DOT_destroy};
 
 /* Class descriptor for 'tgrowarrayfxd' */
 const SYSTEM_classdescriptor_t GMSDATA_tgrowarrayfxd_CD = {
   _P3str1("\015tgrowarrayfxd"), 
-  &GMSDATA_tgrowarray_CD, NULL, 0, 
+  &SYSTEM_tobject_CD, NULL, 0, 
   sizeof(GMSDATA_tgrowarrayfxd_OD), GMSDATA_tgrowarrayfxd_VT, NULL};
 
 
@@ -67,126 +57,97 @@ const SYSTEM_classdescriptor_t GMSDATA_trorcmapper_CD = {
   sizeof(GMSDATA_trorcmapper_OD), GMSDATA_trorcmapper_VT, NULL};
 
 
-Constructor(GMSDATA_tgrowarray ) GMSDATA_tgrowarray_DOT_create(
-  GMSDATA_tgrowarray self)
-{
-  ValueCast(GMSDATA_tgrowarray,SYSTEM_tobject_DOT_create(ValueCast(
-    SYSTEM_tobject,self)));
-  self->GMSDATA_tgrowarray_DOT_baseallocated = 0;
-  self->GMSDATA_tgrowarray_DOT_pbase = NULL;
-  self->GMSDATA_tgrowarray_DOT_pcurrentbuf = NULL;
-  self->GMSDATA_tgrowarray_DOT_baseused =  -1;
-  return self;
-}  /* create */
-
-Destructor(GMSDATA_tgrowarray ) GMSDATA_tgrowarray_DOT_destroy(
-  GMSDATA_tgrowarray self)
-{
-  GMSDATA_tgrowarray_DOT_clear(self);
-  SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
-  return self;
-}  /* destroy */
-
-Procedure GMSDATA_tgrowarray_DOT_clear(
-  GMSDATA_tgrowarray self)
-{
-  while (self->GMSDATA_tgrowarray_DOT_baseused >= 0) {
-    _P3freemem((*self->GMSDATA_tgrowarray_DOT_pbase)[self->
-      GMSDATA_tgrowarray_DOT_baseused]);
-    self->GMSDATA_tgrowarray_DOT_baseused = self->
-      GMSDATA_tgrowarray_DOT_baseused - 1;
-  
-}
-#if 0
-  SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
-    GMSDATA_tgrowarray_DOT_pbase),0);
-#else
-  SYSTEM_reallocmem((void **) &self->GMSDATA_tgrowarray_DOT_pbase, 0);
-#endif
-  self->GMSDATA_tgrowarray_DOT_baseallocated = 0;
-  self->GMSDATA_tgrowarray_DOT_pcurrentbuf = NULL;
-}  /* clear */
-
-Function(SYSTEM_int64 ) GMSDATA_tgrowarray_DOT_memoryused(
-  GMSDATA_tgrowarray self)
-{
-  SYSTEM_int64 result;
-
-  if (self->GMSDATA_tgrowarray_DOT_pcurrentbuf == NULL) { 
-    result = 0;
-  } else 
-    result = self->GMSDATA_tgrowarray_DOT_baseallocated * sizeof(
-      SYSTEM_pointer) + self->GMSDATA_tgrowarray_DOT_baseused * 
-      GMSDATA_bufsize + self->GMSDATA_tgrowarray_DOT_pcurrentbuf->
-      bytesused;
-  return result;
-}  /* memoryused */
-
-Function(SYSTEM_pointer ) GMSDATA_tgrowarray_DOT_reservemem(
-  GMSDATA_tgrowarray self,
-  SYSTEM_integer l)
-{
-  SYSTEM_pointer result;
-
-  if (self->GMSDATA_tgrowarray_DOT_pcurrentbuf == NULL || self->
-    GMSDATA_tgrowarray_DOT_pcurrentbuf->bytesused + l > 
-    GMSDATA_bufsize) {
-    self->GMSDATA_tgrowarray_DOT_baseused = self->
-      GMSDATA_tgrowarray_DOT_baseused + 1;
-    if (self->GMSDATA_tgrowarray_DOT_baseused >= self->
-      GMSDATA_tgrowarray_DOT_baseallocated) {
-      if (self->GMSDATA_tgrowarray_DOT_baseallocated == 0) { 
-        self->GMSDATA_tgrowarray_DOT_baseallocated = 32;
-      } else 
-        self->GMSDATA_tgrowarray_DOT_baseallocated = 2 * self->
-          GMSDATA_tgrowarray_DOT_baseallocated;
-#if 0
-      SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
-        GMSDATA_tgrowarray_DOT_pbase),self->
-        GMSDATA_tgrowarray_DOT_baseallocated * sizeof(SYSTEM_pointer));
-#else
-      SYSTEM_reallocmem((void **) &self->GMSDATA_tgrowarray_DOT_pbase,
-			self->GMSDATA_tgrowarray_DOT_baseallocated * sizeof(SYSTEM_pointer));
-#endif
-    } 
-    _P3getmem(self->GMSDATA_tgrowarray_DOT_pcurrentbuf,sizeof(
-      GMSDATA_tgadatabuffer));
-    (*self->GMSDATA_tgrowarray_DOT_pbase)[self->
-      GMSDATA_tgrowarray_DOT_baseused] = self->
-      GMSDATA_tgrowarray_DOT_pcurrentbuf;
-    self->GMSDATA_tgrowarray_DOT_pcurrentbuf->bytesused = 0;
-  } 
-  { register GMSDATA_tgadatabuffer *_W2=self->
-    GMSDATA_tgrowarray_DOT_pcurrentbuf;
-    result = ValueCast(SYSTEM_pointer,&_W2->buffer[_W2->bytesused]);
-    _W2->bytesused = _W2->bytesused + l;
-
-  }
-  return result;
-}  /* reservemem */
-
-Function(SYSTEM_pointer ) GMSDATA_tgrowarray_DOT_reserveandclear(
-  GMSDATA_tgrowarray self,
-  SYSTEM_integer l)
-{
-  SYSTEM_pointer result;
-
-  result = GMSDATA_tgrowarray_DOT_reservemem(self,l);
-  SYSTEM_P3_fillchar(result,l,0);
-  return result;
-}  /* reserveandclear */
-
 Constructor(GMSDATA_tgrowarrayfxd ) GMSDATA_tgrowarrayfxd_DOT_create(
   GMSDATA_tgrowarrayfxd self,
   SYSTEM_integer asize)
 {
-  ValueCast(GMSDATA_tgrowarrayfxd,GMSDATA_tgrowarray_DOT_create(ValueCast(
-    GMSDATA_tgrowarray,self)));
+  ValueCast(GMSDATA_tgrowarrayfxd,SYSTEM_tobject_DOT_create(ValueCast(
+    SYSTEM_tobject,self)));
+  self->GMSDATA_tgrowarrayfxd_DOT_pbase = NULL;
+  self->GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf = NULL;
+  self->GMSDATA_tgrowarrayfxd_DOT_baseused =  -1;
   self->GMSDATA_tgrowarrayfxd_DOT_fsize = asize;
   self->GMSDATA_tgrowarrayfxd_DOT_fstorefact = GMSDATA_bufsize /  self->
     GMSDATA_tgrowarrayfxd_DOT_fsize;
   return self;
 }  /* create */
+
+Destructor(GMSDATA_tgrowarrayfxd ) GMSDATA_tgrowarrayfxd_DOT_destroy(
+  GMSDATA_tgrowarrayfxd self)
+{
+  GMSDATA_tgrowarrayfxd_DOT_clear(self);
+  SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
+  return self;
+}  /* destroy */
+
+Procedure GMSDATA_tgrowarrayfxd_DOT_clear(
+  GMSDATA_tgrowarrayfxd self)
+{
+  while (self->GMSDATA_tgrowarrayfxd_DOT_baseused >= 0) {
+    P3UTILS_p3freemem64(&PointerCast(SYSTEM_pointer,&(*self->
+      GMSDATA_tgrowarrayfxd_DOT_pbase)[self->
+      GMSDATA_tgrowarrayfxd_DOT_baseused]),sizeof(
+      GMSDATA_tgadatabuffer));
+    self->GMSDATA_tgrowarrayfxd_DOT_baseused = self->
+      GMSDATA_tgrowarrayfxd_DOT_baseused - 1;
+  }
+  P3UTILS_p3reallocmem64(&PointerCast(SYSTEM_pointer,&self->
+    GMSDATA_tgrowarrayfxd_DOT_pbase),0);
+  self->GMSDATA_tgrowarrayfxd_DOT_baseallocated = 0;
+  self->GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf = NULL;
+  self->GMSDATA_tgrowarrayfxd_DOT_fcount = 0;
+}  /* clear */
+
+Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_reservemem(
+  GMSDATA_tgrowarrayfxd self)
+{
+  SYSTEM_pointer result;
+
+  if (self->GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf == NULL || self->
+    GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf->bytesused + self->
+    GMSDATA_tgrowarrayfxd_DOT_fsize > GMSDATA_bufsize) {
+    self->GMSDATA_tgrowarrayfxd_DOT_baseused = self->
+      GMSDATA_tgrowarrayfxd_DOT_baseused + 1;
+    if (self->GMSDATA_tgrowarrayfxd_DOT_baseused >= self->
+      GMSDATA_tgrowarrayfxd_DOT_baseallocated) {
+      if (self->GMSDATA_tgrowarrayfxd_DOT_baseallocated == 0) { 
+        self->GMSDATA_tgrowarrayfxd_DOT_baseallocated = 32;
+      } else 
+        self->GMSDATA_tgrowarrayfxd_DOT_baseallocated = 2 * self->
+          GMSDATA_tgrowarrayfxd_DOT_baseallocated;
+      P3UTILS_p3reallocmem64(&PointerCast(SYSTEM_pointer,&self->
+        GMSDATA_tgrowarrayfxd_DOT_pbase),ValueCast(SYSTEM_int64,self->
+        GMSDATA_tgrowarrayfxd_DOT_baseallocated) * sizeof(
+        SYSTEM_pointer));
+    } 
+    P3UTILS_p3getmem64(&PointerCast(SYSTEM_pointer,&self->
+      GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf),sizeof(
+      GMSDATA_tgadatabuffer));
+    (*self->GMSDATA_tgrowarrayfxd_DOT_pbase)[self->
+      GMSDATA_tgrowarrayfxd_DOT_baseused] = self->
+      GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf;
+    self->GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf->bytesused = 0;
+  } 
+  { register GMSDATA_tgadatabuffer *_W2=self->
+    GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf;
+    result = ValueCast(SYSTEM_pointer,&_W2->buffer[_W2->bytesused]);
+    _W2->bytesused = _W2->bytesused + self->
+      GMSDATA_tgrowarrayfxd_DOT_fsize;
+
+  }
+  _P3inc0(self->GMSDATA_tgrowarrayfxd_DOT_fcount);
+  return result;
+}  /* reservemem */
+
+Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_reserveandclear(
+  GMSDATA_tgrowarrayfxd self)
+{
+  SYSTEM_pointer result;
+
+  result = GMSDATA_tgrowarrayfxd_DOT_reservemem(self);
+  SYSTEM_P3_fillchar(result,self->GMSDATA_tgrowarrayfxd_DOT_fsize,0);
+  return result;
+}  /* reserveandclear */
 
 Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_additem(
   GMSDATA_tgrowarrayfxd self,
@@ -194,12 +155,9 @@ Function(SYSTEM_pointer ) GMSDATA_tgrowarrayfxd_DOT_additem(
 {
   SYSTEM_pointer result;
 
-  result = GMSDATA_tgrowarray_DOT_reservemem(ValueCast(
-    GMSDATA_tgrowarray,self),self->GMSDATA_tgrowarrayfxd_DOT_fsize);
+  result = GMSDATA_tgrowarrayfxd_DOT_reservemem(self);
   GMSOBJ_cmove(r,ValueCast(SYSTEM_P3_pbyte,result),self->
     GMSDATA_tgrowarrayfxd_DOT_fsize);
-  self->GMSDATA_tgrowarrayfxd_DOT_fcount = self->
-    GMSDATA_tgrowarrayfxd_DOT_fcount + 1;
   return result;
 }  /* additem */
 
@@ -211,7 +169,7 @@ Function(GMSGEN_pbytedataarray )
   GMSGEN_pbytedataarray result;
 
   result = ValueCast(GMSGEN_pbytedataarray,&(*self->
-    GMSDATA_tgrowarray_DOT_pbase)[n /  self->
+    GMSDATA_tgrowarrayfxd_DOT_pbase)[n /  self->
     GMSDATA_tgrowarrayfxd_DOT_fstorefact]->buffer[n % self->
     GMSDATA_tgrowarrayfxd_DOT_fstorefact * self->
     GMSDATA_tgrowarrayfxd_DOT_fsize]);
@@ -229,12 +187,20 @@ Procedure GMSDATA_tgrowarrayfxd_DOT_getitem(
   GMSOBJ_cmove(&(*pb)[0],r,self->GMSDATA_tgrowarrayfxd_DOT_fsize);
 }  /* getitem */
 
-Procedure GMSDATA_tgrowarrayfxd_DOT_clear(
+Function(SYSTEM_int64 ) GMSDATA_tgrowarrayfxd_DOT_memoryused(
   GMSDATA_tgrowarrayfxd self)
 {
-  GMSDATA_tgrowarray_DOT_clear(ValueCast(GMSDATA_tgrowarray,self));
-  self->GMSDATA_tgrowarrayfxd_DOT_fcount = 0;
-}  /* clear */
+  SYSTEM_int64 result;
+
+  if (self->GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf == NULL) { 
+    result = 0;
+  } else 
+    result = self->GMSDATA_tgrowarrayfxd_DOT_baseallocated * sizeof(
+      SYSTEM_pointer) + ValueCast(SYSTEM_int64,self->
+      GMSDATA_tgrowarrayfxd_DOT_baseused) * GMSDATA_bufsize + self->
+      GMSDATA_tgrowarrayfxd_DOT_pcurrentbuf->bytesused;
+  return result;
+}  /* memoryused */
 
 Constructor(GMSDATA_ttblgamsdata ) GMSDATA_ttblgamsdata_DOT_create(
   GMSDATA_ttblgamsdata self,
@@ -289,9 +255,8 @@ Procedure GMSDATA_ttblgamsdata_DOT_insertrecord(
   GMSGEN_pbytedataarray p;
 
   p = ValueCast(GMSGEN_pbytedataarray,
-    GMSDATA_tgrowarray_DOT_reservemem(ValueCast(GMSDATA_tgrowarray,
-    self->GMSDATA_ttblgamsdata_DOT_ds),self->
-    GMSDATA_ttblgamsdata_DOT_ds->GMSDATA_tgrowarrayfxd_DOT_fsize));
+    GMSDATA_tgrowarrayfxd_DOT_reservemem(self->
+    GMSDATA_ttblgamsdata_DOT_ds));
   GMSOBJ_cmove(inx,&(*p)[0],self->
     GMSDATA_ttblgamsdata_DOT_findexsize);
   GMSOBJ_cmove(buffer,&(*p)[self->GMSDATA_ttblgamsdata_DOT_findexsize],
@@ -315,8 +280,9 @@ Procedure GMSDATA_ttblgamsdata_DOT_sort(
           sortneeded = SYSTEM_true;
           SYSTEM_break(BRK_1);
         } 
-	} while (n++ !=  _stop);
+      } while (n++ !=  _stop);
 BRK_1:;
+
     }
     if (sortneeded) 
       GMSDATA_ttblgamsdata_DOT_quicksort(self,0,self->
@@ -520,7 +486,7 @@ Function(SYSTEM_boolean ) GMSDATA_ttblgamsdata_DOT_searchrecord(
         result = SYSTEM_true;
         l = i;
         SYSTEM_break(BRK_2);
-      } 
+      }
   }
 BRK_2:;
   *recnr = l;
@@ -581,9 +547,9 @@ Function(SYSTEM_int64 ) GMSDATA_ttblgamsdata_DOT_memoryused(
 {
   SYSTEM_int64 result;
 
-  result = GMSDATA_tgrowarray_DOT_memoryused(ValueCast(
-    GMSDATA_tgrowarray,self->GMSDATA_ttblgamsdata_DOT_ds)) + 
-    GMSOBJ_txlist_DOT_memoryused(self->GMSDATA_ttblgamsdata_DOT_flist);
+  result = GMSDATA_tgrowarrayfxd_DOT_memoryused(self->
+    GMSDATA_ttblgamsdata_DOT_ds) + GMSOBJ_txlist_DOT_memoryused(self->
+    GMSDATA_ttblgamsdata_DOT_flist);
   return result;
 }  /* memoryused */
 typedef struct GMSDATA_trorcrecord_S *GMSDATA_prorcrecord;
@@ -785,7 +751,8 @@ Function(SYSTEM_integer ) GMSDATA_txintlist_DOT_add(
 Destructor(GMSDATA_txintlist ) GMSDATA_txintlist_DOT_destroy(
   GMSDATA_txintlist self)
 {
-  GMSDATA_tgrowarray_DOT_destroy(ValueCast(GMSDATA_tgrowarray,self));
+  GMSDATA_tgrowarrayfxd_DOT_destroy(ValueCast(GMSDATA_tgrowarrayfxd,
+    self));
   return self;
 }  /* destroy */
 
@@ -826,10 +793,9 @@ Procedure GMSDATA_txintlist_DOT_setitems(
   SYSTEM_integer v)
 {
   while (index >= self->GMSDATA_tgrowarrayfxd_DOT_fcount) {
-    GMSDATA_tgrowarray_DOT_reserveandclear(ValueCast(
-      GMSDATA_tgrowarray,self),self->GMSDATA_tgrowarrayfxd_DOT_fsize);
-    _P3inc0(self->GMSDATA_tgrowarrayfxd_DOT_fcount);
-  
+
+    GMSDATA_tgrowarrayfxd_DOT_reserveandclear(ValueCast(
+      GMSDATA_tgrowarrayfxd,self));
 }
   *ValueCast(SYSTEM_P3_pinteger,
     GMSDATA_tgrowarrayfxd_DOT_getitemptrindx(ValueCast(
