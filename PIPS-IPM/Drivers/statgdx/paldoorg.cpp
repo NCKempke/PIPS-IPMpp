@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -14,10 +14,11 @@
 #include "gmsgen.h"
 #include "strutilx.h"
 #include "gmsglobx.h"
+#include "palmdcon.h"
 #include "gmsobj.h"
 #include "paldoorg.h"
 
-_P3STR_15 PALDOORG_cmexliccodes = {8,'0','1','0','2','0','3','0','4'};
+_P3STR_15 PALDOORG_cmexliccodes = {12,'0','0','0','1','0','2','0','3','0','4','0','5'};
 
 void * const PALDOORG_tpalobject_VT[] = {(void*)&
   PALDOORG_tpalobject_DOT_destroy};
@@ -77,33 +78,33 @@ static Function(SYSTEM_boolean ) PALDOORG_platformsvals(
       *val3 = 13;
       break;
     case 2: 
-      *val1 = 3;
-      *val2 = 97;
-      *val3 = 13;
-      break;
-    case 3: 
       *val1 = 7;
       *val2 = 19;
       *val3 = 83;
       break;
-    case 4: 
+    case 3: 
       *val1 = 79;
       *val2 = 23;
       *val3 = 11;
       break;
-    case 5: 
-      *val1 = 11;
-      *val2 = 79;
-      *val3 = 19;
-      break;
-    case 6: 
+    case 4: 
       *val1 = 73;
       *val2 = 23;
       *val3 = 13;
       break;
-    case 7: 
+    case 5: 
       *val1 = 7;
       *val2 = 83;
+      *val3 = 19;
+      break;
+    case 6: 
+      *val1 = 3;
+      *val2 = 97;
+      *val3 = 13;
+      break;
+    case 7: 
+      *val1 = 11;
+      *val2 = 79;
       *val3 = 19;
       break;
     case 8: 
@@ -136,6 +137,11 @@ static Function(SYSTEM_boolean ) PALDOORG_platformsvals(
       *val2 = 89;
       *val3 = 19;
       break;
+    case 14: 
+      *val1 = 5;
+      *val2 = 89;
+      *val3 = 19;
+      break;
     default:
       result = SYSTEM_false;
   }
@@ -149,28 +155,43 @@ Procedure PALDOORG_tpalobject_DOT_gutsofcreate(
     SYSUTILS_P3_now() - 1);
   PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdlsysnam,16,_P3str1("\015Uninitialized"));
   _P3strclr(self->PALDOORG_tpalobject_DOT_gdlauditline);
-  PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdlrelcpr,70,_P3str1("\075Copyright (C) 1987-2015 GAMS Development. All rights reserved"));
-  PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdlreldat,21,_P3str1("\025ALFA Released 16Feb15"));
-  PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdllicdat,12,_P3str1("\014Jan 26, 2015"));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrelmaj,2,_P3str1("\00224"));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrelmin,1,_P3str1("\0015"));
+  PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdlrelcpr,70,_P3str1("\075Copyright (C) 1987-2020 GAMS Development. All rights reserved"));
+  PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdlreldat,21,_P3str1("\025Released Nov  3, 2020"));
+  PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdllicdat,12,_P3str1("\014Nov  1, 2020"));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrelmaj,2,_P3str1("\00233"));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrelmin,1,_P3str1("\0012"));
   _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrelgold,1,_P3str1("\0010"));
-  self->PALDOORG_tpalobject_DOT_gdllicjul = 42029;
+  self->PALDOORG_tpalobject_DOT_gdllicjul = 44135;
   _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrelplc,3,_P3str1("\003LEX"));
   PALDOORG_blankfill(self->PALDOORG_tpalobject_DOT_gdlrelplt,22,_P3str1("\017x86 64bit/Linux"));
   _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlbldcod,3,_P3str1("\003LEG"));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrevision,12,_P3str1("\006r50613"));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_gdlrevision,12,_P3str1("\010rb238721"));
   _P3strcat(self->PALDOORG_tpalobject_DOT_gdlsysver,3,self->
     PALDOORG_tpalobject_DOT_gdlrelmaj,self->
     PALDOORG_tpalobject_DOT_gdlrelmin);
   if (PALDOORG_tpalobject_DOT_palisalfa(self)) 
     P3UTILS_p3nopopups();
-  PALDOORG_tpalobject_DOT_makedemolicense(self);
-  self->PALDOORG_tpalobject_DOT_rowcnt = 301;
-  self->PALDOORG_tpalobject_DOT_colcnt = 301;
-  self->PALDOORG_tpalobject_DOT_nzcnt = 2001;
-  self->PALDOORG_tpalobject_DOT_nlnzcnt = 1001;
-  self->PALDOORG_tpalobject_DOT_disccnt = 51;
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_license1,65,_P3str1("\101                                                                 "));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_license2,65,_P3str1("\101                                                                 "));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_license3,65,_P3str1("\101                                                                 "));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_license4,65,_P3str1("\101                                                                 "));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_license5,65,_P3str1("\101                                                                 "));
+  _P3strcpy(self->PALDOORG_tpalobject_DOT_license6,65,_P3str1("\101                                                                 "));
+  self->PALDOORG_tpalobject_DOT_licensestatus = 1;
+  self->PALDOORG_tpalobject_DOT_licenselevel = 0;
+  self->PALDOORG_tpalobject_DOT_licenseversion = 2;
+  self->PALDOORG_tpalobject_DOT_licenseactsub = PALDOORG_licensemaxsub;
+  self->PALDOORG_tpalobject_DOT_currentsearchhelper = self->
+    PALDOORG_tpalobject_DOT_licenseactsub + 1;
+  self->PALDOORG_tpalobject_DOT_optionsearchhelper = 0;
+  self->PALDOORG_tpalobject_DOT_rowcnt = 5001;
+  self->PALDOORG_tpalobject_DOT_colcnt = 5001;
+  self->PALDOORG_tpalobject_DOT_nzcnt = self->
+    PALDOORG_tpalobject_DOT_rowcnt * self->
+    PALDOORG_tpalobject_DOT_colcnt;
+  self->PALDOORG_tpalobject_DOT_nlnzcnt = 0;
+  self->PALDOORG_tpalobject_DOT_disccnt = 0;
+  _P3strclr(self->PALDOORG_tpalobject_DOT_sysdir);
 }  /* gutsofcreate */
 
 Constructor(PALDOORG_tpalobject ) PALDOORG_tpalobject_DOT_create(
@@ -214,6 +235,48 @@ Procedure PALDOORG_tpalobject_DOT_palsetauditline(
   SYSTEM_copy(self->PALDOORG_tpalobject_DOT_gdlsysnam,16,self->
     PALDOORG_tpalobject_DOT_gdlauditline,1,16);
 }  /* palsetauditline */
+
+Procedure PALDOORG_tpalobject_DOT_palsetsystemname(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *sname)
+{
+  SYSTEM_shortstring auditline;
+  _P3STR_31 systemname;
+
+  PALDOORG_blankfill(systemname,16,sname);
+  {
+    _P3STR_31 _t1;
+    _P3STR_31 _t2;
+    _P3STR_31 _t3;
+    _P3STR_31 _t4;
+    _P3STR_31 _t5;
+    _P3STR_31 _t6;
+    _P3STR_31 _t7;
+    _P3STR_31 _t8;
+    _P3STR_63 _t9;
+    _P3STR_63 _t10;
+    _P3STR_95 _t11;
+    _P3STR_95 _t12;
+    _P3STR_95 _t13;
+    _P3STR_95 _t14;
+    _P3STR_95 _t15;
+
+    _P3strcat(auditline,255,_P3strcat(_t15,91,_P3strcat(_t14,69,
+      _P3strcat(_t13,68,_P3strcat(_t12,65,_P3strcat(_t11,64,
+      _P3strcat(_t10,43,_P3strcat(_t9,42,_P3strcat(_t8,30,
+      _P3strcat(_t7,29,_P3strcat(_t6,28,_P3strcat(_t5,27,
+      _P3strcat(_t4,26,_P3strcat(_t3,25,_P3strcat(_t2,23,
+      _P3strcat(_t1,22,_P3str1("\006_GAMS_"),systemname),_P3str1("\001 ")),
+      self->PALDOORG_tpalobject_DOT_gdlrelmaj),_P3str1("\001.")),self->
+      PALDOORG_tpalobject_DOT_gdlrelmin),_P3str1("\001.")),self->
+      PALDOORG_tpalobject_DOT_gdlrelgold),_P3str1("\001 ")),self->
+      PALDOORG_tpalobject_DOT_gdlrevision),_P3str1("\001 ")),self->
+      PALDOORG_tpalobject_DOT_gdlreldat),_P3str1("\001 ")),self->
+      PALDOORG_tpalobject_DOT_gdlbldcod),_P3str1("\001 ")),self->
+      PALDOORG_tpalobject_DOT_gdlrelplt),_P3str1("\006_SMAG_"));
+  }
+  PALDOORG_tpalobject_DOT_palsetauditline(self,auditline);
+}  /* palsetsystemname */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_palauditrun(
   PALDOORG_tpalobject self)
@@ -399,19 +462,25 @@ Procedure PALDOORG_tpalobject_DOT_palauditfields(
   SYSTEM_ansichar *v3)
 {
   {
+    SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
 
-    SYSUTILS_P3_trim(v1,255,SYSTEM_copy(_t2,255,auditline,1,16));
+    _P3strcpy(v1,255,SYSUTILS_P3_trim(_t1,255,SYSTEM_copy(_t2,255,
+      auditline,1,16)));
   }
   {
+    SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
 
-    SYSUTILS_P3_trim(v2,255,SYSTEM_copy(_t2,255,auditline,18,12));
+    _P3strcpy(v2,255,SYSUTILS_P3_trim(_t1,255,SYSTEM_copy(_t2,255,
+      auditline,18,12)));
   }
   {
+    SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
 
-    SYSUTILS_P3_trim(v3,255,SYSTEM_copy(_t2,255,auditline,31,255));
+    _P3strcpy(v3,255,SYSUTILS_P3_trim(_t1,255,SYSTEM_copy(_t2,255,
+      auditline,31,255)));
   }
 }  /* palauditfields */
 
@@ -438,6 +507,43 @@ Function(SYSTEM_ansichar *)
   }
   return result;
 }  /* palgetshortauditline */
+cnstdef {buflen5lines = 325};
+cnstdef {bufmax = 490};
+typedef SYSTEM_uint16 _sub_1PALLICENSEREADU;
+typedef SYSTEM_ansichar _arr_0PALLICENSEREADU[490];
+
+static Function(SYSTEM_boolean ) checkbomoffset(
+  SYSTEM_integer *bomoffset,
+  SYSTEM_ansichar *_2buf,
+  PALDOORG_tpalobject *_2self)
+{
+  SYSTEM_boolean result;
+  cnstdef {maxbom = 5};
+  typedef SYSTEM_uint8 _sub_1CHECKBOMOFFSET;
+  typedef _P3STR_7 _arr_0CHECKBOMOFFSET[5];
+  static _arr_0CHECKBOMOFFSET boms = {{3,'\357','\273','\277'}, {2,'\376','\377'}, {2,'\377','\376'}, {4,'\000','\000','\376','\377'}, {4,'\377','\376','\000','\000'}};
+  SYSTEM_integer i;
+
+  result = SYSTEM_true;
+  *bomoffset = 0;
+  for (i = 1;i <= (SYSTEM_int32)maxbom;++i) {
+    {
+      SYSTEM_shortstring _t1;
+      _P3STR_255 _t2;
+
+      if (STRUTILX_strcmp(boms[i - 1],SYSTEM_copy(_t1,255,
+        _P3pa2str(_t2,255,_2buf,490),1,SYSTEM_length(boms[i - 1]))) == 0) {
+        if (i == 1) { 
+          *bomoffset = SYSTEM_length(boms[0]);
+        } else 
+          result = SYSTEM_false;
+        SYSTEM_break(BRK_1);
+      } 
+    }
+  }
+  BRK_1:;
+  return result;
+}  /* checkbomoffset */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
   PALDOORG_tpalobject self,
@@ -446,14 +552,10 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
   SYSTEM_integer *rc)
 {
   SYSTEM_boolean result;
-  cnstdef {bufclean = 325};
-  cnstdef {bufmax = 490};
+  _arr_0PALLICENSEREADU buf;
   SYSTEM_untypedfile f;
   SYSTEM_integer numread;
-  typedef SYSTEM_uint16 _sub_1PALLICENSEREADU;
-  typedef SYSTEM_ansichar _arr_0PALLICENSEREADU[490];
-  _arr_0PALLICENSEREADU buf;
-  SYSTEM_integer i, j, off, len6;
+  SYSTEM_integer i, off, buflen, len6, bomoffset;
 
   result = SYSTEM_false;
   _Iplus_bgn();
@@ -474,17 +576,21 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
   _Iplus_bgn();
   _P3blockR4(f,buf,sizeof(_arr_0PALLICENSEREADU),numread);
   _Iplus_end();
-  j = 0;
+  buflen = 0;
+  if (!checkbomoffset(&bomoffset,buf,&self)) {
+    _P3strcpy(msg,255,_P3str1("\066NON-UTF8 BOM detected indicating unsupported encoding."));
+    return result;
+  } 
   { register SYSTEM_int32 _stop = numread;
-    if ((i = 1) <=  _stop) do {
+    if ((i = 1 + bomoffset) <=  _stop) do {
       if (SYSTEM_ord(buf[i - 1]) > 32) {
-        _P3inc0(j);
-        buf[j - 1] = buf[i - 1];
+        _P3inc0(buflen);
+        buf[buflen - 1] = buf[i - 1];
       } 
     } while (i++ !=  _stop);
 
   }
-  for (i = j + 1;i <= bufmax;++i) {
+  for (i = buflen + 1;i <= bufmax;++i) {
     buf[i - 1] = _P3char('_');
   }
   _P3setlength(self->PALDOORG_tpalobject_DOT_license1,
@@ -497,7 +603,8 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
     PALDOORG_maxlicense,65);
   _P3setlength(self->PALDOORG_tpalobject_DOT_license5,
     PALDOORG_maxlicense,65);
-  _P3setlength(self->PALDOORG_tpalobject_DOT_license6,0,65);
+  _P3setlength(self->PALDOORG_tpalobject_DOT_license6,
+    PALDOORG_maxlicense,65);
   for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
     self->PALDOORG_tpalobject_DOT_license1[i] = buf[i - 1];
   }
@@ -518,18 +625,10 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
     self->PALDOORG_tpalobject_DOT_license5[i] = buf[i + off - 1];
   }
   off = off + PALDOORG_maxlicense;
-  len6 = j - bufclean;
-  if (len6 > 0) {
-    if (len6 > 65) 
-      len6 = PALDOORG_maxlicense;
-    { register SYSTEM_int32 _stop = len6;
-      if ((i = 1) <=  _stop) do {
-        self->PALDOORG_tpalobject_DOT_license6[i] = buf[i + off - 1];
-      } while (i++ !=  _stop);
-
+  if (buflen > buflen5lines) 
+    for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
+      self->PALDOORG_tpalobject_DOT_license6[i] = buf[i + off - 1];
     }
-    _P3setlength(self->PALDOORG_tpalobject_DOT_license6,len6,65);
-  } 
   for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
     if (self->PALDOORG_tpalobject_DOT_license1[i] == _P3char('_')) 
       self->PALDOORG_tpalobject_DOT_license1[i] = _P3char(' ');
@@ -541,7 +640,8 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensereadu(
       self->PALDOORG_tpalobject_DOT_license4[i] = _P3char(' ');
     if (self->PALDOORG_tpalobject_DOT_license5[i] == _P3char('_')) 
       self->PALDOORG_tpalobject_DOT_license5[i] = _P3char(' ');
-  
+    if (self->PALDOORG_tpalobject_DOT_license6[i] == _P3char('_')) 
+      self->PALDOORG_tpalobject_DOT_license6[i] = _P3char(' ');
   }
   {
     SYSTEM_shortstring _t1;
@@ -578,43 +678,21 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_msgadd(
   return result;
 }  /* msgadd */
 
-Procedure PALDOORG_tpalobject_DOT_makedemolicense(
-  PALDOORG_tpalobject self)
-{
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license1,65,_P3str1("\101GAMS Development Corporation, Washington, DC   G871201/0000CA-ANY"));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license2,65,_P3str1("\101Free Demo,  202-342-0180,  sales@gams.com,  www.gams.com         "));
-  {
-    SYSTEM_shortstring _t1;
-
-    _P3strcat(self->PALDOORG_tpalobject_DOT_license3,65,
-      STRUTILX_inttostr(_t1,255,SYSTEM_round(10000000 + 12 * 
-      SYSUTILS_P3_now())),_P3str1("\071000S                                                   00"));
-  }
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license4,65,_P3str1("\10101234567000000                                                   "));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license5,65,_P3str1("\101DC0000       Ref: Generated by Base            A Demo            "));
-  _P3strclr(self->PALDOORG_tpalobject_DOT_license6);
-  self->PALDOORG_tpalobject_DOT_licensestatus = 1;
-  self->PALDOORG_tpalobject_DOT_licenselevel = 0;
-  self->PALDOORG_tpalobject_DOT_licenseversion = 2;
-  self->PALDOORG_tpalobject_DOT_licenseactsub = PALDOORG_licensemaxsub;
-  self->PALDOORG_tpalobject_DOT_currentsearchhelper = self->
-    PALDOORG_tpalobject_DOT_licenseactsub + 1;
-  self->PALDOORG_tpalobject_DOT_optionsearchhelper = 0;
-  self->PALDOORG_tpalobject_DOT_optionsearchhelper = 0;
-}  /* makedemolicense */
-
 Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensegetversion(
   PALDOORG_tpalobject self)
 {
   SYSTEM_integer result;
 
-  if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char('/')) { 
-    result = 2;
+  if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char('|')) { 
+    result = 3;
   } else 
-    if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char(':')) { 
-      result = 1;
+    if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char('/')) { 
+      result = 2;
     } else 
-      result = 0;
+      if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char(':')) { 
+        result = 1;
+      } else 
+        result = 0;
   return result;
 }  /* pallicensegetversion */
 
@@ -658,6 +736,42 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseregistergams(
   }
 }  /* pallicenseregistergams */
 
+Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensegetlline(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  PALDOORG_tpalobject self,
+  SYSTEM_integer linenr)
+{
+  switch (linenr) {
+    case 1: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license1);
+      break;
+    case 2: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license2);
+      break;
+    case 3: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license3);
+      break;
+    case 4: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license4);
+      break;
+    case 5: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license5);
+      break;
+    case 6: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license6);
+      break;
+    default:
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcat(result,_len_ret,_P3str1("\034no license line with number "),
+          SYSUTILS_P3_inttostr(_t1,255,linenr));
+      }
+  }
+  return result;
+}  /* pallicensegetlline */
+
 Procedure PALDOORG_tpalobject_DOT_pallicenseregistergamsdone(
   PALDOORG_tpalobject self)
 {
@@ -681,7 +795,9 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseregistergamsdone(
     if (ValueCast(SYSTEM_int32,SYSTEM_length(self->
       PALDOORG_tpalobject_DOT_license5)) < i) 
       self->PALDOORG_tpalobject_DOT_license5[i] = _P3char(' ');
-  
+    if (ValueCast(SYSTEM_int32,SYSTEM_length(self->
+      PALDOORG_tpalobject_DOT_license6)) < i) 
+      self->PALDOORG_tpalobject_DOT_license6[i] = _P3char(' ');
   }
   _P3setlength(self->PALDOORG_tpalobject_DOT_license1,
     PALDOORG_maxlicense,65);
@@ -692,6 +808,8 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseregistergamsdone(
   _P3setlength(self->PALDOORG_tpalobject_DOT_license4,
     PALDOORG_maxlicense,65);
   _P3setlength(self->PALDOORG_tpalobject_DOT_license5,
+    PALDOORG_maxlicense,65);
+  _P3setlength(self->PALDOORG_tpalobject_DOT_license6,
     PALDOORG_maxlicense,65);
   for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
     if (self->PALDOORG_tpalobject_DOT_license1[i] == _P3char('_')) 
@@ -704,7 +822,8 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseregistergamsdone(
       self->PALDOORG_tpalobject_DOT_license4[i] = _P3char(' ');
     if (self->PALDOORG_tpalobject_DOT_license5[i] == _P3char('_')) 
       self->PALDOORG_tpalobject_DOT_license5[i] = _P3char(' ');
-  
+    if (self->PALDOORG_tpalobject_DOT_license6[i] == _P3char('_')) 
+      self->PALDOORG_tpalobject_DOT_license6[i] = _P3char(' ');
   }
   {
     SYSTEM_shortstring _t1;
@@ -725,13 +844,11 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseregistersystem(
   PALDOORG_tpalobject self,
   SYSTEM_integer numcodes,
   const SYSTEM_ansichar *codes,
-  SYSTEM_integer magicnum,
-  SYSTEM_integer globalflag)
+  SYSTEM_integer magicnum)
 {
   self->PALDOORG_tpalobject_DOT_subsyssecondary = numcodes;
   _P3strcpy(self->PALDOORG_tpalobject_DOT_subsyscode,20,codes);
   self->PALDOORG_tpalobject_DOT_checksum = magicnum;
-  self->PALDOORG_tpalobject_DOT_isglobal = globalflag;
 }  /* pallicenseregistersystem */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_tampercheck(
@@ -748,8 +865,7 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_tampercheck(
     _P3STR_3 _t1;
 
     _P3val_i(_P3strcat(_t1,3,self->
-      PALDOORG_tpalobject_DOT_gdlrelmaj,self->
-      PALDOORG_tpalobject_DOT_gdlrelmin),code1,&i);
+      PALDOORG_tpalobject_DOT_gdlrelmaj,_P3str1("\0019")),code1,&i);
   }
   code1 = sysdatenumber /  PALDOORG_val1 + code1 * PALDOORG_val2;
   for (i = 1;i <= (SYSTEM_int32)16;++i) {
@@ -804,8 +920,8 @@ static Function(SYSTEM_boolean ) PALDOORG_havedata(
           _P3inc0((*q)[0]);
           (*q)[ValueCast(SYSTEM_int32,(*q)[0])] = *p;
         } else 
-          if ((*p == _P3char('\015') && (rp->nlnl == 0 || rp->nlnl == 2))
-	      || (*p == _P3char('\012') && (rp->nlnl == 1 || rp->nlnl == 3))) { 
+          if (*p == _P3char('\015') && (rp->nlnl == 0 || rp->nlnl == 2) || *
+            p == _P3char('\012') && (rp->nlnl == 1 || rp->nlnl == 3)) { 
             _P3inc0(rp->nlnl);
           } else 
             rp->nlnl = 0;
@@ -827,8 +943,9 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_licensecheckv1to3(
   SYSTEM_boolean result;
   SYSTEM_longint code1, code2;
   SYSTEM_integer i;
-  SYSTEM_shortstring msg, nodelocktype, hostid, acthostid;
+  SYSTEM_shortstring msg, nodelocktype, hostid, acthostid, pw, alpha;
   PALDOORG_tusermem u;
+  SYSTEM_text f;
 
   if (self->PALDOORG_tpalobject_DOT_licenselevel == 4) { 
     code1 = 159;
@@ -846,45 +963,102 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_licensecheckv1to3(
       i]) * i * v3;
     code2 = code2 * 10 + SYSTEM_ord(self->
       PALDOORG_tpalobject_DOT_license3[i]) - 48;
-  
   }
   if (code1 == code2 && _P3SET_in_1(self->
-    PALDOORG_tpalobject_DOT_license1[55],_P3char(':'),_P3SET_equal(
-    self->PALDOORG_tpalobject_DOT_license1[55],_P3char('/')))) {
+    PALDOORG_tpalobject_DOT_license1[55],_P3char(':'),_P3SET_in_1(
+    self->PALDOORG_tpalobject_DOT_license1[55],_P3char('/'),
+    _P3SET_equal(self->PALDOORG_tpalobject_DOT_license1[55],_P3char('|'))))) {
     code1 = 0;
     code2 = 0;
-    for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
-      code1 = code1 + SYSTEM_ord(self->
-        PALDOORG_tpalobject_DOT_license3[i]) * i * v1 + SYSTEM_ord(
-        self->PALDOORG_tpalobject_DOT_license4[i]) * i * v2 + 
-        SYSTEM_ord(self->PALDOORG_tpalobject_DOT_license5[i]) * i * v3;
-    }
+    if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char('|')) { 
+      for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
+        code1 = code1 + SYSTEM_ord(self->
+          PALDOORG_tpalobject_DOT_license3[i]) * i * v1 + SYSTEM_ord(
+          self->PALDOORG_tpalobject_DOT_license4[i]) * i * v2 + 
+          SYSTEM_ord(self->PALDOORG_tpalobject_DOT_license5[i]) * i * 
+          v3 + SYSTEM_ord(self->PALDOORG_tpalobject_DOT_license6[i]) * 
+          i * v2;
+      }
+    } else 
+      for (i = 1;i <= (SYSTEM_int32)PALDOORG_maxlicense;++i) {
+        code1 = code1 + SYSTEM_ord(self->
+          PALDOORG_tpalobject_DOT_license3[i]) * i * v1 + SYSTEM_ord(
+          self->PALDOORG_tpalobject_DOT_license4[i]) * i * v2 + 
+          SYSTEM_ord(self->PALDOORG_tpalobject_DOT_license5[i]) * i * 
+          v3;
+      }
     for (i = 1;i <= (SYSTEM_int32)8;++i) {
       code1 = code1 - SYSTEM_ord(self->
         PALDOORG_tpalobject_DOT_license4[i]) * i * v2;
       code2 = code2 * 10 + SYSTEM_ord(self->
         PALDOORG_tpalobject_DOT_license4[i]) - 48;
-    
     }
   } 
-  if (code1 == code2 && self->PALDOORG_tpalobject_DOT_licenselevel == 4) {
-    result = SYSTEM_true;
-    i = STRUTILX_lchpossp(_P3char('@'),self->
-      PALDOORG_tpalobject_DOT_license2,1);
-    if (i == 0) 
-      return result;
+  if (code1 == code2 && P3PLATFORM_osplatform() == 
+    P3PLATFORM_oslinux86_64 && _P3strcmpN(self->
+    PALDOORG_tpalobject_DOT_sysdir,_P3str1("\000"))) 
     {
+      _P3STR_255 _t1;
       SYSTEM_shortstring _t2;
+      SYSTEM_shortstring _t3;
 
-      SYSUTILS_P3_trim(nodelocktype,255,SYSTEM_copy(_t2,255,self->
-        PALDOORG_tpalobject_DOT_license2,1,i));
+      if (SYSUTILS_P3_fileexists(_P3strcat(_t1,255,self->
+        PALDOORG_tpalobject_DOT_sysdir,_P3str1("\020.engine/lice.txt"))) && (
+        self->PALDOORG_tpalobject_DOT_licenseversion < 3 && !
+        SYSUTILS_P3_sametext(SYSTEM_copy(_t2,255,self->
+        PALDOORG_tpalobject_DOT_license2,1,4),_P3str1("\004eng@")) || 
+        self->PALDOORG_tpalobject_DOT_licenseversion >= 3 && !
+        SYSUTILS_P3_sametext(SYSTEM_copy(_t3,255,self->
+        PALDOORG_tpalobject_DOT_license1,1,4),_P3str1("\004eng@")))) {
+        PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\054Engine worker requires eng@ nodelock license"));
+        result = SYSTEM_true;
+        return result;
+      } 
     }
-    if (SYSUTILS_P3_sametext(_P3str1("\004aws@"),nodelocktype)) {
+  if (code1 == code2 && ((self->PALDOORG_tpalobject_DOT_licenselevel == 4 || 
+    self->PALDOORG_tpalobject_DOT_license2[4] == _P3char('@')) && 
+    self->PALDOORG_tpalobject_DOT_licenseversion < 3 || self->
+    PALDOORG_tpalobject_DOT_licenseversion >= 3 && self->
+    PALDOORG_tpalobject_DOT_license1[4] == _P3char('@'))) {
+    result = SYSTEM_true;
+    if (self->PALDOORG_tpalobject_DOT_licenseversion < 3) {
       i = STRUTILX_lchpossp(_P3char('@'),self->
         PALDOORG_tpalobject_DOT_license2,1);
-      SYSTEM_copy(hostid,255,self->PALDOORG_tpalobject_DOT_license2,
-        i + 1,STRUTILX_lchpossp(_P3char(' '),self->
-        PALDOORG_tpalobject_DOT_license2,i + 1) - i - 1);
+      if (i == 0) 
+        return result;
+      {
+        SYSTEM_shortstring _t1;
+        SYSTEM_shortstring _t2;
+
+        _P3strcpy(nodelocktype,255,SYSUTILS_P3_trim(_t1,255,
+          SYSTEM_copy(_t2,255,self->
+          PALDOORG_tpalobject_DOT_license2,1,i)));
+      }
+    } else 
+      {
+        SYSTEM_shortstring _t1;
+        SYSTEM_shortstring _t2;
+
+        _P3strcpy(nodelocktype,255,SYSUTILS_P3_trim(_t1,255,
+          SYSTEM_copy(_t2,255,self->
+          PALDOORG_tpalobject_DOT_license1,1,4)));
+      }
+    if (SYSUTILS_P3_sametext(_P3str1("\004aws@"),nodelocktype)) {
+      if (self->PALDOORG_tpalobject_DOT_licenseversion < 3) {
+        i = STRUTILX_lchpossp(_P3char('@'),self->
+          PALDOORG_tpalobject_DOT_license2,1);
+        SYSTEM_copy(hostid,255,self->
+          PALDOORG_tpalobject_DOT_license2,i + 1,
+          STRUTILX_lchpossp(_P3char(' '),self->
+          PALDOORG_tpalobject_DOT_license2,i + 1) - i - 1);
+      } else {
+        i = STRUTILX_lchpossp(_P3char('@'),self->
+          PALDOORG_tpalobject_DOT_license1,1);
+        SYSTEM_copy(hostid,255,self->
+          PALDOORG_tpalobject_DOT_license1,i + 1,
+          STRUTILX_lchpossp(_P3char(' '),self->
+          PALDOORG_tpalobject_DOT_license1,i + 1) - i - 1);
+      }
       u.webpage[0] = _P3char('\000');
       u.nlnl = 0;
       P3UTILS_p3getfromurl(_P3str1("\017169.254.169.254"),_P3str1("\037latest/meta-data/product-codes/"),80,ValueCast(
@@ -932,11 +1106,145 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_licensecheckv1to3(
         _Iplus_end();
         return result;
       } 
-      SYSUTILS_P3_trim(acthostid,255,u.webpage);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(acthostid,255,SYSUTILS_P3_trim(_t1,255,u.
+          webpage));
+      }
       if (!SYSUTILS_P3_sametext(hostid,acthostid)) 
         return result;
     } else 
-      return result;
+      if (SYSUTILS_P3_sametext(_P3str1("\004mac@"),nodelocktype)) {
+        if (self->PALDOORG_tpalobject_DOT_licenseversion < 3) {
+          i = STRUTILX_lchpossp(_P3char('@'),self->
+            PALDOORG_tpalobject_DOT_license2,1);
+          SYSTEM_copy(hostid,255,self->
+            PALDOORG_tpalobject_DOT_license2,i + 1,
+            STRUTILX_lchpossp(_P3char(' '),self->
+            PALDOORG_tpalobject_DOT_license2,i + 1) - i - 1);
+        } else {
+          i = STRUTILX_lchpossp(_P3char('@'),self->
+            PALDOORG_tpalobject_DOT_license1,1);
+          SYSTEM_copy(hostid,255,self->
+            PALDOORG_tpalobject_DOT_license1,i + 1,
+            STRUTILX_lchpossp(_P3char(' '),self->
+            PALDOORG_tpalobject_DOT_license1,i + 1) - i - 1);
+        }
+        if (!P3UTILS_p3getfirstmacaddress(acthostid)) {
+          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\031MAC address not available"));
+          return result;
+        } 
+        if (!SYSUTILS_P3_sametext(hostid,acthostid)) 
+          if (_P3strcmpE(_P3str1("\004mac@"),nodelocktype)) {
+            {
+              _P3STR_255 _t1;
+              _P3STR_255 _t2;
+              _P3STR_255 _t3;
+              _P3STR_255 _t4;
+
+              PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t4,255,
+                _P3strcat(_t3,255,_P3strcat(_t2,255,_P3strcat(
+                _t1,255,_P3str1("\034MAC address does not match: "),
+                hostid),_P3str1("\017 (expected) <> ")),acthostid),_P3str1("\011 (actual)")));
+            }
+            return result;
+          } else 
+            {
+              _P3STR_255 _t1;
+              _P3STR_255 _t2;
+              _P3STR_255 _t3;
+              _P3STR_255 _t4;
+
+              PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t4,255,
+                _P3strcat(_t3,255,_P3strcat(_t2,255,_P3strcat(
+                _t1,255,_P3str1("\034MAC address does not match: "),
+                hostid),_P3str1("\017 (expected) <> ")),acthostid),_P3str1("\011 (actual)")));
+            }
+      } else 
+        if (SYSUTILS_P3_sametext(_P3str1("\004eng@"),nodelocktype)) {
+          if (self->PALDOORG_tpalobject_DOT_licenseversion < 3) {
+            i = STRUTILX_lchpossp(_P3char('@'),self->
+              PALDOORG_tpalobject_DOT_license2,1);
+            SYSTEM_copy(hostid,255,self->
+              PALDOORG_tpalobject_DOT_license2,i + 1,
+              STRUTILX_lchpossp(_P3char(' '),self->
+              PALDOORG_tpalobject_DOT_license2,i + 1) - i - 1);
+          } else {
+            i = STRUTILX_lchpossp(_P3char('@'),self->
+              PALDOORG_tpalobject_DOT_license1,1);
+            SYSTEM_copy(hostid,255,self->
+              PALDOORG_tpalobject_DOT_license1,i + 1,
+              STRUTILX_lchpossp(_P3char(' '),self->
+              PALDOORG_tpalobject_DOT_license1,i + 1) - i - 1);
+          }
+          if (_P3strcmpN(self->PALDOORG_tpalobject_DOT_sysdir,_P3str1("\000"))) {
+            {
+              _P3STR_255 _t1;
+
+              if (!SYSUTILS_P3_fileexists(_P3strcat(_t1,255,self->
+                PALDOORG_tpalobject_DOT_sysdir,_P3str1("\020.engine/lice.txt"))) || 
+                P3PLATFORM_osplatform() != P3PLATFORM_oslinux86_64) {
+                PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\061License restricted to GAMS Engine worker (bad os)"));
+                return result;
+              } 
+            }
+            _Iplus_bgn();
+            {
+              _P3STR_255 _t1;
+
+              _P3assign(f,_P3strcat(_t1,255,self->
+                PALDOORG_tpalobject_DOT_sysdir,_P3str1("\020.engine/lice.txt")));
+            }
+            _Iplus_end();
+            SYSTEM_filemode = 0;
+            _Iminus_bgn();
+            _P3Treset(f);
+            _Iminus_end();
+            if (SYSTEM_ioresult() != 0) {
+              PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\063License restricted to GAMS Engine worker (bad open)"));
+              return result;
+            } 
+            while (!_P3eoff(1,f)) {
+              _Iplus_bgn();
+              {
+                _P3file_ptr _file_temp = &f;
+
+                _P3read_fs0(acthostid,255);
+                _P3readlf();
+              }
+              _Iplus_end();
+            }
+            _Iplus_bgn();
+            _P3Tclose(f);
+            _Iplus_end();
+            _P3strcpy(pw,255,_P3str1("\0122023420180"));
+            _P3strcpy(alpha,255,_P3str1("\020abcdef0123456789"));
+            { register SYSTEM_int32 _stop = ValueCast(SYSTEM_int32,
+                SYSTEM_length(hostid)) - 1;
+              if ((i = 0) <=  _stop) do {
+                {
+                  _P3STR_3 _t1;
+                  _P3STR_3 _t2;
+
+                  acthostid[i + 1] = alpha[(SYSTEM_pos(_P3ch2str(
+                    _t1,1,acthostid[i + 1]),alpha) + 
+                    SYSTEM_pos(_P3ch2str(_t2,1,pw[i % 
+                    SYSTEM_length(pw) + 1]),alpha) - 2) % 
+                    SYSTEM_length(alpha) + 1];
+                }
+              } while (i++ !=  _stop);
+
+            }
+            if (!SYSUTILS_P3_sametext(hostid,acthostid)) {
+              PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\064License restricted to GAMS Engine worker (bad match)"));
+              return result;
+            } 
+          } 
+        } else 
+          if (self->PALDOORG_tpalobject_DOT_licenseversion < 3 && 
+            self->PALDOORG_tpalobject_DOT_licenselevel == 4) 
+            return result;
   } 
   result = code1 != code2;
   return result;
@@ -969,7 +1277,9 @@ Function(SYSTEM_boolean )
   SYSTEM_boolean result;
   SYSTEM_integer v1, v2, v3;
 
-  v1 = v2 = v3 = 0;
+  v1 = 0;
+  v2 = 0;
+  v3 = 0;
   PALDOORG_platformsvals(GMSGLOBX_platformslookup(pf),&v1,&v2,&v3);
   result = PALDOORG_tpalobject_DOT_licensecheckv1to3(self,v1,v2,v3);
   return result;
@@ -986,8 +1296,19 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_licensecheckinternal(
   {
     SYSTEM_shortstring _t1;
 
-    if (result && SYSUTILS_P3_sametext(_P3str1("\003GEN"),
+    if (result && SYSUTILS_P3_sametext(_P3str1("\003ALL"),
       PALDOORG_tpalobject_DOT_pallicensegetplatform(_t1,255,self))) 
+      if (PALDOORG_platformsvals(GMSGLOBX_platformslookup(_P3str1("\003ALL")),&
+        v1,&v2,&v3)) 
+        result = PALDOORG_tpalobject_DOT_licensecheckv1to3(self,v1,v2,
+          v3);
+  }
+  {
+    SYSTEM_shortstring _t1;
+
+    if (result && SYSUTILS_P3_sametext(_P3str1("\003GEN"),
+      PALDOORG_tpalobject_DOT_pallicensegetplatform(_t1,255,self)) && 
+      _P3SET_i(15,P3PLATFORM_osplatform(),_P3set1("\016\210"))) 
       if (PALDOORG_platformsvals(GMSGLOBX_platformslookup(_P3str1("\003GEN")),&
         v1,&v2,&v3)) 
         result = PALDOORG_tpalobject_DOT_licensecheckv1to3(self,v1,v2,
@@ -1028,7 +1349,8 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_licensecheckinternal(
   return result;
 }  /* licensecheckinternal */
 
-static Function(SYSTEM_integer ) PALDOORG_lnumtoint(
+Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_lnumtoint(
+  PALDOORG_tpalobject self,
   const SYSTEM_ansichar *s)
 {
   SYSTEM_integer result;
@@ -1036,16 +1358,22 @@ static Function(SYSTEM_integer ) PALDOORG_lnumtoint(
   if (SYSTEM_length(s) == 0 || SYSTEM_length(s) > 1) { 
     result = 0;
   } else 
-    if (SYSTEM_ord(s[1]) >= 48 && SYSTEM_ord(s[1]) <= 57) { 
+    if (self->PALDOORG_tpalobject_DOT_licenseversion == 1) { 
       result = SYSTEM_ord(s[1]) - 48;
     } else 
-      if (SYSTEM_ord(s[1]) >= 65 && SYSTEM_ord(s[1]) <= 90) { 
-        result = SYSTEM_ord(s[1]) - 65 + 10;
-      } else 
-        if (SYSTEM_ord(s[1]) >= 97 && SYSTEM_ord(s[1]) <= 122) { 
-          result = SYSTEM_ord(s[1]) - 97 + 36;
+      if (self->PALDOORG_tpalobject_DOT_licenseversion > 1) { 
+        if (SYSTEM_ord(s[1]) >= 48 && SYSTEM_ord(s[1]) <= 57) { 
+          result = SYSTEM_ord(s[1]) - 48;
         } else 
-          result = 0;
+          if (SYSTEM_ord(s[1]) >= 65 && SYSTEM_ord(s[1]) <= 90) { 
+            result = SYSTEM_ord(s[1]) - 65 + 10;
+          } else 
+            if (SYSTEM_ord(s[1]) >= 97 && SYSTEM_ord(s[1]) <= 122) { 
+              result = SYSTEM_ord(s[1]) - 97 + 36;
+            } else 
+              result = 0;
+      } else 
+        result = 0;
   return result;
 }  /* lnumtoint */
 
@@ -1120,8 +1448,8 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensegetsubeval(
     {
       SYSTEM_shortstring _t1;
 
-      result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-        PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
+      result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(_t1,255,
+        self->PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
         PALDOORG_tpalobject_DOT_currentsearchhelper + 1,1));
     }
   return result;
@@ -1134,27 +1462,23 @@ Function(SYSTEM_integer )
   SYSTEM_integer result;
 
   result = 0;
-  switch (self->PALDOORG_tpalobject_DOT_licenseversion) {
-    case 1: 
+  if (self->PALDOORG_tpalobject_DOT_licenseversion == 1) { 
+    {
+      SYSTEM_shortstring _t1;
+
+      result = SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
+        PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
+        PALDOORG_tpalobject_DOT_currentsearchhelper,2));
+    }
+  } else 
+    if (self->PALDOORG_tpalobject_DOT_licenseversion > 1) 
       {
         SYSTEM_shortstring _t1;
 
-        result = SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
-          PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
-          PALDOORG_tpalobject_DOT_currentsearchhelper,2));
+        result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(
+          _t1,255,self->PALDOORG_tpalobject_DOT_license4,7 + 2 * 
+          self->PALDOORG_tpalobject_DOT_currentsearchhelper,1));
       }
-      break;
-    case 2: 
-      {
-        SYSTEM_shortstring _t1;
-
-        result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-          PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
-          PALDOORG_tpalobject_DOT_currentsearchhelper,1));
-      }
-      break;
-    default: break;
-  }
   return result;
 }  /* pallicensegetsubmaint */
 
@@ -1176,28 +1500,11 @@ Function(SYSTEM_boolean )
     result = SYSTEM_true;
     return result;
   } 
-  {
-    SYSTEM_shortstring _t1;
-
-    if (SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
-      PALDOORG_tpalobject_DOT_license3,9,2)) == 0 && 
-      _P3strcmpE(codes,_P3str1("\0020S"))) {
-      _P3strcpy(msg,255,_P3str1("\021Demo license only"));
-      result = SYSTEM_false;
-      return result;
-    } 
-  }
-  {
-    SYSTEM_shortstring _t1;
-
-    if (SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
-      PALDOORG_tpalobject_DOT_license3,9,2)) > 0 && 
-      PALDOORG_tpalobject_DOT_licensecheckinternal(self)) {
-      _P3strcpy(msg,255,_P3str1("\031License validation failed"));
-      result = SYSTEM_true;
-      return result;
-    } 
-  }
+  if (PALDOORG_tpalobject_DOT_licensecheckinternal(self)) {
+    _P3strcpy(msg,255,_P3str1("\031License validation failed"));
+    result = SYSTEM_true;
+    return result;
+  } 
   { register SYSTEM_int32 _stop = numcodes;
     if ((i = 1) <=  _stop) do {
       SYSTEM_copy(lcode,255,codes,i * 2 - 1,2);
@@ -1246,7 +1553,7 @@ Function(SYSTEM_boolean )
                 _P3STR_255 _t2;
 
                 _P3strcat(msg,255,_P3strcat(_t2,255,_P3str1("\007Module "),
-                  STRUTILX_inttostr(_t1,255,over)),_P3str1("\054 days too young for this license - demo only"));
+                  SYSUTILS_P3_inttostr(_t1,255,over)),_P3str1("\054 days too young for this license - demo only"));
               }
             } else {
               {
@@ -1267,11 +1574,11 @@ Function(SYSTEM_boolean )
                 _P3STR_255 _t2;
 
                 _P3strcat(msg,255,_P3strcat(_t2,255,_P3str1("\027Evaluation has expired "),
-                  STRUTILX_inttostr(_t1,255,over)),_P3str1("\011 days ago"));
+                  SYSUTILS_P3_inttostr(_t1,255,over)),_P3str1("\011 days ago"));
               }
               if (over <= 30) 
                 return result;
-            } 
+            }
           } 
         }
 }
@@ -1301,43 +1608,151 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensecheck(
   self->PALDOORG_tpalobject_DOT_nzcnt = nz;
   self->PALDOORG_tpalobject_DOT_nlnzcnt = nlnz;
   self->PALDOORG_tpalobject_DOT_disccnt = ndisc;
+  result = SYSTEM_true;
   if (self->PALDOORG_tpalobject_DOT_checksum != 0 && 
     PALDOORG_tpalobject_DOT_tampercheck(self)) {
     PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\035*** Module has been modified."));
-    PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\052*** Continue to run in demonstration mode."));
-    PALDOORG_tpalobject_DOT_makedemolicense(self);
+    return result;
   } 
-  if (self->PALDOORG_tpalobject_DOT_licenselevel > 0 && 
-    PALDOORG_tpalobject_DOT_licensecheckinternal(self)) {
-    PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\043*** License file validation failed."));
-    PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\052*** Continue to run in demonstration mode."));
-    PALDOORG_tpalobject_DOT_makedemolicense(self);
-  } 
-  if (((self->PALDOORG_tpalobject_DOT_isglobal == 1) &&
-       ((self->PALDOORG_tpalobject_DOT_rowcnt > 10) ||
-	(self->PALDOORG_tpalobject_DOT_colcnt > 10)))
-      ||
-      ((self->PALDOORG_tpalobject_DOT_isglobal == 0) &&
-       (self->PALDOORG_tpalobject_DOT_disccnt > 50 ||
-	self->PALDOORG_tpalobject_DOT_nlnzcnt > 1000 ||
-	self->PALDOORG_tpalobject_DOT_nzcnt > 2000 ||
-	self->PALDOORG_tpalobject_DOT_rowcnt > 300 ||
-	self->PALDOORG_tpalobject_DOT_colcnt > 300))
-      ) {
-    {
-      SYSTEM_shortstring _t1;
+  result = PALDOORG_tpalobject_DOT_pallicensesolvercheck(self,self->
+    PALDOORG_tpalobject_DOT_subsyscode);
+  return result;
+}  /* pallicensecheck */
 
-      if (_P3strcmpE(SYSTEM_copy(_t1,255,self->
-        PALDOORG_tpalobject_DOT_subsyscode,1,2),_P3str1("\00200")) && 
-        self->PALDOORG_tpalobject_DOT_licenselevel == 0) {
-        result = SYSTEM_true;
-        _P3strcpy(msg,255,_P3str1("\027Model exceeds demo size"));
+Function(SYSTEM_boolean ) 
+  PALDOORG_tpalobject_DOT_pallicensesolvercheck(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *codes)
+{
+  SYSTEM_boolean result;
+
+  result = PALDOORG_tpalobject_DOT_pallicensesolverchecksizes(self,
+    codes,self->PALDOORG_tpalobject_DOT_rowcnt,self->
+    PALDOORG_tpalobject_DOT_colcnt,self->PALDOORG_tpalobject_DOT_nzcnt,
+    self->PALDOORG_tpalobject_DOT_nlnzcnt,self->
+    PALDOORG_tpalobject_DOT_disccnt);
+  return result;
+}  /* pallicensesolvercheck */
+
+Function(SYSTEM_boolean ) 
+  PALDOORG_tpalobject_DOT_pallicensesolverchecksizes(
+  PALDOORG_tpalobject self,
+  const SYSTEM_ansichar *codes,
+  SYSTEM_integer m,
+  SYSTEM_integer n,
+  SYSTEM_integer nz,
+  SYSTEM_integer nlnz,
+  SYSTEM_integer ndisc)
+{
+  SYSTEM_boolean result;
+  SYSTEM_shortstring msg, msg2;
+
+  result = SYSTEM_true;
+  if (PALDOORG_tpalobject_DOT_licensecheckinternal(self)) {
+    PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\043*** License file validation failed."));
+    return result;
+  } 
+  if (PALDOORG_tpalobject_DOT_licenseisgamscheckout(self,m,n,nz,nlnz,
+    ndisc)) {
+    result = SYSTEM_false;
+    if (SYSUTILS_P3_sametext(_P3str1("\002LI"),codes) && ((self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && 
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 300 || 
+      n > 300 || nlnz > 100) || (self->
+      PALDOORG_tpalobject_DOT_licenselevel == 0 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 50 || 
+      n > 50 || nlnz > 50) && (m > 10 || n > 10))) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002BA"),codes) && ((self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && 
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 300 || 
+      n > 300 || nlnz > 100) || (self->
+      PALDOORG_tpalobject_DOT_licenselevel == 0 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 50 || 
+      n > 50 || nlnz > 50) && (m > 10 || n > 10))) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002AT"),codes) && ((self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && 
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 300 || 
+      n > 300 || nlnz > 100) || (self->
+      PALDOORG_tpalobject_DOT_licenselevel == 0 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 50 || 
+      n > 50 || nlnz > 50) && (m > 10 || n > 10))) 
+      result = SYSTEM_true;
+    if (STRUTILX_lstrpos(_P3str1("\002GQ"),codes) != 0 && ((self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && 
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 300 || 
+      n > 300 || nlnz > 100) || (self->
+      PALDOORG_tpalobject_DOT_licenselevel == 0 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 50 || 
+      n > 50 || nlnz > 50) && (m > 10 || n > 10))) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002LG"),codes) && ((self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 || self->
+      PALDOORG_tpalobject_DOT_licenselevel > 0 && 
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 300 || 
+      n > 300) || (self->PALDOORG_tpalobject_DOT_licenselevel == 0 || 
+      self->PALDOORG_tpalobject_DOT_licenselevel > 0 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) && (m > 20 || 
+      n > 20))) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002OD"),codes) && self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self) && (m > 2000 || 
+      n > 2000)) 
+      result = SYSTEM_true;
+    if (STRUTILX_lstrpos(_P3str1("\002CP"),codes) != 0 && self->
+      PALDOORG_tpalobject_DOT_licenselevel == 5 && !
+      PALDOORG_tpalobject_DOT_pallicenseisacademic(self) && (m > 2000 || 
+      n > 2000)) 
+      result = SYSTEM_true;
+    if (STRUTILX_lstrpos(_P3str1("\002XP"),codes) != 0 && m + n > 5000) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002KN"),codes) && (m > 300 || 
+      n > 300 || self->PALDOORG_tpalobject_DOT_nzcnt > 2000 || 
+      nlnz > 1000 || ndisc > 50)) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002LS"),codes) && (m > 300 || 
+      n > 300 || self->PALDOORG_tpalobject_DOT_nzcnt > 2000 || 
+      nlnz > 1000 || ndisc > 50)) 
+      result = SYSTEM_true;
+    if (SYSUTILS_P3_sametext(_P3str1("\002DE"),codes) && (m > 300 || 
+      n > 300 || self->PALDOORG_tpalobject_DOT_nzcnt > 2000 || 
+      nlnz > 1000 || ndisc > 50)) 
+      result = SYSTEM_true;
+  } 
+  if (result) {
+    _P3strclr(msg);
+    _P3strclr(msg2);
+    if (PALDOORG_tpalobject_DOT_licenseisgamscheckout(self,m,n,nz,nlnz,
+      ndisc)) {
+      _P3strcpy(msg,255,_P3str1("\053Solver specific demo/community limits apply"));
+      _P3strcpy(msg2,255,_P3str1("\134See www.gams.com/latest/docs/UG_License.html#UG_License_Additional_Solver_Limits for details"));
+    } 
+    if (self->PALDOORG_tpalobject_DOT_licenselevel == 0 && !
+      PALDOORG_tpalobject_DOT_licenseisgamscheckout(self,m,n,nz,nlnz,
+      ndisc)) {
+      _P3strcpy(msg,255,_P3str1("\040Model exceeds demo license size."));
+      _P3strcpy(msg2,255,_P3str1("\134See www.gams.com/latest/docs/UG_License.html#UG_License_Additional_Solver_Limits for details"));
+    } else 
+      if (self->PALDOORG_tpalobject_DOT_licenselevel == 5 && !
+        PALDOORG_tpalobject_DOT_licenseisgamscheckout(self,m,n,nz,nlnz,
+        ndisc)) {
+        _P3strcpy(msg,255,_P3str1("\044Model exceeds community license size"));
+        _P3strcpy(msg2,255,_P3str1("\134See www.gams.com/latest/docs/UG_License.html#UG_License_Additional_Solver_Limits for details"));
       } else 
         result = PALDOORG_tpalobject_DOT_licensechecksubinternal(self,
-          msg,self->PALDOORG_tpalobject_DOT_subsyssecondary,self->
-          PALDOORG_tpalobject_DOT_subsyscode);
-    }
-    if (result) 
+          msg,ValueCast(SYSTEM_int32,SYSTEM_length(codes)) /  2,
+          codes);
+    if (result) {
       if (_P3strcmpN(msg,_P3str1("\000"))) 
         {
           _P3STR_255 _t1;
@@ -1345,142 +1760,32 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensecheck(
           PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t1,255,_P3str1("\004*** "),
             msg));
         }
-    if (result) {
+      if (_P3strcmpN(msg2,_P3str1("\000"))) 
+        {
+          _P3STR_255 _t1;
+
+          PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t1,255,_P3str1("\004*** "),
+            msg2));
+        }
       PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\074*** To update your license, please contact your distributor."));
-      if (self->PALDOORG_tpalobject_DOT_isglobal == 1) {
-        if (self->PALDOORG_tpalobject_DOT_rowcnt > 10) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\053*** Too many equations for global demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of equations          : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_rowcnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demoglobalmaxrow)));
-          }
-        } 
-        if (self->PALDOORG_tpalobject_DOT_colcnt > 10) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\053*** Too many variables for global demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of variables          : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_colcnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demoglobalmaxcol)));
-          }
-        } 
-      } else {
-        if (self->PALDOORG_tpalobject_DOT_rowcnt > 300) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\044*** Too many equations for demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of equations          : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_rowcnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demomaxrow)));
-          }
-        } 
-        if (self->PALDOORG_tpalobject_DOT_colcnt > 300) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\044*** Too many variables for demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of variables          : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_colcnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demomaxcol)));
-          }
-        } 
-        if (self->PALDOORG_tpalobject_DOT_nzcnt > 2000) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\053*** Too many nonzero elements for demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of nonzeros           : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_nzcnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demomaxnz)));
-          }
-        } 
-        if (self->PALDOORG_tpalobject_DOT_nlnzcnt > 1000) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\065*** Too many nonlinear nonzero elements for demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of nonlinear nonzeros : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_nlnzcnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demomaxnlnz)));
-          }
-        } 
-        if (self->PALDOORG_tpalobject_DOT_disccnt > 50) {
-          PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\055*** Too many discrete variables for demo mode"));
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Number of discrete variables : "),
-              STRUTILX_inttostr(_t1,255,self->
-              PALDOORG_tpalobject_DOT_disccnt)));
-          }
-          {
-            SYSTEM_shortstring _t1;
-            _P3STR_255 _t2;
-
-            PALDOORG_tpalobject_DOT_msgadd(self,_P3strcat(_t2,255,_P3str1("\045***   Maximum allowed              : "),
-              STRUTILX_inttostr(_t1,255,PALDOORG_demomaxdisc)));
-          }
-        } 
-      } 
     } 
-  } else 
-    result = SYSTEM_false;
+  } 
+  if (!result) {
+    if (SYSUTILS_P3_sametext(_P3str1("\002LI"),codes) && (m > 2000 || 
+      n > 3000)) {
+      PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\003***"));
+      PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\070*** Model size exceeds LindoGlobal limits of (2000,3000)"));
+      result = SYSTEM_true;
+    } 
+    if (SYSUTILS_P3_sametext(_P3str1("\002LG"),codes) && (m > 2000 || 
+      n > 3000)) {
+      PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\003***"));
+      PALDOORG_tpalobject_DOT_msgadd(self,_P3str1("\060*** Model size exceeds LGO limits of (2000,3000)"));
+      result = SYSTEM_true;
+    } 
+  } 
   return result;
-}  /* pallicensecheck */
+}  /* pallicensesolverchecksizes */
 
 Function(SYSTEM_boolean ) 
   PALDOORG_tpalobject_DOT_pallicensechecksubsys(
@@ -1494,6 +1799,31 @@ Function(SYSTEM_boolean )
     SYSTEM_ord(codes[0]) /  2,codes);
   return result;
 }  /* pallicensechecksubsys */
+
+Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_palprintdemomessage(
+  PALDOORG_tpalobject self,
+  SYSTEM_ansichar *msg)
+{
+  SYSTEM_boolean result;
+
+  result = SYSTEM_true;
+  if (self->PALDOORG_tpalobject_DOT_licenselevel == 0) { 
+    _P3strcpy(msg,255,_P3str1("\074*** This solver runs with a demo license. No commercial use."));
+  } else 
+    if (self->PALDOORG_tpalobject_DOT_licenselevel == 5) { 
+      _P3strcpy(msg,255,_P3str1("\101*** This solver runs with a community license. No commercial use."));
+    } else 
+      if (PALDOORG_tpalobject_DOT_licensechecksubinternal(self,msg,
+        self->PALDOORG_tpalobject_DOT_subsyssecondary,self->
+        PALDOORG_tpalobject_DOT_subsyscode)) { 
+        if (PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) { 
+          _P3strcpy(msg,255,_P3str1("\056*** This solver runs with a community license."));
+        } else 
+          _P3strcpy(msg,255,_P3str1("\074*** This solver runs with a demo license. No commercial use."));
+      } else 
+        result = SYSTEM_false;
+  return result;
+}  /* palprintdemomessage */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensegetmessage(
   PALDOORG_tpalobject self,
@@ -1511,35 +1841,52 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensegetmessage(
   GMSOBJ_txlist_DOT_delete(ValueCast(GMSOBJ_txlist,self->
     PALDOORG_tpalobject_DOT_ml),0);
   if ((ValueCast(GMSOBJ_txstrings,self->PALDOORG_tpalobject_DOT_ml))->
-      GMSOBJ_txlist_DOT_fcount == 0) {
-#if 0
+    GMSOBJ_txlist_DOT_fcount == 0) 
     SYSUTILS_P3_freeandnil(&PointerCast(GMSOBJ_txstrings,&self->
       PALDOORG_tpalobject_DOT_ml));
-#else
-    SYSUTILS_P3_freeandnil((GMSOBJ_txstrings *) & self->PALDOORG_tpalobject_DOT_ml);
-#endif
-  }
   result = SYSTEM_true;
   return result;
 }  /* pallicensegetmessage */
 
 Function(SYSTEM_boolean ) 
-  PALDOORG_tpalobject_DOT_pallicenseisdemocheckout(
+  PALDOORG_tpalobject_DOT_licenseisgamscheckout(
+  PALDOORG_tpalobject self,
+  SYSTEM_integer m,
+  SYSTEM_integer n,
+  SYSTEM_integer nz,
+  SYSTEM_integer nlnz,
+  SYSTEM_integer ndisc)
+{
+  SYSTEM_boolean result;
+
+  if (5 == self->PALDOORG_tpalobject_DOT_licenselevel || self->
+    PALDOORG_tpalobject_DOT_licenselevel > 0 && 
+    PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) { 
+    if (nlnz != 0) { 
+      result = !(m > 2500 || n > 2500);
+    } else 
+      result = !(m > 5000 || n > 5000);
+  } else 
+    if (self->PALDOORG_tpalobject_DOT_nlnzcnt != 0) { 
+      result = !(m > 1000 || n > 1000);
+    } else 
+      result = !(m > 2000 || n > 2000);
+  return result;
+}  /* licenseisgamscheckout */
+
+Function(SYSTEM_boolean ) 
+  PALDOORG_tpalobject_DOT_pallicenseisgamscheckout(
   PALDOORG_tpalobject self)
 {
   SYSTEM_boolean result;
 
-  if (self->PALDOORG_tpalobject_DOT_isglobal == 1) { 
-    result = !(self->PALDOORG_tpalobject_DOT_rowcnt > 10 || self->
-      PALDOORG_tpalobject_DOT_colcnt > 10);
-  } else 
-    result = !(self->PALDOORG_tpalobject_DOT_disccnt > 50 || self->
-      PALDOORG_tpalobject_DOT_nlnzcnt > 1000 || self->
-      PALDOORG_tpalobject_DOT_nzcnt > 2000 || self->
-      PALDOORG_tpalobject_DOT_rowcnt > 300 || self->
-      PALDOORG_tpalobject_DOT_colcnt > 300);
+  result = PALDOORG_tpalobject_DOT_licenseisgamscheckout(self,self->
+    PALDOORG_tpalobject_DOT_rowcnt,self->
+    PALDOORG_tpalobject_DOT_colcnt,self->PALDOORG_tpalobject_DOT_nzcnt,
+    self->PALDOORG_tpalobject_DOT_nlnzcnt,self->
+    PALDOORG_tpalobject_DOT_disccnt);
   return result;
-}  /* pallicenseisdemocheckout */
+}  /* pallicenseisgamscheckout */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicenseisacademic(
   PALDOORG_tpalobject self)
@@ -1549,30 +1896,6 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicenseisacademic(
   result = self->PALDOORG_tpalobject_DOT_license1[60] == _P3char('A');
   return result;
 }  /* pallicenseisacademic */
-
-Procedure PALDOORG_tpalobject_DOT_pallicensedemolimits(
-  PALDOORG_tpalobject self,
-  SYSTEM_integer *m,
-  SYSTEM_integer *n,
-  SYSTEM_integer *nz,
-  SYSTEM_integer *nlnz,
-  SYSTEM_integer *ndisc)
-{
-  *m = PALDOORG_demomaxrow;
-  *n = PALDOORG_demomaxcol;
-  *nz = PALDOORG_demomaxnz;
-  *nlnz = PALDOORG_demomaxnlnz;
-  *ndisc = PALDOORG_demomaxdisc;
-}  /* pallicensedemolimits */
-
-Procedure PALDOORG_tpalobject_DOT_pallicenseglobaldemolimits(
-  PALDOORG_tpalobject self,
-  SYSTEM_integer *m,
-  SYSTEM_integer *n)
-{
-  *m = PALDOORG_demoglobalmaxrow;
-  *n = PALDOORG_demoglobalmaxcol;
-}  /* pallicenseglobaldemolimits */
 
 Procedure PALDOORG_tpalobject_DOT_pallicensesetsubsearch(
   PALDOORG_tpalobject self)
@@ -1623,15 +1946,15 @@ Function(SYSTEM_integer )
     {
       SYSTEM_shortstring _t1;
 
-      result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-        PALDOORG_tpalobject_DOT_license3,65,1));
+      result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(_t1,255,
+        self->PALDOORG_tpalobject_DOT_license3,65,1));
     }
   } else 
     {
       SYSTEM_shortstring _t1;
 
-      result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-        PALDOORG_tpalobject_DOT_license4,10,1));
+      result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(_t1,255,
+        self->PALDOORG_tpalobject_DOT_license4,10,1));
     }
   if (result == 0) { 
     result = SYSTEM_maxlongint;
@@ -1647,26 +1970,22 @@ Function(SYSTEM_integer )
 {
   SYSTEM_integer result;
 
-  switch (self->PALDOORG_tpalobject_DOT_licenseversion) {
-    case 1: 
+  result = 0;
+  if (self->PALDOORG_tpalobject_DOT_licenseversion == 1) { 
+    {
+      SYSTEM_shortstring _t1;
+
+      result = SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
+        PALDOORG_tpalobject_DOT_license4,9,2));
+    }
+  } else 
+    if (self->PALDOORG_tpalobject_DOT_licenseversion > 1) 
       {
         SYSTEM_shortstring _t1;
 
-        result = SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
-          PALDOORG_tpalobject_DOT_license4,9,2));
+        result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(
+          _t1,255,self->PALDOORG_tpalobject_DOT_license4,9,1));
       }
-      break;
-    case 2: 
-      {
-        SYSTEM_shortstring _t1;
-
-        result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-          PALDOORG_tpalobject_DOT_license4,9,1));
-      }
-      break;
-    default:
-      result = 0;
-  }
   if (result == 0) { 
     result = SYSTEM_maxlongint;
   } else 
@@ -1697,17 +2016,13 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensegetjulbase(
     result = PALDOORG_tpalobject_DOT_palgetjuliandays(self,SYSTEM_copy(
       _t1,255,self->PALDOORG_tpalobject_DOT_license1,49,6));
   }
-  switch (self->PALDOORG_tpalobject_DOT_licenseversion) {
-    case 2: 
-      {
-        SYSTEM_shortstring _t1;
+  if (self->PALDOORG_tpalobject_DOT_licenseversion > 1) 
+    {
+      SYSTEM_shortstring _t1;
 
-        result = result - 30 * (SYSUTILS_P3_strtoint(SYSTEM_copy(
-          _t1,255,self->PALDOORG_tpalobject_DOT_license1,56,2)) - 1);
-      }
-      break;
-    default: break;
-  }
+      result = result - 30 * (SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,
+        self->PALDOORG_tpalobject_DOT_license1,56,2)) - 1);
+    }
   return result;
 }  /* pallicensegetjulbase */
 
@@ -1725,24 +2040,6 @@ Procedure PALDOORG_tpalobject_DOT_pallicenseclear(
   self->PALDOORG_tpalobject_DOT_currentsearchhelper = 29;
   self->PALDOORG_tpalobject_DOT_optionsearchhelper = 0;
 }  /* pallicenseclear */
-
-Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensechecksize(
-  PALDOORG_tpalobject self,
-  SYSTEM_integer m,
-  SYSTEM_integer n,
-  SYSTEM_integer nz,
-  SYSTEM_integer nlnz,
-  SYSTEM_integer ndisc)
-{
-  SYSTEM_boolean result;
-
-  result = SYSTEM_false;
-  if (self->PALDOORG_tpalobject_DOT_licenselevel == 0) 
-    if (ndisc > 50 || nlnz > 1000 || nz > 2000 || m > 300 || 
-      n > 300) 
-      result = SYSTEM_true;
-  return result;
-}  /* pallicensechecksize */
 
 Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensereadw(
   PALDOORG_tpalobject self,
@@ -1792,6 +2089,16 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensereadw(
       _P3readlf();
     }
     _Iplus_end();
+    if (self->PALDOORG_tpalobject_DOT_license1[55] == _P3char('|')) {
+      _Iplus_bgn();
+      {
+        _P3file_ptr _file_temp = f;
+
+        _P3read_fs0(self->PALDOORG_tpalobject_DOT_license6,65);
+        _P3readlf();
+      }
+      _Iplus_end();
+    } 
   } 
   return result;
 }  /* pallicensereadw */
@@ -1841,6 +2148,15 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensescipw(
       _P3readlf();
     }
     _Iplus_end();
+    if (temp[55] == _P3char('|')) {
+      _Iplus_bgn();
+      {
+        _P3file_ptr _file_temp = f;
+
+        _P3readlf();
+      }
+      _Iplus_end();
+    } 
   } 
   return result;
 }  /* pallicensescipw */
@@ -1867,6 +2183,9 @@ Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensedisplay(
     case 5: 
       _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license5);
       break;
+    case 6: 
+      _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license6);
+      break;
     default:
       _P3strcpy(result,_len_ret,_P3str1("\041**** Unknown license display line"));
   }
@@ -1890,38 +2209,14 @@ Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensegetdc(
   return result;
 }  /* pallicensegetdc */
 
-Function(SYSTEM_boolean ) 
-  PALDOORG_tpalobject_DOT_pallicensegetacademic(
+Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensehas6lines(
   PALDOORG_tpalobject self)
 {
   SYSTEM_boolean result;
 
-  result = self->PALDOORG_tpalobject_DOT_license1[60] == _P3char('A');
+  result = self->PALDOORG_tpalobject_DOT_license1[55] == _P3char('|');
   return result;
-}  /* pallicensegetacademic */
-
-Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_pallicensemessage(
-  SYSTEM_ansichar *result,
-  SYSTEM_uint8 _len_ret,
-  PALDOORG_tpalobject self)
-{
-  _P3strcpy(result,_len_ret,self->PALDOORG_tpalobject_DOT_license6);
-  return result;
-}  /* pallicensemessage */
-
-Function(SYSTEM_ansichar *) PALDOORG_tpalobject_DOT_palolderlicense3(
-  SYSTEM_ansichar *result,
-  SYSTEM_uint8 _len_ret,
-  PALDOORG_tpalobject self)
-{
-  {
-    SYSTEM_shortstring _t1;
-
-    _P3strcat(result,_len_ret,STRUTILX_inttostr(_t1,255,
-      SYSTEM_round(10000000 + (12 * SYSUTILS_P3_now() - 1))),_P3str1("\071000S                                                   00"));
-  }
-  return result;
-}  /* palolderlicense3 */
+}  /* pallicensehas6lines */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicenseexist(
   PALDOORG_tpalobject self)
@@ -1994,33 +2289,17 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_pallicensewritec2(
     _P3writefn();
   }
   _Iplus_end();
+  _Iplus_bgn();
+  {
+    _P3file_ptr _file_temp = f;
+
+    _P3writefs0(self->PALDOORG_tpalobject_DOT_license6);
+    _P3writefc0(_P3char('0'));
+    _P3writefn();
+  }
+  _Iplus_end();
   return result;
 }  /* pallicensewritec2 */
-
-Procedure PALDOORG_tpalobject_DOT_pallicensedemo(
-  PALDOORG_tpalobject self)
-{
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license1,65,_P3str1("\101GAMS Development Corporation, Washington, DC   G871201/0000CA-ANY"));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license2,65,_P3str1("\101Free Demo,  202-342-0180,  sales@gams.com,  www.gams.com         "));
-  {
-    SYSTEM_shortstring _t1;
-
-    _P3strcat(self->PALDOORG_tpalobject_DOT_license3,65,
-      STRUTILX_inttostr(_t1,255,SYSTEM_round(10000000 + 12 * 
-      SYSUTILS_P3_now())),_P3str1("\071000S                                                   00"));
-  }
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license4,65,_P3str1("\10101234567000000                                                   "));
-  _P3strcpy(self->PALDOORG_tpalobject_DOT_license5,65,_P3str1("\101DC0000       Ref: Generated by Base            A Demo            "));
-  _P3strclr(self->PALDOORG_tpalobject_DOT_license6);
-  self->PALDOORG_tpalobject_DOT_licensestatus = 1;
-  self->PALDOORG_tpalobject_DOT_licenselevel = 0;
-  self->PALDOORG_tpalobject_DOT_licenseversion = 2;
-  self->PALDOORG_tpalobject_DOT_licenseactsub = PALDOORG_licensemaxsub;
-  self->PALDOORG_tpalobject_DOT_currentsearchhelper = self->
-    PALDOORG_tpalobject_DOT_licenseactsub + 1;
-  self->PALDOORG_tpalobject_DOT_optionsearchhelper = 0;
-  self->PALDOORG_tpalobject_DOT_optionsearchhelper = 0;
-}  /* pallicensedemo */
 
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_paltampercheck(
   PALDOORG_tpalobject self)
@@ -2051,10 +2330,44 @@ Function(SYSTEM_ansichar *)
   SYSTEM_uint8 _len_ret,
   PALDOORG_tpalobject self)
 {
-  SYSUTILS_P3_trim(result,_len_ret,self->
-    PALDOORG_tpalobject_DOT_license2);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(result,_len_ret,SYSUTILS_P3_trim(_t1,255,self->
+      PALDOORG_tpalobject_DOT_license2));
+  }
   return result;
 }  /* pallicensegetinstitution */
+
+Function(SYSTEM_ansichar *) 
+  PALDOORG_tpalobject_DOT_pallicensegettltype(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  PALDOORG_tpalobject self)
+{
+  SYSTEM_integer n;
+
+  if (PALDOORG_tpalobject_DOT_pallicensegetevaldate(self) == 
+    SYSTEM_maxlongint) { 
+    _P3strcpy(result,_len_ret,_P3str1("\032Not a time limited license"));
+  } else {
+    {
+      SYSTEM_shortstring _t1;
+      SYSTEM_shortstring _t2;
+
+      _P3strcpy(result,_len_ret,SYSUTILS_P3_trim(_t1,255,
+        SYSTEM_copy(_t2,255,self->PALDOORG_tpalobject_DOT_license5,49,16)));
+    }
+    if (SYSUTILS_P3_sametext(_P3str1("\004eval"),result)) 
+      _P3strcpy(result,_len_ret,_P3str1("\012EVALUATION"));
+    n = GMSGLOBX_tllicenselookup(result);
+    if (n == 0) { 
+      _P3strcpy(result,_len_ret,_P3str1("\032Other time limited license"));
+    } else 
+      GMSGLOBX_tllicensetext(result,_len_ret,n);
+  }
+  return result;
+}  /* pallicensegettltype */
 
 Function(SYSTEM_ansichar *) 
   PALDOORG_tpalobject_DOT_pallicensegetinstdc(
@@ -2128,8 +2441,8 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_licensegetsubeval(
     {
       SYSTEM_shortstring _t1;
 
-      result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-        PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
+      result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(_t1,255,
+        self->PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
         PALDOORG_tpalobject_DOT_currentsearchhelper + 1,1));
     }
   return result;
@@ -2141,27 +2454,23 @@ Function(SYSTEM_integer ) PALDOORG_tpalobject_DOT_licensegetsubmaint(
   SYSTEM_integer result;
 
   result = 0;
-  switch (self->PALDOORG_tpalobject_DOT_licenseversion) {
-    case 1: 
+  if (self->PALDOORG_tpalobject_DOT_licenseversion == 1) { 
+    {
+      SYSTEM_shortstring _t1;
+
+      result = SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
+        PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
+        PALDOORG_tpalobject_DOT_currentsearchhelper,2));
+    }
+  } else 
+    if (self->PALDOORG_tpalobject_DOT_licenseversion > 1) 
       {
         SYSTEM_shortstring _t1;
 
-        result = SYSUTILS_P3_strtoint(SYSTEM_copy(_t1,255,self->
-          PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
-          PALDOORG_tpalobject_DOT_currentsearchhelper,2));
+        result = PALDOORG_tpalobject_DOT_lnumtoint(self,SYSTEM_copy(
+          _t1,255,self->PALDOORG_tpalobject_DOT_license4,7 + 2 * 
+          self->PALDOORG_tpalobject_DOT_currentsearchhelper,1));
       }
-      break;
-    case 2: 
-      {
-        SYSTEM_shortstring _t1;
-
-        result = PALDOORG_lnumtoint(SYSTEM_copy(_t1,255,self->
-          PALDOORG_tpalobject_DOT_license4,7 + 2 * self->
-          PALDOORG_tpalobject_DOT_currentsearchhelper,1));
-      }
-      break;
-    default: break;
-  }
   return result;
 }  /* licensegetsubmaint */
 
@@ -2189,10 +2498,9 @@ Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensegetdates(
       *eval = PALDOORG_tpalobject_DOT_pallicensegetjullice(self) + 30 * *
         eval;
       *maint = *eval;
-    } 
+    }
     return result;
-  
-}
+  }
   result = SYSTEM_false;
   _P3strclr(lcode);
   *eval = 0;
@@ -2236,10 +2544,11 @@ Function(SYSTEM_ansichar *)
   PALDOORG_tpalobject self)
 {
   {
+    SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
 
-    SYSUTILS_P3_trim(result,_len_ret,SYSTEM_copy(_t2,255,self->
-      PALDOORG_tpalobject_DOT_license1,1,47));
+    _P3strcpy(result,_len_ret,SYSUTILS_P3_trim(_t1,255,SYSTEM_copy(
+      _t2,255,self->PALDOORG_tpalobject_DOT_license1,1,47)));
   }
   return result;
 }  /* pallicensegetlicensee */
@@ -2313,7 +2622,7 @@ Function(SYSTEM_ansichar *)
       _P3strclr(result);
     } else 
       GMSGLOBX_gamslicensetypestext(result,_len_ret,k);
-  } 
+  }
   return result;
 }  /* pallicensegetmudtext */
 
@@ -2325,7 +2634,7 @@ Function(SYSTEM_ansichar *)
 {
   switch (self->PALDOORG_tpalobject_DOT_licensestatus) {
     case 0: 
-      _P3strcpy(result,_len_ret,_P3str1("\035license validated succesfully"));
+      _P3strcpy(result,_len_ret,_P3str1("\036license validated successfully"));
       break;
     case 1: 
       _P3strcpy(result,_len_ret,_P3str1("\026license status unknown"));
@@ -2357,29 +2666,30 @@ Function(SYSTEM_ansichar *)
 Function(SYSTEM_boolean ) PALDOORG_tpalobject_DOT_pallicensechecksubx(
   PALDOORG_tpalobject self,
   const SYSTEM_ansichar *sname,
-  const SYSTEM_ansichar *_ftmp1,
+  const SYSTEM_ansichar *codes,
   SYSTEM_integer *daysleft)
 {
-  SYSTEM_shortstring codes;
   SYSTEM_boolean result;
-  SYSTEM_shortstring msg;
+  SYSTEM_shortstring msg, loccodes;
   SYSTEM_integer eval;
 
-  _P3strcpy(codes,255,_ftmp1);
   result = SYSTEM_true;
   if (ValueCast(SYSTEM_int32,SYSTEM_length(codes)) % 2 != 0 || 
     SYSTEM_length(codes) == 0) 
-    return result;
-  if (self->PALDOORG_tpalobject_DOT_licenselevel == 0) 
     return result;
   if ((SYSUTILS_P3_sametext(_P3str1("\006soplex"),sname) || 
     SYSUTILS_P3_sametext(_P3str1("\011osisoplex"),sname) || 
     SYSUTILS_P3_sametext(_P3str1("\004scip"),sname) || 
     SYSUTILS_P3_sametext(_P3str1("\010coinscip"),sname)) && 
-    PALDOORG_tpalobject_DOT_pallicensegetacademic(self)) 
-    _P3strcpy(codes,255,PALDOORG_cmexliccodes);
+    PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) { 
+    _P3strcpy(loccodes,255,PALDOORG_cmexliccodes);
+  } else 
+    _P3strcpy(loccodes,255,codes);
+  if (SYSUTILS_P3_sametext(_P3str1("\010odhcplex"),sname) && 
+    PALDOORG_tpalobject_DOT_pallicenseisacademic(self)) 
+    _P3strcpy(loccodes,255,_P3str1("\004CPCL"));
   if (!PALDOORG_tpalobject_DOT_licensechecksubinternal(self,msg,ValueCast(
-    SYSTEM_int32,SYSTEM_length(codes)) /  2,codes)) {
+    SYSTEM_int32,SYSTEM_length(loccodes)) /  2,loccodes)) {
     result = SYSTEM_false;
     eval = PALDOORG_tpalobject_DOT_pallicensegetsubeval(self);
     if (eval > 0) { 

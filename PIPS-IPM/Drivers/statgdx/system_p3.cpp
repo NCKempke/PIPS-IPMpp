@@ -1,6 +1,7 @@
 #include "p3io.h"
 #include "system_p3.h"
 
+
 static Function(SYSTEM_P3_pansichar ) SYSTEM_P3_getparamshortstr(
   SYSTEM_P3_pansichar p,
   SYSTEM_ansichar *param);
@@ -36,9 +37,9 @@ static Function(SYSTEM_P3_pansichar ) SYSTEM_P3_getparamshortstr(
     if (*p == _P3char('\"') && *s == _P3char('\"')) { 
       _P3inc1(p,2);
     } else 
-      SYSTEM_break(BRK_2);
+      SYSTEM_break(BRK_1);
   }
-BRK_2:;
+BRK_1:;
   len = 0;
   r = ValueCast(SYSTEM_P3_pansichar,&param[1]);
   while (*p > _P3char(' ')) {
@@ -48,14 +49,13 @@ BRK_2:;
       while (*p != _P3char('\000') && *p != _P3char('\"')) {
         pushchar(*p,&r,&len);
         _P3inc0(p);
-      
-}
+      }
       if (*p != _P3char('\000')) 
         _P3inc0(p);
     } else {
       pushchar(*p,&r,&len);
       _P3inc0(p);
-    } 
+    }
 }
   _P3setlength(param,len,255);
   result = p;
@@ -66,7 +66,7 @@ Function(SYSTEM_integer ) SYSTEM_P3_paramcount(void)
 {
   SYSTEM_integer result;
 
-  /**** C code included from system_p3.pas(184:1): 19 lines ****/
+  /**** C code included from system_p3.pas(186:1): 19 lines ****/
 #if defined(_WIN32)
 {
   char *cmdLine;
@@ -96,7 +96,7 @@ Function(SYSTEM_ansichar *) SYSTEM_P3_paramstr(
 {
   SYSTEM_shortstring s;
 
-  /**** C code included from system_p3.pas(211:1): 26 lines ****/
+  /**** C code included from system_p3.pas(213:1): 26 lines ****/
 /*  SYSTEM_shortstring s; */
 #if defined(_WIN32)
 {
@@ -130,7 +130,7 @@ Procedure SYSTEM_P3_getdir(
   SYSTEM_byte d,
   SYSTEM_ansichar *s)
 {
-  /**** C code included from system_p3.pas(243:1): 39 lines ****/
+  /**** C code included from system_p3.pas(245:1): 39 lines ****/
 #if defined(_WIN32)
 {
   char Drive[3];
@@ -177,7 +177,7 @@ Procedure SYSTEM_P3_fillchar(
   SYSTEM_integer len,
   SYSTEM_byte v)
 {
-  /**** C code included from system_p3.pas(288:1): 1 lines ****/
+  /**** C code included from system_p3.pas(290:1): 1 lines ****/
   (void) memset(p, (int)v, (size_t)len);
 }  /* fillchar */
 

@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -34,7 +34,7 @@ Function(SYSTEM_P3_pshortstring ) STRUTILX_newstring(
   } else {
     _P3getmem(result,ValueCast(SYSTEM_int32,SYSTEM_length(s)) + 1);
     _P3strcpy(*result,255,s);
-  } 
+  }
   return result;
 }  /* newstring */
 
@@ -131,12 +131,13 @@ Function(SYSTEM_integer ) STRUTILX_strucmpnum(
           _P3strcat(ws2,255,SYSTEM_copy(_t1,255,
             STRUTILX_blanks255,1,l - l2),ws2);
         }
-      } 
+      }
     { register SYSTEM_int32 _stop = l;
       if ((k = 1) <=  _stop) do {
         result = SYSTEM_ord(ws1[k]) - SYSTEM_ord(ws2[k]);
         if (result != 0) 
           SYSTEM_break(BRK_1);
+      
       } while (k++ !=  _stop);
 BRK_1:;
 
@@ -260,7 +261,7 @@ Function(SYSTEM_boolean ) STRUTILX_pstruequal(
         return result;
     }
     result = SYSTEM_true;
-  } 
+  }
   return result;
 }  /* pstruequal */
 
@@ -283,7 +284,7 @@ Function(SYSTEM_boolean ) STRUTILX_pstrequal(
         return result;
     }
     result = SYSTEM_true;
-  } 
+  }
   return result;
 }  /* pstrequal */
 
@@ -324,26 +325,15 @@ Function(SYSTEM_ansichar *) STRUTILX_inttostrw(
     _P3inc0(w2);
     result[w2] = _P3char(' ');
     _P3dec0(n);
-  
-}
+  }
   while (w < 255) {
     _P3inc0(w2);
     _P3inc0(w);
     result[w2] = s[w];
-  
-}
+  }
   _P3setlength(result,w2,255);
   return result;
 }  /* inttostrw */
-
-Function(SYSTEM_ansichar *) STRUTILX_inttostr(
-  SYSTEM_ansichar *result,
-  SYSTEM_uint8 _len_ret,
-  SYSTEM_integer n)
-{
-  STRUTILX_inttostrw(result,_len_ret,n,0);
-  return result;
-}  /* inttostr */
 
 Function(SYSTEM_ansichar *) STRUTILX_inttostrex(
   SYSTEM_ansichar *result,
@@ -400,14 +390,12 @@ Function(SYSTEM_ansichar *) STRUTILX_inttonicestrw(
     _P3inc0(w2);
     result[w2] = _P3char(' ');
     _P3dec0(n);
-  
-}
+  }
   while (w < 255) {
     _P3inc0(w2);
     _P3inc0(w);
     result[w2] = s[w];
-  
-}
+  }
   _P3setlength(result,w2,255);
   return result;
 }  /* inttonicestrw */
@@ -452,14 +440,12 @@ Function(SYSTEM_ansichar *) STRUTILX_int64tonicestrw(
     _P3inc0(w2);
     result[w2] = _P3char(' ');
     _P3dec0(n);
-  
-}
+  }
   while (w < 255) {
     _P3inc0(w2);
     _P3inc0(w);
     result[w2] = s[w];
-  
-}
+  }
   _P3setlength(result,w2,255);
   return result;
 }  /* int64tonicestrw */
@@ -482,10 +468,11 @@ Function(SYSTEM_ansichar *) STRUTILX_int64tonicestr(
   return result;
 }  /* int64tonicestr */
 
-Function(SYSTEM_ansichar *) STRUTILX_dbltostr(
+Function(SYSTEM_ansichar *) STRUTILX_dbltostrsep(
   SYSTEM_ansichar *result,
   SYSTEM_uint8 _len_ret,
-  SYSTEM_double v)
+  SYSTEM_double v,
+  SYSTEM_ansichar decimalsep)
 {
   SYSTEM_shortstring s;
   SYSTEM_integer i, j, k, e;
@@ -519,7 +506,7 @@ Function(SYSTEM_ansichar *) STRUTILX_dbltostr(
         } while (i++ !=  _stop);
 
       }
-      s[j + e] = _P3char('.');
+      s[j + e] = decimalsep;
       { register SYSTEM_int32 _stop = j + e + 1;
         if ((i = SYSTEM_length(s)) >=  _stop) do {
           if (s[i] == _P3char('0')) {
@@ -548,7 +535,7 @@ BRK_2:;
         } while (i++ !=  _stop);
 
       }
-      s[j] = _P3char('.');
+      s[j] = decimalsep;
       _P3setlength(s,k + e - 2,255);
       { register SYSTEM_int32 _stop = j + e + 1;
         if ((i = SYSTEM_length(s)) >=  _stop) do {
@@ -560,7 +547,7 @@ BRK_2:;
 BRK_3:;
 
       }
-    } 
+    }
   } else {
     if (s[k] == _P3char('+')) 
       s[k] = _P3char(' ');
@@ -588,7 +575,7 @@ BRK_4:;
 BRK_5:;
 
     }
-  } 
+  }
   j = 0;
   { register SYSTEM_int32 _stop = SYSTEM_length(s);
     if ((i = 1) <=  _stop) do {
@@ -600,6 +587,15 @@ BRK_5:;
 
   }
   _P3setlength(result,j,255);
+  return result;
+}  /* dbltostrsep */
+
+Function(SYSTEM_ansichar *) STRUTILX_dbltostr(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  SYSTEM_double v)
+{
+  STRUTILX_dbltostrsep(result,_len_ret,v,_P3char('.'));
   return result;
 }  /* dbltostr */
 
@@ -614,7 +610,7 @@ Function(SYSTEM_ansichar *) STRUTILX_dbltostrex(
     if (v == STRUTILX_mindouble_v) { 
       _P3strcpy(result,_len_ret,STRUTILX_mindouble_s);
     } else 
-      STRUTILX_dbltostr(result,_len_ret,v);
+      STRUTILX_dbltostrsep(result,_len_ret,v,_P3char('.'));
   return result;
 }  /* dbltostrex */
 
@@ -661,7 +657,7 @@ Function(SYSTEM_ansichar *) STRUTILX_padleft(
       _P3strcat(result,_len_ret,SYSTEM_copy(_t1,255,
         STRUTILX_blanks255,1,ww),s);
     }
-  } 
+  }
   return result;
 }  /* padleft */
 
@@ -766,7 +762,7 @@ Function(SYSTEM_integer ) STRUTILX_rchpossp(
       SYSTEM_break(BRK_7);
     } 
   }
-BRK_7:;
+  BRK_7:;
   return result;
 }  /* rchpossp */
 
@@ -835,7 +831,7 @@ Function(SYSTEM_integer ) STRUTILX_rchupossp(
       SYSTEM_break(BRK_9);
     } 
   }
-BRK_9:;
+  BRK_9:;
   return result;
 }  /* rchupossp */
 
@@ -884,7 +880,7 @@ Function(SYSTEM_integer ) STRUTILX_rchsetpos(
       SYSTEM_break(BRK_11);
     } 
   }
-BRK_11:;
+  BRK_11:;
   return result;
 }  /* rchsetpos */
 
@@ -921,23 +917,24 @@ Function(SYSTEM_integer ) STRUTILX_lstrpossp(
     { register SYSTEM_int32 _stop = SYSTEM_length(s) - lp + 1;
       if ((p = sp) <=  _stop) do {
         if (s[p] != pat1) 
-          SYSTEM_continue(CNT_12);
+          SYSTEM_continue(CNT_1);
         result = p;
         { register SYSTEM_int32 _stop = lp;
           if ((k = 2) <=  _stop) do {
             if (pat[k] != s[p + k - 1]) {
               result = 0;
-              SYSTEM_break(BRK_13);
+              SYSTEM_break(BRK_12);
             } 
           } while (k++ !=  _stop);
-BRK_13:;
+BRK_12:;
 
         }
         if (result != 0) 
           return result;
       
-CNT_12:;
+CNT_1:;
       } while (p++ !=  _stop);
+
     }
   return result;
 }  /* lstrpossp */
@@ -1015,7 +1012,7 @@ Function(SYSTEM_ansichar *) STRUTILX_replacestr(
     do {
       i = STRUTILX_lstrpossp(old,s,r);
       if (i <= 0) 
-        SYSTEM_break(BRK_14);
+        SYSTEM_break(BRK_13);
       {
         SYSTEM_shortstring _t1;
         _P3STR_255 _t2;
@@ -1025,13 +1022,13 @@ Function(SYSTEM_ansichar *) STRUTILX_replacestr(
       }
       r = i + SYSTEM_length(old);
     } while (SYSTEM_true);
-BRK_14:;
+BRK_13:;
     {
       SYSTEM_shortstring _t1;
 
       _P3strcat(result,_len_ret,result,SYSTEM_copy(_t1,255,s,r,255));
     }
-  } 
+  }
   return result;
 }  /* replacestr */
 
@@ -1091,7 +1088,7 @@ Function(SYSTEM_integer ) STRUTILX_integerwidth(
   } else {
     result = 1;
     n = -n;
-  } 
+  }
   do {
     result = result + 1;
     n = n /  10;
@@ -1118,7 +1115,7 @@ Function(SYSTEM_ansichar *) STRUTILX_blankstr(
       } while (k++ !=  _stop);
 
     }
-  } 
+  }
   return result;
   SYSTEM_copy(result,_len_ret,STRUTILX_blanks255,1,len);
   return result;
@@ -1149,7 +1146,7 @@ Function(SYSTEM_ansichar *) STRUTILX_extracttoken(
   } else {
     stop = s[*p];
     *p = *p + 1;
-  } 
+  }
   rs = *p;
   while (*p <= l && s[*p] != stop) {
 
@@ -1160,6 +1157,50 @@ Function(SYSTEM_ansichar *) STRUTILX_extracttoken(
     *p = *p + 1;
   return result;
 }  /* extracttoken */
+
+Function(SYSTEM_ansichar *) STRUTILX_extractshortpathnameexcept(
+  SYSTEM_ansichar *result,
+  SYSTEM_uint8 _len_ret,
+  const SYSTEM_ansichar *filename)
+{
+  SYSTEM_integer i;
+
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(result,_len_ret,SYSUTILS_P3_extractshortpathname(_t1,255,
+      filename));
+  }
+  { register SYSTEM_int32 _stop = SYSTEM_length(result);
+    if ((i = 1) <=  _stop) do {
+      if (SYSTEM_ord(result[i]) >= 128) 
+        {
+          _P3STR_255 _t1;
+          _P3STR_255 _t2;
+
+          _P3_RAISE(ValueCast(SYSTEM_exception,
+            SYSTEM_exception_DOT_create(ValueCast(SYSTEM_exception,
+            _P3alloc_object(&SYSTEM_exception_CD)),_P3strcat(_t2,255,
+            _P3strcat(_t1,255,_P3str1("\105Problem extracting short path, result contains extended ASCII codes: "),
+            result),_P3str1("\035 (maybe 8.3 form is disabled)")))));
+        }
+      if (SYSTEM_ord(result[i]) == 32) 
+        {
+          _P3STR_255 _t1;
+          _P3STR_255 _t2;
+
+          _P3_RAISE(ValueCast(SYSTEM_exception,
+            SYSTEM_exception_DOT_create(ValueCast(SYSTEM_exception,
+            _P3alloc_object(&SYSTEM_exception_CD)),_P3strcat(_t2,255,
+            _P3strcat(_t1,255,_P3str1("\067Problem extracting short path, result contains spaces: "),
+            result),_P3str1("\035 (maybe 8.3 form is disabled)")))));
+        }
+    
+    } while (i++ !=  _stop);
+
+  }
+  return result;
+}  /* extractshortpathnameexcept */
 
 Function(SYSTEM_boolean ) STRUTILX_strasintex(
   const SYSTEM_ansichar *s,
@@ -1182,7 +1223,7 @@ Function(SYSTEM_boolean ) STRUTILX_strasintex(
 {
           *v = 0;
           result = SYSTEM_false;
-        } 
+        }
       } _P3_END_TRY_EXCEPT;
   return result;
 }  /* strasintex */
@@ -1237,8 +1278,12 @@ Function(SYSTEM_boolean ) STRUTILX_strasdoubleex(
       if (STRUTILX_struequal(s,STRUTILX_epsdouble_s)) { 
         *v = STRUTILX_epsdouble_v;
       } else {
-        STRUTILX_replacechar(ws,255,_P3set1("\0\0\0\0\0\0\0\0\020\0\0\0\020\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"),_P3char('E'),
-          s);
+        {
+          SYSTEM_shortstring _t1;
+
+          _P3strcpy(ws,255,STRUTILX_replacechar(_t1,255,_P3set1("\0\0\0\0\0\0\0\0\020\0\0\0\020\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"),_P3char('E'),
+            s));
+        }
         _P3_TRY {
           _P3val_d(ws,*v,&k);
           if (_P3SET_i(3,P3IEEEFP_fpclass(*v),_P3set1("\017"))) { 
@@ -1249,7 +1294,7 @@ Function(SYSTEM_boolean ) STRUTILX_strasdoubleex(
 
             result = SYSTEM_false;
         } _P3_END_TRY_EXCEPT;
-} 
+}
   return result;
 }  /* strasdoubleex */
 
@@ -1263,7 +1308,7 @@ Function(SYSTEM_ansichar *) STRUTILX_gmsvaltostr(
     return result;
   } 
   if (v <= GMSSPECS_valbig && v >= GMSSPECS_valsmall) {
-    SYSUTILS_P3_floattostr(result,_len_ret,v);
+    STRUTILX_dbltostr(result,_len_ret,v);
     return result;
   } 
   if (v < GMSSPECS_valsmall) { 
@@ -1307,7 +1352,7 @@ Function(SYSTEM_ansichar *) STRUTILX_mem64tonicestr(
     } else {
       d = 1048576;
       _P3strcpy(s,255,_P3str1("\002Mb"));
-    } 
+    }
   {
     SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
@@ -1377,7 +1422,7 @@ Function(SYSTEM_P3_pshortstring ) STRUTILX_newstringm(
     _P3getmem(result,l);
     _P3strcpy(*result,255,s);
     *m = *m + l;
-  } 
+  }
   return result;
 }  /* newstringm */
 

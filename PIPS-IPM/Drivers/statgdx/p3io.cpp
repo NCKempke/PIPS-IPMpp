@@ -143,18 +143,22 @@
 
 
 #include "p3io.h"
-#include "exceptions_c.h"
-
-#include "globals2.h"
+#include "dtoaLoc.h"
+#include "exceptions.c"
 
 #include <limits.h>
 #include <sys/stat.h>
+#include <typeinfo>
+
+#ifdef BGP
+#define OLD_P3write_r_WAY
+#endif
 
 /* Would like to find better error codes for the next ones than just EIO */
 #define READ_CONVERSION_ERROR  EIO  /* I/O error - good code? */
 #define READ_AT_END_OF_FILE    EIO  /* EOF - can't find a better code. There's no EEOF */
 
-_P3err_t _P3_err = { 0, 0, 0, ""};
+_P3_THREAD_LOCAL_ _P3err_t _P3_err = { 0, 0, 0, ""};
 
 static void
 p3ErrZap (_P3err_t *e)
@@ -232,7 +236,6 @@ void _P3_Std_Exception_Handler (SYSTEM_tobject exception)
   if (NULL == exception)
     return;
 
-# if 0
   /* If it's an Exception object but not an EAbort then print its message: */
   if ( _P3_is(exception, &SYSTEM_exception_CD) &&
       !_P3_is(exception, &EXCEPTIONS_eabort_CD)) {
@@ -243,26 +246,86 @@ void _P3_Std_Exception_Handler (SYSTEM_tobject exception)
     fflush(stdout);
   }
   _P3_ABORT();
-# else
-  {
-    char tbuf[300], *p;
-    const unsigned char *m;
-
-    strcpy (tbuf, "P3 Standard Exception Handler: ");
-    for (p = tbuf;  *p;  p++)
-      ;
-    m = ((SYSTEM_exception)exception)->SYSTEM_exception_DOT_message;
-    memcpy(p, m+1, *m);
-    p[*m] = '\0';
-    exit2R(tbuf);
-  }
-# endif
-
 } /* _P3_Std_Exception_Handler */
-
 
 #endif  /* if _P3_EXC_MODEL_ == 1 */
 
+
+#if _P3_EXC_MODEL_ == 0
+
+/* The global ExceptObject - for now there's only one raised exception
+ * at any one time, stored in this variable:
+ */
+SYSTEM_tobject _P3_ExceptObject = NULL;
+
+jmp_buf *_P3_global_jmp_lnk = NULL;  /* Head of jump buffer linked list */
+
+/* Free the global exception, _P3_ExceptObject. */
+void _P3_Free_Exception()
+{
+  /* want to test: _P3_is(_P3_ExceptObject, &SYSTEM_exception_CD));  ? */
+  SYSTEM_tobject_DOT_free(_P3_ExceptObject);
+  _P3_ExceptObject = NULL;
+} /* _P3_Free_Exception */
+
+/* Call with a C string, sets _P3_ExceptObject to a new exception */
+void _P3_Create_Exception(EXCEPTIONS_texceptions code, char* CMsg)
+{
+  SYSTEM_char buf[257];  /* to store Pascal string */
+  int len = (int) strlen(CMsg);
+
+  EXCTST( printf("P3IO.C: Creating Exception Object, Code %d, Message (%d) '%s'\n",
+           (int)code, len, CMsg);)
+
+  memmove(buf+1, CMsg, *buf = len); /* One-liner to create Pascal string */
+
+  _P3_Free_Exception();   /* Remove any old exception object first. */
+
+  _P3_ExceptObject = EXCEPTIONS_create_exception_by_code(code, buf);
+} /* _P3_Create_Exception */
+
+/* _P3_Std_Exception_Handler: when using setjmp/longjmp, this must be called
+ * to both raise and handle exceptions.  If no setjmp is pending, we cannot call
+ * longjmp but just handle the exception immediately
+ */
+void _P3_Std_Exception_Handler(SYSTEM_tobject Exception)
+{
+  EXCTST(printf("ENTERING _P3_Std_Exception_Handler...Exception = %d\n",
+                (SYSTEM_nativeuint)Exception););
+
+  if (NULL == Exception) {
+    /* e.g. when called from _P3_Exception or a re-raise.  Use existing one */
+    Exception = _P3_ExceptObject;
+  }
+  else {
+    /* use this one, after getting rid of any pending exception */
+    _P3_Free_Exception();
+    _P3_ExceptObject = Exception;
+  }
+
+  if (_P3_global_jmp_lnk) {
+    /* This is where we take off, unwinding the stack hunting for an except block: */
+    EXCTST( printf("Doing a longjmp on %d, %d\n", (int)_P3_global_jmp_lnk,
+            (int)(*_P3_global_jmp_lnk));  );
+    longjmp( *_P3_global_jmp_lnk, 1 );
+  }
+
+  /* Final error handling (in case Exception Handling not enabled,
+     or not in a try-except block) */
+
+  /* If it's an Exception object but not an EAbort then print its message: */
+  if ( _P3_is(Exception, &SYSTEM_exception_CD) &&
+      !_P3_is(Exception, &EXCEPTIONS_eabort_CD)) {
+    /* Print the exception's built-in message: */
+    printf("P3 Standard Exception Handler: ");
+    _P3_write_s0(((SYSTEM_exception)Exception)->SYSTEM_exception_DOT_message);
+    printf("\n");
+    fflush(stdout);
+  }
+  _P3_ABORT();
+} /* _P3_Std_Exception_Handler */
+
+#endif  /* if _P3_EXC_MODEL_ == 0 */
 
 /* assume input s is long enough */
 static char *
@@ -359,6 +422,7 @@ void _P3_Exception (int eCode, const char *s)
  *
  *****************************************************************/
 {
+  const char *msgWhat = "_P3_RAISE";
   char mess[1024] = "\0";
   EXCEPTIONS_texceptions ExcCode = EXCEPTIONS_cnoexception;
 
@@ -369,41 +433,48 @@ void _P3_Exception (int eCode, const char *s)
   case _P3_EXC_CODE_INVALIDCAST:
     mess[0] = '\0';             /* just use the message passed in */
     ExcCode = EXCEPTIONS_cinvalidcast;
+    msgWhat = "_P3_RAISE_INVALIDCAST";
     break;
   case _P3_EXC_CODE_INOUTERROR:
     /* sprintf(mess, "I/O Error. "); */
     mess[0] = '\0';
     ExcCode = EXCEPTIONS_cinouterror;
+    msgWhat = "_P3_RAISE_I/O_ERROR";
     break;
   case _P3_EXC_CODE_RANGEERROR:
     sprintf(mess, "Range check error:  ");
     ExcCode = EXCEPTIONS_crangeerror;
+    msgWhat = "_P3_RAISE_RANGEERROR";
     break;
   case _P3_EXC_CODE_ASSERTIONFAILED:
     mess[0] = '\0';             /* just use the message passed in */
     ExcCode = EXCEPTIONS_cassertionfailed;
+    msgWhat = "_P3_RAISE_ASSERTFAILURE";
     break;
   case _P3_EXC_CODE_ADDRANGE:
     sprintf(mess, "Empty Set Error. "); /* better never happen*/
     ExcCode = EXCEPTIONS_cexception;
+    msgWhat = "_P3_RAISE_ADDRANGE";
     break;
   case _P3_EXC_CODE_OUTOFMEMORY:
     sprintf(mess, "Out of memory");
     ExcCode = EXCEPTIONS_coutofmemory;
+    msgWhat = "_P3_RAISE_OUTOFMEMORY";
     break;
   case _P3_EXC_CODE_ABSTRACTERROR:
     mess[0] = '\0';             /* just use the message passed in */
     ExcCode = EXCEPTIONS_cabstracterror;
+    msgWhat = "_P3_RAISE_ABSTRACTERROR";
     break;
   default:
     sprintf(mess, "Unknown cause. ");
     ExcCode = EXCEPTIONS_cexception;
+    msgWhat = "_P3_RAISE_UNKNOWNEXCEPTION";
     break;
   } /* end switch (eCode) */
 
-  if (_P3_EXC_CODE_INOUTERROR == eCode) {
-    /* ignore input msg s, construct something from errno/_P3_err */
-    /* sprintf(mess, "I/O Error. "); */
+  if ((_P3_EXC_CODE_INOUTERROR == eCode) && ('\0' == *s)) {
+    /* construct something from errno/_P3_err */
     char *sysMsg, *m2 = mess;
     char verb[32];
     char noun[16];
@@ -461,8 +532,22 @@ void _P3_Exception (int eCode, const char *s)
   /* We are ready to create and raise an exception now.
    * How we do that depends on the exception model */
 
+#if _P3_EXC_MODEL_ == 0
+  /* Create new exception object with a nice message, put it in
+    _P3_ExceptObject and then handle it: */
+
+  _P3_Create_Exception(ExcCode, mess);
+  _P3_Std_Exception_Handler(NULL); /* NULL means Reraise the present one */
+
+#endif  /* if _P3_EXC_MODEL_ == 0 */
+
 #if _P3_EXC_MODEL_ == 1
+# if 0
   _P3_RAISE(_P3_Create_Exception2(ExcCode, mess));
+# else
+  /* if we throw exWrap directly, we can use a more helpful message */
+  throw exWrap(msgWhat,(SYSTEM_tobject) _P3_Create_Exception2(ExcCode, mess));
+# endif
 #endif  /* if _P3_EXC_MODEL_ == 1 */
 
 }  /* _P3_Exception */
@@ -490,15 +575,7 @@ void _P3_halt(int rc)
     *  exit(rc):  Terminate "normally", but any other modules' finalization
     *             parts are skipped */
 
-#if 0
     exit(rc);
-#else
-    {
-      char tbuf[256];
-      sprintf (tbuf, "_P3_halt(%d) called", rc);
-      exit2R(tbuf);
-    }
-#endif
 
     /* or: _P3_ABORT(); */
     /* or: _P3_Exception("Halt called from finalization part - rc = ", 3, rc); */
@@ -511,15 +588,7 @@ void _P3_halt(int rc)
      *  as the last entry. That one calls finalization routines in modules */
     _P3_DLL_UNWIND();
 
-#if 0
     exit(rc);
-#else
-    {
-      char tbuf[256];
-      sprintf (tbuf, "_P3_halt(%d) called", rc);
-      exit2R(tbuf);
-    }
-#endif
   }
 }
 
@@ -679,6 +748,7 @@ const SYSTEM_byte _P3false[] = "\5FALSE";
 /* write real with no modifiers, using default format */
 void _P3write_r (SYSTEM_text *fil, SYSTEM_double d)
 {
+#if defined(OLD_P3write_r_WAY)
   char buf[30];
   char *s = buf;
 
@@ -686,9 +756,9 @@ void _P3write_r (SYSTEM_text *fil, SYSTEM_double d)
     _P3_IO_NOTOPEN(_P3_err, EIO, fil, _P3_ERR_VERB_WRITE);
     return;
   }
-#if 0
+# if 0
   IOWRP(fprintf(fil->f,"%23.14E",d));
-#else
+# else
   sprintf (buf,"%22.14E",d);
   if ('\0' == buf[22]) {
     /* assume libraries write in two ways: */
@@ -710,26 +780,46 @@ void _P3write_r (SYSTEM_text *fil, SYSTEM_double d)
     /* else we do not recognize this, just leave it alone */
   }
   IOWRP(fprintf(fil->f, "%s", s));
+# endif
+
+
+#else
+  SYSTEM_shortstring s;
+
+  _P3_Str_dd0 (d, s, sizeof(s)-1);
+  _P3_writefs0 (fil, s);
 #endif
 } /* _P3write_r */
 
 /* write real with one modifier given, using default for second */
-void _P3write_rx(SYSTEM_text *fil, SYSTEM_double   d, SYSTEM_longint len1)
+void _P3write_rx(SYSTEM_text *fil, SYSTEM_double d, SYSTEM_longint len1)
 {
+#if defined(OLD_P3write_r_WAY)
   SYSTEM_byte s[256];
 
-  _P3_Str_d1(d, len1, s, 255); /* Better not be > 255 at return */
-  _P3_writefs0(fil, s);
+  _P3_Str_d1 (d, len1, s, 255);
+#else
+  SYSTEM_shortstring s;
+
+  _P3_Str_dd1 (d, len1, s, sizeof(s)-1);
+#endif
+  _P3_writefs0 (fil, s);
 } /* _P3write_rx */
 
 /* Real with two modifiers */
 void _P3write_ry(_P3file *fil, SYSTEM_double d,
                  SYSTEM_longint len1, SYSTEM_longint len2)
 {
+#if defined(OLD_P3write_r_WAY)
   SYSTEM_byte s[256];
 
-  _P3_Str_d2(d, len1, len2, s, 255); /* Better not be > 255 at return */
-  _P3_writefs0(fil, s);
+  _P3_Str_d2 (d, len1, len2, s, 255);
+#else
+  SYSTEM_shortstring s;
+
+  _P3_Str_dd2 (d, len1, len2, s, sizeof(s)-1);
+#endif
+  _P3_writefs0 (fil, s);
 } /* _P3write_ry */
 
 
@@ -773,12 +863,13 @@ void _P3_Readfs0 (_P3file *fil, SYSTEM_byte *s, SYSTEM_byte max)
     return;
   }
   f = fil->f;
+  ch = '\0';
 
   /* Read up to 'max' characters from a file into the string s.
    * If defined(P3UNIX) and the strings ends with CarriageReturn,
    * we'll return only max-1 chars
    */
-  ch = EOF;			/* squash a stupid warning */
+  ch = EOF;                     /* squash a stupid warning */
   for (i=1; i<=max && (ch =getc(f)) != '\n' && (ch != EOF); i++)
     s[i] = ch;
   *s = i-1;
@@ -822,7 +913,6 @@ void _P3_writefn (SYSTEM_text *fil)
 
 void _P3_write_s0(const SYSTEM_byte *s)
 {
-#if 0
   int i, nChars;
 
   nChars = printf ("%.*s", (int)s[0], s+1);
@@ -832,12 +922,6 @@ void _P3_write_s0(const SYSTEM_byte *s)
   if (ferror(stdout)) {
     _P3_IO_ERR(_P3_err, errno, &SYSTEM_output, _P3_ERR_VERB_WRITE);
   }
-#else
-  char tbuf[256];
-  memcpy(tbuf,s+1,*s);
-  tbuf[*s] = '\0';
-  msg2R (tbuf);
-#endif
 } /* _P3_write_s0 */
 
 void _P3_writefs0 (SYSTEM_text *fil, const SYSTEM_byte *s)
@@ -851,7 +935,14 @@ void _P3_writefs0 (SYSTEM_text *fil, const SYSTEM_byte *s)
   }
   f = fil->f;
 
-  nChars = 0;
+  if (stdout == f) {
+    /* print it with fprintf: this works faster on VIS for stdout */
+    nChars = fprintf (f, "%.*s", (int)s[0], s+1);
+  }
+  else {
+    /* skip fprintf, do it all with putc: faster for files? */
+    nChars = 0;
+  }
   /* now handle special case where null byte stops fprintf early,
    * or case where we don't use fprintf at all
    */
@@ -860,6 +951,16 @@ void _P3_writefs0 (SYSTEM_text *fil, const SYSTEM_byte *s)
   if (ferror(f)) {
     _P3_IO_ERR(_P3_err, errno, fil, _P3_ERR_VERB_WRITE);
   }
+
+  /*************
+  ... this is slower on Alpha, and doesn't work at all on Linux...?
+  int num_transferred;
+
+  if (*s) {
+      num_transferred = fwrite(s+1, *s, 1, fil->f);
+      if ((num_transferred != *s) || ferror(fil->f)) _P3_err.n = errno;
+  }
+  **************/
 } /* _P3_writefs0 */
 
 
@@ -956,6 +1057,10 @@ void _P3_Seek (_P3file *fil, SYSTEM_longint offset, SYSTEM_longint origin)
   if (_P3_ISOPEN(fil)) {        /* open file */
     rc = fseek(fil->f, offset * fil->block_size, code);
 
+  /* printf("Seek(3) ... rc %d, errno %d\n", rc, errno); fflush(stdout);
+     if (errno) {
+     perror("Seek");
+     } */
     if (rc == -1) {
       _P3_IO_ERR(_P3_err, errno, fil, _P3_ERR_VERB_SEEK);
     }
@@ -1109,10 +1214,16 @@ void _P3block_read_write (_P3file        *fil,
     }
     else {
       if (count != num_transferred) { /* Also an error indication to report */
+#if 0
+        int eee;
+        eee = feof(f) ? READ_AT_END_OF_FILE : EIO;
+#else
+        /* avoid a stupid warning about feof() return ignored
+           turfed by the code above */
         int eee = EIO;
-	if (feof(f))
-	  eee = READ_AT_END_OF_FILE;
-        /* eee = feof(f) ? READ_AT_END_OF_FILE : EIO; */
+        if (feof(f))
+          eee = READ_AT_END_OF_FILE;
+#endif
         _P3_IO_ERR(_P3_err, eee, fil, ((wr) ? _P3_ERR_VERB_WRITE : _P3_ERR_VERB_READ));
       }
     }
@@ -1125,7 +1236,6 @@ void _P3block_read_write (_P3file        *fil,
 
 void _P3rw_typed (_P3file *fil, void *buf, int wr)
 {
-  size_t count;
   FILE *f = fil->f;
 
   if (! _P3_ISOPEN(fil)) {
@@ -1133,9 +1243,9 @@ void _P3rw_typed (_P3file *fil, void *buf, int wr)
     return;
   }
   if (wr)
-    count = fwrite(buf, fil->block_size, 1, f);
+    (void) fwrite(buf, fil->block_size, 1, f);
   else
-    count = fread( buf, fil->block_size, 1, f);
+    (void) fread( buf, fil->block_size, 1, f);
   if (ferror(f)) {
     _P3_IO_ERR(_P3_err, errno, fil, ((wr) ? _P3_ERR_VERB_WRITE : _P3_ERR_VERB_READ));
   }
@@ -1205,6 +1315,7 @@ void _P3fileopn(_P3file *fil, SYSTEM_longint s, SYSTEM_longint t,
   fil->f = NULL;
   fil->status = _P3CLOSED;
   fil->block_size = block_size;
+  action = _P3RESET;            /* squash warning */
 
   if (SYSTEM_filemode != _FM_RO && SYSTEM_filemode != _FM_WO)
     SYSTEM_filemode = _FM_RW;
@@ -1212,7 +1323,7 @@ void _P3fileopn(_P3file *fil, SYSTEM_longint s, SYSTEM_longint t,
   /* Set action to perform on file */
   /* Weird case: s = _P3RESET and filemode = 1 (_FM_RO):
      Do append, not write which erases the file */
-  action = _P3RESET;		/* squash warning */
+  action = _P3RESET;            /* squash warning */
   switch (s) {
     case _P3APPEND:
       action = _P3APPEND ;
@@ -1320,7 +1431,29 @@ void _P3fileopn(_P3file *fil, SYSTEM_longint s, SYSTEM_longint t,
 
   }
   else { /* Empty file name. Assign to stdin/stdout, even if non-text file */
-    exit2R("Assign to empty file name not allowed: should be silent instead");
+
+    /* Note: Actually doesn't matter whether a text file, hence "1 ||" below */
+    if (1 || t == 0) {   /* Text file without a name: stdin or stdout   */
+      if (s == _P3RESET) {  /* If call was Reset (NOT action!) -> stdin */
+        if (DUMP_STUFF)
+          printf("ASSIGNING TO STDIN\n");
+        fil->f = stdin;
+      }
+      else {  /* use standard output */
+        if (DUMP_STUFF)
+          printf("ASSIGNING TO STDOUT\n");
+        fil->f = stdout;
+      }
+      _P3_SETMODE(fil,s);
+    }
+    else {
+      /* Here: Assigned empty name to non-text file (or forgot to
+       *       assign name to it), now trying to open it...         */
+      if (DUMP_STUFF)
+        printf("ERROR: Trying to open non-text file to input/output\n");
+      _P3_IO_ERR(_P3_err, EINVAL, fil, verb);
+      fil->status = _P3CLOSED;     /* still closed  */
+    }
   }
 } /* _P3fileopn */
 
@@ -1332,7 +1465,7 @@ void _P3_Close(_P3file *fil)
     return;
   }
   errno = 0;
-  if (fil->f) {
+  if (fil->f && fil->f != stdin && fil->f != stdout) {
     if (fclose(fil->f)) {
       _P3_IO_ERR(_P3_err, errno, fil, _P3_ERR_VERB_CLOSE);
     }
@@ -1549,6 +1682,86 @@ SYSTEM_double _P3read_d (_P3file *fil)
     _P3_IO_ERR(_P3_err, _P3_err.n, fil, _P3_ERR_VERB_READ);
   return res;
 } /* _P3read_d */
+
+/* read the next white-space-delimited string from fil
+ * on EOF or error,
+ *   return >0, set s to the empty string
+ * else
+ *   return 0, set s to a non-empty, non-blank string
+ */
+static int
+getDoubleText (_P3file *fil, SYSTEM_byte *s, SYSTEM_byte max)
+{
+  register int i, ch;
+  int done;
+  FILE *f;
+
+  /* caller already checked that fil is open, etc */
+  f = fil->f;
+
+  for (*s = 0, done = 0;  !done;  ) {
+    ch = fgetc(f);
+    /* advance over spaces that do not end the line */
+    while (isspace(ch) && ('\n' != ch)) {
+      ch = fgetc(f);
+    }
+    if (EOF == ch) {            /* eof or error */
+      if (ferror(f)) {
+        _P3_IO_ERR(_P3_err, errno, fil, _P3_ERR_VERB_READ);
+      }
+      /* printf ("-- getDoubleText: returning 1 on EOF\n"); */
+      return 1;
+    }
+    else if (! isspace(ch)) {   /* we have our non-blank text */
+      for (i = 1;  i <= max && (! isspace(ch)) && (EOF != ch);  i++) {
+        s[i] = ch;
+        ch = fgetc(f);
+      }
+      *s = (SYSTEM_byte) (i-1);
+      if (EOF != ch)
+        (void) ungetc (ch, f);
+      done = 1;
+    }
+    else {                      /* we are at EOLN: skip over  */
+      assert('\n' == ch);
+      /* well, we already read it: the next trip starts the next line */
+    }
+  }
+
+  /* printf ("-- getDoubleText: returning '%.*s'\n", *s, (char *)s+1); */
+  return 0;
+} /* getDoubleText */
+
+
+SYSTEM_double _P3read_dd (_P3file *fil)
+{
+  SYSTEM_double res;
+  int rc;
+  SYSTEM_shortstring s;
+
+  if (! _P3_ISOPEN(fil)) {
+    _P3_IO_NOTOPEN(_P3_err, EIO, fil, _P3_ERR_VERB_READ);
+    return 0;
+  }
+
+  rc = getDoubleText (fil, s, sizeof(s)-1);
+  if (rc) {                   /* EOF found */
+    return 0;
+  }
+  else if (0 != _P3_err.n) {
+    return 0;
+  }
+  else {
+    /* printf ("-- _P3read_dd: got nice string '%.*s'\n", *s, (char *)s+1); */
+  }
+
+  _P3val_d (s, res, &rc);
+  /* printf ("--            200: rc = %d\n", rc); */
+  if (rc > 0) {
+    _P3_Exception(_P3_EXC_CODE_INOUTERROR, "Invalid numeric format");
+  }
+  return res;
+} /* _P3read_dd */
 
 
 void _P3read_ln (_P3file *fil)
@@ -2011,7 +2224,7 @@ void SYSTEM_reallocmem64 (void **p, SYSTEM_int64 s)
   }
 } /* SYSTEM_reallocmem64 */
 
-/* mess is a combo-string: leading length byte AND trailing nil byte */
+/* mess is a short string: leading length byte but no trailing nil byte */
 void _P3assert(const SYSTEM_char *mess, const char *File, int Line)
 {
   char buf[1024];
@@ -2020,7 +2233,7 @@ void _P3assert(const SYSTEM_char *mess, const char *File, int Line)
     sprintf(buf, "Assertion failure (%s:%d)", File, Line);
   }
   else {
-    sprintf(buf, "%s (%s:%d)", mess+1, File, Line);
+    sprintf(buf, "%.*s (%s:%d)", (int) *mess, mess+1, File, Line);
   }
   _P3_Exception(_P3_EXC_CODE_ASSERTIONFAILED, buf);
 } /* _P3assert */
@@ -2048,11 +2261,12 @@ SYSTEM_char *_P3_pchar2str (SYSTEM_char *dst, SYSTEM_char dstSiz,
   return dst;
 } /* _P3_pchar2str */
 
-SYSTEM_char *_P3pa2str(SYSTEM_char *s, SYSTEM_char m,
-                       const SYSTEM_char *p, SYSTEM_char n)
+/* copy from an array of characters to a string */
+SYSTEM_char *_P3pa2str(SYSTEM_char *str, SYSTEM_char strSiz,
+                       const SYSTEM_char *p, SYSTEM_integer pSiz)
 {
-  memmove(s+1, p, *s = (n>m)?m:n);
-  return s;
+  memmove(str+1, p, *str = (pSiz > strSiz) ? strSiz : pSiz);
+  return str;
 } /* _P3pa2str */
 
 SYSTEM_char *_P3_ch2str(SYSTEM_char *st,SYSTEM_byte max,
@@ -2204,7 +2418,7 @@ int _P3stccmp(const SYSTEM_char *st, SYSTEM_char ch)
     return st[1]-ch;
   if (st[1] == ch)
     return 1;
-  
+
   return st[1]-ch;
 } /* _P3stccmp */
 
@@ -2221,6 +2435,35 @@ static void _P3_Cstr2Pstr(SYSTEM_byte *s, char *buf, SYSTEM_byte sMax)
     s[i+1] = buf[i];
   s[0] = i;
 } /* _P3_Cstr2Pstr */
+
+static void
+padLeftC2P (const char eBuf[], size_t eLen, SYSTEM_integer width,
+            SYSTEM_byte *s, SYSTEM_byte sMax)
+{
+  int nPad, k;
+  SYSTEM_byte *dst;
+
+  nPad = width - (int) eLen;
+  if (nPad >= sMax) {
+    (void) memset (s+1, ' ', sMax);
+    s[0] = (SYSTEM_byte) sMax;
+  }
+  else {
+    if (nPad > 0) {
+      (void) memset (s+1, ' ', nPad);
+      dst = s + 1 + nPad;
+    }
+    else {
+      nPad = 0;
+      dst = s + 1;
+    }
+    k = (int)sMax - nPad;
+    if (k > (int)eLen)
+      k = eLen;
+    memcpy (dst, eBuf, k);
+    s[0] = (SYSTEM_byte) (k + nPad);
+  }
+} /* padLeftC2P */
 
 void _P3_Str_i0(SYSTEM_integer i, SYSTEM_byte *s, SYSTEM_byte sMax)
 {
@@ -2249,6 +2492,128 @@ void _P3_Str_d0(SYSTEM_double x, SYSTEM_byte *s, SYSTEM_byte sMax)
   _P3_Cstr2Pstr(s, buffer, sMax);
 } /* _P3_Str_d0 */
 
+/* convert base-10 digits and implied decimal position into E-format string
+ * we assume buf is long enough for the requested width
+ * Possible output formats for width=23,decimals=15:
+ *    12345678901234567890123
+ *   '   d.ddddddddddddddEsdd'
+ *   '  d.ddddddddddddddEsddd'
+ *   '  -d.ddddddddddddddEsdd'
+ *   ' -d.ddddddddddddddEsddd'
+ * But Delphi always does this for width=23,decimals=15:
+ *   ' d.ddddddddddddddEs0ddd'
+ *   '-d.ddddddddddddddEs0ddd'
+ */
+static void
+dig2Exp (const char *dig, size_t digLen, int decPos, int isNeg,
+         int width, int decimals,
+         char *buf, size_t *bufLen)
+{
+  char *d;
+  const char *s;
+  int e, k;
+#if defined(_E_EXPO_2_OR_3_)
+  int fatE;
+#endif
+
+#if 0
+  assert(decPos <= 308);
+  assert(decPos >= -307);
+#endif
+  assert(digLen >= 1);
+  assert(digLen <= 18);
+
+  e = decPos-1;
+#if defined(_E_EXPO_2_OR_3_)
+#endif
+
+  d = buf;
+  for (k = 26;  k < width;  k++) /* any width > 26 is just more blanks */
+    *d++ = ' ';
+#if defined(_E_EXPO_2_OR_3_)
+  *d++ = ' ';                   /* always one blank */
+  fatE = ((e < -99) || (e > 99));
+  if (! fatE)
+    *d++ = ' ';                 /* another blank if two-digit exponent */
+#else
+  /* do like Delphi: always 4-digit exponent */
+#endif
+  if (isNeg)
+    *d++ = '-';
+  else
+    *d++ = ' ';
+  s = dig;
+  *d++ = *s++;
+  *d++ = '.';
+  while (*s)
+    *d++ = *s++;
+  /* printf ("--- digLen = %d\n", (int)digLen); */
+  for (k = 0;  k < decimals - (int)digLen;  k++) /* zero-fill as necessary */
+    *d++ = '0';
+  *d++ = 'E';
+
+  if (e < 0) {
+    e *= -1;
+    *d++ = '-';
+  }
+  else
+    *d++ = '+';
+  *bufLen = d-buf;
+
+#if defined(_E_EXPO_2_OR_3_)
+  if (! fatE)
+    sprintf (d, "%02d", e);
+    *bufLen += 2;
+  }
+  else {
+    sprintf (d, "%d", e);
+    *bufLen += 3;
+  }
+#else
+  sprintf (d, "%04d", e);
+  *bufLen += 4;
+#endif
+  return;
+} /* dig2Exp */
+
+void _P3_Str_dd0(SYSTEM_double x, SYSTEM_byte *s, SYSTEM_byte sMax)
+{
+  char dBuf[32], eBuf[32];
+  size_t eLen;
+  char *p, *pEnd;
+  int decPos, isNeg;
+
+  /* printf ("*** _P3_Str_dd0: input x = %25.18g\n", x); */
+  p = dtoaLoc (x, 2, 15, dBuf, sizeof(dBuf),
+               &decPos, &isNeg, &pEnd);
+  if (decPos <= 308) {
+    dig2Exp (p, pEnd - p, decPos, isNeg, 23, 15, eBuf, &eLen);
+    /* printf ("                 p = %s  len = %d\n", p, (int)(pEnd-p)); */
+#if 0
+    _P3_Cstr2Pstr(s, eBuf, sMax);
+#else
+    (void) _P3_pcharn2str ((SYSTEM_char *)s, (SYSTEM_char)sMax,
+                           (SYSTEM_char *)eBuf, (int)eLen);
+#endif
+  }
+  else {                        /* inf or NaN: take string as returned */
+    dBuf[10] = '\0';            /* just in case, but should never be necessary */
+#if 1
+    padLeftC2P (dBuf, strlen(dBuf), 23, s, sMax);
+#else
+    int nb;
+    nb = 23 - (int) strlen(dBuf);
+    (void) memset (eBuf, ' ', nb);
+    strcpy (eBuf+nb, dBuf);
+#if 0
+    _P3_Cstr2Pstr(s, eBuf, sMax);
+#else
+    (void) _P3_pchar2str (s, sMax, eBuf);
+#endif
+#endif
+  }
+} /* _P3_Str_dd0 */
+
 void _P3_Str_d1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte *s,
                 SYSTEM_byte sMax)
 {
@@ -2268,11 +2633,82 @@ void _P3_Str_d1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte *s,
   _P3_Cstr2Pstr(s, buffer, sMax);
 } /* _P3_Str_d1 */
 
+/* given width w >= 10, return a double in scientific format with w-8 digits
+ * Delphi would do:
+ *    1234567890
+ *    sd.dEsdddd    
+ *    -1.5E+0002   for -150
+ * Previous P3 versions have not used a 4-digit exponent, but rather 2 or 3
+ */
+void _P3_Str_dd1(SYSTEM_double x, SYSTEM_integer w, SYSTEM_byte *s,
+                 SYSTEM_byte sMax)
+{
+  char dBuf[32], eBuf[285];
+  size_t eLen;
+  char *p, *pEnd;
+  int decPos, isNeg;
+  int width, decimals;
+
+  /* protect against really large input w */
+  if (w > sMax + 26) {       /* all the non-blank chars are ignored */
+    int k;
+    for (k = 0;  k < sMax;  k++)
+      s[k+1] = ' ';
+    s[0] = sMax;
+    return;
+  }
+
+  if (w < 10)
+    width = 10;
+  else
+    width = w;
+
+  decimals = width-8;        /* The 8 are non-decimals in: "-3.3E-0001" */
+  if (decimals > 18)
+    decimals = 18;              /* Delphi outputs at most 18 */
+  /* printf ("*** _P3_Str_dd1: input x = %25.18g  w:%d\n", x, width); */
+  p = dtoaLoc (x, 2, decimals, dBuf, sizeof(dBuf),
+               &decPos, &isNeg, &pEnd);
+  if (decPos <= 308) {
+    dig2Exp (p, pEnd - p, decPos, isNeg, width, decimals, eBuf, &eLen);
+    /* printf ("                 p = %s  len = %d\n", p, (int)(pEnd-p)); */
+#if 0
+    _P3_Cstr2Pstr(s, eBuf, sMax);
+#else
+    (void) _P3_pcharn2str ((SYSTEM_char *)s, (SYSTEM_char)sMax,
+                           (SYSTEM_char *)eBuf, (int)eLen);
+#endif
+  }
+  else {                        /* inf or NaN: take string as returned */
+    int nb;
+
+    dBuf[10] = '\0';            /* just in case, but should never be necessary */
+    nb = w - (int) strlen(dBuf);
+    if (nb <= 0)
+      nb = 0;
+    else
+      (void) memset (eBuf, ' ', nb);
+    strcpy (eBuf+nb, dBuf);
+#if 0
+    _P3_Cstr2Pstr(s, eBuf, sMax);
+#else
+    (void) _P3_pchar2str ((SYSTEM_char *)s, (SYSTEM_char)sMax,
+                          (SYSTEM_char *)eBuf);
+#endif
+  }
+} /* _P3_Str_dd1 */
+
 void _P3_Str_d2 (SYSTEM_double x, SYSTEM_integer width,
                  SYSTEM_integer decimals, SYSTEM_byte *s, SYSTEM_byte sMax)
 {
   char buffer[1024];
   char fmt[1024];
+
+  if (decimals < 0) {
+    /* this case is still unchecked */
+    _P3_Str_d1 (x, width, s, sMax);
+    return;
+  }
 
   sprintf(fmt,FMT_Str_d2,width,decimals);
   if (fabs(x) > 1.0e37)
@@ -2281,6 +2717,150 @@ void _P3_Str_d2 (SYSTEM_double x, SYSTEM_integer width,
   sprintf(buffer,fmt,x);
   _P3_Cstr2Pstr(s, buffer, sMax);
 } /* _P3_Str_d2 */
+
+/* _P3_Str_dd2: 2-descriptor str() implementation
+ * if decimals < 0, call 1-descriptor version
+ * set decimals = MIN(dMax, decimals)
+ * experiments with Delphi Version 26.0 (XE5?) show that
+ * for str(x:w:d,buf), we have:
+ *      x                            result
+ *  -------------------------     -----------
+ *  1.20370621524202227E-0035     very small: output in E-format
+ *  1.20370621524202241E-0035     in range: output in F-format
+
+ *  6.64613997892457863E+0035     in range: output in F-format
+ *  6.64613997892457936E+0035     very large: output in E-format
+ */
+void _P3_Str_dd2 (SYSTEM_double x, SYSTEM_integer width,
+                  SYSTEM_integer decimals, SYSTEM_byte *s, SYSTEM_byte sMax)
+{
+  char dBuf[512], eBuf[512], *dst;
+  size_t eLen;
+  char *p, *pEnd;
+  int decPos, isNeg, digLen, k;
+  double xAbs;
+  const double fMax = 6.64613997892457863e+35; /* limit for F-format */
+  const double fMin = 1.20370621524202241e-35; /* limit for F-format */
+  const int decMax = 215;       /* limit for F-format */
+
+  if (decimals < 0) {
+    /* this case is still unchecked */
+    _P3_Str_dd1 (x, width, s, sMax);
+    return;
+  }
+  if (decimals > decMax)
+    decimals = decMax;
+
+  p = dtoaLoc (x, 3, decimals, dBuf, sizeof(dBuf),
+               &decPos, &isNeg, &pEnd);
+  /* this check must come first: NaN values don't compare as expected */
+  if (decPos > 308) {        /* inf or NaN: take string as returned */
+    int nb;
+
+    dBuf[10] = '\0'; /* just in case, but should never be necessary */
+    nb = width - (int) strlen(dBuf);
+    if (nb <= 0)
+      nb = 0;
+    else
+      (void) memset (eBuf, ' ', nb);
+    strcpy (eBuf+nb, dBuf);
+#if 0
+    _P3_Cstr2Pstr(s, eBuf, sMax);
+#else
+    (void) _P3_pchar2str ((SYSTEM_char *)s, (SYSTEM_char)sMax,
+      (SYSTEM_char *)eBuf);
+#endif
+    return;
+  }
+
+  xAbs = fabs(x);
+  if ((xAbs > fMax) || ((xAbs > 0) && (xAbs < fMin))) {
+    /* this case is still unchecked */
+    _P3_Str_dd1 (x, width, s, sMax);
+    return;
+  }
+
+  digLen = (int)(pEnd - p);
+  if (digLen > 18) {
+    /* have too many digits: only get 18 */
+    p = dtoaLoc (x, 2, 18, dBuf, sizeof(dBuf),
+                 &decPos, &isNeg, &pEnd);
+    digLen = (int)(pEnd - p);
+  }
+  dst = eBuf;
+  eLen = 0;
+  if (isNeg)
+    *dst++ = '-';
+  if (decPos > digLen) {
+    // printf ("JJJJ: digLen = %d  decPos = %d  digs = %s\n",
+    //         digLen, decPos, p);
+    // printf ("x = %25.18g\n", x);
+    (void) memcpy (dst, p, digLen);
+    (void) memset (dst+digLen, '0', decPos - digLen);
+    dst += decPos;
+    if (decimals > 0) {
+      *dst++ = '.';
+      (void) memset (dst, '0', decimals);
+      dst += decimals;
+    }
+    *dst = '\0';
+    eLen = dst - eBuf;
+    // printf ("JJ00: eBuf = %s\n", eBuf);
+  }
+  else if (decPos == digLen) {
+    (void) memcpy (dst, p, digLen);
+    dst += decPos;
+    if (decimals > 0) {
+      *dst++ = '.';
+      (void) memset (dst, '0', decimals);
+      dst += decimals;
+    }
+    *dst = '\0';
+    eLen = dst - eBuf;
+  }
+  else if (decPos > 0) {
+    k = digLen - decPos;
+    (void) memcpy (dst, p, decPos);
+    dst += decPos;
+    *dst++ = '.';
+    (void) memcpy (dst, p+decPos, k);
+    (void) memset (dst+k, '0', decimals-k);
+    dst += decimals;
+    *dst = '\0';
+    eLen = dst - eBuf;
+  }
+  else if (0 == decPos) {
+    *dst++ = '0';
+    *dst++ = '.';
+    (void) memcpy (dst, p, digLen);
+    dst += digLen;
+    k = decimals-digLen;
+    if (k > 0) {
+      (void) memset (dst, '0', k);
+      dst += k;
+    }
+    *dst = '\0';
+    eLen = dst - eBuf;
+  }
+  else {                        /* decPos < 0 */
+    *dst++ = '0';
+    *dst++ = '.';
+    k = -decPos;
+    (void) memset (dst, '0', k);
+    dst += k;
+    (void) memcpy (dst, p, digLen);
+    dst += digLen;
+    k += digLen;
+    if (k < decimals) {
+      k = decimals-k;
+      (void) memset (dst, '0', k);
+      dst += k;
+    }
+    *dst = '\0';
+    eLen = dst - eBuf;
+  }
+  padLeftC2P(eBuf, eLen, width, s, sMax);
+} /* _P3_Str_dd2 */
 
 
 /* valid strings look like: [+|-][0x|$]d+,
@@ -2553,6 +3133,87 @@ void _P3_Val_d(const SYSTEM_byte *s, SYSTEM_double *d, SYSTEM_integer *code)
   return;
 } /* _P3_Val_d */
 
+void _P3_Val_dd (const SYSTEM_byte *s, SYSTEM_double *d, SYSTEM_integer *code)
+{
+  char buffer[256], *end;
+  char *s2, *sd;
+  size_t len;
+  int locErrno, sign = 1;
+
+  len = s[0];
+  strncpy (buffer, (char *)(s+1), len);
+  buffer[len] = '\0';
+
+  /* skip over blanks
+   * - Kylix 3 does not treat any other chars as whitespace
+   */
+  for (s2 = buffer;  ' ' == *s2;  s2++)
+    ;
+  if ('+' == *s2) {
+    sd = s2+1;
+  }
+  else if ('-' == *s2) {
+    sign = -1;
+    sd = s2+1;
+  }
+  else
+    sd = s2;
+
+  /* guard against some special cases where strtod
+   * doesn't do the right thing for val():
+   *   the decimal string in front of the decimal exponent
+   *      must be nonempty for strtod, not so for val
+   *   hex input, starts with 0x or 0X
+   *   nan or inf (case insensitive)
+   */
+  if (isdigit(*sd)) {
+    if ('x' == tolower(sd[1])) {
+      end = sd+1;
+      *code = (SYSTEM_integer)(end - buffer + 1);
+      *d = (*sd - '0');
+      return;
+    }
+    /* printf ("*** _P3_Val_dd calling strtodLoc (%s,...)\n", s2); */
+    *d = strtodLoc (s2, &end, &locErrno);
+    /* printf ("result = %g\n", *d); */
+    if ('\0' == *end) {         /* reached the end, things went OK */
+      *code = 0;
+    }
+    else {
+      *code = (SYSTEM_integer)(end - buffer + 1);
+    }
+    return;
+  } /* if digit after space and sign char */
+  else if ('.' == *sd) {
+    if ('\0' == sd[1]) {
+      /* corner case of valid input not handled by strtod */
+      *code = 0;
+      *d = 0;
+    }
+    else {
+      if ('e' == tolower(sd[1])) {
+        *sd = '0';
+      }
+      *d = strtodLoc (sd, &end, &locErrno);
+      *d *= sign;
+      if ('\0' == *end) {               /* reached the end, things went OK */
+        *code = 0;
+      }
+      else {
+        if (end <= sd)
+          end = sd+1;
+        *code = (SYSTEM_integer)(end - buffer + 1);
+      }
+    }
+    return;
+  }
+  else {                        /* not a digit, not a '.' */
+    *d = 0;
+    *code = (SYSTEM_integer)(sd - buffer + 1);
+  }
+  return;
+} /* _P3_Val_dd */
+
 
 /****  Program initialization and command line arguments *****/
 
@@ -2784,15 +3445,9 @@ void P3_PGM_init(char **_Argv, int _Argc, _P3void_procT PGM_Final)
   SYSTEM_filemode = 2;
 
   /* Init std io - gcc doesn't like it in initializer above */
-#if 0
   SYSTEM_input.f = stdin;
   SYSTEM_output.f = stdout;
   SYSTEM_erroutput.f = stderr;
-#else
-  SYSTEM_input.f = NULL;
-  SYSTEM_output.f = NULL;
-  SYSTEM_erroutput.f = NULL;
-#endif
 
   _P3islibrary = 0; /* Note: Different in DLLs and application */
 
@@ -2818,15 +3473,9 @@ void P3_DLL_init(void)
   SYSTEM_filemode = 2;
 
   /* Init std io - gcc doesn't like it in initializer above */
-#if 0
   SYSTEM_input.f = stdin;
   SYSTEM_output.f = stdout;
   SYSTEM_erroutput.f = stderr;
-#else
-  SYSTEM_input.f = NULL;
-  SYSTEM_output.f = NULL;
-  SYSTEM_erroutput.f = NULL;
-#endif
 
   _P3islibrary = 1; /* Note: Different in DLLs and application */
 
@@ -3127,22 +3776,22 @@ DllMain(HINSTANCE hInst, DWORD reason, LPVOID lpReserved)
   return TRUE;
 } /* DllMain */
 
-#elif defined(DAR) || defined(DEG) || defined(DEI) || defined(DIG) || defined(DII) || defined(LEG) || defined(LNX)
+#elif defined(__APPLE__) || (defined(__GNUC__) && defined(__linux__))
 Extern_C __attribute__((constructor))
 void init(void)
 {                               /* Called automatically at SO load */
-  /* printf("--------------- DAR/DEG/DEI/DIG/DII init called ----------- \n"); */
+  /* printf("--------------- Apple/Linux_GCC init called -----------\n"); */
   (void) _P3_DllInit();
 }
 
 Extern_C __attribute__((destructor))
 void fini(void)
 {                               /* Called automatically at SO unload */
-  /* printf("----------------- DAR/DEG/DEI/DIG/DII fini  called ----------- \n"); */
+  /* printf("--------------- Apple/Linux_GCC fini called -----------\n"); */
   _P3_DllFini();
 }
 
-#elif  defined(AIX) || defined(BGP) || defined(LEI)
+#elif  defined(AIX) || defined(BGP) || defined(__linux__)
 Extern_C void _init(void)
 {                               /* Called automatically at SO load */
   /*printf("------------------------  _init  called ----------- \n");*/
@@ -3155,7 +3804,7 @@ Extern_C void _fini(void)
   _P3_DllFini();
 }
 
-#elif defined(SIG) || defined(SOL) || defined(SOX)
+#elif defined(__sun__) || defined(__sparc)
 
 Extern_C void P3_sol_initFunc (void)
 {
@@ -3370,3 +4019,492 @@ SYSTEM_char
 }  /* SYSTEM_paramstr */
 
 /*************** END PARAMSTRING STUFF ***********************************/
+
+/*************** START PROCTREE STUFF ***********************************/
+
+#if ! (defined(__sparc) || defined(__HOS_AIX__))
+
+
+#if defined(__linux__)
+#  include <dirent.h>
+#elif defined(__APPLE__)
+#  include <sys/sysctl.h>
+#endif
+
+#include <vector>
+#include <map>
+#include <stdexcept>
+#include <string>
+
+#if defined(_WIN32)
+typedef DWORD p3pid_t;
+#else
+typedef pid_t p3pid_t;
+#endif
+
+class Node {
+public:
+  std::string name;
+  p3pid_t pid;
+  p3pid_t ppid;
+  Node *parent;
+  std::vector<Node *> children;
+
+  /* Node() { }; */
+  Node(const std::string &name_, p3pid_t pid_ = 0, p3pid_t ppid_= 0)
+    : name(name_), pid(pid_), ppid(ppid_), parent(NULL) { };
+}; // class Node
+
+class Tree {
+public:
+  std::map<p3pid_t,Node *> nodes;
+  int rootCount;
+
+  Tree() : rootCount(0) { };
+  ~Tree() { clear(); }
+  int build();
+  void clear();
+  void insertNode (const std::string &name, p3pid_t pid, p3pid_t ppid);
+  Node * findNodeByPID (p3pid_t pid);
+  int countChildren (p3pid_t pid);
+  int signalChildren (p3pid_t pid, int sigNum);
+  int cbWalk (p3pid_t pid, pidCB_t cbPtr, void *userMem, int postOrder);
+
+private:
+  int countHelper (Node *curr);
+  int signalHelper (Node *curr, int sigNum);
+  int cbWalkHelper (Node *curr, int level, pidCB_t cbPtr, void *userMem, int postOrder);
+
+}; // class Tree
+
+
+// returns:
+//   0 on success
+//   1 if not implemented
+//   2 if proc info not available
+//   >2 on other failures
+int Tree::build ()
+{
+#define PROCFS_ROOT "/proc"
+  bool foundInitProc = false;
+  std::string procfsOpenFail = "Unable to open " PROCFS_ROOT;
+  std::string procSysctlFail = "Failure calling sysctl for proc info";
+  std::string snapshotFail = "Failure calling CreateToolhelp32Snapshot for proc info";
+  std::string notYetImplemented = "Not yet implemented for this system";
+
+  try {
+#if defined(__linux__)
+  /* walk directories in /proc fs to create nodes */
+  DIR *dirp = opendir(PROCFS_ROOT);
+  if (NULL == dirp)
+    throw std::runtime_error(procfsOpenFail);
+  char fName[512], *p2;
+  (void) strcpy(fName, PROCFS_ROOT "/");
+  for (p2 = fName;  *p2;  p2++);
+  FILE *fp;
+  char linebuf[256], *p;
+  char procname[256];
+  uid_t uid;
+  struct dirent *dirEnt;
+  unsigned int u;
+  pid_t pid, ppid;
+  int haveUid, havePPid, havePid, haveName;
+  pid = ppid = 0;
+  for (dirEnt = readdir(dirp);  dirEnt;  dirEnt = readdir(dirp)) {
+    if (dirEnt->d_type == DT_DIR) {
+      strcpy (p2,dirEnt->d_name);
+      strcat (p2,"/status");
+      fp = fopen(fName, "r");
+      if (fp == NULL) {
+        // if the process exits, the dir could vanish
+        // and there are some dirs in /proc that are not processes
+        // fprintf (stderr, "  --- could not open %s\n", fName);
+        continue;               // just ignore
+      }
+      uid = 0;
+      haveUid = havePPid = havePid = haveName = 0;
+      while (fgets(linebuf, sizeof(linebuf), fp) != NULL) {
+        if (0 == strncmp(linebuf,"Name:", 5)) {
+          p = linebuf + 5;
+          while (isspace(*p))
+            p++;
+          sscanf (p, "%255s", procname);
+          haveName = 1;
+        }
+        else if (0 == strncmp(linebuf,"Pid:", 4)) {
+          p = linebuf + 4;
+          while (isspace(*p))
+            p++;
+          sscanf (p, "%u", &u);
+          pid = (pid_t) u;
+          havePid = 1;
+        }
+        else if (0 == strncmp(linebuf,"PPid:", 5)) {
+          p = linebuf + 5;
+          while (isspace(*p))
+            p++;
+          sscanf (p, "%u", &u);
+          ppid = (pid_t) u;
+          havePPid = 1;
+        }
+        else if (0 == strncmp(linebuf,"Uid:", 4)) {
+          p = linebuf + 4;
+          while (isspace(*p))
+            p++;
+          sscanf (p, "%u", &u);
+          uid = (uid_t) u;
+          haveUid = 1;
+        }
+        if (haveUid && havePPid && havePid && haveName) {
+          insertNode (procname, pid, ppid);
+          if (0 == pid) {       // found the init process, i.e. process 0
+            foundInitProc = true;
+          }
+          // printf ("  %s  %s  %u  %u\n", fName, procname, ppid, pid);
+          break;
+        }
+      } // loop over lines in file
+      (void) fclose(fp);
+    } // if a DT_DIR (self is a DT_LNK)
+  }
+  (void) closedir(dirp);
+
+  // if necessary stick in root node: the mythical init process
+  // process 0 does not show up in /proc on Linux, but it makes for a nice root of the tree
+  if (! foundInitProc) {
+    insertNode ("init", (pid_t) 0, (pid_t) 0);
+  }
+
+
+#elif defined(__APPLE__)
+  int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+  struct kinfo_proc *job;
+  size_t jSize;
+  int nJobs, rc, j;
+  pid_t pid, ppid;
+  const char *procName;
+
+  rc = sysctl (mib, 4, NULL, &jSize, NULL, 0);
+  if (rc)
+    throw std::runtime_error(procSysctlFail);
+  nJobs = jSize / sizeof(job[0]);
+  job = (struct kinfo_proc *) malloc(jSize);
+  if (NULL == job)
+    throw std::runtime_error("malloc failure");
+  rc = sysctl (mib, 4, job, &jSize, NULL, 0);
+  if (rc) {
+    free (job);
+    throw std::runtime_error(procSysctlFail);
+  }
+  for (j = 0;  j < nJobs;  j++) {
+    pid = job[j].kp_proc.p_pid;
+    ppid = job[j].kp_eproc.e_ppid;
+    procName = job[j].kp_proc.p_comm;
+    if ((NULL == procName) || ('\0' == *procName))
+      continue;        /* ignore procs with no name or command line */
+    if (0 == pid) {
+      if (0 != ppid)   /* pid 0 should have ppid of 0 */
+        continue;
+      // this is the mother or init process: pid = 0, ppid = 0
+      foundInitProc = true;
+    }
+    insertNode (procName, pid, ppid);
+#if 0
+    printf ("     pid=%5u  uid=%5d\n",
+      (unsigned int) job[j].kp_proc.p_pid,
+      (unsigned int) job[j].kp_eproc.e_pcred.p_ruid);
+#endif
+  }
+  free (job);
+
+#elif defined(_WIN32)
+
+  HANDLE hSnap;
+  PROCESSENTRY32 pe;
+  memset (&pe, 0, sizeof(PROCESSENTRY32));
+  pe.dwSize = sizeof(PROCESSENTRY32);
+  hSnap = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, 0);
+  if (INVALID_HANDLE_VALUE == hSnap)
+    throw std::runtime_error(snapshotFail);
+  if (Process32First(hSnap, &pe)) {
+    do {
+#if 0
+      cout << "  " << setw(8) << pe.th32ParentProcessID
+	   << "  " << setw(8) << pe.th32ProcessID
+	   << "  " << pe.szExeFile << endl;
+#endif
+      insertNode (pe.szExeFile, pe.th32ProcessID, pe.th32ParentProcessID);
+    } while (Process32Next(hSnap, &pe));
+  }
+  CloseHandle (hSnap);        // clean up the snapshot object
+
+  // throw std::runtime_error(notYetImplemented);
+
+#else
+/* # error "NO IMPLEMENTATION for getting process list for Tree" */
+  throw std::runtime_error(notYetImplemented);
+
+#endif
+  } /* end of try block */
+  catch (const std::exception &e) {
+    clear();
+    if (typeid(e) == typeid(std::runtime_error)) {
+      if (e.what() == notYetImplemented)
+        return 1;
+      if (e.what() == procfsOpenFail)
+        return 2;
+      if (e.what() == procSysctlFail)
+        return 2;
+    }
+    return 5;
+  }
+
+  Node *curr, *parent;
+  // link the nodes in the list to form a tree (or a forest of trees)
+  /* for (auto& cur: nodes) { */
+  for (std::map<p3pid_t,Node *>::iterator it=nodes.begin();  it != nodes.end();  ++it) {
+    curr = it->second;
+    parent = findNodeByPID (curr->ppid);
+    if ((NULL != parent) && (curr != parent)) {
+      if (NULL != curr->parent) { /* impossible, right? */
+        clear();
+        return 3;
+      }
+      curr->parent = parent;
+      parent->children.push_back(curr);
+    }
+  }
+
+  int childCount = 0;
+  /* for (auto& cur: nodes) { */
+  for (std::map<p3pid_t,Node *>::iterator it=nodes.begin();  it != nodes.end();  ++it) {
+    curr = it->second;
+    childCount += curr->children.size();
+    if (curr->parent == NULL) {
+      rootCount++;
+    }
+  } // walk the list of processes
+  if ((childCount + rootCount) != (int)nodes.size()) {   /* impossible, right? */
+    clear();
+    return 4;
+  }
+  return 0;
+} /* Tree::build */
+
+void Tree::clear ()
+{
+#if 0
+  for (auto& cur: nodes)
+    delete cur.second;
+#else
+  for (std::map<p3pid_t,Node *>::iterator it=nodes.begin();  it != nodes.end();  ++it)
+    delete it->second;
+#endif
+  nodes.clear();
+}
+
+void Tree::insertNode (const std::string &name, p3pid_t pid, p3pid_t ppid)
+{
+  if (nodes.find(pid) != nodes.end()) /* silently ignore duplicate insertion */
+    return;
+  nodes[pid] = new Node(name, pid, ppid);
+} // insertNode
+
+Node * Tree::findNodeByPID (p3pid_t pid)
+{
+#if 0
+  try {
+    return nodes.at(pid);
+  }
+  catch (const std::out_of_range& e) {
+    return NULL;
+  }
+#else
+  std::map<p3pid_t,Node *>::iterator it = nodes.find(pid);
+  if (nodes.end() == it)
+    return NULL;
+  return it->second;
+#endif
+} // findNodeByPID
+
+int Tree::countHelper (Node *curr)
+{
+  int r = 1;
+  for (std::vector<Node *>::iterator it = curr->children.begin();  it != curr->children.end();  it++)
+    r += countHelper (*it);
+  return r;
+} // countHelper
+
+int Tree::countChildren (p3pid_t pid)
+{
+  Node *curr;
+#if 0
+  try {
+    curr = nodes.at(pid);
+  }
+  catch (const std::out_of_range& e) {
+    return 0;
+  }
+#else
+  std::map<p3pid_t,Node *>::iterator it = nodes.find(pid);
+  if (nodes.end() == it)
+    return 0;
+  curr = it->second;
+#endif
+
+  int r = 0;
+  for (std::vector<Node *>::iterator it = curr->children.begin();  it != curr->children.end();  it++)
+    r += countHelper (*it);
+  return r;
+}  // countChildren
+
+int Tree::signalHelper (Node *curr, int sigNum)
+{
+  for (std::vector<Node *>::iterator it = curr->children.begin();  it != curr->children.end();  it++)
+    (void) signalHelper (*it, sigNum);
+#if defined(_WIN32)
+#else
+  (void) kill (curr->pid, sigNum);
+#endif
+  return 0;
+}  /* signalHelper */
+
+int Tree::signalChildren (p3pid_t pid, int sigNum)
+{
+  Node *curr;
+#if 0
+  try {
+    curr = nodes.at(pid);
+  }
+  catch (const std::out_of_range& e) {
+    return 0;
+  }
+#else
+  std::map<p3pid_t,Node *>::iterator it = nodes.find(pid);
+  if (nodes.end() == it)
+    return 0;
+  curr = it->second;
+#endif
+
+  for (std::vector<Node *>::iterator it = curr->children.begin();  it != curr->children.end();  it++)
+    (void) signalHelper (*it, sigNum);
+  return 0;
+} // signalChildren
+
+// recursively do a pre- or post-order tree walk,
+// calling the callback as we go
+// return the number of nodes in the tree rooted at curr
+int Tree::cbWalkHelper (Node *curr, int level, pidCB_t cbPtr, void *userMem, int postOrder)
+{
+  int r = 0;
+
+  if (! postOrder) {
+    if (cbPtr)
+      cbPtr(curr->pid, level, userMem);
+  }
+  for (std::vector<Node *>::iterator it = curr->children.begin();  it != curr->children.end();  it++)
+    r += cbWalkHelper (*it, level+1, cbPtr, userMem, postOrder);
+  if (postOrder) {
+    if (cbPtr)
+      cbPtr(curr->pid, level, userMem);
+  }
+
+  return r+1;
+}  /* cbWalkHelper */
+
+int Tree::cbWalk (p3pid_t pid, pidCB_t cbPtr, void *userMem, int postOrder)
+{
+  Node *curr;
+  std::map<p3pid_t,Node *>::iterator it = nodes.find(pid);
+  if (nodes.end() == it)
+    return 0;
+  curr = it->second;
+
+  return cbWalkHelper (curr, 0, cbPtr, userMem, postOrder);
+} // cbWalk
+
+#endif /* ! (defined(__sparc) || defined(__HOS_AIX__)) */
+
+
+int
+sigProcTree (int sigNum, int *nChildrenPre, int *nChildrenPost)
+#if (defined(__sparc) || defined(_WIN32) || defined(__HOS_AIX__))
+{
+  return 1; /* not implemented */
+}
+
+#else
+
+{
+  Tree procTree;
+  int rc;
+  rc = procTree.build();
+  if (rc) {
+    return rc;                  /* failure */
+  }
+  // *nChildrenPre = procTree.nodes.size();
+  *nChildrenPre = procTree.countChildren(getpid());
+  if (sigNum <= 0) {
+    *nChildrenPost = *nChildrenPre;
+    return 0;                   /* success */
+  }
+  procTree.signalChildren(getpid(), sigNum);
+  usleep (10000);     /* 10 millisecs */
+  /* hopefully all zombies are picked up now */
+
+  Tree t2;
+  rc = t2.build();
+  if (rc) {
+    return rc;                  /* failure */
+  }
+  *nChildrenPost = t2.countChildren(getpid());
+  return 0;                     /* success */
+} /* sigProcTree */
+
+#endif /* #if (SPARC || WINDOWS || AIX) .. else .. */
+
+int
+walkProcTree (SYSTEM_cardinal pid, pidCB_t cbPtr, void *userMem, SYSTEM_boolean postOrder)
+#if (defined(__sparc) || defined(__HOS_AIX__))
+{
+  return -2; /* not implemented */
+}
+#else
+{
+  /* first check if the PID even exists and is "useful" */
+#if defined(_WIN32)
+  if (0 == pid)
+    return -1;                  /* failure */
+  HANDLE h;
+  h = OpenProcess (PROCESS_ALL_ACCESS, FALSE, (DWORD) pid);
+  if (NULL == h) {
+    int rc = GetLastError();
+    switch (rc) {
+      case ERROR_INVALID_PARAMETER:
+        /* system process but that is pid=0, we checked for that already */
+        /* or expired or invalid PID */
+        return 0; /* no such process */
+        break;
+      case ERROR_ACCESS_DENIED:
+      default:			/* fall through */
+	break;
+    } /* end switch */
+    return -1;			/* failure */
+  }
+#else
+  if (getpgid((pid_t) pid) < 0)
+    return 0;                   /* no such process */
+#endif
+  Tree procTree;
+  int rc;
+  rc = procTree.build();
+  if (rc) {
+    return -1;                  /* failure */
+  }
+  return procTree.cbWalk((p3pid_t)pid, cbPtr, userMem, postOrder);
+} /* walkProcTree */
+
+#endif /* #if (SPARC || WINDOWS || AIX) .. else .. */
+
+/*************** END PROCTREE STUFF ***********************************/
+

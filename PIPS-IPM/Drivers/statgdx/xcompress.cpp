@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -14,41 +14,41 @@
 #include "gmslibname.h"
 #include "xcompress.h"
 
-static P3LIBRARY_tlibhandle XCOMPRESS_zlibhandle;
 
-Prototype Function(SYSTEM_integer ) ( CDECL *_Func_0XCOMPRESS)(
+Prototype Function(SYSTEM_integer ) ( CDECL *XCOMPRESS_tcompress)(
 SYSTEM_pointer pdest,
 CLIBTYPES_clib_ulong *ldest,
 SYSTEM_pointer psrc,
 CLIBTYPES_clib_ulong lsrc);
 
-static _Func_0XCOMPRESS XCOMPRESS_pcompress;
 
-Prototype Function(SYSTEM_integer ) ( CDECL *_Func_1XCOMPRESS)(
+Prototype Function(SYSTEM_integer ) ( CDECL *XCOMPRESS_tuncompress)(
 SYSTEM_pointer pdest,
 CLIBTYPES_clib_ulong *ldest,
 SYSTEM_pointer psrc,
 CLIBTYPES_clib_ulong lsrc);
 
-static _Func_1XCOMPRESS XCOMPRESS_puncompress;
 
-Prototype Function(XCOMPRESS_pgzfile ) ( CDECL *_Func_2XCOMPRESS)(
+Prototype Function(XCOMPRESS_pgzfile ) ( CDECL *XCOMPRESS_tgzreadopen)(
 SYSTEM_P3_pchar fn,
 SYSTEM_P3_pchar mode);
 
-static _Func_2XCOMPRESS XCOMPRESS_pgzreadopen;
 
-Prototype Function(SYSTEM_integer ) ( CDECL *_Func_3XCOMPRESS)(
+Prototype Function(SYSTEM_integer ) ( CDECL *XCOMPRESS_tgzread)(
 XCOMPRESS_pgzfile pgz,
 SYSTEM_pointer pdest,
 SYSTEM_cardinal ldest);
 
-static _Func_3XCOMPRESS XCOMPRESS_pgzread;
 
-Prototype Function(SYSTEM_integer ) ( CDECL *_Func_4XCOMPRESS)(
+Prototype Function(SYSTEM_integer ) ( CDECL *XCOMPRESS_tgzreadclose)(
 XCOMPRESS_pgzfile pgz);
 
-static _Func_4XCOMPRESS XCOMPRESS_pgzreadclose;
+static P3LIBRARY_tlibhandle XCOMPRESS_zlibhandle;
+static XCOMPRESS_tcompress XCOMPRESS_pcompress;
+static XCOMPRESS_tuncompress XCOMPRESS_puncompress;
+static XCOMPRESS_tgzreadopen XCOMPRESS_pgzreadopen;
+static XCOMPRESS_tgzread XCOMPRESS_pgzread;
+static XCOMPRESS_tgzreadclose XCOMPRESS_pgzreadclose;
 
 Function(SYSTEM_boolean ) XCOMPRESS_zlibdllloaded(void)
 {
@@ -82,7 +82,7 @@ static Function(SYSTEM_pointer ) loadentry(
         _P3strcat(_2loadmsg,255,_P3strcat(_t2,255,_P3strcat(_t1,255,_P3str1("\021Entry not found: "),
           n),_P3str1("\004 in ")),_2wfn);
       }
-  } 
+  }
   return result;
 }  /* loadentry */
 
@@ -96,26 +96,40 @@ Function(SYSTEM_boolean ) XCOMPRESS_loadzliblibrary(
 
   _P3strclr(loadmsg);
   if (XCOMPRESS_zlibhandle == ValueCast(SYSTEM_pointer,0)) {
-    SYSUTILS_P3_extractfilepath(path,255,fn);
-    SYSUTILS_P3_extractfilename(basename,255,fn);
+    {
+      SYSTEM_shortstring _t1;
+
+      _P3strcpy(path,255,SYSUTILS_P3_extractfilepath(_t1,255,fn));
+    }
+    {
+      SYSTEM_shortstring _t1;
+
+      _P3strcpy(basename,255,SYSUTILS_P3_extractfilename(_t1,255,
+        fn));
+    }
     if (_P3strcmpE(basename,_P3str1("\000"))) 
       _P3strcpy(basename,255,_P3str1("\010gmszlib1"));
-    GMSLIBNAME_gamslibnamep3(wfn,255,basename);
+    {
+      SYSTEM_shortstring _t1;
+
+      _P3strcpy(wfn,255,GMSLIBNAME_gamslibnamep3(_t1,255,
+        basename));
+    }
     _P3strcat(wfn,255,path,wfn);
     XCOMPRESS_zlibhandle = P3LIBRARY_p3loadlibrary(wfn,loadmsg);
     if (XCOMPRESS_zlibhandle != ValueCast(SYSTEM_pointer,0) && 
       _P3strcmpE(loadmsg,_P3str1("\000"))) {
-      XCOMPRESS_pcompress = ValueCast(_Func_0XCOMPRESS,
-                                      loadentry(_P3str1("\010compress"), wfn,loadmsg));
-      XCOMPRESS_puncompress = ValueCast(_Func_1XCOMPRESS,
-                                        loadentry(_P3str1("\012uncompress"), wfn,loadmsg));
-      XCOMPRESS_pgzreadopen = ValueCast(_Func_2XCOMPRESS,
-                                        loadentry(_P3str1("\006gzopen"), wfn,loadmsg));
-      XCOMPRESS_pgzread = ValueCast(_Func_3XCOMPRESS,
-                                    loadentry(_P3str1("\006gzread"), wfn,loadmsg));
-      XCOMPRESS_pgzreadclose = ValueCast(_Func_4XCOMPRESS,
-                                         loadentry(_P3str1("\007gzclose"), wfn,loadmsg));
-    }
+      XCOMPRESS_pcompress = ValueCast(XCOMPRESS_tcompress,loadentry(_P3str1("\010compress"),
+        wfn,loadmsg));
+      XCOMPRESS_puncompress = ValueCast(XCOMPRESS_tuncompress,
+        loadentry(_P3str1("\012uncompress"),wfn,loadmsg));
+      XCOMPRESS_pgzreadopen = ValueCast(XCOMPRESS_tgzreadopen,
+        loadentry(_P3str1("\006gzopen"),wfn,loadmsg));
+      XCOMPRESS_pgzread = ValueCast(XCOMPRESS_tgzread,loadentry(_P3str1("\006gzread"),
+        wfn,loadmsg));
+      XCOMPRESS_pgzreadclose = ValueCast(XCOMPRESS_tgzreadclose,
+        loadentry(_P3str1("\007gzclose"),wfn,loadmsg));
+    } 
   } 
   if (_P3strcmpN(loadmsg,_P3str1("\000"))) {
     XCOMPRESS_pcompress = NULL;

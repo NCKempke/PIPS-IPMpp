@@ -1,12 +1,12 @@
 #include "p3io.h"
 #include "p3platform.h"
-#include "p3utils.h"
 #include "system_p3.h"
+#include "p3utils.h"
 #include "p3process.h"
 #include "p3library.h"
+#include "exceptions.h"
 #include "math_p3.h"
 #include "p3ieeefp.h"
-#include "exceptions.h"
 #include "sysutils_p3.h"
 #include "p3threads.h"
 #include "idglobal_p3.h"
@@ -25,9 +25,7 @@
 #include "gmsheapnew.h"
 #include "datastorage.h"
 #include "gdlaudit.h"
-#if defined(USE_RUNNER)
 #include "runner.h"
-#endif
 #include "gxfile.h"
 
 _P3STR_7 GXFILE_baduel_prefix = {4,'?','L','_','_'};
@@ -121,6 +119,7 @@ typedef struct GXFILE_uint64_S {
   } _u;
 } GXFILE_uint64;
 
+static SYSTEM_boolean GXFILE_have_mem;
 
 Function(SYSTEM_integer )  STDCALL 
   GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt_dp_fc(
@@ -134,15 +133,9 @@ Function(SYSTEM_integer )  STDCALL
   GXFILE_uint64 local_uptr;
 
   if (self->GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt_dp_callbyref) {
-#if 0
     PointerCast(SYSTEM_pointer,&local_gdxdatareadrawfastfilt_dp) = ValueCast(
       SYSTEM_pointer,self->
       GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt_dp);
-#else
-    (void) memcpy ((void *)&local_gdxdatareadrawfastfilt_dp,
-		   (void *)&self->GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt_dp,
-		   sizeof(GXDEFS_tdatastorefiltproc_f));
-#endif
     local_uptr._u._c1.i = 0;
     local_uptr._u._c2.p = uptr;
     result = (*local_gdxdatareadrawfastfilt_dp)(indx,vals,&local_uptr.
@@ -163,15 +156,9 @@ Procedure  STDCALL GXFILE_tgxfileobj_DOT_gdxgetdomainelements_dp_fc(
   GXFILE_uint64 local_uptr;
 
   if (self->GXFILE_tgxfileobj_DOT_gdxgetdomainelements_dp_callbyref) {
-#if 0
     PointerCast(SYSTEM_pointer,&local_gdxgetdomainelements_dp) = ValueCast(
       SYSTEM_pointer,self->
       GXFILE_tgxfileobj_DOT_gdxgetdomainelements_dp);
-#else
-    (void) memcpy ((void *)&local_gdxgetdomainelements_dp,
-		   (void *)&self->GXFILE_tgxfileobj_DOT_gdxgetdomainelements_dp,
-		   sizeof(GXDEFS_tdomainindexproc_f));
-#endif
     local_uptr._u._c1.i = 0;
     local_uptr._u._c2.p = uptr;
     (*local_gdxgetdomainelements_dp)(&rawindex,&mappedindex,&
@@ -278,11 +265,18 @@ static Function(SYSTEM_integer ) GXFILE_getenvcompressflag(void)
   SYSTEM_integer result;
   SYSTEM_shortstring s;
 
-  SYSUTILS_P3_getenvironmentvariable(s,255,GXFILE_strgdxcompress);
   {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(s,255,SYSUTILS_P3_getenvironmentvariable(_t1,255,
+      GXFILE_strgdxcompress));
+  }
+  {
+    SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
 
-    STRUTILX_uppercase(s,255,SYSTEM_copy(_t2,255,s,1,1));
+    _P3strcpy(s,255,STRUTILX_uppercase(_t1,255,SYSTEM_copy(_t2,255,
+      s,1,1)));
   }
   if (_P3strcmpE(s,_P3str1("\000")) || _P3stccmpE(s,_P3char('N')) || 
     _P3stccmpE(s,_P3char('0'))) { 
@@ -299,29 +293,27 @@ static Function(SYSTEM_integer ) GXFILE_convertgdxfile(
   SYSTEM_integer result;
   SYSTEM_shortstring conv;
   SYSTEM_shortstring comp;
-#if defined(USE_RUNNER)
   RUNNER_trunner r;
-#endif
 
   result = 0;
   {
+    SYSTEM_shortstring _t1;
     SYSTEM_shortstring _t2;
     SYSTEM_shortstring _t3;
 
-    SYSUTILS_P3_trim(conv,255,STRUTILX_uppercase(_t2,255,
-      SYSUTILS_P3_getenvironmentvariable(_t3,255,
-      GXFILE_strgdxconvert)));
+    _P3strcpy(conv,255,SYSUTILS_P3_trim(_t1,255,
+      STRUTILX_uppercase(_t2,255,SYSUTILS_P3_getenvironmentvariable(
+      _t3,255,GXFILE_strgdxconvert))));
   }
   if (_P3strcmpE(conv,_P3str1("\000"))) 
     _P3strcpy(conv,255,_P3str1("\002V7"));
   if (_P3strcmpE(conv,_P3str1("\002V5"))) { 
     _P3strclr(comp);
-  }
-  else if (GXFILE_getenvcompressflag() == 0) { 
-    _P3strcpy(comp,255,_P3str1("\001U"));
-  }
-  else 
-    _P3strcpy(comp,255,_P3str1("\001C"));
+  } else 
+    if (GXFILE_getenvcompressflag() == 0) { 
+      _P3strcpy(comp,255,_P3str1("\001U"));
+    } else 
+      _P3strcpy(comp,255,_P3str1("\001C"));
   {
     _P3STR_255 _t1;
     _P3STR_255 _t2;
@@ -330,11 +322,6 @@ static Function(SYSTEM_integer ) GXFILE_convertgdxfile(
       _t2,255,_P3str1("\002V7"),mycomp))) 
       return result;
   }
-#if ! defined(USE_RUNNER)
-  // if we go this way, we will not run gdxcopy to compress or uncompress
-  // the GDX file
-  result = GXFILE_err_gdxcopy;
-#else
   r = ValueCast(RUNNER_trunner,RUNNER_trunner_DOT_create(ValueCast(
     RUNNER_trunner,_P3alloc_object(&RUNNER_trunner_CD))));
   if (_P3strcmpE(GXFILE_dllloadpath,_P3str1("\000"))) { 
@@ -363,7 +350,6 @@ static Function(SYSTEM_integer ) GXFILE_convertgdxfile(
     if (r->RUNNER_trunner_DOT_fprogrc != 0) 
       result = GXFILE_err_gdxcopy - r->RUNNER_trunner_DOT_fprogrc;
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,r));
-#endif
   return result;
 }  /* convertgdxfile */
 
@@ -388,7 +374,7 @@ static Function(SYSTEM_ansichar *) GXFILE_makegoodexpltext(
         if (q == _P3char('\000')) 
           q = ch;
         ch = q;
-      } 
+      }
       result[i] = ch;
     
     } while (i++ !=  _stop);
@@ -421,21 +407,6 @@ BRK_1:;
   return result;
 }  /* isgoodident */
 
-#if 0
-static Function(SYSTEM_integer ) GXFILE_imax(
-  SYSTEM_integer a,
-  SYSTEM_integer b)
-{
-  SYSTEM_integer result;
-
-  if (a >= b) { 
-    result = a;
-  } else 
-    result = b;
-  return result;
-}  /* imax */
-#endif
-
 static Function(GXFILE_tgdxelemsize ) GXFILE_getintegersize(
   SYSTEM_integer n)
 {
@@ -460,6 +431,8 @@ Constructor(GXFILE_tintegermapping ) GXFILE_tintegermapping_DOT_create(
   ValueCast(GXFILE_tintegermapping,SYSTEM_tobject_DOT_create(ValueCast(
     SYSTEM_tobject,self)));
   self->GXFILE_tintegermapping_DOT_fcapacity = 0;
+  self->GXFILE_tintegermapping_DOT_fmaxcapacity = 2147483647 + ValueCast(
+    SYSTEM_int64,1);
   self->GXFILE_tintegermapping_DOT_fhighestindex = 0;
   self->GXFILE_tintegermapping_DOT_pmap = NULL;
   return self;
@@ -468,14 +441,11 @@ Constructor(GXFILE_tintegermapping ) GXFILE_tintegermapping_DOT_create(
 Destructor(GXFILE_tintegermapping ) GXFILE_tintegermapping_DOT_destroy(
   GXFILE_tintegermapping self)
 {
-  if (self->GXFILE_tintegermapping_DOT_pmap != NULL)  {
-#if 0
-    SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
-				   GXFILE_tintegermapping_DOT_pmap),0);
-#else
-    SYSTEM_reallocmem((void **) &self->GXFILE_tintegermapping_DOT_pmap,0);
-#endif
-  }
+  if (self->GXFILE_tintegermapping_DOT_pmap != NULL) 
+    P3UTILS_p3freemem64(&PointerCast(SYSTEM_pointer,&self->
+      GXFILE_tintegermapping_DOT_pmap),self->
+      GXFILE_tintegermapping_DOT_fmapbytes);
+  self->GXFILE_tintegermapping_DOT_pmap = NULL;
   SYSTEM_tobject_DOT_destroy(ValueCast(SYSTEM_tobject,self));
   return self;
 }  /* destroy */
@@ -485,39 +455,8 @@ Procedure GXFILE_tintegermapping_DOT_setmapping(
   SYSTEM_integer f,
   SYSTEM_integer t)
 {
-  SYSTEM_integer n;
-  SYSTEM_integer delta = 0;
-
-  if (f >= self->GXFILE_tintegermapping_DOT_fcapacity) {
-    delta = 0;
-    do {
-      if (self->GXFILE_tintegermapping_DOT_fcapacity == 0) { 
-        _P3inc1(delta,1024);
-      } else 
-        if (self->GXFILE_tintegermapping_DOT_fcapacity <= 32768) { 
-          _P3inc1(delta,self->GXFILE_tintegermapping_DOT_fcapacity);
-        } else 
-          _P3inc1(delta,self->GXFILE_tintegermapping_DOT_fcapacity /  4);
-    } while (!(f < self->GXFILE_tintegermapping_DOT_fcapacity + delta));
-#if 0
-    SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
-      GXFILE_tintegermapping_DOT_pmap),(self->
-      GXFILE_tintegermapping_DOT_fcapacity + delta) * sizeof(
-      SYSTEM_longint));
-#else
-    SYSTEM_reallocmem((void **) &self->GXFILE_tintegermapping_DOT_pmap,
-		      (self->GXFILE_tintegermapping_DOT_fcapacity + delta) * sizeof(SYSTEM_longint));
-#endif
-    { register SYSTEM_int32 _stop = self->
-        GXFILE_tintegermapping_DOT_fcapacity + delta - 1;
-      if ((n = self->GXFILE_tintegermapping_DOT_fcapacity) <=  _stop) do {
-        (*self->GXFILE_tintegermapping_DOT_pmap)[n] =  -1;
-      } while (n++ !=  _stop);
-
-    }
-    self->GXFILE_tintegermapping_DOT_fcapacity = self->
-      GXFILE_tintegermapping_DOT_fcapacity + delta;
-  } 
+  if (f >= self->GXFILE_tintegermapping_DOT_fcapacity) 
+    GXFILE_tintegermapping_DOT_growmapping(self,f);
   (*self->GXFILE_tintegermapping_DOT_pmap)[f] = t;
   if (f > self->GXFILE_tintegermapping_DOT_fhighestindex) 
     self->GXFILE_tintegermapping_DOT_fhighestindex = f;
@@ -536,13 +475,59 @@ Function(SYSTEM_integer ) GXFILE_tintegermapping_DOT_getmapping(
   return result;
 }  /* getmapping */
 
+Procedure GXFILE_tintegermapping_DOT_growmapping(
+  GXFILE_tintegermapping self,
+  SYSTEM_integer f)
+{
+  SYSTEM_int64 k, prevcap, currcap, delta;
+  SYSTEM_boolean at_max_capacity;
+
+  at_max_capacity = self->GXFILE_tintegermapping_DOT_fmaxcapacity <= 
+    self->GXFILE_tintegermapping_DOT_fcapacity;
+  SYSTEM_cassert(!at_max_capacity);
+  SYSTEM_assert(!at_max_capacity,_P3str1("\070Already at maximum capacity: cannot grow TIntegerMapping"));
+  currcap = self->GXFILE_tintegermapping_DOT_fcapacity;
+  prevcap = currcap;
+  while (f >= currcap) {
+    if (currcap >= 1048576) { 
+      delta = currcap /  2;
+    } else 
+      if (currcap <= 0) { 
+        delta = 1024;
+      } else 
+        delta = currcap;
+    currcap = currcap + delta;
+    if (currcap > self->GXFILE_tintegermapping_DOT_fmaxcapacity) 
+      currcap = self->GXFILE_tintegermapping_DOT_fmaxcapacity;
+  }
+  self->GXFILE_tintegermapping_DOT_fcapacity = currcap;
+  self->GXFILE_tintegermapping_DOT_fmapbytes = self->
+    GXFILE_tintegermapping_DOT_fcapacity * sizeof(SYSTEM_int32);
+  _P3_TRY {
+    P3UTILS_p3reallocmem64(&PointerCast(SYSTEM_pointer,&self->
+      GXFILE_tintegermapping_DOT_pmap),self->
+      GXFILE_tintegermapping_DOT_fmapbytes);
+  } _P3_EXCEPT {
+{
+      GXFILE_have_mem = SYSTEM_false;
+      SYSTEM_cassert(GXFILE_have_mem);
+    }
+  } _P3_END_TRY_EXCEPT;
+  { register SYSTEM_int64 _stop = self->
+      GXFILE_tintegermapping_DOT_fcapacity - 1;
+    if ((k = prevcap) <=  _stop) do {
+      (*self->GXFILE_tintegermapping_DOT_pmap)[k] =  -1;
+    } while (k++ !=  _stop);
+
+  }
+}  /* growmapping */
+
 Function(SYSTEM_int64 ) GXFILE_tintegermapping_DOT_memoryused(
   GXFILE_tintegermapping self)
 {
   SYSTEM_int64 result;
 
-  result = self->GXFILE_tintegermapping_DOT_fcapacity * sizeof(
-    SYSTEM_longint);
+  result = self->GXFILE_tintegermapping_DOT_fmapbytes;
   return result;
 }  /* memoryused */
 
@@ -712,7 +697,7 @@ Function(GXFILE_tuelusermapstatus )
             self->GXFILE_tueltable_DOT_fmaptouserstatus = 
               GXFILE_map_unsorted;
             SYSTEM_break(BRK_2);
-          } 
+          }
       
       } while (n++ !=  _stop);
 BRK_2:;
@@ -810,6 +795,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenwriteex(
     *errnr = GXFILE_err_filealreadyopen;
     return result;
   } 
+  if (_P3strcmpE(filename,_P3str1("\000"))) {
+    *errnr = GXFILE_err_nofile;
+    self->GXFILE_tgxfileobj_DOT_lasterror = *errnr;
+    return result;
+  } 
   self->GXFILE_tgxfileobj_DOT_ffile = ValueCast(
     GMSSTRM_tmibufferedstream,
     GMSSTRM_tmibufferedstream_DOT_createwithpath(ValueCast(
@@ -825,13 +815,12 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenwriteex(
     self->GXFILE_tgxfileobj_DOT_lasterror = *errnr;
     return result;
   } 
-  if (compr != 0) {
+  if (compr != 0) 
     if (self->GXFILE_tgxfileobj_DOT_ffile->
       GMSSTRM_tbufferedfilestream_DOT_fcancompress) { 
       compr = 1;
     } else 
       compr = 0;
-  }
   self->GXFILE_tgxfileobj_DOT_fcomprlev = compr;
   self->GXFILE_tgxfileobj_DOT_compressout = compr > 0;
   self->GXFILE_tgxfileobj_DOT_fmode = GXFILE_f_not_open;
@@ -921,14 +910,28 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenread(
   SYSTEM_integer result;
 
   result = GXFILE_tgxfileobj_DOT_gdxopenreadxx(self,filename,
-    GMSSTRM_fmopenread,errnr);
+    GMSSTRM_fmopenread,0,errnr);
   return result;
 }  /* gdxopenread */
+
+Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadex(
+  GXFILE_tgxfileobj self,
+  const SYSTEM_ansichar *filename,
+  SYSTEM_integer readmode,
+  SYSTEM_integer *errnr)
+{
+  SYSTEM_integer result;
+
+  result = GXFILE_tgxfileobj_DOT_gdxopenreadxx(self,filename,
+    GMSSTRM_fmopenread,readmode,errnr);
+  return result;
+}  /* gdxopenreadex */
 
 Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
   GXFILE_tgxfileobj self,
   const SYSTEM_ansichar *afn,
   SYSTEM_integer filemode,
+  SYSTEM_integer readmode,
   SYSTEM_integer *errnr)
 {
   SYSTEM_integer result;
@@ -936,6 +939,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
   SYSTEM_shortstring s;
   SYSTEM_integer n;
   SYSTEM_integer nrelem;
+  SYSTEM_integer textnum;
   SYSTEM_int64 uelpos;
   SYSTEM_int64 symbpos;
   SYSTEM_int64 settextpos;
@@ -955,6 +959,10 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
   self->GXFILE_tgxfileobj_DOT_fmode = GXFILE_f_not_open;
   self->GXFILE_tgxfileobj_DOT_readptr = NULL;
   GXFILE_tgxfileobj_DOT_initerrors(self);
+  if (_P3strcmpE(afn,_P3str1("\000"))) {
+    *errnr = GXFILE_err_nofile;
+    goto _Lfilenogood_32;
+  } 
   self->GXFILE_tgxfileobj_DOT_ffile = ValueCast(
     GMSSTRM_tmibufferedstream,
     GMSSTRM_tmibufferedstream_DOT_createwithpath(ValueCast(
@@ -963,17 +971,17 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
   *errnr = GMSSTRM_txfilestream_DOT_getlastioresult(ValueCast(
     GMSSTRM_txfilestream,self->GXFILE_tgxfileobj_DOT_ffile));
   if (*errnr != 0) 
-    goto _Lfilenogood_31;
+    goto _Lfilenogood_32;
   if (GMSSTRM_tmibufferedstream_DOT_goodbyteorder(self->
     GXFILE_tgxfileobj_DOT_ffile) != 0) {
     *errnr = GXFILE_err_baddataformat;
-    goto _Lfilenogood_31;
+    goto _Lfilenogood_32;
   } 
   if (GXFILE_tgxfileobj_DOT_errorcondition(self,
     GMSSTRM_txstream_DOT_readbyte(ValueCast(GMSSTRM_txstream,self->
     GXFILE_tgxfileobj_DOT_ffile)) == GXFILE_gdxheadernr,
     GXFILE_err_open_fileheader)) 
-    goto _Lfileerrornr_31;
+    goto _Lfileerrornr_32;
   {
     SYSTEM_shortstring _t1;
 
@@ -981,7 +989,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
       GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
       GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
       GXFILE_gdxheaderid),GXFILE_err_open_filemarker)) 
-      goto _Lfileerrornr_31;
+      goto _Lfileerrornr_32;
   }
   self->GXFILE_tgxfileobj_DOT_versionread = VirtMethodCall(ValueCast(
     GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile), 
@@ -990,7 +998,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
   if (GXFILE_tgxfileobj_DOT_errorcondition(self,self->
     GXFILE_tgxfileobj_DOT_versionread <= 7,
     GXFILE_err_open_fileversion)) 
-    goto _Lfileerrornr_31;
+    goto _Lfileerrornr_32;
   if (self->GXFILE_tgxfileobj_DOT_versionread <= 5) { 
     compr = 0;
   } else 
@@ -1002,7 +1010,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
     GXFILE_tgxfileobj_DOT_ffile->
     GMSSTRM_tbufferedfilestream_DOT_fcancompress) {
     *errnr = GXFILE_err_zlib_not_found;
-    goto _Lfilenogood_31;
+    goto _Lfilenogood_32;
   } 
   self->GXFILE_tgxfileobj_DOT_fcomprlev = compr;
   GMSSTRM_txstream_DOT_readstring(self->
@@ -1021,7 +1029,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
     GMSSTRM_txstream_DOT_readinteger_T, 7, (ValueCast(GMSSTRM_txstream,
     self->GXFILE_tgxfileobj_DOT_ffile))) == GXFILE_mark_boi,
     GXFILE_err_open_boi)) 
-    goto _Lfileerrornr_31;
+    goto _Lfileerrornr_32;
   acronympos = 0;
   domstrpos = 0;
   if (self->GXFILE_tgxfileobj_DOT_versionread <= 5) {
@@ -1060,7 +1068,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
         GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_readint64_T, 9, (ValueCast(
         GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)));
     } 
-  } 
+  }
   GMSSTRM_tbufferedfilestream_DOT_setcompression(ValueCast(
     GMSSTRM_tbufferedfilestream,self->GXFILE_tgxfileobj_DOT_ffile),
     self->GXFILE_tgxfileobj_DOT_douncompress);
@@ -1074,7 +1082,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
       GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
       GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
       GXFILE_mark_symb),GXFILE_err_open_symbolmarker1)) 
-      goto _Lfileerrornr_31;
+      goto _Lfileerrornr_32;
   }
   nrelem = VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
     GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_readinteger_T, 7, (ValueCast(
@@ -1137,14 +1145,21 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
           b = GMSSTRM_txstream_DOT_readbyte(ValueCast(GMSSTRM_txstream,
             self->GXFILE_tgxfileobj_DOT_ffile));
           _W2->siscompressed = b != 0;
-        } 
+        }
         _W2->sdomsymbols = NULL;
         _W2->scommentslist = NULL;
         if (self->GXFILE_tgxfileobj_DOT_versionread >= 7) {
           if (GMSSTRM_txstream_DOT_readbyte(ValueCast(GMSSTRM_txstream,
             self->GXFILE_tgxfileobj_DOT_ffile)) != 0) {
-            _P3getmem(_W2->sdomsymbols,(_W2->sdim + 1) * sizeof(
-              SYSTEM_longint));
+            _P3_TRY {
+              _P3getmem(_W2->sdomsymbols,(_W2->sdim + 1) * sizeof(
+                SYSTEM_longint));
+            } _P3_EXCEPT {
+{
+                GXFILE_have_mem = SYSTEM_false;
+                SYSTEM_cassert(GXFILE_have_mem);
+              }
+            } _P3_END_TRY_EXCEPT;
             { register SYSTEM_int32 _stop = _W2->sdim;
               if ((d = 1) <=  _stop) do {
                 (*_W2->sdomsymbols)[d] = VirtMethodCall(ValueCast(
@@ -1172,8 +1187,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
                   GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)));
               }
               nrelem = nrelem - 1;
-            
-}
+            }
           } 
         } 
         _W2->ssetbitmap = NULL;
@@ -1195,7 +1209,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
       GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
       GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
       GXFILE_mark_symb),GXFILE_err_open_symbolmarker2)) 
-      goto _Lfileerrornr_31;
+      goto _Lfileerrornr_32;
   }
   GMSSTRM_tbufferedfilestream_DOT_setcompression(ValueCast(
     GMSSTRM_tbufferedfilestream,self->GXFILE_tgxfileobj_DOT_ffile),
@@ -1213,7 +1227,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
       GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
       GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
       GXFILE_mark_uel),GXFILE_err_open_uelmarker1)) 
-      goto _Lfileerrornr_31;
+      goto _Lfileerrornr_32;
   }
   { register GXFILE_tueltable_OD *_W2=self->
     GXFILE_tgxfileobj_DOT_ueltable;
@@ -1250,55 +1264,85 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
       GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
       GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
       GXFILE_mark_uel),GXFILE_err_open_uelmarker2)) 
-      goto _Lfileerrornr_31;
+      goto _Lfileerrornr_32;
   }
-  GMSSTRM_tbufferedfilestream_DOT_setcompression(ValueCast(
-    GMSSTRM_tbufferedfilestream,self->GXFILE_tgxfileobj_DOT_ffile),
-    self->GXFILE_tgxfileobj_DOT_douncompress);
-  VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
-    GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_setposition_T, 2, (ValueCast(
-    GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile),settextpos));
-  self->GXFILE_tgxfileobj_DOT_settextlist = ValueCast(GMSOBJ_txstrpool,
-    GMSOBJ_txhashedstringlist_DOT_create(ValueCast(
-    GMSOBJ_txhashedstringlist,_P3alloc_object(&GMSOBJ_txstrpool_CD))));
-  {
-    SYSTEM_shortstring _t1;
+  if (readmode % 2 == 0) {
+    GMSSTRM_tbufferedfilestream_DOT_setcompression(ValueCast(
+      GMSSTRM_tbufferedfilestream,self->GXFILE_tgxfileobj_DOT_ffile),
+      self->GXFILE_tgxfileobj_DOT_douncompress);
+    VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
+      GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_setposition_T, 2, (ValueCast(
+      GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile),settextpos));
+    self->GXFILE_tgxfileobj_DOT_settextlist = ValueCast(
+      GMSOBJ_txstrpool,GMSOBJ_txhashedstringlist_DOT_create(ValueCast(
+      GMSOBJ_txhashedstringlist,_P3alloc_object(&GMSOBJ_txstrpool_CD))));
+    {
+      SYSTEM_shortstring _t1;
 
-    if (GXFILE_tgxfileobj_DOT_errorcondition(self,_P3strcmpE(
-      GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
-      GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
-      GXFILE_mark_sett),GXFILE_err_open_textmarker1)) 
-      goto _Lfileerrornr_31;
-  }
-  nrelem = VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
-    GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_readinteger_T, 7, (ValueCast(
-    GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)));
-  GMSOBJ_txcustomstringlist_DOT_setcapacity(ValueCast(
-    GMSOBJ_txcustomstringlist,self->GXFILE_tgxfileobj_DOT_settextlist),
-    nrelem);
-  { register SYSTEM_int32 _stop = nrelem;
-    if ((n = 1) <=  _stop) do {
-      {
-        SYSTEM_shortstring _t1;
-
-        GMSOBJ_txhashedstringlist_DOT_add(ValueCast(
-          GMSOBJ_txhashedstringlist,self->
-          GXFILE_tgxfileobj_DOT_settextlist),
-          GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
-          GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)));
+      if (GXFILE_tgxfileobj_DOT_errorcondition(self,_P3strcmpE(
+        GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
+        GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
+        GXFILE_mark_sett),GXFILE_err_open_textmarker1)) 
+        goto _Lfileerrornr_32;
+    }
+    nrelem = VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
+      GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_readinteger_T, 7, (ValueCast(
+      GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)));
+    _P3_TRY {
+      GMSOBJ_txcustomstringlist_DOT_setcapacity(ValueCast(
+        GMSOBJ_txcustomstringlist,self->
+        GXFILE_tgxfileobj_DOT_settextlist),nrelem);
+    } _P3_EXCEPT {
+{
+        GXFILE_have_mem = SYSTEM_false;
+        SYSTEM_cassert(GXFILE_have_mem);
       }
-    } while (n++ !=  _stop);
+    } _P3_END_TRY_EXCEPT;
+    { register SYSTEM_int32 _stop = nrelem - 1;
+      if ((n = 0) <=  _stop) do {
+        {
+          SYSTEM_shortstring _t1;
 
-  }
-  {
-    SYSTEM_shortstring _t1;
+          textnum = GMSOBJ_txhashedstringlist_DOT_add(ValueCast(
+            GMSOBJ_txhashedstringlist,self->
+            GXFILE_tgxfileobj_DOT_settextlist),
+            GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
+            GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)));
+        }
+        if (textnum != n) {
+          if (self->GXFILE_tgxfileobj_DOT_mapsettext == NULL) {
+            _P3_TRY {
+              _P3getmem(self->GXFILE_tgxfileobj_DOT_mapsettext,nrelem * sizeof(
+                SYSTEM_longint));
+            } _P3_EXCEPT {
+{
+                GXFILE_have_mem = SYSTEM_false;
+                SYSTEM_cassert(GXFILE_have_mem);
+              }
+            } _P3_END_TRY_EXCEPT;
+            { register SYSTEM_int32 _stop = n - 1;
+              if ((d = 0) <=  _stop) do {
+                (*self->GXFILE_tgxfileobj_DOT_mapsettext)[d] = d;
+              } while (d++ !=  _stop);
 
-    if (GXFILE_tgxfileobj_DOT_errorcondition(self,_P3strcmpE(
-      GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
-      GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
-      GXFILE_mark_sett),GXFILE_err_open_textmarker2)) 
-      goto _Lfileerrornr_31;
-  }
+            }
+          } 
+          (*self->GXFILE_tgxfileobj_DOT_mapsettext)[n] = textnum;
+        } 
+      
+      } while (n++ !=  _stop);
+
+    }
+    {
+      SYSTEM_shortstring _t1;
+
+      if (GXFILE_tgxfileobj_DOT_errorcondition(self,_P3strcmpE(
+        GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
+        GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
+        GXFILE_mark_sett),GXFILE_err_open_textmarker2)) 
+        goto _Lfileerrornr_32;
+    }
+  } 
   if (self->GXFILE_tgxfileobj_DOT_versionread >= 7) {
     GMSSTRM_tbufferedfilestream_DOT_setcompression(ValueCast(
       GMSSTRM_tbufferedfilestream,self->GXFILE_tgxfileobj_DOT_ffile),
@@ -1313,7 +1357,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
         GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
         GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
         GXFILE_mark_acro),GXFILE_err_open_acromarker1)) 
-        goto _Lfileerrornr_31;
+        goto _Lfileerrornr_32;
     }
     GXFILE_tacronymlist_DOT_loadfromstream(self->
       GXFILE_tgxfileobj_DOT_acronymlist,ValueCast(GMSSTRM_txstream,
@@ -1325,7 +1369,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
         GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
         GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
         GXFILE_mark_acro),GXFILE_err_open_acromarker2)) 
-        goto _Lfileerrornr_31;
+        goto _Lfileerrornr_32;
     }
   } 
   self->GXFILE_tgxfileobj_DOT_domainstrlist = ValueCast(
@@ -1347,7 +1391,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
         GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
         GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
         GXFILE_mark_doms),GXFILE_err_open_domsmarker1)) 
-        goto _Lfileerrornr_31;
+        goto _Lfileerrornr_32;
     }
     STRHASH_txstrhashlist_DOT_loadfromstream(self->
       GXFILE_tgxfileobj_DOT_domainstrlist,ValueCast(GMSSTRM_txstream,
@@ -1359,7 +1403,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
         GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
         GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
         GXFILE_mark_doms),GXFILE_err_open_domsmarker2)) 
-        goto _Lfileerrornr_31;
+        goto _Lfileerrornr_32;
     }
     while (SYSTEM_true) {
       synr = VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
@@ -1371,8 +1415,15 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
       { register GXFILE_tgdxsymbrecord *_W2=ValueCast(
         GXFILE_pgdxsymbrecord,STRHASH_txstrhashlist_DOT_getobject(self->
         GXFILE_tgxfileobj_DOT_namelist,synr));
-        _P3getmem(_W2->sdomstrings,(_W2->sdim + 1) * sizeof(
-          SYSTEM_longint));
+        _P3_TRY {
+          _P3getmem(_W2->sdomstrings,(_W2->sdim + 1) * sizeof(
+            SYSTEM_longint));
+        } _P3_EXCEPT {
+{
+            GXFILE_have_mem = SYSTEM_false;
+            SYSTEM_cassert(GXFILE_have_mem);
+          }
+        } _P3_END_TRY_EXCEPT;
         { register SYSTEM_int32 _stop = _W2->sdim;
           if ((d = 1) <=  _stop) do {
             (*_W2->sdomstrings)[d] = VirtMethodCall(ValueCast(
@@ -1384,7 +1435,6 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenreadxx(
         }
 
       }
-    
     }
 BRK_3:;
     {
@@ -1394,7 +1444,7 @@ BRK_3:;
         GMSSTRM_txstream_DOT_readstring(_t1,255,ValueCast(
         GMSSTRM_txstream,self->GXFILE_tgxfileobj_DOT_ffile)),
         GXFILE_mark_doms),GXFILE_err_open_domsmarker3)) 
-        goto _Lfileerrornr_31;
+        goto _Lfileerrornr_32;
     }
   } 
   self->GXFILE_tgxfileobj_DOT_lasterror = GXFILE_err_noerror;
@@ -1406,9 +1456,10 @@ BRK_3:;
     SYSTEM_false);
   result = GXFILE_mytrue;
   return result;
-  _Lfilenogood_31:;
+  _Lfilenogood_32:;
   self->GXFILE_tgxfileobj_DOT_lasterror = *errnr;
-  _Lfileerrornr_31:;
+  _Lfileerrornr_32:;
+  *errnr = self->GXFILE_tgxfileobj_DOT_lasterror;
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,self->
     GXFILE_tgxfileobj_DOT_ffile));
   self->GXFILE_tgxfileobj_DOT_ffile = NULL;
@@ -1679,12 +1730,13 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxclose(
 
       }
       _P3freemem(psy);
-    
     }
     SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_namelist);
   } 
   SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_errorlist);
   SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_settextlist);
+  if (self->GXFILE_tgxfileobj_DOT_mapsettext != NULL) 
+    _P3freemem(self->GXFILE_tgxfileobj_DOT_mapsettext);
   SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_ueltable);
   SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_sortlist);
   SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_filterlist);
@@ -1728,7 +1780,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxgetlasterror(
       result = self->GXFILE_tgxfileobj_DOT_lasterror;
       self->GXFILE_tgxfileobj_DOT_lasterror = GXFILE_err_noerror;
     } 
-  } 
+  }
   return result;
 }  /* gdxgetlasterror */
 
@@ -1806,7 +1858,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolinfo(
         *typ = SYSTEM_ord(_W2->sdatatype);
 
       }
-    } 
+    }
   return result;
 }  /* gdxsymbolinfo */
 
@@ -1845,7 +1897,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolinfox(
         _P3strcpy(expltxt,255,_W2->sexpltxt);
 
       }
-    } 
+    }
   return result;
 }  /* gdxsymbolinfox */
 
@@ -1867,7 +1919,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxfindsymbol(
       if (*synr >= 1) 
         result = GXFILE_mytrue;
     } 
-  } 
+  }
   return result;
 }  /* gdxfindsymbol */
 
@@ -1895,8 +1947,8 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxgetuel(
     {
       SYSTEM_shortstring _t1;
 
-      _P3strcat(uel,255,GXFILE_baduel_prefix,STRUTILX_inttostr(_t1,255,
-        uelnr));
+      _P3strcat(uel,255,GXFILE_baduel_prefix,SYSUTILS_P3_inttostr(
+        _t1,255,uelnr));
     }
   return result;
 }  /* gdxgetuel */
@@ -1933,7 +1985,7 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_preparesymbolwrite(
 
       GXFILE_tgxfileobj_DOT_writetrace(self,_P3strcat(_t4,255,
         _P3strcat(_t2,255,_P3strcat(_t1,255,_P3str1("\011Symbol = "),
-        aname),_P3str1("\010, Dim = ")),STRUTILX_inttostr(_t3,255,
+        aname),_P3str1("\010, Dim = ")),SYSUTILS_P3_inttostr(_t3,255,
         adim)));
     }
   if (!GXFILE_tgxfileobj_DOT_isgoodnewsymbol(self,aname)) 
@@ -1954,12 +2006,18 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_preparesymbolwrite(
     _W2->serrors = 0;
     _W2->suserinfo = auserinfo;
     _W2->ssettext = SYSTEM_false;
-    GXFILE_makegoodexpltext(_W2->sexpltxt,255,atext);
+    {
+      SYSTEM_shortstring _t1;
+
+      _P3strcpy(_W2->sexpltxt,255,GXFILE_makegoodexpltext(_t1,255,
+        atext));
+    }
     _W2->siscompressed = self->GXFILE_tgxfileobj_DOT_compressout && 
       adim > 0;
     _W2->scommentslist = NULL;
     _W2->sdomsymbols = NULL;
-    if (_P3SET_in_1(atype,0,_P3SET_equal(atype,4)) && adim == 1) { 
+    if (_P3SET_in_1(atype,0,_P3SET_equal(atype,4)) && adim == 1 && 
+      self->GXFILE_tgxfileobj_DOT_storedomainsets) { 
       _W2->ssetbitmap = ValueCast(GMSOBJ_tbooleanbitarray,
         GMSOBJ_tbooleanbitarray_DOT_create(ValueCast(
         GMSOBJ_tbooleanbitarray,_P3alloc_object(&
@@ -2187,7 +2245,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatawritemap(
         GXFILE_tgxfileobj_DOT_sortlist));
       self->GXFILE_tgxfileobj_DOT_sortlist = NULL;
       self->GXFILE_tgxfileobj_DOT_fmode = GXFILE_fw_init;
-    } 
+    }
   } _P3_END_TRY_EXCEPT;
   return result;
 }  /* gdxdatawritemap */
@@ -2238,7 +2296,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatawritestr(
   { register SYSTEM_int32 _stop = self->
       GXFILE_tgxfileobj_DOT_fcurrentdim;
     if ((d = 1) <=  _stop) do {
-      SYSUTILS_P3_trimright(sv,255,keystr[d - 1]);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(sv,255,SYSUTILS_P3_trimright(_t1,255,keystr[d - 1]));
+      }
       if (_P3strcmpN(sv,self->GXFILE_tgxfileobj_DOT_laststrelem[d - 1])) {
         kd = STRHASH_txstrhashlist_DOT_indexof(ValueCast(
           STRHASH_txstrhashlist,self->GXFILE_tgxfileobj_DOT_ueltable),
@@ -2275,7 +2337,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatawritestr(
         GXFILE_tgxfileobj_DOT_sortlist));
       self->GXFILE_tgxfileobj_DOT_sortlist = NULL;
       self->GXFILE_tgxfileobj_DOT_fmode = GXFILE_fw_init;
-    } 
+    }
   } _P3_END_TRY_EXCEPT;
   return result;
 }  /* gdxdatawritestr */
@@ -2398,9 +2460,12 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_preparesymbolread(
       } while (!(self->GXFILE_tgxfileobj_DOT_cursyptr->sdatatype != 
         GMSSPECS_dt_alias));
 BRK_4:;
-      if (!self->GXFILE_tgxfileobj_DOT_readuniverse) 
+      if (!self->GXFILE_tgxfileobj_DOT_readuniverse) {
+        SYSTEM_cassert(self->GXFILE_tgxfileobj_DOT_cursyptr->sdatatype == 
+          GMSSPECS_dt_set);
         SYSTEM_assert(self->GXFILE_tgxfileobj_DOT_cursyptr->sdatatype == 
           GMSSPECS_dt_set,_P3str1("\021Bad aliased set-1"));
+      } 
     } 
   } 
   if (self->GXFILE_tgxfileobj_DOT_readuniverse) {
@@ -2467,7 +2532,7 @@ BRK_4:;
               GXFILE_tgxfileobj_DOT_reporterror(self,
                 GXFILE_err_unknownfilter);
               return result;
-            } 
+            }
         }
 
       }
@@ -2528,6 +2593,7 @@ BRK_4:;
     GXFILE_fr_str_data,_P3SET_equal(newmode,GXFILE_fr_slice)))) { 
     result = nrrecs;
   } else {
+    SYSTEM_cassert(newmode == GXFILE_fr_map_data);
     SYSTEM_assert(newmode == GXFILE_fr_map_data,_P3str1("\032Expect to read mapped data"));
     if (GXFILE_tgxfileobj_DOT_resultwillbesorted(self,adomainnrs)) {
       result = nrrecs;
@@ -2567,7 +2633,7 @@ BRK_4:;
                       adderror = SYSTEM_true;
                       fidim = d;
                       SYSTEM_break(BRK_5);
-                    } 
+                    }
                     break;
                   case GXFILE_dm_strict: 
                     v = GXFILE_tueltable_DOT_getusermap(self->
@@ -2579,7 +2645,7 @@ BRK_4:;
                       adderror = SYSTEM_true;
                       fidim = d;
                       SYSTEM_break(BRK_5);
-                    } 
+                    }
                     break;
                   case GXFILE_dm_expand: 
                     en = self->GXFILE_tgxfileobj_DOT_lastelem[d - 1];
@@ -2597,8 +2663,8 @@ BRK_4:;
                       } else {
                         aelements[d - 1] = -en;
                         addnew = SYSTEM_true;
-                      } 
-                    } 
+                      }
+                    }
                     break;
                   default: break;
                 }
@@ -2609,8 +2675,12 @@ BRK_5:;
 
           }
           if (adderror) {
-            GXFILE_tgxfileobj_DOT_addtoerrorlist(self,self->
+            self->GXFILE_tgxfileobj_DOT_lastelem[fidim - 1] = -
+              self->GXFILE_tgxfileobj_DOT_lastelem[fidim - 1];
+            GXFILE_tgxfileobj_DOT_addtoerrorlistdomerrs(self,self->
               GXFILE_tgxfileobj_DOT_lastelem,avals);
+            self->GXFILE_tgxfileobj_DOT_lastelem[fidim - 1] = -
+              self->GXFILE_tgxfileobj_DOT_lastelem[fidim - 1];
             adderror = SYSTEM_false;
           } else {
             if (addnew) {
@@ -2644,10 +2714,8 @@ BRK_5:;
             DATASTORAGE_tlinkeddata_DOT_additem(self->
               GXFILE_tgxfileobj_DOT_sortlist,ValueCast(
               GMSGEN_pintegerarrayone,&aelements[0]),avals);
-          } 
-        
-}
-        SYSUTILS_P3_freeandnil(&expndlist);
+          }
+        }
         DATASTORAGE_tlinkeddata_DOT_startread(self->
           GXFILE_tgxfileobj_DOT_sortlist,&self->
           GXFILE_tgxfileobj_DOT_readptr,ValueCast(
@@ -2658,7 +2726,8 @@ BRK_5:;
 
           allocok = SYSTEM_false;
       } _P3_END_TRY_EXCEPT;
-} 
+}
+  SYSUTILS_P3_freeandnil(&expndlist);
   if (allocok) {
     { register SYSTEM_int32 _stop = self->
         GXFILE_tgxfileobj_DOT_fcurrentdim;
@@ -2675,7 +2744,7 @@ BRK_5:;
     self->GXFILE_tgxfileobj_DOT_sortlist = NULL;
     self->GXFILE_tgxfileobj_DOT_fmode = GXFILE_fr_init;
     result =  -1;
-  } 
+  }
   return result;
 }  /* preparesymbolread */
 
@@ -2787,7 +2856,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadraw(
 
     }
     result = GXFILE_mytrue;
-  } 
+  }
   return result;
 }  /* gdxdatareadraw */
 
@@ -2843,12 +2912,14 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadmap(
     result = GXFILE_mytrue;
     return result;
   } 
+  SYSTEM_cassert(self->GXFILE_tgxfileobj_DOT_fmode == 
+    GXFILE_fr_mapr_data);
   SYSTEM_assert(self->GXFILE_tgxfileobj_DOT_fmode == 
     GXFILE_fr_mapr_data,_P3str1("\025fr_MapR_data expected"));
   addnew = SYSTEM_false;
   adderror = SYSTEM_false;
   fidim = self->GXFILE_tgxfileobj_DOT_fcurrentdim;
-  _Lagain_55:;
+  _Lagain_56:;
   if (!GXFILE_tgxfileobj_DOT_doread(self,values,dimfrst)) 
     return result;
   if (fidim < *dimfrst) 
@@ -2875,7 +2946,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadmap(
                 adderror = SYSTEM_true;
                 fidim = d;
                 SYSTEM_break(BRK_6);
-              } 
+              }
               break;
             case GXFILE_dm_strict: 
               v = GXFILE_tueltable_DOT_getusermap(self->
@@ -2887,7 +2958,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadmap(
                 adderror = SYSTEM_true;
                 fidim = d;
                 SYSTEM_break(BRK_6);
-              } 
+              }
               break;
             case GXFILE_dm_expand: 
               en = self->GXFILE_tgxfileobj_DOT_lastelem[d - 1];
@@ -2898,7 +2969,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadmap(
               } else {
                 keyint[d - 1] = -en;
                 addnew = SYSTEM_true;
-              } 
+              }
               break;
             default: break;
           }
@@ -2909,10 +2980,48 @@ BRK_6:;
 
     }
   if (adderror) {
-    GXFILE_tgxfileobj_DOT_addtoerrorlist(self,self->
+    { register SYSTEM_int32 _stop = self->
+        GXFILE_tgxfileobj_DOT_fcurrentdim;
+      if ((d = 1) <=  _stop) do {
+        { register GXFILE_tdomain *_W2= &self->
+          GXFILE_tgxfileobj_DOT_domainlist[d - 1];
+          switch (_W2->daction) {
+            case GXFILE_dm_filter: 
+              v = GXFILE_tueltable_DOT_getusermap(self->
+                GXFILE_tgxfileobj_DOT_ueltable,self->
+                GXFILE_tgxfileobj_DOT_lastelem[d - 1]);
+              if (!GXFILE_tdfilter_DOT_infilter(_W2->dfilter,v)) 
+                self->GXFILE_tgxfileobj_DOT_lastelem[d - 1] = -
+                  self->GXFILE_tgxfileobj_DOT_lastelem[d - 1];
+              break;
+            case GXFILE_dm_strict: 
+              v = GXFILE_tueltable_DOT_getusermap(self->
+                GXFILE_tgxfileobj_DOT_ueltable,self->
+                GXFILE_tgxfileobj_DOT_lastelem[d - 1]);
+              if (v < 0) 
+                self->GXFILE_tgxfileobj_DOT_lastelem[d - 1] = -
+                  self->GXFILE_tgxfileobj_DOT_lastelem[d - 1];
+              break;
+            default: break;
+          }
+
+        }
+      } while (d++ !=  _stop);
+
+    }
+    GXFILE_tgxfileobj_DOT_addtoerrorlistdomerrs(self,self->
       GXFILE_tgxfileobj_DOT_lastelem,values);
+    { register SYSTEM_int32 _stop = self->
+        GXFILE_tgxfileobj_DOT_fcurrentdim;
+      if ((d = 1) <=  _stop) do {
+        if (self->GXFILE_tgxfileobj_DOT_lastelem[d - 1] < 0) 
+          self->GXFILE_tgxfileobj_DOT_lastelem[d - 1] = -self->
+            GXFILE_tgxfileobj_DOT_lastelem[d - 1];
+      } while (d++ !=  _stop);
+
+    }
     adderror = SYSTEM_false;
-    goto _Lagain_55;
+    goto _Lagain_56;
   } 
   if (addnew) 
     { register SYSTEM_int32 _stop = self->
@@ -2990,13 +3099,13 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadstr(
             SYSTEM_shortstring _t1;
 
             _P3strcat(keystr[d - 1],255,GXFILE_baduel_prefix,
-              STRUTILX_inttostr(_t1,255,led));
+              SYSUTILS_P3_inttostr(_t1,255,led));
           }
       
       } while (d++ !=  _stop);
 
     }
-  } 
+  }
   return result;
 }  /* gdxdatareadstr */
 
@@ -3118,7 +3227,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadslice(
           uelfilterstr[d - 1]);
         if (elemnrs[d - 1] < 0) 
           goodindx = SYSTEM_false;
-      } 
+      }
     
     } while (d++ !=  _stop);
 
@@ -3152,8 +3261,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareadslice(
     }
     if (goodindx) 
       (*dp)(hisindx,values);
-  
-}
+  }
   result = GXFILE_mytrue;
   return result;
 }  /* gdxdatareadslice */
@@ -3219,7 +3327,6 @@ BRK_7:;
           if (GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt_dp_fc(self,
             self->GXFILE_tgxfileobj_DOT_lastelem,values,self) == 0) 
             SYSTEM_break(BRK_8);
-      
       }
 BRK_8:;
       result = GXFILE_mytrue;
@@ -3261,7 +3368,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatasliceuels(
           STRHASH_txstrhashlist_DOT_getstring(keystr[d - 1],255,ValueCast(
             STRHASH_txstrhashlist,self->GXFILE_tgxfileobj_DOT_ueltable),
             n);
-      } 
+      }
     } while (d++ !=  _stop);
 
   }
@@ -3293,7 +3400,6 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareaddone(
       SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_sliceindxs[d - 1]);
       SYSUTILS_P3_freeandnil(&self->GXFILE_tgxfileobj_DOT_slicerevmap[
         d - 1]);
-    
     }
   if (self->GXFILE_tgxfileobj_DOT_nrmappedadded > 0) {
     { register SYSTEM_int32 _stop = self->
@@ -3304,17 +3410,16 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdatareaddone(
       if ((n = self->GXFILE_tgxfileobj_DOT_ueltable->
         GXFILE_tueltable_DOT_usruel2ent->
         GXFILE_tintegermapping_DOT_fhighestindex) >=  _stop) do {
+        SYSTEM_cassert(n >= 1);
+        SYSTEM_assert(n >= 1,_P3str1("\016Wrong entry Nr"));
         en = GXFILE_tintegermapping_DOT_getmapping(self->
           GXFILE_tgxfileobj_DOT_ueltable->
           GXFILE_tueltable_DOT_usruel2ent,n);
-        SYSTEM_assert(n >= 1,_P3str1("\016Wrong entry Nr"));
-        SYSTEM_assert(GMSOBJ_copyptr2int(
-          STRHASH_txstrhashlist_DOT_getobject(ValueCast(
+        d = GMSOBJ_copyptr2int(STRHASH_txstrhashlist_DOT_getobject(ValueCast(
           STRHASH_txstrhashlist,self->GXFILE_tgxfileobj_DOT_ueltable),
-          en)) ==  -1 || GMSOBJ_copyptr2int(
-          STRHASH_txstrhashlist_DOT_getobject(ValueCast(
-          STRHASH_txstrhashlist,self->GXFILE_tgxfileobj_DOT_ueltable),
-          en)) == n,_P3str1("\016Mapped already"));
+          en));
+        SYSTEM_cassert(d ==  -1 || d == n);
+        SYSTEM_assert(d ==  -1 || d == n,_P3str1("\016Mapped already"));
         STRHASH_txstrhashlist_DOT_setobject(ValueCast(
           STRHASH_txstrhashlist,self->GXFILE_tgxfileobj_DOT_ueltable),
           en,ValueCast(SYSTEM_tobject,GMSOBJ_copyint2ptr(n)));
@@ -3349,6 +3454,30 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorrecord(
   SYSTEM_double *values)
 {
   SYSTEM_integer result;
+  SYSTEM_integer d;
+
+  result = GXFILE_tgxfileobj_DOT_gdxdataerrorrecordx(self,recnr,keyint,
+    values);
+  if (1 == result) 
+    { register SYSTEM_int32 _stop = self->
+        GXFILE_tgxfileobj_DOT_errorlist->
+        GMSDATA_ttblgamsdata_DOT__fdim;
+      if ((d = 1) <=  _stop) do {
+        if (keyint[d - 1] < 0) 
+          keyint[d - 1] = -keyint[d - 1];
+      } while (d++ !=  _stop);
+
+    }
+  return result;
+}  /* gdxdataerrorrecord */
+
+Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorrecordx(
+  GXFILE_tgxfileobj self,
+  SYSTEM_integer recnr,
+  SYSTEM_integer *keyint,
+  SYSTEM_double *values)
+{
+  SYSTEM_integer result;
   static GXFILE_tgxmodeset allowedmodes_11 = {198,97,0};
 
   result = GXFILE_myfalse;
@@ -3357,7 +3486,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorrecord(
     if (!GXFILE_tgxfileobj_DOT_checkmode(self,_P3str1("\017DataErrorRecord"),
       allowedmodes_11)) 
       return result;
-  if (self->GXFILE_tgxfileobj_DOT_errorlist != NULL) {
+  if (self->GXFILE_tgxfileobj_DOT_errorlist != NULL) 
     if (recnr < 1 || recnr > GMSDATA_ttblgamsdata_DOT_getcount(
       self->GXFILE_tgxfileobj_DOT_errorlist)) { 
       GXFILE_tgxfileobj_DOT_reporterror(self,GXFILE_err_baderrorrecord);
@@ -3366,9 +3495,8 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxdataerrorrecord(
         GXFILE_tgxfileobj_DOT_errorlist,recnr - 1,keyint,values);
       result = GXFILE_mytrue;
     }
-  }
   return result;
-}  /* gdxdataerrorrecord */
+}  /* gdxdataerrorrecordx */
 
 Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxfilterregisterstart(
   GXFILE_tgxfileobj self,
@@ -3427,7 +3555,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxfilterregister(
       GXFILE_tgxfileobj_DOT_reporterror(self,
         GXFILE_err_filter_unmapped);
       return result;
-    } 
+    }
 
   }
   result = GXFILE_mytrue;
@@ -3462,7 +3590,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxfilterregisterdone(
           GXFILE_tgxfileobj_DOT_ueltable,n);
         if (!GXFILE_tdfilter_DOT_infilter(self->
           GXFILE_tgxfileobj_DOT_curfilter,v)) 
-          SYSTEM_continue(CNT_9);
+          SYSTEM_continue(CNT_1);
         if (v <= lv) {
           self->GXFILE_tgxfileobj_DOT_curfilter->
             GXFILE_tdfilter_DOT_filtsorted = SYSTEM_false;
@@ -3470,7 +3598,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxfilterregisterdone(
         } 
         lv = v;
       
-CNT_9:;
+CNT_1:;
       } while (n++ !=  _stop);
 BRK_9:;
 
@@ -3514,7 +3642,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxumuelinfo(
       GXFILE_tueltable_DOT_usruel2ent->
       GXFILE_tintegermapping_DOT_fhighestindex;
     result = GXFILE_mytrue;
-  } 
+  }
   return result;
 }  /* gdxumuelinfo */
 
@@ -3541,11 +3669,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxumuelget(
     {
       SYSTEM_shortstring _t1;
 
-      _P3strcat(uel,255,GXFILE_baduel_prefix,STRUTILX_inttostr(_t1,255,
-        uelnr));
+      _P3strcat(uel,255,GXFILE_baduel_prefix,SYSUTILS_P3_inttostr(
+        _t1,255,uelnr));
     }
     *uelmap =  -1;
-  } 
+  }
   return result;
 }  /* gdxumuelget */
 
@@ -3625,12 +3753,12 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxgetelemtext(
       return result;
   { register GMSOBJ_txstrpool_OD *_W2=self->
     GXFILE_tgxfileobj_DOT_settextlist;
-    if (!(txtnr > 0 && txtnr < _W2->
+    if (!(txtnr >= 0 && txtnr < _W2->
       GMSOBJ_txcustomstringlist_DOT_fcount)) { 
       {
         SYSTEM_shortstring _t1;
 
-        _P3strcat(txt,255,GXFILE_badstr_prefix,STRUTILX_inttostr(
+        _P3strcat(txt,255,GXFILE_badstr_prefix,SYSUTILS_P3_inttostr(
           _t1,255,txtnr));
       }
     } else {
@@ -3640,7 +3768,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxgetelemtext(
       *node = GMSOBJ_copyptr2int(
         GMSOBJ_txcustomstringlist_DOT_getobject(ValueCast(
         GMSOBJ_txcustomstringlist,_W2),txtnr));
-    } 
+    }
 
   }
   return result;
@@ -3662,7 +3790,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsettextnodenr(
       return result;
   { register GMSOBJ_txstrpool_OD *_W2=self->
     GXFILE_tgxfileobj_DOT_settextlist;
-    if (txtnr > 0 && txtnr < _W2->
+    if (txtnr >= 0 && txtnr < _W2->
       GMSOBJ_txcustomstringlist_DOT_fcount && 
       GMSOBJ_txcustomstringlist_DOT_getobject(ValueCast(
       GMSOBJ_txcustomstringlist,_W2),txtnr) == NULL) {
@@ -3830,7 +3958,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxmapvalue(
           } else {
             *sv = 5;
             result = GXFILE_myfalse;
-          } 
+          }
   return result;
 }  /* gdxmapvalue */
 
@@ -3898,7 +4026,7 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_checkmode(
           _Iplus_bgn();
           _P3write_c0(_P3char(','));
           _Iplus_end();
-        } 
+        }
         _Iplus_bgn();
         _P3write_s0(GXFILE_fmode_str[m]);
         _Iplus_end();
@@ -3909,7 +4037,7 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_checkmode(
     _P3write_c0(_P3char('}'));
     _P3writeln();
     _Iplus_end();
-  } 
+  }
   return result;
 }  /* checkmode */
 
@@ -3934,7 +4062,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsettracelevel(
         self->GXFILE_tgxfileobj_DOT_tracelevel = GXFILE_trl_all;
     }
     _P3strcpy(self->GXFILE_tgxfileobj_DOT_tracestr,255,s);
-  } 
+  }
   result = GXFILE_mytrue;
   if (self->GXFILE_tgxfileobj_DOT_tracelevel > GXFILE_trl_errors) {
     _Iplus_bgn();
@@ -3945,7 +4073,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsettracelevel(
       _P3STR_255 _t2;
 
       GXFILE_tgxfileobj_DOT_writetrace(self,_P3strcat(_t2,255,_P3str1("\021Tracing at level "),
-        STRUTILX_inttostr(_t1,255,SYSTEM_ord(self->
+        SYSUTILS_P3_inttostr(_t1,255,SYSTEM_ord(self->
         GXFILE_tgxfileobj_DOT_tracelevel))));
     }
   } 
@@ -4008,7 +4136,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxuelregisterraw(
     if (!GXFILE_tgxfileobj_DOT_checkmode(self,_P3str1("\016UELRegisterRaw"),
       allowedmodes_16)) 
       return result;
-  SYSUTILS_P3_trimright(sv,255,uel);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(sv,255,SYSUTILS_P3_trimright(_t1,255,uel));
+  }
   if (GXFILE_tgxfileobj_DOT_errorcondition(self,GXDEFS_gooduelstring(
     sv),GXFILE_err_baduelstr)) 
     return result;
@@ -4048,7 +4180,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxuelregistermap(
   SYSTEM_shortstring sv;
 
   result = GXFILE_myfalse;
-  SYSUTILS_P3_trimright(sv,255,uel);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(sv,255,SYSUTILS_P3_trimright(_t1,255,uel));
+  }
   if (self->GXFILE_tgxfileobj_DOT_tracelevel >= GXFILE_trl_all || !
     _P3SET_i(17,self->GXFILE_tgxfileobj_DOT_fmode,allowedmodes_18)) {
     if (!GXFILE_tgxfileobj_DOT_checkmode(self,_P3str1("\016UELRegisterMap"),
@@ -4108,7 +4244,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxuelregisterstr(
     if (!GXFILE_tgxfileobj_DOT_checkmode(self,_P3str1("\016UELRegisterStr"),
       allowedmodes_20)) 
       return result;
-  SYSUTILS_P3_trimright(sv,255,uel);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(sv,255,SYSUTILS_P3_trimright(_t1,255,uel));
+  }
   if (GXFILE_tgxfileobj_DOT_errorcondition(self,GXDEFS_gooduelstring(
     sv),GXFILE_err_baduelstr)) 
     return result;
@@ -4180,17 +4320,18 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_dowrite(
   const SYSTEM_double *avals)
 {
   SYSTEM_boolean result;
-  SYSTEM_integer d;
+  SYSTEM_integer d, dd;
   SYSTEM_integer _fdim;
   SYSTEM_integer delta;
   GMSSPECS_tvarvaltype dv;
   SYSTEM_double x;
   GXFILE_tgdxintvaltyp xv;
   SYSTEM_byte bxv;
+  GXDEFS_tgdxuelindex erroruels;
 
   result = SYSTEM_true;
-  delta = 0;
   _fdim = self->GXFILE_tgxfileobj_DOT_fcurrentdim + 1;
+  delta = 0;
   { register SYSTEM_int32 _stop = self->
       GXFILE_tgxfileobj_DOT_fcurrentdim;
     if ((d = 1) <=  _stop) do {
@@ -4199,10 +4340,37 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_dowrite(
         GXFILE_tgxfileobj_DOT_wrbitmaps[d - 1],aelements[d - 1])) {
         GXFILE_tgxfileobj_DOT_reporterror(self,
           GXFILE_err_domainviolation);
-        GXFILE_tgxfileobj_DOT_addtoerrorlist(self,aelements,avals);
+        { register SYSTEM_int32 _stop = d - 1;
+          if ((dd = 1) <=  _stop) do {
+            erroruels[dd - 1] = aelements[dd - 1];
+          } while (dd++ !=  _stop);
+
+        }
+        erroruels[d - 1] = -aelements[d - 1];
+        { register SYSTEM_int32 _stop = self->
+            GXFILE_tgxfileobj_DOT_fcurrentdim;
+          if ((dd = d + 1) <=  _stop) do {
+            if (self->GXFILE_tgxfileobj_DOT_wrbitmaps[dd - 1] != NULL && !
+              GMSOBJ_tbooleanbitarray_DOT_getbit(self->
+              GXFILE_tgxfileobj_DOT_wrbitmaps[dd - 1],aelements[
+              dd - 1])) { 
+              erroruels[dd - 1] = -aelements[dd - 1];
+            } else 
+              erroruels[dd - 1] = aelements[dd - 1];
+          } while (dd++ !=  _stop);
+
+        }
+        GXFILE_tgxfileobj_DOT_addtoerrorlistdomerrs(self,erroruels,
+          avals);
         result = SYSTEM_false;
         return result;
       } 
+    } while (d++ !=  _stop);
+
+  }
+  { register SYSTEM_int32 _stop = self->
+      GXFILE_tgxfileobj_DOT_fcurrentdim;
+    if ((d = 1) <=  _stop) do {
       delta = aelements[d - 1] - self->
         GXFILE_tgxfileobj_DOT_lastelem[d - 1];
       if (delta != 0) {
@@ -4272,8 +4440,8 @@ BRK_10:;
         } while (d++ !=  _stop);
 
       }
-    } 
-  } 
+    }
+  }
   if (self->GXFILE_tgxfileobj_DOT_datasize > 0) 
     { register GMSSPECS_tvarvaltype _stop = self->
         GXFILE_tgxfileobj_DOT_lastdatafield;
@@ -4302,7 +4470,7 @@ BRK_10:;
 
             _P3inc0(xv);
 }
-        } 
+        }
         bxv = SYSTEM_ord(xv);
         VirtMethodCall(ValueCast(GMSSTRM_txstream,self->
           GXFILE_tgxfileobj_DOT_ffile), GMSSTRM_txstream_DOT_write_T, 5, (ValueCast(
@@ -4325,7 +4493,8 @@ BRK_10:;
     sdatatype,GMSSPECS_dt_alias))) {
     if (avals[GMSSPECS_vallevel] != 0.0) 
       self->GXFILE_tgxfileobj_DOT_cursyptr->ssettext = SYSTEM_true;
-    if (self->GXFILE_tgxfileobj_DOT_fcurrentdim == 1) 
+    if (self->GXFILE_tgxfileobj_DOT_fcurrentdim == 1 && self->
+      GXFILE_tgxfileobj_DOT_cursyptr->ssetbitmap != NULL) 
       GMSOBJ_tbooleanbitarray_DOT_setbit(self->
         GXFILE_tgxfileobj_DOT_cursyptr->ssetbitmap,self->
         GXFILE_tgxfileobj_DOT_lastelem[0],SYSTEM_true);
@@ -4344,6 +4513,7 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_doread(
   GMSSPECS_tvarvaltype dv;
   GXFILE_tgdxintvaltyp sv;
   SYSTEM_byte bsv;
+  SYSTEM_double x;
 
   if (self->GXFILE_tgxfileobj_DOT_readuniverse) {
     self->GXFILE_tgxfileobj_DOT_universenr = self->
@@ -4411,8 +4581,8 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_doread(
       } while (d++ !=  _stop);
 
     }
-  } 
-  if (self->GXFILE_tgxfileobj_DOT_datasize > 0) 
+  }
+  if (self->GXFILE_tgxfileobj_DOT_datasize > 0) {
     { register GMSSPECS_tvarvaltype _stop = self->
         GXFILE_tgxfileobj_DOT_lastdatafield;
       if ((dv = GMSSPECS_vallevel) <=  _stop) do {
@@ -4430,11 +4600,23 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_doread(
           if (avals[dv] >= self->GXFILE_tgxfileobj_DOT_zvalacr) 
             avals[dv] = GXFILE_tgxfileobj_DOT_acronymremap(self,avals[
               dv]);
-        } 
+        }
       
       } while (dv++ !=  _stop);
 
     }
+    if (self->GXFILE_tgxfileobj_DOT_mapsettext != NULL && avals[
+      GMSSPECS_vallevel] != 0.0 && self->
+      GXFILE_tgxfileobj_DOT_cursyptr->sdatatype == GMSSPECS_dt_set) {
+      x = avals[GMSSPECS_vallevel];
+      d = SYSTEM_round(x);
+      if (SYSTEM_abs_r(x - d) < 1e-12 && d > 0 && d <= self->
+        GXFILE_tgxfileobj_DOT_settextlist->
+        GMSOBJ_txcustomstringlist_DOT_fcapacity) 
+        avals[GMSSPECS_vallevel] = (*self->
+          GXFILE_tgxfileobj_DOT_mapsettext)[d];
+    } 
+  } 
   return result;
 }  /* doread */
 
@@ -4456,6 +4638,58 @@ Procedure GXFILE_tgxfileobj_DOT_addtoerrorlist(
   GMSDATA_ttblgamsdata_DOT_addrecord(self->
     GXFILE_tgxfileobj_DOT_errorlist,aelements,avals);
 }  /* addtoerrorlist */
+
+Procedure GXFILE_tgxfileobj_DOT_addtoerrorlistdomerrs(
+  GXFILE_tgxfileobj self,
+  const SYSTEM_integer *aelements,
+  const SYSTEM_double *avals)
+{
+  SYSTEM_integer r, d, en;
+  GXDEFS_tgdxuelindex keys;
+  SYSTEM_boolean found;
+
+  if (self->GXFILE_tgxfileobj_DOT_errorlist == NULL) { 
+    self->GXFILE_tgxfileobj_DOT_errorlist = ValueCast(
+      GMSDATA_ttblgamsdata,GMSDATA_ttblgamsdata_DOT_create(ValueCast(
+      GMSDATA_ttblgamsdata,_P3alloc_object(&GMSDATA_ttblgamsdata_CD)),
+      self->GXFILE_tgxfileobj_DOT_fcurrentdim,self->
+      GXFILE_tgxfileobj_DOT_datasize * sizeof(SYSTEM_double)));
+  } else 
+    if (GMSDATA_ttblgamsdata_DOT_getcount(self->
+      GXFILE_tgxfileobj_DOT_errorlist) >= 11) 
+      return;
+  { register SYSTEM_int32 _stop = self->
+      GXFILE_tgxfileobj_DOT_fcurrentdim;
+    if ((d = 1) <=  _stop) do {
+      en = aelements[d - 1];
+      if (en < 0) {
+        found = SYSTEM_false;
+        { register SYSTEM_int32 _stop = 
+            GMSDATA_ttblgamsdata_DOT_getcount(self->
+            GXFILE_tgxfileobj_DOT_errorlist);
+          if ((r = 1) <=  _stop) do {
+            GMSDATA_ttblgamsdata_DOT_getkeys(self->
+              GXFILE_tgxfileobj_DOT_errorlist,r - 1,keys);
+            if (en == keys[d - 1]) {
+              found = SYSTEM_true;
+              SYSTEM_break(BRK_11);
+            } 
+          
+          } while (r++ !=  _stop);
+BRK_11:;
+
+        }
+        if (!found) {
+          GMSDATA_ttblgamsdata_DOT_addrecord(self->
+            GXFILE_tgxfileobj_DOT_errorlist,aelements,avals);
+          return;
+        } 
+      } 
+    
+    } while (d++ !=  _stop);
+
+  }
+}  /* addtoerrorlistdomerrs */
 
 Procedure GXFILE_tgxfileobj_DOT_getdefaultrecord(
   GXFILE_tgxfileobj self,
@@ -4482,13 +4716,14 @@ Procedure GXFILE_tgxfileobj_DOT_getdefaultrecord(
       break;
     case GMSSPECS_dt_equ: 
       ui = self->GXFILE_tgxfileobj_DOT_cursyptr->suserinfo;
-      if (ui >= 0 && ui <= 85) { 
+      if (ui >= 53 && ui <= 59) { 
         _P3memcpy(avals,sizeof(GMSSPECS_tvarreca),GMSGLOB_defrecequ[ValueCast(
           GMSGLOB_tssymbol,ui) - 53]);
       } else 
         _P3memcpy(avals,sizeof(GMSSPECS_tvarreca),GMSGLOB_defrecequ[0]);
       break;
     default:
+      SYSTEM_cassert(SYSTEM_false);
       SYSTEM_assert(SYSTEM_false,_P3str1("\022GetDefaultRecord-2"));
   }
 }  /* getdefaultrecord */
@@ -4523,17 +4758,16 @@ static Function(SYSTEM_double ) getasacronym(
         _W3->GXFILE_tacronym_DOT_acrautogen = SYSTEM_true;
 
       }
-    } 
+    }
   } else {
     newindx = (ValueCast(GXFILE_tacronym,GMSOBJ_txlist_DOT_get((*
       _2self)->GXFILE_tgxfileobj_DOT_acronymlist->
       GXFILE_tacronymlist_DOT_flist,n)))->
       GXFILE_tacronym_DOT_acrreadmap;
-    if (newindx <= 0) {
+    if (newindx <= 0) 
       if ((*_2self)->GXFILE_tgxfileobj_DOT_nextautoacronym <= 0) { 
         newindx = orgindx;
-      }
-      else {
+      } else {
         newindx = (*_2self)->GXFILE_tgxfileobj_DOT_nextautoacronym;
         (*_2self)->GXFILE_tgxfileobj_DOT_nextautoacronym = (*_2self)->
           GXFILE_tgxfileobj_DOT_nextautoacronym + 1;
@@ -4546,8 +4780,7 @@ static Function(SYSTEM_double ) getasacronym(
 
         }
       }
-    }
-  } 
+  }
   result = (*_2self)->GXFILE_tgxfileobj_DOT_zvalacr * newindx;
   return result;
 }  /* getasacronym */
@@ -4772,7 +5005,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxacronymname(
         SYSTEM_shortstring _t1;
 
         _P3strcat(aname,255,_P3str1("\016UnknownAcronym"),
-          STRUTILX_inttostr(_t1,255,indx));
+          SYSUTILS_P3_inttostr(_t1,255,indx));
       }
     } else 
       STRUTILX_getstring(aname,255,(ValueCast(GXFILE_tacronym,
@@ -4780,7 +5013,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxacronymname(
         GXFILE_tacronymlist_DOT_flist,n)))->
         GXFILE_tacronym_DOT_acrname);
     result = GXFILE_mytrue;
-  } 
+  }
   return result;
 }  /* gdxacronymname */
 
@@ -4809,7 +5042,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxacronymgetinfo(
       *aindx = _W2->GXFILE_tacronym_DOT_acrmap;
 
     }
-  } 
+  }
   return result;
 }  /* gdxacronymgetinfo */
 
@@ -4856,7 +5089,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxacronymsetinfo(
 
       GXFILE_tgxfileobj_DOT_writetrace(self,_P3strcat(_t4,255,
         _P3strcat(_t2,255,_P3strcat(_t1,255,_P3str1("\020AcronymSetInfo: "),
-        aname),_P3str1("\011 index = ")),STRUTILX_inttostr(_t3,255,
+        aname),_P3str1("\011 index = ")),SYSUTILS_P3_inttostr(_t3,255,
         aindx)));
     }
   if (GXFILE_tgxfileobj_DOT_errorcondition(self,n >= 1 || n <= 
@@ -4874,6 +5107,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxacronymsetinfo(
         GXFILE_err_badacroname)) 
         return result;
       if (_W2->GXFILE_tacronym_DOT_acrautogen) {
+        SYSTEM_cassert(_W2->GXFILE_tacronym_DOT_acrreadmap == aindx);
         SYSTEM_assert(_W2->GXFILE_tacronym_DOT_acrreadmap == aindx,_P3str1("\021gdxAcronymSetInfo"));
         _W2->GXFILE_tacronym_DOT_acrautogen = SYSTEM_false;
       } else 
@@ -4947,7 +5181,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxacronymgetmapping(
       _P3STR_255 _t2;
 
       GXFILE_tgxfileobj_DOT_writetrace(self,_P3strcat(_t2,255,_P3str1("\027AcronymGetMapping: N = "),
-        STRUTILX_inttostr(_t1,255,n)));
+        SYSUTILS_P3_inttostr(_t1,255,n)));
     }
   if (GXFILE_tgxfileobj_DOT_errorcondition(self,n >= 1 || n <= 
     self->GXFILE_tgxfileobj_DOT_acronymlist->
@@ -5100,9 +5334,17 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolsetdomain(
   result = GXFILE_mytrue;
   { register GXFILE_tgdxsymbrecord *_W2=self->
     GXFILE_tgxfileobj_DOT_cursyptr;
+    SYSTEM_cassert(_W2->sdomsymbols == NULL);
     SYSTEM_assert(_W2->sdomsymbols == NULL,_P3str1("\017SymbolSetDomain"));
-    _P3getmem(_W2->sdomsymbols,(_W2->sdim + 1) * sizeof(
-      SYSTEM_longint));
+    _P3_TRY {
+      _P3getmem(_W2->sdomsymbols,(_W2->sdim + 1) * sizeof(
+        SYSTEM_longint));
+    } _P3_EXCEPT {
+{
+        GXFILE_have_mem = SYSTEM_false;
+        SYSTEM_cassert(GXFILE_have_mem);
+      }
+    } _P3_END_TRY_EXCEPT;
     { register SYSTEM_int32 _stop = _W2->sdim;
       if ((d = 1) <=  _stop) do {
         domap = SYSTEM_true;
@@ -5117,7 +5359,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolsetdomain(
             result = GXFILE_myfalse;
             domsy = 0;
           } 
-        } 
+        }
         if (domsy > 0) {
           synr = domsy;
           do {
@@ -5126,24 +5368,24 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolsetdomain(
               STRHASH_txstrhashlist_DOT_getobject(self->
               GXFILE_tgxfileobj_DOT_namelist,synr));
               if (_W3->sdatatype == GMSSPECS_dt_set) 
-                SYSTEM_break(BRK_11);
+                SYSTEM_break(BRK_12);
               if (_W3->sdatatype == GMSSPECS_dt_alias) {
                 synr = _W3->suserinfo;
                 if (synr > 0) 
-                  SYSTEM_continue(CNT_11);
+                  SYSTEM_continue(CNT_2);
                 domap = SYSTEM_false;
-                SYSTEM_break(BRK_11);
+                SYSTEM_break(BRK_12);
               } 
               GXFILE_tgxfileobj_DOT_reporterror(self,
                 GXFILE_err_aliassetexpected);
               result = GXFILE_myfalse;
               domsy = 0;
-              SYSTEM_break(BRK_11);
+              SYSTEM_break(BRK_12);
 
             }
-          CNT_11:;
+          CNT_2:;
           } while (SYSTEM_true);
-BRK_11:;
+BRK_12:;
         } 
         (*_W2->sdomsymbols)[d] = domsy;
         if (domap && domsy > 0) 
@@ -5197,8 +5439,15 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolsetdomainx(
   { register GXFILE_tgdxsymbrecord *_W2=syptr;
     if (_W2->sdim > 0) {
       if (_W2->sdomstrings == NULL) 
-        _P3getmem(_W2->sdomstrings,(_W2->sdim + 1) * sizeof(
-          SYSTEM_longint));
+        _P3_TRY {
+          _P3getmem(_W2->sdomstrings,(_W2->sdim + 1) * sizeof(
+            SYSTEM_longint));
+        } _P3_EXCEPT {
+{
+            GXFILE_have_mem = SYSTEM_false;
+            SYSTEM_cassert(GXFILE_have_mem);
+          }
+        } _P3_END_TRY_EXCEPT;
       { register SYSTEM_int32 _stop = _W2->sdim;
         if ((d = 1) <=  _stop) do {
           _P3strcpy(s,255,domainids[d - 1]);
@@ -5214,7 +5463,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolsetdomainx(
               if ((*_W2->sdomstrings)[d] <= 0) 
                 (*_W2->sdomstrings)[d] = STRHASH_txstrhashlist_DOT_add(
                   self->GXFILE_tgxfileobj_DOT_domainstrlist,s);
-            } 
+            }
         
         } while (d++ !=  _stop);
 
@@ -5309,7 +5558,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxsymbolgetdomainx(
 
         }
         result = 3;
-      } 
+      }
 
   }
   return result;
@@ -5339,8 +5588,8 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxaddalias(
   } else 
     synr2 = STRHASH_txstrhashlist_DOT_indexof(self->
       GXFILE_tgxfileobj_DOT_namelist,id2);
-  if (GXFILE_tgxfileobj_DOT_errorcondition(self,(synr1 >= 0) != 
-					   (synr2 >= 0),GXFILE_err_aliassetexpected)) 
+  if (GXFILE_tgxfileobj_DOT_errorcondition(self,synr1 >= 0 != 
+    synr2 >= 0,GXFILE_err_aliassetexpected)) 
     return result;
   if (synr1 > 0) {
     synr = synr1;
@@ -5348,7 +5597,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxaddalias(
   } else {
     synr = synr2;
     _P3strcpy(aname,255,id1);
-  } 
+  }
   if (synr == SYSTEM_maxint) { 
     synr = 0;
   } else 
@@ -5382,7 +5631,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxaddalias(
           STRHASH_txstrhashlist_DOT_getstring(_t1,255,self->
           GXFILE_tgxfileobj_DOT_namelist,synr));
       }
-    } 
+    }
 
   }
   STRHASH_txstrhashlist_DOT_addobject(self->
@@ -5764,7 +6013,7 @@ Procedure GXFILE_tacronym_DOT_savetostream(
 
         GMSSTRM_txstream_DOT_writestring(ValueCast(GMSSTRM_txstream,
           _W2),_P3strcat(_t2,255,_P3str1("\013UnknownACRO"),
-          STRUTILX_inttostr(_t1,255,self->
+          SYSUTILS_P3_inttostr(_t1,255,self->
           GXFILE_tacronym_DOT_acrmap)));
       }
     } else 
@@ -5905,8 +6154,7 @@ Procedure GXFILE_tacronymlist_DOT_loadfromstream(
     a = ValueCast(GXFILE_tacronym,GXFILE_tacronym_DOT_createfromstream(ValueCast(
       GXFILE_tacronym,_P3alloc_object(&GXFILE_tacronym_CD)),s));
     GMSOBJ_txlist_DOT_add(self->GXFILE_tacronymlist_DOT_flist,a);
-  
-}
+  }
 }  /* loadfromstream */
 
 Function(SYSTEM_int64 ) GXFILE_tacronymlist_DOT_memoryused(
@@ -5995,7 +6243,7 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_resultwillbesorted(
     if ((d = 1) <=  _stop) do {
       switch (adomainnrs[d - 1]) {
         case GXDEFS_domc_unmapped: 
-          SYSTEM_continue(CNT_12);
+          SYSTEM_continue(CNT_3);
           break;
         case GXDEFS_domc_expand: 
           if (GXFILE_tueltable_DOT_getmaptouserstatus(self->
@@ -6004,13 +6252,13 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_resultwillbesorted(
           if (d == 1) { 
             if (GXFILE_tueltable_DOT_getmaptouserstatus(self->
               GXFILE_tgxfileobj_DOT_ueltable) >= GXFILE_map_sortgrow) { 
-              SYSTEM_continue(CNT_12);
+              SYSTEM_continue(CNT_3);
             } else 
               return result;
           } else 
             if (GXFILE_tueltable_DOT_getmaptouserstatus(self->
               GXFILE_tgxfileobj_DOT_ueltable) == GXFILE_map_sortfull) { 
-              SYSTEM_continue(CNT_12);
+              SYSTEM_continue(CNT_3);
             } else 
               return result;
           break;
@@ -6022,13 +6270,13 @@ Function(SYSTEM_boolean ) GXFILE_tgxfileobj_DOT_resultwillbesorted(
         default:
           if (GXFILE_tueltable_DOT_getmaptouserstatus(self->
             GXFILE_tgxfileobj_DOT_ueltable) >= GXFILE_map_sorted) 
-            SYSTEM_continue(CNT_12);
+            SYSTEM_continue(CNT_3);
           pfilter = GXFILE_tfilterlist_DOT_findfilter(self->
             GXFILE_tgxfileobj_DOT_filterlist,adomainnrs[d - 1]);
           if (!pfilter->GXFILE_tdfilter_DOT_filtsorted) 
             return result;
       }
-CNT_12:;
+CNT_3:;
     } while (d++ !=  _stop);
 
   }
@@ -6116,7 +6364,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxopenappend(
   _P3strcpy(self->GXFILE_tgxfileobj_DOT_fproducer2,255,producer);
   self->GXFILE_tgxfileobj_DOT_appendactive = SYSTEM_true;
   result = GXFILE_tgxfileobj_DOT_gdxopenreadxx(self,filename,
-    GMSSTRM_fmopenreadwrite,errnr);
+    GMSSTRM_fmopenreadwrite,0,errnr);
   if (result == 0 || *errnr != 0) 
     return result;
   if (self->GXFILE_tgxfileobj_DOT_versionread < 7) {
@@ -6326,7 +6574,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxgetdomainelements(
       GXFILE_tgxfileobj_DOT_reporterror(self,GXFILE_err_unknownfilter);
       return result;
     } 
-  } 
+  }
   domainindxs = ValueCast(GXFILE_tintegermapping,
     GXFILE_tintegermapping_DOT_create(ValueCast(GXFILE_tintegermapping,
     _P3alloc_object(&GXFILE_tintegermapping_CD))));
@@ -6344,14 +6592,17 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxgetdomainelements(
       mapnr = GXFILE_tueltable_DOT_getusermap(self->
         GXFILE_tgxfileobj_DOT_ueltable,rawnr);
       if (!GXFILE_tdfilter_DOT_infilter(dfilter,mapnr)) {
-        GXFILE_tgxfileobj_DOT_addtoerrorlist(self,self->
+        self->GXFILE_tgxfileobj_DOT_lastelem[dimpos - 1] = -self->
+          GXFILE_tgxfileobj_DOT_lastelem[dimpos - 1];
+        GXFILE_tgxfileobj_DOT_addtoerrorlistdomerrs(self,self->
           GXFILE_tgxfileobj_DOT_lastelem,avals);
-        SYSTEM_continue(CNT_14);
+        self->GXFILE_tgxfileobj_DOT_lastelem[dimpos - 1] = -self->
+          GXFILE_tgxfileobj_DOT_lastelem[dimpos - 1];
+        SYSTEM_continue(CNT_4);
       } 
     } 
     GXFILE_tintegermapping_DOT_setmapping(domainindxs,rawnr,1);
-  
-CNT_14:;
+  CNT_4:;
   }
   GXFILE_tgxfileobj_DOT_gdxdatareaddone(self);
   *nrelem = 0;
@@ -6393,7 +6644,7 @@ CNT_14:;
 
     }
     SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,sortl));
-  } 
+  }
   SYSTEM_tobject_DOT_free(ValueCast(SYSTEM_tobject,domainindxs));
   if (*nrelem >= 0) { 
     result = GXFILE_mytrue;
@@ -6415,7 +6666,11 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxrenameuel(
     result =  -1;
     return result;
   } 
-  SYSUTILS_P3_trimright(s,255,newname);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(s,255,SYSUTILS_P3_trimright(_t1,255,newname));
+  }
   if (!GXDEFS_gooduelstring(s)) {
     result = GXFILE_err_baduelstr;
     return result;
@@ -6445,7 +6700,7 @@ Function(SYSTEM_integer ) GXFILE_tgxfileobj_DOT_gdxrenameuel(
 /* unit gxfile */
 void _Init_Module_gxfile(void)
 {
-  GDLAUDIT_gdlsetauditlinelib(_P3str1("\124_GAMS_GDX Library      24.5.0 r50613 ALFA Released 27Jan15 LEG x86 64bit/Linux_SMAG_"));
+  GDLAUDIT_gdlsetauditlinelib(_P3str1("\126_GAMS_GDX Library      33.1.0 rb238721 Released Nov 01, 2020 LEG x86 64bit/Linux_SMAG_"));
   _P3strclr(GXFILE_dllloadpath);
 } /* _Init_Module_gxfile */
 
