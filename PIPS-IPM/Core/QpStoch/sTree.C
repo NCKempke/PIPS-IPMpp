@@ -599,3 +599,42 @@ void sTree::saveCurrentCPUState()
   for(size_t i=0; i<children.size(); i++)
     children[i]->saveCurrentCPUState();
 }
+
+
+void sTree::printProcessTree() const
+{
+   if( rankMe != 0 )
+      return;
+
+   std::cout << "Process Tree:\n\n";
+
+   std::cout << "[ " << myProcs.front() << "-" << myProcs.back() << " ]\n\n";
+
+   std::vector<sTree*> queue;
+   queue.insert(queue.end(), children.begin(), children.end() );
+
+   int curr_size = children.size();
+   int count = 0;
+   while( !queue.empty() )
+   {
+      const auto& child = queue.front();
+      if( child->myProcs.size() > 1 )
+         std::cout << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ]\t";
+      else
+         std::cout << "[ " << child->myProcs.front() << " ]\t";
+
+      if( child->sub_root )
+         queue.insert(queue.end(), child->sub_root->children.begin(), child->sub_root->children.end() );
+      else
+         queue.insert(queue.end(), child->children.begin(), child->children.end() );
+
+      queue.erase(queue.begin());
+      ++count;
+      if( count == curr_size )
+      {
+         curr_size = queue.size();
+         count = 0;
+         std::cout << "\n\n";
+      }
+   }
+}
