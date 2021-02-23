@@ -11,7 +11,7 @@ Procedure P3PRIVATE_pcharconcatpchar(
   SYSTEM_integer len;
 
   if (psrc != NULL) {
-    /**** C code included from p3private.pas(43:1): 2 lines ****/
+    /**** C code included from p3private.pas(49:1): 2 lines ****/
     len = strlen((char *) psrc);
     (void) strcat((char *) pdest+(*w), (char *) psrc);
     *w = *w + len;
@@ -27,7 +27,7 @@ Procedure P3PRIVATE_pcharconcatstr(
 
   len = SYSTEM_length(src);
   if (len > 0) {
-    /**** C code included from p3private.pas(65:1): 2 lines ****/
+    /**** C code included from p3private.pas(71:1): 2 lines ****/
       memcpy((char *)pdest + *w, (char *)src+1, len);
       pdest[*w + len] = '\0';
     *w = *w + len;
@@ -42,7 +42,7 @@ Function(SYSTEM_P3_pansichar ) P3PRIVATE_strtopchar(
 
   len = SYSTEM_length(src);
   _P3getmem(result,len + 1);
-  /**** C code included from p3private.pas(85:1): 2 lines ****/
+  /**** C code included from p3private.pas(91:1): 2 lines ****/
    memcpy((char *)result, (char *)src+1, len);
    result[len] = '\0';
   return result;
@@ -77,7 +77,7 @@ Function(SYSTEM_ansichar *) P3PRIVATE_strbuftostr(
     } else 
       SYSTEM_break(BRK_1);
   }
-BRK_1:;
+  BRK_1:;
   _P3setlength(result,len,255);
   return result;
 }  /* strbuftostr */
@@ -98,7 +98,7 @@ Function(SYSTEM_ansichar *) P3PRIVATE_pchartostr(
     } else 
       SYSTEM_break(BRK_2);
   }
-BRK_2:;
+  BRK_2:;
   _P3setlength(result,len,255);
   return result;
 }  /* pchartostr */

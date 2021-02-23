@@ -13,6 +13,8 @@ typedef GMSGEN_doublearrayone *GMSGEN_pdoublearrayone;
 typedef SYSTEM_textfile *GMSGEN_ptextfile;
 typedef SYSTEM_longint GMSGEN_longintarray[10000001];
 typedef GMSGEN_longintarray *GMSGEN_plongintarray;
+typedef SYSTEM_boolean GMSGEN_tbooleanarray[10000001];
+typedef GMSGEN_tbooleanarray *GMSGEN_pbooleanarray;
 typedef SYSTEM_byte GMSGEN_tbytedataarray[10000001];
 typedef GMSGEN_tbytedataarray *GMSGEN_pbytedataarray;
 typedef SYSTEM_uint32 _sub_1GMSGEN;

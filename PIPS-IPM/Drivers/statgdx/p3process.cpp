@@ -6,7 +6,6 @@
 #include "sysutils_p3.h"
 #include "p3process.h"
 
-#include "globals2.h"
 
 void * const P3PROCESS_texecarglist_VT[] = {(void*)&
   P3PROCESS_texecarglist_DOT_destroy};
@@ -19,7 +18,7 @@ const SYSTEM_classdescriptor_t P3PROCESS_texecarglist_CD = {
 
 static _P3STR_31 P3PROCESS_cmd_win7 = {27,'c',':','\\','w','i','n','d','o','w','s','\\','s','y','s','t','e','m','3','2','\\','c','m','d','.','e','x','e'};
 static _P3STR_31 P3PROCESS_cmd_winnt = {25,'c',':','\\','w','i','n','n','t','\\','s','y','s','t','e','m','3','2','\\','c','m','d','.','e','x','e'};
-/**** C code included from p3process.pas(180:1): 62 lines ****/
+/**** C code included from p3process.pas(249:1): 63 lines ****/
 #if defined(_WIN32)
 # include <tlhelp32.h>
 /* turn off some bits when calling OpenProcess: XP cannot handle them being on
@@ -32,6 +31,7 @@ static _P3STR_31 P3PROCESS_cmd_winnt = {25,'c',':','\\','w','i','n','n','t','\\'
 # include <sys/wait.h>
 # include <signal.h>
 # include <fcntl.h>
+# include <dirent.h>
 # if defined(__HOS_AIX__)
 #  include <procinfo.h>
 # elif defined(__APPLE__)
@@ -108,7 +108,11 @@ static Function(SYSTEM_ansichar *) P3PROCESS_whatquote(
   SYSTEM_shortstring targ;
 
   _P3strclr(result);
-  SYSUTILS_P3_trim(targ,255,arg);
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(targ,255,SYSUTILS_P3_trim(_t1,255,arg));
+  }
   if (SYSTEM_length(targ) > 1 && targ[1] == _P3char('\"') && 
     targ[SYSTEM_length(targ)] == _P3char('\"')) 
     return result;
@@ -127,7 +131,7 @@ static Function(SYSTEM_ansichar *) P3PROCESS_whatquote(
   }
   return result;
 }  /* whatquote */
-/**** C code included from p3process.pas(433:1): 296 lines ****/
+/**** C code included from p3process.pas(596:1): 391 lines ****/
 #define wshowwindow P3PROCESS_wshowwindow
 int
 Win32CreateProc(const char *exeName, char *cmdLine,
@@ -187,6 +191,101 @@ Win32CreateProc(const char *exeName, char *cmdLine,
   }
   return result;
 } /* Win32CreateProc */
+#endif /* if ! defined(_WIN32) .. else .. */
+
+#if defined(_WIN32)
+void getWinErrMsg256 (int errCode, const char prefix[], char buf256[256])
+{
+  DWORD n;
+  size_t k;
+  char msgBuf[1024];
+
+  n = FormatMessage(
+        FORMAT_MESSAGE_FROM_SYSTEM,
+        NULL,
+        errCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+        msgBuf,
+        sizeof(msgBuf),
+        NULL
+        );
+  strcpy (buf256, prefix);
+  if (0 == n) {
+    strcat (buf256, "error message too long or unavailable");
+  }
+  else {
+    k = 256 - 1 - strlen(prefix);
+    strncat (buf256, msgBuf, k);
+  }
+} /* getWinErrMsg256 */
+#endif /* if defined(_WIN32) */
+
+int
+Win32CreateProcEx(const char *exeName, char *cmdLine,
+		  int inheritedHandles, int *exeRC, int *errCode, char errMsg[256])
+#if ! defined(_WIN32)
+{ *exeRC = *exeName + *cmdLine; *errCode = 0; *errMsg = '\0'; return 1; } /*  bogus definition */
+#else
+{
+  PROCESS_INFORMATION processinformation;
+  STARTUPINFO         startupinfo;
+  DWORD               exitcode;
+  int                 result;
+  BOOL brc;
+  size_t n;
+  char msgBuf[512];
+
+  *errMsg = '\0';
+  *errCode = 0;
+  /* Initialise the startup information to be the same as that of the
+   * calling application.  This is easier than initialising the many
+   * individual startup information fields and should be fine in most
+   * cases. */
+  GetStartupInfo(&startupinfo);
+
+  /* StartupInfo.wShowWindow determines whether the called application
+   * will be initially displayed normal, maximises, minimised or some
+   * other subtle variations */
+
+  startupinfo.wShowWindow = wshowwindow;
+
+  if (! CreateProcess(
+    exeName,               /* ApplicationName */
+    cmdLine,               /* lpCommandLine */
+    NULL,                  /* lpProcessAttributes */
+    NULL,                  /* lpThreadAttribute */
+    inheritedHandles,      /* bInheritedHandles */
+    0,                     /* dwCreationFlags */
+    NULL,                  /* lpEnvironment */
+    NULL,                  /* lpCurrentDirectory */
+    &startupinfo,          /* lpStartupInfo */
+    &processinformation    /* lpProcessInformation */
+    )) {
+    *exeRC = 0;
+    *errCode = GetLastError();  /* failed to execute */
+    getWinErrMsg256 (*errCode, "CreateProcess() call failed: ", errMsg);
+    result = 1;
+  }
+  else {
+    WaitForSingleObject(processinformation.hProcess,INFINITE);
+    brc = GetExitCodeProcess(processinformation.hProcess,&exitcode);
+    CloseHandle(processinformation.hThread);
+    CloseHandle(processinformation.hProcess);
+    if (255 == exitcode) { /* abnormal child termination */
+      *exeRC = 0;
+      return 2;
+    }
+    if (! brc) {        /* failed call to GetExitCodeProcess */
+      *exeRC = 0;
+      *errCode = GetLastError();  /* failed to execute */
+      getWinErrMsg256 (*errCode, "GetExitCodeProcess() call failed: ", errMsg);
+      return 3;
+    }
+    *exeRC = exitcode;
+    result = 0;
+  }
+  return result;
+} /* Win32CreateProcEx */
 #endif /* if ! defined(_WIN32) .. else .. */
 
 int
@@ -424,7 +523,7 @@ int unixPidStatus (int p)
 #endif          /* #if defined(_WIN32) .. #else .. */
 
 }
-/**** C code included from p3process.pas(786:1): 98 lines ****/
+/**** C code included from p3process.pas(992:1): 171 lines ****/
 int
 LibcForkExec(int argc, char *const argv[], int *exeRC)
 #if defined(_WIN32)
@@ -448,8 +547,7 @@ LibcForkExec(int argc, char *const argv[], int *exeRC)
     exit (255);                 /* -1 tells parent we could not exec */
 #else
     /* _exit() is a more immediate termination, less likely to flush stdio */
-    /* _exit (255); */                /* -1 tells parent we could not exec */
-    exit2R("Failed exec after fork");
+    _exit (255);                /* -1 tells parent we could not exec */
 #endif
   }
   else {                        /* I am the parent */
@@ -484,6 +582,80 @@ LibcForkExec(int argc, char *const argv[], int *exeRC)
 } /* LibcForkExec */
 #endif /* #if defined(_WIN32) .. else .. */
 
+#if ! defined(_WIN32)
+void getSysErrMsg256 (int errCode, const char prefix[], char buf256[256])
+{
+  char *p = strerror(errCode);
+  int k;
+
+  strcpy (buf256, prefix);
+  k = 256 - 1 - strlen(prefix);
+  strncat (buf256, p, k);
+}
+#endif /* ! defined(_WIN32) */
+
+int
+LibcForkExecEx(int argc, char *const argv[], int *exeRC, int *errCode, char errMsg[256])
+#if defined(_WIN32)
+{ *exeRC = argc + *(argv[0]); *errCode = 0; *errMsg = '\0'; return 1; } /* bogus definition */
+#else
+{
+  int result = 1;
+  int pid, pid2;
+  int wstat;
+  /* */
+  *errMsg = '\0';
+  *errCode = 0;
+  pid = fork();
+  if (pid < 0) {                /* could not fork */
+    *exeRC = 0;
+    *errCode = errno;
+    getSysErrMsg256 (*errCode, "fork() call failed: ", errMsg);
+    result = 1;
+  }
+  else if (0 == pid) {          /* I am the child */
+    execvp (argv[0], argv);
+    execl("/bin/sh", "/bin/sh", "-c", "exit 255", NULL);
+    /* if we are here, it is trouble */
+#if 0 /* do not do this, exit() flushes stdio buffers of the parent */
+    exit (255);                 /* -1 tells parent we could not exec */
+#else
+    /* _exit() is a more immediate termination, less likely to flush stdio */
+    _exit (255);                /* -1 tells parent we could not exec */
+#endif
+  }
+  else {                        /* I am the parent */
+    for ( ; ; ) {
+      wstat = 0;
+      pid2 = waitpid (pid, &wstat, 0);
+      if (pid == pid2)
+        break;
+      if ((-1 == pid2) && (EINTR == errno))
+        continue;
+      *exeRC = 0;
+      *errCode = errno;
+      getSysErrMsg256 (*errCode, "waitpid() call failed: ", errMsg);
+      return 3;    /* failed waitpid */
+    }
+    if (WIFEXITED(wstat)) {     /* normal exit from child */
+      if (255 == WEXITSTATUS(wstat)) { /* because it couldn't exec */
+        *exeRC = 0;
+        result = 2;
+      }
+      else {
+        *exeRC = WEXITSTATUS(wstat);
+        result = 0;
+      }
+    }
+    else {                      /* abnormal return from child */
+      *exeRC = 0;
+      result = 4;
+    }
+  } /* end parent code */
+  return result;
+} /* LibcForkExecEx */
+#endif /* #if defined(_WIN32) .. else .. */
+
 /* libcASyncForkExec does a fork/exec to start a process,
  * but it does not wait for it.  Instead it returns the PID.
  * also, it sets up a new process group for the child
@@ -512,8 +684,7 @@ libcASyncForkExec (int argc, char *const argv[], SYSTEM_cardinal *pid)
 
     /* if we are here, it is trouble */
     execl("/bin/sh", "/bin/sh", "-c", "exit 127", NULL);
-    exit2R("Failed exec after fork");
-    /* _exit (127); */                /* consistent with & usage in bash */
+    _exit (127);                /* consistent with & usage in bash */
   }
   else {                        /* I am the parent */
     (void) setpgid (lPid,0);     /* make the child its own, new process group */
@@ -572,14 +743,13 @@ BRK_1:;
       while (*p != _P3char('\000') && *p != _P3char('\"')) {
         pushchar(*p,&r,&len);
         _P3inc0(p);
-      
-}
+      }
       if (*p != _P3char('\000')) 
         _P3inc0(p);
     } else {
       pushchar(*p,&r,&len);
       _P3inc0(p);
-    } 
+    }
 }
   _P3setlength(param,len,255);
   result = p;
@@ -599,7 +769,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3execp(
   result = 1;
   switch (P3PLATFORM_osfiletype()) {
     case P3PLATFORM_osfilewin: 
-      /**** C code included from p3process.pas(966:1): 1 lines ****/
+      /**** C code included from p3process.pas(1245:1): 1 lines ****/
       result = Win32CreateProc (NULL, (char *) cmdptr, 1, progrc);
       break;
     case P3PLATFORM_osfileunix: 
@@ -628,7 +798,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3execp(
       P3PROCESS_getparamshortstr(s,param);
       SYSTEM_assert(_P3strcmpE(param,_P3str1("\000")),_P3str1("\036cmd string should be exhausted"));
       (*pargv)[argc] = NULL;
-      /**** C code included from p3process.pas(1004:1): 1 lines ****/
+      /**** C code included from p3process.pas(1280:1): 1 lines ****/
       result =  LibcForkExec (argc, (char *const * )( *pargv), progrc);
       { register SYSTEM_int32 _stop = argc - 1;
         if ((i = 0) <=  _stop) do {
@@ -682,13 +852,17 @@ Function(SYSTEM_integer ) P3PROCESS_p3exec2(
         SYSTEM_length(progparams) + 1;
       _P3getmem(cmdptr,cmdlen);
       k = 0;
-      P3PROCESS_whatquote(quote,255,progname);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(quote,255,P3PROCESS_whatquote(_t1,255,progname));
+      }
       P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
       P3PRIVATE_pcharconcatstr(cmdptr,&k,progname);
       P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
       P3PRIVATE_pcharconcatstr(cmdptr,&k,_P3str1("\001 "));
       P3PRIVATE_pcharconcatstr(cmdptr,&k,progparams);
-      /**** C code included from p3process.pas(1072:1): 1 lines ****/
+      /**** C code included from p3process.pas(1347:1): 1 lines ****/
       result = Win32CreateProc (NULL, (char *) cmdptr, 1, progrc);
       _P3freemem(cmdptr);
       break;
@@ -721,7 +895,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3exec2(
       P3PROCESS_getparamshortstr(s,param);
       SYSTEM_assert(_P3strcmpE(param,_P3str1("\000")),_P3str1("\041params string should be exhausted"));
       (*pargv)[argc] = NULL;
-      /**** C code included from p3process.pas(1115:1): 1 lines ****/
+      /**** C code included from p3process.pas(1387:1): 1 lines ****/
       result =  LibcForkExec (argc, (char *const * )( *pargv), progrc);
       { register SYSTEM_int32 _stop = argc - 1;
         if ((i = 1) <=  _stop) do {
@@ -771,7 +945,11 @@ Function(SYSTEM_integer ) P3PROCESS_p3execl(
       }
       _P3getmem(cmdptr,cmdlen);
       k = 0;
-      P3PROCESS_whatquote(quote,255,progname);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(quote,255,P3PROCESS_whatquote(_t1,255,progname));
+      }
       P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
       P3PRIVATE_pcharconcatstr(cmdptr,&k,progname);
       P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
@@ -779,10 +957,11 @@ Function(SYSTEM_integer ) P3PROCESS_p3execl(
           P3PROCESS_texecarglist_DOT_fcount - 1;
         if ((i = 0) <=  _stop) do {
           {
+            SYSTEM_shortstring _t1;
             SYSTEM_shortstring _t2;
 
-            P3PROCESS_whatquote(quote,255,
-              P3PROCESS_texecarglist_DOT_get(_t2,255,progparams,i));
+            _P3strcpy(quote,255,P3PROCESS_whatquote(_t1,255,
+              P3PROCESS_texecarglist_DOT_get(_t2,255,progparams,i)));
           }
           P3PRIVATE_pcharconcatstr(cmdptr,&k,_P3str1("\001 "));
           P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
@@ -819,7 +998,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3execl(
     default:
       SYSTEM_assert(SYSTEM_false,_P3str1("\044unimplemented P3Execl for OSFileType"));
   }
-  /**** C code included from p3process.pas(1251:1): 5 lines ****/
+  /**** C code included from p3process.pas(1494:1): 5 lines ****/
 #if defined(_WIN32)
   result = Win32CreateProc(NULL, (char *)cmdptr, inheritedhandles, progrc);
 #else
@@ -844,6 +1023,107 @@ Function(SYSTEM_integer ) P3PROCESS_p3execl(
   return result;
 }  /* p3execl */
 
+Function(SYSTEM_integer ) P3PROCESS_p3exexec2(
+  const SYSTEM_ansichar *progname,
+  const SYSTEM_ansichar *progparams,
+  SYSTEM_integer *progrc,
+  SYSTEM_integer *errcode,
+  SYSTEM_ansichar *errmsg)
+{
+  SYSTEM_integer result;
+  SYSTEM_P3_pansichar prognameptr;
+  P3PRIVATE_shortstrbuf prognamebuf;
+  SYSTEM_P3_pansichar progparamsptr;
+  P3PRIVATE_shortstrbuf progparamsbuf;
+  P3PRIVATE_shortstrbuf errmsgbuf;
+  SYSTEM_P3_pansichar cmdptr;
+  SYSTEM_integer cmdlen;
+  SYSTEM_integer argc, i, k;
+  P3PROCESS_tpargv pargv;
+  SYSTEM_P3_pansichar s;
+  SYSTEM_shortstring param;
+  SYSTEM_shortstring quote;
+
+  result = 6;
+  *errcode = 0;
+  _P3strclr(errmsg);
+  switch (P3PLATFORM_osfiletype()) {
+    case P3PLATFORM_osfilewin: 
+      cmdlen = ValueCast(SYSTEM_int32,SYSTEM_length(progname)) + 3 + 
+        SYSTEM_length(progparams) + 1;
+      _P3getmem(cmdptr,cmdlen);
+      k = 0;
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(quote,255,P3PROCESS_whatquote(_t1,255,progname));
+      }
+      P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
+      P3PRIVATE_pcharconcatstr(cmdptr,&k,progname);
+      P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
+      P3PRIVATE_pcharconcatstr(cmdptr,&k,_P3str1("\001 "));
+      P3PRIVATE_pcharconcatstr(cmdptr,&k,progparams);
+      /**** C code included from p3process.pas(1567:1): 1 lines ****/
+      result = Win32CreateProcEx (NULL, (char *) cmdptr, 1, progrc, errcode, (char *) errmsgbuf);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(errmsg,255,P3PRIVATE_strbuftostr(_t1,255,
+          errmsgbuf));
+      }
+      _P3freemem(cmdptr);
+      break;
+    case P3PLATFORM_osfileunix: 
+      prognameptr = P3PRIVATE_strtostrbuf(progname,prognamebuf);
+      progparamsptr = P3PRIVATE_strtostrbuf(progparams,progparamsbuf);
+      if (*prognameptr == _P3char('\000')) {
+        *progrc = 0;
+        result = 5;
+        return result;
+      } 
+      argc = 0;
+      s = progparamsptr;
+      do {
+        s = P3PROCESS_getparamshortstr(s,param);
+        _P3inc0(argc);
+      } while (!_P3strcmpE(param,_P3str1("\000")));
+      _P3getmem(pargv,(argc + 1) * sizeof(SYSTEM_pointer));
+      (*pargv)[0] = prognameptr;
+      s = progparamsptr;
+      { register SYSTEM_int32 _stop = argc - 1;
+        if ((i = 1) <=  _stop) do {
+          s = P3PROCESS_getparamshortstr(s,param);
+          (*pargv)[i] = P3PRIVATE_strtopchar(param);
+          SYSTEM_assert(_P3strcmpN(param,_P3str1("\000")),_P3str1("\055params string should not be out of parameters"));
+        
+        } while (i++ !=  _stop);
+
+      }
+      P3PROCESS_getparamshortstr(s,param);
+      SYSTEM_assert(_P3strcmpE(param,_P3str1("\000")),_P3str1("\041params string should be exhausted"));
+      (*pargv)[argc] = NULL;
+      /**** C code included from p3process.pas(1608:1): 1 lines ****/
+      result =  LibcForkExecEx (argc, (char *const * )( *pargv), progrc, errcode, (char *) errmsgbuf);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(errmsg,255,P3PRIVATE_strbuftostr(_t1,255,
+          errmsgbuf));
+      }
+      { register SYSTEM_int32 _stop = argc - 1;
+        if ((i = 1) <=  _stop) do {
+          _P3freemem((*pargv)[i]);
+        } while (i++ !=  _stop);
+
+      }
+      _P3freemem(pargv);
+      break;
+    default:
+      SYSTEM_assert(SYSTEM_false,_P3str1("\046unimplemented P3ExExec2 for OSFileType"));
+  }
+  return result;
+}  /* p3exexec2 */
+
 Function(SYSTEM_integer ) P3PROCESS_p3asyncexecp(
   SYSTEM_P3_pansichar cmdptr,
   SYSTEM_boolean newconsole,
@@ -862,7 +1142,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3asyncexecp(
   _P3strclr(msg);
   switch (P3PLATFORM_osfiletype()) {
     case P3PLATFORM_osfilewin: 
-      /**** C code included from p3process.pas(1305:1): 1 lines ****/
+      /**** C code included from p3process.pas(1654:1): 1 lines ****/
    result = win32ASyncCreateProc (NULL, (char *) cmdptr, newconsole, 1, procinfo);
       break;
     case P3PLATFORM_osfileunix: 
@@ -888,7 +1168,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3asyncexecp(
       P3PROCESS_getparamshortstr(s,param);
       SYSTEM_assert(_P3strcmpE(param,_P3str1("\000")),_P3str1("\036cmd string should be exhausted"));
       (*pargv)[argc] = NULL;
-      /**** C code included from p3process.pas(1333:1): 1 lines ****/
+      /**** C code included from p3process.pas(1682:1): 1 lines ****/
    result = libcASyncForkExec (argc, (char *const * )( *pargv), &pid);
       procinfo->pid = pid;
       { register SYSTEM_int32 _stop = argc - 1;
@@ -943,7 +1223,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3asyncstatus(
     _P3strcpy(msg,255,_P3str1("\013Invalid PID"));
     return result;
   } 
-  /**** C code included from p3process.pas(1402:1): 101 lines ****/
+  /**** C code included from p3process.pas(1752:1): 101 lines ****/
 {
 #if defined(_WIN32)
   HANDLE h;
@@ -1052,7 +1332,7 @@ Function(SYSTEM_cardinal ) P3PROCESS_p3getpid(void)
 {
   SYSTEM_cardinal result;
 
-  /**** C code included from p3process.pas(1578:1): 5 lines ****/
+  /**** C code included from p3process.pas(1928:1): 5 lines ****/
 #if defined(_WIN32)
   result = (SYSTEM_cardinal) GetCurrentProcessId();
 #else
@@ -1067,7 +1347,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3ispidvalid(
   SYSTEM_boolean result;
 
   result = SYSTEM_false;
-  /**** C code included from p3process.pas(1600:1): 18 lines ****/
+  /**** C code included from p3process.pas(1950:1): 18 lines ****/
 {
 #if defined(_WIN32)
   HANDLE hProcess;
@@ -1095,7 +1375,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3ispidrunning(
   SYSTEM_boolean result;
 
   result = SYSTEM_false;
-  /**** C code included from p3process.pas(1649:1): 21 lines ****/
+  /**** C code included from p3process.pas(1999:1): 21 lines ****/
 {
 #if defined(_WIN32)
   HANDLE hProcess;
@@ -1127,7 +1407,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocess(
   SYSTEM_boolean result;
 
   result = SYSTEM_false;
-  /**** C code included from p3process.pas(1701:1): 52 lines ****/
+  /**** C code included from p3process.pas(2051:1): 56 lines ****/
 {
 #if defined(_WIN32)
   HANDLE hProcess;
@@ -1152,7 +1432,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocess(
 
 #else
   int i, rc, wstat;
-  pid_t p, p2;
+  pid_t p;
 
   p = (pid_t) procinfo->pid;
   if (p > 0) {                  /* PIDs are positive */
@@ -1171,8 +1451,12 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocess(
           /* printf ("waiting for zombie\n"); */
         }
         else {                /* a zombie */
-          p2 = waitpid (p, &wstat, 0);
-          /* printf ("debug: after kill and waitpid: p2 = %d\n", p2); */
+#if 0
+          pid_t p2 = waitpid (p, &wstat, 0);
+          printf ("debug: after kill and waitpid: p2 = %d\n", (int) p2);
+#else
+          (void) waitpid (p, &wstat, 0);
+#endif
           return result;
         }
       } /* sleep loop */
@@ -1182,7 +1466,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocess(
 }
   return result;
 }  /* p3killprocess */
-/**** C code included from p3process.pas(1790:1): 93 lines ****/
+/**** C code included from p3process.pas(2144:1): 96 lines ****/
 #if defined(_WIN32)
 BOOL killProcessTree (DWORD myprocID)
 {
@@ -1242,12 +1526,11 @@ SYSTEM_boolean killProcGroupUnix (pid_t p, P3PROCESS_tkillhow how)
 {
   SYSTEM_boolean result;
   int i, rc, wstat;
-  pid_t p2;
 
   result = SYSTEM_false;
   if (p > 0) {                  /* PIDs are positive */
 # if defined(__APPLE__)
-    p2 = getpgid (p);
+    pid_t p2 = getpgid (p);
     rc = killpg (p2, (P3PROCESS_soft == how) ? SIGINT: SIGKILL);
 # else
     rc = kill   (-p, (P3PROCESS_soft == how) ? SIGINT: SIGKILL);
@@ -1266,8 +1549,12 @@ SYSTEM_boolean killProcGroupUnix (pid_t p, P3PROCESS_tkillhow how)
           /* printf ("waiting for zombie\n"); */
         }
         else {                /* a zombie */
-          p2 = waitpid (p, &wstat, 0);
-          /* printf ("debug: after kill and waitpid: p2 = %d\n", p2); */
+#if 0
+          pid_t p3 = waitpid (p, &wstat, 0);
+          printf ("debug: after kill and waitpid: p3 = %d\n", (int) p3);
+#else
+          (void) waitpid (p, &wstat, 0);
+#endif
           return result;
         }
       } /* sleep loop */
@@ -1284,7 +1571,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocgrouptp(
   SYSTEM_boolean result;
 
   result = SYSTEM_false;
-  /**** C code included from p3process.pas(1953:1): 18 lines ****/
+  /**** C code included from p3process.pas(2310:1): 18 lines ****/
 {
 #if defined(_WIN32)
   char cmdBuf[128];
@@ -1313,7 +1600,7 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocgrouptk(
   SYSTEM_boolean result;
 
   result = SYSTEM_false;
-  /**** C code included from p3process.pas(1989:1): 35 lines ****/
+  /**** C code included from p3process.pas(2346:1): 35 lines ****/
 {
 #if defined(_WIN32)
   HANDLE hProcess;
@@ -1352,6 +1639,33 @@ Function(SYSTEM_boolean ) P3PROCESS_p3killprocgrouptk(
   return result;
 }  /* p3killprocgrouptk */
 
+Function(SYSTEM_integer ) P3PROCESS_p3signalproctree(
+  SYSTEM_integer signal,
+  SYSTEM_integer *nchildrenpre,
+  SYSTEM_integer *nchildrenpost)
+{
+  SYSTEM_integer result;
+
+  result = 1;
+  /**** C code included from p3process.pas(2412:1): 1 lines ****/
+  result = sigProcTree (signal, nchildrenpre, nchildrenpost);
+  return result;
+}  /* p3signalproctree */
+
+Function(SYSTEM_integer ) P3PROCESS_p3walkproctree(
+  SYSTEM_cardinal pid,
+  P3PROCESS_tproctreecb cbfunc,
+  SYSTEM_pointer usermem,
+  SYSTEM_boolean postorder)
+{
+  SYSTEM_integer result;
+
+  result =  -2;
+  /**** C code included from p3process.pas(2422:1): 1 lines ****/
+  result = walkProcTree (pid, cbfunc, usermem, postorder);
+  return result;
+}  /* p3walkproctree */
+
 static Function(SYSTEM_integer ) asyncsystem4unix(
   SYSTEM_P3_pansichar cmdptr,
   P3PROCESS_tprocinfo *procinfo,
@@ -1361,7 +1675,6 @@ static Function(SYSTEM_integer ) asyncsystem4unix(
   SYSTEM_cardinal pid;
   SYSTEM_integer argc;
   P3PROCESS_tpargv pargv;
-  SYSTEM_P3_pansichar s;
   SYSTEM_shortstring param;
 
   if (P3PLATFORM_osfiletype() == P3PLATFORM_osfilewin) {
@@ -1370,7 +1683,7 @@ static Function(SYSTEM_integer ) asyncsystem4unix(
     return result;
   } 
   _P3strclr(msg);
-  s = P3PROCESS_getparamshortstr(cmdptr,param);
+  P3PROCESS_getparamshortstr(cmdptr,param);
   if (_P3strcmpE(param,_P3str1("\000"))) {
     argc = 1;
     _P3getmem(pargv,(argc + 1) * sizeof(SYSTEM_pointer));
@@ -1381,9 +1694,9 @@ static Function(SYSTEM_integer ) asyncsystem4unix(
     (*pargv)[0] = P3PRIVATE_strtopchar(_P3str1("\007/bin/sh"));
     (*pargv)[1] = P3PRIVATE_strtopchar(_P3str1("\002-c"));
     (*pargv)[2] = cmdptr;
-  } 
+  }
   (*pargv)[argc] = NULL;
-  /**** C code included from p3process.pas(2099:1): 1 lines ****/
+  /**** C code included from p3process.pas(2476:1): 1 lines ****/
   result = libcASyncForkExec (argc, (char *const * )( *pargv), &pid);
   procinfo->pid = pid;
   _P3freemem((*pargv)[0]);
@@ -1401,7 +1714,7 @@ static Function(SYSTEM_integer ) P3PROCESS_system4unix(
   SYSTEM_integer rcode;
   SYSTEM_P3_pansichar newptr;
 
-  /**** C code included from p3process.pas(2163:1): 31 lines ****/
+  /**** C code included from p3process.pas(2505:1): 31 lines ****/
 #if defined(_WIN32)
   result = 127; /* should never happen */
 #else
@@ -1451,8 +1764,12 @@ static Function(SYSTEM_integer ) asyncsystem4win(
   SYSTEM_integer arglen;
 
   _P3strclr(msg);
-  SYSUTILS_P3_getenvironmentvariable(cs,255,_P3str1("\007COMSPEC"));
-  if (_P3strcmpE(cs,_P3str1("\000"))) {
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(cs,255,SYSUTILS_P3_getenvironmentvariable(_t1,255,_P3str1("\007COMSPEC")));
+  }
+  if (_P3strcmpE(cs,_P3str1("\000"))) 
     if (SYSUTILS_P3_fileexists(P3PROCESS_cmd_win7)) { 
       _P3strcpy(cs,255,P3PROCESS_cmd_win7);
     } else 
@@ -1463,7 +1780,6 @@ static Function(SYSTEM_integer ) asyncsystem4win(
         _P3strcpy(msg,255,_P3str1("\045COMSPEC not set and cmd.exe not found"));
         return result;
       }
-  }
   csptr = P3PRIVATE_strtostrbuf(cs,csbuf);
   if (*cmdptr == _P3char('\000')) {
     arglen = SYSUTILS_P3_strlen(csptr) + 1;
@@ -1478,8 +1794,8 @@ static Function(SYSTEM_integer ) asyncsystem4win(
     P3PRIVATE_pcharconcatstr(argptr,&arglen,cs);
     P3PRIVATE_pcharconcatstr(argptr,&arglen,_P3str1("\004 /C "));
     P3PRIVATE_pcharconcatpchar(argptr,&arglen,cmdptr);
-  } 
-  /**** C code included from p3process.pas(2249:1): 5 lines ****/
+  }
+  /**** C code included from p3process.pas(2591:1): 5 lines ****/
 #if 0
   printf ("debug asyncSystem4Win: calling win32CreateProc (%s, %s, ...)\n",
           (char *) csptr, (char *) argptr);
@@ -1504,8 +1820,12 @@ static Function(SYSTEM_integer ) P3PROCESS_system4win(
   SYSTEM_P3_pansichar argptr;
   SYSTEM_integer arglen;
 
-  SYSUTILS_P3_getenvironmentvariable(cs,255,_P3str1("\007COMSPEC"));
-  if (_P3strcmpE(cs,_P3str1("\000"))) {
+  {
+    SYSTEM_shortstring _t1;
+
+    _P3strcpy(cs,255,SYSUTILS_P3_getenvironmentvariable(_t1,255,_P3str1("\007COMSPEC")));
+  }
+  if (_P3strcmpE(cs,_P3str1("\000"))) 
     if (SYSUTILS_P3_fileexists(P3PROCESS_cmd_win7)) { 
       _P3strcpy(cs,255,P3PROCESS_cmd_win7);
     } else 
@@ -1515,7 +1835,6 @@ static Function(SYSTEM_integer ) P3PROCESS_system4win(
         result = 1;
         return result;
       }
-  }
   csptr = P3PRIVATE_strtostrbuf(cs,csbuf);
   if (*cmdptr == _P3char('\000')) {
     arglen = SYSUTILS_P3_strlen(csptr) + 1;
@@ -1530,8 +1849,8 @@ static Function(SYSTEM_integer ) P3PROCESS_system4win(
     P3PRIVATE_pcharconcatstr(argptr,&arglen,cs);
     P3PRIVATE_pcharconcatstr(argptr,&arglen,_P3str1("\004 /C "));
     P3PRIVATE_pcharconcatpchar(argptr,&arglen,cmdptr);
-  } 
-  /**** C code included from p3process.pas(2314:1): 1 lines ****/
+  }
+  /**** C code included from p3process.pas(2651:1): 1 lines ****/
   result = Win32CreateProc ((char *) csptr, (char *) argptr, inheritedhandles, progrc);
   if (result != 0) 
     result = 2;
@@ -1610,7 +1929,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3system2(
       result = P3PROCESS_system4unix(cmdptr,progrc);
       break;
     default:
-      SYSTEM_assert(SYSTEM_false,_P3str1("\045unimplemented P3system for OSFileType"));
+      SYSTEM_assert(SYSTEM_false,_P3str1("\046unimplemented P3system2 for OSFileType"));
   }
   _P3freemem(cmdptr);
   return result;
@@ -1650,10 +1969,11 @@ Function(SYSTEM_integer ) P3PROCESS_p3systeml(
       P3PROCESS_texecarglist_DOT_fcount - 1;
     if ((i = 0) <=  _stop) do {
       {
+        SYSTEM_shortstring _t1;
         SYSTEM_shortstring _t2;
 
-        P3PROCESS_whatquote(quote,255,
-          P3PROCESS_texecarglist_DOT_get(_t2,255,progparams,i));
+        _P3strcpy(quote,255,P3PROCESS_whatquote(_t1,255,
+          P3PROCESS_texecarglist_DOT_get(_t2,255,progparams,i)));
       }
       P3PRIVATE_pcharconcatstr(cmdptr,&k,_P3str1("\001 "));
       P3PRIVATE_pcharconcatstr(cmdptr,&k,quote);
@@ -1677,7 +1997,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3systeml(
       result = P3PROCESS_system4unix(cmdptr,progrc);
       break;
     default:
-      SYSTEM_assert(SYSTEM_false,_P3str1("\045unimplemented P3system for OSFileType"));
+      SYSTEM_assert(SYSTEM_false,_P3str1("\046unimplemented P3systemL for OSFileType"));
   }
   _P3freemem(cmdptr);
   return result;
@@ -1697,7 +2017,12 @@ static Function(SYSTEM_P3_pansichar ) P3PROCESS_unixgetcommandline(void)
   buflen = 1;
   { register SYSTEM_int32 _stop = SYSTEM_P3_paramcount();
     if ((i = 0) <=  _stop) do {
-      SYSTEM_P3_paramstr(s,255,i);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(s,255,VariableCast(SYSTEM_shortstring,
+          SYSTEM_P3_paramstr(_t1,255,i),SYSTEM_shortstring));
+      }
       buflen = buflen + SYSTEM_length(s) + 3;
     
     } while (i++ !=  _stop);
@@ -1709,18 +2034,25 @@ static Function(SYSTEM_P3_pansichar ) P3PROCESS_unixgetcommandline(void)
   {
     SYSTEM_shortstring _t1;
 
-    P3PRIVATE_pcharconcatstr(result,&k,SYSTEM_P3_paramstr(_t1,255,0));
+    P3PRIVATE_pcharconcatstr(result,&k,VariableCast(SYSTEM_shortstring,
+      SYSTEM_P3_paramstr(_t1,255,0),SYSTEM_shortstring));
   }
   P3PRIVATE_pcharconcatstr(result,&k,_P3str1("\002\" "));
   { register SYSTEM_int32 _stop = SYSTEM_P3_paramcount();
     if ((i = 1) <=  _stop) do {
-      SYSTEM_P3_paramstr(s,255,i);
+      {
+        SYSTEM_shortstring _t1;
+
+        _P3strcpy(s,255,VariableCast(SYSTEM_shortstring,
+          SYSTEM_P3_paramstr(_t1,255,i),SYSTEM_shortstring));
+      }
       P3PRIVATE_pcharconcatstr(result,&k,_P3str1("\001 "));
       {
         SYSTEM_shortstring _t1;
 
-        P3PRIVATE_pcharconcatstr(result,&k,SYSTEM_P3_paramstr(_t1,255,
-          i));
+        P3PRIVATE_pcharconcatstr(result,&k,VariableCast(
+          SYSTEM_shortstring,SYSTEM_P3_paramstr(_t1,255,i),
+          SYSTEM_shortstring));
       }
     
     } while (i++ !=  _stop);
@@ -1737,7 +2069,7 @@ Function(SYSTEM_P3_pansichar ) P3PROCESS_p3getcommandline(void)
   if (P3PLATFORM_osfilewin != P3PLATFORM_osfiletype()) { 
     result = P3PROCESS_unixgetcommandline();
   } else 
-    /**** C code included from p3process.pas(2501:1): 5 lines ****/
+    /**** C code included from p3process.pas(2832:1): 5 lines ****/
 #if defined(_WIN32)
     result = (SYSTEM_P3_pansichar) GetCommandLine();
 #else
@@ -1746,14 +2078,14 @@ Function(SYSTEM_P3_pansichar ) P3PROCESS_p3getcommandline(void)
   return result;
 }  /* p3getcommandline */
 static P3PROCESS_tctrlhandler P3PROCESS_ctrlhandler;
-/**** C code included from p3process.pas(2524:1): 6 lines ****/
+/**** C code included from p3process.pas(2848:1): 6 lines ****/
 #if ! defined(_WIN32)
 static sigset_t sigSet;
 static struct sigaction newAction;
 static struct sigaction oldAction;
 C_LINKAGE(static void ( * oldHandler) (int);)
 #endif
-/**** C code included from p3process.pas(2556:1): 28 lines ****/
+/**** C code included from p3process.pas(2873:1): 28 lines ****/
 #define ctrlhandler P3PROCESS_ctrlhandler
 
 #if defined(_WIN32)
@@ -1798,7 +2130,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3installctrlhandler(
     P3PROCESS_ctrlhandler = ValueCast(P3PROCESS_tctrlhandler,
       newhandler);
   } else 
-    /**** C code included from p3process.pas(2647:1): 30 lines ****/
+    /**** C code included from p3process.pas(2941:1): 30 lines ****/
 {
 #if defined(_WIN32)
   ctrlhandler = newhandler;
@@ -1840,7 +2172,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3uninstallctrlhandler(void)
   if (ValueCast(SYSTEM_pointer,P3PROCESS_ctrlhandler) == NULL) { 
     result = P3PROCESS_p3ctrlhandlerwasempty;
   } else {
-    /**** C code included from p3process.pas(2719:1): 21 lines ****/
+    /**** C code included from p3process.pas(2996:1): 21 lines ****/
 #if defined(_WIN32)
   if (SetConsoleCtrlHandler(P3Handler,FALSE))
     result = P3PROCESS_p3ctrlhandlerok;
@@ -1863,7 +2195,7 @@ Function(SYSTEM_integer ) P3PROCESS_p3uninstallctrlhandler(void)
     result = P3PROCESS_p3ctrlhandlerok;
 #endif /* #if defined(_WIN32) .. else .. */
     P3PROCESS_ctrlhandler = NULL;
-  } 
+  }
   return result;
 }  /* p3uninstallctrlhandler */
 
@@ -1897,7 +2229,7 @@ static Function(SYSTEM_P3_pshortstring ) P3PROCESS_newstring(
   } else {
     _P3getmem(result,ValueCast(SYSTEM_int32,SYSTEM_length(s)) + 1);
     _P3strcpy(*result,255,s);
-  } 
+  }
   return result;
 }  /* newstring */
 
@@ -1988,14 +2320,9 @@ Procedure P3PROCESS_texecarglist_DOT_setcapacity(
   if (newcapacity != self->P3PROCESS_texecarglist_DOT_fcapacity) {
     if (newcapacity < self->P3PROCESS_texecarglist_DOT_fcount) 
       newcapacity = self->P3PROCESS_texecarglist_DOT_fcount;
-#if 0
     SYSTEM_reallocmem(&PointerCast(SYSTEM_pointer,&self->
       P3PROCESS_texecarglist_DOT_flist),newcapacity * sizeof(
       SYSTEM_pointer));
-#else
-      SYSTEM_reallocmem ((void **) & self->P3PROCESS_texecarglist_DOT_flist,
-                         newcapacity * sizeof(SYSTEM_pointer));
-#endif
     self->P3PROCESS_texecarglist_DOT_fcapacity = newcapacity;
   } 
 }  /* setcapacity */
@@ -2116,7 +2443,7 @@ Procedure P3PROCESS_texecarglist_DOT_put(
 
 Procedure P3PROCESS_p3defaultshowwindow(void)
 {
-  /**** C code included from p3process.pas(2939:1): 5 lines ****/
+  /**** C code included from p3process.pas(3213:1): 5 lines ****/
 #if defined(_WIN32)
   wshowwindow = SW_SHOWNA;
 #else
@@ -2137,14 +2464,90 @@ Function(SYSTEM_integer ) P3PROCESS_p3getshowwindow(void)
   result = P3PROCESS_wshowwindow;
   return result;
 }  /* p3getshowwindow */
+/**** C code included from p3process.pas(3234:1): 70 lines ****/
+#if defined(_WIN32)
+DWORD bitCount(ULONG_PTR u)
+{
+  UINT64 b;
+  DWORD r = 0;
+
+  b = (UINT64) u;
+  while (b > 0) {
+    if (1 & b)
+      r++;
+    b >>= 1;
+  }
+  return r;
+} /* bitCount */
+
+/* on success, return TRUE */
+BOOL winProcInfo (int *coreCount, int *logicalCount)
+{
+  DWORD rc, len, pos, group;
+  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buf, proc;
+  unsigned char *ucPtr;
+  SYSTEM_INFO siSysInfo;
+
+  *coreCount = -1;
+  *logicalCount = -1;
+
+  len = 0;
+  rc = GetLogicalProcessorInformationEx (RelationProcessorCore, NULL, &len);
+  if (rc || (ERROR_INSUFFICIENT_BUFFER != GetLastError()))
+    return FALSE; /* failure */
+  buf = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX) malloc(len);
+  if (NULL == buf)
+    return FALSE; /* failure */
+  rc = GetLogicalProcessorInformationEx (RelationProcessorCore, buf, &len);
+  if (! rc) {
+    free(buf);
+    return FALSE; /* failure */
+  }
+  *coreCount = 0;
+  *logicalCount = 0;
+  ucPtr = (unsigned char *) buf;
+  for (pos = 0;  pos < len;  ) {
+    proc = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX) (ucPtr+pos);
+    if (RelationProcessorCore == proc->Relationship) {
+      ++*coreCount;
+      for (group = 0;  group < proc->Processor.GroupCount;  group++) {
+        KAFFINITY mask = proc->Processor.GroupMask[group].Mask;
+        while (0 != mask) {
+          *logicalCount += mask&1;
+          mask >>= 1;
+        }
+      }
+    }
+    pos += proc->Size;
+  }
+  free(buf);
+  /* only if logicalCount <= 64 can we
+   * verify what we computed is consistent with numberOfProcessors */
+  if ( *logicalCount <= 64 ) {
+    GetSystemInfo(&siSysInfo);
+    if ( *logicalCount != (int) siSysInfo.dwNumberOfProcessors) {
+      *coreCount = -1;
+      *logicalCount = -1;
+      return FALSE; /* failure */
+    }
+  }
+
+  return TRUE; /* success */
+} /* winProcInfo */
+#endif
 
 Function(SYSTEM_integer ) P3PROCESS_p3getnumberofprocessors(void)
 {
   SYSTEM_integer result;
 
-  /**** C code included from p3process.pas(2969:1): 7 lines ****/
+  /**** C code included from p3process.pas(3478:1): 12 lines ****/
 #if defined(_WIN32)
+  int coreCount, logicalCount;
   SYSTEM_INFO siSysInfo;
+  if (winProcInfo(&coreCount, &logicalCount))
+    return logicalCount;
+  /* my assumption: better to use GetSystemInfo than return -1, */
+  /*                even if GetSystemInfo may undercount        */
   GetSystemInfo(&siSysInfo);
   result = (int) siSysInfo.dwNumberOfProcessors;
 #else
@@ -2152,6 +2555,95 @@ Function(SYSTEM_integer ) P3PROCESS_p3getnumberofprocessors(void)
 #endif /* #if defined(_WIN32) .. else .. */
   return result;
 }  /* p3getnumberofprocessors */
+
+Function(SYSTEM_integer ) P3PROCESS_p3getnumberofcores(void)
+{
+  SYSTEM_integer result;
+
+  result =  -1;
+  /**** C code included from p3process.pas(3514:1): 60 lines ****/
+#if defined(_WIN32)
+{
+  int coreCount, logicalCount;
+  if (winProcInfo(&coreCount, &logicalCount))
+    result = coreCount;
+}
+#elif defined(__linux__)
+{
+  FILE *fp;
+  char *p = NULL, *s;
+  size_t pLen = 0;
+  ssize_t nRead;
+  long int corMin, corMax, sibMin, sibMax, v;
+
+  fp = fopen ("/proc/cpuinfo", "r");
+  if (fp) {
+    corMax = 0;
+    corMin = 99999999;
+    sibMax = 0;
+    sibMin = 99999999;
+    while ((nRead = getline (&p, &pLen, fp)) >= 0) {
+      /* printf ("line of len %zu: %s", nRead, p); */
+      if (strstr(p, "cpu cores") && (s=strstr(p,":"))) {
+        v = strtol (s+1, NULL, 10);
+        if (v > corMax)
+          corMax = v;
+        if (v < corMin)
+          corMin = v;
+      }
+      else if (strstr(p, "siblings") && (s=strstr(p,":"))) {
+        v = strtol (s+1, NULL, 10);
+        if (v > sibMax)
+          sibMax = v;
+        if (v < sibMin)
+          sibMin = v;
+      }
+    }
+    free (p);
+    fclose (fp);
+    /*
+    printf ("closing down: corMin=%ld corMax=%ld  sibMin=%ld sibMax=%ld\n",
+            corMin, corMax, sibMin, sibMax);
+    */
+    if ((corMin == corMax) && (sibMin == sibMax)) {
+      if ((corMin == sibMin) || (2*corMin == sibMin))
+        result = corMin;
+    }
+  }
+}
+#elif defined(__APPLE__)
+{
+  int k;
+  size_t sz  = sizeof(k);
+
+  if (0 == sysctlbyname ("hw.physicalcpu", &k, &sz, NULL, 0))
+    result = k;
+}
+#else
+  /* not done yet */
+#endif /* #if defined(_WIN32) .. else .. */
+  return result;
+}  /* p3getnumberofcores */
+
+Function(SYSTEM_boolean ) P3PROCESS_p3getprocinfo(
+  SYSTEM_integer *nphysical,
+  SYSTEM_integer *nlogical)
+{
+  SYSTEM_boolean result;
+
+  result = SYSTEM_false;
+  *nphysical =  -1;
+  *nlogical =  -1;
+  /**** C code included from p3process.pas(3589:1): 7 lines ****/
+#if defined(_WIN32)
+{
+  result = winProcInfo(nphysical, nlogical);
+}
+#else
+  /* not done yet */
+#endif /* #if defined(_WIN32) .. else .. */
+  return result;
+}  /* p3getprocinfo */
 
 /* unit p3process */
 void _Init_Module_p3process(void)
