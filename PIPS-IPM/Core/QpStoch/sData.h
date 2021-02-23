@@ -95,6 +95,10 @@ public:
   bool isRootNodeInSync() const;
 
 protected:
+  static void removeN0LinkVarsIn2Links( std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch,
+        const StochGenMatrix& Cstoch, const std::vector<int>& linkStartBlockIdA,
+        const std::vector<int>& linkStartBlockIdC );
+
   static PERMUTATION getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
         const std::vector<int>& linkStartBlockId, int n_links_after_split );
 

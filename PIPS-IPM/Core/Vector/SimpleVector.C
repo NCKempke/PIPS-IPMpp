@@ -149,13 +149,13 @@ bool SimpleVectorBase<T>::isKindOf( int kind ) const
 template<typename T>
 void SimpleVectorBase<T>::copyIntoArray( T w[] ) const
 {
-  memcpy( w, this->v, this->n * sizeof( T ) );
+   std::copy( v, v + this->n, w );
 }
 
 template<typename T>
 void SimpleVectorBase<T>::copyFromArray( const T w[] )
 {
-  memcpy( this->v, w, this->n * sizeof( T ) );
+   std::copy( w, w + this->n, v );
 }
 
 template<typename T>
@@ -249,15 +249,13 @@ bool SimpleVectorBase<T>::isZero() const
 template<typename T>
 void SimpleVectorBase<T>::setToZero()
 {
-  int i;
-  for( i = 0; i < this->n; i++ ) v[i] = 0.0;
+   setToConstant(0.0);
 }
 
 template<typename T>
 void SimpleVectorBase<T>::setToConstant( T c)
 {
-  int i;
-  for( i = 0; i < this->n; i++ ) v[i] = c;
+   std::fill( v, v + this->n, c );
 }
 
 // specialiced for double only
@@ -697,19 +695,11 @@ T SimpleVectorBase<T>::dotProductSelf( T scaleFactor ) const
    T dot = 0.0;
 
    if( scaleFactor == 1.0 )
-   {
-      for( int i = 0; i < this->n; i++ )
-         if( !PIPSisZero(v[i]) )
-            dot += v[i] * v[i];
-   }
+      dot = dotProductWith( *this );
    else
    {
       for( int i = 0; i < this->n; i++ )
-      {
-         const T valScaled = v[i] * scaleFactor;
-         if( !PIPSisZero(valScaled) )
-            dot += valScaled * valScaled;
-      }
+         dot += (v[i] * scaleFactor) * (v[i] * scaleFactor);
    }
    return dot;
 }

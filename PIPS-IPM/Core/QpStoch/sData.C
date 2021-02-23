@@ -1004,7 +1004,7 @@ PERMUTATION sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_va
    for( size_t i = 0; i < n_link_vars; ++i )
    {
       assert( count <= back_count );
-      assert( link_vars_n_blocks[i] >= 0 );
+      assert( link_vars_n_blocks[i] >= -1 );
 
       if( link_vars_n_blocks[i] > threshold_global_vars )
       {
@@ -1898,8 +1898,6 @@ void sData::addChildrenForSplit()
 
    assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
    assert( linkStartBlockLengthsA.size() == new_children.size() );
-
-   n0LinkVars = 0;
 }
 
 void sData::splitData( int myl_from_border, int mzl_from_border )
@@ -2132,6 +2130,57 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    return unperm_resids;
 }
 
+void sData::removeN0LinkVarsIn2Links( std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch,
+      const StochGenMatrix& Cstoch, const std::vector<int>& linkStartBlockIdA,
+      const std::vector<int>& linkStartBlockIdC )
+{
+   for( size_t i = 0; i < n_blocks_per_link_var.size(); ++i )
+   {
+      /* variable is n0LinkVar */
+      if( n_blocks_per_link_var[i] == 0 )
+      {
+         /// Blmat
+         {
+            const SparseGenMatrix& Blmat = dynamic_cast<SparseGenMatrix&>(*Astoch.Blmat).getTranspose();
+            const int col_start_A = Blmat.krowM()[i];
+            const int col_end_A = Blmat.krowM()[i + 1];
+
+            for( int k = col_start_A; k < col_end_A; ++k )
+            {
+               const int row_for_col = Blmat.jcolM()[k];
+
+               /* variable appears in a 2link */
+               if( linkStartBlockIdA[row_for_col] >= 0 )
+               {
+                  n_blocks_per_link_var[i] = -1;
+                  continue;
+               }
+            }
+         }
+
+         /// Dlmat
+         {
+            const SparseGenMatrix& Dlmat = dynamic_cast<SparseGenMatrix&>(*Cstoch.Blmat).getTranspose();
+            const int col_start_C = Dlmat.krowM()[i];
+            const int col_end_C = Dlmat.krowM()[i + 1];
+
+            for( int k = col_start_C; k < col_end_C; ++k )
+            {
+               const int row_for_col = Dlmat.jcolM()[k];
+
+               /* variable appears in a 2link */
+               if( linkStartBlockIdC[row_for_col] >= 0 )
+               {
+                  n_blocks_per_link_var[i] = -1;
+                  continue;
+               }
+            }
+         }
+      }
+   }
+}
+
+
 void sData::activateLinkStructureExploitation()
 {
    assert( !stochNode->isHierarchicalRoot() );
@@ -2173,6 +2222,10 @@ void sData::activateLinkStructureExploitation()
 
    Astoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdA, n_blocks_per_link_row_A);
    Cstoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdC, n_blocks_per_link_row_C);
+
+   /* since 2 links can get permuted out of the linking part we cannot rely on n0Linkvars the appear in 2links */
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+      removeN0LinkVarsIn2Links( n_blocks_per_link_var, Astoch, Cstoch, linkStartBlockIdA, linkStartBlockIdC );
 
 #ifndef NDEBUG
    std::vector<int> linkStart_A2 = Astoch.get2LinkStartBlocks();
