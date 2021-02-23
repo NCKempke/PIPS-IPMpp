@@ -923,51 +923,6 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    return top_layer;
 }
 
-void sTreeCallbacks::mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees )
-{
-   map_child_to_sub_tree.clear();
-   map_child_to_sub_tree.reserve(n_children);
-
-   if( n_subtrees == 0 )
-      return;
-
-   const unsigned int everyone_gets = std::floor(n_children / n_subtrees);
-   const unsigned int n_leftovers = n_children % n_subtrees;
-
-   std::vector<unsigned int> children_per_tree( n_subtrees, everyone_gets );
-
-   if( n_leftovers > 0 )
-   {
-      const unsigned int free_in_leftover_row = n_subtrees - n_leftovers;
-
-      const unsigned int free_after_each_leftover = std::floor(free_in_leftover_row / n_leftovers);
-      const unsigned int additional_frees = free_in_leftover_row % n_leftovers;
-
-      unsigned int additional_frees_assigned = 0;
-      for( unsigned int i = 0; i < n_subtrees; i += free_after_each_leftover )
-      {
-         ++children_per_tree[i];
-         ++i;
-
-         if( additional_frees != additional_frees_assigned )
-         {
-            ++i;
-            ++additional_frees_assigned;
-         }
-      }
-      assert( additional_frees_assigned == additional_frees );
-   }
-
-   assert( std::accumulate( children_per_tree.begin(), children_per_tree.end(),
-         decltype(children_per_tree)::value_type(0) ) == n_children );
-
-   for( unsigned int i = 0; i < children_per_tree.size(); ++i )
-   {
-      for( unsigned int j = 0; j < children_per_tree[i]; ++j )
-         map_child_to_sub_tree.push_back( i );
-   }
-}
-
 unsigned int sTreeCallbacks::getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
 {
    const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );

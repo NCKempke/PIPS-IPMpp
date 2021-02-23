@@ -11,6 +11,7 @@
 #include "DoubleMatrixTypes.h"
 #include "pipsport.h"
 
+#include <numeric>
 #include <algorithm>
 #include <cmath>
 
@@ -68,164 +69,60 @@ void sTree::assignProcesses(MPI_Comm comm)
 {
    assert( comm != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
-   const int size = PIPS_MPIgetSize(comm);
 
-   std::vector<int> processes(size);
-   for( int p = 0; p < size; p++)
+   const int world_size = PIPS_MPIgetSize(comm);
+   /* assign root node */
+   commWrkrs = MPI_COMM_WORLD;
+
+   std::vector<int> processes(world_size);
+   for( int p = 0; p < world_size; p++)
       processes[p] = p;
-
-   assignProcesses(comm, processes);
-}
-
-#ifndef MIN
-#define MIN(a,b) ( (a>b) ? b : a )
-#endif
-
-void sTree::assignProcesses(MPI_Comm world, std::vector<int>& processes)
-{
-   assert( !is_hierarchical_root );
-
-   int ierr;
-   commWrkrs = world;
    myProcs = processes;
 
-   const int n_procs = processes.size();
-   /* if we are at a leaf only one proc should be left */
-   if( children.size() == 0 )
-   {
-      assert( n_procs == 1 );
-      return;
-   }
-
-   /* if only one process is left anyway we just assign it to all children */
-   if( 1 == n_procs )
-   {
-      for( size_t c = 0; c < children.size(); c++)
-         children[c]->assignProcesses(MPI_COMM_SELF, processes);
-      return;
-   }
-
 #if 0
-   /* inactive but used to claculate loads that children would generate and then assign the processes */
+   /* inactive but used to calculate loads that children would generate and then assign the processes */
    vector<double> child_nodes_load( children.size() );
    for(size_t i = 0; i < children.size(); i++)
       child_nodes_load[i] = children[i]->processLoad();
 #endif
+
+   const unsigned int n_procs = processes.size();
    //**** solve the assignment problem ****
-   std::vector<std::vector<int> > map_child_nodes_to_procs(children.size());
-
-   const int n_children_per_process = children.size() / n_procs;
-   const int n_unassigned = children.size() % n_procs;
-
    /* too many MPI processes? */
-   if( n_children_per_process == 0 )
-   {
-      std::cout << "too many MPI processes! (max: " << children.size() << ")" << std::endl;
-      MPI_Abort(world, 1);
-   }
+   std::stringstream ss;
+   ss << "too many MPI processes! (max: " << children.size() << ")\n";
+   PIPS_MPIabortIf( n_procs > children.size(), ss.str() );
 
-   for( size_t i = 0; i < children.size(); i++)
-   {
-      map_child_nodes_to_procs[i].resize(1);
-      map_child_nodes_to_procs[i][0] = -1;
-   }
-
-
-   /* assign n_children_per_process + one left out node to the first n_unassigned processes */
-   size_t pos = 0;
-   for( int i = 0; i < n_procs; ++i )
-   {
-      const int n_assign_to_proc = ( i < n_unassigned ) ? n_children_per_process + 1 : n_children_per_process;
-
-      for( int j = 0; j < n_assign_to_proc; ++j )
-      {
-         assert( pos < children.size() );
-         map_child_nodes_to_procs[pos++][0] = i;
-      }
-   }
-
-   assert( pos == children.size() );
+   std::vector<unsigned int> map_child_nodes_to_procs;
+   mapChildrenToNSubTrees(map_child_nodes_to_procs, children.size(), n_procs);
 
 #ifndef NDEBUG
    for( size_t i = 0; i < children.size(); i++ )
-   {
-      assert( map_child_nodes_to_procs[i][0] != -1 );
-      assert( map_child_nodes_to_procs[i][0] < n_procs );
-   }
+      assert( map_child_nodes_to_procs[i] < n_procs );
 
    for( size_t i = 1; i < children.size(); i++ )
-      assert( map_child_nodes_to_procs[i - 1][0] <= map_child_nodes_to_procs[i][0] );
+      assert( map_child_nodes_to_procs[i - 1] <= map_child_nodes_to_procs[i] );
 
    std::vector<size_t> load_per_proc(n_procs, 0);
    for( size_t i = 0; i < children.size(); ++i )
-      load_per_proc[ map_child_nodes_to_procs[i][0] ]++;
+      load_per_proc[ map_child_nodes_to_procs[i] ]++;
 
    const size_t max_load = *std::max_element(load_per_proc.begin(), load_per_proc.end());
    const size_t min_load = *std::min_element(load_per_proc.begin(), load_per_proc.end());
    assert( max_load == min_load || max_load == min_load + 1 );
 #endif
 
-   MPI_Group mpiWorldGroup;
-   ierr = MPI_Comm_group(commWrkrs, &mpiWorldGroup);
-   (void) ierr;
-   assert( ierr == MPI_SUCCESS );
-
    for( size_t i = 0; i < children.size(); i++ )
    {
-     const int n_ranks_4_this_child = map_child_nodes_to_procs[i].size();
-     int* ranksToKeep = new int[n_ranks_4_this_child];
-
-     bool isChildInThisProcess = false;
-
-     for( int proc = 0; proc < n_ranks_4_this_child; proc++ )
-     {
-        ranksToKeep[proc] = map_child_nodes_to_procs[i][proc];
-        if( rankMe == ranksToKeep[proc] )
-           isChildInThisProcess = true;
-     }
-
-     std::vector<int> childRanks(n_ranks_4_this_child);
-     for( int c = 0; c < n_ranks_4_this_child; c++ )
-        childRanks[c] = ranksToKeep[c];
-
-     if( isChildInThisProcess )
-     {
-        if( n_ranks_4_this_child == 1 )
-        {
-           children[i]->assignProcesses(MPI_COMM_SELF, childRanks);
-        }
-        else
-        {
-           //create the communicator this child should use
-           MPI_Comm childComm;
-           MPI_Group childGroup;
-           ierr = MPI_Group_incl(mpiWorldGroup, n_ranks_4_this_child, ranksToKeep,
-                 &childGroup);
-           assert( ierr == MPI_SUCCESS );
-
-           ierr = MPI_Comm_create(commWrkrs, childGroup, &childComm);
-           assert( ierr == MPI_SUCCESS );
-           MPI_Group_free(&childGroup);
-
-           //!log printf("----Node [%d] is on proc [%d]\n", i, rankMe);fflush(stdout);
-           children[i]->assignProcesses(childComm, childRanks);
-        }
-     }
-     else
-     {  //this Child was not assigned to this MPI process
-        //!log printf("---Node [%d] not on  proc [%d] \n", i, rankMe);fflush(stdout);
-        // continue solving the assignment problem so that
-        // each node knows the CPUs the other nodes are on.
-
-        children[i]->assignProcesses(MPI_COMM_NULL, childRanks);
-     }
-
-     delete[] ranksToKeep;
-  }
-
-  MPI_Group_free(&mpiWorldGroup);
+      children[i]->myProcs.clear();
+      children[i]->myProcs.push_back( map_child_nodes_to_procs[i] );
+      assert( rankMe >= 0 );
+      if( static_cast<unsigned int>(rankMe) == map_child_nodes_to_procs[i] )
+         children[i]->commWrkrs = MPI_COMM_SELF;
+      else
+         children[i]->commWrkrs = MPI_COMM_NULL;
+   }
 }
-
 
 double sTree::processLoad() const
 {
@@ -636,5 +533,51 @@ void sTree::printProcessTree() const
          count = 0;
          std::cout << "\n\n";
       }
+   }
+}
+
+void sTree::mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees )
+{
+   assert( n_subtrees <= n_children );
+   map_child_to_sub_tree.clear();
+   map_child_to_sub_tree.reserve(n_children);
+
+   if( n_subtrees == 0 )
+      return;
+
+   const unsigned int everyone_gets = std::floor(n_children / n_subtrees);
+   const unsigned int n_leftovers = n_children % n_subtrees;
+
+   std::vector<unsigned int> children_per_tree( n_subtrees, everyone_gets );
+
+   if( n_leftovers > 0 )
+   {
+      const unsigned int free_in_leftover_row = n_subtrees - n_leftovers;
+
+      const unsigned int free_after_each_leftover = std::floor(free_in_leftover_row / n_leftovers);
+      const unsigned int additional_frees = free_in_leftover_row % n_leftovers;
+
+      unsigned int additional_frees_assigned = 0;
+      for( unsigned int i = 0; i < n_subtrees; i += free_after_each_leftover )
+      {
+         ++children_per_tree[i];
+         ++i;
+
+         if( additional_frees != additional_frees_assigned )
+         {
+            ++i;
+            ++additional_frees_assigned;
+         }
+      }
+      assert( additional_frees_assigned == additional_frees );
+   }
+
+   assert( std::accumulate( children_per_tree.begin(), children_per_tree.end(),
+         decltype(children_per_tree)::value_type(0) ) == n_children );
+
+   for( unsigned int i = 0; i < children_per_tree.size(); ++i )
+   {
+      for( unsigned int j = 0; j < children_per_tree[i]; ++j )
+         map_child_to_sub_tree.push_back( i );
    }
 }

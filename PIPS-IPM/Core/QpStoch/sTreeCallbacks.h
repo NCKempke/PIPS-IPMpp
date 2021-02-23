@@ -142,8 +142,6 @@ protected:
 
    sTreeCallbacks();
    InputNode* data{}; //input data
-private:
-   static void mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees );
 };
 
 
