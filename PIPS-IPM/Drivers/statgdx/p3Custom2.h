@@ -1,4 +1,4 @@
-/* $Id: p3Custom2.h 52165 2015-05-19 13:33:37Z sdirkse $
+/* $Id$
  * Header for C routines in p3Custom2.c
  * This code is sensitive to the order of the #defines, so inlining is not OK
  */

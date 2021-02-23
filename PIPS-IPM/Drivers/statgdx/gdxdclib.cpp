@@ -29,11 +29,10 @@
 #include "gmsheapnew.h"
 #include "datastorage.h"
 #include "gmsglobx.h"
+#include "palmdcon.h"
 #include "paldoorg.h"
 #include "gdlaudit.h"
-#if defined(USE_RUNNER)
 #include "runner.h"
-#endif
 #include "gxfile.h"
 
 
@@ -60,7 +59,7 @@ static Function(SYSTEM_integer )  STDCALL GDXDCLIB_checkp(
     } else {
       (*ValueCast(GMSGEN_pansichararray,msgbuf))[0] = _P3char('\000');
       result = 1;
-    } 
+    }
     return result;
 }  /* checkp */
 
@@ -124,20 +123,20 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL xapiversion(
       _P3STR_255 _t2;
 
       _P3strcat(msg,255,_P3strcat(_t2,255,_P3str1("\100gdxdclib: The API is too old for the used library, API version: "),
-        SYSUTILS_P3_inttostr(_t1,255,api)),_P3str1("\024, library version: 7"));
+        SYSUTILS_P3_inttostr(_t1,255,api)),_P3str1("\024, library version: 8"));
     }
-    if (api >= 7) {
+    if (api >= 8) {
       result = 1;
-      if (api == 7) {
+      if (api == 8) {
         *comp = 1;
         _P3strcpy(msg,255,_P3str1("\067gdxdclib: API version and library version are the same."));
       } else {
         *comp = 3;
         _P3strcpy(msg,255,_P3str1("\061gdxdclib: API version is newer than this library."));
-      } 
+      }
       return result;
     } 
-    if (api == 7) {
+    if (api == 7 || api == 8) {
       result = 1;
       *comp = 2;
       _P3strcpy(msg,255,_P3str1("\106gdxdclib: Client version is compatible to this version of the library."));
@@ -180,18 +179,18 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL xcheck(
     SYSTEM_integer result;
     SYSTEM_integer i, entryindex;
     cnstdef {maxarg = 6};
-    cnstdef {maxentry = 87};
+    cnstdef {maxentry = 91};
     cnstdef {maxlen = 24};
     typedef SYSTEM_uint8 _sub_1XCHECK;
-    typedef _P3STR_31 _arr_0XCHECK[87];
-    static _arr_0XCHECK entryname = {{13,'g','d','x','A','c','r','o','n','y','m','A','d','d'}, {15,'g','d','x','A','c','r','o','n','y','m','C','o','u','n','t'}, {17,'g','d','x','A','c','r','o','n','y','m','G','e','t','I','n','f','o'}, {20,'g','d','x','A','c','r','o','n','y','m','G','e','t','M','a','p','p','i','n','g'}, {15,'g','d','x','A','c','r','o','n','y','m','I','n','d','e','x'}, {14,'g','d','x','A','c','r','o','n','y','m','N','a','m','e'}, {16,'g','d','x','A','c','r','o','n','y','m','N','e','x','t','N','r'}, {17,'g','d','x','A','c','r','o','n','y','m','S','e','t','I','n','f','o'}, {15,'g','d','x','A','c','r','o','n','y','m','V','a','l','u','e'}, {11,'g','d','x','A','d','d','A','l','i','a','s'}, {13,'g','d','x','A','d','d','S','e','t','T','e','x','t'}, {14,'g','d','x','A','u','t','o','C','o','n','v','e','r','t'}, {8,'g','d','x','C','l','o','s','e'}, {17,'g','d','x','D','a','t','a','E','r','r','o','r','C','o','u','n','t'}, {18,'g','d','x','D','a','t','a','E','r','r','o','r','R','e','c','o','r','d'}, {15,'g','d','x','D','a','t','a','R','e','a','d','D','o','n','e'}, {24,'g','d','x','D','a','t','a','R','e','a','d','F','i','l','t','e','r','e','d','S','t','a','r','t'}, {14,'g','d','x','D','a','t','a','R','e','a','d','M','a','p'}, {19,'g','d','x','D','a','t','a','R','e','a','d','M','a','p','S','t','a','r','t'}, {14,'g','d','x','D','a','t','a','R','e','a','d','R','a','w'}, {18,'g','d','x','D','a','t','a','R','e','a','d','R','a','w','F','a','s','t'}, {22,'g','d','x','D','a','t','a','R','e','a','d','R','a','w','F','a','s','t','F','i','l','t'}, {19,'g','d','x','D','a','t','a','R','e','a','d','R','a','w','S','t','a','r','t'}, {16,'g','d','x','D','a','t','a','R','e','a','d','S','l','i','c','e'}, {21,'g','d','x','D','a','t','a','R','e','a','d','S','l','i','c','e','S','t','a','r','t'}, {14,'g','d','x','D','a','t','a','R','e','a','d','S','t','r'}, {19,'g','d','x','D','a','t','a','R','e','a','d','S','t','r','S','t','a','r','t'}, {16,'g','d','x','D','a','t','a','S','l','i','c','e','U','E','L','S'}, {16,'g','d','x','D','a','t','a','W','r','i','t','e','D','o','n','e'}, {15,'g','d','x','D','a','t','a','W','r','i','t','e','M','a','p'}, {20,'g','d','x','D','a','t','a','W','r','i','t','e','M','a','p','S','t','a','r','t'}, {15,'g','d','x','D','a','t','a','W','r','i','t','e','R','a','w'}, {20,'g','d','x','D','a','t','a','W','r','i','t','e','R','a','w','S','t','a','r','t'}, {15,'g','d','x','D','a','t','a','W','r','i','t','e','S','t','r'}, {20,'g','d','x','D','a','t','a','W','r','i','t','e','S','t','r','S','t','a','r','t'}, {16,'g','d','x','G','e','t','D','L','L','V','e','r','s','i','o','n'}, {13,'g','d','x','E','r','r','o','r','C','o','u','n','t'}, {11,'g','d','x','E','r','r','o','r','S','t','r'}, {11,'g','d','x','F','i','l','e','I','n','f','o'}, {14,'g','d','x','F','i','l','e','V','e','r','s','i','o','n'}, {15,'g','d','x','F','i','l','t','e','r','E','x','i','s','t','s'}, {17,'g','d','x','F','i','l','t','e','r','R','e','g','i','s','t','e','r'}, {21,'g','d','x','F','i','l','t','e','r','R','e','g','i','s','t','e','r','D','o','n','e'}, {22,'g','d','x','F','i','l','t','e','r','R','e','g','i','s','t','e','r','S','t','a','r','t'}, {13,'g','d','x','F','i','n','d','S','y','m','b','o','l'}, {14,'g','d','x','G','e','t','E','l','e','m','T','e','x','t'}, {15,'g','d','x','G','e','t','L','a','s','t','E','r','r','o','r'}, {16,'g','d','x','G','e','t','M','e','m','o','r','y','U','s','e','d'}, {19,'g','d','x','G','e','t','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {9,'g','d','x','G','e','t','U','E','L'}, {11,'g','d','x','M','a','p','V','a','l','u','e'}, {13,'g','d','x','O','p','e','n','A','p','p','e','n','d'}, {11,'g','d','x','O','p','e','n','R','e','a','d'}, {12,'g','d','x','O','p','e','n','W','r','i','t','e'}, {14,'g','d','x','O','p','e','n','W','r','i','t','e','E','x'}, {21,'g','d','x','R','e','s','e','t','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {13,'g','d','x','S','e','t','H','a','s','T','e','x','t'}, {23,'g','d','x','S','e','t','R','e','a','d','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {19,'g','d','x','S','e','t','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {16,'g','d','x','S','e','t','T','e','x','t','N','o','d','e','N','r'}, {16,'g','d','x','S','e','t','T','r','a','c','e','L','e','v','e','l'}, {20,'g','d','x','S','y','m','b','I','n','d','x','M','a','x','L','e','n','g','t','h'}, {16,'g','d','x','S','y','m','b','M','a','x','L','e','n','g','t','h'}, {19,'g','d','x','S','y','m','b','o','l','A','d','d','C','o','m','m','e','n','t'}, {19,'g','d','x','S','y','m','b','o','l','G','e','t','C','o','m','m','e','n','t'}, {18,'g','d','x','S','y','m','b','o','l','G','e','t','D','o','m','a','i','n'}, {19,'g','d','x','S','y','m','b','o','l','G','e','t','D','o','m','a','i','n','X'}, {12,'g','d','x','S','y','m','b','o','l','D','i','m'}, {13,'g','d','x','S','y','m','b','o','l','I','n','f','o'}, {14,'g','d','x','S','y','m','b','o','l','I','n','f','o','X'}, {18,'g','d','x','S','y','m','b','o','l','S','e','t','D','o','m','a','i','n'}, {19,'g','d','x','S','y','m','b','o','l','S','e','t','D','o','m','a','i','n','X'}, {13,'g','d','x','S','y','s','t','e','m','I','n','f','o'}, {15,'g','d','x','U','E','L','M','a','x','L','e','n','g','t','h'}, {18,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','D','o','n','e'}, {17,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','M','a','p'}, {22,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','M','a','p','S','t','a','r','t'}, {17,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','R','a','w'}, {22,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','R','a','w','S','t','a','r','t'}, {17,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','S','t','r'}, {22,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','S','t','r','S','t','a','r','t'}, {12,'g','d','x','U','M','F','i','n','d','U','E','L'}, {11,'g','d','x','U','M','U','e','l','G','e','t'}, {12,'g','d','x','U','M','U','e','l','I','n','f','o'}, {20,'g','d','x','G','e','t','D','o','m','a','i','n','E','l','e','m','e','n','t','s'}, {13,'g','d','x','C','u','r','r','e','n','t','D','i','m'}, {12,'g','d','x','R','e','n','a','m','e','U','E','L'}};
+    typedef _P3STR_31 _arr_0XCHECK[91];
+    static _arr_0XCHECK entryname = {{13,'g','d','x','A','c','r','o','n','y','m','A','d','d'}, {15,'g','d','x','A','c','r','o','n','y','m','C','o','u','n','t'}, {17,'g','d','x','A','c','r','o','n','y','m','G','e','t','I','n','f','o'}, {20,'g','d','x','A','c','r','o','n','y','m','G','e','t','M','a','p','p','i','n','g'}, {15,'g','d','x','A','c','r','o','n','y','m','I','n','d','e','x'}, {14,'g','d','x','A','c','r','o','n','y','m','N','a','m','e'}, {16,'g','d','x','A','c','r','o','n','y','m','N','e','x','t','N','r'}, {17,'g','d','x','A','c','r','o','n','y','m','S','e','t','I','n','f','o'}, {15,'g','d','x','A','c','r','o','n','y','m','V','a','l','u','e'}, {11,'g','d','x','A','d','d','A','l','i','a','s'}, {13,'g','d','x','A','d','d','S','e','t','T','e','x','t'}, {14,'g','d','x','A','u','t','o','C','o','n','v','e','r','t'}, {8,'g','d','x','C','l','o','s','e'}, {17,'g','d','x','D','a','t','a','E','r','r','o','r','C','o','u','n','t'}, {18,'g','d','x','D','a','t','a','E','r','r','o','r','R','e','c','o','r','d'}, {19,'g','d','x','D','a','t','a','E','r','r','o','r','R','e','c','o','r','d','X'}, {15,'g','d','x','D','a','t','a','R','e','a','d','D','o','n','e'}, {24,'g','d','x','D','a','t','a','R','e','a','d','F','i','l','t','e','r','e','d','S','t','a','r','t'}, {14,'g','d','x','D','a','t','a','R','e','a','d','M','a','p'}, {19,'g','d','x','D','a','t','a','R','e','a','d','M','a','p','S','t','a','r','t'}, {14,'g','d','x','D','a','t','a','R','e','a','d','R','a','w'}, {18,'g','d','x','D','a','t','a','R','e','a','d','R','a','w','F','a','s','t'}, {22,'g','d','x','D','a','t','a','R','e','a','d','R','a','w','F','a','s','t','F','i','l','t'}, {19,'g','d','x','D','a','t','a','R','e','a','d','R','a','w','S','t','a','r','t'}, {16,'g','d','x','D','a','t','a','R','e','a','d','S','l','i','c','e'}, {21,'g','d','x','D','a','t','a','R','e','a','d','S','l','i','c','e','S','t','a','r','t'}, {14,'g','d','x','D','a','t','a','R','e','a','d','S','t','r'}, {19,'g','d','x','D','a','t','a','R','e','a','d','S','t','r','S','t','a','r','t'}, {16,'g','d','x','D','a','t','a','S','l','i','c','e','U','E','L','S'}, {16,'g','d','x','D','a','t','a','W','r','i','t','e','D','o','n','e'}, {15,'g','d','x','D','a','t','a','W','r','i','t','e','M','a','p'}, {20,'g','d','x','D','a','t','a','W','r','i','t','e','M','a','p','S','t','a','r','t'}, {15,'g','d','x','D','a','t','a','W','r','i','t','e','R','a','w'}, {20,'g','d','x','D','a','t','a','W','r','i','t','e','R','a','w','S','t','a','r','t'}, {15,'g','d','x','D','a','t','a','W','r','i','t','e','S','t','r'}, {20,'g','d','x','D','a','t','a','W','r','i','t','e','S','t','r','S','t','a','r','t'}, {16,'g','d','x','G','e','t','D','L','L','V','e','r','s','i','o','n'}, {13,'g','d','x','E','r','r','o','r','C','o','u','n','t'}, {11,'g','d','x','E','r','r','o','r','S','t','r'}, {11,'g','d','x','F','i','l','e','I','n','f','o'}, {14,'g','d','x','F','i','l','e','V','e','r','s','i','o','n'}, {15,'g','d','x','F','i','l','t','e','r','E','x','i','s','t','s'}, {17,'g','d','x','F','i','l','t','e','r','R','e','g','i','s','t','e','r'}, {21,'g','d','x','F','i','l','t','e','r','R','e','g','i','s','t','e','r','D','o','n','e'}, {22,'g','d','x','F','i','l','t','e','r','R','e','g','i','s','t','e','r','S','t','a','r','t'}, {13,'g','d','x','F','i','n','d','S','y','m','b','o','l'}, {14,'g','d','x','G','e','t','E','l','e','m','T','e','x','t'}, {15,'g','d','x','G','e','t','L','a','s','t','E','r','r','o','r'}, {16,'g','d','x','G','e','t','M','e','m','o','r','y','U','s','e','d'}, {19,'g','d','x','G','e','t','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {9,'g','d','x','G','e','t','U','E','L'}, {11,'g','d','x','M','a','p','V','a','l','u','e'}, {13,'g','d','x','O','p','e','n','A','p','p','e','n','d'}, {11,'g','d','x','O','p','e','n','R','e','a','d'}, {13,'g','d','x','O','p','e','n','R','e','a','d','E','x'}, {12,'g','d','x','O','p','e','n','W','r','i','t','e'}, {14,'g','d','x','O','p','e','n','W','r','i','t','e','E','x'}, {21,'g','d','x','R','e','s','e','t','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {13,'g','d','x','S','e','t','H','a','s','T','e','x','t'}, {23,'g','d','x','S','e','t','R','e','a','d','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {19,'g','d','x','S','e','t','S','p','e','c','i','a','l','V','a','l','u','e','s'}, {16,'g','d','x','S','e','t','T','e','x','t','N','o','d','e','N','r'}, {16,'g','d','x','S','e','t','T','r','a','c','e','L','e','v','e','l'}, {20,'g','d','x','S','y','m','b','I','n','d','x','M','a','x','L','e','n','g','t','h'}, {16,'g','d','x','S','y','m','b','M','a','x','L','e','n','g','t','h'}, {19,'g','d','x','S','y','m','b','o','l','A','d','d','C','o','m','m','e','n','t'}, {19,'g','d','x','S','y','m','b','o','l','G','e','t','C','o','m','m','e','n','t'}, {18,'g','d','x','S','y','m','b','o','l','G','e','t','D','o','m','a','i','n'}, {19,'g','d','x','S','y','m','b','o','l','G','e','t','D','o','m','a','i','n','X'}, {12,'g','d','x','S','y','m','b','o','l','D','i','m'}, {13,'g','d','x','S','y','m','b','o','l','I','n','f','o'}, {14,'g','d','x','S','y','m','b','o','l','I','n','f','o','X'}, {18,'g','d','x','S','y','m','b','o','l','S','e','t','D','o','m','a','i','n'}, {19,'g','d','x','S','y','m','b','o','l','S','e','t','D','o','m','a','i','n','X'}, {13,'g','d','x','S','y','s','t','e','m','I','n','f','o'}, {15,'g','d','x','U','E','L','M','a','x','L','e','n','g','t','h'}, {18,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','D','o','n','e'}, {17,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','M','a','p'}, {22,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','M','a','p','S','t','a','r','t'}, {17,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','R','a','w'}, {22,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','R','a','w','S','t','a','r','t'}, {17,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','S','t','r'}, {22,'g','d','x','U','E','L','R','e','g','i','s','t','e','r','S','t','r','S','t','a','r','t'}, {12,'g','d','x','U','M','F','i','n','d','U','E','L'}, {11,'g','d','x','U','M','U','e','l','G','e','t'}, {12,'g','d','x','U','M','U','e','l','I','n','f','o'}, {20,'g','d','x','G','e','t','D','o','m','a','i','n','E','l','e','m','e','n','t','s'}, {13,'g','d','x','C','u','r','r','e','n','t','D','i','m'}, {12,'g','d','x','R','e','n','a','m','e','U','E','L'}, {18,'g','d','x','S','t','o','r','e','D','o','m','a','i','n','S','e','t','s'}, {21,'g','d','x','S','t','o','r','e','D','o','m','a','i','n','S','e','t','s','S','e','t'}};
     typedef SYSTEM_uint8 _sub_3XCHECK;
-    typedef SYSTEM_integer _arr_2XCHECK[87];
-    static _arr_2XCHECK dllnrarg = {3, 0, 4, 4, 1, 2, 1, 4, 1, 2, 2, 1, 0, 0, 3, 0, 3, 4, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 0, 2, 5, 2, 5, 2, 5, 1, 0, 2, 2, 2, 1, 1, 0, 1, 2, 3, 0, 0, 1, 2, 2, 3, 2, 3, 4, 0, 1, 1, 1, 2, 2, 2, 0, 2, 3, 2, 2, 1, 4, 4, 1, 2, 2, 0, 0, 2, 0, 1, 0, 2, 0, 3, 3, 2, 6, 0, 2};
+    typedef SYSTEM_integer _arr_2XCHECK[91];
+    static _arr_2XCHECK dllnrarg = {3, 0, 4, 4, 1, 2, 1, 4, 1, 2, 2, 1, 0, 0, 3, 3, 0, 3, 4, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, 0, 2, 5, 2, 5, 2, 5, 1, 0, 2, 2, 2, 1, 1, 0, 1, 2, 3, 0, 0, 1, 2, 2, 3, 2, 3, 3, 4, 0, 1, 1, 1, 2, 2, 2, 0, 2, 3, 2, 2, 1, 4, 4, 1, 2, 2, 0, 0, 2, 0, 1, 0, 2, 0, 3, 3, 2, 6, 0, 2, 0, 1};
     typedef SYSTEM_uint8 _sub_5XCHECK;
     typedef SYSTEM_uint8 _sub_7XCHECK;
     typedef SYSTEM_integer _arr_6XCHECK[7];
-    typedef _arr_6XCHECK _arr_4XCHECK[87];
+    typedef _arr_6XCHECK _arr_4XCHECK[91];
     static _arr_4XCHECK dllsign = {{3, 11, 11, 3,  -1,  -1,  -1}, 
       {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
       {3, 3, 12, 12, 4,  -1,  -1}, {3, 3, 4, 4, 4,  -1,  -1}, 
@@ -201,7 +200,8 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL xcheck(
       {3, 11, 4,  -1,  -1,  -1,  -1}, {3, 3,  -1,  -1,  -1,  -1,  -1}, 
       {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
       {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
-      {3, 3, 52, 54,  -1,  -1,  -1}, {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
+      {3, 3, 52, 54,  -1,  -1,  -1}, {3, 3, 52, 54,  -1,  -1,  -1}, 
+      {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
       {3, 3, 51, 4,  -1,  -1,  -1}, {3, 3, 52, 54, 4,  -1,  -1}, 
       {3, 3, 4,  -1,  -1,  -1,  -1}, {3, 52, 54, 4,  -1,  -1,  -1}, 
       {3, 3, 59, 4,  -1,  -1,  -1}, {3, 3, 55, 59,  -1,  -1,  -1}, 
@@ -221,8 +221,9 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL xcheck(
       {23,  -1,  -1,  -1,  -1,  -1,  -1}, 
       {3, 58,  -1,  -1,  -1,  -1,  -1}, {3, 3, 12,  -1,  -1,  -1,  -1}, 
       {3, 13, 4,  -1,  -1,  -1,  -1}, {3, 11, 11, 4,  -1,  -1,  -1}, 
-      {3, 11, 4,  -1,  -1,  -1,  -1}, {3, 11, 11, 4,  -1,  -1,  -1}, 
-      {3, 11, 11, 3, 4,  -1,  -1}, {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
+      {3, 11, 4,  -1,  -1,  -1,  -1}, {3, 11, 3, 4,  -1,  -1,  -1}, 
+      {3, 11, 11, 4,  -1,  -1,  -1}, {3, 11, 11, 3, 4,  -1,  -1}, 
+      {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
       {3, 3,  -1,  -1,  -1,  -1,  -1}, {3, 57,  -1,  -1,  -1,  -1,  -1}, 
       {3, 57,  -1,  -1,  -1,  -1,  -1}, {3, 3, 3,  -1,  -1,  -1,  -1}, 
       {3, 3, 11,  -1,  -1,  -1,  -1}, {3, 3, 52,  -1,  -1,  -1,  -1}, 
@@ -240,7 +241,8 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL xcheck(
       {3, 11, 4, 4,  -1,  -1,  -1}, {3, 3, 12, 4,  -1,  -1,  -1}, 
       {3, 4, 4,  -1,  -1,  -1,  -1}, {3, 3, 3, 3, 59, 4, 1}, 
       {3,  -1,  -1,  -1,  -1,  -1,  -1}, 
-      {3, 11, 11,  -1,  -1,  -1,  -1}};
+      {3, 11, 11,  -1,  -1,  -1,  -1}, {15,  -1,  -1,  -1,  -1,  -1,  -1}, 
+      {0, 15,  -1,  -1,  -1,  -1,  -1}};
 
     entryindex = 0;
     for (i = 1;i <= (SYSTEM_int32)maxentry;++i) {
@@ -248,8 +250,8 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL xcheck(
         entryindex = i;
         SYSTEM_break(BRK_1);
       } 
-}
-BRK_1:;
+    }
+    BRK_1:;
     if (entryindex == 0) {
       result = 0;
       {
@@ -561,6 +563,20 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL
       GXFILE_tgxfileobj,pgdx),recnr,keyint,values);
     return result;
 }  /* gdxdataerrorrecord */
+
+Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL 
+    gdxdataerrorrecordx(
+    SYSTEM_pointer pgdx,
+    SYSTEM_integer recnr,
+    SYSTEM_integer *keyint,
+    SYSTEM_double *values)
+{
+    SYSTEM_integer result;
+
+    result = GXFILE_tgxfileobj_DOT_gdxdataerrorrecordx(ValueCast(
+      GXFILE_tgxfileobj,pgdx),recnr,keyint,values);
+    return result;
+}  /* gdxdataerrorrecordx */
 
 Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL 
     gdxdatareaddone(
@@ -1056,6 +1072,20 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL gdxopenread(
     return result;
 }  /* gdxopenread */
 
+Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL 
+    gdxopenreadex(
+    SYSTEM_pointer pgdx,
+    const SYSTEM_ansichar *filename,
+    SYSTEM_integer readmode,
+    SYSTEM_integer *errnr)
+{
+    SYSTEM_integer result;
+
+    result = GXFILE_tgxfileobj_DOT_gdxopenreadex(ValueCast(
+      GXFILE_tgxfileobj,pgdx),filename,readmode,errnr);
+    return result;
+}  /* gdxopenreadex */
+
 Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL gdxopenwrite(
     SYSTEM_pointer pgdx,
     const SYSTEM_ansichar *filename,
@@ -1500,11 +1530,8 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL
     (ValueCast(GXFILE_tgxfileobj,pgdx))->
       GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt_dp_callbyref = 
       SYSTEM_true;
-#if 0    
-    PointerCast(SYSTEM_pointer,&local_dp) = ValueCast(SYSTEM_pointer, dp);
-#else
-    (void) memcpy ((void *)&local_dp, (void *)&dp, sizeof(local_dp));
-#endif
+    PointerCast(SYSTEM_pointer,&local_dp) = ValueCast(SYSTEM_pointer,
+      dp);
     result = GXFILE_tgxfileobj_DOT_gdxdatareadrawfastfilt(ValueCast(
       GXFILE_tgxfileobj,pgdx),synr,uelfilterstr,local_dp);
     return result;
@@ -1526,11 +1553,8 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL
     (ValueCast(GXFILE_tgxfileobj,pgdx))->
       GXFILE_tgxfileobj_DOT_gdxgetdomainelements_dp_callbyref = 
       SYSTEM_true;
-#if 0    
-    PointerCast(SYSTEM_pointer,&local_dp) = ValueCast(SYSTEM_pointer, dp);
-#else
-    (void) memcpy ((void *)&local_dp, (void *)&dp, sizeof(local_dp));
-#endif
+    PointerCast(SYSTEM_pointer,&local_dp) = ValueCast(SYSTEM_pointer,
+      dp);
     result = GXFILE_tgxfileobj_DOT_gdxgetdomainelements(ValueCast(
       GXFILE_tgxfileobj,pgdx),synr,dimpos,filternr,local_dp,nrelem,
       uptr);
@@ -1968,6 +1992,25 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL cgdxopenread(
 }  /* cgdxopenread */
 
 Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL 
+    cgdxopenreadex(
+    SYSTEM_pointer pgdx,
+    SYSTEM_P3_pansichar filename,
+    SYSTEM_integer readmode,
+    SYSTEM_integer *errnr)
+{
+    SYSTEM_integer result;
+
+    {
+      SYSTEM_shortstring _t1;
+
+      result = GXFILE_tgxfileobj_DOT_gdxopenreadex(ValueCast(
+        GXFILE_tgxfileobj,pgdx),PCHUTIL_pchartostr(_t1,255,filename),
+        readmode,errnr);
+    }
+    return result;
+}  /* cgdxopenreadex */
+
+Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL 
     cgdxopenwrite(
     SYSTEM_pointer pgdx,
     SYSTEM_P3_pansichar filename,
@@ -2362,6 +2405,25 @@ Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL
     return result;
 }  /* bgdxsymbolgetdomainx */
 
+Extern_C _P3_DllExport Function(SYSTEM_integer )  STDCALL 
+    gdxstoredomainsets(
+    SYSTEM_pointer pgdx)
+{
+    SYSTEM_integer result;
+
+    result = ValueCast(SYSTEM_int32,(ValueCast(GXFILE_tgxfileobj,pgdx))->
+      GXFILE_tgxfileobj_DOT_storedomainsets);
+    return result;
+}  /* gdxstoredomainsets */
+
+Extern_C _P3_DllExport Procedure  STDCALL gdxstoredomainsetsset(
+    SYSTEM_pointer pgdx,
+    SYSTEM_integer x)
+{
+    (ValueCast(GXFILE_tgxfileobj,pgdx))->
+      GXFILE_tgxfileobj_DOT_storedomainsets = x != 0;
+}  /* gdxstoredomainsetsset */
+
 /* Library gdxdclib */
 
 /* THIS IS THE DLL EXIT ROUTINE */
@@ -2370,11 +2432,10 @@ Extern_C void _P3_DllFini()
   _P3_Finalizing = 1;
   _P3_DLL_UNWIND();
   _Final_Module_gxfile();
-#if defined(USE_RUNNER)
   _Final_Module_runner();
-#endif
   _Final_Module_gdlaudit();
   _Final_Module_paldoorg();
+  _Final_Module_palmdcon();
   _Final_Module_gmsglobx();
   _Final_Module_datastorage();
   _Final_Module_gmsheapnew();
@@ -2439,11 +2500,10 @@ Extern_C SYSTEM_integer _P3_DllInit()
   _Init_Module_gmsheapnew();
   _Init_Module_datastorage();
   _Init_Module_gmsglobx();
+  _Init_Module_palmdcon();
   _Init_Module_paldoorg();
   _Init_Module_gdlaudit();
-#if defined(USE_RUNNER)
   _Init_Module_runner();
-#endif
   _Init_Module_gxfile();
 
 

@@ -680,7 +680,7 @@ $offecho
 
 *ECAR_BALANCE.fx(t,r,shiftclass)=0;
 *ECAR_DELAY.fx(t,r,shiftclass)=0;
-execute_loadpoint '%sol%'; simple.limrow=200000; simple.limcol=20000;
+*execute_loadpoint '%sol%'; simple.limrow=200000; simple.limcol=20000;
    solve simple min OBJ use lp;
 
 $ENDIF.method
