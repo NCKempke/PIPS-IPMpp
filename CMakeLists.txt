@@ -77,6 +77,8 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 find_library(GFORTRAN_LIBRARY NAMES libgfortran.so REQUIRED)
 find_library(DL_LIBRARY NAMES dl REQUIRED)
 
+find_package(Threads REQUIRED)
+
 find_package(OpenMP)
 if(NOT OpenMP_FOUND)
    message(FATAL_ERROR "Configuration aborted due to missing OpenMP libraries!")
