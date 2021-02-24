@@ -925,6 +925,7 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
 
 unsigned int sTreeCallbacks::getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
 {
+   // old way - results in a lot of wait at Allreduces..
    const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
 
    mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
@@ -1197,8 +1198,14 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
    }
 }
 
-void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+void sTreeCallbacks::splitTree( int n_layers_total, int n_layers_left, sData* data )
 {
+   if( n_layers_left == 0 )
+      return;
+
+   const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
+   const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
+
    assert( commWrkrs != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
 
@@ -1228,36 +1235,65 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    }
 
    adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq);
-
    assertTreeStructureCorrect();
+
+   data->splitDataAccordingToTree( 0, 0 );
+
+   assert( children.size() == data->children.size() );
+
+   for( size_t i = 0; i < children.size(); ++i )
+      children[i]->splitTree( n_layers_total, n_layers_left - 1, data );
 }
 
-sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
-      const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
 {
+   assert( data->exploitingLinkStructure() );
+
+   const int n_layers = pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS");
+
    assert( !is_hierarchical_root );
    assert( np == -1 );
    assertTreeStructureCorrect();
 
-   assert( nx_to_shave >= 0 );
-   assert( myl_to_shave >=0 );
-   assert( mzl_to_shave >= 0 );
-
-   assert( nx_to_shave <= nx_active );
-   assert( myl_to_shave <= myl_active );
-   assert( mzl_to_shave <= mzl_active );
-
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-   if( pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
-      splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
+   if( n_layers >= 1 )
+   {
+      if( PIPS_MPIgetRank() == 0 )
+      {
+         std::cout << "Building hierarchical data\n";
+         std::cout << "Adding " << n_layers << " layers to hierarchical data\n";
+      }
 
-   sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
+      if( n_layers > 1 && pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
+      {
+         splitTree( n_layers, n_layers - 1, data );
+         printProcessTree();
+      }
 
-   printProcessTree();
+      const int nx_to_shave = data->getNGlobalVars();
+      const int myl_to_shave = data->getNGlobalEQConss();
+      const int mzl_to_shave = data->getNGlobalINEQConss();
 
-   return top_layer;
+      assert( nx_to_shave >= 0 );
+      assert( myl_to_shave >=0 );
+      assert( mzl_to_shave >= 0 );
+
+      assert( nx_to_shave <= nx_active );
+      assert( myl_to_shave <= myl_active );
+      assert( mzl_to_shave <= mzl_active );
+
+      sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
+      data = data->shaveDenseBorder( top_layer );
+
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "Hierarchical data built\n";
+
+      return top_layer;
+   }
+   else
+      return this;
 }
 
 std::vector<MPI_Comm> sTreeCallbacks::getChildComms() const

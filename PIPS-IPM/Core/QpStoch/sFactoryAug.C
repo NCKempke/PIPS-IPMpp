@@ -40,7 +40,6 @@ sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()
 
 Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 {
-   data = dynamic_cast<sData*>(prob_in);
 
    // TODO : DELETEME
 //   OoqpVector* x_bef = tree->newPrimalVector();
@@ -64,25 +63,14 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 //
 //   const double Q2norm_bef = x_bef2->twonorm();
 //   const double Q1norm_bef = x_bef2->onenorm();
-
-   assert( data->exploitingLinkStructure() );
-   const int nx_to_shave = data->getNGlobalVars();
-   const int myl_to_shave = data->getNGlobalEQConss();
-   const int mzl_to_shave = data->getNGlobalINEQConss();
-
-   // adjust tree
-   const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
-   const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
+   data = dynamic_cast<sData*>(prob_in);
 
    hier_tree_swap.reset( tree->clone() );
 
-   tree = tree->switchToHierarchicalTree( nx_to_shave, myl_to_shave, mzl_to_shave, twoLinksStartBlockA, twoLinksStartBlockC );
+   tree = tree->switchToHierarchicalTree( data );
 
    assert( tree->getChildren().size() == 1 );
    assert( tree->isHierarchicalRoot() );
-
-   // adjust data
-   data = data->switchToHierarchicalData( tree );
 
    assert( data->isHierarchyRoot() );
 

@@ -1017,12 +1017,13 @@ PERMUTATION sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_va
 
    for( size_t i = 0; i < n_link_vars; ++i )
    {
-      if( link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars )
+      if( link_vars_n_blocks[i] == -1 || (link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars) )
       {
          assert( count <= back_count );
          permvec[count++] = i;
       }
    }
+   std::cout << count << " " << back_count + 1 << std::endl;
    assert(count == back_count + 1);
 
    permuteVector(permvec, link_vars_n_blocks);
@@ -1051,7 +1052,7 @@ PERMUTATION sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_va
          }
          else
          {
-            assert( 0 < link_vars_n_blocks[i] );
+            assert( 0 < link_vars_n_blocks[i] || link_vars_n_blocks[i] == -1 );
             assert( link_vars_n_blocks[i] <= threshold_global_vars );
          }
       }
@@ -1627,6 +1628,7 @@ sData* sData::shaveDenseBorder( const sTree* tree )
 {
    sData* hierarchical_top = shaveBorderFromDataAndCreateNewTop( tree );
 
+   std::cout << "hi" << std::endl;
    const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
    const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
    assert( ixlow.vec );
@@ -1893,8 +1895,8 @@ void sData::addChildrenForSplit()
    children.clear();
    children.insert( children.begin(), new_children.begin(), new_children.end() );
 
-   assert( linkStartBlockIdA.size() == n_global_eq_linking_conss + static_cast<unsigned int>(stochNode->myl()) );
-   assert( linkStartBlockIdC.size() == n_global_ineq_linking_conss + static_cast<unsigned int>(stochNode->mzl()) );
+//   assert( linkStartBlockIdA.size() == n_global_eq_linking_conss + static_cast<unsigned int>(stochNode->myl()) );
+//   assert( linkStartBlockIdC.size() == n_global_ineq_linking_conss + static_cast<unsigned int>(stochNode->mzl()) );
 
    assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
    assert( linkStartBlockLengthsA.size() == new_children.size() );
@@ -2006,31 +2008,7 @@ void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
    reorderLinkingConstraintsAccordingToSplit( myl_from_border, mzl_from_border );
    splitDataAndAddAsChildLayer( myl_from_border, mzl_from_border );
 
-   for( auto& child : children )
-   {
-      // TODO : propagate the splits upwards and adjust the StringGen matrices..
-      assert( child->is_hierarchy_inner_leaf );
-      child->splitDataAccordingToTree(0,0);
-   }
-}
-
-sData* sData::switchToHierarchicalData( const sTree* tree )
-{
-   assert( tree->isHierarchicalRoot() );
-   assert( tree->nChildren() == 1 );
-
-   if( PIPS_MPIgetRank() == 0 )
-      std::cout << "Building hierarchical data...\n";
-
-   if( pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
-      splitDataAccordingToTree( tree->myl(), tree->mzl() );
-
-   sData* hierarchical_top = shaveDenseBorder( tree );
-
-   if( PIPS_MPIgetRank() == 0 )
-      std::cout << "Hierarchical data built\n";
-
-   return hierarchical_top;
+   // TODO : propagate the splits upwards and adjust the StringGen matrices..
 }
 
 void sData::permuteLinkStructureDetection( const PERMUTATION& perm_A, const PERMUTATION& perm_C )

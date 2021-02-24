@@ -72,8 +72,7 @@ public:
 
    virtual void writeSizes( std::ostream& sout ) const;
 
-   sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
-         const std::vector<int>& twoLinksStartBlockC ) override;
+   sTree* switchToHierarchicalTree( sData*& data ) override;
 
    const std::vector<unsigned int>& getMapBlockSubTrees() const
       { assert( is_hierarchical_inner_root ); return map_node_sub_root; };
@@ -109,7 +108,7 @@ protected:
    void adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
          const std::vector<unsigned int>& two_links_children_ineq );
 
-   void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
+   void splitTree( int n_layers_total, int n_layers_left, sData* data ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 

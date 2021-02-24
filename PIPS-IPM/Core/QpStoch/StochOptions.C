@@ -256,15 +256,19 @@ namespace pips_options
       bool_options["PRECONDITION_SPARSE"] = true;
 
       int_options["SC_BLOCKWISE_BLOCKSIZE_MAX"] = 20;
+
+      /// HIERARCHICAL APPROACH
       bool_options["HIERARCHICAL"] = false;
       bool_options["HIERARCHICAL_APPLY_SPLIT"] = true;
       bool_options["HIERARCHICAL_TESTING"] = false;
       bool_options["HIERARCHICAL_PRINT_HIER_DATA"] = false;
 
+      /** 1 -> only dense border, 2 -> dense border + 1 additional layer ... */
+      int_options["HIERARCHICAL_APPROACH_N_LAYERS"] = 2;
+
       /// SCHUR COMPLEMENT
       /** should the schur complement be allreduced to all processes or to a single one */
       bool_options["ALLREDUCE_SCHUR_COMPLEMENT"] = false;
-
       /// GONDZIO SOLVERS
       /** should adaptive linesearch be applied in the GondzioStoch solvers - overwritten in gmspips.cpp */
       bool_options["GONDZIO_STOCH_ADAPTIVE_LINESEARCH"] = false;

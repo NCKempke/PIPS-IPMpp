@@ -106,14 +106,12 @@ protected:
   void splitData( int myl_from_border, int mzl_from_border );
   void reorderLinkingConstraintsAccordingToSplit( int myl_from_border = 0, int mzl_from_border = 0 );
   void splitDataAndAddAsChildLayer( int myl_from_border = 0, int mzl_from_border = 0 );
-  void splitDataAccordingToTree( int myl_from_border = 0, int mzl_from_border = 0 );
 
   sData* shaveBorderFromDataAndCreateNewTop( const sTree* tree );
-  sData* shaveDenseBorder( const sTree* tree );
 
  public:
-  // Hierarchical Stuff
-  sData* switchToHierarchicalData( const sTree* tree );
+  sData* shaveDenseBorder( const sTree* tree );
+  void splitDataAccordingToTree( int myl_from_border = 0, int mzl_from_border = 0 );
 
   int getNGlobalVars() const { return n_global_linking_vars; };
   int getNGlobalEQConss() const { return n_global_eq_linking_conss; };
