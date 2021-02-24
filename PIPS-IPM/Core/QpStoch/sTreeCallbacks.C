@@ -448,7 +448,8 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
 
          assert( child->MYL <= MYL );
          assert( child->MZL <= MZL );
-         if( is_hierarchical_inner_root )
+
+         if( child->sub_root )
          {
             assert( child->MYL >= myl_active );
             assert( child->MZL >= mzl_active );
@@ -923,21 +924,22 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    return top_layer;
 }
 
-unsigned int sTreeCallbacks::getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
+unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
 {
    // old way - results in a lot of wait at Allreduces..
-   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
+//   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
+   const unsigned int n_new_roots = std::floor( std::pow( n_children, 1.0 / take_nth_root ) );
 
    mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
    return n_new_roots;
 }
 
-void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree )
+void sTreeCallbacks::createSubcommunicatorsAndChildren( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree )
 {
    // TODO : maybe adjust the split at some point - the first n_leftovers procs have one additional block assigned to them .. this will lead to some imbalance in the tree here..
-   PIPS_MPIabortIf( children.size() < 3, "Need at lest 4 child tree nodes to split a root node");
+   PIPS_MPIabortIf( children.size() < 3, "Need at least 4 child tree nodes left to split a root node");
 
-   const unsigned int n_new_roots = getMapChildrenToSqrtNSubTrees( map_child_to_sub_tree, children.size() );
+   const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size() );
    assert( map_child_to_sub_tree.size() == children.size() );
 
    /* create new sub-roots */
@@ -948,6 +950,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
       leaf->setHierarchicalInnerLeaf();
 
       leaf->sub_root = new sTreeCallbacks();
+      leaf->sub_root->setHierarchicalInnerLeaf();
    }
 
    /* determine processes for each subtree and assign children */
@@ -1005,7 +1008,9 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
    /* add sub_roots as this new children */
    children.clear();
    children.insert( children.begin(), new_leafs.begin(), new_leafs.end() );
-   is_hierarchical_inner_root = true;
+
+   if( !is_hierarchical_inner_leaf )
+      is_hierarchical_inner_root = true;
 }
 
 void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
@@ -1016,7 +1021,6 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
 #ifndef NDEBUG
    const unsigned int n_leafs = map_node_sub_root.size();
 #endif
-   assert( is_hierarchical_inner_root );
    assert( n_leafs == two_links_start_in_child_A.size() );
    assert( n_leafs == two_links_start_in_child_C.size() );
 
@@ -1055,7 +1059,6 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
 
 void sTreeCallbacks::adjustActiveMylBy( int adjustment )
 {
-   assert( !is_hierarchical_inner_leaf );
    assert( isInVector(rankMe, myProcs) );
 
    myl_active += adjustment;
@@ -1082,7 +1085,6 @@ void sTreeCallbacks::adjustActiveMylBy( int adjustment )
 
 void sTreeCallbacks::adjustActiveMzlBy( int adjustment )
 {
-   assert( !is_hierarchical_inner_leaf );
    assert( isInVector(rankMe, myProcs) );
    mzl_active += adjustment;
    MZL += adjustment;
@@ -1105,7 +1107,6 @@ void sTreeCallbacks::adjustActiveMzlBy( int adjustment )
 void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
       const std::vector<unsigned int>& two_links_children_ineq )
 {
-   assert( is_hierarchical_inner_root );
    assert( two_links_children_eq.size() == two_links_children_ineq.size() );
 
    unsigned int my_two_links_eq{0};
@@ -1198,22 +1199,22 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
    }
 }
 
-void sTreeCallbacks::splitTree( int n_layers_total, int n_layers_left, sData* data )
+void sTreeCallbacks::splitTree( int n_layers, sData* data )
 {
-   if( n_layers_left == 0 )
+   if( n_layers == 1 || commWrkrs == MPI_COMM_NULL )
       return;
 
    const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
    const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
 
-   assert( commWrkrs != MPI_COMM_NULL );
+//   assert( commWrkrs != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
 
 #ifndef NDEBUG
    const size_t n_old_leafs = children.size();
 #endif
 
-   createSubcommunicatorsAndChildren( map_node_sub_root );
+   createSubcommunicatorsAndChildren( n_layers, map_node_sub_root );
    assert( map_node_sub_root.size() == n_old_leafs );
 
    std::vector<unsigned int> two_links_children_eq, two_links_children_ineq;
@@ -1237,12 +1238,12 @@ void sTreeCallbacks::splitTree( int n_layers_total, int n_layers_left, sData* da
    adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq);
    assertTreeStructureCorrect();
 
-   data->splitDataAccordingToTree( 0, 0 );
+   data->splitDataAccordingToTree();
 
    assert( children.size() == data->children.size() );
 
    for( size_t i = 0; i < children.size(); ++i )
-      children[i]->splitTree( n_layers_total, n_layers_left - 1, data );
+      children[i]->sub_root->splitTree( n_layers - 1, data->children[i] );
 }
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
@@ -1268,7 +1269,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
 
       if( n_layers > 1 && pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
       {
-         splitTree( n_layers, n_layers - 1, data );
+         splitTree( n_layers, data );
          printProcessTree();
       }
 

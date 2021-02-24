@@ -103,15 +103,15 @@ protected:
         const std::vector<int>& linkStartBlockId, int n_links_after_split );
 
   void addChildrenForSplit();
-  void splitData( int myl_from_border, int mzl_from_border );
-  void reorderLinkingConstraintsAccordingToSplit( int myl_from_border = 0, int mzl_from_border = 0 );
-  void splitDataAndAddAsChildLayer( int myl_from_border = 0, int mzl_from_border = 0 );
+  void splitData();
+  void reorderLinkingConstraintsAccordingToSplit();
+  void splitDataAndAddAsChildLayer();
 
   sData* shaveBorderFromDataAndCreateNewTop( const sTree* tree );
 
  public:
   sData* shaveDenseBorder( const sTree* tree );
-  void splitDataAccordingToTree( int myl_from_border = 0, int mzl_from_border = 0 );
+  void splitDataAccordingToTree();
 
   int getNGlobalVars() const { return n_global_linking_vars; };
   int getNGlobalEQConss() const { return n_global_eq_linking_conss; };
@@ -208,7 +208,7 @@ protected:
   /* a two link must be in two blocks directly after one another */
   const bool is_hierarchy_root{false};
   bool is_hierarchy_inner_root{false};
-  const bool is_hierarchy_inner_leaf{false};
+  bool is_hierarchy_inner_leaf{false};
   /* only for leafs: indicate wether A_mat stroed in this child belongs to the child (true) or is part of the border (false) */
   bool has_RAC{true};
 

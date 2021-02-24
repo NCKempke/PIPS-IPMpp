@@ -1628,7 +1628,6 @@ sData* sData::shaveDenseBorder( const sTree* tree )
 {
    sData* hierarchical_top = shaveBorderFromDataAndCreateNewTop( tree );
 
-   std::cout << "hi" << std::endl;
    const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
    const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
    assert( ixlow.vec );
@@ -1744,7 +1743,7 @@ PERMUTATION sData::getChildLinkConsFirstOwnLinkConsLastPermutation( const std::v
    return perm;
 }
 
-void sData::reorderLinkingConstraintsAccordingToSplit(int myl_from_border , int mzl_from_border )
+void sData::reorderLinkingConstraintsAccordingToSplit()
 {
    /* assert that distributed Schur complement has not yet been initialized */
    assert( isSCrowLocal.size() == 0 );
@@ -1752,8 +1751,8 @@ void sData::reorderLinkingConstraintsAccordingToSplit(int myl_from_border , int 
 
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
-   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdA, stochNode->myl() + myl_from_border );
-   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdC, stochNode->mzl() + mzl_from_border );
+   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdA, stochNode->myl() );
+   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdC, stochNode->mzl() );
 
    /* which blocks do the individual two-links start in */
    permuteLinkingCons(perm_A, perm_C);
@@ -1762,7 +1761,10 @@ void sData::reorderLinkingConstraintsAccordingToSplit(int myl_from_border , int 
 
 void sData::addChildrenForSplit()
 {
-   this->is_hierarchy_inner_root = true;
+   if( stochNode->isHierarchicalInnerLeaf() )
+      is_hierarchy_inner_leaf = true;
+   else
+      is_hierarchy_inner_root = true;
 
    assert( isSCrowLocal.size() == 0 );
    assert( isSCrowMyLocal.size() == 0 );
@@ -1776,22 +1778,36 @@ void sData::addChildrenForSplit()
    unsigned int childchild_pos{0};
    for( unsigned int i = 0; i < n_new_children; ++i )
    {
-      StochSymMatrix* Q_child = dynamic_cast<StochSymMatrix&>(*Q).children[i];
-      StochGenMatrix* A_child = dynamic_cast<StochGenMatrix&>(*A).children[i];
-      StochGenMatrix* C_child = dynamic_cast<StochGenMatrix&>(*C).children[i];
+      StochSymMatrix* Q_child = is_hierarchy_inner_root ? dynamic_cast<StochSymMatrix&>(*Q).children[i] :
+            dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).children[i];
 
-      StochVector* g_child = dynamic_cast<StochVector&>(*g).children[i];
-      StochVector* blx_child = dynamic_cast<StochVector&>(*blx).children[i];
-      StochVector* ixlow_child = dynamic_cast<StochVector&>(*ixlow).children[i];
-      StochVector* bux_child = dynamic_cast<StochVector&>(*bux).children[i];
-      StochVector* ixupp_child = dynamic_cast<StochVector&>(*ixupp).children[i];
+      StochGenMatrix* A_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*A).children[i] :
+            dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).children[i];
+      StochGenMatrix* C_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*C).children[i] :
+            dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).children[i];
 
-      StochVector* bA_child = dynamic_cast<StochVector&>(*bA).children[i];
+      StochVector* g_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*g).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).vec).children[i];
+      StochVector* blx_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*blx).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).vec).children[i];
+      StochVector* ixlow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixlow).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).vec).children[i];
+      StochVector* bux_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bux).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).vec).children[i];
+      StochVector* ixupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixupp).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).vec).children[i];
 
-      StochVector* bl_child = dynamic_cast<StochVector&>(*bl).children[i];
-      StochVector* iclow_child = dynamic_cast<StochVector&>(*iclow).children[i];
-      StochVector* bu_child = dynamic_cast<StochVector&>(*bu).children[i];
-      StochVector* icupp_child = dynamic_cast<StochVector&>(*icupp).children[i];
+      StochVector* bA_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bA).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).children[i];
+
+      StochVector* bl_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bl).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).children[i];
+      StochVector* iclow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*iclow).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).children[i];
+      StochVector* bu_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bu).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).children[i];
+      StochVector* icupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*icupp).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).children[i];
 
       assert( dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf() );
       const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
@@ -1851,13 +1867,14 @@ void sData::addChildrenForSplit()
       const int last_child = childchild_pos;
 
       int eq_to_erase{0};
-      while( first_child <= *(linkStartBlockIdA.begin() + eq_to_erase) && *(linkStartBlockIdA.begin() + eq_to_erase) < last_child )
-         ++eq_to_erase;
+      if( !linkStartBlockIdA.empty() )
+         while( first_child <= *(linkStartBlockIdA.begin() + eq_to_erase) && *(linkStartBlockIdA.begin() + eq_to_erase) < last_child )
+            ++eq_to_erase;
 
       int ineq_to_erase{0};
-      while( first_child <= *(linkStartBlockIdC.begin() + ineq_to_erase) &&
-            *(linkStartBlockIdC.begin() + ineq_to_erase) < last_child )
-         ++ineq_to_erase;
+      if( !linkStartBlockIdC.empty() )
+         while( first_child <= *(linkStartBlockIdC.begin() + ineq_to_erase) && *(linkStartBlockIdC.begin() + ineq_to_erase) < last_child )
+            ++ineq_to_erase;
       assert( myl == 0 || myl == eq_to_erase );
       assert( mzl == 0 || mzl == ineq_to_erase );
 
@@ -1895,14 +1912,11 @@ void sData::addChildrenForSplit()
    children.clear();
    children.insert( children.begin(), new_children.begin(), new_children.end() );
 
-//   assert( linkStartBlockIdA.size() == n_global_eq_linking_conss + static_cast<unsigned int>(stochNode->myl()) );
-//   assert( linkStartBlockIdC.size() == n_global_ineq_linking_conss + static_cast<unsigned int>(stochNode->mzl()) );
-
    assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
    assert( linkStartBlockLengthsA.size() == new_children.size() );
 }
 
-void sData::splitData( int myl_from_border, int mzl_from_border )
+void sData::splitData()
 {
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
@@ -1934,24 +1948,46 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
 //   const double Q2norm_bef = x_bef2->twonorm();
 //   const double Q1norm_bef = x_bef2->onenorm();
 
-   dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
-   dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl() + myl_from_border, child_comms);
-   dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl() + mzl_from_border, child_comms);
+   if( stochNode->isHierarchicalInnerLeaf() )
+   {
+      dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
 
-   dynamic_cast<StochVector&>(*g).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).vec).split(map_block_subtree, child_comms);
 
-   dynamic_cast<StochVector&>(*bux).split(map_block_subtree, child_comms);
-   dynamic_cast<StochVector&>(*ixupp).split(map_block_subtree, child_comms);
-   dynamic_cast<StochVector&>(*blx).split(map_block_subtree, child_comms);
-   dynamic_cast<StochVector&>(*ixlow).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).vec).split(map_block_subtree, child_comms);
 
-   dynamic_cast<StochVector&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl() + myl_from_border);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
 
-   dynamic_cast<StochVector&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
-   dynamic_cast<StochVector&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
-   dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
-   dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl() + mzl_from_border );
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+   }
+   else
+   {
+      dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
+      dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
 
+      dynamic_cast<StochVector&>(*g).split(map_block_subtree, child_comms);
+
+      dynamic_cast<StochVector&>(*bux).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*ixupp).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*blx).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*ixlow).split(map_block_subtree, child_comms);
+
+      dynamic_cast<StochVector&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
+
+      dynamic_cast<StochVector&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+   }
 // TODO : DELETEME
 //   OoqpVector* x_after = g;
 //   OoqpVector* y_after = bA;
@@ -1993,20 +2029,20 @@ void sData::splitData( int myl_from_border, int mzl_from_border )
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 }
 
-void sData::splitDataAndAddAsChildLayer(int myl_from_border , int mzl_from_border)
+void sData::splitDataAndAddAsChildLayer()
 {
-   splitData( myl_from_border, mzl_from_border );
+   splitData();
    addChildrenForSplit();
 }
 
-void sData::splitDataAccordingToTree(int myl_from_border , int mzl_from_border )
+void sData::splitDataAccordingToTree()
 {
    /* we came to a leaf and stop here */
-   if( !stochNode->isHierarchicalInnerRoot() )
+   if( !stochNode->isHierarchicalInnerRoot() && !stochNode->isHierarchicalInnerLeaf() )
       return;
 
-   reorderLinkingConstraintsAccordingToSplit( myl_from_border, mzl_from_border );
-   splitDataAndAddAsChildLayer( myl_from_border, mzl_from_border );
+   reorderLinkingConstraintsAccordingToSplit();
+   splitDataAndAddAsChildLayer();
 
    // TODO : propagate the splits upwards and adjust the StringGen matrices..
 }
@@ -2032,13 +2068,26 @@ void sData::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATION& perm
    assert( permutationIsValid(permC) );
    assert( !is_hierarchy_root );
 
-   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
-   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
-   dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(permA);
-   dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(permC);
-   dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(permC);
-   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(permC);
-   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
+   if( stochNode->isHierarchicalInnerLeaf() )
+   {
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).permuteLinkingCons(permA);
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).permuteLinkingCons(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).permuteLinkingEntries(permA);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).permuteLinkingEntries(permC);
+   }
+   else
+   {
+      dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
+      dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
+      dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(permA);
+      dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
+   }
 }
 
 void sData::permuteLinkingVars(const PERMUTATION& perm)

@@ -75,7 +75,7 @@ public:
    sTree* switchToHierarchicalTree( sData*& data ) override;
 
    const std::vector<unsigned int>& getMapBlockSubTrees() const
-      { assert( is_hierarchical_inner_root ); return map_node_sub_root; };
+      { return map_node_sub_root; };
    std::vector<MPI_Comm> getChildComms() const;
 
    void assertTreeStructureCorrect() const;
@@ -88,7 +88,7 @@ protected:
    void assertTreeStructureIsMyNodeSubRoot() const;
    void assertTreeStructureIsMyNode()const;
 
-   static unsigned int getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
+   static unsigned int getMapChildrenToNthRootSubTrees( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
 
    void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
@@ -99,7 +99,7 @@ protected:
          DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
    StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
 
-   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree );
+   void createSubcommunicatorsAndChildren( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree );
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
          std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
          unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
@@ -108,7 +108,7 @@ protected:
    void adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
          const std::vector<unsigned int>& two_links_children_ineq );
 
-   void splitTree( int n_layers_total, int n_layers_left, sData* data ) override;
+   void splitTree( int n_layers, sData* data ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 

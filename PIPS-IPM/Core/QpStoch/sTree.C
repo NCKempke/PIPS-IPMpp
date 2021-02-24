@@ -517,6 +517,8 @@ void sTree::printProcessTree() const
       const auto& child = queue.front();
       if( child->myProcs.size() > 1 )
          std::cout << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ]\t";
+      else if( child->sub_root && child->sub_root->myProcs.size() > 1 )
+         std::cout << "[ " << child->sub_root->myProcs.front() << "-" << child->sub_root->myProcs.back() << " ]\t";
 
       if( child->sub_root )
          queue.insert(queue.end(), child->sub_root->children.begin(), child->sub_root->children.end() );
