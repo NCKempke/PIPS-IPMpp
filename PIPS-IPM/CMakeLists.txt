@@ -118,8 +118,9 @@ if (BUILD_GDX_SOURCE)
       PRIVATE Drivers/gmspips
    )
    target_link_libraries(gmschk 
-      PRIVATE dl
-      PRIVATE statgdx
+      statgdx
+      dl
+      Threads::Threads
    )
 else()
    set(GAMSDIR Drivers/gams)
