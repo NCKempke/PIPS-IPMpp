@@ -14,6 +14,8 @@
 
 #include "mpi.h"
 
+class sTreeCallbacks;
+
 class StringGenMatrix : public GenMatrix
 {
    public:
@@ -71,6 +73,7 @@ class StringGenMatrix : public GenMatrix
 
       /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
       void combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms );
+      virtual void splitAlongTree( const sTreeCallbacks& tree );
 
       GenMatrix* shaveBottom( int n_rows ) override;
 
@@ -146,6 +149,8 @@ class StringGenDummyMatrix : public StringGenMatrix
       void addColSums( OoqpVector& ) const override {};
 
       GenMatrix* shaveBottom( int ) override { return new StringGenDummyMatrix(); };
+
+      void splitAlongTree( const sTreeCallbacks& ) override { assert( false && "should not end up here" ); };
 
    protected:
       void multVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};

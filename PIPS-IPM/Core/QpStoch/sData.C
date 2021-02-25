@@ -2029,6 +2029,28 @@ void sData::splitData()
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 }
 
+void sData::splitStringMatricesAccordingToSubtreeStructure()
+{
+   assert( dynamic_cast<StochGenMatrix&>(*A).Blmat->isKindOf(kStringGenMatrix) );
+   assert( dynamic_cast<StochGenMatrix&>(*C).Blmat->isKindOf(kStringGenMatrix) );
+   StringGenMatrix& Blmat = dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Blmat);
+   StringGenMatrix& Dlmat = dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Blmat);
+
+   if( stochNode->getCommWorkers() == MPI_COMM_NULL )
+   {
+      assert( Blmat.isKindOf(kStringGenDummyMatrix) );
+      assert( Dlmat.isKindOf(kStringGenDummyMatrix) );
+      return;
+   }
+
+   Blmat.splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*stochNode) );
+   Dlmat.splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*stochNode) );
+
+   assert( children.size() == Blmat.children.size() ) ;
+   assert( children.size() == Dlmat.children.size() ) ;
+}
+
+
 void sData::splitDataAndAddAsChildLayer()
 {
    splitData();

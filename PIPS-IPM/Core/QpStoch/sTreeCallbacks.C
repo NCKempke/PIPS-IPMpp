@@ -1207,7 +1207,6 @@ void sTreeCallbacks::splitTree( int n_layers, sData* data )
    const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
    const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
 
-//   assert( commWrkrs != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
 
 #ifndef NDEBUG
@@ -1243,7 +1242,13 @@ void sTreeCallbacks::splitTree( int n_layers, sData* data )
    assert( children.size() == data->children.size() );
 
    for( size_t i = 0; i < children.size(); ++i )
-      children[i]->sub_root->splitTree( n_layers - 1, data->children[i] );
+   {
+      if( n_layers - 1 > 1 )
+      {
+         children[i]->sub_root->splitTree( n_layers - 1, data->children[i] );
+         data->children[i]->splitStringMatricesAccordingToSubtreeStructure();
+      }
+   }
 }
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )

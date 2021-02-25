@@ -10,6 +10,7 @@
 #include "StochVector.h"
 #include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
+#include "sTreeCallbacks.h"
 
 #include "pipsdef.h"
 #include <algorithm>
@@ -721,4 +722,22 @@ void StringGenMatrix::writeDashedLineToStream( std::ostream& out ) const
 
    if( mat_link && PIPS_MPIgetRank(mpi_comm) == 0 )
       mat_link->writeDashedLineToStream( out );
+}
+
+void StringGenMatrix::splitAlongTree( const sTreeCallbacks& tree )
+{
+   if( tree.getMapBlockSubTrees().empty() )
+      return;
+   combineChildrenInNewChildren(tree.getMapBlockSubTrees(), tree.getChildComms() );
+
+   assert( children.size() == tree.getChildren().size() );
+   const auto tree_children = tree.getChildren();
+   for( size_t i = 0; i < tree_children.size(); ++i )
+   {
+      const auto& tree_child = tree_children[i];
+      if( tree_child->getCommWorkers() == MPI_COMM_NULL )
+         assert( children[i]->isKindOf(kStringGenDummyMatrix) );
+      else if( tree_child->getSubRoot() )
+         children[i]->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
+   }
 }
