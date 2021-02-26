@@ -159,6 +159,8 @@ public:
    virtual int getSize() const { return this->n; };
    int getNnzs() const override;
 
+   virtual void recomputeSize();
+
    virtual bool isRootNodeInSync() const;
 
    virtual void split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
@@ -282,6 +284,8 @@ public:
 
    int getSize() const override { return 0; };
    int getNnzs() const override { return 0; };
+
+   void recomputeSize() override{};
 
    bool isRootNodeInSync() const override { return true; };
 

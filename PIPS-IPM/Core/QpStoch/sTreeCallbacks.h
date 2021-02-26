@@ -105,10 +105,10 @@ protected:
          unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
    void adjustActiveMylBy( int adjustment );
    void adjustActiveMzlBy( int adjustment );
-   void adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
+   std::pair<int,int> adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
          const std::vector<unsigned int>& two_links_children_ineq );
 
-   void splitTree( int n_layers, sData* data ) override;
+   std::pair<int,int> splitTree( int n_layers, sData* data ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 

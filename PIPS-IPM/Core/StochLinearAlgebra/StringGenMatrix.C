@@ -366,15 +366,7 @@ void StringGenMatrix::getRowMinMaxVecVertical( bool get_min, bool initialize_vec
    {
       assert( minmax.children[i]);
       if( children[i]->isKindOf(kStringGenDummyMatrix) )
-      {
-         if( !minmax.children[i]->isKindOf(kStochDummy) )
-         {
-            std::cout << i << "\n";
-            minmax.children[i]->writeToStream(std::cout);
-            std::cout << minmax.children[i]->isKindOf(kStochDummy) << " " << minmax.children[i]->vec->isKindOf(kStochDummy) << "\n";
-         }
          assert( minmax.children[i]->isKindOf(kStochDummy) );
-      }
 
       children[i]->getRowMinMaxVecVertical(get_min, initialize_vec, col_scale, *minmax.children[i]);
    }
@@ -730,13 +722,25 @@ void StringGenMatrix::splitAlongTree( const sTreeCallbacks& tree )
       return;
    combineChildrenInNewChildren(tree.getMapBlockSubTrees(), tree.getChildComms() );
 
+   assert( tree.getChildComms().size() == children.size() );
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      auto& child = children[i];
+      StringGenMatrix* new_child = new StringGenMatrix( is_vertical, child, nullptr, tree.getChildComms()[i]);
+      child = new_child;
+   }
+
    assert( children.size() == tree.getChildren().size() );
    const auto tree_children = tree.getChildren();
    for( size_t i = 0; i < tree_children.size(); ++i )
    {
       const auto& tree_child = tree_children[i];
       if( tree_child->getCommWorkers() == MPI_COMM_NULL )
-         assert( children[i]->isKindOf(kStringGenDummyMatrix) );
+      {
+         delete children[i];
+         children[i] = new StringGenDummyMatrix();
+      }
       else if( tree_child->getSubRoot() )
          children[i]->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
    }

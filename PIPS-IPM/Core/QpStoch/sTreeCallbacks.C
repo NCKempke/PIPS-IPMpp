@@ -871,6 +871,7 @@ StochVector* sTreeCallbacks::createicupp() const
 
 sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave )
 {
+   assertTreeStructureCorrect();
    if( PIPS_MPIgetRank() == 0 && !pips_options::getBoolParameter("SILENT") )
       std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " <<
          mzl_to_shave << " inequalities for the border\n";
@@ -957,6 +958,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( int take_nth_root, std::
    for( size_t child = 0; child < children.size(); ++child )
    {
       const auto& child_procs = children[child]->myProcs;
+
       assert( child_procs.size() >= 1 );
 
       const unsigned int assigned_sub_root_for_child = map_child_to_sub_tree[ child ];
@@ -985,7 +987,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( int take_nth_root, std::
    /* create all sub-communicators */
    for( auto new_leaf : new_leafs )
    {
-      new_leaf->commWrkrs = PIPS_MPIcreateGroupFromRanks( new_leaf->myProcs );
+      new_leaf->commWrkrs = PIPS_MPIcreateGroupFromRanks( new_leaf->myProcs, commWrkrs );
 
       if( !isInVector( rankMe, new_leaf->myProcs) )
          assert( new_leaf->commWrkrs == MPI_COMM_NULL );
@@ -1104,7 +1106,7 @@ void sTreeCallbacks::adjustActiveMzlBy( int adjustment )
    }
 }
 
-void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
+std::pair<int,int> sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
       const std::vector<unsigned int>& two_links_children_ineq )
 {
    assert( two_links_children_eq.size() == two_links_children_ineq.size() );
@@ -1195,14 +1197,14 @@ void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two
          }
 #endif
       }
-
    }
+   return std::make_pair(not_my_two_links_eq, not_my_two_links_ineq);
 }
 
-void sTreeCallbacks::splitTree( int n_layers, sData* data )
+std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, sData* data )
 {
    if( n_layers == 1 || commWrkrs == MPI_COMM_NULL )
-      return;
+      return std::make_pair(0,0);
 
    const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
    const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
@@ -1214,6 +1216,7 @@ void sTreeCallbacks::splitTree( int n_layers, sData* data )
 #endif
 
    createSubcommunicatorsAndChildren( n_layers, map_node_sub_root );
+
    assert( map_node_sub_root.size() == n_old_leafs );
 
    std::vector<unsigned int> two_links_children_eq, two_links_children_ineq;
@@ -1234,21 +1237,34 @@ void sTreeCallbacks::splitTree( int n_layers, sData* data )
             << " root and " << two_links_children_ineq_sum << " child links\n";
    }
 
-   adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq);
-   assertTreeStructureCorrect();
-
+   std::pair<int,int> deleted_myl_mzl = adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq);
    data->splitDataAccordingToTree();
+   assertTreeStructureCorrect();
 
    assert( children.size() == data->children.size() );
 
+   std::pair<int,int> deleted_children(0,0);
    for( size_t i = 0; i < children.size(); ++i )
    {
       if( n_layers - 1 > 1 )
       {
-         children[i]->sub_root->splitTree( n_layers - 1, data->children[i] );
-         data->children[i]->splitStringMatricesAccordingToSubtreeStructure();
+         if( children[i]->sub_root->getCommWorkers() != MPI_COMM_NULL )
+         {
+            std::pair<int,int> child_deleted = children[i]->sub_root->splitTree( n_layers - 1, data->children[i] );
+            children[i]->MYL -= child_deleted.first;
+            children[i]->MZL -= child_deleted.second;
+
+            deleted_children = std::make_pair( deleted_children.first + child_deleted.first, deleted_children.second + child_deleted.second);
+            data->children[i]->splitStringMatricesAccordingToSubtreeStructure();
+         }
       }
    }
+   MYL -= deleted_children.first;
+   MZL -= deleted_children.second;
+
+   assertTreeStructureCorrect();
+   data->recomputeSize();
+   return std::make_pair<int,int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
 sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
@@ -1275,6 +1291,7 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
       if( n_layers > 1 && pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
       {
          splitTree( n_layers, data );
+         assertTreeStructureCorrect();
          printProcessTree();
       }
 

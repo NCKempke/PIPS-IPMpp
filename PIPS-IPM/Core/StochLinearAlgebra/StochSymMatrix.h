@@ -104,10 +104,10 @@ public:
   virtual BorderedSymMatrix* raiseBorder( int n_vars );
   virtual void splitMatrix( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms );
 
+  virtual void recomputeSize();
  protected:
   virtual StringGenMatrix* shaveBorder(int n_vars);
   virtual StringGenMatrix* shaveBorder2(int n_vars);
-  virtual void recomputeSize();
 
   StochSymMatrix* parent{};
 };
@@ -169,12 +169,12 @@ public:
 
   BorderedSymMatrix* raiseBorder( int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
   void splitMatrix( const std::vector<unsigned int>&, const std::vector<MPI_Comm>& ) override {};
+  void recomputeSize() override {};
 
  protected:
   StringGenMatrix* shaveBorder( int ) override { return new StringGenDummyMatrix(); };
   StringGenMatrix* shaveBorder2( int ) override { return new StringGenDummyMatrix(); };
 
-  void recomputeSize() override {};
 };
 
 typedef SmartPointer<StochSymMatrix> StochSymMatrixHandle;

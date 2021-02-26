@@ -2051,6 +2051,27 @@ int StochVectorBase<T>::getNnzs() const
 }
 
 template<typename T>
+void StochVectorBase<T>::recomputeSize()
+{
+   if( vec && vec->isKindOf(kStochVector) )
+      dynamic_cast<StochVector*>(vec)->recomputeSize();
+   if( vecl && vecl->isKindOf(kStochVector) )
+      dynamic_cast<StochVector*>(vecl)->recomputeSize();
+
+   this->n = 0;
+   if( vec )
+      this->n += vec->length();
+   if( vecl )
+      this->n += vecl->length();
+
+   for( auto& child : children )
+   {
+      child->recomputeSize();
+      this->n += child->length();
+   }
+}
+
+template<typename T>
 void StochVectorBase<T>::permuteVec0Entries(const std::vector<unsigned int>& permvec)
 {
    if( vec )

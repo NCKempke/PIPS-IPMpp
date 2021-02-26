@@ -497,7 +497,7 @@ void StochGenMatrix::writeToStreamDenseBordered( const StringGenMatrix& border_l
 
       int mChild, nChild;
       children[it]->getSize(mChild, nChild);
-      offset += PIPS_MPIgetMax( nChild, mpiComm );
+      offset += PIPS_MPIgetSum( nChild, mpiComm );
 
       MPI_Barrier(mpiComm);
    }
@@ -603,7 +603,7 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const
    if( iAmDistrib )
       MPI_Barrier(mpiComm);
 
-   int mBmat, nBmat; this->Bmat->getSize(mBmat, nBmat);
+   int mBmat, nBmat; Bmat->getSize(mBmat, nBmat);
 
    assert( Bmat->isKindOf(kSparseGenMatrix) );
 
@@ -612,7 +612,7 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const
    {
       for( int i = 0; i < mBmat; ++i )
       {
-         for( int i = 0; i < offset; ++i )
+         for( int j = 0; j < offset; ++j )
             out << "\t";
          dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
          out << "\n";
@@ -632,7 +632,7 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const
 
       int mChild, nChild;
       children[it]->getSize(mChild, nChild);
-      offset += PIPS_MPIgetMax( nChild, mpiComm );
+      offset += PIPS_MPIgetSum( nChild, mpiComm );
 
       MPI_Barrier(mpiComm);
    }
@@ -2005,7 +2005,6 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
 // TODO specify border and left from sData...
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
-
 #ifndef NDEBUG
    int m_link, n_link;
    Blmat->getSize(m_link, n_link);
@@ -2237,7 +2236,5 @@ void StochGenMatrix::splitMatrix( const std::vector<int>& twolinks_start_in_bloc
    delete Blmat_new;
    delete Blmat_leftover;
 
-   for( auto& child : children )
-      child->recomputeSize();
-   this->recomputeSize();
+   recomputeSize();
 }
