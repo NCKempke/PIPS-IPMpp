@@ -162,6 +162,12 @@ public:
   virtual void getSize( long long& m, long long& n ) const = 0;
   virtual void getSize( int& m, int& n ) const = 0;
 
+  void printSize() const
+  {
+     long long m, n; getSize(m,n);
+     std::cout << m << " x " << n << " (rows x cols)\n";
+  }
+
   virtual ~DoubleMatrix() = default;
 };
 
