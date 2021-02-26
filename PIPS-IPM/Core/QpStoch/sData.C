@@ -1023,7 +1023,6 @@ PERMUTATION sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_va
          permvec[count++] = i;
       }
    }
-   std::cout << count << " " << back_count + 1 << std::endl;
    assert(count == back_count + 1);
 
    permuteVector(permvec, link_vars_n_blocks);
@@ -2024,9 +2023,29 @@ void sData::splitData()
 //   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
 //   std::cout << "Q1norm before : " << Q1norm_bef << " vs Q1norm after : " << Q1norm_after << " difference " << Q1norm_bef - Q1norm_after << "\n";
 
-   MPI_Barrier(MPI_COMM_WORLD);
    // TODO : when Q is used we also need this here..
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+}
+
+void sData::recomputeSize()
+{
+   dynamic_cast<StochSymMatrix&>(*Q).recomputeSize();
+   dynamic_cast<StochGenMatrix&>(*A).recomputeSize();
+   dynamic_cast<StochGenMatrix&>(*C).recomputeSize();
+
+   dynamic_cast<StochVector&>(*g).recomputeSize();
+
+   dynamic_cast<StochVector&>(*bux).recomputeSize();
+   dynamic_cast<StochVector&>(*ixupp).recomputeSize();
+   dynamic_cast<StochVector&>(*blx).recomputeSize();
+   dynamic_cast<StochVector&>(*ixlow).recomputeSize();
+
+   dynamic_cast<StochVector&>(*bA).recomputeSize();
+
+   dynamic_cast<StochVector&>(*bu).recomputeSize();
+   dynamic_cast<StochVector&>(*icupp).recomputeSize();
+   dynamic_cast<StochVector&>(*bl).recomputeSize();
+   dynamic_cast<StochVector&>(*iclow).recomputeSize();
 }
 
 void sData::splitStringMatricesAccordingToSubtreeStructure()
@@ -2065,8 +2084,6 @@ void sData::splitDataAccordingToTree()
 
    reorderLinkingConstraintsAccordingToSplit();
    splitDataAndAddAsChildLayer();
-
-   // TODO : propagate the splits upwards and adjust the StringGen matrices..
 }
 
 void sData::permuteLinkStructureDetection( const PERMUTATION& perm_A, const PERMUTATION& perm_C )

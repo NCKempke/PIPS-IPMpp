@@ -112,6 +112,7 @@ protected:
  public:
   sData* shaveDenseBorder( const sTree* tree );
   void splitDataAccordingToTree();
+  void recomputeSize();
   void splitStringMatricesAccordingToSubtreeStructure();
 
   int getNGlobalVars() const { return n_global_linking_vars; };
