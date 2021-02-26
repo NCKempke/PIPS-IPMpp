@@ -107,9 +107,9 @@ void sLinsys::factor(Data *prob_, Variables *vars)
   
   sData* prob = dynamic_cast<sData*>(prob_);
   // in order to avoid a call to QpGenLinsys::factor, call factor2 method.
-  // factor2(prob, vars);
-  assembleKKT(prob, vars);
-  allreduceAndFactorKKT(prob, vars);
+   factor2(prob, vars);
+//  assembleKKT(prob, vars);
+//  allreduceAndFactorKKT(prob, vars);
 
 #ifdef TIMING
   tTot = MPI_Wtime() - tTot;
@@ -496,7 +496,7 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
    else
    {
       assert( mres == mF + mG );
-      assert( nres == nF );
+      assert( nres >= nF );
    }
 #endif
 

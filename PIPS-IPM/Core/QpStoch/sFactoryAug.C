@@ -38,7 +38,7 @@ sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()
    return new sLinsysRootBordered(this, data);
 }
 
-Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
+Data* sFactoryAug::switchToHierarchicalData( Data* )
 {
 
    // TODO : DELETEME
@@ -63,7 +63,7 @@ Data* sFactoryAug::switchToHierarchicalData( Data* prob_in )
 //
 //   const double Q2norm_bef = x_bef2->twonorm();
 //   const double Q1norm_bef = x_bef2->onenorm();
-   data = dynamic_cast<sData*>(prob_in);
+//   data = dynamic_cast<sData*>(prob_in);
 
    hier_tree_swap.reset( tree->clone() );
 
