@@ -41,7 +41,7 @@ class sLinsysLeaf : public sLinsys
 
   //void Lsolve2 ( OoqpVector& x ) override;
   //void Dsolve2 ( OoqpVector& x ) override;
-  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool) override;
 
   void putZDiagonal( OoqpVector& zdiag ) override;
   //void solveCompressed( OoqpVector& rhs ) override;
@@ -54,9 +54,9 @@ class sLinsysLeaf : public sLinsys
 
   void addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
 
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool ) override;
   void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-        bool sparse_res, bool sym_res ) override;
+        bool sparse_res, bool sym_res, bool ) override;
 
  protected:
 

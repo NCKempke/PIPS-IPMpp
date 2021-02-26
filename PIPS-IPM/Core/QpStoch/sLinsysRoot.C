@@ -414,7 +414,6 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
       assert( is_sym );
 
    const bool has_RAC = Br.has_RAC;
-
    int mX0, nX0; X0.getSize(mX0, nX0);
    int mSC, nSC; SC_.getSize(mSC, nSC);
 
@@ -430,6 +429,15 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
 
    assert( F0vec_border );
    assert( G0vec_border );
+
+   int mF0V{0}; int nF0V{0};
+   F0vec_border->getSize(mF0V, nF0V);
+
+   int mG0V{0}; int nG0V{0};
+   G0vec_border->getSize(mG0V, nG0V);
+
+   if( !has_RAC && nF0V == 0 && nG0V == 0 )
+      return;
 
 #ifndef NDEBUG
    int mF0C{0}; int nF0C{0};
@@ -448,11 +456,6 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
    if( C0_border )
       C0_border->getSize(mC0, nC0);
 
-   int mF0V{0}; int nF0V{0};
-   F0vec_border->getSize(mF0V, nF0V);
-
-   int mG0V{0}; int nG0V{0};
-   G0vec_border->getSize(mG0V, nG0V);
 
    assert( nA0 == nC0 );
    assert( nF0V == nG0V );
@@ -461,7 +464,6 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
       assert( nA0 == nF0V );
 
    assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
-
    assert( nF0C == nG0C );
 
    if( has_RAC )
@@ -583,7 +585,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 }
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC )
 {
    assert( children.size() == Br.F.children.size() );
 
@@ -596,7 +598,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
          Br_mod_border_child.push_back( getChild( br_mod, it ) );
 
       BorderLinsys border_child = getChild( Br, it );
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child);
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC);
    }
 
    /* allreduce the result */
@@ -607,7 +609,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
 void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res )
+      bool sym_res, bool sparse_res, bool use_local_RAC )
 {
    assert( !is_hierarchy_root );
 
@@ -627,7 +629,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
       for( auto& bm : Br_mod_border )
          border_mod_child.push_back( getChild( bm, it ) );
 
-      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res );
+      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC );
    }
 }
 
@@ -754,7 +756,7 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::Ltsolve2( sData*, StochVector& x, SimpleVector& x0)
+void sLinsysRoot::Ltsolve2( sData*, StochVector& x, SimpleVector& x0, bool)
 {
    assert( false && "not in use");
    assert( pips_options::getBoolParameter("HIERARCHICAL") );
@@ -764,7 +766,7 @@ void sLinsysRoot::Ltsolve2( sData*, StochVector& x, SimpleVector& x0)
 
    for( size_t i = 0; i < children.size(); ++i )
    {
-      children[i]->computeInnerSystemRightHandSide( *b.children[i], x0 );
+      children[i]->computeInnerSystemRightHandSide( *b.children[i], x0, true );
       children[i]->solveCompressed( *x.children[i] );
    }
 

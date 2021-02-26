@@ -571,7 +571,7 @@ void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
    SimpleVector& z0 = b0; //just another name, for clarity
 
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->Ltsolve2(prob->children[it], *b.children[it], z0);
+      children[it]->Ltsolve2(prob->children[it], *b.children[it], z0, true);
 
 #ifdef TIMING
    int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -610,6 +610,16 @@ void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
 #endif
 }
 
+void sLinsysRootAug::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
+{
+   LsolveHierarchyBorder( result, Br, Br_mod_border, true );
+}
+
+void sLinsysRootAug::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res )
+{
+   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, true );
+}
 
 extern int gLackOfAccuracy;
 //void sLinsysRootAug::solveReduced( sData *prob, SimpleVector& b)

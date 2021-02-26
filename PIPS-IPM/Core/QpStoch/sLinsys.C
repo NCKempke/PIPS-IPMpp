@@ -310,13 +310,17 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    int mF0V{0}; int nF0V{0};
    F0vec_border->getSize(mF0V, nF0V);
 
+   int mG0V{0}; int nG0V{0};
+   G0vec_border->getSize(mG0V, nG0V);
+
+   if( !has_RAC && nF0V == 0 && nG0V == 0 )
+      return;
+
 #ifndef NDEBUG
    int mG0C{0}; int nG0C{0};
    if( G0cons_border )
       G0cons_border->getSize( mG0C, nG0C );
 
-   int mG0V{0}; int nG0V{0};
-   G0vec_border->getSize(mG0V, nG0V);
 
    assert( nA0 == nC0 );
    assert( nF0V == nG0V );
@@ -390,7 +394,6 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
 
 #ifndef NDEBUG
    int mRes, nRes; result.getSize(mRes, nRes);
-   assert( mX == mRes );
 
    assert( nF == nG );
    if( with_RAC )
@@ -400,10 +403,15 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
       assert( mR == mC );
       assert( nR == nF );
 
+      assert( nR + nA + nC == nRes );
       assert( mR + mF + mG <= nX );
    }
    else
+   {
+      assert( nF <= nRes );
       assert( mF + mG == nX );
+   }
+   assert( mX == mRes );
 #endif
    // X from the right with each column of Bi^T todo add OMP to submethods
 

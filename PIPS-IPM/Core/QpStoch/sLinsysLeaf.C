@@ -51,7 +51,7 @@ void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
-void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp)
+void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool)
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
    SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
@@ -127,14 +127,17 @@ void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_
 
 /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) and add it to res */
 void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res )
+      std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool )
 {
    int mres, nres; res.getSize(mres, nres);
 
 #ifndef NDEBUG
    int nx_border, myl_border, mzl_border, dummy;
-   Br.R.getSize(dummy, nx_border);
-   if( !Br.has_RAC )
+   if( Br.has_RAC )
+      Br.R.getSize(dummy, nx_border);
+   else if( Br.use_local_RAC )
+      data->getLocalCrossHessian().getSize(dummy, nx_border);
+   else
       nx_border = 0;
    Br.F.getSize(myl_border, dummy);
    Br.G.getSize(mzl_border, dummy);
@@ -196,8 +199,6 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
 
    addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, *BliT, *BiT_buffer, res );
 }
-
-
 
 void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
@@ -302,17 +303,24 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
 // TODO merge with other super similar method further up
 void sLinsysLeaf::addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
 {
+   int mRes, nRes;
+   result.getSize(mRes, nRes);
+#ifndef NDEBUG
    int nx_border, myl_border, mzl_border, dummy;
-   Br.R.getSize(dummy, nx_border);
-   if( !Br.has_RAC )
+   if( Br.has_RAC )
+      Br.R.getSize(dummy, nx_border);
+   else if( Br.use_local_RAC )
+      data->getLocalCrossHessian().getSize(dummy, nx_border);
+   else
       nx_border = 0;
-   Br.F.getSize(myl_border, dummy);
-   Br.G.getSize(mzl_border, dummy);
-
+   Br.F.mat->getSize(myl_border, dummy);
+   Br.G.mat->getSize(mzl_border, dummy);
+   assert( nx_border + myl_border + mzl_border <= mRes );
+#endif
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
    // TODO : reuse and make member ? possible?
 
-   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( nx_border + myl_border + mzl_border, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
+   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( mRes, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
 
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
    int m, n; BiT_buffer->getSize(m, n);
@@ -350,7 +358,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, Borde
 }
 
 /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool )
 {
    if( Br_mod_border.empty() )
       addInnerBorderKiInvBrToRes( result, Br );

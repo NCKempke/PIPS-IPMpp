@@ -157,7 +157,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
    PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
 
-void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0 )
+void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool )
 {
    BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_left,
@@ -220,7 +220,7 @@ void sLinsysRootBordered::Ltsolve(sData*, OoqpVector& x)
    assert( xs.vec );
    SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.vec);
 
-   computeInnerSystemRightHandSide( b, b0 );
+   computeInnerSystemRightHandSide( b, b0, false );
 
    children[0]->solveCompressed( b );
 }

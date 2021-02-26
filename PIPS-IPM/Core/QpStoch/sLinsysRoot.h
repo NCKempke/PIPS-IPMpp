@@ -55,7 +55,7 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeKKT( sData* prob, Variables* vars ) = 0;
   virtual void finalizeKKTdist( sData* /*prob*/ ) {assert("not implemented here \n" && 0);};
 
-  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) override;
+  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool) override;
 
   /* compute (Br0 - sum_j Br_mod_border) - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border );
@@ -63,10 +63,13 @@ class sLinsysRoot : public sLinsys {
   virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
+  using sLinsys::LsolveHierarchyBorder;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC ) override;
 
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-  void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res ) override;
+  using sLinsys::LtsolveHierarchyBorder;
+  void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 

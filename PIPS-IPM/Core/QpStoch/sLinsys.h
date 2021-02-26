@@ -134,7 +134,7 @@ class sLinsys : public QpGenLinsys
   virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;
   virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp) = 0;
+  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool use_local_RAC) = 0;
 
   void solveCompressed( OoqpVector& rhs ) override;
 
@@ -189,7 +189,7 @@ class sLinsys : public QpGenLinsys
 
   /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
   virtual void LniTransMultHierarchyBorder( DoubleMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
-        std::vector<BorderMod>& /*Br_mod_border*/, bool /*sparse_res*/, bool /*sym_res*/) { assert( false && "not implemented here"); };
+        std::vector<BorderMod>& /*Br_mod_border*/, bool /*sparse_res*/, bool /*sym_res*/, bool /*use_local_RAC*/) { assert( false && "not implemented here"); };
 
   /** y += alpha * Lni^T * x */
   virtual void LniTransMult(sData *prob, 
@@ -210,7 +210,7 @@ class sLinsys : public QpGenLinsys
 
   virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/ ) { assert( 0 && "not implemented here" ); };
 
-  virtual void computeInnerSystemRightHandSide( StochVector& /*rhs_inner*/, const SimpleVector& /*b0*/ ) { assert( false && "not implemented here" ); };
+  virtual void computeInnerSystemRightHandSide( StochVector& /*rhs_inner*/, const SimpleVector& /*b0*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here" ); };
  protected:
 //  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
 //        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
@@ -249,6 +249,9 @@ class sLinsys : public QpGenLinsys
   virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/ )
   { assert( false && "not implemented here" ); };
 
+  virtual void LsolveHierarchyBorder( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC*/ )
+  { assert( false && "not implemented here" ); };
+
   /* solve with SC and comput X_0 = SC^-1 B_0 */
   virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/ )
   { assert( false && "not implemented here" ); };
@@ -258,8 +261,12 @@ class sLinsys : public QpGenLinsys
         BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/)
   { assert( false && "not implemented here" ); };
 
+  virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC*/)
+  { assert( false && "not implemented here" ); };
+
   /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Brmod_ij Xj )and add it to result */
-  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/ )
+  virtual void addInnerBorderKiInvBrToRes( DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*has_RAC*/ )
   { assert( false && "not implemented here" ); };
 
  protected:

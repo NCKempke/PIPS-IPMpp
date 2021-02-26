@@ -26,8 +26,7 @@ class sDummyLinsys : public sLinsys
   void Lsolve( sData*, OoqpVector& ) override {};
   void Dsolve( sData*, OoqpVector& ) override {};
   void Ltsolve( sData*, OoqpVector& ) override {};
-
-  void Ltsolve2( sData*, StochVector&, SimpleVector& ) override {};
+  void Ltsolve2( sData*, StochVector&, SimpleVector&, bool ) override {};
 
   void putZDiagonal( OoqpVector& ) override {};
   void solveCompressed( OoqpVector& ) override {};
@@ -46,8 +45,9 @@ class sDummyLinsys : public sLinsys
   void addTermToSchurResidual( sData*, SimpleVector&, SimpleVector& ) override {};
 
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>& ) override {};
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>& ) override {};
-  void LniTransMultHierarchyBorder( DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool ) override {};
+  void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool ) override {};
+  void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool ) override {};
+  void LniTransMultHierarchyBorder( DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool ) override {};
 
   void allocU( DenseGenMatrix**, int ) override {};
   void allocV( DenseGenMatrix**, int ) override {};
@@ -58,7 +58,7 @@ class sDummyLinsys : public sLinsys
 
   void addBorderTimesRhsToB0( StochVector&, SimpleVector&, BorderLinsys& ) override {};
   void addBorderX0ToRhs( StochVector&, const SimpleVector&, BorderLinsys& ) override {};
-  void computeInnerSystemRightHandSide( StochVector&, const SimpleVector& ) override {};
+  void computeInnerSystemRightHandSide( StochVector&, const SimpleVector&, bool ) override {};
 };
 
 #endif

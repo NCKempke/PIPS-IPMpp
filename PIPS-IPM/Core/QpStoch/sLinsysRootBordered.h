@@ -23,7 +23,7 @@ class sLinsysRootBordered : public sLinsysRoot
       void Dsolve(sData*, OoqpVector& x) override;
       void Ltsolve(sData*, OoqpVector& v) override;
 
-      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0 ) override;
+      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0, bool ) override;
    protected:
       SymMatrix* createKKT(sData*);
       void assembleLocalKKT(sData* prob) override;
