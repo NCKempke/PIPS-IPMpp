@@ -1037,7 +1037,7 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
       buffer[i] = v[permvec[i]];
    }
 
-   std::swap(v, buffer);
+   std::copy(buffer, buffer + this->n, v);
 
    delete[] buffer;
 }
