@@ -280,6 +280,9 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
 {
    const bool has_RAC = B.has_RAC;
 
+   if( !B.has_RAC && !B.use_local_RAC )
+      return;
+
    int mX0, nX0; X.getSize( mX0, nX0 );
    int mRes, nRes; result.getSize( mRes, nRes );
    assert( mX0 == mRes );
@@ -289,9 +292,11 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
 
    SparseGenMatrix* A0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.A.mat) : nullptr;
    SparseGenMatrix* C0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.C.mat) : nullptr;
-   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.A.mat_link) : dynamic_cast<SparseGenMatrix*>(B.F.mat);
-   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.C.mat_link) : dynamic_cast<SparseGenMatrix*>(B.G.mat);
+   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.A.mat_link) : &data->getLocalF();
+   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.C.mat_link) : &data->getLocalG();
 
+   if( has_RAC )
+      assert( F0cons_border && G0cons_border && A0_border && C0_border && F0vec_border && G0vec_border );
    assert( F0vec_border );
    assert( G0vec_border );
 
@@ -360,6 +365,7 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
        */
       X.multMatAt( 0, 1.0, nF0C + mA0, result, -1.0, C0_border->getTranspose() );
    }
+
    /*            [ F0VT ]
     * res -= X * [  0   ]
     *            [  0   ]

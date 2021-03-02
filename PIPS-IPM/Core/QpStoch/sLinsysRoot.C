@@ -178,6 +178,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    // TODO : parallelize over MPI porcs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer);
 
+   if( !Br.has_RAC && !Br.use_local_RAC )
+      return;
+
    bool has_RAC = Br.has_RAC;
 
    int mX0, nX0; buffer.getSize( mX0, nX0 );
@@ -187,10 +190,10 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 
    SparseGenMatrix* A0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat) : nullptr;
    SparseGenMatrix* C0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat) : nullptr;
-   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : dynamic_cast<SparseGenMatrix*>(Br.F.mat);
-   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : dynamic_cast<SparseGenMatrix*>(Br.G.mat);
 
-   has_RAC = F0cons_border && G0cons_border && A0_border && C0_border;
+   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : &data->getLocalF();
+   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : &data->getLocalG();
+
    if( has_RAC )
       assert( F0cons_border && G0cons_border && A0_border && C0_border );
    assert( F0vec_border );
@@ -412,8 +415,11 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
 {
    if( is_sparse )
       assert( is_sym );
-
    const bool has_RAC = Br.has_RAC;
+
+   if( !has_RAC && !Br.use_local_RAC )
+      return;
+
    int mX0, nX0; X0.getSize(mX0, nX0);
    int mSC, nSC; SC_.getSize(mSC, nSC);
 
@@ -424,8 +430,8 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
 
    SparseGenMatrix* A0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat) : nullptr;
    SparseGenMatrix* C0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat) : nullptr;
-   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : dynamic_cast<SparseGenMatrix*>(Br.F.mat);
-   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : dynamic_cast<SparseGenMatrix*>(Br.G.mat);
+   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : &data->getLocalF();
+   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : &data->getLocalG();
 
    assert( F0vec_border );
    assert( G0vec_border );
@@ -840,7 +846,7 @@ void sLinsysRoot::createChildren(sData *prob)
 
 void sLinsysRoot::deleteChildren()
 {
-  for(size_t it=0; it < children.size(); it++) {
+  for(size_t it = 0; it < children.size(); it++) {
     children[it]->deleteChildren();
     delete children[it];
   }
@@ -895,7 +901,7 @@ void sLinsysRoot::putXDiagonal( OoqpVector& xdiag_ )
   xDiag = xdiag.vec;
  
   // propagate it to the subtree
-  for(size_t it=0; it<children.size(); it++)
+  for(size_t it = 0; it < children.size(); it++)
     children[it]->putXDiagonal(*xdiag.children[it]);
 }
 
@@ -910,7 +916,7 @@ void sLinsysRoot::putZDiagonal( OoqpVector& zdiag_ )
   zDiagLinkCons = zdiag.vecl;
 
   // propagate it to the subtree
-  for(size_t it=0; it<children.size(); it++)
+  for(size_t it = 0; it < children.size(); it++)
     children[it]->putZDiagonal(*zdiag.children[it]);
 }
 
@@ -963,9 +969,7 @@ void sLinsysRoot::reduceKKTdense()
 
          // reduce lower left part
          if( locnx > 0 )
-         {
             submatrixAllReduceFull(kktd, locNxMy, 0, locmyl + locmzl, locnx, mpiComm);
-         }
 
          // reduce lower diagonal linking part
          submatrixAllReduceDiagLower(kktd, locNxMy, locmyl + locmzl, mpiComm);
