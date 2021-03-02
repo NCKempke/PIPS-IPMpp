@@ -626,7 +626,9 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
 
    assert( n_children == n_new_children );
    assert( children.size() == n_new_children + map_child_subchild.size() );
+
    children.erase( children.begin(), children.begin() + map_child_subchild.size() );
+   assert( children.size() == n_new_children );
 }
 
 GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
@@ -742,6 +744,9 @@ void StringGenMatrix::splitAlongTree( const sTreeCallbacks& tree )
          children[i] = new StringGenDummyMatrix();
       }
       else if( tree_child->getSubRoot() )
-         children[i]->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
+      {
+         assert( children[i]->mat->isKindOf(kStringGenMatrix) );
+         dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
+      }
    }
 }
