@@ -42,8 +42,6 @@ class sData : public QpGenData {
   void AddChild(sData* child);
   const sTree* stochNode{};
 
-private: 
-
   PERMUTATION getLinkVarsPermInv() const;
   PERMUTATION getLinkConsEqPermInv() const;
   PERMUTATION getLinkConsIneqPermInv() const;

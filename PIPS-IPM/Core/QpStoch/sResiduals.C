@@ -170,59 +170,59 @@ void sResiduals::createChildren()
   }
 }
 
-void sResiduals::collapseHierarchicalStructure(const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+void sResiduals::collapseHierarchicalStructure(const sData& data_hier, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
-   dynamic_cast<StochVector&>(*rQ).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*rQ).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
 
    const bool empty_vec = true;
    if( nxlow > 0 )
    {
-      dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
-      dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+      dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+      dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
    }
    else
    {
-      dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL, empty_vec);
-      dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL, empty_vec);
+      dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
+      dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
    }
 
    if( nxupp > 0 )
    {
-      dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
-      dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL);
+      dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+      dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
    }
    else
    {
-      dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL, empty_vec);
-      dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(*tree_hier, VectorType::PRIMAL, empty_vec);
+      dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
+      dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
    }
 
-   dynamic_cast<StochVector&>(*rA).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Y);
+   dynamic_cast<StochVector&>(*rA).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Y);
 
-   dynamic_cast<StochVector&>(*rC).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
-   dynamic_cast<StochVector&>(*rz).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rC).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rz).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
 
    if( mcupp > 0 )
    {
-      dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
-      dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+      dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+      dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
    }
    else
    {
-      dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z, empty_vec);
-      dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z, empty_vec);
+      dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
+      dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
    }
 
    if ( mclow > 0 )
    {
-      dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
-      dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z);
+      dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+      dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
    }
    else
    {
-      dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z, empty_vec);
-      dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(*tree_hier, VectorType::DUAL_Z, empty_vec);
+      dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
+      dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
    }
 
 

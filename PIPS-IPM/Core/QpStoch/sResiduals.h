@@ -45,7 +45,7 @@ public:
 
   bool isRootNodeInSync() const;
 
-  void collapseHierarchicalStructure( const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
+  void collapseHierarchicalStructure( const sData& data, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 
   std::vector<sResiduals*> children;
 protected:

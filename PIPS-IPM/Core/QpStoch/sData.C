@@ -2148,7 +2148,7 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
    sVars* unperm_vars = new sVars(vars);
 
    if( is_hierarchy_root )
-      unperm_vars->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+      unperm_vars->collapseHierarchicalStructure( *this, unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
    assert( unperm_vars->children.size() == unpermData.children.size() );
 
@@ -2173,7 +2173,7 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    sResiduals* unperm_resids = new sResiduals(resids);
 
    if( is_hierarchy_root )
-      unperm_resids->collapseHierarchicalStructure( stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+      unperm_resids->collapseHierarchicalStructure( *this, stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
    assert( unperm_resids->children.size() == unpermData.children.size() );
 
