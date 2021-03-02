@@ -21,10 +21,13 @@ message(STATUS "MPIEXEC_NUMPROC_FLAG=${MPIEXEC_NUMPROC_FLAG}")
 
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_DIRS})
 
+# WATCH OUT : these iwll be added to all executables - also the GAMS part - this might or might not lead to many warnings
+# add gmspips/pips specific WARNINGS via target_compile_options in PIPS-IPM/CMakeLists.txt
+ 
 ### TODO : introduce Wextra/pedantic -Wconversion -Wno-zero-as-null-pointer-const maybe
 #add_compile_options( -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual )
 set(c_flags -Wall -Wno-long-long -fPIC)
-set(cxx_flags -Wall -Wextra -Wno-long-long -Wsuggest-override -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
+set(cxx_flags -Wall -Wno-long-long -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:C>:${c_flags}>"
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"
@@ -80,7 +83,9 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 find_library(GFORTRAN_LIBRARY NAMES libgfortran.so REQUIRED)
 find_library(DL_LIBRARY NAMES dl REQUIRED)
 
-find_package(Threads REQUIRED)
+if( BUILD_GDX_SOURCE )
+   find_package(Threads REQUIRED)
+endif( BUILD_GDX_SOURCE )
 
 find_package(OpenMP)
 if(NOT OpenMP_FOUND)
