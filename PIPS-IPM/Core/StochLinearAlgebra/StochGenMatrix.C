@@ -2049,7 +2049,6 @@ void StochGenMatrix::shaveBorder( int m_conss, int n_vars, StringGenMatrix* bord
       assert( hasSparseMatrices() );
       assert( children.size() == 0 );
       assert( PIPS_MPIgetSize( mpiComm ) == 1 );
-      assert( !amatEmpty() );
 
       SparseGenMatrix* const border_a_mat = dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
       SparseGenMatrix* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(m_conss));
