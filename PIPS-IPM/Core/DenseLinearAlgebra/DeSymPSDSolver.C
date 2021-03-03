@@ -201,7 +201,3 @@ void DeSymPSDSolver::diagonalChanged( int /* idiag */, int /*extent*/ )
 {
   this->matrixChanged();
 }
-
-DeSymPSDSolver::~DeSymPSDSolver()
-{
-}

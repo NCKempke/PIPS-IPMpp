@@ -33,7 +33,7 @@ public:
   using DoubleLinearSolver::Lsolve;
   void Lsolve ( GenMatrix& mat ) override;
 
-  virtual ~DeSymPSDSolver();
+  ~DeSymPSDSolver() override = default;
 };
 
 #endif
