@@ -63,7 +63,6 @@ class Ma57Solver;
 sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
   : tree( new sTreeCallbacks(inputTree) )
 {
-  //decide how the CPUs are assigned
   tree->assignProcesses(comm);
 
   tree->computeGlobalSizes();
@@ -180,9 +179,9 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 
     int nnzA = A.numberOfNonZeros();
     int nnzC = C.numberOfNonZeros();
-    std::cout << "augdump  nx=" << nx << std::endl;
-    std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << std::endl
-              << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << std::endl;
+    std::cout << "augdump  nx=" << nx << "\n";
+    std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << "\n"
+              << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << "\n";
 
 	std::vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
 	std::vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
@@ -209,21 +208,21 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 	std::ofstream fd("augdump.dat");
 	fd << std::scientific;
 	fd.precision(16);
-	fd << (nx + my + mz) << std::endl;
-	fd << nx_1 << std::endl;
-	fd << nnzA+nnzC << std::endl;
+	fd << (nx + my + mz) << "\n";
+	fd << nx_1 << "\n";
+	fd << nnzA+nnzC << "\n";
 
    for( int i = 0; i <= nx_1; i++ )
       fd << colptr[i] << " ";
-   fd << std::endl;
+   fd << "\n";
    for( int i = 0; i < nnz; i++ )
       fd << rowidx[i] << " ";
-   fd << std::endl;
+   fd << "\n";
    for( int i = 0; i < nnz; i++ )
       fd << elts[i] << " ";
-   fd << std::endl;
-   printf("finished dumping aug\n");
+   fd << "\n";
 
+   std::cout << "finished dumping aug\n";
 }
 
 Data* sFactory::makeData()
@@ -336,7 +335,6 @@ void sFactory::iterateStarted()
   iterTmMonitor.recIterateTm_start();
   tree->startMonitors();
 }
-
 
 void sFactory::iterateEnded()
 {
