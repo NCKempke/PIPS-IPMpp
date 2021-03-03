@@ -15,7 +15,7 @@
 
 sFactoryAug::sFactoryAug( StochInputTree* inputTree, MPI_Comm comm)
   : sFactory(inputTree, comm)
-{ };
+{};
 
 sLinsysRoot* sFactoryAug::newLinsysRoot()
 {
@@ -32,6 +32,8 @@ sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
    else
       return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs, true);
 }
+
+DoubleLinearSolver* sFactoryAug::newRootSolver(){ return nullptr;};
 
 sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()
 {

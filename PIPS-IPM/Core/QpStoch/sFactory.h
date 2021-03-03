@@ -29,18 +29,20 @@ class sVars;
 class sLinsys;
 class sLinsysRoot;
 class sLinsysLeaf;
+class DoubleLinearSolver;
+class DoubleMatrix;
 
 #include "StochResourcesMonitor.h"
 
 class sFactory : public QpGen
 {
-   public:
+ public:
 
-      sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
+  sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
 
-   protected:
-      sFactory() = default;
-      ~sFactory() override;
+ protected:
+  sFactory() = default;
+  ~sFactory() override;
 
  public:
 
@@ -57,7 +59,6 @@ class sFactory : public QpGen
   OoqpVector* makeDualZVector() const override;
   /** create rhs for augmented system using tree */
   OoqpVector* makeRhs() const override;
-
 
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
   virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
@@ -76,7 +77,8 @@ class sFactory : public QpGen
   virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd,OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 
-
+  virtual DoubleLinearSolver* newRootSolver() = 0;
+  virtual DoubleLinearSolver* newLeafSolver( DoubleMatrix* kkt );
 
   sTree * tree{};
   sData * data{};
