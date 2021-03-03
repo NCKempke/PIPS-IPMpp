@@ -932,10 +932,10 @@ void sLinsysRoot::AddChild(sLinsys* child)
 void sLinsysRoot::initializeKKT(sData*, Variables*)
 {
    if( hasSparseKkt )
-      dynamic_cast<SparseSymMatrix*>(kkt)->symPutZeroes();
+      dynamic_cast<SparseSymMatrix*>(kkt.get())->symPutZeroes();
    else
    {
-      DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt);
+      DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
       myAtPutZeros(kktd);
    }
 }
@@ -954,7 +954,7 @@ void sLinsysRoot::reduceKKT(sData* prob)
 // collects (reduces) dense global Schur complement
 void sLinsysRoot::reduceKKTdense()
 {
-   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt);
+   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    // parallel communication
    if( iAmDistrib )
@@ -1630,11 +1630,7 @@ void sLinsysRoot::factorizeKKT(sData* prob)
        {
          omp_set_num_threads(n_threads_solvers);
 
-         const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
          const int id = omp_get_thread_num();
-
-         SparseSymMatrix& my_kkt = dynamic_cast<SparseSymMatrix&>(*problems_blocked[id].get());
-         kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
          solvers_blocked[id]->matrixChanged();
        }
      }

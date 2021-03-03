@@ -36,7 +36,7 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 		      int nSC0); //first solve call
 
   /** sets mStorage to refer to the argument sgm */
-  PardisoSchurSolver( SparseSymMatrix * sgm );
+  PardisoSchurSolver( const SparseSymMatrix * sgm );
 
 
   void diagonalChanged( int idiag, int extent ) override;
@@ -71,7 +71,7 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 
  protected:
 
-  SparseSymMatrix* Msys{}; // this is the (1,1) block in the augmented system
+  const SparseSymMatrix* Msys{}; // this is the (1,1) block in the augmented system
   bool first{true};
   bool firstSolve{true};
   void  *pt[64];

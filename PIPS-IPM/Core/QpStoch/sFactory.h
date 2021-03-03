@@ -78,7 +78,7 @@ class sFactory : public QpGen
 				     OoqpVector* nomegaInv, OoqpVector* rhs);
 
   virtual DoubleLinearSolver* newRootSolver() = 0;
-  virtual DoubleLinearSolver* newLeafSolver( DoubleMatrix* kkt );
+  virtual DoubleLinearSolver* newLeafSolver( const DoubleMatrix* kkt );
 
   sTree * tree{};
   sData * data{};

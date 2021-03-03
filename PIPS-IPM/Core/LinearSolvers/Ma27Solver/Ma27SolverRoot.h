@@ -24,7 +24,7 @@ class Ma27SolverRoot : public Ma27Solver
 {
 
  public:
-  Ma27SolverRoot( SparseSymMatrix * sgm, const std::string& name_, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD );
+  Ma27SolverRoot( const SparseSymMatrix * sgm, const std::string& name_, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD );
 
   ~Ma27SolverRoot();
 

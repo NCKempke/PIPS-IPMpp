@@ -11,7 +11,7 @@
 #include "SimpleVector.h"
 #include "SparseSymMatrix.h"
 
-Ma27SolverRoot::Ma27SolverRoot( SparseSymMatrix * sgm, const std::string& name, bool solve_in_parallel, MPI_Comm mpiComm )
+Ma27SolverRoot::Ma27SolverRoot( const SparseSymMatrix * sgm, const std::string& name, bool solve_in_parallel, MPI_Comm mpiComm )
  : Ma27Solver(sgm, name), solve_in_parallel(solve_in_parallel), comm(mpiComm)
 {
    threshold_pivoting_max = 0.1;

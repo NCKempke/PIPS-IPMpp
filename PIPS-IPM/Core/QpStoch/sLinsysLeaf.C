@@ -84,22 +84,16 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   assert( n_solvers >= 1 );
 
   solvers_blocked.resize(n_solvers);
-  problems_blocked.resize(n_solvers);
+  kkt.reset(kkt_sp);
 
   #pragma omp parallel num_threads(n_solvers)
   {
      omp_set_num_threads(n_threads_solvers);
      const int id = omp_get_thread_num();
 
-     if( id == 0 )
-        problems_blocked[id].reset( kkt_sp );
-     else
-        problems_blocked[id].reset( new SparseSymMatrix( *dynamic_cast<SparseSymMatrix*>(kkt_sp) ) );
-
-     solvers_blocked[id].reset( factory_->newLeafSolver( dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get()) ) );
+     solvers_blocked[id].reset( factory_->newLeafSolver( kkt_sp ) );
   }
 
-  kkt = problems_blocked[0].get();
   solver = solvers_blocked[0].get();
 
 #ifdef TIMING
@@ -122,11 +116,8 @@ void sLinsysLeaf::factor2(sData*, Variables*)
       {
          omp_set_num_threads(n_threads_solvers);
 
-         const SparseStorage& kkt_mod = dynamic_cast<SparseSymMatrix&>(*kkt).getStorageRef();
          const int id = omp_get_thread_num();
 
-         SparseSymMatrix& my_kkt = dynamic_cast<SparseSymMatrix&>(*problems_blocked[id].get());
-         kkt_mod.copyFrom( my_kkt.krowM(), my_kkt.jcolM(), my_kkt.M() );
          solvers_blocked[id]->matrixChanged();
       }
    }

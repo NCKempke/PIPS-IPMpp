@@ -104,7 +104,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */
-  int numberOfNonZeros() { return mStorage->numberOfNonZeros(); }
+  int numberOfNonZeros() const { return mStorage->numberOfNonZeros(); }
 
   /** Reduce the matrix to lower triangular */
   void reduceToLower();

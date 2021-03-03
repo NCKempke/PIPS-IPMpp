@@ -22,7 +22,7 @@ class DeSymPSDSolver : public DoubleLinearSolver {
 protected:
   DenseStorageHandle mStorage;
 public:
-  DeSymPSDSolver( DenseSymMatrix * dsm );
+  DeSymPSDSolver( const DenseSymMatrix * dsm );
   void diagonalChanged( int idiag, int extent ) override;
   void matrixChanged() override;
 

@@ -101,7 +101,9 @@ public:
   long long size() const override;
 
   DenseStorage& getStorageRef() { return *mStorage; }
+  const DenseStorage& getStorageRef() const { return *mStorage; }
   DenseStorageHandle  getStorageHandle() { return mStorage; }
+  const DenseStorageHandle  getStorageHandle() const { return mStorage; }
 
   /* this = alpha * op(A)*op(B)  +   beta * this */
   void matMult(double alpha,

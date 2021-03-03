@@ -19,52 +19,21 @@
 
 #include "mpi.h"
 
-PardisoSolver::PardisoSolver( SparseSymMatrix * sgm )
+PardisoSolver::PardisoSolver( const SparseSymMatrix * sgm ) :
+   Msys{sgm}, n{static_cast<int>(sgm->size())}, nnz{sgm->numberOfNonZeros()}
 {
-  Msys = sgm;
-  Mdsys = nullptr;
-  n = sgm->size();
-  nnz = sgm->numberOfNonZeros();
+   krowM = new int[n+1];
+   jcolM = new int[nnz];
+   M = new double[nnz];
 
-  krowM = new int[n+1];
-  jcolM = new int[nnz];
-  M = new double[nnz];
-
-  first = true;
-  nvec = new double[n];
-
-  mtype = -2;
-  error = 0;
-  phase = 0;
-  nrhs = -1; // do not specify here
-  maxfct = 1; // max number of fact having same sparsity pattern to keep at the same time
-  mnum = 1; // actual matrix (as in index from 1 to maxfct)
-  msglvl = 0; // messaging level (0 = no output, 1 = statistical info to screen)
+   nvec = new double[n];
 }
 
 
-PardisoSolver::PardisoSolver( DenseSymMatrix * m )
+PardisoSolver::PardisoSolver( const DenseSymMatrix * m ) : Mdsys{m}, n{static_cast<int>(Mdsys->size())}
 {
-  Msys = nullptr;
-  Mdsys = m;
-  n = m->size();
-  
-  nnz=0; //getNumberOfNonZeros(*Mdsys);
-
-  krowM = nullptr;//new int[n+1];
-  jcolM = nullptr;//new int[nnz];
-  M = nullptr;//new double[nnz];
-
-  first = true;
-  nvec = new double[n];
-
-  mtype = -2;
-  error = 0;
-  nrhs = -1;
-  phase = 0;
-  maxfct = 1; // max number of fact having same sparsity pattern to keep at the same time
-  mnum = 1; // actual matrix (as in index from 1 to maxfct)
-  msglvl = 0; // messaging level (0 = no output, 1 = statistical info to screen)
+   assert( m->size() < std::numeric_limits<int>::max() );
+   nvec = new double[n];
 }
 
 bool PardisoSolver::iparmUnchanged() const
@@ -139,7 +108,7 @@ void PardisoSolver::initSystem()
       // the dense matrix is also processed in matrixChanged everytime the method is called
 
       // the input is a dense matrix
-      DenseSymMatrix& Md = (*Mdsys);
+      const DenseSymMatrix& Md = (*Mdsys);
       nnz = Md.getNumberOfNonZeros();
 
       delete[] krowM;
@@ -218,7 +187,7 @@ void PardisoSolver::matrixChanged()
    if( Mdsys )
    {
       // the input is a dense matrix
-      DenseSymMatrix& Md = (*Mdsys);
+      const DenseSymMatrix& Md = (*Mdsys);
       //double tm=MPI_Wtime();
       int nzIt = 0;
       for( int i = 0; i < n; i++ )

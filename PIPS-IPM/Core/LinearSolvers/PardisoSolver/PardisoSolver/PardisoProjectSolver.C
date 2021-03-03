@@ -10,30 +10,30 @@
 
 #include "mpi.h"
 
-extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
-extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*, int*, int*, int*,
-   int*, int*, double*, double*, int*, double*);
+extern "C" void pardisoinit(void*, const int*, int*, int*, double*, int*);
+extern "C" void pardiso(void*, const int*, const int*, const int*, const int*, int*, double*, int*, int*, int*, int*,
+   int*, const int*, double*, double*, int*, double*);
 
 extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *, double *, int *);
 
-PardisoProjectSolver::PardisoProjectSolver( SparseSymMatrix * sgm ) : PardisoSolver( sgm )
+PardisoProjectSolver::PardisoProjectSolver( const SparseSymMatrix * sgm ) : PardisoSolver( sgm )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
-      std::cout << "PardisoProjectSolver::PardisoProjectSolver (sparse input)" << std::endl;
+      std::cout << "PardisoProjectSolver::PardisoProjectSolver (sparse input)\n";
 #endif
 
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */
 }
 
-PardisoProjectSolver::PardisoProjectSolver( DenseSymMatrix * m ) : PardisoSolver( m )
+PardisoProjectSolver::PardisoProjectSolver( const DenseSymMatrix * m ) : PardisoSolver( m )
 {
 #ifdef TIMING
    if( myRank == PIPS_MPIgetRank() )
-     std::cout << "PardisoProjectSolver created (dense input)" << std::endl;
+     std::cout << "PardisoProjectSolver created (dense input)\n";
 #endif
 
    num_threads = PIPSgetnOMPthreads();
@@ -46,7 +46,7 @@ void PardisoProjectSolver::firstCall()
 
    int error = 0;
 
-   // the licence file read seems to be critical..
+   // the licence file read seems to be critical.. for PARDISO 6.0 and 6.2 - not 7.0/7.2 anymore?
 //   #pragma omp critical
    pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
 
@@ -83,8 +83,8 @@ void PardisoProjectSolver::setIparm(int* iparm) const
    iparm[18] = 0; /* don't compute GFLOPS */
 }
 
-void PardisoProjectSolver::pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
-      int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error)
+void PardisoProjectSolver::pardisoCall(void *pt, const int* maxfct, const int* mnum, const int* mtype, const int* phase, int* n, double* M, int* krowM, int* jcolM,
+      int* perm, int* nrhs, int* iparm, const int* msglvl, double* rhs, double* sol, int* error)
 {
    pardiso(pt, maxfct, mnum, mtype, phase, n, M, krowM, jcolM, perm, nrhs, iparm, msglvl, rhs, sol, error, dparm );
 }

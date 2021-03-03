@@ -168,9 +168,8 @@ class sLinsys : public QpGenLinsys
   int n_solvers{-1};
   int n_threads_solvers{-1};
   std::vector<std::unique_ptr<DoubleLinearSolver>> solvers_blocked{1};
-  std::vector<std::unique_ptr<SymMatrix>> problems_blocked{1};
 
-  SymMatrix* kkt{};
+  std::unique_ptr<SymMatrix> kkt{};
   DoubleLinearSolver* solver{};
 
  public:

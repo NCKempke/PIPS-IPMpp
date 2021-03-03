@@ -138,52 +138,45 @@ void sLinsysRootAug::setNSolversNThreads(SolverType solver)
 
 void sLinsysRootAug::createSolversSparse(SolverType solver_type)
 {
+   SparseSymMatrix* kkt_sp = dynamic_cast<SparseSymMatrix*>(kkt.get());
    #pragma omp parallel num_threads(n_solvers)
    {
       omp_set_num_threads(n_threads_solvers);
       const int id = omp_get_thread_num();
 
-      if( id == 0 )
-         problems_blocked[id].reset( kkt );
-      else
-         problems_blocked[id].reset( new SparseSymMatrix( dynamic_cast<SparseSymMatrix&>(*kkt) ) );
-
-      SparseSymMatrix* kktmat = dynamic_cast<SparseSymMatrix*>(problems_blocked[id].get());
-
       if( solver_type == SolverType::SOLVER_MUMPS )
       {
    #ifdef WITH_MUMPS
-         solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kktmat, allreduce_kkt) );
+         solvers_blocked[id].reset( new MumpsSolverRoot(mpiComm, kkt_sp, allreduce_kkt) );
    #endif
       }
       else if( solver_type == SolverType::SOLVER_PARDISO )
       {
    #ifdef WITH_PARDISO
-         solvers_blocked[id].reset( new PardisoProjectIndefSolver(kktmat, allreduce_kkt, mpiComm) );
+         solvers_blocked[id].reset( new PardisoProjectIndefSolver(kkt_sp, allreduce_kkt, mpiComm) );
    #endif
       }
       else if( solver_type == SolverType::SOLVER_MKL_PARDISO )
       {
    #ifdef WITH_MKL_PARDISO
-         solvers_blocked[id].reset( new PardisoMKLIndefSolver(kktmat, allreduce_kkt, mpiComm) );
+         solvers_blocked[id].reset( new PardisoMKLIndefSolver(kkt_sp, allreduce_kkt, mpiComm) );
    #endif
       }
       else if( solver_type == SolverType::SOLVER_MA57 )
       {
    #ifdef WITH_MA57
-         solvers_blocked[id].reset( new Ma57SolverRoot(kktmat, allreduce_kkt, mpiComm) );
+         solvers_blocked[id].reset( new Ma57SolverRoot(kkt_sp, allreduce_kkt, mpiComm) );
    #endif
       }
       else
       {
          assert( solver_type == SolverType::SOLVER_MA27 );
    #ifdef WITH_MA27
-         solvers_blocked[id].reset( new Ma27SolverRoot(kktmat, "sLinsysRootAug", allreduce_kkt, mpiComm) );
+         solvers_blocked[id].reset( new Ma27SolverRoot(kkt_sp, "sLinsysRootAug", allreduce_kkt, mpiComm) );
    #endif
       }
    }
 
-   kkt = problems_blocked[0].get();
    solver = solvers_blocked[0].get();
 }
 
@@ -192,9 +185,7 @@ void sLinsysRootAug::createSolversDense()
    assert( n_solvers == 1 );
 
    const SolverTypeDense solver_type = pips_options::getSolverDense();
-   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kkt);
-
-   problems_blocked[0].reset( kktmat );
+   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    if( solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF )
       solvers_blocked[0].reset( new DeSymIndefSolver(kktmat) );
@@ -206,7 +197,6 @@ void sLinsysRootAug::createSolversDense()
       solvers_blocked[0].reset( new DeSymPSDSolver(kktmat) );
    }
 
-   kkt = problems_blocked[0].get();
    solver = solvers_blocked[0].get();
 }
 
@@ -226,7 +216,7 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
          std::cout << "sLinsysRootAug: using " << pips_options::getSolverDense() << "\n";
    }
 
-   kkt = createKKT(prob);
+   kkt.reset(createKKT(prob));
 
    if( !printed && PIPS_MPIgetRank() == 0 )
    {
@@ -242,7 +232,6 @@ void sLinsysRootAug::createSolversAndKKts(sData* prob)
    printed = true;
 
    solvers_blocked.resize(n_solvers);
-   problems_blocked.resize(n_solvers);
 
    if( hasSparseKkt )
       createSolversSparse(solver_root);
@@ -1874,7 +1863,7 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
 {
    int j, p, pend;
 
-   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt);
+   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    //alias for internal buffer of kkt
    double** const dKkt = kktd->Mat();

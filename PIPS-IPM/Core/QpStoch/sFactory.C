@@ -75,9 +75,9 @@ sFactory::~sFactory()
       delete tree;
 }
 
-DoubleLinearSolver* sFactory::newLeafSolver( DoubleMatrix* kkt_ )
+DoubleLinearSolver* sFactory::newLeafSolver( const DoubleMatrix* kkt_ )
 {
-   SparseSymMatrix* kkt = dynamic_cast<SparseSymMatrix*>(kkt_);
+   const SparseSymMatrix* kkt = dynamic_cast<const SparseSymMatrix*>(kkt_);
    assert( kkt );
 
    const SolverType leaf_solver = pips_options::getSolverLeaf();

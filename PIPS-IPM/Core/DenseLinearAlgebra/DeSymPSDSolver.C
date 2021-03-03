@@ -30,7 +30,7 @@ extern "C" void dtrsm_(char* side,
 		       double* B, int* LDB);
 
 
-DeSymPSDSolver::DeSymPSDSolver( DenseSymMatrix * dsm )
+DeSymPSDSolver::DeSymPSDSolver( const DenseSymMatrix * dsm )
 {
   mStorage = dsm->getStorageHandle();
 }

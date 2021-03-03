@@ -36,7 +36,7 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
       std::cout << "sLinsysRootAugHierInner: using " << solver_sub_root << "\n";
    }
 
-   kkt = createKKT(prob);
+   kkt.reset(createKKT(prob));
 
    if( !printed && PIPS_MPIgetRank() == 0 )
       std::cout << "sLinsysRootAugHierInner: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
@@ -44,7 +44,6 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
 
 
    solvers_blocked.resize(n_solvers);
-   problems_blocked.resize(n_solvers);
 
    createSolversSparse(solver_sub_root);
 }

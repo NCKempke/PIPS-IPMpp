@@ -41,7 +41,7 @@ extern "C" void FNAME(dscal)(int *n,
       double *alpha, double *x, int *incx);
 
 
-DeSymIndefSolver2::DeSymIndefSolver2( DenseSymMatrix * dm, int nx ) : nx(nx)
+DeSymIndefSolver2::DeSymIndefSolver2( const DenseSymMatrix * dm, int nx ) : nx(nx)
 {
   mStorage = dm->getStorageHandle();
 

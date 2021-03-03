@@ -22,10 +22,9 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 {
    assert(locmyl >= 0 && locmzl >= 0);
 
-   problems_blocked[0].reset( createKKT(prob_) );
-   kkt = problems_blocked[0].get();
+   kkt.reset(createKKT(prob_));
 
-   solvers_blocked[0].reset( createSolver(prob_, kkt) );
+   solvers_blocked[0].reset( createSolver(prob_, kkt.get()) );
    solver = solvers_blocked[0].get();
 }
 
@@ -266,10 +265,10 @@ void sLinsysRootBordered::reduceKKT(sData*)
       allreduceMatrix(*kkt, false, true, mpiComm );
 }
 
-DoubleLinearSolver* sLinsysRootBordered::createSolver(sData*, SymMatrix* kktmat_)
+DoubleLinearSolver* sLinsysRootBordered::createSolver(sData*, const SymMatrix* kktmat_)
 {
    const SolverTypeDense solver = pips_options::getSolverDense();
-   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kktmat_);
+   const DenseSymMatrix* kktmat = dynamic_cast<const DenseSymMatrix*>(kktmat_);
 
    static bool printed = false;
    if( !printed && 0 == PIPS_MPIgetRank(mpiComm) )

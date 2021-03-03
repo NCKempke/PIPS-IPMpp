@@ -13,7 +13,7 @@
 class PardisoProjectSchurSolver : public PardisoSchurSolver
 {
 public:
-  PardisoProjectSchurSolver( SparseSymMatrix * sgm );
+  PardisoProjectSchurSolver( const SparseSymMatrix * sgm );
 
   void solve( OoqpVector& rhs_in ) override;
   using DoubleLinearSolver::solve;

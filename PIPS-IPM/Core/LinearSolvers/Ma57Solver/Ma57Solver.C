@@ -27,7 +27,7 @@ void dumpdata(int* irow, int* jcol, double* M, int, int nnz)
   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
-Ma57Solver::Ma57Solver( SparseSymMatrix * sgm ) :
+Ma57Solver::Ma57Solver( const SparseSymMatrix * sgm ) :
       n( sgm->getStorageRef().n)
 {
 

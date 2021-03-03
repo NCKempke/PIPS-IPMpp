@@ -23,7 +23,7 @@ extern "C" void pardiso_get_schur(void*, int*, int*, int*, double*, int*, int*);
 
 extern double g_iterNumber;
 
-PardisoProjectSchurSolver::PardisoProjectSchurSolver( SparseSymMatrix * sgm )
+PardisoProjectSchurSolver::PardisoProjectSchurSolver( const SparseSymMatrix * sgm )
    : PardisoSchurSolver( sgm )
 {
    num_threads = PIPSgetnOMPthreads();

@@ -61,7 +61,7 @@ extern "C" {
 #endif
 
 
-DeSymIndefSolver::DeSymIndefSolver( DenseSymMatrix * dm )
+DeSymIndefSolver::DeSymIndefSolver( const DenseSymMatrix * dm )
 {
   mStorage = dm->getStorageHandle();
 
@@ -73,7 +73,7 @@ DeSymIndefSolver::DeSymIndefSolver( DenseSymMatrix * dm )
 
 }
 
-DeSymIndefSolver::DeSymIndefSolver( SparseSymMatrix * sm )
+DeSymIndefSolver::DeSymIndefSolver( const SparseSymMatrix * sm )
 {
   int size = sm->size();
   mStorage = DenseStorageHandle( new DenseStorage(size,size) );

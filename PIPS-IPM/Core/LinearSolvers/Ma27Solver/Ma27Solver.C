@@ -33,9 +33,9 @@ void Ma27Solver::init()
 
    FNAME(ma27id)(icntl.data(), cntl.data());
 
-   this->setThresholdPivoting( default_threshold_pivoting );
+   setThresholdPivoting( default_threshold_pivoting );
    cntl[1] = default_fratio;
-   this->setSmallPivot( default_small_pivot );
+   setSmallPivot( default_small_pivot );
 
    icntl[0] = 0;
    icntl[1] = 0;
