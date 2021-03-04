@@ -75,7 +75,7 @@ protected:
   const int max_tries = 8;
   int max_n_iter_refinement = 5;
 
-  const int ooqp_print_level_warnings = 10000;
+  const int ooqp_print_level_warnings = 1000;
 
   /** the Threshold Pivoting parameter may need to be increased during
    * the algorithm if poor precision is obtained from the linear
@@ -129,7 +129,7 @@ protected:
   /** amount of solvers that might call this routine - used to duplicate data structures
    * where ever necessary to make the solve calls thread safe
    */
-  const int n_solvers{1};
+  const int n_threads{1};
 
   /** to distinguish between root and leaf solver in error messages */
   const std::string name;

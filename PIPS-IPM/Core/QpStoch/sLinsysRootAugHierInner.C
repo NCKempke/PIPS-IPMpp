@@ -18,7 +18,6 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
    assert( locmz == 0 );
 
    createSolversAndKKts(prob_);
-   createReducedRhss();
 }
 
 void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
@@ -26,15 +25,10 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
    assert( hasSparseKkt );
 
    const SolverType solver_sub_root = pips_options::getSolverSubRoot();
-   setNSolversNThreads(solver_sub_root);
 
    static bool printed = false;
    if( !printed && PIPS_MPIgetRank() == 0 )
-   {
-      std::cout << "sLinsysRootAugHierInner: using " << n_solvers << " solvers in parallel (with "
-            << n_threads_solvers << " threads each) for sub-root SC computations\n";
       std::cout << "sLinsysRootAugHierInner: using " << solver_sub_root << "\n";
-   }
 
    kkt.reset(createKKT(prob));
 

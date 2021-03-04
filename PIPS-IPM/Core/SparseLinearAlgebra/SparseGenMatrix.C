@@ -363,43 +363,43 @@ void SparseGenMatrix::transmultMatSymUpper( double beta, SymMatrix& y,
 void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
 				  double alpha,  const OoqpVector& x_in ) const
 {
-  const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
+   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
+   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-  assert( x.length() == mStorage->m && y.length() == mStorage->n );
+   assert( x.length() == mStorage->m && y.length() == mStorage->n );
 
-  const double* xv = 0;
-  double* yv = 0;
-
-  if( x.length() > 0 ) xv = &x[0];
-  if( y.length() > 0 ) yv = &y[0];
-
-  mStorage->transMult( beta, yv, 1, alpha, xv, 1 );
+   mStorage->transMult( beta, y.elements(), 1, alpha, x.elements(), 1 );
 }
 
-void SparseGenMatrix::transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const
+void SparseGenMatrix::transMult( double beta, OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const
 {
-  const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
+   const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
+   SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
 
-  assert( x.length() > 0 && y.length() > 0 );
-  assert( x.length() >= incx * mStorage->m );
-  assert( y.length() >= incy * mStorage->n );
+   assert( x.length() > 0 && y.length() > 0 );
+   assert( x.length() >= incx * mStorage->m );
+   assert( y.length() >= incy * mStorage->n );
 
-  const double* xv = 0;
-  double* yv = 0;
-
-  if( x.length() > 0 )
-     xv = &x[0];
-  if( y.length() > 0 )
-     yv = &y[0];
-
-  mStorage->transMult( beta, yv, incy, alpha, xv, incx );
+   mStorage->transMult( beta, y.elements(), incy, alpha, x.elements(), incx );
 }
 
-void SparseGenMatrix::transMult( double beta,  double yv[], int incy, double alpha, const double xv[], int incx ) const
+void SparseGenMatrix::transMult( double beta, double yv[], int incy, double alpha, const double xv[], int incx ) const
 {
-  mStorage->transMult( beta, yv, incy, alpha, xv, incx );
+   mStorage->transMult( beta, yv, incy, alpha, xv, incx );
+}
+
+void SparseGenMatrix::transMultD(double beta, OoqpVector& y_, double alpha, const OoqpVector& x_, const OoqpVector& d_ ) const
+{
+   const SimpleVector& x = dynamic_cast<const SimpleVector &>(x_);
+   const SimpleVector& d = dynamic_cast<const SimpleVector &>(d_);
+   SimpleVector& y = dynamic_cast<SimpleVector &>(y_);
+
+   assert( x.length() == d.length() );
+   assert( x.length() > 0 && y.length() > 0 );
+   assert( x.length() == mStorage->m );
+   assert( y.length() == mStorage->n );
+
+   mStorage->transMultD(beta, y.elements(), 1, alpha, x.elements(), d.elements(), 1);
 }
 
 double SparseGenMatrix::abmaxnorm() const

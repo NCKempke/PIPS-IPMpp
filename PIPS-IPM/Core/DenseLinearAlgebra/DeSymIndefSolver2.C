@@ -6,40 +6,8 @@
 #include "SimpleVector.h"
 #include <cassert>
 
+#include "OoqpBlas.h"
 #include "DenseSymMatrix.h"
-
-
-#ifndef FNAME
-#ifndef __bg__
-#define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
-#endif
-
-// declarations for LAPACK functions used to factor/solve:
-
-extern "C" void FNAME(dpotrf)(char *uplo,
-      int *n, double *A, int*lda, int*info);
-
-extern "C" void FNAME(dtrsm)(char *side,
-      char *uplo, char *transa, char *diag,
-      int* m, int *n, double *alpha, double *A,
-      int *lda, double *B, int *ldb);
-
-extern "C" void FNAME(dsyrk)(char *uplo,
-      char *trans, int* n, int* k, double *alpha,
-      double *A, int *lda, double *beta,
-      double *C, int *ldc);
-
-extern "C" void FNAME(dtrsv)(char *uplo,
-      char *trans, char* diag, int *n,
-      double *A, int *lda, double *x,
-      int *incx);
-
-extern "C" void FNAME(dscal)(int *n,
-      double *alpha, double *x, int *incx);
-
 
 DeSymIndefSolver2::DeSymIndefSolver2( const DenseSymMatrix * dm, int nx ) : nx(nx)
 {

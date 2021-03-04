@@ -17,10 +17,10 @@ extern int gOoqpPrintLevel;
 
 Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_ ) :
       mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n}, nnz{mat_storage->numberOfNonZeros()},
-      n_solvers{PIPSgetnOMPthreads()}, name( name_ )//, scaler( new Mc30Scaler() )
+      n_threads{PIPSgetnOMPthreads()}, name( name_ )//, scaler( new Mc30Scaler() )
 {
-   if( n_solvers > 1 )
-      info.resize(20 * n_solvers);
+   if( n_threads > 1 )
+      info.resize(20 * n_threads);
    init();
 }
 
@@ -55,7 +55,7 @@ void Ma27Solver::firstCall()
   iw = new int[liw];
 
   /* later iw1 will need to be of size nsteps * nsolvers with nsteps <= n -> set it to the max once */
-  iw1 = new int[std::max(2 * n, n_solvers * n)];
+  iw1 = new int[std::max(2 * n, n_threads * n)];
   ikeep = new int[3 * n];
 
   int iflag = 0; // set to 1 if ikeep contains pivot order
@@ -128,7 +128,7 @@ void Ma27Solver::matrixChanged()
 
    delete[] ww;
 
-   ww = new double[n_solvers * maxfrt];
+   ww = new double[n_threads * maxfrt];
    assert( ww );
 }
 
@@ -137,12 +137,11 @@ void Ma27Solver::solve( int nrhss, double* rhss, int*)
    const double tmp = max_n_iter_refinement;
    max_n_iter_refinement = 2;
 
+   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads)
    for (int i = 0; i < nrhss; i++)
    {
      SimpleVector v(rhss + i * n, n);
-
      solve(v);
-
      //solveIterRef(v); slower for some reason
    }
    max_n_iter_refinement = tmp;
@@ -164,7 +163,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 
 //   /* sparsify rhs */
 //   for( int i = 0; i < rhs.length(); ++i )
-//      if( std::fabs(rhs[i]) < precision )
+//      if( std::fabs(rhs[i]) < 1e-15 )
 //         rhs[i] = 0.0;
 
    // define structures to save rhs and store residuals
@@ -186,7 +185,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    double res_last = -1.0;
 
    const int my_id = omp_get_thread_num();
-   assert( my_id < n_solvers );
+   assert( my_id < n_threads );
 
    double* ww_loc = ww + my_id * maxfrt;
    int* iw1_loc = iw1 + my_id * n;

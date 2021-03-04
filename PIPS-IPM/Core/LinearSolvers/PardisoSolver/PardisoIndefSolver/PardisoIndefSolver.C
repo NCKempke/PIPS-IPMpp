@@ -421,7 +421,7 @@ void PardisoIndefSolver::solveSynchronized( OoqpVector& vec )
 }
 
 
-void PardisoIndefSolver::solve ( OoqpVector& v )
+void PardisoIndefSolver::solve( OoqpVector& v )
 {
    assert( iparmUnchanged() );
 
@@ -523,6 +523,87 @@ void PardisoIndefSolver::solve ( OoqpVector& v )
 #ifdef TIMING_FLOPS
    HPM_Stop("DSYTRSSolve");
 #endif
+}
+
+void PardisoIndefSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
+{
+   assert(rhss);
+   assert(nrhss >= 1);
+
+   if( static_cast<int>(sol.size()) < nrhss * n )
+      sol.resize( nrhss * n );
+
+   if( static_cast<int>(rhss_nonzero.size()) < nrhss * n )
+   {
+      rhss_nonzero.resize( nrhss * n );
+      map_rhs_nonzero_original.resize( nrhss );
+   }
+
+   int nrhss_nnz{0};
+   for( int i = 0; i < nrhss; ++i )
+   {
+      if( std::any_of( rhss + i * n, rhss + (i + 1) * n, [](double d){ return !PIPSisZero(d); }) )
+      {
+         std::copy( rhss + i * n, rhss + (i + 1) * n, rhss_nonzero.begin() + nrhss_nnz * n);
+         map_rhs_nonzero_original[nrhss_nnz] = i;
+         ++nrhss_nnz;
+      }
+   }
+
+#ifndef NDEBUG
+//   if( colSparsity )
+//   {]
+//      for( int nr = 0; nr < nrhss; nr++ )
+//      {
+//         for( int i = 0; i < n; i++ )
+//         {
+//            const int rhspos = nr * n + i;
+//            if( rhss[rhspos] != 0.0 )
+//               assert(colSparsity[i] == 1);
+//            else if( nrhss == 1 ) // does not work with zeroes in matrix, e.g. callback example
+//               assert(colSparsity[i] == 0);
+//         }
+//      }
+//   }
+   // PARDISO cannot deal well with all zero rhs
+   for( int i = 0; i < nrhss_nnz; ++i )
+      assert( std::any_of(rhss_nonzero.begin() + i * n, rhss_nonzero.begin() + (i + 1) * n, [](double d){
+               return d != 0.0;
+         })
+      );
+#endif
+
+   /* same for mkl_pardiso and pardiso */
+   phase = 33; // solve and iterative refinement
+   int nrhss_local = nrhss;
+
+   assert(iparmUnchanged());
+
+// see notes on [30] earlier - cannot be specified on the go
+// seems to detoriate parformance a lot - triggers many BiCGStab steps
+//   if( colSparsity )
+//   {
+//      iparm[30] = 1; //sparse rhs
+//   }
+//   else
+   {
+      iparm[30] = 0;
+   }
+
+   assert(pt); assert(a); assert(ia); assert(ja); assert(rhss);
+   int error = 0;
+
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, nullptr,
+         &nrhss_local, iparm, &msglvl, rhss_nonzero.data(), sol.data(), &error);
+
+   if( error != 0 )
+   {
+      printf("PardisoSolver - ERROR during solve: %d", error);
+      exit(1);
+   }
+
+   for( int i = 0; i < nrhss_nnz; ++i )
+      std::copy(sol.begin() + i * n, sol.begin() + (i + 1) * n, rhss + map_rhs_nonzero_original[i] * n );
 }
 
 void PardisoIndefSolver::diagonalChanged( int /* idiag */, int /* extent */ )

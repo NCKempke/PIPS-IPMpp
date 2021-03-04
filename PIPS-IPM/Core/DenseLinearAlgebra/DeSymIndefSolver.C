@@ -192,7 +192,7 @@ void DeSymIndefSolver::solve ( GenMatrix& rhs_in )
 
   int n = mStorage->n;
 
-  FNAME(dsytrs)( &fortranUplo, &n, &ncols,	&mStorage->M[0][0],	&n,
+  FNAME(dsytrs)( &fortranUplo, &n, &ncols, &mStorage->M[0][0],	&n,
 	   ipiv, &rhs[0][0],	&n,	&info);
 
   assert(info==0);

@@ -28,12 +28,12 @@ void dumpdata(int* irow, int* jcol, double* M, int, int nnz)
 }
 
 Ma57Solver::Ma57Solver( const SparseSymMatrix * sgm, const std::string& name_ ) : mat_storage{sgm->getStorageHandle()},
-      n{mat_storage->n}, nnz{mat_storage->numberOfNonZeros()}, lkeep{ 7 * n + nnz + 2 * std::max(n, nnz) + 42 }, n_solvers{PIPSgetnOMPthreads()}, name(name_)
+      n{mat_storage->n}, nnz{mat_storage->numberOfNonZeros()}, lkeep{ 7 * n + nnz + 2 * std::max(n, nnz) + 42 }, n_threads{PIPSgetnOMPthreads()}, name(name_)
 {
-   if( n_solvers > 1 )
+   if( n_threads > 1 )
    {
-      info.resize(40 * n_solvers);
-      rinfo.resize(20 * n_solvers);
+      info.resize(40 * n_threads);
+      rinfo.resize(20 * n_threads);
    }
 
    init();
@@ -57,8 +57,8 @@ void Ma57Solver::init()
    icntl[15] = 1;
 
    /* in the solve stage each solver will need its own copy of icntl to switch between solve and iterative refinement */
-   icntl.resize( n_solvers * icntl.size() );
-   for( int i = 1; i < n_solvers; ++i )
+   icntl.resize( n_threads * icntl.size() );
+   for( int i = 1; i < n_threads; ++i )
       std::copy(icntl.begin(), icntl.begin() + 20, icntl.begin() + 20 * i);
 
    // only use if icntl[6] == 1 (default)
@@ -78,7 +78,7 @@ void Ma57Solver::firstCall()
   if( keep.empty() )
      keep.resize(lkeep);
 
-  iworkn.resize( std::max(5 * n, n_solvers * n * 4 ) );
+  iworkn.resize( std::max(5 * n, n_threads * n * 4 ) );
 
   FNAME(ma57ad)( &n, &nnz, irowM.data(), jcolM.data(), &lkeep, keep.data(), iworkn.data(), icntl.data(), info.data(), rinfo.data() );
   assert(info[0] >= 0);
@@ -89,7 +89,7 @@ void Ma57Solver::firstCall()
   lifact = static_cast<int>(ipessimism * info[9]);
   ifact.resize(lifact);
 
-  dworkn.resize( n_solvers * n * 4 );
+  dworkn.resize( n_threads * n * 4 );
 
 }
 
@@ -126,7 +126,7 @@ void Ma57Solver::matrixChanged()
 void Ma57Solver::solve( OoqpVector& rhs_in )
 {
    const int my_id = omp_get_thread_num();
-   assert( my_id < n_solvers );
+   assert( my_id < n_threads );
 
    assert( dworkn.size() >= static_cast<unsigned int>( (my_id + 1) * n * 4 ) );
    assert( iworkn.size() >= static_cast<unsigned int>( (my_id + 1) * n ) );
@@ -224,25 +224,21 @@ void Ma57Solver::solve(int solveType, OoqpVector& rhs_in)
    }
 }
 
+// rhs vectors are on the "rows", for continuous memory
 void Ma57Solver::solve(GenMatrix& rhs_in)
 {
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+
   int N, NRHS;
-
-  // rhs vectors are on the "rows", for continuous memory
   rhs.getSize( NRHS, N );
-  assert( n == N );
 
-  /* the multiple rhs (macd) option in MA57 does not allow for iterative refinement */
-  for (int i = 0; i < NRHS; i++)
-  {
-     SimpleVector v(rhs[i],N);
-     solve(v);
-  }
+  assert( n == N );
+  solve( NRHS, rhs.elements(), nullptr);
 }
 
 void Ma57Solver::solve( int nrhss, double* rhss, int* )
 {
+   #pragma omp parallel for schedule(static, 1) num_threads(n_threads)
    /* the multiple rhs (macd) option in MA57 does not allow for iterative refinement */
    for (int i = 0; i < nrhss; i++)
    {
@@ -250,7 +246,6 @@ void Ma57Solver::solve( int nrhss, double* rhss, int* )
       solve(v);
    }
 }
-
 
 bool Ma57Solver::checkErrorsAndReact()
 {

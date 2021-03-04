@@ -58,30 +58,6 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
 #endif
 
-  if( computeBlockwiseSC )
-  {
-     const int n_omp_threads = PIPSgetnOMPthreads();
-     const int n_threads_for_pardiso = 2;
-     if( pips_options::getIntParameter("LINEAR_LEAF_SOLVER") == SolverType::SOLVER_PARDISO )
-     {
-        n_solvers = std::max( 1, n_omp_threads / n_threads_for_pardiso );
-        n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
-     }
-     else
-     {
-        n_solvers = n_omp_threads;
-        n_threads_solvers = 1;
-     }
-
-     static bool printed = false;
-     if( PIPS_MPIgetRank() == 0 && !printed )
-     {
-        printed = true;
-        std::cout << "Using " << n_solvers << " solvers in parallel (with "
-           << n_threads_solvers << " threads each) for leaf SC computation - sLinsysLeaf\n";
-     }
-  }
-
   kkt.reset(kkt_sp);
   solver.reset( factory_->newLeafSolver( kkt_sp ) );
 

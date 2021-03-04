@@ -27,7 +27,7 @@
 
 #include "sLinsysRoot.h"
 #include "pipsport.h"
-
+#include <memory>
 
 class sData;
 /** 
@@ -60,8 +60,6 @@ class sLinsysRootAug : public sLinsysRoot {
 
  protected:
   SymMatrix* createKKT (sData* prob) const;
-  void createReducedRhss();
-  void setNSolversNThreads( SolverType solver );
   void createSolversSparse( SolverType solver );
   void createSolversDense();
 
@@ -89,8 +87,8 @@ class sLinsysRootAug : public sLinsysRoot {
 
   SymMatrix* CtDC{};
 
-  std::vector<std::unique_ptr<SimpleVector>> reduced_rhss_blocked;
-  SimpleVector* redRhs;
+  std::vector<double> reduced_rhss_blocked;
+  std::unique_ptr<SimpleVector> redRhs;
 };
 
 #endif

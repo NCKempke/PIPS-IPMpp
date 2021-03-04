@@ -47,12 +47,9 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
 
    assert(locmyl >= 0 && locmzl >= 0);
 
-   n_solvers = 1;
-   n_threads_solvers = PIPSgetnOMPthreads();
-
    createSolversAndKKts(data);
 
-   createReducedRhss();
+   redRhs.reset( new SimpleVector(locnx + locmy + locmz + locmyl + locmzl) );
 }
 
 sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
@@ -69,10 +66,9 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
 
 
    if( create_solvers )
-   {
       createSolversAndKKts(data);
-      createReducedRhss();
-   }
+
+   redRhs.reset( new SimpleVector(locnx + locmy + locmz + locmyl + locmzl) );
 }
 
 sLinsysRootAug::~sLinsysRootAug()
@@ -100,40 +96,6 @@ SymMatrix* sLinsysRootAug::createKKT(sData* prob) const
    {
       return new DenseSymMatrix(n);
    }
-}
-
-void sLinsysRootAug::createReducedRhss()
-{
-   assert( n_solvers >= 1);
-
-   reduced_rhss_blocked.resize(n_solvers);
-
-   #pragma omp parallel num_threads(n_solvers)
-   {
-      const int id = omp_get_thread_num();
-
-      reduced_rhss_blocked[id].reset( new SimpleVector(locnx + locmy + locmz + locmyl + locmzl) );
-      reduced_rhss_blocked[id]->setToZero();
-   }
-
-   redRhs = reduced_rhss_blocked[0].get();
-}
-
-void sLinsysRootAug::setNSolversNThreads(SolverType solver)
-{
-   const int n_omp_threads = PIPSgetnOMPthreads();
-
-   if( solver == SolverType::SOLVER_PARDISO )
-   {
-      n_solvers = std::max( 1, n_omp_threads / 2 );
-      n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
-   }
-   else
-   {
-      n_solvers = n_omp_threads;
-      n_threads_solvers = 1;
-   }
-   assert( n_solvers >= 1 );
 }
 
 void sLinsysRootAug::createSolversSparse(SolverType solver_type)
@@ -175,8 +137,6 @@ void sLinsysRootAug::createSolversSparse(SolverType solver_type)
 
 void sLinsysRootAug::createSolversDense()
 {
-   assert( n_solvers == 1 );
-
    const SolverTypeDense solver_type = pips_options::getSolverDense();
    DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
@@ -194,13 +154,10 @@ void sLinsysRootAug::createSolversDense()
 void sLinsysRootAug::createSolversAndKKts(sData* prob)
 {
    const SolverType solver_root = pips_options::getSolverRoot();
-   setNSolversNThreads(solver_root);
 
    static bool printed = false;
    if( !printed && PIPS_MPIgetRank() == 0 )
    {
-      std::cout << "sLinsysRootAug: using " << n_solvers << " solvers in parallel (with "
-            << n_threads_solvers << " threads each) for root SC computations\n";
       if( hasSparseKkt )
          std::cout << "sLinsysRootAug: using " << solver_root << "\n";
       else
@@ -600,82 +557,6 @@ void sLinsysRootAug::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMa
 }
 
 extern int gLackOfAccuracy;
-//void sLinsysRootAug::solveReduced( sData *prob, SimpleVector& b)
-//{
-//  int myRank; MPI_Comm_rank(mpiComm, &myRank);
-//  assert( false && "old method never used");
-//#ifdef TIMING
-//  t_start=MPI_Wtime();
-//  troot_total=tchild_total=tcomm_total=0.0;
-//#endif
-//
-//  assert(locnx+locmy+locmz == b.length());
-//  SimpleVector& r = (*redRhs);
-//  assert(r.length() <= b.length());
-//  SparseGenMatrix& C = prob->getLocalD();
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // LOCAL SOLVE
-//  ///////////////////////////////////////////////////////////////////////
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // b=[b1;b2;b3] is a locnx+locmy+locmz vector
-//  // the new rhs should be
-//  //           r = [b1-C^T*(zDiag)^{-1}*b3; b2]
-//  ///////////////////////////////////////////////////////////////////////
-//
-//  r.copyFromArray(b.elements()); //will copy only as many elems as r has
-//
-//  // aliases to parts (no mem allocations)
-//  SimpleVector r3(&r[locnx+locmy], locmz); //r3 is used as a temp
-//                                           //buffer for b3
-//  SimpleVector r2(&r[locnx],       locmy);
-//  SimpleVector r1(&r[0],           locnx);
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // compute r1 = b1 - C^T*(zDiag)^{-1}*b3
-//  ///////////////////////////////////////////////////////////////////////
-//  if(locmz>0) {
-//    assert(r3.length() == zDiag->length());
-//    r3.componentDiv(*zDiag);//r3 is a copy of b3
-//    C.transMult(1.0, r1, -1.0, r3);
-//  }
-//  ///////////////////////////////////////////////////////////////////////
-//  // r contains all the stuff -> solve for it
-//  ///////////////////////////////////////////////////////////////////////
-//  if( innerSCSolve == 0 ) {
-//    // Option 1. - solve with the factors
-//    solver->Dsolve(r);
-//  } else if( innerSCSolve == 1 ) {
-//    // Option 2 - solve with the factors and perform iter. ref.
-//    solveWithIterRef(prob, r);
-//  } else {
-//    assert( innerSCSolve == 2 );
-//    // Option 3 - use the factors as preconditioner and apply BiCGStab
-//    solveWithBiCGStab(prob, r);
-//  }
-//
-//  ///////////////////////////////////////////////////////////////////////
-//  // r is the sln to the reduced system
-//  // the sln to the aug system should be
-//  //      x = [r1; r2;  (zDiag)^{-1} * (b3-C*r1);
-//  ///////////////////////////////////////////////////////////////////////
-//  SimpleVector b1(&b[0],           locnx);
-//  SimpleVector b2(&b[locnx],       locmy);
-//  SimpleVector b3(&b[locnx+locmy], locmz);
-//  b1.copyFrom(r1);
-//  b2.copyFrom(r2);
-//
-//  if(locmz>0) {
-//    C.mult(1.0, b3, -1.0, r1);
-//    b3.componentDiv(*zDiag);
-//  }
-//#ifdef TIMING
-//  if( myRank == 0 && innerSCSolve >= 1 )
-//    cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
-//	 << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << endl;
-//#endif
-//}
 
 void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
 {
@@ -787,27 +668,26 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
    troot_total = tchild_total = tcomm_total = 0.0;
 #endif
 
-   assert( n_solvers >= 1 );
    int m, length_rhs; rhs_mat_transp.getSize( m, length_rhs);
 
-   assert(locmyl >= 0 && locmzl >= 0);
-   assert(locnx + locmy + locmz + locmyl + locmzl == length_rhs);
+   assert( locmyl >= 0 && locmzl >= 0 );
+   assert( locnx + locmy + locmz + locmyl + locmzl == length_rhs );
+
+   const int length_reduced = locnx + locmy + locmyl + locmzl;
+   if( reduced_rhss_blocked.size() <= static_cast<unsigned int>(n_rhs * length_reduced) )
+      reduced_rhss_blocked.resize(n_rhs * length_reduced);
 
    ///////////////////////////////////////////////////////////////////////
    // LOCAL SOLVE WITH SCHUR COMPLEMENT and set of buffer rhs
    ///////////////////////////////////////////////////////////////////////
    SparseGenMatrix &C = data->getLocalD();
 
-   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_solvers)
+   #pragma omp parallel for schedule(dynamic, 1)
    for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
    {
-      omp_set_num_threads(n_threads_solvers);
-      const int id = omp_get_thread_num();
       assert( rhs_i < m );
 
-
-      double *rhs_reduced = reduced_rhss_blocked[id]->elements();
-      assert( reduced_rhss_blocked[id]->length() >= length_rhs );
+      double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
       SimpleVector b_vec( rhs_mat_transp[rhs_i], length_rhs );
       double *b = b_vec.elements();
@@ -817,17 +697,19 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       // the new rhs should be
       //           r = [b1-C^T*(zDiag)^{-1}*b3; b2; b4; b5]
       ///////////////////////////////////////////////////////////////////////
+
       //copy all elements from b into r except for the the residual values corresponding to z0 = b3
       // copy b1, b2
       std::copy(b, b + locnx + locmy, rhs_reduced);
+
       // copy b4, b5
       std::copy(b + locnx + locmy + locmz, b + locnx + locmy + locmz + locmyl + locmzl, rhs_reduced + locnx + locmy);
-      // copy b3 to the end - used as buffer for reduction computations
-      std::copy(b + locnx + locmy, b + locnx + locmy + locmz, rhs_reduced + locnx + locmy + locmyl + locmzl);
-      // rhs_reduced now : [ b1; b2; b4; b5; b3]
+
+      // rhs_reduced now : [ b1; b2; b4; b5 ]
+
       // alias to r1 part (no mem allocations)
       SimpleVector rhs1(rhs_reduced, locnx);
-      SimpleVector b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
+      SimpleVector b3(b + locnx + locmy, locmz);
 
       ///////////////////////////////////////////////////////////////////////
       // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
@@ -835,45 +717,38 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       // if we have C part
       if( locmz > 0 )
       {
+         assert( zDiag );
          assert(b3.length() == zDiag->length());
-         b3.componentDiv(*zDiag);
-         C.transMult(1.0, rhs1, -1.0, b3);
+         C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
       }
+   }
 
-      ///////////////////////////////////////////////////////////////////////
-      // rhs_reduced now contains all components -> solve for it
-      ///////////////////////////////////////////////////////////////////////
 
-      // we do not need the last locmz elements of r since they were buffer only
-      SimpleVector rhs_short(rhs_reduced, locnx + locmy + locmyl + locmzl);
+   ///////////////////////////////////////////////////////////////////////
+   // reduced_rhss_blocked now contains all reduced rhs -> solve for it
+   ///////////////////////////////////////////////////////////////////////
+   if( innerSCSolve == 0 )
+      solver->solve(n_rhs, reduced_rhss_blocked.data(), nullptr);
+   else
+      assert( false && "bicg and iterref not available for blocked solution");
 
-      if( innerSCSolve == 0 )
-      {
-         // Option 1. - solve with the factors
-         solver->Dsolve(rhs_short);
-      }
-      else if( innerSCSolve == 1 )
-      {
-         PIPS_MPIabortIf( true, "innserSCSolve 1 not supported for parallel SC computations .. TODO");
-         // Option 2 - solve with the factors and perform iter. ref.
-         solveWithIterRef(data, rhs_short);
-      }
-      else
-      {
-         PIPS_MPIabortIf( true, "innserSCSolve 2 not supported for parallel SC computations .. TODO");
-         assert(innerSCSolve == 2);
-         // Option 3 - use the factors as preconditioner and apply BiCGStab
-         solveWithBiCGStab(data, rhs_short);
-      }
+   ///////////////////////////////////////////////////////////////////////
+   // rhs_small is now the solution to the reduced system
+   // the solution to the augmented system can now be computed as
+   //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
+   ///////////////////////////////////////////////////////////////////////
 
-      ///////////////////////////////////////////////////////////////////////
-      // rhs_small is now the solution to the reduced system
-      // the solution to the augmented system can now be computed as
-      //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
-      ///////////////////////////////////////////////////////////////////////
 
-      // copy the solution components and calculate r3
-      // copy rhs1 and rhs2
+   // copy the solution components and calculate r3
+   // copy rhs1 and rhs2
+   #pragma omp parallel for schedule(dynamic, 1)
+   for( int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i )
+   {
+      double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
+
+      SimpleVector b_vec( rhs_mat_transp[rhs_i], length_rhs );
+      double *b = b_vec.elements();
+
       std::copy(rhs_reduced, rhs_reduced + locnx + locmy, b);
       // compute x3
       if( locmz > 0 )
@@ -885,9 +760,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       }
 
       // copy rhs3 and rhs4
-      std::copy(rhs_reduced + locnx + locmy,
-            rhs_reduced + locnx + locmy + locmyl + locmzl,
-            b + locnx + locmy + locmz);
+      std::copy(rhs_reduced + locnx + locmy, rhs_reduced + locnx + locmy + locmyl + locmzl, b + locnx + locmy + locmz);
    }
 #ifdef TIMING
    // TODO
@@ -895,7 +768,6 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
     std::cout << "Root - Refin times: child=" << tchild_total << " root=" << troot_total
        << " comm=" << tcomm_total << " total=" << MPI_Wtime()-t_start << "\n";
 #endif
-
 }
 
 
@@ -2041,24 +1913,20 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
    const int rhs_start = my_rank < leftover ? (n_blockrhs + 1) * my_rank :
          (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
 
-   #pragma omp parallel for schedule(dynamic, 1)
-   for( int rhs_i = 0; rhs_i < rhs_start; ++rhs_i )
-   {
-      SimpleVector b( rhs_mat_transp[rhs_i], n );
-      b.setToZero();
-   }
-
    assert( rhs_start <= m );
    assert( rhs_start + n_rhs <= m );
 
-   solveReducedLinkConsBlocked( data, rhs_mat_transp, rhs_start, n_rhs );
-
+   // set rhs contributed by other procs to zero
    #pragma omp parallel for schedule(dynamic, 1)
-   for( int rhs_i = rhs_start + n_rhs; rhs_i < m; ++rhs_i )
+   for( int rhs_i = 0; rhs_i < m; ++rhs_i )
    {
+      if( rhs_start <= rhs_i && rhs_i < rhs_start + n_rhs )
+         continue;
       SimpleVector b( rhs_mat_transp[rhs_i], n );
       b.setToZero();
    }
+
+   solveReducedLinkConsBlocked( data, rhs_mat_transp, rhs_start, n_rhs );
 
    if( iAmDistrib )
    {

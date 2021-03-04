@@ -95,7 +95,7 @@ public:
   { return mStorage->M[index]; }
 
   /** Return a pointer to the first element in the matrix */
-  double * elements() { return mStorage->M[0]; };
+  double* elements() { return mStorage->M[0]; };
   /** Return mMat, an    */
   double **Mat() { return mStorage->M; };
 

@@ -123,7 +123,7 @@ class sLinsys : public QpGenLinsys
 		   bool create_iter_ref_vecs
   );
 
-  ~sLinsys() override;
+  ~sLinsys() override = default;
 
   void factor (Data *prob, Variables *vars) override;
 
@@ -157,16 +157,14 @@ class sLinsys : public QpGenLinsys
   /* members for blockwise schur complement computation */
   bool computeBlockwiseSC{false};
 
+  /* batches right hand sides are being processed int */
   int blocksizemax{0};
-  double* colsBlockDense{};
-  int* colId{};
-  int* colSparsity{};
+  std::vector<double> colsBlockDense;
+  std::vector<int> colId;
+  std::vector<int> colSparsity;
 
   /* is this linsys the overall root */
   const bool is_hierarchy_root{false};
-
-  int n_solvers{-1};
-  int n_threads_solvers{-1};
 
   std::unique_ptr<SymMatrix> kkt{};
   std::unique_ptr<DoubleLinearSolver> solver{};

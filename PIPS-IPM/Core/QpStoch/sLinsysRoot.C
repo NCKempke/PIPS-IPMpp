@@ -1584,7 +1584,6 @@ void sLinsysRoot::factorizeKKT(sData* prob)
 
   if( usePrecondDist )
   {
-     assert( n_solvers == 1 );
      const int myRank = PIPS_MPIgetRank(mpiComm);
 
      assert(kktDist);

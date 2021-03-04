@@ -99,6 +99,9 @@ public:
   virtual void transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const;
   virtual void transMult( double beta,  double y_in[], int incy, double alpha, const double x_in[], int incx ) const;
 
+  /** y = beta * y + this^T diag(d)^-1 x */
+  virtual void transMultD( double beta, OoqpVector& y, double alpha, const OoqpVector& x, const OoqpVector& d ) const ;
+
   /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
   void matTransDMultMat(OoqpVector& d, SymMatrix** res) override;
   /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */

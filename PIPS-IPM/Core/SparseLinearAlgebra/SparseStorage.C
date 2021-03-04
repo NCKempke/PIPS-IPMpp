@@ -884,22 +884,43 @@ void SparseStorage::multSym( double beta, double y[], int incy, double alpha, co
 void SparseStorage::transMult( double beta,  double y[], int incy,
 			       double alpha, const double x[], int incx ) const
 {
-  int i, j, k;
-  if(beta!=1.0) {
-    for( j = 0; j < n; j++ ) {
-      y[j * incy] *= beta;
-    }
-  }
-  for( i = 0; i < m; i++ ) {
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      j = jcolM[k];
-#ifndef NDEBUG
-      assert(j < n);
-#endif
-      y[j * incy] += alpha * M[k] * x[i * incx];
-    }
-  }
+   if( beta != 1.0 )
+      for(int j = 0; j < n; j++ )
+         y[j * incy] *= beta;
+
+   for(int i = 0; i < m; i++ )
+   {
+      for(int  k = krowM[i]; k < krowM[i+1]; k++ )
+      {
+         const int j = jcolM[k];
+
+         assert(j < n);
+
+         y[j * incy] += alpha * M[k] * x[i * incx];
+      }
+   }
 }
+
+void SparseStorage::transMultD( double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd ) const
+{
+   if( beta != 1.0 )
+      for(int j = 0; j < n; j++ )
+         y[j * incy] *= beta;
+
+   for(int i = 0; i < m; i++ )
+   {
+      for(int  k = krowM[i]; k < krowM[i+1]; k++ )
+      {
+         const int j = jcolM[k];
+
+         assert(j < n);
+         assert( !PIPSisZero(d[i * incxd]) );
+
+         y[j * incy] += alpha * M[k] * x[i * incxd] / d[i * incxd];
+      }
+   }
+}
+
 
 /* Y <- alpha* M^T X + beta*Y
  * Computes only the elements in Y that are lower triangular

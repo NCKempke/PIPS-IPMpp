@@ -26,8 +26,8 @@ include_directories(SYSTEM ${MPI_CXX_INCLUDE_DIRS})
  
 ### TODO : introduce Wextra/pedantic -Wconversion -Wno-zero-as-null-pointer-const maybe
 #add_compile_options( -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual )
-set(c_flags -Wall -Wno-long-long -fPIC)
-set(cxx_flags -Wall -Wno-long-long -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
+set(c_flags -Wall -g -Wno-long-long -fPIC)
+set(cxx_flags -Wall -g -Wno-long-long -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:C>:${c_flags}>"
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"

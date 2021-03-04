@@ -9,11 +9,6 @@
 #include "OoqpVector.h"
 #include "SimpleVector.h"
 
-extern "C" void dsyr_( char * uplo, int * n,
-		       double * alpha, double * x,
-		       int * incx, double * a,
-		       int * lda );
-
 int DenseStorageInstances = 0;
 
 void DenseStorage::fromGetDiagonal( int idiag, OoqpVector& vec )

@@ -262,16 +262,16 @@ void SimpleVectorBase<T>::setToConstant( T c)
 template<>
 void SimpleVectorBase<double>::randomize( double alpha, double beta, double *ix )
 {
-  assert( beta > alpha);
+   if( this->n == 0 )
+      return;
+   assert( beta > alpha);
 
-  double drand(double *);
-  double scale = beta - alpha;
-  double shift = alpha/scale;
+   double drand(double *);
+   double scale = beta - alpha;
+   double shift = alpha/scale;
 
-  int i;
-  for( i = 0; i < this->n; i++ ) {
-    v[i] = scale * (drand(ix) + shift);
-  }
+   for( int i = 0; i < this->n; i++ )
+      v[i] = scale * (drand(ix) + shift);
 }
 
 template<typename T>
@@ -296,6 +296,10 @@ void SimpleVectorBase<T>::copyFromAbs(const OoqpVectorBase<T>& vec )
 template<typename T>
 T SimpleVectorBase<T>::infnorm() const
 {
+
+  if( this->n == 0 )
+     return -std::numeric_limits<T>::max();
+
   T temp, norm = 0;
   int i;
   for( i = 0; i < this->n; i++ ) {
@@ -305,6 +309,16 @@ T SimpleVectorBase<T>::infnorm() const
   }
 
   return norm;
+}
+
+template<>
+double SimpleVectorBase<double>::infnorm() const
+{
+   if( this->n == 0 )
+      return -std::numeric_limits<double>::max();
+
+  const int one = 1;
+  return std::fabs(v[idamax_( &this->n, v, &one ) - 1]);
 }
 
 template<typename T>
@@ -503,8 +517,11 @@ void SimpleVectorBase<T>::writeMPSformatBoundsWithVar(std::ostream& out, const s
 template<>
 void SimpleVectorBase<double>::scale( double alpha )
 {
-  int one = 1;
-  dscal_( &this->n, &alpha, v, &one );
+   if( this->n == 0 )
+      return;
+
+   const int one = 1;
+   dscal_( &this->n, &alpha, v, &one );
 }
 
 // generic implementation without boost 
@@ -518,11 +535,13 @@ void SimpleVectorBase<T>::scale( T )
 template<>
 void SimpleVectorBase<double>::axpy( double alpha, const OoqpVectorBase<double>& vec )
 {
-  assert( this->n == vec.length() );
-  const SimpleVectorBase<double> & sv = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+   assert( this->n == vec.length() );
+   if( this->n == 0 )
+      return;
 
-  int one = 1;
-  daxpy_( &this->n, &alpha, sv.v, &one, v, &one );
+   const SimpleVectorBase<double> & sv = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+   const int one = 1;
+   daxpy_( &this->n, &alpha, sv.v, &one, v, &one );
 }
 
 template<typename T>
@@ -649,11 +668,14 @@ void SimpleVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& xvec,
 template<>
 double SimpleVectorBase<double>::dotProductWith( const OoqpVectorBase<double>& vec ) const
 {
-  assert( this->n == vec.length() );
-  const SimpleVectorBase<double> & svec = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+   assert( this->n == vec.length() );
+   if( this->n == 0 )
+      return 0.0;
 
-  const int incx = 1;
-  return ddot_( &this->n, v, &incx, svec.v, &incx );
+   const SimpleVectorBase<double> & svec = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+
+   const int incx = 1;
+   return ddot_( &this->n, v, &incx, svec.v, &incx );
 }
 
 template<typename T>

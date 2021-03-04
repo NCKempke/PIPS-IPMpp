@@ -110,6 +110,7 @@ public:
 
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
+  virtual void transMultD( double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd ) const;
 
   void atPutDiagonal( int idiag, OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
