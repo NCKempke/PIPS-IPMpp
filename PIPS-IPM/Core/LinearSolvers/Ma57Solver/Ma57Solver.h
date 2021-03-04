@@ -99,6 +99,10 @@ protected:
    /** nonzero element of the factors */
    std::vector<double> fact;
 
+   /** vectors for solve */
+   std::vector<double> x;
+   std::vector<double> resid;
+
    /** dimension of the whole matrix */
    const int n;
 

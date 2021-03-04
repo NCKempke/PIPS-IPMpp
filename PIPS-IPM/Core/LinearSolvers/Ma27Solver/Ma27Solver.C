@@ -19,6 +19,12 @@ Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_ ) :
       mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n}, nnz{mat_storage->numberOfNonZeros()},
       n_threads{PIPSgetnOMPthreads()}, name( name_ )//, scaler( new Mc30Scaler() )
 {
+   assert( n_threads >= 1 );
+
+   iter.resize( n * n_threads );
+   iter_best.resize( n * n_threads );
+   resid.resize( n * n_threads );
+
    if( n_threads > 1 )
       info.resize(20 * n_threads);
    init();
@@ -165,16 +171,18 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 //   for( int i = 0; i < rhs.length(); ++i )
 //      if( std::fabs(rhs[i]) < 1e-15 )
 //         rhs[i] = 0.0;
+   const int my_id = omp_get_thread_num();
 
    // define structures to save rhs and store residuals
-   SimpleVectorHandle iter(new SimpleVector(n));
-   iter->setToZero();
+   SimpleVector iter_loc = SimpleVector(iter.data() + my_id * n , n);
+   iter_loc.setToZero();
+   SimpleVector best_iter_loc = SimpleVector(iter_best.data() + my_id * n , n);
+   best_iter_loc.setToZero();
+   SimpleVector residual_loc = SimpleVector(resid.data() + my_id * n, n);
+   residual_loc.copyFrom( rhs );
 
-   SimpleVectorHandle best_iter(new SimpleVector(n));
    double best_resid = std::numeric_limits<double>::infinity();
 
-   SimpleVectorHandle residual(new SimpleVector(n));
-   residual->copyFrom( rhs );
 
    const double rhsnorm = rhs.twonorm();
 
@@ -184,7 +192,6 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
    double rnorm = -1.0;
    double res_last = -1.0;
 
-   const int my_id = omp_get_thread_num();
    assert( my_id < n_threads );
 
    double* ww_loc = ww + my_id * maxfrt;
@@ -197,26 +204,25 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       assert( maxfrt > 0 );
       assert( nsteps > 0 );
       assert( ww );
-      assert( residual->elements() );
       assert( iw1_loc );
 
       /* solve DAD y = D*residual */
       if( scaler )
-         scaler->scaleVector(*residual);
-      FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, ww_loc, &maxfrt, residual->elements(), iw1_loc,
+         scaler->scaleVector(residual_loc);
+      FNAME(ma27cd)(&n, fact.data(), &la, iw, &liw, ww_loc, &maxfrt, residual_loc.elements(), iw1_loc,
             &nsteps, icntl.data(), info_loc);
       /* Dy = x */
       if( scaler )
-         scaler->scaleVector(*residual);
+         scaler->scaleVector(residual_loc);
 
-      iter->axpy(1.0, *residual);
+      iter_loc.axpy(1.0, residual_loc);
 
-      residual->copyFrom(rhs);
+      residual_loc.copyFrom(rhs);
       /* calculate residual and possibly new rhs */
-      mat_storage->multSym(1.0, residual->elements(), 1, -1.0, iter->elements(), 1);
+      mat_storage->multSym(1.0, residual_loc.elements(), 1, -1.0, iter_loc.elements(), 1);
 
       /* res = res - A * drhs where A * drhs_out = drhs_in */
-      rnorm = residual->twonorm();
+      rnorm = residual_loc.twonorm();
 
       if( PIPSisEQ(rnorm, res_last, 1e-7) || rnorm > 100 * best_resid )
          done = true;
@@ -226,7 +232,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
       if( rnorm < best_resid )
       {
          best_resid = rnorm;
-         best_iter->copyFrom(*iter);
+         best_iter_loc.copyFrom(iter_loc);
       }
 
       if( rnorm < precision * ( 1.0 + rhsnorm ) )
@@ -313,7 +319,7 @@ void Ma27Solver::solve( OoqpVector& rhs_in )
 //      assert(false);
    }
 
-   rhs.copyFrom(*best_iter);
+   rhs.copyFrom(best_iter_loc);
 
 #ifndef NDEBUG
    auto pos = std::find_if( rhs.elements(), rhs.elements() + rhs.length(), []( double el ) { return std::fabs(el) > 1e50; });

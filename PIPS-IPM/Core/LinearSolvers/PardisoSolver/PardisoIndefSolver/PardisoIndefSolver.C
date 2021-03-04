@@ -54,7 +54,7 @@ bool PardisoIndefSolver::iparmUnchanged()
       { 7, 10, 12, 23, 24 };
 
    bool unchanged = true;
-   bool print = false;
+   bool print = true;
 
    int iparm_compare[64];
    getIparm(iparm_compare);

@@ -30,6 +30,9 @@ void dumpdata(int* irow, int* jcol, double* M, int, int nnz)
 Ma57Solver::Ma57Solver( const SparseSymMatrix * sgm, const std::string& name_ ) : mat_storage{sgm->getStorageHandle()},
       n{mat_storage->n}, nnz{mat_storage->numberOfNonZeros()}, lkeep{ 7 * n + nnz + 2 * std::max(n, nnz) + 42 }, n_threads{PIPSgetnOMPthreads()}, name(name_)
 {
+   assert( n_threads >= 1 );
+   x.resize(n * n_threads);
+   resid.resize(n * n_threads);
    if( n_threads > 1 )
    {
       info.resize(40 * n_threads);
@@ -133,12 +136,19 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
    assert( icntl.size() >= static_cast<unsigned int>( (my_id + 1 ) * 20 ) );
    assert( info.size() >= static_cast<unsigned int>( (my_id + 1) *  40 ) );
    assert( rinfo.size() >= static_cast<unsigned int>( (my_id + 1) *  20 ) );
+   assert( x.size() >= static_cast<unsigned int>( (my_id + 1) *  n ) );
+   assert( resid.size() >= static_cast<unsigned int>( (my_id + 1) *  n ) );
 
    double* dworkn_loc = dworkn.data() + my_id * n * 4;
    int* iworkn_loc = iworkn.data() + my_id * n;
    int* icntl_loc = icntl.data() + my_id * 20;
    int* info_loc = info.data() + my_id * 40;
    double* rinfo_loc = rinfo.data() + my_id * 20;
+
+   SimpleVector x_loc( x.data() + my_id * n, n );
+   SimpleVector resid_loc( resid.data() + my_id * n, n );
+
+	SimpleVector& rhs = dynamic_cast<SimpleVector &>(rhs_in);
 
    /* job 1 : perform one step of iterative refinement */
 	int job = 0;
@@ -148,11 +158,6 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
    else
       icntl_loc[8] = n_iterative_refinement; // Iterative refinement
 
-	// TODO make members..
-	SimpleVectorHandle x( new SimpleVector(n) );
-	SimpleVectorHandle resid( new SimpleVector(n) );
-	SimpleVector& rhs = dynamic_cast<SimpleVector &>(rhs_in);
-
 	const double rhsnorm = rhs.infnorm();
 
 	bool done = false;
@@ -160,11 +165,11 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
 	while( !done )
 	{
       FNAME(ma57dd)(&job, &n, &nnz, mat_storage->M, irowM.data(), jcolM.data(), fact.data(), &lfact, ifact.data(),
-            &lifact, rhs.elements(), x->elements(), resid->elements(), dworkn_loc, iworkn_loc, icntl_loc, cntl.data(), info_loc, rinfo_loc );
+            &lifact, rhs.elements(), x_loc.elements(), resid_loc.elements(), dworkn_loc, iworkn_loc, icntl_loc, cntl.data(), info_loc, rinfo_loc );
 
       done = checkErrorsAndReact();
 
-      if( resid->infnorm() < precision * ( 1 + rhsnorm ) )
+      if( resid_loc.infnorm() < precision * ( 1 + rhsnorm ) )
          done = true;
       else
       {
@@ -199,7 +204,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
       }
 	}
 
-	rhs.copyFrom( *x );
+	rhs.copyFrom( x_loc );
 }
 
 void Ma57Solver::solve(int solveType, OoqpVector& rhs_in)

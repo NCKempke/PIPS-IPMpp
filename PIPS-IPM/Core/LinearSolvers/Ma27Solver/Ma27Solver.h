@@ -103,6 +103,11 @@ protected:
   /** nonzero element of the factors */
   std::vector<double> fact;
 
+  /** vectors for iterative refinement */
+  std::vector<double> iter;
+  std::vector<double> iter_best;
+  std::vector<double> resid;
+
   /** dimension of the whole matrix */
   const int n;
 
