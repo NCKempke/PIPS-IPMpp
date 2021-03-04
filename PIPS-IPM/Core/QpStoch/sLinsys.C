@@ -1074,7 +1074,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
       double* colsBlockDense_loc = BT[ i * blocksizemax ];
 
-      solvers_blocked[id]->solve(actual_blocksize, colsBlockDense_loc, nullptr);
+      solver->solve(actual_blocksize, colsBlockDense_loc, nullptr);
 
       addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId_loc, nB, actual_blocksize, sparse_res, sym_res, result);
    }
@@ -1221,7 +1221,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          border_right.A.fromGetColsBlock(colId_loc, nrhs, length_col, mR_r, colsBlockDense_loc, colSparsity_loc);
          border_right.C.fromGetColsBlock(colId_loc, nrhs, length_col, (mR_r + mA_r), colsBlockDense_loc, colSparsity_loc);
 
-         solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
+         solver->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
          addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId_loc, length_col, nrhs, sparse_res, sym_res, result);
       }
@@ -1275,7 +1275,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          // get column block from Ft (i.e., row block from F)
          border_right.F.fromGetColsBlock(colId_loc, nrhs, length_col, 0, colsBlockDense_loc, colSparsity_loc);
 
-         solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
+         solver->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
          for( int j = 0; j < nrhs; ++j )
             colId_loc[j] += n_res_tp - nF_right - nG_right;
@@ -1325,7 +1325,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
          border_right.G.fromGetColsBlock(colId_loc, nrhs, length_col, 0, colsBlockDense_loc, colSparsity_loc);
 
-         solvers_blocked[id]->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
+         solver->solve(nrhs, colsBlockDense_loc, colSparsity_loc);
 
          for( int j = 0; j < nrhs; ++j )
             colId_loc[j] += n_res_tp - nG_right;

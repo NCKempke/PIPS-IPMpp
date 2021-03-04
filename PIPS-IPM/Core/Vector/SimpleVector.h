@@ -26,7 +26,7 @@ protected:
   int preserveVec;
   T * v;
 public:
-  SimpleVectorBase( int nx = 0 );
+  explicit SimpleVectorBase( int nx = 0 );
   SimpleVectorBase( T * v, int nx );
   SimpleVectorBase( const SimpleVectorBase<T>& other );
   //@{

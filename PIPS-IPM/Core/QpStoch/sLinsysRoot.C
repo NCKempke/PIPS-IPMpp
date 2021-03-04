@@ -1624,18 +1624,7 @@ void sLinsysRoot::factorizeKKT(sData* prob)
   }
   else
   {
-     if( hasSparseKkt )
-     {
-       #pragma omp parallel num_threads(n_solvers)
-       {
-         omp_set_num_threads(n_threads_solvers);
-
-         const int id = omp_get_thread_num();
-         solvers_blocked[id]->matrixChanged();
-       }
-     }
-     else
-        solver->matrixChanged();
+     solver->matrixChanged();
   }
 
   //stochNode->resMon.recFactTmLocal_stop(); 

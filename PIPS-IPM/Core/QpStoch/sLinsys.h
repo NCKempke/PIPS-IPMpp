@@ -167,10 +167,9 @@ class sLinsys : public QpGenLinsys
 
   int n_solvers{-1};
   int n_threads_solvers{-1};
-  std::vector<std::unique_ptr<DoubleLinearSolver>> solvers_blocked{1};
 
   std::unique_ptr<SymMatrix> kkt{};
-  DoubleLinearSolver* solver{};
+  std::unique_ptr<DoubleLinearSolver> solver{};
 
  public:
   MPI_Comm mpiComm{MPI_COMM_NULL};

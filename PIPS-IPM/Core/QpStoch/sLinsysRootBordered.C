@@ -24,8 +24,7 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
 
    kkt.reset(createKKT(prob_));
 
-   solvers_blocked[0].reset( createSolver(prob_, kkt.get()) );
-   solver = solvers_blocked[0].get();
+   solver.reset( createSolver(prob_, kkt.get()) );
 }
 
 void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)

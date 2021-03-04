@@ -13,29 +13,6 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
        )
   : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_, false)
 {
-   static bool printed = false;
-   const int n_omp_threads = PIPSgetnOMPthreads();
-   if( pips_options::getIntParameter("LINEAR_LEAF_SOLVER") == SolverType::SOLVER_PARDISO )
-   {
-      n_solvers = std::max( 1, n_omp_threads / 2 );
-      n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
-   }
-   else
-   {
-      n_solvers = n_omp_threads;
-      n_threads_solvers = 1;
-   }
-
-   if( computeBlockwiseSC )
-   {
-      if( PIPS_MPIgetRank() == 0 && !printed )
-      {
-         printed = true;
-         std::cout << "Using " << n_solvers << " solvers in parallel (with "
-            << n_threads_solvers << " threads each) for leaf SC computation - sLinsysLeaf\n";
-      }
-   }
-
 #ifdef TIMING
   const int myRank = PIPS_MPIgetRank(mpiComm);
   const double t0 = MPI_Wtime();
@@ -81,20 +58,32 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
 #endif
 
-  assert( n_solvers >= 1 );
-
-  solvers_blocked.resize(n_solvers);
-  kkt.reset(kkt_sp);
-
-  #pragma omp parallel num_threads(n_solvers)
+  if( computeBlockwiseSC )
   {
-     omp_set_num_threads(n_threads_solvers);
-     const int id = omp_get_thread_num();
+     const int n_omp_threads = PIPSgetnOMPthreads();
+     const int n_threads_for_pardiso = 2;
+     if( pips_options::getIntParameter("LINEAR_LEAF_SOLVER") == SolverType::SOLVER_PARDISO )
+     {
+        n_solvers = std::max( 1, n_omp_threads / n_threads_for_pardiso );
+        n_threads_solvers = ( n_omp_threads > 1 ) ? 2 : 1;
+     }
+     else
+     {
+        n_solvers = n_omp_threads;
+        n_threads_solvers = 1;
+     }
 
-     solvers_blocked[id].reset( factory_->newLeafSolver( kkt_sp ) );
+     static bool printed = false;
+     if( PIPS_MPIgetRank() == 0 && !printed )
+     {
+        printed = true;
+        std::cout << "Using " << n_solvers << " solvers in parallel (with "
+           << n_threads_solvers << " threads each) for leaf SC computation - sLinsysLeaf\n";
+     }
   }
 
-  solver = solvers_blocked[0].get();
+  kkt.reset(kkt_sp);
+  solver.reset( factory_->newLeafSolver( kkt_sp ) );
 
 #ifdef TIMING
   const double t1 = MPI_Wtime() - t0;
@@ -110,19 +99,7 @@ void sLinsysLeaf::factor2(sData*, Variables*)
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
    stochNode->resMon.recFactTmLocal_start();
 
-   if( computeBlockwiseSC )
-   {
-      #pragma omp parallel num_threads(n_solvers)
-      {
-         omp_set_num_threads(n_threads_solvers);
-
-         const int id = omp_get_thread_num();
-
-         solvers_blocked[id]->matrixChanged();
-      }
-   }
-   else
-      solver->matrixChanged();
+   solver->matrixChanged();
 
    stochNode->resMon.recFactTmLocal_stop();
 }

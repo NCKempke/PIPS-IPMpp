@@ -861,6 +861,26 @@ void SparseStorage::mult( double beta,  double y[], int incy,
    }
 }
 
+void SparseStorage::multSym( double beta, double y[], int incy, double alpha, const double x[], int incx ) const
+{
+   for ( int i = 0; i < m; i++ )
+      y[i * incy] *= beta;
+
+   for ( int i = 0; i < n; i++ )
+   {
+      for( int k = krowM[i]; k < krowM[i+1]; k++ )
+      {
+         const int j = jcolM[k];
+
+         y[i * incy] += alpha * M[k] * x[j * incx];
+         // todo fixme won't work with Q or any other "really" symmetric matrix!
+         // Necessary because CtDC from sLinsysRootAug is stored as a general matrix
+         if ( i != j )//&& 0 )
+            y[j * incy] += alpha * M[k] * x[i * incx];
+      }
+   }
+}
+
 void SparseStorage::transMult( double beta,  double y[], int incy,
 			       double alpha, const double x[], int incx ) const
 {

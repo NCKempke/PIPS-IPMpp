@@ -42,9 +42,6 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
       std::cout << "sLinsysRootAugHierInner: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
    printed = true;
 
-
-   solvers_blocked.resize(n_solvers);
-
    createSolversSparse(solver_sub_root);
 }
 

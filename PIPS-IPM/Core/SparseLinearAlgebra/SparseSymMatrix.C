@@ -331,31 +331,8 @@ void SparseSymMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const
 void SparseSymMatrix::mult ( double beta,  double y[], int incy,
 				 double alpha, const double x[], int incx ) const
 {
-   int m, n, i, j, k;
-   this->getSize(m, n);
-
-   int * jcolM = mStorage->jcolM;
-   int * krowM = mStorage->krowM;
-   double * M  = mStorage->M;
-
-   for ( i = 0; i < m; i++ )
-      y[i * incy] *= beta;
-
-   for ( i = 0; i < n; i++ )
-   {
-      for( k = krowM[i]; k < krowM[i+1]; k++ )
-      {
-         j = jcolM[k];
-	  
-         y[i * incy] += alpha * M[k] * x[j * incx];
-         // todo fixme won't work with Q or any other "really" symmetric matrix!
-         // Necessary because CtDC from sLinsysRootAug is stored as a general matrix
-         if ( i != j )//&& 0 )
-            y[j * incy] += alpha * M[k] * x[i * incx];
-      }
-   }
+   mStorage->multSym( beta, y, incy, alpha, x, incx );
 }
-
 
 void SparseSymMatrix::atPutDiagonal( int idiag, OoqpVector& v )
 {

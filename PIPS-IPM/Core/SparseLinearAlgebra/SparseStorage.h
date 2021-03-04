@@ -105,6 +105,8 @@ public:
   virtual void getFromPat( double data[], int n, int kpat[] );
   virtual void mult( double beta,  double y[], int incy,
 		     double alpha, const double x[], int incx ) const;
+  virtual void multSym( double beta,  double y[], int incy,
+             double alpha, const double x[], int incx ) const;
 
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
