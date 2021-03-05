@@ -1143,29 +1143,29 @@ void sData::writeToStreamDense(ostream& out) const
    int myRank;
    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-   if( myRank == 0 ) out <<  "A: " << std::endl;
+   if( myRank == 0 ) out <<  "A: \n";
    (*A).writeToStreamDense(out);
-   if( myRank == 0 ) out <<  "C: " << std::endl;
+   if( myRank == 0 ) out <<  "C: \n";
    (*C).writeToStreamDense(out);
-   if( myRank == 0 ) out <<  "obj: " << std::endl;
+   if( myRank == 0 ) out <<  "obj: \n";
    (*g).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "bA: " << std::endl;
+   if( myRank == 0 ) out <<  "bA: \n";
    (*bA).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "xupp: " << std::endl;
+   if( myRank == 0 ) out <<  "xupp: \n";
    (*bux).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "ixupp: " << std::endl;
+   if( myRank == 0 ) out <<  "ixupp: \n";
    (*ixupp).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "xlow: " << std::endl;
+   if( myRank == 0 ) out <<  "xlow: \n";
    (*blx).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "ixlow: " << std::endl;
+   if( myRank == 0 ) out <<  "ixlow: \n";
    (*ixlow).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "cupp: " << std::endl;
+   if( myRank == 0 ) out <<  "cupp: \n";
    (*bu).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "icupp: " << std::endl;
+   if( myRank == 0 ) out <<  "icupp: \n";
    (*icupp).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "clow: " << std::endl;
+   if( myRank == 0 ) out <<  "clow: \n";
    (*bl).writeToStreamAll(out);
-   if( myRank == 0 ) out <<  "iclow: " << std::endl;
+   if( myRank == 0 ) out <<  "iclow: \n";
    (*iclow).writeToStreamAll(out);
 }
 
@@ -1182,14 +1182,14 @@ void sData::writeMPSformat(ostream& out)
 
    if( world_size > 1 )
    {
-      cout<<"MPS format writer only available using one Process!"<<endl;
+      cout<<"MPS format writer only available using one Process!\n";
       return;
    }
-   cout<<"Writing MPS format..."<<endl;
+   cout<<"Writing MPS format...\n";
 
-   out <<  "NAME PIPS_to_MPS " << endl;
-   out << "ROWS" <<endl;
-   out << " N COST" <<endl;
+   out <<  "NAME PIPS_to_MPS \n";
+   out << "ROWS" <<"\n";
+   out << " N COST" <<"\n";
 
    // write all row names and if they are E, L or G
    (*A).writeMPSformatRows(out, 0, nullptr);
@@ -1197,24 +1197,24 @@ void sData::writeMPSformat(ostream& out)
    (*C).writeMPSformatRows(out, 2, iclow);
 
    // write all variable names
-   out <<  "COLUMNS " << endl;
+   out <<  "COLUMNS \n";
    writeMPSColumns(out);
 
    // write all rhs / lhs
-   out <<  "RHS " << endl;
+   out <<  "RHS \n";
 
    (*bA).writeMPSformatRhs(out, 0, nullptr);
    (*bu).writeMPSformatRhs(out, 1, icupp);
    (*bl).writeMPSformatRhs(out, 2, iclow);
 
    // write all variable bounds
-   out <<  "BOUNDS " << endl;
+   out <<  "BOUNDS \n";
    (*bux).writeMPSformatBounds(out, ixupp, true);
    (*blx).writeMPSformatBounds(out, ixlow, false);
 
-   out <<  "ENDATA " << endl;
+   out <<  "ENDATA \n";
 
-   cout<<"Finished writing MPS format."<<endl;
+   cout<<"Finished writing MPS format.\n";
 }
 
 void sData::writeMPSColumns(ostream& out)
@@ -1254,12 +1254,12 @@ void sData::writeMPSColumns(ostream& out)
       // cost coefficients:
       rowNameStub = "COST";
       if( gSimple->elements()[col] != 0 )
-         out<<varName<< " " << rowNameStub << " " << gSimple->elements()[col] <<endl;
+         out<<varName<< " " << rowNameStub << " " << gSimple->elements()[col] <<"\n";
 
       // coefficients in A_0:
       rowNameStub = "row_E_R_";
       for( int k = ASparseTrans.krowM()[col]; k<ASparseTrans.krowM()[col+1]; k++ )
-         out<<varName<< " " << rowNameStub << ASparseTrans.jcolM()[k] << " " << ASparseTrans.M()[k] <<endl;
+         out<<varName<< " " << rowNameStub << ASparseTrans.jcolM()[k] << " " << ASparseTrans.M()[k] <<"\n";
 
       // coefficients in F_0:
       if( AStoch.Blmat )
@@ -1267,7 +1267,7 @@ void sData::writeMPSColumns(ostream& out)
          SparseGenMatrix& ABlmatSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.Blmat)->getTranspose();
          rowNameStub = "row_E_L_";
          for( int k = ABlmatSparseTrans.krowM()[col]; k<ABlmatSparseTrans.krowM()[col+1]; k++ )
-            out<<varName<< " " << rowNameStub << ABlmatSparseTrans.jcolM()[k] << " " << ABlmatSparseTrans.M()[k] <<endl;
+            out<<varName<< " " << rowNameStub << ABlmatSparseTrans.jcolM()[k] << " " << ABlmatSparseTrans.M()[k] <<"\n";
          dynamic_cast<SparseGenMatrix*>(AStoch.Blmat)->deleteTransposed();
       }
       // coefficients in A_i:
@@ -1279,7 +1279,7 @@ void sData::writeMPSColumns(ostream& out)
          sstmRow << "row_E_"<<(int)it<<"_";
          rowNameStub = sstmRow.str();
          for( int k = AChildSparseTrans.krowM()[col]; k<AChildSparseTrans.krowM()[col+1]; k++ )
-            out<<varName<< " " << rowNameStub << AChildSparseTrans.jcolM()[k] << " " << AChildSparseTrans.M()[k] <<endl;
+            out<<varName<< " " << rowNameStub << AChildSparseTrans.jcolM()[k] << " " << AChildSparseTrans.M()[k] <<"\n";
          dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Amat)->deleteTransposed();
       }
 
@@ -1290,9 +1290,9 @@ void sData::writeMPSColumns(ostream& out)
       {
          int rowIdx = CSparseTrans.jcolM()[k];
          if( dynamic_cast<SimpleVector*>(icuppStoch.vec)->elements()[rowIdx] != 0.0)
-            out<<varName<< " " << rowNameStubLT << rowIdx << " " << CSparseTrans.M()[k] <<endl;
+            out<<varName<< " " << rowNameStubLT << rowIdx << " " << CSparseTrans.M()[k] <<"\n";
          if( dynamic_cast<SimpleVector*>(iclowStoch.vec)->elements()[rowIdx] != 0.0)
-            out<<varName<< " " << rowNameStubGT << rowIdx << " " << CSparseTrans.M()[k] <<endl;
+            out<<varName<< " " << rowNameStubGT << rowIdx << " " << CSparseTrans.M()[k] <<"\n";
       }
       // coefficients in G_0:
       if( CStoch.Blmat )
@@ -1304,9 +1304,9 @@ void sData::writeMPSColumns(ostream& out)
          {
             int rowIdx = CBlmatSparseTrans.jcolM()[k];
             if( dynamic_cast<SimpleVector*>(icuppStoch.vecl)->elements()[rowIdx] != 0.0)
-               out<<varName<< " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
             if( dynamic_cast<SimpleVector*>(iclowStoch.vecl)->elements()[rowIdx] != 0.0)
-               out<<varName<< " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.Blmat)->deleteTransposed();
       }
@@ -1326,9 +1326,9 @@ void sData::writeMPSColumns(ostream& out)
          {
             int rowIdx = CChildSparseTrans.jcolM()[k];
             if( dynamic_cast<SimpleVector*>(icuppStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
-               out<<varName<< " " << rowNameStubLT << rowIdx << " " << CChildSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStubLT << rowIdx << " " << CChildSparseTrans.M()[k] <<"\n";
             if( dynamic_cast<SimpleVector*>(iclowStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
-               out<<varName<< " " << rowNameStubGT << rowIdx << " " << CChildSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStubGT << rowIdx << " " << CChildSparseTrans.M()[k] <<"\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Amat)->deleteTransposed();
       }
@@ -1350,7 +1350,7 @@ void sData::writeMPSColumns(ostream& out)
          // coeffs in COST:
          rowNameStub = "COST";
          if( gSimple->elements()[col] != 0 )
-            out<<varName<< " " << rowNameStub << " " << gSimple->elements()[col] <<endl;
+            out<<varName<< " " << rowNameStub << " " << gSimple->elements()[col] <<"\n";
 
          // coeffs in A_i:
          SparseGenMatrix& AChildSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Bmat)->getTranspose();
@@ -1359,7 +1359,7 @@ void sData::writeMPSColumns(ostream& out)
          sstmRow << "row_E_"<<(int)it<<"_";
          rowNameStub = sstmRow.str();
          for( int k = AChildSparseTrans.krowM()[col]; k<AChildSparseTrans.krowM()[col+1]; k++ )
-            out<<varName<< " " << rowNameStub << AChildSparseTrans.jcolM()[k] << " " << AChildSparseTrans.M()[k] <<endl;
+            out<<varName<< " " << rowNameStub << AChildSparseTrans.jcolM()[k] << " " << AChildSparseTrans.M()[k] <<"\n";
          dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Bmat)->deleteTransposed();
 
          // coefficients in D_i:
@@ -1376,9 +1376,9 @@ void sData::writeMPSColumns(ostream& out)
          {
             int rowIdx = CChildSparseTrans.jcolM()[k];
             if( dynamic_cast<SimpleVector*>(icuppStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
-               out<<varName<< " " << rowNameStubLT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStubLT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] <<"\n";
             if( dynamic_cast<SimpleVector*>(iclowStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
-               out<<varName<< " " << rowNameStubGT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStubGT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] <<"\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Bmat)->deleteTransposed();
 
@@ -1388,7 +1388,7 @@ void sData::writeMPSColumns(ostream& out)
             SparseGenMatrix& ABlmatSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Blmat)->getTranspose();
             rowNameStub = "row_E_L_";
             for( int k = ABlmatSparseTrans.krowM()[col]; k<ABlmatSparseTrans.krowM()[col+1]; k++ )
-               out<<varName<< " " << rowNameStub << ABlmatSparseTrans.jcolM()[k] << " " << ABlmatSparseTrans.M()[k] <<endl;
+               out<<varName<< " " << rowNameStub << ABlmatSparseTrans.jcolM()[k] << " " << ABlmatSparseTrans.M()[k] <<"\n";
             dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Blmat)->deleteTransposed();
          }
 
@@ -1402,9 +1402,9 @@ void sData::writeMPSColumns(ostream& out)
             {
                int rowIdx = CBlmatSparseTrans.jcolM()[k];
                if( dynamic_cast<SimpleVector*>(icuppStoch.vecl)->elements()[rowIdx] != 0.0)
-                  out<<varName<< " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<endl;
+                  out<<varName<< " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
                if( dynamic_cast<SimpleVector*>(iclowStoch.vecl)->elements()[rowIdx] != 0.0)
-                  out<<varName<< " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<endl;
+                  out<<varName<< " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
             }
             dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Blmat)->deleteTransposed();
          }
@@ -1584,7 +1584,7 @@ void sData::activateLinkStructureExploitation()
    {
       useLinkStructure = false;
       if( myrank == 0 )
-         std::cout << "no linking constraints so no linking structure found" << std::endl;
+         std::cout << "no linking constraints so no linking structure found\n";
       return;
    }
 
@@ -1628,20 +1628,20 @@ void sData::activateLinkStructureExploitation()
    if( myrank == 0 )
    {
       std::cout << "number of 0-link variables: " << n0LinkVars << " (out of "
-            << nx0 << " link variables) " << std::endl;
+            << nx0 << " link variables) \n";
       std::cout << "number of equality 2-links: " << n2LinksEq << " (out of "
-            << linkStartBlockIdA.size() << " equalities) " << std::endl;
+            << linkStartBlockIdA.size() << " equalities) \n";
       std::cout << "number of inequality 2-links: " << n2LinksIneq << " (out of "
-            << linkStartBlockIdC.size() << " equalities) " << std::endl;
+            << linkStartBlockIdC.size() << " equalities) \n";
 
       std::cout << "ratio: "
-            << (n2LinksEq + n2LinksIneq) / ((double) linkStartBlockIdA.size() + linkStartBlockIdC.size()) << std::endl;
+            << (n2LinksEq + n2LinksIneq) / ((double) linkStartBlockIdA.size() + linkStartBlockIdC.size()) << "\n";
    }
 
    if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + linkVarsNnz.size()) < minStructuredLinksRatio )
    {
       if( myrank == 0 )
-         std::cout << "not enough linking structure found" << std::endl;
+         std::cout << "not enough linking structure found\n";
       useLinkStructure = false;
    }
 
@@ -1767,15 +1767,15 @@ void sData::printLinkVarsStats()
          if( linkSizes[i] != 0 )
          {
             nlocal += linkSizes[i];
-            std::cout << i << "-link vars: " << linkSizes[i] << std::endl;
+            std::cout << i << "-link vars: " << linkSizes[i] << "\n";
          }
 
       assert(n - nlocal >= 0);
-      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")" <<   std::endl;
+      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")" <<   "\n";
 
-      std::cout << "   Block0 exclusive vars " << count0 << std::endl;
-      std::cout << "   LC exclusive vars " << countLC << std::endl;
-      std::cout << "   Block0 or LC vars " << count0LC  << std::endl;
+      std::cout << "   Block0 exclusive vars " << count0 << "\n";
+      std::cout << "   LC exclusive vars " << countLC << "\n";
+      std::cout << "   Block0 or LC vars " << count0LC  << "\n";
    }
 }
 
@@ -1808,9 +1808,9 @@ void sData::printLinkConsStats()
             if( linkSizes[i] != 0 )
             {
                nlocal += linkSizes[i];
-               std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << std::endl;
+               std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")" <<   std::endl;
+         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")" <<   "\n";
 
       }
    }
@@ -1837,9 +1837,9 @@ void sData::printLinkConsStats()
             if( linkSizes[i] != 0 )
             {
                nlocal += linkSizes[i];
-               std::cout << "inequality " <<  i << "-link cons: " << linkSizes[i] << std::endl;
+               std::cout << "inequality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")" <<   std::endl;
+         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")" <<   "\n";
       }
    }
 }
@@ -2340,84 +2340,84 @@ bool sData::isRootNodeInSync() const
    /* matrix A */
    if(!dynamic_cast<const StochGenMatrix&>(*A).isRootNodeInSync())
    {
-      std::cout << "ERROR: matrix A corrupted!" << std::endl;
+      std::cout << "ERROR: matrix A corrupted!\n";
       in_sync = false;
    }
 
    /* matrix C */
    if( !dynamic_cast<const StochGenMatrix&>(*C).isRootNodeInSync() )
    {
-      std::cout << "ERROR: matrix C corrupted!" << std::endl;
+      std::cout << "ERROR: matrix C corrupted!\n";
       in_sync = false;
    }
 
    /* objective g */
    if( !dynamic_cast<const StochVector&>(*g).isRootNodeInSync() )
    {
-      std::cout << "ERROR: objective vector corrupted!" << std::endl;
+      std::cout << "ERROR: objective vector corrupted!\n";
       in_sync = false;
    }
 
    /* rhs equality bA */
    if( !dynamic_cast<const StochVector&>(*bA).isRootNodeInSync() )
    {
-      std::cout << "ERROR: rhs of A corrupted!" << std::endl;
+      std::cout << "ERROR: rhs of A corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds x bux */
    if( !dynamic_cast<const StochVector&>(*bux).isRootNodeInSync() )
    {
-      std::cout << "ERROR: upper bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for upper bounds x ixupp */
    if( !dynamic_cast<const StochVector&>(*ixupp).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index upper bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: index upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds x blx */
    if( !dynamic_cast<const StochVector&>(*blx).isRootNodeInSync() )
    {
-      std::cout << "ERROR: lower bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds x ixlow */
    if( !dynamic_cast<const StochVector&>(*ixlow).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index lower bounds x corrupted!" << std::endl;
+      std::cout << "ERROR: index lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds C bu */
    if( !dynamic_cast<const StochVector&>(*bu).isRootNodeInSync() )
    {
-      std::cout << "ERROR: rhs C corrupted!" << std::endl;
+      std::cout << "ERROR: rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* index upper bounds C icupp */
    if( !dynamic_cast<const StochVector&>(*icupp).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index rhs C corrupted!" << std::endl;
+      std::cout << "ERROR: index rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds C bl */
    if( !dynamic_cast<const StochVector&>(*bl).isRootNodeInSync() )
    {
-      std::cout << "ERROR: lower bounds C corrupted!" << std::endl;
+      std::cout << "ERROR: lower bounds C corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds C iclow */
    if( !dynamic_cast<const StochVector&>(*iclow).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index lower bounds C corrupted!" << std::endl;
+      std::cout << "ERROR: index lower bounds C corrupted!\n";
       in_sync = false;
    }
 
@@ -2473,10 +2473,10 @@ void sData::printRanges() const
 
       const std::streamsize pre_old = std::cout.precision();
       std::cout << std::setprecision(0) << std::scientific;
-      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]" << std::endl;
-      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]" << std::endl;
-      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]" << std::endl;
-      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]" << std::endl;
+      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]\n";
+      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]\n";
+      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]\n";
+      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]\n";
       std::cout << std::setprecision(pre_old) << std::defaultfloat;
    }
 }
