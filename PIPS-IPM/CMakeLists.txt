@@ -196,7 +196,7 @@ if (BUILD_GDX_SOURCE)
 	 Drivers/statgdx/xcompress.cpp	 
 	 )	 
      
-   link_directories(PIPS-IPM)
+   #link_directories(PIPS-IPM)
    add_executable(gmspips Drivers/gmspips/gmspips.cpp Drivers/gmspips/gmspipsio.c)
    add_definitions(-DGMS_PIPS -DGMS_MPI -DLINKCONSTR -DGDXSOURCE -fno-strict-aliasing -fwrapv -DGC_NO_MUTEX) # -DGMS_LOG
    target_include_directories(gmspips PUBLIC Drivers/statgdx Drivers/gmspips/)
