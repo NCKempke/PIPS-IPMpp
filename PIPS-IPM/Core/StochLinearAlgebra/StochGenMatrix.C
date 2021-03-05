@@ -797,7 +797,7 @@ void StochGenMatrix::writeMPSformatRows(ostream& out, int rowType, OoqpVector* i
          for(int i=0; i<m; i++)
          {
             if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->vecl)->elements()[i] != 0.0) )
-               out<<" "<< rt<<" row_"<<rt<<"_"<<"L" <<"_"<<i << \n"";
+               out<<" "<< rt<<" row_"<<rt<<"_"<<"L" <<"_"<<i << "\n";
          }
       }
    }
