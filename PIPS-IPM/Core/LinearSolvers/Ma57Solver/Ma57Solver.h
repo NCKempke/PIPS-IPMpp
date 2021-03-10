@@ -89,7 +89,7 @@ protected:
     *
     * This is the min we are willing to go with our pivots.
     */
-   const double threshold_pivtol = 1e-14;
+   const double threshold_pivtol = 1e-20;
    const double threshold_pivtol_factor = 0.1;
    const double default_pivtol = 1.0e-7;
 
