@@ -66,7 +66,7 @@ void Ma57Solver::init()
 
    // only use if icntl[6] == 1 (default)
    setThresholdPivoting(default_pivoting);
-   setSmallPivot(default_pivtol);
+//   setSmallPivot(default_pivtol);
    //   cntl[2] convergence for Ma57DD iterative refinement (norm improvement by factor..) default 0.5
    //   cntl[3] Ma57BD (reuse of old factorization)
    //   cntl[4] static pivoting
