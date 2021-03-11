@@ -948,9 +948,6 @@ unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root
 
 void sTreeCallbacks::createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree )
 {
-   // TODO : maybe adjust the split at some point - the first n_leftovers procs have one additional block assigned to them .. this will lead to some imbalance in the tree here..
-   PIPS_MPIabortIf( children.size() < 3, "Need at least 4 child tree nodes left to split a root node");
-
    const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size() );
    if( n_new_roots <= 1 )
    {
