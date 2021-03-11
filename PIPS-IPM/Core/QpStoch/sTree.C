@@ -512,6 +512,7 @@ void sTree::printProcessTree() const
    size_t count = 0;
    bool node_layer_reached = false;
    bool node_layer_next = false;
+   bool tree_unbalanced = false;
    while( !queue.empty() )
    {
       const sTree* child = queue.front();
@@ -548,6 +549,9 @@ void sTree::printProcessTree() const
       }
       else
       {
+         if( node_layer_reached )
+            tree_unbalanced = true;
+
          assert( child );
          assert( !child->sub_root );
          if( child->myProcs.size() >= 1 )
@@ -583,6 +587,11 @@ void sTree::printProcessTree() const
          std::cout << "\n\n";
       }
    }
+
+   if( tree_unbalanced )
+      std::cout << "WARNING : the split tree is unbalanced and there is branches that are longer than others\n" <<
+         "\t-> this is bad for performance but that fine of a split usually is bad for performance anyway..\n" <<
+         "\t-> rethink the amount of layers for the hierarchical approach..\n\n";
 }
 
 void sTree::mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees )
