@@ -505,30 +505,79 @@ void sTree::printProcessTree() const
 
    std::cout << "Process Tree:\n\n";
 
-   std::cout << "[ " << myProcs.front() << "-" << myProcs.back() << " ]\n\n";
+   std::vector<const sTree*> queue;
+   queue.insert(queue.end(), this);
 
-   std::vector<sTree*> queue;
-   queue.insert(queue.end(), children.begin(), children.end() );
-
-   int curr_size = children.size();
-   int count = 0;
+   size_t curr_size = queue.size();
+   size_t count = 0;
+   bool node_layer_reached = false;
+   bool node_layer_next = false;
    while( !queue.empty() )
    {
-      const auto& child = queue.front();
-      if( child->myProcs.size() > 1 )
-         std::cout << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ]\t";
-      else if( child->sub_root && child->sub_root->myProcs.size() > 1 )
-         std::cout << "[ " << child->sub_root->myProcs.front() << "-" << child->sub_root->myProcs.back() << " ]\t";
+      const sTree* child = queue.front();
+      if( !child )
+      {
+         std::cout << "| ";
+         queue.erase(queue.begin());
+         ++count;
+      }
+      else if( node_layer_reached && child->myProcs.size() == 1 )
+      {
+         static size_t node = 1;
+         assert(child);
 
-      if( child->sub_root )
-         queue.insert(queue.end(), child->sub_root->children.begin(), child->sub_root->children.end() );
+         const size_t node_begin = node;
+         const int curr_proc = child->myProcs[0];
+         queue.erase(queue.begin());
+         ++count;
+
+         size_t node_end = node;
+
+         while( !queue.empty() && queue.front() != nullptr && queue.front()->myProcs[0] == curr_proc )
+         {
+            ++node_end;
+            queue.erase(queue.begin());
+            ++count;
+         }
+
+         if( node_begin != node_end )
+            std::cout << "[ " << curr_proc << ": " << node_begin << "-" << node_end << " ] ";
+         else
+            std::cout << "[ " << curr_proc << ": " << node_begin << " ] ";
+         node = node_end + 1;
+      }
       else
-         queue.insert(queue.end(), child->children.begin(), child->children.end() );
+      {
+         assert( child );
+         assert( !child->sub_root );
+         if( child->myProcs.size() >= 1 )
+         {
+            if( child->myProcs.size() > 1 )
+               std::cout << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ] ";
+            else
+               std::cout << "[ " << child->myProcs.front() << " ] ";
+         }
 
-      queue.erase(queue.begin());
-      ++count;
+         for( auto& childchild : child->children )
+         {
+            if( childchild->sub_root )
+               queue.insert(queue.end(), childchild->sub_root);
+            else
+            {
+               node_layer_next = true;
+               queue.insert(queue.end(), childchild);
+            }
+         }
+         if( !(child->children.empty()) )
+            queue.insert(queue.end(), nullptr);
+         queue.erase(queue.begin());
+         ++count;
+      }
+
       if( count == curr_size )
       {
+         if( node_layer_next )
+            node_layer_reached = true;
          curr_size = queue.size();
          count = 0;
          std::cout << "\n\n";
