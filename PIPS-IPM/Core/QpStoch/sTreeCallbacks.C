@@ -925,22 +925,38 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    return top_layer;
 }
 
-unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
+unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
 {
+   assert( take_nth_root > 1 );
+
    // old way - results in a lot of wait at Allreduces..
 //   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
-   const unsigned int n_new_roots = std::floor( std::pow( n_children, 1.0 / take_nth_root ) );
+   unsigned int n_new_roots = 0;
+   while( n_new_roots <= 1 && take_nth_root > 1 )
+   {
+      n_new_roots = std::floor( std::pow( n_children, 1.0 / take_nth_root ) );
+      if( PIPS_MPIgetRank() == 0 && n_new_roots <= 1 )
+      {
+         std::cout << "Too many layers for hierarchical split specified - the number of Blocks does not allow for " << take_nth_root << " layers - decreasing amount of layers\n";
+         take_nth_root -= 1;
+      }
+   }
 
    mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
    return n_new_roots;
 }
 
-void sTreeCallbacks::createSubcommunicatorsAndChildren( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree )
+void sTreeCallbacks::createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree )
 {
    // TODO : maybe adjust the split at some point - the first n_leftovers procs have one additional block assigned to them .. this will lead to some imbalance in the tree here..
    PIPS_MPIabortIf( children.size() < 3, "Need at least 4 child tree nodes left to split a root node");
 
    const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size() );
+   if( n_new_roots <= 1 )
+   {
+      assert( take_nth_root == 1 );
+      return;
+   }
    assert( map_child_to_sub_tree.size() == children.size() );
 
    /* create new sub-roots */
@@ -1216,6 +1232,13 @@ std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, sData* data )
 #endif
 
    createSubcommunicatorsAndChildren( n_layers, map_node_sub_root );
+
+   if( n_layers == 1 )
+   {
+      if( rankMe == 0 )
+         std::cout << "No split applied!\n";
+      return std::make_pair(0,0);
+   }
 
    assert( map_node_sub_root.size() == n_old_leafs );
 

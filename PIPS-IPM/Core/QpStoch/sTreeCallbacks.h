@@ -88,7 +88,7 @@ protected:
    void assertTreeStructureIsMyNodeSubRoot() const;
    void assertTreeStructureIsMyNode()const;
 
-   static unsigned int getMapChildrenToNthRootSubTrees( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
+   static unsigned int getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
 
    void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
@@ -99,7 +99,7 @@ protected:
          DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
    StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
 
-   void createSubcommunicatorsAndChildren( int take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree );
+   void createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree );
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
          std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
          unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
