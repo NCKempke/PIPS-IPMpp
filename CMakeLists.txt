@@ -27,7 +27,7 @@ add_compile_options(
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"
 )
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE)

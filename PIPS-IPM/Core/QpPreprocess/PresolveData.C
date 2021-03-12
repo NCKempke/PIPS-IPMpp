@@ -32,7 +32,7 @@ bool PresolveData::iTrackRow() const
    return track_row && ( !nodeIsDummy(tracked_row.getNode()) && (my_rank == 0 || tracked_row.isLinkingRow() || tracked_row.getNode() != -1) );
 }
 
-PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) :
+PresolveData::PresolveData(const sData& sorigprob, StochPostsolver* postsolver) :
       postsolver(postsolver),
       limit_max_bound_accepted( pips_options::getDoubleParameter("PRESOLVE_MAX_BOUND_ACCEPTED") ),
       array_outdated_indicators(new bool[length_array_outdated_indicators]),
@@ -42,9 +42,9 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       outdated_activities(array_outdated_indicators[3]),
       outdated_obj_vector(array_outdated_indicators[4]),
       postsolve_linking_row_propagation_needed(array_outdated_indicators[5]),
-      nnzs_row_A{ cloneStochVector<double,int>(*sorigprob->bA) },
-      nnzs_row_C{ cloneStochVector<double,int>(*sorigprob->icupp) },
-      nnzs_col{ cloneStochVector<double,int>(*sorigprob->g) },
+      nnzs_row_A{ cloneStochVector<double,int>(*sorigprob.bA) },
+      nnzs_row_C{ cloneStochVector<double,int>(*sorigprob.icupp) },
+      nnzs_col{ cloneStochVector<double,int>(*sorigprob.g) },
       actmax_eq_part{ cloneStochVector<int,double>(*nnzs_row_A) },
       actmin_eq_part{ dynamic_cast<StochVector*>(actmax_eq_part->clone()) },
       actmax_eq_ubndd{ dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->clone()) },
@@ -59,11 +59,11 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       track_row( pips_options::getBoolParameter("PRESOLVE_TRACK_ROW") ),
       track_col( pips_options::getBoolParameter("PRESOLVE_TRACK_COL") ),
       tracked_row(ROW, pips_options::getIntParameter("PRESOLVE_TRACK_ROW_NODE"),
-            pips_options::getIntParameter("PRESOLVE_TRACK_ROW_INDEX"),
-            pips_options::getBoolParameter("PRESOLVE_TRACK_ROW_LINKING"),
-            (pips_options::getIntParameter("PRESOLVE_TRACK_ROW_SYSTEM") == 0 ? EQUALITY_SYSTEM : INEQUALITY_SYSTEM) ),
+      pips_options::getIntParameter("PRESOLVE_TRACK_ROW_INDEX"),
+      pips_options::getBoolParameter("PRESOLVE_TRACK_ROW_LINKING"),
+      (pips_options::getIntParameter("PRESOLVE_TRACK_ROW_SYSTEM") == 0 ? EQUALITY_SYSTEM : INEQUALITY_SYSTEM) ),
       tracked_col(COL, pips_options::getIntParameter("PRESOLVE_TRACK_COL_NODE"),
-            pips_options::getIntParameter("PRESOLVE_TRACK_COL_INDEX") ),
+      pips_options::getIntParameter("PRESOLVE_TRACK_COL_INDEX") ),
       objective_vec_chgs{ new SimpleVector(nnzs_col->vec->length()) },
       lower_bound_implied_by_system{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       lower_bound_implied_by_row{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
@@ -71,8 +71,8 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
       upper_bound_implied_by_system{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       upper_bound_implied_by_row{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       upper_bound_implied_by_node{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
-      absmin_col{ dynamic_cast<StochVector*>(sorigprob->g->clone()) },
-      absmax_col{ dynamic_cast<StochVector*>(sorigprob->g->clone()) },
+      absmin_col{ dynamic_cast<StochVector*>(sorigprob.g->clone()) },
+      absmax_col{ dynamic_cast<StochVector*>(sorigprob.g->clone()) },
       store_linking_row_boundTightening_A( nnzs_row_A->vecl->length(), 0 ),
       store_linking_row_boundTightening_C( nnzs_row_C->vecl->length(), 0 )
 {
@@ -90,7 +90,7 @@ PresolveData::PresolveData(const sData* sorigprob, StochPostsolver* postsolver) 
    absmax_col->setToZero();
    objective_vec_chgs->setToZero();
 
-   presProb = sorigprob->cloneFull(true);
+   presProb = sorigprob.cloneFull(true);
 
    const int n_linking_vars = (nnzs_col->vec) ? nnzs_col->vec->length() : 0;
 
@@ -2108,11 +2108,32 @@ void PresolveData::removeRedundantParallelRow( const INDEX& rm_row, const INDEX&
    removeRow( rm_row );
 }
 
+void PresolveData::removeRedundantSide( const INDEX& row, bool is_upper_side )
+{
+   assert( row.isRow() );
+   assert( row.inInEqSys() );
+
+   if( postsolver )
+   {
+      assert( !wasRowRemoved(row) );
+
+      assert( PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->icupp, row)) );
+      assert( PIPSisEQ(1.0, getSimpleVecFromRowStochVec(*presProb->iclow, row)) );
+
+      postsolver->notifyRedundantSide(row, is_upper_side, getSimpleVecFromRowStochVec(*presProb->bl, row),
+            getSimpleVecFromRowStochVec(*presProb->bu, row) );
+   }
+
+   if( track_row && tracked_row == row )
+      std::cout << "TRACKING_ROW: removal of " << (is_upper_side ? "rhs" : "lhs") << "of tracked row as redundant" << std::endl;
+
+}
+
 void PresolveData::removeRedundantRow( const INDEX& row )
 {
    assert( row.isRow() );
 
-   if(postsolver)
+   if( postsolver )
    {
       assert( !wasRowRemoved( row ) );
 

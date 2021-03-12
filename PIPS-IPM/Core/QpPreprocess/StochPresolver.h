@@ -9,13 +9,14 @@
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVER_H_
 
 #include "QpPresolver.h"
-#include <vector>
+#include "PresolveData.h"
 
-class Data;
-class Postsolver;
-class StochPresolverBase;
-class PresolveData;
+#include <vector>
+#include <memory>
+
 class sTree;
+class StochPresolverBase;
+
 /**  * @defgroup QpPreprocess
  *
  * QP presolver
@@ -28,36 +29,33 @@ class sTree;
 class StochPresolver : public QpPresolver
 {
 private:
-   const int my_rank;
+   const int my_rank = -1;
    /** limit for max rounds to apply all presolvers */
-   const int limit_max_rounds;
+   const int limit_max_rounds = -1;
    /** should free variables' bounds be reset after presolve (given the row implying these bounds was not removed */
-   const bool reset_free_variables_after_presolve;
+   const bool reset_free_variables_after_presolve = false;
    /** should the problem be written to std::cout before and after presolve */
-   const bool print_problem;
+   const bool print_problem = false;
    /** should the presolved problem be written out in MPS format */
-   const bool write_presolved_problem;
+   const bool write_presolved_problem = false;
 
-   const int verbosity;
+   const int verbosity = -1;
 
    /* tree belonging to origData and presData */
    sTree* const tree;
 
-   PresolveData* presData;
-   std::vector<StochPresolverBase*> presolvers;
+   PresolveData presData;
+   std::vector<std::unique_ptr<StochPresolverBase>> presolvers;
 
    void resetFreeVariables();
 public:
 
-   StochPresolver(sTree* tree, const Data* prob, Postsolver* postsolver);
-   virtual ~StochPresolver();
+   StochPresolver(sTree* tree, const Data& prob, Postsolver* postsolver);
+   ~StochPresolver() override = default;
 
    Data* presolve() override;
 };
 
 //@}
-
-
-
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVER_H_ */
