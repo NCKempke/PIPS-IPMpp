@@ -38,10 +38,6 @@ StochColumnStorage::StochColumnStorage(const StochGenMatrix& matrix_eq_part, con
    createStorageMatrix(INEQUALITY_SYSTEM, matrix_ineq_part);
 }
 
-StochColumnStorage::~StochColumnStorage()
-{
-}
-
 void StochColumnStorage::createStorageMatrix(SystemType system_type, const StochGenMatrix& sys_matrix)
 {
    SparseGenMatrixHandle& b0_block_storage = (system_type == EQUALITY_SYSTEM) ? B0_eq : B0_ineq;

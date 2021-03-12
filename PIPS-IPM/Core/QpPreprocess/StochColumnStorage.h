@@ -16,7 +16,7 @@ class StochColumnStorage
 {
 public:
    StochColumnStorage( const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);
-   ~StochColumnStorage();
+   ~StochColumnStorage() = default;
 
    int storeCol( const INDEX& col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);
 
