@@ -27,30 +27,19 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
 
-      if( my_rank == 0 )
-         std::cout << "\n MA57 " << name << ": rebuilt Schur complement factorization is starting ...\n";
-
       mat_storage = matrixNewSym.getStorageHandle();
 
       init();
       matrixChanged();
-
-      if( my_rank == 0 )
-         std::cout << "\n MA57 " << name << ": Schur complement factorization completed \n";
    }
 }
 
 void Ma57SolverRoot::matrixChanged()
 {
    assert( omp_get_thread_num() == 0 );
-   if( PIPS_MPIgetRank(comm) == 0 )
-      std::cout << "\n MA57 " << name << ": Schur complement factorization is starting ...\n";
 
    if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
       Ma57Solver::matrixChanged();
-
-   if( PIPS_MPIgetRank(comm) == 0 )
-      std::cout << "\n MA57 " << name << ": Schur complement factorization completed\n";
 }
 
 void Ma57SolverRoot::solve(OoqpVector& rhs)

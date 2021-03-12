@@ -100,8 +100,16 @@ void sLinsysRoot::allreduceAndFactorKKT(sData* prob, Variables* vars)
 
 void sLinsysRoot::factor2(sData *prob, Variables *vars)
 {
-   if( is_hierarchy_root )
-      assert( children.size() == 1 );
+   if( PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      if( is_hierarchy_root )
+      {
+         assert( children.size() == 1 );
+         std::cout << "\n Building dense outer Schur Complement...\n\n";
+      }
+      else if( data->isHierarchyInnerRoot() )
+         std::cout << " Building sparse top level Schur Complement...\n\n";
+   }
 
    /* set kkt to zero */
    initializeKKT(prob, vars);
@@ -126,7 +134,22 @@ void sLinsysRoot::factor2(sData *prob, Variables *vars)
 
    finalizeKKT(prob, vars);
 
+   if( PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      if( is_hierarchy_root )
+         std::cout << " Dense Schur Complement factorization is starting... ";
+      else if( data->isHierarchyInnerRoot() )
+         std::cout << " Sparse top level Schur Complement factorization is starting... ";
+   }
+
    factorizeKKT(prob);
+
+   if( PIPS_MPIgetRank(mpiComm) == 0 )
+   {
+      if( is_hierarchy_root || data->isHierarchyInnerRoot() )
+         std::cout << "done\n\n";
+   }
+
 #ifdef TIMING
    afterFactor();
 #endif

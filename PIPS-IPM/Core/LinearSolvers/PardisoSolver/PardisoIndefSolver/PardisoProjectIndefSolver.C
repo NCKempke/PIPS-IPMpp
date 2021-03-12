@@ -91,9 +91,6 @@ void PardisoProjectIndefSolver::initPardiso()
    }
 
    setIparm(iparm);
-
-   if( PIPS_MPIgetRank(mpi_comm) == 0 )
-      printf("PARDISO root: using %d threads \n", iparm[2]);
 }
 
 void PardisoProjectIndefSolver::getIparm( int* iparm ) const

@@ -254,35 +254,18 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
      std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
      dd->setToConstant(1.0);
   }
-//  dd->addConstant( 1e-8 );
 
   if( nxlow + nxupp > 0 )
      putXDiagonal( *dd );
-
-  const double infnormdd = dd->infnorm();
-  double mindd; int dummy;
-  dd->min(mindd, dummy);
-
-  if( PIPS_MPIgetRank() == 0 )
-     std::cout << "Diagonal dd : inf " << infnormdd << ", min " << mindd << "\n";
 
   nomegaInv->invert();
   nomegaInv->negate();
 
   if( pips_options::getBoolParameter("HIERARCHICAL_TESTING") )
      nomegaInv->setToConstant(1.0);
-//  nomegaInv->addConstant( -1e-8 );
-
 
   if( mclow + mcupp > 0 )
      putZDiagonal( *nomegaInv );
-
-  const double infnormomegainv = nomegaInv->infnorm();
-  double minomegainv;
-  dd->min(minomegainv, dummy);
-
-  if( PIPS_MPIgetRank() == 0 )
-     std::cout << "Diagonal omegaInv: inf " << infnormomegainv << ", min " << minomegainv << "\n";
 }
 
 void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
