@@ -854,6 +854,8 @@ void SparseStorageDynamic::axpyWithRowAtPosNeg( double alpha, double * y_pos, do
 
    assert(y_pos);
 
+   assert(y_pos);
+
    for(int i = rowptr[row].start; i < rowptr[row].end; ++i)
    {
       assert( y_pos[jcolM[i]] >= 0 );
