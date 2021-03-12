@@ -838,6 +838,8 @@ void SparseStorageDynamic::axpyWithRowAt( double alpha, double* y, int length, i
 
    assert(y);
 
+   assert(y);
+
    for(int i = rowptr[row].start; i < rowptr[row].end; ++i)
    {
       assert(jcolM[i] < length);
