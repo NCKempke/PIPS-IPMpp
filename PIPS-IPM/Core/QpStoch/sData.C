@@ -1223,52 +1223,29 @@ void sData::writeToStreamDense( std::ostream& out ) const
 {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   if( myRank == 0 )
-      out << "A:\n";
+   if( myRank == 0 ) out <<  "A:\n";
    (*A).writeToStreamDense(out);
-
-   if( myRank == 0 )
-      out << "C:\n";
+   if( myRank == 0 ) out <<  "C:\n";
    (*C).writeToStreamDense(out);
-
-   if( myRank == 0 )
-      out << "obj:\n";
+   if( myRank == 0 ) out <<  "obj:\n";
    (*g).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "bA:\n";
+   if( myRank == 0 ) out <<  "bA:\n";
    (*bA).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "xupp:\n";
+   if( myRank == 0 ) out <<  "xupp:\n";
    (*bux).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "ixupp:\n";
+   if( myRank == 0 ) out <<  "ixupp:\n";
    (*ixupp).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "xlow:\n";
+   if( myRank == 0 ) out <<  "xlow:\n";
    (*blx).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "ixlow:\n";
+   if( myRank == 0 ) out <<  "ixlow:\n";
    (*ixlow).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "cupp:\n";
+   if( myRank == 0 ) out <<  "cupp:\n";
    (*bu).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "icupp:\n";
+   if( myRank == 0 ) out <<  "icupp:\n";
    (*icupp).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "clow:\n";
+   if( myRank == 0 ) out <<  "clow:\n";
    (*bl).writeToStream(out);
-
-   if( myRank == 0 )
-      out << "iclow:\n";
+   if( myRank == 0 ) out <<  "iclow:\n";
    (*iclow).writeToStream(out);
 }
 
@@ -2373,8 +2350,7 @@ void sData::activateLinkStructureExploitation()
 
    if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
    {
-
-      if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
+      if( ratio < minStructuredLinksRatio )
       {
          if( myrank == 0 )
             std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << ")\n";

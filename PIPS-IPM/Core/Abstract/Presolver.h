@@ -27,11 +27,16 @@ class Postsolver;
 class Presolver
 {
 public:
-  Presolver() = default;
-  virtual ~Presolver() = default;
 
-  /** presolve and return pointer to presolved data */
-  virtual Data* presolve() = 0;
+   Presolver(const Data& prob, Postsolver* postsolver = nullptr) : origprob{prob}, postsolver{postsolver}{};
+   virtual ~Presolver() = default;
+
+   /** presolve and return pointer to presolved data */
+   virtual Data* presolve() = 0;
+
+protected:
+   const Data& origprob;
+   Postsolver* const postsolver{};
 
 };
 

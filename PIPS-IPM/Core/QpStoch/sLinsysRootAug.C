@@ -422,6 +422,8 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
 
 void sLinsysRootAug::assembleLocalKKT( sData* prob )
 {
+   const bool is_layer_only_twolinks = prob->isHierarchySparseTopLayerOnlyTwolinks();
+
    for( size_t c = 0; c < children.size(); ++c )
    {
 #ifdef STOCH_TESTING
@@ -431,8 +433,10 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
          continue;
 
       children[c]->stochNode->resMon.recFactTmChildren_start();
+
+
       //---------------------------------------------
-      addTermToSchurCompl( prob, c, false );
+      addTermToSchurCompl( prob, c, !is_layer_only_twolinks );
       //---------------------------------------------
       children[c]->stochNode->resMon.recFactTmChildren_stop();
    }

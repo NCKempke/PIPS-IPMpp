@@ -207,7 +207,15 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
             presData.removeRedundantRow( row );
             n_removed_rows++;
          }
-      }
+         else if( row.inInEqSys() && !PIPSisZero(icupp[row_index]) && actmax_ubndd == 0 && PIPSisLEFeas(actmax_part, cupp[row_index]) )
+         {
+            presData.removeRedundantSide( row, true );
+         }
+         else if( row.inInEqSys() && !PIPSisZero(iclow[row_index]) && actmin_ubndd == 0 && PIPSisLEFeas(clow[row_index], actmin_part) )
+         {
+            presData.removeRedundantSide( row, false );
+         }
+            }
    }
    return n_removed_rows;
 }

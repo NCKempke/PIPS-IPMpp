@@ -742,7 +742,7 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
       for(int i=0; i<m; i++)
       {
          if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->vec)->elements()[i] != 0.0) )
-            out<< " "<<rt<<" row_"<<rt<<"_"<<"R" <<"_"<<i <<"\n";
+            out<< " "<<rt<<" row_"<<rt<<"_"<<"R" <<"_"<<i << "\n";
       }
       // linking rows:
       if( Blmat )
@@ -751,7 +751,7 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
          for(int i=0; i<m; i++)
          {
             if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->vecl)->elements()[i] != 0.0) )
-               out<<" "<< rt<<" row_"<<rt<<"_"<<"L" <<"_"<<i <<"\n";
+               out<<" "<< rt<<" row_"<<rt<<"_"<<"L" <<"_"<<i << "\n";
          }
       }
    }
@@ -761,7 +761,7 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
       for(int i=0; i<m; i++)
       {
          if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->children[it]->vec)->elements()[i] != 0.0) )
-            out<<" "<< rt<<" row_"<<rt<<"_"<<it <<"_"<<i <<"\n";
+            out<<" "<< rt<<" row_"<<rt<<"_"<<it <<"_"<<i << "\n";
       }
    }
 }

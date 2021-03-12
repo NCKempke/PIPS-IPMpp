@@ -11,8 +11,6 @@
 #include "Presolver.h"
 #include "pipsport.h"
 
-class Data;
-class Postsolver;
 /**  * @defgroup QpPreprocess
  *
  * QP scaler
@@ -25,12 +23,8 @@ class Postsolver;
 
 class QpPresolver : public Presolver
 {
-   protected:
-      const Data* const origprob;
-      Postsolver* const postsolver;
-
    public:
-      QpPresolver(const Data* prob, Postsolver* postsolver = nullptr);
+      QpPresolver(const Data& prob, Postsolver* postsolver = nullptr);
       ~QpPresolver() override = default;
 };
 
