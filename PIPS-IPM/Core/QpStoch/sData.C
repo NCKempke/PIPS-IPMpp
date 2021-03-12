@@ -2365,7 +2365,7 @@ void sData::activateLinkStructureExploitation()
       std::cout << "number of equality 2-links: " << n2LinksEq << " (out of "
             << linkStartBlockIdA.size() << " equalities)\n";
       std::cout << "number of inequality 2-links: " << n2LinksIneq << " (out of "
-            << linkStartBlockIdC.size() << " equalities)\n";
+            << linkStartBlockIdC.size() << " inequalities)\n";
 
       std::cout << "ratio: " << ratio << "\n";
    }
@@ -2516,7 +2516,7 @@ void sData::printLinkVarsStats()
          if( linkSizes[i] != 0 )
          {
             nlocal += linkSizes[i];
-            std::cout << i << "-link vars: " << linkSizes[i] << "\n";
+            std::cout << "---" << i << "-link vars: " << linkSizes[i] << "\n";
          }
 
       assert(n - nlocal >= 0);
@@ -2557,12 +2557,16 @@ void sData::printLinkConsStats()
             if( linkSizes[i] != 0 )
             {
                nlocal += linkSizes[i];
-               std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
+               std::cout << "---equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
          std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")\n";
 
       }
    }
+   else
+      if( rank == 0 )
+         std::cout << "---total equality linking constraints: 0\n";
+
 
    if( mzl > 0 )
    {
@@ -2591,6 +2595,9 @@ void sData::printLinkConsStats()
          std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")\n";
       }
    }
+   else
+      if( rank == 0 )
+         std::cout << "---total inequality linking constraints: 0\n";
 }
 
 sData::~sData()
