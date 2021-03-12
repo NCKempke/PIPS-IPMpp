@@ -434,7 +434,6 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 
       children[c]->stochNode->resMon.recFactTmChildren_start();
 
-
       //---------------------------------------------
       addTermToSchurCompl( prob, c, !is_layer_only_twolinks );
       //---------------------------------------------
