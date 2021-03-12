@@ -44,7 +44,7 @@ class StringGenMatrix : public GenMatrix
 
       virtual void addChild(StringGenMatrix* child);
 
-      bool isEmpty() const;
+      virtual bool isEmpty() const;
       int isKindOf( int matrix ) const override;
 
       /** y = beta * y + alpha * this * x */
@@ -131,6 +131,8 @@ class StringGenDummyMatrix : public StringGenMatrix
       ~StringGenDummyMatrix() override = default;
 
       void addChild( StringGenMatrix* ) override {};
+
+      bool isEmpty() const override { return true; };
       int isKindOf( int type ) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
       void mult( double, OoqpVector&, double, const OoqpVector& ) const override {};
       void transMult( double, OoqpVector&, double, const OoqpVector& ) const override {};

@@ -502,7 +502,8 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
    }
    else
    {
-      assert( mres == mF + mG );
+      /* greater equal - there could be 0linkvars */
+      assert( mres >= mF + mG );
       assert( nres >= nF );
    }
 #endif
@@ -931,7 +932,8 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    {
       assert( mF_right == mG_right );
       assert( mF_right <= length_col );
-      assert( nF_right + nG_right == n_res_tp );
+      /* less equal since there could be link0vars */
+      assert( nF_right + nG_right <= n_res_tp );
    }
 #endif
 
@@ -1137,7 +1139,8 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
       assert( mR == mA && mA == mC );
    }
    else
-      assert( nRes == mF + mG );
+      /* >= since there could be 0linkvars */
+      assert( nRes >= mF + mG );
 #endif
 
    // multiply each column with left_border and add if to res

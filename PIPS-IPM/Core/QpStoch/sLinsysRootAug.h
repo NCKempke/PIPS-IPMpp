@@ -52,11 +52,11 @@ class sLinsysRootAug : public sLinsysRoot {
   void Ltsolve(sData *prob, OoqpVector& x) override;
 
   using sLinsys::LsolveHierarchyBorder;
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border ) override;
 
   using sLinsys::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res ) override;
+        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border ) override;
 
  protected:
   SymMatrix* createKKT (sData* prob) const;

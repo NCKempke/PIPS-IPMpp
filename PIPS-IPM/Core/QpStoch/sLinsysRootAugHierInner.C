@@ -79,15 +79,15 @@ void sLinsysRootAugHierInner::Ltsolve2(sData*, StochVector& x, SimpleVector& x0,
    solveCompressed( x );
 }
 
-void sLinsysRootAugHierInner::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
+void sLinsysRootAugHierInner::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border )
 {
-   LsolveHierarchyBorder( result, Br, Br_mod_border, false );
+   LsolveHierarchyBorder( result, Br, Br_mod_border, false, two_link_border );
 }
 
 void sLinsysRootAugHierInner::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res )
+      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border )
 {
-   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false );
+   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false, two_link_border );
 }
 
 void sLinsysRootAugHierInner::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool use_local_RAC )

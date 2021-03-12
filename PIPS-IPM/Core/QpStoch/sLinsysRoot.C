@@ -591,13 +591,17 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 }
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border )
 {
    assert( children.size() == Br.F.children.size() );
 
    /* get contribution to schur_complement from each child */
+   /* for a pure 2-link border this has only be done for the last and first process in a communicator - the rest is zero */
    for( size_t it = 0; it < children.size(); it++ )
    {
+      if( two_link_border && ( it != 0 && it != children.size() - 1 ) )
+         continue;
+
       std::vector<BorderMod> Br_mod_border_child;
 
       for( auto& br_mod : Br_mod_border )
@@ -615,7 +619,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
 void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, bool use_local_RAC )
+      bool sym_res, bool sparse_res, bool use_local_RAC, bool two_link_border )
 {
    assert( !is_hierarchy_root );
 
@@ -628,6 +632,9 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for( size_t it = 0; it < children.size(); it++ )
    {
+      if( two_link_border && ( it != 0 && it != children.size() - 1 ) )
+         continue;
+
       BorderLinsys bl_child = getChild( Bl, it );
       BorderLinsys br_child = getChild( Br, it );
 

@@ -23,11 +23,11 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
       void Ltsolve2(sData*, StochVector& x, SimpleVector& x0, bool use_local_RAC ) override;
 
       using sLinsys::LsolveHierarchyBorder;
-      void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border ) override;
+      void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border ) override;
 
       using sLinsys::LtsolveHierarchyBorder;
       void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-            std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res ) override;
+            std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border ) override;
 
       void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool use_local_RAC ) override;
 

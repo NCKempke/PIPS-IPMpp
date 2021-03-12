@@ -18,7 +18,6 @@ class sDummyLinsys : public sLinsys
 
   ~sDummyLinsys() override = default;
 
-
   void factor2( sData*, Variables*) override {};
   void allreduceAndFactorKKT(sData*, Variables*) override {};
   void assembleKKT(sData*, Variables*) override {}
@@ -44,8 +43,8 @@ class sDummyLinsys : public sLinsys
 
   void addTermToSchurResidual( sData*, SimpleVector&, SimpleVector& ) override {};
 
-  void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>& ) override {};
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool ) override {};
+  void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool ) override {};
   void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool ) override {};
   void LniTransMultHierarchyBorder( DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool ) override {};
 
