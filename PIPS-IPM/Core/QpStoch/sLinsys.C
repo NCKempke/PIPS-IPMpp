@@ -911,7 +911,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    else
    {
       assert( nF_left == nG_left );
-      assert( mF_left <= length_col );
+      assert( nF_left <= length_col );
       assert( mF_left + mG_left == m_res_tp );
    }
 
