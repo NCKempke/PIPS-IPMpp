@@ -532,7 +532,7 @@ void StochVectorBase<T>::max( T& m, int& index ) const
    m = -std::numeric_limits<T>::max();
    if( vec )
    {
-      T max_tmp;
+      T max_tmp = -std::numeric_limits<T>::max();
       vec->max( max_tmp, index );
 
       m = std::max( m, max_tmp );
@@ -540,7 +540,7 @@ void StochVectorBase<T>::max( T& m, int& index ) const
 
    if( vecl )
    {
-      T max_tmp;
+      T max_tmp = -std::numeric_limits<T>::max();
       vecl->max(max_tmp, index);
 
       m = std::max( m, max_tmp );
@@ -548,7 +548,7 @@ void StochVectorBase<T>::max( T& m, int& index ) const
 
    for( size_t it = 0; it < children.size(); it++ )
    {
-      T max_tmp;
+      T max_tmp = -std::numeric_limits<T>::max();
       children[it]->max(max_tmp, index);
 
       m = std::max( m, max_tmp );

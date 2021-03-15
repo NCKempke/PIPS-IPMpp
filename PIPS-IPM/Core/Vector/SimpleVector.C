@@ -122,14 +122,9 @@ int SimpleVectorBase<T>::getNnzs() const
 template<typename T>
 void SimpleVectorBase<T>::max( T& m, int& index ) const
 {
-   if( this->n == 0 )
-   {
-      index = -1;
-      m = -std::numeric_limits<T>::max();
-      return;
-   }
-   index = 0;
-   m = v[0];
+   m = -std::numeric_limits<T>::max();
+   index = -1;
+
    for( int i = 0; i < this->n; i++ )
    {
       if( v[i] > m )

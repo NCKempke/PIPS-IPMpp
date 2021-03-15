@@ -472,18 +472,18 @@ void StochGenMatrix::transMult2 ( double beta,   StochVector& y,
 
 double StochGenMatrix::abmaxnorm() const
 {
-  double nrm = 0.0;
+   double nrm = 0.0;
   
-  for(size_t it = 0; it < children.size(); it++)
-    nrm = std::max(nrm, children[it]->abmaxnorm());
+   for(size_t it = 0; it < children.size(); it++)
+      nrm = std::max(nrm, children[it]->abmaxnorm());
 
-  if(iAmDistrib)
-     PIPS_MPIgetMaxInPlace( nrm, mpiComm );
+   if(iAmDistrib)
+      PIPS_MPIgetMaxInPlace( nrm, mpiComm );
 
-  nrm = std::max(nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
-  nrm = std::max(nrm, Blmat->abmaxnorm());
+   nrm = std::max(nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
+   nrm = std::max(nrm, Blmat->abmaxnorm());
 
-  return nrm;
+   return nrm;
 }
 
 double StochGenMatrix::abminnormNonZero( double tol ) const
