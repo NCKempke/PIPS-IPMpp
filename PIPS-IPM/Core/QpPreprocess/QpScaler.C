@@ -233,6 +233,7 @@ double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVecto
       j = -1;
       max = -std::numeric_limits<double>::max();
       maxvecC.max(max, j);
+      std::cout << max << " " << C->abmaxnorm() << "\n";
       assert(max < 0 || max == C->abmaxnorm());
    }
 #endif

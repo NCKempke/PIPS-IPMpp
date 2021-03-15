@@ -1031,75 +1031,63 @@ void StochGenMatrix::getNnzPerCol(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
 }
 
 void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
-      const OoqpVector* colScaleVec, const OoqpVector* colScaleParent, OoqpVector& minmaxVec, OoqpVector* linkParent)
+      const OoqpVector* col_scale_, const OoqpVector* col_scale_link_vars_, OoqpVector& minmax_, OoqpVector* minmax_linking_)
 {
-   StochVector& minmaxVecStoch = dynamic_cast<StochVector&>(minmaxVec);
-   const StochVector* const colScaleVecStoch = dynamic_cast<const StochVector*>(colScaleVec);
+   StochVector& minmax = dynamic_cast<StochVector&>(minmax_);
+   assert(minmax.children.size() == children.size());
+   
+   const StochVector* const col_scale = dynamic_cast<const StochVector*>(col_scale_);
+   const SimpleVector* const col_scale_link_vars = dynamic_cast<const SimpleVector*>(col_scale_link_vars_);
 
-   SimpleVector* mvecl = nullptr;
-   const SimpleVector* const covecparent = dynamic_cast<const SimpleVector*>(colScaleParent);
-   const SimpleVector* const covec = colScaleVecStoch != nullptr ?
-         dynamic_cast<SimpleVector*>(colScaleVecStoch->vec) : nullptr;
+   SimpleVector* minmax_linking = dynamic_cast<SimpleVector*>(minmax_linking_);
+   const SimpleVector* const col_scale_vec = col_scale ? dynamic_cast<SimpleVector*>(col_scale->vec) : nullptr;
 
-   // assert tree compatibility
-   assert(minmaxVecStoch.children.size() == children.size());
-
-   Bmat->getRowMinMaxVec(getMin, initializeVec, covec, *(minmaxVecStoch.vec));
-
-   // not at root?
-   if( linkParent != nullptr )
-      Amat->getRowMinMaxVec(getMin, false, covecparent, *(minmaxVecStoch.vec));
+   Bmat->getRowMinMaxVec(getMin, initializeVec, col_scale_vec, *(minmax.vec));
+   Amat->getRowMinMaxVec(getMin, false, col_scale_link_vars, *(minmax.vec));
 
    /* with linking constraints? */
-   if( minmaxVecStoch.vecl || linkParent )
+   const bool at_root_link = !minmax_linking;
+   const bool has_linking = minmax.vecl || minmax_linking;
+   if( has_linking )
    {
-      assert(minmaxVecStoch.vecl == nullptr || linkParent == nullptr);
+      assert( !minmax.vecl || !minmax_linking );
 
-      // at root?
-      if( linkParent == nullptr )
+      if( at_root_link )
       {
-         mvecl = dynamic_cast<SimpleVector*>(minmaxVecStoch.vecl);
+         minmax_linking = dynamic_cast<SimpleVector*>(minmax.vecl);
 
          if( initializeVec )
          {
             if( getMin )
-               mvecl->setToConstant(std::numeric_limits<double>::max());
+               minmax_linking->setToConstant(std::numeric_limits<double>::max());
             else
-               mvecl->setToZero();
+               minmax_linking->setToZero();
          }
       }
-      else
-      {
-         mvecl = dynamic_cast<SimpleVector*>(linkParent);
-      }
 
-      if( linkParent != nullptr || iAmSpecial(iAmDistrib, mpiComm) )
-         Blmat->getRowMinMaxVec(getMin, false, covec, *mvecl);
+      assert( minmax_linking );
+      if( !at_root_link || iAmSpecial(iAmDistrib, mpiComm) )
+         Blmat->getRowMinMaxVec(getMin, false, col_scale_vec, *minmax_linking);
    }
 
-   if( colScaleVec != nullptr )
+   for( size_t it = 0; it < children.size(); it++ )
    {
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->getRowMinMaxVec(getMin, initializeVec, colScaleVecStoch->children[it], covec,
-               *(minmaxVecStoch.children[it]), mvecl);
-   }
-   else
-   {
-      for( size_t it = 0; it < children.size(); it++ )
-         children[it]->getRowMinMaxVec(getMin, initializeVec, nullptr, nullptr,
-               *(minmaxVecStoch.children[it]), mvecl);
+      const OoqpVector* col_scale_child = col_scale ? col_scale->children[it] : nullptr;
+
+      children[it]->getRowMinMaxVec(getMin, initializeVec, col_scale_child, col_scale_vec,
+            *(minmax.children[it]), minmax_linking);
    }
 
    // distributed, with linking constraints, and at root?
-   if( iAmDistrib && minmaxVecStoch.vecl && !linkParent )
+   if( iAmDistrib && at_root_link && has_linking )
    {
-      assert(mvecl != nullptr);
+      assert( minmax_linking );
 
       // sum up linking constraints vectors
       if( getMin )
-        PIPS_MPIminArrayInPlace(mvecl->elements(), mvecl->length(), mpiComm);
+        PIPS_MPIminArrayInPlace(minmax_linking->elements(), minmax_linking->length(), mpiComm);
       else
-        PIPS_MPImaxArrayInPlace(mvecl->elements(), mvecl->length(), mpiComm);
+        PIPS_MPImaxArrayInPlace(minmax_linking->elements(), minmax_linking->length(), mpiComm);
    }
 }
 

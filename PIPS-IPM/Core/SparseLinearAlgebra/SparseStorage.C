@@ -1933,6 +1933,9 @@ void SparseStorage::addRowSums(double* vec) const
 
 void SparseStorage::getRowMinVec(const double* colScaleVec, double* vec) const
 {
+   if( n <= 0 )
+      return;
+
    const bool coscale = (colScaleVec != nullptr);
 
    if( coscale )
@@ -1973,6 +1976,9 @@ void SparseStorage::getRowMinVec(const double* colScaleVec, double* vec) const
 
 void SparseStorage::getRowMaxVec(const double* colScaleVec, double* vec) const
 {
+   if( n <= 0 )
+      return;
+
    const bool coscale = (colScaleVec != nullptr);
 
    if( coscale )
