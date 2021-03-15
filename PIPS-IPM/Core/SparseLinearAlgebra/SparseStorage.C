@@ -21,9 +21,9 @@ SparseStorage::SparseStorage( int m_, int n_, int len_ ) :
       m{m_}, n{n_}, len{len_}
 {
    assert( m_ >= 0 );
-//   assert( n_ >= 0 );
    assert( len_ >= 0 );
-
+   if( n_ <= 0 )
+      assert( len_ == 0 );
    neverDeleteElts = 0;
 
    jcolM = new int[len];
@@ -1257,16 +1257,15 @@ void SparseStorage::randomize( double alpha, double beta, double * seed )
 
 double SparseStorage::abmaxnorm() const
 {
-  double norm = 0.0;
-  int nnz = this->numberOfNonZeros();
+   double norm = 0.0;
+   const int nnz = numberOfNonZeros();
   
-  int i;
-  double fabsMi;
-  for( i = 0; i < nnz; i++ ) {
-    fabsMi = fabs( M[i] );
-    if ( fabsMi > norm ) norm = fabsMi;
-  }
-  return norm;
+   for( int i = 0; i < nnz; i++ )
+   {
+      const double absM = std::fabs( M[i] );
+      if ( absM > norm ) norm = absM;
+   }
+   return norm;
 }
 
 double SparseStorage::abminnormNonZero( double tol ) const
@@ -2002,6 +2001,9 @@ void SparseStorage::addRowSums(double* vec) const
 
 void SparseStorage::getRowMinVec(const double* colScaleVec, double* vec) const
 {
+   if( n <= 0 )
+      return;
+
    const bool coscale = (colScaleVec != nullptr);
 
    if( coscale )
@@ -2042,6 +2044,9 @@ void SparseStorage::getRowMinVec(const double* colScaleVec, double* vec) const
 
 void SparseStorage::getRowMaxVec(const double* colScaleVec, double* vec) const
 {
+   if( n <= 0 )
+      return;
+
    const bool coscale = (colScaleVec != nullptr);
 
    if( coscale )
