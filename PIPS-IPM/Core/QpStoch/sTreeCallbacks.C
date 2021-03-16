@@ -938,7 +938,8 @@ unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root
       if( n_new_roots <= 1 )
       {
          if( rankMe == 0 )
-            std::cout << "Too many layers for hierarchical split specified - the number of Blocks does not allow for " << take_nth_root << " layers - decreasing amount of layers\n";
+            std::cout << "Too many layers for hierarchical split specified - the number of Blocks does not allow for " <<
+            take_nth_root << " layers - decreasing amount of layers\n";
          take_nth_root -= 1;
       }
    }

@@ -722,7 +722,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       if( locmz > 0 )
       {
          assert( zDiag );
-         assert(b3.length() == zDiag->length());
+         assert( b3.length() == zDiag->length( ));
          C.transMultD(1.0, rhs1, -1.0, b3, *zDiag);
       }
    }
