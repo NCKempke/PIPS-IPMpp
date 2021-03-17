@@ -498,97 +498,193 @@ void sTree::saveCurrentCPUState()
 }
 
 
-void sTree::printProcessTree() const
+void sTree::appendPrintTreeLayer( std::vector<std::string>& layer_outputs, unsigned int level ) const
 {
-   if( rankMe != 0 )
+   if( level == layer_outputs.size() )
+      layer_outputs.push_back("");
+   if( commWrkrs == MPI_COMM_NULL )
       return;
 
-   std::cout << "Process Tree:\n\n";
+   std::stringstream curr_level_output;
+   const bool I_print_layer = PIPS_MPIgetRank(commWrkrs) == 0;
 
-   std::vector<const sTree*> queue;
-   queue.insert(queue.end(), this);
-
-   size_t curr_size = queue.size();
-   size_t count = 0;
-   bool node_layer_reached = false;
-   bool node_layer_next = false;
-   bool tree_unbalanced = false;
-   while( !queue.empty() )
+   if( I_print_layer )
    {
-      const sTree* child = queue.front();
-      if( !child )
+      if( !children.empty() )
       {
-         std::cout << "| ";
-         queue.erase(queue.begin());
-         ++count;
-      }
-      else if( node_layer_reached && child->myProcs.size() == 1 )
-      {
-         static size_t node = 1;
-         assert(child);
 
-         const size_t node_begin = node;
-         const int curr_proc = child->myProcs[0];
-         queue.erase(queue.begin());
-         ++count;
-
-         size_t node_end = node;
-
-         while( !queue.empty() && queue.front() != nullptr && queue.front()->myProcs[0] == curr_proc )
+         std::stringstream level_stream;
+         level_stream << "|";
+         for( size_t i = 0; i < children.size(); ++i)
          {
-            ++node_end;
-            queue.erase(queue.begin());
-            ++count;
-         }
+            const auto& child = children[i];
 
-         if( node_begin != node_end )
-            std::cout << "[ " << curr_proc << ": " << node_begin << "-" << node_end << " ] ";
-         else
-            std::cout << "[ " << curr_proc << ": " << node_begin << " ] ";
-         node = node_end + 1;
-      }
-      else
-      {
-         if( node_layer_reached )
-            tree_unbalanced = true;
+            /* this is a leaf */
+            if( child->children.empty() && !child->sub_root )
+            {
+               int count = 1;
+               while( i + 1 < children.size() && children[i + 1]->myProcs == child->myProcs )
+               {
+                  ++count;
+                  ++i;
+               }
 
-         assert( child );
-         assert( !child->sub_root );
-         if( child->myProcs.size() >= 1 )
-         {
-            if( child->myProcs.size() > 1 )
-               std::cout << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ] ";
-            else
-               std::cout << "[ " << child->myProcs.front() << " ] ";
-         }
-
-         for( auto& childchild : child->children )
-         {
-            if( childchild->sub_root )
-               queue.insert(queue.end(), childchild->sub_root);
+               level_stream << " [ " << child->myProcs.front() << " : " << count << " leafs ]";
+            }
             else
             {
-               node_layer_next = true;
-               queue.insert(queue.end(), childchild);
+               if( child->myProcs.size() == 1 )
+                  level_stream << " [ " << child->myProcs.front() << " ]";
+               else
+                  level_stream << " [ " << child->myProcs.front() << " - " << child->myProcs.back() << " ]";
             }
          }
-         if( !(child->children.empty()) )
-            queue.insert(queue.end(), nullptr);
-         queue.erase(queue.begin());
-         ++count;
-      }
+         level_stream << " |";
 
-      if( count == curr_size )
-      {
-         if( node_layer_next )
-            node_layer_reached = true;
-         curr_size = queue.size();
-         count = 0;
-         std::cout << "\n\n";
+         layer_outputs[level].append(level_stream.str());
       }
    }
 
-   if( tree_unbalanced )
+   for( const auto& child : children )
+   {
+      if( child->sub_root )
+         child->sub_root->appendPrintTreeLayer(layer_outputs, level + 1);
+      else
+         child->appendPrintTreeLayer(layer_outputs, level + 1);
+   }
+}
+
+void sTree::printProcessTree() const
+{
+   assert( commWrkrs != MPI_COMM_NULL );
+
+   unsigned int level = 0;
+   bool tree_unbalanced = false;
+
+   if( rankMe == 0 )
+      std::cout << "Process Tree:\n\n";
+
+   std::vector<std::string> level_outputs;
+   if( PIPS_MPIgetRank(commWrkrs) == 0 )
+   {
+      std::stringstream level_stream;
+      if( myProcs.size() == 1 )
+         level_stream << "| [ " << myProcs.front() << " ] |";
+      else
+         level_stream << "| [ " << myProcs.front() << " - " << myProcs.back() << " ] |";
+
+      level_outputs.push_back(level_stream.str());
+   }
+   else
+      level_outputs.push_back("");
+
+   appendPrintTreeLayer(level_outputs, level + 1);
+
+   const unsigned int levels = PIPS_MPIgetMax(level_outputs.size());
+
+   if( levels > level_outputs.size() )
+   {
+      assert( levels == level_outputs.size() + 1 );
+      tree_unbalanced = true;
+      level_outputs.push_back("");
+   }
+   assert( PIPS_MPIisValueEqual(level_outputs.size()) );
+
+   for( auto& level : level_outputs )
+   {
+      const std::string level_full = PIPS_MPIallgatherString(level);
+
+      if( rankMe == 0 )
+         std::cout << level_full << "\n\n";
+   }
+
+//   std::vector<const sTree*> queue;
+//   queue.insert(queue.end(), this);
+//
+//   size_t curr_size = queue.size();
+//   size_t count = 0;
+//   bool node_layer_reached = false;
+//   bool node_layer_next = false;
+//   bool tree_unbalanced = false;
+//
+//   std::stringstream curr_level_output;
+//   while( !queue.empty() )
+//   {
+//      printTreeLayer(queue);
+//
+//      const sTree* child = queue.front();
+//
+//      if( !child )
+//      {
+//         curr_level_output << "| ";
+//         queue.erase(queue.begin());
+//         ++count;
+//      }
+//      else
+//      if( node_layer_reached && child->myProcs.size() == 1 )
+//      {
+//         assert(child);
+//
+//         unsigned int n_nodes = 1;
+//         queue.erase(queue.begin());
+//         ++count;
+//
+//         if( child->myProcs[0] != rankMe )
+//            continue;
+//
+//
+//         while( !queue.empty() && queue.front() && queue.front()->myProcs[0] == rankMe )
+//         {
+//            ++n_nodes;
+//            queue.erase(queue.begin());
+//            ++count;
+//         }
+//
+//         curr_level_output << "[ " << rankMe << ": " << n_nodes << " leafs ] ";
+//      }
+//      else
+//      {
+//         assert( child );
+//         const bool I_print = child->commWrkrs != MPI_COMM_NULL && PIPS_MPIgetRank( child->commWrkrs ) == 0;
+//
+//         std::cout << "I print " << I_print << std::endl;
+//         if( node_layer_reached )
+//            tree_unbalanced = true;
+//
+//         assert( !child->sub_root );
+//         if( child->myProcs.size() >= 1 && I_print )
+//         {
+//            if( child->myProcs.size() > 1 )
+//               curr_level_output << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ] ";
+//            else
+//               curr_level_output << "[ " << child->myProcs.front() << " ] ";
+//         }
+//
+//         if( !node_layer_reached )
+//         {
+//
+//         }
+//
+//         queue.erase(queue.begin());
+//         ++count;
+//      }
+//
+//      if( count == curr_size )
+//      {
+//         if( node_layer_next )
+//            node_layer_reached = true;
+//         curr_size = queue.size();
+//         count = 0;
+//
+//         const std::string level = PIPS_MPIallgatherString(curr_level_output.str());
+//         curr_level_output.str(std::string());
+//         if( rankMe ==  0 )
+//            std::cout << level << "\n\n";
+//      }
+//   }
+
+   PIPS_MPIgetLogicOrInPlace(tree_unbalanced);
+   if( tree_unbalanced && rankMe == 0 )
       std::cout << "WARNING : the split tree is unbalanced and there is branches that are longer than others\n" <<
          "\t-> this is bad for performance but that fine of a split usually is bad for performance anyway..\n" <<
          "\t-> rethink the amount of layers for the hierarchical approach..\n\n";

@@ -88,7 +88,8 @@ protected:
    void assertTreeStructureIsMyNodeSubRoot() const;
    void assertTreeStructureIsMyNode()const;
 
-   static unsigned int getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
+   unsigned int getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
+         unsigned int n_procs, const std::vector<unsigned int>& child_procs );
 
    void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);

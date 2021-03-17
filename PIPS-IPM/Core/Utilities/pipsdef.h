@@ -415,6 +415,12 @@ inline MPI_Datatype get_mpi_datatype_t<unsigned int>::get()
    return MPI_UNSIGNED;
 };
 
+template<>
+inline MPI_Datatype get_mpi_datatype_t<long unsigned int>::get()
+{
+   return  MPI_UNSIGNED_LONG;
+};
+
 template <typename T>
 inline MPI_Datatype get_mpi_datatype(const T&) {
    return get_mpi_datatype_t<T>::get();

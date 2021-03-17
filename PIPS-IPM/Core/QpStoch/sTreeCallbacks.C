@@ -925,9 +925,12 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    return top_layer;
 }
 
-unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
+unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
+      unsigned int n_procs, const std::vector<unsigned int>& child_procs )
 {
    assert( take_nth_root > 1 );
+   assert( n_procs <= n_children );
+   assert( child_procs.size() == n_children );
 
    // old way - results in a lot of wait at Allreduces..
 //   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
@@ -935,22 +938,92 @@ unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root
    while( n_new_roots <= 1 && take_nth_root > 1 )
    {
       n_new_roots = std::floor( std::pow( n_children, 1.0 / take_nth_root ) );
+
+      std::cout << n_new_roots << " " << n_procs << " " << n_new_roots % n_procs << std::endl;
+      if( n_procs <= n_new_roots && ((n_new_roots % n_procs) != 0) )
+      {
+         while( n_new_roots % n_procs != 0 )
+            --n_new_roots;
+      }
+      else if( n_procs > n_new_roots && n_procs % n_new_roots != 0 )
+      {
+         while( n_procs % n_new_roots != 0 )
+            --n_new_roots;
+      }
+
       if( n_new_roots <= 1 )
       {
-         if( rankMe == 0 )
-            std::cout << "Too many layers for hierarchical split specified - the number of Blocks does not allow for " <<
+         if( PIPS_MPIgetRank(commWrkrs) == 0 )
+            std::cout << "Too many layers for hierarchical split specified - the number of blocks and MPI processes does not allow for " <<
             take_nth_root << " layers - decreasing amount of layers\n";
          take_nth_root -= 1;
       }
    }
 
-   mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
+   if( take_nth_root <= 1 )
+      return n_new_roots;
+
+   assert( n_new_roots > 1 );
+//   mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
+
+   /* now map new roots to procs or procs to new_roots */
+   mapChildrenToNSubTrees( map_child_to_sub_tree, n_children, n_new_roots );
+//   if( n_procs <= n_new_roots )
+//   {
+//      assert( n_new_roots % n_procs == 0 );
+//   }
+//   else
+//   {
+//      assert( n_procs % n_new_roots == 0 );
+//      /* roots to procs */
+//      std::vector<unsigned int> map_procs_roots;
+//      map_child_to_sub_tree.clear();
+//      map_child_to_sub_tree.resize(n_children);
+//
+//      /* proc to roots */
+//      mapChildrenToNSubTrees( map_procs_roots, n_new_roots, n_procs );
+//
+//      for( size_t i = 0; i < n_children; ++i )
+//      {
+//         const unsigned int child_proc = child_procs[i];
+//         assert( child_proc < map_procs_roots.size() );
+//         map_child_to_sub_tree[i] = map_procs_roots[child_proc];
+//      }
+//   }
+//
    return n_new_roots;
 }
 
 void sTreeCallbacks::createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree )
 {
-   const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size() );
+   assert( children.size() > 1 );
+   assert( myProcs.size() == getNDistinctValues(myProcs) );
+
+   std::vector<unsigned int> child_procs;
+   child_procs.reserve( children.size() );
+
+   assert( children.front()->myProcs.size() == 1 );
+   child_procs.push_back(0);
+   unsigned int proc = 0;
+   for( size_t i = 1; i < children.size(); ++i )
+   {
+      assert( children[i]->myProcs.size() == 1 );
+      if( children[i-1]->myProcs != children[i]->myProcs )
+         ++proc;
+
+      child_procs.push_back(proc);
+   }
+
+   const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size(), myProcs.size(), child_procs );
+
+   if( rankMe == 0 )
+   {
+      for( auto i : map_child_to_sub_tree )
+         std::cout << i << "\t";
+      std::cout << std::endl;
+
+   }
+
    if( n_new_roots <= 1 )
    {
       assert( take_nth_root == 1 );
@@ -1234,7 +1307,7 @@ std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, sData* data )
 
    if( n_layers == 1 )
    {
-      if( rankMe == 0 )
+      if( PIPS_MPIgetRank(commWrkrs) == 0 )
          std::cout << "No split applied!\n";
       return std::make_pair(0,0);
    }
@@ -1315,6 +1388,13 @@ sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
          splitTree( n_layers, data );
          assertTreeStructureCorrect();
          printProcessTree();
+
+         if( map_node_sub_root.empty() )
+         {
+            if( PIPS_MPIgetRank() == 0 )
+               std::cout << "Not a single split has been applied - hierarchical approach will have no additional sparse layers\n";
+            pips_options::setIntParameter("HIERARCHICAL_APPROACH_N_LAYERS", 1);
+         }
       }
 
       const int nx_to_shave = data->getNGlobalVars();

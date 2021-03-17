@@ -143,6 +143,7 @@ public:
 
   void printProcessTree() const;
 protected:
+  void appendPrintTreeLayer( std::vector<std::string>& layer_outputs, unsigned int level ) const;
   void assignProcesses( MPI_Comm, std::vector<int>&);
 
   sTree() = default;

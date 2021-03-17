@@ -150,7 +150,8 @@ protected:
   void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
         int& local2linksStartIneq, int& local2linksEndIneq);
 
-  bool isHierarchySparseTopLayerOnlyTwolinks() const { return pips_options::getBoolParameter("HIERARCHICAL") && threshold_global_cons <= 1 && threshold_global_vars == 0; };
+  bool isHierarchySparseTopLayerOnlyTwolinks() const { return (pips_options::getBoolParameter("HIERARCHICAL")) &&
+        (pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) && threshold_global_cons <= 1 && threshold_global_vars == 0; };
 
   bool isHierarchyRoot() const { return is_hierarchy_root; };
   bool isHierarchyInnerRoot() const { return is_hierarchy_inner_root; };
