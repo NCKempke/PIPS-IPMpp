@@ -1223,52 +1223,29 @@ void sData::writeToStreamDense( std::ostream& out ) const
 {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   if( myRank == 0 )
-      out <<  "A: " << "\n";
+   if( myRank == 0 ) out <<  "A: \n";
    (*A).writeToStreamDense(out);
-
-   if( myRank == 0 )
-      out <<  "C: " << "\n";
+   if( myRank == 0 ) out <<  "C: \n";
    (*C).writeToStreamDense(out);
-
-   if( myRank == 0 )
-      out <<  "obj: " << "\n";
+   if( myRank == 0 ) out <<  "obj: \n";
    (*g).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "bA: " << "\n";
+   if( myRank == 0 ) out <<  "bA: \n";
    (*bA).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "xupp: " << "\n";
+   if( myRank == 0 ) out <<  "xupp: \n";
    (*bux).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "ixupp: " << "\n";
+   if( myRank == 0 ) out <<  "ixupp: \n";
    (*ixupp).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "xlow: " << "\n";
+   if( myRank == 0 ) out <<  "xlow: \n";
    (*blx).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "ixlow: " << "\n";
+   if( myRank == 0 ) out <<  "ixlow: \n";
    (*ixlow).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "cupp: " << "\n";
+   if( myRank == 0 ) out <<  "cupp: \n";
    (*bu).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "icupp: " << "\n";
+   if( myRank == 0 ) out <<  "icupp: \n";
    (*icupp).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "clow: " << "\n";
+   if( myRank == 0 ) out <<  "clow: \n";
    (*bl).writeToStream(out);
-
-   if( myRank == 0 )
-      out <<  "iclow: " << "\n";
+   if( myRank == 0 ) out <<  "iclow: \n";
    (*iclow).writeToStream(out);
 }
 
@@ -1300,24 +1277,24 @@ void sData::writeMPSformat( std::ostream& out)
    (*C).writeMPSformatRows(out, 2, iclow);
 
    // write all variable names
-   out <<  "COLUMNS " << "\n";
+   out <<  "COLUMNS \n";
    writeMPSColumns(out);
 
    // write all rhs / lhs
-   out <<  "RHS " << "\n";
+   out <<  "RHS \n";
 
    (*bA).writeMPSformatRhs(out, 0, nullptr);
    (*bu).writeMPSformatRhs(out, 1, icupp);
    (*bl).writeMPSformatRhs(out, 2, iclow);
 
    // write all variable bounds
-   out <<  "BOUNDS " << "\n";
+   out <<  "BOUNDS \n";
    (*bux).writeMPSformatBounds(out, ixupp, true);
    (*blx).writeMPSformatBounds(out, ixlow, false);
 
-   out <<  "ENDATA " << "\n";
+   out <<  "ENDATA \n";
 
-   cout<<"Finished writing MPS format."<<"\n";
+   cout<<"Finished writing MPS format.\n";
 }
 
 void sData::writeMPSColumns(ostream& out)
@@ -1942,7 +1919,7 @@ void sData::activateLinkStructureExploitation()
 
       useLinkStructure = false;
       if( myrank == 0 )
-         std::cout << "no linking constraints so no linking structure found" << "\n";
+         std::cout << "no linking constraints so no linking structure found\n";
       return;
    }
 
@@ -2042,8 +2019,7 @@ void sData::activateLinkStructureExploitation()
 
    if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
    {
-
-      if( (n2LinksEq + n2LinksIneq + n0LinkVars) / double(linkStartBlockIdA.size() + linkStartBlockIdC.size() + n_blocks_per_link_var.size()) < minStructuredLinksRatio )
+      if( ratio < minStructuredLinksRatio )
       {
          if( myrank == 0 )
             std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << "\n";
@@ -2889,84 +2865,84 @@ bool sData::isRootNodeInSync() const
    /* matrix A */
    if(!dynamic_cast<const StochGenMatrix&>(*A).isRootNodeInSync())
    {
-      std::cout << "ERROR: matrix A corrupted!" << "\n";
+      std::cout << "ERROR: matrix A corrupted!\n";
       in_sync = false;
    }
 
    /* matrix C */
    if( !dynamic_cast<const StochGenMatrix&>(*C).isRootNodeInSync() )
    {
-      std::cout << "ERROR: matrix C corrupted!" << "\n";
+      std::cout << "ERROR: matrix C corrupted!\n";
       in_sync = false;
    }
 
    /* objective g */
    if( !dynamic_cast<const StochVector&>(*g).isRootNodeInSync() )
    {
-      std::cout << "ERROR: objective vector corrupted!" << "\n";
+      std::cout << "ERROR: objective vector corrupted!\n";
       in_sync = false;
    }
 
    /* rhs equality bA */
    if( !dynamic_cast<const StochVector&>(*bA).isRootNodeInSync() )
    {
-      std::cout << "ERROR: rhs of A corrupted!" << "\n";
+      std::cout << "ERROR: rhs of A corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds x bux */
    if( !dynamic_cast<const StochVector&>(*bux).isRootNodeInSync() )
    {
-      std::cout << "ERROR: upper bounds x corrupted!" << "\n";
+      std::cout << "ERROR: upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for upper bounds x ixupp */
    if( !dynamic_cast<const StochVector&>(*ixupp).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index upper bounds x corrupted!" << "\n";
+      std::cout << "ERROR: index upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds x blx */
    if( !dynamic_cast<const StochVector&>(*blx).isRootNodeInSync() )
    {
-      std::cout << "ERROR: lower bounds x corrupted!" << "\n";
+      std::cout << "ERROR: lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds x ixlow */
    if( !dynamic_cast<const StochVector&>(*ixlow).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index lower bounds x corrupted!" << "\n";
+      std::cout << "ERROR: index lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds C bu */
    if( !dynamic_cast<const StochVector&>(*bu).isRootNodeInSync() )
    {
-      std::cout << "ERROR: rhs C corrupted!" << "\n";
+      std::cout << "ERROR: rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* index upper bounds C icupp */
    if( !dynamic_cast<const StochVector&>(*icupp).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index rhs C corrupted!" << "\n";
+      std::cout << "ERROR: index rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds C bl */
    if( !dynamic_cast<const StochVector&>(*bl).isRootNodeInSync() )
    {
-      std::cout << "ERROR: lower bounds C corrupted!" << "\n";
+      std::cout << "ERROR: lower bounds C corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds C iclow */
    if( !dynamic_cast<const StochVector&>(*iclow).isRootNodeInSync() )
    {
-      std::cout << "ERROR: index lower bounds C corrupted!" << "\n";
+      std::cout << "ERROR: index lower bounds C corrupted!\n";
       in_sync = false;
    }
 
@@ -3022,10 +2998,10 @@ void sData::printRanges() const
 
       const std::streamsize pre_old = std::cout.precision();
       std::cout << std::setprecision(0) << std::scientific;
-      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]" << "\n";
-      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]" << "\n";
-      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]" << "\n";
-      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]" << "\n";
+      std::cout << "Matrix range    [" << mat_min << ", " << mat_max << "]\n";
+      std::cout << "Objective range [" << ( absmin_objective == inf ? 0.0 : absmin_objective ) << ", " << absmax_objective << "]\n";
+      std::cout << "Bounds range    [" << ( bounds_min == inf ? 0.0 : bounds_min ) << ", " << bounds_max << "]\n";
+      std::cout << "RhsLhs range    [" << ( rhs_min == inf ? 0.0 : rhs_min ) << ", " << rhs_max << "]\n";
       std::cout << std::setprecision(pre_old) << std::defaultfloat;
    }
 }

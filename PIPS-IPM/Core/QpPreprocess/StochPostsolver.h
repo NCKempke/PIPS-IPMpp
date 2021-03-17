@@ -32,6 +32,7 @@ public:
       void notifySingletonIneqalityRow( int node, int row, BlockType block_type, int col, double coeff, double lhs, double rhs );
 
       void notifySingletonRowBoundsTightened( const INDEX& row, const INDEX& col, double xlow_old, double xupp_old, double xlow_new, double xupp_new, double coeff);
+      void notifyRedundantSide( const INDEX& row, bool is_upper_side, double lhs, double rhs );
       void notifyRedundantRow( const INDEX& row, int iclow, int icupp, double lhs, double rhs, const StochGenMatrix& matrix_row);
       void notifyFixedColumn( const INDEX& col, double value, double obj_coeff, const StochGenMatrix& eq_mat, const StochGenMatrix& ineq_mat );
       void notifyFixedEmptyColumn( const INDEX& col, double value, double obj_coeff, double xlow, double xupp);
@@ -98,7 +99,7 @@ private:
          FIXED_COLUMN = 0,
          SUBSTITUTED_COLUMN = 1,
          STORE_BOUND_TIGHTENING_LINKING_ROWS = 2,
-         DUMMY2 = 3,
+         REDUNDANT_SIDE = 3,
          REDUNDANT_ROW = 4,
          BOUNDS_TIGHTENED = 5,
          SINGLETON_EQUALITY_ROW = 6,
@@ -186,6 +187,7 @@ private:
       void finishNotify();
 
 /// postsolve operations
+      bool postsolveRedundantSide(sVars& original_vars, int reduction_idx) const;
       bool postsolveRedundantRow(sVars& original_vars, int reduction_idx);
       bool postsolveBoundsTightened(sVars& original_vars, int reduction_idx);
       bool postsolveFixedColumn(sVars& original_vars, int reduction_idx);

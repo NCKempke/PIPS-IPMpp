@@ -104,9 +104,10 @@ private:
   int getNGlobalEQConss() const { return n_global_eq_linking_conss; };
   int getNGlobalINEQConss() const { return n_global_ineq_linking_conss; };
 
-  virtual void writeToStreamDense( std::ostream& out) const;
-  void writeMPSformat( std::ostream& out);
-  void writeMPSColumns( std::ostream& out);
+  virtual void writeToStreamDense( std::ostream& out ) const;
+  void writeMPSformat( std::ostream& out );
+  void writeMPSColumns( std::ostream& out );
+
   virtual sData* cloneFull(bool switchToDynamicStorage = false) const;
 
   double objectiveValue( const QpGenVars * vars ) const override;

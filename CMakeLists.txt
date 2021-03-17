@@ -27,7 +27,7 @@ add_compile_options(
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"
 )
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE)
@@ -76,6 +76,8 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ## required packages 
 find_library(GFORTRAN_LIBRARY NAMES libgfortran.so REQUIRED)
 find_library(DL_LIBRARY NAMES dl REQUIRED)
+
+find_package(Threads REQUIRED)
 
 find_package(OpenMP)
 if(NOT OpenMP_FOUND)

@@ -19,15 +19,17 @@ int SparseStorage::instances = 0;
 
 SparseStorage::SparseStorage( int m_, int n_, int len_ )
 {
-  int i;
-  
+  if( n_ <= 0 )
+     assert( len_ == 0 );
+  assert( m_ >= -1 );
+
   neverDeleteElts = 0;
   m      = m_;
   n      = n_;
   len    = len_;
   jcolM  = new int[len];
   krowM  = new int[m+1];
-  for( i = 0; i <= m; i++ ) {
+  for( int i = 0; i <= m; i++ ) {
     krowM[i] = 0;
   }
   M      = new double[len];
@@ -41,6 +43,9 @@ SparseStorage::SparseStorage( int m_, int n_, int len_,
 			      int * krowM_, int * jcolM_, double * M_,
 			      int deleteElts)
 {
+   if( n_ <= 0 )
+        assert( len_ == 0 );
+
   neverDeleteElts = (!deleteElts);
 
   //neverDeleteElts = 1;
@@ -1195,16 +1200,15 @@ void SparseStorage::randomize( double alpha, double beta, double * seed )
 
 double SparseStorage::abmaxnorm() const
 {
-  double norm = 0.0;
-  int nnz = this->numberOfNonZeros();
+   double norm = 0.0;
+   const int nnz = numberOfNonZeros();
   
-  int i;
-  double fabsMi;
-  for( i = 0; i < nnz; i++ ) {
-    fabsMi = fabs( M[i] );
-    if ( fabsMi > norm ) norm = fabsMi;
-  }
-  return norm;
+   for( int i = 0; i < nnz; i++ )
+   {
+      const double absM = std::fabs( M[i] );
+      if ( absM > norm ) norm = absM;
+   }
+   return norm;
 }
 
 double SparseStorage::abminnormNonZero( double tol ) const
@@ -1956,6 +1960,9 @@ void SparseStorage::addRowSums(double* vec) const
 
 void SparseStorage::getRowMinVec(const double* colScaleVec, double* vec) const
 {
+   if( n <= 0 )
+      return;
+
    const bool coscale = (colScaleVec != nullptr);
 
    if( coscale )
@@ -1996,6 +2003,9 @@ void SparseStorage::getRowMinVec(const double* colScaleVec, double* vec) const
 
 void SparseStorage::getRowMaxVec(const double* colScaleVec, double* vec) const
 {
+   if( n <= 0 )
+      return;
+
    const bool coscale = (colScaleVec != nullptr);
 
    if( coscale )

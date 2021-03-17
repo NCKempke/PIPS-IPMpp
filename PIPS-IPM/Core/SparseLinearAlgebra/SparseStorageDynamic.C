@@ -820,6 +820,10 @@ double SparseStorageDynamic::rowTimesVec( const double* vec, int length, int row
 {
    assert(0 <= row && row < m);
    assert(length == n);
+   if( n == 0 )
+      return 0.0;
+
+   assert(vec);
 
    if( length == 0 )
       return 0.0;
@@ -836,11 +840,15 @@ double SparseStorageDynamic::rowTimesVec( const double* vec, int length, int row
 
 void SparseStorageDynamic::axpyWithRowAt( double alpha, double* y, int length, int row) const
 {
-   assert(y);
    assert(0 <= row && row < m);
    assert(length == n);
    if( length == 0 )
       return;
+
+   if( n == 0 )
+      return;
+
+   assert(y);
 
    for(int i = rowptr[row].start; i < rowptr[row].end; ++i)
    {
@@ -851,11 +859,15 @@ void SparseStorageDynamic::axpyWithRowAt( double alpha, double* y, int length, i
 
 void SparseStorageDynamic::axpyWithRowAtPosNeg( double alpha, double * y_pos, double* y_neg, int length, int row) const
 {
-   assert(y_pos);
    assert(0 <= row && row < m);
    assert(length == n);
    if( length == 0 )
       return;
+
+   if( n == 0 )
+      return;
+
+   assert(y_pos);
 
    for(int i = rowptr[row].start; i < rowptr[row].end; ++i)
    {
