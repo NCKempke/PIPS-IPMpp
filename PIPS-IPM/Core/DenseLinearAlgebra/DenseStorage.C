@@ -76,7 +76,7 @@ DenseStorage::DenseStorage( int min, int nin )
     int i;
     for( i = 1; i < m; i++ ) M[i] = M[0] + i * n; 
   } catch ( ... ) {
-    std::cerr << "Out of memory in DenseStorage::DenseStorage(int, int)\n";
+    std::cerr << "Out of memory in DenseStorage::DenseStorage(" << m << ", " << n << ")\n";
     throw;
   }
 }
