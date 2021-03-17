@@ -33,10 +33,8 @@ class GeoStochScaler : public StochScaler
 protected:
   void doObjScaling() override;
   
-  void applyGeoMean(OoqpVector& maxvec, OoqpVector& minvec);
+  void applyGeoMean(OoqpVector& maxvec, const OoqpVector& minvec);
   void postEquiScale();
-  void setScalingVecsToOne();
-
 public:
 
   GeoStochScaler(Data * prob, bool equiScaling, bool bitshifting = false);

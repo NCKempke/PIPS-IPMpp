@@ -17,12 +17,11 @@ class sData;
 class sLinsysLeafSchurSlv : public sLinsysLeaf
 {
  public:
-  template<class LINSOLVER>
   sLinsysLeafSchurSlv(sFactory* factory,
 		      sData* prob_,				    
 		      OoqpVector* dd_, OoqpVector* dq_, 
 		      OoqpVector* nomegaInv_,
-		      OoqpVector* rhs_, LINSOLVER* solver);
+		      OoqpVector* rhs_) : sLinsysLeaf(factory, prob_, dd_, dq_, nomegaInv_, rhs_) {};
 
   void factor2(sData *prob, Variables *vars) override;
   void addTermToDenseSchurCompl(sData *prob, 
@@ -31,23 +30,8 @@ class sLinsysLeafSchurSlv : public sLinsysLeaf
             SparseSymMatrix& SC) override;
 
  private:
-  bool switchedToSafeSlv;
+  bool switchedToSafeSlv{false};
 
 }; 
-template<class LINSOLVER>
-sLinsysLeafSchurSlv::sLinsysLeafSchurSlv(sFactory* factory,
-					 sData* prob,
-					 OoqpVector* dd_, 
-					 OoqpVector* dq_, 
-					 OoqpVector* nomegaInv_,
-					 OoqpVector* rhs_,
-					 LINSOLVER* s)
-: sLinsysLeaf(factory, prob, dd_, dq_, nomegaInv_, rhs_, s), 
-  switchedToSafeSlv(false)
-{
-  
-  
-}
-
 
 #endif

@@ -396,7 +396,7 @@ void SparseStorageDynamic::addNnzPerRow(int* vec) const
 #endif
 }
 
-void SparseStorageDynamic::writeToStreamDense( ostream& out) const
+void SparseStorageDynamic::writeToStreamDense( std::ostream& out) const
 {
    int i, k;
    //todo: instead of \t, use length of longest value in M
@@ -421,11 +421,11 @@ void SparseStorageDynamic::writeToStreamDense( ostream& out) const
          out << 0 << '\t';
          j++;
       }
-      out << endl;
+      out << "\n";
    }
 }
 
-void SparseStorageDynamic::writeToStreamDenseRow( stringstream& out, int rowidx) const
+void SparseStorageDynamic::writeToStreamDenseRow( std::ostream& out, int rowidx) const
 {
    int j = 0; // Column j
 
@@ -489,7 +489,7 @@ void SparseStorageDynamic::restoreOrder()
       std::vector<std::pair<int, double> > pairVector;
 
       for(int j = start; j < end; j++)
-         pairVector.push_back(make_pair(jcolM[j], M[j]));
+         pairVector.push_back(std::make_pair(jcolM[j], M[j]));
 
       std::sort(pairVector.begin(), pairVector.end(), first_is_smaller());
       for(int j = start; j < end; j++)

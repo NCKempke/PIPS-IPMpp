@@ -15,6 +15,7 @@
 #include "DenseStorageHandle.h"
 #include "pipsport.h"
 
+/* root pardiso solver */
 class PardisoIndefSolver : public DoubleLinearSolver
 {
    public:
@@ -30,11 +31,18 @@ class PardisoIndefSolver : public DoubleLinearSolver
       constexpr static bool parallelForwardBackwardDefault = true;
       constexpr static bool factorizationTwoLevelDefault = true;
 
+      /** buffer for solution of solve phase */
+      std::vector<double> sol;
+      /** buffer for non-zero right hand sides - PARDISO cannot porperly deal with 0 rhs when solving multiple rhss at once */
+      std::vector<double> rhss_nonzero;
+      /** maps a non-zero rhs to its original index */
+      std::vector<int> map_rhs_nonzero_original;
+
+      MPI_Comm mpi_comm{MPI_COMM_NULL};
 
       double* x{}; /* solution vector */
 
       int mtype{-2};
-
 
       int n; /* size of the matrix */
 
@@ -69,15 +77,17 @@ class PardisoIndefSolver : public DoubleLinearSolver
       virtual void checkMatrix() = 0;
       virtual void getIparm( int* iparm ) const = 0;
    public:
-      PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel);
-      PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel);
+      PardisoIndefSolver(DenseSymMatrix * storage, bool solve_in_parallel, MPI_Comm mpi_comm );
+      PardisoIndefSolver(SparseSymMatrix * storage, bool solve_in_parallel, MPI_Comm mpi_comm );
       void diagonalChanged(int idiag, int extent) override;
       void matrixChanged() override;
       void matrixRebuild( DoubleMatrix& matrixNew ) override;
 
       using DoubleLinearSolver::solve;
-      void solve ( OoqpVector& vec ) override;
-      void solve ( GenMatrix& ) override { assert(0 && "not supported"); };
+      void solve( OoqpVector& vec ) override;
+      void solve( GenMatrix& ) override { assert(0 && "not supported"); };
+      void solve( int nrhss, double* rhss, int* /*colSparsity*/ );
+
       void solveSynchronized( OoqpVector& vec ) override;
       ~PardisoIndefSolver() override;
 

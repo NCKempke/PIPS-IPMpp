@@ -12,19 +12,19 @@
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 
-PardisoMKLSolver::PardisoMKLSolver( SparseSymMatrix * sgm ) : PardisoSolver( sgm )
+PardisoMKLSolver::PardisoMKLSolver( const SparseSymMatrix * sgm ) : PardisoSolver( sgm )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
-     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)" << std::endl;
+     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)\n";
 #endif
 }
 
-PardisoMKLSolver::PardisoMKLSolver( DenseSymMatrix * m ) : PardisoSolver( m )
+PardisoMKLSolver::PardisoMKLSolver( const DenseSymMatrix * m ) : PardisoSolver( m )
 {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
-     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)" << std::endl;
+     std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)\n";
 #endif
 }
 
@@ -62,15 +62,14 @@ void PardisoMKLSolver::setIparm(int* iparm) const
    #endif
 }
 
-void PardisoMKLSolver::pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
-      int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error)
+void PardisoMKLSolver::pardisoCall(void *pt, const int* maxfct, const int* mnum, const int* mtype, const int* phase, int* n, double* M, int* krowM, int* jcolM,
+      int* perm, int* nrhs, int* iparm, const int* msglvl, double* rhs, double* sol, int* error)
 {
    pardiso(pt, maxfct, mnum, mtype, phase, n, M, krowM, jcolM, perm, nrhs, iparm, msglvl, rhs, sol, error );
 }
 
 PardisoMKLSolver::~PardisoMKLSolver()
 {
-
    phase = -1; // release internal memory
    nrhs = 1;
 

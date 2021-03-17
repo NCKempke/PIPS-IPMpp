@@ -33,7 +33,7 @@ void sLinsysLeafSchurSlv::addTermToDenseSchurCompl( sData *prob,
   SparseGenMatrix& R = prob->getLocalCrossHessian();
   
   //if(!gLackOfAccuracy && !switchedToSafeSlv) {
-    PardisoSchurSolver* scSolver = dynamic_cast<PardisoSchurSolver*>(solver);
+    PardisoSchurSolver* scSolver = dynamic_cast<PardisoSchurSolver*>(solver.get());
     scSolver->schur_solve(R, A, C, F, G, SC);
     //} else {
     ////cout << "\tdefaulting to sLinsysLeaf::addTermToDenseSchurCompl ...";
@@ -51,7 +51,7 @@ void sLinsysLeafSchurSlv::addTermToSparseSchurCompl( sData *prob,
   SparseGenMatrix& G = prob->getLocalG();
   SparseGenMatrix& R = prob->getLocalCrossHessian();
 
-  PardisoSchurSolver* scSolver = dynamic_cast<PardisoSchurSolver*>(solver);
+  PardisoSchurSolver* scSolver = dynamic_cast<PardisoSchurSolver*>(solver.get());
   scSolver->schur_solve_sparse(R, A, C, F, G, SC);
 }
 

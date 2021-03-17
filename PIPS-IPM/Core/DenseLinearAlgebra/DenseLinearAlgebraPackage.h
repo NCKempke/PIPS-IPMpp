@@ -26,16 +26,16 @@ class DoubleLinearSolver;
  */
 class DenseLinearAlgebraPackage : public LinearAlgebraPackage {
 protected:
-  DenseLinearAlgebraPackage() {};
-  virtual ~DenseLinearAlgebraPackage() {};
+  DenseLinearAlgebraPackage() = default;
+  ~DenseLinearAlgebraPackage() override = default;
 public:
   /** Return the sole instance of this class. This instance must not
    * ever be deleted. */
   static DenseLinearAlgebraPackage * soleInstance();
-  SymMatrix * newSymMatrix( int size, int nnz ) override;
-  GenMatrix * newGenMatrix( int m, int n, int nnz ) override;
-  OoqpVector *  newVector( int n ) override;
-  void whatami( char type[32] ) override;
+  SymMatrix * newSymMatrix( int size, int nnz ) const override;
+  GenMatrix * newGenMatrix( int m, int n, int nnz ) const override;
+  OoqpVector *  newVector( int n ) const override;
+  void whatami( char type[32] ) const override;
 };
 
 /**

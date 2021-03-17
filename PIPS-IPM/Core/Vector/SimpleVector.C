@@ -144,13 +144,13 @@ bool SimpleVectorBase<T>::isKindOf( int kind ) const
 template<typename T>
 void SimpleVectorBase<T>::copyIntoArray( T w[] ) const
 {
-  memcpy( w, this->v, this->n * sizeof( T ) );
+   std::copy( v, v + this->n, w );
 }
 
 template<typename T>
 void SimpleVectorBase<T>::copyFromArray( const T w[] )
 {
-  memcpy( this->v, w, this->n * sizeof( T ) );
+   std::copy( w, w + this->n, v );
 }
 
 template<typename T>
@@ -244,31 +244,29 @@ bool SimpleVectorBase<T>::isZero() const
 template<typename T>
 void SimpleVectorBase<T>::setToZero()
 {
-  int i;
-  for( i = 0; i < this->n; i++ ) v[i] = 0.0;
+   setToConstant(0.0);
 }
 
 template<typename T>
 void SimpleVectorBase<T>::setToConstant( T c)
 {
-  int i;
-  for( i = 0; i < this->n; i++ ) v[i] = c;
+   std::fill( v, v + this->n, c );
 }
 
 // specialiced for double only
 template<>
 void SimpleVectorBase<double>::randomize( double alpha, double beta, double *ix )
 {
-  assert( beta > alpha);
+   if( this->n == 0 )
+      return;
+   assert( beta > alpha);
 
-  double drand(double *);
-  double scale = beta - alpha;
-  double shift = alpha/scale;
+   double drand(double *);
+   double scale = beta - alpha;
+   double shift = alpha/scale;
 
-  int i;
-  for( i = 0; i < this->n; i++ ) {
-    v[i] = scale * (drand(ix) + shift);
-  }
+   for( int i = 0; i < this->n; i++ )
+      v[i] = scale * (drand(ix) + shift);
 }
 
 template<typename T>
@@ -293,6 +291,10 @@ void SimpleVectorBase<T>::copyFromAbs(const OoqpVectorBase<T>& vec )
 template<typename T>
 T SimpleVectorBase<T>::infnorm() const
 {
+
+  if( this->n == 0 )
+     return -std::numeric_limits<T>::max();
+
   T temp, norm = 0;
   int i;
   for( i = 0; i < this->n; i++ ) {
@@ -302,6 +304,16 @@ T SimpleVectorBase<T>::infnorm() const
   }
 
   return norm;
+}
+
+template<>
+double SimpleVectorBase<double>::infnorm() const
+{
+   if( this->n == 0 )
+      return -std::numeric_limits<double>::max();
+
+  const int one = 1;
+  return std::fabs(v[idamax_( &this->n, v, &one ) - 1]);
 }
 
 template<typename T>
@@ -500,8 +512,11 @@ void SimpleVectorBase<T>::writeMPSformatBoundsWithVar(std::ostream& out, const s
 template<>
 void SimpleVectorBase<double>::scale( double alpha )
 {
-  int one = 1;
-  dscal_( &this->n, &alpha, v, &one );
+   if( this->n == 0 )
+      return;
+
+   const int one = 1;
+   dscal_( &this->n, &alpha, v, &one );
 }
 
 // generic implementation without boost 
@@ -515,11 +530,13 @@ void SimpleVectorBase<T>::scale( T )
 template<>
 void SimpleVectorBase<double>::axpy( double alpha, const OoqpVectorBase<double>& vec )
 {
-  assert( this->n == vec.length() );
-  const SimpleVectorBase<double> & sv = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+   assert( this->n == vec.length() );
+   if( this->n == 0 )
+      return;
 
-  int one = 1;
-  daxpy_( &this->n, &alpha, sv.v, &one, v, &one );
+   const SimpleVectorBase<double> & sv = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+   const int one = 1;
+   daxpy_( &this->n, &alpha, sv.v, &one, v, &one );
 }
 
 template<typename T>
@@ -643,11 +660,25 @@ void SimpleVectorBase<T>::axdzpy( T alpha, const OoqpVectorBase<T>& xvec,
   }
 }
 
+template<>
+double SimpleVectorBase<double>::dotProductWith( const OoqpVectorBase<double>& vec ) const
+{
+   assert( this->n == vec.length() );
+   if( this->n == 0 )
+      return 0.0;
+
+   const SimpleVectorBase<double> & svec = dynamic_cast<const SimpleVectorBase<double> &>(vec);
+
+   const int incx = 1;
+   return ddot_( &this->n, v, &incx, svec.v, &incx );
+}
+
 template<typename T>
 T SimpleVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& vec ) const
 {
   assert( this->n == vec.length() );
   const SimpleVectorBase<T> & svec = dynamic_cast<const SimpleVectorBase<T> &>(vec);
+
   T * vvec = svec.v;
 
   T dot1 = 0.0;
@@ -681,19 +712,11 @@ T SimpleVectorBase<T>::dotProductSelf( T scaleFactor ) const
    T dot = 0.0;
 
    if( scaleFactor == 1.0 )
-   {
-      for( int i = 0; i < this->n; i++ )
-         if( !PIPSisZero(v[i]) )
-            dot += v[i] * v[i];
-   }
+      dot = dotProductWith( *this );
    else
    {
       for( int i = 0; i < this->n; i++ )
-      {
-         const T valScaled = v[i] * scaleFactor;
-         if( !PIPSisZero(valScaled) )
-            dot += valScaled * valScaled;
-      }
+         dot += (v[i] * scaleFactor) * (v[i] * scaleFactor);
    }
    return dot;
 }
@@ -1031,9 +1054,27 @@ void SimpleVectorBase<T>::permuteEntries(const std::vector<unsigned int>& permve
       buffer[i] = v[permvec[i]];
    }
 
-   std::swap(v, buffer);
+   std::copy(buffer, buffer + this->n, v);
 
    delete[] buffer;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::appendToFront( unsigned int n_to_add, const T& value )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + n_to_add;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_fill( new_v, new_v + n_to_add, value );
+   std::uninitialized_copy( this->v, this->v + this->n, new_v + n_to_add );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
 }
 
 template<typename T>
@@ -1047,6 +1088,24 @@ void SimpleVectorBase<T>::appendToFront( const SimpleVectorBase<T>& other )
 
    std::uninitialized_copy( other.v, other.v + other.n, new_v );
    std::uninitialized_copy( this->v, this->v + this->n, new_v + other.n );
+
+   delete[] this->v;
+
+   this->n = new_len;
+   this->v = new_v;
+}
+
+template<typename T>
+void SimpleVectorBase<T>::appendToBack( unsigned int n_to_add, const T& value )
+{
+   assert( !preserveVec );
+
+   const int new_len = this->n + n_to_add;
+
+   T* new_v = new T[new_len];
+
+   std::uninitialized_copy( this->v, this->v + this->n, new_v );
+   std::uninitialized_fill( new_v + this->n, new_v + new_len, value );
 
    delete[] this->v;
 

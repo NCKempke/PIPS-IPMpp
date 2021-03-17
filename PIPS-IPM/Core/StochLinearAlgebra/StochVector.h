@@ -5,25 +5,30 @@
 #include "SimpleVector.h"
 #include "StochVector_fwd.h"
 #include "StochVectorHandle.h"
+
 #include "mpi.h"
 
 #include <vector>
 
-class StochTree;
+class sTree;
+class sData;
+
+enum class VectorType{ PRIMAL, DUAL_Y, DUAL_Z };
 
 template <typename T>
 class StochVectorBase : public OoqpVectorBase<T> {
 
+
 public:
-  StochVectorBase( SimpleVectorBase<T>* vec, SimpleVectorBase<T>* vecl, MPI_Comm mpi_comm);
+  StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm);
 
   StochVectorBase( int n, MPI_Comm mpiComm );
   StochVectorBase( int n, int nl, MPI_Comm mpiComm );
   virtual ~StochVectorBase() override;
 
   virtual void AddChild(StochVectorBase<T>* child);
-  virtual void AddChild(OoqpVectorBase<T>* child);
 
+  // TODO : use unique pointers
   /** The data for this node. */
   OoqpVectorBase<T>* vec{};
 
@@ -33,12 +38,12 @@ public:
   /** Children of this node */
   std::vector<StochVectorBase<T>*> children;
 
-  /** Link to the parent of this node. Needed when we multiply a matrix
-      with this vector
-  */
+  /** Links to this vectors parent.
+   *  Needed when we multiply a matrix with this vector to get the appropriate linking vec part.
+   */
   StochVectorBase<T>* parent{};
 
-
+public:
   /* MPI communicator */
   const MPI_Comm mpiComm{MPI_COMM_NULL};
   /* flag used to indicate if the children are distributed or not. */
@@ -50,7 +55,7 @@ public:
   OoqpVectorBase<T>* cloneFull() const override;
 
   virtual void jointCopyFrom(const StochVectorBase<T>& vx, const StochVectorBase<T>& vy, const StochVectorBase<T>& vz);
-  virtual void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy,StochVectorBase<T>& vz) const;
+  virtual void jointCopyTo(StochVectorBase<T>& vx, StochVectorBase<T>& vy, StochVectorBase<T>& vz) const;
 
   bool isKindOf( int kind ) const override;
   void setToZero() override;
@@ -155,10 +160,18 @@ public:
    virtual int getSize() const { return this->n; };
    int getNnzs() const override;
 
+   virtual void recomputeSize();
+
    virtual bool isRootNodeInSync() const;
 
+   virtual void split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
+         const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
-   virtual void collapseHierarchicalStructure();
+   virtual void collapseFromHierarchical( const sData& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec = false );
+   virtual void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
+         std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const sData& data_hier, VectorType type, bool empty_vec );
+
+   virtual OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const;
 
    void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
    void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
@@ -166,7 +179,7 @@ protected:
    StochVectorBase() = default;
 
 private:
-   void appendOnlyChildToThis();
+   void appendChildrenToThis();
    void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs ) override;
 };
 
@@ -175,22 +188,20 @@ private:
  */
 template <typename T>
 class StochDummyVectorBase : public StochVectorBase<T> {
-protected:
-
 public:
-  StochDummyVectorBase() : StochVectorBase<T>(0, MPI_COMM_NULL) {};
+
+   StochDummyVectorBase() : StochVectorBase<T>(0, MPI_COMM_NULL) {};
   ~StochDummyVectorBase() override = default;
 
   void AddChild(StochVectorBase<T>* ) override {};
-  void AddChild(OoqpVectorBase<T>* ) override {};
 
    StochVectorBase<T>* clone() const override { return new StochDummyVectorBase<T>();}
    StochVectorBase<T>* cloneFull() const override { return new StochDummyVectorBase<T>();}
 
    void jointCopyFrom(const StochVectorBase<T>&, const StochVectorBase<T>&, const StochVectorBase<T>&) override {};
-   void jointCopyTo(StochVectorBase<T>&, StochVectorBase<T>&,StochVectorBase<T>&) const override {};
+   void jointCopyTo(StochVectorBase<T>&, StochVectorBase<T>&, StochVectorBase<T>&) const override {};
 
-   bool isKindOf( int kind ) const override {return kind == kStochDummy;}
+   bool isKindOf( int kind ) const override {return kind == kStochDummy || kind == kStochVector;}
    bool isZero() const override { return true; };
    void setToZero() override {};
    void setToConstant( T ) override {};
@@ -275,10 +286,18 @@ public:
    int getSize() const override { return 0; };
    int getNnzs() const override { return 0; };
 
+   void recomputeSize() override{};
+
    bool isRootNodeInSync() const override { return true; };
 
+   void split( const std::vector<unsigned int>&, const std::vector<MPI_Comm>&,
+         const std::vector<int>&, int ) override {};
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
-   void collapseHierarchicalStructure() override {};
+
+   void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl, std::vector<StochVectorBase<T>*>& new_children,
+         const sTree& tree_hier, const sData& data_hier, VectorType type, bool empty_vec ) override;
+
+   OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const override { assert( false && "Should not end up here"); return nullptr; };
 
    void pushAwayFromZero( double, double, const OoqpVectorBase<T>* ) override {};
    void getSumCountIfSmall( double, double&, int&, const OoqpVectorBase<T>* ) const override {};

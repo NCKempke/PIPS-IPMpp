@@ -24,9 +24,9 @@ class Ma57SolverRoot : public Ma57Solver
 {
 
  public:
-  Ma57SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD);
+  Ma57SolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, const std::string& name = "root" );
 
-  ~Ma57SolverRoot();
+  ~Ma57SolverRoot() = default;
 
   void matrixRebuild( DoubleMatrix& matrixNew ) override;
   void matrixChanged() override;

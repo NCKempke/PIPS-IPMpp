@@ -10,28 +10,30 @@
 #include "StochGenMatrix.h"
 #include "StochSymMatrix.h"
 
-#include "list"
-
+#include <list>
+#include <utility>
 #include "mpi.h"
 
 class sTreeCallbacks;
+class sData;
 
 class sTree
 {
+  friend sTreeCallbacks;
  public:
-  // global sizes are still local to each MPI process - they just sum all local data
-  virtual void computeGlobalSizes() = 0;
-  void getGlobalSizes(long long& n, long long& my, long long& mz);
-
-  void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
-
   StochNodeResourcesMonitor resMon;
   static StochIterateResourcesMonitor iterMon;
 
-  virtual ~sTree();
+  long long getN() const { return N; };
+  long long getMY() const { return MY; };
+  long long getMYL() const { return MYL; };
+  long long getMZ() const { return MZ; };
+  long long getMZL() const { return MZL; };
+
+  virtual sTree* clone() const = 0;
  protected:
 
-  void assignProcesses( MPI_Comm, vector<int>&);
+  sTree( const sTree& other );
 
   MPI_Comm commWrkrs{ MPI_COMM_NULL };
   std::vector<int> myProcs, myOldProcs;
@@ -51,22 +53,31 @@ class sTree
 
   double IPMIterExecTIME{-1.0}; // not used since we currently do not compute loads for nodes and processes...
   std::vector<sTree*> children;
+  /* used for hierarchical approach - implies sub structure inside the current Bmat */
+  sTree* sub_root{};
 
   /* global number of all processes available */
   static int numProcs;
 
-
-protected:
-  bool is_hierarchical_root = false;
-  bool is_hierarchical_inner = false;
-  bool is_hierarchical_leaf = false;
+  bool is_hierarchical_root{false};
+  bool is_hierarchical_inner_root{false};
+  bool is_hierarchical_inner_leaf{false};
 
 public:
+  // global sizes are still local to each MPI process - they just sum all local data
+  virtual void computeGlobalSizes() = 0;
+  void getGlobalSizes(long long& n, long long& my, long long& mz) const;
+  void getGlobalSizes(long long& n, long long& my, long long& myl, long long& mzlong, long long& mzl) const;
+
+  void assignProcesses( MPI_Comm comm = MPI_COMM_WORLD);
+
+  virtual ~sTree();
+
   bool distributedPreconditionerActive() const;
 
   void startMonitors(); void startNodeMonitors();
   void stopMonitors();  void stopNodeMonitors();
-  void syncMonitoringData(vector<double>& vCPUTotal);
+  void syncMonitoringData(std::vector<double>& vCPUTotal);
   bool balanceLoad();
   bool balanceLoadPrecond();
 
@@ -94,10 +105,11 @@ public:
   StochVector* newDualYVector(bool empty = false)  const;
   StochVector* newDualZVector(bool empty = false)  const;
 
-  StochVector* newRhs();
+  StochVector* newRhs() const;
 
+  const sTree* getSubRoot() const { return sub_root; };
   const std::vector<sTree*>& getChildren() const { return children; };
-  int nChildren() const { return children.size(); }
+  unsigned int nChildren() const { return children.size(); }
   MPI_Comm getCommWorkers() const { return commWrkrs; };
 
   int innerSize(int which) const;
@@ -113,7 +125,27 @@ public:
   //time of this node and its subnodes  after the first iteration.
   double processLoad() const;
 
- protected:
+  bool isHierarchicalRoot() const { return is_hierarchical_root; };
+
+  void setHierarchicalInnerRoot() { is_hierarchical_inner_root = true; };
+  bool isHierarchicalInnerRoot() const { return is_hierarchical_inner_root; };
+
+  void setHierarchicalInnerLeaf() { is_hierarchical_inner_leaf = true; };
+  bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
+
+  /* shave tree and add an additional top layer */
+  virtual sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
+  /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
+  virtual std::pair<int,int> splitTree( int n_layers, sData* data ) = 0;
+
+  // TODO : make sure that none of the not suitable methods get called...
+  virtual sTree* switchToHierarchicalTree( sData*& data ) = 0;
+
+  void printProcessTree() const;
+protected:
+  void appendPrintTreeLayer( std::vector<std::string>& layer_outputs, unsigned int level ) const;
+  void assignProcesses( MPI_Comm, std::vector<int>&);
+
   sTree() = default;
 
   void toMonitorsList( std::list<NodeExecEntry>& );
@@ -123,24 +155,7 @@ public:
 
   void saveCurrentCPUState();
 
-  int isInVector(int elem, const vector<int>& vec) const;
-public:
-  //to be called after assignProcesses
-  bool isHierarchicalRoot() const { return is_hierarchical_root; };
-  bool isHierarchicalInner() const { return is_hierarchical_inner; };
-
-  /* shave tree and add an additional top layer */
-  virtual sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
-  /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
-  virtual void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) = 0;
-
-  // TODO : make sure that none of the not suitable methods get called...
-  virtual sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
-        const std::vector<int>& twoLinksStartBlockC ) = 0;
-  virtual sTree * collapseHierarchicalTree() = 0;
-
-private:
-  friend sTreeCallbacks;
+  static void mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees );
 };
 
 #endif 

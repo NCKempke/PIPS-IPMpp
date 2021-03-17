@@ -11,10 +11,11 @@
 #include "StochVector.h"
 #include "StochGenMatrix.h"
 #include "SimpleVector.h"
+#include "pipsdef.h"
 #include <vector>
 
 // is the permuation vector valid?
-bool permutationIsValid(const std::vector<unsigned int>& perm);
+bool permutationIsValid(const PERMUTATION& perm);
 
 // are the columns of the given sub-matrix ordered?
 bool subMatrixIsOrdered(const int* rowptr, const int* colidx,

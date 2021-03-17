@@ -28,8 +28,8 @@ enum MumpsVerbosity{verb_mute, verb_standard, verb_high};
 class MumpsSolverBase : public DoubleLinearSolver {
 
  public:
-  MumpsSolverBase( SparseSymMatrix * sgm );
-  MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix * sgm );
+  MumpsSolverBase( const SparseSymMatrix * sgm );
+  MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, const SparseSymMatrix * sgm );
 
   ~MumpsSolverBase();
 
@@ -63,7 +63,7 @@ class MumpsSolverBase : public DoubleLinearSolver {
   int rankMumps, rankPips;
 
   DMUMPS_STRUC_C* mumps;
-  SparseSymMatrix* Msys;
+  const SparseSymMatrix* Msys;
 
   // matrix pointer in triplet format
   int* tripletIrn;

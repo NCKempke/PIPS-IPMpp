@@ -17,18 +17,6 @@
 #include <numeric>
 #include <functional>
 
-static
-std::vector<unsigned int> getInversePermutation(const std::vector<unsigned int>& perm)
-{
-   size_t size = perm.size();
-   std::vector<unsigned int> perm_inv(size, 0);
-
-   for( size_t i = 0; i < size; i++ )
-      perm_inv[perm[i]] = i;
-
-   return perm_inv;
-}
-
 static bool blockIsInRange(int block, int blocksStart, int blocksEnd)
 {
    return ((block >= (blocksStart - 1) && block < blocksEnd) || block == -1);
@@ -705,7 +693,6 @@ std::vector<int> sData::get2LinkLengthsVec(const std::vector<int>& linkStartBloc
 SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
 {
    assert(children.size() > 0);
-
    const int nx0 = getLocalnx();
    const int my0 = getLocalmy();
    const int myl = getLocalmyl();
@@ -719,6 +706,7 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
    int* krowM = new int[sizeSC + 1];
    int* jcolM = new int[nnz];
    double* M = new double[nnz];
+   std::uninitialized_fill(M, M + nnz, 0);
 
    krowM[0] = 0;
 
@@ -728,9 +716,17 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
    int* const colidxBtrans = Btrans.jcolM();
 
 #ifndef NDEBUG
+   if( !is_hierarchy_inner_leaf )
+   {
       int bm, bn;
       Btrans.getSize(bm, bn);
       assert(bm == nx0 && bn == my0);
+   }
+   else
+   {
+      assert( nx0 == 0 );
+      assert( my0 == 0 );
+   }
 #endif
 
    const int nx0NonZero = nx0 - n0LinkVars;
@@ -746,16 +742,19 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpper()
 
       krowM[i + 1] = krowM[i] + (nx0 - i) + blength + myl + mzl;
 
+      /* dense square block */
       appendRowDense(i, nx0, nnzcount, jcolM);
 
+      /* B0^T */
       appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
 
+      /* dense sum X1^T Fi^T and X1^T Gi^T */
       appendRowDense(nx0 + my0, nx0 + my0 + myl + mzl, nnzcount, jcolM);
 
       assert(nnzcount == krowM[i + 1]);
    }
 
-   // dense square block and rest of B_0, F_0^T, G_0^T
+   // dense square block from 0LinkVars and rest of B_0^T, F_0^T, G_0^T
    for( int i = nx0NonZero; i < nx0; ++i )
    {
       appendRowDense(i, nx0, nnzcount, jcolM);
@@ -858,6 +857,7 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpperDist(int blocksStart, int 
    int* const krowM = new int[sizeSC + 1];
    int* const jcolM = new int[nnz];
    double* const M = new double[nnz];
+   std::uninitialized_fill(M, M + nnz, 0);
 
    krowM[0] = 0;
 
@@ -988,15 +988,15 @@ SparseSymMatrix* sData::createSchurCompSymbSparseUpperDist(int blocksStart, int 
    return (new SparseSymMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
 }
 
-std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals)
+PERMUTATION sData::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals)
 {
    const size_t n_link_vars = link_vars_n_blocks.size();
    n_globals = 0;
 
    if( n_link_vars == 0 )
-      return std::vector<unsigned int>();
+      return PERMUTATION();
 
-   std::vector<unsigned int> permvec(n_link_vars, 0);
+   PERMUTATION permvec(n_link_vars, 0);
 
    int count = 0;
    int back_count = n_link_vars - 1;
@@ -1004,7 +1004,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
    for( size_t i = 0; i < n_link_vars; ++i )
    {
       assert( count <= back_count );
-      assert( link_vars_n_blocks[i] >= 0 );
+      assert( link_vars_n_blocks[i] >= -1 );
 
       if( link_vars_n_blocks[i] > threshold_global_vars )
       {
@@ -1017,7 +1017,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
 
    for( size_t i = 0; i < n_link_vars; ++i )
    {
-      if( link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars )
+      if( link_vars_n_blocks[i] == -1 || (link_vars_n_blocks[i] > 0 && link_vars_n_blocks[i] <= threshold_global_vars) )
       {
          assert( count <= back_count );
          permvec[count++] = i;
@@ -1051,7 +1051,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
          }
          else
          {
-            assert( 0 < link_vars_n_blocks[i] );
+            assert( 0 < link_vars_n_blocks[i] || link_vars_n_blocks[i] == -1 );
             assert( link_vars_n_blocks[i] <= threshold_global_vars );
          }
       }
@@ -1064,7 +1064,7 @@ std::vector<unsigned int> sData::get0VarsLastGlobalsFirstPermutation(std::vector
    return permvec;
 }
 
-std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
+PERMUTATION sData::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
       std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals)
 {
    assert( linkStartBlockId.size() == n_blocks_per_row.size() );
@@ -1072,9 +1072,9 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
    n_globals = 0;
 
    if( n_links == 0 )
-      return std::vector<unsigned int>();
+      return PERMUTATION();
 
-   std::vector<unsigned int> permvec(n_links, 0);
+   PERMUTATION permvec(n_links, 0);
    std::vector<int> w(nBlocks + 1, 0);
 
    /* count the 2-links per block - the ones starting at block -1 are no 2-links and are counted in w[0] */
@@ -1198,59 +1198,54 @@ std::vector<unsigned int> sData::getAscending2LinkFirstGlobalsLastPermutation(st
 }
 
 sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
-        OoqpVector * xlow_in, OoqpVector * ixlow_in, long long nxlow_,
-        OoqpVector * xupp_in, OoqpVector * ixupp_in, long long nxupp_,
+        OoqpVector * xlow_in, OoqpVector * ixlow_in,
+        OoqpVector * xupp_in, OoqpVector * ixupp_in,
         GenMatrix  * A_in, OoqpVector * bA_in,
         GenMatrix  * C_in,
-        OoqpVector * clow_in, OoqpVector * iclow_in, long long mclow_,
-        OoqpVector * cupp_in, OoqpVector * icupp_in, long long mcupp_,
-        bool add_children, bool is_hierarchy_root
+        OoqpVector * clow_in, OoqpVector * iclow_in,
+        OoqpVector * cupp_in, OoqpVector * icupp_in,
+        bool add_children, bool is_hierarchy_root, bool is_hierarchy_inner_root,
+        bool is_hierarchy_inner_leaf
         )
   : QpGenData(SparseLinearAlgebraPackage::soleInstance(),
-         c_in, Q_in,
-         xlow_in, ixlow_in, xupp_in, ixupp_in,
-         A_in, bA_in,
-         C_in,
-         clow_in, iclow_in, cupp_in, icupp_in),
-         is_hierarchy_root( is_hierarchy_root ),
-         useLinkStructure( false )
+         c_in, Q_in, xlow_in, ixlow_in, xupp_in, ixupp_in,
+         A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in),
+         stochNode{ tree_ },
+         is_hierarchy_root{ is_hierarchy_root },
+         is_hierarchy_inner_root{ is_hierarchy_inner_root },
+         is_hierarchy_inner_leaf{ is_hierarchy_inner_leaf }
 {
-  nxlow = nxlow_; nxupp = nxupp_;
-  mclow = mclow_; mcupp = mcupp_;
-  stochNode = tree_;
-
-  if( add_children )
-     createChildren();
-  n0LinkVars = 0;
+   if( add_children )
+      createChildren();
 }
 
 void sData::writeToStreamDense( std::ostream& out ) const
 {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   if( myRank == 0 ) out <<  "A: \n";
+   if( myRank == 0 ) out <<  "A:\n";
    (*A).writeToStreamDense(out);
-   if( myRank == 0 ) out <<  "C: \n";
+   if( myRank == 0 ) out <<  "C:\n";
    (*C).writeToStreamDense(out);
-   if( myRank == 0 ) out <<  "obj: \n";
+   if( myRank == 0 ) out <<  "obj:\n";
    (*g).writeToStream(out);
-   if( myRank == 0 ) out <<  "bA: \n";
+   if( myRank == 0 ) out <<  "bA:\n";
    (*bA).writeToStream(out);
-   if( myRank == 0 ) out <<  "xupp: \n";
+   if( myRank == 0 ) out <<  "xupp:\n";
    (*bux).writeToStream(out);
-   if( myRank == 0 ) out <<  "ixupp: \n";
+   if( myRank == 0 ) out <<  "ixupp:\n";
    (*ixupp).writeToStream(out);
-   if( myRank == 0 ) out <<  "xlow: \n";
+   if( myRank == 0 ) out <<  "xlow:\n";
    (*blx).writeToStream(out);
-   if( myRank == 0 ) out <<  "ixlow: \n";
+   if( myRank == 0 ) out <<  "ixlow:\n";
    (*ixlow).writeToStream(out);
-   if( myRank == 0 ) out <<  "cupp: \n";
+   if( myRank == 0 ) out <<  "cupp:\n";
    (*bu).writeToStream(out);
-   if( myRank == 0 ) out <<  "icupp: \n";
+   if( myRank == 0 ) out <<  "icupp:\n";
    (*icupp).writeToStream(out);
-   if( myRank == 0 ) out <<  "clow: \n";
+   if( myRank == 0 ) out <<  "clow:\n";
    (*bl).writeToStream(out);
-   if( myRank == 0 ) out <<  "iclow: \n";
+   if( myRank == 0 ) out <<  "iclow:\n";
    (*iclow).writeToStream(out);
 }
 
@@ -1267,15 +1262,14 @@ void sData::writeMPSformat( std::ostream& out)
 
    if( world_size > 1 )
    {
-      cout << "MPS format writer only available using one Process!\n";
+      std::cout << "MPS format writer only available using one Process!\n";
       return;
    }
-   cout << "Writing MPS format...\n";
+   std::cout << "Writing MPS format...\n";
 
-   out <<  "NAME PIPS_to_MPS \n";
-
-   out << "ROWS" <<"\n";
-   out << " N COST" <<"\n";
+   out << "NAME PIPS_to_MPS\n";
+   out << "ROWS\n";
+   out << " N COST\n";
 
    // write all row names and if they are E, L or G
    (*A).writeMPSformatRows(out, 0, nullptr);
@@ -1283,37 +1277,37 @@ void sData::writeMPSformat( std::ostream& out)
    (*C).writeMPSformatRows(out, 2, iclow);
 
    // write all variable names
-   out <<  "COLUMNS \n";
+   out << "COLUMNS\n";
    writeMPSColumns(out);
 
    // write all rhs / lhs
-   out <<  "RHS \n";
+   out << "RHS\n";
 
    (*bA).writeMPSformatRhs(out, 0, nullptr);
    (*bu).writeMPSformatRhs(out, 1, icupp);
    (*bl).writeMPSformatRhs(out, 2, iclow);
 
    // write all variable bounds
-   out <<  "BOUNDS \n";
+   out << "BOUNDS\n";
    (*bux).writeMPSformatBounds(out, ixupp, true);
    (*blx).writeMPSformatBounds(out, ixlow, false);
 
-   out <<  "ENDATA \n";
+   out << "ENDATA\n";
 
-   cout<<"Finished writing MPS format.\n";
+   std::cout << "Finished writing MPS format.\n";
 }
 
-void sData::writeMPSColumns(ostream& out)
+void sData::writeMPSColumns(std::ostream& out)
 {
    int world_size;
    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
    assert( world_size == 1 );
 
    int n;
-   string varName;
-   string rowNameStub;
-   string rowNameStubLT;
-   string rowNameStubGT;
+   std::string varName;
+   std::string rowNameStub;
+   std::string rowNameStubLT;
+   std::string rowNameStubGT;
    StochVector& gStoch = dynamic_cast<StochVector&>(*g);
    StochVector& icuppStoch = dynamic_cast<StochVector&>(*icupp);
    StochVector& iclowStoch = dynamic_cast<StochVector&>(*iclow);
@@ -1506,9 +1500,9 @@ void sData::writeMPSColumns(ostream& out)
 sData* sData::cloneFull(bool switchToDynamicStorage) const
 {
    // todo Q is empty!
-   StochSymMatrixHandle Q_clone(dynamic_cast<const StochSymMatrix&>(*Q).clone());
-   StochGenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
-   StochGenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
+   SymMatrixHandle Q_clone(Q->clone());
+   GenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
+   GenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
    StochVectorHandle c_clone (dynamic_cast<StochVector*>(g->cloneFull()));
    StochVectorHandle bA_clone ( dynamic_cast<StochVector*>(bA->cloneFull()));
@@ -1523,10 +1517,10 @@ sData* sData::cloneFull(bool switchToDynamicStorage) const
 
    const sTree* tree_clone = stochNode;
 
+   // TODO : proper copy ctor..
    sData* clone = new sData(tree_clone, c_clone, Q_clone, xlow_clone,
-         ixlow_clone, nxlow, xupp_clone, ixupp_clone, nxupp, A_clone, bA_clone,
-         C_clone, clow_clone, iclow_clone, mclow, cupp_clone, icupp_clone,
-         mcupp);
+         ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
+         C_clone, clow_clone, iclow_clone, cupp_clone, icupp_clone );
 
    return clone;
 }
@@ -1555,12 +1549,13 @@ sData::createChildren()
   for(size_t it=0; it<gSt.children.size(); it++) {
     AddChild(new sData(stochNode->getChildren()[it],
 	       gSt.children[it], QSt.children[it],
-	       xlowSt.children[it], ixlowSt.children[it], nxlow,
-	       xuppSt.children[it], ixuppSt.children[it], nxupp,
+	       xlowSt.children[it], ixlowSt.children[it],
+	       xuppSt.children[it], ixuppSt.children[it],
 	       ASt.children[it], bASt.children[it],
 	       CSt.children[it],
-	       clowSt.children[it], iclowSt.children[it], mclow,
-	       cuppSt.children[it], icuppSt.children[it], mcupp ));
+	       clowSt.children[it], iclowSt.children[it],
+	       cuppSt.children[it], icuppSt.children[it] )
+    );
   }
 }
 
@@ -1574,164 +1569,8 @@ void sData::destroyChildren()
    children.clear();
 }
 
-void sData::getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C)
+sData* sData::shaveBorderFromDataAndCreateNewTop( const sTree* tree )
 {
-   perm_A.resize( linkConsPermutationA.size() );
-   perm_C.resize( linkConsPermutationC.size() );
-
-   assert( linkStartBlockIdA.size() == linkConsPermutationA.size() );
-   assert( linkStartBlockIdC.size() == linkConsPermutationC.size() );
-
-   assert( stochNode->myl() >= 0 );
-   assert( stochNode->mzl() >= 0 );
-   const int n_global_links_eq_after_split = stochNode->myl();
-   const int n_global_links_ineq_after_split = stochNode->mzl();
-
-   assert( linkStartBlockIdA.size() >= static_cast<size_t>(n_global_links_eq_after_split + n_global_eq_linking_conss) );
-   assert( linkStartBlockIdC.size() >= static_cast<size_t>(n_global_links_ineq_after_split + n_global_ineq_linking_conss) );
-
-#ifndef NDEBUG
-   int last_map_block = -1;
-#endif
-   const std::vector<unsigned int>& map_block_subcomm = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
-   assert( false && "TODO: check..");
-   {
-      size_t pos_local_twolinks_A = 0;
-      const size_t end_local_twolinks_A = static_cast<size_t>(linkStartBlockIdA.size() - n_global_links_eq_after_split - n_global_eq_linking_conss);
-      size_t pos_global_linksA = end_local_twolinks_A;
-
-      for( size_t i = 0; i < linkStartBlockIdA.size(); ++i )
-      {
-         assert( last_map_block <= linkStartBlockIdA[i] );
-
-         if( linkStartBlockIdA[i] == - 1 )
-         {
-            assert( pos_local_twolinks_A == end_local_twolinks_A );
-            perm_A[pos_global_linksA] = i;
-            ++pos_global_linksA;
-         }
-         else
-         {
-            assert( 0 <= linkStartBlockIdA[i] );
-            const size_t start_block_link_i = static_cast<size_t>(linkStartBlockIdA[i]);
-
-            assert( start_block_link_i < map_block_subcomm.size() );
-
-            if( start_block_link_i == map_block_subcomm.size() - 1 )
-               perm_A[pos_local_twolinks_A] = i;
-            else if( map_block_subcomm[start_block_link_i] != map_block_subcomm[start_block_link_i + 1] )
-            {
-               perm_A[pos_global_linksA] = i;
-               ++pos_global_linksA;
-            }
-            else
-            {
-               assert( map_block_subcomm[start_block_link_i] == map_block_subcomm[start_block_link_i + 1] );
-               perm_A[pos_local_twolinks_A] = i;
-               ++pos_local_twolinks_A;
-            }
-         }
-      }
-      assert( pos_local_twolinks_A == end_local_twolinks_A );
-      assert( pos_global_linksA == linkStartBlockIdA.size() );
-   }
-
-   {
-      size_t pos_local_twolinks_C = 0;
-      const size_t end_local_twolinks_C = static_cast<size_t>(linkStartBlockIdC.size() - n_global_links_ineq_after_split - n_global_ineq_linking_conss);
-      size_t pos_global_linksC = end_local_twolinks_C;
-
-      for( size_t i = 0; i < linkStartBlockIdC.size(); ++i )
-      {
-         assert( last_map_block <= linkStartBlockIdC[i] );
-
-         if( linkStartBlockIdC[i] == - 1 )
-         {
-            assert( pos_local_twolinks_C == end_local_twolinks_C );
-            perm_C[pos_global_linksC] = i;
-            ++pos_global_linksC;
-         }
-         else
-         {
-            assert( 0 <= linkStartBlockIdC[i] );
-            const size_t start_block_link_i = static_cast<size_t>(linkStartBlockIdC[i]);
-            assert( start_block_link_i < map_block_subcomm.size() );
-
-            if( start_block_link_i == map_block_subcomm.size() - 1 )
-               perm_C[pos_local_twolinks_C] = i;
-            else if( map_block_subcomm[start_block_link_i] != map_block_subcomm[start_block_link_i + 1] )
-            {
-               perm_C[pos_global_linksC] = i;
-               ++pos_global_linksC;
-            }
-            else
-            {
-               assert( map_block_subcomm[start_block_link_i] == map_block_subcomm[start_block_link_i + 1] );
-               perm_C[pos_local_twolinks_C] = i;
-               ++pos_local_twolinks_C;
-            }
-         }
-      }
-      assert( pos_local_twolinks_C == end_local_twolinks_C );
-      assert( pos_global_linksC == linkStartBlockIdC.size() );
-   }
-}
-
-void sData::reorderLinkingConstraintsAccordingToSplit()
-{
-   /* assert that distributed Schur complement has not yet been initialized */
-   assert( isSCrowLocal.size() == 0 );
-   assert( isSCrowMyLocal.size() == 0 );
-
-   // TODO assert tree compatibility (one split at exactly this node)
-
-   std::vector<unsigned int> perm_A;
-   std::vector<unsigned int> perm_C;
-   getLinkConsSplitPermutations(perm_A, perm_C);
-
-   assert( permutationIsValid(perm_A) );
-   assert( permutationIsValid(perm_C) );
-
-   /* which blocks do the individual two-links start in */
-   permuteLinkingCons(perm_A, perm_C);
-   permuteVector(perm_A, linkStartBlockIdA);
-   permuteVector(perm_A, n_blocks_per_link_row_A);
-
-   permuteVector(perm_C, linkStartBlockIdC);
-   permuteVector(perm_C, n_blocks_per_link_row_C);
-
-   permuteVector(perm_A, linkConsPermutationA);
-   permuteVector(perm_C, linkConsPermutationC);
-}
-
-void sData::splitDataAccordingToTree()
-{
-   assert( stochNode->isHierarchicalInner() );
-   reorderLinkingConstraintsAccordingToSplit();
-
-   splitDataAccordingToTree();
-
-   assert( false && "TODO: implement");
-}
-
-sData* sData::switchToHierarchicalData( const sTree* tree )
-{
-   assert( tree->isHierarchicalRoot() );
-   assert( tree->nChildren() == 1 );
-
-//   this->splitDataAccordingToTree( dynamic_cast<const sTreeCallbacks&>(*tree->children[0]) );
-
-   // TODO : split lower levels according to tree structure
-   // TODO : make method for top layer and split operation
-
-   const int my_rank = PIPS_MPIgetRank();
-   if( my_rank == 0 )
-   {
-      std::cout << "Switching to hierarchical data ..." << "\n";
-      std::cout << "Trimming " << n_global_linking_vars << " vars, " << n_global_eq_linking_conss << " dense equalities, and " <<
-            n_global_ineq_linking_conss << " inequalities for the border" << "\n";
-   }
-
    SymMatrixHandle Q_hier( dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars) );
 
    GenMatrixHandle A_hier( dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars) );
@@ -1754,21 +1593,30 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    // TODO what is this?
    //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
 
-   sData* hierarchical_top = new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
-         ixlow_hier.ptr_unsave(), nxlow, bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(), nxupp,
+   return new sData(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(),
+         ixlow_hier.ptr_unsave(), bux_hier.ptr_unsave(), ixupp_hier.ptr_unsave(),
          A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(),
-         iclow_hier.ptr_unsave(), mclow, bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), mcupp,
+         iclow_hier.ptr_unsave(), bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(),
          false, true);
+}
 
-   assert( ixlow_hier->vec );
-   assert( ixupp_hier->vec );
-   this->nxlow -= ixlow_hier->vec->numberOfNonzeros();
-   this->nxupp -= ixupp_hier->vec->numberOfNonzeros();
+sData* sData::shaveDenseBorder( const sTree* tree )
+{
+   sData* hierarchical_top = shaveBorderFromDataAndCreateNewTop( tree );
 
-   assert( iclow_hier->vecl );
-   assert( icupp_hier->vecl );
-   this->mclow -= iclow_hier->vecl->numberOfNonzeros();
-   this->mcupp -= icupp_hier->vecl->numberOfNonzeros();
+   const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
+   const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
+   assert( ixlow.vec );
+   assert( ixupp.vec );
+   nxlow -= ixlow.vec->numberOfNonzeros();
+   nxupp -= ixupp.vec->numberOfNonzeros();
+
+   const StochVector& iclow = dynamic_cast<const StochVector&>(*hierarchical_top->iclow);
+   const StochVector& icupp = dynamic_cast<const StochVector&>(*hierarchical_top->icupp);
+   assert( iclow.vecl );
+   assert( icupp.vecl );
+   mclow -= iclow.vecl->numberOfNonzeros();
+   mcupp -= icupp.vecl->numberOfNonzeros();
 
    long long dummy;
    nx = g->length();
@@ -1811,31 +1659,454 @@ sData* sData::switchToHierarchicalData( const sTree* tree )
    hierarchical_top->children.push_back(this);
    stochNode = tree->getChildren()[0];
 
-   // TODO: implement recursive layering of linear system
-   //   this->splitIntoMultiple();
-
-   if( my_rank == 0 )
-      std::cout << "Hierarchical data built" << "\n";
-
    return hierarchical_top;
 }
 
-void sData::permuteLinkingCons(const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC)
+PERMUTATION sData::getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
+      const std::vector<int>& linkStartBlockId, int n_links_after_split )
+{
+   /* assuming that global links have already been ordered last */
+   PERMUTATION perm( linkStartBlockId.size() );
+
+   assert( n_links_after_split >= 0 );
+
+#ifndef NDEBUG
+   int last_map_block = -1;
+#endif
+
+   size_t pos_child_twolinks = 0;
+   const size_t end_child_twolinks = static_cast<size_t>(linkStartBlockId.size() - n_links_after_split);
+   size_t pos_remaining_links = end_child_twolinks;
+
+   for( size_t i = 0; i < linkStartBlockId.size(); ++i )
+   {
+      assert( last_map_block <= linkStartBlockId[i] );
+
+      /* we arrived at the global links which will all stay at this node */
+      if( linkStartBlockId[i] == - 1 )
+      {
+         assert( pos_child_twolinks == end_child_twolinks );
+         perm[pos_remaining_links] = i;
+         ++pos_remaining_links;
+      }
+      else
+      {
+         assert( 0 <= linkStartBlockId[i] );
+         const size_t start_block_link_i = static_cast<size_t>(linkStartBlockId[i]);
+         assert( start_block_link_i < map_block_subtree.size() );
+
+         if( start_block_link_i == map_block_subtree.size() - 1 )
+         {
+            perm[pos_child_twolinks] = i;
+            ++pos_child_twolinks;
+         }
+         else if( map_block_subtree[start_block_link_i] != map_block_subtree[start_block_link_i + 1] )
+         {
+            perm[pos_remaining_links] = i;
+            ++pos_remaining_links;
+         }
+         else
+         {
+            assert( map_block_subtree[start_block_link_i] == map_block_subtree[start_block_link_i + 1] );
+            perm[pos_child_twolinks] = i;
+            ++pos_child_twolinks;
+         }
+      }
+   }
+   assert( pos_child_twolinks == end_child_twolinks );
+   assert( pos_remaining_links == linkStartBlockId.size() );
+   assert( permutationIsValid(perm) );
+   return perm;
+}
+
+void sData::reorderLinkingConstraintsAccordingToSplit()
+{
+   /* assert that distributed Schur complement has not yet been initialized */
+   assert( isSCrowLocal.size() == 0 );
+   assert( isSCrowMyLocal.size() == 0 );
+
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+
+   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdA, stochNode->myl() );
+   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation( map_block_subtree, linkStartBlockIdC, stochNode->mzl() );
+
+   /* which blocks do the individual two-links start in */
+   permuteLinkingCons(perm_A, perm_C);
+   permuteLinkStructureDetection(perm_A, perm_C);
+}
+
+void sData::addChildrenForSplit()
+{
+   if( stochNode->isHierarchicalInnerLeaf() )
+      is_hierarchy_inner_leaf = true;
+   else
+      is_hierarchy_inner_root = true;
+
+   assert( isSCrowLocal.size() == 0 );
+   assert( isSCrowMyLocal.size() == 0 );
+
+   const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
+
+   const sTreeCallbacks& tree = dynamic_cast<const sTreeCallbacks&>(*stochNode);
+   std::vector<sData*> new_children(n_new_children);
+
+   unsigned int childchild_pos{0};
+   for( unsigned int i = 0; i < n_new_children; ++i )
+   {
+      StochSymMatrix* Q_child = is_hierarchy_inner_root ? dynamic_cast<StochSymMatrix&>(*Q).children[i] :
+            dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).children[i];
+
+      StochGenMatrix* A_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*A).children[i] :
+            dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).children[i];
+      StochGenMatrix* C_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*C).children[i] :
+            dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).children[i];
+
+      StochVector* g_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*g).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).vec).children[i];
+      StochVector* blx_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*blx).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).vec).children[i];
+      StochVector* ixlow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixlow).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).vec).children[i];
+      StochVector* bux_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bux).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).vec).children[i];
+      StochVector* ixupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixupp).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).vec).children[i];
+
+      StochVector* bA_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bA).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).children[i];
+
+      StochVector* bl_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bl).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).children[i];
+      StochVector* iclow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*iclow).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).children[i];
+      StochVector* bu_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bu).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).children[i];
+      StochVector* icupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*icupp).children[i] :
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).children[i];
+
+      assert( dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf() );
+      const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
+
+      sData* child = new sData(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child,
+            A_child, bA_child, C_child, bl_child, iclow_child, bu_child, icupp_child,
+            false, false, false, true);
+      new_children[i] = child;
+
+      const int myl = tree_child->myl();
+      const int mzl = tree_child->mzl();
+
+      child->linkConsPermutationA.resize(myl);
+      std::iota(child->linkConsPermutationA.begin(), child->linkConsPermutationA.end(), 0);
+
+      child->linkConsPermutationC.resize(mzl);
+      std::iota(child->linkConsPermutationC.begin(), child->linkConsPermutationC.end(), 0);
+
+      /// A
+      child->linkStartBlockIdA.insert(child->linkStartBlockIdA.begin(), linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + myl);
+      std::transform(child->linkStartBlockIdA.begin(), child->linkStartBlockIdA.end(), child->linkStartBlockIdA.begin(),
+            [&childchild_pos](const int& a){ return a - childchild_pos; } );
+
+      child->n_blocks_per_link_row_A.insert(child->n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin() + myl);
+      n_blocks_per_link_row_A.erase(n_blocks_per_link_row_A.begin(), n_blocks_per_link_row_A.begin() + myl);
+
+      /// C
+      child->linkStartBlockIdC.insert(child->linkStartBlockIdC.begin(), linkStartBlockIdC.begin(), linkStartBlockIdC.begin() + mzl);
+      std::transform(child->linkStartBlockIdC.begin(), child->linkStartBlockIdC.end(), child->linkStartBlockIdC.begin(),
+            [&childchild_pos](const int& a){ return a - childchild_pos; } );
+
+      child->n_blocks_per_link_row_C.insert(child->n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin() + mzl);
+      n_blocks_per_link_row_C.erase(n_blocks_per_link_row_C.begin(), n_blocks_per_link_row_C.begin() + mzl);
+
+      const int first_child = childchild_pos;
+      while( childchild_pos < map_blocks_children.size() && map_blocks_children[childchild_pos] == i )
+      {
+         children[childchild_pos]->has_RAC = false;
+         child->AddChild(children[childchild_pos]);
+
+         if( childchild_pos + 1 == map_blocks_children.size()
+               || map_blocks_children[childchild_pos + 1] != i )
+         {
+            child->linkStartBlockLengthsA.push_back( 0 );
+            child->linkStartBlockLengthsC.push_back( 0 );
+         }
+         else
+         {
+            child->linkStartBlockLengthsA.push_back( linkStartBlockLengthsA[childchild_pos] );
+            linkStartBlockLengthsA[childchild_pos] = -20;
+
+            child->linkStartBlockLengthsC.push_back( linkStartBlockLengthsC[childchild_pos] );
+            linkStartBlockLengthsC[childchild_pos] = -20;
+         }
+         ++childchild_pos;
+      }
+      const int last_child = childchild_pos;
+
+      int eq_to_erase{0};
+      if( !linkStartBlockIdA.empty() )
+         while( first_child <= *(linkStartBlockIdA.begin() + eq_to_erase) && *(linkStartBlockIdA.begin() + eq_to_erase) < last_child )
+            ++eq_to_erase;
+
+      int ineq_to_erase{0};
+      if( !linkStartBlockIdC.empty() )
+         while( first_child <= *(linkStartBlockIdC.begin() + ineq_to_erase) && *(linkStartBlockIdC.begin() + ineq_to_erase) < last_child )
+            ++ineq_to_erase;
+      assert( myl == 0 || myl == eq_to_erase );
+      assert( mzl == 0 || mzl == ineq_to_erase );
+
+      linkStartBlockIdA.erase(linkStartBlockIdA.begin(), linkStartBlockIdA.begin() + eq_to_erase);
+      linkStartBlockIdC.erase(linkStartBlockIdC.begin(), linkStartBlockIdC.begin() + ineq_to_erase);
+
+      assert( child->linkStartBlockLengthsA.size() == child->children.size() );
+      assert( child->linkStartBlockLengthsA.back() == 0 );
+
+      // Leaving child->linkVarsPermutation, child->n_blocks_per_link_var empty for now - not sure if ever needed
+
+      child->useLinkStructure = true;
+   }
+
+   linkStartBlockLengthsA.erase( std::remove_if(linkStartBlockLengthsA.begin(),
+         linkStartBlockLengthsA.end(),
+         [](int a){ return a == -20; }),
+         linkStartBlockLengthsA.end()
+   );
+
+   linkStartBlockLengthsC.erase( std::remove_if(linkStartBlockLengthsC.begin(),
+         linkStartBlockLengthsC.end(),
+         [](int a){ return a == -20; }),
+         linkStartBlockLengthsC.end()
+   );
+
+   for( unsigned int i = 0; i < linkStartBlockIdA.size(); ++i )
+      if( linkStartBlockIdA[i] >= 0 )
+         linkStartBlockIdA[i] = map_blocks_children[linkStartBlockIdA[i]];
+
+   for( unsigned int i = 0; i < linkStartBlockIdC.size(); ++i )
+      if( linkStartBlockIdC[i] >= 0 )
+         linkStartBlockIdC[i] = map_blocks_children[linkStartBlockIdC[i]];
+
+   children.clear();
+   children.insert( children.begin(), new_children.begin(), new_children.end() );
+
+   assert( linkStartBlockLengthsA.size() == linkStartBlockLengthsC.size() );
+   assert( linkStartBlockLengthsA.size() == new_children.size() );
+}
+
+void sData::splitData()
+{
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
+   assert( child_comms.size() == getNDistinctValues(map_block_subtree) );
+
+// TODO : DELETEME
+//   OoqpVector* x_bef = g;
+//   OoqpVector* y_bef = bA;
+//   OoqpVector* z_bef = bl;
+//   x_bef->setToConstant(2.0);
+//   y_bef->setToConstant(2.0);
+//   z_bef->setToConstant(2.0);
+//
+//   const double norm2_bef = g->twonorm();
+//   const double norm1_bef = g->onenorm();
+//
+//   A->transMult(2.0, *x_bef, 3.0, *y_bef);
+//   const double A2norm_bef = x_bef->twonorm();
+//   const double A1norm_bef = x_bef->onenorm();
+//
+//   C->mult(2.0, *z_bef, 3.0, *x_bef);
+//   const double C2norm_bef = z_bef->twonorm();
+//   const double C1norm_bef = z_bef->onenorm();
+//
+//   OoqpVector* x_bef2 = g->clone();
+//   x_bef2->setToConstant(2.0);
+//   Q->transMult(2.0, *x_bef2, 3.0, *x_bef);
+//
+//   const double Q2norm_bef = x_bef2->twonorm();
+//   const double Q1norm_bef = x_bef2->onenorm();
+
+   if( stochNode->isHierarchicalInnerLeaf() )
+   {
+      dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
+
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).vec).split(map_block_subtree, child_comms);
+
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).vec).split(map_block_subtree, child_comms);
+
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
+
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+   }
+   else
+   {
+      dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
+      dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
+
+      dynamic_cast<StochVector&>(*g).split(map_block_subtree, child_comms);
+
+      dynamic_cast<StochVector&>(*bux).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*ixupp).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*blx).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*ixlow).split(map_block_subtree, child_comms);
+
+      dynamic_cast<StochVector&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
+
+      dynamic_cast<StochVector&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+   }
+// TODO : DELETEME
+//   OoqpVector* x_after = g;
+//   OoqpVector* y_after = bA;
+//   OoqpVector* z_after = bl;
+//   x_after->setToConstant(2.0);
+//   y_after->setToConstant(2.0);
+//   z_after->setToConstant(2.0);
+//
+//   const double norm2_after = g->twonorm();
+//   const double norm1_after = g->onenorm();
+//
+//   A->transMult(2.0, *x_after, 3.0, *y_after);
+//   const double A2norm_after = x_after->twonorm();
+//   const double A1norm_after = x_after->onenorm();
+//   C->mult(2.0, *z_after, 3.0, *x_after);
+//   const double C2norm_after = z_after->twonorm();
+//   const double C1norm_after = z_after->onenorm();
+//
+//   OoqpVector* x_after2 = g->clone();
+//   x_after2->setToConstant(2.0);
+//   Q->transMult(2.0, *x_after2, 3.0, *x_after);
+//
+//   const double Q2norm_after = x_after2->twonorm();
+//   const double Q1norm_after = x_after2->onenorm();
+//
+//   std::cout << "normg1 before : " << norm1_bef << " vs normg1 after : " << norm1_after << " difference " << norm1_bef - norm1_after << "\n";
+//   std::cout << "normg2 before : " << norm2_bef << " vs normg2 after : " << norm2_after << " difference " << norm2_bef - norm2_after << "\n";
+//
+//   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
+//   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
+//   std::cout << "Q2norm before : " << Q2norm_bef << " vs Q2norm after : " << Q2norm_after << " difference " << Q2norm_bef - Q2norm_after << "\n";
+//   std::cout << "\n";
+//   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
+//   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
+//   std::cout << "Q1norm before : " << Q1norm_bef << " vs Q1norm after : " << Q1norm_after << " difference " << Q1norm_bef - Q1norm_after << "\n";
+
+   // TODO : when Q is used we also need this here..
+   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+}
+
+void sData::recomputeSize()
+{
+   dynamic_cast<StochSymMatrix&>(*Q).recomputeSize();
+   dynamic_cast<StochGenMatrix&>(*A).recomputeSize();
+   dynamic_cast<StochGenMatrix&>(*C).recomputeSize();
+
+   dynamic_cast<StochVector&>(*g).recomputeSize();
+
+   dynamic_cast<StochVector&>(*bux).recomputeSize();
+   dynamic_cast<StochVector&>(*ixupp).recomputeSize();
+   dynamic_cast<StochVector&>(*blx).recomputeSize();
+   dynamic_cast<StochVector&>(*ixlow).recomputeSize();
+
+   dynamic_cast<StochVector&>(*bA).recomputeSize();
+
+   dynamic_cast<StochVector&>(*bu).recomputeSize();
+   dynamic_cast<StochVector&>(*icupp).recomputeSize();
+   dynamic_cast<StochVector&>(*bl).recomputeSize();
+   dynamic_cast<StochVector&>(*iclow).recomputeSize();
+}
+
+void sData::splitStringMatricesAccordingToSubtreeStructure()
+{
+   assert( dynamic_cast<StochGenMatrix&>(*A).Blmat->isKindOf(kStringGenMatrix) );
+   assert( dynamic_cast<StochGenMatrix&>(*C).Blmat->isKindOf(kStringGenMatrix) );
+   StringGenMatrix& Blmat = dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Blmat);
+   StringGenMatrix& Dlmat = dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Blmat);
+
+   if( stochNode->getCommWorkers() == MPI_COMM_NULL )
+   {
+      assert( Blmat.isKindOf(kStringGenDummyMatrix) );
+      assert( Dlmat.isKindOf(kStringGenDummyMatrix) );
+      return;
+   }
+
+   Blmat.splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*stochNode) );
+   Dlmat.splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*stochNode) );
+
+   assert( children.size() == Blmat.children.size() ) ;
+   assert( children.size() == Dlmat.children.size() ) ;
+}
+
+
+void sData::splitDataAndAddAsChildLayer()
+{
+   splitData();
+   addChildrenForSplit();
+}
+
+void sData::splitDataAccordingToTree()
+{
+   /* we came to a leaf and stop here */
+   if( !stochNode->isHierarchicalInnerRoot() && !stochNode->isHierarchicalInnerLeaf() )
+      return;
+
+   reorderLinkingConstraintsAccordingToSplit();
+   splitDataAndAddAsChildLayer();
+}
+
+void sData::permuteLinkStructureDetection( const PERMUTATION& perm_A, const PERMUTATION& perm_C )
+{
+   assert( isSCrowLocal.empty() );
+   assert( isSCrowMyLocal.empty() );
+
+   permuteVector(perm_A, linkStartBlockIdA);
+   permuteVector(perm_A, n_blocks_per_link_row_A);
+
+   permuteVector(perm_C, linkStartBlockIdC);
+   permuteVector(perm_C, n_blocks_per_link_row_C);
+
+   permuteVector(perm_A, linkConsPermutationA);
+   permuteVector(perm_C, linkConsPermutationC);
+}
+
+void sData::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATION& permC)
 {
    assert( permutationIsValid(permA) );
    assert( permutationIsValid(permC) );
    assert( !is_hierarchy_root );
 
-   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
-   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
-   dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(permA);
-   dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(permC);
-   dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(permC);
-   dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(permC);
-   dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
+   if( stochNode->isHierarchicalInnerLeaf() )
+   {
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).permuteLinkingCons(permA);
+      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).permuteLinkingCons(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).permuteLinkingEntries(permA);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).permuteLinkingEntries(permC);
+   }
+   else
+   {
+      dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
+      dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
+      dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(permA);
+      dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
+   }
 }
 
-void sData::permuteLinkingVars(const std::vector<unsigned int>& perm)
+void sData::permuteLinkingVars(const PERMUTATION& perm)
 {
    assert( permutationIsValid(linkVarsPermutation) );
    assert( !is_hierarchy_root );
@@ -1854,13 +2125,13 @@ sVars* sData::getVarsUnperm(const sVars& vars, const sData& unpermData) const
    sVars* unperm_vars = new sVars(vars);
 
    if( is_hierarchy_root )
-      unperm_vars->collapseHierarchicalStructure( unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+      unperm_vars->collapseHierarchicalStructure( *this, unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
    assert( unperm_vars->children.size() == unpermData.children.size() );
 
-   const std::vector<unsigned int> perm_inv_link_vars = getLinkVarsPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_eq = getLinkConsEqPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
+   const PERMUTATION perm_inv_link_vars = getLinkVarsPermInv();
+   const PERMUTATION perm_inv_link_cons_eq = getLinkConsEqPermInv();
+   const PERMUTATION perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
 
    if( perm_inv_link_vars.size() != 0 )
       unperm_vars->permuteVec0Entries( perm_inv_link_vars, true );
@@ -1879,13 +2150,13 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
    sResiduals* unperm_resids = new sResiduals(resids);
 
    if( is_hierarchy_root )
-      unperm_resids->collapseHierarchicalStructure( unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
+      unperm_resids->collapseHierarchicalStructure( *this, stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp );
 
    assert( unperm_resids->children.size() == unpermData.children.size() );
 
-   const std::vector<unsigned int> perm_inv_link_vars = this->getLinkVarsPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
-   const std::vector<unsigned int> perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
+   const PERMUTATION perm_inv_link_vars = this->getLinkVarsPermInv();
+   const PERMUTATION perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
+   const PERMUTATION perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
    /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already */
    const bool do_not_permut_bounds = is_hierarchy_root ? true : false;
@@ -1901,6 +2172,57 @@ sResiduals* sData::getResidsUnperm(const sResiduals& resids, const sData& unperm
 
    return unperm_resids;
 }
+
+void sData::removeN0LinkVarsIn2Links( std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch,
+      const StochGenMatrix& Cstoch, const std::vector<int>& linkStartBlockIdA,
+      const std::vector<int>& linkStartBlockIdC )
+{
+   for( size_t i = 0; i < n_blocks_per_link_var.size(); ++i )
+   {
+      /* variable is n0LinkVar */
+      if( n_blocks_per_link_var[i] == 0 )
+      {
+         /// Blmat
+         {
+            const SparseGenMatrix& Blmat = dynamic_cast<SparseGenMatrix&>(*Astoch.Blmat).getTranspose();
+            const int col_start_A = Blmat.krowM()[i];
+            const int col_end_A = Blmat.krowM()[i + 1];
+
+            for( int k = col_start_A; k < col_end_A; ++k )
+            {
+               const int row_for_col = Blmat.jcolM()[k];
+
+               /* variable appears in a 2link */
+               if( linkStartBlockIdA[row_for_col] >= 0 )
+               {
+                  n_blocks_per_link_var[i] = -1;
+                  continue;
+               }
+            }
+         }
+
+         /// Dlmat
+         {
+            const SparseGenMatrix& Dlmat = dynamic_cast<SparseGenMatrix&>(*Cstoch.Blmat).getTranspose();
+            const int col_start_C = Dlmat.krowM()[i];
+            const int col_end_C = Dlmat.krowM()[i + 1];
+
+            for( int k = col_start_C; k < col_end_C; ++k )
+            {
+               const int row_for_col = Dlmat.jcolM()[k];
+
+               /* variable appears in a 2link */
+               if( linkStartBlockIdC[row_for_col] >= 0 )
+               {
+                  n_blocks_per_link_var[i] = -1;
+                  continue;
+               }
+            }
+         }
+      }
+   }
+}
+
 
 void sData::activateLinkStructureExploitation()
 {
@@ -1918,7 +2240,7 @@ void sData::activateLinkStructureExploitation()
       if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
       {
          if( myrank == 0 )
-            std::cout << "No linking constraints found - hierarchical approach cannot be used" << "\n";
+            std::cout << "No linking constraints found - hierarchical approach cannot be used\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
       }
 
@@ -1944,6 +2266,10 @@ void sData::activateLinkStructureExploitation()
    Astoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdA, n_blocks_per_link_row_A);
    Cstoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdC, n_blocks_per_link_row_C);
 
+   /* since 2 links can get permuted out of the linking part we cannot rely on n0Linkvars the appear in 2links */
+   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+      removeN0LinkVarsIn2Links( n_blocks_per_link_var, Astoch, Cstoch, linkStartBlockIdA, linkStartBlockIdC );
+
 #ifndef NDEBUG
    std::vector<int> linkStart_A2 = Astoch.get2LinkStartBlocks();
    assert( linkStartBlockIdA.size() == linkStart_A2.size() );
@@ -1951,7 +2277,7 @@ void sData::activateLinkStructureExploitation()
    {
       assert( linkStart_A2[i] == linkStartBlockIdA[i] );
       if( linkStart_A2[i] != linkStartBlockIdA[i] && myrank == 0)
-         std::cout << "New : " << linkStart_A2[i] << " != " << linkStartBlockIdA[i] << " old" << "\n";
+         std::cout << "New : " << linkStart_A2[i] << " != " << linkStartBlockIdA[i] << " old\n";
    }
 
    std::vector<int> linkStart_C2 = Cstoch.get2LinkStartBlocks();
@@ -1960,7 +2286,7 @@ void sData::activateLinkStructureExploitation()
    {
       assert( linkStart_C2[i] == linkStartBlockIdC[i] );
       if( linkStart_C2[i] != linkStartBlockIdC[i] && myrank == 0)
-         std::cout << "New : " << linkStart_C2[i] << " != " << linkStartBlockIdC[i] << " old" << "\n";
+         std::cout << "New : " << linkStart_C2[i] << " != " << linkStartBlockIdC[i] << " old\n";
    }
 #endif
 
@@ -2016,7 +2342,7 @@ void sData::activateLinkStructureExploitation()
       std::cout << "number of equality 2-links: " << n2LinksEq << " (out of "
             << linkStartBlockIdA.size() << " equalities)\n";
       std::cout << "number of inequality 2-links: " << n2LinksIneq << " (out of "
-            << linkStartBlockIdC.size() << " equalities)\n";
+            << linkStartBlockIdC.size() << " inequalities)\n";
 
       std::cout << "ratio: " << ratio << "\n";
    }
@@ -2027,7 +2353,7 @@ void sData::activateLinkStructureExploitation()
       if( ratio < minStructuredLinksRatio )
       {
          if( myrank == 0 )
-            std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << "\n";
+            std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << ")\n";
          useLinkStructure = false;
       }
    }
@@ -2100,6 +2426,7 @@ sData::createScaleFromQ()
 
 void sData::printLinkVarsStats()
 {
+   assert( !is_hierarchy_inner_leaf && !is_hierarchy_inner_root && !is_hierarchy_root );
    int n = getLocalnx();
 
    std::vector<int> linkCountA(n, 0);
@@ -2113,21 +2440,21 @@ void sData::printLinkVarsStats()
    Astoch.updateKLinkVarsCount(linkCountA);
    Cstoch.updateKLinkVarsCount(linkCountC);
 
-   Astoch.Bmat->getTranspose().updateNonEmptyRowsCount(linkCount0);
-   Astoch.Bmat->deleteTransposed();
-   Cstoch.Bmat->getTranspose().updateNonEmptyRowsCount(linkCount0);
-   Cstoch.Bmat->deleteTransposed();
+   dynamic_cast<SparseGenMatrix*>(Astoch.Bmat)->getTranspose().updateNonEmptyRowsCount(linkCount0);
+   dynamic_cast<SparseGenMatrix*>(Astoch.Bmat)->deleteTransposed();
+   dynamic_cast<SparseGenMatrix*>(Cstoch.Bmat)->getTranspose().updateNonEmptyRowsCount(linkCount0);
+   dynamic_cast<SparseGenMatrix*>(Cstoch.Bmat)->deleteTransposed();
 
    if( Astoch.Blmat )
    {
-      Astoch.Blmat->getTranspose().updateNonEmptyRowsCount(linkCountLC);
-      Astoch.Blmat->deleteTransposed();
+      dynamic_cast<SparseGenMatrix*>(Astoch.Blmat)->getTranspose().updateNonEmptyRowsCount(linkCountLC);
+      dynamic_cast<SparseGenMatrix*>(Astoch.Blmat)->deleteTransposed();
    }
 
    if( Cstoch.Blmat )
    {
-      Cstoch.Blmat->getTranspose().updateNonEmptyRowsCount(linkCountLC);
-      Cstoch.Blmat->deleteTransposed();
+      dynamic_cast<SparseGenMatrix*>(Cstoch.Blmat)->getTranspose().updateNonEmptyRowsCount(linkCountLC);
+      dynamic_cast<SparseGenMatrix*>(Cstoch.Blmat)->deleteTransposed();
    }
 
    const int rank = PIPS_MPIgetRank();
@@ -2165,11 +2492,11 @@ void sData::printLinkVarsStats()
          if( linkSizes[i] != 0 )
          {
             nlocal += linkSizes[i];
-            std::cout << i << "-link vars: " << linkSizes[i] << "\n";
+            std::cout << "---" << i << "-link vars: " << linkSizes[i] << "\n";
          }
 
       assert(n - nlocal >= 0);
-      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")" <<   "\n";
+      std::cout << "---total linking variables: " << n << " (global: " << n - nlocal << ")\n";
 
       std::cout << "   Block0 exclusive vars " << count0 << "\n";
       std::cout << "   LC exclusive vars " << countLC << "\n";
@@ -2206,12 +2533,16 @@ void sData::printLinkConsStats()
             if( linkSizes[i] != 0 )
             {
                nlocal += linkSizes[i];
-               std::cout << "equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
+               std::cout << "---equality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")" <<   "\n";
+         std::cout << "---total equality linking constraints: " << myl << " (global: " << myl - nlocal << ")\n";
 
       }
    }
+   else
+      if( rank == 0 )
+         std::cout << "---total equality linking constraints: 0\n";
+
 
    if( mzl > 0 )
    {
@@ -2237,9 +2568,12 @@ void sData::printLinkConsStats()
                nlocal += linkSizes[i];
                std::cout << "inequality " <<  i << "-link cons: " << linkSizes[i] << "\n";
             }
-         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")" <<   "\n";
+         std::cout << "---total inequality linking constraints: " << mzl << " (global: " << mzl - nlocal << ")\n";
       }
    }
+   else
+      if( rank == 0 )
+         std::cout << "---total inequality linking constraints: 0\n";
 }
 
 sData::~sData()
@@ -2248,21 +2582,23 @@ sData::~sData()
       delete children[it];
 }
 
-std::vector<unsigned int> sData::getLinkVarsPermInv() const
+PERMUTATION sData::getLinkVarsPermInv() const
 {
    if( is_hierarchy_root )
       return this->children[0]->getLinkVarsPermInv();
    else
       return getInversePermutation(linkVarsPermutation);
 }
-std::vector<unsigned int> sData::getLinkConsEqPermInv() const
+
+PERMUTATION sData::getLinkConsEqPermInv() const
 {
    if( is_hierarchy_root )
       return this->children[0]->getLinkConsEqPermInv();
    else
       return getInversePermutation(linkConsPermutationA);
 }
-std::vector<unsigned int> sData::getLinkConsIneqPermInv() const
+
+PERMUTATION sData::getLinkConsIneqPermInv() const
 {
    if( is_hierarchy_root )
       return this->children[0]->getLinkConsIneqPermInv();
@@ -2272,88 +2608,103 @@ std::vector<unsigned int> sData::getLinkConsIneqPermInv() const
 
 int sData::getLocalnx() const
 {
-   long long my, nx;
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
-      Abd.border_left->getSize(my, nx);
-   }
+   assert( !is_hierarchy_root );
+
+   long long my{0};
+   long long nx{0};
+   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+
+   if( is_hierarchy_inner_leaf )
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
    else
-   {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
       Ast.Bmat->getSize(my, nx);
-   }
+
    return nx;
 }
 
 int sData::getLocalmy() const
 {
-   long long my, nx;
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-      const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
-      Cbd.getSize(my, nx);
-   }
+   assert( !is_hierarchy_root );
+
+   long long my{0};
+   long long nx{0};
+   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+
+   if( is_hierarchy_inner_leaf )
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
    else
-   {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
       Ast.Bmat->getSize(my, nx);
-   }
+
    return my;
 }
 
 int sData::getLocalmyl() const
 {
-   long long myl, nxl;
+   long long myl{0};
+   long long nxl{0};
+   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+
    if( is_hierarchy_root )
    {
       assert( 0 && "TODO : implement");
 //      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
 //      Abd.Blmat->getSize(myl, nxl);
    }
-   else
+   else if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
    {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
-      Ast.Blmat->getSize(myl, nxl);
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
+      dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Blmat->getSize(myl, nxl);
    }
+   else
+      Ast.Blmat->getSize(myl, nxl);
+
    return myl;
 }
 
 int sData::getLocalmz() const
 {
-   long long mz, nx;
+   long long mz{0};
+   long long nx{0};
+   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+
    if( is_hierarchy_root )
-   {
       assert( 0 && "TODO : implement");
-   }
+   else if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
    else
-   {
-      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
       Cst.Bmat->getSize(mz, nx);
-   }
+
    return mz;
 }
 
 int sData::getLocalmzl() const
 {
-   long long mzl, nxl;
+   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+   long long mzl{0};
+   long long nxl{0};
+
    if( is_hierarchy_root )
    {
       assert( 0 && "TODO : implement");
    }
-   else
+   else if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
    {
-      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
-      Cst.Blmat->getSize(mzl, nxl);
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
+      dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Blmat->getSize(mzl, nxl);
    }
+   else
+      Cst.Blmat->getSize(mzl, nxl);
+
    return mzl;
 }
 
 int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
 {
-   long long nx_loc, my_loc, mz_loc, myl_loc, mzl_loc;
+   long long nx_loc{0};
+   long long my_loc{0};
+   long long mz_loc{0};
+   long long myl_loc{0};
+   long long mzl_loc{0};
 
    if( is_hierarchy_root )
    {
@@ -2368,6 +2719,18 @@ int sData::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const
       assert(Cbd.border_left->mat_link);
       Cbd.border_left->mat->getSize(mz_loc, nx_loc);
       Cbd.bottom_left_block->getSize(mzl_loc, nx_loc);
+   }
+   else if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
+
+      dynamic_cast<const StochGenMatrix&>(*Ast.Bmat).Blmat->getSize(myl_loc, nx_loc);
+      dynamic_cast<const StochGenMatrix&>(*Cst.Bmat).Blmat->getSize(mzl_loc, nx_loc);
+      nx_loc = 0;
    }
    else
    {
@@ -2401,6 +2764,17 @@ int sData::getLocalSizes(int& nx, int& my, int& mz) const
       assert(Cbd.border_left->mat);
       Cbd.border_left->mat->getSize(mz_loc, nx_loc);
    }
+   else if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
+
+      dynamic_cast<const StochGenMatrix&>(*Ast.Bmat).Bmat->getSize(my_loc, nx_loc);
+      dynamic_cast<const StochGenMatrix&>(*Cst.Bmat).Bmat->getSize(mz_loc, nx_loc);
+   }
    else
    {
       const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
@@ -2413,20 +2787,21 @@ int sData::getLocalSizes(int& nx, int& my, int& mz) const
    nx = nx_loc;
    my = my_loc;
    mz = mz_loc;
+
    return 0;
 }
 
 int sData::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD)
 {
-   if( is_hierarchy_root )
+   if( is_hierarchy_root || is_hierarchy_inner_root || is_hierarchy_inner_leaf )
       assert( 0 && "TODO : implement");
    const StochSymMatrix& Qst = dynamic_cast<const StochSymMatrix&>(*Q);
    const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
    const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
 
-   nnzQ = Qst.diag->getStorageRef().len + Qst.border->getStorageRef().len;
-   nnzB = Ast.Bmat->getStorageRef().len;
-   nnzD = Cst.Bmat->getStorageRef().len;
+   nnzQ = dynamic_cast<const SparseSymMatrix*>(Qst.diag)->getStorageRef().len + Qst.border->getStorageRef().len;
+   nnzB = dynamic_cast<const SparseGenMatrix*>(Ast.Bmat)->getStorageRef().len;
+   nnzD = dynamic_cast<const SparseGenMatrix*>(Cst.Bmat)->getStorageRef().len;
    return 0;
 }
 
@@ -2515,10 +2890,16 @@ int sData::getSchurCompMaxNnz()
    const int mzl = getLocalmzl();
 
 #ifndef NDEBUG
+   if( !is_hierarchy_inner_leaf )
    {
       int mB, nB;
       getLocalB().getSize(mB, nB);
-      assert(mB == my  && nB == n0);
+      assert(mB == my && nB == n0);
+   }
+   else
+   {
+      assert( my == 0 );
+      assert( n0 == 0 );
    }
 #endif
 
@@ -2564,7 +2945,6 @@ int sData::getSchurCompMaxNnz()
       const int* startRowGtrans = Gt.krowM();
       nnz += startRowGtrans[n0] - startRowGtrans[n0 - n0LinkVars];
    }
-
    return nnz;
 }
 
@@ -2637,17 +3017,26 @@ int sData::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd)
 SparseSymMatrix& sData::getLocalQ()
 {
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
-   return *Qst.diag;
+   assert( !is_hierarchy_root );
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Qst.diag->isKindOf(kStochSymMatrix) );
+      return dynamic_cast<SparseSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Qst.diag).diag);
+   }
+   else
+   {
+      assert( Qst.diag->isKindOf(kSparseSymMatrix) );
+      return dynamic_cast<SparseSymMatrix&>(*Qst.diag);
+   }
 }
 
 SparseGenMatrix&
 sData::getLocalCrossHessian()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
    StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
+   assert( !is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
+
    return *Qst.border;
 }
 
@@ -2657,36 +3046,77 @@ sData::getLocalCrossHessian()
 SparseGenMatrix&
 sData::getLocalA()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
+   assert( !is_hierarchy_root );
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   return *Ast.Amat;
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Ast.Amat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Ast.Amat).Amat);
+   }
+   else
+   {
+      assert( Ast.Amat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
+   }
 }
 
 // This is W_i:
 SparseGenMatrix&
 sData::getLocalB()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
+   assert( !is_hierarchy_root );
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   return *Ast.Bmat;
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Bmat);
+   }
+   else
+   {
+      assert( Ast.Bmat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Ast.Bmat);
+   }
 }
 
 // This is F_i (linking equality matrix):
 SparseGenMatrix&
 sData::getLocalF()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
+   assert( !is_hierarchy_root );
    StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
-   return *Ast.Blmat;
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Ast.Bmat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Blmat);
+   }
+   else
+   {
+      assert( Ast.Blmat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Ast.Blmat);
+   }
+}
+
+StringGenMatrix&
+sData::getLocalFBorder()
+{
+   assert( is_hierarchy_inner_leaf );
+   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+
+   assert( Ast.Blmat->isKindOf(kStringGenMatrix) );
+   return dynamic_cast<StringGenMatrix&>(*Ast.Blmat);
+}
+
+StringGenMatrix&
+sData::getLocalGBorder()
+{
+   assert( is_hierarchy_inner_leaf );
+   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+
+   assert( Cst.Blmat->isKindOf(kStringGenMatrix) );
+   return dynamic_cast<StringGenMatrix&>(*Cst.Blmat);
 }
 
 // low_i <= C_i x_0 + D_i x_i <= upp_i
@@ -2695,36 +3125,58 @@ sData::getLocalF()
 SparseGenMatrix&
 sData::getLocalC()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
+   assert( !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   return *Cst.Amat;
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Cst.Amat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Amat).Amat);
+   }
+   else
+   {
+      assert( Cst.Amat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
+   }
 }
 
 // This is D_i
 SparseGenMatrix&
 sData::getLocalD()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
+   assert( !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   return *Cst.Bmat;
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Bmat);
+   }
+   else
+   {
+      assert( Cst.Bmat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Cst.Bmat);
+   }
+
 }
 
 // This is G_i (linking inequality matrix):
 SparseGenMatrix&
 sData::getLocalG()
 {
-   if( is_hierarchy_root )
-   {
-      assert( 0 && "TODO : implement");
-   }
+   assert( !is_hierarchy_root );
    StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
-   return *Cst.Blmat;
+
+   if( is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL )
+   {
+      assert( Cst.Bmat->isKindOf(kStochGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Blmat);
+   }
+   else
+   {
+      assert( Cst.Blmat->isKindOf(kSparseGenMatrix) );
+      return dynamic_cast<SparseGenMatrix&>(*Cst.Blmat);
+   }
 }
 
 void sData::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC,

@@ -38,5 +38,5 @@ macro(package_add_test TESTNAME)
    set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
 endmacro()
 
-
 add_subdirectory( QpStoch )
+add_subdirectory( StochLinearAlgebra )

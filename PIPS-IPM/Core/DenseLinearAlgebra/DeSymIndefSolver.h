@@ -21,10 +21,10 @@ public:
 protected:
   double* work; int lwork;
   int *ipiv;
-  SparseSymMatrix *sparseMat;
+  const SparseSymMatrix *sparseMat;
 public:
-  DeSymIndefSolver( DenseSymMatrix * storage );
-  DeSymIndefSolver( SparseSymMatrix * storage );
+  DeSymIndefSolver( const DenseSymMatrix * storage );
+  DeSymIndefSolver( const SparseSymMatrix * storage );
   void diagonalChanged( int idiag, int extent ) override;
   void matrixChanged() override;
 

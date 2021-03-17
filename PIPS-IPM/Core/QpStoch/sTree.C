@@ -11,6 +11,7 @@
 #include "DoubleMatrixTypes.h"
 #include "pipsport.h"
 
+#include <numeric>
 #include <algorithm>
 #include <cmath>
 
@@ -20,10 +21,32 @@ int sTree::rankZeroW = 0;
 int sTree::rankPrcnd =-1;
 int sTree::numProcs  =-1;
 
+sTree::sTree(const sTree& other) : commWrkrs{ other.commWrkrs },
+      myProcs( other.myProcs.begin(), other.myProcs.end() ),
+      myOldProcs( other.myOldProcs.begin(), other.myOldProcs.end() ),
+      commP2ZeroW{ other.commP2ZeroW },
+      N{ other.N },
+      MY{ other.MY },
+      MZ{ other.MZ },
+      MYL{ other.MYL },
+      MZL{ other.MZL },
+      np{ other.np },
+      IPMIterExecTIME{ other.IPMIterExecTIME },
+      is_hierarchical_root{ other.is_hierarchical_root },
+      is_hierarchical_inner_root{ other.is_hierarchical_inner_root },
+      is_hierarchical_inner_leaf{ other.is_hierarchical_inner_leaf }
+{
+   if( other.sub_root )
+      sub_root = other.sub_root->clone();
+   for( auto& child : other.children )
+      children.push_back( child->clone() );
+}
+
 sTree::~sTree() 
 {
   for(size_t it = 0; it < children.size(); it++)
     delete children[it];
+  delete sub_root;
 }
 
 int sTree::myl() const
@@ -42,170 +65,64 @@ bool sTree::distributedPreconditionerActive() const
          ( commP2ZeroW != MPI_COMM_NULL ) && ( rankMe != -1 );
 }
 
-
-
 void sTree::assignProcesses(MPI_Comm comm)
 {
+   assert( comm != MPI_COMM_NULL );
    assert( !is_hierarchical_root );
-   const int size = PIPS_MPIgetSize(comm);
 
-   std::vector<int> processes(size);
-   for( int p = 0; p < size; p++)
+   const int world_size = PIPS_MPIgetSize(comm);
+   /* assign root node */
+   commWrkrs = MPI_COMM_WORLD;
+
+   std::vector<int> processes(world_size);
+   for( int p = 0; p < world_size; p++)
       processes[p] = p;
-
-   assignProcesses(comm, processes);
-}
-
-#ifndef MIN
-#define MIN(a,b) ( (a>b) ? b : a )
-#endif
-
-void sTree::assignProcesses(MPI_Comm world, vector<int>& processes)
-{
-   assert( !is_hierarchical_root );
-
-   int ierr;
-   commWrkrs = world;
    myProcs = processes;
 
-   const int n_procs = processes.size();
-
-   /* if we are at a leaf only one proc should be left */
-   if( children.size() == 0 )
-   {
-      assert( n_procs == 1 );
-      return;
-   }
-
-   /* if only one process is left anyway we just assign it to all children */
-   if( 1 == n_procs )
-   {
-      for( size_t c = 0; c < children.size(); c++)
-         children[c]->assignProcesses(world, processes);
-      return;
-   }
-
 #if 0
-   /* inactive but used to claculate loads that children would generate and then assign the processes */
+   /* inactive but used to calculate loads that children would generate and then assign the processes */
    vector<double> child_nodes_load( children.size() );
    for(size_t i = 0; i < children.size(); i++)
       child_nodes_load[i] = children[i]->processLoad();
 #endif
+
+   const unsigned int n_procs = processes.size();
    //**** solve the assignment problem ****
-   vector<vector<int> > map_child_nodes_to_procs(children.size());
-
-   const int n_children_per_process = children.size() / n_procs;
-   const int n_unassigned = children.size() % n_procs;
-
    /* too many MPI processes? */
-   if( n_children_per_process == 0 )
-   {
-      std::cout << "too many MPI processes! (max: " << children.size() << ")" << std::endl;
-      MPI_Abort(world, 1);
-   }
+   std::stringstream ss;
+   ss << "too many MPI processes! (max: " << children.size() << ")\n";
+   PIPS_MPIabortIf( n_procs > children.size(), ss.str() );
 
-   for( size_t i = 0; i < children.size(); i++)
-   {
-      map_child_nodes_to_procs[i].resize(1);
-      map_child_nodes_to_procs[i][0] = -1;
-   }
-
-
-   /* assign n_children_per_process + one left out node to the first n_unassigned processes */
-   size_t pos = 0;
-   for( int i = 0; i < n_procs; ++i )
-   {
-      const int n_assign_to_proc = ( i < n_unassigned ) ? n_children_per_process + 1 : n_children_per_process;
-
-      for( int j = 0; j < n_assign_to_proc; ++j )
-      {
-         assert( pos < children.size() );
-         map_child_nodes_to_procs[pos++][0] = i;
-      }
-   }
-
-   assert( pos == children.size() );
+   std::vector<unsigned int> map_child_nodes_to_procs;
+   mapChildrenToNSubTrees(map_child_nodes_to_procs, children.size(), n_procs);
 
 #ifndef NDEBUG
    for( size_t i = 0; i < children.size(); i++ )
-   {
-      assert( map_child_nodes_to_procs[i][0] != -1 );
-      assert( map_child_nodes_to_procs[i][0] < n_procs );
-   }
+      assert( map_child_nodes_to_procs[i] < n_procs );
 
    for( size_t i = 1; i < children.size(); i++ )
-      assert( map_child_nodes_to_procs[i - 1][0] <= map_child_nodes_to_procs[i][0] );
+      assert( map_child_nodes_to_procs[i - 1] <= map_child_nodes_to_procs[i] );
 
    std::vector<size_t> load_per_proc(n_procs, 0);
    for( size_t i = 0; i < children.size(); ++i )
-      load_per_proc[ map_child_nodes_to_procs[i][0] ]++;
+      load_per_proc[ map_child_nodes_to_procs[i] ]++;
 
    const size_t max_load = *std::max_element(load_per_proc.begin(), load_per_proc.end());
    const size_t min_load = *std::min_element(load_per_proc.begin(), load_per_proc.end());
    assert( max_load == min_load || max_load == min_load + 1 );
 #endif
 
-   MPI_Group mpiWorldGroup;
-   ierr = MPI_Comm_group(commWrkrs, &mpiWorldGroup);
-   (void) ierr;
-   assert( ierr == MPI_SUCCESS );
-
    for( size_t i = 0; i < children.size(); i++ )
    {
-     const int n_ranks_4_this_child = map_child_nodes_to_procs[i].size();
-     int* ranksToKeep = new int[n_ranks_4_this_child];
-
-     bool isChildInThisProcess = false;
-
-     for( int proc = 0; proc < n_ranks_4_this_child; proc++ )
-     {
-        ranksToKeep[proc] = map_child_nodes_to_procs[i][proc];
-        if( rankMe == ranksToKeep[proc] )
-           isChildInThisProcess = true;
-     }
-
-     vector<int> childRanks(n_ranks_4_this_child);
-     for( int c = 0; c < n_ranks_4_this_child; c++ )
-        childRanks[c] = ranksToKeep[c];
-
-     if( isChildInThisProcess )
-     {
-        if( n_ranks_4_this_child == 1 )
-        {
-           children[i]->assignProcesses(MPI_COMM_SELF, childRanks);
-        }
-        else
-        {
-           //create the communicator this child should use
-           MPI_Comm childComm;
-           MPI_Group childGroup;
-           ierr = MPI_Group_incl(mpiWorldGroup, n_ranks_4_this_child, ranksToKeep,
-                 &childGroup);
-           assert( ierr == MPI_SUCCESS );
-
-           ierr = MPI_Comm_create(commWrkrs, childGroup, &childComm);
-           assert( ierr == MPI_SUCCESS );
-           MPI_Group_free(&childGroup);
-
-           //!log printf("----Node [%d] is on proc [%d]\n", i, rankMe);fflush(stdout);
-           children[i]->assignProcesses(childComm, childRanks);
-        }
-     }
-     else
-     {  //this Child was not assigned to this MPI process
-        //!log printf("---Node [%d] not on  proc [%d] \n", i, rankMe);fflush(stdout);
-        // continue solving the assignment problem so that
-        // each node knows the CPUs the other nodes are on.
-
-        children[i]->assignProcesses(MPI_COMM_NULL, childRanks);
-     }
-
-     delete[] ranksToKeep;
-  }
-
-  MPI_Group_free(&mpiWorldGroup);
+      children[i]->myProcs.clear();
+      children[i]->myProcs.push_back( map_child_nodes_to_procs[i] );
+      assert( rankMe >= 0 );
+      if( static_cast<unsigned int>(rankMe) == map_child_nodes_to_procs[i] )
+         children[i]->commWrkrs = MPI_COMM_SELF;
+      else
+         children[i]->commWrkrs = MPI_COMM_NULL;
+   }
 }
-
 
 double sTree::processLoad() const
 {
@@ -217,16 +134,16 @@ double sTree::processLoad() const
   return IPMIterExecTIME;
 }
 
-void sTree::getGlobalSizes(long long& n, long long& my, long long& mz)
+void sTree::getGlobalSizes(long long& n, long long& my, long long& mz) const
 {
    n = N; my = MY; mz = MZ;
 }
 
-/*void sTree::GetLocalSizes(int& nOut, int& myOut, int& mzOut)
+void sTree::getGlobalSizes(long long& n, long long& my, long long& myl, long long& mz, long long& mzl) const
 {
-  nOut=nx(); myOut=my(); mzOut=mz();
+   n = N; my = MY; mz = MZ; myl = MYL, mzl = MZL;
 }
-*/
+
 int sTree::innerSize(int which) const
 {
    assert( false );
@@ -241,13 +158,30 @@ StochVector* sTree::newPrimalVector(bool empty) const
    if( commWrkrs == MPI_COMM_NULL )
       return new StochDummyVector();
 
-   StochVector* x = new StochVector( empty ? 0 : nx(), commWrkrs);
-
-   for(size_t it = 0; it < children.size(); it++)
+   StochVector* x{};
+   if( !sub_root )
    {
-      StochVector* child = children[it]->newPrimalVector();
-      x->AddChild(child);
+      x = new StochVector( empty ? 0 : nx(), commWrkrs);
+
+      for(size_t it = 0; it < children.size(); it++)
+      {
+         StochVector* child = children[it]->newPrimalVector(empty);
+         x->AddChild(child);
+      }
    }
+   else
+   {
+      assert( children.size() == 0 );
+      if( sub_root->commWrkrs == MPI_COMM_NULL )
+         x = new StochDummyVector();
+      else
+      {
+         StochVector* x_vec = sub_root->newPrimalVector(empty);
+         x = new StochVector( x_vec, nullptr, commWrkrs );
+         x_vec->parent = x;
+      }
+   }
+
    return x;
 }
 
@@ -256,15 +190,34 @@ StochVector* sTree::newDualYVector(bool empty) const
    if( commWrkrs == MPI_COMM_NULL )
       return new StochDummyVector();
 
+   StochVector* y{};
    const int yl = (np == -1) ? myl() : -1;
 
-   StochVector* y = new StochVector(empty ? std::min(0, my()) : my(),
-         empty ? std::min(yl, 0) : yl, commWrkrs);
-
-   for(size_t it = 0; it < children.size(); it++)
+   if( !sub_root )
    {
-      StochVector* child = children[it]->newDualYVector();
-      y->AddChild(child);
+      y = new StochVector(empty ? std::min(0, my()) : my(),
+            empty ? std::min(yl, 0) : yl, commWrkrs);
+
+      for(size_t it = 0; it < children.size(); it++)
+      {
+         StochVector* child = children[it]->newDualYVector(empty);
+         y->AddChild(child);
+      }
+   }
+   else
+   {
+      assert( children.size() == 0 );
+
+      if( sub_root->commWrkrs == MPI_COMM_NULL )
+         y = new StochDummyVector();
+      else
+      {
+         StochVector* y_vec = sub_root->newDualYVector( empty );
+         assert( yl == -1 );
+
+         y = new StochVector( y_vec, nullptr, commWrkrs );
+         y_vec->parent = y;
+      }
    }
    return y;
 }
@@ -274,36 +227,62 @@ StochVector* sTree::newDualZVector(bool empty) const
    if( commWrkrs == MPI_COMM_NULL )
       return new StochDummyVector();
 
+   StochVector* z{};
    const int zl = (np == -1) ? mzl() : -1;
 
-   StochVector* z = new StochVector( empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
-
-   for( size_t it = 0; it < children.size(); it++)
+   if( !sub_root )
    {
-      StochVector* child = children[it]->newDualZVector();
-      z->AddChild(child);
+
+      z = new StochVector( empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
+      for( size_t it = 0; it < children.size(); it++)
+      {
+         StochVector* child = children[it]->newDualZVector(empty);
+         z->AddChild(child);
+      }
    }
+   else
+   {
+      assert( children.size() == 0 );
+      if( sub_root->commWrkrs == MPI_COMM_NULL )
+         z = new StochDummyVector();
+      else
+      {
+         StochVector* z_vec = sub_root->newDualZVector(empty);
+         assert( zl == -1 );
+
+         z = new StochVector( z_vec, nullptr, commWrkrs );
+         z_vec->parent = z;
+      }
+   }
+
    return z;
 }
 
-StochVector* sTree::newRhs()
+StochVector* sTree::newRhs() const
 {
   //is this node a dead-end for this process?
   if( commWrkrs == MPI_COMM_NULL )
     return new StochDummyVector();
 
-  int locmyl = (np == -1) ? myl() : 0;
-  int locmzl = (np == -1) ? mzl() : 0;
+  StochVector* rhs{};
+  if( !sub_root )
+  {
+     int locmyl = (np == -1) ? myl() : 0;
+     int locmzl = (np == -1) ? mzl() : 0;
 
-  locmyl = std::max(locmyl, 0);
-  locmzl = std::max(locmzl, 0);
+     locmyl = std::max(locmyl, 0);
+     locmzl = std::max(locmzl, 0);
 
-  StochVector* rhs = new StochVector(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
+     rhs = new StochVector(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
 
-  for(size_t it=0; it<children.size(); it++) {
-    StochVector* child = children[it]->newRhs();
-    rhs->AddChild(child);
+     for(size_t it = 0; it < children.size(); it++)
+     {
+        StochVector* child = children[it]->newRhs();
+        rhs->AddChild(child);
+     }
   }
+  else
+     rhs = sub_root->newRhs();
 
   return rhs;
 }
@@ -335,7 +314,7 @@ void sTree::stopNodeMonitors()
   resMon.computeTotal();
 }
 
-void sTree::toMonitorsList(list<NodeExecEntry>& lstExecTm)
+void sTree::toMonitorsList(std::list<NodeExecEntry>& lstExecTm)
 {
   lstExecTm.push_back(resMon.eTotal);
 
@@ -343,7 +322,7 @@ void sTree::toMonitorsList(list<NodeExecEntry>& lstExecTm)
     children[i]->toMonitorsList(lstExecTm);
 }
 
-void sTree::fromMonitorsList(list<NodeExecEntry>& lstExecTm)
+void sTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm)
 {
   resMon.eTotal = lstExecTm.front();
   lstExecTm.pop_front();
@@ -352,10 +331,10 @@ void sTree::fromMonitorsList(list<NodeExecEntry>& lstExecTm)
     children[i]->fromMonitorsList(lstExecTm);
 }
 
-void sTree::syncMonitoringData(vector<double>& vCPUTotal)
+void sTree::syncMonitoringData(std::vector<double>& vCPUTotal)
 {
 
-  list<NodeExecEntry> lstExecTm;
+  std::list<NodeExecEntry> lstExecTm;
   this->toMonitorsList(lstExecTm);
 
   int noNodes = lstExecTm.size(); 
@@ -364,7 +343,7 @@ void sTree::syncMonitoringData(vector<double>& vCPUTotal)
   double* recvBuf = new double[noNodes+nCPUs];
   double* sendBuf = new double[noNodes+nCPUs];
   
-  list<NodeExecEntry>::iterator iter = lstExecTm.begin();
+  std::list<NodeExecEntry>::iterator iter = lstExecTm.begin();
   for(int it=0; it<noNodes; it++) { sendBuf[it] = iter->tmChildren; iter++; }
   for(int it=noNodes; it<noNodes+nCPUs; it++) sendBuf[it] = vCPUTotal[it-noNodes];
 
@@ -403,7 +382,7 @@ bool sTree::balanceLoad()
   computeNodeTotal();
 
   int nCPUs; MPI_Comm_size(commWrkrs, &nCPUs);
-  vector<double> cpuExecTm(nCPUs, 0.0);
+  std::vector<double> cpuExecTm(nCPUs, 0.0);
   cpuExecTm[rankMe] = this->IPMIterExecTIME;
 
   //if(sleepFlag && rankMe==1) {cpuExecTm[1] += 4.0;}
@@ -430,7 +409,7 @@ bool sTree::balanceLoad()
 
   if(maxLoad<1.0) return 0;
 
-  double balance = max(maxLoad/total*nCPUs, total/nCPUs/minLoad);
+  double balance = std::max(maxLoad/total*nCPUs, total/nCPUs/minLoad);
   if(balance<1.3) { //it is OK, no balancing
 
     //decide if balancing is needed due to the 'fat' nodes
@@ -460,7 +439,7 @@ bool sTree::balanceLoad()
 
   cpuExecTm.clear();
 
-  vector<int> ranks(nCPUs);
+  std::vector<int> ranks(nCPUs);
   for(int i=0; i<nCPUs; i++) ranks[i]=i; 
   assignProcesses(MPI_COMM_WORLD, ranks);
   return 1;
@@ -472,9 +451,9 @@ bool sTree::balanceLoad()
 void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromCPU )
 {
   // was this node previously assigned to cpu 'rank'?
-  int  wasAssigned=isInVector(rank, myOldProcs);
+  int wasAssigned = isInVector(rank, myOldProcs);
   // is currently assigned to cpu 'rank'?
-  int  isAssigned=isInVector(rank, myProcs);
+  int isAssigned = isInVector(rank, myProcs);
 
   //if(0==wasAssigned && 0==isAssigned) return;
   //if(1==wasAssigned && 1==isAssigned) return;
@@ -493,13 +472,6 @@ void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromC
       sendOrRecv = maRecv;
     }
   }
-}
-
-int sTree::isInVector(int elem, const vector<int>& vec) const
-{
-  for(size_t i=0; i<vec.size(); i++)
-    if(elem==vec[i]) return 1;
-  return 0;
 }
 
 void sTree::computeNodeTotal()
@@ -523,4 +495,243 @@ void sTree::saveCurrentCPUState()
 
   for(size_t i=0; i<children.size(); i++)
     children[i]->saveCurrentCPUState();
+}
+
+
+void sTree::appendPrintTreeLayer( std::vector<std::string>& layer_outputs, unsigned int level ) const
+{
+   if( level == layer_outputs.size() )
+      layer_outputs.push_back("");
+   if( commWrkrs == MPI_COMM_NULL )
+      return;
+
+   std::stringstream curr_level_output;
+   const bool I_print_layer = PIPS_MPIgetRank(commWrkrs) == 0;
+
+   if( I_print_layer )
+   {
+      if( !children.empty() )
+      {
+
+         std::stringstream level_stream;
+         level_stream << "|";
+         for( size_t i = 0; i < children.size(); ++i)
+         {
+            const auto& child = children[i];
+
+            /* this is a leaf */
+            if( child->children.empty() && !child->sub_root )
+            {
+               int count = 1;
+               while( i + 1 < children.size() && children[i + 1]->myProcs == child->myProcs )
+               {
+                  ++count;
+                  ++i;
+               }
+
+               level_stream << " [ " << child->myProcs.front() << " : " << count << " leafs ]";
+            }
+            else
+            {
+               if( child->myProcs.size() == 1 )
+                  level_stream << " [ " << child->myProcs.front() << " ]";
+               else
+                  level_stream << " [ " << child->myProcs.front() << " - " << child->myProcs.back() << " ]";
+            }
+         }
+         level_stream << " |";
+
+         layer_outputs[level].append(level_stream.str());
+      }
+   }
+
+   for( const auto& child : children )
+   {
+      if( child->sub_root )
+         child->sub_root->appendPrintTreeLayer(layer_outputs, level + 1);
+      else
+         child->appendPrintTreeLayer(layer_outputs, level + 1);
+   }
+}
+
+void sTree::printProcessTree() const
+{
+   assert( commWrkrs != MPI_COMM_NULL );
+
+   unsigned int level = 0;
+   bool tree_unbalanced = false;
+
+   if( rankMe == 0 )
+      std::cout << "Process Tree:\n\n";
+
+   std::vector<std::string> level_outputs;
+   if( PIPS_MPIgetRank(commWrkrs) == 0 )
+   {
+      std::stringstream level_stream;
+      if( myProcs.size() == 1 )
+         level_stream << "| [ " << myProcs.front() << " ] |";
+      else
+         level_stream << "| [ " << myProcs.front() << " - " << myProcs.back() << " ] |";
+
+      level_outputs.push_back(level_stream.str());
+   }
+   else
+      level_outputs.push_back("");
+
+   appendPrintTreeLayer(level_outputs, level + 1);
+
+   const unsigned int levels = PIPS_MPIgetMax(level_outputs.size());
+
+   if( levels > level_outputs.size() )
+   {
+      assert( levels == level_outputs.size() + 1 );
+      tree_unbalanced = true;
+      level_outputs.push_back("");
+   }
+   assert( PIPS_MPIisValueEqual(level_outputs.size()) );
+
+   for( auto& level : level_outputs )
+   {
+      const std::string level_full = PIPS_MPIallgatherString(level);
+
+      if( rankMe == 0 )
+         std::cout << level_full << "\n\n";
+   }
+
+//   std::vector<const sTree*> queue;
+//   queue.insert(queue.end(), this);
+//
+//   size_t curr_size = queue.size();
+//   size_t count = 0;
+//   bool node_layer_reached = false;
+//   bool node_layer_next = false;
+//   bool tree_unbalanced = false;
+//
+//   std::stringstream curr_level_output;
+//   while( !queue.empty() )
+//   {
+//      printTreeLayer(queue);
+//
+//      const sTree* child = queue.front();
+//
+//      if( !child )
+//      {
+//         curr_level_output << "| ";
+//         queue.erase(queue.begin());
+//         ++count;
+//      }
+//      else
+//      if( node_layer_reached && child->myProcs.size() == 1 )
+//      {
+//         assert(child);
+//
+//         unsigned int n_nodes = 1;
+//         queue.erase(queue.begin());
+//         ++count;
+//
+//         if( child->myProcs[0] != rankMe )
+//            continue;
+//
+//
+//         while( !queue.empty() && queue.front() && queue.front()->myProcs[0] == rankMe )
+//         {
+//            ++n_nodes;
+//            queue.erase(queue.begin());
+//            ++count;
+//         }
+//
+//         curr_level_output << "[ " << rankMe << ": " << n_nodes << " leafs ] ";
+//      }
+//      else
+//      {
+//         assert( child );
+//         const bool I_print = child->commWrkrs != MPI_COMM_NULL && PIPS_MPIgetRank( child->commWrkrs ) == 0;
+//
+//         std::cout << "I print " << I_print << std::endl;
+//         if( node_layer_reached )
+//            tree_unbalanced = true;
+//
+//         assert( !child->sub_root );
+//         if( child->myProcs.size() >= 1 && I_print )
+//         {
+//            if( child->myProcs.size() > 1 )
+//               curr_level_output << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ] ";
+//            else
+//               curr_level_output << "[ " << child->myProcs.front() << " ] ";
+//         }
+//
+//         if( !node_layer_reached )
+//         {
+//
+//         }
+//
+//         queue.erase(queue.begin());
+//         ++count;
+//      }
+//
+//      if( count == curr_size )
+//      {
+//         if( node_layer_next )
+//            node_layer_reached = true;
+//         curr_size = queue.size();
+//         count = 0;
+//
+//         const std::string level = PIPS_MPIallgatherString(curr_level_output.str());
+//         curr_level_output.str(std::string());
+//         if( rankMe ==  0 )
+//            std::cout << level << "\n\n";
+//      }
+//   }
+
+   PIPS_MPIgetLogicOrInPlace(tree_unbalanced);
+   if( tree_unbalanced && rankMe == 0 )
+      std::cout << "WARNING : the split tree is unbalanced and there is branches that are longer than others\n" <<
+         "\t-> this is bad for performance but that fine of a split usually is bad for performance anyway..\n" <<
+         "\t-> rethink the amount of layers for the hierarchical approach..\n\n";
+}
+
+void sTree::mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees )
+{
+   assert( n_subtrees <= n_children );
+   map_child_to_sub_tree.clear();
+   map_child_to_sub_tree.reserve(n_children);
+
+   if( n_subtrees == 0 )
+      return;
+
+   const unsigned int everyone_gets = std::floor(n_children / n_subtrees);
+   const unsigned int n_leftovers = n_children % n_subtrees;
+
+   std::vector<unsigned int> children_per_tree( n_subtrees, everyone_gets );
+
+   if( n_leftovers > 0 )
+   {
+      const unsigned int free_in_leftover_row = n_subtrees - n_leftovers;
+
+      const unsigned int free_after_each_leftover = std::floor(free_in_leftover_row / n_leftovers);
+      const unsigned int additional_frees = free_in_leftover_row % n_leftovers;
+
+      unsigned int additional_frees_assigned = 0;
+      for( unsigned int i = 0; i < n_subtrees; i += free_after_each_leftover )
+      {
+         ++children_per_tree[i];
+         ++i;
+
+         if( additional_frees != additional_frees_assigned )
+         {
+            ++i;
+            ++additional_frees_assigned;
+         }
+      }
+      assert( additional_frees_assigned == additional_frees );
+   }
+
+   assert( std::accumulate( children_per_tree.begin(), children_per_tree.end(),
+         decltype(children_per_tree)::value_type(0) ) == n_children );
+
+   for( unsigned int i = 0; i < children_per_tree.size(); ++i )
+   {
+      for( unsigned int j = 0; j < children_per_tree[i]; ++j )
+         map_child_to_sub_tree.push_back( i );
+   }
 }

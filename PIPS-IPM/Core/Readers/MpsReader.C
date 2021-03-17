@@ -1323,7 +1323,7 @@ void MpsReader::readRowsSection( char line[200],
       try {
 	newRowInfo = new MpsRowInfo[lNewRowInfo];
       } catch(...) {
-	cerr << "Out of memory in MpsReader.\n";
+	std::cerr << "Out of memory in MpsReader.\n";
 	iErr = mpsmemoryerr;
         break;
       }

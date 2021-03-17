@@ -14,43 +14,37 @@
 
 #include "pipschecks.h"
 #include "pipsport.h"
+
 #include <vector>
+#include <memory>
 
 class sTree;
 class LinearAlgebraPackage;
 
 class sData : public QpGenData {
- public:
+   protected:
+      sData() = default;
+   public:
   /** constructor that sets up pointers to the data objects that are
       passed as arguments */
   sData( const sTree* stochNode,
 	 OoqpVector * c, SymMatrix * Q,
-	 OoqpVector * xlow, OoqpVector * ixlow, long long nxlow,
-	 OoqpVector * xupp, OoqpVector * ixupp, long long nxupp,
+	 OoqpVector * xlow, OoqpVector * ixlow,
+	 OoqpVector * xupp, OoqpVector * ixupp,
 	 GenMatrix * A, OoqpVector * bA,
 	 GenMatrix * C,
-	 OoqpVector * clow, OoqpVector * iclow, long long mclow,
-	 OoqpVector * cupp, OoqpVector * ciupp, long long mcupp,
-	 bool add_children = true, bool is_hierarchy_root = false );
+	 OoqpVector * clow, OoqpVector * iclow,
+	 OoqpVector * cupp, OoqpVector * ciupp,
+	 bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
+    bool is_hierarchy_inner_leaf = false );
 
   std::vector<sData*> children;
   void AddChild(sData* child);
-  const sTree* stochNode;
+  const sTree* stochNode{};
 
-public:
-  long long nxlow, nxupp, mclow, mcupp;
-
-  
-private: 
-//  std::vector<unsigned int> getCollapsedHierarchicalLinkVarsPerm() const;
-//  std::vector<unsigned int> getCollapsedHierarchicalLinkConsPerm( const std::vector<unsigned int> sData::* cons_permutation ) const;
-
-  // returns inverse permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkVarsPermInv() const;
-  // returns inverse permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkConsEqPermInv () const;
-  // returns inverse permutation vector or empty vector if no permutation has been performed
-  std::vector<unsigned int> getLinkConsIneqPermInv() const;
+  PERMUTATION getLinkVarsPermInv() const;
+  PERMUTATION getLinkConsEqPermInv() const;
+  PERMUTATION getLinkConsIneqPermInv() const;
 
 public:
   int getLocalnx() const;
@@ -84,6 +78,9 @@ public:
   SparseGenMatrix& getLocalC();
   SparseGenMatrix& getLocalD();
   SparseGenMatrix& getLocalG();
+  StringGenMatrix& getLocalGBorder();
+  StringGenMatrix& getLocalFBorder();
+
 
   void printLinkVarsStats();
   void printLinkConsStats();
@@ -95,14 +92,26 @@ public:
 
   bool isRootNodeInSync() const;
 
-private:
-  void getLinkConsSplitPermutations(std::vector<unsigned int>& perm_A, std::vector<unsigned int>& perm_C);
+protected:
+  static void removeN0LinkVarsIn2Links( std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch,
+        const StochGenMatrix& Cstoch, const std::vector<int>& linkStartBlockIdA,
+        const std::vector<int>& linkStartBlockIdC );
+
+  static PERMUTATION getChildLinkConsFirstOwnLinkConsLastPermutation( const std::vector<unsigned int>& map_block_subtree,
+        const std::vector<int>& linkStartBlockId, int n_links_after_split );
+
+  void addChildrenForSplit();
+  void splitData();
   void reorderLinkingConstraintsAccordingToSplit();
-  void splitDataAccordingToTree();
+  void splitDataAndAddAsChildLayer();
+
+  sData* shaveBorderFromDataAndCreateNewTop( const sTree* tree );
 
  public:
-  // Hierarchical Stuff
-  sData* switchToHierarchicalData( const sTree* tree );
+  sData* shaveDenseBorder( const sTree* tree );
+  void splitDataAccordingToTree();
+  void recomputeSize();
+  void splitStringMatricesAccordingToSubtreeStructure();
 
   int getNGlobalVars() const { return n_global_linking_vars; };
   int getNGlobalEQConss() const { return n_global_eq_linking_conss; };
@@ -115,7 +124,7 @@ private:
   virtual sData* cloneFull(bool switchToDynamicStorage = false) const;
 
   double objectiveValue( const QpGenVars * vars ) const override;
-  void createScaleFromQ() override;
+  void createScaleFromQ();
 
   void cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC, const StochVectorBase<int>& colNnzVec);
 
@@ -141,7 +150,13 @@ private:
   void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
         int& local2linksStartIneq, int& local2linksEndIneq);
 
-  bool isHierarchieRoot() const { return is_hierarchy_root; };
+  bool isHierarchySparseTopLayerOnlyTwolinks() const { return (pips_options::getBoolParameter("HIERARCHICAL")) &&
+        (pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) && threshold_global_cons <= 1 && threshold_global_vars == 0; };
+
+  bool isHierarchyRoot() const { return is_hierarchy_root; };
+  bool isHierarchyInnerRoot() const { return is_hierarchy_inner_root; };
+  bool isHierarchyInnerLeaf() const { return is_hierarchy_inner_leaf; };
+  bool hasRAC() const { return has_RAC; };
 
   ~sData() override;
 
@@ -150,14 +165,15 @@ private:
   void destroyChildren();
 
  private:
-  int n0LinkVars;
+  int n0LinkVars{0};
 
-  constexpr static int threshold_global_cons = 2;
-  constexpr static int threshold_global_vars = 0;
-  constexpr static int nLinkStats = 6;
-  constexpr static double minStructuredLinksRatio = 0.5;
-  static std::vector<unsigned int> get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
-  static std::vector<unsigned int> getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
+  /* trimming everything that is not a 2 link and everything that is not a 0vec at the moment - makes border computations sparser */
+  constexpr static int threshold_global_cons{1};
+  constexpr static int threshold_global_vars{0}; // TODO: adapt properly
+  constexpr static int nLinkStats{6};
+  constexpr static double minStructuredLinksRatio{0.5};
+  static PERMUTATION get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
+  static PERMUTATION getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId,
         std::vector<int>& n_blocks_per_row, size_t nBlocks, int& n_globals);
 
   // returns number of block rows
@@ -195,12 +211,17 @@ private:
   static std::vector<int> get2LinkLengthsVec(const std::vector<int>& linkStartBlocks, const size_t nBlocks);
 
   /* a two link must be in two blocks directly after one another */
-  const bool is_hierarchy_root;
-  bool useLinkStructure;
+  const bool is_hierarchy_root{false};
+  bool is_hierarchy_inner_root{false};
+  bool is_hierarchy_inner_leaf{false};
+  /* only for leafs: indicate wether A_mat stroed in this child belongs to the child (true) or is part of the border (false) */
+  bool has_RAC{true};
 
-  int n_global_linking_vars = -1;
-  int n_global_eq_linking_conss = -1;
-  int n_global_ineq_linking_conss = -1;
+  bool useLinkStructure{false};
+
+  int n_global_linking_vars{-1};
+  int n_global_eq_linking_conss{-1};
+  int n_global_ineq_linking_conss{-1};
 
   /* number non-empty of blocks for each linking column */
   std::vector<int> n_blocks_per_link_var;
@@ -223,17 +244,17 @@ private:
   std::vector<int> linkStartBlockLengthsA;
   std::vector<int> linkStartBlockLengthsC;
 
-  std::vector<unsigned int> linkVarsPermutation;
-  std::vector<unsigned int> linkConsPermutationA;
-  std::vector<unsigned int> linkConsPermutationC;
+  PERMUTATION linkVarsPermutation;
+  PERMUTATION linkConsPermutationA;
+  PERMUTATION linkConsPermutationC;
   std::vector<bool> isSCrowLocal;
   std::vector<bool> isSCrowMyLocal;
 
   void initDistMarker(int blocksStart, int blocksEnd);
 
-
-  void permuteLinkingVars( const std::vector<unsigned int>& perm );
-  void permuteLinkingCons( const std::vector<unsigned int>& permA, const std::vector<unsigned int>& permC );
+  void permuteLinkStructureDetection( const PERMUTATION& perm_A, const PERMUTATION& perm_C );
+  void permuteLinkingVars( const PERMUTATION& perm );
+  void permuteLinkingCons( const PERMUTATION& permA, const PERMUTATION& permC );
 public:
   void printRanges() const;
 };

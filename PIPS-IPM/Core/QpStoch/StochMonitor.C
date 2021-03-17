@@ -10,20 +10,15 @@
 #include <cstdio>
 #include "pipsport.h"
 
-StochMonitor::StochMonitor(QpGenStoch* qp_, Scaler* scaler)
-  : qp(qp_), scaler(scaler)
+StochMonitor::StochMonitor(Scaler* scaler)
+  : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{ PIPS_MPIgetRank(mpiComm) }, myGlobRank{myRank}
 {
-  mpiComm=MPI_COMM_WORLD; //default for old version
-  MPI_Comm_rank(mpiComm, &myRank);
-  myGlobRank = myRank;
 }
 
-StochMonitor::StochMonitor(sFactory* qp_, Scaler* scaler)
-  : qp(nullptr), scaler(scaler)
+StochMonitor::StochMonitor(sFactory* qp, Scaler* scaler)
+  : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()}, myRank{ PIPS_MPIgetRank(mpiComm) },
+    myGlobRank{ PIPS_MPIgetRank() }
 {
-  mpiComm = qp_->tree->getCommWorkers();
-  MPI_Comm_rank(mpiComm, &myRank);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myGlobRank);
 }
 
 void StochMonitor::doIt( const Solver * solver, const Data * data, const Variables * vars,
@@ -106,25 +101,20 @@ StochMonitor::doItStoch(const Solver *solver, const Data *data,
                // Termination has been detected by the status check; print
                // appropriate message
                switch( status_code )
-                  {
+               {
                   case SUCCESSFUL_TERMINATION:
-                     std::cout << "\n" << " *** SUCCESSFUL TERMINATION ***"
-                           << "\n";
+                     std::cout << "\n *** SUCCESSFUL TERMINATION ***\n";
                      break;
                   case MAX_ITS_EXCEEDED:
-                     std::cout << "\n" << " *** MAXIMUM ITERATIONS REACHED *** "
-                           << "\n";
+                     std::cout << "\n *** MAXIMUM ITERATIONS REACHED ***\n";
                      break;
                   case INFEASIBLE:
-                     std::cout << "\n"
-                           << " *** TERMINATION: PROBABLY INFEASIBLE *** "
-                           << "\n";
+                     std::cout << "\n *** TERMINATION: PROBABLY INFEASIBLE ***\n";
                      break;
                   case UNKNOWN:
-                     std::cout << "\n"
-                           << " *** TERMINATION: STATUS UNKNOWN *** " << "\n";
+                     std::cout << "\n *** TERMINATION: STATUS UNKNOWN ***\n";
                      break;
-                  } // end switch(statusCode)
+               }
             }
          }
          break; // end case 0: case 1:

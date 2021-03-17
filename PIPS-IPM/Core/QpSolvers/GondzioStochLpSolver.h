@@ -38,7 +38,7 @@ public:
 
   GondzioStochLpSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler = nullptr );
 
-  virtual ~GondzioStochLpSolver();
+  ~GondzioStochLpSolver() override = default;
 
   int solve( Data *prob, Variables *iterate, Residuals * resid ) override;
 

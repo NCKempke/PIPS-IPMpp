@@ -22,19 +22,20 @@ class DoubleLinearSolver;
  * an appropriate type. */
 class LinearAlgebraPackage : public IotrRefCount{
 protected:
-  LinearAlgebraPackage() {};
-  virtual ~LinearAlgebraPackage() {};
+  LinearAlgebraPackage() = default;
+  ~LinearAlgebraPackage() override = default;
 public:
   /** Create a new symmetric matrix (of appropriate type). */
-  virtual SymMatrix * newSymMatrix( int size, int nnz ) = 0;
+  virtual SymMatrix * newSymMatrix( int size, int nnz ) const = 0;
   /** Create a new non-symmetric matrix (of appropriate type). */
-  virtual GenMatrix * newGenMatrix( int m, int n, int nnz ) = 0;
+  virtual GenMatrix * newGenMatrix( int m, int n, int nnz ) const = 0;
   /** Create a new vector (of appropriate type.) */
-  virtual OoqpVector * newVector( int n ) = 0;
+  virtual OoqpVector * newVector( int n ) const = 0;
+
   /** Get a string indicating the type of this object
    *  (for debugging purposes.)
    */
-  virtual void whatami( char type[32] ) = 0;
+  virtual void whatami( char type[32] ) const = 0;
 };
 
 /**

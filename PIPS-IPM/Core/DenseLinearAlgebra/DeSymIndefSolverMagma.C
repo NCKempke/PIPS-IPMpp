@@ -72,7 +72,7 @@ extern "C" void FNAME(dgetrs)(char* trans,
 DeSymIndefSolverMagma::DeSymIndefSolverMagma( DenseSymMatrix * dm )
 {
 
-  cout << "creating GPUCODE solver" << endl;
+   std::cout << "creating GPUCODE solver\n";
   mStorage = dm->getStorageHandle();
 
   int size = mStorage->n;
@@ -92,10 +92,10 @@ DeSymIndefSolverMagma::DeSymIndefSolverMagma( DenseSymMatrix * dm )
   cudaMalloc(&mRhs_gpu, sizeof(double) * size);
   assert(mRhs_gpu!=nullptr);
 #else
-  cout << "DeSymIndefSolverMagma used but GPU code is not enabled" << endl;
+  std::cout << "DeSymIndefSolverMagma used but GPU code is not enabled\n";
 #endif
 
-  cout << "MAGMA: size of matrix is " << size << "done with MAGMA constructor" << endl;
+  std::cout << "MAGMA: size of matrix is " << size << "done with MAGMA constructor\n";
 }
 
 DeSymIndefSolverMagma::DeSymIndefSolverMagma( SparseSymMatrix * )
@@ -115,7 +115,7 @@ DeSymIndefSolverMagma::DeSymIndefSolverMagma( SparseSymMatrix * )
 //#include "mpi.h"
 void DeSymIndefSolverMagma::matrixChanged()
 {
-  cout << "Magma::matrixChanged()" << endl;
+  std::cout << "Magma::matrixChanged()\n";
   int info;
 
   int n = mStorage->n;
@@ -133,12 +133,12 @@ void DeSymIndefSolverMagma::matrixChanged()
   if(info!=0)
       printf("DeSymIndefSolverMagma::matrixChanged : error - dsytrf returned info=%d\n", info);
   assert(info==0);
-  cout << "MAGMA factorization done." << endl;
+  std::cout << "MAGMA factorization done.\n";
 }
 
 void DeSymIndefSolverMagma::solve ( OoqpVector& v )
 {
-  cout << "magma::solve ( OoqpVector& v )" << endl;
+  std::cout << "magma::solve ( OoqpVector& v )\n";
   char trans = 'N';
   int info;
   int one = 1;
@@ -153,9 +153,9 @@ void DeSymIndefSolverMagma::solve ( OoqpVector& v )
   FNAME(dgetrs)( &trans, &n, &one,	&mStorage->M[0][0],	&n,
 			ipiv, &sv[0],	&n,	&info);
 #endif
-  if(info!=0) cout << "dgetrs returned info=" << info << endl;
+  if(info!=0)  std::cout << "dgetrs returned info=" << info << "\n";
   assert(info==0);
-  cout << "MAGMA : solve done" << endl;
+  std::cout << "MAGMA : solve done\n";
 }
 
 void DeSymIndefSolverMagma::solve ( GenMatrix& )

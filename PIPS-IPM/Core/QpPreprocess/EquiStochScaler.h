@@ -29,7 +29,7 @@ protected:
 
 public:
   EquiStochScaler(Data * prob, bool bitshifting = true);
-  virtual ~EquiStochScaler();
+  ~EquiStochScaler() override = default;
 
   /** scale */
   void scale() override;

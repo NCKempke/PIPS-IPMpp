@@ -178,10 +178,12 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
   {
      if( my_rank == 0 )
-        std::cout << "Using hierarchical approach!" << std::endl;
+        std::cout << "Using hierarchical approach!\n";
 
      data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
-//  data->writeToStreamDense(std::cout);
+
+     if( pips_options::getBoolParameter("HIERARCHICAL_PRINT_HIER_DATA") )
+      data->writeToStreamDense(std::cout);
   }
 
   vars.reset( dynamic_cast<sVars*>( factory->makeVariables( data.get() ) ) );
@@ -591,6 +593,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
      resids->calcresids(data.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
+     MPI_Barrier(MPI_COMM_WORLD);
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
      unscaleUnpermNotHierResids->calcresids(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
@@ -602,7 +605,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 
 
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     factory->collapseHierarchicalTree();
+     factory->switchToOriginalTree();
 
   dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
   factory->data = origData.get();

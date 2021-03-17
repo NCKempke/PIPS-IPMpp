@@ -48,18 +48,17 @@ protected:
 public:
   static int instances;
 
-  int m;
-  int n;
-  int len;
-  int * jcolM;
-  int * krowM;
-  double * M;
+  int m{};
+  int n{};
+  int len{};
+  int* jcolM{};
+  int* krowM{};
+  double* M{};
 
   SparseStorage( int m_, int n_, int len_ );
   SparseStorage( int m_, int n_, int len_,
 		 int * krowM_, int * jcolM_, double * M_,
 		 int deleteElts=0);
-  //SparseStorage(const vector<SparseStorage*> &blocks, bool diagonal); -- not needed anymore; cpetra
 
   void copyFrom(int * krowM_, int * jcolM_, double * M_) const;
 
@@ -106,9 +105,12 @@ public:
   virtual void getFromPat( double data[], int n, int kpat[] );
   virtual void mult( double beta,  double y[], int incy,
 		     double alpha, const double x[], int incx ) const;
+  virtual void multSym( double beta,  double y[], int incy,
+             double alpha, const double x[], int incx ) const;
 
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
+  virtual void transMultD( double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd ) const;
 
   void atPutDiagonal( int idiag, OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
@@ -116,9 +118,10 @@ public:
   virtual void atPutDiagonal( int idiag,
 			      double x[], int incx, int extent );
 
-  virtual void writeToStream(ostream& out) const;
-  virtual void writeToStreamDense(ostream& out) const;
-  virtual void writeToStreamDenseRow( stringstream& out, int rowidx) const;
+  virtual void writeToStream(std::ostream& out) const;
+  void writeNNZpatternToStreamDense( std::ostream& out ) const;
+  virtual void writeToStreamDense(std::ostream& out) const;
+  virtual void writeToStreamDenseRow( std::ostream& out, int rowidx) const;
 
   virtual void symmetrize( int& info);
   double abmaxnorm() const override;
@@ -193,7 +196,7 @@ public:
 
   void sortCols();
 
-  void dump(const string& filename);
+  void dump(const std::string& filename);
 
   void deleteEmptyRowsCols(const int* nnzRowVec, const int* nnzColVec);
 
@@ -225,11 +228,13 @@ public:
   virtual SparseStorage* shaveLeft( int n_cols );
   virtual SparseStorage* shaveSymLeftBottom( int n );
   virtual SparseStorage* shaveBottom( int n_rows );
+  virtual void dropNEmptyRowsBottom( int n_rows );
+  virtual void dropNEmptyRowsTop( int n_rows );
 
   virtual ~SparseStorage();
 
 private:
-  bool isFortranIndexed;
+  bool isFortranIndexed{false};
 };
 
 #endif

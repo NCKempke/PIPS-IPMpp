@@ -61,7 +61,7 @@ extern "C" {
 #endif
 
 
-DeSymIndefSolver::DeSymIndefSolver( DenseSymMatrix * dm )
+DeSymIndefSolver::DeSymIndefSolver( const DenseSymMatrix * dm )
 {
   mStorage = dm->getStorageHandle();
 
@@ -73,7 +73,7 @@ DeSymIndefSolver::DeSymIndefSolver( DenseSymMatrix * dm )
 
 }
 
-DeSymIndefSolver::DeSymIndefSolver( SparseSymMatrix * sm )
+DeSymIndefSolver::DeSymIndefSolver( const SparseSymMatrix * sm )
 {
   int size = sm->size();
   mStorage = DenseStorageHandle( new DenseStorage(size,size) );
@@ -109,6 +109,15 @@ void DeSymIndefSolver::matrixChanged()
       }
     }
   }
+
+#if 0
+  for( int row = 0; row < mStorage->m; ++row )
+  {
+     for( int col = 0; col < mStorage->n; ++col )
+        std::cout << mStorage->M[row][col] << "\t";
+     std::cout << "\n";
+  }
+#endif
 
 #ifdef TIMING
   int myrank;
@@ -183,7 +192,7 @@ void DeSymIndefSolver::solve ( GenMatrix& rhs_in )
 
   int n = mStorage->n;
 
-  FNAME(dsytrs)( &fortranUplo, &n, &ncols,	&mStorage->M[0][0],	&n,
+  FNAME(dsytrs)( &fortranUplo, &n, &ncols, &mStorage->M[0][0],	&n,
 	   ipiv, &rhs[0][0],	&n,	&info);
 
   assert(info==0);

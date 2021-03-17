@@ -21,21 +21,34 @@ inline SparseGenMatrix* getSparseGenMatrixFromStochMat(const StochGenMatrix& sMa
    if(smat_node == -1)
    {
       if(block_type == BL_MAT)
-         return sMat.Blmat;
+      {
+         assert( sMat.Blmat->isKindOf( kSparseGenMatrix ) );
+         return dynamic_cast<SparseGenMatrix*>(sMat.Blmat);
+      }
       else 
       {
          assert(block_type == B_MAT);
-         return sMat.Bmat;
+         assert( sMat.Bmat->isKindOf( kSparseGenMatrix ) );
+         return dynamic_cast<SparseGenMatrix*>(sMat.Bmat);
       }
    }
    else
    {
       if(block_type == A_MAT)
-         return sMat.children[smat_node]->Amat;
+      {
+         assert( sMat.children[smat_node]->Amat->isKindOf( kSparseGenMatrix ) );
+         return dynamic_cast<SparseGenMatrix*>(sMat.children[smat_node]->Amat);
+      }
       else if(block_type == B_MAT)
-         return sMat.children[smat_node]->Bmat;
+      {
+         assert( sMat.children[smat_node]->Bmat->isKindOf( kSparseGenMatrix ) );
+         return dynamic_cast<SparseGenMatrix*>(sMat.children[smat_node]->Bmat);
+      }
       else if(block_type == BL_MAT)
-         return sMat.children[smat_node]->Blmat;
+      {
+         assert( sMat.children[smat_node]->Blmat->isKindOf( kSparseGenMatrix ) );
+         return dynamic_cast<SparseGenMatrix*>(sMat.children[smat_node]->Blmat);
+      }
    }
    return nullptr;
 }

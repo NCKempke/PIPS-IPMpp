@@ -21,11 +21,18 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <set>
 #include <mpi.h>
-#include "omp.h"
 #include <limits>
 #include <assert.h>
+
+#include "omp.h"
 #include "pipsport.h"
+#include <algorithm>
+
+//#define PIPS_DEBUG
+
+using PERMUTATION = std::vector<unsigned int>;
 
 const double pips_eps = 1e-13;
 const double pips_eps0 = 1e-40;
@@ -124,9 +131,35 @@ inline bool PIPSisZeroFeas(double val)
 }
 
 template<typename T>
-inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>& vec)
+inline bool isInVector( const T& elem, const std::vector<T>& vec )
 {
-//   assert( permutationIsValid(perm) ); TODO...
+   return std::find(vec.begin(), vec.end(), elem) != vec.end();
+}
+
+template<typename T>
+inline bool containsSorted( const std::vector<T>& subset, const std::vector<T>& vec )
+{
+   assert( std::is_sorted(subset.begin(), subset.end() ) );
+   assert( std::is_sorted(vec.begin(), vec.end() ) );
+
+   return std::includes( vec.begin(), vec.end(), subset.begin(), subset.end() );
+}
+
+template<typename T>
+inline bool contains( const std::vector<T>& subset, const std::vector<T>& vec )
+{
+   std::vector<T> subset_cpy(subset);
+   std::vector<T> vec_cpy(vec);
+
+   std::sort(subset_cpy.begin(), subset_cpy.end());
+   std::sort(vec_cpy.begin(), vec_cpy.end());
+
+   return containsSorted( subset_cpy, vec_cpy );
+}
+
+template<typename T>
+inline void permuteVector(const PERMUTATION& perm, std::vector<T>& vec)
+{
    assert( perm.size() == vec.size() );
 
    std::vector<T> tmp(vec.size());
@@ -134,6 +167,23 @@ inline void permuteVector(const std::vector<unsigned int>& perm, std::vector<T>&
    for( size_t i = 0; i < vec.size(); ++i )
       tmp[i] = vec[perm[i]];
    vec = tmp;
+}
+
+inline PERMUTATION getInversePermutation(const PERMUTATION& perm)
+{
+   size_t size = perm.size();
+   PERMUTATION perm_inv(size, 0);
+
+   for( size_t i = 0; i < size; i++ )
+      perm_inv[perm[i]] = i;
+
+   return perm_inv;
+}
+
+template <typename T>
+inline unsigned int getNDistinctValues( const std::vector<T>& values )
+{
+   return std::set<T>(values.begin(), values.end()).size();
 }
 
 inline int PIPSgetnOMPthreads()
@@ -165,6 +215,7 @@ inline MPI_Comm PIPS_MPIcreateGroupFromRanks( const int* chosen_ranks, unsigned 
    MPI_Comm sub_comm;
    MPI_Comm_create( mpi_comm_all, sub_group, &sub_comm);
 
+   MPI_Group_free( &sub_group );
    return sub_comm;
 }
 
@@ -205,15 +256,7 @@ inline int PIPS_MPIgetSize(MPI_Comm comm = MPI_COMM_WORLD)
 
 inline bool PIPS_MPIgetDistributed(MPI_Comm comm = MPI_COMM_WORLD)
 {
-   if( comm == MPI_COMM_NULL )
-      return false;
-
-   const int world_size = PIPS_MPIgetSize(comm);
-
-   if( world_size > 1)
-      return true;
-   else
-      return false;
+   return PIPS_MPIgetSize(comm) > 1;
 }
 
 void inline PIPS_MPIabortInfeasible(std::string message, std::string file, std::string function, MPI_Comm comm = MPI_COMM_WORLD)
@@ -372,6 +415,12 @@ inline MPI_Datatype get_mpi_datatype_t<unsigned int>::get()
    return MPI_UNSIGNED;
 };
 
+template<>
+inline MPI_Datatype get_mpi_datatype_t<long unsigned int>::get()
+{
+   return  MPI_UNSIGNED_LONG;
+};
+
 template <typename T>
 inline MPI_Datatype get_mpi_datatype(const T&) {
    return get_mpi_datatype_t<T>::get();
@@ -450,6 +499,8 @@ inline MPI_Datatype get_mpi_locdatatype(T*)
 
 inline int PIPS_MPIgetRank(MPI_Comm mpiComm = MPI_COMM_WORLD)
 {
+   if( mpiComm == MPI_COMM_NULL )
+      return 0;
    int myrank;
    MPI_Comm_rank(mpiComm, &myrank);
    return myrank;
@@ -568,11 +619,10 @@ void PIPS_MPIgetMinInPlace(T& min, MPI_Comm mpiComm = MPI_COMM_WORLD)
 template <typename T>
 inline bool PIPS_MPIisValueEqual(const T& val, MPI_Comm mpiComm = MPI_COMM_WORLD)
 {
-   // todo make one vec and + - val
-   const T max = PIPS_MPIgetMax(val, mpiComm);
-   const T min = PIPS_MPIgetMin(val, mpiComm);
+   std::vector<T> minmax{val, -val};
+   PIPS_MPImaxArrayInPlace(minmax, mpiComm);
 
-   return (max == min);
+   return (minmax[0] == -minmax[1]);
 }
 
 template <typename T>
@@ -736,6 +786,48 @@ inline void PIPS_MPIminArray(const std::vector<T>& source, std::vector<T>& dest,
       return;
 
    MPI_Allreduce(&source[0], &dest[0], source.size(), get_mpi_datatype(&source[0]), MPI_MIN, mpiComm = MPI_COMM_WORLD);
+}
+
+template <typename T>
+inline void PIPS_MPIallgather( const T* vec, int n_vec, int& n_res, T*& res, MPI_Comm mpiComm = MPI_COMM_WORLD )
+{
+   const int size = PIPS_MPIgetSize(mpiComm);
+   if( size > 1 )
+   {
+      std::vector<int> recieve_sizes( size );
+      std::vector<int> recieve_offsets( size );
+
+      MPI_Allgather( &n_vec, 1, MPI_INT, recieve_sizes.data(), 1, MPI_INT, mpiComm );
+
+      recieve_offsets[0] = 0;
+      for( int i = 1; i < size; ++i )
+         recieve_offsets[i] = recieve_offsets[i - 1] + recieve_sizes[i - 1];
+
+      n_res = recieve_offsets.back() + recieve_sizes.back();
+
+      res = new T[n_res];
+
+      MPI_Allgatherv(vec, n_vec, get_mpi_datatype(vec), res, recieve_sizes.data(), recieve_offsets.data(), get_mpi_datatype(res), mpiComm );
+   }
+   else
+   {
+      n_res = n_vec;
+      res = new T[n_res];
+      std::uninitialized_copy( vec, vec + n_vec, res );
+   }
+}
+
+inline std::string PIPS_MPIallgatherString( const std::string& str, MPI_Comm mpiComm = MPI_COMM_WORLD )
+{
+   const char* send = str.c_str();
+   char* res{};
+   int n_res{0};
+
+   PIPS_MPIallgather( send, str.size(), n_res, res, mpiComm );
+
+   std::string str_gathered( res, n_res );
+   delete[] res;
+   return str_gathered;
 }
 
 template <typename T>
