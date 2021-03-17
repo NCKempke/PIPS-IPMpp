@@ -939,7 +939,6 @@ unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root
    {
       n_new_roots = std::floor( std::pow( n_children, 1.0 / take_nth_root ) );
 
-      std::cout << n_new_roots << " " << n_procs << " " << n_new_roots % n_procs << std::endl;
       if( n_procs <= n_new_roots && ((n_new_roots % n_procs) != 0) )
       {
          while( n_new_roots % n_procs != 0 )
@@ -1015,14 +1014,6 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( int& take_nth_root, std:
    }
 
    const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size(), myProcs.size(), child_procs );
-
-   if( rankMe == 0 )
-   {
-      for( auto i : map_child_to_sub_tree )
-         std::cout << i << "\t";
-      std::cout << std::endl;
-
-   }
 
    if( n_new_roots <= 1 )
    {
