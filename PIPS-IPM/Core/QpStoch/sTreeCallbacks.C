@@ -963,33 +963,37 @@ unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root
       return n_new_roots;
 
    assert( n_new_roots > 1 );
-//   mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
 
    /* now map new roots to procs or procs to new_roots */
-   mapChildrenToNSubTrees( map_child_to_sub_tree, n_children, n_new_roots );
-//   if( n_procs <= n_new_roots )
-//   {
-//      assert( n_new_roots % n_procs == 0 );
-//   }
-//   else
-//   {
-//      assert( n_procs % n_new_roots == 0 );
-//      /* roots to procs */
-//      std::vector<unsigned int> map_procs_roots;
-//      map_child_to_sub_tree.clear();
-//      map_child_to_sub_tree.resize(n_children);
-//
-//      /* proc to roots */
-//      mapChildrenToNSubTrees( map_procs_roots, n_new_roots, n_procs );
-//
-//      for( size_t i = 0; i < n_children; ++i )
-//      {
-//         const unsigned int child_proc = child_procs[i];
-//         assert( child_proc < map_procs_roots.size() );
-//         map_child_to_sub_tree[i] = map_procs_roots[child_proc];
-//      }
-//   }
-//
+   if( n_procs >= n_new_roots )
+   {
+      std::vector<unsigned int> map_proc_to_sub_tree;
+      mapChildrenToNSubTrees( map_proc_to_sub_tree, n_procs, n_new_roots );
+
+      map_child_to_sub_tree.clear();
+      map_child_to_sub_tree.resize( n_children );
+
+      for( size_t i = 0; i < child_procs.size(); ++i )
+         map_child_to_sub_tree[i] = map_proc_to_sub_tree[ child_procs[i] ];
+   }
+   else
+   {
+      std::vector<unsigned int> map_sub_tree_to_proc;
+      mapChildrenToNSubTrees( map_sub_tree_to_proc, n_new_roots, n_procs );
+
+      mapChildrenToNSubTrees( map_child_to_sub_tree, n_children, n_new_roots );
+
+      for( size_t i = 0; i < child_procs.size(); ++i )
+      {
+         if( child_procs[i] != map_sub_tree_to_proc[map_child_to_sub_tree[i]] )
+         {
+            assert( child_procs[i] == map_sub_tree_to_proc[map_child_to_sub_tree[i] + 1] );
+            map_child_to_sub_tree[i] += 1;
+         }
+      }
+   }
+
+   assert( std::is_sorted( map_child_to_sub_tree.begin(), map_child_to_sub_tree.end() ) );
    return n_new_roots;
 }
 
