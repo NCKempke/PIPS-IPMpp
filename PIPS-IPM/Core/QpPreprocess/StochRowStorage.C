@@ -60,8 +60,22 @@ void StochRowStorage::axpyAtRowPosNeg(double beta, StochVector* y_pos, SimpleVec
 
 double StochRowStorage::multRowTimesVec( const INDEX& row, const StochVector& vec ) const
 {
-   assert(row.isRow());
-   const double res = row_storage->localRowTimesVec(vec, row.getNode(), row.getIndex(), row.getLinking());
+   assert( row.isRow() );
+   double res{0.0};
+   if( row.isLinkingRow() )
+   {
+      assert(PIPS_MPIisValueEqual(row.getIndex()));
+
+      if( PIPS_MPIgetRank() == 0)
+         res = row_storage->localRowTimesVec(vec, row.getNode(), row.getIndex(), row.getLinking());
+      else
+         res = multLinkingRowTimesVecWithoutBl0( row.getIndex(), vec);
+      /* this might get very expensive if there is many redundant linking rows */
+      PIPS_MPIgetSumInPlace(res);
+   }
+   else
+      res = row_storage->localRowTimesVec(vec, row.getNode(), row.getIndex(), row.getLinking());
+
    return res;
 }
 

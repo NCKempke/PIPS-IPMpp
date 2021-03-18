@@ -975,22 +975,8 @@ bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_
    /* get current row activity - redundant linking rows have to lie on the stack in the same order */
 
    /* primal values */
-   double value_row = 0.0;
    StochVector& x_vec = dynamic_cast<StochVector&>(*original_vars.x);
-
-   if( row.isLinkingRow() )
-   {
-      assert(PIPS_MPIisValueEqual(row.getIndex()));
-
-      if(my_rank == 0)
-         value_row = row_storage.multRowTimesVec( stored_row, x_vec );
-      else
-         value_row = row_storage.multLinkingRowTimesVecWithoutBl0(index_stored_row, x_vec);
-      /* this might get very expensive if there is many redundant linking rows */
-      PIPS_MPIgetSumInPlace(value_row);
-   }
-   else
-      value_row = row_storage.multRowTimesVec( stored_row, x_vec );
+   const double value_row = row_storage.multRowTimesVec( stored_row, x_vec );
 
    assert( wasRowRemoved(row) );
    markRowAdded(row);
@@ -1272,25 +1258,9 @@ bool StochPostsolver::postsolveFixedColumn(sVars& original_vars, int reduction_i
    getSimpleVecFromColStochVec(original_vars.w, col) = 0.0;
 
    /* set duals for bounds to satisfy reduced costs of reintroduced column times x */
-   double col_times_duals = 0.0;
-   if( col.isLinkingCol() )
-   {
-      assert( PIPS_MPIisValueEqual(col.getIndex()) );
-      /* we need to synchronize the column times duals in this case */
-      if( my_rank == 0 )
-         col_times_duals = col_storage.multColTimesVec(stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
-               dynamic_cast<const StochVector&>(*original_vars.z));
-      else
-         col_times_duals = col_storage.multColTimesVecWithoutRootNode(stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
-               dynamic_cast<const StochVector&>(*original_vars.z));
+   const double col_times_duals = col_storage.multColTimesVec( stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
+         dynamic_cast<const StochVector&>(*original_vars.z));
 
-      PIPS_MPIgetSumInPlace(col_times_duals);
-   }
-   else
-   {
-      col_times_duals = col_storage.multColTimesVec( stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
-            dynamic_cast<const StochVector&>(*original_vars.z));
-   }
    const double reduced_costs = obj_coeff - col_times_duals;
 
    /* adjust slacks in inequalities */
@@ -1749,23 +1719,9 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
    }
 
    /* synchronize value of row for x_val */
-   double value_row = 0.0;
+   const double value_row = row_storage.multRowTimesVec( stored_row, dynamic_cast<const StochVector&>(*original_vars.x) );
    if( col.isCol() )
       assert( PIPSisZero(getSimpleVecFromColStochVec(*original_vars.x, col)) );
-
-   if( row.isLinkingRow() )
-   {
-      assert(PIPS_MPIisValueEqual(row.getIndex()));
-
-      if(my_rank == 0)
-         value_row = row_storage.multRowTimesVec( stored_row, dynamic_cast<const StochVector&>(*original_vars.x));
-      else
-         value_row = row_storage.multLinkingRowTimesVecWithoutBl0( stored_row_idx, dynamic_cast<const StochVector&>(*original_vars.x));
-      PIPS_MPIgetSumInPlace(value_row);
-   }
-   else
-      value_row = row_storage.multRowTimesVec(stored_row, dynamic_cast<const StochVector&>(*original_vars.x));
-
    assert(std::abs(value_row) != INF_POS);
 
    /* reintroduce the removed column on process owning column */
@@ -2379,21 +2335,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( sVars& original
    assert( wasRowRemoved(row) );
    markRowAdded(row);
 
-   double row_value = 0.0;
-
-   if( row.isLinkingRow() )
-   {
-      assert( PIPS_MPIisValueEqual(row.getIndex()) );
-
-      if( col.isCol() && (!col.isLinkingCol() || my_rank == 0) )
-         row_value = row_storage.multRowTimesVec( row_stored, dynamic_cast<const StochVector&>(*original_vars.x) );
-      else
-         row_value = row_storage.multLinkingRowTimesVecWithoutBl0( index_stored_row, dynamic_cast<const StochVector&>(*original_vars.x) );
-
-      PIPS_MPIgetSumInPlace(row_value);
-   }
-   else
-      row_value = row_storage.multRowTimesVec(row_stored, dynamic_cast<const StochVector&>(*original_vars.x));
+   const double row_value = row_storage.multRowTimesVec( row_stored, dynamic_cast<const StochVector&>(*original_vars.x) );
 
    /* duals of row and bounds are zero */
    getSimpleVecFromRowStochVec(original_vars.z, row) = 0;

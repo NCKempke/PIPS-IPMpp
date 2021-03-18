@@ -27,12 +27,12 @@ public:
    void axpyAtRowPosNeg(double beta, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, double alpha, const INDEX& row ) const;
 
    double multRowTimesVec(const INDEX& row, const StochVector &vec) const;
-   double multLinkingRowTimesVecWithoutBl0(int row, const StochVector &vec) const;
-
    double getRowCoefficientAtColumn( const INDEX& row, const INDEX& col ) const;
 
    // todo : deleteRowFromStorage
 private:
+
+   double multLinkingRowTimesVecWithoutBl0(int row, const StochVector &vec) const;
    std::unique_ptr<StochGenMatrix> row_storage{};
 
 };

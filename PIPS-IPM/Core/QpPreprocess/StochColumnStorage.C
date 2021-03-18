@@ -277,27 +277,28 @@ void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector* vec_link, dou
 
 double StochColumnStorage::multColTimesVec( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq ) const
 {
-   assert(-1 <= col.getNode() && col.getNode() < static_cast<int>(nChildren));
-   assert(nChildren == vec_eq.children.size());
-   assert(nChildren == vec_ineq.children.size());
-
-   if(col.getNode() == -1)
-      return multiplyLinkingColTimesVec(col.getIndex(), vec_eq, vec_ineq);
-   else
-      return multiplyLocalColTimesVec(col, vec_eq, vec_ineq);
-}
-
-double StochColumnStorage::multColTimesVecWithoutRootNode( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq ) const
-{
    assert( col.isCol() );
    assert( col.hasValidNode(nChildren) );
-   assert(nChildren == vec_eq.children.size());
-   assert(nChildren == vec_ineq.children.size());
+   assert( nChildren == vec_eq.children.size() );
+   assert( nChildren == vec_ineq.children.size() );
+
+   double res{0.0};
 
    if( col.isLinkingCol() )
-      return multiplyLinkingColTimesVecWithoutRootNode(col.getIndex(), vec_eq, vec_ineq);
+   {
+      assert( PIPS_MPIisValueEqual(col.getIndex()) );
+      /* we need to synchronize the column times duals in this case */
+      if( PIPS_MPIgetRank() == 0 )
+          res = multiplyLinkingColTimesVec(col.getIndex(), vec_eq, vec_ineq);
+      else
+         res = multiplyLinkingColTimesVecWithoutRootNode(col.getIndex(), vec_eq, vec_ineq );
+
+      PIPS_MPIgetSumInPlace(res);
+   }
    else
-      return multiplyLocalColTimesVec(col, vec_eq, vec_ineq);
+      res = multiplyLocalColTimesVec( col, vec_eq, vec_ineq );
+
+   return res;
 }
 
 double StochColumnStorage::multiplyLinkingColTimesVec(int col, const StochVector& vec_eq, const StochVector& vec_ineq) const
