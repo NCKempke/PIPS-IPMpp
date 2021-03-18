@@ -1163,7 +1163,8 @@ bool PresolveData::varBoundImpliedFreeBy( bool upper, const INDEX& col, const IN
 /* uses current activities (non-updated) to check whether said column's bounds are implied by row */
 void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower_implied, const INDEX& col, const INDEX& row) const
 {
-   assert( !outdated_activities );
+//   if( row.isLinkingRow() )
+//      assert( !outdated_activities );
 
    assert( col.isCol() );
    assert( row.isRow() );
@@ -1281,7 +1282,7 @@ void PresolveData::fixEmptyColumn(const INDEX& col, double val)
 {
    assert( col.isCol() );
    assert( col.hasValidNode(nChildren) );
-
+   assert( !wasColumnRemoved(col) );
    if(postsolver)
    {
       const double obj_value = getSimpleVecFromColStochVec(*presProb->g, col);
@@ -1598,6 +1599,7 @@ void PresolveData::tightenRowBoundsParallelRow(const INDEX& row1, const INDEX& r
    assert( !row1.isLinkingRow() && !row2.isLinkingRow() );
    assert( row1.inInEqSys() && row2.inInEqSys() );
    assert( clow_new != INF_NEG || cupp_new != INF_POS );
+   assert( !wasRowRemoved(row1) && !wasRowRemoved(row2) );
    assert( PIPSisLE(clow_new, cupp_new) );
 
    if( track_row && tracked_row == row1 )
