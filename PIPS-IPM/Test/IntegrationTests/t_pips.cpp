@@ -27,9 +27,11 @@ class ScenarioTests : public ::testing::TestWithParam<Instance>
 {
    protected:
       const std::string root{ __ROOT_DIR__ };
+      const int world_size{PIPS_MPIgetSize()};
 
       void SetUp() override
       {
+         ASSERT_GE(world_size, 1);
       }
 
       void TearDown() override
@@ -94,6 +96,11 @@ TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDisabled )
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
+   ASSERT_GE( world_size, 1 );
+
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
+
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_GEO_STOCH );
 
    EXPECT_NEAR( result, result_solve, 1e-5 ) << " while solving " << problem_paths;
@@ -104,6 +111,12 @@ TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDefault )
    const std::string& problem_paths(GetParam().name);
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
+
+   ASSERT_GE( world_size, 1 );
+
+   /* skip test if too many mpi procs were run for this example */
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
 
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH );
 
@@ -116,6 +129,11 @@ TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDisabled )
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
+   ASSERT_GE( world_size, 1 );
+
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
+
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE );
 
    EXPECT_NEAR( result, result_solve, 1e-5 ) << " while solving " << problem_paths;
@@ -126,6 +144,11 @@ TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDefault )
    const std::string& problem_paths(GetParam().name);
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
+
+   ASSERT_GE( world_size, 1 );
+
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
 
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_NONE );
 

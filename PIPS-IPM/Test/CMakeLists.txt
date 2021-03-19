@@ -8,11 +8,12 @@ mark_as_advanced(
     gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
 )
 
-add_library( customMain TestsMain.cpp )
-target_link_libraries( customMain MPI::MPI_CXX gtest gmock )
 
 add_subdirectory( Utilities )
 include_directories( Utilities )
+
+add_library( customMain TestsMain.cpp )
+target_link_libraries( customMain MPI::MPI_CXX gtest gmock )
 
 macro(package_add_test TESTNAME)
    # create an exectuable in which the tests will be stored
