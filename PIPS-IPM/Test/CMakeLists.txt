@@ -11,6 +11,9 @@ mark_as_advanced(
 add_library( customMain TestsMain.cpp )
 target_link_libraries( customMain MPI::MPI_CXX gtest gmock )
 
+add_subdirectory( Utilities )
+include_directories( Utilities )
+
 macro(package_add_test TESTNAME)
    # create an exectuable in which the tests will be stored
    add_executable(${TESTNAME} ${ARGN})
@@ -29,7 +32,11 @@ macro(package_add_test TESTNAME)
       PRIVATE ooqpqpstochpresolver
       PRIVATE OpenMP::OpenMP_CXX
       PRIVATE customMain
+      PRIVATE utilities
    )
+   # the root PIPS directory (used for finding test related data)
+   target_compile_definitions( ${TESTNAME} PRIVATE -D__ROOT_DIR__="${CMAKE_SOURCE_DIR}")
+   
    # gtest_discover_tests replaces gtest_add_tests,
    # see https://cmake.org/cmake/help/v3.10/module/GoogleTest.html for more options to pass to it
    gtest_discover_tests(${TESTNAME}
@@ -43,3 +50,4 @@ add_subdirectory( QpStoch )
 add_subdirectory( StochLinearAlgebra )
 add_subdirectory( QpPreprocess )
 add_subdirectory( Drivers )
+add_subdirectory( IntegrationTests )

@@ -42,7 +42,6 @@
 
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
-extern bool ipStartFound;
 
 GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler )
   : GondzioSolver(opt, prob, scaler),
@@ -153,8 +152,6 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    this->start(factory, iterate, prob, resid, step);
    stochFactory->iterateEnded();
 
-   assert(!ipStartFound);
-   ipStartFound = true;
    iter = 0;
    NumberGondzioCorrections = 0;
    done = 0;
