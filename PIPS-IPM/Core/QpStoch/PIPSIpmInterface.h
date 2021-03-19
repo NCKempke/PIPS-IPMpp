@@ -100,6 +100,7 @@ public:
 
   MPI_Comm comm = MPI_COMM_NULL;
   const int my_rank = -1;
+  int result{-1};
   bool ran_solver = false;
 };
 
@@ -267,7 +268,7 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
   const int result = 0;
 #else
   //---------------------------------------------
-  const int result = solver->solve(data.get(), vars.get(), resids.get());
+  result = solver->solve(data.get(), vars.get(), resids.get());
   //---------------------------------------------
 #endif
 
@@ -593,7 +594,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
      resids->calcresids(data.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
-     MPI_Barrier(MPI_COMM_WORLD);
+     MPI_Barrier(comm);
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
      unscaleUnpermNotHierResids->calcresids(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
@@ -613,7 +614,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   postsolvedVars.reset( dynamic_cast<sVars*>( factory->makeVariables( origData.get() ) ) );
 
   postsolvedResids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals( origData.get() ) ) );
-  postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars);
+  postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
   double obj_postsolved = origData->objectiveValue(postsolvedVars.get());
 

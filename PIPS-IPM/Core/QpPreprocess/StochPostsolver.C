@@ -732,10 +732,18 @@ void StochPostsolver::markRowAdded(const INDEX& row)
 
 // todo : usage and check of padding origrow - can already be done - even without any dual postsolve stuff
 // todo : sort reductions by nodes ? and then reverse ?
-PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Variables& original_solution)
+PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code)
 {
    if(my_rank == 0)
-      std::cout << "start postsolving... " << "\n";
+      std::cout << "start postsolving...\n";
+
+   if( result_code != 0 )
+   {
+      if( my_rank != 0 )
+         std::cout << "prostsolving non-optimal solution - will not check tolerances\n";
+
+      postsolve_tol = std::numeric_limits<double>::max();
+   }
 
    const sVars& stoch_reduced_sol = dynamic_cast<const sVars&>(reduced_solution);
    sVars& stoch_original_sol = dynamic_cast<sVars&>(original_solution);
@@ -983,7 +991,7 @@ bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_
    if( row.inEqSys() )
    {
       assert(PIPSisEQ(lhs, rhs));
-      if( !PIPSisEQFeas(value_row, rhs) )
+      if( !PIPSisEQ(value_row, rhs, postsolve_tol) )
          PIPSdebugMessage("Postsolve Warning: when reintroducing a redundant equality row it did not meet its rhs with feastol: %f != %f", value_row, rhs);
       assert( PIPSisEQ(value_row, rhs, postsolve_tol) );
 
@@ -1631,7 +1639,7 @@ bool StochPostsolver::postsolveSingletonInequalityRow(sVars& original_vars, int 
          getSimpleVecFromRowStochVec(original_vars.lambda, row) = std::max(0.0, dual_singelton_row);
          getSimpleVecFromRowStochVec(original_vars.pi, row) = -std::min(0.0, dual_singelton_row);
 
-         assert(PIPSisEQFeas(diff_dual_row * coeff, error_in_reduced_costs));
+         assert( PIPSisEQ(diff_dual_row * coeff, error_in_reduced_costs, postsolve_tol) );
       }
    }
    return true;
@@ -2191,9 +2199,9 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(sVars& original_
          {
             /* assert bounds of substituted variable are similarly tight */
             if( PIPSisLT(0.0, scalar) )
-               assert( PIPSisEQFeas( getSimpleVecFromColStochVec(original_vars.x, col2) - xlow_col2, std::fabs(old_slack_lower * scalar) ) );
+               assert( PIPSisEQ( getSimpleVecFromColStochVec(original_vars.x, col2) - xlow_col2, std::fabs(old_slack_lower * scalar), postsolve_tol ) );
             else
-               assert( PIPSisEQFeas( xupp_col2 - getSimpleVecFromColStochVec(original_vars.x, col2), std::fabs(old_slack_lower * scalar) ) );
+               assert( PIPSisEQ( xupp_col2 - getSimpleVecFromColStochVec(original_vars.x, col2), std::fabs(old_slack_lower * scalar), postsolve_tol ) );
 
             const double dual_shift_col2 = -coeff_col2 * dual_shift_row2;
             PIPSisLT(0.0, scalar) ? assert( PIPSisLE(0.0, dual_shift_col2) ) : assert( PIPSisLE( dual_shift_col2, 0.0) );
@@ -2268,9 +2276,9 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(sVars& original_
          {
             /* assert bounds of substituted variable are similarly tight */
             if( PIPSisLT(0.0, scalar) )
-               assert( PIPSisEQFeas( xupp_col2 - getSimpleVecFromColStochVec(original_vars.x, col2), std::fabs(old_slack_upper * scalar) ) );
+               assert( PIPSisEQ( xupp_col2 - getSimpleVecFromColStochVec(original_vars.x, col2), std::fabs(old_slack_upper * scalar), postsolve_tol ) );
             else
-               assert( PIPSisEQFeas( getSimpleVecFromColStochVec(original_vars.x, col2) - xlow_col2, std::fabs(old_slack_upper * scalar) ) );
+               assert( PIPSisEQ( getSimpleVecFromColStochVec(original_vars.x, col2) - xlow_col2, std::fabs(old_slack_upper * scalar), postsolve_tol ) );
 
             const double dual_shift_col2 = -coeff_col2 * dual_shift_row2;
             /* -row^T * dual - gamma + phi */
