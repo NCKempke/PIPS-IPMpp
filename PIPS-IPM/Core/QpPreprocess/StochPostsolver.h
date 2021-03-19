@@ -20,8 +20,8 @@
 #include "StochColumnStorage.h"
 
 class StochPostsolver : public QpPostsolver {
-public:
 
+   public:
       StochPostsolver( const sData& original_problem );
       virtual ~StochPostsolver();
 

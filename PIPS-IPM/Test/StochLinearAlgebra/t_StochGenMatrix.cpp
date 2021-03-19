@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include "sTreeCallbacks.h"
+#include "StringGenMatrix.h"
 #include "mpi.h"
 #include "StochGenMatrix.h"
 
@@ -31,9 +33,9 @@ StochGenMatrix* StochGenMatrixSplittingTest::createTestMatrix(unsigned int n_lin
 
 TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce )
 {
-   std::vector<unsigned int> mat_input(std::get<0>(GetParam()));
-   std::vector<int> twolinks_start_in_block_id(std::get<1>(GetParam()));
-   std::vector<unsigned int> map_blocks_children(std::get<2>(GetParam()));
+   const std::vector<unsigned int>& mat_input(std::get<0>(GetParam()));
+   const std::vector<int>& twolinks_start_in_block_id(std::get<1>(GetParam()));
+   const std::vector<unsigned int>& map_blocks_children(std::get<2>(GetParam()));
 
    ASSERT_EQ( mat_input.size(), 6 );
    const int n_links_vars = mat_input[0];
@@ -84,7 +86,7 @@ TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce )
       child->Blmat->getSize(mbl, nbl);
 
       EXPECT_EQ( na, 0 );
-      EXPECT_EQ( ma, mb );
+      EXPECT_EQ( ma, 0 );
       EXPECT_EQ( nb, nbl );
 
       EXPECT_EQ( mbl, n_links_in_root );
@@ -104,7 +106,7 @@ TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce )
    EXPECT_EQ( n_links_in_root + sum_child_links, m_links_cons );
    EXPECT_EQ( sum_child_children, 0 );
    EXPECT_EQ( sum_child_Bmat_children, map_blocks_children.size() );
-}
+};
 
 INSTANTIATE_TEST_CASE_P(
       TestSplitStochGenMatrixOnce,

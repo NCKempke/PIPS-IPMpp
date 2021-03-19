@@ -16,18 +16,19 @@ macro(package_add_test TESTNAME)
    add_executable(${TESTNAME} ${ARGN})
    # link the Google test infrastructure, mocking library, and a default main fuction to
    # the test executable.  Remove g_test_main if writing your own main function.
-   target_link_libraries(${TESTNAME} 
-      ooqpstoch
-      ooqpstochla 
-      ooqpgondziostoch 
-      ooqpequistochscaler
-      ooqpqpstochpresolver
-      ooqpgensparse 
-      ooqpsparse 
-      ooqpdense 
-      ooqpbase 
-      OpenMP::OpenMP_CXX
-      customMain
+   target_link_libraries( ${TESTNAME} 
+      PRIVATE gmspips_reader 
+      PRIVATE ooqpstoch
+      PRIVATE ooqpstochla 
+      PRIVATE ooqpgondziostoch 
+      PRIVATE ooqpequistochscaler
+      PRIVATE ooqpgensparse 
+      PRIVATE ooqpsparse 
+      PRIVATE ooqpdense 
+      PRIVATE ooqpbase
+      PRIVATE ooqpqpstochpresolver
+      PRIVATE OpenMP::OpenMP_CXX
+      PRIVATE customMain
    )
    # gtest_discover_tests replaces gtest_add_tests,
    # see https://cmake.org/cmake/help/v3.10/module/GoogleTest.html for more options to pass to it
@@ -40,3 +41,5 @@ endmacro()
 
 add_subdirectory( QpStoch )
 add_subdirectory( StochLinearAlgebra )
+add_subdirectory( QpPreprocess )
+add_subdirectory( Drivers )

@@ -34,7 +34,7 @@ add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
 target_compile_options(pipsipmCallbackExample PRIVATE ${OpenMP_CXX_FLAGS})
 target_link_libraries(pipsipmCallbackExample 
    PRIVATE ooqpstoch 
-   PRIVATE ooqpstochla 
+   PRIVATE ooqpstochla
    PRIVATE ooqpgondziostoch 
    PRIVATE ooqpequistochscaler
    PRIVATE ooqpgensparse 
@@ -192,4 +192,13 @@ add_executable(gmschk
 )
 target_link_libraries(gmschk
    PRIVATE gmspipsio
+)
+
+########### gmpipsreader ###########
+add_library( gmspips_reader Drivers/gmspips/gmspips_reader.cpp )
+
+target_link_libraries( gmspips_reader
+   PRIVATE gmspipsio
+   PRIVATE ooqpstoch
+   PRIVATE MPI::MPI_CXX
 )

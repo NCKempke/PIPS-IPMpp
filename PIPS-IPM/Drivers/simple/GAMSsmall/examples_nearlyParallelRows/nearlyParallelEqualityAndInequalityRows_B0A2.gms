@@ -11,9 +11,9 @@ parameter g(j) obj coefficients / j1 1, j2 1, j3 1, j4 -1, j5 1, j6 1, j7 1, j8 
           cupp(i) c right hand side   / i1 8, i2 -2, i3 100, i4 100, i5 100, i6 100, i7 100, i8 1, i9 20, i10 0.4, i11 100, i12 100, i13 100, i14 100, i15 100 /
 
 
-* in this example the parallel row presolver should detect three parallel equality row pairs - one in B0 and two in B2 and delete them from the system
-* for the one in B0 bounds get propagated but both variables are actually zero in the final solution
-* for the one in B2 the propagated bound is tight
+* in this example the parallel row presolver should detect three nearly parallel inequality rows
+* i8, i9 and i10 are redundant
+* same holds for i1 and i2
 Table A(i,j)
     j1    j2    j3    j4    j5    j6    j7    j8    j9   j10   j11   j12   j13   j14   j15   j16   j17   j18
 i1

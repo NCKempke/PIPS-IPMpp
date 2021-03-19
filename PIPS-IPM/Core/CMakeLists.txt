@@ -22,15 +22,11 @@ add_library(ooqpgensparse STATIC
 add_library(ooqpstoch STATIC 
    QpStoch/sFactory.C
    QpStoch/sFactoryAug.C
-   #   sFactoryAugSchurLeaf.C
-   #   sFactoryAugComm2SchurLeaf.C
    QpStoch/sData.C
    QpStoch/sLinsys.C
    QpStoch/sLinsysRoot.C
    QpStoch/sLinsysRootAug.C
    QpStoch/sLinsysRootAugHierInner.C
-   #   sLinsysRootComm2.C
-   #   sLinsysRootAugComm2.C
    QpStoch/sLinsysLeaf.C
    QpStoch/sLinsysLeafSchurSlv.C
    QpStoch/sVars.C
@@ -39,6 +35,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sTree.C
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C
+   StochLinearAlgebra/StringGenMatrix.C # TODO : bad hack...
 )
 
 if( HAVE_MA27 )
