@@ -26,27 +26,15 @@
 
 // declarations for LAPACK functions used to factor/solve:
 
+// TODO : move to ooqpblas ?
 // dsytrf_() factors a symmetric indefinite matrix A, see LAPACK
 // documentation for more details.
-extern "C" void FNAME(dsytrf)(char *uplo,
-			int *n,
-			double A[],
-			int *lda,
-			int ipiv[],
-			double work[],
-			int *lwork,
-			int *info);
+extern "C" void FNAME(dsytrf)( const char* uplo, const int* n, double A[],
+      const int* lda, int ipiv[], double work[], const int* lwork, int* info);
 
 // dsytrs_() solves the system Ax = b using the factor obtained by dsytrf_().
-extern "C" void FNAME(dsytrs)(char *uplo,
-			int *n,
-			int *nrhs,
-			double A[],
-			int *lda,
-			int ipiv[],
-			double b[],
-			int *ldb,
-			int *info);
+extern "C" void FNAME(dsytrs)( const char* uplo, const int* n, const int* nrhs,
+      double A[], const int* lda, int ipiv[], double b[], const int* ldb, int* info);
 
 #ifdef TIMING_FLOPS
 extern "C" {
@@ -61,42 +49,31 @@ extern "C" {
 #endif
 
 
-DeSymIndefSolver::DeSymIndefSolver( const DenseSymMatrix * dm )
+DeSymIndefSolver::DeSymIndefSolver( const DenseSymMatrix * dm ) :
+   mStorage{ dm->getStorageHandle() }
 {
-  mStorage = dm->getStorageHandle();
-
-  int size = mStorage->n;
-  ipiv = new int[size];
-  lwork = -1;
-  work = nullptr;
-  sparseMat = 0;
-
+  ipiv.resize(mStorage->n);
 }
 
-DeSymIndefSolver::DeSymIndefSolver( const SparseSymMatrix * sm )
+DeSymIndefSolver::DeSymIndefSolver( const SparseSymMatrix * sm ) :
+      sparseMat{ sm }
 {
-  int size = sm->size();
+  const int size = sm->size();
   mStorage = DenseStorageHandle( new DenseStorage(size,size) );
 
-  ipiv = new int[size];
-  lwork = -1;
-  work = nullptr;
-  sparseMat = sm;
-
-
-
+  ipiv.resize(size);
 }
 
 void DeSymIndefSolver::matrixChanged()
 {
-  char fortranUplo = 'U';
   int info;
 
-  int n = mStorage->n;
+  const int n = mStorage->n;
   if( n == 0 )
      return;
 
-  if (sparseMat) {
+  if (sparseMat)
+  {
     std::fill(mStorage->M[0],mStorage->M[0]+n*n,0.);
 
     const double *sM = sparseMat->M();
@@ -127,28 +104,27 @@ void DeSymIndefSolver::matrixChanged()
      std::cout << "DENSE_SYM_INDEF: starting factorization" << std::endl;
 #endif
 
-  //query the size of workspace
-  lwork=-1;
-  double lworkNew;
-  FNAME(dsytrf)( &fortranUplo, &n, &mStorage->M[0][0], &n,
-	   ipiv, &lworkNew, &lwork, &info );
+  const int query_workspace_size = -1;
+  double optimal_workspace_size_output;
+  FNAME(dsytrf)( &fortranUplo, &n, &mStorage->M[0][0], &n, ipiv.data(), &optimal_workspace_size_output, &query_workspace_size, &info );
 
-  lwork = (int)lworkNew;
-  if(work) delete[] work;
-  work = new double[lwork];
+  assert( 0 < optimal_workspace_size_output && optimal_workspace_size_output < std::numeric_limits<int>::max() );
+  const int optimal_workspace_size = static_cast<int>( optimal_workspace_size_output );
+
+  if( optimal_workspace_size > static_cast<int>(work.size()) )
+     work.resize(optimal_workspace_size);
 
 #ifdef TIMING_FLOPS
   HPM_Start("DSYTRFFact");
 #endif
 
   //factorize
-  FNAME(dsytrf)( &fortranUplo, &n, &mStorage->M[0][0], &n,
-	   ipiv, work, &lwork, &info );
+  FNAME(dsytrf)( &fortranUplo, &n, &mStorage->M[0][0], &n, ipiv.data(), work.data(), &optimal_workspace_size, &info );
 
 #ifdef TIMING_FLOPS
   HPM_Stop("DSYTRFFact");
 #endif
-  if(info!=0)
+  if( info != 0 )
       printf("DeSymIndefSolver::matrixChanged : error - dsytrf returned info=%d\n", info);
   //assert(info==0);
 
@@ -156,55 +132,46 @@ void DeSymIndefSolver::matrixChanged()
   //for(int i=0; i<n; i++)
   //  if(ipiv[i]<0) piv2x2++;
   //printf("%d 2x2 pivots were used\n", piv2x2);
-
 }
 
 void DeSymIndefSolver::solve ( OoqpVector& v )
 {
-  char fortranUplo = 'U';
   int info;
-  int one = 1;
+  const int one = 1;
 
-  int n = mStorage->n;
+  const int n = mStorage->n;
   SimpleVector & sv = dynamic_cast<SimpleVector &>(v);
 
   if( n == 0 )
      return;
+
 #ifdef TIMING_FLOPS
   HPM_Start("DSYTRSSolve");
 #endif
 
-  FNAME(dsytrs)( &fortranUplo, &n, &one,	&mStorage->M[0][0],	&n,
-	   ipiv, &sv[0],	&n,	&info);
+  FNAME(dsytrs)(&fortranUplo, &n, &one, &mStorage->M[0][0], &n, ipiv.data(), &sv[0], &n, &info);
 
 #ifdef TIMING_FLOPS
   HPM_Stop("DSYTRSSolve");
 #endif
-  assert(info==0);
+  assert( info == 0 );
 }
 
 void DeSymIndefSolver::solve ( GenMatrix& rhs_in )
 {
   DenseGenMatrix &rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
-  char fortranUplo = 'U';
+
   int info;
   int nrows,ncols; rhs.getSize(ncols,nrows);
 
-  int n = mStorage->n;
+  const int n = mStorage->n;
 
-  FNAME(dsytrs)( &fortranUplo, &n, &ncols, &mStorage->M[0][0],	&n,
-	   ipiv, &rhs[0][0],	&n,	&info);
+  FNAME(dsytrs)(&fortranUplo, &n, &ncols, &mStorage->M[0][0], &n, ipiv.data(), &rhs[0][0], &n, &info );
 
-  assert(info==0);
+  assert( info == 0 );
 }
 
 void DeSymIndefSolver::diagonalChanged( int /* idiag */, int /* extent */ )
 {
   this->matrixChanged();
-}
-
-DeSymIndefSolver::~DeSymIndefSolver()
-{
-  delete[] ipiv;
-  if(work) delete[] work;
 }

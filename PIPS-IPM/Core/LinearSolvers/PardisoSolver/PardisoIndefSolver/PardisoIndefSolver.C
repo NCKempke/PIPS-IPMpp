@@ -165,7 +165,6 @@ void PardisoIndefSolver::matrixRebuild( DoubleMatrix& matrixNew )
       if( !pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0 )
          printf("\n Schur complement factorization is starting ...\n ");
 
-      assert(mStorageSparse);
 
       factorizeFromSparse(matrixNewSym);
 

@@ -119,7 +119,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
 
    bool pure_centering_step = false;
    bool numerical_troubles = false;
-   bool precond_limit = false;
+   bool precond_decreased = false;
 
    setDnorm(*prob);
    // initialization of (x,y,z) and factorization routine.
@@ -350,13 +350,13 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
       // if we encountered numerical troubles while computing the step check enter a probing round
       if( numerical_troubles )
       {
-         if( !precond_limit )
-            precond_limit = decreasePreconditionerImpact(sys);
+         if( precond_decreased )
+            precond_decreased = decreasePreconditionerImpact(sys);
 
          doProbing_pd(prob, iterate, resid, alpha_pri, alpha_dual);
          const double alpha_max = std::max(alpha_pri, alpha_dual);
 
-         if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_limit, alpha_max ) )
+         if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_decreased, alpha_max ) )
             continue;
       }
 

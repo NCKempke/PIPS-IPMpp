@@ -127,13 +127,15 @@ void sLinsysRoot::factor2(sData *prob, Variables *vars)
 #endif 
 
    reduceKKT(prob);
-
  #ifdef TIMING
    stochNode->resMon.recReduceTmLocal_stop();
 #endif
 
    finalizeKKT(prob, vars);
 
+   std::cout << "kkt" << std::endl;
+   kkt->writeToStreamDense(std::cout);
+   std::cout << "\n\n";
    if( PIPS_MPIgetRank(mpiComm) == 0 )
    {
       if( is_hierarchy_root )
@@ -981,7 +983,7 @@ void sLinsysRoot::reduceKKT(sData* prob)
 }
 
 
-// collects (reduces) dense global Schur complement
+/* collects (reduces) lower left part of dense global symmetric Schur complement */
 void sLinsysRoot::reduceKKTdense()
 {
    DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
@@ -1004,7 +1006,7 @@ void sLinsysRoot::reduceKKTdense()
          // reduce lower diagonal linking part
          submatrixAllReduceDiagLower(kktd, locNxMy, locmyl + locmzl, mpiComm);
       }
-  }
+   }
 }
 
 
@@ -1806,6 +1808,7 @@ void sLinsysRoot::allreduceMatrix( DoubleMatrix& mat, bool is_sparse, bool is_sy
    }
    else
    {
+      // TODO : these seem to be not proper handling of the symmetric dense schur complement - need ot check maths first
       if( is_sym )
          submatrixAllReduceFull( &dynamic_cast<DenseSymMatrix&>(mat), 0, 0, m, n, comm);
       else

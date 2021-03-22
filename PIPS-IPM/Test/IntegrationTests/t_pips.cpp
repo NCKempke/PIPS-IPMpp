@@ -23,6 +23,9 @@
 #define __ROOT_DIR__ "define_this_variable_for_the_tests_to_succeed"
 #endif
 
+// TODO : criterion should be mathematical and adaptive to scaling ..
+const double solution_tol = 1e-4;
+
 class ScenarioTests : public ::testing::TestWithParam<Instance>
 {
    protected:
@@ -103,7 +106,7 @@ TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDisabled )
 
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_GEO_STOCH );
 
-   EXPECT_NEAR( result, result_solve, 1e-5 ) << " while solving " << problem_paths;
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
 TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDefault )
@@ -120,7 +123,7 @@ TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDefault )
 
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH );
 
-   EXPECT_NEAR( result, result_solve, 1e-5 ) << " while solving " << problem_paths;
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
 TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDisabled )
@@ -136,7 +139,7 @@ TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDisabled )
 
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE );
 
-   EXPECT_NEAR( result, result_solve, 1e-5 ) << " while solving " << problem_paths;
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
 TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDefault )
@@ -152,7 +155,7 @@ TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDefault )
 
    const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_NONE );
 
-   EXPECT_NEAR( result, result_solve, 1e-5 ) << " while solving " << problem_paths;
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
 INSTANTIATE_TEST_SUITE_P(

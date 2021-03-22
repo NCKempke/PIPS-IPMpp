@@ -680,20 +680,17 @@ void SparseStorage::writeNNZpatternToStreamDense( std::ostream& out ) const
 
 void SparseStorage::writeToStreamDense(std::ostream& out) const
 {
-   int i, k;
    //todo: instead of \t, use length of longest value in M
 
-   for( i = 0; i < m; i++ )
-   { // Row i
-      int j = 0; // Column j
-      for( k = krowM[i]; k < krowM[i + 1]; k++ )
+   for( int i = 0; i < m; i++ )
+   {
+      int j = 0;
+      for( int k = krowM[i]; k < krowM[i + 1]; k++ )
       {
-
 #ifndef NDEBUG
          // assert that columns are ordered
          assert(k == krowM[i] || jcolM[k - 1] < jcolM[k]);
 #endif
-
          while( jcolM[k] > j )
          {
             out << 0 << '\t';

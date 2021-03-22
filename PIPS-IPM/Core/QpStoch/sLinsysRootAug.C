@@ -423,6 +423,8 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
 void sLinsysRootAug::assembleLocalKKT( sData* prob )
 {
    const bool is_layer_only_twolinks = prob->isHierarchySparseTopLayerOnlyTwolinks();
+   if( !pips_options::getBoolParameter("HIERARCHICAL") )
+      assert( !is_layer_only_twolinks );
 
    for( size_t c = 0; c < children.size(); ++c )
    {
@@ -436,6 +438,7 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 
       //---------------------------------------------
       addTermToSchurCompl( prob, c, !is_layer_only_twolinks );
+
       //---------------------------------------------
       children[c]->stochNode->resMon.recFactTmChildren_stop();
    }

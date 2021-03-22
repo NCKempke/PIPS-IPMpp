@@ -43,6 +43,7 @@ macro(package_add_test TESTNAME)
    gtest_discover_tests(${TESTNAME}
       # set a working directory so your project root so that you can find test data via paths relative to the project root
       WORKING_DIRECTORY ${PROJECT_DIR}
+      DISCOVERY_TIMEOUT 10
    )
    set_target_properties(${TESTNAME} PROPERTIES FOLDER tests)
 endmacro()
