@@ -6,6 +6,7 @@
  */
 
 #include "gmspips_reader.hpp"
+#include <cstring>
 
 const size_t MAX_PATH_LENGHT = 256;
 
