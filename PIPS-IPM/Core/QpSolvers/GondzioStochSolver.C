@@ -137,7 +137,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
 
    bool pure_centering_step = false;
    bool numerical_troubles = false;
-   bool precond_decreased = false;
+   bool precond_decreased = true;
 
    setDnorm(*prob);
 

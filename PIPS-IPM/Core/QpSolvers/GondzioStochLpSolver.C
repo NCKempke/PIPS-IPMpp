@@ -119,7 +119,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
 
    bool pure_centering_step = false;
    bool numerical_troubles = false;
-   bool precond_decreased = false;
+   bool precond_decreased = true;
 
    setDnorm(*prob);
    // initialization of (x,y,z) and factorization routine.
