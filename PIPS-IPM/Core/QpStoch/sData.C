@@ -634,7 +634,8 @@ int sData::getSCmixedBlocksMaxNnzDist(size_t nRows, size_t nCols,
          assert(block >= 1);
          assert(linkStartBlockLength_Right[block - 1] >= 0);
 
-         nnz += length_Left * length_Right;
+         const int lastlenght_right = linkStartBlockLength_Right[block - 1];
+         nnz += length_Left * lastlenght_right;
       }
 
       // diagonal block
