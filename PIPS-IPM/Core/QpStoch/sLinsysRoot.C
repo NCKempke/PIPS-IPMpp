@@ -133,9 +133,6 @@ void sLinsysRoot::factor2(sData *prob, Variables *vars)
 
    finalizeKKT(prob, vars);
 
-   std::cout << "kkt" << std::endl;
-   kkt->writeToStreamDense(std::cout);
-   std::cout << "\n\n";
    if( PIPS_MPIgetRank(mpiComm) == 0 )
    {
       if( is_hierarchy_root )

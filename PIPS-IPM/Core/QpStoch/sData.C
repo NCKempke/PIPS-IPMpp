@@ -2350,7 +2350,7 @@ void sData::activateLinkStructureExploitation()
 
    if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
    {
-      if( false || ratio < minStructuredLinksRatio )
+      if( ratio < minStructuredLinksRatio )
       {
          if( myrank == 0 )
             std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << ")\n";
