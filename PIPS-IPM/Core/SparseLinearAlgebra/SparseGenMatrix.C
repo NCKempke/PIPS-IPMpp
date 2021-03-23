@@ -395,6 +395,8 @@ void SparseGenMatrix::transMultD(double beta, OoqpVector& y_, double alpha, cons
    SimpleVector& y = dynamic_cast<SimpleVector &>(y_);
 
    assert( x.length() == d.length() );
+   if( x.length() == 0 || y.length() == 0 )
+      return;
    assert( x.length() > 0 && y.length() > 0 );
    assert( x.length() == mStorage->m );
    assert( y.length() == mStorage->n );
