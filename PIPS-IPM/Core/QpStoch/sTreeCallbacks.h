@@ -97,7 +97,7 @@ protected:
    StochGenMatrix* createMatrix( TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat,
          DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
          DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
-         DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
+         DATA_NNZ fnnzBlmat, DATA_MAT Blmat, const std::string& prefix_for_print  ) const;
    StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
 
    void createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree );
