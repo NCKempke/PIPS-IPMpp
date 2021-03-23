@@ -560,7 +560,7 @@ StochSymMatrix* sTreeCallbacks::createQ() const
 StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat,
       DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
       DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
-      DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const
+      DATA_NNZ fnnzBlmat, DATA_MAT Blmat, const std::string& prefix_for_print ) const
 {
    assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf );
 
@@ -606,8 +606,8 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
             dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
 
       if( print_tree_sizes_on_reading )
-         printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-               data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+         printf("root  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+               prefix_for_print.c_str(), data->*m_ABmat, prefix_for_print.c_str(), data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
    }
    else
    {
@@ -639,8 +639,8 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
             dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
 
       if( print_tree_sizes_on_reading )
-         printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-               data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+         printf("  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+               prefix_for_print.c_str(), data->*m_ABmat, prefix_for_print.c_str(), data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
    }
 
    // populate Bl if existent
@@ -651,7 +651,7 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
    for(size_t it = 0; it < children.size(); it++)
    {
       StochGenMatrix* child = dynamic_cast<sTreeCallbacks*>(children[it])->createMatrix( MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat,
-            nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
+            nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print );
       A->AddChild(child);
    }
    return A;
@@ -677,8 +677,9 @@ StochGenMatrix* sTreeCallbacks::createA() const
    DATA_NNZ fnnzBlmat = &InputNode::fnnzBl;
    DATA_MAT Blmat = &InputNode::fBl;
 
+   const std::string prefix = "y";
    return createMatrix( MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
-         fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
+         fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix );
 }
 
 StochGenMatrix* sTreeCallbacks::createC() const
@@ -701,8 +702,9 @@ StochGenMatrix* sTreeCallbacks::createC() const
    DATA_NNZ fnnzDlmat = &InputNode::fnnzDl;
    DATA_MAT Dlmat = &InputNode::fDl;
 
+   const std::string prefix = "z";
    return createMatrix( MZ, MZL, m_CDmat, n_Mat, nnzCmat, fnnzCmat, Cmat, nnzDmat,
-         fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat );
+         fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat, prefix );
 }
 
 int sTreeCallbacks::nx() const
