@@ -151,17 +151,26 @@ Data* StochPresolver::presolve()
 
    if( write_presolved_problem )
    {
-      std::ofstream of("presolved.mps");
-
-      if( of.is_open() )
-         finalPresData->writeMPSformat(of);
-      else
+      if( PIPS_MPIgetSize() > 1 )
+      {
          if( my_rank == 0 )
-            std::cout << "Could not open presolved.mps to write out presolved problem!!\n";
+            std::cout << "MPS format writer only available using one process!\n";
+      }
+      else
+      {
+         std::ofstream of("presolved.mps");
+
+         if( of.is_open() )
+            finalPresData->writeMPSformat(of);
+         else
+            if( my_rank == 0 )
+               std::cout << "Could not open presolved.mps to write out presolved problem!!\n";
+      }
    }
 
    if( my_rank == 0 )
       std::cout << "end stoch presolving\n";
+
    presData.printRowColStats();
    finalPresData->printRanges();
 

@@ -244,6 +244,13 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
    nomegaInv->invert();
    nomegaInv->negate();
 
+   if( pips_options::getBoolParameter("HIERARCHICAL_TESTING") )
+   {
+      std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
+      dd->setToConstant(1.0);
+      nomegaInv->setToConstant(1.0);
+   }
+
    if( nxlow + nxupp > 0 )
       putXDiagonal( *dd );
 
@@ -254,10 +261,11 @@ void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
       regularizeKKTs();
 
    const double infnormdd = dd->infnorm();
+   const double infnormomegainv = nomegaInv->infnorm();
+
    double mindd; int dummy;
    dd->min(mindd, dummy);
 
-   const double infnormomegainv = nomegaInv->infnorm();
    double minomegainv;
    dd->min(minomegainv, dummy);
 
@@ -435,7 +443,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
       ztemp = step->pi;
     }
 
-    this->solveXYZS( *step->x, *step->y, *step->z, *step->s,
+    solveXYZS( *step->x, *step->y, *step->z, *step->s,
 		     *ztemp, prob );
   }
 

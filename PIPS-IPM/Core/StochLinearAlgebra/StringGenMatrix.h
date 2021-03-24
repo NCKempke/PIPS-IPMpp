@@ -14,14 +14,16 @@
 
 #include "mpi.h"
 
+class sTreeCallbacks;
+
 class StringGenMatrix : public GenMatrix
 {
    public:
       // TODO : keep public? ...
       // like stoch gen matrix possibly infinite but we will only have one layer of children at all times...
       std::vector<StringGenMatrix*> children;
-      SparseGenMatrix* mat{}; // never null
-      SparseGenMatrix* mat_link{}; // possibly null
+      GenMatrix* mat{}; // never null
+      GenMatrix* mat_link{}; // possibly null
       bool is_vertical{false};
 
    protected:
@@ -32,12 +34,17 @@ class StringGenMatrix : public GenMatrix
       const int rank{-1};
 
    public:
-      StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_);
+      StringGenMatrix() = default;
+
+      StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_);
 
       ~StringGenMatrix() override;
 
+      MPI_Comm getComm() const { return mpi_comm; };
+
       virtual void addChild(StringGenMatrix* child);
 
+      virtual bool isEmpty() const;
       int isKindOf( int matrix ) const override;
 
       /** y = beta * y + alpha * this * x */
@@ -48,9 +55,9 @@ class StringGenMatrix : public GenMatrix
       double abmaxnorm() const override;
       void scalarMult( double num ) override;
 
-      void writeToStreamDense( std::ostream& ) const override { assert( 0 && "TODO: implement..."); };
-
-      virtual std::string writeToStreamDenseRowChildren(int row) const;
+      void writeToStreamDense( std::ostream& ) const override;
+      void writeToStreamDenseRow( std::ostream& out, int row ) const override;
+      void writeDashedLineToStream( std::ostream& out ) const override;
 
       void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
       void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
@@ -64,6 +71,11 @@ class StringGenMatrix : public GenMatrix
       void getSize( long long& m_, long long& n_ ) const override { m_ = m; n_ = n; };
       void getSize( int& m_, int& n_ ) const override { m_ = m; n_ = n; };
 
+      /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
+      void combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms );
+      virtual void splitAlongTree( const sTreeCallbacks& tree );
+
+      GenMatrix* shaveBottom( int n_rows ) override;
 
       /* methods not needed for Hierarchical approach */
       double abminnormNonZero( double) const override { assert( false && "TODO: implement" ); return 0.0; };
@@ -84,15 +96,12 @@ class StringGenMatrix : public GenMatrix
       void putSparseTriple( int[], int, int[], double[], int& ) override { assert( "not implemented" && 0 ); };
       void randomize( double, double, double* ) override { assert( "not implemented" && 0 ); };
 
-
    protected:
-      StringGenMatrix() = default;
+      virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const;
+      virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x, bool root) const;
 
-      virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-      virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-
-      virtual void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
-      virtual void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+      virtual void transMultVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x, bool root ) const;
+      virtual void transMultHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const;
 
       virtual void columnScaleVertical( const OoqpVector& vec );
       virtual void columnScaleHorizontal( const OoqpVector& vec );
@@ -123,13 +132,16 @@ class StringGenDummyMatrix : public StringGenMatrix
       ~StringGenDummyMatrix() override = default;
 
       void addChild( StringGenMatrix* ) override {};
+
+      bool isEmpty() const override { return true; };
       int isKindOf( int type ) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
       void mult( double, OoqpVector&, double, const OoqpVector& ) const override {};
       void transMult( double, OoqpVector&, double, const OoqpVector& ) const override {};
       double abmaxnorm() const override { return -std::numeric_limits<double>::infinity(); };
       void scalarMult( double ) override {};
       void writeToStream( std::ostream& ) const override {};
-      std::string writeToStreamDenseRowChildren( int ) const override { return ""; };
+      void writeToStreamDenseRow( std::ostream&, int ) const override {};
+      void writeDashedLineToStream( std::ostream& ) const override {};
 
       void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
       void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
@@ -139,11 +151,15 @@ class StringGenDummyMatrix : public StringGenMatrix
       void addRowSums( OoqpVector& ) const override {};
       void addColSums( OoqpVector& ) const override {};
 
+      GenMatrix* shaveBottom( int ) override { return new StringGenDummyMatrix(); };
+
+      void splitAlongTree( const sTreeCallbacks& ) override { assert( false && "should not end up here" ); };
+
    protected:
       void multVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};
-      void multHorizontal( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void multHorizontal( double, OoqpVector&, double, const OoqpVector&, bool ) const override {};
 
-      void transMultVertical( double, OoqpVector&, double, const OoqpVector& ) const override {};
+      void transMultVertical( double, OoqpVector&, double, const OoqpVector&, bool ) const override {};
       void transMultHorizontal( double, OoqpVector&, double, const OoqpVector& ) const override {};
 
       void columnScaleVertical( const OoqpVector& ) override {};

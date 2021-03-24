@@ -34,6 +34,8 @@ class StochInputTree
   public:
     StochInputNode(int id_ = -1);
 
+    StochInputNode( int id_, int n_, int my_, int myl_, int mz_, int mzl_);
+
 	StochInputNode(void* user_data, int id, 
 	   int n, int my, int mz,
 	   FMAT fQ, FNNZ fnnzQ, FVEC fc,  
@@ -71,25 +73,66 @@ class StochInputTree
 
   protected:
 
-    int id;
-    int n, my, myl, mz, mzl;
-    int nnzQ, nnzA, nnzB, nnzBl, nnzC, nnzD, nnzDl;
+    int id{-1};
+    int n{-1};
+    int my{-1};
+    int myl{-1};
+    int mz{-1};
+    int mzl{-1};
 
-  protected:
-    //callback functions
+    int nnzQ{-1};
+    int nnzA{-1};
+    int nnzB{-1};
+    int nnzBl{-1};
+    int nnzC{-1};
+    int nnzD{-1};
+    int nnzDl{-1};
+
     //callback functions nCall, myCall, mzCall, mylCall, mzlCall can be nullptr if data is provided through int n, my, mz, myl, mzl
-    FNNZ nCall, myCall, mzCall, mylCall, mzlCall;
-    FNNZ fnnzQ, fnnzA, fnnzB, fnnzBl, fnnzC, fnnzD, fnnzDl;
-    FMAT fQ, fA, fB, fBl, fC, fD, fDl;
+    FNNZ nCall{};
+    FNNZ myCall{};
+    FNNZ mzCall{};
+    FNNZ mylCall{};
+    FNNZ mzlCall{};
 
-    FVEC fc, fb, fbl;
-    FVEC fclow, fcupp, ficlow, ficupp;
-    FVEC fdllow, fdlupp, fidllow, fidlupp;
-    FVEC fxlow, fxupp, fixlow, fixupp;
+    FNNZ fnnzQ{};
+    FNNZ fnnzA{};
+    FNNZ fnnzB{};
+    FNNZ fnnzBl{};
+    FNNZ fnnzC{};
+    FNNZ fnnzD{};
+    FNNZ fnnzDl{};
+
+    FMAT fQ{};
+    FMAT fA{};
+    FMAT fB{};
+    FMAT fBl{};
+    FMAT fC{};
+    FMAT fD{};
+    FMAT fDl{};
+
+    FVEC fc{};
+    FVEC fb{};
+    FVEC fbl{};
+
+    FVEC fclow{};
+    FVEC fcupp{};
+    FVEC ficlow{};
+    FVEC ficupp{};
+
+    FVEC fdllow{};
+    FVEC fdlupp{};
+    FVEC fidllow{};
+    FVEC fidlupp{};
+
+    FVEC fxlow{};
+    FVEC fxupp{};
+    FVEC fixlow{};
+    FVEC fixupp{};
     
-    void *user_data;
+    void* user_data{};
 
-    bool deleteUserData;
+    bool deleteUserData{false};
 
   }; // end of inner class StochInputNode
 
@@ -107,8 +150,8 @@ class StochInputTree
   std::vector<StochInputTree*> children;
  protected:
   StochInputTree();
+  StochInputNode* nodeInput{};
 
-  StochInputNode* nodeInput;
 };
 
 #endif

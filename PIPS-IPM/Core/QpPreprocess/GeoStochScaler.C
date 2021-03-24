@@ -6,7 +6,6 @@
  */
 
 //#define PIPS_DEBUG
-#define PIPS_OUTPUT_SCALER
 #include "GeoStochScaler.h"
 #include "pipsdef.h"
 #include "pipsport.h"
@@ -20,10 +19,8 @@ static const double maxobjscale = 100.0;
 GeoStochScaler::GeoStochScaler(Data* prob, bool equiScaling, bool bitshifting)
   : StochScaler(prob, bitshifting)
 {
-   int myRank = 0;
-   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-   if( myRank == 0) std::cout<<"Creating GeoStochScaler... bitshifting="<< bitshifting << "\n";
+   if( PIPS_MPIgetRank() == 0 && scaling_output )
+      std::cout << "Creating GeoStochScaler... bitshifting=" << bitshifting << " equiscaling=" << equiScaling << "\n";
    equilibrate = equiScaling;
 
    // todo: adjust parameters
@@ -75,12 +72,11 @@ void GeoStochScaler::doObjScaling()
 
 void GeoStochScaler::scale()
 {
-   assert(vec_rowscaleA == nullptr && vec_rowscaleC == nullptr && vec_colscale == nullptr);
+   assert( !vec_rowscaleA && !vec_rowscaleC && !vec_colscale );
 
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-
    vec_rowscaleA.reset( dynamic_cast<StochVector*>(bA->clone()) );
    std::unique_ptr<StochVector> rowminA{ dynamic_cast<StochVector*>(bA->clone()) };
    vec_rowscaleC.reset( dynamic_cast<StochVector*>(rhsC->clone()) );
@@ -93,8 +89,11 @@ void GeoStochScaler::scale()
 
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   if( myRank == 0 ) printf("rowratio before scaling %f \n", rowratio);
-   if( myRank == 0 ) printf("colratio before scaling %f \n", colratio);
+   if( myRank == 0 && scaling_output )
+   {
+      printf("rowratio before scaling %f \n", rowratio);
+      printf("colratio before scaling %f \n", colratio);
+   }
 
    double p0start, p1start;
    if( colratio < rowratio && !with_sides )
@@ -114,10 +113,12 @@ void GeoStochScaler::scale()
 
    if( !geoscale )
    {
-      if( myRank == 0 ) printf("No geometric scaling done, ratio already good enough.\n");
+      if( myRank == 0 && scaling_output )
+         std::cout << "No geometric scaling done, ratio already good enough.\n";
       if( !equilibrate )
          return;
-      PIPSdebugMessage("But will still perform equilibrium scaling.\n");
+      if( myRank == 0 && scaling_output )
+         std::cout << "But will still perform equilibrium scaling.\n";
    }
 
    double p0 = 0.0;
@@ -135,7 +136,6 @@ void GeoStochScaler::scale()
          {
             p0 = maxColRatio(*vec_colscale, *colmin, vec_rowscaleA.get(), vec_rowscaleC.get());
             applyGeoMean(*vec_colscale, *colmin);
-
             invertAndRound(do_bitshifting, *vec_colscale);
 
             p1 = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, vec_colscale.get());
@@ -144,10 +144,12 @@ void GeoStochScaler::scale()
 
             invertAndRound(do_bitshifting, *vec_rowscaleA);
             invertAndRound(do_bitshifting, *vec_rowscaleC);
+
             PIPSdebugMessage("Geometric Scaling round %d. colratio=%f, rowratio=%f \n", i, p0, p1);
          }
          else // row first
          {
+
             p0 = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, vec_colscale.get());
             applyGeoMean(*vec_rowscaleA, *rowminA);
             applyGeoMean(*vec_rowscaleC, *rowminC);
@@ -158,6 +160,7 @@ void GeoStochScaler::scale()
             applyGeoMean(*vec_colscale, *colmin);
 
             invertAndRound(do_bitshifting, *vec_colscale);
+
             PIPSdebugMessage("Geometric Scaling round %d. colratio=%f, rowratio=%f \n", i, p1, p0);
          }
          // if ratio improvement is not good enough, then break:
@@ -188,10 +191,6 @@ void GeoStochScaler::scale()
          postEquiScale();
       }
 
-      PIPSdebugMessage("before scaling: \n "
-            "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-           obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
-
       applyScaling();
 
 #if 0
@@ -210,24 +209,7 @@ void GeoStochScaler::scale()
       lhsC->scalarMult(1.0 / absmaxAll);
 #endif
 
-      PIPSdebugMessage("after scaling: \n "
-            "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-            obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
-
-#ifdef PIPS_OUTPUT_SCALER
-      std::unique_ptr<StochVector> xrowmaxA{ dynamic_cast<StochVector*>(bA->clone()) };
-      std::unique_ptr<StochVector> xrowminA{ dynamic_cast<StochVector*>(bA->clone()) };
-      std::unique_ptr<StochVector> xrowmaxC{ dynamic_cast<StochVector*>(rhsC->clone()) };
-      std::unique_ptr<StochVector> xrowminC{ dynamic_cast<StochVector*>(rhsC->clone()) };
-      std::unique_ptr<StochVector> xcolmax{ dynamic_cast<StochVector*>(bux->clone()) };
-      std::unique_ptr<StochVector> xcolmin{ dynamic_cast<StochVector*>(bux->clone()) };
-
-      const double xrowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
-      const double xcolratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);
-
-      if( myRank == 0 ) printf("rowratio after scaling %f \n", xrowratio);
-      if( myRank == 0 ) printf("colratio after scaling %f \n", xcolratio);
-#endif
+      printRowColRatio();
 
       if( equilibrate )
          assert(A->abmaxnorm() <= 2.0 && C->abmaxnorm() <= 2.0);
@@ -244,20 +226,11 @@ void GeoStochScaler::scale()
    }
 }
 
-void GeoStochScaler::setScalingVecsToOne()
-{
-   assert( vec_rowscaleA && vec_rowscaleC && vec_colscale );
-
-   vec_rowscaleA->setToConstant(1.0);
-   vec_rowscaleC->setToConstant(1.0);
-   vec_colscale->setToConstant(1.0);
-}
-
 /** apply an approximation to the geometric mean to Vector maxvec:
  * Multiply maxvec and minvec componentwise and take the square root of the result.
  * Return result in maxvec.
  * */
-void GeoStochScaler::applyGeoMean(OoqpVector& maxvec, OoqpVector& minvec)
+void GeoStochScaler::applyGeoMean(OoqpVector& maxvec, const OoqpVector& minvec)
 {
    assert( maxvec.length() == minvec.length() );
 

@@ -11,7 +11,6 @@
 
 #include <cstring>
 #include <iostream>
-using namespace std;
 #include "OoqpVectorHandle.h"
 #include "DoubleMatrixHandle.h"
 
@@ -23,7 +22,7 @@ class DoubleLinearSolver;
  */
 class DoubleStorage : public IotrRefCount {
 public:
-  DoubleStorage() { };
+  DoubleStorage() = default;
 
   virtual void atPutDense( int row, int col, double * A, int lda,
 			   int rowExtent, int colExtent ) = 0;
@@ -51,7 +50,7 @@ public:
   virtual void scalarMult( double num) = 0;
   virtual double abmaxnorm() const = 0;
   virtual double abminnormNonZero( double tol = 1e-30 ) const = 0;
-  virtual ~DoubleStorage() {};
+  virtual ~DoubleStorage() = default;
 };
 
 /** Parent of all matrix classes
@@ -59,7 +58,7 @@ public:
  */
 class DoubleMatrix : public IotrRefCount {
 public:
-  DoubleMatrix() {}
+  DoubleMatrix() = default;
 
   /** True if this matrix identifies itself to be of type matrixType. */
   virtual int isKindOf( int matrixType ) const = 0;
@@ -126,6 +125,10 @@ public:
 
   virtual void writeToStreamDense( std::ostream& out ) const = 0;
 
+  virtual void writeToStreamDenseRow( std::ostream&, int) const { assert( false && "not implemented" ); };
+
+  virtual void writeDashedLineToStream( std::ostream& ) const { assert( false && "not implemented" ); };
+
   /** Place the diagonal elements of this matrix in the vector vec */
   virtual void getDiagonal( OoqpVector& vec ) = 0;
   /** Set the matrix to the diagoanl matrix whose diagonal is vec */
@@ -169,7 +172,13 @@ public:
   virtual void getSize( long long& m, long long& n ) const = 0;
   virtual void getSize( int& m, int& n ) const = 0;
 
-  virtual ~DoubleMatrix() {};
+  void printSize() const
+  {
+     long long m, n; getSize(m,n);
+     std::cout << m << " x " << n << " (rows x cols)\n";
+  }
+
+  virtual ~DoubleMatrix() = default;
 };
 
 /** Parent of all Symmetric matrices. 
@@ -215,6 +224,10 @@ public:
 			      int& info ) = 0;
   /** the size of this square matrix */
   virtual long long size() const = 0;
+
+  /** deep clone matrix */
+  virtual SymMatrix* clone() const { assert( false && "not implmented"); return nullptr; };
+
 };
 
 /** Parent of all non-symmetric, possibly non-square, matrices.
@@ -266,7 +279,7 @@ public:
   /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
   virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) = 0;
 
-  virtual void writeMPSformatRows(ostream& /*out*/, int /*rowType*/, OoqpVector* /*irhs*/) const {}
+  virtual void writeMPSformatRows( std::ostream& /*out*/, int /*rowType*/, OoqpVector* /*irhs*/) const {}
 
   /** get number of elements per row to given vector */
   virtual void getNnzPerRow(OoqpVectorBase<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
@@ -288,6 +301,17 @@ public:
   /** add absolute value sum of each column to vector */
   virtual void addColSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
 
+  /** return nonzeros in matrix */
+  virtual int numberOfNonZeros() const { assert( false && "not implmented"); return -1; };
+
+  /** clone of matrix with n = 0 - possibly with underlying dynamic sparse storage */
+  virtual GenMatrix* cloneEmptyRows(bool /*s witchToDynamicStorage = false*/ ) const { assert( false && "not implmented"); return nullptr; };
+
+  /** full clone of matrix - possibly with underlying dynamic sparse storage */
+  virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage = false */) const { assert( false && "not implmented"); return nullptr; };
+
+  /** shave of bottom n constraints and return them in a new matrix */
+  virtual GenMatrix* shaveBottom( int ) { assert( false && "not implemented"); return nullptr; };
 };
 
 #endif

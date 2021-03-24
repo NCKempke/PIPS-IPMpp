@@ -16,15 +16,15 @@ class PardisoMKLSolver : public PardisoSolver {
 public:
    void firstCall() override;
 
-   PardisoMKLSolver( SparseSymMatrix * sgm );
-   PardisoMKLSolver( DenseSymMatrix* m );
+   PardisoMKLSolver( const SparseSymMatrix * sgm );
+   PardisoMKLSolver( const DenseSymMatrix* m);
 
 
 protected:
    void setIparm(int* iparm) const override;
 
-   void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
-         int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error) override;
+   void pardisoCall(void *pt, const int* maxfct, const int* mnum, const int* mtype, const int* phase, int* n, double* M, int* krowM, int* jcolM,
+         int* perm, int* nrhs, int* iparm, const int* msglvl, double* rhs, double* sol, int* error) override;
   ~PardisoMKLSolver() override;
 };
 

@@ -22,14 +22,11 @@ add_library(ooqpgensparse STATIC
 add_library(ooqpstoch STATIC 
    QpStoch/sFactory.C
    QpStoch/sFactoryAug.C
-   #   sFactoryAugSchurLeaf.C
-   #   sFactoryAugComm2SchurLeaf.C
    QpStoch/sData.C
    QpStoch/sLinsys.C
    QpStoch/sLinsysRoot.C
    QpStoch/sLinsysRootAug.C
-   #   sLinsysRootComm2.C
-   #   sLinsysRootAugComm2.C
+   QpStoch/sLinsysRootAugHierInner.C
    QpStoch/sLinsysLeaf.C
    QpStoch/sLinsysLeafSchurSlv.C
    QpStoch/sVars.C
@@ -38,6 +35,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sTree.C
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C
+   StochLinearAlgebra/StringGenMatrix.C # TODO : bad hack...
 )
 
 if( HAVE_MA27 )
@@ -70,7 +68,10 @@ if( HAVE_PARDISO OR HAVE_MKL_PARDISO )
    target_link_libraries( ooqpstoch PUBLIC pardiso_abstract )
 endif( HAVE_PARDISO OR HAVE_MKL_PARDISO )
 
-target_link_libraries( ooqpstoch PRIVATE ${MATH_LIBS} )
+target_link_libraries( ooqpstoch 
+   PRIVATE MPI::MPI_CXX
+   PRIVATE ${MATH_LIBS}
+)
 
 
 

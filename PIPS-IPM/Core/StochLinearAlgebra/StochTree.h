@@ -39,11 +39,11 @@ class StochTree {
 
 
   virtual void assignProcesses  ( );
-  virtual void assignProcesses  (MPI_Comm, vector<int>&);
+  virtual void assignProcesses  (MPI_Comm, std::vector<int>&);
   //void assignProcesses  (MPI_Comm);
 
   MPI_Comm commWrkrs, myOldMpiComm; //workers only
-  vector<int> myProcs, myOldProcs;
+  std::vector<int> myProcs, myOldProcs;
 
   MPI_Comm commP2ZeroW;   // preconditioner (rank P+1) and special (rank 0) worker
   static int rankPrcnd;   // rank of preconditioner
@@ -52,7 +52,7 @@ class StochTree {
 
   void startMonitors(); void startNodeMonitors();
   void stopMonitors();  void stopNodeMonitors();
-  void syncMonitoringData(vector<double>& vCPUTotal);
+  void syncMonitoringData(std::vector<double>& vCPUTotal);
   bool balanceLoad();
   bool balanceLoadPrecond();
 
@@ -117,14 +117,14 @@ class StochTree {
  protected:
   StochTree();
 
-  void   toMonitorsList(list<NodeExecEntry>&);
-  void fromMonitorsList(list<NodeExecEntry>&);
+  void   toMonitorsList(std::list<NodeExecEntry>&);
+  void fromMonitorsList(std::list<NodeExecEntry>&);
 
   void computeNodeTotal();
 
   void saveCurrentCPUState();
 
-  int isInVector(int elem, const vector<int>& vec);
+  int isInVector(int elem, const std::vector<int>& vec);
 
  protected:
   StochInputTree::StochInputNode* data; //input data

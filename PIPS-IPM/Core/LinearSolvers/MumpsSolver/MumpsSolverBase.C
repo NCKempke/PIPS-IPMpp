@@ -34,10 +34,8 @@ MumpsSolverBase::MumpsSolverBase( MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_
    setUpMumps();
 }
 
-MumpsSolverBase::MumpsSolverBase( SparseSymMatrix * sgm )
- : MumpsSolverBase(MPI_COMM_WORLD, MPI_COMM_SELF, sgm )
-{
-}
+MumpsSolverBase::MumpsSolverBase( const SparseSymMatrix * sgm )
+ : MumpsSolverBase(MPI_COMM_WORLD, MPI_COMM_SELF, sgm) {}
 
 MumpsSolverBase::~MumpsSolverBase()
 {

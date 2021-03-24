@@ -17,7 +17,7 @@ class StochPresolverSingletonColumns : public StochPresolverBase
 public:
    StochPresolverSingletonColumns(PresolveData& presData, const sData& origProb);
 
-   ~StochPresolverSingletonColumns();
+   ~StochPresolverSingletonColumns() override = default;
 
    bool applyPresolving() override;
 

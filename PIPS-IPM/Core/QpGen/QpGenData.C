@@ -15,14 +15,10 @@
 
 QpGenData::QpGenData(LinearAlgebraPackage * la_,
 		     long long nx_, long long my_, long long mz_,
-		     long long nnzQ, long long nnzA, long long nnzC)
+		     long long nnzQ, long long nnzA, long long nnzC )
+   :  la{la_}, nx{nx_}, my{my_}, mz{mz_}
 {
-   assert( false && "never called" );
-  la = la_;
-
-  nx = nx_;
-  my = my_;
-  mz = mz_;
+  assert( false && "never called" );
 
   Q = SymMatrixHandle( la->newSymMatrix( nx,     nnzQ ) );
   A = GenMatrixHandle( la->newGenMatrix( my, nx, nnzA ) );
@@ -51,11 +47,11 @@ QpGenData::QpGenData( LinearAlgebraPackage * la_in,
 		      GenMatrix  * C_in,
 		      OoqpVector * clow_in, OoqpVector * iclow_in,
 		      OoqpVector * cupp_in, OoqpVector * icupp_in ) :
+        la{la_in},
         nxlow{ ixlow_in->numberOfNonzeros() },
         nxupp{ ixupp_in->numberOfNonzeros() },
         mclow{ iclow_in->numberOfNonzeros() },
         mcupp{ icupp_in->numberOfNonzeros() }
-
 {
   SpReferTo( g,     c_in  );
   SpReferTo( bA,    bA_in );
@@ -69,7 +65,6 @@ QpGenData::QpGenData( LinearAlgebraPackage * la_in,
   SpReferTo( icupp, icupp_in );
 
   long long dummy;
-  la = la_in;
 
   nx = g->length();
   SpReferTo( Q, Q_in );
@@ -306,50 +301,50 @@ QpGenData::randomlyChooseBoundedVariables( OoqpVector& x,
 
 void QpGenData::print()
 {
-  cout << "begin Q\n";
-  Q->writeToStream( cout );
-  cout << "end Q\n";
-  cout << "begin c\n";
-  g->writeToStream( cout );
-  cout << "end c\n";
+  std::cout << "begin Q\n";
+  Q->writeToStream( std::cout );
+  std::cout << "end Q\n";
+  std::cout << "begin c\n";
+  g->writeToStream( std::cout );
+  std::cout << "end c\n";
 
-  cout << "begin xlow\n";
-  blx->writeToStream( cout );
-  cout << "end xlow\n";
-  cout << "begin ixlow\n";
-  ixlow->writeToStream( cout );
-  cout << "end ixlow\n";
+  std::cout << "begin xlow\n";
+  blx->writeToStream( std::cout );
+  std::cout << "end xlow\n";
+  std::cout << "begin ixlow\n";
+  ixlow->writeToStream( std::cout );
+  std::cout << "end ixlow\n";
 
-  cout << "begin xupp\n";
-  bux->writeToStream( cout );
-  cout << "end xupp\n";  
-  cout << "begin ixupp\n";
-  ixupp->writeToStream( cout );
-  cout << "end ixupp\n";
-  cout << "begin A\n";
+  std::cout << "begin xupp\n";
+  bux->writeToStream( std::cout );
+  std::cout << "end xupp\n";
+  std::cout << "begin ixupp\n";
+  ixupp->writeToStream( std::cout );
+  std::cout << "end ixupp\n";
+  std::cout << "begin A\n";
 
-  A->writeToStream( cout );
-  cout << "end A\n";
-  cout << "begin b\n";
-  bA->writeToStream( cout );
-  cout << "end b\n";
-  cout << "begin C\n";
-  C->writeToStream( cout );
-  cout << "end C\n";
+  A->writeToStream( std::cout );
+  std::cout << "end A\n";
+  std::cout << "begin b\n";
+  bA->writeToStream( std::cout );
+  std::cout << "end b\n";
+  std::cout << "begin C\n";
+  C->writeToStream( std::cout );
+  std::cout << "end C\n";
   
-  cout << "begin clow\n";
-  bl->writeToStream( cout );
-  cout << "end clow\n";
-  cout << "begin iclow\n";
-  iclow->writeToStream( cout );
-  cout << "end iclow\n";
+  std::cout << "begin clow\n";
+  bl->writeToStream( std::cout );
+  std::cout << "end clow\n";
+  std::cout << "begin iclow\n";
+  iclow->writeToStream( std::cout );
+  std::cout << "end iclow\n";
 
-  cout << "begin cupp\n";
-  bu->writeToStream( cout );
-  cout << "end cupp\n";
-  cout << "begin icupp\n";
-  icupp->writeToStream( cout );
-  cout << "end icupp\n";
+  std::cout << "begin cupp\n";
+  bu->writeToStream( std::cout );
+  std::cout << "end cupp\n";
+  std::cout << "begin icupp\n";
+  icupp->writeToStream( std::cout );
+  std::cout << "end icupp\n";
 
 }
 

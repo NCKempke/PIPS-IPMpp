@@ -1,12 +1,13 @@
 /* PIPS-IPM                                                           *
  * Author:  Cosmin G. Petra                                           *
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
-
 #ifndef STOCH_TREE_CALLBACKS
 #define STOCH_TREE_CALLBACKS
 
 #include "sTree.h"
 #include "StochInputTree.h"
+
+#include <memory>
 #include <functional>
 /** This class creates objects when  the problem is specified by C callbacks.
  *  Obsolete and present only to ensure compatibility with older versions of the code.
@@ -17,6 +18,10 @@ class sData;
 
 class sTreeCallbacks : public sTree
 {
+protected:
+   sTreeCallbacks( const sTreeCallbacks& other );
+public:
+
    using InputNode = StochInputTree::StochInputNode;
    using DATA_MAT = FMAT InputNode::*;
    using DATA_VEC = FVEC InputNode::*;
@@ -24,10 +29,13 @@ class sTreeCallbacks : public sTree
    using DATA_INT = int InputNode::*;
    using TREE_SIZE = long long sTree::*;
 
-public:
+   sTree* clone() const override;
+
    sTreeCallbacks(StochInputTree* root);
    sTreeCallbacks(StochInputTree::StochInputNode* data_);
    ~sTreeCallbacks() = default;
+
+   void addChild( sTreeCallbacks* child );
 
    StochSymMatrix* createQ() const override;
 
@@ -64,42 +72,46 @@ public:
 
    virtual void writeSizes( std::ostream& sout ) const;
 
-   sTree* switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave, const std::vector<int>& twoLinksStartBlockA,
-         const std::vector<int>& twoLinksStartBlockC ) override;
-   sTree* collapseHierarchicalTree() override;
+   sTree* switchToHierarchicalTree( sData*& data ) override;
 
-   void splitDataAccordingToTree( sData& data ) const;
    const std::vector<unsigned int>& getMapBlockSubTrees() const
-      { assert( is_hierarchical_inner ); return map_node_sub_root; };
-protected:
+      { return map_node_sub_root; };
+   std::vector<MPI_Comm> getChildComms() const;
+
    void assertTreeStructureCorrect() const;
 
-   static unsigned int getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children );
+protected:
+   void assertTreeStructureChildren() const;
+   void assertSubRoot() const;
+   void assertTreeStructureIsNotMyNode() const;
+   void assertTreeStructureIsMyNodeChildren() const;
+   void assertTreeStructureIsMyNodeSubRoot() const;
+   void assertTreeStructureIsMyNode()const;
 
-   virtual void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
+   unsigned int getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
+         unsigned int n_procs, const std::vector<unsigned int>& child_procs );
+
+   void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
          const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
 
    StochGenMatrix* createMatrix( TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat,
          DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
          DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
-         DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const;
+         DATA_NNZ fnnzBlmat, DATA_MAT Blmat, const std::string& prefix_for_print  ) const;
    StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
 
-   void splitMatrixAccordingToTree( StochSymMatrix& mat ) const;
-   void splitMatrixAccordingToTree( StochGenMatrix& mat ) const;
-   void splitVectorAccordingToTree( StochVector& vec ) const;
-
-   void createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree );
+   void createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree );
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
          std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
          unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
-   void adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
-         const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum);
+   void adjustActiveMylBy( int adjustment );
+   void adjustActiveMzlBy( int adjustment );
+   std::pair<int,int> adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
+         const std::vector<unsigned int>& two_links_children_ineq );
 
-   void splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC ) override;
+   std::pair<int,int> splitTree( int n_layers, sData* data ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
-   sTree* collapseDenseBorder();
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE{-1};
@@ -130,9 +142,6 @@ protected:
 
    sTreeCallbacks();
    InputNode* data{}; //input data
-
-private:
-   static void mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees );
 };
 
 

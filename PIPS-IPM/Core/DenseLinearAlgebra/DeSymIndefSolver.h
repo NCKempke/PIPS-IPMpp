@@ -11,27 +11,37 @@
 #include "DenseStorageHandle.h"
 #include "pipsport.h"
 
+#include <vector>
+
 /** A linear solver for dense, symmetric indefinite systems
  * @ingroup DenseLinearAlgebra
  * @ingroup LinearSolvers
  */
-class DeSymIndefSolver : public DoubleLinearSolver {
-public:
-  DenseStorageHandle mStorage;
-protected:
-  double* work; int lwork;
-  int *ipiv;
-  SparseSymMatrix *sparseMat;
-public:
-  DeSymIndefSolver( DenseSymMatrix * storage );
-  DeSymIndefSolver( SparseSymMatrix * storage );
-  void diagonalChanged( int idiag, int extent ) override;
-  void matrixChanged() override;
+class DeSymIndefSolver : public DoubleLinearSolver
+{
+   public:
+      DeSymIndefSolver(const DenseSymMatrix *storage);
+      DeSymIndefSolver(const SparseSymMatrix *storage);
 
-  using DoubleLinearSolver::solve;
-  void solve ( OoqpVector& vec ) override;
-  void solve ( GenMatrix& vec ) override;
-  virtual ~DeSymIndefSolver();
+      void diagonalChanged(int idiag, int extent) override;
+      void matrixChanged() override;
+
+      using DoubleLinearSolver::solve;
+      void solve(OoqpVector &vec) override;
+      void solve(GenMatrix &vec) override;
+
+      ~DeSymIndefSolver() override = default;
+
+   protected:
+
+      /* in PIPS symmetric matrices will be lower diagonal matrices which makes them upper diagonal in fortran access */
+      const char fortranUplo = 'U';
+
+      DenseStorageHandle mStorage;
+      std::vector<double> work;
+      std::vector<int> ipiv;
+
+      const SparseSymMatrix* sparseMat{};
 };
 
 #endif

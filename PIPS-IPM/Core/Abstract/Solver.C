@@ -18,7 +18,6 @@
 #include <limits>
 #include "mpi.h"
 
-bool ipStartFound = false;
 double g_iterNumber = 0.0;
 int gOoqpPrintLevel = 1000;
 int gLackOfAccuracy=0;

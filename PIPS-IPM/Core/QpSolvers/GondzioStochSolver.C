@@ -42,7 +42,6 @@
 
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
-extern bool ipStartFound;
 
 GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler )
   : GondzioSolver(opt, prob, scaler),
@@ -138,7 +137,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
 
    bool pure_centering_step = false;
    bool numerical_troubles = false;
-   bool precond_limit = false;
+   bool precond_decreased = true;
 
    setDnorm(*prob);
 
@@ -153,8 +152,6 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    this->start(factory, iterate, prob, resid, step);
    stochFactory->iterateEnded();
 
-   assert(!ipStartFound);
-   ipStartFound = true;
    iter = 0;
    NumberGondzioCorrections = 0;
    done = 0;
@@ -337,10 +334,10 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
       // if we encountered numerical troubles while computing the step enter a probing round
       if( numerical_troubles )
       {
-         if( !precond_limit )
-            precond_limit = decreasePreconditionerImpact(sys);
+         if( precond_decreased )
+            precond_decreased = decreasePreconditionerImpact(sys);
          doProbing(prob, iterate, resid, alpha);
-         if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_limit, alpha ) )
+         if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_decreased, alpha ) )
             continue;
       }
 
@@ -408,7 +405,7 @@ void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals* re
       if( additional_correctors_small_comp_pairs && !small_corr )
       {
          if( PIPS_MPIgetRank() == 0 )
-            std::cout << "switching to small correctors" << std::endl;
+            std::cout << "switching to small correctors\n";
          small_corr = true;
       }
    }
@@ -478,7 +475,7 @@ bool GondzioStochSolver::decreasePreconditionerImpact(LinearSystem* sys) const
    if( !success )
    {
       if( PIPS_MPIgetRank() == 0 )
-         std::cout << "Cannot increase precision in preconditioner anymore" << std::endl;
+         std::cout << "Cannot increase precision in preconditioner anymore\n";
    }
    return success;
 }
@@ -507,7 +504,7 @@ void GondzioStochSolver::doProbing( Data* prob, Variables* iterate, Residuals* r
    alpha = factor * alpha;
 }
 
-/* when numerical troubles occured we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
+/* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
 double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing,
       double mu_last, double mu_probing) const
 {
@@ -515,14 +512,16 @@ double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, dou
    assert( resids_norm_probing > 0.0 );
 
    double factor = 1.0;
-   const double limit_resids = 10.0 * std::max( artol * dnorm, resids_norm_last );
+   const double limit_resids = 10.0 * resids_norm_last;
 
    if( resids_norm_probing > limit_resids )
    {
       assert( resids_norm_probing > resids_norm_last );
       assert( limit_resids > resids_norm_last );
+
       const double resids_diff = resids_norm_probing - resids_norm_last;
       const double resids_max_change = limit_resids - resids_norm_last;
+
       assert( resids_diff > 0.0 ); assert( resids_max_change > 0.0 );
       assert( resids_max_change < resids_diff );
 
@@ -549,23 +548,26 @@ double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, dou
 }
 
 bool GondzioStochSolver::restartIterateBecauseOfPoorStep( bool& pure_centering_step,
-      bool precond_limit, double alpha_max) const
+      bool precond_decreased, double alpha_max) const
 {
    const int my_rank = PIPS_MPIgetRank();
 
    if( !pure_centering_step && alpha_max < mutol * 1e-2 )
    {
       if( my_rank == 0 )
-         std::cout << "poor step computed - trying pure centering step" << std::endl;
+         std::cout << "poor step computed - trying pure centering step\n";
       pure_centering_step = true;
       return true;
    }
-   else if( alpha_max < mutol * 1e-2 && pure_centering_step && !precond_limit )
+   else if( alpha_max < mutol * 1e-2 && pure_centering_step && precond_decreased )
    {
       if( my_rank == 0 )
-         std::cout << "refactorization" << std::endl;
+         std::cout << "poor step computed - refactorization with decreased preconditioning\n";
       return true;
    }
+
+   if( my_rank == 0 )
+      std::cout << "poor step computed but keeping it\n";
    return false;
 }
 

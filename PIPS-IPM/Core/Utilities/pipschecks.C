@@ -5,16 +5,16 @@
  *      Author: bzfrehfe
  */
 
-#include "pipschecks.h"
 #include "pipsdef.h"
 #include "OoqpVector.h"
+#include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
 #include <cmath>
 #include <limits>
 #include <cassert>
 #include <algorithm>
 
-bool permutationIsValid(const std::vector<unsigned int>& perm)
+bool permutationIsValid(const PERMUTATION& perm)
 {
    size_t size = perm.size();
    std::vector<bool> permflag(size, false);

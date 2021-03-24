@@ -15,13 +15,19 @@ message(STATUS "MPI_CXX_WORKS=${MPI_CXX_WORKS}")
 message(STATUS "MPI_CXX_LIBRARIES=${MPI_CXX_LIBRARIES}")
 message(STATUS "MPI_CXX_INCLUDE_DIRS=${MPI_CXX_INCLUDE_DIRS}")
 message(STATUS "MPI_CXX_LINK_FLAGS=${MPI_CXX_LINK_FLAGS}")
+message(STATUS "MPIEXEC=${MPIEXEC}")
+message(STATUS "MPIEXEC_NUMPROC_FLAG=${MPIEXEC_NUMPROC_FLAG}")
+
 
 include_directories(SYSTEM ${MPI_CXX_INCLUDE_DIRS})
 
+# WATCH OUT : these iwll be added to all executables - also the GAMS part - this might or might not lead to many warnings
+# add gmspips/pips specific WARNINGS via target_compile_options in PIPS-IPM/CMakeLists.txt
+ 
 ### TODO : introduce Wextra/pedantic -Wconversion -Wno-zero-as-null-pointer-const maybe
 #add_compile_options( -Wall -Wno-long-long -Wnon-virtual-dtor -Woverloaded-virtual )
-set(c_flags -Wall -Wno-long-long -fPIC)
-set(cxx_flags -Wall -Wextra -Wno-long-long -Wsuggest-override -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
+set(c_flags -Wall -g -Wno-long-long -fPIC)
+set(cxx_flags -Wall -g -Wno-long-long -Wnon-virtual-dtor -Wno-zero-as-null-pointer-constant -Woverloaded-virtual -fopenmp -fPIC)
 add_compile_options(
   "$<$<COMPILE_LANGUAGE:C>:${c_flags}>"
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"
@@ -77,7 +83,9 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 find_library(GFORTRAN_LIBRARY NAMES libgfortran.so REQUIRED)
 find_library(DL_LIBRARY NAMES dl REQUIRED)
 
-find_package(Threads REQUIRED)
+if( BUILD_GDX_SOURCE )
+   find_package(Threads REQUIRED)
+endif( BUILD_GDX_SOURCE )
 
 find_package(OpenMP)
 if(NOT OpenMP_FOUND)
@@ -98,12 +106,13 @@ elseif(IS_DIRECTORY $ENV{EBROOTGCC})
 elseif(IS_DIRECTORY $ENV{EBROOTICCIFORT})
     message(STATUS "Using Intel Compiler MKL")
     #try mkl_avx2 / 512
-    set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -liomp5 -lgfortran -lpthread -lm -ldl -Wl,--end-group -std=c++11")
+    set(MATH_LIBS "-Wl,--start-group -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -liomp5 -lgfortran -lpthread -lm -ldl -Wl,--end-group -std=c++11")
     ###set(MATH_LIBS "-Wl,--start-group -Wl,--no-as-needed -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_lapack95_lp64 -lmkl_sequential -lmkl_core -liomp5 -lgfortran -fopenmp -lpthread -lm -Wl,--end-group -std=c++11")
     ###set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lmkl_avx -lmkl_def -liomp5 -lpthread -lgfortran -lm -ldl -Wl,--end-group")
     message(STATUS "Using MKLROOT:$ENV{MKLROOT} MATH_LIBS=${MATH_LIBS}")
 elseif(IS_DIRECTORY $ENV{MKLROOT})
-   set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -Wl,--end-group -lgomp -lgfortran -lm -ldl")
+   set( MATH_LIBS  "-Wl,--start-group $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/intel64/libmkl_gnu_thread.a $ENV{MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl -m64" )
+   # set(MATH_LIBS "-Wl,--start-group  -L$ENV{MKLROOT}/lib/intel64 -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -Wl,--end-group -lgomp -lgfortran -lm -ldl")
    message(STATUS "Using MKLROOT:$ENV{MKLROOT} MATH_LIBS=${MATH_LIBS}")
 else(MATH_LIBS)
     message(STATUS "Searching system path for MATH_LIBS")

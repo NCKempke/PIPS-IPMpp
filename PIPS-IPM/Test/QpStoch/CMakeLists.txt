@@ -6,4 +6,5 @@ include_directories(../../Core/Abstract)
 include_directories(../../Core/Utilities)
 include_directories(../../Core/SparseLinearAlgebra)
 
-package_add_test( dummyTest t_sTreeCallbacks.cpp )
+package_add_test( sTreeCallbacksTest t_sTreeCallbacks.cpp )
+package_add_test( sDataTest t_sData.cpp )

@@ -1,4 +1,4 @@
-* ./gamsexample.sh -NP=3 -BLOCKS=4 -GAMSFILE=./singletonInequalityColumn_B01-PRESOLVE=true
+* ./gamsexample.sh -NP=3 -BLOCKS=4 -GAMSFILE=./singletonInequalityColumn_B1 -PRESOLVE=true
 
 
 * if you wanna use this example please hack in useLinkStructure = true; in sData.C

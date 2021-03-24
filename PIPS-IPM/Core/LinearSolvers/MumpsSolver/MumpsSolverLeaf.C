@@ -10,7 +10,7 @@
 #include "SparseGenMatrix.h"
 #include "dmumps_c.h"
 
-MumpsSolverLeaf::MumpsSolverLeaf( SparseSymMatrix * sgm )
+MumpsSolverLeaf::MumpsSolverLeaf( const SparseSymMatrix * sgm )
  : MumpsSolverBase(sgm)
 {}
 

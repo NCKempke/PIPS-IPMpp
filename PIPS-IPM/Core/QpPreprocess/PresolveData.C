@@ -350,10 +350,10 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
       SimpleVectorBase<int>& actmin_ineq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.vec);
       SimpleVectorBase<int>& actmax_ineq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.vec);
 
-      addActivityOfBlock(mat_A.Bmat->getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd, actmax_eq_root_part, actmax_eq_root_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.Bmat)->getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd, actmax_eq_root_part, actmax_eq_root_ubndd,
             xlow_root, ixlow_root, xupp_root, ixupp_root);
 
-      addActivityOfBlock(mat_C.Bmat->getStorageDynamicRef(), actmin_ineq_root_part, actmin_ineq_root_ubndd, actmax_ineq_root_part, actmax_ineq_root_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.Bmat)->getStorageDynamicRef(), actmin_ineq_root_part, actmin_ineq_root_ubndd, actmax_ineq_root_part, actmax_ineq_root_ubndd,
             xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
@@ -370,10 +370,10 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
    /* Bl0 */
    if( my_rank == 0 )
    {
-      addActivityOfBlock(mat_A.Blmat->getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd, actmax_eq_link_part, actmax_eq_link_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.Blmat)->getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd, actmax_eq_link_part, actmax_eq_link_ubndd,
             xlow_root, ixlow_root, xupp_root, ixupp_root);
 
-      addActivityOfBlock(mat_C.Blmat->getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd, actmax_ineq_link_part, actmax_ineq_link_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.Blmat)->getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd, actmax_ineq_link_part, actmax_ineq_link_ubndd,
             xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
@@ -400,15 +400,15 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
             SimpleVectorBase<int>& actmax_eq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.children[node]->vec);
 
             /* Ai */
-            addActivityOfBlock(mat_A.children[node]->Amat->getStorageDynamicRef(), actmin_eq_child_part, actmin_eq_child_ubndd, actmax_eq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Amat)->getStorageDynamicRef(), actmin_eq_child_part, actmin_eq_child_ubndd, actmax_eq_child_part,
                   actmax_eq_child_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
             /* Bi */
-            addActivityOfBlock(mat_A.children[node]->Bmat->getStorageDynamicRef(), actmin_eq_child_part, actmin_eq_child_ubndd,
+            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Bmat)->getStorageDynamicRef(), actmin_eq_child_part, actmin_eq_child_ubndd,
                   actmax_eq_child_part, actmax_eq_child_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
          }
          /* Bli */
-         addActivityOfBlock(mat_A.children[node]->Blmat->getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd, actmax_eq_link_part,
+         addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Blmat)->getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd, actmax_eq_link_part,
                actmax_eq_link_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
 
       }
@@ -424,16 +424,16 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
             SimpleVectorBase<int>& actmax_ineq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.children[node]->vec);
 
             /* Ai */
-            addActivityOfBlock(mat_C.children[node]->Amat->getStorageDynamicRef(), actmin_ineq_child_part, actmin_ineq_child_ubndd, actmax_ineq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Amat)->getStorageDynamicRef(), actmin_ineq_child_part, actmin_ineq_child_ubndd, actmax_ineq_child_part,
                   actmax_ineq_child_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
             /* Bi */
-            addActivityOfBlock(mat_C.children[node]->Bmat->getStorageDynamicRef(), actmin_ineq_child_part, actmin_ineq_child_ubndd, actmax_ineq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Bmat)->getStorageDynamicRef(), actmin_ineq_child_part, actmin_ineq_child_ubndd, actmax_ineq_child_part,
                   actmax_ineq_child_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
          }
 
          /* Bli */
-         addActivityOfBlock(mat_C.children[node]->Blmat->getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd,
+         addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Blmat)->getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd,
                actmax_ineq_link_part, actmax_ineq_link_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
       }
 
@@ -1163,7 +1163,8 @@ bool PresolveData::varBoundImpliedFreeBy( bool upper, const INDEX& col, const IN
 /* uses current activities (non-updated) to check whether said column's bounds are implied by row */
 void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower_implied, const INDEX& col, const INDEX& row) const
 {
-   assert( !outdated_activities );
+//   if( row.isLinkingRow() )
+//      assert( !outdated_activities );
 
    assert( col.isCol() );
    assert( row.isRow() );
@@ -1281,7 +1282,7 @@ void PresolveData::fixEmptyColumn(const INDEX& col, double val)
 {
    assert( col.isCol() );
    assert( col.hasValidNode(nChildren) );
-
+   assert( !wasColumnRemoved(col) );
    if(postsolver)
    {
       const double obj_value = getSimpleVecFromColStochVec(*presProb->g, col);
@@ -1598,6 +1599,7 @@ void PresolveData::tightenRowBoundsParallelRow(const INDEX& row1, const INDEX& r
    assert( !row1.isLinkingRow() && !row2.isLinkingRow() );
    assert( row1.inInEqSys() && row2.inInEqSys() );
    assert( clow_new != INF_NEG || cupp_new != INF_POS );
+   assert( !wasRowRemoved(row1) && !wasRowRemoved(row2) );
    assert( PIPSisLE(clow_new, cupp_new) );
 
    if( track_row && tracked_row == row1 )

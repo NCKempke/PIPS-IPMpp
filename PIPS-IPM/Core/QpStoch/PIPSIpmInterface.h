@@ -100,6 +100,7 @@ public:
 
   MPI_Comm comm = MPI_COMM_NULL;
   const int my_rank = -1;
+  int result{-1};
   bool ran_solver = false;
 };
 
@@ -178,10 +179,12 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
   {
      if( my_rank == 0 )
-        std::cout << "Using hierarchical approach!" << std::endl;
+        std::cout << "Using hierarchical approach!\n";
 
      data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
-//  data->writeToStreamDense(std::cout);
+
+     if( pips_options::getBoolParameter("HIERARCHICAL_PRINT_HIER_DATA") )
+      data->writeToStreamDense(std::cout);
   }
 
   vars.reset( dynamic_cast<sVars*>( factory->makeVariables( data.get() ) ) );
@@ -265,7 +268,7 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
   const int result = 0;
 #else
   //---------------------------------------------
-  const int result = solver->solve(data.get(), vars.get(), resids.get());
+  result = solver->solve(data.get(), vars.get(), resids.get());
   //---------------------------------------------
 #endif
 
@@ -591,6 +594,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
      resids->calcresids(data.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
+     MPI_Barrier(comm);
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
      unscaleUnpermNotHierResids->calcresids(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
@@ -602,7 +606,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 
 
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     factory->collapseHierarchicalTree();
+     factory->switchToOriginalTree();
 
   dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
   factory->data = origData.get();
@@ -610,7 +614,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   postsolvedVars.reset( dynamic_cast<sVars*>( factory->makeVariables( origData.get() ) ) );
 
   postsolvedResids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals( origData.get() ) ) );
-  postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars);
+  postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
   double obj_postsolved = origData->objectiveValue(postsolvedVars.get());
 

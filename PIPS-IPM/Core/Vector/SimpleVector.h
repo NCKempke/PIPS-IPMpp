@@ -26,7 +26,7 @@ protected:
   int preserveVec;
   T * v;
 public:
-  SimpleVectorBase( int nx = 0 );
+  explicit SimpleVectorBase( int nx = 0 );
   SimpleVectorBase( T * v, int nx );
   SimpleVectorBase( const SimpleVectorBase<T>& other );
   //@{
@@ -164,7 +164,10 @@ public:
   /** Returns a pointer to the elements of this vector. */
   T * elements() const { return v; };
 
+  void appendToFront( unsigned int n_to_add, const T& value );
   void appendToFront( const SimpleVectorBase<T>& other );
+
+  void appendToBack( unsigned int n_to_add, const T& value );
   void appendToBack( const SimpleVectorBase<T>& other );
 
   void jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpVectorBase<T>& vy, const OoqpVectorBase<T>& vz) override;

@@ -11,7 +11,6 @@
 #include "StochGenMatrix.h"
 #include "StochVector.h"
 
-
 #include "sVars.h"
 #include "sResiduals.h"
 
@@ -63,7 +62,6 @@ class Ma57Solver;
 sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
   : tree( new sTreeCallbacks(inputTree) )
 {
-  //decide how the CPUs are assigned
   tree->assignProcesses(comm);
 
   tree->computeGlobalSizes();
@@ -77,13 +75,81 @@ sFactory::~sFactory()
       delete tree;
 }
 
+DoubleLinearSolver* sFactory::newLeafSolver( const DoubleMatrix* kkt_ )
+{
+   const SparseSymMatrix* kkt = dynamic_cast<const SparseSymMatrix*>(kkt_);
+   assert( kkt );
+
+   const SolverType leaf_solver = pips_options::getSolverLeaf();
+
+   if( !pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) )
+   {
+      if( leaf_solver == SolverType::SOLVER_MUMPS )
+      {
+#ifdef WITH_MUMPS
+         return new MumpsSolverLeaf(kkt);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_PARDISO )
+      {
+#ifdef WITH_PARDISO
+         return new PardisoProjectSchurSolver(kkt);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
+      {
+#ifdef WITH_MKL_PARDISO
+         return new PardisoMKLSchurSolver(kkt);
+#endif
+      }
+
+      PIPS_MPIabortIf(true, "No leaf solver for Schur Complement computation could be found - should not happen..");
+   }
+   else
+   {
+      if( leaf_solver == SolverType::SOLVER_PARDISO )
+      {
+#ifdef WITH_PARDISO
+         return new PardisoProjectSolver(kkt);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
+      {
+#ifdef WITH_MKL_PARDISO
+         return new PardisoMKLSolver(kkt);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_MA57 )
+      {
+#ifdef WITH_MA57
+         return new Ma57Solver(kkt);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_MA27 )
+      {
+#ifdef WITH_MA27
+         return new Ma27Solver(kkt);
+#endif
+      }
+      else if( leaf_solver == SolverType::SOLVER_MUMPS )
+      {
+#ifdef WITH_MUMPS
+         return new MumpsSolverLeaf(kkt);
+#endif
+      }
+
+      PIPS_MPIabortIf(true, "No leaf solver for Blockwise Schur Complement computation could be found - should not happen..");
+   }
+   return nullptr;
+}
+
+
 sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
-			OoqpVector* dd, OoqpVector* dq,
-			OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs )
+         OoqpVector* dd, OoqpVector* dq,
+         OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs )
 {
    assert( prob );
    static bool printed = false;
-
    const SolverType leaf_solver = pips_options::getSolverLeaf();
 
    if( !pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) )
@@ -95,77 +161,35 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
       if( leaf_solver == SolverType::SOLVER_MUMPS )
       {
 #ifdef WITH_MUMPS
-         MumpsSolverLeaf* linSolver = nullptr;
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_PARDISO )
+      else if( leaf_solver == SolverType::SOLVER_PARDISO || leaf_solver == SolverType::SOLVER_MKL_PARDISO )
+         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+      else
       {
-#ifdef WITH_PARDISO
-         PardisoProjectSchurSolver* linSolver = nullptr;
-         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
-#endif
+         std::stringstream msg;
+         msg << "Error: did not specify SC_COMPUTE_BLOCKWISE but " << leaf_solver << " can only compute the Schur Complement blockwise";
+         PIPS_MPIabortIf(true, msg.str());
+         return nullptr;
       }
-      else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
+   }
+   else
+   {
+      if( PIPS_MPIgetRank() == 0 && !printed )
+         std::cout << "Using " << leaf_solver << " for blockwise Schur Complement computation - deactivating distributed preconditioner - sFactory\n";
+      pips_options::setBoolParameter("PRECONDITION_DISTRIBUTED", false);
+      printed = true;
+
+      if( leaf_solver == SolverType::SOLVER_MUMPS )
       {
-#ifdef WITH_MKL_PARDISO
-         PardisoMKLSchurSolver* linSolver = nullptr;
-         return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
+#ifdef WITH_MUMPS
+         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
 #endif
       }
       else
-      {
-         if( PIPS_MPIgetRank() == 0 )
-             std::cout << "Error: did not specify SC_COMPUTE_BLOCKWISE but " << leaf_solver << " can only compute the Schur Complement blockwise\n";
-         MPI_Barrier(MPI_COMM_WORLD);
-         MPI_Abort(MPI_COMM_WORLD, -1);
-      }
+         return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
    }
-
-   assert( pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) );
-
-   if( PIPS_MPIgetRank() == 0 && !printed )
-      std::cout << "Using " << leaf_solver << " for blockwise Schur Complement computation - deactivating distributed preconditioner - sFactory\n";
-   pips_options::setBoolParameter("PRECONDITION_DISTRIBUTED", false);
-   printed = true;
-
-
-   if( leaf_solver == SolverType::SOLVER_PARDISO )
-   {
-#ifdef WITH_PARDISO
-      PardisoProjectSolver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
-#endif
-   }
-   else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
-   {
-#ifdef WITH_MKL_PARDISO
-      PardisoMKLSolver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
-#endif
-   }
-   else if( leaf_solver == SolverType::SOLVER_MA57 )
-   {
-#ifdef WITH_MA57
-      Ma57Solver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
-#endif
-   }
-   else if( leaf_solver == SolverType::SOLVER_MA27 )
-   {
-#ifdef WITH_MA27
-      Ma27Solver* s = nullptr;
-      return new sLinsysLeaf(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, s);
-#endif
-   }
-   else if( leaf_solver == SolverType::SOLVER_MUMPS )
-   {
-#ifdef WITH_MUMPS
-         MumpsSolverLeaf* linSolver = nullptr;
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, linSolver);
-#endif
-   }
-
    return nullptr;
 }
 
@@ -179,12 +203,12 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 
     int nnzA = A.numberOfNonZeros();
     int nnzC = C.numberOfNonZeros();
-    std::cout << "augdump  nx=" << nx << std::endl;
+    std::cout << "augdump  nx=" << nx << "\n";
     std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << "\n"
               << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << "\n";
 
-	vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
-	vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
+	std::vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
+	std::vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
 	A.getStorageRef().transpose(&colptrA[0],&rowidxA[0],&eltsA[0]);
 	C.getStorageRef().transpose(&colptrC[0],&rowidxC[0],&eltsC[0]);
 
@@ -206,7 +230,7 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
 	assert(nnz == nnzA + nnzC);
 
 	std::ofstream fd("augdump.dat");
-	fd << scientific;
+	fd << std::scientific;
 	fd.precision(16);
 	fd << (nx + my + mz) << "\n";
 	fd << nx_1 << "\n";
@@ -221,8 +245,8 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
    for( int i = 0; i < nnz; i++ )
       fd << elts[i] << " ";
    fd << "\n";
-   printf("finished dumping aug\n");
 
+   std::cout << "finished dumping aug\n";
 }
 
 Data* sFactory::makeData()
@@ -335,7 +359,6 @@ void sFactory::iterateStarted()
   iterTmMonitor.recIterateTm_start();
   tree->startMonitors();
 }
-
 
 void sFactory::iterateEnded()
 {

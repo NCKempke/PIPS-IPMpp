@@ -17,9 +17,34 @@
 
 #include "pipsport.h"
 
-#ifndef UCTRANS // see note in smlParDriver.C
-#define UCTRANS
-#endif
+sTreeCallbacks::sTreeCallbacks( const sTreeCallbacks& other ) : sTree( other ),
+   N_INACTIVE{ other.N_INACTIVE },
+   MY_INACTIVE{ other.MY_INACTIVE },
+   MZ_INACTIVE{ other.MZ_INACTIVE },
+   MYL_INACTIVE{ other.MYL_INACTIVE },
+   MZL_INACTIVE{ other.MZL_INACTIVE },
+   nx_active{ other.nx_active },
+   my_active{ other.my_active },
+   mz_active{ other.mz_active },
+   myl_active{ other.myl_active },
+   mzl_active{ other.mzl_active },
+   nx_inactive{ other.nx_inactive },
+   my_inactive{ other.my_inactive },
+   mz_inactive{ other.mz_inactive },
+   myl_inactive{ other.myl_inactive },
+   mzl_inactive{ other.mzl_inactive },
+   isDataPresolved{ other.isDataPresolved },
+   hasPresolvedData{ other.hasPresolvedData },
+   print_tree_sizes_on_reading{ other.print_tree_sizes_on_reading },
+   map_node_sub_root(other.map_node_sub_root.begin(), other.map_node_sub_root.end()),
+   data{ other.data }
+{
+}
+
+sTree* sTreeCallbacks::clone() const
+{
+   return new sTreeCallbacks(*this);
+}
 
 sTreeCallbacks::sTreeCallbacks()
    : print_tree_sizes_on_reading{ pips_options::getBoolParameter( "PRINT_TREESIZES_ON_READ" ) }
@@ -56,6 +81,37 @@ sTreeCallbacks::sTreeCallbacks(InputNode* data_)
       numProcs = PIPS_MPIgetSize();
 }
 
+void sTreeCallbacks::addChild( sTreeCallbacks* child )
+{
+   N += child->N;
+
+   if( child->MY > 0 )
+      MY += child->MY;
+
+   if( child->MZ > 0 )
+      MZ += child->MZ;
+
+   child->np = nx_active;
+
+   if( child->commWrkrs != MPI_COMM_NULL )
+   {
+      MYL = child->MYL;
+      MZL = child->MZL;
+      myl_active = child->myl_active;
+      mzl_active = child->mzl_active;
+   }
+
+   if( child->commWrkrs != MPI_COMM_NULL )
+   {
+      assert( containsSorted( child->myProcs, myProcs ) );
+      assert( child->myl_active <= child->MYL );
+      assert( child->mzl_active <= child->MZL );
+   }
+
+   this->children.push_back(child);
+}
+
+
 void sTreeCallbacks::switchToPresolvedData()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
@@ -81,6 +137,7 @@ void sTreeCallbacks::switchToPresolvedData()
    }
 
    isDataPresolved = true;
+   assertTreeStructureCorrect();
 }
 
 
@@ -108,6 +165,7 @@ void sTreeCallbacks::switchToOriginalData()
    }
 
    isDataPresolved = false;
+   assertTreeStructureCorrect();
 }
 
 
@@ -173,6 +231,7 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    }
    else
    {
+      MYL_INACTIVE =  mylParent;
       myl_inactive = mylParent;
    }
 
@@ -184,12 +243,15 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    }
    else
    {
+      MZL_INACTIVE = mzlParent;
       mzl_inactive = mzlParent;
    }
 
    // empty child?
    if( N_INACTIVE == 0 && MY_INACTIVE == 0 && MZ_INACTIVE == 0 && np != -1 )
    {
+      MYL_INACTIVE = 0;
+      MZL_INACTIVE = 0;
       myl_inactive = 0;
       mzl_inactive = 0;
    }
@@ -212,11 +274,10 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
       N_INACTIVE += sTreeCallbacksChild->N_INACTIVE;
       MY_INACTIVE += sTreeCallbacksChild->MY_INACTIVE;
       MZ_INACTIVE += sTreeCallbacksChild->MZ_INACTIVE;
-      MYL_INACTIVE += sTreeCallbacksChild->MYL_INACTIVE;
-      MZL_INACTIVE += sTreeCallbacksChild->MZL_INACTIVE;
    }
 
    hasPresolvedData = true;
+
 }
 
 
@@ -239,6 +300,11 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
       sout << "mzl_active : " << mzl_active << "\n";
    }
 
+   if( sub_root )
+   {
+      sout << "subroot: \n";
+      dynamic_cast<sTreeCallbacks*>(sub_root)->writeSizes(sout);
+   }
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -251,7 +317,7 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
    }
 
    if( myRank == 0 )
-      std::cout << std::endl;
+      std::cout << "\n";
 }
 
 
@@ -261,27 +327,30 @@ void sTreeCallbacks::computeGlobalSizes()
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
    assert( !isDataPresolved );
 
-   if( data && sTree::isInVector( rankMe, myProcs ) )
+   if( data && isInVector( rankMe, myProcs ) )
    {
-      // callback must be used for sizes
-      assert( data->nCall );
-      assert( data->myCall );
-      assert( data->mzCall );
+      // callbacks can be used for sizes
+      assert( data->nCall || data->n != -1 );
+      assert( data->myCall || data->my != -1 );
+      assert( data->mzCall || data->mz != -1 );
 
       /* load sizes from callbacks */
-      data->nCall(data->user_data, data->id, &data->n);
-      data->myCall(data->user_data, data->id, &data->my);
-      data->mzCall(data->user_data, data->id, &data->mz);
+      if( data->n == -1 )
+         data->nCall(data->user_data, data->id, &data->n);
+      if( data->my == -1 )
+         data->myCall(data->user_data, data->id, &data->my);
+      if( data->mz == -1 )
+         data->mzCall(data->user_data, data->id, &data->mz);
 
       if( data->mylCall )
          data->mylCall(data->user_data, data->id, &data->myl);
-      else
+      else if( data->myl == -1 )
          data->myl = 0;
 
       if( data->mzlCall )
          data->mzlCall(data->user_data, data->id, &data->mzl);
-      else
-         data->myl = 0;
+      else if( data->mzl == -1 )
+         data->mzl = 0;
 
       N = data->n;
       MY = data->my;
@@ -309,92 +378,162 @@ void sTreeCallbacks::computeGlobalSizes()
       MY += children[it]->MY;
       MZ += children[it]->MZ;
    }
-//   assertTreeStructureCorrect();
+   assertTreeStructureCorrect();
 }
 
-
-
-// TODO : buggy...
-void sTreeCallbacks::assertTreeStructureCorrect() const
+void sTreeCallbacks::assertTreeStructureChildren() const
 {
-   assert( myProcs.size() <= children.size() || children.size() == 0 );
-   assert( is_sorted(myProcs.begin(), myProcs.end()) );
-
    for( const sTree* child : children )
    {
       dynamic_cast<const sTreeCallbacks*>(child)->assertTreeStructureCorrect();
+
       if( child->commWrkrs != MPI_COMM_NULL )
       {
-         assert( sTree::isInVector(rankMe, child->myProcs) );
-         assert( child->np == nx_active );
+         assert( isInVector(rankMe, child->myProcs) );
+         if( !is_hierarchical_root )
+            assert( child->np == nx_active );
       }
+
       assert( std::includes(myProcs.begin(), myProcs.end(), child->myProcs.begin(), child->myProcs.end()) );
    }
+}
 
-
-   if( commWrkrs == MPI_COMM_NULL )
+void sTreeCallbacks::assertSubRoot() const
+{
+   if( sub_root )
    {
-      assert( !sTree::isInVector(rankMe, myProcs) );
-
-      assert( nx_active == 0 );
-      assert( my_active == 0 );
-      assert( mz_active == 0 );
-      assert( myl_active == 0 );
-      assert( mzl_active == 0 );
-      assert( N == 0 );
-      assert( MY == 0 );
-      assert( MZ == 0 );
-      assert( MYL == 0 );
-      assert( MZL == 0 );
+      assert( children.size() == 0 );
+      dynamic_cast<const sTreeCallbacks*>(sub_root)->assertTreeStructureCorrect();
    }
-   else
+}
+
+void sTreeCallbacks::assertTreeStructureIsNotMyNode() const
+{
+   assert( !isInVector(rankMe, myProcs) );
+
+   assert( nx_active == 0 );
+   assert( my_active == 0 );
+   assert( mz_active == 0 );
+   assert( myl_active == 0 );
+   assert( mzl_active == 0 );
+   assert( N == 0 );
+   assert( MY == 0 );
+   assert( MZ == 0 );
+
+// might be non-zero in case of hierarchical approach
+//   assert( MYL == 0 );
+//   assert( MZL == 0 );
+}
+
+void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const
+{
+   assert( !sub_root );
+
+   int NX_children{0};
+   int MY_children{0};
+   int MZ_children{0};
+
+   int MYL_children{0};
+   int MZL_children{0};
+
+   for( const sTree* child_ : children )
    {
-      assert( sTree::isInVector(rankMe, myProcs) );
+      const sTreeCallbacks* child = dynamic_cast<const sTreeCallbacks*>(child_);
 
-      if( children.size() == 0 )
-         assert( np != -1 );
-      else
+      if( isInVector(rankMe, child->myProcs) )
       {
-         int nx_children = 0;
-         int my_children = 0;
-         int myl_children = 0;
-         int mz_children = 0;
-         int mzl_children = 0;
+         NX_children += child->N;
+         MY_children += child->MY;
+         MZ_children += child->MZ;
 
-         for( const sTree* child : children )
+         assert( child->MYL <= MYL );
+         assert( child->MZL <= MZL );
+
+         if( child->sub_root )
          {
-            nx_children += child->N;
-            my_children += child->MY;
-            mz_children += child->MZ;
+            assert( child->MYL >= myl_active );
+            assert( child->MZL >= mzl_active );
 
-            assert( child->MYL <= MYL );
-            assert( child->MZL <= MZL );
-            if( this->is_hierarchical_inner || this->is_hierarchical_root )
+            MYL_children += child->MYL - myl_active;
+            MZL_children += child->MZL - mzl_active;
+         }
+         else if( !is_hierarchical_root )
+         {
+            if( child->is_hierarchical_inner_leaf )
             {
-               myl_children += child->MYL;
-               mzl_children += child->MZL;
+               assert( MZL >= child->MZL );
+               assert( MYL >= child->MYL );
             }
             else
             {
-               assert( child->MYL == MYL );
-               assert( child->MZL == MZL );
+               assert( MZL == child->MZL );
+               assert( MYL == child->MYL );
             }
+
+
+            assert( myl_active <= child->MYL );
+            assert( mzl_active <= child->MZL );
+            assert( child->myl_active == myl_active );
+            assert( child->mzl_active == mzl_active );
          }
+         else
+         {
+            assert( child->MYL <= MYL );
+            assert( child->MZL <= MZL );
 
-         assert( N == nx_children + nx_active );
-         assert( MY == my_children + my_active );
-         assert( MYL == myl_children + myl_active );
-         assert( MZ == mz_children + mz_active );
-         if( this->is_hierarchical_inner || this->is_hierarchical_root )
-            assert( MZL == mzl_children + mzl_active );
+            MYL_children += child->MYL;
+            MZL_children += child->MZL;
+         }
       }
-
    }
+
+   assert( N == NX_children + nx_active );
+   assert( MY == MY_children + std::max(0, my_active) );
+   assert( MZ == MZ_children + std::max(0, mz_active) );
+   assert( MYL == MYL_children + myl_active );
+   assert( MZL == MZL_children + mzl_active );
+}
+
+void sTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const
+{
+   assert( sub_root );
+   assert( isInVector(rankMe, myProcs) );
+   assert( sub_root->np = -1 );
+   assert( is_hierarchical_inner_leaf );
+
+   assert( MYL == myl_active + sub_root->MYL );
+   assert( MZL == mzl_active + sub_root->MZL );
+   assert( nx_active == sub_root->N );
+   assert( my_active == sub_root->MY );
+   assert( mz_active == sub_root->MZ );
+}
+
+void sTreeCallbacks::assertTreeStructureIsMyNode() const
+{
+   assert( isInVector(rankMe, myProcs) );
+
+   if( children.size() != 0 )
+      assertTreeStructureIsMyNodeChildren();
+   else if( sub_root )
+      assertTreeStructureIsMyNodeSubRoot();
+}
+
+void sTreeCallbacks::assertTreeStructureCorrect() const
+{
+   assert( std::is_sorted(myProcs.begin(), myProcs.end()) );
+
+   assertTreeStructureChildren();
+   assertSubRoot();
+
+   if( commWrkrs == MPI_COMM_NULL )
+      assertTreeStructureIsNotMyNode();
+   else
+      assertTreeStructureIsMyNode();
 }
 
 StochSymMatrix* sTreeCallbacks::createQ() const
 {
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf );
 
    //is this node a dead-end for this process?
    if( commWrkrs == MPI_COMM_NULL )
@@ -406,8 +545,9 @@ StochSymMatrix* sTreeCallbacks::createQ() const
    StochSymMatrix *Q = new StochSymMatrix(N, data->n, data->nnzQ,
          commWrkrs);
 
-   data->fQ(data->user_data, data->id, Q->diag->krowM(), Q->diag->jcolM(),
-         Q->diag->M());
+   data->fQ(data->user_data, data->id, dynamic_cast<SparseSymMatrix*>(Q->diag)->krowM(),
+         dynamic_cast<SparseSymMatrix*>(Q->diag)->jcolM(),
+         dynamic_cast<SparseSymMatrix*>(Q->diag)->M());
 
    for( size_t it = 0; it < children.size(); it++ )
    {
@@ -420,9 +560,9 @@ StochSymMatrix* sTreeCallbacks::createQ() const
 StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat,
       DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
       DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
-      DATA_NNZ fnnzBlmat, DATA_MAT Blmat ) const
+      DATA_NNZ fnnzBlmat, DATA_MAT Blmat, const std::string& prefix_for_print ) const
 {
-   assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
+   assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf );
 
    if( commWrkrs == MPI_COMM_NULL )
       return new StochGenDummyMatrix();
@@ -462,14 +602,17 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       }
 
       //populate submatrix B
-      (data->*Amat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Bmat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
 
       if( print_tree_sizes_on_reading )
-         printf("root  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-               data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+         printf("root  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+               prefix_for_print.c_str(), data->*m_ABmat, prefix_for_print.c_str(), data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
    }
    else
    {
+      assert( commWrkrs == MPI_COMM_SELF );
+
       if( data->*nnzBmat < 0 )
          (data->*fnnzBmat)(data->user_data, data->id, &(data->*nnzBmat));
 
@@ -490,22 +633,25 @@ StochGenMatrix* sTreeCallbacks::createMatrix( TREE_SIZE MY, TREE_SIZE MYL, DATA_
       }
 
       //populate the submatrices A, B
-      (data->*Amat)(data->user_data, data->id, A->Amat->krowM(), A->Amat->jcolM(), A->Amat->M());
-      (data->*Bmat)(data->user_data, data->id, A->Bmat->krowM(), A->Bmat->jcolM(), A->Bmat->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Amat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Amat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Amat)->M());
+      (data->*Bmat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Bmat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
 
       if( print_tree_sizes_on_reading )
-         printf("  -- my=%d  myl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
-               data->*m_ABmat, data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
+         printf("  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n",
+               prefix_for_print.c_str(), data->*m_ABmat, prefix_for_print.c_str(), data->*m_Blmat, data->*n_Mat, np, data->*nnzAmat, data->*nnzBmat, data->*nnzBlmat);
    }
 
    // populate Bl if existent
    if( data->*Blmat )
-      (data->*Blmat)(data->user_data, data->id, A->Blmat->krowM(), A->Blmat->jcolM(), A->Blmat->M());
+      (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Blmat)->krowM(),
+            dynamic_cast<SparseGenMatrix*>(A->Blmat)->jcolM(), dynamic_cast<SparseGenMatrix*>(A->Blmat)->M());
 
    for(size_t it = 0; it < children.size(); it++)
    {
       StochGenMatrix* child = dynamic_cast<sTreeCallbacks*>(children[it])->createMatrix( MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat,
-            nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
+            nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print );
       A->AddChild(child);
    }
    return A;
@@ -531,8 +677,9 @@ StochGenMatrix* sTreeCallbacks::createA() const
    DATA_NNZ fnnzBlmat = &InputNode::fnnzBl;
    DATA_MAT Blmat = &InputNode::fBl;
 
+   const std::string prefix = "y";
    return createMatrix( MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
-         fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat );
+         fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix );
 }
 
 StochGenMatrix* sTreeCallbacks::createC() const
@@ -555,8 +702,9 @@ StochGenMatrix* sTreeCallbacks::createC() const
    DATA_NNZ fnnzDlmat = &InputNode::fnnzDl;
    DATA_MAT Dlmat = &InputNode::fDl;
 
+   const std::string prefix = "z";
    return createMatrix( MZ, MZL, m_CDmat, n_Mat, nnzCmat, fnnzCmat, Cmat, nnzDmat,
-         fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat );
+         fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat, prefix );
 }
 
 int sTreeCallbacks::nx() const
@@ -594,7 +742,7 @@ StochVector* sTreeCallbacks::createVector( DATA_INT n_vec, DATA_VEC vec, DATA_IN
    assert( n_vec );
    assert( vec );
 
-   assert( !(is_hierarchical_root || is_hierarchical_inner || is_hierarchical_leaf)
+   assert( !(is_hierarchical_root || is_hierarchical_inner_root || is_hierarchical_inner_leaf )
          || (false && "cannot be used with hierarchical data") );
 
    if( commWrkrs == MPI_COMM_NULL )
@@ -725,6 +873,11 @@ StochVector* sTreeCallbacks::createicupp() const
 
 sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave )
 {
+   assertTreeStructureCorrect();
+   if( PIPS_MPIgetRank() == 0 && !pips_options::getBoolParameter("SILENT") )
+      std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " <<
+         mzl_to_shave << " inequalities for the border\n";
+
    sTreeCallbacks* top_layer = new sTreeCallbacks();
 
    /* sTree members */
@@ -740,11 +893,9 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
 
    top_layer->MY = MY;
    top_layer->MYL = MYL;
-   this->MYL -= myl_to_shave;
 
    top_layer->MZ = MZ;
    top_layer->MZL = MZL;
-   this->MZL -= mzl_to_shave;
    top_layer->np = -1;
 
    assert( IPMIterExecTIME == -1 );
@@ -762,118 +913,172 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    top_layer->mz_active = -1;
 
    top_layer->myl_active = myl_to_shave;
-   this->myl_active -= myl_to_shave;
+   this->adjustActiveMylBy(-myl_to_shave);
 
    top_layer->mzl_active = mzl_to_shave;
-   this->mzl_active -= mzl_to_shave;
+   this->adjustActiveMzlBy(-mzl_to_shave);
+
+   for( auto& child : children )
+      dynamic_cast<sTreeCallbacks*>(child)->np = nx_active;
 
    assert( myl_active >= 0 );
    assert( mzl_active >= 0 );
-//   top_layer->assertTreeStructureCorrect();
+   top_layer->assertTreeStructureCorrect();
    return top_layer;
 }
 
-void sTreeCallbacks::mapChildrenToNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees )
+unsigned int sTreeCallbacks::getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
+      unsigned int n_procs, const std::vector<unsigned int>& child_procs )
 {
-   map_child_to_sub_tree.clear();
-   map_child_to_sub_tree.reserve(n_children);
+   assert( take_nth_root > 1 );
+   assert( n_procs <= n_children );
+   assert( child_procs.size() == n_children );
 
-   if( n_subtrees == 0 )
-      return;
-
-   const unsigned int everyone_gets = std::floor(n_children / n_subtrees);
-   const unsigned int n_leftovers = n_children % n_subtrees;
-
-   std::vector<unsigned int> children_per_tree( n_subtrees, everyone_gets );
-
-   if( n_leftovers > 0 )
+   // old way - results in a lot of wait at Allreduces..
+//   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
+   unsigned int n_new_roots = 0;
+   while( n_new_roots <= 1 && take_nth_root > 1 )
    {
-      const unsigned int free_in_leftover_row = n_subtrees - n_leftovers;
+      n_new_roots = std::floor( std::pow( n_children, 1.0 / take_nth_root ) );
 
-      const unsigned int free_after_each_leftover = std::floor(free_in_leftover_row / n_leftovers);
-      const unsigned int additional_frees = free_in_leftover_row % n_leftovers;
-
-      unsigned int additional_frees_assigned = 0;
-      for( unsigned int i = 0; i < n_subtrees; i += free_after_each_leftover )
+      if( n_procs <= n_new_roots && ((n_new_roots % n_procs) != 0) )
       {
-         ++children_per_tree[i];
-         ++i;
+         while( n_new_roots % n_procs != 0 )
+            --n_new_roots;
+      }
+      else if( n_procs > n_new_roots && n_procs % n_new_roots != 0 )
+      {
+         while( n_procs % n_new_roots != 0 )
+            --n_new_roots;
+      }
 
-         if( additional_frees != additional_frees_assigned )
+      if( n_new_roots <= 1 )
+      {
+         if( PIPS_MPIgetRank(commWrkrs) == 0 )
+            std::cout << "Too many layers for hierarchical split specified - the number of blocks and MPI processes does not allow for " <<
+            take_nth_root << " layers - decreasing amount of layers\n";
+         take_nth_root -= 1;
+      }
+   }
+
+   if( take_nth_root <= 1 )
+      return n_new_roots;
+
+   assert( n_new_roots > 1 );
+
+   /* now map new roots to procs or procs to new_roots */
+   if( n_procs >= n_new_roots )
+   {
+      std::vector<unsigned int> map_proc_to_sub_tree;
+      mapChildrenToNSubTrees( map_proc_to_sub_tree, n_procs, n_new_roots );
+
+      map_child_to_sub_tree.clear();
+      map_child_to_sub_tree.resize( n_children );
+
+      for( size_t i = 0; i < child_procs.size(); ++i )
+         map_child_to_sub_tree[i] = map_proc_to_sub_tree[ child_procs[i] ];
+   }
+   else
+   {
+      std::vector<unsigned int> map_sub_tree_to_proc;
+      mapChildrenToNSubTrees( map_sub_tree_to_proc, n_new_roots, n_procs );
+
+      mapChildrenToNSubTrees( map_child_to_sub_tree, n_children, n_new_roots );
+
+      for( size_t i = 0; i < child_procs.size(); ++i )
+      {
+         if( child_procs[i] != map_sub_tree_to_proc[map_child_to_sub_tree[i]] )
          {
-            ++i;
-            ++additional_frees_assigned;
+            assert( child_procs[i] == map_sub_tree_to_proc[map_child_to_sub_tree[i] + 1] );
+            map_child_to_sub_tree[i] += 1;
          }
       }
-      assert( additional_frees_assigned == additional_frees );
    }
 
-   assert( std::accumulate( children_per_tree.begin(), children_per_tree.end(),
-         decltype(children_per_tree)::value_type(0) ) == n_children );
-
-   for( unsigned int i = 0; i < children_per_tree.size(); ++i )
-   {
-      for( unsigned int j = 0; j < children_per_tree[i]; ++j )
-         map_child_to_sub_tree.push_back( i );
-   }
-}
-
-unsigned int sTreeCallbacks::getMapChildrenToSqrtNSubTrees( std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children )
-{
-   const unsigned int n_new_roots = std::round( std::sqrt( n_children ) );
-
-   mapChildrenToNSubTrees(map_child_to_sub_tree, n_children, n_new_roots);
+   assert( std::is_sorted( map_child_to_sub_tree.begin(), map_child_to_sub_tree.end() ) );
    return n_new_roots;
 }
 
-void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int>& map_child_to_sub_tree )
+void sTreeCallbacks::createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree )
 {
-   // TODO : maybe adjust the split at some point - the first n_leftovers procs have one additional block assigned to them .. this will lead to some imbalance in the tree here..
-   PIPS_MPIabortIf( children.size() < 3, "Need at lest 4 child tree nodes to split a root node");
+   assert( children.size() > 1 );
+   assert( myProcs.size() == getNDistinctValues(myProcs) );
 
-   const unsigned int n_new_roots = getMapChildrenToSqrtNSubTrees( map_child_to_sub_tree, children.size() );
+   std::vector<unsigned int> child_procs;
+   child_procs.reserve( children.size() );
+
+   assert( children.front()->myProcs.size() == 1 );
+   child_procs.push_back(0);
+   unsigned int proc = 0;
+   for( size_t i = 1; i < children.size(); ++i )
+   {
+      assert( children[i]->myProcs.size() == 1 );
+      if( children[i-1]->myProcs != children[i]->myProcs )
+         ++proc;
+
+      child_procs.push_back(proc);
+   }
+
+   const unsigned int n_new_roots = getMapChildrenToNthRootSubTrees( take_nth_root, map_child_to_sub_tree, children.size(), myProcs.size(), child_procs );
+
+   if( n_new_roots <= 1 )
+   {
+      assert( take_nth_root == 1 );
+      return;
+   }
    assert( map_child_to_sub_tree.size() == children.size() );
 
    /* create new sub-roots */
-   std::vector<sTreeCallbacks*> new_roots(n_new_roots);
-   for( auto& root : new_roots )
-      root = new sTreeCallbacks();
+   std::vector<sTreeCallbacks*> new_leafs(n_new_roots);
+   for( auto& leaf : new_leafs )
+   {
+      leaf = new sTreeCallbacks();
+      leaf->setHierarchicalInnerLeaf();
+
+      leaf->sub_root = new sTreeCallbacks();
+      leaf->sub_root->setHierarchicalInnerLeaf();
+   }
 
    /* determine processes for each subtree and assign children */
    for( size_t child = 0; child < children.size(); ++child )
    {
       const auto& child_procs = children[child]->myProcs;
+
       assert( child_procs.size() >= 1 );
 
       const unsigned int assigned_sub_root_for_child = map_child_to_sub_tree[ child ];
-      assert( assigned_sub_root_for_child < new_roots.size() );
-      sTreeCallbacks* assigned_root = new_roots[ assigned_sub_root_for_child ];
+      assert( assigned_sub_root_for_child < new_leafs.size() );
+      sTreeCallbacks* assigned_leaf = new_leafs[ assigned_sub_root_for_child ];
 
       for( int process : child_procs )
       {
          // assuming sorted..
-         if( assigned_root->myProcs.empty() || assigned_root->myProcs.back() != process )
+         if( assigned_leaf->myProcs.empty() || assigned_leaf->myProcs.back() != process )
          {
-            if( !assigned_root->myProcs.empty() )
+            if( !assigned_leaf->myProcs.empty() )
             {
-               assert( process > assigned_root->myProcs.back() );
-               assert( !isInVector( process, assigned_root->myProcs ) );
+               assert( process > assigned_leaf->myProcs.back() );
+               assert( !isInVector( process, assigned_leaf->myProcs ) );
             }
 
-            assigned_root->myProcs.push_back( process );
+            assigned_leaf->myProcs.push_back( process );
+            assigned_leaf->sub_root->myProcs.push_back( process );
          }
       }
 
-      assigned_root->children.push_back( children[child] );
+      dynamic_cast<sTreeCallbacks*>(assigned_leaf->sub_root)->addChild( dynamic_cast<sTreeCallbacks*>(children[child]) );
    }
 
    /* create all sub-communicators */
-   for( auto new_root : new_roots )
+   for( auto new_leaf : new_leafs )
    {
-      new_root->commWrkrs = PIPS_MPIcreateGroupFromRanks( new_root->myProcs );
+      new_leaf->commWrkrs = PIPS_MPIcreateGroupFromRanks( new_leaf->myProcs, commWrkrs );
 
-      if( !isInVector( rankMe, new_root->myProcs) )
-         assert( new_root->commWrkrs == MPI_COMM_NULL );
+      if( !isInVector( rankMe, new_leaf->myProcs) )
+         assert( new_leaf->commWrkrs == MPI_COMM_NULL );
+
+      new_leaf->sub_root->commWrkrs = new_leaf->commWrkrs;
+      new_leaf->sub_root->myProcs = new_leaf->myProcs;
    }
 
 #ifndef NDEBUG
@@ -881,8 +1086,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
    {
       if( isInVector(rankMe, children[child]->myProcs ) )
       {
-         auto child_new_root = new_roots[map_child_to_sub_tree[child]];
-         assert( isInVector(rankMe, child_new_root->myProcs) );
+         auto child_new_root = new_leafs[map_child_to_sub_tree[child]];
          assert( child_new_root->commWrkrs != MPI_COMM_NULL );
       }
    }
@@ -890,8 +1094,10 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren( std::vector<unsigned int
 
    /* add sub_roots as this new children */
    children.clear();
-   children.insert( this->children.begin(), new_roots.begin(), new_roots.end() );
-   this->is_hierarchical_inner = true;
+   children.insert( children.begin(), new_leafs.begin(), new_leafs.end() );
+
+   if( !is_hierarchical_inner_leaf )
+      is_hierarchical_inner_root = true;
 }
 
 void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
@@ -902,7 +1108,6 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
 #ifndef NDEBUG
    const unsigned int n_leafs = map_node_sub_root.size();
 #endif
-   assert( is_hierarchical_inner );
    assert( n_leafs == two_links_start_in_child_A.size() );
    assert( n_leafs == two_links_start_in_child_C.size() );
 
@@ -915,7 +1120,7 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
    unsigned int leaf = 0;
    for( unsigned int i = 0; i < n_children; ++i )
    {
-      const sTreeCallbacks& sub_root = dynamic_cast<const sTreeCallbacks&>( *children[i] );
+      const sTreeCallbacks& sub_root = dynamic_cast<const sTreeCallbacks&>( *children[i]->sub_root );
 
       for( size_t j = 0; j < sub_root.children.size(); ++j )
       {
@@ -939,84 +1144,171 @@ void sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_link
    assert( leaf == n_leafs );
 }
 
-void sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
-      const std::vector<unsigned int>& two_links_children_ineq, unsigned int two_links_children_eq_sum, unsigned int two_links_children_ineq_sum)
+void sTreeCallbacks::adjustActiveMylBy( int adjustment )
 {
-   assert( static_cast<unsigned int>(myl_active) >= two_links_children_eq_sum );
-   assert( static_cast<unsigned int>(mzl_active) >= two_links_children_ineq_sum );
+   assert( isInVector(rankMe, myProcs) );
 
-   myl_active -= two_links_children_eq_sum;
-   mzl_active -= two_links_children_ineq_sum;
+   myl_active += adjustment;
+   MYL += adjustment;
+
+   assert( myl_active >= 0 );
+   assert( MYL >= 0 );
+
+   for( sTree* child_ : children )
+   {
+      sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(child_);
+
+      assert( child->children.size() == 0 );
+
+      if( isInVector(rankMe, child->myProcs) )
+      {
+         child->myl_active += adjustment;
+         child->MYL += adjustment;
+      }
+      assert( child->myl_active >= 0 );
+      assert( child->MYL >= 0 );
+   }
+}
+
+void sTreeCallbacks::adjustActiveMzlBy( int adjustment )
+{
+   assert( isInVector(rankMe, myProcs) );
+   mzl_active += adjustment;
+   MZL += adjustment;
+
+   for( auto& child_ : children )
+   {
+      sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(child_);
+      assert( child->children.size() == 0 );
+
+      if( isInVector(rankMe, child->myProcs) )
+      {
+         child->mzl_active += adjustment;
+         child->MZL += adjustment;
+      }
+      assert( child->mzl_active >= 0 );
+      assert( child->MZL >= 0 );
+   }
+}
+
+std::pair<int,int> sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
+      const std::vector<unsigned int>& two_links_children_ineq )
+{
+   assert( two_links_children_eq.size() == two_links_children_ineq.size() );
+
+   unsigned int my_two_links_eq{0};
+   unsigned int my_two_links_ineq{0};
+   unsigned int sum_two_links_children_eq{0};
+   unsigned int sum_two_links_children_ineq{0};
+
+   for( unsigned int i = 0; i < children.size(); ++i )
+   {
+      const sTreeCallbacks& inner_leaf = dynamic_cast<const sTreeCallbacks&>(*children[i]);
+      if( isInVector(rankMe, inner_leaf.myProcs ) )
+      {
+         my_two_links_eq += two_links_children_eq[i];
+         my_two_links_ineq += two_links_children_ineq[i];
+      }
+      sum_two_links_children_eq += two_links_children_eq[i];
+      sum_two_links_children_ineq += two_links_children_ineq[i];
+   }
+   const unsigned int not_my_two_links_eq = sum_two_links_children_eq - my_two_links_eq;
+   const unsigned int not_my_two_links_ineq = sum_two_links_children_ineq - my_two_links_ineq;
+
+   assert( sum_two_links_children_eq <= unsigned(myl_active) );
+   assert( sum_two_links_children_ineq <= unsigned(mzl_active) );
+   assert( not_my_two_links_eq <= MYL );
+   assert( not_my_two_links_ineq <= MZL );
+
+   myl_active -= sum_two_links_children_eq;
+   mzl_active -= sum_two_links_children_ineq;
+   MYL -= not_my_two_links_eq;
+   MZL -= not_my_two_links_ineq;
 
    /* recompute sizes for the children */
    for( size_t i = 0; i < children.size(); ++i )
    {
-      sTreeCallbacks& sub_root = dynamic_cast<sTreeCallbacks&>(*children[i]);
+      sTreeCallbacks& inner_leaf = dynamic_cast<sTreeCallbacks&>(*children[i]);
+      sTreeCallbacks& sub_root = dynamic_cast<sTreeCallbacks&>(*inner_leaf.sub_root);
+      assert( inner_leaf.is_hierarchical_inner_leaf );
 
-      if( isInVector(rankMe, sub_root.myProcs) )
+      if( isInVector(rankMe, inner_leaf.myProcs) )
       {
-         sub_root.MYL = two_links_children_eq[i];
-         sub_root.myl_active = two_links_children_eq[i];
+         assert( isInVector(rankMe, sub_root.myProcs) );
 
-         sub_root.MZL = two_links_children_ineq[i];
-         sub_root.mzl_active = two_links_children_ineq[i];
+         inner_leaf.MYL = myl_active + two_links_children_eq[i];
+         inner_leaf.myl_active = myl_active;
+         if( MYL >= 0 )
+            sub_root.adjustActiveMylBy( - myl_active - sum_two_links_children_eq + two_links_children_eq[i] );
 
-         sub_root.np = this->nx_active;
+         inner_leaf.MZL = mzl_active + two_links_children_ineq[i];
+         inner_leaf.mzl_active = mzl_active;
+         if( MZL >= 0 )
+            sub_root.adjustActiveMzlBy( - mzl_active - sum_two_links_children_ineq + two_links_children_ineq[i] );
 
-         int nx{0};
-         int my{0};
-//         int myl{0};
-         int mz{0};
-//         int mzl{0};
+         inner_leaf.np = nx_active;
 
-         for( size_t j = 0; j < sub_root.children.size(); ++j )
-         {
-            const sTreeCallbacks& leaf = dynamic_cast<const sTreeCallbacks&>(*sub_root.children[j]);
+         inner_leaf.N = sub_root.N;
+         inner_leaf.nx_active = sub_root.N;
 
-            if( leaf.commWrkrs != MPI_COMM_NULL )
-            {
-//               nx += childchild.N;
-//               my += childchild.MY;
-//               mz += childchild.MZ;
-//               childchild.MYL = sub_root.MYL;
-//               childchild.myl_active = sub_root.myl_active;
-//               childchild.MZL = sub_root.MZL;
-//               childchild.mzl_active = sub_root.mzl_active;
-//            }
-//            else
-//            {
-//               assert( childchild.MYL == 0 );
-//               assert( childchild.myl_active == 0 );
-//               assert( childchild.MZL == 0 );
-//               assert( childchild.mzl_active == 0 );
-//            leaf.np = nx;
-            }
-         }
-         sub_root.N = nx;
-         sub_root.MY = my;
-         sub_root.MZ = mz;
+         inner_leaf.MY = sub_root.MY;
+         inner_leaf.my_active = sub_root.MY;
 
+         inner_leaf.MZ = sub_root.MZ;
+         inner_leaf.mz_active = sub_root.MZ;
       }
       else
       {
-         sub_root.N = sub_root.MY = sub_root.MZ = sub_root.MYL = sub_root.MZL = 0;
-         sub_root.nx_active = sub_root.my_active = sub_root.mz_active = sub_root.myl_active = sub_root.mzl_active = 0;
-      }
+         assert( !isInVector(rankMe, sub_root.myProcs) );
 
+         // we need to store the info about how many two links we pushed to that child (and forgot about)
+         inner_leaf.MYL = myl_active + two_links_children_eq[i];
+         inner_leaf.MZL = mzl_active + two_links_children_ineq[i];
+         sub_root.MYL = two_links_children_eq[i];
+         sub_root.MZL = two_links_children_ineq[i];
+
+         inner_leaf.N = inner_leaf.MY = inner_leaf.MZ = 0;
+         inner_leaf.nx_active = inner_leaf.my_active = inner_leaf.mz_active = inner_leaf.myl_active = inner_leaf.mzl_active = 0;
+
+#ifndef NDEBUG
+         assert( sub_root.N == 0 && sub_root.MY == 0 && sub_root.MZ == 0 );
+         assert( sub_root.nx_active == 0 && sub_root.my_active == 0 && sub_root.mz_active == 0 && sub_root.myl_active == 0 && sub_root.mzl_active == 0 );
+
+         for( const auto& child_ : sub_root.children )
+         {
+            const auto& child = dynamic_cast<const sTreeCallbacks*>(child_);
+            assert( child->N == 0 && child->MY == 0 && child->MZ == 0 && child->MYL == 0 && child->MZL == 0 );
+            assert( child->nx_active == 0 && child->my_active == 0 && child->mz_active == 0 && child->myl_active == 0 && child->mzl_active == 0 );
+         }
+#endif
+      }
    }
+   return std::make_pair(not_my_two_links_eq, not_my_two_links_ineq);
 }
 
-
-void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartBlockA, const std::vector<int>& twoLinksStartBlockC )
+std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, sData* data )
 {
-   assert( commWrkrs != MPI_COMM_NULL );
+   if( n_layers == 1 || commWrkrs == MPI_COMM_NULL )
+      return std::make_pair(0,0);
+
+   const std::vector<int>& twoLinksStartBlockA = data->getTwoLinksStartBlockA();
+   const std::vector<int>& twoLinksStartBlockC = data->getTwoLinksStartBlockC();
+
    assert( !is_hierarchical_root );
 
 #ifndef NDEBUG
    const size_t n_old_leafs = children.size();
 #endif
 
-   createSubcommunicatorsAndChildren( map_node_sub_root );
+   createSubcommunicatorsAndChildren( n_layers, map_node_sub_root );
+
+   if( n_layers == 1 )
+   {
+      if( PIPS_MPIgetRank(commWrkrs) == 0 )
+         std::cout << "No split applied!\n";
+      return std::make_pair(0,0);
+   }
+
    assert( map_node_sub_root.size() == n_old_leafs );
 
    std::vector<unsigned int> two_links_children_eq, two_links_children_ineq;
@@ -1028,133 +1320,110 @@ void sTreeCallbacks::splitTreeSquareRoot( const std::vector<int>& twoLinksStartB
    const unsigned int two_links_children_eq_sum = std::accumulate( two_links_children_eq.begin(), two_links_children_eq.end(), unsigned(0) );
    const unsigned int two_links_children_ineq_sum = std::accumulate( two_links_children_ineq.begin(), two_links_children_ineq.end(), unsigned(0) );
 
-   if( rankMe == 0 )
+   if( rankMe == 0 && !pips_options::getBoolParameter("SILENT") )
    {
+      std::cout << "Splitting node into " << children.size() << " subroots\n";
       std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq
-            << " root and " << two_links_children_eq_sum << " child links" << std::endl;
+            << " root and " << two_links_children_eq_sum << " child links\n";
       std::cout << "Splitting " << two_links_children_ineq_sum + two_links_root_ineq << " inequality two-links into " << two_links_root_ineq
-            << " root and " << two_links_children_ineq_sum << " child links" << std::endl;
+            << " root and " << two_links_children_ineq_sum << " child links\n";
    }
 
-   adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq, two_links_children_eq_sum, two_links_children_ineq_sum);
+   std::pair<int,int> deleted_myl_mzl = adjustSizesAfterSplit(two_links_children_eq, two_links_children_ineq);
+   data->splitDataAccordingToTree();
    assertTreeStructureCorrect();
+
+   assert( children.size() == data->children.size() );
+
+   std::pair<int,int> deleted_children(0,0);
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      if( n_layers - 1 > 1 )
+      {
+         if( children[i]->sub_root->getCommWorkers() != MPI_COMM_NULL )
+         {
+            std::pair<int,int> child_deleted = children[i]->sub_root->splitTree( n_layers - 1, data->children[i] );
+            children[i]->MYL -= child_deleted.first;
+            children[i]->MZL -= child_deleted.second;
+
+            deleted_children = std::make_pair( deleted_children.first + child_deleted.first, deleted_children.second + child_deleted.second);
+            data->children[i]->splitStringMatricesAccordingToSubtreeStructure();
+         }
+      }
+   }
+   MYL -= deleted_children.first;
+   MZL -= deleted_children.second;
+
+   assertTreeStructureCorrect();
+   data->recomputeSize();
+   return std::make_pair<int,int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
-
-sTree* sTreeCallbacks::switchToHierarchicalTree( int nx_to_shave, int myl_to_shave, int mzl_to_shave,
-      const std::vector<int>& /*twoLinksStartBlockA*/, const std::vector<int>& /*twoLinksStartBlockC*/ )
+sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
 {
+   assert( data->exploitingLinkStructure() );
+
+   const int n_layers = pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS");
+
    assert( !is_hierarchical_root );
    assert( np == -1 );
-
-   assert( nx_to_shave >= 0 );
-   assert( myl_to_shave >=0 );
-   assert( mzl_to_shave >= 0 );
-
-   assert( nx_to_shave <= nx_active );
-   assert( myl_to_shave <= myl_active );
-   assert( mzl_to_shave <= mzl_active );
+   assertTreeStructureCorrect();
 
    /* distributed preconditioner must be deactivated */
    assert( !distributedPreconditionerActive() );
 
-//   this->splitTreeSquareRoot( twoLinksStartBlockA, twoLinksStartBlockC );
-
-   sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
-
-   return top_layer;
-}
-
-sTree* sTreeCallbacks::collapseDenseBorder()
-{
-   /* this must happen at MPI_COMM_WORLD level */
-   assert( is_hierarchical_root );
-   assert( rankMe == PIPS_MPIgetRank() );
-   assert( numProcs == PIPS_MPIgetSize() );
-   assert( children.size() == 1 );
-
-   sTreeCallbacks* new_top = dynamic_cast<sTreeCallbacks*>(children[0]);
-   children.clear();
-
-   commWrkrs = MPI_COMM_NULL;
-   myProcs.clear();
-
-   new_top->N = N;
-   N = -1;
-   MY = -1;
-   new_top->MYL = MYL;
-   MYL = -1;
-   MZ = -1;
-   new_top->MZL = MZL;
-   MZL = -1;
-
-   numProcs = -1;
-
-   new_top->nx_active += nx_active;
-   nx_active = -1;
-   assert( my_active == - 1 );
-   assert( mz_active == - 1 );
-
-   new_top->myl_active += myl_active;
-   myl_active = -1;
-   new_top->mzl_active += mzl_active;
-   mzl_active = -1;
-
-   return new_top;
-}
-
-sTree* sTreeCallbacks::collapseHierarchicalTree()
-{
-   return collapseDenseBorder();
-}
-
-void sTreeCallbacks::splitMatrixAccordingToTree( StochSymMatrix& /*mat*/ ) const
-{
-
-   assert( false && "TODO : implement " );
-
-}
-
-void sTreeCallbacks::splitMatrixAccordingToTree( StochGenMatrix& /*mat*/ ) const
-{
-   assert( false && "TODO : implement " );
-
-}
-
-void sTreeCallbacks::splitVectorAccordingToTree( StochVector& vec ) const
-{
-   assert( map_node_sub_root.size() == vec.children.size() );
-
-   std::vector<StochVector*> sub_roots(this->children.size());
-
-   for( size_t i = 0; i < this->children.size(); ++i )
+   if( n_layers >= 1 )
    {
-//      sub_roots = new StochVector( , , this->children[i]->commWrkrs);
+      if( PIPS_MPIgetRank() == 0 )
+      {
+         std::cout << "Building hierarchical data\n";
+         std::cout << "Adding " << n_layers << " layers to hierarchical data\n";
+      }
+
+      if( n_layers > 1 && pips_options::getBoolParameter("HIERARCHICAL_APPLY_SPLIT") )
+      {
+         splitTree( n_layers, data );
+         assertTreeStructureCorrect();
+         printProcessTree();
+
+         if( map_node_sub_root.empty() )
+         {
+            if( PIPS_MPIgetRank() == 0 )
+               std::cout << "Not a single split has been applied - hierarchical approach will have no additional sparse layers\n";
+            pips_options::setIntParameter("HIERARCHICAL_APPROACH_N_LAYERS", 1);
+         }
+      }
+
+      const int nx_to_shave = data->getNGlobalVars();
+      const int myl_to_shave = data->getNGlobalEQConss();
+      const int mzl_to_shave = data->getNGlobalINEQConss();
+
+      assert( nx_to_shave >= 0 );
+      assert( myl_to_shave >=0 );
+      assert( mzl_to_shave >= 0 );
+
+      assert( nx_to_shave <= nx_active );
+      assert( myl_to_shave <= myl_active );
+      assert( mzl_to_shave <= mzl_active );
+
+      sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder( nx_to_shave, myl_to_shave, mzl_to_shave ) );
+      data = data->shaveDenseBorder( top_layer );
+
+      if( PIPS_MPIgetRank() == 0 )
+         std::cout << "Hierarchical data built\n";
+
+      return top_layer;
    }
-
-   assert( false && "TODO : implement " );
-
+   else
+      return this;
 }
 
-void sTreeCallbacks::splitDataAccordingToTree( sData& data ) const
+std::vector<MPI_Comm> sTreeCallbacks::getChildComms() const
 {
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.g) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.bux) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.ixupp) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.blx) );
-   splitVectorAccordingToTree( dynamic_cast<StochVector&>(*data.ixlow) );
+   std::vector<MPI_Comm> comms(children.size(), MPI_COMM_NULL);
 
-   //   /* we ordered global linking vars first and global linking rows to the end */
+   for( unsigned int i = 0; i < children.size(); ++i )
+      comms[i] = children[i]->commWrkrs;
 
-   splitMatrixAccordingToTree(dynamic_cast<StochSymMatrix&>(*data.Q));
-   assert( false && "TODO : implement " );
-//
-//   StochVector* bA_hier = dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false);
-//
-//   StochVector* bu_hier = dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false);
-//   StochVector* icupp_hier = dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false);
-//   StochVector* bl_hier = dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false);
-//   StochVector* iclow_hier = dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false);
-//
-
+   return comms;
 }

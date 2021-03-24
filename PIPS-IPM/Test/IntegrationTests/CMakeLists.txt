@@ -1,0 +1,13 @@
+include_directories(../../Core/QpGen)
+include_directories(../../Core/QpSolvers)
+include_directories(../../Core/QpStoch)
+include_directories(../../Core/QpPreprocess)
+include_directories(../../Core/StochLinearAlgebra)
+include_directories(../../Core/Vector)
+include_directories(../../Core/Abstract)
+include_directories(../../Core/Utilities)
+include_directories(../../Core/SparseLinearAlgebra)
+include_directories(../../Drivers/gmspips)
+
+package_add_test( pipsTest t_pips.cpp )
+package_add_test( presolveTest t_presolvers.cpp )

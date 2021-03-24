@@ -6,42 +6,10 @@
 #include "SimpleVector.h"
 #include <cassert>
 
+#include "OoqpBlas.h"
 #include "DenseSymMatrix.h"
 
-
-#ifndef FNAME
-#ifndef __bg__
-#define FNAME(f) f ## _
-#else
-#define FNAME(f) f // no underscores for fortran names on bgp
-#endif
-#endif
-
-// declarations for LAPACK functions used to factor/solve:
-
-extern "C" void FNAME(dpotrf)(char *uplo,
-      int *n, double *A, int*lda, int*info);
-
-extern "C" void FNAME(dtrsm)(char *side,
-      char *uplo, char *transa, char *diag,
-      int* m, int *n, double *alpha, double *A,
-      int *lda, double *B, int *ldb);
-
-extern "C" void FNAME(dsyrk)(char *uplo,
-      char *trans, int* n, int* k, double *alpha,
-      double *A, int *lda, double *beta,
-      double *C, int *ldc);
-
-extern "C" void FNAME(dtrsv)(char *uplo,
-      char *trans, char* diag, int *n,
-      double *A, int *lda, double *x,
-      int *incx);
-
-extern "C" void FNAME(dscal)(int *n,
-      double *alpha, double *x, int *incx);
-
-
-DeSymIndefSolver2::DeSymIndefSolver2( DenseSymMatrix * dm, int nx ) : nx(nx)
+DeSymIndefSolver2::DeSymIndefSolver2( const DenseSymMatrix * dm, int nx ) : nx(nx)
 {
   mStorage = dm->getStorageHandle();
 
@@ -80,7 +48,7 @@ void DeSymIndefSolver2::matrixChanged()
 
   FNAME(dpotrf)(&fortranUplo,&nx,mat,&n,&info);
   if (info != 0) {
-    cerr << "error factoring Q block: info = " << info << endl;
+     std::cerr << "error factoring Q block: info = " << info << "\n";
   }
   assert(info==0);
   if (ny == 0) return;
@@ -100,7 +68,7 @@ void DeSymIndefSolver2::matrixChanged()
 
   FNAME(dpotrf)(&fortranUplo,&ny,mat+nx*n+nx,&n,&info);
   if (info != 0) {
-    cerr << "error factoring AQ^-1A^T block: info = " << info << endl;
+    std::cerr << "error factoring AQ^-1A^T block: info = " << info << "\n";
   }
   assert(info==0);
 

@@ -10,11 +10,12 @@
 #include "StochVector.h"
 #include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
+#include "sTreeCallbacks.h"
 
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix(bool is_vertical, SparseGenMatrix* mat, SparseGenMatrix* mat_link, MPI_Comm mpi_comm_)
+StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_)
    : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
 {
    assert(mat);
@@ -72,6 +73,11 @@ void StringGenMatrix::addChild(StringGenMatrix* child)
    }
 }
 
+bool StringGenMatrix::isEmpty() const
+{
+   return !mat && !mat_link && children.empty() && m == 0 && n == 0;
+}
+
 int StringGenMatrix::isKindOf( int type ) const
 {
    return (type == kStringGenMatrix || type == kStringMatrix || type == kGenMatrix);
@@ -112,33 +118,32 @@ void StringGenMatrix::mult(double beta, OoqpVector& y, double alpha, const OoqpV
    if( is_vertical )
       multVertical(beta, y, alpha, x);
    else
-      multHorizontal(beta, y, alpha, x);
+      multHorizontal(beta, y, alpha, x, true);
 }
 
 void StringGenMatrix::transMult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const
 {
    if( is_vertical )
-      transMultVertical(beta, y, alpha, x);
+      transMultVertical(beta, y, alpha, x, true);
    else
       transMultHorizontal(beta, y, alpha, x);
 }
 
-void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const
+void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
    assert( is_vertical );
-   assert( y.children.size() == children.size() );
-   if( y.vecl )
-      assert( mat_link );
-   else
-      assert( mat_link == nullptr );
+   assert( y.children.size() == children.size());
 
    mat->mult(beta, *y.vec, alpha, x);
 
    if( mat_link )
+   {
+      assert( y.vecl );
       mat_link->mult(beta, *y.vecl, alpha, x);
+   }
 
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -149,64 +154,75 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
    }
 }
 
-void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in, bool root ) const
 {
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( !is_vertical );
    assert( x.children.size() == children.size() );
-   if( children.size() == 0 )
-   {
-      assert( !distributed );
-      assert( rank == 0 );
-   }
    assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
 
-   if( rank == 0 )
-      mat->mult(beta, y, alpha, *x.vec);
+   if( mat->isKindOf(kStringGenMatrix) )
+   {
+      assert( !mat_link );
+      assert( children.empty() );
+      assert( !root );
+      dynamic_cast<const StringGenMatrix*>(mat)->multHorizontal(1.0, y, alpha, *x.vec, false);
+   }
    else
-      y.setToZero();
+   {
+      if( PIPS_MPIiAmSpecial( distributed, mpi_comm ) )
+      {
+         mat->mult( root ? beta : 1.0, y, alpha, *x.vec);
+         if( mat_link )
+            mat_link->mult(1.0, y, alpha, *x.vecl);
+      }
+      else if( root )
+         y.setToZero();
 
-   for( size_t i = 0; i < children.size(); ++i )
-      children[i]->multHorizontal(1.0, y, alpha, *x.children[i]);
+      for( size_t i = 0; i < children.size(); ++i )
+         children[i]->multHorizontal(1.0, y, alpha, *x.children[i], false);
 
-   if( distributed )
-      PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
-
-   if( mat_link )
-      mat->mult(1.0, y, alpha, *x.vecl);
+      if( distributed && root )
+         PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
+   }
 }
 
-void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in, bool root ) const
 {
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
 
    assert( is_vertical );
    assert(x.children.size() == children.size());
-   if( children.size() == 0 )
-   {
-      assert( !distributed );
-      assert( rank == 0 );
-   }
-
    assert( x.vec && mat );
    assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
 
-   if( rank == 0 )
-      mat->transMult(beta, y, alpha, *x.vec);
+   if( mat->isKindOf(kStringGenMatrix) )
+   {
+      assert( !mat_link );
+      assert( children.empty() );
+      assert( !root );
+      dynamic_cast<StringGenMatrix*>(mat)->transMultVertical(1.0, y, alpha, *x.vec, false);
+   }
    else
-      y.setToZero();
+   {
+      if( rank == 0 )
+      {
+         mat->transMult( root ? beta : 1.0, y, alpha, *x.vec);
+         if( mat_link )
+            mat_link->transMult(1.0, y, alpha, *x.vecl);
+      }
+      else if( root )
+         y.setToZero();
 
-   for( size_t i = 0; i < children.size(); i++ )
-      children[i]->transMultVertical(1.0, y, alpha, *x.children[i]);
+      for( size_t i = 0; i < children.size(); i++ )
+         children[i]->transMultVertical(1.0, y, alpha, *x.children[i], false);
 
-   if( distributed )
-      PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
-
-   if( mat_link )
-      mat_link->transMult(1.0, y, alpha, *x.vecl);
+      if( distributed && root )
+         PIPS_MPIsumArrayInPlace(y.elements(), y.length(), mpi_comm);
+   }
 }
 
 void StringGenMatrix::transMultHorizontal ( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
@@ -567,19 +583,170 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
       addColSumsHorizontal( vec );
 }
 
-std::string StringGenMatrix::writeToStreamDenseRowChildren(int row) const
+void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms )
 {
-   std::string str_all;
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      if( children[it]->isKindOf(kStringGenDummyMatrix) )
-         continue;
-      else
-         assert( children[it]->mat );
+#ifndef NDEBUG
+   const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
+   assert( child_comms.size() == n_new_children );
+   assert( children.size() == map_child_subchild.size() );
+#endif
 
-      std::string str = children[it]->mat->writeToStreamDenseRow(row);
-      str_all.append(str);
+   unsigned int n_children{0};
+   for( unsigned int i = 0; i < map_child_subchild.size(); ++i )
+   {
+      if( child_comms[n_children] == MPI_COMM_NULL )
+      {
+         addChild( new StringGenDummyMatrix() );
+         delete children[i];
+         while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1])
+         {
+            ++i;
+            delete children[i];
+         }
+      }
+      else
+      {
+         SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix( 0, n, 0 ) : new SparseGenMatrix( m, 0, 0 );
+         StringGenMatrix* new_child = new StringGenMatrix( is_vertical, empty_filler, nullptr, child_comms[n_children]);
+
+         /* will not change size of StringGenMat since new_child is of size zero */
+         addChild(new_child);
+
+         new_child->addChild( children[i] );
+
+         while( i + 1 != map_child_subchild.size() && map_child_subchild[i] == map_child_subchild[i + 1] )
+         {
+            ++i;
+            new_child->addChild(children[i]);
+         }
+      }
+
+      ++n_children;
    }
-   return str_all;
+
+   assert( n_children == n_new_children );
+   assert( children.size() == n_new_children + map_child_subchild.size() );
+
+   children.erase( children.begin(), children.begin() + map_child_subchild.size() );
+   assert( children.size() == n_new_children );
 }
 
+GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
+{
+   assert( !is_vertical );
+
+   assert( mat );
+   GenMatrix* mat_border = mat->shaveBottom( n_rows );
+   GenMatrix* matlink_border = mat_link ? mat_link->shaveBottom( n_rows ) : nullptr;
+
+   StringGenMatrix* border = new StringGenMatrix( false, mat_border, matlink_border, mpi_comm );
+
+#ifndef NDEBUG
+   int mB, nB;
+   border->getSize(mB,nB);
+   assert( mB == n_rows );
+#endif
+   for( auto& child : children )
+      border->addChild( dynamic_cast<StringGenMatrix*>(child->shaveBottom(n_rows) ) );
+
+   m -= n_rows;
+   return border;
+}
+
+void StringGenMatrix::writeToStreamDense( std::ostream& out ) const
+{
+   assert( !is_vertical );
+   for( int i = 0; i < m; ++i )
+   {
+      writeToStreamDenseRow( out, i );
+      out << "\n";
+   }
+}
+
+void StringGenMatrix::writeToStreamDenseRow( std::ostream& out, int row ) const
+{
+   assert( !is_vertical );
+
+   const int my_rank = PIPS_MPIgetRank(mpi_comm);
+
+   std::ostringstream row_stream{};
+   mat->writeToStreamDenseRow( row_stream, row );
+
+   if( my_rank != 0 )
+   {
+      row_stream.str("");
+      row_stream.clear();
+   }
+
+   for( auto& child : children )
+      child->writeToStreamDenseRow( row_stream, row );
+
+   const std::string my_row_part = row_stream.str();
+   const std::string full_row = PIPS_MPIallgatherString( my_row_part, mpi_comm );
+
+   if( my_rank == 0 )
+      out << full_row;
+
+   if( mat_link && my_rank == 0 )
+      mat_link->writeToStreamDenseRow( out, row );
+}
+
+void StringGenMatrix::writeDashedLineToStream( std::ostream& out ) const
+{
+   assert( !is_vertical );
+
+   std::stringstream row_stream{};
+
+   mat->writeDashedLineToStream( row_stream );
+
+   if( PIPS_MPIgetRank(mpi_comm) != 0 )
+   {
+      row_stream.str("");
+      row_stream.clear();
+   }
+
+   for( auto& child : children )
+      child->writeDashedLineToStream( row_stream );
+
+   const std::string my_row_part = row_stream.str();
+   const std::string full_row = PIPS_MPIallgatherString( my_row_part, mpi_comm );
+
+   if( PIPS_MPIgetRank(mpi_comm) == 0 )
+      out << full_row;
+
+   if( mat_link && PIPS_MPIgetRank(mpi_comm) == 0 )
+      mat_link->writeDashedLineToStream( out );
+}
+
+void StringGenMatrix::splitAlongTree( const sTreeCallbacks& tree )
+{
+   if( tree.getMapBlockSubTrees().empty() )
+      return;
+   combineChildrenInNewChildren(tree.getMapBlockSubTrees(), tree.getChildComms() );
+
+   assert( tree.getChildComms().size() == children.size() );
+
+   for( size_t i = 0; i < children.size(); ++i )
+   {
+      auto& child = children[i];
+      StringGenMatrix* new_child = new StringGenMatrix( is_vertical, child, nullptr, tree.getChildComms()[i]);
+      child = new_child;
+   }
+
+   assert( children.size() == tree.getChildren().size() );
+   const auto tree_children = tree.getChildren();
+   for( size_t i = 0; i < tree_children.size(); ++i )
+   {
+      const auto& tree_child = tree_children[i];
+      if( tree_child->getCommWorkers() == MPI_COMM_NULL )
+      {
+         delete children[i];
+         children[i] = new StringGenDummyMatrix();
+      }
+      else if( tree_child->getSubRoot() )
+      {
+         assert( children[i]->mat->isKindOf(kStringGenMatrix) );
+         dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
+      }
+   }
+}

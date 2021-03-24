@@ -15,13 +15,13 @@
 #pragma GCC diagnostic pop
 
 #include <cassert>
+#include <memory>
 
 class QpGenData;
 class sData;
 
 class QpGenVars;
 class StochInputTree;
-//class stochasticInput;
 class sTree;
 class StochSymMatrix;
 class sResiduals;
@@ -29,18 +29,20 @@ class sVars;
 class sLinsys;
 class sLinsysRoot;
 class sLinsysLeaf;
+class DoubleLinearSolver;
+class DoubleMatrix;
 
 #include "StochResourcesMonitor.h"
 
 class sFactory : public QpGen
 {
-   public:
+ public:
 
-      sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
+  sFactory( StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD );
 
-   protected:
-      sFactory() = default;
-      ~sFactory() override;
+ protected:
+  sFactory() = default;
+  ~sFactory() override;
 
  public:
 
@@ -58,11 +60,10 @@ class sFactory : public QpGen
   /** create rhs for augmented system using tree */
   OoqpVector* makeRhs() const override;
 
-
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
   virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 
-  virtual void collapseHierarchicalTree() { assert( 0 && "not implemented here" ); }
+  virtual void switchToOriginalTree() { assert( 0 && "not implemented here" ); }
 
   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override
   { assert(0 && "not implemented here"); };
@@ -75,6 +76,9 @@ class sFactory : public QpGen
         OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs ) = 0;
   virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd, OoqpVector* dq,
 				     OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs );
+
+  virtual DoubleLinearSolver* newRootSolver() = 0;
+  virtual DoubleLinearSolver* newLeafSolver( const DoubleMatrix* kkt );
 
   sTree * tree{};
   sData * data{};
@@ -89,6 +93,9 @@ class sFactory : public QpGen
 
   StochIterateResourcesMonitor iterTmMonitor;
   double m_tmTotal{0.0};
+
+ protected:
+  std::unique_ptr<sTree> hier_tree_swap{};
 };
 
 #endif

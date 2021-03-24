@@ -20,8 +20,8 @@
 #include "StochColumnStorage.h"
 
 class StochPostsolver : public QpPostsolver {
-public:
 
+   public:
       StochPostsolver( const sData& original_problem );
       virtual ~StochPostsolver();
 
@@ -83,13 +83,13 @@ private:
 public:
       /// synchronization events
 
-      PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution) override;
+      PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code) override;
 private:
 
       const int my_rank{ PIPS_MPIgetRank() };
       const bool distributed{ PIPS_MPIgetDistributed() };
 
-      const double postsolve_tol;
+      double postsolve_tol;
       const double INF_NEG;
       const double INF_POS;
 

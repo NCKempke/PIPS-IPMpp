@@ -52,7 +52,7 @@ extern "C" {
 
 #define SHRINK_SC
 
-PardisoSchurSolver::PardisoSchurSolver( SparseSymMatrix * sgm ) :
+PardisoSchurSolver::PardisoSchurSolver( const SparseSymMatrix * sgm ) :
       Msys{ sgm }
 {
   const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -397,7 +397,7 @@ void PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R,
 
     assert(idxDiagAug>=0);
 
-    diagMap.insert( pair<int,int>(idxDiagMsys,idxDiagAug) );
+    diagMap.insert( std::pair<int,int>(idxDiagMsys,idxDiagAug) );
   }
 
   //convert to Fortran indexing
@@ -422,7 +422,7 @@ bool PardisoSchurSolver::iparmUnchanged()
    setIparm(iparm_compare);
 
 
-   vector<int> to_compare(check_iparm, check_iparm + sizeof(check_iparm) / sizeof(check_iparm[0]) );
+   std::vector<int> to_compare(check_iparm, check_iparm + sizeof(check_iparm) / sizeof(check_iparm[0]) );
 
    for(int i = 0; i < 64; ++i)
    {

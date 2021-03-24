@@ -40,8 +40,7 @@ public:
 
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
-
-  void writeToStream(ostream& out) const override;
+  void writeToStream(std::ostream& out) const override;
   void writeToStreamDense(std::ostream& out) const override;
   void randomizePSD(double * seed) override;
 
@@ -103,7 +102,9 @@ public:
   long long size() const override;
 
   DenseStorage& getStorageRef() { return *mStorage; }
+  const DenseStorage& getStorageRef() const { return *mStorage; }
   DenseStorageHandle  getStorageHandle() { return mStorage; }
+  const DenseStorageHandle  getStorageHandle() const { return mStorage; }
 
   /* this = alpha * op(A)*op(B)  +   beta * this */
   void matMult(double alpha,

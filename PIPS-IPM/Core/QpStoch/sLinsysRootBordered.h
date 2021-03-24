@@ -23,18 +23,16 @@ class sLinsysRootBordered : public sLinsysRoot
       void Dsolve(sData*, OoqpVector& x) override;
       void Ltsolve(sData*, OoqpVector& v) override;
 
+      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0, bool ) override;
    protected:
       SymMatrix* createKKT(sData*);
       void assembleLocalKKT(sData* prob) override;
       void reduceKKT(sData*) override;
 
-      DoubleLinearSolver* createSolver(sData*, SymMatrix* kktmat);
-
+      DoubleLinearSolver* createSolver(sData*, const SymMatrix* kktmat);
    private:
       void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );
-      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0 );
 
-      std::unique_ptr<StochVector> sol_inner{};
 };
 
 #endif /* PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_ */

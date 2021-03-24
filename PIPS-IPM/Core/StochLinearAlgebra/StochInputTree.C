@@ -21,7 +21,7 @@ StochInputTree::StochInputTree(StochInputNode* root)
 StochInputTree::~StochInputTree() 
 {
   if (nodeInput) delete nodeInput;
-  for (size_t it=0; it<children.size(); it++) delete children[it];
+  for (size_t it = 0; it < children.size(); it++) delete children[it];
 }
 
 void StochInputTree::AddChild(const StochInputNode  &node)
@@ -38,6 +38,11 @@ void StochInputTree::AddChild(StochInputTree *subTree)
 //************************** NODE ***************************
 //***********************************************************
 StochInputTree::StochInputNode::
+StochInputNode( int id_, int n_, int my_, int myl_, int mz_, int mzl_)
+  : id{id_}, n{n_}, my{my_}, myl{myl_}, mz{mz_}, mzl{mzl_}
+{}
+
+StochInputTree::StochInputNode::
 StochInputNode(void* user_data_, int id_, 
 	       int n_, int my_, int mz_,
 	       FMAT fQ_, FNNZ fnnzQ_, FVEC fc_, 
@@ -51,18 +56,13 @@ StochInputNode(void* user_data_, int id_,
 	       FVEC fxlow_, FVEC fixlow_, 
 	       FVEC fxupp_, FVEC fixupp_,
 	       bool deleteUserData_/*=false*/)
-  : id(id_), n(n_), my(my_), myl(-1), mz(mz_), mzl(-1),
-    nnzQ(-1), nnzA(-1), nnzB(-1), nnzBl(-1), nnzC(-1), nnzD(-1), nnzDl(-1),
-    nCall(nullptr), myCall(nullptr), mzCall(nullptr), mylCall(nullptr), mzlCall(nullptr),
-    fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzBl(nullptr), fnnzC(fnnzC_), fnnzD(fnnzD_), fnnzDl(nullptr),
-    fQ(fQ_), fA(fA_), fB(fB_), fBl(nullptr), fC(fC_), fD(fD_), fDl(nullptr),
-    fc(fc_), fb(fb_), fbl(nullptr),
-    fclow(fclow_), fcupp(fcupp_), ficlow(ficlow_), ficupp(ficupp_),
-	 fdllow(nullptr), fdlupp(nullptr), fidllow(nullptr), fidlupp(nullptr),
+  : id(id_), n(n_), my(my_), mz(mz_), fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzC(fnnzC_), fnnzD(fnnzD_),
+    fQ(fQ_), fA(fA_), fB(fB_), fC(fC_), fD(fD_),
+    fc(fc_), fb(fb_), fclow(fclow_), fcupp(fcupp_), ficlow(ficlow_), ficupp(ficupp_),
     fxlow(fxlow_), fxupp(fxupp_), fixlow(fixlow_), fixupp(fixupp_), 
     user_data(user_data_), 
     deleteUserData(deleteUserData_)
-{ }
+{}
 
 
 // full callback constructor without constraints
@@ -80,14 +80,9 @@ StochInputNode(void* user_data_, int id_,
           FVEC fxlow_, FVEC fixlow_,
           FVEC fxupp_, FVEC fixupp_,
           bool deleteUserData_/*=false*/)
-  : id(id_), n(-1), my(-1), myl(-1), mz(-1), mzl(-1),
-    nnzQ(-1), nnzA(-1), nnzB(-1), nnzBl(-1), nnzC(-1), nnzD(-1), nnzDl(-1),
-    nCall(n_), myCall(my_), mzCall(mz_), mylCall(nullptr), mzlCall(nullptr),
-    fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzBl(nullptr), fnnzC(fnnzC_), fnnzD(fnnzD_), fnnzDl(nullptr),
-    fQ(fQ_), fA(fA_), fB(fB_), fBl(nullptr), fC(fC_), fD(fD_), fDl(nullptr),
-    fc(fc_), fb(fb_), fbl(nullptr),
-    fclow(fclow_), fcupp(fcupp_), ficlow(ficlow_), ficupp(ficupp_),
-    fdllow(nullptr), fdlupp(nullptr), fidllow(nullptr), fidlupp(nullptr),
+  : id(id_), nCall(n_), myCall(my_), mzCall(mz_), fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_),
+    fnnzC(fnnzC_), fnnzD(fnnzD_), fQ(fQ_), fA(fA_), fB(fB_), fC(fC_), fD(fD_),
+    fc(fc_), fb(fb_), fclow(fclow_), fcupp(fcupp_), ficlow(ficlow_), ficupp(ficupp_),
     fxlow(fxlow_), fxupp(fxupp_), fixlow(fixlow_), fixupp(fixupp_),
     user_data(user_data_),
     deleteUserData(deleteUserData_)
@@ -104,7 +99,7 @@ StochInputNode(void* user_data_, int id_,
 	       FVEC fb_, FVEC fbl_,
 	       FMAT fC_, FNNZ fnnzC_,
 	       FMAT fD_, FNNZ fnnzD_,
-		   FMAT fDl_, FNNZ fnnzDl_,
+		    FMAT fDl_, FNNZ fnnzDl_,
 	       FVEC fclow_, FVEC ficlow_,
 	       FVEC fcupp_, FVEC ficupp_,
 	       FVEC fdllow_, FVEC fidllow_,
@@ -112,9 +107,7 @@ StochInputNode(void* user_data_, int id_,
 	       FVEC fxlow_, FVEC fixlow_,
 	       FVEC fxupp_, FVEC fixupp_,
 	       bool deleteUserData_/*=false*/)
-  : id(id_), n(-1), my(-1), myl(-1), mz(-1), mzl(-1),
-    nnzQ(-1), nnzA(-1), nnzB(-1), nnzBl(-1), nnzC(-1), nnzD(-1), nnzDl(-1),
-    nCall(n_), myCall(my_), mzCall(mz_), mylCall(myl_), mzlCall(mzl_),
+  : id(id_), nCall(n_), myCall(my_), mzCall(mz_), mylCall(myl_), mzlCall(mzl_),
     fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzBl(fnnzBl_), fnnzC(fnnzC_), fnnzD(fnnzD_), fnnzDl(fnnzDl_),
     fQ(fQ_), fA(fA_), fB(fB_), fBl(fBl_), fC(fC_), fD(fD_), fDl(fDl_),
     fc(fc_), fb(fb_), fbl(fbl_),
@@ -126,16 +119,8 @@ StochInputNode(void* user_data_, int id_,
 { }
 
 StochInputTree::StochInputNode::StochInputNode( int id_ )
-  : id(id_), n(-1), my(-1), myl(-1), mz(-1), mzl(-1),
-    nnzQ(-1), nnzA(-1), nnzB(-1), nnzBl(-1), nnzC(-1), nnzD(-1), nnzDl(-1),
-    nCall(nullptr), myCall(nullptr), mzCall(nullptr), mylCall(nullptr), mzlCall(nullptr),
-    fnnzQ(nullptr), fnnzA(nullptr), fnnzB(nullptr), fnnzBl(nullptr), fnnzC(nullptr), fnnzD(nullptr),
-    fnnzDl(nullptr), fQ(nullptr), fA(nullptr), fB(nullptr), fBl(nullptr), fC(nullptr), fD(nullptr), fDl(nullptr),
-    fc(nullptr), fb(nullptr), fbl(nullptr), fclow(nullptr), fcupp(nullptr), ficlow(nullptr), ficupp(nullptr),
-    fdllow(nullptr), fdlupp(nullptr), fidllow(nullptr), fidlupp(nullptr), fxlow(nullptr), fxupp(nullptr), fixlow(nullptr), fixupp(nullptr),
-    user_data(nullptr), 
-    deleteUserData(false)
-{ }
+  : id(id_)
+{}
 
 
 StochInputTree::StochInputNode::~StochInputNode() 

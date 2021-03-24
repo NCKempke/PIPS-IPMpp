@@ -31,28 +31,30 @@ private:
 
   // note: also used for dummy class!
   virtual void deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent);
-  virtual void writeToStreamDenseChild(stringstream& out, int offset) const;
+  virtual void writeToStreamDenseChild(std::stringstream& out, int offset) const;
 
 public:
+  StochSymMatrix( SymMatrix* diag, SparseGenMatrix* border, MPI_Comm mpiComm );
+
   /** Constructs a matrix with local size 'local_n' having 'local_nnz' local nonzeros
       and set the global size and the id to to 'global_n' and 'id', respectively.
       The parameter 'id' is used for output/debug purposes only.
       The created matrix will have no children.*/
   StochSymMatrix( long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm );
 
-  virtual ~StochSymMatrix();
+  ~StochSymMatrix() override;
 
   std::vector<StochSymMatrix*> children;
-  SparseSymMatrix* diag{};
+  SymMatrix* diag{};
   SparseGenMatrix* border{};
 
-  long long n;
-  MPI_Comm mpiComm;
-  int iAmDistrib;
+  long long n{0};
+  MPI_Comm mpiComm{MPI_COMM_NULL};
+  int iAmDistrib{0};
   
   void AddChild(StochSymMatrix* child);
 
-  virtual StochSymMatrix* clone() const;
+  SymMatrix* clone() const override;
 
   int isKindOf( int type ) const override;
 
@@ -101,11 +103,14 @@ public:
 
   // TODO specify border bottom and left..
   virtual BorderedSymMatrix* raiseBorder( int n_vars );
+  virtual void splitMatrix( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms );
 
+  virtual void recomputeSize();
  protected:
-  virtual void shaveBorder(int n_vars, StringGenMatrix*& border_vertical);
+  virtual StringGenMatrix* shaveBorder(int n_vars);
+  virtual StringGenMatrix* shaveBorder2(int n_vars);
 
-  StochSymMatrix* parent;
+  StochSymMatrix* parent{};
 };
 
 /** 
@@ -124,7 +129,7 @@ public:
 
   ~StochSymDummyMatrix() override = default;
 
-  StochSymDummyMatrix* clone() const override { return new StochSymDummyMatrix(); };
+  SymMatrix* clone() const override { return new StochSymDummyMatrix(); };
 
   int isKindOf( int type ) const override;
 
@@ -165,10 +170,12 @@ public:
   void scalarMult( double ) override {};
 
   BorderedSymMatrix* raiseBorder( int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
+  void splitMatrix( const std::vector<unsigned int>&, const std::vector<MPI_Comm>& ) override {};
+  void recomputeSize() override {};
 
  protected:
-  void shaveBorder( int, StringGenMatrix*& border_vertical ) override
-     { border_vertical = new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveBorder( int ) override { return new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveBorder2( int ) override { return new StringGenDummyMatrix(); };
 
 };
 

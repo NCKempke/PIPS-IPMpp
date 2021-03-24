@@ -17,48 +17,36 @@
 
 int SparseStorage::instances = 0;
 
-SparseStorage::SparseStorage( int m_, int n_, int len_ )
+SparseStorage::SparseStorage( int m_, int n_, int len_ ) :
+      m{m_}, n{n_}, len{len_}
 {
-  if( n_ <= 0 )
-     assert( len_ == 0 );
-  assert( m_ >= -1 );
+   assert( m_ >= 0 );
+   assert( len_ >= 0 );
+   if( n_ <= 0 )
+      assert( len_ == 0 );
+   neverDeleteElts = 0;
 
-  neverDeleteElts = 0;
-  m      = m_;
-  n      = n_;
-  len    = len_;
-  jcolM  = new int[len];
-  krowM  = new int[m+1];
-  for( int i = 0; i <= m; i++ ) {
-    krowM[i] = 0;
-  }
-  M      = new double[len];
+   jcolM = new int[len];
+   krowM = new int[m+1];
+   M = new double[len];
 
-  isFortranIndexed = false;
+   std::fill( krowM, krowM + m + 1, 0 );
+   std::fill( jcolM, jcolM + len, 0 );
+   std::fill( M, M + len, 0 );
 
-  SparseStorage::instances++;
+   SparseStorage::instances++;
 }
 
-SparseStorage::SparseStorage( int m_, int n_, int len_,
-			      int * krowM_, int * jcolM_, double * M_,
-			      int deleteElts)
+SparseStorage::SparseStorage(int m_, int n_, int len_, int *krowM_, int *jcolM_,
+      double *M_, int deleteElts) :
+         neverDeleteElts{!deleteElts}, m { m_ }, n{n_}, len{len_}, jcolM{jcolM_}, krowM{krowM_}, M{M_}
+
 {
-   if( n_ <= 0 )
-        assert( len_ == 0 );
+   assert( m_ >= 0 );
+   assert( n_ >= 0 );
+   assert( len_ >= 0 );
 
-  neverDeleteElts = (!deleteElts);
-
-  //neverDeleteElts = 1;
-  m               = m_;
-  n               = n_;
-  len             = len_;
-  jcolM           = jcolM_;
-  krowM           = krowM_;
-  M               = M_;
-
-  isFortranIndexed = false;
-
-  SparseStorage::instances++;
+   SparseStorage::instances++;
 }
 
 SparseStorage::~SparseStorage()
@@ -349,7 +337,6 @@ void SparseStorage::fromGetRowsBlock(const int* rowIndices, int nRows, int array
       const int r = rowIndices[i];
       assert(r >= 0 && r < m);
 
-      // empty row?
       if( krowM[r] == krowM[r + 1] )
          continue;
 
@@ -508,7 +495,7 @@ void SparseStorage:: atPutDense( int row, int col, double * A, int lda,
       info = 0;
     }
     if ( info != 0 ) { 
-      cout << "bing\n"; return;
+      std::cout << "bing\n"; return;
     }
 	
     km = km_f;
@@ -651,33 +638,59 @@ void SparseStorage::fromGetSpRow( int row, int col,
   nnz = ka;
 }
 
-void SparseStorage::writeToStream(ostream& out) const
+void SparseStorage::writeToStream(std::ostream& out) const
 {
   int i, k;
 
   for( i = 0; i < m; i++ ) {
     for ( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      out << i << '\t' << jcolM[k] << '\t' << M[k] << endl;
+      out << i << '\t' << jcolM[k] << '\t' << M[k] << "\n";
     }
   }
 }
 
-void SparseStorage::writeToStreamDense( ostream& out) const
+void SparseStorage::writeNNZpatternToStreamDense( std::ostream& out ) const
 {
-   int i, k;
+   for( int row = 0; row < m; row++ )
+   {
+      int col = 0;
+      for( int k = krowM[row]; k < krowM[row + 1]; k++ )
+      {
+#ifndef NDEBUG
+         // assert that columns are ordered
+         assert(k == krowM[row] || jcolM[k - 1] < jcolM[k]);
+#endif
+
+         while( jcolM[k] > col )
+         {
+            out << "   ";
+            col++;
+         }
+         out << " * ";
+         col++;
+      }
+      while( col < n )
+      {
+         out << "   ";
+         col++;
+      }
+      out << "\n";
+   }
+}
+
+void SparseStorage::writeToStreamDense(std::ostream& out) const
+{
    //todo: instead of \t, use length of longest value in M
 
-   for( i = 0; i < m; i++ )
-   { // Row i
-      int j = 0; // Column j
-      for( k = krowM[i]; k < krowM[i + 1]; k++ )
+   for( int i = 0; i < m; i++ )
+   {
+      int j = 0;
+      for( int k = krowM[i]; k < krowM[i + 1]; k++ )
       {
-
 #ifndef NDEBUG
          // assert that columns are ordered
          assert(k == krowM[i] || jcolM[k - 1] < jcolM[k]);
 #endif
-
          while( jcolM[k] > j )
          {
             out << 0 << '\t';
@@ -691,11 +704,11 @@ void SparseStorage::writeToStreamDense( ostream& out) const
          out << 0 << '\t';
          j++;
       }
-      out << endl;
+      out << "\n";
    }
 }
 
-void SparseStorage::writeToStreamDenseRow( stringstream& out, int rowidx) const
+void SparseStorage::writeToStreamDenseRow( std::ostream& out, int rowidx) const
 {
    int j = 0; // Column j
    for( int k = krowM[rowidx]; k < krowM[rowidx + 1]; k++ )
@@ -830,40 +843,81 @@ void indexedLexSort( int first[], int n, int swapFirst,
 void SparseStorage::mult( double beta,  double y[], int incy,
 			      double alpha, const double x[], int incx ) const
 {
-  int i, j, k;
-  double temp;
-  for( i = 0; i < m; i++ ) {
-    temp = 0;
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      j = jcolM[k];
-      temp += M[k] * x[j * incx];
+   int i, j, k;
+   double temp;
+   for( i = 0; i < m; i++ ) {
+      temp = 0;
+      for( k = krowM[i]; k < krowM[i+1]; k++ ) {
+         j = jcolM[k];
+         temp += M[k] * x[j * incx];
 #ifndef NDEBUG
-      assert(j < n);
+         assert(j < n);
 #endif
-    }
-    y[i * incy] = beta * y[i * incy] + alpha * temp;
-  }
+      }
+      y[i * incy] = beta * y[i * incy] + alpha * temp;
+   }
+}
+
+void SparseStorage::multSym( double beta, double y[], int incy, double alpha, const double x[], int incx ) const
+{
+   for ( int i = 0; i < m; i++ )
+      y[i * incy] *= beta;
+
+   for ( int i = 0; i < n; i++ )
+   {
+      for( int k = krowM[i]; k < krowM[i+1]; k++ )
+      {
+         const int j = jcolM[k];
+
+         y[i * incy] += alpha * M[k] * x[j * incx];
+         // todo fixme won't work with Q or any other "really" symmetric matrix!
+         // Necessary because CtDC from sLinsysRootAug is stored as a general matrix
+         if ( i != j )//&& 0 )
+            y[j * incy] += alpha * M[k] * x[i * incx];
+      }
+   }
 }
 
 void SparseStorage::transMult( double beta,  double y[], int incy,
 			       double alpha, const double x[], int incx ) const
 {
-  int i, j, k;
-  if(beta!=1.0) {
-    for( j = 0; j < n; j++ ) {
-      y[j * incy] *= beta;
-    }
-  }
-  for( i = 0; i < m; i++ ) {
-    for( k = krowM[i]; k < krowM[i+1]; k++ ) {
-      j = jcolM[k];
-#ifndef NDEBUG
-      assert(j < n);
-#endif
-      y[j * incy] += alpha * M[k] * x[i * incx];
-    }
-  }
+   if( beta != 1.0 )
+      for(int j = 0; j < n; j++ )
+         y[j * incy] *= beta;
+
+   for(int i = 0; i < m; i++ )
+   {
+      for(int  k = krowM[i]; k < krowM[i+1]; k++ )
+      {
+         const int j = jcolM[k];
+
+         assert(j < n);
+
+         y[j * incy] += alpha * M[k] * x[i * incx];
+      }
+   }
 }
+
+void SparseStorage::transMultD( double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd ) const
+{
+   if( beta != 1.0 )
+      for(int j = 0; j < n; j++ )
+         y[j * incy] *= beta;
+
+   for(int i = 0; i < m; i++ )
+   {
+      for(int  k = krowM[i]; k < krowM[i+1]; k++ )
+      {
+         const int j = jcolM[k];
+
+         assert(j < n);
+         assert( !PIPSisZero(d[i * incxd]) );
+
+         y[j * incy] += alpha * M[k] * x[i * incxd] / d[i * incxd];
+      }
+   }
+}
+
 
 /* Y <- alpha* M^T X + beta*Y
  * Computes only the elements in Y that are lower triangular
@@ -1454,6 +1508,10 @@ void SparseStorage::matTransDSymbMultMat(double*,
   *krowAtDA = new int[n+1];
   *jcolAtDA = new int[nnzAtA];
   *AtDA     = new double[nnzAtA];
+
+  std::uninitialized_fill(*krowAtDA, *krowAtDA + n + 1, 0 );
+  std::uninitialized_fill(*jcolAtDA, *jcolAtDA + nnzAtA, 0 );
+  std::uninitialized_fill(*AtDA, *AtDA + nnzAtA, 0 );
 }
 
 
@@ -1552,7 +1610,7 @@ void SparseStorage::matTransDinvMultMat(double* d,
       W[j]=0.0;
     }
   }
-  krowAtDA[n] =nnzAtA;
+  krowAtDA[n] = nnzAtA;
   delete[] W;
   delete[] flag;
 }
@@ -1592,22 +1650,22 @@ void SparseStorage::reduceToLower()
   //for(int k=krowC
 }
 
-void SparseStorage::dump(const string& filename)
+void SparseStorage::dump(const std::string& filename)
 {
-  ofstream fd(filename.c_str());
-  fd << scientific; 
+  std::ofstream fd(filename.c_str());
+  fd << std::scientific;
   fd.precision(16);
-  fd << m << " " << n << " " << len << endl;
+  fd << m << " " << n << " " << len << "\n";
 
   int i;
   for (i = 0; i <= m; i++) {
     fd << krowM[i] << " ";
   }
-  fd << endl;
+  fd << "\n";
   for (i = 0; i < len; i++) {
     fd << jcolM[i] << " ";
   }
-  fd << endl;
+  fd << "\n";
   for (i = 0; i < len; i++) {
     fd << M[i] << " ";
   }
@@ -1632,7 +1690,10 @@ void SparseStorage::deleteEmptyRowsCols(const int* nnzRowVec, const int* nnzColV
       if( nnzColVec[i] != 0.0 )
          colsmap[i] = n_new++;
 
-   assert(krowM[0] == 0 && "method not fully supported");
+   assert( m_new >= 0 && m_new <= m );
+   assert( n_new >= 0 && n_new <= n );
+
+   assert(krowM[m] == 0 && "method not fully supported");
 
 #if 0
    int nnz = 0;
@@ -2402,6 +2463,37 @@ SparseStorage* SparseStorage::shaveBottom( int n_rows )
    assert( border->isValid() );
 
    return border;
+}
+
+void SparseStorage::dropNEmptyRowsBottom( int n_rows )
+{
+   assert( n_rows <= m );
+   assert( 0 <= n_rows );
+
+   if( n_rows == 0 )
+      return;
+
+   // assert rows are empty
+   assert( krowM[m] - krowM[ m - n_rows ] == 0 );
+   m -= n_rows;
+   assert( this->isValid() );
+}
+
+void SparseStorage::dropNEmptyRowsTop( int n_rows )
+{
+   assert( n_rows <= m );
+   assert( 0 <= n_rows );
+   assert( isValid() );
+
+   if( n_rows == 0 )
+      return;
+
+   assert( krowM[0] - krowM[n_rows] == 0 );
+
+   std::move( krowM + n_rows, krowM + m + 1, krowM );
+   m -= n_rows;
+
+   assert( isValid() );
 }
 
 SparseStorage* SparseStorage::shaveSymLeftBottom( int )

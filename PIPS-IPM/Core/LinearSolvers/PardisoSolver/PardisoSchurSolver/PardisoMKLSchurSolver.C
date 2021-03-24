@@ -17,7 +17,7 @@
 
 extern double g_iterNumber;
 
-PardisoMKLSchurSolver::PardisoMKLSchurSolver( SparseSymMatrix * sm ) :
+PardisoMKLSchurSolver::PardisoMKLSchurSolver( const SparseSymMatrix * sm ) :
    PardisoSchurSolver( sm )
 {}
 
@@ -237,7 +237,7 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
    {
       //update diagonal entries in the PARDISO aug sys
       const double* eltsMsys = Msys->getStorageRef().M;
-      map<int, int>::iterator it;
+      std::map<int, int>::iterator it;
 
 #if 0
       double max = -1e20;

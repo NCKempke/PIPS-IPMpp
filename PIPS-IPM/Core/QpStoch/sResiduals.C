@@ -170,23 +170,61 @@ void sResiduals::createChildren()
   }
 }
 
-void sResiduals::collapseHierarchicalStructure(OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+void sResiduals::collapseHierarchicalStructure(const sData& data_hier, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
-   dynamic_cast<StochVector&>(*rQ).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rv).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rw).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rgamma).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rphi).collapseHierarchicalStructure();
+   dynamic_cast<StochVector&>(*rQ).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
 
-   dynamic_cast<StochVector&>(*rA).collapseHierarchicalStructure();
+   const bool empty_vec = true;
+   if( nxlow > 0 )
+   {
+      dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+      dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+   }
+   else
+   {
+      dynamic_cast<StochVector&>(*rv).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
+      dynamic_cast<StochVector&>(*rgamma).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
+   }
 
-   dynamic_cast<StochVector&>(*rC).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rt).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*ru).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rz).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rlambda).collapseHierarchicalStructure();
-   dynamic_cast<StochVector&>(*rpi).collapseHierarchicalStructure();
+   if( nxupp > 0 )
+   {
+      dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+      dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+   }
+   else
+   {
+      dynamic_cast<StochVector&>(*rw).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
+      dynamic_cast<StochVector&>(*rphi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL, empty_vec);
+   }
+
+   dynamic_cast<StochVector&>(*rA).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Y);
+
+   dynamic_cast<StochVector&>(*rC).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<StochVector&>(*rz).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+
+   if( mcupp > 0 )
+   {
+      dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+      dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   }
+   else
+   {
+      dynamic_cast<StochVector&>(*ru).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
+      dynamic_cast<StochVector&>(*rpi).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
+   }
+
+   if ( mclow > 0 )
+   {
+      dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+      dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   }
+   else
+   {
+      dynamic_cast<StochVector&>(*rt).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
+      dynamic_cast<StochVector&>(*rlambda).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z, empty_vec);
+   }
+
 
    ixlow = ixlow_;
    ixupp = ixupp_;
@@ -209,10 +247,18 @@ void sResiduals::permuteVec0Entries( const std::vector<unsigned int>& perm, bool
    }
 
    dynamic_cast<StochVector&>(*rQ).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*rv).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*rw).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*rgamma).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*rphi).permuteVec0Entries(perm);
+
+   if( nxlow > 0 )
+   {
+      dynamic_cast<StochVector&>(*rv).permuteVec0Entries(perm);
+      dynamic_cast<StochVector&>(*rgamma).permuteVec0Entries(perm);
+   }
+
+   if( nxupp > 0 )
+   {
+      dynamic_cast<StochVector&>(*rw).permuteVec0Entries(perm);
+      dynamic_cast<StochVector&>(*rphi).permuteVec0Entries(perm);
+   }
 }
 
 void sResiduals::permuteEqLinkingEntries( const std::vector<unsigned int>& perm )
@@ -229,11 +275,19 @@ void sResiduals::permuteIneqLinkingEntries( const std::vector<unsigned int>& per
    }
 
    dynamic_cast<StochVector&>(*rC).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*rt).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*ru).permuteLinkingEntries(perm);
    dynamic_cast<StochVector&>(*rz).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*rlambda).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*rpi).permuteLinkingEntries(perm);
+
+   if( mcupp > 0 )
+   {
+      dynamic_cast<StochVector&>(*ru).permuteLinkingEntries(perm);
+      dynamic_cast<StochVector&>(*rpi).permuteLinkingEntries(perm);
+   }
+
+   if ( mclow > 0 )
+   {
+      dynamic_cast<StochVector&>(*rt).permuteLinkingEntries(perm);
+      dynamic_cast<StochVector&>(*rlambda).permuteLinkingEntries(perm);
+   }
 }
 
 bool sResiduals::isRootNodeInSync() const

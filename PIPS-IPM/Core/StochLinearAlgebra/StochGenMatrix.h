@@ -7,6 +7,7 @@
 #include "SparseGenMatrix.h"
 #include "BorderedGenMatrix.h"
 #include "StringGenMatrix.h"
+#include "sTree.h"
 
 #include "pipsport.h"
 #include "mpi.h"
@@ -15,8 +16,11 @@
 
 class StochGenMatrix : public GenMatrix {
 protected:
-
+  StochGenMatrix() = default;
 public:
+
+  StochGenMatrix( GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf = false, bool inner_root = false );
+
   /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
    *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
    *  Also sets the global sizes to 'global_m' and 'global_n'.
@@ -25,7 +29,7 @@ public:
   StochGenMatrix(long long global_m, long long global_n,
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
-		 MPI_Comm mpiComm_);
+		 MPI_Comm mpiComm_ );
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
       A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz. Otherwise, identical to the above constructor */
@@ -33,7 +37,7 @@ public:
 		 int A_m, int A_n, int A_nnz,
 		 int B_m, int B_n, int B_nnz,
 		 int Bl_m, int Bl_n, int Bl_nnz,
-		 MPI_Comm mpiComm_);
+		 MPI_Comm mpiComm_ );
 
   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
   StochGenMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
@@ -41,37 +45,34 @@ public:
   // constructor for combining scenarios
   virtual ~StochGenMatrix();
 
-  virtual StochGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const;
-  virtual StochGenMatrix* cloneFull(bool switchToDynamicStorage = false) const;
+  GenMatrix* cloneEmptyRows( bool switchToDynamicStorage = false ) const override;
+  GenMatrix* cloneFull( bool switchToDynamicStorage = false ) const override;
 
-  virtual void AddChild(StochGenMatrix* child);
+  virtual void AddChild( StochGenMatrix* child );
 
   std::vector<StochGenMatrix*> children;
-  SparseGenMatrix* Amat;
-  SparseGenMatrix* Bmat;
-  SparseGenMatrix* Blmat;
+  GenMatrix* Amat{};
+  GenMatrix* Bmat{};
+  GenMatrix* Blmat{};
 
-  long long m, n;
-  MPI_Comm mpiComm;
-  int iAmDistrib;
+  long long m{-1};
+  long long n{-1};
+  MPI_Comm mpiComm{MPI_COMM_NULL};
+  int iAmDistrib{false};
+
+  /* is this matrix an inner matrix of the matrix hierarchy - if not, then its children hold the local Amat, Bmat and Blmat */
+  const bool inner_leaf{false};
+  const bool inner_root{false};
  private:
+  bool hasSparseMatrices() const;
+
   /** trans mult method for children with linking constraints */
-  virtual void transMult2 ( double beta,   StochVector& y,
-		    double alpha,  StochVector& x,
-		    OoqpVector& yvecParent, const OoqpVector& xvecl ) const;
+  virtual void transMult2( double beta, StochVector& y, double alpha, StochVector& x, const OoqpVector* xvecl ) const;
 
-  /** trans mult method for children; does not support linking constraints */
-  virtual void transMult2 ( double beta,   StochVector& y,
-		    double alpha,  StochVector& x,
-		    OoqpVector& yvecParent );
-
-  /** mult method for children; needed only for linking constraints */
-  virtual void mult2 ( double beta,  OoqpVector& y,
-                        double alpha, OoqpVector& x,
-						   OoqpVector& yvecParent );
+  virtual void mult2( double beta,  StochVector& y, double alpha, StochVector& x, OoqpVector* yparentl_ );
 
   /** column scale method for children */
-  virtual void columnScale2( const OoqpVector& vec, const OoqpVector& parentvec );
+  virtual void columnScale2( const OoqpVector& vec );
 
   /** row scale method for children */
   virtual void rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec );
@@ -83,14 +84,6 @@ public:
   virtual void addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) const;
   virtual void addColSums( OoqpVector& sumVec, OoqpVector* linkParent ) const;
 
-  /** internal method needed for handling linking constraints */
-  virtual void getRowMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* colScaleVec, const OoqpVector* colScaleParent, OoqpVector& minmaxVec, OoqpVector* linkParent);
-
-  virtual void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, const OoqpVector* rowScaleParent, OoqpVector& minmaxVec, OoqpVector* minmaxParent );
-
-
   virtual void initTransposedChild(bool dynamic);
   virtual void initStaticStorageFromDynamic(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>& colNnzVec,
     const OoqpVectorBase<int>* rowLinkVec, const OoqpVectorBase<int>* colParentVec);
@@ -98,11 +91,6 @@ public:
   virtual void permuteLinkingVarsChild(const std::vector<unsigned int>& permvec);
 
   virtual void getLinkVarsNnzChild(std::vector<int>& vec) const;
-
-  virtual void writeToStreamDenseChild( std::stringstream& out, int offset) const;
-  virtual void writeToStreamDenseChildBordered( std::stringstream& out, int offset, const SparseGenMatrix& border) const;
-  virtual std::string writeToStreamDenseRowLink(int rowidx) const;
-
 
  public:
   virtual void updateTransposed();
@@ -114,7 +102,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */  
-  virtual int numberOfNonZeros();
+  int numberOfNonZeros() const override;
 
   int isKindOf( int matType ) const override;
 
@@ -147,9 +135,16 @@ public:
   virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
   void writeToStream( std::ostream& ) const override { assert( "Not implemented" && 0 ); };
-  void writeToStreamDenseBordered( const StringGenMatrix& border_left, std::ostream& out ) const;
-  void writeToStreamDense( std::ostream& out ) const override;
-  void writeMPSformatRows( std::ostream& out , int rowType, OoqpVector* irhs) const override;
+
+  void writeToStreamDense( std::ostream& out ) const override
+  { writeToStreamDense( out, 0 ); };
+  virtual void writeToStreamDense( std::ostream& out, int offset ) const;
+  virtual void writeToStreamDenseBordered( const StringGenMatrix& border, std::ostream& out, int offset = 0 ) const;
+  void writeDashedLineToStream( std::ostream& out ) const override
+  { writeDashedLineToStream( out, 0 ); };
+  virtual void writeDashedLineToStream( std::ostream& out, int offset) const;
+
+  void writeMPSformatRows( std::ostream& out, int rowType, OoqpVector* irhs) const override;
 
   void randomize( double, double, double* ) override { assert( "Not implemented" && 0 ); };
 
@@ -174,18 +169,9 @@ public:
   };
 
   /** fill vector with absolute minimum/maximum value of each row */
-  void getRowMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override
-  {
-     getRowMinMaxVec(getMin, initializeVec, colScaleVec, nullptr, minmaxVec, nullptr);
-  };
-
+ void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
   /** fill vector with absolute minimum/maximum value of each column */
-  void getColMinMaxVec( bool getMin, bool initializeVec,
-        const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override
-  {
-     getColMinMaxVec(getMin, initializeVec, rowScaleVec, nullptr, minmaxVec, nullptr);
-  };
+  void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
 
   void addRowSums( OoqpVector& sumVec ) const override { addRowSums(sumVec, nullptr); };
   void addColSums( OoqpVector& sumVec ) const override { addColSums(sumVec, nullptr); };
@@ -223,8 +209,27 @@ public:
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
 
+  virtual StringGenMatrix* shaveLinkingConstraints( unsigned int n_conss );
+  virtual void splitMatrix( const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
+        const std::vector<MPI_Comm>& child_comms );
+
+
 protected:
-  virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom);
+  virtual void writeToStreamDenseChild( std::ostream& out, int offset) const;
+  virtual void writeToStreamDenseBorderedChild( const StringGenMatrix& border_left, std::ostream& out, int offset = 0 ) const;
+
+  virtual void writeToStreamDenseRowLink( std::ostream& out, int rowidx) const;
+
+  /* internal methods for linking cons and hierarchical structure */
+  virtual void getRowMinMaxVecChild(bool getMin, bool initializeVec, const OoqpVector* colScaleVec_,
+        OoqpVector& minmaxVec_, OoqpVector* minmax_link_parent);
+  virtual void getColMinMaxVecChild( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, const OoqpVector* rowScaleParent,
+        OoqpVector& minmaxVec );
+
+  bool amatEmpty() const;
+  virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix* border_left, StringGenMatrix* border_bottom);
+  virtual StringGenMatrix* shaveLeftBorder( int n_vars );
+  virtual StringGenMatrix* shaveLeftBorderChild( int n_vars );
 };
 
 
@@ -251,15 +256,15 @@ public:
   void getSize( int& m, int& n ) const override { m = 0; n = 0; }
   void getSize( long long& m, long long& n ) const override { m = 0; n = 0; }
 
-  StochGenMatrix* cloneEmptyRows( bool ) const override { return new StochGenDummyMatrix(); };
-  StochGenMatrix* cloneFull( bool ) const  override { return new StochGenDummyMatrix(); };
+  GenMatrix* cloneEmptyRows( bool ) const override { return new StochGenDummyMatrix(); };
+  GenMatrix* cloneFull( bool ) const  override { return new StochGenDummyMatrix(); };
 
 
   /** The actual number of structural non-zero elements in this sparse
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */  
-  int numberOfNonZeros() override { return 0; }
+  int numberOfNonZeros() const override { return 0; };
 
   int isKindOf( int matType ) const override;
 
@@ -280,17 +285,11 @@ public:
   void getDiagonal( OoqpVector& ) override {};
   void setToDiagonal( const OoqpVector& ) override {};
 
-  /** y = beta * y + alpha * this * x */
   void mult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-
-  /** mult method for children; needed only for linking constraints */
-  void mult2 ( double, OoqpVector&, double, OoqpVector&, OoqpVector& ) override {};
+  void mult2 ( double, StochVector&, double, StochVector&, OoqpVector* ) override {};
 
   void transMult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-
-  void transMult2 ( double, StochVector&, double, StochVector&, OoqpVector&, const OoqpVector& ) const override {};
-
-  void transMult2 ( double, StochVector&, double, StochVector&, OoqpVector& ) override {};
+  void transMult2 ( double, StochVector&, double, StochVector&, const OoqpVector* ) const override {};
 
   double abmaxnorm() const override { return 0.0; };
   double abminnormNonZero( double ) const override { return std::numeric_limits<double>::infinity(); };
@@ -300,13 +299,21 @@ public:
 
   void getLinkVarsNnz( std::vector<int>& ) const override {};
   void writeToStream( std::ostream& ) const override {};
+
   void writeToStreamDense( std::ostream& ) const override {};
+  void writeToStreamDense( std::ostream&, int ) const override{};
+  void writeToStreamDenseBordered( const StringGenMatrix&, std::ostream&, int) const override{};
+  void writeDashedLineToStream( std::ostream& ) const override {};
+  void writeDashedLineToStream( std::ostream&, int ) const override {};
+
   void writeMPSformatRows( std::ostream&, int, OoqpVector* ) const override {};
 
- private:
-  void writeToStreamDenseChild( std::stringstream&, int ) const override {};
-  void writeToStreamDenseChildBordered( std::stringstream&, int, const SparseGenMatrix& ) const override {};
-  std::string writeToStreamDenseRowLink( int ) const override { return 0; };
+ protected:
+  void writeToStreamDenseChild( std::ostream&, int ) const override {};
+  void writeToStreamDenseBorderedChild( const StringGenMatrix&, std::ostream&, int ) const override {};
+
+  void writeToStreamDenseRowLink( std::ostream&, int ) const override {};
+
  public:
   void randomize( double, double, double* ) override {};
 
@@ -316,7 +323,7 @@ public:
 
   void initTransposedChild( bool ) override {};
 
-  void columnScale2( const OoqpVector&, const OoqpVector& ) override {};
+  void columnScale2( const OoqpVector& ) override {};
   void rowScale2( const OoqpVector&, const OoqpVector* ) override {};
 
   void initTransposed( bool ) override {};
@@ -327,10 +334,7 @@ public:
   void getNnzPerRow( OoqpVectorBase<int>& ) override {};
   void getNnzPerCol( OoqpVectorBase<int>& ) override {};
 
-  void getRowMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector&, OoqpVector* ) override {};
-  void getColMinMaxVec( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector&, OoqpVector* ) override {};
-  void getRowMinMaxVec( bool , bool, const OoqpVector*, OoqpVector& ) override {};
-
+  void getRowMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
   void getColMinMaxVec( bool, bool, const OoqpVector*, OoqpVector& ) override {};
 
   void addRowSums( OoqpVector&, OoqpVector* ) const override {};
@@ -360,11 +364,19 @@ public:
   void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector*, StochVector*, SimpleVector*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
+  StringGenMatrix* shaveLinkingConstraints( unsigned int ) override { return new StringGenDummyMatrix(); };
+  void splitMatrix( const std::vector<int>&, const std::vector<unsigned int>&, unsigned int, const std::vector<MPI_Comm>& ) override
+     { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); };
 
   void recomputeSize( StochGenMatrix* ) override {};
  protected:
-  void shaveBorder( int, int, StringGenMatrix*& border_left, StringGenMatrix*& border_bottom) override
-  { border_left = new StringGenDummyMatrix(); border_bottom = new StringGenDummyMatrix(); };
+  void getRowMinMaxVecChild( bool, bool, const OoqpVector*, OoqpVector&, OoqpVector* )override {};
+  void getColMinMaxVecChild( bool, bool, const OoqpVector*, const OoqpVector*, OoqpVector& )override {};
+
+  void shaveBorder( int, int, StringGenMatrix* border_left, StringGenMatrix* border_bottom) override
+  { border_left->addChild(new StringGenDummyMatrix()); border_bottom->addChild(new StringGenDummyMatrix()); };
+  StringGenMatrix* shaveLeftBorder( int ) override { return new StringGenDummyMatrix(); };
+  StringGenMatrix* shaveLeftBorderChild( int ) override { return new StringGenDummyMatrix(); };
 
 };
 

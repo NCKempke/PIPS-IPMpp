@@ -46,7 +46,6 @@
 
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
-extern bool ipStartFound;
 
 
 GondzioStochLpSolver::GondzioStochLpSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler)
@@ -73,7 +72,7 @@ void GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables *iterate, V
       double weight_curr = weight_min
             + (weight_intervallength / (n_linesearch_points)) * n;
 
-      weight_curr = min(weight_curr, 1.0);
+      weight_curr = std::min(weight_curr, 1.0);
 
       assert(weight_curr > 0.0 && weight_curr <= 1.0);
 
@@ -120,7 +119,7 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
 
    bool pure_centering_step = false;
    bool numerical_troubles = false;
-   bool precond_limit = false;
+   bool precond_decreased = true;
 
    setDnorm(*prob);
    // initialization of (x,y,z) and factorization routine.
@@ -134,32 +133,14 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
    this->start(factory, iterate, prob, resid, step);
    stochFactory->iterateEnded();
 
-   assert(!ipStartFound);
-   ipStartFound = true;
    iter = 0;
    NumberGondzioCorrections = 0;
    mu = iterate->mu();
 
 
-   const QpGenData& qpgendata = dynamic_cast<const QpGenData&>(*prob);
-
-   double min_obj = -1;
-   qpgendata.g->absminNonZero(min_obj, 1e-14);
-   const double max_obj = qpgendata.g->infnorm();
-   if( PIPS_MPIgetRank() == 0 )
-      std::cout << "Objective absmin != 0 : " << min_obj << ", max : " << max_obj << std::endl;
-
    while( true )
    {
       iter++;
-
-      const QpGenVars& vars = dynamic_cast<const QpGenVars&>(*iterate);
-      const double max = vars.x->infnorm();
-      double min = -1;
-      vars.x->absminNonZero(min, 1e-3);
-
-      if( PIPS_MPIgetRank() == 0 )
-         std::cout << "X abs min : " << min << ", X abs max: " << max << std::endl;
 
       if( false )
          iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
@@ -369,13 +350,13 @@ int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resi
       // if we encountered numerical troubles while computing the step check enter a probing round
       if( numerical_troubles )
       {
-         if( !precond_limit )
-            precond_limit = decreasePreconditionerImpact(sys);
+         if( precond_decreased )
+            precond_decreased = decreasePreconditionerImpact(sys);
 
          doProbing_pd(prob, iterate, resid, alpha_pri, alpha_dual);
          const double alpha_max = std::max(alpha_pri, alpha_dual);
 
-         if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_limit, alpha_max ) )
+         if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_decreased, alpha_max ) )
             continue;
       }
 
@@ -425,9 +406,4 @@ void GondzioStochLpSolver::doProbing_pd( Data* prob, Variables* iterate, Residua
 
    alpha_pri = factor * alpha_pri;
    alpha_dual = factor * alpha_dual;
-}
-
-
-GondzioStochLpSolver::~GondzioStochLpSolver()
-{
 }

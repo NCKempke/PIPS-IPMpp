@@ -28,7 +28,6 @@ using namespace std;
 double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
-extern bool ipStartFound;
 extern double g_iterNumber;
 
 int sleepFlag=0;
@@ -61,8 +60,6 @@ int MehrotraStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid
   this->start( factory, iterate, prob, resid, step );
   stochFactory->iterateEnded();
 
-  assert(!ipStartFound);
-  ipStartFound = true;
   iter = 0;
   done = 0;
   mu = iterate->mu();

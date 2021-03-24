@@ -19,10 +19,6 @@ StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData &pre
 {
 }
 
-StochPresolverSingletonColumns::~StochPresolverSingletonColumns()
-{
-}
-
 bool StochPresolverSingletonColumns::applyPresolving()
 {
    assert(presData.reductionsEmpty());
@@ -34,8 +30,8 @@ bool StochPresolverSingletonColumns::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
    {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
-      std::cout << "--- Before singleton columns presolving:" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+      std::cout << "--- Before singleton columns presolving:\n";
    }
    countRowsCols();
 #endif
@@ -44,7 +40,7 @@ bool StochPresolverSingletonColumns::applyPresolving()
    if( presData.getSingletonCols().empty() )
    {
       if( my_rank == 0 && verbosity > 1 )
-         std::cout << "No more singletons left - exiting" << "\n";
+         std::cout << "No more singletons left - exiting\n";
    }
 #endif
 
@@ -135,15 +131,15 @@ bool StochPresolverSingletonColumns::applyPresolving()
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
    {
-      std::cout << "--- After singleton columns presolving:" << "\n";
+      std::cout << "--- After singleton columns presolving:\n";
       std::cout << "\tRemoved columns during singleton column elimination: " << removed_cols << "\n";
    }
    else if( my_rank == 0 && verbosity == 1 )
-      std::cout << "SinCol:\t removed " << removed_cols << " cols" << "\n";
+      std::cout << "SinCol:\t removed " << removed_cols << " cols\n";
 
    countRowsCols();
    if( my_rank == 0 && verbosity > 1 )
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 #endif
 
    assert(presData.reductionsEmpty());
@@ -164,7 +160,7 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
    updatePointersForCurrentNode(col.getNode(), EQUALITY_SYSTEM);
    const SimpleVectorBase<int> &nnzs_col = col.isLinkingCol() ? *currNnzColParent : *currNnzColChild;
 
-   if( nnzs_col[col.getIndex()] == 0 )
+   if( nnzs_col[col.getIndex()] == 0 || presData.wasColumnRemoved(col) )
       return false;
 
    assert(nnzs_col[col.getIndex()] == 1);

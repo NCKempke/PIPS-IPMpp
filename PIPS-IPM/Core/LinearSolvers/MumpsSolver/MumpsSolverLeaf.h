@@ -18,7 +18,7 @@ class MumpsSolverLeaf : public MumpsSolverBase {
 
  public:
   using DoubleLinearSolver::solve;
-  MumpsSolverLeaf( SparseSymMatrix * sgm );
+  MumpsSolverLeaf( const SparseSymMatrix * sgm );
 
   ~MumpsSolverLeaf() = default;
 

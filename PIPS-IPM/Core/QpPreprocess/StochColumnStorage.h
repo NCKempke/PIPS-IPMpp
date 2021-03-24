@@ -27,7 +27,6 @@ public:
    void axpyAtCol( double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector* eq_link, SimpleVector* ineq_link, double alpha, const INDEX& col ) const;
 
    double multColTimesVec( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq ) const;
-   double multColTimesVecWithoutRootNode( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq ) const;
 
    // todo: delete Column from storage
 private:

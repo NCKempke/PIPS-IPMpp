@@ -90,9 +90,9 @@ public:
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
   void writeToStream( std::ostream& out ) const override;
+  void writeNNZpatternToStreamDense( std::ostream& out ) const;
   void writeToStreamDense( std::ostream& out ) const override;
-  virtual std::string writeToStreamDenseRow(int row) const;
-  virtual void writeToStreamDenseRow( std::stringstream& out, int row ) const;
+  void writeToStreamDenseRow( std::ostream& out, int row) const override;
 
   void randomizePSD(double *) override;
 
@@ -105,7 +105,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */
-  int numberOfNonZeros() { return mStorage->numberOfNonZeros(); }
+  int numberOfNonZeros() const { return mStorage->numberOfNonZeros(); }
 
   /** Reduce the matrix to lower triangular */
   void reduceToLower();
@@ -120,6 +120,8 @@ public:
 
   virtual SparseGenMatrix* shaveSymLeftBottom( int n_vars );
 
-  virtual ~SparseSymMatrix() {};
+  ~SparseSymMatrix() override = default;
+
+  SymMatrix* clone() const override;
 };
 #endif

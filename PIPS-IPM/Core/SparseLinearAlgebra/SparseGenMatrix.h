@@ -28,14 +28,14 @@ private:
         const SparseStorageDynamic* storage_dynamic, const OoqpVector* coScaleVec, OoqpVector& minmaxVec );
 protected:
   SparseStorageHandle mStorage;
-  SparseStorageDynamic* mStorageDynamic;
+  SparseStorageDynamic* mStorageDynamic{};
 
   // in the case of A'*A we internally form the transpose only once
-  SparseGenMatrix* m_Mt;
+  SparseGenMatrix* m_Mt{};
 
 public:
 
-  SparseGenMatrix();
+  SparseGenMatrix() = default;
 
   void updateTransposed();
   void deleteTransposed();
@@ -46,9 +46,9 @@ public:
 		   int deleteElts=0);
   SparseGenMatrix( SparseStorage* m_storage );
 
-  virtual SparseGenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const;
+  GenMatrix* cloneFull(bool switchToDynamicStorage = false) const override;
+  GenMatrix* cloneEmptyRows(bool switchToDynamicStorage = false) const override;
   virtual SparseGenMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
-  virtual SparseGenMatrix* cloneFull(bool switchToDynamicStorage = false) const;
 
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
@@ -57,7 +57,7 @@ public:
    *  matrix. This includes so-called "accidental" zeros, elements that
    *  are treated as non-zero even though their value happens to be zero.
    */
-  virtual int numberOfNonZeros();
+  int numberOfNonZeros() const override;
 
   int isKindOf( int matType ) const override;
 
@@ -65,6 +65,8 @@ public:
 			   int rowExtent, int colExtent ) override;
   void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent ) override;
+
+  virtual bool isEmpty() const { return mStorage->n == 0 && mStorage->m == 0 && mStorage->len == 0; };
 
   void columnScale( const OoqpVector& vec ) override;
   void rowScale( const OoqpVector& vec ) override;
@@ -91,11 +93,14 @@ public:
 
   virtual void multMatSymUpper( double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart ) const;
 
-  virtual void transmultMatSymUpper( double beta, SymMatrix& y, double alpha, double x[], int yrowstart, int ycolstart ) const;
+  virtual void transmultMatSymUpper( double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart ) const;
 
   void transMult( double beta,   OoqpVector& y, double alpha,  const OoqpVector& x ) const override;
   virtual void transMult( double beta,  OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const;
   virtual void transMult( double beta,  double y_in[], int incy, double alpha, const double x_in[], int incx ) const;
+
+  /** y = beta * y + this^T diag(d)^-1 x */
+  virtual void transMultD( double beta, OoqpVector& y, double alpha, const OoqpVector& x, const OoqpVector& d ) const;
 
   /** res = this^T * D * this where D=diag(d) is a diagonal matrix. */
   void matTransDMultMat(OoqpVector& d, SymMatrix** res) override;
@@ -112,10 +117,10 @@ public:
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
 
-  void writeToStream( std::ostream& out) const override;
-  void writeToStreamDense( std::ostream& out) const override;
-  virtual void writeToStreamDenseRow( std::stringstream& out, int rowidx) const;
-  virtual std::string writeToStreamDenseRow( int rowidx) const;
+  void writeToStream( std::ostream& out ) const override;
+  void writeToStreamDense(std::ostream& out ) const override;
+  void writeToStreamDenseRow( std::ostream& out, int rowidx ) const override;
+  void writeDashedLineToStream( std::ostream& out ) const override;
 
   /** Make the elements in this matrix symmetric. The elements of interest
    *  must be in the lower triangle, and the upper triangle must be empty.
@@ -219,7 +224,9 @@ public:
   virtual void addColToRow( double coeff, int col, int row );
 
   virtual SparseGenMatrix* shaveLeft(int n_cols);
-  virtual SparseGenMatrix* shaveBottom(int n_rows);
+  GenMatrix* shaveBottom(int n_rows) override;
+  virtual void dropNEmptyRowsBottom( int n_rows );
+  virtual void dropNEmptyRowsTop( int n_rows );
 
   virtual ~SparseGenMatrix();
 };
