@@ -6,6 +6,7 @@
 #define SPSTOCHFACTORY
 
 #include "QpGen.h"
+#include "sTree.h"
 
 // save diagnostic state
 #pragma GCC diagnostic push 
@@ -22,7 +23,6 @@ class sData;
 
 class QpGenVars;
 class StochInputTree;
-class sTree;
 class StochSymMatrix;
 class sResiduals;
 class sVars;
