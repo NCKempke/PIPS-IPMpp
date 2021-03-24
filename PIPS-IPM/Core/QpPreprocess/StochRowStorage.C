@@ -64,7 +64,7 @@ double StochRowStorage::multRowTimesVec( const INDEX& row, const StochVector& ve
    double res{0.0};
    if( row.isLinkingRow() )
    {
-      assert(PIPS_MPIisValueEqual(row.getIndex()));
+      assert(PIPS_MPIisValueEqual(row.getNode()));
 
       if( PIPS_MPIgetRank() == 0)
          res = row_storage->localRowTimesVec(vec, row.getNode(), row.getIndex(), row.getLinking());

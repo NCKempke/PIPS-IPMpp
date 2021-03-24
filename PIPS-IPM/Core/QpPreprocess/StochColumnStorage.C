@@ -286,7 +286,7 @@ double StochColumnStorage::multColTimesVec( const INDEX& col, const StochVector&
 
    if( col.isLinkingCol() )
    {
-      assert( PIPS_MPIisValueEqual(col.getIndex()) );
+      assert( PIPS_MPIisValueEqual(col.getNode()) );
       /* we need to synchronize the column times duals in this case */
       if( PIPS_MPIgetRank() == 0 )
           res = multiplyLinkingColTimesVec(col.getIndex(), vec_eq, vec_ineq);
