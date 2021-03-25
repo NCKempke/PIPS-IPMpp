@@ -183,7 +183,7 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 
          if( solver != SolverType::SOLVER_NONE )
          {
-            pips_options::setIntParameter( "LEAF_SOLVER", solver );
+            pips_options::setIntParameter( "LIENAR_LEAF_SOLER", solver );
             return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs);
          }
 
