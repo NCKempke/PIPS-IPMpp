@@ -183,7 +183,9 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 
          if( solver != SolverType::SOLVER_NONE )
          {
-            pips_options::setIntParameter( "LIENAR_LEAF_SOLER", solver );
+            if( PIPS_MPIgetRank() == 0 )
+               std::cout << " Found solver " << solver << " - using that for leaf computations\n";
+            pips_options::setIntParameter( "LINEAR_LEAF_SOLVER", solver );
             return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs);
          }
 
