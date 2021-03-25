@@ -173,10 +173,19 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
             std::cout << "WARNING: checking for PARDISO or MUMPS instead...\n";
          }
 
-         if( pips_options::isSolverAvailable( SolverType::SOLVER_PARDISO ) ||
-               pips_options::isSolverAvailable( SolverType::SOLVER_MKL_PARDISO) ||
-               pips_options::isSolverAvailable( SolverType::SOLVER_MUMPS) )
+         SolverType solver = SolverType::SOLVER_NONE;
+         if( pips_options::isSolverAvailable( SolverType::SOLVER_PARDISO ) )
+            solver = SolverType::SOLVER_PARDISO;
+         else if( pips_options::isSolverAvailable( SolverType::SOLVER_MKL_PARDISO) )
+            solver = SolverType::SOLVER_MKL_PARDISO;
+         else if( pips_options::isSolverAvailable( SolverType::SOLVER_MUMPS) )
+            solver = SolverType::SOLVER_MUMPS;
+
+         if( solver != SolverType::SOLVER_NONE )
+         {
+            pips_options::setIntParameter( "LEAF_SOLVER", solver );
             return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs);
+         }
 
          PIPS_MPIabortIf(true, "Error: Could not find suitable solver - please specify SC_COMPUTE_BLOCKWISE");
          return nullptr;
