@@ -35,6 +35,8 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       nnz = matrixNewSym.numberOfNonZeros();
 
       init();
+
+      fact.clear();
       matrixChanged();
    }
 }

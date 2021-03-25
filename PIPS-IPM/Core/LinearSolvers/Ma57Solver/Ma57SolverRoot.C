@@ -32,6 +32,8 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       lkeep = 7 * n + nnz + 2 * std::max(n, nnz) + 42;
 
       init();
+
+      keep.clear();
       matrixChanged();
    }
 }
