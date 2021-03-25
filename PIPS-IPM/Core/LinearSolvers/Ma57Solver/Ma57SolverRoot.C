@@ -28,6 +28,7 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
 
       mat_storage = matrixNewSym.getStorageHandle();
+      nnz = matrixNewSym.numberOfNonZeros();
 
       init();
       matrixChanged();

@@ -107,7 +107,7 @@ protected:
    const int n;
 
    /** number of nonzeros in the matrix */
-   const int nnz;
+   int nnz;
 
    /** temporary storage */
    const int lkeep{-1};

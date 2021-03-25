@@ -112,7 +112,7 @@ protected:
   const int n;
 
   /** number of nonzeros in the matrix */
-  const int nnz;
+  int nnz;
 
   /** length of the array containing factors; may be increased during
    * the numerical factorization if the estimate obtained during the
