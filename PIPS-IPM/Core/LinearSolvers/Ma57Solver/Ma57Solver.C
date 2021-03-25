@@ -78,7 +78,7 @@ void Ma57Solver::firstCall()
   jcolM.resize(nnz);
   getIndices(irowM, jcolM);
 
-  if( keep.empty() )
+  if( keep.size() < static_cast<size_t>(lkeep) )
      keep.resize(lkeep);
 
   iworkn.resize( std::max(5 * n, n_threads * n * 4 ) );

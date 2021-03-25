@@ -110,7 +110,7 @@ protected:
    int nnz;
 
    /** temporary storage */
-   const int lkeep{-1};
+   int lkeep{-1};
    std::vector<int> keep;
 
    /** temporary storage for the factorization process */
