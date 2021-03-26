@@ -229,9 +229,7 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
 
-   BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
-         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
-
+   BorderLinsys Bl( data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
 
    addBTKiInvBToSC( result, Bl, Br, Br_mod_border, false, false );
 
@@ -244,18 +242,15 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
    BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
 
-
    std::vector<BorderMod> border_mod;
 
    addBTKiInvBToSC( SC, Bl, Br, border_mod, true, sparseSC );
-
 }
 
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
       BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool use_local_RAC )
 {
    BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
-
 
    BorderMod B_inner_mod(B_inner, X0);
    std::vector<BorderMod> border_mod( Br_mod_border );

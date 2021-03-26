@@ -1951,7 +1951,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    assert( !is_hierarchy_root );
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */
-   /* only called on sLinsysRootAug and sLinsysRootAugHierInner */
+   /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
    const bool two_link_border = !(Bl.has_RAC || Bl.use_local_RAC);
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
