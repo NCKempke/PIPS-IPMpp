@@ -71,11 +71,6 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
    redRhs.reset( new SimpleVector(locnx + locmy + locmz + locmyl + locmzl) );
 }
 
-sLinsysRootAug::~sLinsysRootAug()
-{
-   delete CtDC;
-}
-
 SymMatrix* sLinsysRootAug::createKKT(sData* prob) const
 {
    const int n = locnx + locmy + locmyl + locmzl;

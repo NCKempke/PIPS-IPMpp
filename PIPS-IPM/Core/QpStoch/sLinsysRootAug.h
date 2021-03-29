@@ -42,7 +42,7 @@ class sLinsysRootAug : public sLinsysRoot {
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_, bool creat_solvers);
-  ~sLinsysRootAug() override;
+  ~sLinsysRootAug() override = default;
 
   void finalizeKKT( sData* prob, Variables* vars) override;
   void finalizeKKTdist(sData* prob) override;
