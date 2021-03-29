@@ -1947,6 +1947,9 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sym_res, bool sparse_res )
 {
+   if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty() ) )
+      return;
+
    assert( !is_hierarchy_root );
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */
