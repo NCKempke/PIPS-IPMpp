@@ -231,7 +231,11 @@ void sLinsys::finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod,
 {
    /* compute BiT_buffer += X_j^T Bmodj for all j */
    for( auto& border_mod_block : border_mod )
+   {
+      if( border_mod_block.border.isEmpty() )
+         continue;
       finalizeDenseBorderBlocked( border_mod_block.border, border_mod_block.multiplier, result );
+   }
 }
 
 void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
@@ -242,6 +246,9 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
       std::unique_ptr<BorderBiBlock> BiT_mod{};
 
       BorderLinsys& border = border_mod_block.border;
+
+      if( border.isEmpty() )
+         continue;
 
       if( border.use_local_RAC )
          BiT_mod.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
@@ -1268,5 +1275,42 @@ void sLinsys::addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& borde
 
       addLeftBorderTimesDenseColsToResTranspDense(border_left, cols, cols_id, length_col, blocksize, res_ncols, res_array);
    }
-
 }
+
+template<>
+bool sLinsys::BorderLinsys::isEmpty() const
+{
+   if( use_local_RAC )
+      return false;
+   else
+   {
+      if( F.numberOfNonZeros() == 0 && G.numberOfNonZeros() == 0 )
+      {
+         if( has_RAC )
+            return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0 ;
+         else
+            return true;
+      }
+      else
+         return false;
+   }
+};
+
+template<>
+bool sLinsys::BorderBiBlock::isEmpty() const
+{
+   if( use_local_RAC )
+      return false;
+   else
+   {
+      if( F.numberOfNonZeros() == 0 && G.numberOfNonZeros() == 0 )
+      {
+         if( has_RAC )
+            return R.numberOfNonZeros() == 0 && A.numberOfNonZeros() == 0 && C.numberOfNonZeros() == 0 ;
+         else
+            return true;
+      }
+      else
+         return false;
+   }
+};

@@ -49,6 +49,8 @@ class sLinsys : public QpGenLinsys
          T& F;
          T& G;
 
+         bool isEmpty() const;
+
          RACFG_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
             has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G} {};
 
@@ -105,6 +107,7 @@ class sLinsys : public QpGenLinsys
 
       using BorderMod = BorderMod_Block<DenseGenMatrix>;
       using BorderModVector = BorderMod_Block<StochVector>;
+
 
       template<typename T>
       static BorderMod_Block<T> getChild( BorderMod_Block<T>& bordermod, unsigned int i )
@@ -288,5 +291,11 @@ class sLinsys : public QpGenLinsys
   void finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result );
 
 };
+
+template<>
+bool sLinsys::RACFG_BLOCK<StringGenMatrix>::isEmpty() const;
+template<>
+bool sLinsys::RACFG_BLOCK<SparseGenMatrix>::isEmpty() const;
+
 
 #endif
