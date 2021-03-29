@@ -654,7 +654,8 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      if( two_link_border && ( it != 0 && it != children.size() - 1 ) )
+
+      if( getChild( Bl, it ).isEmpty() )
          continue;
 
       BorderLinsys bl_child = getChild( Bl, it );
@@ -662,7 +663,12 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
 
       std::vector<BorderMod> border_mod_child;
       for( auto& bm : Br_mod_border )
-         border_mod_child.push_back( getChild( bm, it ) );
+      {
+         const BorderMod child = getChild(bm,it);
+
+         if( !child.border.isEmpty() )
+            border_mod_child.push_back( getChild( bm, it ) );
+      }
 
       children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC );
    }
@@ -676,6 +682,9 @@ void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    for( size_t i = 0; i < children.size(); ++i )
    {
       BorderLinsys child_border = getChild(border, i);
+      if( child_border.isEmpty() )
+         continue;
+
       children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
    }
 
@@ -736,6 +745,9 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    for( size_t i = 0; i < children.size(); ++i )
    {
       BorderLinsys child_border = getChild( border, i );
+      if( child_border.isEmpty() )
+         continue;
+
       children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
    }
 

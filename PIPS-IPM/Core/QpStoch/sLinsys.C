@@ -419,6 +419,9 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    }
    assert( mX == mRes );
 #endif
+   if( BT.isEmpty() )
+      return;
+
    // X from the right with each column of Bi^T todo add OMP to submethods
 
    /*            [ RiT ]
@@ -456,6 +459,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    }
 }
 
+// TODO - move
 void sLinsys::addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const
 {
    int mres, nres; res.getSize( mres, nres );
@@ -514,6 +518,8 @@ void sLinsys::addBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT ) cons
       assert( nres >= nF );
    }
 #endif
+   if( BiT.isEmpty() )
+      return;
 
    if( BiT.has_RAC )
    {
@@ -840,6 +846,9 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
    if( sym_res )
       assert( m_res == n_res );
 
+   if( border_left_transp.isEmpty() )
+      return;
+
    int mB, nB; BT.getSize(mB, nB);
 
    const int chunk_length = blocksizemax * PIPSgetnOMPthreads();
@@ -944,6 +953,8 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    }
 #endif
 
+   if( border_left_transp.isEmpty() || border_right.isEmpty() )
+      return;
 
    const int chunk_length = blocksizemax * PIPSgetnOMPthreads();
 
@@ -1150,6 +1161,9 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspSparse( const BorderBiBlock&
       assert( nRes >= mF + mG );
 #endif
 
+   if( Bl.isEmpty() )
+      return;
+
    // multiply each column with left_border and add if to res
    #pragma omp parallel for schedule(dynamic, 10)
    for( int it_col = 0; it_col < n_cols; it_col++ )
@@ -1211,6 +1225,9 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
    assert( n_cols_res >= 1 );
 #endif
 
+   if( Bl.isEmpty() )
+      return;
+
    // multiply each column with left factor of SC
    #pragma omp parallel for schedule(dynamic, 10)
    for( int it_col = 0; it_col < n_cols; it_col++ )
@@ -1237,6 +1254,9 @@ void sLinsys::addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& 
 void sLinsys::addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& border_left, const double* cols,
       const int* cols_id, int length_col, int blocksize, bool sparse_res, bool sym_res, DoubleMatrix& res ) const
 {
+   if( border_left.isEmpty() )
+      return;
+
    assert(cols_id && cols);
 
    if( sparse_res )

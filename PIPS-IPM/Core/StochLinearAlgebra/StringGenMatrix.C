@@ -129,6 +129,28 @@ void StringGenMatrix::transMult(double beta, OoqpVector& y, double alpha, const 
       transMultHorizontal(beta, y, alpha, x);
 }
 
+long long StringGenMatrix::numberOfNonZeros( const StringGenMatrix* parent ) const
+{
+   long long nonzeros{};
+
+   for( auto& child : children )
+      nonzeros += child->numberOfNonZeros(this);
+
+   if( dynamic_cast<const StringGenMatrix*>(mat) )
+      nonzeros += dynamic_cast<const StringGenMatrix*>(mat)->numberOfNonZeros(this);
+   else if( PIPS_MPIiAmSpecial( distributed, mpi_comm ) )
+   {
+      if( mat )
+         nonzeros += mat->numberOfNonZeros();
+      if( mat_link )
+         nonzeros += mat->numberOfNonZeros();
+   }
+
+   if( !parent && distributed )
+      PIPS_MPIgetSumInPlace(nonzeros);
+   return nonzeros;
+}
+
 void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);

@@ -555,6 +555,9 @@ void sLinsysRootAug::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys
 void sLinsysRootAug::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res , bool two_link_border )
 {
+   if( Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()) )
+      return;
+
    LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, true, two_link_border );
 }
 
@@ -692,6 +695,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
       SimpleVector b_vec( rhs_mat_transp[rhs_i], length_rhs );
+
       double *b = b_vec.elements();
 
       ///////////////////////////////////////////////////////////////////////

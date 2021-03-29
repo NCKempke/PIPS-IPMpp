@@ -75,6 +75,8 @@ class StringGenMatrix : public GenMatrix
       void combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms );
       virtual void splitAlongTree( const sTreeCallbacks& tree );
 
+      int numberOfNonZeros() const override { return numberOfNonZeros(nullptr); };
+
       GenMatrix* shaveBottom( int n_rows ) override;
 
       /* methods not needed for Hierarchical approach */
@@ -96,6 +98,8 @@ class StringGenMatrix : public GenMatrix
       void randomize( double, double, double* ) override { assert( "not implemented" && 0 ); };
 
    protected:
+      long long numberOfNonZeros( const StringGenMatrix* parent ) const;
+
       virtual void multVertical( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const;
       virtual void multHorizontal( double beta, OoqpVector& y, double alpha, const OoqpVector& x, bool root) const;
 
@@ -149,6 +153,8 @@ class StringGenDummyMatrix : public StringGenMatrix
 
       void addRowSums( OoqpVector& ) const override {};
       void addColSums( OoqpVector& ) const override {};
+
+      int numberOfNonZeros() const override { return 0; };
 
       GenMatrix* shaveBottom( int ) override { return new StringGenDummyMatrix(); };
 
