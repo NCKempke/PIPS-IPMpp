@@ -342,7 +342,7 @@ static void appendMixedBlocksDist(const std::vector<int>& linkStartBlockId_Left,
 
 
 void sData::getSCrangeMarkers(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
-      int& local2linksStartIneq, int& local2linksEndIneq)
+      int& local2linksStartIneq, int& local2linksEndIneq) const
 {
    const int blocksStartReal = (blocksStart > 0) ? (blocksStart - 1) : blocksStart;
    const int nx0 = getLocalnx();

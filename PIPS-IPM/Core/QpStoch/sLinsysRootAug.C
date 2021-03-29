@@ -1000,7 +1000,7 @@ void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy,
 
 void sLinsysRootAug::solveWithIterRef( sData *prob, SimpleVector& r)
 {
-   assert( false && " TODO : not sure if working correctly...");
+  assert( false && " TODO : not sure if working correctly...");
   SimpleVector r2(&r[locnx],       locmy);
   SimpleVector r1(&r[0],           locnx);
 
@@ -1151,7 +1151,7 @@ void sLinsysRootAug::solveWithIterRef( sData *prob, SimpleVector& r)
 
 void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
 {
-   assert( false && "TODO: not sure if working correctly");
+  assert( false && "TODO: not sure if working correctly");
   int n = b.length();
 
   const int maxit=75; //500
