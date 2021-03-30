@@ -621,20 +621,26 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
    /* for a pure 2-link border this has only be done for the last and first process in a communicator - the rest is zero */
    for( size_t it = 0; it < children.size(); it++ )
    {
-      if( two_link_border && ( it != 0 && it != children.size() - 1 ) )
-         continue;
-
+      BorderLinsys border_child = getChild( Br, it );
+      
       std::vector<BorderMod> Br_mod_border_child;
 
       for( auto& br_mod : Br_mod_border )
-         Br_mod_border_child.push_back( getChild( br_mod, it ) );
+      {
+         auto child = getChild( br_mod, it );
+         if( !child.border.isEmpty() )
+            Br_mod_border_child.push_back( child );
+      }
 
-      BorderLinsys border_child = getChild( Br, it );
+      if( border_child.isEmpty() && Br_mod_border.empty() )
+         continue;
+
       children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC);
    }
 
    /* allreduce the result */
    // TODO : optimize -> do not reduce A_0 part ( all zeros... )
+   /* in a two-link border we have at most 2 contributions and these are guaranteed disjunct */
    if( iAmDistrib )
       allreduceMatrix( result, false, false, mpiComm );
 }

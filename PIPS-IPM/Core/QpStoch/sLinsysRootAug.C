@@ -1947,15 +1947,16 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sym_res, bool sparse_res )
 {
+   assert( !is_hierarchy_root );
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty() ) )
       return;
-
-   assert( !is_hierarchy_root );
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */
    /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
    const bool two_link_border = !(Bl.has_RAC || Bl.use_local_RAC);
 
+   if( two_link_border )
+      ;
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */
    int nr, mr;
@@ -1964,7 +1965,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
    const int m_buffer = mr;
 
-   // buffer for Br0 - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
+   // buffer for Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
    std::unique_ptr<DenseGenMatrix> buffer_b0{ new DenseGenMatrix(m_buffer, n_buffer) };
    buffer_b0->atPutZeros(0, 0, m_buffer, n_buffer);
@@ -1973,7 +1974,8 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
    LsolveHierarchyBorder( *buffer_b0, Br, Br_mod_border, two_link_border );
 
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
-   finalizeZ0Hierarchical( *buffer_b0, Br, Br_mod_border );
+//   if( !two_link_border || PIPS_MPIgetRank(mpiComm) == 0 )
+      finalizeZ0Hierarchical( *buffer_b0, Br, Br_mod_border );
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form! )
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
