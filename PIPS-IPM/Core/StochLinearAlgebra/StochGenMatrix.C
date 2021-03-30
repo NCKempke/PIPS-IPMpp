@@ -2022,6 +2022,8 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 
    for( size_t it = 0; it < children.size(); it++ )
       children[it]->shaveBorder(m_conss, n_vars, border_left, border_bottom);
+   border_left->recomputeNonzeros();
+   border_bottom->recomputeNonzeros();
 
    m -= m_conss;
    n -= n_vars;
@@ -2074,6 +2076,7 @@ StringGenMatrix* StochGenMatrix::shaveLeftBorder( int n_vars )
    for( auto& child : children )
       border->addChild( dynamic_cast<StringGenMatrix*>( child->shaveLeftBorderChild(n_vars) ) );
 
+   border->recomputeNonzeros();
    return border;
 }
 
@@ -2105,6 +2108,7 @@ StringGenMatrix* StochGenMatrix::shaveLinkingConstraints( unsigned int n_conss )
       border->addChild(border_child);
    }
 
+   border->recomputeNonzeros();
    return border;
 }
 
