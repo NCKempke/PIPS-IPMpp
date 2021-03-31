@@ -27,6 +27,8 @@ class StringGenMatrix : public GenMatrix
       bool is_vertical{false};
 
    protected:
+      const bool is_view{false};
+
       long long m{0};
       long long n{0};
       const MPI_Comm mpi_comm{MPI_COMM_NULL};
@@ -37,7 +39,7 @@ class StringGenMatrix : public GenMatrix
    public:
       StringGenMatrix() = default;
 
-      StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_);
+      StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view = false);
 
       ~StringGenMatrix() override;
 

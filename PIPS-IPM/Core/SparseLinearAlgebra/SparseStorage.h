@@ -174,11 +174,10 @@ public:
   void transMultMatLower( double beta,  double* Y, int ny, int ldy,
 			  double alpha, double *X, int ldx, int colStart);
 
-  void fromGetColBlock(int col, double *A, int lda, int colExtent, bool &allzero);
   void fromGetColBlock(int col, double *A, int lda, int colExtent, int* colSparsity, bool &allzero);
 
-  void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset,
-        double* rowsArrayDense, int* rowSparsity = nullptr) const;
+  void fromGetRowsBlock( double* rows_array_dense, size_t row_start, size_t n_rows, size_t array_line_size, size_t array_line_offest, int* row_sparsity );
+  void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset, double* rowsArrayDense, int* rowSparsity = nullptr) const;
 
   /** add nnz per row to given array (of size nRows) */
   void addNnzPerRow(int* vec) const;

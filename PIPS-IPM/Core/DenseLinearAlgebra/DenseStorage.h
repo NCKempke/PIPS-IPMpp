@@ -43,6 +43,8 @@ public:
   virtual void atPutZeros( int row, int col,
 			   int rowExtent, int colExtent );
 
+  void putZeros();
+
   virtual void atAddOuterProductOf( int row, int col, double alpha,
 				    double * x, int incx, int nx );
 

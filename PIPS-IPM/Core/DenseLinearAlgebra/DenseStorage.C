@@ -199,6 +199,11 @@ void DenseStorage::atPutZeros( int row, int col,
   }
 }
 
+void DenseStorage::putZeros()
+{
+   std::fill( M[0], M[0] + n * m, 0.0 );
+}
+
 void DenseStorage::atPutDense( int row, int col, double * A, int lda,
 				   int rowExtent, int colExtent )
 {

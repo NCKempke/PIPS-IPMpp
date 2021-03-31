@@ -324,6 +324,36 @@ void SparseStorage::fromGetColBlock(int col, double *A, int lda, int colExtent, 
   }
 }
 
+void SparseStorage::fromGetRowsBlock( double* rows_array_dense, size_t row_start, size_t n_rows, size_t array_line_size, size_t array_line_offest, int* row_sparsity )
+{
+   assert( array_line_offest + n <= array_line_size );
+   assert( rows_array_dense );
+   assert( row_start + n_rows <= m );
+
+   for( size_t i = 0; i < n_rows; ++i )
+   {
+      const int row = row_start + i;
+
+      if( krowM[row] == krowM[row + 1] )
+         continue;
+
+      const int offset = i * array_line_size + array_line_offest;
+      assert( offset >= 0 );
+      for( int k = krowM[row]; k < krowM[row + 1]; ++k )
+      {
+         const int col = jcolM[k];
+         const double val = M[k];
+
+         assert( offset + col < array_line_size * n_rows );
+         if( row_sparsity )
+            row_sparsity[array_line_offest + col] = 1;
+
+         rows_array_dense[offset + col] = val;
+
+      }
+   }
+}
+
 
 void SparseStorage::fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize,
       int arrayLineOffset, double* rowsArrayDense, int* rowSparsity) const

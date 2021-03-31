@@ -613,7 +613,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 }
 
 /* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border )
+void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border, int begin_cols, int end_cols )
 {
    assert( children.size() == Br.F.children.size() );
 
@@ -635,7 +635,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
       if( border_child.isEmpty() && Br_mod_border.empty() )
          continue;
 
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC);
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, begin_cols, end_cols);
    }
 
    /* allreduce the result */

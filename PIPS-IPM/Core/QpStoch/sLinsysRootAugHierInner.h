@@ -23,7 +23,7 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
       void Ltsolve2(sData*, StochVector& x, SimpleVector& x0, bool use_local_RAC ) override;
 
       using sLinsys::LsolveHierarchyBorder;
-      void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border ) override;
+      void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
 
       using sLinsys::LtsolveHierarchyBorder;
       void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
@@ -35,11 +35,11 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
       void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
       void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
-      void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC ) override;
+      void addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res, bool sym_res, int begin_cols, int end_cols ) override;
 
       void addTermToSchurComplBlocked( sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC ) override;
       void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-            bool sparse_res, bool sym_res, bool use_local_RAC ) override;
+            bool sparse_res, bool sym_res, bool use_local_RAC, int begin_cols, int end_cols ) override;
 
       void putXDiagonal( OoqpVector& xdiag ) override;
       void putZDiagonal( OoqpVector& zdiag ) override;

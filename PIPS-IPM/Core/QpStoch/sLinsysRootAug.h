@@ -52,7 +52,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void Ltsolve(sData *prob, OoqpVector& x) override;
 
   using sLinsys::LsolveHierarchyBorder;
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
 
   using sLinsys::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
@@ -69,6 +69,8 @@ class sLinsysRootAug : public sLinsysRoot {
   void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
   void addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res ) override;
+  void addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+        bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols );
 
  private:
   void createSolversAndKKts(sData* prob);
@@ -89,6 +91,8 @@ class sLinsysRootAug : public sLinsysRoot {
 
   std::vector<double> reduced_rhss_blocked;
   std::unique_ptr<SimpleVector> redRhs;
+
+  std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
 };
 
 #endif

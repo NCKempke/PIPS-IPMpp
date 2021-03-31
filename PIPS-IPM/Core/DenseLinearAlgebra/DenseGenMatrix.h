@@ -39,6 +39,8 @@ public:
   virtual void atPutZeros( int row, int col,
 			   int rowExtent, int colExtent );
 
+  void putZeros();
+
   void getDiagonal( OoqpVector& vec ) override;
   void setToDiagonal( const OoqpVector& vec ) override;
 
@@ -117,7 +119,7 @@ public:
 
   /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
    * starting at mul_start and the results gets added starting at res_start */
-  void multMatAt( int mul_start, double beta, int res_start, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const;
+  void multMatAt( int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const;
 
 };
 

@@ -15,8 +15,8 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_)
-   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
+StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view )
+   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) ), is_view{is_view}
 {
    assert(mat);
 
@@ -45,6 +45,9 @@ StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* ma
 
 StringGenMatrix::~StringGenMatrix()
 {
+   if( is_view )
+      return;
+
    for( StringGenMatrix* child : children )
       delete child;
 

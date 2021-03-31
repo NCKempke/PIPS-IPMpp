@@ -175,91 +175,6 @@ void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_
   }
 }
 
-/* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) and add it to res */
-void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool )
-{
-   int mres, nres; res.getSize(mres, nres);
-
-#ifndef NDEBUG
-   int nx_border, myl_border, mzl_border, dummy;
-   if( Br.has_RAC )
-      Br.R.getSize(dummy, nx_border);
-   else if( Br.use_local_RAC )
-      data->getLocalCrossHessian().getSize(dummy, nx_border);
-   else
-      nx_border = 0;
-   Br.F.getSize(myl_border, dummy);
-   Br.G.getSize(mzl_border, dummy);
-   assert( nx_border + myl_border + mzl_border <= mres );
-#endif
-
-   std::unique_ptr<BorderBiBlock> BliT{};
-   if( Bl.has_RAC )
-      BliT.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) ) );
-   else if( Bl.use_local_RAC )
-      BliT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) ) );
-   else
-      BliT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false ) );
-
-   if( BliT->isEmpty() )
-      return;
-
-   /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
-   // TODO : reuse and make member ? possible?
-
-   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( mres, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
-
-   /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
-   int m, n; BiT_buffer->getSize(m, n);
-   BiT_buffer->atPutZeros(0, 0, m, n );
-
-   /* put (Bri)^T into buffer
-    *
-    *                [ RiT AiT CiT ]
-    *                [  0   0   0  ]
-    * Bri^T        = [  Fi  0   0  ]
-    *                [  Gi  0   0  ]
-    */
-   if( !Br.isEmpty() )
-   {
-      std::unique_ptr<BorderBiBlock> BriT{};
-
-      if( Br.has_RAC )
-         BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
-      else if( Br.use_local_RAC )
-         BriT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
-      else
-         BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
-
-      addBiTBorder( *BiT_buffer, *BriT);
-   }
-
-
-   /* compute (Bri - Bi_{inner} * X0)^T = Bri^T - X0^T * Bi_{inner}^T
-    *
-    *                     [ Ri 0 0 FiT GiT ]^T
-    * Bi_{inner} = X0^T * [ Ai 0 0  0   0  ]
-    *                     [ Ci 0 0  0   0  ]
-    */
-   BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
-   if( !BiT_inner.isEmpty() )
-      multRightDenseBorderBlocked( BiT_inner, X0, *BiT_buffer );
-
-   /* now similarly compute BiT_buffer += X_j^T Bmodj for all j */
-   multRightDenseBorderModBlocked( Br_mod_border, *BiT_buffer );
-
-   /* compute Bli^T Ki^-1 Bi_buffer = Bli^T Ki^-1 (Bri^T - X0^T * Bi_{inner}^T - sumj Xj^T Bmodj^T) */
-   addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, *BliT, *BiT_buffer, res );
-}
-
 void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
    assert( prob == data );
@@ -291,7 +206,7 @@ void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMat
    if( border_left_transp->isEmpty() || border_right->isEmpty() )
       return;
 
-   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, *border_left_transp, *border_right, SC );
+   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0, SC.size() );
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
@@ -327,55 +242,28 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_,
 }
 
 /* compute result += B_inner^T K^-1 Br */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols )
 {
    assert( Br.A.children.size() == 0 );
 
-   const bool result_sparse = false;
-   const bool result_sym = false;
+   /* empty dummy */
+   std::vector<BorderMod> Br_mod_border;
 
-   std::unique_ptr<BorderBiBlock> border_inner_tp{};
-   std::unique_ptr<BorderBiBlock> border_right{};
-
-   if( data->hasRAC() )
-      border_inner_tp.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(),
-         data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), data->getLocalF(), data->getLocalG() ) );
-   else
-      border_inner_tp.reset( new BorderBiBlock( data->getLocalF(), data->getLocalG(), false ) );
-
-   if( Br.has_RAC )
-      border_right.reset(
-            new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*Br.R.mat),
-                  dynamic_cast<SparseGenMatrix&>(*Br.A.mat),
-                  dynamic_cast<SparseGenMatrix&>(*Br.C.mat),
-                  dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
-   else if( Br.use_local_RAC )
-      border_right.reset(
-            new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
-                  data->getLocalC(),
-                  dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
-   else
-      border_right.reset(
-            new BorderBiBlock(
-                  dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-                  dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose(),
-                  false));
-
-   if( border_inner_tp->isEmpty() || border_right->isEmpty() )
-      return;
-
-   addBiTLeftKiBiRightToResBlockedParallelSolvers( result_sparse, result_sym, *border_inner_tp, *border_right, result);
+   addInnerBorderKiInvBrToRes( result, Br, Br_mod_border, false, false, false, begin_cols, end_cols );
 }
 
-/* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
-// TODO merge with other super similar method further up
-void sLinsysLeaf::addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
+/* compute result += Bl K^-1 ( Br - Br_mod_border ) for the columns begin_cols to end_cols in (Br - Br_mod_border) */
+void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
 {
-   int mRes, nRes;
-   result.getSize(mRes, nRes);
+   const int n_cols = end_cols - begin_cols;
+   assert( n_cols <= PIPSgetnOMPthreads() * blocksize_hierarchical );
+
 #ifndef NDEBUG
+   int mres, nres;
+   result.getSize(mres, nres);
+   assert( begin_cols <= end_cols );
+   assert( 0 <= begin_cols && end_cols <= mres );
+
    int nx_border, myl_border, mzl_border, dummy;
    if( Br.has_RAC )
       Br.R.getSize(dummy, nx_border);
@@ -385,30 +273,24 @@ void sLinsysLeaf::addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, Borde
       nx_border = 0;
    Br.F.mat->getSize(myl_border, dummy);
    Br.G.mat->getSize(mzl_border, dummy);
-   assert( nx_border + myl_border + mzl_border <= mRes );
+   assert( nx_border + myl_border + mzl_border <= mres );
 #endif
 
-   BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
-
-   if( BiT_inner.isEmpty() )
+   if( Bl.isEmpty() )
       return;
 
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
-   // TODO : reuse and make member ? possible?
-
-   std::unique_ptr<DenseGenMatrix> BiT_buffer( new DenseGenMatrix( mRes, dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
+   if( !BiT_buffer )
+      BiT_buffer.reset( new DenseGenMatrix( blocksize_hierarchical * PIPSgetnOMPthreads(), dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
 
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
-   int m, n; BiT_buffer->getSize(m, n);
-   BiT_buffer->atPutZeros(0, 0, m, n );
+   BiT_buffer->putZeros();
 
-   /* put (Bri)^T into buffer
+   /* put cols from begin_cols to end_cold of (Bri)^T into buffer
     *
-    *                  nxb myb mzb
-    *                [ RiT AiT CiT ]
-    * Bri^T        = [  Fi  0   0  ]
-    *                [  Gi  0   0  ]
+    *                [ RiT 0 AiT CiT ]
+    * Bri^T        = [  Fi 0  0   0  ]
+    *                [  Gi 0  0   0  ]
     */
    std::unique_ptr<BorderBiBlock> BriT{};
 
@@ -422,23 +304,64 @@ void sLinsysLeaf::addInnerBorderKiInvBrToResDense( DenseGenMatrix& result, Borde
    else
       BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
 
-   if( !BriT->isEmpty() )
-      addBiTBorder( *BiT_buffer, *BriT);
 
-   /* BiT_buffer += X_j^T Bmodj for all j */
-   multRightDenseBorderModBlocked( Br_mod_border, *BiT_buffer );
+   if( !Br_mod_border.empty() )
+   {
+      // TODO : return early if all Bordermods and Br were empty
+      if( !BriT->isEmpty() )
+         putBiTBorder( *BiT_buffer, *BriT, begin_cols, end_cols );
 
-   /* compute B_{inner}^T Ki^-1 Bi_buffer = B_{inner}^T Ki^-1 (Bri^T - sumj Xj^T Bmodj^T) */
-   addBiTLeftKiDenseToResBlockedParallelSolvers( false, false, BiT_inner, *BiT_buffer, result );
+      /* BiT_buffer += X_j^T Bmodj for all j */
+      multRightDenseBorderModBlocked( Br_mod_border, *BiT_buffer, begin_cols, end_cols );
+
+      /* compute B_{inner}^T Ki^-1 Bi_buffer = B_{inner}^T Ki^-1 (Bri^T - sumj Xj^T Bmodj^T) */
+      addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *BiT_buffer, result, begin_cols, end_cols );
+   }
+   else
+   {
+      if( !Br.isEmpty() )
+         addBiTLeftKiBiRightToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *BriT, result, begin_cols, end_cols );
+   }
 }
 
 /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
 {
-   if( Br_mod_border.empty() )
-      addInnerBorderKiInvBrToRes( result, Br );
+   BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
+
+   addLeftBorderKiInvBrToRes( result, BiT_inner, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols );
+}
+
+/* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) and add it to res */
+void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+      std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols )
+{
+   std::unique_ptr<BorderBiBlock> BliT{};
+
+   if( Bl.has_RAC )
+      BliT.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) ) );
+   else if( Bl.use_local_RAC )
+      BliT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) ) );
    else
-      addInnerBorderKiInvBrToResDense( result, Br, Br_mod_border );
+      BliT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false ) );
+
+   /* constructed to be able to call addLeftBorderKiInvBrToRes.. */
+   std::unique_ptr<StringGenMatrix> localF_view( std::make_unique<StringGenMatrix>(true, data->getLocalF(), nullptr, mpiComm, true) );
+   std::unique_ptr<StringGenMatrix> localG_view( std::make_unique<StringGenMatrix>(true, data->getLocalF(), nullptr, mpiComm, true) );
+
+
+   BorderLinsys BiT_inner( *localF_view, *localG_view, data->hasRAC() );
+   if( !BiT_inner.isEmpty() )
+   {
+      BorderMod inner_mod( BiT_inner, X0 );
+      Br_mod_border.push_back( inner_mod );
+   }
+
+   addLeftBorderKiInvBrToRes( res, *BliT, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols );
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )

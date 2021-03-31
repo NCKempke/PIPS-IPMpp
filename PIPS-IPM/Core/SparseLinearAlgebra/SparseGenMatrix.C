@@ -754,6 +754,12 @@ void SparseGenMatrix::fromGetRowsBlock(const int* rowIndices, int nRows, int arr
    mStorage->fromGetRowsBlock(rowIndices, nRows, arrayLineSize, arrayLineOffset, rowsArrayDense, rowSparsity);
 }
 
+void SparseGenMatrix::fromGetRowsBlock(int row_start, int n_rows, int array_line_size, int array_line_offset,
+      double* rows_array_dense, int* row_sparsity ) const
+{
+   mStorage->fromGetRowsBlock( rows_array_dense, row_start, n_rows, array_line_size, array_line_offset, row_sparsity);
+}
+
 void SparseGenMatrix::deleteEmptyRows(int*& orgIndex)
 {
    mStorage->deleteEmptyRows(orgIndex);
@@ -770,6 +776,15 @@ void SparseGenMatrix::fromGetColsBlock(const int* colIndices, int nCols, int arr
 
    m_Mt->getStorageRef().fromGetRowsBlock(colIndices, nCols, arrayLineSize, arrayLineOffset,
          colsArrayDense, rowSparsity);
+}
+
+void SparseGenMatrix::fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset,
+       double* cols_array_dense, int* row_sparsity )
+{
+   if( !m_Mt )
+      updateTransposed();
+
+   m_Mt->getStorageRef().fromGetRowsBlock( cols_array_dense, col_start, n_cols, array_line_size, array_line_offset, row_sparsity);
 }
 
 bool SparseGenMatrix::hasTransposed() const

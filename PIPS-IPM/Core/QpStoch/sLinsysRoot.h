@@ -64,7 +64,7 @@ class sLinsysRoot : public sLinsys {
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   using sLinsys::LsolveHierarchyBorder;
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border, int begin_cols, int end_cols ) override;
 
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
   using sLinsys::LtsolveHierarchyBorder;
