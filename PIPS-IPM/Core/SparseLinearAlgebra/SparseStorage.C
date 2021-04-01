@@ -274,31 +274,6 @@ void SparseStorage::fromGetDense( int row, int col, double * A, int lda,
 	} // End loop over all rows in range
 }
 
-
-// used in backsolves
-// get a dense block of columns *in column-major format*
-// A must be zero'd on input
-// allzero is true if there are actually no nonzero entries in this block
-void SparseStorage::fromGetColBlock(int col, double *A, int lda, int colExtent, bool &allzero)
-{
-  int i,j,k;
-  for (i = 0; i < m; i++) {
-    for ( k = krowM[i]; k < krowM[i+1]; k++) {
-      j = jcolM[k];
-      if ( j >= col ) {
-        if (j < col + colExtent) {
-          A[i+(j-col)*lda] = M[k];
-          //if (allzero) allzero = false;
-	  allzero=false;
-        } else {
-          break;
-        }
-      }
-    }
-  }
-}
-
-
 // used in backsolves
 // get a dense block of columns *in column-major format*
 // A must be zero'd on input
@@ -324,11 +299,11 @@ void SparseStorage::fromGetColBlock(int col, double *A, int lda, int colExtent, 
   }
 }
 
-void SparseStorage::fromGetRowsBlock( double* rows_array_dense, size_t row_start, size_t n_rows, size_t array_line_size, size_t array_line_offest, int* row_sparsity )
+void SparseStorage::fromGetRowsBlock( double* rows_array_dense, size_t row_start, size_t n_rows, size_t array_line_size, size_t array_line_offest, int* row_sparsity ) const
 {
    assert( array_line_offest + n <= array_line_size );
    assert( rows_array_dense );
-   assert( row_start + n_rows <= m );
+   assert( static_cast<int>(row_start + n_rows) <= m );
 
    for( size_t i = 0; i < n_rows; ++i )
    {
@@ -337,7 +312,7 @@ void SparseStorage::fromGetRowsBlock( double* rows_array_dense, size_t row_start
       if( krowM[row] == krowM[row + 1] )
          continue;
 
-      const int offset = i * array_line_size + array_line_offest;
+      const size_t offset = i * array_line_size + array_line_offest;
       assert( offset >= 0 );
       for( int k = krowM[row]; k < krowM[row + 1]; ++k )
       {

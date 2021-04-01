@@ -56,7 +56,7 @@ class sLinsysRootAug : public sLinsysRoot {
 
   using sLinsys::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border ) override;
+        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 
  protected:
   SymMatrix* createKKT (sData* prob) const;
@@ -79,7 +79,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void solveWithIterRef( sData *prob, SimpleVector& b);
   void solveWithBiCGStab( sData *prob, SimpleVector& b);
 
-  void DsolveHierarchyBorder( DenseGenMatrix& b ) override;
+  void DsolveHierarchyBorder( DenseGenMatrix& b, int n_cols ) override;
 
   // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
   void addLinkConsBlock0Matrix( sData *prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
@@ -92,7 +92,9 @@ class sLinsysRootAug : public sLinsysRoot {
   std::vector<double> reduced_rhss_blocked;
   std::unique_ptr<SimpleVector> redRhs;
 
+ protected:
   std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
+
 };
 
 #endif

@@ -4,7 +4,6 @@
 
 #include "sLinsysLeaf.h"
 
-
 sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
           OoqpVector* dd_,
           OoqpVector* dq_,
@@ -350,8 +349,8 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
       BliT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false ) );
 
    /* constructed to be able to call addLeftBorderKiInvBrToRes.. */
-   std::unique_ptr<StringGenMatrix> localF_view( std::make_unique<StringGenMatrix>(true, data->getLocalF(), nullptr, mpiComm, true) );
-   std::unique_ptr<StringGenMatrix> localG_view( std::make_unique<StringGenMatrix>(true, data->getLocalF(), nullptr, mpiComm, true) );
+   std::unique_ptr<StringGenMatrix> localF_view( std::make_unique<StringGenMatrix>(true, &data->getLocalF(), nullptr, mpiComm, true) );
+   std::unique_ptr<StringGenMatrix> localG_view( std::make_unique<StringGenMatrix>(true, &data->getLocalG(), nullptr, mpiComm, true) );
 
 
    BorderLinsys BiT_inner( *localF_view, *localG_view, data->hasRAC() );

@@ -195,11 +195,13 @@ void sLinsysRoot::afterFactor()
  */
 // TODO : refactor! ..
 // TODO : move to aug..
-void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border )
+void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows )
 {
    // TODO : parallelize over MPI porcs?
-   finalizeDenseBorderModBlocked(Br_mod_border, buffer);
+   finalizeDenseBorderModBlocked( Br_mod_border, buffer, begin_rows, end_rows );
 
+   // TODO
+   assert( false );
    if( !Br.has_RAC && !Br.use_local_RAC )
       return;
 
@@ -635,7 +637,9 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
       if( border_child.isEmpty() && Br_mod_border.empty() )
          continue;
 
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, begin_cols, end_cols);
+      const bool sparse_res = false;
+      const bool sym_res = false;
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, sparse_res, sym_res, begin_cols, end_cols);
    }
 
    /* allreduce the result */
@@ -647,7 +651,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
 void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, bool use_local_RAC, bool two_link_border )
+      bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols )
 {
    assert( !is_hierarchy_root );
 
@@ -676,7 +680,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
             border_mod_child.push_back( getChild( bm, it ) );
       }
 
-      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC );
+      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC, begin_cols, end_cols );
    }
 }
 

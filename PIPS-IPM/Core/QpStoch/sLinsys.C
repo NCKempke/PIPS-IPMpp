@@ -227,14 +227,14 @@ void sLinsys::addLnizi(sData *prob, OoqpVector& z0_, OoqpVector& zi_)
   C.transMult(1.0, z01, -1.0, zi3);
 }
 
-void sLinsys::finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result )
+void sLinsys::finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result, int begin_rows, int end_rows )
 {
    /* compute BiT_buffer += X_j^T Bmodj for all j */
    for( auto& border_mod_block : border_mod )
    {
       if( border_mod_block.border.isEmpty() )
          continue;
-      finalizeDenseBorderBlocked( border_mod_block.border, border_mod_block.multiplier, result );
+      finalizeDenseBorderBlocked( border_mod_block.border, border_mod_block.multiplier, result, begin_rows, end_rows );
    }
 }
 
@@ -276,7 +276,7 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
  * buffer -= X * [ F0V  0     0    ]
  *               [ G0V  0     0    ]
  */
-void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result )
+void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows )
 {
    const bool has_RAC = B.has_RAC;
 
@@ -342,41 +342,39 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
       assert( nX0 >= nF0V );
 #endif
 
-
-
    if( has_RAC )
    {
       /*            [  0  ]
        * res -= X * [ F0C ]
        *            [ G0C ]
        */
-      X.multMatAt( nF0V, 1.0, 0, result, -1.0, *F0cons_border );
-      X.multMatAt( nF0V + mF0C, 1.0, 0, result, -1.0, *G0cons_border );
+      X.multMatAt( begin_rows, end_rows, nF0V, 1.0, 0, 0, result, -1.0, *F0cons_border );
+      X.multMatAt( begin_rows, end_rows, nF0V + mF0C, 1.0, 0, 0, result, -1.0, *G0cons_border );
 
       /*            [ A0T ]
        * res -= X * [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, nF0C, result, -1.0, A0_border->getTranspose() );
+      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C, result, -1.0, A0_border->getTranspose() );
 
       /*            [ C0T ]
        * res -= X * [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( 0, 1.0, nF0C + mA0, result, -1.0, C0_border->getTranspose() );
+      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C + mA0, result, -1.0, C0_border->getTranspose() );
    }
 
    /*            [ F0VT ]
     * res -= X * [  0   ]
     *            [  0   ]
     */
-   X.multMatAt( 0, 1.0, nF0C + mA0 + mC0, result, -1.0, F0vec_border->getTranspose() );
+   X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C + mA0 + mC0, result, -1.0, F0vec_border->getTranspose() );
 
    /*            [ G0VT ]
     * res -= X * [  0   ]
     *            [  0   ]
     */
-   X.multMatAt( 0, 1.0, nF0C + mA0 + mC0 + mF0V, result, -1.0, G0vec_border->getTranspose() );
+   X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C + mA0 + mC0 + mF0V, result, -1.0, G0vec_border->getTranspose() );
 }
 
 
@@ -498,13 +496,13 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
 
    int mRt, nRt; BiT.R.getSize(mRt, nRt);
    int mAt, nAt; BiT.A.getSize(mAt, nAt);
-   int mCt, nCt; BiT.C.getSize(mCt, nCt);
    int mF, nF; BiT.F.getSize(mF, nF);
    int mG, nG; BiT.G.getSize(mG, nG);
 
    int mres, nres; res.getSize(mres, nres);
 
 #ifndef NDEBUG
+   int mCt, nCt; BiT.C.getSize(mCt, nCt);
    assert( nF == nG );
    if( BiT.has_RAC )
    {
@@ -518,11 +516,12 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
       assert( mres >= mF + mG );
       assert( nres >= nF );
    }
+
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mres );
 #endif
    if( BiT.isEmpty() )
       return;
 
-   const int n_rows = end_rows - begin_rows;
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
 
    // TODO : use same members as in other blockwise computations

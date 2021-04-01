@@ -27,8 +27,6 @@ class StringGenMatrix : public GenMatrix
       bool is_vertical{false};
 
    protected:
-      const bool is_view{false};
-
       long long m{0};
       long long n{0};
       const MPI_Comm mpi_comm{MPI_COMM_NULL};
@@ -36,6 +34,8 @@ class StringGenMatrix : public GenMatrix
       const int rank{-1};
       long long nonzeros{0};
 
+      // will not delete its data when deleted
+      const bool is_view{false};
    public:
       StringGenMatrix() = default;
 

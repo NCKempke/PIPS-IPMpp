@@ -58,7 +58,7 @@ class sLinsysRoot : public sLinsys {
   void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool) override;
 
   /* compute (Br0 - sum_j Br_mod_border) - buffer */
-  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border );
+  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows );
   /* compute SC += B0_{outer}^T X0 */
   virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
 
@@ -69,7 +69,7 @@ class sLinsysRoot : public sLinsys {
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
   using sLinsys::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, bool two_link_border ) override;
+        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 

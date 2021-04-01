@@ -173,7 +173,7 @@ class sLinsys : public QpGenLinsys
   std::unique_ptr<DoubleLinearSolver> solver{};
 
   // TODO : make param!
-  const size_t blocksize_hierarchical = 20;
+  const int blocksize_hierarchical = 20;
 
  public:
   MPI_Comm mpiComm{MPI_COMM_NULL};
@@ -256,16 +256,17 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   /* solve with SC and comput X_0 = SC^-1 B_0 */
-  virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/ )
+  virtual void DsolveHierarchyBorder( DenseGenMatrix& /*buffer_b0*/, int /*n_cols*/ )
   { assert( false && "not implemented here" ); };
 
   /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
   virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
-        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*two_link_border*/)
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, int /*begin_cols*/, int /*end_cols*/)
   { assert( false && "not implemented here" ); };
 
   virtual void LtsolveHierarchyBorder( DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/,
-        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC*/, bool /*two_link_border*/)
+        BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC*/,
+        int /*begin_cols*/, int /*end_cols*/ )
   { assert( false && "not implemented here" ); };
 
   /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Brmod_ij Xj )and add it to result */
@@ -283,17 +284,17 @@ class sLinsys : public QpGenLinsys
   void addLeftBorderTimesDenseColsToResTranspDense( const BorderBiBlock& Bl, const double* cols,
         const int* cols_id, int length_col, int n_cols, int n_cols_res, double** res) const;
 
-  /* calculate res -= BT * X */
-  void finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result );
+  /* calculate res -= BT0 * X0 */
+  void finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows );
 
-  /* calculate res -= X * BT */
+  /* calculate res -= X0 * BT */
   void multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows );
 
-  /* calculate res -= (sum_j XjT * BjT ) */
+  /* calculate res -= (sum_j X0jT * BjT ) */
   void multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result, int begin_cols, int end_cols );
 
   /* calculate res -= (sum_j X0jT * B0JT ) */
-  void finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result );
+  void finalizeDenseBorderModBlocked( std::vector<BorderMod>& border_mod, DenseGenMatrix& result, int begin_rows, int end_rows );
 
 };
 

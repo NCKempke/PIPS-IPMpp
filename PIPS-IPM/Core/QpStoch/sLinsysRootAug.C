@@ -553,12 +553,12 @@ void sLinsysRootAug::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys
 }
 
 void sLinsysRootAug::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res , bool two_link_border )
+      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols )
 {
    if( Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()) )
       return;
 
-   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, true, two_link_border );
+   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, true, begin_cols, end_cols );
 }
 
 extern int gLackOfAccuracy;
@@ -1893,38 +1893,41 @@ void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
    //myAtPutZeros(kktd, locnx, locnx, locmy, locmy);
 }
 
-void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
+void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp, int n_cols )
 {
    /* b holds all rhs in transposed form - C part from schur complement is already missing in b */
    const int my_rank = PIPS_MPIgetRank( mpiComm );
-
 #ifdef TIMING
    // TODO
 #endif
+
+#ifndef NDEBUG
    assert(locmyl >= 0 && locmzl >= 0);
 
    int m,n; rhs_mat_transp.getSize(m, n);
+   assert( n_cols <= m );
    assert( locnx + locmy + locmz + locmyl + locmzl == n );
+#endif
 
-   /* for every right hand side one of the processes now does the SC solve operation and puts it at the corresponding
+   /*
+    * for every right hand side one of the processes now does the SC solve operation and puts it at the corresponding
     * position in b
     * Every process has to do n_rhs / n_procs right hand sides while the first few might have to solve with one additional one
     */
-
    const int size = PIPS_MPIgetSize( mpiComm );
-   const int n_blockrhs = static_cast<int>( m / size );
-   const int leftover = m % size;
+   const int n_blockrhs = static_cast<int>( n_cols / size );
+   const int leftover = n_cols % size;
 
    const int n_rhs = (my_rank < leftover ) ? n_blockrhs + 1 : n_blockrhs;
    const int rhs_start = my_rank < leftover ? (n_blockrhs + 1) * my_rank :
          (n_blockrhs + 1) * leftover + (my_rank - leftover) * n_blockrhs;
 
-   assert( rhs_start <= m );
-   assert( rhs_start + n_rhs <= m );
+   assert( rhs_start <= n_cols );
+   assert( rhs_start + n_rhs <= n_cols );
 
    // set rhs contributed by other procs to zero
    #pragma omp parallel for schedule(dynamic, 1)
-   for( int rhs_i = 0; rhs_i < m; ++rhs_i )
+   for( int rhs_i = 0; rhs_i < n_cols; ++rhs_i )
    {
       if( rhs_start <= rhs_i && rhs_i < rhs_start + n_rhs )
          continue;
@@ -1936,6 +1939,8 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp )
 
    if( iAmDistrib )
    {
+      // TODO only allreduce relevant part
+      // TODO is allreduce even worth it here? Every proc could also compute all its rhs - add if n_rhs big
       int m, n;
       rhs_mat_transp.getSize(m, n);
       submatrixAllReduceFull(&rhs_mat_transp, 0, 0, m, n, mpiComm);
@@ -1983,6 +1988,8 @@ void sLinsysRootAug::addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsy
       bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols )
 {
    assert( !is_hierarchy_root );
+   assert( 0 <= begin_cols && begin_cols <= end_cols );
+   assert( buffer_b0.getStorageRef().m <= end_cols );
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */
    /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
@@ -1998,14 +2005,14 @@ void sLinsysRootAug::addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsy
 
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
 //TODO:   if( !two_link_border || PIPS_MPIgetRank(mpiComm) == 0 )
-    finalizeZ0Hierarchical( buffer_b0, Br, Br_mod_border );
+    finalizeZ0Hierarchical( buffer_b0, Br, Br_mod_border, begin_cols, end_cols );
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form! )
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
-   DsolveHierarchyBorder( buffer_b0 );
+   DsolveHierarchyBorder( buffer_b0, end_cols - begin_cols );
 
    // compute result += -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) += -SUM_i Bli^T Xi
-   LtsolveHierarchyBorder( result, buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res, two_link_border_left );
+   LtsolveHierarchyBorder( result, buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res, begin_cols, end_cols );
 
    // compute result += Bl0^T X0
    if( PIPS_MPIgetRank(mpiComm) == 0 )

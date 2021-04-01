@@ -757,6 +757,7 @@ void SparseGenMatrix::fromGetRowsBlock(const int* rowIndices, int nRows, int arr
 void SparseGenMatrix::fromGetRowsBlock(int row_start, int n_rows, int array_line_size, int array_line_offset,
       double* rows_array_dense, int* row_sparsity ) const
 {
+   assert( 0 <= row_start && 0 <= n_rows && 0 <= array_line_size && 0 <= array_line_offset );
    mStorage->fromGetRowsBlock( rows_array_dense, row_start, n_rows, array_line_size, array_line_offset, row_sparsity);
 }
 

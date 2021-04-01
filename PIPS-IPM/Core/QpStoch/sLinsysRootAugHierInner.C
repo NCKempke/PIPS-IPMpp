@@ -85,12 +85,12 @@ void sLinsysRootAugHierInner::LsolveHierarchyBorder( DenseGenMatrix& result, Bor
 }
 
 void sLinsysRootAugHierInner::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border )
+      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols )
 {
    if( Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()) )
       return;
 
-   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false, two_link_border );
+   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false, begin_cols, end_cols );
 }
 
 void sLinsysRootAugHierInner::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool use_local_RAC )
@@ -277,13 +277,13 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
    }
 
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
-   const size_t m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
+   const int m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
 
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
    if( !buffer_blocked_hierarchical )
       buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
-   buffer_blocked_hierarchical->atPutZeros(0, 0, m_buffer, n_buffer);
+   buffer_blocked_hierarchical->putZeros();
 
    assert( end_cols - begin_cols <= m_buffer );
 

@@ -45,8 +45,8 @@ class sDummyLinsys : public sLinsys
 
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int ) override {};
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, int, int ) override {};
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int ) override {};
-  void LniTransMultHierarchyBorder( DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool ) override {};
+  void addInnerBorderKiInvBrToRes( DoubleMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int, int ) override {};
+  void LniTransMultHierarchyBorder( DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int, int ) override {};
 
   void allocU( DenseGenMatrix**, int ) override {};
   void allocV( DenseGenMatrix**, int ) override {};
