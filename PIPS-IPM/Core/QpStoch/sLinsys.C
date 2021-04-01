@@ -278,6 +278,7 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
  */
 void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows )
 {
+   assert( false );
    const bool has_RAC = B.has_RAC;
 
    if( !B.has_RAC && !B.use_local_RAC )
@@ -958,7 +959,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    if( with_RAC )
    {
       int mC_right, nC_right; border_right.C.getSize(mC_right, nC_right);
-      assert( nR_r == nA_r);
+      assert( nR_r == nA_r );
       assert( nR_r == nC_right);
       assert( mR_r == mF_right );
       assert( mR_r == mG_right );

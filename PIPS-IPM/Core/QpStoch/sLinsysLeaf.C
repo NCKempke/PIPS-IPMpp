@@ -263,8 +263,8 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
 #ifndef NDEBUG
    int mres, nres;
    result.getSize(mres, nres);
+   assert( 0 <= begin_cols );
    assert( begin_cols <= end_cols );
-   assert( 0 <= begin_cols && end_cols <= mres );
 
    int nx_border, myl_border, mzl_border, dummy;
    if( Br.has_RAC )
@@ -275,7 +275,7 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
       nx_border = 0;
    Br.F.mat->getSize(myl_border, dummy);
    Br.G.mat->getSize(mzl_border, dummy);
-   assert( nx_border + myl_border + mzl_border <= mres );
+   assert( end_cols <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
 #endif
 
    if( Bl.isEmpty() )
@@ -294,21 +294,21 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
     * Bri^T        = [  Fi 0  0   0  ]
     *                [  Gi 0  0   0  ]
     */
-   std::unique_ptr<BorderBiBlock> BriT{};
-
-   if( Br.has_RAC )
-      BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
-            dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(), Br.n_empty_rows,
-            dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
-   else if( Br.use_local_RAC )
-      BriT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), Br.n_empty_rows,
-            dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
-   else
-      BriT.reset( new BorderBiBlock( Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
-
-
    if( !Br_mod_border.empty() )
    {
+      std::unique_ptr<BorderBiBlock> BriT{};
+
+      if( Br.has_RAC )
+         BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(), Br.n_empty_rows,
+               dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
+      else if( Br.use_local_RAC )
+         BriT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), Br.n_empty_rows,
+               dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
+      else
+         BriT.reset( new BorderBiBlock( Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
+
+
       // TODO : return early if all Bordermods and Br were empty
       if( !BriT->isEmpty() )
          putBiTBorder( *BiT_buffer, *BriT, begin_cols, end_cols );
@@ -321,6 +321,19 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
    }
    else
    {
+      std::unique_ptr<BorderBiBlock> BriT{};
+
+      if( Br.has_RAC )
+         BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.R.mat),
+               dynamic_cast<SparseGenMatrix&>(*Br.A.mat), dynamic_cast<SparseGenMatrix&>(*Br.C.mat), Br.n_empty_rows,
+               dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() ) );
+      else if( Br.use_local_RAC )
+         BriT.reset( new BorderBiBlock( data->getLocalCrossHessian(), data->getLocalA(), data->getLocalC(), Br.n_empty_rows,
+               dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose() ) );
+      else
+         BriT.reset( new BorderBiBlock( Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose(), false ) );
+
+
       if( !Br.isEmpty() )
          addBiTLeftKiBiRightToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *BriT, result, begin_cols, end_cols );
    }

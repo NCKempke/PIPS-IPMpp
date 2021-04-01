@@ -435,8 +435,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  *       [ G0V  0    0   ]
  *
  */
-void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse )
+void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
 {
+   assert( false );
    if( is_sparse )
       assert( is_sym );
    const bool has_RAC = Br.has_RAC;

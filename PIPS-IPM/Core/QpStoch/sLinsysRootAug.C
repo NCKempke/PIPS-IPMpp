@@ -2005,7 +2005,7 @@ void sLinsysRootAug::addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsy
 
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
 //TODO:   if( !two_link_border || PIPS_MPIgetRank(mpiComm) == 0 )
-    finalizeZ0Hierarchical( buffer_b0, Br, Br_mod_border, begin_cols, end_cols );
+   finalizeZ0Hierarchical( buffer_b0, Br, Br_mod_border, begin_cols, end_cols );
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form! )
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
@@ -2016,5 +2016,5 @@ void sLinsysRootAug::addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsy
 
    // compute result += Bl0^T X0
    if( PIPS_MPIgetRank(mpiComm) == 0 )
-      finalizeInnerSchurComplementContribution( result, buffer_b0, Bl, sym_res, sparse_res );
+      finalizeInnerSchurComplementContribution( result, buffer_b0, Bl, sym_res, sparse_res, begin_cols, end_cols );
 }

@@ -60,7 +60,7 @@ class sLinsysRoot : public sLinsys {
   /* compute (Br0 - sum_j Br_mod_border) - buffer */
   virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows );
   /* compute SC += B0_{outer}^T X0 */
-  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
+  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   using sLinsys::LsolveHierarchyBorder;
