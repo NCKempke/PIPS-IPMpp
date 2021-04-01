@@ -1956,19 +1956,38 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
       return;
 
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
-   const size_t m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
+
+   int dummy, m_result;
+   result.getSize(m_result, dummy);
+
+   assert( m_result > 0 );
+   assert( blocksize_hierarchical > 0 );
+
+   int m_buffer{0};
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+      m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
+   else
+      m_buffer = m_result;
 
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
    if( !buffer_blocked_hierarchical )
       buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
-   buffer_blocked_hierarchical->atPutZeros(0, 0, m_buffer, n_buffer);
-
-   int dummy, m_result;
-   result.getSize(m_result, dummy);
-   assert( m_result > 0 );
+   else
+   {
+      int mbuf, nbuf; buffer_blocked_hierarchical->getSize(mbuf, nbuf);
+      if( mbuf < m_buffer || nbuf < n_buffer )
+         buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
+   }
+   buffer_blocked_hierarchical->putZeros();
 
    const size_t n_chunks = std::ceil( m_result / m_buffer );
+
+   if( !pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   {
+      assert( n_chunks == 1 );
+      assert( m_buffer == m_result );
+   }
 
    for( size_t i = 0; i < n_chunks; ++i )
    {

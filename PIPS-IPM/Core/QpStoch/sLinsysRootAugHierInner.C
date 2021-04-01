@@ -237,22 +237,38 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVe
 
 void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
 {
+   int mres, dummy; result.getSize( mres, dummy );
+   int mG, mF;
+   data->getLocalFBorder().getSize(mF, dummy);
+   data->getLocalGBorder().getSize(mG, dummy);
+
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
+   assert( 0 <= mres - mG - mF );
 
-   BorderLinsys Bl( 0, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Bl( mres - mG - mF, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
       return;
-   addBTKiInvBToSC( result, Bl, Br, Br_mod_border, sparse_res, sym_res);
 
+   addBTKiInvBToSC( result, Bl, Br, Br_mod_border, sparse_res, sym_res );
 }
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
    assert( data == prob );
 
-   BorderLinsys Bl( 0, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
-   BorderLinsys Br( 0, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   int mSC = SC.size();
+   int mG, nG, mF, nF;
+   data->getLocalFBorder().getSize(mF, nF);
+   data->getLocalGBorder().getSize(mG, nG);
+
+   assert( nF == nG );
+   assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
+   assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
+   assert( 0 <= mSC - mG - mF );
+
+   BorderLinsys Bl( mSC - mG - mF, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Br( mSC - mG - mF, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    if( Bl.isEmpty() )
       return;
 
@@ -277,12 +293,32 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
    }
 
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
-   const int m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
+
+   int dummy, m_result;
+   res.getSize(m_result, dummy);
+
+   assert( m_result > 0 );
+   assert( blocksize_hierarchical > 0 );
+
+   int m_buffer{0};
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+      m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
+   else
+   {
+      assert( begin_cols == 0 && end_cols == m_result );
+      m_buffer = m_result;
+   }
 
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
    if( !buffer_blocked_hierarchical )
       buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
+   else
+   {
+      int mbuf, nbuf; buffer_blocked_hierarchical->getSize(mbuf, nbuf);
+      if( mbuf < m_buffer || nbuf < n_buffer )
+         buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
+   }
    buffer_blocked_hierarchical->putZeros();
 
    assert( end_cols - begin_cols <= m_buffer );

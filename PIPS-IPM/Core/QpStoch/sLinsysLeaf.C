@@ -257,36 +257,63 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
 /* compute result += Bl K^-1 ( Br - Br_mod_border ) for the columns begin_cols to end_cols in (Br - Br_mod_border) */
 void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
 {
-   const int n_cols = end_cols - begin_cols;
-   assert( n_cols <= PIPSgetnOMPthreads() * blocksize_hierarchical );
-
+   int dummy;
 #ifndef NDEBUG
+   const int n_cols = end_cols - begin_cols;
    int mres, nres;
    result.getSize(mres, nres);
    assert( 0 <= begin_cols );
    assert( begin_cols <= end_cols );
 
-   int nx_border, myl_border, mzl_border, dummy;
+   int nx_border{0};
    if( Br.has_RAC )
       Br.R.getSize(dummy, nx_border);
    else if( Br.use_local_RAC )
       data->getLocalCrossHessian().getSize(dummy, nx_border);
+
+   int myl_border, mzl_border;
+   Br.F.mat->getSize(dummy, myl_border);
+   Br.G.mat->getSize(dummy, mzl_border);
+   std::cout << end_cols << " " << nx_border << " " << Br.n_empty_rows << " " << myl_border << " " << mzl_border  << std::endl;
+
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE" ) )
+      assert( end_cols <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
    else
-      nx_border = 0;
-   Br.F.mat->getSize(myl_border, dummy);
-   Br.G.mat->getSize(mzl_border, dummy);
-   assert( end_cols <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
+      assert( end_cols == nx_border + Br.n_empty_rows + myl_border + mzl_border && begin_cols == 0 );
+
 #endif
 
    if( Bl.isEmpty() )
       return;
 
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
-   if( !BiT_buffer )
-      BiT_buffer.reset( new DenseGenMatrix( blocksize_hierarchical * PIPSgetnOMPthreads(), dynamic_cast<SparseSymMatrix&>(*kkt).size() ) );
-
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
+   const int n_buffer = kkt->size();
+
+   int m_result;
+   result.getSize(m_result, dummy);
+
+   assert( m_result > 0 );
+   assert( blocksize_hierarchical > 0 );
+
+   int m_buffer{0};
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+      m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
+   else
+      m_buffer = m_result;
+
+   if( !BiT_buffer )
+      BiT_buffer.reset( new DenseGenMatrix(m_buffer, n_buffer) );
+   else
+   {
+      int mbuf, nbuf; BiT_buffer->getSize(mbuf, nbuf);
+      if( mbuf < m_buffer || nbuf < n_buffer )
+         BiT_buffer.reset( new DenseGenMatrix(m_buffer, n_buffer) );
+   }
    BiT_buffer->putZeros();
+
+   assert( n_cols <= m_buffer );
+
 
    /* put cols from begin_cols to end_cold of (Bri)^T into buffer
     *

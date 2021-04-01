@@ -178,7 +178,7 @@ class sLinsys : public QpGenLinsys
   std::unique_ptr<DoubleLinearSolver> solver{};
 
   // TODO : make param!
-  const int blocksize_hierarchical = 20;
+  const int blocksize_hierarchical{20};
 
  public:
   MPI_Comm mpiComm{MPI_COMM_NULL};

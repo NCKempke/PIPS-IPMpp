@@ -200,14 +200,18 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    // TODO : parallelize over MPI porcs?
    finalizeDenseBorderModBlocked( Br_mod_border, buffer, begin_rows, end_rows );
 
+   int mX0, nX0; buffer.getSize( mX0, nX0 );
    // TODO
-   assert( false );
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+      assert( false );
+   else
+      assert( end_rows = nX0 );
+
    if( !Br.has_RAC && !Br.use_local_RAC )
       return;
 
    bool has_RAC = Br.has_RAC;
 
-   int mX0, nX0; buffer.getSize( mX0, nX0 );
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -437,7 +441,13 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  */
 void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
 {
-   assert( false );
+   int mSC, nSC; SC_.getSize(mSC, nSC);
+
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+      assert( false );
+   else
+      assert( end_rows == mSC );
+
    if( is_sparse )
       assert( is_sym );
    const bool has_RAC = Br.has_RAC;
@@ -446,7 +456,6 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
       return;
 
    int mX0, nX0; X0.getSize(mX0, nX0);
-   int mSC, nSC; SC_.getSize(mSC, nSC);
 
    assert( mSC == mX0 );
 

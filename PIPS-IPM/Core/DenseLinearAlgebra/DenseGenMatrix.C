@@ -354,7 +354,7 @@ void DenseGenMatrix::multMatAt( int row_start, int row_end, int col_offset_this,
    assert( 0 <= col_offset_this );
    assert( 0 <= row_start );
    assert( row_start <= row_end );
-   assert( row_end < mStorage->m );
+   assert( row_end <= mStorage->m );
 
    int mat_m, mat_n; mat.getSize( mat_m, mat_n );
 

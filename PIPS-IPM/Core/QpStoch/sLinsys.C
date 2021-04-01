@@ -19,6 +19,7 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     is_hierarchy_root(is_hierarchy_root),
+    blocksize_hierarchical( pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL") ),
     stochNode{ factory_->tree }
 {
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
@@ -278,7 +279,8 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
  */
 void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows )
 {
-   assert( false );
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+      assert( false );
    const bool has_RAC = B.has_RAC;
 
    if( !B.has_RAC && !B.use_local_RAC )
@@ -416,6 +418,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
       assert( nF <= nRes );
       assert( mF + mG == nX );
    }
+
    assert( mRes <= mX );
    assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX );
 #endif
@@ -478,23 +481,19 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
    const int n_empty_rows = BiT.n_empty_rows;
 
 #ifndef NDEBUG
-   const int m_border = BiT.has_RAC ? n_empty_rows + mF + mG : mRt + n_empty_rows + mF + mG;
+   const int m_border = BiT.has_RAC ? mRt + n_empty_rows + mF + mG : n_empty_rows + mF + mG;
 
    int mres, nres; res.getSize(mres, nres);
    int mCt, nCt; BiT.C.getSize(mCt, nCt);
+   assert( mres <= end_rows - begin_rows );
    assert( nF == nG );
    if( BiT.has_RAC )
    {
-      assert( mRt + mF + mG <= mres );
       assert( nF == nRt );
       assert( nRt + nAt + nCt == nres );
    }
    else
-   {
-      /* greater equal - there could be 0linkvars */
-      assert( mres >= mF + mG );
       assert( nres >= nF );
-   }
 
    assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= m_border );
 #endif
@@ -517,23 +516,29 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
 
    const int begin_F = end_RAC + n_empty_rows;
    const int end_F = begin_F + mF;
-   if( begin_rows < end_F && begin_F <= end_rows )
+   if( begin_rows < end_F && begin_F < end_rows )
    {
       const int begin_block_F = std::max( begin_rows, begin_F) - begin_F;
       const int end_block_F = std::min(end_rows, end_F) - begin_F;
       const int n_rhs_block = end_block_F - begin_block_F;
 
-      BiT.F.fromGetRowsBlock( begin_block_F, n_rhs_block, length_col, 0, res[ std::max(begin_F - begin_rows, 0) ] );
+      const int res_start_row = std::max( begin_F - begin_rows, 0 );
+      assert( res_start_row + n_rhs_block <= mres );
+
+      BiT.F.fromGetRowsBlock( begin_block_F, n_rhs_block, length_col, 0, res[ res_start_row ] );
    }
 
    const int begin_G = end_F;
-   if( begin_G <= end_rows )
+   if( begin_G < end_rows )
    {
       const int begin_block_G = std::max( begin_rows, begin_G ) - begin_G;
       const int end_block_G = end_rows - begin_G;
       const int n_rhs_block = end_block_G - begin_block_G;
 
-      BiT.G.fromGetRowsBlock( begin_block_G, n_rhs_block, length_col, 0, res[ std::max(begin_G - begin_rows, 0) ] );
+      const int res_start_row = std::max( begin_G - begin_rows, 0 );
+      assert( res_start_row + n_rhs_block <= mres );
+
+      BiT.G.fromGetRowsBlock( begin_block_G, n_rhs_block, length_col, 0, res[res_start_row] );
    }
 }
 
@@ -1058,7 +1063,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       //                       (0  )
       const int begin_F = with_RAC ? nR_r + border_right.n_empty_rows : border_right.n_empty_rows;
       const int end_F = begin_F + nF_right;
-      if( begin_F < end_cols && begin_cols <= end_F )
+      if( begin_F < end_cols && begin_cols < end_F )
       {
          const int begin_block_F = std::max(begin_F, begin_cols) - begin_F;
          const int end_block_F = std::min( end_cols, end_F ) - begin_F;
@@ -1109,7 +1114,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       const int begin_G = with_RAC ? nR_r + border_right.n_empty_rows + nF_right: border_right.n_empty_rows + nF_right;
       const int end_G = begin_G + nG_right;
 
-      if( begin_G < end_cols && begin_cols <= end_G )
+      if( begin_G < end_cols && begin_cols < end_G )
       {
          const int begin_block_G = std::max(begin_G, begin_cols) - begin_G;
          const int end_block_G = std::min( end_cols, end_G ) - begin_G;
