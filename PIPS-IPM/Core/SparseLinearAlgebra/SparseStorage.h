@@ -180,7 +180,9 @@ public:
   void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset, double* rowsArrayDense, int* rowSparsity = nullptr) const;
 
   /** add nnz per row to given array (of size nRows) */
-  void addNnzPerRow(int* vec) const;
+  void addNnzPerRow(int* vec) const { addNnzPerRow(vec, 0, m); };
+  void addNnzPerRow(int* vec, int begin_rows, int end_rows) const;
+
   void getLinkVarsNnz(std::vector<int>& vec) const;
 
   /** add abs. sum per row to given array (of size nRows) */

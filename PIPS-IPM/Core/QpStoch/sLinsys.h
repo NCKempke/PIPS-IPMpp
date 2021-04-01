@@ -39,9 +39,10 @@ class sLinsys : public QpGenLinsys
          const bool use_local_RAC{};
          const bool has_RAC{};
          /* represents a block like
-          * [ R_i F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
-          * [ A_i   0     0   ] or possibly [  F_i    0     0   ]
-          * [ C_i   0     0   ]             [  G_i    0     0   ]
+          * [ R_i 0 F_i^T G_i^T ]             [ R_i^T A_i^T C_i^T ]
+          * [ A_i 0   0     0   ] or possibly [   0     0     0   ]
+          * [ C_i 0   0     0   ]             [  F_i    0     0   ]
+          *                                   [  G_i    0     0   ]
           */
          T& R;
          T& A;
@@ -49,17 +50,20 @@ class sLinsys : public QpGenLinsys
          T& F;
          T& G;
 
+         /* n_empty_rows gives the distance between RAC and F,G blocks */
+         int n_empty_rows;
+
          bool isEmpty() const;
 
-         RACFG_BLOCK( T& R, T& A, T& C, T& F, T& G ) :
-            has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G} {};
+         RACFG_BLOCK( T& R, T& A, T& C, int n_empty_rows, T& F, T& G ) :
+            has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G}, n_empty_rows{n_empty_rows} { assert(n_empty_rows >= 0); };
 
-         RACFG_BLOCK( T& F, T& G, bool use_local_RAC ) :
-            use_local_RAC{ use_local_RAC }, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G} {};
+         RACFG_BLOCK( int n_empty_rows, T& F, T& G, bool use_local_RAC ) :
+            use_local_RAC{ use_local_RAC }, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy}, F{F}, G{G}, n_empty_rows{n_empty_rows} {  assert(n_empty_rows >= 0); };
 
          RACFG_BLOCK( const RACFG_BLOCK<T>& block ) :
             use_local_RAC{ block.use_local_RAC }, has_RAC{ block.has_RAC }, R{ block.R }, A{ block.A }, C{ block.C },
-             F{ block.F }, G{ block.G } {};
+             F{ block.F }, G{ block.G }, n_empty_rows{ block.n_empty_rows} { assert(n_empty_rows >= 0); };
       };
 
       using BorderLinsys = RACFG_BLOCK<StringGenMatrix>;
@@ -75,22 +79,23 @@ class sLinsys : public QpGenLinsys
                return BorderLinsys( dynamic_cast<StringGenMatrix&>(*border.R.children[i]->mat),
                      dynamic_cast<StringGenMatrix&>(*border.A.children[i]->mat),
                      dynamic_cast<StringGenMatrix&>(*border.C.children[i]->mat),
+                     border.n_empty_rows,
                      dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
                      dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat)
-                  );
+                     );
             else
-               return BorderLinsys( *border.R.children[i], *border.A.children[i], *border.C.children[i],
+               return BorderLinsys( *border.R.children[i], *border.A.children[i], *border.C.children[i], border.n_empty_rows,
                   *border.F.children[i], *border.G.children[i] );
          }
          else
          {
             if( !dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix) )
-               return BorderLinsys( dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
+               return BorderLinsys( border.n_empty_rows, dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
                      dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat),
                      border.use_local_RAC
                   );
             else
-               return BorderLinsys( *border.F.children[i], *border.G.children[i], border.use_local_RAC );
+               return BorderLinsys( border.n_empty_rows, *border.F.children[i], *border.G.children[i], border.use_local_RAC );
          }
       }
 
@@ -182,9 +187,6 @@ class sLinsys : public QpGenLinsys
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
   virtual void addLniziLinkCons( sData */*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here"); };
 
-
-  /* adds mat to res starting at row_0 col_0 */
-  void addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const;
 
   /* put BiT into res */
   virtual void putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows ) const;

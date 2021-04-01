@@ -1985,10 +1985,12 @@ void SparseStorage::deleteZeroRowsColsSym(int*& new2orgIdx)
    assert(this->isValid());
 }
 
-void SparseStorage::addNnzPerRow(int* vec) const
+void SparseStorage::addNnzPerRow(int* vec, int begin_rows, int end_rows) const
 {
-   for( int r = 0; r < m; r++ )
-      vec[r] += krowM[r + 1] - krowM[r];
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= m );
+
+   for( int r = begin_rows; r < end_rows; r++ )
+      vec[r - begin_rows ] += krowM[r + 1] - krowM[r];
 }
 
 void SparseStorage::addRowSums(double* vec) const

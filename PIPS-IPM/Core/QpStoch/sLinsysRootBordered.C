@@ -147,6 +147,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
    BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_left,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_left,
+         0,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
@@ -160,6 +161,7 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inne
    BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_left,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_left,
+         0,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*data->C).border_bottom);
 
@@ -249,6 +251,7 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
    BorderLinsys B( *dynamic_cast<BorderedSymMatrix&>(*prob->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*prob->A).border_left,
          *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_left,
+         0,
          *dynamic_cast<BorderedGenMatrix&>(*prob->A).border_bottom,
          *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_bottom);
    std::vector<BorderMod> border_mod;

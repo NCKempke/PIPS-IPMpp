@@ -121,6 +121,8 @@ public:
    * starting at mul_start and the results gets added starting at res_start */
   void multMatAt( int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const;
 
+  /* adds mat to this starting at row_0 col_0 */
+  void addMatAt( const SparseGenMatrix& mat, int row_0, int col_0 );
 };
 
 #endif

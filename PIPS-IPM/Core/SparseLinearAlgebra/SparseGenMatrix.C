@@ -598,8 +598,7 @@ SparseGenMatrix::addNnzPerRow(OoqpVectorBase<int>& nnzVec) const
    }
 }
 
-void
-SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
+void SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
 {
    SimpleVectorBase<int>& vec = dynamic_cast<SimpleVectorBase<int>&>(nnzVec);
 
@@ -615,6 +614,25 @@ SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
    {
       assert(vec.length() == m_Mt->mStorage->m);
       m_Mt->mStorage->addNnzPerRow(vec.elements());
+   }
+}
+
+void SparseGenMatrix::addNnzPerCol( OoqpVectorBase<int>& nnzVec, int begin_cols, int end_cols )
+{
+   SimpleVectorBase<int>& vec = dynamic_cast<SimpleVectorBase<int>&>(nnzVec);
+
+   if( !m_Mt)
+      initTransposed();
+
+   if( m_Mt->mStorageDynamic != nullptr  )
+   {
+      assert(vec.length() == m_Mt->mStorageDynamic->getM());
+      m_Mt->mStorageDynamic->addNnzPerRow(vec.elements(), begin_cols, end_cols);
+   }
+   else
+   {
+      assert(vec.length() == m_Mt->mStorage->m);
+      m_Mt->mStorage->addNnzPerRow(vec.elements(), begin_cols, end_cols);
    }
 }
 

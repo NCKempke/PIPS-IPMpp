@@ -160,6 +160,7 @@ public:
 
   virtual void addNnzPerRow(OoqpVectorBase<int>& nnzVec) const;
   virtual void addNnzPerCol(OoqpVectorBase<int>& nnzVec);
+  void addNnzPerCol( OoqpVectorBase<int>& nnzVec, int begin_cols, int end_cols );
 
   /** fill vector with absolute minimum/maximum value of each row */
   void getRowMinMaxVec( bool getMin, bool initializeVec,

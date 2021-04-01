@@ -95,7 +95,7 @@ void sLinsysRootAugHierInner::LtsolveHierarchyBorder( DoubleMatrix& res, const D
 
 void sLinsysRootAugHierInner::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool use_local_RAC )
 {
-   BorderLinsys Border( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+   BorderLinsys Border( 0, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
 
    if( Border.isEmpty() )
@@ -139,7 +139,7 @@ void sLinsysRootAugHierInner::addLniziLinkCons( sData*, OoqpVector& z0_, OoqpVec
    /* solve system */
    solveCompressed( *sol_inner );
 
-   BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+   BorderLinsys Bl( 0, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
 
    addBorderTimesRhsToB0( *sol_inner, z0, Bl );
@@ -240,7 +240,7 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, 
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
 
-   BorderLinsys Bl( data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Bl( 0, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
       return;
    addBTKiInvBToSC( result, Bl, Br, Br_mod_border, sparse_res, sym_res);
@@ -251,8 +251,8 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 {
    assert( data == prob );
 
-   BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
-   BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Bl( 0, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Br( 0, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    if( Bl.isEmpty() )
       return;
 
@@ -268,7 +268,7 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
       return;
 
-   BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
+   BorderLinsys B_inner( 0, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
    std::vector<BorderMod> border_mod( Br_mod_border );
    if( !B_inner.isEmpty() )
    {

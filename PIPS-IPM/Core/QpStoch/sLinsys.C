@@ -252,13 +252,13 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
 
       if( border.use_local_RAC )
          BiT_mod.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
+               border.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
       else if( border.has_RAC )
          BiT_mod.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*border.R.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*border.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*border.C.mat).getTranspose(),
+               dynamic_cast<SparseGenMatrix&>(*border.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*border.C.mat).getTranspose(), border.n_empty_rows,
                dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
       else
-         BiT_mod.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat), false ) );
+         BiT_mod.reset( new BorderBiBlock ( border.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat), false ) );
 
       multRightDenseBorderBlocked( *BiT_mod, border_mod_block.multiplier, result, begin_cols, end_cols );
    }
@@ -383,13 +383,10 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
 {
    /*
     *        [  RiT   AiT   CiT ]
-    *        [   0     0     0  ]
     * Bi^T = [   0     0     0  ]
     *        [   Fi    0     0  ]
     *        [   Gi    0     0  ]
     */
-
-   assert( false );
    const bool with_RAC = BT.has_RAC;
    int mX, nX; X.getSize(mX, nX);
    int mR, nR; BT.R.getSize( mR, nR);
@@ -397,7 +394,9 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    int mF, nF; BT.F.getSize( mF, nF );
    int mG, nG; BT.G.getSize( mG, nG );
 
+
 #ifndef NDEBUG
+   const int n_empty_rows = BT.n_empty_rows;
    int mRes, nRes; result.getSize(mRes, nRes);
 
    assert( nF == nG );
@@ -409,15 +408,17 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
       assert( nR == nF );
 
       assert( nR + nA + nC == nRes );
-      assert( mR + mF + mG <= nX );
+      assert( mR + n_empty_rows + mF + mG == nX );
    }
    else
    {
       assert( nF <= nRes );
       assert( mF + mG == nX );
    }
-   assert( mX == mRes );
+   assert( mRes <= mX );
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX );
 #endif
+
    if( BT.isEmpty() )
       return;
 
@@ -458,32 +459,6 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    }
 }
 
-// TODO - move
-void sLinsys::addMatAt( DenseGenMatrix& res, const SparseGenMatrix& mat, int row_0, int col_0 ) const
-{
-   int mres, nres; res.getSize( mres, nres );
-   int mmat, nmat; mat.getSize( mmat, nmat );
-
-   assert( 0 <= row_0 && row_0 + mmat <= mres );
-   assert( 0 <= col_0 && col_0 + nmat <= nres );
-
-   for( int row = 0; row < mmat; ++row )
-   {
-      const int row_start = mat.krowM()[row];
-      const int row_end = mat.krowM()[row + 1];
-
-      for( int j = row_start; j < row_end; ++j )
-      {
-         const int col = mat.jcolM()[j];
-         const double val = mat.M()[j];
-
-         assert( col_0 + col < nres );
-         res[row_0 + row][col_0 + col] += val;
-      }
-   }
-
-}
-
 void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows ) const
 {
    /* add (Bri)^T to res
@@ -499,9 +474,12 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
    int mF, nF; BiT.F.getSize(mF, nF);
    int mG, nG; BiT.G.getSize(mG, nG);
 
-   int mres, nres; res.getSize(mres, nres);
+   const int n_empty_rows = BiT.n_empty_rows;
 
 #ifndef NDEBUG
+   const int m_border = BiT.has_RAC ? n_empty_rows + mF + mG : mRt + n_empty_rows + mF + mG;
+
+   int mres, nres; res.getSize(mres, nres);
    int mCt, nCt; BiT.C.getSize(mCt, nCt);
    assert( nF == nG );
    if( BiT.has_RAC )
@@ -517,56 +495,45 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
       assert( nres >= nF );
    }
 
-   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mres );
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= m_border );
 #endif
    if( BiT.isEmpty() )
       return;
 
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
 
-   // TODO : use same members as in other blockwise computations
-
-   const int end_RAC = mRt;
+   const int end_RAC = std::max(0, mRt);
    if( BiT.has_RAC && begin_rows < end_RAC )
    {
-      const int begin_block = begin_rows;
-      const int end_block = std::min( end_RAC, end_rows );
-      const int n_rhs_block = end_block - begin_rows;
+      const int begin_block_RAC = begin_rows;
+      const int end_block_RAC = std::min( end_RAC, end_rows );
+      const int n_rhs_block = end_block_RAC - begin_rows;
 
-      BiT.R.fromGetRowsBlock( begin_block, n_rhs_block, length_col, 0, res[0] );
-      BiT.A.fromGetRowsBlock( begin_block, n_rhs_block, length_col, nRt, res[0] );
-      BiT.C.fromGetRowsBlock( begin_block, n_rhs_block, length_col, (nRt + nAt), res[0] );
+      BiT.R.fromGetRowsBlock( begin_block_RAC, n_rhs_block, length_col, 0, res[0] );
+      BiT.A.fromGetRowsBlock( begin_block_RAC, n_rhs_block, length_col, nRt, res[0] );
+      BiT.C.fromGetRowsBlock( begin_block_RAC, n_rhs_block, length_col, (nRt + nAt), res[0] );
    }
 
-   const int begin_F = mres - mF - mG;
-   const int end_F = mres - mG;
-   if( end_rows >= begin_F && begin_rows <= end_F )
+   const int begin_F = end_RAC + n_empty_rows;
+   const int end_F = begin_F + mF;
+   if( begin_rows < end_F && begin_F <= end_rows )
    {
-      const int begin_block = std::max( begin_rows, begin_F);
-      const int end_block = std::min(end_rows, end_F );
-      const int n_rhs_block = end_block - begin_block;
+      const int begin_block_F = std::max( begin_rows, begin_F) - begin_F;
+      const int end_block_F = std::min(end_rows, end_F) - begin_F;
+      const int n_rhs_block = end_block_F - begin_block_F;
 
-      BiT.F.fromGetRowsBlock( begin_block, n_rhs_block, length_col, 0, res[ begin_block - begin_rows ] );
+      BiT.F.fromGetRowsBlock( begin_block_F, n_rhs_block, length_col, 0, res[ std::max(begin_F - begin_rows, 0) ] );
    }
 
-   const int begin_G = mres - mG;
-   if( end_rows >= begin_G )
+   const int begin_G = end_F;
+   if( begin_G <= end_rows )
    {
-      const int begin_block = std::max( begin_rows, begin_G );
-      const int end_block = end_rows;
-      const int n_rhs_block = end_block - begin_block;
+      const int begin_block_G = std::max( begin_rows, begin_G ) - begin_G;
+      const int end_block_G = end_rows - begin_G;
+      const int n_rhs_block = end_block_G - begin_block_G;
 
-      BiT.G.fromGetRowsBlock( begin_block, n_rhs_block, length_col, 0, res[ begin_block - begin_rows ] );
+      BiT.G.fromGetRowsBlock( begin_block_G, n_rhs_block, length_col, 0, res[ std::max(begin_G - begin_rows, 0) ] );
    }
-//   if( BiT.has_RAC )
-//   {
-//      addMatAt( res, BiT.R, 0, 0 );
-//      addMatAt( res, BiT.A, 0, nRt );
-//      addMatAt( res, BiT.C, 0, nRt + nAt );
-//   }
-
-//   addMatAt( res, BiT.F, mres - mF - mG, 0 );
-//   addMatAt( res, BiT.G, mres - mG, 0 );
 }
 
 void sLinsys::solveCompressed( OoqpVector& rhs_)
@@ -878,10 +845,12 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
 void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_cols, int end_cols )
 {
+#ifndef NDEBUG
    int m_res, n_res; result.getSize(m_res, n_res);
    assert( m_res >= 0 && n_res >= 0 );
    if( sym_res )
       assert( m_res == n_res );
+#endif
 
    if( border_left_transp.isEmpty() )
       return;
@@ -916,6 +885,9 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
       solver->solve(actual_blocksize, colsBlockDense_loc, nullptr);
 
+      for( int j = 0; j < actual_blocksize; ++j )
+         colId[j] -= begin_cols;
+
       addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId.data(), nB, actual_blocksize, sparse_res, sym_res, result );
    }
 
@@ -927,31 +899,42 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 }
 
 /* res is in transposed form here */
+/*
+ * calculate
+ *
+ * res += border_left_transposed K^-1 border_right only for begin_cols, end_cols
+ *
+ *                [ R 0 F G ]                          [ R A C ]
+ * Border_right = [ A 0 0 0 ] border_left_transposed = [ 0 0 0 ]
+ *                [ C 0 0 0 ]                          [ F 0 0 ]
+ *                                                     [ G 0 0 ]
+ */
 void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols )
 {
    if( sparse_res )
       assert( sym_res );
 
-   int m_res_tp, n_res_tp;
-   result.getSize(n_res_tp, m_res_tp);
-
    int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
    int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
+
+   int nR_r, mR_r; border_right.R.getSize(mR_r, nR_r);
+   int nA_r, mA_r; border_right.A.getSize(mA_r, nA_r);
 
    const bool with_RAC = border_right.has_RAC;
    const bool withF = ( nF_right > 0 );
    const bool withG = ( nG_right > 0 );
-
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
 
 #ifndef NDEBUG
+   int m_res_tp, n_res_tp;
+   result.getSize(n_res_tp, m_res_tp);
+
    assert( 0 <= begin_cols && begin_cols <= end_cols );
    assert( end_cols - begin_cols <= n_res_tp );
 
    int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
    int mG_left, nG_left; border_left_transp.G.getSize(mG_left, nG_left);
-
    if( border_left_transp.has_RAC )
    {
       int mR_left, nR_left; border_left_transp.R.getSize(mR_left, nR_left);
@@ -962,35 +945,33 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       assert( nR_left == nF_left );
       assert( nR_left == nG_left );
 
-      assert( mR_left + mF_left + mG_left <= m_res_tp);
+      assert( mR_left + border_left_transp.n_empty_rows + mF_left + mG_left == m_res_tp);
       assert( nR_left + nA_left + nC_left == length_col );
    }
    else
    {
       assert( nF_left == nG_left );
       assert( nF_left <= length_col );
-      assert( mF_left + mG_left == m_res_tp );
+      assert( border_left_transp.n_empty_rows + mF_left + mG_left == m_res_tp );
    }
 
    if( with_RAC )
    {
-      int mR_right, nR_right; border_right.R.getSize(mR_right, nR_right);
-      int mA_right, nA_right; border_right.A.getSize(mA_right, nA_right);
       int mC_right, nC_right; border_right.C.getSize(mC_right, nC_right);
-      assert( nR_right == nA_right);
-      assert( nR_right == nC_right);
-      assert( mR_right == mF_right );
-      assert( mR_right == mG_right );
+      assert( nR_r == nA_r);
+      assert( nR_r == nC_right);
+      assert( mR_r == mF_right );
+      assert( mR_r == mG_right );
 
-      assert( nR_right + nF_right + nG_right <= n_res_tp );
-      assert( mR_right + mA_right + mC_right == length_col);
+      assert( end_cols <= nR_r + border_right.n_empty_rows + nF_right + nG_right );
+      assert( mR_r + mA_r + mC_right == length_col);
    }
    else
    {
       assert( mF_right == mG_right );
       assert( mF_right <= length_col );
       /* less equal since there could be link0vars */
-      assert( nF_right + nG_right <= n_res_tp );
+      assert( end_cols <= border_right.n_empty_rows + nF_right + nG_right );
    }
 #endif
 
@@ -1024,42 +1005,47 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       //                       (R)
       //     SC +=  B^T  K^-1  (A)
       //                       (C)
-
-      int nR_r, mR_r;
-      border_right.R.getSize(mR_r, nR_r);
-      int nA_r, mA_r;
-      border_right.A.getSize(mA_r, nA_r);
-
-      SimpleVectorBase<int> nnzPerColRAC(nR_r);
-
-      border_right.R.addNnzPerCol(nnzPerColRAC);
-      border_right.A.addNnzPerCol(nnzPerColRAC);
-      border_right.C.addNnzPerCol(nnzPerColRAC);
-
-      const int chunks_RAC = std::ceil( static_cast<double>(nR_r) / chunk_length );
-
-      for( int i = 0; i < chunks_RAC; i++ )
+      if( begin_cols < nR_r )
       {
-         const int actual_blocksize = std::min( (i + 1) * chunk_length, nR_r) - i * chunk_length;
+         const int begin_block_RAC = begin_cols;
+         const int end_block_RAC = std::min( end_cols, nR_r );
 
-         int nrhs = 0;
+         const int n_cols = end_block_RAC - begin_block_RAC;
+         // TODO : add buffer for nonzeros..
+         SimpleVectorBase<int> nnzPerColRAC(n_cols);
 
-         for( int j = 0; j < actual_blocksize; ++j )
-            if( nnzPerColRAC[j + i * chunk_length] != 0 )
-               colId[nrhs++] = j + i * chunk_length;
+         border_right.R.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
+         border_right.A.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
+         border_right.C.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
 
-         if( nrhs == 0 )
-            continue;
+         const int chunks_RAC = std::ceil( static_cast<double>(n_cols) / chunk_length );
 
-         std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0);
+         for( int i = 0; i < chunks_RAC; i++ )
+         {
+            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_RAC, end_block_RAC) - i * chunk_length + begin_block_RAC;
 
-         border_right.R.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
-         border_right.A.fromGetColsBlock(colId.data(), nrhs, length_col, mR_r, colsBlockDense.data(), colSparsity_ptr);
-         border_right.C.fromGetColsBlock(colId.data(), nrhs, length_col, (mR_r + mA_r), colsBlockDense.data(), colSparsity_ptr);
+            int nrhs = 0;
 
-         solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
+            for( int j = 0; j < actual_blocksize; ++j )
+               if( nnzPerColRAC[j + i * chunk_length] != 0 )
+                  colId[nrhs++] = j + i * chunk_length + begin_block_RAC;
 
-         addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
+            if( nrhs == 0 )
+               continue;
+
+            std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0);
+
+            border_right.R.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
+            border_right.A.fromGetColsBlock(colId.data(), nrhs, length_col, mR_r, colsBlockDense.data(), colSparsity_ptr);
+            border_right.C.fromGetColsBlock(colId.data(), nrhs, length_col, (mR_r + mA_r), colsBlockDense.data(), colSparsity_ptr);
+
+            solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
+
+            for( int j = 0; j < nrhs; ++j )
+               colId[j] -= begin_block_RAC;
+
+            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
+         }
       }
    }
 
@@ -1069,37 +1055,47 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       //                       (F^T)
       //     SC +=  B^T  K^-1  (0  )
       //                       (0  )
-
-      SimpleVectorBase<int> nnzPerColFt(nF_right);
-      border_right.F.addNnzPerCol(nnzPerColFt);
-
-      const int chunks_F = std::ceil( static_cast<double>(nF_right) / chunk_length );
-
-      // do block-wise multiplication for columns of F^T part
-      for(int i = 0; i < chunks_F; ++i )
+      const int begin_F = with_RAC ? nR_r + border_right.n_empty_rows : border_right.n_empty_rows;
+      const int end_F = begin_F + nF_right;
+      if( begin_F < end_cols && begin_cols <= end_F )
       {
-         const int actual_blocksize = std::min( (i + 1) * chunk_length, nF_right) - i * chunk_length;
+         const int begin_block_F = std::max(begin_F, begin_cols) - begin_F;
+         const int end_block_F = std::min( end_cols, end_F ) - begin_F;
+         assert( 0 <= begin_block_F && begin_block_F <= end_block_F && end_block_F <= nF_right );
 
-         int nrhs = 0;
+         const int n_cols = end_block_F - begin_block_F;
 
-         for( int j = 0; j < actual_blocksize; ++j )
-            if( nnzPerColFt[j + i * chunk_length] != 0 )
-               colId[nrhs++] = j + i * chunk_length;
+         SimpleVectorBase<int> nnzPerColFt(n_cols);
+         border_right.F.addNnzPerCol(nnzPerColFt, begin_block_F, end_block_F);
 
-         if( nrhs == 0 )
-            continue;
+         const int chunks_F = std::ceil( static_cast<double>(n_cols) / chunk_length );
 
-         std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0 );
+         // do block-wise multiplication for columns of F^T part
+         for(int i = 0; i < chunks_F; ++i )
+         {
+            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_F, end_block_F) - i * chunk_length + begin_block_F;
 
-         // get column block from Ft (i.e., row block from F)
-         border_right.F.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
+            int nrhs = 0;
 
-         solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
+            for( int j = 0; j < actual_blocksize; ++j )
+               if( nnzPerColFt[j + i * chunk_length] != 0 )
+                  colId[nrhs++] = j + i * chunk_length + begin_block_F;
 
-         for( int j = 0; j < nrhs; ++j )
-            colId[j] += n_res_tp - nF_right - nG_right;
+            if( nrhs == 0 )
+               continue;
 
-         addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
+            std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0 );
+
+            // get column block from Ft (i.e., row block from F)
+            border_right.F.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
+
+            solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
+
+            for( int j = 0; j < nrhs; ++j )
+               colId[j] += -begin_block_F + std::max( 0, begin_F - begin_cols );
+
+            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
+         }
       }
    }
 
@@ -1109,36 +1105,47 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       //                       (G^T)
       //     SC +=  B^T  K^-1  (0  )
       //                       (0  )
+      const int begin_G = with_RAC ? nR_r + border_right.n_empty_rows + nF_right: border_right.n_empty_rows + nF_right;
+      const int end_G = begin_G + nG_right;
 
-      SimpleVectorBase<int> nnzPerColGt(nG_right);
-      border_right.G.addNnzPerCol( nnzPerColGt );
-
-      const int chunks_G = std::ceil( static_cast<double>(nG_right) / chunk_length );
-
-      // do block-wise multiplication for columns of G^T part
-      for( int i = 0; i < chunks_G; ++i )
+      if( begin_G < end_cols && begin_cols <= end_G )
       {
-         const int actual_blocksize = std::min( (i + 1) * chunk_length, nG_right) - i * chunk_length;
+         const int begin_block_G = std::max(begin_G, begin_cols) - begin_G;
+         const int end_block_G = std::min( end_cols, end_G ) - begin_G;
+         assert( 0 <= begin_block_G && begin_block_G <= end_block_G && end_block_G <= nG_right );
 
-         int nrhs = 0;
+         const int n_cols = end_block_G - begin_block_G;
 
-         for( int j = 0; j < actual_blocksize; ++j )
-            if( nnzPerColGt[j + i * chunk_length] != 0 )
-               colId[nrhs++] = j + i * chunk_length;
+         SimpleVectorBase<int> nnzPerColGt(n_cols);
+         border_right.G.addNnzPerCol( nnzPerColGt, begin_block_G, end_block_G );
 
-         if( nrhs == 0 )
-            continue;
+         const int chunks_G = std::ceil( static_cast<double>(n_cols) / chunk_length );
 
-         std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0);
+         // do block-wise multiplication for columns of G^T part
+         for( int i = 0; i < chunks_G; ++i )
+         {
+            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_G, end_block_G) - i * chunk_length + begin_block_G;
 
-         border_right.G.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
+            int nrhs = 0;
 
-         solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
+            for( int j = 0; j < actual_blocksize; ++j )
+               if( nnzPerColGt[j + i * chunk_length] != 0 )
+                  colId[nrhs++] = j + i * chunk_length + begin_block_G;
 
-         for( int j = 0; j < nrhs; ++j )
-            colId[j] += n_res_tp - nG_right;
+            if( nrhs == 0 )
+               continue;
 
-         addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
+            std::fill(colsBlockDense.begin(), colsBlockDense.end(), 0);
+
+            border_right.G.fromGetColsBlock(colId.data(), nrhs, length_col, 0, colsBlockDense.data(), colSparsity_ptr);
+
+            solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
+
+            for( int j = 0; j < nrhs; ++j )
+               colId[j] += -begin_block_G + std::max( 0, begin_G - begin_cols );
+
+            addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
+         }
       }
    }
 

@@ -390,5 +390,26 @@ void DenseGenMatrix::multMatAt( int row_start, int row_end, int col_offset_this,
    }
 }
 
-/* compute beta * res += alpha * this * mat with this being restricted to the columns [from, to) */
-//void DenseGenMatrix::multMatAtFromTo( )
+void DenseGenMatrix::addMatAt( const SparseGenMatrix& mat, int row_0, int col_0 )
+{
+   int mmat, nmat; mat.getSize( mmat, nmat );
+
+   assert( 0 <= row_0 && row_0 + mmat <= mStorage->m );
+   assert( 0 <= col_0 && col_0 + nmat <= mStorage->n );
+
+   for( int row = 0; row < mmat; ++row )
+   {
+      const int row_start = mat.krowM()[row];
+      const int row_end = mat.krowM()[row + 1];
+
+      for( int j = row_start; j < row_end; ++j )
+      {
+         const int col = mat.jcolM()[j];
+         const double val = mat.M()[j];
+
+         assert( col_0 + col < mStorage->n );
+         *this[row_0 + row][col_0 + col] += val;
+      }
+   }
+
+}

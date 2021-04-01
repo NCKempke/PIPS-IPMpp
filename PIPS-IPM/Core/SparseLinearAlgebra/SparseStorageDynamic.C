@@ -386,13 +386,14 @@ SparseStorageDynamic* SparseStorageDynamic::getTranspose() const
 }
 
 
-void SparseStorageDynamic::addNnzPerRow(int* vec) const
+void SparseStorageDynamic::addNnzPerRow( int* vec, int begin_rows, int end_rows ) const
 {
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= m );
 #ifdef PRE_CPP11
-   for( int r = 0; r < m; r++ )
-      vec[r] += rowptr[r].end - rowptr[r].start;
+   for( int begin_rows = 0; r < end_rows; r++ )
+      vec[r - begin_rows ] += rowptr[r].end - rowptr[r].start;
 #else
-   std::transform(rowptr, rowptr + m, vec, vec, [](ROWPTRS pt, double v)->double { return v + pt.end - pt.start; });
+   std::transform(rowptr + begin_rows, rowptr + end_rows, vec, vec, [](ROWPTRS pt, double v)->double { return v + pt.end - pt.start; });
 #endif
 }
 

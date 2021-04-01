@@ -185,20 +185,23 @@ void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMat
 
    if( use_local_RAC )
    {
+      const int n_empty = SC.size() - prob->getLocalCrossHessian().getStorageRef().n - prob->getLocalF().getStorageRef().m - prob->getLocalG().getStorageRef().m;
+
       assert( prob->hasRAC() );
-      border_right.reset( new BorderBiBlock(prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(),
+      border_right.reset( new BorderBiBlock(prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(), n_empty,
             prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose()) );
 
       border_left_transp.reset( new BorderBiBlock(prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
-            prob->getLocalF(), prob->getLocalG()) );
+            n_empty, prob->getLocalF(), prob->getLocalG()) );
 
    }
    else
    {
       assert( !prob->hasRAC() );
+      const int n_empty = SC.size() - prob->getLocalF().getStorageRef().m - prob->getLocalG().getStorageRef().m;
 
-      border_right.reset( new BorderBiBlock(prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose(), use_local_RAC) );
-      border_left_transp.reset( new BorderBiBlock(prob->getLocalF(), prob->getLocalG(), use_local_RAC) );
+      border_right.reset( new BorderBiBlock(n_empty, prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose(), use_local_RAC) );
+      border_left_transp.reset( new BorderBiBlock(n_empty, prob->getLocalF(), prob->getLocalG(), use_local_RAC) );
    }
 
 
@@ -295,13 +298,13 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
 
    if( Br.has_RAC )
       BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(),
-            dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(),
+            dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(), Br.n_empty_rows,
             dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
    else if( Br.use_local_RAC )
-      BriT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+      BriT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), Br.n_empty_rows,
             dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat) ) );
    else
-      BriT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
+      BriT.reset( new BorderBiBlock( Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false ) );
 
 
    if( !Br_mod_border.empty() )
@@ -326,8 +329,12 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
 /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
 void sLinsysLeaf::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
 {
-   BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( data->getLocalF(), data->getLocalG(), false );
+   int res_m, dummy; result.getSize(dummy, res_m);
+   const int n_empty = data->hasRAC() ? res_m - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m :
+         res_m - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
+
+   BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), n_empty,
+         data->getLocalF(), data->getLocalG() ) : BorderBiBlock( n_empty, data->getLocalF(), data->getLocalG(), false );
 
    addLeftBorderKiInvBrToRes( result, BiT_inner, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols );
 }
@@ -340,20 +347,22 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
 
    if( Bl.has_RAC )
       BliT.reset( new BorderBiBlock ( dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(),
-         dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(),
+         dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(), Bl.n_empty_rows,
          dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) ) );
    else if( Bl.use_local_RAC )
-      BliT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+      BliT.reset( new BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), Bl.n_empty_rows,
          dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat) ) );
    else
-      BliT.reset( new BorderBiBlock( dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false ) );
+      BliT.reset( new BorderBiBlock( Bl.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false ) );
 
    /* constructed to be able to call addLeftBorderKiInvBrToRes.. */
    std::unique_ptr<StringGenMatrix> localF_view( std::make_unique<StringGenMatrix>(true, &data->getLocalF(), nullptr, mpiComm, true) );
    std::unique_ptr<StringGenMatrix> localG_view( std::make_unique<StringGenMatrix>(true, &data->getLocalG(), nullptr, mpiComm, true) );
 
+   const int n_empty = data->hasRAC() ? kkt->size() - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m :
+         kkt->size() - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
 
-   BorderLinsys BiT_inner( *localF_view, *localG_view, data->hasRAC() );
+   BorderLinsys BiT_inner( n_empty, *localF_view, *localG_view, data->hasRAC() );
    if( !BiT_inner.isEmpty() )
    {
       BorderMod inner_mod( BiT_inner, X0 );
@@ -385,17 +394,20 @@ void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
             new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*border.R.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.A.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.C.mat),
+                  border.n_empty_rows,
                   dynamic_cast<SparseGenMatrix&>(*border.F.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
    else if( border.use_local_RAC )
       border_block.reset(
             new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
                   data->getLocalC(),
+                  border.n_empty_rows,
                   dynamic_cast<SparseGenMatrix&>(*border.F.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
    else
       border_block.reset(
             new BorderBiBlock(
+                  border.n_empty_rows,
                   dynamic_cast<SparseGenMatrix&>(*border.F.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.G.mat),
                   false));
@@ -476,17 +488,20 @@ void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
             new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*border.R.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.A.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.C.mat),
+                  border.n_empty_rows,
                   dynamic_cast<SparseGenMatrix&>(*border.F.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.G.mat) ) );
    else if( border.use_local_RAC )
       border_block.reset(
             new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(),
                   data->getLocalC(),
+                  border.n_empty_rows,
                   dynamic_cast<SparseGenMatrix&>(*border.F.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
    else
       border_block.reset(
             new BorderBiBlock(
+                  border.n_empty_rows,
                   dynamic_cast<SparseGenMatrix&>(*border.F.mat),
                   dynamic_cast<SparseGenMatrix&>(*border.G.mat),
                   false));
