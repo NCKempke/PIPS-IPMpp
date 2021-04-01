@@ -930,14 +930,11 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
       /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols )
 {
-   assert( false );
    if( sparse_res )
       assert( sym_res );
 
    int m_res_tp, n_res_tp;
    result.getSize(n_res_tp, m_res_tp);
-   if( sym_res )
-      assert( m_res_tp == n_res_tp );
 
    int mF_right, nF_right; border_right.F.getSize(mF_right, nF_right);
    int mG_right, nG_right; border_right.G.getSize(mG_right, nG_right);
@@ -949,6 +946,9 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
    const int length_col = dynamic_cast<SparseSymMatrix&>(*kkt).size();
 
 #ifndef NDEBUG
+   assert( 0 <= begin_cols && begin_cols <= end_cols );
+   assert( end_cols - begin_cols <= n_res_tp );
+
    int mF_left, nF_left; border_left_transp.F.getSize(mF_left, nF_left);
    int mG_left, nG_left; border_left_transp.G.getSize(mG_left, nG_left);
 
@@ -1063,12 +1063,6 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
       }
    }
 
-#ifdef TIME_SCHUR
-   const double t_end = omp_get_wtime();
-   std::cout << "t_end - t_start:" << (t_end - t_start) << std::endl;
-   assert(0);
-#endif
-
    // do we have linking equality constraints?
    if( withF )
    {
@@ -1165,6 +1159,13 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
       assert(0);
    }
+#endif
+
+
+#ifdef TIME_SCHUR
+   const double t_end = omp_get_wtime();
+   std::cout << "t_end - t_start:" << (t_end - t_start) << std::endl;
+   assert(0);
 #endif
 }
 
