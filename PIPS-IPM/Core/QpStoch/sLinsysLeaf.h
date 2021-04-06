@@ -54,7 +54,7 @@ class sLinsysLeaf : public sLinsys
 
   void addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols ) override;
   void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-        bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols ) override;
+        bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border ) override;
 
  protected:
 
@@ -76,8 +76,6 @@ protected:
 
   /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
   void addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols, int end_cols );
-
-  std::unique_ptr<DenseGenMatrix> BiT_buffer{};
 }; 
 
 #endif

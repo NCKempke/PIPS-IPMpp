@@ -67,9 +67,9 @@ class sLinsysRootAug : public sLinsysRoot {
 //  void solveReduced( sData *prob, SimpleVector& b);
   void solveReducedLinkCons( sData *prob, SimpleVector& b);
   void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
-  void addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+  void addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res ) override;
-  void addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+  void addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols );
 
  private:
@@ -91,10 +91,6 @@ class sLinsysRootAug : public sLinsysRoot {
 
   std::vector<double> reduced_rhss_blocked;
   std::unique_ptr<SimpleVector> redRhs;
-
- protected:
-  std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
-
 };
 
 #endif

@@ -624,7 +624,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
    }
 }
 
-/* compute -SUM_i Bi_{inner}^T Ki^{-1} Bri */
+/* compute result += [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T += SUM_i (Bri - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}^T */
 void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border, int begin_cols, int end_cols )
 {
    assert( children.size() == Br.F.children.size() );
@@ -674,7 +674,6 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for( size_t it = 0; it < children.size(); it++ )
    {
-
       if( getChild( Bl, it ).isEmpty() )
          continue;
 
@@ -690,7 +689,7 @@ void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatri
             border_mod_child.push_back( getChild( bm, it ) );
       }
 
-      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC, begin_cols, end_cols );
+      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC, begin_cols, end_cols, locmy + locmz );
    }
 }
 

@@ -485,7 +485,7 @@ void sLinsys::putBiTBorder( DenseGenMatrix& res, const BorderBiBlock& BiT, int b
 
    int mres, nres; res.getSize(mres, nres);
    int mCt, nCt; BiT.C.getSize(mCt, nCt);
-   assert( mres <= end_rows - begin_rows );
+   assert( mres >= end_rows - begin_rows );
    assert( nF == nG );
    if( BiT.has_RAC )
    {
@@ -1350,6 +1350,28 @@ void sLinsys::addLeftBorderTimesDenseColsToResTransp( const BorderBiBlock& borde
 
       addLeftBorderTimesDenseColsToResTranspDense(border_left, cols, cols_id, length_col, blocksize, res_ncols, res_array);
    }
+}
+
+int sLinsys::allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n)
+{
+   assert( blocksize_hierarchical > 0 );
+   assert( buffer_m > 0 );
+   assert( buffer_n > 0 );
+
+   const bool blockwise = pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE");
+   const int buffer_m_blocked = blockwise ? PIPSgetnOMPthreads() * blocksize_hierarchical : buffer_m;
+
+   if( !buffer_blocked_hierarchical )
+      buffer_blocked_hierarchical.reset( new DenseGenMatrix(buffer_m_blocked, buffer_n) );
+   else
+   {
+      int mbuf, nbuf; buffer_blocked_hierarchical->getSize(mbuf, nbuf);
+      if( mbuf < buffer_m_blocked || nbuf < buffer_n )
+         buffer_blocked_hierarchical.reset( new DenseGenMatrix(buffer_m_blocked, buffer_n) );
+   }
+   buffer_blocked_hierarchical->putZeros();
+
+   return buffer_m_blocked;
 }
 
 template<>

@@ -101,7 +101,6 @@ void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
       }
    }
 
-
    /////////////////////////////////////////////////////////////
    // update the KKT with G and put z diagonal
    /////////////////////////////////////////////////////////////
@@ -256,7 +255,7 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
          *dynamic_cast<BorderedGenMatrix&>(*prob->C).border_bottom);
    std::vector<BorderMod> border_mod;
 
-   children[0]->addBTKiInvBToSC(SC, B, B, border_mod, true, false);
+   children[0]->addBlTKiInvBrToRes(SC, B, B, border_mod, true, false);
 }
 
 /* since we have only one child we will not allreduce anything */

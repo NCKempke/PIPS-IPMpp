@@ -174,16 +174,23 @@ class sLinsys : public QpGenLinsys
   /* is this linsys the overall root */
   const bool is_hierarchy_root{false};
 
+  /* symmetric Schur Complement / whole KKT system in lower triangular from */
   std::unique_ptr<SymMatrix> kkt{};
   std::unique_ptr<DoubleLinearSolver> solver{};
 
   // TODO : make param!
   const int blocksize_hierarchical{20};
+  std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
 
  public:
   MPI_Comm mpiComm{MPI_COMM_NULL};
   sTree* stochNode{};
 
+ protected:
+  /* depending on SC_HIERARCHICAL_COMPUTE_BLOCKWISE either allocated a full buffer of buffer_m rows or a smaller one - returns number of rows in buffer */
+  int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
+
+ public:
   virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
   virtual void addLniziLinkCons( sData */*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here"); };
 
@@ -193,7 +200,8 @@ class sLinsys : public QpGenLinsys
 
   /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
   virtual void LniTransMultHierarchyBorder( DoubleMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
-        std::vector<BorderMod>& /*Br_mod_border*/, bool /*sparse_res*/, bool /*sym_res*/, bool /*use_local_RAC*/, int /*begin_cols*/, int /*end_cols*/ ) { assert( false && "not implemented here"); };
+        std::vector<BorderMod>& /*Br_mod_border*/, bool /*sparse_res*/, bool /*sym_res*/, bool /*use_local_RAC*/, int /*begin_cols*/, int /*end_cols*/,
+        int /*n_empty_rows_inner_border*/ ) { assert( false && "not implemented here"); };
 
   /** y += alpha * Lni^T * x */
   virtual void LniTransMult(sData *prob, 
@@ -244,8 +252,9 @@ class sLinsys : public QpGenLinsys
 				      SimpleVector& res, 
 				      SimpleVector& x);
 
+  // TODO only compute bottom left part for symmetric matrices
   /* compute result += Bl^T K^-1 Br where K is our own linear system */
-  virtual void addBTKiInvBToSC( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
+  virtual void addBlTKiInvBrToRes( DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
         bool /*sym_res*/, bool /*sparse_res*/ )
   { assert( false && "not implemented here"); }
 

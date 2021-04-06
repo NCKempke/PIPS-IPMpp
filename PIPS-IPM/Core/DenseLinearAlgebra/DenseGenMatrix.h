@@ -25,6 +25,9 @@ public:
 
   int isKindOf( int matType ) const override;
 
+  int getM() const { return mStorage->m; };
+  int getN() const { return mStorage->n; };
+
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
 

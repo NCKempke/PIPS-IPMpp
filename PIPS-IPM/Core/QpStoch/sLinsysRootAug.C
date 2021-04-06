@@ -1947,39 +1947,24 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp, int 
    }
 }
 
-void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res )
+void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res, bool sparse_res )
 {
    assert( !is_hierarchy_root );
 
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty() ) )
       return;
 
-   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
-
+   // TODO is m_result correct here?
    int dummy, m_result;
-   result.getSize(m_result, dummy);
+   result.getSize( m_result, dummy );
 
    assert( m_result > 0 );
    assert( blocksize_hierarchical > 0 );
 
-   int m_buffer{0};
-   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
-      m_buffer = PIPSgetnOMPthreads() * blocksize_hierarchical;
-   else
-      m_buffer = m_result;
-
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
-   if( !buffer_blocked_hierarchical )
-      buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
-   else
-   {
-      int mbuf, nbuf; buffer_blocked_hierarchical->getSize(mbuf, nbuf);
-      if( mbuf < m_buffer || nbuf < n_buffer )
-         buffer_blocked_hierarchical.reset( new DenseGenMatrix(m_buffer, n_buffer) );
-   }
-   buffer_blocked_hierarchical->putZeros();
+   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
 
    const size_t n_chunks = std::ceil( m_result / m_buffer );
 
@@ -1994,7 +1979,7 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
       const int begin_chunk = i * m_buffer;
       const int end_chunk = std::min( static_cast<size_t>(m_result), (i + 1) * m_buffer );
 
-      addBTKiInvBToSCBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_chunk, end_chunk );
+      addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_chunk, end_chunk );
    }
 }
 
@@ -2002,13 +1987,15 @@ void sLinsysRootAug::addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, Bo
 //TODO: probably separate method for two-links?
 
 /* if Bl^T is a two link border this needs to be done for at most the first and the last child of this communicator (all the other children are guaranteed 0) */
-/* compute res += Bl^T Ki^-1 (Br - sum_j Bmodj Xj) = Bl^T Ki^-1 (Br - modif_border) */
-void sLinsysRootAug::addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+/* compute res += [ Bl^T Ki^-1 (Br - sum_j Bmodj Xj) ]^T = (Br^T - SUM_j Xj^T Bmodj^T) Ki^-1 Bl */
+void sLinsysRootAug::addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols )
 {
+   /* buffer_b0 is in transposed for so that we can access its cols (or rows in the storage) quickly in Dsolve */
    assert( !is_hierarchy_root );
    assert( 0 <= begin_cols && begin_cols <= end_cols );
-   assert( buffer_b0.getStorageRef().m <= end_cols );
+   assert( buffer_b0.getN() == kkt->size() || buffer_b0.getN() == kkt->size() + locmz );
+   assert( buffer_b0.getM() >= end_cols - begin_cols );
 
    /* Bi_{inner} is our own border, Ki are our own diagonals */
    /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
@@ -2019,7 +2006,7 @@ void sLinsysRootAug::addBTKiInvBToSCBlockwise( DoubleMatrix& result, BorderLinsy
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */
-   // buffer_b0 = - SUM_i Bi_{inner}^T Ki^{-1} ( (Bri - sum_j Bmodij Xij) )
+   // buffer_b0 = - [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T = SUM_i (Bri^T - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}
    LsolveHierarchyBorder( buffer_b0, Br, Br_mod_border, two_link_border_left, begin_cols, end_cols );
 
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}

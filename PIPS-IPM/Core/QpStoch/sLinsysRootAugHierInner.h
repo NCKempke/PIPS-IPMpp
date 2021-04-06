@@ -39,7 +39,7 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       void addTermToSchurComplBlocked( sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC ) override;
       void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-            bool sparse_res, bool sym_res, bool use_local_RAC, int begin_cols, int end_cols ) override;
+            bool sparse_res, bool sym_res, bool use_local_RAC, int begin_cols, int end_cols, int n_empty_rows_inner_border ) override;
 
       void putXDiagonal( OoqpVector& xdiag ) override;
       void putZDiagonal( OoqpVector& zdiag ) override;
