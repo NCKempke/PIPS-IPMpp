@@ -423,7 +423,9 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    }
 }
 
-/* compute SC -= Br0^T X0
+/* sc -= [ Br0^T X0 ]^T = X0^T Br0
+ *
+ * compute SC -= Br0^T X0
  *         [  0  A0T C0T F0VT G0VT ]
  * Br0^T = [ F0C  0   0   0    0   ]
  *         [ G0C  0   0   0    0   ]
@@ -442,11 +444,10 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
 {
    int mSC, nSC; SC_.getSize(mSC, nSC);
-
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
       assert( false );
    else
-      assert( end_rows == mSC );
+      assert( end_rows <= mSC );
 
    if( is_sparse )
       assert( is_sym );

@@ -235,6 +235,7 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVe
    }
 }
 
+/* res += [ B_inner^T K_i^{-1} (Br - SUM_j Brmodj Xj) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K_i^{-1} B_inner from begin_cols to end_cols in */
 void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
 {
    int mres, dummy; result.getSize( mres, dummy );
@@ -252,7 +253,13 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, 
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
       return;
 
-   addBlTKiInvBrToRes( result, Bl, Br, Br_mod_border, sparse_res, sym_res );
+   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
+   // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
+   // dense since we have no clue about any structure in the system and Xij are dense
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(mres, n_buffer);
+   assert( end_cols - begin_cols <= m_buffer );
+
+   addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols );
 }
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
