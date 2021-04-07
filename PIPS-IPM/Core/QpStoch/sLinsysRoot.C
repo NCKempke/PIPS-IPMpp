@@ -201,7 +201,6 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    finalizeDenseBorderModBlocked( Br_mod_border, buffer, begin_rows, end_rows );
 
    int mbuffer, nbuffer; buffer.getSize( mbuffer, nbuffer );
-   assert( end_rows <= mbuffer );
 
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
       assert( end_rows - begin_rows <= mbuffer );

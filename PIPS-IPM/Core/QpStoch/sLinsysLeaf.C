@@ -263,7 +263,7 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
    int mres, nres;
    result.getSize(mres, nres);
    assert( 0 <= begin_cols && begin_cols <= end_cols );
-   assert( end_cols <= mres );
+   assert( n_cols <= mres );
 
    int nx_border{0};
    if( Br.has_RAC )

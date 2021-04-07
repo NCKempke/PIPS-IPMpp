@@ -1026,7 +1026,11 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
          for( int i = 0; i < chunks_RAC; i++ )
          {
-            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_RAC, end_block_RAC) - i * chunk_length + begin_block_RAC;
+            assert( i * chunk_length + begin_block_RAC <= end_block_RAC );
+
+            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_RAC, end_block_RAC) - (i * chunk_length + begin_block_RAC);
+            assert( 0 <= actual_blocksize );
+            assert( i * chunk_length + actual_blocksize <= n_cols );
 
             int nrhs = 0;
 
@@ -1077,7 +1081,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          // do block-wise multiplication for columns of F^T part
          for(int i = 0; i < chunks_F; ++i )
          {
-            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_F, end_block_F) - i * chunk_length + begin_block_F;
+            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_F, end_block_F) - (i * chunk_length + begin_block_F);
 
             int nrhs = 0;
 
@@ -1096,7 +1100,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
             for( int j = 0; j < nrhs; ++j )
-               colId[j] += -begin_block_F + std::max( 0, begin_F - begin_cols );
+               colId[j] += begin_F - begin_block_F;
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
@@ -1128,7 +1132,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          // do block-wise multiplication for columns of G^T part
          for( int i = 0; i < chunks_G; ++i )
          {
-            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_G, end_block_G) - i * chunk_length + begin_block_G;
+            const int actual_blocksize = std::min( (i + 1) * chunk_length + begin_block_G, end_block_G) - (i * chunk_length + begin_block_G);
 
             int nrhs = 0;
 
@@ -1146,7 +1150,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
             for( int j = 0; j < nrhs; ++j )
-               colId[j] += -begin_block_G + std::max( 0, begin_G - begin_cols );
+               colId[j] += begin_G - begin_block_G;
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
