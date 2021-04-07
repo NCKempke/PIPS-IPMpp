@@ -143,11 +143,11 @@ class sLinsysRoot : public sLinsys {
 
   void finalizeInnerSchurComplementContributionDense( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
         SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
-        SparseGenMatrix* G0cons_border, bool is_sym );
+        SparseGenMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows );
 
   void finalizeInnerSchurComplementContributionSparse( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
         SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
-        SparseGenMatrix* G0cons_border );
+        SparseGenMatrix* G0cons_border, int begin_rows, int end_rows );
 
   MPI_Datatype MatrixEntryTriplet_mpi;
 

@@ -193,7 +193,6 @@ void sLinsysRoot::afterFactor()
  * [ F0V  0     0    ]   + buffer
  * [ G0V  0     0    ]
  */
-// TODO : refactor! ..
 // TODO : move to aug..
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows )
 {
@@ -261,7 +260,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    if( mA0 != 0 )
       assert( nF0C + mA0 + mC0 + mF0V + mG0V == nbuffer );
 
-   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   if( !pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
    {
       if( has_RAC )
          assert( mbuffer == nF0V + mF0C + mG0C );
@@ -321,16 +320,16 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    }
 }
 
-/* sc -= [ Br0^T X0 ]^T = X0^T Br0
+/* result -= [ Br0^T X0 ]^T = X0^T Br0
  *
- * compute SC -= Br0^T X0
+ * compute result -= Br0^T X0
  *         [  0  A0T C0T F0VT G0VT ]
  * Br0^T = [ F0C  0   0   0    0   ]
  *         [ G0C  0   0   0    0   ]
  *
- * SC is still stored in transposed form as well as X0
+ * result and X0 are stored in transposed form
  *
- * SC -= X0 Br0 instead
+ * result -= X0 Br0 instead
  *
  * Br0 = [  0  F0CT G0CT ]
  *       [  A   0    0   ]
@@ -339,24 +338,25 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  *       [ G0V  0    0   ]
  *
  */
-void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
+void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
 {
-   int mSC, nSC; SC_.getSize(mSC, nSC);
+   assert( 0 <= begin_rows && begin_rows <= end_rows );
+
+   int m_result, n_result; result.getSize(m_result, n_result);
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
-      assert( false );
+      assert( end_rows - begin_rows <= m_result );
    else
-      assert( end_rows <= mSC );
+      assert( end_rows <= m_result && begin_rows == 0 );
 
    if( is_sparse )
       assert( is_sym );
-   const bool has_RAC = Br.has_RAC;
 
+   const bool has_RAC = Br.has_RAC;
    if( !has_RAC && !Br.use_local_RAC )
       return;
 
    int mX0, nX0; X0.getSize(mX0, nX0);
-
-   assert( mSC == mX0 );
+   assert( end_rows <= mX0 );
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -406,22 +406,20 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution( DoubleMatrix& SC_, D
    assert( nF0C == nG0C );
 
    if( has_RAC )
-      assert( nSC == nF0V + mF0C + mG0C );
+      assert( n_result == nF0V + mF0C + mG0C );
    else
-      assert( nSC >= mF0V );
-
-   assert( mX0 == mSC );
+      assert( n_result >= mF0V );
 #endif
 
    if( is_sparse )
-      finalizeInnerSchurComplementContributionSparse(SC_, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border );
+      finalizeInnerSchurComplementContributionSparse(result, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border, begin_rows, end_rows );
    else
-      finalizeInnerSchurComplementContributionDense(SC_, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border, is_sym );
+      finalizeInnerSchurComplementContributionDense(result, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border, is_sym, begin_rows, end_rows );
 }
 
 /* SC and X0 stored in transposed form */
 void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
-      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border )
+      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border, int begin_rows, int end_rows )
 {
    assert( F0vec_border );
    assert( G0vec_border );
@@ -429,6 +427,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
    SparseSymMatrix& SC = dynamic_cast<SparseSymMatrix&>(SC_);
 
    int dummy, mX0; X0.getSize(mX0, dummy);
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX0 );
 
    int mA0{0}; int nA0{0};
    if( A0_border )
@@ -450,7 +449,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
-   for( int i = 0; i < mX0; i++ )
+   for( int i = begin_rows; i < end_rows; i++ )
    {
       const double* const col = X0[i];
       if( A0_border )
@@ -476,7 +475,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
 /* SC and X0 stored in transposed form */
 void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
       SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border,
-      bool is_sym )
+      bool is_sym, int begin_rows, int end_rows )
 {
    assert( F0vec_border );
    assert( G0vec_border );
@@ -484,6 +483,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
    double** SC = is_sym ? dynamic_cast<DenseSymMatrix&>(SC_).Mat() : dynamic_cast<DenseGenMatrix&>(SC_).Mat();
 
    int dummy, mX0; X0.getSize(mX0, dummy);
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX0 );
 
    int mA0{0}; int nA0{0};
    if( A0_border )
@@ -502,7 +502,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
-   for( int i = 0; i < mX0; i++ )
+   for( int i = begin_rows; i < end_rows; i++ )
    {
       const double* const col = X0[i];
       if( A0_border )
