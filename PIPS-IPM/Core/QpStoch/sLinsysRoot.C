@@ -271,32 +271,54 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 #endif
 
    /* add A0^T, C0^T, F0V^T, G0V^T */
-   if( 0 < nF0V )
+   if( begin_rows < nF0V )
    {
+      const int end_f0vblock = std::min( nF0V, end_rows );
+
       /* A0^T */
       if( mA0 > 0 )
-         buffer.addMatAt( A0_border->getTranspose(), 0, nF0C );
+         buffer.addMatAt( A0_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C );
 
       /* C0^T */
       if( mC0 > 0 )
-         buffer.addMatAt( C0_border->getTranspose(), 0, nF0C + mA0 );
+         buffer.addMatAt( C0_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 );
 
       /* F0V^T */
       if( mF0V > 0 )
-         buffer.addMatAt( F0vec_border->getTranspose(), 0, nF0C + mA0 + mC0 );
+         buffer.addMatAt( F0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 );
 
       /* G0V^T */
       if( mG0V > 0 )
-         buffer.addMatAt( G0vec_border->getTranspose(), 0, nF0C + mA0 + mC0 + mF0V );
+         buffer.addMatAt( G0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 + mF0V );
    }
 
    /* F0C */
-   if( mF0C > 0 )
-      buffer.addMatAt( *F0cons_border, nA0, 0 );
+   {
+      const int start_F0C_block = nA0;
+      const int end_F0C_block = nA0 + mF0C;
+
+      if( mF0C > 0 && begin_rows < end_F0C_block && start_F0C_block <= end_rows )
+      {
+         const int start_F0C_mat = std::max(begin_rows, start_F0C_block) - start_F0C_block;
+         const int end_F0C_mat = std::min(end_rows, end_F0C_block) - start_F0C_block;
+         assert( 0 <= start_F0C_mat && start_F0C_mat <= end_F0C_mat );
+         buffer.addMatAt( *F0cons_border, start_F0C_mat, end_F0C_mat, nA0, 0 );
+      }
+   }
 
    /* G0C */
-   if( mG0C > 0 )
-      buffer.addMatAt( *G0cons_border, nA0 + mF0C, 0 );
+   {
+      const int start_G0C_block = nA0 + mF0C;
+      const int end_G0C_block = nA0 + mF0C + mG0C;
+
+      if( mG0C > 0 && begin_rows < end_G0C_block && start_G0C_block <= end_rows )
+      {
+         const int start_G0C_mat = std::max(begin_rows, start_G0C_block) - start_G0C_block;
+         const int end_G0C_mat = std::min(end_rows, end_G0C_block) - start_G0C_block;
+         assert( 0 <= start_G0C_mat && start_G0C_mat <= end_G0C_mat );
+         buffer.addMatAt( *G0cons_border, start_G0C_mat, end_G0C_mat,nA0 + mF0C, 0 );
+      }
+   }
 }
 
 /* sc -= [ Br0^T X0 ]^T = X0^T Br0
