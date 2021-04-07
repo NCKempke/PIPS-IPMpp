@@ -1979,6 +1979,7 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
       const int begin_chunk = i * m_buffer;
       const int end_chunk = std::min( static_cast<size_t>(m_result), (i + 1) * m_buffer );
 
+      assert( end_chunk - begin_chunk <= m_buffer );
       addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_chunk, end_chunk );
    }
 }

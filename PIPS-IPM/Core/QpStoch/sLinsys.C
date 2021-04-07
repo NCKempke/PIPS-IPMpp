@@ -266,21 +266,19 @@ void sLinsys::multRightDenseBorderModBlocked( std::vector<BorderMod>& border_mod
 }
 
 /* compute
- *              locnx locmy     locmyl locmzl
- * nx_border  [   0    A0T  C0T F0VT G0VT ]
- * myl_border [  F0C    0    0   0    0   ]
- * mzl_border [  G0C    0    0   0    0   ]
+ *              locnx locmy locmz locmyl locmzl
+ * nx_border  [   0    A0T  C0T    F0VT G0VT ]
+ * myl_border [  F0C    0    0      0    0   ]
+ * mzl_border [  G0C    0    0      0    0   ]
  *
  *               [  0 F0C^T  G0C^T ]^T
  *               [ A0   0     0    ]
  *               [ C0   0     0    ]
- * buffer -= X * [ F0V  0     0    ]
+ * result -= X * [ F0V  0     0    ]
  *               [ G0V  0     0    ]
  */
 void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows )
 {
-   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
-      assert( false );
    const bool has_RAC = B.has_RAC;
 
    if( !B.has_RAC && !B.use_local_RAC )

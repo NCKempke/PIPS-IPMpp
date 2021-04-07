@@ -182,10 +182,10 @@ void sLinsysRoot::afterFactor()
 #endif
 
 /* compute
- *              locnx locmy locmyl locmzl
- * nx_border  [   0    A0T   F0VT   G0VT ]
- * myl_border [  F0C    0     0      0   ]
- * mzl_border [  G0C    0     0      0   ]
+ *             locnx locmy locmz locmyl locmzl
+ *           [   0    A0T   C0T   F0VT   G0VT ] nx_border
+ * buffer += [  F0C    0     0     0      0   ] myl_border
+ *           [  G0C    0     0     0      0   ] mzl_border
  *
  * [  0 F0C^T  G0C^T ]^T
  * [ A0   0     0    ]
@@ -197,21 +197,22 @@ void sLinsysRoot::afterFactor()
 // TODO : move to aug..
 void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows )
 {
-   // TODO : parallelize over MPI porcs?
+   assert( 0 <= begin_rows && begin_rows <= end_rows );
+   // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked( Br_mod_border, buffer, begin_rows, end_rows );
 
-   int mX0, nX0; buffer.getSize( mX0, nX0 );
-   // TODO
+   int mbuffer, nbuffer; buffer.getSize( mbuffer, nbuffer );
+   assert( end_rows <= mbuffer );
+
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
-      assert( false );
+      assert( end_rows - begin_rows <= mbuffer );
    else
-      assert( end_rows = nX0 );
+      assert( end_rows = mbuffer );
 
    if( !Br.has_RAC && !Br.use_local_RAC )
       return;
 
    bool has_RAC = Br.has_RAC;
-
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -258,169 +259,44 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 
    assert( nF0C == nG0C );
    if( mA0 != 0 )
-      assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
-   if( has_RAC )
-      assert( mX0 == nF0V + mF0C + mG0C );
-   else
-      assert( mX0 >= nF0V );
+      assert( nF0C + mA0 + mC0 + mF0V + mG0V == nbuffer );
+
+   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   {
+      if( has_RAC )
+         assert( mbuffer == nF0V + mF0C + mG0C );
+      else
+         assert( mbuffer >= nF0V );
+   }
 #endif
 
    /* add A0^T, C0^T, F0V^T, G0V^T */
-   for( int row = 0; row < nF0V; ++row )
+   if( 0 < nF0V )
    {
-      // TODO refactor and move somewhere else... TODO use addMatAt
       /* A0^T */
       if( mA0 > 0 )
-      {
-         const SparseGenMatrix& A0_transp = A0_border->getTranspose();
-
-         const double* MAt = A0_transp.M();
-         const int* krowAt = A0_transp.krowM();
-         const int* jcolAt = A0_transp.jcolM();
-
-         const int rowAt_start = krowAt[row];
-         const int rowAt_end = krowAt[row + 1];
-
-         const int col_buffer_start = nF0C;
-         for( int k = rowAt_start; k < rowAt_end; ++k )
-         {
-            const int col_At = jcolAt[k];
-            const double val_At = MAt[k];
-
-            const int col_buffer = col_buffer_start + col_At;
-
-            assert( nF0C <= col_buffer && col_buffer < nF0C + mA0 );
-            buffer[row][col_buffer] += val_At;
-         }
-      }
+         buffer.addMatAt( A0_border->getTranspose(), 0, nF0C );
 
       /* C0^T */
       if( mC0 > 0 )
-      {
-         const SparseGenMatrix& C0_transp = C0_border->getTranspose();
-
-         const double* MCt = C0_transp.M();
-         const int* krowCt = C0_transp.krowM();
-         const int* jcolCt = C0_transp.jcolM();
-
-         const int rowCt_start = krowCt[row];
-         const int rowCt_end = krowCt[row + 1];
-
-         const int col_buffer_start = nF0C + mA0;
-         for( int k = rowCt_start; k < rowCt_end; ++k )
-         {
-            const int col_At = jcolCt[k];
-            const double val_Ct = MCt[k];
-
-            const int col_buffer = col_buffer_start + col_At;
-
-            assert( nF0C + mA0 <= col_buffer && col_buffer < nF0C + mA0 + mC0 );
-            buffer[row][col_buffer] += val_Ct;
-         }
-      }
+         buffer.addMatAt( C0_border->getTranspose(), 0, nF0C + mA0 );
 
       /* F0V^T */
       if( mF0V > 0 )
-      {
-         const SparseGenMatrix& F0V_transp = F0vec_border->getTranspose();
-
-         const double* MF0Vt = F0V_transp.M();
-         const int* krowF0Vt = F0V_transp.krowM();
-         const int* jcolF0Vt = F0V_transp.jcolM();
-
-         const int rowF0Vt_start = krowF0Vt[row];
-         const int rowF0Vt_end = krowF0Vt[row + 1];
-
-         const int col_buffer_start = nF0C + mA0 + mC0;
-         for( int k = rowF0Vt_start; k < rowF0Vt_end; ++k )
-         {
-            const int col_F0Vt = jcolF0Vt[k];
-            const double val_F0Vt = MF0Vt[k];
-
-            const int col_buffer = col_buffer_start + col_F0Vt;
-
-            assert( nF0C + mA0 + mC0 <= col_buffer && col_buffer < nF0C + mA0 + mC0 + mF0V );
-            buffer[row][col_buffer] += val_F0Vt;
-         }
-      }
+         buffer.addMatAt( F0vec_border->getTranspose(), 0, nF0C + mA0 + mC0 );
 
       /* G0V^T */
       if( mG0V > 0 )
-      {
-         const SparseGenMatrix& G0V_transp = G0vec_border->getTranspose();
-
-         const double* MG0Vt = G0V_transp.M();
-         const int* krowG0Vt = G0V_transp.krowM();
-         const int* jcolG0Vt = G0V_transp.jcolM();
-
-         const int rowG0Vt_start = krowG0Vt[row];
-         const int rowG0Vt_end = krowG0Vt[row + 1];
-
-         const int col_buffer_start = nF0C + mA0 + mC0 + mF0V;
-         for( int k = rowG0Vt_start; k < rowG0Vt_end; ++k )
-         {
-            const int col_G0Vt = jcolG0Vt[k];
-            const double val_G0Vt = MG0Vt[k];
-
-            const int col_buffer = col_buffer_start + col_G0Vt;
-
-            assert( nF0C + mA0 + mC0 + mF0V <= col_buffer && col_buffer < nF0C + mA0 + mC0 + mF0V + mG0V );
-            buffer[row][col_buffer] += val_G0Vt;
-         }
-      }
+         buffer.addMatAt( G0vec_border->getTranspose(), 0, nF0C + mA0 + mC0 + mF0V );
    }
 
    /* F0C */
    if( mF0C > 0 )
-   {
-      for( int rowF = 0; rowF < mF0C; ++rowF )
-      {
-         const double* MF0C = F0cons_border->M();
-         const int* krowF0C = F0cons_border->krowM();
-         const int* jcolF0C = F0cons_border->jcolM();
-
-         const int rowF0C_start = krowF0C[rowF];
-         const int rowF0C_end = krowF0C[rowF + 1];
-
-         for( int k = rowF0C_start; k < rowF0C_end; ++k )
-         {
-            const int col = jcolF0C[k];
-            const double val_F0C = MF0C[k];
-
-            const int row_buffer = rowF + nA0;
-
-            assert( nA0 <= row_buffer && row_buffer < nA0 + mF0C );
-            assert( 0 <= col && col < locnx );
-            buffer[row_buffer][col] += val_F0C;
-         }
-      }
-   }
+      buffer.addMatAt( *F0cons_border, nA0, 0 );
 
    /* G0C */
    if( mG0C > 0 )
-   {
-      for( int rowG = 0; rowG < mG0C; ++rowG )
-      {
-         const double* MG0C = G0cons_border->M();
-         const int* krowG0C = G0cons_border->krowM();
-         const int* jcolG0C = G0cons_border->jcolM();
-
-         const int rowG0C_start = krowG0C[rowG];
-         const int rowG0C_end = krowG0C[rowG + 1];
-
-         for( int k = rowG0C_start; k < rowG0C_end; ++k )
-         {
-            const int col = jcolG0C[k];
-            const double val_G0C = MG0C[k];
-
-            const int row_buffer = rowG + nA0 + mF0C;
-
-            assert( nA0 + mF0C <= row_buffer && row_buffer < nA0 + mF0C + mG0C );
-            assert( 0 <= col && col < locnx );
-            buffer[row_buffer][col] += val_G0C;
-         }
-      }
-   }
+      buffer.addMatAt( *G0cons_border, nA0 + mF0C, 0 );
 }
 
 /* sc -= [ Br0^T X0 ]^T = X0^T Br0

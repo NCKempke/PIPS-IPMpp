@@ -394,8 +394,11 @@ void DenseGenMatrix::addMatAt( const SparseGenMatrix& mat, int row_0, int col_0 
 {
    int mmat, nmat; mat.getSize( mmat, nmat );
 
-   assert( 0 <= row_0 && row_0 + mmat <= mStorage->m );
-   assert( 0 <= col_0 && col_0 + nmat <= mStorage->n );
+   if( mmat <= 0 || nmat <= 0 )
+      return;
+
+   assert( 0 <= row_0 && row_0 + mmat - 1 < mStorage->m );
+   assert( 0 <= col_0 && col_0 + nmat - 1 < mStorage->n );
 
    for( int row = 0; row < mmat; ++row )
    {
@@ -407,8 +410,10 @@ void DenseGenMatrix::addMatAt( const SparseGenMatrix& mat, int row_0, int col_0 
          const int col = mat.jcolM()[j];
          const double val = mat.M()[j];
 
+         assert( col < nmat );
          assert( col_0 + col < mStorage->n );
-         *this[row_0 + row][col_0 + col] += val;
+         assert( row_0 + row < mStorage->m );
+         this->operator [](row_0 + row)[col_0 + col] += val;
       }
    }
 

@@ -63,7 +63,7 @@ DenseStorage::DenseStorage( int min, int nin )
   m = min;
   n = nin;
 
-  int mbar = (m > 0 ) ? m : 1; // We always allocate one row.
+  int mbar = (m > 0) ? m : 1; // We always allocate one row.
   try {
     neverDeleteElts = 0;
 
