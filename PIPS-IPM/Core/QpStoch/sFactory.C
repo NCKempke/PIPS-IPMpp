@@ -33,8 +33,6 @@ class PardisoSchurSolver;
 class Ma27Solver;
 class Ma57Solver;
 
-#include "sLinsysLeafSchurSlv.h"
-#include "sLinsysLeafMumps.h"
 
 #ifdef WITH_MA57
 #include "Ma57Solver.h"
@@ -45,16 +43,19 @@ class Ma57Solver;
 #endif
 
 #ifdef WITH_PARDISO
+#include "sLinsysLeafSchurSlv.h"
 #include "PardisoProjectSolver.h"
 #include "../LinearSolvers/PardisoSolver/PardisoSchurSolver/PardisoProjectSchurSolver.h"
 #endif
 
 #ifdef WITH_MKL_PARDISO
+#include "sLinsysLeafSchurSlv.h"
 #include "PardisoMKLSolver.h"
 #include "../LinearSolvers/PardisoSolver/PardisoSchurSolver/PardisoMKLSchurSolver.h"
 #endif
 
 #ifdef WITH_MUMPS
+#include "sLinsysLeafMumps.h"
 #include "../LinearSolvers/MumpsSolver/MumpsSolverLeaf.h"
 #endif
 
@@ -165,7 +166,11 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 #endif
       }
       else if( leaf_solver == SolverType::SOLVER_PARDISO || leaf_solver == SolverType::SOLVER_MKL_PARDISO )
+      {
+#if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
          return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+#endif
+      }
       else
       {
          if( PIPS_MPIgetRank() == 0 )
@@ -187,7 +192,9 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
             if( PIPS_MPIgetRank() == 0 )
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
             pips_options::setIntParameter( "LINEAR_LEAF_SOLVER", solver );
+#if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
             return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+#endif
          }
 
          PIPS_MPIabortIf(true, "Error: Could not find suitable solver - please specify SC_COMPUTE_BLOCKWISE");

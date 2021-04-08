@@ -154,7 +154,7 @@ target_compile_definitions(gmspipsio
    PRIVATE GC_NO_MUTEX
 )
 target_link_libraries(gmspipsio
-   PRIVATE dl
+   PRIVATE ${DL_LIBRARY}
 )
 
 ############## gmspips ##############
