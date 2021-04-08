@@ -45,6 +45,7 @@ sLinsys::sLinsys(sFactory* factory_,
     data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
+    blocksize_hierarchical( pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL") ),
     stochNode{factory_->tree}
 {
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
