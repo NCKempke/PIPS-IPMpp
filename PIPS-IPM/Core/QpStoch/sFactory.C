@@ -187,7 +187,7 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
             if( PIPS_MPIgetRank() == 0 )
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
             pips_options::setIntParameter( "LINEAR_LEAF_SOLVER", solver );
-            return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs);
+            return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
          }
 
          PIPS_MPIabortIf(true, "Error: Could not find suitable solver - please specify SC_COMPUTE_BLOCKWISE");
