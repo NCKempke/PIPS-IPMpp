@@ -134,10 +134,6 @@ void StochVectorBase<T>::jointCopyFrom(const OoqpVectorBase<T>& vx_, const OoqpV
    const StochVectorBase<T>& vy = dynamic_cast<const StochVectorBase&>(vy_);
    const StochVectorBase<T>& vz = dynamic_cast<const StochVectorBase&>(vz_);
 
-   assert( children.size() == vx.children.size() );
-   assert( children.size() == vy.children.size() );
-   assert( children.size() == vz.children.size() );
-
    if( vx.vec->isKindOf(kStochVector) )
    {
       assert( vy.vec->isKindOf(kStochVector) && vz.vec->isKindOf(kStochVector) );
