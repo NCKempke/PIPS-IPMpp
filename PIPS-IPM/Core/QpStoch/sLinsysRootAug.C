@@ -1966,8 +1966,9 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
    const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
 
-   const size_t n_chunks = std::ceil( m_result / m_buffer );
+   const size_t n_chunks = std::ceil( static_cast<double>(m_result) / m_buffer );
 
+   assert( n_chunks > 0 );
    if( !pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
    {
       assert( n_chunks == 1 );
