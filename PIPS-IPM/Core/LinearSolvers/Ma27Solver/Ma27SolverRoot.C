@@ -32,8 +32,11 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       freeWorkingArrays();
 
       mat_storage = matrixNewSym.getStorageHandle();
+      nnz = matrixNewSym.numberOfNonZeros();
 
       init();
+
+      fact.clear();
       matrixChanged();
    }
 }

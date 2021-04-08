@@ -28,8 +28,12 @@ void Ma57SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
       assert( matrixNewSym.getStorageRef().fortranIndexed() );
 
       mat_storage = matrixNewSym.getStorageHandle();
+      nnz = matrixNewSym.numberOfNonZeros();
+      lkeep = 7 * n + nnz + 2 * std::max(n, nnz) + 42;
 
       init();
+
+      keep.clear();
       matrixChanged();
    }
 }

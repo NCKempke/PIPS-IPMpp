@@ -168,9 +168,29 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
          return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
       else
       {
-         std::stringstream msg;
-         msg << "Error: did not specify SC_COMPUTE_BLOCKWISE but " << leaf_solver << " can only compute the Schur Complement blockwise";
-         PIPS_MPIabortIf(true, msg.str());
+         if( PIPS_MPIgetRank() == 0 )
+         {
+            std::cout << "WARNING: did not specify SC_COMPUTE_BLOCKWISE but " << leaf_solver << " which can only compute the Schur Complement blockwise\n";
+            std::cout << "WARNING: checking for PARDISO or MUMPS instead...\n";
+         }
+
+         SolverType solver = SolverType::SOLVER_NONE;
+         if( pips_options::isSolverAvailable( SolverType::SOLVER_PARDISO ) )
+            solver = SolverType::SOLVER_PARDISO;
+         else if( pips_options::isSolverAvailable( SolverType::SOLVER_MKL_PARDISO) )
+            solver = SolverType::SOLVER_MKL_PARDISO;
+         else if( pips_options::isSolverAvailable( SolverType::SOLVER_MUMPS) )
+            solver = SolverType::SOLVER_MUMPS;
+
+         if( solver != SolverType::SOLVER_NONE )
+         {
+            if( PIPS_MPIgetRank() == 0 )
+               std::cout << " Found solver " << solver << " - using that for leaf computations\n";
+            pips_options::setIntParameter( "LINEAR_LEAF_SOLVER", solver );
+            return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, rhs);
+         }
+
+         PIPS_MPIabortIf(true, "Error: Could not find suitable solver - please specify SC_COMPUTE_BLOCKWISE");
          return nullptr;
       }
    }
