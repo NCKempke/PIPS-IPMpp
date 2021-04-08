@@ -419,13 +419,16 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
    }
 
    assert( mRes <= mX );
-   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX );
+   assert( 0 <= begin_rows && begin_rows <= end_rows );
+   assert( end_rows - begin_rows <= mX );
 #endif
 
    if( BT.isEmpty() )
       return;
 
    // X from the right with each column of Bi^T todo add OMP to submethods
+
+   const int n_rows = end_rows - begin_rows;
 
    /*            [ RiT ]
     *            [  0  ]
@@ -434,13 +437,13 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
     *            [  Gi ]
     */
    if( with_RAC )
-      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, 0, result, -1.0, BT.R );
+      X.multMatAt( 0, n_rows, 0, 1.0, 0, 0, result, -1.0, BT.R );
 
    if( mF > 0 )
-      X.multMatAt( begin_rows, end_rows, nX - mF - mG, 1.0, 0, 0, result, -1.0, BT.F );
+      X.multMatAt( 0, n_rows, nX - mF - mG, 1.0, 0, 0, result, -1.0, BT.F );
 
    if( mG > 0 )
-      X.multMatAt( begin_rows, end_rows, nX - mG, 1.0, 0, 0, result, -1.0, BT.G );
+      X.multMatAt( 0, n_rows, nX - mG, 1.0, 0, 0, result, -1.0, BT.G );
 
    if( with_RAC )
    {
@@ -450,7 +453,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nR, result, -1.0, BT.A );
+      X.multMatAt( 0, n_rows, 0, 1.0, 0, nR, result, -1.0, BT.A );
 
       /*            [ CiT ]
        *            [  0  ]
@@ -458,7 +461,7 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
        *            [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nR + nA, result, -1.0, BT.C );
+      X.multMatAt( 0, n_rows, 0, 1.0, 0, nR + nA, result, -1.0, BT.C );
    }
 }
 
