@@ -178,7 +178,6 @@ class sLinsys : public QpGenLinsys
   std::unique_ptr<SymMatrix> kkt{};
   std::unique_ptr<DoubleLinearSolver> solver{};
 
-  // TODO : make param!
   const int blocksize_hierarchical{20};
   std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
 
