@@ -141,6 +141,9 @@ void sLinsysRoot::factor2(sData *prob, Variables *vars)
          std::cout << " Sparse top level Schur Complement factorization is starting... ";
    }
 
+   std::cout << "before fact fin SC \n";
+   kkt->writeToStreamDense(std::cout);
+   std::cout << "done writing\n";
    factorizeKKT(prob);
 
    if( PIPS_MPIgetRank(mpiComm) == 0 )
@@ -340,10 +343,11 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
 {
    assert( 0 <= begin_rows && begin_rows <= end_rows );
+   const int n_rows = end_rows - begin_rows;
 
    int m_result, n_result; result.getSize(m_result, n_result);
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
-      assert( end_rows - begin_rows <= m_result );
+      assert( n_rows <= m_result );
    else
       assert( end_rows <= m_result && begin_rows == 0 );
 
@@ -355,7 +359,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result,
       return;
 
    int mX0, nX0; X0.getSize(mX0, nX0);
-   assert( end_rows <= mX0 );
+   assert( n_rows <= mX0 );
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -481,8 +485,11 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 
    double** SC = is_sym ? dynamic_cast<DenseSymMatrix&>(SC_).Mat() : dynamic_cast<DenseGenMatrix&>(SC_).Mat();
 
+   const int n_rows = end_rows - begin_rows;
    int dummy, mX0; X0.getSize(mX0, dummy);
-   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX0 );
+   int mSC; SC_.getSize(mSC, dummy);
+   assert( 0 <= begin_rows && begin_rows <= end_rows && n_rows <= mX0 );
+   assert( n_rows <= mSC );
 
    int mA0{0}; int nA0{0};
    if( A0_border )
@@ -501,24 +508,28 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
-   for( int i = begin_rows; i < end_rows; i++ )
+   for( int i = 0; i < n_rows; ++i )
    {
-      const double* const col = X0[i];
+      const int row = is_sym ? i + begin_rows : i;
+      assert( row < mX0 && row < mSC );
+
+      const double* const col = X0[row];
+
       if( A0_border )
-         A0_border->transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C], 1);
+         A0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C], 1);
 
       if( C0_border )
-         C0_border->transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + mA0], 1);
+         C0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0], 1);
 
-      F0vec_border->transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + mA0 + mC0], 1);
+      F0vec_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0 + mC0], 1);
 
-      G0vec_border->transMult(1.0, &SC[i][0], 1, -1.0, &col[nF0C + mA0 + mC0 + mF0V], 1);
+      G0vec_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0 + mC0 + mF0V], 1);
 
       if( F0cons_border )
-         F0cons_border->mult(1.0, &SC[i][nA0], 1, -1.0, &col[0], 1);
+         F0cons_border->mult(1.0, &SC[row][nA0], 1, -1.0, &col[0], 1);
 
       if( G0cons_border )
-         G0cons_border->mult(1.0, &SC[i][nA0 + mF0C], 1, -1.0, &col[0], 1);
+         G0cons_border->mult(1.0, &SC[row][nA0 + mF0C], 1, -1.0, &col[0], 1);
    }
 }
 
@@ -547,7 +558,7 @@ void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& B
 
       const bool sparse_res = false;
       const bool sym_res = false;
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, sparse_res, sym_res, begin_cols, end_cols);
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, sparse_res, sym_res, begin_cols, end_cols, locmy + locmz );
    }
 
    /* allreduce the result */

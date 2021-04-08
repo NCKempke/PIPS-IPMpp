@@ -222,9 +222,6 @@ class sLinsys : public QpGenLinsys
   virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/ ) { assert( 0 && "not implemented here" ); };
 
   virtual void computeInnerSystemRightHandSide( StochVector& /*rhs_inner*/, const SimpleVector& /*b0*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here" ); };
- protected:
-//  virtual void addBiTLeftKiBiRightToResBlocked( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-//        /* const */ BorderBiBlock &border_right, DoubleMatrix& result);
 
  public:
 
@@ -281,7 +278,7 @@ class sLinsys : public QpGenLinsys
 
   /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Brmod_ij Xj )and add it to result */
   virtual void addInnerBorderKiInvBrToRes( DoubleMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*has_RAC*/, bool /*sparse_res*/,
-        bool /*sym_res*/, int /*begin_cols*/, int /*end_cols*/ )
+        bool /*sym_res*/, int /*begin_cols*/, int /*end_cols*/, int /*n_empty_rows_inner_border*/ )
   { assert( false && "not implemented here" ); };
 
  protected:

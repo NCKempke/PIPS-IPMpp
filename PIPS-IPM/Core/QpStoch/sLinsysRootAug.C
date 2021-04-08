@@ -1954,7 +1954,6 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty() ) )
       return;
 
-   // TODO is m_result correct here?
    int dummy, m_result;
    result.getSize( m_result, dummy );
 
@@ -1982,6 +1981,11 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
 
       assert( end_chunk - begin_chunk <= m_buffer );
       addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_chunk, end_chunk );
+
+
+      std::cout << "res after adding a chunk ( from " << begin_chunk << " to " << end_chunk << ")\n";
+      result.writeToStreamDense(std::cout);
+      std::cout << std::endl;
    }
 }
 
@@ -1993,6 +1997,8 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
 void sLinsysRootAug::addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols )
 {
+   buffer_b0.putZeros();
+
    /* buffer_b0 is in transposed for so that we can access its cols (or rows in the storage) quickly in Dsolve */
    assert( !is_hierarchy_root );
    assert( 0 <= begin_cols && begin_cols <= end_cols );
@@ -2011,13 +2017,24 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLi
    // buffer_b0 = - [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T = SUM_i (Bri^T - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}
    LsolveHierarchyBorder( buffer_b0, Br, Br_mod_border, two_link_border_left, begin_cols, end_cols );
 
+   std::cout << "after lsolve" << std::endl;
+   buffer_b0.writeToStreamDense(std::cout);
+   std::cout << std::endl;
+
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
 //TODO:   if( !two_link_border || PIPS_MPIgetRank(mpiComm) == 0 )
    finalizeZ0Hierarchical( buffer_b0, Br, Br_mod_border, begin_cols, end_cols );
+   std::cout << "after fin" << std::endl;
+   buffer_b0.writeToStreamDense(std::cout);
+   std::cout << std::endl;
 
    // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form! )
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( buffer_b0, end_cols - begin_cols );
+
+   std::cout << "after dsolve" << std::endl;
+   buffer_b0.writeToStreamDense(std::cout);
+   std::cout << std::endl;
 
    // compute result += -SUM_i Bli^T Ki^{-1} ( ( Bri - sum_j Bmodij Xij )  - Bi_{inner} X0 ) += -SUM_i Bli^T Xi
    LtsolveHierarchyBorder( result, buffer_b0, Bl, Br, Br_mod_border, sym_res, sparse_res, begin_cols, end_cols );

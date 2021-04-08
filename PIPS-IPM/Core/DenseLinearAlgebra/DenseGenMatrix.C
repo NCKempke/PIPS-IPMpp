@@ -398,13 +398,15 @@ void DenseGenMatrix::addMatAt( const SparseGenMatrix& mat, int mat_row_start, in
 
    assert( 0 <= mat_row_start && mat_row_start <= mat_row_end && mat_row_end - 1 < mmat );
 
-   assert( 0 <= this_row_0 && this_row_0 + mat_row_end - mat_row_start - 1 < mStorage->m );
+   const int n_rows = mat_row_end - mat_row_start;
+   assert( 0 <= this_row_0 && this_row_0 + n_rows - 1 < mStorage->m );
    assert( 0 <= this_col_0 && this_col_0 + nmat - 1 < mStorage->n );
 
-   for( int row = mat_row_start; row < mat_row_end; ++row )
+   for( int row = 0; row < n_rows; ++row )
    {
-      const int row_start = mat.krowM()[row];
-      const int row_end = mat.krowM()[row + 1];
+      const int row_in_mat = mat_row_start + row;
+      const int row_start = mat.krowM()[row_in_mat];
+      const int row_end = mat.krowM()[row_in_mat + 1];
 
       for( int j = row_start; j < row_end; ++j )
       {

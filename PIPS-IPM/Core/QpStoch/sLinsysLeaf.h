@@ -52,7 +52,7 @@ class sLinsysLeaf : public sLinsys
 
   void addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
 
-  void addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols ) override;
+  void addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols, int ) override;
   void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border ) override;
 

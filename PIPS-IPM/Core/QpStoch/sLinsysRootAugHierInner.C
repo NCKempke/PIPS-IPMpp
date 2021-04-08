@@ -236,20 +236,14 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVe
 }
 
 /* res += [ B_inner^T K_i^{-1} (Br - SUM_j Brmodj Xj) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K_i^{-1} B_inner from begin_cols to end_cols in */
-void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
+void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res,
+      bool sym_res, int begin_cols, int end_cols, int n_empty_rows_inner_border )
 {
    int mres, dummy; result.getSize( mres, dummy );
-   int mG, nG;
-   int mF, nF;
-   data->getLocalFBorder().getSize(mF, nF);
-   data->getLocalGBorder().getSize(mG, nG);
-
-   assert( nF == nG );
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
-   assert( 0 <= mres - mG - mF );
 
-   BorderLinsys Bl( mres - mG - mF, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Bl( n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
    if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
       return;
 

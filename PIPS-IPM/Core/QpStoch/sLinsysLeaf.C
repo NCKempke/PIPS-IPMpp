@@ -251,7 +251,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
    /* empty dummy */
    std::vector<BorderMod> Br_mod_border;
 
-   addInnerBorderKiInvBrToRes( result, Br, Br_mod_border, false, false, false, begin_cols, end_cols );
+   addInnerBorderKiInvBrToRes( result, Br, Br_mod_border, false, false, false, begin_cols, end_cols, 0 );
 }
 
 /* compute result += [ Bl^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 Bl for cols begin_cols to end_cols in (Br - SUM_j Brmodj Xj) */
@@ -350,7 +350,7 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
 }
 
 /* compute result += [ B_{inner}^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 B_{inner} */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
+void sLinsysLeaf::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols, int )
 {
    int res_m, res_n; result.getSize(res_m, res_n);
    const int n_empty = data->hasRAC() ? res_n - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m :
@@ -393,7 +393,12 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
       Br_mod_border.push_back( inner_mod );
    }
 
-   addLeftBorderKiInvBrToRes( res, *BliT, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols, begin_cols, end_cols );
+   /* sym res is a schur complement while the other is a buffer */
+   if( sym_res )
+      addLeftBorderKiInvBrToRes( res, *BliT, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols, begin_cols, end_cols );
+   else
+      addLeftBorderKiInvBrToRes( res, *BliT, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols, 0, end_cols - begin_cols);
+
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )

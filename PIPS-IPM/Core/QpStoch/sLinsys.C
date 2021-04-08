@@ -301,6 +301,7 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
       assert( F0cons_border && G0cons_border && A0_border && C0_border && F0vec_border && G0vec_border );
    assert( F0vec_border );
    assert( G0vec_border );
+   const int n_rows = end_rows - begin_rows;
 
    int mA0{0}; int nA0{0};
    if( A0_border )
@@ -350,33 +351,33 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
        * res -= X * [ F0C ]
        *            [ G0C ]
        */
-      X.multMatAt( begin_rows, end_rows, nF0V, 1.0, 0, 0, result, -1.0, *F0cons_border );
-      X.multMatAt( begin_rows, end_rows, nF0V + mF0C, 1.0, 0, 0, result, -1.0, *G0cons_border );
+      X.multMatAt( 0, n_rows, nF0V, 1.0, 0, 0, result, -1.0, *F0cons_border );
+      X.multMatAt( 0, n_rows, nF0V + mF0C, 1.0, 0, 0, result, -1.0, *G0cons_border );
 
       /*            [ A0T ]
        * res -= X * [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C, result, -1.0, A0_border->getTranspose() );
+      X.multMatAt( 0, n_rows, 0, 1.0, 0, nF0C, result, -1.0, A0_border->getTranspose() );
 
       /*            [ C0T ]
        * res -= X * [  0  ]
        *            [  0  ]
        */
-      X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C + mA0, result, -1.0, C0_border->getTranspose() );
+      X.multMatAt( 0, n_rows, 0, 1.0, 0, nF0C + mA0, result, -1.0, C0_border->getTranspose() );
    }
 
    /*            [ F0VT ]
     * res -= X * [  0   ]
     *            [  0   ]
     */
-   X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C + mA0 + mC0, result, -1.0, F0vec_border->getTranspose() );
+   X.multMatAt( 0, n_rows, 0, 1.0, 0, nF0C + mA0 + mC0, result, -1.0, F0vec_border->getTranspose() );
 
    /*            [ G0VT ]
     * res -= X * [  0   ]
     *            [  0   ]
     */
-   X.multMatAt( begin_rows, end_rows, 0, 1.0, 0, nF0C + mA0 + mC0 + mF0V, result, -1.0, G0vec_border->getTranspose() );
+   X.multMatAt( 0, n_rows, 0, 1.0, 0, nF0C + mA0 + mC0 + mF0V, result, -1.0, G0vec_border->getTranspose() );
 }
 
 
