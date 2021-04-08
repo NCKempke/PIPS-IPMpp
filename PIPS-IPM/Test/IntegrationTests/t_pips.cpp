@@ -55,7 +55,7 @@ class ScenarioTests : public ::testing::TestWithParam<Instance>
 
       std::string gams_path;
 
-      double solveInstance( const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler );
+      double solveInstance( const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step );
 };
 
 std::vector<Instance> getInstances()
@@ -66,7 +66,7 @@ std::vector<Instance> getInstances()
 }
 
 
-double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler )
+double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step )
 {
    testing::internal::CaptureStdout();
 
@@ -75,25 +75,42 @@ double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_
 
    pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
-   PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
-         scaler, presolver );
-
    double result = std::numeric_limits<double>::infinity();
-   try
+
+   if( primal_dual_step )
    {
-      pipsIpm.go();
-      result = pipsIpm.getObjective();
+      PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
+            scaler, presolver );
+      try
+      {
+         pipsIpm.go();
+         result = pipsIpm.getObjective();
+      }
+      catch( ... )
+      {
+         EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
+      }
    }
-   catch( ... )
+   else
    {
-      EXPECT_TRUE(false);
+      PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
+            scaler, presolver );
+      try
+      {
+         pipsIpm.go();
+         result = pipsIpm.getObjective();
+      }
+      catch( ... )
+      {
+         EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
+      }
    }
 
    testing::internal::GetCapturedStdout();
    return result;
 };
 
-TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDisabled )
+TEST_P( ScenarioTests, TestGamssmallPrimalDualStepScaleGeo )
 {
    const std::string& problem_paths(GetParam().name);
    const size_t& n_blocks(GetParam().n_blocks);
@@ -104,12 +121,12 @@ TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDisabled )
    if( static_cast<size_t>(world_size) >= n_blocks )
       GTEST_SKIP();
 
-   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_GEO_STOCH );
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_GEO_STOCH, true );
 
    EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
-TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDefault )
+TEST_P( ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve )
 {
    const std::string& problem_paths(GetParam().name);
    const size_t& n_blocks(GetParam().n_blocks);
@@ -121,12 +138,12 @@ TEST_P( ScenarioTests, TestAllGamssmallScaleGeoPresolveDefault )
    if( static_cast<size_t>(world_size) >= n_blocks )
       GTEST_SKIP();
 
-   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH );
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH, true );
 
    EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
-TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDisabled )
+TEST_P( ScenarioTests, TestGamssmallPrimalDualStep )
 {
    const std::string& problem_paths(GetParam().name);
    const size_t& n_blocks(GetParam().n_blocks);
@@ -137,12 +154,12 @@ TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDisabled )
    if( static_cast<size_t>(world_size) >= n_blocks )
       GTEST_SKIP();
 
-   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE );
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE, true );
 
    EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
 
-TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDefault )
+TEST_P( ScenarioTests, TestGamssmallPrimalDualStepPresolve )
 {
    const std::string& problem_paths(GetParam().name);
    const size_t& n_blocks(GetParam().n_blocks);
@@ -153,7 +170,55 @@ TEST_P( ScenarioTests, TestAllGamssmallNoScalePresolveDefault )
    if( static_cast<size_t>(world_size) >= n_blocks )
       GTEST_SKIP();
 
-   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_NONE );
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE, true );
+
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
+};
+
+TEST_P( ScenarioTests, TestGamssmallNoSettings )
+{
+   const std::string& problem_paths(GetParam().name);
+   const size_t& n_blocks(GetParam().n_blocks);
+   const double& result(GetParam().result);
+
+   ASSERT_GE( world_size, 1 );
+
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
+
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE, false );
+
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
+};
+
+TEST_P( ScenarioTests, TestGamssmallPresolve )
+{
+   const std::string& problem_paths(GetParam().name);
+   const size_t& n_blocks(GetParam().n_blocks);
+   const double& result(GetParam().result);
+
+   ASSERT_GE( world_size, 1 );
+
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
+
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_NONE, false );
+
+   EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
+};
+
+TEST_P( ScenarioTests, TestGamssmallScaleGeoPresolve )
+{
+   const std::string& problem_paths(GetParam().name);
+   const size_t& n_blocks(GetParam().n_blocks);
+   const double& result(GetParam().result);
+
+   ASSERT_GE( world_size, 1 );
+
+   if( static_cast<size_t>(world_size) >= n_blocks )
+      GTEST_SKIP();
+
+   const double result_solve = solveInstance( root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH, false );
 
    EXPECT_NEAR( result, result_solve, solution_tol ) << " while solving " << problem_paths;
 };
