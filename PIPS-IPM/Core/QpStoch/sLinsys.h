@@ -237,10 +237,10 @@ class sLinsys : public QpGenLinsys
   { assert( false && "not implemented here" ); };
 
   virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-        /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols );
+        /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res );
 
   void addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-        /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_cols, int end_cols );
+        /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_rows_res, int end_rows_res);
 
   virtual void addTermToSparseSchurCompl(sData* /*prob*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
 					

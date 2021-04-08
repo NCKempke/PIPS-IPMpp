@@ -208,7 +208,7 @@ void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMat
    if( border_left_transp->isEmpty() || border_right->isEmpty() )
       return;
 
-   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0, SC.size() );
+   addBiTLeftKiBiRightToResBlockedParallelSolvers( sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0, SC.size(), 0, SC.size() );
 }
 
 void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, 
@@ -255,14 +255,19 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLins
 }
 
 /* compute result += [ Bl^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 Bl for cols begin_cols to end_cols in (Br - SUM_j Brmodj Xj) */
-void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols, int end_cols )
+void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols_br, int end_cols_br,
+      int begin_cols_res, int end_cols_res )
 {
    int dummy;
 #ifndef NDEBUG
-   const int n_cols = end_cols - begin_cols;
+   const int n_cols = end_cols_br - begin_cols_br;
+   assert( end_cols_res - begin_cols_res == n_cols );
+
    int mres, nres;
    result.getSize(mres, nres);
-   assert( 0 <= begin_cols && begin_cols <= end_cols );
+   assert( 0 <= begin_cols_br&& begin_cols_br <= end_cols_br );
+   assert( 0 <= begin_cols_res && begin_cols_res <= end_cols_res );
+   assert( end_cols_res <= mres );
    assert( n_cols <= mres );
 
    int nx_border{0};
@@ -276,9 +281,9 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
    Br.G.mat->getSize(mzl_border, dummy);
 
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE" ) )
-      assert( end_cols <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
+      assert( end_cols_br <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
    else
-      assert( end_cols == nx_border + Br.n_empty_rows + myl_border + mzl_border && begin_cols == 0 );
+      assert( end_cols_br == nx_border + Br.n_empty_rows + myl_border + mzl_border && begin_cols_br == 0 );
 #endif
 
    if( Bl.isEmpty() )
@@ -316,13 +321,13 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
 
       // TODO : return early if all Bordermods and Br were empty
       if( !BriT->isEmpty() )
-         putBiTBorder( *buffer_blocked_hierarchical, *BriT, begin_cols, end_cols );
+         putBiTBorder( *buffer_blocked_hierarchical, *BriT, begin_cols_br, end_cols_br );
 
       /* BiT_buffer += X_j^T Bmodj for all j */
-      multRightDenseBorderModBlocked( Br_mod_border, *buffer_blocked_hierarchical, begin_cols, end_cols );
+      multRightDenseBorderModBlocked( Br_mod_border, *buffer_blocked_hierarchical, begin_cols_br, end_cols_br );
 
       /* compute B_{inner}^T Ki^-1 Bi_buffer = B_{inner}^T Ki^-1 (Bri^T - sumj Xj^T Bmodj^T) */
-      addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *buffer_blocked_hierarchical, result, begin_cols, end_cols );
+      addBiTLeftKiDenseToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *buffer_blocked_hierarchical, result, begin_cols_res, end_cols_res );
    }
    else
    {
@@ -340,7 +345,7 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
 
 
       if( !Br.isEmpty() )
-         addBiTLeftKiBiRightToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *BriT, result, begin_cols, end_cols );
+         addBiTLeftKiBiRightToResBlockedParallelSolvers( sparse_res, sym_res, Bl, *BriT, result, begin_cols_br, end_cols_br, begin_cols_res, end_cols_res );
    }
 }
 
@@ -355,10 +360,11 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys
    BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock( data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(), n_empty,
          data->getLocalF(), data->getLocalG() ) : BorderBiBlock( n_empty, data->getLocalF(), data->getLocalG(), false );
 
-   addLeftBorderKiInvBrToRes( result, BiT_inner, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols );
+   addLeftBorderKiInvBrToRes( result, BiT_inner, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols, 0, end_cols - begin_cols );
 }
 
-/* compute res += [Bli^T X_i]^T = [ Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) ]^T = (Bri^T - SUM_i Xi^T Brmodi^T - X0^T Bi_{inner}^T) Ki^{-1} Bli and add it to res */
+/* compute res += [Bli^T X_i]^T = [ Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) ]^T = (Bri^T - SUM_i Xi^T Brmodi^T - X0^T Bi_{inner}^T) Ki^{-1} Bli and add it to res
+ * begin_cols to end_cols is the position in res */
 void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border )
 {
@@ -378,9 +384,6 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
    std::unique_ptr<StringGenMatrix> localF_view( std::make_unique<StringGenMatrix>(true, &data->getLocalF(), nullptr, mpiComm, true) );
    std::unique_ptr<StringGenMatrix> localG_view( std::make_unique<StringGenMatrix>(true, &data->getLocalG(), nullptr, mpiComm, true) );
 
-//   int x0m, x0n; X0.getSize(x0m, x0n);
-//   const int n_empty = data->hasRAC() ? x0n - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m :
-//         x0n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
    assert( n_empty_rows_inner_border >= 0 );
 
    BorderLinsys B_inner( n_empty_rows_inner_border, *localF_view, *localG_view, data->hasRAC() );
@@ -390,7 +393,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGen
       Br_mod_border.push_back( inner_mod );
    }
 
-   addLeftBorderKiInvBrToRes( res, *BliT, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols );
+   addLeftBorderKiInvBrToRes( res, *BliT, Br, Br_mod_border, sparse_res, sym_res, begin_cols, end_cols, begin_cols, end_cols );
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )

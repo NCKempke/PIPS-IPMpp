@@ -75,7 +75,8 @@ protected:
   void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols );
 
   /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
-  void addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols, int end_cols );
+  void addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, int begin_cols_br, int end_cols_br,
+              int begin_cols_res, int end_cols_res );
 }; 
 
 #endif

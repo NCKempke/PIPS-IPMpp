@@ -850,8 +850,9 @@ void sLinsys::addTermToDenseSchurCompl(sData *prob,
   }
 }
 
-void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-      /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_cols, int end_cols )
+/* res += [ Bl^T Ki^{-1} BT ]^T for cols begin_rows to end_rows in res */
+void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& BlT,
+      /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_rows_res, int end_rows_res )
 {
 #ifndef NDEBUG
    int m_res, n_res; result.getSize(m_res, n_res);
@@ -860,12 +861,14 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
       assert( m_res == n_res );
 #endif
 
-   if( border_left_transp.isEmpty() )
+   if( BlT.isEmpty() )
       return;
 
    int mB, nB; BT.getSize(mB, nB);
-   assert( 0 <= begin_cols && begin_cols <= end_cols && end_cols <= mB );
-   const int n_cols = end_cols - begin_cols;
+   assert( 0 <= begin_rows_res && begin_rows_res <= end_rows_res );
+   const int n_cols = end_rows_res - begin_rows_res;
+   assert( n_cols <= mB );
+   assert( end_rows_res <= m_res);
 
    const int chunk_length = blocksizemax * PIPSgetnOMPthreads();
 
@@ -884,19 +887,18 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
 
    for( int i = 0; i < chunks; i++ )
    {
-      const int actual_blocksize = std::min( (i + 1) * chunk_length, end_cols) - i * chunk_length;
+      const int actual_blocksize = std::min( (i + 1) * chunk_length, n_cols) - (i * chunk_length);
 
-      for( int j = 0; j < actual_blocksize; ++j )
-         colId[j] = j + i * chunk_length + begin_cols;
-
-      double* colsBlockDense_loc = BT[ i * chunk_length + begin_cols];
-
+      double* colsBlockDense_loc = BT[ i * chunk_length ];
       solver->solve(actual_blocksize, colsBlockDense_loc, nullptr);
 
       for( int j = 0; j < actual_blocksize; ++j )
-         colId[j] -= begin_cols;
+      {
+         colId[j] = j + i * chunk_length + begin_rows_res;
+         assert( colId[j] < m_res );
+      }
 
-      addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense_loc, colId.data(), nB, actual_blocksize, sparse_res, sym_res, result );
+      addLeftBorderTimesDenseColsToResTransp(BlT, colsBlockDense_loc, colId.data(), nB, actual_blocksize, sparse_res, sym_res, result );
    }
 
 #ifdef TIME_SCHUR
@@ -918,7 +920,7 @@ void sLinsys::addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, boo
  *                                                     [ G 0 0 ]
  */
 void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-      /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols )
+      /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res )
 {
    if( sparse_res )
       assert( sym_res );
@@ -1055,7 +1057,10 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
             /* map indices back to buffer */
             for( int j = 0; j < nrhs; ++j )
-               colId[j] -= begin_block_RAC;
+            {
+               colId[j] -= begin_block_RAC + begin_rows_res;
+               assert( colId[j] < n_res_tp );
+            }
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
@@ -1105,7 +1110,10 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
             for( int j = 0; j < nrhs; ++j )
-               colId[j] += begin_F - begin_cols;
+            {
+               colId[j] += begin_F - begin_cols + begin_rows_res;
+               assert( colId[j] < n_res_tp );
+            }
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
@@ -1155,7 +1163,10 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
             for( int j = 0; j < nrhs; ++j )
-               colId[j] += begin_G - begin_cols;
+            {
+               colId[j] += begin_G - begin_cols + begin_rows_res;
+               assert( colId[j] < n_res_tp );
+            }
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
