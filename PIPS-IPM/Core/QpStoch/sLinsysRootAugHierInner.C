@@ -283,7 +283,8 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
 
    std::vector<BorderMod> border_mod;
 
-   addBlTKiInvBrToRes( SC, Bl, Br, border_mod, true, sparseSC );
+   const bool sc_is_symmetric = true;
+   addBlTKiInvBrToRes( SC, Bl, Br, border_mod, sc_is_symmetric, sparseSC );
 }
 
 /* compute (Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0))^T and add it to SC */
