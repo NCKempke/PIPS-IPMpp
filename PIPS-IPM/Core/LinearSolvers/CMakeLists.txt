@@ -16,7 +16,10 @@ endif(HAVE_MUMPS)
 
 if(HAVE_MA27)
    add_library( ma27_solver STATIC Mc30Scaler/Mc30Scaler.C Ma27Solver/Ma27Solver.C Ma27Solver/Ma27SolverRoot.C )# ../QpGen/QpGenSparseMa27.C )
-   target_link_libraries( ma27_solver PRIVATE ${MA27_LIBRARY} )
+   target_link_libraries( ma27_solver 
+	   	PRIVATE ${MA27_LIBRARY} 
+   		PRIVATE ${GFORTRAN_LIBRARY}
+   	)
 endif(HAVE_MA27)
 
 if(HAVE_MA57)
@@ -24,6 +27,7 @@ if(HAVE_MA57)
    target_link_libraries( ma57_solver 
       PRIVATE ${MA57_LIBRARY}
       PRIVATE ${METIS_4_LIBRARY} 
+      PRIVATE ${GFORTRAN_LIBRARY}
    )
 endif(HAVE_MA57)
 
