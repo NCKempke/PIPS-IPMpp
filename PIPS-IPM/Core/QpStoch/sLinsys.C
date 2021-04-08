@@ -1016,7 +1016,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
          const int end_block_RAC = std::min( end_cols, nR_r );
 
          const int n_cols = end_block_RAC - begin_block_RAC;
-         // TODO : add buffer for nonzeros..
+         // TODO : add buffer for nonzeros and do not reallocate all the time
          SimpleVectorBase<int> nnzPerColRAC(n_cols);
 
          border_right.R.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
@@ -1050,6 +1050,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
+            /* map indices back to buffer */
             for( int j = 0; j < nrhs; ++j )
                colId[j] -= begin_block_RAC;
 
@@ -1101,7 +1102,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
             for( int j = 0; j < nrhs; ++j )
-               colId[j] += begin_F - begin_block_F;
+               colId[j] += begin_F - begin_cols;
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
@@ -1151,7 +1152,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
             solver->solve(nrhs, colsBlockDense.data(), colSparsity_ptr);
 
             for( int j = 0; j < nrhs; ++j )
-               colId[j] += begin_G - begin_block_G;
+               colId[j] += begin_G - begin_cols;
 
             addLeftBorderTimesDenseColsToResTransp(border_left_transp, colsBlockDense.data(), colId.data(), length_col, nrhs, sparse_res, sym_res, result);
          }
