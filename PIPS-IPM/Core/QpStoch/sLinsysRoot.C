@@ -202,7 +202,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
 
    int mbuffer, nbuffer; buffer.getSize( mbuffer, nbuffer );
 
-   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   if( sc_compute_blockwise_hierarchical )
       assert( end_rows - begin_rows <= mbuffer );
    else
       assert( end_rows = mbuffer );
@@ -259,7 +259,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    if( mA0 != 0 )
       assert( nF0C + mA0 + mC0 + mF0V + mG0V == nbuffer );
 
-   if( !pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   if( !sc_compute_blockwise_hierarchical )
    {
       if( has_RAC )
          assert( mbuffer == nF0V + mF0C + mG0C );
@@ -344,7 +344,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result,
 #ifndef NDEBUG
    assert( 0 <= begin_rows && begin_rows <= end_rows );
    const int n_rows = end_rows - begin_rows;
-   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   if( sc_compute_blockwise_hierarchical )
       assert( n_rows <= m_result );
    else
       assert( end_rows <= m_result && begin_rows == 0 );

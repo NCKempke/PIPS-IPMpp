@@ -1968,7 +1968,7 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
    const size_t n_chunks = std::ceil( static_cast<double>(m_result) / m_buffer );
 
    assert( n_chunks > 0 );
-   if( !pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
+   if( !sc_compute_blockwise_hierarchical )
    {
       assert( n_chunks == 1 );
       assert( m_buffer == m_result );

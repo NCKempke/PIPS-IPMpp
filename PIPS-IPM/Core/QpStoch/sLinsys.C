@@ -20,9 +20,10 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     is_hierarchy_root(is_hierarchy_root),
     blocksize_hierarchical( pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL") ),
+    sc_compute_blockwise_hierarchical{ pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") },
     stochNode{ factory_->tree }
 {
-  if( computeBlockwiseSC && PIPS_MPIgetRank() == 0 )
+  if( sc_compute_blockwise_hierarchical && PIPS_MPIgetRank() == 0 )
      std::cout << "Computing hierarchical Schur complements blockwise with buffersize " << blocksize_hierarchical << " (times # of available OMP threads)\n";
 
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
@@ -49,6 +50,7 @@ sLinsys::sLinsys(sFactory* factory_,
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     blocksize_hierarchical( pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL") ),
+    sc_compute_blockwise_hierarchical{ pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") },
     stochNode{factory_->tree}
 {
   prob->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
@@ -1380,8 +1382,7 @@ int sLinsys::allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n
    assert( buffer_m > 0 );
    assert( buffer_n > 0 );
 
-   const bool blockwise = pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE");
-   const int buffer_m_blocked = blockwise ? PIPSgetnOMPthreads() * blocksize_hierarchical : buffer_m;
+   const int buffer_m_blocked = sc_compute_blockwise_hierarchical ? PIPSgetnOMPthreads() * blocksize_hierarchical : buffer_m;
 
    if( !buffer_blocked_hierarchical )
       buffer_blocked_hierarchical.reset( new DenseGenMatrix(buffer_m_blocked, buffer_n) );

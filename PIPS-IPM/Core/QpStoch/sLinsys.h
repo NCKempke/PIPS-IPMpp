@@ -179,6 +179,7 @@ class sLinsys : public QpGenLinsys
   std::unique_ptr<DoubleLinearSolver> solver{};
 
   const int blocksize_hierarchical{20};
+  const bool sc_compute_blockwise_hierarchical{false};
   std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
 
  public:

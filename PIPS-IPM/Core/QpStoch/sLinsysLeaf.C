@@ -280,7 +280,7 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
    Br.F.mat->getSize(myl_border, dummy);
    Br.G.mat->getSize(mzl_border, dummy);
 
-   if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE" ) )
+   if( sc_compute_blockwise_hierarchical )
       assert( end_cols_br <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
    else
       assert( end_cols_br == nx_border + Br.n_empty_rows + myl_border + mzl_border && begin_cols_br == 0 );
