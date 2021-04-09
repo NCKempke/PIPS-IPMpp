@@ -22,6 +22,9 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
     blocksize_hierarchical( pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL") ),
     stochNode{ factory_->tree }
 {
+  if( computeBlockwiseSC && PIPS_MPIgetRank() == 0 )
+     std::cout << "Computing hierarchical Schur complements blockwise with buffersize " << blocksize_hierarchical << " (times # of available OMP threads)\n";
+
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
     assert( is_hierarchy_root );
 
