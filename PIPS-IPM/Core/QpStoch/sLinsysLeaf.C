@@ -295,9 +295,12 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
    int m_result;
    result.getSize(m_result, dummy);
 
+#ifndef NDEBUG
    const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
    assert( n_cols <= m_buffer );
-
+#else
+   allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
+#endif
    /* put cols from begin_cols to end_cold of (Bri)^T into buffer
     *
     *                [ RiT 0 AiT CiT ]

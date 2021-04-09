@@ -1901,10 +1901,10 @@ void sLinsysRootAug::DsolveHierarchyBorder( DenseGenMatrix& rhs_mat_transp, int 
    // TODO
 #endif
 
+   int m, n; rhs_mat_transp.getSize(m, n);
 #ifndef NDEBUG
    assert(locmyl >= 0 && locmzl >= 0);
 
-   int m,n; rhs_mat_transp.getSize(m, n);
    assert( n_cols <= m );
    assert( locnx + locmy + locmz + locmyl + locmzl == n );
 #endif

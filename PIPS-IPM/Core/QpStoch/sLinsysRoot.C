@@ -339,14 +339,16 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  */
 void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
 {
+   int m_result, n_result; result.getSize(m_result, n_result);
+
+#ifndef NDEBUG
    assert( 0 <= begin_rows && begin_rows <= end_rows );
    const int n_rows = end_rows - begin_rows;
-
-   int m_result, n_result; result.getSize(m_result, n_result);
    if( pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE") )
       assert( n_rows <= m_result );
    else
       assert( end_rows <= m_result && begin_rows == 0 );
+#endif
 
    if( is_sparse )
       assert( is_sym );
