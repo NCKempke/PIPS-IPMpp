@@ -80,7 +80,8 @@ else(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 ## required packages 
-find_library(GFORTRAN_LIBRARY NAMES libgfortran.so REQUIRED)
+#find_library(GFORTRAN_LIBRARY NAMES gfortran REQUIRED)
+set(GFORTRAN_LIBRARY "-lgfortran")
 find_library(DL_LIBRARY NAMES dl REQUIRED)
 
 if( BUILD_GDX_SOURCE )
