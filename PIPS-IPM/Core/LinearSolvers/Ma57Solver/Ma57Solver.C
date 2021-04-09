@@ -197,7 +197,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
                if( thresholdPivoting() == threshold_pivoting_max )
                   std::cout << "WARNING MA57 " << name << ": Unprecise solution but ThresholdPivoting is already at its max\n";
                else
-                  std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting to " << thresholdPivoting() << " - refactoization suggested\n";
+                  std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting to " << thresholdPivoting() << " - refactorization suggested\n";
             }
             done = true;
          }
