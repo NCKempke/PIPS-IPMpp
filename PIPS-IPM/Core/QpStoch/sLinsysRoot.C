@@ -141,9 +141,6 @@ void sLinsysRoot::factor2(sData *prob, Variables *vars)
          std::cout << " Sparse top level Schur Complement factorization is starting... ";
    }
 
-   std::cout << "before fact fin SC \n";
-   kkt->writeToStreamDense(std::cout);
-   std::cout << "done writing\n";
    factorizeKKT(prob);
 
    if( PIPS_MPIgetRank(mpiComm) == 0 )
@@ -303,7 +300,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
          const int start_F0C_mat = std::max(begin_rows, start_F0C_block) - start_F0C_block;
          const int end_F0C_mat = std::min(end_rows, end_F0C_block) - start_F0C_block;
          assert( 0 <= start_F0C_mat && start_F0C_mat <= end_F0C_mat );
-         buffer.addMatAt( *F0cons_border, start_F0C_mat, end_F0C_mat, nA0, 0 );
+         buffer.addMatAt( *F0cons_border, start_F0C_mat, end_F0C_mat, std::max(0, start_F0C_block - begin_rows), 0 );
       }
    }
 
@@ -317,7 +314,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
          const int start_G0C_mat = std::max(begin_rows, start_G0C_block) - start_G0C_block;
          const int end_G0C_mat = std::min(end_rows, end_G0C_block) - start_G0C_block;
          assert( 0 <= start_G0C_mat && start_G0C_mat <= end_G0C_mat );
-         buffer.addMatAt( *G0cons_border, start_G0C_mat, end_G0C_mat,nA0 + mF0C, 0 );
+         buffer.addMatAt( *G0cons_border, start_G0C_mat, end_G0C_mat, std::max(0, start_G0C_block - begin_rows), 0 );
       }
    }
 }
@@ -511,9 +508,9 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& S
    for( int i = 0; i < n_rows; ++i )
    {
       const int row = is_sym ? i + begin_rows : i;
-      assert( row < mX0 && row < mSC );
+      assert( i < mX0 && row < mSC );
 
-      const double* const col = X0[row];
+      const double* const col = X0[i];
 
       if( A0_border )
          A0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C], 1);

@@ -404,9 +404,6 @@ else
    pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs,
          iparm, &msglvl, &ddum, &ddum, &error);
 
-   std::cout << "kkt\n";
-   this->mStorageSparse->writeToStream(std::cout);
-   std::cout << "finkkt\n";
    if( error != 0 )
    {
       printf("\nERROR during numerical factorization: %d", error);
