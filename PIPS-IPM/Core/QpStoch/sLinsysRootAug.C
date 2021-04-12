@@ -1992,6 +1992,7 @@ void sLinsysRootAug::addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl,
 void sLinsysRootAug::addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols )
 {
+   /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
    buffer_b0.putZeros();
 
    /* buffer_b0 is in transposed for so that we can access its cols (or rows in the storage) quickly in Dsolve */
@@ -2000,8 +2001,6 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLi
    assert( buffer_b0.getN() == kkt->size() || buffer_b0.getN() == kkt->size() + locmz );
    assert( buffer_b0.getM() >= end_cols - begin_cols );
 
-   /* Bi_{inner} is our own border, Ki are our own diagonals */
-   /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
    const bool two_link_border_left = !(Bl.has_RAC || Bl.use_local_RAC);
    const bool two_link_border_right = !(Br.has_RAC || Br.use_local_RAC);
 
@@ -2013,10 +2012,9 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLi
    LsolveHierarchyBorder( buffer_b0, Br, Br_mod_border, two_link_border_left, begin_cols, end_cols );
 
    // buffer_b0 = (Br0 - sum_j Bmod0J X0j ) - buffer_b0 = Br0 - sum_j Bmod0J X0j - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij )}
-//TODO:   if( !two_link_border || PIPS_MPIgetRank(mpiComm) == 0 )
    finalizeZ0Hierarchical( buffer_b0, Br, Br_mod_border, begin_cols, end_cols );
 
-   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form! )
+   // solve with Schur Complement for B0_{outer} - SUM_i Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) (stored in transposed form!)
    // buffer_b0 = SC_{inner}^-1 buffer_b0 = X0
    DsolveHierarchyBorder( buffer_b0, end_cols - begin_cols );
 
