@@ -214,7 +214,7 @@ protected:
   const bool is_hierarchy_root{false};
   bool is_hierarchy_inner_root{false};
   bool is_hierarchy_inner_leaf{false};
-  /* only for leafs: indicate wether A_mat stroed in this child belongs to the child (true) or is part of the border (false) */
+  /* only for leafs: indicate whether A_mat belongs to the child (true) or is part of the border (false) */
   bool has_RAC{true};
 
   bool useLinkStructure{false};

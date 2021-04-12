@@ -243,11 +243,14 @@ void Ma57Solver::solve(GenMatrix& rhs_in)
 
 void Ma57Solver::solve( int nrhss, double* rhss, int* )
 {
-   #pragma omp parallel for schedule(static, 1) num_threads(n_threads)
+   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads)
    /* the multiple rhs (macd) option in MA57 does not allow for iterative refinement */
    for (int i = 0; i < nrhss; i++)
    {
       SimpleVector v(rhss + i * n, n);
+
+      if( v.isZero() )
+         continue;
       solve(v);
    }
 }
