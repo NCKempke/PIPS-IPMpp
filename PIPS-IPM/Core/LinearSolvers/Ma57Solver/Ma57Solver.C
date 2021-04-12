@@ -169,7 +169,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
 
       done = checkErrorsAndReact();
 
-      if( resid_loc.infnorm() < precision * ( 1 + rhsnorm ) )
+      if( true || resid_loc.infnorm() < precision * ( 1 + rhsnorm ) || resid_loc.infnorm() < precision )
          done = true;
       else
       {
