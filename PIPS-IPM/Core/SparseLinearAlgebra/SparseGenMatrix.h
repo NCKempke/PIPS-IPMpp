@@ -160,6 +160,7 @@ public:
 
   virtual void addNnzPerRow(OoqpVectorBase<int>& nnzVec) const;
   virtual void addNnzPerCol(OoqpVectorBase<int>& nnzVec);
+  void addNnzPerCol( OoqpVectorBase<int>& nnzVec, int begin_cols, int end_cols );
 
   /** fill vector with absolute minimum/maximum value of each row */
   void getRowMinMaxVec( bool getMin, bool initializeVec,
@@ -196,8 +197,14 @@ public:
   void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset,
         double* rowsArrayDense, int* rowSparsity = nullptr) const;
 
+  void fromGetRowsBlock(int row_start, int n_rows, int array_line_size, int array_line_offset,
+        double* rows_array_dense, int* row_sparsity = nullptr) const;
+
   void fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset,
         double* colsArrayDense, int* rowSparsity = nullptr);
+
+  void fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset,
+        double* cols_array_dense, int* row_sparsity = nullptr);
 
   bool hasTransposed() const;
 

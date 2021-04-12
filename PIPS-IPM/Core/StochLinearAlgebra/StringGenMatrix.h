@@ -32,11 +32,14 @@ class StringGenMatrix : public GenMatrix
       const MPI_Comm mpi_comm{MPI_COMM_NULL};
       const bool distributed{false};
       const int rank{-1};
+      long long nonzeros{0};
 
+      // will not delete its data when deleted
+      const bool is_view{false};
    public:
       StringGenMatrix() = default;
 
-      StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_);
+      StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view = false);
 
       ~StringGenMatrix() override;
 
@@ -74,6 +77,9 @@ class StringGenMatrix : public GenMatrix
       /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
       void combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms );
       virtual void splitAlongTree( const sTreeCallbacks& tree );
+
+      virtual void recomputeNonzeros();
+      int numberOfNonZeros() const override;
 
       GenMatrix* shaveBottom( int n_rows ) override;
 
@@ -149,6 +155,9 @@ class StringGenDummyMatrix : public StringGenMatrix
 
       void addRowSums( OoqpVector& ) const override {};
       void addColSums( OoqpVector& ) const override {};
+
+      void recomputeNonzeros() override {};
+      int numberOfNonZeros() const override { return 0; };
 
       GenMatrix* shaveBottom( int ) override { return new StringGenDummyMatrix(); };
 

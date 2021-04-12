@@ -530,6 +530,7 @@ StringGenMatrix* StochSymMatrix::shaveBorder( int n_vars )
       border_vertical->addChild( children[it]->shaveBorder2(n_vars) );
 
    n -= n_vars;
+   border_vertical->recomputeNonzeros();
    return border_vertical;
 }
 

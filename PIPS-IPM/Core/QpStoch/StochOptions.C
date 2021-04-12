@@ -263,6 +263,15 @@ namespace pips_options
       bool_options["HIERARCHICAL_TESTING"] = false;
       bool_options["HIERARCHICAL_PRINT_HIER_DATA"] = false;
 
+      /** should all columns be computed at once when computing the hierarchical schur complements ?
+       * this will render SC_BLOCKSIZE_HIERARCHICAL obsolete but might consume big amounts of memory and
+       * might fail if columns * length columns is too big (stroage allocation might fail)
+       */
+      bool_options["SC_HIERARCHICAL_COMPUTE_BLOCKWISE"] = true;
+
+      /** columns to solve for at once when computing the hierarchical schur complements*/
+      int_options["SC_BLOCKSIZE_HIERARCHICAL"] = 20;
+
       /** 1 -> only dense border, 2 -> dense border + 1 additional layer ... */
       int_options["HIERARCHICAL_APPROACH_N_LAYERS"] = 2;
 

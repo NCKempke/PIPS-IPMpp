@@ -42,7 +42,7 @@ class sLinsysRootAug : public sLinsysRoot {
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_, bool creat_solvers);
-  ~sLinsysRootAug() override;
+  ~sLinsysRootAug() override = default;
 
   void finalizeKKT( sData* prob, Variables* vars) override;
   void finalizeKKTdist(sData* prob) override;
@@ -52,11 +52,11 @@ class sLinsysRootAug : public sLinsysRoot {
   void Ltsolve(sData *prob, OoqpVector& x) override;
 
   using sLinsys::LsolveHierarchyBorder;
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
 
   using sLinsys::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border ) override;
+        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 
  protected:
   SymMatrix* createKKT (sData* prob) const;
@@ -67,8 +67,10 @@ class sLinsysRootAug : public sLinsysRoot {
 //  void solveReduced( sData *prob, SimpleVector& b);
   void solveReducedLinkCons( sData *prob, SimpleVector& b);
   void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
-  void addBTKiInvBToSC( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+  void addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res ) override;
+  void addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+        bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols );
 
  private:
   void createSolversAndKKts(sData* prob);
@@ -77,7 +79,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void solveWithIterRef( sData *prob, SimpleVector& b);
   void solveWithBiCGStab( sData *prob, SimpleVector& b);
 
-  void DsolveHierarchyBorder( DenseGenMatrix& b ) override;
+  void DsolveHierarchyBorder( DenseGenMatrix& b, int n_cols ) override;
 
   // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
   void addLinkConsBlock0Matrix( sData *prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);

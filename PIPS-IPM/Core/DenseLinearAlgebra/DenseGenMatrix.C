@@ -54,6 +54,10 @@ void DenseGenMatrix::atPutZeros( int row, int col,
   mStorage->atPutZeros( row, col, rowExtent, colExtent );
 }
 
+void DenseGenMatrix::putZeros()
+{
+   mStorage->putZeros();
+}
 
 void DenseGenMatrix::putSparseTriple( int irow[], int len,
 					  int jcol[], double A[], 
@@ -345,24 +349,29 @@ void DenseGenMatrix::matMult(double alpha,
 // TODO : probably move to some utility class..
 /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
  * starting at mul_start and the results gets added starting at res_start */
-void DenseGenMatrix::multMatAt( int mul_start, double beta, int res_start, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const
+void DenseGenMatrix::multMatAt( int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const
 {
-   assert( mul_start >= 0 );
+   assert( 0 <= col_offset_this );
+   assert( 0 <= row_start );
+   assert( row_start <= row_end );
+   assert( row_end <= mStorage->m );
+
    int mat_m, mat_n; mat.getSize( mat_m, mat_n );
 
-   assert( mul_start <= mStorage->n && mul_start + mat_m <= mStorage->n );
+   assert( col_offset_this <= mStorage->n && col_offset_this + mat_m <= mStorage->n );
 
-   assert( res_start >= 0 );
-   assert( res_start <= res.mStorage->n && res_start + mat_n <= res.mStorage->n );
-   assert( res.mStorage->m == mStorage->m );
+   const int n_rows = row_end - row_start;
+   assert( col_offset_result >= 0 );
+   assert( col_offset_result <= res.mStorage->n && col_offset_result + mat_n <= res.mStorage->n );
+   assert( n_rows + row_start_res <= res.mStorage->m );
 
    SparseStorage& mat_tp = mat.getTranspose().getStorageRef();
-   for( int j = 0; j < mStorage->m; ++j )
+   for( int j = 0; j < n_rows; ++j )
    {
       for( int i = 0; i < mat_n; ++i )
       {
          if( beta != 1.0 )
-            res[j][res_start + i] *= beta;
+            res[row_start + j][col_offset_result + i] *= beta;
 
          const int col_start = mat_tp.krowM[i];
          const int col_end = mat_tp.krowM[i + 1];
@@ -372,12 +381,42 @@ void DenseGenMatrix::multMatAt( int mul_start, double beta, int res_start, Dense
             const int row = mat_tp.jcolM[k];
             const double val = mat_tp.M[k];
 
-            assert( res_start + i < res.mStorage->n );
+            assert( col_offset_result + i < res.mStorage->n );
             assert( row < mat_m );
-            assert( row + mul_start < mStorage->n );
-            res[j][res_start + i] += mStorage->M[j][row + mul_start] * val * alpha;
+            assert( row + col_offset_this < mStorage->n );
+            res[row_start_res + j][col_offset_result + i] += mStorage->M[row_start + j][row + col_offset_this] * val * alpha;
          }
       }
    }
+}
 
+void DenseGenMatrix::addMatAt( const SparseGenMatrix& mat, int mat_row_start, int mat_row_end, int this_row_0, int this_col_0 )
+{
+   int mmat, nmat; mat.getSize( mmat, nmat );
+   if( mmat <= 0 || nmat <= 0 )
+      return;
+
+   assert( 0 <= mat_row_start && mat_row_start <= mat_row_end && mat_row_end - 1 < mmat );
+
+   const int n_rows = mat_row_end - mat_row_start;
+   assert( 0 <= this_row_0 && this_row_0 + n_rows - 1 < mStorage->m );
+   assert( 0 <= this_col_0 && this_col_0 + nmat - 1 < mStorage->n );
+
+   for( int row = 0; row < n_rows; ++row )
+   {
+      const int row_in_mat = mat_row_start + row;
+      const int row_start = mat.krowM()[row_in_mat];
+      const int row_end = mat.krowM()[row_in_mat + 1];
+
+      for( int j = row_start; j < row_end; ++j )
+      {
+         const int col = mat.jcolM()[j];
+         const double val = mat.M()[j];
+
+         assert( col < nmat );
+         assert( this_col_0 + col < mStorage->n );
+         assert( this_row_0 + row < mStorage->m );
+         this->operator [](this_row_0 + row)[this_col_0 + col] += val;
+      }
+   }
 }

@@ -79,21 +79,27 @@ void sLinsysRootAugHierInner::Ltsolve2(sData*, StochVector& x, SimpleVector& x0,
    solveCompressed( x );
 }
 
-void sLinsysRootAugHierInner::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border )
+void sLinsysRootAugHierInner::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols  )
 {
-   LsolveHierarchyBorder( result, Br, Br_mod_border, false, two_link_border );
+   LsolveHierarchyBorder( result, Br, Br_mod_border, false, two_link_border, begin_cols, end_cols );
 }
 
 void sLinsysRootAugHierInner::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool two_link_border )
+      std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols )
 {
-   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false, two_link_border );
+   if( Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()) )
+      return;
+
+   LtsolveHierarchyBorder( res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false, begin_cols, end_cols );
 }
 
 void sLinsysRootAugHierInner::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool use_local_RAC )
 {
-   BorderLinsys Border( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+   BorderLinsys Border( 0, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
+
+   if( Border.isEmpty() )
+      return;
 
    addBorderX0ToRhs( rhs_inner, b0, Border );
 }
@@ -133,7 +139,7 @@ void sLinsysRootAugHierInner::addLniziLinkCons( sData*, OoqpVector& z0_, OoqpVec
    /* solve system */
    solveCompressed( *sol_inner );
 
-   BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
+   BorderLinsys Bl( 0, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
 
    addBorderTimesRhsToB0( *sol_inner, z0, Bl );
@@ -146,6 +152,9 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0( StochVector& rhs, SimpleVec
    for( size_t i = 0; i < children.size(); ++i )
    {
       BorderLinsys child_border = getChild(border, i);
+      if( child_border.isEmpty() )
+         continue;
+
       children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
    }
 
@@ -190,6 +199,8 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVe
    for( size_t i = 0; i < children.size(); ++i )
    {
       BorderLinsys child_border = getChild(border, i);
+      if( child_border.isEmpty() )
+         continue;
       children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
    }
 
@@ -224,45 +235,87 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVe
    }
 }
 
-void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC )
+/* res += [ B_inner^T K_i^{-1} (Br - SUM_j Brmodj Xj) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K_i^{-1} B_inner from begin_cols to end_cols in */
+void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res,
+      bool sym_res, int begin_cols, int end_cols, int n_empty_rows_inner_border )
 {
+   int mres, dummy; result.getSize( mres, dummy );
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
 
-   BorderLinsys Bl( dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
-         dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC );
+   BorderLinsys Bl( n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
+   if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
+      return;
 
+   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
+   // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
+   // dense since we have no clue about any structure in the system and Xij are dense
+#ifndef NDEBUG
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(mres, n_buffer);
+   assert( end_cols - begin_cols <= m_buffer );
+#else
+   allocateAndZeroBlockedComputationsBuffer(mres, n_buffer);
+#endif
 
-   addBTKiInvBToSC( result, Bl, Br, Br_mod_border, false, false );
-
+   addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols );
 }
 
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
    assert( data == prob );
 
-   BorderLinsys Bl( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
-   BorderLinsys Br( prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   int mSC = SC.size();
+   int mG, nG, mF, nF;
+   data->getLocalFBorder().getSize(mF, nF);
+   data->getLocalGBorder().getSize(mG, nG);
 
+   assert( nF == nG );
+   assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
+   assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
+   assert( 0 <= mSC - mG - mF );
+
+   BorderLinsys Bl( mSC - mG - mF, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Br( mSC - mG - mF, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   if( Bl.isEmpty() )
+      return;
 
    std::vector<BorderMod> border_mod;
 
-   addBTKiInvBToSC( SC, Bl, Br, border_mod, true, sparseSC );
-
+   const bool sc_is_symmetric = true;
+   addBlTKiInvBrToRes( SC, Bl, Br, border_mod, sc_is_symmetric, sparseSC );
 }
 
+/* compute (Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0))^T and add it to SC */
 void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0,
-      BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool use_local_RAC )
+      BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool use_local_RAC, int begin_cols, int end_cols, int n_empty_rows_inner_border )
 {
-   BorderLinsys B_inner( data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
 
+   if( Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()) )
+      return;
 
-   BorderMod B_inner_mod(B_inner, X0);
+   BorderLinsys B_inner( n_empty_rows_inner_border, data->getLocalFBorder(), data->getLocalGBorder(), use_local_RAC );
+
    std::vector<BorderMod> border_mod( Br_mod_border );
-   border_mod.push_back( B_inner_mod );
+   if( !B_inner.isEmpty() )
+   {
+      BorderMod B_inner_mod(B_inner, X0);
+      border_mod.push_back( B_inner_mod );
+   }
 
-   addBTKiInvBToSC( res, Bl, Br, border_mod, sym_res, sparse_res );
+   const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
+   int dummy, m_result;
+   res.getSize(m_result, dummy);
 
+   // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
+   // dense since we have no clue about any structure in the system and Xij are dense
+#ifndef NDEBUG
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
+   assert( end_cols - begin_cols <= m_buffer );
+#else
+   allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
+#endif
+
+   addBlTKiInvBrToResBlockwise( res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols );
 }
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )

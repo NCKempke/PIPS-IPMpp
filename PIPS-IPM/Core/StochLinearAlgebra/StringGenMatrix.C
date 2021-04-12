@@ -15,17 +15,20 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_)
-   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
+StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view )
+   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) ), is_view{is_view}
 {
    assert(mat);
 
    mat->getSize(m, n);
 
+   nonzeros += mat->numberOfNonZeros();
+
    if( mat_link )
    {
       long long ml, nl;
       mat_link->getSize(ml, nl);
+      nonzeros += mat_link->numberOfNonZeros();
 
       if( is_vertical )
       {
@@ -42,6 +45,9 @@ StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* ma
 
 StringGenMatrix::~StringGenMatrix()
 {
+   if( is_view )
+      return;
+
    for( StringGenMatrix* child : children )
       delete child;
 
@@ -52,6 +58,8 @@ StringGenMatrix::~StringGenMatrix()
 void StringGenMatrix::addChild(StringGenMatrix* child)
 {
    children.push_back(child);
+
+   nonzeros += child->numberOfNonZeros();
 
    long long m_, n_;
    child->getSize(m_, n_);
@@ -127,6 +135,49 @@ void StringGenMatrix::transMult(double beta, OoqpVector& y, double alpha, const 
       transMultVertical(beta, y, alpha, x, true);
    else
       transMultHorizontal(beta, y, alpha, x);
+}
+
+int StringGenMatrix::numberOfNonZeros() const
+{
+#ifndef NDEBUG
+   const int nonzeros_now = nonzeros;
+   const_cast<StringGenMatrix*>(this)->recomputeNonzeros();
+   assert( nonzeros_now == nonzeros );
+#endif
+   return nonzeros;
+}
+
+void StringGenMatrix::recomputeNonzeros()
+{
+   nonzeros = 0;
+
+   for( auto& child : children )
+   {
+      child->recomputeNonzeros();
+      if( PIPS_MPIgetRank(child->mpi_comm) == 0 )
+         nonzeros += child->numberOfNonZeros();
+      else
+         child->numberOfNonZeros();
+   }
+
+   if( dynamic_cast<const StringGenMatrix*>(mat) )
+   {
+      StringGenMatrix& matstr = dynamic_cast<StringGenMatrix&>(*mat);
+      matstr.recomputeNonzeros();
+      if( PIPS_MPIgetRank(matstr.mpi_comm) == 0 )
+         nonzeros += matstr.numberOfNonZeros();
+      else
+         matstr.numberOfNonZeros();
+   }
+   else if( PIPS_MPIiAmSpecial( distributed, mpi_comm ) )
+   {
+      if( mat )
+         nonzeros += mat->numberOfNonZeros();
+      if( mat_link )
+         nonzeros += mat_link->numberOfNonZeros();
+   }
+
+   PIPS_MPIgetSumInPlace(nonzeros, mpi_comm);
 }
 
 void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
@@ -585,6 +636,7 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
 
 void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms )
 {
+
 #ifndef NDEBUG
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
    assert( child_comms.size() == n_new_children );
@@ -629,13 +681,15 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
 
    children.erase( children.begin(), children.begin() + map_child_subchild.size() );
    assert( children.size() == n_new_children );
+
+   recomputeNonzeros();
 }
 
 GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
 {
    assert( !is_vertical );
-
    assert( mat );
+
    GenMatrix* mat_border = mat->shaveBottom( n_rows );
    GenMatrix* matlink_border = mat_link ? mat_link->shaveBottom( n_rows ) : nullptr;
 
@@ -646,10 +700,15 @@ GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
    border->getSize(mB,nB);
    assert( mB == n_rows );
 #endif
+
    for( auto& child : children )
       border->addChild( dynamic_cast<StringGenMatrix*>(child->shaveBottom(n_rows) ) );
 
    m -= n_rows;
+
+   recomputeNonzeros();
+   border->recomputeNonzeros();
+
    return border;
 }
 
@@ -749,4 +808,6 @@ void StringGenMatrix::splitAlongTree( const sTreeCallbacks& tree )
          dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
       }
    }
+
+   recomputeNonzeros();
 }

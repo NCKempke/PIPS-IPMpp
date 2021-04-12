@@ -143,7 +143,7 @@ protected:
   // start and end positions for local 2-links in Schur complement that are non-zero if only
   // blocks greater equal blocksStart and smaller blocksEnd are considered
   void getSCrangeMarkers(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq,
-        int& local2linksStartIneq, int& local2linksEndIneq);
+        int& local2linksStartIneq, int& local2linksEndIneq) const;
 
   // start and end positions for local 2-links in Schur complement that are owned by
   // blocks greater equal blocksStart and smaller blocksEnd are considered
