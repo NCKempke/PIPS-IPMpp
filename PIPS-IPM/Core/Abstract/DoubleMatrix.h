@@ -127,9 +127,9 @@ public:
 
   virtual void writeDashedLineToStream( std::ostream& ) const { assert( false && "not implemented" ); };
 
-  /** Place the diagonal elements of this matrix in the vector vec */
+  /** Place the diagonal elements of this matrix in the vector first */
   virtual void getDiagonal( OoqpVector& vec ) = 0;
-  /** Set the matrix to the diagoanl matrix whose diagonal is vec */
+  /** Set the matrix to the diagoanl matrix whose diagonal is first */
   virtual void setToDiagonal( const OoqpVector& vec ) = 0;
 
   /** Set some of the diagonal elements of this matrix.
@@ -286,10 +286,10 @@ public:
         const OoqpVector* /*rowScaleVec*/, OoqpVector& /*minmaxVec*/ ) { assert(0 && "not implemented"); };
 
   /** add absolute value sum of each row to vector */
-  virtual void addRowSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
+  virtual void addRowSums( OoqpVector& /*first*/ ) const { assert(0 && "not implemented"); };
 
   /** add absolute value sum of each column to vector */
-  virtual void addColSums( OoqpVector& /*vec*/ ) const { assert(0 && "not implemented"); };
+  virtual void addColSums( OoqpVector& /*first*/ ) const { assert(0 && "not implemented"); };
 
   /** return nonzeros in matrix */
   virtual int numberOfNonZeros() const { assert( false && "not implemented"); return -1; };

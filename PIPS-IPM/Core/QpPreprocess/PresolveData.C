@@ -64,7 +64,7 @@ PresolveData::PresolveData(const sData& sorigprob, StochPostsolver* postsolver) 
       (pips_options::getIntParameter("PRESOLVE_TRACK_ROW_SYSTEM") == 0 ? EQUALITY_SYSTEM : INEQUALITY_SYSTEM) ),
       tracked_col(COL, pips_options::getIntParameter("PRESOLVE_TRACK_COL_NODE"),
       pips_options::getIntParameter("PRESOLVE_TRACK_COL_INDEX") ),
-      objective_vec_chgs{ new SimpleVector(nnzs_col->vec->length()) },
+      objective_vec_chgs{ new SimpleVector(nnzs_col->first->length()) },
       lower_bound_implied_by_system{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       lower_bound_implied_by_row{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       lower_bound_implied_by_node{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
@@ -73,8 +73,8 @@ PresolveData::PresolveData(const sData& sorigprob, StochPostsolver* postsolver) 
       upper_bound_implied_by_node{ dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone()) },
       absmin_col{ dynamic_cast<StochVector*>(sorigprob.g->clone()) },
       absmax_col{ dynamic_cast<StochVector*>(sorigprob.g->clone()) },
-      store_linking_row_boundTightening_A( nnzs_row_A->vecl->length(), 0 ),
-      store_linking_row_boundTightening_C( nnzs_row_C->vecl->length(), 0 )
+      store_linking_row_boundTightening_A(nnzs_row_A->last->length(), 0 ),
+      store_linking_row_boundTightening_C(nnzs_row_C->last->length(), 0 )
 {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool) );
    outdated_activities = true;
@@ -92,10 +92,10 @@ PresolveData::PresolveData(const sData& sorigprob, StochPostsolver* postsolver) 
 
    presProb = sorigprob.cloneFull(true);
 
-   const int n_linking_vars = (nnzs_col->vec) ? nnzs_col->vec->length() : 0;
+   const int n_linking_vars = (nnzs_col->first) ? nnzs_col->first->length() : 0;
 
-   const int n_linking_A = (nnzs_row_A->vecl) ? nnzs_row_A->vecl->length() : 0;
-   const int n_linking_C = (nnzs_row_C->vecl) ? nnzs_row_C->vecl->length() : 0;
+   const int n_linking_A = (nnzs_row_A->last) ? nnzs_row_A->last->length() : 0;
+   const int n_linking_C = (nnzs_row_C->last) ? nnzs_row_C->last->length() : 0;
 
    assert( n_linking_vars + 2 * n_linking_A + 2 * n_linking_C < std::numeric_limits<int>::max() );
 
@@ -320,35 +320,35 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
    }
    else
    {
-      actmin_eq_part.vecl->setToZero();
-      actmax_eq_part.vecl->setToZero();
-      actmin_ineq_part.vecl->setToZero();
-      actmax_ineq_part.vecl->setToZero();
+      actmin_eq_part.last->setToZero();
+      actmax_eq_part.last->setToZero();
+      actmin_ineq_part.last->setToZero();
+      actmax_ineq_part.last->setToZero();
 
-      actmin_eq_ubndd.vecl->setToZero();
-      actmax_eq_ubndd.vecl->setToZero();
-      actmin_ineq_ubndd.vecl->setToZero();
-      actmax_ineq_ubndd.vecl->setToZero();
+      actmin_eq_ubndd.last->setToZero();
+      actmax_eq_ubndd.last->setToZero();
+      actmin_ineq_ubndd.last->setToZero();
+      actmax_ineq_ubndd.last->setToZero();
    }
 
    /* compute activities at root node */
-   const SimpleVector& xupp_root = dynamic_cast<const SimpleVector&>(*xupp.vec);
-   const SimpleVector& ixupp_root = dynamic_cast<const SimpleVector&>(*ixupp.vec);
-   const SimpleVector& xlow_root = dynamic_cast<const SimpleVector&>(*xlow.vec);
-   const SimpleVector& ixlow_root = dynamic_cast<const SimpleVector&>(*ixlow.vec);
+   const SimpleVector& xupp_root = dynamic_cast<const SimpleVector&>(*xupp.first);
+   const SimpleVector& ixupp_root = dynamic_cast<const SimpleVector&>(*ixupp.first);
+   const SimpleVector& xlow_root = dynamic_cast<const SimpleVector&>(*xlow.first);
+   const SimpleVector& ixlow_root = dynamic_cast<const SimpleVector&>(*ixlow.first);
 
    /* A0/B0 */
    if(!linking_only)
    {
-      SimpleVector& actmin_eq_root_part = dynamic_cast<SimpleVector&>(*actmin_eq_part.vec);
-      SimpleVector& actmax_eq_root_part = dynamic_cast<SimpleVector&>(*actmax_eq_part.vec);
-      SimpleVector& actmin_ineq_root_part = dynamic_cast<SimpleVector&>(*actmin_ineq_part.vec);
-      SimpleVector& actmax_ineq_root_part = dynamic_cast<SimpleVector&>(*actmax_ineq_part.vec);
+      SimpleVector& actmin_eq_root_part = dynamic_cast<SimpleVector&>(*actmin_eq_part.first);
+      SimpleVector& actmax_eq_root_part = dynamic_cast<SimpleVector&>(*actmax_eq_part.first);
+      SimpleVector& actmin_ineq_root_part = dynamic_cast<SimpleVector&>(*actmin_ineq_part.first);
+      SimpleVector& actmax_ineq_root_part = dynamic_cast<SimpleVector&>(*actmax_ineq_part.first);
 
-      SimpleVectorBase<int>& actmin_eq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.vec);
-      SimpleVectorBase<int>& actmax_eq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.vec);
-      SimpleVectorBase<int>& actmin_ineq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.vec);
-      SimpleVectorBase<int>& actmax_ineq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.vec);
+      SimpleVectorBase<int>& actmin_eq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.first);
+      SimpleVectorBase<int>& actmax_eq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.first);
+      SimpleVectorBase<int>& actmin_ineq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.first);
+      SimpleVectorBase<int>& actmax_ineq_root_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.first);
 
       addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.Bmat)->getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd, actmax_eq_root_part, actmax_eq_root_ubndd,
             xlow_root, ixlow_root, xupp_root, ixupp_root);
@@ -357,15 +357,15 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
             xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
-   SimpleVector& actmin_eq_link_part = dynamic_cast<SimpleVector&>(*actmin_eq_part.vecl);
-   SimpleVector& actmax_eq_link_part = dynamic_cast<SimpleVector&>(*actmax_eq_part.vecl);
-   SimpleVector& actmin_ineq_link_part = dynamic_cast<SimpleVector&>(*actmin_ineq_part.vecl);
-   SimpleVector& actmax_ineq_link_part = dynamic_cast<SimpleVector&>(*actmax_ineq_part.vecl);
+   SimpleVector& actmin_eq_link_part = dynamic_cast<SimpleVector&>(*actmin_eq_part.last);
+   SimpleVector& actmax_eq_link_part = dynamic_cast<SimpleVector&>(*actmax_eq_part.last);
+   SimpleVector& actmin_ineq_link_part = dynamic_cast<SimpleVector&>(*actmin_ineq_part.last);
+   SimpleVector& actmax_ineq_link_part = dynamic_cast<SimpleVector&>(*actmax_ineq_part.last);
 
-   SimpleVectorBase<int>& actmin_eq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.vecl);
-   SimpleVectorBase<int>& actmax_eq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.vecl);
-   SimpleVectorBase<int>& actmin_ineq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.vecl);
-   SimpleVectorBase<int>& actmax_ineq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.vecl);
+   SimpleVectorBase<int>& actmin_eq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.last);
+   SimpleVectorBase<int>& actmax_eq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.last);
+   SimpleVectorBase<int>& actmin_ineq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.last);
+   SimpleVectorBase<int>& actmax_ineq_link_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.last);
 
    /* Bl0 */
    if( my_rank == 0 )
@@ -383,21 +383,21 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
       if( mat_A.children[node]->isKindOf(kStochGenDummyMatrix) && mat_C.children[node]->isKindOf(kStochGenDummyMatrix) )
          continue;
 
-      const SimpleVector& xupp_child = dynamic_cast<const SimpleVector&>(*xupp.children[node]->vec);
-      const SimpleVector& ixupp_child = dynamic_cast<const SimpleVector&>(*ixupp.children[node]->vec);
-      const SimpleVector& xlow_child = dynamic_cast<const SimpleVector&>(*xlow.children[node]->vec);
-      const SimpleVector& ixlow_child = dynamic_cast<const SimpleVector&>(*ixlow.children[node]->vec);
+      const SimpleVector& xupp_child = dynamic_cast<const SimpleVector&>(*xupp.children[node]->first);
+      const SimpleVector& ixupp_child = dynamic_cast<const SimpleVector&>(*ixupp.children[node]->first);
+      const SimpleVector& xlow_child = dynamic_cast<const SimpleVector&>(*xlow.children[node]->first);
+      const SimpleVector& ixlow_child = dynamic_cast<const SimpleVector&>(*ixlow.children[node]->first);
 
       /* EQUALITY_SYSTEM */
       if( !mat_A.children[node]->isKindOf(kStochGenDummyMatrix) )
       {
          if( !linking_only )
          {
-            SimpleVector& actmin_eq_child_part = dynamic_cast<SimpleVector&>(*actmin_eq_part.children[node]->vec);
-            SimpleVector& actmax_eq_child_part = dynamic_cast<SimpleVector&>(*actmax_eq_part.children[node]->vec);
+            SimpleVector& actmin_eq_child_part = dynamic_cast<SimpleVector&>(*actmin_eq_part.children[node]->first);
+            SimpleVector& actmax_eq_child_part = dynamic_cast<SimpleVector&>(*actmax_eq_part.children[node]->first);
 
-            SimpleVectorBase<int>& actmin_eq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.children[node]->vec);
-            SimpleVectorBase<int>& actmax_eq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.children[node]->vec);
+            SimpleVectorBase<int>& actmin_eq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.children[node]->first);
+            SimpleVectorBase<int>& actmax_eq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.children[node]->first);
 
             /* Ai */
             addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Amat)->getStorageDynamicRef(), actmin_eq_child_part, actmin_eq_child_ubndd, actmax_eq_child_part,
@@ -417,11 +417,11 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
       {
          if( !linking_only )
          {
-            SimpleVector& actmin_ineq_child_part = dynamic_cast<SimpleVector&>(*actmin_ineq_part.children[node]->vec);
-            SimpleVector& actmax_ineq_child_part = dynamic_cast<SimpleVector&>(*actmax_ineq_part.children[node]->vec);
+            SimpleVector& actmin_ineq_child_part = dynamic_cast<SimpleVector&>(*actmin_ineq_part.children[node]->first);
+            SimpleVector& actmax_ineq_child_part = dynamic_cast<SimpleVector&>(*actmax_ineq_part.children[node]->first);
 
-            SimpleVectorBase<int>& actmin_ineq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.children[node]->vec);
-            SimpleVectorBase<int>& actmax_ineq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.children[node]->vec);
+            SimpleVectorBase<int>& actmin_ineq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.children[node]->first);
+            SimpleVectorBase<int>& actmax_ineq_child_ubndd = dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.children[node]->first);
 
             /* Ai */
             addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Amat)->getStorageDynamicRef(), actmin_ineq_child_part, actmin_ineq_child_ubndd, actmax_ineq_child_part,
@@ -443,15 +443,15 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
    if( distributed )
    {
       // todo is copying and then allreducing once cheaper than allreducing 4 times ? by a lot?
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmin_eq_part.vecl)->elements(), actmin_eq_part.vecl->length());
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmax_eq_part.vecl)->elements(), actmax_eq_part.vecl->length());
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmin_ineq_part.vecl)->elements(), actmin_ineq_part.vecl->length());
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmax_ineq_part.vecl)->elements(), actmax_ineq_part.vecl->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmin_eq_part.last)->elements(), actmin_eq_part.last->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmax_eq_part.last)->elements(), actmax_eq_part.last->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmin_ineq_part.last)->elements(), actmin_ineq_part.last->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(actmax_ineq_part.last)->elements(), actmax_ineq_part.last->length());
 
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmin_eq_ubndd.vecl)->elements(), actmin_eq_ubndd.vecl->length());
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmax_eq_ubndd.vecl)->elements(), actmax_eq_ubndd.vecl->length());
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmin_ineq_ubndd.vecl)->elements(), actmin_ineq_ubndd.vecl->length());
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmax_ineq_ubndd.vecl)->elements(), actmax_ineq_ubndd.vecl->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmin_eq_ubndd.last)->elements(), actmin_eq_ubndd.last->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmax_eq_ubndd.last)->elements(), actmax_eq_ubndd.last->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmin_ineq_ubndd.last)->elements(), actmin_ineq_ubndd.last->length());
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(actmax_ineq_ubndd.last)->elements(), actmax_ineq_ubndd.last->length());
    }
 
 
@@ -496,19 +496,19 @@ void PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq
       }
    }
 
-   for(int row = 0; row < actmin_eq_part.vecl->length(); ++row)
+   for(int row = 0; row < actmin_eq_part.last->length(); ++row)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.vecl)[row] >= 2 )
-         dynamic_cast<SimpleVector&>(*actmin_eq_part.vecl)[row] = INF_NEG;
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.vecl)[row] >= 2 )
-         dynamic_cast<SimpleVector&>(*actmax_eq_part.vecl)[row] = INF_POS;
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd.last)[row] >= 2 )
+         dynamic_cast<SimpleVector&>(*actmin_eq_part.last)[row] = INF_NEG;
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd.last)[row] >= 2 )
+         dynamic_cast<SimpleVector&>(*actmax_eq_part.last)[row] = INF_POS;
    }
-   for(int row = 0; row < actmin_ineq_part.vecl->length(); ++row)
+   for(int row = 0; row < actmin_ineq_part.last->length(); ++row)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.vecl)[row] >= 2 )
-         dynamic_cast<SimpleVector&>(*actmin_ineq_part.vecl)[row] = INF_NEG;
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.vecl)[row] >= 2 )
-         dynamic_cast<SimpleVector&>(*actmax_ineq_part.vecl)[row] = INF_POS;
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd.last)[row] >= 2 )
+         dynamic_cast<SimpleVector&>(*actmin_ineq_part.last)[row] = INF_NEG;
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd.last)[row] >= 2 )
+         dynamic_cast<SimpleVector&>(*actmax_ineq_part.last)[row] = INF_POS;
    }
 
    if( iTrackRow() )
@@ -638,54 +638,54 @@ void PresolveData::allreduceAndApplyLinkingRowActivities()
    if(distributed)
       PIPS_MPIsumArrayInPlace(array_act_unbounded_chgs);
 
-   dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd->vecl).axpy( 1.0, *actmin_eq_ubndd_chgs);
-   dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd->vecl).axpy( 1.0, *actmax_eq_ubndd_chgs);
-   dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd->vecl).axpy( 1.0, *actmin_ineq_ubndd_chgs);
-   dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd->vecl).axpy( 1.0, *actmax_ineq_ubndd_chgs);
+   dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd->last).axpy(1.0, *actmin_eq_ubndd_chgs);
+   dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd->last).axpy(1.0, *actmax_eq_ubndd_chgs);
+   dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd->last).axpy(1.0, *actmin_ineq_ubndd_chgs);
+   dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd->last).axpy(1.0, *actmax_ineq_ubndd_chgs);
 
    /* equality system */
-   for(int row = 0; row < actmin_eq_ubndd->vecl->length(); ++row)
+   for(int row = 0; row < actmin_eq_ubndd->last->length(); ++row)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd->vecl)[row] < 2
-            && dynamic_cast<SimpleVector&>(*actmin_eq_part->vecl)[row] == INF_NEG)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd->last)[row] < 2
+            && dynamic_cast<SimpleVector&>(*actmin_eq_part->last)[row] == INF_NEG)
       {
          (*actmin_eq_chgs)[row] = computeLocalLinkingRowMinOrMaxActivity( INDEX(ROW, -1, row, true, EQUALITY_SYSTEM), false);
-         dynamic_cast<SimpleVector&>(*actmin_eq_part->vecl)[row] = 0;
+         dynamic_cast<SimpleVector&>(*actmin_eq_part->last)[row] = 0;
       }
 
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd->vecl)[row] < 2
-            && dynamic_cast<SimpleVector&>(*actmax_eq_part->vecl)[row] == INF_POS)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmax_eq_ubndd->last)[row] < 2
+            && dynamic_cast<SimpleVector&>(*actmax_eq_part->last)[row] == INF_POS)
       {
          (*actmax_eq_chgs)[row] = computeLocalLinkingRowMinOrMaxActivity( INDEX(ROW, -1, row, true, EQUALITY_SYSTEM), true);
-         dynamic_cast<SimpleVector&>(*actmax_eq_part->vecl)[row] = 0;
+         dynamic_cast<SimpleVector&>(*actmax_eq_part->last)[row] = 0;
       }
    }
 
    /* inequality system */
-   for(int row = 0; row < actmin_ineq_ubndd->vecl->length(); ++row)
+   for(int row = 0; row < actmin_ineq_ubndd->last->length(); ++row)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd->vecl)[row] < 2
-            && dynamic_cast<SimpleVector&>(*actmin_ineq_part->vecl)[row] == INF_NEG)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd->last)[row] < 2
+            && dynamic_cast<SimpleVector&>(*actmin_ineq_part->last)[row] == INF_NEG)
       {
          (*actmin_ineq_chgs)[row] = computeLocalLinkingRowMinOrMaxActivity( INDEX(ROW, -1, row, true, INEQUALITY_SYSTEM), false);
-         dynamic_cast<SimpleVector&>(*actmin_ineq_part->vecl)[row] = 0;
+         dynamic_cast<SimpleVector&>(*actmin_ineq_part->last)[row] = 0;
       }
 
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd->vecl)[row] < 2
-            && dynamic_cast<SimpleVector&>(*actmax_ineq_part->vecl)[row] == INF_POS)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmax_ineq_ubndd->last)[row] < 2
+            && dynamic_cast<SimpleVector&>(*actmax_ineq_part->last)[row] == INF_POS)
       {
          (*actmax_ineq_chgs)[row] = computeLocalLinkingRowMinOrMaxActivity( INDEX(ROW, -1, row, true, INEQUALITY_SYSTEM), true);
-         dynamic_cast<SimpleVector&>(*actmax_ineq_part->vecl)[row] = 0;
+         dynamic_cast<SimpleVector&>(*actmax_ineq_part->last)[row] = 0;
       }
    }
 
    if( distributed )
       PIPS_MPIsumArrayInPlace(array_act_chgs);
 
-   dynamic_cast<SimpleVector&>(*actmin_eq_part->vecl).axpy(1.0, *actmin_eq_chgs);
-   dynamic_cast<SimpleVector&>(*actmax_eq_part->vecl).axpy(1.0, *actmax_eq_chgs);
-   dynamic_cast<SimpleVector&>(*actmin_ineq_part->vecl).axpy(1.0, *actmin_ineq_chgs);
-   dynamic_cast<SimpleVector&>(*actmax_ineq_part->vecl).axpy(1.0, *actmax_ineq_chgs);
+   dynamic_cast<SimpleVector&>(*actmin_eq_part->last).axpy(1.0, *actmin_eq_chgs);
+   dynamic_cast<SimpleVector&>(*actmax_eq_part->last).axpy(1.0, *actmax_eq_chgs);
+   dynamic_cast<SimpleVector&>(*actmin_ineq_part->last).axpy(1.0, *actmin_ineq_chgs);
+   dynamic_cast<SimpleVector&>(*actmax_ineq_part->last).axpy(1.0, *actmax_ineq_chgs);
 
    actmin_eq_chgs->setToZero();
    actmax_eq_chgs->setToZero();
@@ -703,20 +703,20 @@ void PresolveData::allreduceAndApplyLinkingRowActivities()
 #ifndef NDEBUG
    /* check if all rows with unbounded counter <= 1 are computed and the rest is set to +/- infinity */
 
-   for(int i = 0; i < actmin_eq_ubndd->vecl->length(); ++i)
+   for(int i = 0; i < actmin_eq_ubndd->last->length(); ++i)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd->vecl)[i] < 2 )
-         assert( std::fabs(dynamic_cast<SimpleVector&>(*actmin_eq_part->vecl)[i]) != INF_POS );
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmin_eq_ubndd->last)[i] < 2 )
+         assert(std::fabs(dynamic_cast<SimpleVector&>(*actmin_eq_part->last)[i]) != INF_POS );
       else
-         assert( dynamic_cast<SimpleVector&>(*actmin_eq_part->vecl)[i] == INF_NEG );
+         assert(dynamic_cast<SimpleVector&>(*actmin_eq_part->last)[i] == INF_NEG );
    }
 
-   for(int i = 0; i < actmin_ineq_ubndd->vecl->length(); ++i)
+   for(int i = 0; i < actmin_ineq_ubndd->last->length(); ++i)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd->vecl)[i] < 2 )
-         assert( std::fabs(dynamic_cast<SimpleVector&>(*actmin_ineq_part->vecl)[i]) != INF_POS );
+      if(dynamic_cast<SimpleVectorBase<int>&>(*actmin_ineq_ubndd->last)[i] < 2 )
+         assert(std::fabs(dynamic_cast<SimpleVector&>(*actmin_ineq_part->last)[i]) != INF_POS );
       else
-         assert( dynamic_cast<SimpleVector&>(*actmin_ineq_part->vecl)[i] == INF_NEG );
+         assert(dynamic_cast<SimpleVector&>(*actmin_ineq_part->last)[i] == INF_NEG );
    }
 #endif
 }
@@ -733,27 +733,27 @@ void PresolveData::allreduceAndApplyNnzChanges()
       PIPS_MPIsumArrayInPlace(array_nnz_chgs);
 
    /* update local nnzCounters */
-   nnzs_col->vec->axpy(1, *nnzs_col_chgs);
-   nnzs_row_A->vecl->axpy(1, *nnzs_row_A_chgs);
-   nnzs_row_C->vecl->axpy(1, *nnzs_row_C_chgs);
+   nnzs_col->first->axpy(1, *nnzs_col_chgs);
+   nnzs_row_A->last->axpy(1, *nnzs_row_A_chgs);
+   nnzs_row_C->last->axpy(1, *nnzs_row_C_chgs);
 
    // todo : this can be done more efficiently, e.g. while substracting
    // todo : this has still flaws - new singleton rows in B0 and D0 are not communicated properly for some reason - might happen else where
    for( int i = 0; i < nnzs_col_chgs->length(); ++i )
    {
-      if( (*nnzs_col_chgs)[i] > 0 && dynamic_cast<SimpleVectorBase<int>&>(*nnzs_col->vec)[i] == 1 )
+      if( (*nnzs_col_chgs)[i] > 0 && dynamic_cast<SimpleVectorBase<int>&>(*nnzs_col->first)[i] == 1 )
          singleton_cols.push( INDEX(COL, -1, i) );
    }
    
    for( int i = 0; i < nnzs_row_A_chgs->length(); ++i )
    {
-      if( (*nnzs_row_A_chgs)[i] > 0 && dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->vec)[i] == 1 )
+      if( (*nnzs_row_A_chgs)[i] > 0 && dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->first)[i] == 1 )
          singleton_rows.push( INDEX(ROW, -1, i, true, EQUALITY_SYSTEM) );
    }
    
    for( int i = 0; i < nnzs_row_C_chgs->length(); ++i )
    {
-      if( (*nnzs_row_C_chgs)[i] > 0 && dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->vec)[i] == 1 )
+      if( (*nnzs_row_C_chgs)[i] > 0 && dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->first)[i] == 1 )
          singleton_rows.push( INDEX(ROW, -1, i, true, INEQUALITY_SYSTEM) );
    }
 
@@ -762,9 +762,9 @@ void PresolveData::allreduceAndApplyNnzChanges()
    int index = -1;
    nnzs_col->min(minval, index);
    assert( minval >= 0 );
-   nnzs_row_A->vecl->min(minval, index);
+   nnzs_row_A->last->min(minval, index);
    assert(minval >= 0);
-   nnzs_row_C->vecl->min(minval, index);
+   nnzs_row_C->last->min(minval, index);
    assert(minval >= 0);
 #endif
 
@@ -785,9 +785,9 @@ void PresolveData::allreduceAndApplyBoundChanges()
    if(distributed)
       PIPS_MPIsumArrayInPlace(array_bound_chgs);
 
-   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->bA).vecl)->axpy( 1.0, *bound_chgs_A);
-   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->bl).vecl)->axpy( 1.0, *bound_chgs_C);
-   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->bu).vecl)->axpy( 1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->bA).last)->axpy(1.0, *bound_chgs_A);
+   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->bl).last)->axpy(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->bu).last)->axpy(1.0, *bound_chgs_C);
 
    bound_chgs_A->setToZero();
    bound_chgs_C->setToZero();
@@ -805,7 +805,7 @@ void PresolveData::allreduceAndApplyObjVecChanges()
    if(distributed)
       PIPS_MPIsumArrayInPlace(objective_vec_chgs->elements(), objective_vec_chgs->length());
 
-   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->g).vec)->axpy(1.0, *objective_vec_chgs);
+   dynamic_cast<SimpleVector*>(dynamic_cast<StochVector&>(*presProb->g).first)->axpy(1.0, *objective_vec_chgs);
 
    objective_vec_chgs->setToZero();
    outdated_obj_vector = false;
@@ -840,18 +840,18 @@ void PresolveData::initSingletons()
 {
    /* rows of A */
    /* B0 */
-   for(int i = 0; i < nnzs_row_A->vec->length(); ++i)
+   for(int i = 0; i < nnzs_row_A->first->length(); ++i)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->vec)[i] == 1)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->first)[i] == 1)
          singleton_rows.push( INDEX(ROW, -1, i, false, EQUALITY_SYSTEM) );
    }
 
    /* Bl0 */
-   if(nnzs_row_A->vecl != nullptr)
+   if(nnzs_row_A->last != nullptr)
    {
-      for(int i = 0; i < nnzs_row_A->vecl->length(); ++i)
+      for(int i = 0; i < nnzs_row_A->last->length(); ++i)
       {
-         if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->vecl)[i] == 1)
+         if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->last)[i] == 1)
             singleton_rows.push( INDEX(ROW, -1, i, true, EQUALITY_SYSTEM) );
       }
    }
@@ -861,9 +861,9 @@ void PresolveData::initSingletons()
    {
       if( !nodeIsDummy(i) )
       {
-         for(int j = 0; j < nnzs_row_A->children[i]->vec->length(); ++j)
+         for(int j = 0; j < nnzs_row_A->children[i]->first->length(); ++j)
          {
-            if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->children[i]->vec)[j] == 1)
+            if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_A->children[i]->first)[j] == 1)
                singleton_rows.push( INDEX(ROW, i, j, false, EQUALITY_SYSTEM) );
          }
       }
@@ -871,16 +871,16 @@ void PresolveData::initSingletons()
 
    /* rows of C */
    /* B0 */
-   for(int i = 0; i < nnzs_row_C->vec->length(); ++i)
-      if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->vec)[i] == 1)
+   for(int i = 0; i < nnzs_row_C->first->length(); ++i)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->first)[i] == 1)
          singleton_rows.push( INDEX(ROW, -1, i, false, INEQUALITY_SYSTEM) );
 
    /* Bl0 */
-   if( nnzs_row_C->vecl != nullptr)
+   if(nnzs_row_C->last != nullptr)
    {
-      for( int i = 0; i < nnzs_row_C->vecl->length(); ++i )
+      for(int i = 0; i < nnzs_row_C->last->length(); ++i )
       {
-         if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->vecl)[i] == 1 )
+         if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->last)[i] == 1 )
             singleton_rows.push( INDEX(ROW, -1, i, true, INEQUALITY_SYSTEM) );
       }
    }
@@ -890,28 +890,28 @@ void PresolveData::initSingletons()
    {
       if( !nodeIsDummy(i) )
       {
-         for( int j = 0; j < nnzs_row_C->children[i]->vec->length(); ++j )
+         for(int j = 0; j < nnzs_row_C->children[i]->first->length(); ++j )
          {
-            if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->children[i]->vec)[j] == 1 )
+            if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_row_C->children[i]->first)[j] == 1 )
                singleton_rows.push( INDEX(ROW, i, j, false, INEQUALITY_SYSTEM) );
          }
       }
    }
 
    /* columns */
-   for(int i = 0; i < nnzs_col->vec->length(); ++i)
+   for(int i = 0; i < nnzs_col->first->length(); ++i)
    {
-      if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_col->vec)[i] == 1)
+      if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_col->first)[i] == 1)
          singleton_cols.push( INDEX(COL, -1, i) );
    }
 
    for(int i = 0; i < nChildren; ++i)
    {
-      if(nnzs_col->children[i]->vec != nullptr)
+      if(nnzs_col->children[i]->first != nullptr)
       {
-         for(int j = 0; j < nnzs_col->children[i]->vec->length(); ++j)
+         for(int j = 0; j < nnzs_col->children[i]->first->length(); ++j)
          {
-            if( dynamic_cast<SimpleVectorBase<int>&>(*nnzs_col->children[i]->vec)[j] == 1)
+            if(dynamic_cast<SimpleVectorBase<int>&>(*nnzs_col->children[i]->first)[j] == 1)
                singleton_cols.push( INDEX(COL, i, j) );
          }
       }
@@ -2957,8 +2957,8 @@ bool PresolveData::verifyNnzcounters() const
    initNnzCounter(*nnzs_row_A_new, *nnzs_row_C_new, *nnzs_col_new);
 
    // linking variables:
-   SimpleVectorBase<int>* nColOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col_new->vec);
-   SimpleVectorBase<int>* nColUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col->vec);
+   SimpleVectorBase<int>* nColOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col_new->first);
+   SimpleVectorBase<int>* nColUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col->first);
    assert( nColUpdatedSimple->length() == nColOrigSimple->length() );
    for( int i = 0; i < nColUpdatedSimple->length(); i++)
    {
@@ -2976,8 +2976,8 @@ bool PresolveData::verifyNnzcounters() const
       if( nodeIsDummy( it ) )
          continue;
 
-      nColOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col_new->children[it]->vec);
-      nColUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col->children[it]->vec);
+      nColOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col_new->children[it]->first);
+      nColUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_col->children[it]->first);
       assert( nColOrigSimple ); assert( nColUpdatedSimple );
       assert( nColUpdatedSimple->length() == nColOrigSimple->length() );
       for( int i = 0; i < nColUpdatedSimple->length(); i++)
@@ -2993,8 +2993,8 @@ bool PresolveData::verifyNnzcounters() const
    }
 
    // rows A:
-   SimpleVectorBase<int>* nRowAOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A_new->vec);
-   SimpleVectorBase<int>* nRowAUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A->vec);
+   SimpleVectorBase<int>* nRowAOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A_new->first);
+   SimpleVectorBase<int>* nRowAUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A->first);
    assert( nRowAUpdatedSimple->length() == nRowAOrigSimple->length() );
    for( int i = 0; i < nRowAUpdatedSimple->length(); i++)
    {
@@ -3013,8 +3013,8 @@ bool PresolveData::verifyNnzcounters() const
       if( nodeIsDummy( it ) )
          continue;
 
-      nRowAOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A_new->children[it]->vec);
-      nRowAUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A->children[it]->vec);
+      nRowAOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A_new->children[it]->first);
+      nRowAUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A->children[it]->first);
       assert( nRowAUpdatedSimple->length() == nRowAOrigSimple->length() );
       for( int i = 0; i < nRowAUpdatedSimple->length(); i++)
       {
@@ -3027,10 +3027,10 @@ bool PresolveData::verifyNnzcounters() const
          }
       }
    }
-   if(nnzs_row_A_new->vecl) // linking rows:
+   if(nnzs_row_A_new->last) // linking rows:
    {
-      nRowAOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A_new->vecl);
-      nRowAUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A->vecl);
+      nRowAOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A_new->last);
+      nRowAUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_A->last);
       assert( nRowAUpdatedSimple->length() == nRowAOrigSimple->length() );
       for( int i=0; i<nRowAUpdatedSimple->length(); i++)
       {
@@ -3044,8 +3044,8 @@ bool PresolveData::verifyNnzcounters() const
       }
    }
    // rows C:
-   SimpleVectorBase<int>* nRowCOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C_new->vec);
-   SimpleVectorBase<int>* nRowCUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C->vec);
+   SimpleVectorBase<int>* nRowCOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C_new->first);
+   SimpleVectorBase<int>* nRowCUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C->first);
    assert( nRowCUpdatedSimple->length() == nRowCOrigSimple->length() );
    for( int i = 0; i < nRowCUpdatedSimple->length(); i++)
    {
@@ -3063,8 +3063,8 @@ bool PresolveData::verifyNnzcounters() const
       if( nodeIsDummy( it ) )
          continue;
 
-      nRowCOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C_new->children[it]->vec);
-      nRowCUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C->children[it]->vec);
+      nRowCOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C_new->children[it]->first);
+      nRowCUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C->children[it]->first);
       assert( nRowCUpdatedSimple->length() == nRowCOrigSimple->length() );
       for( int i = 0; i < nRowCUpdatedSimple->length(); i++)
       {
@@ -3077,10 +3077,10 @@ bool PresolveData::verifyNnzcounters() const
          }
       }
    }
-   if(nnzs_row_C_new->vecl) // linking rows:
+   if(nnzs_row_C_new->last) // linking rows:
    {
-      nRowCOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C_new->vecl);
-      nRowCUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C->vecl);
+      nRowCOrigSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C_new->last);
+      nRowCUpdatedSimple = dynamic_cast<SimpleVectorBase<int>*>(nnzs_row_C->last);
       assert( nRowCUpdatedSimple->length() == nRowCOrigSimple->length() );
       for( int i = 0; i < nRowCUpdatedSimple->length(); i++)
       {

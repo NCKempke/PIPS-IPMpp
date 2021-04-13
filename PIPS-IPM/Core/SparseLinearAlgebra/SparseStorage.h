@@ -21,10 +21,10 @@
  */
 class SparseStorage : public DoubleStorage {
 private:
-  /** store absolute non-zero minimum entry of row i and vec[i] in vec[i]; empty rows get value 0.0  */
+  /** store absolute non-zero minimum entry of row i and first[i] in first[i]; empty rows get value 0.0  */
   void getRowMinVec(const double* colScaleVec, double* vec) const;
 
-  /** store absolute non-zero maximum entry of row i and vec[i] in vec[i]; empty rows get value 0.0  */
+  /** store absolute non-zero maximum entry of row i and first[i] in first[i]; empty rows get value 0.0  */
   void getRowMaxVec(const double* colScaleVec, double* vec) const;
 
   class index_sort
@@ -188,7 +188,7 @@ public:
   /** add abs. sum per row to given array (of size nRows) */
   void addRowSums( double* vec ) const;
 
-  /** store absolute non-zero minimum/maximum entry of row i and vec[i] in vec[i];
+  /** store absolute non-zero minimum/maximum entry of row i and first[i] in first[i];
    *  empty rows get value 0.0 for maximization and <double>::max() for minimization  */
   void getRowMinMaxVec(bool getMin, const double* colScaleVec, double* vec) const;
 

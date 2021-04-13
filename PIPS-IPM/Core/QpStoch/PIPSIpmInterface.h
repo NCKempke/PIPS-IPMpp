@@ -334,8 +334,8 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getObjective() {
 template<typename FORMULATION, typename SOLVER>
 double PIPSIpmInterface<FORMULATION,SOLVER>::getFirstStageObjective() const
 {
-  OoqpVector& x = *(dynamic_cast<StochVector&>(*vars->x).vec);
-  OoqpVector& c = *(dynamic_cast<StochVector&>(*data->g).vec);
+  OoqpVector& x = *(dynamic_cast<StochVector&>(*vars->x).first);
+  OoqpVector& c = *(dynamic_cast<StochVector&>(*data->g).first);
   return c.dotProductWith(x);
 }
 
@@ -506,13 +506,13 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStagePrimalColSolution() const
 {
-	SimpleVector const &v = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->x).vec);
+	SimpleVector const &v = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->x).first);
 	return std::vector<double>(&v[0],&v[0]+v.length());
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrimalColSolution(int scen) const {
-	SimpleVector const &v = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->x).children[scen]->vec);
+	SimpleVector const &v = *dynamic_cast<SimpleVector const*>(dynamic_cast<StochVector const&>(*vars->x).children[scen]->first);
 	if(!v.length())
 	  return std::vector<double>(); //this vector is not on this processor
 	else

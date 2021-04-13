@@ -60,15 +60,15 @@ void BorderedSymMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
 
    assert(x.children.size() == 1 && y.children.size() == 1);
    assert(x.children[0] && y.children[0]);
-   assert( x.vec );
-   assert( y.vec );
-   assert( !x.vecl );
-   assert( !y.vecl );
+   assert( x.first );
+   assert( y.first );
+   assert( !x.last );
+   assert( !y.last );
 
-   top_left_block->mult( beta, *y.vec, alpha, *x.vec );
-   border_vertical->transMult( 1.0, *y.vec, alpha, *x.children[0] );
+   top_left_block->mult(beta, *y.first, alpha, *x.first );
+   border_vertical->transMult(1.0, *y.first, alpha, *x.children[0] );
 
-   border_vertical->mult( beta, *y.children[0], alpha, *x.vec );
+   border_vertical->mult( beta, *y.children[0], alpha, *x.first );
    inner_matrix->mult( 1.0, *y.children[0], alpha, *x.children[0] );
 }
 
@@ -85,9 +85,9 @@ void BorderedSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_in )
    StochVector& x = dynamic_cast<StochVector&>(x_in);
    assert( x.children.size() == 1 );
    assert( x.children[0] );
-   assert( !x.vecl && x.vec );
+   assert(!x.last && x.first );
 
-   top_left_block->getDiagonal(*x.vec);
+   top_left_block->getDiagonal(*x.first);
 
    inner_matrix->fromGetDiagonal(idiag, *x.children[0]);
 }

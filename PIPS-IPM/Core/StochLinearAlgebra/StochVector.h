@@ -30,16 +30,16 @@ public:
 
   // TODO : use unique pointers
   /** The data for this node. */
-  OoqpVectorBase<T>* vec{};
+  OoqpVectorBase<T>* first{};
 
   /** The linking constraint data for this node. */
-  OoqpVectorBase<T>* vecl{};
+  OoqpVectorBase<T>* last{};
 
   /** Children of this node */
   std::vector<StochVectorBase<T>*> children;
 
   /** Links to this vectors parent.
-   *  Needed when we multiply a matrix with this vector to get the appropriate linking vec part.
+   *  Needed when we multiply a matrix with this vector to get the appropriate linking first part.
    */
   StochVectorBase<T>* parent{};
 

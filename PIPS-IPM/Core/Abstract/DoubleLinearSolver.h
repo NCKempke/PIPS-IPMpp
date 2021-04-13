@@ -82,7 +82,7 @@ class SymmetricLinearScaler
 };
 
 /**
- * The abstract  interface to a mat-vec operation required by
+ * The abstract  interface to a mat-first operation required by
  * the iterative solvers.
  * @ingroup LinearSolvers
  * @ingroup AbstractLinearAlgebra
@@ -118,14 +118,14 @@ class DoubleIterativeLinearSolver : public DoubleLinearSolver {
   /** MatVec ops for left and right preconditioner */
   MatTimesVec *ML{}, *MR{};
 
-  /** Actual mat-vec operations */
+  /** Actual mat-first operations */
   void applyA (double beta, OoqpVector& res, double alpha, OoqpVector& x);
   void applyM1(double beta, OoqpVector& res, double alpha, OoqpVector& x);
   void applyM2(double beta, OoqpVector& res, double alpha, OoqpVector& x);
 };
 
 /**
- * An implementation of the abstract class @MatTimesVec that performs a mat-vec
+ * An implementation of the abstract class @MatTimesVec that performs a mat-first
  * with both the matrix and vector being on the same processor.
  *
  * It can use OOQP matrix and the implementation is based on SimpleVector class.
@@ -141,7 +141,7 @@ class StoredMatTimesVec : public MatTimesVec {
 };
 /**
  * An implementation of the abstract class @MatTimesVec that performs a
- * mat transpose-vec with both the matrix and vector being on the same processor.
+ * mat transpose-first with both the matrix and vector being on the same processor.
  *
  * It can use OOQP matrix and the implementation is based on SimpleVector class.
  */

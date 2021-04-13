@@ -1317,7 +1317,7 @@ void sData::writeMPSColumns(std::ostream& out)
    StochGenMatrix& CStoch = dynamic_cast<StochGenMatrix&>(*C);
    SparseGenMatrix& CSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.Bmat)->getTranspose();
 
-   SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.vec);
+   SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.first);
    n = gSimple->length();
 
    std::stringstream sstmCol;
@@ -1370,9 +1370,9 @@ void sData::writeMPSColumns(std::ostream& out)
       for( int k = CSparseTrans.krowM()[col]; k<CSparseTrans.krowM()[col+1]; k++ )
       {
          int rowIdx = CSparseTrans.jcolM()[k];
-         if( dynamic_cast<SimpleVector*>(icuppStoch.vec)->elements()[rowIdx] != 0.0)
+         if(dynamic_cast<SimpleVector*>(icuppStoch.first)->elements()[rowIdx] != 0.0)
             out<<varName<< " " << rowNameStubLT << rowIdx << " " << CSparseTrans.M()[k] <<"\n";
-         if( dynamic_cast<SimpleVector*>(iclowStoch.vec)->elements()[rowIdx] != 0.0)
+         if(dynamic_cast<SimpleVector*>(iclowStoch.first)->elements()[rowIdx] != 0.0)
             out<<varName<< " " << rowNameStubGT << rowIdx << " " << CSparseTrans.M()[k] <<"\n";
       }
       // coefficients in G_0:
@@ -1384,9 +1384,9 @@ void sData::writeMPSColumns(std::ostream& out)
          for( int k = CBlmatSparseTrans.krowM()[col]; k<CBlmatSparseTrans.krowM()[col+1]; k++ )
          {
             int rowIdx = CBlmatSparseTrans.jcolM()[k];
-            if( dynamic_cast<SimpleVector*>(icuppStoch.vecl)->elements()[rowIdx] != 0.0)
+            if(dynamic_cast<SimpleVector*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
                out<<varName<< " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
-            if( dynamic_cast<SimpleVector*>(iclowStoch.vecl)->elements()[rowIdx] != 0.0)
+            if(dynamic_cast<SimpleVector*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
                out<<varName<< " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.Blmat)->deleteTransposed();
@@ -1406,9 +1406,9 @@ void sData::writeMPSColumns(std::ostream& out)
          for( int k = CChildSparseTrans.krowM()[col]; k<CChildSparseTrans.krowM()[col+1]; k++ )
          {
             int rowIdx = CChildSparseTrans.jcolM()[k];
-            if( dynamic_cast<SimpleVector*>(icuppStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
+            if(dynamic_cast<SimpleVector*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out<<varName<< " " << rowNameStubLT << rowIdx << " " << CChildSparseTrans.M()[k] <<"\n";
-            if( dynamic_cast<SimpleVector*>(iclowStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
+            if(dynamic_cast<SimpleVector*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out<<varName<< " " << rowNameStubGT << rowIdx << " " << CChildSparseTrans.M()[k] <<"\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Amat)->deleteTransposed();
@@ -1418,7 +1418,7 @@ void sData::writeMPSColumns(std::ostream& out)
    // non-linking variables:
    for( size_t it = 0; it < children.size(); it++ )
    {
-      SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.children[it]->vec);
+      SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.children[it]->first);
       n = gSimple->length();
 
       for( int col = 0; col<n; col++ )
@@ -1456,9 +1456,9 @@ void sData::writeMPSColumns(std::ostream& out)
          for( int k = CChildSparseTrans.krowM()[col]; k<CChildSparseTrans.krowM()[col+1]; k++ )
          {
             int rowIdx = CChildSparseTrans.jcolM()[k];
-            if( dynamic_cast<SimpleVector*>(icuppStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
+            if(dynamic_cast<SimpleVector*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out<<varName<< " " << rowNameStubLT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] <<"\n";
-            if( dynamic_cast<SimpleVector*>(iclowStoch.children[it]->vec)->elements()[rowIdx] != 0.0)
+            if(dynamic_cast<SimpleVector*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out<<varName<< " " << rowNameStubGT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] <<"\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Bmat)->deleteTransposed();
@@ -1482,9 +1482,9 @@ void sData::writeMPSColumns(std::ostream& out)
             for( int k = CBlmatSparseTrans.krowM()[col]; k<CBlmatSparseTrans.krowM()[col+1]; k++ )
             {
                int rowIdx = CBlmatSparseTrans.jcolM()[k];
-               if( dynamic_cast<SimpleVector*>(icuppStoch.vecl)->elements()[rowIdx] != 0.0)
+               if(dynamic_cast<SimpleVector*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
                   out<<varName<< " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
-               if( dynamic_cast<SimpleVector*>(iclowStoch.vecl)->elements()[rowIdx] != 0.0)
+               if(dynamic_cast<SimpleVector*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
                   out<<varName<< " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] <<"\n";
             }
             dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Blmat)->deleteTransposed();
@@ -1607,17 +1607,17 @@ sData* sData::shaveDenseBorder( const sTree* tree )
 
    const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
    const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
-   assert( ixlow.vec );
-   assert( ixupp.vec );
-   nxlow -= ixlow.vec->numberOfNonzeros();
-   nxupp -= ixupp.vec->numberOfNonzeros();
+   assert( ixlow.first );
+   assert( ixupp.first );
+   nxlow -= ixlow.first->numberOfNonzeros();
+   nxupp -= ixupp.first->numberOfNonzeros();
 
    const StochVector& iclow = dynamic_cast<const StochVector&>(*hierarchical_top->iclow);
    const StochVector& icupp = dynamic_cast<const StochVector&>(*hierarchical_top->icupp);
-   assert( iclow.vecl );
-   assert( icupp.vecl );
-   mclow -= iclow.vecl->numberOfNonzeros();
-   mcupp -= icupp.vecl->numberOfNonzeros();
+   assert( iclow.last );
+   assert( icupp.last );
+   mclow -= iclow.last->numberOfNonzeros();
+   mcupp -= icupp.last->numberOfNonzeros();
 
    long long dummy;
    nx = g->length();
@@ -1764,27 +1764,27 @@ void sData::addChildrenForSplit()
             dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).children[i];
 
       StochVector* g_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*g).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).first).children[i];
       StochVector* blx_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*blx).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).first).children[i];
       StochVector* ixlow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixlow).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).first).children[i];
       StochVector* bux_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bux).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).first).children[i];
       StochVector* ixupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixupp).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).first).children[i];
 
       StochVector* bA_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bA).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).first).children[i];
 
       StochVector* bl_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bl).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).first).children[i];
       StochVector* iclow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*iclow).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).first).children[i];
       StochVector* bu_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bu).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).first).children[i];
       StochVector* icupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*icupp).children[i] :
-            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).children[i];
+            dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).first).children[i];
 
       assert( dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf() );
       const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
@@ -1931,19 +1931,19 @@ void sData::splitData()
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).first).split(map_block_subtree, child_comms);
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).vec).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).vec).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).vec).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).vec).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).first).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).first).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).first).split(map_block_subtree, child_comms);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).first).split(map_block_subtree, child_comms);
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).first).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
    }
    else
    {
@@ -2089,11 +2089,11 @@ void sData::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATION& perm
    {
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).permuteLinkingCons(permA);
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).permuteLinkingCons(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).vec).permuteLinkingEntries(permA);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).vec).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).vec).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).vec).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).vec).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).first).permuteLinkingEntries(permA);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).first).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).first).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).first).permuteLinkingEntries(permC);
+      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).first).permuteLinkingEntries(permC);
    }
    else
    {

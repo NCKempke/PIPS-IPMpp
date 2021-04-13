@@ -447,8 +447,8 @@ void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
    StochVector& b = dynamic_cast<StochVector&>(x);
    assert(children.size() == b.children.size() );
 
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
-   assert(!b.vecl);
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
+   assert(!b.last);
 
    if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
       b0.setToZero();
@@ -487,7 +487,7 @@ void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
 
   /* children have already computed Li^T\Di\Li\bi in Lsolve() */
   StochVector& b = dynamic_cast<StochVector&>(x);
-  SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+  SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
 #ifdef TIMING
   stochNode->resMon.eDsolve.clear();
   stochNode->resMon.recDsolveTmLocal_start();
@@ -501,7 +501,7 @@ void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
 void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
    SimpleVector& z0 = b0; //just another name, for clarity

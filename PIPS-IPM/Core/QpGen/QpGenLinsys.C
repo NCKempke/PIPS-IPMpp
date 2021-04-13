@@ -639,7 +639,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
          dx.copyFrom(p);
          solveCompressed(dx);
 
-         //mat-vec: v = K*ph
+         //mat-first: v = K*ph
          matMult(0.0, v, 1.0, dx);
 
          const double rtv = r0.dotProductWith(v);
@@ -685,7 +685,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
          dx.copyFrom(r);
          solveCompressed(dx);
 
-         //mat-vec
+         //mat-first
          matMult(0.0, t, 1.0, dx);
 
          const double tt = t.dotProductSelf(1.0);

@@ -44,10 +44,10 @@ StochPostsolver::StochPostsolver(const sData& original_problem) :
 {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool) );
 
-   const int n_linking_vars = (padding_origcol->vec) ? padding_origcol->vec->length() : 0;
+   const int n_linking_vars = (padding_origcol->first) ? padding_origcol->first->length() : 0;
 
-   const int n_linking_A = (padding_origrow_equality->vecl) ? padding_origrow_equality->vecl->length() : 0;
-   const int n_linking_C = (padding_origrow_inequality->vecl) ? padding_origrow_inequality->vecl->length() : 0;
+   const int n_linking_A = (padding_origrow_equality->last) ? padding_origrow_equality->last->length() : 0;
+   const int n_linking_C = (padding_origrow_inequality->last) ? padding_origrow_inequality->last->length() : 0;
 
    assert( 5.0 * n_linking_vars < std::numeric_limits<int>::max() );
 
@@ -2542,13 +2542,13 @@ bool StochPostsolver::syncLinkingVarChanges(sVars& original_vars)
       return true;
 
    PIPS_MPIsumArrayInPlace( array_linking_var_changes );
-   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->vec)->elements(), dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->vec)->length() );
+   PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->first)->elements(), dynamic_cast<SimpleVectorBase<int>*>(padding_origcol->first)->length() );
 
-   SimpleVector& linking_x = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.x).vec);
-   SimpleVector& linking_v = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.v).vec);
-   SimpleVector& linking_w = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.w).vec);
-   SimpleVector& linking_gamma = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.gamma).vec);
-   SimpleVector& linking_phi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.phi).vec);
+   SimpleVector& linking_x = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.x).first);
+   SimpleVector& linking_v = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.v).first);
+   SimpleVector& linking_w = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.w).first);
+   SimpleVector& linking_gamma = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.gamma).first);
+   SimpleVector& linking_phi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.phi).first);
 
    for( int i = 0; i < linking_x.length(); ++i )
    {
@@ -2598,10 +2598,10 @@ bool StochPostsolver::syncEqLinkingRowChanges(sVars& original_vars)
       return true;
 
    PIPS_MPIsumArrayInPlace( array_eq_linking_row_changes );
-   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->vecl)->elements(),
-         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->vecl)->length() );
+   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->last)->elements(),
+         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_equality->last)->length() );
 
-   SimpleVector& linking_y = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.y).vecl);
+   SimpleVector& linking_y = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.y).last);
 
    for( int i = 0; i < linking_y.length(); ++i )
    {
@@ -2637,16 +2637,16 @@ bool StochPostsolver::syncIneqLinkingRowChanges(sVars& original_vars)
       return true;
 
    PIPS_MPIsumArrayInPlace( array_ineq_linking_row_changes );
-   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->vecl)->elements(),
-         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->vecl)->length() );
+   PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->last)->elements(),
+         dynamic_cast<SimpleVectorBase<int>*>(padding_origrow_inequality->last)->length() );
 
-   SimpleVector& linking_z = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.z).vecl);
-   SimpleVector& linking_lambda = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.lambda).vecl);
-   SimpleVector& linking_pi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.pi).vecl);
+   SimpleVector& linking_z = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.z).last);
+   SimpleVector& linking_lambda = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.lambda).last);
+   SimpleVector& linking_pi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.pi).last);
 
-   SimpleVector& linking_s = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.s).vecl);
-   SimpleVector& linking_t = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.t).vecl);
-   SimpleVector& linking_u = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.u).vecl);
+   SimpleVector& linking_s = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.s).last);
+   SimpleVector& linking_t = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.t).last);
+   SimpleVector& linking_u = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(*original_vars.u).last);
 
    for( int i = 0; i < linking_z.length(); ++i )
    {
@@ -2841,14 +2841,14 @@ void StochPostsolver::addIneqRowDual(double& z, double& lambda, double& pi, doub
 
 bool StochPostsolver::sameNonZeroPatternDistributed(const StochVector& vec) const
 {
-   assert(vec.vec);
+   assert(vec.first);
 
-   if( !sameNonZeroPatternDistributed( dynamic_cast<const SimpleVector&>(*vec.vec) ) )
+   if( !sameNonZeroPatternDistributed( dynamic_cast<const SimpleVector&>(*vec.first) ) )
       return false;
 
-   if( vec.vecl )
+   if( vec.last )
    {
-      if( !sameNonZeroPatternDistributed( dynamic_cast<const SimpleVector&>(*vec.vecl) ) )
+      if( !sameNonZeroPatternDistributed( dynamic_cast<const SimpleVector&>(*vec.last) ) )
          return false;
    }
    return true;
@@ -3148,9 +3148,9 @@ void StochPostsolver::setOriginalValuesFromReduced(StochVectorBase<T>& original_
 {
    assert( reduced_vector.children.size() == original_vector.children.size() );
    assert( padding_original.children.size() == reduced_vector.children.size() );
-   assert( reduced_vector.vec != nullptr && original_vector.vec != nullptr && padding_original.vec != nullptr );
-   assert( (reduced_vector.vecl != nullptr && original_vector.vecl != nullptr && padding_original.vecl != nullptr)
-         || (reduced_vector.vecl == nullptr && original_vector.vecl == nullptr && padding_original.vecl == nullptr) );
+   assert(reduced_vector.first != nullptr && original_vector.first != nullptr && padding_original.first != nullptr );
+   assert( (reduced_vector.last != nullptr && original_vector.last != nullptr && padding_original.last != nullptr)
+         || (reduced_vector.last == nullptr && original_vector.last == nullptr && padding_original.last == nullptr) );
 
    if( reduced_vector.isKindOf(kStochDummy) )
    {
@@ -3159,15 +3159,15 @@ void StochPostsolver::setOriginalValuesFromReduced(StochVectorBase<T>& original_
    }
 
    /* root node */
-   /* vec */
-   setOriginalValuesFromReduced( dynamic_cast<SimpleVectorBase<T>&>(*original_vector.vec), dynamic_cast<const SimpleVectorBase<T>&>(*reduced_vector.vec),
-      dynamic_cast<const SimpleVectorBase<int>&>(*padding_original.vec));
+   /* first */
+   setOriginalValuesFromReduced(dynamic_cast<SimpleVectorBase<T>&>(*original_vector.first), dynamic_cast<const SimpleVectorBase<T>&>(*reduced_vector.first),
+                                dynamic_cast<const SimpleVectorBase<int>&>(*padding_original.first));
 
-   /* vecl */
-   if( reduced_vector.vecl )
+   /* last */
+   if( reduced_vector.last )
    {
-      setOriginalValuesFromReduced( dynamic_cast<SimpleVectorBase<T>&>(*original_vector.vecl), dynamic_cast<const SimpleVectorBase<T>&>(*reduced_vector.vecl),
-         dynamic_cast<const SimpleVectorBase<int>&>(*padding_original.vecl));
+      setOriginalValuesFromReduced(dynamic_cast<SimpleVectorBase<T>&>(*original_vector.last), dynamic_cast<const SimpleVectorBase<T>&>(*reduced_vector.last),
+                                   dynamic_cast<const SimpleVectorBase<int>&>(*padding_original.last));
    }
 
    /* child nodes */

@@ -12,8 +12,8 @@
 
 StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData &presData, const sData &origProb) :
    StochPresolverBase(presData, origProb), removed_cols(0), local_singletons(false),
-   n_linking_rows_eq(dynamic_cast<const StochVector&>(*origProb.bA).vecl->length()),
-   n_linking_rows_ineq(dynamic_cast<const StochVector&>(*origProb.bu).vecl->length()),
+   n_linking_rows_eq(dynamic_cast<const StochVector&>(*origProb.bA).last->length()),
+   n_linking_rows_ineq(dynamic_cast<const StochVector&>(*origProb.bu).last->length()),
    local_linking_column_for_row_in_proc(n_linking_rows_eq + n_linking_rows_ineq),
    cols( n_linking_rows_eq + n_linking_rows_ineq), coeffs( n_linking_rows_ineq )
 {

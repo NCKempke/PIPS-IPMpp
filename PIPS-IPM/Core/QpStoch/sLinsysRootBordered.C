@@ -183,9 +183,9 @@ void sLinsysRootBordered::Lsolve(sData* , OoqpVector& x)
    assert( data->children.size() == 1 );
    StochVector& b = *dynamic_cast<StochVector&>(x).children[0];
 
-   assert( xs.vec );
-   assert( !xs.vecl );
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.vec);
+   assert( xs.first );
+   assert( !xs.last );
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.first);
 
    computeSchurCompRightHandSide( b, b0 );
 }
@@ -199,8 +199,8 @@ void sLinsysRootBordered::Dsolve(sData*, OoqpVector& x)
    StochVector& xs = dynamic_cast<StochVector&>(x);
    assert( xs.children.size() == 1 );
    assert( data->children.size() == 1 );
-   assert( xs.vec );
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.vec);
+   assert( xs.first );
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.first);
 
    solver->solve( b0 );
 }
@@ -216,8 +216,8 @@ void sLinsysRootBordered::Ltsolve(sData*, OoqpVector& x)
    assert( data->children.size() == 1 );
    StochVector& b = *dynamic_cast<StochVector&>(x).children[0];
 
-   assert( xs.vec );
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.vec);
+   assert( xs.first );
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.first);
 
    computeInnerSystemRightHandSide( b, b0, false );
 

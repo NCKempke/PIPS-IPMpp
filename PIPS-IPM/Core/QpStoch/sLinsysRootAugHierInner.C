@@ -9,9 +9,9 @@
 
 sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
       sData *prob_, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_) :
-      sLinsysRootAug(factory, prob_, dynamic_cast<StochVector*>(dd_)->vec,
-            dynamic_cast<StochVector*>(dq_)->vec,
-            dynamic_cast<StochVector*>(nomegaInv_)->vec, rhs_, false)
+      sLinsysRootAug(factory, prob_, dynamic_cast<StochVector*>(dd_)->first,
+                     dynamic_cast<StochVector*>(dq_)->first,
+                     dynamic_cast<StochVector*>(nomegaInv_)->first, rhs_, false)
 {
    assert( locnx == 0 );
    assert( locmy == 0 );
@@ -60,7 +60,7 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
 void sLinsysRootAugHierInner::Ltsolve( sData *prob, OoqpVector& x )
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
    SimpleVector& z0 = b0; //just another name, for clarity
@@ -112,8 +112,8 @@ void sLinsysRootAugHierInner::Lsolve(sData *prob, OoqpVector& x )
    StochVector& b = dynamic_cast<StochVector&>(x);
    assert(children.size() == b.children.size() );
 
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.vec);
-   assert(!b.vecl);
+   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
+   assert(!b.last);
 
    if( iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0 )
       b0.setToZero();
@@ -174,12 +174,12 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0( StochVector& rhs, SimpleVec
       int mGb, nGb; G_border.getSize(mGb, nGb);
 
       assert( mFb == mGb );
-      assert( rhs.vec );
-      assert( rhs.vec->length() == nFb + nGb );
+      assert( rhs.first );
+      assert(rhs.first->length() == nFb + nGb );
 
       assert( b0.length() >= mFb );
 
-      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.first);
 
       SimpleVector zi1 (&zi[0], nFb );
       SimpleVector zi2 (&zi[nFb], nGb );
@@ -218,12 +218,12 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs( StochVector& rhs, const SimpleVe
       int mFb, nFb; F_border.getSize(mFb, nFb);
       int mGb, nGb; G_border.getSize(mGb, nGb);
 
-      assert( rhs.vec );
-      assert( rhs.vec->length() == mFb + mGb );
+      assert( rhs.first );
+      assert(rhs.first->length() == mFb + mGb );
       assert( nFb == nGb );
       assert( x0.length() >= nFb );
 
-      SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.vec);
+      SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.first);
 
       SimpleVector rhs01 (&rhs0[0], mFb );
       SimpleVector rhs02 (&rhs0[mFb], mGb );
@@ -320,12 +320,12 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder( DoubleMatrix& res, co
 
 void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )
 {
-  assert( dynamic_cast<StochVector&>(xdiag_).vec->isKindOf(kStochVector) );
-  StochVector& xdiag = dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(xdiag_).vec);
+  assert( dynamic_cast<StochVector&>(xdiag_).first->isKindOf(kStochVector) );
+  StochVector& xdiag = dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(xdiag_).first);
 
   assert(children.size() == xdiag.children.size());
 
-  xDiag = xdiag.vec;
+  xDiag = xdiag.first;
 
   for(size_t it = 0; it < children.size(); it++)
     children[it]->putXDiagonal(*xdiag.children[it]);
@@ -334,13 +334,13 @@ void sLinsysRootAugHierInner::putXDiagonal( OoqpVector& xdiag_ )
 
 void sLinsysRootAugHierInner::putZDiagonal( OoqpVector& zdiag_ )
 {
-  assert( dynamic_cast<StochVector&>(zdiag_).vec->isKindOf(kStochVector) );
-  StochVector& zdiag = dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(zdiag_).vec);
+  assert( dynamic_cast<StochVector&>(zdiag_).first->isKindOf(kStochVector) );
+  StochVector& zdiag = dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(zdiag_).first);
 
   assert(children.size() == zdiag.children.size());
 
-  zDiag = zdiag.vec;
-  zDiagLinkCons = zdiag.vecl;
+  zDiag = zdiag.first;
+  zDiagLinkCons = zdiag.last;
 
   for(size_t it = 0; it < children.size(); it++)
     children[it]->putZDiagonal(*zdiag.children[it]);

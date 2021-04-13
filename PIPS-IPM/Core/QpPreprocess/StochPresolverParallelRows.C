@@ -300,12 +300,12 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node)
       currDmat = nullptr;
       currDmatTrans = nullptr;
 
-      currIneqRhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bu)).vec);
-      currIneqLhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bl)).vec);
-      currIcupp = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().icupp)).vec);
-      currIclow = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().iclow)).vec);
+      currIneqRhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bu)).first);
+      currIneqLhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bl)).first);
+      currIcupp = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().icupp)).first);
+      currIclow = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().iclow)).first);
 
-      currNnzRowC = dynamic_cast<const SimpleVectorBase<int>*>(presData.getNnzsRowC().vec);
+      currNnzRowC = dynamic_cast<const SimpleVectorBase<int>*>(presData.getNnzsRowC().first);
    }
    else
    {
@@ -317,12 +317,12 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node)
       currDmat = dynamic_cast<SparseGenMatrix*>(dynamic_cast<const StochGenMatrix&>(*(presData.getPresProb().C)).children[node]->Bmat)->getStorageDynamic();
       currDmatTrans = dynamic_cast<SparseGenMatrix*>(dynamic_cast<const StochGenMatrix&>(*(presData.getPresProb().C)).children[node]->Bmat)->getStorageDynamicTransposed();
 
-      currIneqRhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bu)).children[node]->vec);
-      currIneqLhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bl)).children[node]->vec);
-      currIcupp = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().icupp)).children[node]->vec);
-      currIclow = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().iclow)).children[node]->vec);
+      currIneqRhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bu)).children[node]->first);
+      currIneqLhs = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().bl)).children[node]->first);
+      currIcupp = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().icupp)).children[node]->first);
+      currIclow = dynamic_cast<const SimpleVector*>(dynamic_cast<const StochVector&>(*(presData.getPresProb().iclow)).children[node]->first);
 
-      currNnzRowC = dynamic_cast<const SimpleVectorBase<int>*>(presData.getNnzsRowC().children[node]->vec);
+      currNnzRowC = dynamic_cast<const SimpleVectorBase<int>*>(presData.getNnzsRowC().children[node]->first);
    }
 
 }

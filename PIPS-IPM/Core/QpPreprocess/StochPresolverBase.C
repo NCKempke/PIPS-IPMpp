@@ -26,9 +26,9 @@ StochPresolverBase::StochPresolverBase(PresolveData& presData, const sData& orig
       verbosity( pips_options::getIntParameter("PRESOLVE_VERBOSITY") ),
       INF_NEG( -pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
       INF_POS( pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
-      n_linking_vars( dynamic_cast<const StochVector&>(*origProb.g).vec->length() ),
-      n_linking_rows_eq( dynamic_cast<const StochVector&>(*origProb.bA).vecl ? dynamic_cast<const StochVector&>(*origProb.bA).vecl->length() : 0),
-      n_linking_rows_ineq( dynamic_cast<const StochVector&>(*origProb.iclow).vecl ? dynamic_cast<const StochVector&>(*origProb.iclow).vecl->length() : 0),
+      n_linking_vars( dynamic_cast<const StochVector&>(*origProb.g).first->length() ),
+      n_linking_rows_eq(dynamic_cast<const StochVector&>(*origProb.bA).last ? dynamic_cast<const StochVector&>(*origProb.bA).last->length() : 0),
+      n_linking_rows_ineq(dynamic_cast<const StochVector&>(*origProb.iclow).last ? dynamic_cast<const StochVector&>(*origProb.iclow).last->length() : 0),
       presData(presData), origProb(origProb)
 {
    localNelims = 0;
@@ -111,8 +111,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
       countRowsBlock(n_rows_linking_ineq, n_rows_empty_linking_ineq, n_rows_onsided_ineq, n_rows_boxed_ineq, n_rows_fixed_ineq, n_rows_singleton_linking_ineq,
          INEQUALITY_SYSTEM, BL_MAT);
 
-      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).vec);
-      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).vec);
+      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).first);
+      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free, n_cols_orig_free_removed, 
          ixlow_orig, ixupp_orig, true);
@@ -160,8 +160,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
          A_MAT);
       assert( n_rows_ineq - n_rows_empty_ineq == n_rows_onsided_ineq + n_rows_boxed_ineq + n_rows_fixed_ineq );
 
-      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).children[node]->vec);
-      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).children[node]->vec);
+      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).children[node]->first);
+      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).children[node]->first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free, n_cols_orig_free_removed, 
          ixlow_orig, ixupp_orig, false);

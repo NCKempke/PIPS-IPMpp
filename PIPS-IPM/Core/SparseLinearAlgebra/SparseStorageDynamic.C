@@ -391,7 +391,7 @@ void SparseStorageDynamic::addNnzPerRow( int* vec, int begin_rows, int end_rows 
    assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= m );
 #ifdef PRE_CPP11
    for( int begin_rows = 0; r < end_rows; r++ )
-      vec[r - begin_rows ] += rowptr[r].end - rowptr[r].start;
+      first[r - begin_rows ] += rowptr[r].end - rowptr[r].start;
 #else
    std::transform(rowptr + begin_rows, rowptr + end_rows, vec, vec, [](ROWPTRS pt, double v)->double { return v + pt.end - pt.start; });
 #endif

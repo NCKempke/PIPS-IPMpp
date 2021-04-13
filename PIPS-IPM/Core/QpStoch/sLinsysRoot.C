@@ -639,11 +639,11 @@ void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
    int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
 
-   assert( rhs.vec );
-   assert( rhs.vec->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
+   assert( rhs.first );
+   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
    assert( x0.length() == nA0 + mF0C + mG0C );
 
-   SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.vec);
+   SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.first);
 
    double* rhs01 = &rhs0[0];
    double* rhs02 = &rhs0[nF0C];
@@ -704,11 +704,11 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
       SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
       int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
 
-      assert( rhs.vec );
-      assert( rhs.vec->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
+      assert( rhs.first );
+      assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
       assert( b0.length() == nA0 + mF0C + mG0C );
 
-      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.vec);
+      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.first);
 
       SimpleVector zi1 (&zi[0], nF0C);
       SimpleVector zi2 (&zi[nF0C], mA0 );
@@ -865,8 +865,8 @@ void sLinsysRoot::putXDiagonal( OoqpVector& xdiag_ )
   StochVector& xdiag = dynamic_cast<StochVector&>(xdiag_);
   assert(children.size() == xdiag.children.size());
 
-  //kkt->atPutDiagonal( 0, *xdiag.vec );
-  xDiag = xdiag.vec;
+  //kkt->atPutDiagonal( 0, *xdiag.first );
+  xDiag = xdiag.first;
  
   // propagate it to the subtree
   for(size_t it = 0; it < children.size(); it++)
@@ -879,9 +879,9 @@ void sLinsysRoot::putZDiagonal( OoqpVector& zdiag_ )
   StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
   assert(children.size() == zdiag.children.size());
 
-  //kkt->atPutDiagonal( locnx+locmy, *zdiag.vec );
-  zDiag = zdiag.vec;
-  zDiagLinkCons = zdiag.vecl;
+  //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
+  zDiag = zdiag.first;
+  zDiagLinkCons = zdiag.last;
 
   // propagate it to the subtree
   for(size_t it = 0; it < children.size(); it++)

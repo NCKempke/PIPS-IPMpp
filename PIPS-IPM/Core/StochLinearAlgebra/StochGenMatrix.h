@@ -196,7 +196,7 @@ public:
 
   virtual int appendRow( const StochGenMatrix& matrix_row, int child, int row, bool linking );
 
-  /** calculate vec^T * row where row is linking or not in child child and with row index row
+  /** calculate first^T * row where row is linking or not in child child and with row index row
    *  for a linking row only the available blocks will be multiplied - currently only possible for dynamic storage! (since 
    *  this was its foremost usecase)
    */

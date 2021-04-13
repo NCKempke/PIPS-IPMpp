@@ -82,13 +82,13 @@ void sLinsysLeaf::factor2(sData*, Variables*)
 void sLinsysLeaf::putXDiagonal( OoqpVector& xdiag_ )
 {
   StochVector& xdiag = dynamic_cast<StochVector&>(xdiag_);
-  kkt->atPutDiagonal( 0, *xdiag.vec );
+  kkt->atPutDiagonal( 0, *xdiag.first );
 }
 
 void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
 {
   StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
-  kkt->atPutDiagonal( locnx + locmy, *zdiag.vec );
+  kkt->atPutDiagonal( locnx + locmy, *zdiag.first );
 }
 
 void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )
@@ -96,14 +96,14 @@ void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )
    StochVector& x = dynamic_cast<StochVector&>(x_in);
    assert(x.children.size()==0);
    stochNode->resMon.recDsolveTmChildren_start();
-   solver->Dsolve(*x.vec);
+   solver->Dsolve(*x.first);
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
 void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool)
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
-   SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.vec);
+   SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.first);
    assert( 0 == b.children.size() );
 
 #ifdef TIMING
@@ -126,7 +126,7 @@ void sLinsysLeaf::deleteChildren()
 void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/ )
 {
   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
-  SimpleVector& zi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(zi_).vec);
+  SimpleVector& zi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(zi_).first);
 
   solver->solve(zi);
 
@@ -409,7 +409,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    assert( border.F.children.size() == 0 );
    assert( rhs.children.size() == 0 );
 
-   assert( rhs.vec );
+   assert( rhs.first );
    if( border.has_RAC )
    {
       assert( border.R.mat );
@@ -447,7 +447,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    if( border_block->isEmpty() )
       return;
 
-   addBorderTimesRhsToB0( dynamic_cast<SimpleVector&>(*rhs.vec), b0, *border_block);
+   addBorderTimesRhsToB0(dynamic_cast<SimpleVector&>(*rhs.first), b0, *border_block);
 }
 
 void sLinsysLeaf::addBorderTimesRhsToB0( SimpleVector& rhs, SimpleVector& b0, BorderBiBlock& border )
@@ -503,7 +503,7 @@ void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    assert( border.F.children.size() == 0 );
    assert( rhs.children.size() == 0 );
 
-   assert( rhs.vec );
+   assert( rhs.first );
    if( border.has_RAC )
    {
       assert( border.R.mat );
@@ -541,7 +541,7 @@ void sLinsysLeaf::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    if( border_block->isEmpty() )
       return;
 
-   addBorderX0ToRhs( dynamic_cast<SimpleVector&>(*rhs.vec), x0, *border_block);
+   addBorderX0ToRhs(dynamic_cast<SimpleVector&>(*rhs.first), x0, *border_block);
 }
 
 void sLinsysLeaf::addBorderX0ToRhs( SimpleVector& rhs, const SimpleVector& x0, BorderBiBlock& border )
