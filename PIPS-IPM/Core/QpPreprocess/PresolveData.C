@@ -12,11 +12,10 @@
 #include "DoubleMatrixTypes.h"
 #include "StochMatrixUtilities.h"
 #include "pipsdef.h"
-#include "pipsport.h"
 #include "StochVectorUtilities.h"
 #include "SimpleVector.h"
 
-#include <stdexcept>
+#include <memory>
 #include <limits>
 #include <algorithm>
 #include <string>
@@ -825,7 +824,7 @@ void PresolveData::initNnzCounter(StochVectorBase<int>& nnzs_row_A, StochVectorB
    StochGenMatrix& A = getSystemMatrix(EQUALITY_SYSTEM);
    StochGenMatrix& C = getSystemMatrix(INEQUALITY_SYSTEM);
 
-   SmartPointer<StochVectorBase<int> > colClone(dynamic_cast<StochVectorBase<int>*>(nnzs_col.clone()));
+   std::unique_ptr<StochVectorBase<int> > colClone(dynamic_cast<StochVectorBase<int>*>(nnzs_col.clone()));
 
    A.getNnzPerRow(nnzs_row_A);
    C.getNnzPerRow(nnzs_row_C);
@@ -2854,14 +2853,14 @@ bool PresolveData::verifyActivities() const
    StochVectorHandle actmax_eq_part_new(dynamic_cast<StochVector*>(actmax_eq_part->clone()));
    StochVectorHandle actmin_eq_part_new(dynamic_cast<StochVector*>(actmin_eq_part->clone()));
 
-   SmartPointer<StochVectorBase<int> > actmax_eq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmax_eq_ubndd->clone()));
-   SmartPointer<StochVectorBase<int> > actmin_eq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmin_eq_ubndd->clone()));
+   std::unique_ptr<StochVectorBase<int> > actmax_eq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmax_eq_ubndd->clone()));
+   std::unique_ptr<StochVectorBase<int> > actmin_eq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmin_eq_ubndd->clone()));
 
    StochVectorHandle actmax_ineq_part_new(dynamic_cast<StochVector*>(actmax_ineq_part->clone()));
    StochVectorHandle actmin_ineq_part_new(dynamic_cast<StochVector*>(actmin_ineq_part->clone()));
 
-   SmartPointer<StochVectorBase<int> > actmax_ineq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmax_ineq_ubndd->clone()));
-   SmartPointer<StochVectorBase<int> > actmin_ineq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmin_ineq_ubndd->clone()));
+   std::unique_ptr<StochVectorBase<int> > actmax_ineq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmax_ineq_ubndd->clone()));
+   std::unique_ptr<StochVectorBase<int> > actmin_ineq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmin_ineq_ubndd->clone()));
 
    actmax_eq_part_new->setToZero();
    actmin_eq_part_new->setToZero();
@@ -2946,9 +2945,9 @@ bool PresolveData::verifyNnzcounters() const
    assert(!outdated_nnzs);
 
    bool nnzCorrect = true;
-   SmartPointer<StochVectorBase<int> > nnzs_col_new(dynamic_cast<StochVectorBase<int>*>(nnzs_col->cloneFull()));
-   SmartPointer<StochVectorBase<int> > nnzs_row_A_new(dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->cloneFull()));
-   SmartPointer<StochVectorBase<int> > nnzs_row_C_new(dynamic_cast<StochVectorBase<int>*>(nnzs_row_C->cloneFull()));
+   std::unique_ptr<StochVectorBase<int> > nnzs_col_new(dynamic_cast<StochVectorBase<int>*>(nnzs_col->cloneFull()));
+   std::unique_ptr<StochVectorBase<int> > nnzs_row_A_new(dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->cloneFull()));
+   std::unique_ptr<StochVectorBase<int> > nnzs_row_C_new(dynamic_cast<StochVectorBase<int>*>(nnzs_row_C->cloneFull()));
 
    nnzs_col_new->setToZero();
    nnzs_row_A_new->setToZero();
