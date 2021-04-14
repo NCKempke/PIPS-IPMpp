@@ -17,16 +17,16 @@
 #include "StochVector_fwd.h"
 
 template<typename T>
-StochVectorBase<T>::StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm)
-   : first(vec), last(vecl), mpiComm(mpi_comm ), iAmDistrib(PIPS_MPIgetDistributed(mpiComm) ),
+StochVectorBase<T>::StochVectorBase(OoqpVectorBase<T>* first, OoqpVectorBase<T>* last, MPI_Comm mpi_comm)
+   : first(first), last(last), mpiComm(mpi_comm ), iAmDistrib(PIPS_MPIgetDistributed(mpiComm) ),
      iAmSpecial( PIPS_MPIiAmSpecial( iAmDistrib, mpiComm) )
 {
-   assert( vec || vecl );
+   assert(first || last );
 
-   if( vec )
-      this->n += vec->length();
-   if( vecl )
-      this->n += vecl->length();
+   if( first )
+      this->n += first->length();
+   if( last )
+      this->n += last->length();
 }
 
 template<typename T>

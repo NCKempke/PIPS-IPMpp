@@ -20,7 +20,7 @@ class StochVectorBase : public OoqpVectorBase<T> {
 
 
 public:
-  StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm);
+  StochVectorBase(OoqpVectorBase<T>* first, OoqpVectorBase<T>* last, MPI_Comm mpi_comm);
 
   StochVectorBase( int n, MPI_Comm mpiComm );
   StochVectorBase( int n, int nl, MPI_Comm mpiComm );
