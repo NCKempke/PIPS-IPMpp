@@ -306,7 +306,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
 
   assert( vars->validNonZeroPattern() );
   assert( res ->validNonZeroPattern() );
-  
+
   /*** compute rX ***/
   /* rx = rQ */
   step->x->copyFrom( *res->rQ );
@@ -315,7 +315,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     OoqpVector& gamma_by_v = *step->v;
     gamma_by_v.copyFrom( *vars->gamma );
     gamma_by_v.divideSome( *vars->v, *ixlow );
-	
+
     /* rx = rQ + Gamma/V rv */
     step->x->axzpy ( 1.0, gamma_by_v, *res->rv );
     /* rx = rQ + Gamma/V rv + rGamma/V */
@@ -326,7 +326,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     OoqpVector& phi_by_w = *step->w;
     phi_by_w.copyFrom( *vars->phi );
     phi_by_w.divideSome( *vars->w, *ixupp );
-	  
+
     /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
     step->x->axzpy ( 1.0, phi_by_w, *res->rw );
     /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
@@ -411,7 +411,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     step->v->copyFrom( *step->x );
     step->v->axpy( -1.0, *res->rv );
     step->v->selectNonZeros( *ixlow );
-	
+
     /* Dgamma = V^-1 ( rgamma - Gamma * Dv ) */
     step->gamma->copyFrom( *res->rgamma );
     step->gamma->axzpy( -1.0, *vars->gamma, *step->v );
@@ -425,7 +425,7 @@ void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
     step->w->copyFrom( *res->rw );
     step->w->axpy( -1.0, *step->x );
     step->w->selectNonZeros( *ixupp );
-	
+
     /* Dphi = W^-1 ( rphi - Phi * Dw ) */
     step->phi->copyFrom( *res->rphi );
     step->phi->axzpy( -1.0, *vars->phi, *step->w );
@@ -533,7 +533,7 @@ void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 
   stepy.negate();
   stepz.negate();
-	
+
   /* Ds = Omega^-1 (rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U - Dz ) */
   steps.axpy( -1.0, stepz );
   steps.componentMult( *nomegaInv );
@@ -779,11 +779,11 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
  *       [            C                  0  -(lambda/V + pi/u)^-1 ]
  * stepx, stepy, stepz are used as temporary buffers
  */
-void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res, 
+void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
 			     double alpha, const OoqpVector& sol,
 			     const QpGenData& data,
-			     OoqpVector& solx, 
-			     OoqpVector& soly, 
+			     OoqpVector& solx,
+			     OoqpVector& soly,
 			     OoqpVector& solz)
 {
   assert( resx );
@@ -882,7 +882,7 @@ void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector&
       computeResidual(*sol, *res );
 #ifdef TIMING
       tResid += (MPI_Wtime()-tTmp);
-#endif 
+#endif
 
       const double rel_res_norm = res->twonorm() / bnorm;
 #ifdef TIMING
@@ -890,7 +890,7 @@ void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector&
       //histRelResidInf.push_back(res->infnorm()/bnorm);
       //if(0==myRank) cout << "resid.nrm xyz: " << resNorm << "   "
       //		 << "rhs.nrm xyz: " << bnorm << endl;
-#endif      
+#endif
 
       if( rel_res_norm < tol_iter_ref || n_refin_steps < max_iter_ref_steps )
          break;
@@ -900,14 +900,14 @@ void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector&
 #ifdef TIMING
     tTot = MPI_Wtime() - tTot;
     if(0==myRank) {// && refinSteps>0)  {
-      cout << "Outer Iter Refin " << refinSteps 
-	   << " iterations. Rel.resid.nrm:"; //Norm rel res:" 
-      for(size_t it=0; it<histRelResid.size(); it++) 
+      cout << "Outer Iter Refin " << refinSteps
+	   << " iterations. Rel.resid.nrm:"; //Norm rel res:"
+      for(size_t it=0; it<histRelResid.size(); it++)
 	  cout << histRelResid[it] << " | ";
       cout << endl;
-      cout << "solveXYZS w/ iter. refin. times: solve=" << tSlv 
-	   << "  matvec=" << tResid 
-	   << "  total=" << tTot << endl; 
+      cout << "solveXYZS w/ iter. refin. times: solve=" << tSlv
+	   << "  matvec=" << tResid
+	   << "  total=" << tTot << endl;
     }
 #endif
 }
@@ -922,10 +922,10 @@ void QpGenLinsys::solveCompressedIterRefin( const std::function<void(OoqpVector&
  * stepx, stepy, stepz are used as temporary buffers
  */
 void QpGenLinsys::computeResidualXYZ(const OoqpVector& sol,
-				     OoqpVector& res, 
-				     OoqpVector& solx, 
-				     OoqpVector& soly, 
-				     OoqpVector& solz, 
+				     OoqpVector& res,
+				     OoqpVector& solx,
+				     OoqpVector& soly,
+				     OoqpVector& solz,
 				     const QpGenData& data)
 {
   this->separateVars( solx, soly, solz, sol );

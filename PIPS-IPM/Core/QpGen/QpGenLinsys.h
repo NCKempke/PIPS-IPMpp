@@ -17,7 +17,6 @@ class QpGenData;
 class QpGen;
 class Variables;
 class Residuals;
-class DoubleLinearSolver;
 
 /** 
  * Linear System solvers for the general QP formulation. This class
@@ -130,8 +129,8 @@ public:
    * solves the system using the factorization produced there,
    * partitions the solution vector into step components, then
    * recovers the step components eliminated during the block
-   * elimination that produced the augmented system form 
-   * 
+   * elimination that produced the augmented system form
+   *
    * @see QpGenSparseLinsys::solveCompressed
    * @see QpGenDenseLinsys::solveCompressed
 */
@@ -168,7 +167,7 @@ public:
    *
    * @param rhs on input contains the aggregated right-hand side of
    * the augmented system; on output contains the solution in
-   * aggregated form 
+   * aggregated form
    *
    * @see QpGenSparseLinsys::solveCompressed
    * @see QpGenDenseLinsys::solveCompressed
