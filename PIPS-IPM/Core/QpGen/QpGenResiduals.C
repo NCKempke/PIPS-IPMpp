@@ -113,7 +113,7 @@ double updateNormAndPrint( double norm, const OoqpVector& vec, bool print, std::
    return std::max( norm, infnorm );
 }
 
-void QpGenResiduals::calcresids(Data *prob_in, Variables *vars_in, bool print_resids)
+void QpGenResiduals::calcresids(Problem *prob_in, Variables *vars_in, bool print_resids)
 {
 #ifdef TIMING
   print_resids = true;

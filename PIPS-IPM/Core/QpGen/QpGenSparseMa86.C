@@ -21,7 +21,7 @@ QpGenSparseMa86::QpGenSparseMa86( int nx_in, int my_in, int mz_in,
   la = SparseLinearAlgebraPackage::soleInstance();
 }
 
-LinearSystem * QpGenSparseMa86::makeLinsys( Data * prob_in )
+LinearSystem * QpGenSparseMa86::makeLinsys( Problem * prob_in )
 {
   QpGenData * prob = (QpGenData *) prob_in;
   int n = nx + my + mz;

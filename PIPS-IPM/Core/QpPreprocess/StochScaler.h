@@ -10,12 +10,12 @@
 
 #include "QpScaler.h"
 
-class Data;
+class Problem;
 
 class StochScaler : public QpScaler
 {
 public:
-	StochScaler(Data* prob, bool bitshifting);
+	StochScaler(Problem* prob, bool bitshifting);
 	~StochScaler() override = default;
 
 	Variables* getVariablesUnscaled(const Variables& vars) const override;

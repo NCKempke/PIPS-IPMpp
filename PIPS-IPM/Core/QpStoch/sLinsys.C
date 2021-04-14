@@ -93,7 +93,7 @@ void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
   vars.jointCopyTo(x, y, z);
 }
 
-void sLinsys::factor(Data *prob_, Variables *vars)
+void sLinsys::factor(Problem *prob_, Variables *vars)
 {
 #ifdef TIMING
   double tTot = MPI_Wtime();

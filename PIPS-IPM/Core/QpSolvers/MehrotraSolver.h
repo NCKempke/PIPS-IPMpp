@@ -8,7 +8,7 @@
 #include "Solver.h"
 #include "OoqpMonitor.h"
 
-class Data;
+class Problem;
 class Variables;
 class ProblemFormulation;
 
@@ -36,13 +36,13 @@ protected:
   Variables * step;
 
 public:
-  MehrotraSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler = nullptr);
+  MehrotraSolver( ProblemFormulation * opt, Problem* problem, const Scaler* scaler = nullptr);
 
   ~MehrotraSolver();
 
-  int solve( Data *prob, Variables *iterate, Residuals * resids ) override;
+  int solve( Problem* problem, Variables *iterate, Residuals * resids ) override;
 
-  void defaultMonitor( const Data * data, const Variables * vars,
+  void defaultMonitor( const Problem* problem, const Variables * vars,
 			       const Residuals * resids,
 			       double alpha, double sigma,
 			       int i, double mu,

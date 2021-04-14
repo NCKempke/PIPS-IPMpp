@@ -16,7 +16,7 @@
 #include "pipsdef.h"
 #include "pipsport.h"
 
-QpScaler::QpScaler(Data * prob, bool bitshifting)
+QpScaler::QpScaler(Problem * prob, bool bitshifting)
 : Scaler(prob, bitshifting), scaling_output{ pips_options::getBoolParameter("SCALER_OUTPUT") }
 {
    QpGenData* qpprob = dynamic_cast<QpGenData*>(prob);

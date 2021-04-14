@@ -39,7 +39,7 @@
  * the QPs.  
  * @{
  */
-class Data;
+class Problem;
 class Residuals;
 class LinearSystem;
 class Variables;
@@ -52,13 +52,13 @@ class ProblemFormulation {
 public:
 
   /** create the Residuals class for the relevant formulation */
-  virtual Residuals * makeResiduals( Data * prob_in ) = 0;
+  virtual Residuals * makeResiduals( Problem * prob_in ) = 0;
 
   /** creates the LinearSystem class for the relevant formulation */
-  virtual LinearSystem * makeLinsys( Data * prob_in ) = 0;
+  virtual LinearSystem * makeLinsys( Problem * prob_in ) = 0;
 
   /** creates the Variables class for the relevant formulation */
-  virtual Variables * makeVariables( Data * prob_in ) = 0;
+  virtual Variables * makeVariables( Problem * prob_in ) = 0;
 
   virtual ~ProblemFormulation() = default;
 };

@@ -11,7 +11,7 @@
 #include "../QpPreprocess/StochScaler.h"
 #include "StochVector.h"
 
-class Data;
+class Problem;
 
 
 /**  * @defgroup QpPreprocess
@@ -37,7 +37,7 @@ protected:
   void postEquiScale();
 public:
 
-  GeoStochScaler(Data * prob, bool equiScaling, bool bitshifting = false);
+  GeoStochScaler(Problem * prob, bool equiScaling, bool bitshifting = false);
   virtual ~GeoStochScaler() = default;
 
   /** scale */

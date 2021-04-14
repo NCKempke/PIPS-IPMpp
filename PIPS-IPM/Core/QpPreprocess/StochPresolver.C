@@ -44,7 +44,7 @@
 #include "pipschecks.h"
 #include "pipsport.h"
 
-StochPresolver::StochPresolver(sTree* tree_, const Data& prob, Postsolver* postsolver = nullptr)
+StochPresolver::StochPresolver(sTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr)
  : QpPresolver(prob, postsolver), my_rank( PIPS_MPIgetRank(MPI_COMM_WORLD) ),
    limit_max_rounds( pips_options::getIntParameter("PRESOLVE_MAX_ROUNDS") ),
    reset_free_variables_after_presolve( pips_options::getBoolParameter("PRESOLVE_RESET_FREE_VARIABLES") ),
@@ -71,7 +71,7 @@ StochPresolver::StochPresolver(sTree* tree_, const Data& prob, Postsolver* posts
       presolvers.emplace_back( std::make_unique<StochPresolverBoundStrengthening>( presData, sorigprob ) );
 }
 
-Data* StochPresolver::presolve()
+Problem* StochPresolver::presolve()
 {
    if( my_rank == 0 )
       std::cout << "start stoch presolving\n";

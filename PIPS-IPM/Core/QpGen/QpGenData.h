@@ -5,7 +5,7 @@
 #ifndef QPGENDATA
 #define QPGENDATA
 
-#include "Data.h"
+#include "Problem.h"
 #include "OoqpVectorHandle.h"
 #include "OoqpVector.h"
 #include "DoubleMatrixHandle.h"
@@ -24,7 +24,7 @@ class QpGenDataTester;
  * @ingroup QpGen
  */
 
-class QpGenData : public Data {
+class QpGenData : public Problem {
 #ifdef TESTING
   friend QpGenDataTester;
 #endif

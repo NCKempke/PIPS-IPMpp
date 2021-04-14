@@ -7,7 +7,7 @@
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "Status.h"
-#include "Data.h"
+#include "Problem.h"
 #include "ProblemFormulation.h"
 
 #include "OoqpVector.h"
@@ -34,7 +34,7 @@ static double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
 
-MehrotraSolver::MehrotraSolver( ProblemFormulation * opt, Data * prob, const Scaler * scaler ) :
+MehrotraSolver::MehrotraSolver( ProblemFormulation * opt, Problem * prob, const Scaler * scaler ) :
       Solver( scaler )
 {
   factory = opt;
@@ -57,7 +57,7 @@ MehrotraSolver::MehrotraSolver( ProblemFormulation * opt, Data * prob, const Sca
 }
 
 
-int MehrotraSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
+int MehrotraSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 {
   int done;
   double mu, alpha = 1, sigma = 1, muaff;
@@ -139,7 +139,7 @@ int MehrotraSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
   return status_code;
 }
 
-void MehrotraSolver::defaultMonitor( const Data * /* data */, const Variables * /* vars */,
+void MehrotraSolver::defaultMonitor( const Problem * /* problem */, const Variables * /* vars */,
 				     const Residuals * resids,
 				     double alpha, double /* sigma */,
 				     int i, double mu, 

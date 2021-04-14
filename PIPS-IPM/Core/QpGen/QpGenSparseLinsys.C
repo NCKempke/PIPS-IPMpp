@@ -60,7 +60,7 @@ void QpGenSparseLinsys::solveCompressed( OoqpVector & arhs )
 }  
 
 
-void QpGenSparseLinsys::factor(Data *prob, Variables *vars)
+void QpGenSparseLinsys::factor(Problem *prob, Variables *vars)
 {
   this->QpGenLinsys::factor( prob, vars );
   solver->matrixChanged();

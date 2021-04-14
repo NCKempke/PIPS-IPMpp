@@ -8,7 +8,7 @@
 #include "Scaler.h"
 #include "Residuals.h"
 
-class Data;
+class Problem;
 class Variables;
 class LinearSystem;
 class Status;
@@ -85,7 +85,7 @@ protected:
   int iter{0};
 
   /** initialize dnorm and dnorm_orig */
-  void setDnorm( const Data& data );
+  void setDnorm( const Problem& data );
 
 public:
   Solver( const Scaler* scaler = nullptr );
@@ -93,28 +93,28 @@ public:
 
   /** starting point heuristic */
   virtual void start( ProblemFormulation * formulation, 
-		      Variables * iterate, Data * prob,
+		      Variables * iterate, Problem * prob,
 		      Residuals * resid, Variables * step);
 
   /** default starting point heuristic */
   virtual void defaultStart( ProblemFormulation * formulation,
-			     Variables * iterate, Data * prob,
+			     Variables * iterate, Problem * prob,
 			     Residuals * resid, Variables * step);
 
   /** alternative starting point heuristic */
   virtual void stevestart ( ProblemFormulation * formulation,
-			    Variables * iterate, Data * prob, 
+			    Variables * iterate, Problem * prob,
 			    Residuals * resid, Variables * step );
 
   /** alternative starting point heuristic: sets the "complementary"
    * variables to a large positive value (based on the norm of the
    * problem data) and the remaining variables to zero */
   virtual void dumbstart ( ProblemFormulation * formulation,
-			   Variables * iterate, Data * prob, 
+			   Variables * iterate, Problem * prob,
 			   Residuals * resid, Variables * step );
 
   /** implements the interior-point method for solving the QP */
-  virtual int solve(Data *prob, Variables *iterate, Residuals * resids) = 0;
+  virtual int solve(Problem *prob, Variables *iterate, Residuals * resids) = 0;
 
   /** Mehrotra's heuristic to calculate the final step length */
   virtual double finalStepLength( Variables *iterate, Variables *step );
@@ -124,7 +124,7 @@ public:
 		  	  	  	  	  	  	  double& alpha_primal, double& alpha_dual );
 
   /** perform monitor operation at each interior-point iteration */
-  virtual void doMonitor( const Data * data, const Variables * vars,
+  virtual void doMonitor( const Problem * data, const Variables * vars,
 						  const Residuals * resids,
 						  double alpha, double sigma,
 						  int i, double mu,
@@ -132,7 +132,7 @@ public:
 						  int level );
 
   /** perform monitor operation at each interior-point iteration */
-  virtual void doMonitorPd( const Data * data, const Variables * vars,
+  virtual void doMonitorPd( const Problem * data, const Variables * vars,
                     const Residuals * resids,
                     double alpha_primal, double alpha_dual, double sigma,
                     int i, double mu,
@@ -141,7 +141,7 @@ public:
 
   /** default monitor: prints out one line of information on each
    * interior-point iteration */
-  virtual void defaultMonitor( const Data * data, const Variables * vars,
+  virtual void defaultMonitor( const Problem * data, const Variables * vars,
 							   const Residuals * resids,
 							   double alpha, double sigma,
 							   int i, double mu, 
@@ -150,14 +150,14 @@ public:
 
   /** this method called to test for convergence status at the end of
    * each interior-point iteration */
-  virtual int doStatus( const Data * data, const Variables * vars,
+  virtual int doStatus( const Problem * data, const Variables * vars,
 			const Residuals * resids,
 			int i, double mu, 
 			int level );
 
   /** default method for checking status. May be replaced by a
    * user-defined method */
-  virtual int defaultStatus( const Data * data, const Variables * vars,
+  virtual int defaultStatus( const Problem * data, const Variables * vars,
 			     const Residuals * resids,
 			     int i, double mu, 
 			     int level );

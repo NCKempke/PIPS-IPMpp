@@ -24,7 +24,7 @@ OblioQpGen::OblioQpGen( int nx_, int my_, int mz_,
 }
 
 
-LinearSystem * OblioQpGen::makeLinsys( Data * prob_in )
+LinearSystem * OblioQpGen::makeLinsys( Problem * prob_in )
 { 
   QpGenData * prob = (QpGenData *) prob_in;
   int n = nx + my + mz;

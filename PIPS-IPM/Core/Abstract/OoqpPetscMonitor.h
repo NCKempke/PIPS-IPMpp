@@ -13,7 +13,7 @@ protected:
   int rank;
 public:
   OoqpPetscSelfMonitor();
-  virtual void doIt( Solver * solver, Data * data, Variables * vars,
+  virtual void doIt( Solver * solver, Problem * data, Variables * vars,
 		     Residuals * resids,
 		     double alpha, double sigma,
 		     int i, double mu,

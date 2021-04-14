@@ -13,7 +13,7 @@
 #include <vector>
 #include <list>
 
-class Data;
+class Problem;
 class QpGen;
 class QpGenStoch;
 class sData;

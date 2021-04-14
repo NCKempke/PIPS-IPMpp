@@ -27,7 +27,7 @@ QpGenSca::QpGenSca(int nx_, int my_, int mz_,
 }
 	
 
-Data * QpGenSca::makeData()
+Problem * QpGenSca::makeData()
 {
   return new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );
 }
@@ -56,7 +56,7 @@ QpGenSca::separateVars( OoqpVector& x_in, OoqpVector& y_in,
 }
 
 
-Data         * 
+Problem         *
 QpGenSca::makeData( double    c_[],
 			     int    krowQ[],  int  jcolQ[],  double dQ[],
 			     double  xlow_[],  char ixlow_[],
@@ -116,7 +116,7 @@ QpGenSca::makeData( double    c_[],
   return data;
 }
 
-LinearSystem  *QpGenSca::makeLinsys( Data * prob_in )
+LinearSystem  *QpGenSca::makeLinsys( Problem * prob_in )
 {
   QpGenData * prob = (QpGenData *) prob_in;
 
@@ -130,7 +130,7 @@ LinearSystem  *QpGenSca::makeLinsys( Data * prob_in )
 
 
 /*
-Data   *
+Problem   *
 QpGenSca::
 copyDataFromSparseTriple( double c[],
 			  int irowQ[], int lenQ,  int jcolQ[],  double dQ[],

@@ -7,7 +7,7 @@
 #include "OoqpMonitor.h"
 #include "Status.h"
 #include "SimpleVector.h"
-#include "Data.h"
+#include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"
 #include "LinearSystem.h"
@@ -56,7 +56,7 @@ Solver::Solver(const Scaler* scaler) : scaler{ scaler }
 }
 
 void Solver::start( ProblemFormulation * formulation,
-		    Variables * iterate, Data * prob,
+		    Variables * iterate, Problem * prob,
 		    Residuals * resid, Variables * step  )
 {
   if( startStrategy ) {
@@ -69,7 +69,7 @@ void Solver::start( ProblemFormulation * formulation,
 }
 
 void Solver::defaultStart( ProblemFormulation * /* formulation */,
-			   Variables * iterate, Data * prob,
+			   Variables * iterate, Problem * prob,
 			   Residuals * resid, Variables * step  )
 {
   double sdatanorm = std::sqrt(dnorm);
@@ -93,7 +93,7 @@ void Solver::defaultStart( ProblemFormulation * /* formulation */,
 }
 
 void Solver::stevestart(  ProblemFormulation * /* formulation */,
-			  Variables * iterate, Data * prob,
+			  Variables * iterate, Problem * prob,
 			  Residuals * resid, Variables * step  )
 {
   double sdatanorm = std::sqrt(dnorm);
@@ -136,7 +136,7 @@ void Solver::stevestart(  ProblemFormulation * /* formulation */,
 }
 
 void Solver::dumbstart(  ProblemFormulation * /* formulation */,
-			 Variables * iterate, Data * /* prob */,
+			 Variables * iterate, Problem * /* prob */,
 			 Residuals * /*resid*/, Variables * /*step*/  )
 {
    const double a = 1.e3;
@@ -294,7 +294,7 @@ void Solver::finalStepLength_PD( Variables *iterate, Variables *step,
 }
 
 
-void Solver::doMonitor( const Data * data, const Variables * vars,
+void Solver::doMonitor( const Problem * data, const Variables * vars,
 			const Residuals * resids,
 			double alpha, double sigma,
 			int i, double mu,
@@ -309,7 +309,7 @@ void Solver::doMonitor( const Data * data, const Variables * vars,
   }
 }
 
-void Solver::doMonitorPd( const Data * data, const Variables * vars,
+void Solver::doMonitorPd( const Problem * data, const Variables * vars,
          const Residuals * resids,
          double alpha_primal, double alpha_dual, double sigma,
          int i, double mu,
@@ -325,7 +325,7 @@ void Solver::doMonitorPd( const Data * data, const Variables * vars,
 }
 
 
-int Solver::doStatus( const Data * data, const Variables * vars,
+int Solver::doStatus( const Problem * data, const Variables * vars,
 		       const Residuals * resids,
 		       int i, double mu,
 		       int level )
@@ -379,7 +379,7 @@ std::pair<double,double> Solver::computeUnscaledGapAndResidualNorm( const Residu
 }
 
 
-int Solver::defaultStatus( const Data * /* data */, const Variables * /* vars */,
+int Solver::defaultStatus( const Problem * /* data */, const Variables * /* vars */,
 				 const Residuals * resids,
 				 int iterate, double mu, 
 				 int /* level */)
@@ -475,7 +475,7 @@ int Solver::defaultStatus( const Data * /* data */, const Variables * /* vars */
   return stop_code;
 }
 
-void Solver::setDnorm(const Data& data)
+void Solver::setDnorm(const Problem& data)
 {
    dnorm = data.datanorm();
 

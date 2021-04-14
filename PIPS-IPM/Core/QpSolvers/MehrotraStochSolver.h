@@ -3,7 +3,7 @@
 
 #include "MehrotraSolver.h"
 
-class Data;
+class Problem;
 class Variables;
 class ProblemFormulation;
 
@@ -15,11 +15,11 @@ class MehrotraStochSolver : public MehrotraSolver
 {
 
 public:
-  MehrotraStochSolver( ProblemFormulation * opt, Data * prob, const Scaler * scaler = nullptr );
+  MehrotraStochSolver( ProblemFormulation * opt, Problem * problem, const Scaler * scaler = nullptr );
 
   ~MehrotraStochSolver();
 
-  int solve( Data *prob, Variables *iterate, Residuals * resids ) override;
+  int solve( Problem *problem, Variables *iterate, Residuals * resids ) override;
 
 };
 

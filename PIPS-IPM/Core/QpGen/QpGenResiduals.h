@@ -70,7 +70,7 @@ public:
 
   virtual ~QpGenResiduals() = default;
   
-  void calcresids(Data *problem, Variables *vars, bool print_resids = false) override;
+  void calcresids(Problem* problem, Variables *vars, bool print_resids = false) override;
 
   void add_r3_xz_alpha(const Variables *vars, double alpha) override;
 

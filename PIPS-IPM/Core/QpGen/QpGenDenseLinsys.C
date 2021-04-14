@@ -16,7 +16,7 @@ QpGenDenseLinsys::QpGenDenseLinsys( QpGen * qpgen,
   SpReferTo( kkt, Mat );
 }
 
-void QpGenDenseLinsys::factor(Data *prob_in, Variables *vars)
+void QpGenDenseLinsys::factor(Problem *prob_in, Variables *vars)
 {
   QpGenData * prob = (QpGenData *) prob_in;
   

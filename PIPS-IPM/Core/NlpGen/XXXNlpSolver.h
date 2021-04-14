@@ -13,10 +13,10 @@ public:
 
   ~XXXNlpSolver();
 
-  virtual int solve( Data *prob, Variables *iterate, Residuals * resids );
+  virtual int solve( Problem *prob, Variables *iterate, Residuals * resids );
 
 
-  virtual void defaultMonitor( Data * data, Variables * vars,
+  virtual void defaultMonitor( Problem * data, Variables * vars,
 			       Residuals * resids,
 			       double alpha, double sigma,
 			       int i, double mu,

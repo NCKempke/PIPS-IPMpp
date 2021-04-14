@@ -9,7 +9,7 @@
 #define PIPS_IPM_CORE_ABSTRACT_POSTSOLVER_H_
 
 
-class Data;
+class Problem;
 class Variables;
 
 enum PostsolveStatus

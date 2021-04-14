@@ -12,7 +12,7 @@
 
 #include <functional>
 
-class Data;
+class Problem;
 class QpGenData;
 class QpGen;
 class Variables;
@@ -122,7 +122,7 @@ public:
    * @see QpGenSparseLinsys::factor
    * @see QpGenDenseLinsys::factor
    */
-  void factor(Data *prob, Variables *vars) override;
+  void factor(Problem *prob, Variables *vars) override;
 
   /** solves the system for a given set of residuals. Assembles the
    * right-hand side appropriate to the matrix factored in factor,
@@ -134,7 +134,7 @@ public:
    * @see QpGenSparseLinsys::solveCompressed
    * @see QpGenDenseLinsys::solveCompressed
 */
-  void solve(Data *prob, Variables *vars, Residuals *res,
+  void solve(Problem *prob, Variables *vars, Residuals *res,
 		     Variables *step) override;
 
   /** assembles a single vector object from three given vectors

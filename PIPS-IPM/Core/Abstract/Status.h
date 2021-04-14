@@ -6,7 +6,7 @@
 #define STATUS_H
 #include "pipsport.h"
 class Solver;
-class Data;
+class Problem;
 class Variables;
 class Residuals;
 
@@ -29,7 +29,7 @@ extern const char * TerminationStrings[];
 class Status
 {
 public:
-  virtual int doIt(  const Solver * solver, const Data * data, const Variables * vars,
+  virtual int doIt(  const Solver * solver, const Problem * data, const Variables * vars,
 		     const Residuals * resids,
 		     int i, double mu,
 		     int level ) = 0;
@@ -67,7 +67,7 @@ protected:
   void * ctx;
 public:
   CStatus( StatusCFunc doItC_, void * ctx );
-  int doIt( const Solver * solver, const Data * data, const Variables * vars,
+  int doIt( const Solver * solver, const Problem * data, const Variables * vars,
 		     const Residuals * resids,
 		     int i, double mu, 
 		     int level ) override;

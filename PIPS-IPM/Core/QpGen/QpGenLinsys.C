@@ -236,7 +236,7 @@ QpGenLinsys::~QpGenLinsys()
   delete res4;
   delete res5;
 }
-void QpGenLinsys::factor(Data * /* prob_in */, Variables *vars_in)
+void QpGenLinsys::factor(Problem * /* prob_in */, Variables *vars_in)
 {
   QpGenVars * vars = (QpGenVars *) vars_in;
 
@@ -295,7 +295,7 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
      return d >= 0; } ) );
 }
 
-void QpGenLinsys::solve(Data * prob_in, Variables *vars_in,
+void QpGenLinsys::solve(Problem * prob_in, Variables *vars_in,
 			Residuals *res_in, Variables *step_in)
 {
   QpGenData      * prob  = (QpGenData *) prob_in;

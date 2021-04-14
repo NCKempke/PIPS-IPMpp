@@ -1,7 +1,7 @@
 #include "sVars.h"
 #include "QpGenData.h"
 #include "OoqpVector.h"
-#include "Data.h"
+#include "Problem.h"
 #include "QpGenResiduals.h"
 #include "QpGenLinsys.h"
 #include "StochVector.h"

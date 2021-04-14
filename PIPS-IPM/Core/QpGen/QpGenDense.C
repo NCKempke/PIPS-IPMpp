@@ -27,7 +27,7 @@ QpGenDense::QpGenDense( int nx_, int my_, int mz_,
   la = DenseLinearAlgebraPackage::soleInstance();
 }
 
-LinearSystem  * QpGenDense::makeLinsys( Data * prob_in )
+LinearSystem  * QpGenDense::makeLinsys( Problem * prob_in )
 {
   QpGenData * prob = (QpGenData *) prob_in;
 

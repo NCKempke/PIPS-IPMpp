@@ -11,7 +11,7 @@
 #include "sResiduals.h"
 
 
-StochScaler::StochScaler(Data* prob, bool bitshifting)
+StochScaler::StochScaler(Problem* prob, bool bitshifting)
 	: QpScaler(prob, bitshifting)
 {
 }

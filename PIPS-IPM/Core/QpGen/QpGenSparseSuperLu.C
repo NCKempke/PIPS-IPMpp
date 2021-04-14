@@ -22,7 +22,7 @@ SuperLUQpGen::SuperLUQpGen( int nx, int my, int mz,
   la = SparseLinearAlgebraPackage::soleInstance();
 }
 
-LinearSystem * SuperLUQpGen::makeLinsys( Data * prob_in )
+LinearSystem * SuperLUQpGen::makeLinsys( Problem * prob_in )
 {
   QpGenData * prob = (QpGenData *) prob_in;
   int n = nx + my + mz;

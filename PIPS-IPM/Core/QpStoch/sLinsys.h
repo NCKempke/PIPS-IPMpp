@@ -133,7 +133,7 @@ class sLinsys : public QpGenLinsys
 
   ~sLinsys() override = default;
 
-  void factor (Data *prob, Variables *vars) override;
+  void factor (Problem *prob, Variables *vars) override;
 
   virtual void factor2(sData *prob, Variables *vars) = 0;
   virtual void assembleKKT(sData *prob, Variables *vars) = 0;

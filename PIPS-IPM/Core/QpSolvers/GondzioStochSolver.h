@@ -11,7 +11,7 @@
 #include "GondzioSolver.h"
 #include "Observer.h"
 
-class Data;
+class Problem;
 class Variables;
 class ProblemFormulation;
 
@@ -59,9 +59,9 @@ protected:
   double bigcstab_norm_res_rel;
   int bicg_iterations;
 
-  void computePredictorStep( Data* prob, Variables* iterate, Residuals* resid );
-  void computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu );
-  void computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr );
+  void computePredictorStep( Problem* prob, Variables* iterate, Residuals* resid );
+  void computeCorrectorStep( Problem* prob, Variables* iterate, double sigma, double mu );
+  void computeGondzioCorrector( Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr );
 
   void checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr) const;
 
@@ -80,19 +80,19 @@ protected:
 
   void computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step,
         double alpha) const;
-  void doProbing( Data* prob, Variables* iterate, Residuals* resid, double& alpha );
+  void doProbing( Problem* prob, Variables* iterate, Residuals* resid, double& alpha );
 
   bool restartIterateBecauseOfPoorStep( bool& pure_centering_step, bool precond_limit, double alpha_max) const;
 
-  void pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const;
-  void pushSmallComplementarityProducts( const Data& prob, Variables& iterate, Residuals& residuals ) const;
+  void pushConvergedVarsAwayFromBounds( Problem& problem, Variables& vars ) const;
+  void pushSmallComplementarityProducts( const Problem& prob, Variables& iterate, Residuals& residuals ) const;
 public:
 
-  GondzioStochSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler = nullptr );
+  GondzioStochSolver( ProblemFormulation * of, Problem * prob, const Scaler* scaler = nullptr );
 
   virtual ~GondzioStochSolver();
 
-  int solve( Data *prob, Variables *iterate, Residuals * resid ) override;
+  int solve( Problem *prob, Variables *iterate, Residuals * resid ) override;
 
   void notifyFromSubject() override;
 };

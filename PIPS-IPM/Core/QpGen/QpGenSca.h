@@ -21,8 +21,8 @@ public:
 		  int nnzQ_, int nnzA_, int nnzC_,
 		  COMMINFO& cinfo);
 
-  Data  * makeData();
-  Data  * makeData( double    c[],
+  Problem  * makeData();
+  Problem  * makeData( double    c[],
 			 int    krowQ[],  int  jcolQ[],  double dQ[],
 			 double  xlow[],  char ixlow[],
 			 double  xupp[],  char ixupp[],
@@ -32,9 +32,9 @@ public:
 			 double  clow[],  char iclow[],
 			 double  cupp[],  char icupp[] );
 
-  LinearSystem * makeLinsys( Data * prob_in );
+  LinearSystem * makeLinsys( Problem * prob_in );
 /*
-  Data   *
+  Problem   *
   copyDataFromSparseTriple( double c[],
 			    int irowQ[], int nnzQ,  int jcolQ[],  double dQ[],
 			    double xlow[],  char ixlow[],

@@ -14,7 +14,7 @@
 #include <cmath>
 #include <memory>
 
-EquiStochScaler::EquiStochScaler(Data* prob, bool bitshifting)
+EquiStochScaler::EquiStochScaler(Problem* prob, bool bitshifting)
   : StochScaler(prob, bitshifting)
 {
    if( PIPS_MPIgetRank() == 0 && scaling_output )

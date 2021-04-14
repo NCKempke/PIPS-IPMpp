@@ -7,7 +7,7 @@
 
 #include "Solver.h"
 
-class Data;
+class Problem;
 class Variables;
 class ProblemFormulation;
 
@@ -50,16 +50,16 @@ protected:
 
 public:
 
-  GondzioSolver( ProblemFormulation * of, Data * prob, const Scaler * = nullptr );
+  GondzioSolver( ProblemFormulation * of, Problem * prob, const Scaler * = nullptr );
 
   virtual ~GondzioSolver();
 
-  int solve( Data *prob, Variables *iterate, Residuals * resid ) override;
+  int solve( Problem *prob, Variables *iterate, Residuals * resid ) override;
 
   /** reset parameters to their default values */
   virtual void reset_parameters() {};
 
-  void defaultMonitor( const Data * data, const Variables * vars,
+  void defaultMonitor( const Problem * problem, const Variables * vars,
         const Residuals * resids,
         double alpha, double sigma,
         int i, double mu,

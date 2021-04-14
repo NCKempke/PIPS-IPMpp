@@ -12,7 +12,7 @@
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "Status.h"
-#include "Data.h"
+#include "Problem.h"
 #include "ProblemFormulation.h"
 
 #include "OoqpVector.h"
@@ -48,7 +48,7 @@ extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
 
-GondzioStochLpSolver::GondzioStochLpSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler)
+GondzioStochLpSolver::GondzioStochLpSolver( ProblemFormulation * opt, Problem * prob, const Scaler* scaler)
   : GondzioStochSolver(opt, prob, scaler)
 {
 }
@@ -106,7 +106,7 @@ void GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables *iterate, V
    alpha_dual_candidate = alpha_dual_best;
 }
 
-int GondzioStochLpSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
+int GondzioStochLpSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
@@ -390,7 +390,7 @@ void GondzioStochLpSolver::computeProbingStep_pd(Variables* probing_step, const 
    probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
 }
 
-void GondzioStochLpSolver::doProbing_pd( Data* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual )
+void GondzioStochLpSolver::doProbing_pd( Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual )
 {
    const double mu_last = iterate->mu();
    const double resids_norm_last = resid->residualNorm();

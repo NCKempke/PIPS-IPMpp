@@ -7,7 +7,7 @@
 #include <cassert>
 #include "pipsport.h"
 class Solver;
-class Data;
+class Problem;
 class Variables;
 class Residuals;
 
@@ -22,14 +22,14 @@ public:
   OoqpMonitor() = default;
   virtual ~OoqpMonitor() = default;
 
-  virtual void doIt( const Solver * solver, const Data * data, const Variables * vars,
+  virtual void doIt( const Solver * solver, const Problem * data, const Variables * vars,
 					 const Residuals * resids,
 					 double alpha, double sigma,
 					 int i, double mu, 
                      int status_code,
 					 int level ) = 0;
 
-  virtual void doItPd( const Solver* /*solver*/, const Data* /*data*/, const Variables* /*vars*/, const Residuals* /*resids*/,
+  virtual void doItPd( const Solver* /*solver*/, const Problem* /*data*/, const Variables* /*vars*/, const Residuals* /*resids*/,
         double /*alpha_primal*/, double /*alpha_dual*/, double /*sigma*/, int /*i*/, double /*mu*/, int /*status_code*/,
                 int /*level*/ ) { assert(0 && "not implemented here"); };
 };  
@@ -44,7 +44,7 @@ public:
  */
 class OoqpSelfMonitor : public OoqpMonitor {
 public:
-  void doIt( const Solver * solver, const Data * data, const Variables * vars,
+  void doIt( const Solver * solver, const Problem * data, const Variables * vars,
 					 const Residuals * resids,
 					 double alpha, double sigma,
 					 int i, double mu,
@@ -65,7 +65,7 @@ protected:
   void * ctx;
 public:
   COoqpMonitor( DoItCFunc doItC_, void * ctx_ );
-  void doIt( const Solver * solver, const Data * data, const Variables * vars,
+  void doIt( const Solver * solver, const Problem * data, const Variables * vars,
 					 const Residuals * resids,
 					 double alpha, double sigma,
 					 int i, double mu,

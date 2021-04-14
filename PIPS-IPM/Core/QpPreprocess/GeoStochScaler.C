@@ -16,7 +16,7 @@
 static const double maxobjscale = 100.0;
 
 
-GeoStochScaler::GeoStochScaler(Data* prob, bool equiScaling, bool bitshifting)
+GeoStochScaler::GeoStochScaler(Problem* prob, bool equiScaling, bool bitshifting)
   : StochScaler(prob, bitshifting)
 {
    if( PIPS_MPIgetRank() == 0 && scaling_output )

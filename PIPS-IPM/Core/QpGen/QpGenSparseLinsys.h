@@ -42,7 +42,7 @@ public:
    *
    * @see QpGenLinsys::factor 
    */
-  void factor(Data *prob, Variables *vars) override;
+  void factor(Problem *prob, Variables *vars) override;
   
   virtual ~QpGenSparseLinsys();
 };

@@ -7,7 +7,7 @@
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "Status.h"
-#include "Data.h"
+#include "Problem.h"
 #include "ProblemFormulation.h"
 #include "QpGenOptions.h"
 
@@ -25,7 +25,7 @@ double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
 
-GondzioSolver::GondzioSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler ) :
+GondzioSolver::GondzioSolver( ProblemFormulation * of, Problem * prob, const Scaler* scaler ) :
       Solver(scaler)
 {
   factory              = of;
@@ -65,7 +65,7 @@ GondzioSolver::GondzioSolver( ProblemFormulation * of, Data * prob, const Scaler
   status   = 0; 
 }
 
-int GondzioSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
+int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 {
   int done;
   double mu, muaff;
@@ -219,7 +219,7 @@ int GondzioSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
 }
 
 
-void GondzioSolver::defaultMonitor( const Data * /* data */, const Variables * /* vars */,
+void GondzioSolver::defaultMonitor( const Problem * /* problem */, const Variables * /* vars */,
 									const Residuals * resids,
 									double alpha, double sigma,
 									int i, double mu, 

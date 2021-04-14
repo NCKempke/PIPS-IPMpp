@@ -19,7 +19,7 @@ public:
   // for a QpGenSparseXXX without changing the code.
   QpGenDense( int nx_, int my_, int mz_,
 	      int nnzQ, int nnzA, int nnzC);
-  virtual LinearSystem  * makeLinsys( Data * prob_in );
+  virtual LinearSystem  * makeLinsys( Problem * prob_in );
   virtual QpGenData     * makeData( double    c[],  double   Q[],
 				    double xlow[],  char ixlow[], 
 				    double xupp[],  char ixupp[],

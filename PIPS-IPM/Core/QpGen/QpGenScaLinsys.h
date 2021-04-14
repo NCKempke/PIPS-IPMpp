@@ -31,7 +31,7 @@ public:
   virtual void putZDiagonal( OoqpVector& zdiag );
 
 
-  virtual void factor(Data *prob, Variables *vars);
+  virtual void factor(Problem *prob, Variables *vars);
 
   virtual ~QpGenScaLinsys();
 };

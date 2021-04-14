@@ -21,8 +21,8 @@ public:
       nnzQ(nnzQ_), nnzA(nnzA_), nnzC(nnzC_)
   {}
 
-  Data  * makeData();
-  Data  * makeData( double    c[],
+  Problem  * makeData();
+  Problem  * makeData( double    c[],
 			 int    krowQ[],  int  jcolQ[],  double dQ[],
 			 double  xlow[],  char ixlow[],
 			 double  xupp[],  char ixupp[],
@@ -34,8 +34,7 @@ public:
 
   void makeRandomData( QpGenData *& prob, QpGenVars *& soln );
 
-  Data   *
-  copyDataFromSparseTriple( double c[],
+  Problem* copyDataFromSparseTriple( double c[],
 			    int irowQ[], int nnzQ,  int jcolQ[],  double dQ[],
 			    double xlow[],  char ixlow[],
 			    double xupp[],  char ixupp[],

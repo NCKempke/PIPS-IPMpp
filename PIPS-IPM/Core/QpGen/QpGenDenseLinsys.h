@@ -46,7 +46,7 @@ public:
    *
    * @see QpGenLinsys::factor 
    */
-  virtual void factor(Data *prob, Variables *vars);
+  virtual void factor(Problem *prob, Variables *vars);
 
   virtual ~QpGenDenseLinsys();
 };

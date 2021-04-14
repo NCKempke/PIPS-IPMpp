@@ -22,7 +22,7 @@ QpGenSparseMa57::QpGenSparseMa57( int nx, int my, int mz,
   la = SparseLinearAlgebraPackage::soleInstance();
 }
 
-LinearSystem * QpGenSparseMa57::makeLinsys( Data * prob_in )
+LinearSystem * QpGenSparseMa57::makeLinsys( Problem * prob_in )
 {
   QpGenData * prob = (QpGenData *) prob_in;
   int n = nx + my + mz;

@@ -46,10 +46,10 @@ class sFactory : public QpGen
 
  public:
 
-  virtual Data* makeData();
-  Residuals * makeResiduals( Data * prob_in ) override;
-  Variables * makeVariables( Data * prob_in ) override;
-  LinearSystem* makeLinsys( Data * prob_in ) override;
+  virtual Problem* makeData();
+  Residuals * makeResiduals( Problem * prob_in ) override;
+  Variables * makeVariables( Problem * prob_in ) override;
+  LinearSystem* makeLinsys( Problem * prob_in ) override;
 
   /** create x shaped vector using tree */
   OoqpVector* makePrimalVector() const override;
@@ -61,7 +61,7 @@ class sFactory : public QpGen
   OoqpVector* makeRhs() const override;
 
   virtual sLinsysRoot* newLinsysRootHierarchical() { assert( 0 && "not implemented here" ); return nullptr; }
-  virtual Data* switchToHierarchicalData( Data* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
+  virtual Problem* switchToHierarchicalData( Problem* /*prob_in*/ ) { assert( 0 && "not implemented here" ); return nullptr; }
 
   virtual void switchToOriginalTree() { assert( 0 && "not implemented here" ); }
 

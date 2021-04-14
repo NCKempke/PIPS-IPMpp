@@ -275,7 +275,7 @@ void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
    std::cout << "finished dumping aug\n";
 }
 
-Data* sFactory::makeData()
+Problem* sFactory::makeData()
 {
 #ifdef TIMING
    double t2 = MPI_Wtime();
@@ -311,7 +311,7 @@ Data* sFactory::makeData()
 }
 
 // TODO adjust this for hierarchical approach
-Variables* sFactory::makeVariables( Data * prob_in )
+Variables* sFactory::makeVariables( Problem * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
 
@@ -339,14 +339,14 @@ Variables* sFactory::makeVariables( Data * prob_in )
   return vars;
 }
 
-Residuals* sFactory::makeResiduals( Data * prob_in )
+Residuals* sFactory::makeResiduals( Problem * prob_in )
 {
   sData* prob = dynamic_cast<sData*>(prob_in);
   resid =  new sResiduals( tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
   return resid;
 }
 
-LinearSystem* sFactory::makeLinsys( Data* )
+LinearSystem* sFactory::makeLinsys( Problem* )
 {
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
       linsys = newLinsysRootHierarchical();

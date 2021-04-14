@@ -40,7 +40,7 @@ sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()
    return new sLinsysRootBordered(this, data);
 }
 
-Data* sFactoryAug::switchToHierarchicalData( Data* )
+Problem* sFactoryAug::switchToHierarchicalData(Problem*)
 {
 
    // TODO : DELETEME

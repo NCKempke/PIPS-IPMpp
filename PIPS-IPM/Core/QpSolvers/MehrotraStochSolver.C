@@ -3,7 +3,7 @@
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "Status.h"
-#include "Data.h"
+#include "Problem.h"
 #include "ProblemFormulation.h"
 
 #include "sVars.h"
@@ -32,7 +32,7 @@ extern double g_iterNumber;
 
 int sleepFlag=0;
 
-MehrotraStochSolver::MehrotraStochSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler )
+MehrotraStochSolver::MehrotraStochSolver( ProblemFormulation * opt, Problem * problem, const Scaler* scaler )
   : MehrotraSolver(opt, prob, scaler)
 {
 
@@ -42,7 +42,7 @@ MehrotraStochSolver::MehrotraStochSolver( ProblemFormulation * opt, Data * prob,
 #include "QpGenVars.h"
 #include "QpGenResiduals.h"
 
-int MehrotraStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
+int MehrotraStochSolver::solve(Problem *problem, Variables *iterate, Residuals * resid )
 {
   int done;
   double mu, alpha = 1, sigma = 1, muaff;
@@ -50,14 +50,14 @@ int MehrotraStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid
   sFactory* stochFactory = reinterpret_cast<sFactory*>(factory);
   gmu = 1000;
   //  grnorm = 1000;
-  setDnorm( *prob );
+  setDnorm( *problem );
   // initialization of (x,y,z) and factorization routine.
-  sys = factory->makeLinsys( prob );
+  sys = factory->makeLinsys( problem );
 
   g_iterNumber=0.0;
 
   stochFactory->iterateStarted();
-  this->start( factory, iterate, prob, resid, step );
+  this->start( factory, iterate, problem, resid, step );
   stochFactory->iterateEnded();
 
   iter = 0;

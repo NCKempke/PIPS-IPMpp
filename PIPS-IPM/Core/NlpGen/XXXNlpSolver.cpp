@@ -13,7 +13,7 @@ XXXNlpSolver::~XXXNlpSolver()
 // An example of the solve method
 //
 // 
-int XXXNlpSolver::solve(Data *prob_, Variables *iterate_, Residuals * resid_ )
+int XXXNlpSolver::solve(Problem *prob_, Variables *iterate_, Residuals * resid_ )
 {
   NlpDataFull* prob = dynamic_cast<NlpDataFull*>(prob_);
   NlpVars* iterate = dynamic_cast<NlpVars*>(prob_);

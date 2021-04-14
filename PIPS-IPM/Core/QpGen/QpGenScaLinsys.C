@@ -22,7 +22,7 @@ QpGenScaLinsys::QpGenScaLinsys( QpGen * qpgen,
 
 }
 
-void QpGenScaLinsys::factor(Data *prob_in, Variables *vars)
+void QpGenScaLinsys::factor(Problem *prob_in, Variables *vars)
 {
   QpGenData * prob = (QpGenData *) prob_in;
   

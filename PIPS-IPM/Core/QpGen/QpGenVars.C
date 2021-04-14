@@ -5,7 +5,7 @@
 #include "QpGenVars.h"
 #include "QpGenData.h"
 #include "OoqpVector.h"
-#include "Data.h"
+#include "Problem.h"
 #include "QpGenResiduals.h"
 #include "QpGenLinsys.h"
 #include "SimpleVector.h"
@@ -174,7 +174,7 @@ QpGenVars::QpGenVars( const QpGenVars& vars) : Variables(vars)
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
-double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Data&, double tol ) const
+double QpGenVars::getAverageDistanceToBoundForConvergedVars( const Problem&, double tol ) const
 {
    assert( 0 < tol );
 
@@ -595,7 +595,7 @@ void QpGenVars::findBlocking_pd( const Variables * step,
 
 
 
-//  void QpGenVars::start(Data *prob, Residuals * resid, LinearSystem * sys,
+//  void QpGenVars::start(Problem *prob, Residuals * resid, LinearSystem * sys,
 //  		      Variables * step )
 //  {
 //    s->setToZero();
@@ -1224,7 +1224,7 @@ void QpGenVars::printNorms() const
       std::cout << "||vars_pi||_INF = " << temp_inf << "\t||vars_pi||_2 = " << temp_2 << std::endl;
 }
 
-void QpGenVars::setNotIndicatedBoundsTo( Data& data, double value )
+void QpGenVars::setNotIndicatedBoundsTo( Problem& data, double value )
 {
    value = std::fabs(value);
    QpGenData& qpdata = dynamic_cast<QpGenData&>(data);

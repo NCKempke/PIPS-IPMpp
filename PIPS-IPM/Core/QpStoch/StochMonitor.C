@@ -21,7 +21,7 @@ StochMonitor::StochMonitor(sFactory* qp, Scaler* scaler)
 {
 }
 
-void StochMonitor::doIt( const Solver * solver, const Data * data, const Variables * vars,
+void StochMonitor::doIt( const Solver * solver, const Problem * data, const Variables * vars,
 			 const Residuals * resids,
 			 double alpha, double sigma,
 			 int i, double mu,
@@ -31,7 +31,7 @@ void StochMonitor::doIt( const Solver * solver, const Data * data, const Variabl
    StochMonitor::doItStoch(solver, data, vars, resids, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
-void StochMonitor::doItPd( const Solver * solver, const Data * data, const Variables * vars,
+void StochMonitor::doItPd( const Solver * solver, const Problem * data, const Variables * vars,
               const Residuals * resids,
               double alpha_primal, double alpha_dual, double sigma,
               int i, double mu,
@@ -42,7 +42,7 @@ void StochMonitor::doItPd( const Solver * solver, const Data * data, const Varia
 }
 
 void
-StochMonitor::doItStoch(const Solver *solver, const Data *data,
+StochMonitor::doItStoch(const Solver *solver, const Problem *data,
       const Variables *vars, const Residuals *resids, double alpha_primal,
       double alpha_dual, double, int i, double mu, int status_code,
       int level) const

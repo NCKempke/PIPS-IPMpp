@@ -14,7 +14,7 @@
 
 class LinearSystem;
 class Residuals;
-class Data;
+class Problem;
 class Solver;
 /**
  * Holds the variables used by the interior point solver. In terms of
@@ -156,7 +156,7 @@ public:
   }
 
   /** set not indicated bounds to +- value or 10 * the current max of the x variables */
-  virtual void setNotIndicatedBoundsTo( Data& /*data*/, double /*value*/ )
+  virtual void setNotIndicatedBoundsTo( Problem& /*data*/, double /*value*/ )
   {
      assert(0 && "not implemented here");
   }

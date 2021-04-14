@@ -77,7 +77,7 @@ public:
 
   virtual ~QpGenVars();
   
-  double getAverageDistanceToBoundForConvergedVars( const Data&, double tol ) const;
+  double getAverageDistanceToBoundForConvergedVars( const Problem&, double tol ) const;
 
   void pushSlacksFromBound( double tol, double amount );
 
@@ -179,7 +179,7 @@ public:
 
   void printNorms() const override;
 
-  void setNotIndicatedBoundsTo( Data& data, double value ) override;
+  void setNotIndicatedBoundsTo( Problem& data, double value ) override;
 };
 
 /** Indicates what type is the blocking variable in the step length

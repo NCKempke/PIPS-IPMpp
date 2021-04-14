@@ -10,7 +10,7 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "QpGenVars.h"
 
-Data * QpGenSparseSeq::makeData()
+Problem * QpGenSparseSeq::makeData()
 {
   return new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );
 }
@@ -43,8 +43,7 @@ QpGenSparseSeq::separateVars( OoqpVector& x_in, OoqpVector& y_in,
 }
 
 
-Data         * 
-QpGenSparseSeq::makeData( double    c_[],
+Problem* QpGenSparseSeq::makeData( double    c_[],
 			     int    krowQ[],  int  jcolQ[],  double dQ[],
 			     double  xlow_[],  char ixlow_[],
 			     double  xupp_[],  char ixupp_[],
@@ -103,8 +102,7 @@ QpGenSparseSeq::makeData( double    c_[],
   return data;
 }
 
-Data   *
-QpGenSparseSeq::
+Problem* QpGenSparseSeq::
 copyDataFromSparseTriple( double c[],
 			  int irowQ[], int lenQ,  int jcolQ[],  double dQ[],
 			  double xlow[],  char ixlow[],

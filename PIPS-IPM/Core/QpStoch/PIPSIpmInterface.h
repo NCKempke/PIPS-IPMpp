@@ -34,8 +34,7 @@
 //#define PRESOLVE_POSTSOLVE_ONLY // will not call solve routine an just presolve and then postsolve the problem - for debugging presolve and postsolve operations
 
 template<class FORMULATION, class IPMSOLVER> 
-class PIPSIpmInterface 
-{
+class PIPSIpmInterface {
  public:
   PIPSIpmInterface(StochInputTree* in, MPI_Comm = MPI_COMM_WORLD,
         ScalerType scaler_type = SCALER_NONE, PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
@@ -84,7 +83,7 @@ public:
 
   std::unique_ptr<sData> data{};       // possibly presolved data
   std::unique_ptr<sData> dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
-  std::unique_ptr<sData> origData{};   // original data
+  std::unique_ptr<sData> original_problem{};   // original data
   std::unique_ptr<sVars> vars{};
   std::unique_ptr<sVars> unscaleUnpermNotHierVars{};
   std::unique_ptr<sVars> postsolvedVars{};
@@ -131,15 +130,15 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   // presolving activated?
   if( presolver_type != PRESOLVER_NONE )
   {
-     origData.reset( dynamic_cast<sData*>(factory->makeData()) );
+     original_problem.reset(dynamic_cast<sData*>(factory->makeData()) );
 
      MPI_Barrier(comm);
      const double t0_presolve = MPI_Wtime();
 
      if( postsolve )
-        postsolver.reset( prefactory->makePostsolver( origData.get() ) );
+        postsolver.reset( prefactory->makePostsolver(original_problem.get() ) );
 
-     presolver.reset( prefactory->makePresolver(dynamic_cast<sFactory*>(factory.get())->tree, origData.get(), presolver_type, postsolver.get()) );
+     presolver.reset( prefactory->makePresolver(dynamic_cast<sFactory*>(factory.get())->tree, original_problem.get(), presolver_type, postsolver.get()) );
 
      data.reset( dynamic_cast<sData*>(presolver->presolve()) );
 
@@ -319,7 +318,7 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getObjective() {
 
   double obj;
   if(postsolvedVars != nullptr)
-    obj = origData->objectiveValue( postsolvedVars.get() );
+    obj = original_problem->objectiveValue(postsolvedVars.get() );
   else
   {
     obj = data->objectiveValue( vars.get() );
@@ -463,10 +462,10 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityCons
   StochVector* eq_vals = (postsolvedVars == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermNotHierResids->rA->cloneFull()) :
     dynamic_cast<StochVector*>(postsolvedResids->rA->cloneFull());
 
-  if( origData == nullptr || postsolvedVars == nullptr )
+  if(original_problem == nullptr || postsolvedVars == nullptr )
     eq_vals->axpy(1.0, *data->bA);
   else
-    eq_vals->axpy(1.0, *origData->bA);
+    eq_vals->axpy(1.0, *original_problem->bA);
 
   std::vector<double> eq_vals_vec = eq_vals->gatherStochVector();
 
@@ -563,7 +562,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   const bool print_residuals = pips_options::getBoolParameter("POSTSOLVE_PRINT_RESIDS");
   const int my_rank = PIPS_MPIgetRank(comm);
 
-  assert(origData);
+  assert(original_problem);
   assert(data);
 
 #if !defined(NDEBUG) && defined(PRESOLVE_POSTSOLVE_ONLY) // todo : resids for C also need recomputation.. - s variable
@@ -609,14 +608,14 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
      factory->switchToOriginalTree();
 
   dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
-  factory->data = origData.get();
+  factory->data = original_problem.get();
 
-  postsolvedVars.reset( dynamic_cast<sVars*>( factory->makeVariables( origData.get() ) ) );
+  postsolvedVars.reset( dynamic_cast<sVars*>( factory->makeVariables(original_problem.get() ) ) );
 
-  postsolvedResids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals( origData.get() ) ) );
+  postsolvedResids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals(original_problem.get() ) ) );
   postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
-  double obj_postsolved = origData->objectiveValue(postsolvedVars.get());
+  double obj_postsolved = original_problem->objectiveValue(postsolvedVars.get());
 
   MPI_Barrier(comm);
   const double t_postsolve = MPI_Wtime();
@@ -632,7 +631,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals after postsolve:" << "\n";
-     postsolvedResids->calcresids(origData.get(), postsolvedVars.get(), print_residuals);
+     postsolvedResids->calcresids(original_problem.get(), postsolvedVars.get(), print_residuals);
 
      printComplementarityResiduals(*postsolvedVars);
   }

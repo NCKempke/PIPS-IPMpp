@@ -2,8 +2,8 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#ifndef DATA_H
-#define DATA_H
+#ifndef PROBLEM_H
+#define PROBLEM_H
 
 class Variables;
 
@@ -13,10 +13,10 @@ class Variables;
  *
  * @ingroup AbstractProblemFormulation
  */
-class Data
+class Problem
 {
 public:
-  virtual ~Data() = default;
+  virtual ~Problem() = default;
   
   /** compute the norm of the problem data */
   virtual double datanorm() const = 0;

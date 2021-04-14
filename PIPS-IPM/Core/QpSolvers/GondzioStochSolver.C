@@ -11,7 +11,7 @@
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "Status.h"
-#include "Data.h"
+#include "Problem.h"
 #include "ProblemFormulation.h"
 
 #include "OoqpVector.h"
@@ -43,7 +43,7 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Data * prob, const Scaler* scaler )
+GondzioStochSolver::GondzioStochSolver( ProblemFormulation * opt, Problem * prob, const Scaler* scaler )
   : GondzioSolver(opt, prob, scaler),
     n_linesearch_points( pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
     dynamic_corrector_schedule( pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE") ),
@@ -122,7 +122,7 @@ void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Varia
    alpha_candidate = alpha_best;
 }
 
-int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid )
+int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 {
    assert( prob ); assert( iterate ); assert( resid );
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -361,7 +361,7 @@ int GondzioStochSolver::solve(Data *prob, Variables *iterate, Residuals * resid 
    return status_code;
 }
 
-void GondzioStochSolver::computePredictorStep( Data* prob, Variables* iterate, Residuals* resid )
+void GondzioStochSolver::computePredictorStep( Problem* prob, Variables* iterate, Residuals* resid )
 {
    resid->set_r3_xz_alpha(iterate, 0.0);
    sys->factor(prob, iterate);
@@ -369,7 +369,7 @@ void GondzioStochSolver::computePredictorStep( Data* prob, Variables* iterate, R
    step->negate();
 }
 
-void GondzioStochSolver::computeCorrectorStep( Data* prob, Variables* iterate, double sigma, double mu )
+void GondzioStochSolver::computeCorrectorStep( Problem* prob, Variables* iterate, double sigma, double mu )
 {
    corrector_resid->clear_r1r2();
    // form right hand side of linear system:
@@ -379,7 +379,7 @@ void GondzioStochSolver::computeCorrectorStep( Data* prob, Variables* iterate, d
    corrector_step->negate();
 }
 
-void GondzioStochSolver::computeGondzioCorrector( Data* prob, Variables* iterate, double rmin, double rmax, bool small_corr )
+void GondzioStochSolver::computeGondzioCorrector( Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr )
 {
    // place XZ into the r3 component of corrector_resids
    corrector_resid->set_r3_xz_alpha(corrector_step, 0.0);
@@ -487,7 +487,7 @@ void GondzioStochSolver::computeProbingStep(Variables* probing_step, const Varia
    probing_step->saxpy(step, alpha);
 }
 
-void GondzioStochSolver::doProbing( Data* prob, Variables* iterate, Residuals* resid, double& alpha )
+void GondzioStochSolver::doProbing( Problem* prob, Variables* iterate, Residuals* resid, double& alpha )
 {
    const double mu_last = iterate->mu();
    const double resids_norm_last = resid->residualNorm();
@@ -571,7 +571,7 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep( bool& pure_centering_s
    return false;
 }
 
-void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables& vars ) const
+void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Problem& data, Variables& vars ) const
 {
    if( push_converged_vars_from_bound && (iter % fequency_push_converged_vars_from_bound) == 0 && vars.mu() < mu_limit_push_converged_vars_from_bound )
    {
@@ -592,7 +592,7 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Data& data, Variables&
 }
 
 /* initially adapted from hopdm */ // TODO : check some more
-void GondzioStochSolver::pushSmallComplementarityProducts( const Data& prob_in, Variables& iterate_in, Residuals& /*residuals*/ ) const
+void GondzioStochSolver::pushSmallComplementarityProducts( const Problem& prob_in, Variables& iterate_in, Residuals& /*residuals*/ ) const
 {
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Pushing small complementarity products ... ";
