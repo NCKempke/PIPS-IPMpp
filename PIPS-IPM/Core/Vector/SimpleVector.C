@@ -658,7 +658,6 @@ T SimpleVectorBase<T>::dotProductWith(const OoqpVectorBase<T> &vec) const {
 template<typename T>
 T SimpleVectorBase<T>::dotProductSelf(T scaleFactor) const {
    assert(scaleFactor >= 0.0);
-#endif
 
    T dot = 0.0;
 
