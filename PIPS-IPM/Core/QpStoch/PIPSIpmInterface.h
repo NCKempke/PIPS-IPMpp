@@ -78,10 +78,10 @@ public:
   static bool isDistributed() { return true; }
 
  protected:
-  std::unique_ptr<FORMULATION> factory{};
-  std::unique_ptr<PreprocessFactory> prefactory{};
+  std::unique_ptr<FORMULATION> formulation_factory{};
+  std::unique_ptr<PreprocessFactory> preprocess_factory{};
 
-  std::unique_ptr<sData> data{};       // possibly presolved data
+  std::unique_ptr<sData> presolved_problem{};       // possibly presolved problem
   std::unique_ptr<sData> dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
   std::unique_ptr<sData> original_problem{};   // original data
   std::unique_ptr<sVars> vars{};
@@ -117,42 +117,40 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   MPI_Barrier(comm);
   const double t0 = MPI_Wtime();
 
-  factory.reset( new FORMULATION( in, comm) );
+  formulation_factory.reset(new FORMULATION(in, comm) );
 #ifdef TIMING
   if( my_rank == 0 ) printf("factory created\n");
 #endif
 
-  prefactory.reset( new PreprocessFactory() );
+  preprocess_factory.reset(new PreprocessFactory() );
 #ifdef TIMING
   if( my_rank == 0 ) printf("prefactory created\n");
 #endif
 
   // presolving activated?
-  if( presolver_type != PRESOLVER_NONE )
-  {
-     original_problem.reset(dynamic_cast<sData*>(factory->makeData()) );
+  if( presolver_type != PRESOLVER_NONE ) {
+     original_problem.reset(dynamic_cast<sData*>(formulation_factory->makeData()) );
 
      MPI_Barrier(comm);
      const double t0_presolve = MPI_Wtime();
 
      if( postsolve )
-        postsolver.reset( prefactory->makePostsolver(original_problem.get() ) );
+        postsolver.reset(preprocess_factory->makePostsolver(original_problem.get() ) );
 
-     presolver.reset( prefactory->makePresolver(dynamic_cast<sFactory*>(factory.get())->tree, original_problem.get(), presolver_type, postsolver.get()) );
+     presolver.reset(preprocess_factory->makePresolver(dynamic_cast<sFactory*>(formulation_factory.get())->tree, original_problem.get(), presolver_type, postsolver.get()) );
 
-     data.reset( dynamic_cast<sData*>(presolver->presolve()) );
+     presolved_problem.reset(dynamic_cast<sData*>(presolver->presolve()) );
 
-     factory->data = data.get(); // todo update also sTree* of factory
+     formulation_factory->data = presolved_problem.get(); // todo update also sTree* of factory
 
      MPI_Barrier(comm);
      const double t_presolve = MPI_Wtime();
      if( my_rank == 0 )
         std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << "\n";
   }
-  else
-  {
-     data.reset( dynamic_cast<sData*>(factory->makeData()) );
-     assert( data );
+  else {
+     presolved_problem.reset(dynamic_cast<sData*>(formulation_factory->makeData()) );
+     assert(presolved_problem );
   }
 
 //  data->writeToStreamDense(std::cout);
@@ -168,42 +166,40 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   if( my_rank == 0 ) printf("data created\n");
 #endif
 
-  dataUnpermNotHier.reset( data->cloneFull() );
+  dataUnpermNotHier.reset(presolved_problem->cloneFull() );
 
   // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
   if( pips_options::getBoolParameter("PARDISO_FOR_GLOBAL_SC") )
-     data->activateLinkStructureExploitation();
+     presolved_problem->activateLinkStructureExploitation();
 
   // TODO : save "old" data somewhere?
-  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-  {
+  if( pips_options::getBoolParameter( "HIERARCHICAL" ) ) {
      if( my_rank == 0 )
         std::cout << "Using hierarchical approach!\n";
 
-     data.reset( dynamic_cast<sData*>(factory->switchToHierarchicalData( data.release()) ) );
+     presolved_problem.reset(dynamic_cast<sData*>(formulation_factory->switchToHierarchicalData(presolved_problem.release()) ) );
 
      if( pips_options::getBoolParameter("HIERARCHICAL_PRINT_HIER_DATA") )
-      data->writeToStreamDense(std::cout);
+      presolved_problem->writeToStreamDense(std::cout);
   }
 
-  vars.reset( dynamic_cast<sVars*>( factory->makeVariables( data.get() ) ) );
+  vars.reset( dynamic_cast<sVars*>( formulation_factory->makeVariables(presolved_problem.get() ) ) );
 #ifdef TIMING
   if( my_rank == 0 ) printf("variables created\n");
 #endif
 
-  resids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals( data.get() ) ) );
+  resids.reset( dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(presolved_problem.get() ) ) );
 #ifdef TIMING
   if( my_rank == 0 ) printf("resids created\n");
 #endif
 
-  scaler.reset( prefactory->makeScaler(data.get(), scaler_type) );
+  scaler.reset(preprocess_factory->makeScaler(presolved_problem.get(), scaler_type) );
 
 #ifdef TIMING
   if( my_rank == 0 ) printf("scaler created\n");
 #endif
 
-  if( scaler )
-  {
+  if( scaler ) {
      MPI_Barrier(comm);
      const double t0_scaling = MPI_Wtime();
 
@@ -215,8 +211,8 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
         std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
   }
 
-  solver.reset( new IPMSOLVER( factory.get(), data.get(), scaler.get() ) );
-  solver->addMonitor(new StochMonitor( factory.get(), scaler.get() ));
+  solver.reset( new IPMSOLVER(formulation_factory.get(), presolved_problem.get(), scaler.get() ) );
+  solver->addMonitor(new StochMonitor(formulation_factory.get(), scaler.get() ));
 #ifdef TIMING
   if( my_rank == 0 ) printf("solver created\n");
   //solver->monitorSelf();
@@ -230,32 +226,26 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
 
 template<typename FORMULATION, typename IPMSOLVER>
-void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
-{
-
+void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
   if( my_rank == 0 )
      std::cout << "solving ...\n";
 
-  if( my_rank == 0 )
-  {
-
+  if( my_rank == 0 ) {
      // TODO : use unlifted data....
-     if( !pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     {
-        std::cout << "1st stage " << data->getLocalnx() << " variables, " << data->getLocalmy()
-	             << " equality constraints, " << data->getLocalmz() << " inequality constraints.\n";
+     if( !pips_options::getBoolParameter( "HIERARCHICAL" ) ) {
+        std::cout << "1st stage " << presolved_problem->getLocalnx() << " variables, " << presolved_problem->getLocalmy()
+                  << " equality constraints, " << presolved_problem->getLocalmz() << " inequality constraints.\n";
 
-        const int nscens = data->children.size();
-        if( nscens )
-        {
-           std::cout << "2nd stage " << data->children[0]->getLocalnx() << " variables, "
-                 << data->children[0]->getLocalmy() << " equality constraints, "
-                 << data->children[0]->getLocalmz() << " inequality constraints.\n";
+        const int nscens = presolved_problem->children.size();
+        if( nscens ) {
+           std::cout << "2nd stage " << presolved_problem->children[0]->getLocalnx() << " variables, "
+                     << presolved_problem->children[0]->getLocalmy() << " equality constraints, "
+                     << presolved_problem->children[0]->getLocalmz() << " inequality constraints.\n";
 
            std::cout << nscens << " scenarios." << "\n";
-           std::cout << "Total " << data->getLocalnx() + nscens * data->children[0]->getLocalnx() << " variables, "
-                 << data->getLocalmy() + nscens * data->children[0]->getLocalmy()  << " equality constraints, "
-                 << data->getLocalmz() + nscens * data->children[0]->getLocalmz() << " inequality constraints.\n";
+           std::cout << "Total " << presolved_problem->getLocalnx() + nscens * presolved_problem->children[0]->getLocalnx() << " variables, "
+                     << presolved_problem->getLocalmy() + nscens * presolved_problem->children[0]->getLocalmy() << " equality constraints, "
+                     << presolved_problem->getLocalmz() + nscens * presolved_problem->children[0]->getLocalmz() << " inequality constraints.\n";
         }
      }
   }
@@ -267,7 +257,7 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go()
   const int result = 0;
 #else
   //---------------------------------------------
-  result = solver->solve(data.get(), vars.get(), resids.get());
+  result = solver->solve(presolved_problem.get(), vars.get(), resids.get());
   //---------------------------------------------
 #endif
 
@@ -319,9 +309,8 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getObjective() {
   double obj;
   if(postsolvedVars != nullptr)
     obj = original_problem->objectiveValue(postsolvedVars.get() );
-  else
-  {
-    obj = data->objectiveValue( vars.get() );
+  else {
+    obj = presolved_problem->objectiveValue(vars.get() );
     if( scaler )
        obj = scaler->getObjUnscaled(obj);
   }
@@ -331,51 +320,45 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getObjective() {
 
 
 template<typename FORMULATION, typename SOLVER>
-double PIPSIpmInterface<FORMULATION,SOLVER>::getFirstStageObjective() const
-{
+double PIPSIpmInterface<FORMULATION,SOLVER>::getFirstStageObjective() const {
   OoqpVector& x = *(dynamic_cast<StochVector&>(*vars->x).first);
-  OoqpVector& c = *(dynamic_cast<StochVector&>(*data->g).first);
+  OoqpVector& c = *(dynamic_cast<StochVector&>(*presolved_problem->g).first);
   return c.dotProductWith(x);
 }
 
 template<class FORMULATION, class IPMSOLVER>
-void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm()
-{
+void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm() {
   assert(unscaleUnpermNotHierVars == nullptr);
   assert(dataUnpermNotHier);
 
   if(!ran_solver)
     throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted solution");
-  if( scaler )
-  {
+  if( scaler ) {
     std::unique_ptr<sVars> unscaled_vars{ dynamic_cast<sVars*>(scaler->getVariablesUnscaled(*vars)) };
-    unscaleUnpermNotHierVars.reset( data->getVarsUnperm(*unscaled_vars, *dataUnpermNotHier) );
+    unscaleUnpermNotHierVars.reset(presolved_problem->getVarsUnperm(*unscaled_vars, *dataUnpermNotHier) );
   }
   else
-    unscaleUnpermNotHierVars.reset( data->getVarsUnperm(*vars, *dataUnpermNotHier) );
+    unscaleUnpermNotHierVars.reset(presolved_problem->getVarsUnperm(*vars, *dataUnpermNotHier) );
 
 }
 
 template<class FORMULATION, class IPMSOLVER>
-void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm()
-{
+void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
   assert(unscaleUnpermNotHierResids == nullptr);
   assert(dataUnpermNotHier);
 
   if(!ran_solver)
     throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted residuals");
-  if( scaler )
-  {
+  if( scaler ) {
     std::unique_ptr<sResiduals> unscaled_resids{ dynamic_cast<sResiduals*>(scaler->getResidualsUnscaled(*resids)) };
-    unscaleUnpermNotHierResids.reset( data->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier) );
+    unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier) );
   }
   else
-    unscaleUnpermNotHierResids.reset( data->getResidsUnperm(*resids, *dataUnpermNotHier) );
+    unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*resids, *dataUnpermNotHier) );
 }
 
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution( OoqpVectorHandle sVars::* member_to_gather )
-{
+std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution( OoqpVectorHandle sVars::* member_to_gather ) {
   if( unscaleUnpermNotHierVars == nullptr)
     this->getVarsUnscaledUnperm();
 
@@ -389,12 +372,10 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution
     vec = dynamic_cast<const StochVector&>(*(postsolvedVars.get()->*member_to_gather)).gatherStochVector();
 
   return vec;
-
 }
 
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherPrimalSolution()
-{
+std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherPrimalSolution() {
   return gatherFromSolution( &sVars::x );
 }
 
@@ -463,7 +444,7 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityCons
     dynamic_cast<StochVector*>(postsolvedResids->rA->cloneFull());
 
   if(original_problem == nullptr || postsolvedVars == nullptr )
-    eq_vals->axpy(1.0, *data->bA);
+    eq_vals->axpy(1.0, *presolved_problem->bA);
   else
     eq_vals->axpy(1.0, *original_problem->bA);
 
@@ -563,7 +544,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   const int my_rank = PIPS_MPIgetRank(comm);
 
   assert(original_problem);
-  assert(data);
+  assert(presolved_problem);
 
 #if !defined(NDEBUG) && defined(PRESOLVE_POSTSOLVE_ONLY) // todo : resids for C also need recomputation.. - s variable
   /* todo: randomize all vectors x since it has not actually been set to anything */
@@ -590,7 +571,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals before postsolve:" << "\n";
-     resids->calcresids(data.get(), vars.get(), print_residuals);
+     resids->calcresids(presolved_problem.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
      MPI_Barrier(comm);
@@ -605,14 +586,14 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 
 
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     factory->switchToOriginalTree();
+     formulation_factory->switchToOriginalTree();
 
-  dynamic_cast<sTreeCallbacks*>(factory->tree)->switchToOriginalData();
-  factory->data = original_problem.get();
+  dynamic_cast<sTreeCallbacks*>(formulation_factory->tree)->switchToOriginalData();
+   formulation_factory->data = original_problem.get();
 
-  postsolvedVars.reset( dynamic_cast<sVars*>( factory->makeVariables(original_problem.get() ) ) );
+  postsolvedVars.reset( dynamic_cast<sVars*>( formulation_factory->makeVariables(original_problem.get() ) ) );
 
-  postsolvedResids.reset( dynamic_cast<sResiduals*>( factory->makeResiduals(original_problem.get() ) ) );
+  postsolvedResids.reset( dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(original_problem.get() ) ) );
   postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
   double obj_postsolved = original_problem->objectiveValue(postsolvedVars.get());
