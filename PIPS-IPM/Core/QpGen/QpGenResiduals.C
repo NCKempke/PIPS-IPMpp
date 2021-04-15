@@ -119,18 +119,18 @@ void QpGenResiduals::evaluate(Problem *problem_in, Variables *iterate_in, bool p
   print_resids = true;
 #endif
   const int myRank = PIPS_MPIgetRank();
-  QpGenVars * iterate = (QpGenVars *) iterate_in;
-  QuadraticProblem * problem = (QuadraticProblem *) problem_in;
+  QpGenVars* iterate = (QpGenVars *) iterate_in;
+  // TODO replace problem with problem_in everywhere, then remove problem
+  QuadraticProblem* problem = (QuadraticProblem *) problem_in;
 
   double norm = 0.0, gap = 0.0;
   primal_objective = 0.0;
   dual_objective = 0.0;
 
-   primal_objective = problem->objective_value(iterate);
+   primal_objective = problem_in->objective_value(iterate);
 
   /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
-  problem->getg(*rQ );
-  problem->objective_gradient(iterate, *rQ);
+  problem_in->objective_gradient(iterate, *rQ);
 
   // contribution calculate x^T (g + Qx) to duality gap */
   gap = rQ->dotProductWith(*iterate->x);
