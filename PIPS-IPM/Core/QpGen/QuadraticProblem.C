@@ -12,41 +12,8 @@
 #include "LinearAlgebraPackage.h"
 #include "MpsReader.h"
 
-
-QuadraticProblem::QuadraticProblem(LinearAlgebraPackage * la_,
-		     long long nx_, long long my_, long long mz_,
-		     long long nnzQ, long long nnzA, long long nnzC )
-   :  la{la_}, nx{nx_}, my{my_}, mz{mz_}
-{
-  assert( false && "never called" );
-
-  Q = SymMatrixHandle( la->newSymMatrix( nx,     nnzQ ) );
-  A = GenMatrixHandle( la->newGenMatrix( my, nx, nnzA ) );
-  C = GenMatrixHandle( la->newGenMatrix( mz, nx, nnzC ) );
-
-  g     = OoqpVectorHandle( la->newVector( nx ) );
-  blx   = OoqpVectorHandle( la->newVector( nx ) );
-  ixlow = OoqpVectorHandle( la->newVector( nx ) );
-  bux   = OoqpVectorHandle( la->newVector( nx ) );
-  ixupp = OoqpVectorHandle( la->newVector( nx ) );
-
-  bA    = OoqpVectorHandle( la->newVector( my ) );
-  
-  bl    = OoqpVectorHandle( la->newVector( mz ) );
-  iclow = OoqpVectorHandle( la->newVector( mz ) );
-  bu    = OoqpVectorHandle( la->newVector( mz ) );
-  icupp = OoqpVectorHandle( la->newVector( mz ) );
-  sc    = OoqpVectorHandle( la->newVector( nx  ) );
-}
-
-QuadraticProblem::QuadraticProblem( LinearAlgebraPackage * la_in,
-		      OoqpVector * c_in, SymMatrix * Q_in,
-		      OoqpVector * xlow_in, OoqpVector * ixlow_in,
-		      OoqpVector * xupp_in, OoqpVector * ixupp_in,
-		      GenMatrix  * A_in, OoqpVector * bA_in,
-		      GenMatrix  * C_in,
-		      OoqpVector * clow_in, OoqpVector * iclow_in,
-		      OoqpVector * cupp_in, OoqpVector * icupp_in ) :
+QuadraticProblem::QuadraticProblem( LinearAlgebraPackage * la_in, OoqpVector * c_in, SymMatrix * Q_in, OoqpVector * xlow_in, OoqpVector * ixlow_in,
+	 OoqpVector * xupp_in, OoqpVector * ixupp_in, GenMatrix  * A_in, OoqpVector * bA_in, GenMatrix  * C_in, OoqpVector * clow_in, OoqpVector * iclow_in, OoqpVector * cupp_in, OoqpVector * icupp_in ) :
         la{la_in},
         nxlow{ ixlow_in->numberOfNonzeros() },
         nxupp{ ixupp_in->numberOfNonzeros() },
@@ -474,7 +441,7 @@ void QuadraticProblem::getDiagonalOfQ( OoqpVector& dq )
 }
 
 void QuadraticProblem::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) {
-   this->getg( gradient );
+   this->getg(gradient);
    this->Qmult(1., gradient, 1., *vars->x);
    return;
 }

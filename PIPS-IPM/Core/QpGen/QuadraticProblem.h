@@ -32,13 +32,8 @@ private:
 
   /** as part of setting up a random test problem, generate a random
    *  set of upper, lower, and two-sided bounds */
-  void randomlyChooseBoundedVariables( OoqpVector& x, OoqpVector& dualx,
-				       OoqpVector& blx, OoqpVector& ixlow,
-				       OoqpVector& bux, OoqpVector& ixupp,
-				       double * ix,
-				       double percentLowerOnly,
-				       double percentUpperOnly,
-				       double percentBound );
+  void randomlyChooseBoundedVariables( OoqpVector& x, OoqpVector& dualx, OoqpVector& blx, OoqpVector& ixlow,
+		OoqpVector& bux, OoqpVector& ixupp, double * ix, double percentLowerOnly, double percentUpperOnly, double percentBound );
 protected:
 
   QuadraticProblem() = default;
@@ -68,21 +63,11 @@ public:
   long long mclow{0};
   long long mcupp{0};
 
-  /** constructor that makes data objects of the specified dimensions */
-  QuadraticProblem(LinearAlgebraPackage * la,
-	    long long nx_, long long my_, long long mz_,
-	    long long nnzQ, long long nnzA, long long nnzC);
-
   /** constructor that sets up pointers to the data objects that are
       passed as arguments */
-  QuadraticProblem( LinearAlgebraPackage * la,
-	     OoqpVector * c, SymMatrix * Q,
-	     OoqpVector * xlow, OoqpVector * ixlow,
-	     OoqpVector * xupp, OoqpVector * ixupp,
-	     GenMatrix * A, OoqpVector * bA,
-	     GenMatrix * C,
-	     OoqpVector * clow, OoqpVector * iclow,
-	     OoqpVector * cupp, OoqpVector * ciupp );
+  QuadraticProblem( LinearAlgebraPackage * la, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow,
+	     OoqpVector* xupp, OoqpVector* ixupp, GenMatrix* A, OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow,
+	     OoqpVector* cupp, OoqpVector* ciupp );
 
   /** insert the Hessian Q into the matrix M for the fundamental
       linear system, where M is stored as a GenMatrix */
@@ -109,24 +94,19 @@ public:
   virtual void putCIntoAt( SymMatrix& M, int row, int col );
 
   /** y = beta * y + alpha * Q * x */
-  virtual void Qmult( double beta,  OoqpVector& y,
-		      double alpha, const OoqpVector& x ) const;
+  virtual void Qmult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const;
 
   /** y = beta * y + alpha * A * x */
-  virtual void Amult( double beta,  OoqpVector& y,
-		      double alpha, const OoqpVector& x) const;
+  virtual void Amult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x) const;
 
   /** y = beta * y + alpha * C * x   */
-  virtual void Cmult( double beta,  OoqpVector& y,
-		      double alpha, const OoqpVector& x ) const;
+  virtual void Cmult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const;
 
   /** y = beta * y + alpha * A\T * x */
-  virtual void ATransmult( double beta,  OoqpVector& y,
-			   double alpha, const OoqpVector& x ) const;
+  virtual void ATransmult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const;
 
   /** y = beta * y + alpha * C\T * x */
-  virtual void CTransmult( double beta,  OoqpVector& y,
-			   double alpha, const OoqpVector& x ) const;
+  virtual void CTransmult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const;
 
   void getg(  OoqpVector& cout ) const;
   void getbA( OoqpVector& bout ) const;
@@ -168,7 +148,7 @@ public:
 			    OoqpVector & z, OoqpVector & s );
   void print() override;
 
-   virtual void objective_gradient(const QpGenVars* vars, OoqpVector& gradient);
+   virtual void objective_gradient(const QpGenVars* vars, OoqpVector& gradient) override;
    virtual double objective_value(const QpGenVars * vars ) const override;
 
   ~QuadraticProblem() override = default;
