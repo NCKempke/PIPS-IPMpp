@@ -572,13 +572,13 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals before postsolve:" << "\n";
-     resids->evaluate(presolved_problem.get(), vars.get(), print_residuals);
+     resids->evaluate(*presolved_problem.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
      MPI_Barrier(comm);
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
-     unscaleUnpermNotHierResids->evaluate(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
+     unscaleUnpermNotHierResids->evaluate(*dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
      printComplementarityResiduals(*unscaleUnpermNotHierVars);
   }
 
@@ -613,7 +613,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals after postsolve:" << "\n";
-     postsolvedResids->evaluate(original_problem.get(), postsolvedVars.get(), print_residuals);
+     postsolvedResids->evaluate(*original_problem.get(), postsolvedVars.get(), print_residuals);
 
      printComplementarityResiduals(*postsolvedVars);
   }

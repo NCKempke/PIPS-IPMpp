@@ -76,7 +76,7 @@ void QuadraticProblem::getDiagonalOfQ(OoqpVector &q_diagonal) {
    Q->fromGetDiagonal(0, q_diagonal);
 }
 
-void QuadraticProblem::objective_gradient(const QpGenVars *vars, OoqpVector &gradient) {
+void QuadraticProblem::objective_gradient(const QpGenVars *vars, OoqpVector &gradient) const {
    this->getg(gradient);
    this->Qmult(1., gradient, 1., *vars->x);
    return;

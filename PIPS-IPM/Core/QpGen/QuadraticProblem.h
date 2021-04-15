@@ -73,7 +73,7 @@ public:
 
    void print() override;
 
-   virtual void objective_gradient(const QpGenVars *vars, OoqpVector &gradient) override;
+   virtual void objective_gradient(const QpGenVars *vars, OoqpVector &gradient) const override;
 
    virtual double objective_value(const QpGenVars *vars) const override;
 

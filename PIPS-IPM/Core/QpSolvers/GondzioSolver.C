@@ -91,7 +91,7 @@ int GondzioSolver::solve(Problem& problem, Variables *iterate, Residuals * resid
     {
       iter ++;
       // evaluate residuals and update algorithm status:
-      resid->evaluate(&problem, iterate);
+      resid->evaluate(problem, iterate);
 
       //  termination test:
       status_code = this->doStatus(&problem, iterate, resid, iter, mu, 0 );
@@ -206,7 +206,7 @@ int GondzioSolver::solve(Problem& problem, Variables *iterate, Residuals * resid
 
     } while(!done);
   
-  resid->evaluate(&problem, iterate);
+  resid->evaluate(problem, iterate);
   if( gOoqpPrintLevel >= 10 ) {
     this->doMonitor(&problem, iterate, resid, alpha, sigma,
                     iter, mu, status_code, 1 );

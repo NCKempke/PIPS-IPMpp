@@ -77,7 +77,7 @@ void Solver::defaultStart( ProblemFormulation * /* formulation */,
   double b  = sdatanorm;
   iterate->interiorPoint( a, b );
 
-  resid->evaluate( prob, iterate );
+  resid->evaluate(*prob, iterate );
   resid->set_r3_xz_alpha( iterate, 0.0 );
 
   sys->factor( prob, iterate );
@@ -87,7 +87,7 @@ void Solver::defaultStart( ProblemFormulation * /* formulation */,
  
   // Take the full affine scaling step
   iterate->saxpy( step, 1.0 );
-  // resid->evaluate(prob, iterate); // Calc the resids if debugging.
+  // resid->evaluate(*prob, iterate); // Calc the resids if debugging.
   double shift = 1.e3 + 2*iterate->violation();
   iterate->shiftBoundVariables( shift, shift );
 }
@@ -105,7 +105,7 @@ void Solver::stevestart(  ProblemFormulation * /* formulation */,
   // the residuals that are obtained when all values are zero.
 
   resid->set_r3_xz_alpha( iterate, -sdatanorm );
-  resid->evaluate( prob, iterate );
+  resid->evaluate(*prob, iterate );
 
   // next, assign 1 to all the complementary variables, so that there
   // are identities in the coefficient matrix when we do the solve.

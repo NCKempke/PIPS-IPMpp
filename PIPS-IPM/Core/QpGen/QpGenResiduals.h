@@ -70,7 +70,7 @@ public:
 
   virtual ~QpGenResiduals() = default;
   
-  void evaluate(Problem* problem_in, Variables *iterate_in, bool print_resids = false) override;
+  void evaluate(Problem& problem, Variables *iterate_in, bool print_resids = false) override;
 
   void add_r3_xz_alpha(const Variables *vars, double alpha) override;
 

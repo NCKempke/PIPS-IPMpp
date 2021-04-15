@@ -172,7 +172,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
       stochFactory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
-      resid->evaluate(&problem, iterate);
+      resid->evaluate(problem, iterate);
 
       //  termination test:
       status_code = this->doStatus(&problem, iterate, resid, iter, mu, 0);
@@ -352,7 +352,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
    }
    while( !done );
 
-   resid->evaluate(&problem, iterate);
+   resid->evaluate(problem, iterate);
    if( gOoqpPrintLevel >= 10 )
    {
       this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu, status_code, 1);
@@ -494,7 +494,7 @@ void GondzioStochSolver::doProbing( Problem* prob, Variables* iterate, Residuals
 
    computeProbingStep(temp_step, iterate, step, alpha);
 
-   resid->evaluate(prob, temp_step, false);
+   resid->evaluate(*prob, temp_step, false);
    const double mu_probing = temp_step->mu();
    const double resids_norm_probing = resid->residualNorm();
 
