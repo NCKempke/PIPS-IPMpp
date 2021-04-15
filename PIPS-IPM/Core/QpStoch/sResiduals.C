@@ -99,7 +99,7 @@ sResiduals::sResiduals( const sTree* tree, OoqpVector * ixlow_, OoqpVector * ixu
   createChildren();
 }
 
-sResiduals::sResiduals( const sResiduals& res ) : QpGenResiduals( res )
+sResiduals::sResiduals( const sResiduals& res ) : Residuals( res )
 {
    for(unsigned int i = 0; i < res.children.size(); ++i)
    {

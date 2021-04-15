@@ -44,7 +44,7 @@ protected:
   Variables *corrector_step, *step;
 
   /** storage for residual vectors */
-  Residuals *corrector_resid;
+  Residuals *corrector_residuals;
 
   ProblemFormulation * factory;
 

@@ -59,11 +59,11 @@ protected:
   double bigcstab_norm_res_rel;
   int bicg_iterations;
 
-  void computePredictorStep( Problem* prob, Variables* iterate, Residuals* resid );
+  void computePredictorStep( Problem* prob, Variables* iterate, Residuals* residuals );
   void computeCorrectorStep( Problem* prob, Variables* iterate, double sigma, double mu );
   void computeGondzioCorrector( Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr );
 
-  void checkLinsysSolveNumericalTroublesAndReact(Residuals* resid, bool& numerical_troubles, bool& small_corr) const;
+  void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
 
   void registerBiCGStabOvserver(LinearSystem* sys);
 
@@ -80,19 +80,19 @@ protected:
 
   void computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step,
         double alpha) const;
-  void doProbing( Problem* prob, Variables* iterate, Residuals* resid, double& alpha );
+  void doProbing( Problem* prob, Variables* iterate, Residuals* residuals, double& alpha );
 
   bool restartIterateBecauseOfPoorStep( bool& pure_centering_step, bool precond_limit, double alpha_max) const;
 
   void pushConvergedVarsAwayFromBounds( Problem& problem, Variables& vars ) const;
-  void pushSmallComplementarityProducts( const Problem& prob, Variables& iterate, Residuals& residuals ) const;
+  void pushSmallComplementarityProducts( const Problem& problem, Variables& iterate, Residuals& residuals ) const;
 public:
 
   GondzioStochSolver( ProblemFormulation * of, Problem * prob, const Scaler* scaler = nullptr );
 
   virtual ~GondzioStochSolver();
 
-  int solve(Problem& problem, Variables *iterate, Residuals * resid ) override;
+  int solve(Problem& problem, Variables *iterate, Residuals * residuals ) override;
 
   void notifyFromSubject() override;
 };

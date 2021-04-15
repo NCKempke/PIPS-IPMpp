@@ -6,7 +6,7 @@
 #include "QuadraticProblem.h"
 #include "OoqpVector.h"
 #include "Problem.h"
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "QpGenLinsys.h"
 #include "SimpleVector.h"
 #include "MpsReader.h"

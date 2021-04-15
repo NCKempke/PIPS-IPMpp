@@ -92,21 +92,15 @@ public:
   virtual ~Solver();
 
   /** starting point heuristic */
-  virtual void start( ProblemFormulation * formulation, 
-		      Variables * iterate, Problem * prob,
-		      Residuals * resid, Variables * step);
+  virtual void start( ProblemFormulation * formulation, Variables * iterate, Problem * prob, Residuals * resid, Variables * step);
 
   /** default starting point heuristic */
-  virtual void defaultStart( ProblemFormulation * formulation,
-			     Variables * iterate, Problem * prob,
-			     Residuals * resid, Variables * step);
+  virtual void defaultStart( ProblemFormulation * formulation, Variables * iterate, Problem * prob, Residuals * resid, Variables * step);
 
   /** alternative starting point heuristic: sets the "complementary"
    * variables to a large positive value (based on the norm of the
    * problem data) and the remaining variables to zero */
-  virtual void dumbstart ( ProblemFormulation * formulation,
-			   Variables * iterate, Problem * prob,
-			   Residuals * resid, Variables * step );
+  virtual void dumbstart ( ProblemFormulation * formulation, Variables * iterate, Problem * prob, Residuals * resid, Variables * step );
 
   /** implements the interior-point method for solving the QP */
   virtual int solve(Problem& problem, Variables *iterate, Residuals * resids) = 0;
@@ -115,8 +109,7 @@ public:
   virtual double finalStepLength( Variables *iterate, Variables *step );
 
   /** Mehrotra's heuristic to calculate the final step length in primal and dual direction */
-  virtual void finalStepLength_PD( Variables *iterate, Variables *step,
-		  	  	  	  	  	  	  double& alpha_primal, double& alpha_dual );
+  virtual void finalStepLength_PD( Variables *iterate, Variables *step, double& alpha_primal, double& alpha_dual );
 
   /** perform monitor operation at each interior-point iteration */
   virtual void doMonitor( const Problem * data, const Variables * vars,

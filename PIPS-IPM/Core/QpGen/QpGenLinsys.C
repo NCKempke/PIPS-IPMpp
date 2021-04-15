@@ -5,7 +5,7 @@
 #include "QpGenLinsys.h"
 
 #include "QuadraticProblem.h"
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "QpGenVars.h"
 
 #include "OoqpVector.h"
@@ -301,7 +301,7 @@ void QpGenLinsys::solve(Problem * prob_in, Variables *vars_in,
   QuadraticProblem      * prob  = (QuadraticProblem *) prob_in;
   QpGenVars      * vars  = (QpGenVars *) vars_in;
   QpGenVars      * step  = (QpGenVars *) step_in;
-  QpGenResiduals * res   = (QpGenResiduals *) res_in;
+  Residuals * res   = (Residuals *) res_in;
 
 
   assert( vars->validNonZeroPattern() );
