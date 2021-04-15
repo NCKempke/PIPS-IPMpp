@@ -12,7 +12,7 @@
 #include "StochVector.h"
 #include "QuadraticProblem.h"
 #include "QpGenVars.h"
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "pipsdef.h"
 #include "pipsport.h"
 
@@ -55,7 +55,7 @@ Variables* QpScaler::getVariablesUnscaled(const Variables& vars) const
 
 Residuals* QpScaler::getResidualsUnscaled(const Residuals& resids) const
 {
-   QpGenResiduals* qp_resids = new QpGenResiduals(dynamic_cast<const QpGenResiduals&>(resids));
+   Residuals* qp_resids = new Residuals(dynamic_cast<const Residuals&>(resids));
    unscaleResiduals(*qp_resids);
 
    return qp_resids;
@@ -99,7 +99,7 @@ void QpScaler::unscaleResiduals( Residuals& resids ) const
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
    
-   QpGenResiduals& qp_resids = dynamic_cast<QpGenResiduals&>(resids);
+   Residuals& qp_resids = dynamic_cast<Residuals&>(resids);
 
    qp_resids.rQ->componentDiv(*vec_colscale);
    qp_resids.rA->componentDiv(*vec_rowscaleA);

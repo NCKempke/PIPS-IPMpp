@@ -1,8 +1,4 @@
-/* OOQP                                                               *
- * Authors: E. Michael Gertz, Stephen J. Wright                       *
- * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
-
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "QpGenVars.h"
 #include "Problem.h"
 #include "LinearAlgebraPackage.h"
@@ -10,40 +6,40 @@
 
 #include <iostream>
 
-QpGenResiduals::QpGenResiduals(const QpGenResiduals &res) : Residuals(res) {
-   nx = res.nx;
-   my = res.my;
-   mz = res.mz;
+Residuals::Residuals(const Residuals& residuals) {
+   nx = residuals.nx;
+   my = residuals.my;
+   mz = residuals.mz;
 
-   ixlow = OoqpVectorHandle(res.ixlow->cloneFull());
-   nxlow = res.nxlow;
+   ixlow = OoqpVectorHandle(residuals.ixlow->cloneFull());
+   nxlow = residuals.nxlow;
 
-   ixupp = OoqpVectorHandle(res.ixupp->cloneFull());
-   nxupp = res.nxupp;
+   ixupp = OoqpVectorHandle(residuals.ixupp->cloneFull());
+   nxupp = residuals.nxupp;
 
-   iclow = OoqpVectorHandle(res.iclow->cloneFull());
-   mclow = res.mclow;
+   iclow = OoqpVectorHandle(residuals.iclow->cloneFull());
+   mclow = residuals.mclow;
 
-   icupp = OoqpVectorHandle(res.icupp->cloneFull());
-   mcupp = res.mcupp;
+   icupp = OoqpVectorHandle(residuals.icupp->cloneFull());
+   mcupp = residuals.mcupp;
 
-   rQ = OoqpVectorHandle(res.rQ->cloneFull());
-   rA = OoqpVectorHandle(res.rA->cloneFull());
-   rC = OoqpVectorHandle(res.rC->cloneFull());
+   rQ = OoqpVectorHandle(residuals.rQ->cloneFull());
+   rA = OoqpVectorHandle(residuals.rA->cloneFull());
+   rC = OoqpVectorHandle(residuals.rC->cloneFull());
 
-   rz = OoqpVectorHandle(res.rz->cloneFull());
+   rz = OoqpVectorHandle(residuals.rz->cloneFull());
 
-   rt = OoqpVectorHandle(res.rt->cloneFull());
-   rlambda = OoqpVectorHandle(res.rlambda->cloneFull());
+   rt = OoqpVectorHandle(residuals.rt->cloneFull());
+   rlambda = OoqpVectorHandle(residuals.rlambda->cloneFull());
 
-   ru = OoqpVectorHandle(res.ru->cloneFull());
-   rpi = OoqpVectorHandle(res.rpi->cloneFull());
+   ru = OoqpVectorHandle(residuals.ru->cloneFull());
+   rpi = OoqpVectorHandle(residuals.rpi->cloneFull());
 
-   rv = OoqpVectorHandle(res.rv->cloneFull());
-   rgamma = OoqpVectorHandle(res.rgamma->cloneFull());
+   rv = OoqpVectorHandle(residuals.rv->cloneFull());
+   rgamma = OoqpVectorHandle(residuals.rgamma->cloneFull());
 
-   rw = OoqpVectorHandle(res.rw->cloneFull());
-   rphi = OoqpVectorHandle(res.rphi->cloneFull());
+   rw = OoqpVectorHandle(residuals.rw->cloneFull());
+   rphi = OoqpVectorHandle(residuals.rphi->cloneFull());
 }
 
 double updateNormAndPrint(double norm, const OoqpVector &vec, bool print, std::string &&name) {
@@ -59,7 +55,7 @@ double updateNormAndPrint(double norm, const OoqpVector &vec, bool print, std::s
    return std::max(norm, infnorm);
 }
 
-void QpGenResiduals::evaluate(Problem& problem, Variables *iterate_in, bool print_resids) {
+void Residuals::evaluate(Problem& problem, Variables *iterate_in, bool print_resids) {
 #ifdef TIMING
    print_resids = true;
 #endif
@@ -183,7 +179,7 @@ void QpGenResiduals::evaluate(Problem& problem, Variables *iterate_in, bool prin
    }
 }
 
-double QpGenResiduals::recomputeResidualNorm() {
+double Residuals::recomputeResidualNorm() {
    mResidualNorm = 0.0;
 
    double componentNorm = 0.0;
@@ -230,7 +226,7 @@ double QpGenResiduals::recomputeResidualNorm() {
    return mResidualNorm;
 }
 
-void QpGenResiduals::add_r3_xz_alpha(const Variables *vars_in, double alpha) {
+void Residuals::add_r3_xz_alpha(const Variables *vars_in, double alpha) {
    QpGenVars *vars = (QpGenVars *) vars_in;
 
    if (mclow > 0) rlambda->axzpy(1.0, *vars->t, *vars->lambda);
@@ -246,19 +242,19 @@ void QpGenResiduals::add_r3_xz_alpha(const Variables *vars_in, double alpha) {
    }
 }
 
-void QpGenResiduals::set_r3_xz_alpha(const Variables *vars, double alpha) {
+void Residuals::set_r3_xz_alpha(const Variables *vars, double alpha) {
    this->clear_r3();
    this->add_r3_xz_alpha(vars, alpha);
 }
 
-void QpGenResiduals::clear_r3() {
+void Residuals::clear_r3() {
    if (mclow > 0) rlambda->setToZero();
    if (mcupp > 0) rpi->setToZero();
    if (nxlow > 0) rgamma->setToZero();
    if (nxupp > 0) rphi->setToZero();
 }
 
-void QpGenResiduals::clear_r1r2() {
+void Residuals::clear_r1r2() {
    rQ->setToZero();
    rA->setToZero();
    rC->setToZero();
@@ -269,7 +265,7 @@ void QpGenResiduals::clear_r1r2() {
    if (mcupp > 0) ru->setToZero();
 }
 
-void QpGenResiduals::project_r3(double rmin, double rmax) {
+void Residuals::project_r3(double rmin, double rmax) {
    if (mclow > 0) {
       rlambda->gondzioProjection(rmin, rmax);
       rlambda->selectNonZeros(*iclow);
@@ -290,7 +286,7 @@ void QpGenResiduals::project_r3(double rmin, double rmax) {
 }
 
 
-int QpGenResiduals::validNonZeroPattern() {
+int Residuals::validNonZeroPattern() {
    if (nxlow > 0 &&
        (!rv->matchesNonZeroPattern(*ixlow) ||
         !rgamma->matchesNonZeroPattern(*ixlow))) {
@@ -317,8 +313,8 @@ int QpGenResiduals::validNonZeroPattern() {
    return 1;
 }
 
-void QpGenResiduals::copyFrom(const Residuals &other_in) {
-   const QpGenResiduals &other = dynamic_cast<const QpGenResiduals &>(other_in);
+void Residuals::copyFrom(const Residuals &other_in) {
+   const Residuals &other = dynamic_cast<const Residuals &>(other_in);
 
    mResidualNorm = other.mResidualNorm;
    mDualityGap = other.mDualityGap;
@@ -356,7 +352,7 @@ void QpGenResiduals::copyFrom(const Residuals &other_in) {
    rpi->copyFrom(*other.rpi);
 }
 
-void QpGenResiduals::writeToStream(std::ostream &out) {
+void Residuals::writeToStream(std::ostream &out) {
    /*
    printf("--------------rQ\n");
    rQ->writeToStream(out);printf("---------------------------\n");
@@ -372,32 +368,4 @@ void QpGenResiduals::writeToStream(std::ostream &out) {
    printf("rz\n");
    rz->writeToStream(out);
    printf("---------------------------\n");
-   /*
-   if ( mclow > 0 ) {
-     printf("rt\n");
-     rt->writeToStream(out);printf("---------------------------\n");
-     printf("rlambda\n");
-     rlambda->writeToStream(out);printf("---------------------------\n");
-   }
-   if ( mcupp > 0 ) {
-     printf("ru\n");
-     ru->writeToStream(out);printf("---------------------------\n");
-     printf("rpi\n");
-     rpi->writeToStream(out);printf("---------------------------\n");
-   }
-
-
-   if( nxlow > 0 ) {
-     printf("rv\n");
-     rv->writeToStream(out);printf("---------------------------\n");
-     printf("rgamma\n");
-     rgamma->writeToStream(out);printf("---------------------------\n");
-   }
-   if( nxupp > 0 ) {
-     printf("rw\n");
-     rw->writeToStream(out);printf("---------------------------\n");
-     printf("rphi\n");
-     rphi->writeToStream(out);printf("---------------------------\n");
-     }
-   */
 }

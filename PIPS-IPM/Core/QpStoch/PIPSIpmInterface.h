@@ -88,7 +88,7 @@ public:
   std::unique_ptr<sVars> unscaleUnpermNotHierVars{};
   std::unique_ptr<sVars> postsolvedVars{};
 
-  std::unique_ptr<sResiduals> resids{};
+  std::unique_ptr<sResiduals> residuals{};
   std::unique_ptr<sResiduals> unscaleUnpermNotHierResids{};
   std::unique_ptr<sResiduals> postsolvedResids{};
 
@@ -188,7 +188,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
   if( my_rank == 0 ) printf("variables created\n");
 #endif
 
-  resids.reset( dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(presolved_problem.get() ) ) );
+  residuals.reset( dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(presolved_problem.get() ) ) );
 #ifdef TIMING
   if( my_rank == 0 ) printf("resids created\n");
 #endif
@@ -258,7 +258,7 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
 #else
   //---------------------------------------------
   //result = solver->solve(presolved_problem.get(), vars.get(), resids.get());
-  result = solver->solve(*presolved_problem, vars.get(), resids.get());
+  result = solver->solve(*presolved_problem, vars.get(), residuals.get());
   //---------------------------------------------
 #endif
 
@@ -351,11 +351,11 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
   if(!ran_solver)
     throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted residuals");
   if( scaler ) {
-    std::unique_ptr<sResiduals> unscaled_resids{ dynamic_cast<sResiduals*>(scaler->getResidualsUnscaled(*resids)) };
+    std::unique_ptr<sResiduals> unscaled_resids{ dynamic_cast<sResiduals*>(scaler->getResidualsUnscaled(*residuals)) };
     unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier) );
   }
   else
-    unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*resids, *dataUnpermNotHier) );
+    unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*residuals, *dataUnpermNotHier) );
 }
 
 template<class FORMULATION, class IPMSOLVER>
@@ -572,7 +572,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals before postsolve:" << "\n";
-     resids->evaluate(*presolved_problem.get(), vars.get(), print_residuals);
+     residuals->evaluate(*presolved_problem.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
      MPI_Barrier(comm);

@@ -31,7 +31,7 @@ GondzioSolver::GondzioSolver(ProblemFormulation *of, Problem *prob, const Scaler
    factory = of;
    step = factory->makeVariables(prob);
    corrector_step = factory->makeVariables(prob);
-   corrector_resid = factory->makeResiduals(prob);
+   corrector_residuals = factory->makeResiduals(prob);
 
    maxit = 300;
    printlevel = 0; // has no meaning right now
@@ -128,8 +128,8 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
       step_length = iterate->stepbound(step);
 
       // prepare for Gondzio corrector loop: zero out the
-      // corrector_resid structure:
-      corrector_resid->clear_r1r2();
+      // corrector_residuals structure:
+      corrector_residuals->clear_r1r2();
 
       // calculate the target box:
       rmin = sigma * mu * beta_min;
@@ -153,14 +153,14 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
          // add a step of this length to corrector_step
          corrector_step->saxpy(step, alpha_target);
 
-         // place XZ into the r3 component of corrector_resids
-         corrector_resid->set_r3_xz_alpha(corrector_step, 0.0);
+         // place XZ into the r3 component of corrector_residuals
+         corrector_residuals->set_r3_xz_alpha(corrector_step, 0.0);
 
          // do the projection operation
-         corrector_resid->project_r3(rmin, rmax);
+         corrector_residuals->project_r3(rmin, rmax);
 
          // solve for corrector direction
-         linear_system->solve(&problem, iterate, corrector_resid, corrector_step);
+         linear_system->solve(&problem, iterate, corrector_residuals, corrector_step);
 
          // add the current step to corrector_step, and calculate the
          // step to boundary along the resulting direction
@@ -269,7 +269,7 @@ void GondzioSolver::defaultMonitor(const Problem * /* problem */, const Variable
 
 
 GondzioSolver::~GondzioSolver() {
-   delete corrector_resid;
+   delete corrector_residuals;
    delete corrector_step;
    delete step;
    delete linear_system;

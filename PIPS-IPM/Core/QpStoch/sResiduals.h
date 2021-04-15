@@ -1,7 +1,7 @@
 #ifndef STOCHRESIDUALS
 #define STOCHRESIDUALS
 
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "StochVector_fwd.h"
 #include "StochVector.h"
 #include <vector>
@@ -9,14 +9,14 @@
 class sTree;
 
 /** 
- * Class added to supply a more generic constructor for its parent, QpGenResiduals.
- * The default constructor of QpGenResiduals can not be always used since it assumes that vectors
+ * Class added to supply a more generic constructor for its parent, Residuals.
+ * The default constructor of Residuals can not be always used since it assumes that vectors
  * are arrays. For stochastic problems, the vectors are trees of arrays.
  *
  * @ingroup QpGen
  */
 
-class sResiduals : public QpGenResiduals {
+class sResiduals : public Residuals {
 public:
   /**
    * Constructor

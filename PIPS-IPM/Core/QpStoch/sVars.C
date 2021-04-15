@@ -2,7 +2,7 @@
 #include "QuadraticProblem.h"
 #include "OoqpVector.h"
 #include "Problem.h"
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "QpGenLinsys.h"
 #include "StochVector.h"
 #include "sTree.h"

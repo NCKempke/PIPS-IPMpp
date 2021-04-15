@@ -15,9 +15,6 @@
 #include "Problem.h"
 #include "ProblemFormulation.h"
 
-#include "OoqpVector.h"
-#include "DoubleMatrix.h"
-
 #include "sFactory.h"
 #include "StochResourcesMonitor.h"
 
@@ -37,7 +34,7 @@
 #include "StochVector.h"
 #include "mpi.h"
 #include "QpGenVars.h"
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 
 #include <fstream>
 #include <string>
@@ -193,8 +190,8 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
 
       step->saxpy_pd(corrector_step, weight_primal_candidate, weight_dual_candidate);
 
-      // prepare for Gondzio corrector loop: zero out the corrector_resid structure:
-      corrector_resid->clear_r1r2();
+      // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
+      corrector_residuals->clear_r1r2();
 
       // calculate the target box:
       const double rmin = sigma * mu * beta_min;
