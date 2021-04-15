@@ -52,7 +52,7 @@ protected:
   /** right-hand side of the system */
   OoqpVector* rhs{};
 
-  QpGenLinsys( QpGen* factory_, QuadraticProblem* prob, bool create_iter_ref_vecs );
+  QpGenLinsys( QpGen* factory_, QuadraticProblem* problem, bool create_iter_ref_vecs );
 
   /** dimensions of the vectors in the general QP formulation */
   long long nx{0};
@@ -108,8 +108,8 @@ protected:
   const bool xyzs_solve_print_residuals;
 
 public:
-  QpGenLinsys( QpGen* factory, QuadraticProblem* data );
-  QpGenLinsys( QpGen* factory_, QuadraticProblem* prob, OoqpVector* dd_, OoqpVector* dq_,
+  QpGenLinsys( QpGen* factory, QuadraticProblem* problem );
+  QpGenLinsys( QpGen* factory_, QuadraticProblem* problem, OoqpVector* dd_, OoqpVector* dq_,
         OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs );
 
   ~QpGenLinsys() override;

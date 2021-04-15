@@ -14,22 +14,21 @@
 #include "QpGenVars.h"
 #include "Residuals.h"
 #include "pipsdef.h"
-#include "pipsport.h"
 
-QpScaler::QpScaler(Problem * prob, bool bitshifting)
-: Scaler(prob, bitshifting), scaling_output{ pips_options::getBoolParameter("SCALER_OUTPUT") }
+QpScaler::QpScaler(Problem* problem, bool bitshifting)
+: Scaler(problem, bitshifting), scaling_output{pips_options::getBoolParameter("SCALER_OUTPUT") }
 {
-   QuadraticProblem* qpprob = dynamic_cast<QuadraticProblem*>(prob);
+   QuadraticProblem* qp = dynamic_cast<QuadraticProblem*>(problem);
 
-   Q = qpprob->Q;
-   A = qpprob->A;
-   C = qpprob->C;
-   obj = qpprob->g;
-   bA = qpprob->bA;
-   bux = qpprob->bux; // upper bound of x
-   blx = qpprob->blx; // lower bound of x
-   rhsC = qpprob->bu; // RHS of C
-   lhsC = qpprob->bl; // LHS of C
+   Q = qp->Q;
+   A = qp->A;
+   C = qp->C;
+   obj = qp->g;
+   bA = qp->bA;
+   bux = qp->bux; // upper bound of x
+   blx = qp->blx; // lower bound of x
+   rhsC = qp->bu; // RHS of C
+   lhsC = qp->bl; // LHS of C
 
    factor_objscale = 1.0;
 }

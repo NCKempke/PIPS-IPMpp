@@ -26,8 +26,7 @@ double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
 
-GondzioSolver::GondzioSolver(ProblemFormulation *of, Problem *prob, const Scaler *scaler) :
-      Solver(scaler) {
+GondzioSolver::GondzioSolver(ProblemFormulation *of, Problem *prob, const Scaler *scaler) : Solver(scaler) {
    factory = of;
    step = factory->makeVariables(prob);
    corrector_step = factory->makeVariables(prob);
@@ -93,7 +92,8 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
 
       //  termination test:
       status_code = this->doStatus(&problem, iterate, residuals, iteration, mu, 0);
-      if (status_code != NOT_FINISHED) break;
+      if (status_code != NOT_FINISHED)
+         break;
       if (gOoqpPrintLevel >= 10) {
          this->doMonitor(&problem, iterate, residuals, step_length, sigma, iteration, mu, status_code, 0);
       }
@@ -112,8 +112,7 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
       sigma = pow(barrier_term_affine / mu, tsig);
 
       if (gOoqpPrintLevel >= 10) {
-         this->doMonitor(&problem, iterate, residuals,
-                         step_length, sigma, iteration, mu, status_code, 2);
+         this->doMonitor(&problem, iterate, residuals, step_length, sigma, iteration, mu, status_code, 2);
       }
 
       // *** Corrector step ***
@@ -139,16 +138,15 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
       NumberGondzioCorrections = 0;
 
       // enter the Gondzio correction loop:
-      while (NumberGondzioCorrections < maximum_correctors
-             && step_length < 1.0
-             && !StopCorrections) {
+      while (NumberGondzioCorrections < maximum_correctors && step_length < 1.0 && !StopCorrections) {
 
          // copy current variables into corrector_step
          corrector_step->copy(iterate);
 
          // calculate target steplength
          alpha_target = StepFactor1 * step_length + StepFactor0;
-         if (alpha_target > 1.0) alpha_target = 1.0;
+         if (alpha_target > 1.0)
+            alpha_target = 1.0;
 
          // add a step of this length to corrector_step
          corrector_step->saxpy(step, alpha_target);
@@ -174,7 +172,8 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
             step_length = alpha_enhanced;
             NumberGondzioCorrections++;
             StopCorrections = 1;
-         } else if (alpha_enhanced >= (1.0 + AcceptTol) * step_length) {
+         }
+         else if (alpha_enhanced >= (1.0 + AcceptTol) * step_length) {
             // if enhanced step length is significantly better than the
             // current step_length, make the enhanced step official, but maybe
             // keep correcting
@@ -182,7 +181,8 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
             step_length = alpha_enhanced;
             NumberGondzioCorrections++;
             StopCorrections = 0;
-         } else {
+         }
+         else {
             // otherwise quit the correction loop
             StopCorrections = 1;
          }
@@ -206,8 +206,7 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
 
    residuals->evaluate(problem, iterate);
    if (gOoqpPrintLevel >= 10) {
-      this->doMonitor(&problem, iterate, residuals, step_length, sigma,
-            iteration, mu, status_code, 1);
+      this->doMonitor(&problem, iterate, residuals, step_length, sigma, iteration, mu, status_code, 1);
    }
 
    // print the results, if you really want to..
@@ -217,12 +216,9 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
 }
 
 
-void GondzioSolver::defaultMonitor(const Problem * /* problem */, const Variables * /* vars */,
-                                   const Residuals *resids,
-                                   double alpha, double sigma,
-                                   int i, double mu,
-                                   int status_code,
-                                   int level) const {
+void
+GondzioSolver::defaultMonitor(const Problem * /* problem */, const Variables * /* vars */, const Residuals *resids, double alpha, double sigma, int i,
+      double mu, int status_code, int level) const {
    switch (level) {
       case 0 :
       case 1: {
@@ -240,12 +236,10 @@ void GondzioSolver::defaultMonitor(const Problem * /* problem */, const Variable
          std::cout << std::endl << "Duality Gap: " << gap << std::endl;
 
          if (i > 1) {
-            std::cout << " Number of Corrections = " << NumberGondzioCorrections
-                      << " alpha = " << alpha << std::endl;
+            std::cout << " Number of Corrections = " << NumberGondzioCorrections << " alpha = " << alpha << std::endl;
          }
          std::cout << " *** Iteration " << i << " *** " << std::endl;
-         std::cout << " mu = " << mu << " relative residual norm = "
-                   << rnorm / dnorm_orig << std::endl;
+         std::cout << " mu = " << mu << " relative residual norm = " << rnorm / dnorm_orig << std::endl;
 
          if (level == 1) {
             // Termination has been detected by the status check; print
