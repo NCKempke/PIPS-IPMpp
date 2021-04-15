@@ -521,13 +521,13 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool &pure_centering_st
    return false;
 }
 
-void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem &data, Variables &vars) const {
+void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem &problem, Variables &vars) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
        vars.mu() < mu_limit_push_converged_vars_from_bound) {
       QpGenVars &qpvars = dynamic_cast<QpGenVars &>(vars);
 
       const double convergence_tol = 1e-8;
-      const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars(data, convergence_tol);
+      const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
 
       if (average_dist < 1e-8) {
          if (PIPS_MPIgetRank() == 0)

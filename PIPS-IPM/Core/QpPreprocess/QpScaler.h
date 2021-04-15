@@ -77,7 +77,7 @@ protected:
   void setScalingVecsToOne();
 public:
 
-  QpScaler(Problem* prob, bool bitshifting = false);
+  QpScaler(Problem* problem, bool bitshifting = false);
   ~QpScaler() override = default;
 
   /** scale */
