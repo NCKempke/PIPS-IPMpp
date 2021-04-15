@@ -208,7 +208,7 @@ protected:
   // number of sparse 2-link rows
   static int n2linksRows(const std::vector<int>& linkStartBlockLengths);
 
-  static std::vector<int> get2LinkLengthsVec(const std::vector<int>& linkStartBlocks, const size_t nBlocks);
+  static std::vector<int> get2LinkLengthsVec(const std::vector<int>& linkStartBlocks, size_t nBlocks);
 
   /* a two link must be in two blocks directly after one another */
   const bool is_hierarchy_root{false};

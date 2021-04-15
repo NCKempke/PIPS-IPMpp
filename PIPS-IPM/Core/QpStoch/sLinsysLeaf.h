@@ -48,7 +48,7 @@ class sLinsysLeaf : public sLinsys
   //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
   void deleteChildren() override;
 
-  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC ) override;
+  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int ) override;
 
   void addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
 
@@ -59,9 +59,6 @@ class sLinsysLeaf : public sLinsys
  protected:
 
   static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
-
-  template<class LINSOLVER>
-  void initBlockedSolvers();
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;

@@ -473,7 +473,12 @@ template<typename T>
 double StochVectorBase<T>::twonorm() const
 {
   const T scale = this->infnorm();
-  assert(scale >= 0.0);
+#ifndef NDEBUG
+  if( ! (scale > 0.0) ){
+     std::cout << "ERROR : infnorm smaller 0 .. : " << scale << std::endl;
+  }
+   assert(scale >= 0.0);
+#endif
 
   if( PIPSisZero(scale) )
      return 0.0;
@@ -1546,6 +1551,13 @@ T StochVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& v_ ) const
 template<typename T>
 T StochVectorBase<T>::dotProductSelf(T scaleFactor) const
 {
+#ifndef NDEBUG
+   if( scaleFactor < 0.0 ){
+      std::cout << "ERROR : infnorm smaller 0 .. : " << scaleFactor << std::endl;
+   }
+   assert(scaleFactor >= 0.0);
+#endif
+
    T dot_product = 0.0;
 
    for( size_t it = 0; it < children.size(); it++ )

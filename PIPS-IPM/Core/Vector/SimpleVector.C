@@ -707,7 +707,12 @@ T SimpleVectorBase<T>::dotProductWith( const OoqpVectorBase<T>& vec ) const
 template<typename T>
 T SimpleVectorBase<T>::dotProductSelf( T scaleFactor ) const
 {
+#ifndef NDEBUG
+   if( scaleFactor < 0.0 ){
+      std::cout << "ERROR : infnorm smaller 0 .. : " << scaleFactor << std::endl;
+   }
    assert(scaleFactor >= 0.0);
+#endif
 
    T dot = 0.0;
 

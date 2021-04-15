@@ -260,11 +260,10 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, 
    addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols );
 }
 
-void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
+void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int n_empty_rows_inner_border )
 {
    assert( data == prob );
 
-   int mSC = SC.size();
    int mG, nG, mF, nF;
    data->getLocalFBorder().getSize(mF, nF);
    data->getLocalGBorder().getSize(mG, nG);
@@ -272,10 +271,9 @@ void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool spars
    assert( nF == nG );
    assert( dynamic_cast<StochGenMatrix&>(*data->A).Blmat->isKindOf(kStringGenMatrix) );
    assert( dynamic_cast<StochGenMatrix&>(*data->C).Blmat->isKindOf(kStringGenMatrix) );
-   assert( 0 <= mSC - mG - mF );
 
-   BorderLinsys Bl( mSC - mG - mF, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
-   BorderLinsys Br( mSC - mG - mF, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Bl( n_empty_rows_inner_border, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
+   BorderLinsys Br( n_empty_rows_inner_border, prob->getLocalFBorder(), prob->getLocalGBorder(), use_local_RAC );
    if( Bl.isEmpty() )
       return;
 

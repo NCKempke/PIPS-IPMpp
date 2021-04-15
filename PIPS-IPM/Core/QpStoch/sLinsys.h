@@ -220,7 +220,8 @@ class sLinsys : public QpGenLinsys
    */
   virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
 
-  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/ ) { assert( 0 && "not implemented here" ); };
+  virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/,
+    bool /*use_local_RAC*/, int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
   virtual void computeInnerSystemRightHandSide( StochVector& /*rhs_inner*/, const SimpleVector& /*b0*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here" ); };
 

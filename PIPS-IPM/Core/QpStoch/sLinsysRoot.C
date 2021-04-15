@@ -1636,8 +1636,10 @@ void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool use_l
 {
    assert(childindex < prob->children.size());
 
-   if( computeBlockwiseSC )
-      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC );
+   if( computeBlockwiseSC ) {
+      const int n_empty_rows_border = use_local_RAC ? locmy : locnx + locmy;
+      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC, n_empty_rows_border );
+   }
    else
    {
 	   if( hasSparseKkt )

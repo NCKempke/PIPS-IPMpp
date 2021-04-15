@@ -174,7 +174,7 @@ void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_
   }
 }
 
-void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
+void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int )
 {
    assert( prob == data );
 
@@ -283,7 +283,9 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes( DoubleMatrix& result, BorderBiBlock
    if( sc_compute_blockwise_hierarchical )
       assert( end_cols_br <= nx_border + Br.n_empty_rows + myl_border + mzl_border );
    else
+   {
       assert( end_cols_br == nx_border + Br.n_empty_rows + myl_border + mzl_border && begin_cols_br == 0 );
+   }
 #endif
 
    if( Bl.isEmpty() )
