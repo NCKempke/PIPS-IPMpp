@@ -13,7 +13,7 @@ Utilities/drand.C Utilities/sort.C Utilities/pipschecks.C QpGen/QpGenOptions.C Q
 )
 
 add_library(ooqpgensparse STATIC
-  QpGen/QpGenVars.C QpGen/QpGenData.C QpGen/QpGenResiduals.C QpGen/QpGen.C QpGen/QpGenLinsys.C #QpGen
+  QpGen/QpGenVars.C QpGen/QuadraticProblem.C QpGen/QpGenResiduals.C QpGen/QpGen.C QpGen/QpGenLinsys.C #QpGen
   QpGen/QpGenSparseSeq.C QpGen/QpGenSparseLinsys.C #QpGenSparse
   Readers/MpsReader.C Readers/hash.C #Readers
   LinearSolvers/Preconditioners/SCsparsifier.C

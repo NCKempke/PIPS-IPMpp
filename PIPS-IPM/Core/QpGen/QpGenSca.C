@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGenSca.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenScaLinsys.h"
 #include "SimpleVector.h"
 #include "SparseGenMatrix.h"
@@ -29,7 +29,7 @@ QpGenSca::QpGenSca(int nx_, int my_, int mz_,
 
 Problem * QpGenSca::makeData()
 {
-  return new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );
+  return new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );
 }
 
 void QpGenSca::joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
@@ -107,8 +107,8 @@ QpGenSca::makeData( double    c_[],
   SimpleVectorHandle icupp( new SimpleVector( mz ) );
   icupp->copyFromArray( icupp_ );
 
-  QpGenData * 
-    data = new QpGenData( SparseLinearAlgebraPackage::soleInstance(),
+  QuadraticProblem * 
+    data = new QuadraticProblem( SparseLinearAlgebraPackage::soleInstance(),
 			  c, Q, xlow, ixlow, xupp, ixupp,
 			  A, b,
 			  C, clow, iclow, cupp, icupp );
@@ -118,7 +118,7 @@ QpGenSca::makeData( double    c_[],
 
 LinearSystem  *QpGenSca::makeLinsys( Problem * prob_in )
 {
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
 
   int n = nx + my + mz;
   ScaDenSymMatrixHandle Mat((ScaDenSymMatrix*)sca_la->newSymMatrix(n,0));
@@ -142,8 +142,8 @@ copyDataFromSparseTriple( double c[],
 			  double clow[], char iclow[],
 			  double cupp[], char icupp[] )
 {
-  QpGenData * prob =
-    (QpGenData *) new QpGenData( la, nx, my, mz, nnzQ, nnzA, nnzC );  
+  QuadraticProblem * prob =
+    (QuadraticProblem *) new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );  
   int info;
 
   assert( lenQ <= nnzQ );

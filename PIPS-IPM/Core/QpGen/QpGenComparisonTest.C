@@ -283,7 +283,7 @@ int solveQPSparse(int levels, int printx)
   for(int i=0;i<nx; i++)c[i]=1.0;
   
   QpGenSparseMa57 * qp = new QpGenSparseMa57( nx, my, mz, nnzQ, nnzA, nnzC );
-  QpGenData * prob = (QpGenData * ) qp->makeData(c, 
+  QuadraticProblem * prob = (QuadraticProblem * ) qp->makeData(c, 
 						 krowQ, jcolQ, dQ,
 						 xlow, ixlow,
 						 xupp, ixupp,

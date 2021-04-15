@@ -257,7 +257,8 @@ void PIPSIpmInterface<FORMULATION,IPMSOLVER>::go() {
   const int result = 0;
 #else
   //---------------------------------------------
-  result = solver->solve(presolved_problem.get(), vars.get(), resids.get());
+  //result = solver->solve(presolved_problem.get(), vars.get(), resids.get());
+  result = solver->solve(*presolved_problem, vars.get(), resids.get());
   //---------------------------------------------
 #endif
 
@@ -549,7 +550,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
 #if !defined(NDEBUG) && defined(PRESOLVE_POSTSOLVE_ONLY) // todo : resids for C also need recomputation.. - s variable
   /* todo: randomize all vectors x since it has not actually been set to anything */
   vars->x->setToConstant(0.1);
-  resids->calcresids(data, vars);
+  resids->evaluate(data, vars);
 #endif
 
   if( unscaleUnpermNotHierVars == nullptr)
@@ -571,13 +572,13 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals before postsolve:" << "\n";
-     resids->calcresids(presolved_problem.get(), vars.get(), print_residuals);
+     resids->evaluate(presolved_problem.get(), vars.get(), print_residuals);
      printComplementarityResiduals(*vars);
 
      MPI_Barrier(comm);
      if( my_rank == 0 )
         std::cout << "Residuals after unscaling/permuting:" << "\n";
-     unscaleUnpermNotHierResids->calcresids(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
+     unscaleUnpermNotHierResids->evaluate(dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
      printComplementarityResiduals(*unscaleUnpermNotHierVars);
   }
 
@@ -612,7 +613,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   {
      if( my_rank == 0 )
         std::cout << "\n" << "Residuals after postsolve:" << "\n";
-     postsolvedResids->calcresids(original_problem.get(), postsolvedVars.get(), print_residuals);
+     postsolvedResids->evaluate(original_problem.get(), postsolvedVars.get(), print_residuals);
 
      printComplementarityResiduals(*postsolvedVars);
   }

@@ -7,7 +7,7 @@
 
 #include "QpGen.h"
 #include "OoqpVectorHandle.h"
-class QpGenData;
+class QuadraticProblem;
 class QpGenVars;
 
 class QpGenDense : public QpGen {
@@ -20,15 +20,15 @@ public:
   QpGenDense( int nx_, int my_, int mz_,
 	      int nnzQ, int nnzA, int nnzC);
   virtual LinearSystem  * makeLinsys( Problem * prob_in );
-  virtual QpGenData     * makeData( double    c[],  double   Q[],
+  virtual QuadraticProblem     * makeData( double    c[],  double   Q[],
 				    double xlow[],  char ixlow[], 
 				    double xupp[],  char ixupp[],
 				    double    A[],  double  bA[],
 				    double    C[],  
 				    double clow[],  char iclow[],
 				    double cupp[],  char icupp[] );
-  virtual QpGenData     * makeData();
-  void makeRandomData(QpGenData *& data, QpGenVars *& soln);
+  virtual QuadraticProblem     * makeData();
+  void makeRandomData(QuadraticProblem *& data, QpGenVars *& soln);
 
   virtual void joinRHS( OoqpVector& rhs_in,  OoqpVector& rhs1_in,
 			OoqpVector& rhs2_in, OoqpVector& rhs3_in );

@@ -19,7 +19,7 @@ using namespace std;
 #include "QpGenResiduals.h"
 #include "SimpleVector.h"
 #include "Status.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "OoqpVersion.h"
 
 /*
@@ -60,7 +60,7 @@ int qpgenstoch_solve( StochInputTree* tree,
     
     //QpGenStoch* qp = new QpGenStochAugExt( tree );
     FORMULATION* qp = new FORMULATION(tree);
-    QpGenData* prob = (QpGenData * ) qp->makeData();
+    QuadraticProblem* prob = (QuadraticProblem * ) qp->makeData();
 
 
 #ifdef HAVE_GETRUSAGE

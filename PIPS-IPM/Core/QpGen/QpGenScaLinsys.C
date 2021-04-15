@@ -3,14 +3,14 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGenScaLinsys.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "ScaDenSymMatrix.h"
 #include "QpGenSca.h"
 #include "ScaGenIndefSolver.h"
 #include "LinearAlgebraPackage.h"
 
 QpGenScaLinsys::QpGenScaLinsys( QpGen * qpgen,
-			      QpGenData * data,
+			      QuadraticProblem * data,
 			      LinearAlgebraPackage * la, ScaDenSymMatrix * Mat,
 			      ScaGenIndefSolver * solver_in ) :
   QpGenLinsys( qpgen, data, la ), solver(solver_in)
@@ -24,7 +24,7 @@ QpGenScaLinsys::QpGenScaLinsys( QpGen * qpgen,
 
 void QpGenScaLinsys::factor(Problem *prob_in, Variables *vars)
 {
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
   
 
   kkt->scalarMult(0.);

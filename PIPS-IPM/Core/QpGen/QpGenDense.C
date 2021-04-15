@@ -10,7 +10,7 @@
 #include "SimpleVector.h"
 #include "SimpleVectorHandle.h"
 #include "DeSymIndefSolver.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenVars.h"
 #include "QpGenDenseLinsys.h"
 
@@ -29,7 +29,7 @@ QpGenDense::QpGenDense( int nx_, int my_, int mz_,
 
 LinearSystem  * QpGenDense::makeLinsys( Problem * prob_in )
 {
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
 
   int n = nx + my + mz;
   DenseSymMatrixHandle Mat( new DenseSymMatrix(n) );
@@ -39,7 +39,7 @@ LinearSystem  * QpGenDense::makeLinsys( Problem * prob_in )
   return new QpGenDenseLinsys( this, prob, la, Mat, solver );
 }
 
-QpGenData * QpGenDense::makeData( double    c[],  double   Q[],
+QuadraticProblem * QpGenDense::makeData( double    c[],  double   Q[],
 				  double xlow[],  char ixlow[], 
 				  double xupp[],  char ixupp[],
 				  double    A[],  double  bA[],
@@ -73,14 +73,14 @@ QpGenData * QpGenDense::makeData( double    c[],  double   Q[],
     (*vicupp)[i] = (icupp[i] == 0) ? 0.0 : 1.0;
   }
 
-  return new QpGenData( la, vc, mQ, vxlow, vixlow, vxupp, vixupp,
+  return new QuadraticProblem( la, vc, mQ, vxlow, vixlow, vxupp, vixupp,
 			mA, vbA,
 			mC, vclow, viclow, vcupp, vicupp );
 }
 
-QpGenData *  QpGenDense::makeData()
+QuadraticProblem *  QpGenDense::makeData()
 {
-  return new QpGenData( la, nx, my, mz, nx * nx, my * nx, mz * nx );
+  return new QuadraticProblem( la, nx, my, mz, nx * nx, my * nx, mz * nx );
 }
 
 
@@ -112,10 +112,10 @@ QpGenDense::separateVars( OoqpVector& x_in, OoqpVector& y_in,
   if ( mz > 0 ) memcpy( &z[0], &vars[nx + my], mz * sizeof( double ) );
 }
 
-void QpGenDense::makeRandomData( QpGenData *& data, QpGenVars *& soln )
+void QpGenDense::makeRandomData( QuadraticProblem *& data, QpGenVars *& soln )
 {
   data =
-    new QpGenData( la, nx, my, mz, nx * nx, nx * my, nx * mz );
+    new QuadraticProblem( la, nx, my, mz, nx * nx, nx * my, nx * mz );
 
   OoqpVectorHandle x( la->newVector( nx ) );
   OoqpVectorHandle y( la->newVector( my ) );

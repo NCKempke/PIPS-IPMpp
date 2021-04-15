@@ -24,7 +24,7 @@ class QpGenDataTester;
  * @ingroup QpGen
  */
 
-class QpGenData : public Problem {
+class QuadraticProblem : public Problem {
 #ifdef TESTING
   friend QpGenDataTester;
 #endif
@@ -41,7 +41,7 @@ private:
 				       double percentBound );
 protected:
 
-  QpGenData() = default;
+  QuadraticProblem() = default;
   LinearAlgebraPackage * la{};
 public:
   SymMatrixHandle Q;
@@ -69,13 +69,13 @@ public:
   long long mcupp{0};
 
   /** constructor that makes data objects of the specified dimensions */
-  QpGenData(LinearAlgebraPackage * la,
+  QuadraticProblem(LinearAlgebraPackage * la,
 	    long long nx_, long long my_, long long mz_,
 	    long long nnzQ, long long nnzA, long long nnzC);
 
   /** constructor that sets up pointers to the data objects that are
       passed as arguments */
-  QpGenData( LinearAlgebraPackage * la,
+  QuadraticProblem( LinearAlgebraPackage * la,
 	     OoqpVector * c, SymMatrix * Q,
 	     OoqpVector * xlow, OoqpVector * ixlow,
 	     OoqpVector * xupp, OoqpVector * ixupp,
@@ -170,7 +170,7 @@ public:
 
   virtual double objectiveValue( const QpGenVars * vars ) const;
 
-  ~QpGenData() override = default;
+  ~QuadraticProblem() override = default;
 };
 
 #endif

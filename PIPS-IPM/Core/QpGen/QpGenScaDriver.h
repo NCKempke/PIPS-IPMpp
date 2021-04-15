@@ -23,7 +23,7 @@ using namespace std;
 #include "MpsReader.h"
 #include "SimpleVector.h"
 #include "Status.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "OoqpVersion.h"
 #include "scalapack.h"
 
@@ -124,7 +124,7 @@ int qpgensca_solve( int argc, char * argv[],
     
     FORMULATION * qp 
       = new FORMULATION( n1, m1, m2, nnzQ, nnzA, nnzC, cinfo );
-    QpGenData * prob = (QpGenData * ) qp->makeData();
+    QuadraticProblem * prob = (QuadraticProblem * ) qp->makeData();
  
     /* Set the scaling option */
     if( scale == 1)

@@ -1,7 +1,7 @@
 #ifndef DATAQPSTOCH
 #define DATAQPSTOCH
 
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "sResiduals.h"
 #include "sVars.h"
 #include "StochSymMatrix.h"
@@ -21,7 +21,7 @@
 class sTree;
 class LinearAlgebraPackage;
 
-class sData : public QpGenData {
+class sData : public QuadraticProblem {
    protected:
       sData() = default;
    public:

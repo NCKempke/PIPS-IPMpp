@@ -6,7 +6,7 @@
 #define SPSEQQPGENFACTORY
 
 #include "QpGen.h"
-class QpGenData;
+class QuadraticProblem;
 class QpGenVars;
 
 class QpGenSparseSeq : public QpGen {
@@ -32,7 +32,7 @@ public:
 			 double  clow[],  char iclow[],
 			 double  cupp[],  char icupp[] );
 
-  void makeRandomData( QpGenData *& prob, QpGenVars *& soln );
+  void makeRandomData( QuadraticProblem *& prob, QpGenVars *& soln );
 
   Problem* copyDataFromSparseTriple( double c[],
 			    int irowQ[], int nnzQ,  int jcolQ[],  double dQ[],

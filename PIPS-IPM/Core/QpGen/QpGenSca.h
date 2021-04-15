@@ -7,7 +7,7 @@
 
 #include "QpGen.h"
 #include "scalapack.h"
-class QpGenData;
+class QuadraticProblem;
 class QpGenVars;
 
 class QpGenSca : public QpGen {

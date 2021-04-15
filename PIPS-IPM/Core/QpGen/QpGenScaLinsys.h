@@ -7,7 +7,7 @@
 
 #include "QpGenLinsys.h"
 
-class QpGenData;
+class QuadraticProblem;
 #include "ScaGenIndefSolver.h"
 #include "ScaDenSymMatrixHandle.h"
 #include "OoqpVectorHandle.h"
@@ -20,7 +20,7 @@ protected:
   ScaGenIndefSolver * solver;
 public:
   QpGenScaLinsys( QpGen * factory,
-		 QpGenData * data,
+		 QuadraticProblem * data,
 		 LinearAlgebraPackage * la, ScaDenSymMatrix * Mat,
 		 ScaGenIndefSolver * solver );
 

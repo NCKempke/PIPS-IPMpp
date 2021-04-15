@@ -7,7 +7,7 @@
  */
 #include "QpGenSparseSuperLu.h"
 #include "QpGenSparseLinsys.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 
 #include "SparseLinearAlgebraPackage.h"
 #include "SparseGenMatrix.h"
@@ -24,7 +24,7 @@ SuperLUQpGen::SuperLUQpGen( int nx, int my, int mz,
 
 LinearSystem * SuperLUQpGen::makeLinsys( Problem * prob_in )
 {
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
   int n = nx + my + mz;
 
   SparseGenMatrix *Mat= new SparseGenMatrix( n, n, n + 2*nnzQ + 2 * nnzA + 2 * nnzC );

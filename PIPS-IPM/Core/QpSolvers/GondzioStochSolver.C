@@ -122,9 +122,9 @@ void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Varia
    alpha_candidate = alpha_best;
 }
 
-int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
+int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * resid )
 {
-   assert( prob ); assert( iterate ); assert( resid );
+   assert( iterate ); assert( resid );
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    int done;
@@ -139,17 +139,17 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
    bool numerical_troubles = false;
    bool precond_decreased = true;
 
-   setDnorm(*prob);
+   setDnorm(problem);
 
    // initialization of (x,y,z) and factorization routine.
-   sys = factory->makeLinsys(prob);
+   sys = factory->makeLinsys(&problem);
 
    // register as observer for the BiCGStab solves
    registerBiCGStabOvserver(sys);
    setBiCGStabTol(-1);
 
    stochFactory->iterateStarted();
-   this->start(factory, iterate, prob, resid, step);
+   this->start(factory, iterate, &problem, resid, step);
    stochFactory->iterateEnded();
 
    iter = 0;
@@ -162,9 +162,9 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
       iter++;
 
       if( false )
-         iterate->setNotIndicatedBoundsTo( *prob, 1e15 );
-      // pushConvergedVarsAwayFromBounds(*prob, *iterate);
-      // pushSmallComplementarityProducts( *prob, *iterate, *resid );
+         iterate->setNotIndicatedBoundsTo(problem, 1e15 );
+      // pushConvergedVarsAwayFromBounds(*problem, *iterate);
+      // pushSmallComplementarityProducts( *problem, *iterate, *resid );
 
       setBiCGStabTol(iter);
       bool small_corr = false;
@@ -172,24 +172,24 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
       stochFactory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
-      resid->calcresids(prob, iterate);
+      resid->evaluate(&problem, iterate);
 
       //  termination test:
-      status_code = this->doStatus(prob, iterate, resid, iter, mu, 0);
+      status_code = this->doStatus(&problem, iterate, resid, iter, mu, 0);
 
       if( status_code != NOT_FINISHED )
          break;
 
       if( gOoqpPrintLevel >= 10 )
       {
-         this->doMonitor(prob, iterate, resid, alpha, sigma, iter, mu,
-               status_code, 0);
+         this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu,
+                         status_code, 0);
       }
 
       // *** Predictor step ***
       if( !pure_centering_step )
       {
-         computePredictorStep( prob, iterate, resid );
+         computePredictorStep(&problem, iterate, resid );
          checkLinsysSolveNumericalTroublesAndReact( resid, numerical_troubles, small_corr );
       }
       else
@@ -205,13 +205,13 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
 
       if( gOoqpPrintLevel >= 10 )
       {
-         this->doMonitor(prob, iterate, resid, alpha, sigma, iter, mu,
-               status_code, 2);
+         this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu,
+                         status_code, 2);
       }
 
       g_iterNumber += 1.0;
 
-      computeCorrectorStep( prob, iterate, sigma, mu );
+      computeCorrectorStep(&problem, iterate, sigma, mu );
       checkLinsysSolveNumericalTroublesAndReact( resid, numerical_troubles, small_corr );
 
       // calculate weighted predictor-corrector step
@@ -256,7 +256,7 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
          // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
          /* compute corrector step */
-         computeGondzioCorrector(prob, iterate, rmin, rmax, small_corr);
+         computeGondzioCorrector(&problem, iterate, rmin, rmax, small_corr);
          const bool was_small_corr = small_corr;
          checkLinsysSolveNumericalTroublesAndReact(resid, numerical_troubles, small_corr);
 
@@ -336,7 +336,7 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
       {
          if( precond_decreased )
             precond_decreased = decreasePreconditionerImpact(sys);
-         doProbing(prob, iterate, resid, alpha);
+         doProbing(&problem, iterate, resid, alpha);
          if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_decreased, alpha ) )
             continue;
       }
@@ -352,10 +352,10 @@ int GondzioStochSolver::solve(Problem *prob, Variables *iterate, Residuals * res
    }
    while( !done );
 
-   resid->calcresids(prob, iterate);
+   resid->evaluate(&problem, iterate);
    if( gOoqpPrintLevel >= 10 )
    {
-      this->doMonitor(prob, iterate, resid, alpha, sigma, iter, mu, status_code, 1);
+      this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu, status_code, 1);
    }
 
    return status_code;
@@ -494,7 +494,7 @@ void GondzioStochSolver::doProbing( Problem* prob, Variables* iterate, Residuals
 
    computeProbingStep(temp_step, iterate, step, alpha);
 
-   resid->calcresids(prob, temp_step, false);
+   resid->evaluate(prob, temp_step, false);
    const double mu_probing = temp_step->mu();
    const double resids_norm_probing = resid->residualNorm();
 
@@ -597,7 +597,7 @@ void GondzioStochSolver::pushSmallComplementarityProducts( const Problem& prob_i
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "Pushing small complementarity products ... ";
    QpGenVars& iterate = dynamic_cast<QpGenVars&>(iterate_in);
-   const QpGenData& prob = dynamic_cast<const QpGenData&>(prob_in);
+   const QuadraticProblem& prob = dynamic_cast<const QuadraticProblem&>(prob_in);
 
    const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / prob.nx );
 

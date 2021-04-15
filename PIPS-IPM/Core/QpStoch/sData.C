@@ -1208,7 +1208,7 @@ sData::sData(const sTree* tree_, OoqpVector * c_in, SymMatrix * Q_in,
         bool add_children, bool is_hierarchy_root, bool is_hierarchy_inner_root,
         bool is_hierarchy_inner_leaf
         )
-  : QpGenData(SparseLinearAlgebraPackage::soleInstance(),
+  : QuadraticProblem(SparseLinearAlgebraPackage::soleInstance(),
          c_in, Q_in, xlow_in, ixlow_in, xupp_in, ixupp_in,
          A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in),
          stochNode{ tree_ },

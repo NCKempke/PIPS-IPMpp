@@ -3,7 +3,7 @@
 
 #include "Residuals.h"
 #include "Solver.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenVars.h"
 #include "sTree.h"
 #include <iostream>
@@ -47,7 +47,7 @@ StochMonitor::doItStoch(const Solver *solver, const Problem *data,
       double alpha_dual, double, int i, double mu, int status_code,
       int level) const
 {
-   double objective = dynamic_cast<const QpGenData*>(data)->objectiveValue(
+   double objective = dynamic_cast<const QuadraticProblem*>(data)->objectiveValue(
          dynamic_cast<const QpGenVars*>(vars));
 
    const Residuals *resids_unscaled = resids;

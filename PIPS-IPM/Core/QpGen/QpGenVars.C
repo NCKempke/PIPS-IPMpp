@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGenVars.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "OoqpVector.h"
 #include "Problem.h"
 #include "QpGenResiduals.h"
@@ -1048,7 +1048,7 @@ int QpGenVars::validNonZeroPattern()
   return 1;
 }
 
-void QpGenVars::unscaleSolution(QpGenData * data)
+void QpGenVars::unscaleSolution(QuadraticProblem * data)
 {
 
 // Modifying sx is equivalent to modifying x
@@ -1058,7 +1058,7 @@ SimpleVector & sx = (SimpleVector &) *this->x;
 sx.componentMult(data->scale());
 }
 
-void QpGenVars::unscaleBounds(QpGenData * data)
+void QpGenVars::unscaleBounds(QuadraticProblem * data)
 {
 
 SimpleVector & sxlow = (SimpleVector &) data-> xlowerBound();
@@ -1071,7 +1071,7 @@ sxlow.componentMult(data->scale());
 sxupp.componentMult(data->scale());
 }
 
-void QpGenVars::printSolution( MpsReader * reader, QpGenData * data,
+void QpGenVars::printSolution( MpsReader * reader, QuadraticProblem * data,
 			       int& iErr )
 {
   assert( x->isKindOf( kSimpleVector ) ); // Otherwise this routine
@@ -1227,7 +1227,7 @@ void QpGenVars::printNorms() const
 void QpGenVars::setNotIndicatedBoundsTo( Problem& data, double value )
 {
    value = std::fabs(value);
-   QpGenData& qpdata = dynamic_cast<QpGenData&>(data);
+   QuadraticProblem& qpdata = dynamic_cast<QuadraticProblem&>(data);
 
    const double x_inf = x->infnorm();
    const double xlow_inf = std::min( -10.0 * x_inf, -value );

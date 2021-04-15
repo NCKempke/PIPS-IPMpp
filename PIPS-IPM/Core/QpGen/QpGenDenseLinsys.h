@@ -10,7 +10,7 @@
 #include "OoqpVectorHandle.h"
 
 class QpGen;
-class QpGenData;
+class QuadraticProblem;
 class DoubleLinearSolver;
 
 /** 
@@ -26,7 +26,7 @@ protected:
   DoubleLinearSolver * solver;
 public:
   QpGenDenseLinsys( QpGen * factory,
-		 QpGenData * data,
+		 QuadraticProblem * data,
 		 DenseSymMatrix * Mat,
 		 DoubleLinearSolver * solver );
 

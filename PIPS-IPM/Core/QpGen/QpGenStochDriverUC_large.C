@@ -2370,7 +2370,7 @@ void qpgenSolve(PbData& data, int printx)
   // Solve the problem
   ////////////////////////////////////////////////////
   QpGenSparseMa57 * qp = new QpGenSparseMa57( NX, MY, MZ, nnzQ, nnzA, nnzC );
-  QpGenData * prob = (QpGenData * ) qp->makeData(c, 
+  QuadraticProblem * prob = (QuadraticProblem * ) qp->makeData(c, 
 						 krowQ, jcolQ, dQ,
 						 xlow, ixlow,
 						 xupp, ixupp,

@@ -114,7 +114,7 @@ public:
 			   Residuals * resid, Variables * step );
 
   /** implements the interior-point method for solving the QP */
-  virtual int solve(Problem *prob, Variables *iterate, Residuals * resids) = 0;
+  virtual int solve(Problem& problem, Variables *iterate, Residuals * resids) = 0;
 
   /** Mehrotra's heuristic to calculate the final step length */
   virtual double finalStepLength( Variables *iterate, Variables *step );

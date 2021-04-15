@@ -12,7 +12,7 @@
 #include "OoqpVectorHandle.h"
 
 class QpGen;
-class QpGenData;
+class QuadraticProblem;
 class Variables;
 class LinearAlgebraPackage;
 
@@ -70,7 +70,7 @@ public:
 
   virtual ~QpGenResiduals() = default;
   
-  void calcresids(Problem* problem, Variables *vars, bool print_resids = false) override;
+  void evaluate(Problem* problem, Variables *vars, bool print_resids = false) override;
 
   void add_r3_xz_alpha(const Variables *vars, double alpha) override;
 

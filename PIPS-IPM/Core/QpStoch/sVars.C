@@ -1,5 +1,5 @@
 #include "sVars.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "OoqpVector.h"
 #include "Problem.h"
 #include "QpGenResiduals.h"

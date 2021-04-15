@@ -4,7 +4,7 @@
 
 #include "QpGenSparseMa86.h"
 #include "QpGenSparseLinsys.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 
 #include "SparseLinearAlgebraPackage.h"
 #include "SparseSymMatrix.h"
@@ -23,7 +23,7 @@ QpGenSparseMa86::QpGenSparseMa86( int nx_in, int my_in, int mz_in,
 
 LinearSystem * QpGenSparseMa86::makeLinsys( Problem * prob_in )
 {
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
   int n = nx + my + mz;
 
   SparseSymMatrixHandle Mat( new SparseSymMatrix( n,n + nnzQ

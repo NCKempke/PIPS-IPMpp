@@ -2,7 +2,7 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenVars.h"
 #include "DoubleMatrix.h"
 #include "OoqpVector.h"
@@ -13,7 +13,7 @@
 #include "MpsReader.h"
 
 
-QpGenData::QpGenData(LinearAlgebraPackage * la_,
+QuadraticProblem::QuadraticProblem(LinearAlgebraPackage * la_,
 		     long long nx_, long long my_, long long mz_,
 		     long long nnzQ, long long nnzA, long long nnzC )
    :  la{la_}, nx{nx_}, my{my_}, mz{mz_}
@@ -39,7 +39,7 @@ QpGenData::QpGenData(LinearAlgebraPackage * la_,
   sc    = OoqpVectorHandle( la->newVector( nx  ) );
 }
 
-QpGenData::QpGenData( LinearAlgebraPackage * la_in,
+QuadraticProblem::QuadraticProblem( LinearAlgebraPackage * la_in,
 		      OoqpVector * c_in, SymMatrix * Q_in,
 		      OoqpVector * xlow_in, OoqpVector * ixlow_in,
 		      OoqpVector * xupp_in, OoqpVector * ixupp_in,
@@ -76,47 +76,47 @@ QpGenData::QpGenData( LinearAlgebraPackage * la_in,
   C->getSize( mz, dummy );
 }
 
-void QpGenData::Qmult( double beta,  OoqpVector& y,
+void QuadraticProblem::Qmult( double beta,  OoqpVector& y,
 		       double alpha, const OoqpVector& x ) const
 {
   Q->mult( beta, y, alpha, x );
 }
 
-void QpGenData::Amult( double beta,  OoqpVector& y,
+void QuadraticProblem::Amult( double beta,  OoqpVector& y,
 		       double alpha, const OoqpVector& x) const
 {
   A->mult( beta, y, alpha, x );
 }
 
-void QpGenData::Cmult( double beta,  OoqpVector& y,
+void QuadraticProblem::Cmult( double beta,  OoqpVector& y,
 		       double alpha, const OoqpVector& x ) const
 {
   C->mult( beta, y, alpha, x );
 }
 
-void QpGenData::ATransmult( double beta,  OoqpVector& y,
+void QuadraticProblem::ATransmult( double beta,  OoqpVector& y,
 			    double alpha, const OoqpVector& x ) const
 {
   A->transMult( beta, y, alpha, x );
 }
 
-void QpGenData::CTransmult( double beta,  OoqpVector& y,
+void QuadraticProblem::CTransmult( double beta,  OoqpVector& y,
 			    double alpha, const OoqpVector& x ) const
 {
   C->transMult( beta, y, alpha, x );
 }
 
-void QpGenData::getg( OoqpVector& myG ) const
+void QuadraticProblem::getg( OoqpVector& myG ) const
 {
   myG.copyFrom( *g );
 }
 
-void QpGenData::getbA( OoqpVector& bout ) const
+void QuadraticProblem::getbA( OoqpVector& bout ) const
 {
   bout.copyFrom( *bA );
 }
 
-double QpGenData::datanorm() const
+double QuadraticProblem::datanorm() const
 {
   double norm = 0.0;
   double componentNorm;
@@ -155,7 +155,7 @@ double QpGenData::datanorm() const
   return norm;
 }
 
-void QpGenData::datainput( MpsReader * reader, int& iErr ) 
+void QuadraticProblem::datainput( MpsReader * reader, int& iErr ) 
 {
     reader->readQpGen( *g, *Q, *blx, *ixlow, *bux, *ixupp,
 		     *A, *bA,
@@ -182,7 +182,7 @@ void QpGenData::datainput( MpsReader * reader, int& iErr )
 }
 
 void 
-QpGenData::randomlyChooseBoundedVariables( OoqpVector& x,
+QuadraticProblem::randomlyChooseBoundedVariables( OoqpVector& x,
 					   OoqpVector& dualx,
 					   OoqpVector& xlow_,
 					   OoqpVector& ixlow_,
@@ -299,7 +299,7 @@ QpGenData::randomlyChooseBoundedVariables( OoqpVector& x,
   delete [] sdualx;
 }
 
-void QpGenData::print()
+void QuadraticProblem::print()
 {
   std::cout << "begin Q\n";
   Q->writeToStream( std::cout );
@@ -350,7 +350,7 @@ void QpGenData::print()
 
 #include <fstream>
 
-void QpGenData::datarandom( OoqpVector & x, OoqpVector & y,
+void QuadraticProblem::datarandom( OoqpVector & x, OoqpVector & y,
 			    OoqpVector & z, OoqpVector & s )
 {
   double drand( double * );
@@ -438,42 +438,42 @@ void QpGenData::datarandom( OoqpVector & x, OoqpVector & y,
 }
 
 
-void QpGenData::putQIntoAt( GenMatrix& M, int row, int col )
+void QuadraticProblem::putQIntoAt( GenMatrix& M, int row, int col )
 {
   M.atPutSubmatrix( row, col, *Q, 0, 0, nx, nx );
 }
 
-void QpGenData::putQIntoAt( SymMatrix& M, int row, int col )
+void QuadraticProblem::putQIntoAt( SymMatrix& M, int row, int col )
 {
   M.symAtPutSubmatrix( row, col, *Q, 0, 0, nx, nx );
 }
 
-void QpGenData::putAIntoAt( GenMatrix& M, int row, int col )
+void QuadraticProblem::putAIntoAt( GenMatrix& M, int row, int col )
 {
   M.atPutSubmatrix( row, col, *A, 0, 0, my, nx );
 }
 
-void QpGenData::putAIntoAt( SymMatrix& M, int row, int col )
+void QuadraticProblem::putAIntoAt( SymMatrix& M, int row, int col )
 {
   M.symAtPutSubmatrix( row, col, *A, 0, 0, my, nx );
 }
 
-void QpGenData::putCIntoAt( GenMatrix& M, int row, int col )
+void QuadraticProblem::putCIntoAt( GenMatrix& M, int row, int col )
 {
   M.atPutSubmatrix( row, col, *C, 0, 0, mz, nx );
 }
 
-void QpGenData::putCIntoAt( SymMatrix& M, int row, int col )
+void QuadraticProblem::putCIntoAt( SymMatrix& M, int row, int col )
 {
   M.symAtPutSubmatrix( row, col, *C, 0, 0, mz, nx );
 }
 
-void QpGenData::getDiagonalOfQ( OoqpVector& dq )
+void QuadraticProblem::getDiagonalOfQ( OoqpVector& dq )
 {
   Q->fromGetDiagonal(0, dq);
 }
 
-double QpGenData::objectiveValue( const QpGenVars * vars ) const
+double QuadraticProblem::objectiveValue( const QpGenVars * vars ) const
 {
   OoqpVectorHandle temp( la->newVector( nx ) );
 
@@ -483,7 +483,7 @@ double QpGenData::objectiveValue( const QpGenVars * vars ) const
   return temp->dotProductWith( *vars->x );
 }
 
-void QpGenData::createScaleFromQ()
+void QuadraticProblem::createScaleFromQ()
 {
   // Stuff the diagonal elements of Q into the vector "sc"
   this->getDiagonalOfQ( *sc);
@@ -501,23 +501,23 @@ void QpGenData::createScaleFromQ()
     }
 }
 
-void QpGenData::scaleQ()
+void QuadraticProblem::scaleQ()
 {
   Q->symmetricScale( *sc);
 }
 
 
-void QpGenData::scaleA()
+void QuadraticProblem::scaleA()
 {
   A->columnScale( *sc);
 }
 
-void QpGenData::scaleC()
+void QuadraticProblem::scaleC()
 {
   C->columnScale( *sc);
 }
 
-void QpGenData::scaleg()
+void QuadraticProblem::scaleg()
 {
   SimpleVector & scVector = dynamic_cast<SimpleVector &>(*sc);
 
@@ -527,7 +527,7 @@ void QpGenData::scaleg()
   g->componentMult( scVector);
 }
 
-void QpGenData::scalexupp()
+void QuadraticProblem::scalexupp()
 {
   SimpleVector & scVector = dynamic_cast<SimpleVector &>(*sc);
 
@@ -539,7 +539,7 @@ void QpGenData::scalexupp()
 }
 
 
-void QpGenData::scalexlow()
+void QuadraticProblem::scalexlow()
 {
   SimpleVector & scVector = dynamic_cast<SimpleVector &>(*sc);
 
@@ -550,13 +550,13 @@ void QpGenData::scalexlow()
 
 }
 
-void QpGenData::flipg()
+void QuadraticProblem::flipg()
 {
   // Multiply C matrix by -1
   g->scalarMult( -1.0);
 }
 
-void QpGenData::flipQ()
+void QuadraticProblem::flipQ()
 {
   // Multiply Q matrix by -1
   Q->scalarMult( -1.0);

@@ -92,7 +92,7 @@ public:
 
   virtual ~GondzioStochSolver();
 
-  int solve( Problem *prob, Variables *iterate, Residuals * resid ) override;
+  int solve(Problem& problem, Variables *iterate, Residuals * resid ) override;
 
   void notifyFromSubject() override;
 };

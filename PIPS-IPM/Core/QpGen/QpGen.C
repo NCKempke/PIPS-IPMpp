@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGen.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenVars.h"
 #include "QpGenResiduals.h"
 #include "LinearAlgebraPackage.h"

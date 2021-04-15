@@ -4,7 +4,7 @@
 
 #include "QpGenLinsys.h"
 
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenResiduals.h"
 #include "QpGenVars.h"
 
@@ -143,7 +143,7 @@ static bool isZero(double val, int& flag)
    return false;
 }
 
-QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs ) :
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QuadraticProblem* prob, bool create_iter_ref_vecs ) :
   factory( factory_ ),
   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
@@ -193,7 +193,7 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref
    }
 };
 
-QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QuadraticProblem* prob, OoqpVector* dd_, OoqpVector* dq_,
       OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, prob, create_iter_ref_vecs )
 {
    dd = dd_;
@@ -202,7 +202,7 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, Ooq
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys( QpGen* factory_, QpGenData* prob ) : QpGenLinsys( factory_, prob, true )
+QpGenLinsys::QpGenLinsys( QpGen* factory_, QuadraticProblem* prob ) : QpGenLinsys( factory_, prob, true )
 {
   if( nxupp + nxlow > 0 )
   {
@@ -298,7 +298,7 @@ void QpGenLinsys::computeDiagonals( OoqpVector& dd_, OoqpVector& omega,
 void QpGenLinsys::solve(Problem * prob_in, Variables *vars_in,
 			Residuals *res_in, Variables *step_in)
 {
-  QpGenData      * prob  = (QpGenData *) prob_in;
+  QuadraticProblem      * prob  = (QuadraticProblem *) prob_in;
   QpGenVars      * vars  = (QpGenVars *) vars_in;
   QpGenVars      * step  = (QpGenVars *) step_in;
   QpGenResiduals * res   = (QpGenResiduals *) res_in;
@@ -440,7 +440,7 @@ void QpGenLinsys::solve(Problem * prob_in, Variables *vars_in,
 void QpGenLinsys::solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 			       OoqpVector& stepz, OoqpVector& steps,
 			       OoqpVector& /* ztemp */,
-			       QpGenData* prob )
+			       QuadraticProblem* prob )
 {
   /* step->z = rC */
   /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
@@ -781,7 +781,7 @@ void QpGenLinsys::solveCompressedBiCGStab( const std::function<void(double, Ooqp
  */
 void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
 			     double alpha, const OoqpVector& sol,
-			     const QpGenData& data,
+			     const QuadraticProblem& data,
 			     OoqpVector& solx,
 			     OoqpVector& soly,
 			     OoqpVector& solz)
@@ -815,7 +815,7 @@ void QpGenLinsys::matXYZMult(double beta,  OoqpVector& res,
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
 double QpGenLinsys::matXYZinfnorm(
-             const QpGenData& data,
+             const QuadraticProblem& data,
              OoqpVector& solx,
              OoqpVector& soly,
              OoqpVector& solz)
@@ -926,7 +926,7 @@ void QpGenLinsys::computeResidualXYZ(const OoqpVector& sol,
 				     OoqpVector& solx,
 				     OoqpVector& soly,
 				     OoqpVector& solz,
-				     const QpGenData& data)
+				     const QuadraticProblem& data)
 {
   this->separateVars( solx, soly, solz, sol );
   this->separateVars( *resx, *resy, *resz, res);

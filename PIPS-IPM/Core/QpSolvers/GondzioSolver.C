@@ -65,7 +65,7 @@ GondzioSolver::GondzioSolver( ProblemFormulation * of, Problem * prob, const Sca
   status   = 0; 
 }
 
-int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
+int GondzioSolver::solve(Problem& problem, Variables *iterate, Residuals * resid )
 {
   int done;
   double mu, muaff;
@@ -76,10 +76,10 @@ int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 
   gmu = 1000;
   //  grnorm = 1000;
-  setDnorm(*prob);
+  setDnorm(problem);
   // initialization of (x,y,z) and factorization routine.
-  sys = factory->makeLinsys( prob );
-  this->start( factory, iterate, prob, resid, step );
+  sys = factory->makeLinsys( &problem );
+  this->start(factory, iterate, &problem, resid, step );
 
   iter = 0; 
   NumberGondzioCorrections = 0; 
@@ -91,21 +91,21 @@ int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
     {
       iter ++;
       // evaluate residuals and update algorithm status:
-      resid->calcresids(prob, iterate);
+      resid->evaluate(&problem, iterate);
 
       //  termination test:
-      status_code = this->doStatus( prob, iterate, resid, iter, mu, 0 );
+      status_code = this->doStatus(&problem, iterate, resid, iter, mu, 0 );
       if( status_code != NOT_FINISHED ) break;
       if( gOoqpPrintLevel >= 10  ) {
-		this->doMonitor( prob, iterate, resid, alpha, sigma,
-						 iter, mu, status_code, 0 );
+		this->doMonitor(&problem, iterate, resid, alpha, sigma,
+                      iter, mu, status_code, 0 );
       }
       // *** Predictor step ***
 
       resid->set_r3_xz_alpha( iterate, 0.0 );
 
-      sys->factor(prob, iterate);
-      sys->solve(prob, iterate, resid, step);
+      sys->factor(&problem, iterate);
+      sys->solve(&problem, iterate, resid, step);
       step->negate();
 
       alpha = iterate->stepbound(step);
@@ -115,15 +115,15 @@ int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
       sigma = pow(muaff/mu, tsig);
       
       if( gOoqpPrintLevel >= 10 ) {
-		this->doMonitor( prob, iterate, resid,
-						 alpha, sigma, iter, mu, status_code, 2 );
+		this->doMonitor(&problem, iterate, resid,
+                      alpha, sigma, iter, mu, status_code, 2 );
       }
 
       // *** Corrector step ***
       // form right hand side of linear system:
       resid->add_r3_xz_alpha( step, -sigma*mu );
 
-      sys->solve(prob, iterate, resid, step);
+      sys->solve(&problem, iterate, resid, step);
       step->negate();
 
       // calculate distance to boundary along the Mehrotra
@@ -162,7 +162,7 @@ int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 	corrector_resid->project_r3(rmin, rmax);
 
 	// solve for corrector direction
-	sys->solve(prob,iterate,corrector_resid,corrector_step);
+	sys->solve(&problem, iterate, corrector_resid, corrector_step);
 
 	// add the current step to corrector_step, and calculate the
 	// step to boundary along the resulting direction
@@ -206,10 +206,10 @@ int GondzioSolver::solve(Problem *prob, Variables *iterate, Residuals * resid )
 
     } while(!done);
   
-  resid->calcresids(prob, iterate);
+  resid->evaluate(&problem, iterate);
   if( gOoqpPrintLevel >= 10 ) {
-    this->doMonitor(prob, iterate, resid, alpha, sigma,
-					iter, mu, status_code, 1 );
+    this->doMonitor(&problem, iterate, resid, alpha, sigma,
+                    iter, mu, status_code, 1 );
   }
 
   // print the results, if you really want to..

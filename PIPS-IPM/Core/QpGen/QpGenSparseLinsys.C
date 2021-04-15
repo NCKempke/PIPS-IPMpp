@@ -7,7 +7,7 @@
 #include "SparseSymMatrix.h"
 
 QpGenSparseLinsys::QpGenSparseLinsys(  QpGen * factory_in,
-				       QpGenData * data,
+				       QuadraticProblem * data,
 				       SparseSymMatrix * Mat_in,
 				       DoubleLinearSolver * solver_in )
   : QpGenLinsys( factory_in, data ), solver(solver_in)

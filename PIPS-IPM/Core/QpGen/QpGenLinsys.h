@@ -13,7 +13,7 @@
 #include <functional>
 
 class Problem;
-class QpGenData;
+class QuadraticProblem;
 class QpGen;
 class Variables;
 class Residuals;
@@ -52,7 +52,7 @@ protected:
   /** right-hand side of the system */
   OoqpVector* rhs{};
 
-  QpGenLinsys( QpGen* factory_, QpGenData* prob, bool create_iter_ref_vecs );
+  QpGenLinsys( QpGen* factory_, QuadraticProblem* prob, bool create_iter_ref_vecs );
 
   /** dimensions of the vectors in the general QP formulation */
   long long nx{0};
@@ -108,8 +108,8 @@ protected:
   const bool xyzs_solve_print_residuals;
 
 public:
-  QpGenLinsys( QpGen* factory, QpGenData* data );
-  QpGenLinsys( QpGen* factory_, QpGenData* prob, OoqpVector* dd_, OoqpVector* dq_,
+  QpGenLinsys( QpGen* factory, QuadraticProblem* data );
+  QpGenLinsys( QpGen* factory_, QuadraticProblem* prob, OoqpVector* dd_, OoqpVector* dq_,
         OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs );
 
   ~QpGenLinsys() override;
@@ -161,7 +161,7 @@ public:
       solveCompressed to solve it */
   virtual void solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
 			  OoqpVector& stepz, OoqpVector& steps,
-			  OoqpVector& ztemp, QpGenData * data );
+			  OoqpVector& ztemp, QuadraticProblem * data );
 
   /** perform the actual solve using the factors produced in factor.
    *
@@ -191,20 +191,20 @@ public:
 				 OoqpVector& w,  OoqpVector& phi );
    protected:
       void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
-            OoqpVector& soly, OoqpVector& solz, const QpGenData& data);
-      void computeResidualsReducedSlacks( const QpGenData& data );
-      void computeResidualsFull( const QpGenData& data );
+            OoqpVector& soly, OoqpVector& solz, const QuadraticProblem& data);
+      void computeResidualsReducedSlacks( const QuadraticProblem& data );
+      void computeResidualsFull( const QuadraticProblem& data );
 
       void matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol,
-            const QpGenData& data, OoqpVector& solx, OoqpVector& soly,
+            const QuadraticProblem& data, OoqpVector& solx, OoqpVector& soly,
             OoqpVector& solz);
-      void matReducedSlacksMult( const QpGenData& data );
-      void matFullMult( const QpGenData& data );
+      void matReducedSlacksMult( const QuadraticProblem& data );
+      void matFullMult( const QuadraticProblem& data );
 
-      double matXYZinfnorm(const QpGenData& data, OoqpVector &solx, OoqpVector &soly,
+      double matXYZinfnorm(const QuadraticProblem& data, OoqpVector &solx, OoqpVector &soly,
             OoqpVector &solz);
-      void matReducedInfnorm( const QpGenData& data );
-      void matFullInfnorm( const QpGenData& data );
+      void matReducedInfnorm( const QuadraticProblem& data );
+      void matFullInfnorm( const QuadraticProblem& data );
 
 
   // TODO : move to LinearSystem level

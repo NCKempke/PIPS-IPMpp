@@ -6,7 +6,7 @@
 #include "QpGenResiduals.h"
 #include "SimpleVector.h"
 #include "Status.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "OoqpVersion.h"
 #include <boost/scoped_ptr.hpp>
 #include "SparseGenMatrix.h"
@@ -31,7 +31,7 @@ public:
 
 protected:
 	scoped_ptr<FORMULATION> qp;
-	scoped_ptr<QpGenData> prob;
+	scoped_ptr<QuadraticProblem> prob;
 	scoped_ptr<QpGenVars> vars;
 	scoped_ptr<Residuals> resid;
 	scoped_ptr<SOLVER> s;
@@ -267,7 +267,7 @@ OOQPInterface<SOLVER,FORMULATION>::OOQPInterface(stochasticInput &input, MPI_Com
 	}
 
 	qp.reset(new FORMULATION(totalVars,my,mz,nnzQ,nnzA,nnzC));
-	prob.reset(dynamic_cast<QpGenData*>(qp->makeData()));
+	prob.reset(dynamic_cast<QuadraticProblem*>(qp->makeData()));
 
 	separateRows(input,dynamic_cast<SparseGenMatrix&>(*prob->A),dynamic_cast<SparseGenMatrix&>(*prob->C));
 	formQ(input,dynamic_cast<SparseSymMatrix&>(*prob->Q));

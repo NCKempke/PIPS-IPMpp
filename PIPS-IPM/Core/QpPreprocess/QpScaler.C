@@ -10,7 +10,7 @@
 
 #include "QpScaler.h"
 #include "StochVector.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenVars.h"
 #include "QpGenResiduals.h"
 #include "pipsdef.h"
@@ -19,7 +19,7 @@
 QpScaler::QpScaler(Problem * prob, bool bitshifting)
 : Scaler(prob, bitshifting), scaling_output{ pips_options::getBoolParameter("SCALER_OUTPUT") }
 {
-   QpGenData* qpprob = dynamic_cast<QpGenData*>(prob);
+   QuadraticProblem* qpprob = dynamic_cast<QuadraticProblem*>(prob);
 
    Q = qpprob->Q;
    A = qpprob->A;

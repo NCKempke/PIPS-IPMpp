@@ -7,7 +7,7 @@
 #include <vector>
 
 class QpGen;
-class QpGenData;
+class QuadraticProblem;
 class LinearAlgebraPackage;
 class sTree;
 

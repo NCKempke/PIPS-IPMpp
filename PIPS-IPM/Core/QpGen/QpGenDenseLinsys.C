@@ -3,12 +3,12 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGenDenseLinsys.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "DenseSymMatrix.h"
 #include "DoubleLinearSolver.h"
 
 QpGenDenseLinsys::QpGenDenseLinsys( QpGen * qpgen,
-			      QpGenData * data,
+			      QuadraticProblem * data,
 			      DenseSymMatrix * Mat,
 			      DoubleLinearSolver * solver_in ) :
   QpGenLinsys( qpgen, data ), solver(solver_in)
@@ -18,7 +18,7 @@ QpGenDenseLinsys::QpGenDenseLinsys( QpGen * qpgen,
 
 void QpGenDenseLinsys::factor(Problem *prob_in, Variables *vars)
 {
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
   
   prob->putQIntoAt( *kkt, 0,       0 );
   prob->putAIntoAt( *kkt, nx,      0 );

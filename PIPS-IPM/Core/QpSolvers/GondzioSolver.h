@@ -54,7 +54,7 @@ public:
 
   virtual ~GondzioSolver();
 
-  int solve( Problem *prob, Variables *iterate, Residuals * resid ) override;
+  int solve(Problem& problem, Variables *iterate, Residuals * resid ) override;
 
   /** reset parameters to their default values */
   virtual void reset_parameters() {};

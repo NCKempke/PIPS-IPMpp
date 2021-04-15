@@ -4,7 +4,7 @@
 
 #include "QpGenResiduals.h"
 #include "QpGenVars.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 
 #include "OoqpVector.h"
 #include "LinearAlgebraPackage.h"
@@ -113,14 +113,14 @@ double updateNormAndPrint( double norm, const OoqpVector& vec, bool print, std::
    return std::max( norm, infnorm );
 }
 
-void QpGenResiduals::calcresids(Problem *prob_in, Variables *vars_in, bool print_resids)
+void QpGenResiduals::evaluate(Problem *prob_in, Variables *vars_in, bool print_resids)
 {
 #ifdef TIMING
   print_resids = true;
 #endif
   const int myRank = PIPS_MPIgetRank();
   QpGenVars * vars = (QpGenVars *) vars_in;
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
 
   double norm = 0.0, gap = 0.0;
   primal_objective = 0.0;

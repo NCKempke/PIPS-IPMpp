@@ -18,7 +18,7 @@
 #include <cassert>
 #include <memory>
 
-class QpGenData;
+class QuadraticProblem;
 class sData;
 
 class QpGenVars;

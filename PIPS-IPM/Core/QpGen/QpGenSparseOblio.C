@@ -6,7 +6,7 @@
  * Edited by: Quan H. Nguyen 
  */
 #include "QpGenSparseOblio.h"
-#include "QpGenData.h"
+#include "QuadraticProblem.h"
 #include "QpGenSparseLinsys.h"
 
 #include "SparseLinearAlgebraPackage.h"
@@ -26,7 +26,7 @@ OblioQpGen::OblioQpGen( int nx_, int my_, int mz_,
 
 LinearSystem * OblioQpGen::makeLinsys( Problem * prob_in )
 { 
-  QpGenData * prob = (QpGenData *) prob_in;
+  QuadraticProblem * prob = (QuadraticProblem *) prob_in;
   int n = nx + my + mz;
 
   SparseSymMatrixHandle Mat( new SparseSymMatrix( n,n + nnzQ

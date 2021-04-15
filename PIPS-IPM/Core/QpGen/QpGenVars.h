@@ -9,7 +9,7 @@
 #include "OoqpVectorHandle.h"
 
 class QpGen;
-class QpGenData;
+class QuadraticProblem;
 class LinearAlgebraPackage;
 class MpsReader;
 
@@ -162,11 +162,11 @@ public:
   double violation() override;
 
   void print() override;
-  virtual void printSolution( MpsReader * reader, QpGenData * prob,
+  virtual void printSolution( MpsReader * reader, QuadraticProblem * prob,
 			      int& iErr );
 
-  virtual void unscaleSolution( QpGenData * data);
-  virtual void unscaleBounds  ( QpGenData * data);
+  virtual void unscaleSolution( QuadraticProblem * data);
+  virtual void unscaleBounds  ( QuadraticProblem * data);
 
   virtual int validNonZeroPattern();
   
