@@ -10,10 +10,10 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "QpGenVars.h"
 
-Problem * QpGenSparseSeq::makeData()
-{
-  return new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );
-}
+//Problem * QpGenSparseSeq::makeData()
+//{
+//  return new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );
+//}
 
 void QpGenSparseSeq::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
 				   const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
@@ -100,66 +100,4 @@ Problem* QpGenSparseSeq::makeData( double    c_[],
 			  C, clow, iclow, cupp, icupp );
 
   return data;
-}
-
-Problem* QpGenSparseSeq::
-copyDataFromSparseTriple( double c[],
-			  int irowQ[], int lenQ,  int jcolQ[],  double dQ[],
-			  double xlow[],  char ixlow[],
-			  double xupp[],  char ixupp[],
-			  int irowA[], int lenA,  int jcolA[],  double dA[],
-			  double   bA[],
-			  int irowC[],  int lenC,  int jcolC[], double dC[],
-			  double clow[], char iclow[],
-			  double cupp[], char icupp[] )
-{
-  QuadraticProblem * prob =
-    (QuadraticProblem *) new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );  
-  int info;
-
-  assert( lenQ <= nnzQ );
-  assert( lenA <= nnzA );
-  assert( lenC <= nnzC );
-
-  prob->g->copyFromArray( c );
-  prob->Q->putSparseTriple( irowQ, lenQ, jcolQ, dQ, info );
-
-  prob-> blx->copyFromArray( xlow );
-  prob->ixlow->copyFromArray( ixlow );
-
-  prob-> bux->copyFromArray( xupp );
-  prob->ixupp->copyFromArray( ixupp );
-  
-  prob->A->putSparseTriple( irowA, lenA, jcolA, dA, info );
-  prob->bA->copyFromArray( bA );
-  
-  prob->C->putSparseTriple( irowC, lenC, jcolC, dC, info );
-
-  prob->bl   ->copyFromArray(  clow );
-  prob->iclow->copyFromArray( iclow );
-  
-  prob->bu   ->copyFromArray(  cupp );
-  prob->icupp->copyFromArray( icupp );
-
-  return prob;
-}
-
-void QpGenSparseSeq::makeRandomData( QuadraticProblem *& data, QpGenVars *& soln )
-{
-  data =
-    new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );
-
-  OoqpVectorHandle x( la->newVector( nx ) );
-  OoqpVectorHandle y( la->newVector( my ) );
-  OoqpVectorHandle z( la->newVector( mz ) );
-  OoqpVectorHandle s( la->newVector( mz ) );
-
-  data->datarandom( *x, *y, *z, *s );
-
-  soln = (QpGenVars * ) this->makeVariables( data );
-
-  soln->x->copyFrom( *x );
-  soln->y->copyFrom( *y );
-  soln->z->copyFrom( *z );
-  soln->s->copyFrom( *s );
 }

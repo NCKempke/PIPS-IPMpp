@@ -21,7 +21,7 @@ public:
       nnzQ(nnzQ_), nnzA(nnzA_), nnzC(nnzC_)
   {}
 
-  Problem  * makeData();
+  //Problem  * makeData();
   Problem  * makeData( double    c[],
 			 int    krowQ[],  int  jcolQ[],  double dQ[],
 			 double  xlow[],  char ixlow[],
@@ -31,18 +31,6 @@ public:
 			 int    krowC[],  int  jcolC[],  double dC[],
 			 double  clow[],  char iclow[],
 			 double  cupp[],  char icupp[] );
-
-  void makeRandomData( QuadraticProblem *& prob, QpGenVars *& soln );
-
-  Problem* copyDataFromSparseTriple( double c[],
-			    int irowQ[], int nnzQ,  int jcolQ[],  double dQ[],
-			    double xlow[],  char ixlow[],
-			    double xupp[],  char ixupp[],
-			    int irowA[], int nnzA,  int jcolA[],  double dA[],
-			    double   bA[],
-			    int irowC[],  int nnzC,  int jcolC[], double dC[],
-			    double clow[], char iclow[],
-			    double cupp[], char icupp[] );
 
   void joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
 			const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const override;
