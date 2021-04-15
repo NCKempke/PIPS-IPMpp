@@ -49,7 +49,7 @@ public:
 
    virtual double objective_value(const QpGenVars *x) const = 0;
 
-   virtual void objective_gradient(const QpGenVars *vars, OoqpVector &gradient) = 0;
+   virtual void objective_gradient(const QpGenVars *vars, OoqpVector &gradient) const = 0;
 
    /** compute the norm of the problem data */
    virtual double datanorm() const;

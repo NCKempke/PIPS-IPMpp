@@ -56,11 +56,6 @@ public:
   OoqpVectorHandle rlambda;
   OoqpVectorHandle rpi;
 
-  QpGenResiduals( LinearAlgebraPackage * la,
-		  long long nx, long long my, long long mz,
-		  OoqpVector * ixlow, OoqpVector * ixupp,
-		  OoqpVector * iclow, OoqpVector * icupp );
-
   QpGenResiduals( const QpGenResiduals& res);
 
   const long long& getNxupp() { return nxupp; };
@@ -70,7 +65,7 @@ public:
 
   virtual ~QpGenResiduals() = default;
   
-  void evaluate(Problem* problem_in, Variables *iterate_in, bool print_resids = false) override;
+  void evaluate(Problem& problem, Variables *iterate_in, bool print_resids = false) override;
 
   void add_r3_xz_alpha(const Variables *vars, double alpha) override;
 
