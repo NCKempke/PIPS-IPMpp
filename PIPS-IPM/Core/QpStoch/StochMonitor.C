@@ -47,7 +47,7 @@ StochMonitor::doItStoch(const Solver *solver, const Problem *data,
       double alpha_dual, double, int i, double mu, int status_code,
       int level) const
 {
-   double objective = dynamic_cast<const QuadraticProblem*>(data)->objectiveValue(
+   double objective = dynamic_cast<const QuadraticProblem*>(data)->objective_value(
          dynamic_cast<const QpGenVars*>(vars));
 
    const Residuals *resids_unscaled = resids;

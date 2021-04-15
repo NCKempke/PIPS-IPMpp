@@ -148,7 +148,7 @@ int qpgen_solve( int argc, char * argv[],
 #endif
       //  vars->print();
       
-      double objective = reader->objconst() + prob->objectiveValue(vars);
+      double objective = reader->objconst() + prob->objective_value(vars);
       
       cout << " " << n1 << " variables, " 
 	   << m1  << " equality constraints, " 

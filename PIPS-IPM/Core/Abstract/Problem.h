@@ -5,6 +5,9 @@
 #ifndef PROBLEM_H
 #define PROBLEM_H
 
+#include "QpGenVars.h"
+#include "OoqpVector.h"
+
 class Variables;
 
 /**
@@ -16,13 +19,16 @@ class Variables;
 class Problem
 {
 public:
-  virtual ~Problem() = default;
-  
-  /** compute the norm of the problem data */
-  virtual double datanorm() const = 0;
+   virtual ~Problem() = default;
 
-  /** print the problem data */
-  virtual void print() = 0;
+   virtual double objective_value(const QpGenVars* x) const = 0;
+   //virtual void objective_gradient(const OoqpVector& x, OoqpVector& gradient) = 0;
+
+    /** compute the norm of the problem data */
+    virtual double datanorm() const = 0;
+
+    /** print the problem data */
+    virtual void print() = 0;
 };
 
 #endif

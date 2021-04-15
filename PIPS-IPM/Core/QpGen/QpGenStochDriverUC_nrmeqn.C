@@ -2277,7 +2277,7 @@ void qpgenSolve(PbData& data, int printx)
     + (after_solve.ru_utime.tv_usec - before_solve.ru_utime.tv_usec)
     / 1000000.0;
   
-  double objective = prob->objectiveValue(vars);
+  double objective = prob->objective_value(vars);
 
   if(printx) {
     cout << "The x-solution is:\n";

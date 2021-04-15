@@ -110,7 +110,7 @@ int qpgenstoch_solve( StochInputTree* tree,
 	int rank=0, size; MPI_Comm_size(MPI_COMM_WORLD, &size);
 	if(size>1) MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	double objective = prob->objectiveValue(vars);
+	double objective = prob->objective_value(vars);
 	
 	if(0==rank) {
 	  

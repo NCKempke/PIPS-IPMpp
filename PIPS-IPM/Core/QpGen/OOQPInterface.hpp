@@ -406,7 +406,7 @@ void OOQPInterface<S,F>::go() {
 	int result = s->solve(prob.get(),vars.get(),resid.get());
 
 	if ( 0 == result && mype == 0) {
-	 double objective = prob->objectiveValue(vars.get());
+	 double objective = prob->objective_value(vars.get());
       
       cout << " " << prob->nx << " variables, " 
 	   << prob->my  << " equality constraints, " 
@@ -422,7 +422,7 @@ void OOQPInterface<S,F>::go() {
 
 template<typename S, typename F>
 double OOQPInterface<S,F>::getObjective() const {
-	return prob->objectiveValue(vars.get());
+	return prob->objective_value(vars.get());
 }
 
 

@@ -302,7 +302,7 @@ int solveQPSparse(int levels, int printx)
   
   int result = s->solve(prob,vars, resid);
   
-  double objective = prob->objectiveValue(vars);
+  double objective = prob->objective_value(vars);
   
   cout << " " << nx << " variables, " 
        << my  << " equality constraints, " 

@@ -168,7 +168,8 @@ public:
 			    OoqpVector & z, OoqpVector & s );
   void print() override;
 
-  virtual double objectiveValue( const QpGenVars * vars ) const;
+   virtual void objective_gradient(const QpGenVars* vars, OoqpVector& gradient);
+   virtual double objective_value(const QpGenVars * vars ) const override;
 
   ~QuadraticProblem() override = default;
 };

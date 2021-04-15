@@ -473,14 +473,18 @@ void QuadraticProblem::getDiagonalOfQ( OoqpVector& dq )
   Q->fromGetDiagonal(0, dq);
 }
 
-double QuadraticProblem::objectiveValue( const QpGenVars * vars ) const
-{
-  OoqpVectorHandle temp( la->newVector( nx ) );
+void QuadraticProblem::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) {
+   this->getg( gradient );
+   this->Qmult(1., gradient, 1., *vars->x);
+   return;
+}
 
-  this->getg( *temp );
-  this->Qmult( 1.0, *temp, 0.5, *vars->x );
+double QuadraticProblem::objective_value(const QpGenVars * vars ) const {
+  OoqpVectorHandle gradient(la->newVector(nx));
+  this->getg( *gradient );
+  this->Qmult(1., *gradient, 0.5, *vars->x );
 
-  return temp->dotProductWith( *vars->x );
+  return gradient->dotProductWith(*vars->x );
 }
 
 void QuadraticProblem::createScaleFromQ()

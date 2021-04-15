@@ -123,7 +123,7 @@ protected:
 
   virtual sData* cloneFull(bool switchToDynamicStorage = false) const;
 
-  double objectiveValue( const QpGenVars * vars ) const override;
+  double objective_value(const QpGenVars * vars ) const override;
   void createScaleFromQ();
 
   void cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC, const StochVectorBase<int>& colNnzVec);

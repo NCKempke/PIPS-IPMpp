@@ -2391,7 +2391,7 @@ void sData::AddChild(sData* child)
    children.push_back(child);
 }
 
-double sData::objectiveValue(const QpGenVars * vars) const
+double sData::objective_value(const QpGenVars * vars) const
 {
    const StochVector& x = dynamic_cast<const StochVector&>(*vars->x);
    OoqpVectorHandle temp(x.clone());

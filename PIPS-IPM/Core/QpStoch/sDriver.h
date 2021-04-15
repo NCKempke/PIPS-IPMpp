@@ -144,7 +144,7 @@ int qpstoch_solve( StochInputTree* tree,
 	
 	// OUTPUT of the statistics
 
-	double objective = prob->objectiveValue(vars);
+	double objective = prob->objective_value(vars);
 	
 	if(0==rank) {
 	  sTree* stTree = qp->tree;
@@ -185,7 +185,7 @@ int qpstoch_solve( StochInputTree* tree,
 #ifdef TIMING
       cout << "MAXMEM " << StochIterateResourcesMonitor::getMaxMemUsage() << 
         " KB" << endl;
-      //double objective = prob->objectiveValue(vars);
+      //double objective = prob->objective_value(vars);
       //cout << "OBJVAL " << objective << endl;
 #else
 	    cout << "Maximum memory usage: " << 

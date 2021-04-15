@@ -309,9 +309,9 @@ double PIPSIpmInterface<FORMULATION,SOLVER>::getObjective() {
 
   double obj;
   if(postsolvedVars != nullptr)
-    obj = original_problem->objectiveValue(postsolvedVars.get() );
+    obj = original_problem->objective_value(postsolvedVars.get() );
   else {
-    obj = presolved_problem->objectiveValue(vars.get() );
+    obj = presolved_problem->objective_value(vars.get() );
     if( scaler )
        obj = scaler->getObjUnscaled(obj);
   }
@@ -597,7 +597,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution()
   postsolvedResids.reset( dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(original_problem.get() ) ) );
   postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
-  double obj_postsolved = original_problem->objectiveValue(postsolvedVars.get());
+  double obj_postsolved = original_problem->objective_value(postsolvedVars.get());
 
   MPI_Barrier(comm);
   const double t_postsolve = MPI_Wtime();
