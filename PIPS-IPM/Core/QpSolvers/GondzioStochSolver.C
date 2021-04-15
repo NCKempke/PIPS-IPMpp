@@ -142,31 +142,31 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
    setDnorm(problem);
 
    // initialization of (x,y,z) and factorization routine.
-   sys = factory->makeLinsys(&problem);
+   linear_system = factory->makeLinsys(&problem);
 
    // register as observer for the BiCGStab solves
-   registerBiCGStabOvserver(sys);
+   registerBiCGStabOvserver(linear_system);
    setBiCGStabTol(-1);
 
    stochFactory->iterateStarted();
    this->start(factory, iterate, &problem, resid, step);
    stochFactory->iterateEnded();
 
-   iter = 0;
+   iteration = 0;
    NumberGondzioCorrections = 0;
    done = 0;
    mu = iterate->mu();
 
    do
    {
-      iter++;
+      iteration++;
 
       if( false )
          iterate->setNotIndicatedBoundsTo(problem, 1e15 );
       // pushConvergedVarsAwayFromBounds(*problem, *iterate);
       // pushSmallComplementarityProducts( *problem, *iterate, *resid );
 
-      setBiCGStabTol(iter);
+      setBiCGStabTol(iteration);
       bool small_corr = false;
 
       stochFactory->iterateStarted();
@@ -175,14 +175,14 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
       resid->evaluate(problem, iterate);
 
       //  termination test:
-      status_code = this->doStatus(&problem, iterate, resid, iter, mu, 0);
+      status_code = this->doStatus(&problem, iterate, resid, iteration, mu, 0);
 
       if( status_code != NOT_FINISHED )
          break;
 
       if( gOoqpPrintLevel >= 10 )
       {
-         this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu,
+         this->doMonitor(&problem, iterate, resid, alpha, sigma, iteration, mu,
                          status_code, 0);
       }
 
@@ -205,7 +205,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
 
       if( gOoqpPrintLevel >= 10 )
       {
-         this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu,
+         this->doMonitor(&problem, iterate, resid, alpha, sigma, iteration, mu,
                          status_code, 2);
       }
 
@@ -301,7 +301,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
             NumberGondzioCorrections++;
          }
          /* if not done yet because correctors were not good enough - try a small corrector if enabled */
-         else if( additional_correctors_small_comp_pairs && !small_corr && iter >= first_iter_small_correctors )
+         else if( additional_correctors_small_comp_pairs && !small_corr && iteration >= first_iter_small_correctors )
          {
             if( alpha < max_alpha_small_correctors )
             {
@@ -335,7 +335,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
       if( numerical_troubles )
       {
          if( precond_decreased )
-            precond_decreased = decreasePreconditionerImpact(sys);
+            precond_decreased = decreasePreconditionerImpact(linear_system);
          doProbing(&problem, iterate, resid, alpha);
          if( restartIterateBecauseOfPoorStep( pure_centering_step, precond_decreased, alpha ) )
             continue;
@@ -355,7 +355,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
    resid->evaluate(problem, iterate);
    if( gOoqpPrintLevel >= 10 )
    {
-      this->doMonitor(&problem, iterate, resid, alpha, sigma, iter, mu, status_code, 1);
+      this->doMonitor(&problem, iterate, resid, alpha, sigma, iteration, mu, status_code, 1);
    }
 
    return status_code;
@@ -364,8 +364,8 @@ int GondzioStochSolver::solve(Problem& problem, Variables *iterate, Residuals * 
 void GondzioStochSolver::computePredictorStep( Problem* prob, Variables* iterate, Residuals* resid )
 {
    resid->set_r3_xz_alpha(iterate, 0.0);
-   sys->factor(prob, iterate);
-   sys->solve(prob, iterate, resid, step);
+   linear_system->factor(prob, iterate);
+   linear_system->solve(prob, iterate, resid, step);
    step->negate();
 }
 
@@ -375,7 +375,7 @@ void GondzioStochSolver::computeCorrectorStep( Problem* prob, Variables* iterate
    // form right hand side of linear system:
    corrector_resid->set_r3_xz_alpha(step, -sigma * mu);
 
-   sys->solve(prob, iterate, corrector_resid, corrector_step);
+   linear_system->solve(prob, iterate, corrector_resid, corrector_step);
    corrector_step->negate();
 }
 
@@ -392,7 +392,7 @@ void GondzioStochSolver::computeGondzioCorrector( Problem* prob, Variables* iter
       corrector_resid->project_r3(rmin, rmax);
 
    // solve for corrector direction
-   sys->solve(prob, iterate, corrector_resid, corrector_step); // corrector_step is now delta_m
+   linear_system->solve(prob, iterate, corrector_resid, corrector_step); // corrector_step is now delta_m
 }
 
 
@@ -573,7 +573,7 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep( bool& pure_centering_s
 
 void GondzioStochSolver::pushConvergedVarsAwayFromBounds( Problem& data, Variables& vars ) const
 {
-   if( push_converged_vars_from_bound && (iter % fequency_push_converged_vars_from_bound) == 0 && vars.mu() < mu_limit_push_converged_vars_from_bound )
+   if( push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 && vars.mu() < mu_limit_push_converged_vars_from_bound )
    {
       QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
 

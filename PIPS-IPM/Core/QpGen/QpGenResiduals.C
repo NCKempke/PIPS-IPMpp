@@ -4,61 +4,11 @@
 
 #include "QpGenResiduals.h"
 #include "QpGenVars.h"
-#include "QuadraticProblem.h"
-
-#include "OoqpVector.h"
+#include "Problem.h"
 #include "LinearAlgebraPackage.h"
-
 #include "pipsdef.h"
 
 #include <iostream>
-#include <fstream>
-
-#include "mpi.h"
-
-QpGenResiduals::QpGenResiduals(LinearAlgebraPackage *la,
-                               long long nx_, long long my_, long long mz_,
-                               OoqpVector *ixlow_in, OoqpVector *ixupp_in,
-                               OoqpVector *iclow_in, OoqpVector *icupp_in) {
-   assert(false && "Cannot be used with StochLinearAlgebra");
-   nx = nx_;
-   my = my_;
-   mz = mz_;
-
-   SpReferTo(ixlow, ixlow_in);
-   nxlow = ixlow->numberOfNonzeros();
-
-   SpReferTo(ixupp, ixupp_in);
-   nxupp = ixupp->numberOfNonzeros();
-
-   SpReferTo(iclow, iclow_in);
-   mclow = iclow->numberOfNonzeros();
-
-   SpReferTo(icupp, icupp_in);
-   mcupp = icupp->numberOfNonzeros();
-
-   rQ = OoqpVectorHandle(la->newVector(nx));
-   rA = OoqpVectorHandle(la->newVector(my));
-   rC = OoqpVectorHandle(la->newVector(mz));
-
-   rz = OoqpVectorHandle(la->newVector(mz));
-   if (mclow > 0) {
-      rt = OoqpVectorHandle(la->newVector(mz));
-      rlambda = OoqpVectorHandle(la->newVector(mz));
-   }
-   if (mcupp > 0) {
-      ru = OoqpVectorHandle(la->newVector(mz));
-      rpi = OoqpVectorHandle(la->newVector(mz));
-   }
-   if (nxlow > 0) {
-      rv = OoqpVectorHandle(la->newVector(nx));
-      rgamma = OoqpVectorHandle(la->newVector(nx));
-   }
-   if (nxupp > 0) {
-      rw = OoqpVectorHandle(la->newVector(nx));
-      rphi = OoqpVectorHandle(la->newVector(nx));
-   }
-}
 
 QpGenResiduals::QpGenResiduals(const QpGenResiduals &res) : Residuals(res) {
    nx = res.nx;

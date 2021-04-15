@@ -79,10 +79,10 @@ protected:
 
   double startTime{-1.0};
 
-  LinearSystem *sys{};
+  LinearSystem* linear_system{};
 
   /** iteration counter */
-  int iter{0};
+  int iteration{0};
 
   /** initialize dnorm and dnorm_orig */
   void setDnorm( const Problem& data );
@@ -100,11 +100,6 @@ public:
   virtual void defaultStart( ProblemFormulation * formulation,
 			     Variables * iterate, Problem * prob,
 			     Residuals * resid, Variables * step);
-
-  /** alternative starting point heuristic */
-  virtual void stevestart ( ProblemFormulation * formulation,
-			    Variables * iterate, Problem * prob,
-			    Residuals * resid, Variables * step );
 
   /** alternative starting point heuristic: sets the "complementary"
    * variables to a large positive value (based on the norm of the
@@ -150,10 +145,10 @@ public:
 
   /** this method called to test for convergence status at the end of
    * each interior-point iteration */
-  virtual int doStatus( const Problem * data, const Variables * vars,
-			const Residuals * resids,
-			int i, double mu, 
-			int level );
+  virtual int doStatus(const Problem * problem, const Variables * vars,
+                       const Residuals * resids,
+                       int i, double mu,
+                       int level );
 
   /** default method for checking status. May be replaced by a
    * user-defined method */
@@ -189,7 +184,7 @@ public:
 
   /** returns a pointed to the linear system object stored in this
    *  class */
-  LinearSystem * getLinearSystem() const { return sys; };
+  LinearSystem * getLinearSystem() const { return linear_system; };
 
 private:
   std::pair<double,double> computeUnscaledGapAndResidualNorm( const Residuals& );

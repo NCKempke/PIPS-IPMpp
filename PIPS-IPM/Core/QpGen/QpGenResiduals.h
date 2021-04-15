@@ -56,11 +56,6 @@ public:
   OoqpVectorHandle rlambda;
   OoqpVectorHandle rpi;
 
-  QpGenResiduals( LinearAlgebraPackage * la,
-		  long long nx, long long my, long long mz,
-		  OoqpVector * ixlow, OoqpVector * ixupp,
-		  OoqpVector * iclow, OoqpVector * icupp );
-
   QpGenResiduals( const QpGenResiduals& res);
 
   const long long& getNxupp() { return nxupp; };
