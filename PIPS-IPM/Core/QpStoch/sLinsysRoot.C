@@ -262,7 +262,7 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    if( !sc_compute_blockwise_hierarchical )
    {
       if( has_RAC )
-         assert( mbuffer == nF0V + mF0C + mG0C );
+         assert( mbuffer >= nF0V + mF0C + mG0C );
       else
          assert( mbuffer >= nF0V );
    }

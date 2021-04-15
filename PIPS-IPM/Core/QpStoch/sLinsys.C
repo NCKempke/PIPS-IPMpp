@@ -290,10 +290,6 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    if( !B.has_RAC && !B.use_local_RAC )
       return;
 
-   int mX0, nX0; X.getSize( mX0, nX0 );
-   int mRes, nRes; result.getSize( mRes, nRes );
-   assert( mX0 == mRes );
-
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.G.mat) : nullptr;
 
@@ -302,23 +298,24 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.A.mat_link) : &data->getLocalF();
    SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(B.C.mat_link) : &data->getLocalG();
 
-   if( has_RAC )
-      assert( F0cons_border && G0cons_border && A0_border && C0_border && F0vec_border && G0vec_border );
    assert( F0vec_border );
    assert( G0vec_border );
    const int n_rows = end_rows - begin_rows;
 
    int mA0{0}; int nA0{0};
-   if( A0_border )
+   if( A0_border ) {
       A0_border->getSize(mA0, nA0);
+   }
 
    int mC0{0}; int nC0{0};
-   if( C0_border )
+   if( C0_border ) {
       C0_border->getSize(mC0, nC0);
+   }
 
    int mF0C{0}; int nF0C{0};
-   if( F0cons_border )
+   if( F0cons_border ) {
       F0cons_border->getSize( mF0C, nF0C );
+   }
 
    int mF0V{0}; int nF0V{0};
    F0vec_border->getSize(mF0V, nF0V);
@@ -326,14 +323,19 @@ void sLinsys::finalizeDenseBorderBlocked( BorderLinsys& B, const DenseGenMatrix&
    int mG0V{0}; int nG0V{0};
    G0vec_border->getSize(mG0V, nG0V);
 
-   if( !has_RAC && nF0V == 0 && nG0V == 0 )
+   if( !has_RAC && nF0V == 0 && nG0V == 0 ) {
       return;
+   }
 
 #ifndef NDEBUG
-   int mG0C{0}; int nG0C{0};
-   if( G0cons_border )
-      G0cons_border->getSize( mG0C, nG0C );
+   int mX0, nX0; X.getSize( mX0, nX0 );
+   int mRes, nRes; result.getSize( mRes, nRes );
+   assert( n_rows <= mX0 && n_rows <= mRes );
 
+   int mG0C{0}; int nG0C{0};
+   if( G0cons_border ) {
+      G0cons_border->getSize( mG0C, nG0C );
+   }
 
    assert( nA0 == nC0 );
    assert( nF0V == nG0V );
@@ -424,9 +426,9 @@ void sLinsys::multRightDenseBorderBlocked( BorderBiBlock& BT, const DenseGenMatr
       assert( mF + mG == nX );
    }
 
-   assert( mRes <= mX );
    assert( 0 <= begin_rows && begin_rows <= end_rows );
    assert( end_rows - begin_rows <= mX );
+   assert( end_rows - begin_rows <= mRes );
 #endif
 
    if( BT.isEmpty() )
