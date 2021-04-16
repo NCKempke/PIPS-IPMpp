@@ -3,12 +3,10 @@
 
 #include "Residuals.h"
 #include "Solver.h"
-#include "QuadraticProblem.h"
+#include "Problem.h"
 #include "QpGenVars.h"
-#include "sTree.h"
 #include <iostream>
 #include <cstdio>
-#include "pipsport.h"
 
 StochMonitor::StochMonitor(Scaler* scaler)
   : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{ PIPS_MPIgetRank(mpiComm) }, myGlobRank{myRank}
@@ -42,13 +40,12 @@ void StochMonitor::doItPd( const Solver * solver, const Problem * data, const Va
 }
 
 void
-StochMonitor::doItStoch(const Solver *solver, const Problem *data,
+StochMonitor::doItStoch(const Solver *solver, const Problem *problem,
       const Variables *vars, const Residuals *resids, double alpha_primal,
       double alpha_dual, double, int i, double mu, int status_code,
       int level) const
 {
-   double objective = dynamic_cast<const QuadraticProblem*>(data)->objective_value(
-         dynamic_cast<const QpGenVars*>(vars));
+   double objective = problem->objective_value(dynamic_cast<const QpGenVars*>(vars));
 
    const Residuals *resids_unscaled = resids;
    if( scaler )
