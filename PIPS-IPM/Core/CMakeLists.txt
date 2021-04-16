@@ -3,7 +3,6 @@ add_subdirectory(QpPreprocess)
 add_subdirectory(SparseLinearAlgebra)
 add_subdirectory(DenseLinearAlgebra)
 add_subdirectory(StochLinearAlgebra)
-add_subdirectory(QpStoch)
 add_subdirectory(LinearSolvers)
 
 add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Abstract/Problem.C Abstract/Residuals.cpp Abstract/Solver.C Abstract/Status.C Abstract/Scaler.C
