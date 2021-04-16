@@ -18,32 +18,31 @@ class DoubleLinearSolver;
  */
 class QpGenSparseLinsys : public QpGenLinsys {
 protected:
-  SparseSymMatrixHandle Mat;
-  DoubleLinearSolver * solver;
+   SparseSymMatrixHandle Mat;
+   DoubleLinearSolver* solver;
 public:
-  QpGenSparseLinsys(  QpGen * factory,
-		QP * data,
-		SparseSymMatrix * Mat,
-		DoubleLinearSolver * solver );
+   QpGenSparseLinsys(QpGen* factory, Problem* problem, SparseSymMatrix* Mat, DoubleLinearSolver* solver);
 
-  /** perform the actual solve using the factors produced in factor.
-   *
-   * @param rhs on input contains the aggregated right-hand side of
-   * the augmented system; on output contains the solution in
-   * aggregated form
-   */
-  void solveCompressed( OoqpVector& rhs ) override;
+   /** perform the actual solve using the factors produced in factor.
+    *
+    * @param rhs on input contains the aggregated right-hand side of
+    * the augmented system; on output contains the solution in
+    * aggregated form
+    */
+   void solveCompressed(OoqpVector& rhs) override;
 
-  void putXDiagonal( OoqpVector& xdiag ) override;
-  void putZDiagonal( OoqpVector& zdiag ) override;
+   void putXDiagonal(OoqpVector& xdiag) override;
 
-  /** calls QpGenLinsys::factor to assemble the augmented system
-   * matrix, then calls matrixChanged to factor it
-   *
-   * @see QpGenLinsys::factor 
-   */
-  void factor(Problem *prob, Variables *vars) override;
-  
-  virtual ~QpGenSparseLinsys();
+   void putZDiagonal(OoqpVector& zdiag) override;
+
+   /** calls QpGenLinsys::factor to assemble the augmented system
+    * matrix, then calls matrixChanged to factor it
+    *
+    * @see QpGenLinsys::factor
+    */
+   void factorize(Problem* prob, Variables* vars) override;
+
+   virtual ~QpGenSparseLinsys();
 };
+
 #endif

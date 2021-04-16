@@ -93,7 +93,7 @@ void sLinsys::separateVars( OoqpVector& x_in, OoqpVector& y_in,
   vars.jointCopyTo(x, y, z);
 }
 
-void sLinsys::factor(Problem *prob_, Variables *vars)
+void sLinsys::factorize(Problem *prob_, Variables *vars)
 {
 #ifdef TIMING
   double tTot = MPI_Wtime();
@@ -101,7 +101,7 @@ void sLinsys::factor(Problem *prob_, Variables *vars)
   // the call to the the parent's method takes care of all necessary updates
   // to the KKT system (updating diagonals mainly). This is done recursively,
   // we don't have to worry about it anymore. 
-  QpGenLinsys::factor(prob_, vars);
+  QpGenLinsys::factorize(prob_, vars);
 
   // now DO THE LINEAR ALGEBRA!
   

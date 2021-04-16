@@ -84,8 +84,7 @@ Solver::Solver(ProblemFormulation& problem_formulation, Problem& problem, const 
    status = 0;
 }
 
-void
-Solver::start(ProblemFormulation *formulation, Variables *iterate, Problem *prob, Residuals *resid, Variables *step) {
+void Solver::start(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step) {
    if (startStrategy) {
       startStrategy->doIt(this, formulation, iterate, prob, resid, step);
    }
@@ -95,8 +94,7 @@ Solver::start(ProblemFormulation *formulation, Variables *iterate, Problem *prob
    }
 }
 
-void Solver::defaultStart(ProblemFormulation * /* formulation */, Variables *iterate, Problem *prob, Residuals *resid,
-      Variables *step) {
+void Solver::defaultStart(ProblemFormulation* /* formulation */, Variables* iterate, Problem* prob, Residuals* resid, Variables* step) {
    double sdatanorm = std::sqrt(dnorm);
    double a = sdatanorm;
    double b = sdatanorm;
@@ -105,7 +103,7 @@ void Solver::defaultStart(ProblemFormulation * /* formulation */, Variables *ite
    resid->evaluate(*prob, iterate);
    resid->set_r3_xz_alpha(iterate, 0.0);
 
-   linear_system->factor(prob, iterate);
+   linear_system->factorize(prob, iterate);
    linear_system->solve(prob, iterate, resid, step);
 
    step->negate();
@@ -117,8 +115,7 @@ void Solver::defaultStart(ProblemFormulation * /* formulation */, Variables *ite
    iterate->shiftBoundVariables(shift, shift);
 }
 
-void Solver::dumbstart(ProblemFormulation * /* formulation */, Variables *iterate, Problem * /* prob */,
-      Residuals * /*resid*/, Variables * /*step*/  ) {
+void Solver::dumbstart(ProblemFormulation* /* formulation */, Variables* iterate, Problem* /* prob */, Residuals* /*resid*/, Variables* /*step*/  ) {
    const double a = 1.e3;
    const double b = 1.e5;
 
@@ -126,7 +123,7 @@ void Solver::dumbstart(ProblemFormulation * /* formulation */, Variables *iterat
    iterate->interiorPoint(bigstart, bigstart);
 }
 
-double Solver::finalStepLength(Variables *iterate, Variables *step) {
+double Solver::finalStepLength(Variables* iterate, Variables* step) {
    double primalValue = -std::numeric_limits<double>::max();
    double primalStep = -std::numeric_limits<double>::max();
    double dualValue = -std::numeric_limits<double>::max();
@@ -182,7 +179,7 @@ double Solver::finalStepLength(Variables *iterate, Variables *step) {
    return alpha;
 }
 
-void Solver::finalStepLength_PD(Variables *iterate, Variables *step, double &alpha_primal, double &alpha_dual) {
+void Solver::finalStepLength_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
    double primalValue_p = -std::numeric_limits<double>::max();
    double primalStep_p = -std::numeric_limits<double>::max();
    double dualValue_p = -std::numeric_limits<double>::max();
@@ -197,8 +194,8 @@ void Solver::finalStepLength_PD(Variables *iterate, Variables *step, double &alp
 
    bool primalBlocking, dualBlocking;
 
-   iterate->findBlocking_pd(step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d,
-         dualValue_d, dualStep_d, maxAlpha_p, maxAlpha_d, primalBlocking, dualBlocking);
+   iterate->findBlocking_pd(step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
+         maxAlpha_p, maxAlpha_d, primalBlocking, dualBlocking);
 
    const double mufull = iterate->mustep_pd(step, maxAlpha_p, maxAlpha_d) / gamma_a;
 
@@ -253,9 +250,10 @@ void Solver::finalStepLength_PD(Variables *iterate, Variables *step, double &alp
 }
 
 
-void Solver::doMonitor(const Problem *data, const Variables *vars, const Residuals *resids, double alpha, double sigma,
-      int i, double mu, int stop_code, int level) {
-   OoqpMonitor *m = itsMonitors;
+void
+Solver::doMonitor(const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu, int stop_code,
+      int level) {
+   OoqpMonitor* m = itsMonitors;
 
    while (m) {
       m->doIt(this, data, vars, resids, alpha, sigma, i, mu, stop_code, level);
@@ -263,9 +261,10 @@ void Solver::doMonitor(const Problem *data, const Variables *vars, const Residua
    }
 }
 
-void Solver::doMonitorPd(const Problem *data, const Variables *vars, const Residuals *resids, double alpha_primal,
-      double alpha_dual, double sigma, int i, double mu, int stop_code, int level) {
-   OoqpMonitor *m = itsMonitors;
+void
+Solver::doMonitorPd(const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal, double alpha_dual, double sigma, int i,
+      double mu, int stop_code, int level) {
+   OoqpMonitor* m = itsMonitors;
 
    while (m) {
       m->doItPd(this, data, vars, resids, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
@@ -274,8 +273,7 @@ void Solver::doMonitorPd(const Problem *data, const Variables *vars, const Resid
 }
 
 
-int
-Solver::doStatus(const Problem *problem, const Variables *vars, const Residuals *resids, int i, double mu, int level) {
+int Solver::doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, int level) {
    if (status) {
       return status->doIt(this, problem, vars, resids, i, mu, level);
    }
@@ -289,13 +287,13 @@ void Solver::monitorSelf() {
    this->addMonitor(new OoqpSelfMonitor);
 }
 
-void Solver::addMonitor(OoqpMonitor *m) {
+void Solver::addMonitor(OoqpMonitor* m) {
    // Push the monitor onto the list
    m->nextMonitor = itsMonitors;
    itsMonitors = m;
 }
 
-std::pair<double, double> Solver::computeUnscaledGapAndResidualNorm(const Residuals &residuals) {
+std::pair<double, double> Solver::computeUnscaledGapAndResidualNorm(const Residuals& residuals) {
    if (!scaler)
       return std::make_pair(std::fabs(residuals.dualityGap()), residuals.residualNorm());
    else {
@@ -311,9 +309,7 @@ std::pair<double, double> Solver::computeUnscaledGapAndResidualNorm(const Residu
 }
 
 
-int
-Solver::defaultStatus(const Problem *, const Variables * /* vars */, const Residuals *resids, int iterate, double mu,
-      int /* level */) {
+int Solver::defaultStatus(const Problem*, const Variables* /* vars */, const Residuals* resids, int iterate, double mu, int /* level */) {
    const int myrank = PIPS_MPIgetRank();
    int stop_code = NOT_FINISHED;
    int idx;
@@ -348,8 +344,7 @@ Solver::defaultStatus(const Problem *, const Variables * /* vars */, const Resid
       stop_code = SUCCESSFUL_TERMINATION;
 
    if (myrank == 0) {
-      std::cout << "mu/mutol: " << mu << "  " << mutol << "  ....   rnorm/limit: " << rnorm << " " << artol * dnorm_orig
-                << std::endl;
+      std::cout << "mu/mutol: " << mu << "  " << mutol << "  ....   rnorm/limit: " << rnorm << " " << artol * dnorm_orig << std::endl;
 
       if (printTimeStamp) {
          const double timestamp = MPI_Wtime() - startTime;
@@ -378,8 +373,7 @@ Solver::defaultStatus(const Problem *, const Variables * /* vars */, const Resid
       printf("hehe dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
 
-   if (idx >= 350 && rnorm > artol * dnorm_orig &&
-       rnorm_history[idx] * mu_history[0] >= 1.e8 * mu_history[idx] * rnorm_history[0]) {
+   if (idx >= 350 && rnorm > artol * dnorm_orig && rnorm_history[idx] * mu_history[0] >= 1.e8 * mu_history[idx] * rnorm_history[0]) {
       stop_code = UNKNOWN;
       printf("dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
@@ -402,7 +396,7 @@ Solver::defaultStatus(const Problem *, const Variables * /* vars */, const Resid
    return stop_code;
 }
 
-void Solver::setDnorm(const Problem &data) {
+void Solver::setDnorm(const Problem& data) {
    dnorm = data.datanorm();
 
    if (scaler)
@@ -411,8 +405,7 @@ void Solver::setDnorm(const Problem &data) {
       dnorm_orig = dnorm;
 }
 
-void
-Solver::defaultMonitor(const Problem* /* problem */, const Variables* /* vars */, const Residuals* resids, double alpha, double sigma, int i,
+void Solver::defaultMonitor(const Problem* /* problem */, const Variables* /* vars */, const Residuals* resids, double alpha, double sigma, int i,
       double mu, int status_code, int level) const {
    switch (level) {
       case 0 :
@@ -457,9 +450,9 @@ Solver::defaultMonitor(const Problem* /* problem */, const Variables* /* vars */
 }
 
 Solver::~Solver() {
-   OoqpMonitor *m = itsMonitors;
+   OoqpMonitor* m = itsMonitors;
    while (m) {
-      OoqpMonitor *n = m->nextMonitor;
+      OoqpMonitor* n = m->nextMonitor;
       delete m;
       m = n;
    }

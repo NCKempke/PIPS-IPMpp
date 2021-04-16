@@ -13,9 +13,13 @@
 #include <functional>
 
 class Problem;
+
 class QP;
+
 class QpGen;
+
 class Variables;
+
 class Residuals;
 
 /** 
@@ -33,184 +37,184 @@ class Residuals;
 
 class QpGenLinsys : public LinearSystem, public Subject {
 protected:
-  /** observer pattern for convergence status of BiCGStab when calling solve */
-  int bicg_conv_flag{-2};
-  int bicg_niterations{-1};
+   /** observer pattern for convergence status of BiCGStab when calling solve */
+   int bicg_conv_flag{-2};
+   int bicg_niterations{-1};
 
-  double bicg_resnorm{0.0};
-  double bicg_relresnorm{0.0};
+   double bicg_resnorm{0.0};
+   double bicg_relresnorm{0.0};
 
-  int getIntValue(const std::string& s) const override;
-  double getDoubleValue(const std::string& s) const override;
-  bool getBoolValue(const std::string& s) const override;
+   int getIntValue(const std::string& s) const override;
 
-  /** stores a critical diagonal matrix as a vector */
-  OoqpVector* nomegaInv{};
+   double getDoubleValue(const std::string& s) const override;
 
-  QpGen* factory{};
+   bool getBoolValue(const std::string& s) const override;
 
-  /** right-hand side of the system */
-  OoqpVector* rhs{};
+   /** stores a critical diagonal matrix as a vector */
+   OoqpVector* nomegaInv{};
 
-  QpGenLinsys( QpGen* factory_, QP* problem, bool create_iter_ref_vecs );
+   QpGen* factory{};
 
-  /** dimensions of the vectors in the general QP formulation */
-  long long nx{0};
-  long long my{0};
-  long long mz{0};
+   /** right-hand side of the system */
+   OoqpVector* rhs{};
 
-  /** temporary storage vectors */
-  OoqpVector* dd{};
-  OoqpVector* dq{};
+   QpGenLinsys(QpGen* factory_, Problem* problem, bool create_iter_ref_vecs);
 
-  /** index matrices for the upper and lower bounds on x and Cx */
-  OoqpVector* ixupp{};
-  OoqpVector* icupp{};
-  OoqpVector* ixlow{};
-  OoqpVector* iclow{};
+   /** dimensions of the vectors in the general QP formulation */
+   long long nx{0};
+   long long my{0};
+   long long mz{0};
 
-  /** dimensions of the upper and lower bound vectors */
-  long long nxupp{0};
-  long long nxlow{0};
-  long long mcupp{0};
-  long long mclow{0};
+   /** temporary storage vectors */
+   OoqpVector* dd{};
+   OoqpVector* dq{};
 
-  int useRefs{0};
+   /** index matrices for the upper and lower bounds on x and Cx */
+   OoqpVector* ixupp{};
+   OoqpVector* icupp{};
+   OoqpVector* ixlow{};
+   OoqpVector* iclow{};
 
-  /** Work vectors for iterative refinement of the XYZ linear system */
-  OoqpVector* sol{};
-  OoqpVector* res{};
-  OoqpVector* resx{};
-  OoqpVector* resy{};
-  OoqpVector* resz{};
+   /** dimensions of the upper and lower bound vectors */
+   long long nxupp{0};
+   long long nxlow{0};
+   long long mcupp{0};
+   long long mclow{0};
 
-  /** Work vectors for BiCGStab */
-  OoqpVector* sol2{};
-  OoqpVector* sol3{};
-  OoqpVector* res2{};
-  OoqpVector* res3{};
-  OoqpVector* res4{};
-  OoqpVector* res5{};
+   int useRefs{0};
 
-  /// error absorbtion in linear system outer level
-  const int outerSolve;
-  const int innerSCSolve;
+   /** Work vectors for iterative refinement of the XYZ linear system */
+   OoqpVector* sol{};
+   OoqpVector* res{};
+   OoqpVector* resx{};
+   OoqpVector* resy{};
+   OoqpVector* resz{};
 
-  /// parameters for the bicg solve
-  const bool outer_bicg_print_statistics;
+   /** Work vectors for BiCGStab */
+   OoqpVector* sol2{};
+   OoqpVector* sol3{};
+   OoqpVector* res2{};
+   OoqpVector* res3{};
+   OoqpVector* res4{};
+   OoqpVector* res5{};
 
-  const double outer_bicg_eps;
+   /// error absorbtion in linear system outer level
+   const int outerSolve;
+   const int innerSCSolve;
 
-  const int outer_bicg_max_iter;
-  const int outer_bicg_max_normr_divergences;
-  const int outer_bicg_max_stagnations;
+   /// parameters for the bicg solve
+   const bool outer_bicg_print_statistics;
 
-  const bool xyzs_solve_print_residuals;
+   const double outer_bicg_eps;
+
+   const int outer_bicg_max_iter;
+   const int outer_bicg_max_normr_divergences;
+   const int outer_bicg_max_stagnations;
+
+   const bool xyzs_solve_print_residuals;
 
 public:
-  QpGenLinsys( QpGen* factory, QP* problem );
-  QpGenLinsys( QpGen* factory_, QP* problem, OoqpVector* dd_, OoqpVector* dq_,
-        OoqpVector* nomegaInv_, OoqpVector* rhs_, bool create_iter_ref_vecs );
+   QpGenLinsys(QpGen* factory, Problem* problem);
 
-  ~QpGenLinsys() override;
+   QpGenLinsys(QpGen* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_, bool
+   create_iter_ref_vecs);
 
-
-  /** sets up the matrix for the main linear system in "augmented
-   * system" form. The actual factorization is performed by a routine
-   * specific to either the sparse or dense case.
-   *
-   * @see QpGenSparseLinsys::factor
-   * @see QpGenDenseLinsys::factor
-   */
-  void factor(Problem *prob, Variables *vars) override;
-
-  /** solves the system for a given set of residuals. Assembles the
-   * right-hand side appropriate to the matrix factored in factor,
-   * solves the system using the factorization produced there,
-   * partitions the solution vector into step components, then
-   * recovers the step components eliminated during the block
-   * elimination that produced the augmented system form
-   *
-   * @see QpGenSparseLinsys::solveCompressed
-   * @see QpGenDenseLinsys::solveCompressed
-*/
-  void solve(Problem *prob, Variables *vars, Residuals *res,
-		     Variables *step) override;
-
-  /** assembles a single vector object from three given vectors
-   *
-   * @param rhs (output) final joined vector
-   * @param rhs1 (input) first part of rhs
-   * @param rhs2 (input) middle part of rhs
-   * @param rhs3 (input) last part of rhs
-   */
-  virtual void joinRHS( OoqpVector& rhs, const OoqpVector& rhs1,
-			const OoqpVector& rhs2, const OoqpVector& rhs3 ) const;
-
-  /** extracts three component vectors from a given aggregated vector.
-   *
-   * @param vars (input) aggregated vector
-   * @param vars1 (output) first part of vars
-   * @param vars2 (output) middle part of vars
-   * @param vars3 (output) last part of vars
-   */
-  virtual void separateVars( OoqpVector& vars1, OoqpVector& vars2,
-			     OoqpVector& vars3, const OoqpVector& vars ) const;
-
-  /** assemble right-hand side of augmented system and call
-      solveCompressed to solve it */
-  virtual void solveXYZS( OoqpVector& stepx, OoqpVector& stepy,
-			  OoqpVector& stepz, OoqpVector& steps,
-			  OoqpVector& ztemp, QP * data );
-
-  /** perform the actual solve using the factors produced in factor.
-   *
-   * @param rhs on input contains the aggregated right-hand side of
-   * the augmented system; on output contains the solution in
-   * aggregated form
-   *
-   * @see QpGenSparseLinsys::solveCompressed
-   * @see QpGenDenseLinsys::solveCompressed
-   */
-  virtual void solveCompressed( OoqpVector& rhs ) = 0;
-
-  /** places the diagonal resulting from the bounds on x into the
-   * augmented system matrix */
-  virtual void putXDiagonal( OoqpVector& xdiag ) = 0;
-
-  /** places the diagonal resulting from the bounds on Cx into the
-   * augmented system matrix */
-  virtual void putZDiagonal( OoqpVector& zdiag ) = 0;
-
-  /** computes the diagonal matrices in the augmented system from the
-      current set of variables */
-  virtual void computeDiagonals( OoqpVector& dd, OoqpVector& omega,
-				 OoqpVector& t,  OoqpVector& lambda,
-				 OoqpVector& u,  OoqpVector& pi,
-				 OoqpVector& v,  OoqpVector& gamma,
-				 OoqpVector& w,  OoqpVector& phi );
-   protected:
-      void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
-            OoqpVector& soly, OoqpVector& solz, const QP& data);
-      void computeResidualsReducedSlacks( const QP& data );
-      void computeResidualsFull( const QP& data );
-
-      void matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol,
-            const QP& data, OoqpVector& solx, OoqpVector& soly,
-            OoqpVector& solz);
-      void matReducedSlacksMult( const QP& data );
-      void matFullMult( const QP& data );
-
-      double matXYZinfnorm(const QP& data, OoqpVector &solx, OoqpVector &soly,
-            OoqpVector &solz);
-      void matReducedInfnorm( const QP& data );
-      void matFullInfnorm( const QP& data );
+   ~QpGenLinsys() override;
 
 
-  // TODO : move to LinearSystem level
-  void solveCompressedBiCGStab( const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm );
+   /** sets up the matrix for the main linear system in "augmented
+    * system" form. The actual factorization is performed by a routine
+    * specific to either the sparse or dense case.
+    *
+    * @see QpGenSparseLinsys::factorize
+    * @see QpGenDenseLinsys::factorize
+    */
+   void factorize(Problem* problem, Variables* iterate) override;
 
-  void solveCompressedIterRefin( const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual );
+   /** solves the system for a given set of residuals. Assembles the
+    * right-hand side appropriate to the matrix factored in factor,
+    * solves the system using the factorization produced there,
+    * partitions the solution vector into step components, then
+    * recovers the step components eliminated during the block
+    * elimination that produced the augmented system form
+    *
+    * @see QpGenSparseLinsys::solveCompressed
+    * @see QpGenDenseLinsys::solveCompressed
+ */
+   void solve(Problem* prob, Variables* vars, Residuals* res, Variables* step) override;
+
+   /** assembles a single vector object from three given vectors
+    *
+    * @param rhs (output) final joined vector
+    * @param rhs1 (input) first part of rhs
+    * @param rhs2 (input) middle part of rhs
+    * @param rhs3 (input) last part of rhs
+    */
+   virtual void joinRHS(OoqpVector& rhs, const OoqpVector& rhs1, const OoqpVector& rhs2, const OoqpVector& rhs3) const;
+
+   /** extracts three component vectors from a given aggregated vector.
+    *
+    * @param vars (input) aggregated vector
+    * @param vars1 (output) first part of vars
+    * @param vars2 (output) middle part of vars
+    * @param vars3 (output) last part of vars
+    */
+   virtual void separateVars(OoqpVector& vars1, OoqpVector& vars2, OoqpVector& vars3, const OoqpVector& vars) const;
+
+   /** assemble right-hand side of augmented system and call
+       solveCompressed to solve it */
+   virtual void solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& ztemp, QP* problem);
+
+   /** perform the actual solve using the factors produced in factor.
+    *
+    * @param rhs on input contains the aggregated right-hand side of
+    * the augmented system; on output contains the solution in
+    * aggregated form
+    *
+    * @see QpGenSparseLinsys::solveCompressed
+    * @see QpGenDenseLinsys::solveCompressed
+    */
+   virtual void solveCompressed(OoqpVector& rhs) = 0;
+
+   /** places the diagonal resulting from the bounds on x into the
+    * augmented system matrix */
+   virtual void putXDiagonal(OoqpVector& xdiag) = 0;
+
+   /** places the diagonal resulting from the bounds on Cx into the
+    * augmented system matrix */
+   virtual void putZDiagonal(OoqpVector& zdiag) = 0;
+
+   /** computes the diagonal matrices in the augmented system from the
+       current set of variables */
+   virtual void computeDiagonals(OoqpVector& dd, OoqpVector& omega, OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
+         OoqpVector& gamma, OoqpVector& w, OoqpVector& phi);
+
+protected:
+   void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
+
+   //void computeResidualsReducedSlacks(const QP& data);
+
+   //void computeResidualsFull(const QP& data);
+
+   void matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx, OoqpVector& soly,
+         OoqpVector& solz);
+
+   //void matReducedSlacksMult(const QP& data);
+
+   //void matFullMult(const QP& data);
+
+   double matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz);
+
+   //void matReducedInfnorm(const QP& data);
+
+   //void matFullInfnorm(const QP& data);
+
+
+   // TODO : move to LinearSystem level
+   void
+   solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm);
+
+   void solveCompressedIterRefin(const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual);
 
 };
 

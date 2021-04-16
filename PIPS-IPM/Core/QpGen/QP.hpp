@@ -52,7 +52,7 @@ public:
    virtual void putQIntoAt(GenMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * Q * x */
-   virtual void Qmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+   virtual void hessian_multiplication(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override;
 
    /** extract the diagonal of the Hessian and put it in the OoqpVector hessian_diagonal */
    void hessian_diagonal(OoqpVector& hessian_diagonal) override;

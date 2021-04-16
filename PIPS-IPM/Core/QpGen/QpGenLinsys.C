@@ -3,26 +3,18 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGenLinsys.h"
-
 #include "QP.hpp"
 #include "Residuals.h"
 #include "QpGenVars.h"
-
 #include "OoqpVector.h"
-#include "DoubleMatrix.h"
-#include "DoubleLinearSolver.h"
 #include "SimpleVector.h"
 #include "LinearAlgebraPackage.h"
 #include "QpGen.h"
 #include "mpi.h"
-#include "pipsport.h"
 #include "QpGenOptions.h"
 
-#include <limits>
 #include <vector>
-#include <algorithm>
 #include <functional>
-#include <fstream>
 
 extern int gOuterBiCGIter;
 extern double gOuterBiCGIterAvg;
@@ -32,7 +24,7 @@ extern int gOuterBiCGFails;
 static std::vector<int> bicgIters;
 
 
-int QpGenLinsys::getIntValue(const std::string &s) const {
+int QpGenLinsys::getIntValue(const std::string& s) const {
    if (s.compare("BICG_NITERATIONS") == 0)
       return bicg_niterations;
    else if (s.compare("BICG_CONV_FLAG"))
@@ -43,7 +35,7 @@ int QpGenLinsys::getIntValue(const std::string &s) const {
    }
 }
 
-bool QpGenLinsys::getBoolValue(const std::string &s) const {
+bool QpGenLinsys::getBoolValue(const std::string& s) const {
    if (s.compare("BICG_CONVERGED") == 0)
       return bicg_conv_flag == 0;
    else if (s.compare("BICG_SKIPPED") == 0)
@@ -62,7 +54,7 @@ bool QpGenLinsys::getBoolValue(const std::string &s) const {
    }
 }
 
-double QpGenLinsys::getDoubleValue(const std::string &s) const {
+double QpGenLinsys::getDoubleValue(const std::string& s) const {
    if (s.compare("BICG_RESNORM") == 0)
       return bicg_resnorm;
    else if (s.compare("BICG_RELRESNORM") == 0)
@@ -123,7 +115,7 @@ static void biCGStabCommunicateStatus(int flag, int it) {
 
 }
 
-static bool isZero(double val, int &flag) {
+static bool isZero(double val, int& flag) {
    if (PIPSisZero(val)) {
       flag = 4;
       return true;
@@ -132,7 +124,7 @@ static bool isZero(double val, int &flag) {
    return false;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem, bool create_iter_ref_vecs) : factory(factory_),
+QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
       outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")), innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
       outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
       outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
@@ -178,7 +170,7 @@ QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem, bool create_iter_ref_vecs
    }
 };
 
-QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_,
+QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_,
       bool create_iter_ref_vecs) : QpGenLinsys(factory_, problem, create_iter_ref_vecs) {
    dd = dd_;
    dq = dq_;
@@ -186,7 +178,7 @@ QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem, OoqpVector *dd_, OoqpVect
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem) : QpGenLinsys(factory_, problem, true) {
+QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem) : QpGenLinsys(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
       dd = factory->makePrimalVector();
       dq = factory->makePrimalVector();
@@ -218,13 +210,14 @@ QpGenLinsys::~QpGenLinsys() {
    delete res5;
 }
 
-void QpGenLinsys::factor(Problem * /* prob_in */, Variables *vars_in) {
-   QpGenVars *vars = (QpGenVars *) vars_in;
+void QpGenLinsys::factorize(Problem* /* problem */, Variables* vars_in) {
+   QpGenVars* vars = (QpGenVars*) vars_in;
 
    assert(vars->validNonZeroPattern());
 
-   if (nxlow + nxupp > 0)
+   if (nxlow + nxupp > 0) {
       dd->copyFrom(*dq);
+   }
    computeDiagonals(*dd, *nomegaInv, *vars->t, *vars->lambda, *vars->u, *vars->pi, *vars->v, *vars->gamma, *vars->w, *vars->phi);
 
    if (pips_options::getBoolParameter("HIERARCHICAL_TESTING")) {
@@ -232,22 +225,25 @@ void QpGenLinsys::factor(Problem * /* prob_in */, Variables *vars_in) {
       dd->setToConstant(1.0);
    }
 
-   if (nxlow + nxupp > 0)
+   if (nxlow + nxupp > 0) {
       putXDiagonal(*dd);
+   }
 
    nomegaInv->invert();
    nomegaInv->negate();
 
-   if (pips_options::getBoolParameter("HIERARCHICAL_TESTING"))
+   if (pips_options::getBoolParameter("HIERARCHICAL_TESTING")) {
       nomegaInv->setToConstant(1.0);
+   }
 
-   if (mclow + mcupp > 0)
+   if (mclow + mcupp > 0) {
       putZDiagonal(*nomegaInv);
+   }
 }
 
 void
-QpGenLinsys::computeDiagonals(OoqpVector &dd_, OoqpVector &omega, OoqpVector &t, OoqpVector &lambda, OoqpVector &u, OoqpVector &pi, OoqpVector &v,
-      OoqpVector &gamma, OoqpVector &w, OoqpVector &phi) {
+QpGenLinsys::computeDiagonals(OoqpVector& dd_, OoqpVector& omega, OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
+      OoqpVector& gamma, OoqpVector& w, OoqpVector& phi) {
    /*** dd = dQ + Gamma/V + Phi/W ***/
    if (nxupp + nxlow > 0) {
       if (nxlow > 0)
@@ -255,7 +251,7 @@ QpGenLinsys::computeDiagonals(OoqpVector &dd_, OoqpVector &omega, OoqpVector &t,
       if (nxupp > 0)
          dd_.axdzpy(1.0, phi, w, *ixupp);
    }
-   assert(dd_.allOf([](const double &d) {
+   assert(dd_.allOf([](const double& d) {
       return d >= 0;
    }));
 
@@ -266,17 +262,16 @@ QpGenLinsys::computeDiagonals(OoqpVector &dd_, OoqpVector &omega, OoqpVector &t,
    if (mcupp > 0)
       omega.axdzpy(1.0, pi, u, *icupp);
 
-   assert(omega.allOf([](const double &d) {
+   assert(omega.allOf([](const double& d) {
       return d >= 0;
    }));
 }
 
-void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in, Variables *step_in) {
-   QP *problem = (QP *) prob_in;
-   QpGenVars *vars = (QpGenVars *) vars_in;
-   QpGenVars *step = (QpGenVars *) step_in;
-   Residuals *res = (Residuals *) res_in;
-
+void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in, Variables* step_in) {
+   QP* problem = (QP*) prob_in;
+   QpGenVars* vars = (QpGenVars*) vars_in;
+   QpGenVars* step = (QpGenVars*) step_in;
+   Residuals* res = (Residuals*) res_in;
 
    assert(vars->validNonZeroPattern());
    assert(res->validNonZeroPattern());
@@ -285,7 +280,7 @@ void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in,
    /* rx = rQ */
    step->x->copyFrom(*res->rQ);
    if (nxlow > 0) {
-      OoqpVector &gamma_by_v = *step->v;
+      OoqpVector& gamma_by_v = *step->v;
       gamma_by_v.copyFrom(*vars->gamma);
       gamma_by_v.divideSome(*vars->v, *ixlow);
 
@@ -296,7 +291,7 @@ void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in,
    }
 
    if (nxupp > 0) {
-      OoqpVector &phi_by_w = *step->w;
+      OoqpVector& phi_by_w = *step->w;
       phi_by_w.copyFrom(*vars->phi);
       phi_by_w.divideSome(*vars->w, *ixupp);
 
@@ -311,7 +306,7 @@ void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in,
    /* step->s = rz */
    step->s->copyFrom(*res->rz);
    if (mclow > 0) {
-      OoqpVector &lambda_by_t = *step->t;
+      OoqpVector& lambda_by_t = *step->t;
       lambda_by_t.copyFrom(*vars->lambda);
       lambda_by_t.divideSome(*vars->t, *iclow);
 
@@ -322,7 +317,7 @@ void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in,
    }
 
    if (mcupp > 0) {
-      OoqpVector &pi_by_u = *step->u;
+      OoqpVector& pi_by_u = *step->u;
       pi_by_u.copyFrom(*vars->pi);
       pi_by_u.divideSome(*vars->u, *icupp);
 
@@ -410,8 +405,7 @@ void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in,
 
 }
 
-void
-QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, OoqpVector &steps, OoqpVector & /* ztemp */, QP *prob) {
+void QpGenLinsys::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& /* ztemp */, QP* problem) {
    /* step->z = rC */
    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
@@ -420,7 +414,7 @@ QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, 
    /* rz = rC + Omega^-1 ( rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U ) */
    stepz.axzpy(-1.0, *nomegaInv, steps);
 
-   OoqpVector *residual = nullptr;
+   OoqpVector* residual = nullptr;
    if (xyzs_solve_print_residuals) {
       residual = rhs->cloneFull();
       this->joinRHS(*residual, stepx, stepy, stepz);
@@ -441,7 +435,7 @@ QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, 
       // Iterative refinement
       ///////////////////////////////////////////////////////////////
       auto computeResiduals = std::bind(&QpGenLinsys::computeResidualXYZ, this, std::placeholders::_1, std::placeholders::_2, std::ref(stepx),
-            std::ref(stepy), std::ref(stepz), std::ref(*prob));
+            std::ref(stepy), std::ref(stepz), std::ref(*problem));
 
       solveCompressedIterRefin(computeResiduals);
 
@@ -463,9 +457,9 @@ QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, 
       ///////////////////////////////////////////////////////////////
 
       auto matMult = std::bind(&QpGenLinsys::matXYZMult, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
-            std::placeholders::_4, std::ref(*prob), std::ref(stepx), std::ref(stepy), std::ref(stepz));
+            std::placeholders::_4, std::ref(*problem), std::ref(stepx), std::ref(stepy), std::ref(stepz));
 
-      auto matInfnorm = std::bind(&QpGenLinsys::matXYZinfnorm, this, std::ref(*prob), std::ref(stepx), std::ref(stepy), std::ref(stepz));
+      auto matInfnorm = std::bind(&QpGenLinsys::matXYZinfnorm, this, std::ref(*problem), std::ref(stepx), std::ref(stepy), std::ref(stepz));
 
       solveCompressedBiCGStab(matMult, matInfnorm);
 
@@ -481,7 +475,7 @@ QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, 
       assert(sol);
       const double bnorm = residual->infnorm();
       this->joinRHS(*sol, stepx, stepy, stepz);
-      this->matXYZMult(1.0, *residual, -1.0, *sol, *prob, stepx, stepy, stepz);
+      this->matXYZMult(1.0, *residual, -1.0, *sol, *problem, stepx, stepy, stepz);
 
       this->separateVars(*resx, *resy, *resz, *residual);
       const double resxnorm = resx->infnorm();
@@ -506,11 +500,11 @@ QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, 
    steps.negate();
 }
 
-void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpVector &, double, OoqpVector &)> &matMult,
-      const std::function<double()> &matInfnorm) {
+void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult,
+      const std::function<double()>& matInfnorm) {
    //aliases
-   OoqpVector &r0 = *res2, &dx = *sol2, &best_x = *sol3, &v = *res3, &t = *res4, &p = *res5;
-   OoqpVector &x = *sol, &r = *res, &b = *rhs;
+   OoqpVector& r0 = *res2, & dx = *sol2, & best_x = *sol3, & v = *res3, & t = *res4, & p = *res5;
+   OoqpVector& x = *sol, & r = *res, & b = *rhs;
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
@@ -627,7 +621,7 @@ void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpV
 
          if (normr <= tolb || nstags >= outer_bicg_max_stagnations) {
             //compute the actual residual
-            OoqpVector &res = dx; //use dx
+            OoqpVector& res = dx; //use dx
             res.copyFrom(b);
             matMult(1.0, res, -1.0, x);
 
@@ -670,7 +664,7 @@ void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpV
 
          if (normr <= tolb || nstags >= outer_bicg_max_stagnations) {
             //compute the actual residual
-            OoqpVector &res = dx; //use dx
+            OoqpVector& res = dx; //use dx
             res.copyFrom(b);
             matMult(1.0, res, -1.0, x);
 
@@ -733,8 +727,9 @@ void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpV
  *       [            C                  0  -(lambda/V + pi/u)^-1 ]
  * stepx, stepy, stepz are used as temporary buffers
  */
-void QpGenLinsys::matXYZMult(double beta, OoqpVector &res, double alpha, const OoqpVector &sol, const QP &data, OoqpVector &solx,
-      OoqpVector &soly, OoqpVector &solz) {
+void QpGenLinsys::matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx, OoqpVector&
+soly,
+      OoqpVector& solz) {
    assert(resx);
    assert(resy);
    assert(resz);
@@ -745,43 +740,43 @@ void QpGenLinsys::matXYZMult(double beta, OoqpVector &res, double alpha, const O
    separateVars(*resx, *resy, *resz, res);
 
    /* resx = beta resx + alpha Q solx + alpha dd solx */
-   data.Qmult(beta, *resx, alpha, solx);
+   problem.hessian_multiplication(beta, *resx, alpha, solx);
    resx->axzpy(alpha, *dd, solx);
 
    /* resx = beta resx + alpha Q solx + alpha dd solx + alpha AT soly + alpha CT solz */
-   data.ATransmult(1.0, *resx, alpha, soly);
-   data.CTransmult(1.0, *resx, alpha, solz);
+   problem.ATransmult(1.0, *resx, alpha, soly);
+   problem.CTransmult(1.0, *resx, alpha, solz);
 
    /* resy = beta resy + alpha A solx */
-   data.Amult(beta, *resy, alpha, solx);
+   problem.Amult(beta, *resy, alpha, solx);
 
    /* resz = beta resz + alpha C solx + alpha nomegaInv solz */
-   data.Cmult(beta, *resz, alpha, solx);
+   problem.Cmult(beta, *resz, alpha, solx);
    resz->axzpy(alpha, *nomegaInv, solz);
 
    this->joinRHS(res, *resx, *resy, *resz);
 }
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
-double QpGenLinsys::matXYZinfnorm(const QP &data, OoqpVector &solx, OoqpVector &soly, OoqpVector &solz) {
+double QpGenLinsys::matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz) {
    solx.copyFromAbs(*dd);
 
-   data.A->addColSums(solx);
-   data.C->addColSums(solx);
+   problem.A->addColSums(solx);
+   problem.C->addColSums(solx);
    double infnorm = solx.infnorm();
 
    soly.setToZero();
-   data.A->addRowSums(soly);
+   problem.A->addRowSums(soly);
    infnorm = std::max(infnorm, soly.infnorm());
 
    solz.copyFromAbs(*nomegaInv);
-   data.C->addRowSums(solz);
+   problem.C->addRowSums(solz);
    infnorm = std::max(infnorm, solz.infnorm());
 
    return infnorm;
 }
 
-void QpGenLinsys::solveCompressedIterRefin(const std::function<void(OoqpVector &sol, OoqpVector &res)> &computeResidual) {
+void QpGenLinsys::solveCompressedIterRefin(const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual) {
 #ifdef TIMING
    int myRank; MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
    vector<double> histRelResid;
@@ -862,36 +857,36 @@ void QpGenLinsys::solveCompressedIterRefin(const std::function<void(OoqpVector &
  *
  * stepx, stepy, stepz are used as temporary buffers
  */
-void QpGenLinsys::computeResidualXYZ(const OoqpVector &sol, OoqpVector &res, OoqpVector &solx, OoqpVector &soly, OoqpVector &solz,
-      const QP &data) {
+void QpGenLinsys::computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem&
+problem) {
    this->separateVars(solx, soly, solz, sol);
    this->separateVars(*resx, *resy, *resz, res);
 
    /* resx += - Q solx - ddT solx - AT soly - CT solz */
-   data.Qmult(1.0, *resx, -1.0, solx);
+   problem.hessian_multiplication(1.0, *resx, -1.0, solx);
    resx->axzpy(-1.0, *dd, solx);
-   data.ATransmult(1.0, *resx, -1.0, soly);
-   data.CTransmult(1.0, *resx, -1.0, solz);
+   problem.ATransmult(1.0, *resx, -1.0, soly);
+   problem.CTransmult(1.0, *resx, -1.0, solz);
 
    /* resy += - A soly */
-   data.Amult(1.0, *resy, -1.0, solx);
+   problem.Amult(1.0, *resy, -1.0, solx);
 
    /* resz += - C solx - nOmegaInvT solz */
-   data.Cmult(1.0, *resz, -1.0, solx);
+   problem.Cmult(1.0, *resz, -1.0, solx);
    resz->axzpy(-1.0, *nomegaInv, solz);
 
    this->joinRHS(res, *resx, *resy, *resz);
 }
 
 
-void QpGenLinsys::joinRHS(OoqpVector &rhs_in, const OoqpVector &rhs1_in, const OoqpVector &rhs2_in, const OoqpVector &rhs3_in) const {
+void QpGenLinsys::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
    // joinRHS has to be delegated to the factory. This is true because
    // the rhs may be distributed across processors, so the factory is the
    // only object that knows with certainly how to scatter the elements.
    factory->joinRHS(rhs_in, rhs1_in, rhs2_in, rhs3_in);
 }
 
-void QpGenLinsys::separateVars(OoqpVector &x_in, OoqpVector &y_in, OoqpVector &z_in, const OoqpVector &vars_in) const {
+void QpGenLinsys::separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
    // separateVars has to be delegated to the factory. This is true because
    // the rhs may be distributed across processors, so the factory is the
    // only object that knows with certainly how to scatter the elements.

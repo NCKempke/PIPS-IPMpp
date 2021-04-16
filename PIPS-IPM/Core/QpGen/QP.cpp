@@ -18,10 +18,10 @@ QP::QP(LinearAlgebraPackage* la_in, OoqpVector* c_in, SymMatrix* Q_in, OoqpVecto
    SpReferTo(Q, Q_in);
 }
 
-void QP::Qmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void QP::hessian_multiplication(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+   // y = beta * y + alpha * Q * x
    Q->mult(beta, y, alpha, x);
 }
-
 
 double QP::datanorm() const {
    double norm = Problem::datanorm();
@@ -77,14 +77,14 @@ void QP::hessian_diagonal(OoqpVector& hessian_diagonal) {
 
 void QP::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const {
    this->getg(gradient);
-   this->Qmult(1., gradient, 1., *vars->x);
+   this->hessian_multiplication(1., gradient, 1., *vars->x);
    return;
 }
 
 double QP::objective_value(const QpGenVars* vars) const {
    OoqpVectorHandle gradient(la->newVector(nx));
    this->getg(*gradient);
-   this->Qmult(1., *gradient, 0.5, *vars->x);
+   this->hessian_multiplication(1., *gradient, 0.5, *vars->x);
 
    return gradient->dotProductWith(*vars->x);
 }
