@@ -1777,8 +1777,10 @@ void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A,
 
 void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm)
 {
-   assert(nRows > 0);
-   assert(nCols > 0);
+   assert(nRows >= 0);
+   assert(nCols >= 0);
+   if(nRows == 0 || nCols == 0)
+      return;
    assert(startRow >= 0);
    assert(startCol >= 0);
 

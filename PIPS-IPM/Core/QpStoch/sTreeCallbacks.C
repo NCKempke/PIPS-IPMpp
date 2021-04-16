@@ -877,9 +877,7 @@ sTree* sTreeCallbacks::shaveDenseBorder( int nx_to_shave, int myl_to_shave, int 
    if( PIPS_MPIgetRank() == 0 && !pips_options::getBoolParameter("SILENT") )
       std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " <<
          mzl_to_shave << " inequalities for the border\n";
-   if( nx_to_shave + myl_to_shave + mzl_to_shave == 0 )
-      return this;
-
+   
    sTreeCallbacks* top_layer = new sTreeCallbacks();
 
    /* sTree members */
