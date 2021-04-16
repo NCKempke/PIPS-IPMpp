@@ -54,8 +54,8 @@ public:
    /** y = beta * y + alpha * Q * x */
    virtual void Qmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
-   /** extract the diagonal of Q and put it in the OoqpVector q_diagonal */
-   void getDiagonalOfQ(OoqpVector& q_diagonal);
+   /** extract the diagonal of the Hessian and put it in the OoqpVector hessian_diagonal */
+   void hessian_diagonal(OoqpVector& hessian_diagonal) override;
 
    void createScaleFromQ();
 

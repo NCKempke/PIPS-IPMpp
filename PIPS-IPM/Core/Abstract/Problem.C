@@ -55,6 +55,12 @@ void Problem::getbA(OoqpVector &bout) const {
    bout.copyFrom(*bA);
 }
 
+// precondition: hessian_diagonal is a vector of zeros
+void Problem::hessian_diagonal(OoqpVector& hessian_diagonal) {
+   // if there is no Hessian, do nothing
+   return;
+}
+
 void Problem::putAIntoAt(GenMatrix &M, int row, int col) {
    M.atPutSubmatrix(row, col, *A, 0, 0, my, nx);
 }
