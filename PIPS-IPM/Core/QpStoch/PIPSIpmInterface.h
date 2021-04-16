@@ -229,7 +229,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
          std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
    }
 
-   solver.reset(new IPMSOLVER(formulation_factory.get(), presolved_problem.get(), scaler.get()));
+   solver.reset(new IPMSOLVER(*formulation_factory, *presolved_problem, scaler.get()));
    solver->addMonitor(new StochMonitor(formulation_factory.get(), scaler.get()));
 #ifdef TIMING
    if( my_rank == 0 ) printf("solver created\n");

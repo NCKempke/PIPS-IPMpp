@@ -33,21 +33,18 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-GondzioStochSolver::GondzioStochSolver(ProblemFormulation *opt, Problem *prob, const Scaler *scaler) : GondzioSolver(
-      opt, prob, scaler), n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
+GondzioStochSolver::GondzioStochSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : GondzioSolver
+(problem_formulation, problem, scaler),
+      n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
       dynamic_corrector_schedule(pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
-      additional_correctors_small_comp_pairs(
-            pips_options::getBoolParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
+      additional_correctors_small_comp_pairs(pips_options::getBoolParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
       max_additional_correctors(pips_options::getIntParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
       first_iter_small_correctors(pips_options::getIntParameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
-      max_alpha_small_correctors(pips_options::getDoubleParameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")),
-      NumberSmallCorrectors(0),
+      max_alpha_small_correctors(pips_options::getDoubleParameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
       push_converged_vars_from_bound(pips_options::getBoolParameter("GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND")),
-      fequency_push_converged_vars_from_bound(
-            pips_options::getIntParameter("GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS")),
-      mu_limit_push_converged_vars_from_bound(
-            pips_options::getDoubleParameter("GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS")), bicgstab_skipped(false),
-      bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
+      fequency_push_converged_vars_from_bound(pips_options::getIntParameter("GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS")),
+      mu_limit_push_converged_vars_from_bound(pips_options::getDoubleParameter("GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS")),
+      bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
       dynamic_bicg_tol(pips_options::getBoolParameter("OUTER_BICG_DYNAMIC_TOL")) {
    assert(max_additional_correctors > 0);
    assert(first_iter_small_correctors >= 0);
@@ -66,11 +63,12 @@ GondzioStochSolver::GondzioStochSolver(ProblemFormulation *opt, Problem *prob, c
    StepFactor0 = 0.3;
    StepFactor1 = 1.5;
 
-   temp_step = factory->makeVariables(prob);
+   temp_step = factory.makeVariables(&problem);
 }
 
-void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Variables *predictor_step,
-      Variables *corrector_step, double alpha_predictor, double &alpha_candidate, double &weight_candidate) {
+void
+GondzioStochSolver::calculateAlphaWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor,
+      double& alpha_candidate, double& weight_candidate) {
    assert(corrector_step);
    assert(predictor_step);
    assert(temp_step);
@@ -108,7 +106,7 @@ void GondzioStochSolver::calculateAlphaWeightCandidate(Variables *iterate, Varia
    alpha_candidate = alpha_best;
 }
 
-int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *residuals) {
+int GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
    assert(iterate);
    assert(residuals);
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -118,7 +116,7 @@ int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *r
    double alpha_target, alpha_enhanced;
    int status_code;
    double alpha = 1, sigma = 1;
-   sFactory *stochFactory = dynamic_cast<sFactory *>(factory);
+   sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
    g_iterNumber = 0.0;
 
    bool pure_centering_step = false;
@@ -128,15 +126,15 @@ int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *r
    setDnorm(problem);
 
    // initialization of (x,y,z) and factorization routine.
-   linear_system = factory->makeLinsys(&problem);
+   linear_system = factory.makeLinsys(&problem);
 
    // register as observer for the BiCGStab solves
    registerBiCGStabOvserver(linear_system);
    setBiCGStabTol(-1);
 
-   stochFactory->iterateStarted();
-   this->start(factory, iterate, &problem, residuals, step);
-   stochFactory->iterateEnded();
+   stoch_factory->iterateStarted();
+   this->start(&factory, iterate, &problem, residuals, step);
+   stoch_factory->iterateEnded();
 
    iteration = 0;
    NumberGondzioCorrections = 0;
@@ -154,7 +152,7 @@ int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *r
       setBiCGStabTol(iteration);
       bool small_corr = false;
 
-      stochFactory->iterateStarted();
+      stoch_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
       residuals->evaluate(problem, iterate);
@@ -218,8 +216,7 @@ int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *r
       // if small_corr_aggr only try small correctors
 
       // enter the Gondzio correction loop:
-      while (NumberGondzioCorrections < maximum_correctors && NumberSmallCorrectors < max_additional_correctors &&
-             PIPSisLT(alpha, 1.0)) {
+      while (NumberGondzioCorrections < maximum_correctors && NumberSmallCorrectors < max_additional_correctors && PIPSisLT(alpha, 1.0)) {
          if (dynamic_corrector_schedule)
             adjustLimitGondzioCorrectors();
          corrector_step->copy(iterate);
@@ -318,7 +315,7 @@ int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *r
       pure_centering_step = false;
       numerical_troubles = false;
 
-      stochFactory->iterateEnded();
+      stoch_factory->iterateEnded();
    } while (!done);
 
    residuals->evaluate(problem, iterate);
@@ -329,14 +326,14 @@ int GondzioStochSolver::solve(Problem &problem, Variables *iterate, Residuals *r
    return status_code;
 }
 
-void GondzioStochSolver::computePredictorStep(Problem *prob, Variables *iterate, Residuals *residuals) {
+void GondzioStochSolver::computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals) {
    residuals->set_r3_xz_alpha(iterate, 0.0);
    linear_system->factor(prob, iterate);
    linear_system->solve(prob, iterate, residuals, step);
    step->negate();
 }
 
-void GondzioStochSolver::computeCorrectorStep(Problem *prob, Variables *iterate, double sigma, double mu) {
+void GondzioStochSolver::computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu) {
    corrector_residuals->clear_r1r2();
    // form right hand side of linear system:
    corrector_residuals->set_r3_xz_alpha(step, -sigma * mu);
@@ -345,8 +342,7 @@ void GondzioStochSolver::computeCorrectorStep(Problem *prob, Variables *iterate,
    corrector_step->negate();
 }
 
-void GondzioStochSolver::computeGondzioCorrector(Problem *prob, Variables *iterate, double rmin, double rmax,
-      bool small_corr) {
+void GondzioStochSolver::computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
    corrector_residuals->set_r3_xz_alpha(corrector_step, 0.0);
    if (small_corr)
@@ -362,8 +358,7 @@ void GondzioStochSolver::computeGondzioCorrector(Problem *prob, Variables *itera
 }
 
 
-void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals *residuals, bool &numerical_troubles,
-      bool &small_corr) const {
+void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
    if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->residualNorm()) {
       PIPSdebugMessage("Step computation in BiCGStab failed");
       numerical_troubles = true;
@@ -375,14 +370,14 @@ void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals *re
    }
 }
 
-void GondzioStochSolver::registerBiCGStabOvserver(LinearSystem *sys) {
+void GondzioStochSolver::registerBiCGStabOvserver(LinearSystem* sys) {
    /* every linsys handed to the GondzioStoch should be observable */
-   assert(dynamic_cast<Subject *>(sys));
-   setSubject(dynamic_cast<Subject *>(sys));
+   assert(dynamic_cast<Subject*>(sys));
+   setSubject(dynamic_cast<Subject*>(sys));
 }
 
 void GondzioStochSolver::notifyFromSubject() {
-   const Subject &subj = *getSubject();
+   const Subject& subj = *getSubject();
 
    bicgstab_skipped = subj.getBoolValue("BICG_SKIPPED");
    if (!bicgstab_skipped)
@@ -427,9 +422,9 @@ void GondzioStochSolver::adjustLimitGondzioCorrectors() {
    }
 }
 
-bool GondzioStochSolver::decreasePreconditionerImpact(LinearSystem *sys) const {
+bool GondzioStochSolver::decreasePreconditionerImpact(LinearSystem* sys) const {
    bool success = false;
-   dynamic_cast<sLinsysRoot *>(sys)->precondSC.decreaseDiagDomBound(success);
+   dynamic_cast<sLinsysRoot*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {
       if (PIPS_MPIgetRank() == 0)
          std::cout << "Cannot increase precision in preconditioner anymore\n";
@@ -437,13 +432,12 @@ bool GondzioStochSolver::decreasePreconditionerImpact(LinearSystem *sys) const {
    return success;
 }
 
-void GondzioStochSolver::computeProbingStep(Variables *probing_step, const Variables *iterate, const Variables *step,
-      double alpha) const {
+void GondzioStochSolver::computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
    probing_step->copy(iterate);
    probing_step->saxpy(step, alpha);
 }
 
-void GondzioStochSolver::doProbing(Problem *prob, Variables *iterate, Residuals *residuals, double &alpha) {
+void GondzioStochSolver::doProbing(Problem* prob, Variables* iterate, Residuals* residuals, double& alpha) {
    const double mu_last = iterate->mu();
    const double resids_norm_last = residuals->residualNorm();
 
@@ -459,8 +453,7 @@ void GondzioStochSolver::doProbing(Problem *prob, Variables *iterate, Residuals 
 }
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
-double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last,
-      double mu_probing) const {
+double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
    assert(resids_norm_last > 0.0);
    assert(resids_norm_probing > 0.0);
 
@@ -500,8 +493,7 @@ double GondzioStochSolver::computeStepFactorProbing(double resids_norm_last, dou
    return factor;
 }
 
-bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool &pure_centering_step, bool precond_decreased,
-      double alpha_max) const {
+bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
    const int my_rank = PIPS_MPIgetRank();
 
    if (!pure_centering_step && alpha_max < mutol * 1e-2) {
@@ -521,10 +513,10 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool &pure_centering_st
    return false;
 }
 
-void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem &problem, Variables &vars) const {
+void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& vars) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
        vars.mu() < mu_limit_push_converged_vars_from_bound) {
-      QpGenVars &qpvars = dynamic_cast<QpGenVars &>(vars);
+      QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
 
       const double convergence_tol = 1e-8;
       const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
@@ -540,10 +532,10 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem &problem, Varia
 }
 
 /* initially adapted from hopdm */ // TODO : check some more
-void GondzioStochSolver::pushSmallComplementarityProducts(const Problem &problem, Variables &iterate_in, Residuals & /*residuals*/ ) const {
+void GondzioStochSolver::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate_in, Residuals& /*residuals*/ ) const {
    if (PIPS_MPIgetRank() == 0)
       std::cout << "Pushing small complementarity products ... ";
-   QpGenVars &iterate = dynamic_cast<QpGenVars &>(iterate_in);
+   QpGenVars& iterate = dynamic_cast<QpGenVars&>(iterate_in);
 
    const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / problem.nx );
 
@@ -559,8 +551,8 @@ void GondzioStochSolver::pushSmallComplementarityProducts(const Problem &problem
    if (PIPS_MPIgetRank() == 0)
       std::cout << "done" << std::endl;
    if (PIPS_MPIgetRank() == 0)
-      std::cout << "Tol small pairs : " << tol_small_comp << " tol small duals : " << tol_small_dual
-                << " tol small variable : " << tol_small_variable << std::endl;
+      std::cout << "Tol small pairs : " << tol_small_comp << " tol small duals : " << tol_small_dual << " tol small variable : " << tol_small_variable
+                << std::endl;
 }
 
 GondzioStochSolver::~GondzioStochSolver() {

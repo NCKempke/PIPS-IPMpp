@@ -8,7 +8,9 @@
 #include "Solver.h"
 
 class Problem;
+
 class Variables;
+
 class ProblemFormulation;
 
 
@@ -17,54 +19,50 @@ class ProblemFormulation;
  * Mehrotra's original predictor-corrector algorithm.
  * @ingroup QpSolvers
  */
-class GondzioSolver : public Solver
-{
+class GondzioSolver : public Solver {
 protected:
 
-  /** parameter in range [0,100] determines verbosity. (Higher value
-   *  => more verbose.) */
-  int        printlevel;
+   /** parameter in range [0,100] determines verbosity. (Higher value
+    *  => more verbose.) */
+   int printlevel;
 
-  /** exponent in Mehrotra's centering parameter, which is usually
-   *  chosen to me (muaff/mu)^tsig, where muaff is the predicted
-   *  complementarity gap obtained from an affine-scaling step, while
-   *  mu is the current complementarity gap */
-  double     tsig;
+   /** exponent in Mehrotra's centering parameter, which is usually
+    *  chosen to me (muaff/mu)^tsig, where muaff is the predicted
+    *  complementarity gap obtained from an affine-scaling step, while
+    *  mu is the current complementarity gap */
+   double tsig;
 
-  /** maximum number of Gondzio corrector steps */
-  int        maximum_correctors;
+   /** maximum number of Gondzio corrector steps */
+   int maximum_correctors;
 
-  /** actual number of Gondzio corrections needed */
-  int        NumberGondzioCorrections;
+   /** actual number of Gondzio corrections needed */
+   int NumberGondzioCorrections;
 
-  /** various parameters associated with Gondzio correction */
-  double     StepFactor0, StepFactor1, AcceptTol, beta_min, beta_max;
+   /** various parameters associated with Gondzio correction */
+   double StepFactor0, StepFactor1, AcceptTol, beta_min, beta_max;
 
-  /**  storage for step vectors */
-  Variables *corrector_step, *step;
+   /**  storage for step vectors */
+   Variables* corrector_step, * step;
 
-  /** storage for residual vectors */
-  Residuals *corrector_residuals;
+   /** storage for residual vectors */
+   Residuals* corrector_residuals;
 
-  ProblemFormulation * factory;
+   ProblemFormulation& factory;
+   // ProblemFormulation* factory;
 
 public:
 
-  GondzioSolver( ProblemFormulation * of, Problem * prob, const Scaler * = nullptr );
+   GondzioSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* = nullptr);
 
-  virtual ~GondzioSolver();
+   virtual ~GondzioSolver();
 
-  int solve(Problem& problem, Variables *iterate, Residuals * residuals ) override;
+   int solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
 
-  /** reset parameters to their default values */
-  virtual void reset_parameters() {};
+   /** reset parameters to their default values */
+   virtual void reset_parameters() {};
 
-  void defaultMonitor( const Problem * problem, const Variables * vars,
-        const Residuals * resids,
-        double alpha, double sigma,
-        int i, double mu,
-        int status_code,
-        int level ) const override;
+   void defaultMonitor(const Problem* problem, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+         int status_code, int level) const override;
 };
 
 #endif

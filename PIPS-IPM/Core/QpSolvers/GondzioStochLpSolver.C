@@ -45,13 +45,15 @@ extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
 
-GondzioStochLpSolver::GondzioStochLpSolver(ProblemFormulation *opt, Problem *prob, const Scaler *scaler)
-      : GondzioStochSolver(opt, prob, scaler) {
+GondzioStochLpSolver::GondzioStochLpSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : GondzioStochSolver
+(problem_formulation, problem,
+      scaler) {
 }
 
-void GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables *iterate, Variables *predictor_step,
-      Variables *corrector_step, double alpha_primal, double alpha_dual, double &alpha_primal_candidate,
-      double &alpha_dual_candidate, double &weight_primal_candidate, double &weight_dual_candidate) {
+void
+GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+      double alpha_dual, double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate,
+      double& weight_dual_candidate) {
    assert(alpha_primal > 0.0 && alpha_primal <= 1.0);
    assert(alpha_dual > 0.0 && alpha_dual <= 1.0);
 
@@ -96,14 +98,14 @@ void GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables *iterate, V
    alpha_dual_candidate = alpha_dual_best;
 }
 
-int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals *resid) {
+int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals* resid) {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    double mu, muaff;
    int status_code;
    double sigma = 1.0;
    double alpha_pri = 1.0, alpha_dual = 1.0;
-   sFactory *stochFactory = dynamic_cast<sFactory *>(factory);
+   sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
    g_iterNumber = 0.0;
 
    bool pure_centering_step = false;
@@ -112,15 +114,15 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
 
    setDnorm(problem);
    // initialization of (x,y,z) and factorization routine.
-   linear_system = factory->makeLinsys(&problem);
+   linear_system = factory.makeLinsys(&problem);
 
    // register as observer for the BiCGStab solves
    registerBiCGStabOvserver(linear_system);
    setBiCGStabTol(-1);
 
-   stochFactory->iterateStarted();
-   this->start(factory, iterate, &problem, resid, step);
-   stochFactory->iterateEnded();
+   stoch_factory->iterateStarted();
+   this->start(&factory, iterate, &problem, resid, step);
+   stoch_factory->iterateEnded();
 
    iteration = 0;
    NumberGondzioCorrections = 0;
@@ -138,7 +140,7 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
       setBiCGStabTol(iteration);
       bool small_corr = false;
 
-      stochFactory->iterateStarted();
+      stoch_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
       resid->evaluate(problem, iterate);
@@ -182,8 +184,8 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
       // calculate weighted predictor-corrector step
       double weight_primal_candidate, weight_dual_candidate = -1.0;
 
-      calculateAlphaPDWeightCandidate(iterate, step, corrector_step, alpha_pri, alpha_dual, alpha_pri, alpha_dual,
-            weight_primal_candidate, weight_dual_candidate);
+      calculateAlphaPDWeightCandidate(iterate, step, corrector_step, alpha_pri, alpha_dual, alpha_pri, alpha_dual, weight_primal_candidate,
+            weight_dual_candidate);
 
       assert(weight_primal_candidate >= 0.0 && weight_primal_candidate <= 1.0);
       assert(weight_dual_candidate >= 0.0 && weight_dual_candidate <= 1.0);
@@ -211,8 +213,7 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
          const double alpha_pri_target = std::min(1.0, StepFactor1 * alpha_pri + StepFactor0);
          const double alpha_dual_target = std::min(1.0, StepFactor1 * alpha_dual + StepFactor0);
 
-         PIPSdebugMessage("corrector loop: %d alpha_pri: %f alpha_dual %f \n", NumberGondzioCorrections, alpha_pri,
-                  alpha_dual);
+         PIPSdebugMessage("corrector loop: %d alpha_pri: %f alpha_dual %f \n", NumberGondzioCorrections, alpha_pri, alpha_dual);
 
          // add a step of this length to corrector_step
          corrector_step->saxpy_pd(step, alpha_pri_target, alpha_dual_target);
@@ -232,8 +233,8 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
          }
 
          // calculate weighted predictor-corrector step
-         calculateAlphaPDWeightCandidate(iterate, step, corrector_step, alpha_pri_target, alpha_dual_target,
-               alpha_pri_enhanced, alpha_dual_enhanced, weight_primal_candidate, weight_dual_candidate);
+         calculateAlphaPDWeightCandidate(iterate, step, corrector_step, alpha_pri_target, alpha_dual_target, alpha_pri_enhanced, alpha_dual_enhanced,
+               weight_primal_candidate, weight_dual_candidate);
 
          // if the enhanced step length is actually 1, make it official
          // and stop correcting
@@ -253,8 +254,7 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
             // exit Gondzio correction loop
             break;
          }
-         else if (alpha_pri_enhanced >= (1.0 + AcceptTol) * alpha_pri &&
-                  alpha_dual_enhanced >= (1.0 + AcceptTol) * alpha_dual) {
+         else if (alpha_pri_enhanced >= (1.0 + AcceptTol) * alpha_pri && alpha_dual_enhanced >= (1.0 + AcceptTol) * alpha_dual) {
             PIPSdebugMessage("both better \n");
 
             // if enhanced step length is significantly better than the
@@ -341,7 +341,7 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
       pure_centering_step = false;
       numerical_troubles = false;
 
-      stochFactory->iterateEnded();
+      stoch_factory->iterateEnded();
    }
 
    resid->evaluate(problem, iterate);
@@ -352,15 +352,13 @@ int GondzioStochLpSolver::solve(Problem &problem, Variables *iterate, Residuals 
    return status_code;
 }
 
-void
-GondzioStochLpSolver::computeProbingStep_pd(Variables *probing_step, const Variables *iterate, const Variables *step,
-      double alpha_primal, double alpha_dual) const {
+void GondzioStochLpSolver::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
+      double alpha_dual) const {
    probing_step->copy(iterate);
    probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
 }
 
-void GondzioStochLpSolver::doProbing_pd(Problem *prob, Variables *iterate, Residuals *resid, double &alpha_pri,
-      double &alpha_dual) {
+void GondzioStochLpSolver::doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual) {
    const double mu_last = iterate->mu();
    const double resids_norm_last = resid->residualNorm();
 
