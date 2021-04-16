@@ -199,6 +199,12 @@ namespace pips_options
 
       int_options["GONDZIO_MAX_CORRECTORS"] = 5;
       int_options["GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX"] = 3;
+
+      if( isSolverAvailable(SolverType::SOLVER_MA57) ){
+         int_options["LINEAR_LEAF_SOLVER"] = SolverType::SOLVER_MA57;
+         int_options["LINEAR_ROOT_SOLVER"] = SolverType::SOLVER_MA57;
+         int_options["LINEAR_SUB_ROOT_SOLVER"] = SolverType::SOLVER_MA57;
+      }
    }
 
    StochOptions::StochOptions()
