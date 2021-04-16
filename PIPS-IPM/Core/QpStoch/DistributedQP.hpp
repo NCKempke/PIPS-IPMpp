@@ -2,7 +2,7 @@
 #define DATAQPSTOCH
 
 #include "QP.hpp"
-#include "sResiduals.h"
+#include "DistributedResiduals.hpp"
 #include "sVars.h"
 #include "StochSymMatrix.h"
 #include "SparseSymMatrix.h"
@@ -28,9 +28,9 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const sTree* stochNode, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp, GenMatrix* A,
-         OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp, bool add_children = true,
-         bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false);
+   DistributedQP(const sTree* stochNode, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp,
+         GenMatrix* A, OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp,
+         bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false);
 
    std::vector<DistributedQP*> children;
 
@@ -103,7 +103,7 @@ public:
 
    void activateLinkStructureExploitation();
 
-   sResiduals* getResidsUnperm(const sResiduals& resids, const DistributedQP& unpermData) const;
+   DistributedResiduals* getResidsUnperm(const DistributedResiduals& resids, const DistributedQP& unpermData) const;
 
    sVars* getVarsUnperm(const sVars& vars, const DistributedQP& unpermData) const;
 

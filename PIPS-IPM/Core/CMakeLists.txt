@@ -30,7 +30,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sLinsysLeafSchurSlv.C
    QpStoch/sVars.C
    QpStoch/StochMonitor.C
-   QpStoch/sResiduals.C
+   QpStoch/DistributedResiduals.cpp
    QpStoch/sTree.C
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C

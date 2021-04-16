@@ -1392,8 +1392,8 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    const sTree* tree_clone = stochNode;
 
    // TODO : proper copy ctor..
-   DistributedQP* clone = new DistributedQP(tree_clone, c_clone, Q_clone, xlow_clone, ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone, C_clone, clow_clone,
-         iclow_clone, cupp_clone, icupp_clone);
+   DistributedQP* clone = new DistributedQP(tree_clone, c_clone, Q_clone, xlow_clone, ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
+         C_clone, clow_clone, iclow_clone, cupp_clone, icupp_clone);
 
    return clone;
 }
@@ -1521,9 +1521,8 @@ DistributedQP* DistributedQP::shaveDenseBorder(const sTree* tree) {
    return hierarchical_top;
 }
 
-PERMUTATION
-DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree, const std::vector<int>& linkStartBlockId,
-      int n_links_after_split) {
+PERMUTATION DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree,
+      const std::vector<int>& linkStartBlockId, int n_links_after_split) {
    /* assuming that global links have already been ordered last */
    PERMUTATION perm(linkStartBlockId.size());
 
@@ -1638,8 +1637,8 @@ void DistributedQP::addChildrenForSplit() {
       assert(dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
       const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
 
-      DistributedQP* child = new DistributedQP(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child, A_child, bA_child, C_child, bl_child,
-            iclow_child, bu_child, icupp_child, false, false, false, true);
+      DistributedQP* child = new DistributedQP(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child, A_child, bA_child,
+            C_child, bl_child, iclow_child, bu_child, icupp_child, false, false, false, true);
       new_children[i] = child;
 
       const int myl = tree_child->myl();
@@ -1979,8 +1978,8 @@ sVars* DistributedQP::getVarsUnperm(const sVars& vars, const DistributedQP& unpe
    return unperm_vars;
 }
 
-sResiduals* DistributedQP::getResidsUnperm(const sResiduals& resids, const DistributedQP& unpermData) const {
-   sResiduals* unperm_resids = new sResiduals(resids);
+DistributedResiduals* DistributedQP::getResidsUnperm(const DistributedResiduals& resids, const DistributedQP& unpermData) const {
+   DistributedResiduals* unperm_resids = new DistributedResiduals(resids);
 
    if (is_hierarchy_root)
       unperm_resids->collapseHierarchicalStructure(*this, stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
@@ -2909,8 +2908,8 @@ SparseGenMatrix& DistributedQP::getLocalG() {
    }
 }
 
-void
-DistributedQP::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC, const StochVectorBase<int>& colNnzVec) {
+void DistributedQP::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC,
+      const StochVectorBase<int>& colNnzVec) {
    StochSymMatrix& Q_stoch = dynamic_cast<StochSymMatrix&>(*Q);
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);

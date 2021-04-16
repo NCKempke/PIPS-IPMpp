@@ -566,7 +566,7 @@ int main(int argc, char ** argv) {
   if( rank == 0 )
      std::cout << "solving..." << std::endl;
 
-  pipsIpm.go();
+  pipsIpm.run();
 
   const double objective = pipsIpm.getObjective();
   if( rank == 0 )

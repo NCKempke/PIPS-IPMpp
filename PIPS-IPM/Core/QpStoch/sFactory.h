@@ -29,7 +29,7 @@ class StochInputTree;
 
 class StochSymMatrix;
 
-class sResiduals;
+class DistributedResiduals;
 
 class sVars;
 
@@ -110,7 +110,7 @@ public:
 
    virtual void iterateEnded();
 
-   sResiduals* resid{};
+   DistributedResiduals* resid{};
    std::vector<sVars*> registeredVars;
 
    sLinsysRoot* linsys{};
