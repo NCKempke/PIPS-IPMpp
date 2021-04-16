@@ -14,7 +14,7 @@ class Residuals;
 class StochMonitor : public OoqpMonitor 
 {
  private:
-  void doItStoch( const Solver * solver, const Problem * data, const Variables * vars,
+  void doItStoch( const Solver * solver, const Problem * problem, const Variables * vars,
         const Residuals * resids,
         double alpha_primal, double alpha_dual, double,
         int i, double mu,
