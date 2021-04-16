@@ -26,11 +26,11 @@ double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
 
-GondzioSolver::GondzioSolver(ProblemFormulation *of, Problem *prob, const Scaler *scaler) : Solver(scaler) {
-   factory = of;
-   step = factory->makeVariables(prob);
-   corrector_step = factory->makeVariables(prob);
-   corrector_residuals = factory->makeResiduals(prob);
+GondzioSolver::GondzioSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(scaler), factory
+(problem_formulation) {
+   step = factory.makeVariables(&problem);
+   corrector_step = factory.makeVariables(&problem);
+   corrector_residuals = factory.makeResiduals(&problem);
 
    maxit = 300;
    printlevel = 0; // has no meaning right now
@@ -53,7 +53,7 @@ GondzioSolver::GondzioSolver(ProblemFormulation *of, Problem *prob, const Scaler
    beta_min = 0.1;
    beta_max = 10.0;
 
-   // allocate space to track the sequence of complementarity gaps,
+   // allocate space to track the sequence problem_formulation complementarity gaps,
    // residual norms, and merit functions.
    mu_history = new double[maxit];
    rnorm_history = new double[maxit];
@@ -64,7 +64,7 @@ GondzioSolver::GondzioSolver(ProblemFormulation *of, Problem *prob, const Scaler
    status = 0;
 }
 
-int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residuals) {
+int GondzioSolver::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
    int done;
    double mu, barrier_term_affine;
    int StopCorrections;
@@ -76,8 +76,8 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
    //  grnorm = 1000;
    setDnorm(problem);
    // initialization of (x,y,z) and factorization routine.
-   linear_system = factory->makeLinsys(&problem);
-   this->start(factory, iterate, &problem, residuals, step);
+   linear_system = factory.makeLinsys(&problem);
+   this->start(&factory, iterate, &problem, residuals, step);
 
    iteration = 0;
    NumberGondzioCorrections = 0;
@@ -217,13 +217,13 @@ int GondzioSolver::solve(Problem &problem, Variables *iterate, Residuals *residu
 
 
 void
-GondzioSolver::defaultMonitor(const Problem * /* problem */, const Variables * /* vars */, const Residuals *resids, double alpha, double sigma, int i,
+GondzioSolver::defaultMonitor(const Problem* /* problem */, const Variables* /* vars */, const Residuals* resids, double alpha, double sigma, int i,
       double mu, int status_code, int level) const {
    switch (level) {
       case 0 :
       case 1: {
 
-         const Residuals *resids_unscaled = resids;
+         const Residuals* resids_unscaled = resids;
          if (scaler)
             resids_unscaled = scaler->getResidualsUnscaled(*resids);
 
@@ -260,7 +260,6 @@ GondzioSolver::defaultMonitor(const Problem * /* problem */, const Variables * /
          break;
    }
 }
-
 
 GondzioSolver::~GondzioSolver() {
    delete corrector_residuals;
