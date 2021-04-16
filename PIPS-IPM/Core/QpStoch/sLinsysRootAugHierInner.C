@@ -260,7 +260,7 @@ void sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes( DoubleMatrix& result, 
    addBlTKiInvBrToResBlockwise( result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols );
 }
 
-void sLinsysRootAugHierInner::addTermToSchurComplBlocked(sData* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int n_empty_rows_inner_border )
+void sLinsysRootAugHierInner::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int n_empty_rows_inner_border )
 {
    assert( data == prob );
 

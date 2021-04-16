@@ -174,7 +174,7 @@ void sLinsysLeaf::addLniziLinkCons(DistributedQP *prob, OoqpVector& z0_, OoqpVec
   }
 }
 
-void sLinsysLeaf::addTermToSchurComplBlocked( DistributedQP *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
+void sLinsysLeaf::addTermToSchurComplBlocked( DistributedQP *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int )
 {
    assert( prob == data );
 

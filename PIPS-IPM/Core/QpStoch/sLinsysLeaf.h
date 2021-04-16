@@ -48,7 +48,7 @@ class sLinsysLeaf : public sLinsys
   //void Ltsolve_internal(  DistributedQP *prob, StochVector& x, SimpleVector& xp);
   void deleteChildren() override;
 
-  void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int ) override;
+  void addTermToSchurComplBlocked( DistributedQP *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int ) override;
 
   void addLniziLinkCons(DistributedQP *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
 
