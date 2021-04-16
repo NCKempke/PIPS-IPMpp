@@ -2001,7 +2001,7 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
    return res;
 }
 
-// TODO specify border and left from sData...
+// TODO specify border and left from DistributedQP...
 BorderedGenMatrix* StochGenMatrix::raiseBorder( int m_conss, int n_vars )
 {
 #ifndef NDEBUG

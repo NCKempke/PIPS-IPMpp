@@ -3,7 +3,7 @@
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
 #include "sTree.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "StochVector.h"

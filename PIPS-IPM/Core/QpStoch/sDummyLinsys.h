@@ -10,7 +10,7 @@
 class sDummyLinsys : public sLinsys
 {
  public:
-  sDummyLinsys(sFactory* factory, sData* prob)
+  sDummyLinsys(sFactory* factory, DistributedQP* prob)
     : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, false)
  {
      mpiComm = MPI_COMM_NULL;
@@ -18,14 +18,14 @@ class sDummyLinsys : public sLinsys
 
   ~sDummyLinsys() override = default;
 
-  void factor2( sData*, Variables*) override {};
-  void allreduceAndFactorKKT(sData*, Variables*) override {};
-  void assembleKKT(sData*, Variables*) override {}
+  void factor2( DistributedQP*, Variables*) override {};
+  void allreduceAndFactorKKT(DistributedQP*, Variables*) override {};
+  void assembleKKT(DistributedQP*, Variables*) override {}
 
-  void Lsolve( sData*, OoqpVector& ) override {};
-  void Dsolve( sData*, OoqpVector& ) override {};
-  void Ltsolve( sData*, OoqpVector& ) override {};
-  void Ltsolve2( sData*, StochVector&, SimpleVector&, bool ) override {};
+  void Lsolve( DistributedQP*, OoqpVector& ) override {};
+  void Dsolve( DistributedQP*, OoqpVector& ) override {};
+  void Ltsolve( DistributedQP*, OoqpVector& ) override {};
+  void Ltsolve2( DistributedQP*, StochVector&, SimpleVector&, bool ) override {};
 
   void putZDiagonal( OoqpVector& ) override {};
   void solveCompressed( OoqpVector& ) override {};
@@ -35,13 +35,13 @@ class sDummyLinsys : public sLinsys
 
   void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override {};
 
-  void addLnizi(sData*, OoqpVector&, OoqpVector& ) override {};
-  void addLniziLinkCons(sData*, OoqpVector&, OoqpVector&, bool ) override {};
+  void addLnizi(DistributedQP*, OoqpVector&, OoqpVector& ) override {};
+  void addLniziLinkCons(DistributedQP*, OoqpVector&, OoqpVector&, bool ) override {};
 
   /** y += alpha * Lni^T * x */
-  //  void LniTransMult(sData *prob, SimpleVector& y, double alpha, SimpleVector& x) override {};
+  //  void LniTransMult(DistributedQP *prob, SimpleVector& y, double alpha, SimpleVector& x) override {};
 
-  void addTermToSchurResidual( sData*, SimpleVector&, SimpleVector& ) override {};
+  void addTermToSchurResidual( DistributedQP*, SimpleVector&, SimpleVector& ) override {};
 
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int ) override {};
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, int, int ) override {};
@@ -50,7 +50,7 @@ class sDummyLinsys : public sLinsys
 
   void allocU( DenseGenMatrix**, int ) override {};
   void allocV( DenseGenMatrix**, int ) override {};
-  void computeU_V( sData*, DenseGenMatrix*, DenseGenMatrix* ) override {};
+  void computeU_V( DistributedQP*, DenseGenMatrix*, DenseGenMatrix* ) override {};
   void deleteChildren() override {};
 
   bool isDummy() const override { return true; };

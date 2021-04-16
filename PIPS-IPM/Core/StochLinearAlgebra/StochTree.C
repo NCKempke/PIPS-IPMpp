@@ -4,7 +4,7 @@
 
 #include "StochTree.h"
 #include "QpGenStoch.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"

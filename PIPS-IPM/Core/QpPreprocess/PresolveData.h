@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_PRESOLVEDATA_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_PRESOLVEDATA_H_
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "StochPostsolver.h"
 #include "StochVectorHandle.h"
 #include "SimpleVectorHandle.h"
@@ -24,7 +24,7 @@
 class PresolveData
 {
 private:
-      sData* presProb;
+      DistributedQP* presProb;
 
       StochPostsolver* const postsolver;
 
@@ -134,10 +134,10 @@ private:
 
 public :
 
-      PresolveData(const sData& sorigprob, StochPostsolver* postsolver);
+      PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver);
       ~PresolveData();
 
-      const sData& getPresProb() const { return *presProb; };
+      const DistributedQP& getPresProb() const { return *presProb; };
 
       double getObjOffset() const { return objOffset; };
       int getNChildren() const { return nChildren; };
@@ -160,16 +160,16 @@ public :
       std::queue<INDEX>& getSingletonRows() { return singleton_rows; };
       std::queue<INDEX>& getSingletonCols() { return singleton_cols; };
 
-      sData* finalize();
+      DistributedQP* finalize();
 
       /* reset originally free variables' bounds to +- inf iff their current bounds are still implied by the problem */
-      void resetOriginallyFreeVarsBounds( const sData& orig_prob );
+      void resetOriginallyFreeVarsBounds( const DistributedQP& orig_prob );
 
       /* whether or not there is currently changes buffered that need synchronization among all procs */
       bool reductionsEmpty();
 
       /* checks activities, non-zeros and root node */
-      bool presDataInSync() const;
+      bool presolve_dataInSync() const;
 
       /// synchronizing the problem over all mpi processes if necessary
       // TODO : add a allreduceEverything method that simply calls all the others
@@ -220,7 +220,7 @@ public :
       /* call whenever a single entry has been deleted from the matrix */
       void deleteEntryAtIndex(const INDEX& row, const INDEX& col, int col_index);
 
-      /* methods for verifying state of presData or querying the problem */
+      /* methods for verifying state of presolve_data or querying the problem */
       bool verifyNnzcounters() const;
       bool verifyActivities() const;
 

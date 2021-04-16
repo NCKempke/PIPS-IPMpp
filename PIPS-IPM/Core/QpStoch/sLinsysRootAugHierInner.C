@@ -8,7 +8,7 @@
 #include "sLinsysRootAugHierInner.h"
 
 sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
-      sData *prob_, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_) :
+      DistributedQP *prob_, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_) :
       sLinsysRootAug(factory, prob_, dynamic_cast<StochVector*>(dd_)->first,
                      dynamic_cast<StochVector*>(dq_)->first,
                      dynamic_cast<StochVector*>(nomegaInv_)->first, rhs_, false)
@@ -20,7 +20,7 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
    createSolversAndKKts(prob_);
 }
 
-void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
+void sLinsysRootAugHierInner::createSolversAndKKts(DistributedQP* prob)
 {
    assert( hasSparseKkt );
 
@@ -39,7 +39,7 @@ void sLinsysRootAugHierInner::createSolversAndKKts(sData* prob)
    createSolversSparse(solver_sub_root);
 }
 
-void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
+void sLinsysRootAugHierInner::assembleLocalKKT( DistributedQP* prob )
 {
    for( size_t c = 0; c < children.size(); ++c )
    {
@@ -57,7 +57,7 @@ void sLinsysRootAugHierInner::assembleLocalKKT( sData* prob )
    }
 }
 
-void sLinsysRootAugHierInner::Ltsolve( sData *prob, OoqpVector& x )
+void sLinsysRootAugHierInner::Ltsolve( DistributedQP *prob, OoqpVector& x )
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
    SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
@@ -69,7 +69,7 @@ void sLinsysRootAugHierInner::Ltsolve( sData *prob, OoqpVector& x )
       children[it]->Ltsolve2(prob->children[it], *b.children[it], z0, false);
 }
 
-void sLinsysRootAugHierInner::Ltsolve2(sData*, StochVector& x, SimpleVector& x0, bool use_local_RAC )
+void sLinsysRootAugHierInner::Ltsolve2(DistributedQP*, StochVector& x, SimpleVector& x0, bool use_local_RAC )
 {
    assert( pips_options::getBoolParameter("HIERARCHICAL") );
 
@@ -105,7 +105,7 @@ void sLinsysRootAugHierInner::computeInnerSystemRightHandSide( StochVector& rhs_
 }
 
 /* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
-void sLinsysRootAugHierInner::Lsolve(sData *prob, OoqpVector& x )
+void sLinsysRootAugHierInner::Lsolve(DistributedQP *prob, OoqpVector& x )
 {
    assert( !is_hierarchy_root );
 
@@ -126,7 +126,7 @@ void sLinsysRootAugHierInner::Lsolve(sData *prob, OoqpVector& x )
       PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
 
-void sLinsysRootAugHierInner::addLniziLinkCons( sData*, OoqpVector& z0_, OoqpVector& zi, bool use_local_RAC )
+void sLinsysRootAugHierInner::addLniziLinkCons( DistributedQP*, OoqpVector& z0_, OoqpVector& zi, bool use_local_RAC )
 {
    assert( zi.isKindOf(kStochVector) );
    SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);

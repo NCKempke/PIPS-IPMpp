@@ -8,7 +8,7 @@
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "BorderedSymMatrix.h"
 
 
@@ -39,7 +39,7 @@ static void biCGStabCommunicateStatus(int flag, int it)
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
+sLinsysRootAug::sLinsysRootAug(sFactory * factory_, DistributedQP * prob_)
   : sLinsysRoot(factory_, prob_)
 { 
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
@@ -53,7 +53,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, sData * prob_)
 }
 
 sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
-			       sData* prob_,
+			       DistributedQP* prob_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,
 			       OoqpVector* nomegaInv_,
@@ -71,7 +71,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
    redRhs.reset( new SimpleVector(locnx + locmy + locmz + locmyl + locmzl) );
 }
 
-SymMatrix* sLinsysRootAug::createKKT(sData* prob) const
+SymMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const
 {
    const int n = locnx + locmy + locmyl + locmzl;
    if( hasSparseKkt )
@@ -146,7 +146,7 @@ void sLinsysRootAug::createSolversDense()
    }
 }
 
-void sLinsysRootAug::createSolversAndKKts(sData* prob)
+void sLinsysRootAug::createSolversAndKKts(DistributedQP* prob)
 {
    const SolverType solver_root = pips_options::getSolverRoot();
 
@@ -185,7 +185,7 @@ static double t_start, troot_total, taux, tchild_total, tcomm_total;
 #endif
 
 
-void sLinsysRootAug::finalizeKKT(sData* prob, Variables* vars)
+void sLinsysRootAug::finalizeKKT(DistributedQP* prob, Variables* vars)
 {
   stochNode->resMon.recFactTmLocal_start();
   stochNode->resMon.recSchurMultLocal_start();
@@ -207,7 +207,7 @@ void sLinsysRootAug::finalizeKKT(sData* prob, Variables* vars)
 }
 
 
-void sLinsysRootAug::finalizeKKTdist(sData* prob)
+void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob)
 {
    assert(kkt && hasSparseKkt && prob);
 
@@ -415,7 +415,7 @@ void sLinsysRootAug::finalizeKKTdist(sData* prob)
    }
 }
 
-void sLinsysRootAug::assembleLocalKKT( sData* prob )
+void sLinsysRootAug::assembleLocalKKT( DistributedQP* prob )
 {
    const bool is_layer_only_twolinks = prob->isHierarchySparseTopLayerOnlyTwolinks();
    if( !pips_options::getBoolParameter("HIERARCHICAL") )
@@ -440,7 +440,7 @@ void sLinsysRootAug::assembleLocalKKT( sData* prob )
 }
 
 /* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
-void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
+void sLinsysRootAug::Lsolve(DistributedQP *prob, OoqpVector& x)
 {
    assert( !is_hierarchy_root );
 
@@ -481,7 +481,7 @@ void sLinsysRootAug::Lsolve(sData *prob, OoqpVector& x)
 }
 
 /* does Schur Complement solve */
-void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
+void sLinsysRootAug::Dsolve( DistributedQP *prob, OoqpVector& x )
 {
   /* Ki^-1 bi has already been computed in Lsolve */
 
@@ -498,7 +498,7 @@ void sLinsysRootAug::Dsolve( sData *prob, OoqpVector& x )
 #endif
 }
 
-void sLinsysRootAug::Ltsolve( sData *prob, OoqpVector& x )
+void sLinsysRootAug::Ltsolve( DistributedQP *prob, OoqpVector& x )
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
    SimpleVector& b0 = dynamic_cast<SimpleVector&>(*b.first);
@@ -563,7 +563,7 @@ void sLinsysRootAug::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMa
 
 extern int gLackOfAccuracy;
 
-void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
+void sLinsysRootAug::solveReducedLinkCons( DistributedQP*, SimpleVector& b_vec)
 {
 #ifdef TIMING
    t_start = MPI_Wtime();
@@ -666,7 +666,7 @@ void sLinsysRootAug::solveReducedLinkCons( sData*, SimpleVector& b_vec)
 #endif
 }
 
-void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs )
+void sLinsysRootAug::solveReducedLinkConsBlocked( DistributedQP* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs )
 {
 #ifdef TIMING
    t_start = MPI_Wtime();
@@ -778,7 +778,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& r
 
 
 /** Ht should be either Ft or Gt */
-void sLinsysRootAug::addLinkConsBlock0Matrix( sData *prob, SparseGenMatrix& Ht, int nHtOffsetCols,
+void sLinsysRootAug::addLinkConsBlock0Matrix( DistributedQP *prob, SparseGenMatrix& Ht, int nHtOffsetCols,
       int nKktOffsetCols, int startCol, int endCol)
 {
    assert(startCol >= 0 && startCol <= endCol && nKktOffsetCols >= 0 && nKktOffsetCols <= startCol);
@@ -907,7 +907,7 @@ void sLinsysRootAug::addLinkConsBlock0Matrix( sData *prob, SparseGenMatrix& Ht, 
 /** rxy = beta*rxy + alpha * SC * x */
 void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy,
               double alpha, SimpleVector& x,
-              sData* prob)
+              DistributedQP* prob)
 {
   //if (iAmDistrib) {
   //only one process subtracts [ (Q+Dx0+C'*Dz0*C)*xx + A'*xy + F'*xxl + G'*xyl ] from r
@@ -1002,7 +1002,7 @@ void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy,
 }
 
 
-void sLinsysRootAug::solveWithIterRef( sData *prob, SimpleVector& r)
+void sLinsysRootAug::solveWithIterRef( DistributedQP *prob, SimpleVector& r)
 {
   assert( false && " TODO : not sure if working correctly...");
   SimpleVector r2(&r[locnx],       locmy);
@@ -1153,7 +1153,7 @@ void sLinsysRootAug::solveWithIterRef( sData *prob, SimpleVector& r)
 #endif  
 }
 
-void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
+void sLinsysRootAug::solveWithBiCGStab( DistributedQP *prob, SimpleVector& b)
 {
   assert( false && "TODO: not sure if working correctly");
   int n = b.length();
@@ -1458,7 +1458,7 @@ void sLinsysRootAug::solveWithBiCGStab( sData *prob, SimpleVector& b)
   delete[] resvec;
 }
 
-void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
+void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*)
 {
    SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
@@ -1726,7 +1726,7 @@ void sLinsysRootAug::finalizeKKTsparse(sData* prob, Variables*)
 #endif
 }
 
-void sLinsysRootAug::finalizeKKTdense(sData* prob, Variables*)
+void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*)
 {
    int j, p, pend;
 

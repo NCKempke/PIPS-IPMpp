@@ -4,7 +4,7 @@
 #include "StochVector.h"
 #include "pipsport.h"
 #include "sTree.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -2361,7 +2361,7 @@ StochVectorBase<T>* StochVectorBase<T>::raiseBorder( int n_vars, bool linking_pa
 }
 
 template<typename T>
-void StochVectorBase<T>::collapseFromHierarchical( const sData& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec )
+void StochVectorBase<T>::collapseFromHierarchical( const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec )
 {
    SimpleVectorBase<T>* new_vec = new SimpleVectorBase<T>();
    SimpleVectorBase<T>* new_vecl{};
@@ -2409,7 +2409,7 @@ void StochVectorBase<T>::collapseFromHierarchical( const sData& data_hier, const
 
 template<typename T>
 void StochVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
-      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const sData& data_hier, VectorType type, bool empty_vec )
+      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec )
 {
    assert( children.size() == tree_hier.nChildren() );
    assert( children.size() == data_hier.children.size() );
@@ -2463,7 +2463,7 @@ void StochVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>* new_vec,
 
 template<typename T>
 void StochDummyVectorBase<T>::appendHierarchicalToThis( SimpleVectorBase<T>*, SimpleVectorBase<T>* new_vecl,
-      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const sData&, VectorType type, bool empty_vec )
+      std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec )
 {
    assert( tree_hier.getCommWorkers() == MPI_COMM_NULL );
    const int n_dummies = tree_hier.nChildren();

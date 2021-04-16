@@ -13,7 +13,7 @@
 class StochPresolverBoundStrengthening : public StochPresolverBase
 {
 public:
-   StochPresolverBoundStrengthening(PresolveData& presData, const sData& origProb);
+   StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb);
 
    ~StochPresolverBoundStrengthening() override = default;
 

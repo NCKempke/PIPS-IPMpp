@@ -19,9 +19,9 @@
 #include <cassert>
 #include <memory>
 
-class QuadraticProblem;
+class QP;
 
-class sData;
+class DistributedQP;
 
 class QpGenVars;
 
@@ -95,16 +95,16 @@ public:
 
    virtual sLinsysRoot* newLinsysRoot() = 0;
 
-   virtual sLinsysRoot* newLinsysRoot(sData* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
+   virtual sLinsysRoot* newLinsysRoot(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
 
-   virtual sLinsysLeaf* newLinsysLeaf(sData* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs);
+   virtual sLinsysLeaf* newLinsysLeaf(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs);
 
    virtual DoubleLinearSolver* newRootSolver() = 0;
 
    virtual DoubleLinearSolver* newLeafSolver(const DoubleMatrix* kkt);
 
    sTree* tree{};
-   sData* data{};
+   DistributedQP* data{};
 
    virtual void iterateStarted();
 

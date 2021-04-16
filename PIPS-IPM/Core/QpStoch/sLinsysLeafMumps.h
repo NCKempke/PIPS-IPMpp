@@ -11,7 +11,7 @@
 #include "pipsport.h"
 
 class sFactory;
-class sData;
+class DistributedQP;
 
 /** This class solves the linear system corresponding to a leaf node.
  */
@@ -21,7 +21,7 @@ class sLinsysLeafMumps : public sLinsysLeaf
   static constexpr int bufferMaxSize = (1024*1024*64);
 
   sLinsysLeafMumps(sFactory* factory,
-        sData* prob_,
+        DistributedQP* prob_,
         OoqpVector* dd_, OoqpVector* dq_,
         OoqpVector* nomegaInv_,
         OoqpVector* rhs_)
@@ -29,18 +29,18 @@ class sLinsysLeafMumps : public sLinsysLeaf
 
   ~sLinsysLeafMumps();
 
-  void addTermToSparseSchurCompl(sData *prob,
+  void addTermToSparseSchurCompl(DistributedQP *prob,
             SparseSymMatrix& SC) override;
 
-  void addTermToDenseSchurCompl(sData *prob,
+  void addTermToDenseSchurCompl(DistributedQP *prob,
             DenseSymMatrix& SC) override;
 
  private:
-  void addTermToSchurComplMumps(sData *prob, bool sparseSC,
+  void addTermToSchurComplMumps(DistributedQP *prob, bool sparseSC,
             SymMatrix& SC);
 
   /* build right matrix for Schur complement; Fortran indexed, CSC, and without empty columns */
-  void buildSchurRightMatrix(sData *prob, SymMatrix& SC);
+  void buildSchurRightMatrix(DistributedQP *prob, SymMatrix& SC);
 
   SparseGenMatrix* schurRightMatrix_csc{};
   int* schurRightNzColId{};

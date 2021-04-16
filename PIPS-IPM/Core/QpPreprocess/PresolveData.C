@@ -31,7 +31,7 @@ bool PresolveData::iTrackRow() const
    return track_row && ( !nodeIsDummy(tracked_row.getNode()) && (my_rank == 0 || tracked_row.isLinkingRow() || tracked_row.getNode() != -1) );
 }
 
-PresolveData::PresolveData(const sData& sorigprob, StochPostsolver* postsolver) :
+PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver) :
       postsolver(postsolver),
       limit_max_bound_accepted( pips_options::getDoubleParameter("PRESOLVE_MAX_BOUND_ACCEPTED") ),
       array_outdated_indicators(new bool[length_array_outdated_indicators]),
@@ -192,7 +192,7 @@ void PresolveData::initAbsminAbsmaxInCols(StochVector& absmin, StochVector& absm
    getSystemMatrix(INEQUALITY_SYSTEM).getColMinMaxVec(false, false, nullptr, absmax);
 }
 
-sData* PresolveData::finalize()
+DistributedQP* PresolveData::finalize()
 {
 
 #ifndef NDEBUG
@@ -943,7 +943,7 @@ bool PresolveData::reductionsEmpty()
    return !outdated_obj_vector && !outdated_activities && !outdated_lhsrhs && !outdated_linking_var_bounds && !outdated_nnzs && (recv == 0.0) && !postsolve_linking_row_propagation_needed;
 }
 
-bool PresolveData::presDataInSync() const
+bool PresolveData::presolve_dataInSync() const
 {
    return presProb->isRootNodeInSync() && verifyNnzcounters() && verifyActivities();
 }
@@ -992,7 +992,7 @@ void PresolveData::deleteEntryAtIndex( const INDEX& row, const INDEX& col, int c
    reduceNnzCounterColumnBy( col, 1, at_root);
 }
 
-void PresolveData::resetOriginallyFreeVarsBounds(const sData& orig_prob)
+void PresolveData::resetOriginallyFreeVarsBounds(const DistributedQP& orig_prob)
 {
    // todo : tell postsolver about released variables
    assert( 0 && "not yet properly implemented" );

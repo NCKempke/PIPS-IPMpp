@@ -28,13 +28,13 @@ sLinsysLeafMumps::~sLinsysLeafMumps()
    delete[] buffer;
 }
 
-void sLinsysLeafMumps::addTermToSparseSchurCompl( sData *prob,
+void sLinsysLeafMumps::addTermToSparseSchurCompl( DistributedQP *prob,
                       SparseSymMatrix& SC)
 {
   this->addTermToSchurComplMumps(prob, true, SC);
 }
 
-void sLinsysLeafMumps::addTermToDenseSchurCompl( sData *prob,
+void sLinsysLeafMumps::addTermToDenseSchurCompl( DistributedQP *prob,
                       DenseSymMatrix& SC)
 {
   this->addTermToSchurComplMumps(prob, false, SC);
@@ -48,7 +48,7 @@ void sLinsysLeafMumps::addTermToDenseSchurCompl( sData *prob,
 //  (G          )
 //
 // ... but leave out empty rows (columns in the original right Schur factor)
-void sLinsysLeafMumps::buildSchurRightMatrix(sData *prob, SymMatrix& SC)
+void sLinsysLeafMumps::buildSchurRightMatrix(DistributedQP *prob, SymMatrix& SC)
 {
    assert(prob);
    assert(!schurRightMatrix_csc);
@@ -186,7 +186,7 @@ void sLinsysLeafMumps::buildSchurRightMatrix(sData *prob, SymMatrix& SC)
 
 
 
-void sLinsysLeafMumps::addTermToSchurComplMumps(sData *prob, bool sparseSC,
+void sLinsysLeafMumps::addTermToSchurComplMumps(DistributedQP *prob, bool sparseSC,
           SymMatrix& SC)
 {
    if( !schurRightMatrix_csc )

@@ -15,7 +15,7 @@
 //#include "sTreeImpl.h"
 
 #include "sTree.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sResiduals.h"
 #include "sVars.h"
 #include "StochMonitor.h"
@@ -98,9 +98,9 @@ protected:
    std::unique_ptr<FORMULATION> formulation_factory{};
    std::unique_ptr<PreprocessFactory> preprocess_factory{};
 
-   std::unique_ptr<sData> presolved_problem{};       // possibly presolved problem
-   std::unique_ptr<sData> dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
-   std::unique_ptr<sData> original_problem{};   // original data
+   std::unique_ptr<DistributedQP> presolved_problem{};       // possibly presolved problem
+   std::unique_ptr<DistributedQP> dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
+   std::unique_ptr<DistributedQP> original_problem{};   // original data
    std::unique_ptr<sVars> vars{};
    std::unique_ptr<sVars> unscaleUnpermNotHierVars{};
    std::unique_ptr<sVars> postsolvedVars{};
@@ -145,7 +145,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
    // presolving activated?
    if (presolver_type != PRESOLVER_NONE) {
-      original_problem.reset(dynamic_cast<sData*>(formulation_factory->create_problem()));
+      original_problem.reset(dynamic_cast<DistributedQP*>(formulation_factory->create_problem()));
 
       MPI_Barrier(comm);
       const double t0_presolve = MPI_Wtime();
@@ -157,7 +157,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
             preprocess_factory->makePresolver(dynamic_cast<sFactory*>(formulation_factory.get())->tree, original_problem.get(), presolver_type,
                   postsolver.get()));
 
-      presolved_problem.reset(dynamic_cast<sData*>(presolver->presolve()));
+      presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
 
       formulation_factory->data = presolved_problem.get(); // todo update also sTree* of factory
 
@@ -167,7 +167,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
          std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << "\n";
    }
    else {
-      presolved_problem.reset(dynamic_cast<sData*>(formulation_factory->create_problem()));
+      presolved_problem.reset(dynamic_cast<DistributedQP*>(formulation_factory->create_problem()));
       assert(presolved_problem);
    }
 
@@ -195,7 +195,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
       if (my_rank == 0)
          std::cout << "Using hierarchical approach!\n";
 
-      presolved_problem.reset(dynamic_cast<sData*>(formulation_factory->switchToHierarchicalData(presolved_problem.release())));
+      presolved_problem.reset(dynamic_cast<DistributedQP*>(formulation_factory->switchToHierarchicalData(presolved_problem.release())));
 
       if (pips_options::getBoolParameter("HIERARCHICAL_PRINT_HIER_DATA"))
          presolved_problem->writeToStreamDense(std::cout);

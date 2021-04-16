@@ -8,7 +8,7 @@
 #include "sLinsys.h"
 #include "sTree.h"
 #include "sFactory.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"
 
@@ -23,34 +23,34 @@ class sLinsysLeaf : public sLinsys
 {
  public:
     sLinsysLeaf(sFactory* factory,
-		sData* prob_,				    
+		DistributedQP* prob_,				    
 		OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 		OoqpVector* rhs_);
 
   ~sLinsysLeaf() override = default;
 
-  void factor2( sData *prob, Variables *vars) override;
-  void assembleKKT(sData*, Variables*) override {};
-  void allreduceAndFactorKKT(sData* prob, Variables* vars) override { factor2( prob, vars ); };
+  void factor2( DistributedQP *prob, Variables *vars) override;
+  void assembleKKT(DistributedQP*, Variables*) override {};
+  void allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) override { factor2( prob, vars ); };
 
-  void Lsolve( sData*, OoqpVector& ) override {};
-  void Dsolve( sData*, OoqpVector& x ) override;
-  void Ltsolve( sData*, OoqpVector& ) override {};
+  void Lsolve( DistributedQP*, OoqpVector& ) override {};
+  void Dsolve( DistributedQP*, OoqpVector& x ) override;
+  void Ltsolve( DistributedQP*, OoqpVector& ) override {};
 
   //void Lsolve2 ( OoqpVector& x ) override;
   //void Dsolve2 ( OoqpVector& x ) override;
-  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool) override;
+  void Ltsolve2( DistributedQP *prob, StochVector& x, SimpleVector& xp, bool) override;
 
   void putZDiagonal( OoqpVector& zdiag ) override;
   //void solveCompressed( OoqpVector& rhs ) override;
   void putXDiagonal( OoqpVector& xdiag_ ) override;
 
-  //void Ltsolve_internal(  sData *prob, StochVector& x, SimpleVector& xp);
+  //void Ltsolve_internal(  DistributedQP *prob, StochVector& x, SimpleVector& xp);
   void deleteChildren() override;
 
   void addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int ) override;
 
-  void addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
+  void addLniziLinkCons(DistributedQP *prob, OoqpVector& z0_, OoqpVector& zi_, bool ) override;
 
   void addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res, int begin_cols, int end_cols, int ) override;
   void LniTransMultHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,

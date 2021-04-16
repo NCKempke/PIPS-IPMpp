@@ -14,7 +14,7 @@
 #include "IotrRefCount.h"
 #include "SmartPointer.h"
 #include "StochPostsolver.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "pipsport.h"
 
 enum ScalerType {SCALER_NONE, SCALER_EQUI_STOCH, SCALER_GEO_STOCH, SCALER_GEO_EQUI_STOCH};
@@ -54,7 +54,7 @@ public:
       // todo : not sure about the factory design here
       static Postsolver* makePostsolver(const Problem* original_problem)
       {
-         return new StochPostsolver(dynamic_cast<const sData&>(*original_problem));
+         return new StochPostsolver(dynamic_cast<const DistributedQP&>(*original_problem));
       }
 };
 

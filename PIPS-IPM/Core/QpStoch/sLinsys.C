@@ -7,14 +7,14 @@
 #include "sLinsys.h"
 #include "sTree.h"
 #include "sFactory.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "SparseLinearAlgebraPackage.h"
 #include "math.h"
 
 #include "pipsport.h"
 #include "omp.h"
 
-sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
+sLinsys::sLinsys(sFactory* factory_, DistributedQP* prob, bool is_hierarchy_root)
   : QpGenLinsys(factory_, prob), data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
@@ -38,7 +38,7 @@ sLinsys::sLinsys(sFactory* factory_, sData* prob, bool is_hierarchy_root)
 }
 
 sLinsys::sLinsys(sFactory* factory_,
-		 sData* prob,				    
+		 DistributedQP* prob,				    
 		 OoqpVector* dd_, 
 		 OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
@@ -105,7 +105,7 @@ void sLinsys::factor(Problem *prob_, Variables *vars)
 
   // now DO THE LINEAR ALGEBRA!
   
-  sData* prob = dynamic_cast<sData*>(prob_);
+  DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_);
   // in order to avoid a call to QpGenLinsys::factor, call factor2 method.
    factor2(prob, vars);
 //  assembleKKT(prob, vars);
@@ -135,7 +135,7 @@ void sLinsys::factor(Problem *prob_, Variables *vars)
  *
  *   V = Di\U
  */
-void sLinsys::computeU_V(sData *prob, 
+void sLinsys::computeU_V(DistributedQP *prob, 
 			 DenseGenMatrix* U, DenseGenMatrix* V)
 {
   U->scalarMult(0.0);
@@ -206,7 +206,7 @@ void sLinsys::allocV(DenseGenMatrix ** V, int n0)
  *
  * 
  */
-void sLinsys::addLnizi(sData *prob, OoqpVector& z0_, OoqpVector& zi_)
+void sLinsys::addLnizi(DistributedQP *prob, OoqpVector& z0_, OoqpVector& zi_)
 {
   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
   SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
@@ -574,7 +574,7 @@ void sLinsys::solveCompressed( OoqpVector& rhs_)
  *  y = beta*y + Di\Li\ (  [ A 0 0 ] * x )
  *                      (  [ C 0 0 ]    )
  */
-void sLinsys::LniTransMult(sData *prob, 
+void sLinsys::LniTransMult(DistributedQP *prob, 
 			   SimpleVector& y, 
 			   double alpha, SimpleVector& x)
 {
@@ -644,7 +644,7 @@ void sLinsys::LniTransMult(sData *prob,
  *                 [G         ]
  */
 
-void sLinsys::addTermToSchurResidual(sData* prob, 
+void sLinsys::addTermToSchurResidual(DistributedQP* prob, 
 				     SimpleVector& res, 
 				     SimpleVector& x)
 {
@@ -699,7 +699,7 @@ void sLinsys::addTermToSchurResidual(sData* prob,
      G.mult(1.0,&res[res.length() - locmzl],1, 1.0,&y[0],1);
 }
 
-void sLinsys::addTermToDenseSchurCompl(sData *prob,
+void sLinsys::addTermToDenseSchurCompl(DistributedQP *prob,
 				       DenseSymMatrix& SC)
 {
   SparseGenMatrix& A = prob->getLocalA();

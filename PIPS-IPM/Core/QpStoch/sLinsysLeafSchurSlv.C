@@ -5,7 +5,7 @@
 #include "sLinsysLeafSchurSlv.h"
 #include "sTree.h"
 #include "sFactory.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"
 #include "PardisoSolver.h"
@@ -23,7 +23,7 @@ extern int gLackOfAccuracy;
  * A and C are the recourse eq. and ineq. matrices, R is the cross
  * Hessian term.
  */
-void sLinsysLeafSchurSlv::addTermToDenseSchurCompl( sData *prob, 
+void sLinsysLeafSchurSlv::addTermToDenseSchurCompl( DistributedQP *prob, 
 						    DenseSymMatrix& SC)
 {
   SparseGenMatrix& A = prob->getLocalA();
@@ -42,7 +42,7 @@ void sLinsysLeafSchurSlv::addTermToDenseSchurCompl( sData *prob,
     //}
 }
 
-void sLinsysLeafSchurSlv::addTermToSparseSchurCompl( sData *prob,
+void sLinsysLeafSchurSlv::addTermToSparseSchurCompl( DistributedQP *prob,
                       SparseSymMatrix& SC)
 {
   SparseGenMatrix& A = prob->getLocalA();
@@ -55,7 +55,7 @@ void sLinsysLeafSchurSlv::addTermToSparseSchurCompl( sData *prob,
   scSolver->schur_solve_sparse(R, A, C, F, G, SC);
 }
 
-void sLinsysLeafSchurSlv::factor2(sData *prob, Variables *vars)
+void sLinsysLeafSchurSlv::factor2(DistributedQP *prob, Variables *vars)
 {
   // if(gLackOfAccuracy) {
   //   cout << "sLinsysLeafSchurSlv -> accuracy lost, switching to vanilla PARDISO" << endl;

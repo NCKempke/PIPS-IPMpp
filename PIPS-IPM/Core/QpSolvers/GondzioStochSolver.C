@@ -16,7 +16,7 @@
 #include "sFactory.h"
 #include "StochOptions.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 
 #include <iostream>
 #include <algorithm>

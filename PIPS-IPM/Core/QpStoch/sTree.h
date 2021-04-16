@@ -15,7 +15,7 @@
 #include "mpi.h"
 
 class sTreeCallbacks;
-class sData;
+class DistributedQP;
 
 class sTree
 {
@@ -136,10 +136,10 @@ public:
   /* shave tree and add an additional top layer */
   virtual sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
   /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
-  virtual std::pair<int,int> splitTree( int n_layers, sData* data ) = 0;
+  virtual std::pair<int,int> splitTree( int n_layers, DistributedQP* data ) = 0;
 
   // TODO : make sure that none of the not suitable methods get called...
-  virtual sTree* switchToHierarchicalTree( sData*& data ) = 0;
+  virtual sTree* switchToHierarchicalTree( DistributedQP*& data ) = 0;
 
   void printProcessTree() const;
 protected:

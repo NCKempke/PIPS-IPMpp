@@ -22,7 +22,7 @@ protected:
   DoubleLinearSolver * solver;
 public:
   QpGenSparseLinsys(  QpGen * factory,
-		QuadraticProblem * data,
+		QP * data,
 		SparseSymMatrix * Mat,
 		DoubleLinearSolver * solver );
 

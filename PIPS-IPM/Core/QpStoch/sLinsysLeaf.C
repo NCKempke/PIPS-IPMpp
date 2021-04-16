@@ -4,7 +4,7 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
+sLinsysLeaf::sLinsysLeaf(sFactory *factory_, DistributedQP* prob,
           OoqpVector* dd_,
           OoqpVector* dq_,
           OoqpVector* nomegaInv_,
@@ -68,7 +68,7 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, sData* prob,
   mpiComm = (dynamic_cast<StochVector*>(dd_))->mpiComm;
 }
 
-void sLinsysLeaf::factor2(sData*, Variables*)
+void sLinsysLeaf::factor2(DistributedQP*, Variables*)
 {
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
@@ -91,7 +91,7 @@ void sLinsysLeaf::putZDiagonal( OoqpVector& zdiag_)
   kkt->atPutDiagonal( locnx + locmy, *zdiag.first );
 }
 
-void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )
+void sLinsysLeaf::Dsolve( DistributedQP*, OoqpVector& x_in )
 {
    StochVector& x = dynamic_cast<StochVector&>(x_in);
    assert(x.children.size()==0);
@@ -100,7 +100,7 @@ void sLinsysLeaf::Dsolve( sData*, OoqpVector& x_in )
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
-void sLinsysLeaf::Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool)
+void sLinsysLeaf::Ltsolve2( DistributedQP *prob, StochVector& x, SimpleVector& xp, bool)
 {
    StochVector& b = dynamic_cast<StochVector&>(x);
    SimpleVector& bi = dynamic_cast<SimpleVector&>(*b.first);
@@ -123,7 +123,7 @@ void sLinsysLeaf::deleteChildren()
 { }
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
-void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/ )
+void sLinsysLeaf::addLniziLinkCons(DistributedQP *prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/ )
 {
   SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
   SimpleVector& zi = dynamic_cast<SimpleVector&>(*dynamic_cast<StochVector&>(zi_).first);
@@ -174,7 +174,7 @@ void sLinsysLeaf::addLniziLinkCons(sData *prob, OoqpVector& z0_, OoqpVector& zi_
   }
 }
 
-void sLinsysLeaf::addTermToSchurComplBlocked( sData *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int )
+void sLinsysLeaf::addTermToSchurComplBlocked( DistributedQP *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC )
 {
    assert( prob == data );
 

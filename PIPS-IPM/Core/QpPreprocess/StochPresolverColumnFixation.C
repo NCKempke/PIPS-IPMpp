@@ -13,8 +13,8 @@
 #include <limits>
 
 StochPresolverColumnFixation::StochPresolverColumnFixation(
-      PresolveData& presData, const sData& origProb) :
-      StochPresolverBase(presData, origProb),
+      PresolveData& presolve_data, const DistributedQP& origProb) :
+      StochPresolverBase(presolve_data, origProb),
       limit_fixation_max_fixing_impact( pips_options::getDoubleParameter( "PRESOLVE_COLUMN_FIXATION_MAX_FIXING_IMPACT" ) ),
       fixed_columns(0)
 {
@@ -27,8 +27,8 @@ StochPresolverColumnFixation::~StochPresolverColumnFixation()
 /* scan through columns and fix those that have tight bounds */
 bool StochPresolverColumnFixation::applyPresolving()
 {
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1)
@@ -39,7 +39,7 @@ bool StochPresolverColumnFixation::applyPresolving()
    countRowsCols();
 #endif
 
-   presData.startColumnFixation();
+   presolve_data.startColumnFixation();
 
    int fixed_columns_run = 0;
 
@@ -51,7 +51,7 @@ bool StochPresolverColumnFixation::applyPresolving()
    {
       const INDEX col_index = INDEX(COL, -1, col);
 
-      if( presData.wasColumnRemoved(col_index) )
+      if( presolve_data.wasColumnRemoved(col_index) )
          continue;
 
       // TODO : make criterion numerically more stable
@@ -78,7 +78,7 @@ bool StochPresolverColumnFixation::applyPresolving()
             else  // set the variable to the arithmetic mean:
                value = ( (*currxlowParent)[col] + (*currxuppParent)[col] ) / 2.0;
 
-            presData.fixColumn( col_index, value);
+            presolve_data.fixColumn( col_index, value);
             if(my_rank == 0)
                ++fixed_columns_run;
          }
@@ -88,7 +88,7 @@ bool StochPresolverColumnFixation::applyPresolving()
    /* child nodes */
    for(int node = 0; node < nChildren; ++node)
    {
-      if(presData.nodeIsDummy(node) )
+      if(presolve_data.nodeIsDummy(node) )
          continue;
 
       updatePointersForCurrentNode(node, EQUALITY_SYSTEM);
@@ -118,7 +118,7 @@ bool StochPresolverColumnFixation::applyPresolving()
                   value = (*currxuppChild)[col];
                else  // set the variable to the arithmetic mean:
                   value = ( (*currxlowChild)[col] + (*currxuppChild)[col] ) / 2.0;
-               presData.fixColumn( INDEX(COL, node, col), value);
+               presolve_data.fixColumn( INDEX(COL, node, col), value);
                ++fixed_columns_run;
             }
          }
@@ -126,10 +126,10 @@ bool StochPresolverColumnFixation::applyPresolving()
    }
 
    /* communicate the local changes */
-   presData.allreduceAndApplyBoundChanges();
-   presData.allreduceAndApplyLinkingRowActivities();
-   presData.allreduceAndApplyNnzChanges();
-   presData.allreduceObjOffset();
+   presolve_data.allreduceAndApplyBoundChanges();
+   presolve_data.allreduceAndApplyLinkingRowActivities();
+   presolve_data.allreduceAndApplyNnzChanges();
+   presolve_data.allreduceObjOffset();
 
    PIPS_MPIgetSumInPlace(fixed_columns_run, MPI_COMM_WORLD);
    fixed_columns += fixed_columns_run;
@@ -147,8 +147,8 @@ bool StochPresolverColumnFixation::applyPresolving()
       std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
    if( fixed_columns_run != 0)
       return true;

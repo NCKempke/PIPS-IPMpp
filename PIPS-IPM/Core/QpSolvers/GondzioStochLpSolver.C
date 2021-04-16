@@ -18,7 +18,7 @@
 #include "sFactory.h"
 #include "StochResourcesMonitor.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sVars.h"
 #include "sLinsysRoot.h"
 

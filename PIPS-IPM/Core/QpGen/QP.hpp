@@ -26,21 +26,21 @@ class QpGenDataTester;
  * @ingroup QpGen
  */
 
-class QuadraticProblem : public Problem {
+class QP : public Problem {
 #ifdef TESTING
    friend QpGenDataTester;
 #endif
 
 protected:
 
-   QuadraticProblem() = default;
+   QP() = default;
 
 public:
    SymMatrixHandle Q;
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */
-   QuadraticProblem(LinearAlgebraPackage* la, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp,
+   QP(LinearAlgebraPackage* la, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp,
          GenMatrix* A, OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp);
 
    /** insert the Hessian Q into the matrix M for the fundamental
@@ -75,7 +75,7 @@ public:
 
    virtual double objective_value(const QpGenVars* vars) const override;
 
-   ~QuadraticProblem() override = default;
+   ~QP() override = default;
 };
 
 #endif

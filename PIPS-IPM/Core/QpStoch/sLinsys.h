@@ -23,7 +23,7 @@
 
 class sTree;
 class sFactory;
-class sData;
+class DistributedQP;
 class StringSymMatrix;
 
 class sLinsys : public QpGenLinsys
@@ -121,9 +121,9 @@ class sLinsys : public QpGenLinsys
          return BorderMod_Block<T>( child, bordermod.multiplier );
       }
 
-  sLinsys(sFactory* factory, sData* prob, bool is_hierarchy_root = false);
+  sLinsys(sFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
   sLinsys(sFactory* factory,
-		   sData* prob, 
+		   DistributedQP* prob, 
 		   OoqpVector* dd, 
 		   OoqpVector* dq,
 		   OoqpVector* nomegaInv,
@@ -135,14 +135,14 @@ class sLinsys : public QpGenLinsys
 
   void factor (Problem *prob, Variables *vars) override;
 
-  virtual void factor2(sData *prob, Variables *vars) = 0;
-  virtual void assembleKKT(sData *prob, Variables *vars) = 0;
-  virtual void allreduceAndFactorKKT(sData *prob, Variables *vars) = 0;
+  virtual void factor2(DistributedQP *prob, Variables *vars) = 0;
+  virtual void assembleKKT(DistributedQP *prob, Variables *vars) = 0;
+  virtual void allreduceAndFactorKKT(DistributedQP *prob, Variables *vars) = 0;
 
-  virtual void Lsolve( sData *prob, OoqpVector& x ) = 0;
-  virtual void Dsolve( sData *prob, OoqpVector& x ) = 0;
-  virtual void Ltsolve( sData *prob, OoqpVector& x ) = 0;
-  virtual void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool use_local_RAC) = 0;
+  virtual void Lsolve( DistributedQP *prob, OoqpVector& x ) = 0;
+  virtual void Dsolve( DistributedQP *prob, OoqpVector& x ) = 0;
+  virtual void Ltsolve( DistributedQP *prob, OoqpVector& x ) = 0;
+  virtual void Ltsolve2( DistributedQP *prob, StochVector& x, SimpleVector& xp, bool use_local_RAC) = 0;
 
   void solveCompressed( OoqpVector& rhs ) override;
 
@@ -158,7 +158,7 @@ class sLinsys : public QpGenLinsys
 
  protected:
   int locnx, locmy, locmyl, locmz, locmzl;
-  sData* data{};
+  DistributedQP* data{};
   
   int iAmDistrib;
 
@@ -191,8 +191,8 @@ class sLinsys : public QpGenLinsys
   int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
 
  public:
-  virtual void addLnizi(sData *prob, OoqpVector& z0, OoqpVector& zi);
-  virtual void addLniziLinkCons( sData */*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here"); };
+  virtual void addLnizi(DistributedQP *prob, OoqpVector& z0, OoqpVector& zi);
+  virtual void addLniziLinkCons( DistributedQP */*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/ ) { assert( false && "not implemented here"); };
 
 
   /* put BiT into res */
@@ -204,7 +204,7 @@ class sLinsys : public QpGenLinsys
         int /*n_empty_rows_inner_border*/ ) { assert( false && "not implemented here"); };
 
   /** y += alpha * Lni^T * x */
-  virtual void LniTransMult(sData *prob, 
+  virtual void LniTransMult(DistributedQP *prob, 
 		    SimpleVector& y, 
 		    double alpha, SimpleVector& x);
 
@@ -213,12 +213,12 @@ class sLinsys : public QpGenLinsys
    */
   virtual void allocU(DenseGenMatrix ** Ut, int np);
   virtual void allocV (DenseGenMatrix ** V, int np);
-  virtual void computeU_V(sData *prob, DenseGenMatrix* U, DenseGenMatrix* V);
+  virtual void computeU_V(DistributedQP *prob, DenseGenMatrix* U, DenseGenMatrix* V);
 
   /** Method(s) that use a memory-friendly mechanism for computing
    *  the terms from the Schur Complement
    */
-  virtual void addTermToDenseSchurCompl(sData *prob, DenseSymMatrix& SC);
+  virtual void addTermToDenseSchurCompl(DistributedQP *prob, DenseSymMatrix& SC);
 
   virtual void addTermToSchurComplBlocked(sData* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/,
     bool /*use_local_RAC*/, int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
@@ -241,12 +241,12 @@ class sLinsys : public QpGenLinsys
   void addBiTLeftKiDenseToResBlockedParallelSolvers( bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
         /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_rows_res, int end_rows_res);
 
-  virtual void addTermToSparseSchurCompl(sData* /*prob*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
+  virtual void addTermToSparseSchurCompl(DistributedQP* /*prob*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
 					
   /** Used in the iterative refinement for the dense Schur complement systems
    * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
    */
-  virtual void addTermToSchurResidual(sData* prob, 
+  virtual void addTermToSchurResidual(DistributedQP* prob, 
 				      SimpleVector& res, 
 				      SimpleVector& x);
 
