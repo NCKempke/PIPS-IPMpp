@@ -1,13 +1,9 @@
 #include <SimpleVector.h>
 #include "Problem.h"
 
-Problem::Problem(LinearAlgebraPackage *la_in, OoqpVector *c_in, OoqpVector *xlow_in, OoqpVector *ixlow_in,
-   OoqpVector *xupp_in, OoqpVector *ixupp_in, GenMatrix *A_in, OoqpVector *bA_in, GenMatrix *C_in, OoqpVector *clow_in,
-   OoqpVector *iclow_in, OoqpVector *cupp_in, OoqpVector *icupp_in) :
-      la{la_in},
-      nxlow{ixlow_in->numberOfNonzeros()},
-      nxupp{ixupp_in->numberOfNonzeros()},
-      mclow{iclow_in->numberOfNonzeros()},
+Problem::Problem(LinearAlgebraPackage* la_in, OoqpVector* c_in, OoqpVector* xlow_in, OoqpVector* ixlow_in, OoqpVector* xupp_in, OoqpVector* ixupp_in,
+      GenMatrix* A_in, OoqpVector* bA_in, GenMatrix* C_in, OoqpVector* clow_in, OoqpVector* iclow_in, OoqpVector* cupp_in, OoqpVector* icupp_in) : la{
+      la_in}, nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()}, mclow{iclow_in->numberOfNonzeros()},
       mcupp{icupp_in->numberOfNonzeros()} {
    SpReferTo(g, c_in);
    SpReferTo(bA, bA_in);
@@ -31,49 +27,43 @@ Problem::Problem(LinearAlgebraPackage *la_in, OoqpVector *c_in, OoqpVector *xlow
    C->getSize(mz, dummy);
 }
 
-void Problem::Amult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const {
+void Problem::Amult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
    A->mult(beta, y, alpha, x);
 }
 
-void Problem::Cmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const {
+void Problem::Cmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
    C->mult(beta, y, alpha, x);
 }
 
-void Problem::ATransmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const {
+void Problem::ATransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
    A->transMult(beta, y, alpha, x);
 }
 
-void Problem::CTransmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const {
+void Problem::CTransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
    C->transMult(beta, y, alpha, x);
 }
 
-void Problem::getg(OoqpVector &myG) const {
+void Problem::getg(OoqpVector& myG) const {
    myG.copyFrom(*g);
 }
 
-void Problem::getbA(OoqpVector &bout) const {
+void Problem::getbA(OoqpVector& bout) const {
    bout.copyFrom(*bA);
 }
 
-// precondition: hessian_diagonal is a vector of zeros
-void Problem::hessian_diagonal(OoqpVector& hessian_diagonal) {
-   // if there is no Hessian, do nothing
-   return;
-}
-
-void Problem::putAIntoAt(GenMatrix &M, int row, int col) {
+void Problem::putAIntoAt(GenMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *A, 0, 0, my, nx);
 }
 
-void Problem::putAIntoAt(SymMatrix &M, int row, int col) {
+void Problem::putAIntoAt(SymMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *A, 0, 0, my, nx);
 }
 
-void Problem::putCIntoAt(GenMatrix &M, int row, int col) {
+void Problem::putCIntoAt(GenMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *C, 0, 0, mz, nx);
 }
 
-void Problem::putCIntoAt(SymMatrix &M, int row, int col) {
+void Problem::putCIntoAt(SymMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *C, 0, 0, mz, nx);
 }
 
@@ -86,7 +76,7 @@ void Problem::scaleC() {
 }
 
 void Problem::scaleg() {
-   SimpleVector &scVector = dynamic_cast<SimpleVector &>(*sc);
+   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
    assert (scVector.length() == g->length());
 
    // D * g
@@ -94,7 +84,7 @@ void Problem::scaleg() {
 }
 
 void Problem::scalexupp() {
-   SimpleVector &scVector = dynamic_cast<SimpleVector &>(*sc);
+   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
 
    assert (scVector.length() == bux->length());
 
@@ -105,7 +95,7 @@ void Problem::scalexupp() {
 
 
 void Problem::scalexlow() {
-   SimpleVector &scVector = dynamic_cast<SimpleVector &>(*sc);
+   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
 
    assert (scVector.length() == blx->length());
 
@@ -124,32 +114,40 @@ double Problem::datanorm() const {
    double componentNorm;
 
    componentNorm = g->infnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    componentNorm = bA->infnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    componentNorm = A->abmaxnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    componentNorm = C->abmaxnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    assert(blx->matchesNonZeroPattern(*ixlow));
    componentNorm = blx->infnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    assert(bux->matchesNonZeroPattern(*ixupp));
    componentNorm = bux->infnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    assert(bl->matchesNonZeroPattern(*iclow));
    componentNorm = bl->infnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    assert(bu->matchesNonZeroPattern(*icupp));
    componentNorm = bu->infnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
 
    return norm;
 }

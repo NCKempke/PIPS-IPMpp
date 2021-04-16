@@ -33,9 +33,8 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-GondzioStochSolver::GondzioStochSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : Solver
-(problem_formulation, problem, scaler),
-      n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
+GondzioStochSolver::GondzioStochSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(problem_formulation,
+      problem, scaler), n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
       dynamic_corrector_schedule(pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
       additional_correctors_small_comp_pairs(pips_options::getBoolParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
       max_additional_correctors(pips_options::getIntParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
@@ -328,7 +327,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* r
 
 void GondzioStochSolver::computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals) {
    residuals->set_r3_xz_alpha(iterate, 0.0);
-   linear_system->factor(prob, iterate);
+   linear_system->factorize(prob, iterate);
    linear_system->solve(prob, iterate, residuals, step);
    step->negate();
 }

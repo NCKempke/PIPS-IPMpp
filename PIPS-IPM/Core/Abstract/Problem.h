@@ -15,7 +15,8 @@ class LinearAlgebraPackage;
 class Problem {
 protected:
    Problem() = default;
-   LinearAlgebraPackage *la{};
+
+   LinearAlgebraPackage* la{};
 
 public:
    GenMatrixHandle A;
@@ -41,15 +42,14 @@ public:
    long long mclow{0};
    long long mcupp{0};
 
-   Problem(LinearAlgebraPackage *la, OoqpVector *c, OoqpVector *xlow, OoqpVector *ixlow,
-      OoqpVector *xupp, OoqpVector *ixupp, GenMatrix *A, OoqpVector *bA, GenMatrix *C, OoqpVector *clow,
-      OoqpVector *iclow, OoqpVector *cupp, OoqpVector *ciupp);
+   Problem(LinearAlgebraPackage* la, OoqpVector* c, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp, GenMatrix* A,
+         OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp);
 
    virtual ~Problem() = default;
 
-   virtual double objective_value(const QpGenVars *x) const = 0;
+   virtual double objective_value(const QpGenVars* x) const = 0;
 
-   virtual void objective_gradient(const QpGenVars *vars, OoqpVector &gradient) const = 0;
+   virtual void objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const = 0;
 
    /** compute the norm of the problem data */
    virtual double datanorm() const;
@@ -57,61 +57,63 @@ public:
    /** print the problem data */
    virtual void print();
 
-   OoqpVector &xupperBound() { return *bux; };
+   OoqpVector& xupperBound() { return *bux; };
 
-   const OoqpVector &xupperBound() const { return *bux; };
+   const OoqpVector& xupperBound() const { return *bux; };
 
-   OoqpVector &ixupperBound() { return *ixupp; };
+   OoqpVector& ixupperBound() { return *ixupp; };
 
-   OoqpVector &xlowerBound() { return *blx; };
+   OoqpVector& xlowerBound() { return *blx; };
 
-   const OoqpVector &xlowerBound() const { return *blx; };
+   const OoqpVector& xlowerBound() const { return *blx; };
 
-   OoqpVector &ixlowerBound() { return *ixlow; };
+   OoqpVector& ixlowerBound() { return *ixlow; };
 
-   OoqpVector &supperBound() { return *bu; };
+   OoqpVector& supperBound() { return *bu; };
 
-   OoqpVector &isupperBound() { return *icupp; };
+   OoqpVector& isupperBound() { return *icupp; };
 
-   OoqpVector &slowerBound() { return *bl; };
+   OoqpVector& slowerBound() { return *bl; };
 
-   OoqpVector &islowerBound() { return *iclow; };
+   OoqpVector& islowerBound() { return *iclow; };
 
-   OoqpVector &scale() { return *sc; };
+   OoqpVector& scale() { return *sc; };
 
-   virtual void hessian_diagonal(OoqpVector& hessian_diagonal);
+   virtual void hessian_multiplication(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const = 0;
+
+   virtual void hessian_diagonal(OoqpVector& hessian_diagonal) = 0;
 
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putAIntoAt(GenMatrix &M, int row, int col);
+   virtual void putAIntoAt(GenMatrix& M, int row, int col);
 
    /** insert the constraint matrix C into the matrix M for the
        fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putCIntoAt(GenMatrix &M, int row, int col);
+   virtual void putCIntoAt(GenMatrix& M, int row, int col);
 
    /** insert the constraint matrix A into the matrix M for the
        fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putAIntoAt(SymMatrix &M, int row, int col);
+   virtual void putAIntoAt(SymMatrix& M, int row, int col);
 
    /** insert the constraint matrix C into the matrix M for the
        fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putCIntoAt(SymMatrix &M, int row, int col);
+   virtual void putCIntoAt(SymMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * A * x */
-   virtual void Amult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const;
+   virtual void Amult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
    /** y = beta * y + alpha * C * x   */
-   virtual void Cmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const;
+   virtual void Cmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
    /** y = beta * y + alpha * A\T * x */
-   virtual void ATransmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const;
+   virtual void ATransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
    /** y = beta * y + alpha * C\T * x */
-   virtual void CTransmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const;
+   virtual void CTransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
 
-   void getg(OoqpVector &cout) const;
+   void getg(OoqpVector& cout) const;
 
-   void getbA(OoqpVector &bout) const;
+   void getbA(OoqpVector& bout) const;
 
    void scaleA();
 

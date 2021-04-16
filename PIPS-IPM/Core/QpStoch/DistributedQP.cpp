@@ -2209,7 +2209,7 @@ double DistributedQP::objective_value(const QpGenVars* vars) const {
    OoqpVectorHandle temp(x.clone());
 
    this->getg(*temp);
-   this->Qmult(1.0, *temp, 0.5, *vars->x);
+   this->hessian_multiplication(1.0, *temp, 0.5, *vars->x);
 
    return temp->dotProductWith(*vars->x);
 }
