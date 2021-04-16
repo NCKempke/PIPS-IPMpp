@@ -62,7 +62,7 @@ void Residuals::evaluate(Problem& problem, Variables *iterate_in, bool print_res
    primal_objective = problem.objective_value(iterate);
 
    /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
-   problem.objective_gradient(iterate, *rQ);
+   problem.objective_gradient(iterate, *rQ); // Qx + g
 
    // contribution calculate x^T (g + Qx) to duality gap */
    gap = rQ->dotProductWith(*iterate->x);

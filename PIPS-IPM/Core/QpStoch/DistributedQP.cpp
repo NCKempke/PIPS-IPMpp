@@ -2219,7 +2219,7 @@ void DistributedQP::createScaleFromQ() {
    assert("Not implemented!" && 0);
 
    // Stuff the diagonal elements of Q into the vector "sc"
-   this->getDiagonalOfQ(*sc);
+   this->hessian_diagonal(*sc);
 
    // Modifying scVector is equivalent to modifying sc
    /*SimpleVector & scVector = dynamic_cast<SimpleVector &>(*sc);

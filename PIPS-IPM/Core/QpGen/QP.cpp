@@ -71,8 +71,8 @@ void QP::putQIntoAt(GenMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QP::getDiagonalOfQ(OoqpVector& q_diagonal) {
-   Q->fromGetDiagonal(0, q_diagonal);
+void QP::hessian_diagonal(OoqpVector& hessian_diagonal) {
+   Q->fromGetDiagonal(0, hessian_diagonal);
 }
 
 void QP::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const {
@@ -91,7 +91,7 @@ double QP::objective_value(const QpGenVars* vars) const {
 
 void QP::createScaleFromQ() {
    // Stuff the diagonal elements of Q into the vector "sc"
-   this->getDiagonalOfQ(*sc);
+   this->hessian_diagonal(*sc);
 
    // Modifying scVector is equivalent to modifying sc
    SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);

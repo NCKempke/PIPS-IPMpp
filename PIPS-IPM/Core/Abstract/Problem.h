@@ -79,6 +79,8 @@ public:
 
    OoqpVector &scale() { return *sc; };
 
+   virtual void hessian_diagonal(OoqpVector& hessian_diagonal);
+
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */
    virtual void putAIntoAt(GenMatrix &M, int row, int col);

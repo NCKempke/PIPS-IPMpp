@@ -190,7 +190,7 @@ QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem) : QpGenLinsys(factory_, p
    if (nxupp + nxlow > 0) {
       dd = factory->makePrimalVector();
       dq = factory->makePrimalVector();
-      problem->getDiagonalOfQ(*dq);
+      problem->hessian_diagonal(*dq);
    }
 
    nomegaInv = factory->makeDualZVector();
