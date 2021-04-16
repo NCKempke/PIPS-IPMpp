@@ -83,7 +83,7 @@ double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_
             scaler, presolver );
       try
       {
-         pipsIpm.go();
+         pipsIpm.run();
          result = pipsIpm.getObjective();
       }
       catch( ... )
@@ -97,7 +97,7 @@ double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_
             scaler, presolver );
       try
       {
-         pipsIpm.go();
+         pipsIpm.run();
          result = pipsIpm.getObjective();
       }
       catch( ... )

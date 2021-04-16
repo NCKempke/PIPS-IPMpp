@@ -16,28 +16,28 @@ class sTree;
  * @ingroup QpGen
  */
 
-class sResiduals : public Residuals {
+class DistributedResiduals : public Residuals {
 public:
   /**
    * Constructor
    */
-  sResiduals( OoqpVector * rQ,
-	      OoqpVector * rA, OoqpVector * rC, 
-	      OoqpVector * rz, 
-	      OoqpVector * rt, OoqpVector * rlambda, 
-	      OoqpVector * ru, OoqpVector * rpi, 
-	      OoqpVector * rv, OoqpVector * rgamma, 
-	      OoqpVector * rw, OoqpVector * rphi, 
+  DistributedResiduals( OoqpVector * rQ,
+	      OoqpVector * rA, OoqpVector * rC,
+	      OoqpVector * rz,
+	      OoqpVector * rt, OoqpVector * rlambda,
+	      OoqpVector * ru, OoqpVector * rpi,
+	      OoqpVector * rv, OoqpVector * rgamma,
+	      OoqpVector * rw, OoqpVector * rphi,
 	      OoqpVector * ixlow, double nxlowGlobal,
 	      OoqpVector * ixupp, double nxuppGlobal,
-	      OoqpVector * iclow, double mclowGlobal, 
+	      OoqpVector * iclow, double mclowGlobal,
 	      OoqpVector * icupp, double mcuppGlobal );
-  
-  sResiduals( const sTree* tree, OoqpVector * ixlow_, OoqpVector * ixupp_, OoqpVector * iclow_, OoqpVector * icupp_ );
-  
-  sResiduals( const sResiduals& res );
 
-  ~sResiduals() override;
+  DistributedResiduals( const sTree* tree, OoqpVector * ixlow_, OoqpVector * ixupp_, OoqpVector * iclow_, OoqpVector * icupp_ );
+
+  DistributedResiduals( const DistributedResiduals& res );
+
+  ~DistributedResiduals() override;
 
   void permuteVec0Entries( const std::vector<unsigned int>& perm, bool resids_only = false );
   void permuteEqLinkingEntries( const std::vector<unsigned int>& perm );
@@ -47,10 +47,10 @@ public:
 
   void collapseHierarchicalStructure( const DistributedQP& data, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 
-  std::vector<sResiduals*> children;
+  std::vector<DistributedResiduals*> children;
 protected:
   void createChildren();
-  void AddChild(sResiduals* child);
+  void AddChild(DistributedResiduals* child);
 };
 
 #endif

@@ -12,7 +12,7 @@
 #include "StochVector.h"
 
 #include "sVars.h"
-#include "sResiduals.h"
+#include "DistributedResiduals.hpp"
 
 #include "sLinsysRoot.h"
 #include "sLinsysLeaf.h"
@@ -315,7 +315,7 @@ Variables* sFactory::makeVariables(Problem* prob_in) {
 
 Residuals* sFactory::makeResiduals(Problem* prob_in) {
    DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
-   resid = new sResiduals(tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
+   resid = new DistributedResiduals(tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
    return resid;
 }
 

@@ -16,7 +16,7 @@
 
 #include "sTree.h"
 #include "DistributedQP.hpp"
-#include "sResiduals.h"
+#include "DistributedResiduals.hpp"
 #include "sVars.h"
 #include "StochMonitor.h"
 
@@ -41,7 +41,7 @@ public:
 
    ~PIPSIpmInterface() = default;
 
-   void go();
+   void run();
 
    double getObjective();
 
@@ -105,9 +105,9 @@ protected:
    std::unique_ptr<sVars> unscaleUnpermNotHierVars{};
    std::unique_ptr<sVars> postsolvedVars{};
 
-   std::unique_ptr<sResiduals> residuals{};
-   std::unique_ptr<sResiduals> unscaleUnpermNotHierResids{};
-   std::unique_ptr<sResiduals> postsolvedResids{};
+   std::unique_ptr<DistributedResiduals> residuals{};
+   std::unique_ptr<DistributedResiduals> unscaleUnpermNotHierResids{};
+   std::unique_ptr<DistributedResiduals> postsolvedResids{};
 
    std::unique_ptr<Presolver> presolver{};
    std::unique_ptr<Postsolver> postsolver{};
@@ -206,7 +206,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
    if( my_rank == 0 ) printf("variables created\n");
 #endif
 
-   residuals.reset(dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(presolved_problem.get())));
+   residuals.reset(dynamic_cast<DistributedResiduals*>( formulation_factory->makeResiduals(presolved_problem.get())));
 #ifdef TIMING
    if( my_rank == 0 ) printf("resids created\n");
 #endif
@@ -244,7 +244,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
 
 
 template<typename FORMULATION, typename IPMSOLVER>
-void PIPSIpmInterface<FORMULATION, IPMSOLVER>::go() {
+void PIPSIpmInterface<FORMULATION, IPMSOLVER>::run() {
    if (my_rank == 0)
       std::cout << "solving ...\n";
 
@@ -369,7 +369,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
    if (!ran_solver)
       throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted residuals");
    if (scaler) {
-      std::unique_ptr<sResiduals> unscaled_resids{dynamic_cast<sResiduals*>(scaler->getResidualsUnscaled(*residuals))};
+      std::unique_ptr<DistributedResiduals> unscaled_resids{dynamic_cast<DistributedResiduals*>(scaler->getResidualsUnscaled(*residuals))};
       unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier));
    }
    else
@@ -598,7 +598,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution() {
 
    postsolvedVars.reset(dynamic_cast<sVars*>( formulation_factory->makeVariables(original_problem.get())));
 
-   postsolvedResids.reset(dynamic_cast<sResiduals*>( formulation_factory->makeResiduals(original_problem.get())));
+   postsolvedResids.reset(dynamic_cast<DistributedResiduals*>( formulation_factory->makeResiduals(original_problem.get())));
    postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
    double obj_postsolved = original_problem->objective_value(postsolvedVars.get());
