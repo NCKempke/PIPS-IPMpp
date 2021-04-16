@@ -10,17 +10,15 @@
 #include "LinearAlgebraPackage.h"
 #include "MpsReader.h"
 
-QuadraticProblem::QuadraticProblem(LinearAlgebraPackage *la_in, OoqpVector *c_in, SymMatrix *Q_in, OoqpVector *xlow_in,
-                                   OoqpVector *ixlow_in,
-                                   OoqpVector *xupp_in, OoqpVector *ixupp_in, GenMatrix *A_in, OoqpVector *bA_in,
-                                   GenMatrix *C_in, OoqpVector *clow_in, OoqpVector *iclow_in, OoqpVector *cupp_in,
-                                   OoqpVector *icupp_in) :
-   // superclass constructor
-   Problem(la_in, c_in, xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in) {
+QuadraticProblem::QuadraticProblem(LinearAlgebraPackage* la_in, OoqpVector* c_in, SymMatrix* Q_in, OoqpVector* xlow_in, OoqpVector* ixlow_in,
+      OoqpVector* xupp_in, OoqpVector* ixupp_in, GenMatrix* A_in, OoqpVector* bA_in, GenMatrix* C_in, OoqpVector* clow_in, OoqpVector* iclow_in,
+      OoqpVector* cupp_in, OoqpVector* icupp_in) :
+// superclass constructor
+      Problem(la_in, c_in, xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in) {
    SpReferTo(Q, Q_in);
 }
 
-void QuadraticProblem::Qmult(double beta, OoqpVector &y, double alpha, const OoqpVector &x) const {
+void QuadraticProblem::Qmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
    Q->mult(beta, y, alpha, x);
 }
 
@@ -30,11 +28,12 @@ double QuadraticProblem::datanorm() const {
    double componentNorm;
 
    componentNorm = Q->abmaxnorm();
-   if (componentNorm > norm) norm = componentNorm;
+   if (componentNorm > norm)
+      norm = componentNorm;
    return norm;
 }
 
-void QuadraticProblem::datainput(MpsReader *reader, int &iErr) {
+void QuadraticProblem::datainput(MpsReader* reader, int& iErr) {
    reader->readQpGen(*g, *Q, *blx, *ixlow, *bux, *ixupp, *A, *bA, *C, *bl, *iclow, *bu, *icupp, iErr);
 
    if (reader->scalingOption == 1) {
@@ -64,25 +63,25 @@ void QuadraticProblem::print() {
    Problem::print();
 }
 
-void QuadraticProblem::putQIntoAt(SymMatrix &M, int row, int col) {
+void QuadraticProblem::putQIntoAt(SymMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QuadraticProblem::putQIntoAt(GenMatrix &M, int row, int col) {
+void QuadraticProblem::putQIntoAt(GenMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QuadraticProblem::getDiagonalOfQ(OoqpVector &q_diagonal) {
+void QuadraticProblem::getDiagonalOfQ(OoqpVector& q_diagonal) {
    Q->fromGetDiagonal(0, q_diagonal);
 }
 
-void QuadraticProblem::objective_gradient(const QpGenVars *vars, OoqpVector &gradient) const {
+void QuadraticProblem::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const {
    this->getg(gradient);
    this->Qmult(1., gradient, 1., *vars->x);
    return;
 }
 
-double QuadraticProblem::objective_value(const QpGenVars *vars) const {
+double QuadraticProblem::objective_value(const QpGenVars* vars) const {
    OoqpVectorHandle gradient(la->newVector(nx));
    this->getg(*gradient);
    this->Qmult(1., *gradient, 0.5, *vars->x);
@@ -95,7 +94,7 @@ void QuadraticProblem::createScaleFromQ() {
    this->getDiagonalOfQ(*sc);
 
    // Modifying scVector is equivalent to modifying sc
-   SimpleVector &scVector = dynamic_cast<SimpleVector &>(*sc);
+   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
 
    int scLength = scVector.length();
 
