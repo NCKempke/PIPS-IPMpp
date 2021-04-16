@@ -1,19 +1,17 @@
-/* OOQP                                                               *
- * Authors: E. Michael Gertz, Stephen J. Wright                       *
- * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
-
-#include "pipsport.h"
 #include "Solver.h"
 #include "OoqpMonitor.h"
 #include "Status.h"
-#include "SimpleVector.h"
 #include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "OoqpStartStrategy.h"
 #include "Options.h"
-
+#include "ProblemFormulation.h"
+#include "QpGenOptions.h"
+#include <iostream>
+#include <cstdio>
+#include <cassert>
 #include <cmath>
 #include <limits>
 #include "mpi.h"
@@ -29,10 +27,12 @@ double gOuterBiCGIterAvg = 0.0;
 int gInnerBiCGIter = 0;
 int gInnerBiCGFails = 0;
 
-//number of iterative refinements in the 2nd stage sparse systems
-//int gInnerStg2solve=3; not used
+// gmu is needed by MA57!
+double gmu;
+// double grnorm;
+extern int gOoqpPrintLevel;
 
-Solver::Solver(const Scaler *scaler) : scaler{scaler} {
+Solver::Solver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(problem_formulation) {
    if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;
       gamma_f = 0.95;
@@ -49,6 +49,39 @@ Solver::Solver(const Scaler *scaler) : scaler{scaler} {
       printTimeStamp = true;
       startTime = MPI_Wtime();
    }
+   step = factory.makeVariables(&problem);
+   corrector_step = factory.makeVariables(&problem);
+   corrector_residuals = factory.makeResiduals(&problem);
+
+   maxit = 300;
+   printlevel = 0; // has no meaning right now
+   tsig = 3.0;     // the usual value for the centering exponent (tau)
+
+   NumberGondzioCorrections = 0;
+
+   maximum_correctors = qpgen_options::getIntParameter("GONDZIO_MAX_CORRECTORS");
+
+   // the two StepFactor constants set targets for increase in step
+   // length for each corrector
+   StepFactor0 = 0.08;
+   StepFactor1 = 1.08;
+
+   // accept the enhanced step if it produces a small improvement in the step length
+   AcceptTol = 0.01;
+
+   //define the Gondzio correction box
+   beta_min = 0.1;
+   beta_max = 10.0;
+
+   // allocate space to track the sequence problem_formulation complementarity gaps,
+   // residual norms, and merit functions.
+   mu_history = new double[maxit];
+   rnorm_history = new double[maxit];
+   phi_history = new double[maxit];
+   phi_min_history = new double[maxit];
+
+   // Use the defaultStatus method
+   status = 0;
 }
 
 void
@@ -262,15 +295,6 @@ void Solver::addMonitor(OoqpMonitor *m) {
    itsMonitors = m;
 }
 
-Solver::~Solver() {
-   OoqpMonitor *m = itsMonitors;
-   while (m) {
-      OoqpMonitor *n = m->nextMonitor;
-      delete m;
-      m = n;
-   }
-}
-
 std::pair<double, double> Solver::computeUnscaledGapAndResidualNorm(const Residuals &residuals) {
    if (!scaler)
       return std::make_pair(std::fabs(residuals.dualityGap()), residuals.residualNorm());
@@ -387,3 +411,66 @@ void Solver::setDnorm(const Problem &data) {
       dnorm_orig = dnorm;
 }
 
+void
+Solver::defaultMonitor(const Problem* /* problem */, const Variables* /* vars */, const Residuals* resids, double alpha, double sigma, int i,
+      double mu, int status_code, int level) const {
+   switch (level) {
+      case 0 :
+      case 1: {
+
+         const Residuals* resids_unscaled = resids;
+         if (scaler)
+            resids_unscaled = scaler->getResidualsUnscaled(*resids);
+
+         const double gap = resids_unscaled->dualityGap();
+         const double rnorm = resids_unscaled->residualNorm();
+
+         if (scaler)
+            delete resids_unscaled;
+
+         std::cout << std::endl << "Duality Gap: " << gap << std::endl;
+
+         if (i > 1) {
+            std::cout << " Number of Corrections = " << NumberGondzioCorrections << " alpha = " << alpha << std::endl;
+         }
+         std::cout << " *** Iteration " << i << " *** " << std::endl;
+         std::cout << " mu = " << mu << " relative residual norm = " << rnorm / dnorm_orig << std::endl;
+
+         if (level == 1) {
+            // Termination has been detected by the status check; print
+            // appropriate message
+            if (status_code == SUCCESSFUL_TERMINATION)
+               std::cout << std::endl << " *** SUCCESSFUL TERMINATION ***" << std::endl;
+            else if (status_code == MAX_ITS_EXCEEDED)
+               std::cout << std::endl << " *** MAXIMUM ITERATIONS REACHED *** " << std::endl;
+            else if (status_code == INFEASIBLE)
+               std::cout << std::endl << " *** TERMINATION: PROBABLY INFEASIBLE *** " << std::endl;
+            else if (status_code == UNKNOWN)
+               std::cout << std::endl << " *** TERMINATION: STATUS UNKNOWN *** " << std::endl;
+         }
+      }
+         break;
+      case 2:
+         std::cout << " *** sigma = " << sigma << std::endl;
+         break;
+   }
+}
+
+Solver::~Solver() {
+   OoqpMonitor *m = itsMonitors;
+   while (m) {
+      OoqpMonitor *n = m->nextMonitor;
+      delete m;
+      m = n;
+   }
+
+   delete corrector_residuals;
+   delete corrector_step;
+   delete step;
+   delete linear_system;
+
+   delete[] mu_history;
+   delete[] rnorm_history;
+   delete[] phi_history;
+   delete[] phi_min_history;
+}

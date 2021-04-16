@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_GONDZIOSTOCHSOLVER_H
 #define PIPS_IPM_GONDZIOSTOCHSOLVER_H
 
-#include "GondzioSolver.h"
+#include "Solver.h"
 #include "Observer.h"
 
 class Problem;
@@ -24,7 +24,7 @@ const unsigned int max_linesearch_points = 50;
  * Mehrotra's original predictor-corrector algorithm.
  * @ingroup QpSolvers
  */
-class GondzioStochSolver : public GondzioSolver, public Observer {
+class GondzioStochSolver : public Solver, public Observer {
 private:
    // returns Gondzio weight for corrector step
    virtual void calculateAlphaWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double predictor_alpha,
