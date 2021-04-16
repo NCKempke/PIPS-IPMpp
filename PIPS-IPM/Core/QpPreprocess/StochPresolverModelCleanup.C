@@ -13,8 +13,8 @@
 #include <vector>
 #include <string>
 
-StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presData, const sData& origProb)
-   : StochPresolverBase(presData, origProb),
+StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb)
+   : StochPresolverBase(presolve_data, origProb),
      limit_min_mat_entry( pips_options::getDoubleParameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY") ),
      limit_max_matrix_entry_impact( pips_options::getDoubleParameter("PRESOLVE_MODEL_CLEANUP_MAX_MATRIX_ENTRY_IMPACT") ),
      limit_matrix_entry_impact_feasdist( pips_options::getDoubleParameter("PRESOLVE_MODEL_CLEANUP_MATRIX_ENTRY_IMPACT_FEASDIST") ),
@@ -31,8 +31,8 @@ StochPresolverModelCleanup::~StochPresolverModelCleanup()
 
 bool StochPresolverModelCleanup::applyPresolving()
 {
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
@@ -58,19 +58,19 @@ bool StochPresolverModelCleanup::applyPresolving()
    int n_removed_entries_ineq = removeTinyEntriesFromSystem(INEQUALITY_SYSTEM);
    n_removed_entries = n_removed_entries_eq + n_removed_entries_ineq;
 
-   int local_count_empty_brows = presData.countEmptyRowsBDmat();
+   int local_count_empty_brows = presolve_data.countEmptyRowsBDmat();
    PIPS_MPIgetSumInPlace(local_count_empty_brows);
    if( my_rank == 0 )
       std::cout << "empty brows " << local_count_empty_brows << std::endl;
 
-   presData.allreduceAndApplyNnzChanges();
+   presolve_data.allreduceAndApplyNnzChanges();
 
    n_fixed_empty_columns = fixEmptyColumns();
 
    // update all nnzCounters - set reductionStochvecs to zero afterwards
-   presData.allreduceAndApplyBoundChanges();
-   presData.allreduceObjOffset();
-   presData.allreduceAndApplyLinkingRowActivities();
+   presolve_data.allreduceAndApplyBoundChanges();
+   presolve_data.allreduceObjOffset();
+   presolve_data.allreduceAndApplyLinkingRowActivities();
 
    if( distributed )
       PIPS_MPIsumArrayInPlace( counts, MPI_COMM_WORLD);
@@ -95,8 +95,8 @@ bool StochPresolverModelCleanup::applyPresolving()
       std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
 #endif
 
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
    if( n_removed_entries != 0 || n_removed_rows != 0 || n_fixed_empty_columns != 0 )
       return true;
@@ -120,7 +120,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type)
 
    // children:
    for( int node = 0; node < nChildren; node++)
-      if( !presData.nodeIsDummy( node ) )
+      if( !presolve_data.nodeIsDummy( node ) )
          nRemovedRows += removeRedundantRows(system_type, node);
 
    return nRemovedRows;
@@ -128,7 +128,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type)
 
 int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int node)
 {
-   assert(!presData.nodeIsDummy(node));
+   assert(!presolve_data.nodeIsDummy(node));
    int n_removed_rows = 0;
    int n_removed_rows_link = 0;
    if(node == -1)
@@ -143,9 +143,9 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
 {
    assert(-1 <= node && node < nChildren);
    assert( (linking && node == -1) || !linking );
-   assert(!presData.nodeIsDummy(node));
+   assert(!presolve_data.nodeIsDummy(node));
 
-   if(linking && !presData.hasLinking(system_type))
+   if(linking && !presolve_data.hasLinking(system_type))
       return 0;
    updatePointersForCurrentNode(node, system_type);
 
@@ -161,7 +161,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
    for( int row_index = 0; row_index < nnzs.length(); ++row_index)
    {
       const INDEX row(ROW, node, row_index, linking, system_type);
-      if( presData.wasRowRemoved( row ) )
+      if( presolve_data.wasRowRemoved( row ) )
       {
          assert(nnzs[row_index] == 0);
          continue;
@@ -169,7 +169,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
 
       double actmin_part, actmax_part;
       int actmin_ubndd, actmax_ubndd;
-      presData.getRowActivities(row, actmax_part, actmin_part, actmax_ubndd, actmin_ubndd);
+      presolve_data.getRowActivities(row, actmax_part, actmin_part, actmax_ubndd, actmin_ubndd);
 
       if( system_type == EQUALITY_SYSTEM )
       {
@@ -183,7 +183,7 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
          }
          else if( PIPSisLE(rhs_eq[row_index], actmin_part, feastol) && PIPSisLE(actmax_part, rhs_eq[row_index], feastol) )
          {
-            presData.removeRedundantRow( row );
+            presolve_data.removeRedundantRow( row );
             n_removed_rows++;
          }
       }
@@ -198,22 +198,22 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
          else if( ( PIPSisZero(iclow[row_index]) || PIPSisLE(clow[row_index], -infinity) ) &&
                ( PIPSisZero(icupp[row_index]) || PIPSisLE(infinity, cupp[row_index])) )
          {
-            presData.removeRedundantRow( row );
+            presolve_data.removeRedundantRow( row );
             n_removed_rows++;
          }
          else if( ( PIPSisZero(iclow[row_index]) || (actmin_ubndd == 0 && PIPSisLEFeas(clow[row_index], actmin_part)) )
                && ( PIPSisZero(icupp[row_index]) || (actmax_ubndd == 0 && PIPSisLEFeas(actmax_part, cupp[row_index])) ) )
          {
-            presData.removeRedundantRow( row );
+            presolve_data.removeRedundantRow( row );
             n_removed_rows++;
          }
          else if( row.inInEqSys() && !PIPSisZero(icupp[row_index]) && actmax_ubndd == 0 && PIPSisLEFeas(actmax_part, cupp[row_index]) )
          {
-            presData.removeRedundantSide( row, true );
+            presolve_data.removeRedundantSide( row, true );
          }
          else if( row.inInEqSys() && !PIPSisZero(iclow[row_index]) && actmin_ubndd == 0 && PIPSisLEFeas(clow[row_index], actmin_part) )
          {
-            presData.removeRedundantSide( row, false );
+            presolve_data.removeRedundantSide( row, false );
          }
             }
    }
@@ -222,24 +222,24 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
 
 /* removes all small entries from the specified system
  *
- * While removing the reduction vectors in presData get set - nnzVectors are not updated an that must be
+ * While removing the reduction vectors in presolve_data get set - nnzVectors are not updated an that must be
  * done using updateNnzFromReductions if needed.
  * Transposed matrices get updated in a subroutine - so after calling this method, that matrix should
  * be in a consistent state.
  */
 int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_type)
 {
-   assert(dynamic_cast<const StochGenMatrix&>(*(presData.getPresProb().A)).children.size() == (size_t) nChildren);
-   assert(dynamic_cast<const StochGenMatrix&>(*(presData.getPresProb().C)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const StochGenMatrix&>(*(presolve_data.getPresProb().A)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const StochGenMatrix&>(*(presolve_data.getPresProb().C)).children.size() == (size_t) nChildren);
 
    int n_elims = 0;
 
-   assert(!presData.nodeIsDummy(-1));
+   assert(!presolve_data.nodeIsDummy(-1));
 
    /* reductions in root node */
    /* process B0 and Bl0 */
    n_elims += removeTinyInnerLoop(system_type, -1, B_MAT);
-   if (  presData.hasLinking(system_type) )
+   if (  presolve_data.hasLinking(system_type) )
       n_elims += removeTinyInnerLoop(system_type, -1, BL_MAT);
 
 
@@ -250,7 +250,7 @@ int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_ty
    // go through the children
    for( int node = 0; node < nChildren; node++ )
    {
-      if( !presData.nodeIsDummy(node) )
+      if( !presolve_data.nodeIsDummy(node) )
       {
          /* Amat */
          n_elims += removeTinyInnerLoop(system_type, node, A_MAT );
@@ -260,7 +260,7 @@ int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_ty
 
          /* this has to be synchronized */
          /* Blmat */
-         if( presData.hasLinking(system_type) )
+         if( presolve_data.hasLinking(system_type) )
             n_elims += removeTinyInnerLoop(system_type, node, BL_MAT);
          }
    }
@@ -273,7 +273,7 @@ int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_ty
  */
 int StochPresolverModelCleanup::removeTinyInnerLoop( SystemType system_type, int node, BlockType block_type)
 {
-   if(presData.nodeIsDummy(node))
+   if(presolve_data.nodeIsDummy(node))
       return 0;
 
    updatePointersForCurrentNode(node, system_type);
@@ -341,7 +341,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop( SystemType system_type, int
          {
             const INDEX row_INDEX(ROW, node_row, r, linking_row, system_type);
             const INDEX col_INDEX(COL, node_col, col);
-            presData.deleteEntryAtIndex(row_INDEX, col_INDEX, col_index);
+            presolve_data.deleteEntryAtIndex(row_INDEX, col_INDEX, col_index);
 
             /* since the current entry got deleted we have to step back one entry */
             --col_index;
@@ -367,7 +367,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop( SystemType system_type, int
             {
                const INDEX row_INDEX(ROW, node_row, r, linking_row, system_type);
                const INDEX col_INDEX(COL, node_col, col);
-               presData.deleteEntryAtIndex(row_INDEX, col_INDEX, col_index);
+               presolve_data.deleteEntryAtIndex(row_INDEX, col_INDEX, col_index);
 
                /* since the current entry got deleted we have to step back one entry */
                --col_index;
@@ -384,7 +384,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop( SystemType system_type, int
                total_sum_modifications_row += mat_abs * (bux - blx);
                const INDEX row_INDEX(ROW, node_row, r, linking_row, system_type);
                const INDEX col_INDEX(COL, node_col, col);
-               presData.deleteEntryAtIndex(row_INDEX, col_INDEX, col_index);
+               presolve_data.deleteEntryAtIndex(row_INDEX, col_INDEX, col_index);
 
                /* since the current entry got deleted we have to step back one entry */
                --col_index;
@@ -410,7 +410,7 @@ int StochPresolverModelCleanup::fixEmptyColumns()
 
    for(int node = -1; node < nChildren; ++node)
    {
-      if( presData.nodeIsDummy(node) )
+      if( presolve_data.nodeIsDummy(node) )
          continue;
       
       updatePointersForCurrentNode(node, EQUALITY_SYSTEM);
@@ -426,7 +426,7 @@ int StochPresolverModelCleanup::fixEmptyColumns()
       {
          const INDEX col(COL, node, col_index);
 
-         if( presData.wasColumnRemoved(col) )
+         if( presolve_data.wasColumnRemoved(col) )
          {
             assert( nnzs_col[col_index] == 0 );
             assert( PIPSisZero(ixlow[col_index] ) );
@@ -444,7 +444,7 @@ int StochPresolverModelCleanup::fixEmptyColumns()
             {
                if( !PIPSisZero(ixupp[col_index]) )
                {
-                  presData.fixEmptyColumn(col, xupp[col_index]);
+                  presolve_data.fixEmptyColumn(col, xupp[col_index]);
                }
                else
                {
@@ -456,7 +456,7 @@ int StochPresolverModelCleanup::fixEmptyColumns()
             {
                if( !PIPSisZero(ixlow[col_index]) )
                {
-                  presData.fixEmptyColumn(col, xlow[col_index]);
+                  presolve_data.fixEmptyColumn(col, xlow[col_index]);
                }
                else
                {
@@ -468,11 +468,11 @@ int StochPresolverModelCleanup::fixEmptyColumns()
             {
                assert( PIPSisEQ( g[col_index], 0.0) );
                if( !PIPSisZero(ixlow[col_index]) )
-                  presData.fixEmptyColumn(col, xlow[col_index]);
+                  presolve_data.fixEmptyColumn(col, xlow[col_index]);
                else if( !PIPSisZero(ixlow[col_index]) )
-                  presData.fixEmptyColumn(col, xlow[col_index]);
+                  presolve_data.fixEmptyColumn(col, xlow[col_index]);
                else
-                  presData.fixEmptyColumn(col, 0.0);
+                  presolve_data.fixEmptyColumn(col, 0.0);
             }
 
             if( my_rank == 0 || !col.isLinkingCol() )

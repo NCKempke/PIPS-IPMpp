@@ -18,7 +18,7 @@ class sFactoryAug : public sFactory
       sLinsysRoot* newLinsysRoot() override;
       sLinsysRoot* newLinsysRootHierarchical() override;
 
-      sLinsysRoot* newLinsysRoot(sData *prob, OoqpVector *dd, OoqpVector *dq,
+      sLinsysRoot* newLinsysRoot(DistributedQP *prob, OoqpVector *dd, OoqpVector *dq,
             OoqpVector *nomegaInv, OoqpVector *rhs) override;
 
       Problem* switchToHierarchicalData(Problem* prob_in) override;

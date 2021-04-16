@@ -7,7 +7,7 @@
 #include <vector>
 
 class QpGen;
-class QuadraticProblem;
+class QP;
 class LinearAlgebraPackage;
 class sTree;
 
@@ -39,7 +39,7 @@ public:
 
   std::vector<sVars*> children;
 
-  void collapseHierarchicalStructure(const sData& hier_data, const sTree* stochNode, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+  void collapseHierarchicalStructure(const DistributedQP& hier_data, const sTree* stochNode, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
         OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
 
   void permuteVec0Entries( const std::vector<unsigned int>& perm, bool vars_only = false );

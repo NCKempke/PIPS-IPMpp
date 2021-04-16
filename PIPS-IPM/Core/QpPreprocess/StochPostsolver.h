@@ -13,7 +13,7 @@
 
 #include "QpPostsolver.h"
 #include "StochVector.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sVars.h"
 #include "SystemType.h"
 #include "StochRowStorage.h"
@@ -22,7 +22,7 @@
 class StochPostsolver : public QpPostsolver {
 
    public:
-      StochPostsolver( const sData& original_problem );
+      StochPostsolver( const DistributedQP& original_problem );
       virtual ~StochPostsolver();
 
       void notifyRowModified( const INDEX& row );

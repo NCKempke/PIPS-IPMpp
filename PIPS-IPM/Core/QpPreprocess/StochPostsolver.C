@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 
-StochPostsolver::StochPostsolver(const sData& original_problem) :
+StochPostsolver::StochPostsolver(const DistributedQP& original_problem) :
    QpPostsolver(original_problem),
    postsolve_tol( pips_options::getDoubleParameter("POSTSOLVE_TOLERANCE") ),
    INF_NEG( -pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),

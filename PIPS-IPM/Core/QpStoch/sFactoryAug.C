@@ -4,7 +4,7 @@
 
 #include "sFactoryAug.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 
 #include "StochTree.h"
 #include "StochInputTree.h"
@@ -23,7 +23,7 @@ sLinsysRoot* sFactoryAug::newLinsysRoot()
    return new sLinsysRootAug(this, data);
 }
 
-sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
+sLinsysRoot* sFactoryAug::newLinsysRoot(DistributedQP* prob,
 			   OoqpVector* dd,OoqpVector* dq,
 			   OoqpVector* nomegaInv, OoqpVector* rhs)
 {
@@ -65,7 +65,7 @@ Problem* sFactoryAug::switchToHierarchicalData(Problem*)
 //
 //   const double Q2norm_bef = x_bef2->twonorm();
 //   const double Q1norm_bef = x_bef2->onenorm();
-//   data = dynamic_cast<sData*>(prob_in);
+//   data = dynamic_cast<DistributedQP*>(prob_in);
 
    hier_tree_swap.reset( tree->clone() );
 

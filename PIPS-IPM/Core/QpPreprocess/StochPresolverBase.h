@@ -11,7 +11,7 @@
 #include "StochVector.h"
 #include "StochGenMatrix.h"
 #include "PresolveData.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "SystemType.h"
 #include "StochPostsolver.h"
 #include "pipsport.h"
@@ -21,7 +21,7 @@
 class StochPresolverBase
 {
 public:
-   StochPresolverBase(PresolveData& presData, const sData& origProb);
+   StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb);
    virtual ~StochPresolverBase();
 
    virtual bool applyPresolving() = 0;
@@ -31,9 +31,9 @@ protected:
    void updatePointersForCurrentNode(int node, SystemType system_type);
 
 private:
-   void countRowsBlock(int& n_rows_total, int& n_rows_empty, int& n_rows_onesided, int& n_rows_boxed, int& n_rows_fixed, int& n_rows_singleton, SystemType system_type, 
-      BlockType block_type) const; 
-   void countBoxedColumns( int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed, int& n_cols_singleton, 
+   void countRowsBlock(int& n_rows_total, int& n_rows_empty, int& n_rows_onesided, int& n_rows_boxed, int& n_rows_fixed, int& n_rows_singleton, SystemType system_type,
+      BlockType block_type) const;
+   void countBoxedColumns( int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed, int& n_cols_singleton,
       int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector& ixlow_orig, const SimpleVector& ixupp_orig,
       bool at_root_node) const;
 
@@ -58,10 +58,10 @@ protected:
    const int n_linking_rows_ineq;
 
    /* not owned by the class itself - given from the outside */
-   PresolveData& presData;
+   PresolveData& presolve_data;
 
    // pointers to the currently needed matrices and vectors for presolving
-   const sData& origProb;
+   const DistributedQP& origProb;
 
    const SparseStorageDynamic* currAmat;
    const SparseStorageDynamic* currAmatTrans;

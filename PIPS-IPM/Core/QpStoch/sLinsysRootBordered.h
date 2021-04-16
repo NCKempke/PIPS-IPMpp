@@ -13,23 +13,23 @@
 class sLinsysRootBordered : public sLinsysRoot
 {
    public:
-      sLinsysRootBordered(sFactory * factory_, sData * prob_);
+      sLinsysRootBordered(sFactory * factory_, DistributedQP * prob_);
 
       ~sLinsysRootBordered() override = default;
 
-      void finalizeKKT(sData* prob, Variables* ) override;
+      void finalizeKKT(DistributedQP* prob, Variables* ) override;
 
-      void Lsolve(sData*, OoqpVector& x) override;
-      void Dsolve(sData*, OoqpVector& x) override;
-      void Ltsolve(sData*, OoqpVector& v) override;
+      void Lsolve(DistributedQP*, OoqpVector& x) override;
+      void Dsolve(DistributedQP*, OoqpVector& x) override;
+      void Ltsolve(DistributedQP*, OoqpVector& v) override;
 
       void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0, bool ) override;
    protected:
-      SymMatrix* createKKT(sData*);
-      void assembleLocalKKT(sData* prob) override;
-      void reduceKKT(sData*) override;
+      SymMatrix* createKKT(DistributedQP*);
+      void assembleLocalKKT(DistributedQP* prob) override;
+      void reduceKKT(DistributedQP*) override;
 
-      DoubleLinearSolver* createSolver(sData*, const SymMatrix* kktmat);
+      DoubleLinearSolver* createSolver(DistributedQP*, const SymMatrix* kktmat);
    private:
       void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );
 

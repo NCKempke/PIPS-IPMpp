@@ -170,7 +170,7 @@ void sResiduals::createChildren()
   }
 }
 
-void sResiduals::collapseHierarchicalStructure(const sData& data_hier, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+void sResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
    dynamic_cast<StochVector&>(*rQ).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);

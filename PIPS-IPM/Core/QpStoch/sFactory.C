@@ -4,7 +4,7 @@
 
 #include "sFactory.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sTreeCallbacks.h"
 #include "StochInputTree.h"
 #include "StochSymMatrix.h"
@@ -137,7 +137,7 @@ DoubleLinearSolver* sFactory::newLeafSolver(const DoubleMatrix* kkt_) {
    return nullptr;
 }
 
-sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
+sLinsysLeaf* sFactory::newLinsysLeaf(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
    assert(prob);
    static bool printed = false;
    const SolverType leaf_solver = pips_options::getSolverLeaf();
@@ -286,13 +286,13 @@ Problem* sFactory::create_problem() {
          std::cout << "IO second part took " << t2 << " sec\n";
 #endif
 
-   data = new sData(tree, c, Q, xlow, ixlow, xupp, ixupp, A, b, C, clow, iclow, cupp, icupp);
+   data = new DistributedQP(tree, c, Q, xlow, ixlow, xupp, ixupp, A, b, C, clow, iclow, cupp, icupp);
    return data;
 }
 
 // TODO adjust this for hierarchical approach
 Variables* sFactory::makeVariables(Problem* prob_in) {
-   sData* prob = dynamic_cast<sData*>(prob_in);
+   DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
 
    OoqpVectorHandle x = OoqpVectorHandle(makePrimalVector());
    OoqpVectorHandle s = OoqpVectorHandle(makeDualZVector());
@@ -314,7 +314,7 @@ Variables* sFactory::makeVariables(Problem* prob_in) {
 }
 
 Residuals* sFactory::makeResiduals(Problem* prob_in) {
-   sData* prob = dynamic_cast<sData*>(prob_in);
+   DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
    resid = new sResiduals(tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
    return resid;
 }

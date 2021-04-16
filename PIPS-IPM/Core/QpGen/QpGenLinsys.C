@@ -4,7 +4,7 @@
 
 #include "QpGenLinsys.h"
 
-#include "QuadraticProblem.h"
+#include "QP.hpp"
 #include "Residuals.h"
 #include "QpGenVars.h"
 
@@ -132,7 +132,7 @@ static bool isZero(double val, int &flag) {
    return false;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen *factory_, QuadraticProblem *problem, bool create_iter_ref_vecs) : factory(factory_),
+QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem, bool create_iter_ref_vecs) : factory(factory_),
       outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")), innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
       outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
       outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
@@ -178,7 +178,7 @@ QpGenLinsys::QpGenLinsys(QpGen *factory_, QuadraticProblem *problem, bool create
    }
 };
 
-QpGenLinsys::QpGenLinsys(QpGen *factory_, QuadraticProblem *problem, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_,
+QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_,
       bool create_iter_ref_vecs) : QpGenLinsys(factory_, problem, create_iter_ref_vecs) {
    dd = dd_;
    dq = dq_;
@@ -186,7 +186,7 @@ QpGenLinsys::QpGenLinsys(QpGen *factory_, QuadraticProblem *problem, OoqpVector 
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen *factory_, QuadraticProblem *problem) : QpGenLinsys(factory_, problem, true) {
+QpGenLinsys::QpGenLinsys(QpGen *factory_, QP *problem) : QpGenLinsys(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
       dd = factory->makePrimalVector();
       dq = factory->makePrimalVector();
@@ -272,7 +272,7 @@ QpGenLinsys::computeDiagonals(OoqpVector &dd_, OoqpVector &omega, OoqpVector &t,
 }
 
 void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in, Variables *step_in) {
-   QuadraticProblem *problem = (QuadraticProblem *) prob_in;
+   QP *problem = (QP *) prob_in;
    QpGenVars *vars = (QpGenVars *) vars_in;
    QpGenVars *step = (QpGenVars *) step_in;
    Residuals *res = (Residuals *) res_in;
@@ -411,7 +411,7 @@ void QpGenLinsys::solve(Problem *prob_in, Variables *vars_in, Residuals *res_in,
 }
 
 void
-QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, OoqpVector &steps, OoqpVector & /* ztemp */, QuadraticProblem *prob) {
+QpGenLinsys::solveXYZS(OoqpVector &stepx, OoqpVector &stepy, OoqpVector &stepz, OoqpVector &steps, OoqpVector & /* ztemp */, QP *prob) {
    /* step->z = rC */
    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
@@ -733,7 +733,7 @@ void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpV
  *       [            C                  0  -(lambda/V + pi/u)^-1 ]
  * stepx, stepy, stepz are used as temporary buffers
  */
-void QpGenLinsys::matXYZMult(double beta, OoqpVector &res, double alpha, const OoqpVector &sol, const QuadraticProblem &data, OoqpVector &solx,
+void QpGenLinsys::matXYZMult(double beta, OoqpVector &res, double alpha, const OoqpVector &sol, const QP &data, OoqpVector &solx,
       OoqpVector &soly, OoqpVector &solz) {
    assert(resx);
    assert(resy);
@@ -763,7 +763,7 @@ void QpGenLinsys::matXYZMult(double beta, OoqpVector &res, double alpha, const O
 }
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
-double QpGenLinsys::matXYZinfnorm(const QuadraticProblem &data, OoqpVector &solx, OoqpVector &soly, OoqpVector &solz) {
+double QpGenLinsys::matXYZinfnorm(const QP &data, OoqpVector &solx, OoqpVector &soly, OoqpVector &solz) {
    solx.copyFromAbs(*dd);
 
    data.A->addColSums(solx);
@@ -863,7 +863,7 @@ void QpGenLinsys::solveCompressedIterRefin(const std::function<void(OoqpVector &
  * stepx, stepy, stepz are used as temporary buffers
  */
 void QpGenLinsys::computeResidualXYZ(const OoqpVector &sol, OoqpVector &res, OoqpVector &solx, OoqpVector &soly, OoqpVector &solz,
-      const QuadraticProblem &data) {
+      const QP &data) {
    this->separateVars(solx, soly, solz, sol);
    this->separateVars(*resx, *resy, *resz, res);
 

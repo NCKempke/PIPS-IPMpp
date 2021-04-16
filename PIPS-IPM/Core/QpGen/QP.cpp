@@ -2,7 +2,7 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include "QuadraticProblem.h"
+#include "QP.hpp"
 #include "QpGenVars.h"
 #include "DoubleMatrix.h"
 #include <cmath>
@@ -10,7 +10,7 @@
 #include "LinearAlgebraPackage.h"
 #include "MpsReader.h"
 
-QuadraticProblem::QuadraticProblem(LinearAlgebraPackage* la_in, OoqpVector* c_in, SymMatrix* Q_in, OoqpVector* xlow_in, OoqpVector* ixlow_in,
+QP::QP(LinearAlgebraPackage* la_in, OoqpVector* c_in, SymMatrix* Q_in, OoqpVector* xlow_in, OoqpVector* ixlow_in,
       OoqpVector* xupp_in, OoqpVector* ixupp_in, GenMatrix* A_in, OoqpVector* bA_in, GenMatrix* C_in, OoqpVector* clow_in, OoqpVector* iclow_in,
       OoqpVector* cupp_in, OoqpVector* icupp_in) :
 // superclass constructor
@@ -18,12 +18,12 @@ QuadraticProblem::QuadraticProblem(LinearAlgebraPackage* la_in, OoqpVector* c_in
    SpReferTo(Q, Q_in);
 }
 
-void QuadraticProblem::Qmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void QP::Qmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
    Q->mult(beta, y, alpha, x);
 }
 
 
-double QuadraticProblem::datanorm() const {
+double QP::datanorm() const {
    double norm = Problem::datanorm();
    double componentNorm;
 
@@ -33,7 +33,7 @@ double QuadraticProblem::datanorm() const {
    return norm;
 }
 
-void QuadraticProblem::datainput(MpsReader* reader, int& iErr) {
+void QP::datainput(MpsReader* reader, int& iErr) {
    reader->readQpGen(*g, *Q, *blx, *ixlow, *bux, *ixupp, *A, *bA, *C, *bl, *iclow, *bu, *icupp, iErr);
 
    if (reader->scalingOption == 1) {
@@ -56,32 +56,32 @@ void QuadraticProblem::datainput(MpsReader* reader, int& iErr) {
    }
 }
 
-void QuadraticProblem::print() {
+void QP::print() {
    std::cout << "begin Q\n";
    Q->writeToStream(std::cout);
    std::cout << "end Q\n";
    Problem::print();
 }
 
-void QuadraticProblem::putQIntoAt(SymMatrix& M, int row, int col) {
+void QP::putQIntoAt(SymMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QuadraticProblem::putQIntoAt(GenMatrix& M, int row, int col) {
+void QP::putQIntoAt(GenMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QuadraticProblem::getDiagonalOfQ(OoqpVector& q_diagonal) {
+void QP::getDiagonalOfQ(OoqpVector& q_diagonal) {
    Q->fromGetDiagonal(0, q_diagonal);
 }
 
-void QuadraticProblem::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const {
+void QP::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const {
    this->getg(gradient);
    this->Qmult(1., gradient, 1., *vars->x);
    return;
 }
 
-double QuadraticProblem::objective_value(const QpGenVars* vars) const {
+double QP::objective_value(const QpGenVars* vars) const {
    OoqpVectorHandle gradient(la->newVector(nx));
    this->getg(*gradient);
    this->Qmult(1., *gradient, 0.5, *vars->x);
@@ -89,7 +89,7 @@ double QuadraticProblem::objective_value(const QpGenVars* vars) const {
    return gradient->dotProductWith(*vars->x);
 }
 
-void QuadraticProblem::createScaleFromQ() {
+void QP::createScaleFromQ() {
    // Stuff the diagonal elements of Q into the vector "sc"
    this->getDiagonalOfQ(*sc);
 
@@ -106,11 +106,11 @@ void QuadraticProblem::createScaleFromQ() {
    }
 }
 
-void QuadraticProblem::scaleQ() {
+void QP::scaleQ() {
    Q->symmetricScale(*sc);
 }
 
-void QuadraticProblem::flipQ() {
+void QP::flipQ() {
    // Multiply Q matrix by -1
    Q->scalarMult(-1.0);
 }

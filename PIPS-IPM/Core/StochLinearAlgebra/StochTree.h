@@ -16,7 +16,7 @@
 class Problem;
 class QpGen;
 class QpGenStoch;
-class sData;
+class DistributedQP;
 class StochSymMatrix;
 class StochGenMatrix;
 class QpGenStochLinsys;

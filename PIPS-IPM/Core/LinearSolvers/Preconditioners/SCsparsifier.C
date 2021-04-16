@@ -126,7 +126,7 @@ SCsparsifier::updateStats()
 }
 
 void
-SCsparsifier::unmarkDominatedSCdistLocals(const sData& prob,
+SCsparsifier::unmarkDominatedSCdistLocals(const DistributedQP& prob,
       SparseSymMatrix& sc)
 {
    const std::vector<bool>& rowIsMyLocal = prob.getSCrowMarkerMyLocal();
@@ -224,7 +224,7 @@ SCsparsifier::resetSCdistEntries(SparseSymMatrix& sc) const
 
 
 void
-SCsparsifier::getSparsifiedSC_fortran(const sData& prob,
+SCsparsifier::getSparsifiedSC_fortran(const DistributedQP& prob,
       SparseSymMatrix& sc)
 {
    assert(!sc.getStorageRef().fortranIndexed());
@@ -360,7 +360,7 @@ void SCsparsifier::updateDiagDomBound()
 }
 
 
-std::vector<double> SCsparsifier::getDomDiagDist(const sData& prob, SparseSymMatrix& sc, bool isLeaf) const
+std::vector<double> SCsparsifier::getDomDiagDist(const DistributedQP& prob, SparseSymMatrix& sc, bool isLeaf) const
 {
    int* const krowM = sc.krowM();
    double* const M = sc.M();

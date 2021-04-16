@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QpGenSparseSeq.h"
-#include "QuadraticProblem.h"
+#include "QP.hpp"
 #include "SimpleVector.h"
 #include "SparseGenMatrix.h"
 #include "SparseSymMatrix.h"
@@ -12,7 +12,7 @@
 
 //Problem * QpGenSparseSeq::create_problem()
 //{
-//  return new QuadraticProblem( la, nx, my, mz, nnzQ, nnzA, nnzC );
+//  return new QP( la, nx, my, mz, nnzQ, nnzA, nnzC );
 //}
 
 void QpGenSparseSeq::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
@@ -82,7 +82,7 @@ Problem* QpGenSparseSeq::create_problem(double c_[], int krowQ[], int jcolQ[], d
    SimpleVectorHandle icupp(new SimpleVector(mz));
    icupp->copyFromArray(icupp_);
 
-   QuadraticProblem* data = new QuadraticProblem(SparseLinearAlgebraPackage::soleInstance(), c, Q, xlow, ixlow, xupp, ixupp, A, b, C, clow, iclow,
+   QP* data = new QP(SparseLinearAlgebraPackage::soleInstance(), c, Q, xlow, ixlow, xupp, ixupp, A, b, C, clow, iclow,
          cupp, icupp);
 
    return data;

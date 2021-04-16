@@ -29,27 +29,27 @@
 #include "pipsport.h"
 #include <memory>
 
-class sData;
+class DistributedQP;
 /** 
  * ROOT (= NON-leaf) linear system in reduced augmented form
  */
 class sLinsysRootAug : public sLinsysRoot {
 
  public:
-  sLinsysRootAug(sFactory * factory_, sData * prob_);
+  sLinsysRootAug(sFactory * factory_, DistributedQP * prob_);
   sLinsysRootAug(sFactory* factory,
-		 sData* prob_,
+		 DistributedQP* prob_,
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
 		 OoqpVector* rhs_, bool creat_solvers);
   ~sLinsysRootAug() override = default;
 
-  void finalizeKKT( sData* prob, Variables* vars) override;
-  void finalizeKKTdist(sData* prob) override;
+  void finalizeKKT( DistributedQP* prob, Variables* vars) override;
+  void finalizeKKTdist(DistributedQP* prob) override;
 
-  void Lsolve(sData *prob, OoqpVector& x) override;
-  void Dsolve(sData *prob, OoqpVector& x) override;
-  void Ltsolve(sData *prob, OoqpVector& x) override;
+  void Lsolve(DistributedQP *prob, OoqpVector& x) override;
+  void Dsolve(DistributedQP *prob, OoqpVector& x) override;
+  void Ltsolve(DistributedQP *prob, OoqpVector& x) override;
 
   using sLinsys::LsolveHierarchyBorder;
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
@@ -59,33 +59,33 @@ class sLinsysRootAug : public sLinsysRoot {
         std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 
  protected:
-  SymMatrix* createKKT (sData* prob) const;
+  SymMatrix* createKKT (DistributedQP* prob) const;
   void createSolversSparse( SolverType solver );
   void createSolversDense();
 
-  void assembleLocalKKT( sData* prob ) override;
-//  void solveReduced( sData *prob, SimpleVector& b);
-  void solveReducedLinkCons( sData *prob, SimpleVector& b);
-  void solveReducedLinkConsBlocked( sData* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
+  void assembleLocalKKT( DistributedQP* prob ) override;
+//  void solveReduced( DistributedQP *prob, SimpleVector& b);
+  void solveReducedLinkCons( DistributedQP *prob, SimpleVector& b);
+  void solveReducedLinkConsBlocked( DistributedQP* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
   void addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res ) override;
   void addBlTKiInvBrToResBlockwise( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols );
 
  private:
-  void createSolversAndKKts(sData* prob);
-  void finalizeKKTdense( sData* prob, Variables* vars);
-  void finalizeKKTsparse( sData* prob, Variables* vars);
-  void solveWithIterRef( sData *prob, SimpleVector& b);
-  void solveWithBiCGStab( sData *prob, SimpleVector& b);
+  void createSolversAndKKts(DistributedQP* prob);
+  void finalizeKKTdense( DistributedQP* prob, Variables* vars);
+  void finalizeKKTsparse( DistributedQP* prob, Variables* vars);
+  void solveWithIterRef( DistributedQP *prob, SimpleVector& b);
+  void solveWithBiCGStab( DistributedQP *prob, SimpleVector& b);
 
   void DsolveHierarchyBorder( DenseGenMatrix& b, int n_cols ) override;
 
   // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
-  void addLinkConsBlock0Matrix( sData *prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
+  void addLinkConsBlock0Matrix( DistributedQP *prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
 
   /** y = beta*y - alpha* SC * x */
-  void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, sData* prob);
+  void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, DistributedQP* prob);
 
   SymMatrix* CtDC{};
 

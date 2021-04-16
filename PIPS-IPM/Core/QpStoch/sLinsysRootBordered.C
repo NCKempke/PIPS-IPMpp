@@ -17,7 +17,7 @@
 #include "sLinsysRootAug.h"
 #include "sFactory.h"
 
-sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
+sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, DistributedQP * prob_)
   : sLinsysRoot(factory_, prob_, true)
 {
    assert(locmyl >= 0 && locmzl >= 0);
@@ -27,7 +27,7 @@ sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, sData * prob_)
    solver.reset( createSolver(prob_, kkt.get()) );
 }
 
-void sLinsysRootBordered::finalizeKKT(/* const */sData* prob, Variables*)
+void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*)
 {
 
    /* Add corner block
@@ -173,7 +173,7 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inne
  *    [ B^T K0 ] [ x_0 ] = [ b_0 ]
  */
 /* forms right hand side for schur system \tilda{b_0} = b_0 - B^T * K^-1 b and in doing so solves K^-1 b */
-void sLinsysRootBordered::Lsolve(sData* , OoqpVector& x)
+void sLinsysRootBordered::Lsolve(DistributedQP* , OoqpVector& x)
 {
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
@@ -191,7 +191,7 @@ void sLinsysRootBordered::Lsolve(sData* , OoqpVector& x)
 }
 
 /* does Schur Complement solve and computes SC x_0 = \tilda{b_0} = ( K0 - B^T K B ) x_0 */
-void sLinsysRootBordered::Dsolve(sData*, OoqpVector& x)
+void sLinsysRootBordered::Dsolve(DistributedQP*, OoqpVector& x)
 {
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
@@ -206,7 +206,7 @@ void sLinsysRootBordered::Dsolve(sData*, OoqpVector& x)
 }
 
 /* back substitute x_0 : K x = b - B x_0 and solve for x */
-void sLinsysRootBordered::Ltsolve(sData*, OoqpVector& x)
+void sLinsysRootBordered::Ltsolve(DistributedQP*, OoqpVector& x)
 {
    assert( is_hierarchy_root );
    assert( children.size() == 1 );
@@ -225,7 +225,7 @@ void sLinsysRootBordered::Ltsolve(sData*, OoqpVector& x)
 }
 
 /* create kkt used to store Schur Complement of border layer */
-SymMatrix* sLinsysRootBordered::createKKT(sData*)
+SymMatrix* sLinsysRootBordered::createKKT(DistributedQP*)
 {
    const int n = locnx + locmyl + locmzl;
 
@@ -235,7 +235,7 @@ SymMatrix* sLinsysRootBordered::createKKT(sData*)
    return new DenseSymMatrix(n);
 }
 
-void sLinsysRootBordered::assembleLocalKKT(sData* prob)
+void sLinsysRootBordered::assembleLocalKKT(DistributedQP* prob)
 {
    assert(allreduce_kkt);
    assert( is_hierarchy_root );
@@ -259,13 +259,13 @@ void sLinsysRootBordered::assembleLocalKKT(sData* prob)
 }
 
 /* since we have only one child we will not allreduce anything */
-void sLinsysRootBordered::reduceKKT(sData*)
+void sLinsysRootBordered::reduceKKT(DistributedQP*)
 {
    if( iAmDistrib )
       allreduceMatrix(*kkt, false, true, mpiComm );
 }
 
-DoubleLinearSolver* sLinsysRootBordered::createSolver(sData*, const SymMatrix* kktmat_)
+DoubleLinearSolver* sLinsysRootBordered::createSolver(DistributedQP*, const SymMatrix* kktmat_)
 {
    const SolverTypeDense solver = pips_options::getSolverDense();
    const DenseSymMatrix* kktmat = dynamic_cast<const DenseSymMatrix*>(kktmat_);

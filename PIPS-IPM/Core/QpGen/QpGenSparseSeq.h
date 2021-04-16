@@ -7,7 +7,7 @@
 
 #include "QpGen.h"
 
-class QuadraticProblem;
+class QP;
 
 class QpGenVars;
 

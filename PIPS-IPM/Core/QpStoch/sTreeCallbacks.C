@@ -3,7 +3,7 @@
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
 #include "sTreeCallbacks.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
@@ -33,8 +33,8 @@ sTreeCallbacks::sTreeCallbacks( const sTreeCallbacks& other ) : sTree( other ),
    mz_inactive{ other.mz_inactive },
    myl_inactive{ other.myl_inactive },
    mzl_inactive{ other.mzl_inactive },
-   isDataPresolved{ other.isDataPresolved },
-   hasPresolvedData{ other.hasPresolvedData },
+   is_data_presolved{ other.is_data_presolved },
+   has_presolved_data{ other.has_presolved_data },
    print_tree_sizes_on_reading{ other.print_tree_sizes_on_reading },
    map_node_sub_root(other.map_node_sub_root.begin(), other.map_node_sub_root.end()),
    data{ other.data }
@@ -115,8 +115,8 @@ void sTreeCallbacks::addChild( sTreeCallbacks* child )
 void sTreeCallbacks::switchToPresolvedData()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   assert(!isDataPresolved);
-   assert(hasPresolvedData);
+   assert(!is_data_presolved);
+   assert(has_presolved_data);
 
    std::swap(N_INACTIVE, N);
    std::swap(MY_INACTIVE, MY);
@@ -136,7 +136,7 @@ void sTreeCallbacks::switchToPresolvedData()
       dynamic_cast<sTreeCallbacks*>(children[it])->switchToPresolvedData();
    }
 
-   isDataPresolved = true;
+   is_data_presolved = true;
    assertTreeStructureCorrect();
 }
 
@@ -144,7 +144,7 @@ void sTreeCallbacks::switchToPresolvedData()
 void sTreeCallbacks::switchToOriginalData()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   assert(isDataPresolved);
+   assert(is_data_presolved);
 
    std::swap(N_INACTIVE, N);
    std::swap(MY_INACTIVE, MY);
@@ -164,7 +164,7 @@ void sTreeCallbacks::switchToOriginalData()
       dynamic_cast<sTreeCallbacks*>(children[it])->switchToOriginalData();
    }
 
-   isDataPresolved = false;
+   is_data_presolved = false;
    assertTreeStructureCorrect();
 }
 
@@ -172,16 +172,16 @@ void sTreeCallbacks::switchToOriginalData()
 bool sTreeCallbacks::isPresolved()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   return isDataPresolved;
+   return is_data_presolved;
 }
 
 bool sTreeCallbacks::hasPresolved()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   return hasPresolvedData;
+   return has_presolved_data;
 }
 
-void sTreeCallbacks::initPresolvedData( const sData& presolved_data )
+void sTreeCallbacks::initPresolvedData( const DistributedQP& presolved_data )
 {
    const StochSymMatrix& Q = dynamic_cast<const StochSymMatrix&>(*presolved_data.Q);
    const StochGenMatrix& A = dynamic_cast<const StochGenMatrix&>(*presolved_data.A);
@@ -201,7 +201,7 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
       const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent)
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   assert(!hasPresolvedData);
+   assert(!has_presolved_data);
 
    assert(nxVec.children.size() == children.size());
    assert(myVec.children.size() == children.size());
@@ -276,7 +276,7 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
       MZ_INACTIVE += sTreeCallbacksChild->MZ_INACTIVE;
    }
 
-   hasPresolvedData = true;
+   has_presolved_data = true;
 
 }
 
@@ -325,7 +325,7 @@ void sTreeCallbacks::writeSizes( std::ostream& sout ) const
 void sTreeCallbacks::computeGlobalSizes()
 {
    assert(!is_hierarchical_root || ( false && "cannot be used with hierarchical data" ) );
-   assert( !isDataPresolved );
+   assert( !is_data_presolved );
 
    if( data && isInVector( rankMe, myProcs ) )
    {
@@ -538,7 +538,7 @@ StochSymMatrix* sTreeCallbacks::createQ() const
    //is this node a dead-end for this process?
    if( commWrkrs == MPI_COMM_NULL )
       return new StochSymDummyMatrix();
-  
+
    if( data->nnzQ < 0 )
       data->fnnzQ(data->user_data, data->id, &data->nnzQ);
 
@@ -1286,7 +1286,7 @@ std::pair<int,int> sTreeCallbacks::adjustSizesAfterSplit( const std::vector<unsi
    return std::make_pair(not_my_two_links_eq, not_my_two_links_ineq);
 }
 
-std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, sData* data )
+std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, DistributedQP* data )
 {
    if( n_layers == 1 || commWrkrs == MPI_COMM_NULL )
       return std::make_pair(0,0);
@@ -1359,7 +1359,7 @@ std::pair<int,int> sTreeCallbacks::splitTree( int n_layers, sData* data )
    return std::make_pair<int,int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
-sTree* sTreeCallbacks::switchToHierarchicalTree( sData*& data )
+sTree* sTreeCallbacks::switchToHierarchicalTree( DistributedQP*& data )
 {
    assert( data->exploitingLinkStructure() );
 

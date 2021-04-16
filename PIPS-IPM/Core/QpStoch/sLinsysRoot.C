@@ -4,7 +4,7 @@
 
 #include "sLinsysRoot.h"
 #include "sFactory.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sDummyLinsys.h"
 #include "sLinsysLeaf.h"
 #include "StochOptions.h"
@@ -20,7 +20,7 @@
 double g_scenNum;
 #endif
 
-sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root)
+sLinsysRoot::sLinsysRoot(sFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root)
   : sLinsys(factory_, prob_, is_hierarchy_root)
 {
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
@@ -29,7 +29,7 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_r
 }
 
 sLinsysRoot::sLinsysRoot(sFactory* factory_,
-			 sData* prob_,
+			 DistributedQP* prob_,
 			 OoqpVector* dd_,
 			 OoqpVector* dq_,
 			 OoqpVector* nomegaInv_,
@@ -71,7 +71,7 @@ sLinsysRoot::~sLinsysRoot()
 //this variable is just reset in this file; children will default to the "safe" linear solver
 extern int gLackOfAccuracy;
 
-void sLinsysRoot::assembleKKT(sData* prob, Variables* vars)
+void sLinsysRoot::assembleKKT(DistributedQP* prob, Variables* vars)
 {
    if( is_hierarchy_root )
       assert( children.size() == 1 );
@@ -89,7 +89,7 @@ void sLinsysRoot::assembleKKT(sData* prob, Variables* vars)
    assembleLocalKKT( prob );
 }
 
-void sLinsysRoot::allreduceAndFactorKKT(sData* prob, Variables* vars)
+void sLinsysRoot::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars)
 {
    reduceKKT(prob);
 
@@ -98,7 +98,7 @@ void sLinsysRoot::allreduceAndFactorKKT(sData* prob, Variables* vars)
    factorizeKKT(prob);
 }
 
-void sLinsysRoot::factor2(sData *prob, Variables *vars)
+void sLinsysRoot::factor2(DistributedQP *prob, Variables *vars)
 {
    if( PIPS_MPIgetRank(mpiComm) == 0 )
    {
@@ -730,7 +730,7 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::Ltsolve2( sData*, StochVector& x, SimpleVector& x0, bool)
+void sLinsysRoot::Ltsolve2( DistributedQP*, StochVector& x, SimpleVector& x0, bool)
 {
    assert( false && "not in use");
    assert( pips_options::getBoolParameter("HIERARCHICAL") );
@@ -761,7 +761,7 @@ void sLinsysRoot::Ltsolve2( sData*, StochVector& x, SimpleVector& x0, bool)
 //      children[it]->Ltsolve2(prob->children[it], *b.children[it], xi);
 }
 
-void sLinsysRoot::createChildren(sData *prob)
+void sLinsysRoot::createChildren(DistributedQP *prob)
 {
    sLinsys* child{};
    assert( dd && dq && nomegaInv && rhs && prob );
@@ -897,7 +897,7 @@ void sLinsysRoot::AddChild(sLinsys* child)
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
 /* Atoms methods of FACTOR2 for a non-leaf linear system */
-void sLinsysRoot::initializeKKT(sData*, Variables*)
+void sLinsysRoot::initializeKKT(DistributedQP*, Variables*)
 {
    if( hasSparseKkt )
       dynamic_cast<SparseSymMatrix*>(kkt.get())->symPutZeroes();
@@ -908,7 +908,7 @@ void sLinsysRoot::initializeKKT(sData*, Variables*)
    }
 }
 
-void sLinsysRoot::reduceKKT(sData* prob)
+void sLinsysRoot::reduceKKT(DistributedQP* prob)
 {
    if( usePrecondDist )
       reduceKKTdist(prob);
@@ -1051,7 +1051,7 @@ void sLinsysRoot::registerMatrixEntryTripletMPI()
    MPI_Type_commit(&MatrixEntryTriplet_mpi);
 }
 
-void sLinsysRoot::syncKKTdistLocalEntries(sData* prob)
+void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
 {
    if( !iAmDistrib )
       return;
@@ -1225,7 +1225,7 @@ void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>&
    MPI_Send(&prevEntries[0], nEntries, MatrixEntryTriplet_mpi, prevRank, 0, mpiComm);
 }
 
-std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(sData* prob, int childStart, int) const
+std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int) const
 {
    assert(kkt && hasSparseKkt);
 
@@ -1298,7 +1298,7 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
 }
 
 
-void sLinsysRoot::reduceKKTdist(sData* prob)
+void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
 {
    assert(prob);
    assert(iAmDistrib);
@@ -1539,7 +1539,7 @@ void sLinsysRoot::factorizeKKT()
    factorizeKKT(nullptr);
 }
 
-void sLinsysRoot::factorizeKKT(sData* prob)
+void sLinsysRoot::factorizeKKT(DistributedQP* prob)
 {
   //stochNode->resMon.recFactTmLocal_start();  
 #ifdef TIMING
@@ -1632,7 +1632,7 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
   myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC )
+void sLinsysRoot::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC )
 {
    assert(childindex < prob->children.size());
 
