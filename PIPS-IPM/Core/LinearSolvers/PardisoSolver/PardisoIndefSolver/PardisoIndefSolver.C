@@ -528,13 +528,12 @@ void PardisoIndefSolver::solve( OoqpVector& v )
 
 void PardisoIndefSolver::solve( int nrhss, double* rhss, int* /*colSparsity*/ )
 {
-
-   assert(rhss);
    assert(nrhss >= 0);
    if (nrhss == 0){
       return;
    }
 
+   assert(rhss);
    if( static_cast<int>(sol.size()) < nrhss * n )
       sol.resize( nrhss * n );
 
