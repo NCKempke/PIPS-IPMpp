@@ -3,6 +3,7 @@
 
 #include <OoqpVectorHandle.h>
 #include <iostream>
+#include <limits>
 
 /**
  * @file Residuals.h
@@ -20,31 +21,31 @@ class Variables;
  */
 class Residuals {
 protected:
-   double mResidualNorm;
-   double mDualityGap;
-   double primal_objective;
-   double dual_objective;
+   double mResidualNorm{std::numeric_limits<double>::infinity()};
+   double mDualityGap{std::numeric_limits<double>::infinity()};
+   double primal_objective{std::numeric_limits<double>::infinity()};
+   double dual_objective{std::numeric_limits<double>::infinity()};
 
-   long long nx{0};
-   long long my{0};
-   long long mz{0};
+   long long nx{-1};
+   long long my{-1};
+   long long mz{-1};
 
-   long long nxupp{0};
+   long long nxupp{-1};
    OoqpVectorHandle ixupp;
 
-   long long nxlow{0};
+   long long nxlow{-1};
    OoqpVectorHandle ixlow;
 
-   long long mcupp{0};
+   long long mcupp{-1};
    OoqpVectorHandle icupp;
 
-   long long mclow{0};
+   long long mclow{-1};
    OoqpVectorHandle iclow;
 
    Residuals() = default;
 
 public:
-   int m, n;
+   int m{-1}, n{-1};
 
    OoqpVectorHandle rQ;
    OoqpVectorHandle rA;

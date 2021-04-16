@@ -429,7 +429,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
    SparseSymMatrix& SC = dynamic_cast<SparseSymMatrix&>(SC_);
 
    int dummy, mX0; X0.getSize(mX0, dummy);
-   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows <= mX0 );
+   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows - begin_rows <= mX0 );
 
    int mA0{0}; int nA0{0};
    if( A0_border )

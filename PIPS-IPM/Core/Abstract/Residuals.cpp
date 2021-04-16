@@ -6,22 +6,15 @@
 
 #include <iostream>
 
-Residuals::Residuals(const Residuals& residuals) {
-   nx = residuals.nx;
-   my = residuals.my;
-   mz = residuals.mz;
-
+Residuals::Residuals(const Residuals& residuals) :
+   mResidualNorm{residuals.mResidualNorm}, mDualityGap{residuals.mDualityGap}, primal_objective{residuals.primal_objective},
+   dual_objective{residuals.dual_objective}, nx{residuals.nx}, my{residuals.my}, mz{residuals.mz},
+   nxupp{residuals.nxupp}, nxlow{residuals.nxlow}, mcupp{residuals.mcupp}, mclow{residuals.mclow}
+   {
    ixlow = OoqpVectorHandle(residuals.ixlow->cloneFull());
-   nxlow = residuals.nxlow;
-
    ixupp = OoqpVectorHandle(residuals.ixupp->cloneFull());
-   nxupp = residuals.nxupp;
-
    iclow = OoqpVectorHandle(residuals.iclow->cloneFull());
-   mclow = residuals.mclow;
-
    icupp = OoqpVectorHandle(residuals.icupp->cloneFull());
-   mcupp = residuals.mcupp;
 
    rQ = OoqpVectorHandle(residuals.rQ->cloneFull());
    rA = OoqpVectorHandle(residuals.rA->cloneFull());
