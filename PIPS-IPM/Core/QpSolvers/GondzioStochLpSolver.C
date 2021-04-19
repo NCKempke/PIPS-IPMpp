@@ -97,11 +97,11 @@ GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables* iterate, Variab
    alpha_dual_candidate = alpha_dual_best;
 }
 
-int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals* resid) {
+TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    double mu, muaff;
-   int status_code;
+   TerminationCode status_code;
    double sigma = 1.0;
    double alpha_pri = 1.0, alpha_dual = 1.0;
    sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
@@ -120,7 +120,7 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
    setBiCGStabTol(-1);
 
    stoch_factory->iterateStarted();
-   this->start(&factory, iterate, &problem, resid, step);
+   this->start(&factory, iterate, &problem, residuals, step);
    stoch_factory->iterateEnded();
 
    iteration = 0;
@@ -134,7 +134,7 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
       if (false)
          iterate->setNotIndicatedBoundsTo(problem, 1e15);
 //      pushConvergedVarsAwayFromBounds(*problem, *iterate);
-//      pushSmallComplementarityProducts( *problem, *iterate, *resid );
+//      pushSmallComplementarityProducts( *problem, *iterate, *residuals );
 
       setBiCGStabTol(iteration);
       bool small_corr = false;
@@ -142,22 +142,22 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
       stoch_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
-      resid->evaluate(problem, iterate);
+      residuals->evaluate(problem, iterate);
 
       //  termination test:
-      status_code = this->doStatus(&problem, iterate, resid, iteration, mu, 0);
+      status_code = this->doStatus(&problem, iterate, residuals, iteration, mu, SUCCESSFUL_TERMINATION);
 
       if (status_code != NOT_FINISHED)
          break;
 
       if (gOoqpPrintLevel >= 10) {
-         this->doMonitorPd(&problem, iterate, resid, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 0);
+         this->doMonitorPd(&problem, iterate, residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 0);
       }
 
       // *** Predictor step ***
       if (!pure_centering_step) {
-         computePredictorStep(&problem, iterate, resid);
-         checkLinsysSolveNumericalTroublesAndReact(resid, numerical_troubles, small_corr);
+         computePredictorStep(&problem, iterate, residuals);
+         checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
       }
       else
          step->setToZero();
@@ -171,14 +171,14 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
       sigma = pow(muaff / mu, tsig);
 
       if (gOoqpPrintLevel >= 10) {
-         this->doMonitorPd(&problem, iterate, resid, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 2);
+         this->doMonitorPd(&problem, iterate, residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 2);
       }
 
       g_iterNumber += 1.0;
 
       // *** Corrector step ***
       computeCorrectorStep(&problem, iterate, sigma, mu);
-      checkLinsysSolveNumericalTroublesAndReact(resid, numerical_troubles, small_corr);
+      checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
 
       // calculate weighted predictor-corrector step
       double weight_primal_candidate, weight_dual_candidate = -1.0;
@@ -221,7 +221,7 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
          /* compute corrector step */
          computeGondzioCorrector(&problem, iterate, rmin, rmax, small_corr);
          const bool was_small_corr = small_corr;
-         checkLinsysSolveNumericalTroublesAndReact(resid, numerical_troubles, small_corr);
+         checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
 
          if (numerical_troubles) {
             if (!was_small_corr && small_corr)
@@ -322,7 +322,7 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
          if (precond_decreased)
             precond_decreased = decreasePreconditionerImpact(linear_system);
 
-         doProbing_pd(&problem, iterate, resid, alpha_pri, alpha_dual);
+         doProbing_pd(&problem, iterate, residuals, alpha_pri, alpha_dual);
          const double alpha_max = std::max(alpha_pri, alpha_dual);
 
          if (restartIterateBecauseOfPoorStep(pure_centering_step, precond_decreased, alpha_max))
@@ -343,9 +343,9 @@ int GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals*
       stoch_factory->iterateEnded();
    }
 
-   resid->evaluate(problem, iterate);
+   residuals->evaluate(problem, iterate);
    if (gOoqpPrintLevel >= 10) {
-      this->doMonitorPd(&problem, iterate, resid, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 1);
+      this->doMonitorPd(&problem, iterate, residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 1);
    }
 
    return status_code;

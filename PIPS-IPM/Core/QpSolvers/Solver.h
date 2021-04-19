@@ -2,6 +2,7 @@
 #define ALGORITHM_H
 
 #include <memory>
+#include <Status.h>
 #include "Scaler.h"
 #include "Residuals.h"
 
@@ -126,7 +127,7 @@ public:
    virtual void dumbstart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
 
    /** implements the interior-point method for solving the QP */
-   virtual int solve(Problem& problem, Variables* iterate, Residuals* resids) = 0;
+   virtual TerminationCode solve(Problem& problem, Variables* iterate, Residuals* resids) = 0;
 
    /** Mehrotra's heuristic to calculate the final step length */
    virtual double finalStepLength(Variables* iterate, Variables* step);
@@ -151,11 +152,11 @@ public:
 
    /** this method called to test for convergence status at the end of
     * each interior-point iteration */
-   virtual int doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, int level);
+   virtual TerminationCode doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
 
    /** default method for checking status. May be replaced by a
     * user-defined method */
-   virtual int defaultStatus(const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, int level);
+   virtual TerminationCode defaultStatus(const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
 
    /** method to add user-defined monitors to the monitor operations
        performed at each iteration */

@@ -43,12 +43,10 @@ public:
    QP(LinearAlgebraPackage* la, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp,
          GenMatrix* A, OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp);
 
-   /** insert the Hessian Q into the matrix M for the fundamental
-    linear system, where M is stored as a SymMatrix */
+   /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
    virtual void putQIntoAt(SymMatrix& M, int row, int col);
 
-   /** insert the Hessian Q into the matrix M for the fundamental
-       linear system, where M is stored as a GenMatrix */
+   /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a GenMatrix */
    virtual void putQIntoAt(GenMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * Q * x */

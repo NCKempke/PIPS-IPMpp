@@ -219,30 +219,6 @@ double QpGenVars::mu() {
    }
 }
 
-double QpGenVars::mustep(const Variables* step_in, double alpha) {
-   const QpGenVars* step = (const QpGenVars*) step_in;
-   double mu = 0.0;
-   if (nComplementaryVariables == 0) {
-      return 0.0;
-   }
-   else {
-      if (mclow > 0) {
-         mu += t->shiftedDotProductWith(alpha, *step->t, *lambda, alpha, *step->lambda);
-      }
-      if (mcupp > 0) {
-         mu += u->shiftedDotProductWith(alpha, *step->u, *pi, alpha, *step->pi);
-      }
-      if (nxlow > 0) {
-         mu += v->shiftedDotProductWith(alpha, *step->v, *gamma, alpha, *step->gamma);
-      }
-      if (nxupp > 0) {
-         mu += w->shiftedDotProductWith(alpha, *step->w, *phi, alpha, *step->phi);
-      }
-      mu /= nComplementaryVariables;
-      return mu;
-   }
-}
-
 double QpGenVars::mustep_pd(const Variables* step_in, double alpha_primal, double alpha_dual) {
    const QpGenVars* step = (const QpGenVars*) step_in;
    double mu = 0.0;

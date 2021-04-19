@@ -105,7 +105,7 @@ GondzioStochSolver::calculateAlphaWeightCandidate(Variables* iterate, Variables*
    alpha_candidate = alpha_best;
 }
 
-int GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
+TerminationCode GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
    assert(iterate);
    assert(residuals);
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -113,7 +113,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* r
    int done;
    double mu, muaff;
    double alpha_target, alpha_enhanced;
-   int status_code;
+   TerminationCode status_code;
    double alpha = 1, sigma = 1;
    sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
    g_iterNumber = 0.0;
@@ -157,7 +157,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* r
       residuals->evaluate(problem, iterate);
 
       //  termination test:
-      status_code = this->doStatus(&problem, iterate, residuals, iteration, mu, 0);
+      status_code = this->doStatus(&problem, iterate, residuals, iteration, mu, SUCCESSFUL_TERMINATION);
 
       if (status_code != NOT_FINISHED)
          break;
@@ -177,7 +177,7 @@ int GondzioStochSolver::solve(Problem& problem, Variables* iterate, Residuals* r
       alpha = iterate->stepbound(step);
 
       // calculate centering parameter
-      muaff = iterate->mustep(step, alpha);
+      muaff = iterate->mustep_pd(step, alpha, alpha);
 
       assert(!PIPSisZero(mu));
       sigma = pow(muaff / mu, tsig);

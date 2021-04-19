@@ -16,14 +16,10 @@ class Variables;
 class Residuals;
 
 enum TerminationCode {
-   SUCCESSFUL_TERMINATION = 0,
-   NOT_FINISHED,
-   MAX_ITS_EXCEEDED,
-   INFEASIBLE,
-   UNKNOWN
+   SUCCESSFUL_TERMINATION = 0, NOT_FINISHED, MAX_ITS_EXCEEDED, INFEASIBLE, UNKNOWN
 };
 
-extern const char *TerminationStrings[];
+extern const char* TerminationStrings[];
 
 /**
  * Class for representing termination conditions of a QP solver.
@@ -32,10 +28,8 @@ extern const char *TerminationStrings[];
  */
 class Status {
 public:
-   virtual int doIt(const Solver *solver, const Problem *data, const Variables *vars,
-                    const Residuals *resids,
-                    int i, double mu,
-                    int level) = 0;
+   virtual TerminationCode
+   doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level) = 0;
 
    virtual ~Status();
 };
@@ -44,19 +38,19 @@ public:
  * 
  * @ingroup QpSolvers */
 struct StatusData {
-   void *solver;
-   void *data;
-   void *vars;
-   void *resids;
+   void* solver;
+   void* data;
+   void* vars;
+   void* resids;
    int i;
    double mu;
    double dnorm;
    int level;
-   void *ctx;
+   void* ctx;
 };
 
 extern "C" {
-typedef int (*StatusCFunc)(void *data);
+typedef TerminationCode (* StatusCFunc)(void* data);
 }
 
 
@@ -68,14 +62,12 @@ typedef int (*StatusCFunc)(void *data);
 class CStatus : public Status {
 protected:
    StatusCFunc doItC;
-   void *ctx;
+   void* ctx;
 public:
-   CStatus(StatusCFunc doItC_, void *ctx);
+   CStatus(StatusCFunc doItC_, void* ctx);
 
-   int doIt(const Solver *solver, const Problem *data, const Variables *vars,
-            const Residuals *resids,
-            int i, double mu,
-            int level) override;
+   TerminationCode
+   doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level) override;
 };
 
 #endif

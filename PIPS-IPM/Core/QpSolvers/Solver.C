@@ -138,7 +138,7 @@ double Solver::finalStepLength(Variables* iterate, Variables* step) {
 
    const double maxAlpha = iterate->findBlocking(step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
 
-   const double mufull = iterate->mustep(step, maxAlpha) / gamma_a;
+   const double mufull = iterate->mustep_pd(step, maxAlpha, maxAlpha) / gamma_a;
 
    double alpha = 1.0;
    switch (firstOrSecond) {
@@ -273,7 +273,7 @@ Solver::doMonitorPd(const Problem* data, const Variables* vars, const Residuals*
 }
 
 
-int Solver::doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, int level) {
+TerminationCode Solver::doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level) {
    if (status) {
       return status->doIt(this, problem, vars, resids, i, mu, level);
    }
@@ -309,9 +309,10 @@ std::pair<double, double> Solver::computeUnscaledGapAndResidualNorm(const Residu
 }
 
 
-int Solver::defaultStatus(const Problem*, const Variables* /* vars */, const Residuals* resids, int iterate, double mu, int /* level */) {
+TerminationCode
+Solver::defaultStatus(const Problem*, const Variables* /* vars */, const Residuals* resids, int iterate, double mu, TerminationCode /* level */) {
    const int myrank = PIPS_MPIgetRank();
-   int stop_code = NOT_FINISHED;
+   TerminationCode stop_code = NOT_FINISHED;
    int idx;
 
    const std::pair<double, double> gap_norm = computeUnscaledGapAndResidualNorm(*resids);

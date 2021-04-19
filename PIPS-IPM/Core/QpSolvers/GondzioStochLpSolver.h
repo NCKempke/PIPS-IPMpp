@@ -40,7 +40,7 @@ public:
 
    ~GondzioStochLpSolver() override = default;
 
-   int solve(Problem& problem, Variables* iterate, Residuals* resid) override;
+   TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
 
 };
 
