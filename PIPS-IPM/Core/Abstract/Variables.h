@@ -34,10 +34,6 @@ public:
   virtual double mu() = 0;
 
   /** compute the complementarity gap resulting from a step of length
-   * "alpha" along direction "step" */
-  virtual double mustep(const Variables *step, double alpha) = 0;
-
-  /** compute the complementarity gap resulting from a step of length
    * "alpha_primal" along primal direction of "step" and
    * "alpha_dual" along dual direction of "step" */
   virtual double mustep_pd( const Variables* /*step*/, double /*alpha_primal*/, double /*alpha_dual*/ )

@@ -84,7 +84,6 @@ public:
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
   double mu() override;
 
-  double mustep(const Variables *step_in, double alpha) override;
   double mustep_pd( const Variables *step, double alpha_primal, double alpha_dual ) override;
 
   void saxpy( const Variables *b, double alpha ) override;
