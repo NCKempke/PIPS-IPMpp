@@ -10,26 +10,25 @@
 
 #include "QpScaler.h"
 #include "StochVector.h"
-#include "QpGenData.h"
+#include "QP.hpp"
 #include "QpGenVars.h"
-#include "QpGenResiduals.h"
+#include "Residuals.h"
 #include "pipsdef.h"
-#include "pipsport.h"
 
-QpScaler::QpScaler(Data * prob, bool bitshifting)
-: Scaler(prob, bitshifting), scaling_output{ pips_options::getBoolParameter("SCALER_OUTPUT") }
+QpScaler::QpScaler(Problem* problem, bool bitshifting)
+: Scaler(problem, bitshifting), scaling_output{pips_options::getBoolParameter("SCALER_OUTPUT") }
 {
-   QpGenData* qpprob = dynamic_cast<QpGenData*>(prob);
+   QP* qp = dynamic_cast<QP*>(problem);
 
-   Q = qpprob->Q;
-   A = qpprob->A;
-   C = qpprob->C;
-   obj = qpprob->g;
-   bA = qpprob->bA;
-   bux = qpprob->bux; // upper bound of x
-   blx = qpprob->blx; // lower bound of x
-   rhsC = qpprob->bu; // RHS of C
-   lhsC = qpprob->bl; // LHS of C
+   Q = qp->Q;
+   A = qp->A;
+   C = qp->C;
+   obj = qp->g;
+   bA = qp->bA;
+   bux = qp->bux; // upper bound of x
+   blx = qp->blx; // lower bound of x
+   rhsC = qp->bu; // RHS of C
+   lhsC = qp->bl; // LHS of C
 
    factor_objscale = 1.0;
 }
@@ -55,7 +54,7 @@ Variables* QpScaler::getVariablesUnscaled(const Variables& vars) const
 
 Residuals* QpScaler::getResidualsUnscaled(const Residuals& resids) const
 {
-   QpGenResiduals* qp_resids = new QpGenResiduals(dynamic_cast<const QpGenResiduals&>(resids));
+   Residuals* qp_resids = new Residuals(dynamic_cast<const Residuals&>(resids));
    unscaleResiduals(*qp_resids);
 
    return qp_resids;
@@ -99,7 +98,7 @@ void QpScaler::unscaleResiduals( Residuals& resids ) const
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
    
-   QpGenResiduals& qp_resids = dynamic_cast<QpGenResiduals&>(resids);
+   Residuals& qp_resids = dynamic_cast<Residuals&>(resids);
 
    qp_resids.rQ->componentDiv(*vec_colscale);
    qp_resids.rA->componentDiv(*vec_rowscaleA);

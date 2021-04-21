@@ -8,28 +8,24 @@
 #include "StochScaler.h"
 #include "pipsdef.h"
 #include "sVars.h"
-#include "sResiduals.h"
+#include "DistributedResiduals.hpp"
 
 
-StochScaler::StochScaler(Data* prob, bool bitshifting)
-	: QpScaler(prob, bitshifting)
-{
+StochScaler::StochScaler(Problem* prob, bool bitshifting) : QpScaler(prob, bitshifting) {
 }
 
-Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const
-{
-   Variables* s_vars = new sVars(dynamic_cast<const sVars&>(vars)); 
+Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const {
+   Variables* s_vars = new sVars(dynamic_cast<const sVars&>(vars));
    assert(s_vars);
-   assert( dynamic_cast<sVars*>(s_vars)->x);
+   assert(dynamic_cast<sVars*>(s_vars)->x);
 
    unscaleVariables(*s_vars);
 
    return s_vars;
 };
 
-Residuals* StochScaler::getResidualsUnscaled(const Residuals& resids) const
-{
-   sResiduals* s_resids = new sResiduals(dynamic_cast<const sResiduals&>(resids));
+Residuals* StochScaler::getResidualsUnscaled(const Residuals& resids) const {
+   DistributedResiduals* s_resids = new DistributedResiduals(dynamic_cast<const DistributedResiduals&>(resids));
    assert(s_resids);
 
    unscaleResiduals(*s_resids);

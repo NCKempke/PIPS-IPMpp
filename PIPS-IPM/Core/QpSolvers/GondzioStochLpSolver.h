@@ -10,8 +10,10 @@
 
 #include "GondzioStochSolver.h"
 
-class Data;
+class Problem;
+
 class Variables;
+
 class ProblemFormulation;
 
 
@@ -21,26 +23,24 @@ class ProblemFormulation;
  * allowing different step primal and dual step lengths.
  * @ingroup QpSolvers
  */
-class GondzioStochLpSolver : public GondzioStochSolver
-{
+class GondzioStochLpSolver : public GondzioStochSolver {
 private:
-  // returns Gondzio weight for corrector step for different alpha_primal and alpha_dual
-  virtual void calculateAlphaPDWeightCandidate(Variables *iterate, Variables* predictor_step,
-         Variables* corrector_step, double alpha_primal, double alpha_dual,
-         double& alpha_primal_candidate, double& alpha_dual_candidate,
-         double& weight_primal_candidate, double& weight_dual_candidate);
+   // returns Gondzio weight for corrector step for different alpha_primal and alpha_dual
+   virtual void
+   calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
+         double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
 
-  void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step,
-        double alpha_primal, double alpha_dual) const;
-  void doProbing_pd( Data* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual );
+   void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
+
+   void doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual);
 
 public:
 
-  GondzioStochLpSolver( ProblemFormulation * of, Data * prob, const Scaler* scaler = nullptr );
+   GondzioStochLpSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler = nullptr);
 
-  ~GondzioStochLpSolver() override = default;
+   ~GondzioStochLpSolver() override = default;
 
-  int solve( Data *prob, Variables *iterate, Residuals * resid ) override;
+   TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
 
 };
 

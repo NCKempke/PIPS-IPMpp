@@ -20,19 +20,19 @@
 #include <limits>
 #include <cmath> // std::isfinite
 
-StochPresolverBase::StochPresolverBase(PresolveData& presData, const sData& origProb) :
+StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb) :
       my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
       distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)),
       verbosity( pips_options::getIntParameter("PRESOLVE_VERBOSITY") ),
       INF_NEG( -pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
       INF_POS( pips_options::getDoubleParameter("PRESOLVE_INFINITY") ),
-      n_linking_vars( dynamic_cast<const StochVector&>(*origProb.g).vec->length() ),
-      n_linking_rows_eq( dynamic_cast<const StochVector&>(*origProb.bA).vecl ? dynamic_cast<const StochVector&>(*origProb.bA).vecl->length() : 0),
-      n_linking_rows_ineq( dynamic_cast<const StochVector&>(*origProb.iclow).vecl ? dynamic_cast<const StochVector&>(*origProb.iclow).vecl->length() : 0),
-      presData(presData), origProb(origProb)
+      n_linking_vars( dynamic_cast<const StochVector&>(*origProb.g).first->length() ),
+      n_linking_rows_eq(dynamic_cast<const StochVector&>(*origProb.bA).last ? dynamic_cast<const StochVector&>(*origProb.bA).last->length() : 0),
+      n_linking_rows_ineq(dynamic_cast<const StochVector&>(*origProb.iclow).last ? dynamic_cast<const StochVector&>(*origProb.iclow).last->length() : 0),
+      presolve_data(presolve_data), origProb(origProb)
 {
    localNelims = 0;
-   nChildren = presData.getNChildren();
+   nChildren = presolve_data.getNChildren();
 
    setPointersToNull();
 }
@@ -111,8 +111,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
       countRowsBlock(n_rows_linking_ineq, n_rows_empty_linking_ineq, n_rows_onsided_ineq, n_rows_boxed_ineq, n_rows_fixed_ineq, n_rows_singleton_linking_ineq,
          INEQUALITY_SYSTEM, BL_MAT);
 
-      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).vec);
-      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).vec);
+      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).first);
+      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free, n_cols_orig_free_removed, 
          ixlow_orig, ixupp_orig, true);
@@ -145,7 +145,7 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
    /* child nodes in both systems */
    for( int node = 0; node < nChildren; node++)
    {
-      if( presData.nodeIsDummy( node ) )
+      if( presolve_data.nodeIsDummy( node ) )
          continue;
 
       /* equality system */
@@ -160,8 +160,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
          A_MAT);
       assert( n_rows_ineq - n_rows_empty_ineq == n_rows_onsided_ineq + n_rows_boxed_ineq + n_rows_fixed_ineq );
 
-      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).children[node]->vec);
-      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).children[node]->vec);
+      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).children[node]->first);
+      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).children[node]->first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free, n_cols_orig_free_removed, 
          ixlow_orig, ixupp_orig, false);
@@ -197,7 +197,7 @@ void StochPresolverBase::countRowsBlock(int& n_rows_total, int& n_rows_empty, in
    SystemType system_type, BlockType block_type) const
 {
    if(block_type == BL_MAT)
-      if( !presData.hasLinking(system_type) )
+      if( !presolve_data.hasLinking(system_type) )
          return;
 
    const SimpleVectorBase<int>* nnz_row = (block_type != BL_MAT) ? currNnzRow : currNnzRowLink;
@@ -313,11 +313,11 @@ void StochPresolverBase::countBoxedColumns( int& n_cols_total, int& n_cols_empty
  */
 void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType system_type)
 {
-   assert( !presData.nodeIsDummy(node) );
+   assert( !presolve_data.nodeIsDummy(node) );
    assert(-1 <= node && node < nChildren );
    assert(system_type == EQUALITY_SYSTEM || system_type == INEQUALITY_SYSTEM);
 
-   const GenMatrixHandle matrix = (system_type == EQUALITY_SYSTEM) ? presData.getPresProb().A : presData.getPresProb().C;
+   const GenMatrixHandle matrix = (system_type == EQUALITY_SYSTEM) ? presolve_data.getPresProb().A : presolve_data.getPresProb().C;
 
    /* set matrix pointers for A B and Bl */
    setPointersMatrices(matrix, node);
@@ -379,32 +379,32 @@ void StochPresolverBase::setPointersMatrixBoundsActivities(SystemType system_typ
 
    if( system_type == EQUALITY_SYSTEM )
    {
-      currEqRhs = &getSimpleVecFromRowStochVec( *presData.getPresProb().bA, node, false );
+      currEqRhs = &getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bA, node, false );
 
       currIneqLhs = currIclow = currIneqRhs = currIcupp = currIneqLhsLink =
             currIclowLink = currIneqRhsLink = currIcuppLink = nullptr;
 
-      if( presData.hasLinking(system_type) )
-         currEqRhsLink = &getSimpleVecFromRowStochVec( *presData.getPresProb().bA, node, true );
+      if( presolve_data.hasLinking(system_type) )
+         currEqRhsLink = &getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bA, node, true );
       else
          currEqRhsLink = nullptr;
 
    }
    else
    {
-      currIneqLhs = &getSimpleVecFromRowStochVec(*presData.getPresProb().bl, node, false);
-      currIclow = &getSimpleVecFromRowStochVec(*presData.getPresProb().iclow, node, false);
-      currIneqRhs = &getSimpleVecFromRowStochVec(*presData.getPresProb().bu, node, false);
-      currIcupp = &getSimpleVecFromRowStochVec(*presData.getPresProb().icupp, node, false);
+      currIneqLhs = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bl, node, false);
+      currIclow = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().iclow, node, false);
+      currIneqRhs = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bu, node, false);
+      currIcupp = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().icupp, node, false);
 
       currIneqLhsLink = currIclowLink = currIneqRhsLink = currIcuppLink = nullptr;
 
-      if( presData.hasLinking(system_type) )
+      if( presolve_data.hasLinking(system_type) )
       {
-         currIneqLhsLink = &getSimpleVecFromRowStochVec(*presData.getPresProb().bl, node, true);
-         currIclowLink = &getSimpleVecFromRowStochVec(*presData.getPresProb().iclow, node, true);
-         currIneqRhsLink = &getSimpleVecFromRowStochVec(*presData.getPresProb().bu, node, true);
-         currIcuppLink = &getSimpleVecFromRowStochVec(*presData.getPresProb().icupp, node, true);
+         currIneqLhsLink = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bl, node, true);
+         currIclowLink = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().iclow, node, true);
+         currIneqRhsLink = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().bu, node, true);
+         currIcuppLink = &getSimpleVecFromRowStochVec(*presolve_data.getPresProb().icupp, node, true);
       }
       else
          currEqRhs = currEqRhsLink = nullptr;
@@ -415,17 +415,17 @@ void StochPresolverBase::setPointersVarBounds(int node)
 {
    assert(-1 <= node && node < nChildren);
 
-   currxlowParent = &getSimpleVecFromColStochVec(*presData.getPresProb().blx, -1);
-   currIxlowParent = &getSimpleVecFromColStochVec(*presData.getPresProb().ixlow, -1);
-   currxuppParent = &getSimpleVecFromColStochVec(*presData.getPresProb().bux, -1);
-   currIxuppParent = &getSimpleVecFromColStochVec(*presData.getPresProb().ixupp, -1);
+   currxlowParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().blx, -1);
+   currIxlowParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixlow, -1);
+   currxuppParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().bux, -1);
+   currIxuppParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixupp, -1);
 
    if(node != -1)
    {
-      currxlowChild = &getSimpleVecFromColStochVec(*presData.getPresProb().blx, node);
-      currIxlowChild = &getSimpleVecFromColStochVec(*presData.getPresProb().ixlow, node);
-      currxuppChild = &getSimpleVecFromColStochVec(*presData.getPresProb().bux, node);
-      currIxuppChild = &getSimpleVecFromColStochVec(*presData.getPresProb().ixupp, node);
+      currxlowChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().blx, node);
+      currIxlowChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixlow, node);
+      currxuppChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().bux, node);
+      currIxuppChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixupp, node);
    }
    else
       currxlowChild = currxuppChild = currIxlowChild = currIxuppChild = nullptr;
@@ -433,9 +433,9 @@ void StochPresolverBase::setPointersVarBounds(int node)
 
 void StochPresolverBase::setPointersObjective(int node)
 {
-   currgParent = &getSimpleVecFromColStochVec(*presData.getPresProb().g, -1);
+   currgParent = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().g, -1);
    if(node != -1)
-      currgChild = &getSimpleVecFromColStochVec(*presData.getPresProb().g, node);
+      currgChild = &getSimpleVecFromColStochVec(*presolve_data.getPresProb().g, node);
    else
       currgChild = nullptr;
 }
@@ -443,21 +443,21 @@ void StochPresolverBase::setPointersObjective(int node)
 void StochPresolverBase::setReductionPointers(SystemType system_type, int node){
    assert(-1 <= node && node < nChildren);
 
-   const StochVectorBase<int>& row_nnz = (system_type == EQUALITY_SYSTEM) ? presData.getNnzsRowA() : presData.getNnzsRowC();
+   const StochVectorBase<int>& row_nnz = (system_type == EQUALITY_SYSTEM) ? presolve_data.getNnzsRowA() : presolve_data.getNnzsRowC();
 
    /* rows */
    currNnzRow = &getSimpleVecFromRowStochVec(row_nnz, node, false);
 
-   if( presData.hasLinking(system_type) )
+   if( presolve_data.hasLinking(system_type) )
       currNnzRowLink = &getSimpleVecFromRowStochVec(row_nnz, node, true);
    else
       currNnzRowLink = nullptr;
    
    /* columns */
-   currNnzColParent = &getSimpleVecFromColStochVec(presData.getNnzsCol(), -1);
+   currNnzColParent = &getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), -1);
 
    if(node != -1)
-      currNnzColChild = &getSimpleVecFromColStochVec(presData.getNnzsCol(), node);
+      currNnzColChild = &getSimpleVecFromColStochVec(presolve_data.getNnzsCol(), node);
    else
       currNnzColChild = nullptr;
 }

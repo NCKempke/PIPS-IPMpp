@@ -3,17 +3,16 @@ add_subdirectory(QpPreprocess)
 add_subdirectory(SparseLinearAlgebra)
 add_subdirectory(DenseLinearAlgebra)
 add_subdirectory(StochLinearAlgebra)
-add_subdirectory(QpStoch)
 add_subdirectory(LinearSolvers)
 
-add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Abstract/Data.C Abstract/Solver.C Abstract/Status.C Abstract/Scaler.C
-  Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C 
-  Vector/OoqpVector.C Vector/SimpleVector.C Vector/VectorUtilities.C
+add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Abstract/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
+  Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  QpSolvers/Solver.C 
+  Vector/OoqpVector.C Vector/SimpleVector.C
 Utilities/drand.C Utilities/sort.C Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C
-)
+        Abstract/Residuals.cpp)
 
 add_library(ooqpgensparse STATIC
-  QpGen/QpGenVars.C QpGen/QpGenData.C QpGen/QpGenResiduals.C QpGen/QpGen.C QpGen/QpGenLinsys.C #QpGen
+  QpGen/QpGenVars.C QpGen/QP.cpp QpGen/QpGen.C QpGen/QpGenLinsys.C #QpGen
   QpGen/QpGenSparseSeq.C QpGen/QpGenSparseLinsys.C #QpGenSparse
   Readers/MpsReader.C Readers/hash.C #Readers
   LinearSolvers/Preconditioners/SCsparsifier.C
@@ -22,7 +21,7 @@ add_library(ooqpgensparse STATIC
 add_library(ooqpstoch STATIC 
    QpStoch/sFactory.C
    QpStoch/sFactoryAug.C
-   QpStoch/sData.C
+   QpStoch/DistributedQP.cpp
    QpStoch/sLinsys.C
    QpStoch/sLinsysRoot.C
    QpStoch/sLinsysRootAug.C
@@ -31,7 +30,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sLinsysLeafSchurSlv.C
    QpStoch/sVars.C
    QpStoch/StochMonitor.C
-   QpStoch/sResiduals.C
+   QpStoch/DistributedResiduals.cpp
    QpStoch/sTree.C
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C

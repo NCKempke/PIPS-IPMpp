@@ -11,7 +11,7 @@
 #include "pipsport.h"
 #include <cstddef>
 
-class Data;
+class Problem;
 class Postsolver;
 /**  * @defgroup Preprocessing
  *
@@ -28,14 +28,14 @@ class Presolver
 {
 public:
 
-   Presolver(const Data& prob, Postsolver* postsolver = nullptr) : origprob{prob}, postsolver{postsolver}{};
+   Presolver(const Problem& prob, Postsolver* postsolver = nullptr) : origprob{prob}, postsolver{postsolver}{};
    virtual ~Presolver() = default;
 
    /** presolve and return pointer to presolved data */
-   virtual Data* presolve() = 0;
+   virtual Problem* presolve() = 0;
 
 protected:
-   const Data& origprob;
+   const Problem& origprob;
    Postsolver* const postsolver{};
 
 };

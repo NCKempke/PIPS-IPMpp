@@ -10,7 +10,7 @@
 
 #include "../QpPreprocess/StochScaler.h"
 
-class Data;
+class Problem;
 
 
 /**  * @defgroup QpPreprocess
@@ -28,7 +28,7 @@ protected:
   void doObjScaling() override;
 
 public:
-  EquiStochScaler(Data * prob, bool bitshifting = true);
+  EquiStochScaler(Problem * prob, bool bitshifting = true);
   ~EquiStochScaler() override = default;
 
   /** scale */

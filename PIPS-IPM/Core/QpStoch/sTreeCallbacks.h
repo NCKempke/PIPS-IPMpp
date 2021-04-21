@@ -14,7 +14,7 @@
  *  The new sTree implementation, C++-like is sTreeImpl.
  */
 
-class sData;
+class DistributedQP;
 
 class sTreeCallbacks : public sTree
 {
@@ -68,11 +68,11 @@ public:
    virtual void switchToOriginalData();
    virtual bool isPresolved();
    virtual bool hasPresolved();
-   virtual void initPresolvedData(const sData& presolved_data);
+   virtual void initPresolvedData(const DistributedQP& presolved_data);
 
    virtual void writeSizes( std::ostream& sout ) const;
 
-   sTree* switchToHierarchicalTree( sData*& data ) override;
+   sTree* switchToHierarchicalTree( DistributedQP*& data ) override;
 
    const std::vector<unsigned int>& getMapBlockSubTrees() const
       { return map_node_sub_root; };
@@ -109,7 +109,7 @@ protected:
    std::pair<int,int> adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
          const std::vector<unsigned int>& two_links_children_ineq );
 
-   std::pair<int,int> splitTree( int n_layers, sData* data ) override;
+   std::pair<int,int> splitTree( int n_layers, DistributedQP* data ) override;
 
    sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 
@@ -133,8 +133,8 @@ protected:
    int myl_inactive{-1};
    int mzl_inactive{-1};
 
-   bool isDataPresolved{false};
-   bool hasPresolvedData{false};
+   bool is_data_presolved{false};
+   bool has_presolved_data{false};
    bool print_tree_sizes_on_reading{false};
 
    /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */

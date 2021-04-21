@@ -9,7 +9,7 @@
 #include "OoqpVectorHandle.h"
 
 class QpGen;
-class QpGenData;
+class QP;
 class LinearAlgebraPackage;
 class MpsReader;
 
@@ -77,14 +77,13 @@ public:
 
   virtual ~QpGenVars();
   
-  double getAverageDistanceToBoundForConvergedVars( const Data&, double tol ) const;
+  double getAverageDistanceToBoundForConvergedVars( const Problem&, double tol ) const;
 
   void pushSlacksFromBound( double tol, double amount );
 
   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
   double mu() override;
 
-  double mustep(const Variables *step_in, double alpha) override;
   double mustep_pd( const Variables *step, double alpha_primal, double alpha_dual ) override;
 
   void saxpy( const Variables *b, double alpha ) override;
@@ -162,11 +161,11 @@ public:
   double violation() override;
 
   void print() override;
-  virtual void printSolution( MpsReader * reader, QpGenData * prob,
+  virtual void printSolution( MpsReader * reader, QP * prob,
 			      int& iErr );
 
-  virtual void unscaleSolution( QpGenData * data);
-  virtual void unscaleBounds  ( QpGenData * data);
+  virtual void unscaleSolution( QP * data);
+  virtual void unscaleBounds  ( QP * data);
 
   virtual int validNonZeroPattern();
   
@@ -179,7 +178,7 @@ public:
 
   void printNorms() const override;
 
-  void setNotIndicatedBoundsTo( Data& data, double value ) override;
+  void setNotIndicatedBoundsTo( Problem& data, double value ) override;
 };
 
 /** Indicates what type is the blocking variable in the step length

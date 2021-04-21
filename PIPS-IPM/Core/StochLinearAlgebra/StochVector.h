@@ -11,7 +11,7 @@
 #include <vector>
 
 class sTree;
-class sData;
+class DistributedQP;
 
 enum class VectorType{ PRIMAL, DUAL_Y, DUAL_Z };
 
@@ -20,7 +20,7 @@ class StochVectorBase : public OoqpVectorBase<T> {
 
 
 public:
-  StochVectorBase( OoqpVectorBase<T>* vec, OoqpVectorBase<T>* vecl, MPI_Comm mpi_comm);
+  StochVectorBase(OoqpVectorBase<T>* first, OoqpVectorBase<T>* last, MPI_Comm mpi_comm);
 
   StochVectorBase( int n, MPI_Comm mpiComm );
   StochVectorBase( int n, int nl, MPI_Comm mpiComm );
@@ -30,16 +30,16 @@ public:
 
   // TODO : use unique pointers
   /** The data for this node. */
-  OoqpVectorBase<T>* vec{};
+  OoqpVectorBase<T>* first{};
 
   /** The linking constraint data for this node. */
-  OoqpVectorBase<T>* vecl{};
+  OoqpVectorBase<T>* last{};
 
   /** Children of this node */
   std::vector<StochVectorBase<T>*> children;
 
   /** Links to this vectors parent.
-   *  Needed when we multiply a matrix with this vector to get the appropriate linking vec part.
+   *  Needed when we multiply a matrix with this vector to get the appropriate linking first part.
    */
   StochVectorBase<T>* parent{};
 
@@ -167,9 +167,9 @@ public:
    virtual void split( const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
-   virtual void collapseFromHierarchical( const sData& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec = false );
+   virtual void collapseFromHierarchical( const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec = false );
    virtual void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
-         std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const sData& data_hier, VectorType type, bool empty_vec );
+         std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec );
 
    virtual OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const;
 
@@ -295,7 +295,7 @@ public:
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
 
    void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl, std::vector<StochVectorBase<T>*>& new_children,
-         const sTree& tree_hier, const sData& data_hier, VectorType type, bool empty_vec ) override;
+         const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec ) override;
 
    OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const override { assert( false && "Should not end up here"); return nullptr; };
 

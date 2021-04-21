@@ -19,7 +19,7 @@
 #include <ctype.h>
 #include <memory>
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sTreeCallbacks.h"
 
 #include "StochOptions.h"
@@ -44,50 +44,50 @@
 #include "pipschecks.h"
 #include "pipsport.h"
 
-StochPresolver::StochPresolver(sTree* tree_, const Data& prob, Postsolver* postsolver = nullptr)
+StochPresolver::StochPresolver(sTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr)
  : QpPresolver(prob, postsolver), my_rank( PIPS_MPIgetRank(MPI_COMM_WORLD) ),
    limit_max_rounds( pips_options::getIntParameter("PRESOLVE_MAX_ROUNDS") ),
    reset_free_variables_after_presolve( pips_options::getBoolParameter("PRESOLVE_RESET_FREE_VARIABLES") ),
    print_problem( pips_options::getBoolParameter("PRESOLVE_PRINT_PROBLEM") ),
    write_presolved_problem( pips_options::getBoolParameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS") ),
    verbosity( pips_options::getIntParameter("PRESOLVE_VERBOSITY") ),
-   tree(tree_), presData( dynamic_cast<const sData&>(origprob), dynamic_cast<StochPostsolver*>(postsolver) )
+   tree(tree_), preDistributedQP( dynamic_cast<const DistributedQP&>(origprob), dynamic_cast<StochPostsolver*>(postsolver) )
 {
-   const sData& sorigprob = dynamic_cast<const sData&>(origprob);
+   const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
 
    if( pips_options::getBoolParameter("PRESOLVE_SINGLETON_ROWS") )
-      presolvers.emplace_back( std::make_unique<StochPresolverSingletonRows>( presData, sorigprob ) );
+      presolvers.emplace_back( std::make_unique<StochPresolverSingletonRows>( preDistributedQP, sorigprob ) );
 
    if( pips_options::getBoolParameter("PRESOLVE_COLUMN_FIXATION") )
-      presolvers.emplace_back( std::make_unique<StochPresolverColumnFixation>( presData, sorigprob ) );
+      presolvers.emplace_back( std::make_unique<StochPresolverColumnFixation>( preDistributedQP, sorigprob ) );
 
    if( pips_options::getBoolParameter("PRESOLVE_PARALLEL_ROWS") )
-      presolvers.emplace_back( std::make_unique<StochPresolverParallelRows>( presData, sorigprob ) );
+      presolvers.emplace_back( std::make_unique<StochPresolverParallelRows>( preDistributedQP, sorigprob ) );
 
    if( pips_options::getBoolParameter("PRESOLVE_SINGLETON_COLUMNS") )
-      presolvers.emplace_back( std::make_unique<StochPresolverSingletonColumns>( presData, sorigprob ) );
+      presolvers.emplace_back( std::make_unique<StochPresolverSingletonColumns>( preDistributedQP, sorigprob ) );
 
    if( pips_options::getBoolParameter("PRESOLVE_BOUND_STRENGTHENING") )
-      presolvers.emplace_back( std::make_unique<StochPresolverBoundStrengthening>( presData, sorigprob ) );
+      presolvers.emplace_back( std::make_unique<StochPresolverBoundStrengthening>( preDistributedQP, sorigprob ) );
 }
 
-Data* StochPresolver::presolve()
+Problem* StochPresolver::presolve()
 {
    if( my_rank == 0 )
       std::cout << "start stoch presolving\n";
-   presData.printRowColStats();
+   preDistributedQP.printRowColStats();
 
-   const sData& sorigprob = dynamic_cast<const sData&>(origprob);
+   const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
    sorigprob.printRanges();
 
    assert( sorigprob.isRootNodeInSync() );
-   assert( presData.getPresProb().isRootNodeInSync() );
+   assert( preDistributedQP.getPresProb().isRootNodeInSync() );
 
    if( print_problem )
       sorigprob.writeToStreamDense(std::cout);
 
    /* initialize model clean up (necessary presolver) */
-   StochPresolverModelCleanup presolverCleanup(presData, sorigprob);
+   StochPresolverModelCleanup presolverCleanup(preDistributedQP, sorigprob);
 
    if( my_rank == 0 && verbosity > 1 )
       std::cout <<"--- Before Presolving:\n";
@@ -112,42 +112,42 @@ Data* StochPresolver::presolve()
       std::cout << "--- After Presolving:\n";
    presolverCleanup.countRowsCols();
    if( my_rank == 0 )
-      std::cout << "Objective offset: " << presData.getObjOffset() << "\n";
-   assert( presData.getPresProb().isRootNodeInSync() );
+      std::cout << "Objective offset: " << preDistributedQP.getObjOffset() << "\n";
+   assert( preDistributedQP.getPresProb().isRootNodeInSync() );
 
    if( reset_free_variables_after_presolve )
       resetFreeVariables();
 
    /* finalize data and switch tree to new presolved data */
-   sData* finalPresData = presData.finalize();
+   DistributedQP* finalPreDistributedQP = preDistributedQP.finalize();
 
    assert( tree != nullptr );
-   assert( tree == finalPresData->stochNode );
+   assert( tree == finalPreDistributedQP->stochNode );
 
    sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*tree);
-   callbackTree.initPresolvedData(*finalPresData);
+   callbackTree.initPresolvedData(*finalPreDistributedQP);
    callbackTree.switchToPresolvedData();
 
    /* change original bounds and set ixlow ixupp */
-//   finalPresData->xlowerBound().setNotIndicatedEntriesToVal( -1e10, *finalPresData->ixlow );
-//   finalPresData->xupperBound().setNotIndicatedEntriesToVal( 1e10, *finalPresData->ixupp );
+//   finalPreDistributedQP->xlowerBound().setNotIndicatedEntriesToVal( -1e10, *finalPreDistributedQP->ixlow );
+//   finalPreDistributedQP->xupperBound().setNotIndicatedEntriesToVal( 1e10, *finalPreDistributedQP->ixupp );
 //
-//   OoqpVector* ixupp_inv = finalPresData->ixupp->clone();
+//   OoqpVector* ixupp_inv = finalPreDistributedQP->ixupp->clone();
 //   ixupp_inv->setToZero();
-//   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixupp);
+//   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *finalPreDistributedQP->ixupp);
 //
-//   OoqpVector* ixlow_inv = finalPresData->ixlow->clone();
+//   OoqpVector* ixlow_inv = finalPreDistributedQP->ixlow->clone();
 //   ixlow_inv->setToZero();
-//   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *finalPresData->ixlow);
+//   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *finalPreDistributedQP->ixlow);
 //
-//   finalPresData->ixlow->setToConstant(1);
-//   finalPresData->ixupp->setToConstant(1);
+//   finalPreDistributedQP->ixlow->setToConstant(1);
+//   finalPreDistributedQP->ixupp->setToConstant(1);
 
-   assert( finalPresData );
-   assert( finalPresData->isRootNodeInSync() );
+   assert( finalPreDistributedQP );
+   assert( finalPreDistributedQP->isRootNodeInSync() );
 
    if( print_problem )
-      finalPresData->writeToStreamDense(std::cout);
+      finalPreDistributedQP->writeToStreamDense(std::cout);
 
    if( write_presolved_problem )
    {
@@ -161,7 +161,7 @@ Data* StochPresolver::presolve()
          std::ofstream of("presolved.mps");
 
          if( of.is_open() )
-            finalPresData->writeMPSformat(of);
+            finalPreDistributedQP->writeMPSformat(of);
          else
             if( my_rank == 0 )
                std::cout << "Could not open presolved.mps to write out presolved problem!!\n";
@@ -171,10 +171,10 @@ Data* StochPresolver::presolve()
    if( my_rank == 0 )
       std::cout << "end stoch presolving\n";
 
-   presData.printRowColStats();
-   finalPresData->printRanges();
+   preDistributedQP.printRowColStats();
+   finalPreDistributedQP->printRanges();
 
-   return finalPresData;
+   return finalPreDistributedQP;
 }
 
 void StochPresolver::resetFreeVariables()
@@ -182,7 +182,7 @@ void StochPresolver::resetFreeVariables()
    if( my_rank == 0 )
       std::cout << "Resetting bounds found in bound strengthening\n";
 
-   const sData& sorigprob = dynamic_cast<const sData&>(origprob);
+   const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
 
-   presData.resetOriginallyFreeVarsBounds(sorigprob);
+   preDistributedQP.resetOriginallyFreeVarsBounds(sorigprob);
 }

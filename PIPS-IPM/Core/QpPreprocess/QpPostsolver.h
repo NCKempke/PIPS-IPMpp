@@ -10,7 +10,7 @@
 
 #include "Postsolver.h"
 
-class Data;
+class Problem;
 
 /**
  * Abstract base class for QP Postsolvers.
@@ -19,10 +19,10 @@ class Data;
 class QpPostsolver : public Postsolver
 {
    protected:
-      const Data& original_problem;
+      const Problem& original_problem;
 
    public:
-      QpPostsolver(const Data& prob);
+      QpPostsolver(const Problem& prob);
       ~QpPostsolver() override = default;
 };
 

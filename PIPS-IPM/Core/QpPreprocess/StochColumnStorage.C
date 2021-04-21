@@ -337,13 +337,13 @@ double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, co
          assert( !stored_cols_ineq->children[node]->isKindOf(kStochGenDummyMatrix) );
 
          const SparseGenMatrix& A_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, BL_MAT);
-         assert(vec_eq.children[node]->vec);
+         assert(vec_eq.children[node]->first);
 
          const SimpleVector& a_vec = getSimpleVecFromRowStochVec(vec_eq, node, false);
          res += A_mat.localRowTimesVec(a_vec, col);
 
          const SparseGenMatrix& C_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, BL_MAT);
-         assert(vec_ineq.children[node]->vec);
+         assert(vec_ineq.children[node]->first);
 
          const SimpleVector& c_vec = getSimpleVecFromRowStochVec(vec_ineq, node, false);
          res += C_mat.localRowTimesVec(c_vec, col);

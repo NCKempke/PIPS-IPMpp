@@ -63,7 +63,7 @@ DenseStorage::DenseStorage( int min, int nin )
   m = min;
   n = nin;
 
-  int mbar = (m > 0 ) ? m : 1; // We always allocate one row.
+  int mbar = (m > 0) ? m : 1; // We always allocate one row.
   try {
     neverDeleteElts = 0;
 
@@ -197,6 +197,11 @@ void DenseStorage::atPutZeros( int row, int col,
       M[i][j] = 0.0;
     }
   }
+}
+
+void DenseStorage::putZeros()
+{
+   std::fill( M[0], M[0] + n * m, 0.0 );
 }
 
 void DenseStorage::atPutDense( int row, int col, double * A, int lda,

@@ -14,7 +14,7 @@
 class StochPresolverModelCleanup : public StochPresolverBase
 {
    public:
-      StochPresolverModelCleanup(PresolveData& presData, const sData& origProb);
+      StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb);
 
       virtual ~StochPresolverModelCleanup();
 

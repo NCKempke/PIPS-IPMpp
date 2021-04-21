@@ -8,14 +8,14 @@
 class ProblemFormulation;
 class Solver;
 class Variables;
-class Data;
+class Problem;
 class Residuals;
 
 class OoqpStartStrategy {
 public:
   virtual void doIt( Solver * solver,
 		     ProblemFormulation * formulation,
-		     Variables * iterate, Data * prob,
+		     Variables * iterate, Problem * prob,
 		     Residuals * resid, Variables * step ) = 0;
 
   virtual ~OoqpStartStrategy() {}

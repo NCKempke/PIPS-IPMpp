@@ -7,22 +7,25 @@
 
 #include "sFactory.h"
 
-class sFactoryAug : public sFactory
-{
-   public:
-      sFactoryAug(StochInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
-      ~sFactoryAug() override = default;
+class sFactoryAug : public sFactory {
+public:
+   sFactoryAug(StochInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
 
-      DoubleLinearSolver* newRootSolver() override;
+   ~sFactoryAug() override = default;
 
-      sLinsysRoot* newLinsysRoot() override;
-      sLinsysRoot* newLinsysRootHierarchical() override;
+   DoubleLinearSolver* newRootSolver() override;
 
-      sLinsysRoot* newLinsysRoot(sData *prob, OoqpVector *dd, OoqpVector *dq,
+   sLinsysRoot* newLinsysRoot() override;
+
+   sLinsysRoot* newLinsysRootHierarchical() override;
+
+      sLinsysRoot* newLinsysRoot(DistributedQP *prob, OoqpVector *dd, OoqpVector *dq,
         OoqpVector *nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector *rhs ) override;
 
-      Data* switchToHierarchicalData(Data *prob_in) override;
-      void switchToOriginalTree() override;
+   Problem* switchToHierarchicalData(Problem* prob_in) override;
+
+   void switchToOriginalTree() override;
 
 };
+
 #endif

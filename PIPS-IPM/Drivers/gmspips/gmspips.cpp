@@ -421,7 +421,7 @@ int main(int argc, char ** argv)
 		if( gmsRank == 0 )
 		   std::cout << "solving...\n";
 
-		pipsIpm.go();
+		pipsIpm.run();
       objective = pipsIpm.getObjective();
       if(presolve)
          pipsIpm.postsolveComputedSolution();
@@ -452,7 +452,7 @@ int main(int argc, char ** argv)
 		if( gmsRank == 0 )
 		   std::cout << "solving...\n";
 
-		pipsIpm.go();
+		pipsIpm.run();
       objective = pipsIpm.getObjective();
       if(presolve)
          pipsIpm.postsolveComputedSolution();

@@ -8,11 +8,13 @@
 #include "ProblemFormulation.h"
 #include "OoqpVector_fwd.h"
 
-class Data;
+
+class Problem;
 class Residuals;
 class LinearSystem;
 class Variables;
 class LinearAlgebraPackage;
+
 
 /**
  * @defgroup QpGen

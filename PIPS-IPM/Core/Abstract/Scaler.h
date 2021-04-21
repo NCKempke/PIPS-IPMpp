@@ -11,7 +11,7 @@
 
 #include "pipsport.h"
 
-class Data;
+class Problem;
 class Variables;
 class Residuals;
 
@@ -29,14 +29,14 @@ class Residuals;
 class Scaler
 {
 protected:
-  Data* const problem;
+  Problem* const problem;
   const bool do_bitshifting; // only scale by power of two factors?
   const bool with_sides; // consider lhs/rhs?
 
   const double dnorm_orig;
 
 public:
-  Scaler(Data * prob, bool bitshifting = false, bool usesides = false);
+  Scaler(Problem * prob, bool bitshifting = false, bool usesides = false);
   virtual ~Scaler() = default;
 
   /** scale */

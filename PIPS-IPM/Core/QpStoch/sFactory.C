@@ -4,7 +4,7 @@
 
 #include "sFactory.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "sTreeCallbacks.h"
 #include "StochInputTree.h"
 #include "StochSymMatrix.h"
@@ -12,7 +12,7 @@
 #include "StochVector.h"
 
 #include "sVars.h"
-#include "sResiduals.h"
+#include "DistributedResiduals.hpp"
 
 #include "sLinsysRoot.h"
 #include "sLinsysLeaf.h"
@@ -27,10 +27,15 @@
 #include <stdlib.h>
 
 class PardisoProjectSolver;
+
 class PardisoMKLSolver;
+
 class MumpsSolverLeaf;
+
 class PardisoSchurSolver;
+
 class Ma27Solver;
+
 class Ma57Solver;
 
 
@@ -46,6 +51,7 @@ class Ma57Solver;
 #include "sLinsysLeafSchurSlv.h"
 #include "PardisoProjectSolver.h"
 #include "../LinearSolvers/PardisoSolver/PardisoSchurSolver/PardisoProjectSchurSolver.h"
+
 #endif
 
 #ifdef WITH_MKL_PARDISO
@@ -60,45 +66,37 @@ class Ma57Solver;
 #endif
 
 
-sFactory::sFactory( StochInputTree* inputTree, MPI_Comm comm)
-  : tree( new sTreeCallbacks(inputTree) )
-{
-  tree->assignProcesses(comm);
+sFactory::sFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new sTreeCallbacks(inputTree)) {
+   tree->assignProcesses(comm);
 
-  tree->computeGlobalSizes();
-  //now the sizes of the problem are available, set them for the parent class
-  tree->getGlobalSizes(nx, my, mz);
+   tree->computeGlobalSizes();
+   //now the sizes of the problem are available, set them for the parent class
+   tree->getGlobalSizes(nx, my, mz);
 }
 
-sFactory::~sFactory()
-{
-   if(tree)
+sFactory::~sFactory() {
+   if (tree)
       delete tree;
 }
 
-DoubleLinearSolver* sFactory::newLeafSolver( const DoubleMatrix* kkt_ )
-{
+DoubleLinearSolver* sFactory::newLeafSolver(const DoubleMatrix* kkt_) {
    const SparseSymMatrix* kkt = dynamic_cast<const SparseSymMatrix*>(kkt_);
-   assert( kkt );
+   assert(kkt);
 
    const SolverType leaf_solver = pips_options::getSolverLeaf();
 
-   if( !pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) )
-   {
-      if( leaf_solver == SolverType::SOLVER_MUMPS )
-      {
+   if (!pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")) {
+      if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
          return new MumpsSolverLeaf(kkt);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_PARDISO )
-      {
+      else if (leaf_solver == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
          return new PardisoProjectSchurSolver(kkt);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
-      {
+      else if (leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
          return new PardisoMKLSchurSolver(kkt);
 #endif
@@ -106,34 +104,28 @@ DoubleLinearSolver* sFactory::newLeafSolver( const DoubleMatrix* kkt_ )
 
       PIPS_MPIabortIf(true, "No leaf solver for Schur Complement computation could be found - should not happen..");
    }
-   else
-   {
-      if( leaf_solver == SolverType::SOLVER_PARDISO )
-      {
+   else {
+      if (leaf_solver == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
          return new PardisoProjectSolver(kkt);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_MKL_PARDISO )
-      {
+      else if (leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
          return new PardisoMKLSolver(kkt);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_MA57 )
-      {
+      else if (leaf_solver == SolverType::SOLVER_MA57) {
 #ifdef WITH_MA57
          return new Ma57Solver(kkt);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_MA27 )
-      {
+      else if (leaf_solver == SolverType::SOLVER_MA27) {
 #ifdef WITH_MA27
          return new Ma27Solver(kkt);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_MUMPS )
-      {
+      else if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
          return new MumpsSolverLeaf(kkt);
 #endif
@@ -145,7 +137,7 @@ DoubleLinearSolver* sFactory::newLeafSolver( const DoubleMatrix* kkt_ )
 }
 
 
-sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
+sLinsysLeaf* sFactory::newLinsysLeaf(DistributedQP* prob,
          OoqpVector* dd, OoqpVector* dq,
          OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs )
 {
@@ -153,45 +145,40 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
    static bool printed = false;
    const SolverType leaf_solver = pips_options::getSolverLeaf();
 
-   if( !pips_options::getBoolParameter( "SC_COMPUTE_BLOCKWISE" ) )
-   {
-      if( PIPS_MPIgetRank() == 0 && !printed )
-          std::cout << "Using " << leaf_solver << " for leaf schur complement computation - sFactory\n";
+   if (!pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")) {
+      if (PIPS_MPIgetRank() == 0 && !printed)
+         std::cout << "Using " << leaf_solver << " for leaf schur complement computation - sFactory\n";
       printed = true;
 
-      if( leaf_solver == SolverType::SOLVER_MUMPS )
-      {
+      if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
          return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
 #endif
       }
-      else if( leaf_solver == SolverType::SOLVER_PARDISO || leaf_solver == SolverType::SOLVER_MKL_PARDISO )
-      {
+      else if (leaf_solver == SolverType::SOLVER_PARDISO || leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
          return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
 #endif
       }
-      else
-      {
-         if( PIPS_MPIgetRank() == 0 )
-         {
-            std::cout << "WARNING: did not specify SC_COMPUTE_BLOCKWISE but " << leaf_solver << " which can only compute the Schur Complement blockwise\n";
+      else {
+         if (PIPS_MPIgetRank() == 0) {
+            std::cout << "WARNING: did not specify SC_COMPUTE_BLOCKWISE but " << leaf_solver
+                      << " which can only compute the Schur Complement blockwise\n";
             std::cout << "WARNING: checking for PARDISO or MUMPS instead...\n";
          }
 
          SolverType solver = SolverType::SOLVER_NONE;
-         if( pips_options::isSolverAvailable( SolverType::SOLVER_PARDISO ) )
+         if (pips_options::isSolverAvailable(SolverType::SOLVER_PARDISO))
             solver = SolverType::SOLVER_PARDISO;
-         else if( pips_options::isSolverAvailable( SolverType::SOLVER_MKL_PARDISO) )
+         else if (pips_options::isSolverAvailable(SolverType::SOLVER_MKL_PARDISO))
             solver = SolverType::SOLVER_MKL_PARDISO;
-         else if( pips_options::isSolverAvailable( SolverType::SOLVER_MUMPS) )
+         else if (pips_options::isSolverAvailable(SolverType::SOLVER_MUMPS))
             solver = SolverType::SOLVER_MUMPS;
 
-         if( solver != SolverType::SOLVER_NONE )
-         {
-            if( PIPS_MPIgetRank() == 0 )
+         if (solver != SolverType::SOLVER_NONE) {
+            if (PIPS_MPIgetRank() == 0)
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
-            pips_options::setIntParameter( "LINEAR_LEAF_SOLVER", solver );
+            pips_options::setIntParameter("LINEAR_LEAF_SOLVER", solver);
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
             return new sLinsysLeafSchurSlv(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
 #endif
@@ -201,15 +188,13 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
          return nullptr;
       }
    }
-   else
-   {
-      if( PIPS_MPIgetRank() == 0 && !printed )
+   else {
+      if (PIPS_MPIgetRank() == 0 && !printed)
          std::cout << "Using " << leaf_solver << " for blockwise Schur Complement computation - deactivating distributed preconditioner - sFactory\n";
       pips_options::setBoolParameter("PRECONDITION_DISTRIBUTED", false);
       printed = true;
 
-      if( leaf_solver == SolverType::SOLVER_MUMPS )
-      {
+      if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
          return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
 #endif
@@ -221,63 +206,61 @@ sLinsysLeaf* sFactory::newLinsysLeaf(sData* prob,
 }
 
 
-void dumpaug(int nx, SparseGenMatrix &A, SparseGenMatrix &C) {
+void dumpaug(int nx, SparseGenMatrix& A, SparseGenMatrix& C) {
 
-    long long my, mz, nx_1, nx_2;
-    A.getSize(my,nx_1);
-    C.getSize(mz,nx_2);
-    assert(nx_1 == nx_2);
+   long long my, mz, nx_1, nx_2;
+   A.getSize(my, nx_1);
+   C.getSize(mz, nx_2);
+   assert(nx_1 == nx_2);
 
-    int nnzA = A.numberOfNonZeros();
-    int nnzC = C.numberOfNonZeros();
-    std::cout << "augdump  nx=" << nx << "\n";
-    std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << "\n"
-              << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << "\n";
+   int nnzA = A.numberOfNonZeros();
+   int nnzC = C.numberOfNonZeros();
+   std::cout << "augdump  nx=" << nx << "\n";
+   std::cout << "A: " << my << "x" << nx_1 << "   nnz=" << nnzA << "\n" << "C: " << mz << "x" << nx_1 << "   nnz=" << nnzC << "\n";
 
-	std::vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA+nnzC);
-	std::vector<int> colptrA(nx_1+1),colptrC(nx_1+1), colptr(nx_1+1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA+nnzC);
-	A.getStorageRef().transpose(&colptrA[0],&rowidxA[0],&eltsA[0]);
-	C.getStorageRef().transpose(&colptrC[0],&rowidxC[0],&eltsC[0]);
+   std::vector<double> eltsA(nnzA), eltsC(nnzC), elts(nnzA + nnzC);
+   std::vector<int> colptrA(nx_1 + 1), colptrC(nx_1 + 1), colptr(nx_1 + 1), rowidxA(nnzA), rowidxC(nnzC), rowidx(nnzA + nnzC);
+   A.getStorageRef().transpose(&colptrA[0], &rowidxA[0], &eltsA[0]);
+   C.getStorageRef().transpose(&colptrC[0], &rowidxC[0], &eltsC[0]);
 
-	int nnz = 0;
-	for (int col = 0; col < nx_1; col++) {
-		colptr[col] = nnz;
-		for (int r = colptrA[col]; r < colptrA[col+1]; r++) {
-			int row = rowidxA[r]+nx+1; // +1 for fortran
-			rowidx[nnz] = row;
-			elts[nnz++] = eltsA[r];
-		}
-		for (int r = colptrC[col]; r < colptrC[col+1]; r++) {
-			int row = rowidxC[r]+nx+my+1;
-			rowidx[nnz] = row;
-			elts[nnz++] = eltsC[r];
-		}
-	}
-	colptr[nx_1] = nnz;
-	assert(nnz == nnzA + nnzC);
+   int nnz = 0;
+   for (int col = 0; col < nx_1; col++) {
+      colptr[col] = nnz;
+      for (int r = colptrA[col]; r < colptrA[col + 1]; r++) {
+         int row = rowidxA[r] + nx + 1; // +1 for fortran
+         rowidx[nnz] = row;
+         elts[nnz++] = eltsA[r];
+      }
+      for (int r = colptrC[col]; r < colptrC[col + 1]; r++) {
+         int row = rowidxC[r] + nx + my + 1;
+         rowidx[nnz] = row;
+         elts[nnz++] = eltsC[r];
+      }
+   }
+   colptr[nx_1] = nnz;
+   assert(nnz == nnzA + nnzC);
 
-	std::ofstream fd("augdump.dat");
-	fd << std::scientific;
-	fd.precision(16);
-	fd << (nx + my + mz) << "\n";
-	fd << nx_1 << "\n";
-	fd << nnzA+nnzC << "\n";
+   std::ofstream fd("augdump.dat");
+   fd << std::scientific;
+   fd.precision(16);
+   fd << (nx + my + mz) << "\n";
+   fd << nx_1 << "\n";
+   fd << nnzA + nnzC << "\n";
 
-   for( int i = 0; i <= nx_1; i++ )
+   for (int i = 0; i <= nx_1; i++)
       fd << colptr[i] << " ";
    fd << "\n";
-   for( int i = 0; i < nnz; i++ )
+   for (int i = 0; i < nnz; i++)
       fd << rowidx[i] << " ";
    fd << "\n";
-   for( int i = 0; i < nnz; i++ )
+   for (int i = 0; i < nnz; i++)
       fd << elts[i] << " ";
    fd << "\n";
 
    std::cout << "finished dumping aug\n";
 }
 
-Data* sFactory::makeData()
-{
+Problem* sFactory::create_problem() {
 #ifdef TIMING
    double t2 = MPI_Wtime();
 #endif
@@ -306,50 +289,41 @@ Data* sFactory::makeData()
          std::cout << "IO second part took " << t2 << " sec\n";
 #endif
 
-   data = new sData(tree, c, Q, xlow, ixlow, xupp, ixupp,
-         A, b, C, clow, iclow, cupp, icupp );
+   data = new DistributedQP(tree, c, Q, xlow, ixlow, xupp, ixupp, A, b, C, clow, iclow, cupp, icupp);
    return data;
 }
 
 // TODO adjust this for hierarchical approach
-Variables* sFactory::makeVariables( Data * prob_in )
-{
-  sData* prob = dynamic_cast<sData*>(prob_in);
+Variables* sFactory::makeVariables(Problem* prob_in) {
+   DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
 
-  OoqpVectorHandle x      = OoqpVectorHandle( makePrimalVector() );
-  OoqpVectorHandle s      = OoqpVectorHandle( makeDualZVector() );
-  OoqpVectorHandle y      = OoqpVectorHandle( makeDualYVector() );
-  OoqpVectorHandle z      = OoqpVectorHandle( makeDualZVector() );
-  OoqpVectorHandle v      = OoqpVectorHandle( makePrimalVector() );
-  OoqpVectorHandle gamma  = OoqpVectorHandle( makePrimalVector() );
-  OoqpVectorHandle w      = OoqpVectorHandle( makePrimalVector() );
-  OoqpVectorHandle phi    = OoqpVectorHandle( makePrimalVector() );
-  OoqpVectorHandle t      = OoqpVectorHandle( makeDualZVector() );
-  OoqpVectorHandle lambda = OoqpVectorHandle( makeDualZVector() );
-  OoqpVectorHandle u      = OoqpVectorHandle( makeDualZVector() );
-  OoqpVectorHandle pi     = OoqpVectorHandle( makeDualZVector() );
+   OoqpVectorHandle x = OoqpVectorHandle(makePrimalVector());
+   OoqpVectorHandle s = OoqpVectorHandle(makeDualZVector());
+   OoqpVectorHandle y = OoqpVectorHandle(makeDualYVector());
+   OoqpVectorHandle z = OoqpVectorHandle(makeDualZVector());
+   OoqpVectorHandle v = OoqpVectorHandle(makePrimalVector());
+   OoqpVectorHandle gamma = OoqpVectorHandle(makePrimalVector());
+   OoqpVectorHandle w = OoqpVectorHandle(makePrimalVector());
+   OoqpVectorHandle phi = OoqpVectorHandle(makePrimalVector());
+   OoqpVectorHandle t = OoqpVectorHandle(makeDualZVector());
+   OoqpVectorHandle lambda = OoqpVectorHandle(makeDualZVector());
+   OoqpVectorHandle u = OoqpVectorHandle(makeDualZVector());
+   OoqpVectorHandle pi = OoqpVectorHandle(makeDualZVector());
 
-  sVars* vars = new sVars( tree, x, s, y, z,
-			   v, gamma, w, phi,
-			   t, lambda, u, pi,
-			   prob->ixlow, prob->ixlow->numberOfNonzeros(),
-			   prob->ixupp, prob->ixupp->numberOfNonzeros(),
-			   prob->iclow, prob->iclow->numberOfNonzeros(),
-			   prob->icupp, prob->icupp->numberOfNonzeros());
-  registeredVars.push_back(vars);
-  return vars;
+   sVars* vars = new sVars(tree, x, s, y, z, v, gamma, w, phi, t, lambda, u, pi, prob->ixlow, prob->ixlow->numberOfNonzeros(), prob->ixupp,
+         prob->ixupp->numberOfNonzeros(), prob->iclow, prob->iclow->numberOfNonzeros(), prob->icupp, prob->icupp->numberOfNonzeros());
+   registeredVars.push_back(vars);
+   return vars;
 }
 
-Residuals* sFactory::makeResiduals( Data * prob_in )
-{
-  sData* prob = dynamic_cast<sData*>(prob_in);
-  resid =  new sResiduals( tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
-  return resid;
+Residuals* sFactory::makeResiduals(Problem* prob_in) {
+   DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
+   resid = new DistributedResiduals(tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
+   return resid;
 }
 
-LinearSystem* sFactory::makeLinsys( Data* )
-{
-   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
+LinearSystem* sFactory::makeLinsys(Problem*) {
+   if (pips_options::getBoolParameter("HIERARCHICAL"))
       linsys = newLinsysRootHierarchical();
    else
       linsys = newLinsysRoot();
@@ -357,54 +331,47 @@ LinearSystem* sFactory::makeLinsys( Data* )
    return linsys;
 }
 
-OoqpVector* sFactory::makePrimalVector() const
-{
-   assert( !la );
+OoqpVector* sFactory::makePrimalVector() const {
+   assert(!la);
    return tree->newPrimalVector();
 }
 
-OoqpVector* sFactory::makeDualYVector() const
-{
-   assert( !la );
+OoqpVector* sFactory::makeDualYVector() const {
+   assert(!la);
    return tree->newDualYVector();
 }
 
-OoqpVector* sFactory::makeDualZVector() const
-{
-   assert( !la );
+OoqpVector* sFactory::makeDualZVector() const {
+   assert(!la);
    return tree->newDualZVector();
 }
 
-OoqpVector* sFactory::makeRhs() const
-{
-   assert( !la );
+OoqpVector* sFactory::makeRhs() const {
+   assert(!la);
    return tree->newRhs();
 }
 
-void sFactory::iterateStarted()
-{
-  iterTmMonitor.recIterateTm_start();
-  tree->startMonitors();
+void sFactory::iterateStarted() {
+   iterTmMonitor.recIterateTm_start();
+   tree->startMonitors();
 }
 
-void sFactory::iterateEnded()
-{
-  tree->stopMonitors();
+void sFactory::iterateEnded() {
+   tree->stopMonitors();
 
-  if(tree->balanceLoad()) {
-    printf("Should not get here! OMG OMG OMG\n");
-  }
-  //logging and monitoring
-  iterTmMonitor.recIterateTm_stop();
-  m_tmTotal += iterTmMonitor.tmIterate;
+   if (tree->balanceLoad()) {
+      printf("Should not get here! OMG OMG OMG\n");
+   }
+   //logging and monitoring
+   iterTmMonitor.recIterateTm_stop();
+   m_tmTotal += iterTmMonitor.tmIterate;
 
-  if( PIPS_MPIgetRank() == 0 )
-  {
+   if (PIPS_MPIgetRank() == 0) {
 #ifdef TIMING
-    extern double g_iterNumber;
-    printf("TIME %g SOFAR %g ITER %d\n", iterTmMonitor.tmIterate, m_tmTotal, (int)g_iterNumber);
-    //#elseif STOCH_TESTING
-    //printf("ITERATION WALLTIME: iter=%g  Total=%g\n", iterTmMonitor.tmIterate, m_tmTotal);
+      extern double g_iterNumber;
+      printf("TIME %g SOFAR %g ITER %d\n", iterTmMonitor.tmIterate, m_tmTotal, (int)g_iterNumber);
+      //#elseif STOCH_TESTING
+      //printf("ITERATION WALLTIME: iter=%g  Total=%g\n", iterTmMonitor.tmIterate, m_tmTotal);
 #endif
-  }
+   }
 }

@@ -25,6 +25,9 @@ public:
 
   int isKindOf( int matType ) const override;
 
+  int getM() const { return mStorage->m; };
+  int getN() const { return mStorage->n; };
+
   void getSize( long long& m, long long& n ) const override;
   void getSize( int& m, int& n ) const override;
 
@@ -38,6 +41,8 @@ public:
    */
   virtual void atPutZeros( int row, int col,
 			   int rowExtent, int colExtent );
+
+  void putZeros();
 
   void getDiagonal( OoqpVector& vec ) override;
   void setToDiagonal( const OoqpVector& vec ) override;
@@ -118,8 +123,10 @@ public:
 
   /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
    * starting at mul_start and the results gets added starting at res_start */
-  void multMatAt( int mul_start, double beta, int res_start, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const;
+  void multMatAt( int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseGenMatrix& res, double alpha, /* const */ SparseGenMatrix& mat ) const;
 
+  /* adds mat to this starting at row_0 col_0 */
+  void addMatAt( const SparseGenMatrix& mat, int mat_row_start, int mat_row_end, int this_row_0, int this_col_0 );
 };
 
 #endif

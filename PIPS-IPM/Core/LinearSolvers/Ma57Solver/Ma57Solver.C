@@ -197,7 +197,7 @@ void Ma57Solver::solve( OoqpVector& rhs_in )
                if( thresholdPivoting() == threshold_pivoting_max )
                   std::cout << "WARNING MA57 " << name << ": Unprecise solution but ThresholdPivoting is already at its max\n";
                else
-                  std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting to " << thresholdPivoting() << " - refactoization suggested\n";
+                  std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting to " << thresholdPivoting() << " - refactorization suggested\n";
             }
             done = true;
          }
@@ -243,11 +243,14 @@ void Ma57Solver::solve(GenMatrix& rhs_in)
 
 void Ma57Solver::solve( int nrhss, double* rhss, int* )
 {
-   #pragma omp parallel for schedule(static, 1) num_threads(n_threads)
+   #pragma omp parallel for schedule(dynamic, 1) num_threads(n_threads)
    /* the multiple rhs (macd) option in MA57 does not allow for iterative refinement */
    for (int i = 0; i < nrhss; i++)
    {
       SimpleVector v(rhss + i * n, n);
+
+      if( v.isZero() )
+         continue;
       solve(v);
    }
 }

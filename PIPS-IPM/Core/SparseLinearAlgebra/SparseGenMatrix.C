@@ -605,8 +605,7 @@ SparseGenMatrix::addNnzPerRow(OoqpVectorBase<int>& nnzVec) const
    }
 }
 
-void
-SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
+void SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
 {
    SimpleVectorBase<int>& vec = dynamic_cast<SimpleVectorBase<int>&>(nnzVec);
 
@@ -622,6 +621,28 @@ SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
    {
       assert(vec.length() == m_Mt->mStorage->m);
       m_Mt->mStorage->addNnzPerRow(vec.elements());
+   }
+}
+
+void SparseGenMatrix::addNnzPerCol( OoqpVectorBase<int>& nnzVec, int begin_cols, int end_cols )
+{
+   assert(0 <= begin_cols && begin_cols <= end_cols );
+   assert( end_cols - begin_cols <= nnzVec.length() );
+
+   SimpleVectorBase<int>& vec = dynamic_cast<SimpleVectorBase<int>&>(nnzVec);
+
+   if( !m_Mt)
+      initTransposed();
+
+   if( m_Mt->mStorageDynamic != nullptr  )
+   {
+      assert( end_cols <= m_Mt->mStorageDynamic->getM());
+      m_Mt->mStorageDynamic->addNnzPerRow(vec.elements(), begin_cols, end_cols);
+   }
+   else
+   {
+      assert( end_cols <= m_Mt->mStorage->m);
+      m_Mt->mStorage->addNnzPerRow(vec.elements(), begin_cols, end_cols);
    }
 }
 
@@ -761,6 +782,13 @@ void SparseGenMatrix::fromGetRowsBlock(const int* rowIndices, int nRows, int arr
    mStorage->fromGetRowsBlock(rowIndices, nRows, arrayLineSize, arrayLineOffset, rowsArrayDense, rowSparsity);
 }
 
+void SparseGenMatrix::fromGetRowsBlock(int row_start, int n_rows, int array_line_size, int array_line_offset,
+      double* rows_array_dense, int* row_sparsity ) const
+{
+   assert( 0 <= row_start && 0 <= n_rows && 0 <= array_line_size && 0 <= array_line_offset );
+   mStorage->fromGetRowsBlock( rows_array_dense, row_start, n_rows, array_line_size, array_line_offset, row_sparsity);
+}
+
 void SparseGenMatrix::deleteEmptyRows(int*& orgIndex)
 {
    mStorage->deleteEmptyRows(orgIndex);
@@ -777,6 +805,15 @@ void SparseGenMatrix::fromGetColsBlock(const int* colIndices, int nCols, int arr
 
    m_Mt->getStorageRef().fromGetRowsBlock(colIndices, nCols, arrayLineSize, arrayLineOffset,
          colsArrayDense, rowSparsity);
+}
+
+void SparseGenMatrix::fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset,
+       double* cols_array_dense, int* row_sparsity )
+{
+   if( !m_Mt )
+      updateTransposed();
+
+   m_Mt->getStorageRef().fromGetRowsBlock( cols_array_dense, col_start, n_cols, array_line_size, array_line_offset, row_sparsity);
 }
 
 bool SparseGenMatrix::hasTransposed() const

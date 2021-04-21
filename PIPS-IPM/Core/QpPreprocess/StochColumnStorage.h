@@ -22,7 +22,7 @@ public:
 
    int storeCol( const INDEX& col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part);
 
-   /** y = beta * vec + alpha * stored - either of the vectors can be nullptr and will then not be considered */
+   /** y = beta * first + alpha * stored - either of the vectors can be nullptr and will then not be considered */
    /** there is the option of specifying a special vector to store the linking row results in - if no vector is given the corresponding link vector will be ignored */
    void axpyAtCol( double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector* eq_link, SimpleVector* ineq_link, double alpha, const INDEX& col ) const;
 
@@ -50,7 +50,7 @@ private:
 
    void createStorageMatrix(SystemType system_type, const StochGenMatrix& sys_matrix);
 
-   /* calculate vec + alpha * stored for system */
+   /* calculate first + alpha * stored for system */
    void axpyAtCol(StochVector& vec, SimpleVector* vec_link, double alpha, const INDEX& col, SystemType system_type) const;
 };
 

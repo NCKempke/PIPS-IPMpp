@@ -69,12 +69,12 @@ protected:
    std::vector<double> rinfo = std::vector<double>(20);
 
    /** precision aimed for with iterative refinement */
-   const double precision = 1e-7;
+   const double precision = 1e-6;
 
-   const int max_tries = 8;
-   const int n_iterative_refinement = 10;
+   const int max_tries = 4;
+   const int n_iterative_refinement = 5;
 
-   const int ooqp_print_level_warnings = 10000;
+   const int ooqp_print_level_warnings = 1000;
 
    /** the Threshold Pivoting parameter may need to be increased during
     * the algorithm if poor precision is obtained from the linear

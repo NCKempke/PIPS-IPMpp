@@ -15,17 +15,20 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_)
-   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) )
+StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view )
+   : mat(mat), mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed( PIPS_MPIgetDistributed(mpi_comm) ), rank( PIPS_MPIgetRank(mpi_comm) ), is_view{is_view}
 {
    assert(mat);
 
    mat->getSize(m, n);
 
+   nonzeros += mat->numberOfNonZeros();
+
    if( mat_link )
    {
       long long ml, nl;
       mat_link->getSize(ml, nl);
+      nonzeros += mat_link->numberOfNonZeros();
 
       if( is_vertical )
       {
@@ -42,6 +45,9 @@ StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* ma
 
 StringGenMatrix::~StringGenMatrix()
 {
+   if( is_view )
+      return;
+
    for( StringGenMatrix* child : children )
       delete child;
 
@@ -52,6 +58,8 @@ StringGenMatrix::~StringGenMatrix()
 void StringGenMatrix::addChild(StringGenMatrix* child)
 {
    children.push_back(child);
+
+   nonzeros += child->numberOfNonZeros();
 
    long long m_, n_;
    child->getSize(m_, n_);
@@ -129,6 +137,49 @@ void StringGenMatrix::transMult(double beta, OoqpVector& y, double alpha, const 
       transMultHorizontal(beta, y, alpha, x);
 }
 
+int StringGenMatrix::numberOfNonZeros() const
+{
+#ifndef NDEBUG
+   const int nonzeros_now = nonzeros;
+   const_cast<StringGenMatrix*>(this)->recomputeNonzeros();
+   assert( nonzeros_now == nonzeros );
+#endif
+   return nonzeros;
+}
+
+void StringGenMatrix::recomputeNonzeros()
+{
+   nonzeros = 0;
+
+   for( auto& child : children )
+   {
+      child->recomputeNonzeros();
+      if( PIPS_MPIgetRank(child->mpi_comm) == 0 )
+         nonzeros += child->numberOfNonZeros();
+      else
+         child->numberOfNonZeros();
+   }
+
+   if( dynamic_cast<const StringGenMatrix*>(mat) )
+   {
+      StringGenMatrix& matstr = dynamic_cast<StringGenMatrix&>(*mat);
+      matstr.recomputeNonzeros();
+      if( PIPS_MPIgetRank(matstr.mpi_comm) == 0 )
+         nonzeros += matstr.numberOfNonZeros();
+      else
+         matstr.numberOfNonZeros();
+   }
+   else if( PIPS_MPIiAmSpecial( distributed, mpi_comm ) )
+   {
+      if( mat )
+         nonzeros += mat->numberOfNonZeros();
+      if( mat_link )
+         nonzeros += mat_link->numberOfNonZeros();
+   }
+
+   PIPS_MPIgetSumInPlace(nonzeros, mpi_comm);
+}
+
 void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
    const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
@@ -137,12 +188,12 @@ void StringGenMatrix::multVertical( double beta, OoqpVector& y_in, double alpha,
    assert( is_vertical );
    assert( y.children.size() == children.size());
 
-   mat->mult(beta, *y.vec, alpha, x);
+   mat->mult(beta, *y.first, alpha, x);
 
    if( mat_link )
    {
-      assert( y.vecl );
-      mat_link->mult(beta, *y.vecl, alpha, x);
+      assert( y.last );
+      mat_link->mult(beta, *y.last, alpha, x);
    }
 
    for( size_t i = 0; i < children.size(); ++i )
@@ -161,22 +212,22 @@ void StringGenMatrix::multHorizontal( double beta, OoqpVector& y_in, double alph
 
    assert( !is_vertical );
    assert( x.children.size() == children.size() );
-   assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
+   assert((x.last && mat_link ) || (x.last == nullptr && mat_link == nullptr ) );
 
    if( mat->isKindOf(kStringGenMatrix) )
    {
       assert( !mat_link );
       assert( children.empty() );
       assert( !root );
-      dynamic_cast<const StringGenMatrix*>(mat)->multHorizontal(1.0, y, alpha, *x.vec, false);
+      dynamic_cast<const StringGenMatrix*>(mat)->multHorizontal(1.0, y, alpha, *x.first, false);
    }
    else
    {
       if( PIPS_MPIiAmSpecial( distributed, mpi_comm ) )
       {
-         mat->mult( root ? beta : 1.0, y, alpha, *x.vec);
+         mat->mult( root ? beta : 1.0, y, alpha, *x.first);
          if( mat_link )
-            mat_link->mult(1.0, y, alpha, *x.vecl);
+            mat_link->mult(1.0, y, alpha, *x.last);
       }
       else if( root )
          y.setToZero();
@@ -196,23 +247,23 @@ void StringGenMatrix::transMultVertical( double beta, OoqpVector& y_in, double a
 
    assert( is_vertical );
    assert(x.children.size() == children.size());
-   assert( x.vec && mat );
-   assert( ( x.vecl && mat_link ) || ( x.vecl == nullptr && mat_link == nullptr ) );
+   assert(x.first && mat );
+   assert((x.last && mat_link ) || (x.last == nullptr && mat_link == nullptr ) );
 
    if( mat->isKindOf(kStringGenMatrix) )
    {
       assert( !mat_link );
       assert( children.empty() );
       assert( !root );
-      dynamic_cast<StringGenMatrix*>(mat)->transMultVertical(1.0, y, alpha, *x.vec, false);
+      dynamic_cast<StringGenMatrix*>(mat)->transMultVertical(1.0, y, alpha, *x.first, false);
    }
    else
    {
       if( rank == 0 )
       {
-         mat->transMult( root ? beta : 1.0, y, alpha, *x.vec);
+         mat->transMult( root ? beta : 1.0, y, alpha, *x.first);
          if( mat_link )
-            mat_link->transMult(1.0, y, alpha, *x.vecl);
+            mat_link->transMult(1.0, y, alpha, *x.last);
       }
       else if( root )
          y.setToZero();
@@ -233,15 +284,15 @@ void StringGenMatrix::transMultHorizontal ( double beta, OoqpVector& y_in, doubl
 
    assert( !is_vertical );
    assert(y.children.size() == children.size());
-   if( y.vecl )
+   if( y.last )
       assert( mat_link );
    else
       assert( mat_link == nullptr );
 
-   mat->transMult(beta, *y.vec, alpha, x);
+   mat->transMult(beta, *y.first, alpha, x);
 
    if( mat_link )
-      mat_link->transMult( beta, *y.vecl, alpha, x);
+      mat_link->transMult(beta, *y.last, alpha, x);
 
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -257,9 +308,9 @@ void StringGenMatrix::getColMinMaxVecHorizontal( bool get_min, bool initialize_v
    assert( !is_vertical );
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
 
-   assert( minmax.vec && mat );
+   assert(minmax.first && mat );
    assert( minmax.children.size() == children.size());
-   assert( (minmax.vecl && mat_link) || (minmax.vecl == nullptr && mat_link == nullptr) );
+   assert((minmax.last && mat_link) || (minmax.last == nullptr && mat_link == nullptr) );
 
 
    for( size_t i = 0; i < children.size(); ++i )
@@ -271,10 +322,10 @@ void StringGenMatrix::getColMinMaxVecHorizontal( bool get_min, bool initialize_v
       children[i]->getColMinMaxVecHorizontal(get_min, initialize_vec, row_scale, *minmax.children[i]);
    }
 
-   mat->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vec);
+   mat->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.first);
 
    if( mat_link )
-      mat_link->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.vecl);
+      mat_link->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.last);
 }
 
 void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_ ) const
@@ -287,7 +338,7 @@ void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec
 
    assert( !has_rowscale || row_scale->children.size() == children.size() );
    if( has_rowscale )
-      assert( (row_scale->vecl && mat_link) || ( row_scale->vecl == nullptr && mat_link == nullptr) );
+      assert((row_scale->last && mat_link) || (row_scale->last == nullptr && mat_link == nullptr) );
 
 
    for( size_t i = 0; i < children.size(); i++ )
@@ -307,10 +358,10 @@ void StringGenMatrix::getColMinMaxVecVertical( bool get_min, bool initialize_vec
          PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
    }
 
-   mat->getColMinMaxVec( get_min, initialize_vec, has_rowscale ? row_scale->vec : nullptr, minmax );
+   mat->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->first : nullptr, minmax );
 
    if( mat_link )
-      mat_link->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, minmax);
+      mat_link->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, minmax);
 }
 
 /** StochVector colScaleVec, SimpleVector minmaxVec */
@@ -323,7 +374,7 @@ void StringGenMatrix::getRowMinMaxVecHorizontal( bool get_min, bool initialize_v
    SimpleVector& minmax = dynamic_cast<SimpleVector&>(minmax_);
    assert( !has_colscale || col_scale->children.size() == children.size() );
    if( has_colscale )
-      assert( (col_scale->vecl && mat_link) || ( col_scale->vecl == nullptr && mat_link == nullptr) );
+      assert((col_scale->last && mat_link) || (col_scale->last == nullptr && mat_link == nullptr) );
 
 
    for( size_t i = 0; i < children.size(); i++ )
@@ -343,10 +394,10 @@ void StringGenMatrix::getRowMinMaxVecHorizontal( bool get_min, bool initialize_v
          PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
    }
 
-   mat->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, minmax);
+   mat->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, minmax);
 
    if( mat_link )
-      mat_link->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->vecl : nullptr, minmax);
+      mat_link->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last : nullptr, minmax);
 }
 
 /** StochVector minmaxVec, SimpleVector colScaleVec */
@@ -356,11 +407,11 @@ void StringGenMatrix::getRowMinMaxVecVertical( bool get_min, bool initialize_vec
 
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
 
-   assert( minmax.vec && mat );
+   assert(minmax.first && mat );
    assert( minmax.children.size() == children.size());
-   assert( (minmax.vecl && mat_link) || (minmax.vecl == nullptr && mat_link == nullptr) );
+   assert((minmax.last && mat_link) || (minmax.last == nullptr && mat_link == nullptr) );
 
-   mat->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.vec);
+   mat->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.first);
 
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -372,7 +423,7 @@ void StringGenMatrix::getRowMinMaxVecVertical( bool get_min, bool initialize_vec
    }
 
    if( mat_link )
-      mat_link->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.vecl);
+      mat_link->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.last);
 }
 
 void StringGenMatrix::getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec )
@@ -411,11 +462,11 @@ void StringGenMatrix::columnScaleHorizontal( const OoqpVector& vec_in )
 
    const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
 
-   assert(vec.vec);
+   assert(vec.first);
    assert(vec.children.size() == children.size());
-   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr) );
 
-   mat->columnScale(*vec.vec);
+   mat->columnScale(*vec.first);
 
    for( size_t i = 0; i < children.size(); ++i )
    {
@@ -427,7 +478,7 @@ void StringGenMatrix::columnScaleHorizontal( const OoqpVector& vec_in )
    }
 
    if( mat_link )
-      mat_link->columnScale(*vec.vecl);
+      mat_link->columnScale(*vec.last);
 }
 
 void StringGenMatrix::rowScaleVertical( const OoqpVector& vec_in )
@@ -436,11 +487,11 @@ void StringGenMatrix::rowScaleVertical( const OoqpVector& vec_in )
 
    const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
 
-   assert(vec.vec);
+   assert(vec.first);
    assert(vec.children.size() == children.size());
-   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr) );
 
-   mat->rowScale(*vec.vec);
+   mat->rowScale(*vec.first);
 
    for( size_t i = 0; i < children.size(); i++ )
    {
@@ -452,7 +503,7 @@ void StringGenMatrix::rowScaleVertical( const OoqpVector& vec_in )
    }
 
    if( mat_link )
-      mat_link->rowScale(*vec.vecl);
+      mat_link->rowScale(*vec.last);
 }
 
 void StringGenMatrix::rowScaleHorizontal( const OoqpVector& vec )
@@ -489,11 +540,11 @@ void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in ) const
 
    StochVector& vec = dynamic_cast<StochVector&>(vec_in);
 
-   assert( vec.vec );
+   assert( vec.first );
    assert( vec.children.size() == children.size() );
-   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr) );
 
-   mat->addRowSums(*vec.vec);
+   mat->addRowSums(*vec.first);
 
    for( size_t i = 0; i < children.size(); i++ )
    {
@@ -505,7 +556,7 @@ void StringGenMatrix::addRowSumsVertical( OoqpVector& vec_in ) const
    }
 
    if( mat_link )
-      mat_link->addRowSums(*vec.vecl);
+      mat_link->addRowSums(*vec.last);
 }
 
 void StringGenMatrix::addRowSumsHorizontal( OoqpVector& vec_in ) const
@@ -548,11 +599,11 @@ void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in ) const
 
    StochVector& vec = dynamic_cast<StochVector&>(vec_in);
 
-   assert( vec.vec );
+   assert( vec.first );
    assert( vec.children.size() == children.size() );
-   assert( (vec.vecl && mat_link) || (vec.vecl == nullptr && mat_link == nullptr) );
+   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr) );
 
-   mat->addColSums(*vec.vec);
+   mat->addColSums(*vec.first);
 
    for( size_t i = 0; i < children.size(); i++ )
    {
@@ -564,7 +615,7 @@ void StringGenMatrix::addColSumsHorizontal( OoqpVector& vec_in ) const
    }
 
    if( mat_link )
-      mat_link->addColSums(*vec.vecl);
+      mat_link->addColSums(*vec.last);
 }
 
 void StringGenMatrix::addRowSums( OoqpVector& vec ) const
@@ -585,6 +636,7 @@ void StringGenMatrix::addColSums( OoqpVector& vec ) const
 
 void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms )
 {
+
 #ifndef NDEBUG
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
    assert( child_comms.size() == n_new_children );
@@ -629,13 +681,15 @@ void StringGenMatrix::combineChildrenInNewChildren( const std::vector<unsigned i
 
    children.erase( children.begin(), children.begin() + map_child_subchild.size() );
    assert( children.size() == n_new_children );
+
+   recomputeNonzeros();
 }
 
 GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
 {
    assert( !is_vertical );
-
    assert( mat );
+
    GenMatrix* mat_border = mat->shaveBottom( n_rows );
    GenMatrix* matlink_border = mat_link ? mat_link->shaveBottom( n_rows ) : nullptr;
 
@@ -646,10 +700,15 @@ GenMatrix* StringGenMatrix::shaveBottom( int n_rows )
    border->getSize(mB,nB);
    assert( mB == n_rows );
 #endif
+
    for( auto& child : children )
       border->addChild( dynamic_cast<StringGenMatrix*>(child->shaveBottom(n_rows) ) );
 
    m -= n_rows;
+
+   recomputeNonzeros();
+   border->recomputeNonzeros();
+
    return border;
 }
 
@@ -749,4 +808,6 @@ void StringGenMatrix::splitAlongTree( const sTreeCallbacks& tree )
          dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree( dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()) );
       }
    }
+
+   recomputeNonzeros();
 }

@@ -2,10 +2,10 @@
 #include "gmock/gmock.h"
 
 #include "mpi.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include <tuple>
 
-class HierarchicalDataSplittingTest : public sData, public ::testing::TestWithParam<std::tuple<std::vector<unsigned int>, std::vector<int>, int, std::vector<unsigned int>>>
+class HierarchicalDataSplittingTest : public DistributedQP, public ::testing::TestWithParam<std::tuple<std::vector<unsigned int>, std::vector<int>, int, std::vector<unsigned int>>>
 {};
 
 TEST_P(HierarchicalDataSplittingTest, TestPermutationOfLinkingConstraintsForSplit )

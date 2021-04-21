@@ -11,7 +11,7 @@
 
 class SCsparsifier;
 class sFactory;
-class sData;
+class DistributedQP;
 
 // DEBUG only
 //#include "ScaDenSymMatrix.h"
@@ -28,7 +28,7 @@ class sLinsysRoot : public sLinsys {
  };
 
  protected:
-  void createChildren(sData* prob);
+  void createChildren(DistributedQP* prob);
   void deleteChildren() override;
 
  private:
@@ -37,47 +37,47 @@ class sLinsysRoot : public sLinsys {
  public:
   std::vector<sLinsys*> children;
 
-  sLinsysRoot(sFactory * factory_, sData * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(sFactory *factory, sData *prob_, OoqpVector *dd_,
+  sLinsysRoot(sFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root = false);
+  sLinsysRoot(sFactory *factory, DistributedQP *prob_, OoqpVector *dd_,
         OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *primal_reg_,
         OoqpVector *dual_y_reg_, OoqpVector *dual_z_reg_, OoqpVector *rhs_);
 
-  void factor2(sData *prob, Variables *vars) override;
-  void assembleKKT(sData *prob, Variables *vars) override;
-  void allreduceAndFactorKKT(sData *prob, Variables *vars) override;
+  void factor2(DistributedQP *prob, Variables *vars) override;
+  void assembleKKT(DistributedQP *prob, Variables *vars) override;
+  void allreduceAndFactorKKT(DistributedQP *prob, Variables *vars) override;
 
   /* Atoms methods of FACTOR2 for a non-leaf linear system */
-  virtual void initializeKKT(sData* prob, Variables* vars);
-  virtual void assembleLocalKKT( sData* prob ) = 0;
-  void addTermToSchurCompl(sData* prob, size_t childindex, bool use_local_RAC );
-  virtual void reduceKKT(sData *prob);
+  virtual void initializeKKT(DistributedQP* prob, Variables* vars);
+  virtual void assembleLocalKKT( DistributedQP* prob ) = 0;
+  void addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC );
+  virtual void reduceKKT(DistributedQP *prob);
   virtual void factorizeKKT(); 
-  virtual void factorizeKKT( sData* prob );
-  virtual void finalizeKKT( sData* prob, Variables* vars ) = 0;
-  virtual void finalizeKKTdist( sData* /*prob*/ ) {assert("not implemented here \n" && 0);};
+  virtual void factorizeKKT( DistributedQP* prob );
+  virtual void finalizeKKT( DistributedQP* prob, Variables* vars ) = 0;
+  virtual void finalizeKKTdist( DistributedQP* /*prob*/ ) {assert("not implemented here \n" && 0);};
 
-  void Ltsolve2( sData *prob, StochVector& x, SimpleVector& xp, bool) override;
+  void Ltsolve2( DistributedQP *prob, StochVector& x, SimpleVector& xp, bool) override;
 
   /* compute (Br0 - sum_j Br_mod_border) - buffer */
-  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border );
+  virtual void finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows );
   /* compute SC += B0_{outer}^T X0 */
-  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse );
+  virtual void finalizeInnerSchurComplementContribution( DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows );
 
   /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
   using sLinsys::LsolveHierarchyBorder;
-  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border ) override;
+  void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border, int begin_cols, int end_cols ) override;
 
   /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
   using sLinsys::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
-        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, bool two_link_border ) override;
+        std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols ) override;
 
   void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
 
   void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
 
-  void putXDiagonal( const OoqpVector& xdiag_ ) override;
-  void putZDiagonal( const OoqpVector& zdiag_ ) override;
+  void putXDiagonal(const OoqpVector& xdiag_) override;
+  void putZDiagonal(const OoqpVector& zdiag_) override;
  
   void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
   void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
@@ -143,23 +143,23 @@ class sLinsysRoot : public sLinsys {
  private:
   void initProperChildrenRange();
   void registerMatrixEntryTripletMPI();
-  void reduceKKTdist(sData* prob);
+  void reduceKKTdist(DistributedQP* prob);
   void reduceKKTdense();
   void reduceKKTsparse();
   void reduceToProc0(int size, double* values);
   void reduceToAllProcs(int size, double* values);
-  void syncKKTdistLocalEntries(sData* prob);
+  void syncKKTdistLocalEntries(DistributedQP* prob);
   void sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const;
   std::vector<MatrixEntryTriplet> receiveKKTdistLocalEntries() const;
-  std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(sData* prob, int childStart, int childEnd) const;
+  std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int childEnd) const;
 
   void finalizeInnerSchurComplementContributionDense( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
         SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
-        SparseGenMatrix* G0cons_border, bool is_sym );
+        SparseGenMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows );
 
   void finalizeInnerSchurComplementContributionSparse( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
         SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
-        SparseGenMatrix* G0cons_border );
+        SparseGenMatrix* G0cons_border, int begin_rows, int end_rows );
 
   MPI_Datatype MatrixEntryTriplet_mpi;
 

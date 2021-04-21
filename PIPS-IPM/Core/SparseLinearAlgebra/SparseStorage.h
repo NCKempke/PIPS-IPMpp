@@ -21,10 +21,10 @@
  */
 class SparseStorage : public DoubleStorage {
 private:
-  /** store absolute non-zero minimum entry of row i and vec[i] in vec[i]; empty rows get value 0.0  */
+  /** store absolute non-zero minimum entry of row i and first[i] in first[i]; empty rows get value 0.0  */
   void getRowMinVec(const double* colScaleVec, double* vec) const;
 
-  /** store absolute non-zero maximum entry of row i and vec[i] in vec[i]; empty rows get value 0.0  */
+  /** store absolute non-zero maximum entry of row i and first[i] in first[i]; empty rows get value 0.0  */
   void getRowMaxVec(const double* colScaleVec, double* vec) const;
 
   class index_sort
@@ -175,20 +175,21 @@ public:
   void transMultMatLower( double beta,  double* Y, int ny, int ldy,
 			  double alpha, double *X, int ldx, int colStart);
 
-  void fromGetColBlock(int col, double *A, int lda, int colExtent, bool &allzero);
   void fromGetColBlock(int col, double *A, int lda, int colExtent, int* colSparsity, bool &allzero);
 
-  void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset,
-        double* rowsArrayDense, int* rowSparsity = nullptr) const;
+  void fromGetRowsBlock( double* rows_array_dense, size_t row_start, size_t n_rows, size_t array_line_size, size_t array_line_offest, int* row_sparsity ) const;
+  void fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset, double* rowsArrayDense, int* rowSparsity = nullptr) const;
 
   /** add nnz per row to given array (of size nRows) */
-  void addNnzPerRow(int* vec) const;
+  void addNnzPerRow(int* vec) const { addNnzPerRow(vec, 0, m); };
+  void addNnzPerRow(int* vec, int begin_rows, int end_rows) const;
+
   void getLinkVarsNnz(std::vector<int>& vec) const;
 
   /** add abs. sum per row to given array (of size nRows) */
   void addRowSums( double* vec ) const;
 
-  /** store absolute non-zero minimum/maximum entry of row i and vec[i] in vec[i];
+  /** store absolute non-zero minimum/maximum entry of row i and first[i] in first[i];
    *  empty rows get value 0.0 for maximization and <double>::max() for minimization  */
   void getRowMinMaxVec(bool getMin, const double* colScaleVec, double* vec) const;
 

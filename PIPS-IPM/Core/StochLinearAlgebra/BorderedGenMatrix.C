@@ -74,11 +74,11 @@ void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
-   border_left->mult(beta, *y.children[0], alpha, *x.vec);
+   border_left->mult(beta, *y.children[0], alpha, *x.first);
    inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
 
-   bottom_left_block->mult(beta, *y.vecl, alpha, *x.vec);
-   border_bottom->mult(1.0, *y.vecl, alpha, *x.children[0]);
+   bottom_left_block->mult(beta, *y.last, alpha, *x.first);
+   border_bottom->mult(1.0, *y.last, alpha, *x.children[0]);
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -91,11 +91,11 @@ void BorderedGenMatrix::transMult( double beta, OoqpVector& y_in, double alpha, 
    const StochVector& x = dynamic_cast<const StochVector&>(x_in);
    StochVector& y = dynamic_cast<StochVector&>(y_in);
 
-   border_left->transMult(beta, *y.vec, alpha, *x.children[0]);
-   bottom_left_block->transMult(1.0, *y.vec, alpha, *x.vecl);
+   border_left->transMult(beta, *y.first, alpha, *x.children[0]);
+   bottom_left_block->transMult(1.0, *y.first, alpha, *x.last);
 
    inner_matrix->transMult(beta, *y.children[0], alpha, *x.children[0]);
-   border_bottom->transMult(1.0, *y.children[0], alpha, *x.vecl);
+   border_bottom->transMult(1.0, *y.children[0], alpha, *x.last);
 }
 
 double BorderedGenMatrix::abmaxnorm() const
@@ -116,8 +116,8 @@ void BorderedGenMatrix::columnScale( const OoqpVector& vec )
 
    const StochVector& svec = dynamic_cast<const StochVector&>(vec);
 
-   border_left->columnScale(*svec.vec);
-   bottom_left_block->columnScale(*svec.vec);
+   border_left->columnScale(*svec.first);
+   bottom_left_block->columnScale(*svec.first);
 
    inner_matrix->columnScale(*svec.children[0]);
    border_bottom->columnScale(*svec.children[0]);
@@ -132,8 +132,8 @@ void BorderedGenMatrix::rowScale ( const OoqpVector& vec )
    border_left->rowScale(*svec.children[0]);
    inner_matrix->rowScale(*svec.children[0]);
 
-   bottom_left_block->rowScale(*svec.vecl);
-   border_bottom->rowScale(*svec.vecl);
+   bottom_left_block->rowScale(*svec.last);
+   border_bottom->rowScale(*svec.last);
 }
 
 void BorderedGenMatrix::scalarMult( double num )
@@ -166,11 +166,11 @@ void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, cons
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
    const StochVector* col_scale = has_colscale ? dynamic_cast<const StochVector*>(col_scale_in) : nullptr;
 
-   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, *minmax.children[0]);
+   border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.children[0]);
    inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.children[0]);
 
-   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->vec : nullptr, *minmax.vecl);
-   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.vecl);
+   bottom_left_block->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.last);
+   border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.last);
 }
 
 void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_in )
@@ -184,11 +184,11 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
    const StochVector* row_scale = has_rowscale ? dynamic_cast<const StochVector*>(row_scale_in) : nullptr;
 
-   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.vec);
-   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, *minmax.vec);
+   border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.first);
+   bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.first);
 
    inner_matrix->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.children[0]);
-   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->vecl : nullptr, *minmax.children[0]);
+   border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.children[0]);
 }
 
 void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
@@ -200,8 +200,8 @@ void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
   border_left->addRowSums( *vec.children[0] );
   inner_matrix->addRowSums( *vec.children[0] );
 
-  bottom_left_block->addRowSums( *vec.vecl );
-  border_bottom->addRowSums( *vec.vecl );
+  bottom_left_block->addRowSums( *vec.last );
+  border_bottom->addRowSums( *vec.last );
 }
 
 void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
@@ -210,8 +210,8 @@ void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
 
    StochVector& vec = dynamic_cast<StochVector&>(vec_);
 
-   border_left->addColSums( *vec.vec );
-   bottom_left_block->addColSums( *vec.vec );
+   border_left->addColSums( *vec.first );
+   bottom_left_block->addColSums( *vec.first );
 
    inner_matrix->addColSums( *vec.children[0] );
    border_bottom->addColSums( *vec.children[0] );
@@ -236,27 +236,27 @@ bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVectorBase<T>& 
 
    if( row_vec )
    {
-      if( vecs.vecl != nullptr )
+      if(vecs.last != nullptr )
       {
-         std::cout << "row-vec but root.vecl" << std::endl;
+         std::cout << "row-first but root.last" << std::endl;
          return false;
       }
-      if( vecs.vec == nullptr )
+      if(vecs.first == nullptr )
       {
-         std::cout << "row-vec but NO root.vec" << std::endl;
+         std::cout << "row-first but NO root.first" << std::endl;
          return false;
       }
    }
    else
    {
-      if( vecs.vec != nullptr )
+      if(vecs.first != nullptr )
       {
-         std::cout << "col-vec but root.vec" << std::endl;
+         std::cout << "col-first but root.first" << std::endl;
          return false;
       }
-      if( vecs.vecl == nullptr )
+      if(vecs.last == nullptr )
       {
-         std::cout << "col-vec but NO root.vecl" << std::endl;
+         std::cout << "col-first but NO root.last" << std::endl;
          return false;
       }
 
@@ -275,14 +275,14 @@ bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVectorBase<T>& 
 
    int n_border, m_border;
    border_left->getSize(m_border, n_border);
-   if( row_vec && vecs.vec->length() != n_border )
+   if( row_vec && vecs.first->length() != n_border )
    {
-      std::cout << "ROW: root.vec.length = " << vecs.vec->length() << " != " << n_border << " = border.n " << std::endl;
+      std::cout << "ROW: root.first.length = " << vecs.first->length() << " != " << n_border << " = border.n " << std::endl;
       return false;
    }
    if( !row_vec && vecs.length() != m )
    {
-      std::cout << "COL: root.vecl.length = " << vecs.vecl->length() << " != " << m_border << " = border.m " << std::endl;
+      std::cout << "COL: root.last.length = " << vecs.last->length() << " != " << m_border << " = border.m " << std::endl;
       return false;
    }
 

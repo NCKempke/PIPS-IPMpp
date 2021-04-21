@@ -7,7 +7,7 @@
 
 #include "QpPostsolver.h"
 
-QpPostsolver::QpPostsolver(const Data& prob)
+QpPostsolver::QpPostsolver(const Problem& prob)
  : original_problem(prob)
 {
 }

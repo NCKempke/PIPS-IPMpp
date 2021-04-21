@@ -41,19 +41,19 @@ private:
 
    const int verbosity = -1;
 
-   /* tree belonging to origData and presData */
+   /* tree belonging to origData and preDistributedQP */
    sTree* const tree;
 
-   PresolveData presData;
+   PresolveData preDistributedQP;
    std::vector<std::unique_ptr<StochPresolverBase>> presolvers;
 
    void resetFreeVariables();
 public:
 
-   StochPresolver(sTree* tree, const Data& prob, Postsolver* postsolver);
+   StochPresolver(sTree* tree, const Problem& prob, Postsolver* postsolver);
    ~StochPresolver() override = default;
 
-   Data* presolve() override;
+   Problem* presolve() override;
 };
 
 //@}

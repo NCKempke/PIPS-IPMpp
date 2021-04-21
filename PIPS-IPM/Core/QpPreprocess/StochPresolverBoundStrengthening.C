@@ -13,17 +13,17 @@
 
 
 StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(
-      PresolveData& presData, const sData& origProb) :
-      StochPresolverBase(presData, origProb),
+      PresolveData& presolve_data, const DistributedQP& origProb) :
+      StochPresolverBase(presolve_data, origProb),
       limit_iter( pips_options::getIntParameter("PRESOLVE_BOUND_STR_MAX_ITER") ),
       limit_entry( pips_options::getDoubleParameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY") ),
       limit_partial_activity( pips_options::getDoubleParameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY") ),
       limit_bounds( pips_options::getDoubleParameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_BOUNDS") ),
       tightenings(0),
       local_bound_tightenings(false),
-      n_linking_vars( dynamic_cast<const StochVector&>(*origProb.g).vec->length() ),
-      n_eq_linking_rows( dynamic_cast<const StochVector&>(*origProb.bA).vecl->length() ),
-      n_ineq_linking_rows( dynamic_cast<const StochVector&>(*origProb.bl).vecl->length() ),
+      n_linking_vars( dynamic_cast<const StochVector&>(*origProb.g).first->length() ),
+      n_eq_linking_rows( dynamic_cast<const StochVector&>(*origProb.bA).last->length() ),
+      n_ineq_linking_rows( dynamic_cast<const StochVector&>(*origProb.bl).last->length() ),
       ub_linking_var(n_linking_vars),
       lb_linking_var(n_linking_vars),
       rows_ub(n_linking_vars),
@@ -46,8 +46,8 @@ void StochPresolverBoundStrengthening::resetArrays()
 
 bool StochPresolverBoundStrengthening::applyPresolving()
 {
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1)
@@ -68,7 +68,7 @@ bool StochPresolverBoundStrengthening::applyPresolving()
    do
    {
       resetArrays();
-      presData.startBoundTightening();
+      presolve_data.startBoundTightening();
 
       ++iter;
       tightened = false;
@@ -84,7 +84,7 @@ bool StochPresolverBoundStrengthening::applyPresolving()
       for( int node = 0; node < nChildren; node++)
       {
          // dummy child?
-         if( !presData.nodeIsDummy(node) )
+         if( !presolve_data.nodeIsDummy(node) )
          {
             if( strenghtenBoundsInNode(EQUALITY_SYSTEM, node) )
               tightened = true;
@@ -98,12 +98,12 @@ bool StochPresolverBoundStrengthening::applyPresolving()
       communicateLinkingVarBounds();
       resetArrays();
 
-      presData.endBoundTightening();
-      presData.allreduceAndApplyLinkingRowActivities();
+      presolve_data.endBoundTightening();
+      presolve_data.allreduceAndApplyLinkingRowActivities();
       PIPS_MPIgetLogicAndInPlace(tightened);
 
-      assert(presData.reductionsEmpty());
-      assert(presData.presDataInSync());
+      assert(presolve_data.reductionsEmpty());
+      assert(presolve_data.presolve_dataInSync());
    }
    while( tightened && iter < limit_iter );
 
@@ -156,13 +156,13 @@ void StochPresolverBoundStrengthening::communicateLinkingVarBounds()
       {
          is_lower_bound ? assert( lb_linking_var[i] == best_bound ) : assert( ub_linking_var[i - n_linking_vars] == best_bound );
          const INDEX& row = is_lower_bound ? rows_lb[i] : rows_ub[i - n_linking_vars];
-         const bool propagated = presData.rowPropagatedBounds(row, col, is_lower_bound ? best_bound : INF_NEG, is_lower_bound ? INF_POS : -best_bound);
+         const bool propagated = presolve_data.rowPropagatedBounds(row, col, is_lower_bound ? best_bound : INF_NEG, is_lower_bound ? INF_POS : -best_bound);
          if( propagated )
             ++tightenings;
       }
       else if( best_rank != -1 )
       {
-         const bool propagated = presData.rowPropagatedBounds(INDEX(), col, is_lower_bound ? best_bound : INF_NEG, is_lower_bound ? INF_POS : -best_bound);
+         const bool propagated = presolve_data.rowPropagatedBounds(INDEX(), col, is_lower_bound ? best_bound : INF_NEG, is_lower_bound ? INF_POS : -best_bound);
          if( propagated )
             ++tightenings;
       }
@@ -181,7 +181,7 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInNode(SystemType system_
    if( strenghtenBoundsInBlock(system_type, node, B_MAT) )
       tightened = true;
 
-   if( presData.hasLinking(system_type) )
+   if( presolve_data.hasLinking(system_type) )
    {
       if( strenghtenBoundsInBlock(system_type, node, BL_MAT) )
         tightened = true;
@@ -243,7 +243,7 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock( SystemType syste
       double actmin_part, actmax_part;
       int actmin_ubndd, actmax_ubndd;
 
-      presData.getRowActivities( row_INDEX, actmax_part, actmin_part, actmax_ubndd, actmin_ubndd);
+      presolve_data.getRowActivities( row_INDEX, actmax_part, actmin_part, actmax_ubndd, actmin_ubndd);
 
       /* two or more unbounded variables make it impossible to derive new bounds so skip the row completely */
       if( actmin_ubndd >= 2 && actmax_ubndd >= 2)
@@ -390,7 +390,7 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock( SystemType syste
             }
          }
          else
-            row_propagated = presData.rowPropagatedBounds(row_INDEX, INDEX(COL, node_col, col), lbx_new, ubx_new);
+            row_propagated = presolve_data.rowPropagatedBounds(row_INDEX, INDEX(COL, node_col, col), lbx_new, ubx_new);
 
          if( row_propagated && (node != -1 || my_rank == 0) )
             ++tightenings;

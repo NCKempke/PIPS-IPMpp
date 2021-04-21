@@ -10,10 +10,10 @@
 #include "StochPresolverSingletonColumns.h"
 #include "StochVectorUtilities.h"
 
-StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData &presData, const sData &origProb) :
-   StochPresolverBase(presData, origProb), removed_cols(0), local_singletons(false),
-   n_linking_rows_eq(dynamic_cast<const StochVector&>(*origProb.bA).vecl->length()),
-   n_linking_rows_ineq(dynamic_cast<const StochVector&>(*origProb.bu).vecl->length()),
+StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData &presolve_data, const DistributedQP &origProb) :
+   StochPresolverBase(presolve_data, origProb), removed_cols(0), local_singletons(false),
+   n_linking_rows_eq(dynamic_cast<const StochVector&>(*origProb.bA).last->length()),
+   n_linking_rows_ineq(dynamic_cast<const StochVector&>(*origProb.bu).last->length()),
    local_linking_column_for_row_in_proc(n_linking_rows_eq + n_linking_rows_ineq),
    cols( n_linking_rows_eq + n_linking_rows_ineq), coeffs( n_linking_rows_ineq )
 {
@@ -21,11 +21,11 @@ StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData &pre
 
 bool StochPresolverSingletonColumns::applyPresolving()
 {
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
    resetArrays();
-   presData.startSingletonColumnPresolve();
+   presolve_data.startSingletonColumnPresolve();
 
 #ifndef NDEBUG
    if( my_rank == 0 && verbosity > 1 )
@@ -37,7 +37,7 @@ bool StochPresolverSingletonColumns::applyPresolving()
 #endif
 
 #ifndef NDEBUG
-   if( presData.getSingletonCols().empty() )
+   if( presolve_data.getSingletonCols().empty() )
    {
       if( my_rank == 0 && verbosity > 1 )
          std::cout << "No more singletons left - exiting\n";
@@ -47,15 +47,15 @@ bool StochPresolverSingletonColumns::applyPresolving()
    int removed_cols_run = 0;
 
    // main loop:
-   while( !presData.getSingletonCols().empty() )
+   while( !presolve_data.getSingletonCols().empty() )
    {
-      const INDEX& col = presData.getSingletonCols().front();
+      const INDEX& col = presolve_data.getSingletonCols().front();
       const bool removed = removeSingletonColumn(col);
 
       if( removed )
          ++removed_cols_run;
 
-      presData.getSingletonCols().pop();
+      presolve_data.getSingletonCols().pop();
    }
 
    /* check for local singletons and communicate */
@@ -83,47 +83,47 @@ bool StochPresolverSingletonColumns::applyPresolving()
          {
             assert( !cols[i].isLinkingCol() );
             if( row.inEqSys() )
-               presData.removeImpliedFreeColumnSingletonEqualityRowSynced( row, cols[i] );
+               presolve_data.removeImpliedFreeColumnSingletonEqualityRowSynced( row, cols[i] );
             else
             {
-               const double iclow = getSimpleVecFromRowStochVec( *presData.getPresProb().iclow, row );
-               const double icupp = getSimpleVecFromRowStochVec( *presData.getPresProb().icupp, row );
-               const double clow = getSimpleVecFromRowStochVec( *presData.getPresProb().bl, row );
-               const double cupp = getSimpleVecFromRowStochVec( *presData.getPresProb().bu, row );
+               const double iclow = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().iclow, row );
+               const double icupp = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().icupp, row );
+               const double clow = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bl, row );
+               const double cupp = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bu, row );
 
                if( !PIPSisZero(iclow) && !PIPSisZero(icupp) && PIPSisEQ(clow, cupp) )
-                  presData.removeImpliedFreeColumnSingletonEqualityRowSynced( row, cols[i] );
+                  presolve_data.removeImpliedFreeColumnSingletonEqualityRowSynced( row, cols[i] );
                else
-                  presData.removeFreeColumnSingletonInequalityRowSynced( row, cols[i], coeffs.at(row_index) );
+                  presolve_data.removeFreeColumnSingletonInequalityRowSynced( row, cols[i], coeffs.at(row_index) );
             }
             ++removed_cols_run;
          }
          else
          {
             if( row.inEqSys() )
-               presData.removeImpliedFreeColumnSingletonEqualityRowSynced( row, INDEX() );
+               presolve_data.removeImpliedFreeColumnSingletonEqualityRowSynced( row, INDEX() );
             else
             {
-               const double iclow = getSimpleVecFromRowStochVec( *presData.getPresProb().iclow, row );
-               const double icupp = getSimpleVecFromRowStochVec( *presData.getPresProb().icupp, row );
-               const double clow = getSimpleVecFromRowStochVec( *presData.getPresProb().bl, row );
-               const double cupp = getSimpleVecFromRowStochVec( *presData.getPresProb().bu, row );
+               const double iclow = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().iclow, row );
+               const double icupp = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().icupp, row );
+               const double clow = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bl, row );
+               const double cupp = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bu, row );
 
                if( !PIPSisZero(iclow) && !PIPSisZero(icupp) && PIPSisEQ(clow, cupp) )
-                  presData.removeImpliedFreeColumnSingletonEqualityRowSynced( row, INDEX() );
+                  presolve_data.removeImpliedFreeColumnSingletonEqualityRowSynced( row, INDEX() );
                else
-                  presData.removeFreeColumnSingletonInequalityRowSynced( row, INDEX(), 0.0 );
+                  presolve_data.removeFreeColumnSingletonInequalityRowSynced( row, INDEX(), 0.0 );
             }
          }
       }
    }
 
-   presData.allreduceAndApplyBoundChanges();
-   presData.allreduceAndApplyNnzChanges();
-   presData.allreduceAndApplyLinkingRowActivities();
-   presData.allreduceLinkingVarBounds();
-   presData.allreduceAndApplyObjVecChanges();
-   presData.allreduceObjOffset();
+   presolve_data.allreduceAndApplyBoundChanges();
+   presolve_data.allreduceAndApplyNnzChanges();
+   presolve_data.allreduceAndApplyLinkingRowActivities();
+   presolve_data.allreduceLinkingVarBounds();
+   presolve_data.allreduceAndApplyObjVecChanges();
+   presolve_data.allreduceObjOffset();
 
    PIPS_MPIgetSumInPlace(removed_cols_run, MPI_COMM_WORLD);
    removed_cols += removed_cols_run;
@@ -142,8 +142,8 @@ bool StochPresolverSingletonColumns::applyPresolving()
       std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 #endif
 
-   assert(presData.reductionsEmpty());
-   assert(presData.presDataInSync());
+   assert(presolve_data.reductionsEmpty());
+   assert(presolve_data.presolve_dataInSync());
 
    if( removed_cols_run != 0 )
       return true;
@@ -155,12 +155,12 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
 {
    assert( col.isCol() );
    assert( col.hasValidNode(nChildren) );
-   assert( !presData.nodeIsDummy(col.getNode()) );
+   assert( !presolve_data.nodeIsDummy(col.getNode()) );
 
    updatePointersForCurrentNode(col.getNode(), EQUALITY_SYSTEM);
    const SimpleVectorBase<int> &nnzs_col = col.isLinkingCol() ? *currNnzColParent : *currNnzColChild;
 
-   if( nnzs_col[col.getIndex()] == 0 || presData.wasColumnRemoved(col) )
+   if( nnzs_col[col.getIndex()] == 0 || presolve_data.wasColumnRemoved(col) )
       return false;
 
    assert(nnzs_col[col.getIndex()] == 1);
@@ -208,15 +208,15 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
          return false;
       }
       else
-         presData.removeImpliedFreeColumnSingletonEqualityRow( row, col );
+         presolve_data.removeImpliedFreeColumnSingletonEqualityRow( row, col );
    }
    else if( row.inInEqSys() )
    {
       /* inequality singleton variables */
-      const double iclow = getSimpleVecFromRowStochVec( *presData.getPresProb().iclow, row );
-      const double icupp = getSimpleVecFromRowStochVec( *presData.getPresProb().icupp, row );
-      const double clow = getSimpleVecFromRowStochVec( *presData.getPresProb().bl, row );
-      const double cupp = getSimpleVecFromRowStochVec( *presData.getPresProb().bu, row );
+      const double iclow = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().iclow, row );
+      const double icupp = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().icupp, row );
+      const double clow = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bl, row );
+      const double cupp = getSimpleVecFromRowStochVec( *presolve_data.getPresProb().bu, row );
 
       if( !PIPSisZero(iclow) && !PIPSisZero(icupp) && PIPSisEQ(clow, cupp) )
       {
@@ -230,7 +230,7 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
             return false;
          }
          else
-            presData.removeImpliedFreeColumnSingletonEqualityRow( row, col );
+            presolve_data.removeImpliedFreeColumnSingletonEqualityRow( row, col );
 
       }
       else if( !PIPSisZero(iclow) && !PIPSisZero(icupp) )
@@ -242,8 +242,8 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
       {
          assert(!PIPSisEQ(iclow, icupp));
 
-         const double obj_coeff = getSimpleVecFromColStochVec( *presData.getPresProb().g, col);
-         const double coeff = presData.getRowCoeff(row, col);
+         const double obj_coeff = getSimpleVecFromColStochVec( *presolve_data.getPresProb().g, col);
+         const double coeff = presolve_data.getRowCoeff(row, col);
 
          assert(!PIPSisZero(coeff));
 
@@ -253,8 +253,8 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
          /* both positive */
          if( PIPSisLE(0.0, coeff_le_row) && PIPSisLE(0.0, obj_coeff) )
          {
-            const double ixlow = getSimpleVecFromColStochVec( *presData.getPresProb().ixlow, col );
-            const double xlow = getSimpleVecFromColStochVec( *presData.getPresProb().blx, col);
+            const double ixlow = getSimpleVecFromColStochVec( *presolve_data.getPresProb().ixlow, col );
+            const double xlow = getSimpleVecFromColStochVec( *presolve_data.getPresProb().blx, col);
             if( PIPSisZero(ixlow) && PIPSisLT(0.0, obj_coeff) )
                PIPS_MPIabortInfeasible("Found unbounded singleton column variable", "StochPresolverSingletonColumns.C", "removeSingletonColumn");
 
@@ -272,20 +272,20 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
                }
                else
                   /* remove variable and associated row from whole system */
-                  presData.removeFreeColumnSingletonInequalityRow( row, col, coeff );
+                  presolve_data.removeFreeColumnSingletonInequalityRow( row, col, coeff );
             }
             else
             {
                /* fix variable to lower bound */
                assert( xlow != INF_NEG );
-               presData.fixColumnInequalitySingleton(col, row, xlow, coeff);
+               presolve_data.fixColumnInequalitySingleton(col, row, xlow, coeff);
             }
          }
          /* both negative */
          else if( PIPSisLE(coeff_le_row, 0.0) && PIPSisLE(obj_coeff, 0.0) )
          {
-            const double ixupp = getSimpleVecFromColStochVec(*presData.getPresProb().ixupp, col);
-            const double xupp = getSimpleVecFromColStochVec( *presData.getPresProb().bux, col);
+            const double ixupp = getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixupp, col);
+            const double xupp = getSimpleVecFromColStochVec( *presolve_data.getPresProb().bux, col);
             if( PIPSisZero(ixupp) && PIPSisLT(obj_coeff, 0.0) )
                PIPS_MPIabortInfeasible("Found unbounded singleton column variable", "StochPresolverSingletonColumns.C", "removeSingletonColumn");
 
@@ -303,13 +303,13 @@ bool StochPresolverSingletonColumns::removeSingletonColumn(const INDEX& col)
                }
                else
                   /* remove variable and associated row from whole system */
-                  presData.removeFreeColumnSingletonInequalityRow( row, col, coeff );
+                  presolve_data.removeFreeColumnSingletonInequalityRow( row, col, coeff );
             }
             else
             {
                /* fix variable to upper bound */
                assert( xupp != INF_POS );
-               presData.fixColumnInequalitySingleton(col, row, xupp, coeff);
+               presolve_data.fixColumnInequalitySingleton(col, row, xupp, coeff);
             }
          }
       }
@@ -354,7 +354,7 @@ INDEX StochPresolverSingletonColumns::findRowForNonlinkingSingelton(const INDEX&
    assert(col.isCol());
    assert(col.getNode() != -1);
 
-   if( presData.nodeIsDummy(col.getNode()) )
+   if( presolve_data.nodeIsDummy(col.getNode()) )
    {
       found = false;
       return INDEX();
@@ -412,7 +412,7 @@ INDEX StochPresolverSingletonColumns::findRowForLinkingSingletonInSystem(int col
 
    for( int row_node = -1; row_node < nChildren; ++row_node )
    {
-      if( !presData.nodeIsDummy(row_node) )
+      if( !presolve_data.nodeIsDummy(row_node) )
       {
          int row_index = -1;
          updatePointersForCurrentNode(row_node, system_type);
@@ -473,8 +473,8 @@ void StochPresolverSingletonColumns::checkColImpliedFree(const INDEX& col, const
       updatePointersForCurrentNode(row.getNode(), row.getSystemType());
 
    /* check whether free */
-   const double ixupp = getSimpleVecFromColStochVec(*presData.getPresProb().ixupp, col);
-   const double ixlow = getSimpleVecFromColStochVec(*presData.getPresProb().ixlow, col);
+   const double ixupp = getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixupp, col);
+   const double ixlow = getSimpleVecFromColStochVec(*presolve_data.getPresProb().ixlow, col);
 
    if( PIPSisZero(ixupp) )
       ub_implied_free = true;
@@ -482,8 +482,8 @@ void StochPresolverSingletonColumns::checkColImpliedFree(const INDEX& col, const
       lb_implied_free = true;
 
    /* check whether bound tightening found bounds from the variables row that make it implied free */
-   ub_implied_free = ub_implied_free || presData.varBoundImpliedFreeBy(true, col, row);
-   lb_implied_free = lb_implied_free || presData.varBoundImpliedFreeBy(false, col, row);
+   ub_implied_free = ub_implied_free || presolve_data.varBoundImpliedFreeBy(true, col, row);
+   lb_implied_free = lb_implied_free || presolve_data.varBoundImpliedFreeBy(false, col, row);
 }
 
 void StochPresolverSingletonColumns::resetArrays()

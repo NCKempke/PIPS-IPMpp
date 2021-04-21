@@ -19,9 +19,9 @@
  *	either from one of the children (node = 0, ..., nChildren - 1 )
  * or from the parent node = -1
  *
- * for the col vec function SimpleVectorBase<T> vec is returned 
+ * for the col first function SimpleVectorBase<T> first is returned
  *
- * for row vec function either the associated SimpleVectorBase<T> vec (linking = false) or vecl (linking = true) is returned
+ * for row first function either the associated SimpleVectorBase<T> first (linking = false) or last (linking = true) is returned
  *
  * asserts existence of these vectors as well as the specified child
  */
@@ -34,26 +34,26 @@ inline SimpleVectorBase<T>& getSimpleVecFromStochVec(const StochVectorBase<T>& s
    {
       if( linking )
       {
-         assert(stochvec.vecl);
-         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.vecl));
+         assert(stochvec.last);
+         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.last));
       }
       else
       {
-         assert(stochvec.vec);
-         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.vec));
+         assert(stochvec.first);
+         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.first));
       }
    }
    else
    {
       if( linking )
       {
-         assert(stochvec.vecl);
-         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.vecl));
+         assert(stochvec.last);
+         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.last));
       }
       else
       {
-         assert(stochvec.children[node]->vec);
-         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.children[node]->vec));
+         assert(stochvec.children[node]->first);
+         return dynamic_cast<SimpleVectorBase<T>&>(*(stochvec.children[node]->first));
       }
    }
 }
@@ -113,10 +113,10 @@ inline StochVectorBase<U>* cloneStochVector(const StochVectorBase<T>& svec)
   if( svec.isKindOf(kStochDummy) )
     return new StochDummyVectorBase<U>();
 
-  if( svec.vecl )
-    clone = new StochVectorBase<U>( svec.vec->length(), svec.vecl->length(), svec.mpiComm);
+  if( svec.last )
+    clone = new StochVectorBase<U>(svec.first->length(), svec.last->length(), svec.mpiComm);
   else
-    clone = new StochVectorBase<U>( svec.vec->length(), svec.mpiComm);
+    clone = new StochVectorBase<U>(svec.first->length(), svec.mpiComm);
 
   for(size_t it = 0; it < svec.children.size(); it++) {
     clone->AddChild( cloneStochVector<T,U>(*svec.children[it]) );
@@ -172,12 +172,12 @@ inline void writeLBltXltUBtoStringStreamDenseChild( std::stringstream& sout,
    }
    
    sout << "--" << std::endl;
-   assert(lb.vec); assert(ixlow.vec); assert(ub.vec); assert(ixupp.vec);
+   assert(lb.first); assert(ixlow.first); assert(ub.first); assert(ixupp.first);
    writeLBltXltUBToStreamAllStringStream(sout, 
-      dynamic_cast<const SimpleVector&>(*lb.vec),
-      dynamic_cast<const SimpleVector&>(*ixlow.vec),
-      dynamic_cast<const SimpleVector&>(*ub.vec),
-      dynamic_cast<const SimpleVector&>(*ixupp.vec));
+      dynamic_cast<const SimpleVector&>(*lb.first),
+      dynamic_cast<const SimpleVector&>(*ixlow.first),
+      dynamic_cast<const SimpleVector&>(*ub.first),
+      dynamic_cast<const SimpleVector&>(*ixupp.first));
       
    
    for( size_t it = 0; it < lb.children.size(); it++ ){
@@ -185,15 +185,15 @@ inline void writeLBltXltUBtoStringStreamDenseChild( std::stringstream& sout,
       writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it],
          *ixlow.children[it], *ub.children[it], *ixupp.children[it]);   }
 
-   if( lb.vecl )
+   if( lb.last )
    {
-      assert(ixlow.vecl); assert(ub.vecl); assert(ixupp.vecl);
+      assert(ixlow.last); assert(ub.last); assert(ixupp.last);
       sout << "---" << std::endl;
       writeLBltXltUBToStreamAllStringStream(sout,
-         dynamic_cast<const SimpleVector&>(*lb.vecl),
-         dynamic_cast<const SimpleVector&>(*ixlow.vecl),
-         dynamic_cast<const SimpleVector&>(*ub.vecl),
-         dynamic_cast<const SimpleVector&>(*ixupp.vecl));
+         dynamic_cast<const SimpleVector&>(*lb.last),
+         dynamic_cast<const SimpleVector&>(*ixlow.last),
+         dynamic_cast<const SimpleVector&>(*ub.last),
+         dynamic_cast<const SimpleVector&>(*ixupp.last));
    }
 }
 
@@ -223,12 +223,12 @@ inline void writeLBltXltUBtoStreamDense( std::ostream& out,
    if( my_rank == 0)
    {
       sout << "----" << std::endl;
-      assert(lb.vec); assert(ixlow.vec); assert(ub.vec); assert(ixupp.vec);
+      assert(lb.first); assert(ixlow.first); assert(ub.first); assert(ixupp.first);
       writeLBltXltUBToStreamAllStringStream(sout, 
-         dynamic_cast<const SimpleVector&>(*lb.vec),
-         dynamic_cast<const SimpleVector&>(*ixlow.vec),
-         dynamic_cast<const SimpleVector&>(*ub.vec),
-         dynamic_cast<const SimpleVector&>(*ixupp.vec));
+         dynamic_cast<const SimpleVector&>(*lb.first),
+         dynamic_cast<const SimpleVector&>(*ixlow.first),
+         dynamic_cast<const SimpleVector&>(*ub.first),
+         dynamic_cast<const SimpleVector&>(*ixupp.first));
 
       for( size_t it = 0; it < lb.children.size(); it++ )
          writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it],
@@ -247,16 +247,16 @@ inline void writeLBltXltUBtoStreamDense( std::ostream& out,
          out << rowPartFromP;
          delete[] buf;
       }
-      if( lb.vecl )
+      if( lb.last )
       {
-         assert(ixlow.vecl); assert(ub.vecl); 
-         assert(ixupp.vecl);
+         assert(ixlow.last); assert(ub.last);
+         assert(ixupp.last);
          sout << "---" << std::endl;
          writeLBltXltUBToStreamAllStringStream(sout, 
-            dynamic_cast<const SimpleVector&>(*lb.vecl), 
-            dynamic_cast<const SimpleVector&>(*ixlow.vecl),
-            dynamic_cast<const SimpleVector&>(*ub.vecl),
-            dynamic_cast<const SimpleVector&>(*ixupp.vecl));
+            dynamic_cast<const SimpleVector&>(*lb.last),
+            dynamic_cast<const SimpleVector&>(*ixlow.last),
+            dynamic_cast<const SimpleVector&>(*ub.last),
+            dynamic_cast<const SimpleVector&>(*ixupp.last));
       }
       sout << "----" << std::endl;
       out << sout.str();

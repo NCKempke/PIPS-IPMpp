@@ -130,19 +130,19 @@ void StochSymMatrix::mult( double beta,  OoqpVector& y_,
 
    if( 0.0 == alpha)
    {
-      y.vec->scale( beta );
+      y.first->scale(beta );
       return;
    }
 
    if( !parent )
    {
       if( PIPS_MPIiAmSpecial(iAmDistrib, mpiComm) )
-         diag->mult( beta, *y.vec, alpha, *x.vec );
+         diag->mult(beta, *y.first, alpha, *x.first );
       else
-         y.vec->setToZero();
+         y.first->setToZero();
    }
    else
-      diag->mult( beta, *y.vec, alpha, *x.vec );
+      diag->mult(beta, *y.first, alpha, *x.first );
 
    // y0 = y0 + alpha * border^T * xi
    if( border )
@@ -151,8 +151,8 @@ void StochSymMatrix::mult( double beta,  OoqpVector& y_,
       assert( x.parent );
       assert( y.parent );
 
-      border->transMult( 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.vec );
-      border->mult(1.0, *y.vec, alpha, *x.getLinkingVecNotHierarchicalTop() );
+      border->transMult( 1.0, *y.getLinkingVecNotHierarchicalTop(), alpha, *x.first );
+      border->mult(1.0, *y.first, alpha, *x.getLinkingVecNotHierarchicalTop() );
    }
 
    assert(y.children.size() == children.size() );
@@ -163,7 +163,7 @@ void StochSymMatrix::mult( double beta,  OoqpVector& y_,
       children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
 
    if( iAmDistrib && !parent )
-      PIPS_MPIsumArrayInPlace( dynamic_cast<SimpleVector*>(y.vec)->elements(), y.vec->length(), mpiComm );
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(y.first)->elements(), y.first->length(), mpiComm );
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -297,7 +297,7 @@ void StochSymMatrix::getDiagonal( OoqpVector& vec_ )
   StochVector& vec = dynamic_cast<StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->getDiagonal( *vec.vec);
+  diag->getDiagonal( *vec.first);
 
   for(size_t it=0; it<children.size(); it++)
     children[it]->getDiagonal(*vec.children[it]);
@@ -308,7 +308,7 @@ void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->setToDiagonal(*vec.vec);
+  diag->setToDiagonal(*vec.first);
 
   for(size_t it=0; it<children.size(); it++)
     children[it]->setToDiagonal(*vec.children[it]);
@@ -323,9 +323,9 @@ void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
   assert(v.children.size() - nChildren==0);
 
   //check the node size compatibility
-  assert(this->diag->size() == v.vec->length());
+  assert(this->diag->size() == v.first->length());
 
-  diag->atPutDiagonal ( idiag, *v.vec);
+  diag->atPutDiagonal ( idiag, *v.first);
 
   for (int it=0; it<nChildren; it++) 
     children[it]->atPutDiagonal( idiag, *v.children[it]);
@@ -340,9 +340,9 @@ void StochSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v_ )
   assert(v.children.size() - nChildren==0);
 
   //check the node size compatibility
-  assert(this->diag->size() == v.vec->length());
+  assert(this->diag->size() == v.first->length());
 
-  diag->atAddDiagonal( idiag, *v.vec);
+  diag->atAddDiagonal( idiag, *v.first);
 
   for (int it=0; it<nChildren; it++)
     children[it]->atAddDiagonal( idiag, *v.children[it]);
@@ -354,7 +354,7 @@ void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
    StochVector& x = dynamic_cast<StochVector&>(x_);
    assert(x.children.size() == children.size());
 
-   diag->getDiagonal(*x.vec);
+   diag->getDiagonal(*x.first);
 
    for (size_t it = 0; it < children.size(); it++)
       children[it]->getDiagonal(*x.children[it]);
@@ -365,7 +365,7 @@ void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
   assert(children.size() == vec.children.size());
 
-  diag->symmetricScale(*vec.vec);
+  diag->symmetricScale(*vec.first);
 
   for (size_t it=0; it<children.size(); it++) 
     children[it]->symmetricScale(*vec.children[it]);
@@ -376,7 +376,7 @@ void StochSymMatrix::columnScale( const OoqpVector& vec_ )
    const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
    assert(children.size() == vec.children.size());
 
-   diag->columnScale(*vec.vec);
+   diag->columnScale(*vec.first);
 
    if( border )
       border->columnScale( *vec.getLinkingVecNotHierarchicalTop() );
@@ -390,9 +390,9 @@ void StochSymMatrix::rowScale ( const OoqpVector& vec_ )
    const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
    assert(children.size() == vec.children.size());
 
-   diag->rowScale( *vec.vec );
+   diag->rowScale( *vec.first );
    if( border )
-      border->rowScale( *vec.vec );
+      border->rowScale( *vec.first );
 
    for (size_t it = 0; it < children.size(); it++)
       children[it]->rowScale(*vec.children[it]);
@@ -414,7 +414,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
    const StochVectorBase<int>& nnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(nnzVec);
    assert( children.size() == nnzVecStoch.children.size() );
 
-   const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>( nnzVecStoch.vec );
+   const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>( nnzVecStoch.first );
    assert( vec );
 
    const int n_old = n;
@@ -546,6 +546,7 @@ StringGenMatrix* StochSymMatrix::shaveBorder( int n_vars )
       border_vertical->addChild( children[it]->shaveBorder2(n_vars) );
 
    n -= n_vars;
+   border_vertical->recomputeNonzeros();
    return border_vertical;
 }
 

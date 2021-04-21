@@ -8,6 +8,6 @@
 #include "QpPresolver.h"
 
 
-QpPresolver::QpPresolver(const Data& prob, Postsolver* postsolver)
+QpPresolver::QpPresolver(const Problem& prob, Postsolver* postsolver)
  : Presolver(prob, postsolver)
 {}

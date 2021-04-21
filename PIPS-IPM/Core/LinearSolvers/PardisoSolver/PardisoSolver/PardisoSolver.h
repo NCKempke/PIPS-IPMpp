@@ -74,7 +74,7 @@ protected:
   std::map<int,int> diagMap;
 
   /** temporary storage for the factorization process */
-  double* nvec{}; //temporary vec
+  double* nvec{}; //temporary first
 
   /** buffer for solution of solve phase */
   std::vector<double> sol;

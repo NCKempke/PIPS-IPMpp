@@ -4,7 +4,7 @@
 
 #include "sFactoryAug.h"
 
-#include "sData.h"
+#include "DistributedQP.hpp"
 
 #include "StochTree.h"
 #include "StochInputTree.h"
@@ -13,17 +13,14 @@
 #include "sLinsysRootAugHierInner.h"
 #include "sLinsysRootBordered.h"
 
-sFactoryAug::sFactoryAug( StochInputTree* inputTree, MPI_Comm comm)
-  : sFactory(inputTree, comm)
-{};
+sFactoryAug::sFactoryAug(StochInputTree* inputTree, MPI_Comm comm) : sFactory(inputTree, comm) {};
 
-sLinsysRoot* sFactoryAug::newLinsysRoot()
-{
-   assert( data );
+sLinsysRoot* sFactoryAug::newLinsysRoot() {
+   assert(data);
    return new sLinsysRootAug(this, data);
 }
 
-sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
+sLinsysRoot* sFactoryAug::newLinsysRoot(DistributedQP* prob,
 			   OoqpVector* dd, OoqpVector* dq,
 			   OoqpVector* nomegaInv,
 			   OoqpVector* regP,
@@ -38,15 +35,13 @@ sLinsysRoot* sFactoryAug::newLinsysRoot(sData* prob,
       return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, true);
 }
 
-DoubleLinearSolver* sFactoryAug::newRootSolver(){ return nullptr;};
+DoubleLinearSolver* sFactoryAug::newRootSolver() { return nullptr; };
 
-sLinsysRoot* sFactoryAug::newLinsysRootHierarchical()
-{
+sLinsysRoot* sFactoryAug::newLinsysRootHierarchical() {
    return new sLinsysRootBordered(this, data);
 }
 
-Data* sFactoryAug::switchToHierarchicalData( Data* )
-{
+Problem* sFactoryAug::switchToHierarchicalData(Problem*) {
 
    // TODO : DELETEME
 //   OoqpVector* x_bef = tree->newPrimalVector();
@@ -70,16 +65,16 @@ Data* sFactoryAug::switchToHierarchicalData( Data* )
 //
 //   const double Q2norm_bef = x_bef2->twonorm();
 //   const double Q1norm_bef = x_bef2->onenorm();
-//   data = dynamic_cast<sData*>(prob_in);
+//   data = dynamic_cast<DistributedQP*>(prob_in);
 
-   hier_tree_swap.reset( tree->clone() );
+   hier_tree_swap.reset(tree->clone());
 
-   tree = tree->switchToHierarchicalTree( data );
+   tree = tree->switchToHierarchicalTree(data);
 
-   assert( tree->getChildren().size() == 1 );
-   assert( tree->isHierarchicalRoot() );
+   assert(tree->getChildren().size() == 1);
+   assert(tree->isHierarchicalRoot());
 
-   assert( data->isHierarchyRoot() );
+   assert(data->isHierarchyRoot());
 
 // TODO : DELETEME
 //   OoqpVector* x_after = tree->newPrimalVector();
@@ -113,9 +108,8 @@ Data* sFactoryAug::switchToHierarchicalData( Data* )
    return data;
 }
 
-void sFactoryAug::switchToOriginalTree()
-{
-   assert( hier_tree_swap );
+void sFactoryAug::switchToOriginalTree() {
+   assert(hier_tree_swap);
 
    sTree* tmp = tree;
    tree = hier_tree_swap.get();

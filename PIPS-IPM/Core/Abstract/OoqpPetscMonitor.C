@@ -13,7 +13,7 @@ OoqpPetscSelfMonitor::OoqpPetscSelfMonitor()
 }
 
 
-void OoqpPetscSelfMonitor::doIt( Solver * solver, Data * data,
+void OoqpPetscSelfMonitor::doIt( Solver * solver, Problem * data,
 				 Variables * vars,
 				 Residuals * resids,
 				 double alpha, double sigma,

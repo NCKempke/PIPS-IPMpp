@@ -14,7 +14,7 @@
 #include "IotrRefCount.h"
 #include "SmartPointer.h"
 #include "StochPostsolver.h"
-#include "sData.h"
+#include "DistributedQP.hpp"
 #include "pipsport.h"
 
 enum ScalerType {SCALER_NONE, SCALER_EQUI_STOCH, SCALER_GEO_STOCH, SCALER_GEO_EQUI_STOCH};
@@ -24,7 +24,7 @@ class PreprocessFactory : public IotrRefCount
 {
 public:
   
-      static Scaler* makeScaler(Data* data, ScalerType type)
+      static Scaler* makeScaler(Problem* data, ScalerType type)
       {
          switch( type )
             {
@@ -39,7 +39,7 @@ public:
             }
       };
 
-      static Presolver* makePresolver(sTree* tree, const Data* data, PresolverType type, Postsolver* postsolver = nullptr)
+      static Presolver* makePresolver(sTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr)
       {
          assert( data );
          switch( type )
@@ -52,9 +52,9 @@ public:
       };
 
       // todo : not sure about the factory design here
-      static Postsolver* makePostsolver(const Data* original_problem)
+      static Postsolver* makePostsolver(const Problem* original_problem)
       {
-         return new StochPostsolver(dynamic_cast<const sData&>(*original_problem));
+         return new StochPostsolver(dynamic_cast<const DistributedQP&>(*original_problem));
       }
 };
 

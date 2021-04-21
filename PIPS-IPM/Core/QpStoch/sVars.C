@@ -1,8 +1,8 @@
 #include "sVars.h"
-#include "QpGenData.h"
+#include "QP.hpp"
 #include "OoqpVector.h"
-#include "Data.h"
-#include "QpGenResiduals.h"
+#include "Problem.h"
+#include "Residuals.h"
 #include "QpGenLinsys.h"
 #include "StochVector.h"
 #include "sTree.h"
@@ -191,7 +191,7 @@ void sVars::createChildren()
 
 }
 
-void sVars::collapseHierarchicalStructure(const sData& hier_data, const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
+void sVars::collapseHierarchicalStructure(const DistributedQP& hier_data, const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_)
 {
    dynamic_cast<StochVector&>(*x).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);

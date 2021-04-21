@@ -319,7 +319,7 @@ public:
 		      double clow[],   char    iclow[],
 		      double cupp[],   char    icupp[],
 		      double lambda[], double  pi[],
-		      double z[],      double  objectiveValue,
+		      double z[],      double  objective_value,
 		      int& iErr );
   char * defaultOutputFilename( int& iErr );
 
