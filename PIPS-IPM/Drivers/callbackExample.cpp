@@ -1,3 +1,4 @@
+#include <GondzioInteriorPointMethod.hpp>
 #include "StochInputTree.h"
 #include "PIPSIpmInterface.h"
 #include "sFactoryAug.h"
@@ -494,7 +495,8 @@ int main(int argc, char** argv) {
 
    /* use BiCGStab for outer solve */
    pips_options::setIntParameter("INNER_SC_SOLVE", 0);
-   PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   //PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   PIPSIpmInterface<sFactoryAug, GondzioInteriorPointMethod> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 
    if (rank == 0)
       std::cout << "PIPSIpmInterface created" << std::endl;

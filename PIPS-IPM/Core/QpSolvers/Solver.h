@@ -26,10 +26,94 @@ class ProblemFormulation;
  * @{
  */
 
+const unsigned int max_linesearch_points = 50;
+
 /** 
  * Abstract base class for QP solvers.
  */
 class Solver {
+public:
+   Solver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* = nullptr);
+
+   virtual ~Solver();
+
+   /** starting point heuristic */
+   virtual void start(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
+
+   /** default starting point heuristic */
+   virtual void defaultStart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
+
+   /** alternative starting point heuristic: sets the "complementary"
+    * variables to a large positive value (based on the norm of the
+    * problem data) and the remaining variables to zero */
+   virtual void dumbstart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
+
+   /** implements the interior-point method for solving the subproblem */
+   virtual TerminationCode solve(Problem& problem, Variables* iterate, Residuals* resids) = 0;
+
+   /** Mehrotra's heuristic to calculate the final step length */
+   virtual double finalStepLength(Variables* iterate, Variables* step);
+
+   /** Mehrotra's heuristic to calculate the final step length in primal and dual direction */
+   virtual void finalStepLength_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
+
+   /** perform monitor operation at each interior-point iteration */
+   virtual void
+   doMonitor(const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu, int stop_code,
+         int level);
+
+   /** perform monitor operation at each interior-point iteration */
+   virtual void
+   doMonitorPd(const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal, double alpha_dual, double sigma, int i,
+         double mu, int stop_code, int level);
+
+   /** default monitor: prints out one line of information on each
+    * interior-point iteration */
+   void defaultMonitor(const Problem* problem, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+         int status_code, int level) const;
+
+   /** this method called to test for convergence status at the end of
+    * each interior-point iteration */
+   virtual TerminationCode doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
+
+   /** default method for checking status. May be replaced by a
+    * user-defined method */
+   virtual TerminationCode defaultStatus(const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
+
+   /** method to add user-defined monitors to the monitor operations
+       performed at each iteration */
+   void addMonitor(OoqpMonitor*);
+
+   /** method to replace the defaultStatus method with a user-defined
+    *  status checking method */
+   void useStatus(Status* s) { status = s; }
+
+   /** method to replace the defaultStatus method with a user-defined
+    *  status checking method */
+   void useStartStrategy(OoqpStartStrategy* s) { startStrategy = s; }
+
+   /** enables defaultMonitor as one of the monitors */
+   void monitorSelf();
+
+   void setMuTol(double m) { mutol = m; }
+
+   double getMuTol() const { return mutol; }
+
+   void setArTol(double ar) { artol = ar; }
+
+   double getArTol() const { return artol; }
+
+   double dataNorm() const { return dnorm; }
+
+   double dataNormOrig() const { return dnorm_orig; }
+
+   /** returns a pointed to the linear system object stored in this
+    *  class */
+   LinearSystem* getLinearSystem() const { return linear_system; };
+
+   /** reset parameters to their default values */
+   virtual void reset_parameters() {};
+
 protected:
    OoqpMonitor* itsMonitors{};
    Status* status{};
@@ -109,88 +193,6 @@ protected:
    Residuals* corrector_residuals;
 
    ProblemFormulation& factory;
-
-public:
-   Solver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* = nullptr);
-
-   virtual ~Solver();
-
-   /** starting point heuristic */
-   virtual void start(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
-
-   /** default starting point heuristic */
-   virtual void defaultStart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
-
-   /** alternative starting point heuristic: sets the "complementary"
-    * variables to a large positive value (based on the norm of the
-    * problem data) and the remaining variables to zero */
-   virtual void dumbstart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
-
-   /** implements the interior-point method for solving the QP */
-   virtual TerminationCode solve(Problem& problem, Variables* iterate, Residuals* resids) = 0;
-
-   /** Mehrotra's heuristic to calculate the final step length */
-   virtual double finalStepLength(Variables* iterate, Variables* step);
-
-   /** Mehrotra's heuristic to calculate the final step length in primal and dual direction */
-   virtual void finalStepLength_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-
-   /** perform monitor operation at each interior-point iteration */
-   virtual void
-   doMonitor(const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu, int stop_code,
-         int level);
-
-   /** perform monitor operation at each interior-point iteration */
-   virtual void
-   doMonitorPd(const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal, double alpha_dual, double sigma, int i,
-         double mu, int stop_code, int level);
-
-   /** default monitor: prints out one line of information on each
-    * interior-point iteration */
-   void defaultMonitor(const Problem* problem, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
-         int status_code, int level) const;
-
-   /** this method called to test for convergence status at the end of
-    * each interior-point iteration */
-   virtual TerminationCode doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
-
-   /** default method for checking status. May be replaced by a
-    * user-defined method */
-   virtual TerminationCode defaultStatus(const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
-
-   /** method to add user-defined monitors to the monitor operations
-       performed at each iteration */
-   void addMonitor(OoqpMonitor*);
-
-   /** method to replace the defaultStatus method with a user-defined
-    *  status checking method */
-   void useStatus(Status* s) { status = s; }
-
-   /** method to replace the defaultStatus method with a user-defined
-    *  status checking method */
-   void useStartStrategy(OoqpStartStrategy* s) { startStrategy = s; }
-
-   /** enables defaultMonitor as one of the monitors */
-   void monitorSelf();
-
-   void setMuTol(double m) { mutol = m; }
-
-   double getMuTol() const { return mutol; }
-
-   void setArTol(double ar) { artol = ar; }
-
-   double getArTol() const { return artol; }
-
-   double dataNorm() const { return dnorm; }
-
-   double dataNormOrig() const { return dnorm_orig; }
-
-   /** returns a pointed to the linear system object stored in this
-    *  class */
-   LinearSystem* getLinearSystem() const { return linear_system; };
-
-   /** reset parameters to their default values */
-   virtual void reset_parameters() {};
 
 private:
    std::pair<double, double> computeUnscaledGapAndResidualNorm(const Residuals&);

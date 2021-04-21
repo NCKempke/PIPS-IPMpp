@@ -1,34 +1,24 @@
-/*
- * GondzioStochSolver.h
- *
- *  Created on: Dec 7, 2017
- *      Author: Daniel Rehfeldt
- */
+#ifndef GONDZIO_INTERIOR_POINT_METHOD_H
+#define GONDZIO_INTERIOR_POINT_METHOD_H
 
-#ifndef PIPS_IPM_GONDZIOSTOCHSOLVER_H
-#define PIPS_IPM_GONDZIOSTOCHSOLVER_H
-
+#include "pipsdef.h"
 #include "Solver.h"
 #include "Observer.h"
+#include "Variables.h"
+#include "Problem.h"
 
-class Problem;
+enum StepLengthType { PRIMAL, PRIMAL_DUAL };
 
-class Variables;
+class GondzioInteriorPointMethod : public Solver, public Observer {
+public:
+   GondzioInteriorPointMethod(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler);
 
-class ProblemFormulation;
+   virtual ~GondzioInteriorPointMethod();
 
-/**
- * Derived class of Solver implementing Gondzio-correction version of
- * Mehrotra's original predictor-corrector algorithm.
- * @ingroup QpSolvers
- */
-class GondzioStochSolver : public Solver, public Observer {
-private:
-   // returns Gondzio weight for corrector step
-   virtual void calculateAlphaWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double predictor_alpha,
-         double& alpha_candidate, double& weight_candidate);
+   TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
 
 protected:
+   StepLengthType step_length_type;
    unsigned int n_linesearch_points;
    Variables* temp_step;
 
@@ -57,47 +47,30 @@ protected:
    bool bicgstab_converged;
    double bigcstab_norm_res_rel;
    int bicg_iterations;
-
-   void computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals);
-
-   void computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu);
-
-   void computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr);
-
-   void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
-
-   void registerBiCGStabOvserver(LinearSystem* sys);
-
-   void setBiCGStabTol(int iteration) const;
-
    // controls whether setBiCGTol applies an dynamic schedule for the BiCGStab tolerance or just uses the user defined input (OUTER_BICG_TOL)
    bool dynamic_bicg_tol;
 
+   void computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals);
+   void computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu);
+   void computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr);
+   void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
+   void registerBiCGStabOvserver(LinearSystem* sys);
+   void setBiCGStabTol(int iteration) const;
    void adjustLimitGondzioCorrectors();
-
    bool decreasePreconditionerImpact(LinearSystem* sys) const;
-
    double computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const;
-
-   void computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const;
-
-   void doProbing(Problem* prob, Variables* iterate, Residuals* residuals, double& alpha);
-
+   void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
+   void doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual);
    bool restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_limit, double alpha_max) const;
-
    void pushConvergedVarsAwayFromBounds(Problem& problem, Variables& vars) const;
-
    void pushSmallComplementarityProducts(const Problem& problem, Variables& iterate, Residuals& residuals) const;
-
-public:
-
-   GondzioStochSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler = nullptr);
-
-   virtual ~GondzioStochSolver();
-
-   TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
-
    void notifyFromSubject() override;
+
+private:
+   // returns Gondzio weight for corrector step
+   virtual void
+   calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
+         double& step_length_primal_candidate, double& step_length_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
 };
 
-#endif /* PIPS_IPM_GONDZIOSTOCHSOLVER_H */
+#endif
