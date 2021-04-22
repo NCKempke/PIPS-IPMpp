@@ -39,7 +39,7 @@ class Residuals;
 class QpGenLinsys : public LinearSystem, public Subject {
 
 public:
-      enum class BiCGStabStatus : int
+      enum class IterativeSolverSolutionStatus : int
       {
          DID_NOT_RUN = -2,
          NOT_CONVERGED_MAX_ITERATIONS = -1,
@@ -50,17 +50,17 @@ public:
          DIVERGED = 5
       };
 
-      friend std::ostream& operator<<(std::ostream& os, BiCGStabStatus status)
+      friend std::ostream& operator<<(std::ostream& os, IterativeSolverSolutionStatus status)
       {
           switch (status)
           {
-              case BiCGStabStatus::DID_NOT_RUN : return os << "did_not_run" ;
-              case BiCGStabStatus::NOT_CONVERGED_MAX_ITERATIONS: return os << "not converged int max iterations";
-              case BiCGStabStatus::CONVERGED: return os << "converged";
-              case BiCGStabStatus::SKIPPED: return os << "skipped";
-              case BiCGStabStatus::STAGNATION: return os << "stagnation occurred";
-              case BiCGStabStatus::BREAKDOWN: return os << "breakdown occurred";
-              case BiCGStabStatus::DIVERGED: return os << "diverged";
+              case IterativeSolverSolutionStatus::DID_NOT_RUN : return os << "did not run" ;
+              case IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS: return os << "not converged int max iterations";
+              case IterativeSolverSolutionStatus::CONVERGED: return os << "converged";
+              case IterativeSolverSolutionStatus::SKIPPED: return os << "skipped";
+              case IterativeSolverSolutionStatus::STAGNATION: return os << "stagnation occurred";
+              case IterativeSolverSolutionStatus::BREAKDOWN: return os << "breakdown occurred";
+              case IterativeSolverSolutionStatus::DIVERGED: return os << "diverged";
               // omit default case to trigger compiler warning for missing cases
           };
           return os << static_cast<std::uint16_t>(status);
@@ -68,7 +68,7 @@ public:
 
 protected:
    /** observer pattern for convergence status of BiCGStab when calling solve */
-   BiCGStabStatus bicg_conv_flag{BiCGStabStatus::DID_NOT_RUN};
+   IterativeSolverSolutionStatus bicg_conv_flag{IterativeSolverSolutionStatus::DID_NOT_RUN};
    int bicg_niterations{-1};
 
    double bicg_resnorm{0.0};
@@ -130,13 +130,13 @@ protected:
 
    /** Work vectors for iterative refinement of the XYZ linear system */
    OoqpVector* sol{};
+   OoqpVector* sol2{};
    OoqpVector* res{};
    OoqpVector* resx{};
    OoqpVector* resy{};
    OoqpVector* resz{};
 
    /** Work vectors for BiCGStab */
-   OoqpVector* sol2{};
    OoqpVector* sol3{};
    OoqpVector* res2{};
    OoqpVector* res3{};
@@ -248,14 +248,14 @@ public:
     virtual void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) = 0;
 
 protected:
-    void computeResidualXYZ(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
-
+    void compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
+    void compute_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
    //void computeResidualsReducedSlacks(const QP& data);
 
    //void computeResidualsFull(const QP& data);
 
-   void matXYZMult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx, OoqpVector& soly,
-         OoqpVector& solz);
+   void system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx,
+      OoqpVector& soly, OoqpVector& solz, bool use_regularized_system);
 
    //void matReducedSlacksMult(const QP& data);
 
@@ -266,11 +266,10 @@ protected:
    //void matReducedInfnorm(const QP& data);
 
    //void matFullInfnorm(const QP& data);
-
+   void printDiagonalNorms() const;
 
    // TODO : move to LinearSystem level
-   void
-   solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm);
+   void solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm);
 
    void solveCompressedIterRefin(const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual);
 

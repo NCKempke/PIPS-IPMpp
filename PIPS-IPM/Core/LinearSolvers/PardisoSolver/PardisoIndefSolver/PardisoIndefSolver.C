@@ -148,7 +148,7 @@ void PardisoIndefSolver::matrixChanged()
          factorizeFromDense();
 
       if( !pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0 )
-         printf("\n PardisoIndefSolver: Schur complement factorization completed \n ");
+         printf("\n PardisoIndefSolver: Schur complement factorization completed \n");
    }
 }
 
@@ -168,7 +168,7 @@ void PardisoIndefSolver::matrixRebuild( DoubleMatrix& matrixNew )
       factorizeFromSparse(matrixNewSym);
 
       if( !pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0 )
-         printf("\n Schur complement factorization completed \n ");
+         printf("\n Schur complement factorization completed \n");
    }
 }
 

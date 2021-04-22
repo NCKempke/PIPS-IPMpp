@@ -339,15 +339,14 @@ namespace pips_options
       /// REGULARIZATION FOR LINEAR SYSTEM
       bool_options["REGULARIZATION"] = false;
 
-      double_options["REGULARIZATION_INITIAL_PRIMAL"] = 1e-10;
-      double_options["REGULARIZATION_INITIAL_DUAL_Y"] = -1e-10;
-      double_options["REGULARIZATION_INITIAL_DUAL_Z"] = -1e-10;
+      double_options["REGULARIZATION_INITIAL_PRIMAL"] = 1;
+      double_options["REGULARIZATION_INITIAL_DUAL_Y"] = 0;
+      double_options["REGULARIZATION_INITIAL_DUAL_Z"] = 0;
 
       double_options["REGULARIZATION_MIN_PRIMAL"] = 1e-20;
-      double_options["REGULARIZATION_MIN_DUAL"] = -1e-20;
+      double_options["REGULARIZATION_MIN_DUAL"] = 1e-20;
 
       setPresolveDefaults();
-
    }
 
    void StochOptions::setPresolveDefaults()

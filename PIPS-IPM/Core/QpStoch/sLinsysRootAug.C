@@ -1008,9 +1008,7 @@ void sLinsysRootAug::addLinkConsBlock0Matrix( DistributedQP *prob, SparseGenMatr
 
 
 /** rxy = beta*rxy + alpha * SC * x */
-void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy,
-              double alpha, SimpleVector& x,
-              DistributedQP* prob)
+void sLinsysRootAug::SCmult( double beta, SimpleVector& rxy, double alpha, SimpleVector& x, DistributedQP* prob)
 {
    assert(false && "TODO: implement regularization");
   //if (iAmDistrib) {
