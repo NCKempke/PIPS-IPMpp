@@ -494,18 +494,17 @@ bool GondzioInteriorPointMethod::restartIterateBecauseOfPoorStep(bool& pure_cent
    return false;
 }
 
-void GondzioInteriorPointMethod::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& vars) const {
+void GondzioInteriorPointMethod::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& iterate) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
-       vars.mu() < mu_limit_push_converged_vars_from_bound) {
-      Variables& qpvars = dynamic_cast<Variables&>(vars);
+         iterate.mu() < mu_limit_push_converged_vars_from_bound) {
 
       const double convergence_tol = 1e-8;
-      const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
+      const double average_dist = iterate.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
 
       if (average_dist < 1e-8) {
          if (PIPS_MPIgetRank() == 0)
             std::cout << "Pushing converged vars away from bound: avg_dist: " << average_dist << std::endl;
-         qpvars.pushSlacksFromBound(average_dist / 10., average_dist);
+         iterate.pushSlacksFromBound(average_dist / 10., average_dist);
       }
       else if (PIPS_MPIgetRank() == 0)
          std::cout << "No push done.. avg was : " << average_dist << std::endl;
@@ -513,10 +512,9 @@ void GondzioInteriorPointMethod::pushConvergedVarsAwayFromBounds(Problem& proble
 }
 
 /* initially adapted from hopdm */ // TODO : check some more
-void GondzioInteriorPointMethod::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate_in, Residuals& /*residuals*/ ) const {
+void GondzioInteriorPointMethod::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate, Residuals& /*residuals*/ ) const {
    if (PIPS_MPIgetRank() == 0)
       std::cout << "Pushing small complementarity products ... ";
-   Variables& iterate = dynamic_cast<Variables&>(iterate_in);
 
    const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / problem.nx );
 

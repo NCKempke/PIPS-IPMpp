@@ -46,12 +46,11 @@ double updateNormAndPrint(double norm, const OoqpVector& vec, bool print, std::s
    return std::max(norm, infnorm);
 }
 
-void Residuals::evaluate(Problem& problem, Variables* iterate_in, bool print_resids) {
+void Residuals::evaluate(Problem& problem, Variables* iterate, bool print_resids) {
 #ifdef TIMING
    print_resids = true;
 #endif
    const int myRank = PIPS_MPIgetRank();
-   Variables* iterate = (Variables*) iterate_in;
 
    double norm = 0.0, gap = 0.0;
    primal_objective = 0.0;
