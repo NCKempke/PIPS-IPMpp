@@ -26,7 +26,7 @@
 #include <cmath>
 
 #include "mpi.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "QpGenLinsys.h"
 #include "sLinsysRoot.h"
 
@@ -515,7 +515,7 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool& pure_centering_st
 void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& vars) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
        vars.mu() < mu_limit_push_converged_vars_from_bound) {
-      QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
+      Variables& qpvars = dynamic_cast<Variables&>(vars);
 
       const double convergence_tol = 1e-8;
       const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
@@ -534,7 +534,7 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Varia
 void GondzioStochSolver::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate_in, Residuals& /*residuals*/ ) const {
    if (PIPS_MPIgetRank() == 0)
       std::cout << "Pushing small complementarity products ... ";
-   QpGenVars& iterate = dynamic_cast<QpGenVars&>(iterate_in);
+   Variables& iterate = dynamic_cast<Variables&>(iterate_in);
 
    const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / problem.nx );
 

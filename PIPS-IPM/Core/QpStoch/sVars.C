@@ -16,7 +16,7 @@
 sVars::sVars( const sTree* tree,
 	     OoqpVector * ixlow_in, OoqpVector * ixupp_in,
 	     OoqpVector * iclow_in, OoqpVector * icupp_in)
-  : QpGenVars()
+  : Variables()
 {
   /* not in use anymore */
   assert(false);
@@ -81,7 +81,7 @@ sVars::sVars( const sTree* tree, OoqpVector * x_in, OoqpVector * s_in,
 	      OoqpVector * ixupp_in, long long nxuppGlobal,
 	      OoqpVector * iclow_in, long long mclowGlobal,
 	      OoqpVector * icupp_in, long long mcuppGlobal)
-  : QpGenVars()
+  : Variables()
 {
 
   stochNode = tree;
@@ -134,7 +134,7 @@ sVars::sVars( const sTree* tree, OoqpVector * x_in, OoqpVector * s_in,
   createChildren();
 }
 
-sVars::sVars(const sVars& vars) : QpGenVars(vars)
+sVars::sVars(const sVars& vars) : Variables(vars)
 {
   stochNode = vars.stochNode;
   for(unsigned int i = 0; i < vars.children.size(); ++i)

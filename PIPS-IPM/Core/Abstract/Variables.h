@@ -6,6 +6,21 @@
 #define VARIABLES_H
 
 #include <cassert>
+#include "OoqpVectorHandle.h"
+
+class QpGen;
+class LinearAlgebraPackage;
+class Problem;
+
+/** Indicates what type is the blocking variable in the step length
+ * determination. If tblock, then the blocking variable is one of the
+ * slack variables t for a general lower bound, and so on. Special
+ * value no_block is for the case in which a step length of 1 can be
+ * taken without hitting the bound.  */
+
+enum {
+   no_block = 0, t_block = 1, lambda_block = 2, u_block = 3, pi_block = 4, v_block = 5, gamma_block = 6, w_block = 7, phi_block = 8
+};
 
 /**
  * @file Variables.h
@@ -14,150 +29,161 @@
 
 class LinearSystem;
 class Residuals;
-class Problem;
 class Solver;
+class MpsReader;
+
+#ifdef TESTING
+class VariablesTester;
+#endif
+
 /**
  * Holds the variables used by the interior point solver. In terms of
  * in our abstract problem formulation, these variables are the
  * vectors x, y, z and s.
  *
  * @ingroup AbstractProblemFormulation */
-class Variables
-{
+class Variables {
 public:
-  /** number of complementary primal-dual variables. */
-  long long nComplementaryVariables;
-  
-  /** compute complementarity gap, obtained by taking the inner
-      product of the complementary vectors and dividing by the total
-      number of components */
-  virtual double mu() = 0;
+#ifdef TESTING
+   friend VariablesTester;
+#endif
 
-  /** compute the complementarity gap resulting from a step of length
-   * "alpha_primal" along primal direction of "step" and
-   * "alpha_dual" along dual direction of "step" */
-  virtual double mustep_pd( const Variables* /*step*/, double /*alpha_primal*/, double /*alpha_dual*/ )
-  {
-    assert(0 && "not implemented here");
-    return 0;
-  }
+   /** number of complementary primal-dual variables. */
+   long long nComplementaryVariables;
 
-  /** negate the value of all the variables in this structure */
-  virtual void negate() = 0;
+   long long nx, nxupp, nxlow;
+   long long my;
+   long long mz, mcupp, mclow;
 
-  /** given variables b, compute a <- a + alpha b, where a are the
-      variables in this class */
-  virtual void saxpy( const Variables *b, double alpha) = 0;
-  
-  /** given variables b, compute a <- a + alpha_primal * b_primal + alpha_dual * b_dual,
-   *  where a are the variables in this class
-   *
-   *  @see saxpy
-   */
-  virtual void saxpy_pd( const Variables* /*b*/, double /*alpha_primal*/, double /*alpha_dual*/)
-  {
-    assert(0 && "not implemented here");
-  }
+   OoqpVectorHandle ixlow;
+   OoqpVectorHandle ixupp;
+   OoqpVectorHandle icupp;
+   OoqpVectorHandle iclow;
+   Variables(){};
 
-  /** calculate the largest alpha in (0,1] such that the nonnegative
-   * variables stay nonnegative in the given search direction. In the
-   * abstract problem formulation, this is the largest value of alpha
-   * such that (s,z) + alpha * (b->s,b->z) >= 0.  
-   *
-   * @see findBlocking
-   */
-  virtual double stepbound( const Variables *b ) = 0;
+   OoqpVectorHandle x;
+   OoqpVectorHandle s;
+   OoqpVectorHandle y;
+   OoqpVectorHandle z;
 
-  /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
-     * variables stay nonnegative in the given search direction b. In the
-     * abstract problem formulation, this is the largest value of alpha
-     * such that (s,z) + alpha_primal * (b->s, 0) + alpha_dual * (0, b->z) >= 0.
-     *
-     * @see stepbound
-     */
-  virtual void stepbound_pd( const Variables* /*b*/, double& /*alpha_primal*/, double& /*alpha_dual*/ )
-  {
-    assert(0 && "not implemented here");
-  }
+   OoqpVectorHandle v;
+   OoqpVectorHandle gamma;
 
-  /** Performs the same function as stepbound, and supplies additional
-   * information about which component of the nonnegative variables is
-   * responsible for restricting alpha. In terms of the abstract
-   * formulation, the components have the following meanings.
-   *
-   * @param step  step in the variables
-   * @param primalValue the value of the blocking component of the
-   * primal variables s.
-   * 
-   * @param primalStep the corresponding value of the blocking
-   * component of the primal step variables b->s.
-   *
-   * @param dualValue the value of the blocking component of the dual
-   * variables z.
-   * 
-   * @param dualStep the corresponding value of the blocking component
-   * of the dual step variables b->z.
-   *
-   * @param firstOrSecond  1 if the primal step is blocking, 2 if the dual
-   * step is block, 0 if no step is blocking.  
-   *
-   * @see stepbound
-   * */
-  virtual double findBlocking( const Variables * step,
-			       double & primalValue,
-			       double & primalStep,
-			       double & dualValue,
-			       double & dualStep,
-			       int& firstOrSecond ) = 0;
+   OoqpVectorHandle w;
+   OoqpVectorHandle phi;
 
-  virtual void findBlocking_pd( const Variables* /*step*/, double& /*primalValue*/, double& /*primalStep*/,
-  				double& /*dualValue*/, double& /*dualStep*/, double& /*primalValue_d*/, double& /*primalStep_d*/,
-  				double& /*dualValue_d*/, double& /*dualStep_d*/,
-  				double& /*alphaPrimal*/, double& /*alphaDual*/,
-				bool& /*primalBlocking*/, bool& /*dualBlocking*/ )
-  {
-    assert(0 && "not implemented here");
-  }
+   OoqpVectorHandle t;
+   OoqpVectorHandle lambda;
 
-  /** In the abstract QP formulation, sets s to alpha, z to beta and
-   *  the other variable components to zero. */
-  virtual void interiorPoint( double alpha, double beta ) = 0;
+   OoqpVectorHandle u;
+   OoqpVectorHandle pi;
 
-  /** In the standard QP formulation, sets s += alpha, z += beta */
-  virtual void shiftBoundVariables( double alpha, double beta ) = 0;
+   /** constructor in which the data and variable pointers are set to
+       point to the given arguments */
+   Variables(OoqpVector* x_in, OoqpVector* s_in, OoqpVector* y_in, OoqpVector* z_in, OoqpVector* v_in, OoqpVector* gamma_in, OoqpVector* w_in,
+   OoqpVector* phi_in, OoqpVector* t_in, OoqpVector* lambda_in, OoqpVector* u_in, OoqpVector* pi_in, OoqpVector* ixlow_in, OoqpVector* ixupp_in,
+         OoqpVector* iclow_in, OoqpVector* icupp_in);
 
-  /** The amount by which the current variables violate the
-   *  non-negativity constraints. */
-  virtual double violation() = 0;
+   /** constructor that creates variables objects of specified
+       dimensions. */
+   Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, OoqpVector* ixlow, OoqpVector* ixupp, OoqpVector* iclow,
+   OoqpVector* icupp);
 
-  /** print the variables */
-  virtual void print();
+   Variables(const Variables& vars);
 
-  /** copy the variables */
-  virtual void copy(const Variables *b) = 0;
+   double getAverageDistanceToBoundForConvergedVars(const Problem&, double tol) const;
 
-  /** compute the 1-norm of the variables */
-  virtual double onenorm() const = 0;
+   void pushSlacksFromBound(double tol, double amount);
 
-  /** compute the inf-norm of the variables */
-  virtual double infnorm() const = 0;
+   /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
+   double mu();
 
-  /** set variables to zero */
-  virtual void setToZero() = 0;
+   double mustep_pd(const Variables* step, double alpha_primal, double alpha_dual);
 
-  /** print norms of all involved quantities */
-  virtual void printNorms() const
-  {
-     assert(0 && "not implemented here");
-  }
+   void saxpy(const Variables* b, double alpha);
+   void saxpy_pd(const Variables* b, double alpha_primal, double alpha_dual);
 
-  /** set not indicated bounds to +- value or 10 * the current max of the x variables */
-  virtual void setNotIndicatedBoundsTo( Problem& /*data*/, double /*value*/ )
-  {
-     assert(0 && "not implemented here");
-  }
+   void negate();
 
-  virtual ~Variables() = default;
+   /** calculate the largest alpha in (0,1] such that the nonnegative
+    * variables stay nonnegative in the given search direction. In the
+    * general QP problem formulation, this is the largest value of
+    * alpha such that (t,u,v,w,lambda,pi,phi,gamma) + alpha *
+    * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
+    *
+    * @see findBlocking */
+   double stepbound(const Variables* b);
+
+   /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
+    * variables stay nonnegative in the given search direction b. In the
+    * abstract problem formulation, this is the largest value of alphas
+    * such that (s,z) + alpha_primal * (b->s,0) + alpha_dual * (0,b->z) >= 0.
+    *
+    * @see stepbound
+    */
+   void stepbound_pd(const Variables* b, double& alpha_primal, double& alpha_dual);
+
+   /** Performs the same function as stepbound, and supplies additional
+    * information about which component of the nonnegative variables is
+    * responsible for restricting alpha. In terms of the abstract
+    * formulation, the components have the following meanings.
+    *
+    * @param primalValue the value of the blocking component of the
+    * primal variables (u,t,v,w).
+    *
+    * @param primalStep the corresponding value of the blocking
+    * component of the primal step variables (b->u,b->t,b->v,b->w).
+    *
+    * @param dualValue the value of the blocking component of the dual
+    * variables (lambda,pi,phi,gamma).
+    *
+    * @param dualStep the corresponding value of the blocking component
+    * of the dual step variables (b->lambda,b->pi,b->phi,b->gamma).
+    *
+    * @param firstOrSecond  1 if the primal step is blocking, 2 if the dual
+    * step is block, 0 if no step is blocking.
+    *
+    * @see stepbound
+    * */
+   double findBlocking(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
+
+   void findBlocking_pd(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
+         double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
+         bool& dualBlocking);
+
+   /** sets components of (u,t,v,w) to alpha and of
+       (lambda,pi,phi,gamma) to beta */
+   void interiorPoint(double alpha, double beta);
+
+   /** add alpha to components of (u,t,v,w) and beta to components of
+       (lambda,pi,phi,gamma) */
+   void shiftBoundVariables(double alpha, double beta);
+
+   /** check whether this is an interior point. Useful as a sanity check. */
+   int isInteriorPoint();
+
+   double violation();
+
+   void print();
+   void printSolution(MpsReader* reader, Problem* problem, int& iErr);
+
+   void unscaleSolution(Problem* problem);
+   void unscaleBounds(Problem* problem);
+
+   int validNonZeroPattern();
+
+   void copy(const Variables* b);
+
+   double onenorm() const;
+   double infnorm() const;
+
+   void setToZero();
+
+   void printNorms() const;
+
+   void setNotIndicatedBoundsTo(Problem& data, double value);
+
+   virtual ~Variables() = default;
 };
 
 #endif

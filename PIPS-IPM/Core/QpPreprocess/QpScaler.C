@@ -11,7 +11,7 @@
 #include "QpScaler.h"
 #include "StochVector.h"
 #include "QP.hpp"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "Residuals.h"
 #include "pipsdef.h"
 
@@ -46,7 +46,7 @@ double QpScaler::getObjUnscaled(double objval) const
 
 Variables* QpScaler::getVariablesUnscaled(const Variables& vars) const
 {
-   QpGenVars* qp_vars = new QpGenVars(dynamic_cast<const QpGenVars&>(vars)); 
+   Variables* qp_vars = new Variables(dynamic_cast<const Variables&>(vars)); 
    unscaleVariables(*qp_vars);
 
    return qp_vars;
@@ -71,7 +71,7 @@ void QpScaler::unscaleVariables( Variables& vars ) const
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
 
-   QpGenVars& qp_vars = dynamic_cast<QpGenVars&>(vars); 
+   Variables& qp_vars = dynamic_cast<Variables&>(vars); 
 
    qp_vars.x->componentMult(*vec_colscale);
    qp_vars.s->componentDiv(*vec_rowscaleC);

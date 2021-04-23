@@ -23,7 +23,7 @@ class QP;
 
 class DistributedQP;
 
-class QpGenVars;
+class Variables;
 
 class StochInputTree;
 

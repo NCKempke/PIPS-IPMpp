@@ -5,7 +5,7 @@
 #include "QpGenLinsys.h"
 #include "QP.hpp"
 #include "Residuals.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "OoqpVector.h"
 #include "SimpleVector.h"
 #include "LinearAlgebraPackage.h"
@@ -211,7 +211,7 @@ QpGenLinsys::~QpGenLinsys() {
 }
 
 void QpGenLinsys::factorize(Problem* /* problem */, Variables* vars_in) {
-   QpGenVars* vars = (QpGenVars*) vars_in;
+   Variables* vars = (Variables*) vars_in;
 
    assert(vars->validNonZeroPattern());
 
@@ -269,8 +269,8 @@ QpGenLinsys::computeDiagonals(OoqpVector& dd_, OoqpVector& omega, OoqpVector& t,
 
 void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in, Variables* step_in) {
    QP* problem = (QP*) prob_in;
-   QpGenVars* vars = (QpGenVars*) vars_in;
-   QpGenVars* step = (QpGenVars*) step_in;
+   Variables* vars = (Variables*) vars_in;
+   Variables* step = (Variables*) step_in;
    Residuals* res = (Residuals*) res_in;
 
    assert(vars->validNonZeroPattern());
