@@ -9,7 +9,7 @@
 
 class QP;
 
-class QpGenVars;
+class Variables;
 
 class QpGenSparseSeq : public QpGen {
 protected:

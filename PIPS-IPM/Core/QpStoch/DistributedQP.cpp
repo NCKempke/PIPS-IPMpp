@@ -2204,7 +2204,7 @@ void DistributedQP::AddChild(DistributedQP* child) {
    children.push_back(child);
 }
 
-double DistributedQP::objective_value(const QpGenVars* vars) const {
+double DistributedQP::objective_value(const Variables* vars) const {
    const StochVector& x = dynamic_cast<const StochVector&>(*vars->x);
    OoqpVectorHandle temp(x.clone());
 

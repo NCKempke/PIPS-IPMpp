@@ -307,7 +307,7 @@ public:
   double objconst() { return -objminus; }
 
   /** print the solution contained in the individual arrays of the
-      QpGenVars "variables" object as an ascii file,associating the
+      Variables "variables" object as an ascii file,associating the
       numerical values with the names stored in the MpsReader
       structure */
   void printSolution( double x[],      int     nx,

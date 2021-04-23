@@ -26,7 +26,7 @@
 #include <cmath>
 
 #include "mpi.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "QpGenLinsys.h"
 #include "sLinsysRoot.h"
 
@@ -512,18 +512,17 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool& pure_centering_st
    return false;
 }
 
-void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& vars) const {
+void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& iterate) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
-       vars.mu() < mu_limit_push_converged_vars_from_bound) {
-      QpGenVars& qpvars = dynamic_cast<QpGenVars&>(vars);
+         iterate.mu() < mu_limit_push_converged_vars_from_bound) {
 
       const double convergence_tol = 1e-8;
-      const double average_dist = qpvars.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
+      const double average_dist = iterate.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);
 
       if (average_dist < 1e-8) {
          if (PIPS_MPIgetRank() == 0)
             std::cout << "Pushing converged vars away from bound: avg_dist: " << average_dist << std::endl;
-         qpvars.pushSlacksFromBound(average_dist / 10.0, average_dist);
+         iterate.pushSlacksFromBound(average_dist / 10.0, average_dist);
       }
       else if (PIPS_MPIgetRank() == 0)
          std::cout << "No push done.. avg was : " << average_dist << std::endl;
@@ -531,10 +530,9 @@ void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Varia
 }
 
 /* initially adapted from hopdm */ // TODO : check some more
-void GondzioStochSolver::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate_in, Residuals& /*residuals*/ ) const {
+void GondzioStochSolver::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate, Residuals& /*residuals*/ ) const {
    if (PIPS_MPIgetRank() == 0)
       std::cout << "Pushing small complementarity products ... ";
-   QpGenVars& iterate = dynamic_cast<QpGenVars&>(iterate_in);
 
    const double tol_small_comp = 1e-5 * iterate.mu(); //std::max(, 1e-4 * residuals.dualityGap() / problem.nx );
 

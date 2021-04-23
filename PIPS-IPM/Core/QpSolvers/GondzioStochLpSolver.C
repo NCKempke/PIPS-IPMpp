@@ -14,32 +14,19 @@
 #include "Status.h"
 #include "Problem.h"
 #include "ProblemFormulation.h"
-
 #include "sFactory.h"
-#include "StochResourcesMonitor.h"
 
 #include "DistributedQP.hpp"
 #include "sVars.h"
 #include "sLinsysRoot.h"
 
-#include <cstring>
 #include <iostream>
-#include <fstream>
 #include <algorithm>
 
 #include <cstdio>
 #include <cassert>
 #include <cmath>
-
-#include "StochVector.h"
 #include "mpi.h"
-#include "QpGenVars.h"
-#include "Residuals.h"
-
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <limits>
 
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;

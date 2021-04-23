@@ -1,7 +1,7 @@
 #ifndef QPGENSTOCHVARS
 #define QPGENSTOCHVARS
 
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "OoqpVectorHandle.h"
 #include "StochVector.h"
 #include <vector>
@@ -11,7 +11,7 @@ class QP;
 class LinearAlgebraPackage;
 class sTree;
 
-class sVars : public QpGenVars {
+class sVars : public Variables {
 public:
   sVars( const sTree* tree,
 	 OoqpVector * ixlow_in, OoqpVector * ixupp_in,

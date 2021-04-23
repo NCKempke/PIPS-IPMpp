@@ -1,16 +1,14 @@
 #include "Residuals.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "Problem.h"
 #include "LinearAlgebraPackage.h"
 #include "pipsdef.h"
 
 #include <iostream>
 
-Residuals::Residuals(const Residuals& residuals) :
-   mResidualNorm{residuals.mResidualNorm}, mDualityGap{residuals.mDualityGap}, primal_objective{residuals.primal_objective},
-   dual_objective{residuals.dual_objective}, nx{residuals.nx}, my{residuals.my}, mz{residuals.mz},
-   nxupp{residuals.nxupp}, nxlow{residuals.nxlow}, mcupp{residuals.mcupp}, mclow{residuals.mclow}
-   {
+Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResidualNorm}, mDualityGap{residuals.mDualityGap},
+      primal_objective{residuals.primal_objective}, dual_objective{residuals.dual_objective}, nx{residuals.nx}, my{residuals.my}, mz{residuals.mz},
+      nxupp{residuals.nxupp}, nxlow{residuals.nxlow}, mcupp{residuals.mcupp}, mclow{residuals.mclow} {
    ixlow = OoqpVectorHandle(residuals.ixlow->cloneFull());
    ixupp = OoqpVectorHandle(residuals.ixupp->cloneFull());
    iclow = OoqpVectorHandle(residuals.iclow->cloneFull());
@@ -35,7 +33,7 @@ Residuals::Residuals(const Residuals& residuals) :
    rphi = OoqpVectorHandle(residuals.rphi->cloneFull());
 }
 
-double updateNormAndPrint(double norm, const OoqpVector &vec, bool print, std::string &&name) {
+double updateNormAndPrint(double norm, const OoqpVector& vec, bool print, std::string&& name) {
    const double infnorm = vec.infnorm();
 
    if (print) {
@@ -48,12 +46,11 @@ double updateNormAndPrint(double norm, const OoqpVector &vec, bool print, std::s
    return std::max(norm, infnorm);
 }
 
-void Residuals::evaluate(Problem& problem, Variables *iterate_in, bool print_resids) {
+void Residuals::evaluate(Problem& problem, Variables* iterate, bool print_resids) {
 #ifdef TIMING
    print_resids = true;
 #endif
    const int myRank = PIPS_MPIgetRank();
-   QpGenVars *iterate = (QpGenVars *) iterate_in;
 
    double norm = 0.0, gap = 0.0;
    primal_objective = 0.0;
@@ -72,8 +69,10 @@ void Residuals::evaluate(Problem& problem, Variables *iterate_in, bool print_res
 
    iterate->gamma->selectNonZeros(*ixlow);
    iterate->phi->selectNonZeros(*ixupp);
-   if (nxlow > 0) rQ->axpy(-1.0, *iterate->gamma);
-   if (nxupp > 0) rQ->axpy(1.0, *iterate->phi);
+   if (nxlow > 0)
+      rQ->axpy(-1.0, *iterate->gamma);
+   if (nxupp > 0)
+      rQ->axpy(1.0, *iterate->phi);
 
    norm = updateNormAndPrint(norm, *rQ, print_resids, "rQ");
 
@@ -219,32 +218,42 @@ double Residuals::recomputeResidualNorm() {
    return mResidualNorm;
 }
 
-void Residuals::add_r3_xz_alpha(const Variables *vars_in, double alpha) {
-   QpGenVars *vars = (QpGenVars *) vars_in;
-
-   if (mclow > 0) rlambda->axzpy(1.0, *vars->t, *vars->lambda);
-   if (mcupp > 0) rpi->axzpy(1.0, *vars->u, *vars->pi);
-   if (nxlow > 0) rgamma->axzpy(1.0, *vars->v, *vars->gamma);
-   if (nxupp > 0) rphi->axzpy(1.0, *vars->w, *vars->phi);
+void Residuals::add_r3_xz_alpha(const Variables* variables, double alpha) {
+   if (mclow > 0)
+      rlambda->axzpy(1.0, *variables->t, *variables->lambda);
+   if (mcupp > 0)
+      rpi->axzpy(1.0, *variables->u, *variables->pi);
+   if (nxlow > 0)
+      rgamma->axzpy(1.0, *variables->v, *variables->gamma);
+   if (nxupp > 0)
+      rphi->axzpy(1.0, *variables->w, *variables->phi);
 
    if (alpha != 0.0) {
-      if (mclow > 0) rlambda->addSomeConstants(alpha, *iclow);
-      if (mcupp > 0) rpi->addSomeConstants(alpha, *icupp);
-      if (nxlow > 0) rgamma->addSomeConstants(alpha, *ixlow);
-      if (nxupp > 0) rphi->addSomeConstants(alpha, *ixupp);
+      if (mclow > 0)
+         rlambda->addSomeConstants(alpha, *iclow);
+      if (mcupp > 0)
+         rpi->addSomeConstants(alpha, *icupp);
+      if (nxlow > 0)
+         rgamma->addSomeConstants(alpha, *ixlow);
+      if (nxupp > 0)
+         rphi->addSomeConstants(alpha, *ixupp);
    }
 }
 
-void Residuals::set_r3_xz_alpha(const Variables *vars, double alpha) {
+void Residuals::set_r3_xz_alpha(const Variables* vars, double alpha) {
    this->clear_r3();
    this->add_r3_xz_alpha(vars, alpha);
 }
 
 void Residuals::clear_r3() {
-   if (mclow > 0) rlambda->setToZero();
-   if (mcupp > 0) rpi->setToZero();
-   if (nxlow > 0) rgamma->setToZero();
-   if (nxupp > 0) rphi->setToZero();
+   if (mclow > 0)
+      rlambda->setToZero();
+   if (mcupp > 0)
+      rpi->setToZero();
+   if (nxlow > 0)
+      rgamma->setToZero();
+   if (nxupp > 0)
+      rphi->setToZero();
 }
 
 void Residuals::clear_r1r2() {
@@ -252,10 +261,14 @@ void Residuals::clear_r1r2() {
    rA->setToZero();
    rC->setToZero();
    rz->setToZero();
-   if (nxlow > 0) rv->setToZero();
-   if (nxupp > 0) rw->setToZero();
-   if (mclow > 0) rt->setToZero();
-   if (mcupp > 0) ru->setToZero();
+   if (nxlow > 0)
+      rv->setToZero();
+   if (nxupp > 0)
+      rw->setToZero();
+   if (mclow > 0)
+      rt->setToZero();
+   if (mcupp > 0)
+      ru->setToZero();
 }
 
 void Residuals::project_r3(double rmin, double rmax) {
@@ -280,72 +293,62 @@ void Residuals::project_r3(double rmin, double rmax) {
 
 
 int Residuals::validNonZeroPattern() {
-   if (nxlow > 0 &&
-       (!rv->matchesNonZeroPattern(*ixlow) ||
-        !rgamma->matchesNonZeroPattern(*ixlow))) {
+   if (nxlow > 0 && (!rv->matchesNonZeroPattern(*ixlow) || !rgamma->matchesNonZeroPattern(*ixlow))) {
       return 0;
    }
 
-   if (nxupp > 0 &&
-       (!rw->matchesNonZeroPattern(*ixupp) ||
-        !rphi->matchesNonZeroPattern(*ixupp))) {
+   if (nxupp > 0 && (!rw->matchesNonZeroPattern(*ixupp) || !rphi->matchesNonZeroPattern(*ixupp))) {
       return 0;
    }
-   if (mclow > 0 &&
-       (!rt->matchesNonZeroPattern(*iclow) ||
-        !rlambda->matchesNonZeroPattern(*iclow))) {
+   if (mclow > 0 && (!rt->matchesNonZeroPattern(*iclow) || !rlambda->matchesNonZeroPattern(*iclow))) {
       return 0;
    }
 
-   if (mcupp > 0 &&
-       (!ru->matchesNonZeroPattern(*icupp) ||
-        !rpi->matchesNonZeroPattern(*icupp))) {
+   if (mcupp > 0 && (!ru->matchesNonZeroPattern(*icupp) || !rpi->matchesNonZeroPattern(*icupp))) {
       return 0;
    }
 
    return 1;
 }
 
-void Residuals::copyFrom(const Residuals &other_in) {
-   const Residuals &other = dynamic_cast<const Residuals &>(other_in);
+void Residuals::copyFrom(const Residuals& residuals) {
+   mResidualNorm = residuals.mResidualNorm;
+   mDualityGap = residuals.mDualityGap;
+   m = residuals.m;
+   n = residuals.n;
 
-   mResidualNorm = other.mResidualNorm;
-   mDualityGap = other.mDualityGap;
-   m = other.m;
-   n = other.n;
+   nx = residuals.nx;
+   my = residuals.my;
+   mz = residuals.mz;
 
-   nx = other.nx;
-   my = other.my;
-   mz = other.mz;
+   nxupp = residuals.nxupp;
+   ixupp->copyFrom(*residuals.ixupp);
 
-   nxupp = other.nxupp;
-   ixupp->copyFrom(*other.ixupp);
+   nxlow = residuals.nxlow;
+   ixlow->copyFrom(*residuals.ixlow);
 
-   nxlow = other.nxlow;
-   ixlow->copyFrom(*other.ixlow);
+   mcupp = residuals.mcupp;
+   icupp->copyFrom(*residuals.icupp);
 
-   mcupp = other.mcupp;
-   icupp->copyFrom(*other.icupp);
+   mclow = residuals.mclow;
+   iclow->copyFrom(*residuals.iclow);
 
-   mclow = other.mclow;
-   iclow->copyFrom(*other.iclow);
+   rQ->copyFrom(*residuals.rQ);
+   rA->copyFrom(*residuals.rA);
+   rC->copyFrom(*residuals.rC);
 
-   rQ->copyFrom(*other.rQ);
-   rA->copyFrom(*other.rA);
-   rC->copyFrom(*other.rC);
-
-   rz->copyFrom(*other.rz);
-   rv->copyFrom(*other.rv);
-   rw->copyFrom(*other.rw);
-   rt->copyFrom(*other.rt);
-   ru->copyFrom(*other.ru);
-   rgamma->copyFrom(*other.rgamma);
-   rphi->copyFrom(*other.rphi);
-   rlambda->copyFrom(*other.rlambda);
-   rpi->copyFrom(*other.rpi);
+   rz->copyFrom(*residuals.rz);
+   rv->copyFrom(*residuals.rv);
+   rw->copyFrom(*residuals.rw);
+   rt->copyFrom(*residuals.rt);
+   ru->copyFrom(*residuals.ru);
+   rgamma->copyFrom(*residuals.rgamma);
+   rphi->copyFrom(*residuals.rphi);
+   rlambda->copyFrom(*residuals.rlambda);
+   rpi->copyFrom(*residuals.rpi);
 }
 
-void Residuals::writeToStream(std::ostream &out) {
+void Residuals::writeToStream(std::ostream& out) {
    /*
    printf("--------------rQ\n");
    rQ->writeToStream(out);printf("---------------------------\n");

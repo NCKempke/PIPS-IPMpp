@@ -4,7 +4,7 @@
 #include "Residuals.h"
 #include "Solver.h"
 #include "Problem.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include <iostream>
 #include <cstdio>
 
@@ -45,7 +45,7 @@ StochMonitor::doItStoch(const Solver *solver, const Problem *problem,
       double alpha_dual, double, int i, double mu, int status_code,
       int level) const
 {
-   double objective = problem->objective_value(dynamic_cast<const QpGenVars*>(vars));
+   double objective = problem->objective_value(dynamic_cast<const Variables*>(vars));
 
    const Residuals *resids_unscaled = resids;
    if( scaler )

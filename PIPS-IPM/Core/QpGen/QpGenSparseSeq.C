@@ -8,7 +8,7 @@
 #include "SparseGenMatrix.h"
 #include "SparseSymMatrix.h"
 #include "SparseLinearAlgebraPackage.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 
 //Problem * QpGenSparseSeq::create_problem()
 //{

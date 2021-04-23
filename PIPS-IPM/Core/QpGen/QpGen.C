@@ -4,7 +4,7 @@
 
 #include "QpGen.h"
 #include "QP.hpp"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "Residuals.h"
 #include "LinearAlgebraPackage.h"
 
