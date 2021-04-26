@@ -10,7 +10,7 @@
 class sDummyLinsys : public sLinsys
 {
  public:
-  sDummyLinsys(sFactory* factory, DistributedQP* prob)
+  sDummyLinsys(DistributedFactory* factory, DistributedQP* prob)
     : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, false)
  {
      mpiComm = MPI_COMM_NULL;

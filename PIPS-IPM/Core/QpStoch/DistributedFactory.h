@@ -45,15 +45,15 @@ class DoubleMatrix;
 
 #include "StochResourcesMonitor.h"
 
-class sFactory : public ProblemFormulation {
+class DistributedFactory : public ProblemFormulation {
 public:
 
-   sFactory(StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD);
+   DistributedFactory(StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD);
 
 protected:
-   sFactory() = default;
+   DistributedFactory() = default;
 
-   ~sFactory() override;
+   ~DistributedFactory() override;
 
 public:
 

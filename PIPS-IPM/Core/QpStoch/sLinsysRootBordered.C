@@ -15,9 +15,9 @@
 #include "StochOptions.h"
 
 #include "sLinsysRootAug.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 
-sLinsysRootBordered::sLinsysRootBordered(sFactory * factory_, DistributedQP * prob_)
+sLinsysRootBordered::sLinsysRootBordered(DistributedFactory * factory_, DistributedQP * prob_)
   : sLinsysRoot(factory_, prob_, true)
 {
    assert(locmyl >= 0 && locmzl >= 0);

@@ -2,7 +2,7 @@
 #define STOCH_MONITOR
 
 #include "OoqpMonitor.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 #include "Scaler.h"
 #include "pipsport.h"
 
@@ -23,7 +23,7 @@ class StochMonitor : public OoqpMonitor
 
  public:  
   StochMonitor(Scaler* scaler = nullptr);
-  StochMonitor(sFactory* qp, Scaler* scaler = nullptr);
+  StochMonitor(DistributedFactory* qp, Scaler* scaler = nullptr);
 
   void doIt( const Solver * solver, const Problem * data, const Variables * vars,
 		     const Residuals * resids,

@@ -154,7 +154,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
          postsolver.reset(preprocess_factory->makePostsolver(original_problem.get()));
 
       presolver.reset(
-            preprocess_factory->makePresolver(dynamic_cast<sFactory*>(formulation_factory.get())->tree, original_problem.get(), presolver_type,
+            preprocess_factory->makePresolver(dynamic_cast<DistributedFactory*>(formulation_factory.get())->tree, original_problem.get(), presolver_type,
                   postsolver.get()));
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));

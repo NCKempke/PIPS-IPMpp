@@ -5,9 +5,9 @@
 #ifndef STOCHACTORYAUG
 #define STOCHACTORYAUG
 
-#include "sFactory.h"
+#include "DistributedFactory.h"
 
-class sFactoryAug : public sFactory {
+class sFactoryAug : public DistributedFactory {
 public:
    sFactoryAug(StochInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
 

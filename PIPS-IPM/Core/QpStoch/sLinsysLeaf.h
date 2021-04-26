@@ -7,7 +7,7 @@
 
 #include "sLinsys.h"
 #include "sTree.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"
@@ -22,7 +22,7 @@
 class sLinsysLeaf : public sLinsys
 {
  public:
-    sLinsysLeaf(sFactory* factory,
+    sLinsysLeaf(DistributedFactory* factory,
 		DistributedQP* prob_,				    
 		OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
 		OoqpVector* rhs_);

@@ -3,7 +3,7 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRoot.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "sDummyLinsys.h"
 #include "sLinsysLeaf.h"
@@ -20,7 +20,7 @@
 double g_scenNum;
 #endif
 
-sLinsysRoot::sLinsysRoot(sFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root)
+sLinsysRoot::sLinsysRoot(DistributedFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root)
   : sLinsys(factory_, prob_, is_hierarchy_root)
 {
   if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
@@ -28,7 +28,7 @@ sLinsysRoot::sLinsysRoot(sFactory * factory_, DistributedQP * prob_, bool is_hie
   init();
 }
 
-sLinsysRoot::sLinsysRoot(sFactory* factory_,
+sLinsysRoot::sLinsysRoot(DistributedFactory* factory_,
 			 DistributedQP* prob_,
 			 OoqpVector* dd_,
 			 OoqpVector* dq_,
@@ -776,13 +776,13 @@ void sLinsysRoot::createChildren(DistributedQP *prob)
       assert( ddst.children[it] != nullptr );
       if( MPI_COMM_NULL == ddst.children[it]->mpiComm )
       {
-         child = new sDummyLinsys(dynamic_cast<sFactory*>(factory),
+         child = new sDummyLinsys(dynamic_cast<DistributedFactory*>(factory),
                prob->children[it]);
       }
       else
       {
          assert( prob->children[it] );
-         sFactory *stochFactory = dynamic_cast<sFactory*>(factory);
+         DistributedFactory *stochFactory = dynamic_cast<DistributedFactory*>(factory);
          if( is_hierarchy_root )
          {
             assert( prob->isHierarchyRoot() );

@@ -71,7 +71,7 @@ public:
     * x' * Q * x - b' * y + c' * x - d' * z
     *  @endcode
     */
-   double dualityGap() const { return mDualityGap; };
+   double duality_gap() const { return mDualityGap; };
 
    double primalObjective() const { return primal_objective; };
 
@@ -84,16 +84,16 @@ public:
    * adding the pairwise products of the complementary variables plus
    * a constant alpha to this term.  
    */
-   void add_r3_xz_alpha(const Variables* vars, double alpha);
+   void add_to_complementarity_residual(const Variables& variables, double alpha);
 
    /** Set the "complementarity" component of the residuals to the
     * pairwise products of the complementary variables plus a constant
     * alpha
     */
-   void set_r3_xz_alpha(const Variables* vars, double alpha);
+   void set_complementarity_residual(const Variables& variables, double alpha);
 
    /** set the complementarity component of the residuals to 0. */
-   void clear_r3();
+   void clear_complementarity_residual();
 
    /** set the noncomplementarity components of the residual (the terms
     *  arising from the linear equalities in the KKT conditions) to 0.  */

@@ -13,7 +13,7 @@
 #include "sLinsysRootAugHierInner.h"
 #include "sLinsysRootBordered.h"
 
-sFactoryAug::sFactoryAug(StochInputTree* inputTree, MPI_Comm comm) : sFactory(inputTree, comm) {};
+sFactoryAug::sFactoryAug(StochInputTree* inputTree, MPI_Comm comm) : DistributedFactory(inputTree, comm) {};
 
 sLinsysRoot* sFactoryAug::newLinsysRoot() {
    assert(data);

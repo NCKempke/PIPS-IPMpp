@@ -7,7 +7,7 @@
 
 #include "sLinsysRootAugHierInner.h"
 
-sLinsysRootAugHierInner::sLinsysRootAugHierInner(sFactory *factory,
+sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory *factory,
       DistributedQP *prob_, OoqpVector *dd_, OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *rhs_) :
       sLinsysRootAug(factory, prob_, dynamic_cast<StochVector*>(dd_)->first,
                      dynamic_cast<StochVector*>(dq_)->first,

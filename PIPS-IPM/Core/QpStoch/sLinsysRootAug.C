@@ -39,7 +39,7 @@ static void biCGStabCommunicateStatus(int flag, int it)
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(sFactory * factory_, DistributedQP * prob_)
+sLinsysRootAug::sLinsysRootAug(DistributedFactory * factory_, DistributedQP * prob_)
   : sLinsysRoot(factory_, prob_)
 { 
    if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
@@ -52,7 +52,7 @@ sLinsysRootAug::sLinsysRootAug(sFactory * factory_, DistributedQP * prob_)
    redRhs.reset( new SimpleVector(locnx + locmy + locmz + locmyl + locmzl) );
 }
 
-sLinsysRootAug::sLinsysRootAug(sFactory* factory_,
+sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_,
 			       DistributedQP* prob_,
 			       OoqpVector* dd_, 
 			       OoqpVector* dq_,

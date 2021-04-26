@@ -14,7 +14,7 @@
 #include "Status.h"
 #include "Problem.h"
 #include "ProblemFormulation.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 
 #include "DistributedQP.hpp"
 #include "sVars.h"
@@ -91,7 +91,7 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables& iterate
    TerminationCode status_code;
    double sigma = 1.0;
    double alpha_pri = 1.0, alpha_dual = 1.0;
-   sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
+   DistributedFactory* stoch_factory = dynamic_cast<DistributedFactory*>(&factory);
    g_iterNumber = 0.0;
 
    bool pure_centering_step = false;

@@ -2,7 +2,7 @@
    Authors: Cosmin Petra
    See license and copyright information in the documentation */
 
-#include "sFactory.h"
+#include "DistributedFactory.h"
 
 #include "DistributedQP.hpp"
 #include "sTreeCallbacks.h"
@@ -67,7 +67,7 @@ class Ma57Solver;
 #endif
 
 
-sFactory::sFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new sTreeCallbacks(inputTree)) {
+DistributedFactory::DistributedFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new sTreeCallbacks(inputTree)) {
    tree->assignProcesses(comm);
 
    tree->computeGlobalSizes();
@@ -75,12 +75,12 @@ sFactory::sFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new sTreeCal
    tree->getGlobalSizes(nx, my, mz);
 }
 
-sFactory::~sFactory() {
+DistributedFactory::~DistributedFactory() {
    if (tree)
       delete tree;
 }
 
-DoubleLinearSolver* sFactory::newLeafSolver(const DoubleMatrix* kkt_) {
+DoubleLinearSolver* DistributedFactory::newLeafSolver(const DoubleMatrix* kkt_) {
    const SparseSymMatrix* kkt = dynamic_cast<const SparseSymMatrix*>(kkt_);
    assert(kkt);
 
@@ -137,7 +137,7 @@ DoubleLinearSolver* sFactory::newLeafSolver(const DoubleMatrix* kkt_) {
    return nullptr;
 }
 
-sLinsysLeaf* sFactory::newLinsysLeaf(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
+sLinsysLeaf* DistributedFactory::newLinsysLeaf(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
    assert(prob);
    static bool printed = false;
    const SolverType leaf_solver = pips_options::getSolverLeaf();
@@ -257,7 +257,7 @@ void dumpaug(int nx, SparseGenMatrix& A, SparseGenMatrix& C) {
    std::cout << "finished dumping aug\n";
 }
 
-Problem* sFactory::create_problem() {
+Problem* DistributedFactory::create_problem() {
 #ifdef TIMING
    double t2 = MPI_Wtime();
 #endif
@@ -291,7 +291,7 @@ Problem* sFactory::create_problem() {
 }
 
 // TODO adjust this for hierarchical approach
-Variables* sFactory::makeVariables(Problem* prob_in) {
+Variables* DistributedFactory::makeVariables(Problem* prob_in) {
    DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
 
    OoqpVectorHandle x = OoqpVectorHandle(makePrimalVector());
@@ -313,13 +313,13 @@ Variables* sFactory::makeVariables(Problem* prob_in) {
    return vars;
 }
 
-Residuals* sFactory::makeResiduals(Problem* prob_in) {
+Residuals* DistributedFactory::makeResiduals(Problem* prob_in) {
    DistributedQP* prob = dynamic_cast<DistributedQP*>(prob_in);
    resid = new DistributedResiduals(tree, prob->ixlow, prob->ixupp, prob->iclow, prob->icupp);
    return resid;
 }
 
-LinearSystem* sFactory::makeLinsys(Problem*) {
+LinearSystem* DistributedFactory::makeLinsys(Problem*) {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       linsys = newLinsysRootHierarchical();
    else
@@ -328,32 +328,32 @@ LinearSystem* sFactory::makeLinsys(Problem*) {
    return linsys;
 }
 
-OoqpVector* sFactory::makePrimalVector() const {
+OoqpVector* DistributedFactory::makePrimalVector() const {
    assert(!la);
    return tree->newPrimalVector();
 }
 
-OoqpVector* sFactory::makeDualYVector() const {
+OoqpVector* DistributedFactory::makeDualYVector() const {
    assert(!la);
    return tree->newDualYVector();
 }
 
-OoqpVector* sFactory::makeDualZVector() const {
+OoqpVector* DistributedFactory::makeDualZVector() const {
    assert(!la);
    return tree->newDualZVector();
 }
 
-OoqpVector* sFactory::makeRhs() const {
+OoqpVector* DistributedFactory::makeRhs() const {
    assert(!la);
    return tree->newRhs();
 }
 
-void sFactory::iterateStarted() {
+void DistributedFactory::iterateStarted() {
    iterTmMonitor.recIterateTm_start();
    tree->startMonitors();
 }
 
-void sFactory::iterateEnded() {
+void DistributedFactory::iterateEnded() {
    tree->stopMonitors();
 
    if (tree->balanceLoad()) {

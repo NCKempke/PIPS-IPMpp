@@ -218,15 +218,15 @@ double Residuals::recomputeResidualNorm() {
    return mResidualNorm;
 }
 
-void Residuals::add_r3_xz_alpha(const Variables* variables, double alpha) {
+void Residuals::add_to_complementarity_residual(const Variables& variables, double alpha) {
    if (mclow > 0)
-      rlambda->axzpy(1.0, *variables->t, *variables->lambda);
+      rlambda->axzpy(1.0, *variables.t, *variables.lambda);
    if (mcupp > 0)
-      rpi->axzpy(1.0, *variables->u, *variables->pi);
+      rpi->axzpy(1.0, *variables.u, *variables.pi);
    if (nxlow > 0)
-      rgamma->axzpy(1.0, *variables->v, *variables->gamma);
+      rgamma->axzpy(1.0, *variables.v, *variables.gamma);
    if (nxupp > 0)
-      rphi->axzpy(1.0, *variables->w, *variables->phi);
+      rphi->axzpy(1.0, *variables.w, *variables.phi);
 
    if (alpha != 0.0) {
       if (mclow > 0)
@@ -240,12 +240,12 @@ void Residuals::add_r3_xz_alpha(const Variables* variables, double alpha) {
    }
 }
 
-void Residuals::set_r3_xz_alpha(const Variables* vars, double alpha) {
-   this->clear_r3();
-   this->add_r3_xz_alpha(vars, alpha);
+void Residuals::set_complementarity_residual(const Variables& variables, double alpha) {
+   this->clear_complementarity_residual();
+   this->add_to_complementarity_residual(variables, alpha);
 }
 
-void Residuals::clear_r3() {
+void Residuals::clear_complementarity_residual() {
    if (mclow > 0)
       rlambda->setToZero();
    if (mcupp > 0)

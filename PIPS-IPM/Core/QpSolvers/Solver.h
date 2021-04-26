@@ -64,11 +64,13 @@ public:
 
    /** this method called to test for convergence status at the end of
     * each interior-point iteration */
-   virtual TerminationCode doStatus(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level);
+   virtual TerminationCode
+   doStatus(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level);
 
    /** default method for checking status. May be replaced by a
     * user-defined method */
-   virtual TerminationCode defaultStatus(const Problem* data, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level);
+   virtual TerminationCode
+   defaultStatus(const Problem* data, const Variables* iterate, const Residuals* residuals, int iteration, double mu, TerminationCode level);
 
    /** method to add user-defined monitors to the monitor operations
        performed at each iteration */
@@ -104,14 +106,19 @@ protected:
    OoqpMonitor* itsMonitors{};
    Status* status{};
    const Scaler* scaler{};
+   ProblemFormulation& factory;
+   /**  storage for step vectors */
+   Variables* step, * corrector_step;
+   /** storage for residual vectors */
+   Residuals* corrector_residuals;
 
    std::unique_ptr<Residuals> residuals_unscaled{};
 
    /** norm of problem data */
-   double dnorm{0.0};
+   double dnorm{0.};
 
    /** norm of original unscaled problem */
-   double dnorm_orig{0.0};
+   double dnorm_orig{0.};
 
    /** termination parameters */
    double mutol{1.e-6};
@@ -122,10 +129,10 @@ protected:
 
    /** parameters associated with the step length heuristic */
    double gamma_f{0.99};
-   double gamma_a{1.0 / (1.0 - 0.99)};
+   double gamma_a{1. / (1. - 0.99)};
 
    /** merit function, defined as the sum of the complementarity gap the residual norms, divided by (1+norm of problem data) */
-   double phi{0.0};
+   double phi{0.};
 
    /** maximum number of  iterations allowed */
    int maxit{0};
@@ -144,7 +151,7 @@ protected:
 
    bool printTimeStamp{true};
 
-   double startTime{-1.0};
+   double startTime{-1.};
 
    LinearSystem* linear_system{};
 
@@ -171,16 +178,8 @@ protected:
    /** various parameters associated with Gondzio correction */
    double StepFactor0, StepFactor1, AcceptTol, beta_min, beta_max;
 
-   /**  storage for step vectors */
-   Variables* corrector_step, * step;
-
-   /** storage for residual vectors */
-   Residuals* corrector_residuals;
-
-   ProblemFormulation& factory;
-
 private:
-   std::pair<double, double> computeUnscaledGapAndResidualNorm(const Residuals&);
+   std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
 };
 
 //@}

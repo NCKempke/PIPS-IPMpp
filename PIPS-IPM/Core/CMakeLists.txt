@@ -19,7 +19,7 @@ add_library(ooqpgensparse STATIC
 )
 
 add_library(ooqpstoch STATIC 
-   QpStoch/sFactory.C
+   QpStoch/DistributedFactory.C
    QpStoch/sFactoryAug.C
    QpStoch/DistributedQP.cpp
    QpStoch/sLinsys.C

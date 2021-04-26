@@ -12,7 +12,7 @@
 class sLinsysRootAugHierInner : public sLinsysRootAug
 {
    public:
-      sLinsysRootAugHierInner(sFactory* factory, DistributedQP* prob_, OoqpVector* dd_,
+      sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_,
             OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_);
       ~sLinsysRootAugHierInner() override = default;
 

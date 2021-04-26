@@ -13,7 +13,7 @@
 #include "Status.h"
 #include "Problem.h"
 #include "ProblemFormulation.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 #include "StochOptions.h"
 
 #include "DistributedQP.hpp"
@@ -113,7 +113,7 @@ TerminationCode GondzioStochSolver::solve(Problem& problem, Variables& iterate, 
    double alpha_target, alpha_enhanced;
    TerminationCode status_code;
    double alpha = 1, sigma = 1;
-   sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
+   DistributedFactory* stoch_factory = dynamic_cast<DistributedFactory*>(&factory);
    g_iterNumber = 0.0;
 
    bool pure_centering_step = false;
@@ -319,7 +319,7 @@ TerminationCode GondzioStochSolver::solve(Problem& problem, Variables& iterate, 
 }
 
 void GondzioStochSolver::computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals) {
-   residuals->set_r3_xz_alpha(iterate, 0.0);
+   residuals->set_complementarity_residual(*iterate, 0.0);
    linear_system->factorize(prob, iterate);
    linear_system->solve(prob, iterate, residuals, step);
    step->negate();
@@ -328,7 +328,7 @@ void GondzioStochSolver::computePredictorStep(Problem* prob, Variables* iterate,
 void GondzioStochSolver::computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu) {
    corrector_residuals->clear_r1r2();
    // form right hand side of linear system:
-   corrector_residuals->set_r3_xz_alpha(step, -sigma * mu);
+   corrector_residuals->set_complementarity_residual(*step, -sigma * mu);
 
    linear_system->solve(prob, iterate, corrector_residuals, corrector_step);
    corrector_step->negate();
@@ -336,7 +336,7 @@ void GondzioStochSolver::computeCorrectorStep(Problem* prob, Variables* iterate,
 
 void GondzioStochSolver::computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
-   corrector_residuals->set_r3_xz_alpha(corrector_step, 0.0);
+   corrector_residuals->set_complementarity_residual(*corrector_step, 0.0);
    if (small_corr)
       assert(additional_correctors_small_comp_pairs);
    // do the projection operation

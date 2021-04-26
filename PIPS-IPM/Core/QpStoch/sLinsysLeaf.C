@@ -4,7 +4,7 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::sLinsysLeaf(sFactory *factory_, DistributedQP* prob,
+sLinsysLeaf::sLinsysLeaf(DistributedFactory *factory_, DistributedQP* prob,
           OoqpVector* dd_,
           OoqpVector* dq_,
           OoqpVector* nomegaInv_,

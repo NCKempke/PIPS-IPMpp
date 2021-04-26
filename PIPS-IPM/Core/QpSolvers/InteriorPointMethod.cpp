@@ -2,7 +2,7 @@
 #include "Status.h"
 #include "StochOptions.h"
 #include "sLinsysRoot.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
@@ -47,7 +47,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
    double sigma = 1.;
    double step_length_primal = 1., step_length_dual = 1.;
 
-   sFactory* stoch_factory = dynamic_cast<sFactory*>(&factory);
+   DistributedFactory* distributed_factory = dynamic_cast<DistributedFactory*>(&factory);
    g_iterNumber = 0.;
 
    bool pure_centering_step = false;
@@ -63,9 +63,9 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
    registerBiCGStabOvserver(linear_system);
    setBiCGStabTol(-1);
 
-   stoch_factory->iterateStarted();
+   distributed_factory->iterateStarted();
    this->solve_linear_system(iterate, problem, residuals, *step);
-   stoch_factory->iterateEnded();
+   distributed_factory->iterateEnded();
 
    iteration = 0;
    NumberGondzioCorrections = 0;
@@ -77,7 +77,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
       setBiCGStabTol(iteration);
       bool small_corr = false;
 
-      stoch_factory->iterateStarted();
+      distributed_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
       residuals.evaluate(problem, iterate);
@@ -95,7 +95,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
 
       // *** Predictor step ***
       if (!pure_centering_step) {
-         computePredictorStep(&problem, &iterate, &residuals);
+         compute_predictor_step(problem, iterate, residuals);
          checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
       }
       else
@@ -304,7 +304,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
       pure_centering_step = false;
       numerical_troubles = false;
 
-      stoch_factory->iterateEnded();
+      distributed_factory->iterateEnded();
    }
 
    residuals.evaluate(problem, iterate);
@@ -315,17 +315,17 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
    return status_code;
 }
 
-void InteriorPointMethod::computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals) {
-   residuals->set_r3_xz_alpha(iterate, 0.);
-   linear_system->factorize(prob, iterate);
-   linear_system->solve(prob, iterate, residuals, step);
+void InteriorPointMethod::compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals) {
+   residuals.set_complementarity_residual(iterate, 0.);
+   linear_system->factorize(&problem, &iterate);
+   linear_system->solve(&problem, &iterate, &residuals, step);
    step->negate();
 }
 
 void InteriorPointMethod::computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu) {
    corrector_residuals->clear_r1r2();
    // form right hand side of linear system:
-   corrector_residuals->set_r3_xz_alpha(step, -sigma * mu);
+   corrector_residuals->set_complementarity_residual(*step, -sigma * mu);
 
    linear_system->solve(prob, iterate, corrector_residuals, corrector_step);
    corrector_step->negate();
@@ -333,7 +333,7 @@ void InteriorPointMethod::computeCorrectorStep(Problem* prob, Variables* iterate
 
 void InteriorPointMethod::computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
-   corrector_residuals->set_r3_xz_alpha(corrector_step, 0.);
+   corrector_residuals->set_complementarity_residual(*corrector_step, 0.);
    if (small_corr)
       assert(additional_correctors_small_comp_pairs);
    // do the projection operation

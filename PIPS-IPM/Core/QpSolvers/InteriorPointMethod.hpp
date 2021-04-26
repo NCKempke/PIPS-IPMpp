@@ -50,7 +50,7 @@ protected:
    // controls whether setBiCGTol applies an dynamic schedule for the BiCGStab tolerance or just uses the user defined input (OUTER_BICG_TOL)
    bool dynamic_bicg_tol;
 
-   void computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals);
+   void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals);
    void computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu);
    void computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr);
    void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;

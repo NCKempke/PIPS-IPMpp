@@ -11,7 +11,7 @@
 StochMonitor::StochMonitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
 
-StochMonitor::StochMonitor(sFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()}, myRank{PIPS_MPIgetRank(mpiComm)},
+StochMonitor::StochMonitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()}, myRank{PIPS_MPIgetRank(mpiComm)},
       myGlobRank{PIPS_MPIgetRank()} {
 }
 
@@ -37,7 +37,7 @@ void StochMonitor::doItStoch(const Solver* solver, const Problem* problem, const
 
    const double dnorm = solver->dataNormOrig();
    const double rnorm = resids_unscaled->residualNorm();
-   const double gap = resids_unscaled->dualityGap();
+   const double gap = resids_unscaled->duality_gap();
 
    if (scaler)
       delete resids_unscaled;
