@@ -1,4 +1,4 @@
-#include "GondzioInteriorPointMethod.hpp"
+#include "InteriorPointMethod.hpp"
 #include "Status.h"
 #include "StochOptions.h"
 #include "sLinsysRoot.h"
@@ -7,7 +7,7 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-GondzioInteriorPointMethod::GondzioInteriorPointMethod(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(
+InteriorPointMethod::InteriorPointMethod(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(
       problem_formulation, problem, scaler), step_length_type(PRIMAL), // TO CHANGE
       n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
       dynamic_corrector_schedule(pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
@@ -40,7 +40,7 @@ GondzioInteriorPointMethod::GondzioInteriorPointMethod(ProblemFormulation& probl
    temp_step = factory.makeVariables(&problem);
 }
 
-TerminationCode GondzioInteriorPointMethod::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
+TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    double mu, muaff;
@@ -319,14 +319,14 @@ TerminationCode GondzioInteriorPointMethod::solve(Problem& problem, Variables* i
    return status_code;
 }
 
-void GondzioInteriorPointMethod::computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals) {
+void InteriorPointMethod::computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals) {
    residuals->set_r3_xz_alpha(iterate, 0.);
    linear_system->factorize(prob, iterate);
    linear_system->solve(prob, iterate, residuals, step);
    step->negate();
 }
 
-void GondzioInteriorPointMethod::computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu) {
+void InteriorPointMethod::computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu) {
    corrector_residuals->clear_r1r2();
    // form right hand side of linear system:
    corrector_residuals->set_r3_xz_alpha(step, -sigma * mu);
@@ -335,7 +335,7 @@ void GondzioInteriorPointMethod::computeCorrectorStep(Problem* prob, Variables* 
    corrector_step->negate();
 }
 
-void GondzioInteriorPointMethod::computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr) {
+void InteriorPointMethod::computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
    corrector_residuals->set_r3_xz_alpha(corrector_step, 0.);
    if (small_corr)
@@ -350,7 +350,7 @@ void GondzioInteriorPointMethod::computeGondzioCorrector(Problem* prob, Variable
    linear_system->solve(prob, iterate, corrector_residuals, corrector_step); // corrector_step is now delta_m
 }
 
-void GondzioInteriorPointMethod::checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
+void InteriorPointMethod::checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
    if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->residualNorm()) {
       PIPSdebugMessage("Step computation in BiCGStab failed");
       numerical_troubles = true;
@@ -362,13 +362,13 @@ void GondzioInteriorPointMethod::checkLinsysSolveNumericalTroublesAndReact(Resid
    }
 }
 
-void GondzioInteriorPointMethod::registerBiCGStabOvserver(LinearSystem* sys) {
+void InteriorPointMethod::registerBiCGStabOvserver(LinearSystem* sys) {
    /* every linsys handed to the GondzioStoch should be observable */
    assert(dynamic_cast<Subject*>(sys));
    setSubject(dynamic_cast<Subject*>(sys));
 }
 
-void GondzioInteriorPointMethod::setBiCGStabTol(int iteration) const {
+void InteriorPointMethod::setBiCGStabTol(int iteration) const {
    if (!dynamic_bicg_tol)
       return;
 
@@ -384,7 +384,7 @@ void GondzioInteriorPointMethod::setBiCGStabTol(int iteration) const {
       pips_options::setDoubleParameter("OUTER_BICG_TOL", 1e-10);
 }
 
-void GondzioInteriorPointMethod::adjustLimitGondzioCorrectors() {
+void InteriorPointMethod::adjustLimitGondzioCorrectors() {
    assert(bicg_iterations >= 0);
    if (dynamic_corrector_schedule) {
       if (bicgstab_skipped)
@@ -400,7 +400,7 @@ void GondzioInteriorPointMethod::adjustLimitGondzioCorrectors() {
    }
 }
 
-bool GondzioInteriorPointMethod::decreasePreconditionerImpact(LinearSystem* sys) const {
+bool InteriorPointMethod::decreasePreconditionerImpact(LinearSystem* sys) const {
    bool success = false;
    dynamic_cast<sLinsysRoot*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {
@@ -410,13 +410,13 @@ bool GondzioInteriorPointMethod::decreasePreconditionerImpact(LinearSystem* sys)
    return success;
 }
 
-void GondzioInteriorPointMethod::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
+void InteriorPointMethod::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
       double alpha_dual) const {
    probing_step->copy(iterate);
    probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
 }
 
-void GondzioInteriorPointMethod::doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual) {
+void InteriorPointMethod::doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual) {
    const double mu_last = iterate->mu();
    const double resids_norm_last = resid->residualNorm();
 
@@ -434,7 +434,7 @@ void GondzioInteriorPointMethod::doProbing_pd(Problem* prob, Variables* iterate,
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
 double
-GondzioInteriorPointMethod::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
+InteriorPointMethod::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
    assert(resids_norm_last > 0.);
    assert(resids_norm_probing > 0.);
 
@@ -474,7 +474,7 @@ GondzioInteriorPointMethod::computeStepFactorProbing(double resids_norm_last, do
    return factor;
 }
 
-bool GondzioInteriorPointMethod::restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
+bool InteriorPointMethod::restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
    const int my_rank = PIPS_MPIgetRank();
 
    if (!pure_centering_step && alpha_max < mutol * 1e-2) {
@@ -494,7 +494,7 @@ bool GondzioInteriorPointMethod::restartIterateBecauseOfPoorStep(bool& pure_cent
    return false;
 }
 
-void GondzioInteriorPointMethod::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& iterate) const {
+void InteriorPointMethod::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& iterate) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
          iterate.mu() < mu_limit_push_converged_vars_from_bound) {
 
@@ -512,7 +512,7 @@ void GondzioInteriorPointMethod::pushConvergedVarsAwayFromBounds(Problem& proble
 }
 
 /* initially adapted from hopdm */ // TODO : check some more
-void GondzioInteriorPointMethod::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate, Residuals& /*residuals*/ ) const {
+void InteriorPointMethod::pushSmallComplementarityProducts(const Problem& problem, Variables& iterate, Residuals& /*residuals*/ ) const {
    if (PIPS_MPIgetRank() == 0)
       std::cout << "Pushing small complementarity products ... ";
 
@@ -534,11 +534,11 @@ void GondzioInteriorPointMethod::pushSmallComplementarityProducts(const Problem&
                 << std::endl;
 }
 
-GondzioInteriorPointMethod::~GondzioInteriorPointMethod() {
+InteriorPointMethod::~InteriorPointMethod() {
    delete temp_step;
 }
 
-void GondzioInteriorPointMethod::notifyFromSubject() {
+void InteriorPointMethod::notifyFromSubject() {
    const Subject& subj = *getSubject();
 
    bicgstab_skipped = subj.getBoolValue("BICG_SKIPPED");
@@ -552,7 +552,7 @@ void GondzioInteriorPointMethod::notifyFromSubject() {
       PIPSdebugMessage("BiGCStab had troubles converging\n");
 }
 
-void GondzioInteriorPointMethod::calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step,
+void InteriorPointMethod::calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step,
       double alpha_primal, double alpha_dual, double& step_length_primal_candidate, double& step_length_dual_candidate, double& weight_primal_candidate,
       double& weight_dual_candidate) {
    assert(alpha_primal > 0. && alpha_primal <= 1.);

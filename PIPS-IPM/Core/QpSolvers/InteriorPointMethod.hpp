@@ -9,11 +9,11 @@
 
 enum StepLengthType { PRIMAL, PRIMAL_DUAL };
 
-class GondzioInteriorPointMethod : public Solver, public Observer {
+class InteriorPointMethod : public Solver, public Observer {
 public:
-   GondzioInteriorPointMethod(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler);
+   InteriorPointMethod(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler);
 
-   virtual ~GondzioInteriorPointMethod();
+   virtual ~InteriorPointMethod();
 
    TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
 
