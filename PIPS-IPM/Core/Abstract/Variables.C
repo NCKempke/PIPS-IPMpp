@@ -676,7 +676,7 @@ Variables::findBlocking_pd(const Variables* step, double& primalValue, double& p
 
 //  }
 
-void Variables::interiorPoint(double alpha, double beta) {
+void Variables::push_to_interior(double alpha, double beta) {
    s->setToZero();
    x->setToZero();
    y->setToZero();

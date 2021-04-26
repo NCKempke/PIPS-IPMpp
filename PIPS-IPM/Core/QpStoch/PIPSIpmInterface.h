@@ -276,7 +276,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::run() {
 #else
    //---------------------------------------------
    //result = solver->solve(presolved_problem.get(), vars.get(), resids.get());
-   result = solver->solve(*presolved_problem, vars.get(), residuals.get());
+   result = solver->solve(*presolved_problem, *vars, *residuals);
    //---------------------------------------------
 #endif
 

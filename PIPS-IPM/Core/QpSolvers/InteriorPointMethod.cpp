@@ -32,15 +32,14 @@ InteriorPointMethod::InteriorPointMethod(ProblemFormulation& problem_formulation
          this->n_linesearch_points = std::min(unsigned(size) + this->n_linesearch_points, max_linesearch_points);
    }
 
-   // the two StepFactor constants set targets for increase in step
-   // length for each corrector
+   // the two StepFactor constants set targets for increase in step length for each corrector
    StepFactor0 = 0.3;
    StepFactor1 = 1.5;
 
    temp_step = factory.makeVariables(&problem);
 }
 
-TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
+TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate, Residuals& residuals) {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    double mu, muaff;
@@ -65,18 +64,15 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
    setBiCGStabTol(-1);
 
    stoch_factory->iterateStarted();
-   this->start(&factory, iterate, &problem, residuals, step);
+   this->solve_linear_system(&iterate, &problem, &residuals, step);
    stoch_factory->iterateEnded();
 
    iteration = 0;
    NumberGondzioCorrections = 0;
-   mu = iterate->mu();
+   mu = iterate.mu();
 
    while (true) {
       iteration++;
-
-      if (false)
-         iterate->setNotIndicatedBoundsTo(problem, 1e15);
 
       setBiCGStabTol(iteration);
       bool small_corr = false;
@@ -84,63 +80,63 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
       stoch_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
-      residuals->evaluate(problem, iterate);
+      residuals.evaluate(problem, &iterate);
 
       //  termination test:
-      status_code = this->doStatus(&problem, iterate, residuals, iteration, mu, SUCCESSFUL_TERMINATION);
+      status_code = this->doStatus(&problem, &iterate, &residuals, iteration, mu, SUCCESSFUL_TERMINATION);
 
       if (status_code != NOT_FINISHED)
          break;
 
       std::cout << "Step 1: " << step_length_primal << ", " << step_length_dual << "\n";
       if (gOoqpPrintLevel >= 10) {
-         this->doMonitorPd(&problem, iterate, residuals, step_length_primal, step_length_dual, sigma, iteration, mu, status_code, 0);
+         this->doMonitorPd(&problem, &iterate, &residuals, step_length_primal, step_length_dual, sigma, iteration, mu, status_code, 0);
       }
 
       // *** Predictor step ***
       if (!pure_centering_step) {
-         computePredictorStep(&problem, iterate, residuals);
-         checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
+         computePredictorStep(&problem, &iterate, &residuals);
+         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
       }
       else
          step->setToZero();
 
       // compute the step length
       if (step_length_type == PRIMAL) {
-         double step_length = iterate->stepbound(step);
+         double step_length = iterate.stepbound(step);
          step_length_primal = step_length;
          step_length_dual = step_length;
       }
       else {
-         iterate->stepbound_pd(step, step_length_primal, step_length_dual);
+         iterate.stepbound_pd(step, step_length_primal, step_length_dual);
       }
       std::cout << "Step 2: " << step_length_primal << ", " << step_length_dual << "\n";
 
       // calculate centering parameter
-      muaff = iterate->mustep_pd(step, step_length_primal, step_length_dual);
+      muaff = iterate.mustep_pd(step, step_length_primal, step_length_dual);
 
       assert(!PIPSisZero(mu));
       sigma = pow(muaff / mu, tsig);
 
       if (gOoqpPrintLevel >= 10) {
          // TODO this varies
-         this->doMonitorPd(&problem, iterate, residuals, step_length_primal, step_length_dual, sigma, iteration, mu, status_code, 2);
+         this->doMonitorPd(&problem, &iterate, &residuals, step_length_primal, step_length_dual, sigma, iteration, mu, status_code, 2);
       }
 
       g_iterNumber += 1.;
 
       // *** Corrector step ***
-      computeCorrectorStep(&problem, iterate, sigma, mu);
-      checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
+      computeCorrectorStep(&problem, &iterate, sigma, mu);
+      checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
 
       // calculate weighted predictor-corrector step
       double weight_primal_candidate, weight_dual_candidate = -1.;
       if (step_length_type == PRIMAL) {
-         calculateAlphaPDWeightCandidate(iterate, step, corrector_step, step_length_primal, step_length_dual, step_length_primal, step_length_dual,
+         calculateAlphaPDWeightCandidate(&iterate, step, corrector_step, step_length_primal, step_length_dual, step_length_primal, step_length_dual,
                weight_primal_candidate, weight_dual_candidate);
       }
       else {
-         calculateAlphaPDWeightCandidate(iterate, step, corrector_step, step_length_primal, step_length_dual, step_length_primal, step_length_dual,
+         calculateAlphaPDWeightCandidate(&iterate, step, corrector_step, step_length_primal, step_length_dual, step_length_primal, step_length_dual,
                weight_primal_candidate, weight_dual_candidate);
       }
       std::cout << "Step 3: " << step_length_primal << ", " << step_length_dual << "\n";
@@ -166,7 +162,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
              (PIPSisLT(step_length_primal, 1.) || PIPSisLT(step_length_dual, 1.))) {
          if (dynamic_corrector_schedule)
             adjustLimitGondzioCorrectors();
-         corrector_step->copy(iterate);
+         corrector_step->copy(&iterate);
 
          // calculate target steplength
          const double step_length_primal_target = std::min(1., StepFactor1 * step_length_primal + StepFactor0);
@@ -180,9 +176,9 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
          // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
          /* compute corrector step */
-         computeGondzioCorrector(&problem, iterate, rmin, rmax, small_corr);
+         computeGondzioCorrector(&problem, &iterate, rmin, rmax, small_corr);
          const bool was_small_corr = small_corr;
-         checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
+         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
 
          if (numerical_troubles) {
             if (!was_small_corr && small_corr)
@@ -194,7 +190,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
 
          // calculate weighted predictor-corrector step
          double step_length_primal_enhanced, step_length_dual_enhanced;
-         calculateAlphaPDWeightCandidate(iterate, step, corrector_step, step_length_primal_target, step_length_dual_target,
+         calculateAlphaPDWeightCandidate(&iterate, step, corrector_step, step_length_primal_target, step_length_dual_target,
                   step_length_primal_enhanced, step_length_dual_enhanced, weight_primal_candidate, weight_dual_candidate);
 
          // if the enhanced step length is actually 1, make it official and stop correcting
@@ -277,11 +273,11 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
 
       // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic.x
       if (step_length_type == PRIMAL) {
-         step_length_primal = finalStepLength(iterate, step);
+         step_length_primal = finalStepLength(&iterate, step);
          step_length_dual = step_length_primal;
       }
       else {
-         finalStepLength_PD(iterate, step, step_length_primal, step_length_dual);
+         finalStepLength_PD(&iterate, step, step_length_primal, step_length_dual);
       }
 
       std::cout << "Step 8: " << step_length_primal << ", " << step_length_dual << "\n";
@@ -293,7 +289,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
          if (precond_decreased)
             precond_decreased = decreasePreconditionerImpact(linear_system);
 
-         doProbing_pd(&problem, iterate, residuals, step_length_primal, step_length_dual);
+         doProbing_pd(&problem, &iterate, &residuals, step_length_primal, step_length_dual);
          std::cout << "Step 9: " << step_length_primal << ", " << step_length_dual << "\n";
          const double alpha_max = std::max(step_length_primal, step_length_dual);
 
@@ -302,8 +298,8 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
       }
 
       // actually take the step and calculate the new mu
-      iterate->saxpy_pd(step, step_length_primal, step_length_dual);
-      mu = iterate->mu();
+      iterate.saxpy_pd(step, step_length_primal, step_length_dual);
+      mu = iterate.mu();
 
       pure_centering_step = false;
       numerical_troubles = false;
@@ -311,9 +307,9 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables* iterate,
       stoch_factory->iterateEnded();
    }
 
-   residuals->evaluate(problem, iterate);
+   residuals.evaluate(problem, &iterate);
    if (gOoqpPrintLevel >= 10) {
-      this->doMonitorPd(&problem, iterate, residuals, step_length_primal, step_length_dual, sigma, iteration, mu, status_code, 1);
+      this->doMonitorPd(&problem, &iterate, &residuals, step_length_primal, step_length_dual, sigma, iteration, mu, status_code, 1);
    }
 
    return status_code;

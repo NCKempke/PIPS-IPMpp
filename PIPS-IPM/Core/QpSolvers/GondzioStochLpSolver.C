@@ -84,7 +84,7 @@ GondzioStochLpSolver::calculateAlphaPDWeightCandidate(Variables* iterate, Variab
    alpha_dual_candidate = alpha_dual_best;
 }
 
-TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate, Residuals* residuals) {
+TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables& iterate, Residuals& residuals) {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    double mu, muaff;
@@ -107,21 +107,16 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
    setBiCGStabTol(-1);
 
    stoch_factory->iterateStarted();
-   this->start(&factory, iterate, &problem, residuals, step);
+   this->solve_linear_system(&iterate, &problem, &residuals, step);
    stoch_factory->iterateEnded();
 
    iteration = 0;
    NumberGondzioCorrections = 0;
-   mu = iterate->mu();
+   mu = iterate.mu();
 
 
    while (true) {
       iteration++;
-
-      if (false)
-         iterate->setNotIndicatedBoundsTo(problem, 1e15);
-//      pushConvergedVarsAwayFromBounds(*problem, *iterate);
-//      pushSmallComplementarityProducts( *problem, *iterate, *residuals );
 
       setBiCGStabTol(iteration);
       bool small_corr = false;
@@ -129,48 +124,48 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
       stoch_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
-      residuals->evaluate(problem, iterate);
+      residuals.evaluate(problem, &iterate);
 
       //  termination test:
-      status_code = this->doStatus(&problem, iterate, residuals, iteration, mu, SUCCESSFUL_TERMINATION);
+      status_code = this->doStatus(&problem, &iterate, &residuals, iteration, mu, SUCCESSFUL_TERMINATION);
 
       if (status_code != NOT_FINISHED)
          break;
 
       if (gOoqpPrintLevel >= 10) {
-         this->doMonitorPd(&problem, iterate, residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 0);
+         this->doMonitorPd(&problem, &iterate, &residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 0);
       }
 
       // *** Predictor step ***
       if (!pure_centering_step) {
-         computePredictorStep(&problem, iterate, residuals);
-         checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
+         computePredictorStep(&problem, &iterate, &residuals);
+         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
       }
       else
          step->setToZero();
 
-      iterate->stepbound_pd(step, alpha_pri, alpha_dual);
+      iterate.stepbound_pd(step, alpha_pri, alpha_dual);
 
       // calculate centering parameter
-      muaff = iterate->mustep_pd(step, alpha_pri, alpha_dual);
+      muaff = iterate.mustep_pd(step, alpha_pri, alpha_dual);
 
       assert(!PIPSisZero(mu));
       sigma = pow(muaff / mu, tsig);
 
       if (gOoqpPrintLevel >= 10) {
-         this->doMonitorPd(&problem, iterate, residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 2);
+         this->doMonitorPd(&problem, &iterate, &residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 2);
       }
 
       g_iterNumber += 1.0;
 
       // *** Corrector step ***
-      computeCorrectorStep(&problem, iterate, sigma, mu);
-      checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
+      computeCorrectorStep(&problem, &iterate, sigma, mu);
+      checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
 
       // calculate weighted predictor-corrector step
       double weight_primal_candidate, weight_dual_candidate = -1.0;
 
-      calculateAlphaPDWeightCandidate(iterate, step, corrector_step, alpha_pri, alpha_dual, alpha_pri, alpha_dual, weight_primal_candidate,
+      calculateAlphaPDWeightCandidate(&iterate, step, corrector_step, alpha_pri, alpha_dual, alpha_pri, alpha_dual, weight_primal_candidate,
             weight_dual_candidate);
 
       assert(weight_primal_candidate >= 0.0 && weight_primal_candidate <= 1.0);
@@ -193,7 +188,7 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
              (PIPSisLT(alpha_pri, 1.0) || PIPSisLT(alpha_dual, 1.0))) {
          if (dynamic_corrector_schedule)
             adjustLimitGondzioCorrectors();
-         corrector_step->copy(iterate);
+         corrector_step->copy(&iterate);
 
          double alpha_pri_enhanced, alpha_dual_enhanced;
          const double alpha_pri_target = std::min(1.0, StepFactor1 * alpha_pri + StepFactor0);
@@ -206,9 +201,9 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
          // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
          /* compute corrector step */
-         computeGondzioCorrector(&problem, iterate, rmin, rmax, small_corr);
+         computeGondzioCorrector(&problem, &iterate, rmin, rmax, small_corr);
          const bool was_small_corr = small_corr;
-         checkLinsysSolveNumericalTroublesAndReact(residuals, numerical_troubles, small_corr);
+         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
 
          if (numerical_troubles) {
             if (!was_small_corr && small_corr)
@@ -219,7 +214,7 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
          }
 
          // calculate weighted predictor-corrector step
-         calculateAlphaPDWeightCandidate(iterate, step, corrector_step, alpha_pri_target, alpha_dual_target, alpha_pri_enhanced, alpha_dual_enhanced,
+         calculateAlphaPDWeightCandidate(&iterate, step, corrector_step, alpha_pri_target, alpha_dual_target, alpha_pri_enhanced, alpha_dual_enhanced,
                weight_primal_candidate, weight_dual_candidate);
 
          // if the enhanced step length is actually 1, make it official
@@ -302,14 +297,14 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
 
       // We've finally decided on a step direction, now calculate the
       // length using Mehrotra's heuristic.x
-      finalStepLength_PD(iterate, step, alpha_pri, alpha_dual);
+      finalStepLength_PD(&iterate, step, alpha_pri, alpha_dual);
 
       // if we encountered numerical troubles while computing the step check enter a probing round
       if (numerical_troubles) {
          if (precond_decreased)
             precond_decreased = decreasePreconditionerImpact(linear_system);
 
-         doProbing_pd(&problem, iterate, residuals, alpha_pri, alpha_dual);
+         doProbing_pd(&problem, &iterate, &residuals, alpha_pri, alpha_dual);
          const double alpha_max = std::max(alpha_pri, alpha_dual);
 
          if (restartIterateBecauseOfPoorStep(pure_centering_step, precond_decreased, alpha_max))
@@ -321,8 +316,8 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
 //      iterate->printNorms();
 
       // actually take the step and calculate the new mu
-      iterate->saxpy_pd(step, alpha_pri, alpha_dual);
-      mu = iterate->mu();
+      iterate.saxpy_pd(step, alpha_pri, alpha_dual);
+      mu = iterate.mu();
 
       pure_centering_step = false;
       numerical_troubles = false;
@@ -330,9 +325,9 @@ TerminationCode GondzioStochLpSolver::solve(Problem& problem, Variables* iterate
       stoch_factory->iterateEnded();
    }
 
-   residuals->evaluate(problem, iterate);
+   residuals.evaluate(problem, &iterate);
    if (gOoqpPrintLevel >= 10) {
-      this->doMonitorPd(&problem, iterate, residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 1);
+      this->doMonitorPd(&problem, &iterate, &residuals, alpha_pri, alpha_dual, sigma, iteration, mu, status_code, 1);
    }
 
    return status_code;

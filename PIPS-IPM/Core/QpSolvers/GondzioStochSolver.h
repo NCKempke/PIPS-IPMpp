@@ -95,7 +95,7 @@ public:
 
    virtual ~GondzioStochSolver();
 
-   TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
+   TerminationCode solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
 
    void notifyFromSubject() override;
 };

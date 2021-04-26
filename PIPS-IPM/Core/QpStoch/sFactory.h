@@ -5,7 +5,7 @@
 #ifndef SPSTOCHFACTORY
 #define SPSTOCHFACTORY
 
-#include "QpGen.h"
+#include "ProblemFormulation.h"
 #include "sTree.h"
 
 // save diagnostic state
@@ -45,7 +45,7 @@ class DoubleMatrix;
 
 #include "StochResourcesMonitor.h"
 
-class sFactory : public QpGen {
+class sFactory : public ProblemFormulation {
 public:
 
    sFactory(StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD);

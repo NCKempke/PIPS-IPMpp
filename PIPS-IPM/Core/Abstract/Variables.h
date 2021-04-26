@@ -151,9 +151,8 @@ public:
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
          bool& dualBlocking);
 
-   /** sets components of (u,t,v,w) to alpha and of
-       (lambda,pi,phi,gamma) to beta */
-   void interiorPoint(double alpha, double beta);
+   /** sets components of (u,t,v,w) to alpha and of (lambda,pi,phi,gamma) to beta */
+   void push_to_interior(double alpha, double beta);
 
    /** add alpha to components of (u,t,v,w) and beta to components of
        (lambda,pi,phi,gamma) */

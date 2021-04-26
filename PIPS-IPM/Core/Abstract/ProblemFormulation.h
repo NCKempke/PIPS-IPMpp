@@ -6,6 +6,7 @@
 #define OPTIMIZATIONFACTORY
 
 #include <iostream>
+#include "OoqpVector_fwd.h"
 
 /**
  *  @defgroup AbstractProblemFormulation
@@ -43,6 +44,7 @@ class Problem;
 class Residuals;
 class LinearSystem;
 class Variables;
+class LinearAlgebraPackage;
 
 /**
  * Creates a compatible set of components representing a problem formulation
@@ -50,6 +52,18 @@ class Variables;
  */
 class ProblemFormulation {
 public:
+   virtual void joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const = 0;
+
+   virtual void separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const = 0;
+
+   /** create x shaped vector using LinearAlgebraPackage */
+   virtual OoqpVector* makePrimalVector() const;
+   /** create dual A shaped vector using LinearAlgebraPackage */
+   virtual OoqpVector* makeDualYVector() const;
+   /** create dual C shaped vector using LinearAlgebraPackage */
+   virtual OoqpVector* makeDualZVector() const;
+   /** create a rhs vector for the augmented system */
+   virtual OoqpVector* makeRhs() const;
 
   /** create the Residuals class for the relevant formulation */
   virtual Residuals * makeResiduals( Problem * prob_in ) = 0;
@@ -61,6 +75,20 @@ public:
   virtual Variables * makeVariables( Problem * prob_in ) = 0;
 
   virtual ~ProblemFormulation() = default;
+
+protected:
+   LinearAlgebraPackage* la{};
+   /** number of elements in x */
+   long long nx{0};
+
+   /** number of rows in A and b including linking rows (sFactory..) */
+   long long my{0};
+
+   /** number of rows in C including linking rows */
+   long long mz{0};
+
+   ProblemFormulation() = default;
+   ProblemFormulation(int nx_, int my_, int mz_);
 };
 
 //@}

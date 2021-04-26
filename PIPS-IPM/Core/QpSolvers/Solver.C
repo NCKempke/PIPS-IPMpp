@@ -5,7 +5,6 @@
 #include "Variables.h"
 #include "Residuals.h"
 #include "LinearSystem.h"
-#include "OoqpStartStrategy.h"
 #include "Options.h"
 #include "ProblemFormulation.h"
 #include "QpGenOptions.h"
@@ -84,43 +83,23 @@ Solver::Solver(ProblemFormulation& problem_formulation, Problem& problem, const 
    status = 0;
 }
 
-void Solver::start(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step) {
-   if (startStrategy) {
-      startStrategy->doIt(this, formulation, iterate, prob, resid, step);
-   }
-   else {
-      this->defaultStart(formulation, iterate, prob, resid, step);
-      //this->dumbstart( formulation, iterate, prob, resid, step );
-   }
-}
+void Solver::solve_linear_system(Variables* iterate, Problem* problem, Residuals* residuals, Variables* step) {
+   double problem_norm = std::sqrt(dnorm);
+   iterate->push_to_interior(problem_norm, problem_norm);
 
-void Solver::defaultStart(ProblemFormulation* /* formulation */, Variables* iterate, Problem* prob, Residuals* resid, Variables* step) {
-   double sdatanorm = std::sqrt(dnorm);
-   double a = sdatanorm;
-   double b = sdatanorm;
-   iterate->interiorPoint(a, b);
+   residuals->evaluate(*problem, iterate);
+   residuals->set_r3_xz_alpha(iterate, 0.0);
 
-   resid->evaluate(*prob, iterate);
-   resid->set_r3_xz_alpha(iterate, 0.0);
-
-   linear_system->factorize(prob, iterate);
-   linear_system->solve(prob, iterate, resid, step);
+   linear_system->factorize(problem, iterate);
+   linear_system->solve(problem, iterate, residuals, step);
 
    step->negate();
 
    // Take the full affine scaling step
    iterate->saxpy(step, 1.0);
-   // resid->evaluate(*prob, iterate); // Calc the resids if debugging.
    double shift = 1.e3 + 2 * iterate->violation();
    iterate->shiftBoundVariables(shift, shift);
-}
-
-void Solver::dumbstart(ProblemFormulation* /* formulation */, Variables* iterate, Problem* /* prob */, Residuals* /*resid*/, Variables* /*step*/  ) {
-   const double a = 1.e3;
-   const double b = 1.e5;
-
-   const double bigstart = a * dnorm + b;
-   iterate->interiorPoint(bigstart, bigstart);
+   return;
 }
 
 double Solver::finalStepLength(Variables* iterate, Variables* step) {

@@ -9,7 +9,7 @@
 #include "OoqpVector.h"
 #include "SimpleVector.h"
 #include "LinearAlgebraPackage.h"
-#include "QpGen.h"
+#include "ProblemFormulation.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
 
@@ -124,7 +124,7 @@ static bool isZero(double val, int& flag) {
    return false;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
+QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
       outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")), innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
       outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
       outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
@@ -170,7 +170,7 @@ QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, bool create_iter_ref
    }
 };
 
-QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_,
+QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_,
       bool create_iter_ref_vecs) : QpGenLinsys(factory_, problem, create_iter_ref_vecs) {
    dd = dd_;
    dq = dq_;
@@ -178,7 +178,7 @@ QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, OoqpVector* dd_, Ooq
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem) : QpGenLinsys(factory_, problem, true) {
+QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem) : QpGenLinsys(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
       dd = factory->makePrimalVector();
       dq = factory->makePrimalVector();

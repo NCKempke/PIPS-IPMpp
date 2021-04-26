@@ -15,7 +15,7 @@ public:
 
    virtual ~InteriorPointMethod();
 
-   TerminationCode solve(Problem& problem, Variables* iterate, Residuals* residuals) override;
+   TerminationCode solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
 
 protected:
    StepLengthType step_length_type;

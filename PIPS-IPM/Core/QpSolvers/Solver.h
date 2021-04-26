@@ -16,8 +16,6 @@ class Status;
 
 class OoqpMonitor;
 
-class OoqpStartStrategy;
-
 class ProblemFormulation;
 
 /**  * @defgroup QpSolvers
@@ -37,19 +35,11 @@ public:
 
    virtual ~Solver();
 
-   /** starting point heuristic */
-   virtual void start(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
-
-   /** default starting point heuristic */
-   virtual void defaultStart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
-
-   /** alternative starting point heuristic: sets the "complementary"
-    * variables to a large positive value (based on the norm of the
-    * problem data) and the remaining variables to zero */
-   virtual void dumbstart(ProblemFormulation* formulation, Variables* iterate, Problem* prob, Residuals* resid, Variables* step);
+   /** solve the IPM system */
+   virtual void solve_linear_system(Variables* iterate, Problem* problem, Residuals* residuals, Variables* step);
 
    /** implements the interior-point method for solving the subproblem */
-   virtual TerminationCode solve(Problem& problem, Variables* iterate, Residuals* resids) = 0;
+   virtual TerminationCode solve(Problem& problem, Variables& iterate, Residuals& residuals) = 0;
 
    /** Mehrotra's heuristic to calculate the final step length */
    virtual double finalStepLength(Variables* iterate, Variables* step);
@@ -59,26 +49,26 @@ public:
 
    /** perform monitor operation at each interior-point iteration */
    virtual void
-   doMonitor(const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu, int stop_code,
+   doMonitor(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu, int stop_code,
          int level);
 
    /** perform monitor operation at each interior-point iteration */
    virtual void
-   doMonitorPd(const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal, double alpha_dual, double sigma, int i,
+   doMonitorPd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma, int i,
          double mu, int stop_code, int level);
 
    /** default monitor: prints out one line of information on each
     * interior-point iteration */
-   void defaultMonitor(const Problem* problem, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+   void defaultMonitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu,
          int status_code, int level) const;
 
    /** this method called to test for convergence status at the end of
     * each interior-point iteration */
-   virtual TerminationCode doStatus(const Problem* problem, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
+   virtual TerminationCode doStatus(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level);
 
    /** default method for checking status. May be replaced by a
     * user-defined method */
-   virtual TerminationCode defaultStatus(const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level);
+   virtual TerminationCode defaultStatus(const Problem* data, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level);
 
    /** method to add user-defined monitors to the monitor operations
        performed at each iteration */
@@ -87,10 +77,6 @@ public:
    /** method to replace the defaultStatus method with a user-defined
     *  status checking method */
    void useStatus(Status* s) { status = s; }
-
-   /** method to replace the defaultStatus method with a user-defined
-    *  status checking method */
-   void useStartStrategy(OoqpStartStrategy* s) { startStrategy = s; }
 
    /** enables defaultMonitor as one of the monitors */
    void monitorSelf();
@@ -117,7 +103,6 @@ public:
 protected:
    OoqpMonitor* itsMonitors{};
    Status* status{};
-   OoqpStartStrategy* startStrategy{};
    const Scaler* scaler{};
 
    std::unique_ptr<Residuals> residuals_unscaled{};

@@ -6,13 +6,13 @@ add_subdirectory(StochLinearAlgebra)
 add_subdirectory(LinearSolvers)
 
 add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Abstract/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
-  Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  QpSolvers/Solver.C 
+  Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  QpSolvers/Solver.C  Abstract/ProblemFormulation.cpp
   Vector/OoqpVector.C Vector/SimpleVector.C
 Utilities/drand.C Utilities/sort.C Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C
-        Abstract/Residuals.cpp)
+        Abstract/Residuals.cpp Abstract/ProblemFormulation.cpp)
 
 add_library(ooqpgensparse STATIC
-  Abstract/Variables.C QpGen/QP.cpp QpGen/QpGen.C QpGen/QpGenLinsys.C #QpGen
+  Abstract/Variables.C QpGen/QP.cpp QpGen/QpGenLinsys.C #QpGen
   QpGen/QpGenSparseSeq.C QpGen/QpGenSparseLinsys.C #QpGenSparse
   Readers/MpsReader.C Readers/hash.C #Readers
   LinearSolvers/Preconditioners/SCsparsifier.C
