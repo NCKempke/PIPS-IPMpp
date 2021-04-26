@@ -8,18 +8,19 @@
 #ifndef _PARDISOINDEFSOLVER_H_
 #define _PARDISOINDEFSOLVER_H_
 
+#include <memory>
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
 #include "DenseSymMatrix.h"
 #include "SparseSymMatrix.h"
-#include "DenseStorageHandle.h"
+#include "DenseStorage.h"
 #include "pipsport.h"
 
 /* root pardiso solver */
 class PardisoIndefSolver : public DoubleLinearSolver
 {
    public:
-      DenseStorageHandle mStorage;
+      std::shared_ptr<DenseStorage> mStorage;
       SparseStorageHandle mStorageSparse;
    protected:
 

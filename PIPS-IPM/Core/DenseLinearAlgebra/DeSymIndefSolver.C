@@ -2,7 +2,6 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include "pipsport.h"
 #include "DeSymIndefSolver.h"
 #include "SimpleVector.h"
 #include <cassert>
@@ -59,7 +58,7 @@ DeSymIndefSolver::DeSymIndefSolver( const SparseSymMatrix * sm ) :
       sparseMat{ sm }
 {
   const int size = sm->size();
-  mStorage = DenseStorageHandle( new DenseStorage(size,size) );
+  mStorage = std::shared_ptr<DenseStorage>( new DenseStorage(size,size) );
 
   ipiv.resize(size);
 }

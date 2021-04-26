@@ -8,12 +8,6 @@
 #include "SmartPointer.h"
 #include "IotrRefCount.h"
 
-class DoubleStorage;
-typedef SmartPointer<DoubleStorage> DoubleStorageHandle;
-
-class DoubleMatrix;
-typedef SmartPointer<DoubleMatrix> DoubleMatrixHandle;
-
 class GenMatrix;
 typedef SmartPointer<GenMatrix> GenMatrixHandle;
 

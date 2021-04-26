@@ -6,34 +6,17 @@
  */
 
 #include "StochPresolver.h"
-
-#include <algorithm>
 #include <cassert>
-#include <cmath>
-#include <limits>
 #include <iostream>
-#include <utility>
-#include <vector>
 #include <string>
-#include <cstdlib>
-#include <ctype.h>
 #include <memory>
 
 #include "DistributedQP.hpp"
 #include "sTreeCallbacks.h"
 
 #include "StochOptions.h"
-#include "PresolveData.h"
-#include "StochVector.h"
 #include "StochGenMatrix.h"
-#include "SmartPointer.h"
-#include "DoubleMatrix.h"
-#include "SparseGenMatrix.h"
-#include "StochVectorHandle.h"
 #include "OoqpVector.h"
-#include "StochGenMatrix.h"
-#include "sTreeCallbacks.h"
-#include "DoubleMatrixTypes.h"
 #include "StochPostsolver.h"
 #include "StochPresolverBoundStrengthening.h"
 #include "StochPresolverModelCleanup.h"
@@ -41,8 +24,6 @@
 #include "StochPresolverSingletonRows.h"
 #include "StochPresolverSingletonColumns.h"
 #include "StochPresolverParallelRows.h"
-#include "pipschecks.h"
-#include "pipsport.h"
 
 StochPresolver::StochPresolver(sTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr)
  : QpPresolver(prob, postsolver), my_rank( PIPS_MPIgetRank(MPI_COMM_WORLD) ),

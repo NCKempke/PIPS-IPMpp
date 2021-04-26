@@ -8,7 +8,6 @@
 #define DESYMPSDSOLVER_H
 
 #include "DoubleLinearSolver.h"
-#include "DenseStorageHandle.h"
 #include "DenseSymMatrixHandle.h"
 #include "OoqpVectorHandle.h"
 #include "DenseGenMatrix.h"
@@ -20,7 +19,7 @@
  */
 class DeSymPSDSolver : public DoubleLinearSolver {
 protected:
-  DenseStorageHandle mStorage;
+  std::shared_ptr<DenseStorage> mStorage;
 public:
   DeSymPSDSolver( const DenseSymMatrix * dsm );
   void diagonalChanged( int idiag, int extent ) override;

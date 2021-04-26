@@ -7,9 +7,8 @@
 
 #include "DoubleMatrix.h"
 #include "DenseStorage.h"
-#include "DenseGenMatrixHandle.h"
+#include <memory>
 
-class DoubleLinearSolver;
 class SparseGenMatrix;
 
 /** A class of dense, non-symmetric, possibly non-square, matrices.
@@ -17,7 +16,7 @@ class SparseGenMatrix;
  */
 class DenseGenMatrix : public GenMatrix {
 public:
-  DenseStorageHandle mStorage;
+   std::shared_ptr<DenseStorage> mStorage;
 
   DenseGenMatrix( int size );
   DenseGenMatrix( int m, int n );
@@ -105,7 +104,7 @@ public:
   double **Mat() { return mStorage->M; };
 
   DenseStorage& getStorageRef() { return *mStorage; }
-  DenseStorageHandle getStorageHandle() { return mStorage; }
+  std::shared_ptr<DenseStorage> getStorageHandle() { return mStorage; }
 
   /* the following functions added by C.Petra 09/09 */
 

@@ -7,8 +7,9 @@
 
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
-#include "DenseStorageHandle.h"
 #include "pipsport.h"
+#include <memory>
+#include "DenseStorage.h"
 
 /** Specialized LDL^T solver for saddle point systems
  * @ingroup DenseLinearAlgebra
@@ -16,7 +17,7 @@
  */
 class DeSymIndefSolver2 : public DoubleLinearSolver {
 public:
-  DenseStorageHandle mStorage;
+  std::shared_ptr<DenseStorage> mStorage;
 protected:
   int nx, ny, n;
 public:
