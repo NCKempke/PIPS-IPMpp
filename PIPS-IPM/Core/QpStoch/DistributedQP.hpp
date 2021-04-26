@@ -150,7 +150,7 @@ public:
 
    virtual DistributedQP* cloneFull(bool switchToDynamicStorage = false) const;
 
-   double objective_value(const Variables* vars) const override;
+   double objective_value(const Variables& variables) const override;
 
    void createScaleFromQ();
 

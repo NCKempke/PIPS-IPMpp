@@ -327,9 +327,9 @@ double PIPSIpmInterface<FORMULATION, SOLVER>::getObjective() {
 
    double obj;
    if (postsolvedVars != nullptr)
-      obj = original_problem->objective_value(postsolvedVars.get());
+      obj = original_problem->objective_value(*postsolvedVars.get());
    else {
-      obj = presolved_problem->objective_value(vars.get());
+      obj = presolved_problem->objective_value(*vars.get());
       if (scaler)
          obj = scaler->getObjUnscaled(obj);
    }
@@ -576,13 +576,13 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution() {
    if (print_residuals) {
       if (my_rank == 0)
          std::cout << "\n" << "Residuals before postsolve:" << "\n";
-      residuals->evaluate(*presolved_problem.get(), vars.get(), print_residuals);
+      residuals->evaluate(*presolved_problem.get(), *vars.get(), print_residuals);
       printComplementarityResiduals(*vars);
 
       MPI_Barrier(comm);
       if (my_rank == 0)
          std::cout << "Residuals after unscaling/permuting:" << "\n";
-      unscaleUnpermNotHierResids->evaluate(*dataUnpermNotHier.get(), unscaleUnpermNotHierVars.get(), print_residuals);
+      unscaleUnpermNotHierResids->evaluate(*dataUnpermNotHier.get(), *unscaleUnpermNotHierVars.get(), print_residuals);
       printComplementarityResiduals(*unscaleUnpermNotHierVars);
    }
 
@@ -601,7 +601,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution() {
    postsolvedResids.reset(dynamic_cast<DistributedResiduals*>( formulation_factory->makeResiduals(original_problem.get())));
    postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolvedVars, result);
 
-   double obj_postsolved = original_problem->objective_value(postsolvedVars.get());
+   double obj_postsolved = original_problem->objective_value(*postsolvedVars.get());
 
    MPI_Barrier(comm);
    const double t_postsolve = MPI_Wtime();
@@ -615,7 +615,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution() {
    if (print_residuals) {
       if (my_rank == 0)
          std::cout << "\n" << "Residuals after postsolve:" << "\n";
-      postsolvedResids->evaluate(*original_problem.get(), postsolvedVars.get(), print_residuals);
+      postsolvedResids->evaluate(*original_problem.get(), *postsolvedVars.get(), print_residuals);
 
       printComplementarityResiduals(*postsolvedVars);
    }

@@ -130,7 +130,7 @@ TerminationCode GondzioStochSolver::solve(Problem& problem, Variables& iterate, 
    setBiCGStabTol(-1);
 
    stoch_factory->iterateStarted();
-   this->solve_linear_system(&iterate, &problem, &residuals, step);
+   this->solve_linear_system(iterate, problem, residuals, *step);
    stoch_factory->iterateEnded();
 
    iteration = 0;
@@ -147,7 +147,7 @@ TerminationCode GondzioStochSolver::solve(Problem& problem, Variables& iterate, 
       stoch_factory->iterateStarted();
 
       // evaluate residuals and update algorithm status:
-      residuals.evaluate(problem, &iterate);
+      residuals.evaluate(problem, iterate);
 
       //  termination test:
       status_code = this->doStatus(&problem, &iterate, &residuals, iteration, mu, SUCCESSFUL_TERMINATION);
@@ -310,7 +310,7 @@ TerminationCode GondzioStochSolver::solve(Problem& problem, Variables& iterate, 
       stoch_factory->iterateEnded();
    } while (!done);
 
-   residuals.evaluate(problem, &iterate);
+   residuals.evaluate(problem, iterate);
    if (gOoqpPrintLevel >= 10) {
       this->doMonitor(&problem, &iterate, &residuals, alpha, sigma, iteration, mu, status_code, 1);
    }
@@ -435,7 +435,7 @@ void GondzioStochSolver::doProbing(Problem* prob, Variables* iterate, Residuals*
 
    computeProbingStep(temp_step, iterate, step, alpha);
 
-   residuals->evaluate(*prob, temp_step, false);
+   residuals->evaluate(*prob, *temp_step, false);
    const double mu_probing = temp_step->mu();
    const double resids_norm_probing = residuals->residualNorm();
 

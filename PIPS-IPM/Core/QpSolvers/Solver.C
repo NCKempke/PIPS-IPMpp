@@ -83,22 +83,22 @@ Solver::Solver(ProblemFormulation& problem_formulation, Problem& problem, const 
    status = 0;
 }
 
-void Solver::solve_linear_system(Variables* iterate, Problem* problem, Residuals* residuals, Variables* step) {
+void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals& residuals, Variables& step) {
    double problem_norm = std::sqrt(dnorm);
-   iterate->push_to_interior(problem_norm, problem_norm);
+   iterate.push_to_interior(problem_norm, problem_norm);
 
-   residuals->evaluate(*problem, iterate);
-   residuals->set_r3_xz_alpha(iterate, 0.0);
+   residuals.evaluate(problem, iterate);
+   residuals.set_r3_xz_alpha(&iterate, 0.0);
 
-   linear_system->factorize(problem, iterate);
-   linear_system->solve(problem, iterate, residuals, step);
+   linear_system->factorize(&problem, &iterate);
+   linear_system->solve(&problem, &iterate, &residuals, &step);
 
-   step->negate();
+   step.negate();
 
    // Take the full affine scaling step
-   iterate->saxpy(step, 1.0);
-   double shift = 1.e3 + 2 * iterate->violation();
-   iterate->shiftBoundVariables(shift, shift);
+   iterate.saxpy(&step, 1.0);
+   double shift = 1.e3 + 2 * iterate.violation();
+   iterate.shiftBoundVariables(shift, shift);
    return;
 }
 
@@ -107,7 +107,6 @@ double Solver::finalStepLength(Variables* iterate, Variables* step) {
    double primalStep = -std::numeric_limits<double>::max();
    double dualValue = -std::numeric_limits<double>::max();
    double dualStep = -std::numeric_limits<double>::max();
-   int firstOrSecond = -1;
 
 
 #ifdef TIMING
@@ -115,24 +114,24 @@ double Solver::finalStepLength(Variables* iterate, Variables* step) {
    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 #endif
 
-   const double maxAlpha = iterate->findBlocking(step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
+   int firstOrSecond = -1;
+   const double maximum_step_length = iterate->findBlocking(step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
+   const double mu_full = iterate->mustep_pd(step, maximum_step_length, maximum_step_length) / gamma_a;
 
-   const double mufull = iterate->mustep_pd(step, maxAlpha, maxAlpha) / gamma_a;
-
-   double alpha = 1.0;
+   double step_length = 1.0;
    switch (firstOrSecond) {
       case 0:
-         alpha = 1; // No constraints were blocking
+         step_length = 1; // No constraints were blocking
          break;
       case 1:
-         alpha = (-primalValue + mufull / (dualValue + maxAlpha * dualStep)) / primalStep;
+         step_length = (-primalValue + mu_full / (dualValue + maximum_step_length * dualStep)) / primalStep;
 #ifdef TIMING
          if( myrank == 0 )
             std::cout << "(primal) original alpha " << alpha << std::endl;
 #endif
          break;
       case 2:
-         alpha = (-dualValue + mufull / (primalValue + maxAlpha * primalStep)) / dualStep;
+         step_length = (-dualValue + mu_full / (primalValue + maximum_step_length * primalStep)) / dualStep;
 #ifdef TIMING
          if( myrank == 0 )
             std::cout << "(dual) original alpha " << alpha << std::endl;
@@ -144,18 +143,18 @@ double Solver::finalStepLength(Variables* iterate, Variables* step) {
          break;
    }
    // safeguard against numerical troubles in the above computations
-   alpha = std::min(maxAlpha, alpha);
+   step_length = std::min(maximum_step_length, step_length);
 
    // make it at least gamma_f * maxStep
-   if (alpha < gamma_f * maxAlpha)
-      alpha = gamma_f * maxAlpha;
+   if (step_length < gamma_f * maximum_step_length)
+      step_length = gamma_f * maximum_step_length;
 
    // back off just a touch (or a bit more)
-   alpha *= steplength_factor;
+   step_length *= steplength_factor;
 
-   assert(alpha < 1.0);
+   assert(step_length < 1.0);
 
-   return alpha;
+   return step_length;
 }
 
 void Solver::finalStepLength_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
@@ -358,21 +357,12 @@ Solver::defaultStatus(const Problem*, const Variables* /* vars */, const Residua
       printf("dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
 
-   //if(dnorm * mu < 50 * rnorm || mu < 1e-5) {
    if (mu * dnorm_orig < 1.0e5 * rnorm) {
-      //if(!onSafeSolver) {
       gLackOfAccuracy = 1;
-      //cout << "Lack of accuracy detected ---->" << mu << ":" << rnorm/dnorm << endl;
    }
    else {
-      //if(dnorm_orig * mu > 1e7 * rnorm && mu > 1.0e4)
-      //gLackOfAccuracy=-1;
-      //else
       gLackOfAccuracy = 1;
    }
-   //onSafeSolver=1;
-   //}
-   //gLackOfAccuracy=-1; //disable iter refin in sLinsysRootAug
    return stop_code;
 }
 

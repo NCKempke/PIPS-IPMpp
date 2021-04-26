@@ -69,9 +69,9 @@ public:
 
    void print() override;
 
-   virtual void objective_gradient(const Variables* vars, OoqpVector& gradient) const override;
+   virtual void objective_gradient(const Variables& variables, OoqpVector& gradient) const override;
 
-   virtual double objective_value(const Variables* vars) const override;
+   virtual double objective_value(const Variables& variables) const override;
 
    ~QP() override = default;
 };

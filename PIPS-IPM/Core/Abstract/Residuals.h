@@ -11,6 +11,7 @@
  */
 
 class Problem;
+
 class Variables;
 
 /**
@@ -77,19 +78,19 @@ public:
    double dualObjective() const { return dual_objective; };
 
    /** calculate residuals, their norms, and duality/complementarity gap, given a problem and variable set.  */
-   void evaluate(Problem &problem, Variables *iterate_in, bool print_resids = false);
+   void evaluate(Problem& problem, Variables& iterate_in, bool print_resids = false);
 
    /** Modify the "complementarity" component of the residuals, by
    * adding the pairwise products of the complementary variables plus
    * a constant alpha to this term.  
    */
-   void add_r3_xz_alpha(const Variables *vars, double alpha);
+   void add_r3_xz_alpha(const Variables* vars, double alpha);
 
    /** Set the "complementarity" component of the residuals to the
     * pairwise products of the complementary variables plus a constant
     * alpha
     */
-   void set_r3_xz_alpha(const Variables *vars, double alpha);
+   void set_r3_xz_alpha(const Variables* vars, double alpha);
 
    /** set the complementarity component of the residuals to 0. */
    void clear_r3();
@@ -107,7 +108,7 @@ public:
     * @see SimpleVector::gondzioProjection */
    void project_r3(double rmin, double rmax);
 
-   void copyFrom(const Residuals &);
+   void copyFrom(const Residuals&);
 
    virtual ~Residuals() = default;
 
@@ -115,15 +116,15 @@ public:
 
    int validNonZeroPattern();
 
-   void writeToStream(std::ostream &out);
+   void writeToStream(std::ostream& out);
 
-   const long long &getNxupp() { return nxupp; };
+   const long long& getNxupp() { return nxupp; };
 
-   const long long &getNxlow() { return nxlow; };
+   const long long& getNxlow() { return nxlow; };
 
-   const long long &getMcupp() { return mcupp; };
+   const long long& getMcupp() { return mcupp; };
 
-   const long long &getMclow() { return mclow; };
+   const long long& getMclow() { return mclow; };
 };
 
 #endif

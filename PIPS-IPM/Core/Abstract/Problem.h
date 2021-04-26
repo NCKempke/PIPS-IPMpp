@@ -47,9 +47,9 @@ public:
 
    virtual ~Problem() = default;
 
-   virtual double objective_value(const Variables* x) const = 0;
+   virtual double objective_value(const Variables& x) const = 0;
 
-   virtual void objective_gradient(const Variables* vars, OoqpVector& gradient) const = 0;
+   virtual void objective_gradient(const Variables& vars, OoqpVector& gradient) const = 0;
 
    /** compute the norm of the problem data */
    virtual double datanorm() const;

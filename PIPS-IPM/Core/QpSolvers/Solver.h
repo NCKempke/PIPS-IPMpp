@@ -36,7 +36,7 @@ public:
    virtual ~Solver();
 
    /** solve the IPM system */
-   virtual void solve_linear_system(Variables* iterate, Problem* problem, Residuals* residuals, Variables* step);
+   virtual void solve_linear_system(Variables& iterate, Problem& problem, Residuals& residuals, Variables& step);
 
    /** implements the interior-point method for solving the subproblem */
    virtual TerminationCode solve(Problem& problem, Variables& iterate, Residuals& residuals) = 0;
