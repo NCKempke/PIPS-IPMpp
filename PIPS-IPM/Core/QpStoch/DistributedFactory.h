@@ -48,15 +48,7 @@ class DoubleMatrix;
 class DistributedFactory : public ProblemFormulation {
 public:
 
-   DistributedFactory(StochInputTree*, MPI_Comm comm = MPI_COMM_WORLD);
-
-protected:
-   DistributedFactory() = default;
-
-   ~DistributedFactory() override;
-
-public:
-
+   DistributedFactory(StochInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
    virtual Problem* make_problem();
 
    Residuals* make_residuals(Problem& problem) override;
@@ -77,19 +69,23 @@ public:
    /** create rhs for augmented system using tree */
    OoqpVector* make_right_hand_side() const override;
 
-   virtual sLinsysRoot* newLinsysRootHierarchical() = 0;
+   DoubleLinearSolver* make_root_solver();
+
+   sLinsysRoot* make_linear_system_root();
+
+   sLinsysRoot* newLinsysRootHierarchical();
+
+   sLinsysRoot* make_linear_system_root(DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs);
+
+   Problem* switchToHierarchicalData(Problem* problem);
+
+   void switchToOriginalTree();
 
    void join_right_hand_side(OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
 
    void separate_variables(OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
 
-   virtual sLinsysRoot* make_linear_system_root() = 0;
-
-   virtual sLinsysRoot* make_linear_system_root(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
-
    virtual sLinsysLeaf* make_linear_system_leaf(DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs);
-
-   virtual DoubleLinearSolver* make_root_solver() = 0;
 
    virtual DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
 
@@ -108,8 +104,11 @@ public:
    StochIterateResourcesMonitor iterTmMonitor;
    double m_tmTotal{0.0};
 
+   ~DistributedFactory();
+
 protected:
    std::unique_ptr<sTree> hier_tree_swap{};
+   DistributedFactory() = default;
 };
 
 #endif

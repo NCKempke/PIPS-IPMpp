@@ -15,21 +15,21 @@
 #include "gmspipsio.h"
 #include "StochInputTree.h"
 
-class gmspips_reader{
-   public:
-      gmspips_reader( const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks );
-      virtual ~gmspips_reader();
+class gmspips_reader {
+public:
+   gmspips_reader(const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks);
+   virtual ~gmspips_reader();
 
-      StochInputTree* read_problem();
+   StochInputTree* read_problem();
 
-   protected:
-      gmspips_reader(){};
+protected:
+   gmspips_reader() {};
 
 
-      std::vector<GMSPIPSBlockData_t*> blocks;
+   std::vector<GMSPIPSBlockData_t*> blocks;
 
-      size_t n_blocks{};
-      bool log_reading{false};
+   size_t n_blocks{};
+   bool log_reading{false};
 };
 
 #endif /* PIPS_IPM_DRIVERS_GMSPIPS_GMSPIPSREADER_HPP_ */

@@ -16,6 +16,12 @@
 #include "StochOptions.h"
 #include "mpi.h"
 #include <stdio.h>
+#include "DistributedQP.hpp"
+#include "StochTree.h"
+#include "StochInputTree.h"
+#include "sLinsysRootAug.h"
+#include "sLinsysRootAugHierInner.h"
+#include "sLinsysRootBordered.h"
 
 class PardisoProjectSolver;
 class PardisoMKLSolver;
@@ -297,4 +303,43 @@ void DistributedFactory::iterate_ended() {
       //printf("ITERATION WALLTIME: iter=%g  Total=%g\n", iterTmMonitor.tmIterate, m_tmTotal);
 #endif
    }
+}
+
+sLinsysRoot* DistributedFactory::make_linear_system_root() {
+   assert(problem);
+   return new sLinsysRootAug(this, problem);
+}
+
+sLinsysRoot* DistributedFactory::make_linear_system_root(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
+   if (prob->isHierarchyInnerLeaf())
+      return new sLinsysRootAugHierInner(this, prob, dd, dq, nomegaInv, rhs);
+   else
+      return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs, true);
+}
+
+DoubleLinearSolver* DistributedFactory::make_root_solver() { return nullptr; };
+
+sLinsysRoot* DistributedFactory::newLinsysRootHierarchical() {
+   return new sLinsysRootBordered(this, problem);
+}
+
+Problem* DistributedFactory::switchToHierarchicalData(Problem*) {
+   hier_tree_swap.reset(tree->clone());
+
+   tree = tree->switchToHierarchicalTree(problem);
+
+   assert(tree->getChildren().size() == 1);
+   assert(tree->isHierarchicalRoot());
+
+   assert(problem->isHierarchyRoot());
+   return problem;
+}
+
+void DistributedFactory::switchToOriginalTree() {
+   assert(hier_tree_swap);
+
+   sTree* tmp = tree;
+   tree = hier_tree_swap.get();
+   hier_tree_swap.release();
+   hier_tree_swap.reset(tmp);
 }

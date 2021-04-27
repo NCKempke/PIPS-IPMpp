@@ -6,8 +6,6 @@
  */
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-
-#include "sFactoryAug.h"
 #include "GondzioStochLpSolver.h"
 #include "PIPSIpmInterface.h"
 #include "gmspips_reader.hpp"
@@ -79,7 +77,7 @@ double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_
 
    if( primal_dual_step )
    {
-      PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
+      PIPSIpmInterface<DistributedFactory, GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
             scaler, presolver );
       try
       {
@@ -93,7 +91,7 @@ double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_
    }
    else
    {
-      PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
+      PIPSIpmInterface<DistributedFactory, GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD,
             scaler, presolver );
       try
       {

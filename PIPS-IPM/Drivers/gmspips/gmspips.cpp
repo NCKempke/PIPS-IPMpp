@@ -4,7 +4,6 @@
 #include "PIPSIpmInterface.h"
 #include "GondzioStochSolver.h"
 #include "GondzioStochLpSolver.h"
-#include "sFactoryAug.h"
 #endif
 #if defined(GMS_MPI)
 #include "mpi.h"
@@ -412,7 +411,7 @@ int main(int argc, char ** argv)
 	   if( gmsRank == 0 )
 	      std::cout << "Different steplengths in primal and dual direction are used.\n";
 
-	   PIPSIpmInterface<sFactoryAug, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
+	   PIPSIpmInterface<DistributedFactory, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
 	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 
 		if( gmsRank == 0 )
@@ -443,7 +442,7 @@ int main(int argc, char ** argv)
 	else
 	{
       pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", true);
-      PIPSIpmInterface<sFactoryAug, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
+      PIPSIpmInterface<DistributedFactory, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
             scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
 
 		if( gmsRank == 0 )
