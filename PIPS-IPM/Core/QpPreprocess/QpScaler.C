@@ -114,7 +114,7 @@ void QpScaler::unscaleResiduals(Residuals& resids) const {
 
    // gap is scaling resistant
 
-   qp_resids.recomputeResidualNorm();
+   qp_resids.recompute_residual_norm();
 }
 
 OoqpVector* QpScaler::getPrimalUnscaled(const OoqpVector& solprimal) const {

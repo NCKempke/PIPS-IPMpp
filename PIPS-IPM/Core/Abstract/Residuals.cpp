@@ -171,7 +171,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    }
 }
 
-double Residuals::recomputeResidualNorm() {
+double Residuals::recompute_residual_norm() {
    mResidualNorm = 0.0;
 
    double componentNorm = 0.0;
@@ -256,7 +256,7 @@ void Residuals::clear_complementarity_residual() {
       rphi->setToZero();
 }
 
-void Residuals::clear_r1r2() {
+void Residuals::clear_linear_residuals() {
    rQ->setToZero();
    rA->setToZero();
    rC->setToZero();
@@ -288,11 +288,10 @@ void Residuals::project_r3(double rmin, double rmax) {
       rphi->gondzioProjection(rmin, rmax);
       rphi->selectNonZeros(*ixupp);
    }
-
 }
 
 
-int Residuals::validNonZeroPattern() {
+int Residuals::valid_non_zero_pattern() {
    if (nxlow > 0 && (!rv->matchesNonZeroPattern(*ixlow) || !rgamma->matchesNonZeroPattern(*ixlow))) {
       return 0;
    }
@@ -311,7 +310,7 @@ int Residuals::validNonZeroPattern() {
    return 1;
 }
 
-void Residuals::copyFrom(const Residuals& residuals) {
+void Residuals::copy(const Residuals& residuals) {
    mResidualNorm = residuals.mResidualNorm;
    mDualityGap = residuals.mDualityGap;
    m = residuals.m;

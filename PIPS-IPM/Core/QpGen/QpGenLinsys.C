@@ -151,20 +151,20 @@ QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, bool cr
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {
          //for iterative refinement or BICGStab
-         sol = factory->makeRhs();
-         res = factory->makeRhs();
-         resx = factory->makePrimalVector();
-         resy = factory->makeDualYVector();
-         resz = factory->makeDualZVector();
+         sol = factory->make_right_hand_side();
+         res = factory->make_right_hand_side();
+         resx = factory->make_primal_vector();
+         resy = factory->make_equalities_dual_vector();
+         resz = factory->make_inequalities_dual_vector();
 
          if (outerSolve == 2) {
             //BiCGStab; additional vectors needed
-            sol2 = factory->makeRhs();
-            sol3 = factory->makeRhs();
-            res2 = factory->makeRhs();
-            res3 = factory->makeRhs();
-            res4 = factory->makeRhs();
-            res5 = factory->makeRhs();
+            sol2 = factory->make_right_hand_side();
+            sol3 = factory->make_right_hand_side();
+            res2 = factory->make_right_hand_side();
+            res3 = factory->make_right_hand_side();
+            res4 = factory->make_right_hand_side();
+            res5 = factory->make_right_hand_side();
          }
       }
    }
@@ -180,13 +180,13 @@ QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, OoqpVec
 
 QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem) : QpGenLinsys(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
-      dd = factory->makePrimalVector();
-      dq = factory->makePrimalVector();
+      dd = factory->make_primal_vector();
+      dq = factory->make_primal_vector();
       problem->hessian_diagonal(*dq);
    }
 
-   nomegaInv = factory->makeDualZVector();
-   rhs = factory->makeRhs();
+   nomegaInv = factory->make_inequalities_dual_vector();
+   rhs = factory->make_right_hand_side();
 }
 
 QpGenLinsys::~QpGenLinsys() {
@@ -274,7 +274,7 @@ void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in,
    Residuals* res = (Residuals*) res_in;
 
    assert(vars->validNonZeroPattern());
-   assert(res->validNonZeroPattern());
+   assert(res->valid_non_zero_pattern());
 
    /*** compute rX ***/
    /* rx = rQ */
@@ -883,13 +883,13 @@ void QpGenLinsys::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const O
    // joinRHS has to be delegated to the factory. This is true because
    // the rhs may be distributed across processors, so the factory is the
    // only object that knows with certainly how to scatter the elements.
-   factory->joinRHS(rhs_in, rhs1_in, rhs2_in, rhs3_in);
+   factory->join_right_hand_side(rhs_in, rhs1_in, rhs2_in, rhs3_in);
 }
 
 void QpGenLinsys::separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
    // separateVars has to be delegated to the factory. This is true because
    // the rhs may be distributed across processors, so the factory is the
    // only object that knows with certainly how to scatter the elements.
-   factory->separateVars(x_in, y_in, z_in, vars_in);
+   factory->separate_variables(x_in, y_in, z_in, vars_in);
 }
 

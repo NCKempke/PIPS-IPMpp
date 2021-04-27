@@ -15,7 +15,7 @@
 //  return new QP( la, nx, my, mz, nnzQ, nnzA, nnzC );
 //}
 
-void QpGenSparseSeq::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
+void QpGenSparseSeq::join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
    SimpleVector& rhs = dynamic_cast<SimpleVector&>(rhs_in);
    const SimpleVector& rhs1 = dynamic_cast<const SimpleVector&>(rhs1_in);
    const SimpleVector& rhs2 = dynamic_cast<const SimpleVector&>(rhs2_in);
@@ -28,7 +28,7 @@ void QpGenSparseSeq::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, cons
       memcpy(&rhs[nx + my], &rhs3[0], mz * sizeof(double));
 }
 
-void QpGenSparseSeq::separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
+void QpGenSparseSeq::separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
    const SimpleVector& vars = dynamic_cast<const SimpleVector&>(vars_in);
    SimpleVector& x = dynamic_cast<SimpleVector&>(x_in);
    SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);

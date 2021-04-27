@@ -15,22 +15,22 @@
 
 sFactoryAug::sFactoryAug(StochInputTree* inputTree, MPI_Comm comm) : DistributedFactory(inputTree, comm) {};
 
-sLinsysRoot* sFactoryAug::newLinsysRoot() {
-   assert(data);
-   return new sLinsysRootAug(this, data);
+sLinsysRoot* sFactoryAug::make_linear_system_root() {
+   assert(problem);
+   return new sLinsysRootAug(this, problem);
 }
 
-sLinsysRoot* sFactoryAug::newLinsysRoot(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
+sLinsysRoot* sFactoryAug::make_linear_system_root(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) {
    if (prob->isHierarchyInnerLeaf())
       return new sLinsysRootAugHierInner(this, prob, dd, dq, nomegaInv, rhs);
    else
       return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, rhs, true);
 }
 
-DoubleLinearSolver* sFactoryAug::newRootSolver() { return nullptr; };
+DoubleLinearSolver* sFactoryAug::make_root_solver() { return nullptr; };
 
 sLinsysRoot* sFactoryAug::newLinsysRootHierarchical() {
-   return new sLinsysRootBordered(this, data);
+   return new sLinsysRootBordered(this, problem);
 }
 
 Problem* sFactoryAug::switchToHierarchicalData(Problem*) {
@@ -61,12 +61,12 @@ Problem* sFactoryAug::switchToHierarchicalData(Problem*) {
 
    hier_tree_swap.reset(tree->clone());
 
-   tree = tree->switchToHierarchicalTree(data);
+   tree = tree->switchToHierarchicalTree(problem);
 
    assert(tree->getChildren().size() == 1);
    assert(tree->isHierarchicalRoot());
 
-   assert(data->isHierarchyRoot());
+   assert(problem->isHierarchyRoot());
 
 // TODO : DELETEME
 //   OoqpVector* x_after = tree->newPrimalVector();
@@ -97,7 +97,7 @@ Problem* sFactoryAug::switchToHierarchicalData(Problem*) {
 //   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
 //   std::cout << "Q1norm before : " << Q1norm_bef << " vs Q1norm after : " << Q1norm_after << " difference " << Q1norm_bef - Q1norm_after << "\n";
 
-   return data;
+   return problem;
 }
 
 void sFactoryAug::switchToOriginalTree() {

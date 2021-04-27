@@ -58,11 +58,11 @@ protected:
    double bigcstab_norm_res_rel;
    int bicg_iterations;
 
-   void computePredictorStep(Problem* prob, Variables* iterate, Residuals* residuals);
+   void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals);
 
-   void computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu);
+   void compute_corrector_step(Problem& problem, Variables& iterate, double sigma, double mu);
 
-   void computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr);
+   void compute_gondzio_corrector(Problem& problem, Variables& iterate, double rmin, double rmax, bool small_corr);
 
    void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
 

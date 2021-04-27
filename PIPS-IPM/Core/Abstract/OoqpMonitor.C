@@ -10,7 +10,7 @@
 void
 OoqpSelfMonitor::doIt(const Solver* solver, const Problem* qpdata, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i,
       double mu, int status_code, int level) {
-   solver->defaultMonitor(qpdata, vars, resids, alpha, sigma, i, mu, status_code, level);
+   solver->default_monitor(qpdata, vars, resids, alpha, sigma, i, mu, status_code, level);
 }
 
 COoqpMonitor::COoqpMonitor(DoItCFunc doItC_, void* ctx_) {

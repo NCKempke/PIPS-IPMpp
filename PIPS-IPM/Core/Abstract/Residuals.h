@@ -97,7 +97,7 @@ public:
 
    /** set the noncomplementarity components of the residual (the terms
     *  arising from the linear equalities in the KKT conditions) to 0.  */
-   void clear_r1r2();
+   void clear_linear_residuals();
 
    /** perform the projection operation required by Gondzio algorithm:
     * replace each component r3_i of the complementarity component of
@@ -108,13 +108,13 @@ public:
     * @see SimpleVector::gondzioProjection */
    void project_r3(double rmin, double rmax);
 
-   void copyFrom(const Residuals&);
+   void copy(const Residuals&);
 
    virtual ~Residuals() = default;
 
-   double recomputeResidualNorm();
+   double recompute_residual_norm();
 
-   int validNonZeroPattern();
+   int valid_non_zero_pattern();
 
    void writeToStream(std::ostream& out);
 

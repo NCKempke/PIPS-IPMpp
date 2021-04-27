@@ -32,7 +32,7 @@ double gmu;
 extern int gOoqpPrintLevel;
 
 Solver::Solver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(problem_formulation),
-step(factory.makeVariables(&problem)), corrector_step(factory.makeVariables(&problem)), corrector_residuals(factory.makeResiduals(&problem)) {
+step(factory.make_variables(problem)), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)) {
    if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;
       gamma_f = 0.95;
@@ -46,24 +46,24 @@ step(factory.makeVariables(&problem)), corrector_step(factory.makeVariables(&pro
    }
 
    if (base_options::getBoolParameter("IP_PRINT_TIMESTAMP")) {
-      printTimeStamp = true;
-      startTime = MPI_Wtime();
+      print_timestamp = true;
+      start_time = MPI_Wtime();
    }
-   maxit = 300;
-   printlevel = 0; // has no meaning right now
+   max_iterations = 300;
+   print_level = 0; // has no meaning right now
    tsig = 3.0;     // the usual value for the centering exponent (tau)
 
-   NumberGondzioCorrections = 0;
+   number_gondzio_corrections = 0;
 
    maximum_correctors = qpgen_options::getIntParameter("GONDZIO_MAX_CORRECTORS");
 
    // the two StepFactor constants set targets for increase in step
    // length for each corrector
-   StepFactor0 = 0.08;
-   StepFactor1 = 1.08;
+   step_factor0 = 0.08;
+   step_factor1 = 1.08;
 
    // accept the enhanced step if it produces a small improvement in the step length
-   AcceptTol = 0.01;
+   acceptance_tolerance = 0.01;
 
    //define the Gondzio correction box
    beta_min = 0.1;
@@ -71,10 +71,10 @@ step(factory.makeVariables(&problem)), corrector_step(factory.makeVariables(&pro
 
    // allocate space to track the sequence problem_formulation complementarity gaps,
    // residual norms, and merit functions.
-   mu_history = new double[maxit];
-   rnorm_history = new double[maxit];
-   phi_history = new double[maxit];
-   phi_min_history = new double[maxit];
+   mu_history = new double[max_iterations];
+   residual_norm_history = new double[max_iterations];
+   phi_history = new double[max_iterations];
+   phi_min_history = new double[max_iterations];
 
    // Use the defaultStatus method
    status = 0;
@@ -99,7 +99,7 @@ void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals
    return;
 }
 
-double Solver::finalStepLength(Variables* iterate, Variables* step) {
+double Solver::mehrotra_step_length(Variables* iterate, Variables* step) {
    double primalValue = -std::numeric_limits<double>::max();
    double primalStep = -std::numeric_limits<double>::max();
    double dualValue = -std::numeric_limits<double>::max();
@@ -154,7 +154,7 @@ double Solver::finalStepLength(Variables* iterate, Variables* step) {
    return step_length;
 }
 
-void Solver::finalStepLength_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
+void Solver::mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
    double primalValue_p = -std::numeric_limits<double>::max();
    double primalStep_p = -std::numeric_limits<double>::max();
    double dualValue_p = -std::numeric_limits<double>::max();
@@ -226,43 +226,43 @@ void Solver::finalStepLength_PD(Variables* iterate, Variables* step, double& alp
 
 
 void
-Solver::doMonitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu, int stop_code,
+Solver::do_monitor(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu, int stop_code,
       int level) {
    OoqpMonitor* m = itsMonitors;
 
    while (m) {
-      m->doIt(this, problem, iterate, residuals, alpha, sigma, i, mu, stop_code, level);
+      m->doIt(this, data, iterate, residuals, alpha, sigma, i, mu, stop_code, level);
       m = m->nextMonitor;
    }
 }
 
 void
-Solver::doMonitorPd(const Problem* problem, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma, int i,
+Solver::do_monitor_Pd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma, int i,
       double mu, int stop_code, int level) {
    OoqpMonitor* m = itsMonitors;
 
    while (m) {
-      m->doItPd(this, problem, iterate, residuals, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
+      m->doItPd(this, data, iterate, residuals, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
       m = m->nextMonitor;
    }
 }
 
 
-TerminationCode Solver::doStatus(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level) {
+TerminationCode Solver::do_status(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level) {
    if (status) {
       return status->doIt(this, problem, iterate, residuals, i, mu, level);
    }
    else {
-      return this->defaultStatus(problem, iterate, residuals, i, mu, level);
+      return this->default_status(problem, iterate, residuals, i, mu, level);
    }
 }
 
 
 void Solver::monitorSelf() {
-   this->addMonitor(new OoqpSelfMonitor);
+   this->add_monitor(new OoqpSelfMonitor);
 }
 
-void Solver::addMonitor(OoqpMonitor* m) {
+void Solver::add_monitor(OoqpMonitor* m) {
    // Push the monitor onto the list
    m->nextMonitor = itsMonitors;
    itsMonitors = m;
@@ -275,7 +275,7 @@ std::pair<double, double> Solver::compute_unscaled_gap_and_residual_norm(const R
       if (!residuals_unscaled)
          residuals_unscaled.reset(scaler->getResidualsUnscaled(residuals));
       else {
-         residuals_unscaled->copyFrom(residuals);
+         residuals_unscaled->copy(residuals);
          scaler->unscaleResiduals(*residuals_unscaled);
       }
 
@@ -285,36 +285,31 @@ std::pair<double, double> Solver::compute_unscaled_gap_and_residual_norm(const R
 
 
 TerminationCode
-Solver::defaultStatus(const Problem*, const Variables* /* iterate */, const Residuals* residuals, int iteration, double mu, TerminationCode /* level */) {
+Solver::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu, TerminationCode /* level */level) {
    const int myrank = PIPS_MPIgetRank();
    TerminationCode stop_code = NOT_FINISHED;
-   int idx;
 
    const std::pair<double, double> gap_norm = compute_unscaled_gap_and_residual_norm(*residuals);
    const double gap = gap_norm.first;
    const double rnorm = gap_norm.second;
 
-   idx = iteration - 1;
-   if (idx < 0)
-      idx = 0;
-   if (idx >= maxit)
-      idx = maxit - 1;
+   int index = std::min(std::max(0, iteration - 1), max_iterations - 1);
 
    // store the historical record
-   mu_history[idx] = mu;
-   rnorm_history[idx] = rnorm;
-   phi = (rnorm + gap) / dnorm_orig;
-   phi_history[idx] = phi;
+   mu_history[index] = mu;
+   residual_norm_history[index] = rnorm;
+   double phi = (rnorm + gap) / dnorm_orig;
+   phi_history[index] = phi;
 
-   if (idx > 0) {
-      phi_min_history[idx] = phi_min_history[idx - 1];
-      if (phi < phi_min_history[idx])
-         phi_min_history[idx] = phi;
+   if (index > 0) {
+      phi_min_history[index] = phi_min_history[index - 1];
+      if (phi < phi_min_history[index])
+         phi_min_history[index] = phi;
    }
    else
-      phi_min_history[idx] = phi;
+      phi_min_history[index] = phi;
 
-   if (iteration >= maxit)
+   if (iteration >= max_iterations)
       stop_code = MAX_ITS_EXCEEDED;
    else if (mu <= mutol && rnorm <= artol * dnorm_orig)
       stop_code = SUCCESSFUL_TERMINATION;
@@ -322,8 +317,8 @@ Solver::defaultStatus(const Problem*, const Variables* /* iterate */, const Resi
    if (myrank == 0) {
       std::cout << "mu/mutol: " << mu << "  " << mutol << "  ....   rnorm/limit: " << rnorm << " " << artol * dnorm_orig << std::endl;
 
-      if (printTimeStamp) {
-         const double timestamp = MPI_Wtime() - startTime;
+      if (print_timestamp) {
+         const double timestamp = MPI_Wtime() - start_time;
          std::cout << "time stamp: " << timestamp << std::endl;
       }
    }
@@ -332,7 +327,7 @@ Solver::defaultStatus(const Problem*, const Variables* /* iterate */, const Resi
       return stop_code;
 
    // check infeasibility condition
-   if (idx >= 10 && phi >= 1.e-8 && phi >= 1.e4 * phi_min_history[idx]) {
+   if (index >= 10 && phi >= 1.e-8 && phi >= 1.e4 * phi_min_history[index]) {
 #ifdef TIMING
       if( myrank == 0 )
          std::cout << "possible INFEASIBLITY detected, phi: " << phi << std::endl;
@@ -344,12 +339,12 @@ Solver::defaultStatus(const Problem*, const Variables* /* iterate */, const Resi
       return stop_code;
 
    // check for unknown status: slow convergence first
-   if (idx >= 350 && phi_min_history[idx] >= 0.5 * phi_min_history[idx - 30]) {
+   if (index >= 350 && phi_min_history[index] >= 0.5 * phi_min_history[index - 30]) {
       stop_code = UNKNOWN;
       printf("hehe dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
 
-   if (idx >= 350 && rnorm > artol * dnorm_orig && rnorm_history[idx] * mu_history[0] >= 1.e8 * mu_history[idx] * rnorm_history[0]) {
+   if (index >= 350 && rnorm > artol * dnorm_orig && residual_norm_history[index] * mu_history[0] >= 1.e8 * mu_history[index] * residual_norm_history[0]) {
       stop_code = UNKNOWN;
       printf("dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
@@ -363,7 +358,7 @@ Solver::defaultStatus(const Problem*, const Variables* /* iterate */, const Resi
    return stop_code;
 }
 
-void Solver::setDnorm(const Problem& problem) {
+void Solver::set_problem_norm(const Problem& problem) {
    dnorm = problem.datanorm();
 
    if (scaler)
@@ -372,7 +367,7 @@ void Solver::setDnorm(const Problem& problem) {
       dnorm_orig = dnorm;
 }
 
-void Solver::defaultMonitor(const Problem* /* problem */, const Variables* /* iterate */, const Residuals* residuals, double alpha, double sigma, int i,
+void Solver::default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha, double sigma, int i,
       double mu, int status_code, int level) const {
    switch (level) {
       case 0 :
@@ -391,7 +386,7 @@ void Solver::defaultMonitor(const Problem* /* problem */, const Variables* /* it
          std::cout << std::endl << "Duality Gap: " << gap << std::endl;
 
          if (i > 1) {
-            std::cout << " Number of Corrections = " << NumberGondzioCorrections << " alpha = " << alpha << std::endl;
+            std::cout << " Number of Corrections = " << number_gondzio_corrections << " alpha = " << alpha << std::endl;
          }
          std::cout << " *** Iteration " << i << " *** " << std::endl;
          std::cout << " mu = " << mu << " relative residual norm = " << rnorm / dnorm_orig << std::endl;
@@ -430,7 +425,7 @@ Solver::~Solver() {
    delete linear_system;
 
    delete[] mu_history;
-   delete[] rnorm_history;
+   delete[] residual_norm_history;
    delete[] phi_history;
    delete[] phi_min_history;
 }

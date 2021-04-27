@@ -24,9 +24,9 @@ public:
    create_problem(double c[], int krowQ[], int jcolQ[], double dQ[], double xlow[], char ixlow[], double xupp[], char ixupp[], int krowA[], int jcolA[],
          double dA[], double b[], int krowC[], int jcolC[], double dC[], double clow[], char iclow[], double cupp[], char icupp[]);
 
-   void joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const override;
+   void join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const override;
 
-   void separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const override;
+   void separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const override;
 
 };
 

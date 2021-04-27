@@ -41,9 +41,13 @@
  * @{
  */
 class Problem;
+
 class Residuals;
+
 class LinearSystem;
+
 class Variables;
+
 class LinearAlgebraPackage;
 
 /**
@@ -52,29 +56,29 @@ class LinearAlgebraPackage;
  */
 class ProblemFormulation {
 public:
-   virtual void joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const = 0;
+   virtual void join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const = 0;
 
-   virtual void separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const = 0;
+   virtual void separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const = 0;
 
    /** create x shaped vector using LinearAlgebraPackage */
-   virtual OoqpVector* makePrimalVector() const;
+   virtual OoqpVector* make_primal_vector() const;
    /** create dual A shaped vector using LinearAlgebraPackage */
-   virtual OoqpVector* makeDualYVector() const;
+   virtual OoqpVector* make_equalities_dual_vector() const;
    /** create dual C shaped vector using LinearAlgebraPackage */
-   virtual OoqpVector* makeDualZVector() const;
+   virtual OoqpVector* make_inequalities_dual_vector() const;
    /** create a rhs vector for the augmented system */
-   virtual OoqpVector* makeRhs() const;
+   virtual OoqpVector* make_right_hand_side() const;
 
-  /** create the Residuals class for the relevant formulation */
-  virtual Residuals * makeResiduals( Problem * prob_in ) = 0;
+   /** create the Residuals class for the relevant formulation */
+   virtual Residuals* make_residuals(Problem& problem) = 0;
 
-  /** creates the LinearSystem class for the relevant formulation */
-  virtual LinearSystem * makeLinsys( Problem * prob_in ) = 0;
+   /** creates the LinearSystem class for the relevant formulation */
+   virtual LinearSystem* make_linear_system(Problem& problem) = 0;
 
-  /** creates the Variables class for the relevant formulation */
-  virtual Variables * makeVariables( Problem * prob_in ) = 0;
+   /** creates the Variables class for the relevant formulation */
+   virtual Variables* make_variables(Problem& problem) = 0;
 
-  virtual ~ProblemFormulation() = default;
+   virtual ~ProblemFormulation() = default;
 
 protected:
    LinearAlgebraPackage* la{};

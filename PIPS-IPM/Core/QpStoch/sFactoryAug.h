@@ -13,17 +13,17 @@ public:
 
    ~sFactoryAug() override = default;
 
-   DoubleLinearSolver* newRootSolver() override;
+   DoubleLinearSolver* make_root_solver() override;
 
-   sLinsysRoot* newLinsysRoot() override;
+   sLinsysRoot* make_linear_system_root() override;
 
    sLinsysRoot* newLinsysRootHierarchical() override;
 
-   sLinsysRoot* newLinsysRoot(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) override;
+   sLinsysRoot* make_linear_system_root(DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) override;
 
-   Problem* switchToHierarchicalData(Problem* prob_in) override;
+   Problem* switchToHierarchicalData(Problem* problem);
 
-   void switchToOriginalTree() override;
+   void switchToOriginalTree();
 
 };
 

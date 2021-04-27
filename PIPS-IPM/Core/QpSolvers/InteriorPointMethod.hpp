@@ -51,9 +51,9 @@ protected:
    bool dynamic_bicg_tol;
 
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals);
-   void computeCorrectorStep(Problem* prob, Variables* iterate, double sigma, double mu);
-   void computeGondzioCorrector(Problem* prob, Variables* iterate, double rmin, double rmax, bool small_corr);
-   void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
+   void compute_corrector_step(Problem& problem, Variables& iterate, double sigma, double mu);
+   void compute_gondzio_corrector(Problem* problem, Variables* iterate, double rmin, double rmax, bool small_corr);
+   void check_linear_system_solve_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void registerBiCGStabOvserver(LinearSystem* sys);
    void setBiCGStabTol(int iteration) const;
    void adjustLimitGondzioCorrectors();
@@ -62,14 +62,12 @@ protected:
    void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
    void doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual);
    bool restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_limit, double alpha_max) const;
-   void pushConvergedVarsAwayFromBounds(Problem& problem, Variables& vars) const;
-   void pushSmallComplementarityProducts(const Problem& problem, Variables& iterate, Residuals& residuals) const;
    void notifyFromSubject() override;
 
 private:
    // returns Gondzio weight for corrector step
    virtual void
-   calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
+   calculate_alpha_PD_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
          double& step_length_primal_candidate, double& step_length_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
 };
 

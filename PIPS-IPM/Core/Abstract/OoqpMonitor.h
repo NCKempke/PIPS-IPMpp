@@ -35,7 +35,7 @@ public:
 };  
 
 
-/** Monitors that simply call the solver's defaultMonitor method.
+/** Monitors that simply call the solver's default_monitor method.
  * 
  *  Don't create instances of this class. Call the solver's monitorSelf
  *  method instead.

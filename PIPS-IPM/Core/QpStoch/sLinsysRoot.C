@@ -795,16 +795,14 @@ void sLinsysRoot::createChildren(DistributedQP *prob)
 
          if( prob->children[it]->children.empty() )
          {
-            child = stochFactory->newLinsysLeaf(prob->children[it],
-                  ddst.children[it], dqst.children[it],
-                  nomegaInvst.children[it], rhsst.children[it]);
+            child = stochFactory->make_linear_system_leaf(prob->children[it], ddst.children[it], dqst.children[it], nomegaInvst.children[it],
+                  rhsst.children[it]);
          }
          else
          {
             assert( prob->children[it] );
-            child = stochFactory->newLinsysRoot(prob->children[it],
-                  ddst.children[it], dqst.children[it],
-                  nomegaInvst.children[it], rhsst.children[it]);
+            child = stochFactory->make_linear_system_root(prob->children[it], ddst.children[it], dqst.children[it], nomegaInvst.children[it],
+                  rhsst.children[it]);
          }
       }
       assert( child != nullptr );

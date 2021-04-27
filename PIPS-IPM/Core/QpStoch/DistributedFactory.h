@@ -57,60 +57,50 @@ protected:
 
 public:
 
-   virtual Problem* create_problem();
+   virtual Problem* make_problem();
 
-   Residuals* makeResiduals(Problem* prob_in) override;
+   Residuals* make_residuals(Problem& problem) override;
 
-   Variables* makeVariables(Problem* prob_in) override;
+   Variables* make_variables(Problem& problem) override;
 
-   LinearSystem* makeLinsys(Problem* prob_in) override;
+   LinearSystem* make_linear_system(Problem& problem) override;
 
    /** create x shaped vector using tree */
-   OoqpVector* makePrimalVector() const override;
+   OoqpVector* make_primal_vector() const override;
 
    /** create dual A shaped vector using tree */
-   OoqpVector* makeDualYVector() const override;
+   OoqpVector* make_equalities_dual_vector() const override;
 
    /** create dual C shaped vector using tree */
-   OoqpVector* makeDualZVector() const override;
+   OoqpVector* make_inequalities_dual_vector() const override;
 
    /** create rhs for augmented system using tree */
-   OoqpVector* makeRhs() const override;
+   OoqpVector* make_right_hand_side() const override;
 
-   virtual sLinsysRoot* newLinsysRootHierarchical() {
-      assert(0 && "not implemented here");
-      return nullptr;
-   }
+   virtual sLinsysRoot* newLinsysRootHierarchical() = 0;
 
-   virtual Problem* switchToHierarchicalData(Problem* /*prob_in*/ ) {
-      assert(0 && "not implemented here");
-      return nullptr;
-   }
+   void join_right_hand_side(OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
 
-   virtual void switchToOriginalTree() { assert(0 && "not implemented here"); }
+   void separate_variables(OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
 
-   void joinRHS(OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
+   virtual sLinsysRoot* make_linear_system_root() = 0;
 
-   void separateVars(OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
+   virtual sLinsysRoot* make_linear_system_root(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
 
-   virtual sLinsysRoot* newLinsysRoot() = 0;
+   virtual sLinsysLeaf* make_linear_system_leaf(DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs);
 
-   virtual sLinsysRoot* newLinsysRoot(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs) = 0;
+   virtual DoubleLinearSolver* make_root_solver() = 0;
 
-   virtual sLinsysLeaf* newLinsysLeaf(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs);
-
-   virtual DoubleLinearSolver* newRootSolver() = 0;
-
-   virtual DoubleLinearSolver* newLeafSolver(const DoubleMatrix* kkt);
+   virtual DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
 
    sTree* tree{};
-   DistributedQP* data{};
+   DistributedQP* problem{};
 
-   virtual void iterateStarted();
+   virtual void iterate_started();
 
-   virtual void iterateEnded();
+   virtual void iterate_ended();
 
-   DistributedResiduals* resid{};
+   DistributedResiduals* residuals{};
    std::vector<sVars*> registeredVars;
 
    sLinsysRoot* linsys{};
