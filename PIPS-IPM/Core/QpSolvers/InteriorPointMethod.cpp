@@ -7,7 +7,7 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-InteriorPointMethod::InteriorPointMethod(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(
+InteriorPointMethod::InteriorPointMethod(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(
       problem_formulation, problem, scaler), step_length_type(PRIMAL), // TO CHANGE
       n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
       dynamic_corrector_schedule(pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),

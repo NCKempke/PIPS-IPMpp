@@ -214,9 +214,9 @@ public:
   /** appends col - need matrix_col to have a transposed! */
   virtual int appendCol(const SparseGenMatrix& matrix_col, int col);
 
-  virtual double localRowTimesVec( const SimpleVector& vec, int row ) const;
-  virtual void axpyWithRowAt(double alpha, SimpleVector& y, int row) const;
-  virtual void axpyWithRowAtPosNeg( double alpha, SimpleVector& y_pos, SimpleVector& y_neg, int row) const;
+  virtual double localRowTimesVec( const SimpleVector<double>& vec, int row ) const;
+  virtual void axpyWithRowAt(double alpha, SimpleVector<double>& y, int row) const;
+  virtual void axpyWithRowAtPosNeg( double alpha, SimpleVector<double>& y_pos, SimpleVector<double>& y_neg, int row) const;
 
   virtual void removeRow(int row);
   virtual void removeCol( int col );

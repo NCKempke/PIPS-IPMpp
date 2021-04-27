@@ -205,7 +205,7 @@ int StochColumnStorage::storeLocalCol(const INDEX& col, const StochGenMatrix& ma
    return Bi_index;
 }
 
-void StochColumnStorage::axpyAtCol(double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector* eq_link, SimpleVector* ineq_link, double alpha, const INDEX& col ) const
+void StochColumnStorage::axpyAtCol(double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector<double>* eq_link, SimpleVector<double>* ineq_link, double alpha, const INDEX& col ) const
 {
    assert( col.isCol() );
 
@@ -224,7 +224,7 @@ void StochColumnStorage::axpyAtCol(double beta, StochVector* eq_vec, StochVector
       axpyAtCol( *ineq_vec, ineq_link, alpha, col, INEQUALITY_SYSTEM );
 }
 
-void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector* vec_link, double alpha, const INDEX& col, SystemType system_type) const
+void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector<double>* vec_link, double alpha, const INDEX& col, SystemType system_type) const
 {
    assert( col.isCol() );
    assert( !vec.isKindOf(kStochDummy) );
@@ -235,12 +235,12 @@ void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector* vec_link, dou
    if( col.isLinkingCol() )
    {
       /* B0 */
-      SimpleVector& b0_vec = getSimpleVecFromRowStochVec(vec, -1, false);
+      SimpleVector<double>& b0_vec = getSimpleVecFromRowStochVec(vec, -1, false);
       B0_mat.axpyWithRowAt(alpha, b0_vec, col.getIndex() );
 
       /* Bl0 */
       const SparseGenMatrix& Bl0_mat = *getSparseGenMatrixFromStochMat(mat, -1, BL_MAT);
-      SimpleVector& bl0_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) :
+      SimpleVector<double>& bl0_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) :
             *vec_link;
       Bl0_mat.axpyWithRowAt(alpha, bl0_vec, col.getIndex() );
 
@@ -252,7 +252,7 @@ void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector* vec_link, dou
             assert( !mat.children[node]->isKindOf(kStochGenDummyMatrix) );
 
             const SparseGenMatrix& A_mat = *getSparseGenMatrixFromStochMat(mat, node, BL_MAT);
-            SimpleVector& a_vec = getSimpleVecFromRowStochVec(vec, node, false);
+            SimpleVector<double>& a_vec = getSimpleVecFromRowStochVec(vec, node, false);
 
             A_mat.axpyWithRowAt( alpha, a_vec, col.getIndex() );
          }
@@ -263,10 +263,10 @@ void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector* vec_link, dou
       assert( !mat.children[col.getNode()]->isKindOf(kStochGenDummyMatrix) );
 
       const SparseGenMatrix& Bi_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), B_MAT);
-      SimpleVector& bi_vec = getSimpleVecFromRowStochVec(vec, col.getNode(), false);
+      SimpleVector<double>& bi_vec = getSimpleVecFromRowStochVec(vec, col.getNode(), false);
 
       const SparseGenMatrix& Bli_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), A_MAT);
-      SimpleVector& bli_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) :
+      SimpleVector<double>& bli_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) :
             *vec_link;
 
       Bi_mat.axpyWithRowAt( alpha, bi_vec, col.getIndex() );
@@ -339,13 +339,13 @@ double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, co
          const SparseGenMatrix& A_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, BL_MAT);
          assert(vec_eq.children[node]->first);
 
-         const SimpleVector& a_vec = getSimpleVecFromRowStochVec(vec_eq, node, false);
+         const SimpleVector<double>& a_vec = getSimpleVecFromRowStochVec(vec_eq, node, false);
          res += A_mat.localRowTimesVec(a_vec, col);
 
          const SparseGenMatrix& C_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, BL_MAT);
          assert(vec_ineq.children[node]->first);
 
-         const SimpleVector& c_vec = getSimpleVecFromRowStochVec(vec_ineq, node, false);
+         const SimpleVector<double>& c_vec = getSimpleVecFromRowStochVec(vec_ineq, node, false);
          res += C_mat.localRowTimesVec(c_vec, col);
       }
    }

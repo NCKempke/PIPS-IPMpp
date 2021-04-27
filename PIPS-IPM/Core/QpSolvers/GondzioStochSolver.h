@@ -15,7 +15,7 @@ class Problem;
 
 class Variables;
 
-class ProblemFormulation;
+class ProblemFactory;
 
 /**
  * Derived class of Solver implementing Gondzio-correction version of
@@ -91,7 +91,7 @@ protected:
 
 public:
 
-   GondzioStochSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler = nullptr);
+   GondzioStochSolver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler = nullptr);
 
    virtual ~GondzioStochSolver();
 

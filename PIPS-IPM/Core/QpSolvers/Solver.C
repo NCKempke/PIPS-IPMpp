@@ -6,7 +6,7 @@
 #include "Residuals.h"
 #include "LinearSystem.h"
 #include "Options.h"
-#include "ProblemFormulation.h"
+#include "ProblemFactory.h"
 #include "QpGenOptions.h"
 #include <iostream>
 #include <cstdio>
@@ -31,7 +31,7 @@ double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
 
-Solver::Solver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(problem_formulation),
+Solver::Solver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(problem_formulation),
 step(factory.make_variables(problem)), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)) {
    if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;

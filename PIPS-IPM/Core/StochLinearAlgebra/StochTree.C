@@ -924,7 +924,7 @@ void StochTree::syncStochVector(StochVector& stVec)
 	// this child needs to be deleted
 	marked4Del[it] = 1;
 	
-	SimpleVector* vec = (SimpleVector*)stVec.children[it]->vec;
+	SimpleVector<double>* vec = (SimpleVector<double>*)stVec.children[it]->vec;
 	int        dim = vec->length();
 	double* buffer = vec->elements();
 
@@ -952,13 +952,13 @@ void StochTree::syncStochVector(StochVector& stVec)
 	  
 	  stVec.children[it] = new StochVector(dim, children[it]->commWrkrs);
 	  stVec.children[it]->parent = &stVec;
-	  buffer = ((SimpleVector*)stVec.children[it]->vec)->elements();
+	  buffer = ((SimpleVector<double>*)stVec.children[it]->vec)->elements();
 	} else { //children will be added one by one to stVec (it has
 		 //no children)
 	  assert(stVec.children.size()==it);
 
 	  stVec.AddChild(new StochVector(dim, children[it]->commWrkrs));
-	  buffer = ((SimpleVector*)stVec.children[stVec.children.size()-1]->vec)->elements();
+	  buffer = ((SimpleVector<double>*)stVec.children[stVec.children.size()-1]->vec)->elements();
 	}
 	//do nothing for the stoch empty vectors
 	if( dim > 0 ) {
@@ -1007,7 +1007,7 @@ void StochTree::syncStochVector_old(StochVector& stVec, int which)
     if(syncNeeded) {
       syncChildren = 1;
       if(sending) {
-	double* buffer = ((SimpleVector*)stVec.children[it]->vec)->elements();
+	double* buffer = ((SimpleVector<double>*)stVec.children[it]->vec)->elements();
 
 	//do nothing for the stoch empty vectors
 	if( stVec.vec->length() > 0 ) {
@@ -1033,14 +1033,14 @@ void StochTree::syncStochVector_old(StochVector& stVec, int which)
 	    stVec.children[it] = new StochVector(0, children[it]->commWrkrs);
 
 	  }
-	  buffer = ((SimpleVector*)stVec.children[it]->vec)->elements();
+	  buffer = ((SimpleVector<double>*)stVec.children[it]->vec)->elements();
 	} else { //children will be added one by one to stVec (it has
 		 //no children)
 	  assert(stVec.children.size()==it);
 
 	  stVec.AddChild(new StochVector(children[it]->innerSize(which), 
 					 children[it]->commWrkrs));
-	  buffer = ((SimpleVector*)stVec.children[stVec.children.size()-1]->vec)->elements();
+	  buffer = ((SimpleVector<double>*)stVec.children[stVec.children.size()-1]->vec)->elements();
 	}
 	//do nothing for the stoch empty vectors
 	if( stVec.vec->length() > 0 ) {
@@ -1087,7 +1087,7 @@ StochVector* StochTree::createc() const
     return new StochDummyVector();  
 
   StochVector* c = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)c->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)c->vec)->elements();
   if (!fakedata) {
     // populate the node's data with data from user.
 
@@ -1126,7 +1126,7 @@ StochVector* StochTree::createb() const
     return new StochDummyVector();
 
   StochVector* b = new StochVector(my(), commWrkrs);
-  double* vData = ((SimpleVector*)b->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)b->vec)->elements();
   if (!fakedata) {
     data->fb(data->user_data, data->id, 
        vData, data->my);
@@ -1154,7 +1154,7 @@ StochVector* StochTree::createxlow() const
     return new StochDummyVector();
 
   StochVector* xlow = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)xlow->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)xlow->vec)->elements();
   if (!fakedata) {
     data->fxlow(data->user_data, data->id, 
        vData, data->n);
@@ -1181,7 +1181,7 @@ StochVector* StochTree::createixlow() const
     return new StochDummyVector();
 
   StochVector* ixlow = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)ixlow->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)ixlow->vec)->elements();
   if (!fakedata) {
     data->fixlow(data->user_data, data->id, 
        vData, data->n);
@@ -1208,7 +1208,7 @@ StochVector* StochTree::createxupp() const
     return new StochDummyVector();
 
   StochVector* xupp = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)xupp->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)xupp->vec)->elements();
   if (!fakedata) {
     data->fxupp(data->user_data, data->id, 
        vData, data->n);
@@ -1235,7 +1235,7 @@ StochVector* StochTree::createixupp() const
     return new StochDummyVector();
 
   StochVector* ixupp = new StochVector(nx(), commWrkrs);
-  double* vData = ((SimpleVector*)ixupp->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)ixupp->vec)->elements();
   if (!fakedata) {
     data->fixupp(data->user_data, data->id, 
        vData, data->n);
@@ -1264,7 +1264,7 @@ StochVector* StochTree::createclow() const
     return new StochDummyVector();
 
   StochVector* clow = new StochVector(mz(), commWrkrs);
-  double* vData = ((SimpleVector*)clow->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)clow->vec)->elements();
   if (!fakedata) {  
     data->fclow(data->user_data, data->id, 
          vData, data->mz);
@@ -1291,7 +1291,7 @@ StochVector* StochTree::createiclow() const
     return new StochDummyVector();
 
   StochVector* iclow = new StochVector(mz(), commWrkrs);
-  double* vData = ((SimpleVector*)iclow->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)iclow->vec)->elements();
   if (!fakedata) {
     data->ficlow(data->user_data, data->id, 
        vData, data->mz);
@@ -1318,7 +1318,7 @@ StochVector* StochTree::createcupp() const
     return new StochDummyVector();
 
   StochVector* cupp = new StochVector(mz(), commWrkrs);
-  double* vData = ((SimpleVector*)cupp->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)cupp->vec)->elements();
     if (!fakedata) {
     data->fcupp(data->user_data, data->id, 
        vData, data->mz);
@@ -1346,7 +1346,7 @@ StochVector* StochTree::createicupp() const
     return new StochDummyVector();
 
   StochVector* icupp = new StochVector(mz(), commWrkrs);
-  double* vData = ((SimpleVector*)icupp->vec)->elements();  
+  double* vData = ((SimpleVector<double>*)icupp->vec)->elements();
   if (!fakedata) {
     data->ficupp(data->user_data, data->id, 
        vData, data->mz);

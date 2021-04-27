@@ -6,8 +6,6 @@
 #define SIMPLEVECTOR
 
 #include "OoqpVector.h"
-#include "SimpleVector_fwd.h"
-#include "SimpleVectorHandle.h"
 #include "pipsdef.h"
 #include "StochOptions.h"
 
@@ -20,157 +18,146 @@
  * @ingroup SparseLinearAlgebra
  * @ingroup DenseLinearAlgebra
  */
-template <typename T>
-class SimpleVectorBase : public OoqpVectorBase<T> {
+template<typename T>
+class SimpleVector : public OoqpVectorBase<T> {
 protected:
-  int preserveVec;
-  T * v;
+   int preserveVec;
+   T* v;
+   std::vector<T> test;
+
 public:
-  explicit SimpleVectorBase( int nx = 0 );
-  SimpleVectorBase( T * v, int nx );
-  SimpleVectorBase( const SimpleVectorBase<T>& other );
-  //@{
-  /**
-   * Access the individual elements of this vector.
-   */
-  T & operator[]( int i ) {
+   explicit SimpleVector(int nx = 0);
+   SimpleVector(T* v, int nx);
+   SimpleVector(const SimpleVector<T>& other);
+   //@{
+   /**
+    * Access the individual elements of this vector.
+    */
+   T& operator[](int i) {
 #ifdef RANGECHECKS
-    assert( i >= 0 && i < this->n );
+      assert( i >= 0 && i < this->n );
 #endif
-    return v[i];
- }
-  const T & operator[]( int i ) const
-  {
+      return v[i];
+   }
+   const T& operator[](int i) const {
 #ifdef RANGECHECKS
-    assert( i >= 0 && i < this->n );
+      assert( i >= 0 && i < this->n );
 #endif
-    return v[i];
-  }
-  //@}
+      return v[i];
+   }
+   //@}
 
-  OoqpVectorBase<T>* clone() const override;
-  /* copy vector entries as well */
-  OoqpVectorBase<T>* cloneFull() const override;
+   OoqpVectorBase<T>* clone() const override;
+   /* copy vector entries as well */
+   OoqpVectorBase<T>* cloneFull() const override;
 
-  virtual ~SimpleVectorBase();
+   virtual ~SimpleVector();
 
-  void copyIntoArray( T v[] ) const override;
-  void copyFromArray( const T v[] ) override;
-  void copyFromArray( const char v[] ) override;
-  bool isZero() const override;
-  void setToZero() override;
-  void setToConstant( T c ) override;
-  void randomize( T , T , T* ) override { assert( 0 && "not implemented here" ); };
-  void copyFrom( const OoqpVectorBase<T>& v ) override;
-  void copyFromAbs(const OoqpVectorBase<T>& v) override;
-  double twonorm() const override;
-  T infnorm() const override;
-  T onenorm() const override;
-  void min( T& m, int& index ) const override;
-  void max( T& m, int& index ) const override;
-  void absminVecUpdate(OoqpVectorBase<T>& absminvec) const override;
-  void absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const override;
-  void absmin( T& m) const override;
-  void absminNonZero(T& m, T zero_eps) const override;
-  int getNnzs() const override;
+   void copyIntoArray(T v[]) const override;
+   void copyFromArray(const T v[]) override;
+   void copyFromArray(const char v[]) override;
+   bool isZero() const override;
+   void setToZero() override;
+   void setToConstant(T c) override;
+   void randomize(T, T, T*) override { assert(0 && "not implemented here"); };
+   void copyFrom(const OoqpVectorBase<T>& v) override;
+   void copyFromAbs(const OoqpVectorBase<T>& v) override;
+   double twonorm() const override;
+   T infnorm() const override;
+   T onenorm() const override;
+   void min(T& m, int& index) const override;
+   void max(T& m, int& index) const override;
+   void absminVecUpdate(OoqpVectorBase<T>& absminvec) const override;
+   void absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const override;
+   void absmin(T& m) const override;
+   void absminNonZero(T& m, T zero_eps) const override;
+   int getNnzs() const override;
 
-  void componentMult( const OoqpVectorBase<T>& v ) override;
-  void scalarMult( T num ) override;
-  void printSolutionToStdErr() const ;
-  void componentDiv( const OoqpVectorBase<T>& v ) override;
-  bool componentEqual( const OoqpVectorBase<T>& vec, T tol) const override;
-  bool componentNotEqual( const T val, const T tol ) const override;
-  void setNotIndicatedEntriesToVal( const T val, const OoqpVectorBase<T>& ind ) override;
+   void componentMult(const OoqpVectorBase<T>& v) override;
+   void scalarMult(T num) override;
+   void printSolutionToStdErr() const;
+   void componentDiv(const OoqpVectorBase<T>& v) override;
+   bool componentEqual(const OoqpVectorBase<T>& vec, T tol) const override;
+   bool componentNotEqual(const T val, const T tol) const override;
+   void setNotIndicatedEntriesToVal(const T val, const OoqpVectorBase<T>& ind) override;
 
-  void writeToStream( std::ostream& out, int offset = 0 ) const override;
-  void writefToStream( std::ostream& out, const char format[] ) const override;
+   void writeToStream(std::ostream& out, int offset = 0) const override;
+   void writefToStream(std::ostream& out, const char format[]) const override;
 
-  void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const override;
-  void writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const OoqpVectorBase<T>* ix, bool upperBound) const override;
+   void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const override;
+   void writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const OoqpVectorBase<T>* ix, bool upperBound) const override;
 
-  void scale( T alpha ) override;
-  
-  void axpy  ( T alpha, const OoqpVectorBase<T>& x ) override;
-  void axzpy ( T alpha, const OoqpVectorBase<T>& x, const OoqpVectorBase<T>& z ) override;
-  void axdzpy( T alpha, const OoqpVectorBase<T>& x, const OoqpVectorBase<T>& z ) override;
+   void scale(T alpha) override;
 
-   void addConstant( T c ) override;
+   void axpy(T alpha, const OoqpVectorBase<T>& x) override;
+   void axzpy(T alpha, const OoqpVectorBase<T>& x, const OoqpVectorBase<T>& z) override;
+   void axdzpy(T alpha, const OoqpVectorBase<T>& x, const OoqpVectorBase<T>& z) override;
+
+   void addConstant(T c) override;
 
 /** perform the projection operation required by Gondzio algorithm:
    * replace each component of the vector v by vp_i - v_i, where vp_i
    * is the projection of v_i onto the box [rmin, rmax]. Then if the
    * resulting value is less than -rmax, replace it by -rmax.
    * */
-  void gondzioProjection( T rmin, T rmax ) override;
-  T dotProductWith( const OoqpVectorBase<T>& v ) const override;
-  T dotProductSelf( T scaleFactor ) const override;
+   void gondzioProjection(T rmin, T rmax) override;
+   T dotProductWith(const OoqpVectorBase<T>& v) const override;
+   T dotProductSelf(T scaleFactor) const override;
 
-  T shiftedDotProductWith( T alpha, const OoqpVectorBase<T>& mystep,
-					const OoqpVectorBase<T>& yvec,
-					T beta,  const OoqpVectorBase<T>& ystep ) const override;
+   T shiftedDotProductWith(T alpha, const OoqpVectorBase<T>& mystep, const OoqpVectorBase<T>& yvec, T beta,
+         const OoqpVectorBase<T>& ystep) const override;
    void negate() override;
    void invert() override;
-   void invertSave( T zeroReplacementVal = 0.0 ) override;
+   void invertSave(T zeroReplacementVal = 0.0) override;
    void applySqrt() override;
    void roundToPow2() override;
    bool allPositive() const override;
-   bool allOf( const std::function<bool(const T&)>& pred ) const override;
+   bool allOf(const std::function<bool(const T&)>& pred) const override;
 
    long long numberOfNonzeros() const override;
 
-  bool matchesNonZeroPattern( const OoqpVectorBase<T>& select ) const override;
-  void selectNonZeros( const OoqpVectorBase<T>& select ) override;
-  void selectPositive() override;
-  void selectNegative() override;
-  void addSomeConstants( T c, const OoqpVectorBase<T>& select ) override;
-  void writefSomeToStream( std::ostream& out, const char format[],
-				   const OoqpVectorBase<T>& select ) const override;
-  void axdzpy( T alpha, const OoqpVectorBase<T>& x,
-		       const OoqpVectorBase<T>& z, const OoqpVectorBase<T>& select ) override;
+   bool matchesNonZeroPattern(const OoqpVectorBase<T>& select) const override;
+   void selectNonZeros(const OoqpVectorBase<T>& select) override;
+   void selectPositive() override;
+   void selectNegative() override;
+   void addSomeConstants(T c, const OoqpVectorBase<T>& select) override;
+   void writefSomeToStream(std::ostream& out, const char format[], const OoqpVectorBase<T>& select) const override;
+   void axdzpy(T alpha, const OoqpVectorBase<T>& x, const OoqpVectorBase<T>& z, const OoqpVectorBase<T>& select) override;
 
-  bool isKindOf( int kind ) const override;
+   bool isKindOf(int kind) const override;
 
-  bool somePositive( const OoqpVectorBase<T>& select ) const override;
-  void divideSome( const OoqpVectorBase<T>& div, const OoqpVectorBase<T>& select ) override;
+   bool somePositive(const OoqpVectorBase<T>& select) const override;
+   void divideSome(const OoqpVectorBase<T>& div, const OoqpVectorBase<T>& select) override;
 
-  T stepbound(const OoqpVectorBase<T>& v, T maxStep ) const override;
-  T findBlocking(const OoqpVectorBase<T> & wstep_vec,
-			      const OoqpVectorBase<T> & u_vec,
-			      const OoqpVectorBase<T> & ustep_vec,
-			      T maxStep,
-			      T *w_elt,
-			      T *wstep_elt,
-			      T *u_elt,
-			      T *ustep_elt,
-			      int& first_or_second) const override;
+   T stepbound(const OoqpVectorBase<T>& v, T maxStep) const override;
+   T findBlocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep, T* w_elt,
+         T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const override;
 
-  void findBlocking_pd(const OoqpVectorBase<T> & wstep_vec,
-                      const OoqpVectorBase<T> & u_vec, const OoqpVectorBase<T> & ustep_vec,
-                      T& maxStepPri, T& maxStepDual,
-                      T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p,
-                      T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
-                      bool& primalBlocking, bool& dualBlocking) const override;
+   void findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T& maxStepPri,
+         T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
+         bool& primalBlocking, bool& dualBlocking) const override;
 
-  void removeEntries(const OoqpVectorBase<int>& select) override;
+   void removeEntries(const OoqpVectorBase<int>& select) override;
 
-  void permuteEntries(const std::vector<unsigned int>& permvec);
+   void permuteEntries(const std::vector<unsigned int>& permvec);
 
-  void getSumCountIfSmall( double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select ) const override;
+   void getSumCountIfSmall(double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select) const override;
 
-  void pushAwayFromZero( double tol, double amount, const OoqpVectorBase<T>* select ) override;
+   void pushAwayFromZero(double tol, double amount, const OoqpVectorBase<T>* select) override;
 
-  void pushSmallComplementarityPairs( OoqpVectorBase<T>& other_vec, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other, double tol_pairs ) override;
+   void pushSmallComplementarityPairs(OoqpVectorBase<T>& other_vec, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other,
+         double tol_pairs) override;
 
-  /** Returns a pointer to the elements of this vector. */
-  T * elements() const { return v; };
+   /** Returns a pointer to the elements of this vector. */
+   T* elements() const { return v; };
 
-  void appendToFront( unsigned int n_to_add, const T& value );
-  void appendToFront( const SimpleVectorBase<T>& other );
+   void appendToFront(unsigned int n_to_add, const T& value);
+   void appendToFront(const SimpleVector<T>& other);
 
-  void appendToBack( unsigned int n_to_add, const T& value );
-  void appendToBack( const SimpleVectorBase<T>& other );
+   void appendToBack(unsigned int n_to_add, const T& value);
+   void appendToBack(const SimpleVector<T>& other);
 
-  virtual SimpleVectorBase<T>* shaveBorder( int n_shave, bool shave_top );
+   virtual SimpleVector<T>* shaveBorder(int n_shave, bool shave_top);
 };
 
 #endif

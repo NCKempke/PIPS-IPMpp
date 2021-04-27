@@ -87,7 +87,7 @@ void DeSymIndefSolver2::solve ( OoqpVector& v )
   int one = 1;
   double minus1 = -1;
 
-  SimpleVector &  sv = dynamic_cast<SimpleVector &>(v);
+  SimpleVector<double> &  sv = dynamic_cast<SimpleVector<double> &>(v);
   double *rhs = &sv[0];
 
   FNAME(dtrsv)(&fortranUplo,&fortranT,&fortranN,

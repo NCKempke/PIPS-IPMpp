@@ -14,7 +14,7 @@ class Problem;
 
 class Variables;
 
-class ProblemFormulation;
+class ProblemFactory;
 
 
 /**
@@ -36,7 +36,7 @@ private:
 
 public:
 
-   GondzioStochLpSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler = nullptr);
+   GondzioStochLpSolver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler = nullptr);
 
    ~GondzioStochLpSolver() override = default;
 

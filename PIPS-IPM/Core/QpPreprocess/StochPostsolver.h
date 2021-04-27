@@ -165,24 +165,24 @@ private:
       /* local changes in linking variables */
       bool& outdated_linking_vars;
       std::vector<double> array_linking_var_changes;
-      std::unique_ptr<SimpleVector> x_changes{};
-      std::unique_ptr<SimpleVector> v_changes{};
-      std::unique_ptr<SimpleVector> w_changes{};
-      std::unique_ptr<SimpleVector> gamma_changes{};
-      std::unique_ptr<SimpleVector> phi_changes{};
+      std::unique_ptr<SimpleVector<double>> x_changes{};
+      std::unique_ptr<SimpleVector<double>> v_changes{};
+      std::unique_ptr<SimpleVector<double>> w_changes{};
+      std::unique_ptr<SimpleVector<double>> gamma_changes{};
+      std::unique_ptr<SimpleVector<double>> phi_changes{};
 
       /* local changes in equality linking rows */
       bool& outdated_equality_linking_rows;
       std::vector<double> array_eq_linking_row_changes;
-      std::unique_ptr<SimpleVector> y_changes{};
+      std::unique_ptr<SimpleVector<double>> y_changes{};
 
       /* local changes in inequality rows */
       bool& outdated_inequality_linking_rows;
       std::vector<double> array_ineq_linking_row_changes;
-      std::unique_ptr<SimpleVector> z_changes{};
-      std::unique_ptr<SimpleVector> s_changes{};
-      std::unique_ptr<SimpleVector> t_changes{};
-      std::unique_ptr<SimpleVector> u_changes{};
+      std::unique_ptr<SimpleVector<double>> z_changes{};
+      std::unique_ptr<SimpleVector<double>> s_changes{};
+      std::unique_ptr<SimpleVector<double>> t_changes{};
+      std::unique_ptr<SimpleVector<double>> u_changes{};
 
       void finishNotify();
 
@@ -215,7 +215,7 @@ private:
       bool complementarySlackRowMet(const sVars& vars, const INDEX& row, double tol) const;
 
       bool sameNonZeroPatternDistributed(const StochVector& svec) const; // TODO: move
-      bool sameNonZeroPatternDistributed(const SimpleVector& vec) const; // TODO: move
+      bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) const; // TODO: move
 
       template <typename T>
       void setOriginalValuesFromReduced(StochVectorBase<T>& original_vector,
@@ -223,9 +223,9 @@ private:
          const StochVectorBase<int>& padding_original) const;
 
       template <typename T>
-      void setOriginalValuesFromReduced(SimpleVectorBase<T>& original_vector,
-         const SimpleVectorBase<T>& reduced_vector,
-         const SimpleVectorBase<int>& padding_original) const;
+      void setOriginalValuesFromReduced(SimpleVector<T>& original_vector,
+         const SimpleVector<T>& reduced_vector,
+         const SimpleVector<int>& padding_original) const;
 };
 
 

@@ -115,8 +115,8 @@ void DenseGenMatrix::mult(double beta, OoqpVector& y_in, double alpha, const Ooq
    double** M = mStorage->M;
    int incx = 1, incy = 1;
 
-   const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
-   SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
+   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    if (n != 0 && m != 0) {
       dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
@@ -141,8 +141,8 @@ void DenseGenMatrix::transMult(double beta, OoqpVector& y_in, double alpha, cons
    char fortranTrans = 'N';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
-   const SimpleVector& x = dynamic_cast<const SimpleVector&>(x_in);
-   SimpleVector& y = dynamic_cast<SimpleVector&>(y_in);
+   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
    int incx = 1, incy = 1;
 
    if (m != 0 && n != 0) {
@@ -220,7 +220,7 @@ void DenseGenMatrix::fromGetDiagonal(int idiag, OoqpVector& v) {
 
 void DenseGenMatrix::getRow(int rowIndex, OoqpVector& v_in) {
    assert (rowIndex >= 0 && rowIndex <= mStorage->m);
-   SimpleVector& v = dynamic_cast<SimpleVector&>(v_in);
+   SimpleVector<double>& v = dynamic_cast<SimpleVector<double>&>(v_in);
 
    mStorage->fromGetDense(rowIndex, 0, &v[0], 1, 1, mStorage->n);
 }

@@ -24,7 +24,7 @@ public:
 
    /** y = beta * first + alpha * stored - either of the vectors can be nullptr and will then not be considered */
    /** there is the option of specifying a special vector to store the linking row results in - if no vector is given the corresponding link vector will be ignored */
-   void axpyAtCol( double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector* eq_link, SimpleVector* ineq_link, double alpha, const INDEX& col ) const;
+   void axpyAtCol( double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector<double>* eq_link, SimpleVector<double>* ineq_link, double alpha, const INDEX& col ) const;
 
    double multColTimesVec( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq ) const;
 
@@ -51,7 +51,7 @@ private:
    void createStorageMatrix(SystemType system_type, const StochGenMatrix& sys_matrix);
 
    /* calculate first + alpha * stored for system */
-   void axpyAtCol(StochVector& vec, SimpleVector* vec_link, double alpha, const INDEX& col, SystemType system_type) const;
+   void axpyAtCol(StochVector& vec, SimpleVector<double>* vec_link, double alpha, const INDEX& col, SystemType system_type) const;
 };
 
 

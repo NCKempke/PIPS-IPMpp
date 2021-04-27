@@ -24,7 +24,7 @@ int StochRowStorage::storeRow( const INDEX& row, const StochGenMatrix& matrix_ro
 /* TODO : it would probably be nice to have something like a StochVectorView that one can create at this point and then use like a normal StochVec.. */
 /** y = beta * y + alpha * stored */
 /** if y_linking is defined the result of beta * y + alpha * stored for linking variables will be put there */
-void StochRowStorage::axpyAtRow(double beta, StochVector* y, SimpleVector* y_linking, double alpha, const INDEX& row) const
+void StochRowStorage::axpyAtRow(double beta, StochVector* y, SimpleVector<double>* y_linking, double alpha, const INDEX& row) const
 {
    assert( row.isRow() );
    assert( y );
@@ -38,7 +38,7 @@ void StochRowStorage::axpyAtRow(double beta, StochVector* y, SimpleVector* y_lin
    row_storage->axpyWithRowAt(alpha, y, y_linking, row.getNode(), row.getIndex(), row.getLinking());
 }
 
-void StochRowStorage::axpyAtRowPosNeg(double beta, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, double alpha, const INDEX& row) const
+void StochRowStorage::axpyAtRowPosNeg(double beta, StochVector* y_pos, SimpleVector<double>* y_link_pos, StochVector* y_neg, SimpleVector<double>* y_link_neg, double alpha, const INDEX& row) const
 {
    assert( row.isRow() );
    assert( (y_link_pos && y_link_neg) || (!y_link_pos && !y_link_neg) );
@@ -82,7 +82,7 @@ double StochRowStorage::multRowTimesVec( const INDEX& row, const StochVector& ve
 double StochRowStorage::multLinkingRowTimesVecWithoutBl0( int row, const StochVector& vec) const
 {
    const double res_full = row_storage->localRowTimesVec(vec, -1, row, true);
-   const double res_bl0 = dynamic_cast<const SparseGenMatrix*>(row_storage->Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.first), row);
+   const double res_bl0 = dynamic_cast<const SparseGenMatrix*>(row_storage->Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
 
    return res_full - res_bl0;
 }

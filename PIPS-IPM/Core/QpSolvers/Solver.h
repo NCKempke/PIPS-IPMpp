@@ -16,7 +16,7 @@ class Status;
 
 class OoqpMonitor;
 
-class ProblemFormulation;
+class ProblemFactory;
 
 /**  * @defgroup QpSolvers
  *
@@ -31,7 +31,7 @@ const unsigned int max_linesearch_points = 50;
  */
 class Solver {
 public:
-   Solver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* = nullptr);
+   Solver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* = nullptr);
 
    virtual ~Solver();
 
@@ -101,7 +101,7 @@ protected:
    OoqpMonitor* itsMonitors{};
    Status* status{};
    const Scaler* scaler{};
-   ProblemFormulation& factory;
+   ProblemFactory& factory;
    /**  storage for step vectors */
    Variables* step, * corrector_step;
    /** storage for residual vectors */

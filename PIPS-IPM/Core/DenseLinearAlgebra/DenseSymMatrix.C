@@ -115,8 +115,8 @@ void DenseSymMatrix::mult(double beta, double y[], int incy, double alpha, const
 void DenseSymMatrix::mult(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const {
    char fortranUplo = 'U';
    int n = mStorage->n;
-   SimpleVector& y = (SimpleVector&) y_in;
-   SimpleVector& x = (SimpleVector&) x_in;
+   SimpleVector<double>& y = (SimpleVector<double>&) y_in;
+   SimpleVector<double>& x = (SimpleVector<double>&) x_in;
    int incx = 1, incy = 1;
 
    if (n != 0) {

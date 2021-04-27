@@ -11,7 +11,6 @@
 #include "DistributedQP.hpp"
 #include "StochPostsolver.h"
 #include "StochVectorHandle.h"
-#include "SimpleVectorHandle.h"
 #include "SparseStorageDynamic.h"
 #include "SystemType.h"
 
@@ -49,9 +48,9 @@ private:
 
       /* size of non-zero changes array = #linking rows A + #linking rows C + # linking variables */
       std::vector<int> array_nnz_chgs;
-      std::unique_ptr<SimpleVectorBase<int>> nnzs_row_A_chgs{};
-      std::unique_ptr<SimpleVectorBase<int>> nnzs_row_C_chgs{};
-      std::unique_ptr<SimpleVectorBase<int>> nnzs_col_chgs{};
+      std::unique_ptr<SimpleVector<int>> nnzs_row_A_chgs{};
+      std::unique_ptr<SimpleVector<int>> nnzs_row_C_chgs{};
+      std::unique_ptr<SimpleVector<int>> nnzs_col_chgs{};
 
       /* In the constructor all unbounded entries will be counted.
        * Unbounded entries mean variables with non-zero multiplier that are unbounded in either upper or lower direction.
@@ -73,21 +72,21 @@ private:
 
       /// changes in boundedness and activities of linking rows get stored and synchronized
       std::vector<double> array_act_chgs;
-      std::unique_ptr<SimpleVector> actmax_eq_chgs{};
-      std::unique_ptr<SimpleVector> actmin_eq_chgs{};
-      std::unique_ptr<SimpleVector> actmax_ineq_chgs{};
-      std::unique_ptr<SimpleVector> actmin_ineq_chgs{};
+      std::unique_ptr<SimpleVector<double>> actmax_eq_chgs{};
+      std::unique_ptr<SimpleVector<double>> actmin_eq_chgs{};
+      std::unique_ptr<SimpleVector<double>> actmax_ineq_chgs{};
+      std::unique_ptr<SimpleVector<double>> actmin_ineq_chgs{};
 
       std::vector<int> array_act_unbounded_chgs;
-      std::unique_ptr<SimpleVectorBase<int>> actmax_eq_ubndd_chgs{};
-      std::unique_ptr<SimpleVectorBase<int>> actmin_eq_ubndd_chgs{};
-      std::unique_ptr<SimpleVectorBase<int>> actmax_ineq_ubndd_chgs{};
-      std::unique_ptr<SimpleVectorBase<int>> actmin_ineq_ubndd_chgs{};
+      std::unique_ptr<SimpleVector<int>> actmax_eq_ubndd_chgs{};
+      std::unique_ptr<SimpleVector<int>> actmin_eq_ubndd_chgs{};
+      std::unique_ptr<SimpleVector<int>> actmax_ineq_ubndd_chgs{};
+      std::unique_ptr<SimpleVector<int>> actmin_ineq_ubndd_chgs{};
 
       /* handling changes in bounds */
       std::vector<double> array_bound_chgs;
-      std::unique_ptr<SimpleVector> bound_chgs_A{};
-      std::unique_ptr<SimpleVector> bound_chgs_C{};
+      std::unique_ptr<SimpleVector<double>> bound_chgs_A{};
+      std::unique_ptr<SimpleVector<double>> bound_chgs_C{};
 
       /* storing so far found singleton rows and columns */
       std::queue<INDEX> singleton_rows;
@@ -112,7 +111,7 @@ private:
       // objective offset created by presolving
       double objOffset{ 0.0 };
       double obj_offset_chgs{ 0.0 };
-      std::unique_ptr<SimpleVector> objective_vec_chgs{};
+      std::unique_ptr<SimpleVector<double>> objective_vec_chgs{};
 
       // store free variables which bounds are only implied by bound tightening to remove bounds later again
       std::unique_ptr<StochVectorBase<int>> lower_bound_implied_by_system{};
@@ -275,13 +274,13 @@ private:
       void setUndefinedVarboundsTo(double value);
       void setUndefinedRowboundsTo(double value);
 
-      void addActivityOfBlock( const SparseStorageDynamic& matrix, SimpleVector& min_partact, 
-            SimpleVectorBase<int>& unbounded_min, SimpleVector& max_partact,
-            SimpleVectorBase<int>& unbounded_max, const SimpleVector& xlow, 
-            const SimpleVector& ixlow, const SimpleVector& xupp, 
-            const SimpleVector& ixupp) const ;
+      void addActivityOfBlock( const SparseStorageDynamic& matrix, SimpleVector<double>& min_partact,
+            SimpleVector<int>& unbounded_min, SimpleVector<double>& max_partact,
+            SimpleVector<int>& unbounded_max, const SimpleVector<double>& xlow,
+            const SimpleVector<double>& ixlow, const SimpleVector<double>& xupp,
+            const SimpleVector<double>& ixupp) const ;
 
-      long resetOriginallyFreeVarsBounds(const SimpleVector& ixlow_orig, const SimpleVector& ixupp_orig, int node);
+      long resetOriginallyFreeVarsBounds(const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig, int node);
 
       void adjustMatrixRhsLhsBy( const INDEX& row, double value, bool at_root );
       /// methods for modifying the problem
@@ -338,8 +337,8 @@ public:
       int countEmptyRowsBDmat() const;
 
 private:
-      void writeMatrixRowToStreamDense(std::ostream& out, const SparseGenMatrix& mat, int node, int row, const SimpleVector& ixupp, const SimpleVector& xupp,
-            const SimpleVector& ixlow, const SimpleVector& xlow) const;
+      void writeMatrixRowToStreamDense(std::ostream& out, const SparseGenMatrix& mat, int node, int row, const SimpleVector<double>& ixupp, const SimpleVector<double>& xupp,
+            const SimpleVector<double>& ixlow, const SimpleVector<double>& xlow) const;
       void printVarBoundStatistics(std::ostream& out) const;
 };
 

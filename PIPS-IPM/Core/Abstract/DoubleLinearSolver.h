@@ -128,7 +128,7 @@ class DoubleIterativeLinearSolver : public DoubleLinearSolver {
  * An implementation of the abstract class @MatTimesVec that performs a mat-first
  * with both the matrix and vector being on the same processor.
  *
- * It can use OOQP matrix and the implementation is based on SimpleVector class.
+ * It can use OOQP matrix and the implementation is based on SimpleVector<double> class.
  */
 class StoredMatTimesVec : public MatTimesVec {
  public:
@@ -143,7 +143,7 @@ class StoredMatTimesVec : public MatTimesVec {
  * An implementation of the abstract class @MatTimesVec that performs a
  * mat transpose-first with both the matrix and vector being on the same processor.
  *
- * It can use OOQP matrix and the implementation is based on SimpleVector class.
+ * It can use OOQP matrix and the implementation is based on SimpleVector<double> class.
  */
 class StoredMatTransTimesVec : public MatTimesVec {
  public:

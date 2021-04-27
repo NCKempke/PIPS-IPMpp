@@ -29,7 +29,7 @@ GenMatrix * SparseLinearAlgebraPackage::newGenMatrix( int m, int n,
   
 OoqpVector * SparseLinearAlgebraPackage::newVector( int n ) const
 {
-  return new SimpleVector(n);
+  return new SimpleVector<double>(n);
 }
  
 void SparseLinearAlgebraPackage::whatami( char type[32] ) const

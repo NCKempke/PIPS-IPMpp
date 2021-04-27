@@ -20,77 +20,65 @@
 double g_scenNum;
 #endif
 
-sLinsysRoot::sLinsysRoot(DistributedFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root)
-  : sLinsys(factory_, prob_, is_hierarchy_root)
-{
-  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-    assert( is_hierarchy_root );
-  init();
-}
-
-sLinsysRoot::sLinsysRoot(DistributedFactory* factory_,
-			 DistributedQP* prob_,
-			 OoqpVector* dd_,
-			 OoqpVector* dq_,
-			 OoqpVector* nomegaInv_,
-			 OoqpVector* rhs_)
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, true)
-{
+sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : sLinsys(factory_, prob_, is_hierarchy_root) {
+   if (pips_options::getBoolParameter("HIERARCHICAL"))
+      assert(is_hierarchy_root);
    init();
 }
 
-void sLinsysRoot::init()
-{
-  createChildren(data);
-
-  precondSC = SCsparsifier(mpiComm);
-  usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
-
-  // use sparse KKT if (enough) 2 links are present
-  hasSparseKkt = data->exploitingLinkStructure();
-  allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
-  if( pips_options::getBoolParameter( "HIERARCHICAL" ) )
-     assert( allreduce_kkt );
-
-  usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
-  MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
-
-  initProperChildrenRange();
+sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
+      OoqpVector* rhs_) : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, rhs_, true) {
+   init();
 }
 
-sLinsysRoot::~sLinsysRoot()
-{
-  for(size_t c = 0; c < children.size(); c++)
-    delete children[c];
+void sLinsysRoot::init() {
+   createChildren(data);
 
-  delete kktDist;
+   precondSC = SCsparsifier(mpiComm);
+   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
 
-  delete[] sparseKktBuffer;
+   // use sparse KKT if (enough) 2 links are present
+   hasSparseKkt = data->exploitingLinkStructure();
+   allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
+   if (pips_options::getBoolParameter("HIERARCHICAL"))
+      assert(allreduce_kkt);
+
+   usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
+   MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
+
+   initProperChildrenRange();
+}
+
+sLinsysRoot::~sLinsysRoot() {
+   for (size_t c = 0; c < children.size(); c++)
+      delete children[c];
+
+   delete kktDist;
+
+   delete[] sparseKktBuffer;
 }
 
 //this variable is just reset in this file; children will default to the "safe" linear solver
 extern int gLackOfAccuracy;
 
-void sLinsysRoot::assembleKKT(DistributedQP* prob, Variables* vars)
-{
-   if( is_hierarchy_root )
-      assert( children.size() == 1 );
+void sLinsysRoot::assembleKKT(DistributedQP* prob, Variables* vars) {
+   if (is_hierarchy_root)
+      assert(children.size() == 1);
 
    /* set kkt to zero */
    initializeKKT(prob, vars);
 
    /* important that int separate loops! else block in Allreduce might occur */
-   for(size_t c = 0; c < children.size(); c++)
+   for (size_t c = 0; c < children.size(); c++)
       children[c]->assembleKKT(prob->children[c], vars);
-   for(size_t c = 0; c < children.size(); c++)
+   for (size_t c = 0; c < children.size(); c++)
       children[c]->allreduceAndFactorKKT(prob->children[c], vars);
 
    /* build KKT from local children */
-   assembleLocalKKT( prob );
+   assembleLocalKKT(prob);
 }
 
-void sLinsysRoot::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars)
-{
+void sLinsysRoot::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) {
    reduceKKT(prob);
 
    finalizeKKT(prob, vars);
@@ -98,16 +86,13 @@ void sLinsysRoot::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars)
    factorizeKKT(prob);
 }
 
-void sLinsysRoot::factor2(DistributedQP *prob, Variables *vars)
-{
-   if( PIPS_MPIgetRank(mpiComm) == 0 )
-   {
-      if( is_hierarchy_root )
-      {
-         assert( children.size() == 1 );
+void sLinsysRoot::factor2(DistributedQP* prob, Variables* vars) {
+   if (PIPS_MPIgetRank(mpiComm) == 0) {
+      if (is_hierarchy_root) {
+         assert(children.size() == 1);
          std::cout << "\n Building dense outer Schur Complement...\n\n";
       }
-      else if( data->isHierarchyInnerRoot() )
+      else if (data->isHierarchyInnerRoot())
          std::cout << " Building sparse top level Schur Complement...\n\n";
    }
 
@@ -115,37 +100,35 @@ void sLinsysRoot::factor2(DistributedQP *prob, Variables *vars)
    initializeKKT(prob, vars);
 
    // First tell children to factorize.
-   for(size_t c = 0; c < children.size(); c++)
+   for (size_t c = 0; c < children.size(); c++)
       children[c]->factor2(prob->children[c], vars);
 
    /* build KKT from local children */
-   assembleLocalKKT( prob );
+   assembleLocalKKT(prob);
 
 #ifdef TIMING
    MPI_Barrier(MPI_COMM_WORLD);
    stochNode->resMon.recReduceTmLocal_start();
-#endif 
+#endif
 
    reduceKKT(prob);
- #ifdef TIMING
+#ifdef TIMING
    stochNode->resMon.recReduceTmLocal_stop();
 #endif
 
    finalizeKKT(prob, vars);
 
-   if( PIPS_MPIgetRank(mpiComm) == 0 )
-   {
-      if( is_hierarchy_root )
+   if (PIPS_MPIgetRank(mpiComm) == 0) {
+      if (is_hierarchy_root)
          std::cout << " Dense Schur Complement factorization is starting... ";
-      else if( data->isHierarchyInnerRoot() )
+      else if (data->isHierarchyInnerRoot())
          std::cout << " Sparse top level Schur Complement factorization is starting... ";
    }
 
    factorizeKKT(prob);
 
-   if( PIPS_MPIgetRank(mpiComm) == 0 )
-   {
-      if( is_hierarchy_root || data->isHierarchyInnerRoot() )
+   if (PIPS_MPIgetRank(mpiComm) == 0) {
+      if (is_hierarchy_root || data->isHierarchyInnerRoot())
          std::cout << "done\n\n";
    }
 
@@ -164,18 +147,18 @@ void sLinsysRoot::afterFactor()
       if (children[c]->mpiComm == MPI_COMM_NULL) continue;
       
       printf("  rank %d NODE %4zu SPFACT %g BACKSOLVE %g SEC ITER %d\n", mype, c,
-	     children[c]->stochNode->resMon.eFact.tmLocal,
-	     children[c]->stochNode->resMon.eFact.tmChildren, (int)g_iterNumber);
+        children[c]->stochNode->resMon.eFact.tmLocal,
+        children[c]->stochNode->resMon.eFact.tmChildren, (int)g_iterNumber);
     }
   }
   if( (mype/1024)*1024==mype) {
     for (size_t c=0; c<children.size(); c++) {
       if (children[c]->mpiComm == MPI_COMM_NULL) continue;
-      
+
       double redall = stochNode->resMon.eReduce.tmLocal;
       double redscat = stochNode->resMon.eReduceScatter.tmLocal;
-      printf("  rank %d REDUCE %g SEC ITER %d REDSCAT %g DIFF %g\n", mype, redall, 
-	     (int)g_iterNumber, redscat, redall-redscat);
+      printf("  rank %d REDUCE %g SEC ITER %d REDSCAT %g DIFF %g\n", mype, redall,
+        (int)g_iterNumber, redscat, redall-redscat);
     }
   }
 }
@@ -194,20 +177,21 @@ void sLinsysRoot::afterFactor()
  * [ G0V  0     0    ]
  */
 // TODO : move to aug..
-void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows )
-{
-   assert( 0 <= begin_rows && begin_rows <= end_rows );
+void
+sLinsysRoot::finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
+   assert(0 <= begin_rows && begin_rows <= end_rows);
    // TODO : parallelize over MPI procs?
-   finalizeDenseBorderModBlocked( Br_mod_border, buffer, begin_rows, end_rows );
+   finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
 
-   int mbuffer, nbuffer; buffer.getSize( mbuffer, nbuffer );
+   int mbuffer, nbuffer;
+   buffer.getSize(mbuffer, nbuffer);
 
-   if( sc_compute_blockwise_hierarchical )
-      assert( end_rows - begin_rows <= mbuffer );
+   if (sc_compute_blockwise_hierarchical)
+      assert(end_rows - begin_rows <= mbuffer);
    else
-      assert( end_rows = mbuffer );
+      assert(end_rows = mbuffer);
 
-   if( !Br.has_RAC && !Br.use_local_RAC )
+   if (!Br.has_RAC && !Br.use_local_RAC)
       return;
 
    bool has_RAC = Br.has_RAC;
@@ -221,73 +205,77 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
    SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : &data->getLocalF();
    SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : &data->getLocalG();
 
-   if( has_RAC )
-      assert( F0cons_border && G0cons_border && A0_border && C0_border );
-   assert( F0vec_border );
-   assert( G0vec_border );
+   if (has_RAC)
+      assert(F0cons_border && G0cons_border && A0_border && C0_border);
+   assert(F0vec_border);
+   assert(G0vec_border);
 
-   int mA0{0}; int nA0{0};
-   if( A0_border )
+   int mA0{0};
+   int nA0{0};
+   if (A0_border)
       A0_border->getSize(mA0, nA0);
 
-   int mC0{0}; int nC0{0};
-   if( C0_border )
+   int mC0{0};
+   int nC0{0};
+   if (C0_border)
       C0_border->getSize(mC0, nC0);
 
-   int mF0C{0}; int nF0C{0};
-   if( F0cons_border )
-      F0cons_border->getSize( mF0C, nF0C );
+   int mF0C{0};
+   int nF0C{0};
+   if (F0cons_border)
+      F0cons_border->getSize(mF0C, nF0C);
 
-   int mG0C{0}; int nG0C{0};
-   if( G0cons_border )
-      G0cons_border->getSize( mG0C, nG0C );
+   int mG0C{0};
+   int nG0C{0};
+   if (G0cons_border)
+      G0cons_border->getSize(mG0C, nG0C);
 
-   int mF0V{0}; int nF0V{0};
+   int mF0V{0};
+   int nF0V{0};
    F0vec_border->getSize(mF0V, nF0V);
 
-   int mG0V{0}; int nG0V{0};
+   int mG0V{0};
+   int nG0V{0};
    G0vec_border->getSize(mG0V, nG0V);
 
 #ifndef NDEBUG
-   assert( nA0 == nC0 );
-   assert( nF0V == nG0V );
+   assert(nA0 == nC0);
+   assert(nF0V == nG0V);
 
-   if( has_RAC )
-      assert( nA0 == nF0V );
+   if (has_RAC)
+      assert(nA0 == nF0V);
 
-   assert( nF0C == nG0C );
-   if( mA0 != 0 )
-      assert( nF0C + mA0 + mC0 + mF0V + mG0V == nbuffer );
+   assert(nF0C == nG0C);
+   if (mA0 != 0)
+      assert(nF0C + mA0 + mC0 + mF0V + mG0V == nbuffer);
 
-   if( !sc_compute_blockwise_hierarchical )
-   {
-      if( has_RAC )
-         assert( mbuffer >= nF0V + mF0C + mG0C );
+   if (!sc_compute_blockwise_hierarchical) {
+      if (has_RAC)
+         assert(mbuffer >= nF0V + mF0C + mG0C);
       else
-         assert( mbuffer >= nF0V );
+         assert(mbuffer >= nF0V);
    }
 #endif
 
    /* add A0^T, C0^T, F0V^T, G0V^T */
-   if( begin_rows < nF0V )
-   {
-      const int end_f0vblock = std::min( nF0V, end_rows );
+   if (begin_rows < nF0V) {
+      const int end_f0vblock = std::min(nF0V, end_rows);
 
       /* A0^T */
-      if( mA0 > 0 )
-         buffer.addMatAt( A0_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C );
+      if (mA0 > 0)
+         buffer.addMatAt(A0_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C);
 
       /* C0^T */
-      if( mC0 > 0 )
-         buffer.addMatAt( C0_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 );
+      if (mC0 > 0)
+         buffer.addMatAt(C0_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0);
 
       /* F0V^T */
-      if( mF0V > 0 )
-         buffer.addMatAt( F0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 );
+      if (mF0V > 0)
+         buffer.addMatAt(F0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0);
 
       /* G0V^T */
-      if( mG0V > 0 )
-         buffer.addMatAt( G0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 + mF0V );
+      if (mG0V > 0)
+         buffer.addMatAt(G0vec_border->getTranspose(), begin_rows, end_f0vblock, 0, nF0C + mA0 + mC0 + mF0V);
    }
 
    /* F0C */
@@ -295,12 +283,11 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
       const int start_F0C_block = nA0;
       const int end_F0C_block = nA0 + mF0C;
 
-      if( mF0C > 0 && begin_rows < end_F0C_block && start_F0C_block <= end_rows )
-      {
+      if (mF0C > 0 && begin_rows < end_F0C_block && start_F0C_block <= end_rows) {
          const int start_F0C_mat = std::max(begin_rows, start_F0C_block) - start_F0C_block;
          const int end_F0C_mat = std::min(end_rows, end_F0C_block) - start_F0C_block;
-         assert( 0 <= start_F0C_mat && start_F0C_mat <= end_F0C_mat );
-         buffer.addMatAt( *F0cons_border, start_F0C_mat, end_F0C_mat, std::max(0, start_F0C_block - begin_rows), 0 );
+         assert(0 <= start_F0C_mat && start_F0C_mat <= end_F0C_mat);
+         buffer.addMatAt(*F0cons_border, start_F0C_mat, end_F0C_mat, std::max(0, start_F0C_block - begin_rows), 0);
       }
    }
 
@@ -309,12 +296,11 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
       const int start_G0C_block = nA0 + mF0C;
       const int end_G0C_block = nA0 + mF0C + mG0C;
 
-      if( mG0C > 0 && begin_rows < end_G0C_block && start_G0C_block <= end_rows )
-      {
+      if (mG0C > 0 && begin_rows < end_G0C_block && start_G0C_block <= end_rows) {
          const int start_G0C_mat = std::max(begin_rows, start_G0C_block) - start_G0C_block;
          const int end_G0C_mat = std::min(end_rows, end_G0C_block) - start_G0C_block;
-         assert( 0 <= start_G0C_mat && start_G0C_mat <= end_G0C_mat );
-         buffer.addMatAt( *G0cons_border, start_G0C_mat, end_G0C_mat, std::max(0, start_G0C_block - begin_rows), 0 );
+         assert(0 <= start_G0C_mat && start_G0C_mat <= end_G0C_mat);
+         buffer.addMatAt(*G0cons_border, start_G0C_mat, end_G0C_mat, std::max(0, start_G0C_block - begin_rows), 0);
       }
    }
 }
@@ -337,28 +323,30 @@ void sLinsysRoot::finalizeZ0Hierarchical( DenseGenMatrix& buffer, BorderLinsys& 
  *       [ G0V  0    0   ]
  *
  */
-void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows, int end_rows )
-{
-   int m_result, n_result; result.getSize(m_result, n_result);
+void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse,
+      int begin_rows, int end_rows) {
+   int m_result, n_result;
+   result.getSize(m_result, n_result);
 
 #ifndef NDEBUG
-   assert( 0 <= begin_rows && begin_rows <= end_rows );
+   assert(0 <= begin_rows && begin_rows <= end_rows);
    const int n_rows = end_rows - begin_rows;
-   if( sc_compute_blockwise_hierarchical )
-      assert( n_rows <= m_result );
+   if (sc_compute_blockwise_hierarchical)
+      assert(n_rows <= m_result);
    else
-      assert( end_rows <= m_result && begin_rows == 0 );
+      assert(end_rows <= m_result && begin_rows == 0);
 #endif
 
-   if( is_sparse )
-      assert( is_sym );
+   if (is_sparse)
+      assert(is_sym);
 
    const bool has_RAC = Br.has_RAC;
-   if( !has_RAC && !Br.use_local_RAC )
+   if (!has_RAC && !Br.use_local_RAC)
       return;
 
-   int mX0, nX0; X0.getSize(mX0, nX0);
-   assert( n_rows <= mX0 );
+   int mX0, nX0;
+   X0.getSize(mX0, nX0);
+   assert(n_rows <= mX0);
 
    SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
    SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
@@ -368,80 +356,91 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result,
    SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : &data->getLocalF();
    SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : &data->getLocalG();
 
-   assert( F0vec_border );
-   assert( G0vec_border );
+   assert(F0vec_border);
+   assert(G0vec_border);
 
-   int mF0V{0}; int nF0V{0};
+   int mF0V{0};
+   int nF0V{0};
    F0vec_border->getSize(mF0V, nF0V);
 
-   int mG0V{0}; int nG0V{0};
+   int mG0V{0};
+   int nG0V{0};
    G0vec_border->getSize(mG0V, nG0V);
 
-   if( !has_RAC && nF0V == 0 && nG0V == 0 )
+   if (!has_RAC && nF0V == 0 && nG0V == 0)
       return;
 
 #ifndef NDEBUG
-   int mF0C{0}; int nF0C{0};
-   if( F0cons_border )
-      F0cons_border->getSize( mF0C, nF0C );
+   int mF0C{0};
+   int nF0C{0};
+   if (F0cons_border)
+      F0cons_border->getSize(mF0C, nF0C);
 
-   int mG0C{0}; int nG0C{0};
-   if( G0cons_border )
-      G0cons_border->getSize( mG0C, nG0C );
+   int mG0C{0};
+   int nG0C{0};
+   if (G0cons_border)
+      G0cons_border->getSize(mG0C, nG0C);
 
-   int mA0{0}; int nA0{0};
-   if( A0_border )
-      A0_border->getSize(mA0, nA0);
-
-   int mC0{0}; int nC0{0};
-   if( C0_border )
-      C0_border->getSize(mC0, nC0);
-
-
-   assert( nA0 == nC0 );
-   assert( nF0V == nG0V );
-
-   if( has_RAC )
-      assert( nA0 == nF0V );
-
-   assert( nF0C + mA0 + mC0 + mF0V + mG0V == nX0 );
-   assert( nF0C == nG0C );
-
-   if( has_RAC )
-      assert( n_result == nF0V + mF0C + mG0C );
-   else
-      assert( n_result >= mF0V );
-#endif
-
-   if( is_sparse )
-      finalizeInnerSchurComplementContributionSparse(result, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border, begin_rows, end_rows );
-   else
-      finalizeInnerSchurComplementContributionDense(result, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border, is_sym, begin_rows, end_rows );
-}
-
-/* SC and X0 stored in transposed form */
-void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
-      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border, int begin_rows, int end_rows )
-{
-   assert( F0vec_border );
-   assert( G0vec_border );
-
-   SparseSymMatrix& SC = dynamic_cast<SparseSymMatrix&>(SC_);
-
-   int dummy, mX0; X0.getSize(mX0, dummy);
-   assert( 0 <= begin_rows && begin_rows <= end_rows && end_rows - begin_rows <= mX0 );
-
-   int mA0{0}; int nA0{0};
-   if( A0_border )
+   int mA0{0};
+   int nA0{0};
+   if (A0_border)
       A0_border->getSize(mA0, nA0);
 
    int mC0{0};
-   if( C0_border )
+   int nC0{0};
+   if (C0_border)
+      C0_border->getSize(mC0, nC0);
+
+
+   assert(nA0 == nC0);
+   assert(nF0V == nG0V);
+
+   if (has_RAC)
+      assert(nA0 == nF0V);
+
+   assert(nF0C + mA0 + mC0 + mF0V + mG0V == nX0);
+   assert(nF0C == nG0C);
+
+   if (has_RAC)
+      assert(n_result == nF0V + mF0C + mG0C);
+   else
+      assert(n_result >= mF0V);
+#endif
+
+   if (is_sparse)
+      finalizeInnerSchurComplementContributionSparse(result, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border,
+            begin_rows, end_rows);
+   else
+      finalizeInnerSchurComplementContributionDense(result, X0, A0_border, C0_border, F0vec_border, G0vec_border, F0cons_border, G0cons_border,
+            is_sym, begin_rows, end_rows);
+}
+
+/* SC and X0 stored in transposed form */
+void sLinsysRoot::finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
+      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
+      SparseGenMatrix* G0cons_border, int begin_rows, int end_rows) {
+   assert(F0vec_border);
+   assert(G0vec_border);
+
+   SparseSymMatrix& SC = dynamic_cast<SparseSymMatrix&>(SC_);
+
+   int dummy, mX0;
+   X0.getSize(mX0, dummy);
+   assert(0 <= begin_rows && begin_rows <= end_rows && end_rows - begin_rows <= mX0);
+
+   int mA0{0};
+   int nA0{0};
+   if (A0_border)
+      A0_border->getSize(mA0, nA0);
+
+   int mC0{0};
+   if (C0_border)
       C0_border->getSize(mC0, dummy);
 
-   int nF0C{0}; int mF0C{0};
-   if( F0cons_border )
-      F0cons_border->getSize( mF0C, nF0C );
+   int nF0C{0};
+   int mF0C{0};
+   if (F0cons_border)
+      F0cons_border->getSize(mF0C, nF0C);
 
    int mF0V{0};
    F0vec_border->getSize(mF0V, dummy);
@@ -451,199 +450,201 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse( DoubleMatrix& 
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
-   for( int i = begin_rows; i < end_rows; i++ )
-   {
+   for (int i = begin_rows; i < end_rows; i++) {
       const double* const col = X0[i];
-      if( A0_border )
-         A0_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C], i, 0 );
+      if (A0_border)
+         A0_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C], i, 0);
 
-      if( C0_border )
-         C0_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0], i, 0 );
+      if (C0_border)
+         C0_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0], i, 0);
 
-      if( mF0V > 0 )
-         F0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0], i, 0 );
+      if (mF0V > 0)
+         F0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0], i, 0);
 
-      if( mG0V > 0 )
-         G0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0 + mF0V], i, 0 );
+      if (mG0V > 0)
+         G0vec_border->transmultMatSymUpper(1.0, SC, -1.0, &col[nF0C + mA0 + mC0 + mF0V], i, 0);
 
-      if( F0cons_border )
+      if (F0cons_border)
          F0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nA0);
 
-      if( G0cons_border )
-         G0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nA0 + mF0C );
+      if (G0cons_border)
+         G0cons_border->multMatSymUpper(1.0, SC, -1.0, &col[0], i, nA0 + mF0C);
    }
 }
 
 /* SC and X0 stored in transposed form */
-void sLinsysRoot::finalizeInnerSchurComplementContributionDense( DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
-      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border,
-      bool is_sym, int begin_rows, int end_rows )
-{
-   assert( F0vec_border );
-   assert( G0vec_border );
+void sLinsysRoot::finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
+      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
+      SparseGenMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
+   assert(F0vec_border);
+   assert(G0vec_border);
 
    double** SC = is_sym ? dynamic_cast<DenseSymMatrix&>(SC_).Mat() : dynamic_cast<DenseGenMatrix&>(SC_).Mat();
 
    const int n_rows = end_rows - begin_rows;
-   int dummy, mX0; X0.getSize(mX0, dummy);
-   int mSC; SC_.getSize(mSC, dummy);
-   assert( 0 <= begin_rows && begin_rows <= end_rows && n_rows <= mX0 );
-   assert( n_rows <= mSC );
+   int dummy, mX0;
+   X0.getSize(mX0, dummy);
+   int mSC;
+   SC_.getSize(mSC, dummy);
+   assert(0 <= begin_rows && begin_rows <= end_rows && n_rows <= mX0);
+   assert(n_rows <= mSC);
 
-   int mA0{0}; int nA0{0};
-   if( A0_border )
+   int mA0{0};
+   int nA0{0};
+   if (A0_border)
       A0_border->getSize(mA0, nA0);
 
    int mC0{0};
-   if( C0_border )
+   if (C0_border)
       C0_border->getSize(mC0, dummy);
 
-   int nF0C{0}; int mF0C{0};
-   if( F0cons_border )
-      F0cons_border->getSize( mF0C, nF0C );
+   int nF0C{0};
+   int mF0C{0};
+   if (F0cons_border)
+      F0cons_border->getSize(mF0C, nF0C);
 
    int mF0V{0};
    F0vec_border->getSize(mF0V, dummy);
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
-   for( int i = 0; i < n_rows; ++i )
-   {
+   for (int i = 0; i < n_rows; ++i) {
       const int row = is_sym ? i + begin_rows : i;
-      assert( i < mX0 && row < mSC );
+      assert(i < mX0 && row < mSC);
 
       const double* const col = X0[i];
 
-      if( A0_border )
+      if (A0_border)
          A0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C], 1);
 
-      if( C0_border )
+      if (C0_border)
          C0_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0], 1);
 
       F0vec_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0 + mC0], 1);
 
       G0vec_border->transMult(1.0, &SC[row][0], 1, -1.0, &col[nF0C + mA0 + mC0 + mF0V], 1);
 
-      if( F0cons_border )
+      if (F0cons_border)
          F0cons_border->mult(1.0, &SC[row][nA0], 1, -1.0, &col[0], 1);
 
-      if( G0cons_border )
+      if (G0cons_border)
          G0cons_border->mult(1.0, &SC[row][nA0 + mF0C], 1, -1.0, &col[0], 1);
    }
 }
 
 /* compute result += [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T += SUM_i (Bri - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}^T */
-void sLinsysRoot::LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border, int begin_cols, int end_cols )
-{
-   assert( children.size() == Br.F.children.size() );
+void sLinsysRoot::LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
+      bool two_link_border, int begin_cols, int end_cols) {
+   assert(children.size() == Br.F.children.size());
 
    /* get contribution to schur_complement from each child */
    /* for a pure 2-link border this has only be done for the last and first process in a communicator - the rest is zero */
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      BorderLinsys border_child = getChild( Br, it );
-      
+   for (size_t it = 0; it < children.size(); it++) {
+      BorderLinsys border_child = getChild(Br, it);
+
       std::vector<BorderMod> Br_mod_border_child;
 
-      for( auto& br_mod : Br_mod_border )
-      {
-         auto child = getChild( br_mod, it );
-         if( !child.border.isEmpty() )
-            Br_mod_border_child.push_back( child );
+      for (auto& br_mod : Br_mod_border) {
+         auto child = getChild(br_mod, it);
+         if (!child.border.isEmpty())
+            Br_mod_border_child.push_back(child);
       }
 
-      if( border_child.isEmpty() && Br_mod_border.empty() )
+      if (border_child.isEmpty() && Br_mod_border.empty())
          continue;
 
       const bool sparse_res = false;
       const bool sym_res = false;
-      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, sparse_res, sym_res, begin_cols, end_cols, locmy + locmz );
+      children[it]->addInnerBorderKiInvBrToRes(result, border_child, Br_mod_border_child, use_local_RAC, sparse_res, sym_res, begin_cols, end_cols,
+            locmy + locmz);
    }
 
    /* allreduce the result */
    // TODO : optimize -> do not reduce A_0 part ( all zeros... )
    /* in a two-link border we have at most 2 contributions and these are guaranteed disjunct */
-   if( iAmDistrib )
-      allreduceMatrix( result, false, false, mpiComm );
+   if (iAmDistrib)
+      allreduceMatrix(result, false, false, mpiComm);
 }
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols )
-{
-   assert( !is_hierarchy_root );
+void sLinsysRoot::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+      std::vector<BorderMod>& Br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) {
+   assert(!is_hierarchy_root);
 
    /* X0 is still in transposed form */
-   assert( children.size() == Br.F.children.size() );
-   assert( children.size() == Bl.F.children.size() );
-   assert( !Br.F.isKindOf( kStringGenDummyMatrix ) );
-   assert( !Bl.F.isKindOf( kStringGenDummyMatrix ) );
+   assert(children.size() == Br.F.children.size());
+   assert(children.size() == Bl.F.children.size());
+   assert(!Br.F.isKindOf(kStringGenDummyMatrix));
+   assert(!Bl.F.isKindOf(kStringGenDummyMatrix));
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      if( getChild( Bl, it ).isEmpty() )
+   for (size_t it = 0; it < children.size(); it++) {
+      if (getChild(Bl, it).isEmpty())
          continue;
 
-      BorderLinsys bl_child = getChild( Bl, it );
-      BorderLinsys br_child = getChild( Br, it );
+      BorderLinsys bl_child = getChild(Bl, it);
+      BorderLinsys br_child = getChild(Br, it);
 
       std::vector<BorderMod> border_mod_child;
-      for( auto& bm : Br_mod_border )
-      {
-         const BorderMod child = getChild(bm,it);
+      for (auto& bm : Br_mod_border) {
+         const BorderMod child = getChild(bm, it);
 
-         if( !child.border.isEmpty() )
-            border_mod_child.push_back( getChild( bm, it ) );
+         if (!child.border.isEmpty())
+            border_mod_child.push_back(getChild(bm, it));
       }
 
-      children[it]->LniTransMultHierarchyBorder( res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC, begin_cols, end_cols, locmy + locmz );
+      children[it]->LniTransMultHierarchyBorder(res, X0, bl_child, br_child, border_mod_child, sparse_res, sym_res, use_local_RAC, begin_cols,
+            end_cols, locmy + locmz);
    }
 }
 
-void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border )
-{
-   assert( rhs.children.size() == children.size() );
-   assert( border.A.children.size() == children.size() );
+void sLinsysRoot::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+   assert(rhs.children.size() == children.size());
+   assert(border.A.children.size() == children.size());
 
-   for( size_t i = 0; i < children.size(); ++i )
-   {
+   for (size_t i = 0; i < children.size(); ++i) {
       BorderLinsys child_border = getChild(border, i);
-      if( child_border.isEmpty() )
+      if (child_border.isEmpty())
          continue;
 
-      children[i]->addBorderX0ToRhs( *rhs.children[i], x0, child_border );
+      children[i]->addBorderX0ToRhs(*rhs.children[i], x0, child_border);
    }
 
    /* add schur complement part */
-   assert( border.A.mat );
-   assert( border.C.mat );
+   assert(border.A.mat);
+   assert(border.C.mat);
 
    SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
-   int mA0, nA0; A0_border.getSize(mA0, nA0);
+   int mA0, nA0;
+   A0_border.getSize(mA0, nA0);
 
    SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
-   int mC0, nC0; C0_border.getSize(mC0, nC0);
+   int mC0, nC0;
+   C0_border.getSize(mC0, nC0);
 
-   assert( border.F.mat );
-   assert( border.A.mat_link );
+   assert(border.F.mat);
+   assert(border.A.mat_link);
    SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
-   int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
+   int mF0V, nF0V;
+   F0vec_border.getSize(mF0V, nF0V);
    SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
-   int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
+   int mF0C, nF0C;
+   F0cons_border.getSize(mF0C, nF0C);
 
-   assert( border.C.mat_link );
-   assert( border.G.mat );
+   assert(border.C.mat_link);
+   assert(border.G.mat);
    SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
-   int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
+   int mG0V, nG0V;
+   G0vec_border.getSize(mG0V, nG0V);
    SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
-   int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
+   int mG0C, nG0C;
+   G0cons_border.getSize(mG0C, nG0C);
 
-   assert( rhs.first );
-   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
-   assert( x0.length() == nA0 + mF0C + mG0C );
+   assert(rhs.first);
+   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
+   assert(x0.length() == nA0 + mF0C + mG0C);
 
-   SimpleVector& rhs0 = dynamic_cast<SimpleVector&>(*rhs.first);
+   SimpleVector<double>& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
    double* rhs01 = &rhs0[0];
    double* rhs02 = &rhs0[nF0C];
@@ -660,65 +661,68 @@ void sLinsysRoot::addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, Bo
    F0vec_border.mult(1.0, rhs04, 1, -1.0, x01, 1);
    G0vec_border.mult(1.0, rhs05, 1, -1.0, x01, 1);
 
-   F0cons_border.transMult(1.0, rhs01, 1, -1.0, x02, 1 );
-   G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1 );
+   F0cons_border.transMult(1.0, rhs01, 1, -1.0, x02, 1);
+   G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1);
 }
 
-void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border )
-{
-   assert( rhs.children.size() == children.size() );
-   assert( border.A.children.size() == children.size() );
+void sLinsysRoot::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+   assert(rhs.children.size() == children.size());
+   assert(border.A.children.size() == children.size());
 
-   for( size_t i = 0; i < children.size(); ++i )
-   {
-      BorderLinsys child_border = getChild( border, i );
-      if( child_border.isEmpty() )
+   for (size_t i = 0; i < children.size(); ++i) {
+      BorderLinsys child_border = getChild(border, i);
+      if (child_border.isEmpty())
          continue;
 
-      children[i]->addBorderTimesRhsToB0( *rhs.children[i], b0, child_border );
+      children[i]->addBorderTimesRhsToB0(*rhs.children[i], b0, child_border);
    }
 
    /* add schur complement part */
-   if( PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0 )
-   {
-      assert( border.A.mat );
-      assert( border.C.mat );
+   if (PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0) {
+      assert(border.A.mat);
+      assert(border.C.mat);
 
       SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
-      int mA0, nA0; A0_border.getSize(mA0, nA0);
+      int mA0, nA0;
+      A0_border.getSize(mA0, nA0);
 
       SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
-      int mC0, nC0; C0_border.getSize(mC0, nC0);
+      int mC0, nC0;
+      C0_border.getSize(mC0, nC0);
 
-      assert( border.F.mat );
-      assert( border.A.mat_link );
+      assert(border.F.mat);
+      assert(border.A.mat_link);
       SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
-      int mF0V, nF0V; F0vec_border.getSize(mF0V, nF0V);
+      int mF0V, nF0V;
+      F0vec_border.getSize(mF0V, nF0V);
       SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
-      int mF0C, nF0C; F0cons_border.getSize(mF0C, nF0C);
+      int mF0C, nF0C;
+      F0cons_border.getSize(mF0C, nF0C);
 
-      assert( border.C.mat_link );
-      assert( border.G.mat );
+      assert(border.C.mat_link);
+      assert(border.G.mat);
       SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
-      int mG0V, nG0V; G0vec_border.getSize(mG0V, nG0V);
+      int mG0V, nG0V;
+      G0vec_border.getSize(mG0V, nG0V);
       SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
-      int mG0C, nG0C; G0cons_border.getSize(mG0C, nG0C);
+      int mG0C, nG0C;
+      G0cons_border.getSize(mG0C, nG0C);
 
-      assert( rhs.first );
-      assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V );
-      assert( b0.length() == nA0 + mF0C + mG0C );
+      assert(rhs.first);
+      assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
+      assert(b0.length() == nA0 + mF0C + mG0C);
 
-      SimpleVector& zi = dynamic_cast<SimpleVector&>(*rhs.first);
+      SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
-      SimpleVector zi1 (&zi[0], nF0C);
-      SimpleVector zi2 (&zi[nF0C], mA0 );
-      SimpleVector zi3 (&zi[nF0C + mA0], mC0);
-      SimpleVector zi4 (&zi[nF0C + mA0 + mC0], mF0V);
-      SimpleVector zi5 (&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
+      SimpleVector<double> zi1(&zi[0], nF0C);
+      SimpleVector<double> zi2(&zi[nF0C], mA0);
+      SimpleVector<double> zi3(&zi[nF0C + mA0], mC0);
+      SimpleVector<double> zi4(&zi[nF0C + mA0 + mC0], mF0V);
+      SimpleVector<double> zi5(&zi[nF0C + mA0 + mC0 + mF0V], mG0V);
 
-      SimpleVector b1( &b0[0], nA0 );
-      SimpleVector b2( &b0[nA0], mF0C );
-      SimpleVector b3( &b0[nA0 + mF0C], mG0C );
+      SimpleVector<double> b1(&b0[0], nA0);
+      SimpleVector<double> b2(&b0[nA0], mF0C);
+      SimpleVector<double> b3(&b0[nA0 + mF0C], mG0C);
 
       A0_border.transMult(1.0, b1, -1.0, zi2);
       C0_border.transMult(1.0, b1, -1.0, zi3);
@@ -730,187 +734,149 @@ void sLinsysRoot::addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, Bor
    }
 }
 
-void sLinsysRoot::Ltsolve2( DistributedQP*, StochVector& x, SimpleVector& x0, bool)
-{
-   assert( false && "not in use");
-   assert( pips_options::getBoolParameter("HIERARCHICAL") );
-   assert( children.size() == x.children.size() );
+void sLinsysRoot::Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>& x0, bool) {
+   assert(false && "not in use");
+   assert(pips_options::getBoolParameter("HIERARCHICAL"));
+   assert(children.size() == x.children.size());
 
    StochVector& b = dynamic_cast<StochVector&>(x);
 
-   for( size_t i = 0; i < children.size(); ++i )
-   {
-      children[i]->computeInnerSystemRightHandSide( *b.children[i], x0, true );
-      children[i]->solveCompressed( *x.children[i] );
+   for (size_t i = 0; i < children.size(); ++i) {
+      children[i]->computeInnerSystemRightHandSide(*b.children[i], x0, true);
+      children[i]->solveCompressed(*x.children[i]);
    }
-
-//#ifdef TIMING
-//  stochNode->resMon.eLtsolve.clear();
-//  stochNode->resMon.recLtsolveTmLocal_start();
-//#endif
-//   //b_i -= Lni^T x0
-//   LniTransMult(prob, bi, -1.0, x0);
-//   solver->Ltsolve(bi);
-//
-//#ifdef TIMING
-//  stochNode->resMon.recLtsolveTmLocal_stop();
-//#endif
-//   SimpleVector& xi = bi;
-//   //recursive call in order to get the children to do their part
-//   for(size_t it = 0; it < children.size(); it++)
-//      children[it]->Ltsolve2(prob->children[it], *b.children[it], xi);
 }
 
-void sLinsysRoot::createChildren(DistributedQP *prob)
-{
+void sLinsysRoot::createChildren(DistributedQP* prob) {
    sLinsys* child{};
-   assert( dd && dq && nomegaInv && rhs && prob );
+   assert(dd && dq && nomegaInv && rhs && prob);
 
-   StochVector &ddst = dynamic_cast<StochVector&>(*dd);
-   StochVector &dqst = dynamic_cast<StochVector&>(*dq);
-   StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
-   StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
+   StochVector& ddst = dynamic_cast<StochVector&>(*dd);
+   StochVector& dqst = dynamic_cast<StochVector&>(*dq);
+   StochVector& nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
+   StochVector& rhsst = dynamic_cast<StochVector&>(*rhs);
 
-   for( size_t it = 0; it < prob->children.size(); it++ )
-   {
-      assert( ddst.children[it] != nullptr );
-      if( MPI_COMM_NULL == ddst.children[it]->mpiComm )
-      {
-         child = new sDummyLinsys(dynamic_cast<DistributedFactory*>(factory),
-               prob->children[it]);
+   for (size_t it = 0; it < prob->children.size(); it++) {
+      assert(ddst.children[it] != nullptr);
+      if (MPI_COMM_NULL == ddst.children[it]->mpiComm) {
+         child = new sDummyLinsys(dynamic_cast<DistributedFactory*>(factory), prob->children[it]);
       }
-      else
-      {
-         assert( prob->children[it] );
-         DistributedFactory *stochFactory = dynamic_cast<DistributedFactory*>(factory);
-         if( is_hierarchy_root )
-         {
-            assert( prob->isHierarchyRoot() );
-            assert( prob->children.size() == 1 );
-            assert( prob->children[0] );
-            assert( ddst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1
-                  && rhsst.children.size() == 1 );
-            assert( MPI_COMM_NULL != ddst.children[0]->mpiComm);
+      else {
+         assert(prob->children[it]);
+         DistributedFactory* stochFactory = dynamic_cast<DistributedFactory*>(factory);
+         if (is_hierarchy_root) {
+            assert(prob->isHierarchyRoot());
+            assert(prob->children.size() == 1);
+            assert(prob->children[0]);
+            assert(ddst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1 && rhsst.children.size() == 1);
+            assert(MPI_COMM_NULL != ddst.children[0]->mpiComm);
          }
 
-         if( prob->children[it]->children.empty() )
-         {
+         if (prob->children[it]->children.empty()) {
             child = stochFactory->make_linear_system_leaf(prob->children[it], ddst.children[it], dqst.children[it], nomegaInvst.children[it],
                   rhsst.children[it]);
          }
-         else
-         {
-            assert( prob->children[it] );
+         else {
+            assert(prob->children[it]);
             child = stochFactory->make_linear_system_root(prob->children[it], ddst.children[it], dqst.children[it], nomegaInvst.children[it],
                   rhsst.children[it]);
          }
       }
-      assert( child != nullptr );
+      assert(child != nullptr);
       AddChild(child);
    }
 }
 
-void sLinsysRoot::deleteChildren()
-{
-  for(size_t it = 0; it < children.size(); it++) {
-    children[it]->deleteChildren();
-    delete children[it];
-  }
-  children.clear();
+void sLinsysRoot::deleteChildren() {
+   for (size_t it = 0; it < children.size(); it++) {
+      children[it]->deleteChildren();
+      delete children[it];
+   }
+   children.clear();
 }
 
-void sLinsysRoot::initProperChildrenRange()
-{
+void sLinsysRoot::initProperChildrenRange() {
    assert(children.size() > 0);
 
    int childStart = -1;
    int childEnd = -1;
-   for( size_t it = 0; it < children.size(); it++ )
-   {
-      if( childEnd != -1 )
+   for (size_t it = 0; it < children.size(); it++) {
+      if (childEnd != -1)
          assert(children[it]->isDummy());
 
-      if( children[it]->isDummy() )
-      {
+      if (children[it]->isDummy()) {
          // end of range?
-         if( childStart != -1 && childEnd == -1 )
+         if (childStart != -1 && childEnd == -1)
             childEnd = int(it);
 
          continue;
       }
 
       // start of range?
-      if( childStart == -1 )
+      if (childStart == -1)
          childStart = int(it);
    }
 
    assert(childStart >= 0);
 
-   if( childEnd == -1 )
-   {
+   if (childEnd == -1) {
       assert(!children[children.size() - 1]->isDummy());
       childEnd = int(children.size());
    }
 
-    assert(childStart < childEnd && childEnd <= int(children.size()));
+   assert(childStart < childEnd && childEnd <= int(children.size()));
 
-    childrenProperStart = childStart;
-    childrenProperEnd = childEnd;
+   childrenProperStart = childStart;
+   childrenProperEnd = childEnd;
 }
 
-void sLinsysRoot::putXDiagonal( OoqpVector& xdiag_ )
-{
-  StochVector& xdiag = dynamic_cast<StochVector&>(xdiag_);
-  assert(children.size() == xdiag.children.size());
+void sLinsysRoot::putXDiagonal(OoqpVector& xdiag_) {
+   StochVector& xdiag = dynamic_cast<StochVector&>(xdiag_);
+   assert(children.size() == xdiag.children.size());
 
-  //kkt->atPutDiagonal( 0, *xdiag.first );
-  xDiag = xdiag.first;
- 
-  // propagate it to the subtree
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->putXDiagonal(*xdiag.children[it]);
+   //kkt->atPutDiagonal( 0, *xdiag.first );
+   xDiag = xdiag.first;
+
+   // propagate it to the subtree
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->putXDiagonal(*xdiag.children[it]);
 }
 
 
-void sLinsysRoot::putZDiagonal( OoqpVector& zdiag_ )
-{
-  StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
-  assert(children.size() == zdiag.children.size());
+void sLinsysRoot::putZDiagonal(OoqpVector& zdiag_) {
+   StochVector& zdiag = dynamic_cast<StochVector&>(zdiag_);
+   assert(children.size() == zdiag.children.size());
 
-  //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
-  zDiag = zdiag.first;
-  zDiagLinkCons = zdiag.last;
+   //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
+   zDiag = zdiag.first;
+   zDiagLinkCons = zdiag.last;
 
-  // propagate it to the subtree
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->putZDiagonal(*zdiag.children[it]);
+   // propagate it to the subtree
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->putZDiagonal(*zdiag.children[it]);
 }
 
-void sLinsysRoot::AddChild(sLinsys* child)
-{
-  children.push_back(child);
+void sLinsysRoot::AddChild(sLinsys* child) {
+   children.push_back(child);
 }
 
 ///////////////////////////////////////////////////////////
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
 /* Atoms methods of FACTOR2 for a non-leaf linear system */
-void sLinsysRoot::initializeKKT(DistributedQP*, Variables*)
-{
-   if( hasSparseKkt )
+void sLinsysRoot::initializeKKT(DistributedQP*, Variables*) {
+   if (hasSparseKkt)
       dynamic_cast<SparseSymMatrix*>(kkt.get())->symPutZeroes();
-   else
-   {
+   else {
       DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
       myAtPutZeros(kktd);
    }
 }
 
-void sLinsysRoot::reduceKKT(DistributedQP* prob)
-{
-   if( usePrecondDist )
+void sLinsysRoot::reduceKKT(DistributedQP* prob) {
+   if (usePrecondDist)
       reduceKKTdist(prob);
-   else if( hasSparseKkt )
+   else if (hasSparseKkt)
       reduceKKTsparse();
    else
       reduceKKTdense();
@@ -918,23 +884,20 @@ void sLinsysRoot::reduceKKT(DistributedQP* prob)
 
 
 /* collects (reduces) lower left part of dense global symmetric Schur complement */
-void sLinsysRoot::reduceKKTdense()
-{
+void sLinsysRoot::reduceKKTdense() {
    DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    // parallel communication
-   if( iAmDistrib )
-   {
-      if( locnx > 0 )
+   if (iAmDistrib) {
+      if (locnx > 0)
          submatrixAllReduceDiagLower(kktd, 0, locnx, mpiComm);
 
-      if( locmyl > 0 || locmzl > 0 )
-      {
+      if (locmyl > 0 || locmzl > 0) {
          const int locNxMy = locnx + locmy;
          assert(kktd->size() == locnx + locmy + locmyl + locmzl);
 
          // reduce lower left part
-         if( locnx > 0 )
+         if (locnx > 0)
             submatrixAllReduceFull(kktd, locNxMy, 0, locmyl + locmzl, locnx, mpiComm);
 
          // reduce lower diagonal linking part
@@ -945,9 +908,8 @@ void sLinsysRoot::reduceKKTdense()
 
 
 // collects sparse global Schur complement
-void sLinsysRoot::reduceKKTsparse()
-{
-   if( !iAmDistrib )
+void sLinsysRoot::reduceKKTsparse() {
+   if (!iAmDistrib)
       return;
    assert(kkt);
 
@@ -961,84 +923,78 @@ void sLinsysRoot::reduceKKTsparse()
    assert(kkts.size() == sizeKkt);
    assert(!kkts.isLower);
 
-   if( allreduce_kkt )
+   if (allreduce_kkt)
       reduceToAllProcs(nnzKkt, MKkt);
    else
       reduceToProc0(nnzKkt, MKkt);
 }
 
 #define CHUNK_SIZE (1024*1024*64) //doubles = 128 MBytes (maximum)
-void sLinsysRoot::reduceToAllProcs(int size, double* values)
-{
+void sLinsysRoot::reduceToAllProcs(int size, double* values) {
    assert(values && values != sparseKktBuffer);
    assert(size > 0);
 
-   if( sparseKktBuffer == nullptr )
+   if (sparseKktBuffer == nullptr)
       sparseKktBuffer = new double[CHUNK_SIZE];
 
    const int reps = size / CHUNK_SIZE;
    const int res = size - CHUNK_SIZE * reps;
    assert(res >= 0 && res < CHUNK_SIZE);
 
-   for( int i = 0; i < reps; i++ )
-   {
+   for (int i = 0; i < reps; i++) {
       double* const start = &values[i * CHUNK_SIZE];
       MPI_Allreduce(start, sparseKktBuffer, CHUNK_SIZE, MPI_DOUBLE, MPI_SUM, mpiComm);
 
       memcpy(start, sparseKktBuffer, size_t(CHUNK_SIZE) * sizeof(double));
    }
 
-   if( res > 0 )
-   {
+   if (res > 0) {
       double* const start = &values[reps * CHUNK_SIZE];
       MPI_Allreduce(start, sparseKktBuffer, res, MPI_DOUBLE, MPI_SUM, mpiComm);
 
-         memcpy(start, sparseKktBuffer, size_t(res) * sizeof(double));
+      memcpy(start, sparseKktBuffer, size_t(res) * sizeof(double));
    }
 }
 
 #define CHUNK_SIZE (1024*1024*64) //doubles = 128 MBytes (maximum)
-void sLinsysRoot::reduceToProc0(int size, double* values)
-{
+void sLinsysRoot::reduceToProc0(int size, double* values) {
    assert(values && values != sparseKktBuffer);
    assert(size > 0);
 
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
+   int myRank;
+   MPI_Comm_rank(mpiComm, &myRank);
 
-   if( myRank == 0 && sparseKktBuffer == nullptr )
+   if (myRank == 0 && sparseKktBuffer == nullptr)
       sparseKktBuffer = new double[CHUNK_SIZE];
 
    const int reps = size / CHUNK_SIZE;
    const int res = size - CHUNK_SIZE * reps;
    assert(res >= 0 && res < CHUNK_SIZE);
 
-   for( int i = 0; i < reps; i++ )
-   {
+   for (int i = 0; i < reps; i++) {
       double* const start = &values[i * CHUNK_SIZE];
       MPI_Reduce(start, sparseKktBuffer, CHUNK_SIZE, MPI_DOUBLE, MPI_SUM, 0, mpiComm);
 
-      if( myRank == 0 )
+      if (myRank == 0)
          memcpy(start, sparseKktBuffer, size_t(CHUNK_SIZE) * sizeof(double));
    }
 
-   if( res > 0 )
-   {
+   if (res > 0) {
       double* const start = &values[reps * CHUNK_SIZE];
       MPI_Reduce(start, sparseKktBuffer, res, MPI_DOUBLE, MPI_SUM, 0, mpiComm);
 
-      if( myRank == 0 )
+      if (myRank == 0)
          memcpy(start, sparseKktBuffer, size_t(res) * sizeof(double));
    }
 }
 
 
-void sLinsysRoot::registerMatrixEntryTripletMPI()
-{
+void sLinsysRoot::registerMatrixEntryTripletMPI() {
    assert(MatrixEntryTriplet_mpi == MPI_DATATYPE_NULL);
 
    const int nitems = 3;
-   int blocklengths[3] = { 1, 1, 1 };
-   MPI_Datatype Types[3] = { MPI_DOUBLE, MPI_INT, MPI_INT };
+   int blocklengths[3] = {1, 1, 1};
+   MPI_Datatype Types[3] = {MPI_DOUBLE, MPI_INT, MPI_INT};
    MPI_Aint offsets[3];
 
    offsets[0] = offsetof(MatrixEntryTriplet, val);
@@ -1049,9 +1005,8 @@ void sLinsysRoot::registerMatrixEntryTripletMPI()
    MPI_Type_commit(&MatrixEntryTriplet_mpi);
 }
 
-void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
-{
-   if( !iAmDistrib )
+void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob) {
+   if (!iAmDistrib)
       return;
 
    assert(kkt && hasSparseKkt);
@@ -1064,48 +1019,46 @@ void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
 
    const int childStart = childrenProperStart;
    const int childEnd = childrenProperEnd;
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
-   int size; MPI_Comm_size(mpiComm, &size);
+   int myRank;
+   MPI_Comm_rank(mpiComm, &myRank);
+   int size;
+   MPI_Comm_size(mpiComm, &size);
 
    assert(size > 1);
 
    // MPI matrix entries triplet not registered yet?
-   if( MatrixEntryTriplet_mpi == MPI_DATATYPE_NULL )
+   if (MatrixEntryTriplet_mpi == MPI_DATATYPE_NULL)
       registerMatrixEntryTripletMPI();
 
    // pack the entries that will be send below
    std::vector<MatrixEntryTriplet> prevEntries = this->packKKTdistOutOfRangeEntries(prob, childStart, childEnd);
    std::vector<MatrixEntryTriplet> myEntries(0);
 
-   assert(prevEntries.size() > 0 && prevEntries[0].row == - 1 && prevEntries[0].col == - 1);
+   assert(prevEntries.size() > 0 && prevEntries[0].row == -1 && prevEntries[0].col == -1);
 
    // odd processes send first (one process back)
-   if( myRank % 2 != 0 )
-   {
+   if (myRank % 2 != 0) {
       this->sendKKTdistLocalEntries(prevEntries);
    }
 
    // even processes (except last) receive first
-   if( myRank % 2 == 0 && myRank != size - 1 )
-   {
+   if (myRank % 2 == 0 && myRank != size - 1) {
       assert(myEntries.size() == 0);
       myEntries = this->receiveKKTdistLocalEntries();
    }
 
    // even processes (except first) send
-   if( myRank % 2 == 0 && myRank > 0 )
-   {
+   if (myRank % 2 == 0 && myRank > 0) {
       this->sendKKTdistLocalEntries(prevEntries);
    }
 
    // odd processes (except last) receive
-   if( myRank % 2 != 0 && myRank != size - 1 )
-   {
+   if (myRank % 2 != 0 && myRank != size - 1) {
       assert(myEntries.size() == 0);
       myEntries = this->receiveKKTdistLocalEntries();
    }
 
-   assert(myEntries.size() > 0 || myRank == size - 1 );
+   assert(myEntries.size() > 0 || myRank == size - 1);
 
    int lastRow = 0;
    int lastC = -1;
@@ -1116,8 +1069,7 @@ void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
 #endif
 
    // finally, put received data into Schur complement matrix
-   for( size_t i = 1; i < myEntries.size(); i++ )
-   {
+   for (size_t i = 1; i < myEntries.size(); i++) {
       const double val = myEntries[i].val;
       const int row = myEntries[i].row;
       const int col = myEntries[i].col;
@@ -1132,22 +1084,18 @@ void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
       int c;
 
       // continue from last position?
-      if( row == lastRow )
-      {
-         for( c = lastC + 1; c < krowKkt[row + 1]; c++ )
-         {
+      if (row == lastRow) {
+         for (c = lastC + 1; c < krowKkt[row + 1]; c++) {
             const int colKkt = jColKkt[c];
 
-            if( colKkt == col )
-            {
+            if (colKkt == col) {
                MKkt[c] += val;
                break;
             }
          }
 
          // found the correct entry in last row?
-         if( c != krowKkt[row + 1] )
-         {
+         if (c != krowKkt[row + 1]) {
             assert(c < krowKkt[row + 1]);
             lastRow = row;
             lastC = c;
@@ -1158,12 +1106,10 @@ void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
       c = krowKkt[row];
       assert(col >= jColKkt[c]);
 
-      for( ; c < krowKkt[row + 1]; c++ )
-      {
+      for (; c < krowKkt[row + 1]; c++) {
          const int colKkt = jColKkt[c];
 
-         if( colKkt == col )
-         {
+         if (colKkt == col) {
             MKkt[c] += val;
             break;
          }
@@ -1177,13 +1123,14 @@ void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob)
 }
 
 
-std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::receiveKKTdistLocalEntries() const
-{
+std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::receiveKKTdistLocalEntries() const {
    assert(kkt && hasSparseKkt);
    assert(MatrixEntryTriplet_mpi != MPI_DATATYPE_NULL);
 
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
-   int size; MPI_Comm_size(mpiComm, &size);
+   int myRank;
+   MPI_Comm_rank(mpiComm, &myRank);
+   int size;
+   MPI_Comm_size(mpiComm, &size);
    const int nextRank = myRank + 1;
    assert(nextRank < size);
 
@@ -1209,9 +1156,9 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::receiveKKTdistLocalEnt
 }
 
 
-void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const
-{
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
+void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const {
+   int myRank;
+   MPI_Comm_rank(mpiComm, &myRank);
    const int prevRank = myRank - 1;
    const int nEntries = int(prevEntries.size());
 
@@ -1223,11 +1170,11 @@ void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>&
    MPI_Send(&prevEntries[0], nEntries, MatrixEntryTriplet_mpi, prevRank, 0, mpiComm);
 }
 
-std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int) const
-{
+std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int) const {
    assert(kkt && hasSparseKkt);
 
-   int myRank; MPI_Comm_rank(mpiComm, &myRank);
+   int myRank;
+   MPI_Comm_rank(mpiComm, &myRank);
 
    SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
    const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
@@ -1243,26 +1190,21 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
    const MatrixEntryTriplet entry_zero = {-1.0, -1, -1};
    packedEntries.push_back(entry_zero);
 
-   if( childStart > 0 )
-   {
+   if (childStart > 0) {
       assert(myRank > 0);
 
       // pack data
-      for( int r = 0; r < sizeKkt; r++ )
-      {
+      for (int r = 0; r < sizeKkt; r++) {
          const bool rIsLocal = rowIsLocal[r];
 
-         if( rIsLocal && !rowIsMyLocal[r] )
-         {
-            for( int c = krowKkt[r]; c < krowKkt[r + 1]; c++ )
-            {
+         if (rIsLocal && !rowIsMyLocal[r]) {
+            for (int c = krowKkt[r]; c < krowKkt[r + 1]; c++) {
                const int col = jColKkt[c];
 
-               if( !rowIsMyLocal[col] )
-               {
+               if (!rowIsMyLocal[col]) {
                   const double val = MKkt[c];
 
-                  if( PIPSisZero(val) )
+                  if (PIPSisZero(val))
                      continue;
 
                   const MatrixEntryTriplet entry = {val, r, col};
@@ -1271,18 +1213,16 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
             }
          }
 
-         if( rIsLocal )
+         if (rIsLocal)
             continue;
 
-         for( int c = krowKkt[r]; c < krowKkt[r + 1]; c++ )
-         {
+         for (int c = krowKkt[r]; c < krowKkt[r + 1]; c++) {
             const int col = jColKkt[c];
 
-            if( rowIsLocal[col] && !rowIsMyLocal[col] )
-            {
+            if (rowIsLocal[col] && !rowIsMyLocal[col]) {
                const double val = MKkt[c];
 
-               if( PIPSisZero(val) )
+               if (PIPSisZero(val))
                   continue;
 
                const MatrixEntryTriplet entry = {val, r, col};
@@ -1296,8 +1236,7 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
 }
 
 
-void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
-{
+void sLinsysRoot::reduceKKTdist(DistributedQP* prob) {
    assert(prob);
    assert(iAmDistrib);
    assert(kkt);
@@ -1333,15 +1272,12 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
    precondSC.unmarkDominatedSCdistLocals(*prob, kkts);
 
    // compute row lengths
-   for( int r = 0; r < sizeKkt; r++ )
-   {
-      if( rowIsMyLocal[r] )
-      {
-         for( int c = krowKkt[r]; c < krowKkt[r + 1]; c++ )
-         {
+   for (int r = 0; r < sizeKkt; r++) {
+      if (rowIsMyLocal[r]) {
+         for (int c = krowKkt[r]; c < krowKkt[r + 1]; c++) {
             const int col = jColKkt[c];
 
-            if( col < 0 )
+            if (col < 0)
                continue;
 
             nnzDistMyLocal++;
@@ -1355,27 +1291,23 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
 
       const bool rIsLocal = rowIsLocal[r];
 
-      for( int c = krowKkt[r]; c < krowKkt[r + 1]; c++ )
-      {
+      for (int c = krowKkt[r]; c < krowKkt[r + 1]; c++) {
          const int col = jColKkt[c];
 
-         if( col < 0 )
-         {
+         if (col < 0) {
             assert(-col - 1 >= 0 && -col - 1 < sizeKkt);
             assert((!(!rIsLocal && !rowIsLocal[-col - 1])));
             continue;
          }
 
          // is (r, col) a shared entry?
-         if( !rIsLocal && !rowIsLocal[col] )
-         {
+         if (!rIsLocal && !rowIsLocal[col]) {
             nnzDistShared++;
             rowSizeShared[r]++;
             assert(!rowIsMyLocal[col]);
          }
 
-         if( rowIsMyLocal[col] )
-         {
+         if (rowIsMyLocal[col]) {
             nnzDistMyLocal++;
             rowSizeMyLocal[r]++;
             rowIndexMyLocal.push_back(r);
@@ -1399,7 +1331,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
       MPI_Allreduce(&rowSizeShared[0], &rowSizeSharedMax[0], sizeKkt, MPI_INT, MPI_MAX, mpiComm);
 
       assert(nnzDistSharedMax == nnzDistShared);
-      for( int i = 0; i < sizeKkt; i++ )
+      for (int i = 0; i < sizeKkt; i++)
          assert(rowSizeShared[i] == rowSizeSharedMax[i]);
    }
 #endif
@@ -1415,8 +1347,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
    assert(int(colIndexGathered.size()) == nnzDistLocal);
    assert(localGatheredMyEnd - localGatheredMyStart == nnzDistMyLocal);
 
-   for( int i = 0; i < int(rowIndexMyLocal.size()); i++ )
-   {
+   for (int i = 0; i < int(rowIndexMyLocal.size()); i++) {
       assert(rowIndexMyLocal[i] == rowIndexGathered[i + localGatheredMyStart]);
       assert(colIndexMyLocal[i] == colIndexGathered[i + localGatheredMyStart]);
    }
@@ -1430,7 +1361,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
    kktDist = new SparseSymMatrix(sizeKkt, nnzDist, false);
 
    int* const krowDist = kktDist->krowM();
-   int* const jColDist  = kktDist->jcolM();
+   int* const jColDist = kktDist->jcolM();
    double* const MDist = kktDist->M();
 
    assert(krowDist[0] == 0);
@@ -1438,21 +1369,18 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
 
    memset(MDist, 0, nnzDist * sizeof(double));
 
-   for( int r = 1; r < sizeKkt; r++ )
+   for (int r = 1; r < sizeKkt; r++)
       krowDist[r + 1] = krowDist[r] + rowSizeLocal[r - 1] + rowSizeShared[r - 1];
 
    // fill in global and locally owned positions and values
-   for( int r = 0; r < sizeKkt; r++ )
-   {
-      if( rowIsMyLocal[r] )
-      {
-         for( int c = krowKkt[r]; c < krowKkt[r + 1]; c++ )
-         {
+   for (int r = 0; r < sizeKkt; r++) {
+      if (rowIsMyLocal[r]) {
+         for (int c = krowKkt[r]; c < krowKkt[r + 1]; c++) {
             assert(krowDist[r + 1] < nnzDist);
 
             const int col = jColKkt[c];
 
-            if( col < 0 )
+            if (col < 0)
                continue;
 
             const double val = MKkt[c];
@@ -1464,20 +1392,17 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
          continue;
       }
 
-      for( int c = krowKkt[r]; c < krowKkt[r + 1]; c++ )
-      {
+      for (int c = krowKkt[r]; c < krowKkt[r + 1]; c++) {
          const int col = jColKkt[c];
 
-         if( col < 0 )
-         {
+         if (col < 0) {
             assert(-col - 1 >= 0 && -col - 1 < sizeKkt);
             assert(!(!rowIsLocal[r] && !rowIsLocal[-col - 1]));
             continue;
          }
 
          // is (r, col) a shared entry or locally owned?
-         if( (!rowIsLocal[r] && !rowIsLocal[col]) || rowIsMyLocal[col] )
-         {
+         if ((!rowIsLocal[r] && !rowIsLocal[col]) || rowIsMyLocal[col]) {
             assert(krowDist[r + 1] < nnzDist);
 
             const double val = MKkt[c];
@@ -1491,8 +1416,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
    precondSC.resetSCdistEntries(kkts);
 
    // fill in gathered local pairs not inserted yet
-   for( int i = 0; i < nnzDistLocal; i++ )
-   {
+   for (int i = 0; i < nnzDistLocal; i++) {
       const int row = rowIndexGathered[i];
       const int col = colIndexGathered[i];
 
@@ -1500,7 +1424,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
       assert(col >= row && col < sizeKkt);
 
       // pair already added?
-      if( i >= localGatheredMyStart && i < localGatheredMyEnd )
+      if (i >= localGatheredMyStart && i < localGatheredMyEnd)
          continue;
 
       assert(krowDist[row + 1] < nnzDist);
@@ -1512,8 +1436,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
    assert(krowDist[0] == 0);
    assert(krowDist[sizeKkt] == nnzDist);
 
-   for( int r = 0; r < sizeKkt; r++ )
-   {
+   for (int r = 0; r < sizeKkt; r++) {
       assert(krowDist[r + 1] == krowDist[r] + rowSizeLocal[r] + rowSizeShared[r]);
       assert(krowDist[r + 1] >= krowDist[r]);
    }
@@ -1523,7 +1446,7 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
 
    assert(kktDist->getStorageRef().isValid());
 
-   if( allreduce_kkt )
+   if (allreduce_kkt)
       reduceToAllProcs(nnzDist, MDist);
    else
       reduceToProc0(nnzDist, MDist);
@@ -1532,34 +1455,31 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob)
    assert(kktDist->getStorageRef().isSorted());
 }
 
-void sLinsysRoot::factorizeKKT()
-{
+void sLinsysRoot::factorizeKKT() {
    factorizeKKT(nullptr);
 }
 
-void sLinsysRoot::factorizeKKT(DistributedQP* prob)
-{
-  //stochNode->resMon.recFactTmLocal_start();  
+void sLinsysRoot::factorizeKKT(DistributedQP* prob) {
+   //stochNode->resMon.recFactTmLocal_start();
 #ifdef TIMING
-  MPI_Barrier(mpiComm);
-  extern double g_iterNumber;
-  double st=MPI_Wtime();
+   MPI_Barrier(mpiComm);
+   extern double g_iterNumber;
+   double st=MPI_Wtime();
 #endif
-  if( is_hierarchy_root )
-     assert( !usePrecondDist );
+   if (is_hierarchy_root)
+      assert(!usePrecondDist);
 
-  if( usePrecondDist )
-  {
-     const int myRank = PIPS_MPIgetRank(mpiComm);
+   if (usePrecondDist) {
+      const int myRank = PIPS_MPIgetRank(mpiComm);
 
-     assert(kktDist);
-     assert(prob);
+      assert(kktDist);
+      assert(prob);
 
-     if( allreduce_kkt || myRank == 0)
-        precondSC.getSparsifiedSC_fortran(*prob, *kktDist);
+      if (allreduce_kkt || myRank == 0)
+         precondSC.getSparsifiedSC_fortran(*prob, *kktDist);
 
-     // todo do that properly
-     precondSC.updateStats();
+      // todo do that properly
+      precondSC.updateStats();
 
 #if 0
       {
@@ -1585,142 +1505,128 @@ void sLinsysRoot::factorizeKKT(DistributedQP* prob)
       }
 #endif
 
-     solver->matrixRebuild(*kktDist);
-  }
-  else
-  {
-     solver->matrixChanged();
-  }
+      solver->matrixRebuild(*kktDist);
+   }
+   else {
+      solver->matrixChanged();
+   }
 
-  //stochNode->resMon.recFactTmLocal_stop(); 
+   //stochNode->resMon.recFactTmLocal_stop();
 #ifdef TIMING
-  st = MPI_Wtime()-st;
-  MPI_Barrier(mpiComm);
-  int mype; MPI_Comm_rank(mpiComm, &mype);
-  // note, this will include noop scalapack processors
-  if( (mype/512)*512==mype )
-    printf("  rank %d 1stSTAGE FACT %g SEC ITER %d\n", mype, st, (int)g_iterNumber);
+   st = MPI_Wtime()-st;
+   MPI_Barrier(mpiComm);
+   int mype; MPI_Comm_rank(mpiComm, &mype);
+   // note, this will include noop scalapack processors
+   if( (mype/512)*512==mype )
+     printf("  rank %d 1stSTAGE FACT %g SEC ITER %d\n", mype, st, (int)g_iterNumber);
 #endif
 }
 
 //faster than DenseSymMatrix::atPutZeros
-void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat, 
-			       int row, int col, 
-			       int rowExtent, int colExtent)
-{
-  assert( row >= 0 && row + rowExtent <= mat->size() );
-  assert( col >= 0 && col + colExtent <= mat->size() );
+void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent) {
+   assert(row >= 0 && row + rowExtent <= mat->size());
+   assert(col >= 0 && col + colExtent <= mat->size());
 
-  double ** M = mat->getStorageRef().M;
+   double** M = mat->getStorageRef().M;
 
-  for(int j=col; j<col+colExtent; j++) {
+   for (int j = col; j < col + colExtent; j++) {
       M[row][j] = 0.0;
-  }
+   }
 
-  int nToCopy = colExtent*sizeof(double);
+   int nToCopy = colExtent * sizeof(double);
 
-  for(int i=row+1; i<row+rowExtent; i++) {
-    memcpy(M[i]+col, M[row]+col, nToCopy);
-  }
+   for (int i = row + 1; i < row + rowExtent; i++) {
+      memcpy(M[i] + col, M[row] + col, nToCopy);
+   }
 }
 
-void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat)
-{
-  int n = mat->size();
-  myAtPutZeros(mat, 0, 0, n, n);
+void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat) {
+   int n = mat->size();
+   myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC )
-{
+void sLinsysRoot::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC) {
    assert(childindex < prob->children.size());
 
-   if( computeBlockwiseSC ) {
+   if (computeBlockwiseSC) {
       const int n_empty_rows_border = use_local_RAC ? locmy : locnx + locmy;
-      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC, n_empty_rows_border );
+      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC, n_empty_rows_border);
    }
-   else
-   {
-	   if( hasSparseKkt )
-	   {
-	      SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   else {
+      if (hasSparseKkt) {
+         SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
-	      children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
-	   }
-	   else
-	   {
-		  DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
-		  children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
-	   }
+         children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
+      }
+      else {
+         DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
+         children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
+      }
    }
 }
 
-void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A,
-		             int startRow, int startCol, int nRows, int nCols,
-				     MPI_Comm comm)
-{
-  double ** M = A->mStorage->M;
-  int n = A->mStorage->n;
+void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+   double** M = A->mStorage->M;
+   int n = A->mStorage->n;
 
-  assert(nRows > 0);
-  assert(nCols > 0);
-  assert(startRow >= 0);
-  assert(startCol >= 0);
+   assert(nRows > 0);
+   assert(nCols > 0);
+   assert(startRow >= 0);
+   assert(startCol >= 0);
 
-  int endRow = startRow + nRows;
-  int endCol = startCol + nCols;
+   int endRow = startRow + nRows;
+   int endCol = startCol + nCols;
 
-  assert(n >= endRow);
-  assert(n >= endCol);
+   assert(n >= endRow);
+   assert(n >= endCol);
 
-  int chunk_size = (CHUNK_SIZE / n) * n;
-  chunk_size = std::min(chunk_size, n*nRows);
+   int chunk_size = (CHUNK_SIZE / n) * n;
+   chunk_size = std::min(chunk_size, n * nRows);
 
-  double* chunk = new double[chunk_size];
+   double* chunk = new double[chunk_size];
 
-  int rows_in_chunk = chunk_size/n;
+   int rows_in_chunk = chunk_size / n;
 
-  int iRow=startRow;
+   int iRow = startRow;
 
-  // main loop
-  do {
+   // main loop
+   do {
 
-    if( iRow + rows_in_chunk > endRow )
-      rows_in_chunk = endRow - iRow;
+      if (iRow + rows_in_chunk > endRow)
+         rows_in_chunk = endRow - iRow;
 
-    assert(rows_in_chunk > 0);
+      assert(rows_in_chunk > 0);
 #ifndef NDEBUG
-    const int iErr=MPI_Allreduce(&M[iRow][0], chunk, rows_in_chunk*n, MPI_DOUBLE, MPI_SUM, comm);
-    assert(iErr==MPI_SUCCESS);
+      const int iErr = MPI_Allreduce(&M[iRow][0], chunk, rows_in_chunk * n, MPI_DOUBLE, MPI_SUM, comm);
+      assert(iErr == MPI_SUCCESS);
 #else
-    MPI_Allreduce(&M[iRow][0], chunk, rows_in_chunk*n, MPI_DOUBLE, MPI_SUM, comm);
+      MPI_Allreduce(&M[iRow][0], chunk, rows_in_chunk*n, MPI_DOUBLE, MPI_SUM, comm);
 #endif
 
-    int shift = 0;
+      int shift = 0;
 
-    // copy into M
-    for( int i = iRow; i < iRow + rows_in_chunk; i++ ) {
-      for( int j = startCol; j < endCol; j++ )
-	    M[i][j] = chunk[shift+j];
+      // copy into M
+      for (int i = iRow; i < iRow + rows_in_chunk; i++) {
+         for (int j = startCol; j < endCol; j++)
+            M[i][j] = chunk[shift + j];
 
-      // shift one row forward
-      shift += n;
-    }
-    iRow += rows_in_chunk;
+         // shift one row forward
+         shift += n;
+      }
+      iRow += rows_in_chunk;
 
-  } while( iRow < endRow );
+   } while (iRow < endRow);
 
-  delete[] chunk;
+   delete[] chunk;
 }
 
 // TODO: move all this to the respective matrix and storages.......
-void sLinsysRoot::allreduceMatrix( DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm )
-{
-   int n,m; mat.getSize(m,n);
+void sLinsysRoot::allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
+   int n, m;
+   mat.getSize(m, n);
 
-   if( is_sparse )
-   {
-      if( is_sym )
-      {
+   if (is_sparse) {
+      if (is_sym) {
          SparseSymMatrix& matsp = dynamic_cast<SparseSymMatrix&>(mat);
 
          int* const krowKkt = matsp.krowM();
@@ -1731,8 +1637,7 @@ void sLinsysRoot::allreduceMatrix( DoubleMatrix& mat, bool is_sparse, bool is_sy
 
          reduceToAllProcs(nnzKkt, MKkt);
       }
-      else
-      {
+      else {
          SparseGenMatrix& matsp = dynamic_cast<SparseGenMatrix&>(mat);
 
          int* const krowKkt = matsp.krowM();
@@ -1742,18 +1647,16 @@ void sLinsysRoot::allreduceMatrix( DoubleMatrix& mat, bool is_sparse, bool is_sy
          reduceToAllProcs(nnzKkt, MKkt);
       }
    }
-   else
-   {
+   else {
       // TODO : these seem to be not proper handling of the symmetric dense schur complement - need ot check maths first
-      if( is_sym )
-         submatrixAllReduceFull( &dynamic_cast<DenseSymMatrix&>(mat), 0, 0, m, n, comm);
+      if (is_sym)
+         submatrixAllReduceFull(&dynamic_cast<DenseSymMatrix&>(mat), 0, 0, m, n, comm);
       else
-         submatrixAllReduceFull( &dynamic_cast<DenseGenMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(&dynamic_cast<DenseGenMatrix&>(mat), 0, 0, m, n, comm);
    }
 }
 
-void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm)
-{
+void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** const M = A->mStorage->M;
    assert(A->mStorage->n == A->mStorage->m);
    assert(A->mStorage->n >= startRow + nRows);
@@ -1762,10 +1665,7 @@ void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int st
    submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
 }
 
-void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A,
-                   int startRow, int startCol, int nRows, int nCols,
-                 MPI_Comm comm)
-{
+void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** const M = A->mStorage->M;
    assert(A->mStorage->m >= startRow + nRows);
    assert(A->mStorage->n >= startCol + nCols);
@@ -1773,11 +1673,10 @@ void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A,
    submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
 }
 
-void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm)
-{
+void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    assert(nRows >= 0);
    assert(nCols >= 0);
-   if(nRows == 0 || nCols == 0)
+   if (nRows == 0 || nCols == 0)
       return;
    assert(startRow >= 0);
    assert(startCol >= 0);
@@ -1792,8 +1691,7 @@ void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol,
    int counter = 0;
    const size_t nColBytes = nCols * sizeof(double);
 
-   for( int r = startRow; r < endRow; r++ )
-   {
+   for (int r = startRow; r < endRow; r++) {
       memcpy(&bufferSend[counter], &A[r][startCol], nColBytes);
       counter += nCols;
    }
@@ -1809,8 +1707,7 @@ void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol,
 
    // copy back
    counter = 0;
-   for( int r = startRow; r < endRow; r++ )
-   {
+   for (int r = startRow; r < endRow; r++) {
       memcpy(&A[r][startCol], &bufferRecv[counter], nColBytes);
       counter += nCols;
    }
@@ -1822,16 +1719,13 @@ void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol,
 }
 
 
-void sLinsysRoot::submatrixAllReduceDiagLower(DenseSymMatrix* A,
-                   int substart, int subsize,
-                 MPI_Comm comm)
-{
+void sLinsysRoot::submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm) {
    double** const M = A->mStorage->M;
 
    assert(subsize >= 0);
    assert(substart >= 0);
 
-   if( subsize == 0)
+   if (subsize == 0)
       return;
 
    const int subend = substart + subsize;
@@ -1846,9 +1740,8 @@ void sLinsysRoot::submatrixAllReduceDiagLower(DenseSymMatrix* A,
 
    int counter = 0;
 
-   for( int i = substart; i < subend; i++ )
-      for( int j = substart; j <= i; j++ )
-      {
+   for (int i = substart; i < subend; i++)
+      for (int j = substart; j <= i; j++) {
          assert(counter < buffersize);
          bufferSend[counter++] = M[i][j];
       }
@@ -1863,9 +1756,8 @@ void sLinsysRoot::submatrixAllReduceDiagLower(DenseSymMatrix* A,
 #endif
 
    counter = 0;
-   for( int i = substart; i < subend; i++ )
-      for( int j = substart; j <= i; j++ )
-      {
+   for (int i = substart; i < subend; i++)
+      for (int j = substart; j <= i; j++) {
          assert(counter < buffersize);
          M[i][j] = bufferRecv[counter++];
       }
@@ -1918,7 +1810,7 @@ void sLinsysRoot::dumpMatrix(int scen, int proc, const char* nameToken, DenseSym
   fclose(file);
 }
 
-void sLinsysRoot::dumpRhs(int proc, const char* nameToken,  SimpleVector& rhs) 
+void sLinsysRoot::dumpRhs(int proc, const char* nameToken,  SimpleVector<double>& rhs) 
 {
   int n = rhs.length();
   char szNumber[30];

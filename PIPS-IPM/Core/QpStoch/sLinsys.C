@@ -148,7 +148,7 @@ void sLinsys::computeU_V(DistributedQP *prob,
   A.getSize(N, nxP); assert(N==locmy);
 
   N = locnx+locmy+locmz;
-  SimpleVector uCol(N);
+  SimpleVector<double> uCol(N);
 
   for(int it=0; it<nxP; it++) {
     
@@ -208,8 +208,8 @@ void sLinsys::allocV(DenseGenMatrix ** V, int n0)
  */
 void sLinsys::addLnizi(DistributedQP *prob, OoqpVector& z0_, OoqpVector& zi_)
 {
-  SimpleVector& z0 = dynamic_cast<SimpleVector&>(z0_);
-  SimpleVector& zi = dynamic_cast<SimpleVector&>(zi_);
+  SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
+  SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(zi_);
 
   solver->Dsolve(zi);
   solver->Ltsolve(zi);
@@ -223,11 +223,11 @@ void sLinsys::addLnizi(DistributedQP *prob, OoqpVector& z0_, OoqpVector& zi_)
   A.getSize(dummy, n0);
 
   // zi2 and zi3 are just references to fragments of zi
-  SimpleVector zi1 (&zi[0],           locnx);
-  SimpleVector zi2 (&zi[locnx],       locmy);
-  SimpleVector zi3 (&zi[locnx+locmy], locmz);
+  SimpleVector<double> zi1 (&zi[0],           locnx);
+  SimpleVector<double> zi2 (&zi[locnx],       locmy);
+  SimpleVector<double> zi3 (&zi[locnx+locmy], locmz);
   // same for z01 (only the first n0 entries in the output z0 are computed)
-  SimpleVector z01 (&z0[0], n0);
+  SimpleVector<double> z01 (&z0[0], n0);
 
   R.transMult(1.0, z01, -1.0, zi1);
   A.transMult(1.0, z01, -1.0, zi2);
@@ -575,8 +575,8 @@ void sLinsys::solveCompressed( OoqpVector& rhs_)
  *                      (  [ C 0 0 ]    )
  */
 void sLinsys::LniTransMult(DistributedQP *prob, 
-			   SimpleVector& y, 
-			   double alpha, SimpleVector& x)
+			   SimpleVector<double>& y, 
+			   double alpha, SimpleVector<double>& x)
 {
   SparseGenMatrix& A = prob->getLocalA();
   int N{0}, nx0{0};
@@ -591,17 +591,17 @@ void sLinsys::LniTransMult(DistributedQP *prob,
   assert(y.length() == N);
   
   //!memopt
-  SimpleVector LniTx(N);
+  SimpleVector<double> LniTx(N);
 
   // shortcuts
-  SimpleVector x1(&x[0], nx0);
-  SimpleVector LniTx1(&LniTx[0], locnx);
+  SimpleVector<double> x1(&x[0], nx0);
+  SimpleVector<double> LniTx1(&LniTx[0], locnx);
 
   LniTx1.setToZero();
   if( data->hasRAC() )
   {
-     SimpleVector LniTx2(&LniTx[locnx], locmy);
-     SimpleVector LniTx3(&LniTx[locnx+locmy], locmz);
+     SimpleVector<double> LniTx2(&LniTx[locnx], locmy);
+     SimpleVector<double> LniTx3(&LniTx[locnx+locmy], locmz);
 
      SparseGenMatrix& C = prob->getLocalC();
      SparseGenMatrix& R = prob->getLocalCrossHessian();
@@ -616,7 +616,7 @@ void sLinsys::LniTransMult(DistributedQP *prob,
 	 int nxMyMzP = x.length() - locmyl - locmzl;
 
 	 SparseGenMatrix& F = prob->getLocalF();
-    SimpleVector xlink(&x[nxMyMzP], locmyl);
+    SimpleVector<double> xlink(&x[nxMyMzP], locmyl);
 
     F.transMult(1.0, LniTx1, 1.0, xlink);
   }
@@ -626,7 +626,7 @@ void sLinsys::LniTransMult(DistributedQP *prob,
     int nxMyMzMylP = x.length() - locmzl;
 
     SparseGenMatrix& G = prob->getLocalG();
-    SimpleVector xlink(&x[nxMyMzMylP], locmzl);
+    SimpleVector<double> xlink(&x[nxMyMzMylP], locmzl);
 
     G.transMult(1.0, LniTx1, 1.0, xlink);
   }
@@ -645,8 +645,8 @@ void sLinsys::LniTransMult(DistributedQP *prob,
  */
 
 void sLinsys::addTermToSchurResidual(DistributedQP* prob, 
-				     SimpleVector& res, 
-				     SimpleVector& x)
+				     SimpleVector<double>& res, 
+				     SimpleVector<double>& x)
 {
   SparseGenMatrix& A = prob->getLocalA();
   SparseGenMatrix& C = prob->getLocalC();
@@ -666,7 +666,7 @@ void sLinsys::addTermToSchurResidual(DistributedQP* prob,
   assert(x.length() >= nxP);
 
   int N=locnx+locmy+locmz;
-  SimpleVector y(N);
+  SimpleVector<double> y(N);
 
   R.mult( 0.0,&y[0],1,           1.0,&x[0],1);
   A.mult( 0.0,&y[locnx],1,       1.0,&x[0],1);
@@ -738,8 +738,8 @@ void sLinsys::addTermToDenseSchurCompl(DistributedQP *prob,
 
   N = locnx+locmy+locmz;
 
-  SimpleVector col(N);
-  SimpleVectorBase<int> nnzPerColRAC(nxP);
+  SimpleVector<double> col(N);
+  SimpleVector<int> nnzPerColRAC(nxP);
 
   if( withR )
      R.addNnzPerCol(nnzPerColRAC);
@@ -791,7 +791,7 @@ void sLinsys::addTermToDenseSchurCompl(DistributedQP *prob,
   // do we have linking equality constraints?
   if( withMyl )
   {
-    SimpleVectorBase<int> nnzPerColFt(locmyl);
+    SimpleVector<int> nnzPerColFt(locmyl);
     F.addNnzPerRow(nnzPerColFt);
 
     // do column-wise multiplication for columns containing Ft (F transposed)
@@ -826,7 +826,7 @@ void sLinsys::addTermToDenseSchurCompl(DistributedQP *prob,
   // do we have linking inequality constraints?
   if( withMzl )
   {
-    SimpleVectorBase<int> nnzPerColGt(locmzl);
+    SimpleVector<int> nnzPerColGt(locmzl);
     G.addNnzPerRow(nnzPerColGt);
 
     // do column-wise multiplication for columns containing Gt (G transposed)
@@ -1030,7 +1030,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
          const int n_cols = end_block_RAC - begin_block_RAC;
          // TODO : add buffer for nonzeros and do not reallocate all the time
-         SimpleVectorBase<int> nnzPerColRAC(n_cols);
+         SimpleVector<int> nnzPerColRAC(n_cols);
 
          border_right.R.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
          border_right.A.addNnzPerCol(nnzPerColRAC, begin_block_RAC, end_block_RAC);
@@ -1091,7 +1091,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
          const int n_cols = end_block_F - begin_block_F;
 
-         SimpleVectorBase<int> nnzPerColFt(n_cols);
+         SimpleVector<int> nnzPerColFt(n_cols);
          border_right.F.addNnzPerCol(nnzPerColFt, begin_block_F, end_block_F);
 
          const int chunks_F = std::ceil( static_cast<double>(n_cols) / chunk_length );
@@ -1145,7 +1145,7 @@ void sLinsys::addBiTLeftKiBiRightToResBlockedParallelSolvers( bool sparse_res, b
 
          const int n_cols = end_block_G - begin_block_G;
 
-         SimpleVectorBase<int> nnzPerColGt(n_cols);
+         SimpleVector<int> nnzPerColGt(n_cols);
          border_right.G.addNnzPerCol( nnzPerColGt, begin_block_G, end_block_G );
 
          const int chunks_G = std::ceil( static_cast<double>(n_cols) / chunk_length );

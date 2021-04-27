@@ -5,7 +5,7 @@
 #ifndef SPSTOCHFACTORY
 #define SPSTOCHFACTORY
 
-#include "ProblemFormulation.h"
+#include "ProblemFactory.h"
 #include "sTree.h"
 
 // save diagnostic state
@@ -45,7 +45,7 @@ class DoubleMatrix;
 
 #include "StochResourcesMonitor.h"
 
-class DistributedFactory : public ProblemFormulation {
+class DistributedFactory : public ProblemFactory {
 public:
 
    DistributedFactory(StochInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);

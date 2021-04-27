@@ -8,18 +8,15 @@
 #include "QpGenOptions.h"
 #include <limits>
 
-namespace qpgen_options
-{
-   QpGenOptions::QpGenOptions()
-   {
+namespace qpgen_options {
+   QpGenOptions::QpGenOptions() {
       /* initializes base class options first ny calling base class default constructor */
       Options::getInstance();
       /* override with own set of options */
       setDefaults();
    }
 
-   void QpGenOptions::setDefaults()
-   {
+   void QpGenOptions::setDefaults() {
       /// SCALER
       bool_options["SCALER_OUTPUT"] = true;
 

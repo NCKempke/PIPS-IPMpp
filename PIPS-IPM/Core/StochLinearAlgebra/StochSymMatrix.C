@@ -163,7 +163,7 @@ void StochSymMatrix::mult( double beta,  OoqpVector& y_,
       children[it]->mult(beta, *(y.children[it]), alpha, *(x.children[it]));
 
    if( iAmDistrib && !parent )
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(y.first)->elements(), y.first->length(), mpiComm );
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>*>(y.first)->elements(), y.first->length(), mpiComm );
 }
 
 /** y = beta * y + alpha * this^T * x */
@@ -398,7 +398,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
    const StochVectorBase<int>& nnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(nnzVec);
    assert( children.size() == nnzVecStoch.children.size() );
 
-   const SimpleVectorBase<int>* vec = dynamic_cast<const SimpleVectorBase<int>*>( nnzVecStoch.first );
+   const SimpleVector<int>* vec = dynamic_cast<const SimpleVector<int>*>( nnzVecStoch.first );
    assert( vec );
 
    const int n_old = n;
@@ -410,7 +410,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, cons
       assert( border );
       assert( children.size() == 0 );
      // adapt border
-      assert(dynamic_cast<const SimpleVectorBase<int>*>(linkParent));
+      assert(dynamic_cast<const SimpleVector<int>*>(linkParent));
       border->deleteEmptyRowsCols(*vec, *linkParent);
    }
    else

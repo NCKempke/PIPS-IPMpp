@@ -54,7 +54,7 @@ class LinearAlgebraPackage;
  * Creates a compatible set of components representing a problem formulation
  * specialized by structure.
  */
-class ProblemFormulation {
+class ProblemFactory {
 public:
    virtual void join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const = 0;
 
@@ -78,7 +78,7 @@ public:
    /** creates the Variables class for the relevant formulation */
    virtual Variables* make_variables(Problem& problem) = 0;
 
-   virtual ~ProblemFormulation() = default;
+   virtual ~ProblemFactory() = default;
 
 protected:
    LinearAlgebraPackage* la{};
@@ -91,8 +91,8 @@ protected:
    /** number of rows in C including linking rows */
    long long mz{0};
 
-   ProblemFormulation() = default;
-   ProblemFormulation(int nx_, int my_, int mz_);
+   ProblemFactory() = default;
+   ProblemFactory(int nx_, int my_, int mz_);
 };
 
 //@}

@@ -203,8 +203,8 @@ public:
   virtual double localRowTimesVec( const StochVector& vec, int child, int row, bool linking ) const;
 
   /* y += alpha * RowAt(child, row, linking) */
-  virtual void axpyWithRowAt( double alpha, StochVector* y, SimpleVector* y_linking, int child, int row, bool linking) const;
-  virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos, StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const;
+  virtual void axpyWithRowAt( double alpha, StochVector* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const;
+  virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector<double>* y_link_pos, StochVector* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking ) const;
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
 
@@ -358,8 +358,8 @@ public:
   int appendRow( const StochGenMatrix&, int, int, bool ) override { assert( 0 && "CANNOT APPEND ROW TO DUMMY MATRIX"); return -1; };
   double localRowTimesVec( const StochVector&, int, int, bool ) const override { assert( 0 && "CANNOT MULTIPLY ROW WITH DUMMY MATRIX"); return -1; };
 
-  void axpyWithRowAt( double, StochVector*, SimpleVector*, int, int, bool ) const override {};
-  void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector*, StochVector*, SimpleVector*, int, int, bool ) const override {};
+  void axpyWithRowAt( double, StochVector*, SimpleVector<double>*, int, int, bool ) const override {};
+  void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector<double>*, StochVector*, SimpleVector<double>*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
   StringGenMatrix* shaveLinkingConstraints( unsigned int ) override { return new StringGenDummyMatrix(); };

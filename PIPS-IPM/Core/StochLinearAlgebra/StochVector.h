@@ -168,7 +168,7 @@ public:
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual StochVectorBase<T>* raiseBorder( int n_vars, bool linking_part, bool shave_top );
    virtual void collapseFromHierarchical( const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec = false );
-   virtual void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl,
+   virtual void appendHierarchicalToThis( SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl,
          std::vector<StochVectorBase<T>*>& new_children, const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec );
 
    virtual OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const;
@@ -294,7 +294,7 @@ public:
          const std::vector<int>&, int ) override {};
    StochVectorBase<T>* raiseBorder( int, bool, bool ) override { assert( 0 && "This should never be attempted" ); return nullptr; };
 
-   void appendHierarchicalToThis( SimpleVectorBase<T>* new_vec, SimpleVectorBase<T>* new_vecl, std::vector<StochVectorBase<T>*>& new_children,
+   void appendHierarchicalToThis( SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<StochVectorBase<T>*>& new_children,
          const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec ) override;
 
    OoqpVectorBase<T>* getLinkingVecNotHierarchicalTop() const override { assert( false && "Should not end up here"); return nullptr; };

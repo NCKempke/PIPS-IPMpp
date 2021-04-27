@@ -13,7 +13,7 @@
 #include "LinearSystem.h"
 #include "Status.h"
 #include "Problem.h"
-#include "ProblemFormulation.h"
+#include "ProblemFactory.h"
 #include "DistributedFactory.h"
 
 #include "DistributedQP.hpp"
@@ -32,7 +32,7 @@ extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
 
-GondzioStochLpSolver::GondzioStochLpSolver(ProblemFormulation& problem_formulation, Problem& problem, const Scaler* scaler) : GondzioStochSolver(
+GondzioStochLpSolver::GondzioStochLpSolver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : GondzioStochSolver(
       problem_formulation, problem, scaler) {
 }
 

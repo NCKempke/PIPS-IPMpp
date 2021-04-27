@@ -1205,7 +1205,7 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
    StochGenMatrix& CStoch = dynamic_cast<StochGenMatrix&>(*C);
    SparseGenMatrix& CSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.Bmat)->getTranspose();
 
-   SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.first);
+   SimpleVector<double>* gSimple = dynamic_cast<SimpleVector<double>*>(gStoch.first);
    n = gSimple->length();
 
    std::stringstream sstmCol;
@@ -1254,9 +1254,9 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
       rowNameStubGT = "row_G_R_";
       for (int k = CSparseTrans.krowM()[col]; k < CSparseTrans.krowM()[col + 1]; k++) {
          int rowIdx = CSparseTrans.jcolM()[k];
-         if (dynamic_cast<SimpleVector*>(icuppStoch.first)->elements()[rowIdx] != 0.0)
+         if (dynamic_cast<SimpleVector<double>*>(icuppStoch.first)->elements()[rowIdx] != 0.0)
             out << varName << " " << rowNameStubLT << rowIdx << " " << CSparseTrans.M()[k] << "\n";
-         if (dynamic_cast<SimpleVector*>(iclowStoch.first)->elements()[rowIdx] != 0.0)
+         if (dynamic_cast<SimpleVector<double>*>(iclowStoch.first)->elements()[rowIdx] != 0.0)
             out << varName << " " << rowNameStubGT << rowIdx << " " << CSparseTrans.M()[k] << "\n";
       }
       // coefficients in G_0:
@@ -1266,9 +1266,9 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
          rowNameStubGT = "row_G_L_";
          for (int k = CBlmatSparseTrans.krowM()[col]; k < CBlmatSparseTrans.krowM()[col + 1]; k++) {
             int rowIdx = CBlmatSparseTrans.jcolM()[k];
-            if (dynamic_cast<SimpleVector*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
+            if (dynamic_cast<SimpleVector<double>*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
                out << varName << " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
-            if (dynamic_cast<SimpleVector*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
+            if (dynamic_cast<SimpleVector<double>*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
                out << varName << " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.Blmat)->deleteTransposed();
@@ -1286,9 +1286,9 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
          rowNameStubGT = sstmRow.str();
          for (int k = CChildSparseTrans.krowM()[col]; k < CChildSparseTrans.krowM()[col + 1]; k++) {
             int rowIdx = CChildSparseTrans.jcolM()[k];
-            if (dynamic_cast<SimpleVector*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
+            if (dynamic_cast<SimpleVector<double>*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out << varName << " " << rowNameStubLT << rowIdx << " " << CChildSparseTrans.M()[k] << "\n";
-            if (dynamic_cast<SimpleVector*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
+            if (dynamic_cast<SimpleVector<double>*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out << varName << " " << rowNameStubGT << rowIdx << " " << CChildSparseTrans.M()[k] << "\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Amat)->deleteTransposed();
@@ -1297,7 +1297,7 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
 
    // non-linking variables:
    for (size_t it = 0; it < children.size(); it++) {
-      SimpleVector* gSimple = dynamic_cast<SimpleVector*>(gStoch.children[it]->first);
+      SimpleVector<double>* gSimple = dynamic_cast<SimpleVector<double>*>(gStoch.children[it]->first);
       n = gSimple->length();
 
       for (int col = 0; col < n; col++) {
@@ -1333,9 +1333,9 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
          rowNameStubGT = sstmRow.str();
          for (int k = CChildSparseTrans.krowM()[col]; k < CChildSparseTrans.krowM()[col + 1]; k++) {
             int rowIdx = CChildSparseTrans.jcolM()[k];
-            if (dynamic_cast<SimpleVector*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
+            if (dynamic_cast<SimpleVector<double>*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out << varName << " " << rowNameStubLT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] << "\n";
-            if (dynamic_cast<SimpleVector*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
+            if (dynamic_cast<SimpleVector<double>*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
                out << varName << " " << rowNameStubGT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] << "\n";
          }
          dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Bmat)->deleteTransposed();
@@ -1356,9 +1356,9 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
             rowNameStubGT = "row_G_L_";
             for (int k = CBlmatSparseTrans.krowM()[col]; k < CBlmatSparseTrans.krowM()[col + 1]; k++) {
                int rowIdx = CBlmatSparseTrans.jcolM()[k];
-               if (dynamic_cast<SimpleVector*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
+               if (dynamic_cast<SimpleVector<double>*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
                   out << varName << " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
-               if (dynamic_cast<SimpleVector*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
+               if (dynamic_cast<SimpleVector<double>*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
                   out << varName << " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
             }
             dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Blmat)->deleteTransposed();
@@ -2222,7 +2222,7 @@ void DistributedQP::createScaleFromQ() {
    this->hessian_diagonal(*sc);
 
    // Modifying scVector is equivalent to modifying sc
-   /*SimpleVector & scVector = dynamic_cast<SimpleVector &>(*sc);
+   /*SimpleVector<double> & scVector = dynamic_cast<SimpleVector<double> &>(*sc);
 
     int scLength = scVector.length();
 

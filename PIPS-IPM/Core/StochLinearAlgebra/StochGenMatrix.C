@@ -266,7 +266,7 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
       children[it]->mult2(beta, *y.children[it], alpha, *x.children[it], y.last);
 
    if( iAmDistrib && y.last )
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(y.last)->elements(), y.last->length(), mpiComm);
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>*>(y.last)->elements(), y.last->length(), mpiComm);
 }
 
 
@@ -332,7 +332,7 @@ void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
       children[it]->transMult2(beta, *y.children[it], alpha, *x.children[it], x.last);
 
    if( iAmDistrib && y.first == y.getLinkingVecNotHierarchicalTop() )
-      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector*>(y.first)->elements(), y.first->length(), mpiComm);
+      PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>*>(y.first)->elements(), y.first->length(), mpiComm);
 }
 
 void StochGenMatrix::transMult2 ( double beta, StochVector& y,
@@ -741,7 +741,7 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
       this->Bmat->getSize(m, n);
       for(int i=0; i<m; i++)
       {
-         if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->first)->elements()[i] != 0.0) )
+         if( !irhs || (irhsStoch && dynamic_cast<SimpleVector<double>*>(irhsStoch->first)->elements()[i] != 0.0) )
             out<< " "<<rt<<" row_"<<rt<<"_"<<"R" <<"_"<<i << "\n";
       }
       // linking rows:
@@ -750,7 +750,7 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
          this->Blmat->getSize(m, n);
          for(int i=0; i<m; i++)
          {
-            if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->last)->elements()[i] != 0.0) )
+            if( !irhs || (irhsStoch && dynamic_cast<SimpleVector<double>*>(irhsStoch->last)->elements()[i] != 0.0) )
                out<<" "<< rt<<" row_"<<rt<<"_"<<"L" <<"_"<<i << "\n";
          }
       }
@@ -760,7 +760,7 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
       children[it]->Amat->getSize(m, n);
       for(int i=0; i<m; i++)
       {
-         if( !irhs || (irhsStoch && dynamic_cast<SimpleVector*>(irhsStoch->children[it]->first)->elements()[i] != 0.0) )
+         if( !irhs || (irhsStoch && dynamic_cast<SimpleVector<double>*>(irhsStoch->children[it]->first)->elements()[i] != 0.0) )
             out<<" "<< rt<<" row_"<<rt<<"_"<<it <<"_"<<i << "\n";
       }
    }
@@ -822,7 +822,7 @@ void StochGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
    // assert tree compatibility
    assert(nnzVecStoch.children.size() == children.size());
 
-   SimpleVectorBase<int>* nnzvecl = nullptr;
+   SimpleVector<int>* nnzvecl = nullptr;
 
    dynamic_cast<SparseGenMatrix*>(Bmat)->addNnzPerRow(*(nnzVecStoch.first));
 
@@ -835,9 +835,9 @@ void StochGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
       assert(nnzVecStoch.last == nullptr || linkParent == nullptr);
 
       if( linkParent )
-         nnzvecl = dynamic_cast<SimpleVectorBase<int>*>(linkParent);
+         nnzvecl = dynamic_cast<SimpleVector<int>*>(linkParent);
       else
-         nnzvecl = dynamic_cast<SimpleVectorBase<int>*>(nnzVecStoch.last);
+         nnzvecl = dynamic_cast<SimpleVector<int>*>(nnzVecStoch.last);
 
       if( linkParent != nullptr || iAmSpecial(iAmDistrib, mpiComm) )
          dynamic_cast<SparseGenMatrix*>(Blmat)->addNnzPerRow(*nnzvecl);
@@ -862,7 +862,7 @@ void StochGenMatrix::getNnzPerCol(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
    // assert tree compatibility
    assert(nnzVecStoch.children.size() == children.size());
 
-   SimpleVectorBase<int>* vec = dynamic_cast<SimpleVectorBase<int>*>(nnzVecStoch.first);
+   SimpleVector<int>* vec = dynamic_cast<SimpleVector<int>*>(nnzVecStoch.first);
 
    if( iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr )
    {
@@ -929,9 +929,9 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Ooqp
    if( iAmDistrib )
    {
       if( getMin )
-        PIPS_MPIminArrayInPlace(dynamic_cast<SimpleVector&>(*minmax.last).elements(), minmax.last->length(), mpiComm);
+        PIPS_MPIminArrayInPlace(dynamic_cast<SimpleVector<double>&>(*minmax.last).elements(), minmax.last->length(), mpiComm);
       else
-        PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector&>(*minmax.last).elements(), minmax.last->length(), mpiComm);
+        PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<double>&>(*minmax.last).elements(), minmax.last->length(), mpiComm);
    }
 }
 
@@ -990,7 +990,7 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Ooqp
 
    if( iAmDistrib )
    {
-      SimpleVector& mvec = dynamic_cast<SimpleVector&>(*minmaxVec.first);
+      SimpleVector<double>& mvec = dynamic_cast<SimpleVector<double>&>(*minmaxVec.first);
       if( getMin )
          PIPS_MPIminArrayInPlace( mvec.elements(), mvec.length(), mpiComm );
       else
@@ -1032,7 +1032,7 @@ void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) co
    assert( hasSparseMatrices() );
 
    StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
-   SimpleVector* mvecl = nullptr;
+   SimpleVector<double>* mvecl = nullptr;
 
    // assert tree compatibility
    assert(sumVecStoch.children.size() == children.size());
@@ -1050,9 +1050,9 @@ void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) co
 
       // at root?
       if( linkParent == nullptr )
-         mvecl = dynamic_cast<SimpleVector*>(sumVecStoch.last);
+         mvecl = dynamic_cast<SimpleVector<double>*>(sumVecStoch.last);
       else
-         mvecl = dynamic_cast<SimpleVector*>(linkParent);
+         mvecl = dynamic_cast<SimpleVector<double>*>(linkParent);
 
       if( linkParent != nullptr || iAmSpecial(iAmDistrib, mpiComm) )
          Blmat->addRowSums(*mvecl);
@@ -1088,7 +1088,7 @@ void StochGenMatrix::addColSums( OoqpVector& sumVec, OoqpVector* linkParent ) co
    // assert tree compatibility
    assert(sumVecStoch.children.size() == children.size());
 
-   SimpleVector* const mvec = dynamic_cast<SimpleVector*>(sumVecStoch.first);
+   SimpleVector<double>* const mvec = dynamic_cast<SimpleVector<double>*>(sumVecStoch.first);
 
    if( iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr )
       Bmat->addColSums(*mvec);
@@ -1134,10 +1134,10 @@ void StochGenMatrix::initStaticStorageFromDynamic(const OoqpVectorBase<int>& row
 
    assert(rowNnzVecStoch.children.size() == colNnzVecStoch.children.size());
 
-   const SimpleVectorBase<int>* const rowvec = dynamic_cast<const SimpleVectorBase<int>*>(rowNnzVecStoch.first);
-   const SimpleVectorBase<int>* const colvec = dynamic_cast<const SimpleVectorBase<int>*>(colNnzVecStoch.first);
+   const SimpleVector<int>* const rowvec = dynamic_cast<const SimpleVector<int>*>(rowNnzVecStoch.first);
+   const SimpleVector<int>* const colvec = dynamic_cast<const SimpleVector<int>*>(colNnzVecStoch.first);
 
-   const SimpleVectorBase<int>* const rowlink = dynamic_cast<const SimpleVectorBase<int>*>(rowNnzVecStoch.last);
+   const SimpleVector<int>* const rowlink = dynamic_cast<const SimpleVector<int>*>(rowNnzVecStoch.last);
    assert(rowvec); assert(colvec);
 
    dynamic_cast<SparseGenMatrix*>(Amat)->initStaticStorageFromDynamic(*rowvec, colParentVec); // initialized with colVec == nullptr for parent
@@ -1824,7 +1824,7 @@ int StochGenMatrix::appendRow( const StochGenMatrix& matrix_row, int child, int 
 };
 
 /* y += alpha RowAt(child, row, linking) */
-void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector* y_linking, int child, int row, bool linking) const
+void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const
 {
    assert(hasSparseMatrices());
    assert( y );
@@ -1840,7 +1840,7 @@ void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector* 
       else
       {
          assert( y->first );
-         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector&>(*y->first), row);
+         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
       }
 
       for( unsigned int i = 0; i < children.size(); ++i )
@@ -1849,7 +1849,7 @@ void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector* 
          {
             assert(children[i]->Blmat);
             assert(y->children[i]->first);
-            dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector&>(*y->children[i]->first), row);
+            dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->children[i]->first), row);
          }
       }
    }
@@ -1863,7 +1863,7 @@ void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector* 
          else
          {
             assert(y->first);
-            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector&>(*y->first), row);
+            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
          }
       }
       else
@@ -1872,21 +1872,21 @@ void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector* 
          assert(children[child]->Bmat);
 
          assert(y->children[child]->first);
-         dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector&>(*y->children[child]->first), row);
+         dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->children[child]->first), row);
 
          if( y_linking )
             dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, *y_linking, row);
          else
          {
             assert(y->first);
-            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector&>(*y->first), row);
+            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
          }
       }
    }
 }
 
-void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector* y_link_pos,
-      StochVector* y_neg, SimpleVector* y_link_neg, int child, int row, bool linking ) const
+void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector<double>* y_link_pos,
+      StochVector* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking ) const
 {
    assert(hasSparseMatrices());
    assert( y_pos && y_neg );
@@ -1905,7 +1905,7 @@ void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, Simp
       {
          assert( y_pos->first );
          assert( y_neg->first );
-         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector&>(*y_pos->first), dynamic_cast<SimpleVector&>(*y_neg->first), row);
+         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first), dynamic_cast<SimpleVector<double>&>(*y_neg->first), row);
       }
 
       for( unsigned int i = 0; i < children.size(); ++i )
@@ -1915,7 +1915,7 @@ void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, Simp
             assert(children[i]->Blmat);
             assert(y_pos->children[i]->first);
             assert(y_neg->children[i]->first);
-            dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector&>(*y_pos->children[i]->first), dynamic_cast<SimpleVector&>(*y_neg->children[i]->first), row);
+            dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->children[i]->first), dynamic_cast<SimpleVector<double>&>(*y_neg->children[i]->first), row);
          }
       }
    }
@@ -1930,7 +1930,7 @@ void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, Simp
          {
             assert(y_pos->first);
             assert(y_neg->first);
-            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector&>(*y_pos->first), dynamic_cast<SimpleVector&>(*y_neg->first), row);
+            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first), dynamic_cast<SimpleVector<double>&>(*y_neg->first), row);
          }
       }
       else
@@ -1940,7 +1940,7 @@ void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, Simp
 
          assert(y_pos->children[child]->first);
          assert(y_neg->children[child]->first);
-         dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector&>(*y_pos->children[child]->first), dynamic_cast<SimpleVector&>(*y_neg->children[child]->first), row);
+         dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->children[child]->first), dynamic_cast<SimpleVector<double>&>(*y_neg->children[child]->first), row);
 
          if( y_link_pos )
             dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
@@ -1948,7 +1948,7 @@ void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, Simp
          {
             assert(y_pos->first);
             assert(y_neg->first);
-            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector&>(*y_pos->first), dynamic_cast<SimpleVector&>(*y_neg->first), row);
+            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first), dynamic_cast<SimpleVector<double>&>(*y_neg->first), row);
          }
       }
    }
@@ -1967,7 +1967,7 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
    {
       assert(Blmat);
       assert(vec.first);
-      res += dynamic_cast<const SparseGenMatrix*>(Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.first), row);
+      res += dynamic_cast<const SparseGenMatrix*>(Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
 
       for( unsigned int i = 0; i < children.size(); ++i )
       {
@@ -1975,7 +1975,7 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
          {
             assert(children[i]->Blmat);
             assert(vec.children[i]->first);
-            res += dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.children[i]->first), row);
+            res += dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.children[i]->first), row);
          }
       }
    }
@@ -1985,7 +1985,7 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
       {
          assert(Bmat);
          assert(vec.first);
-         res += dynamic_cast<const SparseGenMatrix*>(Bmat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.first), row);
+         res += dynamic_cast<const SparseGenMatrix*>(Bmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
       }
       else
       {
@@ -1993,8 +1993,8 @@ double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int r
          assert(children[child]->Bmat);
          assert(vec.first);
          assert(vec.children[child]->first);
-         res += dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.first), row);
-         res += dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->localRowTimesVec(dynamic_cast<const SimpleVector&>(*vec.children[child]->first), row);
+         res += dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
+         res += dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.children[child]->first), row);
       }
    }
 

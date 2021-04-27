@@ -9,7 +9,7 @@ add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/O
   Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  QpSolvers/Solver.C
   Vector/OoqpVector.C Vector/SimpleVector.C
 Utilities/drand.C Utilities/sort.C Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C
-        Abstract/Residuals.cpp Abstract/ProblemFormulation.cpp)
+        Abstract/Residuals.cpp Abstract/ProblemFactory.cpp)
 
 add_library(ooqpgensparse STATIC
   Abstract/Variables.C QpGen/QP.cpp QpGen/QpGenLinsys.C #QpGen

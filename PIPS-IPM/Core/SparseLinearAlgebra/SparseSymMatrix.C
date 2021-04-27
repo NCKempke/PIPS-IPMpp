@@ -255,8 +255,8 @@ long long SparseSymMatrix::size() const
 void SparseSymMatrix::mult ( double beta,  OoqpVector& y_in,
 				 double alpha, const OoqpVector& x_in ) const
 {
-  const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
+  const SimpleVector<double> & x = dynamic_cast<const SimpleVector<double> &>(x_in);
+  SimpleVector<double> & y = dynamic_cast<SimpleVector<double> &>(y_in);
   
   assert( x.length() == mStorage->n &&  y.length() == mStorage->m );
   
@@ -271,8 +271,8 @@ void SparseSymMatrix::mult ( double beta,  OoqpVector& y_in,
 void SparseSymMatrix::transMult ( double beta,   OoqpVector& y_in,
 				      double alpha,  const OoqpVector& x_in ) const
 {
-  const SimpleVector & x = dynamic_cast<const SimpleVector &>(x_in);
-  SimpleVector & y = dynamic_cast<SimpleVector &>(y_in);
+  const SimpleVector<double> & x = dynamic_cast<const SimpleVector<double> &>(x_in);
+  SimpleVector<double> & y = dynamic_cast<SimpleVector<double> &>(y_in);
   
   assert( x.length() == mStorage->n &&  y.length() == mStorage->m );
   
@@ -371,7 +371,7 @@ void SparseSymMatrix::reduceToLower()
 
 void SparseSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec)
 {
-   const SimpleVectorBase<int>& vec = dynamic_cast<const SimpleVectorBase<int>&>(nnzVec);
+   const SimpleVector<int>& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
 #ifndef NDEBUG
    int m,n;
    mStorage->getSize(m,n);

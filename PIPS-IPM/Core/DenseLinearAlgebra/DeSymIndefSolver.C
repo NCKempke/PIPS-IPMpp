@@ -139,7 +139,7 @@ void DeSymIndefSolver::solve ( OoqpVector& v )
   const int one = 1;
 
   const int n = mStorage->n;
-  SimpleVector & sv = dynamic_cast<SimpleVector &>(v);
+  SimpleVector<double> & sv = dynamic_cast<SimpleVector<double> &>(v);
 
   if( n == 0 )
      return;

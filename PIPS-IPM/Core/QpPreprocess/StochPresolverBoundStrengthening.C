@@ -207,18 +207,18 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock( SystemType syste
 
    bool tightened = false;
 
-   const SimpleVector& xlow = (node == -1 || block_type == A_MAT) ? *currxlowParent : *currxlowChild;
-   const SimpleVector& ixlow = (node == -1 || block_type == A_MAT) ? *currIxlowParent : *currIxlowChild;
-   const SimpleVector& xupp = (node == -1 || block_type == A_MAT) ? *currxuppParent : *currxuppChild;
-   const SimpleVector& ixupp = (node == -1 || block_type == A_MAT) ? *currIxuppParent : *currIxuppChild;
+   const SimpleVector<double>& xlow = (node == -1 || block_type == A_MAT) ? *currxlowParent : *currxlowChild;
+   const SimpleVector<double>& ixlow = (node == -1 || block_type == A_MAT) ? *currIxlowParent : *currIxlowChild;
+   const SimpleVector<double>& xupp = (node == -1 || block_type == A_MAT) ? *currxuppParent : *currxuppChild;
+   const SimpleVector<double>& ixupp = (node == -1 || block_type == A_MAT) ? *currIxuppParent : *currIxuppChild;
 
-   const SimpleVector& iclow = (block_type == BL_MAT) ? *currIclowLink : *currIclow;
-   const SimpleVector& clow = (block_type == BL_MAT) ? *currIneqLhsLink : *currIneqLhs;
-   const SimpleVector& icupp = (block_type == BL_MAT) ? *currIcuppLink : *currIcupp;
-   const SimpleVector& cupp = (block_type == BL_MAT) ? *currIneqRhsLink : *currIneqRhs;
-   const SimpleVector& rhs = (block_type == BL_MAT) ? *currEqRhsLink : *currEqRhs;
+   const SimpleVector<double>& iclow = (block_type == BL_MAT) ? *currIclowLink : *currIclow;
+   const SimpleVector<double>& clow = (block_type == BL_MAT) ? *currIneqLhsLink : *currIneqLhs;
+   const SimpleVector<double>& icupp = (block_type == BL_MAT) ? *currIcuppLink : *currIcupp;
+   const SimpleVector<double>& cupp = (block_type == BL_MAT) ? *currIneqRhsLink : *currIneqRhs;
+   const SimpleVector<double>& rhs = (block_type == BL_MAT) ? *currEqRhsLink : *currEqRhs;
 
-   const SimpleVectorBase<int>& nnzs_row = (block_type == BL_MAT) ? *currNnzRowLink : *currNnzRow;
+   const SimpleVector<int>& nnzs_row = (block_type == BL_MAT) ? *currNnzRowLink : *currNnzRow;
 
    const SparseStorageDynamic* mat;
 

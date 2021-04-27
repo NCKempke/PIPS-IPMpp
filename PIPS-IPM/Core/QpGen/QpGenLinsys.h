@@ -16,7 +16,7 @@ class Problem;
 
 class QP;
 
-class ProblemFormulation;
+class ProblemFactory;
 
 class Variables;
 
@@ -53,12 +53,12 @@ protected:
    /** stores a critical diagonal matrix as a vector */
    OoqpVector* nomegaInv{};
 
-   ProblemFormulation* factory{};
+   ProblemFactory* factory{};
 
    /** right-hand side of the system */
    OoqpVector* rhs{};
 
-   QpGenLinsys(ProblemFormulation* factory_, Problem* problem, bool create_iter_ref_vecs);
+   QpGenLinsys(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
 
    /** dimensions of the vectors in the general QP formulation */
    long long nx{0};
@@ -114,10 +114,10 @@ protected:
    const bool xyzs_solve_print_residuals;
 
 public:
-   QpGenLinsys(ProblemFormulation* factory, Problem* problem);
+   QpGenLinsys(ProblemFactory* factory, Problem* problem);
 
-   QpGenLinsys(ProblemFormulation* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_, bool
-   create_iter_ref_vecs);
+   QpGenLinsys(ProblemFactory* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* rhs_,
+         bool create_iter_ref_vecs);
 
    ~QpGenLinsys() override;
 
