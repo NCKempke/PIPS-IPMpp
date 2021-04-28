@@ -790,7 +790,7 @@ T SimpleVector<T>::stepbound(const OoqpVectorBase<T>& pvec, T maxStep) const {
 }
 
 template<typename T>
-T SimpleVector<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep,
+T SimpleVector<T>::find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep,
       T* w_elt, T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const {
    T* w = v;
    const SimpleVector<T>& swstep = dynamic_cast<const SimpleVector<T>&>(wstep_vec);
@@ -806,7 +806,7 @@ T SimpleVector<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVe
 }
 
 template<typename T>
-void SimpleVector<T>::findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec,
+void SimpleVector<T>::find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec,
       T& maxStepPri, T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
       bool& primalBlocking, bool& dualBlocking) const {
    const T* w = v;
@@ -850,7 +850,7 @@ void SimpleVector<T>::selectNonZeros(const OoqpVectorBase<T>& select) {
    assert(this->n == select.length());
    int i;
    for (i = 0; i < this->n; i++) {
-      if (0.0 == map[i])
+      if (map[i] == 0.)
          v[i] = 0.0;
    }
 }

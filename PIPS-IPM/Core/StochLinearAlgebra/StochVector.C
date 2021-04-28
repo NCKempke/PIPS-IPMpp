@@ -654,7 +654,7 @@ T StochVectorBase<T>::stepbound(const OoqpVectorBase<T>& v_, T maxStep) const {
 }
 
 template<typename T>
-T StochVectorBase<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep,
+T StochVectorBase<T>::find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep,
       T* w_elt, T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const {
    const StochVectorBase<T>& w = *this;
    const StochVectorBase<T>& u = dynamic_cast<const StochVectorBase<T>&>(u_vec);
@@ -671,7 +671,7 @@ T StochVectorBase<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const Ooq
       assert(u.last);
       assert(ustep.last);
 
-      step = w.last->findBlocking(*wstep.last, *u.last, *ustep.last, step, w_elt, wstep_elt, u_elt, ustep_elt, first_or_second);
+      step = w.last->find_blocking(*wstep.last, *u.last, *ustep.last, step, w_elt, wstep_elt, u_elt, ustep_elt, first_or_second);
    }
 
    if (w.first) {
@@ -679,7 +679,7 @@ T StochVectorBase<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const Ooq
       assert(u.first);
       assert(ustep.first);
 
-      step = w.first->findBlocking(*wstep.first, *u.first, *ustep.first, step, w_elt, wstep_elt, u_elt, ustep_elt, first_or_second);
+      step = w.first->find_blocking(*wstep.first, *u.first, *ustep.first, step, w_elt, wstep_elt, u_elt, ustep_elt, first_or_second);
    }
 
    const int nChildren = w.children.size();
@@ -689,7 +689,7 @@ T StochVectorBase<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const Ooq
    assert(nChildren - ustep.children.size() == 0);
 
    for (int it = 0; it < nChildren; it++) {
-      step = w.children[it]->findBlocking(*wstep.children[it], *u.children[it], *ustep.children[it], step, w_elt, wstep_elt, u_elt, ustep_elt,
+      step = w.children[it]->find_blocking(*wstep.children[it], *u.children[it], *ustep.children[it], step, w_elt, wstep_elt, u_elt, ustep_elt,
             first_or_second);
    }
 
@@ -767,7 +767,7 @@ T StochVectorBase<T>::findBlocking(const OoqpVectorBase<T>& wstep_vec, const Ooq
 }
 
 template<typename T>
-void StochVectorBase<T>::findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec,
+void StochVectorBase<T>::find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec,
       T& maxStepPri, T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
       bool& primalBlocking, bool& dualBlocking) const {
    const StochVectorBase<T>& w = *this;
@@ -783,7 +783,7 @@ void StochVectorBase<T>::findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, con
       assert(u.last);
       assert(ustep.last);
 
-      w.last->findBlocking_pd(*wstep.last, *u.last, *ustep.last, maxStepPri, maxStepDual, w_elt_p, wstep_elt_p, u_elt_p, ustep_elt_p, w_elt_d,
+      w.last->find_blocking_pd(*wstep.last, *u.last, *ustep.last, maxStepPri, maxStepDual, w_elt_p, wstep_elt_p, u_elt_p, ustep_elt_p, w_elt_d,
             wstep_elt_d, u_elt_d, ustep_elt_d, primalBlocking, dualBlocking);
    }
 
@@ -792,7 +792,7 @@ void StochVectorBase<T>::findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, con
       assert(u.first);
       assert(ustep.first);
 
-      w.first->findBlocking_pd(*wstep.first, *u.first, *ustep.first, maxStepPri, maxStepDual, w_elt_p, wstep_elt_p, u_elt_p, ustep_elt_p, w_elt_d,
+      w.first->find_blocking_pd(*wstep.first, *u.first, *ustep.first, maxStepPri, maxStepDual, w_elt_p, wstep_elt_p, u_elt_p, ustep_elt_p, w_elt_d,
             wstep_elt_d, u_elt_d, ustep_elt_d, primalBlocking, dualBlocking);
    }
 
@@ -803,7 +803,7 @@ void StochVectorBase<T>::findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, con
    assert(nChildren - ustep.children.size() == 0);
 
    for (int it = 0; it < nChildren; it++) {
-      w.children[it]->findBlocking_pd(*wstep.children[it], *u.children[it], *ustep.children[it], maxStepPri, maxStepDual, w_elt_p, wstep_elt_p,
+      w.children[it]->find_blocking_pd(*wstep.children[it], *u.children[it], *ustep.children[it], maxStepPri, maxStepDual, w_elt_p, wstep_elt_p,
             u_elt_p, ustep_elt_p, w_elt_d, wstep_elt_d, u_elt_d, ustep_elt_d, primalBlocking, dualBlocking);
    }
 

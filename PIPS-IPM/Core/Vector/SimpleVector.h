@@ -130,10 +130,10 @@ public:
    void divideSome(const OoqpVectorBase<T>& div, const OoqpVectorBase<T>& select) override;
 
    T stepbound(const OoqpVectorBase<T>& v, T maxStep) const override;
-   T findBlocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep, T* w_elt,
+   T find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep, T* w_elt,
          T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const override;
 
-   void findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T& maxStepPri,
+   void find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T& maxStepPri,
          T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
          bool& primalBlocking, bool& dualBlocking) const override;
 

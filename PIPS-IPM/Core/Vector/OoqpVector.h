@@ -257,10 +257,10 @@ public:
     *  component is in "this", and first_or_second=2 if the blocking
     *  component is in u_vec.
     */
-   virtual T findBlocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep, T* w_elt,
+   virtual T find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep, T* w_elt,
          T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const = 0;
 
-   virtual void findBlocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T& maxStepPri,
+   virtual void find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T& maxStepPri,
          T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
          bool& primalBlocking, bool& dualBlocking) const = 0;
 

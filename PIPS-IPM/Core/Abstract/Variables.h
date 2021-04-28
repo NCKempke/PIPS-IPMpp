@@ -116,7 +116,7 @@ public:
     * alpha such that (t,u,v,w,lambda,pi,phi,gamma) + alpha *
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
-    * @see findBlocking */
+    * @see find_blocking */
    double stepbound(const Variables* b);
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative

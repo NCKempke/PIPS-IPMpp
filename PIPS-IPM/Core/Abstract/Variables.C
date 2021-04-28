@@ -439,19 +439,19 @@ Variables::findBlocking(const Variables* step, double& primalValue, double& prim
    const Variables* d = (const Variables*) step;
 
    if (mclow > 0) {
-      alpha = t->findBlocking(*d->t, *lambda, *d->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = t->find_blocking(*d->t, *lambda, *d->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    if (mcupp > 0) {
-      alpha = u->findBlocking(*d->u, *pi, *d->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = u->find_blocking(*d->u, *pi, *d->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    if (nxlow > 0) {
-      alpha = v->findBlocking(*d->v, *gamma, *d->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = v->find_blocking(*d->v, *gamma, *d->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    if (nxupp > 0) {
-      alpha = w->findBlocking(*d->w, *phi, *d->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = w->find_blocking(*d->w, *phi, *d->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    return alpha;
@@ -467,22 +467,22 @@ Variables::findBlocking_pd(const Variables* step, double& primalValue, double& p
    const Variables* d = (const Variables*) step;
 
    if (mclow > 0) {
-      t->findBlocking_pd(*d->t, *lambda, *d->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      t->find_blocking_pd(*d->t, *lambda, *d->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (mcupp > 0) {
-      u->findBlocking_pd(*d->u, *pi, *d->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      u->find_blocking_pd(*d->u, *pi, *d->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxlow > 0) {
-      v->findBlocking_pd(*d->v, *gamma, *d->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      v->find_blocking_pd(*d->v, *gamma, *d->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxupp > 0) {
-      w->findBlocking_pd(*d->w, *phi, *d->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      w->find_blocking_pd(*d->w, *phi, *d->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 }
