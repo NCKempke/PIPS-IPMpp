@@ -16,9 +16,6 @@
 #include "StochOptions.h"
 #include "mpi.h"
 #include <stdio.h>
-#include "DistributedQP.hpp"
-#include "StochTree.h"
-#include "StochInputTree.h"
 #include "sLinsysRootAug.h"
 #include "sLinsysRootAugHierInner.h"
 #include "sLinsysRootBordered.h"
