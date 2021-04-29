@@ -6,8 +6,9 @@ include_directories(
    Core/QpSolvers 
    Core/QpPreprocess 
    Core/QpGen
-   Core/SparseLinearAlgebra 
-   Core/DenseLinearAlgebra 
+   Core/LinearAlgebra/Sparse 
+   Core/LinearAlgebra/Dense
+   Core/LinearAlgebra/Distributed
    Core/Readers
    Core/LinearSolvers/Ma27Solver 
    Core/LinearSolvers/Ma57Solver 
@@ -18,7 +19,6 @@ include_directories(
    Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
    Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
    Core/LinearSolvers/BiCGStabSolver 
-   Core/StochLinearAlgebra 
    Core/QpStoch
 )
 

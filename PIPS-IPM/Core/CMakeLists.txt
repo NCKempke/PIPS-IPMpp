@@ -1,15 +1,13 @@
 add_subdirectory(QpSolvers)
 add_subdirectory(QpPreprocess)
-add_subdirectory(SparseLinearAlgebra)
-add_subdirectory(DenseLinearAlgebra)
-add_subdirectory(StochLinearAlgebra)
+add_subdirectory(LinearAlgebra/Sparse)
+add_subdirectory(LinearAlgebra/Dense)
+add_subdirectory(LinearAlgebra/Distributed)
 add_subdirectory(LinearSolvers)
 
 add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Abstract/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
-  Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  QpSolvers/Solver.C
-  Vector/OoqpVector.C Vector/SimpleVector.C
-Utilities/drand.C Utilities/sort.C Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C
-        Abstract/Residuals.cpp Abstract/ProblemFactory.cpp)
+  Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  QpSolvers/Solver.C Vector/OoqpVector.C Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
+  Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C Abstract/Residuals.cpp Abstract/ProblemFactory.cpp)
 
 add_library(ooqpgensparse STATIC
   Abstract/Variables.C QpGen/QP.cpp QpGen/QpGenLinsys.C #QpGen
@@ -33,7 +31,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sTree.C
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C
-   StochLinearAlgebra/StringGenMatrix.C # TODO : bad hack...
+   LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
 )
 
 if( HAVE_MA27 )
@@ -70,12 +68,3 @@ target_link_libraries( ooqpstoch
    PRIVATE MPI::MPI_CXX
    PRIVATE ${MATH_LIBS}
 )
-
-
-
-
-
-
-
-
-

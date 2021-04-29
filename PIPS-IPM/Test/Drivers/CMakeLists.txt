@@ -1,10 +1,10 @@
 include_directories(../../Core/QpGen)
 include_directories(../../Core/QpStoch)
-include_directories(../../Core/StochLinearAlgebra)
+include_directories(../../Core/LinearAlgebra/Distributed)
 include_directories(../../Core/Vector)
 include_directories(../../Core/Abstract)
 include_directories(../../Core/Utilities)
-include_directories(../../Core/SparseLinearAlgebra)
+include_directories(../../Core/LinearAlgebra/Sparse)
 include_directories(../../Drivers/gmspips)
 
 package_add_test( gmspipsReaderTest t_gmspips_reader.cpp )
