@@ -6,7 +6,7 @@
 #include "BorderedSymMatrix.h"
 #include "sLinsys.h"
 #include "sTree.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseLinearAlgebraPackage.h"
 #include "math.h"
@@ -14,7 +14,7 @@
 #include "pipsport.h"
 #include "omp.h"
 
-sLinsys::sLinsys(sFactory* factory_, DistributedQP* prob, bool is_hierarchy_root)
+sLinsys::sLinsys(DistributedFactory* factory_, DistributedQP* prob, bool is_hierarchy_root)
   : QpGenLinsys(factory_, prob), data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
@@ -37,7 +37,7 @@ sLinsys::sLinsys(sFactory* factory_, DistributedQP* prob, bool is_hierarchy_root
   this->iAmDistrib = dds.iAmDistrib;
 }
 
-sLinsys::sLinsys(sFactory* factory_,
+sLinsys::sLinsys(DistributedFactory* factory_,
 		 DistributedQP* prob,
 		 OoqpVector* dd_, 
 		 OoqpVector* dq_,

@@ -2204,14 +2204,14 @@ void DistributedQP::AddChild(DistributedQP* child) {
    children.push_back(child);
 }
 
-double DistributedQP::objective_value(const QpGenVars* vars) const {
-   const StochVector& x = dynamic_cast<const StochVector&>(*vars->x);
+double DistributedQP::objective_value(const Variables& variables) const {
+   const StochVector& x = dynamic_cast<const StochVector&>(*variables.x);
    OoqpVectorHandle temp(x.clone());
 
    this->getg(*temp);
-   this->hessian_multiplication(1.0, *temp, 0.5, *vars->x);
+   this->hessian_multiplication(1.0, *temp, 0.5, *variables.x);
 
-   return temp->dotProductWith(*vars->x);
+   return temp->dotProductWith(*variables.x);
 }
 
 void DistributedQP::createScaleFromQ() {

@@ -10,23 +10,23 @@
 
 const size_t MAX_PATH_LENGHT = 256;
 
-extern "C" typedef int (*FNNZ)(void* user_data, int id, int* nnz);
+extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
 
 /* Row-major format */
-extern "C" typedef int (*FMAT)(void* user_data, int id, int* krowM, int* jcolM, double* M);
+extern "C" typedef int (* FMAT)(void* user_data, int id, int* krowM, int* jcolM, double* M);
 
-extern "C" typedef int (*FVEC)(void* user_data, int id, double* vec, int len);
+extern "C" typedef int (* FVEC)(void* user_data, int id, double* vec, int len);
 
 extern "C" {
 
-   static int gmsRank{0};
-   static bool allGDX{false};
-   static char fileName[MAX_PATH_LENGHT];
-   static char GDXDirectory[MAX_PATH_LENGHT];
-   static int numBlocks=0;
-   FILE *fLog;
+static int gmsRank{0};
+static bool allGDX{false};
+static char fileName[MAX_PATH_LENGHT];
+static char GDXDirectory[MAX_PATH_LENGHT];
+static int numBlocks = 0;
+FILE* fLog;
 
-   #define checkAndAlloc(blk)                                                        \
+#define checkAndAlloc(blk)                                                        \
    if (!blocks[blk])                                                                 \
    {                                                                                 \
       int rc;                                                                        \
@@ -44,7 +44,7 @@ extern "C" {
       if (rc) {fprintf(fLog,"Block %d read on gmsRank %d failed rc=%d\n", blk, gmsRank, rc); return rc;} \
    }
 
-   #define nCB(nType)                                                   \
+#define nCB(nType)                                                   \
    int fsize##nType(void* user_data, int id, int* nnz)                  \
    {                                                                    \
       GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;   \
@@ -56,13 +56,13 @@ extern "C" {
       return 0;                                                         \
    }
 
-   nCB(ni)
-   nCB(mA)
-   nCB(mC)
-   nCB(mBL)
-   nCB(mDL)
+nCB(ni)
+nCB(mA)
+nCB(mC)
+nCB(mBL)
+nCB(mDL)
 
-   #define nnzCB(nnzType)                                               \
+#define nnzCB(nnzType)                                               \
    int fnonzero##nnzType(void* user_data, int id, int* nnz)             \
    {                                                                    \
       GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;   \
@@ -74,14 +74,14 @@ extern "C" {
       return 0;                                                         \
    }
 
-   nnzCB(A)
-   nnzCB(B)
-   nnzCB(C)
-   nnzCB(D)
-   nnzCB(BL)
-   nnzCB(DL)
+nnzCB(A)
+nnzCB(B)
+nnzCB(C)
+nnzCB(D)
+nnzCB(BL)
+nnzCB(DL)
 
-   #define vecCB(vecType, size)                                         \
+#define vecCB(vecType, size)                                         \
    int fvec##vecType(void* user_data, int id, double* vec, int len)     \
    {                                                                    \
       GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;   \
@@ -97,24 +97,24 @@ extern "C" {
       return 0;                                                         \
    }
 
-   vecCB(c    ,ni )
-   vecCB(xlow ,ni )
-   vecCB(ixlow,ni )
-   vecCB(xupp ,ni )
-   vecCB(ixupp,ni )
-   vecCB(b    ,mA )
-   vecCB(clow ,mC )
-   vecCB(iclow,mC )
-   vecCB(cupp ,mC )
-   vecCB(icupp,mC )
-   vecCB(bL   ,mBL)
-   vecCB(dlow ,mDL)
-   vecCB(idlow,mDL)
-   vecCB(dupp ,mDL)
-   vecCB(idupp,mDL)
+vecCB(c, ni)
+vecCB(xlow, ni)
+vecCB(ixlow, ni)
+vecCB(xupp, ni)
+vecCB(ixupp, ni)
+vecCB(b, mA)
+vecCB(clow, mC)
+vecCB(iclow, mC)
+vecCB(cupp, mC)
+vecCB(icupp, mC)
+vecCB(bL, mBL)
+vecCB(dlow, mDL)
+vecCB(idlow, mDL)
+vecCB(dupp, mDL)
+vecCB(idupp, mDL)
 
 
-   #define matCB(mat,mmat)                                                   \
+#define matCB(mat, mmat)                                                   \
    int fmat##mat(void* user_data, int id, int* krowM, int* jcolM, double* M) \
    {                                                                         \
       GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;        \
@@ -143,50 +143,46 @@ extern "C" {
       return 0;                                                              \
    }
 
-   matCB(A,A)
-   matCB(B,A)
-   matCB(C,C)
-   matCB(D,C)
-   matCB(BL,BL)
-   matCB(DL,DL)
+matCB(A, A)
+matCB(B, A)
+matCB(C, C)
+matCB(D, C)
+matCB(BL, BL)
+matCB(DL, DL)
 
-   int fnonzeroQ(void*, int, int* nnz)
-   {
-      *nnz = 0;
-      return 0;
-   }
+int fnonzeroQ(void*, int, int* nnz) {
+   *nnz = 0;
+   return 0;
+}
 
-   int fmatQ(void* user_data, int id, int* krowM, int*, double*)
-   {
-      GMSPIPSBlockData_t* blk = ((GMSPIPSBlockData_t**) user_data)[id];
-      assert(blk);
+int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
+   GMSPIPSBlockData_t* blk = ((GMSPIPSBlockData_t**) user_data)[id];
+   assert(blk);
 
-      for(int i = 0; i <= blk->ni; i++ )
-          krowM[i] = 0;
+   for (int i = 0; i <= blk->ni; i++)
+      krowM[i] = 0;
 
-      return 0;
-   }
+   return 0;
+}
 } /* extern C */
 
 
-gmspips_reader::gmspips_reader( const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks_ )
-   : n_blocks{n_blocks_}
-{
+gmspips_reader::gmspips_reader(const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks_) : n_blocks{n_blocks_} {
    initGMSPIPSIO();
 
-   blocks.resize( n_blocks );
+   blocks.resize(n_blocks);
 
    gmsRank = PIPS_MPIgetRank();
 
    const std::string gdx_end = ".gdx";
-   if (gdx_end.size() <= path_to_problem.size() && std::equal( gdx_end.rbegin(), gdx_end.rend(), path_to_problem.rbegin() ) )
+   if (gdx_end.size() <= path_to_problem.size() && std::equal(gdx_end.rbegin(), gdx_end.rend(), path_to_problem.rbegin()))
       allGDX = true;
 
-   assert( path_to_problem.size() < MAX_PATH_LENGHT );
-   strcpy( fileName, path_to_problem.c_str() );
+   assert(path_to_problem.size() < MAX_PATH_LENGHT);
+   strcpy(fileName, path_to_problem.c_str());
 
-   assert( path_to_gams.size() < MAX_PATH_LENGHT );
-   strcpy( GDXDirectory, path_to_gams.c_str() );
+   assert(path_to_gams.size() < MAX_PATH_LENGHT);
+   strcpy(GDXDirectory, path_to_gams.c_str());
 
 
    const std::string log_file = log_reading ? "log%d.txt" + gmsRank : "/dev/null";
@@ -196,88 +192,60 @@ gmspips_reader::gmspips_reader( const std::string& path_to_problem, const std::s
    numBlocks = n_blocks;
 }
 
-gmspips_reader::~gmspips_reader()
-{
-   for( auto& block : blocks )
-   {
+gmspips_reader::~gmspips_reader() {
+   for (auto& block : blocks) {
       freeBlock(block);
       free(block);
    }
 }
 
-StochInputTree* gmspips_reader::read_problem()
-{
-   FNNZ fsni   = &fsizeni   ;
-   FNNZ fsmA   = &fsizemA   ;
-   FNNZ fsmC   = &fsizemC   ;
-   FNNZ fsmBL  = &fsizemBL  ;
-   FNNZ fsmDL  = &fsizemDL  ;
-   FNNZ fnnzQ  = &fnonzeroQ ;
-   FNNZ fnnzA  = &fnonzeroA ;
-   FNNZ fnnzB  = &fnonzeroB ;
-   FNNZ fnnzC  = &fnonzeroC ;
-   FNNZ fnnzD  = &fnonzeroD ;
+StochInputTree* gmspips_reader::read_problem() {
+   FNNZ fsni = &fsizeni;
+   FNNZ fsmA = &fsizemA;
+   FNNZ fsmC = &fsizemC;
+   FNNZ fsmBL = &fsizemBL;
+   FNNZ fsmDL = &fsizemDL;
+   FNNZ fnnzQ = &fnonzeroQ;
+   FNNZ fnnzA = &fnonzeroA;
+   FNNZ fnnzB = &fnonzeroB;
+   FNNZ fnnzC = &fnonzeroC;
+   FNNZ fnnzD = &fnonzeroD;
    FNNZ fnnzBL = &fnonzeroBL;
    FNNZ fnnzDL = &fnonzeroDL;
-   FVEC fc     = &fvecc    ;
-   FVEC fxlow  = &fvecxlow ;
+   FVEC fc = &fvecc;
+   FVEC fxlow = &fvecxlow;
    FVEC fixlow = &fvecixlow;
-   FVEC fxupp  = &fvecxupp ;
+   FVEC fxupp = &fvecxupp;
    FVEC fixupp = &fvecixupp;
-   FVEC fb     = &fvecb    ;
-   FVEC fclow  = &fvecclow ;
+   FVEC fb = &fvecb;
+   FVEC fclow = &fvecclow;
    FVEC ficlow = &fveciclow;
-   FVEC fcupp  = &fveccupp ;
+   FVEC fcupp = &fveccupp;
    FVEC ficupp = &fvecicupp;
-   FVEC fbL    = &fvecbL   ;
-   FVEC fdlow  = &fvecdlow ;
+   FVEC fbL = &fvecbL;
+   FVEC fdlow = &fvecdlow;
    FVEC fidlow = &fvecidlow;
-   FVEC fdupp  = &fvecdupp ;
+   FVEC fdupp = &fvecdupp;
    FVEC fidupp = &fvecidupp;
 
-   FMAT fA  = &fmatA ;
-   FMAT fB  = &fmatB ;
-   FMAT fC  = &fmatC ;
-   FMAT fD  = &fmatD ;
+   FMAT fA = &fmatA;
+   FMAT fB = &fmatB;
+   FMAT fC = &fmatC;
+   FMAT fD = &fmatD;
    FMAT fBL = &fmatBL;
    FMAT fDL = &fmatDL;
-   FMAT fQ  = &fmatQ ;
+   FMAT fQ = &fmatQ;
 
    //build the problem tree
-   StochInputTree::StochInputNode data(blocks.data(), 0,
-      fsni, fsmA, fsmBL, fsmC, fsmDL,
-      fQ,  fnnzQ, fc,
-      fA,  fnnzA,
-      fB,  fnnzB,
-      fBL, fnnzBL,
-      fb,
-      fbL,
-      fC,  fnnzC,
-      fD,  fnnzD,
-      fDL, fnnzDL,
-      fclow, ficlow, fcupp, ficupp,
-      fdlow, fidlow, fdupp, fidupp,
-      fxlow, fixlow, fxupp, fixupp, false );
+   StochInputTree::StochInputNode data(blocks.data(), 0, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb, fbL,
+         fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
    StochInputTree* root = new StochInputTree(data);
 
-   for( int blk = 1; blk < numBlocks; blk++ )
-   {
-      StochInputTree::StochInputNode data(blocks.data(), blk,
-         fsni, fsmA, fsmBL, fsmC, fsmDL,
-         fQ,  fnnzQ, fc,
-         fA,  fnnzA,
-         fB,  fnnzB,
-         fBL, fnnzBL,
-         fb,
-         fbL,
-         fC,  fnnzC,
-         fD,  fnnzD,
-         fDL, fnnzDL,
-         fclow, ficlow, fcupp, ficupp,
-         fdlow, fidlow, fdupp, fidupp,
-         fxlow, fixlow, fxupp, fixupp, false );
+   for (int blk = 1; blk < numBlocks; blk++) {
+      StochInputTree::StochInputNode data(blocks.data(), blk, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb,
+            fbL, fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
 
-       root->AddChild(new StochInputTree(data));
+      root->AddChild(new StochInputTree(data));
    }
 
    return root;

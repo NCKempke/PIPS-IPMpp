@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "QP.hpp"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "DoubleMatrix.h"
 #include <cmath>
 #include "SimpleVector.h"
@@ -75,18 +75,18 @@ void QP::hessian_diagonal(OoqpVector& hessian_diagonal) {
    Q->fromGetDiagonal(0, hessian_diagonal);
 }
 
-void QP::objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const {
+void QP::objective_gradient(const Variables& variables, OoqpVector& gradient) const {
    this->getg(gradient);
-   this->hessian_multiplication(1., gradient, 1., *vars->x);
+   this->hessian_multiplication(1., gradient, 1., *variables.x);
    return;
 }
 
-double QP::objective_value(const QpGenVars* vars) const {
+double QP::objective_value(const Variables& variables) const {
    OoqpVectorHandle gradient(la->newVector(nx));
    this->getg(*gradient);
-   this->hessian_multiplication(1., *gradient, 0.5, *vars->x);
+   this->hessian_multiplication(1., *gradient, 0.5, *variables.x);
 
-   return gradient->dotProductWith(*vars->x);
+   return gradient->dotProductWith(*variables.x);
 }
 
 void QP::createScaleFromQ() {

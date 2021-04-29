@@ -23,7 +23,7 @@
 
 class sTree;
 
-class sFactory;
+class DistributedFactory;
 
 class DistributedQP;
 
@@ -111,10 +111,10 @@ public:
       return BorderMod_Block<T>(child, bordermod.multiplier);
    }
 
-  sLinsys(sFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
-  sLinsys(sFactory* factory,
+  sLinsys(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
+  sLinsys(DistributedFactory* factory,
      DistributedQP* prob,
-		   OoqpVector* dd, 
+		   OoqpVector* dd,
 		   OoqpVector* dq,
 		   OoqpVector* nomegaInv,
 		   OoqpVector* primal_reg_,

@@ -10,7 +10,7 @@
 #include "SCsparsifier.h"
 
 class SCsparsifier;
-class sFactory;
+class DistributedFactory;
 class DistributedQP;
 
 // DEBUG only
@@ -37,8 +37,8 @@ class sLinsysRoot : public sLinsys {
  public:
   std::vector<sLinsys*> children;
 
-  sLinsysRoot(sFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(sFactory *factory, DistributedQP *prob_, OoqpVector *dd_,
+  sLinsysRoot(DistributedFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root = false);
+  sLinsysRoot(DistributedFactory *factory, DistributedQP *prob_, OoqpVector *dd_,
         OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *primal_reg_,
         OoqpVector *dual_y_reg_, OoqpVector *dual_z_reg_, OoqpVector *rhs_);
 

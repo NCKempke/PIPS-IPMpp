@@ -11,6 +11,7 @@
  */
 
 class Problem;
+
 class Variables;
 
 /**
@@ -70,33 +71,33 @@ public:
     * x' * Q * x - b' * y + c' * x - d' * z
     *  @endcode
     */
-   double dualityGap() const { return mDualityGap; };
+   double duality_gap() const { return mDualityGap; };
 
    double primalObjective() const { return primal_objective; };
 
    double dualObjective() const { return dual_objective; };
 
    /** calculate residuals, their norms, and duality/complementarity gap, given a problem and variable set.  */
-   void evaluate(Problem &problem, Variables *iterate_in, bool print_resids = false);
+   void evaluate(Problem& problem, Variables& iterate_in, bool print_resids = false);
 
    /** Modify the "complementarity" component of the residuals, by
    * adding the pairwise products of the complementary variables plus
    * a constant alpha to this term.  
    */
-   void add_r3_xz_alpha(const Variables *vars, double alpha);
+   void add_to_complementarity_residual(const Variables& variables, double alpha);
 
    /** Set the "complementarity" component of the residuals to the
     * pairwise products of the complementary variables plus a constant
     * alpha
     */
-   void set_r3_xz_alpha(const Variables *vars, double alpha);
+   void set_complementarity_residual(const Variables& variables, double alpha);
 
    /** set the complementarity component of the residuals to 0. */
-   void clear_r3();
+   void clear_complementarity_residual();
 
    /** set the noncomplementarity components of the residual (the terms
     *  arising from the linear equalities in the KKT conditions) to 0.  */
-   void clear_r1r2();
+   void clear_linear_residuals();
 
    /** perform the projection operation required by Gondzio algorithm:
     * replace each component r3_i of the complementarity component of
@@ -107,23 +108,23 @@ public:
     * @see SimpleVector::gondzioProjection */
    void project_r3(double rmin, double rmax);
 
-   void copyFrom(const Residuals &);
+   void copy(const Residuals&);
 
    virtual ~Residuals() = default;
 
-   double recomputeResidualNorm();
+   double recompute_residual_norm();
 
-   int validNonZeroPattern();
+   int valid_non_zero_pattern();
 
-   void writeToStream(std::ostream &out);
+   void writeToStream(std::ostream& out);
 
-   const long long &getNxupp() { return nxupp; };
+   const long long& getNxupp() { return nxupp; };
 
-   const long long &getNxlow() { return nxlow; };
+   const long long& getNxlow() { return nxlow; };
 
-   const long long &getMcupp() { return mcupp; };
+   const long long& getMcupp() { return mcupp; };
 
-   const long long &getMclow() { return mclow; };
+   const long long& getMclow() { return mclow; };
 };
 
 #endif

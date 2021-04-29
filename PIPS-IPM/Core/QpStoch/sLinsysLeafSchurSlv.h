@@ -8,7 +8,7 @@
 #include "sLinsysLeaf.h"
 
 class StochTree;
-class sFactory;
+class DistributedFactory;
 class DistributedQP;
 
 /** This class solves the linear system corresponding to a leaf node.
@@ -17,7 +17,7 @@ class DistributedQP;
 class sLinsysLeafSchurSlv : public sLinsysLeaf
 {
  public:
-  sLinsysLeafSchurSlv(sFactory* factory,
+  sLinsysLeafSchurSlv(DistributedFactory* factory,
 		      DistributedQP* prob_,				    
 		      OoqpVector* dd_, OoqpVector* dq_, 
 		      OoqpVector* nomegaInv_,

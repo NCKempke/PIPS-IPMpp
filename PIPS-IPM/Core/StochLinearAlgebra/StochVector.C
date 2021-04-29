@@ -425,7 +425,7 @@ void StochVectorBase<T>::copyFrom( const OoqpVectorBase<T>& v_ )
    assert( children.size() == v.children.size() );
 
    for(size_t it = 0; it < children.size(); it++)
-      children[it]->copyFrom( *v.children[it] );
+      children[it]->copyFrom(*v.children[it]);
 }
 
 template<typename T>

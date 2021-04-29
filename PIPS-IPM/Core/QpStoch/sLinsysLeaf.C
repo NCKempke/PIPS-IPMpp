@@ -4,7 +4,7 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::sLinsysLeaf(sFactory *factory_, DistributedQP* prob,
+sLinsysLeaf::sLinsysLeaf(DistributedFactory *factory_, DistributedQP* prob,
           OoqpVector* dd_,
           OoqpVector* dq_,
           OoqpVector* nomegaInv_,
@@ -61,7 +61,7 @@ sLinsysLeaf::sLinsysLeaf(sFactory *factory_, DistributedQP* prob,
 #endif
 
   kkt.reset(kkt_sp);
-  solver.reset( factory_->newLeafSolver( kkt_sp ) );
+  solver.reset(factory_->make_leaf_solver(kkt_sp) );
 
 #ifdef TIMING
   const double t1 = MPI_Wtime() - t0;

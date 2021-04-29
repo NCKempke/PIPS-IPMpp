@@ -4,7 +4,7 @@
 
 #include "sLinsysLeafSchurSlv.h"
 #include "sTree.h"
-#include "sFactory.h"
+#include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"

@@ -5,11 +5,11 @@
 #include "QpGenLinsys.h"
 #include "QP.hpp"
 #include "Residuals.h"
-#include "QpGenVars.h"
+#include "Variables.h"
 #include "OoqpVector.h"
 #include "SimpleVector.h"
 #include "LinearAlgebraPackage.h"
-#include "QpGen.h"
+#include "ProblemFormulation.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
 
@@ -104,7 +104,7 @@ static bool isZero(double val, QpGenLinsys::IterativeSolverSolutionStatus& statu
    return false;
 }
 
-QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, bool create_iter_ref_vecs) :
+QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, bool create_iter_ref_vecs) :
   factory(factory_),
   apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION") ),
   primal_reg_val(qpgen_options::getDoubleParameter("REGULARIZATION_INITIAL_PRIMAL") ),
@@ -140,26 +140,26 @@ QpGenLinsys::QpGenLinsys(QpGen* factory_, Problem* problem, bool create_iter_ref
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {
          //for iterative refinement or BICGStab
-         sol = factory->makeRhs();
-         sol2 = factory->makeRhs();
-         res = factory->makeRhs();
-         resx = factory->makePrimalVector();
-         resy = factory->makeDualYVector();
-         resz = factory->makeDualZVector();
+         sol = factory->make_right_hand_side();
+         sol2 = factory->make_right_hand_side();
+         res = factory->make_right_hand_side();
+         resx = factory->make_primal_vector();
+         resy = factory->make_equalities_dual_vector();
+         resz = factory->make_inequalities_dual_vector();
 
          if (outerSolve == 2) {
             //BiCGStab; additional vectors needed
-            sol3 = factory->makeRhs();
-            res2 = factory->makeRhs();
-            res3 = factory->makeRhs();
-            res4 = factory->makeRhs();
-            res5 = factory->makeRhs();
+            sol3 = factory->make_right_hand_side();
+            res2 = factory->make_right_hand_side();
+            res3 = factory->make_right_hand_side();
+            res4 = factory->make_right_hand_side();
+            res5 = factory->make_right_hand_side();
          }
       }
    }
 }
 
-QpGenLinsys::QpGenLinsys( QpGen* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_,
+QpGenLinsys::QpGenLinsys( ProblemFormulation* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_,
       OoqpVector* nomegaInv_, OoqpVector* regP_,
       OoqpVector* regDy_, OoqpVector* regDz_,
       OoqpVector* rhs_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, problem, create_iter_ref_vecs )
@@ -173,19 +173,19 @@ QpGenLinsys::QpGenLinsys( QpGen* factory_, Problem* problem, OoqpVector* dd_, Oo
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys( QpGen* factory_, Problem* problem ) : QpGenLinsys( factory_, problem, true )
+QpGenLinsys::QpGenLinsys( ProblemFormulation* factory_, Problem* problem ) : QpGenLinsys( factory_, problem, true )
 {
    if(nxupp + nxlow > 0) {
-      dd = factory->makePrimalVector();
-      dq = factory->makePrimalVector();
+      dd = factory->make_primal_vector();
+      dq = factory->make_primal_vector();
       problem->hessian_diagonal(*dq);
    }
-   nomegaInv = factory->makeDualZVector();
-   rhs = factory->makeRhs();
+   nomegaInv = factory->make_inequalities_dual_vector();
+   rhs = factory->make_right_hand_side();
 
-   regP = factory->makePrimalVector();
-   regDy = factory->makeDualYVector();
-   regDz = factory->makeDualZVector();
+   regP = factory->make_primal_vector();
+   regDy = factory->make_equalities_dual_vector();
+   regDz = factory->make_inequalities_dual_vector();
 }
 
 QpGenLinsys::~QpGenLinsys() {
@@ -212,9 +212,7 @@ QpGenLinsys::~QpGenLinsys() {
    delete res5;
 }
 
-void QpGenLinsys::factorize(Problem* /* problem */, Variables* vars_in){
-   QpGenVars* vars = (QpGenVars*) vars_in;
-
+void QpGenLinsys::factorize(Problem* /* problem */, Variables* vars){
    assert(vars->validNonZeroPattern());
    assert(vars->validNonZeroPattern());
 
@@ -370,12 +368,12 @@ QpGenLinsys::computeDiagonals(OoqpVector& dd_, OoqpVector& omega, OoqpVector& t,
 
 void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in, Variables* step_in) {
    QP* problem = (QP*) prob_in;
-   QpGenVars* vars = (QpGenVars*) vars_in;
-   QpGenVars* step = (QpGenVars*) step_in;
+   Variables* vars = (Variables*) vars_in;
+   Variables* step = (Variables*) step_in;
    Residuals* res = (Residuals*) res_in;
 
    assert(vars->validNonZeroPattern());
-   assert(res->validNonZeroPattern());
+   assert(res->valid_non_zero_pattern());
 
    /*** compute rX ***/
    /* rx = rQ */

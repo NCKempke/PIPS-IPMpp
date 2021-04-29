@@ -9,16 +9,9 @@
 #include "StochPresolverBase.h"
 
 #include "StochOptions.h"
-#include "DoubleMatrixTypes.h"
-#include "SmartPointer.h"
 #include "pipsdef.h"
-#include "pipsport.h"
 #include "StochVectorUtilities.h"
-
-#include <algorithm>
 #include <cassert>
-#include <limits>
-#include <cmath> // std::isfinite
 
 StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb) :
       my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),

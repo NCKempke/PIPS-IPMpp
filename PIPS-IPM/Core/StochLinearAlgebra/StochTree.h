@@ -14,7 +14,7 @@
 #include <list>
 
 class Problem;
-class QpGen;
+class ProblemFormulation;
 class QpGenStoch;
 class DistributedQP;
 class StochSymMatrix;

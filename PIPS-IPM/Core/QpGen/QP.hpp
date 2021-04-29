@@ -14,7 +14,7 @@ class MpsReader;
 
 class LinearAlgebraPackage;
 
-class QpGenVars;
+class Variables;
 
 #ifdef TESTING
 class QpGenDataTester;
@@ -69,9 +69,9 @@ public:
 
    void print() override;
 
-   virtual void objective_gradient(const QpGenVars* vars, OoqpVector& gradient) const override;
+   virtual void objective_gradient(const Variables& variables, OoqpVector& gradient) const override;
 
-   virtual double objective_value(const QpGenVars* vars) const override;
+   virtual double objective_value(const Variables& variables) const override;
 
    ~QP() override = default;
 };

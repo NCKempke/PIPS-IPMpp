@@ -8,10 +8,11 @@
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
 #include "SparseSymMatrix.h"
-#include "DenseStorageHandle.h"
+#include "DenseStorage.h"
 #include "pipsport.h"
 
 #include <vector>
+#include <memory>
 
 /** A linear solver for dense, symmetric indefinite systems
  * @ingroup DenseLinearAlgebra
@@ -37,7 +38,7 @@ class DeSymIndefSolver : public DoubleLinearSolver
       /* in PIPS symmetric matrices will be lower diagonal matrices which makes them upper diagonal in fortran access */
       const char fortranUplo = 'U';
 
-      DenseStorageHandle mStorage;
+      std::shared_ptr<DenseStorage> mStorage;
       std::vector<double> work;
       std::vector<int> ipiv;
 

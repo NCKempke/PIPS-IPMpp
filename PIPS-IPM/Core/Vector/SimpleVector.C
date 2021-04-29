@@ -389,7 +389,7 @@ void SimpleVectorBase<T>::writeToStream(std::ostream &out, int offset) const {
 
 template<typename T>
 void SimpleVectorBase<T>::writefToStream(std::ostream &out, const char format[]) const {
-   SmartPointer<SimpleVectorBase<T> > empty(new SimpleVectorBase<T>(0));
+   std::unique_ptr<SimpleVectorBase<T> > empty = std::make_unique<SimpleVectorBase<T>>(0);
    this->writefSomeToStream(out, format, *empty);
 }
 

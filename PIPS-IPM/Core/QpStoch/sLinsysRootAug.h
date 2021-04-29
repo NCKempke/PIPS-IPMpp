@@ -36,8 +36,8 @@ class DistributedQP;
 class sLinsysRootAug : public sLinsysRoot {
 
  public:
-  sLinsysRootAug(sFactory * factory_, DistributedQP * prob_);
-  sLinsysRootAug(sFactory* factory,
+  sLinsysRootAug(DistributedFactory * factory_, DistributedQP * prob_);
+  sLinsysRootAug(DistributedFactory* factory,
 		 DistributedQP* prob_,
 		 OoqpVector* dd_, OoqpVector* dq_,
 		 OoqpVector* nomegaInv_,
