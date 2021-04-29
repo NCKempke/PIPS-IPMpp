@@ -25,7 +25,7 @@ class sDummyLinsys : public sLinsys
   void Lsolve( DistributedQP*, OoqpVector& ) override {};
   void Dsolve( DistributedQP*, OoqpVector& ) override {};
   void Ltsolve( DistributedQP*, OoqpVector& ) override {};
-  void Ltsolve2( DistributedQP*, StochVector&, SimpleVector&, bool ) override {};
+  void Ltsolve2( DistributedQP*, StochVector&, SimpleVector<double>&, bool ) override {};
 
   void solveCompressed( OoqpVector& ) override {};
 
@@ -42,9 +42,9 @@ class sDummyLinsys : public sLinsys
   void addLniziLinkCons(DistributedQP*, OoqpVector&, OoqpVector&, bool ) override {};
 
   /** y += alpha * Lni^T * x */
-  //  void LniTransMult(DistributedQP *prob, SimpleVector& y, double alpha, SimpleVector& x) override {};
+  //  void LniTransMult(DistributedQP *prob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x) override {};
 
-  void addTermToSchurResidual( DistributedQP*, SimpleVector&, SimpleVector& ) override {};
+  void addTermToSchurResidual( DistributedQP*, SimpleVector<double>&, SimpleVector<double>& ) override {};
 
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int ) override {};
   void LsolveHierarchyBorder( DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, int, int ) override {};
@@ -58,9 +58,9 @@ class sDummyLinsys : public sLinsys
 
   bool isDummy() const override { return true; };
 
-  void addBorderTimesRhsToB0( StochVector&, SimpleVector&, BorderLinsys& ) override {};
-  void addBorderX0ToRhs( StochVector&, const SimpleVector&, BorderLinsys& ) override {};
-  void computeInnerSystemRightHandSide( StochVector&, const SimpleVector&, bool ) override {};
+  void addBorderTimesRhsToB0( StochVector&, SimpleVector<double>&, BorderLinsys& ) override {};
+  void addBorderX0ToRhs( StochVector&, const SimpleVector<double>&, BorderLinsys& ) override {};
+  void computeInnerSystemRightHandSide( StochVector&, const SimpleVector<double>&, bool ) override {};
 };
 
 #endif

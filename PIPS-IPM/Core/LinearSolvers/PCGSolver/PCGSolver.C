@@ -36,7 +36,7 @@ void PCGSolver::solve( OoqpVector& rhs_ )
 
 void PCGSolver::solvefull( OoqpVector& rhs_ )
 {
-  SimpleVector& b = dynamic_cast<SimpleVector&>(rhs_);
+  SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
   assert(n+m == b.length());
 
   int flag, imin; int stagsteps, maxstagsteps;
@@ -53,19 +53,19 @@ void PCGSolver::solvefull( OoqpVector& rhs_ )
   if(tmpVec5==nullptr) tmpVec5=new double[n];
   if(tmpVec6==nullptr) tmpVec6=new double[n+m];
 
-  SimpleVector xy(tmpVec1, n+m);      //iterate
-  SimpleVector auxnm(tmpVec2,n+m);      //auxiliary
-  SimpleVector xmin(tmpVec3,n);   //minimal residual iterate
-  SimpleVector g(tmpVec4,n);      //work vectors
-  SimpleVector p(tmpVec5,n);
-  SimpleVector res(tmpVec6, n+m);
+  SimpleVector<double> xy(tmpVec1, n+m);      //iterate
+  SimpleVector<double> auxnm(tmpVec2,n+m);      //auxiliary
+  SimpleVector<double> xmin(tmpVec3,n);   //minimal residual iterate
+  SimpleVector<double> g(tmpVec4,n);      //work vectors
+  SimpleVector<double> p(tmpVec5,n);
+  SimpleVector<double> res(tmpVec6, n+m);
 
-  SimpleVector    x(& xy[0],n); //y-part of the iterate
-  SimpleVector    y(& xy[n],m); //x-part of the iterate
-  SimpleVector   rx(&res[0],n); //residual
-  SimpleVector   ry(&res[n],m); //residual corresponding to last m eqn
-  SimpleVector auxn(&auxnm[0],n);
-  SimpleVector auxm(&auxnm[n],m);
+  SimpleVector<double>    x(& xy[0],n); //y-part of the iterate
+  SimpleVector<double>    y(& xy[n],m); //x-part of the iterate
+  SimpleVector<double>   rx(&res[0],n); //residual
+  SimpleVector<double>   ry(&res[n],m); //residual corresponding to last m eqn
+  SimpleVector<double> auxn(&auxnm[0],n);
+  SimpleVector<double> auxm(&auxnm[n],m);
   //////////////////////////////////////////////////////////////////
   // Starting procedure
   /////////////////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ void PCGSolver::solvefull( OoqpVector& rhs_ )
   int ii=0; while(ii<maxit) {
     ii++;
     // compute Hp and p'Hp
-    SimpleVector Hp(&auxn[0], n);
+    SimpleVector<double> Hp(&auxn[0], n);
     applyA(0.0, Hp, 1.0, p);
     pHp = p.dotProductWith(Hp);
 
@@ -131,7 +131,7 @@ void PCGSolver::solvefull( OoqpVector& rhs_ )
     ///////////////////////////////////////
     if(normr<=tolb) {
       //compute actual residual
-      SimpleVector rx_act(&auxnm[0], n);
+      SimpleVector<double> rx_act(&auxnm[0], n);
       rx_act.copyFromArray(&b[0]);
       applyA(-1.0, rx_act, 1.0, x);
       normr_act=rx_act.twonorm(); 
@@ -186,7 +186,7 @@ void PCGSolver::solvefull( OoqpVector& rhs_ )
 
     if(flag==4) x.copyFrom(xmin);
     //compute actual residual
-    SimpleVector rx(&auxnm[0], n);
+    SimpleVector<double> rx(&auxnm[0], n);
     rx.copyFromArray(&b[0]);
     applyA(1.0, rx, -1.0, x);
     normr_act = rx.twonorm(); 

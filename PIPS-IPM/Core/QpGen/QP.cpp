@@ -94,7 +94,7 @@ void QP::createScaleFromQ() {
    this->hessian_diagonal(*sc);
 
    // Modifying scVector is equivalent to modifying sc
-   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
+   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    int scLength = scVector.length();
 

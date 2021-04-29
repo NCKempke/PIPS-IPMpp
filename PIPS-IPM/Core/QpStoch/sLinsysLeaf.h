@@ -42,7 +42,7 @@ class sLinsysLeaf : public sLinsys
 
   //void Lsolve2 ( OoqpVector& x ) override;
   //void Dsolve2 ( OoqpVector& x ) override;
-  void Ltsolve2( DistributedQP *prob, StochVector& x, SimpleVector& xp, bool) override;
+  void Ltsolve2( DistributedQP *prob, StochVector& x, SimpleVector<double>& xp, bool) override;
 
   void putXDiagonal( const OoqpVector& xdiag_ ) override;
   void putZDiagonal( const OoqpVector& zdiag_ ) override;
@@ -50,7 +50,7 @@ class sLinsysLeaf : public sLinsys
   void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
   void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
 
-  //void Ltsolve_internal(  DistributedQP *prob, StochVector& x, SimpleVector& xp);
+  //void Ltsolve_internal(  DistributedQP *prob, StochVector& x, SimpleVector<double>& xp);
   void deleteChildren() override;
 
   void addTermToSchurComplBlocked( DistributedQP *prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int ) override;
@@ -65,11 +65,11 @@ class sLinsysLeaf : public sLinsys
 
   static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
 
-  void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
-  void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
+  void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border ) override;
+  void addBorderX0ToRhs( StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border ) override;
  private:
-  void addBorderTimesRhsToB0( SimpleVector& rhs, SimpleVector& b0, BorderBiBlock& border );
-  void addBorderX0ToRhs( SimpleVector& rhs, const SimpleVector& x0, BorderBiBlock& border );
+  void addBorderTimesRhsToB0( SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border );
+  void addBorderX0ToRhs( SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border );
 
   /* compute result += B_inner^T K^-1 Br */
   void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols );

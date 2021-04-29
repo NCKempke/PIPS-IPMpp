@@ -140,7 +140,7 @@ public:
 
    virtual void Ltsolve(DistributedQP* prob, OoqpVector& x) = 0;
 
-   virtual void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector& xp, bool use_local_RAC) = 0;
+   virtual void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
 
    void solveCompressed(OoqpVector& rhs) override;
 
@@ -203,7 +203,7 @@ public:
          int /*end_cols*/, int /*n_empty_rows_inner_border*/) { assert(false && "not implemented here"); };
 
    /** y += alpha * Lni^T * x */
-   virtual void LniTransMult(DistributedQP* prob, SimpleVector& y, double alpha, SimpleVector& x);
+   virtual void LniTransMult(DistributedQP* prob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 
    /** Methods that use dense matrices U and V to compute the
     *  terms from the Schur complement.
@@ -222,19 +222,19 @@ public:
    virtual void addTermToSchurComplBlocked(DistributedQP* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
-   virtual void computeInnerSystemRightHandSide(StochVector& /*rhs_inner*/, const SimpleVector& /*b0*/, bool /*use_local_RAC*/) {
+   virtual void computeInnerSystemRightHandSide(StochVector& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 
 public:
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderTimesRhsToB0(StochVector& /*rhs*/, SimpleVector& /*b0*/, BorderLinsys& /*border*/ ) {
+   virtual void addBorderTimesRhsToB0(StochVector& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {
       assert(false && "not implemented here");
    };
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderX0ToRhs(StochVector& /*rhs*/, const SimpleVector& /*x0*/, BorderLinsys& /*border*/ ) {
+   virtual void addBorderX0ToRhs(StochVector& /*rhs*/, const SimpleVector<double>& /*x0*/, BorderLinsys& /*border*/ ) {
       assert(false && "not implemented here");
    };
 
@@ -249,7 +249,7 @@ public:
    /** Used in the iterative refinement for the dense Schur complement systems
     * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
     */
-   virtual void addTermToSchurResidual(DistributedQP* prob, SimpleVector& res, SimpleVector& x);
+   virtual void addTermToSchurResidual(DistributedQP* prob, SimpleVector<double>& res, SimpleVector<double>& x);
 
    // TODO only compute bottom left part for symmetric matrices
    /* compute result += Bl^T K^-1 Br where K is our own linear system */

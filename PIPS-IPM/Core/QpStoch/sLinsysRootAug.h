@@ -65,7 +65,7 @@ class sLinsysRootAug : public sLinsysRoot {
   void createSolversDense();
 
   void assembleLocalKKT( DistributedQP* prob ) override;
-  void solveReducedLinkCons( DistributedQP *prob, SimpleVector& b);
+  void solveReducedLinkCons( DistributedQP *prob, SimpleVector<double>& b);
   void solveReducedLinkConsBlocked( DistributedQP* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs );
   void addBlTKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
         bool sym_res, bool sparse_res ) override;
@@ -76,8 +76,8 @@ class sLinsysRootAug : public sLinsysRoot {
   void createSolversAndKKts(DistributedQP* prob);
   void finalizeKKTdense( DistributedQP* prob, Variables* vars);
   void finalizeKKTsparse( DistributedQP* prob, Variables* vars);
-  void solveWithIterRef( DistributedQP *prob, SimpleVector& b);
-  void solveWithBiCGStab( DistributedQP *prob, SimpleVector& b);
+  void solveWithIterRef( DistributedQP *prob, SimpleVector<double>& b);
+  void solveWithBiCGStab( DistributedQP *prob, SimpleVector<double>& b);
 
   void DsolveHierarchyBorder( DenseGenMatrix& b, int n_cols ) override;
 
@@ -85,14 +85,14 @@ class sLinsysRootAug : public sLinsysRoot {
   void addLinkConsBlock0Matrix( DistributedQP *prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
 
   /** y = beta*y - alpha* SC * x */
-  void SCmult ( double beta, SimpleVector& y, double alpha, SimpleVector& x, DistributedQP* prob);
+  void SCmult ( double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x, DistributedQP* prob);
 
   std::unique_ptr<SymMatrix> CtDC;
 
   std::vector<double> reduced_rhss_blocked;
-  std::unique_ptr<SimpleVector> redRhs;
+  std::unique_ptr<SimpleVector<double>> redRhs;
 
-  std::unique_ptr<SimpleVector> zDiagReg;
+  std::unique_ptr<SimpleVector<double>> zDiagReg;
 };
 
 #endif

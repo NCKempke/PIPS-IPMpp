@@ -6,7 +6,7 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrix.h"
 
-QpGenSparseLinsys::QpGenSparseLinsys(ProblemFormulation* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : QpGenLinsys(
+QpGenSparseLinsys::QpGenSparseLinsys(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : QpGenLinsys(
       factory_in, problem), solver(solver_in) {
    SpReferTo(Mat, Mat_in);
 }

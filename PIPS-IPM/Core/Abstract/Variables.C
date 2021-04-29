@@ -439,19 +439,19 @@ Variables::findBlocking(const Variables* step, double& primalValue, double& prim
    const Variables* d = (const Variables*) step;
 
    if (mclow > 0) {
-      alpha = t->findBlocking(*d->t, *lambda, *d->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = t->find_blocking(*d->t, *lambda, *d->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    if (mcupp > 0) {
-      alpha = u->findBlocking(*d->u, *pi, *d->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = u->find_blocking(*d->u, *pi, *d->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    if (nxlow > 0) {
-      alpha = v->findBlocking(*d->v, *gamma, *d->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = v->find_blocking(*d->v, *gamma, *d->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    if (nxupp > 0) {
-      alpha = w->findBlocking(*d->w, *phi, *d->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = w->find_blocking(*d->w, *phi, *d->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
 
    return alpha;
@@ -467,22 +467,22 @@ Variables::findBlocking_pd(const Variables* step, double& primalValue, double& p
    const Variables* d = (const Variables*) step;
 
    if (mclow > 0) {
-      t->findBlocking_pd(*d->t, *lambda, *d->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      t->find_blocking_pd(*d->t, *lambda, *d->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (mcupp > 0) {
-      u->findBlocking_pd(*d->u, *pi, *d->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      u->find_blocking_pd(*d->u, *pi, *d->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxlow > 0) {
-      v->findBlocking_pd(*d->v, *gamma, *d->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      v->find_blocking_pd(*d->v, *gamma, *d->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxupp > 0) {
-      w->findBlocking_pd(*d->w, *phi, *d->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      w->find_blocking_pd(*d->w, *phi, *d->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 }
@@ -923,7 +923,7 @@ int Variables::validNonZeroPattern() {
 void Variables::unscaleSolution(Problem* problem) {
 
 // Modifying sx is equivalent to modifying x
-   SimpleVector& sx = (SimpleVector&) *this->x;
+   SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
 
 // x = D * x'
    sx.componentMult(problem->scale());
@@ -931,8 +931,8 @@ void Variables::unscaleSolution(Problem* problem) {
 
 void Variables::unscaleBounds(Problem* problem) {
 
-   SimpleVector& sxlow = (SimpleVector&) problem->xlowerBound();
-   SimpleVector& sxupp = (SimpleVector&) problem->xupperBound();
+   SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
+   SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
 
 // l = D * l'
    sxlow.componentMult(problem->scale());
@@ -943,31 +943,28 @@ void Variables::unscaleBounds(Problem* problem) {
 
 void Variables::printSolution(MpsReader* reader, Problem* problem, int& iErr) {
    assert(x->isKindOf(kSimpleVector)); // Otherwise this routine
-   // cannot be used.
-   double objective;
-   {
-      SimpleVectorHandle temp(new SimpleVector(nx));
-      problem->getg(*temp);
-      problem->hessian_multiplication(1.0, *temp, 0.5, *x);
-      objective = temp->dotProductWith(*x);
-   }
 
-   SimpleVector& sx = (SimpleVector&) *this->x;
-   SimpleVector& sxlow = (SimpleVector&) problem->xlowerBound();
-   SimpleVector& sixlow = (SimpleVector&) problem->ixlowerBound();
-   SimpleVector& sxupp = (SimpleVector&) problem->xupperBound();
-   SimpleVector& sixupp = (SimpleVector&) problem->ixupperBound();
-   SimpleVector& sgamma = (SimpleVector&) *this->gamma;
-   SimpleVector& sphi = (SimpleVector&) *this->phi;
-   SimpleVector& sy = (SimpleVector&) *this->y;
-   SimpleVector& ss = (SimpleVector&) *this->s;
-   SimpleVector& slambda = (SimpleVector&) *this->lambda;
-   SimpleVector& spi = (SimpleVector&) *this->pi;
-   SimpleVector& sz = (SimpleVector&) *this->z;
-   SimpleVector& sclow = (SimpleVector&) problem->slowerBound();
-   SimpleVector& siclow = (SimpleVector&) problem->islowerBound();
-   SimpleVector& scupp = (SimpleVector&) problem->supperBound();
-   SimpleVector& sicupp = (SimpleVector&) problem->isupperBound();
+   SimpleVector<double> g(nx);
+   problem->getg(g);
+   problem->hessian_multiplication(1.0, g, 0.5, *x);
+   double objective = g.dotProductWith(*x);
+
+   SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
+   SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
+   SimpleVector<double>& sixlow = (SimpleVector<double>&) problem->ixlowerBound();
+   SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
+   SimpleVector<double>& sixupp = (SimpleVector<double>&) problem->ixupperBound();
+   SimpleVector<double>& sgamma = (SimpleVector<double>&) *this->gamma;
+   SimpleVector<double>& sphi = (SimpleVector<double>&) *this->phi;
+   SimpleVector<double>& sy = (SimpleVector<double>&) *this->y;
+   SimpleVector<double>& ss = (SimpleVector<double>&) *this->s;
+   SimpleVector<double>& slambda = (SimpleVector<double>&) *this->lambda;
+   SimpleVector<double>& spi = (SimpleVector<double>&) *this->pi;
+   SimpleVector<double>& sz = (SimpleVector<double>&) *this->z;
+   SimpleVector<double>& sclow = (SimpleVector<double>&) problem->slowerBound();
+   SimpleVector<double>& siclow = (SimpleVector<double>&) problem->islowerBound();
+   SimpleVector<double>& scupp = (SimpleVector<double>&) problem->supperBound();
+   SimpleVector<double>& sicupp = (SimpleVector<double>&) problem->isupperBound();
 
    char* cxupp = new char[nx];
    char* cxlow = new char[nx];
@@ -1139,8 +1136,7 @@ void Variables::setNotIndicatedBoundsTo(Problem& problem, double value) {
 // stored at this top level, we can't do much except print their
 // dimensions.
 
-void Variables::print()
-{
-  std::cout << " Complementary Variables = " << nComplementaryVariables << std::endl;
-  std::cout << "(Cannot tell you more at this level)" << std::endl;
+void Variables::print() {
+   std::cout << " Complementary Variables = " << nComplementaryVariables << std::endl;
+   std::cout << "(Cannot tell you more at this level)" << std::endl;
 }

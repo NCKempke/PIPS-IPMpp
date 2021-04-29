@@ -104,8 +104,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
       countRowsBlock(n_rows_linking_ineq, n_rows_empty_linking_ineq, n_rows_onsided_ineq, n_rows_boxed_ineq, n_rows_fixed_ineq, n_rows_singleton_linking_ineq,
          INEQUALITY_SYSTEM, BL_MAT);
 
-      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).first);
-      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).first);
+      const SimpleVector<double>& ixlow_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).first);
+      const SimpleVector<double>& ixupp_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free, n_cols_orig_free_removed, 
          ixlow_orig, ixupp_orig, true);
@@ -153,8 +153,8 @@ void StochPresolverBase::countRowsCols()// method is const but changes pointers
          A_MAT);
       assert( n_rows_ineq - n_rows_empty_ineq == n_rows_onsided_ineq + n_rows_boxed_ineq + n_rows_fixed_ineq );
 
-      const SimpleVector& ixlow_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).children[node]->first);
-      const SimpleVector& ixupp_orig = dynamic_cast<const SimpleVector&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).children[node]->first);
+      const SimpleVector<double>& ixlow_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const StochVector& >(*origProb.ixlow).children[node]->first);
+      const SimpleVector<double>& ixupp_orig = dynamic_cast<const SimpleVector<double>&>(*dynamic_cast<const StochVector& >(*origProb.ixupp).children[node]->first);
 
       countBoxedColumns(n_cols, n_cols_empty, n_cols_free, n_cols_onesided, n_cols_boxed, n_cols_singleton, n_cols_orig_free, n_cols_orig_free_removed, 
          ixlow_orig, ixupp_orig, false);
@@ -193,11 +193,11 @@ void StochPresolverBase::countRowsBlock(int& n_rows_total, int& n_rows_empty, in
       if( !presolve_data.hasLinking(system_type) )
          return;
 
-   const SimpleVectorBase<int>* nnz_row = (block_type != BL_MAT) ? currNnzRow : currNnzRowLink;
-   const SimpleVector* iclow = (block_type != BL_MAT) ? currIclow : currIclowLink;
-   const SimpleVector* lhs = (block_type != BL_MAT) ? currIneqLhs : currIneqLhsLink;
-   const SimpleVector* icupp = (block_type != BL_MAT) ? currIcupp : currIcuppLink;
-   const SimpleVector* rhs = (block_type != BL_MAT) ? currIneqRhs : currIneqRhsLink;
+   const SimpleVector<int>* nnz_row = (block_type != BL_MAT) ? currNnzRow : currNnzRowLink;
+   const SimpleVector<double>* iclow = (block_type != BL_MAT) ? currIclow : currIclowLink;
+   const SimpleVector<double>* lhs = (block_type != BL_MAT) ? currIneqLhs : currIneqLhsLink;
+   const SimpleVector<double>* icupp = (block_type != BL_MAT) ? currIcupp : currIcuppLink;
+   const SimpleVector<double>* rhs = (block_type != BL_MAT) ? currIneqRhs : currIneqRhsLink;
    if(system_type == EQUALITY_SYSTEM)
       rhs = (block_type != BL_MAT) ? currEqRhs : currEqRhsLink;
 
@@ -255,15 +255,15 @@ void StochPresolverBase::countRowsBlock(int& n_rows_total, int& n_rows_empty, in
 }
 
 void StochPresolverBase::countBoxedColumns( int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed, int& n_cols_singleton, 
-   int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector& ixlow_orig, const SimpleVector& ixupp_orig, bool at_root_node) const
+   int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig, bool at_root_node) const
 {
-   const SimpleVector& ixlow = (at_root_node) ? *currIxlowParent : *currIxlowChild;
-   const SimpleVector& ixupp = (at_root_node) ? *currIxuppParent : *currIxuppChild;
-   const SimpleVectorBase<int>& curr_nnz = (at_root_node) ? *currNnzColParent : *currNnzColChild;
+   const SimpleVector<double>& ixlow = (at_root_node) ? *currIxlowParent : *currIxlowChild;
+   const SimpleVector<double>& ixupp = (at_root_node) ? *currIxuppParent : *currIxuppChild;
+   const SimpleVector<int>& curr_nnz = (at_root_node) ? *currNnzColParent : *currNnzColChild;
 
 #ifndef NDEBUG
-   const SimpleVector& xupp = (at_root_node) ? *currxuppParent : *currxuppChild;
-   const SimpleVector& xlow = (at_root_node) ? *currxlowParent : *currxlowChild;
+   const SimpleVector<double>& xupp = (at_root_node) ? *currxuppParent : *currxuppChild;
+   const SimpleVector<double>& xlow = (at_root_node) ? *currxlowParent : *currxlowChild;
    assert( ixlow.length() == ixupp.length() );
    assert( ixlow.length() == xlow.length() );
    assert( xlow.length() == xupp.length() );

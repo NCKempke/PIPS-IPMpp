@@ -5,7 +5,7 @@
 #ifndef QPGENSPARSELINSYS
 #define QPGENSPARSELINSYS
 
-#include <ProblemFormulation.h>
+#include <ProblemFactory.h>
 #include "QpGenLinsys.h"
 #include "SparseSymMatrixHandle.h"
 
@@ -22,7 +22,7 @@ protected:
    SparseSymMatrixHandle Mat;
    DoubleLinearSolver* solver;
 public:
-   QpGenSparseLinsys(ProblemFormulation* factory, Problem* problem, SparseSymMatrix* Mat, DoubleLinearSolver* solver);
+   QpGenSparseLinsys(ProblemFactory* factory, Problem* problem, SparseSymMatrix* Mat, DoubleLinearSolver* solver);
 
    /** perform the actual solve using the factors produced in factor.
     *

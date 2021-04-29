@@ -9,7 +9,9 @@
 #include "OoqpVectorHandle.h"
 
 class QpGen;
+
 class LinearAlgebraPackage;
+
 class Problem;
 
 /** Indicates what type is the blocking variable in the step length
@@ -28,8 +30,11 @@ enum {
  */
 
 class LinearSystem;
+
 class Residuals;
+
 class Solver;
+
 class MpsReader;
 
 #ifdef TESTING
@@ -59,7 +64,7 @@ public:
    OoqpVectorHandle ixupp;
    OoqpVectorHandle icupp;
    OoqpVectorHandle iclow;
-   Variables(){};
+   Variables() {};
 
    OoqpVectorHandle x;
    OoqpVectorHandle s;
@@ -81,13 +86,13 @@ public:
    /** constructor in which the data and variable pointers are set to
        point to the given arguments */
    Variables(OoqpVector* x_in, OoqpVector* s_in, OoqpVector* y_in, OoqpVector* z_in, OoqpVector* v_in, OoqpVector* gamma_in, OoqpVector* w_in,
-   OoqpVector* phi_in, OoqpVector* t_in, OoqpVector* lambda_in, OoqpVector* u_in, OoqpVector* pi_in, OoqpVector* ixlow_in, OoqpVector* ixupp_in,
+         OoqpVector* phi_in, OoqpVector* t_in, OoqpVector* lambda_in, OoqpVector* u_in, OoqpVector* pi_in, OoqpVector* ixlow_in, OoqpVector* ixupp_in,
          OoqpVector* iclow_in, OoqpVector* icupp_in);
 
    /** constructor that creates variables objects of specified
        dimensions. */
    Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, OoqpVector* ixlow, OoqpVector* ixupp, OoqpVector* iclow,
-   OoqpVector* icupp);
+         OoqpVector* icupp);
 
    Variables(const Variables& vars);
 
@@ -111,7 +116,7 @@ public:
     * alpha such that (t,u,v,w,lambda,pi,phi,gamma) + alpha *
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
-    * @see findBlocking */
+    * @see find_blocking */
    double stepbound(const Variables* b);
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative

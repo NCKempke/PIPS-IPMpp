@@ -18,51 +18,44 @@
  * Defines default options for QpgenPIPS.
  */
 
-namespace qpgen_options
-{
+namespace qpgen_options {
    void setOptions(const std::string& opt_file);
    int getIntParameter(const std::string& identifier);
    double getDoubleParameter(const std::string& identifier);
    bool getBoolParameter(const std::string& identifier);
 
-   class QpGenOptions : public base_options::Options
-   {
+   class QpGenOptions : public base_options::Options {
 
-      protected :
-         friend void setOptions(const std::string& opt_file);
-         friend int getIntParameter(const std::string& identifier);
-         friend double getDoubleParameter(const std::string& identifier);
-         friend bool getBoolParameter(const std::string& identifier);
+   protected :
+      friend void setOptions(const std::string& opt_file);
+      friend int getIntParameter(const std::string& identifier);
+      friend double getDoubleParameter(const std::string& identifier);
+      friend bool getBoolParameter(const std::string& identifier);
 
-         static QpGenOptions& getInstance()
-         {
-            static QpGenOptions opt;
-            return opt;
-         }
+      static QpGenOptions& getInstance() {
+         static QpGenOptions opt;
+         return opt;
+      }
 
-         void setDefaults() override;
-         QpGenOptions();
+      void setDefaults() override;
+      QpGenOptions();
 
-         virtual ~QpGenOptions() {};
+      virtual ~QpGenOptions() {};
    };
 
-   inline void setOptions(const std::string& opt_file)
-   {
+   inline void setOptions(const std::string& opt_file) {
       return QpGenOptions::getInstance().fillOptionsFromFile(opt_file);
    }
 
-   inline int getIntParameter(const std::string& identifier)
-   {
+   inline int getIntParameter(const std::string& identifier) {
       return QpGenOptions::getInstance().getIntParam(identifier);
    }
 
-   inline bool getBoolParameter(const std::string& identifier)
-   {
+   inline bool getBoolParameter(const std::string& identifier) {
       return QpGenOptions::getInstance().getBoolParam(identifier);
    }
 
-   inline double getDoubleParameter(const std::string& identifier)
-   {
+   inline double getDoubleParameter(const std::string& identifier) {
       return QpGenOptions::getInstance().getDoubleParam(identifier);
    }
 }

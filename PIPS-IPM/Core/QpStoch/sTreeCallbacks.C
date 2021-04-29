@@ -209,11 +209,11 @@ void sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMa
    assert(A.children.size() == children.size());
    assert(C.children.size() == children.size());
 
-   const SimpleVector& nxVecSimple = dynamic_cast<const SimpleVector&>(*nxVec.first);
-   const SimpleVector& myVecSimple = dynamic_cast<const SimpleVector&>(*myVec.first);
-   const SimpleVector& mzVecSimple = dynamic_cast<const SimpleVector&>(*mzVec.first);
-   const SimpleVector* const myVecSimpleLink = dynamic_cast<const SimpleVector*>(myVec.last);
-   const SimpleVector* const mzVecSimpleLink = dynamic_cast<const SimpleVector*>(mzVec.last);
+   const SimpleVector<double>& nxVecSimple = dynamic_cast<const SimpleVector<double>&>(*nxVec.first);
+   const SimpleVector<double>& myVecSimple = dynamic_cast<const SimpleVector<double>&>(*myVec.first);
+   const SimpleVector<double>& mzVecSimple = dynamic_cast<const SimpleVector<double>&>(*mzVec.first);
+   const SimpleVector<double>* const myVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(myVec.last);
+   const SimpleVector<double>* const mzVecSimpleLink = dynamic_cast<const SimpleVector<double>*>(mzVec.last);
 
    N_INACTIVE = nxVecSimple.length();
    MY_INACTIVE = myVecSimple.length();
@@ -753,8 +753,8 @@ StochVector* sTreeCallbacks::createVector( DATA_INT n_vec, DATA_VEC vec, DATA_IN
    StochVector* svec = new StochVector( data->*n_vec, nlinking, commWrkrs );
 
    assert( svec->first );
-   double* elems = dynamic_cast<SimpleVector*>(svec->first)->elements();
-   double* elems_link = (nlinking != -1) ? dynamic_cast<SimpleVector*>(svec->last)->elements() : nullptr;
+   double* elems = dynamic_cast<SimpleVector<double>*>(svec->first)->elements();
+   double* elems_link = (nlinking != -1) ? dynamic_cast<SimpleVector<double>*>(svec->last)->elements() : nullptr;
 
    (data->*vec)(data->user_data, data->id, elems, data->*n_vec);
 

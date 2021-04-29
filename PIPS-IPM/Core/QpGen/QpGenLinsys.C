@@ -9,7 +9,7 @@
 #include "OoqpVector.h"
 #include "SimpleVector.h"
 #include "LinearAlgebraPackage.h"
-#include "ProblemFormulation.h"
+#include "ProblemFactory.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
 
@@ -104,7 +104,7 @@ static bool isZero(double val, QpGenLinsys::IterativeSolverSolutionStatus& statu
    return false;
 }
 
-QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, bool create_iter_ref_vecs) :
+QpGenLinsys::QpGenLinsys(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) :
   factory(factory_),
   apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION") ),
   primal_reg_val(qpgen_options::getDoubleParameter("REGULARIZATION_INITIAL_PRIMAL") ),
@@ -159,7 +159,7 @@ QpGenLinsys::QpGenLinsys(ProblemFormulation* factory_, Problem* problem, bool cr
    }
 }
 
-QpGenLinsys::QpGenLinsys( ProblemFormulation* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_,
+QpGenLinsys::QpGenLinsys( ProblemFactory* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_,
       OoqpVector* nomegaInv_, OoqpVector* regP_,
       OoqpVector* regDy_, OoqpVector* regDz_,
       OoqpVector* rhs_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, problem, create_iter_ref_vecs )
@@ -173,7 +173,7 @@ QpGenLinsys::QpGenLinsys( ProblemFormulation* factory_, Problem* problem, OoqpVe
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys( ProblemFormulation* factory_, Problem* problem ) : QpGenLinsys( factory_, problem, true )
+QpGenLinsys::QpGenLinsys( ProblemFactory* factory_, Problem* problem ) : QpGenLinsys( factory_, problem, true )
 {
    if(nxupp + nxlow > 0) {
       dd = factory->make_primal_vector();

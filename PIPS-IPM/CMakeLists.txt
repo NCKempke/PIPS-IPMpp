@@ -3,11 +3,12 @@ include_directories(
    Core/Abstract 
    Core/Vector 
    Core/Utilities 
-   Core/QpSolvers 
+   Core/InteriorPointMethod 
    Core/QpPreprocess 
    Core/QpGen
-   Core/SparseLinearAlgebra 
-   Core/DenseLinearAlgebra 
+   Core/LinearAlgebra/Sparse 
+   Core/LinearAlgebra/Dense
+   Core/LinearAlgebra/Distributed
    Core/Readers
    Core/LinearSolvers/Ma27Solver 
    Core/LinearSolvers/Ma57Solver 
@@ -18,7 +19,6 @@ include_directories(
    Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
    Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
    Core/LinearSolvers/BiCGStabSolver 
-   Core/StochLinearAlgebra 
    Core/QpStoch
 )
 
@@ -35,7 +35,7 @@ target_compile_options(pipsipmCallbackExample PRIVATE ${OpenMP_CXX_FLAGS})
 target_link_libraries(pipsipmCallbackExample 
    PRIVATE ooqpstoch 
    PRIVATE ooqpstochla
-   PRIVATE ooqpgondziostoch 
+   PRIVATE interior_point_method 
    PRIVATE ooqpequistochscaler
    PRIVATE ooqpgensparse 
    PRIVATE ooqpsparse 
@@ -175,7 +175,7 @@ target_link_libraries(gmspips
    PRIVATE gmspipsio
    PRIVATE ooqpstoch
    PRIVATE ooqpstochla
-   PRIVATE ooqpgondziostoch
+   PRIVATE interior_point_method
    PRIVATE ooqpequistochscaler
    PRIVATE ooqpgensparse
    PRIVATE ooqpbase

@@ -72,14 +72,14 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    /////////////////////////////////////////////////////////////
    if( xDiag )
    {
-      const SimpleVector& sxDiag = dynamic_cast<const SimpleVector&>(*xDiag);
+      const auto& sxDiag = dynamic_cast<const SimpleVector<double>&>(*xDiag);
       for( int i = 0; i < locnx; i++)
          SC[i][i] += sxDiag[i];
    }
 
    if( xReg )
    {
-      const SimpleVector& sxReg = dynamic_cast<const SimpleVector&>(*xReg);
+      const auto& sxReg = dynamic_cast<const SimpleVector<double>&>(*xReg);
       for( int i = 0; i < locnx; i++)
          SC[i][i] += sxReg[i];
    }
@@ -89,7 +89,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    /////////////////////////////////////////////////////////////
    if( locmyl > 0 )
    {
-      const SimpleVector* syRegLink = dynamic_cast<const SimpleVector*>(yRegLinkCons);
+      const auto* syRegLink = dynamic_cast<const SimpleVector<double>*>(yRegLinkCons);
 
       const double* MF0 = F0.M();
       const int* krowF0 = F0.krowM();
@@ -118,8 +118,8 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    if( locmzl > 0 )
    {
       assert(zDiagLinkCons);
-      const SimpleVector& szDiagLinkCons = dynamic_cast<const SimpleVector&>(*zDiagLinkCons);
-      const SimpleVector* szRegLinkCons = dynamic_cast<const SimpleVector*>(zRegLinkCons);
+      const auto& szDiagLinkCons = dynamic_cast<const SimpleVector<double>&>(*zDiagLinkCons);
+      const auto* szRegLinkCons = dynamic_cast<const SimpleVector<double>*>(zRegLinkCons);
 
       const double* MG0 = G0.M();
       const int* krowG0 = G0.krowM();
@@ -144,7 +144,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    }
 }
 
-void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 )
+void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector<double>& b0 )
 {
    if( !sol_inner )
       sol_inner.reset(dynamic_cast<StochVector*>(rhs_inner.cloneFull()));
@@ -169,7 +169,7 @@ void sLinsysRootBordered::computeSchurCompRightHandSide( const StochVector& rhs_
    PIPS_MPIsumArrayInPlace( b0.elements(), b0.length(), mpiComm );
 }
 
-void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool )
+void sLinsysRootBordered::computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector<double>& b0, bool )
 {
    BorderLinsys border( *dynamic_cast<BorderedSymMatrix&>(*data->Q).border_vertical,
          *dynamic_cast<BorderedGenMatrix&>(*data->A).border_left,
@@ -199,7 +199,7 @@ void sLinsysRootBordered::Lsolve(DistributedQP* , OoqpVector& x)
 
    assert( xs.first );
    assert( !xs.last );
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.first);
+   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
 
    computeSchurCompRightHandSide( b, b0 );
 }
@@ -214,7 +214,7 @@ void sLinsysRootBordered::Dsolve(DistributedQP*, OoqpVector& x)
    assert( xs.children.size() == 1 );
    assert( data->children.size() == 1 );
    assert( xs.first );
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.first);
+   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
 
    solver->solve( b0 );
 }
@@ -231,7 +231,7 @@ void sLinsysRootBordered::Ltsolve(DistributedQP*, OoqpVector& x)
    StochVector& b = *dynamic_cast<StochVector&>(x).children[0];
 
    assert( xs.first );
-   SimpleVector& b0 = dynamic_cast<SimpleVector&>(*xs.first);
+   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
 
    computeInnerSystemRightHandSide( b, b0, false );
 

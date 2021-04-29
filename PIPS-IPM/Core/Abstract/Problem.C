@@ -76,7 +76,7 @@ void Problem::scaleC() {
 }
 
 void Problem::scaleg() {
-   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
+   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
    assert (scVector.length() == g->length());
 
    // D * g
@@ -84,7 +84,7 @@ void Problem::scaleg() {
 }
 
 void Problem::scalexupp() {
-   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
+   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    assert (scVector.length() == bux->length());
 
@@ -95,7 +95,7 @@ void Problem::scalexupp() {
 
 
 void Problem::scalexlow() {
-   SimpleVector& scVector = dynamic_cast<SimpleVector&>(*sc);
+   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    assert (scVector.length() == blx->length());
 

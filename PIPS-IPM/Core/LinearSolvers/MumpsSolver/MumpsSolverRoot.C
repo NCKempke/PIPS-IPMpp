@@ -144,7 +144,7 @@ MumpsSolverRoot::solve(OoqpVector& rhs)
 {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 
-   SimpleVector& sv = dynamic_cast<SimpleVector &>(rhs);
+   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double> &>(rhs);
 
    if( mpiCommMumps != MPI_COMM_NULL )
    {

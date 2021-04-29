@@ -20,7 +20,7 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
 
       void Lsolve(DistributedQP *prob, OoqpVector& x) override;
       void Ltsolve( DistributedQP *prob, OoqpVector& x ) override;
-      void Ltsolve2(DistributedQP*, StochVector& x, SimpleVector& x0, bool use_local_RAC ) override;
+      void Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>& x0, bool use_local_RAC ) override;
 
       using sLinsys::LsolveHierarchyBorder;
       void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
@@ -29,11 +29,11 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
       void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
             std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 
-      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& b0, bool use_local_RAC ) override;
+      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector<double>& b0, bool use_local_RAC ) override;
 
       void addLniziLinkCons( DistributedQP *prob, OoqpVector& z0, OoqpVector& zi, bool use_local_RAC ) override;
-      void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector& b0, BorderLinsys& border ) override;
-      void addBorderX0ToRhs( StochVector& rhs, const SimpleVector& x0, BorderLinsys& border ) override;
+      void addBorderTimesRhsToB0( StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border ) override;
+      void addBorderX0ToRhs( StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border ) override;
 
       void addInnerBorderKiInvBrToRes( DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool sparse_res, bool sym_res, int begin_cols, int end_cols,
             int n_empty_rows_inner_border ) override;

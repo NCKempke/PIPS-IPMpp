@@ -5,19 +5,19 @@
 #ifndef SPSEQQPGENFACTORY
 #define SPSEQQPGENFACTORY
 
-#include "ProblemFormulation.h"
+#include "ProblemFactory.h"
 
 class QP;
 
 class Variables;
 
-class QpGenSparseSeq : public ProblemFormulation {
+class QpGenSparseSeq : public ProblemFactory {
 protected:
    int nnzQ;
    int nnzA;
    int nnzC;
 public:
-   QpGenSparseSeq(int nx_, int my_, int mz_, int nnzQ_, int nnzA_, int nnzC_) : ProblemFormulation(nx_, my_, mz_), nnzQ(nnzQ_), nnzA(nnzA_), nnzC(nnzC_) {}
+   QpGenSparseSeq(int nx_, int my_, int mz_, int nnzQ_, int nnzA_, int nnzC_) : ProblemFactory(nx_, my_, mz_), nnzQ(nnzQ_), nnzA(nnzA_), nnzC(nnzC_) {}
 
    //Problem  * create_problem();
    Problem*

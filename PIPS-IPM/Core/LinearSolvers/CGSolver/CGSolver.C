@@ -30,7 +30,7 @@ CGSolver::~CGSolver()
 
 void CGSolver::solve( OoqpVector& rhs_ )
 {
-  SimpleVector& b = dynamic_cast<SimpleVector&>(rhs_);
+  SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
   int n = b.length();
 
   int flag, imin; int stag, maxmsteps, maxstagsteps, moresteps;
@@ -47,12 +47,12 @@ void CGSolver::solve( OoqpVector& rhs_ )
   if(tmpVec5==nullptr) tmpVec5=new double[n];
   if(tmpVec6==nullptr) tmpVec6=new double[n];
 
-  SimpleVector x(tmpVec1, n);      //iterate
-  SimpleVector r(tmpVec2,n);      //residual
-  SimpleVector xmin(tmpVec3,n);   //minimal residual iterate
-  SimpleVector y(tmpVec4,n);      //work vectors
-  SimpleVector z(tmpVec5,n);      //work vectors
-  SimpleVector p(tmpVec6,n);
+  SimpleVector<double> x(tmpVec1, n);      //iterate
+  SimpleVector<double> r(tmpVec2,n);      //residual
+  SimpleVector<double> xmin(tmpVec3,n);   //minimal residual iterate
+  SimpleVector<double> y(tmpVec4,n);      //work vectors
+  SimpleVector<double> z(tmpVec5,n);      //work vectors
+  SimpleVector<double> p(tmpVec6,n);
   //if(firstSolve)
   //  //initial guess is 0, the previous found solution otherwise
   x.setToZero();
@@ -90,7 +90,7 @@ void CGSolver::solve( OoqpVector& rhs_ )
       p.scale(beta); p.axpy(1.0, z); // p=z + beta*p
     }
 
-    SimpleVector& q = y;
+    SimpleVector<double>& q = y;
     applyA(0.0, q, 1.0, p); //q=A*p
     pq = p.dotProductWith(q);
     if(pq<=0) {flag=4; break;}

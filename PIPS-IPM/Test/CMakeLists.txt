@@ -23,7 +23,7 @@ macro(package_add_test TESTNAME)
       PRIVATE gmspips_reader 
       PRIVATE ooqpstoch
       PRIVATE ooqpstochla 
-      PRIVATE ooqpgondziostoch 
+      PRIVATE interior_point_method 
       PRIVATE ooqpequistochscaler
       PRIVATE ooqpgensparse 
       PRIVATE ooqpsparse 

@@ -113,30 +113,30 @@ private:
    const SparseStorageDynamic* currCmatTrans{};
    const SparseStorageDynamic* currDmat{};
    const SparseStorageDynamic* currDmatTrans{};
-   const SimpleVectorBase<int>* currNnzRowC{};
+   const SimpleVector<int>* currNnzRowC{};
 
    // pointers to the normalized and copied matrix blocks
    std::unique_ptr<SparseStorageDynamic> norm_Amat{};
    std::unique_ptr<SparseStorageDynamic> norm_Bmat{};
    std::unique_ptr<SparseStorageDynamic> norm_Cmat{};
    std::unique_ptr<SparseStorageDynamic> norm_Dmat{};
-   std::unique_ptr<SimpleVector> norm_b{};
-   std::unique_ptr<SimpleVector> norm_clow{};
-   std::unique_ptr<SimpleVector> norm_cupp{};
-   std::unique_ptr<SimpleVector> norm_iclow{};
-   std::unique_ptr<SimpleVector> norm_icupp{};
-   std::unique_ptr<SimpleVector> norm_factorC{};
-   std::unique_ptr<SimpleVector> norm_factorA{};
+   std::unique_ptr<SimpleVector<double>> norm_b{};
+   std::unique_ptr<SimpleVector<double>> norm_clow{};
+   std::unique_ptr<SimpleVector<double>> norm_cupp{};
+   std::unique_ptr<SimpleVector<double>> norm_iclow{};
+   std::unique_ptr<SimpleVector<double>> norm_icupp{};
+   std::unique_ptr<SimpleVector<double>> norm_factorC{};
+   std::unique_ptr<SimpleVector<double>> norm_factorA{};
 
    // data for the nearly parallel row case
-   std::unique_ptr<SimpleVectorBase<int>> rowContainsSingletonVariableA{};
-   std::unique_ptr<SimpleVectorBase<int>> rowContainsSingletonVariableC{};
-   std::unique_ptr<SimpleVector> singletonCoeffsColParent{};
-   std::unique_ptr<SimpleVector> singletonCoeffsColChild{};
-   std::unique_ptr<SimpleVectorBase<int>> normNnzRowA{};
-   std::unique_ptr<SimpleVectorBase<int>> normNnzRowC{};
-   std::unique_ptr<SimpleVectorBase<int>> normNnzColParent{};
-   std::unique_ptr<SimpleVectorBase<int>> normNnzColChild{};
+   std::unique_ptr<SimpleVector<int>> rowContainsSingletonVariableA{};
+   std::unique_ptr<SimpleVector<int>> rowContainsSingletonVariableC{};
+   std::unique_ptr<SimpleVector<double>> singletonCoeffsColParent{};
+   std::unique_ptr<SimpleVector<double>> singletonCoeffsColChild{};
+   std::unique_ptr<SimpleVector<int>> normNnzRowA{};
+   std::unique_ptr<SimpleVector<int>> normNnzRowC{};
+   std::unique_ptr<SimpleVector<int>> normNnzColParent{};
+   std::unique_ptr<SimpleVector<int>> normNnzColChild{};
    std::unique_ptr<SparseStorageDynamic> norm_AmatTrans{};
    std::unique_ptr<SparseStorageDynamic> norm_BmatTrans{};
    std::unique_ptr<SparseStorageDynamic> norm_CmatTrans{};
@@ -160,15 +160,15 @@ private:
    void updateExtendedPointersForCurrentNode(int node);
 
    void removeSingletonVars();
-   void removeEntry(int colIdx, SimpleVectorBase<int>& rowContainsSingletonVar,
-         SparseStorageDynamic& matrix, SparseStorageDynamic& matrixTrans, SimpleVectorBase<int>& nnzRow, SimpleVectorBase<int>& nnzCol,
+   void removeEntry(int colIdx, SimpleVector<int>& rowContainsSingletonVar,
+         SparseStorageDynamic& matrix, SparseStorageDynamic& matrixTrans, SimpleVector<int>& nnzRow, SimpleVector<int>& nnzCol,
          bool parent);
    double removeEntryInDynamicStorage(SparseStorageDynamic& storage, int row, int col) const;
 
    void normalizeBlocksRowwise( SystemType system_type, SparseStorageDynamic* a_mat, SparseStorageDynamic* b_mat,
-         SimpleVector* cupp, SimpleVector* clow, SimpleVector* icupp, SimpleVector* iclow) const;
+         SimpleVector<double>* cupp, SimpleVector<double>* clow, SimpleVector<double>* icupp, SimpleVector<double>* iclow) const;
    void insertRowsIntoHashtable( boost::unordered_set<rowlib::rowWithColInd, boost::hash<rowlib::rowWithColInd> > &rows,
-         const SparseStorageDynamic* Ablock, const SparseStorageDynamic* Bblock, SystemType system_type, const SimpleVectorBase<int>* nnz_row_norm, const SimpleVectorBase<int>* nnz_row_orig);
+         const SparseStorageDynamic* Ablock, const SparseStorageDynamic* Bblock, SystemType system_type, const SimpleVector<int>* nnz_row_norm, const SimpleVector<int>* nnz_row_orig);
    void compareRowsInCoeffHashTable(int& nRowElims, int it);
    bool checkRowsAreParallel( const rowlib::rowWithEntries& row1, const rowlib::rowWithEntries& row2);
 

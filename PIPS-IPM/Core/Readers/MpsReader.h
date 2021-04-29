@@ -5,9 +5,9 @@
 #ifndef MPSREADER
 #define MPSREADER
 
+#include "SimpleVector.h"
 #include "OoqpVectorHandle.h"
 #include "DoubleMatrixHandle.h"
-#include "SimpleVectorHandle.h"
 #include <cstdio>
 #include "hash.h"
 
@@ -165,14 +165,14 @@ protected:
 				char line[62], 
 				int& iErr, int& return_getline );
   virtual void readRHSSection( OoqpVector&  b,
-			       SimpleVector& clow, OoqpVector& iclow,
-			       SimpleVector& cupp, OoqpVector& icupp,
+			       SimpleVector<double>& clow, OoqpVector& iclow,
+			       SimpleVector<double>& cupp, OoqpVector& icupp,
 			       char line[], int& ierr, int& kindOfLine );
   virtual void readRHSSection( double b[],
 			       double clow[], char iclow[],
 			       double cupp[], char icupp[],
 			       char line[], int& ierr, int& kindOfLine );
-  virtual void readRangesSection( SimpleVector& clow, SimpleVector& cupp,
+  virtual void readRangesSection( SimpleVector<double>& clow, SimpleVector<double>& cupp,
 				  char line[], int& ierr, int& kindOfLine );
   virtual void readRangesSection( double clow[], double cupp[],
 				  char line[], int& ierr, int& kindOfLine );

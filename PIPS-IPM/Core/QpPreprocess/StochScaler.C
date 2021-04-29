@@ -7,7 +7,7 @@
 
 #include "StochScaler.h"
 #include "pipsdef.h"
-#include "sVars.h"
+#include "DistributedVariables.h"
 #include "DistributedResiduals.hpp"
 
 
@@ -15,9 +15,9 @@ StochScaler::StochScaler(Problem* prob, bool bitshifting) : QpScaler(prob, bitsh
 }
 
 Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const {
-   Variables* s_vars = new sVars(dynamic_cast<const sVars&>(vars));
+   Variables* s_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(vars));
    assert(s_vars);
-   assert(dynamic_cast<sVars*>(s_vars)->x);
+   assert(dynamic_cast<DistributedVariables*>(s_vars)->x);
 
    unscaleVariables(*s_vars);
 

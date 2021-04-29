@@ -3,7 +3,7 @@
 
 #include "QP.hpp"
 #include "DistributedResiduals.hpp"
-#include "sVars.h"
+#include "DistributedVariables.h"
 #include "StochSymMatrix.h"
 #include "SparseSymMatrix.h"
 #include "StochGenMatrix.h"
@@ -105,7 +105,7 @@ public:
 
    DistributedResiduals* getResidsUnperm(const DistributedResiduals& resids, const DistributedQP& unpermData) const;
 
-   sVars* getVarsUnperm(const sVars& vars, const DistributedQP& unpermData) const;
+   DistributedVariables* getVarsUnperm(const DistributedVariables& vars, const DistributedQP& unpermData) const;
 
    bool isRootNodeInSync() const;
 

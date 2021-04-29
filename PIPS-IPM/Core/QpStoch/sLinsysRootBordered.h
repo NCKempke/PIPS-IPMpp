@@ -23,7 +23,7 @@ class sLinsysRootBordered : public sLinsysRoot
       void Dsolve(DistributedQP*, OoqpVector& x) override;
       void Ltsolve(DistributedQP*, OoqpVector& v) override;
 
-      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector& x0, bool ) override;
+      void computeInnerSystemRightHandSide( StochVector& rhs_inner, const SimpleVector<double>& x0, bool ) override;
    protected:
       SymMatrix* createKKT(DistributedQP*);
       void assembleLocalKKT(DistributedQP* prob) override;
@@ -31,7 +31,7 @@ class sLinsysRootBordered : public sLinsysRoot
 
       DoubleLinearSolver* createSolver(DistributedQP*, const SymMatrix* kktmat);
    private:
-      void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector& b0 );
+      void computeSchurCompRightHandSide( const StochVector& rhs_inner, SimpleVector<double>& b0 );
 
 };
 
