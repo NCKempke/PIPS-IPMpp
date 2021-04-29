@@ -54,10 +54,10 @@ protected:
    void compute_corrector_step(Problem& problem, Variables& iterate, double sigma, double mu);
    void compute_gondzio_corrector(Problem* problem, Variables* iterate, double rmin, double rmax, bool small_corr);
    void check_linear_system_solve_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
-   void registerBiCGStabOvserver(LinearSystem* sys);
+   void registerBiCGStabOvserver(AbstractLinearSystem* sys);
    void setBiCGStabTol(int iteration) const;
    void adjustLimitGondzioCorrectors();
-   bool decreasePreconditionerImpact(LinearSystem* sys) const;
+   bool decreasePreconditionerImpact(AbstractLinearSystem* sys) const;
    double computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const;
    void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
    void doProbing_pd(Problem* prob, Variables* iterate, Residuals* resid, double& alpha_pri, double& alpha_dual);

@@ -55,7 +55,7 @@ public:
 
    Variables* make_variables(Problem& problem) override;
 
-   LinearSystem* make_linear_system(Problem& problem) override;
+   AbstractLinearSystem* make_linear_system(Problem& problem) override;
 
    /** create x shaped vector using tree */
    OoqpVector* make_primal_vector() const override;

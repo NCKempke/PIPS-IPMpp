@@ -10,7 +10,7 @@
 #include "GondzioStochLpSolver.h"
 #include "Variables.h"
 #include "Residuals.h"
-#include "LinearSystem.h"
+#include "AbstractLinearSystem.h"
 #include "Status.h"
 #include "Problem.h"
 #include "ProblemFactory.h"

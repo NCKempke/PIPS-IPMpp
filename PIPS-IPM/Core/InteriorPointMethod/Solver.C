@@ -4,7 +4,7 @@
 #include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"
-#include "LinearSystem.h"
+#include "AbstractLinearSystem.h"
 #include "Options.h"
 #include "ProblemFactory.h"
 #include "QpGenOptions.h"

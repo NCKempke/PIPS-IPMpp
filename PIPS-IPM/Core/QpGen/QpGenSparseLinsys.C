@@ -6,7 +6,7 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrix.h"
 
-QpGenSparseLinsys::QpGenSparseLinsys(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : QpGenLinsys(
+QpGenSparseLinsys::QpGenSparseLinsys(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : LinearSystem(
       factory_in, problem), solver(solver_in) {
    SpReferTo(Mat, Mat_in);
 }
@@ -54,7 +54,7 @@ void QpGenSparseLinsys::solveCompressed(OoqpVector& arhs) {
 
 
 void QpGenSparseLinsys::factorize(Problem* prob, Variables* vars) {
-   this->QpGenLinsys::factorize(prob, vars);
+   this->LinearSystem::factorize(prob, vars);
    solver->matrixChanged();
 }
 

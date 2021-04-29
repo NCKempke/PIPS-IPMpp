@@ -44,7 +44,7 @@ class Problem;
 
 class Residuals;
 
-class LinearSystem;
+class AbstractLinearSystem;
 
 class Variables;
 
@@ -73,7 +73,7 @@ public:
    virtual Residuals* make_residuals(Problem& problem) = 0;
 
    /** creates the LinearSystem class for the relevant formulation */
-   virtual LinearSystem* make_linear_system(Problem& problem) = 0;
+   virtual AbstractLinearSystem* make_linear_system(Problem& problem) = 0;
 
    /** creates the Variables class for the relevant formulation */
    virtual Variables* make_variables(Problem& problem) = 0;

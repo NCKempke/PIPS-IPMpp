@@ -358,7 +358,7 @@ void InteriorPointMethod::check_linear_system_solve_numerical_troubles(Residuals
    }
 }
 
-void InteriorPointMethod::registerBiCGStabOvserver(LinearSystem* sys) {
+void InteriorPointMethod::registerBiCGStabOvserver(AbstractLinearSystem* sys) {
    /* every linsys handed to the GondzioStoch should be observable */
    assert(dynamic_cast<Subject*>(sys));
    setSubject(dynamic_cast<Subject*>(sys));
@@ -396,7 +396,7 @@ void InteriorPointMethod::adjustLimitGondzioCorrectors() {
    }
 }
 
-bool InteriorPointMethod::decreasePreconditionerImpact(LinearSystem* sys) const {
+bool InteriorPointMethod::decreasePreconditionerImpact(AbstractLinearSystem* sys) const {
    bool success = false;
    dynamic_cast<sLinsysRoot*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {

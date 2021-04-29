@@ -249,7 +249,7 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) {
    return residuals;
 }
 
-LinearSystem* DistributedFactory::make_linear_system(Problem&) {
+AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       linsys = newLinsysRootHierarchical();
    else

@@ -5,7 +5,7 @@
 #ifndef SLINSYS
 #define SLINSYS
 
-#include "QpGenLinsys.h"
+#include "LinearSystem.h"
 #include "DoubleLinearSolver.h"
 #include "OoqpVectorHandle.h"
 #include "DenseSymMatrix.h"
@@ -29,7 +29,7 @@ class DistributedQP;
 
 class StringSymMatrix;
 
-class sLinsys : public QpGenLinsys {
+class sLinsys : public LinearSystem {
 public:
    template<typename T>
    struct RACFG_BLOCK {

@@ -6,7 +6,7 @@
 #define QPGENSPARSELINSYS
 
 #include <ProblemFactory.h>
-#include "QpGenLinsys.h"
+#include "LinearSystem.h"
 #include "SparseSymMatrixHandle.h"
 
 class DoubleLinearSolver;
@@ -17,7 +17,7 @@ class DoubleLinearSolver;
  *
  * @ingroup QpGen 
  */
-class QpGenSparseLinsys : public QpGenLinsys {
+class QpGenSparseLinsys : public LinearSystem {
 protected:
    SparseSymMatrixHandle Mat;
    DoubleLinearSolver* solver;

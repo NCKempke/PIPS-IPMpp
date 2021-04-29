@@ -9,7 +9,7 @@
 #include "GondzioStochSolver.h"
 #include "Variables.h"
 #include "Residuals.h"
-#include "LinearSystem.h"
+#include "AbstractLinearSystem.h"
 #include "Status.h"
 #include "Problem.h"
 #include "ProblemFactory.h"
@@ -27,7 +27,7 @@
 
 #include "mpi.h"
 #include "Variables.h"
-#include "QpGenLinsys.h"
+#include "LinearSystem.h"
 #include "sLinsysRoot.h"
 
 extern int gOoqpPrintLevel;
@@ -362,7 +362,7 @@ void GondzioStochSolver::checkLinsysSolveNumericalTroublesAndReact(Residuals* re
    }
 }
 
-void GondzioStochSolver::registerBiCGStabOvserver(LinearSystem* sys) {
+void GondzioStochSolver::registerBiCGStabOvserver(AbstractLinearSystem* sys) {
    /* every linsys handed to the GondzioStoch should be observable */
    assert(dynamic_cast<Subject*>(sys));
    setSubject(dynamic_cast<Subject*>(sys));
@@ -414,7 +414,7 @@ void GondzioStochSolver::adjustLimitGondzioCorrectors() {
    }
 }
 
-bool GondzioStochSolver::decreasePreconditionerImpact(LinearSystem* sys) const {
+bool GondzioStochSolver::decreasePreconditionerImpact(AbstractLinearSystem* sys) const {
    bool success = false;
    dynamic_cast<sLinsysRoot*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {

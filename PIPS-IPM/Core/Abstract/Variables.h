@@ -29,7 +29,7 @@ enum {
  * @ingroup AbstractProblemFormulation
  */
 
-class LinearSystem;
+class AbstractLinearSystem;
 
 class Residuals;
 

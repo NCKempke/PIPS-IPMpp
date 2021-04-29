@@ -15,7 +15,7 @@
 #include "omp.h"
 
 sLinsys::sLinsys(DistributedFactory* factory_, DistributedQP* prob, bool is_hierarchy_root)
-  : QpGenLinsys(factory_, prob), data{prob},
+  : LinearSystem(factory_, prob), data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
     is_hierarchy_root(is_hierarchy_root),
@@ -45,7 +45,7 @@ sLinsys::sLinsys(DistributedFactory* factory_,
 		 OoqpVector* rhs_,
 		 bool create_iter_ref_vecs
 		 )
-  : QpGenLinsys( factory_, prob, dd_, dq_, nomegaInv_, rhs_, create_iter_ref_vecs ),
+  : LinearSystem( factory_, prob, dd_, dq_, nomegaInv_, rhs_, create_iter_ref_vecs ),
     data{prob},
     computeBlockwiseSC( pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE") ),
     blocksizemax( pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX") ),
@@ -101,7 +101,7 @@ void sLinsys::factorize(Problem *prob_, Variables *vars)
   // the call to the the parent's method takes care of all necessary updates
   // to the KKT system (updating diagonals mainly). This is done recursively,
   // we don't have to worry about it anymore. 
-  QpGenLinsys::factorize(prob_, vars);
+  LinearSystem::factorize(prob_, vars);
 
   // now DO THE LINEAR ALGEBRA!
   
