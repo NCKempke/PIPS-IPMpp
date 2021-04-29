@@ -5,21 +5,21 @@ add_subdirectory(LinearAlgebra/Dense)
 add_subdirectory(LinearAlgebra/Distributed)
 add_subdirectory(LinearSolvers)
 
-add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Abstract/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
+add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
   Abstract/OoqpMonitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C  InteriorPointMethod/Solver.C Vector/OoqpVector.C Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-  Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C Abstract/Residuals.cpp Abstract/ProblemFactory.cpp)
+  Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C Abstract/Residuals.cpp Problems/ProblemFactory.cpp)
 
 add_library(ooqpgensparse STATIC
-  Abstract/Variables.C QpGen/QP.cpp QpGen/LinearSystem.C #QpGen
-        QpGen/QPFactory.C QpGen/SparseLinearSystem.C #QpGenSparse
+  Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
+        Problems/QPFactory.C LinearSystems/SparseLinearSystem.C #QpGenSparse
   Readers/MpsReader.C Readers/hash.C #Readers
   LinearSolvers/Preconditioners/SCsparsifier.C
 )
 
 add_library(ooqpstoch STATIC 
    QpStoch/DistributedFactory.C
-   QpStoch/DistributedQP.cpp
-        QpStoch/DistributedLinearSystem.C
+   Problems/DistributedQP.cpp
+   LinearSystems/DistributedLinearSystem.C
    QpStoch/sLinsysRoot.C
    QpStoch/sLinsysRootAug.C
    QpStoch/sLinsysRootAugHierInner.C
