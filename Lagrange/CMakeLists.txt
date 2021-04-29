@@ -5,7 +5,7 @@ include_directories(../PIPS-S/Basic)
 include_directories(../PIPS-S/Core)
 include_directories(../PIPS-S/CoinBALPFactorization)
 include_directories(../BasisBootstrap/ScenarioReduction)
-include_directories(../PIPS-IPM/Core/Abstract ../PIPS-IPM/Core/Vector ../PIPS-IPM/Core/Utilities ../PIPS-IPM/Core/QpSolvers ../PIPS-IPM/Core/QpGen
+include_directories(../PIPS-IPM/Core/Abstract ../PIPS-IPM/Core/Vector ../PIPS-IPM/Core/Utilities ../PIPS-IPM/Core/InteriorPointMethod ../PIPS-IPM/Core/QpGen
   ../PIPS-IPM/Core/SparseLinearAlgebra ../PIPS-IPM/Core/DenseLinearAlgebra ../PIPS-IPM/Core/Readers 
   ../PIPS-IPM/Core/LinearSolvers/Ma57Solver)
 include_directories(../PIPS-IPM/Core/StochLinearAlgebra ../PIPS-IPM/Core/QpStoch)

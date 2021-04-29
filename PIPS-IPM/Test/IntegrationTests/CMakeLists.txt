@@ -1,5 +1,5 @@
 include_directories(../../Core/QpGen)
-include_directories(../../Core/QpSolvers)
+include_directories(../../Core/InteriorPointMethod)
 include_directories(../../Core/QpStoch)
 include_directories(../../Core/QpPreprocess)
 include_directories(../../Core/LinearAlgebra/Distributed)
