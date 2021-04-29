@@ -2,9 +2,9 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include "QpGenLinsys.h"
-#include "QP.hpp"
+#include "LinearSystem.h"
 #include "Residuals.h"
+#include "Problem.h"
 #include "Variables.h"
 #include "OoqpVector.h"
 #include "SimpleVector.h"
@@ -27,19 +27,19 @@ extern int gOuterBiCGFails;
 static std::vector<int> bicgIters;
 
 
-int QpGenLinsys::getIntValue(const std::string& s) const {
+int LinearSystem::getIntValue(const std::string& s) const {
    if (s.compare("BICG_NITERATIONS") == 0)
       return bicg_niterations;
    else if(s.compare("BICG_CONV_FLAG"))
       return static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag);
    else
    {
-      std::cout << "Unknown observer int request in QpGenLinsys.C: " << s << "\n";
+      std::cout << "Unknown observer int request in LinearSystem.C: " << s << "\n";
       return -1;
    }
 }
 
-bool QpGenLinsys::getBoolValue(const std::string& s) const
+bool LinearSystem::getBoolValue(const std::string& s) const
 {
    if( s.compare("BICG_CONVERGED") == 0 )
       return bicg_conv_flag == IterativeSolverSolutionStatus::CONVERGED;
@@ -55,18 +55,18 @@ bool QpGenLinsys::getBoolValue(const std::string& s) const
       return bicg_conv_flag == IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS;
    else
    {
-      std::cout << "Unknown observer bool request in QpGenLinsys.C: " << s << "\n";
+      std::cout << "Unknown observer bool request in LinearSystem.C: " << s << "\n";
       return false;
    }
 }
 
-double QpGenLinsys::getDoubleValue(const std::string& s) const {
+double LinearSystem::getDoubleValue(const std::string& s) const {
    if (s.compare("BICG_RESNORM") == 0)
       return bicg_resnorm;
    else if (s.compare("BICG_RELRESNORM") == 0)
       return bicg_relresnorm;
    else {
-      std::cout << "Unknown observer double request in QpGenLinsys.C: " << s << "\n";
+      std::cout << "Unknown observer double request in LinearSystem.C: " << s << "\n";
       return 0.0;
    }
 }
@@ -95,16 +95,16 @@ static void biCGStabCommunicateStatus(int flag, int it)
       gOuterBiCGFails++;
 }
 
-static bool isZero(double val, QpGenLinsys::IterativeSolverSolutionStatus& status) {
+static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& status) {
    if (PIPSisZero(val)) {
-      status = QpGenLinsys::IterativeSolverSolutionStatus::BREAKDOWN;
+      status = LinearSystem::IterativeSolverSolutionStatus::BREAKDOWN;
       return true;
    }
 
    return false;
 }
 
-QpGenLinsys::QpGenLinsys(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) :
+LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) :
   factory(factory_),
   apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION") ),
   primal_reg_val(qpgen_options::getDoubleParameter("REGULARIZATION_INITIAL_PRIMAL") ),
@@ -159,10 +159,10 @@ QpGenLinsys::QpGenLinsys(ProblemFactory* factory_, Problem* problem, bool create
    }
 }
 
-QpGenLinsys::QpGenLinsys( ProblemFactory* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_,
+LinearSystem::LinearSystem( ProblemFactory* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_,
       OoqpVector* nomegaInv_, OoqpVector* regP_,
       OoqpVector* regDy_, OoqpVector* regDz_,
-      OoqpVector* rhs_, bool create_iter_ref_vecs ) : QpGenLinsys( factory_, problem, create_iter_ref_vecs )
+      OoqpVector* rhs_, bool create_iter_ref_vecs ) : LinearSystem( factory_, problem, create_iter_ref_vecs )
 {
    dd = dd_;
    dq = dq_;
@@ -173,7 +173,7 @@ QpGenLinsys::QpGenLinsys( ProblemFactory* factory_, Problem* problem, OoqpVector
    rhs = rhs_;
 }
 
-QpGenLinsys::QpGenLinsys( ProblemFactory* factory_, Problem* problem ) : QpGenLinsys( factory_, problem, true )
+LinearSystem::LinearSystem( ProblemFactory* factory_, Problem* problem ) : LinearSystem( factory_, problem, true )
 {
    if(nxupp + nxlow > 0) {
       dd = factory->make_primal_vector();
@@ -188,7 +188,7 @@ QpGenLinsys::QpGenLinsys( ProblemFactory* factory_, Problem* problem ) : QpGenLi
    regDz = factory->make_inequalities_dual_vector();
 }
 
-QpGenLinsys::~QpGenLinsys() {
+LinearSystem::~LinearSystem() {
    if (!useRefs) {
       delete regDz;
       delete regDy;
@@ -212,7 +212,7 @@ QpGenLinsys::~QpGenLinsys() {
    delete res5;
 }
 
-void QpGenLinsys::factorize(Problem* /* problem */, Variables* vars){
+void LinearSystem::factorize(Problem* /* problem */, Variables* vars){
    assert(vars->validNonZeroPattern());
    assert(vars->validNonZeroPattern());
 
@@ -246,7 +246,7 @@ void QpGenLinsys::factorize(Problem* /* problem */, Variables* vars){
    clean_factorization = true;
 }
 
-void QpGenLinsys::printDiagonalNorms() const {
+void LinearSystem::printDiagonalNorms() const {
    assert(dd);
    assert(nomegaInv);
    const double infnorm_primal_diagonal = dd->infnorm();
@@ -269,7 +269,7 @@ void QpGenLinsys::printDiagonalNorms() const {
    }
 }
 
-void QpGenLinsys::adjustRegularization()
+void LinearSystem::adjustRegularization()
 {
    if( !clean_factorization )
       return;
@@ -322,7 +322,7 @@ void QpGenLinsys::adjustRegularization()
 }
 
 
-void QpGenLinsys::regularizeKKTs()
+void LinearSystem::regularizeKKTs()
 {
    if (PIPS_MPIgetRank() == 0) {
       std::cout << "Regularizing system with (dP, dDy, dDz) = (" << primal_reg_val << ", " << dual_y_reg_val << ", " << dual_z_reg_val << ")\n";
@@ -333,7 +333,7 @@ void QpGenLinsys::regularizeKKTs()
 }
 
 void
-QpGenLinsys::computeDiagonals(OoqpVector& dd_, OoqpVector& omega, OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
+LinearSystem::computeDiagonals(OoqpVector& dd_, OoqpVector& omega, OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
       OoqpVector& gamma, OoqpVector& w, OoqpVector& phi) {
 
    /*** dd = dQ + Gamma/V + Phi/W ***/
@@ -366,70 +366,65 @@ QpGenLinsys::computeDiagonals(OoqpVector& dd_, OoqpVector& omega, OoqpVector& t,
    omega.negate();
 }
 
-void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in, Variables* step_in) {
-   QP* problem = (QP*) prob_in;
-   Variables* vars = (Variables*) vars_in;
-   Variables* step = (Variables*) step_in;
-   Residuals* res = (Residuals*) res_in;
-
-   assert(vars->validNonZeroPattern());
-   assert(res->valid_non_zero_pattern());
+void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* residuals, Variables* step) {
+   assert(variables->validNonZeroPattern());
+   assert(residuals->valid_non_zero_pattern());
 
    /*** compute rX ***/
    /* rx = rQ */
-   step->x->copyFrom(*res->rQ);
+   step->x->copyFrom(*residuals->rQ);
    if (nxlow > 0) {
       OoqpVector& gamma_by_v = *step->v;
-      gamma_by_v.copyFrom(*vars->gamma);
-      gamma_by_v.divideSome(*vars->v, *ixlow);
+      gamma_by_v.copyFrom(*variables->gamma);
+      gamma_by_v.divideSome(*variables->v, *ixlow);
 
       /* rx = rQ + Gamma/V rv */
-      step->x->axzpy(1.0, gamma_by_v, *res->rv);
+      step->x->axzpy(1.0, gamma_by_v, *residuals->rv);
       /* rx = rQ + Gamma/V rv + rGamma/V */
-      step->x->axdzpy(1.0, *res->rgamma, *vars->v, *ixlow);
+      step->x->axdzpy(1.0, *residuals->rgamma, *variables->v, *ixlow);
    }
 
    if (nxupp > 0) {
       OoqpVector& phi_by_w = *step->w;
-      phi_by_w.copyFrom(*vars->phi);
-      phi_by_w.divideSome(*vars->w, *ixupp);
+      phi_by_w.copyFrom(*variables->phi);
+      phi_by_w.divideSome(*variables->w, *ixupp);
 
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
-      step->x->axzpy(1.0, phi_by_w, *res->rw);
+      step->x->axzpy(1.0, phi_by_w, *residuals->rw);
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
-      step->x->axdzpy(-1.0, *res->rphi, *vars->w, *ixupp);
+      step->x->axdzpy(-1.0, *residuals->rphi, *variables->w, *ixupp);
    }
 
    // start by partially computing step->s
    /*** compute rs ***/
    /* step->s = rz */
-   step->s->copyFrom(*res->rz);
+   step->s->copyFrom(*residuals->rz);
    if (mclow > 0) {
       OoqpVector& lambda_by_t = *step->t;
-      lambda_by_t.copyFrom(*vars->lambda);
-      lambda_by_t.divideSome(*vars->t, *iclow);
+      lambda_by_t.copyFrom(*variables->lambda);
+      lambda_by_t.divideSome(*variables->t, *iclow);
 
       /* step->s = rz + Lambda/T * rt */
-      step->s->axzpy(1.0, lambda_by_t, *res->rt);
+      step->s->axzpy(1.0, lambda_by_t, *residuals->rt);
       /* step->s = rz + Lambda/T * rt + rlambda/T */
-      step->s->axdzpy(1.0, *res->rlambda, *vars->t, *iclow);
+      step->s->axdzpy(1.0, *residuals->rlambda, *variables->t, *iclow);
    }
 
    if (mcupp > 0) {
       OoqpVector& pi_by_u = *step->u;
-      pi_by_u.copyFrom(*vars->pi);
-      pi_by_u.divideSome(*vars->u, *icupp);
+      pi_by_u.copyFrom(*variables->pi);
+      pi_by_u.divideSome(*variables->u, *icupp);
 
       /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-      step->s->axzpy(1.0, pi_by_u, *res->ru);
+      step->s->axzpy(1.0, pi_by_u, *residuals->ru);
       /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
-      step->s->axdzpy(-1.0, *res->rpi, *vars->u, *icupp);
+      step->s->axdzpy(-1.0, *residuals->rpi, *variables->u, *icupp);
    }
 
    /*** ry = rA ***/
-   step->y->copyFrom(*res->rA);
+   step->y->copyFrom(*residuals->rA);
    /*** rz = rC ***/
-   step->z->copyFrom(*res->rC);
+   step->z->copyFrom(*residuals->rC);
 
    {
       // Unfortunately, we need a temporary OoqpVector for the solve,
@@ -448,27 +443,27 @@ void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in,
    if (mclow > 0) {
       /* Dt = Ds - rt */
       step->t->copyFrom(*step->s);
-      step->t->axpy(-1.0, *res->rt);
+      step->t->axpy(-1.0, *residuals->rt);
       step->t->selectNonZeros(*iclow);
 
       /* Dlambda = T^-1 (rlambda - Lambda * Dt ) */
-      step->lambda->copyFrom(*res->rlambda);
-      step->lambda->axzpy(-1.0, *vars->lambda, *step->t);
-      step->lambda->divideSome(*vars->t, *iclow);
+      step->lambda->copyFrom(*residuals->rlambda);
+      step->lambda->axzpy(-1.0, *variables->lambda, *step->t);
+      step->lambda->divideSome(*variables->t, *iclow);
       //!
       step->lambda->selectNonZeros(*iclow);
    }
 
    if (mcupp > 0) {
       /* Du = ru - Ds */
-      step->u->copyFrom(*res->ru);
+      step->u->copyFrom(*residuals->ru);
       step->u->axpy(-1.0, *step->s);
       step->u->selectNonZeros(*icupp);
 
       /* Dpi = U^-1 ( rpi - Pi * Du ) */
-      step->pi->copyFrom(*res->rpi);
-      step->pi->axzpy(-1.0, *vars->pi, *step->u);
-      step->pi->divideSome(*vars->u, *icupp);
+      step->pi->copyFrom(*residuals->rpi);
+      step->pi->axzpy(-1.0, *variables->pi, *step->u);
+      step->pi->divideSome(*variables->u, *icupp);
       //!
       step->pi->selectNonZeros(*icupp);
    }
@@ -476,27 +471,27 @@ void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in,
    if (nxlow > 0) {
       /* Dv = Dx - rv */
       step->v->copyFrom(*step->x);
-      step->v->axpy(-1.0, *res->rv);
+      step->v->axpy(-1.0, *residuals->rv);
       step->v->selectNonZeros(*ixlow);
 
       /* Dgamma = V^-1 ( rgamma - Gamma * Dv ) */
-      step->gamma->copyFrom(*res->rgamma);
-      step->gamma->axzpy(-1.0, *vars->gamma, *step->v);
-      step->gamma->divideSome(*vars->v, *ixlow);
+      step->gamma->copyFrom(*residuals->rgamma);
+      step->gamma->axzpy(-1.0, *variables->gamma, *step->v);
+      step->gamma->divideSome(*variables->v, *ixlow);
       //!
       step->gamma->selectNonZeros(*ixlow);
    }
 
    if (nxupp > 0) {
       /* Dw = rw - Dx */
-      step->w->copyFrom(*res->rw);
+      step->w->copyFrom(*residuals->rw);
       step->w->axpy(-1.0, *step->x);
       step->w->selectNonZeros(*ixupp);
 
       /* Dphi = W^-1 ( rphi - Phi * Dw ) */
-      step->phi->copyFrom(*res->rphi);
-      step->phi->axzpy(-1.0, *vars->phi, *step->w);
-      step->phi->divideSome(*vars->w, *ixupp);
+      step->phi->copyFrom(*residuals->rphi);
+      step->phi->axzpy(-1.0, *variables->phi, *step->w);
+      step->phi->divideSome(*variables->w, *ixupp);
       //!
       step->phi->selectNonZeros(*ixupp);
    }
@@ -504,7 +499,7 @@ void QpGenLinsys::solve(Problem* prob_in, Variables* vars_in, Residuals* res_in,
 
 }
 
-void QpGenLinsys::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& /* ztemp */, QP* problem) {
+void LinearSystem::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& /* ztemp */, Problem* problem) {
    /* step->z = rC */
    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
@@ -609,7 +604,7 @@ void QpGenLinsys::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& st
    steps.negate();
 }
 
-void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult,
+void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult,
       const std::function<double()>& matInfnorm) {
    //aliases
    OoqpVector& r0 = *res2, & dx = *sol2, & best_x = *sol3, & v = *res3, & t = *res4, & p = *res5;
@@ -840,7 +835,7 @@ void QpGenLinsys::solveCompressedBiCGStab(const std::function<void(double, OoqpV
  * stepx, stepy, stepz are used as temporary buffers
  * if use_regularized_sysyem == false regP, regDy and regDz are not used
  */
-void QpGenLinsys::system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem,
+void LinearSystem::system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem,
    OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, bool use_regularized_system) {
    assert(resx);
    assert(resy);
@@ -877,7 +872,7 @@ void QpGenLinsys::system_mult(double beta, OoqpVector& res, double alpha, const 
 }
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
-double QpGenLinsys::matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz) {
+double LinearSystem::matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz) {
    solx.copyFromAbs(*dd);
    if( regP )
       solx.axpy( primal_reg_val > 0 ? 1.0 : -1.0, *regP );
@@ -901,7 +896,7 @@ double QpGenLinsys::matXYZinfnorm(const Problem& problem, OoqpVector& solx, Ooqp
    return infnorm;
 }
 
-void QpGenLinsys::solveCompressedIterRefin(const std::function<void(OoqpVector& solution, OoqpVector& residual)>& computeResidual) {
+void LinearSystem::solveCompressedIterRefin(const std::function<void(OoqpVector& solution, OoqpVector& residual)>& computeResidual) {
    assert(this->rhs);
    assert(this->res);
    assert(this->sol);
@@ -1002,7 +997,7 @@ void QpGenLinsys::solveCompressedIterRefin(const std::function<void(OoqpVector& 
  *
  * stepx, stepy, stepz are used as temporary buffers
  */
-void QpGenLinsys::compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem&
+void LinearSystem::compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem&
 problem) {
    const double alpha = -1.0;
    const double beta = 1.0;
@@ -1010,7 +1005,7 @@ problem) {
    system_mult(beta, res, alpha, sol, problem, solx, soly, solz, true);
 }
 
-void QpGenLinsys::compute_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
+void LinearSystem::compute_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
    OoqpVector& soly, OoqpVector& solz, const Problem& problem) {
    const double alpha = -1.0;
    const double beta = 1.0;
@@ -1018,10 +1013,10 @@ void QpGenLinsys::compute_system_residuals(const OoqpVector& sol, OoqpVector& re
    system_mult(beta, res, alpha, sol, problem, solx, soly, solz, false);
 }
 
-void QpGenLinsys::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
+void LinearSystem::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
    rhs_in.jointCopyFrom(rhs1_in, rhs2_in, rhs3_in);
 }
 
-void QpGenLinsys::separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
+void LinearSystem::separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
    vars_in.jointCopyTo(x_in, y_in, z_in);
 }

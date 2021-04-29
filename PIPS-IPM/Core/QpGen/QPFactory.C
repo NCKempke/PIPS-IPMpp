@@ -2,7 +2,7 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include "QpGenSparseSeq.h"
+#include "QPFactory.h"
 #include "QP.hpp"
 #include "SimpleVector.h"
 #include "SparseGenMatrix.h"
@@ -10,12 +10,7 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "Variables.h"
 
-//Problem * QpGenSparseSeq::create_problem()
-//{
-//  return new QP( la, nx, my, mz, nnzQ, nnzA, nnzC );
-//}
-
-void QpGenSparseSeq::join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
+void QPFactory::join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    const SimpleVector<double>& rhs1 = dynamic_cast<const SimpleVector<double>&>(rhs1_in);
    const SimpleVector<double>& rhs2 = dynamic_cast<const SimpleVector<double>&>(rhs2_in);
@@ -28,7 +23,7 @@ void QpGenSparseSeq::join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& 
       memcpy(&rhs[nx + my], &rhs3[0], mz * sizeof(double));
 }
 
-void QpGenSparseSeq::separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
+void QPFactory::separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
    const SimpleVector<double>& vars = dynamic_cast<const SimpleVector<double>&>(vars_in);
    SimpleVector<double>& x = dynamic_cast<SimpleVector<double>&>(x_in);
    SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
@@ -42,8 +37,7 @@ void QpGenSparseSeq::separate_variables(OoqpVector& x_in, OoqpVector& y_in, Ooqp
 }
 
 
-Problem*
-QpGenSparseSeq::create_problem(double c_[], int krowQ[], int jcolQ[], double dQ[], double xlow_[], char ixlow_[], double xupp_[], char ixupp_[],
+Problem* QPFactory::create_problem(double c_[], int krowQ[], int jcolQ[], double dQ[], double xlow_[], char ixlow_[], double xupp_[], char ixupp_[],
       int krowA[], int jcolA[], double dA[], double b_[], int krowC[], int jcolC[], double dC[], double clow_[], char iclow_[], double cupp_[],
       char icupp_[]) {
    // objective function
@@ -74,6 +68,6 @@ QpGenSparseSeq::create_problem(double c_[], int krowQ[], int jcolQ[], double dQ[
    SimpleVector<double> icupp(mz);
    icupp.copyFromArray(icupp_);
 
-   QP* data = new QP(SparseLinearAlgebraPackage::soleInstance(), &c, Q, &xlow, &ixlow, &xupp, &ixupp, A, &b, C, &clow, &iclow, &cupp, &icupp);
-   return data;
+   QP* problem = new QP(SparseLinearAlgebraPackage::soleInstance(), &c, Q, &xlow, &ixlow, &xupp, &ixupp, A, &b, C, &clow, &iclow, &cupp, &icupp);
+   return problem;
 }

@@ -2,22 +2,22 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include "QpGenSparseLinsys.h"
+#include "SparseLinearSystem.h"
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrix.h"
 
-QpGenSparseLinsys::QpGenSparseLinsys(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : QpGenLinsys(
+SparseLinearSystem::SparseLinearSystem(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : LinearSystem(
       factory_in, problem), solver(solver_in) {
    SpReferTo(Mat, Mat_in);
 }
 
 
-void QpGenSparseLinsys::putXDiagonal(const OoqpVector& xdiag) {
+void SparseLinearSystem::putXDiagonal(const OoqpVector& xdiag) {
    Mat->atPutDiagonal(0, xdiag);
 }
 
 
-void QpGenSparseLinsys::putZDiagonal(const OoqpVector& zdiag) {
+void SparseLinearSystem::putZDiagonal(const OoqpVector& zdiag) {
    Mat->atPutDiagonal(nx + my, zdiag);
    //zdiag.writeToStream(cout);
    //!assert(false);
@@ -46,18 +46,18 @@ void QpGenSparseLinsys::putZDiagonal(const OoqpVector& zdiag) {
 }
 
 
-void QpGenSparseLinsys::solveCompressed(OoqpVector& arhs) {
+void SparseLinearSystem::solveCompressed(OoqpVector& arhs) {
    //printf("-----\n");arhs.writeToStream(cout);
    solver->solve(arhs);
    //printf("~~~~~\n");arhs.writeToStream(cout);
 }
 
 
-void QpGenSparseLinsys::factorize(Problem* prob, Variables* vars) {
-   this->QpGenLinsys::factorize(prob, vars);
+void SparseLinearSystem::factorize(Problem* prob, Variables* vars) {
+   this->LinearSystem::factorize(prob, vars);
    solver->matrixChanged();
 }
 
-QpGenSparseLinsys::~QpGenSparseLinsys() {
+SparseLinearSystem::~SparseLinearSystem() {
    delete solver;
 }

@@ -10,8 +10,8 @@ add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/O
   Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C Abstract/Residuals.cpp Abstract/ProblemFactory.cpp)
 
 add_library(ooqpgensparse STATIC
-  Abstract/Variables.C QpGen/QP.cpp QpGen/QpGenLinsys.C #QpGen
-  QpGen/QpGenSparseSeq.C QpGen/QpGenSparseLinsys.C #QpGenSparse
+  Abstract/Variables.C QpGen/QP.cpp QpGen/LinearSystem.C #QpGen
+        QpGen/QPFactory.C QpGen/SparseLinearSystem.C #QpGenSparse
   Readers/MpsReader.C Readers/hash.C #Readers
   LinearSolvers/Preconditioners/SCsparsifier.C
 )
@@ -19,7 +19,7 @@ add_library(ooqpgensparse STATIC
 add_library(ooqpstoch STATIC 
    QpStoch/DistributedFactory.C
    QpStoch/DistributedQP.cpp
-   QpStoch/sLinsys.C
+        QpStoch/DistributedLinearSystem.C
    QpStoch/sLinsysRoot.C
    QpStoch/sLinsysRootAug.C
    QpStoch/sLinsysRootAugHierInner.C

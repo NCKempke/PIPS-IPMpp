@@ -66,7 +66,7 @@ protected:
 
    void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
 
-   void registerBiCGStabOvserver(LinearSystem* sys);
+   void registerBiCGStabOvserver(AbstractLinearSystem* sys);
 
    void setBiCGStabTol(int iteration) const;
 
@@ -75,7 +75,7 @@ protected:
 
    void adjustLimitGondzioCorrectors();
 
-   bool decreasePreconditionerImpact(LinearSystem* sys) const;
+   bool decreasePreconditionerImpact(AbstractLinearSystem* sys) const;
 
    double computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const;
 

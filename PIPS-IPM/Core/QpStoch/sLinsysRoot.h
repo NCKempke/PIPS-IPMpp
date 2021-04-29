@@ -5,7 +5,7 @@
 #ifndef SROOTLINSYS
 #define SROOTLINSYS
 
-#include "sLinsys.h"
+#include "DistributedLinearSystem.h"
 #include "StochGenMatrix.h"
 #include "SCsparsifier.h"
 
@@ -21,7 +21,7 @@ class DistributedQP;
 /** 
  * ROOT (= NON-leaf) linear system
  */
-class sLinsysRoot : public sLinsys {
+class sLinsysRoot : public DistributedLinearSystem {
    struct MatrixEntryTriplet {
       double val;
       int row;
@@ -36,7 +36,7 @@ private:
    void init();
 
 public:
-   std::vector<sLinsys*> children;
+   std::vector<DistributedLinearSystem*> children;
 
   sLinsysRoot(DistributedFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root = false);
   sLinsysRoot(DistributedFactory *factory, DistributedQP *prob_, OoqpVector *dd_,
@@ -67,13 +67,13 @@ public:
          int end_rows);
 
    /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
-   using sLinsys::LsolveHierarchyBorder;
+   using DistributedLinearSystem::LsolveHierarchyBorder;
    void
    LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border,
          int begin_cols, int end_cols) override;
 
    /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-   using sLinsys::LtsolveHierarchyBorder;
+   using DistributedLinearSystem::LtsolveHierarchyBorder;
    void LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border,
          bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) override;
 
@@ -87,7 +87,7 @@ public:
   void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
   void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
 
-  virtual void AddChild(sLinsys* child);
+   virtual void AddChild(DistributedLinearSystem* child);
 
    virtual bool usingSparseKkt() { return hasSparseKkt; };
 

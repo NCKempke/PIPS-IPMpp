@@ -20,7 +20,7 @@
 double g_scenNum;
 #endif
 
-sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : sLinsys(factory_, prob_, is_hierarchy_root) {
+sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_, is_hierarchy_root) {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
@@ -36,7 +36,7 @@ sLinsysRoot::sLinsysRoot(DistributedFactory* factory_,
 			 OoqpVector* dual_z_reg_,
 			 OoqpVector* rhs_
 )
-  : sLinsys(factory_, prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, true)
+  : DistributedLinearSystem(factory_, prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, true)
 {
    init();
 }
@@ -758,7 +758,7 @@ void sLinsysRoot::Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>&
 }
 
 void sLinsysRoot::createChildren(DistributedQP* prob) {
-   sLinsys* child{};
+   DistributedLinearSystem* child{};
    assert(dd && dq && nomegaInv && rhs && prob);
 
    StochVector &ddst = dynamic_cast<StochVector&>(*dd);
@@ -912,7 +912,7 @@ void sLinsysRoot::addRegularization( OoqpVector& regP_, OoqpVector& regDy_, Ooqp
       children[i]->addRegularization( *regP.children[i], *regDy.children[i], *regDz.children[i] );
 }
 
-void sLinsysRoot::AddChild(sLinsys* child)
+void sLinsysRoot::AddChild(DistributedLinearSystem* child)
 {
   children.push_back(child);
 }

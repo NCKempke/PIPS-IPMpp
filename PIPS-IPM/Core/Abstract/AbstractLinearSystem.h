@@ -2,8 +2,8 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#ifndef LINEARSYSTEM_H
-#define LINEARSYSTEM_H
+#ifndef ABSTRACTLINEARSYSTEM_H
+#define ABSTRACTLINEARSYSTEM_H
 
 class Problem;
 
@@ -16,7 +16,7 @@ class Residuals;
  *
  * @ingroup AbstractProblemFormulation 
  */
-class LinearSystem {
+class AbstractLinearSystem {
 public:
    /** factorizes the matrix, stores data related to the factorization
     * to prepare for later calls to "solve"
@@ -27,7 +27,7 @@ public:
     */
    virtual void solve(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step) = 0;
 
-   virtual ~LinearSystem() = default;
+   virtual ~AbstractLinearSystem() = default;
 };
 
 

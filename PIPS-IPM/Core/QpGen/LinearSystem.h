@@ -5,7 +5,7 @@
 #ifndef QPGENLINSYS
 #define QPGENLINSYS
 
-#include "LinearSystem.h"
+#include "AbstractLinearSystem.h"
 #include "DoubleMatrixHandle.h"
 #include "OoqpVector.h"
 #include "Observer.h"
@@ -15,8 +15,6 @@
 
 class Problem;
 
-class QP;
-
 class ProblemFactory;
 
 class Variables;
@@ -24,7 +22,7 @@ class Variables;
 class Residuals;
 
 /** 
- * Linear System solvers for the general QP formulation. This class
+ * Linear System solvers. This class
  * contains definitions of methods and data common to the sparse and
  * dense special cases of the general formulation. The derived classes
  * QpGenSparseLinsys and QpGenDenseLinsys contain the aspects that are
@@ -36,7 +34,7 @@ class Residuals;
  * @ingroup QpGen 
  */
 
-class QpGenLinsys : public LinearSystem, public Subject {
+class LinearSystem : public AbstractLinearSystem, public Subject {
 
 public:
       enum class IterativeSolverSolutionStatus : int
@@ -103,9 +101,9 @@ protected:
    OoqpVector* regDy{};
    OoqpVector* regDz{};
 
-   QpGenLinsys(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
+   LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
 
-   /** dimensions of the vectors in the general QP formulation */
+   /** dimensions of the vectors */
    long long nx{0};
    long long my{0};
    long long mz{0};
@@ -159,13 +157,13 @@ protected:
    const bool xyzs_solve_print_residuals;
 
 public:
-   QpGenLinsys(ProblemFactory* factory, Problem* problem);
-   QpGenLinsys(ProblemFactory* factory_, Problem* problem, OoqpVector* dd_,
+   LinearSystem(ProblemFactory* factory, Problem* problem);
+   LinearSystem(ProblemFactory* factory_, Problem* problem, OoqpVector* dd_,
         OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
         OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_,
         OoqpVector* rhs_, bool create_iter_ref_vecs);
 
-   ~QpGenLinsys() override;
+   ~LinearSystem() override;
 
 
    /** sets up the matrix for the main linear system in "augmented
@@ -187,7 +185,7 @@ public:
     * @see QpGenSparseLinsys::solveCompressed
     * @see QpGenDenseLinsys::solveCompressed
  */
-   void solve(Problem* prob, Variables* vars, Residuals* res, Variables* step) override;
+   void solve(Problem* problem, Variables* variables, Residuals* residuals, Variables* step) override;
 
    /** assembles a single vector object from three given vectors
     *
@@ -209,7 +207,7 @@ public:
 
    /** assemble right-hand side of augmented system and call
        solveCompressed to solve it */
-   virtual void solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& ztemp, QP* problem);
+   virtual void solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& ztemp, Problem* problem);
 
    /** perform the actual solve using the factors produced in factor.
     *
@@ -256,10 +254,6 @@ protected:
 
    void system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx,
       OoqpVector& soly, OoqpVector& solz, bool use_regularized_system);
-
-   //void matReducedSlacksMult(const QP& data);
-
-   //void matFullMult(const QP& data);
 
    double matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz);
 

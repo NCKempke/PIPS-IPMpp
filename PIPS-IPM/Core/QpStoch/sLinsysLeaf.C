@@ -13,7 +13,7 @@ sLinsysLeaf::sLinsysLeaf(DistributedFactory *factory_, DistributedQP* prob,
           OoqpVector* dual_z_reg_,
           OoqpVector* rhs_
        )
-  : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false)
+  : DistributedLinearSystem(factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false)
 {
 #ifdef TIMING
    const int myRank = PIPS_MPIgetRank(mpiComm);

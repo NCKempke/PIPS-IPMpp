@@ -10,7 +10,7 @@ class Problem;
 
 class Variables;
 
-class LinearSystem;
+class AbstractLinearSystem;
 
 class Status;
 
@@ -92,7 +92,7 @@ public:
 
    /** returns a pointed to the linear system object stored in this
     *  class */
-   LinearSystem* getLinearSystem() const { return linear_system; };
+   AbstractLinearSystem* getLinearSystem() const { return linear_system; };
 
    /** reset parameters to their default values */
    virtual void reset_parameters() {};
@@ -145,7 +145,7 @@ protected:
 
    double start_time{-1.};
 
-   LinearSystem* linear_system{};
+   AbstractLinearSystem* linear_system{};
 
    /** iteration counter */
    int iteration{0};
