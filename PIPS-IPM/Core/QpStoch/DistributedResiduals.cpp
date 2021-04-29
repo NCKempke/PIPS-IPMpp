@@ -17,7 +17,7 @@ DistributedResiduals::DistributedResiduals(OoqpVector* rQ_, OoqpVector* rA_, Ooq
    SpReferTo(icupp, icupp_);
    mcupp = mcuppGlobal;
 
-   SpReferTo(rQ, rQ_);
+   SpReferTo(lagrangian_gradient, rQ_);
    SpReferTo(rA, rA_);
    SpReferTo(rC, rC_);
    SpReferTo(rz, rz_);
@@ -50,7 +50,7 @@ DistributedResiduals::DistributedResiduals(const sTree* tree, OoqpVector* ixlow_
    mcupp = icupp->numberOfNonzeros();
 
    const bool empty_vector = true;
-   rQ = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
+   lagrangian_gradient = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
    rA = OoqpVectorHandle((OoqpVector*) tree->newDualYVector());
    rC = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
 
@@ -110,7 +110,7 @@ void DistributedResiduals::AddChild(DistributedResiduals* child) {
 }
 
 void DistributedResiduals::createChildren() {
-   StochVector& rQSt = dynamic_cast<StochVector&>(*rQ);
+   StochVector& rQSt = dynamic_cast<StochVector&>(*lagrangian_gradient);
 
    StochVector& rASt = dynamic_cast<StochVector&>(*rA);
    StochVector& rCSt = dynamic_cast<StochVector&>(*rC);
@@ -155,7 +155,7 @@ void DistributedResiduals::createChildren() {
 
 void DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const sTree* tree_hier, OoqpVectorHandle ixlow_,
       OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_) {
-   dynamic_cast<StochVector&>(*rQ).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
+   dynamic_cast<StochVector&>(*lagrangian_gradient).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
 
    const bool empty_vec = true;
    if (nxlow > 0) {
@@ -218,7 +218,7 @@ void DistributedResiduals::permuteVec0Entries(const std::vector<unsigned int>& p
       dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
    }
 
-   dynamic_cast<StochVector&>(*rQ).permuteVec0Entries(perm);
+   dynamic_cast<StochVector&>(*lagrangian_gradient).permuteVec0Entries(perm);
 
    if (nxlow > 0) {
       dynamic_cast<StochVector&>(*rv).permuteVec0Entries(perm);
@@ -258,7 +258,7 @@ void DistributedResiduals::permuteIneqLinkingEntries(const std::vector<unsigned 
 bool DistributedResiduals::isRootNodeInSync() const {
    bool in_sync = true;
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
-   if (!dynamic_cast<const StochVector&>(*rQ).isRootNodeInSync()) {
+   if (!dynamic_cast<const StochVector&>(*lagrangian_gradient).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "rQ not in sync" << std::endl;
       in_sync = false;

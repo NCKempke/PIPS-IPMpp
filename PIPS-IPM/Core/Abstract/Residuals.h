@@ -48,7 +48,7 @@ protected:
 public:
    int m{-1}, n{-1};
 
-   OoqpVectorHandle rQ;
+   OoqpVectorHandle lagrangian_gradient;
    OoqpVectorHandle rA;
    OoqpVectorHandle rC;
    OoqpVectorHandle rz;

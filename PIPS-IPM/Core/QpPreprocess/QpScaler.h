@@ -85,8 +85,8 @@ public:
 
   double getObjUnscaled(double objval) const override;
 
-  Variables* getVariablesUnscaled(const Variables& vars) const override;
-  Residuals* getResidualsUnscaled(const Residuals& resids) const override;
+  Variables* getVariablesUnscaled(const Variables& variables) const override;
+  Residuals* getResidualsUnscaled(const Residuals& residuals) const override;
 
   void unscaleVariables( Variables& vars ) const override;
   void unscaleResiduals( Residuals& resids ) const override;

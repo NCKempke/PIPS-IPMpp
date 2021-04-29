@@ -42,21 +42,19 @@ double QpScaler::getObjUnscaled(double objval) const {
       return objval;
 }
 
-Variables* QpScaler::getVariablesUnscaled(const Variables& vars) const {
-   Variables* qp_vars = new Variables(dynamic_cast<const Variables&>(vars));
-   unscaleVariables(*qp_vars);
-
-   return qp_vars;
+Variables* QpScaler::getVariablesUnscaled(const Variables& variables) const {
+   Variables* unscaled_variables = new Variables(variables);
+   unscaleVariables(*unscaled_variables);
+   return unscaled_variables;
 };
 
-Residuals* QpScaler::getResidualsUnscaled(const Residuals& resids) const {
-   Residuals* qp_resids = new Residuals(dynamic_cast<const Residuals&>(resids));
-   unscaleResiduals(*qp_resids);
-
-   return qp_resids;
+Residuals* QpScaler::getResidualsUnscaled(const Residuals& residuals) const {
+   Residuals* unscaled_residuals = new Residuals(residuals);
+   unscaleResiduals(*unscaled_residuals);
+   return unscaled_residuals;
 };
 
-void QpScaler::unscaleVariables(Variables& vars) const {
+void QpScaler::unscaleVariables(Variables& variables) const {
    if (!scaling_applied)
       return;
 
@@ -66,24 +64,21 @@ void QpScaler::unscaleVariables(Variables& vars) const {
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
 
-   Variables& qp_vars = dynamic_cast<Variables&>(vars);
-
-   qp_vars.x->componentMult(*vec_colscale);
-   qp_vars.s->componentDiv(*vec_rowscaleC);
-   qp_vars.y->componentMult(*vec_rowscaleA);
-   qp_vars.z->componentMult(*vec_rowscaleC);
-
-   qp_vars.v->componentMult(*vec_colscale);
-   qp_vars.gamma->componentDiv(*vec_colscale);
-   qp_vars.w->componentMult(*vec_colscale);
-   qp_vars.phi->componentDiv(*vec_colscale);
-   qp_vars.t->componentDiv(*vec_rowscaleC);
-   qp_vars.lambda->componentMult(*vec_rowscaleC);
-   qp_vars.u->componentDiv(*vec_rowscaleC);
-   qp_vars.pi->componentMult(*vec_rowscaleC);
+   variables.x->componentMult(*vec_colscale);
+   variables.s->componentDiv(*vec_rowscaleC);
+   variables.y->componentMult(*vec_rowscaleA);
+   variables.z->componentMult(*vec_rowscaleC);
+   variables.v->componentMult(*vec_colscale);
+   variables.gamma->componentDiv(*vec_colscale);
+   variables.w->componentMult(*vec_colscale);
+   variables.phi->componentDiv(*vec_colscale);
+   variables.t->componentDiv(*vec_rowscaleC);
+   variables.lambda->componentMult(*vec_rowscaleC);
+   variables.u->componentDiv(*vec_rowscaleC);
+   variables.pi->componentMult(*vec_rowscaleC);
 }
 
-void QpScaler::unscaleResiduals(Residuals& resids) const {
+void QpScaler::unscaleResiduals(Residuals& residuals) const {
    if (!scaling_applied)
       return;
 
@@ -92,29 +87,27 @@ void QpScaler::unscaleResiduals(Residuals& resids) const {
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
 
-   Residuals& qp_resids = dynamic_cast<Residuals&>(resids);
+   residuals.lagrangian_gradient->componentDiv(*vec_colscale);
+   residuals.rA->componentDiv(*vec_rowscaleA);
+   residuals.rC->componentDiv(*vec_rowscaleC);
+   residuals.rz->componentMult(*vec_rowscaleC);
 
-   qp_resids.rQ->componentDiv(*vec_colscale);
-   qp_resids.rA->componentDiv(*vec_rowscaleA);
-   qp_resids.rC->componentDiv(*vec_rowscaleC);
-   qp_resids.rz->componentMult(*vec_rowscaleC);
+   if (residuals.getNxlow() > 0)
+      residuals.rv->componentMult(*vec_colscale);
 
-   if (qp_resids.getNxlow() > 0)
-      qp_resids.rv->componentMult(*vec_colscale);
+   if (residuals.getNxupp() > 0)
+      residuals.rw->componentMult(*vec_colscale);
 
-   if (qp_resids.getNxupp() > 0)
-      qp_resids.rw->componentMult(*vec_colscale);
+   if (residuals.getMclow() > 0)
+      residuals.rt->componentDiv(*vec_rowscaleC);
 
-   if (qp_resids.getMclow() > 0)
-      qp_resids.rt->componentDiv(*vec_rowscaleC);
-
-   if (qp_resids.getMcupp() > 0)
-      qp_resids.ru->componentDiv(*vec_rowscaleC);
+   if (residuals.getMcupp() > 0)
+      residuals.ru->componentDiv(*vec_rowscaleC);
    // nothing to to for rgamma, rphi, rlambda, rpi;
 
    // gap is scaling resistant
 
-   qp_resids.recompute_residual_norm();
+   residuals.recompute_residual_norm();
 }
 
 OoqpVector* QpScaler::getPrimalUnscaled(const OoqpVector& solprimal) const {

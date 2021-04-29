@@ -372,7 +372,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
 
    /*** compute rX ***/
    /* rx = rQ */
-   step->x->copyFrom(*residuals->rQ);
+   step->x->copyFrom(*residuals->lagrangian_gradient);
    if (nxlow > 0) {
       OoqpVector& gamma_by_v = *step->v;
       gamma_by_v.copyFrom(*variables->gamma);
