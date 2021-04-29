@@ -1954,8 +1954,8 @@ void DistributedQP::permuteLinkingVars(const PERMUTATION& perm) {
    dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
 }
 
-sVars* DistributedQP::getVarsUnperm(const sVars& vars, const DistributedQP& unpermData) const {
-   sVars* unperm_vars = new sVars(vars);
+DistributedVariables* DistributedQP::getVarsUnperm(const DistributedVariables& vars, const DistributedQP& unpermData) const {
+   DistributedVariables* unperm_vars = new DistributedVariables(vars);
 
    if (is_hierarchy_root)
       unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);

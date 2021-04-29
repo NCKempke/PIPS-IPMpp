@@ -17,7 +17,7 @@
 #include "sTree.h"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
-#include "sVars.h"
+#include "DistributedVariables.h"
 #include "StochMonitor.h"
 
 
@@ -78,9 +78,9 @@ public:
    void postsolveComputedSolution();
 
 private:
-   void printComplementarityResiduals(const sVars& vars) const;
+   void printComplementarityResiduals(const DistributedVariables& vars) const;
 
-   std::vector<double> gatherFromSolution(OoqpVectorHandle sVars::* member_to_gather);
+   std::vector<double> gatherFromSolution(OoqpVectorHandle DistributedVariables::* member_to_gather);
 
 public:
    std::vector<double> gatherEqualityConsValues();
@@ -101,9 +101,9 @@ protected:
    std::unique_ptr<DistributedQP> presolved_problem{};       // possibly presolved problem
    std::unique_ptr<DistributedQP> dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
    std::unique_ptr<DistributedQP> original_problem{};   // original data
-   std::unique_ptr<sVars> variables{};
-   std::unique_ptr<sVars> unscaleUnpermNotHierVars{};
-   std::unique_ptr<sVars> postsolved_variables{};
+   std::unique_ptr<DistributedVariables> variables{};
+   std::unique_ptr<DistributedVariables> unscaleUnpermNotHierVars{};
+   std::unique_ptr<DistributedVariables> postsolved_variables{};
 
    std::unique_ptr<DistributedResiduals> residuals{};
    std::unique_ptr<DistributedResiduals> unscaleUnpermNotHierResids{};
@@ -200,7 +200,7 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
          presolved_problem->writeToStreamDense(std::cout);
    }
 
-   variables.reset(dynamic_cast<sVars*>( formulation_factory->make_variables(*presolved_problem)));
+   variables.reset(dynamic_cast<DistributedVariables*>( formulation_factory->make_variables(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("variables created\n");
 #endif
@@ -352,7 +352,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm() {
    if (!ran_solver)
       throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted solution");
    if (scaler) {
-      std::unique_ptr<sVars> unscaled_vars{dynamic_cast<sVars*>(scaler->getVariablesUnscaled(*variables))};
+      std::unique_ptr<DistributedVariables> unscaled_vars{dynamic_cast<DistributedVariables*>(scaler->getVariablesUnscaled(*variables))};
       unscaleUnpermNotHierVars.reset(presolved_problem->getVarsUnperm(*unscaled_vars, *dataUnpermNotHier));
    }
    else
@@ -376,7 +376,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
 }
 
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution(OoqpVectorHandle sVars::* member_to_gather) {
+std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution(OoqpVectorHandle DistributedVariables::* member_to_gather) {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -394,27 +394,27 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherPrimalSolution() {
-   return gatherFromSolution(&sVars::x);
+   return gatherFromSolution(&DistributedVariables::x);
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionEq() {
-   return gatherFromSolution(&sVars::y);
+   return gatherFromSolution(&DistributedVariables::y);
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionIneq() {
-   return gatherFromSolution(&sVars::z);
+   return gatherFromSolution(&DistributedVariables::z);
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionIneqUpp() {
-   return gatherFromSolution(&sVars::pi);
+   return gatherFromSolution(&DistributedVariables::pi);
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionIneqLow() {
-   return gatherFromSolution(&sVars::lambda);
+   return gatherFromSolution(&DistributedVariables::lambda);
 }
 
 template<class FORMULATION, class IPMSOLVER>
@@ -435,12 +435,12 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolution
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionVarBoundsUpp() {
-   return gatherFromSolution(&sVars::phi);
+   return gatherFromSolution(&DistributedVariables::phi);
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherDualSolutionVarBoundsLow() {
-   return gatherFromSolution(&sVars::gamma);
+   return gatherFromSolution(&DistributedVariables::gamma);
 }
 
 template<class FORMULATION, class IPMSOLVER>
@@ -509,7 +509,7 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrim
 }
 
 template<class FORMULATION, class IPMSOLVER>
-void PIPSIpmInterface<FORMULATION, IPMSOLVER>::printComplementarityResiduals(const sVars& svars) const {
+void PIPSIpmInterface<FORMULATION, IPMSOLVER>::printComplementarityResiduals(const DistributedVariables& svars) const {
    const int my_rank = PIPS_MPIgetRank();
 
    /* complementarity residuals before postsolve */
@@ -595,7 +595,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution() {
    dynamic_cast<sTreeCallbacks*>(formulation_factory->tree)->switchToOriginalData();
    formulation_factory->problem = original_problem.get();
 
-   postsolved_variables.reset(dynamic_cast<sVars*>( formulation_factory->make_variables(*original_problem)));
+   postsolved_variables.reset(dynamic_cast<DistributedVariables*>( formulation_factory->make_variables(*original_problem)));
 
    postsolvedResids.reset(dynamic_cast<DistributedResiduals*>(formulation_factory->make_residuals(*original_problem)));
    postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolved_variables, result);

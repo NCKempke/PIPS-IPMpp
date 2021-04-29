@@ -14,7 +14,7 @@
 #include "QpPostsolver.h"
 #include "StochVector.h"
 #include "DistributedQP.hpp"
-#include "sVars.h"
+#include "DistributedVariables.h"
 #include "SystemType.h"
 #include "StochRowStorage.h"
 #include "StochColumnStorage.h"
@@ -187,32 +187,32 @@ private:
       void finishNotify();
 
 /// postsolve operations
-      bool postsolveRedundantSide(sVars& original_vars, int reduction_idx) const;
-      bool postsolveRedundantRow(sVars& original_vars, int reduction_idx);
-      bool postsolveBoundsTightened(sVars& original_vars, int reduction_idx);
-      bool postsolveFixedColumn(sVars& original_vars, int reduction_idx);
-      bool postsolveFixedEmptyColumn(sVars& original_vars, int reduction_idx);
-      bool postsolveFixedColumnSingletonFromInequality(sVars& original_vars, int reduction_idx);
-      bool postsolveSingletonEqualityRow(sVars& original_vars, int reduction_idx) const;
-      bool postsolveSingletonInequalityRow(sVars& original_vars, int reduction_idx) const;
-      bool postsolveNearlyParallelRowSubstitution(sVars& original_vars, int reduction_idx);
-      bool postsolveNearlyParallelRowBoundsTightened(sVars& original_vars, int reduction_idx);
-      bool postsolveParallelRowsBoundsTightened(sVars& original_vars, int reduction_idx) const;
-      bool postsolveFreeColumnSingletonEquality(sVars& original_vars, int reduction_idx);
-      bool postsolveFreeColumnSingletonInequalityRow(sVars& original_vars, int reduction_idx);
+      bool postsolveRedundantSide(DistributedVariables& original_vars, int reduction_idx) const;
+      bool postsolveRedundantRow(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveBoundsTightened(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveFixedColumn(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveFixedEmptyColumn(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveFixedColumnSingletonFromInequality(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveSingletonEqualityRow(DistributedVariables& original_vars, int reduction_idx) const;
+      bool postsolveSingletonInequalityRow(DistributedVariables& original_vars, int reduction_idx) const;
+      bool postsolveNearlyParallelRowSubstitution(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveNearlyParallelRowBoundsTightened(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveParallelRowsBoundsTightened(DistributedVariables& original_vars, int reduction_idx) const;
+      bool postsolveFreeColumnSingletonEquality(DistributedVariables& original_vars, int reduction_idx);
+      bool postsolveFreeColumnSingletonInequalityRow(DistributedVariables& original_vars, int reduction_idx);
 
-      bool syncLinkingVarChanges(sVars& original_vars);
-      bool syncEqLinkingRowChanges(sVars& original_vars);
-      bool syncIneqLinkingRowChanges(sVars& original_vars);
-      bool syncLinkingRowsAfterBoundTightening(sVars& original_vars, int i);
+      bool syncLinkingVarChanges(DistributedVariables& original_vars);
+      bool syncEqLinkingRowChanges(DistributedVariables& original_vars);
+      bool syncIneqLinkingRowChanges(DistributedVariables& original_vars);
+      bool syncLinkingRowsAfterBoundTightening(DistributedVariables& original_vars, int i);
       int findNextRowInStored(int pos_reduction, unsigned int& start, const INDEX& row) const;
 
       void addIneqRowDual(double& z, double& lambda, double& pi, double value) const;
 
-      void setOriginalVarsFromReduced(const sVars& reduced_vars, sVars& original_vars) const;
-      bool allVariablesSet(const sVars& vars) const;
-      bool complementarySlackVariablesMet(const sVars& vars, const INDEX& col, double tol) const;
-      bool complementarySlackRowMet(const sVars& vars, const INDEX& row, double tol) const;
+      void setOriginalVarsFromReduced(const DistributedVariables& reduced_vars, DistributedVariables& original_vars) const;
+      bool allVariablesSet(const DistributedVariables& vars) const;
+      bool complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const;
+      bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
 
       bool sameNonZeroPatternDistributed(const StochVector& svec) const; // TODO: move
       bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) const; // TODO: move

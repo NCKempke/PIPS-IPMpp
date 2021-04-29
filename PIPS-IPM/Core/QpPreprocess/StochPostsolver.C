@@ -745,8 +745,8 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
       postsolve_tol = std::numeric_limits<double>::max();
    }
 
-   const sVars& stoch_reduced_sol = dynamic_cast<const sVars&>(reduced_solution);
-   sVars& stoch_original_sol = dynamic_cast<sVars&>(original_solution);
+   const DistributedVariables& stoch_reduced_sol = dynamic_cast<const DistributedVariables&>(reduced_solution);
+   DistributedVariables& stoch_original_sol = dynamic_cast<DistributedVariables&>(original_solution);
 
    /* original variables are now reduced vars padded with zeros */
    setOriginalVarsFromReduced(stoch_reduced_sol, stoch_original_sol);
@@ -892,7 +892,7 @@ PostsolveStatus StochPostsolver::postsolve(const Variables& reduced_solution, Va
       return PRESOLVE_FAIL;
 }
 
-bool StochPostsolver::postsolveRedundantSide(sVars& original_vars, int reduction_idx) const
+bool StochPostsolver::postsolveRedundantSide(DistributedVariables& original_vars, int reduction_idx) const
 {
    assert( reductions.at(reduction_idx) == REDUNDANT_SIDE );
 
@@ -944,7 +944,7 @@ bool StochPostsolver::postsolveRedundantSide(sVars& original_vars, int reduction
  *       -> assert in place to check this
  *    the current activity gets synchronized for slack computation
  */
-bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveRedundantRow(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == REDUNDANT_ROW );
 
@@ -1040,7 +1040,7 @@ bool StochPostsolver::postsolveRedundantRow(sVars& original_vars, int reduction_
    return true;
 }
 
-bool StochPostsolver::postsolveBoundsTightened(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == BOUNDS_TIGHTENED );
 
@@ -1226,7 +1226,7 @@ bool StochPostsolver::postsolveBoundsTightened(sVars& original_vars, int reducti
    return true;
 }
 
-bool StochPostsolver::postsolveFixedColumn(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveFixedColumn(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == FIXED_COLUMN );
 
@@ -1304,7 +1304,7 @@ bool StochPostsolver::postsolveFixedColumn(sVars& original_vars, int reduction_i
  * no special treatment for linking variables since all processes should fix them simultaneously and in the same order
  *    -> assert is in place to check this
  */
-bool StochPostsolver::postsolveFixedEmptyColumn(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveFixedEmptyColumn(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == FIXED_EMPTY_COLUMN );
 
@@ -1377,7 +1377,7 @@ bool StochPostsolver::postsolveFixedEmptyColumn(sVars& original_vars, int reduct
    return true;
 }
 
-bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == FIXED_COLUMN_SINGLETON_FROM_INEQUALITY );
 
@@ -1437,7 +1437,7 @@ bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(sVars& origina
    return true;
 }
 
-bool StochPostsolver::postsolveSingletonEqualityRow(sVars& original_vars, int reduction_idx) const
+bool StochPostsolver::postsolveSingletonEqualityRow(DistributedVariables& original_vars, int reduction_idx) const
 {
    assert( reductions.at(reduction_idx) == SINGLETON_EQUALITY_ROW );
 
@@ -1541,7 +1541,7 @@ bool StochPostsolver::postsolveSingletonEqualityRow(sVars& original_vars, int re
    return true;
 }
 
-bool StochPostsolver::postsolveSingletonInequalityRow(sVars& original_vars, int reduction_idx) const
+bool StochPostsolver::postsolveSingletonInequalityRow(DistributedVariables& original_vars, int reduction_idx) const
 {
    assert( reductions.at(reduction_idx) == SINGLETON_INEQUALITY_ROW );
 
@@ -1645,7 +1645,7 @@ bool StochPostsolver::postsolveSingletonInequalityRow(sVars& original_vars, int 
    return true;
 }
 
-bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveFreeColumnSingletonEquality(DistributedVariables& original_vars, int reduction_idx)
 {
    /* row can be an equality row but then it must have clow == cupp */
    assert( reductions.at(reduction_idx) == FREE_COLUMN_SINGLETON_EQUALITY );
@@ -1776,7 +1776,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(sVars& original_vars,
    return true;
 }
 
-bool StochPostsolver::postsolveNearlyParallelRowSubstitution(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveNearlyParallelRowSubstitution(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == NEARLY_PARALLEL_ROW_SUBSTITUTION );
 
@@ -2001,7 +2001,7 @@ bool StochPostsolver::postsolveNearlyParallelRowSubstitution(sVars& original_var
    return true;
 }
 
-bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == NEARLY_PARALLEL_ROW_BOUNDS_TIGHTENED );
 
@@ -2308,7 +2308,7 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(sVars& original_
    return true;
 }
 
-bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( sVars& original_vars, int reduction_idx)
+bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( DistributedVariables& original_vars, int reduction_idx)
 {
    assert( reductions.at(reduction_idx) == FREE_COLUMN_SINGLETON_INEQUALITY_ROW );
 
@@ -2422,7 +2422,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( sVars& original
    return true;
 }
 
-bool StochPostsolver::postsolveParallelRowsBoundsTightened(sVars& original_vars, int reduction_idx) const
+bool StochPostsolver::postsolveParallelRowsBoundsTightened(DistributedVariables& original_vars, int reduction_idx) const
 {
    assert( reductions.at(reduction_idx) == PARALLEL_ROWS_BOUNDS_TIGHTENED );
 
@@ -2528,7 +2528,7 @@ bool StochPostsolver::postsolveParallelRowsBoundsTightened(sVars& original_vars,
 }
 
 /* sync linking variables - either the variables are not set everywhere or on some procs they are set to something non-zero while on others they are zero */
-bool StochPostsolver::syncLinkingVarChanges(sVars& original_vars)
+bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
 {
    assert( dynamic_cast<const StochVector&>(*original_vars.x).isRootNodeInSync() );
    assert( dynamic_cast<const StochVector&>(*original_vars.v).isRootNodeInSync() );
@@ -2590,7 +2590,7 @@ bool StochPostsolver::syncLinkingVarChanges(sVars& original_vars)
    return true;
 }
 
-bool StochPostsolver::syncEqLinkingRowChanges(sVars& original_vars)
+bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_vars)
 {
    PIPS_MPIgetLogicOrInPlace(outdated_equality_linking_rows );
 
@@ -2622,7 +2622,7 @@ bool StochPostsolver::syncEqLinkingRowChanges(sVars& original_vars)
    return true;
 }
 
-bool StochPostsolver::syncIneqLinkingRowChanges(sVars& original_vars)
+bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_vars)
 {
    assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
    assert( dynamic_cast<const StochVector&>(*original_vars.s).isRootNodeInSync() );
@@ -2692,7 +2692,7 @@ bool StochPostsolver::syncIneqLinkingRowChanges(sVars& original_vars)
 }
 
 // TODO : who sets these to 0.0 after applying the changes?
-bool StochPostsolver::syncLinkingRowsAfterBoundTightening(sVars& original_vars, int i)
+bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& original_vars, int i)
 {
    assert( dynamic_cast<const StochVector&>(*original_vars.y).isRootNodeInSync() );
    assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
@@ -2882,7 +2882,7 @@ bool StochPostsolver::sameNonZeroPatternDistributed(const SimpleVector<double>& 
 }
 
 
-void StochPostsolver::setOriginalVarsFromReduced(const sVars& reduced_vars, sVars& original_vars) const
+void StochPostsolver::setOriginalVarsFromReduced(const DistributedVariables& reduced_vars, DistributedVariables& original_vars) const
 {
 #ifdef ANCIENT_CPP
    const double initial_const = NAN;
@@ -2963,7 +2963,7 @@ void StochPostsolver::setOriginalVarsFromReduced(const sVars& reduced_vars, sVar
    setOriginalValuesFromReduced(pi_orig, pi_reduced, *padding_origrow_inequality);
 }
 
-bool StochPostsolver::allVariablesSet(const sVars& vars) const
+bool StochPostsolver::allVariablesSet(const DistributedVariables& vars) const
 {
    bool all_set = true;
 #ifdef ANCIENT_CPP
@@ -3071,7 +3071,7 @@ bool StochPostsolver::allVariablesSet(const sVars& vars) const
    return all_set;
 }
 
-bool StochPostsolver::complementarySlackVariablesMet(const sVars& vars, const INDEX& col, double tol) const
+bool StochPostsolver::complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const
 {
    assert( col.isCol() );
    assert( !wasColumnRemoved(col) );
@@ -3102,7 +3102,7 @@ bool StochPostsolver::complementarySlackVariablesMet(const sVars& vars, const IN
    return std::fabs(v * gamma) < tol && std::fabs(w * phi) < tol ;
 }
 
-bool StochPostsolver::complementarySlackRowMet(const sVars& vars, const INDEX& row, double tol) const
+bool StochPostsolver::complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const
 {
    assert( row.isRow() );
    assert( !wasRowRemoved(row) );

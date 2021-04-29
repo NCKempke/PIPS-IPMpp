@@ -9,7 +9,7 @@
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "StochVector.h"
-#include "sVars.h"
+#include "DistributedVariables.h"
 #include "DistributedResiduals.hpp"
 #include "sLinsysRoot.h"
 #include "sLinsysLeaf.h"
@@ -238,7 +238,7 @@ Variables* DistributedFactory::make_variables(Problem& problem) {
    OoqpVectorHandle u = OoqpVectorHandle(make_inequalities_dual_vector());
    OoqpVectorHandle pi = OoqpVectorHandle(make_inequalities_dual_vector());
 
-   sVars* variables = new sVars(tree, x, s, y, z, v, gamma, w, phi, t, lambda, u, pi, problem.ixlow, problem.ixlow->numberOfNonzeros(), problem.ixupp,
+   DistributedVariables* variables = new DistributedVariables(tree, x, s, y, z, v, gamma, w, phi, t, lambda, u, pi, problem.ixlow, problem.ixlow->numberOfNonzeros(), problem.ixupp,
          problem.ixupp->numberOfNonzeros(), problem.iclow, problem.iclow->numberOfNonzeros(), problem.icupp, problem.icupp->numberOfNonzeros());
    registeredVars.push_back(variables);
    return variables;

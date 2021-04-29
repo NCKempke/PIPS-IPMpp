@@ -17,7 +17,7 @@
 #include "DistributedFactory.h"
 
 #include "DistributedQP.hpp"
-#include "sVars.h"
+#include "DistributedVariables.h"
 #include "sLinsysRoot.h"
 
 #include <iostream>

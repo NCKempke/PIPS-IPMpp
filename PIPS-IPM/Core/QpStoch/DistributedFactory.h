@@ -31,7 +31,7 @@ class StochSymMatrix;
 
 class DistributedResiduals;
 
-class sVars;
+class DistributedVariables;
 
 class sLinsys;
 
@@ -97,7 +97,7 @@ public:
    virtual void iterate_ended();
 
    DistributedResiduals* residuals{};
-   std::vector<sVars*> registeredVars;
+   std::vector<DistributedVariables*> registeredVars;
 
    sLinsysRoot* linsys{};
 
