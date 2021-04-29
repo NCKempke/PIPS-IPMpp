@@ -125,6 +125,10 @@ public:
    const long long& getMcupp() { return mcupp; };
 
    const long long& getMclow() { return mclow; };
+
+   double constraint_violation();
+   double optimality_measure(double mu);
+   double feasibility_measure(double mu);
 };
 
 #endif

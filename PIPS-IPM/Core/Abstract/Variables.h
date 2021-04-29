@@ -8,11 +8,11 @@
 #include <cassert>
 #include "OoqpVectorHandle.h"
 
-class QpGen;
-
 class LinearAlgebraPackage;
 
 class Problem;
+
+class MpsReader;
 
 /** Indicates what type is the blocking variable in the step length
  * determination. If tblock, then the blocking variable is one of the
@@ -29,13 +29,7 @@ enum {
  * @ingroup AbstractProblemFormulation
  */
 
-class AbstractLinearSystem;
 
-class Residuals;
-
-class Solver;
-
-class MpsReader;
 
 #ifdef TESTING
 class VariablesTester;

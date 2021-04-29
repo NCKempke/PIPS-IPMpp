@@ -1,7 +1,6 @@
 #include "Residuals.h"
 #include "Variables.h"
 #include "Problem.h"
-#include "LinearAlgebraPackage.h"
 #include "pipsdef.h"
 
 #include <iostream>
@@ -363,4 +362,41 @@ void Residuals::writeToStream(std::ostream& out) {
    printf("rz\n");
    rz->writeToStream(out);
    printf("---------------------------\n");
+}
+
+double Residuals::constraint_violation() {
+   return rA->onenorm() + rC->onenorm();
+}
+
+double Residuals::optimality_measure(double mu) {
+   return this->lagrangian_gradient->twonorm() + mu;
+}
+double Residuals::feasibility_measure(double mu) {
+   double complementarity = 0.;
+   // compute componentwise products of complementary variables
+//   if (mclow > 0) {
+//      OoqpVectorHandle rt_copy = OoqpVectorHandle(rt->cloneFull());
+//      rt_copy->componentMult(*rlambda);
+//      rt_copy->addConstant(-mu);
+//      complementarity += rt_copy->onenorm();
+//   }
+//   if (mcupp > 0) {
+//      OoqpVectorHandle ru_copy = OoqpVectorHandle(ru->cloneFull());
+//      ru_copy->componentMult(*rphi);
+//      ru_copy->addConstant(-mu);
+//      complementarity += ru_copy->onenorm();
+//   }
+//   if (nxlow > 0) {
+//      OoqpVectorHandle rv_copy = OoqpVectorHandle(rv->cloneFull());
+//      rv_copy->componentMult(*rgamma);
+//      rv_copy->addConstant(-mu);
+//      complementarity += rv_copy->onenorm();
+//   }
+//   if (nxupp > 0) {
+//      OoqpVectorHandle rw_copy = OoqpVectorHandle(rw->cloneFull());
+//      rw_copy->componentMult(*rphi);
+//      rw_copy->addConstant(-mu);
+//      complementarity += rw_copy->onenorm();
+//   }
+   return this->constraint_violation() + complementarity;
 }
