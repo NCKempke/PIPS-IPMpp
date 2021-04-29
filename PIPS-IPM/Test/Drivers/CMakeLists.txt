@@ -1,3 +1,5 @@
+include_directories(../../Core/Problems)
+include_directories(../../Core/LinearSystems)
 include_directories(../../Core/QpGen)
 include_directories(../../Core/QpStoch)
 include_directories(../../Core/LinearAlgebra/Distributed)

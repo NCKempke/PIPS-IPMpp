@@ -1,25 +1,26 @@
 #add_definitions(-DTIMING -DSTOCH_TESTING) # timing output
 include_directories(
    Core/Abstract 
-   Core/Vector 
-   Core/Utilities 
    Core/InteriorPointMethod 
-   Core/QpPreprocess 
-   Core/QpGen
    Core/LinearAlgebra/Sparse 
    Core/LinearAlgebra/Dense
    Core/LinearAlgebra/Distributed
-   Core/Readers
    Core/LinearSolvers/Ma27Solver 
    Core/LinearSolvers/Ma57Solver 
    Core/LinearSolvers/Mc30Scaler 
    Core/LinearSolvers/Preconditioners
-   #Core/LinearSolvers/Ma86Solver 
    Core/LinearSolvers/PardisoSolver/PardisoSolver
    Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
    Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
    Core/LinearSolvers/BiCGStabSolver 
+   Core/LinearSystems
+   Core/Problems
+   Core/QpGen
+   Core/QpPreprocess 
    Core/QpStoch
+   Core/Readers
+   Core/Utilities
+   Core/Vector 
 )
 
 if( HAVE_MUMPS )
