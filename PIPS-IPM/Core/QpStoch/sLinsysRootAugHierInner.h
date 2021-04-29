@@ -22,10 +22,10 @@ class sLinsysRootAugHierInner : public sLinsysRootAug
       void Ltsolve( DistributedQP *prob, OoqpVector& x ) override;
       void Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>& x0, bool use_local_RAC ) override;
 
-      using sLinsys::LsolveHierarchyBorder;
+      using DistributedLinearSystem::LsolveHierarchyBorder;
       void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
 
-      using sLinsys::LtsolveHierarchyBorder;
+      using DistributedLinearSystem::LtsolveHierarchyBorder;
       void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
             std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 

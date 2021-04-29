@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <cmath>
+
 extern int gOoqpPrintLevel;
 
 enum { DATALINE = 1, HEADERLINE };
@@ -399,9 +400,9 @@ void MpsReader::readRHSSection(double b[], double clow[], char iclow[], double c
 }
 
 
-void MpsReader::readRHSSection(OoqpVector& b_, SimpleVector<double>& clow, OoqpVector& iclow_, SimpleVector<double>& cupp, OoqpVector& icupp_, char line[],
-      int& ierr,
-      int& kindOfLine) {
+void
+MpsReader::readRHSSection(OoqpVector& b_, SimpleVector<double>& clow, OoqpVector& iclow_, SimpleVector<double>& cupp, OoqpVector& icupp_, char line[],
+      int& ierr, int& kindOfLine) {
    char* iclow = 0, * icupp = 0;
    double* db = 0, * dclow = 0, * dcupp = 0;
    if (my < 0 || mz < 0) {

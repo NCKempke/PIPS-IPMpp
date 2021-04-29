@@ -29,7 +29,7 @@ class DistributedQP;
 
 class StringSymMatrix;
 
-class sLinsys : public LinearSystem {
+class DistributedLinearSystem : public LinearSystem {
 public:
    template<typename T>
    struct RACFG_BLOCK {
@@ -111,33 +111,34 @@ public:
       return BorderMod_Block<T>(child, bordermod.multiplier);
    }
 
-   sLinsys(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* problem, bool is_hierarchy_root = false);
 
-   sLinsys(DistributedFactory* factory, DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs, bool create_iter_ref_vecs);
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* rhs,
+         bool create_iter_ref_vecs);
 
-   ~sLinsys() override = default;
+   ~DistributedLinearSystem() override = default;
 
-   void factorize(Problem* prob, Variables* vars) override;
+   void factorize(Problem* problem, Variables* variables) override;
 
-   virtual void factor2(DistributedQP* prob, Variables* vars) = 0;
+   virtual void factor2(DistributedQP* problem, Variables* variables) = 0;
 
-   virtual void assembleKKT(DistributedQP* prob, Variables* vars) = 0;
+   virtual void assembleKKT(DistributedQP* problem, Variables* variables) = 0;
 
-   virtual void allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) = 0;
+   virtual void allreduceAndFactorKKT(DistributedQP* problem, Variables* variables) = 0;
 
-   virtual void Lsolve(DistributedQP* prob, OoqpVector& x) = 0;
+   virtual void Lsolve(DistributedQP* problem, OoqpVector& x) = 0;
 
-   virtual void Dsolve(DistributedQP* prob, OoqpVector& x) = 0;
+   virtual void Dsolve(DistributedQP* problem, OoqpVector& x) = 0;
 
-   virtual void Ltsolve(DistributedQP* prob, OoqpVector& x) = 0;
+   virtual void Ltsolve(DistributedQP* problem, OoqpVector& x) = 0;
 
-   virtual void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
+   virtual void Ltsolve2(DistributedQP* problem, StochVector& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
 
    void solveCompressed(OoqpVector& rhs) override;
 
    void joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const override;
 
-   void separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const override;
+   void separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& variables_in) const override;
 
    virtual void deleteChildren() = 0;
 
@@ -178,9 +179,9 @@ protected:
    int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
 
 public:
-   virtual void addLnizi(DistributedQP* prob, OoqpVector& z0, OoqpVector& zi);
+   virtual void addLnizi(DistributedQP* problem, OoqpVector& z0, OoqpVector& zi);
 
-   virtual void addLniziLinkCons(DistributedQP*/*prob*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/) {
+   virtual void addLniziLinkCons(DistributedQP*/*problem*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 
@@ -194,7 +195,7 @@ public:
          int /*end_cols*/, int /*n_empty_rows_inner_border*/) { assert(false && "not implemented here"); };
 
    /** y += alpha * Lni^T * x */
-   virtual void LniTransMult(DistributedQP* prob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
+   virtual void LniTransMult(DistributedQP* problem, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 
    /** Methods that use dense matrices U and V to compute the
     *  terms from the Schur complement.
@@ -203,14 +204,14 @@ public:
 
    virtual void allocV(DenseGenMatrix** V, int np);
 
-   virtual void computeU_V(DistributedQP* prob, DenseGenMatrix* U, DenseGenMatrix* V);
+   virtual void computeU_V(DistributedQP* problem, DenseGenMatrix* U, DenseGenMatrix* V);
 
    /** Method(s) that use a memory-friendly mechanism for computing
     *  the terms from the Schur Complement
     */
-   virtual void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymMatrix& SC);
+   virtual void addTermToDenseSchurCompl(DistributedQP* problem, DenseSymMatrix& SC);
 
-   virtual void addTermToSchurComplBlocked(DistributedQP* /*prob*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
+   virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
    virtual void computeInnerSystemRightHandSide(StochVector& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
@@ -235,12 +236,12 @@ public:
    void addBiTLeftKiDenseToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
          /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_rows_res, int end_rows_res);
 
-   virtual void addTermToSparseSchurCompl(DistributedQP* /*prob*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
+   virtual void addTermToSparseSchurCompl(DistributedQP* /*problem*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
 
    /** Used in the iterative refinement for the dense Schur complement systems
     * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
     */
-   virtual void addTermToSchurResidual(DistributedQP* prob, SimpleVector<double>& res, SimpleVector<double>& x);
+   virtual void addTermToSchurResidual(DistributedQP* problem, SimpleVector<double>& res, SimpleVector<double>& x);
 
    // TODO only compute bottom left part for symmetric matrices
    /* compute result += Bl^T K^-1 Br where K is our own linear system */
@@ -301,10 +302,10 @@ protected:
 };
 
 template<>
-bool sLinsys::RACFG_BLOCK<StringGenMatrix>::isEmpty() const;
+bool DistributedLinearSystem::RACFG_BLOCK<StringGenMatrix>::isEmpty() const;
 
 template<>
-bool sLinsys::RACFG_BLOCK<SparseGenMatrix>::isEmpty() const;
+bool DistributedLinearSystem::RACFG_BLOCK<SparseGenMatrix>::isEmpty() const;
 
 
 #endif

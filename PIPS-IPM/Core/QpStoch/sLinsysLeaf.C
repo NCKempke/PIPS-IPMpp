@@ -5,7 +5,7 @@
 #include "sLinsysLeaf.h"
 
 sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-      OoqpVector* rhs_) : sLinsys(factory_, prob, dd_, dq_, nomegaInv_, rhs_, false) {
+      OoqpVector* rhs_) : DistributedLinearSystem(factory_, prob, dd_, dq_, nomegaInv_, rhs_, false) {
 #ifdef TIMING
    const int myRank = PIPS_MPIgetRank(mpiComm);
    const double t0 = MPI_Wtime();

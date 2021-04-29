@@ -1,17 +1,17 @@
 #ifndef SDUMMYLINSYS
 #define SDUMMYLINSYS
 
-#include "sLinsys.h"
+#include "DistributedLinearSystem.h"
 #include "pipsport.h"
 
 /** 
  * DUMMY Linear system class
  */
-class sDummyLinsys : public sLinsys
+class sDummyLinsys : public DistributedLinearSystem
 {
  public:
   sDummyLinsys(DistributedFactory* factory, DistributedQP* prob)
-    : sLinsys(factory, prob, nullptr, nullptr, nullptr, nullptr, false)
+    : DistributedLinearSystem(factory, prob, nullptr, nullptr, nullptr, nullptr, false)
  {
      mpiComm = MPI_COMM_NULL;
  };

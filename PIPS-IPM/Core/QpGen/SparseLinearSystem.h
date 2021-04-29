@@ -17,12 +17,12 @@ class DoubleLinearSolver;
  *
  * @ingroup QpGen 
  */
-class QpGenSparseLinsys : public LinearSystem {
+class SparseLinearSystem : public LinearSystem {
 protected:
    SparseSymMatrixHandle Mat;
    DoubleLinearSolver* solver;
 public:
-   QpGenSparseLinsys(ProblemFactory* factory, Problem* problem, SparseSymMatrix* Mat, DoubleLinearSolver* solver);
+   SparseLinearSystem(ProblemFactory* factory, Problem* problem, SparseSymMatrix* Mat, DoubleLinearSolver* solver);
 
    /** perform the actual solve using the factors produced in factor.
     *
@@ -43,7 +43,7 @@ public:
     */
    void factorize(Problem* problem, Variables* vars) override;
 
-   virtual ~QpGenSparseLinsys();
+   virtual ~SparseLinearSystem();
 };
 
 #endif

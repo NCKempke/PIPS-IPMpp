@@ -33,7 +33,7 @@ class DistributedResiduals;
 
 class DistributedVariables;
 
-class sLinsys;
+class DistributedLinearSystem;
 
 class sLinsysRoot;
 

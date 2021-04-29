@@ -51,10 +51,10 @@ class sLinsysRootAug : public sLinsysRoot {
   void Dsolve(DistributedQP *prob, OoqpVector& x) override;
   void Ltsolve(DistributedQP *prob, OoqpVector& x) override;
 
-  using sLinsys::LsolveHierarchyBorder;
+  using DistributedLinearSystem::LsolveHierarchyBorder;
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;
 
-  using sLinsys::LtsolveHierarchyBorder;
+  using DistributedLinearSystem::LtsolveHierarchyBorder;
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
         std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 

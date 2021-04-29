@@ -68,6 +68,6 @@ Problem* QPFactory::create_problem(double c_[], int krowQ[], int jcolQ[], double
    SimpleVector<double> icupp(mz);
    icupp.copyFromArray(icupp_);
 
-   QP* data = new QP(SparseLinearAlgebraPackage::soleInstance(), &c, Q, &xlow, &ixlow, &xupp, &ixupp, A, &b, C, &clow, &iclow, &cupp, &icupp);
-   return data;
+   QP* problem = new QP(SparseLinearAlgebraPackage::soleInstance(), &c, Q, &xlow, &ixlow, &xupp, &ixupp, A, &b, C, &clow, &iclow, &cupp, &icupp);
+   return problem;
 }
