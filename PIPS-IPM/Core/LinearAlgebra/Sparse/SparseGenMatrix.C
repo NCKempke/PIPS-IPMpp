@@ -390,9 +390,9 @@ void SparseGenMatrix::transMult( double beta, double yv[], int incy, double alph
 
 void SparseGenMatrix::transMultD(double beta, OoqpVector& y_, double alpha, const OoqpVector& x_, const OoqpVector& d_ ) const
 {
-   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double> &>(x_);
-   const SimpleVector<double>& d = dynamic_cast<const SimpleVector<double> &>(d_);
-   SimpleVector<double>& y = dynamic_cast<SimpleVector<double> &>(y_);
+   const auto& x = dynamic_cast<const SimpleVector<double> &>(x_);
+   const auto& d = dynamic_cast<const SimpleVector<double> &>(d_);
+   auto& y = dynamic_cast<SimpleVector<double> &>(y_);
 
    assert( x.length() == d.length() );
    if( x.length() == 0 || y.length() == 0 )
