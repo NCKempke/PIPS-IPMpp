@@ -6,8 +6,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrix.h"
 
-SparseLinearSystem::SparseLinearSystem(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : LinearSystem(
-      factory_in, problem), solver(solver_in) {
+SparseLinearSystem::SparseLinearSystem(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in)
+      : LinearSystem(factory_in, problem), solver(solver_in) {
    SpReferTo(Mat, Mat_in);
 }
 

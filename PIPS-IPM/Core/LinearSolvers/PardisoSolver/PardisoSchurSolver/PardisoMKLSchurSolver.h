@@ -10,24 +10,23 @@
 
 #include "PardisoSchurSolver.h"
 
-class PardisoMKLSchurSolver : public PardisoSchurSolver
-{
+class PardisoMKLSchurSolver : public PardisoSchurSolver {
 public:
-   PardisoMKLSchurSolver( const SparseSymMatrix * sgm );
-   void solve( Vector<double>& rhs ) override;
+   PardisoMKLSchurSolver(const SparseSymMatrix* sgm);
+   void solve(Vector<double>& rhs) override;
    using DoubleLinearSolver::solve;
 
- protected:
-  ~PardisoMKLSchurSolver() override;
+protected:
+   ~PardisoMKLSchurSolver() override;
 
-  void computeSC(int nSCO, /*const*/SparseGenMatrix& R,
-     /*const*/SparseGenMatrix& A,
-     /*const*/SparseGenMatrix& C,
-     /*const*/SparseGenMatrix& F,
-     /*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
+   void computeSC(int nSCO, /*const*/SparseGenMatrix& R,
+         /*const*/SparseGenMatrix& A,
+         /*const*/SparseGenMatrix& C,
+         /*const*/SparseGenMatrix& F,
+         /*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
 
-  void setIparm(int* iparm) const override;
-  void initPardiso() override;
+   void setIparm(int* iparm) const override;
+   void initPardiso() override;
 };
 
 #endif /* PARDISO_MKL_SCHUR_LINSYS_H */

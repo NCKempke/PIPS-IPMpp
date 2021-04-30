@@ -6,25 +6,22 @@
 #include "mpi.h"
 #include "utilities.hpp"
 
-class MPITestingEnvironment : public testing::Environment
-{
-   public:
-      ~MPITestingEnvironment() override = default;
+class MPITestingEnvironment : public testing::Environment {
+public:
+   ~MPITestingEnvironment() override = default;
 
-      void SetUp() override
-      {
-      }
+   void SetUp() override {
+   }
 
-      void TearDown() override
-      {
-      }
+   void TearDown() override {
+   }
 };
 
 
 int main(int argc, char** argv) {
 #ifndef NDEBUG
    const int mpi_init_error = MPI_Init(&argc, &argv);
-   assert( !mpi_init_error );
+   assert(!mpi_init_error);
 #else
    MPI_Init(&argc, &argv);
 #endif
@@ -38,8 +35,7 @@ int main(int argc, char** argv) {
    int size;
    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-   if( myrank != 0 )
-   {
+   if (myrank != 0) {
       ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
       delete listeners.Release(listeners.default_result_printer());
    }
@@ -50,12 +46,12 @@ int main(int argc, char** argv) {
 
    const int test_result = RUN_ALL_TESTS();
 
-   if( myrank == 0 )
+   if (myrank == 0)
       std::cout << "Google Test exited with " << test_result << "\n";
 
 #ifndef NDEBUG
    const int mpi_finalize_error = MPI_Finalize();
-   assert( !mpi_finalize_error );
+   assert(!mpi_finalize_error);
 #else
    MPI_Finalize();
 #endif

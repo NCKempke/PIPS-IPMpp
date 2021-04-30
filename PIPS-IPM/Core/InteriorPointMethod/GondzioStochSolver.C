@@ -507,7 +507,7 @@ bool GondzioStochSolver::restartIterateBecauseOfPoorStep(bool& pure_centering_st
 
 void GondzioStochSolver::pushConvergedVarsAwayFromBounds(Problem& problem, Variables& iterate) const {
    if (push_converged_vars_from_bound && (iteration % fequency_push_converged_vars_from_bound) == 0 &&
-         iterate.mu() < mu_limit_push_converged_vars_from_bound) {
+       iterate.mu() < mu_limit_push_converged_vars_from_bound) {
 
       const double convergence_tol = 1e-8;
       const double average_dist = iterate.getAverageDistanceToBoundForConvergedVars(problem, convergence_tol);

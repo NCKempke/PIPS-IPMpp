@@ -6,26 +6,26 @@
 #define OOQPMONITORDATA
 
 typedef struct {
-  void * solver;
-  void * data;
-  void * vars;
-  void * resids;
-  int i;
-  double mu;
-  double rnorm;
-  double dataNorm;
-  int status_code;
-  int level;
-  double alpha;
-  double sigma;
-  double gap;
-  void * ctx;
+   void* solver;
+   void* data;
+   void* vars;
+   void* resids;
+   int i;
+   double mu;
+   double rnorm;
+   double dataNorm;
+   int status_code;
+   int level;
+   double alpha;
+   double sigma;
+   double gap;
+   void* ctx;
 } OoqpMonitorData;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-  typedef int (*DoItCFunc) ( OoqpMonitorData * data );
+typedef int (* DoItCFunc)(OoqpMonitorData* data);
 #ifdef __cplusplus
 }
 #endif

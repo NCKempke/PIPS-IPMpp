@@ -10,8 +10,7 @@
 
 #include "StochPresolverBase.h"
 
-class StochPresolverBoundStrengthening : public StochPresolverBase
-{
+class StochPresolverBoundStrengthening : public StochPresolverBase {
 public:
    StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb);
 
@@ -49,7 +48,7 @@ private:
    void communicateLinkingVarBounds();
 
    bool strenghtenBoundsInNode(SystemType system_type, int node);
-   bool strenghtenBoundsInBlock( SystemType system_type, int node, BlockType block_type);
+   bool strenghtenBoundsInBlock(SystemType system_type, int node, BlockType block_type);
 };
 
 

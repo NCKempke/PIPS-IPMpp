@@ -196,7 +196,8 @@ void QpScaler::applyScaling() {
             obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
 }
 
-double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC, const Vector<double>* colScalevec) {
+double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,
+      const Vector<double>* colScalevec) {
    A->getRowMinMaxVec(true, true, colScalevec, minvecA);
    A->getRowMinMaxVec(false, true, colScalevec, maxvecA);
    C->getRowMinMaxVec(true, true, colScalevec, minvecC);

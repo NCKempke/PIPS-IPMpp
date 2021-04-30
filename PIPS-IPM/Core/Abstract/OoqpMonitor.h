@@ -4,11 +4,16 @@
 
 #ifndef OOQPMONITOR
 #define OOQPMONITOR
+
 #include <cassert>
 #include "pipsport.h"
+
 class Solver;
+
 class Problem;
+
 class Variables;
+
 class Residuals;
 
 /** Represents objects that display progress information for interior
@@ -17,22 +22,21 @@ class Residuals;
  */
 class OoqpMonitor {
 public:
-  OoqpMonitor* nextMonitor{};
+   OoqpMonitor* nextMonitor{};
 
-  OoqpMonitor() = default;
-  virtual ~OoqpMonitor() = default;
+   OoqpMonitor() = default;
+   virtual ~OoqpMonitor() = default;
 
-  virtual void doIt( const Solver * solver, const Problem * data, const Variables * vars,
-					 const Residuals * resids,
-					 double alpha, double sigma,
-					 int i, double mu, 
-                     int status_code,
-					 int level ) = 0;
+   virtual void
+   doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+         int status_code, int level) = 0;
 
-  virtual void doItPd( const Solver* /*solver*/, const Problem* /*data*/, const Variables* /*vars*/, const Residuals* /*resids*/,
-        double /*alpha_primal*/, double /*alpha_dual*/, double /*sigma*/, int /*i*/, double /*mu*/, int /*status_code*/,
-                int /*level*/ ) { assert(0 && "not implemented here"); };
-};  
+   virtual void
+   doItPd(const Solver* /*solver*/, const Problem* /*data*/, const Variables* /*vars*/, const Residuals* /*resids*/, double /*alpha_primal*/,
+         double /*alpha_dual*/, double /*sigma*/, int /*i*/, double /*mu*/, int /*status_code*/, int /*level*/) {
+      assert(0 && "not implemented here");
+   };
+};
 
 
 /** Monitors that simply call the solver's default_monitor method.
@@ -44,12 +48,8 @@ public:
  */
 class OoqpSelfMonitor : public OoqpMonitor {
 public:
-  void doIt( const Solver * solver, const Problem * data, const Variables * vars,
-					 const Residuals * resids,
-					 double alpha, double sigma,
-					 int i, double mu,
-                     int status_code,
-					 int level ) override;
+   void doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+         int status_code, int level) override;
 };
 
 #include "OoqpMonitorData.h"
@@ -61,16 +61,12 @@ public:
  */
 class COoqpMonitor : public OoqpMonitor {
 protected:
-  DoItCFunc doItC;
-  void * ctx;
+   DoItCFunc doItC;
+   void* ctx;
 public:
-  COoqpMonitor( DoItCFunc doItC_, void * ctx_ );
-  void doIt( const Solver * solver, const Problem * data, const Variables * vars,
-					 const Residuals * resids,
-					 double alpha, double sigma,
-					 int i, double mu,
-                     int status_code,
-					 int level ) override;
+   COoqpMonitor(DoItCFunc doItC_, void* ctx_);
+   void doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+         int status_code, int level) override;
 };
 
 

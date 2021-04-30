@@ -73,11 +73,11 @@ public:
    void absmin(T& m) const override;
    void absminNonZero(T& m, T zero_eps) const override;
    T stepbound(const Vector<T>& v, T maxStep) const override;
-   T find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt,
-         T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const override;
-   void find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri,
-         T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
-         bool& primalBlocking, bool& dualBlocking) const override;
+   T find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt, T* u_elt,
+         T* ustep_elt, int& first_or_second) const override;
+   void find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual, T& w_elt_p,
+         T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d, bool& primalBlocking,
+         bool& dualBlocking) const override;
 
    void componentMult(const Vector<T>& v) override;
    void componentDiv(const Vector<T>& v) override;
@@ -111,8 +111,7 @@ public:
 
    /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
     */
-   T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta,
-         const Vector<T>& ystep) const override;
+   T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const override;
    void negate() override;
    void invert() override;
    void invertSave(T zeroReplacementVal = 0.0) override;
@@ -166,8 +165,8 @@ protected:
 
 private:
    void appendChildrenToThis();
-   void pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
-         double tol_pairs) override;
+   void
+   pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other, double tol_pairs) override;
 };
 
 /** DUMMY VERSION
@@ -205,10 +204,9 @@ public:
    void absmin(T& m) const override { m = std::numeric_limits<T>::infinity(); };
    void absminNonZero(T& m, T) const override { m = std::numeric_limits<T>::infinity(); };
    T stepbound(const Vector<T>&, T maxStep) const override { return maxStep; }
-   T find_blocking(const Vector<T>&, const Vector<T>&, const Vector<T>&, T maxStep, T*, T*, T*, T*,
-         int&) const override { return maxStep; };
-   void find_blocking_pd(const Vector<T>&, const Vector<T>&, const Vector<T>&, T&, T&, T&, T&, T&, T&, T&, T&, T&, T&, bool&,
-         bool&) const override {};
+   T find_blocking(const Vector<T>&, const Vector<T>&, const Vector<T>&, T maxStep, T*, T*, T*, T*, int&) const override { return maxStep; };
+   void
+   find_blocking_pd(const Vector<T>&, const Vector<T>&, const Vector<T>&, T&, T&, T&, T&, T&, T&, T&, T&, T&, T&, bool&, bool&) const override {};
 
    void componentMult(const Vector<T>&) override {};
    void componentDiv(const Vector<T>&) override {};

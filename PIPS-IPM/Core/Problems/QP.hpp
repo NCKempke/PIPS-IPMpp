@@ -42,8 +42,9 @@ public:
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */
-   QP(LinearAlgebraPackage* la, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
-         GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp);
+   QP(LinearAlgebraPackage* la, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+         Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
+         Vector<double>* ciupp);
 
    /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
    virtual void putQIntoAt(SymMatrix& M, int row, int col);

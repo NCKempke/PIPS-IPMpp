@@ -18,16 +18,14 @@
  * base class for options class.
  */
 
-namespace base_options
-{
+namespace base_options {
    int getIntParameter(const std::string& identifier);
    double getDoubleParameter(const std::string& identifier);
    bool getBoolParameter(const std::string& identifier);
 
-   class Options : public Singleton
-   {
+   class Options : public Singleton {
    private:
-      virtual void setDefaults(){};
+      virtual void setDefaults() {};
 
    protected:
       // not thread safe when modified..
@@ -43,14 +41,13 @@ namespace base_options
       Options();
       virtual ~Options() = default;
 
-      static Options& getInstance()
-      {
+      static Options& getInstance() {
          static Options opt;
          return opt;
       }
 
-      bool isIdentifierUnique( const std::string& identifier ) const;
-      bool identifierExists( const std::string& identifier ) const;
+      bool isIdentifierUnique(const std::string& identifier) const;
+      bool identifierExists(const std::string& identifier) const;
       void fillOptionsFromFile(const std::string& filename);
 
       int getIntParam(const std::string& identifier) const;
@@ -62,18 +59,15 @@ namespace base_options
       void setDoubleParam(const std::string& param, double value);
    };
 
-   inline int getIntParameter(const std::string& identifier)
-   {
+   inline int getIntParameter(const std::string& identifier) {
       return Options::getInstance().getIntParam(identifier);
    }
 
-   inline bool getBoolParameter(const std::string& identifier)
-   {
+   inline bool getBoolParameter(const std::string& identifier) {
       return Options::getInstance().getBoolParam(identifier);
    }
 
-   inline double getDoubleParameter(const std::string& identifier)
-   {
+   inline double getDoubleParameter(const std::string& identifier) {
       return Options::getInstance().getDoubleParam(identifier);
    }
 }

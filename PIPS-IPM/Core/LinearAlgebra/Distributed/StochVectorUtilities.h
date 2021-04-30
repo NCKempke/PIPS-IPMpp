@@ -127,8 +127,8 @@ inline DistributedVector<U>* cloneStochVector(const Vector<T>& ooqpvec) {
       return cloneStochVector<T, U>(dynamic_cast<const DistributedVector<T>&>(ooqpvec));
 }
 
-inline void writeLBltXltUBToStreamAllStringStream(std::stringstream& sout, const SimpleVector<double>& lb, const SimpleVector<double>& ixlow, const
-SimpleVector<double>& ub, const SimpleVector<double>& ixupp) {
+inline void writeLBltXltUBToStreamAllStringStream(std::stringstream& sout, const SimpleVector<double>& lb, const SimpleVector<double>& ixlow,
+      const SimpleVector<double>& ub, const SimpleVector<double>& ixupp) {
    assert(lb.length() == ixlow.length());
    assert(lb.length() == ub.length());
    assert(lb.length() == ixupp.length());
@@ -141,8 +141,9 @@ SimpleVector<double>& ub, const SimpleVector<double>& ixupp) {
    }
 }
 
-inline void writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow, const DistributedVector<double>& ub,
-      const DistributedVector<double>& ixupp) {
+inline void
+writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow,
+      const DistributedVector<double>& ub, const DistributedVector<double>& ixupp) {
    assert(lb.children.size() == ixlow.children.size());
    assert(lb.children.size() == ub.children.size());
    assert(lb.children.size() == ixupp.children.size());
@@ -159,8 +160,9 @@ inline void writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, cons
    assert(ixlow.first);
    assert(ub.first);
    assert(ixupp.first);
-   writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first), dynamic_cast<const SimpleVector<double>&>(*ixlow.first),
-         dynamic_cast<const SimpleVector<double>&>(*ub.first), dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
+   writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first),
+         dynamic_cast<const SimpleVector<double>&>(*ixlow.first), dynamic_cast<const SimpleVector<double>&>(*ub.first),
+         dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
 
 
    for (size_t it = 0; it < lb.children.size(); it++) {
@@ -173,14 +175,14 @@ inline void writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, cons
       assert(ub.last);
       assert(ixupp.last);
       sout << "---" << std::endl;
-      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last), dynamic_cast<const SimpleVector<double>&>(*ixlow.last),
-            dynamic_cast<const SimpleVector<double>&>(*ub.last), dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
+      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last),
+            dynamic_cast<const SimpleVector<double>&>(*ixlow.last), dynamic_cast<const SimpleVector<double>&>(*ub.last),
+            dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
    }
 }
 
-inline void
-writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow, const DistributedVector<double>& ub, const DistributedVector<double>& ixupp,
-      MPI_Comm mpiComm) {
+inline void writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow,
+      const DistributedVector<double>& ub, const DistributedVector<double>& ixupp, MPI_Comm mpiComm) {
    assert(lb.children.size() == ixlow.children.size());
    assert(lb.children.size() == ub.children.size());
    assert(lb.children.size() == ixupp.children.size());
@@ -206,8 +208,9 @@ writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVector<double>& 
       assert(ixlow.first);
       assert(ub.first);
       assert(ixupp.first);
-      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first), dynamic_cast<const SimpleVector<double>&>(*ixlow.first),
-            dynamic_cast<const SimpleVector<double>&>(*ub.first), dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
+      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first),
+            dynamic_cast<const SimpleVector<double>&>(*ixlow.first), dynamic_cast<const SimpleVector<double>&>(*ub.first),
+            dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
 
       for (size_t it = 0; it < lb.children.size(); it++)
          writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it], *ixlow.children[it], *ub.children[it], *ixupp.children[it]);
@@ -229,8 +232,9 @@ writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVector<double>& 
          assert(ub.last);
          assert(ixupp.last);
          sout << "---" << std::endl;
-         writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last), dynamic_cast<const SimpleVector<double>&>(*ixlow.last),
-               dynamic_cast<const SimpleVector<double>&>(*ub.last), dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
+         writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last),
+               dynamic_cast<const SimpleVector<double>&>(*ixlow.last), dynamic_cast<const SimpleVector<double>&>(*ub.last),
+               dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
       }
       sout << "----" << std::endl;
       out << sout.str();

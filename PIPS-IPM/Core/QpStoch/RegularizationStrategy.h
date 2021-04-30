@@ -7,8 +7,8 @@
 
 #include <tuple>
 
-using Inertia = std::tuple<unsigned int,unsigned int,unsigned int>;
-using Regularization = std::tuple<double,double,double>;
+using Inertia = std::tuple<unsigned int, unsigned int, unsigned int>;
+using Regularization = std::tuple<double, double, double>;
 
 class RegularizationStrategy {
 
@@ -26,7 +26,7 @@ private:
    constexpr static double barrier_exponent_dual{0.25};
 
    constexpr static double primal_regularization_initial{1e-4};
-   constexpr static double primal_regularization_decrease_factor{1.0/3.0};
+   constexpr static double primal_regularization_decrease_factor{1.0 / 3.0};
    constexpr static double primal_regularization_increase_factor_initial{100.0};
    constexpr static double primal_regularization_increase_factor{8.0};
 

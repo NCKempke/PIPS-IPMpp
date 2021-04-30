@@ -10,29 +10,22 @@
 
 #include "StochPresolverBase.h"
 
-class StochPresolverColumnFixation: public StochPresolverBase
-{
-   public:
+class StochPresolverColumnFixation : public StochPresolverBase {
+public:
 
-      StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedQP& origProb);
+   StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedQP& origProb);
 
-      virtual ~StochPresolverColumnFixation();
+   virtual ~StochPresolverColumnFixation();
 
-      bool applyPresolving() override;
+   bool applyPresolving() override;
 
-   private:
-      /** limit on the possible impact a column can have on the problem */
-      const double limit_fixation_max_fixing_impact;
+private:
+   /** limit on the possible impact a column can have on the problem */
+   const double limit_fixation_max_fixing_impact;
 
-      int fixed_columns;
+   int fixed_columns;
 
 };
-
-
-
-
-
-
 
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVERCOLUMNFIXATION_H_ */

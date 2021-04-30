@@ -663,8 +663,9 @@ T DistributedVector<T>::stepbound(const Vector<T>& v_, T maxStep) const {
 }
 
 template<typename T>
-T DistributedVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep,
-      T* w_elt, T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const {
+T
+DistributedVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt,
+      T* u_elt, T* ustep_elt, int& first_or_second) const {
    const DistributedVector<T>& w = *this;
    const DistributedVector<T>& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
 
@@ -776,9 +777,10 @@ T DistributedVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T
 }
 
 template<typename T>
-void DistributedVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec,
-      T& maxStepPri, T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
-      bool& primalBlocking, bool& dualBlocking) const {
+void
+DistributedVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual,
+      T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d, bool& primalBlocking,
+      bool& dualBlocking) const {
    const DistributedVector<T>& w = *this;
    const DistributedVector<T>& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
    const T local_eps = 1e-14;
@@ -1423,8 +1425,7 @@ T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
 /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
  */
 template<typename T>
-T DistributedVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep_, const Vector<T>& yvec_, T beta,
-      const Vector<T>& ystep_) const {
+T DistributedVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep_, const Vector<T>& yvec_, T beta, const Vector<T>& ystep_) const {
    const DistributedVector<T>& mystep = dynamic_cast<const DistributedVector<T>&>(mystep_);
    const DistributedVector<T>& yvec = dynamic_cast<const DistributedVector<T>&>(yvec_);
    const DistributedVector<T>& ystep = dynamic_cast<const DistributedVector<T>&>(ystep_);
@@ -2171,7 +2172,8 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 }
 
 template<typename T>
-void DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
+void
+DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
       const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
    assert(children.size() == tree_hier.nChildren());
    assert(children.size() == data_hier.children.size());
@@ -2260,8 +2262,8 @@ Vector<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const {
 }
 
 template<typename T>
-void DistributedVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this,
-      double tol_other, double tol_pairs) {
+void DistributedVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
+      double tol_pairs) {
    DistributedVector<T>& other_vec = dynamic_cast<DistributedVector<T>&>(other_vec_in);
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_in);
 

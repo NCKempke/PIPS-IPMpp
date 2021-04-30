@@ -664,8 +664,7 @@ T SimpleVector<T>::dotProductSelf(T scaleFactor) const {
 }
 
 template<typename T>
-T SimpleVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta,
-      const Vector<T>& ystep) const {
+T SimpleVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const {
    assert(this->n == mystep.length() && this->n == yvec.length() && this->n == ystep.length());
 
    const SimpleVector<T>& syvec = dynamic_cast<const SimpleVector<T>&>(yvec);
@@ -790,8 +789,8 @@ T SimpleVector<T>::stepbound(const Vector<T>& pvec, T maxStep) const {
 }
 
 template<typename T>
-T SimpleVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep,
-      T* w_elt, T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const {
+T SimpleVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt,
+      T* u_elt, T* ustep_elt, int& first_or_second) const {
    T* w = v;
    const SimpleVector<T>& swstep = dynamic_cast<const SimpleVector<T>&>(wstep_vec);
    T* wstep = swstep.v;
@@ -806,9 +805,9 @@ T SimpleVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_
 }
 
 template<typename T>
-void SimpleVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec,
-      T& maxStepPri, T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
-      bool& primalBlocking, bool& dualBlocking) const {
+void SimpleVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual,
+      T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d, bool& primalBlocking,
+      bool& dualBlocking) const {
    const T* w = v;
    const SimpleVector<T>& swstep = dynamic_cast<const SimpleVector<T>&>(wstep_vec);
    const T* wstep = swstep.v;
@@ -997,31 +996,29 @@ void SimpleVector<T>::appendToFront(const SimpleVector<T>& other) {
 }
 
 template<typename T>
-void SimpleVector<T>::jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz)
-{
-   assert( this->length() == vx.length() + vy.length() + vz.length() );
+void SimpleVector<T>::jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) {
+   assert(this->length() == vx.length() + vy.length() + vz.length());
 
    const SimpleVector<T>& x = dynamic_cast<const SimpleVector<T>&>(vx);
    const SimpleVector<T>& y = dynamic_cast<const SimpleVector<T>&>(vy);
    const SimpleVector<T>& z = dynamic_cast<const SimpleVector<T>&>(vz);
 
-   std::copy(x.v, x.v + x.length(), v );
+   std::copy(x.v, x.v + x.length(), v);
    std::copy(y.v, y.v + y.length(), v + x.length());
    std::copy(z.v, z.v + z.length(), v + x.length() + y.length());
 }
 
 template<typename T>
-void SimpleVector<T>::jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const
-{
-   assert( this->length() == vx.length() + vy.length() + vz.length() );
+void SimpleVector<T>::jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const {
+   assert(this->length() == vx.length() + vy.length() + vz.length());
 
    SimpleVector<T>& x = dynamic_cast<SimpleVector<T>&>(vx);
    SimpleVector<T>& y = dynamic_cast<SimpleVector<T>&>(vy);
    SimpleVector<T>& z = dynamic_cast<SimpleVector<T>&>(vz);
 
-   std::copy( v, v + x.length(), x.v );
-   std::copy( v + x.length(), v + x.length() + y.length(), y.v );
-   std::copy( v + x.length() + y.length(), v + x.length() + y.length() + z.length(), z.v );
+   std::copy(v, v + x.length(), x.v);
+   std::copy(v + x.length(), v + x.length() + y.length(), y.v);
+   std::copy(v + x.length() + y.length(), v + x.length() + y.length() + z.length(), z.v);
 }
 
 template<typename T>
@@ -1104,8 +1101,7 @@ void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_c
 }
 
 template<typename T>
-void
-SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
+void SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
       double tol_pairs) {
    assert(tol_other > 0);
    assert(tol_this > 0);

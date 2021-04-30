@@ -20,24 +20,16 @@
 double g_scenNum;
 #endif
 
-sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_, is_hierarchy_root) {
+sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_,
+      is_hierarchy_root) {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
 }
 
-sLinsysRoot::sLinsysRoot(DistributedFactory* factory_,
-			 DistributedQP* prob_,
-			 Vector<double>* dd_,
-			 Vector<double>* dq_,
-			 Vector<double>* nomegaInv_,
-			 Vector<double>* primal_reg_,
-			 Vector<double>* dual_y_reg_,
-			 Vector<double>* dual_z_reg_,
-			 Vector<double>* rhs_
-)
-  : DistributedLinearSystem(factory_, prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, true)
-{
+sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+      Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLinearSystem(factory_,
+      prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, true) {
    init();
 }
 
@@ -781,22 +773,19 @@ void sLinsysRoot::createChildren(DistributedQP* prob) {
             assert(prob->isHierarchyRoot());
             assert(prob->children.size() == 1);
             assert(prob->children[0]);
-            assert(primal_diagonalst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1 && rhsst.children.size() == 1);
+            assert(primal_diagonalst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1 &&
+                   rhsst.children.size() == 1);
             assert(MPI_COMM_NULL != primal_diagonalst.children[0]->mpiComm);
          }
 
-         if( prob->children[it]->children.empty() )
-         {
-            child = stochFactory->make_linear_system_leaf(prob->children[it],
-               primal_diagonalst.children[it], dqst.children[it], nomegaInvst.children[it],
-                  regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it] );
+         if (prob->children[it]->children.empty()) {
+            child = stochFactory->make_linear_system_leaf(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
+                  nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it]);
          }
-         else
-         {
-            assert( prob->children[it] );
-            child = stochFactory->make_linear_system_root(prob->children[it],
-               primal_diagonalst.children[it], dqst.children[it], nomegaInvst.children[it],
-                  regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it] );
+         else {
+            assert(prob->children[it]);
+            child = stochFactory->make_linear_system_root(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
+                  nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it]);
          }
       }
       assert(child != nullptr);
@@ -847,20 +836,18 @@ void sLinsysRoot::initProperChildrenRange() {
    childrenProperEnd = childEnd;
 }
 
-void sLinsysRoot::put_primal_diagonal()
-{
+void sLinsysRoot::put_primal_diagonal() {
    assert(primal_diagonal);
    const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
    assert(children.size() == primal_diagonal_stoch.children.size());
 
    xDiag = primal_diagonal_stoch.first;
 
-   for(size_t it = 0; it < children.size(); it++)
+   for (size_t it = 0; it < children.size(); it++)
       children[it]->put_primal_diagonal();
 }
 
-void sLinsysRoot::put_dual_inequalites_diagonal()
-{
+void sLinsysRoot::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    assert(children.size() == nomegaInv_stoch.children.size());
@@ -869,13 +856,12 @@ void sLinsysRoot::put_dual_inequalites_diagonal()
    zDiag = nomegaInv_stoch.first;
    zDiagLinkCons = nomegaInv_stoch.last;
 
-   for(size_t it = 0; it < children.size(); it++)
+   for (size_t it = 0; it < children.size(); it++)
       children[it]->put_dual_inequalites_diagonal();
 }
 
-void sLinsysRoot::AddChild(DistributedLinearSystem* child)
-{
-  children.push_back(child);
+void sLinsysRoot::AddChild(DistributedLinearSystem* child) {
+   children.push_back(child);
 }
 
 ///////////////////////////////////////////////////////////
@@ -1523,9 +1509,10 @@ void sLinsysRoot::factorizeKKT(DistributedQP* prob) {
       }
 #endif
       if (apply_regularization) {
-         assert( false && "TODO: implement");
+         assert(false && "TODO: implement");
          solver->matrixRebuild(*kktDist);
-      } else {
+      }
+      else {
          solver->matrixRebuild(*kktDist);
       }
    }

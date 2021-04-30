@@ -6,8 +6,7 @@
 
 #include <memory>
 
-class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>>
-{};
+class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {};
 
 // TODO:....
 //TEST_P(HierarchicalMappingParametersTest, CorrectMappingChildrenToNewRoots )
@@ -49,48 +48,43 @@ class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testin
 //      testing::ValuesIn(maps_expected)
 //);
 
-class HierarchicalSplittingTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>>
-{
-      void SetUp() override
-      {
-         sTree::numProcs = 1;
-         sTree::rankPrcnd = -1;
-         sTree::rankZeroW = 0;
-         sTree::rankMe = 0;
-         pips_options::setBoolParameter("SILENT", true);
-      }
+class HierarchicalSplittingTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {
+   void SetUp() override {
+      sTree::numProcs = 1;
+      sTree::rankPrcnd = -1;
+      sTree::rankZeroW = 0;
+      sTree::rankMe = 0;
+      pips_options::setBoolParameter("SILENT", true);
+   }
 
-      void TearDown() override
-      {
-         delete input_tree;
-      }
+   void TearDown() override {
+      delete input_tree;
+   }
 
-   protected:
-      StochInputTree::StochInputNode* root_node{nullptr};
-      StochInputTree* input_tree{nullptr};
-   public:
-      sTreeCallbacks* createTestTree( int n_children, int n_eq_links, int n_ineq_links );
+protected:
+   StochInputTree::StochInputNode* root_node{nullptr};
+   StochInputTree* input_tree{nullptr};
+public:
+   sTreeCallbacks* createTestTree(int n_children, int n_eq_links, int n_ineq_links);
 
 };
 
-sTreeCallbacks* HierarchicalSplittingTest::createTestTree( int nChildren, int n_eq_linkings, int n_ineq_linkings )
-{
+sTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_eq_linkings, int n_ineq_linkings) {
    const int NX_ROOT = 10;
    const int MY_ROOT = 20;
    const int MZ_ROOT = 30;
 
-   StochInputTree::StochInputNode* root_node = new StochInputTree::StochInputNode( -1, NX_ROOT, MY_ROOT, n_eq_linkings, MZ_ROOT, n_ineq_linkings );
+   StochInputTree::StochInputNode* root_node = new StochInputTree::StochInputNode(-1, NX_ROOT, MY_ROOT, n_eq_linkings, MZ_ROOT, n_ineq_linkings);
 
    input_tree = new StochInputTree(root_node);
 
-   for( int i = 0; i < nChildren; ++i )
-   {
+   for (int i = 0; i < nChildren; ++i) {
       const int NX_CHILD = 10 + i;
       const int MY_CHILD = 20 + i;
       const int MZ_CHILD = 30 + i;
-      StochInputTree::StochInputNode* leaf_node = new StochInputTree::StochInputNode( i, NX_CHILD, MY_CHILD, n_eq_linkings, MZ_CHILD, n_ineq_linkings );
+      StochInputTree::StochInputNode* leaf_node = new StochInputTree::StochInputNode(i, NX_CHILD, MY_CHILD, n_eq_linkings, MZ_CHILD, n_ineq_linkings);
 
-      input_tree->AddChild( new StochInputTree(leaf_node) );
+      input_tree->AddChild(new StochInputTree(leaf_node));
    }
 
    sTreeCallbacks* tree = new sTreeCallbacks(input_tree);

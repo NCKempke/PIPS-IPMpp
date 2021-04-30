@@ -56,7 +56,8 @@ class LinearAlgebraPackage;
  */
 class ProblemFactory {
 public:
-   virtual void join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const = 0;
+   virtual void join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in,
+         const Vector<double>& rhs3_in) const = 0;
 
    virtual void separate_variables(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const = 0;
 

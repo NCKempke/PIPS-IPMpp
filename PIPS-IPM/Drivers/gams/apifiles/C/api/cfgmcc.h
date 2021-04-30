@@ -26,31 +26,31 @@
  * SOFTWARE.
  */
 
-#if ! defined(_CFGCC_H_)
+#if !defined(_CFGCC_H_)
 #     define  _CFGCC_H_
 
 #define CFGAPIVERSION 4
 
 
-
 enum cfgProcType {
-  cfgProc_none           = 0,
-  cfgProc_lp             = 1,
-  cfgProc_mip            = 2,
-  cfgProc_rmip           = 3,
-  cfgProc_nlp            = 4,
-  cfgProc_mcp            = 5,
-  cfgProc_mpec           = 6,
-  cfgProc_rmpec          = 7,
-  cfgProc_cns            = 8,
-  cfgProc_dnlp           = 9,
-  cfgProc_rminlp         = 10,
-  cfgProc_minlp          = 11,
-  cfgProc_qcp            = 12,
-  cfgProc_miqcp          = 13,
-  cfgProc_rmiqcp         = 14,
-  cfgProc_emp            = 15,
-  cfgProc_nrofmodeltypes = 16  };
+   cfgProc_none = 0,
+   cfgProc_lp = 1,
+   cfgProc_mip = 2,
+   cfgProc_rmip = 3,
+   cfgProc_nlp = 4,
+   cfgProc_mcp = 5,
+   cfgProc_mpec = 6,
+   cfgProc_rmpec = 7,
+   cfgProc_cns = 8,
+   cfgProc_dnlp = 9,
+   cfgProc_rminlp = 10,
+   cfgProc_minlp = 11,
+   cfgProc_qcp = 12,
+   cfgProc_miqcp = 13,
+   cfgProc_rmiqcp = 14,
+   cfgProc_emp = 15,
+   cfgProc_nrofmodeltypes = 16
+};
 
 
 #if defined(_WIN32)
@@ -64,18 +64,18 @@ extern "C" {
 #endif
 
 struct cfgRec;
-typedef struct cfgRec *cfgHandle_t;
+typedef struct cfgRec* cfgHandle_t;
 
-typedef int (*cfgErrorCallback_t) (int ErrCount, const char *msg);
+typedef int (* cfgErrorCallback_t)(int ErrCount, const char* msg);
 
 /* headers for "wrapper" routines implemented in C */
-int cfgGetReady  (char *msgBuf, int msgBufLen);
-int cfgGetReadyD (const char *dirName, char *msgBuf, int msgBufLen);
-int cfgGetReadyL (const char *libName, char *msgBuf, int msgBufLen);
-int cfgCreate    (cfgHandle_t *pcfg, char *msgBuf, int msgBufLen);
-int cfgCreateD   (cfgHandle_t *pcfg, const char *dirName, char *msgBuf, int msgBufLen);
-int cfgCreateL   (cfgHandle_t *pcfg, const char *libName, char *msgBuf, int msgBufLen);
-int cfgFree      (cfgHandle_t *pcfg);
+int cfgGetReady(char* msgBuf, int msgBufLen);
+int cfgGetReadyD(const char* dirName, char* msgBuf, int msgBufLen);
+int cfgGetReadyL(const char* libName, char* msgBuf, int msgBufLen);
+int cfgCreate(cfgHandle_t* pcfg, char* msgBuf, int msgBufLen);
+int cfgCreateD(cfgHandle_t* pcfg, const char* dirName, char* msgBuf, int msgBufLen);
+int cfgCreateL(cfgHandle_t* pcfg, const char* libName, char* msgBuf, int msgBufLen);
+int cfgFree(cfgHandle_t* pcfg);
 
 int cfgLibraryLoaded(void);
 int cfgLibraryUnload(void);
@@ -83,20 +83,20 @@ int cfgLibraryUnload(void);
 /* returns true  (1) if API and library have the same version,
            false (0) on failure;
    Library needs to be initialized before calling this        */
-int  cfgCorrectLibraryVersion(char *msgBuf, int msgBufLen);
+int cfgCorrectLibraryVersion(char* msgBuf, int msgBufLen);
 
-int  cfgGetScreenIndicator   (void);
-void cfgSetScreenIndicator   (int scrind);
-int  cfgGetExceptionIndicator(void);
+int cfgGetScreenIndicator(void);
+void cfgSetScreenIndicator(int scrind);
+int cfgGetExceptionIndicator(void);
 void cfgSetExceptionIndicator(int excind);
-int  cfgGetExitIndicator     (void);
-void cfgSetExitIndicator     (int extind);
+int cfgGetExitIndicator(void);
+void cfgSetExitIndicator(int extind);
 cfgErrorCallback_t cfgGetErrorCallback(void);
 void cfgSetErrorCallback(cfgErrorCallback_t func);
-int  cfgGetAPIErrorCount     (void);
-void cfgSetAPIErrorCount     (int ecnt);
+int cfgGetAPIErrorCount(void);
+void cfgSetAPIErrorCount(int ecnt);
 
-void cfgErrorHandling(const char *msg);
+void cfgErrorHandling(const char* msg);
 void cfgInitMutexes(void);
 void cfgFiniMutexes(void);
 
@@ -109,72 +109,72 @@ void cfgFiniMutexes(void);
 
 
 /* Prototypes for Dummy Functions */
-int  CFG_CALLCONV d_cfgReadConfig (cfgHandle_t pcfg, const char *filename);
-int  CFG_CALLCONV d_cfgReadConfigGUC (cfgHandle_t pcfg, const char *filename, const char *sysDir);
-int  CFG_CALLCONV d_cfgNumAlgs (cfgHandle_t pcfg);
-int  CFG_CALLCONV d_cfgDefaultAlg (cfgHandle_t pcfg, int proc);
-char * CFG_CALLCONV d_cfgAlgName (cfgHandle_t pcfg, int alg, char *buf);
-char * CFG_CALLCONV d_cfgAlgCode (cfgHandle_t pcfg, int alg, char *buf);
-int  CFG_CALLCONV d_cfgAlgHidden (cfgHandle_t pcfg, int alg);
-int  CFG_CALLCONV d_cfgAlgAllowsModifyProblem (cfgHandle_t pcfg, int alg);
-int  CFG_CALLCONV d_cfgAlgLibInfo (cfgHandle_t pcfg, int alg, char *name, char *prefix);
-int  CFG_CALLCONV d_cfgAlgThreadSafeIndic (cfgHandle_t pcfg, int alg);
-int  CFG_CALLCONV d_cfgAlgNumber (cfgHandle_t pcfg, const char *id);
-int  CFG_CALLCONV d_cfgAlgCapability (cfgHandle_t pcfg, int alg, int proc);
-int  CFG_CALLCONV d_cfgAlgCreate (cfgHandle_t pcfg, int alg, void **psl, const char *sysDir, char *msg);
-int  CFG_CALLCONV d_cfgAlgReadyAPI (cfgHandle_t pcfg, int alg, void *psl, void *gmo, void *opt);
-int  CFG_CALLCONV d_cfgAlgModifyProblem (cfgHandle_t pcfg, int alg, void *psl);
-int  CFG_CALLCONV d_cfgAlgCallSolver (cfgHandle_t pcfg, int alg, void *psl, void *gmo);
-void  CFG_CALLCONV d_cfgAlgFree (cfgHandle_t pcfg, int alg, void **vpsl);
-int  CFG_CALLCONV d_cfgDefFileName (cfgHandle_t pcfg, const char *id, char *defFileName);
-char * CFG_CALLCONV d_cfgModelTypeName (cfgHandle_t pcfg, int proc, char *buf);
-int  CFG_CALLCONV d_cfgModelTypeNumber (cfgHandle_t pcfg, const char *id);
-int  CFG_CALLCONV d_cfgNumMsg (cfgHandle_t pcfg);
-char * CFG_CALLCONV d_cfgGetMsg (cfgHandle_t pcfg, char *buf);
+int  CFG_CALLCONV d_cfgReadConfig(cfgHandle_t pcfg, const char* filename);
+int  CFG_CALLCONV d_cfgReadConfigGUC(cfgHandle_t pcfg, const char* filename, const char* sysDir);
+int  CFG_CALLCONV d_cfgNumAlgs(cfgHandle_t pcfg);
+int  CFG_CALLCONV d_cfgDefaultAlg(cfgHandle_t pcfg, int proc);
+char* CFG_CALLCONV d_cfgAlgName(cfgHandle_t pcfg, int alg, char* buf);
+char* CFG_CALLCONV d_cfgAlgCode(cfgHandle_t pcfg, int alg, char* buf);
+int  CFG_CALLCONV d_cfgAlgHidden(cfgHandle_t pcfg, int alg);
+int  CFG_CALLCONV d_cfgAlgAllowsModifyProblem(cfgHandle_t pcfg, int alg);
+int  CFG_CALLCONV d_cfgAlgLibInfo(cfgHandle_t pcfg, int alg, char* name, char* prefix);
+int  CFG_CALLCONV d_cfgAlgThreadSafeIndic(cfgHandle_t pcfg, int alg);
+int  CFG_CALLCONV d_cfgAlgNumber(cfgHandle_t pcfg, const char* id);
+int  CFG_CALLCONV d_cfgAlgCapability(cfgHandle_t pcfg, int alg, int proc);
+int  CFG_CALLCONV d_cfgAlgCreate(cfgHandle_t pcfg, int alg, void** psl, const char* sysDir, char* msg);
+int  CFG_CALLCONV d_cfgAlgReadyAPI(cfgHandle_t pcfg, int alg, void* psl, void* gmo, void* opt);
+int  CFG_CALLCONV d_cfgAlgModifyProblem(cfgHandle_t pcfg, int alg, void* psl);
+int  CFG_CALLCONV d_cfgAlgCallSolver(cfgHandle_t pcfg, int alg, void* psl, void* gmo);
+void  CFG_CALLCONV d_cfgAlgFree(cfgHandle_t pcfg, int alg, void** vpsl);
+int  CFG_CALLCONV d_cfgDefFileName(cfgHandle_t pcfg, const char* id, char* defFileName);
+char* CFG_CALLCONV d_cfgModelTypeName(cfgHandle_t pcfg, int proc, char* buf);
+int  CFG_CALLCONV d_cfgModelTypeNumber(cfgHandle_t pcfg, const char* id);
+int  CFG_CALLCONV d_cfgNumMsg(cfgHandle_t pcfg);
+char* CFG_CALLCONV d_cfgGetMsg(cfgHandle_t pcfg, char* buf);
 
-typedef int  (CFG_CALLCONV *cfgReadConfig_t) (cfgHandle_t pcfg, const char *filename);
+typedef int  (CFG_CALLCONV* cfgReadConfig_t)(cfgHandle_t pcfg, const char* filename);
 CFG_FUNCPTR(cfgReadConfig);
-typedef int  (CFG_CALLCONV *cfgReadConfigGUC_t) (cfgHandle_t pcfg, const char *filename, const char *sysDir);
+typedef int  (CFG_CALLCONV* cfgReadConfigGUC_t)(cfgHandle_t pcfg, const char* filename, const char* sysDir);
 CFG_FUNCPTR(cfgReadConfigGUC);
-typedef int  (CFG_CALLCONV *cfgNumAlgs_t) (cfgHandle_t pcfg);
+typedef int  (CFG_CALLCONV* cfgNumAlgs_t)(cfgHandle_t pcfg);
 CFG_FUNCPTR(cfgNumAlgs);
-typedef int  (CFG_CALLCONV *cfgDefaultAlg_t) (cfgHandle_t pcfg, int proc);
+typedef int  (CFG_CALLCONV* cfgDefaultAlg_t)(cfgHandle_t pcfg, int proc);
 CFG_FUNCPTR(cfgDefaultAlg);
-typedef char * (CFG_CALLCONV *cfgAlgName_t) (cfgHandle_t pcfg, int alg, char *buf);
+typedef char* (CFG_CALLCONV* cfgAlgName_t)(cfgHandle_t pcfg, int alg, char* buf);
 CFG_FUNCPTR(cfgAlgName);
-typedef char * (CFG_CALLCONV *cfgAlgCode_t) (cfgHandle_t pcfg, int alg, char *buf);
+typedef char* (CFG_CALLCONV* cfgAlgCode_t)(cfgHandle_t pcfg, int alg, char* buf);
 CFG_FUNCPTR(cfgAlgCode);
-typedef int  (CFG_CALLCONV *cfgAlgHidden_t) (cfgHandle_t pcfg, int alg);
+typedef int  (CFG_CALLCONV* cfgAlgHidden_t)(cfgHandle_t pcfg, int alg);
 CFG_FUNCPTR(cfgAlgHidden);
-typedef int  (CFG_CALLCONV *cfgAlgAllowsModifyProblem_t) (cfgHandle_t pcfg, int alg);
+typedef int  (CFG_CALLCONV* cfgAlgAllowsModifyProblem_t)(cfgHandle_t pcfg, int alg);
 CFG_FUNCPTR(cfgAlgAllowsModifyProblem);
-typedef int  (CFG_CALLCONV *cfgAlgLibInfo_t) (cfgHandle_t pcfg, int alg, char *name, char *prefix);
+typedef int  (CFG_CALLCONV* cfgAlgLibInfo_t)(cfgHandle_t pcfg, int alg, char* name, char* prefix);
 CFG_FUNCPTR(cfgAlgLibInfo);
-typedef int  (CFG_CALLCONV *cfgAlgThreadSafeIndic_t) (cfgHandle_t pcfg, int alg);
+typedef int  (CFG_CALLCONV* cfgAlgThreadSafeIndic_t)(cfgHandle_t pcfg, int alg);
 CFG_FUNCPTR(cfgAlgThreadSafeIndic);
-typedef int  (CFG_CALLCONV *cfgAlgNumber_t) (cfgHandle_t pcfg, const char *id);
+typedef int  (CFG_CALLCONV* cfgAlgNumber_t)(cfgHandle_t pcfg, const char* id);
 CFG_FUNCPTR(cfgAlgNumber);
-typedef int  (CFG_CALLCONV *cfgAlgCapability_t) (cfgHandle_t pcfg, int alg, int proc);
+typedef int  (CFG_CALLCONV* cfgAlgCapability_t)(cfgHandle_t pcfg, int alg, int proc);
 CFG_FUNCPTR(cfgAlgCapability);
-typedef int  (CFG_CALLCONV *cfgAlgCreate_t) (cfgHandle_t pcfg, int alg, void **psl, const char *sysDir, char *msg);
+typedef int  (CFG_CALLCONV* cfgAlgCreate_t)(cfgHandle_t pcfg, int alg, void** psl, const char* sysDir, char* msg);
 CFG_FUNCPTR(cfgAlgCreate);
-typedef int  (CFG_CALLCONV *cfgAlgReadyAPI_t) (cfgHandle_t pcfg, int alg, void *psl, void *gmo, void *opt);
+typedef int  (CFG_CALLCONV* cfgAlgReadyAPI_t)(cfgHandle_t pcfg, int alg, void* psl, void* gmo, void* opt);
 CFG_FUNCPTR(cfgAlgReadyAPI);
-typedef int  (CFG_CALLCONV *cfgAlgModifyProblem_t) (cfgHandle_t pcfg, int alg, void *psl);
+typedef int  (CFG_CALLCONV* cfgAlgModifyProblem_t)(cfgHandle_t pcfg, int alg, void* psl);
 CFG_FUNCPTR(cfgAlgModifyProblem);
-typedef int  (CFG_CALLCONV *cfgAlgCallSolver_t) (cfgHandle_t pcfg, int alg, void *psl, void *gmo);
+typedef int  (CFG_CALLCONV* cfgAlgCallSolver_t)(cfgHandle_t pcfg, int alg, void* psl, void* gmo);
 CFG_FUNCPTR(cfgAlgCallSolver);
-typedef void  (CFG_CALLCONV *cfgAlgFree_t) (cfgHandle_t pcfg, int alg, void **vpsl);
+typedef void  (CFG_CALLCONV* cfgAlgFree_t)(cfgHandle_t pcfg, int alg, void** vpsl);
 CFG_FUNCPTR(cfgAlgFree);
-typedef int  (CFG_CALLCONV *cfgDefFileName_t) (cfgHandle_t pcfg, const char *id, char *defFileName);
+typedef int  (CFG_CALLCONV* cfgDefFileName_t)(cfgHandle_t pcfg, const char* id, char* defFileName);
 CFG_FUNCPTR(cfgDefFileName);
-typedef char * (CFG_CALLCONV *cfgModelTypeName_t) (cfgHandle_t pcfg, int proc, char *buf);
+typedef char* (CFG_CALLCONV* cfgModelTypeName_t)(cfgHandle_t pcfg, int proc, char* buf);
 CFG_FUNCPTR(cfgModelTypeName);
-typedef int  (CFG_CALLCONV *cfgModelTypeNumber_t) (cfgHandle_t pcfg, const char *id);
+typedef int  (CFG_CALLCONV* cfgModelTypeNumber_t)(cfgHandle_t pcfg, const char* id);
 CFG_FUNCPTR(cfgModelTypeNumber);
-typedef int  (CFG_CALLCONV *cfgNumMsg_t) (cfgHandle_t pcfg);
+typedef int  (CFG_CALLCONV* cfgNumMsg_t)(cfgHandle_t pcfg);
 CFG_FUNCPTR(cfgNumMsg);
-typedef char * (CFG_CALLCONV *cfgGetMsg_t) (cfgHandle_t pcfg, char *buf);
+typedef char* (CFG_CALLCONV* cfgGetMsg_t)(cfgHandle_t pcfg, char* buf);
 CFG_FUNCPTR(cfgGetMsg);
 #if defined(__cplusplus)
 }

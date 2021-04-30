@@ -12,14 +12,13 @@
 
 class Problem;
 
-class StochScaler : public QpScaler
-{
+class StochScaler : public QpScaler {
 public:
-	StochScaler(Problem* prob, bool bitshifting);
-	~StochScaler() override = default;
+   StochScaler(Problem* prob, bool bitshifting);
+   ~StochScaler() override = default;
 
-	Variables* getVariablesUnscaled(const Variables& vars) const override;
-  	Residuals* getResidualsUnscaled(const Residuals& resids) const override;
+   Variables* getVariablesUnscaled(const Variables& vars) const override;
+   Residuals* getResidualsUnscaled(const Residuals& resids) const override;
 };
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHSCALER_H_ */

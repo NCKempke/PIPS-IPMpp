@@ -54,8 +54,8 @@ public:
 
    /** perform monitor operation at each interior-point iteration */
    virtual void
-   do_monitor_Pd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma, int i,
-         double mu, int stop_code, int level);
+   do_monitor_Pd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma,
+         int i, double mu, int stop_code, int level);
 
    /** default monitor: prints out one line of information on each interior-point iteration */
    void default_monitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu,

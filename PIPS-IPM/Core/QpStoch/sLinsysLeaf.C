@@ -4,9 +4,9 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Vector<double>* dd_, Vector<double>* dq_,
-   Vector<double>* nomegaInv_, Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_ )
-   : DistributedLinearSystem(factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false) {
+sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+      Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLinearSystem(factory_,
+      prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false) {
 #ifdef TIMING
    const int myRank = PIPS_MPIgetRank(mpiComm);
    const double t0 = MPI_Wtime();
@@ -19,8 +19,7 @@ sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Vect
    prob->getLocalNnz(nnzQ, nnzB, nnzD);
 
    if (apply_regularization) {
-      regularization_strategy = std::make_unique<RegularizationStrategy>(static_cast<unsigned int>(locnx),
-         static_cast<unsigned int>(locmy + locmz));
+      regularization_strategy = std::make_unique<RegularizationStrategy>(static_cast<unsigned int>(locnx), static_cast<unsigned int>(locmy + locmz));
    }
 #ifdef TIMING
    if( myRank == 0 )
@@ -73,25 +72,24 @@ void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
 
    if (apply_regularization) {
       factorize_with_correct_inertia();
-   } else {
+   }
+   else {
       solver->matrixChanged();
    }
 
    stochNode->resMon.recFactTmLocal_stop();
 }
 
-void sLinsysLeaf::put_primal_diagonal()
-{
+void sLinsysLeaf::put_primal_diagonal() {
    assert(primal_diagonal);
    const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
-   kkt->atPutDiagonal( 0, *primal_diagonal_stoch.first );
+   kkt->atPutDiagonal(0, *primal_diagonal_stoch.first);
 }
 
-void sLinsysLeaf::put_dual_inequalites_diagonal()
-{
+void sLinsysLeaf::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
-   kkt->atPutDiagonal( locnx + locmy, *nomegaInv_stoch.first );
+   kkt->atPutDiagonal(locnx + locmy, *nomegaInv_stoch.first);
 }
 
 void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector_) {
@@ -101,12 +99,12 @@ void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization,
    auto& regularization_vector = *dynamic_cast<DistributedVector<double>&>(regularization_vector_).first;
 
    regularization_vector.addConstant(regularization);
-   kkt->diagonal_add_constant_from( offset, regularization_vector.length(), regularization );
+   kkt->diagonal_add_constant_from(offset, regularization_vector.length(), regularization);
 }
 
 /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
-void sLinsysLeaf::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization)
-{
+void
+sLinsysLeaf::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) {
    assert(false);
    assert(this->primal_regularization_diagonal);
    assert(this->dual_equality_regularization_diagonal);

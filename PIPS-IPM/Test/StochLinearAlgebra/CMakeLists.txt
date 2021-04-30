@@ -6,4 +6,4 @@ include_directories(../../Core/Abstract)
 include_directories(../../Core/Utilities)
 include_directories(../../Core/LinearAlgebra/Sparse)
 
-package_add_test( StochGenMatrixTest t_StochGenMatrix.cpp )
+package_add_test(StochGenMatrixTest t_StochGenMatrix.cpp)

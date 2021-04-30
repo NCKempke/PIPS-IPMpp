@@ -22,17 +22,16 @@ class Problem;
 /**
  * Derived class for QP scalers.
  */
-class EquiStochScaler : public StochScaler
-{
+class EquiStochScaler : public StochScaler {
 protected:
-  void doObjScaling() override;
+   void doObjScaling() override;
 
 public:
-  EquiStochScaler(Problem * prob, bool bitshifting = true);
-  ~EquiStochScaler() override = default;
+   EquiStochScaler(Problem* prob, bool bitshifting = true);
+   ~EquiStochScaler() override = default;
 
-  /** scale */
-  void scale() override;
+   /** scale */
+   void scale() override;
 };
 
 //@}

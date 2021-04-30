@@ -16,9 +16,10 @@ public:
 
    ~sLinsysRootBordered() override = default;
 
-      void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
+   void
+   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
-      void finalizeKKT(DistributedQP* prob, Variables*) override;
+   void finalizeKKT(DistributedQP* prob, Variables*) override;
 
    void Lsolve(DistributedQP*, Vector<double>& x) override;
    void Dsolve(DistributedQP*, Vector<double>& x) override;

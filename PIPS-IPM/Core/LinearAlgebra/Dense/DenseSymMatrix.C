@@ -208,16 +208,12 @@ void DenseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowE
 }
 
 
-void DenseSymMatrix::atPutDiagonal( int idiag,
-					const Vector<double>& v )
-{
-  mStorage->atPutDiagonal( idiag, v );
+void DenseSymMatrix::atPutDiagonal(int idiag, const Vector<double>& v) {
+   mStorage->atPutDiagonal(idiag, v);
 }
 
-void DenseSymMatrix::atAddDiagonal( int idiag,
-					const Vector<double>& v )
-{
-  mStorage->atAddDiagonal( idiag, v );
+void DenseSymMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
+   mStorage->atAddDiagonal(idiag, v);
 }
 
 void DenseSymMatrix::fromGetDiagonal(int idiag, Vector<double>& v) {

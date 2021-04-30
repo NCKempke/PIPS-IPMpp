@@ -23,9 +23,8 @@ PardisoSolver::PardisoSolver(const SparseSymMatrix* sgm) : Msys{sgm}, n{static_c
    nvec = new double[n];
 }
 
-PardisoSolver::PardisoSolver( const DenseSymMatrix * m ) : Mdsys{m}, n{static_cast<int>(Mdsys->size())}
-{
-   assert( m->size() < std::numeric_limits<int>::max() );
+PardisoSolver::PardisoSolver(const DenseSymMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
+   assert(m->size() < std::numeric_limits<int>::max());
    nvec = new double[n];
 }
 
@@ -365,7 +364,7 @@ PardisoSolver::~PardisoSolver() {
    delete[] nvec;
 }
 
-std::tuple<unsigned int,unsigned int,unsigned int> PardisoSolver::get_inertia() const{
+std::tuple<unsigned int, unsigned int, unsigned int> PardisoSolver::get_inertia() const {
    assert(false && "TODO: Implement");
-   return {0,0,0};
+   return {0, 0, 0};
 }

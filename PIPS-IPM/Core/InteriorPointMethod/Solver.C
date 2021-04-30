@@ -32,7 +32,7 @@ double gmu;
 extern int gOoqpPrintLevel;
 
 Solver::Solver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(problem_formulation),
-step(factory.make_variables(problem)), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)) {
+      step(factory.make_variables(problem)), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)) {
    if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;
       gamma_f = 0.95;
@@ -225,9 +225,8 @@ void Solver::mehrotra_step_length_PD(Variables* iterate, Variables* step, double
 }
 
 
-void
-Solver::do_monitor(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu, int stop_code,
-      int level) {
+void Solver::do_monitor(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu,
+      int stop_code, int level) {
    OoqpMonitor* m = itsMonitors;
 
    while (m) {
@@ -237,8 +236,8 @@ Solver::do_monitor(const Problem* data, const Variables* iterate, const Residual
 }
 
 void
-Solver::do_monitor_Pd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma, int i,
-      double mu, int stop_code, int level) {
+Solver::do_monitor_Pd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma,
+      int i, double mu, int stop_code, int level) {
    OoqpMonitor* m = itsMonitors;
 
    while (m) {
@@ -248,7 +247,8 @@ Solver::do_monitor_Pd(const Problem* data, const Variables* iterate, const Resid
 }
 
 
-TerminationCode Solver::do_status(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level) {
+TerminationCode
+Solver::do_status(const Problem* problem, const Variables* iterate, const Residuals* residuals, int i, double mu, TerminationCode level) {
    if (status) {
       return status->doIt(this, problem, iterate, residuals, i, mu, level);
    }
@@ -285,7 +285,8 @@ std::pair<double, double> Solver::compute_unscaled_gap_and_residual_norm(const R
 
 
 TerminationCode
-Solver::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu, TerminationCode /* level */level) {
+Solver::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu,
+      TerminationCode /* level */level) {
    const int myrank = PIPS_MPIgetRank();
    TerminationCode stop_code = NOT_FINISHED;
 
@@ -344,7 +345,8 @@ Solver::default_status(const Problem* data, const Variables* iterate /* iterate 
       printf("hehe dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
 
-   if (index >= 350 && rnorm > artol * dnorm_orig && residual_norm_history[index] * mu_history[0] >= 1.e8 * mu_history[index] * residual_norm_history[0]) {
+   if (index >= 350 && rnorm > artol * dnorm_orig &&
+       residual_norm_history[index] * mu_history[0] >= 1.e8 * mu_history[index] * residual_norm_history[0]) {
       stop_code = UNKNOWN;
       printf("dnorm=%g rnorm=%g artol=%g\n", rnorm, dnorm_orig, artol);
    }
@@ -367,8 +369,8 @@ void Solver::set_problem_norm(const Problem& problem) {
       dnorm_orig = dnorm;
 }
 
-void Solver::default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha, double sigma, int i,
-      double mu, int status_code, int level) const {
+void Solver::default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
+      double sigma, int i, double mu, int status_code, int level) const {
    switch (level) {
       case 0 :
       case 1: {

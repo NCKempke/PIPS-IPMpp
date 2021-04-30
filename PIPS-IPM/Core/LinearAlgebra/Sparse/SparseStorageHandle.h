@@ -9,6 +9,7 @@
 #include "SmartPointer.h"
 
 class SparseStorage;
+
 typedef SmartPointer<SparseStorage> SparseStorageHandle;
 
 #endif

@@ -9,6 +9,7 @@
 #include "SmartPointer.h"
 
 class DenseSymMatrix;
+
 typedef SmartPointer<DenseSymMatrix> DenseSymMatrixHandle;
 
 

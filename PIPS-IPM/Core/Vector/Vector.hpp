@@ -153,8 +153,7 @@ public:
 
    /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
     */
-   virtual T
-   shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const = 0;
+   virtual T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const = 0;
    /** Negate all the elements of this Vector<double> object. */
    virtual void negate() = 0;
 
@@ -258,12 +257,14 @@ public:
     *  component is in "this", and first_or_second=2 if the blocking
     *  component is in u_vec.
     */
-   virtual T find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt,
-         T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const = 0;
+   virtual T
+   find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt, T* u_elt,
+         T* ustep_elt, int& first_or_second) const = 0;
 
-   virtual void find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri,
-         T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
-         bool& primalBlocking, bool& dualBlocking) const = 0;
+   virtual void
+   find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual, T& w_elt_p,
+         T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d, bool& primalBlocking,
+         bool& dualBlocking) const = 0;
 
    /** Copy the elements of this Vector<double> into the C-style array v. */
    virtual void copyIntoArray(T v[]) const = 0;
@@ -281,17 +282,22 @@ public:
    /** compute the sum of all entries smaller considered zero with tol and count how many*/
    virtual void getSumCountIfSmall(double, double&, int&, const Vector<T>*) const { assert(0 && "not implemented here"); };
 
-   virtual void
-   pushSmallComplementarityPairs(Vector<T>& /*other_vec*/, const Vector<T>& /*select_in*/, double /*tol_this*/, double /*tol_other*/,
+   virtual void pushSmallComplementarityPairs(Vector<T>& /*other_vec*/, const Vector<T>& /*select_in*/, double /*tol_this*/, double /*tol_other*/,
          double /*tol_pairs*/) { assert(0 && "not implemented here"); };
 
-  virtual Vector<T>* clone() const { assert(0 && "not implemented here"); return nullptr; };
-  virtual Vector<T>* cloneFull() const { assert(0 && "not implemented here"); return nullptr; };
+   virtual Vector<T>* clone() const {
+      assert(0 && "not implemented here");
+      return nullptr;
+   };
+   virtual Vector<T>* cloneFull() const {
+      assert(0 && "not implemented here");
+      return nullptr;
+   };
 
-  /** copy [this] = [vx, vy, vz] */
-  virtual void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) = 0;
-  /** copy [vx, vy, vz] = [this] */
-  virtual void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const = 0;
+   /** copy [this] = [vx, vy, vz] */
+   virtual void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) = 0;
+   /** copy [vx, vy, vz] = [this] */
+   virtual void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const = 0;
 
 };
 

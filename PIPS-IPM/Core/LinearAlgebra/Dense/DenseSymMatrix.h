@@ -71,11 +71,11 @@ public:
    void getDiagonal(Vector<double>& vec) override;
    void setToDiagonal(const Vector<double>& vec) override;
 
-  void atPutDiagonal( int idiag, const Vector<double>& v ) override;
-  void atAddDiagonal( int idiag, const Vector<double>& v ) override;
-  void fromGetDiagonal( int idiag, Vector<double>& v ) override;
+   void atPutDiagonal(int idiag, const Vector<double>& v) override;
+   void atAddDiagonal(int idiag, const Vector<double>& v) override;
+   void fromGetDiagonal(int idiag, Vector<double>& v) override;
 
-  void diagonal_add_constant_from(int from, int length, double value) override;
+   void diagonal_add_constant_from(int from, int length, double value) override;
 
 
    static DenseSymMatrix* randomPSD(int n, double* seed);

@@ -15,20 +15,19 @@
  * thus for each base class there can only be exactly one instance.
  */
 
-class Singleton
-{
+class Singleton {
    /// delete copy constructor and assignment operator for all inheriting classes
-   #ifdef PRE_CPP11
-      Singleton(Singleton const&);
-      void operator=(Singleton const&);
-   #else
-      Singleton(Singleton const&) = delete;
-      void operator=(Singleton const&) = delete;
-   #endif
+#ifdef PRE_CPP11
+   Singleton(Singleton const&);
+   void operator=(Singleton const&);
+#else
+   Singleton(Singleton const&) = delete;
+   void operator=(Singleton const&) = delete;
+#endif
 
-   protected:
-      Singleton() {};
-      virtual ~Singleton() {};
+protected:
+   Singleton() {};
+   virtual ~Singleton() {};
 };
 
 #endif /* PIPS_IPM_CORE_ABSTRACT_SINGLETON_H_ */

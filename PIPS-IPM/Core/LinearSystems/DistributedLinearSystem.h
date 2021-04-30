@@ -114,8 +114,8 @@ public:
 
    DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
 
-   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, Vector<double>* dd, Vector<double>* dq, Vector<double>* nomegaInv, Vector<double>* primal_reg_,
-		   Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs, bool create_iter_ref_vecs);
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, Vector<double>* dd, Vector<double>* dq, Vector<double>* nomegaInv,
+         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs, bool create_iter_ref_vecs);
 
    ~DistributedLinearSystem() override = default;
 
@@ -123,7 +123,8 @@ public:
 
    void factorize_with_correct_inertia() override;
 
-   virtual void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
+   virtual void
+   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
 
    virtual void factor2(DistributedQP* problem, Variables* variables) = 0;
 
@@ -219,7 +220,8 @@ public:
    virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
-   virtual void computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
+   virtual void
+   computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 

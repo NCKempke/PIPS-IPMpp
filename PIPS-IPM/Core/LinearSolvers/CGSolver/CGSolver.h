@@ -12,30 +12,33 @@ class MatTimesVec;
  *
  * @ingroup LinearSolvers 
  */
-class CGSolver : public  DoubleIterativeLinearSolver {
+class CGSolver : public DoubleIterativeLinearSolver {
 public:
-  /** build the class for the linear system 
-   *  for Ax=b preconditioned with M1 (or M1 and M2)
-   */
-  CGSolver( MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2=nullptr );
+   /** build the class for the linear system
+    *  for Ax=b preconditioned with M1 (or M1 and M2)
+    */
+   CGSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2 = nullptr);
 
-  virtual ~CGSolver();
+   virtual ~CGSolver();
 
-  /** version of the main solve routine that takes argument as an
-   * Vector<double>
-   *
-   * @param drhs on input contains the right-hand side; on output
-   * contains the solution
-   */
-  void solve( Vector<double>& rhs );
+   /** version of the main solve routine that takes argument as an
+    * Vector<double>
+    *
+    * @param drhs on input contains the right-hand side; on output
+    * contains the solution
+    */
+   void solve(Vector<double>& rhs);
 
 protected:
-  CGSolver() {};
+   CGSolver() {};
 
-  double tol; double iter; int maxit; int flag;
+   double tol;
+   double iter;
+   int maxit;
+   int flag;
 
-  double *tmpVec1,*tmpVec2,*tmpVec3,*tmpVec4,*tmpVec5,*tmpVec6;
-  //int firstSolve;
+   double* tmpVec1, * tmpVec2, * tmpVec3, * tmpVec4, * tmpVec5, * tmpVec6;
+   //int firstSolve;
 };
 
 

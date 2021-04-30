@@ -10,7 +10,9 @@
 #include "SCsparsifier.h"
 
 class SCsparsifier;
+
 class DistributedFactory;
+
 class DistributedQP;
 
 // DEBUG only
@@ -36,9 +38,9 @@ private:
 public:
    std::vector<DistributedLinearSystem*> children;
 
-  sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_, Vector<double>* primal_reg_,
-        Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
+   sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
+   sLinsysRoot(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
 
    void factor2(DistributedQP* prob, Variables* vars) override;
    void assembleKKT(DistributedQP* prob, Variables* vars) override;
@@ -78,8 +80,8 @@ public:
 
    void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 
-  void put_primal_diagonal() override;
-  void put_dual_inequalites_diagonal() override;
+   void put_primal_diagonal() override;
+   void put_dual_inequalites_diagonal() override;
 
    virtual void AddChild(DistributedLinearSystem* child);
 

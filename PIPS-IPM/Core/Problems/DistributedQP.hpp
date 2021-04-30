@@ -28,9 +28,10 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const sTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
-         GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp,
-         bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false);
+   DistributedQP(const sTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+         Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
+         Vector<double>* ciupp, bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
+         bool is_hierarchy_inner_leaf = false);
 
    std::vector<DistributedQP*> children;
 
@@ -154,7 +155,8 @@ public:
 
    void createScaleFromQ();
 
-   void cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC, const DistributedVector<int>& colNnzVec);
+   void
+   cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC, const DistributedVector<int>& colNnzVec);
 
    // marker that indicates whether a Schur complement row is (2-link) local
    const std::vector<bool>& getSCrowMarkerLocal() const;

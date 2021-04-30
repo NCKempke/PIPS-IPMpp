@@ -17,13 +17,12 @@
 extern int gOoqpPrintLevel;
 
 
-void dumpdata(int* irow, int* jcol, double* M, int, int nnz)
-{
-  printf("======================================================\n");
-  for(int i = 0; i < nnz; i++)
-     printf("%6d %6d %10.2f\n", irow[i], jcol[i], M[i]);
-  printf("\n");
-  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+void dumpdata(int* irow, int* jcol, double* M, int, int nnz) {
+   printf("======================================================\n");
+   for (int i = 0; i < nnz; i++)
+      printf("%6d %6d %10.2f\n", irow[i], jcol[i], M[i]);
+   printf("\n");
+   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 }
 
 Ma57Solver::Ma57Solver(const SparseSymMatrix* sgm, const std::string& name_) : mat_storage{sgm->getStorageHandle()}, n{mat_storage->n},
@@ -442,7 +441,7 @@ void Ma57Solver::getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) co
    }
 }
 
-std::tuple<unsigned int,unsigned int,unsigned int> Ma57Solver::get_inertia() const{
+std::tuple<unsigned int, unsigned int, unsigned int> Ma57Solver::get_inertia() const {
    assert(false && "TODO: Implement");
-   return {0,0,0};
+   return {0, 0, 0};
 }

@@ -328,7 +328,8 @@ void StringGenMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec,
 }
 
 /** DistributedVector<double> colScaleVec, SimpleVector<double> minmaxVec */
-void StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_) const {
+void
+StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_) const {
    assert(!is_vertical);
    const bool has_colscale = (col_scale_in != nullptr);
 

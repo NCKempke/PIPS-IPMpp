@@ -10,7 +10,8 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "Variables.h"
 
-void QPFactory::join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const {
+void QPFactory::join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in,
+      const Vector<double>& rhs3_in) const {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    const SimpleVector<double>& rhs1 = dynamic_cast<const SimpleVector<double>&>(rhs1_in);
    const SimpleVector<double>& rhs2 = dynamic_cast<const SimpleVector<double>&>(rhs2_in);

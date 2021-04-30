@@ -14,15 +14,12 @@
 #include <cmath>
 #include <memory>
 
-EquiStochScaler::EquiStochScaler(Problem* prob, bool bitshifting)
-  : StochScaler(prob, bitshifting)
-{
-   if( PIPS_MPIgetRank() == 0 && scaling_output )
+EquiStochScaler::EquiStochScaler(Problem* prob, bool bitshifting) : StochScaler(prob, bitshifting) {
+   if (PIPS_MPIgetRank() == 0 && scaling_output)
       std::cout << "Creating EquiStochScaler...\n";
 }
 
-void EquiStochScaler::doObjScaling()
-{
+void EquiStochScaler::doObjScaling() {
    assert(vec_colscale != nullptr);
 
    obj->componentMult(*vec_colscale);
@@ -36,34 +33,31 @@ void EquiStochScaler::doObjScaling()
 }
 
 // todo scale Q
-void EquiStochScaler::scale()
-{
-   assert( !vec_rowscaleA && !vec_rowscaleC && !vec_colscale );
+void EquiStochScaler::scale() {
+   assert(!vec_rowscaleA && !vec_rowscaleC && !vec_colscale);
 
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-   vec_rowscaleA.reset( dynamic_cast<DistributedVector<double>*>(bA->clone()) );
-   std::unique_ptr<DistributedVector<double>> rowminA{ dynamic_cast<DistributedVector<double>*>(bA->clone()) };
-   vec_rowscaleC.reset( dynamic_cast<DistributedVector<double>*>(rhsC->clone()) );
-   std::unique_ptr<DistributedVector<double>> rowminC{ dynamic_cast<DistributedVector<double>*>(rhsC->clone()) };
-   vec_colscale.reset( dynamic_cast<DistributedVector<double>*>(bux->clone()) );
-   std::unique_ptr<DistributedVector<double>> colmin{ dynamic_cast<DistributedVector<double>*>(bux->clone()) };
+   vec_rowscaleA.reset(dynamic_cast<DistributedVector<double>*>(bA->clone()));
+   std::unique_ptr<DistributedVector<double>> rowminA{dynamic_cast<DistributedVector<double>*>(bA->clone())};
+   vec_rowscaleC.reset(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
+   std::unique_ptr<DistributedVector<double>> rowminC{dynamic_cast<DistributedVector<double>*>(rhsC->clone())};
+   vec_colscale.reset(dynamic_cast<DistributedVector<double>*>(bux->clone()));
+   std::unique_ptr<DistributedVector<double>> colmin{dynamic_cast<DistributedVector<double>*>(bux->clone())};
 
    const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);
 
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   if( myRank == 0 && scaling_output )
-   {
+   if (myRank == 0 && scaling_output) {
       printf("rowratio before scaling %f \n", rowratio);
       printf("colratio before scaling %f \n", colratio);
    }
 
    // column scaling first?
-   if( colratio < rowratio && !with_sides )
-   {
+   if (colratio < rowratio && !with_sides) {
       invertAndRound(do_bitshifting, *vec_colscale);
 
       A->getRowMinMaxVec(false, true, vec_colscale.get(), *vec_rowscaleA);
@@ -87,8 +81,7 @@ void EquiStochScaler::scale()
 
    printRowColRatio();
 
-   if( !scaling_applied )
-   {
+   if (!scaling_applied) {
       setScalingVecsToOne();
 #ifndef NDEBUG
       vec_rowscaleA->setToConstant(NAN);

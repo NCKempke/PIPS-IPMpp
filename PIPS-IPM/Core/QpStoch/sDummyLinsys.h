@@ -27,12 +27,12 @@ public:
 
    void solveCompressed(Vector<double>&) override {};
 
-  void put_primal_diagonal() override {};
-  void put_dual_inequalites_diagonal() override {};
+   void put_primal_diagonal() override {};
+   void put_dual_inequalites_diagonal() override {};
 
    void add_regularization_local_kkt(double, double, double) override {};
 
-   void joinRHS( Vector<double>&, const Vector<double>&, const Vector<double>&, const Vector<double>& ) const override {};
+   void joinRHS(Vector<double>&, const Vector<double>&, const Vector<double>&, const Vector<double>&) const override {};
 
    void separateVars(Vector<double>&, Vector<double>&, Vector<double>&, const Vector<double>&) const override {};
 

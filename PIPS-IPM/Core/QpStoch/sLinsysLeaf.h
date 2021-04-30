@@ -21,8 +21,8 @@
  */
 class sLinsysLeaf : public DistributedLinearSystem {
 public:
-   sLinsysLeaf(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_, Vector<double>* primal_reg_,
-         Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
+   sLinsysLeaf(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
 
    ~sLinsysLeaf() override = default;
 
@@ -41,7 +41,8 @@ public:
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
 
-   void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
+   void
+   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
    //void Ltsolve_internal(  DistributedQP *prob, DistributedVector<double>& x, SimpleVector<double>& xp);
    void deleteChildren() override;

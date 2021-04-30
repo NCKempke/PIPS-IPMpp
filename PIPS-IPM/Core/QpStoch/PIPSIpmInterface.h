@@ -376,7 +376,8 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
 }
 
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
+std::vector<double>
+PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -451,8 +452,9 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityCons
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
 
-   DistributedVector<double>* eq_vals = (postsolved_variables == nullptr) ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rA->cloneFull())
-                                                            : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rA->cloneFull());
+   DistributedVector<double>* eq_vals = (postsolved_variables == nullptr)
+                                        ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rA->cloneFull())
+                                        : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rA->cloneFull());
 
    if (original_problem == nullptr || postsolved_variables == nullptr)
       eq_vals->axpy(1.0, *presolved_problem->bA);
@@ -478,8 +480,9 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
 
-   DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr) ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rC->cloneFull())
-                                                              : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
+   DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr)
+                                          ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rC->cloneFull())
+                                          : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
 
    if (postsolved_variables == nullptr)
       ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->s);

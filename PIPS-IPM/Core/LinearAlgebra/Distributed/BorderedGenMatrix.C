@@ -19,15 +19,14 @@
 #include <cassert>
 #include "StringGenMatrix.h"
 
-BorderedGenMatrix::BorderedGenMatrix(StochGenMatrix* inner_matrix_, StringGenMatrix* border_left_,
-            StringGenMatrix* border_bottom_, SparseGenMatrix* bottom_left_block_, MPI_Comm mpi_comm_ ) :
-            inner_matrix{inner_matrix_}, border_left{border_left_}, border_bottom{border_bottom_}, bottom_left_block{bottom_left_block_},
-            mpi_comm(mpi_comm_), distributed( mpi_comm == MPI_COMM_NULL ), rank( PIPS_MPIgetRank(mpi_comm) )
-{
-   assert( inner_matrix );
-   assert( border_left );
-   assert( border_bottom );
-   assert( bottom_left_block );
+BorderedGenMatrix::BorderedGenMatrix(StochGenMatrix* inner_matrix_, StringGenMatrix* border_left_, StringGenMatrix* border_bottom_,
+      SparseGenMatrix* bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{inner_matrix_}, border_left{border_left_},
+      border_bottom{border_bottom_}, bottom_left_block{bottom_left_block_}, mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL),
+      rank(PIPS_MPIgetRank(mpi_comm)) {
+   assert(inner_matrix);
+   assert(border_left);
+   assert(border_bottom);
+   assert(bottom_left_block);
 
    bottom_left_block->getSize(m, n);
 
@@ -38,37 +37,34 @@ BorderedGenMatrix::BorderedGenMatrix(StochGenMatrix* inner_matrix_, StringGenMat
    border_left->getSize(m_left, n_left);
 
    int m_inner, n_inner;
-   inner_matrix->getSize(m_inner, n_inner );
+   inner_matrix->getSize(m_inner, n_inner);
 
-   assert( n == n_left );
-   assert( m == m_bottom );
+   assert(n == n_left);
+   assert(m == m_bottom);
 
-   assert( m_inner == m_left );
-   assert( n_inner == n_bottom );
+   assert(m_inner == m_left);
+   assert(n_inner == n_bottom);
 
    m += m_left;
    n += n_bottom;
 
 }
 
-BorderedGenMatrix::~BorderedGenMatrix()
-{
+BorderedGenMatrix::~BorderedGenMatrix() {
    delete bottom_left_block;
    delete border_bottom;
    delete border_left;
    delete inner_matrix;
 }
 
-int BorderedGenMatrix::isKindOf( int type ) const
-{
+int BorderedGenMatrix::isKindOf(int type) const {
    return type == kBorderedGenMatrix || type == kBorderedMatrix || type == kGenMatrix;
 }
 
-void BorderedGenMatrix::mult( double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in ) const
-{
+void BorderedGenMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    /* x row, y column shaped */
-   assert( hasVecStructureForBorderedMat(x_in, true) );
-   assert( hasVecStructureForBorderedMat(y_in, false) );
+   assert(hasVecStructureForBorderedMat(x_in, true));
+   assert(hasVecStructureForBorderedMat(y_in, false));
 
    const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
@@ -81,11 +77,10 @@ void BorderedGenMatrix::mult( double beta, Vector<double>& y_in, double alpha, c
 }
 
 /** y = beta * y + alpha * this^T * x */
-void BorderedGenMatrix::transMult( double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in ) const
-{
+void BorderedGenMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    /* x column, y row shaped */
-   assert( hasVecStructureForBorderedMat(x_in, false) );
-   assert( hasVecStructureForBorderedMat(y_in, true) );
+   assert(hasVecStructureForBorderedMat(x_in, false));
+   assert(hasVecStructureForBorderedMat(y_in, true));
 
    const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
@@ -97,8 +92,7 @@ void BorderedGenMatrix::transMult( double beta, Vector<double>& y_in, double alp
    border_bottom->transMult(1.0, *y.children[0], alpha, *x.last);
 }
 
-double BorderedGenMatrix::abmaxnorm() const
-{
+double BorderedGenMatrix::abmaxnorm() const {
    double norm = -std::numeric_limits<double>::infinity();
 
    norm = std::max(norm, inner_matrix->abmaxnorm());
@@ -109,9 +103,8 @@ double BorderedGenMatrix::abmaxnorm() const
    return norm;
 }
 
-void BorderedGenMatrix::columnScale( const Vector<double>& vec )
-{
-   assert( hasVecStructureForBorderedMat(vec, true) );
+void BorderedGenMatrix::columnScale(const Vector<double>& vec) {
+   assert(hasVecStructureForBorderedMat(vec, true));
 
    const DistributedVector<double>& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
@@ -122,9 +115,8 @@ void BorderedGenMatrix::columnScale( const Vector<double>& vec )
    border_bottom->columnScale(*svec.children[0]);
 }
 
-void BorderedGenMatrix::rowScale ( const Vector<double>& vec )
-{
-   assert( hasVecStructureForBorderedMat(vec, false) );
+void BorderedGenMatrix::rowScale(const Vector<double>& vec) {
+   assert(hasVecStructureForBorderedMat(vec, false));
 
    const DistributedVector<double>& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
@@ -135,32 +127,28 @@ void BorderedGenMatrix::rowScale ( const Vector<double>& vec )
    border_bottom->rowScale(*svec.last);
 }
 
-void BorderedGenMatrix::scalarMult( double num )
-{
+void BorderedGenMatrix::scalarMult(double num) {
    inner_matrix->scalarMult(num);
    border_left->scalarMult(num);
    border_bottom->scalarMult(num);
    bottom_left_block->scalarMult(num);
 }
 
-void BorderedGenMatrix::getSize( long long& m_, long long& n_ ) const
-{
+void BorderedGenMatrix::getSize(long long& m_, long long& n_) const {
    m_ = m;
    n_ = n;
 }
 
-void BorderedGenMatrix::getSize( int& m_, int& n_ ) const
-{
+void BorderedGenMatrix::getSize(int& m_, int& n_) const {
    m_ = m;
    n_ = n;
 }
 
-void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in )
-{
-   assert( hasVecStructureForBorderedMat(minmax_in, false) );
+void BorderedGenMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in) {
+   assert(hasVecStructureForBorderedMat(minmax_in, false));
    const bool has_colscale = (col_scale_in != nullptr);
-   if( has_colscale )
-      assert( hasVecStructureForBorderedMat(*col_scale_in, true) );
+   if (has_colscale)
+      assert(hasVecStructureForBorderedMat(*col_scale_in, true));
 
    DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
@@ -172,13 +160,12 @@ void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, cons
    border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.last);
 }
 
-void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in )
-{
-   assert( hasVecStructureForBorderedMat(minmax_in, true) );
+void BorderedGenMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in) {
+   assert(hasVecStructureForBorderedMat(minmax_in, true));
 
    const bool has_rowscale = (row_scale_in != nullptr);
-   if( has_rowscale )
-      assert( hasVecStructureForBorderedMat(*row_scale_in, false) );
+   if (has_rowscale)
+      assert(hasVecStructureForBorderedMat(*row_scale_in, false));
 
    DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
@@ -190,97 +177,82 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.children[0]);
 }
 
-void BorderedGenMatrix::addRowSums( Vector<double>& vec_ ) const
-{
-  assert( hasVecStructureForBorderedMat( vec_, false ) );
-
-  DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
-
-  border_left->addRowSums( *vec.children[0] );
-  inner_matrix->addRowSums( *vec.children[0] );
-
-  bottom_left_block->addRowSums( *vec.last );
-  border_bottom->addRowSums( *vec.last );
-}
-
-void BorderedGenMatrix::addColSums( Vector<double>& vec_ ) const
-{
-   assert( hasVecStructureForBorderedMat( vec_, true ) );
+void BorderedGenMatrix::addRowSums(Vector<double>& vec_) const {
+   assert(hasVecStructureForBorderedMat(vec_, false));
 
    DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
-   border_left->addColSums( *vec.first );
-   bottom_left_block->addColSums( *vec.first );
+   border_left->addRowSums(*vec.children[0]);
+   inner_matrix->addRowSums(*vec.children[0]);
 
-   inner_matrix->addColSums( *vec.children[0] );
-   border_bottom->addColSums( *vec.children[0] );
+   bottom_left_block->addRowSums(*vec.last);
+   border_bottom->addRowSums(*vec.last);
+}
+
+void BorderedGenMatrix::addColSums(Vector<double>& vec_) const {
+   assert(hasVecStructureForBorderedMat(vec_, true));
+
+   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
+
+   border_left->addColSums(*vec.first);
+   bottom_left_block->addColSums(*vec.first);
+
+   inner_matrix->addColSums(*vec.children[0]);
+   border_bottom->addColSums(*vec.children[0]);
 }
 
 template<typename T>
-bool BorderedGenMatrix::hasVecStructureForBorderedMat( const Vector<T>& vec, bool row_vec ) const
-{
+bool BorderedGenMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const {
    const DistributedVector<T>& vecs = dynamic_cast<const DistributedVector<T>&>(vec);
 
-   if( vecs.children.size() != 1 )
-   {
+   if (vecs.children.size() != 1) {
       std::cout << "children" << std::endl;
       return false;
    }
 
-   if( vecs.children[0] == nullptr )
-   {
+   if (vecs.children[0] == nullptr) {
       std::cout << "child[0]" << std::endl;
       return false;
    }
 
-   if( row_vec )
-   {
-      if(vecs.last != nullptr )
-      {
+   if (row_vec) {
+      if (vecs.last != nullptr) {
          std::cout << "row-first but root.last" << std::endl;
          return false;
       }
-      if(vecs.first == nullptr )
-      {
+      if (vecs.first == nullptr) {
          std::cout << "row-first but NO root.first" << std::endl;
          return false;
       }
    }
-   else
-   {
-      if(vecs.first != nullptr )
-      {
+   else {
+      if (vecs.first != nullptr) {
          std::cout << "col-first but root.first" << std::endl;
          return false;
       }
-      if(vecs.last == nullptr )
-      {
+      if (vecs.last == nullptr) {
          std::cout << "col-first but NO root.last" << std::endl;
          return false;
       }
 
    }
 
-   if( row_vec && vecs.length() != n )
-   {
+   if (row_vec && vecs.length() != n) {
       std::cout << "ROW: root.length = " << vecs.length() << " != " << n << " = border.n " << std::endl;
       return false;
    }
-   if( !row_vec && vecs.length() != m )
-   {
+   if (!row_vec && vecs.length() != m) {
       std::cout << "COL: root.length = " << vecs.length() << " != " << m << " = border.m " << std::endl;
       return false;
    }
 
    int n_border, m_border;
    border_left->getSize(m_border, n_border);
-   if( row_vec && vecs.first->length() != n_border )
-   {
+   if (row_vec && vecs.first->length() != n_border) {
       std::cout << "ROW: root.first.length = " << vecs.first->length() << " != " << n_border << " = border.n " << std::endl;
       return false;
    }
-   if( !row_vec && vecs.length() != m )
-   {
+   if (!row_vec && vecs.length() != m) {
       std::cout << "COL: root.last.length = " << vecs.last->length() << " != " << m_border << " = border.m " << std::endl;
       return false;
    }
@@ -288,40 +260,37 @@ bool BorderedGenMatrix::hasVecStructureForBorderedMat( const Vector<T>& vec, boo
    return true;
 }
 
-void BorderedGenMatrix::writeToStreamDense( std::ostream& out ) const
-{
+void BorderedGenMatrix::writeToStreamDense(std::ostream& out) const {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    const int size = PIPS_MPIgetSize(mpi_comm);
-   const bool iAmDistrib = ( size != 0 );
+   const bool iAmDistrib = (size != 0);
 
-   inner_matrix->writeToStreamDenseBordered( *border_left, out );
+   inner_matrix->writeToStreamDenseBordered(*border_left, out);
 
-   int mL, nL; this->bottom_left_block->getSize(mL, nL);
-   if( mL > 0 )
-   {
-      if( iAmDistrib )
+   int mL, nL;
+   this->bottom_left_block->getSize(mL, nL);
+   if (mL > 0) {
+      if (iAmDistrib)
          MPI_Barrier(mpi_comm);
 
       // for each row r do:
-      for( int r = 0; r < mL; r++ )
-      {
+      for (int r = 0; r < mL; r++) {
          MPI_Barrier(mpi_comm);
 
          // process Zero collects all the information and then prints it.
-         if( my_rank == 0 )
-         {
+         if (my_rank == 0) {
             bottom_left_block->writeToStreamDenseRow(out, r);
             out << "|\t";
          }
          border_bottom->writeToStreamDenseRow(out, r);
 
-         if( my_rank == 0 )
+         if (my_rank == 0)
             out << "\n";
 
          MPI_Barrier(mpi_comm);
       }
    }
-   if( iAmDistrib )
+   if (iAmDistrib)
       MPI_Barrier(mpi_comm);
 }
 

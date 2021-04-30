@@ -2,9 +2,10 @@
 #include "sTree.h"
 #include "DistributedVector.h"
 
-DistributedResiduals::DistributedResiduals(Vector<double>* rQ_, Vector<double>* rA_, Vector<double>* rC_, Vector<double>* rz_, Vector<double>* rt_, Vector<double>* rlambda_,
-      Vector<double>* ru_, Vector<double>* rpi_, Vector<double>* rv_, Vector<double>* rgamma_, Vector<double>* rw_, Vector<double>* rphi_, Vector<double>* ixlow_,
-      double nxlowGlobal, Vector<double>* ixupp_, double nxuppGlobal, Vector<double>* iclow_, double mclowGlobal, Vector<double>* icupp_, double mcuppGlobal) {
+DistributedResiduals::DistributedResiduals(Vector<double>* rQ_, Vector<double>* rA_, Vector<double>* rC_, Vector<double>* rz_, Vector<double>* rt_,
+      Vector<double>* rlambda_, Vector<double>* ru_, Vector<double>* rpi_, Vector<double>* rv_, Vector<double>* rgamma_, Vector<double>* rw_,
+      Vector<double>* rphi_, Vector<double>* ixlow_, double nxlowGlobal, Vector<double>* ixupp_, double nxuppGlobal, Vector<double>* iclow_,
+      double mclowGlobal, Vector<double>* icupp_, double mcuppGlobal) {
    SpReferTo(ixlow, ixlow_);
    nxlow = nxlowGlobal;
 
@@ -35,7 +36,8 @@ DistributedResiduals::DistributedResiduals(Vector<double>* rQ_, Vector<double>* 
 }
 
 
-DistributedResiduals::DistributedResiduals(const sTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_, Vector<double>* icupp_) {
+DistributedResiduals::DistributedResiduals(const sTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_,
+      Vector<double>* icupp_) {
 
    SpReferTo(ixlow, ixlow_);
    nxlow = ixlow->numberOfNonzeros();

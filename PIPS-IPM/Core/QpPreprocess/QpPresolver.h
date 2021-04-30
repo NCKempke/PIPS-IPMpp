@@ -21,11 +21,10 @@
  * Abstract base class for QP Presolvers.
  */
 
-class QpPresolver : public Presolver
-{
-   public:
-      QpPresolver(const Problem& prob, Postsolver* postsolver = nullptr);
-      ~QpPresolver() override = default;
+class QpPresolver : public Presolver {
+public:
+   QpPresolver(const Problem& prob, Postsolver* postsolver = nullptr);
+   ~QpPresolver() override = default;
 };
 
 

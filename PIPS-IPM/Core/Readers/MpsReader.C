@@ -402,8 +402,8 @@ void MpsReader::readRHSSection(double b[], double clow[], char iclow[], double c
 
 
 void
-MpsReader::readRHSSection(Vector<double>& b_, SimpleVector<double>& clow, Vector<double>& iclow_, SimpleVector<double>& cupp, Vector<double>& icupp_, char line[],
-      int& ierr, int& kindOfLine) {
+MpsReader::readRHSSection(Vector<double>& b_, SimpleVector<double>& clow, Vector<double>& iclow_, SimpleVector<double>& cupp, Vector<double>& icupp_,
+      char line[], int& ierr, int& kindOfLine) {
    char* iclow = 0, * icupp = 0;
    double* db = 0, * dclow = 0, * dcupp = 0;
    if (my < 0 || mz < 0) {
@@ -491,7 +491,8 @@ void MpsReader::readRangesSection(double clow[], double cupp[], char line[], int
 }
 
 void
-MpsReader::readBoundsSection(Vector<double>& xlow_, Vector<double>& ixlow_, Vector<double>& xupp_, Vector<double>& ixupp_, char line[], int& ierr, int& kindOfLine) {
+MpsReader::readBoundsSection(Vector<double>& xlow_, Vector<double>& ixlow_, Vector<double>& xupp_, Vector<double>& ixupp_, char line[], int& ierr,
+      int& kindOfLine) {
    // Force the computation of cached values
    if (my < 0) {
       int nx_, my_, mz_;
@@ -1667,7 +1668,8 @@ void MpsReader::readQpGen(double c[], int irowQ[], int jcolQ[], double dQ[], dou
 
 }
 
-void MpsReader::readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, int& iErr) {
+void MpsReader::readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp,
+      int& iErr) {
    if (my > 0 || mz > 0) {
       iErr = 1024;
       return;
@@ -1714,8 +1716,9 @@ void MpsReader::readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlo
    this->expectHeader2(kindOfLine, "ENDATA", line, iErr);
 }
 
-void MpsReader::readQpGen(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, GenMatrix& A,
-      Vector<double>& b, GenMatrix& C, Vector<double>& clow_, Vector<double>& iclow, Vector<double>& cupp_, Vector<double>& icupp, int& iErr) {
+void MpsReader::readQpGen(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp,
+      GenMatrix& A, Vector<double>& b, GenMatrix& C, Vector<double>& clow_, Vector<double>& iclow, Vector<double>& cupp_, Vector<double>& icupp,
+      int& iErr) {
    char line[200];
    int kindOfLine;
 

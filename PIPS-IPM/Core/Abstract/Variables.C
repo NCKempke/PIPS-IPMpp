@@ -9,9 +9,9 @@
 #include "Problem.h"
 #include "MpsReader.h"
 
-Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in,
-      Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in,
-      Vector<double>* iclow_in, Vector<double>* icupp_in) {
+Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in,
+      Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in,
+      Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in) {
    SpReferTo(x, x_in);
    SpReferTo(s, s_in);
    SpReferTo(y, y_in);

@@ -21,26 +21,25 @@
 /** implements linear solver class for root nodes that uses the MA57 solver
  */
 
-class Ma27SolverRoot : public Ma27Solver
-{
+class Ma27SolverRoot : public Ma27Solver {
 
- public:
-  Ma27SolverRoot( const SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, const std::string& name_ = "root" );
+public:
+   Ma27SolverRoot(const SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, const std::string& name_ = "root");
 
-  ~Ma27SolverRoot() override = default;
+   ~Ma27SolverRoot() override = default;
 
-  void matrixRebuild( DoubleMatrix& matrixNew ) override;
-  void matrixChanged() override;
+   void matrixRebuild(DoubleMatrix& matrixNew) override;
+   void matrixChanged() override;
 
-  using Ma27Solver::solve;
+   using Ma27Solver::solve;
 
-  void solve( Vector<double>& rhs ) override;
+   void solve(Vector<double>& rhs) override;
 
- private:
-  const bool solve_in_parallel;
-  const MPI_Comm comm;
+private:
+   const bool solve_in_parallel;
+   const MPI_Comm comm;
 
-  void factorize();
+   void factorize();
 };
 
 

@@ -210,19 +210,16 @@ void DenseGenMatrix::fromGetDense(int row, int col, double* A, int lda, int rowE
    mStorage->fromGetDense(row, col, A, lda, lrow, lcol);
 }
 
-void DenseGenMatrix::atPutDiagonal( int idiag, const Vector<double>& v )
-{
-  mStorage->atPutDiagonal( idiag, v );
+void DenseGenMatrix::atPutDiagonal(int idiag, const Vector<double>& v) {
+   mStorage->atPutDiagonal(idiag, v);
 }
 
-void DenseGenMatrix::atAddDiagonal( int idiag, const Vector<double>& v )
-{
-  mStorage->atAddDiagonal( idiag, v );
+void DenseGenMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
+   mStorage->atAddDiagonal(idiag, v);
 }
 
-void DenseGenMatrix::fromGetDiagonal( int idiag, Vector<double>& v )
-{
-  mStorage->fromGetDiagonal( idiag, v );
+void DenseGenMatrix::fromGetDiagonal(int idiag, Vector<double>& v) {
+   mStorage->fromGetDiagonal(idiag, v);
 }
 
 void DenseGenMatrix::getRow(int rowIndex, Vector<double>& v_in) {

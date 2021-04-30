@@ -63,7 +63,8 @@ protected:
    virtual void doObjScaling() = 0;
 
    /** get maximum absolute row ratio and write maximum row entries into vectors */
-   double maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC, const Vector<double>* colScalevec);
+   double
+   maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC, const Vector<double>* colScalevec);
 
    /** get maximum absolute column ratio and write maximum column entries into vectors */
    double maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC);

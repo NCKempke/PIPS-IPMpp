@@ -15,6 +15,7 @@
 #include <memory>
 
 class sTree;
+
 class StochPresolverBase;
 
 /**  * @defgroup QpPreprocess
@@ -26,8 +27,7 @@ class StochPresolverBase;
 /**
  * Derived class for QP presolvers.
  */
-class StochPresolver : public QpPresolver
-{
+class StochPresolver : public QpPresolver {
 private:
    const int my_rank = -1;
    /** limit for max rounds to apply all presolvers */

@@ -66,9 +66,9 @@ protected:
 
 private:
    // returns Gondzio weight for corrector step
-   virtual void
-   calculate_alpha_PD_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
-         double& step_length_primal_candidate, double& step_length_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
+   virtual void calculate_alpha_PD_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+         double alpha_dual, double& step_length_primal_candidate, double& step_length_dual_candidate, double& weight_primal_candidate,
+         double& weight_dual_candidate);
 };
 
 #endif

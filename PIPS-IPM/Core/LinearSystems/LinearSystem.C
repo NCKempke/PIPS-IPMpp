@@ -30,31 +30,28 @@ static std::vector<int> bicgIters;
 int LinearSystem::getIntValue(const std::string& s) const {
    if (s == "BICG_NITERATIONS")
       return bicg_niterations;
-   else if(s =="BICG_CONV_FLAG")
+   else if (s == "BICG_CONV_FLAG")
       return static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag);
-   else
-   {
+   else {
       std::cout << "Unknown observer int request in LinearSystem.C: " << s << "\n";
       return -1;
    }
 }
 
-bool LinearSystem::getBoolValue(const std::string& s) const
-{
-   if( s == "BICG_CONVERGED" )
+bool LinearSystem::getBoolValue(const std::string& s) const {
+   if (s == "BICG_CONVERGED")
       return bicg_conv_flag == IterativeSolverSolutionStatus::CONVERGED;
-   else if( s == "BICG_SKIPPED" )
+   else if (s == "BICG_SKIPPED")
       return bicg_conv_flag == IterativeSolverSolutionStatus::SKIPPED;
-   else if( s == "BICG_DIVERGED" )
+   else if (s == "BICG_DIVERGED")
       return bicg_conv_flag == IterativeSolverSolutionStatus::DIVERGED;
-   else if( s == "BICG_BREAKDOWN" )
+   else if (s == "BICG_BREAKDOWN")
       return bicg_conv_flag == IterativeSolverSolutionStatus::BREAKDOWN;
-   else if( s == "BICG_STAGNATION" )
+   else if (s == "BICG_STAGNATION")
       return bicg_conv_flag == IterativeSolverSolutionStatus::STAGNATION;
-   else if( s == "BICG_EXCEED_MAX_ITER" )
+   else if (s == "BICG_EXCEED_MAX_ITER")
       return bicg_conv_flag == IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS;
-   else
-   {
+   else {
       std::cout << "Unknown observer bool request in LinearSystem.C: " << s << "\n";
       return false;
    }
@@ -71,8 +68,7 @@ double LinearSystem::getDoubleValue(const std::string& s) const {
    }
 }
 
-static void biCGStabCommunicateStatus(int flag, int it)
-{
+static void biCGStabCommunicateStatus(int flag, int it) {
    double iterAvg = 0.0;
 
    /* IP algorithm started? */
@@ -104,17 +100,15 @@ static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& stat
    return false;
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) :
-   factory(factory_),
-   apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")),
-   outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
-   innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
-   outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
-   outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
-   outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
-   outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-   outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-   xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
+LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
+      apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")), outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
+      innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
+      outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+      outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
+      outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
+      outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
+      outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+      xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
 
    assert(factory_);
    assert(problem);
@@ -154,8 +148,10 @@ LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool crea
    }
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,Vector<double>* nomegaInv_,
-      Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_, Vector<double>* dual_inequality_regularization_,Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem, create_iter_ref_vecs) {
+LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
+      Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
+      Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
+      create_iter_ref_vecs) {
    primal_diagonal = primal_diagonal_;
    dq = dq_;
    nomegaInv = nomegaInv_;
@@ -242,18 +238,18 @@ void LinearSystem::printDiagonalNorms() const {
    const double infnorm_inequalities_diagonal = nomegaInv->infnorm();
    const double twonorm_inequalities_diagonal = nomegaInv->twonorm();
 
-   double min_primal_diagonal; int dummy;
+   double min_primal_diagonal;
+   int dummy;
    primal_diagonal->min(min_primal_diagonal, dummy);
 
    double min_inequalities_diagonal;
    primal_diagonal->min(min_inequalities_diagonal, dummy);
 
-   if( PIPS_MPIgetRank() == 0 )
-   {
-      std::cout << "Primal diagonal: ||.||_inf=" << infnorm_primal_diagonal << ", ||.||_2=" << twonorm_primal_diagonal <<
-         ", min=" << min_primal_diagonal << "\n";
-      std::cout << "Inequalities diagonal: ||.||_inf=" << infnorm_inequalities_diagonal << ", ||.||_2=" << twonorm_inequalities_diagonal <<
-         ", min " << min_inequalities_diagonal << "\n";
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "Primal diagonal: ||.||_inf=" << infnorm_primal_diagonal << ", ||.||_2=" << twonorm_primal_diagonal << ", min="
+                << min_primal_diagonal << "\n";
+      std::cout << "Inequalities diagonal: ||.||_inf=" << infnorm_inequalities_diagonal << ", ||.||_2=" << twonorm_inequalities_diagonal << ", min "
+                << min_inequalities_diagonal << "\n";
    }
 }
 
@@ -267,9 +263,8 @@ void LinearSystem::print_regularization_statistics() const {
    const double infnorm_dual_inequality_regularization = dual_inequality_regularization_diagonal->infnorm();
 
    if (PIPS_MPIgetRank() == 0) {
-      std::cout << "Regularized system with (||dP||_inf, ||dDy||_inf, ||dDz||_inf) = ("
-                << infnorm_primal_regularization << ", " << infnorm_dual_equality_regularization << ", "
-                << infnorm_dual_inequality_regularization << ")\n";
+      std::cout << "Regularized system with (||dP||_inf, ||dDy||_inf, ||dDz||_inf) = (" << infnorm_primal_regularization << ", "
+                << infnorm_dual_equality_regularization << ", " << infnorm_dual_inequality_regularization << ")\n";
    }
 }
 
@@ -439,7 +434,8 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
 
 }
 
-void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& /* ztemp */, Problem* problem) {
+void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& /* ztemp */,
+      Problem* problem) {
    /* step->z = rC */
    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
@@ -448,11 +444,10 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
    /* rz = rC + Omega^-1 ( rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U ) */
    stepz.axzpy(-1.0, *nomegaInv, steps);
 
-  std::unique_ptr<Vector<double>> residual;
-  if( xyzs_solve_print_residuals )
-  {
-     residual.reset( rhs->cloneFull() );
-     joinRHS(*residual, stepx, stepy, stepz);
+   std::unique_ptr<Vector<double>> residual;
+   if (xyzs_solve_print_residuals) {
+      residual.reset(rhs->cloneFull());
+      joinRHS(*residual, stepx, stepy, stepz);
 
       const double xinf = stepx.infnorm();
       const double yinf = stepy.infnorm();
@@ -470,8 +465,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       // Iterative refinement
       ///////////////////////////////////////////////////////////////
       auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = *problem](auto&& PH1, auto&& PH2) {
-         compute_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy,
-            stepz, capture0);
+         compute_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
       };
 
       solveCompressedIterRefin(computeResiduals);
@@ -494,11 +488,9 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       ///////////////////////////////////////////////////////////////
 
       const bool use_regularized_system = true;
-      auto matMult = [this, &capture0 = *problem, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1,
-         auto&& PH2, auto&& PH3, auto&& PH4) {
-         system_mult(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2),
-            std::forward<decltype(PH3)>(PH3), std::forward<decltype(PH4)>(PH4), capture0, stepx, stepy, stepz,
-            use_regularized_system);
+      auto matMult = [this, &capture0 = *problem, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+         system_mult(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3),
+               std::forward<decltype(PH4)>(PH4), capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
       auto matInfnorm = [this, &capture0 = *problem, &stepx, &stepy, &stepz] {
@@ -511,7 +503,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
 
       /* notify observers about result of BiCGStab */
       notifyObservers();
-  }
+   }
 
    if (xyzs_solve_print_residuals) {
       assert(sol);
@@ -577,11 +569,11 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
    if (normr <= tolb) {
 
       bicg_conv_flag = IterativeSolverSolutionStatus::SKIPPED;
-      biCGStabCommunicateStatus( static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag), bicg_niterations);
+      biCGStabCommunicateStatus(static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag), bicg_niterations);
 
-      if( myRank == 0 )
-         std::cout << "BiCGStab (it=" << bicg_niterations << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" <<
-            normr / n2b  << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
+      if (myRank == 0)
+         std::cout << "BiCGStab (it=" << bicg_niterations << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" << normr / n2b << ", avg.iter="
+                   << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
       return;
    }
 
@@ -758,10 +750,10 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
 
    bicg_relresnorm = bicg_resnorm / n2b;
 
-   biCGStabCommunicateStatus( static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag), std::max(bicg_niterations, 1));
-   if( myRank == 0 )
-      std::cout << "BiCGStab (it=" << std::max(1, bicg_niterations) << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" <<
-         normr / n2b  << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
+   biCGStabCommunicateStatus(static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag), std::max(bicg_niterations, 1));
+   if (myRank == 0)
+      std::cout << "BiCGStab (it=" << std::max(1, bicg_niterations) << ", rel.res.norm=" << bicg_relresnorm << ", rel.r.norm=" << normr / n2b
+                << ", avg.iter=" << gOuterBiCGIterAvg << ") " << bicg_conv_flag << "\n";
 }
 
 /**
@@ -772,14 +764,16 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
  * stepx, stepy, stepz are used as temporary buffers
  * if use_regularized_sysyem == false primal_regularization_diagonal, dual_equality_regularization_diagonal and dual_inequality_regularization_diagonal are not used
  */
-void LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const Vector<double>& sol, const Problem& problem,
-   Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
+void
+LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const Vector<double>& sol, const Problem& problem, Vector<double>& solx,
+      Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
    assert(resx);
    assert(resy);
    assert(resz);
    assert(nomegaInv);
    assert(primal_diagonal);
-   assert((primal_regularization_diagonal && dual_equality_regularization_diagonal && dual_inequality_regularization_diagonal) || (!primal_regularization_diagonal && !dual_equality_regularization_diagonal && !dual_inequality_regularization_diagonal));
+   assert((primal_regularization_diagonal && dual_equality_regularization_diagonal && dual_inequality_regularization_diagonal) ||
+          (!primal_regularization_diagonal && !dual_equality_regularization_diagonal && !dual_inequality_regularization_diagonal));
 
    separateVars(solx, soly, solz, sol);
    separateVars(*resx, *resy, *resz, res);
@@ -809,9 +803,10 @@ void LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, c
 }
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
-double LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
+double
+LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
    solx.copyFromAbs(*primal_diagonal);
-   if( use_regularized_system && primal_regularization_diagonal )
+   if (use_regularized_system && primal_regularization_diagonal)
       solx.axpy(1.0, *primal_regularization_diagonal);
 
    problem.A->addColSums(solx);
@@ -819,16 +814,16 @@ double LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx,
    double infnorm = solx.infnorm();
 
    soly.setToZero();
-   if( use_regularized_system && dual_equality_regularization_diagonal )
-      soly.axpy( 1.0, *dual_equality_regularization_diagonal );
+   if (use_regularized_system && dual_equality_regularization_diagonal)
+      soly.axpy(1.0, *dual_equality_regularization_diagonal);
 
    problem.A->addRowSums(soly);
    infnorm = std::max(infnorm, soly.infnorm());
 
    solz.copyFromAbs(*nomegaInv);
    solz.negate();
-   if( use_regularized_system && dual_inequality_regularization_diagonal )
-      solz.axpy( 1.0, *dual_inequality_regularization_diagonal );
+   if (use_regularized_system && dual_inequality_regularization_diagonal)
+      solz.axpy(1.0, *dual_inequality_regularization_diagonal);
 
    problem.C->addRowSums(solz);
    infnorm = std::max(infnorm, solz.infnorm());
@@ -881,11 +876,10 @@ void LinearSystem::solveCompressedIterRefin(const std::function<void(Vector<doub
       computeResidual(solution, residual);
       residual_norm_current_solution = residual.twonorm();
 
-      if( residual_norm_current_solution > min_improvement_factor * residual_last_iterate ) {
+      if (residual_norm_current_solution > min_improvement_factor * residual_last_iterate) {
          ++n_steps_no_improvement;
       }
-      else
-      {
+      else {
          n_steps_no_improvement = 0;
       }
 
@@ -907,7 +901,7 @@ void LinearSystem::solveCompressedIterRefin(const std::function<void(Vector<doub
       }
 
       /* store best solution if we compute one more in the next round */
-      if(residual_norm_current_solution < residual_norm_best_solution ) {
+      if (residual_norm_current_solution < residual_norm_best_solution) {
          residual_norm_best_solution = residual_norm_current_solution;
          best_solution.copyFrom(solution);
       }
@@ -923,8 +917,8 @@ void LinearSystem::solveCompressedIterRefin(const std::function<void(Vector<doub
 
    if (PIPS_MPIgetRank() == 0) {
       const double norm_final = std::min(residual_norm_best_solution, residual_norm_current_solution);
-      std::cout << "IterRef (it=" << current_iterative_refinement_step << ", residual norm=" << norm_final
-                << ", relative residual norm=" << norm_final / rhs_norm << ") " << convergence_status << "\n";
+      std::cout << "IterRef (it=" << current_iterative_refinement_step << ", residual norm=" << norm_final << ", relative residual norm="
+                << norm_final / rhs_norm << ") " << convergence_status << "\n";
    }
 }
 
@@ -937,23 +931,24 @@ void LinearSystem::solveCompressedIterRefin(const std::function<void(Vector<doub
  *
  * stepx, stepy, stepz are used as temporary buffers
  */
-void LinearSystem::compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, const Problem&
-problem) {
+void LinearSystem::compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly,
+      Vector<double>& solz, const Problem& problem) {
    const double alpha = -1.0;
    const double beta = 1.0;
 
    system_mult(beta, res, alpha, sol, problem, solx, soly, solz, true);
 }
 
-void LinearSystem::compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx,
-   Vector<double>& soly, Vector<double>& solz, const Problem& problem) {
+void LinearSystem::compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly,
+      Vector<double>& solz, const Problem& problem) {
    const double alpha = -1.0;
    const double beta = 1.0;
 
    system_mult(beta, res, alpha, sol, problem, solx, soly, solz, false);
 }
 
-void LinearSystem::joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const {
+void
+LinearSystem::joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const {
    rhs_in.jointCopyFrom(rhs1_in, rhs2_in, rhs3_in);
 }
 

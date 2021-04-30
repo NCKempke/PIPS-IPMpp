@@ -9,6 +9,7 @@
 #include "SmartPointer.h"
 
 class SparseGenMatrix;
+
 typedef SmartPointer<SparseGenMatrix> SparseGenMatrixHandle;
 
 

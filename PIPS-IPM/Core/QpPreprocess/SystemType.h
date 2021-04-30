@@ -10,36 +10,28 @@
 
 #include <ostream>
 
-enum SystemType
-{
-   EQUALITY_SYSTEM,
-   INEQUALITY_SYSTEM
+enum SystemType {
+   EQUALITY_SYSTEM, INEQUALITY_SYSTEM
 };
 
-enum BlockType
-{
-   A_MAT,
-   B_MAT,
-   BL_MAT
+enum BlockType {
+   A_MAT, B_MAT, BL_MAT
 };
 
 /* can point to a column or row of the problem - EQUALITY/INEQUALITY system has to be stored somewhere else */
-enum IndexType {COL, ROW, EMPTY_INDEX};
+enum IndexType { COL, ROW, EMPTY_INDEX };
 
-struct INDEX
-{
+struct INDEX {
 public:
-   INDEX() : index_type(EMPTY_INDEX), node(-2), index(-1), linking(false), system_type(EQUALITY_SYSTEM){};
+   INDEX() : index_type(EMPTY_INDEX), node(-2), index(-1), linking(false), system_type(EQUALITY_SYSTEM) {};
 
-   INDEX(IndexType index_type, int node, int index, bool linking = false, SystemType system_type = EQUALITY_SYSTEM) :
-      index_type(index_type), node(node), index(index), linking(linking), system_type(system_type)
-   {
-      if( index_type != EMPTY_INDEX)
-      {
-         if(linking)
-            assert( node == -1 );
-         assert( 0 <= index );
-         assert( -1 <= node );
+   INDEX(IndexType index_type, int node, int index, bool linking = false, SystemType system_type = EQUALITY_SYSTEM) : index_type(index_type),
+         node(node), index(index), linking(linking), system_type(system_type) {
+      if (index_type != EMPTY_INDEX) {
+         if (linking)
+            assert(node == -1);
+         assert(0 <= index);
+         assert(-1 <= node);
       }
    };
 
@@ -54,46 +46,47 @@ public:
    inline bool isRow() const { return index_type == ROW; };
    inline bool isCol() const { return index_type == COL; };
    inline bool isEmpty() const { return index_type == EMPTY_INDEX; };
-   inline bool isLinkingCol() const { assert(this->isCol()); return node == -1; };
-   inline bool isLinkingRow() const { assert(this->isRow()); return linking; };
+   inline bool isLinkingCol() const {
+      assert(this->isCol());
+      return node == -1;
+   };
+   inline bool isLinkingRow() const {
+      assert(this->isRow());
+      return linking;
+   };
    inline bool hasValidNode(int nChildren) const { return -1 <= node && node < nChildren; };
    inline bool inEqSys() const { return system_type == EQUALITY_SYSTEM; }
    inline bool inInEqSys() const { return system_type == INEQUALITY_SYSTEM; }
 
-   BlockType getBlockOfColInRow( const INDEX& col ) const
-   {
+   BlockType getBlockOfColInRow(const INDEX& col) const {
       assert(isRow());
       assert(col.isCol());
 
       /* linking row */
-      if(linking)
+      if (linking)
          return BL_MAT;
-      else if( col.isLinkingCol() )
-      {
+      else if (col.isLinkingCol()) {
          /* row node == -1 and col node == -1 and it is not linking -> B0_Mat */
-         if( node == -1 )
+         if (node == -1)
             return B_MAT;
-         /* row node != -1 and col node == -1 -> some A_MAT */
+            /* row node != -1 and col node == -1 -> some A_MAT */
          else
             return A_MAT;
       }
-      /* not a linking row/col and not B0 -> B_MAT */
+         /* not a linking row/col and not B0 -> B_MAT */
       else
          return B_MAT;
    }
 
-   friend std::ostream& operator<< (std::ostream &out, const INDEX& i)
-   {
-      if(i.isRow())
-      {
-         out << "INDEX(ROW," << i.node << "," << i.index << "," << (i.linking ? "true" : "false") << "," << ((i.system_type == EQUALITY_SYSTEM) ? "EQU_SYS" : "INEQ_SYS") << ")";
+   friend std::ostream& operator<<(std::ostream& out, const INDEX& i) {
+      if (i.isRow()) {
+         out << "INDEX(ROW," << i.node << "," << i.index << "," << (i.linking ? "true" : "false") << ","
+             << ((i.system_type == EQUALITY_SYSTEM) ? "EQU_SYS" : "INEQ_SYS") << ")";
       }
-      else if(i.isCol())
-      {
+      else if (i.isCol()) {
          out << "INDEX(COL," << i.node << "," << i.index << ")";
       }
-      else
-      {
+      else {
          out << "INDEX(EMPTY_INDEX)";
       }
       return out;

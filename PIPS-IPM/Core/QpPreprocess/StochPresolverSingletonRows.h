@@ -12,8 +12,7 @@
 #include "SparseStorageDynamic.h"
 #include "PresolveData.h"
 
-class StochPresolverSingletonRows : public StochPresolverBase
-{
+class StochPresolverSingletonRows : public StochPresolverBase {
 public:
    StochPresolverSingletonRows(PresolveData& presolve_data, const DistributedQP& origProb);
 
@@ -23,7 +22,7 @@ public:
    bool applyPresolving() override;
 
 private:
-   long long removed_rows; 
+   long long removed_rows;
 
    std::vector<int> buffer_found_singleton_equality;
    std::vector<INDEX> buffer_rows_lower;
@@ -34,8 +33,8 @@ private:
    std::vector<double> buffer_coeffs_lower;
    std::vector<double> buffer_coeffs_upper;
 
-   bool removeSingletonRow( const INDEX& row );
-   void getBoundsAndColFromSingletonRow( const INDEX& row, int& node_col, int& col_idx, double& xlow_new, double& xupp_new, double& coeff);
+   bool removeSingletonRow(const INDEX& row);
+   void getBoundsAndColFromSingletonRow(const INDEX& row, int& node_col, int& col_idx, double& xlow_new, double& xupp_new, double& coeff);
 
    void removeSingletonLinkingColsSynced();
    void resetBuffers();

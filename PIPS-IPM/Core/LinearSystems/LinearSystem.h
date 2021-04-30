@@ -39,32 +39,30 @@ class Residuals;
 class LinearSystem : public AbstractLinearSystem, public Subject {
 
 public:
-      enum class IterativeSolverSolutionStatus : int
-      {
-         DID_NOT_RUN = -2,
-         NOT_CONVERGED_MAX_ITERATIONS = -1,
-         CONVERGED = 0,
-         SKIPPED = 1,
-         STAGNATION = 3,
-         BREAKDOWN = 4,
-         DIVERGED = 5
-      };
+   enum class IterativeSolverSolutionStatus : int {
+      DID_NOT_RUN = -2, NOT_CONVERGED_MAX_ITERATIONS = -1, CONVERGED = 0, SKIPPED = 1, STAGNATION = 3, BREAKDOWN = 4, DIVERGED = 5
+   };
 
-      friend std::ostream& operator<<(std::ostream& os, IterativeSolverSolutionStatus status)
-      {
-          switch (status)
-          {
-              case IterativeSolverSolutionStatus::DID_NOT_RUN : return os << "did not run" ;
-              case IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS: return os << "not converged int max iterations";
-              case IterativeSolverSolutionStatus::CONVERGED: return os << "converged";
-              case IterativeSolverSolutionStatus::SKIPPED: return os << "skipped";
-              case IterativeSolverSolutionStatus::STAGNATION: return os << "stagnation occurred";
-              case IterativeSolverSolutionStatus::BREAKDOWN: return os << "breakdown occurred";
-              case IterativeSolverSolutionStatus::DIVERGED: return os << "diverged";
-              // omit default case to trigger compiler warning for missing cases
-          };
-          return os << static_cast<std::uint16_t>(status);
-      }
+   friend std::ostream& operator<<(std::ostream& os, IterativeSolverSolutionStatus status) {
+      switch (status) {
+         case IterativeSolverSolutionStatus::DID_NOT_RUN :
+            return os << "did not run";
+         case IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS:
+            return os << "not converged int max iterations";
+         case IterativeSolverSolutionStatus::CONVERGED:
+            return os << "converged";
+         case IterativeSolverSolutionStatus::SKIPPED:
+            return os << "skipped";
+         case IterativeSolverSolutionStatus::STAGNATION:
+            return os << "stagnation occurred";
+         case IterativeSolverSolutionStatus::BREAKDOWN:
+            return os << "breakdown occurred";
+         case IterativeSolverSolutionStatus::DIVERGED:
+            return os << "diverged";
+            // omit default case to trigger compiler warning for missing cases
+      };
+      return os << static_cast<std::uint16_t>(status);
+   }
 
 protected:
    /** observer pattern for convergence status of BiCGStab when calling solve */
@@ -156,8 +154,9 @@ protected:
 public:
    LinearSystem(ProblemFactory* factory, Problem* problem);
 
-   LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_, Vector<double>* primal_regularization_,
-        Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs);
+   LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_,
+         Vector<double>* rhs_, bool create_iter_ref_vecs);
 
    ~LinearSystem() override;
 
@@ -203,7 +202,8 @@ public:
 
    /** assemble right-hand side of augmented system and call
        solveCompressed to solve it */
-   virtual void solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& ztemp, Problem* problem);
+   virtual void
+   solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& ztemp, Problem* problem);
 
    /** perform the actual solve using the factors produced in factor.
     *
@@ -226,8 +226,9 @@ public:
 
    /** computes the diagonal matrices in the augmented system from the
        current set of variables */
-   virtual void computeDiagonals(Vector<double>& t, Vector<double>& lambda, Vector<double>& u, Vector<double>& pi, Vector<double>& v,
-         Vector<double>& gamma, Vector<double>& w, Vector<double>& phi);
+   virtual void
+   computeDiagonals(Vector<double>& t, Vector<double>& lambda, Vector<double>& u, Vector<double>& pi, Vector<double>& v, Vector<double>& gamma,
+         Vector<double>& w, Vector<double>& phi);
 
    /** will factorize and regularize kkt until inertia criterion is met */
    virtual void factorize_with_correct_inertia() = 0;
@@ -235,14 +236,16 @@ public:
    void print_regularization_statistics() const;
 
 protected:
-   void compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, const Problem& problem);
-    void compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, const Problem& problem);
+   void compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly,
+         Vector<double>& solz, const Problem& problem);
+   void compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz,
+         const Problem& problem);
    //void computeResidualsReducedSlacks(const QP& data);
 
    //void computeResidualsFull(const QP& data);
 
    void system_mult(double beta, Vector<double>& res, double alpha, const Vector<double>& sol, const Problem& problem, Vector<double>& solx,
-      Vector<double>& soly, Vector<double>& solz, bool use_regularized_system);
+         Vector<double>& soly, Vector<double>& solz, bool use_regularized_system);
 
    double matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system);
 
@@ -252,7 +255,8 @@ protected:
    void printDiagonalNorms() const;
 
    // TODO : move to LinearSystem level
-   void solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult, const std::function<double()>& matInfnorm);
+   void solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult,
+         const std::function<double()>& matInfnorm);
 
    void solveCompressedIterRefin(const std::function<void(Vector<double>& sol, Vector<double>& res)>& computeResidual);
 

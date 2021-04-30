@@ -25,58 +25,70 @@ extern "C" {
 }
 #endif
 
-int main(int argc, char ** argv) {
-  MPI_Init(&argc, &argv);
-  int mype; MPI_Comm_rank(MPI_COMM_WORLD,&mype);
+int main(int argc, char** argv) {
+   MPI_Init(&argc, &argv);
+   int mype;
+   MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 
-  if(argc<3) {
-    if (mype == 0) printf("\nUsage:\n%s   [rawdump root name]   [num scenarios]   [outer solve (optional): 0 vanilla direct (default), 1 with iter.refin, 2 with BICGStab]   [inner solve (optional): 0 vanila direct (default), EXPERIMENTAL-> 1 iter.refin, 2. BiCGStab]\n\n",argv[0]);
-    return 1;
-  }
-  
-  string datarootname(argv[1]);
-  int nscen = atoi(argv[2]);
+   if (argc < 3) {
+      if (mype == 0)
+         printf(
+               "\nUsage:\n%s   [rawdump root name]   [num scenarios]   [outer solve (optional): 0 vanilla direct (default), 1 with iter.refin, 2 with BICGStab]   [inner solve (optional): 0 vanila direct (default), EXPERIMENTAL-> 1 iter.refin, 2. BiCGStab]\n\n",
+               argv[0]);
+      return 1;
+   }
 
-  int outerSolve=2;
-  if(argc>=4) {
-    outerSolve = atoi(argv[3]);
-    if(mype==0) cout << "Using option [" << outerSolve << "] for outer solve" << endl;
-  }
+   string datarootname(argv[1]);
+   int nscen = atoi(argv[2]);
 
-  int innerSolve=0;
-  if(argc>=5) {
-    innerSolve = atoi(argv[4]);
-     if(mype==0) cout << "Using option [" << innerSolve << "] for inner solve" << endl;
-  }
+   int outerSolve = 2;
+   if (argc >= 4) {
+      outerSolve = atoi(argv[3]);
+      if (mype == 0)
+         cout << "Using option [" << outerSolve << "] for outer solve" << endl;
+   }
 
-  if(mype==0) cout << argv[0] << " starting ..." << endl;
-  int nprocs; MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  if(0==mype) cout << "Using a total of " << nprocs << " MPI processes." << endl;
+   int innerSolve = 0;
+   if (argc >= 5) {
+      innerSolve = atoi(argv[4]);
+      if (mype == 0)
+         cout << "Using option [" << innerSolve << "] for inner solve" << endl;
+   }
 
-  rawInput* s = new rawInput(datarootname,nscen);
-  if(mype==0) cout <<  " raw input created from " << datarootname<< endl;
-  PIPSIpmInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*s);
+   if (mype == 0)
+      cout << argv[0] << " starting ..." << endl;
+   int nprocs;
+   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+   if (0 == mype)
+      cout << "Using a total of " << nprocs << " MPI processes." << endl;
 
-  pips_options::setIntParameter("OUTER_SOLVE", outerSolve);
-  pips_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
+   rawInput* s = new rawInput(datarootname, nscen);
+   if (mype == 0)
+      cout << " raw input created from " << datarootname << endl;
+   PIPSIpmInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*s);
 
-  if(mype==0) cout <<  "PIPSIpmInterface created" << endl;
-  delete s;
-  if(mype==0) cout <<  "rawInput deleted ... starting to solve" << endl;
+   pips_options::setIntParameter("OUTER_SOLVE", outerSolve);
+   pips_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
+
+   if (mype == 0)
+      cout << "PIPSIpmInterface created" << endl;
+   delete s;
+   if (mype == 0)
+      cout << "rawInput deleted ... starting to solve" << endl;
 
 
 #ifdef TIMING_FLOPS
-  if(mype==0) cout << "FLOPS are being recorded using HPM library." << endl;
-  HPM_Init();
-  //HPM_Start("PIPSTotFlops");
+   if(mype==0) cout << "FLOPS are being recorded using HPM library." << endl;
+   HPM_Init();
+   //HPM_Start("PIPSTotFlops");
 #endif
 
-  pipsIpm.go();
+   pipsIpm.go();
 
 #ifdef TIMING_FLOPS
-  //HPM_Stop("PIPSTotFlops");
-  HPM_Print_Flops();
-  HPM_Print_Flops_Agg();
+   //HPM_Stop("PIPSTotFlops");
+   HPM_Print_Flops();
+   HPM_Print_Flops_Agg();
 #endif
 //   if(mype==0) cout << "solving done" << endl;
 
@@ -88,7 +100,7 @@ int main(int argc, char ** argv) {
 //       stringstream ss1; ss1<<"out_duals_scen"<<(s+1)<<".txt";
 //       cout << "saving duals to " << ss1.str() << endl;
 //       ofstream fileduals(ss1.str().c_str());
-      
+
 //       for(size_t i=0; i<duals.size(); i++)
 // 	fileduals << duals[i] << endl;
 //       fileduals.close();
@@ -115,7 +127,7 @@ int main(int argc, char ** argv) {
 //     file1stStg.close();
 //   }
 //   cout << "Solution saved" << endl;
-  MPI_Finalize();
-  return 0;
+   MPI_Finalize();
+   return 0;
 }
 
