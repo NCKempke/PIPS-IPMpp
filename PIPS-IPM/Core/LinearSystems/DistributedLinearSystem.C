@@ -39,13 +39,13 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_,
 		 DistributedQP* problem,
-		 OoqpVector* dd_, 
-		 OoqpVector* dq_,
-		 OoqpVector* nomegaInv_,
-       OoqpVector* primal_reg_,
-       OoqpVector* dual_y_reg_,
-       OoqpVector* dual_z_reg_,
-		 OoqpVector* rhs_,
+		 Vector<double>* dd_,
+		 Vector<double>* dq_,
+		 Vector<double>* nomegaInv_,
+       Vector<double>* primal_reg_,
+       Vector<double>* dual_y_reg_,
+       Vector<double>* dual_z_reg_,
+		 Vector<double>* rhs_,
 		 bool create_iter_ref_vecs
 		 )
   : LinearSystem( factory_, problem, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, create_iter_ref_vecs ),
@@ -71,8 +71,8 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_,
 }
 
 
-void DistributedLinearSystem::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
-				const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
+void DistributedLinearSystem::joinRHS( Vector<double>& rhs_in, const Vector<double>& rhs1_in,
+				const Vector<double>& rhs2_in, const Vector<double>& rhs3_in ) const
 {
   DistributedVector<double>& rhs  = dynamic_cast<DistributedVector<double>&>(rhs_in);
   const DistributedVector<double>& rhs1 = dynamic_cast<const DistributedVector<double>&>(rhs1_in);
@@ -82,8 +82,8 @@ void DistributedLinearSystem::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs
   rhs.jointCopyFrom(rhs1, rhs2, rhs3);
 }
 
-void DistributedLinearSystem::separateVars( OoqpVector& x_in, OoqpVector& y_in,
-				     OoqpVector& z_in, const OoqpVector& vars_in ) const
+void DistributedLinearSystem::separateVars( Vector<double>& x_in, Vector<double>& y_in,
+				     Vector<double>& z_in, const Vector<double>& vars_in ) const
 {
   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
@@ -236,7 +236,7 @@ void DistributedLinearSystem::allocV(DenseGenMatrix ** V, int n0)
  *
  * 
  */
-void DistributedLinearSystem::addLnizi(DistributedQP *problem, OoqpVector& z0_, OoqpVector& zi_)
+void DistributedLinearSystem::addLnizi(DistributedQP *problem, Vector<double>& z0_, Vector<double>& zi_)
 {
   SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
   SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(zi_);
@@ -582,7 +582,7 @@ void DistributedLinearSystem::putBiTBorder( DenseGenMatrix& res, const BorderBiB
    }
 }
 
-void DistributedLinearSystem::solveCompressed( OoqpVector& rhs_)
+void DistributedLinearSystem::solveCompressed( Vector<double>& rhs_)
 {
    DistributedVector<double>& rhs = dynamic_cast<DistributedVector<double>&>(rhs_);
 #ifdef TIMING

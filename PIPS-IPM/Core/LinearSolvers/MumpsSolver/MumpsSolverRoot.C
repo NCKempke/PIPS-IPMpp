@@ -140,7 +140,7 @@ MumpsSolverRoot::factorize()
 }
 
 void
-MumpsSolverRoot::solve(OoqpVector& rhs)
+MumpsSolverRoot::solve(Vector<double>& rhs)
 {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 

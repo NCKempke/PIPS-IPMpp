@@ -11,7 +11,8 @@
 #include "Ma57Solver.h"
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "pipsport.h"
 
 #include "mpi.h"
@@ -33,7 +34,7 @@ class Ma57SolverRoot : public Ma57Solver
 
   using Ma57Solver::solve;
 
-  void solve( OoqpVector& rhs ) override;
+  void solve( Vector<double>& rhs ) override;
 
  private:
   const bool solve_in_parallel;

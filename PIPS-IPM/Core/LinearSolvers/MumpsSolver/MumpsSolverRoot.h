@@ -13,7 +13,8 @@
 #include "mpi.h"
 #include "MumpsSolverBase.h"
 #include "SparseSymMatrix.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "pipsport.h"
 
 
@@ -32,7 +33,7 @@ class MumpsSolverRoot : public MumpsSolverBase {
   void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
-  void solve( OoqpVector& rhs ) override;
+  void solve( Vector<double>& rhs ) override;
 
  private:
   /* indicated wether every process solves or only rank 0 */

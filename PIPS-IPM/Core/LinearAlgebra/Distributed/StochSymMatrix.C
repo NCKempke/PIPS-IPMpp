@@ -122,8 +122,8 @@ long long StochSymMatrix::size() const
  *
  * Here Qi are diagonal blocks, Ri are left bordering blocks
  */
-void StochSymMatrix::mult( double beta,  OoqpVector& y_,
-			    double alpha, const OoqpVector& x_ ) const
+void StochSymMatrix::mult( double beta,  Vector<double>& y_,
+			    double alpha, const Vector<double>& x_ ) const
 {
    const DistributedVector<double> & x = dynamic_cast<const DistributedVector<double>&>(x_);
    DistributedVector<double> & y = dynamic_cast<DistributedVector<double>&>(y_);
@@ -167,8 +167,8 @@ void StochSymMatrix::mult( double beta,  OoqpVector& y_,
 }
 
 /** y = beta * y + alpha * this^T * x */
-void StochSymMatrix::transMult ( double beta,  OoqpVector& y_,
-				 double alpha, const OoqpVector& x_) const
+void StochSymMatrix::transMult ( double beta,  Vector<double>& y_,
+				 double alpha, const Vector<double>& x_) const
 {
   // We are symmetric, this^T = this, therefore call 'mult' method
   this->mult(beta, y_, alpha, x_);
@@ -292,7 +292,7 @@ void StochSymMatrix::writeToStreamDenseChild(std::stringstream& out, int offset)
 
 
 
-void StochSymMatrix::getDiagonal( OoqpVector& vec_ )
+void StochSymMatrix::getDiagonal( Vector<double>& vec_ )
 {
   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
   assert(children.size() == vec.children.size());
@@ -303,7 +303,7 @@ void StochSymMatrix::getDiagonal( OoqpVector& vec_ )
     children[it]->getDiagonal(*vec.children[it]);
 }
 
-void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
+void StochSymMatrix::setToDiagonal( const Vector<double>& vec_ )
 {
   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
   assert(children.size() == vec.children.size());
@@ -314,7 +314,7 @@ void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
     children[it]->setToDiagonal(*vec.children[it]);
 }
 
-void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
+void StochSymMatrix::atPutDiagonal( int idiag, const Vector<double>& v_ )
 {
   const DistributedVector<double>& v = dynamic_cast<const DistributedVector<double>&>(v_);
 
@@ -331,7 +331,7 @@ void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
     children[it]->atPutDiagonal( idiag, *v.children[it]);
 }
 
-void StochSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v_ )
+void StochSymMatrix::atAddDiagonal( int idiag, const Vector<double>& v_ )
 {
   const DistributedVector<double>& v = dynamic_cast<const DistributedVector<double>&>(v_);
 
@@ -347,7 +347,7 @@ void StochSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v_ )
   for (int it=0; it<nChildren; it++)
     children[it]->atAddDiagonal( idiag, *v.children[it]);
 }
-void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
+void StochSymMatrix::fromGetDiagonal( int, Vector<double>& x_ )
 {
    assert( "The value of the parameter is not supported!" );
 
@@ -360,7 +360,7 @@ void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
       children[it]->getDiagonal(*x.children[it]);
 }
 
-void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
+void StochSymMatrix::symmetricScale( const Vector<double>& vec_ )
 {
   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
   assert(children.size() == vec.children.size());
@@ -371,7 +371,7 @@ void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
     children[it]->symmetricScale(*vec.children[it]);
 }
 
-void StochSymMatrix::columnScale( const OoqpVector& vec_ )
+void StochSymMatrix::columnScale( const Vector<double>& vec_ )
 {
    const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
@@ -385,7 +385,7 @@ void StochSymMatrix::columnScale( const OoqpVector& vec_ )
       children[it]->columnScale(*vec.children[it]);
 }
 
-void StochSymMatrix::rowScale ( const OoqpVector& vec_ )
+void StochSymMatrix::rowScale ( const Vector<double>& vec_ )
 {
    const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
@@ -409,7 +409,7 @@ void StochSymMatrix::scalarMult( double num )
 }
 
 
-void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent)
+void StochSymMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, const Vector<int>* linkParent)
 {
    const DistributedVector<int>& nnzVecStoch = dynamic_cast<const DistributedVector<int>&>(nnzVec);
    assert( children.size() == nnzVecStoch.children.size() );

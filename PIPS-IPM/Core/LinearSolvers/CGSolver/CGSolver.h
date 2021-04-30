@@ -22,12 +22,12 @@ public:
   virtual ~CGSolver();
 
   /** version of the main solve routine that takes argument as an
-   * OoqpVector
+   * Vector<double>
    *
    * @param drhs on input contains the right-hand side; on output
    * contains the solution
    */
-  void solve( OoqpVector& rhs );
+  void solve( Vector<double>& rhs );
 
 protected:
   CGSolver() {};

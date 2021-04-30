@@ -6,7 +6,7 @@
 #define DENSEDOUBLEMATRIX_H
 
 #include "DoubleMatrix.h"
-#include "OoqpVector_fwd.h"
+#include "Vector.hpp"
 
 extern int DenseStorageInstances;
 
@@ -30,8 +30,8 @@ public:
 
   void getSize( int& m, int& n ) const override;
 
-  void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( const OoqpVector& vec ) override;
+  void getDiagonal( Vector<double>& vec ) override;
+  void setToDiagonal( const Vector<double>& vec ) override;
 
   void atPutDense( int row, int col, double * A, int lda,
 			   int rowExtent, int colExtent ) override;
@@ -53,9 +53,9 @@ public:
 			     double A[], int lenA, int irowA[], int& nnz,
 			     int rowExtent, int& info ) override;
 
-  void columnScale( const OoqpVector& vec ) override;
-  void rowScale( const OoqpVector& vec ) override;
-  void symmetricScale( const OoqpVector& vec ) override;
+  void columnScale( const Vector<double>& vec ) override;
+  void rowScale( const Vector<double>& vec ) override;
+  void symmetricScale( const Vector<double>& vec ) override;
   void scalarMult( double num) override;
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
@@ -63,9 +63,9 @@ public:
   void atPutSpRow( int col, const double A[], int lenA, int irowA[], int& info ) override;
   void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info );
 
-  void atPutDiagonal(   int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal(   int idiag, const OoqpVector& v ) override;
-  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+  void atPutDiagonal(   int idiag, const Vector<double>& v ) override;
+  void atAddDiagonal(   int idiag, const Vector<double>& v ) override;
+  void fromGetDiagonal( int idiag, Vector<double>& v ) override;
   void atPutDiagonal( int idiag, const double x[], int incx, int extent );
   void atAddDiagonal( int idiag, const double x[], int incx, int extent );
   void diagonal_add_constant_from(int from, int length, double value);

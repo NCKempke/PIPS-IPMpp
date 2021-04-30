@@ -16,7 +16,8 @@
 
 #include "StochOptions.h"
 #include "StochGenMatrix.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "StochPostsolver.h"
 #include "StochPresolverBoundStrengthening.h"
 #include "StochPresolverModelCleanup.h"
@@ -113,11 +114,11 @@ Problem* StochPresolver::presolve()
 //   finalPreDistributedQP->xlowerBound().setNotIndicatedEntriesToVal( -1e10, *finalPreDistributedQP->ixlow );
 //   finalPreDistributedQP->xupperBound().setNotIndicatedEntriesToVal( 1e10, *finalPreDistributedQP->ixupp );
 //
-//   OoqpVector* ixupp_inv = finalPreDistributedQP->ixupp->clone();
+//   Vector<double>* ixupp_inv = finalPreDistributedQP->ixupp->clone();
 //   ixupp_inv->setToZero();
 //   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *finalPreDistributedQP->ixupp);
 //
-//   OoqpVector* ixlow_inv = finalPreDistributedQP->ixlow->clone();
+//   Vector<double>* ixlow_inv = finalPreDistributedQP->ixlow->clone();
 //   ixlow_inv->setToZero();
 //   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *finalPreDistributedQP->ixlow);
 //

@@ -230,7 +230,7 @@ void GeoStochScaler::scale()
  * Multiply maxvec and minvec componentwise and take the square root of the result.
  * Return result in maxvec.
  * */
-void GeoStochScaler::applyGeoMean(OoqpVector& maxvec, const OoqpVector& minvec)
+void GeoStochScaler::applyGeoMean(Vector<double>& maxvec, const Vector<double>& minvec)
 {
    assert( maxvec.length() == minvec.length() );
 

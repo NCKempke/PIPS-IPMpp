@@ -29,12 +29,12 @@ PCGSolver::~PCGSolver()
   if(tmpVec6) delete[] tmpVec6;
 }
 
-void PCGSolver::solve( OoqpVector& rhs_ )
+void PCGSolver::solve( Vector<double>& rhs_ )
 {
   solvefull(rhs_);
 }
 
-void PCGSolver::solvefull( OoqpVector& rhs_ )
+void PCGSolver::solvefull( Vector<double>& rhs_ )
 {
   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
   assert(n+m == b.length());

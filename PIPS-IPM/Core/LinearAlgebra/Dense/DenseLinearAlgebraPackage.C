@@ -26,7 +26,7 @@ GenMatrix* DenseLinearAlgebraPackage::newGenMatrix(int m, int n, int /* nnz */) 
    return new DenseGenMatrix(m, n);
 }
 
-OoqpVector* DenseLinearAlgebraPackage::newVector(int n) const {
+Vector<double>* DenseLinearAlgebraPackage::newVector(int n) const {
    return new SimpleVector<double>(n);
 }
 

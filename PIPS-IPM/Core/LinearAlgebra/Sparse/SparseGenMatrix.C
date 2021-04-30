@@ -212,13 +212,13 @@ void SparseGenMatrix::randomize( double alpha, double beta, double * seed )
 }
 
 
-void SparseGenMatrix::getDiagonal( OoqpVector& vec )
+void SparseGenMatrix::getDiagonal( Vector<double>& vec )
 {
   mStorage->getDiagonal( vec );
 }
 
 
-void SparseGenMatrix::setToDiagonal( const OoqpVector& vec )
+void SparseGenMatrix::setToDiagonal( const Vector<double>& vec )
 {
   mStorage->setToDiagonal( vec );
   assert(m_Mt == nullptr);
@@ -317,8 +317,8 @@ void SparseGenMatrix::atPutSubmatrix( int destRow, int destCol,
 }
 
 
-void SparseGenMatrix::mult ( double beta,  OoqpVector& y_in,
-				 double alpha, const OoqpVector& x_in ) const
+void SparseGenMatrix::mult ( double beta,  Vector<double>& y_in,
+				 double alpha, const Vector<double>& x_in ) const
 {
   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double> &>(x_in);
   SimpleVector<double>& y = dynamic_cast<SimpleVector<double> &>(y_in);
@@ -360,8 +360,8 @@ void SparseGenMatrix::transmultMatSymUpper( double beta, SymMatrix& y,
   m_Mt->getStorageRef().multMatSymUpper( beta, y_sparse.getStorageRef(), alpha, x, yrowstart, ycolstart );
 }
 
-void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
-				  double alpha,  const OoqpVector& x_in ) const
+void SparseGenMatrix::transMult ( double beta,   Vector<double>& y_in,
+				  double alpha,  const Vector<double>& x_in ) const
 {
    const SimpleVector<double> & x = dynamic_cast<const SimpleVector<double> &>(x_in);
    SimpleVector<double> & y = dynamic_cast<SimpleVector<double> &>(y_in);
@@ -371,7 +371,7 @@ void SparseGenMatrix::transMult ( double beta,   OoqpVector& y_in,
    mStorage->transMult( beta, y.elements(), 1, alpha, x.elements(), 1 );
 }
 
-void SparseGenMatrix::transMult( double beta, OoqpVector& y_in, int incy, double alpha, const OoqpVector& x_in, int incx ) const
+void SparseGenMatrix::transMult( double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in, int incx ) const
 {
    const SimpleVector<double> & x = dynamic_cast<const SimpleVector<double> &>(x_in);
    SimpleVector<double> & y = dynamic_cast<SimpleVector<double> &>(y_in);
@@ -388,7 +388,7 @@ void SparseGenMatrix::transMult( double beta, double yv[], int incy, double alph
    mStorage->transMult( beta, yv, incy, alpha, xv, incx );
 }
 
-void SparseGenMatrix::transMultD(double beta, OoqpVector& y_, double alpha, const OoqpVector& x_, const OoqpVector& d_ ) const
+void SparseGenMatrix::transMultD(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_, const Vector<double>& d_ ) const
 {
    const auto& x = dynamic_cast<const SimpleVector<double> &>(x_);
    const auto& d = dynamic_cast<const SimpleVector<double> &>(d_);
@@ -420,7 +420,7 @@ double SparseGenMatrix::abminnormNonZero( double tol ) const
       return std::numeric_limits<double>::infinity();
 }
 
-void SparseGenMatrix::atPutDiagonal( int idiag, const OoqpVector& vvec )
+void SparseGenMatrix::atPutDiagonal( int idiag, const Vector<double>& vvec )
 {
   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
 
@@ -429,7 +429,7 @@ void SparseGenMatrix::atPutDiagonal( int idiag, const OoqpVector& vvec )
   assert(m_Mt == nullptr);
 }
 
-void SparseGenMatrix::atAddDiagonal( int idiag, const OoqpVector& vvec )
+void SparseGenMatrix::atAddDiagonal( int idiag, const Vector<double>& vvec )
 {
   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
   mStorage->atAddDiagonal( idiag, &v[0], 1, v.length() );
@@ -437,12 +437,12 @@ void SparseGenMatrix::atAddDiagonal( int idiag, const OoqpVector& vvec )
   assert(m_Mt == nullptr);
 }
 
-void SparseGenMatrix::fromGetDiagonal( int idiag, OoqpVector& vvec )
+void SparseGenMatrix::fromGetDiagonal( int idiag, Vector<double>& vvec )
 {
   mStorage->fromGetDiagonal( idiag, vvec );
 }
 
-void SparseGenMatrix::columnScale( const OoqpVector& vec )
+void SparseGenMatrix::columnScale( const Vector<double>& vec )
 {
   mStorage->columnScale( vec );
 
@@ -450,7 +450,7 @@ void SparseGenMatrix::columnScale( const OoqpVector& vec )
      m_Mt->rowScale(vec);
 }
 
-void SparseGenMatrix::symmetricScale( const OoqpVector& vec )
+void SparseGenMatrix::symmetricScale( const Vector<double>& vec )
 {
   mStorage->symmetricScale( vec );
 
@@ -458,7 +458,7 @@ void SparseGenMatrix::symmetricScale( const OoqpVector& vec )
      m_Mt->symmetricScale(vec);
 }
 
-void SparseGenMatrix::rowScale( const OoqpVector& vec )
+void SparseGenMatrix::rowScale( const Vector<double>& vec )
 {
   mStorage->rowScale( vec );
 
@@ -474,7 +474,7 @@ void SparseGenMatrix::scalarMult( double num )
      m_Mt->scalarMult(num);
 }
 
-void SparseGenMatrix::matTransDMultMat(OoqpVector& d_, SymMatrix** res)
+void SparseGenMatrix::matTransDMultMat(Vector<double>& d_, SymMatrix** res)
 {
   SimpleVector<double>& d = dynamic_cast<SimpleVector<double> &>(d_);
 
@@ -527,7 +527,7 @@ void SparseGenMatrix::initTransposed(bool dynamic)
    }
 }
 
-void SparseGenMatrix::matTransDinvMultMat(OoqpVector& d_, SymMatrix** res)
+void SparseGenMatrix::matTransDinvMultMat(Vector<double>& d_, SymMatrix** res)
 {
   SimpleVector<double>& d = dynamic_cast<SimpleVector<double> &>(d_);
   const int m = mStorage->m;
@@ -589,7 +589,7 @@ void SparseGenMatrix::matMultTrans(SymMatrix** res)
 
 
 void
-SparseGenMatrix::addNnzPerRow(OoqpVectorBase<int>& nnzVec) const
+SparseGenMatrix::addNnzPerRow(Vector<int>& nnzVec) const
 {
    SimpleVector<int>& vec = dynamic_cast<SimpleVector<int>&>(nnzVec);
 
@@ -605,7 +605,7 @@ SparseGenMatrix::addNnzPerRow(OoqpVectorBase<int>& nnzVec) const
    }
 }
 
-void SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
+void SparseGenMatrix::addNnzPerCol(Vector<int>& nnzVec)
 {
    SimpleVector<int>& vec = dynamic_cast<SimpleVector<int>&>(nnzVec);
 
@@ -624,7 +624,7 @@ void SparseGenMatrix::addNnzPerCol(OoqpVectorBase<int>& nnzVec)
    }
 }
 
-void SparseGenMatrix::addNnzPerCol( OoqpVectorBase<int>& nnzVec, int begin_cols, int end_cols )
+void SparseGenMatrix::addNnzPerCol( Vector<int>& nnzVec, int begin_cols, int end_cols )
 {
    assert(0 <= begin_cols && begin_cols <= end_cols );
    assert( end_cols - begin_cols <= nnzVec.length() );
@@ -646,7 +646,7 @@ void SparseGenMatrix::addNnzPerCol( OoqpVectorBase<int>& nnzVec, int begin_cols,
    }
 }
 
-void SparseGenMatrix::addRowSums(OoqpVector& sumVec) const
+void SparseGenMatrix::addRowSums(Vector<double>& sumVec) const
 {
    SimpleVector<double>& vec = dynamic_cast<SimpleVector<double>&>(sumVec);
 
@@ -656,7 +656,7 @@ void SparseGenMatrix::addRowSums(OoqpVector& sumVec) const
    mStorage->addRowSums(vec.elements());
 }
 
-void SparseGenMatrix::addColSums(OoqpVector& sumVec) const
+void SparseGenMatrix::addColSums(Vector<double>& sumVec) const
 {
    assert( m_Mt );
    assert(m_Mt->mStorageDynamic == nullptr && m_Mt->mStorage != nullptr);
@@ -669,7 +669,7 @@ void SparseGenMatrix::addColSums(OoqpVector& sumVec) const
 
 void
 SparseGenMatrix::getMinMaxVec( bool getMin, bool initializeVec,
-      const SparseStorageDynamic* storage_dynamic, const OoqpVector* coScaleVec, OoqpVector& minmaxVec )
+      const SparseStorageDynamic* storage_dynamic, const Vector<double>* coScaleVec, Vector<double>& minmaxVec )
 {
    SimpleVector<double>& mvec = dynamic_cast<SimpleVector<double>&>(minmaxVec);
 
@@ -697,7 +697,7 @@ SparseGenMatrix::getMinMaxVec( bool getMin, bool initializeVec,
 
 void
 SparseGenMatrix::getMinMaxVec( bool getMin, bool initializeVec,
-      const SparseStorage* storage, const OoqpVector* coScaleVec, OoqpVector& minmaxVec )
+      const SparseStorage* storage, const Vector<double>* coScaleVec, Vector<double>& minmaxVec )
 {
    SimpleVector<double>& mvec = dynamic_cast<SimpleVector<double>&>(minmaxVec);
 
@@ -723,7 +723,7 @@ SparseGenMatrix::getMinMaxVec( bool getMin, bool initializeVec,
 }
 
 void SparseGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
-      const OoqpVector* colScaleVec, OoqpVector& minmaxVec)
+      const Vector<double>* colScaleVec, Vector<double>& minmaxVec)
 {
    if( hasDynamicStorage() )
       getMinMaxVec(getMin, initializeVec, mStorageDynamic, colScaleVec, minmaxVec);
@@ -732,7 +732,7 @@ void SparseGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec,
 }
 
 void SparseGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
-      const OoqpVector* rowScaleVec, OoqpVector& minmaxVec)
+      const Vector<double>* rowScaleVec, Vector<double>& minmaxVec)
 {
    if( hasDynamicStorage() )
    {
@@ -751,7 +751,7 @@ void SparseGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec,
    }
 }
 
-void SparseGenMatrix::initStaticStorageFromDynamic(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>* colNnzVec)
+void SparseGenMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, const Vector<int>* colNnzVec)
 {
    assert(mStorageDynamic != nullptr);
 
@@ -767,7 +767,7 @@ void SparseGenMatrix::initStaticStorageFromDynamic(const OoqpVectorBase<int>& ro
    assert(mStorage->refs() == 2);
 }
 
-void SparseGenMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& rowNnzVec, const OoqpVectorBase<int>& colNnzVec)
+void SparseGenMatrix::deleteEmptyRowsCols(const Vector<int>& rowNnzVec, const Vector<int>& colNnzVec)
 {
    const SimpleVector<int>& rowNnzVecSimple = dynamic_cast<const SimpleVector<int>&>(rowNnzVec);
    const SimpleVector<int>& colNnzVecSimple = dynamic_cast<const SimpleVector<int>&>(colNnzVec);

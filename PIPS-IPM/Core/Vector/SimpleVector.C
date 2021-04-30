@@ -15,7 +15,7 @@
 #include <memory>
 
 template<typename T>
-SimpleVector<T>::SimpleVector(int n_) : OoqpVectorBase<T>(n_), test(n_) {
+SimpleVector<T>::SimpleVector(int n_) : Vector<T>(n_), test(n_) {
    preserveVec = 0;
    v = new T[this->n];
 
@@ -49,7 +49,7 @@ void SimpleVector<T>::min(T& m, int& index) const {
 }
 
 template<typename T>
-void SimpleVector<T>::absminVecUpdate(OoqpVectorBase<T>& absminvec) const {
+void SimpleVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
    SimpleVector<T>& absminvecSimple = dynamic_cast<SimpleVector<T>&>(absminvec);
    assert(absminvecSimple.length() == this->n);
    T* const absminvecArr = absminvecSimple.elements();
@@ -62,7 +62,7 @@ void SimpleVector<T>::absminVecUpdate(OoqpVectorBase<T>& absminvec) const {
 }
 
 template<typename T>
-void SimpleVector<T>::absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const {
+void SimpleVector<T>::absmaxVecUpdate(Vector<T>& absmaxvec) const {
    SimpleVector<T>& absmaxvecSimple = dynamic_cast<SimpleVector<T>&>(absmaxvec);
    assert(absmaxvecSimple.length() == this->n);
    T* const absmaxvecArr = absmaxvecSimple.elements();
@@ -150,7 +150,7 @@ void SimpleVector<T>::copyFromArray(const char w[]) {
 }
 
 template<typename T>
-void SimpleVector<T>::pushAwayFromZero(double tol, double amount, const OoqpVectorBase<T>* select) {
+void SimpleVector<T>::pushAwayFromZero(double tol, double amount, const Vector<T>* select) {
    assert(0 < amount);
    assert(0 < tol);
 
@@ -176,7 +176,7 @@ SimpleVector<T>::SimpleVector(const SimpleVector<T>& other)
 
 template<typename T>
 SimpleVector<T>::SimpleVector(T* v_, int n_)
-      : OoqpVectorBase<T>(n_) {
+      : Vector<T>(n_) {
    preserveVec = 1;
    v = v_;
 }
@@ -189,7 +189,7 @@ SimpleVector<T>::~SimpleVector() {
 }
 
 template<typename T>
-OoqpVectorBase<T>* SimpleVector<T>::cloneFull() const {
+Vector<T>* SimpleVector<T>::cloneFull() const {
    SimpleVector<T>* clone = new SimpleVector<T>(this->n);
    clone->copyFromArray(v);
 
@@ -197,7 +197,7 @@ OoqpVectorBase<T>* SimpleVector<T>::cloneFull() const {
 }
 
 template<typename T>
-OoqpVectorBase<T>* SimpleVector<T>::clone() const {
+Vector<T>* SimpleVector<T>::clone() const {
    return new SimpleVector<T>(this->n);
 }
 
@@ -237,14 +237,14 @@ void SimpleVector<double>::randomize(double alpha, double beta, double* ix) {
 }
 
 template<typename T>
-void SimpleVector<T>::copyFrom(const OoqpVectorBase<T>& vec) {
+void SimpleVector<T>::copyFrom(const Vector<T>& vec) {
    assert(vec.length() == this->n);
 
    vec.copyIntoArray(this->v);
 }
 
 template<typename T>
-void SimpleVector<T>::copyFromAbs(const OoqpVectorBase<T>& vec) {
+void SimpleVector<T>::copyFromAbs(const Vector<T>& vec) {
    const SimpleVector<T>& vecSimple = dynamic_cast<const SimpleVector<T>&>(vec);
    assert(vec.length() == this->n);
    T* const vecArr = vecSimple.elements();
@@ -298,7 +298,7 @@ double SimpleVector<T>::twonorm() const {
 }
 
 template<typename T>
-void SimpleVector<T>::componentMult(const OoqpVectorBase<T>& vec) {
+void SimpleVector<T>::componentMult(const Vector<T>& vec) {
    assert(this->n == vec.length());
    const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
    const T* y = sv.v;
@@ -308,7 +308,7 @@ void SimpleVector<T>::componentMult(const OoqpVectorBase<T>& vec) {
 }
 
 template<typename T>
-bool SimpleVector<T>::componentEqual(const OoqpVectorBase<T>& vec, T tol) const {
+bool SimpleVector<T>::componentEqual(const Vector<T>& vec, T tol) const {
    assert(this->n == vec.length());
    const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
 
@@ -334,7 +334,7 @@ bool SimpleVector<T>::componentNotEqual(const T val, const T tol) const {
 }
 
 template<typename T>
-void SimpleVector<T>::setNotIndicatedEntriesToVal(const T val, const OoqpVectorBase<T>& ind) {
+void SimpleVector<T>::setNotIndicatedEntriesToVal(const T val, const Vector<T>& ind) {
    const SimpleVector<T>& ind_vec = dynamic_cast<const SimpleVector<T>&>(ind);
    assert(ind_vec.length() == this->length());
 
@@ -364,7 +364,7 @@ void SimpleVector<T>::printSolutionToStdErr() const {
 }
 
 template<typename T>
-void SimpleVector<T>::componentDiv(const OoqpVectorBase<T>& vec) {
+void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
    assert(this->n == vec.length());
    T* pv = v, * lv = v + this->n;
 
@@ -391,7 +391,7 @@ void SimpleVector<T>::writefToStream(std::ostream& out, const char format[]) con
 }
 
 template<typename T>
-void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[], const OoqpVectorBase<T>& select) const {
+void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[], const Vector<T>& select) const {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* s = 0;
    if (select.length() > 0) {
@@ -430,7 +430,7 @@ void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[],
 }
 
 template<typename T>
-void SimpleVector<T>::writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const OoqpVectorBase<T>* irhs) const {
+void SimpleVector<T>::writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const Vector<T>* irhs) const {
    if (irhs)
       assert(this->length() == irhs->length());
 
@@ -441,7 +441,7 @@ void SimpleVector<T>::writeMPSformatOnlyRhs(std::ostream& out, const std::string
 }
 
 template<typename T>
-void SimpleVector<T>::writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const OoqpVectorBase<T>* ix, bool upperBound) const {
+void SimpleVector<T>::writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const Vector<T>* ix, bool upperBound) const {
    assert(this->n == dynamic_cast<const SimpleVector<T>*>(ix)->n);
    std::string boundType = (upperBound) ? " UP" : " LO";
    std::string infiniteBound = (upperBound) ? " PL" : " MI";
@@ -471,7 +471,7 @@ void SimpleVector<T>::scale(T) {
 }
 
 template<>
-void SimpleVector<double>::axpy(double alpha, const OoqpVectorBase<double>& vec) {
+void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
    assert(this->n == vec.length());
    if (this->n == 0)
       return;
@@ -482,7 +482,7 @@ void SimpleVector<double>::axpy(double alpha, const OoqpVectorBase<double>& vec)
 }
 
 template<typename T>
-void SimpleVector<T>::axpy(T alpha, const OoqpVectorBase<T>& vec) {
+void SimpleVector<T>::axpy(T alpha, const Vector<T>& vec) {
    assert(this->n == vec.length());
    const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
 
@@ -521,7 +521,7 @@ void SimpleVector<T>::gondzioProjection(T rmin, T rmax) {
 }
 
 template<typename T>
-void SimpleVector<T>::axzpy(T alpha, const OoqpVectorBase<T>& xvec, const OoqpVectorBase<T>& zvec) {
+void SimpleVector<T>::axzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
    const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
@@ -559,7 +559,7 @@ void SimpleVector<T>::axzpy(T alpha, const OoqpVectorBase<T>& xvec, const OoqpVe
 }
 
 template<typename T>
-void SimpleVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& xvec, const OoqpVectorBase<T>& zvec) {
+void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
    T* x = sxvec.v;
    const SimpleVector<T>& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
@@ -576,7 +576,7 @@ void SimpleVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& xvec, const OoqpV
 }
 
 template<typename T>
-void SimpleVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& xvec, const OoqpVectorBase<T>& zvec, const OoqpVectorBase<T>& select) {
+void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec, const Vector<T>& select) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
    const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
@@ -607,7 +607,7 @@ void SimpleVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& xvec, const OoqpV
 }
 
 template<>
-double SimpleVector<double>::dotProductWith(const OoqpVectorBase<double>& vec) const {
+double SimpleVector<double>::dotProductWith(const Vector<double>& vec) const {
    assert(this->n == vec.length());
    if (this->n == 0)
       return 0.0;
@@ -619,7 +619,7 @@ double SimpleVector<double>::dotProductWith(const OoqpVectorBase<double>& vec) c
 }
 
 template<typename T>
-T SimpleVector<T>::dotProductWith(const OoqpVectorBase<T>& vec) const {
+T SimpleVector<T>::dotProductWith(const Vector<T>& vec) const {
    assert(this->n == vec.length());
    const SimpleVector<T>& svec = dynamic_cast<const SimpleVector<T>&>(vec);
 
@@ -664,8 +664,8 @@ T SimpleVector<T>::dotProductSelf(T scaleFactor) const {
 }
 
 template<typename T>
-T SimpleVector<T>::shiftedDotProductWith(T alpha, const OoqpVectorBase<T>& mystep, const OoqpVectorBase<T>& yvec, T beta,
-      const OoqpVectorBase<T>& ystep) const {
+T SimpleVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta,
+      const Vector<T>& ystep) const {
    assert(this->n == mystep.length() && this->n == yvec.length() && this->n == ystep.length());
 
    const SimpleVector<T>& syvec = dynamic_cast<const SimpleVector<T>&>(yvec);
@@ -768,7 +768,7 @@ bool SimpleVector<T>::allOf(const std::function<bool(const T&)>& pred) const {
 
 
 template<typename T>
-T SimpleVector<T>::stepbound(const OoqpVectorBase<T>& pvec, T maxStep) const {
+T SimpleVector<T>::stepbound(const Vector<T>& pvec, T maxStep) const {
    assert(this->n == pvec.length());
 
    const SimpleVector<T>& spvec = dynamic_cast<const SimpleVector<T>&>(pvec);
@@ -790,7 +790,7 @@ T SimpleVector<T>::stepbound(const OoqpVectorBase<T>& pvec, T maxStep) const {
 }
 
 template<typename T>
-T SimpleVector<T>::find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep,
+T SimpleVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep,
       T* w_elt, T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const {
    T* w = v;
    const SimpleVector<T>& swstep = dynamic_cast<const SimpleVector<T>&>(wstep_vec);
@@ -806,7 +806,7 @@ T SimpleVector<T>::find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpV
 }
 
 template<typename T>
-void SimpleVector<T>::find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec,
+void SimpleVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec,
       T& maxStepPri, T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
       bool& primalBlocking, bool& dualBlocking) const {
    const T* w = v;
@@ -824,7 +824,7 @@ void SimpleVector<T>::find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const
 }
 
 template<typename T>
-bool SimpleVector<T>::matchesNonZeroPattern(const OoqpVectorBase<T>& select) const {
+bool SimpleVector<T>::matchesNonZeroPattern(const Vector<T>& select) const {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 
@@ -843,7 +843,7 @@ bool SimpleVector<T>::matchesNonZeroPattern(const OoqpVectorBase<T>& select) con
 }
 
 template<typename T>
-void SimpleVector<T>::selectNonZeros(const OoqpVectorBase<T>& select) {
+void SimpleVector<T>::selectNonZeros(const Vector<T>& select) {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 
@@ -874,7 +874,7 @@ void SimpleVector<T>::selectNegative() {
 }
 
 template<typename T>
-void SimpleVector<T>::addSomeConstants(T c, const OoqpVectorBase<T>& select) {
+void SimpleVector<T>::addSomeConstants(T c, const Vector<T>& select) {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 
@@ -887,7 +887,7 @@ void SimpleVector<T>::addSomeConstants(T c, const OoqpVectorBase<T>& select) {
 }
 
 template<typename T>
-bool SimpleVector<T>::somePositive(const OoqpVectorBase<T>& select) const {
+bool SimpleVector<T>::somePositive(const Vector<T>& select) const {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 
@@ -904,7 +904,7 @@ bool SimpleVector<T>::somePositive(const OoqpVectorBase<T>& select) const {
 }
 
 template<typename T>
-void SimpleVector<T>::divideSome(const OoqpVectorBase<T>& div, const OoqpVectorBase<T>& select) {
+void SimpleVector<T>::divideSome(const Vector<T>& div, const Vector<T>& select) {
    if (this->n == 0)
       return;
 
@@ -926,7 +926,7 @@ void SimpleVector<T>::divideSome(const OoqpVectorBase<T>& div, const OoqpVectorB
 }
 
 template<typename T>
-void SimpleVector<T>::removeEntries(const OoqpVectorBase<int>& select) {
+void SimpleVector<T>::removeEntries(const Vector<int>& select) {
    const SimpleVector<int>& selectSimple = dynamic_cast<const SimpleVector<int>&>(select);
    const int* const selectArr = selectSimple.elements();
    assert(selectArr);
@@ -997,7 +997,7 @@ void SimpleVector<T>::appendToFront(const SimpleVector<T>& other) {
 }
 
 template<typename T>
-void SimpleVector<T>::jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpVectorBase<T>& vy, const OoqpVectorBase<T>& vz)
+void SimpleVector<T>::jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz)
 {
    assert( this->length() == vx.length() + vy.length() + vz.length() );
 
@@ -1011,7 +1011,7 @@ void SimpleVector<T>::jointCopyFrom(const OoqpVectorBase<T>& vx, const OoqpVecto
 }
 
 template<typename T>
-void SimpleVector<T>::jointCopyTo(OoqpVectorBase<T>& vx, OoqpVectorBase<T>& vy, OoqpVectorBase<T>& vz) const
+void SimpleVector<T>::jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const
 {
    assert( this->length() == vx.length() + vy.length() + vz.length() );
 
@@ -1084,7 +1084,7 @@ SimpleVector<T>* SimpleVector<T>::shaveBorder(int n_shave, bool shave_top) {
 
 
 template<typename T>
-void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select) const {
+void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const {
    if (this->n == 0)
       return;
 
@@ -1105,7 +1105,7 @@ void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_c
 
 template<typename T>
 void
-SimpleVector<T>::pushSmallComplementarityPairs(OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this, double tol_other,
+SimpleVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
       double tol_pairs) {
    assert(tol_other > 0);
    assert(tol_this > 0);

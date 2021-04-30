@@ -77,7 +77,7 @@ void DeSymIndefSolver2::matrixChanged()
 
 }
 
-void DeSymIndefSolver2::solve ( OoqpVector& v )
+void DeSymIndefSolver2::solve ( Vector<double>& v )
 {
   char fortranUplo = 'U';
   char fortranT = 'T';

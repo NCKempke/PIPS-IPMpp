@@ -7,7 +7,7 @@
 
 
 #include "BorderedGenMatrix.h"
-#include "OoqpVector_fwd.h"
+#include "Vector.hpp"
 #include "StochGenMatrix.h"
 #include "SparseGenMatrix.h"
 #include "DistributedVector.h"
@@ -64,7 +64,7 @@ int BorderedGenMatrix::isKindOf( int type ) const
    return type == kBorderedGenMatrix || type == kBorderedMatrix || type == kGenMatrix;
 }
 
-void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void BorderedGenMatrix::mult( double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in ) const
 {
    /* x row, y column shaped */
    assert( hasVecStructureForBorderedMat(x_in, true) );
@@ -81,7 +81,7 @@ void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
 }
 
 /** y = beta * y + alpha * this^T * x */
-void BorderedGenMatrix::transMult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void BorderedGenMatrix::transMult( double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in ) const
 {
    /* x column, y row shaped */
    assert( hasVecStructureForBorderedMat(x_in, false) );
@@ -109,7 +109,7 @@ double BorderedGenMatrix::abmaxnorm() const
    return norm;
 }
 
-void BorderedGenMatrix::columnScale( const OoqpVector& vec )
+void BorderedGenMatrix::columnScale( const Vector<double>& vec )
 {
    assert( hasVecStructureForBorderedMat(vec, true) );
 
@@ -122,7 +122,7 @@ void BorderedGenMatrix::columnScale( const OoqpVector& vec )
    border_bottom->columnScale(*svec.children[0]);
 }
 
-void BorderedGenMatrix::rowScale ( const OoqpVector& vec )
+void BorderedGenMatrix::rowScale ( const Vector<double>& vec )
 {
    assert( hasVecStructureForBorderedMat(vec, false) );
 
@@ -155,7 +155,7 @@ void BorderedGenMatrix::getSize( int& m_, int& n_ ) const
    n_ = n;
 }
 
-void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax_in )
+void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in )
 {
    assert( hasVecStructureForBorderedMat(minmax_in, false) );
    const bool has_colscale = (col_scale_in != nullptr);
@@ -172,7 +172,7 @@ void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, cons
    border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.last);
 }
 
-void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const OoqpVector* row_scale_in, OoqpVector& minmax_in )
+void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in )
 {
    assert( hasVecStructureForBorderedMat(minmax_in, true) );
 
@@ -190,7 +190,7 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    border_bottom->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.children[0]);
 }
 
-void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
+void BorderedGenMatrix::addRowSums( Vector<double>& vec_ ) const
 {
   assert( hasVecStructureForBorderedMat( vec_, false ) );
 
@@ -203,7 +203,7 @@ void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
   border_bottom->addRowSums( *vec.last );
 }
 
-void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
+void BorderedGenMatrix::addColSums( Vector<double>& vec_ ) const
 {
    assert( hasVecStructureForBorderedMat( vec_, true ) );
 
@@ -217,7 +217,7 @@ void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
 }
 
 template<typename T>
-bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVectorBase<T>& vec, bool row_vec ) const
+bool BorderedGenMatrix::hasVecStructureForBorderedMat( const Vector<T>& vec, bool row_vec ) const
 {
    const DistributedVector<T>& vecs = dynamic_cast<const DistributedVector<T>&>(vec);
 

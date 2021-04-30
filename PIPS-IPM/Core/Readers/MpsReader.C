@@ -3,7 +3,8 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "MpsReader.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrix.h"
 #include "SimpleVector.h"
 #include <cstring>
@@ -120,7 +121,7 @@ double asDouble(char str[], int len, int& ierr) {
    return value;
 }
 
-void MpsReader::readColsSection(OoqpVector& c_, GenMatrix& A, GenMatrix& C, char line[], int& ierr, int& kindOfLine) {
+void MpsReader::readColsSection(Vector<double>& c_, GenMatrix& A, GenMatrix& C, char line[], int& ierr, int& kindOfLine) {
    // Create a few temporaries
    if (nnzA < 0 || nnzC < 0) {
       int nnzA_, nnzC_, nnzQ_; // Force the computation of these cached values
@@ -401,7 +402,7 @@ void MpsReader::readRHSSection(double b[], double clow[], char iclow[], double c
 
 
 void
-MpsReader::readRHSSection(OoqpVector& b_, SimpleVector<double>& clow, OoqpVector& iclow_, SimpleVector<double>& cupp, OoqpVector& icupp_, char line[],
+MpsReader::readRHSSection(Vector<double>& b_, SimpleVector<double>& clow, Vector<double>& iclow_, SimpleVector<double>& cupp, Vector<double>& icupp_, char line[],
       int& ierr, int& kindOfLine) {
    char* iclow = 0, * icupp = 0;
    double* db = 0, * dclow = 0, * dcupp = 0;
@@ -490,7 +491,7 @@ void MpsReader::readRangesSection(double clow[], double cupp[], char line[], int
 }
 
 void
-MpsReader::readBoundsSection(OoqpVector& xlow_, OoqpVector& ixlow_, OoqpVector& xupp_, OoqpVector& ixupp_, char line[], int& ierr, int& kindOfLine) {
+MpsReader::readBoundsSection(Vector<double>& xlow_, Vector<double>& ixlow_, Vector<double>& xupp_, Vector<double>& ixupp_, char line[], int& ierr, int& kindOfLine) {
    // Force the computation of cached values
    if (my < 0) {
       int nx_, my_, mz_;
@@ -513,7 +514,7 @@ MpsReader::readBoundsSection(OoqpVector& xlow_, OoqpVector& ixlow_, OoqpVector& 
    delete[] ixupp;
 }
 
-void MpsReader::defaultBounds(OoqpVector& xlow_, OoqpVector& ixlow_, OoqpVector& xupp_, OoqpVector& ixupp_) {
+void MpsReader::defaultBounds(Vector<double>& xlow_, Vector<double>& ixlow_, Vector<double>& xupp_, Vector<double>& ixupp_) {
    // Force the computation of cached values
    if (my < 0) {
       int nx_, my_, mz_;
@@ -1666,7 +1667,7 @@ void MpsReader::readQpGen(double c[], int irowQ[], int jcolQ[], double dQ[], dou
 
 }
 
-void MpsReader::readQpBound(OoqpVector& c, SymMatrix& Q, OoqpVector& xlow, OoqpVector& ixlow, OoqpVector& xupp, OoqpVector& ixupp, int& iErr) {
+void MpsReader::readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, int& iErr) {
    if (my > 0 || mz > 0) {
       iErr = 1024;
       return;
@@ -1713,8 +1714,8 @@ void MpsReader::readQpBound(OoqpVector& c, SymMatrix& Q, OoqpVector& xlow, OoqpV
    this->expectHeader2(kindOfLine, "ENDATA", line, iErr);
 }
 
-void MpsReader::readQpGen(OoqpVector& c, SymMatrix& Q, OoqpVector& xlow, OoqpVector& ixlow, OoqpVector& xupp, OoqpVector& ixupp, GenMatrix& A,
-      OoqpVector& b, GenMatrix& C, OoqpVector& clow_, OoqpVector& iclow, OoqpVector& cupp_, OoqpVector& icupp, int& iErr) {
+void MpsReader::readQpGen(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, GenMatrix& A,
+      Vector<double>& b, GenMatrix& C, Vector<double>& clow_, Vector<double>& iclow, Vector<double>& cupp_, Vector<double>& icupp, int& iErr) {
    char line[200];
    int kindOfLine;
 

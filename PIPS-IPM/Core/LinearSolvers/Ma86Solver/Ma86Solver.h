@@ -9,7 +9,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseStorage.h"
 #include "SimpleVector.h"
 
@@ -138,15 +139,15 @@ public:
    virtual void firstCall();
    virtual void diagonalChanged(int idiag, int extent);
    virtual void matrixChanged();
-   virtual void solve(OoqpVector& rhs);
+   virtual void solve(Vector<double>& rhs);
    virtual void solve(SimpleVector<double>& rhs);
    virtual void solve(GenMatrix& rhs);
 
    virtual ~Ma86Solver();
 
-   // virtual void Lsolve( OoqpVector& x );
-   // virtual void Dsolve( OoqpVector& x );
-   // virtual void Ltsolve( OoqpVector& x );
+   // virtual void Lsolve( Vector<double>& x );
+   // virtual void Dsolve( Vector<double>& x );
+   // virtual void Ltsolve( Vector<double>& x );
 
 private:
    SparseSymMatrix* Msys;

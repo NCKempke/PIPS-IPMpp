@@ -116,7 +116,7 @@ void Ma57Solver::matrixChanged() {
    freshFactor = true;
 }
 
-void Ma57Solver::solve(OoqpVector& rhs_in) {
+void Ma57Solver::solve(Vector<double>& rhs_in) {
    const int my_id = omp_get_thread_num();
    assert(my_id < n_threads);
 
@@ -192,7 +192,7 @@ void Ma57Solver::solve(OoqpVector& rhs_in) {
    rhs.copyFrom(x_loc);
 }
 
-void Ma57Solver::solve(int solveType, OoqpVector& rhs_in) {
+void Ma57Solver::solve(int solveType, Vector<double>& rhs_in) {
    if (solveType < 1 || solveType > 4)
       assert("Unknown JOB assigned for use in MA57CD!" && 0);
    else if (solveType == 1) {

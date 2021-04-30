@@ -8,7 +8,8 @@
 #include "LinearAlgebraPackage.h"
 
 #include "DoubleMatrixHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 class DoubleLinearSolver;
 
 /**
@@ -34,7 +35,7 @@ public:
   static DenseLinearAlgebraPackage * soleInstance();
   SymMatrix * newSymMatrix( int size, int nnz ) const override;
   GenMatrix * newGenMatrix( int m, int n, int nnz ) const override;
-  OoqpVector *  newVector( int n ) const override;
+  Vector<double> *  newVector( int n ) const override;
   void whatami( char type[32] ) const override;
 };
 

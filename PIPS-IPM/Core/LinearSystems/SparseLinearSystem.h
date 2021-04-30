@@ -30,7 +30,7 @@ public:
     * the augmented system; on output contains the solution in
     * aggregated form
     */
-   void solveCompressed(OoqpVector& rhs) override;
+   void solveCompressed(Vector<double>& rhs) override;
 
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;

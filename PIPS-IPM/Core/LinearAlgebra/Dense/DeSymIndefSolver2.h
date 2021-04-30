@@ -25,7 +25,7 @@ public:
   void diagonalChanged( int idiag, int extent ) override;
   void matrixChanged() override;
   using DoubleLinearSolver::solve;
-  void solve ( OoqpVector& vec ) override;
+  void solve ( Vector<double>& vec ) override;
   virtual ~DeSymIndefSolver2();
 
 

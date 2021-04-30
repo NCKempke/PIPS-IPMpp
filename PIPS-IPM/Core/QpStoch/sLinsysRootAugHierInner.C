@@ -7,8 +7,8 @@
 
 #include "sLinsysRootAugHierInner.h"
 
-sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_,
-      OoqpVector* nomegaInv_, OoqpVector* regP_, OoqpVector* regDy_, OoqpVector* regDz_, OoqpVector* rhs_) : sLinsysRootAug(factory, prob_,
+sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_,
+      Vector<double>* nomegaInv_, Vector<double>* regP_, Vector<double>* regDy_, Vector<double>* regDz_, Vector<double>* rhs_) : sLinsysRootAug(factory, prob_,
       dynamic_cast<DistributedVector<double>*>(dd_)->first, dynamic_cast<DistributedVector<double>*>(dq_)->first, dynamic_cast<DistributedVector<double>*>(nomegaInv_)->first,
       dynamic_cast<DistributedVector<double>*>(regP_)->first, dynamic_cast<DistributedVector<double>*>(regDy_)->first, dynamic_cast<DistributedVector<double>*>(regDz_)->first, rhs_, false) {
    assert(locnx == 0);
@@ -52,7 +52,7 @@ void sLinsysRootAugHierInner::assembleLocalKKT(DistributedQP* prob) {
    }
 }
 
-void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, Vector<double>& x) {
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 
@@ -97,7 +97,7 @@ void sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<
 }
 
 /* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
-void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, Vector<double>& x) {
    assert(!is_hierarchy_root);
 
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
@@ -117,7 +117,7 @@ void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, OoqpVector& x) {
       PIPS_MPIsumArrayInPlace(b0.elements(), b0.length(), mpiComm);
 }
 
-void sLinsysRootAugHierInner::addLniziLinkCons(DistributedQP*, OoqpVector& z0_, OoqpVector& zi, bool use_local_RAC) {
+void sLinsysRootAugHierInner::addLniziLinkCons(DistributedQP*, Vector<double>& z0_, Vector<double>& zi, bool use_local_RAC) {
    assert(zi.isKindOf(kStochVector));
    SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
 

@@ -11,14 +11,14 @@
 
 class sLinsysRootAugHierInner : public sLinsysRootAug {
 public:
-   sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-         OoqpVector* regP_, OoqpVector* regDy_, OoqpVector* regDz_, OoqpVector* rhs_);
+   sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* regP_, Vector<double>* regDy_, Vector<double>* regDz_, Vector<double>* rhs_);
    ~sLinsysRootAugHierInner() override = default;
 
    void assembleLocalKKT(DistributedQP* prob) override;
 
-   void Lsolve(DistributedQP* prob, OoqpVector& x) override;
-   void Ltsolve(DistributedQP* prob, OoqpVector& x) override;
+   void Lsolve(DistributedQP* prob, Vector<double>& x) override;
+   void Ltsolve(DistributedQP* prob, Vector<double>& x) override;
    void Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool use_local_RAC) override;
 
    using DistributedLinearSystem::LsolveHierarchyBorder;
@@ -31,7 +31,7 @@ public:
 
    void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool use_local_RAC) override;
 
-   void addLniziLinkCons(DistributedQP* prob, OoqpVector& z0, OoqpVector& zi, bool use_local_RAC) override;
+   void addLniziLinkCons(DistributedQP* prob, Vector<double>& z0, Vector<double>& zi, bool use_local_RAC) override;
    void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
    void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 

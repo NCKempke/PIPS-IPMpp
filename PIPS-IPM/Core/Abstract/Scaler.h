@@ -7,7 +7,8 @@
 
 #ifndef PIPS_IPM_CORE_ABSTRACT_SCALER_H_
 #define PIPS_IPM_CORE_ABSTRACT_SCALER_H_
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 
 #include "pipsport.h"
 
@@ -61,19 +62,19 @@ public:
   virtual void unscaleVariables(Variables& resids) const = 0;
 
   /** compute original vector from given primal vector */
-  virtual OoqpVector* getPrimalUnscaled(const OoqpVector& solprimal) const = 0;
+  virtual Vector<double>* getPrimalUnscaled(const Vector<double>& solprimal) const = 0;
 
   /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualEqUnscaled(const OoqpVector& soldual) const = 0;
+  virtual Vector<double>* getDualEqUnscaled(const Vector<double>& soldual) const = 0;
 
   /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualIneqUnscaled(const OoqpVector& soldual) const = 0;
+  virtual Vector<double>* getDualIneqUnscaled(const Vector<double>& soldual) const = 0;
 
   /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualVarBoundsUppUnscaled(const OoqpVector& soldual) const = 0;
+  virtual Vector<double>* getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const = 0;
 
   /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualVarBoundsLowUnscaled(const OoqpVector& soldual) const = 0;
+  virtual Vector<double>* getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const = 0;
 };
 
 //@}

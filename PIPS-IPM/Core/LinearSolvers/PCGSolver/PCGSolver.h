@@ -34,22 +34,22 @@ public:
   virtual ~PCGSolver();
 
   /** version of the main solve routine that takes argument as an
-   * OoqpVector
+   * Vector<double>
    *
    * @param drhs on input contains the right-hand side; on output
    * contains the solution
    */
-  void solve( OoqpVector& rhs );
+  void solve( Vector<double>& rhs );
 
   /** the standard projected CG */
-  void solvefull(OoqpVector& rhs);
+  void solvefull(Vector<double>& rhs);
 
   /** an economical version of projected CG */
-  void solveecon(OoqpVector& rhs);
+  void solveecon(Vector<double>& rhs);
 
   /** "outer" iterative refinement, used if the algorithm was able to reduce the
    *  residual but not to the desired level. */
-  void refine(OoqpVector& rhs);
+  void refine(Vector<double>& rhs);
 protected:
   PCGSolver() {};
 

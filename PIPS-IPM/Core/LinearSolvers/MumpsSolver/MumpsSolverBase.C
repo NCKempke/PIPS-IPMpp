@@ -85,7 +85,7 @@ void MumpsSolverBase::solve(double* vec) {
 }
 
 
-void MumpsSolverBase::solve(OoqpVector& rhs) {
+void MumpsSolverBase::solve(Vector<double>& rhs) {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 
    SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);

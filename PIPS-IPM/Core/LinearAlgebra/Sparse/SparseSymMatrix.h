@@ -8,7 +8,8 @@
 #include "DoubleMatrix.h"
 
 #include "SparseStorage.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseSymMatrixHandle.h"
 
 class SparseGenMatrix;
@@ -53,9 +54,9 @@ public:
   void fromGetSpRow( int row, int col, double A[], int lenA, int jcolA[], int& nnz,
         int colExtent, int& info ) override;
 
-  void symmetricScale ( const OoqpVector& vec ) override;
-  void columnScale ( const OoqpVector& vec ) override;
-  void rowScale ( const OoqpVector& vec ) override;
+  void symmetricScale ( const Vector<double>& vec ) override;
+  void columnScale ( const Vector<double>& vec ) override;
+  void rowScale ( const Vector<double>& vec ) override;
   void scalarMult( double num ) override;
 
   void symAtPutSpRow( int col, double A[], int lenA, int jcolA[],
@@ -68,8 +69,8 @@ public:
 
   long long size() const override;
 
-  void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( const OoqpVector& vec ) override;
+  void getDiagonal( Vector<double>& vec ) override;
+  void setToDiagonal( const Vector<double>& vec ) override;
   void diagonal_add_constant_from(int from, int length, double value) override;
 
   void symAtPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
@@ -81,11 +82,11 @@ public:
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
 
-  void mult ( double beta,  OoqpVector& y,
-                      double alpha, const OoqpVector& x ) const override;
+  void mult ( double beta,  Vector<double>& y,
+                      double alpha, const Vector<double>& x ) const override;
 
-  void transMult ( double beta,   OoqpVector& y,
-                           double alpha,  const OoqpVector& x ) const override;
+  void transMult ( double beta,   Vector<double>& y,
+                           double alpha,  const Vector<double>& x ) const override;
 
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
@@ -97,10 +98,10 @@ public:
 
   void randomizePSD(double *) override;
 
-  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
+  void atPutDiagonal( int idiag, const Vector<double>& v ) override;
+  void atAddDiagonal( int idiag, const Vector<double>& v ) override;
 
-  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+  void fromGetDiagonal( int idiag, Vector<double>& v ) override;
 
   /** The actual number of structural non-zero elements in this sparse
    *  matrix. This includes so-called "accidental" zeros, elements that
@@ -111,7 +112,7 @@ public:
   /** Reduce the matrix to lower triangular */
   void reduceToLower();
 
-  void deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec);
+  void deleteEmptyRowsCols(const Vector<int>& nnzVec);
 
   void deleteZeroRowsCols(int*& new2orgIdx);
 

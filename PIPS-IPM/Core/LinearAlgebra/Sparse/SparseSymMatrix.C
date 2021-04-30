@@ -71,12 +71,12 @@ void SparseSymMatrix::fromGetDense( int row, int col, double * A, int lda,
 }
 
 
-void SparseSymMatrix::getDiagonal( OoqpVector& vec )
+void SparseSymMatrix::getDiagonal( Vector<double>& vec )
 {
   mStorage->getDiagonal( vec );
 }
 
-void SparseSymMatrix::setToDiagonal( const OoqpVector& vec )
+void SparseSymMatrix::setToDiagonal( const Vector<double>& vec )
 {
   mStorage->setToDiagonal( vec );
 }
@@ -260,8 +260,8 @@ long long SparseSymMatrix::size() const
   return mStorage->rows();
 }
 
-void SparseSymMatrix::mult ( double beta,  OoqpVector& y_in,
-				 double alpha, const OoqpVector& x_in ) const
+void SparseSymMatrix::mult ( double beta,  Vector<double>& y_in,
+				 double alpha, const Vector<double>& x_in ) const
 {
   const SimpleVector<double> & x = dynamic_cast<const SimpleVector<double> &>(x_in);
   SimpleVector<double> & y = dynamic_cast<SimpleVector<double> &>(y_in);
@@ -276,8 +276,8 @@ void SparseSymMatrix::mult ( double beta,  OoqpVector& y_in,
   this->mult( beta, yv, 1, alpha, xv, 1 );
 }
 
-void SparseSymMatrix::transMult ( double beta,   OoqpVector& y_in,
-				      double alpha,  const OoqpVector& x_in ) const
+void SparseSymMatrix::transMult ( double beta,   Vector<double>& y_in,
+				      double alpha,  const Vector<double>& x_in ) const
 {
   const SimpleVector<double> & x = dynamic_cast<const SimpleVector<double> &>(x_in);
   SimpleVector<double> & y = dynamic_cast<SimpleVector<double> &>(y_in);
@@ -342,32 +342,32 @@ void SparseSymMatrix::mult ( double beta,  double y[], int incy,
    mStorage->multSym( beta, y, incy, alpha, x, incx );
 }
 
-void SparseSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v )
+void SparseSymMatrix::atPutDiagonal( int idiag, const Vector<double>& v )
 {
   mStorage->atPutDiagonal( idiag, v );
 }
 
-void SparseSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v )
+void SparseSymMatrix::atAddDiagonal( int idiag, const Vector<double>& v )
 {
   mStorage->atAddDiagonal( idiag, v );
 }
 
-void SparseSymMatrix::fromGetDiagonal( int idiag, OoqpVector& v )
+void SparseSymMatrix::fromGetDiagonal( int idiag, Vector<double>& v )
 {
   mStorage->fromGetDiagonal( idiag, v );
 }
 
-void SparseSymMatrix::symmetricScale( const OoqpVector& vec )
+void SparseSymMatrix::symmetricScale( const Vector<double>& vec )
 {
   mStorage->symmetricScale( vec );
 }
 
-void SparseSymMatrix::columnScale( const OoqpVector& vec )
+void SparseSymMatrix::columnScale( const Vector<double>& vec )
 {
   mStorage->columnScale( vec );
 }
 
-void SparseSymMatrix::rowScale( const OoqpVector& vec )
+void SparseSymMatrix::rowScale( const Vector<double>& vec )
 {
   mStorage->rowScale( vec );
 }
@@ -382,7 +382,7 @@ void SparseSymMatrix::reduceToLower()
   mStorage->reduceToLower();
 }
 
-void SparseSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec)
+void SparseSymMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec)
 {
    const SimpleVector<int>& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
 #ifndef NDEBUG

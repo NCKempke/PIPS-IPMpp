@@ -55,45 +55,45 @@ class BorderedGenMatrix : public GenMatrix
       int isKindOf( int matrixType ) const override;
 
       /** y = beta * y + alpha * this * x */
-      void mult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override;
+      void mult( double beta,  Vector<double>& y, double alpha, const Vector<double>& x ) const override;
       /** y = beta * y + alpha * this^T * x */
-      void transMult( double beta, OoqpVector& y, double alpha,  const OoqpVector& x ) const override;
+      void transMult( double beta, Vector<double>& y, double alpha,  const Vector<double>& x ) const override;
 
       double abmaxnorm() const override;
-      void columnScale( const OoqpVector& vec ) override;
-      void rowScale( const OoqpVector& vec ) override;
+      void columnScale( const Vector<double>& vec ) override;
+      void rowScale( const Vector<double>& vec ) override;
 
       void scalarMult( double num ) override;
 
       void getSize( long long& m_, long long& n_ ) const override;
       void getSize( int& m_, int& n_ ) const override;
 
-      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
-      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
+      void getRowMinMaxVec( bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec ) override;
+      void getColMinMaxVec( bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec ) override;
 
       void writeToStreamDense( std::ostream& out ) const override;
 
-      void addRowSums( OoqpVector& vec ) const override;
-      void addColSums( OoqpVector& vec ) const override;
+      void addRowSums( Vector<double>& vec ) const override;
+      void addColSums( Vector<double>& vec ) const override;
 
       /* methods not needed for Hierarchical approach */
       double abminnormNonZero( double ) const override { assert( false && "TODO: implement" ); return 0.0; };
       void writeToStream( std::ostream& ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
-      void getDiagonal( OoqpVector& ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void atPutDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void atAddDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void getDiagonal( Vector<double>& ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void setToDiagonal( const Vector<double>& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void atPutDiagonal( int, const Vector<double>& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void atAddDiagonal( int, const Vector<double>& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+      void fromGetDiagonal( int, Vector<double>& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
 
-      void matTransDMultMat(OoqpVector&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
-      void matTransDinvMultMat(OoqpVector&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
+      void matTransDMultMat(Vector<double>&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
+      void matTransDinvMultMat(Vector<double>&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
 
-      void getNnzPerRow( OoqpVectorBase<int>& ) override { assert( 0 && "not implemented"); };
-      void getNnzPerCol( OoqpVectorBase<int>& ) override { assert( 0 && "not implemented"); };
+      void getNnzPerRow( Vector<int>& ) override { assert(0 && "not implemented"); };
+      void getNnzPerCol( Vector<int>& ) override { assert(0 && "not implemented"); };
       void fromGetDense( int, int, double*, int, int, int ) override { assert(0 && "not implemented"); };
       void fromGetSpRow( int, int, double*, int, int*, int&, int, int& ) override { assert(0 && "not implemented"); };
       void putSparseTriple( int*, int, int*, double*, int& ) override { assert(0 && "not implemented"); };
-      void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented"); };
+      void symmetricScale ( const Vector<double>& ) override { assert(0 && "not implemented"); };
       void atPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert(0 && "not implemented"); };
       void atPutDense( int, int, double*, int, int, int ) override { assert(0 && "not implemented"); };
       void atPutSpRow( int, double*, int, int*, int& ) override { assert(0 && "not implemented"); };
@@ -101,7 +101,7 @@ class BorderedGenMatrix : public GenMatrix
    private:
 
       template<typename T>
-      bool hasVecStructureForBorderedMat( const OoqpVectorBase<T>& vec, bool row_vec ) const;
+      bool hasVecStructureForBorderedMat( const Vector<T>& vec, bool row_vec ) const;
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDGENMATRIX_H_ */

@@ -27,7 +27,7 @@ GenMatrix * SparseLinearAlgebraPackage::newGenMatrix( int m, int n,
   return new SparseGenMatrix( m, n, nnz );
 }
   
-OoqpVector * SparseLinearAlgebraPackage::newVector( int n ) const
+Vector<double> * SparseLinearAlgebraPackage::newVector( int n ) const
 {
   return new SimpleVector<double>(n);
 }

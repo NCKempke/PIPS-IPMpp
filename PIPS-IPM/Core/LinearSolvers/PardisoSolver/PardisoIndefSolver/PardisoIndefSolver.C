@@ -370,7 +370,7 @@ else
    }
 }
 
-void PardisoIndefSolver::solveSynchronized(OoqpVector& vec) {
+void PardisoIndefSolver::solveSynchronized(Vector<double>& vec) {
    const bool solve_in_parallel_old = solve_in_parallel;
    solve_in_parallel = false;
 
@@ -380,7 +380,7 @@ void PardisoIndefSolver::solveSynchronized(OoqpVector& vec) {
 }
 
 
-void PardisoIndefSolver::solve(OoqpVector& v) {
+void PardisoIndefSolver::solve(Vector<double>& v) {
    assert(iparmUnchanged());
 
    const int size = PIPS_MPIgetSize(mpi_comm);

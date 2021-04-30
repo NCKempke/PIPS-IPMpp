@@ -7,7 +7,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseStorage.h"
 
 /** implements the linear solver class using the HSL MA57 solver
@@ -84,15 +85,15 @@ public:
   
   virtual void diagonalChanged( int idiag, int extent );
   virtual void matrixChanged();
-  virtual void solve( OoqpVector& rhs );
+  virtual void solve( Vector<double>& rhs );
 	virtual void solve( GenMatrix& rhs);
 
-  virtual void Lsolve  ( OoqpVector& x );
-  virtual void Dsolve  ( OoqpVector& x );
-  virtual void Ltsolve ( OoqpVector& x );
-  //virtual void Refine  ( OoqpVector& x );
+  virtual void Lsolve  ( Vector<double>& x );
+  virtual void Dsolve  ( Vector<double>& x );
+  virtual void Ltsolve ( Vector<double>& x );
+  //virtual void Refine  ( Vector<double>& x );
  private:
-  void solve(int solveType, OoqpVector& rhs);
+  void solve(int solveType, Vector<double>& rhs);
 
 
  public:

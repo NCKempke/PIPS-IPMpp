@@ -6,12 +6,13 @@
 #include "OoqpBlas.h"
 #include "DenseStorage.h"
 #include "DoubleMatrix.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SimpleVector.h"
 
 int DenseStorageInstances = 0;
 
-void DenseStorage::fromGetDiagonal( int idiag, OoqpVector& vec )
+void DenseStorage::fromGetDiagonal( int idiag, Vector<double>& vec )
 {
    const int extent = vec.length();
 
@@ -25,13 +26,13 @@ void DenseStorage::fromGetDiagonal( int idiag, OoqpVector& vec )
    }
 }
 
-void DenseStorage::getDiagonal( OoqpVector& vec )
+void DenseStorage::getDiagonal( Vector<double>& vec )
 {
    this->fromGetDiagonal( 0, vec );
 }
 
 
-void DenseStorage::setToDiagonal( const OoqpVector& vec )
+void DenseStorage::setToDiagonal( const Vector<double>& vec )
 {
    const int extent = vec.length();
 
@@ -254,14 +255,14 @@ void DenseStorage::addToDiagonalAt( double alpha, double x[], int incx,
 
 
 void DenseStorage::atPutDiagonal( int idiag,
-   const OoqpVector& vvec )
+   const Vector<double>& vvec )
 {
    const SimpleVector<double> & v = dynamic_cast<const SimpleVector<double>&>(vvec);
    atPutDiagonal( idiag, &v[0], 1, v.length() );
 }
 
 void DenseStorage::atAddDiagonal( int idiag,
-   const OoqpVector& vvec )
+   const Vector<double>& vvec )
 {
    const SimpleVector<double> & v = dynamic_cast<const SimpleVector<double>&>(vvec);
    atAddDiagonal( idiag, &v[0], 1, v.length() );
@@ -321,7 +322,7 @@ double DenseStorage::abminnormNonZero( double tol ) const
    return min;
 }
 
-void DenseStorage::columnScale(const OoqpVector &scale_in)
+void DenseStorage::columnScale(const Vector<double> &scale_in)
 {
    const SimpleVector<double> &scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 
@@ -343,7 +344,7 @@ void DenseStorage::scalarMult(double num)
    }
 }
 
-void DenseStorage::rowScale( const OoqpVector& scale_in )
+void DenseStorage::rowScale( const Vector<double>& scale_in )
 {
    const SimpleVector<double> &scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 
@@ -356,7 +357,7 @@ void DenseStorage::rowScale( const OoqpVector& scale_in )
    }
 }
 
-void DenseStorage::symmetricScale(const OoqpVector &scale_in)
+void DenseStorage::symmetricScale(const Vector<double> &scale_in)
 {
    const SimpleVector<double> &scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 

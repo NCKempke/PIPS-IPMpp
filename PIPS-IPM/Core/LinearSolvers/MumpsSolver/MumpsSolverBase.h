@@ -13,7 +13,8 @@
 
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrix.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "pipsport.h"
 
 enum MumpsVerbosity{verb_mute, verb_standard, verb_high};
@@ -37,7 +38,7 @@ class MumpsSolverBase : public DoubleLinearSolver {
   void matrixChanged() override = 0;
 
   using DoubleLinearSolver::solve;
-  void solve( OoqpVector& rhs ) override;
+  void solve( Vector<double>& rhs ) override;
 
   static constexpr MumpsVerbosity defaultVerbosity = verb_mute;
 //  static constexpr MumpsVerbosity defaultVerbosity = verb_standard;

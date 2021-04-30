@@ -54,13 +54,13 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
 
 sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_,
 			       DistributedQP* prob_,
-			       OoqpVector* dd_, 
-			       OoqpVector* dq_,
-			       OoqpVector* nomegaInv_,
-			       OoqpVector* regP,
-			       OoqpVector* regDy,
-			       OoqpVector* regDz,
-			       OoqpVector* rhs_,
+			       Vector<double>* dd_,
+			       Vector<double>* dq_,
+			       Vector<double>* nomegaInv_,
+			       Vector<double>* regP,
+			       Vector<double>* regDy,
+			       Vector<double>* regDz,
+			       Vector<double>* rhs_,
 			       bool create_solvers
              )
   : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, regP, regDy, regDz, rhs_ ) {
@@ -427,7 +427,7 @@ void sLinsysRootAug::assembleLocalKKT(DistributedQP* prob) {
 }
 
 /* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
-void sLinsysRootAug::Lsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAug::Lsolve(DistributedQP* prob, Vector<double>& x) {
    assert(!is_hierarchy_root);
 
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
@@ -466,7 +466,7 @@ void sLinsysRootAug::Lsolve(DistributedQP* prob, OoqpVector& x) {
 }
 
 /* does Schur Complement solve */
-void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAug::Dsolve(DistributedQP* prob, Vector<double>& x) {
    /* Ki^-1 bi has already been computed in Lsolve */
 
    /* children have already computed Li^T\Di\Li\bi in Lsolve() */
@@ -482,7 +482,7 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
 #endif
 }
 
-void sLinsysRootAug::Ltsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAug::Ltsolve(DistributedQP* prob, Vector<double>& x) {
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 

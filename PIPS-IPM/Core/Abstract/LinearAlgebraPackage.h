@@ -13,7 +13,7 @@
 
 #include "DoubleMatrixHandle.h"
 #include "IotrRefCount.h"
-#include "OoqpVector_fwd.h"
+#include "Vector.hpp"
 
 class DoubleLinearSolver;
 
@@ -30,7 +30,7 @@ public:
   /** Create a new non-symmetric matrix (of appropriate type). */
   virtual GenMatrix * newGenMatrix( int m, int n, int nnz ) const = 0;
   /** Create a new vector (of appropriate type.) */
-  virtual OoqpVector * newVector( int n ) const = 0;
+  virtual Vector<double> * newVector( int n ) const = 0;
 
   /** Get a string indicating the type of this object
    *  (for debugging purposes.)

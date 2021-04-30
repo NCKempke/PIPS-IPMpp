@@ -8,7 +8,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "pipsport.h"
 
 #include <vector>
@@ -194,7 +195,7 @@ public:
 
   using DoubleLinearSolver::solve;
   /* thread-safe if not called by more OMP_NUM_THREADS than available when calling the ctor */
-  void solve( OoqpVector& rhs ) override;
+  void solve( Vector<double>& rhs ) override;
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
 
   void diagonalChanged( int idiag, int extent ) override;

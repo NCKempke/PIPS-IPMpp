@@ -49,12 +49,12 @@ void DenseSymMatrix::atAddOuterProductOf(int row, int col, double alpha, double*
 }
 
 
-void DenseSymMatrix::getDiagonal(OoqpVector& vec) {
+void DenseSymMatrix::getDiagonal(Vector<double>& vec) {
    mStorage->getDiagonal(vec);
 }
 
 
-void DenseSymMatrix::setToDiagonal(const OoqpVector& vec) {
+void DenseSymMatrix::setToDiagonal(const Vector<double>& vec) {
    mStorage->setToDiagonal(vec);
 }
 
@@ -112,7 +112,7 @@ void DenseSymMatrix::mult(double beta, double y[], int incy, double alpha, const
 }
 
 
-void DenseSymMatrix::mult(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const {
+void DenseSymMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranUplo = 'U';
    int n = mStorage->n;
    SimpleVector<double>& y = (SimpleVector<double>&) y_in;
@@ -125,7 +125,7 @@ void DenseSymMatrix::mult(double beta, OoqpVector& y_in, double alpha, const Ooq
 }
 
 
-void DenseSymMatrix::transMult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void DenseSymMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    // We're symmetric silly
    this->mult(beta, y, alpha, x);
 }
@@ -209,18 +209,18 @@ void DenseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowE
 
 
 void DenseSymMatrix::atPutDiagonal( int idiag,
-					const OoqpVector& v )
+					const Vector<double>& v )
 {
   mStorage->atPutDiagonal( idiag, v );
 }
 
 void DenseSymMatrix::atAddDiagonal( int idiag,
-					const OoqpVector& v )
+					const Vector<double>& v )
 {
   mStorage->atAddDiagonal( idiag, v );
 }
 
-void DenseSymMatrix::fromGetDiagonal(int idiag, OoqpVector& v) {
+void DenseSymMatrix::fromGetDiagonal(int idiag, Vector<double>& v) {
    mStorage->fromGetDiagonal(idiag, v);
 }
 
@@ -246,15 +246,15 @@ void DenseSymMatrix::symAtPutDense(int row, int col, double* A, int lda, int row
    mStorage->atPutDense(row, col, A, lda, rowExtent, colExtent);
 }
 
-void DenseSymMatrix::symmetricScale(const OoqpVector& vec) {
+void DenseSymMatrix::symmetricScale(const Vector<double>& vec) {
    mStorage->symmetricScale(vec);
 }
 
-void DenseSymMatrix::columnScale(const OoqpVector& vec) {
+void DenseSymMatrix::columnScale(const Vector<double>& vec) {
    mStorage->columnScale(vec);
 }
 
-void DenseSymMatrix::rowScale(const OoqpVector& vec) {
+void DenseSymMatrix::rowScale(const Vector<double>& vec) {
    mStorage->rowScale(vec);
 }
 

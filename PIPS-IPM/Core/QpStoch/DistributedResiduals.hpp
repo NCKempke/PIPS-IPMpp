@@ -20,19 +20,19 @@ public:
   /**
    * Constructor
    */
-  DistributedResiduals( OoqpVector * rQ,
-	      OoqpVector * rA, OoqpVector * rC,
-	      OoqpVector * rz,
-	      OoqpVector * rt, OoqpVector * rlambda,
-	      OoqpVector * ru, OoqpVector * rpi,
-	      OoqpVector * rv, OoqpVector * rgamma,
-	      OoqpVector * rw, OoqpVector * rphi,
-	      OoqpVector * ixlow, double nxlowGlobal,
-	      OoqpVector * ixupp, double nxuppGlobal,
-	      OoqpVector * iclow, double mclowGlobal,
-	      OoqpVector * icupp, double mcuppGlobal );
+  DistributedResiduals( Vector<double> * rQ,
+	      Vector<double> * rA, Vector<double> * rC,
+	      Vector<double> * rz,
+	      Vector<double> * rt, Vector<double> * rlambda,
+	      Vector<double> * ru, Vector<double> * rpi,
+	      Vector<double> * rv, Vector<double> * rgamma,
+	      Vector<double> * rw, Vector<double> * rphi,
+	      Vector<double> * ixlow, double nxlowGlobal,
+	      Vector<double> * ixupp, double nxuppGlobal,
+	      Vector<double> * iclow, double mclowGlobal,
+	      Vector<double> * icupp, double mcuppGlobal );
 
-  DistributedResiduals( const sTree* tree, OoqpVector * ixlow_, OoqpVector * ixupp_, OoqpVector * iclow_, OoqpVector * icupp_ );
+  DistributedResiduals( const sTree* tree, Vector<double> * ixlow_, Vector<double> * ixupp_, Vector<double> * iclow_, Vector<double> * icupp_ );
 
   DistributedResiduals( const DistributedResiduals& res );
 
@@ -44,7 +44,7 @@ public:
 
   bool isRootNodeInSync() const;
 
-  void collapseHierarchicalStructure( const DistributedQP& data, const sTree* tree_hier, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_);
+  void collapseHierarchicalStructure( const DistributedQP& data, const sTree* tree_hier, SmartPointer<Vector<double> > ixlow_, SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_);
 
   std::vector<DistributedResiduals*> children;
 protected:

@@ -1,8 +1,8 @@
 #include <SimpleVector.h>
 #include "Problem.h"
 
-Problem::Problem(LinearAlgebraPackage* la_in, OoqpVector* c_in, OoqpVector* xlow_in, OoqpVector* ixlow_in, OoqpVector* xupp_in, OoqpVector* ixupp_in,
-      GenMatrix* A_in, OoqpVector* bA_in, GenMatrix* C_in, OoqpVector* clow_in, OoqpVector* iclow_in, OoqpVector* cupp_in, OoqpVector* icupp_in) : la{
+Problem::Problem(LinearAlgebraPackage* la_in, Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in, Vector<double>* ixupp_in,
+      GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in, Vector<double>* cupp_in, Vector<double>* icupp_in) : la{
       la_in}, nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()}, mclow{iclow_in->numberOfNonzeros()},
       mcupp{icupp_in->numberOfNonzeros()} {
    SpReferTo(g, c_in);
@@ -27,27 +27,27 @@ Problem::Problem(LinearAlgebraPackage* la_in, OoqpVector* c_in, OoqpVector* xlow
    C->getSize(mz, dummy);
 }
 
-void Problem::Amult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void Problem::Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    A->mult(beta, y, alpha, x);
 }
 
-void Problem::Cmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void Problem::Cmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    C->mult(beta, y, alpha, x);
 }
 
-void Problem::ATransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void Problem::ATransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    A->transMult(beta, y, alpha, x);
 }
 
-void Problem::CTransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const {
+void Problem::CTransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    C->transMult(beta, y, alpha, x);
 }
 
-void Problem::getg(OoqpVector& myG) const {
+void Problem::getg(Vector<double>& myG) const {
    myG.copyFrom(*g);
 }
 
-void Problem::getbA(OoqpVector& bout) const {
+void Problem::getbA(Vector<double>& bout) const {
    bout.copyFrom(*bA);
 }
 

@@ -6,7 +6,8 @@
  */
 
 #include "StochPostsolver.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "StochOptions.h"
 #include "pipsdef.h"
 #include "pipsport.h"

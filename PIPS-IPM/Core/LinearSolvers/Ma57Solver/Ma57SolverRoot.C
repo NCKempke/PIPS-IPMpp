@@ -42,7 +42,7 @@ void Ma57SolverRoot::matrixChanged() {
       Ma57Solver::matrixChanged();
 }
 
-void Ma57SolverRoot::solve(OoqpVector& rhs) {
+void Ma57SolverRoot::solve(Vector<double>& rhs) {
    SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
 
    assert(n == rhs.length());

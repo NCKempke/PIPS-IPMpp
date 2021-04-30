@@ -6,7 +6,7 @@
 #define OPTIMIZATIONFACTORY
 
 #include <iostream>
-#include "OoqpVector_fwd.h"
+#include "Vector.hpp"
 
 /**
  *  @defgroup AbstractProblemFormulation
@@ -56,18 +56,18 @@ class LinearAlgebraPackage;
  */
 class ProblemFactory {
 public:
-   virtual void join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const = 0;
+   virtual void join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const = 0;
 
-   virtual void separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const = 0;
+   virtual void separate_variables(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const = 0;
 
    /** create x shaped vector using LinearAlgebraPackage */
-   virtual OoqpVector* make_primal_vector() const;
+   virtual Vector<double>* make_primal_vector() const;
    /** create dual A shaped vector using LinearAlgebraPackage */
-   virtual OoqpVector* make_equalities_dual_vector() const;
+   virtual Vector<double>* make_equalities_dual_vector() const;
    /** create dual C shaped vector using LinearAlgebraPackage */
-   virtual OoqpVector* make_inequalities_dual_vector() const;
+   virtual Vector<double>* make_inequalities_dual_vector() const;
    /** create a rhs vector for the augmented system */
-   virtual OoqpVector* make_right_hand_side() const;
+   virtual Vector<double>* make_right_hand_side() const;
 
    /** create the Residuals class for the relevant formulation */
    virtual Residuals* make_residuals(Problem& problem) = 0;

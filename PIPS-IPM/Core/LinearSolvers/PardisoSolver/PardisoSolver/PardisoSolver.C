@@ -209,7 +209,7 @@ void PardisoSolver::matrixChanged() {
    }
 }
 
-void PardisoSolver::solve(OoqpVector& rhs_in) {
+void PardisoSolver::solve(Vector<double>& rhs_in) {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    double* sol_local = nvec;
 

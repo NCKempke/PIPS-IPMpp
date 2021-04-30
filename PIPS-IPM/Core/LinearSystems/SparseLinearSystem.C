@@ -24,7 +24,7 @@ void SparseLinearSystem::put_dual_inequalites_diagonal() {
 }
 
 
-void SparseLinearSystem::solveCompressed(OoqpVector& arhs) {
+void SparseLinearSystem::solveCompressed(Vector<double>& arhs) {
    //printf("-----\n");arhs.writeToStream(cout);
    solver->solve(arhs);
    //printf("~~~~~\n");arhs.writeToStream(cout);

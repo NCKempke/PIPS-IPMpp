@@ -11,7 +11,8 @@
 
 #include <cstring>
 #include <iostream>
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrixHandle.h"
 
 class DoubleLinearSolver;
@@ -32,15 +33,15 @@ public:
 
    virtual void getSize(int& m, int& n) const = 0;
 
-   virtual void getDiagonal(OoqpVector& vec) = 0;
-   virtual void setToDiagonal(const OoqpVector& vec) = 0;
+   virtual void getDiagonal(Vector<double>& vec) = 0;
+   virtual void setToDiagonal(const Vector<double>& vec) = 0;
 
-   virtual void atPutDiagonal(int idiag, const OoqpVector& x) = 0;
-   virtual void atAddDiagonal(int idiag, const OoqpVector& x) = 0;
-   virtual void fromGetDiagonal(int idiag, OoqpVector& x) = 0;
-   virtual void symmetricScale(const OoqpVector& vec) = 0;
-   virtual void columnScale(const OoqpVector& vec) = 0;
-   virtual void rowScale(const OoqpVector& vec) = 0;
+   virtual void atPutDiagonal(int idiag, const Vector<double>& x) = 0;
+   virtual void atAddDiagonal(int idiag, const Vector<double>& x) = 0;
+   virtual void fromGetDiagonal(int idiag, Vector<double>& x) = 0;
+   virtual void symmetricScale(const Vector<double>& vec) = 0;
+   virtual void columnScale(const Vector<double>& vec) = 0;
+   virtual void rowScale(const Vector<double>& vec) = 0;
    virtual void scalarMult(double num) = 0;
    [[nodiscard]] virtual double abmaxnorm() const = 0;
    [[nodiscard]] double abminnormNonZero() const { return abminnormNonZero(1e-30); };
@@ -96,10 +97,10 @@ public:
    virtual void putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) = 0;
 
    /** y = beta * y + alpha * this * x */
-   virtual void mult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const = 0;
+   virtual void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
    /** y = beta * y + alpha * this^T * x */
-   virtual void transMult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const = 0;
+   virtual void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
    /** the magnitude of the element in this matrix with largest absolute value.
     */
@@ -119,9 +120,9 @@ public:
    virtual void writeDashedLineToStream(std::ostream&) const { assert(false && "not implemented"); };
 
    /** Place the diagonal elements of this matrix in the vector first */
-   virtual void getDiagonal(OoqpVector& vec) = 0;
+   virtual void getDiagonal(Vector<double>& vec) = 0;
    /** Set the matrix to the diagoanl matrix whose diagonal is first */
-   virtual void setToDiagonal(const OoqpVector& vec) = 0;
+   virtual void setToDiagonal(const Vector<double>& vec) = 0;
 
    /** Set some of the diagonal elements of this matrix.
     * @param idiag the index of the first diagonal element to be modified.
@@ -130,7 +131,7 @@ public:
     * The length of x is the number of diagonal elements to be modified.
     * Typically x will have length less than the length of the diagonal.
     */
-   virtual void atPutDiagonal(int idiag, const OoqpVector& x) = 0;
+   virtual void atPutDiagonal(int idiag, const Vector<double>& x) = 0;
    /** Add to some of the diagonal elements of this matrix.
     * @param idiag the index of the first diagonal element to be modified.
     * @param x the values to add to the diagonal elements.
@@ -138,7 +139,7 @@ public:
     * The length of x is the number of diagonal elements to be modified.
     * Typically x will have length less than the length of the diagonal.
     */
-   virtual void atAddDiagonal(int idiag, const OoqpVector& x) = 0;
+   virtual void atAddDiagonal(int idiag, const Vector<double>& x) = 0;
    virtual void diagonal_add_constant_from(int /*from*/, int /*length*/, double /*value*/) { assert(false && "not implemented"); };
 
    /** Get some of the diagonal elements of this matrix.
@@ -148,16 +149,16 @@ public:
     * The length of x is the number of diagonal elements to be gotten.
     * Typically x will have length less than the length of the diagonal.
     */
-   virtual void fromGetDiagonal(int idiag, OoqpVector& x) = 0;
+   virtual void fromGetDiagonal(int idiag, Vector<double>& x) = 0;
 
    /** Get the number of rows and columns in the matrix
     * @param m the number of rows
     * @param n the number of columns
     */
 
-   virtual void symmetricScale(const OoqpVector& vec) = 0;
-   virtual void columnScale(const OoqpVector& vec) = 0;
-   virtual void rowScale(const OoqpVector& vec) = 0;
+   virtual void symmetricScale(const Vector<double>& vec) = 0;
+   virtual void columnScale(const Vector<double>& vec) = 0;
+   virtual void rowScale(const Vector<double>& vec) = 0;
    virtual void scalarMult(double num) = 0;
 
    virtual void getSize(long long& m, long long& n) const = 0;
@@ -259,34 +260,34 @@ public:
    virtual void randomize(double alpha, double beta, double* seed) = 0;
 
    /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
-   virtual void matTransDMultMat(OoqpVector& d, SymMatrix** res) = 0;
+   virtual void matTransDMultMat(Vector<double>& d, SymMatrix** res) = 0;
 
    /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
-   virtual void matTransDinvMultMat(OoqpVector& d, SymMatrix** res) = 0;
+   virtual void matTransDinvMultMat(Vector<double>& d, SymMatrix** res) = 0;
 
-   virtual void writeMPSformatRows(std::ostream& /*out*/, int /*rowType*/, OoqpVector* /*irhs*/) const {}
+   virtual void writeMPSformatRows(std::ostream& /*out*/, int /*rowType*/, Vector<double>* /*irhs*/) const {}
 
    /** get number of elements per row to given vector */
-   virtual void getNnzPerRow(OoqpVectorBase<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
+   virtual void getNnzPerRow(Vector<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
 
    /** get number of elements per column to given vector */
-   virtual void getNnzPerCol(OoqpVectorBase<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
+   virtual void getNnzPerCol(Vector<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
 
    /** fill vector with absolute minimum/maximum value of each row */
-   virtual void getRowMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const OoqpVector* /*colScaleVec*/, OoqpVector& /*minmaxVec*/ ) {
+   virtual void getRowMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*colScaleVec*/, Vector<double>& /*minmaxVec*/ ) {
       assert(0 && "not implemented");
    };
 
    /** fill vector with absolute minimum/maximum value of each column */
-   virtual void getColMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const OoqpVector* /*rowScaleVec*/, OoqpVector& /*minmaxVec*/ ) {
+   virtual void getColMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*rowScaleVec*/, Vector<double>& /*minmaxVec*/ ) {
       assert(0 && "not implemented");
    };
 
    /** add absolute value sum of each row to vector */
-   virtual void addRowSums(OoqpVector& /*first*/ ) const { assert(0 && "not implemented"); };
+   virtual void addRowSums(Vector<double>& /*first*/ ) const { assert(0 && "not implemented"); };
 
    /** add absolute value sum of each column to vector */
-   virtual void addColSums(OoqpVector& /*first*/ ) const { assert(0 && "not implemented"); };
+   virtual void addColSums(Vector<double>& /*first*/ ) const { assert(0 && "not implemented"); };
 
    /** return nonzeros in matrix */
    [[nodiscard]] virtual int numberOfNonZeros() const {

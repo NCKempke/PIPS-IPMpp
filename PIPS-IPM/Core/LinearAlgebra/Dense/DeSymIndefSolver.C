@@ -133,7 +133,7 @@ void DeSymIndefSolver::matrixChanged()
   //printf("%d 2x2 pivots were used\n", piv2x2);
 }
 
-void DeSymIndefSolver::solve ( OoqpVector& v )
+void DeSymIndefSolver::solve ( Vector<double>& v )
 {
   int info;
   const int one = 1;

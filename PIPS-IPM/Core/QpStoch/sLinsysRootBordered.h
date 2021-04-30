@@ -20,9 +20,9 @@ public:
 
       void finalizeKKT(DistributedQP* prob, Variables*) override;
 
-   void Lsolve(DistributedQP*, OoqpVector& x) override;
-   void Dsolve(DistributedQP*, OoqpVector& x) override;
-   void Ltsolve(DistributedQP*, OoqpVector& v) override;
+   void Lsolve(DistributedQP*, Vector<double>& x) override;
+   void Dsolve(DistributedQP*, Vector<double>& x) override;
+   void Ltsolve(DistributedQP*, Vector<double>& v) override;
 
    void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& x0, bool) override;
 protected:

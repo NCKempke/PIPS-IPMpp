@@ -43,10 +43,10 @@ class Mc30Scaler : public SymmetricLinearScaler
       { assert( false && "TODO : implement" ); };
 
       /* scale a vector */
-      void scaleVector( OoqpVector& vec_in ) const override;
+      void scaleVector( Vector<double>& vec_in ) const override;
 
       /* unscale a vector */
-      void unscaleVector( OoqpVector& vec_in ) const override;
+      void unscaleVector( Vector<double>& vec_in ) const override;
 
    private:
       void getFortranIndex(const int* rowM, const int* colM, int length, int max_index);

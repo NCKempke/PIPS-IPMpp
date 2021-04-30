@@ -5,7 +5,8 @@
 #ifndef DOUBLELINEARSOLVER_H
 #define DOUBLELINEARSOLVER_H
 
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrix.h"
 #include "pipsport.h"
 
@@ -40,7 +41,7 @@ public:
    *
    * @param x on entry the right hand side of the system to be solved.
    *           On exit, the solution.  */
-   virtual void solve ( OoqpVector& x ) = 0;
+   virtual void solve ( Vector<double>& x ) = 0;
 
    /** does this solver report inertia of the factorized matrix back */
    virtual bool reports_inertia() const = 0;
@@ -49,7 +50,7 @@ public:
    virtual std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const = 0;
 
    /* override if necessary */
-   virtual void solveSynchronized( OoqpVector& x ) { solve(x); };
+   virtual void solveSynchronized( Vector<double>& x ) { solve(x); };
 
    // solve with multiple RHS
    virtual void solve ( GenMatrix& /*rhs*/ ) { assert(0 && "Not implemented"); }
@@ -58,10 +59,10 @@ public:
    virtual void solve ( int /*nrhss*/, double* /*rhss*/, int* /*colSparsity*/ ) { assert(0 && "Not implemented"); }
 
    // TODO: remove and only use solve
-   void Lsolve( OoqpVector& /*x*/ ) { assert(false && "is always empty.. "); }
+   void Lsolve( Vector<double>& /*x*/ ) { assert(false && "is always empty.. "); }
    virtual void Lsolve( GenMatrix& /*mat*/ ) { assert(0 && "Not implemented"); }
-   void Dsolve( OoqpVector& x ) { solve(x);}
-   void Ltsolve( OoqpVector& /*x*/ ){ assert(false && "is always empty.. "); }
+   void Dsolve( Vector<double>& x ) { solve(x);}
+   void Ltsolve( Vector<double>& /*x*/ ){ assert(false && "is always empty.. "); }
 
   /** Destructor  */
   virtual ~DoubleLinearSolver() = default;
@@ -80,10 +81,10 @@ class SymmetricLinearScaler
       virtual const double* getScaling() const = 0;
 
       /* unscale a vector */
-      virtual void scaleVector( OoqpVector& vec_in ) const = 0;
+      virtual void scaleVector( Vector<double>& vec_in ) const = 0;
 
       /* scale a vector */
-      virtual void unscaleVector( OoqpVector& vec_in ) const = 0;
+      virtual void unscaleVector( Vector<double>& vec_in ) const = 0;
 
       virtual ~SymmetricLinearScaler() {};
 };
@@ -98,7 +99,7 @@ class SymmetricLinearScaler
 class MatTimesVec {
  public:
   /** y = beta * y + alpha * A * x */
-  virtual void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) = 0;
+  virtual void doIt(double beta, Vector<double>& y, double alpha, Vector<double>& x) = 0;
   virtual ~MatTimesVec();
 };
 
@@ -126,9 +127,9 @@ class DoubleIterativeLinearSolver : public DoubleLinearSolver {
   MatTimesVec *ML{}, *MR{};
 
   /** Actual mat-first operations */
-  void applyA (double beta, OoqpVector& res, double alpha, OoqpVector& x);
-  void applyM1(double beta, OoqpVector& res, double alpha, OoqpVector& x);
-  void applyM2(double beta, OoqpVector& res, double alpha, OoqpVector& x);
+  void applyA (double beta, Vector<double>& res, double alpha, Vector<double>& x);
+  void applyM1(double beta, Vector<double>& res, double alpha, Vector<double>& x);
+  void applyM2(double beta, Vector<double>& res, double alpha, Vector<double>& x);
 };
 
 /**
@@ -142,7 +143,7 @@ class StoredMatTimesVec : public MatTimesVec {
   StoredMatTimesVec(DoubleMatrix* mat);
   virtual ~StoredMatTimesVec() {};
 
-  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) override;
+  void doIt(double beta, Vector<double>& y, double alpha, Vector<double>& x) override;
  protected:
   DoubleMatrix* mMat;
 };
@@ -157,7 +158,7 @@ class StoredMatTransTimesVec : public MatTimesVec {
   StoredMatTransTimesVec(DoubleMatrix* mat);
   virtual ~StoredMatTransTimesVec() {};
 
-  void doIt(double beta, OoqpVector& y, double alpha, OoqpVector& x) override;
+  void doIt(double beta, Vector<double>& y, double alpha, Vector<double>& x) override;
  protected:
   DoubleMatrix* mMat;
 };

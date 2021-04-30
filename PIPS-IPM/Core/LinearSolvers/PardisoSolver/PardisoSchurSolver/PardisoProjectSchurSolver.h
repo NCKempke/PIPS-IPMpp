@@ -15,7 +15,7 @@ class PardisoProjectSchurSolver : public PardisoSchurSolver
 public:
   PardisoProjectSchurSolver( const SparseSymMatrix * sgm );
 
-  void solve( OoqpVector& rhs_in ) override;
+  void solve( Vector<double>& rhs_in ) override;
   using DoubleLinearSolver::solve;
 
 protected:

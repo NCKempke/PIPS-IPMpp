@@ -6,7 +6,8 @@
 #include "Residuals.h"
 #include "Problem.h"
 #include "Variables.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SimpleVector.h"
 #include "LinearAlgebraPackage.h"
 #include "ProblemFactory.h"
@@ -153,8 +154,8 @@ LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool crea
    }
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, OoqpVector* primal_diagonal_, OoqpVector* dq_,OoqpVector* nomegaInv_,
-      OoqpVector* primal_regularization_, OoqpVector* dual_equality_regularization_, OoqpVector* dual_inequality_regularization_,OoqpVector* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem, create_iter_ref_vecs) {
+LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,Vector<double>* nomegaInv_,
+      Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_, Vector<double>* dual_inequality_regularization_,Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem, create_iter_ref_vecs) {
    primal_diagonal = primal_diagonal_;
    dq = dq_;
    nomegaInv = nomegaInv_;
@@ -272,8 +273,8 @@ void LinearSystem::print_regularization_statistics() const {
    }
 }
 
-void LinearSystem::computeDiagonals(OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
-      OoqpVector& gamma, OoqpVector& w, OoqpVector& phi) {
+void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, Vector<double>& u, Vector<double>& pi, Vector<double>& v,
+      Vector<double>& gamma, Vector<double>& w, Vector<double>& phi) {
 
    /*** dd = dQ + Gamma/V + Phi/W ***/
    if (nxlow + nxupp > 0) {
@@ -313,7 +314,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    /* rx = rQ */
    step->x->copyFrom(*residuals->lagrangian_gradient);
    if (nxlow > 0) {
-      OoqpVector& gamma_by_v = *step->v;
+      Vector<double>& gamma_by_v = *step->v;
       gamma_by_v.copyFrom(*variables->gamma);
       gamma_by_v.divideSome(*variables->v, *ixlow);
 
@@ -324,7 +325,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    }
 
    if (nxupp > 0) {
-      OoqpVector& phi_by_w = *step->w;
+      Vector<double>& phi_by_w = *step->w;
       phi_by_w.copyFrom(*variables->phi);
       phi_by_w.divideSome(*variables->w, *ixupp);
 
@@ -339,7 +340,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    /* step->s = rz */
    step->s->copyFrom(*residuals->rz);
    if (mclow > 0) {
-      OoqpVector& lambda_by_t = *step->t;
+      Vector<double>& lambda_by_t = *step->t;
       lambda_by_t.copyFrom(*variables->lambda);
       lambda_by_t.divideSome(*variables->t, *iclow);
 
@@ -350,7 +351,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    }
 
    if (mcupp > 0) {
-      OoqpVector& pi_by_u = *step->u;
+      Vector<double>& pi_by_u = *step->u;
       pi_by_u.copyFrom(*variables->pi);
       pi_by_u.divideSome(*variables->u, *icupp);
 
@@ -366,9 +367,9 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    step->z->copyFrom(*residuals->rC);
 
    {
-      // Unfortunately, we need a temporary OoqpVector for the solve,
+      // Unfortunately, we need a temporary Vector<double> for the solve,
       // Use step->lambda or step->pi
-      OoqpVectorHandle ztemp;
+      SmartPointer<Vector<double> > ztemp;
       if (mclow > 0) {
          ztemp = step->lambda;
       }
@@ -438,7 +439,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
 
 }
 
-void LinearSystem::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& /* ztemp */, Problem* problem) {
+void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& /* ztemp */, Problem* problem) {
    /* step->z = rC */
    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
@@ -447,7 +448,7 @@ void LinearSystem::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& s
    /* rz = rC + Omega^-1 ( rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U ) */
    stepz.axzpy(-1.0, *nomegaInv, steps);
 
-  std::unique_ptr<OoqpVector> residual;
+  std::unique_ptr<Vector<double>> residual;
   if( xyzs_solve_print_residuals )
   {
      residual.reset( rhs->cloneFull() );
@@ -540,11 +541,11 @@ void LinearSystem::solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& s
    steps.negate();
 }
 
-void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult,
+void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult,
       const std::function<double()>& matInfnorm) {
    //aliases
-   OoqpVector& r0 = *res2, & dx = *sol2, & best_x = *sol3, & v = *res3, & t = *res4, & p = *res5;
-   OoqpVector& x = *sol, & r = *res, & b = *rhs;
+   Vector<double>& r0 = *res2, & dx = *sol2, & best_x = *sol3, & v = *res3, & t = *res4, & p = *res5;
+   Vector<double>& x = *sol, & r = *res, & b = *rhs;
 
    const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
@@ -661,7 +662,7 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Ooqp
 
          if (normr <= tolb || nstags >= outer_bicg_max_stagnations) {
             //compute the actual residual
-            OoqpVector& res = dx; //use dx
+            Vector<double>& res = dx; //use dx
             res.copyFrom(b);
             matMult(1.0, res, -1.0, x);
 
@@ -704,7 +705,7 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Ooqp
 
          if (normr <= tolb || nstags >= outer_bicg_max_stagnations) {
             //compute the actual residual
-            OoqpVector& res = dx; //use dx
+            Vector<double>& res = dx; //use dx
             res.copyFrom(b);
             matMult(1.0, res, -1.0, x);
 
@@ -771,8 +772,8 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Ooqp
  * stepx, stepy, stepz are used as temporary buffers
  * if use_regularized_sysyem == false primal_regularization_diagonal, dual_equality_regularization_diagonal and dual_inequality_regularization_diagonal are not used
  */
-void LinearSystem::system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem,
-   OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, bool use_regularized_system) {
+void LinearSystem::system_mult(double beta, Vector<double>& res, double alpha, const Vector<double>& sol, const Problem& problem,
+   Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
    assert(resx);
    assert(resy);
    assert(resz);
@@ -808,7 +809,7 @@ void LinearSystem::system_mult(double beta, OoqpVector& res, double alpha, const
 }
 
 /* computes infinity norm of entire system; solx, soly, solz are used as temporary buffers */
-double LinearSystem::matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, bool use_regularized_system) {
+double LinearSystem::matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system) {
    solx.copyFromAbs(*primal_diagonal);
    if( use_regularized_system && primal_regularization_diagonal )
       solx.axpy(1.0, *primal_regularization_diagonal);
@@ -835,17 +836,17 @@ double LinearSystem::matXYZinfnorm(const Problem& problem, OoqpVector& solx, Ooq
    return infnorm;
 }
 
-void LinearSystem::solveCompressedIterRefin(const std::function<void(OoqpVector& solution, OoqpVector& residual)>& computeResidual) {
+void LinearSystem::solveCompressedIterRefin(const std::function<void(Vector<double>& solution, Vector<double>& residual)>& computeResidual) {
    assert(this->rhs);
    assert(this->res);
    assert(this->sol);
    assert(this->sol2);
 
    /* aliases */
-   OoqpVector& residual = *this->res;
-   OoqpVector& solution = *this->sol;
-   OoqpVector& best_solution = *this->sol2;
-   const OoqpVector& right_hand_side = *this->rhs;
+   Vector<double>& residual = *this->res;
+   Vector<double>& solution = *this->sol;
+   Vector<double>& best_solution = *this->sol2;
+   const Vector<double>& right_hand_side = *this->rhs;
 
    residual.copyFrom(right_hand_side);
    solution.setToZero();
@@ -936,7 +937,7 @@ void LinearSystem::solveCompressedIterRefin(const std::function<void(OoqpVector&
  *
  * stepx, stepy, stepz are used as temporary buffers
  */
-void LinearSystem::compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem&
+void LinearSystem::compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, const Problem&
 problem) {
    const double alpha = -1.0;
    const double beta = 1.0;
@@ -944,18 +945,18 @@ problem) {
    system_mult(beta, res, alpha, sol, problem, solx, soly, solz, true);
 }
 
-void LinearSystem::compute_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx,
-   OoqpVector& soly, OoqpVector& solz, const Problem& problem) {
+void LinearSystem::compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx,
+   Vector<double>& soly, Vector<double>& solz, const Problem& problem) {
    const double alpha = -1.0;
    const double beta = 1.0;
 
    system_mult(beta, res, alpha, sol, problem, solx, soly, solz, false);
 }
 
-void LinearSystem::joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
+void LinearSystem::joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const {
    rhs_in.jointCopyFrom(rhs1_in, rhs2_in, rhs3_in);
 }
 
-void LinearSystem::separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
+void LinearSystem::separateVars(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const {
    vars_in.jointCopyTo(x_in, y_in, z_in);
 }

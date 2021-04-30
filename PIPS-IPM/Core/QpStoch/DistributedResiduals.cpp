@@ -2,9 +2,9 @@
 #include "sTree.h"
 #include "DistributedVector.h"
 
-DistributedResiduals::DistributedResiduals(OoqpVector* rQ_, OoqpVector* rA_, OoqpVector* rC_, OoqpVector* rz_, OoqpVector* rt_, OoqpVector* rlambda_,
-      OoqpVector* ru_, OoqpVector* rpi_, OoqpVector* rv_, OoqpVector* rgamma_, OoqpVector* rw_, OoqpVector* rphi_, OoqpVector* ixlow_,
-      double nxlowGlobal, OoqpVector* ixupp_, double nxuppGlobal, OoqpVector* iclow_, double mclowGlobal, OoqpVector* icupp_, double mcuppGlobal) {
+DistributedResiduals::DistributedResiduals(Vector<double>* rQ_, Vector<double>* rA_, Vector<double>* rC_, Vector<double>* rz_, Vector<double>* rt_, Vector<double>* rlambda_,
+      Vector<double>* ru_, Vector<double>* rpi_, Vector<double>* rv_, Vector<double>* rgamma_, Vector<double>* rw_, Vector<double>* rphi_, Vector<double>* ixlow_,
+      double nxlowGlobal, Vector<double>* ixupp_, double nxuppGlobal, Vector<double>* iclow_, double mclowGlobal, Vector<double>* icupp_, double mcuppGlobal) {
    SpReferTo(ixlow, ixlow_);
    nxlow = nxlowGlobal;
 
@@ -35,7 +35,7 @@ DistributedResiduals::DistributedResiduals(OoqpVector* rQ_, OoqpVector* rA_, Ooq
 }
 
 
-DistributedResiduals::DistributedResiduals(const sTree* tree, OoqpVector* ixlow_, OoqpVector* ixupp_, OoqpVector* iclow_, OoqpVector* icupp_) {
+DistributedResiduals::DistributedResiduals(const sTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_, Vector<double>* icupp_) {
 
    SpReferTo(ixlow, ixlow_);
    nxlow = ixlow->numberOfNonzeros();
@@ -50,45 +50,45 @@ DistributedResiduals::DistributedResiduals(const sTree* tree, OoqpVector* ixlow_
    mcupp = icupp->numberOfNonzeros();
 
    const bool empty_vector = true;
-   lagrangian_gradient = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
-   rA = OoqpVectorHandle((OoqpVector*) tree->newDualYVector());
-   rC = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
+   lagrangian_gradient = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
+   rA = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualYVector());
+   rC = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
 
-   rz = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
+   rz = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
    if (mclow > 0) {
-      rt = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
-      rlambda = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
+      rt = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
+      rlambda = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
    }
    else {
-      rt = OoqpVectorHandle((OoqpVector*) tree->newDualZVector(empty_vector));
-      rlambda = OoqpVectorHandle((OoqpVector*) tree->newDualZVector(empty_vector));
+      rt = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector(empty_vector));
+      rlambda = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector(empty_vector));
    }
 
    if (mcupp > 0) {
-      ru = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
-      rpi = OoqpVectorHandle((OoqpVector*) tree->newDualZVector());
+      ru = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
+      rpi = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
    }
    else {
-      ru = OoqpVectorHandle((OoqpVector*) tree->newDualZVector(empty_vector));
-      rpi = OoqpVectorHandle((OoqpVector*) tree->newDualZVector(empty_vector));
+      ru = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector(empty_vector));
+      rpi = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector(empty_vector));
    }
 
    if (nxlow > 0) {
-      rv = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
-      rgamma = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
+      rv = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
+      rgamma = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
    }
    else {
-      rv = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector(empty_vector));
-      rgamma = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector(empty_vector));
+      rv = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
+      rgamma = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
    }
 
    if (nxupp > 0) {
-      rw = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
-      rphi = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector());
+      rw = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
+      rphi = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
    }
    else {
-      rw = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector(empty_vector));
-      rphi = OoqpVectorHandle((OoqpVector*) tree->newPrimalVector(empty_vector));
+      rw = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
+      rphi = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
    }
 
    createChildren();
@@ -153,8 +153,8 @@ void DistributedResiduals::createChildren() {
    }
 }
 
-void DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const sTree* tree_hier, OoqpVectorHandle ixlow_,
-      OoqpVectorHandle ixupp_, OoqpVectorHandle iclow_, OoqpVectorHandle icupp_) {
+void DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const sTree* tree_hier, SmartPointer<Vector<double> > ixlow_,
+      SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_) {
    dynamic_cast<DistributedVector<double>&>(*lagrangian_gradient).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
 
    const bool empty_vec = true;

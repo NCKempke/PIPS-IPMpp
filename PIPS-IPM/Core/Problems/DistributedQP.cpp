@@ -1090,9 +1090,9 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
    return permvec;
 }
 
-DistributedQP::DistributedQP(const sTree* tree_, OoqpVector* c_in, SymMatrix* Q_in, OoqpVector* xlow_in, OoqpVector* ixlow_in, OoqpVector* xupp_in,
-      OoqpVector* ixupp_in, GenMatrix* A_in, OoqpVector* bA_in, GenMatrix* C_in, OoqpVector* clow_in, OoqpVector* iclow_in, OoqpVector* cupp_in,
-      OoqpVector* icupp_in, bool add_children, bool is_hierarchy_root, bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(
+DistributedQP::DistributedQP(const sTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
+      Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in, Vector<double>* cupp_in,
+      Vector<double>* icupp_in, bool add_children, bool is_hierarchy_root, bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(
       SparseLinearAlgebraPackage::soleInstance(), c_in, Q_in, xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in,
       icupp_in), stochNode{tree_}, is_hierarchy_root{is_hierarchy_root}, is_hierarchy_inner_root{is_hierarchy_inner_root},
       is_hierarchy_inner_leaf{is_hierarchy_inner_leaf} {
@@ -1738,9 +1738,9 @@ void DistributedQP::splitData() {
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
 
 // TODO : DELETEME
-//   OoqpVector* x_bef = g;
-//   OoqpVector* y_bef = bA;
-//   OoqpVector* z_bef = bl;
+//   Vector<double>* x_bef = g;
+//   Vector<double>* y_bef = bA;
+//   Vector<double>* z_bef = bl;
 //   x_bef->setToConstant(2.0);
 //   y_bef->setToConstant(2.0);
 //   z_bef->setToConstant(2.0);
@@ -1756,7 +1756,7 @@ void DistributedQP::splitData() {
 //   const double C2norm_bef = z_bef->twonorm();
 //   const double C1norm_bef = z_bef->onenorm();
 //
-//   OoqpVector* x_bef2 = g->clone();
+//   Vector<double>* x_bef2 = g->clone();
 //   x_bef2->setToConstant(2.0);
 //   Q->transMult(2.0, *x_bef2, 3.0, *x_bef);
 //
@@ -1809,9 +1809,9 @@ void DistributedQP::splitData() {
       dynamic_cast<DistributedVector<double>&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
    }
 // TODO : DELETEME
-//   OoqpVector* x_after = g;
-//   OoqpVector* y_after = bA;
-//   OoqpVector* z_after = bl;
+//   Vector<double>* x_after = g;
+//   Vector<double>* y_after = bA;
+//   Vector<double>* z_after = bl;
 //   x_after->setToConstant(2.0);
 //   y_after->setToConstant(2.0);
 //   z_after->setToConstant(2.0);
@@ -1826,7 +1826,7 @@ void DistributedQP::splitData() {
 //   const double C2norm_after = z_after->twonorm();
 //   const double C1norm_after = z_after->onenorm();
 //
-//   OoqpVector* x_after2 = g->clone();
+//   Vector<double>* x_after2 = g->clone();
 //   x_after2->setToConstant(2.0);
 //   Q->transMult(2.0, *x_after2, 3.0, *x_after);
 //
@@ -2206,7 +2206,7 @@ void DistributedQP::AddChild(DistributedQP* child) {
 
 double DistributedQP::objective_value(const Variables& variables) const {
    const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(*variables.x);
-   OoqpVectorHandle temp(x.clone());
+   SmartPointer<Vector<double> > temp(x.clone());
 
    this->getg(*temp);
    this->hessian_multiplication(1.0, *temp, 0.5, *variables.x);

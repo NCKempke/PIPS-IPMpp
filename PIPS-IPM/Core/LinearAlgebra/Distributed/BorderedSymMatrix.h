@@ -37,12 +37,12 @@ class BorderedSymMatrix : public SymMatrix
       int isKindOf( int type ) const override;
 
       /** y = beta * y + alpha * this * x */
-      void mult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
+      void mult( double beta, Vector<double>& y, double alpha, const Vector<double>& x ) const override;
 
       /** y = beta * y + alpha * this^T * x */
-      void transMult( double beta, OoqpVector& y, double alpha, const OoqpVector& x ) const override;
+      void transMult( double beta, Vector<double>& y, double alpha, const Vector<double>& x ) const override;
 
-      void fromGetDiagonal( int idiag, OoqpVector& x ) override;
+      void fromGetDiagonal( int idiag, Vector<double>& x ) override;
 
       double abmaxnorm() const override;
       void scalarMult( double num ) override;
@@ -56,15 +56,15 @@ class BorderedSymMatrix : public SymMatrix
       void symAtPutSpRow( int, double[], int, int[], int& ) override { assert( "Not implemented" && 0 ); };
       void randomizePSD( double* ) override { assert( "Not implemented" && 0 ); };
       void symAtPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert( "Not implemented" && 0 ); };
-      void atPutDiagonal( int, const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
-      void atAddDiagonal( int, const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void atPutDiagonal( int, const Vector<double>& ) override { assert( "Not implemented" && 0 ); };
+      void atAddDiagonal( int, const Vector<double>& ) override { assert( "Not implemented" && 0 ); };
       void fromGetDense( int, int, double*, int, int, int) override { assert( "Not implemented" && 0 ); };
       void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override { assert( "Not implemented" && 0 ); };
-      void getDiagonal( OoqpVector& ) override { assert( "Not implemented" && 0 ); };
-      void setToDiagonal( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
-      void symmetricScale( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
-      void columnScale( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
-      void rowScale( const OoqpVector& ) override { assert( "Not implemented" && 0 ); };
+      void getDiagonal( Vector<double>& ) override { assert( "Not implemented" && 0 ); };
+      void setToDiagonal( const Vector<double>& ) override { assert( "Not implemented" && 0 ); };
+      void symmetricScale( const Vector<double>& ) override { assert( "Not implemented" && 0 ); };
+      void columnScale( const Vector<double>& ) override { assert( "Not implemented" && 0 ); };
+      void rowScale( const Vector<double>& ) override { assert( "Not implemented" && 0 ); };
       void writeToStream( std::ostream& ) const override { assert( "Not implemented" && 0 ); };
       void putSparseTriple( int[], int, int[], double[], int& ) override { assert( "Not implemented" && 0 ); };
 

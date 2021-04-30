@@ -4,8 +4,8 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, OoqpVector* dd_, OoqpVector* dq_,
-   OoqpVector* nomegaInv_, OoqpVector* primal_reg_, OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs_ )
+sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Vector<double>* dd_, Vector<double>* dq_,
+   Vector<double>* nomegaInv_, Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_ )
    : DistributedLinearSystem(factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false) {
 #ifdef TIMING
    const int myRank = PIPS_MPIgetRank(mpiComm);
@@ -94,7 +94,7 @@ void sLinsysLeaf::put_dual_inequalites_diagonal()
    kkt->atPutDiagonal( locnx + locmy, *nomegaInv_stoch.first );
 }
 
-void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization, OoqpVector& regularization_vector_) {
+void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector_) {
    assert(false);
    assert(dynamic_cast<DistributedVector<double>&>(regularization_vector_).first);
 
@@ -125,7 +125,7 @@ void sLinsysLeaf::add_regularization_local_kkt(double primal_regularization, dou
    }
 }
 
-void sLinsysLeaf::Dsolve(DistributedQP*, OoqpVector& x_in) {
+void sLinsysLeaf::Dsolve(DistributedQP*, Vector<double>& x_in) {
    DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.size() == 0);
    stochNode->resMon.recDsolveTmChildren_start();
@@ -154,7 +154,7 @@ void sLinsysLeaf::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, Si
 void sLinsysLeaf::deleteChildren() {}
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
-void sLinsysLeaf::addLniziLinkCons(DistributedQP* prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/) {
+void sLinsysLeaf::addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
    SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
    SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 

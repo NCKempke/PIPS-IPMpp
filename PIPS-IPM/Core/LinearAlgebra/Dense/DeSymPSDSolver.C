@@ -47,7 +47,7 @@ void DeSymPSDSolver::matrixChanged()
   assert(info==0);
 }
 
-void DeSymPSDSolver::solve ( OoqpVector& x_in )
+void DeSymPSDSolver::solve ( Vector<double>& x_in )
 {
   char fortranUplo = 'U';
   int info;

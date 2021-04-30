@@ -124,8 +124,8 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const DoubleMatrix* kkt
    return nullptr;
 }
 
-sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv,
-   OoqpVector* primal_regularization, OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs) {
+sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
+   Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization, Vector<double>* rhs) {
    assert(problem);
    static bool printed = false;
    const SolverType leaf_solver = pips_options::getSolverLeaf();
@@ -225,18 +225,18 @@ Problem* DistributedFactory::make_problem() {
 
 // TODO adjust this for hierarchical approach
 Variables* DistributedFactory::make_variables(Problem& problem) {
-   OoqpVectorHandle x = OoqpVectorHandle(make_primal_vector());
-   OoqpVectorHandle s = OoqpVectorHandle(make_inequalities_dual_vector());
-   OoqpVectorHandle y = OoqpVectorHandle(make_equalities_dual_vector());
-   OoqpVectorHandle z = OoqpVectorHandle(make_inequalities_dual_vector());
-   OoqpVectorHandle v = OoqpVectorHandle(make_primal_vector());
-   OoqpVectorHandle gamma = OoqpVectorHandle(make_primal_vector());
-   OoqpVectorHandle w = OoqpVectorHandle(make_primal_vector());
-   OoqpVectorHandle phi = OoqpVectorHandle(make_primal_vector());
-   OoqpVectorHandle t = OoqpVectorHandle(make_inequalities_dual_vector());
-   OoqpVectorHandle lambda = OoqpVectorHandle(make_inequalities_dual_vector());
-   OoqpVectorHandle u = OoqpVectorHandle(make_inequalities_dual_vector());
-   OoqpVectorHandle pi = OoqpVectorHandle(make_inequalities_dual_vector());
+   SmartPointer<Vector<double> > x = SmartPointer<Vector<double> >(make_primal_vector());
+   SmartPointer<Vector<double> > s = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
+   SmartPointer<Vector<double> > y = SmartPointer<Vector<double> >(make_equalities_dual_vector());
+   SmartPointer<Vector<double> > z = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
+   SmartPointer<Vector<double> > v = SmartPointer<Vector<double> >(make_primal_vector());
+   SmartPointer<Vector<double> > gamma = SmartPointer<Vector<double> >(make_primal_vector());
+   SmartPointer<Vector<double> > w = SmartPointer<Vector<double> >(make_primal_vector());
+   SmartPointer<Vector<double> > phi = SmartPointer<Vector<double> >(make_primal_vector());
+   SmartPointer<Vector<double> > t = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
+   SmartPointer<Vector<double> > lambda = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
+   SmartPointer<Vector<double> > u = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
+   SmartPointer<Vector<double> > pi = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
 
    DistributedVariables* variables = new DistributedVariables(tree, x, s, y, z, v, gamma, w, phi, t, lambda, u, pi, problem.ixlow, problem.ixlow->numberOfNonzeros(), problem.ixupp,
          problem.ixupp->numberOfNonzeros(), problem.iclow, problem.iclow->numberOfNonzeros(), problem.icupp, problem.icupp->numberOfNonzeros());
@@ -257,22 +257,22 @@ AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
    return linsys;
 }
 
-OoqpVector* DistributedFactory::make_primal_vector() const {
+Vector<double>* DistributedFactory::make_primal_vector() const {
    assert(!la);
    return tree->newPrimalVector();
 }
 
-OoqpVector* DistributedFactory::make_equalities_dual_vector() const {
+Vector<double>* DistributedFactory::make_equalities_dual_vector() const {
    assert(!la);
    return tree->newDualYVector();
 }
 
-OoqpVector* DistributedFactory::make_inequalities_dual_vector() const {
+Vector<double>* DistributedFactory::make_inequalities_dual_vector() const {
    assert(!la);
    return tree->newDualZVector();
 }
 
-OoqpVector* DistributedFactory::make_right_hand_side() const {
+Vector<double>* DistributedFactory::make_right_hand_side() const {
    assert(!la);
    return tree->newRhs();
 }
@@ -307,8 +307,8 @@ sLinsysRoot* DistributedFactory::make_linear_system_root() {
    return new sLinsysRootAug(this, problem);
 }
 
-sLinsysRoot* DistributedFactory::make_linear_system_root(DistributedQP* prob, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv,
-   OoqpVector* primal_regularization, OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs) {
+sLinsysRoot* DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
+   Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization, Vector<double>* rhs) {
    if (prob->isHierarchyInnerLeaf())
       return new sLinsysRootAugHierInner(this, prob, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
    else

@@ -15,7 +15,7 @@
 #include <memory>
 
 template<typename T>
-DistributedVector<T>::DistributedVector(OoqpVectorBase<T>* first, OoqpVectorBase<T>* last, MPI_Comm mpi_comm)
+DistributedVector<T>::DistributedVector(Vector<T>* first, Vector<T>* last, MPI_Comm mpi_comm)
       : first(first), last(last), mpiComm(mpi_comm), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)),
       iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
    assert(first || last);
@@ -28,7 +28,7 @@ DistributedVector<T>::DistributedVector(OoqpVectorBase<T>* first, OoqpVectorBase
 
 template<typename T>
 DistributedVector<T>::DistributedVector(int n_, MPI_Comm mpiComm_)
-      : OoqpVectorBase<T>(n_), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
+      : Vector<T>(n_), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)), iAmSpecial(PIPS_MPIiAmSpecial(iAmDistrib, mpiComm)) {
    first = new SimpleVector<T>(n_);
    last = nullptr;
 }
@@ -71,7 +71,7 @@ DistributedVector<T>::~DistributedVector() {
 }
 
 template<typename T>
-OoqpVectorBase<T>* DistributedVector<T>::clone() const {
+Vector<T>* DistributedVector<T>::clone() const {
    assert(first || last);
    DistributedVector<T>* clone = new DistributedVector<T>(first ? first->clone() : nullptr, last ? last->clone() : nullptr, mpiComm);
 
@@ -83,7 +83,7 @@ OoqpVectorBase<T>* DistributedVector<T>::clone() const {
 }
 
 template<typename T>
-OoqpVectorBase<T>* DistributedVector<T>::cloneFull() const {
+Vector<T>* DistributedVector<T>::cloneFull() const {
    assert(first || last);
    DistributedVector<T>* clone = new DistributedVector<T>(first ? first->cloneFull() : nullptr, last ? last->cloneFull() : nullptr, mpiComm);
 
@@ -95,7 +95,7 @@ OoqpVectorBase<T>* DistributedVector<T>::cloneFull() const {
 }
 
 template<typename T>
-void DistributedVector<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBase<T>& ind) {
+void DistributedVector<T>::setNotIndicatedEntriesToVal(T val, const Vector<T>& ind) {
    const DistributedVector<T>& ind_vec = dynamic_cast<const DistributedVector<T>&>(ind);
 
    assert(this->children.size() == ind_vec.children.size());
@@ -113,7 +113,7 @@ void DistributedVector<T>::setNotIndicatedEntriesToVal(T val, const OoqpVectorBa
 }
 
 template<typename T>
-void DistributedVector<T>::jointCopyFrom(const OoqpVectorBase<T>& vx_, const OoqpVectorBase<T>& vy_, const OoqpVectorBase<T>& vz_) {
+void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& vy_, const Vector<T>& vz_) {
    const DistributedVector<T>& vx = dynamic_cast<const DistributedVector&>(vx_);
    const DistributedVector<T>& vy = dynamic_cast<const DistributedVector&>(vy_);
    const DistributedVector<T>& vz = dynamic_cast<const DistributedVector&>(vz_);
@@ -208,7 +208,7 @@ void DistributedVector<T>::jointCopyFrom(const OoqpVectorBase<T>& vx_, const Ooq
 }
 
 template<typename T>
-void DistributedVector<T>::jointCopyTo(OoqpVectorBase<T>& vx_, OoqpVectorBase<T>& vy_, OoqpVectorBase<T>& vz_) const {
+void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>& vz_) const {
    const DistributedVector<T>& vx = dynamic_cast<const DistributedVector&>(vx_);
    const DistributedVector<T>& vy = dynamic_cast<const DistributedVector&>(vy_);
    const DistributedVector<T>& vz = dynamic_cast<const DistributedVector&>(vz_);
@@ -362,7 +362,7 @@ void DistributedVector<T>::setToConstant(T c) {
 }
 
 template<typename T>
-void DistributedVector<T>::copyFrom(const OoqpVectorBase<T>& v_) {
+void DistributedVector<T>::copyFrom(const Vector<T>& v_) {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
@@ -386,7 +386,7 @@ void DistributedVector<T>::copyFrom(const OoqpVectorBase<T>& v_) {
 }
 
 template<typename T>
-void DistributedVector<T>::copyFromAbs(const OoqpVectorBase<T>& v_) {
+void DistributedVector<T>::copyFromAbs(const Vector<T>& v_) {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
@@ -528,7 +528,7 @@ void DistributedVector<T>::max(T& m, int& index) const {
 }
 
 template<typename T>
-void DistributedVector<T>::absminVecUpdate(OoqpVectorBase<T>& absminvec) const {
+void DistributedVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
    DistributedVector<T>& absminvecStoch = dynamic_cast<DistributedVector<T>&>(absminvec);
 
    if (first) {
@@ -552,7 +552,7 @@ void DistributedVector<T>::absminVecUpdate(OoqpVectorBase<T>& absminvec) const {
 }
 
 template<typename T>
-void DistributedVector<T>::absmaxVecUpdate(OoqpVectorBase<T>& absmaxvec) const {
+void DistributedVector<T>::absmaxVecUpdate(Vector<T>& absmaxvec) const {
    DistributedVector<T>& absmaxvecStoch = dynamic_cast<DistributedVector<T>&>(absmaxvec);
 
    if (first) {
@@ -631,7 +631,7 @@ void DistributedVector<T>::absminNonZero(T& m, T zero_eps) const {
 
 
 template<typename T>
-T DistributedVector<T>::stepbound(const OoqpVectorBase<T>& v_, T maxStep) const {
+T DistributedVector<T>::stepbound(const Vector<T>& v_, T maxStep) const {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    T step = 1.0;
@@ -663,7 +663,7 @@ T DistributedVector<T>::stepbound(const OoqpVectorBase<T>& v_, T maxStep) const 
 }
 
 template<typename T>
-T DistributedVector<T>::find_blocking(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec, T maxStep,
+T DistributedVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep,
       T* w_elt, T* wstep_elt, T* u_elt, T* ustep_elt, int& first_or_second) const {
    const DistributedVector<T>& w = *this;
    const DistributedVector<T>& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
@@ -776,7 +776,7 @@ T DistributedVector<T>::find_blocking(const OoqpVectorBase<T>& wstep_vec, const 
 }
 
 template<typename T>
-void DistributedVector<T>::find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, const OoqpVectorBase<T>& u_vec, const OoqpVectorBase<T>& ustep_vec,
+void DistributedVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec,
       T& maxStepPri, T& maxStepDual, T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d,
       bool& primalBlocking, bool& dualBlocking) const {
    const DistributedVector<T>& w = *this;
@@ -926,7 +926,7 @@ void DistributedVector<T>::find_blocking_pd(const OoqpVectorBase<T>& wstep_vec, 
 }
 
 template<typename T>
-void DistributedVector<T>::componentMult(const OoqpVectorBase<T>& v_) {
+void DistributedVector<T>::componentMult(const Vector<T>& v_) {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
@@ -949,7 +949,7 @@ void DistributedVector<T>::componentMult(const OoqpVectorBase<T>& v_) {
 }
 
 template<typename T>
-void DistributedVector<T>::componentDiv(const OoqpVectorBase<T>& v_) {
+void DistributedVector<T>::componentDiv(const Vector<T>& v_) {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
@@ -973,7 +973,7 @@ void DistributedVector<T>::componentDiv(const OoqpVectorBase<T>& v_) {
 }
 
 template<typename T>
-bool DistributedVector<T>::componentEqual(const OoqpVectorBase<T>& v_, T tol) const {
+bool DistributedVector<T>::componentEqual(const Vector<T>& v_, T tol) const {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    bool component_equal = true;
@@ -1118,7 +1118,7 @@ void DistributedVector<T>::writeToStream(std::ostream& out, int offset) const {
 }
 
 template<typename T>
-void DistributedVector<T>::pushAwayFromZero(double tol, double amount, const OoqpVectorBase<T>* select) {
+void DistributedVector<T>::pushAwayFromZero(double tol, double amount, const Vector<T>* select) {
    const DistributedVector<T>* selects = select ? dynamic_cast<const DistributedVector<T>*>(select) : nullptr;
 
    if (first)
@@ -1135,7 +1135,7 @@ void DistributedVector<T>::pushAwayFromZero(double tol, double amount, const Ooq
 }
 
 template<typename T>
-void DistributedVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const OoqpVectorBase<T>* select) const {
+void DistributedVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const {
    const DistributedVector<T>* selects = dynamic_cast<const DistributedVector<T>*>(select);
 
    if (selects)
@@ -1176,7 +1176,7 @@ void DistributedVector<T>::writefToStream(std::ostream& out, const char format[]
 }
 
 template<typename T>
-void DistributedVector<T>::writeMPSformatRhs(std::ostream& out, int rowType, const OoqpVectorBase<T>* irhs) const {
+void DistributedVector<T>::writeMPSformatRhs(std::ostream& out, int rowType, const Vector<T>* irhs) const {
    // TODO : will not work with hierarchical data
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
@@ -1224,7 +1224,7 @@ void DistributedVector<T>::writeMPSformatRhs(std::ostream& out, int rowType, con
 }
 
 template<typename T>
-void DistributedVector<T>::writeMPSformatBounds(std::ostream& out, const OoqpVectorBase<T>* ix, bool upperBound) const {
+void DistributedVector<T>::writeMPSformatBounds(std::ostream& out, const Vector<T>* ix, bool upperBound) const {
    // TODO : will not work with hierarchical data
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
@@ -1245,7 +1245,7 @@ void DistributedVector<T>::writeMPSformatBounds(std::ostream& out, const OoqpVec
 
 /** this += alpha * x */
 template<typename T>
-void DistributedVector<T>::axpy(T alpha, const OoqpVectorBase<T>& x_) {
+void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
    const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
 
    if (alpha == 0.0)
@@ -1273,7 +1273,7 @@ void DistributedVector<T>::axpy(T alpha, const OoqpVectorBase<T>& x_) {
 
 /** this += alpha * x * z */
 template<typename T>
-void DistributedVector<T>::axzpy(T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_) {
+void DistributedVector<T>::axzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
    const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
    const DistributedVector<T>& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
@@ -1306,7 +1306,7 @@ void DistributedVector<T>::axzpy(T alpha, const OoqpVectorBase<T>& x_, const Ooq
 
 /** this += alpha * x / z */
 template<typename T>
-void DistributedVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_) {
+void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
    const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
    const DistributedVector<T>& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
@@ -1364,7 +1364,7 @@ void DistributedVector<T>::gondzioProjection(T rmin, T rmax) {
 }
 
 template<typename T>
-T DistributedVector<T>::dotProductWith(const OoqpVectorBase<T>& v_) const {
+T DistributedVector<T>::dotProductWith(const Vector<T>& v_) const {
    const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    T dot_product = 0.0;
@@ -1423,8 +1423,8 @@ T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
 /** Return the inner product <this + alpha * mystep, yvec + beta * ystep >
  */
 template<typename T>
-T DistributedVector<T>::shiftedDotProductWith(T alpha, const OoqpVectorBase<T>& mystep_, const OoqpVectorBase<T>& yvec_, T beta,
-      const OoqpVectorBase<T>& ystep_) const {
+T DistributedVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep_, const Vector<T>& yvec_, T beta,
+      const Vector<T>& ystep_) const {
    const DistributedVector<T>& mystep = dynamic_cast<const DistributedVector<T>&>(mystep_);
    const DistributedVector<T>& yvec = dynamic_cast<const DistributedVector<T>&>(yvec_);
    const DistributedVector<T>& ystep = dynamic_cast<const DistributedVector<T>&>(ystep_);
@@ -1576,7 +1576,7 @@ bool DistributedVector<T>::allOf(const std::function<bool(const T&)>& pred) cons
 
 
 template<typename T>
-bool DistributedVector<T>::matchesNonZeroPattern(const OoqpVectorBase<T>& select_) const {
+bool DistributedVector<T>::matchesNonZeroPattern(const Vector<T>& select_) const {
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    bool match = true;
@@ -1611,7 +1611,7 @@ bool DistributedVector<T>::matchesNonZeroPattern(const OoqpVectorBase<T>& select
 }
 
 template<typename T>
-void DistributedVector<T>::selectNonZeros(const OoqpVectorBase<T>& select_) {
+void DistributedVector<T>::selectNonZeros(const Vector<T>& select_) {
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    if (first) {
@@ -1678,7 +1678,7 @@ long long DistributedVector<T>::numberOfNonzeros() const {
 }
 
 template<typename T>
-void DistributedVector<T>::addSomeConstants(T c, const OoqpVectorBase<T>& select_) {
+void DistributedVector<T>::addSomeConstants(T c, const Vector<T>& select_) {
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
    assert(children.size() == select.children.size());
 
@@ -1701,7 +1701,7 @@ void DistributedVector<T>::addSomeConstants(T c, const OoqpVectorBase<T>& select
 }
 
 template<typename T>
-void DistributedVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& x_, const OoqpVectorBase<T>& z_, const OoqpVectorBase<T>& select_) {
+void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_, const Vector<T>& select_) {
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
    const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
    const DistributedVector<T>& z = dynamic_cast<const DistributedVector<T>&>(z_);
@@ -1740,7 +1740,7 @@ void DistributedVector<T>::axdzpy(T alpha, const OoqpVectorBase<T>& x_, const Oo
 }
 
 template<typename T>
-bool DistributedVector<T>::somePositive(const OoqpVectorBase<T>& select_) const {
+bool DistributedVector<T>::somePositive(const Vector<T>& select_) const {
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    bool some_positive = true;;
@@ -1775,7 +1775,7 @@ bool DistributedVector<T>::somePositive(const OoqpVectorBase<T>& select_) const 
 }
 
 template<typename T>
-void DistributedVector<T>::divideSome(const OoqpVectorBase<T>& div_, const OoqpVectorBase<T>& select_) {
+void DistributedVector<T>::divideSome(const Vector<T>& div_, const Vector<T>& select_) {
    const DistributedVector<T>& div = dynamic_cast<const DistributedVector<T>&>(div_);
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
@@ -1807,7 +1807,7 @@ void DistributedVector<T>::divideSome(const OoqpVectorBase<T>& div_, const OoqpV
 }
 
 template<typename T>
-void DistributedVector<T>::removeEntries(const OoqpVectorBase<int>& select_) {
+void DistributedVector<T>::removeEntries(const Vector<int>& select_) {
    const DistributedVector<int>& select = dynamic_cast<const DistributedVector<int>&>(select_);
 
    this->n = 0;
@@ -2236,7 +2236,7 @@ void StochDummyVectorBase<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleV
 
 
 template<typename T>
-OoqpVectorBase<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const {
+Vector<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const {
    const DistributedVector<T>* curr_par = parent;
    if (curr_par == nullptr) {
       /* we are the top */
@@ -2260,7 +2260,7 @@ OoqpVectorBase<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const
 }
 
 template<typename T>
-void DistributedVector<T>::pushSmallComplementarityPairs(OoqpVectorBase<T>& other_vec_in, const OoqpVectorBase<T>& select_in, double tol_this,
+void DistributedVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this,
       double tol_other, double tol_pairs) {
    DistributedVector<T>& other_vec = dynamic_cast<DistributedVector<T>&>(other_vec_in);
    const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_in);

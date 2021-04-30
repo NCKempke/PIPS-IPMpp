@@ -8,31 +8,31 @@
 Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResidualNorm}, mDualityGap{residuals.mDualityGap},
       primal_objective{residuals.primal_objective}, dual_objective{residuals.dual_objective}, nx{residuals.nx}, my{residuals.my}, mz{residuals.mz},
       nxupp{residuals.nxupp}, nxlow{residuals.nxlow}, mcupp{residuals.mcupp}, mclow{residuals.mclow} {
-   ixlow = OoqpVectorHandle(residuals.ixlow->cloneFull());
-   ixupp = OoqpVectorHandle(residuals.ixupp->cloneFull());
-   iclow = OoqpVectorHandle(residuals.iclow->cloneFull());
-   icupp = OoqpVectorHandle(residuals.icupp->cloneFull());
+   ixlow = SmartPointer<Vector<double> >(residuals.ixlow->cloneFull());
+   ixupp = SmartPointer<Vector<double> >(residuals.ixupp->cloneFull());
+   iclow = SmartPointer<Vector<double> >(residuals.iclow->cloneFull());
+   icupp = SmartPointer<Vector<double> >(residuals.icupp->cloneFull());
 
-   lagrangian_gradient = OoqpVectorHandle(residuals.lagrangian_gradient->cloneFull());
-   rA = OoqpVectorHandle(residuals.rA->cloneFull());
-   rC = OoqpVectorHandle(residuals.rC->cloneFull());
+   lagrangian_gradient = SmartPointer<Vector<double> >(residuals.lagrangian_gradient->cloneFull());
+   rA = SmartPointer<Vector<double> >(residuals.rA->cloneFull());
+   rC = SmartPointer<Vector<double> >(residuals.rC->cloneFull());
 
-   rz = OoqpVectorHandle(residuals.rz->cloneFull());
+   rz = SmartPointer<Vector<double> >(residuals.rz->cloneFull());
 
-   rt = OoqpVectorHandle(residuals.rt->cloneFull());
-   rlambda = OoqpVectorHandle(residuals.rlambda->cloneFull());
+   rt = SmartPointer<Vector<double> >(residuals.rt->cloneFull());
+   rlambda = SmartPointer<Vector<double> >(residuals.rlambda->cloneFull());
 
-   ru = OoqpVectorHandle(residuals.ru->cloneFull());
-   rpi = OoqpVectorHandle(residuals.rpi->cloneFull());
+   ru = SmartPointer<Vector<double> >(residuals.ru->cloneFull());
+   rpi = SmartPointer<Vector<double> >(residuals.rpi->cloneFull());
 
-   rv = OoqpVectorHandle(residuals.rv->cloneFull());
-   rgamma = OoqpVectorHandle(residuals.rgamma->cloneFull());
+   rv = SmartPointer<Vector<double> >(residuals.rv->cloneFull());
+   rgamma = SmartPointer<Vector<double> >(residuals.rgamma->cloneFull());
 
-   rw = OoqpVectorHandle(residuals.rw->cloneFull());
-   rphi = OoqpVectorHandle(residuals.rphi->cloneFull());
+   rw = SmartPointer<Vector<double> >(residuals.rw->cloneFull());
+   rphi = SmartPointer<Vector<double> >(residuals.rphi->cloneFull());
 }
 
-double updateNormAndPrint(double norm, const OoqpVector& vec, bool print, std::string&& name) {
+double updateNormAndPrint(double norm, const Vector<double>& vec, bool print, std::string&& name) {
    const double infnorm = vec.infnorm();
 
    if (print) {
@@ -375,25 +375,25 @@ double Residuals::feasibility_measure(double mu) {
    double complementarity = 0.;
    // compute componentwise products of complementary variables
 //   if (mclow > 0) {
-//      OoqpVectorHandle rt_copy = OoqpVectorHandle(rt->cloneFull());
+//      SmartPointer<Vector<double> > rt_copy = SmartPointer<Vector<double> >(rt->cloneFull());
 //      rt_copy->componentMult(*rlambda);
 //      rt_copy->addConstant(-mu);
 //      complementarity += rt_copy->onenorm();
 //   }
 //   if (mcupp > 0) {
-//      OoqpVectorHandle ru_copy = OoqpVectorHandle(ru->cloneFull());
+//      SmartPointer<Vector<double> > ru_copy = SmartPointer<Vector<double> >(ru->cloneFull());
 //      ru_copy->componentMult(*rphi);
 //      ru_copy->addConstant(-mu);
 //      complementarity += ru_copy->onenorm();
 //   }
 //   if (nxlow > 0) {
-//      OoqpVectorHandle rv_copy = OoqpVectorHandle(rv->cloneFull());
+//      SmartPointer<Vector<double> > rv_copy = SmartPointer<Vector<double> >(rv->cloneFull());
 //      rv_copy->componentMult(*rgamma);
 //      rv_copy->addConstant(-mu);
 //      complementarity += rv_copy->onenorm();
 //   }
 //   if (nxupp > 0) {
-//      OoqpVectorHandle rw_copy = OoqpVectorHandle(rw->cloneFull());
+//      SmartPointer<Vector<double> > rw_copy = SmartPointer<Vector<double> >(rw->cloneFull());
 //      rw_copy->componentMult(*rphi);
 //      rw_copy->addConstant(-mu);
 //      complementarity += rw_copy->onenorm();

@@ -15,7 +15,7 @@ BiCGStabSolver::BiCGStabSolver( MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2
   flag = -1;
 };
 
-void BiCGStabSolver::solve( OoqpVector& rhs_ )
+void BiCGStabSolver::solve( Vector<double>& rhs_ )
 {
   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
   int n = b.length();
@@ -228,7 +228,7 @@ void BiCGStabSolver::solve( OoqpVector& rhs_ )
 
 
 /*
-void BiCGStabSolver::solve( OoqpVector& rhs_ )
+void BiCGStabSolver::solve( Vector<double>& rhs_ )
 {
   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
   int n = b.length();

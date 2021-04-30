@@ -255,7 +255,7 @@ void WSMPSolver::matrixChanged() {
    omp_set_num_threads(nthreads);
 }
 
-void WSMPSolver::solve(OoqpVector& rhs_in) {
+void WSMPSolver::solve(Vector<double>& rhs_in) {
    omp_set_num_threads(1);
 
    wrecallmat_(&instance, &iparm[63]);
@@ -315,20 +315,20 @@ WSMPSolver::~WSMPSolver() {
    instances--;
 }
 
-void WSMPSolver::Lsolve(OoqpVector& x) {
+void WSMPSolver::Lsolve(Vector<double>& x) {
    solve(1, x);
 }
 
-void WSMPSolver::Dsolve(OoqpVector& x) {
+void WSMPSolver::Dsolve(Vector<double>& x) {
    solve(3, x);
 }
 
-void WSMPSolver::Ltsolve(OoqpVector& x) {
+void WSMPSolver::Ltsolve(Vector<double>& x) {
    solve(2, x);
 }
 
 
-void WSMPSolver::solve(int solveType, OoqpVector& rhs_in) {
+void WSMPSolver::solve(int solveType, Vector<double>& rhs_in) {
    omp_set_num_threads(1);
 
    wrecallmat_(&instance, &iparm[63]);

@@ -138,7 +138,7 @@ void Ma27Solver::solve(int nrhss, double* rhss, int*) {
    max_n_iter_refinement = tmp;
 }
 
-void Ma27Solver::solve(OoqpVector& rhs_in) {
+void Ma27Solver::solve(Vector<double>& rhs_in) {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
 #ifndef NDEBUG

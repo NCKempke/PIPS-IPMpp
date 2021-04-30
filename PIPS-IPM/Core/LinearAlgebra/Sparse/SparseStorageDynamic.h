@@ -81,14 +81,14 @@ public:
   void fromGetDense( int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
   void atPutSpRow( int, const double*, int, int*, int&) override { assert(0 && "not implemented here"); };
   void fromGetSpRow( int, int, double*, int, int*, int&, int, int& ) override { assert(0 && "not implemented here"); };
-  void getDiagonal( OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void atPutDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void atAddDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void columnScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void rowScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
+  void getDiagonal( Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void setToDiagonal( const Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void atPutDiagonal( int, const Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void atAddDiagonal( int, const Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void fromGetDiagonal( int, Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void symmetricScale ( const Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void columnScale ( const Vector<double>& ) override { assert(0 && "not implemented here"); };
+  void rowScale ( const Vector<double>& ) override { assert(0 && "not implemented here"); };
   void scalarMult( double ) override { assert(0 && "not implemented here"); };
 
   void getSize( int& m, int& n ) const override;

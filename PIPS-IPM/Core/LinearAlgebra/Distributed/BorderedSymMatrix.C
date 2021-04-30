@@ -53,7 +53,7 @@ int BorderedSymMatrix::isKindOf( int type ) const
 }
 
 /** y = beta * y + alpha * this * x */
-void BorderedSymMatrix::mult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
+void BorderedSymMatrix::mult( double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in ) const
 {
    DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
    const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
@@ -73,12 +73,12 @@ void BorderedSymMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
 }
 
 /** y = beta * y + alpha * this^T * x */
-void BorderedSymMatrix::transMult( double beta, OoqpVector& y, double alpha,  const OoqpVector& x ) const
+void BorderedSymMatrix::transMult( double beta, Vector<double>& y, double alpha,  const Vector<double>& x ) const
 {
    this->mult( beta, y, alpha, x );
 }
 
-void BorderedSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_in )
+void BorderedSymMatrix::fromGetDiagonal( int idiag, Vector<double>& x_in )
 {
    assert( "The value of the parameter idiag is not supported!" && idiag == 0 );
 

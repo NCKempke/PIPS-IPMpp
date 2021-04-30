@@ -22,12 +22,12 @@ class sLinsysLeafMumps : public sLinsysLeaf
 
   sLinsysLeafMumps(sFactory* factory,
         DistributedQP* prob_,
-        OoqpVector* dd_, OoqpVector* dq_,
-        OoqpVector* nomegaInv_,
-        OoqpVector* primal_reg_,
-        OoqpVector* dual_y_reg_,
-        OoqpVector* dual_z_reg_,
-        OoqpVector* rhs_
+        Vector<double>* dd_, Vector<double>* dq_,
+        Vector<double>* nomegaInv_,
+        Vector<double>* primal_reg_,
+        Vector<double>* dual_y_reg_,
+        Vector<double>* dual_z_reg_,
+        Vector<double>* rhs_
         )
         : sLinsysLeaf(factory, prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_) {};
 

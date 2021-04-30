@@ -85,11 +85,11 @@ class PardisoIndefSolver : public DoubleLinearSolver
       void matrixRebuild( DoubleMatrix& matrixNew ) override;
 
       using DoubleLinearSolver::solve;
-      void solve( OoqpVector& vec ) override;
+      void solve( Vector<double>& vec ) override;
       void solve( GenMatrix& ) override { assert(0 && "not supported"); };
       void solve( int nrhss, double* rhss, int* /*colSparsity*/ );
 
-      void solveSynchronized( OoqpVector& vec ) override;
+      void solveSynchronized( Vector<double>& vec ) override;
       ~PardisoIndefSolver() override;
 
       bool reports_inertia() const override { return true; };

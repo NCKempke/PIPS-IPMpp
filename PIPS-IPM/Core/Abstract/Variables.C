@@ -2,15 +2,16 @@
 #include <iostream>
 #include <SimpleVector.h>
 #include "Variables.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 
 #include "LinearAlgebraPackage.h"
 #include "Problem.h"
 #include "MpsReader.h"
 
-Variables::Variables(OoqpVector* x_in, OoqpVector* s_in, OoqpVector* y_in, OoqpVector* z_in, OoqpVector* v_in, OoqpVector* gamma_in, OoqpVector* w_in,
-      OoqpVector* phi_in, OoqpVector* t_in, OoqpVector* lambda_in, OoqpVector* u_in, OoqpVector* pi_in, OoqpVector* ixlow_in, OoqpVector* ixupp_in,
-      OoqpVector* iclow_in, OoqpVector* icupp_in) {
+Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in,
+      Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in,
+      Vector<double>* iclow_in, Vector<double>* icupp_in) {
    SpReferTo(x, x_in);
    SpReferTo(s, s_in);
    SpReferTo(y, y_in);
@@ -57,8 +58,8 @@ Variables::Variables(OoqpVector* x_in, OoqpVector* s_in, OoqpVector* y_in, OoqpV
    assert(mz == pi->length() || (0 == pi->length() && mcupp == 0));
 }
 
-Variables::Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, OoqpVector* ixlow_in, OoqpVector* ixupp_in,
-      OoqpVector* iclow_in, OoqpVector* icupp_in) {
+Variables::Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, Vector<double>* ixlow_in, Vector<double>* ixupp_in,
+      Vector<double>* iclow_in, Vector<double>* icupp_in) {
    SpReferTo(ixlow, ixlow_in);
    SpReferTo(ixupp, ixupp_in);
    SpReferTo(iclow, iclow_in);
@@ -81,53 +82,53 @@ Variables::Variables(LinearAlgebraPackage* la, long long nx_, long long my_, lon
    assert(mz == icupp->length() || 0 == icupp->length());
    mcupp = icupp->numberOfNonzeros();
 
-   s = OoqpVectorHandle(la->newVector(mz));
+   s = SmartPointer<Vector<double> >(la->newVector(mz));
    if (mclow > 0) {
-      t = OoqpVectorHandle(la->newVector(mz));
-      lambda = OoqpVectorHandle(la->newVector(mz));
+      t = SmartPointer<Vector<double> >(la->newVector(mz));
+      lambda = SmartPointer<Vector<double> >(la->newVector(mz));
    }
    else {
-      t = OoqpVectorHandle(la->newVector(0));
-      lambda = OoqpVectorHandle(la->newVector(0));
+      t = SmartPointer<Vector<double> >(la->newVector(0));
+      lambda = SmartPointer<Vector<double> >(la->newVector(0));
    }
    if (mcupp > 0) {
-      u = OoqpVectorHandle(la->newVector(mz));
-      pi = OoqpVectorHandle(la->newVector(mz));
+      u = SmartPointer<Vector<double> >(la->newVector(mz));
+      pi = SmartPointer<Vector<double> >(la->newVector(mz));
    }
    else {
-      u = OoqpVectorHandle(la->newVector(0));
-      pi = OoqpVectorHandle(la->newVector(0));
+      u = SmartPointer<Vector<double> >(la->newVector(0));
+      pi = SmartPointer<Vector<double> >(la->newVector(0));
    }
    if (nxlow > 0) {
-      v = OoqpVectorHandle(la->newVector(nx));
-      gamma = OoqpVectorHandle(la->newVector(nx));
+      v = SmartPointer<Vector<double> >(la->newVector(nx));
+      gamma = SmartPointer<Vector<double> >(la->newVector(nx));
    }
    else {
-      v = OoqpVectorHandle(la->newVector(0));
-      gamma = OoqpVectorHandle(la->newVector(0));
+      v = SmartPointer<Vector<double> >(la->newVector(0));
+      gamma = SmartPointer<Vector<double> >(la->newVector(0));
    }
 
    if (nxupp > 0) {
-      w = OoqpVectorHandle(la->newVector(nx));
-      phi = OoqpVectorHandle(la->newVector(nx));
+      w = SmartPointer<Vector<double> >(la->newVector(nx));
+      phi = SmartPointer<Vector<double> >(la->newVector(nx));
    }
    else {
-      w = OoqpVectorHandle(la->newVector(0));
-      phi = OoqpVectorHandle(la->newVector(0));
+      w = SmartPointer<Vector<double> >(la->newVector(0));
+      phi = SmartPointer<Vector<double> >(la->newVector(0));
    }
 
-   x = OoqpVectorHandle(la->newVector(nx));
-   y = OoqpVectorHandle(la->newVector(my));
-   z = OoqpVectorHandle(la->newVector(mz));
+   x = SmartPointer<Vector<double> >(la->newVector(nx));
+   y = SmartPointer<Vector<double> >(la->newVector(my));
+   z = SmartPointer<Vector<double> >(la->newVector(mz));
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 
 }
 
 Variables::Variables(const Variables& vars) {
-   ixlow = OoqpVectorHandle(vars.ixlow->cloneFull());
-   ixupp = OoqpVectorHandle(vars.ixupp->cloneFull());
-   iclow = OoqpVectorHandle(vars.iclow->cloneFull());
-   icupp = OoqpVectorHandle(vars.icupp->cloneFull());
+   ixlow = SmartPointer<Vector<double> >(vars.ixlow->cloneFull());
+   ixupp = SmartPointer<Vector<double> >(vars.ixupp->cloneFull());
+   iclow = SmartPointer<Vector<double> >(vars.iclow->cloneFull());
+   icupp = SmartPointer<Vector<double> >(vars.icupp->cloneFull());
 
    nx = vars.nx;
    my = vars.my;
@@ -138,23 +139,23 @@ Variables::Variables(const Variables& vars) {
    mclow = iclow->numberOfNonzeros();
    mcupp = icupp->numberOfNonzeros();
 
-   s = OoqpVectorHandle(vars.s->cloneFull());
+   s = SmartPointer<Vector<double> >(vars.s->cloneFull());
 
-   t = OoqpVectorHandle(vars.t->cloneFull());
-   lambda = OoqpVectorHandle(vars.lambda->cloneFull());
+   t = SmartPointer<Vector<double> >(vars.t->cloneFull());
+   lambda = SmartPointer<Vector<double> >(vars.lambda->cloneFull());
 
-   u = OoqpVectorHandle(vars.u->cloneFull());
-   pi = OoqpVectorHandle(vars.pi->cloneFull());
+   u = SmartPointer<Vector<double> >(vars.u->cloneFull());
+   pi = SmartPointer<Vector<double> >(vars.pi->cloneFull());
 
-   v = OoqpVectorHandle(vars.v->cloneFull());
-   gamma = OoqpVectorHandle(vars.gamma->cloneFull());
+   v = SmartPointer<Vector<double> >(vars.v->cloneFull());
+   gamma = SmartPointer<Vector<double> >(vars.gamma->cloneFull());
 
-   w = OoqpVectorHandle(vars.w->cloneFull());
-   phi = OoqpVectorHandle(vars.phi->cloneFull());
+   w = SmartPointer<Vector<double> >(vars.w->cloneFull());
+   phi = SmartPointer<Vector<double> >(vars.phi->cloneFull());
 
-   x = OoqpVectorHandle(vars.x->cloneFull());
-   y = OoqpVectorHandle(vars.y->cloneFull());
-   z = OoqpVectorHandle(vars.z->cloneFull());
+   x = SmartPointer<Vector<double> >(vars.x->cloneFull());
+   y = SmartPointer<Vector<double> >(vars.y->cloneFull());
+   z = SmartPointer<Vector<double> >(vars.z->cloneFull());
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
@@ -1096,11 +1097,11 @@ void Variables::setNotIndicatedBoundsTo(Problem& problem, double value) {
    problem.xlowerBound().setNotIndicatedEntriesToVal(xlow_inf, *problem.ixlow);
    problem.xupperBound().setNotIndicatedEntriesToVal(xupp_inf, *problem.ixupp);
 
-   OoqpVector* ixupp_inv = problem.ixupp->clone();
+   Vector<double>* ixupp_inv = problem.ixupp->clone();
    ixupp_inv->setToZero();
    ixupp_inv->setNotIndicatedEntriesToVal(1.0, *problem.ixupp);
 
-   OoqpVector* ixlow_inv = problem.ixlow->clone();
+   Vector<double>* ixlow_inv = problem.ixlow->clone();
    ixlow_inv->setToZero();
    ixlow_inv->setNotIndicatedEntriesToVal(1.0, *problem.ixlow);
 
@@ -1108,7 +1109,7 @@ void Variables::setNotIndicatedBoundsTo(Problem& problem, double value) {
    problem.ixupp->setToConstant(1);
 
    /* adjust slacks */
-   OoqpVector* x_copy = x->cloneFull();
+   Vector<double>* x_copy = x->cloneFull();
 
    /* x - lx */
    x_copy->axpy(-1.0, problem.xlowerBound());

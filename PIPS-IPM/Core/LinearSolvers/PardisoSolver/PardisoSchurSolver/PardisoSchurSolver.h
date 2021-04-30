@@ -9,7 +9,8 @@
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"
 #include "DenseSymMatrix.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseStorage.h"
 #include "pipsport.h"
 #include <map>
@@ -42,7 +43,7 @@ class PardisoSchurSolver : public DoubleLinearSolver {
   void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
-  void solve( OoqpVector& rhs ) override = 0;
+  void solve( Vector<double>& rhs ) override = 0;
   void solve( GenMatrix& ) override { assert(false && "Function not supported. Use PardisoSolver for this functionality."); };
 
    bool reports_inertia() const override { return false; };

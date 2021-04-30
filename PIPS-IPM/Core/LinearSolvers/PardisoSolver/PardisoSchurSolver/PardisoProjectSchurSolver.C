@@ -31,7 +31,7 @@ PardisoProjectSchurSolver::PardisoProjectSchurSolver( const SparseSymMatrix * sg
    initPardiso();
 }
 
-void PardisoProjectSchurSolver::solve( OoqpVector& rhs_in )
+void PardisoProjectSchurSolver::solve( Vector<double>& rhs_in )
 {
   SimpleVector<double>& rhs=dynamic_cast<SimpleVector<double>&>(rhs_in);
 

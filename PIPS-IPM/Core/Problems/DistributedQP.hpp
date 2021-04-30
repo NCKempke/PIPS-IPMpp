@@ -28,8 +28,8 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const sTree* stochNode, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp,
-         GenMatrix* A, OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp,
+   DistributedQP(const sTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
+         GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp,
          bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false, bool is_hierarchy_inner_leaf = false);
 
    std::vector<DistributedQP*> children;

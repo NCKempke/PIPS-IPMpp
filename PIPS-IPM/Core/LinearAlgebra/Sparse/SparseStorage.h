@@ -7,7 +7,8 @@
 
 #include "DoubleMatrix.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "pipsport.h"
 
 #include <cstring>
@@ -81,12 +82,12 @@ public:
   virtual void putSparseTriple( int irow[], int len, int jcol[], double A[], 
 				int& info );
 
-  void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( const OoqpVector& vec ) override;
+  void getDiagonal( Vector<double>& vec ) override;
+  void setToDiagonal( const Vector<double>& vec ) override;
 
-  void columnScale( const OoqpVector& vec ) override;
-  void rowScale( const OoqpVector& vec ) override;
-  void symmetricScale( const OoqpVector& vec ) override;
+  void columnScale( const Vector<double>& vec ) override;
+  void rowScale( const Vector<double>& vec ) override;
+  void symmetricScale( const Vector<double>& vec ) override;
   void scalarMult( double num ) override;
 
   void atPutSpRow( int col, const double A[], int lenA, int irowA[],
@@ -112,9 +113,9 @@ public:
 			   double alpha, const double x[], int incx ) const;
   virtual void transMultD( double beta, double y[], int incy, double alpha, const double x[], const double d[], int incxd ) const;
 
-  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
-   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+  void atPutDiagonal( int idiag, const Vector<double>& v ) override;
+  void atAddDiagonal( int idiag, const Vector<double>& v ) override;
+   void fromGetDiagonal( int idiag, Vector<double>& v ) override;
 
   void atPutDiagonal( int idiag, const double x[], int incx, int extent );
    void atAddDiagonal( int idiag, const double x[], int incx, int extent );

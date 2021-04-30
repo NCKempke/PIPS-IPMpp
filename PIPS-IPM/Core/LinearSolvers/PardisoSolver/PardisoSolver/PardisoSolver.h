@@ -27,7 +27,7 @@ public:
   void diagonalChanged( int idiag, int extent ) override;
   void matrixChanged() override;
 
-  void solve( OoqpVector& rhs ) override;
+  void solve( Vector<double>& rhs ) override;
   void solve( GenMatrix& rhs) override;
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
   void solve( GenMatrix& rhs, int *colSparsity);

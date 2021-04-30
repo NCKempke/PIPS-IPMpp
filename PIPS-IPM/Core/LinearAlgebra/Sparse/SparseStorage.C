@@ -6,7 +6,8 @@
 #include <cstring>
 #include <cassert>
 #include "SparseStorage.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
 #include <limits>
@@ -75,7 +76,7 @@ void SparseStorage::getSize( int& m_, int& n_ ) const
 }
 
 
-void SparseStorage::fromGetDiagonal( int idiag, OoqpVector& vec_in )
+void SparseStorage::fromGetDiagonal( int idiag, Vector<double>& vec_in )
 {
    SimpleVector<double> & vec = dynamic_cast<SimpleVector<double> &>(vec_in);
    int extent = vec.length();
@@ -102,7 +103,7 @@ void SparseStorage::fromGetDiagonal( int idiag, OoqpVector& vec_in )
 
 }
 
-void SparseStorage::columnScale( const OoqpVector& scale_in )
+void SparseStorage::columnScale( const Vector<double>& scale_in )
 {
    const SimpleVector<double> &scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
    assert( scale.length() == n );
@@ -117,7 +118,7 @@ void SparseStorage::columnScale( const OoqpVector& scale_in )
    }
 }
 
-void SparseStorage::rowScale(const OoqpVector &scale_in)
+void SparseStorage::rowScale(const Vector<double> &scale_in)
 {
    const SimpleVector<double> &scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
    assert(scale.length() == m);
@@ -129,7 +130,7 @@ void SparseStorage::rowScale(const OoqpVector &scale_in)
    }
 }
 
-void SparseStorage::symmetricScale(const OoqpVector &scale_in)
+void SparseStorage::symmetricScale(const Vector<double> &scale_in)
 {
    const SimpleVector<double> &scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 
@@ -156,12 +157,12 @@ void SparseStorage::scalarMult(double num)
    }
 }
 
-void SparseStorage::getDiagonal( OoqpVector& vec_in )
+void SparseStorage::getDiagonal( Vector<double>& vec_in )
 {
    this->fromGetDiagonal( 0, vec_in );
 }
 
-void SparseStorage::setToDiagonal( const OoqpVector& vec_in )
+void SparseStorage::setToDiagonal( const Vector<double>& vec_in )
 {
    const SimpleVector<double>& vec = dynamic_cast<const SimpleVector<double> &>(vec_in);
    int diagExtent = std::min(m, n);
@@ -1283,13 +1284,13 @@ double SparseStorage::abminnormNonZero( double tol ) const
    return norm;
 }
 
-void SparseStorage::atPutDiagonal( int idiag, const OoqpVector& vvec )
+void SparseStorage::atPutDiagonal( int idiag, const Vector<double>& vvec )
 {
    const SimpleVector<double> & v = dynamic_cast<const SimpleVector<double> &>(vvec);
    atPutDiagonal( idiag, &v[0], 1, v.length() );
 }
 
-void SparseStorage::atAddDiagonal( int idiag, const OoqpVector& vvec )
+void SparseStorage::atAddDiagonal( int idiag, const Vector<double>& vvec )
 {
    const SimpleVector<double> & v = dynamic_cast<const SimpleVector<double> &>(vvec);
    atAddDiagonal( idiag, &v[0], 1, v.length() );

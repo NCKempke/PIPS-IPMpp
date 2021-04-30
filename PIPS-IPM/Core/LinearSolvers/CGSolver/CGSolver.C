@@ -28,7 +28,7 @@ CGSolver::~CGSolver()
   if(tmpVec6) delete[] tmpVec6;
 }
 
-void CGSolver::solve( OoqpVector& rhs_ )
+void CGSolver::solve( Vector<double>& rhs_ )
 {
   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
   int n = b.length();

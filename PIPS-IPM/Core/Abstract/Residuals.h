@@ -1,7 +1,8 @@
 #ifndef RESIDUALS_H
 #define RESIDUALS_H
 
-#include <OoqpVectorHandle.h>
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include <iostream>
 #include <limits>
 
@@ -32,34 +33,34 @@ protected:
    long long mz{-1};
 
    long long nxupp{-1};
-   OoqpVectorHandle ixupp;
+   SmartPointer<Vector<double> > ixupp;
 
    long long nxlow{-1};
-   OoqpVectorHandle ixlow;
+   SmartPointer<Vector<double> > ixlow;
 
    long long mcupp{-1};
-   OoqpVectorHandle icupp;
+   SmartPointer<Vector<double> > icupp;
 
    long long mclow{-1};
-   OoqpVectorHandle iclow;
+   SmartPointer<Vector<double> > iclow;
 
    Residuals() = default;
 
 public:
    int m{-1}, n{-1};
 
-   OoqpVectorHandle lagrangian_gradient;
-   OoqpVectorHandle rA;
-   OoqpVectorHandle rC;
-   OoqpVectorHandle rz;
-   OoqpVectorHandle rv;
-   OoqpVectorHandle rw;
-   OoqpVectorHandle rt;
-   OoqpVectorHandle ru;
-   OoqpVectorHandle rgamma;
-   OoqpVectorHandle rphi;
-   OoqpVectorHandle rlambda;
-   OoqpVectorHandle rpi;
+   SmartPointer<Vector<double> > lagrangian_gradient;
+   SmartPointer<Vector<double> > rA;
+   SmartPointer<Vector<double> > rC;
+   SmartPointer<Vector<double> > rz;
+   SmartPointer<Vector<double> > rv;
+   SmartPointer<Vector<double> > rw;
+   SmartPointer<Vector<double> > rt;
+   SmartPointer<Vector<double> > ru;
+   SmartPointer<Vector<double> > rgamma;
+   SmartPointer<Vector<double> > rphi;
+   SmartPointer<Vector<double> > rlambda;
+   SmartPointer<Vector<double> > rpi;
 
    Residuals(const Residuals& residuals);
 

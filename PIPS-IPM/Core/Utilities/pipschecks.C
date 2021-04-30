@@ -6,7 +6,8 @@
  */
 
 #include "pipsdef.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
 #include <cmath>

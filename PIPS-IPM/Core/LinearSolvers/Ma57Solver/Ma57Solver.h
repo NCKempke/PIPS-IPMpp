@@ -10,7 +10,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseStorage.h"
 
 #include <vector>
@@ -175,7 +176,7 @@ public:
    ~Ma57Solver() override = default;
 
    using DoubleLinearSolver::solve;
-   void solve( OoqpVector& rhs ) override;
+   void solve( Vector<double>& rhs ) override;
    void solve( int nrhss, double* rhss, int* ) override;
    void solve( GenMatrix& rhs) override;
 
@@ -185,7 +186,7 @@ public:
    bool reports_inertia() const override { return true; };
    std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override;
 protected:
-   void solve(int solveType, OoqpVector& rhs);
+   void solve(int solveType, Vector<double>& rhs);
 //   int* new_iworkn(int dim);
 //   double* new_dworkn(int dim);
 };

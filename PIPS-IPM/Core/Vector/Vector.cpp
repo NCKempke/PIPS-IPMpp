@@ -1,15 +1,16 @@
 /* OOQP                                                               *
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 
 template<typename T>
-OoqpVectorBase<T>::OoqpVectorBase(int n_) : n{n_} {
+Vector<T>::Vector(int n_) : n{n_} {
    assert(n_ >= 0);
 }
 
 template<typename T>
-void OoqpVectorBase<T>::writefToStreamStats(std::ostream& out, std::string prestring) {
+void Vector<T>::writefToStreamStats(std::ostream& out, std::string prestring) {
    T min;
    T max;
    int dummy;
@@ -22,7 +23,7 @@ void OoqpVectorBase<T>::writefToStreamStats(std::ostream& out, std::string prest
 
 
 template
-class OoqpVectorBase<int>;
+class Vector<int>;
 
 template
-class OoqpVectorBase<double>;
+class Vector<double>;

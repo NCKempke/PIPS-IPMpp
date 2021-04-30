@@ -57,7 +57,7 @@ void PardisoMKLSchurSolver::initPardiso()
    pardisoinit(pt, &mtype, iparm);
 }
 
-void PardisoMKLSchurSolver::solve( OoqpVector& rhs_in )
+void PardisoMKLSchurSolver::solve( Vector<double>& rhs_in )
 {
   SimpleVector<double>& rhs=dynamic_cast<SimpleVector<double>&>(rhs_in);
 

@@ -43,8 +43,8 @@ public:
 
   void putZeros();
 
-  void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( const OoqpVector& vec ) override;
+  void getDiagonal( Vector<double>& vec ) override;
+  void setToDiagonal( const Vector<double>& vec ) override;
 
   void atPutSubmatrix( int destRow, int destCol,
 			       DoubleMatrix& M,
@@ -56,18 +56,18 @@ public:
   void putSparseTriple( int irow[], int len, int jcol[], double A[],
 				int& info ) override;
 
-  void mult ( double beta,  OoqpVector& y,
-		      double alpha, const OoqpVector& x ) const override;
+  void mult ( double beta,  Vector<double>& y,
+		      double alpha, const Vector<double>& x ) const override;
   virtual void mult ( double beta,  double y[], int incy,
 		      double alpha, const double x[], int incx ) const;
 
-  void transMult ( double beta,  OoqpVector& y,
-			   double alpha, const OoqpVector& x ) const override;
+  void transMult ( double beta,  Vector<double>& y,
+			   double alpha, const Vector<double>& x ) const override;
   virtual void transMult ( double beta,  double y[], int incy,
 			   double alpha, const double x[], int incx ) const;
 
-  void matTransDMultMat( OoqpVector&, SymMatrix** ) override { assert(false && "not implemented"); };
-  void matTransDinvMultMat(OoqpVector&, SymMatrix** ) override { assert(false && "not implemented"); };
+  void matTransDMultMat( Vector<double>&, SymMatrix** ) override { assert(false && "not implemented"); };
+  void matTransDinvMultMat(Vector<double>&, SymMatrix** ) override { assert(false && "not implemented"); };
 
   void fromGetDense( int row, int col, double * A, int lda,
 			     int rowExtent, int colExtent ) override;
@@ -76,9 +76,9 @@ public:
 			     double A[], int lenA, int jcolA[], int& nnz,
 			     int rowExtent, int& info ) override;
 
-  void columnScale( const OoqpVector& vec ) override;
-  void rowScale( const OoqpVector& vec ) override;
-  void symmetricScale( const OoqpVector &vec ) override;
+  void columnScale( const Vector<double>& vec ) override;
+  void rowScale( const Vector<double>& vec ) override;
+  void symmetricScale( const Vector<double> &vec ) override;
   void scalarMult( double num ) override;
 
   double abmaxnorm() const override;
@@ -88,11 +88,11 @@ public:
   void writeToStreamDense( std::ostream& out ) const override;
   void randomize( double alpha, double beta, double * seed ) override;
 
-  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
-  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+  void atPutDiagonal( int idiag, const Vector<double>& v ) override;
+  void atAddDiagonal( int idiag, const Vector<double>& v ) override;
+  void fromGetDiagonal( int idiag, Vector<double>& v ) override;
   /** Get a row of this matrix. */
-  virtual void getRow ( int rowIndex, OoqpVector& v_in);
+  virtual void getRow ( int rowIndex, Vector<double>& v_in);
 
   double * operator[]( int index ) { return mStorage->M[index]; }
 

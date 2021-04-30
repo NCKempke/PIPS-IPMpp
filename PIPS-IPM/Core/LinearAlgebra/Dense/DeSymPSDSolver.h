@@ -9,7 +9,8 @@
 
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DenseGenMatrix.h"
 #include "pipsport.h"
 
@@ -26,7 +27,7 @@ public:
   void matrixChanged() override;
 
   using DoubleLinearSolver::solve;
-  void solve ( OoqpVector& x ) override;
+  void solve ( Vector<double>& x ) override;
 
   //specialized method that uses BLAS-3 function DTRSM for the triagular solve.
   using DoubleLinearSolver::Lsolve;

@@ -28,7 +28,7 @@ class DeSymIndefSolver : public DoubleLinearSolver
       void matrixChanged() override;
 
       using DoubleLinearSolver::solve;
-      void solve(OoqpVector &vec) override;
+      void solve(Vector<double> &vec) override;
       void solve(GenMatrix &vec) override;
 
       ~DeSymIndefSolver() override = default;

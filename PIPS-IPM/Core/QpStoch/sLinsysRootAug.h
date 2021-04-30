@@ -39,18 +39,18 @@ class sLinsysRootAug : public sLinsysRoot {
   sLinsysRootAug(DistributedFactory * factory_, DistributedQP * prob_);
   sLinsysRootAug(DistributedFactory* factory,
 		 DistributedQP* prob_,
-		 OoqpVector* dd_, OoqpVector* dq_,
-		 OoqpVector* nomegaInv_,
-		 OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz,
-		 OoqpVector* rhs_, bool creat_solvers);
+		 Vector<double>* dd_, Vector<double>* dq_,
+		 Vector<double>* nomegaInv_,
+		 Vector<double>* regP, Vector<double>* regDy, Vector<double>* regDz,
+		 Vector<double>* rhs_, bool creat_solvers);
   ~sLinsysRootAug() override = default;
 
   void finalizeKKT( DistributedQP* prob, Variables* vars) override;
   void finalizeKKTdist(DistributedQP* prob) override;
 
-  void Lsolve(DistributedQP *prob, OoqpVector& x) override;
-  void Dsolve(DistributedQP *prob, OoqpVector& x) override;
-  void Ltsolve(DistributedQP *prob, OoqpVector& x) override;
+  void Lsolve(DistributedQP *prob, Vector<double>& x) override;
+  void Dsolve(DistributedQP *prob, Vector<double>& x) override;
+  void Ltsolve(DistributedQP *prob, Vector<double>& x) override;
 
   using DistributedLinearSystem::LsolveHierarchyBorder;
   void LsolveHierarchyBorder( DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols, int end_cols ) override;

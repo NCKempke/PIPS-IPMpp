@@ -29,10 +29,10 @@ public:
    int isKindOf(int matrixType) const override;
 
    virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   void mult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override;
+   void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
-   void transMult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override;
+   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    void getSize(long long& m, long long& n) const override;
    void getSize(int& m, int& n) const override;
@@ -47,9 +47,9 @@ public:
 
    void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int rowExtent, int& info) override;
 
-   void symmetricScale(const OoqpVector& vec) override;
-   void columnScale(const OoqpVector& vec) override;
-   void rowScale(const OoqpVector& vec) override;
+   void symmetricScale(const Vector<double>& vec) override;
+   void columnScale(const Vector<double>& vec) override;
+   void rowScale(const Vector<double>& vec) override;
    void scalarMult(double num) override;
 
    void symAtPutSpRow(int col, double A[], int lenA, int irowA[], int& info) override;
@@ -68,12 +68,12 @@ public:
 
    void symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
 
-   void getDiagonal(OoqpVector& vec) override;
-   void setToDiagonal(const OoqpVector& vec) override;
+   void getDiagonal(Vector<double>& vec) override;
+   void setToDiagonal(const Vector<double>& vec) override;
 
-  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
-  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+  void atPutDiagonal( int idiag, const Vector<double>& v ) override;
+  void atAddDiagonal( int idiag, const Vector<double>& v ) override;
+  void fromGetDiagonal( int idiag, Vector<double>& v ) override;
 
   void diagonal_add_constant_from(int from, int length, double value) override;
 

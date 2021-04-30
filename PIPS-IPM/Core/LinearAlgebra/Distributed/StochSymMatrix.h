@@ -30,7 +30,7 @@ class StochSymMatrix : public SymMatrix {
 private:
 
   // note: also used for dummy class!
-  virtual void deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent);
+  virtual void deleteEmptyRowsCols(const Vector<int>& nnzVec, const Vector<int>* linkParent);
   virtual void writeToStreamDenseChild(std::stringstream& out, int offset) const;
 
 public:
@@ -69,8 +69,8 @@ public:
   void symAtPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert( false && "Not implemented" ); };;
   void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override { assert( false && "Not implemented" ); };
 
-  void mult ( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override;
-  void transMult ( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override;
+  void mult ( double beta,  Vector<double>& y, double alpha, const Vector<double>& x ) const override;
+  void transMult ( double beta,  Vector<double>& y, double alpha, const Vector<double>& x ) const override;
   
   double abmaxnorm() const override;
   double abminnormNonZero( double tol = 1e-30 ) const override;
@@ -81,22 +81,22 @@ public:
 
   void randomizePSD( double* ) override { assert( false && "Not implemented" ); };
 
-  void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( const OoqpVector& vec ) override;
-  void atPutDiagonal( int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal( int idiag, const OoqpVector& v ) override;
-  void fromGetDiagonal( int, OoqpVector& x ) override;
+  void getDiagonal( Vector<double>& vec ) override;
+  void setToDiagonal( const Vector<double>& vec ) override;
+  void atPutDiagonal( int idiag, const Vector<double>& v ) override;
+  void atAddDiagonal( int idiag, const Vector<double>& v ) override;
+  void fromGetDiagonal( int, Vector<double>& x ) override;
 
   void putSparseTriple( int[], int, int[], double[], int& ) override { assert( false && "Not implemented" ); };
 
-  void symmetricScale ( const OoqpVector& vec ) override;
-  void columnScale ( const OoqpVector& vec ) override;
-  void rowScale ( const OoqpVector& vec ) override;
+  void symmetricScale ( const Vector<double>& vec ) override;
+  void columnScale ( const Vector<double>& vec ) override;
+  void rowScale ( const Vector<double>& vec ) override;
 
   void scalarMult( double num ) override;
 
   // note: also used for dummy class!
-  virtual void deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec)
+  virtual void deleteEmptyRowsCols(const Vector<int>& nnzVec)
   {
      deleteEmptyRowsCols(nnzVec, nullptr);
   }
@@ -145,8 +145,8 @@ public:
 
   void fromGetSpRow( int, int, double[], int, int[], int&, int, int& ) override {};
 
-  void mult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-  void transMult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
+  void mult ( double, Vector<double>&, double, const Vector<double>& ) const override {};
+  void transMult ( double, Vector<double>&, double, const Vector<double>& ) const override {};
   
   double abmaxnorm() const override { return 0.0; }
   double abminnormNonZero( double ) const override { return std::numeric_limits<double>::infinity(); }
@@ -156,17 +156,17 @@ public:
 
   void randomizePSD( double* ) override {};
   
-  void getDiagonal( OoqpVector& ) override {};
-  void setToDiagonal( const OoqpVector& ) override {};
-  void atPutDiagonal( int, const OoqpVector& ) override {};
-  void atAddDiagonal( int, const OoqpVector& ) override {};
-  void fromGetDiagonal( int, OoqpVector& ) override {};
+  void getDiagonal( Vector<double>& ) override {};
+  void setToDiagonal( const Vector<double>& ) override {};
+  void atPutDiagonal( int, const Vector<double>& ) override {};
+  void atAddDiagonal( int, const Vector<double>& ) override {};
+  void fromGetDiagonal( int, Vector<double>& ) override {};
 
   void putSparseTriple( int[], int, int[], double[], int& ) override {};
 
-  void symmetricScale ( const OoqpVector& ) override {};
-  void columnScale ( const OoqpVector& ) override {};
-  void rowScale ( const OoqpVector& ) override {};
+  void symmetricScale ( const Vector<double>& ) override {};
+  void columnScale ( const Vector<double>& ) override {};
+  void rowScale ( const Vector<double>& ) override {};
   void scalarMult( double ) override {};
 
   BorderedSymMatrix* raiseBorder( int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
