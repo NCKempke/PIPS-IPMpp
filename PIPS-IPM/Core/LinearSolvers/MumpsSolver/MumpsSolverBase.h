@@ -45,6 +45,9 @@ class MumpsSolverBase : public DoubleLinearSolver {
   static constexpr unsigned defaultMaxNiterRefinments = 5;
   static constexpr int maxNreallocs = 5;
 
+  bool reports_inertia() const override { return false; };
+  std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { assert( false && "TODO : implement"); return {0,0,0}; };
+
  protected:
 
   void setUpMpiData(MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c);

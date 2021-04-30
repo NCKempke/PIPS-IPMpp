@@ -32,6 +32,9 @@ public:
   void solve( int nrhss, double* rhss, int* colSparsity ) override;
   void solve( GenMatrix& rhs, int *colSparsity);
 
+   bool reports_inertia() const override { return true; };
+   std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override;
+
 protected:
   virtual void setIparm(int* iparm) const = 0;
   virtual void pardisoCall(void *pt, const int* maxfct, const int* mnum, const int* mtype, const int* phase, int* n, double* M, int* krowM, int* jcolM,

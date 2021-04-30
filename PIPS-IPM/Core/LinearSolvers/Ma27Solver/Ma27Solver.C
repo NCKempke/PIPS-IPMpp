@@ -474,3 +474,8 @@ bool Ma27Solver::checkErrorsAndReact() {
 
    return error;
 }
+
+std::tuple<unsigned int,unsigned int,unsigned int> Ma27Solver::get_inertia() const{
+   assert(false && "TODO: Implement");
+   return {0,0,0};
+}

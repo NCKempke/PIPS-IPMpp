@@ -33,6 +33,8 @@ class DeSymIndefSolver : public DoubleLinearSolver
 
       ~DeSymIndefSolver() override = default;
 
+      bool reports_inertia() const override { return true; };
+      std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { assert(false && "TODO : implement"); return {0,0,0}; };
    protected:
 
       /* in PIPS symmetric matrices will be lower diagonal matrices which makes them upper diagonal in fortran access */

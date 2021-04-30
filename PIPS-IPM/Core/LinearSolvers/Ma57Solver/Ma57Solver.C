@@ -441,3 +441,8 @@ void Ma57Solver::getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) co
          jcolM[k] = mat_storage->jcolM[k];
    }
 }
+
+std::tuple<unsigned int,unsigned int,unsigned int> Ma57Solver::get_inertia() const{
+   assert(false && "TODO: Implement");
+   return {0,0,0};
+}

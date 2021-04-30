@@ -182,7 +182,9 @@ public:
    void diagonalChanged( int idiag, int extent ) override;
    void matrixChanged() override;
 
- protected:
+   bool reports_inertia() const override { return true; };
+   std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override;
+protected:
    void solve(int solveType, OoqpVector& rhs);
 //   int* new_iworkn(int dim);
 //   double* new_dworkn(int dim);

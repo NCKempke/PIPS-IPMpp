@@ -92,7 +92,10 @@ class PardisoIndefSolver : public DoubleLinearSolver
       void solveSynchronized( OoqpVector& vec ) override;
       ~PardisoIndefSolver() override;
 
-   private:
+      bool reports_inertia() const override { return true; };
+      std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override;
+
+private:
       void initPardiso();
       void factorizeFromSparse();
       void factorizeFromSparse(SparseSymMatrix& matrix_fortran);

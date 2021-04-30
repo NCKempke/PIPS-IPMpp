@@ -61,8 +61,8 @@ extern "C"
 class Ma27Solver : public DoubleLinearSolver {
 
 protected:
-      const SparseSymMatrix* mat{};
-  SparseStorageHandle mat_storage;
+   const SparseSymMatrix* mat{};
+   SparseStorageHandle mat_storage;
 
   /** control structures MA27 */
   std::vector<int> icntl = std::vector<int>(30);
@@ -199,6 +199,10 @@ public:
 
   void diagonalChanged( int idiag, int extent ) override;
   void matrixChanged() override;
+
+   bool reports_inertia() const override { return true; };
+   std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override;
+
 };
 
 #endif

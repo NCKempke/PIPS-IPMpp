@@ -45,6 +45,9 @@ class PardisoSchurSolver : public DoubleLinearSolver {
   void solve( OoqpVector& rhs ) override = 0;
   void solve( GenMatrix& ) override { assert(false && "Function not supported. Use PardisoSolver for this functionality."); };
 
+   bool reports_inertia() const override { return false; };
+   std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override { return {0, 0, 0}; };
+
   /** Functions specific to the Schur approach. The last argument is the Schur first
    * stage matrix that will be updated.
    * 1. schur_solver( rhs, SC)

@@ -27,6 +27,11 @@ public:
   using DoubleLinearSolver::solve;
   void solve ( OoqpVector& vec ) override;
   virtual ~DeSymIndefSolver2();
+
+
+   bool reports_inertia() const override { return true; };
+   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { assert(false && "TODO : implement"); return {0,0,0}; };
+
 };
 
 #endif

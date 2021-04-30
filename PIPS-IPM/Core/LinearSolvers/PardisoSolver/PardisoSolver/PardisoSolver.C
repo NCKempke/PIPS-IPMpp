@@ -364,3 +364,8 @@ PardisoSolver::~PardisoSolver() {
    delete[] M;
    delete[] nvec;
 }
+
+std::tuple<unsigned int,unsigned int,unsigned int> PardisoSolver::get_inertia() const{
+   assert(false && "TODO: Implement");
+   return {0,0,0};
+}

@@ -42,6 +42,12 @@ public:
    *           On exit, the solution.  */
    virtual void solve ( OoqpVector& x ) = 0;
 
+   /** does this solver report inertia of the factorized matrix back */
+   virtual bool reports_inertia() const = 0;
+
+   /** get inertia of last factorized system */
+   virtual std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const = 0;
+
    /* override if necessary */
    virtual void solveSynchronized( OoqpVector& x ) { solve(x); };
 
