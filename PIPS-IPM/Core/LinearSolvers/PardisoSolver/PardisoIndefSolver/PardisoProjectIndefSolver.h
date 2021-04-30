@@ -16,13 +16,13 @@ public:
   PardisoProjectIndefSolver( SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpi_comm );
   PardisoProjectIndefSolver( DenseSymMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm );
 
- protected:
-  void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
+   ~PardisoProjectIndefSolver() override;
+protected:
+   void pardisoCall(void *pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM,
         int* perm, int* nrhs, int* iparm, int* msglvl, double* rhs, double* sol, int* error) override;
-  void checkMatrix() override;
-  void getIparm( int* iparm ) const override;
+   void checkMatrix() override;
 
-  ~PardisoProjectIndefSolver() override;
+  void getIparm( int* iparm ) const override;
  private:
   void initPardiso();
   void setIparm(int* iparm) const;

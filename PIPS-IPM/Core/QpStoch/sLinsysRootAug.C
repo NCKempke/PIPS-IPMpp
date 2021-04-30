@@ -12,11 +12,10 @@
 #include "BorderedSymMatrix.h"
 
 
-#include "pipsport.h"
 #include "StochOptions.h"
-#include <limits>
+#include <memory>
 #include <unistd.h>
-#include "math.h"
+#include <cmath>
 
 //#define DUMPKKT
 #ifdef DUMPKKT
@@ -49,7 +48,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
       regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmz);
    }
 
-   redRhs.reset(new SimpleVector<double>(locnx + locmy + locmz + locmyl + locmzl));
+   redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
 sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_,
@@ -77,7 +76,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_,
       regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmz);
    }
 
-   redRhs.reset(new SimpleVector<double>(locnx + locmy + locmz + locmyl + locmzl));
+   redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
 SymMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
@@ -102,47 +101,47 @@ SymMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
 }
 
 void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
-   SparseSymMatrix* kkt_sp = dynamic_cast<SparseSymMatrix*>(kkt.get());
+   auto* kkt_sp = dynamic_cast<SparseSymMatrix*>(kkt.get());
 
    if (solver_type == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
-      solver.reset( new MumpsSolverRoot(mpiComm, kkt_sp, allreduce_kkt) );
+      solver = std::make_unique<MumpsSolverRoot>(mpiComm, kkt_sp, allreduce_kkt);
 #endif
    }
    else if (solver_type == SolverType::SOLVER_PARDISO) {
 #ifdef WITH_PARDISO
-      solver.reset(new PardisoProjectIndefSolver(kkt_sp, allreduce_kkt, mpiComm));
+      solver = std::make_unique<PardisoProjectIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
 #endif
    }
    else if (solver_type == SolverType::SOLVER_MKL_PARDISO) {
 #ifdef WITH_MKL_PARDISO
-      solver.reset( new PardisoMKLIndefSolver(kkt_sp, allreduce_kkt, mpiComm) );
+      solver = std::make_unique<PardisoMKLIndefSolver>(kkt_sp, allreduce_kkt, mpiComm);
 #endif
    }
    else if (solver_type == SolverType::SOLVER_MA57) {
 #ifdef WITH_MA57
-      solver.reset( new Ma57SolverRoot(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug") );
+      solver = std::make_unique<Ma57SolverRoot>( kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug" );
 #endif
    }
    else {
       assert(solver_type == SolverType::SOLVER_MA27);
 #ifdef WITH_MA27
-      solver.reset( new Ma27SolverRoot(kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug") );
+      solver = std::make_unique<Ma27SolverRoot>( kkt_sp, allreduce_kkt, mpiComm, "sLinsysRootAug" );
 #endif
    }
 }
 
 void sLinsysRootAug::createSolversDense() {
    const SolverTypeDense solver_type = pips_options::getSolverDense();
-   DenseSymMatrix* kktmat = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* kktmat = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
-      solver.reset(new DeSymIndefSolver(kktmat));
+      solver = std::make_unique<DeSymIndefSolver>(kktmat);
    else if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF_SADDLE_POINT)
-      solver.reset(new DeSymIndefSolver2(kktmat, locnx));
+      solver = std::make_unique<DeSymIndefSolver2>(kktmat, locnx);
    else {
       assert(solver_type == SolverTypeDense::SOLVER_DENSE_SYM_PSD);
-      solver.reset(new DeSymPSDSolver(kktmat));
+      solver = std::make_unique<DeSymPSDSolver>(kktmat);
    }
 }
 
@@ -203,7 +202,7 @@ void sLinsysRootAug::finalizeKKT(DistributedQP* prob, Variables* vars) {
 void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    assert(kkt && hasSparseKkt && prob);
 
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
@@ -264,7 +263,7 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
       assert(CtDC->size() == locnx);
 
       //aliases for internal buffers of CtDC
-      SparseSymMatrix* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
+      auto* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
       const int* krowCtDC = CtDCsp->krowM();
       const int* jcolCtDC = CtDCsp->jcolM();
       const double* dCtDC = CtDCsp->M();
@@ -430,10 +429,10 @@ void sLinsysRootAug::assembleLocalKKT(DistributedQP* prob) {
 void sLinsysRootAug::Lsolve(DistributedQP* prob, OoqpVector& x) {
    assert(!is_hierarchy_root);
 
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
    assert(children.size() == b.children.size());
 
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
    assert(!b.last);
 
    if (iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0)
@@ -470,8 +469,8 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
    /* Ki^-1 bi has already been computed in Lsolve */
 
    /* children have already computed Li^T\Di\Li\bi in Lsolve() */
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 #ifdef TIMING
    stochNode->resMon.eDsolve.clear();
    stochNode->resMon.recDsolveTmLocal_start();
@@ -483,8 +482,8 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
 }
 
 void sLinsysRootAug::Ltsolve(DistributedQP* prob, OoqpVector& x) {
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
    SimpleVector<double>& z0 = b0; //just another name, for clarity
@@ -579,20 +578,20 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
    // rhs_reduced now : [ b1; b2; b4; b5; b3]
 
    // alias to r1 part (no mem allocations)
-   SimpleVector<double> rhs1(&rhs_reduced[0], locnx);
-   SimpleVector<double> b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
+   SimpleVector<double> rhs1(rhs_reduced, locnx);
+   SimpleVector<double> rhs_reduced_b3(rhs_reduced + locnx + locmy + locmyl + locmzl, locmz);
 
    ///////////////////////////////////////////////////////////////////////
-   // compute r1 = b1 - C^T * (zDiag)^{-1} * b3
+   // compute r1 = b1 - C^T * (zDiag)^{-1} * rhs_reduced_b3
    ///////////////////////////////////////////////////////////////////////
    // if we have C part
    if( locmz > 0 )
    {
       assert(zDiag);
-      assert(b3.length() == zDiag->length());
+      assert(rhs_reduced_b3.length() == zDiag->length());
 
-      b3.componentDiv(*zDiag);
-      C.transMult(1.0, rhs1, -1.0, b3);
+      rhs_reduced_b3.componentDiv(*zDiag);
+      C.transMult(1.0, rhs1, -1.0, rhs_reduced_b3);
    }
 
    ///////////////////////////////////////////////////////////////////////
@@ -627,7 +626,6 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
    std::copy(rhs_reduced, rhs_reduced + locnx + locmy, b);
    // compute x3
    if (locmz > 0) {
-      SimpleVector<double> rhs1(rhs_reduced, locnx);
       SimpleVector<double> b3(b + locnx + locmy, locmz);
       C.mult(1.0, b3, -1.0, rhs1);
       b3.componentDiv(*zDiag);
@@ -664,7 +662,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMa
    ///////////////////////////////////////////////////////////////////////
    SparseGenMatrix& C = data->getLocalD();
 
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1) default(none) shared(rhs_start, n_rhs, length_reduced, rhs_mat_transp, length_rhs, m, C)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       assert(rhs_i < m);
 
@@ -725,7 +723,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMa
 
    // copy the solution components and calculate r3
    // copy rhs1 and rhs2
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1) default(none) shared(rhs_start,n_rhs,length_reduced,rhs_mat_transp,length_rhs, C)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
@@ -761,7 +759,7 @@ sLinsysRootAug::addLinkConsBlock0Matrix(DistributedQP* prob, SparseGenMatrix& Ht
    if (startCol == endCol)
       return;
 
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
    int* const jcolKkt = kkts.jcolM();
    int* const krowKkt = kkts.krowM();
@@ -868,7 +866,7 @@ sLinsysRootAug::addLinkConsBlock0Matrix(DistributedQP* prob, SparseGenMatrix& Ht
    }
 }
 
-
+// TODO : should be const
 /** rxy = beta*rxy + alpha * SC * x */
 void sLinsysRootAug::SCmult( double beta, SimpleVector<double>& rxy, double alpha, SimpleVector<double>& x, DistributedQP* prob)
 {
@@ -895,13 +893,13 @@ void sLinsysRootAug::SCmult( double beta, SimpleVector<double>& rxy, double alph
       Q.mult(1.0, &rxy[0], 1, alpha, &x[0], 1);
 
     if(locmz>0) {
-      SparseSymMatrix* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
+      auto* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
       assert(CtDC_sp);
 
          CtDC_sp->mult(1.0, &rxy[0], 1, -alpha, &x[0], 1);
       }
 
-      SimpleVector<double>& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
+      auto& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
       assert(xDiagv.length() == locnx);
       for (int i = 0; i < xDiagv.length(); i++)
          rxy[i] += alpha * xDiagv[i] * x[i];
@@ -923,7 +921,7 @@ void sLinsysRootAug::SCmult( double beta, SimpleVector<double>& rxy, double alph
          G.transMult(1.0, &rxy[0], 1, alpha, &x[locnx + locmy + locmyl], 1);
          G.mult(1.0, &rxy[locnx + locmy + locmyl], 1, alpha, &x[0], 1);
 
-         SimpleVector<double>& zDiagLinkConsv = dynamic_cast<SimpleVector<double>&>(*zDiagLinkCons);
+         auto& zDiagLinkConsv = dynamic_cast<SimpleVector<double>&>(*zDiagLinkCons);
          assert(zDiagLinkConsv.length() == locmzl);
          const int shift = locnx + locmy + locmyl;
          for (int i = 0; i < zDiagLinkConsv.length(); i++)
@@ -1024,7 +1022,7 @@ void sLinsysRootAug::solveWithIterRef(DistributedQP* prob, SimpleVector<double>&
     if(myRank==0) {
       rxy.copyFrom(r);
       if(locmz>0) {
-	SparseSymMatrix* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
+	auto* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
 	CtDC_sp->mult(1.0,&rxy[0],1, 1.0,&x[0],1);
       }
       SparseSymMatrix& Q = prob->getLocalQ();
@@ -1076,7 +1074,7 @@ void sLinsysRootAug::solveWithIterRef(DistributedQP* prob, SimpleVector<double>&
       }
       else {
          double prevRelResNorm = 1.0e10;
-         if (histResid.size())
+         if (!histResid.empty())
             prevRelResNorm = histResid[histResid.size() - 1];
 
          //check for stop, divergence or slow convergence conditions
@@ -1202,7 +1200,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
       std::cout << "innerBICG starts: " << normr << " > " << tolb << "\n";
 
    rt.copyFrom(r); //Shadow residual
-   double* resvec = new double[2 * maxit + 1];
+   auto* resvec = new double[2 * maxit + 1];
    resvec[0] = normr;
    normrmin = normr;
    rho = 1.0;
@@ -1495,6 +1493,8 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
    /* C^T D C block */
 
+
+
    /* A0 dual equalities */
    if (locmy > 0) {
       const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
@@ -1523,7 +1523,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 }
 
 void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
 #ifndef NDEBUG
    int* const jcolKkt = kkts.jcolM();
@@ -1579,7 +1579,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
       assert(CtDC->size() == locnx);
 
       //aliases for internal buffers of CtDC
-      SparseSymMatrix* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
+      auto* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
       const int* krowCtDC = CtDCsp->krowM();
       const int* jcolCtDC = CtDCsp->jcolM();
       const double* dCtDC = CtDCsp->M();
@@ -1750,7 +1750,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
 void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    int j, p, pend;
 
-   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    //alias for internal buffer of kkt
    double** const dKkt = kktd->Mat();
@@ -1810,7 +1810,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
       assert(CtDC->size() == locnx);
 
      //aliases for internal buffers of CtDC
-     SparseSymMatrix* CtDCsp = reinterpret_cast<SparseSymMatrix*>(CtDC.get());
+     auto* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
      int* krowCtDC=CtDCsp->krowM(); int* jcolCtDC=CtDCsp->jcolM(); double* dCtDC=CtDCsp->M();
 
       for (int i = 0; i < locnx; i++) {
@@ -1949,7 +1949,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseGenMatrix& rhs_mat_transp, int n
    assert(rhs_start + n_rhs <= n_cols);
 
    // set rhs contributed by other procs to zero
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1) default(none) shared(n_cols, rhs_start, n_rhs, rhs_mat_transp, n)
    for (int rhs_i = 0; rhs_i < n_cols; ++rhs_i) {
       if (rhs_start <= rhs_i && rhs_i < rhs_start + n_rhs)
          continue;
@@ -1962,8 +1962,6 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseGenMatrix& rhs_mat_transp, int n
    if (iAmDistrib) {
       // TODO only allreduce relevant part
       // TODO is allreduce even worth it here? Every proc could also compute all its rhs - add if n_rhs big
-      int m, n;
-      rhs_mat_transp.getSize(m, n);
       submatrixAllReduceFull(&rhs_mat_transp, 0, 0, m, n, mpiComm);
    }
 }
@@ -1986,7 +1984,7 @@ void sLinsysRootAug::addBlTKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Bl, 
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
    const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
 
-   const size_t n_chunks = std::ceil(static_cast<double>(m_result) / m_buffer);
+   const int n_chunks = std::ceil(static_cast<double>(m_result) / m_buffer);
 
    assert(n_chunks > 0);
    if (!sc_compute_blockwise_hierarchical) {
@@ -1994,9 +1992,9 @@ void sLinsysRootAug::addBlTKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Bl, 
       assert(m_buffer == m_result);
    }
 
-   for (size_t i = 0; i < n_chunks; ++i) {
+   for (int i = 0; i < n_chunks; ++i) {
       const int begin_chunk = i * m_buffer;
-      const int end_chunk = std::min(static_cast<size_t>(m_result), (i + 1) * m_buffer);
+      const int end_chunk = std::min(m_result, (i + 1) * m_buffer);
 
       assert(end_chunk - begin_chunk <= m_buffer);
       addBlTKiInvBrToResBlockwise(result, Bl, Br, Br_mod_border, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_chunk, end_chunk);
@@ -2022,7 +2020,8 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise(DoubleMatrix& result, BorderLin
    const bool two_link_border_left = !(Bl.has_RAC || Bl.use_local_RAC);
    const bool two_link_border_right = !(Br.has_RAC || Br.use_local_RAC);
 
-   if (two_link_border_right);
+   if (two_link_border_right)
+      ;
 
    /* compute Schur Complement right hand sides SUM_i Bi_{inner} Ki^-1 ( Bri - sum_j Bmodij Xij )
     * (keep in mind that in Bi_{this} and the SC we projected C0 Omega0 out) */

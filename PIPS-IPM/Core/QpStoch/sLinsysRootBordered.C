@@ -20,6 +20,9 @@
 sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : sLinsysRoot(factory_, prob_, true) {
    assert(locmyl >= 0 && locmzl >= 0);
 
+   if (apply_regularization) {
+      assert(false && "TODO : regularization not implemented for hierarchical approach currently");
+   }
    kkt.reset(createKKT(prob_));
 
    solver.reset(createSolver(prob_, kkt.get()));
