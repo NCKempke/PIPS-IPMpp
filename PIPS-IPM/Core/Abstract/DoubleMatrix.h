@@ -24,12 +24,9 @@ class DoubleStorage : public IotrRefCount {
 public:
    DoubleStorage() = default;
 
-  virtual void atPutDense( int row, int col, double * A, int lda,
-			   int rowExtent, int colExtent ) = 0;
-  virtual void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent ) = 0;
-  virtual void atPutSpRow( int row, const double A[], int lenA, int jcolA[],
-                           int& info ) = 0;
+   virtual void atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) = 0;
+   virtual void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) = 0;
+   virtual void atPutSpRow(int row, const double A[], int lenA, int jcolA[], int& info) = 0;
 
    virtual void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) = 0;
 
@@ -38,17 +35,17 @@ public:
    virtual void getDiagonal(OoqpVector& vec) = 0;
    virtual void setToDiagonal(const OoqpVector& vec) = 0;
 
-  virtual void atPutDiagonal( int idiag, const OoqpVector& x ) = 0;
-  virtual void atAddDiagonal( int idiag, const OoqpVector& x ) = 0;
-
-  virtual void fromGetDiagonal( int idiag, OoqpVector& x ) = 0;
-  virtual void symmetricScale ( const OoqpVector& vec ) = 0;
-  virtual void columnScale ( const OoqpVector& vec ) = 0;
-  virtual void rowScale ( const OoqpVector& vec ) = 0;
-  virtual void scalarMult( double num) = 0;
-  virtual double abmaxnorm() const = 0;
-  virtual double abminnormNonZero( double tol = 1e-30 ) const = 0;
-  virtual ~DoubleStorage() = default;
+   virtual void atPutDiagonal(int idiag, const OoqpVector& x) = 0;
+   virtual void atAddDiagonal(int idiag, const OoqpVector& x) = 0;
+   virtual void fromGetDiagonal(int idiag, OoqpVector& x) = 0;
+   virtual void symmetricScale(const OoqpVector& vec) = 0;
+   virtual void columnScale(const OoqpVector& vec) = 0;
+   virtual void rowScale(const OoqpVector& vec) = 0;
+   virtual void scalarMult(double num) = 0;
+   [[nodiscard]] virtual double abmaxnorm() const = 0;
+   [[nodiscard]] double abminnormNonZero() const { return abminnormNonZero(1e-30); };
+   [[nodiscard]] virtual double abminnormNonZero(double tol) const = 0;
+   ~DoubleStorage() override = default;
 };
 
 /** Parent of all matrix classes
@@ -59,7 +56,7 @@ public:
    DoubleMatrix() = default;
 
    /** True if this matrix identifies itself to be of type matrixType. */
-   virtual int isKindOf(int matrixType) const = 0;
+   [[nodiscard]] virtual int isKindOf(int matrixType) const = 0;
 
    /** Get the value of some of the elements of this matrix.
     *
@@ -106,11 +103,11 @@ public:
 
    /** the magnitude of the element in this matrix with largest absolute value.
     */
-   virtual double abmaxnorm() const = 0;
+   [[nodiscard]] virtual double abmaxnorm() const = 0;
 
-   /** the magnitude of the element in this matrix with smallest absolute value != 0.
-    */
-   virtual double abminnormNonZero(double tol = 1e-30) const = 0;
+   /** the magnitude of the element in this matrix with smallest absolute value != 0. */
+   [[nodiscard]] double abminnormNonZero() const { return abminnormNonZero(1e-30); };
+   [[nodiscard]] virtual double abminnormNonZero(double tol) const = 0;
 
    /** Write this element to a C++ stream */
    virtual void writeToStream(std::ostream& out) const = 0;
@@ -126,30 +123,32 @@ public:
    /** Set the matrix to the diagoanl matrix whose diagonal is first */
    virtual void setToDiagonal(const OoqpVector& vec) = 0;
 
-  /** Set some of the diagonal elements of this matrix.
-   * @param idiag the index of the first diagonal element to be modified.
-   * @param x the new values for the diagonal elements.
-   *
-   * The length of x is the number of diagonal elements to be modified.
-   * Typically x will have length less than the length of the diagonal.
-   */
-  virtual void atPutDiagonal( int idiag, const OoqpVector& x ) = 0;
-  /** Add to some of the diagonal elements of this matrix.
-   * @param idiag the index of the first diagonal element to be modified.
-   * @param x the values to add to the diagonal elements.
-   *
-   * The length of x is the number of diagonal elements to be modified.
-   * Typically x will have length less than the length of the diagonal.
-   */
-  virtual void atAddDiagonal( int idiag, const OoqpVector& x ) = 0;
-  /** Get some of the diagonal elements of this matrix.
-   * @param idiag the index of the first diagonal element to be read.
-   * @param x a vector to hold the diagonal elements
-   *
-   * The length of x is the number of diagonal elements to be gotten.
-   * Typically x will have length less than the length of the diagonal.
-   */
-  virtual void fromGetDiagonal( int idiag, OoqpVector& x ) = 0;
+   /** Set some of the diagonal elements of this matrix.
+    * @param idiag the index of the first diagonal element to be modified.
+    * @param x the new values for the diagonal elements.
+    *
+    * The length of x is the number of diagonal elements to be modified.
+    * Typically x will have length less than the length of the diagonal.
+    */
+   virtual void atPutDiagonal(int idiag, const OoqpVector& x) = 0;
+   /** Add to some of the diagonal elements of this matrix.
+    * @param idiag the index of the first diagonal element to be modified.
+    * @param x the values to add to the diagonal elements.
+    *
+    * The length of x is the number of diagonal elements to be modified.
+    * Typically x will have length less than the length of the diagonal.
+    */
+   virtual void atAddDiagonal(int idiag, const OoqpVector& x) = 0;
+   virtual void diagonal_add_constant_from(int /*from*/, int /*length*/, double /*value*/) { assert(false && "not implemented"); };
+
+   /** Get some of the diagonal elements of this matrix.
+    * @param idiag the index of the first diagonal element to be read.
+    * @param x a vector to hold the diagonal elements
+    *
+    * The length of x is the number of diagonal elements to be gotten.
+    * Typically x will have length less than the length of the diagonal.
+    */
+   virtual void fromGetDiagonal(int idiag, OoqpVector& x) = 0;
 
    /** Get the number of rows and columns in the matrix
     * @param m the number of rows
@@ -170,7 +169,7 @@ public:
       std::cout << m << " x " << n << " (rows x cols)\n";
    }
 
-   virtual ~DoubleMatrix() = default;
+   ~DoubleMatrix() override = default;
 };
 
 /** Parent of all Symmetric matrices. 
@@ -211,11 +210,11 @@ public:
     */
    virtual void symAtPutSpRow(int col, double A[], int lenA, int irowA[], int& info) = 0;
    /** the size of this square matrix */
-   virtual long long size() const = 0;
+   [[nodiscard]] virtual long long size() const = 0;
 
    /** deep clone matrix */
-   virtual SymMatrix* clone() const {
-      assert(false && "not implmented");
+   [[nodiscard]] virtual SymMatrix* clone() const {
+      assert(false && "not implemented");
       return nullptr;
    };
 
@@ -290,25 +289,25 @@ public:
    virtual void addColSums(OoqpVector& /*first*/ ) const { assert(0 && "not implemented"); };
 
    /** return nonzeros in matrix */
-   virtual int numberOfNonZeros() const {
+   [[nodiscard]] virtual int numberOfNonZeros() const {
       assert(false && "not implemented");
       return -1;
    };
 
    /** clone of matrix with n = 0 - possibly with underlying dynamic sparse storage */
-   virtual GenMatrix* cloneEmptyRows(bool /*s witchToDynamicStorage = false*/) const {
-      assert(false && "not implmented");
+   [[nodiscard]] virtual GenMatrix* cloneEmptyRows(bool /*s witchToDynamicStorage = false*/) const {
+      assert(false && "not implemented");
       return nullptr;
    };
 
    /** full clone of matrix - possibly with underlying dynamic sparse storage */
-   virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage = false */) const {
+   [[nodiscard]] virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage = false */) const {
       assert(false && "not implmented");
       return nullptr;
    };
 
    /** shave of bottom n constraints and return them in a new matrix */
-   virtual GenMatrix* shaveBottom(int) {
+   [[nodiscard]] virtual GenMatrix* shaveBottom(int /* nrows */) {
       assert(false && "not implemented");
       return nullptr;
    };
