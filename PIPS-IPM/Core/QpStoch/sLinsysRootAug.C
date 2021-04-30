@@ -246,41 +246,12 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    /////////////////////////////////////////////////////////////
    if( locmz > 0 && iAmLastRank )
    {
-      SparseGenMatrix& C = prob->getLocalD();
+      assert(zDiag);
+      SymMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
 
-      SymMatrix* CtDCptr;
-      if (!CtDC) {
-         CtDCptr = nullptr;
-      } else {
-         CtDCptr = CtDC.get();
-      }
-
-      C.matTransDinvMultMat(*zDiag, &CtDCptr);
-
+      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
       if (!CtDC){
          CtDC.reset(CtDCptr);
-      }
-      assert(CtDC->size() == locnx);
-
-      //aliases for internal buffers of CtDC
-      auto* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
-      const int* krowCtDC = CtDCsp->krowM();
-      const int* jcolCtDC = CtDCsp->jcolM();
-      const double* dCtDC = CtDCsp->M();
-
-      for (int i = 0; i < locnx; i++) {
-         const int pend = krowCtDC[i + 1];
-         for (int p = krowCtDC[i]; p < pend; p++) {
-            const int col = jcolCtDC[p];
-
-            if (col >= i) {
-               // get start position of dense kkt block
-               const int blockStart = krowKkt[i];
-               assert(col < locnx && jcolKkt[blockStart + col - i] == col);
-
-               MKkt[blockStart + col - i] -= dCtDC[p];
-            }
-         }
       }
    }
 
@@ -1473,6 +1444,69 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
    delete[] resvec;
 }
 
+void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymMatrix& CtDC_loc) {
+   auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   double** const dKkt = kktd->Mat();
+
+   const auto& CtDC_sparse = dynamic_cast<const SparseSymMatrix&>(CtDC_loc);
+
+   const int* krow_CtDC = CtDC_sparse.krowM();
+   const int* jcol_CtDC = CtDC_sparse.jcolM();
+   const double* M_CtDC = CtDC_sparse.M();
+
+   for (int i = 0; i < locnx; i++) {
+      for (int p = krow_CtDC[i]; p < krow_CtDC[i + 1]; p++) {
+         const int j = jcol_CtDC[p];
+
+         if (j <= i)
+            dKkt[i][j] -= M_CtDC[p];
+      }
+   }
+}
+
+void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymMatrix& CtDC_loc) {
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+#ifndef NDEBUG
+   int* const jcolKkt = kkts.jcolM();
+#endif
+   int* const krowKkt = kkts.krowM();
+   double* const MKkt = kkts.M();
+
+   const auto& CtDC_sparse = dynamic_cast<const SparseSymMatrix&>(CtDC_loc);
+   const int* krow_CtDC = CtDC_sparse.krowM();
+   const int* jcol_CtDC = CtDC_sparse.jcolM();
+   const double* M_CtDC = CtDC_sparse.M();
+
+   for (int i = 0; i < locnx; i++) {
+      for (int p = krow_CtDC[i]; p < krow_CtDC[i + 1]; p++) {
+         const int col = jcol_CtDC[p];
+
+         if (col >= i) {
+            // get start position of dense kkt block
+            const int blockStart = krowKkt[i];
+            assert(col < locnx && jcolKkt[blockStart + col - i] == col);
+
+            MKkt[blockStart + col - i] -= M_CtDC[p];
+         }
+      }
+   }
+
+}
+
+void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymMatrix*& CtDC_loc, const OoqpVector& diagonal)
+{
+   SparseGenMatrix& C = data->getLocalD();
+   C.matTransDinvMultMat(*zDiag, &CtDC_loc);
+   assert(CtDC_loc->size() == locnx);
+   assert(CtDC_loc);
+
+   if (hasSparseKkt) {
+      add_CtDC_to_sparse_schur_complement(*CtDC_loc);
+   } else {
+      add_CtDC_to_dense_schur_complement(*CtDC_loc);
+   }
+}
+
 void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization){
    assert(apply_regularization);
    assert(false);
@@ -1491,8 +1525,25 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       kkt->diagonal_add_constant_from(0, locnx, primal_regularization);
    }
 
-   /* C^T D C block */
+   /* C^T reg^-1 C block */
+   if (locmz > 0) {
+      const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
+      assert(dual_inequality_regularization_vec);
 
+      assert(CtDC);
+      if(!CtDC_regularization) {
+         CtDC_regularization.reset(CtDC->clone());
+      }
+
+      // TODO : not nicely done .. temp vector here..
+      std::unique_ptr<SimpleVector<double>> regularization_added(dynamic_cast<SimpleVector<double>*>(dual_inequality_regularization_vec->clone()));
+      regularization_added->setToConstant(dual_inequality_regularization);
+
+      dual_inequality_regularization_vec->addConstant(dual_inequality_regularization);
+
+      SymMatrix* CTDC_regularization_ptr = CtDC.get();
+      compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *regularization_added);
+   }
 
 
    /* A0 dual equalities */
@@ -1562,42 +1613,10 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    if (locmz > 0) {
       assert(zDiag);
 
-      SparseGenMatrix& C = prob->getLocalD();
-
-      SymMatrix* CtDCptr;
-      if (!CtDC) {
-         CtDCptr = nullptr;
-      } else {
-         CtDCptr = CtDC.get();
-      }
-
-      C.matTransDinvMultMat(*zDiag, &CtDCptr);
-
+      SymMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
+      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
       if (!CtDC){
          CtDC.reset(CtDCptr);
-      }
-      assert(CtDC->size() == locnx);
-
-      //aliases for internal buffers of CtDC
-      auto* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
-      const int* krowCtDC = CtDCsp->krowM();
-      const int* jcolCtDC = CtDCsp->jcolM();
-      const double* dCtDC = CtDCsp->M();
-
-
-      for (int i = 0; i < locnx; i++) {
-         const int pend = krowCtDC[i + 1];
-         for (int p = krowCtDC[i]; p < pend; p++) {
-            const int col = jcolCtDC[p];
-
-            if (col >= i) {
-               // get start position of dense kkt block
-               const int blockStart = krowKkt[i];
-               assert(col < locnx && jcolKkt[blockStart + col - i] == col);
-
-               MKkt[blockStart + col - i] -= dCtDC[p];
-            }
-         }
       }
    }
 
@@ -1748,8 +1767,6 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
 }
 
 void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
-   int j, p, pend;
-
    auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    //alias for internal buffer of kkt
@@ -1769,9 +1786,9 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    int* jcolQ = Q.jcolM();
    double* dQ = Q.M();
    for (int i = 0; i < locnx; i++) {
-      pend = krowQ[i + 1];
-      for (p = krowQ[i]; p < pend; p++) {
-         j = jcolQ[p];
+      const int pend = krowQ[i + 1];
+      for (int p = krowQ[i]; p < pend; p++) {
+         const int j = jcolQ[p];
          if (i == j)
             continue;
          double val = dQ[p];
@@ -1793,34 +1810,12 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    /////////////////////////////////////////////////////////////
    if(locmz > 0) {
       assert(zDiag);
+      SymMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
 
-      SparseGenMatrix& C = prob->getLocalD();
-      SymMatrix* CtDCptr;
-      if (!CtDC) {
-         CtDCptr = nullptr;
-      } else {
-         CtDCptr = CtDC.get();
-      }
-
-      C.matTransDinvMultMat(*zDiag, &CtDCptr);
+      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
 
       if (!CtDC){
          CtDC.reset(CtDCptr);
-      }
-      assert(CtDC->size() == locnx);
-
-     //aliases for internal buffers of CtDC
-     auto* CtDCsp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
-     int* krowCtDC=CtDCsp->krowM(); int* jcolCtDC=CtDCsp->jcolM(); double* dCtDC=CtDCsp->M();
-
-      for (int i = 0; i < locnx; i++) {
-         pend = krowCtDC[i + 1];
-         for (p = krowCtDC[i]; p < pend; p++) {
-            j = jcolCtDC[p];
-
-            if (j <= i)
-               dKkt[i][j] -= dCtDC[p];
-         }
       }
    } //~end if locmz>0
    /////////////////////////////////////////////////////////////
@@ -1836,8 +1831,8 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
       int iKkt = locnx;
       for (int i = 0; i < locmy; ++i, ++iKkt) {
 
-         for (p = krowA[i], pend = krowA[i + 1]; p < pend; ++p) {
-            j = jcolA[p];
+         for (int p = krowA[i], pend = krowA[i + 1]; p < pend; ++p) {
+            const int j = jcolA[p];
             assert(j < locnx);
 
          dKkt[iKkt][j] += dA[p];
@@ -1858,8 +1853,8 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
 
      int iKkt = locnx + locmy;
      for( int i = 0; i < locmyl; ++i, ++iKkt ) {
-       for( p = krowF[i], pend = krowF[i+1]; p < pend; ++p ) {
-         j = jcolF[p];
+       for( int p = krowF[i], pend = krowF[i+1]; p < pend; ++p ) {
+         const int j = jcolF[p];
          assert(j < locnx);
 
             const double val = dF[p];
@@ -1884,8 +1879,8 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
       for (int i = 0; i < locmzl; ++i, ++iKkt) {
 
        dKkt[iKkt][iKkt] += szDiagLinkCons[i];
-       for( p = krowG[i], pend = krowG[i+1]; p < pend; ++p ) {
-         j = jcolG[p];
+       for( int p = krowG[i], pend = krowG[i+1]; p < pend; ++p ) {
+         const int j = jcolG[p];
          assert(j < locnx);
 
             const double val = dG[p];
