@@ -103,6 +103,7 @@ if (BUILD_GDX_SOURCE)
    )    
    
    target_compile_options(statgdx 
+      PRIVATE -Wno-register
       PRIVATE -Wno-stringop-overflow
       PRIVATE -Wno-unused-result
       PRIVATE -Wno-unused-value
