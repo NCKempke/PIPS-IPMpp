@@ -495,13 +495,13 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStagePrimalColSolution() const {
-   SimpleVector<double> const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<StochVector const&>(*variables->x).first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<StochVector const&>(*variables->x).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrimalColSolution(int scen) const {
-   SimpleVector<double> const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<StochVector const&>(*variables->x).children[scen]->first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<StochVector const&>(*variables->x).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
    else
