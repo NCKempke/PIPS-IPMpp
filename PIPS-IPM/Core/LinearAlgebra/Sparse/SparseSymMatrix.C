@@ -81,6 +81,14 @@ void SparseSymMatrix::setToDiagonal( const OoqpVector& vec )
   mStorage->setToDiagonal( vec );
 }
 
+void SparseSymMatrix::diagonal_add_constant_from(int from, int length, double value)
+{
+   assert(0 <= from);
+   assert(this->size() <= from + length);
+   mStorage->diagonal_add_constant_from(from, length, value);
+}
+
+
 void SparseSymMatrix::symAtPutSpRow( int row, double A[],
 					 int lenA, int jcolA[],
 					 int& info )

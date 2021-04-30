@@ -224,6 +224,10 @@ void DenseSymMatrix::fromGetDiagonal(int idiag, OoqpVector& v) {
    mStorage->fromGetDiagonal(idiag, v);
 }
 
+void DenseSymMatrix::diagonal_add_constant_from(int from, int length, double value) {
+   assert(from + length < this->size());
+   mStorage->diagonal_add_constant_from(from, length, value);
+}
 
 void DenseSymMatrix::symAtPutSpRow(int row, double A[], int lenA, int jcolA[], int& info) {
    // Lower triangular put

@@ -75,6 +75,9 @@ public:
   void atAddDiagonal( int idiag, const OoqpVector& v ) override;
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
+  void diagonal_add_constant_from(int from, int length, double value) override;
+
+
    static DenseSymMatrix* randomPSD(int n, double* seed);
 
    double* operator[](int index) { return mStorage->M[index]; }

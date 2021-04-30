@@ -70,6 +70,7 @@ public:
 
   void getDiagonal( OoqpVector& vec ) override;
   void setToDiagonal( const OoqpVector& vec ) override;
+  void diagonal_add_constant_from(int from, int length, double value) override;
 
   void symAtPutSubmatrix( int destRow, int destCol, DoubleMatrix& M,
 				  int srcRow, int srcCol,

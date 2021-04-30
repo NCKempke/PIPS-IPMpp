@@ -114,13 +114,14 @@ public:
 
   void atPutDiagonal( int idiag, const OoqpVector& v ) override;
   void atAddDiagonal( int idiag, const OoqpVector& v ) override;
-  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
+   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
 
   void atPutDiagonal( int idiag, const double x[], int incx, int extent );
-  void atAddDiagonal( int idiag, const double x[], int incx, int extent );
+   void atAddDiagonal( int idiag, const double x[], int incx, int extent );
+   void diagonal_add_constant_from(int from, int length, double value);
 
   virtual void writeToStream(std::ostream& out) const;
-  void writeNNZpatternToStreamDense( std::ostream& out ) const;
+   void writeNNZpatternToStreamDense( std::ostream& out ) const;
   virtual void writeToStreamDense(std::ostream& out) const;
   virtual void writeToStreamDenseRow( std::ostream& out, int rowidx) const;
 
