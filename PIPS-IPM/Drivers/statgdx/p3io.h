@@ -1,3 +1,4 @@
+
 /*******************************************************/
 /*         P3    RUNTIME SUPPORT ROUTINES              */
 /*               (c) 1991   Soren Nielsen              */
@@ -89,15 +90,14 @@ SSN 09/09/97. Major rewrite to new file representation
 
 ****************************** end history ***************************/
 
-#if !defined(__cplusplus)
+#if ! defined(__cplusplus)
 #  error "Detected a C compiler but we now require C++ compilation"
 #endif
 
 #if defined(_AIX)
-/* this includes _XOPEN_SOURCE, _POSIX_SOURCE, and other stuff too */
+   /* this includes _XOPEN_SOURCE, _POSIX_SOURCE, and other stuff too */
 #  include <standards.h>
 #endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -113,11 +113,9 @@ SSN 09/09/97. Major rewrite to new file representation
 #  include <direct.h>
 #  include <tlhelp32.h>
 #else
-
 #  include <unistd.h>
 #  include <pthread.h>
 #  include <semaphore.h>
-
 #endif
 
 /* _P3_EXC_MODEL_ controls how P3 implements Delphi exceptions
@@ -129,16 +127,14 @@ SSN 09/09/97. Major rewrite to new file representation
  *  2 : more debug output
  */
 #define _P3_EXC_MODEL_  1
-#if !defined(_P3_EXC_VERBOSE_)
+#if ! defined(_P3_EXC_VERBOSE_)
 # define _P3_EXC_VERBOSE_ 0
 #endif /* ! defined(_P3_EXC_VERBOSE_) */
 
 #if defined(__cplusplus)
-
 # include <iostream>
 # include <cstddef>
 # include <exception>
-
 #else
 /* if no C++, no _P3_EXC_MODEL_=1 */
 # undef  _P3_EXC_MODEL_
@@ -175,7 +171,7 @@ p3ostype_redefined__ERROR;
 P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
 #endif
 
-#if !defined(P3OSDEFINED)
+#if ! defined(P3OSDEFINED)
 /* Set to P3DOS or P3UNIX by default. _WIN32 is MS Visual C/C++ specific? */
 #if defined(_WIN32)
 #define P3OSDEFINED
@@ -192,17 +188,17 @@ P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
 
 /* Calling conventions: */
 /* Adjusted by SPD: 26 Sep 02 to be set only if previously unset */
-#if !defined(REGISTER)
+#if ! defined(REGISTER)
 # define REGISTER   /* Default; leave empty here */
 #endif
-#if !defined(CDECL)
+#if ! defined(CDECL)
 # if defined(P3DOS)
 #  define CDECL   __cdecl
 # elif defined(P3UNIX) || defined(DJGPP)
 #  define CDECL
 # endif
 #endif
-#if !defined(STDCALL)
+#if ! defined(STDCALL)
 # if defined(P3DOS)
 #  define STDCALL   __stdcall
 # elif defined(P3UNIX) || defined(DJGPP)
@@ -216,7 +212,7 @@ P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
 #define P3_INLINE /* nothing */
 #endif
 
-#if !defined(Extern_C)
+#if ! defined(Extern_C)
 # if defined(__cplusplus)
 #   define Extern_C extern "C"
 # else
@@ -224,7 +220,7 @@ P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
 # endif
 #endif
 
-#if !defined(C_LINKAGE)
+#if ! defined(C_LINKAGE)
 # if defined(__cplusplus)
 #   define C_LINKAGE(FUNCDECL) extern "C" { FUNCDECL }
 # else
@@ -232,7 +228,7 @@ P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
 # endif
 #endif
 
-#if !defined(_P3_DllExport)
+#if ! defined(_P3_DllExport)
 # if defined(_P3_LIBRARY) && defined(P3DOS) /* We're compiling a DOS DLL */
 #   define _P3_DllExport __declspec( dllexport )
 # else
@@ -292,7 +288,7 @@ P3OS_TYPE_defined_for_unimplemented_OS_type__ERROR;
  * typedef enum{SYSTEM_false, SYSTEM_true} SYSTEM_boolean;  -- instead next 3:
  */
 /* SSN: Add signed for Watcom: */
-typedef signed char SYSTEM_boolean;
+typedef  signed char SYSTEM_boolean;
 #define SYSTEM_false ((SYSTEM_boolean)0)
 #define SYSTEM_true  ((SYSTEM_boolean)1)
 /* Can't do the following two in C - aren't considered to be constants...
@@ -306,12 +302,12 @@ typedef signed char SYSTEM_boolean;
  * apart from SYSTEM_[u]int64, these call all be the same,
  * regardless of the platform
  */
-typedef signed char SYSTEM_int8;
-typedef signed short int SYSTEM_int16;
-typedef signed int SYSTEM_int32;
-typedef unsigned char SYSTEM_uint8;
-typedef unsigned short int SYSTEM_uint16;
-typedef unsigned int SYSTEM_uint32;
+typedef  signed        char    SYSTEM_int8;
+typedef  signed   short int    SYSTEM_int16;
+typedef  signed         int    SYSTEM_int32;
+typedef  unsigned      char    SYSTEM_uint8;
+typedef  unsigned short int    SYSTEM_uint16;
+typedef  unsigned       int    SYSTEM_uint32;
 
 #define FMT_write_cx "%%%dc"
 #define FMT_write_u0 "%u"
@@ -343,7 +339,7 @@ typedef unsigned __int64 SYSTEM_uint64;
 #  define FMT_read_z   "%I64d"
 
 #elif defined(__linux__) && (64 == __WORDSIZE)
-typedef signed long int SYSTEM_int64;
+typedef   signed long int SYSTEM_int64;
 typedef unsigned long int SYSTEM_uint64;
 #  define FMT_write_y0 "%lu"
 #  define FMT_write_z0 "%ld"
@@ -385,49 +381,49 @@ typedef unsigned long int SYSTEM_nativeuint;
 /* The following implement the integer type declarations in system.pas,
  * based on the "fundamental" types: SYSTEM_[u_]int{8|16|32}
  */
-typedef SYSTEM_int32 SYSTEM_longint;
-typedef SYSTEM_int16 SYSTEM_smallint;
-typedef SYSTEM_int8 SYSTEM_shortint;
-typedef SYSTEM_uint32 SYSTEM_longword;
-typedef SYSTEM_uint16 SYSTEM_word;
-typedef SYSTEM_uint8 SYSTEM_byte;
+typedef SYSTEM_int32    SYSTEM_longint;
+typedef SYSTEM_int16    SYSTEM_smallint;
+typedef SYSTEM_int8     SYSTEM_shortint;
+typedef SYSTEM_uint32   SYSTEM_longword;
+typedef SYSTEM_uint16   SYSTEM_word;
+typedef SYSTEM_uint8    SYSTEM_byte;
 
-typedef SYSTEM_int32 SYSTEM_integer;
-typedef SYSTEM_uint32 SYSTEM_cardinal;
+typedef SYSTEM_int32    SYSTEM_integer;
+typedef SYSTEM_uint32   SYSTEM_cardinal;
 
-typedef unsigned char SYSTEM_ansichar; /* Keep unsigned so ord works!! */
-typedef float SYSTEM_single;
-typedef double SYSTEM_double;
-typedef SYSTEM_double SYSTEM_real;       /* Double/real are synonyms */
+typedef unsigned char   SYSTEM_ansichar; /* Keep unsigned so ord works!! */
+typedef float           SYSTEM_single;
+typedef double          SYSTEM_double;
+typedef SYSTEM_double   SYSTEM_real;       /* Double/real are synonyms */
 
 /* in P3, char and ansichar must always be synonyms */
 #define SYSTEM_char SYSTEM_ansichar
 
 typedef struct _P3file { /* Use this for all files */
-   FILE* f;
-   SYSTEM_shortint status;
-   SYSTEM_longint block_size;
-   SYSTEM_byte nam[257];
+  FILE            *f;
+  SYSTEM_shortint status;
+  SYSTEM_longint  block_size;
+  SYSTEM_byte     nam[257];
 } _P3file;
 /* Status: 0 closed/error, 1 app, 2 read, 3 wrt */
-typedef _P3file SYSTEM_text;     /* Pascal text file */
-typedef SYSTEM_text SYSTEM_textfile; /* Pascal text file */
-typedef _P3file SYSTEM_typed_file; /* typed  file */
-typedef _P3file SYSTEM_file; /* Which one actually used? */
-typedef _P3file SYSTEM_untypedfile; /* Untyped file */
-typedef _P3file* _P3file_ptr;
+typedef  _P3file        SYSTEM_text;     /* Pascal text file */
+typedef  SYSTEM_text    SYSTEM_textfile; /* Pascal text file */
+typedef  _P3file        SYSTEM_typed_file; /* typed  file */
+typedef  _P3file        SYSTEM_file; /* Which one actually used? */
+typedef  _P3file        SYSTEM_untypedfile; /* Untyped file */
+typedef  _P3file        *_P3file_ptr;
 
-typedef void* SYSTEM_pointer; /* Can point to anything */
-typedef void SYSTEM_untyped;  /* Untyped parameters    */
+typedef void            *SYSTEM_pointer; /* Can point to anything */
+typedef void            SYSTEM_untyped;  /* Untyped parameters    */
 
-typedef SYSTEM_char SYSTEM_shortstring[256]; /* Used in system.pas */
+typedef SYSTEM_char     SYSTEM_shortstring[256]; /* Used in system.pas */
 
-#define ENUM1(x, i)  /* (SYSTEM_byte)   */(i)  /* just output the ordinal val */
-#define ENUM2(x, i)  /* (SYSTEM_uint8)  */(i)  /* just output the ordinal val */
-#define ENUM4(x, i)  /* (SYSTEM_uint16) */(i)  /* just output the ordinal val */
-#define ENUM1a(x, i) /* (SYSTEM_byte)   */(x)  /* just use the enum literal */
-#define ENUM2a(x, i) /* (SYSTEM_uint8)  */(x)  /* just use the enum literal */
-#define ENUM4a(x, i) /* (SYSTEM_uint8)  */(x)  /* just use the enum literal */
+#define ENUM1(x,i)  /* (SYSTEM_byte)   */(i)  /* just output the ordinal val */
+#define ENUM2(x,i)  /* (SYSTEM_uint8)  */(i)  /* just output the ordinal val */
+#define ENUM4(x,i)  /* (SYSTEM_uint16) */(i)  /* just output the ordinal val */
+#define ENUM1a(x,i) /* (SYSTEM_byte)   */(x)  /* just use the enum literal */
+#define ENUM2a(x,i) /* (SYSTEM_uint8)  */(x)  /* just use the enum literal */
+#define ENUM4a(x,i) /* (SYSTEM_uint8)  */(x)  /* just use the enum literal */
 
 /* SETS: Sizes and dimensions:
  *       The typedef for _P3set_elem sets everything. It should
@@ -440,9 +436,9 @@ typedef SYSTEM_char SYSTEM_shortstring[256]; /* Used in system.pas */
 #define _P3bits_per_elem  (_P3bits_per_byte*sizeof(_P3set_elem))
 #define _P3set_max   (256/_P3bits_per_elem) /* Length of set in elem's */
 
-typedef SYSTEM_char _P3set_elem;
-typedef _P3set_elem* _P3Tset_ptr;
-typedef _P3set_elem _P3set255[_P3setsize(255)];
+typedef SYSTEM_char     _P3set_elem;
+typedef _P3set_elem     *_P3Tset_ptr;
+typedef _P3set_elem     _P3set255[_P3setsize(255)];
 
 /* SETS: End of definitions */
 
@@ -495,10 +491,10 @@ typedef _P3set_elem _P3set255[_P3setsize(255)];
 #define _P3_ERR_VERB_UNSPEC   19
 
 typedef struct _P3err {
-   int n;                        /* old _P3_errno */
-   unsigned char verb;
-   unsigned char notOpened;      /* handle this special case */
-   unsigned char nam[257];
+  int n;                        /* old _P3_errno */
+  unsigned char verb;
+  unsigned char notOpened;      /* handle this special case */
+  unsigned char nam[257];
 } _P3err_t;
 
 extern _P3_THREAD_LOCAL_ _P3err_t _P3_err;
@@ -538,7 +534,8 @@ extern void _P3error_check(/*char*, int*/);
 /* Define VariableCast so (1) performs runtime size check; (2) is a lvalue */
 /* Note that the runtime size check is a compile-time constant check; free */
 /* Note: v below already has its address taken (or is an array name)       */
-int _P3VariableCastError(const char* File, int Line, size_t sizeof_a, size_t sizeof_b);
+int _P3VariableCastError (const char *File, int Line,
+                          size_t sizeof_a, size_t sizeof_b);
 
 #define VariableCast(t, v, vtyp) \
   *((sizeof(t) != sizeof(vtyp)?  \
@@ -552,22 +549,30 @@ int _P3VariableCastError(const char* File, int Line, size_t sizeof_a, size_t siz
 
 extern const SYSTEM_byte _P3true[];
 extern const SYSTEM_byte _P3false[];
-extern _P3Tset_ptr _P3set_p(SYSTEM_longint len, _P3Tset_ptr ret, const _P3set_elem* s1, const _P3set_elem* s2);
-extern _P3Tset_ptr _P3set_m(SYSTEM_longint len, _P3Tset_ptr ret, const _P3set_elem* s1, const _P3set_elem* s2);
-extern _P3Tset_ptr _P3set_t(SYSTEM_longint len, _P3Tset_ptr ret, const _P3set_elem* s1, const _P3set_elem* s2);
-extern _P3Tset_ptr _P3set_expand(SYSTEM_longint toLen, _P3Tset_ptr to, SYSTEM_longint frLen, const _P3set_elem* fr);
-extern _P3Tset_ptr _P3set_copy(SYSTEM_longint len, _P3Tset_ptr to, const _P3set_elem* fr);
-#define _P3SET_p(d, l, s1, s2) _P3set_p(_P3setsize(l),d,s1,s2)
-#define _P3SET_m(d, l, s1, s2) _P3set_m(_P3setsize(l),d,s1,s2)
-#define _P3SET_t(d, l, s1, s2) _P3set_t(_P3setsize(l),d,s1,s2)
-#define _P3SET_expand(d, L1, s, L2) _P3set_expand(_P3setsize(L1),d,_P3setsize(L2),s)
-#define _P3SET_copy(s1, l, s2) _P3set_copy(_P3setsize(l),s1,s2)
+extern _P3Tset_ptr _P3set_p(SYSTEM_longint len, _P3Tset_ptr ret,
+                            const _P3set_elem *s1, const _P3set_elem *s2);
+extern _P3Tset_ptr _P3set_m(SYSTEM_longint len, _P3Tset_ptr ret,
+                            const _P3set_elem *s1, const _P3set_elem *s2);
+extern _P3Tset_ptr _P3set_t(SYSTEM_longint len, _P3Tset_ptr ret,
+                            const _P3set_elem *s1, const _P3set_elem *s2);
+extern _P3Tset_ptr _P3set_expand(SYSTEM_longint toLen, _P3Tset_ptr to,
+                                 SYSTEM_longint frLen, const _P3set_elem *fr);
+extern _P3Tset_ptr _P3set_copy(SYSTEM_longint len, _P3Tset_ptr to,
+                               const _P3set_elem *fr);
+#define _P3SET_p(d,l,s1,s2) _P3set_p(_P3setsize(l),d,s1,s2)
+#define _P3SET_m(d,l,s1,s2) _P3set_m(_P3setsize(l),d,s1,s2)
+#define _P3SET_t(d,l,s1,s2) _P3set_t(_P3setsize(l),d,s1,s2)
+#define _P3SET_expand(d,L1,s,L2) _P3set_expand(_P3setsize(L1),d,_P3setsize(L2),s)
+#define _P3SET_copy(s1,l,s2) _P3set_copy(_P3setsize(l),s1,s2)
 #define _P3set1(s) ((_P3set_elem*)(s))  /* Cast literal string to set pointer */
 #define _P3set2(s) s /*remove{}*/             /* Literal set in declaration */
 
-extern SYSTEM_boolean _P3set_i(SYSTEM_longint len, SYSTEM_longint i, const _P3set_elem* s);
-extern _P3Tset_ptr _P3set_add_elem(SYSTEM_longint len, _P3Tset_ptr s, _P3set_elem i);
-extern _P3Tset_ptr _P3set_add_range(SYSTEM_longint mx, _P3Tset_ptr s, _P3set_elem lo, _P3set_elem up);
+extern SYSTEM_boolean _P3set_i(SYSTEM_longint len,
+                               SYSTEM_longint i, const _P3set_elem *s);
+extern _P3Tset_ptr _P3set_add_elem(SYSTEM_longint len, _P3Tset_ptr s,
+                                   _P3set_elem i);
+extern _P3Tset_ptr _P3set_add_range(SYSTEM_longint mx, _P3Tset_ptr s,
+                                   _P3set_elem lo, _P3set_elem up);
 
 extern double SYSTEM_int(SYSTEM_double x);
 extern double SYSTEM_frac(SYSTEM_double x);
@@ -576,115 +581,131 @@ extern SYSTEM_int64 SYSTEM_round(SYSTEM_double x);
 #define SYSTEM_fillchar(p, sz, val) memset((void*)(p),(int)(val),(size_t)(sz))
 #define SYSTEM_abs_i(x) labs((SYSTEM_int64)(x))
 #define SYSTEM_abs_r(x) fabs((double)(x))
-extern SYSTEM_int64 SYSTEM_sqr_i(SYSTEM_int64 i);
-extern SYSTEM_double SYSTEM_sqr_r(SYSTEM_double x);
+extern SYSTEM_int64   SYSTEM_sqr_i(SYSTEM_int64 i);
+extern SYSTEM_double  SYSTEM_sqr_r(SYSTEM_double x);
 
 
 /* What's _P3hi supposed to do on a big-endian? */
 #define SYSTEM_lo(x)     ((SYSTEM_byte)(x))
 #define SYSTEM_hi(x)     ((SYSTEM_byte)((x)>>_P3bits_per_byte))
 
-extern void _P3setlength(SYSTEM_byte* s, SYSTEM_integer newLen, SYSTEM_integer siz);
+extern void _P3setlength(SYSTEM_byte *s, SYSTEM_integer newLen,
+                         SYSTEM_integer siz);
 
 extern SYSTEM_char SYSTEM_upcase(SYSTEM_char);
 extern SYSTEM_char SYSTEM_locase(SYSTEM_char);
-extern void _P3_new(void** p, SYSTEM_longint s);
-extern void _P3_new64(void** p, SYSTEM_int64 s);
-extern void _P3_free(void* p, SYSTEM_longint s);
-extern void _P3_free64(void* p, SYSTEM_int64 s);
+extern void _P3_new(void **p, SYSTEM_longint s);
+extern void _P3_new64(void **p, SYSTEM_int64 s);
+extern void _P3_free(void *p, SYSTEM_longint s);
+extern void _P3_free64(void *p, SYSTEM_int64 s);
 extern void SYSTEM_realloc(void** p, SYSTEM_longint lgt);
 
-extern void SYSTEM_reallocmem(void** p, SYSTEM_longint s);
-extern void SYSTEM_reallocmem64(void** p, SYSTEM_int64 s);
-extern SYSTEM_char* _P3_pcharn2str(SYSTEM_char* dst, SYSTEM_char dstSiz, const SYSTEM_char* src, int srcLen);
-extern SYSTEM_char* _P3_pchar2str(SYSTEM_char* dst, SYSTEM_char dstSiz, const SYSTEM_char* src);
+extern void SYSTEM_reallocmem(void **p, SYSTEM_longint s);
+extern void SYSTEM_reallocmem64(void **p, SYSTEM_int64 s);
+extern SYSTEM_char *_P3_pcharn2str (SYSTEM_char *dst, SYSTEM_char dstSiz,
+                                    const SYSTEM_char *src, int srcLen);
+extern SYSTEM_char *_P3_pchar2str (SYSTEM_char *dst, SYSTEM_char dstSiz,
+                                   const SYSTEM_char *src);
 /* only use this macro with a constant string src!! */
 #define _P3conp2str(dst, dstSiz, src) _P3_pcharn2str(dst, dstSiz, (SYSTEM_char *)(src), sizeof(src)-1)
-extern SYSTEM_char* _P3pa2str(SYSTEM_char* str, SYSTEM_char strSiz, const SYSTEM_char* p, SYSTEM_integer pSiz);
-extern SYSTEM_char* _P3_ch2str(SYSTEM_char* st, SYSTEM_byte max, SYSTEM_char ch);
+extern SYSTEM_char *_P3pa2str(SYSTEM_char *str, SYSTEM_char strSiz,
+                              const SYSTEM_char *p, SYSTEM_integer pSiz);
+extern SYSTEM_char *_P3_ch2str(SYSTEM_char *st, SYSTEM_byte max,
+                               SYSTEM_char ch);
 /*extern SYSTEM_char *_P3str2pa( SYSTEM_char *p,  SYSTEM_longint m,
                                SYSTEM_char *s); */
-#define _P3str2pa(p, m, s)  (SYSTEM_char*)_P3memcpy(p, m, s+1)
-extern SYSTEM_char* _P3_strcat(SYSTEM_char* r, SYSTEM_char max, const SYSTEM_char* p1, const SYSTEM_char* p2);
-extern SYSTEM_boolean _P3streq(const SYSTEM_char* p1, const SYSTEM_char* p2);
-extern SYSTEM_boolean _P3streq_ic(const SYSTEM_char* p1, const SYSTEM_char* p2);
-extern int _P3strcmp(const SYSTEM_char* p1, const SYSTEM_char* p2);
-extern int _P3stpcmp(const SYSTEM_char* st, const SYSTEM_char* pa, int lgt);
-extern int _P3stccmp(const SYSTEM_char* st, SYSTEM_char ch);
+#define _P3str2pa(p,m,s)  (SYSTEM_char*)_P3memcpy(p, m, s+1)
+extern SYSTEM_char *_P3_strcat(SYSTEM_char *r,  SYSTEM_char max,
+                               const SYSTEM_char *p1, const SYSTEM_char *p2);
+extern SYSTEM_boolean _P3streq(const SYSTEM_char *p1, const SYSTEM_char *p2);
+extern SYSTEM_boolean _P3streq_ic(const SYSTEM_char *p1, const SYSTEM_char *p2);
+extern int _P3strcmp(const SYSTEM_char *p1, const SYSTEM_char *p2);
+extern int _P3stpcmp(const SYSTEM_char *st, const SYSTEM_char *pa, int lgt);
+extern int _P3stccmp(const SYSTEM_char *st, SYSTEM_char ch);
 extern int _P3_argc;
 extern char** _P3_argv;
 extern SYSTEM_integer SYSTEM_allocmemcount, SYSTEM_allocmemsize;
-extern SYSTEM_int64 SYSTEM_allocmemsize64;
-extern SYSTEM_char* SYSTEM_paramstr(SYSTEM_char* res, SYSTEM_byte max, int index);
+extern SYSTEM_int64                         SYSTEM_allocmemsize64;
+extern SYSTEM_char* SYSTEM_paramstr(SYSTEM_char *res,
+                                    SYSTEM_byte max, int index);
 extern _P3file SYSTEM_input, SYSTEM_output, SYSTEM_erroutput;
-extern SYSTEM_char* SYSTEM_copy(SYSTEM_byte* res, SYSTEM_byte max, const SYSTEM_byte* s, SYSTEM_integer i, SYSTEM_integer cnt);
-extern SYSTEM_integer SYSTEM_pos(const SYSTEM_byte* sub, const SYSTEM_byte* s);
-extern void SYSTEM_delete(SYSTEM_byte* s, SYSTEM_integer i, SYSTEM_integer cnt);
-extern void _P3_insert(const SYSTEM_byte* sub, SYSTEM_byte* dest, SYSTEM_byte maxDest, SYSTEM_integer i);
-extern SYSTEM_byte* _P3_strcpy(SYSTEM_byte* d, SYSTEM_integer max, const SYSTEM_byte* s);
+extern SYSTEM_char *SYSTEM_copy(SYSTEM_byte *res, SYSTEM_byte max,
+                                const SYSTEM_byte *s,
+                                SYSTEM_integer i, SYSTEM_integer cnt);
+extern SYSTEM_integer SYSTEM_pos(const SYSTEM_byte *sub, const SYSTEM_byte *s);
+extern void SYSTEM_delete(SYSTEM_byte *s, SYSTEM_integer i, SYSTEM_integer cnt);
+extern void _P3_insert(const SYSTEM_byte *sub, SYSTEM_byte *dest,
+                       SYSTEM_byte maxDest, SYSTEM_integer i);
+extern SYSTEM_byte* _P3_strcpy(SYSTEM_byte *d, SYSTEM_integer max,
+                               const SYSTEM_byte *s);
 extern long _P3rangechk(SYSTEM_longint, SYSTEM_longint, SYSTEM_longint);
 
 
-#define _P3strcat(r, max, b, c) _P3_strcat(r,max,b,c)
-#define _P3ch2str(a, b, c) _P3_ch2str(a,b,c)
-#define _P3insert(sub, dest, maxDest, i)  _P3_insert(sub,dest,maxDest,i)
+#define _P3strcat(r,max,b,c) _P3_strcat(r,max,b,c)
+#define _P3ch2str(a,b,c) _P3_ch2str(a,b,c)
+#define _P3insert(sub,dest,maxDest,i)  _P3_insert(sub,dest,maxDest,i)
 /* #define _P3delete(s,i,c) SYSTEM_delete(s,i,c) */
 
-#define _P3shl(a, b)  ((a) << (b))
-#define _P3shr(a, b)  ((a) >> (b))
+#define _P3shl(a,b)  ((a) << (b))
+#define _P3shr(a,b)  ((a) >> (b))
 #define _P3inc0(x)       ++(x)
-#define _P3inc1(x, i)   (x)+=(i)
+#define _P3inc1(x,i)   (x)+=(i)
 #define _P3dec0(x)       --(x)
-#define _P3dec1(x, i)   (x)-=(i)
+#define _P3dec1(x,i)   (x)-=(i)
 
 
 extern int SYSTEM_ioresult(void); /* Test and reset _P3_err.n */
 
-extern void _P3write_u(_P3file* fil, SYSTEM_longword i);
-extern void _P3write_i(_P3file* fil, SYSTEM_longint i);
-extern void _P3write_n(_P3file* fil, SYSTEM_nativeuint i);
-extern void _P3write_y(_P3file* fil, SYSTEM_uint64 i);
-extern void _P3write_z(_P3file* fil, SYSTEM_int64 i);
-extern void _P3write_ux(_P3file* fil, SYSTEM_longword i, SYSTEM_longint len);
-extern void _P3write_ix(_P3file* fil, SYSTEM_longint i, SYSTEM_longint len);
-extern void _P3write_nx(_P3file* fil, SYSTEM_nativeuint i, SYSTEM_longint len);
-extern void _P3write_yx(_P3file* fil, SYSTEM_uint64 i, SYSTEM_longint len);
-extern void _P3write_zx(_P3file* fil, SYSTEM_int64 i, SYSTEM_longint len);
-extern void _P3write_r(_P3file* fil, SYSTEM_double d);
-extern void _P3write_rx(_P3file* fil, SYSTEM_double d, SYSTEM_longint len1);
-extern void _P3write_ry(_P3file* fil, SYSTEM_double d, SYSTEM_longint len1, SYSTEM_longint len2);
-extern void _P3write_c(_P3file* fil, SYSTEM_char c);
-extern void _P3write_cx(_P3file* fil, SYSTEM_char c, SYSTEM_longint len);
-extern void _P3_writeln(void);
-extern void _P3_writefn(SYSTEM_text* fil);
-extern void _P3_write_s0(const SYSTEM_byte* s);
-extern void _P3_writefs0(_P3file* fil, const SYSTEM_byte* s);
-extern void _P3_Readfs0(SYSTEM_text* fil, SYSTEM_byte* s, SYSTEM_byte max);
-extern void _P3write_sx(SYSTEM_text* fil, const SYSTEM_byte* s, SYSTEM_longint len);
+extern void _P3write_u (_P3file *fil, SYSTEM_longword i);
+extern void _P3write_i (_P3file *fil, SYSTEM_longint  i);
+extern void _P3write_n (_P3file *fil, SYSTEM_nativeuint i);
+extern void _P3write_y (_P3file *fil, SYSTEM_uint64   i);
+extern void _P3write_z (_P3file *fil, SYSTEM_int64    i);
+extern void _P3write_ux(_P3file *fil, SYSTEM_longword i, SYSTEM_longint len);
+extern void _P3write_ix(_P3file *fil, SYSTEM_longint  i, SYSTEM_longint len);
+extern void _P3write_nx(_P3file *fil, SYSTEM_nativeuint i, SYSTEM_longint len);
+extern void _P3write_yx(_P3file *fil, SYSTEM_uint64   i, SYSTEM_longint len);
+extern void _P3write_zx(_P3file *fil, SYSTEM_int64    i, SYSTEM_longint len);
+extern void _P3write_r (_P3file *fil, SYSTEM_double d);
+extern void _P3write_rx(_P3file *fil, SYSTEM_double d, SYSTEM_longint len1);
+extern void _P3write_ry(_P3file *fil, SYSTEM_double d,
+                        SYSTEM_longint len1, SYSTEM_longint len2);
+extern void _P3write_c (_P3file *fil, SYSTEM_char c);
+extern void _P3write_cx(_P3file *fil, SYSTEM_char c, SYSTEM_longint len);
+extern void _P3_writeln (void);
+extern void _P3_writefn (SYSTEM_text *fil);
+extern void _P3_write_s0(const SYSTEM_byte *s);
+extern void _P3_writefs0(_P3file *fil, const SYSTEM_byte *s);
+extern void _P3_Readfs0(SYSTEM_text *fil, SYSTEM_byte *s, SYSTEM_byte max);
+extern void _P3write_sx(SYSTEM_text *fil,
+                        const SYSTEM_byte *s, SYSTEM_longint len);
 
-extern SYSTEM_longword _P3read_u(_P3file* fil);
-extern SYSTEM_longint _P3read_i(_P3file* fil);
-extern SYSTEM_nativeuint _P3read_n(_P3file* fil);
-extern SYSTEM_uint64 _P3read_y(_P3file* fil);
-extern SYSTEM_int64 _P3read_z(_P3file* fil);
-extern SYSTEM_char _P3read_c(_P3file* fil);
-extern SYSTEM_double _P3read_d(_P3file* fil);
-extern SYSTEM_double _P3read_dd(_P3file* fil);
+extern SYSTEM_longword _P3read_u(_P3file *fil);
+extern SYSTEM_longint  _P3read_i(_P3file *fil);
+extern SYSTEM_nativeuint _P3read_n(_P3file *fil);
+extern SYSTEM_uint64   _P3read_y(_P3file *fil);
+extern SYSTEM_int64    _P3read_z(_P3file *fil);
+extern SYSTEM_char     _P3read_c(_P3file *fil);
+extern SYSTEM_double   _P3read_d(_P3file *fil);
+extern SYSTEM_double   _P3read_dd(_P3file *fil);
 
-extern SYSTEM_boolean _P3_eof(int Iplus, _P3file* fil, const char* File, int Line);
-extern SYSTEM_boolean _P3_eoln(int Iplus, _P3file* fil, const char* File, int Line);
-extern SYSTEM_boolean _P3_seekeof(int Iplus, _P3file* fil, const char* File, int Line);
-extern SYSTEM_boolean _P3_seekeoln(int Iplus, _P3file* fil, const char* File, int Line);
-extern void _P3block_read_write(_P3file* fil, void* buf, size_t count, SYSTEM_longint* numread, SYSTEM_boolean wr);
-extern void _P3rw_typed(_P3file* fil, void* buf, int wr);
-extern void _P3_Assign(_P3file* f, const SYSTEM_char* s);
-extern void _P3fileopn(_P3file* f, SYSTEM_longint s, SYSTEM_longint t, SYSTEM_longint block_size);
-extern void _P3_Close(_P3file* f);
-extern void _P3_Flush(_P3file* f);
+extern SYSTEM_boolean _P3_eof(int Iplus, _P3file *fil, const char *File, int Line);
+extern SYSTEM_boolean _P3_eoln(int Iplus, _P3file *fil, const char *File, int Line);
+extern SYSTEM_boolean _P3_seekeof(int Iplus, _P3file *fil, const char *File, int Line);
+extern SYSTEM_boolean _P3_seekeoln(int Iplus, _P3file *fil, const char *File, int Line);
+extern void _P3block_read_write(_P3file *fil, void *buf,
+                                size_t count, SYSTEM_longint *numread,
+                                SYSTEM_boolean wr);
+extern void _P3rw_typed(_P3file *fil, void *buf, int wr);
+extern void _P3_Assign(_P3file *f, const SYSTEM_char *s);
+extern void _P3fileopn(_P3file *f, SYSTEM_longint s, SYSTEM_longint t,
+                       SYSTEM_longint block_size);
+extern void _P3_Close(_P3file *f);
+extern void _P3_Flush(_P3file *f);
 
-extern void SYSTEM_rmdir(const SYSTEM_char* s);
-extern void SYSTEM_mkdir(const SYSTEM_char* s);
-extern void SYSTEM_chdir(const SYSTEM_char* s);
+extern void SYSTEM_rmdir(const SYSTEM_char *s);
+extern void SYSTEM_mkdir(const SYSTEM_char *s);
+extern void SYSTEM_chdir(const SYSTEM_char *s);
 
 /* INTEGER I/O: WRITE */
 
@@ -693,40 +714,40 @@ extern void SYSTEM_chdir(const SYSTEM_char* s);
 #define _P3writefu0(i)      _P3write_u (_file_temp,i)
 #define _P3write_u1(i, len) _P3write_ux(&SYSTEM_output,i,len)
 #define _P3writefu1(i, len) _P3write_ux(_file_temp,i,len)
-#define _P3write_u2(i, m, n)  _P3write_r2((double)(i),m,n)
-#define _P3writefu2(i, m, n)  _P3writefr2((double)(i),m,n)
+#define _P3write_u2(i,m,n)  _P3write_r2((double)(i),m,n)
+#define _P3writefu2(i,m,n)  _P3writefr2((double)(i),m,n)
 
 /* signed integer, 32 bit */
 #define _P3write_i0(i)      _P3write_i (&SYSTEM_output,i)
 #define _P3writefi0(i)      _P3write_i (_file_temp,i)
 #define _P3write_i1(i, len) _P3write_ix(&SYSTEM_output,(SYSTEM_longint)(i),len)
 #define _P3writefi1(i, len) _P3write_ix(_file_temp,(SYSTEM_longint)(i),len)
-#define _P3write_i2(i, m, n)  _P3write_r2((double)(i),m,n)
-#define _P3writefi2(i, m, n)  _P3writefr2((double)(i),m,n)
+#define _P3write_i2(i,m,n)  _P3write_r2((double)(i),m,n)
+#define _P3writefi2(i,m,n)  _P3writefr2((double)(i),m,n)
 
 /* unsigned integer, native */
 #define _P3write_n0(i)      _P3write_n (&SYSTEM_output,i)
 #define _P3writefn0(i)      _P3write_n (_file_temp,i)
-#define _P3write_n1(i, len)  _P3write_nx(&SYSTEM_output,i,len)
-#define _P3writefn1(i, len)  _P3write_nx(_file_temp,i,len)
-#define _P3write_n2(i, m, n)  _P3write_r2((double)(i),m,n)
-#define _P3writefn2(i, m, n)  _P3writefr2((double)(i),m,n)
+#define _P3write_n1(i,len)  _P3write_nx(&SYSTEM_output,i,len)
+#define _P3writefn1(i,len)  _P3write_nx(_file_temp,i,len)
+#define _P3write_n2(i,m,n)  _P3write_r2((double)(i),m,n)
+#define _P3writefn2(i,m,n)  _P3writefr2((double)(i),m,n)
 
 /* unsigned integer, 64 bit */
 #define _P3write_y0(i)      _P3write_y (&SYSTEM_output,i)
 #define _P3writefy0(i)      _P3write_y (_file_temp,i)
-#define _P3write_y1(i, len)  _P3write_yx(&SYSTEM_output,i,len)
-#define _P3writefy1(i, len)  _P3write_yx(_file_temp,i,len)
-#define _P3write_y2(i, m, n)  _P3write_r2((double)(i),m,n)
-#define _P3writefy2(i, m, n)  _P3writefr2((double)(i),m,n)
+#define _P3write_y1(i,len)  _P3write_yx(&SYSTEM_output,i,len)
+#define _P3writefy1(i,len)  _P3write_yx(_file_temp,i,len)
+#define _P3write_y2(i,m,n)  _P3write_r2((double)(i),m,n)
+#define _P3writefy2(i,m,n)  _P3writefr2((double)(i),m,n)
 
 /* signed integer, 64 bit */
 #define _P3write_z0(i)      _P3write_z (&SYSTEM_output,i)
 #define _P3writefz0(i)      _P3write_z (_file_temp,i)
-#define _P3write_z1(i, len)  _P3write_zx(&SYSTEM_output,i,len)
-#define _P3writefz1(i, len)  _P3write_zx(_file_temp,i,len)
-#define _P3write_z2(i, m, n)  _P3write_r2((double)(i),m,n)
-#define _P3writefz2(i, m, n)  _P3writefr2((double)(i),m,n)
+#define _P3write_z1(i,len)  _P3write_zx(&SYSTEM_output,i,len)
+#define _P3writefz1(i,len)  _P3write_zx(_file_temp,i,len)
+#define _P3write_z2(i,m,n)  _P3write_r2((double)(i),m,n)
+#define _P3writefz2(i,m,n)  _P3writefr2((double)(i),m,n)
 
 /* INTEGER I/O: READ */
 
@@ -752,14 +773,14 @@ extern void SYSTEM_chdir(const SYSTEM_char* s);
 #define _P3writefr0(d)     _P3write_r (_file_temp,(double)d)
 #define _P3write_d0(d)     _P3write_r (&SYSTEM_output,d)
 #define _P3writefd0(d)     _P3write_r (_file_temp,d)
-#define _P3write_r1(d, m)   _P3write_rx(&SYSTEM_output,(double)(d),m)
-#define _P3writefr1(d, m)   _P3write_rx(_file_temp,(double)(d),m)
-#define _P3write_d1(d, m)   _P3write_rx(&SYSTEM_output,(double)(d),m)
-#define _P3writefd1(d, m)   _P3write_rx(_file_temp,(double)(d),m)
-#define _P3write_r2(d, m, n) _P3write_ry(&SYSTEM_output,(double)d,m,n)
-#define _P3writefr2(d, m, n) _P3write_ry(_file_temp,(double)d,m,n)
-#define _P3write_d2(d, m, n) _P3write_ry(&SYSTEM_output,d,m,n)
-#define _P3writefd2(d, m, n) _P3write_ry(_file_temp,d,m,n)
+#define _P3write_r1(d,m)   _P3write_rx(&SYSTEM_output,(double)(d),m)
+#define _P3writefr1(d,m)   _P3write_rx(_file_temp,(double)(d),m)
+#define _P3write_d1(d,m)   _P3write_rx(&SYSTEM_output,(double)(d),m)
+#define _P3writefd1(d,m)   _P3write_rx(_file_temp,(double)(d),m)
+#define _P3write_r2(d,m,n) _P3write_ry(&SYSTEM_output,(double)d,m,n)
+#define _P3writefr2(d,m,n) _P3write_ry(_file_temp,(double)d,m,n)
+#define _P3write_d2(d,m,n) _P3write_ry(&SYSTEM_output,d,m,n)
+#define _P3writefd2(d,m,n) _P3write_ry(_file_temp,d,m,n)
 
 /* Read real */
 #define _P3read__r0(r)    r = _P3read_dd(&SYSTEM_input)
@@ -772,12 +793,12 @@ extern void SYSTEM_chdir(const SYSTEM_char* s);
 #define _P3write_c0(ch)    _P3write_c (&SYSTEM_output,ch)
 #define _P3writefc0(ch)    _P3write_c (_file_temp,ch)
 
-#define _P3write_c1(ch, m)  _P3write_cx(&SYSTEM_output,ch,m)
-#define _P3writefc1(ch, m)  _P3write_cx(_file_temp,ch,m)
+#define _P3write_c1(ch,m)  _P3write_cx(&SYSTEM_output,ch,m)
+#define _P3writefc1(ch,m)  _P3write_cx(_file_temp,ch,m)
 
 /* Define print char with two modifiers: Ignore second modifier */
-#define _P3write_c2(c, m, n) _P3write_cx(&SYSTEM_output,c,m)
-#define _P3writefc2(c, m, n) _P3write_cx(_file_temp,c,m)
+#define _P3write_c2(c,m,n) _P3write_cx(&SYSTEM_output,c,m)
+#define _P3writefc2(c,m,n) _P3write_cx(_file_temp,c,m)
 
 #define _P3read__c0(ch)    ch = _P3read_c(&SYSTEM_input)
 #define _P3read_fc0(ch)    ch = _P3read_c(_file_temp)
@@ -808,20 +829,20 @@ typedef SYSTEM_char _P3SET_191[_P3setsize(191)];
 typedef SYSTEM_char _P3SET_223[_P3setsize(223)];
 typedef SYSTEM_char _P3SET_255[_P3setsize(255)];
 
-#define _P3read__s0(s, max)   _P3_Readfs0(&SYSTEM_input, s,max)
-#define _P3read_fs0(s, max)   _P3_Readfs0(_file_temp, s,max)
+#define _P3read__s0(s,max)   _P3_Readfs0(&SYSTEM_input, s,max)
+#define _P3read_fs0(s,max)   _P3_Readfs0(_file_temp, s,max)
 
 #define _P3write_s0(st)  _P3_write_s0(st)
 #define _P3writefs0(st)  _P3_writefs0(_file_temp,st)
-#define _P3write_s1(st, m)  _P3write_sx(&SYSTEM_output, (st), m)
-#define _P3writefs1(st, m)  _P3write_sx(_file_temp, (st), m)
-#define _P3_copy(res, max, s, i, l)    _P3copy(res,max,s,i,l)
+#define _P3write_s1(st,m)  _P3write_sx(&SYSTEM_output, (st), m)
+#define _P3writefs1(st,m)  _P3write_sx(_file_temp, (st), m)
+#define _P3_copy(res,max,s,i,l)    _P3copy(res,max,s,i,l)
 
 /* Booleans - inline test */
 #define _P3write_b0(b)   _P3write_s0((b)? _P3true : _P3false)
-#define _P3write_b1(b, m) _P3write_s1((b)? _P3true : _P3false, m)
+#define _P3write_b1(b,m) _P3write_s1((b)? _P3true : _P3false, m)
 #define _P3writefb0(b)   _P3writefs0((b)? _P3true : _P3false)
-#define _P3writefb1(b, m) _P3writefs1((b)? _P3true : _P3false, m)
+#define _P3writefb1(b,m) _P3writefs1((b)? _P3true : _P3false, m)
 
 
 /* READLN / WRITELN  */
@@ -834,7 +855,7 @@ typedef SYSTEM_char _P3SET_255[_P3setsize(255)];
 #define _P3writefn()  _P3_writefn(_file_temp)
 #endif
 
-extern void _P3read_ln(_P3file* fil);
+extern void _P3read_ln(_P3file *fil);
 #define _P3readlf()  _P3read_ln(_file_temp)
 #define _P3readln()  _P3read_ln(&SYSTEM_input)
 
@@ -847,10 +868,10 @@ extern void _P3read_ln(_P3file* fil);
 #define _P3eolf(I, f) _P3_eoln(I, &(f),__FILE__,__LINE__)
 
 #define _P3seekeoln(I)   _P3_seekeoln(I,&SYSTEM_input,__FILE__,__LINE__)
-#define _P3seefeoln(I, f) _P3_seekeoln(I,&(f),__FILE__,__LINE__)
+#define _P3seefeoln(I,f) _P3_seekeoln(I,&(f),__FILE__,__LINE__)
 
 #define _P3seekeof(I)    _P3_seekeof(I,&SYSTEM_input,__FILE__,__LINE__)
-#define _P3seefeof(I, f)  _P3_seekeof(I,&(f),__FILE__,__LINE__)
+#define _P3seefeof(I,f)  _P3_seekeof(I,&(f),__FILE__,__LINE__)
 
 /*  Read and Write, only for typed files. */
 #define _P3fread(buf)   _P3rw_typed(_file_temp, buf, 0)
@@ -858,15 +879,15 @@ extern void _P3read_ln(_P3file* fil);
 
 
 /* Blockread/write, only for untyped files: */
-#define _P3blockR3(f, b, c)     _P3block_read_write(&(f),b,c,NULL,0);
-#define _P3blockW3(f, b, c)     _P3block_read_write(&(f),b,c,NULL,1);
-#define _P3blockR4(f, b, c, d)   _P3block_read_write(&(f),b,c,&(d),0);
-#define _P3blockW4(f, b, c, d)   _P3block_read_write(&(f),b,c,&(d),1);
+#define _P3blockR3(f,b,c)     _P3block_read_write(&(f),b,c,NULL,0);
+#define _P3blockW3(f,b,c)     _P3block_read_write(&(f),b,c,NULL,1);
+#define _P3blockR4(f,b,c,d)   _P3block_read_write(&(f),b,c,&(d),0);
+#define _P3blockW4(f,b,c,d)   _P3block_read_write(&(f),b,c,&(d),1);
 
-extern SYSTEM_longint _P3Filesize(int Iplus, _P3file* f, const char* File, int Line);
-extern SYSTEM_longint _P3Filepos(int Iplus, _P3file* f, const char* File, int Line);
-#define _P3filesize(I, f)  _P3Filesize(I,&(f),__FILE__,__LINE__)
-#define _P3filepos(I, f)   _P3Filepos(I,&(f),__FILE__,__LINE__)
+extern SYSTEM_longint _P3Filesize(int Iplus, _P3file *f, const char *File, int Line);
+extern SYSTEM_longint _P3Filepos (int Iplus, _P3file *f, const char *File, int Line);
+#define _P3filesize(I,f)  _P3Filesize(I,&(f),__FILE__,__LINE__)
+#define _P3filepos(I,f)   _P3Filepos(I,&(f),__FILE__,__LINE__)
 
 
 /* RESET, REWRITE, APPEND */
@@ -891,7 +912,7 @@ extern SYSTEM_longint _P3Filepos(int Iplus, _P3file* f, const char* File, int Li
 #define _P3_ISCLOSED(f)    ((f)->status & _P3CLOSED)
 #define _P3_NOTASSIGNED(f) (((f)->status & _P3_STATEMASK) == _P3UNASSIGNED)
 /* _P3_SETMODE has a dual function: set STATE to open and MODE = mode */
-#define _P3_SETMODE(f, mode) (f)->status = _P3OPEN | (mode & _P3_MODEMASK)
+#define _P3_SETMODE(f,mode) (f)->status = _P3OPEN | (mode & _P3_MODEMASK)
 
 #define _P3Treset(f)                _P3fileopn(&(f), _P3RESET  , 0, 1)
 #define _P3Trewrite(f)              _P3fileopn(&(f), _P3REWRITE, 0, 1)
@@ -900,34 +921,34 @@ extern SYSTEM_longint _P3Filepos(int Iplus, _P3file* f, const char* File, int Li
 #define _P3Tclose(fil)              _P3_Close(&(fil))
 #define _P3Tflush(fil)              _P3_Flush(&(fil))
 
-#define _P3Freset(f, elem_size)   _P3fileopn(&(f), _P3RESET  , 1, elem_size)
+#define _P3Freset(f,   elem_size)   _P3fileopn(&(f), _P3RESET  , 1, elem_size)
 #define _P3Frewrite(f, elem_size)   _P3fileopn(&(f), _P3REWRITE, 1, elem_size)
-#define _P3Fappend(f, elem_size)   _P3fileopn(&(f), _P3APPEND , 1, elem_size)
-#define _P3Fupdate(f, elem_size)   _P3fileopn(&(f), _P3UPDATE,  1, elem_size)
+#define _P3Fappend(f,  elem_size)   _P3fileopn(&(f), _P3APPEND , 1, elem_size)
+#define _P3Fupdate(f,  elem_size)   _P3fileopn(&(f), _P3UPDATE,  1, elem_size)
 #define _P3Fclose(fil)              _P3_Close(&(fil))
 
-#define _P3Ureset(f, block_size)  _P3fileopn(&(f), _P3RESET  , 2, block_size)
+#define _P3Ureset(f,   block_size)  _P3fileopn(&(f), _P3RESET  , 2, block_size)
 #define _P3Urewrite(f, block_size)  _P3fileopn(&(f), _P3REWRITE, 2, block_size)
-#define _P3Uappend(f, block_size)  _P3fileopn(&(f), _P3APPEND , 2, block_size)
-#define _P3Uupdate(f, block_size)  _P3fileopn(&(f), _P3UPDATE,  2, block_size)
+#define _P3Uappend(f,  block_size)  _P3fileopn(&(f), _P3APPEND , 2, block_size)
+#define _P3Uupdate(f,  block_size)  _P3fileopn(&(f), _P3UPDATE,  2, block_size)
 #define _P3Uclose(fil)              _P3_Close(&(fil))
 
 
-extern void _P3_Erase(SYSTEM_text* f);
+extern void _P3_Erase(SYSTEM_text *f);
 #define _P3erase(f)    _P3_Erase(&(f))
 
-extern void _P3_Seek(_P3file* fil, SYSTEM_longint pos, SYSTEM_longint from);
-#define _P3Fseek(f, offset, origin) _P3_Seek(&(f),offset,(SYSTEM_longint)origin);
+extern void _P3_Seek(_P3file *fil, SYSTEM_longint pos, SYSTEM_longint from);
+#define _P3Fseek(f,offset,origin) _P3_Seek(&(f),offset,(SYSTEM_longint)origin);
 
 /* Communication between assign and reset/rewrite/append */
 
 #define _P3PATHLEN 256 /* Max path length */
 
-#define _P3assign(f, s)  _P3_Assign(&(f), s)
+#define _P3assign(f,s)  _P3_Assign(&(f), s)
 
-extern void _P3assert(const SYSTEM_char* mess, const char* File, int Line);
-#define SYSTEM_assert(b, w)    {if (!(b)) _P3assert(w, __FILE__, __LINE__);}
-#define SYSTEM_noassert(b, w)  /* ignore assertion */
+extern void _P3assert(const SYSTEM_char* mess, const char *File, int Line);
+#define SYSTEM_assert(b,w)    {if (!(b)) _P3assert(w, __FILE__, __LINE__);}
+#define SYSTEM_noassert(b,w)  /* ignore assertion */
 
 #define SYSTEM_cassert(b)    {assert(b);}
 #define SYSTEM_nocassert(b)  /* ignore cassert */
@@ -937,12 +958,12 @@ extern void _P3assert(const SYSTEM_char* mess, const char* File, int Line);
 /* SET OPERATIONS. Note: Bit-access operations (in-test,
    add element, add range) view sets as arrays of bytes,
    to ensure consistency with constant sets as strings */
-#define _P3SET_i(mx, i, s)  _P3set_i(mx,i,s)
-#define _P3SET_ic(mx, i, s)  /* mx and i are constant */    \
+#define _P3SET_i(mx,i,s)  _P3set_i(mx,i,s)
+#define _P3SET_ic(mx,i,s)  /* mx and i are constant */    \
   (((i)<0||(i)>mx) ? 0 :                                  \
    (s)[(i)/_P3bits_per_elem]>>((i)%_P3bits_per_elem) & 1)
-#define _P3SET_add_elem(mx, s, i) _P3set_add_elem(mx,s,i)
-#define _P3SET_add_range(mx, s, lo, up) _P3set_add_range(mx,s,lo,up)
+#define _P3SET_add_elem(mx,s,i) _P3set_add_elem(mx,s,i)
+#define _P3SET_add_range(mx,s,lo,up) _P3set_add_range(mx,s,lo,up)
 
 /*  MATH ETC. */
 
@@ -957,7 +978,7 @@ extern void _P3assert(const SYSTEM_char* mess, const char* File, int Line);
 
 #define SYSTEM_chr(x)         ((SYSTEM_byte)(x))
 extern void _P3_halt(int);
-extern int _P3_Finalizing;
+extern int  _P3_Finalizing;
 #define _P3halt1(x)       _P3_halt(x)
 #define _P3halt0()        _P3_halt(0)
 #define SYSTEM_length(x)      ((SYSTEM_byte)((x)[0]))  /* Cast necessary! */
@@ -979,7 +1000,7 @@ extern SYSTEM_integer _P3_paramcount(void);
 
 /* HEAP */
 #define _P3new(x)         _P3_new((void**)&(x), sizeof(*(x)))
-#define _P3getmem(x, i)    _P3_new((void**)&(x), i)
+#define _P3getmem(x,i)    _P3_new((void**)&(x), i)
 #define _P3freemem(x)     _P3_free((void*)(x), sizeof(*(x)))
 #define _P3freemem0(x)    _P3_free((void*)(x), 0) /* When don't know size */
 #define _P3freemem2(x, y) _P3_free((void*)(x), y)
@@ -987,32 +1008,37 @@ extern SYSTEM_integer _P3_paramcount(void);
 #define _P3dealloc_object(p) _P3_dealloc_object(p)
 
 /* STRCPY and MEMCPY things */
-#define _P3strcpy(d, max, s)   _P3_strcpy(d,max,s)
+#define _P3strcpy(d,max,s)   _P3_strcpy(d,max,s)
 #define _P3strclr(s1)        *(s1) = '\0'
-#define _P3memcpy(s1, lgt, s2) memmove(s1,s2,lgt)  /* s1: dest, s2: src, lgt...*/
-#define  SYSTEM_move(s, d, c)  memmove(d, s, c  )  /* dest, source, count      */
+#define _P3memcpy(s1,lgt,s2) memmove(s1,s2,lgt)  /* s1: dest, s2: src, lgt...*/
+#define  SYSTEM_move(s,d,c)  memmove(d, s, c  )  /* dest, source, count      */
 
 
 /* EK: STR variants */
-void _P3_Str_i0(SYSTEM_integer i, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_i1(SYSTEM_integer i, SYSTEM_integer width, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_d0(SYSTEM_double x, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_dd0(SYSTEM_double x, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_d1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_dd1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_d2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer decimals, SYSTEM_byte* s, SYSTEM_byte sMax);
-void _P3_Str_dd2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer decimals, SYSTEM_byte* s, SYSTEM_byte sMax);
-#define _P3str_i0(i, s, L)        _P3_Str_i0(i,s,L)
-#define _P3str_i1(i, w, s, L)      _P3_Str_i1(i,w,s,L)
-#define _P3str_i2(i, w, d, s, L)    _P3_Str_i1(i,w,s,L)
+void _P3_Str_i0(SYSTEM_integer i, SYSTEM_byte *s, SYSTEM_byte sMax);
+void _P3_Str_i1(SYSTEM_integer i, SYSTEM_integer width, SYSTEM_byte *s,
+                SYSTEM_byte sMax);
+void _P3_Str_d0(SYSTEM_double x, SYSTEM_byte *s, SYSTEM_byte sMax);
+void _P3_Str_dd0(SYSTEM_double x, SYSTEM_byte *s, SYSTEM_byte sMax);
+void _P3_Str_d1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte *s,
+                SYSTEM_byte sMax);
+void _P3_Str_dd1(SYSTEM_double x, SYSTEM_integer width, SYSTEM_byte *s,
+                 SYSTEM_byte sMax);
+void _P3_Str_d2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer
+                decimals, SYSTEM_byte *s, SYSTEM_byte sMax);
+void _P3_Str_dd2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer
+                 decimals, SYSTEM_byte *s, SYSTEM_byte sMax);
+#define _P3str_i0(i,s,L)        _P3_Str_i0(i,s,L)
+#define _P3str_i1(i,w,s,L)      _P3_Str_i1(i,w,s,L)
+#define _P3str_i2(i,w,d,s,L)    _P3_Str_i1(i,w,s,L)
 #ifdef BGP
 #define _P3str_d0(x,s,L)        _P3_Str_d0(x,s,L)
 #define _P3str_d1(x,w,s,L)      _P3_Str_d1(x,w,s,L)
 #define _P3str_d2(x,w,d,s,L)    _P3_Str_d2(x,w,d,s,L)
 #else
-#define _P3str_d0(x, s, L)        _P3_Str_dd0(x,s,L)
-#define _P3str_d1(x, w, s, L)      _P3_Str_dd1(x,w,s,L)
-#define _P3str_d2(x, w, d, s, L)    _P3_Str_dd2(x,w,d,s,L)
+#define _P3str_d0(x,s,L)        _P3_Str_dd0(x,s,L)
+#define _P3str_d1(x,w,s,L)      _P3_Str_dd1(x,w,s,L)
+#define _P3str_d2(x,w,d,s,L)    _P3_Str_dd2(x,w,d,s,L)
 #endif
 
 
@@ -1020,75 +1046,75 @@ void _P3_Str_dd2(SYSTEM_double x, SYSTEM_integer width, SYSTEM_integer decimals,
 /* incomplete!!! Result can also be byte, single precision floating number
 etc */
 /* better to make a function ???? */
-SYSTEM_integer _P3_Val_SPD(const SYSTEM_byte* s, SYSTEM_integer* code);
-void _P3_Val_i(const SYSTEM_byte* s, SYSTEM_integer* i, SYSTEM_integer* code);
-void _P3_Val_d(const SYSTEM_byte* s, SYSTEM_double* d, SYSTEM_integer* code);
-void _P3_Val_dd(const SYSTEM_byte* s, SYSTEM_double* d, SYSTEM_integer* code);
+SYSTEM_integer _P3_Val_SPD(const SYSTEM_byte *s, SYSTEM_integer *code);
+void _P3_Val_i(const SYSTEM_byte *s, SYSTEM_integer *i, SYSTEM_integer *code);
+void _P3_Val_d(const SYSTEM_byte *s, SYSTEM_double *d, SYSTEM_integer *code);
+void _P3_Val_dd(const SYSTEM_byte *s, SYSTEM_double *d, SYSTEM_integer *code);
 #if 0
 #define _P3val_i(s,i,c) _P3_Val_i(s,i,c)
 #define _P3val_d(s,d,c) _P3_Val_d(s,d,c)
 #else
-#define _P3val_i(s, i, c) i=_P3_Val_SPD(s,c)
+#define _P3val_i(s,i,c) i=_P3_Val_SPD(s,c)
 #ifdef BGP
 #define _P3val_d(s,d,c) _P3_Val_d(s,&(d),c)
 #else
-#define _P3val_d(s, d, c) _P3_Val_dd(s,&(d),c)
+#define _P3val_d(s,d,c) _P3_Val_dd(s,&(d),c)
 #endif
 #endif
 
 /* Block compares. Used for arrays, sets and records.   */
 /* Careful: Must return 0 or 1, not just 0 vs non-zero. */
 
-#define _P3blkcmpE(p1, p2, l)   (memcmp(p1,p2,l)==0)
-#define _P3blkcmpN(p1, p2, l)   (memcmp(p1,p2,l)!=0)
-#define _P3blkcmpG(p1, p2, l)   (memcmp(p1,p2,l)>0)
-#define _P3blkcmpL(p1, p2, l)   (memcmp(p1,p2,l)<0)
-#define _P3blkcmpGE(p1, p2, l)  (memcmp(p1,p2,l)>=0)
-#define _P3blkcmpLE(p1, p2, l)  (memcmp(p1,p2,l)<=0)
+#define _P3blkcmpE(p1,p2,l)   (memcmp(p1,p2,l)==0)
+#define _P3blkcmpN(p1,p2,l)   (memcmp(p1,p2,l)!=0)
+#define _P3blkcmpG(p1,p2,l)   (memcmp(p1,p2,l)>0)
+#define _P3blkcmpL(p1,p2,l)   (memcmp(p1,p2,l)<0)
+#define _P3blkcmpGE(p1,p2,l)  (memcmp(p1,p2,l)>=0)
+#define _P3blkcmpLE(p1,p2,l)  (memcmp(p1,p2,l)<=0)
 
 /* Next 4 used to inline smart 'in' tests: */
-#define _P3SET_equal(i, j)     ((i) == (j))
-#define _P3SET_in_1(i, j, k)    (((i) == (j)) || (k))
-#define _P3SET_in_2(i, j, k, l)  (((i) >= (j) && (i) <= (k)) || (l))
-#define _P3SET_in_3(i, j, k)    ((i) >= (j) && (i) <= (k))
+#define _P3SET_equal(i,j)     ((i) == (j))
+#define _P3SET_in_1(i,j,k)    (((i) == (j)) || (k))
+#define _P3SET_in_2(i,j,k,l)  (((i) >= (j) && (i) <= (k)) || (l))
+#define _P3SET_in_3(i,j,k)    ((i) >= (j) && (i) <= (k))
 
-#define _P3setcmpE(l, p1, p2)    (memcmp(p1,p2,l/_P3bits_per_byte+1)==0)
-#define _P3setcmpN(l, p1, p2)    (memcmp(p1,p2,l/_P3bits_per_byte+1)!=0)
+#define _P3setcmpE(l,p1,p2)    (memcmp(p1,p2,l/_P3bits_per_byte+1)==0)
+#define _P3setcmpN(l,p1,p2)    (memcmp(p1,p2,l/_P3bits_per_byte+1)!=0)
 
-#define _P3strcmpE(p1, p2)   (_P3streq(p1,p2))
-#define _P3strcmpN(p1, p2)   (!_P3streq(p1,p2))
-#define _P3strcmpG(p1, p2)   (_P3strcmp(p1,p2)>0)
-#define _P3strcmpL(p1, p2)   (_P3strcmp(p1,p2)<0)
-#define _P3strcmpGE(p1, p2)  (_P3strcmp(p1,p2)>=0)
-#define _P3strcmpLE(p1, p2)  (_P3strcmp(p1,p2)<=0)
+#define _P3strcmpE(p1,p2)   (_P3streq(p1,p2))
+#define _P3strcmpN(p1,p2)   (!_P3streq(p1,p2))
+#define _P3strcmpG(p1,p2)   (_P3strcmp(p1,p2)>0)
+#define _P3strcmpL(p1,p2)   (_P3strcmp(p1,p2)<0)
+#define _P3strcmpGE(p1,p2)  (_P3strcmp(p1,p2)>=0)
+#define _P3strcmpLE(p1,p2)  (_P3strcmp(p1,p2)<=0)
 
-#define _P3stpcmpE(p1, p2, l)   (_P3stpcmp(p1,p2,l)==0)
-#define _P3stpcmpN(p1, p2, l)   (_P3stpcmp(p1,p2,l)!=0)
-#define _P3stpcmpG(p1, p2, l)   (_P3stpcmp(p1,p2,l)>0)
-#define _P3stpcmpL(p1, p2, l)   (_P3stpcmp(p1,p2,l)<0)
-#define _P3stpcmpGE(p1, p2, l)  (_P3stpcmp(p1,p2,l)>=0)
-#define _P3stpcmpLE(p1, p2, l)  (_P3stpcmp(p1,p2,l)<=0)
+#define _P3stpcmpE(p1,p2,l)   (_P3stpcmp(p1,p2,l)==0)
+#define _P3stpcmpN(p1,p2,l)   (_P3stpcmp(p1,p2,l)!=0)
+#define _P3stpcmpG(p1,p2,l)   (_P3stpcmp(p1,p2,l)>0)
+#define _P3stpcmpL(p1,p2,l)   (_P3stpcmp(p1,p2,l)<0)
+#define _P3stpcmpGE(p1,p2,l)  (_P3stpcmp(p1,p2,l)>=0)
+#define _P3stpcmpLE(p1,p2,l)  (_P3stpcmp(p1,p2,l)<=0)
 
-#define _P3stccmpE(p1, p2)   (_P3stccmp(p1,p2)==0)
-#define _P3stccmpN(p1, p2)   (_P3stccmp(p1,p2)!=0)
-#define _P3stccmpG(p1, p2)   (_P3stccmp(p1,p2)>0)
-#define _P3stccmpL(p1, p2)   (_P3stccmp(p1,p2)<0)
-#define _P3stccmpGE(p1, p2)  (_P3stccmp(p1,p2)>=0)
-#define _P3stccmpLE(p1, p2)  (_P3stccmp(p1,p2)<=0)
+#define _P3stccmpE(p1,p2)   (_P3stccmp(p1,p2)==0)
+#define _P3stccmpN(p1,p2)   (_P3stccmp(p1,p2)!=0)
+#define _P3stccmpG(p1,p2)   (_P3stccmp(p1,p2)>0)
+#define _P3stccmpL(p1,p2)   (_P3stccmp(p1,p2)<0)
+#define _P3stccmpGE(p1,p2)  (_P3stccmp(p1,p2)>=0)
+#define _P3stccmpLE(p1,p2)  (_P3stccmp(p1,p2)<=0)
 
 extern SYSTEM_byte SYSTEM_filemode;
 
 #if defined(__cplusplus)
 extern "C" {
-typedef void (* _P3void_procT)(void);
-void _P3_Finalization(void);
+  typedef void (* _P3void_procT)(void);
+  void _P3_Finalization(void);
 }
 #else
-typedef void (* _P3void_procT)(void);
-void _P3_Finalization(void);
+  typedef void (* _P3void_procT)(void);
+  void _P3_Finalization(void);
 #endif
 extern SYSTEM_integer SYSTEM_exitcode;  /* system.ExitCode */
-extern _P3void_procT SYSTEM_exitproc;  /* system.ExitProc */
+extern _P3void_procT  SYSTEM_exitproc;  /* system.ExitProc */
 
 /* DLL stuff: */
 extern SYSTEM_boolean _P3islibrary;     /* system.IsLibrary (Note: a function)*/
@@ -1104,7 +1130,7 @@ extern SYSTEM_integer SYSTEM_dll_refcount;
 
 extern const _P3set_elem _P3empty_set[];
 
-extern void P3_PGM_init(char**, int, _P3void_procT);
+extern void P3_PGM_init(char **, int, _P3void_procT);
 #define _P3_PGM_INIT()   P3_PGM_init(_Argv, _Argc, &_P3_Finalization);
 /* #define _P3_PGM_EXIT()   {_P3_halt(0); ** Never gets here: ** return 0; }*/
 #define _P3_PGM_EXIT()   { return SYSTEM_exitcode; }
@@ -1164,29 +1190,29 @@ extern void P3_DLL_init(void);
 struct SYSTEM_classdescriptor;
 struct _P3InterfaceDescriptor;
 
-typedef const struct SYSTEM_classdescriptor* SYSTEM_classreference_t;
-typedef struct _P3InterfaceDescriptor* SYSTEM_interfacereference_t;
+typedef const struct SYSTEM_classdescriptor *SYSTEM_classreference_t;
+typedef struct _P3InterfaceDescriptor *SYSTEM_interfacereference_t;
 
 typedef struct SYSTEM_classdescriptor {
-   const SYSTEM_char* name;         /* class' name */
-   const struct SYSTEM_classdescriptor* ancestor; /* null for TObject */
-   const SYSTEM_interfacereference_t* IF; /* Array of interfaces */
-   SYSTEM_integer IF_count;         /* Number of interfaces */
-   SYSTEM_longint CLS_size;         /* Size of an object */
-   void* const* VT;                /* Virtual table */
-   void** IT;                       /* Interface table */
+  const SYSTEM_char *name;         /* class' name */
+  const struct SYSTEM_classdescriptor *ancestor; /* null for TObject */
+  const SYSTEM_interfacereference_t *IF; /* Array of interfaces */
+  SYSTEM_integer IF_count;         /* Number of interfaces */
+  SYSTEM_longint CLS_size;         /* Size of an object */
+  void * const *VT;                /* Virtual table */
+  void **IT;                       /* Interface table */
 } SYSTEM_classdescriptor_t;
 
 
 typedef struct _P3InterfaceDescriptor {
-   int i; /* nothing yet */
+  int i; /* nothing yet */
 } _P3InterfaceDescriptor;
 
 extern const SYSTEM_classdescriptor_t SYSTEM_tobject_CD;
 
-typedef struct SYSTEM_tobject_OD_S* SYSTEM_tobject;
+typedef struct SYSTEM_tobject_OD_S *SYSTEM_tobject;
 typedef struct SYSTEM_tobject_OD_S {
-   const SYSTEM_classdescriptor_t* CD; /* = &SYSTEM_tobject_CD */
+  const SYSTEM_classdescriptor_t *CD; /* = &SYSTEM_tobject_CD */
 } SYSTEM_tobject_OD;
 
 #define _P3get_CD(ref) ((ref)->CD) /* Get ref's ClassDescriptor */
@@ -1195,31 +1221,34 @@ typedef struct SYSTEM_tobject_OD_S {
 typedef SYSTEM_classreference_t SYSTEM_metaclass;  */
 
 
-extern SYSTEM_boolean _P3is(const SYSTEM_tobject objref, const SYSTEM_classdescriptor_t* clsref);
-extern SYSTEM_tobject _P3as(SYSTEM_tobject objref, const SYSTEM_classdescriptor_t* clsref, const char* file, int line);
-#define _P3_is(a, b)   _P3is((SYSTEM_tobject)(a), b)
-#define _P3_as(a, b)   _P3as((SYSTEM_tobject)(a), b, __FILE__, __LINE__)
+extern SYSTEM_boolean _P3is(const SYSTEM_tobject objref,
+                            const SYSTEM_classdescriptor_t *clsref);
+extern SYSTEM_tobject _P3as(SYSTEM_tobject objref,
+                            const SYSTEM_classdescriptor_t *clsref,
+                            const char *file, int line);
+#define _P3_is(a,b)   _P3is((SYSTEM_tobject)(a), b)
+#define _P3_as(a,b)   _P3as((SYSTEM_tobject)(a), b, __FILE__, __LINE__)
 
 
 /* Implementations of methods from TObject:  */
 
 #define SYSTEM_tobject_DOT_create(Self)       (Self)
-#define SYSTEM_tobject_DOT_classname(a, b, c)   _P3_strcpy(a,b,(c)->name)
+#define SYSTEM_tobject_DOT_classname(a,b,c)   _P3_strcpy(a,b,(c)->name)
 #define SYSTEM_tobject_DOT_instancesize(c)    ((c)->CLS_size)
-#define SYSTEM_tobject_DOT_classnameis(a, b)   _P3streq_ic((a)->name, b)
+#define SYSTEM_tobject_DOT_classnameis(a,b)   _P3streq_ic((a)->name, b)
 #define SYSTEM_tobject_DOT_classtype(c)       _P3get_CD(c)
 #define SYSTEM_tobject_DOT_classparent(c)     ((c)->ancestor)
 
 /* Allocation/deallocation of objects:                                     */
 /* constructors call _P3_alloc_object; destructors call _P3_dealloc_object */
-extern SYSTEM_tobject _P3_alloc_object(const SYSTEM_classdescriptor_t* CD);
+extern SYSTEM_tobject _P3_alloc_object(const SYSTEM_classdescriptor_t *CD);
 extern void _P3_dealloc_object(void* p);
 /* Do not use the syntax in the next lines: kill Emacs auto-format
  * typedef Destructor(SYSTEM_tobject)(*SYSTEM_tobject_DOT_destroy_T)(SYSTEM_tobject);
  * extern  Destructor(SYSTEM_tobject)  SYSTEM_tobject_DOT_destroy   (SYSTEM_tobject);
  */
 typedef SYSTEM_tobject (* SYSTEM_tobject_DOT_destroy_T)(SYSTEM_tobject);
-extern SYSTEM_tobject SYSTEM_tobject_DOT_destroy(SYSTEM_tobject);
+extern  SYSTEM_tobject    SYSTEM_tobject_DOT_destroy   (SYSTEM_tobject);
 extern void SYSTEM_tobject_DOT_free(SYSTEM_tobject);
 
 /* NOTE: If you get segmentation errors/illegal references in the
@@ -1228,24 +1257,28 @@ extern void SYSTEM_tobject_DOT_free(SYSTEM_tobject);
 #define VirtMethodCall(ref, typ, ix, prm) ((*(typ)(_P3get_CD(ref)->VT[ix])) prm)
 #define VirtClassMethodCall(ref, typ, ix, prm) ((*(typ)((ref)->VT[ix])) prm)
 
-extern void _P3_abstract_call1(void* ref, ...);
-extern void _P3_abstract_call3(SYSTEM_ansichar* result, SYSTEM_uint8 _len_ret, SYSTEM_tobject o, ...);
-extern void _P3_abstr_cl_call1(void* ref, ...);
-extern void _P3_abstr_cl_call3(SYSTEM_ansichar* result, SYSTEM_uint8 _len_ret, SYSTEM_classreference_t ref, ...);
+extern void _P3_abstract_call1(void *ref, ...);
+extern void _P3_abstract_call3(SYSTEM_ansichar *result, SYSTEM_uint8 _len_ret,
+                               SYSTEM_tobject o, ...);
+extern void _P3_abstr_cl_call1(void *ref, ...);
+extern void _P3_abstr_cl_call3(SYSTEM_ansichar *result, SYSTEM_uint8 _len_ret,
+                               SYSTEM_classreference_t ref, ...);
 /*** End Classes and Interfaces ***/
 
 
 /* Shared Objects/DLLs material: */
 #ifdef DOS
-typedef HINSTANCE SYSTEM_handle;
+  typedef HINSTANCE SYSTEM_handle;
 #else
-typedef void* SYSTEM_handle;
+  typedef void* SYSTEM_handle;
 #endif
 
-extern int sigProcTree(int sigNum, int* nChildrenPre, int* nChildrenPost);
+extern int
+sigProcTree (int sigNum, int *nChildrenPre, int *nChildrenPost);
 
-typedef void (* pidCB_t)(SYSTEM_cardinal pid, int level, void* userMem);
-extern int walkProcTree(SYSTEM_cardinal pid, pidCB_t cbPtr, void* userMem, SYSTEM_boolean postOrder);
+typedef void (* pidCB_t)(SYSTEM_cardinal pid, int level, void *userMem);
+extern int
+walkProcTree (SYSTEM_cardinal pid, pidCB_t cbPtr, void *userMem, SYSTEM_boolean postOrder);
 
 
 /*************** NEW EXCEPTIONS - Object-based like Delphi/Kylix.         */
@@ -1258,15 +1291,16 @@ typedef struct SYSTEM_exception_OD_S* SYSTEM_exception; /* sy_class */
 
 /* The object descriptor is a struct that contains the object's stuff: */
 typedef struct SYSTEM_exception_OD_S { /* Objects of 'exception' */
-   const SYSTEM_classdescriptor_t* CD; /* = &SYSTEM_exception_CD*/
-   SYSTEM_shortstring SYSTEM_exception_DOT_message;
+  const SYSTEM_classdescriptor_t *CD; /* = &SYSTEM_exception_CD*/
+  SYSTEM_shortstring SYSTEM_exception_DOT_message;
 } SYSTEM_exception_OD;
 
 /* Prototype for "exception"'s constructor create(const Msg: string): */
-Constructor(SYSTEM_exception) SYSTEM_exception_DOT_create(SYSTEM_exception self, const SYSTEM_char* msg);
+Constructor(SYSTEM_exception)
+SYSTEM_exception_DOT_create(SYSTEM_exception self, const SYSTEM_char *msg);
 
 /* Declaration of the Virtual Table, defined in p3io.c */
-extern void* const SYSTEM_exception_VT[];
+extern void * const SYSTEM_exception_VT[];
 
 /* Class Descriptor for an exception. To identify it - contains name etc. */
 extern const SYSTEM_classdescriptor_t SYSTEM_exception_CD;
@@ -1274,46 +1308,49 @@ extern const SYSTEM_classdescriptor_t SYSTEM_exception_CD;
 /* Put message as the output of next one to get test output */
 #define EXCTST(message) /* message */
 
-extern void _P3_Exception(int n, const char* s);
+extern void _P3_Exception (int n, const char *s);
 
 #define _P3_exceptobject _P3_ExceptObject  /* local or global, depending on _P3_EXC_MODEL_ */
 #define SYSTEM_exceptobject() _P3_ExceptObject
 
 #if _P3_EXC_MODEL_ == 1
-
 /* C++ try/catch */
 
-class exWrap : public std::exception {
-private:
-   const char* mmm;
-   SYSTEM_tobject payload;
-public:
-   exWrap() : mmm(NULL), payload(NULL) {}
-   exWrap(const char* msg) : mmm(msg), payload(NULL) {}
-   exWrap(SYSTEM_tobject o) : mmm(NULL), payload(o) {}
-   exWrap(const char* msg, SYSTEM_tobject o) : mmm(msg), payload(o) {}
-   virtual const char* what() const throw() {
-      if (mmm)
-         return mmm;
-      else
-         return "exWrap exception";
-   } // what
-   inline SYSTEM_tobject getPayload() { return payload; }
-   inline void setPayload(SYSTEM_tobject o) { payload = o; }
+class exWrap: public std::exception
+{
+ private:
+  const char *mmm;
+  SYSTEM_tobject payload;
+ public:
+  exWrap () : mmm(NULL), payload(NULL) {  }
+  exWrap (const char *msg) : mmm(msg), payload(NULL) { }
+  exWrap (SYSTEM_tobject o) : mmm(NULL), payload(o) { }
+  exWrap (const char *msg, SYSTEM_tobject o) : mmm(msg), payload(o) { }
+  virtual const char *what() const throw()
+  {
+    if (mmm)
+      return mmm;
+    else
+      return "exWrap exception";
+  } // what
+  inline SYSTEM_tobject getPayload () { return payload; }
+  inline void setPayload (SYSTEM_tobject o) { payload = o; }
 }; // exWrap
 
-class exFinal : public std::exception {
-private:
-   const char* mmm;
-public:
-   exFinal() : mmm(NULL) {}
-   exFinal(const char* msg) : mmm(msg) {}
-   virtual const char* what() const throw() {
-      if (mmm)
-         return mmm;
-      else
-         return "exFinal exception";
-   } // what
+class exFinal: public std::exception
+{
+ private:
+  const char *mmm;
+ public:
+  exFinal () : mmm(NULL) {  }
+  exFinal (const char *msg) : mmm(msg) { }
+  virtual const char *what() const throw()
+  {
+    if (mmm)
+      return mmm;
+    else
+      return "exFinal exception";
+  } // what
 }; // exFinal
 
 #define _P3_TRY try {

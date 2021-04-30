@@ -32,20 +32,17 @@
 #include <errno.h>
 
 #define GMD_MAIN
-
 #include "gmdcc.h"
 
 #if defined(_WIN32)
-                                                                                                                        # include <windows.h>
+# include <windows.h>
   static char winErr[] = "Windows error";
   typedef HINSTANCE soHandle_t;
 #else
-
 # include <unistd.h>
 # include <dlfcn.h>
 # include <sys/utsname.h>
-
-typedef void* soHandle_t;
+  typedef void *soHandle_t;
 #endif
 
 static soHandle_t h;
@@ -58,43 +55,37 @@ static gmdErrorCallback_t ErrorCallBack = NULL;
 static int APIErrorCount = 0;
 
 #if !defined(GC_NO_MUTEX)
-
 #include "gcmt.h"
-
 static GC_mutex_t libMutex;
 static GC_mutex_t objMutex;
 static GC_mutex_t exceptMutex;
 
 static int MutexIsInitialized = 0;
 
-void gmdInitMutexes(void) {
-   int rc;
-   if (0 == MutexIsInitialized) {
-      rc = GC_mutex_init(&libMutex);
-      if (0 != rc)
-         gmdErrorHandling("Problem initializing libMutex");
-      rc = GC_mutex_init(&objMutex);
-      if (0 != rc)
-         gmdErrorHandling("Problem initializing objMutex");
-      rc = GC_mutex_init(&exceptMutex);
-      if (0 != rc)
-         gmdErrorHandling("Problem initializing exceptMutex");
-      MutexIsInitialized = 1;
-   }
+void gmdInitMutexes(void)
+{
+  int rc;
+  if (0==MutexIsInitialized) {
+    rc = GC_mutex_init (&libMutex);     if(0!=rc) gmdErrorHandling("Problem initializing libMutex");
+    rc = GC_mutex_init (&objMutex);     if(0!=rc) gmdErrorHandling("Problem initializing objMutex");
+    rc = GC_mutex_init (&exceptMutex);  if(0!=rc) gmdErrorHandling("Problem initializing exceptMutex");
+    MutexIsInitialized = 1;
+  }
 }
 
-void gmdFiniMutexes(void) {
-   if (1 == MutexIsInitialized) {
-      GC_mutex_delete(&libMutex);
-      GC_mutex_delete(&objMutex);
-      GC_mutex_delete(&exceptMutex);
-      MutexIsInitialized = 0;
-   }
+void gmdFiniMutexes(void)
+{
+  if (1==MutexIsInitialized) {
+    GC_mutex_delete (&libMutex);
+    GC_mutex_delete (&objMutex);
+    GC_mutex_delete (&exceptMutex);
+    MutexIsInitialized = 0;
+  }
 }
 #  define lock(MUTEX)   if(MutexIsInitialized) GC_mutex_lock (&MUTEX);
 #  define unlock(MUTEX) if(MutexIsInitialized) GC_mutex_unlock (&MUTEX);
 #else
-                                                                                                                        #  define lock(MUTEX)   ;
+#  define lock(MUTEX)   ;
 #  define unlock(MUTEX) ;
 void gmdInitMutexes(void) {}
 void gmdFiniMutexes(void) {}
@@ -104,24 +95,24 @@ void gmdFiniMutexes(void) {}
 #define GAMS_UNUSED(x) (void)x;
 #endif
 
-typedef void (GMD_CALLCONV* XCreate_t)(gmdHandle_t* pgmd);
+typedef void (GMD_CALLCONV *XCreate_t) (gmdHandle_t *pgmd);
 static GMD_FUNCPTR(XCreate);
-typedef void (GMD_CALLCONV* XCreateD_t)(gmdHandle_t* pgmd, const char* dirName);
+typedef void (GMD_CALLCONV *XCreateD_t) (gmdHandle_t *pgmd, const char *dirName);
 static GMD_FUNCPTR(XCreateD);
-typedef void (GMD_CALLCONV* XFree_t)(gmdHandle_t* pgmd);
+typedef void (GMD_CALLCONV *XFree_t)   (gmdHandle_t *pgmd);
 static GMD_FUNCPTR(XFree);
-typedef int (GMD_CALLCONV* XAPIVersion_t)(int api, char* msg, int* cl);
+typedef int (GMD_CALLCONV *XAPIVersion_t) (int api, char *msg, int *cl);
 static GMD_FUNCPTR(XAPIVersion);
-typedef int (GMD_CALLCONV* XCheck_t)(const char* ep, int nargs, int s[], char* msg);
+typedef int (GMD_CALLCONV *XCheck_t) (const char *ep, int nargs, int s[], char *msg);
 static GMD_FUNCPTR(XCheck);
 
-#define printNoReturn(f, nargs) { \
+#define printNoReturn(f,nargs) { \
   char d_msgBuf[256]; \
   strcpy(d_msgBuf,#f " could not be loaded: "); \
   XCheck(#f,nargs,d_s,d_msgBuf+strlen(d_msgBuf)); \
   gmdErrorHandling(d_msgBuf); \
 }
-#define printAndReturn(f, nargs, rtype) { \
+#define printAndReturn(f,nargs,rtype) { \
   char d_msgBuf[256]; \
   strcpy(d_msgBuf,#f " could not be loaded: "); \
   XCheck(#f,nargs,d_s,d_msgBuf+strlen(d_msgBuf)); \
@@ -129,885 +120,977 @@ static GMD_FUNCPTR(XCheck);
   return (rtype) 0; \
 }
 
-int  GMD_CALLCONV d_gmdInitFromGDX(gmdHandle_t pgmd, const char* fileName) {
-   int d_s[] = {15, 11};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(fileName)
-   printAndReturn(gmdInitFromGDX, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdInitFromDict(gmdHandle_t pgmd, void* gmoPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(gmoPtr)
-   printAndReturn(gmdInitFromDict, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdInitFromCMEX(gmdHandle_t pgmd, TFindSymbol_t findSymbol, TDataReadRawStart_t dataReadRawStart, TDataReadRaw_t dataReadRaw,
-      TDataReadDone_t dataReadDone, TGetElemText_t getElemText, TPrintLog_t printLog, void* usrmem) {
-   int d_s[] = {15, 59, 59, 59, 59, 59, 59, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(findSymbol)
-   GAMS_UNUSED(dataReadRawStart)
-   GAMS_UNUSED(dataReadRaw)
-   GAMS_UNUSED(dataReadDone)
-   GAMS_UNUSED(getElemText)
-   GAMS_UNUSED(printLog)
-   GAMS_UNUSED(usrmem)
-   printAndReturn(gmdInitFromCMEX, 7, int)
-}
-
-int  GMD_CALLCONV d_gmdInitFromDB(gmdHandle_t pgmd, void* gmdSrcPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(gmdSrcPtr)
-   printAndReturn(gmdInitFromDB, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdRegisterGMO(gmdHandle_t pgmd, void* gmoPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(gmoPtr)
-   printAndReturn(gmdRegisterGMO, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdCloseGDX(gmdHandle_t pgmd, int loadRemain) {
-   int d_s[] = {15, 15};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(loadRemain)
-   printAndReturn(gmdCloseGDX, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdAddSymbolX(gmdHandle_t pgmd, const char* symName, int aDim, int stype, int userInfo, const char* explText, void** vDomPtrIn,
-      const char* keyStr[], void** symPtr) {
-   int d_s[] = {15, 11, 3, 3, 3, 11, 2, 55, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symName)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(stype)
-   GAMS_UNUSED(userInfo)
-   GAMS_UNUSED(explText)
-   GAMS_UNUSED(vDomPtrIn)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(symPtr)
-   printAndReturn(gmdAddSymbolX, 8, int)
-}
-
-void* GMD_CALLCONV d_gmdAddSymbolXPy(gmdHandle_t pgmd, const char* symName, int aDim, int stype, int userInfo, const char* explText, void** vDomPtrIn,
-      const char* keyStr[], int* status) {
-   int d_s[] = {1, 11, 3, 3, 3, 11, 2, 55, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symName)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(stype)
-   GAMS_UNUSED(userInfo)
-   GAMS_UNUSED(explText)
-   GAMS_UNUSED(vDomPtrIn)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdAddSymbolXPy, 8, void *)
-}
-
-int  GMD_CALLCONV d_gmdAddSymbol(gmdHandle_t pgmd, const char* symName, int aDim, int stype, int userInfo, const char* explText, void** symPtr) {
-   int d_s[] = {15, 11, 3, 3, 3, 11, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symName)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(stype)
-   GAMS_UNUSED(userInfo)
-   GAMS_UNUSED(explText)
-   GAMS_UNUSED(symPtr)
-   printAndReturn(gmdAddSymbol, 6, int)
-}
-
-void* GMD_CALLCONV d_gmdAddSymbolPy(gmdHandle_t pgmd, const char* symName, int aDim, int stype, int userInfo, const char* explText, int* status) {
-   int d_s[] = {1, 11, 3, 3, 3, 11, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symName)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(stype)
-   GAMS_UNUSED(userInfo)
-   GAMS_UNUSED(explText)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdAddSymbolPy, 6, void *)
-}
-
-int  GMD_CALLCONV d_gmdFindSymbol(gmdHandle_t pgmd, const char* symName, void** symPtr) {
-   int d_s[] = {15, 11, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symName)
-   GAMS_UNUSED(symPtr)
-   printAndReturn(gmdFindSymbol, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdFindSymbolPy(gmdHandle_t pgmd, const char* symName, int* status) {
-   int d_s[] = {1, 11, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symName)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdFindSymbolPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdGetSymbolByIndex(gmdHandle_t pgmd, int idx, void** symPtr) {
-   int d_s[] = {15, 3, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(idx)
-   GAMS_UNUSED(symPtr)
-   printAndReturn(gmdGetSymbolByIndex, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdGetSymbolByIndexPy(gmdHandle_t pgmd, int idx, int* status) {
-   int d_s[] = {1, 3, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(idx)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdGetSymbolByIndexPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdClearSymbol(gmdHandle_t pgmd, void* symPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   printAndReturn(gmdClearSymbol, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdCopySymbol(gmdHandle_t pgmd, void* tarSymPtr, void* srcSymPtr) {
-   int d_s[] = {15, 1, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(tarSymPtr)
-   GAMS_UNUSED(srcSymPtr)
-   printAndReturn(gmdCopySymbol, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdFindRecord(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], void** symIterPtr) {
-   int d_s[] = {15, 1, 55, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdFindRecord, 3, int)
-}
-
-void* GMD_CALLCONV d_gmdFindRecordPy(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], int* status) {
-   int d_s[] = {1, 1, 55, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdFindRecordPy, 3, void *)
-}
-
-int  GMD_CALLCONV d_gmdFindFirstRecord(gmdHandle_t pgmd, void* symPtr, void** symIterPtr) {
-   int d_s[] = {15, 1, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdFindFirstRecord, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdFindFirstRecordPy(gmdHandle_t pgmd, void* symPtr, int* status) {
-   int d_s[] = {1, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdFindFirstRecordPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdFindFirstRecordSlice(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], void** symIterPtr) {
-   int d_s[] = {15, 1, 55, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdFindFirstRecordSlice, 3, int)
-}
-
-void* GMD_CALLCONV d_gmdFindFirstRecordSlicePy(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], int* status) {
-   int d_s[] = {1, 1, 55, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdFindFirstRecordSlicePy, 3, void *)
-}
-
-int  GMD_CALLCONV d_gmdFindLastRecord(gmdHandle_t pgmd, void* symPtr, void** symIterPtr) {
-   int d_s[] = {15, 1, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdFindLastRecord, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdFindLastRecordPy(gmdHandle_t pgmd, void* symPtr, int* status) {
-   int d_s[] = {1, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdFindLastRecordPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdFindLastRecordSlice(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], void** symIterPtr) {
-   int d_s[] = {15, 1, 55, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdFindLastRecordSlice, 3, int)
-}
-
-void* GMD_CALLCONV d_gmdFindLastRecordSlicePy(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], int* status) {
-   int d_s[] = {1, 1, 55, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdFindLastRecordSlicePy, 3, void *)
-}
-
-int  GMD_CALLCONV d_gmdRecordMoveNext(gmdHandle_t pgmd, void* symIterPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdRecordMoveNext, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdRecordHasNext(gmdHandle_t pgmd, void* symIterPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdRecordHasNext, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdRecordMovePrev(gmdHandle_t pgmd, void* symIterPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdRecordMovePrev, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdSameRecord(gmdHandle_t pgmd, void* symIterPtrSrc, void* symIterPtrtar) {
-   int d_s[] = {15, 1, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtrSrc)
-   GAMS_UNUSED(symIterPtrtar)
-   printAndReturn(gmdSameRecord, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdRecordHasPrev(gmdHandle_t pgmd, void* symIterPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdRecordHasPrev, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdGetElemText(gmdHandle_t pgmd, void* symIterPtr, char* txt) {
-   int d_s[] = {15, 1, 12};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(txt)
-   printAndReturn(gmdGetElemText, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetLevel(gmdHandle_t pgmd, void* symIterPtr, double* value) {
-   int d_s[] = {15, 1, 14};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdGetLevel, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetLower(gmdHandle_t pgmd, void* symIterPtr, double* value) {
-   int d_s[] = {15, 1, 14};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdGetLower, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetUpper(gmdHandle_t pgmd, void* symIterPtr, double* value) {
-   int d_s[] = {15, 1, 14};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdGetUpper, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetMarginal(gmdHandle_t pgmd, void* symIterPtr, double* value) {
-   int d_s[] = {15, 1, 14};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdGetMarginal, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetScale(gmdHandle_t pgmd, void* symIterPtr, double* value) {
-   int d_s[] = {15, 1, 14};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdGetScale, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetElemText(gmdHandle_t pgmd, void* symIterPtr, const char* txt) {
-   int d_s[] = {15, 1, 11};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(txt)
-   printAndReturn(gmdSetElemText, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetLevel(gmdHandle_t pgmd, void* symIterPtr, double value) {
-   int d_s[] = {15, 1, 13};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdSetLevel, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetLower(gmdHandle_t pgmd, void* symIterPtr, double value) {
-   int d_s[] = {15, 1, 13};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdSetLower, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetUpper(gmdHandle_t pgmd, void* symIterPtr, double value) {
-   int d_s[] = {15, 1, 13};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdSetUpper, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetMarginal(gmdHandle_t pgmd, void* symIterPtr, double value) {
-   int d_s[] = {15, 1, 13};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdSetMarginal, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetScale(gmdHandle_t pgmd, void* symIterPtr, double value) {
-   int d_s[] = {15, 1, 13};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdSetScale, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetUserInfo(gmdHandle_t pgmd, void* symPtr, int value) {
-   int d_s[] = {15, 1, 3};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(value)
-   printAndReturn(gmdSetUserInfo, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdAddRecord(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], void** symIterPtr) {
-   int d_s[] = {15, 1, 55, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdAddRecord, 3, int)
-}
-
-void* GMD_CALLCONV d_gmdAddRecordPy(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], int* status) {
-   int d_s[] = {1, 1, 55, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdAddRecordPy, 3, void *)
-}
-
-int  GMD_CALLCONV d_gmdMergeRecord(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], void** symIterPtr) {
-   int d_s[] = {15, 1, 55, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdMergeRecord, 3, int)
-}
-
-void* GMD_CALLCONV d_gmdMergeRecordPy(gmdHandle_t pgmd, void* symPtr, const char* keyStr[], int* status) {
-   int d_s[] = {1, 1, 55, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyStr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdMergeRecordPy, 3, void *)
-}
-
-int  GMD_CALLCONV
-d_gmdMergeRecordInt(gmdHandle_t pgmd, void* symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, void** symIterPtr, int haveValues,
-      const double values[]) {
-   int d_s[] = {15, 1, 51, 15, 15, 2, 15, 53};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyInt)
-   GAMS_UNUSED(checkUEL)
-   GAMS_UNUSED(wantSymIterPtr)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(haveValues)
-   GAMS_UNUSED(values)
-   printAndReturn(gmdMergeRecordInt, 7, int)
-}
-
-void* GMD_CALLCONV d_gmdMergeRecordIntPy(gmdHandle_t pgmd, void* symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, int haveValues,
-      const double values[], int* status) {
-   int d_s[] = {1, 1, 51, 15, 15, 15, 53, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyInt)
-   GAMS_UNUSED(checkUEL)
-   GAMS_UNUSED(wantSymIterPtr)
-   GAMS_UNUSED(haveValues)
-   GAMS_UNUSED(values)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdMergeRecordIntPy, 7, void *)
-}
-
-int  GMD_CALLCONV
-d_gmdMergeSetRecordInt(gmdHandle_t pgmd, void* symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, void** symIterPtr, const char* eText) {
-   int d_s[] = {15, 1, 51, 15, 15, 2, 11};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyInt)
-   GAMS_UNUSED(checkUEL)
-   GAMS_UNUSED(wantSymIterPtr)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(eText)
-   printAndReturn(gmdMergeSetRecordInt, 6, int)
-}
-
-void* GMD_CALLCONV d_gmdMergeSetRecordIntPy(gmdHandle_t pgmd, void* symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, const char* eText,
-      int* status) {
-   int d_s[] = {1, 1, 51, 15, 15, 11, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyInt)
-   GAMS_UNUSED(checkUEL)
-   GAMS_UNUSED(wantSymIterPtr)
-   GAMS_UNUSED(eText)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdMergeSetRecordIntPy, 6, void *)
-}
-
-int  GMD_CALLCONV d_gmdAddRecordRaw(gmdHandle_t pgmd, void* symPtr, const int keyInt[], const double values[], const char* eText) {
-   int d_s[] = {15, 1, 51, 53, 11};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(keyInt)
-   GAMS_UNUSED(values)
-   GAMS_UNUSED(eText)
-   printAndReturn(gmdAddRecordRaw, 4, int)
-}
-
-int  GMD_CALLCONV d_gmdDeleteRecord(gmdHandle_t pgmd, void* symIterPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdDeleteRecord, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdGetRecordRaw(gmdHandle_t pgmd, void* symIterPtr, int aDim, int keyInt[], double values[]) {
-   int d_s[] = {15, 1, 3, 52, 54};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(keyInt)
-   GAMS_UNUSED(values)
-   printAndReturn(gmdGetRecordRaw, 4, int)
-}
-
-int  GMD_CALLCONV d_gmdGetKeys(gmdHandle_t pgmd, void* symIterPtr, int aDim, char* keyStr[]) {
-   int d_s[] = {15, 1, 3, 56};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(keyStr)
-   printAndReturn(gmdGetKeys, 3, int)
-}
-
-int  GMD_CALLCONV d_gmdGetKey(gmdHandle_t pgmd, void* symIterPtr, int idx, char* keyStr) {
-   int d_s[] = {15, 1, 3, 12};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   GAMS_UNUSED(idx)
-   GAMS_UNUSED(keyStr)
-   printAndReturn(gmdGetKey, 3, int)
-}
-
-int  GMD_CALLCONV d_gmdGetDomain(gmdHandle_t pgmd, void* symPtr, int aDim, void** vDomPtrOut, char* keyStr[]) {
-   int d_s[] = {15, 1, 3, 2, 56};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(aDim)
-   GAMS_UNUSED(vDomPtrOut)
-   GAMS_UNUSED(keyStr)
-   printAndReturn(gmdGetDomain, 4, int)
-}
-
-int  GMD_CALLCONV d_gmdCopySymbolIterator(gmdHandle_t pgmd, void* symIterPtrSrc, void** symIterPtrtar) {
-   int d_s[] = {15, 1, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtrSrc)
-   GAMS_UNUSED(symIterPtrtar)
-   printAndReturn(gmdCopySymbolIterator, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdCopySymbolIteratorPy(gmdHandle_t pgmd, void* symIterPtrSrc, int* status) {
-   int d_s[] = {1, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtrSrc)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdCopySymbolIteratorPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdFreeSymbolIterator(gmdHandle_t pgmd, void* symIterPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdFreeSymbolIterator, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdMergeUel(gmdHandle_t pgmd, const char* uel, int* uelNr) {
-   int d_s[] = {15, 11, 4};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(uel)
-   GAMS_UNUSED(uelNr)
-   printAndReturn(gmdMergeUel, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetUelByIndex(gmdHandle_t pgmd, int uelNr, char* keyStr) {
-   int d_s[] = {15, 3, 12};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(uelNr)
-   GAMS_UNUSED(keyStr)
-   printAndReturn(gmdGetUelByIndex, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdInfo(gmdHandle_t pgmd, int infoKey, int* ival, double* dval, char* sval) {
-   int d_s[] = {15, 3, 4, 14, 12};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(infoKey)
-   GAMS_UNUSED(ival)
-   GAMS_UNUSED(dval)
-   GAMS_UNUSED(sval)
-   printAndReturn(gmdInfo, 4, int)
-}
-
-int  GMD_CALLCONV d_gmdSymbolInfo(gmdHandle_t pgmd, void* symPtr, int infoKey, int* ival, double* dval, char* sval) {
-   int d_s[] = {15, 1, 3, 4, 14, 12};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(infoKey)
-   GAMS_UNUSED(ival)
-   GAMS_UNUSED(dval)
-   GAMS_UNUSED(sval)
-   printAndReturn(gmdSymbolInfo, 5, int)
-}
-
-int  GMD_CALLCONV d_gmdSymbolDim(gmdHandle_t pgmd, void* symPtr, int* aDim) {
-   int d_s[] = {15, 1, 4};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(aDim)
-   printAndReturn(gmdSymbolDim, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSymbolType(gmdHandle_t pgmd, void* symPtr, int* stype) {
-   int d_s[] = {15, 1, 4};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(stype)
-   printAndReturn(gmdSymbolType, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdWriteGDX(gmdHandle_t pgmd, const char* fileName, int noDomChk) {
-   int d_s[] = {15, 11, 15};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(fileName)
-   GAMS_UNUSED(noDomChk)
-   printAndReturn(gmdWriteGDX, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetSpecialValuesX(gmdHandle_t pgmd, const double specVal[], int* specValType) {
-   int d_s[] = {15, 57, 21};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(specVal)
-   GAMS_UNUSED(specValType)
-   printAndReturn(gmdSetSpecialValuesX, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdSetSpecialValues(gmdHandle_t pgmd, const double specVal[]) {
-   int d_s[] = {15, 57};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(specVal)
-   printAndReturn(gmdSetSpecialValues, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdGetSpecialValues(gmdHandle_t pgmd, double specVal[]) {
-   int d_s[] = {15, 58};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(specVal)
-   printAndReturn(gmdGetSpecialValues, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdSetDebug(gmdHandle_t pgmd, int debugLevel) {
-   int d_s[] = {15, 3};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(debugLevel)
-   printAndReturn(gmdSetDebug, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdGetLastError(gmdHandle_t pgmd, char* msg) {
-   int d_s[] = {15, 12};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(msg)
-   printAndReturn(gmdGetLastError, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdPrintLog(gmdHandle_t pgmd, const char* msg) {
-   int d_s[] = {15, 11};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(msg)
-   printAndReturn(gmdPrintLog, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdStartWriteRecording(gmdHandle_t pgmd) {
-   int d_s[] = {15};
-   GAMS_UNUSED(pgmd)
-   printAndReturn(gmdStartWriteRecording, 0, int)
-}
-
-int  GMD_CALLCONV d_gmdStopWriteRecording(gmdHandle_t pgmd) {
-   int d_s[] = {15};
-   GAMS_UNUSED(pgmd)
-   printAndReturn(gmdStopWriteRecording, 0, int)
-}
-
-int  GMD_CALLCONV d_gmdCheckDBDV(gmdHandle_t pgmd, int* dv) {
-   int d_s[] = {15, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dv)
-   printAndReturn(gmdCheckDBDV, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdCheckSymbolDV(gmdHandle_t pgmd, void* symPtr, int* dv) {
-   int d_s[] = {15, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(dv)
-   printAndReturn(gmdCheckSymbolDV, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdGetFirstDBDV(gmdHandle_t pgmd, void** dvHandle) {
-   int d_s[] = {15, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   printAndReturn(gmdGetFirstDBDV, 1, int)
-}
-
-void* GMD_CALLCONV d_gmdGetFirstDBDVPy(gmdHandle_t pgmd, int* status) {
-   int d_s[] = {1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdGetFirstDBDVPy, 1, void *)
-}
-
-int  GMD_CALLCONV d_gmdGetFirstDVInSymbol(gmdHandle_t pgmd, void* symPtr, void** dvHandle) {
-   int d_s[] = {15, 1, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(dvHandle)
-   printAndReturn(gmdGetFirstDVInSymbol, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdGetFirstDVInSymbolPy(gmdHandle_t pgmd, void* symPtr, int* status) {
-   int d_s[] = {1, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdGetFirstDVInSymbolPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdDomainCheckDone(gmdHandle_t pgmd) {
-   int d_s[] = {15};
-   GAMS_UNUSED(pgmd)
-   printAndReturn(gmdDomainCheckDone, 0, int)
-}
-
-int  GMD_CALLCONV d_gmdGetFirstDVInNextSymbol(gmdHandle_t pgmd, void* dvHandle, int* nextavail) {
-   int d_s[] = {15, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(nextavail)
-   printAndReturn(gmdGetFirstDVInNextSymbol, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdMoveNextDVInSymbol(gmdHandle_t pgmd, void* dvHandle, int* nextavail) {
-   int d_s[] = {15, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(nextavail)
-   printAndReturn(gmdMoveNextDVInSymbol, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdFreeDVHandle(gmdHandle_t pgmd, void* dvHandle) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   printAndReturn(gmdFreeDVHandle, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdGetDVSymbol(gmdHandle_t pgmd, void* dvHandle, void** symPtr) {
-   int d_s[] = {15, 1, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(symPtr)
-   printAndReturn(gmdGetDVSymbol, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdGetDVSymbolPy(gmdHandle_t pgmd, void* dvHandle, int* status) {
-   int d_s[] = {1, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdGetDVSymbolPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdGetDVSymbolRecord(gmdHandle_t pgmd, void* dvHandle, void** symIterPtr) {
-   int d_s[] = {15, 1, 2};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(symIterPtr)
-   printAndReturn(gmdGetDVSymbolRecord, 2, int)
-}
-
-void* GMD_CALLCONV d_gmdGetDVSymbolRecordPy(gmdHandle_t pgmd, void* dvHandle, int* status) {
-   int d_s[] = {1, 1, 20};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(status)
-   printAndReturn(gmdGetDVSymbolRecordPy, 2, void *)
-}
-
-int  GMD_CALLCONV d_gmdGetDVIndicator(gmdHandle_t pgmd, void* dvHandle, int viol[]) {
-   int d_s[] = {15, 1, 8};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(dvHandle)
-   GAMS_UNUSED(viol)
-   printAndReturn(gmdGetDVIndicator, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdInitUpdate(gmdHandle_t pgmd, void* gmoPtr) {
-   int d_s[] = {15, 1};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(gmoPtr)
-   printAndReturn(gmdInitUpdate, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdUpdateModelSymbol(gmdHandle_t pgmd, void* gamsSymPtr, int actionType, void* dataSymPtr, int updateType, int* noMatchCnt) {
-   int d_s[] = {15, 1, 3, 1, 3, 21};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(gamsSymPtr)
-   GAMS_UNUSED(actionType)
-   GAMS_UNUSED(dataSymPtr)
-   GAMS_UNUSED(updateType)
-   GAMS_UNUSED(noMatchCnt)
-   printAndReturn(gmdUpdateModelSymbol, 5, int)
-}
-
-int  GMD_CALLCONV d_gmdCallSolver(gmdHandle_t pgmd, const char* solvername) {
-   int d_s[] = {15, 11};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(solvername)
-   printAndReturn(gmdCallSolver, 1, int)
-}
-
-int  GMD_CALLCONV d_gmdCallSolverTimed(gmdHandle_t pgmd, const char* solvername, double* time) {
-   int d_s[] = {15, 11, 14};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(solvername)
-   GAMS_UNUSED(time)
-   printAndReturn(gmdCallSolverTimed, 2, int)
-}
-
-int  GMD_CALLCONV d_gmdDenseSymbolToDenseArray(gmdHandle_t pgmd, void* cube, int vDim[], void* symPtr, int field) {
-   int d_s[] = {15, 1, 8, 1, 3};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(cube)
-   GAMS_UNUSED(vDim)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(field)
-   printAndReturn(gmdDenseSymbolToDenseArray, 4, int)
-}
-
-int  GMD_CALLCONV d_gmdSparseSymbolToDenseArray(gmdHandle_t pgmd, void* cube, int vDim[], void* symPtr, void** vDomPtr, int field, int* nDropped) {
-   int d_s[] = {15, 1, 8, 1, 2, 3, 4};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(cube)
-   GAMS_UNUSED(vDim)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(vDomPtr)
-   GAMS_UNUSED(field)
-   GAMS_UNUSED(nDropped)
-   printAndReturn(gmdSparseSymbolToDenseArray, 6, int)
-}
-
-int  GMD_CALLCONV
-d_gmdSparseSymbolToSqzdArray(gmdHandle_t pgmd, void* cube, int vDim[], void* symPtr, void** vDomSqueezePtr, void** vDomPtr, int field,
-      int* nDropped) {
-   int d_s[] = {15, 1, 8, 1, 2, 2, 3, 4};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(cube)
-   GAMS_UNUSED(vDim)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(vDomSqueezePtr)
-   GAMS_UNUSED(vDomPtr)
-   GAMS_UNUSED(field)
-   GAMS_UNUSED(nDropped)
-   printAndReturn(gmdSparseSymbolToSqzdArray, 7, int)
-}
-
-int  GMD_CALLCONV d_gmdDenseArrayToSymbol(gmdHandle_t pgmd, void* symPtr, void** vDomPtr, void* cube, int vDim[]) {
-   int d_s[] = {15, 1, 2, 1, 8};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(vDomPtr)
-   GAMS_UNUSED(cube)
-   GAMS_UNUSED(vDim)
-   printAndReturn(gmdDenseArrayToSymbol, 4, int)
-}
-
-int  GMD_CALLCONV d_gmdDenseArraySlicesToSymbol(gmdHandle_t pgmd, void* symPtr, void** vDomSlicePtr, void** vDomPtr, void* cube, int vDim[]) {
-   int d_s[] = {15, 1, 2, 2, 1, 8};
-   GAMS_UNUSED(pgmd)
-   GAMS_UNUSED(symPtr)
-   GAMS_UNUSED(vDomSlicePtr)
-   GAMS_UNUSED(vDomPtr)
-   GAMS_UNUSED(cube)
-   GAMS_UNUSED(vDim)
-   printAndReturn(gmdDenseArraySlicesToSymbol, 5, int)
+int  GMD_CALLCONV d_gmdInitFromGDX (gmdHandle_t pgmd, const char *fileName)
+{
+  int d_s[]={15,11};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(fileName)
+  printAndReturn(gmdInitFromGDX,1,int )
+}
+
+int  GMD_CALLCONV d_gmdInitFromDict (gmdHandle_t pgmd, void *gmoPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(gmoPtr)
+  printAndReturn(gmdInitFromDict,1,int )
+}
+
+int  GMD_CALLCONV d_gmdInitFromCMEX (gmdHandle_t pgmd, TFindSymbol_t findSymbol, TDataReadRawStart_t dataReadRawStart, TDataReadRaw_t dataReadRaw, TDataReadDone_t dataReadDone, TGetElemText_t getElemText, TPrintLog_t printLog, void *usrmem)
+{
+  int d_s[]={15,59,59,59,59,59,59,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(findSymbol)
+  GAMS_UNUSED(dataReadRawStart)
+  GAMS_UNUSED(dataReadRaw)
+  GAMS_UNUSED(dataReadDone)
+  GAMS_UNUSED(getElemText)
+  GAMS_UNUSED(printLog)
+  GAMS_UNUSED(usrmem)
+  printAndReturn(gmdInitFromCMEX,7,int )
+}
+
+int  GMD_CALLCONV d_gmdInitFromDB (gmdHandle_t pgmd, void *gmdSrcPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(gmdSrcPtr)
+  printAndReturn(gmdInitFromDB,1,int )
+}
+
+int  GMD_CALLCONV d_gmdRegisterGMO (gmdHandle_t pgmd, void *gmoPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(gmoPtr)
+  printAndReturn(gmdRegisterGMO,1,int )
+}
+
+int  GMD_CALLCONV d_gmdCloseGDX (gmdHandle_t pgmd, int loadRemain)
+{
+  int d_s[]={15,15};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(loadRemain)
+  printAndReturn(gmdCloseGDX,1,int )
+}
+
+int  GMD_CALLCONV d_gmdAddSymbolX (gmdHandle_t pgmd, const char *symName, int aDim, int stype, int userInfo, const char *explText, void **vDomPtrIn, const char *keyStr[], void **symPtr)
+{
+  int d_s[]={15,11,3,3,3,11,2,55,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symName)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(stype)
+  GAMS_UNUSED(userInfo)
+  GAMS_UNUSED(explText)
+  GAMS_UNUSED(vDomPtrIn)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(symPtr)
+  printAndReturn(gmdAddSymbolX,8,int )
+}
+
+void * GMD_CALLCONV d_gmdAddSymbolXPy (gmdHandle_t pgmd, const char *symName, int aDim, int stype, int userInfo, const char *explText, void **vDomPtrIn, const char *keyStr[], int *status)
+{
+  int d_s[]={1,11,3,3,3,11,2,55,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symName)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(stype)
+  GAMS_UNUSED(userInfo)
+  GAMS_UNUSED(explText)
+  GAMS_UNUSED(vDomPtrIn)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdAddSymbolXPy,8,void *)
+}
+
+int  GMD_CALLCONV d_gmdAddSymbol (gmdHandle_t pgmd, const char *symName, int aDim, int stype, int userInfo, const char *explText, void **symPtr)
+{
+  int d_s[]={15,11,3,3,3,11,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symName)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(stype)
+  GAMS_UNUSED(userInfo)
+  GAMS_UNUSED(explText)
+  GAMS_UNUSED(symPtr)
+  printAndReturn(gmdAddSymbol,6,int )
+}
+
+void * GMD_CALLCONV d_gmdAddSymbolPy (gmdHandle_t pgmd, const char *symName, int aDim, int stype, int userInfo, const char *explText, int *status)
+{
+  int d_s[]={1,11,3,3,3,11,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symName)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(stype)
+  GAMS_UNUSED(userInfo)
+  GAMS_UNUSED(explText)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdAddSymbolPy,6,void *)
+}
+
+int  GMD_CALLCONV d_gmdFindSymbol (gmdHandle_t pgmd, const char *symName, void **symPtr)
+{
+  int d_s[]={15,11,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symName)
+  GAMS_UNUSED(symPtr)
+  printAndReturn(gmdFindSymbol,2,int )
+}
+
+void * GMD_CALLCONV d_gmdFindSymbolPy (gmdHandle_t pgmd, const char *symName, int *status)
+{
+  int d_s[]={1,11,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symName)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdFindSymbolPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdGetSymbolByIndex (gmdHandle_t pgmd, int idx, void **symPtr)
+{
+  int d_s[]={15,3,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(idx)
+  GAMS_UNUSED(symPtr)
+  printAndReturn(gmdGetSymbolByIndex,2,int )
+}
+
+void * GMD_CALLCONV d_gmdGetSymbolByIndexPy (gmdHandle_t pgmd, int idx, int *status)
+{
+  int d_s[]={1,3,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(idx)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdGetSymbolByIndexPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdClearSymbol (gmdHandle_t pgmd, void *symPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  printAndReturn(gmdClearSymbol,1,int )
+}
+
+int  GMD_CALLCONV d_gmdCopySymbol (gmdHandle_t pgmd, void *tarSymPtr, void *srcSymPtr)
+{
+  int d_s[]={15,1,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(tarSymPtr)
+  GAMS_UNUSED(srcSymPtr)
+  printAndReturn(gmdCopySymbol,2,int )
+}
+
+int  GMD_CALLCONV d_gmdFindRecord (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], void **symIterPtr)
+{
+  int d_s[]={15,1,55,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdFindRecord,3,int )
+}
+
+void * GMD_CALLCONV d_gmdFindRecordPy (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], int *status)
+{
+  int d_s[]={1,1,55,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdFindRecordPy,3,void *)
+}
+
+int  GMD_CALLCONV d_gmdFindFirstRecord (gmdHandle_t pgmd, void *symPtr, void **symIterPtr)
+{
+  int d_s[]={15,1,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdFindFirstRecord,2,int )
+}
+
+void * GMD_CALLCONV d_gmdFindFirstRecordPy (gmdHandle_t pgmd, void *symPtr, int *status)
+{
+  int d_s[]={1,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdFindFirstRecordPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdFindFirstRecordSlice (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], void **symIterPtr)
+{
+  int d_s[]={15,1,55,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdFindFirstRecordSlice,3,int )
+}
+
+void * GMD_CALLCONV d_gmdFindFirstRecordSlicePy (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], int *status)
+{
+  int d_s[]={1,1,55,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdFindFirstRecordSlicePy,3,void *)
+}
+
+int  GMD_CALLCONV d_gmdFindLastRecord (gmdHandle_t pgmd, void *symPtr, void **symIterPtr)
+{
+  int d_s[]={15,1,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdFindLastRecord,2,int )
+}
+
+void * GMD_CALLCONV d_gmdFindLastRecordPy (gmdHandle_t pgmd, void *symPtr, int *status)
+{
+  int d_s[]={1,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdFindLastRecordPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdFindLastRecordSlice (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], void **symIterPtr)
+{
+  int d_s[]={15,1,55,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdFindLastRecordSlice,3,int )
+}
+
+void * GMD_CALLCONV d_gmdFindLastRecordSlicePy (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], int *status)
+{
+  int d_s[]={1,1,55,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdFindLastRecordSlicePy,3,void *)
+}
+
+int  GMD_CALLCONV d_gmdRecordMoveNext (gmdHandle_t pgmd, void *symIterPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdRecordMoveNext,1,int )
+}
+
+int  GMD_CALLCONV d_gmdRecordHasNext (gmdHandle_t pgmd, void *symIterPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdRecordHasNext,1,int )
+}
+
+int  GMD_CALLCONV d_gmdRecordMovePrev (gmdHandle_t pgmd, void *symIterPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdRecordMovePrev,1,int )
+}
+
+int  GMD_CALLCONV d_gmdSameRecord (gmdHandle_t pgmd, void *symIterPtrSrc, void *symIterPtrtar)
+{
+  int d_s[]={15,1,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtrSrc)
+  GAMS_UNUSED(symIterPtrtar)
+  printAndReturn(gmdSameRecord,2,int )
+}
+
+int  GMD_CALLCONV d_gmdRecordHasPrev (gmdHandle_t pgmd, void *symIterPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdRecordHasPrev,1,int )
+}
+
+int  GMD_CALLCONV d_gmdGetElemText (gmdHandle_t pgmd, void *symIterPtr, char *txt)
+{
+  int d_s[]={15,1,12};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(txt)
+  printAndReturn(gmdGetElemText,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetLevel (gmdHandle_t pgmd, void *symIterPtr, double *value)
+{
+  int d_s[]={15,1,14};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdGetLevel,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetLower (gmdHandle_t pgmd, void *symIterPtr, double *value)
+{
+  int d_s[]={15,1,14};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdGetLower,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetUpper (gmdHandle_t pgmd, void *symIterPtr, double *value)
+{
+  int d_s[]={15,1,14};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdGetUpper,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetMarginal (gmdHandle_t pgmd, void *symIterPtr, double *value)
+{
+  int d_s[]={15,1,14};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdGetMarginal,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetScale (gmdHandle_t pgmd, void *symIterPtr, double *value)
+{
+  int d_s[]={15,1,14};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdGetScale,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetElemText (gmdHandle_t pgmd, void *symIterPtr, const char *txt)
+{
+  int d_s[]={15,1,11};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(txt)
+  printAndReturn(gmdSetElemText,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetLevel (gmdHandle_t pgmd, void *symIterPtr, double value)
+{
+  int d_s[]={15,1,13};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdSetLevel,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetLower (gmdHandle_t pgmd, void *symIterPtr, double value)
+{
+  int d_s[]={15,1,13};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdSetLower,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetUpper (gmdHandle_t pgmd, void *symIterPtr, double value)
+{
+  int d_s[]={15,1,13};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdSetUpper,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetMarginal (gmdHandle_t pgmd, void *symIterPtr, double value)
+{
+  int d_s[]={15,1,13};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdSetMarginal,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetScale (gmdHandle_t pgmd, void *symIterPtr, double value)
+{
+  int d_s[]={15,1,13};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdSetScale,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetUserInfo (gmdHandle_t pgmd, void *symPtr, int value)
+{
+  int d_s[]={15,1,3};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(value)
+  printAndReturn(gmdSetUserInfo,2,int )
+}
+
+int  GMD_CALLCONV d_gmdAddRecord (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], void **symIterPtr)
+{
+  int d_s[]={15,1,55,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdAddRecord,3,int )
+}
+
+void * GMD_CALLCONV d_gmdAddRecordPy (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], int *status)
+{
+  int d_s[]={1,1,55,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdAddRecordPy,3,void *)
+}
+
+int  GMD_CALLCONV d_gmdMergeRecord (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], void **symIterPtr)
+{
+  int d_s[]={15,1,55,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdMergeRecord,3,int )
+}
+
+void * GMD_CALLCONV d_gmdMergeRecordPy (gmdHandle_t pgmd, void *symPtr, const char *keyStr[], int *status)
+{
+  int d_s[]={1,1,55,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyStr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdMergeRecordPy,3,void *)
+}
+
+int  GMD_CALLCONV d_gmdMergeRecordInt (gmdHandle_t pgmd, void *symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, void **symIterPtr, int haveValues, const double values[])
+{
+  int d_s[]={15,1,51,15,15,2,15,53};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyInt)
+  GAMS_UNUSED(checkUEL)
+  GAMS_UNUSED(wantSymIterPtr)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(haveValues)
+  GAMS_UNUSED(values)
+  printAndReturn(gmdMergeRecordInt,7,int )
+}
+
+void * GMD_CALLCONV d_gmdMergeRecordIntPy (gmdHandle_t pgmd, void *symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, int haveValues, const double values[], int *status)
+{
+  int d_s[]={1,1,51,15,15,15,53,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyInt)
+  GAMS_UNUSED(checkUEL)
+  GAMS_UNUSED(wantSymIterPtr)
+  GAMS_UNUSED(haveValues)
+  GAMS_UNUSED(values)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdMergeRecordIntPy,7,void *)
+}
+
+int  GMD_CALLCONV d_gmdMergeSetRecordInt (gmdHandle_t pgmd, void *symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, void **symIterPtr, const char *eText)
+{
+  int d_s[]={15,1,51,15,15,2,11};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyInt)
+  GAMS_UNUSED(checkUEL)
+  GAMS_UNUSED(wantSymIterPtr)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(eText)
+  printAndReturn(gmdMergeSetRecordInt,6,int )
+}
+
+void * GMD_CALLCONV d_gmdMergeSetRecordIntPy (gmdHandle_t pgmd, void *symPtr, const int keyInt[], int checkUEL, int wantSymIterPtr, const char *eText, int *status)
+{
+  int d_s[]={1,1,51,15,15,11,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyInt)
+  GAMS_UNUSED(checkUEL)
+  GAMS_UNUSED(wantSymIterPtr)
+  GAMS_UNUSED(eText)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdMergeSetRecordIntPy,6,void *)
+}
+
+int  GMD_CALLCONV d_gmdAddRecordRaw (gmdHandle_t pgmd, void *symPtr, const int keyInt[], const double values[], const char *eText)
+{
+  int d_s[]={15,1,51,53,11};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(keyInt)
+  GAMS_UNUSED(values)
+  GAMS_UNUSED(eText)
+  printAndReturn(gmdAddRecordRaw,4,int )
+}
+
+int  GMD_CALLCONV d_gmdDeleteRecord (gmdHandle_t pgmd, void *symIterPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdDeleteRecord,1,int )
+}
+
+int  GMD_CALLCONV d_gmdGetRecordRaw (gmdHandle_t pgmd, void *symIterPtr, int aDim, int keyInt[], double values[])
+{
+  int d_s[]={15,1,3,52,54};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(keyInt)
+  GAMS_UNUSED(values)
+  printAndReturn(gmdGetRecordRaw,4,int )
+}
+
+int  GMD_CALLCONV d_gmdGetKeys (gmdHandle_t pgmd, void *symIterPtr, int aDim, char *keyStr[])
+{
+  int d_s[]={15,1,3,56};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(keyStr)
+  printAndReturn(gmdGetKeys,3,int )
+}
+
+int  GMD_CALLCONV d_gmdGetKey (gmdHandle_t pgmd, void *symIterPtr, int idx, char *keyStr)
+{
+  int d_s[]={15,1,3,12};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  GAMS_UNUSED(idx)
+  GAMS_UNUSED(keyStr)
+  printAndReturn(gmdGetKey,3,int )
+}
+
+int  GMD_CALLCONV d_gmdGetDomain (gmdHandle_t pgmd, void *symPtr, int aDim, void **vDomPtrOut, char *keyStr[])
+{
+  int d_s[]={15,1,3,2,56};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(aDim)
+  GAMS_UNUSED(vDomPtrOut)
+  GAMS_UNUSED(keyStr)
+  printAndReturn(gmdGetDomain,4,int )
+}
+
+int  GMD_CALLCONV d_gmdCopySymbolIterator (gmdHandle_t pgmd, void *symIterPtrSrc, void **symIterPtrtar)
+{
+  int d_s[]={15,1,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtrSrc)
+  GAMS_UNUSED(symIterPtrtar)
+  printAndReturn(gmdCopySymbolIterator,2,int )
+}
+
+void * GMD_CALLCONV d_gmdCopySymbolIteratorPy (gmdHandle_t pgmd, void *symIterPtrSrc, int *status)
+{
+  int d_s[]={1,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtrSrc)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdCopySymbolIteratorPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdFreeSymbolIterator (gmdHandle_t pgmd, void *symIterPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdFreeSymbolIterator,1,int )
+}
+
+int  GMD_CALLCONV d_gmdMergeUel (gmdHandle_t pgmd, const char *uel, int *uelNr)
+{
+  int d_s[]={15,11,4};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(uel)
+  GAMS_UNUSED(uelNr)
+  printAndReturn(gmdMergeUel,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetUelByIndex (gmdHandle_t pgmd, int uelNr, char *keyStr)
+{
+  int d_s[]={15,3,12};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(uelNr)
+  GAMS_UNUSED(keyStr)
+  printAndReturn(gmdGetUelByIndex,2,int )
+}
+
+int  GMD_CALLCONV d_gmdInfo (gmdHandle_t pgmd, int infoKey, int *ival, double *dval, char *sval)
+{
+  int d_s[]={15,3,4,14,12};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(infoKey)
+  GAMS_UNUSED(ival)
+  GAMS_UNUSED(dval)
+  GAMS_UNUSED(sval)
+  printAndReturn(gmdInfo,4,int )
+}
+
+int  GMD_CALLCONV d_gmdSymbolInfo (gmdHandle_t pgmd, void *symPtr, int infoKey, int *ival, double *dval, char *sval)
+{
+  int d_s[]={15,1,3,4,14,12};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(infoKey)
+  GAMS_UNUSED(ival)
+  GAMS_UNUSED(dval)
+  GAMS_UNUSED(sval)
+  printAndReturn(gmdSymbolInfo,5,int )
+}
+
+int  GMD_CALLCONV d_gmdSymbolDim (gmdHandle_t pgmd, void *symPtr, int *aDim)
+{
+  int d_s[]={15,1,4};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(aDim)
+  printAndReturn(gmdSymbolDim,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSymbolType (gmdHandle_t pgmd, void *symPtr, int *stype)
+{
+  int d_s[]={15,1,4};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(stype)
+  printAndReturn(gmdSymbolType,2,int )
+}
+
+int  GMD_CALLCONV d_gmdWriteGDX (gmdHandle_t pgmd, const char *fileName, int noDomChk)
+{
+  int d_s[]={15,11,15};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(fileName)
+  GAMS_UNUSED(noDomChk)
+  printAndReturn(gmdWriteGDX,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetSpecialValuesX (gmdHandle_t pgmd, const double specVal[], int *specValType)
+{
+  int d_s[]={15,57,21};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(specVal)
+  GAMS_UNUSED(specValType)
+  printAndReturn(gmdSetSpecialValuesX,2,int )
+}
+
+int  GMD_CALLCONV d_gmdSetSpecialValues (gmdHandle_t pgmd, const double specVal[])
+{
+  int d_s[]={15,57};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(specVal)
+  printAndReturn(gmdSetSpecialValues,1,int )
+}
+
+int  GMD_CALLCONV d_gmdGetSpecialValues (gmdHandle_t pgmd, double specVal[])
+{
+  int d_s[]={15,58};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(specVal)
+  printAndReturn(gmdGetSpecialValues,1,int )
+}
+
+int  GMD_CALLCONV d_gmdSetDebug (gmdHandle_t pgmd, int debugLevel)
+{
+  int d_s[]={15,3};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(debugLevel)
+  printAndReturn(gmdSetDebug,1,int )
+}
+
+int  GMD_CALLCONV d_gmdGetLastError (gmdHandle_t pgmd, char *msg)
+{
+  int d_s[]={15,12};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(msg)
+  printAndReturn(gmdGetLastError,1,int )
+}
+
+int  GMD_CALLCONV d_gmdPrintLog (gmdHandle_t pgmd, const char *msg)
+{
+  int d_s[]={15,11};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(msg)
+  printAndReturn(gmdPrintLog,1,int )
+}
+
+int  GMD_CALLCONV d_gmdStartWriteRecording (gmdHandle_t pgmd)
+{
+  int d_s[]={15};
+  GAMS_UNUSED(pgmd)
+  printAndReturn(gmdStartWriteRecording,0,int )
+}
+
+int  GMD_CALLCONV d_gmdStopWriteRecording (gmdHandle_t pgmd)
+{
+  int d_s[]={15};
+  GAMS_UNUSED(pgmd)
+  printAndReturn(gmdStopWriteRecording,0,int )
+}
+
+int  GMD_CALLCONV d_gmdCheckDBDV (gmdHandle_t pgmd, int *dv)
+{
+  int d_s[]={15,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dv)
+  printAndReturn(gmdCheckDBDV,1,int )
+}
+
+int  GMD_CALLCONV d_gmdCheckSymbolDV (gmdHandle_t pgmd, void *symPtr, int *dv)
+{
+  int d_s[]={15,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(dv)
+  printAndReturn(gmdCheckSymbolDV,2,int )
+}
+
+int  GMD_CALLCONV d_gmdGetFirstDBDV (gmdHandle_t pgmd, void **dvHandle)
+{
+  int d_s[]={15,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  printAndReturn(gmdGetFirstDBDV,1,int )
+}
+
+void * GMD_CALLCONV d_gmdGetFirstDBDVPy (gmdHandle_t pgmd, int *status)
+{
+  int d_s[]={1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdGetFirstDBDVPy,1,void *)
+}
+
+int  GMD_CALLCONV d_gmdGetFirstDVInSymbol (gmdHandle_t pgmd, void *symPtr, void **dvHandle)
+{
+  int d_s[]={15,1,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(dvHandle)
+  printAndReturn(gmdGetFirstDVInSymbol,2,int )
+}
+
+void * GMD_CALLCONV d_gmdGetFirstDVInSymbolPy (gmdHandle_t pgmd, void *symPtr, int *status)
+{
+  int d_s[]={1,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdGetFirstDVInSymbolPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdDomainCheckDone (gmdHandle_t pgmd)
+{
+  int d_s[]={15};
+  GAMS_UNUSED(pgmd)
+  printAndReturn(gmdDomainCheckDone,0,int )
+}
+
+int  GMD_CALLCONV d_gmdGetFirstDVInNextSymbol (gmdHandle_t pgmd, void *dvHandle, int *nextavail)
+{
+  int d_s[]={15,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(nextavail)
+  printAndReturn(gmdGetFirstDVInNextSymbol,2,int )
+}
+
+int  GMD_CALLCONV d_gmdMoveNextDVInSymbol (gmdHandle_t pgmd, void *dvHandle, int *nextavail)
+{
+  int d_s[]={15,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(nextavail)
+  printAndReturn(gmdMoveNextDVInSymbol,2,int )
+}
+
+int  GMD_CALLCONV d_gmdFreeDVHandle (gmdHandle_t pgmd, void *dvHandle)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  printAndReturn(gmdFreeDVHandle,1,int )
+}
+
+int  GMD_CALLCONV d_gmdGetDVSymbol (gmdHandle_t pgmd, void *dvHandle, void **symPtr)
+{
+  int d_s[]={15,1,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(symPtr)
+  printAndReturn(gmdGetDVSymbol,2,int )
+}
+
+void * GMD_CALLCONV d_gmdGetDVSymbolPy (gmdHandle_t pgmd, void *dvHandle, int *status)
+{
+  int d_s[]={1,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdGetDVSymbolPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdGetDVSymbolRecord (gmdHandle_t pgmd, void *dvHandle, void **symIterPtr)
+{
+  int d_s[]={15,1,2};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(symIterPtr)
+  printAndReturn(gmdGetDVSymbolRecord,2,int )
+}
+
+void * GMD_CALLCONV d_gmdGetDVSymbolRecordPy (gmdHandle_t pgmd, void *dvHandle, int *status)
+{
+  int d_s[]={1,1,20};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(status)
+  printAndReturn(gmdGetDVSymbolRecordPy,2,void *)
+}
+
+int  GMD_CALLCONV d_gmdGetDVIndicator (gmdHandle_t pgmd, void *dvHandle, int viol[])
+{
+  int d_s[]={15,1,8};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(dvHandle)
+  GAMS_UNUSED(viol)
+  printAndReturn(gmdGetDVIndicator,2,int )
+}
+
+int  GMD_CALLCONV d_gmdInitUpdate (gmdHandle_t pgmd, void *gmoPtr)
+{
+  int d_s[]={15,1};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(gmoPtr)
+  printAndReturn(gmdInitUpdate,1,int )
+}
+
+int  GMD_CALLCONV d_gmdUpdateModelSymbol (gmdHandle_t pgmd, void *gamsSymPtr, int actionType, void *dataSymPtr, int updateType, int *noMatchCnt)
+{
+  int d_s[]={15,1,3,1,3,21};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(gamsSymPtr)
+  GAMS_UNUSED(actionType)
+  GAMS_UNUSED(dataSymPtr)
+  GAMS_UNUSED(updateType)
+  GAMS_UNUSED(noMatchCnt)
+  printAndReturn(gmdUpdateModelSymbol,5,int )
+}
+
+int  GMD_CALLCONV d_gmdCallSolver (gmdHandle_t pgmd, const char *solvername)
+{
+  int d_s[]={15,11};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(solvername)
+  printAndReturn(gmdCallSolver,1,int )
+}
+
+int  GMD_CALLCONV d_gmdCallSolverTimed (gmdHandle_t pgmd, const char *solvername, double *time)
+{
+  int d_s[]={15,11,14};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(solvername)
+  GAMS_UNUSED(time)
+  printAndReturn(gmdCallSolverTimed,2,int )
+}
+
+int  GMD_CALLCONV d_gmdDenseSymbolToDenseArray (gmdHandle_t pgmd, void *cube, int vDim[], void *symPtr, int field)
+{
+  int d_s[]={15,1,8,1,3};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(cube)
+  GAMS_UNUSED(vDim)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(field)
+  printAndReturn(gmdDenseSymbolToDenseArray,4,int )
+}
+
+int  GMD_CALLCONV d_gmdSparseSymbolToDenseArray (gmdHandle_t pgmd, void *cube, int vDim[], void *symPtr, void **vDomPtr, int field, int *nDropped)
+{
+  int d_s[]={15,1,8,1,2,3,4};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(cube)
+  GAMS_UNUSED(vDim)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(vDomPtr)
+  GAMS_UNUSED(field)
+  GAMS_UNUSED(nDropped)
+  printAndReturn(gmdSparseSymbolToDenseArray,6,int )
+}
+
+int  GMD_CALLCONV d_gmdSparseSymbolToSqzdArray (gmdHandle_t pgmd, void *cube, int vDim[], void *symPtr, void **vDomSqueezePtr, void **vDomPtr, int field, int *nDropped)
+{
+  int d_s[]={15,1,8,1,2,2,3,4};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(cube)
+  GAMS_UNUSED(vDim)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(vDomSqueezePtr)
+  GAMS_UNUSED(vDomPtr)
+  GAMS_UNUSED(field)
+  GAMS_UNUSED(nDropped)
+  printAndReturn(gmdSparseSymbolToSqzdArray,7,int )
+}
+
+int  GMD_CALLCONV d_gmdDenseArrayToSymbol (gmdHandle_t pgmd, void *symPtr, void **vDomPtr, void *cube, int vDim[])
+{
+  int d_s[]={15,1,2,1,8};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(vDomPtr)
+  GAMS_UNUSED(cube)
+  GAMS_UNUSED(vDim)
+  printAndReturn(gmdDenseArrayToSymbol,4,int )
+}
+
+int  GMD_CALLCONV d_gmdDenseArraySlicesToSymbol (gmdHandle_t pgmd, void *symPtr, void **vDomSlicePtr, void **vDomPtr, void *cube, int vDim[])
+{
+  int d_s[]={15,1,2,2,1,8};
+  GAMS_UNUSED(pgmd)
+  GAMS_UNUSED(symPtr)
+  GAMS_UNUSED(vDomSlicePtr)
+  GAMS_UNUSED(vDomPtr)
+  GAMS_UNUSED(cube)
+  GAMS_UNUSED(vDim)
+  printAndReturn(gmdDenseArraySlicesToSymbol,5,int )
 }
 
 /* return dirName on success, NULL on failure */
-static char* extractFileDirFileName(const char* fileName, char* dirName, char* fName) {
-   int fileNameLen, shave = 0;
-   const char* end, * s;
-   char* t;
+static char *
+extractFileDirFileName (const char *fileName, char *dirName, char *fName)
+{
+  int fileNameLen, shave=0;
+  const char *end, *s;
+  char *t;
 
-   if (NULL == fileName || NULL == dirName || fName == NULL) {
-      return NULL;
-   }
-   fileNameLen = (int) strlen(fileName);
+  if (NULL == fileName || NULL == dirName || fName == NULL) {
+    return NULL;
+  }
+  fileNameLen = (int) strlen(fileName);
 
 #if defined(_WIN32)
-                                                                                                                           /* get the last delimiter */
+  /* get the last delimiter */
   for (end = fileName + fileNameLen - 1;
        end >= fileName && '\\' != *end && ':' != *end;  end--);
   /* shave off the trailing delimiter if:
@@ -1021,34 +1104,35 @@ static char* extractFileDirFileName(const char* fileName, char* dirName, char* f
     end--; shave=1;
   }
 #else
-   /* non-Windows: implicitly, this is the Unix version */
-   /* get the last delimiter */
-   for (end = fileName + fileNameLen - 1; end >= fileName && '/' != *end; end--);
+  /* non-Windows: implicitly, this is the Unix version */
+  /* get the last delimiter */
+  for (end = fileName + fileNameLen - 1;
+       end >= fileName && '/' != *end;  end--);
 
-   if (end > fileName && '/' == *end) {
-      end--;
-      shave = 1;
-   }
+  if (end > fileName && '/' == *end) {
+    end--; shave=1;
+  }
 #endif  /* if defined(_WIN32) */
 
-   for (s = fileName, t = dirName; s <= end; s++, t++)
-      *t = *s;
-   *t = '\0';
+  for (s = fileName, t = dirName;  s <= end;  s++, t++)
+    *t = *s;
+  *t = '\0';
 
-   if (shave)
-      s++;
-   for (t = fName; s <= fileName + fileNameLen - 1; s++, t++)
-      *t = *s;
-   *t = '\0';
+  if (shave) s++;
+  for (t = fName;  s <= fileName + fileNameLen - 1;  s++, t++)
+    *t = *s;
+  *t = '\0';
 
-   return dirName;
+  return dirName;
 } /* extractFileDirFileName */
 
-static soHandle_t loadLib(const char* libName, char** errMsg) {
-   soHandle_t h;
+static soHandle_t
+loadLib (const char *libName, char **errMsg)
+{
+  soHandle_t h;
 
 #if defined(_WIN32)
-                                                                                                                           #if defined(UNICODE) || defined (_UNICODE)
+#if defined(UNICODE) || defined (_UNICODE)
   h = LoadLibraryA(libName);
 #else
   h = LoadLibrary(libName);
@@ -1060,73 +1144,77 @@ static soHandle_t loadLib(const char* libName, char** errMsg) {
     *errMsg = NULL;
   }
 #else
-   (void) dlerror();
-   h = dlopen(libName, RTLD_NOW);
-   if (NULL == h) {
-      *errMsg = dlerror();
-   }
-   else {
-      *errMsg = NULL;
-   }
+  (void) dlerror();
+  h = dlopen (libName, RTLD_NOW);
+  if (NULL == h) {
+    *errMsg = dlerror();
+  }
+  else {
+    *errMsg = NULL;
+  }
 #endif
 
-   return h;
+  return h;
 } /* loadLib */
 
-static int unLoadLib(soHandle_t hh) {
-   int rc;
+static int
+unLoadLib (soHandle_t hh)
+{
+  int rc;
 
 #if defined(_WIN32)
-                                                                                                                           rc = FreeLibrary (hh);
+  rc = FreeLibrary (hh);
   return ! rc;
 #else
-   rc = dlclose(hh);
+  rc = dlclose (hh);
 #endif
-   return rc;
+  return rc;
 } /* unLoadLib */
 
-static void* loadSym(soHandle_t h, const char* sym, char** errMsg) {
-   void* s;
-   const char* from;
-   char* to;
-   const char* tripSym;
-   char lcbuf[257];
-   char ucbuf[257];
-   size_t symLen;
-   int trip;
+static void *
+loadSym (soHandle_t h, const char *sym, char **errMsg)
+{
+  void *s;
+  const char *from;
+  char *to;
+  const char *tripSym;
+  char lcbuf[257];
+  char ucbuf[257];
+  size_t symLen;
+  int trip;
 
-   /* search in this order:
+  /* search in this order:
    *  1. lower
    *  2. original
    *  3. upper
    */
 
-   symLen = 0;
-   for (trip = 1; trip <= 3; trip++) {
-      switch (trip) {
-         case 1:                             /* lower */
-            for (from = sym, to = lcbuf; *from; from++, to++) {
-               *to = tolower(*from);
-            }
-            symLen = from - sym;
-            lcbuf[symLen] = '\0';
-            tripSym = lcbuf;
-            break;
-         case 2:                             /* original */
-            tripSym = sym;
-            break;
-         case 3:                             /* upper */
-            for (from = sym, to = ucbuf; *from; from++, to++) {
-               *to = toupper(*from);
-            }
-            ucbuf[symLen] = '\0';
-            tripSym = ucbuf;
-            break;
-         default:
-            tripSym = sym;
-      } /* end switch */
+  symLen = 0;
+  for (trip = 1;  trip <= 3;  trip++) {
+    switch (trip) {
+    case 1:                             /* lower */
+      for (from = sym, to = lcbuf;  *from;  from++, to++) {
+        *to = tolower(*from);
+      }
+      symLen = from - sym;
+      lcbuf[symLen] = '\0';
+      tripSym = lcbuf;
+      break;
+    case 2:                             /* original */
+      tripSym = sym;
+      break;
+    case 3:                             /* upper */
+      for (from = sym, to = ucbuf;  *from;  from++, to++) {
+        *to = toupper(*from);
+      }
+      ucbuf[symLen] = '\0';
+      tripSym = ucbuf;
+      break;
+    default:
+      tripSym = sym;
+    } /* end switch */
 #if defined(_WIN32)
-                                                                                                                              #  if defined(HAVE_INTPTR_T)
+#  if defined(HAVE_INTPTR_T)
     s = (void *)(intptr_t)GetProcAddress (h, tripSym);
 #  else
     s = (void *)GetProcAddress (h, tripSym);
@@ -1136,32 +1224,32 @@ static void* loadSym(soHandle_t h, const char* sym, char** errMsg) {
       return s;
     }
 #else
-      (void) dlerror();
-      s = dlsym(h, tripSym);
-      *errMsg = dlerror();
-      if (NULL == *errMsg) {
-         return s;
-      }
+    (void) dlerror();
+    s = dlsym (h, tripSym);
+    *errMsg = dlerror();
+    if (NULL == *errMsg) {
+      return s;
+    }
 #endif
-   } /* end loop over symbol name variations */
+  } /* end loop over symbol name variations */
 
-   return NULL;
+  return NULL;
 } /* loadSym */
 
 /* TNAME = type name, ENAME = exported name */
 #if defined(HAVE_INTPTR_T)
-                                                                                                                        #  define LOADIT(TNAME,ENAME) symName = ENAME; TNAME = (TNAME##_t) (intptr_t) loadSym (h, symName, &errMsg); if (NULL == TNAME) goto symMissing
+#  define LOADIT(TNAME,ENAME) symName = ENAME; TNAME = (TNAME##_t) (intptr_t) loadSym (h, symName, &errMsg); if (NULL == TNAME) goto symMissing
 #  define LOADIT_ERR_OK(TNAME,ENAME) symName = ENAME; TNAME = (TNAME##_t) (intptr_t) loadSym (h, symName, &errMsg)
 #else
-#  define LOADIT(TNAME, ENAME) symName = ENAME; TNAME = (TNAME##_t) loadSym (h, symName, &errMsg); if (NULL == TNAME) goto symMissing
-#  define LOADIT_ERR_OK(TNAME, ENAME) symName = ENAME; TNAME = (TNAME##_t) loadSym (h, symName, &errMsg)
+#  define LOADIT(TNAME,ENAME) symName = ENAME; TNAME = (TNAME##_t) loadSym (h, symName, &errMsg); if (NULL == TNAME) goto symMissing
+#  define LOADIT_ERR_OK(TNAME,ENAME) symName = ENAME; TNAME = (TNAME##_t) loadSym (h, symName, &errMsg)
 #endif
 
-#if !defined(GMS_DLL_BASENAME)
+#if ! defined(GMS_DLL_BASENAME)
 # define GMS_DLL_BASENAME "gmdcclib"
 #endif
 #if defined(_WIN32)
-                                                                                                                        # if ! defined(GMS_DLL_PREFIX)
+# if ! defined(GMS_DLL_PREFIX)
 #  define GMS_DLL_PREFIX ""
 # endif
 # if ! defined(GMS_DLL_EXTENSION)
@@ -1177,25 +1265,25 @@ static void* loadSym(soHandle_t h, const char* sym, char** errMsg) {
 
 #else  /* start non-Windows */
 
-# if !defined(GMS_DLL_PREFIX)
+# if ! defined(GMS_DLL_PREFIX)
 #  define GMS_DLL_PREFIX "lib"
 # endif
-# if !defined(GMS_DLL_EXTENSION)
+# if ! defined(GMS_DLL_EXTENSION)
 #  if defined(__APPLE__)
 #   define GMS_DLL_EXTENSION ".dylib"
 #  else
 #   define GMS_DLL_EXTENSION ".so"
 #  endif
 # endif
-# if !defined(GMS_DLL_SUFFIX)
+# if ! defined(GMS_DLL_SUFFIX)
 #  if defined(__WORDSIZE)
-                                                                                                                        #   if 64 == __WORDSIZE
+#   if 64 == __WORDSIZE
 #    define GMS_DLL_SUFFIX "64"
 #   else
 #    define GMS_DLL_SUFFIX ""
 #   endif
 #  elif defined(__SIZEOF_POINTER__)
-                                                                                                                        #   if 4 == __SIZEOF_POINTER__
+#   if 4 == __SIZEOF_POINTER__
 #    define GMS_DLL_SUFFIX ""
 #   elif 8 == __SIZEOF_POINTER__
 #    define GMS_DLL_SUFFIX "64"
@@ -1203,801 +1291,506 @@ static void* loadSym(soHandle_t h, const char* sym, char** errMsg) {
 #  elif defined(__sparcv9)
 #   define GMS_DLL_SUFFIX "64"
 #  elif defined(__sparc)
-                                                                                                                        /*  check __sparc after __sparcv9, both are defined for 64-bit */
+/*  check __sparc after __sparcv9, both are defined for 64-bit */
 #   define GMS_DLL_SUFFIX ""
 #  endif
 # endif /* ! defined(GMS_DLL_SUFFIX) */
 #endif
 
 /* XLibraryLoad: return 0 on success, ~0 on failure */
-static int XLibraryLoad(const char* dllName, char* errBuf, int errBufSize) {
-   char* errMsg;
-   const char* symName;
-   int rc, cl;
+static int
+XLibraryLoad (const char *dllName, char *errBuf, int errBufSize)
+{
+  char *errMsg;
+  const char *symName;
+  int rc, cl;
 
-   if (isLoaded)
-      return 0;
-   h = loadLib(dllName, &errMsg);
-   if (NULL == h) {
-      if (NULL != errBuf) {
-         int elen;
-         char* ebuf;
-         elen = errBufSize;
-         ebuf = errBuf;
-         rc = sprintf(ebuf, "%.*s", elen, "Could not load shared library ");
-         elen -= rc;
-         ebuf += rc;
-         rc = sprintf(ebuf, "%.*s", elen, dllName);
-         elen -= rc;
-         ebuf += rc;
-         rc = sprintf(ebuf, "%.*s", elen, ": ");
-         elen -= rc;
-         ebuf += rc;
-         rc = sprintf(ebuf, "%.*s", elen, errMsg);
-         /* elen -= rc;  ebuf+= rc; */
-         errBuf[errBufSize - 1] = '\0';
-      }
-      return 1;
-   }
-   else {
-      /* printf ("Loaded shared library %s successfully\n", dllName); */
-      if (errBuf && errBufSize)
-         errBuf[0] = '\0';
-   }
+  if (isLoaded)
+    return 0;
+  h = loadLib (dllName, &errMsg);
+  if (NULL == h) {
+    if (NULL != errBuf) {
+      int elen;
+      char* ebuf;
+      elen = errBufSize;  ebuf = errBuf;
+      rc = sprintf (ebuf, "%.*s", elen, "Could not load shared library ");
+      elen -= rc;  ebuf+= rc;
+      rc = sprintf (ebuf, "%.*s", elen, dllName);
+      elen -= rc;  ebuf+= rc;
+      rc = sprintf (ebuf, "%.*s", elen, ": ");
+      elen -= rc;  ebuf+= rc;
+      rc = sprintf (ebuf, "%.*s", elen, errMsg);
+      /* elen -= rc;  ebuf+= rc; */
+      errBuf[errBufSize-1] = '\0';
+    }
+    return 1;
+  }
+  else {
+     /* printf ("Loaded shared library %s successfully\n", dllName); */
+    if (errBuf && errBufSize)
+      errBuf[0] = '\0';
+  }
 
-   LOADIT(XCreate, "XCreate");
-   LOADIT(XCreateD, "XCreateD");
-   LOADIT(XFree, "XFree");
-   LOADIT(XCheck, "C__XCheck");
-   LOADIT(XAPIVersion, "C__XAPIVersion");
+  LOADIT(XCreate, "XCreate");
+  LOADIT(XCreateD, "XCreateD");
+  LOADIT(XFree, "XFree");
+  LOADIT(XCheck, "C__XCheck");
+  LOADIT(XAPIVersion, "C__XAPIVersion");
 
-   if (!XAPIVersion(3, errBuf, &cl))
-      return 1;
+  if (!XAPIVersion(3,errBuf,&cl))
+    return 1;
 
 
-#define CheckAndLoad(f, nargs, prefix) \
+#define CheckAndLoad(f,nargs,prefix) \
   if (!XCheck(#f,nargs,s,errBuf)) \
     f = &d_##f; \
   else { \
     LOADIT(f,prefix #f); \
   }
-   {
-      int s[] = {15, 11};
-      CheckAndLoad(gmdInitFromGDX, 1, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdInitFromDict, 1, "C__");
-   }
-   {
-      int s[] = {15, 59, 59, 59, 59, 59, 59, 1};
-      CheckAndLoad(gmdInitFromCMEX, 7, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdInitFromDB, 1, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdRegisterGMO, 1, "C__");
-   }
-   {
-      int s[] = {15, 15};
-      CheckAndLoad(gmdCloseGDX, 1, "C__");
-   }
-   {
-      int s[] = {15, 11, 3, 3, 3, 11, 2, 55, 2};
-      CheckAndLoad(gmdAddSymbolX, 8, "C__");
-   }
-   {
-      int s[] = {1, 11, 3, 3, 3, 11, 2, 55, 20};
-      CheckAndLoad(gmdAddSymbolXPy, 8, "C__");
-   }
-   {
-      int s[] = {15, 11, 3, 3, 3, 11, 2};
-      CheckAndLoad(gmdAddSymbol, 6, "C__");
-   }
-   {
-      int s[] = {1, 11, 3, 3, 3, 11, 20};
-      CheckAndLoad(gmdAddSymbolPy, 6, "C__");
-   }
-   {
-      int s[] = {15, 11, 2};
-      CheckAndLoad(gmdFindSymbol, 2, "C__");
-   }
-   {
-      int s[] = {1, 11, 20};
-      CheckAndLoad(gmdFindSymbolPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 3, 2};
-      CheckAndLoad(gmdGetSymbolByIndex, 2, "C__");
-   }
-   {
-      int s[] = {1, 3, 20};
-      CheckAndLoad(gmdGetSymbolByIndexPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdClearSymbol, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 1};
-      CheckAndLoad(gmdCopySymbol, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 55, 2};
-      CheckAndLoad(gmdFindRecord, 3, "C__");
-   }
-   {
-      int s[] = {1, 1, 55, 20};
-      CheckAndLoad(gmdFindRecordPy, 3, "C__");
-   }
-   {
-      int s[] = {15, 1, 2};
-      CheckAndLoad(gmdFindFirstRecord, 2, "C__");
-   }
-   {
-      int s[] = {1, 1, 20};
-      CheckAndLoad(gmdFindFirstRecordPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 55, 2};
-      CheckAndLoad(gmdFindFirstRecordSlice, 3, "C__");
-   }
-   {
-      int s[] = {1, 1, 55, 20};
-      CheckAndLoad(gmdFindFirstRecordSlicePy, 3, "C__");
-   }
-   {
-      int s[] = {15, 1, 2};
-      CheckAndLoad(gmdFindLastRecord, 2, "C__");
-   }
-   {
-      int s[] = {1, 1, 20};
-      CheckAndLoad(gmdFindLastRecordPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 55, 2};
-      CheckAndLoad(gmdFindLastRecordSlice, 3, "C__");
-   }
-   {
-      int s[] = {1, 1, 55, 20};
-      CheckAndLoad(gmdFindLastRecordSlicePy, 3, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdRecordMoveNext, 1, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdRecordHasNext, 1, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdRecordMovePrev, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 1};
-      CheckAndLoad(gmdSameRecord, 2, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdRecordHasPrev, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 12};
-      CheckAndLoad(gmdGetElemText, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 14};
-      CheckAndLoad(gmdGetLevel, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 14};
-      CheckAndLoad(gmdGetLower, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 14};
-      CheckAndLoad(gmdGetUpper, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 14};
-      CheckAndLoad(gmdGetMarginal, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 14};
-      CheckAndLoad(gmdGetScale, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 11};
-      CheckAndLoad(gmdSetElemText, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 13};
-      CheckAndLoad(gmdSetLevel, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 13};
-      CheckAndLoad(gmdSetLower, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 13};
-      CheckAndLoad(gmdSetUpper, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 13};
-      CheckAndLoad(gmdSetMarginal, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 13};
-      CheckAndLoad(gmdSetScale, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 3};
-      CheckAndLoad(gmdSetUserInfo, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 55, 2};
-      CheckAndLoad(gmdAddRecord, 3, "C__");
-   }
-   {
-      int s[] = {1, 1, 55, 20};
-      CheckAndLoad(gmdAddRecordPy, 3, "C__");
-   }
-   {
-      int s[] = {15, 1, 55, 2};
-      CheckAndLoad(gmdMergeRecord, 3, "C__");
-   }
-   {
-      int s[] = {1, 1, 55, 20};
-      CheckAndLoad(gmdMergeRecordPy, 3, "C__");
-   }
-   {
-      int s[] = {15, 1, 51, 15, 15, 2, 15, 53};
-      CheckAndLoad(gmdMergeRecordInt, 7, "C__");
-   }
-   {
-      int s[] = {1, 1, 51, 15, 15, 15, 53, 20};
-      CheckAndLoad(gmdMergeRecordIntPy, 7, "C__");
-   }
-   {
-      int s[] = {15, 1, 51, 15, 15, 2, 11};
-      CheckAndLoad(gmdMergeSetRecordInt, 6, "C__");
-   }
-   {
-      int s[] = {1, 1, 51, 15, 15, 11, 20};
-      CheckAndLoad(gmdMergeSetRecordIntPy, 6, "C__");
-   }
-   {
-      int s[] = {15, 1, 51, 53, 11};
-      CheckAndLoad(gmdAddRecordRaw, 4, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdDeleteRecord, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 3, 52, 54};
-      CheckAndLoad(gmdGetRecordRaw, 4, "C__");
-   }
-   {
-      int s[] = {15, 1, 3, 56};
-      CheckAndLoad(gmdGetKeys, 3, "C__");
-   }
-   {
-      int s[] = {15, 1, 3, 12};
-      CheckAndLoad(gmdGetKey, 3, "C__");
-   }
-   {
-      int s[] = {15, 1, 3, 2, 56};
-      CheckAndLoad(gmdGetDomain, 4, "C__");
-   }
-   {
-      int s[] = {15, 1, 2};
-      CheckAndLoad(gmdCopySymbolIterator, 2, "C__");
-   }
-   {
-      int s[] = {1, 1, 20};
-      CheckAndLoad(gmdCopySymbolIteratorPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdFreeSymbolIterator, 1, "C__");
-   }
-   {
-      int s[] = {15, 11, 4};
-      CheckAndLoad(gmdMergeUel, 2, "C__");
-   }
-   {
-      int s[] = {15, 3, 12};
-      CheckAndLoad(gmdGetUelByIndex, 2, "C__");
-   }
-   {
-      int s[] = {15, 3, 4, 14, 12};
-      CheckAndLoad(gmdInfo, 4, "C__");
-   }
-   {
-      int s[] = {15, 1, 3, 4, 14, 12};
-      CheckAndLoad(gmdSymbolInfo, 5, "C__");
-   }
-   {
-      int s[] = {15, 1, 4};
-      CheckAndLoad(gmdSymbolDim, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 4};
-      CheckAndLoad(gmdSymbolType, 2, "C__");
-   }
-   {
-      int s[] = {15, 11, 15};
-      CheckAndLoad(gmdWriteGDX, 2, "C__");
-   }
-   {
-      int s[] = {15, 57, 21};
-      CheckAndLoad(gmdSetSpecialValuesX, 2, "C__");
-   }
-   {
-      int s[] = {15, 57};
-      CheckAndLoad(gmdSetSpecialValues, 1, "C__");
-   }
-   {
-      int s[] = {15, 58};
-      CheckAndLoad(gmdGetSpecialValues, 1, "C__");
-   }
-   {
-      int s[] = {15, 3};
-      CheckAndLoad(gmdSetDebug, 1, "C__");
-   }
-   {
-      int s[] = {15, 12};
-      CheckAndLoad(gmdGetLastError, 1, "C__");
-   }
-   {
-      int s[] = {15, 11};
-      CheckAndLoad(gmdPrintLog, 1, "C__");
-   }
-   {
-      int s[] = {15};
-      CheckAndLoad(gmdStartWriteRecording, 0, "C__");
-   }
-   {
-      int s[] = {15};
-      CheckAndLoad(gmdStopWriteRecording, 0, "C__");
-   }
-   {
-      int s[] = {15, 20};
-      CheckAndLoad(gmdCheckDBDV, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 20};
-      CheckAndLoad(gmdCheckSymbolDV, 2, "C__");
-   }
-   {
-      int s[] = {15, 2};
-      CheckAndLoad(gmdGetFirstDBDV, 1, "C__");
-   }
-   {
-      int s[] = {1, 20};
-      CheckAndLoad(gmdGetFirstDBDVPy, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 2};
-      CheckAndLoad(gmdGetFirstDVInSymbol, 2, "C__");
-   }
-   {
-      int s[] = {1, 1, 20};
-      CheckAndLoad(gmdGetFirstDVInSymbolPy, 2, "C__");
-   }
-   {
-      int s[] = {15};
-      CheckAndLoad(gmdDomainCheckDone, 0, "C__");
-   }
-   {
-      int s[] = {15, 1, 20};
-      CheckAndLoad(gmdGetFirstDVInNextSymbol, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 20};
-      CheckAndLoad(gmdMoveNextDVInSymbol, 2, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdFreeDVHandle, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 2};
-      CheckAndLoad(gmdGetDVSymbol, 2, "C__");
-   }
-   {
-      int s[] = {1, 1, 20};
-      CheckAndLoad(gmdGetDVSymbolPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 2};
-      CheckAndLoad(gmdGetDVSymbolRecord, 2, "C__");
-   }
-   {
-      int s[] = {1, 1, 20};
-      CheckAndLoad(gmdGetDVSymbolRecordPy, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 8};
-      CheckAndLoad(gmdGetDVIndicator, 2, "C__");
-   }
-   {
-      int s[] = {15, 1};
-      CheckAndLoad(gmdInitUpdate, 1, "C__");
-   }
-   {
-      int s[] = {15, 1, 3, 1, 3, 21};
-      CheckAndLoad(gmdUpdateModelSymbol, 5, "C__");
-   }
-   {
-      int s[] = {15, 11};
-      CheckAndLoad(gmdCallSolver, 1, "C__");
-   }
-   {
-      int s[] = {15, 11, 14};
-      CheckAndLoad(gmdCallSolverTimed, 2, "C__");
-   }
-   {
-      int s[] = {15, 1, 8, 1, 3};
-      CheckAndLoad(gmdDenseSymbolToDenseArray, 4, "C__");
-   }
-   {
-      int s[] = {15, 1, 8, 1, 2, 3, 4};
-      CheckAndLoad(gmdSparseSymbolToDenseArray, 6, "C__");
-   }
-   {
-      int s[] = {15, 1, 8, 1, 2, 2, 3, 4};
-      CheckAndLoad(gmdSparseSymbolToSqzdArray, 7, "C__");
-   }
-   {
-      int s[] = {15, 1, 2, 1, 8};
-      CheckAndLoad(gmdDenseArrayToSymbol, 4, "C__");
-   }
-   {
-      int s[] = {15, 1, 2, 2, 1, 8};
-      CheckAndLoad(gmdDenseArraySlicesToSymbol, 5, "C__");
-   }
+  {int s[]={15,11}; CheckAndLoad(gmdInitFromGDX,1,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdInitFromDict,1,"C__"); }
+  {int s[]={15,59,59,59,59,59,59,1}; CheckAndLoad(gmdInitFromCMEX,7,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdInitFromDB,1,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdRegisterGMO,1,"C__"); }
+  {int s[]={15,15}; CheckAndLoad(gmdCloseGDX,1,"C__"); }
+  {int s[]={15,11,3,3,3,11,2,55,2}; CheckAndLoad(gmdAddSymbolX,8,"C__"); }
+  {int s[]={1,11,3,3,3,11,2,55,20}; CheckAndLoad(gmdAddSymbolXPy,8,"C__"); }
+  {int s[]={15,11,3,3,3,11,2}; CheckAndLoad(gmdAddSymbol,6,"C__"); }
+  {int s[]={1,11,3,3,3,11,20}; CheckAndLoad(gmdAddSymbolPy,6,"C__"); }
+  {int s[]={15,11,2}; CheckAndLoad(gmdFindSymbol,2,"C__"); }
+  {int s[]={1,11,20}; CheckAndLoad(gmdFindSymbolPy,2,"C__"); }
+  {int s[]={15,3,2}; CheckAndLoad(gmdGetSymbolByIndex,2,"C__"); }
+  {int s[]={1,3,20}; CheckAndLoad(gmdGetSymbolByIndexPy,2,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdClearSymbol,1,"C__"); }
+  {int s[]={15,1,1}; CheckAndLoad(gmdCopySymbol,2,"C__"); }
+  {int s[]={15,1,55,2}; CheckAndLoad(gmdFindRecord,3,"C__"); }
+  {int s[]={1,1,55,20}; CheckAndLoad(gmdFindRecordPy,3,"C__"); }
+  {int s[]={15,1,2}; CheckAndLoad(gmdFindFirstRecord,2,"C__"); }
+  {int s[]={1,1,20}; CheckAndLoad(gmdFindFirstRecordPy,2,"C__"); }
+  {int s[]={15,1,55,2}; CheckAndLoad(gmdFindFirstRecordSlice,3,"C__"); }
+  {int s[]={1,1,55,20}; CheckAndLoad(gmdFindFirstRecordSlicePy,3,"C__"); }
+  {int s[]={15,1,2}; CheckAndLoad(gmdFindLastRecord,2,"C__"); }
+  {int s[]={1,1,20}; CheckAndLoad(gmdFindLastRecordPy,2,"C__"); }
+  {int s[]={15,1,55,2}; CheckAndLoad(gmdFindLastRecordSlice,3,"C__"); }
+  {int s[]={1,1,55,20}; CheckAndLoad(gmdFindLastRecordSlicePy,3,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdRecordMoveNext,1,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdRecordHasNext,1,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdRecordMovePrev,1,"C__"); }
+  {int s[]={15,1,1}; CheckAndLoad(gmdSameRecord,2,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdRecordHasPrev,1,"C__"); }
+  {int s[]={15,1,12}; CheckAndLoad(gmdGetElemText,2,"C__"); }
+  {int s[]={15,1,14}; CheckAndLoad(gmdGetLevel,2,"C__"); }
+  {int s[]={15,1,14}; CheckAndLoad(gmdGetLower,2,"C__"); }
+  {int s[]={15,1,14}; CheckAndLoad(gmdGetUpper,2,"C__"); }
+  {int s[]={15,1,14}; CheckAndLoad(gmdGetMarginal,2,"C__"); }
+  {int s[]={15,1,14}; CheckAndLoad(gmdGetScale,2,"C__"); }
+  {int s[]={15,1,11}; CheckAndLoad(gmdSetElemText,2,"C__"); }
+  {int s[]={15,1,13}; CheckAndLoad(gmdSetLevel,2,"C__"); }
+  {int s[]={15,1,13}; CheckAndLoad(gmdSetLower,2,"C__"); }
+  {int s[]={15,1,13}; CheckAndLoad(gmdSetUpper,2,"C__"); }
+  {int s[]={15,1,13}; CheckAndLoad(gmdSetMarginal,2,"C__"); }
+  {int s[]={15,1,13}; CheckAndLoad(gmdSetScale,2,"C__"); }
+  {int s[]={15,1,3}; CheckAndLoad(gmdSetUserInfo,2,"C__"); }
+  {int s[]={15,1,55,2}; CheckAndLoad(gmdAddRecord,3,"C__"); }
+  {int s[]={1,1,55,20}; CheckAndLoad(gmdAddRecordPy,3,"C__"); }
+  {int s[]={15,1,55,2}; CheckAndLoad(gmdMergeRecord,3,"C__"); }
+  {int s[]={1,1,55,20}; CheckAndLoad(gmdMergeRecordPy,3,"C__"); }
+  {int s[]={15,1,51,15,15,2,15,53}; CheckAndLoad(gmdMergeRecordInt,7,"C__"); }
+  {int s[]={1,1,51,15,15,15,53,20}; CheckAndLoad(gmdMergeRecordIntPy,7,"C__"); }
+  {int s[]={15,1,51,15,15,2,11}; CheckAndLoad(gmdMergeSetRecordInt,6,"C__"); }
+  {int s[]={1,1,51,15,15,11,20}; CheckAndLoad(gmdMergeSetRecordIntPy,6,"C__"); }
+  {int s[]={15,1,51,53,11}; CheckAndLoad(gmdAddRecordRaw,4,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdDeleteRecord,1,"C__"); }
+  {int s[]={15,1,3,52,54}; CheckAndLoad(gmdGetRecordRaw,4,"C__"); }
+  {int s[]={15,1,3,56}; CheckAndLoad(gmdGetKeys,3,"C__"); }
+  {int s[]={15,1,3,12}; CheckAndLoad(gmdGetKey,3,"C__"); }
+  {int s[]={15,1,3,2,56}; CheckAndLoad(gmdGetDomain,4,"C__"); }
+  {int s[]={15,1,2}; CheckAndLoad(gmdCopySymbolIterator,2,"C__"); }
+  {int s[]={1,1,20}; CheckAndLoad(gmdCopySymbolIteratorPy,2,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdFreeSymbolIterator,1,"C__"); }
+  {int s[]={15,11,4}; CheckAndLoad(gmdMergeUel,2,"C__"); }
+  {int s[]={15,3,12}; CheckAndLoad(gmdGetUelByIndex,2,"C__"); }
+  {int s[]={15,3,4,14,12}; CheckAndLoad(gmdInfo,4,"C__"); }
+  {int s[]={15,1,3,4,14,12}; CheckAndLoad(gmdSymbolInfo,5,"C__"); }
+  {int s[]={15,1,4}; CheckAndLoad(gmdSymbolDim,2,"C__"); }
+  {int s[]={15,1,4}; CheckAndLoad(gmdSymbolType,2,"C__"); }
+  {int s[]={15,11,15}; CheckAndLoad(gmdWriteGDX,2,"C__"); }
+  {int s[]={15,57,21}; CheckAndLoad(gmdSetSpecialValuesX,2,"C__"); }
+  {int s[]={15,57}; CheckAndLoad(gmdSetSpecialValues,1,"C__"); }
+  {int s[]={15,58}; CheckAndLoad(gmdGetSpecialValues,1,"C__"); }
+  {int s[]={15,3}; CheckAndLoad(gmdSetDebug,1,"C__"); }
+  {int s[]={15,12}; CheckAndLoad(gmdGetLastError,1,"C__"); }
+  {int s[]={15,11}; CheckAndLoad(gmdPrintLog,1,"C__"); }
+  {int s[]={15}; CheckAndLoad(gmdStartWriteRecording,0,"C__"); }
+  {int s[]={15}; CheckAndLoad(gmdStopWriteRecording,0,"C__"); }
+  {int s[]={15,20}; CheckAndLoad(gmdCheckDBDV,1,"C__"); }
+  {int s[]={15,1,20}; CheckAndLoad(gmdCheckSymbolDV,2,"C__"); }
+  {int s[]={15,2}; CheckAndLoad(gmdGetFirstDBDV,1,"C__"); }
+  {int s[]={1,20}; CheckAndLoad(gmdGetFirstDBDVPy,1,"C__"); }
+  {int s[]={15,1,2}; CheckAndLoad(gmdGetFirstDVInSymbol,2,"C__"); }
+  {int s[]={1,1,20}; CheckAndLoad(gmdGetFirstDVInSymbolPy,2,"C__"); }
+  {int s[]={15}; CheckAndLoad(gmdDomainCheckDone,0,"C__"); }
+  {int s[]={15,1,20}; CheckAndLoad(gmdGetFirstDVInNextSymbol,2,"C__"); }
+  {int s[]={15,1,20}; CheckAndLoad(gmdMoveNextDVInSymbol,2,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdFreeDVHandle,1,"C__"); }
+  {int s[]={15,1,2}; CheckAndLoad(gmdGetDVSymbol,2,"C__"); }
+  {int s[]={1,1,20}; CheckAndLoad(gmdGetDVSymbolPy,2,"C__"); }
+  {int s[]={15,1,2}; CheckAndLoad(gmdGetDVSymbolRecord,2,"C__"); }
+  {int s[]={1,1,20}; CheckAndLoad(gmdGetDVSymbolRecordPy,2,"C__"); }
+  {int s[]={15,1,8}; CheckAndLoad(gmdGetDVIndicator,2,"C__"); }
+  {int s[]={15,1}; CheckAndLoad(gmdInitUpdate,1,"C__"); }
+  {int s[]={15,1,3,1,3,21}; CheckAndLoad(gmdUpdateModelSymbol,5,"C__"); }
+  {int s[]={15,11}; CheckAndLoad(gmdCallSolver,1,"C__"); }
+  {int s[]={15,11,14}; CheckAndLoad(gmdCallSolverTimed,2,"C__"); }
+  {int s[]={15,1,8,1,3}; CheckAndLoad(gmdDenseSymbolToDenseArray,4,"C__"); }
+  {int s[]={15,1,8,1,2,3,4}; CheckAndLoad(gmdSparseSymbolToDenseArray,6,"C__"); }
+  {int s[]={15,1,8,1,2,2,3,4}; CheckAndLoad(gmdSparseSymbolToSqzdArray,7,"C__"); }
+  {int s[]={15,1,2,1,8}; CheckAndLoad(gmdDenseArrayToSymbol,4,"C__"); }
+  {int s[]={15,1,2,2,1,8}; CheckAndLoad(gmdDenseArraySlicesToSymbol,5,"C__"); }
 
-   return 0;
+ return 0;
 
-   symMissing:
-   if (errBuf && errBufSize > 0) {
-      int elen;
-      char* ebuf;
-      elen = errBufSize;
-      ebuf = errBuf;
-      rc = sprintf(ebuf, "%.*s", elen, "Could not load symbol '");
-      elen -= rc;
-      ebuf += rc;
-      rc = sprintf(ebuf, "%.*s", elen, symName);
-      elen -= rc;
-      ebuf += rc;
-      rc = sprintf(ebuf, "%.*s", elen, "': ");
-      elen -= rc;
-      ebuf += rc;
-      rc = sprintf(ebuf, "%.*s", elen, errMsg);
-      /* elen -= rc;  ebuf+= rc; */
-      errBuf[errBufSize - 1] = '\0';
-      /* printf ("%s\n", errBuf); */
-      return 2;
-   }
+ symMissing:
+  if (errBuf && errBufSize>0) {
+    int elen;
+    char* ebuf;
+    elen = errBufSize;  ebuf = errBuf;
+    rc = sprintf (ebuf, "%.*s", elen, "Could not load symbol '");
+    elen -= rc;  ebuf+= rc;
+    rc = sprintf (ebuf, "%.*s", elen, symName);
+    elen -= rc;  ebuf+= rc;
+    rc = sprintf (ebuf, "%.*s", elen, "': ");
+    elen -= rc;  ebuf+= rc;
+    rc = sprintf (ebuf, "%.*s", elen, errMsg);
+    /* elen -= rc;  ebuf+= rc; */
+    errBuf[errBufSize-1] = '\0';
+    /* printf ("%s\n", errBuf); */
+    return 2;
+  }
 
-   return 0;
+ return 0;
 
 } /* XLibraryLoad */
 
-static int libloader(const char* dllPath, const char* dllName, char* msgBuf, int msgBufSize) {
+static int
+libloader(const char *dllPath, const char *dllName, char *msgBuf, int msgBufSize)
+{
 
-   char dllNameBuf[512];
-   int myrc = 0;
-   char gms_dll_suffix[4];
+  char dllNameBuf[512];
+  int myrc = 0;
+  char gms_dll_suffix[4];
 
-#if !defined(GMS_DLL_PREFIX)
+#if ! defined(GMS_DLL_PREFIX)
 # error "GMS_DLL_PREFIX expected but not defined"
 #endif
-#if !defined(GMS_DLL_BASENAME)
+#if ! defined(GMS_DLL_BASENAME)
 # error "GMS_DLL_BASENAME expected but not defined"
 #endif
-#if !defined(GMS_DLL_EXTENSION)
+#if ! defined(GMS_DLL_EXTENSION)
 # error "GMS_DLL_EXTENSION expected but not defined"
 #endif
-#if !defined(GMS_DLL_SUFFIX)
+#if ! defined(GMS_DLL_SUFFIX)
 # if defined (_WIN32)
 #   error "GMS_DLL_SUFFIX expected but not defined"
 # else
-   struct utsname uts;
+  struct utsname uts;
 
-   myrc = uname(&uts);
-   if (myrc) {
-      strcpy(msgBuf, "Error, cannot define library name suffix");
-      return 0;
-   }
-   if (0 == strcmp(uts.sysname, "AIX")) /* assume AIX is 64-bit */
-      strcpy(gms_dll_suffix, "64");
-   else if (0 == strcmp(uts.sysname, "Darwin")) {
-      /* keep Darwin test in here: fat binaries must check at run time */
-      if (8 == (int) sizeof(void*))
-         strcpy(gms_dll_suffix, "64");
-      else
-         strcpy(gms_dll_suffix, "");
-   }
-   else {
-      strcpy(msgBuf, "Error, cannot define library name suffix");
-      return 0;
-   }
+  myrc = uname(&uts);
+  if (myrc) {
+    strcpy(msgBuf,"Error, cannot define library name suffix");
+    return 0;
+  }
+  if (0 == strcmp(uts.sysname, "AIX")) /* assume AIX is 64-bit */
+    strcpy (gms_dll_suffix, "64");
+  else if (0 == strcmp(uts.sysname, "Darwin")) {
+    /* keep Darwin test in here: fat binaries must check at run time */
+    if (8 == (int)sizeof(void *))
+      strcpy (gms_dll_suffix, "64");
+    else
+      strcpy (gms_dll_suffix, "");
+  }
+  else {
+    strcpy(msgBuf,"Error, cannot define library name suffix");
+    return 0;
+  }
 # endif
 #else
-   strcpy (gms_dll_suffix, GMS_DLL_SUFFIX);
+  strcpy (gms_dll_suffix, GMS_DLL_SUFFIX);
 #endif
 
 
-   if (NULL != msgBuf)
-      msgBuf[0] = '\0';
+  if (NULL != msgBuf) msgBuf[0] = '\0';
 
-   if (!isLoaded) {
-      if (NULL != dllPath && '\0' != *dllPath) {
-         strncpy(dllNameBuf, dllPath, sizeof(dllNameBuf) - 1);
-         dllNameBuf[sizeof(dllNameBuf) - 1] = '\0';
+  if (! isLoaded) {
+    if (NULL != dllPath && '\0' != *dllPath) {
+      strncpy(dllNameBuf, dllPath, sizeof(dllNameBuf)-1);
+      dllNameBuf[sizeof(dllNameBuf)-1] = '\0';
 #if defined(_WIN32)
-                                                                                                                                 if ('\\' != dllNameBuf[strlen(dllNameBuf)])
+      if ('\\' != dllNameBuf[strlen(dllNameBuf)])
         strcat(dllNameBuf,"\\");
 #else
-         if ('/' != dllNameBuf[strlen(dllNameBuf)])
-            strcat(dllNameBuf, "/");
+      if ('/' != dllNameBuf[strlen(dllNameBuf)])
+        strcat(dllNameBuf,"/");
 #endif
-      }
-      else {
-         dllNameBuf[0] = '\0';
-      }
-      if (NULL != dllName && '\0' != *dllName) {
-         strncat(dllNameBuf, dllName, sizeof(dllNameBuf) - strlen(dllNameBuf) - 1);
-      }
-      else {
-         strncat(dllNameBuf, GMS_DLL_PREFIX GMS_DLL_BASENAME, sizeof(dllNameBuf) - strlen(dllNameBuf) - 1);
-         strncat(dllNameBuf, gms_dll_suffix, sizeof(dllNameBuf) - strlen(dllNameBuf) - 1);
-         strncat(dllNameBuf, GMS_DLL_EXTENSION, sizeof(dllNameBuf) - strlen(dllNameBuf) - 1);
-      }
-      isLoaded = !XLibraryLoad(dllNameBuf, msgBuf, msgBufSize);
-      if (isLoaded) {
-      }
-      else {                              /* library load failed */
-         myrc |= 1;
-      }
-   }
-   return (myrc & 1) == 0;
+    }
+    else {
+      dllNameBuf[0] = '\0';
+    }
+    if (NULL != dllName && '\0' != *dllName) {
+      strncat(dllNameBuf, dllName, sizeof(dllNameBuf)-strlen(dllNameBuf)-1);
+    }
+    else {
+      strncat(dllNameBuf, GMS_DLL_PREFIX GMS_DLL_BASENAME, sizeof(dllNameBuf)-strlen(dllNameBuf)-1);
+      strncat(dllNameBuf, gms_dll_suffix                 , sizeof(dllNameBuf)-strlen(dllNameBuf)-1);
+      strncat(dllNameBuf, GMS_DLL_EXTENSION              , sizeof(dllNameBuf)-strlen(dllNameBuf)-1);
+    }
+    isLoaded = ! XLibraryLoad (dllNameBuf, msgBuf, msgBufSize);
+    if (isLoaded) {
+    }
+    else {                              /* library load failed */
+      myrc |= 1;
+    }
+  }
+  return (myrc & 1) == 0;
 }
 
 
 /* gmdGetReady: return false on failure to load library, true on success */
-int gmdGetReady(char* msgBuf, int msgBufSize) {
-   int rc;
-   lock(libMutex);
-   rc = libloader(NULL, NULL, msgBuf, msgBufSize);
-   unlock(libMutex);
-   return rc;
+int gmdGetReady (char *msgBuf, int msgBufSize)
+{
+  int rc;
+  lock(libMutex);
+  rc = libloader(NULL, NULL, msgBuf, msgBufSize);
+  unlock(libMutex);
+  return rc;
 } /* gmdGetReady */
 
 /* gmdGetReadyD: return false on failure to load library, true on success */
-int gmdGetReadyD(const char* dirName, char* msgBuf, int msgBufSize) {
-   int rc;
-   lock(libMutex);
-   rc = libloader(dirName, NULL, msgBuf, msgBufSize);
-   unlock(libMutex);
-   return rc;
+int gmdGetReadyD (const char *dirName, char *msgBuf, int msgBufSize)
+{
+  int rc;
+  lock(libMutex);
+  rc = libloader(dirName, NULL, msgBuf, msgBufSize);
+  unlock(libMutex);
+  return rc;
 } /* gmdGetReadyD */
 
 /* gmdGetReadyL: return false on failure to load library, true on success */
-int gmdGetReadyL(const char* libName, char* msgBuf, int msgBufSize) {
-   char dirName[1024], fName[1024];
-   int rc;
-   extractFileDirFileName(libName, dirName, fName);
-   lock(libMutex);
-   rc = libloader(dirName, fName, msgBuf, msgBufSize);
-   unlock(libMutex);
-   return rc;
+int gmdGetReadyL (const char *libName, char *msgBuf, int msgBufSize)
+{
+  char dirName[1024],fName[1024];
+  int rc;
+  extractFileDirFileName (libName, dirName, fName);
+  lock(libMutex);
+  rc = libloader(dirName, fName, msgBuf, msgBufSize);
+  unlock(libMutex);
+  return rc;
 } /* gmdGetReadyL */
 
 /* gmdCreate: return false on failure to load library, true on success */
-int gmdCreate(gmdHandle_t* pgmd, char* msgBuf, int msgBufSize) {
-   int gmdIsReady;
+int gmdCreate (gmdHandle_t *pgmd, char *msgBuf, int msgBufSize)
+{
+  int gmdIsReady;
 
-   gmdIsReady = gmdGetReady(msgBuf, msgBufSize);
-   if (!gmdIsReady) {
-      return 0;
-   }
-   assert(XCreate);
-   XCreate(pgmd);
-   if (pgmd == NULL) {
-      strcpy(msgBuf, "Error while creating object");
-      return 0;
-   }
-   lock(objMutex);
-   objectCount++;
-   unlock(objMutex);
-   return 1;                     /* return true on successful library load */
+  gmdIsReady = gmdGetReady (msgBuf, msgBufSize);
+  if (! gmdIsReady) {
+    return 0;
+  }
+  assert(XCreate);
+  XCreate(pgmd);
+  if(pgmd == NULL)
+  { strcpy(msgBuf,"Error while creating object"); return 0; }
+  lock(objMutex);
+  objectCount++;
+  unlock(objMutex);
+  return 1;                     /* return true on successful library load */
 } /* gmdCreate */
 
 /* gmdCreateD: return false on failure to load library, true on success */
-int gmdCreateD(gmdHandle_t* pgmd, const char* dirName, char* msgBuf, int msgBufSize) {
-   int gmdIsReady;
+int gmdCreateD (gmdHandle_t *pgmd, const char *dirName,
+                char *msgBuf, int msgBufSize)
+{
+  int gmdIsReady;
 
-   gmdIsReady = gmdGetReadyD(dirName, msgBuf, msgBufSize);
-   if (!gmdIsReady) {
-      return 0;
-   }
-   assert(XCreate);
-   XCreate(pgmd);
-   if (pgmd == NULL) {
-      strcpy(msgBuf, "Error while creating object");
-      return 0;
-   }
-   lock(objMutex);
-   objectCount++;
-   unlock(objMutex);
-   return 1;                     /* return true on successful library load */
+  gmdIsReady = gmdGetReadyD (dirName, msgBuf, msgBufSize);
+  if (! gmdIsReady) {
+    return 0;
+  }
+  assert(XCreate);
+  XCreate(pgmd);
+  if(pgmd == NULL)
+  { strcpy(msgBuf,"Error while creating object"); return 0; }
+  lock(objMutex);
+  objectCount++;
+  unlock(objMutex);
+  return 1;                     /* return true on successful library load */
 } /* gmdCreateD */
 
 /* gmdCreateDD: return false on failure to load library, true on success */
-int gmdCreateDD(gmdHandle_t* pgmd, const char* dirName, char* msgBuf, int msgBufSize) {
-   int gmdIsReady;
+int gmdCreateDD (gmdHandle_t *pgmd, const char *dirName,
+                char *msgBuf, int msgBufSize)
+{
+  int gmdIsReady;
 
-   gmdIsReady = gmdGetReadyD(dirName, msgBuf, msgBufSize);
-   if (!gmdIsReady) {
-      return 0;
-   }
-   assert(XCreateD);
-   XCreateD(pgmd, dirName);
-   if (pgmd == NULL) {
-      strcpy(msgBuf, "Error while creating object");
-      return 0;
-   }
-   lock(objMutex);
-   objectCount++;
-   unlock(objMutex);
-   return 1;                     /* return true on successful library load */
+  gmdIsReady = gmdGetReadyD (dirName, msgBuf, msgBufSize);
+  if (! gmdIsReady) {
+    return 0;
+  }
+  assert(XCreateD);
+  XCreateD(pgmd, dirName);
+  if(pgmd == NULL)
+  { strcpy(msgBuf,"Error while creating object"); return 0; }
+  lock(objMutex);
+  objectCount++;
+  unlock(objMutex);
+  return 1;                     /* return true on successful library load */
 } /* gmdCreateD */
 
 /* gmdCreateL: return false on failure to load library, true on success */
-int gmdCreateL(gmdHandle_t* pgmd, const char* libName, char* msgBuf, int msgBufSize) {
-   int gmdIsReady;
+int gmdCreateL (gmdHandle_t *pgmd, const char *libName,
+                char *msgBuf, int msgBufSize)
+{
+  int gmdIsReady;
 
-   gmdIsReady = gmdGetReadyL(libName, msgBuf, msgBufSize);
-   if (!gmdIsReady) {
-      return 0;
-   }
-   assert(XCreate);
-   XCreate(pgmd);
-   if (pgmd == NULL) {
-      strcpy(msgBuf, "Error while creating object");
-      return 0;
-   }
-   lock(objMutex);
-   objectCount++;
-   unlock(objMutex);
-   return 1;                     /* return true on successful library load */
+  gmdIsReady = gmdGetReadyL (libName, msgBuf, msgBufSize);
+  if (! gmdIsReady) {
+    return 0;
+  }
+  assert(XCreate);
+  XCreate(pgmd);
+  if(pgmd == NULL)
+  { strcpy(msgBuf,"Error while creating object"); return 0; }
+  lock(objMutex);
+  objectCount++;
+  unlock(objMutex);
+  return 1;                     /* return true on successful library load */
 } /* gmdCreateL */
 
-int gmdFree(gmdHandle_t* pgmd) {
-   assert(XFree);
-   XFree(pgmd);
-   pgmd = NULL;
-   lock(objMutex);
-   objectCount--;
-   unlock(objMutex);
-   return 1;
+int gmdFree   (gmdHandle_t *pgmd)
+{
+  assert(XFree);
+  XFree(pgmd); pgmd = NULL;
+  lock(objMutex);
+  objectCount--;
+  unlock(objMutex);
+  return 1;
 } /* gmdFree */
 
-int gmdLibraryLoaded(void) {
-   int rc;
-   lock(libMutex);
-   rc = isLoaded;
-   unlock(libMutex);
-   return rc;
+int gmdLibraryLoaded(void)
+{
+  int rc;
+  lock(libMutex);
+  rc = isLoaded;
+  unlock(libMutex);
+  return rc;
 } /* gmdLibraryLoaded */
 
-int gmdLibraryUnload(void) {
-   lock(objMutex);
-   if (objectCount > 0) {
-      unlock(objMutex);
-      return 0;
-   }
-   unlock(objMutex);
-   lock(libMutex);
-   if (isLoaded) {
-      isLoaded = 0;
-      (void) unLoadLib(h);
-   }
-   unlock(libMutex);
-   return 1;
+int gmdLibraryUnload(void)
+{
+  lock(objMutex);
+  if (objectCount > 0)
+  {
+    unlock(objMutex);
+    return 0;
+  }
+  unlock(objMutex);
+  lock(libMutex);
+  if (isLoaded)
+  {
+    isLoaded = 0;
+    (void) unLoadLib(h);
+  }
+  unlock(libMutex);
+  return 1;
 } /* gmdLibraryUnload */
 
-int gmdCorrectLibraryVersion(char* msgBuf, int msgBufLen) {
-   int cl;
-   char localBuf[256];
+int  gmdCorrectLibraryVersion(char *msgBuf, int msgBufLen)
+{
+  int cl;
+  char localBuf[256];
 
-   if (msgBuf && msgBufLen)
-      msgBuf[0] = '\0';
+  if (msgBuf && msgBufLen) msgBuf[0] = '\0';
 
-   if (!isLoaded) {
-      strncpy(msgBuf, "Library needs to be initialized first", msgBufLen);
-      return 0;
-   }
+  if (! isLoaded) {
+    strncpy(msgBuf, "Library needs to be initialized first", msgBufLen);
+    return 0;
+  }
 
-   if (NULL == XAPIVersion) {
-      strncpy(msgBuf, "Function XAPIVersion not found", msgBufLen);
-      return 0;
-   }
+  if (NULL == XAPIVersion) {
+    strncpy(msgBuf, "Function XAPIVersion not found", msgBufLen);
+    return 0;
+  }
 
-   XAPIVersion(GMDAPIVERSION, localBuf, &cl);
-   strncpy(msgBuf, localBuf, msgBufLen);
+  XAPIVersion(GMDAPIVERSION,localBuf,&cl);
+  strncpy(msgBuf, localBuf, msgBufLen);
 
-   if (1 == cl)
-      return 1;
-   else
-      return 0;
+  if (1 == cl)
+    return 1;
+  else
+    return 0;
 }
 
-int gmdGetScreenIndicator(void) {
-   return ScreenIndicator;
+int gmdGetScreenIndicator(void)
+{
+  return ScreenIndicator;
 }
 
-void gmdSetScreenIndicator(int scrind) {
-   ScreenIndicator = scrind ? 1 : 0;
+void gmdSetScreenIndicator(int scrind)
+{
+  ScreenIndicator = scrind ? 1 : 0;
 }
 
-int gmdGetExceptionIndicator(void) {
+int gmdGetExceptionIndicator(void)
+{
    return ExceptionIndicator;
 }
 
-void gmdSetExceptionIndicator(int excind) {
-   ExceptionIndicator = excind ? 1 : 0;
+void gmdSetExceptionIndicator(int excind)
+{
+  ExceptionIndicator = excind ? 1 : 0;
 }
 
-int gmdGetExitIndicator(void) {
-   return ExitIndicator;
+int gmdGetExitIndicator(void)
+{
+  return ExitIndicator;
 }
 
-void gmdSetExitIndicator(int extind) {
-   ExitIndicator = extind ? 1 : 0;
+void gmdSetExitIndicator(int extind)
+{
+  ExitIndicator = extind ? 1 : 0;
 }
 
-gmdErrorCallback_t gmdGetErrorCallback(void) {
-   return ErrorCallBack;
+gmdErrorCallback_t gmdGetErrorCallback(void)
+{
+  return ErrorCallBack;
 }
 
-void gmdSetErrorCallback(gmdErrorCallback_t func) {
-   lock(exceptMutex);
-   ErrorCallBack = func;
-   unlock(exceptMutex);
+void gmdSetErrorCallback(gmdErrorCallback_t func)
+{
+  lock(exceptMutex);
+  ErrorCallBack = func;
+  unlock(exceptMutex);
 }
 
-int gmdGetAPIErrorCount(void) {
-   return APIErrorCount;
+int gmdGetAPIErrorCount(void)
+{
+  return APIErrorCount;
 }
 
-void gmdSetAPIErrorCount(int ecnt) {
-   APIErrorCount = ecnt;
+void gmdSetAPIErrorCount(int ecnt)
+{
+  APIErrorCount = ecnt;
 }
 
-void gmdErrorHandling(const char* msg) {
-   APIErrorCount++;
-   if (ScreenIndicator) {
-      printf("%s\n", msg);
-      fflush(stdout);
-   }
-   lock(exceptMutex);
-   if (ErrorCallBack)
-      if (ErrorCallBack(APIErrorCount, msg)) {
-         unlock(exceptMutex);
-         exit(123);
-      }
-   unlock(exceptMutex);
-   assert(!ExceptionIndicator);
-   if (ExitIndicator)
-      exit(123);
+void gmdErrorHandling(const char *msg)
+{
+  APIErrorCount++;
+  if (ScreenIndicator) { printf("%s\n", msg); fflush(stdout); }
+  lock(exceptMutex);
+  if (ErrorCallBack)
+    if (ErrorCallBack(APIErrorCount, msg)) { unlock(exceptMutex); exit(123); }
+  unlock(exceptMutex);
+  assert(!ExceptionIndicator);
+  if (ExitIndicator) exit(123);
 }
 
