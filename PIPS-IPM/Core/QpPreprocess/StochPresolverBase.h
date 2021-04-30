@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVERBASE_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVERBASE_H_
 
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "StochGenMatrix.h"
 #include "PresolveData.h"
 #include "DistributedQP.hpp"

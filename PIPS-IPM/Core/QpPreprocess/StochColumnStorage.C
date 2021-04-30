@@ -205,7 +205,7 @@ int StochColumnStorage::storeLocalCol(const INDEX& col, const StochGenMatrix& ma
    return Bi_index;
 }
 
-void StochColumnStorage::axpyAtCol(double beta, StochVector* eq_vec, StochVector* ineq_vec, SimpleVector<double>* eq_link, SimpleVector<double>* ineq_link, double alpha, const INDEX& col ) const
+void StochColumnStorage::axpyAtCol(double beta, DistributedVector<double>* eq_vec, DistributedVector<double>* ineq_vec, SimpleVector<double>* eq_link, SimpleVector<double>* ineq_link, double alpha, const INDEX& col ) const
 {
    assert( col.isCol() );
 
@@ -224,7 +224,7 @@ void StochColumnStorage::axpyAtCol(double beta, StochVector* eq_vec, StochVector
       axpyAtCol( *ineq_vec, ineq_link, alpha, col, INEQUALITY_SYSTEM );
 }
 
-void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector<double>* vec_link, double alpha, const INDEX& col, SystemType system_type) const
+void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<double>* vec_link, double alpha, const INDEX& col, SystemType system_type) const
 {
    assert( col.isCol() );
    assert( !vec.isKindOf(kStochDummy) );
@@ -275,7 +275,7 @@ void StochColumnStorage::axpyAtCol(StochVector& vec, SimpleVector<double>* vec_l
 }
 
 
-double StochColumnStorage::multColTimesVec( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq ) const
+double StochColumnStorage::multColTimesVec( const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq ) const
 {
    assert( col.isCol() );
    assert( col.hasValidNode(nChildren) );
@@ -301,7 +301,7 @@ double StochColumnStorage::multColTimesVec( const INDEX& col, const StochVector&
    return res;
 }
 
-double StochColumnStorage::multiplyLinkingColTimesVec(int col, const StochVector& vec_eq, const StochVector& vec_ineq) const
+double StochColumnStorage::multiplyLinkingColTimesVec(int col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const
 {
    assert( !vec_eq.isKindOf(kStochDummy) && !vec_ineq.isKindOf(kStochDummy) );
 
@@ -323,7 +323,7 @@ double StochColumnStorage::multiplyLinkingColTimesVec(int col, const StochVector
    return res;
 }
 
-double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, const StochVector& vec_eq, const StochVector& vec_ineq) const
+double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const
 {
    double res = 0.0;
 
@@ -353,7 +353,7 @@ double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, co
    return res;
 }
 
-double StochColumnStorage::multiplyLocalColTimesVec( const INDEX& col, const StochVector& vec_eq, const StochVector& vec_ineq) const
+double StochColumnStorage::multiplyLocalColTimesVec( const INDEX& col, const DistributedVector<double>& vec_eq, const DistributedVector<double>& vec_ineq) const
 {
    const int node = col.getNode();
    const int col_index = col.getIndex();

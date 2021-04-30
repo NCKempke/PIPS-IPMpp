@@ -608,7 +608,7 @@ void sLinsysRoot::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix
    }
 }
 
-void sLinsysRoot::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void sLinsysRoot::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
 
@@ -675,7 +675,7 @@ void sLinsysRoot::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>&
    G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1);
 }
 
-void sLinsysRoot::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void sLinsysRoot::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
 
@@ -744,12 +744,12 @@ void sLinsysRoot::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& 
    }
 }
 
-void sLinsysRoot::Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>& x0, bool) {
+void sLinsysRoot::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
    assert(pips_options::getBoolParameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
 
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
 
    for (size_t i = 0; i < children.size(); ++i) {
       children[i]->computeInnerSystemRightHandSide(*b.children[i], x0, true);
@@ -761,13 +761,13 @@ void sLinsysRoot::createChildren(DistributedQP* prob) {
    DistributedLinearSystem* child{};
    assert(dd && dq && nomegaInv && rhs && prob);
 
-   StochVector &ddst = dynamic_cast<StochVector&>(*dd);
-   StochVector &dqst = dynamic_cast<StochVector&>(*dq);
-   StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
-   StochVector &regPst = dynamic_cast<StochVector&>(*regP);
-   StochVector &regDyst = dynamic_cast<StochVector&>(*regDy);
-   StochVector &regDzst = dynamic_cast<StochVector&>(*regDz);
-   StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
+   DistributedVector<double> &ddst = dynamic_cast<DistributedVector<double>&>(*dd);
+   DistributedVector<double> &dqst = dynamic_cast<DistributedVector<double>&>(*dq);
+   DistributedVector<double> &nomegaInvst = dynamic_cast<DistributedVector<double>&>(*nomegaInv);
+   DistributedVector<double> &regPst = dynamic_cast<DistributedVector<double>&>(*regP);
+   DistributedVector<double> &regDyst = dynamic_cast<DistributedVector<double>&>(*regDy);
+   DistributedVector<double> &regDzst = dynamic_cast<DistributedVector<double>&>(*regDz);
+   DistributedVector<double> &rhsst = dynamic_cast<DistributedVector<double>&>(*rhs);
 
    for (size_t it = 0; it < prob->children.size(); it++) {
       assert(ddst.children[it] != nullptr);
@@ -849,7 +849,7 @@ void sLinsysRoot::initProperChildrenRange() {
 
 void sLinsysRoot::putXDiagonal( const OoqpVector& xdiag_ )
 {
-  const StochVector& xdiag = dynamic_cast<const StochVector&>(xdiag_);
+  const DistributedVector<double>& xdiag = dynamic_cast<const DistributedVector<double>&>(xdiag_);
   assert(children.size() == xdiag.children.size());
 
   //kkt->atPutDiagonal( 0, *xdiag.first );
@@ -861,7 +861,7 @@ void sLinsysRoot::putXDiagonal( const OoqpVector& xdiag_ )
 
 void sLinsysRoot::putZDiagonal( const OoqpVector& zdiag_ )
 {
-  const StochVector& zdiag = dynamic_cast<const StochVector&>(zdiag_);
+  const DistributedVector<double>& zdiag = dynamic_cast<const DistributedVector<double>&>(zdiag_);
   assert(children.size() == zdiag.children.size());
 
    //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
@@ -874,9 +874,9 @@ void sLinsysRoot::putZDiagonal( const OoqpVector& zdiag_ )
 
 void sLinsysRoot::addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ )
 {
-   const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
-   const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
-   const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
+   const DistributedVector<double>& regP = dynamic_cast<const DistributedVector<double>&>(regP_);
+   const DistributedVector<double>& regDy = dynamic_cast<const DistributedVector<double>&>(regDy_);
+   const DistributedVector<double>& regDz = dynamic_cast<const DistributedVector<double>&>(regDz_);
 
    xReg = regP.first;
 
@@ -892,9 +892,9 @@ void sLinsysRoot::addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpV
 
 void sLinsysRoot::addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const
 {
-   const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
-   const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
-   const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
+   const DistributedVector<double>& regP = dynamic_cast<const DistributedVector<double>&>(regP_);
+   const DistributedVector<double>& regDy = dynamic_cast<const DistributedVector<double>&>(regDy_);
+   const DistributedVector<double>& regDz = dynamic_cast<const DistributedVector<double>&>(regDz_);
 
    regP.first->setToConstant(primal_reg_val);
 

@@ -2,8 +2,7 @@
 #define STOCHRESIDUALS
 
 #include "Residuals.h"
-#include "StochVector_fwd.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include <vector>
 
 class sTree;

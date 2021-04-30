@@ -504,7 +504,7 @@ void sLinsysRootAug::assembleLocalKKT(DistributedQP* prob) {
 void sLinsysRootAug::Lsolve(DistributedQP* prob, OoqpVector& x) {
    assert(!is_hierarchy_root);
 
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    assert(children.size() == b.children.size());
 
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
@@ -544,7 +544,7 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
    /* Ki^-1 bi has already been computed in Lsolve */
 
    /* children have already computed Li^T\Di\Li\bi in Lsolve() */
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 #ifdef TIMING
    stochNode->resMon.eDsolve.clear();
@@ -557,7 +557,7 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
 }
 
 void sLinsysRootAug::Ltsolve(DistributedQP* prob, OoqpVector& x) {
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);

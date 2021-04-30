@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #include "QpScaler.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "QP.hpp"
 #include "Variables.h"
 #include "Residuals.h"
@@ -320,12 +320,12 @@ void QpScaler::scaleObjVector(double scaling_factor) {
 
 void QpScaler::printRowColRatio() {
    if (scaling_output) {
-      std::unique_ptr<StochVector> xrowmaxA(dynamic_cast<StochVector*>(bA->clone()));
-      std::unique_ptr<StochVector> xrowminA(dynamic_cast<StochVector*>(bA->clone()));
-      std::unique_ptr<StochVector> xrowmaxC(dynamic_cast<StochVector*>(rhsC->clone()));
-      std::unique_ptr<StochVector> xrowminC(dynamic_cast<StochVector*>(rhsC->clone()));
-      std::unique_ptr<StochVector> xcolmax(dynamic_cast<StochVector*>(bux->clone()));
-      std::unique_ptr<StochVector> xcolmin(dynamic_cast<StochVector*>(bux->clone()));
+      std::unique_ptr<DistributedVector<double>> xrowmaxA(dynamic_cast<DistributedVector<double>*>(bA->clone()));
+      std::unique_ptr<DistributedVector<double>> xrowminA(dynamic_cast<DistributedVector<double>*>(bA->clone()));
+      std::unique_ptr<DistributedVector<double>> xrowmaxC(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
+      std::unique_ptr<DistributedVector<double>> xrowminC(dynamic_cast<DistributedVector<double>*>(rhsC->clone()));
+      std::unique_ptr<DistributedVector<double>> xcolmax(dynamic_cast<DistributedVector<double>*>(bux->clone()));
+      std::unique_ptr<DistributedVector<double>> xcolmin(dynamic_cast<DistributedVector<double>*>(bux->clone()));
 
       const double rowratio = maxRowRatio(*xrowmaxA, *xrowmaxC, *xrowminA, *xrowminC, nullptr);
       const double colratio = maxColRatio(*xcolmax, *xcolmin, nullptr, nullptr);

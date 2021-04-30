@@ -3,7 +3,7 @@
 #include "sTreeCallbacks.h"
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
 
@@ -1197,9 +1197,9 @@ void DistributedQP::writeMPSColumns(std::ostream& out) {
    std::string rowNameStub;
    std::string rowNameStubLT;
    std::string rowNameStubGT;
-   StochVector& gStoch = dynamic_cast<StochVector&>(*g);
-   StochVector& icuppStoch = dynamic_cast<StochVector&>(*icupp);
-   StochVector& iclowStoch = dynamic_cast<StochVector&>(*iclow);
+   DistributedVector<double>& gStoch = dynamic_cast<DistributedVector<double>&>(*g);
+   DistributedVector<double>& icuppStoch = dynamic_cast<DistributedVector<double>&>(*icupp);
+   DistributedVector<double>& iclowStoch = dynamic_cast<DistributedVector<double>&>(*iclow);
    StochGenMatrix& AStoch = dynamic_cast<StochGenMatrix&>(*A);
    SparseGenMatrix& ASparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.Bmat)->getTranspose();
    StochGenMatrix& CStoch = dynamic_cast<StochGenMatrix&>(*C);
@@ -1378,16 +1378,16 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    GenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
    GenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
-   StochVectorHandle c_clone(dynamic_cast<StochVector*>(g->cloneFull()));
-   StochVectorHandle bA_clone(dynamic_cast<StochVector*>(bA->cloneFull()));
-   StochVectorHandle xupp_clone(dynamic_cast<StochVector*>(bux->cloneFull()));
-   StochVectorHandle ixupp_clone(dynamic_cast<StochVector*>(ixupp->cloneFull()));
-   StochVectorHandle xlow_clone(dynamic_cast<StochVector*>(blx->cloneFull()));
-   StochVectorHandle ixlow_clone(dynamic_cast<StochVector*>(ixlow->cloneFull()));
-   StochVectorHandle cupp_clone(dynamic_cast<StochVector*>(bu->cloneFull()));
-   StochVectorHandle icupp_clone(dynamic_cast<StochVector*>(icupp->cloneFull()));
-   StochVectorHandle clow_clone(dynamic_cast<StochVector*>(bl->cloneFull()));
-   StochVectorHandle iclow_clone(dynamic_cast<StochVector*>(iclow->cloneFull()));
+   DistributedVector<double>* c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
+   DistributedVector<double>* bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
+   DistributedVector<double>* xupp_clone(dynamic_cast<DistributedVector<double>*>(bux->cloneFull()));
+   DistributedVector<double>* ixupp_clone(dynamic_cast<DistributedVector<double>*>(ixupp->cloneFull()));
+   DistributedVector<double>* xlow_clone(dynamic_cast<DistributedVector<double>*>(blx->cloneFull()));
+   DistributedVector<double>* ixlow_clone(dynamic_cast<DistributedVector<double>*>(ixlow->cloneFull()));
+   DistributedVector<double>* cupp_clone(dynamic_cast<DistributedVector<double>*>(bu->cloneFull()));
+   DistributedVector<double>* icupp_clone(dynamic_cast<DistributedVector<double>*>(icupp->cloneFull()));
+   DistributedVector<double>* clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
+   DistributedVector<double>* iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
 
    const sTree* tree_clone = stochNode;
 
@@ -1402,20 +1402,20 @@ void DistributedQP::createChildren() {
    //follow the structure of one of the tree objects and create the same
    //structure for this class, and link this object with the corresponding
    //vectors and matrices
-   StochVector& gSt = dynamic_cast<StochVector&>(*g);
+   DistributedVector<double>& gSt = dynamic_cast<DistributedVector<double>&>(*g);
    StochSymMatrix& QSt = dynamic_cast<StochSymMatrix&>(*Q);
 
-   StochVector& xlowSt = dynamic_cast<StochVector&>(*blx);
-   StochVector& ixlowSt = dynamic_cast<StochVector&>(*ixlow);
-   StochVector& xuppSt = dynamic_cast<StochVector&>(*bux);
-   StochVector& ixuppSt = dynamic_cast<StochVector&>(*ixupp);
+   DistributedVector<double>& xlowSt = dynamic_cast<DistributedVector<double>&>(*blx);
+   DistributedVector<double>& ixlowSt = dynamic_cast<DistributedVector<double>&>(*ixlow);
+   DistributedVector<double>& xuppSt = dynamic_cast<DistributedVector<double>&>(*bux);
+   DistributedVector<double>& ixuppSt = dynamic_cast<DistributedVector<double>&>(*ixupp);
    StochGenMatrix& ASt = dynamic_cast<StochGenMatrix&>(*A);
-   StochVector& bASt = dynamic_cast<StochVector&>(*bA);
+   DistributedVector<double>& bASt = dynamic_cast<DistributedVector<double>&>(*bA);
    StochGenMatrix& CSt = dynamic_cast<StochGenMatrix&>(*C);
-   StochVector& clowSt = dynamic_cast<StochVector&>(*bl);
-   StochVector& iclowSt = dynamic_cast<StochVector&>(*iclow);
-   StochVector& cuppSt = dynamic_cast<StochVector&>(*bu);
-   StochVector& icuppSt = dynamic_cast<StochVector&>(*icupp);
+   DistributedVector<double>& clowSt = dynamic_cast<DistributedVector<double>&>(*bl);
+   DistributedVector<double>& iclowSt = dynamic_cast<DistributedVector<double>&>(*iclow);
+   DistributedVector<double>& cuppSt = dynamic_cast<DistributedVector<double>&>(*bu);
+   DistributedVector<double>& icuppSt = dynamic_cast<DistributedVector<double>&>(*icupp);
 
    for (size_t it = 0; it < gSt.children.size(); it++) {
       AddChild(new DistributedQP(stochNode->getChildren()[it], gSt.children[it], QSt.children[it], xlowSt.children[it], ixlowSt.children[it],
@@ -1439,39 +1439,39 @@ DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const sTree* tr
    GenMatrixHandle C_hier(dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
 
    /* we ordered global linking vars first and global linking rows to the end */
-   StochVectorHandle g_hier(dynamic_cast<StochVector&>(*g).raiseBorder(n_global_linking_vars, false, true));
-   StochVectorHandle bux_hier(dynamic_cast<StochVector&>(*bux).raiseBorder(n_global_linking_vars, false, true));
-   StochVectorHandle ixupp_hier(dynamic_cast<StochVector&>(*ixupp).raiseBorder(n_global_linking_vars, false, true));
-   StochVectorHandle blx_hier(dynamic_cast<StochVector&>(*blx).raiseBorder(n_global_linking_vars, false, true));
-   StochVectorHandle ixlow_hier(dynamic_cast<StochVector&>(*ixlow).raiseBorder(n_global_linking_vars, false, true));
+   DistributedVector<double>* g_hier(dynamic_cast<DistributedVector<double>&>(*g).raiseBorder(n_global_linking_vars, false, true));
+   DistributedVector<double>* bux_hier(dynamic_cast<DistributedVector<double>&>(*bux).raiseBorder(n_global_linking_vars, false, true));
+   DistributedVector<double>* ixupp_hier(dynamic_cast<DistributedVector<double>&>(*ixupp).raiseBorder(n_global_linking_vars, false, true));
+   DistributedVector<double>* blx_hier(dynamic_cast<DistributedVector<double>&>(*blx).raiseBorder(n_global_linking_vars, false, true));
+   DistributedVector<double>* ixlow_hier(dynamic_cast<DistributedVector<double>&>(*ixlow).raiseBorder(n_global_linking_vars, false, true));
 
-   StochVectorHandle bA_hier(dynamic_cast<StochVector&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false));
+   DistributedVector<double>* bA_hier(dynamic_cast<DistributedVector<double>&>(*bA).raiseBorder(n_global_eq_linking_conss, true, false));
 
-   StochVectorHandle bu_hier(dynamic_cast<StochVector&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false));
-   StochVectorHandle icupp_hier(dynamic_cast<StochVector&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false));
-   StochVectorHandle bl_hier(dynamic_cast<StochVector&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false));
-   StochVectorHandle iclow_hier(dynamic_cast<StochVector&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false));
+   DistributedVector<double>* bu_hier(dynamic_cast<DistributedVector<double>&>(*bu).raiseBorder(n_global_ineq_linking_conss, true, false));
+   DistributedVector<double>* icupp_hier(dynamic_cast<DistributedVector<double>&>(*icupp).raiseBorder(n_global_ineq_linking_conss, true, false));
+   DistributedVector<double>* bl_hier(dynamic_cast<DistributedVector<double>&>(*bl).raiseBorder(n_global_ineq_linking_conss, true, false));
+   DistributedVector<double>* iclow_hier(dynamic_cast<DistributedVector<double>&>(*iclow).raiseBorder(n_global_ineq_linking_conss, true, false));
 
    // TODO what is this?
-   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+   //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
 
-   return new DistributedQP(tree, g_hier.ptr_unsave(), Q_hier.ptr_unsave(), blx_hier.ptr_unsave(), ixlow_hier.ptr_unsave(), bux_hier.ptr_unsave(),
-         ixupp_hier.ptr_unsave(), A_hier.ptr_unsave(), bA_hier.ptr_unsave(), C_hier.ptr_unsave(), bl_hier.ptr_unsave(), iclow_hier.ptr_unsave(),
-         bu_hier.ptr_unsave(), icupp_hier.ptr_unsave(), false, true);
+   return new DistributedQP(tree, g_hier, Q_hier, blx_hier, ixlow_hier, bux_hier,
+         ixupp_hier, A_hier, bA_hier, C_hier, bl_hier, iclow_hier,
+         bu_hier, icupp_hier, false, true);
 }
 
 DistributedQP* DistributedQP::shaveDenseBorder(const sTree* tree) {
    DistributedQP* hierarchical_top = shaveBorderFromDataAndCreateNewTop(tree);
 
-   const StochVector& ixlow = dynamic_cast<const StochVector&>(*hierarchical_top->ixlow);
-   const StochVector& ixupp = dynamic_cast<const StochVector&>(*hierarchical_top->ixupp);
+   const DistributedVector<double>& ixlow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixlow);
+   const DistributedVector<double>& ixupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixupp);
    assert(ixlow.first);
    assert(ixupp.first);
    nxlow -= ixlow.first->numberOfNonzeros();
    nxupp -= ixupp.first->numberOfNonzeros();
 
-   const StochVector& iclow = dynamic_cast<const StochVector&>(*hierarchical_top->iclow);
-   const StochVector& icupp = dynamic_cast<const StochVector&>(*hierarchical_top->icupp);
+   const DistributedVector<double>& iclow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->iclow);
+   const DistributedVector<double>& icupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->icupp);
    assert(iclow.last);
    assert(icupp.last);
    mclow -= iclow.last->numberOfNonzeros();
@@ -1611,28 +1611,28 @@ void DistributedQP::addChildrenForSplit() {
       StochGenMatrix* C_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*C).children[i]
                                                         : dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).children[i];
 
-      StochVector* g_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*g).children[i]
-                                                     : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).first).children[i];
-      StochVector* blx_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*blx).children[i]
-                                                       : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).first).children[i];
-      StochVector* ixlow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixlow).children[i]
-                                                         : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).first).children[i];
-      StochVector* bux_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bux).children[i]
-                                                       : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).first).children[i];
-      StochVector* ixupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*ixupp).children[i]
-                                                         : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).first).children[i];
+      DistributedVector<double>* g_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*g).children[i]
+                                                     : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).children[i];
+      DistributedVector<double>* blx_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*blx).children[i]
+                                                       : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*blx).first).children[i];
+      DistributedVector<double>* ixlow_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*ixlow).children[i]
+                                                         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixlow).first).children[i];
+      DistributedVector<double>* bux_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*bux).children[i]
+                                                       : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bux).first).children[i];
+      DistributedVector<double>* ixupp_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*ixupp).children[i]
+                                                         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixupp).first).children[i];
 
-      StochVector* bA_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bA).children[i]
-                                                      : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).first).children[i];
+      DistributedVector<double>* bA_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*bA).children[i]
+                                                      : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).children[i];
 
-      StochVector* bl_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bl).children[i]
-                                                      : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).first).children[i];
-      StochVector* iclow_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*iclow).children[i]
-                                                         : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).first).children[i];
-      StochVector* bu_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*bu).children[i]
-                                                      : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).first).children[i];
-      StochVector* icupp_child = is_hierarchy_inner_root ? dynamic_cast<StochVector&>(*icupp).children[i]
-                                                         : dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).first).children[i];
+      DistributedVector<double>* bl_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*bl).children[i]
+                                                      : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).children[i];
+      DistributedVector<double>* iclow_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*iclow).children[i]
+                                                         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*iclow).first).children[i];
+      DistributedVector<double>* bu_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*bu).children[i]
+                                                      : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).children[i];
+      DistributedVector<double>* icupp_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*icupp).children[i]
+                                                         : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).children[i];
 
       assert(dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
       const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
@@ -1770,23 +1770,23 @@ void DistributedQP::splitData() {
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(),
             child_comms);
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*g).first).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).split(map_block_subtree, child_comms);
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bux).first).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixupp).first).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*blx).first).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*ixlow).first).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bux).first).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixupp).first).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*blx).first).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*ixlow).first).split(map_block_subtree, child_comms);
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).first).split(map_block_subtree, child_comms, linkStartBlockLengthsA,
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).split(map_block_subtree, child_comms, linkStartBlockLengthsA,
             stochNode->myl());
 
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
             stochNode->mzl());
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
             stochNode->mzl());
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
             stochNode->mzl());
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*iclow).first).split(map_block_subtree, child_comms, linkStartBlockLengthsC,
             stochNode->mzl());
    }
    else {
@@ -1794,19 +1794,19 @@ void DistributedQP::splitData() {
       dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
       dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
 
-      dynamic_cast<StochVector&>(*g).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*g).split(map_block_subtree, child_comms);
 
-      dynamic_cast<StochVector&>(*bux).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*ixupp).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*blx).split(map_block_subtree, child_comms);
-      dynamic_cast<StochVector&>(*ixlow).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*bux).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*ixupp).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*blx).split(map_block_subtree, child_comms);
+      dynamic_cast<DistributedVector<double>&>(*ixlow).split(map_block_subtree, child_comms);
 
-      dynamic_cast<StochVector&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
+      dynamic_cast<DistributedVector<double>&>(*bA).split(map_block_subtree, child_comms, linkStartBlockLengthsA, stochNode->myl());
 
-      dynamic_cast<StochVector&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<StochVector&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<StochVector&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
-      dynamic_cast<StochVector&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<DistributedVector<double>&>(*bu).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<DistributedVector<double>&>(*icupp).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<DistributedVector<double>&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
+      dynamic_cast<DistributedVector<double>&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
    }
 // TODO : DELETEME
 //   OoqpVector* x_after = g;
@@ -1845,7 +1845,7 @@ void DistributedQP::splitData() {
 //   std::cout << "Q1norm before : " << Q1norm_bef << " vs Q1norm after : " << Q1norm_after << " difference " << Q1norm_bef - Q1norm_after << "\n";
 
    // TODO : when Q is used we also need this here..
-   //StochVector* sc_hier = dynamic_cast<StochVector&>(*sc).shaveBorder(-1);
+   //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
 }
 
 void DistributedQP::recomputeSize() {
@@ -1853,19 +1853,19 @@ void DistributedQP::recomputeSize() {
    dynamic_cast<StochGenMatrix&>(*A).recomputeSize();
    dynamic_cast<StochGenMatrix&>(*C).recomputeSize();
 
-   dynamic_cast<StochVector&>(*g).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*g).recomputeSize();
 
-   dynamic_cast<StochVector&>(*bux).recomputeSize();
-   dynamic_cast<StochVector&>(*ixupp).recomputeSize();
-   dynamic_cast<StochVector&>(*blx).recomputeSize();
-   dynamic_cast<StochVector&>(*ixlow).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*bux).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*ixupp).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*blx).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*ixlow).recomputeSize();
 
-   dynamic_cast<StochVector&>(*bA).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*bA).recomputeSize();
 
-   dynamic_cast<StochVector&>(*bu).recomputeSize();
-   dynamic_cast<StochVector&>(*icupp).recomputeSize();
-   dynamic_cast<StochVector&>(*bl).recomputeSize();
-   dynamic_cast<StochVector&>(*iclow).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*bu).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*icupp).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*bl).recomputeSize();
+   dynamic_cast<DistributedVector<double>&>(*iclow).recomputeSize();
 }
 
 void DistributedQP::splitStringMatricesAccordingToSubtreeStructure() {
@@ -1924,20 +1924,20 @@ void DistributedQP::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATI
    if (stochNode->isHierarchicalInnerLeaf()) {
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).permuteLinkingCons(permA);
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).permuteLinkingCons(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bA).first).permuteLinkingEntries(permA);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bl).first).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*bu).first).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*iclow).first).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*dynamic_cast<StochVector&>(*icupp).first).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).permuteLinkingEntries(permA);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*iclow).first).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).permuteLinkingEntries(permC);
    }
    else {
       dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
       dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
-      dynamic_cast<StochVector&>(*bA).permuteLinkingEntries(permA);
-      dynamic_cast<StochVector&>(*bl).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*bu).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(permC);
-      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*bA).permuteLinkingEntries(permA);
+      dynamic_cast<DistributedVector<double>&>(*bl).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*bu).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*iclow).permuteLinkingEntries(permC);
+      dynamic_cast<DistributedVector<double>&>(*icupp).permuteLinkingEntries(permC);
    }
 }
 
@@ -1947,11 +1947,11 @@ void DistributedQP::permuteLinkingVars(const PERMUTATION& perm) {
 
    dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(perm);
    dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(perm);
-   dynamic_cast<StochVector&>(*g).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*bux).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*blx).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*g).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*bux).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*blx).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*ixupp).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*ixlow).permuteVec0Entries(perm);
 }
 
 DistributedVariables* DistributedQP::getVarsUnperm(const DistributedVariables& vars, const DistributedQP& unpermData) const {
@@ -2185,7 +2185,7 @@ void DistributedQP::activateLinkStructureExploitation() {
       assert(linkConsPermutationA.size() == 0);
       assert(linkConsPermutationC.size() == 0);
 
-      const size_t nBlocks = dynamic_cast<StochVector&>(*g).children.size();
+      const size_t nBlocks = dynamic_cast<DistributedVector<double>&>(*g).children.size();
 
       // compute permutation vectors
       linkConsPermutationA = getAscending2LinkFirstGlobalsLastPermutation(linkStartBlockIdA, n_blocks_per_link_row_A, nBlocks,
@@ -2205,7 +2205,7 @@ void DistributedQP::AddChild(DistributedQP* child) {
 }
 
 double DistributedQP::objective_value(const Variables& variables) const {
-   const StochVector& x = dynamic_cast<const StochVector&>(*variables.x);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(*variables.x);
    OoqpVectorHandle temp(x.clone());
 
    this->getg(*temp);
@@ -2908,15 +2908,15 @@ SparseGenMatrix& DistributedQP::getLocalG() {
    }
 }
 
-void DistributedQP::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC,
-      const StochVectorBase<int>& colNnzVec) {
+void DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC,
+      const DistributedVector<int>& colNnzVec) {
    StochSymMatrix& Q_stoch = dynamic_cast<StochSymMatrix&>(*Q);
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
 
    // clean up equality system
    StochGenMatrix& A_stoch = dynamic_cast<StochGenMatrix&>(*A);
-   StochVector& b_Astoch = dynamic_cast<StochVector&>(*bA);
+   DistributedVector<double>& b_Astoch = dynamic_cast<DistributedVector<double>&>(*bA);
 
    A_stoch.initStaticStorageFromDynamic(rowNnzVecA, colNnzVec);
    A_stoch.freeDynamicStorage();
@@ -2926,17 +2926,17 @@ void DistributedQP::cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA,
 
    // clean up inequality system and x
    StochGenMatrix& C_stoch = dynamic_cast<StochGenMatrix&>(*C);
-   StochVector& g_stoch = dynamic_cast<StochVector&>(*g);
+   DistributedVector<double>& g_stoch = dynamic_cast<DistributedVector<double>&>(*g);
 
-   StochVector& blx_stoch = dynamic_cast<StochVector&>(*blx);
-   StochVector& ixlow_stoch = dynamic_cast<StochVector&>(*ixlow);
-   StochVector& bux_stoch = dynamic_cast<StochVector&>(*bux);
-   StochVector& ixupp_stoch = dynamic_cast<StochVector&>(*ixupp);
+   DistributedVector<double>& blx_stoch = dynamic_cast<DistributedVector<double>&>(*blx);
+   DistributedVector<double>& ixlow_stoch = dynamic_cast<DistributedVector<double>&>(*ixlow);
+   DistributedVector<double>& bux_stoch = dynamic_cast<DistributedVector<double>&>(*bux);
+   DistributedVector<double>& ixupp_stoch = dynamic_cast<DistributedVector<double>&>(*ixupp);
 
-   StochVector& bl_stoch = dynamic_cast<StochVector&>(*bl);
-   StochVector& iclow_stoch = dynamic_cast<StochVector&>(*iclow);
-   StochVector& bu_stoch = dynamic_cast<StochVector&>(*bu);
-   StochVector& icupp_stoch = dynamic_cast<StochVector&>(*icupp);
+   DistributedVector<double>& bl_stoch = dynamic_cast<DistributedVector<double>&>(*bl);
+   DistributedVector<double>& iclow_stoch = dynamic_cast<DistributedVector<double>&>(*iclow);
+   DistributedVector<double>& bu_stoch = dynamic_cast<DistributedVector<double>&>(*bu);
+   DistributedVector<double>& icupp_stoch = dynamic_cast<DistributedVector<double>&>(*icupp);
 
    C_stoch.initStaticStorageFromDynamic(rowNnzVecC, colNnzVec);
    C_stoch.freeDynamicStorage();
@@ -3050,61 +3050,61 @@ bool DistributedQP::isRootNodeInSync() const {
    }
 
    /* objective g */
-   if (!dynamic_cast<const StochVector&>(*g).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*g).isRootNodeInSync()) {
       std::cout << "ERROR: objective vector corrupted!\n";
       in_sync = false;
    }
 
    /* rhs equality bA */
-   if (!dynamic_cast<const StochVector&>(*bA).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*bA).isRootNodeInSync()) {
       std::cout << "ERROR: rhs of A corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds x bux */
-   if (!dynamic_cast<const StochVector&>(*bux).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*bux).isRootNodeInSync()) {
       std::cout << "ERROR: upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for upper bounds x ixupp */
-   if (!dynamic_cast<const StochVector&>(*ixupp).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*ixupp).isRootNodeInSync()) {
       std::cout << "ERROR: index upper bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds x blx */
-   if (!dynamic_cast<const StochVector&>(*blx).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*blx).isRootNodeInSync()) {
       std::cout << "ERROR: lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds x ixlow */
-   if (!dynamic_cast<const StochVector&>(*ixlow).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*ixlow).isRootNodeInSync()) {
       std::cout << "ERROR: index lower bounds x corrupted!\n";
       in_sync = false;
    }
 
    /* upper bounds C bu */
-   if (!dynamic_cast<const StochVector&>(*bu).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*bu).isRootNodeInSync()) {
       std::cout << "ERROR: rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* index upper bounds C icupp */
-   if (!dynamic_cast<const StochVector&>(*icupp).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*icupp).isRootNodeInSync()) {
       std::cout << "ERROR: index rhs C corrupted!\n";
       in_sync = false;
    }
 
    /* lower bounds C bl */
-   if (!dynamic_cast<const StochVector&>(*bl).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*bl).isRootNodeInSync()) {
       std::cout << "ERROR: lower bounds C corrupted!\n";
       in_sync = false;
    }
 
    /* index for lower bounds C iclow */
-   if (!dynamic_cast<const StochVector&>(*iclow).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*iclow).isRootNodeInSync()) {
       std::cout << "ERROR: index lower bounds C corrupted!\n";
       in_sync = false;
    }

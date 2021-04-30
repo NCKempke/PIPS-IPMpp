@@ -7,7 +7,7 @@
 #include "StochSymMatrix.h"
 #include "SparseSymMatrix.h"
 #include "StochGenMatrix.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "DoubleMatrixHandle.h"
 
 #include "sTreeCallbacks.h"
@@ -154,7 +154,7 @@ public:
 
    void createScaleFromQ();
 
-   void cleanUpPresolvedData(const StochVectorBase<int>& rowNnzVecA, const StochVectorBase<int>& rowNnzVecC, const StochVectorBase<int>& colNnzVec);
+   void cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC, const DistributedVector<int>& colNnzVec);
 
    // marker that indicates whether a Schur complement row is (2-link) local
    const std::vector<bool>& getSCrowMarkerLocal() const;

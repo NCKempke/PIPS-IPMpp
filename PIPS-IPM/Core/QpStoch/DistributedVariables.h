@@ -3,7 +3,7 @@
 
 #include "Variables.h"
 #include "OoqpVectorHandle.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include <vector>
 
 class QpGen;

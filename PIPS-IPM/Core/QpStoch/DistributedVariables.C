@@ -2,7 +2,7 @@
 #include "OoqpVector.h"
 #include "Problem.h"
 #include "Residuals.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "sTree.h"
 #include "sTreeCallbacks.h"
 
@@ -84,22 +84,22 @@ void DistributedVariables::AddChild(DistributedVariables* child) {
 
 
 void DistributedVariables::createChildren() {
-   StochVector& xst = dynamic_cast<StochVector&>(*x);
-   StochVector& sst = dynamic_cast<StochVector&>(*s);
-   StochVector& yst = dynamic_cast<StochVector&>(*y);
-   StochVector& zst = dynamic_cast<StochVector&>(*z);
-   StochVector& vst = dynamic_cast<StochVector&>(*v);
-   StochVector& gammast = dynamic_cast<StochVector&>(*gamma);
-   StochVector& wst = dynamic_cast<StochVector&>(*w);
-   StochVector& phist = dynamic_cast<StochVector&>(*phi);
-   StochVector& tst = dynamic_cast<StochVector&>(*t);
-   StochVector& lambdast = dynamic_cast<StochVector&>(*lambda);
-   StochVector& ust = dynamic_cast<StochVector&>(*u);
-   StochVector& pist = dynamic_cast<StochVector&>(*pi);
-   StochVector& ixlowst = dynamic_cast<StochVector&>(*ixlow);
-   StochVector& ixuppst = dynamic_cast<StochVector&>(*ixupp);
-   StochVector& iclowst = dynamic_cast<StochVector&>(*iclow);
-   StochVector& icuppst = dynamic_cast<StochVector&>(*icupp);
+   DistributedVector<double>& xst = dynamic_cast<DistributedVector<double>&>(*x);
+   DistributedVector<double>& sst = dynamic_cast<DistributedVector<double>&>(*s);
+   DistributedVector<double>& yst = dynamic_cast<DistributedVector<double>&>(*y);
+   DistributedVector<double>& zst = dynamic_cast<DistributedVector<double>&>(*z);
+   DistributedVector<double>& vst = dynamic_cast<DistributedVector<double>&>(*v);
+   DistributedVector<double>& gammast = dynamic_cast<DistributedVector<double>&>(*gamma);
+   DistributedVector<double>& wst = dynamic_cast<DistributedVector<double>&>(*w);
+   DistributedVector<double>& phist = dynamic_cast<DistributedVector<double>&>(*phi);
+   DistributedVector<double>& tst = dynamic_cast<DistributedVector<double>&>(*t);
+   DistributedVector<double>& lambdast = dynamic_cast<DistributedVector<double>&>(*lambda);
+   DistributedVector<double>& ust = dynamic_cast<DistributedVector<double>&>(*u);
+   DistributedVector<double>& pist = dynamic_cast<DistributedVector<double>&>(*pi);
+   DistributedVector<double>& ixlowst = dynamic_cast<DistributedVector<double>&>(*ixlow);
+   DistributedVector<double>& ixuppst = dynamic_cast<DistributedVector<double>&>(*ixupp);
+   DistributedVector<double>& iclowst = dynamic_cast<DistributedVector<double>&>(*iclow);
+   DistributedVector<double>& icuppst = dynamic_cast<DistributedVector<double>&>(*icupp);
 
 
    for (size_t it = 0; it < xst.children.size(); it++) {
@@ -112,21 +112,21 @@ void DistributedVariables::createChildren() {
 
 void DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
       OoqpVectorHandle iclow_, OoqpVectorHandle icupp_) {
-   dynamic_cast<StochVector&>(*x).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*x).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
 
-   dynamic_cast<StochVector&>(*v).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<StochVector&>(*w).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<StochVector&>(*phi).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<StochVector&>(*gamma).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*v).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*w).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*phi).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*gamma).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
 
-   dynamic_cast<StochVector&>(*y).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Y);
+   dynamic_cast<DistributedVector<double>&>(*y).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Y);
 
-   dynamic_cast<StochVector&>(*s).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<StochVector&>(*z).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<StochVector&>(*t).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<StochVector&>(*u).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<StochVector&>(*pi).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<StochVector&>(*lambda).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*s).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*z).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*t).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*u).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*pi).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*lambda).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
 
    stochNode = stochNode_;
 
@@ -144,98 +144,98 @@ void DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hi
 
 void DistributedVariables::permuteVec0Entries(const std::vector<unsigned int>& perm, bool vars_only) {
    if (!vars_only) {
-      dynamic_cast<StochVector&>(*ixlow).permuteVec0Entries(perm);
-      dynamic_cast<StochVector&>(*ixupp).permuteVec0Entries(perm);
+      dynamic_cast<DistributedVector<double>&>(*ixlow).permuteVec0Entries(perm);
+      dynamic_cast<DistributedVector<double>&>(*ixupp).permuteVec0Entries(perm);
    }
 
-   dynamic_cast<StochVector&>(*x).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*v).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*w).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*phi).permuteVec0Entries(perm);
-   dynamic_cast<StochVector&>(*gamma).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*x).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*v).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*w).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*phi).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*gamma).permuteVec0Entries(perm);
 }
 
 void DistributedVariables::permuteEqLinkingEntries(const std::vector<unsigned int>& perm) {
-   dynamic_cast<StochVector&>(*y).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*y).permuteLinkingEntries(perm);
 }
 
 void DistributedVariables::permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool vars_only) {
    if (!vars_only) {
-      dynamic_cast<StochVector&>(*iclow).permuteLinkingEntries(perm);
-      dynamic_cast<StochVector&>(*icupp).permuteLinkingEntries(perm);
+      dynamic_cast<DistributedVector<double>&>(*iclow).permuteLinkingEntries(perm);
+      dynamic_cast<DistributedVector<double>&>(*icupp).permuteLinkingEntries(perm);
    }
 
-   dynamic_cast<StochVector&>(*s).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*z).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*t).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*u).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*pi).permuteLinkingEntries(perm);
-   dynamic_cast<StochVector&>(*lambda).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*s).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*z).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*t).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*u).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*pi).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*lambda).permuteLinkingEntries(perm);
 }
 
 bool DistributedVariables::isRootNodeInSync() const {
    bool in_sync = true;
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
-   if (!dynamic_cast<const StochVector&>(*x).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*x).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "x not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*s).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*s).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "s not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*y).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*y).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "y not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*z).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*z).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "z not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const StochVector&>(*v).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*v).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "v not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*gamma).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*gamma).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "gamma not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const StochVector&>(*w).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*w).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "w not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*phi).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*phi).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "phi not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const StochVector&>(*t).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*t).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "t not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*lambda).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*lambda).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "lambda not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const StochVector&>(*u).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*u).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "u not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const StochVector&>(*pi).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*pi).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "pi not in sync" << std::endl;
       in_sync = false;

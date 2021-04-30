@@ -38,10 +38,9 @@ private:
 public:
    std::vector<DistributedLinearSystem*> children;
 
-  sLinsysRoot(DistributedFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(DistributedFactory *factory, DistributedQP *prob_, OoqpVector *dd_,
-        OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *primal_reg_,
-        OoqpVector *dual_y_reg_, OoqpVector *dual_z_reg_, OoqpVector *rhs_);
+   sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
+   sLinsysRoot(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
+         OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs_);
 
    void factor2(DistributedQP* prob, Variables* vars) override;
    void assembleKKT(DistributedQP* prob, Variables* vars) override;
@@ -57,7 +56,7 @@ public:
    virtual void finalizeKKT(DistributedQP* prob, Variables* vars) = 0;
    virtual void finalizeKKTdist(DistributedQP* /*prob*/ ) { assert("not implemented here \n" && 0); };
 
-   void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    /* compute (Br0 - sum_j Br_mod_border) - buffer */
    virtual void finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows);
@@ -77,15 +76,15 @@ public:
    void LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border,
          bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) override;
 
-   void addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
 
-   void addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 
-  void putXDiagonal(const OoqpVector& xdiag_) override;
-  void putZDiagonal(const OoqpVector& zdiag_) override;
+   void putXDiagonal(const OoqpVector& xdiag_) override;
+   void putZDiagonal(const OoqpVector& zdiag_) override;
 
-  void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
-  void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
+   void addRegularization(OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_) const override;
+   void addRegularizationsToKKTs(const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_) override;
 
    virtual void AddChild(DistributedLinearSystem* child);
 
@@ -117,21 +116,21 @@ protected: //buffers
 
    SparseSymMatrix* kktDist{};
 
-  OoqpVector* xDiag{};
+   OoqpVector* xDiag{};
 
-  OoqpVector* zDiag{};
-  OoqpVector* zDiagLinkCons{};
+   OoqpVector* zDiag{};
+   OoqpVector* zDiagLinkCons{};
 
-  OoqpVector* xReg{};
-  OoqpVector* yReg{};
-  OoqpVector* yRegLinkCons{};
+   OoqpVector* xReg{};
+   OoqpVector* yReg{};
+   OoqpVector* yRegLinkCons{};
 
-  OoqpVector* zReg{};
-  OoqpVector* zRegLinkCons{};
+   OoqpVector* zReg{};
+   OoqpVector* zRegLinkCons{};
 
    double* sparseKktBuffer{};
 
-   std::unique_ptr<StochVector> sol_inner{};
+   std::unique_ptr<DistributedVector<double>> sol_inner{};
 
    int childrenProperStart; // first non-dummy child
    int childrenProperEnd;   // end of non-dummy children range (not included)

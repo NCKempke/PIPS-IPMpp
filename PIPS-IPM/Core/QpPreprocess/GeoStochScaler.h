@@ -9,7 +9,7 @@
 #define PIPS_IPM_CORE_QPPREPROCESS_GEOSTOCHSCALER_H_
 
 #include "../QpPreprocess/StochScaler.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 
 class Problem;
 

@@ -32,7 +32,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
   problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
   //get the communicator from one of the vectors
-  StochVector& dds = dynamic_cast<StochVector&>(*dd);
+  DistributedVector<double>& dds = dynamic_cast<DistributedVector<double>&>(*dd);
   this->mpiComm = dds.mpiComm;
   this->iAmDistrib = dds.iAmDistrib;
 }
@@ -60,7 +60,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_,
 
   if( dd )
   {
-     StochVector& dds = dynamic_cast<StochVector&>(*dd);
+     DistributedVector<double>& dds = dynamic_cast<DistributedVector<double>&>(*dd);
      mpiComm = dds.mpiComm;
      iAmDistrib = dds.iAmDistrib;
   }
@@ -77,10 +77,10 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_,
 void DistributedLinearSystem::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs1_in,
 				const OoqpVector& rhs2_in, const OoqpVector& rhs3_in ) const
 {
-  StochVector& rhs  = dynamic_cast<StochVector&>(rhs_in);
-  const StochVector& rhs1 = dynamic_cast<const StochVector&>(rhs1_in);
-  const StochVector& rhs2 = dynamic_cast<const StochVector&>(rhs2_in);
-  const StochVector& rhs3 = dynamic_cast<const StochVector&>(rhs3_in);
+  DistributedVector<double>& rhs  = dynamic_cast<DistributedVector<double>&>(rhs_in);
+  const DistributedVector<double>& rhs1 = dynamic_cast<const DistributedVector<double>&>(rhs1_in);
+  const DistributedVector<double>& rhs2 = dynamic_cast<const DistributedVector<double>&>(rhs2_in);
+  const DistributedVector<double>& rhs3 = dynamic_cast<const DistributedVector<double>&>(rhs3_in);
 
   rhs.jointCopyFrom(rhs1, rhs2, rhs3);
 }
@@ -88,10 +88,10 @@ void DistributedLinearSystem::joinRHS( OoqpVector& rhs_in, const OoqpVector& rhs
 void DistributedLinearSystem::separateVars( OoqpVector& x_in, OoqpVector& y_in,
 				     OoqpVector& z_in, const OoqpVector& vars_in ) const
 {
-  StochVector& x = dynamic_cast<StochVector&>(x_in);
-  StochVector& y = dynamic_cast<StochVector&>(y_in);
-  StochVector& z = dynamic_cast<StochVector&>(z_in);
-  const StochVector& vars = dynamic_cast<const StochVector&>(vars_in);
+  DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
+  DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
+  DistributedVector<double>& z = dynamic_cast<DistributedVector<double>&>(z_in);
+  const DistributedVector<double>& vars = dynamic_cast<const DistributedVector<double>&>(vars_in);
 
   vars.jointCopyTo(x, y, z);
 }
@@ -557,7 +557,7 @@ void DistributedLinearSystem::putBiTBorder( DenseGenMatrix& res, const BorderBiB
 
 void DistributedLinearSystem::solveCompressed( OoqpVector& rhs_)
 {
-   StochVector& rhs = dynamic_cast<StochVector&>(rhs_);
+   DistributedVector<double>& rhs = dynamic_cast<DistributedVector<double>&>(rhs_);
 #ifdef TIMING
   //double tTot=MPI_Wtime();
 #endif

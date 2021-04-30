@@ -12,7 +12,7 @@
 #include "SparseSymMatrix.h"
 #include "DenseGenMatrix.h"
 #include "SimpleVector.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "StringGenMatrix.h"
 
 #include <vector>
@@ -102,7 +102,7 @@ public:
    };
 
    using BorderMod = BorderMod_Block<DenseGenMatrix>;
-   using BorderModVector = BorderMod_Block<StochVector>;
+   using BorderModVector = BorderMod_Block<DistributedVector<double>>;
 
 
    template<typename T>
@@ -140,7 +140,7 @@ public:
 
    virtual void Ltsolve(DistributedQP* problem, OoqpVector& x) = 0;
 
-   virtual void Ltsolve2(DistributedQP* problem, StochVector& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
+   virtual void Ltsolve2(DistributedQP* problem, DistributedVector<double>& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
 
    void solveCompressed(OoqpVector& rhs) override;
 
@@ -222,19 +222,19 @@ public:
    virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
-   virtual void computeInnerSystemRightHandSide(StochVector& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
+   virtual void computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 
 public:
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderTimesRhsToB0(StochVector& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {
+   virtual void addBorderTimesRhsToB0(DistributedVector<double>& /*rhs*/, SimpleVector<double>& /*b0*/, BorderLinsys& /*border*/ ) {
       assert(false && "not implemented here");
    };
 
    /* add you part of the border times rhs to b0 */
-   virtual void addBorderX0ToRhs(StochVector& /*rhs*/, const SimpleVector<double>& /*x0*/, BorderLinsys& /*border*/ ) {
+   virtual void addBorderX0ToRhs(DistributedVector<double>& /*rhs*/, const SimpleVector<double>& /*x0*/, BorderLinsys& /*border*/ ) {
       assert(false && "not implemented here");
    };
 

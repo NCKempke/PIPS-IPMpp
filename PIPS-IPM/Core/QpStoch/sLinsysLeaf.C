@@ -4,17 +4,9 @@
 
 #include "sLinsysLeaf.h"
 
-sLinsysLeaf::sLinsysLeaf(DistributedFactory *factory_, DistributedQP* prob,
-          OoqpVector* dd_,
-          OoqpVector* dq_,
-          OoqpVector* nomegaInv_,
-          OoqpVector* primal_reg_,
-          OoqpVector* dual_y_reg_,
-          OoqpVector* dual_z_reg_,
-          OoqpVector* rhs_
-       )
-  : DistributedLinearSystem(factory_, prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false)
-{
+sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
+      OoqpVector* primal_reg_, OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs_) : DistributedLinearSystem(factory_, prob, dd_, dq_,
+      nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false) {
 #ifdef TIMING
    const int myRank = PIPS_MPIgetRank(mpiComm);
    const double t0 = MPI_Wtime();
@@ -67,7 +59,7 @@ sLinsysLeaf::sLinsysLeaf(DistributedFactory *factory_, DistributedQP* prob,
    if (myRank == 0) printf("Rank 0: new sLinsysLeaf took %f sec\n",t1);
 #endif
 
-   mpiComm = (dynamic_cast<StochVector*>(dd_))->mpiComm;
+   mpiComm = (dynamic_cast<DistributedVector<double>*>(dd_))->mpiComm;
 }
 
 void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
@@ -80,54 +72,49 @@ void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
    stochNode->resMon.recFactTmLocal_stop();
 }
 
-void sLinsysLeaf::putXDiagonal( const OoqpVector& xdiag_ )
-{
-  const StochVector& xdiag = dynamic_cast<const StochVector&>(xdiag_);
-  kkt->atPutDiagonal( 0, *xdiag.first );
+void sLinsysLeaf::putXDiagonal(const OoqpVector& xdiag_) {
+   const DistributedVector<double>& xdiag = dynamic_cast<const DistributedVector<double>&>(xdiag_);
+   kkt->atPutDiagonal(0, *xdiag.first);
 }
 
-void sLinsysLeaf::putZDiagonal( const OoqpVector& zdiag_ )
-{
-  const StochVector& zdiag = dynamic_cast<const StochVector&>(zdiag_);
-  kkt->atPutDiagonal( locnx + locmy, *zdiag.first );
+void sLinsysLeaf::putZDiagonal(const OoqpVector& zdiag_) {
+   const DistributedVector<double>& zdiag = dynamic_cast<const DistributedVector<double>&>(zdiag_);
+   kkt->atPutDiagonal(locnx + locmy, *zdiag.first);
 }
 
 /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
-void sLinsysLeaf::addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const
-{
-   if( locnx > 0 )
-      dynamic_cast<StochVector&>(regP_).first->setToConstant( primal_reg_val );
+void sLinsysLeaf::addRegularization(OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_) const {
+   if (locnx > 0)
+      dynamic_cast<DistributedVector<double>&>(regP_).first->setToConstant(primal_reg_val);
 
-   if( locmy > 0 )
-      dynamic_cast<StochVector&>(regDy_).first->setToConstant( dual_y_reg_val );
+   if (locmy > 0)
+      dynamic_cast<DistributedVector<double>&>(regDy_).first->setToConstant(dual_y_reg_val);
 
-   if( locmz > 0 )
-      dynamic_cast<StochVector&>(regDz_).first->setToConstant( dual_z_reg_val );
+   if (locmz > 0)
+      dynamic_cast<DistributedVector<double>&>(regDz_).first->setToConstant(dual_z_reg_val);
 }
 
-void sLinsysLeaf::addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ )
-{
-  const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
-  kkt->atAddDiagonal( 0, *regP.first );
+void sLinsysLeaf::addRegularizationsToKKTs(const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_) {
+   const DistributedVector<double>& regP = dynamic_cast<const DistributedVector<double>&>(regP_);
+   kkt->atAddDiagonal(0, *regP.first);
 
-  const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
-  kkt->atPutDiagonal( locnx, *regDy.first );
+   const DistributedVector<double>& regDy = dynamic_cast<const DistributedVector<double>&>(regDy_);
+   kkt->atPutDiagonal(locnx, *regDy.first);
 
-  const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
-  kkt->atAddDiagonal( locnx + locmy, *regDz.first );
+   const DistributedVector<double>& regDz = dynamic_cast<const DistributedVector<double>&>(regDz_);
+   kkt->atAddDiagonal(locnx + locmy, *regDz.first);
 }
 
-void sLinsysLeaf::Dsolve( DistributedQP*, OoqpVector& x_in )
-{
-   StochVector& x = dynamic_cast<StochVector&>(x_in);
+void sLinsysLeaf::Dsolve(DistributedQP*, OoqpVector& x_in) {
+   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.size() == 0);
    stochNode->resMon.recDsolveTmChildren_start();
    solver->Dsolve(*x.first);
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
-void sLinsysLeaf::Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool) {
-   StochVector& b = dynamic_cast<StochVector&>(x);
+void sLinsysLeaf::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
    assert(0 == b.children.size());
 
@@ -149,7 +136,7 @@ void sLinsysLeaf::deleteChildren() {}
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
 void sLinsysLeaf::addLniziLinkCons(DistributedQP* prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/) {
    SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
-   SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(zi_).first);
+   SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 
    solver->solve(zi);
 
@@ -427,7 +414,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenM
 
 }
 
-void sLinsysLeaf::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void sLinsysLeaf::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
    assert(border.F.children.size() == 0);
    assert(rhs.children.size() == 0);
 
@@ -510,7 +497,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<
    border.G.mult(1.0, b3, -1.0, zi1);
 }
 
-void sLinsysLeaf::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void sLinsysLeaf::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
    assert(border.F.children.size() == 0);
    assert(rhs.children.size() == 0);
 

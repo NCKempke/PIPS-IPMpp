@@ -8,7 +8,7 @@
 #include "StochInputTree.h"
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "DistributedVariables.h"
 #include "DistributedResiduals.hpp"
 #include "sLinsysRoot.h"
@@ -199,21 +199,21 @@ Problem* DistributedFactory::make_problem() {
 #endif
 
    StochGenMatrixHandle A(tree->createA());
-   StochVectorHandle b(tree->createb());
+   DistributedVector<double>* b(tree->createb());
 
    StochGenMatrixHandle C(tree->createC());
-   StochVectorHandle clow(tree->createclow());
-   StochVectorHandle iclow(tree->createiclow());
-   StochVectorHandle cupp(tree->createcupp());
-   StochVectorHandle icupp(tree->createicupp());
+   DistributedVector<double>* clow(tree->createclow());
+   DistributedVector<double>* iclow(tree->createiclow());
+   DistributedVector<double>* cupp(tree->createcupp());
+   DistributedVector<double>* icupp(tree->createicupp());
 
    StochSymMatrixHandle Q(tree->createQ());
-   StochVectorHandle c(tree->createc());
+   DistributedVector<double>* c(tree->createc());
 
-   StochVectorHandle xlow(tree->createxlow());
-   StochVectorHandle ixlow(tree->createixlow());
-   StochVectorHandle xupp(tree->createxupp());
-   StochVectorHandle ixupp(tree->createixupp());
+   DistributedVector<double>* xlow(tree->createxlow());
+   DistributedVector<double>* ixlow(tree->createixlow());
+   DistributedVector<double>* xupp(tree->createxupp());
+   DistributedVector<double>* ixupp(tree->createixupp());
 
 #ifdef TIMING
    MPI_Barrier( tree->getCommWrkrs() );
