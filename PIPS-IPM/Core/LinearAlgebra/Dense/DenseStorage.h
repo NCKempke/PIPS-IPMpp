@@ -68,6 +68,8 @@ public:
   void fromGetDiagonal( int idiag, OoqpVector& v ) override;
   void atPutDiagonal( int idiag, const double x[], int incx, int extent );
   void atAddDiagonal( int idiag, const double x[], int incx, int extent );
+  void diagonal_add_constant_from(int from, int length, double value);
+
 };
   
 #endif

@@ -281,6 +281,16 @@ void DenseStorage::atAddDiagonal( int idiag,
       M[i + idiag][i + idiag] += x[i*incx];
 }
 
+void DenseStorage::diagonal_add_constant_from(int from, int length, double value)
+{
+   assert(from + length < this->m);
+   assert(from + length < this->n);
+
+   for (int i = from; i < from + length; ++i) {
+      M[i][i] += value;
+   }
+}
+
 double DenseStorage::abmaxnorm() const
 {
    double max = 0.0;
