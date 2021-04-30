@@ -32,7 +32,7 @@ add_library(ooqpstoch STATIC
    QpStoch/sLinsysRootBordered.C
    QpStoch/sTreeCallbacks.C
    LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
-)
+   QpStoch/RegularizationStrategy.h QpStoch/RegularizationStrategy.cpp)
 
 if( HAVE_MA27 )
    target_compile_definitions( ooqpstoch PUBLIC -DWITH_MA27 )
