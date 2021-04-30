@@ -59,6 +59,8 @@ class sLinsysRootAug : public sLinsysRoot {
   void LtsolveHierarchyBorder( DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
         std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols ) override;
 
+   void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
+
  protected:
   SymMatrix* createKKT (DistributedQP* prob) const;
   void createSolversSparse( SolverType solver );
@@ -91,8 +93,6 @@ class sLinsysRootAug : public sLinsysRoot {
 
   std::vector<double> reduced_rhss_blocked;
   std::unique_ptr<SimpleVector<double>> redRhs;
-
-  std::unique_ptr<SimpleVector<double>> zDiagReg;
 };
 
 #endif

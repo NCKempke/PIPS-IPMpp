@@ -32,7 +32,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
   problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
   //get the communicator from one of the vectors
-  StochVector& dds = dynamic_cast<StochVector&>(*dd);
+  const StochVector& dds = dynamic_cast<const StochVector&>(*primal_diagonal);
   this->mpiComm = dds.mpiComm;
   this->iAmDistrib = dds.iAmDistrib;
 }
@@ -58,14 +58,11 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_,
 {
   problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
-  if( dd )
-  {
-     StochVector& dds = dynamic_cast<StochVector&>(*dd);
-     mpiComm = dds.mpiComm;
-     iAmDistrib = dds.iAmDistrib;
-  }
-  else
-  {
+  if (primal_diagonal) {
+     const auto& primal_diagonal_stoch= dynamic_cast<const StochVector&>(*primal_diagonal);
+     mpiComm = primal_diagonal_stoch.mpiComm;
+     iAmDistrib = primal_diagonal_stoch.iAmDistrib;
+  } else {
      mpiComm = MPI_COMM_NULL;
      iAmDistrib = false;
   }
@@ -168,6 +165,36 @@ void DistributedLinearSystem::computeU_V(DistributedQP *problem,
     V->atPutDense(0, it, &uCol[0], 1, N, 1);
 
   }
+}
+
+void DistributedLinearSystem::factorize_with_correct_inertia() {
+   assert(false);
+   regularization_strategy->notify_new_step();
+
+   /* factor once without applying regularization */
+   solver->matrixChanged();
+   if (!solver->reports_inertia()) {
+      return;
+   }
+
+   double last_primal_regularization{0.0};
+   double last_dual_equality_regularization{0.0};
+   double last_dual_inequality_regularization{0.0};
+
+   while (!regularization_strategy->is_inertia_correct(solver->get_inertia())) {
+      auto[primal_regularization_value, dual_equality_regularization_value, dual_inequality_regularization_value] =
+      this->regularization_strategy->get_regularization_parameters(solver->get_inertia(),
+         barrier_parameter_current_iterate);
+
+      assert(primal_regularization_value >= last_primal_regularization);
+      assert(dual_equality_regularization_value >= last_dual_equality_regularization);
+      assert(dual_inequality_regularization_value >= last_dual_inequality_regularization);
+
+      this->add_regularization_local_kkt(primal_regularization_value - last_primal_regularization,
+         dual_equality_regularization_value - last_dual_equality_regularization,
+         dual_inequality_regularization_value - last_dual_inequality_regularization);
+      solver->matrixChanged();
+   }
 }
 
 void DistributedLinearSystem::allocU(DenseGenMatrix ** U, int n0)
@@ -578,7 +605,7 @@ void DistributedLinearSystem::solveCompressed( OoqpVector& rhs_)
  *                      (  [ C 0 0 ]    )
  */
 void DistributedLinearSystem::LniTransMult(DistributedQP *problem,
-			   SimpleVector<double>& y, 
+			   SimpleVector<double>& y,
 			   double alpha, SimpleVector<double>& x)
 {
   SparseGenMatrix& A = problem->getLocalA();
@@ -648,7 +675,7 @@ void DistributedLinearSystem::LniTransMult(DistributedQP *problem,
  */
 
 void DistributedLinearSystem::addTermToSchurResidual(DistributedQP* problem,
-				     SimpleVector<double>& res, 
+				     SimpleVector<double>& res,
 				     SimpleVector<double>& x)
 {
   SparseGenMatrix& A = problem->getLocalA();

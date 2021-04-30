@@ -44,11 +44,10 @@ class sLinsysLeaf : public DistributedLinearSystem
    //void Dsolve2 ( OoqpVector& x ) override;
    void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool) override;
 
-  void putXDiagonal( const OoqpVector& xdiag_ ) override;
-  void putZDiagonal( const OoqpVector& zdiag_ ) override;
+   void put_primal_diagonal() override;
+   void put_dual_inequalites_diagonal() override;
 
-  void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
-  void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
+   void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
    //void Ltsolve_internal(  DistributedQP *prob, StochVector& x, SimpleVector<double>& xp);
    void deleteChildren() override;
@@ -64,6 +63,7 @@ class sLinsysLeaf : public DistributedLinearSystem
          bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) override;
 
 protected:
+   void add_regularization_diagonal(int offset, double regularization, OoqpVector& regularization_vector);
 
    static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
 

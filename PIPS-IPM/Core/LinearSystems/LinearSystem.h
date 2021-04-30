@@ -9,6 +9,7 @@
 #include "DoubleMatrixHandle.h"
 #include "OoqpVector.h"
 #include "Observer.h"
+#include "RegularizationStrategy.h"
 
 #include <functional>
 #include <memory>
@@ -89,17 +90,11 @@ protected:
    // TODO : add parameters
    /** regularization parameters */
    const bool apply_regularization{};
-   bool clean_factorization{false};
-   double primal_reg_val{};
-   double dual_y_reg_val{};
-   double dual_z_reg_val{};
+   std::unique_ptr<RegularizationStrategy> regularization_strategy;
 
-   const double primal_reg_min{};
-   const double dual_reg_min{};
-
-   OoqpVector* regP{};
-   OoqpVector* regDy{};
-   OoqpVector* regDz{};
+   OoqpVector* primal_regularization_diagonal{};
+   OoqpVector* dual_equality_regularization_diagonal{};
+   OoqpVector* dual_inequality_regularization_diagonal{};
 
    LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
 
@@ -108,9 +103,9 @@ protected:
    long long my{0};
    long long mz{0};
 
-  /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
-  OoqpVector* dd{};
-  OoqpVector* dq{};
+   /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
+   OoqpVector* primal_diagonal{};
+   OoqpVector* dq{};
 
    /** index matrices for the upper and lower bounds on x and Cx */
    OoqpVector* ixupp{};
@@ -156,12 +151,12 @@ protected:
 
    const bool xyzs_solve_print_residuals;
 
+   double barrier_parameter_current_iterate{std::numeric_limits<double>::infinity()};
 public:
    LinearSystem(ProblemFactory* factory, Problem* problem);
-   LinearSystem(ProblemFactory* factory_, Problem* problem, OoqpVector* dd_,
-        OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
-        OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_,
-        OoqpVector* rhs_, bool create_iter_ref_vecs);
+
+   LinearSystem(ProblemFactory* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_regularization_,
+        OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization_, OoqpVector* rhs_, bool create_iter_ref_vecs);
 
    ~LinearSystem() override;
 
@@ -222,31 +217,24 @@ public:
 
    /** places the diagonal resulting from the bounds on x into the
     * augmented system matrix */
-   virtual void putXDiagonal(const OoqpVector& xdiag) = 0;
+   virtual void put_primal_diagonal() = 0;
 
    /** places the diagonal resulting from the bounds on Cx into the
     * augmented system matrix */
-   virtual void putZDiagonal(const OoqpVector& zdiag) = 0;
+   virtual void put_dual_inequalites_diagonal() = 0;
 
    /** computes the diagonal matrices in the augmented system from the
        current set of variables */
-   virtual void computeDiagonals(OoqpVector& dd, OoqpVector& omega, OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
+   virtual void computeDiagonals(OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
          OoqpVector& gamma, OoqpVector& w, OoqpVector& phi);
 
-    /** adjust regularization parameters according to BiCGStab outcome */
-    void adjustRegularization();
+   /** will factorize and regularize kkt until inertia criterion is met */
+   virtual void factorize_with_correct_inertia() = 0;
 
-    /** apply regularization to KKTs */
-    virtual void regularizeKKTs();
-
-    /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
-    virtual void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const = 0;
-
-    /** add regularization vectors to KKTs */
-    virtual void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) = 0;
+   void print_regularization_statistics() const;
 
 protected:
-    void compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
+   void compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
     void compute_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
    //void computeResidualsReducedSlacks(const QP& data);
 
@@ -255,7 +243,7 @@ protected:
    void system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx,
       OoqpVector& soly, OoqpVector& solz, bool use_regularized_system);
 
-   double matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz);
+   double matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, bool use_regularized_system);
 
    //void matReducedInfnorm(const QP& data);
 

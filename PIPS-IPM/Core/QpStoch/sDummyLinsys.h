@@ -29,12 +29,12 @@ class sDummyLinsys : public DistributedLinearSystem
 
   void solveCompressed( OoqpVector& ) override {};
 
-  void putXDiagonal( const OoqpVector& ) override {};
-  void putZDiagonal( const OoqpVector& ) override {};
-  void addRegularization( OoqpVector&, OoqpVector&, OoqpVector& ) const override {};
-  void addRegularizationsToKKTs( const OoqpVector&, const OoqpVector&, const OoqpVector& ) override {};
+  void put_primal_diagonal() override {};
+  void put_dual_inequalites_diagonal() override {};
 
-  void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
+   void add_regularization_local_kkt(double, double, double) override {};
+
+   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
 
   void separateVars( OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector& ) const override {};
 

@@ -12,37 +12,15 @@ SparseLinearSystem::SparseLinearSystem(ProblemFactory* factory_in, Problem* prob
 }
 
 
-void SparseLinearSystem::putXDiagonal(const OoqpVector& xdiag) {
-   Mat->atPutDiagonal(0, xdiag);
+void SparseLinearSystem::put_primal_diagonal() {
+   assert(primal_diagonal);
+   Mat->atPutDiagonal(0, *primal_diagonal);
 }
 
 
-void SparseLinearSystem::putZDiagonal(const OoqpVector& zdiag) {
-   Mat->atPutDiagonal(nx + my, zdiag);
-   //zdiag.writeToStream(cout);
-   //!assert(false);
-
-   /*//!log
-   printf("QpGenSparseLinsys::putZDiagonal\n");
-   SparseSymMatrix& M = *Mat;
-
-   int* krowM = M.krowM();
-   int* jcolM = M.jcolM();
-   double* dM = M.M();
-
-   int nn; M.getSize(nn, nn);
-   for(int i=0; i<nn; i++) {
-     printf("row %d \n\t", i);
-
-     for(int j=krowM[i];j<krowM[i+1]; j++)
-       printf("%9d ", jcolM[j]);
-     printf("\n\t");
-
-     for(int j=krowM[i];j<krowM[i+1]; j++)
-       printf("%9.6f ", dM[j]);
-     printf("\n");
-   }
-   */
+void SparseLinearSystem::put_dual_inequalites_diagonal() {
+   assert(nomegaInv);
+   Mat->atPutDiagonal(nx + my, *nomegaInv);
 }
 
 

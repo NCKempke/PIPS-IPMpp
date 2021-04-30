@@ -759,19 +759,19 @@ void sLinsysRoot::Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>&
 
 void sLinsysRoot::createChildren(DistributedQP* prob) {
    DistributedLinearSystem* child{};
-   assert(dd && dq && nomegaInv && rhs && prob);
+   assert(primal_diagonal && dq && nomegaInv && rhs && prob);
 
-   StochVector &ddst = dynamic_cast<StochVector&>(*dd);
+   StochVector &primal_diagonalst = dynamic_cast<StochVector&>(*primal_diagonal);
    StochVector &dqst = dynamic_cast<StochVector&>(*dq);
    StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
-   StochVector &regPst = dynamic_cast<StochVector&>(*regP);
-   StochVector &regDyst = dynamic_cast<StochVector&>(*regDy);
-   StochVector &regDzst = dynamic_cast<StochVector&>(*regDz);
+   StochVector &regPst = dynamic_cast<StochVector&>(*primal_regularization_diagonal);
+   StochVector &regDyst = dynamic_cast<StochVector&>(*dual_equality_regularization_diagonal);
+   StochVector &regDzst = dynamic_cast<StochVector&>(*dual_inequality_regularization_diagonal);
    StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
 
    for (size_t it = 0; it < prob->children.size(); it++) {
-      assert(ddst.children[it] != nullptr);
-      if (MPI_COMM_NULL == ddst.children[it]->mpiComm) {
+      assert(primal_diagonalst.children[it] != nullptr);
+      if (MPI_COMM_NULL == primal_diagonalst.children[it]->mpiComm) {
          child = new sDummyLinsys(dynamic_cast<DistributedFactory*>(factory), prob->children[it]);
       }
       else {
@@ -781,21 +781,21 @@ void sLinsysRoot::createChildren(DistributedQP* prob) {
             assert(prob->isHierarchyRoot());
             assert(prob->children.size() == 1);
             assert(prob->children[0]);
-            assert(ddst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1 && rhsst.children.size() == 1);
-            assert(MPI_COMM_NULL != ddst.children[0]->mpiComm);
+            assert(primal_diagonalst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1 && rhsst.children.size() == 1);
+            assert(MPI_COMM_NULL != primal_diagonalst.children[0]->mpiComm);
          }
 
          if( prob->children[it]->children.empty() )
          {
             child = stochFactory->make_linear_system_leaf(prob->children[it],
-                  ddst.children[it], dqst.children[it], nomegaInvst.children[it],
+               primal_diagonalst.children[it], dqst.children[it], nomegaInvst.children[it],
                   regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it] );
          }
          else
          {
             assert( prob->children[it] );
             child = stochFactory->make_linear_system_root(prob->children[it],
-                  ddst.children[it], dqst.children[it], nomegaInvst.children[it],
+               primal_diagonalst.children[it], dqst.children[it], nomegaInvst.children[it],
                   regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it] );
          }
       }
@@ -847,69 +847,30 @@ void sLinsysRoot::initProperChildrenRange() {
    childrenProperEnd = childEnd;
 }
 
-void sLinsysRoot::putXDiagonal( const OoqpVector& xdiag_ )
+void sLinsysRoot::put_primal_diagonal()
 {
-  const StochVector& xdiag = dynamic_cast<const StochVector&>(xdiag_);
-  assert(children.size() == xdiag.children.size());
+   assert(primal_diagonal);
+   const StochVector& primal_diagonal_stoch = dynamic_cast<const StochVector&>(*primal_diagonal);
+   assert(children.size() == primal_diagonal_stoch.children.size());
 
-  //kkt->atPutDiagonal( 0, *xdiag.first );
-  xDiag = xdiag.first;
+   xDiag = primal_diagonal_stoch.first;
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->putXDiagonal(*xdiag.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->put_primal_diagonal();
 }
 
-void sLinsysRoot::putZDiagonal( const OoqpVector& zdiag_ )
+void sLinsysRoot::put_dual_inequalites_diagonal()
 {
-  const StochVector& zdiag = dynamic_cast<const StochVector&>(zdiag_);
-  assert(children.size() == zdiag.children.size());
+   assert(nomegaInv);
+   const StochVector& nomegaInv_stoch = dynamic_cast<const StochVector&>(*nomegaInv);
+   assert(children.size() == nomegaInv_stoch.children.size());
 
    //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );
-   zDiag = zdiag.first;
-   zDiagLinkCons = zdiag.last;
+   zDiag = nomegaInv_stoch.first;
+   zDiagLinkCons = nomegaInv_stoch.last;
 
-  for(size_t it = 0; it < children.size(); it++)
-    children[it]->putZDiagonal(*zdiag.children[it]);
-}
-
-void sLinsysRoot::addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ )
-{
-   const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
-   const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
-   const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
-
-   xReg = regP.first;
-
-   yReg = regDy.first;
-   yRegLinkCons = regDy.last;
-
-   zReg = regDz.first;
-   zRegLinkCons = regDz.last;
-
-   for(size_t it=0; it < children.size(); it++)
-      children[it]->addRegularizationsToKKTs(*regP.children[it], *regDy.children[it], *regDz.children[it] );
-}
-
-void sLinsysRoot::addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const
-{
-   const StochVector& regP = dynamic_cast<const StochVector&>(regP_);
-   const StochVector& regDy = dynamic_cast<const StochVector&>(regDy_);
-   const StochVector& regDz = dynamic_cast<const StochVector&>(regDz_);
-
-   regP.first->setToConstant(primal_reg_val);
-
-   if( regDy.first )
-      regDy.first->setToConstant(dual_y_reg_val);
-   if( regDy.last )
-      regDy.last->setToConstant(dual_y_reg_val);
-
-   if( regDz.first )
-      regDz.first->setToConstant(dual_z_reg_val);
-   if( regDz.last )
-      regDz.last->setToConstant(dual_z_reg_val);
-
-   for( size_t i = 0; i < children.size(); ++i )
-      children[i]->addRegularization( *regP.children[i], *regDy.children[i], *regDz.children[i] );
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->put_dual_inequalites_diagonal();
 }
 
 void sLinsysRoot::AddChild(DistributedLinearSystem* child)
@@ -1561,11 +1522,20 @@ void sLinsysRoot::factorizeKKT(DistributedQP* prob) {
          exit(1);
       }
 #endif
-
-      solver->matrixRebuild(*kktDist);
+      if (apply_regularization) {
+         assert( false && "TODO: implement");
+         solver->matrixRebuild(*kktDist);
+      } else {
+         solver->matrixRebuild(*kktDist);
+      }
    }
    else {
-      solver->matrixChanged();
+      if (apply_regularization) {
+         factorize_with_correct_inertia();
+      }
+      else {
+         solver->matrixChanged();
+      }
    }
 
    //stochNode->resMon.recFactTmLocal_stop();

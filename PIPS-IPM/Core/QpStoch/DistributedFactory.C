@@ -124,12 +124,9 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const DoubleMatrix* kkt
    return nullptr;
 }
 
-
-sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem,
-         OoqpVector* dd, OoqpVector* dq,
-         OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs )
-{
-   assert( problem );
+sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv,
+   OoqpVector* primal_regularization, OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs) {
+   assert(problem);
    static bool printed = false;
    const SolverType leaf_solver = pips_options::getSolverLeaf();
 
@@ -140,12 +137,12 @@ sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem,
 
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+         return new sLinsysLeafMumps(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
 #endif
       }
       else if (leaf_solver == SolverType::SOLVER_PARDISO || leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
-         return new sLinsysLeafSchurSlv(this, problem, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+         return new sLinsysLeafSchurSlv(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
 #endif
       }
       else {
@@ -168,7 +165,7 @@ sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem,
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
             pips_options::setIntParameter("LINEAR_LEAF_SOLVER", solver);
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
-            return new sLinsysLeafSchurSlv(this, problem, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+            return new sLinsysLeafSchurSlv(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
 #endif
          }
 
@@ -184,11 +181,11 @@ sLinsysLeaf* DistributedFactory::make_linear_system_leaf(DistributedQP* problem,
 
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
-         return new sLinsysLeafMumps(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+         return new sLinsysLeafMumps(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
 #endif
       }
       else
-         return new sLinsysLeaf(this, problem, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+         return new sLinsysLeaf(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
    }
    return nullptr;
 }
@@ -310,11 +307,12 @@ sLinsysRoot* DistributedFactory::make_linear_system_root() {
    return new sLinsysRootAug(this, problem);
 }
 
-sLinsysRoot* DistributedFactory::make_linear_system_root(DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs) {
+sLinsysRoot* DistributedFactory::make_linear_system_root(DistributedQP* prob, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv,
+   OoqpVector* primal_regularization, OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs) {
    if (prob->isHierarchyInnerLeaf())
-      return new sLinsysRootAugHierInner(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs);
+      return new sLinsysRootAugHierInner(this, prob, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
    else
-      return new sLinsysRootAug(this, prob, dd, dq, nomegaInv, regP, regDy, regDz, rhs, true);
+      return new sLinsysRootAug(this, prob, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs, true);
 }
 
 DoubleLinearSolver* DistributedFactory::make_root_solver() { return nullptr; };

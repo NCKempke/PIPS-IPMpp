@@ -10,9 +10,7 @@
 #include "SCsparsifier.h"
 
 class SCsparsifier;
-
 class DistributedFactory;
-
 class DistributedQP;
 
 // DEBUG only
@@ -38,10 +36,9 @@ private:
 public:
    std::vector<DistributedLinearSystem*> children;
 
-  sLinsysRoot(DistributedFactory * factory_, DistributedQP * prob_, bool is_hierarchy_root = false);
-  sLinsysRoot(DistributedFactory *factory, DistributedQP *prob_, OoqpVector *dd_,
-        OoqpVector *dq_, OoqpVector *nomegaInv_, OoqpVector *primal_reg_,
-        OoqpVector *dual_y_reg_, OoqpVector *dual_z_reg_, OoqpVector *rhs_);
+  sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
+  sLinsysRoot(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
+        OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs_);
 
    void factor2(DistributedQP* prob, Variables* vars) override;
    void assembleKKT(DistributedQP* prob, Variables* vars) override;
@@ -81,11 +78,8 @@ public:
 
    void addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 
-  void putXDiagonal(const OoqpVector& xdiag_) override;
-  void putZDiagonal(const OoqpVector& zdiag_) override;
-
-  void addRegularization( OoqpVector& regP_, OoqpVector& regDy_, OoqpVector& regDz_ ) const override;
-  void addRegularizationsToKKTs( const OoqpVector& regP_, const OoqpVector& regDy_, const OoqpVector& regDz_ ) override;
+  void put_primal_diagonal() override;
+  void put_dual_inequalites_diagonal() override;
 
    virtual void AddChild(DistributedLinearSystem* child);
 
@@ -121,13 +115,6 @@ protected: //buffers
 
   OoqpVector* zDiag{};
   OoqpVector* zDiagLinkCons{};
-
-  OoqpVector* xReg{};
-  OoqpVector* yReg{};
-  OoqpVector* yRegLinkCons{};
-
-  OoqpVector* zReg{};
-  OoqpVector* zRegLinkCons{};
 
    double* sparseKktBuffer{};
 

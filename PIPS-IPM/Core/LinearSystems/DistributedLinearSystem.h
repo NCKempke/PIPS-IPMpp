@@ -111,22 +111,18 @@ public:
       return BorderMod_Block<T>(child, bordermod.multiplier);
    }
 
-  DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
-  DistributedLinearSystem(DistributedFactory* factory,
-     DistributedQP* prob,
-		   OoqpVector* dd,
-		   OoqpVector* dq,
-		   OoqpVector* nomegaInv,
-		   OoqpVector* primal_reg_,
-		   OoqpVector* dual_y_reg_,
-		   OoqpVector* dual_z_reg_,
-		   OoqpVector* rhs,
-		   bool create_iter_ref_vecs
-  );
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
+
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* primal_reg_,
+		   OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs, bool create_iter_ref_vecs);
 
    ~DistributedLinearSystem() override = default;
 
    void factorize(Problem* problem, Variables* variables) override;
+
+   void factorize_with_correct_inertia() override;
+
+   virtual void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
 
    virtual void factor2(DistributedQP* problem, Variables* variables) = 0;
 

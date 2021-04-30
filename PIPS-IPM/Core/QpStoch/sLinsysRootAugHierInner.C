@@ -310,30 +310,32 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(DoubleMatrix& res, con
    addBlTKiInvBrToResBlockwise(res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols);
 }
 
-void sLinsysRootAugHierInner::putXDiagonal( const OoqpVector& xdiag_ )
+void sLinsysRootAugHierInner::put_primal_diagonal()
 {
-  assert( dynamic_cast<const StochVector&>(xdiag_).first->isKindOf(kStochVector) );
-  const StochVector& xdiag = dynamic_cast<const StochVector&>(*dynamic_cast<const StochVector&>(xdiag_).first);
+   assert(primal_diagonal);
+   assert(dynamic_cast<const StochVector&>(*primal_diagonal).first->isKindOf(kStochVector));
 
-   assert(children.size() == xdiag.children.size());
+   const auto& primal_diag_loc = dynamic_cast<const StochVector&>(*dynamic_cast<const StochVector&>(*primal_diagonal).first);
+   assert(children.size() == primal_diag_loc.children.size());
 
-   xDiag = xdiag.first;
+   xDiag = primal_diag_loc.first;
 
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->putXDiagonal(*xdiag.children[it]);
+   for(size_t it = 0; it < children.size(); it++)
+      children[it]->put_primal_diagonal();
 }
 
 
-void sLinsysRootAugHierInner::putZDiagonal( const OoqpVector& zdiag_ )
+void sLinsysRootAugHierInner::put_dual_inequalites_diagonal()
 {
-  assert( dynamic_cast<const StochVector&>(zdiag_).first->isKindOf(kStochVector) );
-  const StochVector& zdiag = dynamic_cast<const StochVector&>(*dynamic_cast<const StochVector&>(zdiag_).first);
+   assert(nomegaInv);
+   assert(dynamic_cast<const StochVector&>(*nomegaInv).first->isKindOf(kStochVector));
 
+   const StochVector& zdiag = dynamic_cast<const StochVector&>(*dynamic_cast<const StochVector&>(*nomegaInv).first);
    assert(children.size() == zdiag.children.size());
 
    zDiag = zdiag.first;
    zDiagLinkCons = zdiag.last;
 
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->putZDiagonal(*zdiag.children[it]);
+  for(size_t it = 0; it < children.size(); it++)
+     children[it]->put_dual_inequalites_diagonal();
 }

@@ -75,7 +75,7 @@ public:
 
    sLinsysRoot* newLinsysRootHierarchical();
 
-   sLinsysRoot* make_linear_system_root(DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs);
+   sLinsysRoot* make_linear_system_root(DistributedQP* problem, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* primal_regularization, OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs);
 
    Problem* switchToHierarchicalData(Problem* problem);
 
@@ -85,7 +85,8 @@ public:
 
    void separate_variables(OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
 
-   virtual sLinsysLeaf* make_linear_system_leaf(DistributedQP* problem, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* regP, OoqpVector* regDy, OoqpVector* regDz, OoqpVector* rhs);
+   virtual sLinsysLeaf* make_linear_system_leaf(DistributedQP* problem, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* primal_regularization,
+      OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs);
 
    virtual DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
 

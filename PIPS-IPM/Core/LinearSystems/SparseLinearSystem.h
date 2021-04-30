@@ -32,8 +32,8 @@ public:
     */
    void solveCompressed(OoqpVector& rhs) override;
 
-   void putXDiagonal(const OoqpVector& xdiag) override;
-   void putZDiagonal(const OoqpVector& zdiag) override;
+   void put_primal_diagonal() override;
+   void put_dual_inequalites_diagonal() override;
 
    /** calls QpGenLinsys::factor to assemble the augmented system
     * matrix, then calls matrixChanged to factor it

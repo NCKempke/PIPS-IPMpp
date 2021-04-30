@@ -27,6 +27,31 @@ sLinsysRootBordered::sLinsysRootBordered(DistributedFactory * factory_, Distribu
    solver.reset( createSolver(prob_, kkt.get()) );
 }
 
+void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization)
+{
+   assert(dynamic_cast<StochVector*>(primal_regularization_diagonal));
+   assert(dynamic_cast<StochVector*>(dual_equality_regularization_diagonal));
+   assert(dynamic_cast<StochVector*>(dual_inequality_regularization_diagonal));
+
+   if (locnx > 0) {
+      assert(dynamic_cast<StochVector*>(primal_regularization_diagonal)->first);
+      dynamic_cast<StochVector*>(primal_regularization_diagonal)->first->addConstant(primal_regularization);
+      kkt->diagonal_add_constant_from(0, locnx, primal_regularization);
+   }
+
+   if (locmyl > 0) {
+      assert(dynamic_cast<StochVector*>(dual_equality_regularization_diagonal)->last);
+      dynamic_cast<StochVector*>(dual_equality_regularization_diagonal)->last->addConstant(dual_equality_regularization);
+      kkt->diagonal_add_constant_from(locnx, locmyl, dual_equality_regularization);
+   }
+
+   if (locmzl > 0) {
+      assert(dynamic_cast<StochVector*>(dual_inequality_regularization_diagonal)->last);
+      dynamic_cast<StochVector*>(dual_inequality_regularization_diagonal)->last->addConstant(dual_inequality_regularization);
+      kkt->diagonal_add_constant_from(locnx + locmyl, locmzl, dual_inequality_regularization);
+   }
+}
+
 void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*)
 {
    /* Add corner block
@@ -70,18 +95,9 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    // update the KKT with the diagonals
    // xDiag is in fact diag(Q) + X^{-1} S
    /////////////////////////////////////////////////////////////
-   if( xDiag )
-   {
-      const auto& sxDiag = dynamic_cast<const SimpleVector<double>&>(*xDiag);
-      for( int i = 0; i < locnx; i++)
-         SC[i][i] += sxDiag[i];
-   }
-
-   if( xReg )
-   {
-      const auto& sxReg = dynamic_cast<const SimpleVector<double>&>(*xReg);
-      for( int i = 0; i < locnx; i++)
-         SC[i][i] += sxReg[i];
+   if (locnx > 0) {
+      assert(xDiag);
+      SC.atAddDiagonal(0, *xDiag);
    }
 
    /////////////////////////////////////////////////////////////
@@ -89,17 +105,12 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    /////////////////////////////////////////////////////////////
    if( locmyl > 0 )
    {
-      const auto* syRegLink = dynamic_cast<const SimpleVector<double>*>(yRegLinkCons);
-
       const double* MF0 = F0.M();
       const int* krowF0 = F0.krowM();
       const int* jcolF0 = F0.jcolM();
 
       for( int rowF0 = 0; rowF0 < locmyl; ++rowF0)
       {
-         if( syRegLink )
-            SC[locnx + rowF0][locnx + rowF0] += (*syRegLink)[rowF0];
-
          for( int k = krowF0[rowF0]; k < krowF0[rowF0 + 1]; ++k )
          {
             const int colF0 = jcolF0[k];
@@ -119,7 +130,6 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    {
       assert(zDiagLinkCons);
       const auto& szDiagLinkCons = dynamic_cast<const SimpleVector<double>&>(*zDiagLinkCons);
-      const auto* szRegLinkCons = dynamic_cast<const SimpleVector<double>*>(zRegLinkCons);
 
       const double* MG0 = G0.M();
       const int* krowG0 = G0.krowM();
@@ -127,8 +137,6 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
 
       for( int rowG0 = 0; rowG0 < locmzl; ++rowG0 )
       {
-         if( szRegLinkCons )
-            SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += (*szRegLinkCons)[rowG0];
          SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += szDiagLinkCons[rowG0];
 
          for( int k = krowG0[rowG0]; k < krowG0[rowG0 + 1]; ++k )
