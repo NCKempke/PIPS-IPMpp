@@ -608,7 +608,7 @@ void sLinsysRoot::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix
    }
 }
 
-void sLinsysRoot::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void sLinsysRoot::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
 
@@ -675,7 +675,7 @@ void sLinsysRoot::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>&
    G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1);
 }
 
-void sLinsysRoot::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void sLinsysRoot::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
 
@@ -744,12 +744,12 @@ void sLinsysRoot::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& 
    }
 }
 
-void sLinsysRoot::Ltsolve2(DistributedQP*, StochVector& x, SimpleVector<double>& x0, bool) {
+void sLinsysRoot::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
    assert(pips_options::getBoolParameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
 
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
 
    for (size_t i = 0; i < children.size(); ++i) {
       children[i]->computeInnerSystemRightHandSide(*b.children[i], x0, true);
@@ -761,13 +761,13 @@ void sLinsysRoot::createChildren(DistributedQP* prob) {
    DistributedLinearSystem* child{};
    assert(primal_diagonal && dq && nomegaInv && rhs && prob);
 
-   StochVector &primal_diagonalst = dynamic_cast<StochVector&>(*primal_diagonal);
-   StochVector &dqst = dynamic_cast<StochVector&>(*dq);
-   StochVector &nomegaInvst = dynamic_cast<StochVector&>(*nomegaInv);
-   StochVector &regPst = dynamic_cast<StochVector&>(*primal_regularization_diagonal);
-   StochVector &regDyst = dynamic_cast<StochVector&>(*dual_equality_regularization_diagonal);
-   StochVector &regDzst = dynamic_cast<StochVector&>(*dual_inequality_regularization_diagonal);
-   StochVector &rhsst = dynamic_cast<StochVector&>(*rhs);
+   auto& primal_diagonalst = dynamic_cast<DistributedVector<double>&>(*primal_diagonal);
+   auto& dqst = dynamic_cast<DistributedVector<double>&>(*dq);
+   auto& nomegaInvst = dynamic_cast<DistributedVector<double>&>(*nomegaInv);
+   auto& regPst = dynamic_cast<DistributedVector<double>&>(*primal_regularization_diagonal);
+   auto& regDyst = dynamic_cast<DistributedVector<double>&>(*dual_equality_regularization_diagonal);
+   auto& regDzst = dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal);
+   auto& rhsst = dynamic_cast<DistributedVector<double>&>(*rhs);
 
    for (size_t it = 0; it < prob->children.size(); it++) {
       assert(primal_diagonalst.children[it] != nullptr);
@@ -850,7 +850,7 @@ void sLinsysRoot::initProperChildrenRange() {
 void sLinsysRoot::put_primal_diagonal()
 {
    assert(primal_diagonal);
-   const StochVector& primal_diagonal_stoch = dynamic_cast<const StochVector&>(*primal_diagonal);
+   const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
    assert(children.size() == primal_diagonal_stoch.children.size());
 
    xDiag = primal_diagonal_stoch.first;
@@ -862,7 +862,7 @@ void sLinsysRoot::put_primal_diagonal()
 void sLinsysRoot::put_dual_inequalites_diagonal()
 {
    assert(nomegaInv);
-   const StochVector& nomegaInv_stoch = dynamic_cast<const StochVector&>(*nomegaInv);
+   const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    assert(children.size() == nomegaInv_stoch.children.size());
 
    //kkt->atPutDiagonal( locnx+locmy, *zdiag.first );

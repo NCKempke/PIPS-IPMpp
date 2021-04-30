@@ -19,16 +19,10 @@
 /** This class solves the linear system corresponding to a leaf node.
  *  It just redirects the call to SparseLinearSystem.
  */
-class sLinsysLeaf : public DistributedLinearSystem
-{
- public:
-    sLinsysLeaf(DistributedFactory* factory,
-		DistributedQP* prob_,				    
-		OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_,
-      OoqpVector* primal_reg_,
-      OoqpVector* dual_y_reg_,
-      OoqpVector* dual_z_reg_,
-		OoqpVector* rhs_);
+class sLinsysLeaf : public DistributedLinearSystem {
+public:
+   sLinsysLeaf(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
+         OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs_);
 
    ~sLinsysLeaf() override = default;
 
@@ -42,14 +36,14 @@ class sLinsysLeaf : public DistributedLinearSystem
 
    //void Lsolve2 ( OoqpVector& x ) override;
    //void Dsolve2 ( OoqpVector& x ) override;
-   void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
 
    void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
-   //void Ltsolve_internal(  DistributedQP *prob, StochVector& x, SimpleVector<double>& xp);
+   //void Ltsolve_internal(  DistributedQP *prob, DistributedVector<double>& x, SimpleVector<double>& xp);
    void deleteChildren() override;
 
    void addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int) override;
@@ -67,14 +61,14 @@ protected:
 
    static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
 
-   void addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
-   void addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 private:
    void addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border);
    void addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border);
 
-  /* compute result += B_inner^T K^-1 Br */
-  void addInnerBorderKiInvBrToRes( DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols );
+   /* compute result += B_inner^T K^-1 Br */
+   void addInnerBorderKiInvBrToRes(DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols);
 
    /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
    void addLeftBorderKiInvBrToRes(DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res,

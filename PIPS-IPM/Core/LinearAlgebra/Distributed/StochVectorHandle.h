@@ -3,10 +3,15 @@
 
 #include "IotrRefCount.h"
 #include "SmartPointer.h"
-#include "StochVector_fwd.h"
 #include "pipsport.h"
 
-template<typename T> using StochVectorBaseHandle = SmartPointer<StochVectorBase<T> >;
-typedef SmartPointer<StochVector> StochVectorHandle;
+template<typename T>
+class DistributedVector;
+
+template<typename T>
+class StochDummyVectorBase;
+
+template<typename T> using StochVectorBaseHandle = SmartPointer<DistributedVector<T> >;
+typedef SmartPointer<DistributedVector<double>> StochVectorHandle;
 
 #endif

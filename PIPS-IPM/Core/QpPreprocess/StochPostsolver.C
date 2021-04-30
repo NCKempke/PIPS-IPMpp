@@ -26,16 +26,16 @@ StochPostsolver::StochPostsolver(const DistributedQP& original_problem) :
    padding_origcol{ cloneStochVector<double, int>(*original_problem.g) },
    padding_origrow_equality{ cloneStochVector<double, int>(*original_problem.bA) },
    padding_origrow_inequality{ cloneStochVector<double, int>(*original_problem.bu) },
-   eq_row_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) },
-   ineq_row_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) },
-   column_marked_modified{ dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) },
+   eq_row_marked_modified{ dynamic_cast<DistributedVector<int>*>(padding_origrow_equality->clone()) },
+   ineq_row_marked_modified{ dynamic_cast<DistributedVector<int>*>(padding_origrow_inequality->clone()) },
+   column_marked_modified{ dynamic_cast<DistributedVector<int>*>(padding_origcol->clone()) },
    row_storage( dynamic_cast<const StochGenMatrix&>(*original_problem.A) ),
    col_storage( dynamic_cast<const StochGenMatrix&>(*original_problem.A), dynamic_cast<const StochGenMatrix&>(*original_problem.C) ),
-   eq_row_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_equality->clone()) },
-   ineq_row_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origrow_inequality->clone()) },
-   col_stored_last_at{ dynamic_cast<StochVectorBase<int>*>(padding_origcol->clone()) },
-   last_upper_bound_tightened{ dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) },
-   last_lower_bound_tightened{ dynamic_cast<StochVectorBase<int>*>(col_stored_last_at->clone()) },
+   eq_row_stored_last_at{ dynamic_cast<DistributedVector<int>*>(padding_origrow_equality->clone()) },
+   ineq_row_stored_last_at{ dynamic_cast<DistributedVector<int>*>(padding_origrow_inequality->clone()) },
+   col_stored_last_at{ dynamic_cast<DistributedVector<int>*>(padding_origcol->clone()) },
+   last_upper_bound_tightened{ dynamic_cast<DistributedVector<int>*>(col_stored_last_at->clone()) },
+   last_lower_bound_tightened{ dynamic_cast<DistributedVector<int>*>(col_stored_last_at->clone()) },
    length_array_outdated_indicators(3),
    array_outdated_indicators(new bool[length_array_outdated_indicators]),
    outdated_linking_vars(array_outdated_indicators[0]),
@@ -277,7 +277,7 @@ void StochPostsolver::notifyFreeColumnSingletonEquality( const INDEX& row, const
    assert(!wasRowRemoved(row));
 
    markRowRemoved(row);
-   
+
    const int stored_row_idx = storeRow(row, matrix_row);
 
    reductions.push_back( FREE_COLUMN_SINGLETON_EQUALITY );
@@ -983,7 +983,7 @@ bool StochPostsolver::postsolveRedundantRow(DistributedVariables& original_vars,
    /* get current row activity - redundant linking rows have to lie on the stack in the same order */
 
    /* primal values */
-   StochVector& x_vec = dynamic_cast<StochVector&>(*original_vars.x);
+   DistributedVector<double>& x_vec = dynamic_cast<DistributedVector<double>&>(*original_vars.x);
    const double value_row = row_storage.multRowTimesVec( stored_row, x_vec );
 
    assert( wasRowRemoved(row) );
@@ -1184,8 +1184,8 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
 
    /* add -dz/dy * row to gamma/phi */
    /* store linking variable changes and allreduce them later except when using a row from D/B0 or D/Bl0 */
-   StochVector& gamma = dynamic_cast<StochVector&>(*original_vars.gamma);
-   StochVector& phi = dynamic_cast<StochVector&>(*original_vars.phi);
+   DistributedVector<double>& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
+   DistributedVector<double>& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
 
    /* linking rows not at root - so far we changed the slacks for the variable - missing is dual for the row and resulting corrections */
    if( !at_root_node && row.isLinkingRow() )
@@ -1266,8 +1266,8 @@ bool StochPostsolver::postsolveFixedColumn(DistributedVariables& original_vars, 
    getSimpleVecFromColStochVec(original_vars.w, col) = 0.0;
 
    /* set duals for bounds to satisfy reduced costs of reintroduced column times x */
-   const double col_times_duals = col_storage.multColTimesVec( stored_col, dynamic_cast<const StochVector&>(*original_vars.y),
-         dynamic_cast<const StochVector&>(*original_vars.z));
+   const double col_times_duals = col_storage.multColTimesVec( stored_col, dynamic_cast<const DistributedVector<double>&>(*original_vars.y),
+         dynamic_cast<const DistributedVector<double>&>(*original_vars.z));
 
    const double reduced_costs = obj_coeff - col_times_duals;
 
@@ -1275,11 +1275,11 @@ bool StochPostsolver::postsolveFixedColumn(DistributedVariables& original_vars, 
    /* add col * value to slacks */
    /* for linking rows we have to store the slack changes if they are not happening in the root node */
    if( col.isLinkingCol() )
-      col_storage.axpyAtCol( 1.0, nullptr, &dynamic_cast<StochVector&>(*original_vars.s), nullptr, nullptr, value, stored_col );
+      col_storage.axpyAtCol( 1.0, nullptr, &dynamic_cast<DistributedVector<double>&>(*original_vars.s), nullptr, nullptr, value, stored_col );
    else
    {
       outdated_inequality_linking_rows = true;
-      col_storage.axpyAtCol( 1.0, nullptr, &dynamic_cast<StochVector&>(*original_vars.s), nullptr, s_changes.get(), value, stored_col );
+      col_storage.axpyAtCol( 1.0, nullptr, &dynamic_cast<DistributedVector<double>&>(*original_vars.s), nullptr, s_changes.get(), value, stored_col );
    }
 
    /* set duals of bounds of x */
@@ -1418,7 +1418,7 @@ bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(DistributedVar
 
    double& v = local_linking_col ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col);
    double& w = local_linking_col ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.w, col);
-   
+
    assert( PIPSisZeroFeas(v) && PIPSisZeroFeas(w) );
    v = (xlow_old == INF_NEG) ? 0 : value - xlow_old;
    w = (xupp_old == INF_POS) ? 0 : xupp_old - value;
@@ -1727,7 +1727,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(DistributedVariables&
    }
 
    /* synchronize value of row for x_val */
-   const double value_row = row_storage.multRowTimesVec( stored_row, dynamic_cast<const StochVector&>(*original_vars.x) );
+   const double value_row = row_storage.multRowTimesVec( stored_row, dynamic_cast<const DistributedVector<double>&>(*original_vars.x) );
    if( col.isCol() )
       assert( PIPSisZero(getSimpleVecFromColStochVec(*original_vars.x, col)) );
    assert(std::abs(value_row) != INF_POS);
@@ -2343,7 +2343,7 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow( DistributedVari
    assert( wasRowRemoved(row) );
    markRowAdded(row);
 
-   const double row_value = row_storage.multRowTimesVec( row_stored, dynamic_cast<const StochVector&>(*original_vars.x) );
+   const double row_value = row_storage.multRowTimesVec( row_stored, dynamic_cast<const DistributedVector<double>&>(*original_vars.x) );
 
    /* duals of row and bounds are zero */
    getSimpleVecFromRowStochVec(original_vars.z, row) = 0;
@@ -2530,11 +2530,11 @@ bool StochPostsolver::postsolveParallelRowsBoundsTightened(DistributedVariables&
 /* sync linking variables - either the variables are not set everywhere or on some procs they are set to something non-zero while on others they are zero */
 bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
 {
-   assert( dynamic_cast<const StochVector&>(*original_vars.x).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.v).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.w).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.gamma).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.phi).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.x).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.v).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.w).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.gamma).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.phi).isRootNodeInSync() );
 
    PIPS_MPIgetLogicOrInPlace(outdated_linking_vars);
 
@@ -2544,11 +2544,11 @@ bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
    PIPS_MPIsumArrayInPlace( array_linking_var_changes );
    PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>*>(padding_origcol->first)->elements(), dynamic_cast<SimpleVector<int>*>(padding_origcol->first)->length() );
 
-   SimpleVector<double>& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.x).first);
-   SimpleVector<double>& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.v).first);
-   SimpleVector<double>& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.w).first);
-   SimpleVector<double>& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.gamma).first);
-   SimpleVector<double>& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.phi).first);
+   SimpleVector<double>& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.x).first);
+   SimpleVector<double>& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.v).first);
+   SimpleVector<double>& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.w).first);
+   SimpleVector<double>& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.gamma).first);
+   SimpleVector<double>& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.phi).first);
 
    for( int i = 0; i < linking_x.length(); ++i )
    {
@@ -2581,11 +2581,11 @@ bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
    std::fill( array_linking_var_changes.begin(), array_linking_var_changes.end(), 0.0 );
    outdated_linking_vars = false;
 
-   assert( dynamic_cast<const StochVector&>(*original_vars.x).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.v).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.w).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.gamma).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.phi).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.x).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.v).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.w).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.gamma).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.phi).isRootNodeInSync() );
 
    return true;
 }
@@ -2601,7 +2601,7 @@ bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_var
    PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVector<int>*>(padding_origrow_equality->last)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origrow_equality->last)->length() );
 
-   SimpleVector<double>& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.y).last);
+   SimpleVector<double>& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.y).last);
 
    for( int i = 0; i < linking_y.length(); ++i )
    {
@@ -2617,19 +2617,19 @@ bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_var
    std::fill(array_eq_linking_row_changes.begin(), array_ineq_linking_row_changes.end(), 0.0);
    outdated_equality_linking_rows = false;
 
-   assert( dynamic_cast<const StochVector&>(*original_vars.y).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.y).isRootNodeInSync() );
 
    return true;
 }
 
 bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_vars)
 {
-   assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.s).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.t).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.u).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.pi).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.lambda).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.s).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.t).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.u).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync() );
 
    PIPS_MPIgetLogicOrInPlace(outdated_inequality_linking_rows );
 
@@ -2640,13 +2640,13 @@ bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_v
    PIPS_MPImaxArrayInPlace( dynamic_cast<SimpleVector<int>*>(padding_origrow_inequality->last)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origrow_inequality->last)->length() );
 
-   SimpleVector<double>& linking_z = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.z).last);
-   SimpleVector<double>& linking_lambda = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.lambda).last);
-   SimpleVector<double>& linking_pi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.pi).last);
+   SimpleVector<double>& linking_z = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.z).last);
+   SimpleVector<double>& linking_lambda = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.lambda).last);
+   SimpleVector<double>& linking_pi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.pi).last);
 
-   SimpleVector<double>& linking_s = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.s).last);
-   SimpleVector<double>& linking_t = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.t).last);
-   SimpleVector<double>& linking_u = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(*original_vars.u).last);
+   SimpleVector<double>& linking_s = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.s).last);
+   SimpleVector<double>& linking_t = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.t).last);
+   SimpleVector<double>& linking_u = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.u).last);
 
    for( int i = 0; i < linking_z.length(); ++i )
    {
@@ -2681,12 +2681,12 @@ bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_v
    std::fill( array_ineq_linking_row_changes.begin(), array_ineq_linking_row_changes.end(), 0.0);
    outdated_inequality_linking_rows = false;
 
-   assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.s).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.t).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.u).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.pi).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.lambda).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.s).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.t).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.u).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync() );
 
    return true;
 }
@@ -2694,10 +2694,10 @@ bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_v
 // TODO : who sets these to 0.0 after applying the changes?
 bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& original_vars, int i)
 {
-   assert( dynamic_cast<const StochVector&>(*original_vars.y).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.lambda).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.pi).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.y).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync() );
 
    PIPS_MPIgetLogicOrInPlace(outdated_equality_linking_rows);
    PIPS_MPIgetLogicOrInPlace(outdated_inequality_linking_rows);
@@ -2713,8 +2713,8 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& 
    }
 
    unsigned int current_pos = start_idx_indices.at(i);
-   StochVector& gamma = dynamic_cast<StochVector&>(*original_vars.gamma);
-   StochVector& phi = dynamic_cast<StochVector&>(*original_vars.phi);
+   DistributedVector<double>& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
+   DistributedVector<double>& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
 
    /* gather all z and y changes if any */
    if( outdated_equality_linking_rows )
@@ -2765,10 +2765,10 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& 
          }
       }
    }
-   assert( dynamic_cast<const StochVector&>(*original_vars.y).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.z).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.lambda).isRootNodeInSync() );
-   assert( dynamic_cast<const StochVector&>(*original_vars.pi).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.y).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync() );
+   assert( dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync() );
 
    outdated_equality_linking_rows = false;
    outdated_inequality_linking_rows = false;
@@ -2839,7 +2839,7 @@ void StochPostsolver::addIneqRowDual(double& z, double& lambda, double& pi, doub
    assert( PIPSisEQ(z, lambda - pi, postsolve_tol) );
 }
 
-bool StochPostsolver::sameNonZeroPatternDistributed(const StochVector& vec) const
+bool StochPostsolver::sameNonZeroPatternDistributed(const DistributedVector<double>& vec) const
 {
    assert(vec.first);
 
@@ -2891,74 +2891,74 @@ void StochPostsolver::setOriginalVarsFromReduced(const DistributedVariables& red
 #endif
 
    /* x */
-   const StochVector &x_reduced = dynamic_cast<const StochVector&>(*reduced_vars.x);
-   StochVector &x_orig = dynamic_cast<StochVector&>(*original_vars.x);
+   const DistributedVector<double> &x_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.x);
+   DistributedVector<double> &x_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.x);
    x_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced<>(x_orig, x_reduced, *padding_origcol);
 
    /* s */
-   const StochVector &s_reduced = dynamic_cast<const StochVector&>(*reduced_vars.s);
-   StochVector &s_orig = dynamic_cast<StochVector&>(*original_vars.s);
+   const DistributedVector<double> &s_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.s);
+   DistributedVector<double> &s_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.s);
    s_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(s_orig, s_reduced, *padding_origrow_inequality);
 
    /* y */
-   const StochVector &y_reduced = dynamic_cast<const StochVector&>(*reduced_vars.y);
-   StochVector &y_orig = dynamic_cast<StochVector&>(*original_vars.y);
+   const DistributedVector<double> &y_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.y);
+   DistributedVector<double> &y_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.y);
    y_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(y_orig, y_reduced, *padding_origrow_equality);
 
    /* z */
-   const StochVector &z_reduced = dynamic_cast<const StochVector&>(*reduced_vars.z);
-   StochVector &z_orig = dynamic_cast<StochVector&>(*original_vars.z);
+   const DistributedVector<double> &z_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.z);
+   DistributedVector<double> &z_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.z);
    z_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(z_orig, z_reduced, *padding_origrow_inequality);
 
    /* v */
-   const StochVector &v_reduced = dynamic_cast<const StochVector&>(*reduced_vars.v);
-   StochVector &v_orig = dynamic_cast<StochVector&>(*original_vars.v);
+   const DistributedVector<double> &v_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.v);
+   DistributedVector<double> &v_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.v);
    v_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(v_orig, v_reduced, *padding_origcol);
 
    /* gamma */
-   const StochVector &gamma_reduced = dynamic_cast<const StochVector&>(*reduced_vars.gamma);
-   StochVector &gamma_orig = dynamic_cast<StochVector&>(*original_vars.gamma);
+   const DistributedVector<double> &gamma_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.gamma);
+   DistributedVector<double> &gamma_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
    gamma_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(gamma_orig, gamma_reduced, *padding_origcol);
 
    /* w */
-   const StochVector &w_reduced = dynamic_cast<const StochVector&>(*reduced_vars.w);
-   StochVector &w_orig = dynamic_cast<StochVector&>(*original_vars.w);
+   const DistributedVector<double> &w_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.w);
+   DistributedVector<double> &w_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.w);
    w_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(w_orig, w_reduced, *padding_origcol);
 
    /* phi */
-   const StochVector &phi_reduced = dynamic_cast<const StochVector&>(*reduced_vars.phi);
-   StochVector &phi_orig = dynamic_cast<StochVector&>(*original_vars.phi);
+   const DistributedVector<double> &phi_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.phi);
+   DistributedVector<double> &phi_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
    phi_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(phi_orig, phi_reduced, *padding_origcol);
 
    /* t */
-   const StochVector &t_reduced = dynamic_cast<const StochVector&>(*reduced_vars.t);
-   StochVector &t_orig = dynamic_cast<StochVector&>(*original_vars.t);
+   const DistributedVector<double> &t_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.t);
+   DistributedVector<double> &t_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.t);
    t_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(t_orig, t_reduced, *padding_origrow_inequality);
 
    /* lambda */
-   const StochVector &lambda_reduced = dynamic_cast<const StochVector&>(*reduced_vars.lambda);
-   StochVector &lambda_orig = dynamic_cast<StochVector&>(*original_vars.lambda);
+   const DistributedVector<double> &lambda_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.lambda);
+   DistributedVector<double> &lambda_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.lambda);
    lambda_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(lambda_orig, lambda_reduced, *padding_origrow_inequality);
 
    /* u */
-   const StochVector &u_reduced = dynamic_cast<const StochVector&>(*reduced_vars.u);
-   StochVector &u_orig = dynamic_cast<StochVector&>(*original_vars.u);
+   const DistributedVector<double> &u_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.u);
+   DistributedVector<double> &u_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.u);
    u_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(u_orig, u_reduced, *padding_origrow_inequality);
 
    /* pi */
-   const StochVector &pi_reduced = dynamic_cast<const StochVector&>(*reduced_vars.pi);
-   StochVector &pi_orig = dynamic_cast<StochVector&>(*original_vars.pi);
+   const DistributedVector<double> &pi_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.pi);
+   DistributedVector<double> &pi_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.pi);
    pi_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(pi_orig, pi_reduced, *padding_origrow_inequality);
 }
@@ -3142,9 +3142,9 @@ bool StochPostsolver::complementarySlackRowMet(const DistributedVariables& vars,
 
 /// fills vars_orig with vars_reduced padded with zeros - padding is done via the padding_map
 template <typename T>
-void StochPostsolver::setOriginalValuesFromReduced(StochVectorBase<T>& original_vector,
-   const StochVectorBase<T>& reduced_vector,
-   const StochVectorBase<int>& padding_original) const
+void StochPostsolver::setOriginalValuesFromReduced(DistributedVector<T>& original_vector,
+   const DistributedVector<T>& reduced_vector,
+   const DistributedVector<int>& padding_original) const
 {
    assert( reduced_vector.children.size() == original_vector.children.size() );
    assert( padding_original.children.size() == reduced_vector.children.size() );

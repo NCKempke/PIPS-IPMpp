@@ -1,5 +1,5 @@
 #include "StochSymMatrix.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "DoubleMatrixTypes.h"
 #include "BorderedSymMatrix.h"
 #include "StringGenMatrix.h"
@@ -125,8 +125,8 @@ long long StochSymMatrix::size() const
 void StochSymMatrix::mult( double beta,  OoqpVector& y_,
 			    double alpha, const OoqpVector& x_ ) const
 {
-   const StochVector & x = dynamic_cast<const StochVector&>(x_);
-   StochVector & y = dynamic_cast<StochVector&>(y_);
+   const DistributedVector<double> & x = dynamic_cast<const DistributedVector<double>&>(x_);
+   DistributedVector<double> & y = dynamic_cast<DistributedVector<double>&>(y_);
 
    if( 0.0 == alpha)
    {
@@ -294,7 +294,7 @@ void StochSymMatrix::writeToStreamDenseChild(std::stringstream& out, int offset)
 
 void StochSymMatrix::getDiagonal( OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
   assert(children.size() == vec.children.size());
 
   diag->getDiagonal( *vec.first);
@@ -305,7 +305,7 @@ void StochSymMatrix::getDiagonal( OoqpVector& vec_ )
 
 void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
 {
-  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+  const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
   assert(children.size() == vec.children.size());
 
   diag->setToDiagonal(*vec.first);
@@ -316,7 +316,7 @@ void StochSymMatrix::setToDiagonal( const OoqpVector& vec_ )
 
 void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
 {
-  const StochVector& v = dynamic_cast<const StochVector&>(v_);
+  const DistributedVector<double>& v = dynamic_cast<const DistributedVector<double>&>(v_);
 
   //check the tree compatibility
   int nChildren = children.size();
@@ -333,7 +333,7 @@ void StochSymMatrix::atPutDiagonal( int idiag, const OoqpVector& v_ )
 
 void StochSymMatrix::atAddDiagonal( int idiag, const OoqpVector& v_ )
 {
-  const StochVector& v = dynamic_cast<const StochVector&>(v_);
+  const DistributedVector<double>& v = dynamic_cast<const DistributedVector<double>&>(v_);
 
   //check the tree compatibility
   int nChildren = children.size();
@@ -351,7 +351,7 @@ void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
 {
    assert( "The value of the parameter is not supported!" );
 
-   StochVector& x = dynamic_cast<StochVector&>(x_);
+   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_);
    assert(x.children.size() == children.size());
 
    diag->getDiagonal(*x.first);
@@ -362,7 +362,7 @@ void StochSymMatrix::fromGetDiagonal( int, OoqpVector& x_ )
 
 void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
 {
-  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+  const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
   assert(children.size() == vec.children.size());
 
   diag->symmetricScale(*vec.first);
@@ -373,7 +373,7 @@ void StochSymMatrix::symmetricScale( const OoqpVector& vec_ )
 
 void StochSymMatrix::columnScale( const OoqpVector& vec_ )
 {
-   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->columnScale(*vec.first);
@@ -387,7 +387,7 @@ void StochSymMatrix::columnScale( const OoqpVector& vec_ )
 
 void StochSymMatrix::rowScale ( const OoqpVector& vec_ )
 {
-   const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->rowScale( *vec.first );
@@ -411,7 +411,7 @@ void StochSymMatrix::scalarMult( double num )
 
 void StochSymMatrix::deleteEmptyRowsCols(const OoqpVectorBase<int>& nnzVec, const OoqpVectorBase<int>* linkParent)
 {
-   const StochVectorBase<int>& nnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(nnzVec);
+   const DistributedVector<int>& nnzVecStoch = dynamic_cast<const DistributedVector<int>&>(nnzVec);
    assert( children.size() == nnzVecStoch.children.size() );
 
    const SimpleVector<int>* vec = dynamic_cast<const SimpleVector<int>*>( nnzVecStoch.first );

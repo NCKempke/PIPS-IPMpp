@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_UTILITIES_PIPSCHECKS_H_
 #define PIPS_IPM_CORE_UTILITIES_PIPSCHECKS_H_
 
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "StochGenMatrix.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"

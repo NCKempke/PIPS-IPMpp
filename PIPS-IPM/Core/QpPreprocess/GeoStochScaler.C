@@ -77,12 +77,12 @@ void GeoStochScaler::scale()
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-   vec_rowscaleA.reset( dynamic_cast<StochVector*>(bA->clone()) );
-   std::unique_ptr<StochVector> rowminA{ dynamic_cast<StochVector*>(bA->clone()) };
-   vec_rowscaleC.reset( dynamic_cast<StochVector*>(rhsC->clone()) );
-   std::unique_ptr<StochVector> rowminC{ dynamic_cast<StochVector*>(rhsC->clone()) };
-   vec_colscale.reset( dynamic_cast<StochVector*>(bux->clone()) );
-   std::unique_ptr<StochVector> colmin{ dynamic_cast<StochVector*>(bux->clone()) };
+   vec_rowscaleA.reset( dynamic_cast<DistributedVector<double>*>(bA->clone()) );
+   std::unique_ptr<DistributedVector<double>> rowminA{ dynamic_cast<DistributedVector<double>*>(bA->clone()) };
+   vec_rowscaleC.reset( dynamic_cast<DistributedVector<double>*>(rhsC->clone()) );
+   std::unique_ptr<DistributedVector<double>> rowminC{ dynamic_cast<DistributedVector<double>*>(rhsC->clone()) };
+   vec_colscale.reset( dynamic_cast<DistributedVector<double>*>(bux->clone()) );
+   std::unique_ptr<DistributedVector<double>> colmin{ dynamic_cast<DistributedVector<double>*>(bux->clone()) };
 
    const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);
@@ -246,12 +246,12 @@ void GeoStochScaler::postEquiScale()
 {
    assert(vec_rowscaleA != nullptr && vec_rowscaleC != nullptr && vec_colscale != nullptr);
 
-   StochVector* rowmaxA = dynamic_cast<StochVector*>(bA->clone());
-   std::unique_ptr<StochVector> rowminA{ dynamic_cast<StochVector*>(bA->clone()) };
-   StochVector* rowmaxC = dynamic_cast<StochVector*>(rhsC->clone());
-   std::unique_ptr<StochVector> rowminC{ dynamic_cast<StochVector*>(rhsC->clone()) };
-   StochVector* colmax = dynamic_cast<StochVector*>(bux->clone());
-   std::unique_ptr<StochVector> colmin{ dynamic_cast<StochVector*>(bux->clone()) };
+   DistributedVector<double>* rowmaxA = dynamic_cast<DistributedVector<double>*>(bA->clone());
+   std::unique_ptr<DistributedVector<double>> rowminA{ dynamic_cast<DistributedVector<double>*>(bA->clone()) };
+   DistributedVector<double>* rowmaxC = dynamic_cast<DistributedVector<double>*>(rhsC->clone());
+   std::unique_ptr<DistributedVector<double>> rowminC{ dynamic_cast<DistributedVector<double>*>(rhsC->clone()) };
+   DistributedVector<double>* colmax = dynamic_cast<DistributedVector<double>*>(bux->clone());
+   std::unique_ptr<DistributedVector<double>> colmin{ dynamic_cast<DistributedVector<double>*>(bux->clone()) };
 
    const double rowratio = maxRowRatio(*rowmaxA, *rowmaxC, *rowminA, *rowminC, vec_colscale.get());
    const double colratio = maxColRatio(*colmax, *colmin, vec_rowscaleA.get(), vec_rowscaleC.get());

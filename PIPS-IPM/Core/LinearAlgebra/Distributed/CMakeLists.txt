@@ -1,4 +1,4 @@
-add_library(ooqpstochla STATIC StochVector.C StochSymMatrix.C StochGenMatrix.C
+add_library(ooqpstochla STATIC DistributedVector.C StochSymMatrix.C StochGenMatrix.C
   BorderedGenMatrix.C
   BorderedSymMatrix.C
   StochResourcesMonitor.C

@@ -1,7 +1,6 @@
 #ifndef STOCHGENMATRIX_H
 #define STOCHGENMATRIX_H
 
-#include "StochVector_fwd.h"
 #include "OoqpVector_fwd.h"
 #include "DoubleMatrix.h"
 #include "SparseGenMatrix.h"
@@ -67,9 +66,9 @@ public:
   bool hasSparseMatrices() const;
 
   /** trans mult method for children with linking constraints */
-  virtual void transMult2( double beta, StochVector& y, double alpha, StochVector& x, const OoqpVector* xvecl ) const;
+  virtual void transMult2( double beta, DistributedVector<double>& y, double alpha, DistributedVector<double>& x, const OoqpVector* xvecl ) const;
 
-  virtual void mult2( double beta,  StochVector& y, double alpha, StochVector& x, OoqpVector* yparentl_ );
+  virtual void mult2( double beta,  DistributedVector<double>& y, double alpha, DistributedVector<double>& x, OoqpVector* yparentl_ );
 
   /** column scale method for children */
   virtual void columnScale2( const OoqpVector& vec );
@@ -201,11 +200,11 @@ public:
    *  for a linking row only the available blocks will be multiplied - currently only possible for dynamic storage! (since 
    *  this was its foremost usecase)
    */
-  virtual double localRowTimesVec( const StochVector& vec, int child, int row, bool linking ) const;
+  virtual double localRowTimesVec( const DistributedVector<double>& vec, int child, int row, bool linking ) const;
 
   /* y += alpha * RowAt(child, row, linking) */
-  virtual void axpyWithRowAt( double alpha, StochVector* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const;
-  virtual void axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector<double>* y_link_pos, StochVector* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking ) const;
+  virtual void axpyWithRowAt( double alpha, DistributedVector<double>* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const;
+  virtual void axpyWithRowAtPosNeg( double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking ) const;
 
   virtual BorderedGenMatrix* raiseBorder( int m_conss, int n_vars );
 
@@ -286,10 +285,10 @@ public:
   void setToDiagonal( const OoqpVector& ) override {};
 
   void mult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-  void mult2 ( double, StochVector&, double, StochVector&, OoqpVector* ) override {};
+  void mult2 ( double, DistributedVector<double>&, double, DistributedVector<double>&, OoqpVector* ) override {};
 
   void transMult ( double, OoqpVector&, double, const OoqpVector& ) const override {};
-  void transMult2 ( double, StochVector&, double, StochVector&, const OoqpVector* ) const override {};
+  void transMult2 ( double, DistributedVector<double>&, double, DistributedVector<double>&, const OoqpVector* ) const override {};
 
   double abmaxnorm() const override { return 0.0; };
   double abminnormNonZero( double ) const override { return std::numeric_limits<double>::infinity(); };
@@ -358,10 +357,10 @@ public:
   bool isRootNodeInSync() const override { return true; };
 
   int appendRow( const StochGenMatrix&, int, int, bool ) override { assert( 0 && "CANNOT APPEND ROW TO DUMMY MATRIX"); return -1; };
-  double localRowTimesVec( const StochVector&, int, int, bool ) const override { assert( 0 && "CANNOT MULTIPLY ROW WITH DUMMY MATRIX"); return -1; };
+  double localRowTimesVec( const DistributedVector<double>&, int, int, bool ) const override { assert( 0 && "CANNOT MULTIPLY ROW WITH DUMMY MATRIX"); return -1; };
 
-  void axpyWithRowAt( double, StochVector*, SimpleVector<double>*, int, int, bool ) const override {};
-  void axpyWithRowAtPosNeg( double, StochVector*, SimpleVector<double>*, StochVector*, SimpleVector<double>*, int, int, bool ) const override {};
+  void axpyWithRowAt( double, DistributedVector<double>*, SimpleVector<double>*, int, int, bool ) const override {};
+  void axpyWithRowAtPosNeg( double, DistributedVector<double>*, SimpleVector<double>*, DistributedVector<double>*, SimpleVector<double>*, int, int, bool ) const override {};
 
   BorderedGenMatrix* raiseBorder( int, int ) override { assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX"); return nullptr; };
   StringGenMatrix* shaveLinkingConstraints( unsigned int ) override { return new StringGenDummyMatrix(); };

@@ -7,7 +7,7 @@
 
 #include "StringGenMatrix.h"
 
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
 #include "sTreeCallbacks.h"
@@ -163,7 +163,7 @@ void StringGenMatrix::recomputeNonzeros() {
 
 void StringGenMatrix::multVertical(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const {
    const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   StochVector& y = dynamic_cast<StochVector&>(y_in);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    assert(is_vertical);
    assert(y.children.size() == children.size());
@@ -184,7 +184,7 @@ void StringGenMatrix::multVertical(double beta, OoqpVector& y_in, double alpha, 
 }
 
 void StringGenMatrix::multHorizontal(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in, bool root) const {
-   const StochVector& x = dynamic_cast<const StochVector&>(x_in);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    assert(!is_vertical);
@@ -215,7 +215,7 @@ void StringGenMatrix::multHorizontal(double beta, OoqpVector& y_in, double alpha
 }
 
 void StringGenMatrix::transMultVertical(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in, bool root) const {
-   const StochVector& x = dynamic_cast<const StochVector&>(x_in);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    assert(is_vertical);
@@ -249,7 +249,7 @@ void StringGenMatrix::transMultVertical(double beta, OoqpVector& y_in, double al
 void StringGenMatrix::transMultHorizontal(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const {
 
    const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   StochVector& y = dynamic_cast<StochVector&>(y_in);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    assert(!is_vertical);
    assert(y.children.size() == children.size());
@@ -273,7 +273,7 @@ void StringGenMatrix::transMultHorizontal(double beta, OoqpVector& y_in, double 
 
 void StringGenMatrix::getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, const OoqpVector* row_scale, OoqpVector& minmax_in) const {
    assert(!is_vertical);
-   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
+   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
 
    assert(minmax.first && mat);
    assert(minmax.children.size() == children.size());
@@ -298,7 +298,7 @@ void StringGenMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec,
    assert(is_vertical);
    const bool has_rowscale = (row_scale_in != nullptr);
 
-   const StochVector* row_scale = dynamic_cast<const StochVector*>(row_scale_in);
+   const DistributedVector<double>* row_scale = dynamic_cast<const DistributedVector<double>*>(row_scale_in);
    SimpleVector<double>& minmax = dynamic_cast<SimpleVector<double>&>(minmax_);
 
    assert(!has_rowscale || row_scale->children.size() == children.size());
@@ -327,12 +327,12 @@ void StringGenMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec,
       mat_link->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, minmax);
 }
 
-/** StochVector colScaleVec, SimpleVector<double> minmaxVec */
+/** DistributedVector<double> colScaleVec, SimpleVector<double> minmaxVec */
 void StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const OoqpVector* col_scale_in, OoqpVector& minmax_) const {
    assert(!is_vertical);
    const bool has_colscale = (col_scale_in != nullptr);
 
-   const StochVector* col_scale = dynamic_cast<const StochVector*>(col_scale_in);
+   const DistributedVector<double>* col_scale = dynamic_cast<const DistributedVector<double>*>(col_scale_in);
    SimpleVector<double>& minmax = dynamic_cast<SimpleVector<double>&>(minmax_);
    assert(!has_colscale || col_scale->children.size() == children.size());
    if (has_colscale)
@@ -360,11 +360,11 @@ void StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_ve
       mat_link->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last : nullptr, minmax);
 }
 
-/** StochVector minmaxVec, SimpleVector<double> colScaleVec */
+/** DistributedVector<double> minmaxVec, SimpleVector<double> colScaleVec */
 void StringGenMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, const OoqpVector* col_scale, OoqpVector& minmax_in) const {
    assert(is_vertical);
 
-   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
+   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
 
    assert(minmax.first && mat);
    assert(minmax.children.size() == children.size());
@@ -414,7 +414,7 @@ void StringGenMatrix::columnScaleVertical(const OoqpVector& vec) {
 void StringGenMatrix::columnScaleHorizontal(const OoqpVector& vec_in) {
    assert(!is_vertical);
 
-   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
@@ -437,7 +437,7 @@ void StringGenMatrix::columnScaleHorizontal(const OoqpVector& vec_in) {
 void StringGenMatrix::rowScaleVertical(const OoqpVector& vec_in) {
    assert(is_vertical);
 
-   const StochVector& vec = dynamic_cast<const StochVector&>(vec_in);
+   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
@@ -485,7 +485,7 @@ void StringGenMatrix::rowScale(const OoqpVector& vec) {
 void StringGenMatrix::addRowSumsVertical(OoqpVector& vec_in) const {
    assert(is_vertical);
 
-   StochVector& vec = dynamic_cast<StochVector&>(vec_in);
+   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
@@ -540,7 +540,7 @@ void StringGenMatrix::addColSumsVertical(OoqpVector& vec_in) const {
 void StringGenMatrix::addColSumsHorizontal(OoqpVector& vec_in) const {
    assert(!is_vertical);
 
-   StochVector& vec = dynamic_cast<StochVector&>(vec_in);
+   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());

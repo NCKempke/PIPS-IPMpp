@@ -1,7 +1,7 @@
 #include "StochGenMatrix.h"
 
 #include "DoubleMatrixTypes.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
 #include "pipsport.h"
@@ -147,7 +147,7 @@ void StochGenMatrix::getSize( int& m_out, int& n_out ) const
 
 void StochGenMatrix::columnScale2( const OoqpVector& vec )
 {
-   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
+   const DistributedVector<double>& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
    assert(scalevec.children.size() == 0 && children.size() == 0);
 
    Bmat->columnScale( *scalevec.first );
@@ -160,7 +160,7 @@ void StochGenMatrix::columnScale2( const OoqpVector& vec )
 
 void StochGenMatrix::columnScale( const OoqpVector& vec )
 {
-   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
+   const DistributedVector<double>& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    assert( amatEmpty() );
 
@@ -174,7 +174,7 @@ void StochGenMatrix::columnScale( const OoqpVector& vec )
 
 void StochGenMatrix::rowScale2( const OoqpVector& vec, const OoqpVector* linkingvec )
 {
-   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
+   const DistributedVector<double>& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    assert(scalevec.children.size() == 0 && children.size() == 0);
 
@@ -189,7 +189,7 @@ void StochGenMatrix::rowScale2( const OoqpVector& vec, const OoqpVector* linking
 
 void StochGenMatrix::rowScale( const OoqpVector& vec )
 {
-   const StochVector& scalevec = dynamic_cast<const StochVector&>(vec);
+   const DistributedVector<double>& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    Bmat->rowScale(*scalevec.first);
    if( scalevec.last )
@@ -213,7 +213,7 @@ void StochGenMatrix::scalarMult( double num)
 
 void StochGenMatrix::getDiagonal( OoqpVector& vec_ )
 {
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
   Bmat->getDiagonal(*vec.first);
 
@@ -225,7 +225,7 @@ void StochGenMatrix::getDiagonal( OoqpVector& vec_ )
  
 void StochGenMatrix::setToDiagonal( const OoqpVector& vec_ )
 {
-  const StochVector& vec = dynamic_cast<const StochVector&>(vec_);
+  const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
 
   Bmat->setToDiagonal(*vec.first);
 
@@ -245,8 +245,8 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
       return;
    }
 
-   const StochVector & x = dynamic_cast<const StochVector&>(x_);
-   StochVector& y = dynamic_cast<StochVector&>(y_);
+   const DistributedVector<double> & x = dynamic_cast<const DistributedVector<double>&>(x_);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_);
 
    assert( amatEmpty() );
    Bmat->mult(beta, *y.first, alpha, *x.getLinkingVecNotHierarchicalTop() );
@@ -271,8 +271,8 @@ void StochGenMatrix::mult( double beta, OoqpVector& y_,
 
 
 /* mult method for children; needed only for linking constraints */
-void StochGenMatrix::mult2( double beta,  StochVector& y,
-			   double alpha, StochVector& x, OoqpVector* yparentl_ )
+void StochGenMatrix::mult2( double beta,  DistributedVector<double>& y,
+			   double alpha, DistributedVector<double>& x, OoqpVector* yparentl_ )
 {
    assert( alpha != 0.0 );
    assert( children.size() == 0 );
@@ -308,8 +308,8 @@ void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
       return;
    }
 
-   const StochVector& x = dynamic_cast<const StochVector&>(x_);
-   StochVector& y = dynamic_cast<StochVector&>(y_);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_);
 
    const bool at_root = y.first == y.getLinkingVecNotHierarchicalTop();
    assert( y.first );
@@ -335,8 +335,8 @@ void StochGenMatrix::transMult ( double beta, OoqpVector& y_,
       PIPS_MPIsumArrayInPlace(dynamic_cast<SimpleVector<double>*>(y.first)->elements(), y.first->length(), mpiComm);
 }
 
-void StochGenMatrix::transMult2 ( double beta, StochVector& y,
-				  double alpha, StochVector& x, const OoqpVector* xvecl) const
+void StochGenMatrix::transMult2 ( double beta, DistributedVector<double>& y,
+				  double alpha, DistributedVector<double>& x, const OoqpVector* xvecl) const
 {
    assert( alpha != 0.0 );
    assert( x.first );
@@ -728,9 +728,9 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, OoqpVect
    else
       assert(0);
 
-   StochVector* irhsStoch;
+   DistributedVector<double>* irhsStoch;
    if( irhs )
-      irhsStoch = dynamic_cast<StochVector*>(irhs);
+      irhsStoch = dynamic_cast<DistributedVector<double>*>(irhs);
    else
       irhsStoch = nullptr;
 
@@ -819,7 +819,7 @@ int StochGenMatrix::numberOfNonZeros() const
 void StochGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<int>* linkParent)
 {
    assert( hasSparseMatrices() );
-   StochVectorBase<int>& nnzVecStoch = dynamic_cast<StochVectorBase<int>&>(nnzVec);
+   DistributedVector<int>& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
 
    // assert tree compatibility
    assert(nnzVecStoch.children.size() == children.size());
@@ -859,7 +859,7 @@ void StochGenMatrix::getNnzPerRow(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<in
 void StochGenMatrix::getNnzPerCol(OoqpVectorBase<int>& nnzVec, OoqpVectorBase<int>* linkParent)
 {
    assert( hasSparseMatrices() );
-   StochVectorBase<int>& nnzVecStoch = dynamic_cast<StochVectorBase<int>&>(nnzVec);
+   DistributedVector<int>& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
 
    // assert tree compatibility
    assert(nnzVecStoch.children.size() == children.size());
@@ -899,12 +899,12 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Ooqp
 {
    assert( amatEmpty() );
 
-   StochVector& minmax = dynamic_cast<StochVector&>(minmax_);
+   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_);
 
    const bool scale = col_scale_;
    const bool has_linking = minmax.last;
 
-   const StochVector* const col_scale = scale ? dynamic_cast<const StochVector*>(col_scale_) : nullptr;
+   const DistributedVector<double>* const col_scale = scale ? dynamic_cast<const DistributedVector<double>*>(col_scale_) : nullptr;
    const OoqpVector* const col_scale_vec = scale ? col_scale->getLinkingVecNotHierarchicalTop() : nullptr;
 
    Bmat->getRowMinMaxVec(getMin, initializeVec, col_scale_vec, *minmax.first);
@@ -941,12 +941,12 @@ void StochGenMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const
       OoqpVector& minmax_, OoqpVector* minmax_linking_cons)
 {
    assert( children.empty() );
-   StochVector& minmax = dynamic_cast<StochVector&>(minmax_);
+   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_);
 
    const bool scale = col_scale_;
    const bool has_linking = minmax_linking_cons;
 
-   const StochVector* const col_scale = dynamic_cast<const StochVector*>(col_scale_);
+   const DistributedVector<double>* const col_scale = dynamic_cast<const DistributedVector<double>*>(col_scale_);
 
    const OoqpVector* const col_scale_vec = scale ? col_scale->first : nullptr;
    const OoqpVector* const col_scale_linkingvar_vec = scale ? col_scale->getLinkingVecNotHierarchicalTop() : nullptr;
@@ -966,8 +966,8 @@ void StochGenMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const
 void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const OoqpVector* rowScaleVec_, OoqpVector& minmaxVec_ )
 {
    assert( amatEmpty() );
-   StochVector& minmaxVec = dynamic_cast<StochVector&>(minmaxVec_);
-   const StochVector* rowScaleVec = dynamic_cast<const StochVector*>(rowScaleVec_);
+   DistributedVector<double>& minmaxVec = dynamic_cast<DistributedVector<double>&>(minmaxVec_);
+   const DistributedVector<double>* rowScaleVec = dynamic_cast<const DistributedVector<double>*>(rowScaleVec_);
 
    int blm, bln;
    Blmat->getSize(blm, bln);
@@ -1004,14 +1004,14 @@ void StochGenMatrix::getColMinMaxVecChild( bool getMin, bool initializeVec, cons
       OoqpVector& minmaxVec_ )
 {
    assert( children.empty() );
-   StochVector& minmaxVec = dynamic_cast<StochVector&>(minmaxVec_);
+   DistributedVector<double>& minmaxVec = dynamic_cast<DistributedVector<double>&>(minmaxVec_);
 
    int blm, bln;
    Blmat->getSize(blm, bln);
    const bool scale = rowScale_;
    const bool has_linking = blm > 0;
 
-   const StochVector* rowScale = dynamic_cast<const StochVector*>(rowScale_);
+   const DistributedVector<double>* rowScale = dynamic_cast<const DistributedVector<double>*>(rowScale_);
    const OoqpVector* row_scale_vec = scale ? rowScale->first : nullptr;
 
    Bmat->getColMinMaxVec(getMin, initializeVec, row_scale_vec, *minmaxVec.first);
@@ -1033,7 +1033,7 @@ void StochGenMatrix::addRowSums( OoqpVector& sumVec, OoqpVector* linkParent ) co
    assert( false && "TODO : hierarchical version");
    assert( hasSparseMatrices() );
 
-   StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
+   DistributedVector<double>& sumVecStoch = dynamic_cast<DistributedVector<double>&>(sumVec);
    SimpleVector<double>* mvecl = nullptr;
 
    // assert tree compatibility
@@ -1085,7 +1085,7 @@ void StochGenMatrix::addColSums( OoqpVector& sumVec, OoqpVector* linkParent ) co
    assert( false && "TODO : hierarchical version");
    assert( hasSparseMatrices() );
 
-   StochVector& sumVecStoch = dynamic_cast<StochVector&>(sumVec);
+   DistributedVector<double>& sumVecStoch = dynamic_cast<DistributedVector<double>&>(sumVec);
 
    // assert tree compatibility
    assert(sumVecStoch.children.size() == children.size());
@@ -1131,8 +1131,8 @@ void StochGenMatrix::initStaticStorageFromDynamic(const OoqpVectorBase<int>& row
 {
    assert( hasSparseMatrices() );
 
-   const StochVectorBase<int>& rowNnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(rowNnzVec);
-   const StochVectorBase<int>& colNnzVecStoch = dynamic_cast<const StochVectorBase<int>&>(colNnzVec);
+   const DistributedVector<int>& rowNnzVecStoch = dynamic_cast<const DistributedVector<int>&>(rowNnzVec);
+   const DistributedVector<int>& colNnzVecStoch = dynamic_cast<const DistributedVector<int>&>(colNnzVec);
 
    assert(rowNnzVecStoch.children.size() == colNnzVecStoch.children.size());
 
@@ -1826,7 +1826,7 @@ int StochGenMatrix::appendRow( const StochGenMatrix& matrix_row, int child, int 
 };
 
 /* y += alpha RowAt(child, row, linking) */
-void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const
+void StochGenMatrix::axpyWithRowAt( double alpha, DistributedVector<double>* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const
 {
    assert(hasSparseMatrices());
    assert( y );
@@ -1887,8 +1887,8 @@ void StochGenMatrix::axpyWithRowAt( double alpha, StochVector* y, SimpleVector<d
    }
 }
 
-void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, SimpleVector<double>* y_link_pos,
-      StochVector* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking ) const
+void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos,
+      DistributedVector<double>* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking ) const
 {
    assert(hasSparseMatrices());
    assert( y_pos && y_neg );
@@ -1956,7 +1956,7 @@ void StochGenMatrix::axpyWithRowAtPosNeg( double alpha, StochVector* y_pos, Simp
    }
 }
 
-double StochGenMatrix::localRowTimesVec(const StochVector &vec, int child, int row, bool linking) const
+double StochGenMatrix::localRowTimesVec(const DistributedVector<double> &vec, int child, int row, bool linking) const
 {
    assert(hasSparseMatrices());
    assert(-1 <= child && child < static_cast<int>(children.size()));

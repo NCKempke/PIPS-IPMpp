@@ -63,7 +63,7 @@ sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Ooqp
    if (myRank == 0) printf("Rank 0: new sLinsysLeaf took %f sec\n",t1);
 #endif
 
-   mpiComm = (dynamic_cast<StochVector*>(dd_))->mpiComm;
+   mpiComm = (dynamic_cast<DistributedVector<double>*>(dd_))->mpiComm;
 }
 
 void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
@@ -83,22 +83,22 @@ void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
 void sLinsysLeaf::put_primal_diagonal()
 {
    assert(primal_diagonal);
-   const auto& primal_diagonal_stoch = dynamic_cast<const StochVector&>(*primal_diagonal);
+   const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
    kkt->atPutDiagonal( 0, *primal_diagonal_stoch.first );
 }
 
 void sLinsysLeaf::put_dual_inequalites_diagonal()
 {
    assert(nomegaInv);
-   const auto& nomegaInv_stoch = dynamic_cast<const StochVector&>(*nomegaInv);
+   const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    kkt->atPutDiagonal( locnx + locmy, *nomegaInv_stoch.first );
 }
 
 void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization, OoqpVector& regularization_vector_) {
    assert(false);
-   assert(dynamic_cast<StochVector&>(regularization_vector_).first);
+   assert(dynamic_cast<DistributedVector<double>&>(regularization_vector_).first);
 
-   auto& regularization_vector = *dynamic_cast<StochVector&>(regularization_vector_).first;
+   auto& regularization_vector = *dynamic_cast<DistributedVector<double>&>(regularization_vector_).first;
 
    regularization_vector.addConstant(regularization);
    kkt->diagonal_add_constant_from( offset, regularization_vector.length(), regularization );
@@ -125,17 +125,16 @@ void sLinsysLeaf::add_regularization_local_kkt(double primal_regularization, dou
    }
 }
 
-void sLinsysLeaf::Dsolve( DistributedQP*, OoqpVector& x_in )
-{
-   StochVector& x = dynamic_cast<StochVector&>(x_in);
+void sLinsysLeaf::Dsolve(DistributedQP*, OoqpVector& x_in) {
+   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.size() == 0);
    stochNode->resMon.recDsolveTmChildren_start();
    solver->Dsolve(*x.first);
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
-void sLinsysLeaf::Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool) {
-   StochVector& b = dynamic_cast<StochVector&>(x);
+void sLinsysLeaf::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
    assert(0 == b.children.size());
 
@@ -157,7 +156,7 @@ void sLinsysLeaf::deleteChildren() {}
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
 void sLinsysLeaf::addLniziLinkCons(DistributedQP* prob, OoqpVector& z0_, OoqpVector& zi_, bool /*use_local_RAC*/) {
    SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
-   SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<StochVector&>(zi_).first);
+   SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 
    solver->solve(zi);
 
@@ -435,7 +434,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenM
 
 }
 
-void sLinsysLeaf::addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void sLinsysLeaf::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
    assert(border.F.children.size() == 0);
    assert(rhs.children.size() == 0);
 
@@ -518,7 +517,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<
    border.G.mult(1.0, b3, -1.0, zi1);
 }
 
-void sLinsysLeaf::addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void sLinsysLeaf::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
    assert(border.F.children.size() == 0);
    assert(rhs.children.size() == 0);
 

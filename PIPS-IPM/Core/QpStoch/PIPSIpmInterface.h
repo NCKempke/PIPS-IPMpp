@@ -339,8 +339,8 @@ double PIPSIpmInterface<FORMULATION, SOLVER>::getObjective() {
 
 template<typename FORMULATION, typename SOLVER>
 double PIPSIpmInterface<FORMULATION, SOLVER>::getFirstStageObjective() const {
-   OoqpVector& x = *(dynamic_cast<StochVector&>(*variables->x).first);
-   OoqpVector& c = *(dynamic_cast<StochVector&>(*presolved_problem->g).first);
+   OoqpVector& x = *(dynamic_cast<DistributedVector<double>&>(*variables->x).first);
+   OoqpVector& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
    return c.dotProductWith(x);
 }
 
@@ -385,9 +385,9 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution
 
    std::vector<double> vec;
    if (postsolver == nullptr)
-      vec = dynamic_cast<const StochVector&>(*(unscaleUnpermNotHierVars.get()->*member_to_gather)).gatherStochVector();
+      vec = dynamic_cast<const DistributedVector<double>&>(*(unscaleUnpermNotHierVars.get()->*member_to_gather)).gatherStochVector();
    else
-      vec = dynamic_cast<const StochVector&>(*(postsolved_variables.get()->*member_to_gather)).gatherStochVector();
+      vec = dynamic_cast<const DistributedVector<double>&>(*(postsolved_variables.get()->*member_to_gather)).gatherStochVector();
 
    return vec;
 }
@@ -451,8 +451,8 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityCons
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
 
-   StochVector* eq_vals = (postsolved_variables == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermNotHierResids->rA->cloneFull())
-                                                            : dynamic_cast<StochVector*>(postsolvedResids->rA->cloneFull());
+   DistributedVector<double>* eq_vals = (postsolved_variables == nullptr) ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rA->cloneFull())
+                                                            : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rA->cloneFull());
 
    if (original_problem == nullptr || postsolved_variables == nullptr)
       eq_vals->axpy(1.0, *presolved_problem->bA);
@@ -478,8 +478,8 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
 
-   StochVector* ineq_vals = (postsolved_variables == nullptr) ? dynamic_cast<StochVector*>(unscaleUnpermNotHierResids->rC->cloneFull())
-                                                              : dynamic_cast<StochVector*>(postsolvedResids->rC->cloneFull());
+   DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr) ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rC->cloneFull())
+                                                              : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
 
    if (postsolved_variables == nullptr)
       ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->s);
@@ -495,13 +495,13 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getFirstStagePrimalColSolution() const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<StochVector const&>(*variables->x).first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
 template<class FORMULATION, class IPMSOLVER>
 std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::getSecondStagePrimalColSolution(int scen) const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<StochVector const&>(*variables->x).children[scen]->first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
    else

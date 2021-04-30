@@ -7,11 +7,10 @@
 
 
 #include "BorderedGenMatrix.h"
-#include "StochVector_fwd.h"
 #include "OoqpVector_fwd.h"
 #include "StochGenMatrix.h"
 #include "SparseGenMatrix.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "DoubleMatrixTypes.h"
 
 #include "pipsdef.h"
@@ -71,8 +70,8 @@ void BorderedGenMatrix::mult( double beta, OoqpVector& y_in, double alpha, const
    assert( hasVecStructureForBorderedMat(x_in, true) );
    assert( hasVecStructureForBorderedMat(y_in, false) );
 
-   const StochVector& x = dynamic_cast<const StochVector&>(x_in);
-   StochVector& y = dynamic_cast<StochVector&>(y_in);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    border_left->mult(beta, *y.children[0], alpha, *x.first);
    inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
@@ -88,8 +87,8 @@ void BorderedGenMatrix::transMult( double beta, OoqpVector& y_in, double alpha, 
    assert( hasVecStructureForBorderedMat(x_in, false) );
    assert( hasVecStructureForBorderedMat(y_in, true) );
 
-   const StochVector& x = dynamic_cast<const StochVector&>(x_in);
-   StochVector& y = dynamic_cast<StochVector&>(y_in);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    border_left->transMult(beta, *y.first, alpha, *x.children[0]);
    bottom_left_block->transMult(1.0, *y.first, alpha, *x.last);
@@ -114,7 +113,7 @@ void BorderedGenMatrix::columnScale( const OoqpVector& vec )
 {
    assert( hasVecStructureForBorderedMat(vec, true) );
 
-   const StochVector& svec = dynamic_cast<const StochVector&>(vec);
+   const DistributedVector<double>& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    border_left->columnScale(*svec.first);
    bottom_left_block->columnScale(*svec.first);
@@ -127,7 +126,7 @@ void BorderedGenMatrix::rowScale ( const OoqpVector& vec )
 {
    assert( hasVecStructureForBorderedMat(vec, false) );
 
-   const StochVector& svec = dynamic_cast<const StochVector&>(vec);
+   const DistributedVector<double>& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    border_left->rowScale(*svec.children[0]);
    inner_matrix->rowScale(*svec.children[0]);
@@ -163,8 +162,8 @@ void BorderedGenMatrix::getRowMinMaxVec( bool get_min, bool initialize_vec, cons
    if( has_colscale )
       assert( hasVecStructureForBorderedMat(*col_scale_in, true) );
 
-   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
-   const StochVector* col_scale = has_colscale ? dynamic_cast<const StochVector*>(col_scale_in) : nullptr;
+   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
+   const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
 
    border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.children[0]);
    inner_matrix->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.children[0]);
@@ -181,8 +180,8 @@ void BorderedGenMatrix::getColMinMaxVec( bool get_min, bool initialize_vec, cons
    if( has_rowscale )
       assert( hasVecStructureForBorderedMat(*row_scale_in, false) );
 
-   StochVector& minmax = dynamic_cast<StochVector&>(minmax_in);
-   const StochVector* row_scale = has_rowscale ? dynamic_cast<const StochVector*>(row_scale_in) : nullptr;
+   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
+   const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
 
    border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.first);
    bottom_left_block->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, *minmax.first);
@@ -195,7 +194,7 @@ void BorderedGenMatrix::addRowSums( OoqpVector& vec_ ) const
 {
   assert( hasVecStructureForBorderedMat( vec_, false ) );
 
-  StochVector& vec = dynamic_cast<StochVector&>(vec_);
+  DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
   border_left->addRowSums( *vec.children[0] );
   inner_matrix->addRowSums( *vec.children[0] );
@@ -208,7 +207,7 @@ void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
 {
    assert( hasVecStructureForBorderedMat( vec_, true ) );
 
-   StochVector& vec = dynamic_cast<StochVector&>(vec_);
+   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
    border_left->addColSums( *vec.first );
    bottom_left_block->addColSums( *vec.first );
@@ -220,7 +219,7 @@ void BorderedGenMatrix::addColSums( OoqpVector& vec_ ) const
 template<typename T>
 bool BorderedGenMatrix::hasVecStructureForBorderedMat( const OoqpVectorBase<T>& vec, bool row_vec ) const
 {
-   const StochVectorBase<T>& vecs = dynamic_cast<const StochVectorBase<T>&>(vec);
+   const DistributedVector<T>& vecs = dynamic_cast<const DistributedVector<T>&>(vec);
 
    if( vecs.children.size() != 1 )
    {

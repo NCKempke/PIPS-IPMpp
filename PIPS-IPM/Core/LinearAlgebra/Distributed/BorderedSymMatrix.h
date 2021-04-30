@@ -12,7 +12,7 @@
 #include "SparseSymMatrix.h"
 #include "StochSymMatrix.h"
 #include "StringGenMatrix.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include <vector>
 #include "mpi.h"
 

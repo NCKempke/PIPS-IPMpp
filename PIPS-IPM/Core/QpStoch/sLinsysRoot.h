@@ -54,7 +54,7 @@ public:
    virtual void finalizeKKT(DistributedQP* prob, Variables* vars) = 0;
    virtual void finalizeKKTdist(DistributedQP* /*prob*/ ) { assert("not implemented here \n" && 0); };
 
-   void Ltsolve2(DistributedQP* prob, StochVector& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    /* compute (Br0 - sum_j Br_mod_border) - buffer */
    virtual void finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows);
@@ -74,9 +74,9 @@ public:
    void LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border,
          bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) override;
 
-   void addBorderTimesRhsToB0(StochVector& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
+   void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
 
-   void addBorderX0ToRhs(StochVector& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
+   void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 
   void put_primal_diagonal() override;
   void put_dual_inequalites_diagonal() override;
@@ -111,14 +111,14 @@ protected: //buffers
 
    SparseSymMatrix* kktDist{};
 
-  OoqpVector* xDiag{};
+   OoqpVector* xDiag{};
 
-  OoqpVector* zDiag{};
-  OoqpVector* zDiagLinkCons{};
+   OoqpVector* zDiag{};
+   OoqpVector* zDiagLinkCons{};
 
    double* sparseKktBuffer{};
 
-   std::unique_ptr<StochVector> sol_inner{};
+   std::unique_ptr<DistributedVector<double>> sol_inner{};
 
    int childrenProperStart; // first non-dummy child
    int childrenProperEnd;   // end of non-dummy children range (not included)

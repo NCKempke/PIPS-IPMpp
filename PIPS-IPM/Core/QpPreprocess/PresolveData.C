@@ -36,12 +36,12 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
       outdated_activities(array_outdated_indicators[3]), outdated_obj_vector(array_outdated_indicators[4]),
       postsolve_linking_row_propagation_needed(array_outdated_indicators[5]), nnzs_row_A{cloneStochVector<double, int>(*sorigprob.bA)},
       nnzs_row_C{cloneStochVector<double, int>(*sorigprob.icupp)}, nnzs_col{cloneStochVector<double, int>(*sorigprob.g)},
-      actmax_eq_part{cloneStochVector<int, double>(*nnzs_row_A)}, actmin_eq_part{dynamic_cast<StochVector*>(actmax_eq_part->clone())},
-      actmax_eq_ubndd{dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->clone())},
-      actmin_eq_ubndd{dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->clone())}, actmax_ineq_part{cloneStochVector<int, double>(*nnzs_row_C)},
-      actmin_ineq_part{dynamic_cast<StochVector*>(actmax_ineq_part->clone())},
-      actmax_ineq_ubndd{dynamic_cast<StochVectorBase<int>*>(nnzs_row_C->clone())},
-      actmin_ineq_ubndd{dynamic_cast<StochVectorBase<int>*>(nnzs_row_C->clone())}, INF_NEG(-pips_options::getDoubleParameter("PRESOLVE_INFINITY")),
+      actmax_eq_part{cloneStochVector<int, double>(*nnzs_row_A)}, actmin_eq_part{dynamic_cast<DistributedVector<double>*>(actmax_eq_part->clone())},
+      actmax_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())},
+      actmin_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())}, actmax_ineq_part{cloneStochVector<int, double>(*nnzs_row_C)},
+      actmin_ineq_part{dynamic_cast<DistributedVector<double>*>(actmax_ineq_part->clone())},
+      actmax_ineq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_C->clone())},
+      actmin_ineq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_C->clone())}, INF_NEG(-pips_options::getDoubleParameter("PRESOLVE_INFINITY")),
       INF_POS(pips_options::getDoubleParameter("PRESOLVE_INFINITY")), nChildren(nnzs_col->children.size()),
       track_row(pips_options::getBoolParameter("PRESOLVE_TRACK_ROW")), track_col(pips_options::getBoolParameter("PRESOLVE_TRACK_COL")),
       tracked_row(ROW, pips_options::getIntParameter("PRESOLVE_TRACK_ROW_NODE"), pips_options::getIntParameter("PRESOLVE_TRACK_ROW_INDEX"),
@@ -49,13 +49,13 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
             (pips_options::getIntParameter("PRESOLVE_TRACK_ROW_SYSTEM") == 0 ? EQUALITY_SYSTEM : INEQUALITY_SYSTEM)),
       tracked_col(COL, pips_options::getIntParameter("PRESOLVE_TRACK_COL_NODE"), pips_options::getIntParameter("PRESOLVE_TRACK_COL_INDEX")),
       objective_vec_chgs{new SimpleVector<double>(nnzs_col->first->length())},
-      lower_bound_implied_by_system{dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())},
-      lower_bound_implied_by_row{dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())},
-      lower_bound_implied_by_node{dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())},
-      upper_bound_implied_by_system{dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())},
-      upper_bound_implied_by_row{dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())},
-      upper_bound_implied_by_node{dynamic_cast<StochVectorBase<int>*>(nnzs_col->clone())},
-      absmin_col{dynamic_cast<StochVector*>(sorigprob.g->clone())}, absmax_col{dynamic_cast<StochVector*>(sorigprob.g->clone())},
+      lower_bound_implied_by_system{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
+      lower_bound_implied_by_row{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
+      lower_bound_implied_by_node{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
+      upper_bound_implied_by_system{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
+      upper_bound_implied_by_row{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
+      upper_bound_implied_by_node{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
+      absmin_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())}, absmax_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())},
       store_linking_row_boundTightening_A(nnzs_row_A->last->length(), 0), store_linking_row_boundTightening_C(nnzs_row_C->last->length(), 0) {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool));
    outdated_activities = true;
@@ -141,26 +141,26 @@ PresolveData::~PresolveData() {
 
 /* set non existent bounds on all variables to +/- value */
 void PresolveData::setUndefinedVarboundsTo(double value) {
-   StochVector& xlow = dynamic_cast<StochVector&>(*presProb->blx);
-   StochVector& ixlow = dynamic_cast<StochVector&>(*presProb->ixlow);
-   StochVector& xupp = dynamic_cast<StochVector&>(*presProb->bux);
-   StochVector& ixupp = dynamic_cast<StochVector&>(*presProb->ixupp);
+   DistributedVector<double>& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->blx);
+   DistributedVector<double>& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->ixlow);
+   DistributedVector<double>& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
+   DistributedVector<double>& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
 
    xlow.setNotIndicatedEntriesToVal(-value, ixlow);
    xupp.setNotIndicatedEntriesToVal(value, ixupp);
 }
 
 void PresolveData::setUndefinedRowboundsTo(double value) {
-   StochVector& clow = dynamic_cast<StochVector&>(*presProb->bl);
-   StochVector& iclow = dynamic_cast<StochVector&>(*presProb->iclow);
-   StochVector& cupp = dynamic_cast<StochVector&>(*presProb->bu);
-   StochVector& icupp = dynamic_cast<StochVector&>(*presProb->icupp);
+   DistributedVector<double>& clow = dynamic_cast<DistributedVector<double>&>(*presProb->bl);
+   DistributedVector<double>& iclow = dynamic_cast<DistributedVector<double>&>(*presProb->iclow);
+   DistributedVector<double>& cupp = dynamic_cast<DistributedVector<double>&>(*presProb->bu);
+   DistributedVector<double>& icupp = dynamic_cast<DistributedVector<double>&>(*presProb->icupp);
 
    clow.setNotIndicatedEntriesToVal(-value, iclow);
    cupp.setNotIndicatedEntriesToVal(value, icupp);
 }
 
-void PresolveData::initAbsminAbsmaxInCols(StochVector& absmin, StochVector& absmax) const {
+void PresolveData::initAbsminAbsmaxInCols(DistributedVector<double>& absmin, DistributedVector<double>& absmax) const {
    getSystemMatrix(EQUALITY_SYSTEM).getColMinMaxVec(true, true, nullptr, absmin);
    getSystemMatrix(INEQUALITY_SYSTEM).getColMinMaxVec(true, false, nullptr, absmin);
 
@@ -261,16 +261,16 @@ void PresolveData::recomputeActivities(bool linking_only) {
  *  After that changes in the activities of linking rows will get stored in the SimpleVectors
  */
 void
-PresolveData::recomputeActivities(bool linking_only, StochVector& actmax_eq_part, StochVector& actmin_eq_part, StochVectorBase<int>& actmax_eq_ubndd,
-      StochVectorBase<int>& actmin_eq_ubndd, StochVector& actmax_ineq_part, StochVector& actmin_ineq_part, StochVectorBase<int>& actmax_ineq_ubndd,
-      StochVectorBase<int>& actmin_ineq_ubndd) const {
+PresolveData::recomputeActivities(bool linking_only, DistributedVector<double>& actmax_eq_part, DistributedVector<double>& actmin_eq_part, DistributedVector<int>& actmax_eq_ubndd,
+      DistributedVector<int>& actmin_eq_ubndd, DistributedVector<double>& actmax_ineq_part, DistributedVector<double>& actmin_ineq_part, DistributedVector<int>& actmax_ineq_ubndd,
+      DistributedVector<int>& actmin_ineq_ubndd) const {
    const StochGenMatrix& mat_A = getSystemMatrix(EQUALITY_SYSTEM);
    const StochGenMatrix& mat_C = getSystemMatrix(INEQUALITY_SYSTEM);
 
-   const StochVector& xupp = dynamic_cast<StochVector&>(*presProb->bux);
-   const StochVector& ixupp = dynamic_cast<StochVector&>(*presProb->ixupp);
-   const StochVector& xlow = dynamic_cast<StochVector&>(*presProb->blx);
-   const StochVector& ixlow = dynamic_cast<StochVector&>(*presProb->ixlow);
+   const DistributedVector<double>& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
+   const DistributedVector<double>& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
+   const DistributedVector<double>& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->blx);
+   const DistributedVector<double>& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->ixlow);
 
    /* reset vectors keeping track of activities */
    if (!linking_only) {
@@ -713,9 +713,9 @@ void PresolveData::allreduceAndApplyBoundChanges() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(array_bound_chgs);
 
-   dynamic_cast<SimpleVector<double>*>(dynamic_cast<StochVector&>(*presProb->bA).last)->axpy(1.0, *bound_chgs_A);
-   dynamic_cast<SimpleVector<double>*>(dynamic_cast<StochVector&>(*presProb->bl).last)->axpy(1.0, *bound_chgs_C);
-   dynamic_cast<SimpleVector<double>*>(dynamic_cast<StochVector&>(*presProb->bu).last)->axpy(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector<double>*>(dynamic_cast<DistributedVector<double>&>(*presProb->bA).last)->axpy(1.0, *bound_chgs_A);
+   dynamic_cast<SimpleVector<double>*>(dynamic_cast<DistributedVector<double>&>(*presProb->bl).last)->axpy(1.0, *bound_chgs_C);
+   dynamic_cast<SimpleVector<double>*>(dynamic_cast<DistributedVector<double>&>(*presProb->bu).last)->axpy(1.0, *bound_chgs_C);
 
    bound_chgs_A->setToZero();
    bound_chgs_C->setToZero();
@@ -732,7 +732,7 @@ void PresolveData::allreduceAndApplyObjVecChanges() {
    if (distributed)
       PIPS_MPIsumArrayInPlace(objective_vec_chgs->elements(), objective_vec_chgs->length());
 
-   dynamic_cast<SimpleVector<double>*>(dynamic_cast<StochVector&>(*presProb->g).first)->axpy(1.0, *objective_vec_chgs);
+   dynamic_cast<SimpleVector<double>*>(dynamic_cast<DistributedVector<double>&>(*presProb->g).first)->axpy(1.0, *objective_vec_chgs);
 
    objective_vec_chgs->setToZero();
    outdated_obj_vector = false;
@@ -746,11 +746,11 @@ void PresolveData::allreduceObjOffset() {
    obj_offset_chgs = 0;
 }
 
-void PresolveData::initNnzCounter(StochVectorBase<int>& nnzs_row_A, StochVectorBase<int>& nnzs_row_C, StochVectorBase<int>& nnzs_col) const {
+void PresolveData::initNnzCounter(DistributedVector<int>& nnzs_row_A, DistributedVector<int>& nnzs_row_C, DistributedVector<int>& nnzs_col) const {
    StochGenMatrix& A = getSystemMatrix(EQUALITY_SYSTEM);
    StochGenMatrix& C = getSystemMatrix(INEQUALITY_SYSTEM);
 
-   std::unique_ptr<StochVectorBase<int> > colClone(dynamic_cast<StochVectorBase<int>*>(nnzs_col.clone()));
+   std::unique_ptr<DistributedVector<int> > colClone(dynamic_cast<DistributedVector<int>*>(nnzs_col.clone()));
 
    A.getNnzPerRow(nnzs_row_A);
    C.getNnzPerRow(nnzs_row_C);
@@ -962,7 +962,7 @@ long PresolveData::resetOriginallyFreeVarsBounds(const SimpleVector<double>& ixl
             assert(row_upper != -10);
             assert(node_row_upper != -10);
 
-            const StochVectorBase<int>& nnzs = (sys_row_upper == 0) ? *nnzs_row_A : *nnzs_row_C;
+            const DistributedVector<int>& nnzs = (sys_row_upper == 0) ? *nnzs_row_A : *nnzs_row_C;
 
             if (getSimpleVecFromRowStochVec(nnzs, (node_row_upper == -2) ? -1 : node_row_upper, (node_row_upper == -2))[row_upper] != 0) {
                ixupp[col] = 0;
@@ -976,7 +976,7 @@ long PresolveData::resetOriginallyFreeVarsBounds(const SimpleVector<double>& ixl
             assert(row_lower != -10);
             assert(node_row_lower != -10);
 
-            const StochVectorBase<int>& nnzs = (sys_row_lower == 0) ? *nnzs_row_A : *nnzs_row_C;
+            const DistributedVector<int>& nnzs = (sys_row_lower == 0) ? *nnzs_row_A : *nnzs_row_C;
 
             // todo : problably should also check whether variable is still in row - not necessary for so far implemented presolvers
             if (getSimpleVecFromRowStochVec(nnzs, (node_row_lower == -2) ? -1 : node_row_lower, (row_lower == -2))[row_lower] != 0) {
@@ -2595,17 +2595,17 @@ bool PresolveData::verifyActivities() const {
 
    bool activities_correct = true;
 
-   StochVectorHandle actmax_eq_part_new(dynamic_cast<StochVector*>(actmax_eq_part->clone()));
-   StochVectorHandle actmin_eq_part_new(dynamic_cast<StochVector*>(actmin_eq_part->clone()));
+   DistributedVector<double>* actmax_eq_part_new(dynamic_cast<DistributedVector<double>*>(actmax_eq_part->clone()));
+   DistributedVector<double>* actmin_eq_part_new(dynamic_cast<DistributedVector<double>*>(actmin_eq_part->clone()));
 
-   std::unique_ptr<StochVectorBase<int> > actmax_eq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmax_eq_ubndd->clone()));
-   std::unique_ptr<StochVectorBase<int> > actmin_eq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmin_eq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int> > actmax_eq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmax_eq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int> > actmin_eq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmin_eq_ubndd->clone()));
 
-   StochVectorHandle actmax_ineq_part_new(dynamic_cast<StochVector*>(actmax_ineq_part->clone()));
-   StochVectorHandle actmin_ineq_part_new(dynamic_cast<StochVector*>(actmin_ineq_part->clone()));
+   DistributedVector<double>* actmax_ineq_part_new(dynamic_cast<DistributedVector<double>*>(actmax_ineq_part->clone()));
+   DistributedVector<double>* actmin_ineq_part_new(dynamic_cast<DistributedVector<double>*>(actmin_ineq_part->clone()));
 
-   std::unique_ptr<StochVectorBase<int> > actmax_ineq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmax_ineq_ubndd->clone()));
-   std::unique_ptr<StochVectorBase<int> > actmin_ineq_ubndd_new(dynamic_cast<StochVectorBase<int>*>(actmin_ineq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int> > actmax_ineq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmax_ineq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int> > actmin_ineq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmin_ineq_ubndd->clone()));
 
    actmax_eq_part_new->setToZero();
    actmin_eq_part_new->setToZero();
@@ -2680,9 +2680,9 @@ bool PresolveData::verifyNnzcounters() const {
    assert(!outdated_nnzs);
 
    bool nnzCorrect = true;
-   std::unique_ptr<StochVectorBase<int> > nnzs_col_new(dynamic_cast<StochVectorBase<int>*>(nnzs_col->cloneFull()));
-   std::unique_ptr<StochVectorBase<int> > nnzs_row_A_new(dynamic_cast<StochVectorBase<int>*>(nnzs_row_A->cloneFull()));
-   std::unique_ptr<StochVectorBase<int> > nnzs_row_C_new(dynamic_cast<StochVectorBase<int>*>(nnzs_row_C->cloneFull()));
+   std::unique_ptr<DistributedVector<int> > nnzs_col_new(dynamic_cast<DistributedVector<int>*>(nnzs_col->cloneFull()));
+   std::unique_ptr<DistributedVector<int> > nnzs_row_A_new(dynamic_cast<DistributedVector<int>*>(nnzs_row_A->cloneFull()));
+   std::unique_ptr<DistributedVector<int> > nnzs_row_C_new(dynamic_cast<DistributedVector<int>*>(nnzs_row_C->cloneFull()));
 
    nnzs_col_new->setToZero();
    nnzs_row_A_new->setToZero();
@@ -2821,17 +2821,17 @@ bool PresolveData::nodeIsDummy(int node) const {
    StochGenMatrix& matrix = getSystemMatrix(EQUALITY_SYSTEM);
    // todo : asserts
    if (matrix.children[node]->isKindOf(kStochGenDummyMatrix)) {
-      assert(dynamic_cast<StochVector&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
 
-      assert(dynamic_cast<StochVector&>(*(presProb->bA)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bA)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
       assert(nnzs_row_A->children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->bu)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->bl)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->icupp)).children[node]->isKindOf(kStochDummy));
-      assert(dynamic_cast<StochVector&>(*(presProb->iclow)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bu)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bl)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->icupp)).children[node]->isKindOf(kStochDummy));
+      assert(dynamic_cast<DistributedVector<double>&>(*(presProb->iclow)).children[node]->isKindOf(kStochDummy));
       assert(nnzs_row_C->children[node]->isKindOf(kStochDummy));
 
       return true;
@@ -3686,13 +3686,13 @@ void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseGe
 }
 
 void PresolveData::printVarBoundStatistics(std::ostream& out) const {
-   const StochVector& xupp = dynamic_cast<const StochVector&>(*presProb->bux);
-   const StochVector& xlow = dynamic_cast<const StochVector&>(*presProb->blx);
-   const StochVector& ixupp = dynamic_cast<const StochVector&>(*presProb->ixupp);
-   const StochVector& ixlow = dynamic_cast<const StochVector&>(*presProb->ixlow);
+   const DistributedVector<double>& xupp = dynamic_cast<const DistributedVector<double>&>(*presProb->bux);
+   const DistributedVector<double>& xlow = dynamic_cast<const DistributedVector<double>&>(*presProb->blx);
+   const DistributedVector<double>& ixupp = dynamic_cast<const DistributedVector<double>&>(*presProb->ixupp);
+   const DistributedVector<double>& ixlow = dynamic_cast<const DistributedVector<double>&>(*presProb->ixlow);
 
-   StochVectorHandle xlow_def = StochVectorHandle(dynamic_cast<StochVector*>(xlow.cloneFull()));
-   StochVectorHandle xupp_def = StochVectorHandle(dynamic_cast<StochVector*>(xupp.cloneFull()));
+   DistributedVector<double>* xlow_def = dynamic_cast<DistributedVector<double>*>(xlow.cloneFull());
+   DistributedVector<double>* xupp_def = dynamic_cast<DistributedVector<double>*>(xupp.cloneFull());
 
    xlow_def->componentMult(ixlow);
    xupp_def->componentMult(ixupp);

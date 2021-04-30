@@ -430,7 +430,7 @@ void sLinsysRootAug::assembleLocalKKT(DistributedQP* prob) {
 void sLinsysRootAug::Lsolve(DistributedQP* prob, OoqpVector& x) {
    assert(!is_hierarchy_root);
 
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    assert(children.size() == b.children.size());
 
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
@@ -470,7 +470,7 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
    /* Ki^-1 bi has already been computed in Lsolve */
 
    /* children have already computed Li^T\Di\Li\bi in Lsolve() */
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 #ifdef TIMING
    stochNode->resMon.eDsolve.clear();
@@ -483,7 +483,7 @@ void sLinsysRootAug::Dsolve(DistributedQP* prob, OoqpVector& x) {
 }
 
 void sLinsysRootAug::Ltsolve(DistributedQP* prob, OoqpVector& x) {
-   StochVector& b = dynamic_cast<StochVector&>(x);
+   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
@@ -1480,13 +1480,13 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    assert(false);
    assert(primal_regularization_diagonal);
 
-   assert(dynamic_cast<const StochVector*>(this->primal_regularization_diagonal));
-   assert(dynamic_cast<const StochVector*>(this->dual_equality_regularization_diagonal));
-   assert(dynamic_cast<const StochVector*>(this->dual_inequality_regularization_diagonal));
+   assert(dynamic_cast<const DistributedVector<double>*>(this->primal_regularization_diagonal));
+   assert(dynamic_cast<const DistributedVector<double>*>(this->dual_equality_regularization_diagonal));
+   assert(dynamic_cast<const DistributedVector<double>*>(this->dual_inequality_regularization_diagonal));
 
    /* primal diagonal */
    if (locnx > 0) {
-      const auto& primal_regularization_vec = dynamic_cast<StochVector&>(*this->primal_regularization_diagonal).first;
+      const auto& primal_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->primal_regularization_diagonal).first;
       assert(primal_regularization_vec);
 
       primal_regularization_vec->addConstant(primal_regularization);
@@ -1497,7 +1497,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
    /* A0 dual equalities */
    if (locmy > 0) {
-      const auto& dual_equality_regularization_vec = dynamic_cast<StochVector&>(*this->dual_equality_regularization_diagonal).first;
+      const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
       assert(dual_equality_regularization_vec);
 
       dual_equality_regularization_vec->addConstant(dual_equality_regularization);
@@ -1506,7 +1506,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
    /* dual linking equalities */
    if (locmyl > 0) {
-      const auto& dual_equality_regularization_link_cons = dynamic_cast<StochVector&>(*this->dual_equality_regularization_diagonal).last;
+      const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
       assert(dual_equality_regularization_link_cons);
 
       dual_equality_regularization_link_cons->addConstant(dual_equality_regularization);
@@ -1514,7 +1514,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    }
 
    if (locmzl > 0) {
-      const auto& dual_inequality_regularization_link_cons = dynamic_cast<StochVector&>(*this->dual_inequality_regularization_diagonal).last;
+      const auto& dual_inequality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).last;
       assert(dual_inequality_regularization_link_cons);
 
       dual_inequality_regularization_link_cons->addConstant(dual_inequality_regularization);

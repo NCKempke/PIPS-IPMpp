@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "QpPostsolver.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "DistributedQP.hpp"
 #include "DistributedVariables.h"
 #include "SystemType.h"
@@ -123,16 +123,16 @@ private:
 
       /// for now mapping will contain a dummy value for columns that have not been fixed and the value the columns has been fixed to otherwise
       /// 1 indicates that the row / col has not been removed from the problem - -1 indicates the row / col has been removed */
-      std::unique_ptr<StochVectorBase<int>> padding_origcol{};
-      std::unique_ptr<StochVectorBase<int>> padding_origrow_equality{};
-      std::unique_ptr<StochVectorBase<int>> padding_origrow_inequality{};
+      std::unique_ptr<DistributedVector<int>> padding_origcol{};
+      std::unique_ptr<DistributedVector<int>> padding_origrow_equality{};
+      std::unique_ptr<DistributedVector<int>> padding_origrow_inequality{};
 
       /// has a row been modified since last storing it
       /// 1 if yes, -1 if not
-      std::unique_ptr<StochVectorBase<int>> eq_row_marked_modified{};
-      std::unique_ptr<StochVectorBase<int>> ineq_row_marked_modified{};
+      std::unique_ptr<DistributedVector<int>> eq_row_marked_modified{};
+      std::unique_ptr<DistributedVector<int>> ineq_row_marked_modified{};
       /// has a column been modified
-      std::unique_ptr<StochVectorBase<int>> column_marked_modified{};
+      std::unique_ptr<DistributedVector<int>> column_marked_modified{};
 
       /// vectors for storing ints and doubles containting information needed by postsolve
       std::vector<ReductionType> reductions;
@@ -150,13 +150,13 @@ private:
       StochColumnStorage col_storage;
 
       /// stores the index for a row/col indicating where in stored_rows/cols that row/col was stored last
-      std::unique_ptr<StochVectorBase<int>> eq_row_stored_last_at{};
-      std::unique_ptr<StochVectorBase<int>> ineq_row_stored_last_at{};
-      std::unique_ptr<StochVectorBase<int>> col_stored_last_at{};
+      std::unique_ptr<DistributedVector<int>> eq_row_stored_last_at{};
+      std::unique_ptr<DistributedVector<int>> ineq_row_stored_last_at{};
+      std::unique_ptr<DistributedVector<int>> col_stored_last_at{};
 
       /// stores which reduction is last bound-tightening on variable
-      std::unique_ptr<StochVectorBase<int>> last_upper_bound_tightened{};
-      std::unique_ptr<StochVectorBase<int>> last_lower_bound_tightened{};
+      std::unique_ptr<DistributedVector<int>> last_upper_bound_tightened{};
+      std::unique_ptr<DistributedVector<int>> last_lower_bound_tightened{};
 
       /// stuff for synchronization in-between processes
       const int length_array_outdated_indicators;
@@ -214,13 +214,13 @@ private:
       bool complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const;
       bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
 
-      bool sameNonZeroPatternDistributed(const StochVector& svec) const; // TODO: move
+      bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
       bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) const; // TODO: move
 
       template <typename T>
-      void setOriginalValuesFromReduced(StochVectorBase<T>& original_vector,
-         const StochVectorBase<T>& reduced_vector,
-         const StochVectorBase<int>& padding_original) const;
+      void setOriginalValuesFromReduced(DistributedVector<T>& original_vector,
+         const DistributedVector<T>& reduced_vector,
+         const DistributedVector<int>& padding_original) const;
 
       template <typename T>
       void setOriginalValuesFromReduced(SimpleVector<T>& original_vector,

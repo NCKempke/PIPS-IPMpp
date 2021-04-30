@@ -7,7 +7,7 @@
 #ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_STOCHVECTORUTILITIES_H_
 #define PIPS_IPM_CORE_STOCHLINEARALGEBRA_STOCHVECTORUTILITIES_H_
 
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "SimpleVector.h"
 
 #include <string>
@@ -26,7 +26,7 @@
  * asserts existence of these vectors as well as the specified child
  */
 template<typename T>
-inline SimpleVector<T>& getSimpleVecFromStochVec(const StochVectorBase<T>& stochvec, int node, bool linking) {
+inline SimpleVector<T>& getSimpleVecFromStochVec(const DistributedVector<T>& stochvec, int node, bool linking) {
    assert(-1 <= node && node < static_cast<int>(stochvec.children.size()));
 
    if (node == -1) {
@@ -53,12 +53,12 @@ inline SimpleVector<T>& getSimpleVecFromStochVec(const StochVectorBase<T>& stoch
 
 template<typename T>
 inline SimpleVector<T>& getSimpleVecFromRowStochVec(const OoqpVectorBase<T>& ooqpvec, int node, bool linking) {
-   return getSimpleVecFromStochVec(dynamic_cast<const StochVectorBase<T>&>(ooqpvec), node, linking);
+   return getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), node, linking);
 }
 
 template<typename T>
 inline SimpleVector<T>& getSimpleVecFromColStochVec(const OoqpVectorBase<T>& ooqpvec, int node) {
-   return getSimpleVecFromStochVec(dynamic_cast<const StochVectorBase<T>&>(ooqpvec), node, false);
+   return getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), node, false);
 }
 
 template<typename T>
@@ -71,7 +71,7 @@ inline T& getSimpleVecFromRowStochVec(const SmartPointer<OoqpVectorBase<T> >& oo
 template<typename T>
 inline T& getSimpleVecFromRowStochVec(const OoqpVectorBase<T>& ooqpvec, const INDEX& row) {
    assert(row.isRow());
-   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const StochVectorBase<T>&>(ooqpvec), row.getNode(), row.getLinking());
+   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), row.getNode(), row.getLinking());
    const int index = row.getIndex();
    assert(0 <= index && index < vec.length());
 
@@ -88,7 +88,7 @@ inline T& getSimpleVecFromColStochVec(const SmartPointer<OoqpVectorBase<T> >& oo
 template<typename T>
 inline T& getSimpleVecFromColStochVec(const OoqpVectorBase<T>& ooqpvec, const INDEX& col) {
    assert(col.isCol());
-   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const StochVectorBase<T>&>(ooqpvec), col.getNode(), false);
+   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), col.getNode(), false);
    const int index = col.getIndex();
    assert(0 <= index && index < vec.length());
 
@@ -97,16 +97,16 @@ inline T& getSimpleVecFromColStochVec(const OoqpVectorBase<T>& ooqpvec, const IN
 
 /// clone the structure of a StochVectorBase<T> into one of type U
 template<typename T, typename U>
-inline StochVectorBase<U>* cloneStochVector(const StochVectorBase<T>& svec) {
-   StochVectorBase<U>* clone;
+inline DistributedVector<U>* cloneStochVector(const DistributedVector<T>& svec) {
+   DistributedVector<U>* clone;
 
    if (svec.isKindOf(kStochDummy))
       return new StochDummyVectorBase<U>();
 
    if (svec.last)
-      clone = new StochVectorBase<U>(svec.first->length(), svec.last->length(), svec.mpiComm);
+      clone = new DistributedVector<U>(svec.first->length(), svec.last->length(), svec.mpiComm);
    else
-      clone = new StochVectorBase<U>(svec.first->length(), svec.mpiComm);
+      clone = new DistributedVector<U>(svec.first->length(), svec.mpiComm);
 
    for (size_t it = 0; it < svec.children.size(); it++) {
       clone->AddChild(cloneStochVector<T, U>(*svec.children[it]));
@@ -120,11 +120,11 @@ inline StochDummyVectorBase<U>* cloneStochVector(const StochDummyVectorBase<T>&)
 }
 
 template<typename T, typename U>
-inline StochVectorBase<U>* cloneStochVector(const OoqpVectorBase<T>& ooqpvec) {
+inline DistributedVector<U>* cloneStochVector(const OoqpVectorBase<T>& ooqpvec) {
    if (ooqpvec.isKindOf(kStochDummy))
       return cloneStochVector<T, U>(dynamic_cast<const StochDummyVectorBase<T>&>(ooqpvec));
    else
-      return cloneStochVector<T, U>(dynamic_cast<const StochVectorBase<T>&>(ooqpvec));
+      return cloneStochVector<T, U>(dynamic_cast<const DistributedVector<T>&>(ooqpvec));
 }
 
 inline void writeLBltXltUBToStreamAllStringStream(std::stringstream& sout, const SimpleVector<double>& lb, const SimpleVector<double>& ixlow, const
@@ -141,8 +141,8 @@ SimpleVector<double>& ub, const SimpleVector<double>& ixupp) {
    }
 }
 
-inline void writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const StochVector& lb, const StochVector& ixlow, const StochVector& ub,
-      const StochVector& ixupp) {
+inline void writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow, const DistributedVector<double>& ub,
+      const DistributedVector<double>& ixupp) {
    assert(lb.children.size() == ixlow.children.size());
    assert(lb.children.size() == ub.children.size());
    assert(lb.children.size() == ixupp.children.size());
@@ -179,7 +179,7 @@ inline void writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, cons
 }
 
 inline void
-writeLBltXltUBtoStreamDense(std::ostream& out, const StochVector& lb, const StochVector& ixlow, const StochVector& ub, const StochVector& ixupp,
+writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow, const DistributedVector<double>& ub, const DistributedVector<double>& ixupp,
       MPI_Comm mpiComm) {
    assert(lb.children.size() == ixlow.children.size());
    assert(lb.children.size() == ub.children.size());

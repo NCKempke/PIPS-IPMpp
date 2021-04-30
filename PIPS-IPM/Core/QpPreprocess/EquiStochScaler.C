@@ -7,7 +7,7 @@
 
 //#define PIPS_DEBUG
 #include "EquiStochScaler.h"
-#include "StochVector.h"
+#include "DistributedVector.h"
 #include "pipsdef.h"
 #include "pipsport.h"
 
@@ -43,12 +43,12 @@ void EquiStochScaler::scale()
    /* We want to do the direction with lower maximal ratio first,
     * since the absolute smallest value in the scaled matrix is bounded from below by
     * the inverse of the maximum ratio of the direction that is done first */
-   vec_rowscaleA.reset( dynamic_cast<StochVector*>(bA->clone()) );
-   std::unique_ptr<StochVector> rowminA{ dynamic_cast<StochVector*>(bA->clone()) };
-   vec_rowscaleC.reset( dynamic_cast<StochVector*>(rhsC->clone()) );
-   std::unique_ptr<StochVector> rowminC{ dynamic_cast<StochVector*>(rhsC->clone()) };
-   vec_colscale.reset( dynamic_cast<StochVector*>(bux->clone()) );
-   std::unique_ptr<StochVector> colmin{ dynamic_cast<StochVector*>(bux->clone()) };
+   vec_rowscaleA.reset( dynamic_cast<DistributedVector<double>*>(bA->clone()) );
+   std::unique_ptr<DistributedVector<double>> rowminA{ dynamic_cast<DistributedVector<double>*>(bA->clone()) };
+   vec_rowscaleC.reset( dynamic_cast<DistributedVector<double>*>(rhsC->clone()) );
+   std::unique_ptr<DistributedVector<double>> rowminC{ dynamic_cast<DistributedVector<double>*>(rhsC->clone()) };
+   vec_colscale.reset( dynamic_cast<DistributedVector<double>*>(bux->clone()) );
+   std::unique_ptr<DistributedVector<double>> colmin{ dynamic_cast<DistributedVector<double>*>(bux->clone()) };
 
    const double rowratio = maxRowRatio(*vec_rowscaleA, *vec_rowscaleC, *rowminA, *rowminC, nullptr);
    const double colratio = maxColRatio(*vec_colscale, *colmin, nullptr, nullptr);

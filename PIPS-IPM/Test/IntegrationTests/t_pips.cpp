@@ -66,7 +66,7 @@ std::vector<Instance> getInstances()
 
 double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step )
 {
-//   testing::internal::CaptureStdout();
+   testing::internal::CaptureStdout();
 
    gmspips_reader reader( path_instance, gams_path, n_blocks );
    std::unique_ptr<StochInputTree> tree( reader.read_problem() );
@@ -104,7 +104,7 @@ double ScenarioTests::solveInstance( const std::string& path_instance, size_t n_
       }
    }
 
-//   testing::internal::GetCapturedStdout();
+   testing::internal::GetCapturedStdout();
    return result;
 };
 

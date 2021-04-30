@@ -1,7 +1,6 @@
 #include "Residuals.h"
 #include "Variables.h"
 #include "Problem.h"
-#include "LinearAlgebraPackage.h"
 #include "pipsdef.h"
 
 #include <iostream>
@@ -14,7 +13,7 @@ Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResi
    iclow = OoqpVectorHandle(residuals.iclow->cloneFull());
    icupp = OoqpVectorHandle(residuals.icupp->cloneFull());
 
-   rQ = OoqpVectorHandle(residuals.rQ->cloneFull());
+   lagrangian_gradient = OoqpVectorHandle(residuals.lagrangian_gradient->cloneFull());
    rA = OoqpVectorHandle(residuals.rA->cloneFull());
    rC = OoqpVectorHandle(residuals.rC->cloneFull());
 
@@ -59,22 +58,22 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    primal_objective = problem.objective_value(iterate);
 
    /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
-   problem.objective_gradient(iterate, *rQ); // Qx + g
+   problem.objective_gradient(iterate, *lagrangian_gradient); // Qx + g
 
    // contribution calculate x^T (g + Qx) to duality gap */
-   gap = rQ->dotProductWith(*iterate.x);
+   gap = lagrangian_gradient->dotProductWith(*iterate.x);
 
-   problem.ATransmult(1.0, *rQ, -1.0, *iterate.y);
-   problem.CTransmult(1.0, *rQ, -1.0, *iterate.z);
+   problem.ATransmult(1.0, *lagrangian_gradient, -1.0, *iterate.y);
+   problem.CTransmult(1.0, *lagrangian_gradient, -1.0, *iterate.z);
 
    iterate.gamma->selectNonZeros(*ixlow);
    iterate.phi->selectNonZeros(*ixupp);
    if (nxlow > 0)
-      rQ->axpy(-1.0, *iterate.gamma);
+      lagrangian_gradient->axpy(-1.0, *iterate.gamma);
    if (nxupp > 0)
-      rQ->axpy(1.0, *iterate.phi);
+      lagrangian_gradient->axpy(1.0, *iterate.phi);
 
-   norm = updateNormAndPrint(norm, *rQ, print_resids, "rQ");
+   norm = updateNormAndPrint(norm, *lagrangian_gradient, print_resids, "rQ");
 
    /*** rA = Ax - b ***/
    problem.getbA(*rA);
@@ -175,7 +174,7 @@ double Residuals::recompute_residual_norm() {
    mResidualNorm = 0.0;
 
    double componentNorm = 0.0;
-   componentNorm = rQ->infnorm();
+   componentNorm = lagrangian_gradient->infnorm();
 
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
@@ -257,7 +256,7 @@ void Residuals::clear_complementarity_residual() {
 }
 
 void Residuals::clear_linear_residuals() {
-   rQ->setToZero();
+   lagrangian_gradient->setToZero();
    rA->setToZero();
    rC->setToZero();
    rz->setToZero();
@@ -332,7 +331,7 @@ void Residuals::copy(const Residuals& residuals) {
    mclow = residuals.mclow;
    iclow->copyFrom(*residuals.iclow);
 
-   rQ->copyFrom(*residuals.rQ);
+   lagrangian_gradient->copyFrom(*residuals.lagrangian_gradient);
    rA->copyFrom(*residuals.rA);
    rC->copyFrom(*residuals.rC);
 
@@ -363,4 +362,41 @@ void Residuals::writeToStream(std::ostream& out) {
    printf("rz\n");
    rz->writeToStream(out);
    printf("---------------------------\n");
+}
+
+double Residuals::constraint_violation() {
+   return rA->onenorm() + rC->onenorm();
+}
+
+double Residuals::optimality_measure(double mu) {
+   return this->lagrangian_gradient->twonorm() + mu;
+}
+double Residuals::feasibility_measure(double mu) {
+   double complementarity = 0.;
+   // compute componentwise products of complementary variables
+//   if (mclow > 0) {
+//      OoqpVectorHandle rt_copy = OoqpVectorHandle(rt->cloneFull());
+//      rt_copy->componentMult(*rlambda);
+//      rt_copy->addConstant(-mu);
+//      complementarity += rt_copy->onenorm();
+//   }
+//   if (mcupp > 0) {
+//      OoqpVectorHandle ru_copy = OoqpVectorHandle(ru->cloneFull());
+//      ru_copy->componentMult(*rphi);
+//      ru_copy->addConstant(-mu);
+//      complementarity += ru_copy->onenorm();
+//   }
+//   if (nxlow > 0) {
+//      OoqpVectorHandle rv_copy = OoqpVectorHandle(rv->cloneFull());
+//      rv_copy->componentMult(*rgamma);
+//      rv_copy->addConstant(-mu);
+//      complementarity += rv_copy->onenorm();
+//   }
+//   if (nxupp > 0) {
+//      OoqpVectorHandle rw_copy = OoqpVectorHandle(rw->cloneFull());
+//      rw_copy->componentMult(*rphi);
+//      rw_copy->addConstant(-mu);
+//      complementarity += rw_copy->onenorm();
+//   }
+   return this->constraint_violation() + complementarity;
 }

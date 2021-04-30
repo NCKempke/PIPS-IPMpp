@@ -55,8 +55,8 @@ int BorderedSymMatrix::isKindOf( int type ) const
 /** y = beta * y + alpha * this * x */
 void BorderedSymMatrix::mult( double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in ) const
 {
-   StochVector& y = dynamic_cast<StochVector&>(y_in);
-   const StochVector& x = dynamic_cast<const StochVector&>(x_in);
+   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
+   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
 
    assert(x.children.size() == 1 && y.children.size() == 1);
    assert(x.children[0] && y.children[0]);
@@ -82,7 +82,7 @@ void BorderedSymMatrix::fromGetDiagonal( int idiag, OoqpVector& x_in )
 {
    assert( "The value of the parameter idiag is not supported!" && idiag == 0 );
 
-   StochVector& x = dynamic_cast<StochVector&>(x_in);
+   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert( x.children.size() == 1 );
    assert( x.children[0] );
    assert(!x.last && x.first );

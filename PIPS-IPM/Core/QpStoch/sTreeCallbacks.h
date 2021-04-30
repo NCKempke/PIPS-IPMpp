@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <functional>
+
 /** This class creates objects when  the problem is specified by C callbacks.
  *  Obsolete and present only to ensure compatibility with older versions of the code.
  *  The new sTree implementation, C++-like is sTreeImpl.
@@ -16,10 +17,9 @@
 
 class DistributedQP;
 
-class sTreeCallbacks : public sTree
-{
+class sTreeCallbacks : public sTree {
 protected:
-   sTreeCallbacks( const sTreeCallbacks& other );
+   sTreeCallbacks(const sTreeCallbacks& other);
 public:
 
    using InputNode = StochInputTree::StochInputNode;
@@ -35,25 +35,25 @@ public:
    sTreeCallbacks(StochInputTree::StochInputNode* data_);
    ~sTreeCallbacks() = default;
 
-   void addChild( sTreeCallbacks* child );
+   void addChild(sTreeCallbacks* child);
 
    StochSymMatrix* createQ() const override;
 
    StochGenMatrix* createA() const override;
    StochGenMatrix* createC() const override;
 
-   StochVector* createc() const override;
+   DistributedVector<double>* createc() const override;
 
-   StochVector* createxlow() const override;
-   StochVector* createixlow() const override;
-   StochVector* createxupp() const override;
-   StochVector* createixupp() const override;
+   DistributedVector<double>* createxlow() const override;
+   DistributedVector<double>* createixlow() const override;
+   DistributedVector<double>* createxupp() const override;
+   DistributedVector<double>* createixupp() const override;
 
-   StochVector* createb() const override;
-   StochVector* createclow() const override;
-   StochVector* createiclow() const override;
-   StochVector* createcupp() const override;
-   StochVector* createicupp() const override;
+   DistributedVector<double>* createb() const override;
+   DistributedVector<double>* createclow() const override;
+   DistributedVector<double>* createiclow() const override;
+   DistributedVector<double>* createcupp() const override;
+   DistributedVector<double>* createicupp() const override;
 
    int nx() const override;
    int my() const override;
@@ -70,12 +70,11 @@ public:
    virtual bool hasPresolved();
    virtual void initPresolvedData(const DistributedQP& presolved_data);
 
-   virtual void writeSizes( std::ostream& sout ) const;
+   virtual void writeSizes(std::ostream& sout) const;
 
-   sTree* switchToHierarchicalTree( DistributedQP*& data ) override;
+   sTree* switchToHierarchicalTree(DistributedQP*& data) override;
 
-   const std::vector<unsigned int>& getMapBlockSubTrees() const
-      { return map_node_sub_root; };
+   const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
    std::vector<MPI_Comm> getChildComms() const;
 
    void assertTreeStructureCorrect() const;
@@ -86,32 +85,32 @@ protected:
    void assertTreeStructureIsNotMyNode() const;
    void assertTreeStructureIsMyNodeChildren() const;
    void assertTreeStructureIsMyNodeSubRoot() const;
-   void assertTreeStructureIsMyNode()const;
+   void assertTreeStructureIsMyNode() const;
 
-   unsigned int getMapChildrenToNthRootSubTrees( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
-         unsigned int n_procs, const std::vector<unsigned int>& child_procs );
+   unsigned int getMapChildrenToNthRootSubTrees(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
+         unsigned int n_procs, const std::vector<unsigned int>& child_procs);
 
-   void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C,
-         const StochVector& nxVec, const StochVector& myVec, const StochVector& mzVec, int mylParent, int mzlParent);
+   void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C, const DistributedVector<double>& nxVec,
+         const DistributedVector<double>& myVec, const DistributedVector<double>& mzVec, int mylParent, int mzlParent);
 
-   StochGenMatrix* createMatrix( TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat,
-         DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
-         DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat,
-         DATA_NNZ fnnzBlmat, DATA_MAT Blmat, const std::string& prefix_for_print  ) const;
-   StochVector* createVector( DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec ) const;
+   StochGenMatrix*
+   createMatrix(TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
+         DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat, DATA_MAT Blmat,
+         const std::string& prefix_for_print) const;
+   DistributedVector<double>* createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const;
 
-   void createSubcommunicatorsAndChildren( int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree );
+   void createSubcommunicatorsAndChildren(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree);
    void countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
-         std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq,
-         unsigned int& two_links_root_eq, unsigned int& two_links_root_ineq ) const;
-   void adjustActiveMylBy( int adjustment );
-   void adjustActiveMzlBy( int adjustment );
-   std::pair<int,int> adjustSizesAfterSplit( const std::vector<unsigned int>& two_links_children_eq,
-         const std::vector<unsigned int>& two_links_children_ineq );
+         std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq, unsigned int& two_links_root_eq,
+         unsigned int& two_links_root_ineq) const;
+   void adjustActiveMylBy(int adjustment);
+   void adjustActiveMzlBy(int adjustment);
+   std::pair<int, int>
+   adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq, const std::vector<unsigned int>& two_links_children_ineq);
 
-   std::pair<int,int> splitTree( int n_layers, DistributedQP* data ) override;
+   std::pair<int, int> splitTree(int n_layers, DistributedQP* data) override;
 
-   sTree* shaveDenseBorder( int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+   sTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE{-1};
