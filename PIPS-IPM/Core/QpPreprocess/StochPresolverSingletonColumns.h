@@ -12,8 +12,7 @@
 #include <limits>
 
 
-class StochPresolverSingletonColumns : public StochPresolverBase
-{
+class StochPresolverSingletonColumns : public StochPresolverBase {
 public:
    StochPresolverSingletonColumns(PresolveData& presolve_data, const DistributedQP& origProb);
 
@@ -32,14 +31,14 @@ private:
    std::vector<double> coeffs;
 
 
-   bool removeSingletonColumn( const INDEX& col );
-   INDEX findRowForColumnSingleton( const INDEX& col, bool& found );
-   INDEX findRowForLinkingSingleton( int col, bool& found );
-   INDEX findRowForLinkingSingletonInSystem( int col, SystemType system_type, bool& found );
-   INDEX findRowForNonlinkingSingelton( const INDEX& col, bool& found );
-   bool findRowForSingletonColumnInMatrix( const SparseStorageDynamic& mat, int& row, const int& col );
+   bool removeSingletonColumn(const INDEX& col);
+   INDEX findRowForColumnSingleton(const INDEX& col, bool& found);
+   INDEX findRowForLinkingSingleton(int col, bool& found);
+   INDEX findRowForLinkingSingletonInSystem(int col, SystemType system_type, bool& found);
+   INDEX findRowForNonlinkingSingelton(const INDEX& col, bool& found);
+   bool findRowForSingletonColumnInMatrix(const SparseStorageDynamic& mat, int& row, const int& col);
 
-   void checkColImpliedFree( const INDEX& col, const INDEX& row, bool& lb_implied_free, bool& ub_implied_free );
+   void checkColImpliedFree(const INDEX& col, const INDEX& row, bool& lb_implied_free, bool& ub_implied_free);
    void resetArrays();
 };
 

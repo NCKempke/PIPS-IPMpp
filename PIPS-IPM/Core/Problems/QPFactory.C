@@ -10,7 +10,8 @@
 #include "SparseLinearAlgebraPackage.h"
 #include "Variables.h"
 
-void QPFactory::join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const {
+void QPFactory::join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in,
+      const Vector<double>& rhs3_in) const {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    const SimpleVector<double>& rhs1 = dynamic_cast<const SimpleVector<double>&>(rhs1_in);
    const SimpleVector<double>& rhs2 = dynamic_cast<const SimpleVector<double>&>(rhs2_in);
@@ -23,7 +24,7 @@ void QPFactory::join_right_hand_side(OoqpVector& rhs_in, const OoqpVector& rhs1_
       memcpy(&rhs[nx + my], &rhs3[0], mz * sizeof(double));
 }
 
-void QPFactory::separate_variables(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& vars_in) const {
+void QPFactory::separate_variables(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const {
    const SimpleVector<double>& vars = dynamic_cast<const SimpleVector<double>&>(vars_in);
    SimpleVector<double>& x = dynamic_cast<SimpleVector<double>&>(x_in);
    SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);

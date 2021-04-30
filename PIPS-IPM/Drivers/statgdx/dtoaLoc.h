@@ -1,4 +1,4 @@
-#if ! defined(_DTOA_LOC_H_)
+#if !defined(_DTOA_LOC_H_)
 #     define  _DTOA_LOC_H_
 
 #define DTOA_API
@@ -8,15 +8,14 @@
 extern "C" {
 #endif
 
-  double DTOA_API DTOA_CALLCONV
-  strtodLoc (const char *s00, char **se, int *locErrno);
+double DTOA_API DTOA_CALLCONV
+strtodLoc(const char* s00, char** se, int* locErrno);
 
-  char DTOA_API * DTOA_CALLCONV
-  dtoaLoc (double dd, int mode, int ndigits,
-           char buf[], size_t bufSiz, int *decpt, int *sign, char **rve);
+char DTOA_API* DTOA_CALLCONV
+dtoaLoc(double dd, int mode, int ndigits, char buf[], size_t bufSiz, int* decpt, int* sign, char** rve);
 
-  int DTOA_API DTOA_CALLCONV
-  dtoaInfoLoc ();
+int DTOA_API DTOA_CALLCONV
+dtoaInfoLoc();
 
 #if defined(__cplusplus)
 }

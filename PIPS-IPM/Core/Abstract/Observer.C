@@ -7,50 +7,42 @@
 #include "Observer.h"
 
 /// SUBJECT
-void Subject::registerObserver(Observer* observer)
-{
+void Subject::registerObserver(Observer* observer) {
    observers.push_back(observer);
 }
 
-void Subject::unregisterObserver(Observer* observer)
-{
+void Subject::unregisterObserver(Observer* observer) {
    observers.remove(observer);
 }
 
 /// OBSERVER
-Observer::Observer()
-{
+Observer::Observer() {
    subj = nullptr;
 }
 
-const Subject* Observer::getSubject() const
-{
+const Subject* Observer::getSubject() const {
    return subj;
 }
 
-Observer::~Observer()
-{
+Observer::~Observer() {
    removeSubject();
 }
 
-void Observer::setSubject(Subject* subject)
-{
-   if( subj != nullptr )
+void Observer::setSubject(Subject* subject) {
+   if (subj != nullptr)
       subj->unregisterObserver(this);
    subj = subject;
 
    subject->registerObserver(this);
 };
 
-void Observer::removeSubject()
-{
-   if( subj != nullptr )
+void Observer::removeSubject() {
+   if (subj != nullptr)
       subj->unregisterObserver(this);
    subj = nullptr;
 }
 
-void Subject::notifyObservers()
-{
-   for( std::list <Observer*>::iterator it = observers.begin(); it != observers.end(); ++it )
+void Subject::notifyObservers() {
+   for (std::list<Observer*>::iterator it = observers.begin(); it != observers.end(); ++it)
       (*it)->notifyFromSubject();
 }

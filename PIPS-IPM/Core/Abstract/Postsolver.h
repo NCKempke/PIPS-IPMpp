@@ -10,10 +10,10 @@
 
 
 class Problem;
+
 class Variables;
 
-enum PostsolveStatus
-{
+enum PostsolveStatus {
    PRESOLVE_OK, PRESOLVE_FAIL // TODO
 };
 
@@ -21,14 +21,13 @@ enum PostsolveStatus
  * Abstract base class for Postsolvers.
  */
 
-class Postsolver
-{
+class Postsolver {
 public:
-  Postsolver() = default;
-  virtual ~Postsolver() = default;
+   Postsolver() = default;
+   virtual ~Postsolver() = default;
 
-  /** postsolve reduced solution and set original solution accordingly */
-  virtual PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code) = 0;
+   /** postsolve reduced solution and set original solution accordingly */
+   virtual PostsolveStatus postsolve(const Variables& reduced_solution, Variables& original_solution, int result_code) = 0;
 
 };
 

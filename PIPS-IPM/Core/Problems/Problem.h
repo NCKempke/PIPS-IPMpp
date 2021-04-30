@@ -6,7 +6,8 @@
 #define PROBLEM_H
 
 #include "Variables.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrixHandle.h"
 #include "DoubleMatrix.h"
 
@@ -21,17 +22,17 @@ protected:
 public:
    GenMatrixHandle A;
    GenMatrixHandle C;
-   OoqpVectorHandle g; // objective
-   OoqpVectorHandle bA; // rhs equality
-   OoqpVectorHandle bux; // upper bounds x
-   OoqpVectorHandle ixupp; // index for upper bounds
-   OoqpVectorHandle blx; // lower bounds x
-   OoqpVectorHandle ixlow; // index for lower bounds
-   OoqpVectorHandle bu; // upper bounds C
-   OoqpVectorHandle icupp; // index upper bounds
-   OoqpVectorHandle bl; // lower bounds C
-   OoqpVectorHandle iclow; // index lower bounds
-   OoqpVectorHandle sc; // scale (and diag of Q) -> not maintained currently
+   SmartPointer<Vector<double> > g; // objective
+   SmartPointer<Vector<double> > bA; // rhs equality
+   SmartPointer<Vector<double> > bux; // upper bounds x
+   SmartPointer<Vector<double> > ixupp; // index for upper bounds
+   SmartPointer<Vector<double> > blx; // lower bounds x
+   SmartPointer<Vector<double> > ixlow; // index for lower bounds
+   SmartPointer<Vector<double> > bu; // upper bounds C
+   SmartPointer<Vector<double> > icupp; // index upper bounds
+   SmartPointer<Vector<double> > bl; // lower bounds C
+   SmartPointer<Vector<double> > iclow; // index lower bounds
+   SmartPointer<Vector<double> > sc; // scale (and diag of Q) -> not maintained currently
 
    long long nx{0};
    long long my{0};
@@ -42,14 +43,14 @@ public:
    long long mclow{0};
    long long mcupp{0};
 
-   Problem(LinearAlgebraPackage* la, OoqpVector* c, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp, GenMatrix* A,
-         OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp);
+   Problem(LinearAlgebraPackage* la, Vector<double>* c, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
+         GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp);
 
    virtual ~Problem() = default;
 
    virtual double objective_value(const Variables& x) const = 0;
 
-   virtual void objective_gradient(const Variables& vars, OoqpVector& gradient) const = 0;
+   virtual void objective_gradient(const Variables& vars, Vector<double>& gradient) const = 0;
 
    /** compute the norm of the problem data */
    virtual double datanorm() const;
@@ -57,31 +58,31 @@ public:
    /** print the problem data */
    virtual void print();
 
-   OoqpVector& xupperBound() { return *bux; };
+   Vector<double>& xupperBound() { return *bux; };
 
-   const OoqpVector& xupperBound() const { return *bux; };
+   const Vector<double>& xupperBound() const { return *bux; };
 
-   OoqpVector& ixupperBound() { return *ixupp; };
+   Vector<double>& ixupperBound() { return *ixupp; };
 
-   OoqpVector& xlowerBound() { return *blx; };
+   Vector<double>& xlowerBound() { return *blx; };
 
-   const OoqpVector& xlowerBound() const { return *blx; };
+   const Vector<double>& xlowerBound() const { return *blx; };
 
-   OoqpVector& ixlowerBound() { return *ixlow; };
+   Vector<double>& ixlowerBound() { return *ixlow; };
 
-   OoqpVector& supperBound() { return *bu; };
+   Vector<double>& supperBound() { return *bu; };
 
-   OoqpVector& isupperBound() { return *icupp; };
+   Vector<double>& isupperBound() { return *icupp; };
 
-   OoqpVector& slowerBound() { return *bl; };
+   Vector<double>& slowerBound() { return *bl; };
 
-   OoqpVector& islowerBound() { return *iclow; };
+   Vector<double>& islowerBound() { return *iclow; };
 
-   OoqpVector& scale() { return *sc; };
+   Vector<double>& scale() { return *sc; };
 
-   virtual void hessian_multiplication(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const = 0;
+   virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
-   virtual void hessian_diagonal(OoqpVector& hessian_diagonal) = 0;
+   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) = 0;
 
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */
@@ -100,20 +101,20 @@ public:
    virtual void putCIntoAt(SymMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * A * x */
-   virtual void Amult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+   virtual void Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
    /** y = beta * y + alpha * C * x   */
-   virtual void Cmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+   virtual void Cmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
    /** y = beta * y + alpha * A\T * x */
-   virtual void ATransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+   virtual void ATransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
    /** y = beta * y + alpha * C\T * x */
-   virtual void CTransmult(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const;
+   virtual void CTransmult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
 
-   void getg(OoqpVector& cout) const;
+   void getg(Vector<double>& cout) const;
 
-   void getbA(OoqpVector& bout) const;
+   void getbA(Vector<double>& bout) const;
 
    void scaleA();
 

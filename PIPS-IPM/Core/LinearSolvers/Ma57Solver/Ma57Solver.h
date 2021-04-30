@@ -10,7 +10,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseStorage.h"
 
 #include <vector>
@@ -24,33 +25,25 @@
 #endif
 #endif
 
-extern "C"
-{
-   void FNAME(ma57id)( double cntl[],  int icntl[] );
+extern "C" {
+void FNAME(ma57id)(double cntl[], int icntl[]);
 
-   void FNAME(ma57ad)( const int* n, const int* ne, int irn[],
-      int jcn[], const int* lkeep, int keep[], int iwork[], int icntl[], int info[], double rinfo[] );
+void
+FNAME(ma57ad)(const int* n, const int* ne, int irn[], int jcn[], const int* lkeep, int keep[], int iwork[], int icntl[], int info[], double rinfo[]);
 
-   void FNAME(ma57bd)( const int* n, const int * ne, const double a[],
-      double fact[], const int* lfact, int ifact[],
-      const int* lifact, const int* lkeep, const int keep[],
-      int work[], int * icntl, double cntl[], int info[], double rinfo[] );
+void FNAME(ma57bd)(const int* n, const int* ne, const double a[], double fact[], const int* lfact, int ifact[], const int* lifact, const int* lkeep,
+      const int keep[], int work[], int* icntl, double cntl[], int info[], double rinfo[]);
 
-   void FNAME(ma57cd)( const int* job, const int* n, const double fact[],
-      const int* lfact, const int ifact[], const int * lifact,
-      const int* nrhs, double rhs[], const int* lrhs,
-      double w[], const int * lw, int iw1[], int icntl[], int info[] );
+void FNAME(ma57cd)(const int* job, const int* n, const double fact[], const int* lfact, const int ifact[], const int* lifact, const int* nrhs,
+      double rhs[], const int* lrhs, double w[], const int* lw, int iw1[], int icntl[], int info[]);
 
-   void FNAME(ma57dd)( const int* job, const int * n, const int* ne,
-      const double a[], const int irn[], const int jcn[],
-      const double fact[],  const int* lfact, const int ifact[],
-      const int* lifact, const double rhs[], double x[],
-      double resid[], double w[], int iw[], int icntl[], double cntl[], int info[], double rinfo[] );
+void
+FNAME(ma57dd)(const int* job, const int* n, const int* ne, const double a[], const int irn[], const int jcn[], const double fact[], const int* lfact,
+      const int ifact[], const int* lifact, const double rhs[], double x[], double resid[], double w[], int iw[], int icntl[], double cntl[],
+      int info[], double rinfo[]);
 
-   void FNAME(ma57ed)( const int* n, int* ic, int keep[],
-      const double fact[], const int* lfact, double* newfac,
-      const int* lnew, const int ifact[], const int* lifact,
-      int newifc[], const int* linew, int* info );
+void FNAME(ma57ed)(const int* n, int* ic, int keep[], const double fact[], const int* lfact, double* newfac, const int* lnew, const int ifact[],
+      const int* lifact, int newifc[], const int* linew, int* info);
 }
 
 /** implements the linear solver class using the HSL MA57 solver
@@ -120,9 +113,9 @@ protected:
    std::vector<int> iworkn;
    std::vector<double> dworkn;
 
-  /** amounts by which to increase allocated factorization space when
-   * inadequate space is detected. ipessimism is for array "iw",
-   * rpessimism is for the array "fact". */
+   /** amounts by which to increase allocated factorization space when
+    * inadequate space is detected. ipessimism is for array "iw",
+    * rpessimism is for the array "fact". */
    double ipessimism = 3.0;
    double rpessimism = 3.0;
 
@@ -151,14 +144,14 @@ protected:
     *  using smaller pivots.
     */
    double thresholdPivoting() const { return cntl[0]; }
-   void setThresholdPivoting( double piv  ) { cntl[0] = piv; }
+   void setThresholdPivoting(double piv) { cntl[0] = piv; }
 
    /** the "small pivot" parameter, stored as pivtol in the common
     * block ma27td. The factorization will not accept a pivot whose
     * absolute value is less than this parameter as a 1x1 pivot or as
     * the off-diagonal in a 2x2 pivot.  */
    double getSmallPivot() const { return cntl[1]; }
-   void setSmallPivot( double tol ) { cntl[1] = tol; }
+   void setSmallPivot(double tol) { cntl[1] = tol; }
 
    int minimumRealWorkspace() const { return info[4]; }
    int minimumIntWorkspace() const { return info[5]; }
@@ -166,26 +159,26 @@ protected:
    void init();
    bool checkErrorsAndReact();
 
-   void copyMatrixElements ( std::vector<double>& afact, int lfact ) const;
-   void getIndices( std::vector<int>& irowM, std::vector<int>& jcolM ) const;
+   void copyMatrixElements(std::vector<double>& afact, int lfact) const;
+   void getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) const;
 
 public:
-   Ma57Solver( const SparseSymMatrix * sgm, const std::string& name = "leaf" );
+   Ma57Solver(const SparseSymMatrix* sgm, const std::string& name = "leaf");
 
    ~Ma57Solver() override = default;
 
    using DoubleLinearSolver::solve;
-   void solve( OoqpVector& rhs ) override;
-   void solve( int nrhss, double* rhss, int* ) override;
-   void solve( GenMatrix& rhs) override;
+   void solve(Vector<double>& rhs) override;
+   void solve(int nrhss, double* rhss, int*) override;
+   void solve(GenMatrix& rhs) override;
 
-   void diagonalChanged( int idiag, int extent ) override;
+   void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
    bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int,unsigned int,unsigned int> get_inertia() const override;
+   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
 protected:
-   void solve(int solveType, OoqpVector& rhs);
+   void solve(int solveType, Vector<double>& rhs);
 //   int* new_iworkn(int dim);
 //   double* new_dworkn(int dim);
 };

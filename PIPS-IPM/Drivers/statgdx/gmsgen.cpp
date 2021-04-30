@@ -4,11 +4,9 @@
 
 
 /* unit gmsgen */
-void _Init_Module_gmsgen(void)
-{
+void _Init_Module_gmsgen(void) {
 } /* _Init_Module_gmsgen */
 
-void _Final_Module_gmsgen(void)
-{
+void _Final_Module_gmsgen(void) {
 } /* _Final_Module_gmsgen */
 

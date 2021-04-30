@@ -290,7 +290,7 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
       currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).first);
       currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).first);
 
-      currNnzRowC = dynamic_cast<const SimpleVector<int> *>(presolve_data.getNnzsRowC().first);
+      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().first);
    }
    else {
 
@@ -306,7 +306,7 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
       currIcupp = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().icupp)).children[node]->first);
       currIclow = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().iclow)).children[node]->first);
 
-      currNnzRowC = dynamic_cast<const SimpleVector<int> *>(presolve_data.getNnzsRowC().children[node]->first);
+      currNnzRowC = dynamic_cast<const SimpleVector<int>*>(presolve_data.getNnzsRowC().children[node]->first);
    }
 
 }

@@ -65,12 +65,12 @@ void DenseGenMatrix::atPutSpRow(int row, double* A, int lenA, int* jcolA, int& i
 }
 
 
-void DenseGenMatrix::getDiagonal(OoqpVector& vec) {
+void DenseGenMatrix::getDiagonal(Vector<double>& vec) {
    mStorage->getDiagonal(vec);
 }
 
 
-void DenseGenMatrix::setToDiagonal(const OoqpVector& vec) {
+void DenseGenMatrix::setToDiagonal(const Vector<double>& vec) {
    mStorage->setToDiagonal(vec);
 }
 
@@ -109,7 +109,7 @@ void DenseGenMatrix::mult(double beta, double y[], int incy, double alpha, const
 }
 
 
-void DenseGenMatrix::mult(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const {
+void DenseGenMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranTrans = 'T';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
@@ -137,7 +137,7 @@ void DenseGenMatrix::transMult(double beta, double y[], int incy, double alpha, 
 }
 
 
-void DenseGenMatrix::transMult(double beta, OoqpVector& y_in, double alpha, const OoqpVector& x_in) const {
+void DenseGenMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranTrans = 'N';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
@@ -210,37 +210,34 @@ void DenseGenMatrix::fromGetDense(int row, int col, double* A, int lda, int rowE
    mStorage->fromGetDense(row, col, A, lda, lrow, lcol);
 }
 
-void DenseGenMatrix::atPutDiagonal( int idiag, const OoqpVector& v )
-{
-  mStorage->atPutDiagonal( idiag, v );
+void DenseGenMatrix::atPutDiagonal(int idiag, const Vector<double>& v) {
+   mStorage->atPutDiagonal(idiag, v);
 }
 
-void DenseGenMatrix::atAddDiagonal( int idiag, const OoqpVector& v )
-{
-  mStorage->atAddDiagonal( idiag, v );
+void DenseGenMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
+   mStorage->atAddDiagonal(idiag, v);
 }
 
-void DenseGenMatrix::fromGetDiagonal( int idiag, OoqpVector& v )
-{
-  mStorage->fromGetDiagonal( idiag, v );
+void DenseGenMatrix::fromGetDiagonal(int idiag, Vector<double>& v) {
+   mStorage->fromGetDiagonal(idiag, v);
 }
 
-void DenseGenMatrix::getRow(int rowIndex, OoqpVector& v_in) {
+void DenseGenMatrix::getRow(int rowIndex, Vector<double>& v_in) {
    assert (rowIndex >= 0 && rowIndex <= mStorage->m);
    SimpleVector<double>& v = dynamic_cast<SimpleVector<double>&>(v_in);
 
    mStorage->fromGetDense(rowIndex, 0, &v[0], 1, 1, mStorage->n);
 }
 
-void DenseGenMatrix::columnScale(const OoqpVector& vec) {
+void DenseGenMatrix::columnScale(const Vector<double>& vec) {
    mStorage->columnScale(vec);
 }
 
-void DenseGenMatrix::symmetricScale(const OoqpVector& vec) {
+void DenseGenMatrix::symmetricScale(const Vector<double>& vec) {
    mStorage->symmetricScale(vec);
 }
 
-void DenseGenMatrix::rowScale(const OoqpVector& vec) {
+void DenseGenMatrix::rowScale(const Vector<double>& vec) {
    mStorage->columnScale(vec);
 }
 

@@ -110,9 +110,9 @@ void QpScaler::unscaleResiduals(Residuals& residuals) const {
    residuals.recompute_residual_norm();
 }
 
-OoqpVector* QpScaler::getPrimalUnscaled(const OoqpVector& solprimal) const {
+Vector<double>* QpScaler::getPrimalUnscaled(const Vector<double>& solprimal) const {
    assert(problem && vec_colscale);
-   OoqpVector* unscaledprimal = solprimal.cloneFull();
+   Vector<double>* unscaledprimal = solprimal.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -121,9 +121,9 @@ OoqpVector* QpScaler::getPrimalUnscaled(const OoqpVector& solprimal) const {
    return unscaledprimal;
 }
 
-OoqpVector* QpScaler::getDualEqUnscaled(const OoqpVector& soldual) const {
+Vector<double>* QpScaler::getDualEqUnscaled(const Vector<double>& soldual) const {
    assert(problem && vec_rowscaleA);
-   OoqpVector* unscaleddual = soldual.cloneFull();
+   Vector<double>* unscaleddual = soldual.cloneFull();
 
    // unscale dual
    if (scaling_applied)
@@ -132,9 +132,9 @@ OoqpVector* QpScaler::getDualEqUnscaled(const OoqpVector& soldual) const {
    return unscaleddual;
 }
 
-OoqpVector* QpScaler::getDualIneqUnscaled(const OoqpVector& soldual) const {
+Vector<double>* QpScaler::getDualIneqUnscaled(const Vector<double>& soldual) const {
    assert(problem && vec_rowscaleC);
-   OoqpVector* unscaleddual = soldual.cloneFull();
+   Vector<double>* unscaleddual = soldual.cloneFull();
 
    // unscale dual
    if (scaling_applied)
@@ -143,9 +143,9 @@ OoqpVector* QpScaler::getDualIneqUnscaled(const OoqpVector& soldual) const {
    return unscaleddual;
 }
 
-OoqpVector* QpScaler::getDualVarBoundsUppUnscaled(const OoqpVector& soldual) const {
+Vector<double>* QpScaler::getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const {
    assert(problem && vec_colscale);
-   OoqpVector* unscaleddual = soldual.cloneFull();
+   Vector<double>* unscaleddual = soldual.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -154,9 +154,9 @@ OoqpVector* QpScaler::getDualVarBoundsUppUnscaled(const OoqpVector& soldual) con
    return unscaleddual;
 }
 
-OoqpVector* QpScaler::getDualVarBoundsLowUnscaled(const OoqpVector& soldual) const {
+Vector<double>* QpScaler::getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const {
    assert(problem && vec_colscale);
-   OoqpVector* unscaleddual = soldual.cloneFull();
+   Vector<double>* unscaleddual = soldual.cloneFull();
 
    // unscale primal
    if (scaling_applied)
@@ -196,7 +196,8 @@ void QpScaler::applyScaling() {
             obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
 }
 
-double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVector& minvecA, OoqpVector& minvecC, const OoqpVector* colScalevec) {
+double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,
+      const Vector<double>* colScalevec) {
    A->getRowMinMaxVec(true, true, colScalevec, minvecA);
    A->getRowMinMaxVec(false, true, colScalevec, maxvecA);
    C->getRowMinMaxVec(true, true, colScalevec, minvecC);
@@ -229,8 +230,8 @@ double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVecto
       lhsC->absmaxVecUpdate(maxvecC);
    }
 
-   OoqpVector* const ratiovecA = maxvecA.clone();
-   OoqpVector* const ratiovecC = maxvecC.clone();
+   Vector<double>* const ratiovecA = maxvecA.clone();
+   Vector<double>* const ratiovecC = maxvecC.clone();
 
    ratiovecA->copyFrom(maxvecA);
    ratiovecC->copyFrom(maxvecC);
@@ -258,7 +259,7 @@ double QpScaler::maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVecto
    return maxratio;
 }
 
-double QpScaler::maxColRatio(OoqpVector& maxvec, OoqpVector& minvec, const OoqpVector* rowScaleVecA, const OoqpVector* rowScaleVecC) {
+double QpScaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC) {
    A->getColMinMaxVec(true, true, rowScaleVecA, minvec);
    C->getColMinMaxVec(true, false, rowScaleVecC, minvec);
 
@@ -276,7 +277,7 @@ double QpScaler::maxColRatio(OoqpVector& maxvec, OoqpVector& minvec, const OoqpV
    }
 #endif
 
-   OoqpVector* const ratiovec = maxvec.clone();
+   Vector<double>* const ratiovec = maxvec.clone();
 
    ratiovec->copyFrom(maxvec);
 

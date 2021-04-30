@@ -14,7 +14,9 @@
 #include "mpi.h"
 
 class StringGenMatrix;
+
 class StochGenMatrix;
+
 class SparseGenMatrix;
 
 
@@ -28,80 +30,92 @@ class SparseGenMatrix;
  */
 
 // TODO : make more general ? K B B' and C can be any matrices in theory..
-class BorderedGenMatrix : public GenMatrix
-{
-   public:
-      StochGenMatrix * const inner_matrix{};
-      StringGenMatrix * const border_left{};
-      StringGenMatrix * const border_bottom{};
-	
-      // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-      SparseGenMatrix * const bottom_left_block{};
+class BorderedGenMatrix : public GenMatrix {
+public:
+   StochGenMatrix* const inner_matrix{};
+   StringGenMatrix* const border_left{};
+   StringGenMatrix* const border_bottom{};
 
-   protected:
+   // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
+   SparseGenMatrix* const bottom_left_block{};
 
-      MPI_Comm mpi_comm{MPI_COMM_NULL};
-      const bool distributed{false};
-      const int rank{-1};
+protected:
 
-      long long m{0};
-      long long n{0};
+   MPI_Comm mpi_comm{MPI_COMM_NULL};
+   const bool distributed{false};
+   const int rank{-1};
 
-   public:
-      BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left,
-            StringGenMatrix* border_bottom, SparseGenMatrix* bottom_left_block, MPI_Comm mpi_comm_);
-      virtual ~BorderedGenMatrix();
+   long long m{0};
+   long long n{0};
 
-      int isKindOf( int matrixType ) const override;
+public:
+   BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left, StringGenMatrix* border_bottom, SparseGenMatrix* bottom_left_block,
+         MPI_Comm mpi_comm_);
+   virtual ~BorderedGenMatrix();
 
-      /** y = beta * y + alpha * this * x */
-      void mult( double beta,  OoqpVector& y, double alpha, const OoqpVector& x ) const override;
-      /** y = beta * y + alpha * this^T * x */
-      void transMult( double beta, OoqpVector& y, double alpha,  const OoqpVector& x ) const override;
+   int isKindOf(int matrixType) const override;
 
-      double abmaxnorm() const override;
-      void columnScale( const OoqpVector& vec ) override;
-      void rowScale( const OoqpVector& vec ) override;
+   /** y = beta * y + alpha * this * x */
+   void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
+   /** y = beta * y + alpha * this^T * x */
+   void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-      void scalarMult( double num ) override;
+   double abmaxnorm() const override;
+   void columnScale(const Vector<double>& vec) override;
+   void rowScale(const Vector<double>& vec) override;
 
-      void getSize( long long& m_, long long& n_ ) const override;
-      void getSize( int& m_, int& n_ ) const override;
+   void scalarMult(double num) override;
 
-      void getRowMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* colScaleVec, OoqpVector& minmaxVec ) override;
-      void getColMinMaxVec( bool getMin, bool initializeVec, const OoqpVector* rowScaleVec, OoqpVector& minmaxVec ) override;
+   void getSize(long long& m_, long long& n_) const override;
+   void getSize(int& m_, int& n_) const override;
 
-      void writeToStreamDense( std::ostream& out ) const override;
+   void getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) override;
+   void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) override;
 
-      void addRowSums( OoqpVector& vec ) const override;
-      void addColSums( OoqpVector& vec ) const override;
+   void writeToStreamDense(std::ostream& out) const override;
 
-      /* methods not needed for Hierarchical approach */
-      double abminnormNonZero( double ) const override { assert( false && "TODO: implement" ); return 0.0; };
-      void writeToStream( std::ostream& ) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
-      void getDiagonal( OoqpVector& ) override  { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void atPutDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void atAddDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
-      void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented"); }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+   void addRowSums(Vector<double>& vec) const override;
+   void addColSums(Vector<double>& vec) const override;
 
-      void matTransDMultMat(OoqpVector&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
-      void matTransDinvMultMat(OoqpVector&, SymMatrix** ) override { assert(0 && "not implemented"); }; // TODO : needed?
+   /* methods not needed for Hierarchical approach */
+   double abminnormNonZero(double) const override {
+      assert(false && "TODO: implement");
+      return 0.0;
+   };
+   void writeToStream(std::ostream&) const override { assert(0 && "not implemented"); }; // TODO : implement maybe?
+   void getDiagonal(Vector<double>&) override {
+      assert(0 && "not implemented");
+   }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+   void setToDiagonal(const Vector<double>&) override {
+      assert(0 && "not implemented");
+   }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+   void atPutDiagonal(int, const Vector<double>&) override {
+      assert(0 && "not implemented");
+   }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+   void atAddDiagonal(int, const Vector<double>&) override {
+      assert(0 && "not implemented");
+   }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
+   void fromGetDiagonal(int, Vector<double>&) override {
+      assert(0 && "not implemented");
+   }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
 
-      void getNnzPerRow( OoqpVectorBase<int>& ) override { assert( 0 && "not implemented"); };
-      void getNnzPerCol( OoqpVectorBase<int>& ) override { assert( 0 && "not implemented"); };
-      void fromGetDense( int, int, double*, int, int, int ) override { assert(0 && "not implemented"); };
-      void fromGetSpRow( int, int, double*, int, int*, int&, int, int& ) override { assert(0 && "not implemented"); };
-      void putSparseTriple( int*, int, int*, double*, int& ) override { assert(0 && "not implemented"); };
-      void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented"); };
-      void atPutSubmatrix( int, int, DoubleMatrix&, int, int, int, int ) override { assert(0 && "not implemented"); };
-      void atPutDense( int, int, double*, int, int, int ) override { assert(0 && "not implemented"); };
-      void atPutSpRow( int, double*, int, int*, int& ) override { assert(0 && "not implemented"); };
-      void randomize(double, double, double* ) override { assert(0 && "not implemented"); };
-   private:
+   void matTransDMultMat(Vector<double>&, SymMatrix**) override { assert(0 && "not implemented"); }; // TODO : needed?
+   void matTransDinvMultMat(Vector<double>&, SymMatrix**) override { assert(0 && "not implemented"); }; // TODO : needed?
 
-      template<typename T>
-      bool hasVecStructureForBorderedMat( const OoqpVectorBase<T>& vec, bool row_vec ) const;
+   void getNnzPerRow(Vector<int>&) override { assert(0 && "not implemented"); };
+   void getNnzPerCol(Vector<int>&) override { assert(0 && "not implemented"); };
+   void fromGetDense(int, int, double*, int, int, int) override { assert(0 && "not implemented"); };
+   void fromGetSpRow(int, int, double*, int, int*, int&, int, int&) override { assert(0 && "not implemented"); };
+   void putSparseTriple(int*, int, int*, double*, int&) override { assert(0 && "not implemented"); };
+   void symmetricScale(const Vector<double>&) override { assert(0 && "not implemented"); };
+   void atPutSubmatrix(int, int, DoubleMatrix&, int, int, int, int) override { assert(0 && "not implemented"); };
+   void atPutDense(int, int, double*, int, int, int) override { assert(0 && "not implemented"); };
+   void atPutSpRow(int, double*, int, int*, int&) override { assert(0 && "not implemented"); };
+   void randomize(double, double, double*) override { assert(0 && "not implemented"); };
+private:
+
+   template<typename T>
+   bool hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const;
 };
 
 #endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDGENMATRIX_H_ */

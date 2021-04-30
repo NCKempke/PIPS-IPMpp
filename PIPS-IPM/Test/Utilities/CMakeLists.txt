@@ -1,1 +1,1 @@
-add_library( utilities utilities.cpp )
+add_library(utilities utilities.cpp)

@@ -6,7 +6,8 @@
 #define VARIABLES_H
 
 #include <cassert>
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 
 class LinearAlgebraPackage;
 
@@ -54,39 +55,39 @@ public:
    long long my;
    long long mz, mcupp, mclow;
 
-   OoqpVectorHandle ixlow;
-   OoqpVectorHandle ixupp;
-   OoqpVectorHandle icupp;
-   OoqpVectorHandle iclow;
+   SmartPointer<Vector<double> > ixlow;
+   SmartPointer<Vector<double> > ixupp;
+   SmartPointer<Vector<double> > icupp;
+   SmartPointer<Vector<double> > iclow;
    Variables() {};
 
-   OoqpVectorHandle x;
-   OoqpVectorHandle s;
-   OoqpVectorHandle y;
-   OoqpVectorHandle z;
+   SmartPointer<Vector<double> > x;
+   SmartPointer<Vector<double> > s;
+   SmartPointer<Vector<double> > y;
+   SmartPointer<Vector<double> > z;
 
-   OoqpVectorHandle v;
-   OoqpVectorHandle gamma;
+   SmartPointer<Vector<double> > v;
+   SmartPointer<Vector<double> > gamma;
 
-   OoqpVectorHandle w;
-   OoqpVectorHandle phi;
+   SmartPointer<Vector<double> > w;
+   SmartPointer<Vector<double> > phi;
 
-   OoqpVectorHandle t;
-   OoqpVectorHandle lambda;
+   SmartPointer<Vector<double> > t;
+   SmartPointer<Vector<double> > lambda;
 
-   OoqpVectorHandle u;
-   OoqpVectorHandle pi;
+   SmartPointer<Vector<double> > u;
+   SmartPointer<Vector<double> > pi;
 
    /** constructor in which the data and variable pointers are set to
        point to the given arguments */
-   Variables(OoqpVector* x_in, OoqpVector* s_in, OoqpVector* y_in, OoqpVector* z_in, OoqpVector* v_in, OoqpVector* gamma_in, OoqpVector* w_in,
-         OoqpVector* phi_in, OoqpVector* t_in, OoqpVector* lambda_in, OoqpVector* u_in, OoqpVector* pi_in, OoqpVector* ixlow_in, OoqpVector* ixupp_in,
-         OoqpVector* iclow_in, OoqpVector* icupp_in);
+   Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in,
+         Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in,
+         Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in);
 
    /** constructor that creates variables objects of specified
        dimensions. */
-   Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, OoqpVector* ixlow, OoqpVector* ixupp, OoqpVector* iclow,
-         OoqpVector* icupp);
+   Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, Vector<double>* ixlow, Vector<double>* ixupp,
+         Vector<double>* iclow, Vector<double>* icupp);
 
    Variables(const Variables& vars);
 

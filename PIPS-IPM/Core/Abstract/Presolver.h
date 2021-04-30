@@ -12,6 +12,7 @@
 #include <cstddef>
 
 class Problem;
+
 class Postsolver;
 /**  * @defgroup Preprocessing
  *
@@ -24,11 +25,10 @@ class Postsolver;
  */
 
 
-class Presolver
-{
+class Presolver {
 public:
 
-   Presolver(const Problem& prob, Postsolver* postsolver = nullptr) : origprob{prob}, postsolver{postsolver}{};
+   Presolver(const Problem& prob, Postsolver* postsolver = nullptr) : origprob{prob}, postsolver{postsolver} {};
    virtual ~Presolver() = default;
 
    /** presolve and return pointer to presolved data */

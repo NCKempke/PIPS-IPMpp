@@ -11,8 +11,8 @@
 StochMonitor::StochMonitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
 
-StochMonitor::StochMonitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()}, myRank{PIPS_MPIgetRank(mpiComm)},
-      myGlobRank{PIPS_MPIgetRank()} {
+StochMonitor::StochMonitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()},
+      myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{PIPS_MPIgetRank()} {
 }
 
 void StochMonitor::doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i,

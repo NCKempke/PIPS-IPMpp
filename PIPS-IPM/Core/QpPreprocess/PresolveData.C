@@ -55,8 +55,9 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
       upper_bound_implied_by_system{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
       upper_bound_implied_by_row{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
       upper_bound_implied_by_node{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
-      absmin_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())}, absmax_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())},
-      store_linking_row_boundTightening_A(nnzs_row_A->last->length(), 0), store_linking_row_boundTightening_C(nnzs_row_C->last->length(), 0) {
+      absmin_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())},
+      absmax_col{dynamic_cast<DistributedVector<double>*>(sorigprob.g->clone())}, store_linking_row_boundTightening_A(nnzs_row_A->last->length(), 0),
+      store_linking_row_boundTightening_C(nnzs_row_C->last->length(), 0) {
    std::memset(array_outdated_indicators, 0, length_array_outdated_indicators * sizeof(bool));
    outdated_activities = true;
 
@@ -260,10 +261,9 @@ void PresolveData::recomputeActivities(bool linking_only) {
  *  PresolveData.
  *  After that changes in the activities of linking rows will get stored in the SimpleVectors
  */
-void
-PresolveData::recomputeActivities(bool linking_only, DistributedVector<double>& actmax_eq_part, DistributedVector<double>& actmin_eq_part, DistributedVector<int>& actmax_eq_ubndd,
-      DistributedVector<int>& actmin_eq_ubndd, DistributedVector<double>& actmax_ineq_part, DistributedVector<double>& actmin_ineq_part, DistributedVector<int>& actmax_ineq_ubndd,
-      DistributedVector<int>& actmin_ineq_ubndd) const {
+void PresolveData::recomputeActivities(bool linking_only, DistributedVector<double>& actmax_eq_part, DistributedVector<double>& actmin_eq_part,
+      DistributedVector<int>& actmax_eq_ubndd, DistributedVector<int>& actmin_eq_ubndd, DistributedVector<double>& actmax_ineq_part,
+      DistributedVector<double>& actmin_ineq_part, DistributedVector<int>& actmax_ineq_ubndd, DistributedVector<int>& actmin_ineq_ubndd) const {
    const StochGenMatrix& mat_A = getSystemMatrix(EQUALITY_SYSTEM);
    const StochGenMatrix& mat_C = getSystemMatrix(INEQUALITY_SYSTEM);
 
@@ -3202,9 +3202,9 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
    SimpleVector<int>& actmin_ubndd = row.inEqSys() ? getSimpleVecFromRowStochVec(*actmin_eq_ubndd, row.getNode(), row.isLinkingRow())
                                                    : getSimpleVecFromRowStochVec(*actmin_ineq_ubndd, row.getNode(), row.isLinkingRow());
    SimpleVector<double>& actmax_part = row.inEqSys() ? getSimpleVecFromRowStochVec(*actmax_eq_part, row.getNode(), row.isLinkingRow())
-                                             : getSimpleVecFromRowStochVec(*actmax_ineq_part, row.getNode(), row.isLinkingRow());
+                                                     : getSimpleVecFromRowStochVec(*actmax_ineq_part, row.getNode(), row.isLinkingRow());
    SimpleVector<double>& actmin_part = row.inEqSys() ? getSimpleVecFromRowStochVec(*actmin_eq_part, row.getNode(), row.isLinkingRow())
-                                             : getSimpleVecFromRowStochVec(*actmin_ineq_part, row.getNode(), row.isLinkingRow());
+                                                     : getSimpleVecFromRowStochVec(*actmin_ineq_part, row.getNode(), row.isLinkingRow());
 
    /* we always set these variables but only use them in case an actual linking row gets it's activities updated */
    SimpleVector<int>& actmax_ubndd_chgs = row.inEqSys() ? *actmax_eq_ubndd_chgs : *actmax_ineq_ubndd_chgs;

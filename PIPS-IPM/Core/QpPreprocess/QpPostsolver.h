@@ -16,14 +16,13 @@ class Problem;
  * Abstract base class for QP Postsolvers.
  */
 
-class QpPostsolver : public Postsolver
-{
-   protected:
-      const Problem& original_problem;
+class QpPostsolver : public Postsolver {
+protected:
+   const Problem& original_problem;
 
-   public:
-      QpPostsolver(const Problem& prob);
-      ~QpPostsolver() override = default;
+public:
+   QpPostsolver(const Problem& prob);
+   ~QpPostsolver() override = default;
 };
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_QPPOSTSOLVER_H_ */

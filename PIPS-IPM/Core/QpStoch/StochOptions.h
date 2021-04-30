@@ -14,19 +14,18 @@
 #include <cassert>
 #include <vector>
 #include <ostream>
+
 /**
  * The getInstanceMethod must be specified in this BaseClass.
  * Defines default options for StochPIPS.
  */
 
 
-enum SolverType
-{
+enum SolverType {
    SOLVER_NONE = 0, SOLVER_MA27 = 1, SOLVER_MA57 = 2, SOLVER_PARDISO = 3, SOLVER_MKL_PARDISO = 4, SOLVER_MUMPS = 5
 };
 
-enum SolverTypeDense
-{
+enum SolverTypeDense {
    SOLVER_DENSE_SYM_INDEF = 0, SOLVER_DENSE_SYM_INDEF_SADDLE_POINT = 1, SOLVER_DENSE_SYM_PSD = 2
 };
 
@@ -34,8 +33,7 @@ std::ostream& operator<<(std::ostream& os, const SolverType solver);
 std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver);
 
 
-namespace pips_options
-{
+namespace pips_options {
    bool isSolverAvailable(SolverType solver);
    SolverType getSolverRoot();
    SolverType getSolverSubRoot();
@@ -53,8 +51,7 @@ namespace pips_options
    double getDoubleParameter(const std::string& identifier);
    bool getBoolParameter(const std::string& identifier);
 
-   class StochOptions : public qpgen_options::QpGenOptions
-   {
+   class StochOptions : public qpgen_options::QpGenOptions {
 
    private:
       friend void setIntParameter(const std::string& identifier, int value);
@@ -66,8 +63,7 @@ namespace pips_options
       friend double getDoubleParameter(const std::string& identifier);
       friend bool getBoolParameter(const std::string& identifier);
 
-      static StochOptions& getInstance()
-      {
+      static StochOptions& getInstance() {
          static StochOptions opt;
          return opt;
       }

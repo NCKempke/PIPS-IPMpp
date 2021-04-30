@@ -7,7 +7,8 @@
 
 #include "LinearSystem.h"
 #include "DoubleLinearSolver.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DenseSymMatrix.h"
 #include "SparseSymMatrix.h"
 #include "DenseGenMatrix.h"
@@ -113,8 +114,8 @@ public:
 
    DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, bool is_hierarchy_root = false);
 
-   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, OoqpVector* dd, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* primal_reg_,
-		   OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs, bool create_iter_ref_vecs);
+   DistributedLinearSystem(DistributedFactory* factory, DistributedQP* prob, Vector<double>* dd, Vector<double>* dq, Vector<double>* nomegaInv,
+         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs, bool create_iter_ref_vecs);
 
    ~DistributedLinearSystem() override = default;
 
@@ -122,7 +123,8 @@ public:
 
    void factorize_with_correct_inertia() override;
 
-   virtual void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
+   virtual void
+   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
 
    virtual void factor2(DistributedQP* problem, Variables* variables) = 0;
 
@@ -130,19 +132,19 @@ public:
 
    virtual void allreduceAndFactorKKT(DistributedQP* problem, Variables* variables) = 0;
 
-   virtual void Lsolve(DistributedQP* problem, OoqpVector& x) = 0;
+   virtual void Lsolve(DistributedQP* problem, Vector<double>& x) = 0;
 
-   virtual void Dsolve(DistributedQP* problem, OoqpVector& x) = 0;
+   virtual void Dsolve(DistributedQP* problem, Vector<double>& x) = 0;
 
-   virtual void Ltsolve(DistributedQP* problem, OoqpVector& x) = 0;
+   virtual void Ltsolve(DistributedQP* problem, Vector<double>& x) = 0;
 
    virtual void Ltsolve2(DistributedQP* problem, DistributedVector<double>& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
 
-   void solveCompressed(OoqpVector& rhs) override;
+   void solveCompressed(Vector<double>& rhs) override;
 
-   void joinRHS(OoqpVector& rhs_in, const OoqpVector& rhs1_in, const OoqpVector& rhs2_in, const OoqpVector& rhs3_in) const override;
+   void joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const override;
 
-   void separateVars(OoqpVector& x_in, OoqpVector& y_in, OoqpVector& z_in, const OoqpVector& variables_in) const override;
+   void separateVars(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& variables_in) const override;
 
    virtual void deleteChildren() = 0;
 
@@ -183,9 +185,9 @@ protected:
    int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
 
 public:
-   virtual void addLnizi(DistributedQP* problem, OoqpVector& z0, OoqpVector& zi);
+   virtual void addLnizi(DistributedQP* problem, Vector<double>& z0, Vector<double>& zi);
 
-   virtual void addLniziLinkCons(DistributedQP*/*problem*/, OoqpVector& /*z0*/, OoqpVector& /*zi*/, bool /*use_local_RAC*/) {
+   virtual void addLniziLinkCons(DistributedQP*/*problem*/, Vector<double>& /*z0*/, Vector<double>& /*zi*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 
@@ -218,7 +220,8 @@ public:
    virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
-   virtual void computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
+   virtual void
+   computeInnerSystemRightHandSide(DistributedVector<double>& /*rhs_inner*/, const SimpleVector<double>& /*b0*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 

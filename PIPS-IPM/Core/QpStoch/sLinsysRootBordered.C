@@ -28,8 +28,8 @@ sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, Distribut
    solver.reset(createSolver(prob_, kkt.get()));
 }
 
-void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization)
-{
+void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
+      double dual_inequality_regularization) {
    assert(dynamic_cast<DistributedVector<double>*>(primal_regularization_diagonal));
    assert(dynamic_cast<DistributedVector<double>*>(dual_equality_regularization_diagonal));
    assert(dynamic_cast<DistributedVector<double>*>(dual_inequality_regularization_diagonal));
@@ -53,8 +53,7 @@ void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularizat
    }
 }
 
-void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*)
-{
+void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*) {
    /* Add corner block
     * [ Q0   F0T   G0T  ]
     * [ F0  xReg    0   ]
@@ -103,16 +102,13 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    /////////////////////////////////////////////////////////////
    // update the KKT with F
    /////////////////////////////////////////////////////////////
-   if( locmyl > 0 )
-   {
+   if (locmyl > 0) {
       const double* MF0 = F0.M();
       const int* krowF0 = F0.krowM();
       const int* jcolF0 = F0.jcolM();
 
-      for( int rowF0 = 0; rowF0 < locmyl; ++rowF0)
-      {
-         for( int k = krowF0[rowF0]; k < krowF0[rowF0 + 1]; ++k )
-         {
+      for (int rowF0 = 0; rowF0 < locmyl; ++rowF0) {
+         for (int k = krowF0[rowF0]; k < krowF0[rowF0 + 1]; ++k) {
             const int colF0 = jcolF0[k];
             assert(colF0 < locnx);
 
@@ -134,8 +130,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
       const int* krowG0 = G0.krowM();
       const int* jcolG0 = G0.jcolM();
 
-      for( int rowG0 = 0; rowG0 < locmzl; ++rowG0 )
-      {
+      for (int rowG0 = 0; rowG0 < locmzl; ++rowG0) {
          SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += szDiagLinkCons[rowG0];
 
          for (int k = krowG0[rowG0]; k < krowG0[rowG0 + 1]; ++k) {
@@ -185,7 +180,7 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide(DistributedVector<doub
  *    [ B^T K0 ] [ x_0 ] = [ b_0 ]
  */
 /* forms right hand side for schur system \tilda{b_0} = b_0 - B^T * K^-1 b and in doing so solves K^-1 b */
-void sLinsysRootBordered::Lsolve(DistributedQP*, OoqpVector& x) {
+void sLinsysRootBordered::Lsolve(DistributedQP*, Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
@@ -202,7 +197,7 @@ void sLinsysRootBordered::Lsolve(DistributedQP*, OoqpVector& x) {
 }
 
 /* does Schur Complement solve and computes SC x_0 = \tilda{b_0} = ( K0 - B^T K B ) x_0 */
-void sLinsysRootBordered::Dsolve(DistributedQP*, OoqpVector& x) {
+void sLinsysRootBordered::Dsolve(DistributedQP*, Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
@@ -216,7 +211,7 @@ void sLinsysRootBordered::Dsolve(DistributedQP*, OoqpVector& x) {
 }
 
 /* back substitute x_0 : K x = b - B x_0 and solve for x */
-void sLinsysRootBordered::Ltsolve(DistributedQP*, OoqpVector& x) {
+void sLinsysRootBordered::Ltsolve(DistributedQP*, Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 

@@ -3,11 +3,9 @@
 
 
 /* unit clibtypes */
-void _Init_Module_clibtypes(void)
-{
+void _Init_Module_clibtypes(void) {
 } /* _Init_Module_clibtypes */
 
-void _Final_Module_clibtypes(void)
-{
+void _Final_Module_clibtypes(void) {
 } /* _Final_Module_clibtypes */
 

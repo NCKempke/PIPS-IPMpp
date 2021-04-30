@@ -7,7 +7,8 @@
 
 #include "AbstractLinearSystem.h"
 #include "DoubleMatrixHandle.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "Observer.h"
 #include "RegularizationStrategy.h"
 
@@ -38,32 +39,30 @@ class Residuals;
 class LinearSystem : public AbstractLinearSystem, public Subject {
 
 public:
-      enum class IterativeSolverSolutionStatus : int
-      {
-         DID_NOT_RUN = -2,
-         NOT_CONVERGED_MAX_ITERATIONS = -1,
-         CONVERGED = 0,
-         SKIPPED = 1,
-         STAGNATION = 3,
-         BREAKDOWN = 4,
-         DIVERGED = 5
-      };
+   enum class IterativeSolverSolutionStatus : int {
+      DID_NOT_RUN = -2, NOT_CONVERGED_MAX_ITERATIONS = -1, CONVERGED = 0, SKIPPED = 1, STAGNATION = 3, BREAKDOWN = 4, DIVERGED = 5
+   };
 
-      friend std::ostream& operator<<(std::ostream& os, IterativeSolverSolutionStatus status)
-      {
-          switch (status)
-          {
-              case IterativeSolverSolutionStatus::DID_NOT_RUN : return os << "did not run" ;
-              case IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS: return os << "not converged int max iterations";
-              case IterativeSolverSolutionStatus::CONVERGED: return os << "converged";
-              case IterativeSolverSolutionStatus::SKIPPED: return os << "skipped";
-              case IterativeSolverSolutionStatus::STAGNATION: return os << "stagnation occurred";
-              case IterativeSolverSolutionStatus::BREAKDOWN: return os << "breakdown occurred";
-              case IterativeSolverSolutionStatus::DIVERGED: return os << "diverged";
-              // omit default case to trigger compiler warning for missing cases
-          };
-          return os << static_cast<std::uint16_t>(status);
-      }
+   friend std::ostream& operator<<(std::ostream& os, IterativeSolverSolutionStatus status) {
+      switch (status) {
+         case IterativeSolverSolutionStatus::DID_NOT_RUN :
+            return os << "did not run";
+         case IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS:
+            return os << "not converged int max iterations";
+         case IterativeSolverSolutionStatus::CONVERGED:
+            return os << "converged";
+         case IterativeSolverSolutionStatus::SKIPPED:
+            return os << "skipped";
+         case IterativeSolverSolutionStatus::STAGNATION:
+            return os << "stagnation occurred";
+         case IterativeSolverSolutionStatus::BREAKDOWN:
+            return os << "breakdown occurred";
+         case IterativeSolverSolutionStatus::DIVERGED:
+            return os << "diverged";
+            // omit default case to trigger compiler warning for missing cases
+      };
+      return os << static_cast<std::uint16_t>(status);
+   }
 
 protected:
    /** observer pattern for convergence status of BiCGStab when calling solve */
@@ -80,21 +79,21 @@ protected:
    bool getBoolValue(const std::string& s) const override;
 
    /** stores a critical diagonal matrix as a vector */
-   OoqpVector* nomegaInv{};
+   Vector<double>* nomegaInv{};
 
    ProblemFactory* factory{};
 
    /** right-hand side of the system */
-   OoqpVector* rhs{};
+   Vector<double>* rhs{};
 
    // TODO : add parameters
    /** regularization parameters */
    const bool apply_regularization{};
    std::unique_ptr<RegularizationStrategy> regularization_strategy;
 
-   OoqpVector* primal_regularization_diagonal{};
-   OoqpVector* dual_equality_regularization_diagonal{};
-   OoqpVector* dual_inequality_regularization_diagonal{};
+   Vector<double>* primal_regularization_diagonal{};
+   Vector<double>* dual_equality_regularization_diagonal{};
+   Vector<double>* dual_inequality_regularization_diagonal{};
 
    LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
 
@@ -104,14 +103,14 @@ protected:
    long long mz{0};
 
    /** dq = diag(Q); dd = dq - gamma/ v + phi/w */
-   OoqpVector* primal_diagonal{};
-   OoqpVector* dq{};
+   Vector<double>* primal_diagonal{};
+   Vector<double>* dq{};
 
    /** index matrices for the upper and lower bounds on x and Cx */
-   OoqpVector* ixupp{};
-   OoqpVector* icupp{};
-   OoqpVector* ixlow{};
-   OoqpVector* iclow{};
+   Vector<double>* ixupp{};
+   Vector<double>* icupp{};
+   Vector<double>* ixlow{};
+   Vector<double>* iclow{};
 
    /** dimensions of the upper and lower bound vectors */
    long long nxupp{0};
@@ -122,19 +121,19 @@ protected:
    bool useRefs{false};
 
    /** Work vectors for iterative refinement of the XYZ linear system */
-   OoqpVector* sol{};
-   OoqpVector* sol2{};
-   OoqpVector* res{};
-   OoqpVector* resx{};
-   OoqpVector* resy{};
-   OoqpVector* resz{};
+   Vector<double>* sol{};
+   Vector<double>* sol2{};
+   Vector<double>* res{};
+   Vector<double>* resx{};
+   Vector<double>* resy{};
+   Vector<double>* resz{};
 
    /** Work vectors for BiCGStab */
-   OoqpVector* sol3{};
-   OoqpVector* res2{};
-   OoqpVector* res3{};
-   OoqpVector* res4{};
-   OoqpVector* res5{};
+   Vector<double>* sol3{};
+   Vector<double>* res2{};
+   Vector<double>* res3{};
+   Vector<double>* res4{};
+   Vector<double>* res5{};
 
    /// error absorbtion in linear system outer level
    const int outerSolve;
@@ -155,8 +154,9 @@ protected:
 public:
    LinearSystem(ProblemFactory* factory, Problem* problem);
 
-   LinearSystem(ProblemFactory* factory_, Problem* problem, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_regularization_,
-        OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization_, OoqpVector* rhs_, bool create_iter_ref_vecs);
+   LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_,
+         Vector<double>* rhs_, bool create_iter_ref_vecs);
 
    ~LinearSystem() override;
 
@@ -189,7 +189,7 @@ public:
     * @param rhs2 (input) middle part of rhs
     * @param rhs3 (input) last part of rhs
     */
-   virtual void joinRHS(OoqpVector& rhs, const OoqpVector& rhs1, const OoqpVector& rhs2, const OoqpVector& rhs3) const;
+   virtual void joinRHS(Vector<double>& rhs, const Vector<double>& rhs1, const Vector<double>& rhs2, const Vector<double>& rhs3) const;
 
    /** extracts three component vectors from a given aggregated vector.
     *
@@ -198,11 +198,12 @@ public:
     * @param vars2 (output) middle part of vars
     * @param vars3 (output) last part of vars
     */
-   virtual void separateVars(OoqpVector& vars1, OoqpVector& vars2, OoqpVector& vars3, const OoqpVector& vars) const;
+   virtual void separateVars(Vector<double>& vars1, Vector<double>& vars2, Vector<double>& vars3, const Vector<double>& vars) const;
 
    /** assemble right-hand side of augmented system and call
        solveCompressed to solve it */
-   virtual void solveXYZS(OoqpVector& stepx, OoqpVector& stepy, OoqpVector& stepz, OoqpVector& steps, OoqpVector& ztemp, Problem* problem);
+   virtual void
+   solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& ztemp, Problem* problem);
 
    /** perform the actual solve using the factors produced in factor.
     *
@@ -213,7 +214,7 @@ public:
     * @see QpGenSparseLinsys::solveCompressed
     * @see QpGenDenseLinsys::solveCompressed
     */
-   virtual void solveCompressed(OoqpVector& rhs) = 0;
+   virtual void solveCompressed(Vector<double>& rhs) = 0;
 
    /** places the diagonal resulting from the bounds on x into the
     * augmented system matrix */
@@ -225,8 +226,9 @@ public:
 
    /** computes the diagonal matrices in the augmented system from the
        current set of variables */
-   virtual void computeDiagonals(OoqpVector& t, OoqpVector& lambda, OoqpVector& u, OoqpVector& pi, OoqpVector& v,
-         OoqpVector& gamma, OoqpVector& w, OoqpVector& phi);
+   virtual void
+   computeDiagonals(Vector<double>& t, Vector<double>& lambda, Vector<double>& u, Vector<double>& pi, Vector<double>& v, Vector<double>& gamma,
+         Vector<double>& w, Vector<double>& phi);
 
    /** will factorize and regularize kkt until inertia criterion is met */
    virtual void factorize_with_correct_inertia() = 0;
@@ -234,16 +236,18 @@ public:
    void print_regularization_statistics() const;
 
 protected:
-   void compute_regularized_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
-    void compute_system_residuals(const OoqpVector& sol, OoqpVector& res, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, const Problem& problem);
+   void compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly,
+         Vector<double>& solz, const Problem& problem);
+   void compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz,
+         const Problem& problem);
    //void computeResidualsReducedSlacks(const QP& data);
 
    //void computeResidualsFull(const QP& data);
 
-   void system_mult(double beta, OoqpVector& res, double alpha, const OoqpVector& sol, const Problem& problem, OoqpVector& solx,
-      OoqpVector& soly, OoqpVector& solz, bool use_regularized_system);
+   void system_mult(double beta, Vector<double>& res, double alpha, const Vector<double>& sol, const Problem& problem, Vector<double>& solx,
+         Vector<double>& soly, Vector<double>& solz, bool use_regularized_system);
 
-   double matXYZinfnorm(const Problem& problem, OoqpVector& solx, OoqpVector& soly, OoqpVector& solz, bool use_regularized_system);
+   double matXYZinfnorm(const Problem& problem, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz, bool use_regularized_system);
 
    //void matReducedInfnorm(const QP& data);
 
@@ -251,9 +255,10 @@ protected:
    void printDiagonalNorms() const;
 
    // TODO : move to LinearSystem level
-   void solveCompressedBiCGStab(const std::function<void(double, OoqpVector&, double, OoqpVector&)>& matMult, const std::function<double()>& matInfnorm);
+   void solveCompressedBiCGStab(const std::function<void(double, Vector<double>&, double, Vector<double>&)>& matMult,
+         const std::function<double()>& matInfnorm);
 
-   void solveCompressedIterRefin(const std::function<void(OoqpVector& sol, OoqpVector& res)>& computeResidual);
+   void solveCompressedIterRefin(const std::function<void(Vector<double>& sol, Vector<double>& res)>& computeResidual);
 
 };
 

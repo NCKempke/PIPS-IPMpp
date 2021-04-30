@@ -10,7 +10,8 @@
 
 
 #include "Scaler.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrix.h"
 
 #include <memory>
@@ -26,7 +27,7 @@
  */
 class QpScaler : public Scaler {
 protected:
-   static void invertAndRound(bool round, OoqpVector& vector) {
+   static void invertAndRound(bool round, Vector<double>& vector) {
       vector.invertSave(1.0);
       if (round)
          vector.roundToPow2();
@@ -38,21 +39,21 @@ protected:
    bool scaling_applied{false};
 
    // scaling vector
-   std::unique_ptr<OoqpVector> vec_rowscaleQ{};
-   std::unique_ptr<OoqpVector> vec_rowscaleA{};
-   std::unique_ptr<OoqpVector> vec_rowscaleC{};
-   std::unique_ptr<OoqpVector> vec_colscale{};
+   std::unique_ptr<Vector<double>> vec_rowscaleQ{};
+   std::unique_ptr<Vector<double>> vec_rowscaleA{};
+   std::unique_ptr<Vector<double>> vec_rowscaleC{};
+   std::unique_ptr<Vector<double>> vec_colscale{};
 
    // problem data
    SymMatrixHandle Q;
    GenMatrixHandle A;
    GenMatrixHandle C;
-   OoqpVectorHandle obj;
-   OoqpVectorHandle bA;
-   OoqpVectorHandle bux;
-   OoqpVectorHandle blx;
-   OoqpVectorHandle rhsC;
-   OoqpVectorHandle lhsC;
+   SmartPointer<Vector<double> > obj;
+   SmartPointer<Vector<double> > bA;
+   SmartPointer<Vector<double> > bux;
+   SmartPointer<Vector<double> > blx;
+   SmartPointer<Vector<double> > rhsC;
+   SmartPointer<Vector<double> > lhsC;
 
    // scaling factor for objective
    double factor_objscale;
@@ -62,10 +63,11 @@ protected:
    virtual void doObjScaling() = 0;
 
    /** get maximum absolute row ratio and write maximum row entries into vectors */
-   double maxRowRatio(OoqpVector& maxvecA, OoqpVector& maxvecC, OoqpVector& minvecA, OoqpVector& minvecC, const OoqpVector* colScalevec);
+   double
+   maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC, const Vector<double>* colScalevec);
 
    /** get maximum absolute column ratio and write maximum column entries into vectors */
-   double maxColRatio(OoqpVector& maxvec, OoqpVector& minvec, const OoqpVector* rowScaleVecA, const OoqpVector* rowScaleVecC);
+   double maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, const Vector<double>* rowScaleVecA, const Vector<double>* rowScaleVecC);
 
    void scaleObjVector(double scaling_factor);
 
@@ -89,11 +91,11 @@ public:
    void unscaleVariables(Variables& vars) const override;
    void unscaleResiduals(Residuals& resids) const override;
 
-   OoqpVector* getPrimalUnscaled(const OoqpVector& solprimal) const override;
-   OoqpVector* getDualEqUnscaled(const OoqpVector& soldual) const override;
-   OoqpVector* getDualIneqUnscaled(const OoqpVector& soldual) const override;
-   OoqpVector* getDualVarBoundsUppUnscaled(const OoqpVector& soldual) const override;
-   OoqpVector* getDualVarBoundsLowUnscaled(const OoqpVector& soldual) const override;
+   Vector<double>* getPrimalUnscaled(const Vector<double>& solprimal) const override;
+   Vector<double>* getDualEqUnscaled(const Vector<double>& soldual) const override;
+   Vector<double>* getDualIneqUnscaled(const Vector<double>& soldual) const override;
+   Vector<double>* getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const override;
+   Vector<double>* getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const override;
 };
 
 //@}

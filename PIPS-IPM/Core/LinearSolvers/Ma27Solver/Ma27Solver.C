@@ -138,7 +138,7 @@ void Ma27Solver::solve(int nrhss, double* rhss, int*) {
    max_n_iter_refinement = tmp;
 }
 
-void Ma27Solver::solve(OoqpVector& rhs_in) {
+void Ma27Solver::solve(Vector<double>& rhs_in) {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
 #ifndef NDEBUG
@@ -475,7 +475,7 @@ bool Ma27Solver::checkErrorsAndReact() {
    return error;
 }
 
-std::tuple<unsigned int,unsigned int,unsigned int> Ma27Solver::get_inertia() const{
+std::tuple<unsigned int, unsigned int, unsigned int> Ma27Solver::get_inertia() const {
    assert(false && "TODO: Implement");
-   return {0,0,0};
+   return {0, 0, 0};
 }

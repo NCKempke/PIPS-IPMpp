@@ -20,24 +20,24 @@ public:
    void allreduceAndFactorKKT(DistributedQP*, Variables*) override {};
    void assembleKKT(DistributedQP*, Variables*) override {}
 
-   void Lsolve(DistributedQP*, OoqpVector&) override {};
-   void Dsolve(DistributedQP*, OoqpVector&) override {};
-   void Ltsolve(DistributedQP*, OoqpVector&) override {};
+   void Lsolve(DistributedQP*, Vector<double>&) override {};
+   void Dsolve(DistributedQP*, Vector<double>&) override {};
+   void Ltsolve(DistributedQP*, Vector<double>&) override {};
    void Ltsolve2(DistributedQP*, DistributedVector<double>&, SimpleVector<double>&, bool) override {};
 
-   void solveCompressed(OoqpVector&) override {};
+   void solveCompressed(Vector<double>&) override {};
 
-  void put_primal_diagonal() override {};
-  void put_dual_inequalites_diagonal() override {};
+   void put_primal_diagonal() override {};
+   void put_dual_inequalites_diagonal() override {};
 
    void add_regularization_local_kkt(double, double, double) override {};
 
-   void joinRHS( OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector& ) const override {};
+   void joinRHS(Vector<double>&, const Vector<double>&, const Vector<double>&, const Vector<double>&) const override {};
 
-   void separateVars(OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector&) const override {};
+   void separateVars(Vector<double>&, Vector<double>&, Vector<double>&, const Vector<double>&) const override {};
 
-   void addLnizi(DistributedQP*, OoqpVector&, OoqpVector&) override {};
-   void addLniziLinkCons(DistributedQP*, OoqpVector&, OoqpVector&, bool) override {};
+   void addLnizi(DistributedQP*, Vector<double>&, Vector<double>&) override {};
+   void addLniziLinkCons(DistributedQP*, Vector<double>&, Vector<double>&, bool) override {};
 
    /** y += alpha * Lni^T * x */
    //  void LniTransMult(DistributedQP *prob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x) override {};

@@ -23,8 +23,8 @@ public:
 
    /** y = beta * y + alpha * stored row */
    void axpyAtRow(double beta, DistributedVector<double>* y, SimpleVector<double>* y_linking, double alpha, const INDEX& row) const;
-   void axpyAtRowPosNeg(double beta, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg, SimpleVector<double>* y_link_neg,
-         double alpha, const INDEX& row) const;
+   void axpyAtRowPosNeg(double beta, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg,
+         SimpleVector<double>* y_link_neg, double alpha, const INDEX& row) const;
 
    double multRowTimesVec(const INDEX& row, const DistributedVector<double>& vec) const;
    double getRowCoefficientAtColumn(const INDEX& row, const INDEX& col) const;

@@ -13,18 +13,15 @@
 #include "SparseStorage.h"
 #include <vector>
 
-typedef struct
-{
+typedef struct {
    int start;
    int end;
 } ROWPTRS;
 
-struct first_is_smaller
-{
-    bool operator()(const std::pair<int, double>& x, const std::pair<int, double>& y) const
-    {
-        return x.first < y.first;
-    }
+struct first_is_smaller {
+   bool operator()(const std::pair<int, double>& x, const std::pair<int, double>& y) const {
+      return x.first < y.first;
+   }
 };
 
 /** A class for managing the matrix elements used by sparse matrices.
@@ -33,105 +30,105 @@ struct first_is_smaller
 class SparseStorageDynamic : public DoubleStorage {
 
 private:
-  const double spareRatio;
+   const double spareRatio;
 
-  int m;      // rows
-  int m_len;  // length row array
-  int n;      // cols
-  int len;    // length col/value array
-  int len_free;
+   int m;      // rows
+   int m_len;  // length row array
+   int n;      // cols
+   int len;    // length col/value array
+   int len_free;
 
-  ROWPTRS * rowptr;
-  int * jcolM;
-  double * M;
+   ROWPTRS* rowptr;
+   int* jcolM;
+   double* M;
 
-  /* doubles the size of rowptr */
-  void extendStorageRows();
+   /* doubles the size of rowptr */
+   void extendStorageRows();
 
-  /* compresses storage and doubles size of the col entry storage */
-  void extendStorageValues();
+   /* compresses storage and doubles size of the col entry storage */
+   void extendStorageValues();
 
-  /* shifts all rows such that every row is again row + spareRatio length */ 
-  void rebuildSpareStructure(int guaranteed_spare = 0);
+   /* shifts all rows such that every row is again row + spareRatio length */
+   void rebuildSpareStructure(int guaranteed_spare = 0);
 
 public:
-  static int instances;
+   static int instances;
 
-  int getM() const { return m; };
-  int getN() const { return n; };
-  int getNVals() const { return len-len_free; };
+   int getM() const { return m; };
+   int getN() const { return n; };
+   int getNVals() const { return len - len_free; };
 
-  const ROWPTRS* getRowPtr() const { return rowptr; };
-  const ROWPTRS getRowPtr(int i) const;
+   const ROWPTRS* getRowPtr() const { return rowptr; };
+   const ROWPTRS getRowPtr(int i) const;
 
-  const int* getJcolM() const { return jcolM; };
-  int getJcolM(int i) const;
-  
-  const double* getMat() const { return M; };
-  double getMat(int i) const;
-  void setMat(int i, double val);
+   const int* getJcolM() const { return jcolM; };
+   int getJcolM(int i) const;
 
-  SparseStorageDynamic( const SparseStorage& storage, double spareRatio = 0.2 );
-  SparseStorageDynamic( int m, int n, int len, double spareRatio = 0.2 );
-  SparseStorageDynamic( const SparseStorageDynamic &dynamicStorage);
+   const double* getMat() const { return M; };
+   double getMat(int i) const;
+   void setMat(int i, double val);
 
-  ~SparseStorageDynamic();
+   SparseStorageDynamic(const SparseStorage& storage, double spareRatio = 0.2);
+   SparseStorageDynamic(int m, int n, int len, double spareRatio = 0.2);
+   SparseStorageDynamic(const SparseStorageDynamic& dynamicStorage);
 
-  void atPutDense( int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
-  void fromGetDense( int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
-  void atPutSpRow( int, const double*, int, int*, int&) override { assert(0 && "not implemented here"); };
-  void fromGetSpRow( int, int, double*, int, int*, int&, int, int& ) override { assert(0 && "not implemented here"); };
-  void getDiagonal( OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void setToDiagonal( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void atPutDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void atAddDiagonal( int, const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void fromGetDiagonal( int, OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void symmetricScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void columnScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void rowScale ( const OoqpVector& ) override { assert(0 && "not implemented here"); };
-  void scalarMult( double ) override { assert(0 && "not implemented here"); };
+   ~SparseStorageDynamic();
 
-  void getSize( int& m, int& n ) const override;
+   void atPutDense(int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
+   void fromGetDense(int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
+   void atPutSpRow(int, const double*, int, int*, int&) override { assert(0 && "not implemented here"); };
+   void fromGetSpRow(int, int, double*, int, int*, int&, int, int&) override { assert(0 && "not implemented here"); };
+   void getDiagonal(Vector<double>&) override { assert(0 && "not implemented here"); };
+   void setToDiagonal(const Vector<double>&) override { assert(0 && "not implemented here"); };
+   void atPutDiagonal(int, const Vector<double>&) override { assert(0 && "not implemented here"); };
+   void atAddDiagonal(int, const Vector<double>&) override { assert(0 && "not implemented here"); };
+   void fromGetDiagonal(int, Vector<double>&) override { assert(0 && "not implemented here"); };
+   void symmetricScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
+   void columnScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
+   void rowScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
+   void scalarMult(double) override { assert(0 && "not implemented here"); };
+
+   void getSize(int& m, int& n) const override;
 
 
-  void removeEntryAtIndex(int row, int col_idx);
-  void removeEntryAtRowCol(int row, int col);
+   void removeEntryAtIndex(int row, int col_idx);
+   void removeEntryAtRowCol(int row, int col);
 
-  bool addColToRow( double coeff, int col, int row );
+   bool addColToRow(double coeff, int col, int row);
 
-  void clearRow( int row );
-  void clearCol( int col );
+   void clearRow(int row);
+   void clearCol(int col);
 
-  void appendRow( const SparseStorageDynamic& storage, int row );
+   void appendRow(const SparseStorageDynamic& storage, int row);
 
-  double rowTimesVec( const double* vec, int length, int row) const;
-  void axpyWithRowAt( double alpha, double* y, int length, int row) const;
-  void axpyWithRowAtPosNeg( double alpha, double * y_pos, double* y_neg, int length, int row) const;
+   double rowTimesVec(const double* vec, int length, int row) const;
+   void axpyWithRowAt(double alpha, double* y, int length, int row) const;
+   void axpyWithRowAtPosNeg(double alpha, double* y_pos, double* y_neg, int length, int row) const;
 
-  void scaleRow( int row, double factor );
+   void scaleRow(int row, double factor);
 
-  void addNnzPerRow(int* vec) const { addNnzPerRow( vec, 0, m ); };
-  void addNnzPerRow(int* vec, int begin_rows, int end_rows ) const;
+   void addNnzPerRow(int* vec) const { addNnzPerRow(vec, 0, m); };
+   void addNnzPerRow(int* vec, int begin_rows, int end_rows) const;
 
-  void writeToStreamDense( std::ostream& out) const;
-  void writeToStreamDenseRow( std::ostream& out, int rowidx) const;
+   void writeToStreamDense(std::ostream& out) const;
+   void writeToStreamDenseRow(std::ostream& out, int rowidx) const;
 
-  void restoreOrder();
+   void restoreOrder();
 
-  double abmaxnorm() const override;
-  double abminnormNonZero( double tol = 1e-30 ) const override;
+   double abmaxnorm() const override;
+   double abminnormNonZero(double tol = 1e-30) const override;
 
-  bool isTransposedOf( const SparseStorageDynamic& mat_tp) const; // TODO..
+   bool isTransposedOf(const SparseStorageDynamic& mat_tp) const; // TODO..
 
-  SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;
-  SparseStorageDynamic* getTranspose() const;
+   SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;
+   SparseStorageDynamic* getTranspose() const;
 
-  void getRowMaxVec(const double* colScaleVec, double* vec) const;
-  void getRowMinMaxVec(bool getMin, const double* colScaleVec, double* vec) const;
-  void getRowMinVec(const double* colScaleVec, double* vec) const;
+   void getRowMaxVec(const double* colScaleVec, double* vec) const;
+   void getRowMinMaxVec(bool getMin, const double* colScaleVec, double* vec) const;
+   void getRowMinVec(const double* colScaleVec, double* vec) const;
 
 };
 
-typedef SmartPointer<SparseStorageDynamic>  SparseStorageDynamicHandle;
+typedef SmartPointer<SparseStorageDynamic> SparseStorageDynamicHandle;
 
 #endif /* PIPS_IPM_CORE_SPARSELINEARALGEBRA_SPARSESTORAGEDYNAMIC_H_ */

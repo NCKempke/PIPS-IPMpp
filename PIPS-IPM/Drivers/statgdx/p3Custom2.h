@@ -7,7 +7,7 @@
 #define _P3CUSTOM2_H
 
 /* all args (execName, libName, msg) are really short strings */
-int xGetExecName (unsigned char *execName, unsigned char *msg);
-int xGetLibName (unsigned char *libName, unsigned char *msg);
+int xGetExecName(unsigned char* execName, unsigned char* msg);
+int xGetLibName(unsigned char* libName, unsigned char* msg);
 
 #endif /* ifndef _P3CUSTOM2_H */

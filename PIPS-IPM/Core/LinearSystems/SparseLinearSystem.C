@@ -6,8 +6,8 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrix.h"
 
-SparseLinearSystem::SparseLinearSystem(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in) : LinearSystem(
-      factory_in, problem), solver(solver_in) {
+SparseLinearSystem::SparseLinearSystem(ProblemFactory* factory_in, Problem* problem, SparseSymMatrix* Mat_in, DoubleLinearSolver* solver_in)
+      : LinearSystem(factory_in, problem), solver(solver_in) {
    SpReferTo(Mat, Mat_in);
 }
 
@@ -24,7 +24,7 @@ void SparseLinearSystem::put_dual_inequalites_diagonal() {
 }
 
 
-void SparseLinearSystem::solveCompressed(OoqpVector& arhs) {
+void SparseLinearSystem::solveCompressed(Vector<double>& arhs) {
    //printf("-----\n");arhs.writeToStream(cout);
    solver->solve(arhs);
    //printf("~~~~~\n");arhs.writeToStream(cout);

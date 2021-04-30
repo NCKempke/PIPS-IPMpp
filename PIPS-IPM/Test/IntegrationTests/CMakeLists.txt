@@ -11,5 +11,5 @@ include_directories(../../Core/Abstract)
 include_directories(../../Core/Utilities)
 include_directories(../../Drivers/gmspips)
 
-package_add_test( pipsTest t_pips.cpp )
-package_add_test( presolveTest t_presolvers.cpp )
+package_add_test(pipsTest t_pips.cpp)
+package_add_test(presolveTest t_presolvers.cpp)

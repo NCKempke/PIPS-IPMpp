@@ -6,28 +6,30 @@
 
 using namespace std;
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
 
-  MPI_Init(&argc, &argv);
-  int mype; MPI_Comm_rank(MPI_COMM_WORLD,&mype);
+   MPI_Init(&argc, &argv);
+   int mype;
+   MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 
-  if(argc<3) {
-    if (mype == 0) printf("Usage: %s [rawdump root name] [num scenarios] [solution output root name]\n",argv[0]);
-    return 1;
-  }
-  
-  string datarootname(argv[1]);
-  int nscen = atoi(argv[2]);
+   if (argc < 3) {
+      if (mype == 0)
+         printf("Usage: %s [rawdump root name] [num scenarios] [solution output root name]\n", argv[0]);
+      return 1;
+   }
 
-  rawInput* s = new rawInput(datarootname,nscen);
-  
-  //OOQPInterface<MehrotraSolver,QpGenSparseMa57> ooqp(*s);
-  OOQPInterface<MehrotraSolver,QpGenSparseMa27> ooqp(*s);
+   string datarootname(argv[1]);
+   int nscen = atoi(argv[2]);
 
-  delete s;
+   rawInput* s = new rawInput(datarootname, nscen);
 
-  ooqp.go();
-  
+   //OOQPInterface<MehrotraSolver,QpGenSparseMa57> ooqp(*s);
+   OOQPInterface <MehrotraSolver, QpGenSparseMa27> ooqp(*s);
 
-  return 0;
+   delete s;
+
+   ooqp.go();
+
+
+   return 0;
 }

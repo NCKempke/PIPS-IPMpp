@@ -14,6 +14,7 @@
  */
 #include <cassert>
 #include "pipsport.h"
+
 /**
  * A class whose instances act like pointers that manage their
  * reference count automatically.
@@ -107,162 +108,155 @@
  * @see IotrRefCount
  * @see ReferenceCounting
  * @ingroup ReferenceCounting */
-template <class T>
+template<class T>
 class SmartPointer {
 public:
-  /** Default constructor; creates a SmartPointer referring to nothing. */
-  SmartPointer() : obj(nullptr) {};
-  //@{
-  /** Copy constructor; creates a new smart pointer referring to the same
-   *  object. Increments the reference count of the object.
-   *
-   *  @param sp an existing reference to an object. This reference may be nil.
-   */
-  SmartPointer( const SmartPointer<T>& sp )
-  {
-    this->obj = sp.ptr();
-  };
+   /** Default constructor; creates a SmartPointer referring to nothing. */
+   SmartPointer() : obj(nullptr) {};
+   //@{
+   /** Copy constructor; creates a new smart pointer referring to the same
+    *  object. Increments the reference count of the object.
+    *
+    *  @param sp an existing reference to an object. This reference may be nil.
+    */
+   SmartPointer(const SmartPointer<T>& sp) {
+      this->obj = sp.ptr();
+   };
 #ifdef HAVE_MEMBER_TEMPLATES
-  template <class S>
-  SmartPointer( const SmartPointer<S>& sp )
-  {
-    this->obj = sp.ptr();
-  }
+   template <class S>
+   SmartPointer( const SmartPointer<S>& sp )
+   {
+     this->obj = sp.ptr();
+   }
 #endif
-  //@}
-  //@{
-  /** Dereferencing operation. Return a reference to the object. */
-  T& operator*() { return *obj; };
-  const T& operator*() const { return *obj; };
-  //@}
-  //@{
-  /** Assignment operator; cause this SmartPointer to refer to the same object
-   *  that sp refers to.
-   *  @param sp an existing reference to an object. This reference may be nil.
-   */
-  SmartPointer<T>& operator=( const SmartPointer<T>& sp)
-  {
-    T * newobj = sp.ptr();
-    if( this->obj ) IotrRelease( &this->obj );
+   //@}
+   //@{
+   /** Dereferencing operation. Return a reference to the object. */
+   T& operator*() { return *obj; };
+   const T& operator*() const { return *obj; };
+   //@}
+   //@{
+   /** Assignment operator; cause this SmartPointer to refer to the same object
+    *  that sp refers to.
+    *  @param sp an existing reference to an object. This reference may be nil.
+    */
+   SmartPointer<T>& operator=(const SmartPointer<T>& sp) {
+      T* newobj = sp.ptr();
+      if (this->obj)
+         IotrRelease(&this->obj);
 
-    this->obj = newobj;
+      this->obj = newobj;
 
-    return *this;
-  };
+      return *this;
+   };
 #ifdef HAVE_MEMBER_TEMPLATES
-  template <class S>
-  SmartPointer<T>& operator=(const SmartPointer<S>& sp)
-  {
-    S * ptrin = sp.ptr();
-    if( this->obj ) IotrRelease( &this->obj );
+   template <class S>
+   SmartPointer<T>& operator=(const SmartPointer<S>& sp)
+   {
+     S * ptrin = sp.ptr();
+     if( this->obj ) IotrRelease( &this->obj );
 
-    this->obj = ptrin;
+     this->obj = ptrin;
 
-    return *this;
-  }
+     return *this;
+   }
 #endif
-  //@}
-  /** Destructor; release the object (through a call to IotrRelease()) if the
-   *  object is not nil.
-   */
-  ~SmartPointer()
-  {
-    if( obj ) IotrRelease( &obj );
-  }
-  //@{
-  /**
-   * Send a message to, or access a data member of, the object
-   * to which this is a reference. */
-  T * operator->() {
-    return obj;
-  }
-  const T * operator->() const {
-    return obj;
-  }
-  //@}
-  /** Automatically convert this object to a traditional pointer to an
-   *  object that may be passed in as a paramter to function or method
-   *  calls. For most other purposes SmartPointer::ptr() is more appropriate
-   */
-  operator T*()
-  {
-    return obj;
-  }
-  operator T*() const
-  {
-     return obj;
-  }
+   //@}
+   /** Destructor; release the object (through a call to IotrRelease()) if the
+    *  object is not nil.
+    */
+   ~SmartPointer() {
+      if (obj)
+         IotrRelease(&obj);
+   }
+   //@{
+   /**
+    * Send a message to, or access a data member of, the object
+    * to which this is a reference. */
+   T* operator->() {
+      return obj;
+   }
+   const T* operator->() const {
+      return obj;
+   }
+   //@}
+   /** Automatically convert this object to a traditional pointer to an
+    *  object that may be passed in as a paramter to function or method
+    *  calls. For most other purposes SmartPointer::ptr() is more appropriate
+    */
+   operator T*() {
+      return obj;
+   }
+   operator T*() const {
+      return obj;
+   }
 
-  /** Converts a traditional
-   *  pointer to a smart pointer, destroying the original pointer. */
-  static void bind( SmartPointer<T>& sp, T ** obj )
-  {
-    sp.obj = *obj;
-    *obj   = nullptr;
-  }
-  /** Call SpReferTo() instead of this method; make a SmartPointer refer
-   *  to the same object as a traditional pointer. */
-  static void referTo( SmartPointer<T>& sp, T * obj )
-  {
-    if( obj )    IotrAddRef( &obj );
-    if( sp.obj ) IotrRelease( &sp.obj );
+   /** Converts a traditional
+    *  pointer to a smart pointer, destroying the original pointer. */
+   static void bind(SmartPointer<T>& sp, T** obj) {
+      sp.obj = *obj;
+      *obj = nullptr;
+   }
+   /** Call SpReferTo() instead of this method; make a SmartPointer refer
+    *  to the same object as a traditional pointer. */
+   static void referTo(SmartPointer<T>& sp, T* obj) {
+      if (obj)
+         IotrAddRef(&obj);
+      if (sp.obj)
+         IotrRelease(&sp.obj);
 
-    sp.obj = obj;
-  }
+      sp.obj = obj;
+   }
 
 private:
-  /** Call SpAsPointer() instead; return a traditional pointer to the
-   *  underlying object.  */
-  T * ptr() const
-  {
-    if (obj) IotrAddRef( &obj );
+   /** Call SpAsPointer() instead; return a traditional pointer to the
+    *  underlying object.  */
+   T* ptr() const {
+      if (obj)
+         IotrAddRef(&obj);
 
-    return obj;
-  }
+      return obj;
+   }
 
 public:
-  /** returns pointer without increasing reference count; use with care!
-   */
-  T * ptr_unsave()
-  {
-    return obj;
-  }
-  
-  bool notNil() const
-  {
-    return obj != nullptr;
-  }
+   /** returns pointer without increasing reference count; use with care!
+    */
+   T* ptr_unsave() {
+      return obj;
+   }
 
-  /** Allow EXPLICIT conversion from a (T*) to a SmartPointer to
-   *  T. Implicit conversion is not allowed, because this could have
-   *  subtle, unintended consequences. */
+   bool notNil() const {
+      return obj != nullptr;
+   }
+
+   /** Allow EXPLICIT conversion from a (T*) to a SmartPointer to
+    *  T. Implicit conversion is not allowed, because this could have
+    *  subtle, unintended consequences. */
 #ifdef HAVE_EXPLICIT
-  explicit
+   explicit
 #endif
-	SmartPointer( T * t ) { obj = t; }
+   SmartPointer(T* t) { obj = t; }
 protected:
-  /** a traditional pointer to the object being referenced. */
-  T * obj;
+   /** a traditional pointer to the object being referenced. */
+   T* obj;
 };
 
 /**
  * Set a SmartPointer to nil.
  * @ingroup ReferenceCounting */
-template <class T>
-inline void SpNil( SmartPointer<T>& sp )
-{
-  T * t = nullptr;
-  SmartPointer<T>::bind( sp, &t );
+template<class T>
+inline void SpNil(SmartPointer<T>& sp) {
+   T* t = nullptr;
+   SmartPointer<T>::bind(sp, &t);
 }
 
 /** Make a SmartPointer refer to the same object as a traditional
  * pointer. The reference count is incremented. Use this function to keep
  * a reference to a parameter of a routine.
  * @ingroup ReferenceCounting */
-template <class T>
-inline void SpReferTo( SmartPointer<T>& sp, T * obj )
-{
-  SmartPointer<T>::referTo( sp, obj );
+template<class T>
+inline void SpReferTo(SmartPointer<T>& sp, T* obj) {
+   SmartPointer<T>::referTo(sp, obj);
 }
 
 #endif

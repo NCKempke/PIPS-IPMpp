@@ -9,6 +9,7 @@
 #include "SmartPointer.h"
 
 class SparseSymMatrix;
+
 typedef SmartPointer<SparseSymMatrix> SparseSymMatrixHandle;
 
 #endif

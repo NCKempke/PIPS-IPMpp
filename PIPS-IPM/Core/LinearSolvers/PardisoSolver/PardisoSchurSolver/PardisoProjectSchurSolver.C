@@ -13,136 +13,128 @@
 #include "SimpleVector.h"
 
 extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
-extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*, int*, int*, int*,
-   int*, int*, double*, double*, int*, double*);
+extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*, int*, int*, int*, int*, int*, double*, double*, int*, double*);
 
 extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
-extern "C" void pardiso_printstats (int *, int *, double *, int *, int *, int *, double *, int *);
+extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*, double*, int*);
 extern "C" void pardiso_get_schur(void*, int*, int*, int*, double*, int*, int*);
 
 extern double g_iterNumber;
 
-PardisoProjectSchurSolver::PardisoProjectSchurSolver( const SparseSymMatrix * sgm )
-   : PardisoSchurSolver( sgm )
-{
+PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymMatrix* sgm) : PardisoSchurSolver(sgm) {
    num_threads = PIPSgetnOMPthreads();
 
    initPardiso();
 }
 
-void PardisoProjectSchurSolver::solve( OoqpVector& rhs_in )
-{
-  SimpleVector<double>& rhs=dynamic_cast<SimpleVector<double>&>(rhs_in);
+void PardisoProjectSchurSolver::solve(Vector<double>& rhs_in) {
+   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
-  int error = 0;
-  assert(iparmUnchanged());
+   int error = 0;
+   assert(iparmUnchanged());
 
-  assert(nvec_size == n);
-  double* const x_n = nvec;
-  double* const rhs_n = nvec2;
+   assert(nvec_size == n);
+   double* const x_n = nvec;
+   double* const rhs_n = nvec2;
 
-  const int dim=rhs.length();
-  assert(dim >= 0 && dim <= n);
+   const int dim = rhs.length();
+   assert(dim >= 0 && dim <= n);
 
-  memset(x_n, 0, dim * sizeof(double));
-  memcpy(rhs_n, rhs.elements(), dim * sizeof(double));
+   memset(x_n, 0, dim * sizeof(double));
+   memcpy(rhs_n, rhs.elements(), dim * sizeof(double));
 
-  if( n > dim )
-     memset(&rhs_n[dim], 0, (n - dim) * sizeof(double));
+   if (n > dim)
+      memset(&rhs_n[dim], 0, (n - dim) * sizeof(double));
 
 #ifdef TIMING_FLOPS
-  HPM_Start("PARDISOSolve");
+   HPM_Start("PARDISOSolve");
 #endif
 
-  // solving phase
-  phase = 33; /* solve - iterative refinement */
+   // solving phase
+   phase = 33; /* solve - iterative refinement */
 
-  int* rhsSparsity = nullptr;
-  if( useSparseRhs )
-  {
-     iparm[30] = 1; //sparse rhs
-     rhsSparsity = new int[n]();
+   int* rhsSparsity = nullptr;
+   if (useSparseRhs) {
+      iparm[30] = 1; //sparse rhs
+      rhsSparsity = new int[n]();
 
-     for( int i = 0; i < dim; i++  )
-        if( !PIPSisZero(rhs_n[i]) )
-           rhsSparsity[i] = 1;
-  }
-  else
-  {
-     iparm[30] = 0;
-  }
+      for (int i = 0; i < dim; i++)
+         if (!PIPSisZero(rhs_n[i]))
+            rhsSparsity[i] = 1;
+   }
+   else {
+      iparm[30] = 0;
+   }
 
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug,
-         colidxAug, rhsSparsity, &nrhs, iparm, &msglvl, rhs_n, x_n, &error, dparm);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, rhsSparsity, &nrhs, iparm, &msglvl, rhs_n, x_n, &error, dparm);
 
-  iparm[30] = 0;
-  delete[] rhsSparsity;
+   iparm[30] = 0;
+   delete[] rhsSparsity;
 
-  assert(error == 0);
+   assert(error == 0);
 
 #ifdef TIMING_FLOPS
-  HPM_Stop("PARDISOSolve");
+   HPM_Stop("PARDISOSolve");
 #endif
 
 
 #ifdef PRINT_SC_RESIDUAL
-  //compute residual (alternative)
-  double* tmp_resid=new double[dim];
-  memcpy(tmp_resid, rhs.elements(), dim*sizeof(double));
-  double mat_max=0;
-  for( int i = 0; i < dim; i++ )
-  {
-     for( int p = rowptrAug[i]; p < rowptrAug[i + 1]; p++ )
-     {
-        const int j = colidxAug[p - 1] - 1;
-        if( j + 1 <= dim )
-        {
-           //r[i] = r[i] + M(i,j)*x(j)
-           tmp_resid[i] -= eltsAug[p - 1] * x_n[j];
+   //compute residual (alternative)
+   double* tmp_resid=new double[dim];
+   memcpy(tmp_resid, rhs.elements(), dim*sizeof(double));
+   double mat_max=0;
+   for( int i = 0; i < dim; i++ )
+   {
+      for( int p = rowptrAug[i]; p < rowptrAug[i + 1]; p++ )
+      {
+         const int j = colidxAug[p - 1] - 1;
+         if( j + 1 <= dim )
+         {
+            //r[i] = r[i] + M(i,j)*x(j)
+            tmp_resid[i] -= eltsAug[p - 1] * x_n[j];
 
-           if( abs(eltsAug[p - 1]) > mat_max )
-              mat_max = abs(eltsAug[p - 1]);
+            if( abs(eltsAug[p - 1]) > mat_max )
+               mat_max = abs(eltsAug[p - 1]);
 
-           if( j != i )
-           {
-              //r[j] = r[j] + M(j,i)*x(i)
-              tmp_resid[j] -= eltsAug[p - 1] * x_n[i];
-           }
-        }
-     }
-  }
+            if( j != i )
+            {
+               //r[j] = r[j] + M(j,i)*x(i)
+               tmp_resid[j] -= eltsAug[p - 1] * x_n[i];
+            }
+         }
+      }
+   }
 
-  double res_norm2=0.0, res_nrmInf=0, sol_inf=0.;
-  for( int i = 0; i < dim; i++ )
-  {
-     res_norm2 += tmp_resid[i] * tmp_resid[i];
-     if( res_nrmInf < fabs(tmp_resid[i]) )
-        res_nrmInf = tmp_resid[i];
-     if( abs(x_n[i]) > sol_inf )
-        sol_inf = abs(x_n[i]);
-  }
-  res_norm2 = sqrt(res_norm2);
+   double res_norm2=0.0, res_nrmInf=0, sol_inf=0.;
+   for( int i = 0; i < dim; i++ )
+   {
+      res_norm2 += tmp_resid[i] * tmp_resid[i];
+      if( res_nrmInf < fabs(tmp_resid[i]) )
+         res_nrmInf = tmp_resid[i];
+      if( abs(x_n[i]) > sol_inf )
+         sol_inf = abs(x_n[i]);
+   }
+   res_norm2 = sqrt(res_norm2);
 
-  const double rhsNorm=rhs.twonorm();
-  //if(min(res_nrmInf/(mat_max*sol_inf),res_norm2/(mat_max*sol_inf))>1e-3) {
-  if(min(res_nrmInf/rhsNorm,res_norm2/rhsNorm)>1e-6) {
-    cout << "PardisoSchurSolve large residual - norms resid="<< res_norm2 << ":" << res_nrmInf
-    << " rhs=" << rhsNorm << " sol="<<sol_inf << " mat="<< mat_max
-    << " #refin.=" << iparm[6]
-    << " rel.res.nrmInf=" << res_nrmInf/rhsNorm
-    << " bicgiter=" << gOuterBiCGIter<< endl;
+   const double rhsNorm=rhs.twonorm();
+   //if(min(res_nrmInf/(mat_max*sol_inf),res_norm2/(mat_max*sol_inf))>1e-3) {
+   if(min(res_nrmInf/rhsNorm,res_norm2/rhsNorm)>1e-6) {
+     cout << "PardisoSchurSolve large residual - norms resid="<< res_norm2 << ":" << res_nrmInf
+     << " rhs=" << rhsNorm << " sol="<<sol_inf << " mat="<< mat_max
+     << " #refin.=" << iparm[6]
+     << " rel.res.nrmInf=" << res_nrmInf/rhsNorm
+     << " bicgiter=" << gOuterBiCGIter<< endl;
 
-  }
-  delete[] tmp_resid;
+   }
+   delete[] tmp_resid;
 #endif
 
-  memcpy(&rhs[0], x_n, dim * sizeof(double));
+   memcpy(&rhs[0], x_n, dim * sizeof(double));
 }
 
 
-void PardisoProjectSchurSolver::setIparm(int* iparm) const
-{
+void PardisoProjectSchurSolver::setIparm(int* iparm) const {
    /* common parameters */
    iparm[1] = 2; // 2 and 3 are for METIS - 2 is METIS 4.1, 3 is METIS 5.1, 0 for min degree ordering
 
@@ -158,31 +150,29 @@ void PardisoProjectSchurSolver::setIparm(int* iparm) const
    iparm[10] = 1; // default, scaling for IPM KKT used with either mtype=11/13 or mtype=-2/-4/6 and iparm[12]=1
    iparm[12] = 2;// 0 disable matching, 1 enable matching, no other settings
 
-   if( factorizationTwoLevel )
+   if (factorizationTwoLevel)
       iparm[23] = 1; // parallel Numerical Factorization (0=used in the last years, 1=two-level scheduling)
    else
       iparm[23] = 0;
 
-   if( parallelForwardBackward )
+   if (parallelForwardBackward)
       iparm[24] = 1; // parallelization for the forward and backward solve. 0=sequential, 1=parallel solve.
    else
       iparm[24] = 0;
 
 }
 
-void PardisoProjectSchurSolver::initPardiso()
-{
+void PardisoProjectSchurSolver::initPardiso() {
    int error = 0;
 
 //   #pragma omp critical
    pardisoinit(pt, &mtype, &solver, iparm, dparm, &error);
-   if( error != 0 )
-   {
-      if( error == -10 )
+   if (error != 0) {
+      if (error == -10)
          printf("PARDISO: No license file found \n");
-      if( error == -11 )
+      if (error == -11)
          printf("PARDISO: License is expired \n");
-      if( error == -12 )
+      if (error == -12)
          printf("PARDISO: Wrong username or hostname \n");
 
       PIPS_MPIabortIf(true, "Error in pardisoinit");
@@ -194,19 +184,16 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
 /*const*/SparseGenMatrix& A,
 /*const*/SparseGenMatrix& C,
 /*const*/SparseGenMatrix& F,
-/*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC)
-{
+/*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
    assert(!rowptrSC && !colidxSC && !eltsSC);
 
    bool doSymbFact = false;
-   if( firstSolve )
-   {
+   if (firstSolve) {
       firstSolveCall(R, A, C, F, G, nSCO);
       firstSolve = false;
       doSymbFact = true;
    }
-   else
-   {
+   else {
       //update diagonal entries in the PARDISO aug sys
       const double* eltsMsys = Msys->getStorageRef().M;
       std::map<int, int>::iterator it;
@@ -230,7 +217,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
       std::cout << "local Schur diag: min/max/minAbs  " << min << " " << max << " " << minAbs << std::endl;
 #endif
 
-      for( it = diagMap.begin(); it != diagMap.end(); it++ )
+      for (it = diagMap.begin(); it != diagMap.end(); it++)
          eltsAug[it->second] = eltsMsys[it->first];
    }
 
@@ -239,8 +226,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
 
 #ifndef NDEBUG
    pardiso_chkmatrix(&mtype, &n, eltsAug, rowptrAug, colidxAug, &error);
-   if( error != 0 )
-   {
+   if (error != 0) {
       std::cout << "PARDISO matrix error " << error << "\n";
       exit(1);
    }
@@ -250,17 +236,16 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
    const int myRank = PIPS_MPIgetRank();
 
    static bool printed = false;
-   if( (nIter % symbFactorInterval) == 0 )
-   {
+   if ((nIter % symbFactorInterval) == 0) {
       doSymbFact = true;
-      if( myRank == 0 && !printed )
+      if (myRank == 0 && !printed)
          printf("PardisoSchur: starting symbolic analysis ... ");
    }
    else
       printed = false;
 
    int phase = 22; // numerical factorization
-   if( doSymbFact )
+   if (doSymbFact)
       phase = 12; // numerical factorization & symb analysis
 
    assert(iparmUnchanged());
@@ -268,19 +253,17 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
    /* compute schur complement */
    iparm[37] = nSC; // compute Schur-complement
 
-   #ifdef TIMING_FLOPS
+#ifdef TIMING_FLOPS
    HPM_Start("PARDISOFact");
-   #endif
+#endif
 
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug,
-         colidxAug, nullptr, &nrhs, iparm, &msglvl, nullptr, nullptr, &error, dparm);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, nullptr, &nrhs, iparm, &msglvl, nullptr, nullptr, &error, dparm);
 
- #ifdef TIMING_FLOPS
+#ifdef TIMING_FLOPS
    HPM_Stop("PARDISOFact");
- #endif
+#endif
 
-   if( doSymbFact && myRank == 0 && !printed )
-   {
+   if (doSymbFact && myRank == 0 && !printed) {
       printf("finished \n");
       printed = true;
    }
@@ -291,12 +274,10 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
    if(1001*(myRank/1001)==myRank)
    printf("rank %d perturbPiv %d peakmem %d\n", myRank, iparm[13], iparm[14]); // same for MKL and pardiso
    //cout << "NNZ(SCHUR) " << nnzSC << "    SPARSITY " << nnzSC/(1.0*nSC*nSC) << endl;
- #endif
+#endif
 
-   if( error != 0 )
-   {
-      printf("PardisoSolver - ERROR during factorization: %d. Phase param=%d\n",
-            error, phase);
+   if (error != 0) {
+      printf("PardisoSolver - ERROR during factorization: %d. Phase param=%d\n", error, phase);
       exit(1);
    }
    rowptrSC = new int[nSC + 1];
@@ -307,25 +288,22 @@ void PardisoProjectSchurSolver::computeSC(int nSCO,
    pardiso_get_schur(pt, &maxfct, &mnum, &mtype, eltsSC, rowptrSC, colidxSC);
 
    //convert back to C/C++ indexing
-   for( int it = 0; it < nSC + 1; it++ )
+   for (int it = 0; it < nSC + 1; it++)
       rowptrSC[it]--;
-   for( int it = 0; it < nnzSC; it++ )
+   for (int it = 0; it < nnzSC; it++)
       colidxSC[it]--;
 
    assert(subMatrixIsOrdered(rowptrSC, colidxSC, 0, nSC));
 }
 
 
-PardisoProjectSchurSolver::~PardisoProjectSchurSolver()
-{
+PardisoProjectSchurSolver::~PardisoProjectSchurSolver() {
    int phase = -1; /* Release internal memory . */
    msglvl = 0;
    int error = 0;
 
-   pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-       &n, nullptr, rowptrAug, colidxAug, nullptr, &nrhs,
-       iparm, &msglvl, nullptr, nullptr, &error , dparm );
-   if ( error != 0) {
-     printf ("PardisoProjectSchurSolver - ERROR in pardiso release: %d", error );
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, nullptr, rowptrAug, colidxAug, nullptr, &nrhs, iparm, &msglvl, nullptr, nullptr, &error, dparm);
+   if (error != 0) {
+      printf("PardisoProjectSchurSolver - ERROR in pardiso release: %d", error);
    }
 }

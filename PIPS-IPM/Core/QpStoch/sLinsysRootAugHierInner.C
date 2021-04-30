@@ -7,10 +7,11 @@
 
 #include "sLinsysRootAugHierInner.h"
 
-sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_,
-      OoqpVector* nomegaInv_, OoqpVector* regP_, OoqpVector* regDy_, OoqpVector* regDz_, OoqpVector* rhs_) : sLinsysRootAug(factory, prob_,
-      dynamic_cast<DistributedVector<double>*>(dd_)->first, dynamic_cast<DistributedVector<double>*>(dq_)->first, dynamic_cast<DistributedVector<double>*>(nomegaInv_)->first,
-      dynamic_cast<DistributedVector<double>*>(regP_)->first, dynamic_cast<DistributedVector<double>*>(regDy_)->first, dynamic_cast<DistributedVector<double>*>(regDz_)->first, rhs_, false) {
+sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_,
+      Vector<double>* nomegaInv_, Vector<double>* regP_, Vector<double>* regDy_, Vector<double>* regDz_, Vector<double>* rhs_) : sLinsysRootAug(
+      factory, prob_, dynamic_cast<DistributedVector<double>*>(dd_)->first, dynamic_cast<DistributedVector<double>*>(dq_)->first,
+      dynamic_cast<DistributedVector<double>*>(nomegaInv_)->first, dynamic_cast<DistributedVector<double>*>(regP_)->first,
+      dynamic_cast<DistributedVector<double>*>(regDy_)->first, dynamic_cast<DistributedVector<double>*>(regDz_)->first, rhs_, false) {
    assert(locnx == 0);
    assert(locmy == 0);
    assert(locmz == 0);
@@ -52,7 +53,7 @@ void sLinsysRootAugHierInner::assembleLocalKKT(DistributedQP* prob) {
    }
 }
 
-void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, Vector<double>& x) {
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 
@@ -86,7 +87,8 @@ void sLinsysRootAugHierInner::LtsolveHierarchyBorder(DoubleMatrix& res, const De
    LtsolveHierarchyBorder(res, X0, Bl, Br, br_mod_border, sym_res, sparse_res, false, begin_cols, end_cols);
 }
 
-void sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool use_local_RAC) {
+void
+sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool use_local_RAC) {
    BorderLinsys Border(0, dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->A).Blmat),
          dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*data->C).Blmat), use_local_RAC);
 
@@ -97,7 +99,7 @@ void sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<
 }
 
 /* compute Schur rhs b0 - sum Bi^T Ki^-1 bi for all children */
-void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, OoqpVector& x) {
+void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, Vector<double>& x) {
    assert(!is_hierarchy_root);
 
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
@@ -117,7 +119,7 @@ void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, OoqpVector& x) {
       PIPS_MPIsumArrayInPlace(b0.elements(), b0.length(), mpiComm);
 }
 
-void sLinsysRootAugHierInner::addLniziLinkCons(DistributedQP*, OoqpVector& z0_, OoqpVector& zi, bool use_local_RAC) {
+void sLinsysRootAugHierInner::addLniziLinkCons(DistributedQP*, Vector<double>& z0_, Vector<double>& zi, bool use_local_RAC) {
    assert(zi.isKindOf(kStochVector));
    SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
 
@@ -304,8 +306,7 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(DoubleMatrix& res, con
    addBlTKiInvBrToResBlockwise(res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols);
 }
 
-void sLinsysRootAugHierInner::put_primal_diagonal()
-{
+void sLinsysRootAugHierInner::put_primal_diagonal() {
    assert(primal_diagonal);
    assert(dynamic_cast<const DistributedVector<double>&>(*primal_diagonal).first->isKindOf(kStochVector));
 
@@ -314,13 +315,12 @@ void sLinsysRootAugHierInner::put_primal_diagonal()
 
    xDiag = primal_diag_loc.first;
 
-   for(size_t it = 0; it < children.size(); it++)
+   for (size_t it = 0; it < children.size(); it++)
       children[it]->put_primal_diagonal();
 }
 
 
-void sLinsysRootAugHierInner::put_dual_inequalites_diagonal()
-{
+void sLinsysRootAugHierInner::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    assert(dynamic_cast<const DistributedVector<double>&>(*nomegaInv).first->isKindOf(kStochVector));
 
@@ -330,6 +330,6 @@ void sLinsysRootAugHierInner::put_dual_inequalites_diagonal()
    zDiag = zdiag.first;
    zDiagLinkCons = zdiag.last;
 
-  for(size_t it = 0; it < children.size(); it++)
-     children[it]->put_dual_inequalites_diagonal();
+   for (size_t it = 0; it < children.size(); it++)
+      children[it]->put_dual_inequalites_diagonal();
 }

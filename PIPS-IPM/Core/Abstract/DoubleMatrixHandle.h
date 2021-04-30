@@ -9,9 +9,11 @@
 #include "IotrRefCount.h"
 
 class GenMatrix;
+
 typedef SmartPointer<GenMatrix> GenMatrixHandle;
 
 class SymMatrix;
+
 typedef SmartPointer<SymMatrix> SymMatrixHandle;
 
 #endif

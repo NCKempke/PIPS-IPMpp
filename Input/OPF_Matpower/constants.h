@@ -24,7 +24,7 @@
 
 #define MAXCONNLINES 20
 
-class OoqpVector;
+class Vector<double>;
 class Variables;
 
 /*
@@ -63,13 +63,13 @@ public:
   int ms_1st;
   int n1stCon;
 
-  OoqpVector *full_X;
-  OoqpVector *full_Y;
-  OoqpVector *full_step_x;
-  OoqpVector *full_step_y;
+  Vector<double> *full_X;
+  Vector<double> *full_Y;
+  Vector<double> *full_step_x;
+  Vector<double> *full_step_y;
 
-  OoqpVector *grad_x;
-  OoqpVector *cons_b;
+  Vector<double> *grad_x;
+  Vector<double> *cons_b;
 
   double *full_X_val;
   double *full_Y_val;

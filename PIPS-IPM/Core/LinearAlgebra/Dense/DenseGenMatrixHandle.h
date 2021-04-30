@@ -9,6 +9,7 @@
 #include "SmartPointer.h"
 
 class DenseGenMatrix;
+
 typedef SmartPointer<DenseGenMatrix> DenseGenMatrixHandle;
 
 #endif

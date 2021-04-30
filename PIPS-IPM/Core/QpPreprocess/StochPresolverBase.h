@@ -18,8 +18,7 @@
 
 #include <vector>
 
-class StochPresolverBase
-{
+class StochPresolverBase {
 public:
    StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb);
    virtual ~StochPresolverBase();
@@ -31,11 +30,11 @@ protected:
    void updatePointersForCurrentNode(int node, SystemType system_type);
 
 private:
-   void countRowsBlock(int& n_rows_total, int& n_rows_empty, int& n_rows_onesided, int& n_rows_boxed, int& n_rows_fixed, int& n_rows_singleton, SystemType system_type,
-      BlockType block_type) const;
-   void countBoxedColumns( int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed, int& n_cols_singleton,
-      int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig,
-      bool at_root_node) const;
+   void countRowsBlock(int& n_rows_total, int& n_rows_empty, int& n_rows_onesided, int& n_rows_boxed, int& n_rows_fixed, int& n_rows_singleton,
+         SystemType system_type, BlockType block_type) const;
+   void countBoxedColumns(int& n_cols_total, int& n_cols_empty, int& n_cols_free, int& n_cols_onesided, int& n_cols_boxed, int& n_cols_singleton,
+         int& n_cols_orig_free, int& n_cols_orig_free_removed, const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig,
+         bool at_root_node) const;
 
    void setPointersMatrices(GenMatrixHandle mat, int node);
    void setPointersMatrixBoundsActivities(SystemType system_type, int node);
@@ -76,7 +75,7 @@ protected:
    const SimpleVector<double>* currIxuppParent;
    const SimpleVector<double>* currxlowChild;
    const SimpleVector<double>* currIxlowChild;
-   const SimpleVector<double>* currxuppChild ;
+   const SimpleVector<double>* currxuppChild;
    const SimpleVector<double>* currIxuppChild;
 
    const SimpleVector<double>* currEqRhs;
@@ -105,7 +104,6 @@ protected:
    int localNelims;
 
 };
-
 
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHPRESOLVERBASE_H_ */

@@ -6,7 +6,7 @@
 #define DENSEDOUBLEMATRIX_H
 
 #include "DoubleMatrix.h"
-#include "OoqpVector_fwd.h"
+#include "Vector.hpp"
 
 extern int DenseStorageInstances;
 
@@ -15,61 +15,54 @@ extern int DenseStorageInstances;
  */
 class DenseStorage : public DoubleStorage {
 private:
-  DenseStorage() {};
+   DenseStorage() {};
 protected:
-  int neverDeleteElts;
+   int neverDeleteElts;
 public:
-  int m;
-  int n;
-  double ** M;
+   int m;
+   int n;
+   double** M;
 
-  DenseStorage( int m, int n );
-  DenseStorage( double A[], int m, int n );
+   DenseStorage(int m, int n);
+   DenseStorage(double A[], int m, int n);
 
-  virtual ~DenseStorage();
+   virtual ~DenseStorage();
 
-  void getSize( int& m, int& n ) const override;
+   void getSize(int& m, int& n) const override;
 
-  void getDiagonal( OoqpVector& vec ) override;
-  void setToDiagonal( const OoqpVector& vec ) override;
+   void getDiagonal(Vector<double>& vec) override;
+   void setToDiagonal(const Vector<double>& vec) override;
 
-  void atPutDense( int row, int col, double * A, int lda,
-			   int rowExtent, int colExtent ) override;
+   void atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
 
-  void fromGetDense( int row, int col, double * A, int lda,
-			     int rowExtent, int colExtent ) override;
-  
-  virtual void atPutZeros( int row, int col,
-			   int rowExtent, int colExtent );
+   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
 
-  void putZeros();
+   virtual void atPutZeros(int row, int col, int rowExtent, int colExtent);
 
-  virtual void atAddOuterProductOf( int row, int col, double alpha,
-				    double * x, int incx, int nx );
+   void putZeros();
 
-  virtual void addToDiagonalAt( double alpha, double x[], int incx,
-				int idiag, int extent );
-  void fromGetSpRow( int row, int col,
-			     double A[], int lenA, int irowA[], int& nnz,
-			     int rowExtent, int& info ) override;
+   virtual void atAddOuterProductOf(int row, int col, double alpha, double* x, int incx, int nx);
 
-  void columnScale( const OoqpVector& vec ) override;
-  void rowScale( const OoqpVector& vec ) override;
-  void symmetricScale( const OoqpVector& vec ) override;
-  void scalarMult( double num) override;
-  double abmaxnorm() const override;
-  double abminnormNonZero( double tol = 1e-30 ) const override;
+   virtual void addToDiagonalAt(double alpha, double x[], int incx, int idiag, int extent);
+   void fromGetSpRow(int row, int col, double A[], int lenA, int irowA[], int& nnz, int rowExtent, int& info) override;
 
-  void atPutSpRow( int col, const double A[], int lenA, int irowA[], int& info ) override;
-  void putSparseTriple( int irow[], int len, int jcol[], double A[], int& info );
+   void columnScale(const Vector<double>& vec) override;
+   void rowScale(const Vector<double>& vec) override;
+   void symmetricScale(const Vector<double>& vec) override;
+   void scalarMult(double num) override;
+   double abmaxnorm() const override;
+   double abminnormNonZero(double tol = 1e-30) const override;
 
-  void atPutDiagonal(   int idiag, const OoqpVector& v ) override;
-  void atAddDiagonal(   int idiag, const OoqpVector& v ) override;
-  void fromGetDiagonal( int idiag, OoqpVector& v ) override;
-  void atPutDiagonal( int idiag, const double x[], int incx, int extent );
-  void atAddDiagonal( int idiag, const double x[], int incx, int extent );
-  void diagonal_add_constant_from(int from, int length, double value);
+   void atPutSpRow(int col, const double A[], int lenA, int irowA[], int& info) override;
+   void putSparseTriple(int irow[], int len, int jcol[], double A[], int& info);
+
+   void atPutDiagonal(int idiag, const Vector<double>& v) override;
+   void atAddDiagonal(int idiag, const Vector<double>& v) override;
+   void fromGetDiagonal(int idiag, Vector<double>& v) override;
+   void atPutDiagonal(int idiag, const double x[], int incx, int extent);
+   void atAddDiagonal(int idiag, const double x[], int incx, int extent);
+   void diagonal_add_constant_from(int from, int length, double value);
 
 };
-  
+
 #endif

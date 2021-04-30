@@ -1,5 +1,6 @@
 #include "DistributedVariables.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "Problem.h"
 #include "Residuals.h"
 #include "DistributedVector.h"
@@ -11,10 +12,10 @@
 #include <iostream>
 #include <fstream>
 
-DistributedVariables::DistributedVariables(const sTree* tree, OoqpVector* x_in, OoqpVector* s_in, OoqpVector* y_in, OoqpVector* z_in, OoqpVector* v_in, OoqpVector* gamma_in,
-      OoqpVector* w_in, OoqpVector* phi_in, OoqpVector* t_in, OoqpVector* lambda_in, OoqpVector* u_in, OoqpVector* pi_in, OoqpVector* ixlow_in,
-      long long nxlowGlobal, OoqpVector* ixupp_in, long long nxuppGlobal, OoqpVector* iclow_in, long long mclowGlobal, OoqpVector* icupp_in,
-      long long mcuppGlobal) : Variables() {
+DistributedVariables::DistributedVariables(const sTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,
+      Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in,
+      Vector<double>* u_in, Vector<double>* pi_in, Vector<double>* ixlow_in, long long nxlowGlobal, Vector<double>* ixupp_in, long long nxuppGlobal,
+      Vector<double>* iclow_in, long long mclowGlobal, Vector<double>* icupp_in, long long mcuppGlobal) : Variables() {
 
    stochNode = tree;
 
@@ -103,15 +104,16 @@ void DistributedVariables::createChildren() {
 
 
    for (size_t it = 0; it < xst.children.size(); it++) {
-      AddChild(new DistributedVariables(stochNode->getChildren()[it], xst.children[it], sst.children[it], yst.children[it], zst.children[it], vst.children[it],
-            gammast.children[it], wst.children[it], phist.children[it], tst.children[it], lambdast.children[it], ust.children[it], pist.children[it],
-            ixlowst.children[it], nxlow, ixuppst.children[it], nxupp, iclowst.children[it], mclow, icuppst.children[it], mcupp));
+      AddChild(new DistributedVariables(stochNode->getChildren()[it], xst.children[it], sst.children[it], yst.children[it], zst.children[it],
+            vst.children[it], gammast.children[it], wst.children[it], phist.children[it], tst.children[it], lambdast.children[it], ust.children[it],
+            pist.children[it], ixlowst.children[it], nxlow, ixuppst.children[it], nxupp, iclowst.children[it], mclow, icuppst.children[it], mcupp));
    }
 
 }
 
-void DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const sTree* stochNode_, OoqpVectorHandle ixlow_, OoqpVectorHandle ixupp_,
-      OoqpVectorHandle iclow_, OoqpVectorHandle icupp_) {
+void
+DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const sTree* stochNode_, SmartPointer<Vector<double> > ixlow_,
+      SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_) {
    dynamic_cast<DistributedVector<double>&>(*x).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
 
    dynamic_cast<DistributedVector<double>&>(*v).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);

@@ -6,16 +6,16 @@ DoubleIterativeLinearSolver::DoubleIterativeLinearSolver(MatTimesVec* Ain, MatTi
 
 }
 
-void DoubleIterativeLinearSolver::applyA(double beta, OoqpVector& res, double alpha, OoqpVector& x) {
+void DoubleIterativeLinearSolver::applyA(double beta, Vector<double>& res, double alpha, Vector<double>& x) {
    A->doIt(beta, res, alpha, x);
 }
 
 
-void DoubleIterativeLinearSolver::applyM1(double beta, OoqpVector& res, double alpha, OoqpVector& x) {
+void DoubleIterativeLinearSolver::applyM1(double beta, Vector<double>& res, double alpha, Vector<double>& x) {
    ML->doIt(beta, res, alpha, x);
 }
 
-void DoubleIterativeLinearSolver::applyM2(double beta, OoqpVector& res, double alpha, OoqpVector& x) {
+void DoubleIterativeLinearSolver::applyM2(double beta, Vector<double>& res, double alpha, Vector<double>& x) {
    if (nullptr == MR) {
       //just a identity precond
       if (beta == 0.0) {
@@ -47,7 +47,7 @@ void DoubleIterativeLinearSolver::applyM2(double beta, OoqpVector& res, double a
 StoredMatTimesVec::StoredMatTimesVec(DoubleMatrix* mat) : mMat(mat) {};
 
 
-void StoredMatTimesVec::doIt(double beta, OoqpVector& y_, double alpha, OoqpVector& x_) {
+void StoredMatTimesVec::doIt(double beta, Vector<double>& y_, double alpha, Vector<double>& x_) {
    SimpleVector<double>& x = dynamic_cast<SimpleVector<double>&>(x_);
    SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_);
 
@@ -65,7 +65,7 @@ void StoredMatTimesVec::doIt(double beta, OoqpVector& y_, double alpha, OoqpVect
 StoredMatTransTimesVec::StoredMatTransTimesVec(DoubleMatrix* mat) : mMat(mat) {};
 
 
-void StoredMatTransTimesVec::doIt(double beta, OoqpVector& y_, double alpha, OoqpVector& x_) {
+void StoredMatTransTimesVec::doIt(double beta, Vector<double>& y_, double alpha, Vector<double>& x_) {
    SimpleVector<double>& x = dynamic_cast<SimpleVector<double>&>(x_);
    SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_);
 

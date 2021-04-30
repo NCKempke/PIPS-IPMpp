@@ -9,7 +9,8 @@
 
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DenseGenMatrix.h"
 #include "pipsport.h"
 
@@ -19,24 +20,27 @@
  */
 class DeSymPSDSolver : public DoubleLinearSolver {
 protected:
-  std::shared_ptr<DenseStorage> mStorage;
+   std::shared_ptr<DenseStorage> mStorage;
 public:
-  DeSymPSDSolver( const DenseSymMatrix * dsm );
-  void diagonalChanged( int idiag, int extent ) override;
-  void matrixChanged() override;
+   DeSymPSDSolver(const DenseSymMatrix* dsm);
+   void diagonalChanged(int idiag, int extent) override;
+   void matrixChanged() override;
 
-  using DoubleLinearSolver::solve;
-  void solve ( OoqpVector& x ) override;
+   using DoubleLinearSolver::solve;
+   void solve(Vector<double>& x) override;
 
-  //specialized method that uses BLAS-3 function DTRSM for the triagular solve.
-  using DoubleLinearSolver::Lsolve;
-  void Lsolve ( GenMatrix& mat ) override;
+   //specialized method that uses BLAS-3 function DTRSM for the triagular solve.
+   using DoubleLinearSolver::Lsolve;
+   void Lsolve(GenMatrix& mat) override;
 
-  ~DeSymPSDSolver() override = default;
+   ~DeSymPSDSolver() override = default;
 
 
    bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { assert(false && "TODO : implement"); return {0,0,0}; };
+   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
+      assert(false && "TODO : implement");
+      return {0, 0, 0};
+   };
 
 };
 

@@ -7,8 +7,8 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-InteriorPointMethod::InteriorPointMethod(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(
-      problem_formulation, problem, scaler), step_length_type(PRIMAL), // TO CHANGE
+InteriorPointMethod::InteriorPointMethod(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(problem_formulation,
+      problem, scaler), step_length_type(PRIMAL), // TO CHANGE
       n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
       dynamic_corrector_schedule(pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
       additional_correctors_small_comp_pairs(pips_options::getBoolParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
@@ -429,8 +429,7 @@ void InteriorPointMethod::doProbing_pd(Problem* prob, Variables* iterate, Residu
 }
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
-double
-InteriorPointMethod::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
+double InteriorPointMethod::computeStepFactorProbing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
    assert(resids_norm_last > 0.);
    assert(resids_norm_probing > 0.);
 
@@ -509,8 +508,8 @@ void InteriorPointMethod::notifyFromSubject() {
 }
 
 void InteriorPointMethod::calculate_alpha_PD_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step,
-      double alpha_primal, double alpha_dual, double& step_length_primal_candidate, double& step_length_dual_candidate, double& weight_primal_candidate,
-      double& weight_dual_candidate) {
+      double alpha_primal, double alpha_dual, double& step_length_primal_candidate, double& step_length_dual_candidate,
+      double& weight_primal_candidate, double& weight_dual_candidate) {
    assert(alpha_primal > 0. && alpha_primal <= 1.);
    assert(alpha_dual > 0. && alpha_dual <= 1.);
 

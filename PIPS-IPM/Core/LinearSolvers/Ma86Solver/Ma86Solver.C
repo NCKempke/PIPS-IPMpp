@@ -138,7 +138,7 @@ void Ma86Solver::matrixChanged() {
 }
 
 // Solve
-void Ma86Solver::solve(OoqpVector& rhs_in) {
+void Ma86Solver::solve(Vector<double>& rhs_in) {
    SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    double* sol = rhs.elements();
 

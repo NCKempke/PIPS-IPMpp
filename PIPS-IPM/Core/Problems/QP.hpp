@@ -6,8 +6,10 @@
 #define QPGENDATA
 
 #include "Problem.h"
-#include "OoqpVectorHandle.h"
-#include "OoqpVector.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrixHandle.h"
 
 class MpsReader;
@@ -40,8 +42,9 @@ public:
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */
-   QP(LinearAlgebraPackage* la, OoqpVector* c, SymMatrix* Q, OoqpVector* xlow, OoqpVector* ixlow, OoqpVector* xupp, OoqpVector* ixupp,
-         GenMatrix* A, OoqpVector* bA, GenMatrix* C, OoqpVector* clow, OoqpVector* iclow, OoqpVector* cupp, OoqpVector* ciupp);
+   QP(LinearAlgebraPackage* la, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+         Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
+         Vector<double>* ciupp);
 
    /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
    virtual void putQIntoAt(SymMatrix& M, int row, int col);
@@ -50,10 +53,10 @@ public:
    virtual void putQIntoAt(GenMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * Q * x */
-   virtual void hessian_multiplication(double beta, OoqpVector& y, double alpha, const OoqpVector& x) const override;
+   virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   /** extract the diagonal of the Hessian and put it in the OoqpVector hessian_diagonal */
-   void hessian_diagonal(OoqpVector& hessian_diagonal) override;
+   /** extract the diagonal of the Hessian and put it in the Vector<double> hessian_diagonal */
+   void hessian_diagonal(Vector<double>& hessian_diagonal) override;
 
    void createScaleFromQ();
 
@@ -69,7 +72,7 @@ public:
 
    void print() override;
 
-   virtual void objective_gradient(const Variables& variables, OoqpVector& gradient) const override;
+   virtual void objective_gradient(const Variables& variables, Vector<double>& gradient) const override;
 
    virtual double objective_value(const Variables& variables) const override;
 

@@ -132,7 +132,7 @@ void PardisoIndefSolver::matrixChanged() {
       else
          factorizeFromDense();
 
-      if( !pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0 )
+      if (!pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0)
          printf("\n PardisoIndefSolver: Schur complement factorization completed \n");
    }
 }
@@ -150,7 +150,7 @@ void PardisoIndefSolver::matrixRebuild(DoubleMatrix& matrixNew) {
 
       factorizeFromSparse(matrixNewSym);
 
-      if( !pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0 )
+      if (!pips_options::getBoolParameter("HIERARCHICAL") && my_rank == 0)
          printf("\n Schur complement factorization completed \n");
    }
 }
@@ -370,7 +370,7 @@ else
    }
 }
 
-void PardisoIndefSolver::solveSynchronized(OoqpVector& vec) {
+void PardisoIndefSolver::solveSynchronized(Vector<double>& vec) {
    const bool solve_in_parallel_old = solve_in_parallel;
    solve_in_parallel = false;
 
@@ -380,7 +380,7 @@ void PardisoIndefSolver::solveSynchronized(OoqpVector& vec) {
 }
 
 
-void PardisoIndefSolver::solve(OoqpVector& v) {
+void PardisoIndefSolver::solve(Vector<double>& v) {
    assert(iparmUnchanged());
 
    const int size = PIPS_MPIgetSize(mpi_comm);
@@ -572,7 +572,7 @@ PardisoIndefSolver::~PardisoIndefSolver() {
    delete[] x;
 }
 
-std::tuple<unsigned int,unsigned int,unsigned int> PardisoIndefSolver::get_inertia() const{
+std::tuple<unsigned int, unsigned int, unsigned int> PardisoIndefSolver::get_inertia() const {
    assert(false && "TODO: Implement");
-   return {0,0,0};
+   return {0, 0, 0};
 }

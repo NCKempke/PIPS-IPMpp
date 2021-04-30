@@ -6,7 +6,8 @@
 #define MPSREADER
 
 #include "SimpleVector.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "DoubleMatrixHandle.h"
 #include <cstdio>
 #include "hash.h"
@@ -137,18 +138,19 @@ protected:
    virtual void rowHasRange(int rownum, double val, int& iErr);
    virtual void scanHessSection(char line[62], int& iErr, int& return_getline);
 
-   virtual void readColsSection(OoqpVector& c, GenMatrix& A, GenMatrix& C, char line[62], int& iErr, int& return_getline);
+   virtual void readColsSection(Vector<double>& c, GenMatrix& A, GenMatrix& C, char line[62], int& iErr, int& return_getline);
    virtual void readColsSection(double c[], int irowA[], int jcolA[], double dA[], int irowC[], int jcolC[], double dC[], char line[62], int& iErr,
          int& return_getline);
    virtual void
-   readRHSSection(OoqpVector& b, SimpleVector<double>& clow, OoqpVector& iclow, SimpleVector<double>& cupp, OoqpVector& icupp, char line[], int& ierr,
-         int& kindOfLine);
+   readRHSSection(Vector<double>& b, SimpleVector<double>& clow, Vector<double>& iclow, SimpleVector<double>& cupp, Vector<double>& icupp,
+         char line[], int& ierr, int& kindOfLine);
    virtual void readRHSSection(double b[], double clow[], char iclow[], double cupp[], char icupp[], char line[], int& ierr, int& kindOfLine);
    virtual void readRangesSection(SimpleVector<double>& clow, SimpleVector<double>& cupp, char line[], int& ierr, int& kindOfLine);
    virtual void readRangesSection(double clow[], double cupp[], char line[], int& ierr, int& kindOfLine);
-   virtual void readBoundsSection(OoqpVector& xlow, OoqpVector& ixlow, OoqpVector& xupp, OoqpVector& ixupp, char line[], int& ierr, int& kindOfLine);
+   virtual void readBoundsSection(Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, char line[], int& ierr,
+         int& kindOfLine);
    virtual void defaultBounds(double xlow[], char ixlow[], double xupp[], char ixupp[]);
-   virtual void defaultBounds(OoqpVector& xlow, OoqpVector& ixlow, OoqpVector& xupp, OoqpVector& ixupp);
+   virtual void defaultBounds(Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp);
    virtual void readBoundsSection(double xlow[], char ixlow[], double xupp[], char ixupp[], char line[], int& ierr, int& kindOfLine);
    virtual void readHessSection(SymMatrix& Q, char line[], int& ierr, int& kindOfLine);
    virtual void readHessSection(int irowQ[], int jcolQ[], double dQ[], char line[], int& ierr, int& kindOfLine);
@@ -199,7 +201,8 @@ public:
     * there was some error reading the data, in partical if this QP
     * has more than simple bounds.
     */
-   virtual void readQpBound(OoqpVector& c, SymMatrix& Q, OoqpVector& xlow, OoqpVector& ixlow, OoqpVector& xupp, OoqpVector& ixupp, int& ierr);
+   virtual void
+   readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, int& ierr);
    /**
     * Reads the various components of a QP in the "general" formulation
     * into their respective matrices and vectors, stored as objects
@@ -207,8 +210,8 @@ public:
     * the meaning of the variables.  @param iErr iErr is non-zero if
     * there was some error reading the data.  */
    virtual void
-   readQpGen(OoqpVector& c, SymMatrix& Q, OoqpVector& xlow, OoqpVector& ixlow, OoqpVector& xupp, OoqpVector& ixupp, GenMatrix& A, OoqpVector& b,
-         GenMatrix& C, OoqpVector& clow, OoqpVector& iclow, OoqpVector& cupp, OoqpVector& icupp, int& ierr);
+   readQpGen(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, GenMatrix& A,
+         Vector<double>& b, GenMatrix& C, Vector<double>& clow, Vector<double>& iclow, Vector<double>& cupp, Vector<double>& icupp, int& ierr);
 
    /**
     * Reads the various components of a QP in the "general" formulation

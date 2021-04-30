@@ -17,20 +17,23 @@
  */
 class DeSymIndefSolver2 : public DoubleLinearSolver {
 public:
-  std::shared_ptr<DenseStorage> mStorage;
+   std::shared_ptr<DenseStorage> mStorage;
 protected:
-  int nx, ny, n;
+   int nx, ny, n;
 public:
-  DeSymIndefSolver2( const DenseSymMatrix * storage, int nx );
-  void diagonalChanged( int idiag, int extent ) override;
-  void matrixChanged() override;
-  using DoubleLinearSolver::solve;
-  void solve ( OoqpVector& vec ) override;
-  virtual ~DeSymIndefSolver2();
+   DeSymIndefSolver2(const DenseSymMatrix* storage, int nx);
+   void diagonalChanged(int idiag, int extent) override;
+   void matrixChanged() override;
+   using DoubleLinearSolver::solve;
+   void solve(Vector<double>& vec) override;
+   virtual ~DeSymIndefSolver2();
 
 
    bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { assert(false && "TODO : implement"); return {0,0,0}; };
+   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
+      assert(false && "TODO : implement");
+      return {0, 0, 0};
+   };
 
 };
 

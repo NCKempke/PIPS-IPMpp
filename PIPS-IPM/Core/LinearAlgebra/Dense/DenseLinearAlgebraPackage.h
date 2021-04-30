@@ -8,7 +8,9 @@
 #include "LinearAlgebraPackage.h"
 
 #include "DoubleMatrixHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
+
 class DoubleLinearSolver;
 
 /**
@@ -26,16 +28,16 @@ class DoubleLinearSolver;
  */
 class DenseLinearAlgebraPackage : public LinearAlgebraPackage {
 protected:
-  DenseLinearAlgebraPackage() = default;
-  ~DenseLinearAlgebraPackage() override = default;
+   DenseLinearAlgebraPackage() = default;
+   ~DenseLinearAlgebraPackage() override = default;
 public:
-  /** Return the sole instance of this class. This instance must not
-   * ever be deleted. */
-  static DenseLinearAlgebraPackage * soleInstance();
-  SymMatrix * newSymMatrix( int size, int nnz ) const override;
-  GenMatrix * newGenMatrix( int m, int n, int nnz ) const override;
-  OoqpVector *  newVector( int n ) const override;
-  void whatami( char type[32] ) const override;
+   /** Return the sole instance of this class. This instance must not
+    * ever be deleted. */
+   static DenseLinearAlgebraPackage* soleInstance();
+   SymMatrix* newSymMatrix(int size, int nnz) const override;
+   GenMatrix* newGenMatrix(int m, int n, int nnz) const override;
+   Vector<double>* newVector(int n) const override;
+   void whatami(char type[32]) const override;
 };
 
 /**

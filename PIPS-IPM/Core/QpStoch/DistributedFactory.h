@@ -58,16 +58,16 @@ public:
    AbstractLinearSystem* make_linear_system(Problem& problem) override;
 
    /** create x shaped vector using tree */
-   OoqpVector* make_primal_vector() const override;
+   Vector<double>* make_primal_vector() const override;
 
    /** create dual A shaped vector using tree */
-   OoqpVector* make_equalities_dual_vector() const override;
+   Vector<double>* make_equalities_dual_vector() const override;
 
    /** create dual C shaped vector using tree */
-   OoqpVector* make_inequalities_dual_vector() const override;
+   Vector<double>* make_inequalities_dual_vector() const override;
 
    /** create rhs for augmented system using tree */
-   OoqpVector* make_right_hand_side() const override;
+   Vector<double>* make_right_hand_side() const override;
 
    DoubleLinearSolver* make_root_solver();
 
@@ -75,18 +75,26 @@ public:
 
    sLinsysRoot* newLinsysRootHierarchical();
 
-   sLinsysRoot* make_linear_system_root(DistributedQP* problem, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* primal_regularization, OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs);
+   sLinsysRoot* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
+         Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
+         Vector<double>* rhs);
 
    Problem* switchToHierarchicalData(Problem* problem);
 
    void switchToOriginalTree();
 
-   void join_right_hand_side(OoqpVector&, const OoqpVector&, const OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
+   void join_right_hand_side(Vector<double>&, const Vector<double>&, const Vector<double>&, const Vector<double>&) const override {
+      assert(0 && "not implemented here");
+   };
 
-   void separate_variables(OoqpVector&, OoqpVector&, OoqpVector&, const OoqpVector&) const override { assert(0 && "not implemented here"); };
+   void separate_variables(Vector<double>&, Vector<double>&, Vector<double>&, const Vector<double>&) const override {
+      assert(0 && "not implemented here");
+   };
 
-   virtual sLinsysLeaf* make_linear_system_leaf(DistributedQP* problem, OoqpVector* primal_diagonal, OoqpVector* dq, OoqpVector* nomegaInv, OoqpVector* primal_regularization,
-      OoqpVector* dual_equality_regularization, OoqpVector* dual_inequality_regularization, OoqpVector* rhs);
+   virtual sLinsysLeaf*
+   make_linear_system_leaf(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
+         Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
+         Vector<double>* rhs);
 
    virtual DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
 

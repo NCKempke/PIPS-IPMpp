@@ -80,7 +80,7 @@ public:
 private:
    void printComplementarityResiduals(const DistributedVariables& vars) const;
 
-   std::vector<double> gatherFromSolution(OoqpVectorHandle DistributedVariables::* member_to_gather);
+   std::vector<double> gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather);
 
 public:
    std::vector<double> gatherEqualityConsValues();
@@ -339,8 +339,8 @@ double PIPSIpmInterface<FORMULATION, SOLVER>::getObjective() {
 
 template<typename FORMULATION, typename SOLVER>
 double PIPSIpmInterface<FORMULATION, SOLVER>::getFirstStageObjective() const {
-   OoqpVector& x = *(dynamic_cast<DistributedVector<double>&>(*variables->x).first);
-   OoqpVector& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
+   Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->x).first);
+   Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
    return c.dotProductWith(x);
 }
 
@@ -376,7 +376,8 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
 }
 
 template<class FORMULATION, class IPMSOLVER>
-std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution(OoqpVectorHandle DistributedVariables::* member_to_gather) {
+std::vector<double>
+PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -451,8 +452,9 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherEqualityCons
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
 
-   DistributedVector<double>* eq_vals = (postsolved_variables == nullptr) ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rA->cloneFull())
-                                                            : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rA->cloneFull());
+   DistributedVector<double>* eq_vals = (postsolved_variables == nullptr)
+                                        ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rA->cloneFull())
+                                        : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rA->cloneFull());
 
    if (original_problem == nullptr || postsolved_variables == nullptr)
       eq_vals->axpy(1.0, *presolved_problem->bA);
@@ -478,8 +480,9 @@ std::vector<double> PIPSIpmInterface<FORMULATION, IPMSOLVER>::gatherInequalityCo
    if (postsolver != nullptr && postsolved_variables == nullptr)
       this->postsolveComputedSolution();
 
-   DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr) ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rC->cloneFull())
-                                                              : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
+   DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr)
+                                          ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rC->cloneFull())
+                                          : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
 
    if (postsolved_variables == nullptr)
       ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->s);
@@ -513,10 +516,10 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::printComplementarityResiduals(con
    const int my_rank = PIPS_MPIgetRank();
 
    /* complementarity residuals before postsolve */
-   std::unique_ptr<OoqpVectorBase<double>> t_clone{svars.t->cloneFull()};
-   std::unique_ptr<OoqpVectorBase<double>> u_clone{svars.u->cloneFull()};
-   std::unique_ptr<OoqpVectorBase<double>> v_clone{svars.v->cloneFull()};
-   std::unique_ptr<OoqpVectorBase<double>> w_clone{svars.w->cloneFull()};
+   std::unique_ptr<Vector<double>> t_clone{svars.t->cloneFull()};
+   std::unique_ptr<Vector<double>> u_clone{svars.u->cloneFull()};
+   std::unique_ptr<Vector<double>> v_clone{svars.v->cloneFull()};
+   std::unique_ptr<Vector<double>> w_clone{svars.w->cloneFull()};
 
    t_clone->componentMult(*svars.lambda);
    t_clone->selectNonZeros(*svars.iclow);

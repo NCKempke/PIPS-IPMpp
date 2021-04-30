@@ -21,8 +21,8 @@
  */
 class sLinsysLeaf : public DistributedLinearSystem {
 public:
-   sLinsysLeaf(DistributedFactory* factory, DistributedQP* prob_, OoqpVector* dd_, OoqpVector* dq_, OoqpVector* nomegaInv_, OoqpVector* primal_reg_,
-         OoqpVector* dual_y_reg_, OoqpVector* dual_z_reg_, OoqpVector* rhs_);
+   sLinsysLeaf(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
 
    ~sLinsysLeaf() override = default;
 
@@ -30,25 +30,26 @@ public:
    void assembleKKT(DistributedQP*, Variables*) override {};
    void allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) override { factor2(prob, vars); };
 
-   void Lsolve(DistributedQP*, OoqpVector&) override {};
-   void Dsolve(DistributedQP*, OoqpVector& x) override;
-   void Ltsolve(DistributedQP*, OoqpVector&) override {};
+   void Lsolve(DistributedQP*, Vector<double>&) override {};
+   void Dsolve(DistributedQP*, Vector<double>& x) override;
+   void Ltsolve(DistributedQP*, Vector<double>&) override {};
 
-   //void Lsolve2 ( OoqpVector& x ) override;
-   //void Dsolve2 ( OoqpVector& x ) override;
+   //void Lsolve2 ( Vector<double>& x ) override;
+   //void Dsolve2 ( Vector<double>& x ) override;
    void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
 
-   void add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
+   void
+   add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
    //void Ltsolve_internal(  DistributedQP *prob, DistributedVector<double>& x, SimpleVector<double>& xp);
    void deleteChildren() override;
 
    void addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int) override;
 
-   void addLniziLinkCons(DistributedQP* prob, OoqpVector& z0_, OoqpVector& zi_, bool) override;
+   void addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool) override;
 
    void addInnerBorderKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res,
          int begin_cols, int end_cols, int) override;
@@ -57,7 +58,7 @@ public:
          bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) override;
 
 protected:
-   void add_regularization_diagonal(int offset, double regularization, OoqpVector& regularization_vector);
+   void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
 
    static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
 
