@@ -345,7 +345,7 @@ namespace pips_options
 
       double_options["REGULARIZATION_MIN_PRIMAL"] = 1e-20;
       double_options["REGULARIZATION_MIN_DUAL"] = 1e-20;
-
+      double_options["REGULARIZATION_MAX_PRIMAL"] = 1e40;
       setPresolveDefaults();
    }
 
