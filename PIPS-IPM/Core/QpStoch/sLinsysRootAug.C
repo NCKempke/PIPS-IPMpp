@@ -619,7 +619,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMa
    ///////////////////////////////////////////////////////////////////////
    SparseGenMatrix& C = data->getLocalD();
 
-#pragma omp parallel for schedule(dynamic, 1) default(none) shared(rhs_start, n_rhs, length_reduced, rhs_mat_transp, length_rhs, m, C)
+#pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       assert(rhs_i < m);
 
@@ -679,7 +679,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMa
 
    // copy the solution components and calculate r3
    // copy rhs1 and rhs2
-#pragma omp parallel for schedule(dynamic, 1) default(none) shared(rhs_start,n_rhs,length_reduced,rhs_mat_transp,length_rhs, C)
+#pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
@@ -1926,7 +1926,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseGenMatrix& rhs_mat_transp, int n
    assert(rhs_start + n_rhs <= n_cols);
 
    // set rhs contributed by other procs to zero
-#pragma omp parallel for schedule(dynamic, 1) default(none) shared(n_cols, rhs_start, n_rhs, rhs_mat_transp, n)
+#pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = 0; rhs_i < n_cols; ++rhs_i) {
       if (rhs_start <= rhs_i && rhs_i < rhs_start + n_rhs)
          continue;
