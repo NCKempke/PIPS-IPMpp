@@ -68,7 +68,7 @@ public:
 
    /** A quantity that measures progress toward feasibility. IN terms of the abstract problem formulation, this quantity is defined as
     *  @code
-    * x' * Q * x - b' * y + c' * x - d' * z
+    * x' * Q * x + c' * x - b' * y - d' * z
     *  @endcode
     */
    double duality_gap() const { return mDualityGap; };
