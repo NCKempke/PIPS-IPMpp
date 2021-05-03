@@ -17,7 +17,6 @@
 #include "StochOptions.h"
 #include "StochGenMatrix.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "StochPostsolver.h"
 #include "StochPresolverBoundStrengthening.h"
 #include "StochPresolverModelCleanup.h"

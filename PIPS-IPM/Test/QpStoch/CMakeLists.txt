@@ -8,5 +8,5 @@ include_directories(../../Core/Vector)
 include_directories(../../Core/Abstract)
 include_directories(../../Core/Utilities)
 
-package_add_test(sTreeCallbacksTest t_sTreeCallbacks.cpp)
+package_add_test(DistributedTreeCallbacksTest t_DistributedTreeCallbacks.cpp)
 package_add_test(sDataTest t_sData.cpp)

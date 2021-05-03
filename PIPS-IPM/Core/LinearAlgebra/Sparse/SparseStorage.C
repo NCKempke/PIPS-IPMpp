@@ -7,14 +7,12 @@
 #include <cassert>
 #include "SparseStorage.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
 #include <limits>
 #include <fstream>
 #include <string>
 #include <algorithm>
-#include "pipsport.h"
 
 int SparseStorage::instances = 0;
 

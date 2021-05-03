@@ -6,11 +6,8 @@
 #include "DistributedVector.h"
 #include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
-
-#include "pipsport.h"
 #include "StochOptions.h"
 #include "BorderedSymMatrix.h"
-
 #include <iomanip>
 #include <iostream>
 #include <algorithm>

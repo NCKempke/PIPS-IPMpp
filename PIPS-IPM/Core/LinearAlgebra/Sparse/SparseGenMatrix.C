@@ -10,7 +10,6 @@
 #include "DoubleMatrixTypes.h"
 #include <limits>
 #include "SparseSymMatrix.h"
-#include "pipsport.h"
 
 int SparseGenMatrix::isKindOf(int type) const {
    return type == kSparseGenMatrix || type == kGenMatrix;

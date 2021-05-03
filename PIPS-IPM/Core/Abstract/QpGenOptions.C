@@ -6,7 +6,6 @@
  */
 
 #include "QpGenOptions.h"
-#include <limits>
 
 namespace qpgen_options {
    QpGenOptions::QpGenOptions() {

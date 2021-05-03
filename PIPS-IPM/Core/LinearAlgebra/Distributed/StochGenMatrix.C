@@ -1,11 +1,8 @@
 #include "StochGenMatrix.h"
-
 #include "DoubleMatrixTypes.h"
 #include "DistributedVector.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
-#include "pipsport.h"
-
 #include <limits>
 #include <algorithm>
 #include <numeric>

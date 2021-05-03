@@ -1,14 +1,9 @@
 #include "DistributedVector.h"
-
-#include "VectorUtilities.h"
-#include "pipsport.h"
 #include "DistributedTree.h"
 #include "DistributedQP.hpp"
-
 #include <cassert>
 #include <cstring>
 #include <iostream>
-#include <iomanip>
 #include <limits>
 #include <math.h>
 #include <numeric>

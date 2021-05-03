@@ -4,7 +4,6 @@
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SimpleVector.h"
-#include "StochVectorHandle.h"
 
 #include "mpi.h"
 

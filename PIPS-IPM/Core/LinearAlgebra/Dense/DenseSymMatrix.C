@@ -2,12 +2,8 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include <cmath>
 #include <cassert>
-
 #include "DenseSymMatrix.h"
-#include "DeSymPSDSolver.h"
-#include "DeSymIndefSolver.h"
 #include "OoqpBlas.h"
 #include "SimpleVector.h"
 

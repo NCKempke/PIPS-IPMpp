@@ -5,8 +5,6 @@
 #include "RegularizationStrategy.h"
 #include "StochOptions.h"
 #include "pipsdef.h"
-
-#include<iostream>
 #include<cmath>
 
 RegularizationStrategy::RegularizationStrategy(unsigned int positive_eigenvalues_expected_, unsigned int negative_eigenvalues_expected_)

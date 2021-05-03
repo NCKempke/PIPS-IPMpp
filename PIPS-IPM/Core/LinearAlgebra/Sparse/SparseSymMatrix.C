@@ -8,8 +8,6 @@
 #include <cassert>
 #include <cmath>
 #include "SimpleVector.h"
-#include "pipsport.h"
-
 #include "DoubleMatrixTypes.h"
 
 int SparseSymMatrix::isKindOf(int type) const {

@@ -1,8 +1,5 @@
 #include "PCGSolver.h"
 #include "SimpleVector.h"
-#include "pipsport.h"
-
-#include <math.h>
 
 extern int gOoqpPrintLevel;
 

@@ -4,18 +4,14 @@
 
 #include "DistributedTreeCallbacks.h"
 #include "DistributedQP.hpp"
-
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
 #include "SimpleVector.h"
-#include "DoubleMatrixTypes.h"
-
 #include <cmath>
 #include <algorithm>    // std::swap
 #include <numeric>
 
-#include "pipsport.h"
 
 DistributedTreeCallbacks::DistributedTreeCallbacks(const DistributedTreeCallbacks& other) : DistributedTree(other), N_INACTIVE{other.N_INACTIVE}, MY_INACTIVE{other.MY_INACTIVE},
       MZ_INACTIVE{other.MZ_INACTIVE}, MYL_INACTIVE{other.MYL_INACTIVE}, MZL_INACTIVE{other.MZL_INACTIVE}, nx_active{other.nx_active},

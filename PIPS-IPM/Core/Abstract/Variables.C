@@ -1,4 +1,3 @@
-#include <cstring>
 #include <iostream>
 #include <SimpleVector.h>
 #include "Variables.h"

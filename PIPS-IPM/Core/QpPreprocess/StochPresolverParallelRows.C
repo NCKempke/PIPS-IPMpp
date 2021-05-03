@@ -7,8 +7,6 @@
 
 //#define PIPS_DEBUG
 #include "StochPresolverParallelRows.h"
-
-#include "pipsport.h"
 #include "StochOptions.h"
 #include "StochVectorUtilities.h"
 

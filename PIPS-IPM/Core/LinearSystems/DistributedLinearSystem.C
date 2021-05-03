@@ -5,14 +5,10 @@
 #include "StochOptions.h"
 #include "BorderedSymMatrix.h"
 #include "DistributedLinearSystem.h"
-#include "DistributedTree.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseLinearAlgebraPackage.h"
 #include "math.h"
-
-#include "pipsport.h"
-#include "omp.h"
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, bool is_hierarchy_root) : LinearSystem(
       factory_, problem), data{problem}, computeBlockwiseSC(pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")),

@@ -2,15 +2,11 @@
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "Problem.h"
-#include "Residuals.h"
 #include "DistributedVector.h"
 #include "DistributedTree.h"
 #include "DistributedTreeCallbacks.h"
-
 #include "LinearAlgebraPackage.h"
-
 #include <iostream>
-#include <fstream>
 
 DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,
       Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in,

@@ -5,9 +5,7 @@
 #include <cassert>
 #include "OoqpBlas.h"
 #include "DenseStorage.h"
-#include "DoubleMatrix.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "SimpleVector.h"
 
 int DenseStorageInstances = 0;

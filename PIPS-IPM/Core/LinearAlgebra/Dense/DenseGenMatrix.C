@@ -6,13 +6,9 @@
  */
 
 #include <cassert>
-#include <cmath>
-
 #include "DenseGenMatrix.h"
-#include "DenseSymMatrix.h"
 #include "OoqpBlas.h"
 #include "SimpleVector.h"
-
 #include "DoubleMatrixTypes.h"
 #include "SparseGenMatrix.h"
 

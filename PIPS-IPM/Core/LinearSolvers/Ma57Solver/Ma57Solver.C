@@ -5,13 +5,11 @@
  */
 
 #include "Ma57Solver.h"
-
 #include <algorithm>
 #include "SparseStorage.h"
 #include "SparseSymMatrix.h"
 #include "SimpleVector.h"
 #include "DenseGenMatrix.h"
-#include "pipsport.h"
 #include <mpi.h>
 
 extern int gOoqpPrintLevel;

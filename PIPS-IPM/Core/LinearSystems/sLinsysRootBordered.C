@@ -6,15 +6,11 @@
  */
 
 #include "sLinsysRootBordered.h"
-
 #include "BorderedSymMatrix.h"
-
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
 #include "StochOptions.h"
-
-#include "sLinsysRootAug.h"
 #include "DistributedFactory.h"
 
 sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {

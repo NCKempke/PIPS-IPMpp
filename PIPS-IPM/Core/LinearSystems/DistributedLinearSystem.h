@@ -101,7 +101,6 @@ public:
    };
 
    using BorderMod = BorderMod_Block<DenseGenMatrix>;
-   using BorderModVector = BorderMod_Block<DistributedVector<double>>;
 
 
    template<typename T>

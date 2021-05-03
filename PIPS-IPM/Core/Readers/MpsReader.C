@@ -4,7 +4,6 @@
 
 #include "MpsReader.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "DoubleMatrix.h"
 #include "SimpleVector.h"
 #include <cstring>

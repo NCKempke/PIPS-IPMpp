@@ -15,18 +15,12 @@
 #include "ProblemFactory.h"
 #include "DistributedFactory.h"
 #include "StochOptions.h"
-
-#include "DistributedQP.hpp"
-
 #include <iostream>
 #include <algorithm>
-
 #include <cstdio>
 #include <cassert>
 #include <cmath>
-
 #include "mpi.h"
-#include "Variables.h"
 #include "LinearSystem.h"
 #include "DistributedRootLinearSystem.h"
 

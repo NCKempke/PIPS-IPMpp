@@ -8,7 +8,6 @@
 // turn the warnings back on
 #pragma GCC diagnostic pop
 
-#include <assert.h>
 #include <fstream>
 #include <sstream>
 

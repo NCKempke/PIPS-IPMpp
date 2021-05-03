@@ -3,11 +3,9 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "Ma27Solver.h"
-#include "Mc30Scaler.h"
 #include "SparseSymMatrix.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
-
 #include <fstream>
 #include <algorithm>
 

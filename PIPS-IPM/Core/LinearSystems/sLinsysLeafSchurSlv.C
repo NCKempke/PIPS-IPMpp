@@ -3,14 +3,11 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysLeafSchurSlv.h"
-#include "DistributedTree.h"
-#include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"
 #include "SparseGenMatrix.h"
 #include "PardisoSolver.h"
 #include "PardisoSchurSolver.h"
-#include "Ma57Solver.h"
 
 extern int gLackOfAccuracy;
 

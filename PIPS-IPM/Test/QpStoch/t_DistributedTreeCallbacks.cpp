@@ -1,7 +1,4 @@
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "mpi.h"
 #include "DistributedTreeCallbacks.h"
 #include "StochOptions.h"
 #include <memory>
