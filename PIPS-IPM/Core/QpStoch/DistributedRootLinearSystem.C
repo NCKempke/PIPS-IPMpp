@@ -9,8 +9,6 @@
 #include "DistributedLeafLinearSystem.h"
 #include "StochOptions.h"
 
-#include "pipsport.h"
-
 /*********************************************************************/
 /************************** ROOT *************************************/
 /*********************************************************************/
@@ -51,16 +49,13 @@ void DistributedRootLinearSystem::init() {
 }
 
 DistributedRootLinearSystem::~DistributedRootLinearSystem() {
-   for (size_t c = 0; c < children.size(); c++)
-      delete children[c];
+   for (auto & c : children)
+      delete c;
 
    delete kktDist;
 
    delete[] sparseKktBuffer;
 }
-
-//this variable is just reset in this file; children will default to the "safe" linear solver
-extern int gLackOfAccuracy;
 
 void DistributedRootLinearSystem::assembleKKT(DistributedQP* prob, Variables* vars) {
    if (is_hierarchy_root)
@@ -423,7 +418,7 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse
    assert(F0vec_border);
    assert(G0vec_border);
 
-   SparseSymMatrix& SC = dynamic_cast<SparseSymMatrix&>(SC_);
+   auto& SC = dynamic_cast<SparseSymMatrix&>(SC_);
 
    int dummy, mX0;
    X0.getSize(mX0, dummy);
@@ -615,29 +610,29 @@ void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    assert(border.A.mat);
    assert(border.C.mat);
 
-   SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
+   auto& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
    int mA0, nA0;
    A0_border.getSize(mA0, nA0);
 
-   SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
+   auto& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
    int mC0, nC0;
    C0_border.getSize(mC0, nC0);
 
    assert(border.F.mat);
    assert(border.A.mat_link);
-   SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
+   auto& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
    int mF0V, nF0V;
    F0vec_border.getSize(mF0V, nF0V);
-   SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
+   auto& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
    int mF0C, nF0C;
    F0cons_border.getSize(mF0C, nF0C);
 
    assert(border.C.mat_link);
    assert(border.G.mat);
-   SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
+   auto& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
    int mG0V, nG0V;
    G0vec_border.getSize(mG0V, nG0V);
-   SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
+   auto& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
    int mG0C, nG0C;
    G0cons_border.getSize(mG0C, nG0C);
 
@@ -645,7 +640,7 @@ void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
    assert(x0.length() == nA0 + mF0C + mG0C);
 
-   SimpleVector<double>& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+   auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
    double* rhs01 = &rhs0[0];
    double* rhs02 = &rhs0[nF0C];
@@ -683,29 +678,29 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
       assert(border.A.mat);
       assert(border.C.mat);
 
-      SparseGenMatrix& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
+      auto& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
       int mA0, nA0;
       A0_border.getSize(mA0, nA0);
 
-      SparseGenMatrix& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
+      auto& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
       int mC0, nC0;
       C0_border.getSize(mC0, nC0);
 
       assert(border.F.mat);
       assert(border.A.mat_link);
-      SparseGenMatrix& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
+      auto& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
       int mF0V, nF0V;
       F0vec_border.getSize(mF0V, nF0V);
-      SparseGenMatrix& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
+      auto& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
       int mF0C, nF0C;
       F0cons_border.getSize(mF0C, nF0C);
 
       assert(border.C.mat_link);
       assert(border.G.mat);
-      SparseGenMatrix& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
+      auto& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
       int mG0V, nG0V;
       G0vec_border.getSize(mG0V, nG0V);
-      SparseGenMatrix& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
+      auto& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
       int mG0C, nG0C;
       G0cons_border.getSize(mG0C, nG0C);
 
@@ -713,7 +708,7 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
       assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
       assert(b0.length() == nA0 + mF0C + mG0C);
 
-      SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+      auto& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
       SimpleVector<double> zi1(&zi[0], nF0C);
       SimpleVector<double> zi2(&zi[nF0C], mA0);
@@ -740,7 +735,7 @@ void DistributedRootLinearSystem::Ltsolve2(DistributedQP*, DistributedVector<dou
    assert(pips_options::getBoolParameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
 
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
 
    for (size_t i = 0; i < children.size(); ++i) {
       children[i]->computeInnerSystemRightHandSide(*b.children[i], x0, true);
@@ -767,7 +762,7 @@ void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
       }
       else {
          assert(prob->children[it]);
-         DistributedFactory* stochFactory = dynamic_cast<DistributedFactory*>(factory);
+         auto* stochFactory = dynamic_cast<DistributedFactory*>(factory);
          if (is_hierarchy_root) {
             assert(prob->isHierarchyRoot());
             assert(prob->children.size() == 1);
@@ -793,15 +788,15 @@ void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
 }
 
 void DistributedRootLinearSystem::deleteChildren() {
-   for (size_t it = 0; it < children.size(); it++) {
-      children[it]->deleteChildren();
-      delete children[it];
+   for (auto& it : children) {
+      it->deleteChildren();
+      delete it;
    }
    children.clear();
 }
 
 void DistributedRootLinearSystem::initProperChildrenRange() {
-   assert(children.size() > 0);
+   assert(!children.empty());
 
    int childStart = -1;
    int childEnd = -1;
@@ -842,8 +837,8 @@ void DistributedRootLinearSystem::put_primal_diagonal() {
 
    xDiag = primal_diagonal_stoch.first;
 
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->put_primal_diagonal();
+   for (auto & it : children)
+      it->put_primal_diagonal();
 }
 
 void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
@@ -855,8 +850,8 @@ void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
    zDiag = nomegaInv_stoch.first;
    zDiagLinkCons = nomegaInv_stoch.last;
 
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->put_dual_inequalites_diagonal();
+   for (auto & it : children)
+      it->put_dual_inequalites_diagonal();
 }
 
 void DistributedRootLinearSystem::AddChild(DistributedLinearSystem* child) {
@@ -871,7 +866,7 @@ void DistributedRootLinearSystem::initializeKKT(DistributedQP*, Variables*) {
    if (hasSparseKkt)
       dynamic_cast<SparseSymMatrix*>(kkt.get())->symPutZeroes();
    else {
-      DenseSymMatrix* kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+      auto* kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
       myAtPutZeros(kktd);
    }
 }
@@ -888,7 +883,7 @@ void DistributedRootLinearSystem::reduceKKT(DistributedQP* prob) {
 
 /* collects (reduces) lower left part of dense global symmetric Schur complement */
 void DistributedRootLinearSystem::reduceKKTdense() {
-   DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    // parallel communication
    if (iAmDistrib) {
@@ -916,7 +911,7 @@ void DistributedRootLinearSystem::reduceKKTsparse() {
       return;
    assert(kkt);
 
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
    int* const krowKkt = kkts.krowM();
    double* const MKkt = kkts.M();
@@ -1014,7 +1009,7 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
 
    assert(kkt && hasSparseKkt);
 
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
    int* const krowKkt = kkts.krowM();
    int* const jColKkt = kkts.jcolM();
@@ -1037,7 +1032,7 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
    std::vector<MatrixEntryTriplet> prevEntries = this->packKKTdistOutOfRangeEntries(prob, childStart, childEnd);
    std::vector<MatrixEntryTriplet> myEntries(0);
 
-   assert(prevEntries.size() > 0 && prevEntries[0].row == -1 && prevEntries[0].col == -1);
+   assert(!prevEntries.empty() && prevEntries[0].row == -1 && prevEntries[0].col == -1);
 
    // odd processes send first (one process back)
    if (myRank % 2 != 0) {
@@ -1046,7 +1041,7 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
 
    // even processes (except last) receive first
    if (myRank % 2 == 0 && myRank != size - 1) {
-      assert(myEntries.size() == 0);
+      assert(myEntries.empty());
       myEntries = this->receiveKKTdistLocalEntries();
    }
 
@@ -1057,11 +1052,11 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
 
    // odd processes (except last) receive
    if (myRank % 2 != 0 && myRank != size - 1) {
-      assert(myEntries.size() == 0);
+      assert(myEntries.empty());
       myEntries = this->receiveKKTdistLocalEntries();
    }
 
-   assert(myEntries.size() > 0 || myRank == size - 1);
+   assert(!myEntries.empty() || myRank == size - 1);
 
    int lastRow = 0;
    int lastC = -1;
@@ -1179,7 +1174,7 @@ std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLine
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
 
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
    const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
    const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
    int* const krowKkt = kkts.krowM();
@@ -1247,7 +1242,7 @@ void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
    const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
    const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
 
-   SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
    int* const krowKkt = kkts.krowM();
    int* const jColKkt = kkts.jcolM();
@@ -1546,7 +1541,7 @@ void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat, int row, int
       M[row][j] = 0.0;
    }
 
-   int nToCopy = colExtent * sizeof(double);
+   unsigned long nToCopy = colExtent * sizeof(double);
 
    for (int i = row + 1; i < row + rowExtent; i++) {
       memcpy(M[i] + col, M[row] + col, nToCopy);
@@ -1554,7 +1549,7 @@ void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat, int row, int
 }
 
 void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat) {
-   int n = mat->size();
+   int n = static_cast<int>(mat->size());
    myAtPutZeros(mat, 0, 0, n, n);
 }
 
@@ -1567,12 +1562,12 @@ void DistributedRootLinearSystem::addTermToSchurCompl(DistributedQP* prob, size_
    }
    else {
       if (hasSparseKkt) {
-         SparseSymMatrix& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+         auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
 
          children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
       }
       else {
-         DenseSymMatrix& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
+         auto& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
          children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
       }
    }
@@ -1596,7 +1591,7 @@ void DistributedRootLinearSystem::submatrixAllReduce(DenseSymMatrix* A, int star
    int chunk_size = (CHUNK_SIZE / n) * n;
    chunk_size = std::min(chunk_size, n * nRows);
 
-   double* chunk = new double[chunk_size];
+   auto* chunk = new double[chunk_size];
 
    int rows_in_chunk = chunk_size / n;
 
@@ -1640,7 +1635,7 @@ void DistributedRootLinearSystem::allreduceMatrix(DoubleMatrix& mat, bool is_spa
 
    if (is_sparse) {
       if (is_sym) {
-         SparseSymMatrix& matsp = dynamic_cast<SparseSymMatrix&>(mat);
+         auto& matsp = dynamic_cast<SparseSymMatrix&>(mat);
 
          int* const krowKkt = matsp.krowM();
          double* const MKkt = matsp.M();
@@ -1651,7 +1646,7 @@ void DistributedRootLinearSystem::allreduceMatrix(DoubleMatrix& mat, bool is_spa
          reduceToAllProcs(nnzKkt, MKkt);
       }
       else {
-         SparseGenMatrix& matsp = dynamic_cast<SparseGenMatrix&>(mat);
+         auto& matsp = dynamic_cast<SparseGenMatrix&>(mat);
 
          int* const krowKkt = matsp.krowM();
          double* const MKkt = matsp.M();
@@ -1697,8 +1692,8 @@ void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRo
    const int endRow = startRow + nRows;
    const int buffersize = nRows * nCols;
 
-   double* const bufferSend = new double[buffersize];
-   double* const bufferRecv = new double[buffersize];
+   auto* const bufferSend = new double[buffersize];
+   auto* const bufferRecv = new double[buffersize];
 
    // copy into send buffer
    int counter = 0;
@@ -1748,8 +1743,8 @@ void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymMatrix* A,
    const int buffersize = (subsize * subsize + subsize) / 2;
    assert(buffersize > 0);
 
-   double* const bufferSend = new double[buffersize];
-   double* const bufferRecv = new double[buffersize];
+   auto* const bufferSend = new double[buffersize];
+   auto* const bufferRecv = new double[buffersize];
 
    int counter = 0;
 

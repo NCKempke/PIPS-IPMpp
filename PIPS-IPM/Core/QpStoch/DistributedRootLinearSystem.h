@@ -87,22 +87,22 @@ public:
    ~DistributedRootLinearSystem() override;
 
    //utilities
-   void myAtPutZeros(DenseSymMatrix* mat);
-   void myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent);
+   static void myAtPutZeros(DenseSymMatrix* mat);
+   static void myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent);
 
    // all_reduces specified submatrix (in chunks)
-   void submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    void allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm);
 
-   void submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
-   void submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reduces specified submatrix as a while
-   void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reducees lower half (including diagonal) of specified submatrix
-   void submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm);
+   static void submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm);
 
    SCsparsifier precondSC;
 
@@ -138,11 +138,11 @@ private:
    std::vector<MatrixEntryTriplet> receiveKKTdistLocalEntries() const;
    std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int childEnd) const;
 
-   void finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border, SparseGenMatrix* C0_border,
+   static void finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border, SparseGenMatrix* C0_border,
          SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border, bool is_sym,
          int begin_rows, int end_rows);
 
-   void finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border, SparseGenMatrix* C0_border,
+   static void finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border, SparseGenMatrix* C0_border,
          SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border, int begin_rows,
          int end_rows);
 
