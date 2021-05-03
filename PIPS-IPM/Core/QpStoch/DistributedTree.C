@@ -123,16 +123,6 @@ void DistributedTree::getGlobalSizes(long long& n, long long& my, long long& myl
    myl = MYL, mzl = MZL;
 }
 
-int DistributedTree::innerSize(int which) const {
-   assert(false);
-   if (which == 0)
-      return nx();
-   if (which == 1)
-      return my();
-   assert(which == 2);
-   return mz();
-}
-
 DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL) {
       return new DistributedDummyVector<double>();
@@ -343,85 +333,8 @@ void DistributedTree::syncMonitoringData(std::vector<double>& vCPUTotal) {
    computeNodeTotal(); //updates this->IPMIterExecTIME
 }
 
-
 bool DistributedTree::balanceLoad() {
    return false; //disabled for now
-   //before synchronization, compute the total time recorded on this CPU
-   //updates this->IPMIterExecTIME
-   computeNodeTotal();
-
-   int nCPUs;
-   MPI_Comm_size(commWrkrs, &nCPUs);
-   std::vector<double> cpuExecTm(nCPUs, 0.0);
-   cpuExecTm[rankMe] = this->IPMIterExecTIME;
-
-   //if(sleepFlag && rankMe==1) {cpuExecTm[1] += 4.0;}
-
-   this->syncMonitoringData(cpuExecTm);
-
-   //!log
-#if defined(STOCH_TESTING) && !defined(TIMING)
-   if(!rankMe) {
-     printf("Iteration times per process:\n");
-     for(int it=0; it<nCPUs; it++) printf("%8.4f ", cpuExecTm[it]);
-     printf("\n\n");
-     this->displayExecTimes(0);
-   }
-#endif
-   if (nCPUs == 1)
-      return 0;
-
-   double total = 0.0;
-   double maxLoad = 0, minLoad = 1.e+10;
-   for (int it = 0; it < nCPUs; it++) {
-      total += cpuExecTm[it];
-      if (maxLoad < cpuExecTm[it])
-         maxLoad = cpuExecTm[it];
-      if (minLoad > cpuExecTm[it])
-         minLoad = cpuExecTm[it];
-   }
-
-   if (maxLoad < 1.0)
-      return 0;
-
-   double balance = std::max(maxLoad / total * nCPUs, total / nCPUs / minLoad);
-   if (balance < 1.3) { //it is OK, no balancing
-
-      //decide if balancing is needed due to the 'fat' nodes
-      total = 0.0;
-      maxLoad = 0;
-      for (size_t i = 0; i < children.size(); i++) {
-         total += children[i]->IPMIterExecTIME;
-
-         //if(!rankMe) printf("%7.4f ", children[i]->IPMIterExecTIME);
-
-         if (maxLoad < children[i]->IPMIterExecTIME)
-            maxLoad = children[i]->IPMIterExecTIME;
-      }
-      //if(!rankMe) printf("\n");//aaa
-
-      balance = maxLoad / total * children.size();
-
-      //if(!rankMe) printf("CPU node balance=%g\n", balance);
-
-      if (balance < 2.00)
-         return 0;
-      //else if(!rankMe) printf("!!! Balancing NEEDED: node balance=%g\n", balance);
-   }
-   else {
-      //if(!rankMe) printf("!!! Balancing NEEDED: CPU balance=%g\n", balance);
-   }
-   return 0;
-   //save the current MPI related information
-   saveCurrentCPUState();
-
-   cpuExecTm.clear();
-
-   std::vector<int> ranks(nCPUs);
-   for (int i = 0; i < nCPUs; i++)
-      ranks[i] = i;
-   assignProcesses(MPI_COMM_WORLD, ranks);
-   return 1;
 }
 
 #define maSend 1
@@ -433,8 +346,6 @@ void DistributedTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, in
    // is currently assigned to cpu 'rank'?
    int isAssigned = isInVector(rank, myProcs);
 
-   //if(0==wasAssigned && 0==isAssigned) return;
-   //if(1==wasAssigned && 1==isAssigned) return;
    syncNeeded = 0;
    sendOrRecv = 0;
    toFromCPU = -1;
@@ -566,91 +477,6 @@ void DistributedTree::printProcessTree() const {
       if (rankMe == 0)
          std::cout << level_full << "\n\n";
    }
-
-//   std::vector<const sTree*> queue;
-//   queue.insert(queue.end(), this);
-//
-//   size_t curr_size = queue.size();
-//   size_t count = 0;
-//   bool node_layer_reached = false;
-//   bool node_layer_next = false;
-//   bool tree_unbalanced = false;
-//
-//   std::stringstream curr_level_output;
-//   while( !queue.empty() )
-//   {
-//      printTreeLayer(queue);
-//
-//      const sTree* child = queue.front();
-//
-//      if( !child )
-//      {
-//         curr_level_output << "| ";
-//         queue.erase(queue.begin());
-//         ++count;
-//      }
-//      else
-//      if( node_layer_reached && child->myProcs.size() == 1 )
-//      {
-//         assert(child);
-//
-//         unsigned int n_nodes = 1;
-//         queue.erase(queue.begin());
-//         ++count;
-//
-//         if( child->myProcs[0] != rankMe )
-//            continue;
-//
-//
-//         while( !queue.empty() && queue.front() && queue.front()->myProcs[0] == rankMe )
-//         {
-//            ++n_nodes;
-//            queue.erase(queue.begin());
-//            ++count;
-//         }
-//
-//         curr_level_output << "[ " << rankMe << ": " << n_nodes << " leafs ] ";
-//      }
-//      else
-//      {
-//         assert( child );
-//         const bool I_print = child->commWrkrs != MPI_COMM_NULL && PIPS_MPIgetRank( child->commWrkrs ) == 0;
-//
-//         std::cout << "I print " << I_print << std::endl;
-//         if( node_layer_reached )
-//            tree_unbalanced = true;
-//
-//         assert( !child->sub_root );
-//         if( child->myProcs.size() >= 1 && I_print )
-//         {
-//            if( child->myProcs.size() > 1 )
-//               curr_level_output << "[ " << child->myProcs.front() << "-" << child->myProcs.back() << " ] ";
-//            else
-//               curr_level_output << "[ " << child->myProcs.front() << " ] ";
-//         }
-//
-//         if( !node_layer_reached )
-//         {
-//
-//         }
-//
-//         queue.erase(queue.begin());
-//         ++count;
-//      }
-//
-//      if( count == curr_size )
-//      {
-//         if( node_layer_next )
-//            node_layer_reached = true;
-//         curr_size = queue.size();
-//         count = 0;
-//
-//         const std::string level = PIPS_MPIallgatherString(curr_level_output.str());
-//         curr_level_output.str(std::string());
-//         if( rankMe ==  0 )
-//            std::cout << level << "\n\n";
-//      }
-//   }
 
    PIPS_MPIgetLogicOrInPlace(tree_unbalanced);
    if (tree_unbalanced && rankMe == 0)

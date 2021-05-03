@@ -1501,32 +1501,6 @@ void DistributedQP::splitData() {
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getChildComms();
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
 
-// TODO : DELETEME
-//   Vector<double>* x_bef = g;
-//   Vector<double>* y_bef = bA;
-//   Vector<double>* z_bef = bl;
-//   x_bef->setToConstant(2.0);
-//   y_bef->setToConstant(2.0);
-//   z_bef->setToConstant(2.0);
-//
-//   const double norm2_bef = g->twonorm();
-//   const double norm1_bef = g->onenorm();
-//
-//   A->transMult(2.0, *x_bef, 3.0, *y_bef);
-//   const double A2norm_bef = x_bef->twonorm();
-//   const double A1norm_bef = x_bef->onenorm();
-//
-//   C->mult(2.0, *z_bef, 3.0, *x_bef);
-//   const double C2norm_bef = z_bef->twonorm();
-//   const double C1norm_bef = z_bef->onenorm();
-//
-//   Vector<double>* x_bef2 = g->clone();
-//   x_bef2->setToConstant(2.0);
-//   Q->transMult(2.0, *x_bef2, 3.0, *x_bef);
-//
-//   const double Q2norm_bef = x_bef2->twonorm();
-//   const double Q1norm_bef = x_bef2->onenorm();
-
    if (stochNode->isHierarchicalInnerLeaf()) {
       dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
       dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),

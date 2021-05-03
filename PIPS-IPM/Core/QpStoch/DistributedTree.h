@@ -114,7 +114,6 @@ public:
    unsigned int nChildren() const { return children.size(); }
    MPI_Comm getCommWorkers() const { return commWrkrs; };
 
-   int innerSize(int which) const;
    virtual int nx() const = 0;
    virtual int my() const = 0;
    virtual int myl() const;
