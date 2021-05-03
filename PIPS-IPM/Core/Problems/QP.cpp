@@ -24,13 +24,7 @@ void QP::hessian_multiplication(double beta, Vector<double>& y, double alpha, co
 }
 
 double QP::datanorm() const {
-   double norm = Problem::datanorm();
-   double componentNorm;
-
-   componentNorm = Q->abmaxnorm();
-   if (componentNorm > norm)
-      norm = componentNorm;
-   return norm;
+   return std::max(Problem::datanorm(), Q->abmaxnorm());
 }
 
 void QP::datainput(MpsReader* reader, int& iErr) {
@@ -95,10 +89,7 @@ void QP::createScaleFromQ() {
 
    // Modifying scVector is equivalent to modifying sc
    SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
-
-   int scLength = scVector.length();
-
-   for (int i = 0; i < scLength; i++) {
+   for (int i = 0; i < scVector.length(); i++) {
       if (scVector[i] > 1)
          scVector[i] = 1.0 / sqrt(scVector[i]);
       else

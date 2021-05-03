@@ -4,10 +4,9 @@
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SimpleVector.h"
-
 #include "mpi.h"
-
 #include <vector>
+#include <memory>
 
 class DistributedTree;
 
@@ -59,7 +58,6 @@ public:
    void setToConstant(T c) override;
    bool isZero() const override;
 
-   void randomize(T, T, T*) override { assert("Not implemented" && 0); };
    void copyFrom(const Vector<T>& v) override;
    void copyFromAbs(const Vector<T>& v) override;
    double twonorm() const override;
@@ -88,11 +86,6 @@ public:
    void scalarMult(T num) override;
    void writeToStream(std::ostream& out, int offset = 0) const override;
    void writefToStream(std::ostream& out, const char format[]) const override;
-
-   void writeMPSformatOnlyRhs(std::ostream&, const std::string, const Vector<T>*) const override {};
-   void writeMPSformatBoundsWithVar(std::ostream&, const std::string, const Vector<T>*, bool) const override {};
-   void writeMPSformatRhs(std::ostream& out, int rowType, const Vector<T>* irhs) const override;
-   void writeMPSformatBounds(std::ostream& out, const Vector<T>* ix, bool upperBound) const override;
 
    void scale(T alpha) override;
 
@@ -190,7 +183,6 @@ public:
    bool isZero() const override { return true; };
    void setToZero() override {};
    void setToConstant(T) override {};
-   void randomize(T, T, T*) override {};
    void copyFrom(const Vector<T>&) override {};
    void copyFromAbs(const Vector<T>&) override {};
    double twonorm() const override { return 0.0; }
@@ -220,12 +212,6 @@ public:
    void scalarMult(T) override {};
    void writeToStream(std::ostream&, int) const override {};
    void writefToStream(std::ostream&, const char[]) const override {};
-
-   void writeMPSformatOnlyRhs(std::ostream&, const std::string, const Vector<T>*) const override {};
-   void writeMPSformatRhs(std::ostream&, int, const Vector<T>*) const override {};
-   void writeMPSformatBounds(std::ostream&, const Vector<T>*, bool) const override {};
-   void writeMPSformatBoundsWithVar(std::ostream&, const std::string, const Vector<T>*, bool) const override {};
-
    void scale(T) override {};
 
    /** this += alpha * x */

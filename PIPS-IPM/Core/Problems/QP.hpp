@@ -7,10 +7,6 @@
 
 #include "Problem.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "DoubleMatrixHandle.h"
 
 class MpsReader;
 
@@ -38,7 +34,7 @@ protected:
    QP() = default;
 
 public:
-   SymMatrixHandle Q;
+   SmartPointer<SymMatrix> Q;
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */

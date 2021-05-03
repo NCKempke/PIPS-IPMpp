@@ -111,7 +111,6 @@ public:
    void atPutSubmatrix(int, int, DoubleMatrix&, int, int, int, int) override { assert(0 && "not implemented"); };
    void atPutDense(int, int, double*, int, int, int) override { assert(0 && "not implemented"); };
    void atPutSpRow(int, double*, int, int*, int&) override { assert(0 && "not implemented"); };
-   void randomize(double, double, double*) override { assert(0 && "not implemented"); };
 private:
 
    template<typename T>

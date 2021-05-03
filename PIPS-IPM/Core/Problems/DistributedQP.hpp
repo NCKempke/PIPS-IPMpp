@@ -8,7 +8,6 @@
 #include "SparseSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
-#include "DoubleMatrixHandle.h"
 #include "StochOptions.h"
 #include "DistributedTreeCallbacks.h"
 #include "pipschecks.h"
@@ -144,15 +143,9 @@ public:
 
    virtual void writeToStreamDense(std::ostream& out) const;
 
-   void writeMPSformat(std::ostream& out);
-
-   void writeMPSColumns(std::ostream& out);
-
    virtual DistributedQP* cloneFull(bool switchToDynamicStorage = false) const;
 
    double objective_value(const Variables& variables) const override;
-
-   void createScaleFromQ();
 
    void
    cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC, const DistributedVector<int>& colNnzVec);

@@ -6,6 +6,7 @@
 #include "Vector.hpp"
 #include "DoubleMatrix.h"
 #include "SimpleVector.h"
+#include "SimpleVector.h"
 #include <cstring>
 #include <cerrno>
 #include <cassert>

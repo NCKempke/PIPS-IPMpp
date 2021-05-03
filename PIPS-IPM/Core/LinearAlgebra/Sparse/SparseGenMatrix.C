@@ -161,13 +161,6 @@ void SparseGenMatrix::writeDashedLineToStream(std::ostream& out) const {
    }
 }
 
-
-void SparseGenMatrix::randomize(double alpha, double beta, double* seed) {
-   mStorage->randomize(alpha, beta, seed);
-   assert(m_Mt == nullptr);
-}
-
-
 void SparseGenMatrix::getDiagonal(Vector<double>& vec) {
    mStorage->getDiagonal(vec);
 }

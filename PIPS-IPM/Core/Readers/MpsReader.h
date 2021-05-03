@@ -7,13 +7,13 @@
 
 #include "SimpleVector.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
-#include "DoubleMatrixHandle.h"
 #include <cstdio>
 #include "hash.h"
 
 struct MpsRowInfo;
 struct MpsColInfo;
+class GenMatrix;
+class SymMatrix;
 
 #ifdef TESTING
 class MpsReaderTester;

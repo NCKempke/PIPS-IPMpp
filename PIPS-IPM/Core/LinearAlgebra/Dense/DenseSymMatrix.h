@@ -41,7 +41,6 @@ public:
    double abminnormNonZero(double tol = 1e-30) const override;
    void writeToStream(std::ostream& out) const override;
    void writeToStreamDense(std::ostream& out) const override;
-   void randomizePSD(double* seed) override;
 
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
 

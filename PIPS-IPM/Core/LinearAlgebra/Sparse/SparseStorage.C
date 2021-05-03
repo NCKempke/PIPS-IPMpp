@@ -1156,45 +1156,6 @@ void SparseStorage::getFromPat(double data[], int ldata, int kpat[]) {
    }
 }
 
-void SparseStorage::randomize(double alpha, double beta, double* seed) {
-   int i, k, NN, chosen, icurrent;
-   double r;
-
-   double scale = beta - alpha;
-   double shift = alpha / scale;
-
-   double drand(double*);
-
-   // Knuth's algorithm for choosing length elements out of NN elts.
-   NN = m * n;
-   int length = (len <= NN) ? len : NN;
-   chosen = 0;
-   icurrent = 0;
-   krowM[0] = 0;
-   for (k = 0; k < NN; k++) {
-      r = drand(seed);
-
-      if ((NN - k) * r < length - chosen) {
-         jcolM[chosen] = k % n;
-         i = k / n;
-
-         if (i > icurrent) {
-            for (; icurrent < i; icurrent++) {
-               krowM[icurrent + 1] = chosen;
-            }
-         }
-         M[chosen] = scale * (drand(seed) + shift);
-         chosen++;
-      }
-   }
-   for (; icurrent < m; icurrent++) {
-      krowM[icurrent + 1] = length;
-   }
-
-   assert(chosen == length);
-
-}
-
 double SparseStorage::abmaxnorm() const {
    double norm = 0.0;
    const int nnz = numberOfNonZeros();

@@ -215,7 +215,7 @@ Problem* DistributedFactory::make_problem() {
    DistributedVector<double>* cupp(tree->createcupp());
    DistributedVector<double>* icupp(tree->createicupp());
 
-   StochSymMatrixHandle Q(tree->createQ());
+   SmartPointer<StochSymMatrix> Q(tree->createQ());
    DistributedVector<double>* c(tree->createc());
 
    DistributedVector<double>* xlow(tree->createxlow());

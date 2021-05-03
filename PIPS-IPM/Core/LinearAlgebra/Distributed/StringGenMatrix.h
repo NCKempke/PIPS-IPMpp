@@ -108,7 +108,6 @@ public:
    void atPutDense(int, int, double*, int, int, int) override { assert("not implemented" && 0); };
    void atPutSpRow(int, double[], int, int[], int&) override { assert("not implemented" && 0); };
    void putSparseTriple(int[], int, int[], double[], int&) override { assert("not implemented" && 0); };
-   void randomize(double, double, double*) override { assert("not implemented" && 0); };
 
 protected:
    virtual void multVertical(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;

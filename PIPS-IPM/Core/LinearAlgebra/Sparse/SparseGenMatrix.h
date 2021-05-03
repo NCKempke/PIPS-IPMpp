@@ -118,8 +118,6 @@ public:
     */
    virtual void symmetrize(int& info);
 
-   void randomize(double alpha, double beta, double* seed) override;
-
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
    void fromGetDiagonal(int idiag, Vector<double>& v) override;

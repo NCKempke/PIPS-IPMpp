@@ -13,7 +13,6 @@
 #include <iostream>
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DoubleMatrixHandle.h"
 
 class DoubleLinearSolver;
 
@@ -196,11 +195,6 @@ public:
     */
    virtual void symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
 
-   /** Randomize the elements of this matrix in a manner that makes the matrix
-    *  positive semi-definite.
-    */
-   virtual void randomizePSD(double* seed) = 0;
-
    /** Put a sparse row into this matrix symmetrically.
     *
     *  Elements of the row that would lie above the diagonal are ignored.
@@ -250,14 +244,6 @@ public:
     *  @see DoubleMatrix::fromGetSpRow
     */
    virtual void atPutSpRow(int col, double A[], int lenA, int jcolA[], int& info) = 0;
-
-   /** Fill this matrix with random elements.
-    * @param alpha the elements will be no smaller than alpha.
-    * @param beta the elements will be no larger than beta.
-    * @param seed a arbitrary number used to seed the random number
-    *             generator.
-    */
-   virtual void randomize(double alpha, double beta, double* seed) = 0;
 
    /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
    virtual void matTransDMultMat(Vector<double>& d, SymMatrix** res) = 0;

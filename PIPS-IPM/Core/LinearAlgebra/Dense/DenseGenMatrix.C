@@ -174,23 +174,6 @@ void DenseGenMatrix::writeToStreamDense(std::ostream& out) const {
 }
 
 
-void DenseGenMatrix::randomize(double alpha, double beta, double* seed) {
-   int m = mStorage->m, n = mStorage->n;
-   double** M = mStorage->M;
-   double drand(double*);
-   int i, j;
-
-   double scale = beta - alpha;
-   double shift = alpha / scale;
-
-   for (i = 0; i < m; i++) {
-      for (j = 0; j < n; j++) {
-         M[i][j] = scale * (drand(seed) + shift);
-      }
-   }
-}
-
-
 void DenseGenMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
    int m = mStorage->m, n = mStorage->n;
 

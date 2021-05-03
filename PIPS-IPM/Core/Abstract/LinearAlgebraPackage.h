@@ -11,11 +11,12 @@
  * @{
  */
 
-#include "DoubleMatrixHandle.h"
 #include "IotrRefCount.h"
 #include "Vector.hpp"
 
 class DoubleLinearSolver;
+class GenMatrix;
+class SymMatrix;
 
 /**
  * A class whose instances creates matrices and vectors of

@@ -6,8 +6,6 @@
 #define SPARSELINEARALGEBRA
 
 #include "LinearAlgebraPackage.h"
-
-#include "DoubleMatrixHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 /**

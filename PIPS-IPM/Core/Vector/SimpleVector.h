@@ -59,7 +59,6 @@ public:
    bool isZero() const override;
    void setToZero() override;
    void setToConstant(T c) override;
-   void randomize(T, T, T*) override { assert(0 && "not implemented here"); };
    void copyFrom(const Vector<T>& v) override;
    void copyFromAbs(const Vector<T>& v) override;
    double twonorm() const override;
@@ -83,9 +82,6 @@ public:
 
    void writeToStream(std::ostream& out, int offset = 0) const override;
    void writefToStream(std::ostream& out, const char format[]) const override;
-
-   void writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const Vector<T>* irhs) const override;
-   void writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const Vector<T>* ix, bool upperBound) const override;
 
    void scale(T alpha) override;
 

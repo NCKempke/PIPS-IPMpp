@@ -292,7 +292,7 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
    assert(-1 <= node && node < nChildren);
    assert(system_type == EQUALITY_SYSTEM || system_type == INEQUALITY_SYSTEM);
 
-   const GenMatrixHandle matrix = (system_type == EQUALITY_SYSTEM) ? presolve_data.getPresProb().A : presolve_data.getPresProb().C;
+   const SmartPointer<GenMatrix> matrix = (system_type == EQUALITY_SYSTEM) ? presolve_data.getPresProb().A : presolve_data.getPresProb().C;
 
    /* set matrix pointers for A B and Bl */
    setPointersMatrices(matrix, node);
@@ -311,7 +311,7 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
 }
 
 // todo : set pointers nullptr if no linking constraints?
-void StochPresolverBase::setPointersMatrices(const GenMatrixHandle mat, int node) {
+void StochPresolverBase::setPointersMatrices(const SmartPointer<GenMatrix> mat, int node) {
    assert(-1 <= node && node < nChildren);
    const StochGenMatrix& smat = dynamic_cast<const StochGenMatrix&>(*mat);
 

@@ -56,7 +56,6 @@ public:
    };
    void writeToStreamDense(std::ostream&) const override { assert("Not implemented" && 0); };
    void symAtPutSpRow(int, double[], int, int[], int&) override { assert("Not implemented" && 0); };
-   void randomizePSD(double*) override { assert("Not implemented" && 0); };
    void symAtPutSubmatrix(int, int, DoubleMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
    void atPutDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
    void atAddDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };

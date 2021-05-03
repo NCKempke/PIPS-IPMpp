@@ -135,8 +135,6 @@ public:
 
    void writeMPSformatRows(std::ostream& out, int rowType, Vector<double>* irhs) const override;
 
-   void randomize(double, double, double*) override { assert("Not implemented" && 0); };
-
    /** initialize (dynamic) transposed matrices for A, B, Bl */
    virtual void initTransposed(bool dynamic = false);
    virtual void deleteTransposed();
@@ -309,8 +307,6 @@ protected:
    void writeToStreamDenseRowLink(std::ostream&, int) const override {};
 
 public:
-   void randomize(double, double, double*) override {};
-
    void atPutDiagonal(int, const Vector<double>&) override {};
    void atAddDiagonal(int, const Vector<double>&) override {};
    void fromGetDiagonal(int, Vector<double>&) override {};

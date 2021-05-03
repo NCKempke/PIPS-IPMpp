@@ -8,7 +8,6 @@
 #include "Variables.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DoubleMatrixHandle.h"
 #include "DoubleMatrix.h"
 
 class LinearAlgebraPackage;
@@ -20,8 +19,8 @@ protected:
    LinearAlgebraPackage* la{};
 
 public:
-   GenMatrixHandle A;
-   GenMatrixHandle C;
+   SmartPointer<GenMatrix> A;
+   SmartPointer<GenMatrix> C;
    SmartPointer<Vector<double> > g; // objective
    SmartPointer<Vector<double> > bA; // rhs equality
    SmartPointer<Vector<double> > bux; // upper bounds x

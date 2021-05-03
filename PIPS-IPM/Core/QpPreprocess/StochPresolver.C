@@ -133,8 +133,9 @@ Problem* StochPresolver::presolve() {
       else {
          std::ofstream of("presolved.mps");
 
-         if (of.is_open())
-            finalPreDistributedQP->writeMPSformat(of);
+         if (of.is_open()) {
+            //finalPreDistributedQP->writeMPSformat(of);
+         }
          else if (my_rank == 0)
             std::cout << "Could not open presolved.mps to write out presolved problem!!\n";
       }

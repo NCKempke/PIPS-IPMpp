@@ -72,7 +72,6 @@ public:
 
    void writeToStream(std::ostream& out) const override;
    void writeToStreamDense(std::ostream& out) const override;
-   void randomize(double alpha, double beta, double* seed) override;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;

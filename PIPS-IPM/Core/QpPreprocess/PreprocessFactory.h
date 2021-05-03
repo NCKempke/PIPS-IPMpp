@@ -12,7 +12,6 @@
 #include "GeoStochScaler.h"
 #include "StochPresolver.h"
 #include "IotrRefCount.h"
-#include "SmartPointer.h"
 #include "StochPostsolver.h"
 #include "DistributedQP.hpp"
 #include "pipsport.h"
