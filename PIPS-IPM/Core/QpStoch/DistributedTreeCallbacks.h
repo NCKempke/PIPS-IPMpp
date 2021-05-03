@@ -17,9 +17,9 @@
 
 class DistributedQP;
 
-class sTreeCallbacks : public DistributedTree {
+class DistributedTreeCallbacks : public DistributedTree {
 protected:
-   sTreeCallbacks(const sTreeCallbacks& other);
+   DistributedTreeCallbacks(const DistributedTreeCallbacks& other);
 public:
 
    using InputNode = StochInputTree::StochInputNode;
@@ -31,11 +31,11 @@ public:
 
    DistributedTree* clone() const override;
 
-   sTreeCallbacks(StochInputTree* root);
-   sTreeCallbacks(StochInputTree::StochInputNode* data_);
-   ~sTreeCallbacks() = default;
+   DistributedTreeCallbacks(StochInputTree* root);
+   DistributedTreeCallbacks(StochInputTree::StochInputNode* data_);
+   ~DistributedTreeCallbacks() = default;
 
-   void addChild(sTreeCallbacks* child);
+   void addChild(DistributedTreeCallbacks* child);
 
    StochSymMatrix* createQ() const override;
 
@@ -139,7 +139,7 @@ protected:
    /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */
    std::vector<unsigned int> map_node_sub_root;
 
-   sTreeCallbacks();
+   DistributedTreeCallbacks();
    InputNode* data{}; //input data
 };
 

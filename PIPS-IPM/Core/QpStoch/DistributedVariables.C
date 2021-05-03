@@ -4,15 +4,15 @@
 #include "Problem.h"
 #include "Residuals.h"
 #include "DistributedVector.h"
-#include "sTree.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTree.h"
+#include "DistributedTreeCallbacks.h"
 
 #include "LinearAlgebraPackage.h"
 
 #include <iostream>
 #include <fstream>
 
-DistributedVariables::DistributedVariables(const sTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,
+DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,
       Vector<double>* v_in, Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in,
       Vector<double>* u_in, Vector<double>* pi_in, Vector<double>* ixlow_in, long long nxlowGlobal, Vector<double>* ixupp_in, long long nxuppGlobal,
       Vector<double>* iclow_in, long long mclowGlobal, Vector<double>* icupp_in, long long mcuppGlobal) : Variables() {
@@ -112,7 +112,7 @@ void DistributedVariables::createChildren() {
 }
 
 void
-DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const sTree* stochNode_, SmartPointer<Vector<double> > ixlow_,
+DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_data, const DistributedTree* stochNode_, SmartPointer<Vector<double> > ixlow_,
       SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_) {
    dynamic_cast<DistributedVector<double>&>(*x).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
 

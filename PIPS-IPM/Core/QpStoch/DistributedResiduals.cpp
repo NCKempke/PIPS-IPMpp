@@ -1,5 +1,5 @@
 #include "DistributedResiduals.hpp"
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedVector.h"
 
 DistributedResiduals::DistributedResiduals(Vector<double>* rQ_, Vector<double>* rA_, Vector<double>* rC_, Vector<double>* rz_, Vector<double>* rt_,
@@ -36,7 +36,7 @@ DistributedResiduals::DistributedResiduals(Vector<double>* rQ_, Vector<double>* 
 }
 
 
-DistributedResiduals::DistributedResiduals(const sTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_,
+DistributedResiduals::DistributedResiduals(const DistributedTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_,
       Vector<double>* icupp_) {
 
    SpReferTo(ixlow, ixlow_);
@@ -52,7 +52,7 @@ DistributedResiduals::DistributedResiduals(const sTree* tree, Vector<double>* ix
    mcupp = icupp->numberOfNonzeros();
 
    const bool empty_vector = true;
-   lagrangian_gradient = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
+   lagrangian_gradient = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector());
    rA = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualYVector());
    rC = SmartPointer<Vector<double> >((Vector<double>*) tree->newDualZVector());
 
@@ -76,21 +76,21 @@ DistributedResiduals::DistributedResiduals(const sTree* tree, Vector<double>* ix
    }
 
    if (nxlow > 0) {
-      rv = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
-      rgamma = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
+      rv = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector());
+      rgamma = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector());
    }
    else {
-      rv = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
-      rgamma = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
+      rv = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector(empty_vector));
+      rgamma = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector(empty_vector));
    }
 
    if (nxupp > 0) {
-      rw = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
-      rphi = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector());
+      rw = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector());
+      rphi = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector());
    }
    else {
-      rw = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
-      rphi = SmartPointer<Vector<double> >((Vector<double>*) tree->newPrimalVector(empty_vector));
+      rw = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector(empty_vector));
+      rphi = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector(empty_vector));
    }
 
    createChildren();
@@ -155,7 +155,7 @@ void DistributedResiduals::createChildren() {
    }
 }
 
-void DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const sTree* tree_hier, SmartPointer<Vector<double> > ixlow_,
+void DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hier, const DistributedTree* tree_hier, SmartPointer<Vector<double> > ixlow_,
       SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_) {
    dynamic_cast<DistributedVector<double>&>(*lagrangian_gradient).collapseFromHierarchical(data_hier, *tree_hier, VectorType::PRIMAL);
 

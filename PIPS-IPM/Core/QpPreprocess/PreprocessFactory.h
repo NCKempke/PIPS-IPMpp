@@ -36,7 +36,7 @@ public:
       }
    };
 
-   static Presolver* makePresolver(sTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
+   static Presolver* makePresolver(DistributedTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
       assert(data);
       switch (type) {
          case PRESOLVER_STOCH:

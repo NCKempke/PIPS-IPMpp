@@ -2,7 +2,7 @@
  * Author:  Cosmin G. Petra                                           *
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "DistributedQP.hpp"
 
 #include "StochSymMatrix.h"
@@ -17,7 +17,7 @@
 
 #include "pipsport.h"
 
-sTreeCallbacks::sTreeCallbacks(const sTreeCallbacks& other) : DistributedTree(other), N_INACTIVE{other.N_INACTIVE}, MY_INACTIVE{other.MY_INACTIVE},
+DistributedTreeCallbacks::DistributedTreeCallbacks(const DistributedTreeCallbacks& other) : DistributedTree(other), N_INACTIVE{other.N_INACTIVE}, MY_INACTIVE{other.MY_INACTIVE},
       MZ_INACTIVE{other.MZ_INACTIVE}, MYL_INACTIVE{other.MYL_INACTIVE}, MZL_INACTIVE{other.MZL_INACTIVE}, nx_active{other.nx_active},
       my_active{other.my_active}, mz_active{other.mz_active}, myl_active{other.myl_active}, mzl_active{other.mzl_active},
       nx_inactive{other.nx_inactive}, my_inactive{other.my_inactive}, mz_inactive{other.mz_inactive}, myl_inactive{other.myl_inactive},
@@ -26,18 +26,18 @@ sTreeCallbacks::sTreeCallbacks(const sTreeCallbacks& other) : DistributedTree(ot
       map_node_sub_root(other.map_node_sub_root.begin(), other.map_node_sub_root.end()), data{other.data} {
 }
 
-DistributedTree* sTreeCallbacks::clone() const {
-   return new sTreeCallbacks(*this);
+DistributedTree* DistributedTreeCallbacks::clone() const {
+   return new DistributedTreeCallbacks(*this);
 }
 
-sTreeCallbacks::sTreeCallbacks() : print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")} {
+DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
    if (-1 == numProcs)
       numProcs = PIPS_MPIgetSize();
 }
 
-sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
+DistributedTreeCallbacks::DistributedTreeCallbacks(StochInputTree* inputTree)
       : DistributedTree(), print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
@@ -45,10 +45,10 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
       numProcs = PIPS_MPIgetSize();
 
    for (size_t it = 0; it < inputTree->children.size(); it++)
-      children.push_back(new sTreeCallbacks(inputTree->children[it]));
+      children.push_back(new DistributedTreeCallbacks(inputTree->children[it]));
 }
 
-sTreeCallbacks::sTreeCallbacks(InputNode* data_)
+DistributedTreeCallbacks::DistributedTreeCallbacks(InputNode* data_)
       : DistributedTree(), nx_active(data_->n), my_active(data_->my), mz_active(data_->mz), myl_active(data_->myl), mzl_active(data_->mzl),
       print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")}, data(data_) {
    assert(false && "Not used currently");
@@ -58,7 +58,7 @@ sTreeCallbacks::sTreeCallbacks(InputNode* data_)
       numProcs = PIPS_MPIgetSize();
 }
 
-void sTreeCallbacks::addChild(sTreeCallbacks* child) {
+void DistributedTreeCallbacks::addChild(DistributedTreeCallbacks* child) {
    N += child->N;
 
    if (child->MY > 0)
@@ -86,7 +86,7 @@ void sTreeCallbacks::addChild(sTreeCallbacks* child) {
 }
 
 
-void sTreeCallbacks::switchToPresolvedData() {
+void DistributedTreeCallbacks::switchToPresolvedData() {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    assert(!is_data_presolved);
    assert(has_presolved_data);
@@ -105,7 +105,7 @@ void sTreeCallbacks::switchToPresolvedData() {
 
    for (size_t it = 0; it < children.size(); it++) {
       children[it]->np = this->nx_active;
-      dynamic_cast<sTreeCallbacks*>(children[it])->switchToPresolvedData();
+      dynamic_cast<DistributedTreeCallbacks*>(children[it])->switchToPresolvedData();
    }
 
    is_data_presolved = true;
@@ -113,7 +113,7 @@ void sTreeCallbacks::switchToPresolvedData() {
 }
 
 
-void sTreeCallbacks::switchToOriginalData() {
+void DistributedTreeCallbacks::switchToOriginalData() {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    assert(is_data_presolved);
 
@@ -131,7 +131,7 @@ void sTreeCallbacks::switchToOriginalData() {
 
    for (size_t it = 0; it < children.size(); it++) {
       children[it]->np = this->nx_active;
-      dynamic_cast<sTreeCallbacks*>(children[it])->switchToOriginalData();
+      dynamic_cast<DistributedTreeCallbacks*>(children[it])->switchToOriginalData();
    }
 
    is_data_presolved = false;
@@ -139,17 +139,17 @@ void sTreeCallbacks::switchToOriginalData() {
 }
 
 
-bool sTreeCallbacks::isPresolved() {
+bool DistributedTreeCallbacks::isPresolved() {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    return is_data_presolved;
 }
 
-bool sTreeCallbacks::hasPresolved() {
+bool DistributedTreeCallbacks::hasPresolved() {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    return has_presolved_data;
 }
 
-void sTreeCallbacks::initPresolvedData(const DistributedQP& presolved_data) {
+void DistributedTreeCallbacks::initPresolvedData(const DistributedQP& presolved_data) {
    const StochSymMatrix& Q = dynamic_cast<const StochSymMatrix&>(*presolved_data.Q);
    const StochGenMatrix& A = dynamic_cast<const StochGenMatrix&>(*presolved_data.A);
    const StochGenMatrix& C = dynamic_cast<const StochGenMatrix&>(*presolved_data.C);
@@ -165,7 +165,7 @@ void sTreeCallbacks::initPresolvedData(const DistributedQP& presolved_data) {
 }
 
 void
-sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C, const DistributedVector<double>& nxVec,
+DistributedTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C, const DistributedVector<double>& nxVec,
       const DistributedVector<double>& myVec, const DistributedVector<double>& mzVec, int mylParent, int mzlParent) {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    assert(!has_presolved_data);
@@ -226,14 +226,14 @@ sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix&
 
    for (size_t it = 0; it < children.size(); it++) {
       assert(children[it]->np == this->nx_active);
-      sTreeCallbacks* sTreeCallbacksChild = dynamic_cast<sTreeCallbacks*>(children[it]);
+      DistributedTreeCallbacks* DistributedTreeCallbacksChild = dynamic_cast<DistributedTreeCallbacks*>(children[it]);
 
-      sTreeCallbacksChild->initPresolvedData(*Q.children[it], *A.children[it], *C.children[it], *nxVec.children[it], *myVec.children[it],
+      DistributedTreeCallbacksChild->initPresolvedData(*Q.children[it], *A.children[it], *C.children[it], *nxVec.children[it], *myVec.children[it],
             *mzVec.children[it], myl_inactive, mzl_inactive);
 
-      N_INACTIVE += sTreeCallbacksChild->N_INACTIVE;
-      MY_INACTIVE += sTreeCallbacksChild->MY_INACTIVE;
-      MZ_INACTIVE += sTreeCallbacksChild->MZ_INACTIVE;
+      N_INACTIVE += DistributedTreeCallbacksChild->N_INACTIVE;
+      MY_INACTIVE += DistributedTreeCallbacksChild->MY_INACTIVE;
+      MZ_INACTIVE += DistributedTreeCallbacksChild->MZ_INACTIVE;
    }
 
    has_presolved_data = true;
@@ -241,7 +241,7 @@ sTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix&
 }
 
 
-void sTreeCallbacks::writeSizes(std::ostream& sout) const {
+void DistributedTreeCallbacks::writeSizes(std::ostream& sout) const {
    const int myRank = PIPS_MPIgetRank(commWrkrs);
 
    MPI_Barrier(commWrkrs);
@@ -260,13 +260,13 @@ void sTreeCallbacks::writeSizes(std::ostream& sout) const {
 
    if (sub_root) {
       sout << "subroot: \n";
-      dynamic_cast<sTreeCallbacks*>(sub_root)->writeSizes(sout);
+      dynamic_cast<DistributedTreeCallbacks*>(sub_root)->writeSizes(sout);
    }
 
    for (size_t it = 0; it < children.size(); it++) {
       if (children[it]->commWrkrs != MPI_COMM_NULL) {
          sout << "child " << it << ": \n\n";
-         dynamic_cast<sTreeCallbacks*>(children[it])->writeSizes(sout);
+         dynamic_cast<DistributedTreeCallbacks*>(children[it])->writeSizes(sout);
       }
       MPI_Barrier(commWrkrs);
    }
@@ -277,7 +277,7 @@ void sTreeCallbacks::writeSizes(std::ostream& sout) const {
 
 
 // this is usually called after assigning processes
-void sTreeCallbacks::computeGlobalSizes() {
+void DistributedTreeCallbacks::computeGlobalSizes() {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    assert(!is_data_presolved);
 
@@ -332,9 +332,9 @@ void sTreeCallbacks::computeGlobalSizes() {
    assertTreeStructureCorrect();
 }
 
-void sTreeCallbacks::assertTreeStructureChildren() const {
+void DistributedTreeCallbacks::assertTreeStructureChildren() const {
    for (const DistributedTree* child : children) {
-      dynamic_cast<const sTreeCallbacks*>(child)->assertTreeStructureCorrect();
+      dynamic_cast<const DistributedTreeCallbacks*>(child)->assertTreeStructureCorrect();
 
       if (child->commWrkrs != MPI_COMM_NULL) {
          assert(isInVector(rankMe, child->myProcs));
@@ -346,14 +346,14 @@ void sTreeCallbacks::assertTreeStructureChildren() const {
    }
 }
 
-void sTreeCallbacks::assertSubRoot() const {
+void DistributedTreeCallbacks::assertSubRoot() const {
    if (sub_root) {
       assert(children.size() == 0);
-      dynamic_cast<const sTreeCallbacks*>(sub_root)->assertTreeStructureCorrect();
+      dynamic_cast<const DistributedTreeCallbacks*>(sub_root)->assertTreeStructureCorrect();
    }
 }
 
-void sTreeCallbacks::assertTreeStructureIsNotMyNode() const {
+void DistributedTreeCallbacks::assertTreeStructureIsNotMyNode() const {
    assert(!isInVector(rankMe, myProcs));
 
    assert(nx_active == 0);
@@ -370,7 +370,7 @@ void sTreeCallbacks::assertTreeStructureIsNotMyNode() const {
 //   assert( MZL == 0 );
 }
 
-void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
+void DistributedTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
    assert(!sub_root);
 
    int NX_children{0};
@@ -381,7 +381,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
    int MZL_children{0};
 
    for (const DistributedTree* child_ : children) {
-      const sTreeCallbacks* child = dynamic_cast<const sTreeCallbacks*>(child_);
+      const DistributedTreeCallbacks* child = dynamic_cast<const DistributedTreeCallbacks*>(child_);
 
       if (isInVector(rankMe, child->myProcs)) {
          NX_children += child->N;
@@ -431,7 +431,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
    assert(MZL == MZL_children + mzl_active);
 }
 
-void sTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const {
+void DistributedTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const {
    assert(sub_root);
    assert(isInVector(rankMe, myProcs));
    assert(sub_root->np = -1);
@@ -444,7 +444,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeSubRoot() const {
    assert(mz_active == sub_root->MZ);
 }
 
-void sTreeCallbacks::assertTreeStructureIsMyNode() const {
+void DistributedTreeCallbacks::assertTreeStructureIsMyNode() const {
    assert(isInVector(rankMe, myProcs));
 
    if (children.size() != 0)
@@ -453,7 +453,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNode() const {
       assertTreeStructureIsMyNodeSubRoot();
 }
 
-void sTreeCallbacks::assertTreeStructureCorrect() const {
+void DistributedTreeCallbacks::assertTreeStructureCorrect() const {
    assert(std::is_sorted(myProcs.begin(), myProcs.end()));
 
    assertTreeStructureChildren();
@@ -465,7 +465,7 @@ void sTreeCallbacks::assertTreeStructureCorrect() const {
       assertTreeStructureIsMyNode();
 }
 
-StochSymMatrix* sTreeCallbacks::createQ() const {
+StochSymMatrix* DistributedTreeCallbacks::createQ() const {
    assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf);
 
    //is this node a dead-end for this process?
@@ -488,7 +488,7 @@ StochSymMatrix* sTreeCallbacks::createQ() const {
 }
 
 StochGenMatrix*
-sTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
+DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
       DATA_INT nnzBmat, DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat, DATA_MAT Blmat,
       const std::string& prefix_for_print) const {
    assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf);
@@ -561,14 +561,14 @@ sTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA
             dynamic_cast<SparseGenMatrix*>(A->Blmat)->M());
 
    for (size_t it = 0; it < children.size(); it++) {
-      StochGenMatrix* child = dynamic_cast<sTreeCallbacks*>(children[it])->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
+      StochGenMatrix* child = dynamic_cast<DistributedTreeCallbacks*>(children[it])->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
             fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print);
       A->AddChild(child);
    }
    return A;
 }
 
-StochGenMatrix* sTreeCallbacks::createA() const {
+StochGenMatrix* DistributedTreeCallbacks::createA() const {
    TREE_SIZE MY = &DistributedTree::MY;
    TREE_SIZE MYL = &DistributedTree::MYL;
 
@@ -591,7 +591,7 @@ StochGenMatrix* sTreeCallbacks::createA() const {
    return createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix);
 }
 
-StochGenMatrix* sTreeCallbacks::createC() const {
+StochGenMatrix* DistributedTreeCallbacks::createC() const {
    TREE_SIZE MZ = &DistributedTree::MZ;
    TREE_SIZE MZL = &DistributedTree::MZL;
 
@@ -614,31 +614,31 @@ StochGenMatrix* sTreeCallbacks::createC() const {
    return createMatrix(MZ, MZL, m_CDmat, n_Mat, nnzCmat, fnnzCmat, Cmat, nnzDmat, fnnzDmat, Dmat, m_Dlmat, nnzDlmat, fnnzDlmat, Dlmat, prefix);
 }
 
-int sTreeCallbacks::nx() const {
+int DistributedTreeCallbacks::nx() const {
    return nx_active;
 }
 
-int sTreeCallbacks::my() const {
+int DistributedTreeCallbacks::my() const {
    return my_active;
 }
 
-int sTreeCallbacks::myl() const {
+int DistributedTreeCallbacks::myl() const {
    return myl_active;
 }
 
-int sTreeCallbacks::mz() const {
+int DistributedTreeCallbacks::mz() const {
    return mz_active;
 }
 
-int sTreeCallbacks::mzl() const {
+int DistributedTreeCallbacks::mzl() const {
    return mzl_active;
 }
 
-int sTreeCallbacks::id() const {
+int DistributedTreeCallbacks::id() const {
    return data->id;
 }
 
-DistributedVector<double>* sTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const {
+DistributedVector<double>* DistributedTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC vec, DATA_INT n_linking_vec, DATA_VEC linking_vec) const {
    assert(n_vec);
    assert(vec);
 
@@ -665,49 +665,49 @@ DistributedVector<double>* sTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC
    }
 
    for (const DistributedTree* child_tree : children) {
-      DistributedVector<double>* child_vec = dynamic_cast<const sTreeCallbacks*>(child_tree)->createVector(n_vec, vec, n_linking_vec, linking_vec);
+      DistributedVector<double>* child_vec = dynamic_cast<const DistributedTreeCallbacks*>(child_tree)->createVector(n_vec, vec, n_linking_vec, linking_vec);
       svec->AddChild(child_vec);
    }
 
    return svec;
 }
 
-DistributedVector<double>* sTreeCallbacks::createc() const {
+DistributedVector<double>* DistributedTreeCallbacks::createc() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fc;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* sTreeCallbacks::createxlow() const {
+DistributedVector<double>* DistributedTreeCallbacks::createxlow() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fxlow;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* sTreeCallbacks::createixlow() const {
+DistributedVector<double>* DistributedTreeCallbacks::createixlow() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fixlow;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* sTreeCallbacks::createxupp() const {
+DistributedVector<double>* DistributedTreeCallbacks::createxupp() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fxupp;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* sTreeCallbacks::createixupp() const {
+DistributedVector<double>* DistributedTreeCallbacks::createixupp() const {
    DATA_INT n_func = &InputNode::n;
    DATA_VEC func = &InputNode::fixupp;
 
    return createVector(n_func, func, nullptr, nullptr);
 }
 
-DistributedVector<double>* sTreeCallbacks::createb() const {
+DistributedVector<double>* DistributedTreeCallbacks::createb() const {
    DATA_INT n_func = &InputNode::my;
    DATA_VEC func = &InputNode::fb;
 
@@ -717,7 +717,7 @@ DistributedVector<double>* sTreeCallbacks::createb() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* sTreeCallbacks::createclow() const {
+DistributedVector<double>* DistributedTreeCallbacks::createclow() const {
    DATA_INT n_func = &InputNode::mz;
    DATA_VEC func = &InputNode::fclow;
 
@@ -727,7 +727,7 @@ DistributedVector<double>* sTreeCallbacks::createclow() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* sTreeCallbacks::createiclow() const {
+DistributedVector<double>* DistributedTreeCallbacks::createiclow() const {
    DATA_VEC func = &InputNode::ficlow;
    DATA_INT n_func = &InputNode::mz;
 
@@ -737,7 +737,7 @@ DistributedVector<double>* sTreeCallbacks::createiclow() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* sTreeCallbacks::createcupp() const {
+DistributedVector<double>* DistributedTreeCallbacks::createcupp() const {
    DATA_INT n_func = &InputNode::mz;
    DATA_VEC func = &InputNode::fcupp;
 
@@ -747,7 +747,7 @@ DistributedVector<double>* sTreeCallbacks::createcupp() const {
    return createVector(n_func, func, n_func_link, func_link);
 }
 
-DistributedVector<double>* sTreeCallbacks::createicupp() const {
+DistributedVector<double>* DistributedTreeCallbacks::createicupp() const {
    DATA_INT n_func = &InputNode::mz;
    DATA_VEC func = &InputNode::ficupp;
 
@@ -758,13 +758,13 @@ DistributedVector<double>* sTreeCallbacks::createicupp() const {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
 }
 
-DistributedTree* sTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) {
+DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) {
    assertTreeStructureCorrect();
    if (PIPS_MPIgetRank() == 0 && !pips_options::getBoolParameter("SILENT"))
       std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " << mzl_to_shave
                 << " inequalities for the border\n";
 
-   sTreeCallbacks* top_layer = new sTreeCallbacks();
+   DistributedTreeCallbacks* top_layer = new DistributedTreeCallbacks();
 
    /* sTree members */
    top_layer->commWrkrs = commWrkrs;
@@ -791,7 +791,7 @@ DistributedTree* sTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_sh
    // TODO: not sure about the ressources monitors..: resMon, iterMon..
    top_layer->is_hierarchical_root = true;
 
-   /* sTreeCallbacks members */
+   /* DistributedTreeCallbacks members */
    top_layer->nx_active = nx_to_shave;
    this->nx_active -= nx_to_shave;
 
@@ -805,7 +805,7 @@ DistributedTree* sTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_sh
    this->adjustActiveMzlBy(-mzl_to_shave);
 
    for (auto& child : children)
-      dynamic_cast<sTreeCallbacks*>(child)->np = nx_active;
+      dynamic_cast<DistributedTreeCallbacks*>(child)->np = nx_active;
 
    assert(myl_active >= 0);
    assert(mzl_active >= 0);
@@ -814,7 +814,7 @@ DistributedTree* sTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_sh
 }
 
 unsigned int
-sTreeCallbacks::getMapChildrenToNthRootSubTrees(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
+DistributedTreeCallbacks::getMapChildrenToNthRootSubTrees(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
       unsigned int n_procs, const std::vector<unsigned int>& child_procs) {
    assert(take_nth_root > 1);
    assert(n_procs <= n_children);
@@ -877,7 +877,7 @@ sTreeCallbacks::getMapChildrenToNthRootSubTrees(int& take_nth_root, std::vector<
    return n_new_roots;
 }
 
-void sTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree) {
+void DistributedTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree) {
    assert(children.size() > 1);
    assert(myProcs.size() == getNDistinctValues(myProcs));
 
@@ -905,12 +905,12 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_root, std::
    assert(map_child_to_sub_tree.size() == children.size());
 
    /* create new sub-roots */
-   std::vector<sTreeCallbacks*> new_leafs(n_new_roots);
+   std::vector<DistributedTreeCallbacks*> new_leafs(n_new_roots);
    for (auto& leaf : new_leafs) {
-      leaf = new sTreeCallbacks();
+      leaf = new DistributedTreeCallbacks();
       leaf->setHierarchicalInnerLeaf();
 
-      leaf->sub_root = new sTreeCallbacks();
+      leaf->sub_root = new DistributedTreeCallbacks();
       leaf->sub_root->setHierarchicalInnerLeaf();
    }
 
@@ -922,7 +922,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_root, std::
 
       const unsigned int assigned_sub_root_for_child = map_child_to_sub_tree[child];
       assert(assigned_sub_root_for_child < new_leafs.size());
-      sTreeCallbacks* assigned_leaf = new_leafs[assigned_sub_root_for_child];
+      DistributedTreeCallbacks* assigned_leaf = new_leafs[assigned_sub_root_for_child];
 
       for (int process : child_procs) {
          // assuming sorted..
@@ -937,7 +937,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_root, std::
          }
       }
 
-      dynamic_cast<sTreeCallbacks*>(assigned_leaf->sub_root)->addChild(dynamic_cast<sTreeCallbacks*>(children[child]));
+      dynamic_cast<DistributedTreeCallbacks*>(assigned_leaf->sub_root)->addChild(dynamic_cast<DistributedTreeCallbacks*>(children[child]));
    }
 
    /* create all sub-communicators */
@@ -969,7 +969,7 @@ void sTreeCallbacks::createSubcommunicatorsAndChildren(int& take_nth_root, std::
 }
 
 void
-sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
+DistributedTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_start_in_child_A, const std::vector<int>& two_links_start_in_child_C,
       std::vector<unsigned int>& two_links_children_eq, std::vector<unsigned int>& two_links_children_ineq, unsigned int& two_links_root_eq,
       unsigned int& two_links_root_ineq) const {
    const unsigned int n_children = children.size();
@@ -987,7 +987,7 @@ sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_sta
    /* count two links for all new sub-communicators */
    unsigned int leaf = 0;
    for (unsigned int i = 0; i < n_children; ++i) {
-      const sTreeCallbacks& sub_root = dynamic_cast<const sTreeCallbacks&>( *children[i]->sub_root );
+      const DistributedTreeCallbacks& sub_root = dynamic_cast<const DistributedTreeCallbacks&>( *children[i]->sub_root );
 
       for (size_t j = 0; j < sub_root.children.size(); ++j) {
          assert(leaf < n_leafs);
@@ -1008,7 +1008,7 @@ sTreeCallbacks::countTwoLinksForChildTrees(const std::vector<int>& two_links_sta
    assert(leaf == n_leafs);
 }
 
-void sTreeCallbacks::adjustActiveMylBy(int adjustment) {
+void DistributedTreeCallbacks::adjustActiveMylBy(int adjustment) {
    assert(isInVector(rankMe, myProcs));
 
    myl_active += adjustment;
@@ -1018,7 +1018,7 @@ void sTreeCallbacks::adjustActiveMylBy(int adjustment) {
    assert(MYL >= 0);
 
    for (DistributedTree* child_ : children) {
-      sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(child_);
+      DistributedTreeCallbacks* child = dynamic_cast<DistributedTreeCallbacks*>(child_);
 
       assert(child->children.size() == 0);
 
@@ -1031,13 +1031,13 @@ void sTreeCallbacks::adjustActiveMylBy(int adjustment) {
    }
 }
 
-void sTreeCallbacks::adjustActiveMzlBy(int adjustment) {
+void DistributedTreeCallbacks::adjustActiveMzlBy(int adjustment) {
    assert(isInVector(rankMe, myProcs));
    mzl_active += adjustment;
    MZL += adjustment;
 
    for (auto& child_ : children) {
-      sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(child_);
+      DistributedTreeCallbacks* child = dynamic_cast<DistributedTreeCallbacks*>(child_);
       assert(child->children.size() == 0);
 
       if (isInVector(rankMe, child->myProcs)) {
@@ -1049,7 +1049,7 @@ void sTreeCallbacks::adjustActiveMzlBy(int adjustment) {
    }
 }
 
-std::pair<int, int> sTreeCallbacks::adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
+std::pair<int, int> DistributedTreeCallbacks::adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq,
       const std::vector<unsigned int>& two_links_children_ineq) {
    assert(two_links_children_eq.size() == two_links_children_ineq.size());
 
@@ -1059,7 +1059,7 @@ std::pair<int, int> sTreeCallbacks::adjustSizesAfterSplit(const std::vector<unsi
    unsigned int sum_two_links_children_ineq{0};
 
    for (unsigned int i = 0; i < children.size(); ++i) {
-      const sTreeCallbacks& inner_leaf = dynamic_cast<const sTreeCallbacks&>(*children[i]);
+      const DistributedTreeCallbacks& inner_leaf = dynamic_cast<const DistributedTreeCallbacks&>(*children[i]);
       if (isInVector(rankMe, inner_leaf.myProcs)) {
          my_two_links_eq += two_links_children_eq[i];
          my_two_links_ineq += two_links_children_ineq[i];
@@ -1082,8 +1082,8 @@ std::pair<int, int> sTreeCallbacks::adjustSizesAfterSplit(const std::vector<unsi
 
    /* recompute sizes for the children */
    for (size_t i = 0; i < children.size(); ++i) {
-      sTreeCallbacks& inner_leaf = dynamic_cast<sTreeCallbacks&>(*children[i]);
-      sTreeCallbacks& sub_root = dynamic_cast<sTreeCallbacks&>(*inner_leaf.sub_root);
+      DistributedTreeCallbacks& inner_leaf = dynamic_cast<DistributedTreeCallbacks&>(*children[i]);
+      DistributedTreeCallbacks& sub_root = dynamic_cast<DistributedTreeCallbacks&>(*inner_leaf.sub_root);
       assert(inner_leaf.is_hierarchical_inner_leaf);
 
       if (isInVector(rankMe, inner_leaf.myProcs)) {
@@ -1128,7 +1128,7 @@ std::pair<int, int> sTreeCallbacks::adjustSizesAfterSplit(const std::vector<unsi
                sub_root.nx_active == 0 && sub_root.my_active == 0 && sub_root.mz_active == 0 && sub_root.myl_active == 0 && sub_root.mzl_active == 0);
 
          for (const auto& child_ : sub_root.children) {
-            const auto& child = dynamic_cast<const sTreeCallbacks*>(child_);
+            const auto& child = dynamic_cast<const DistributedTreeCallbacks*>(child_);
             assert(child->N == 0 && child->MY == 0 && child->MZ == 0 && child->MYL == 0 && child->MZL == 0);
             assert(child->nx_active == 0 && child->my_active == 0 && child->mz_active == 0 && child->myl_active == 0 && child->mzl_active == 0);
          }
@@ -1138,7 +1138,7 @@ std::pair<int, int> sTreeCallbacks::adjustSizesAfterSplit(const std::vector<unsi
    return std::make_pair(not_my_two_links_eq, not_my_two_links_ineq);
 }
 
-std::pair<int, int> sTreeCallbacks::splitTree(int n_layers, DistributedQP* data) {
+std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, DistributedQP* data) {
    if (n_layers == 1 || commWrkrs == MPI_COMM_NULL)
       return std::make_pair(0, 0);
 
@@ -1206,7 +1206,7 @@ std::pair<int, int> sTreeCallbacks::splitTree(int n_layers, DistributedQP* data)
    return std::make_pair<int, int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
-DistributedTree* sTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data) {
+DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data) {
    assert(data->exploitingLinkStructure());
 
    const int n_layers = pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS");
@@ -1248,7 +1248,7 @@ DistributedTree* sTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data) 
       assert(myl_to_shave <= myl_active);
       assert(mzl_to_shave <= mzl_active);
 
-      sTreeCallbacks* top_layer = dynamic_cast<sTreeCallbacks*>( shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave));
+      DistributedTreeCallbacks* top_layer = dynamic_cast<DistributedTreeCallbacks*>( shaveDenseBorder(nx_to_shave, myl_to_shave, mzl_to_shave));
       data = data->shaveDenseBorder(top_layer);
 
       if (PIPS_MPIgetRank() == 0)
@@ -1260,7 +1260,7 @@ DistributedTree* sTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data) 
       return this;
 }
 
-std::vector<MPI_Comm> sTreeCallbacks::getChildComms() const {
+std::vector<MPI_Comm> DistributedTreeCallbacks::getChildComms() const {
    std::vector<MPI_Comm> comms(children.size(), MPI_COMM_NULL);
 
    for (unsigned int i = 0; i < children.size(); ++i)

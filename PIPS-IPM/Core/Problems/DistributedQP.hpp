@@ -10,14 +10,14 @@
 #include "DistributedVector.h"
 #include "DoubleMatrixHandle.h"
 #include "StochOptions.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "pipschecks.h"
 #include "pipsport.h"
 
 #include <vector>
 #include <memory>
 
-class sTree;
+class DistributedTree;
 
 class LinearAlgebraPackage;
 
@@ -27,7 +27,7 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const sTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+   DistributedQP(const DistributedTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
          Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
          Vector<double>* ciupp, bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
          bool is_hierarchy_inner_leaf = false);
@@ -36,7 +36,7 @@ public:
 
    void AddChild(DistributedQP* child);
 
-   const sTree* stochNode{};
+   const DistributedTree* stochNode{};
 
    Permutation getLinkVarsPermInv() const;
 
@@ -125,10 +125,10 @@ protected:
 
    void splitDataAndAddAsChildLayer();
 
-   DistributedQP* shaveBorderFromDataAndCreateNewTop(const sTree* tree);
+   DistributedQP* shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree);
 
 public:
-   DistributedQP* shaveDenseBorder(const sTree* tree);
+   DistributedQP* shaveDenseBorder(const DistributedTree* tree);
 
    void splitDataAccordingToTree();
 

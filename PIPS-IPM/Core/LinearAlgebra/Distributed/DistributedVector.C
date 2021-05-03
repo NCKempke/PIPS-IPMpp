@@ -2,7 +2,7 @@
 
 #include "VectorUtilities.h"
 #include "pipsport.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedQP.hpp"
 
 #include <cassert>
@@ -2072,7 +2072,7 @@ n_links_in_root
       }
 
       /* create child holding the new DistributedVector<double> as it's first part */
-      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() : new DistributedVector<T>(vec, nullptr, child_comms[i]);
+      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new DistributedDummyVector<T>() : new DistributedVector<T>(vec, nullptr, child_comms[i]);
       if (vec)
          vec->parent = new_children[i];
 
@@ -2128,7 +2128,7 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_vars, bool linking
 }
 
 template<typename T>
-void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec) {
+void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec) {
    SimpleVector<T>* new_vec = new SimpleVector<T>();
    SimpleVector<T>* new_vecl{};
 
@@ -2174,13 +2174,13 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 template<typename T>
 void
 DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-      const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
+      const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
    assert(children.size() == tree_hier.nChildren());
    assert(children.size() == data_hier.children.size());
 
    for (size_t i = 0; i < children.size(); ++i) {
       DistributedVector<T>& child = *children[i];
-      const sTree* sub_root = tree_hier.getChildren()[i]->getSubRoot();
+      const DistributedTree* sub_root = tree_hier.getChildren()[i]->getSubRoot();
 
       // not a leaf
       if (sub_root) {
@@ -2222,13 +2222,13 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
 }
 
 template<typename T>
-void StochDummyVectorBase<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-      const sTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec) {
+void DistributedDummyVector<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
+      const DistributedTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec) {
    assert(tree_hier.getCommWorkers() == MPI_COMM_NULL);
    const int n_dummies = tree_hier.nChildren();
    /* insert the children this dummy is representing */
    for (int i = 0; i < n_dummies; ++i)
-      new_children.insert(new_children.end(), new StochDummyVectorBase<T>());
+      new_children.insert(new_children.end(), new DistributedDummyVector<T>());
 
    if (type == VectorType::DUAL_Y && !empty_vec)
       new_vecl->appendToBack(tree_hier.getMYL(), -std::numeric_limits<T>::infinity());
