@@ -6,7 +6,7 @@
 #include "SparseGenMatrix.h"
 #include "BorderedGenMatrix.h"
 #include "StringGenMatrix.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 
 #include "pipsport.h"
 #include "mpi.h"

@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "DistributedQP.hpp"
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 
 #include "StochOptions.h"
 #include "StochGenMatrix.h"
@@ -26,7 +26,7 @@
 #include "StochPresolverSingletonColumns.h"
 #include "StochPresolverParallelRows.h"
 
-StochPresolver::StochPresolver(sTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr) : QpPresolver(prob, postsolver),
+StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr) : QpPresolver(prob, postsolver),
       my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)), limit_max_rounds(pips_options::getIntParameter("PRESOLVE_MAX_ROUNDS")),
       reset_free_variables_after_presolve(pips_options::getBoolParameter("PRESOLVE_RESET_FREE_VARIABLES")),
       print_problem(pips_options::getBoolParameter("PRESOLVE_PRINT_PROBLEM")),
@@ -101,7 +101,7 @@ Problem* StochPresolver::presolve() {
    assert(tree != nullptr);
    assert(tree == finalPreDistributedQP->stochNode);
 
-   sTreeCallbacks& callbackTree = dynamic_cast<sTreeCallbacks&>(*tree);
+   DistributedTreeCallbacks& callbackTree = dynamic_cast<DistributedTreeCallbacks&>(*tree);
    callbackTree.initPresolvedData(*finalPreDistributedQP);
    callbackTree.switchToPresolvedData();
 

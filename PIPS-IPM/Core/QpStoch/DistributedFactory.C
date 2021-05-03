@@ -4,7 +4,7 @@
 
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "StochInputTree.h"
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
@@ -60,7 +60,7 @@ class Ma57Solver;
 #endif
 
 
-DistributedFactory::DistributedFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new sTreeCallbacks(inputTree)) {
+DistributedFactory::DistributedFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new DistributedTreeCallbacks(inputTree)) {
    tree->assignProcesses(comm);
 
    tree->computeGlobalSizes();
@@ -271,7 +271,7 @@ AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
 
 Vector<double>* DistributedFactory::make_primal_vector() const {
    assert(!la);
-   return tree->newPrimalVector();
+   return tree->new_primal_vector();
 }
 
 Vector<double>* DistributedFactory::make_equalities_dual_vector() const {
@@ -352,7 +352,7 @@ Problem* DistributedFactory::switchToHierarchicalData(Problem*) {
 void DistributedFactory::switchToOriginalTree() {
    assert(hier_tree_swap);
 
-   sTree* tmp = tree;
+   DistributedTree* tmp = tree;
    tree = hier_tree_swap.get();
    hier_tree_swap.release();
    hier_tree_swap.reset(tmp);

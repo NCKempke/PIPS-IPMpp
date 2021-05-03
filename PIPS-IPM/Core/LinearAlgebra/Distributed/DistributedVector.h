@@ -10,7 +10,7 @@
 
 #include <vector>
 
-class sTree;
+class DistributedTree;
 
 class DistributedQP;
 
@@ -152,9 +152,9 @@ public:
    virtual void split(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual DistributedVector<T>* raiseBorder(int n_vars, bool linking_part, bool shave_top);
-   virtual void collapseFromHierarchical(const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec = false);
+   virtual void collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
    virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-         const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
+         const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
 
    virtual Vector<T>* getLinkingVecNotHierarchicalTop() const;
 
@@ -173,16 +173,16 @@ private:
  *
  */
 template<typename T>
-class StochDummyVectorBase : public DistributedVector<T> {
+class DistributedDummyVector : public DistributedVector<T> {
 public:
 
-   StochDummyVectorBase() : DistributedVector<T>(0, MPI_COMM_NULL) {};
-   ~StochDummyVectorBase() override = default;
+   DistributedDummyVector() : DistributedVector<T>(0, MPI_COMM_NULL) {};
+   ~DistributedDummyVector() override = default;
 
    void AddChild(DistributedVector<T>*) override {};
 
-   DistributedVector<T>* clone() const override { return new StochDummyVectorBase<T>(); }
-   DistributedVector<T>* cloneFull() const override { return new StochDummyVectorBase<T>(); }
+   DistributedVector<T>* clone() const override { return new DistributedDummyVector<T>(); }
+   DistributedVector<T>* cloneFull() const override { return new DistributedDummyVector<T>(); }
 
    void jointCopyFrom(const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
    void jointCopyTo(Vector<T>&, Vector<T>&, Vector<T>&) const override {};
@@ -285,7 +285,7 @@ public:
    };
 
    void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-         const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) override;
+         const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) override;
 
    Vector<T>* getLinkingVecNotHierarchicalTop() const override {
       assert(false && "Should not end up here");

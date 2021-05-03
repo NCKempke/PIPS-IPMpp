@@ -2,26 +2,21 @@
  * Author:  Cosmin G. Petra                                           *
  * (C) 2012 Argonne National Laboratory. See Copyright Notification.  */
 
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedQP.hpp"
-#include "StochSymMatrix.h"
-#include "StochGenMatrix.h"
 #include "DistributedVector.h"
 #include "SimpleVector.h"
-#include "DoubleMatrixTypes.h"
-#include "pipsport.h"
-
 #include <numeric>
 #include <algorithm>
 #include <cmath>
 
-StochIterateResourcesMonitor sTree::iterMon;
-int sTree::rankMe = -1;
-int sTree::rankZeroW = 0;
-int sTree::rankPrcnd = -1;
-int sTree::numProcs = -1;
+StochIterateResourcesMonitor DistributedTree::iterMon;
+int DistributedTree::rankMe = -1;
+int DistributedTree::rankZeroW = 0;
+int DistributedTree::rankPrcnd = -1;
+int DistributedTree::numProcs = -1;
 
-sTree::sTree(const sTree& other) : commWrkrs{other.commWrkrs}, myProcs(other.myProcs.begin(), other.myProcs.end()),
+DistributedTree::DistributedTree(const DistributedTree& other) : commWrkrs{other.commWrkrs}, myProcs(other.myProcs.begin(), other.myProcs.end()),
       myOldProcs(other.myOldProcs.begin(), other.myOldProcs.end()), commP2ZeroW{other.commP2ZeroW}, N{other.N}, MY{other.MY}, MZ{other.MZ},
       MYL{other.MYL}, MZL{other.MZL}, np{other.np}, IPMIterExecTIME{other.IPMIterExecTIME}, is_hierarchical_root{other.is_hierarchical_root},
       is_hierarchical_inner_root{other.is_hierarchical_inner_root}, is_hierarchical_inner_leaf{other.is_hierarchical_inner_leaf} {
@@ -31,25 +26,25 @@ sTree::sTree(const sTree& other) : commWrkrs{other.commWrkrs}, myProcs(other.myP
       children.push_back(child->clone());
 }
 
-sTree::~sTree() {
+DistributedTree::~DistributedTree() {
    for (size_t it = 0; it < children.size(); it++)
       delete children[it];
    delete sub_root;
 }
 
-int sTree::myl() const {
+int DistributedTree::myl() const {
    return -1;
 }
 
-int sTree::mzl() const {
+int DistributedTree::mzl() const {
    return -1;
 }
 
-bool sTree::distributedPreconditionerActive() const {
+bool DistributedTree::distributedPreconditionerActive() const {
    return (rankZeroW != 0) && (rankPrcnd != -1) && (commP2ZeroW != MPI_COMM_NULL) && (rankMe != -1);
 }
 
-void sTree::assignProcesses(MPI_Comm comm) {
+void DistributedTree::assignProcesses(MPI_Comm comm) {
    assert(comm != MPI_COMM_NULL);
    assert(!is_hierarchical_root);
 
@@ -106,7 +101,7 @@ void sTree::assignProcesses(MPI_Comm comm) {
    }
 }
 
-double sTree::processLoad() const {
+double DistributedTree::processLoad() const {
    assert(!is_hierarchical_root);
    //! need a recursive and also a collective call
    if (IPMIterExecTIME < 0.0)
@@ -115,20 +110,20 @@ double sTree::processLoad() const {
    return IPMIterExecTIME;
 }
 
-void sTree::getGlobalSizes(long long& n, long long& my, long long& mz) const {
+void DistributedTree::getGlobalSizes(long long& n, long long& my, long long& mz) const {
    n = N;
    my = MY;
    mz = MZ;
 }
 
-void sTree::getGlobalSizes(long long& n, long long& my, long long& myl, long long& mz, long long& mzl) const {
+void DistributedTree::getGlobalSizes(long long& n, long long& my, long long& myl, long long& mz, long long& mzl) const {
    n = N;
    my = MY;
    mz = MZ;
    myl = MYL, mzl = MZL;
 }
 
-int sTree::innerSize(int which) const {
+int DistributedTree::innerSize(int which) const {
    assert(false);
    if (which == 0)
       return nx();
@@ -138,36 +133,37 @@ int sTree::innerSize(int which) const {
    return mz();
 }
 
-DistributedVector<double>* sTree::newPrimalVector(bool empty) const {
-   if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const {
+   if (commWrkrs == MPI_COMM_NULL) {
+      return new DistributedDummyVector<double>();
+   }
 
-   DistributedVector<double>* x{};
    if (!sub_root) {
-      x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
-
+      DistributedVector<double>* x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
       for (size_t it = 0; it < children.size(); it++) {
-         DistributedVector<double>* child = children[it]->newPrimalVector(empty);
+         DistributedVector<double>* child = children[it]->new_primal_vector(empty);
          x->AddChild(child);
       }
+      return x;
    }
    else {
       assert(children.size() == 0);
-      if (sub_root->commWrkrs == MPI_COMM_NULL)
-         x = new StochDummyVectorBase<double>();
+      if (sub_root->commWrkrs == MPI_COMM_NULL) {
+         DistributedVector<double>* x = new DistributedDummyVector<double>();
+         return x;
+      }
       else {
-         DistributedVector<double>* x_vec = sub_root->newPrimalVector(empty);
-         x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
+         DistributedVector<double>* x_vec = sub_root->new_primal_vector(empty);
+         DistributedVector<double>* x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
          x_vec->parent = x;
+         return x;
       }
    }
-
-   return x;
 }
 
-DistributedVector<double>* sTree::newDualYVector(bool empty) const {
+DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    DistributedVector<double>* y{};
    const int yl = (np == -1) ? myl() : -1;
@@ -184,7 +180,7 @@ DistributedVector<double>* sTree::newDualYVector(bool empty) const {
       assert(children.size() == 0);
 
       if (sub_root->commWrkrs == MPI_COMM_NULL)
-         y = new StochDummyVectorBase<double>();
+         y = new DistributedDummyVector<double>();
       else {
          DistributedVector<double>* y_vec = sub_root->newDualYVector(empty);
          assert(yl == -1);
@@ -196,9 +192,9 @@ DistributedVector<double>* sTree::newDualYVector(bool empty) const {
    return y;
 }
 
-DistributedVector<double>* sTree::newDualZVector(bool empty) const {
+DistributedVector<double>* DistributedTree::newDualZVector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    DistributedVector<double>* z{};
    const int zl = (np == -1) ? mzl() : -1;
@@ -214,7 +210,7 @@ DistributedVector<double>* sTree::newDualZVector(bool empty) const {
    else {
       assert(children.size() == 0);
       if (sub_root->commWrkrs == MPI_COMM_NULL)
-         z = new StochDummyVectorBase<double>();
+         z = new DistributedDummyVector<double>();
       else {
          DistributedVector<double>* z_vec = sub_root->newDualZVector(empty);
          assert(zl == -1);
@@ -227,10 +223,10 @@ DistributedVector<double>* sTree::newDualZVector(bool empty) const {
    return z;
 }
 
-DistributedVector<double>* sTree::newRhs() const {
+DistributedVector<double>* DistributedTree::newRhs() const {
    //is this node a dead-end for this process?
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    DistributedVector<double>* rhs{};
    if (!sub_root) {
@@ -253,37 +249,37 @@ DistributedVector<double>* sTree::newRhs() const {
    return rhs;
 }
 
-void sTree::startMonitors() {
+void DistributedTree::startMonitors() {
    iterMon.recIterateTm_start();
    startNodeMonitors();
 }
 
-void sTree::stopMonitors() {
+void DistributedTree::stopMonitors() {
    iterMon.recIterateTm_stop();
    stopNodeMonitors();
 }
 
-void sTree::startNodeMonitors() {
+void DistributedTree::startNodeMonitors() {
    resMon.reset();
    for (size_t i = 0; i < children.size(); i++)
       children[i]->startNodeMonitors();
 }
 
-void sTree::stopNodeMonitors() {
+void DistributedTree::stopNodeMonitors() {
    for (size_t i = 0; i < children.size(); i++)
       children[i]->stopNodeMonitors();
 
    resMon.computeTotal();
 }
 
-void sTree::toMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
+void DistributedTree::toMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
    lstExecTm.push_back(resMon.eTotal);
 
    for (size_t i = 0; i < children.size(); i++)
       children[i]->toMonitorsList(lstExecTm);
 }
 
-void sTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
+void DistributedTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
    resMon.eTotal = lstExecTm.front();
    lstExecTm.pop_front();
 
@@ -291,7 +287,7 @@ void sTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
       children[i]->fromMonitorsList(lstExecTm);
 }
 
-void sTree::syncMonitoringData(std::vector<double>& vCPUTotal) {
+void DistributedTree::syncMonitoringData(std::vector<double>& vCPUTotal) {
 
    std::list<NodeExecEntry> lstExecTm;
    this->toMonitorsList(lstExecTm);
@@ -348,7 +344,7 @@ void sTree::syncMonitoringData(std::vector<double>& vCPUTotal) {
 }
 
 
-bool sTree::balanceLoad() {
+bool DistributedTree::balanceLoad() {
    return false; //disabled for now
    //before synchronization, compute the total time recorded on this CPU
    //updates this->IPMIterExecTIME
@@ -431,7 +427,7 @@ bool sTree::balanceLoad() {
 #define maSend 1
 #define maRecv 0
 
-void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromCPU) {
+void DistributedTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromCPU) {
    // was this node previously assigned to cpu 'rank'?
    int wasAssigned = isInVector(rank, myOldProcs);
    // is currently assigned to cpu 'rank'?
@@ -461,7 +457,7 @@ void sTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, int& toFromC
    }
 }
 
-void sTree::computeNodeTotal() {
+void DistributedTree::computeNodeTotal() {
    if (0 == children.size())
       this->IPMIterExecTIME = resMon.eTotal.tmChildren;
    else {
@@ -475,7 +471,7 @@ void sTree::computeNodeTotal() {
    }
 }
 
-void sTree::saveCurrentCPUState() {
+void DistributedTree::saveCurrentCPUState() {
    myOldProcs = myProcs;
 
    for (size_t i = 0; i < children.size(); i++)
@@ -483,7 +479,7 @@ void sTree::saveCurrentCPUState() {
 }
 
 
-void sTree::appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const {
+void DistributedTree::appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const {
    if (level == layer_outputs.size())
       layer_outputs.push_back("");
    if (commWrkrs == MPI_COMM_NULL)
@@ -531,7 +527,7 @@ void sTree::appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsign
    }
 }
 
-void sTree::printProcessTree() const {
+void DistributedTree::printProcessTree() const {
    assert(commWrkrs != MPI_COMM_NULL);
 
    unsigned int level = 0;
@@ -663,7 +659,7 @@ void sTree::printProcessTree() const {
                 << "\t-> rethink the amount of layers for the hierarchical approach..\n\n";
 }
 
-void sTree::mapChildrenToNSubTrees(std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees) {
+void DistributedTree::mapChildrenToNSubTrees(std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children, unsigned int n_subtrees) {
    assert(n_subtrees <= n_children);
    map_child_to_sub_tree.clear();
    map_child_to_sub_tree.reserve(n_children);

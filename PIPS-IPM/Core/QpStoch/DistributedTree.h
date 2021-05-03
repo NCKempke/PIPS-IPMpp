@@ -14,12 +14,12 @@
 #include <utility>
 #include "mpi.h"
 
-class sTreeCallbacks;
+class DistributedTreeCallbacks;
 
 class DistributedQP;
 
-class sTree {
-   friend sTreeCallbacks;
+class DistributedTree {
+   friend DistributedTreeCallbacks;
 public:
    StochNodeResourcesMonitor resMon;
    static StochIterateResourcesMonitor iterMon;
@@ -30,10 +30,10 @@ public:
    long long getMZ() const { return MZ; };
    long long getMZL() const { return MZL; };
 
-   virtual sTree* clone() const = 0;
+   virtual DistributedTree* clone() const = 0;
 protected:
 
-   sTree(const sTree& other);
+   DistributedTree(const DistributedTree& other);
 
    MPI_Comm commWrkrs{MPI_COMM_NULL};
    std::vector<int> myProcs, myOldProcs;
@@ -52,9 +52,9 @@ protected:
    int np{-1}; //n for the parent
 
    double IPMIterExecTIME{-1.0}; // not used since we currently do not compute loads for nodes and processes...
-   std::vector<sTree*> children;
+   std::vector<DistributedTree*> children;
    /* used for hierarchical approach - implies sub structure inside the current Bmat */
-   sTree* sub_root{};
+   DistributedTree* sub_root{};
 
    /* global number of all processes available */
    static int numProcs;
@@ -71,7 +71,7 @@ public:
 
    void assignProcesses(MPI_Comm comm = MPI_COMM_WORLD);
 
-   virtual ~sTree();
+   virtual ~DistributedTree();
 
    bool distributedPreconditionerActive() const;
 
@@ -103,14 +103,14 @@ public:
    virtual DistributedVector<double>* createcupp() const = 0;
    virtual DistributedVector<double>* createicupp() const = 0;
 
-   DistributedVector<double>* newPrimalVector(bool empty = false) const;
+   DistributedVector<double>* new_primal_vector(bool empty = false) const;
    DistributedVector<double>* newDualYVector(bool empty = false) const;
    DistributedVector<double>* newDualZVector(bool empty = false) const;
 
    DistributedVector<double>* newRhs() const;
 
-   const sTree* getSubRoot() const { return sub_root; };
-   const std::vector<sTree*>& getChildren() const { return children; };
+   const DistributedTree* getSubRoot() const { return sub_root; };
+   const std::vector<DistributedTree*>& getChildren() const { return children; };
    unsigned int nChildren() const { return children.size(); }
    MPI_Comm getCommWorkers() const { return commWrkrs; };
 
@@ -136,19 +136,19 @@ public:
    bool isHierarchicalInnerLeaf() const { return is_hierarchical_inner_leaf; };
 
    /* shave tree and add an additional top layer */
-   virtual sTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
+   virtual DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) = 0;
    /* add an additional layer below this one by adding sqrt(nChildren) children each with sqrt(nChildren) of our current children */
    virtual std::pair<int, int> splitTree(int n_layers, DistributedQP* data) = 0;
 
    // TODO : make sure that none of the not suitable methods get called...
-   virtual sTree* switchToHierarchicalTree(DistributedQP*& data) = 0;
+   virtual DistributedTree* switchToHierarchicalTree(DistributedQP*& data) = 0;
 
    void printProcessTree() const;
 protected:
    void appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const;
    void assignProcesses(MPI_Comm, std::vector<int>&);
 
-   sTree() = default;
+   DistributedTree() = default;
 
    void toMonitorsList(std::list<NodeExecEntry>&);
    void fromMonitorsList(std::list<NodeExecEntry>&);

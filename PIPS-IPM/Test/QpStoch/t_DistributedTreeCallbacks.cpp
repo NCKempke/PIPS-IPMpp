@@ -2,11 +2,11 @@
 #include "gmock/gmock.h"
 
 #include "mpi.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "StochOptions.h"
 #include <memory>
 
-class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {};
+class HierarchicalMappingParametersTest : public DistributedTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {};
 
 // TODO:....
 //TEST_P(HierarchicalMappingParametersTest, CorrectMappingChildrenToNewRoots )
@@ -48,12 +48,12 @@ class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testin
 //      testing::ValuesIn(maps_expected)
 //);
 
-class HierarchicalSplittingTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {
+class HierarchicalSplittingTest : public DistributedTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {
    void SetUp() override {
-      sTree::numProcs = 1;
-      sTree::rankPrcnd = -1;
-      sTree::rankZeroW = 0;
-      sTree::rankMe = 0;
+      DistributedTree::numProcs = 1;
+      DistributedTree::rankPrcnd = -1;
+      DistributedTree::rankZeroW = 0;
+      DistributedTree::rankMe = 0;
       pips_options::setBoolParameter("SILENT", true);
    }
 
@@ -65,11 +65,11 @@ protected:
    StochInputTree::StochInputNode* root_node{nullptr};
    StochInputTree* input_tree{nullptr};
 public:
-   sTreeCallbacks* createTestTree(int n_children, int n_eq_links, int n_ineq_links);
+   DistributedTreeCallbacks* createTestTree(int n_children, int n_eq_links, int n_ineq_links);
 
 };
 
-sTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_eq_linkings, int n_ineq_linkings) {
+DistributedTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_eq_linkings, int n_ineq_linkings) {
    const int NX_ROOT = 10;
    const int MY_ROOT = 20;
    const int MZ_ROOT = 30;
@@ -87,7 +87,7 @@ sTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_e
       input_tree->AddChild(new StochInputTree(leaf_node));
    }
 
-   sTreeCallbacks* tree = new sTreeCallbacks(input_tree);
+   DistributedTreeCallbacks* tree = new DistributedTreeCallbacks(input_tree);
    tree->assignProcesses();
    tree->computeGlobalSizes();
 
@@ -122,7 +122,7 @@ sTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_e
 //   const int n_eq_links = (n_children - 1) * two_links_eq_per_block + global_eq_links;
 //   const int n_ineq_links = (n_children - 1) * two_links_ineq_per_block + global_ineq_links;
 //
-//   sTreeCallbacks* test_tree = createTestTree( n_children, n_eq_links, n_ineq_links);
+//   DistributedTreeCallbacks* test_tree = createTestTree( n_children, n_eq_links, n_ineq_links);
 //   test_tree->assertTreeStructureCorrect();
 //
 //   std::vector<int> twoLinksStartBlockA(n_children, two_links_eq_per_block);
@@ -131,8 +131,8 @@ sTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_e
 //   std::vector<int> twoLinksStartBlockC(n_children, two_links_ineq_per_block);
 //   twoLinksStartBlockC[n_children - 1] = 0;
 //
-//   std::unique_ptr<sTreeCallbacks> test_tree_split(
-//         dynamic_cast<sTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) ) );
+//   std::unique_ptr<DistributedTreeCallbacks> test_tree_split(
+//         dynamic_cast<DistributedTreeCallbacks*>( test_tree->switchToHierarchicalTree(shave_n_vars, shave_n_eqs, shave_n_ineqs, twoLinksStartBlockA, twoLinksStartBlockC ) ) );
 //
 //   /// check root for right amount of linking constraints
 //   long long dummy, MYL, MZL;
@@ -146,7 +146,7 @@ sTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildren, int n_e
 //   EXPECT_EQ( test_tree_split->nChildren(), 1 );
 //
 //   /// check inner root node
-//   const sTreeCallbacks* inner_root = dynamic_cast<const sTreeCallbacks*>(test_tree_split->getChildren()[0]);
+//   const DistributedTreeCallbacks* inner_root = dynamic_cast<const DistributedTreeCallbacks*>(test_tree_split->getChildren()[0]);
 //   inner_root->getGlobalSizes(dummy, dummy, MYL, dummy, MZL);
 //   EXPECT_EQ( MYL, n_eq_links - shave_n_eqs );
 //   EXPECT_EQ( MZL, n_ineq_links - shave_n_ineqs );

@@ -4,7 +4,7 @@
 #ifndef STOCH_TREE_CALLBACKS
 #define STOCH_TREE_CALLBACKS
 
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "StochInputTree.h"
 
 #include <memory>
@@ -17,9 +17,9 @@
 
 class DistributedQP;
 
-class sTreeCallbacks : public sTree {
+class DistributedTreeCallbacks : public DistributedTree {
 protected:
-   sTreeCallbacks(const sTreeCallbacks& other);
+   DistributedTreeCallbacks(const DistributedTreeCallbacks& other);
 public:
 
    using InputNode = StochInputTree::StochInputNode;
@@ -27,15 +27,15 @@ public:
    using DATA_VEC = FVEC InputNode::*;
    using DATA_NNZ = FNNZ InputNode::*;
    using DATA_INT = int InputNode::*;
-   using TREE_SIZE = long long sTree::*;
+   using TREE_SIZE = long long DistributedTree::*;
 
-   sTree* clone() const override;
+   DistributedTree* clone() const override;
 
-   sTreeCallbacks(StochInputTree* root);
-   sTreeCallbacks(StochInputTree::StochInputNode* data_);
-   ~sTreeCallbacks() = default;
+   DistributedTreeCallbacks(StochInputTree* root);
+   DistributedTreeCallbacks(StochInputTree::StochInputNode* data_);
+   ~DistributedTreeCallbacks() = default;
 
-   void addChild(sTreeCallbacks* child);
+   void addChild(DistributedTreeCallbacks* child);
 
    StochSymMatrix* createQ() const override;
 
@@ -72,7 +72,7 @@ public:
 
    virtual void writeSizes(std::ostream& sout) const;
 
-   sTree* switchToHierarchicalTree(DistributedQP*& data) override;
+   DistributedTree* switchToHierarchicalTree(DistributedQP*& data) override;
 
    const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
    std::vector<MPI_Comm> getChildComms() const;
@@ -110,7 +110,7 @@ protected:
 
    std::pair<int, int> splitTree(int n_layers, DistributedQP* data) override;
 
-   sTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
+   DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 
    /* inactive sizes store the original state of the tree when switching to the presolved data */
    long long N_INACTIVE{-1};
@@ -139,7 +139,7 @@ protected:
    /* after this node has been split this will indicate how the children were assigned to the (new) sub_roots */
    std::vector<unsigned int> map_node_sub_root;
 
-   sTreeCallbacks();
+   DistributedTreeCallbacks();
    InputNode* data{}; //input data
 };
 

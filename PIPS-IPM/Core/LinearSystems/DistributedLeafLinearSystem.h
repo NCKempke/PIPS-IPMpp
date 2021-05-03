@@ -6,7 +6,7 @@
 #define DISTRIBUTEDLEAFLINEARSYSTEM_H
 
 #include "DistributedLinearSystem.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"

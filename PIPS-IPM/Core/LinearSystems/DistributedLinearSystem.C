@@ -5,7 +5,7 @@
 #include "StochOptions.h"
 #include "BorderedSymMatrix.h"
 #include "DistributedLinearSystem.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseLinearAlgebraPackage.h"

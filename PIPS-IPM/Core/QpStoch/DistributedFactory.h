@@ -6,7 +6,7 @@
 #define SPSTOCHFACTORY
 
 #include "ProblemFactory.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 
 // save diagnostic state
 #pragma GCC diagnostic push
@@ -98,7 +98,7 @@ public:
 
    virtual DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
 
-   sTree* tree{};
+   DistributedTree* tree{};
    DistributedQP* problem{};
 
    virtual void iterate_started();
@@ -116,7 +116,7 @@ public:
    ~DistributedFactory() override;
 
 protected:
-   std::unique_ptr<sTree> hier_tree_swap{};
+   std::unique_ptr<DistributedTree> hier_tree_swap{};
    DistributedFactory() = default;
 };
 

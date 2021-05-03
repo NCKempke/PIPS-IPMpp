@@ -9,7 +9,7 @@ template<typename T>
 class DistributedVector;
 
 template<typename T>
-class StochDummyVectorBase;
+class DistributedDummyVector;
 
 template<typename T> using StochVectorBaseHandle = SmartPointer<DistributedVector<T> >;
 typedef SmartPointer<DistributedVector<double>> StochVectorHandle;

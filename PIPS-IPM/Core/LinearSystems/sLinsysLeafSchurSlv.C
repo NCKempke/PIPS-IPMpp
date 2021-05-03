@@ -3,7 +3,7 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysLeafSchurSlv.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "SparseSymMatrix.h"

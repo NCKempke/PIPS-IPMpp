@@ -14,7 +14,7 @@
 //#include "stochasticInput.hpp"
 //#include "sTreeImpl.h"
 
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
@@ -26,7 +26,7 @@
 #include "Presolver.h"
 #include "Postsolver.h"
 
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "pipsport.h"
 
 #include "StochOptions.h"
@@ -594,7 +594,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::postsolveComputedSolution() {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       formulation_factory->switchToOriginalTree();
 
-   dynamic_cast<sTreeCallbacks*>(formulation_factory->tree)->switchToOriginalData();
+   dynamic_cast<DistributedTreeCallbacks*>(formulation_factory->tree)->switchToOriginalData();
    formulation_factory->problem = original_problem.get();
 
    postsolved_variables.reset(dynamic_cast<DistributedVariables*>( formulation_factory->make_variables(*original_problem)));

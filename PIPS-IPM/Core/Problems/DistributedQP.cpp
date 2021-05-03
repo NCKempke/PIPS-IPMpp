@@ -1,6 +1,6 @@
 #include "DistributedQP.hpp"
-#include "sTree.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTree.h"
+#include "DistributedTreeCallbacks.h"
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
@@ -1090,7 +1090,7 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
    return permvec;
 }
 
-DistributedQP::DistributedQP(const sTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
+DistributedQP::DistributedQP(const DistributedTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
       Vector<double>* xupp_in, Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in,
       Vector<double>* iclow_in, Vector<double>* cupp_in, Vector<double>* icupp_in, bool add_children, bool is_hierarchy_root,
       bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(SparseLinearAlgebraPackage::soleInstance(), c_in, Q_in, xlow_in, ixlow_in,
@@ -1389,7 +1389,7 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    DistributedVector<double>* clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
    DistributedVector<double>* iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
 
-   const sTree* tree_clone = stochNode;
+   const DistributedTree* tree_clone = stochNode;
 
    // TODO : proper copy ctor..
    DistributedQP* clone = new DistributedQP(tree_clone, c_clone, Q_clone, xlow_clone, ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
@@ -1432,7 +1432,7 @@ void DistributedQP::destroyChildren() {
    children.clear();
 }
 
-DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const sTree* tree) {
+DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
    SymMatrixHandle Q_hier(dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars));
 
    GenMatrixHandle A_hier(dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
@@ -1459,7 +1459,7 @@ DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const sTree* tr
          icupp_hier, false, true);
 }
 
-DistributedQP* DistributedQP::shaveDenseBorder(const sTree* tree) {
+DistributedQP* DistributedQP::shaveDenseBorder(const DistributedTree* tree) {
    DistributedQP* hierarchical_top = shaveBorderFromDataAndCreateNewTop(tree);
 
    const DistributedVector<double>& ixlow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixlow);
@@ -1575,7 +1575,7 @@ void DistributedQP::reorderLinkingConstraintsAccordingToSplit() {
    assert(isSCrowLocal.size() == 0);
    assert(isSCrowMyLocal.size() == 0);
 
-   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
    Permutation perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdA, stochNode->myl());
    Permutation perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdC, stochNode->mzl());
@@ -1594,10 +1594,10 @@ void DistributedQP::addChildrenForSplit() {
    assert(isSCrowLocal.size() == 0);
    assert(isSCrowMyLocal.size() == 0);
 
-   const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
 
-   const sTreeCallbacks& tree = dynamic_cast<const sTreeCallbacks&>(*stochNode);
+   const DistributedTreeCallbacks& tree = dynamic_cast<const DistributedTreeCallbacks&>(*stochNode);
    std::vector<DistributedQP*> new_children(n_new_children);
 
    unsigned int childchild_pos{0};
@@ -1633,8 +1633,8 @@ void DistributedQP::addChildrenForSplit() {
       DistributedVector<double>* icupp_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*icupp).children[i]
                                                                        : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).children[i];
 
-      assert(dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
-      const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
+      assert(dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
+      const DistributedTree* tree_child = dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
 
       DistributedQP* child = new DistributedQP(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child, A_child, bA_child,
             C_child, bl_child, iclow_child, bu_child, icupp_child, false, false, false, true);
@@ -1732,8 +1732,8 @@ void DistributedQP::addChildrenForSplit() {
 }
 
 void DistributedQP::splitData() {
-   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
-   const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<MPI_Comm> child_comms = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getChildComms();
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
 
 // TODO : DELETEME
@@ -1879,8 +1879,8 @@ void DistributedQP::splitStringMatricesAccordingToSubtreeStructure() {
       return;
    }
 
-   Blmat.splitAlongTree(dynamic_cast<const sTreeCallbacks&>(*stochNode));
-   Dlmat.splitAlongTree(dynamic_cast<const sTreeCallbacks&>(*stochNode));
+   Blmat.splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*stochNode));
+   Dlmat.splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*stochNode));
 
    assert(children.size() == Blmat.children.size());
    assert(children.size() == Dlmat.children.size());
