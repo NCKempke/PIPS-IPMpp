@@ -5,7 +5,6 @@
 #include "DistributedVector.h"
 #include "DistributedTree.h"
 #include "DistributedTreeCallbacks.h"
-#include "LinearAlgebraPackage.h"
 #include <iostream>
 
 DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in,

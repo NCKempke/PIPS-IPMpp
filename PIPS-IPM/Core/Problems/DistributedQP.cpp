@@ -4,7 +4,6 @@
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
-#include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
 #include "StochOptions.h"
 #include "BorderedSymMatrix.h"
@@ -1090,7 +1089,7 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
 DistributedQP::DistributedQP(const DistributedTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
       Vector<double>* xupp_in, Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in,
       Vector<double>* iclow_in, Vector<double>* cupp_in, Vector<double>* icupp_in, bool add_children, bool is_hierarchy_root,
-      bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(SparseLinearAlgebraPackage::soleInstance(), c_in, Q_in, xlow_in, ixlow_in,
+      bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(c_in, Q_in, xlow_in, ixlow_in,
       xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in), stochNode{tree_}, is_hierarchy_root{is_hierarchy_root},
       is_hierarchy_inner_root{is_hierarchy_inner_root}, is_hierarchy_inner_leaf{is_hierarchy_inner_leaf} {
    if (add_children)

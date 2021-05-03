@@ -10,13 +10,9 @@
 #include "SmartPointer.h"
 #include "DoubleMatrix.h"
 
-class LinearAlgebraPackage;
-
 class Problem {
 protected:
    Problem() = default;
-
-   LinearAlgebraPackage* la{};
 
 public:
    SmartPointer<GenMatrix> A;
@@ -42,7 +38,7 @@ public:
    long long mclow{0};
    long long mcupp{0};
 
-   Problem(LinearAlgebraPackage* la, Vector<double>* c, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
+   Problem(Vector<double>* c, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
          GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp);
 
    virtual ~Problem() = default;

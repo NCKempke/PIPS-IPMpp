@@ -270,22 +270,18 @@ AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
 }
 
 Vector<double>* DistributedFactory::make_primal_vector() const {
-   assert(!la);
    return tree->new_primal_vector();
 }
 
 Vector<double>* DistributedFactory::make_equalities_dual_vector() const {
-   assert(!la);
    return tree->newDualYVector();
 }
 
 Vector<double>* DistributedFactory::make_inequalities_dual_vector() const {
-   assert(!la);
    return tree->newDualZVector();
 }
 
 Vector<double>* DistributedFactory::make_right_hand_side() const {
-   assert(!la);
    return tree->newRhs();
 }
 

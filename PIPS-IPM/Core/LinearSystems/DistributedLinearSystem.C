@@ -7,7 +7,6 @@
 #include "DistributedLinearSystem.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
-#include "SparseLinearAlgebraPackage.h"
 #include "math.h"
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, bool is_hierarchy_root) : LinearSystem(

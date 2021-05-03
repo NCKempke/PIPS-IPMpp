@@ -9,8 +9,6 @@
 
 class QP;
 
-class LinearAlgebraPackage;
-
 class DistributedTree;
 
 class DistributedVariables : public Variables {

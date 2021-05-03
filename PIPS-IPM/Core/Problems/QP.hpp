@@ -10,8 +10,6 @@
 
 class MpsReader;
 
-class LinearAlgebraPackage;
-
 class Variables;
 
 #ifdef TESTING
@@ -38,7 +36,7 @@ public:
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */
-   QP(LinearAlgebraPackage* la, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+   QP(Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
          Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
          Vector<double>* ciupp);
 

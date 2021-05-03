@@ -18,8 +18,6 @@
 
 class DistributedTree;
 
-class LinearAlgebraPackage;
-
 class DistributedQP : public QP {
 protected:
    DistributedQP() = default;

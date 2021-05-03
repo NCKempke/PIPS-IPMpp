@@ -48,8 +48,6 @@ class AbstractLinearSystem;
 
 class Variables;
 
-class LinearAlgebraPackage;
-
 /**
  * Creates a compatible set of components representing a problem formulation
  * specialized by structure.
@@ -61,11 +59,11 @@ public:
 
    virtual void separate_variables(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const = 0;
 
-   /** create x shaped vector using LinearAlgebraPackage */
+   /** create x shaped vector */
    virtual Vector<double>* make_primal_vector() const;
-   /** create dual A shaped vector using LinearAlgebraPackage */
+   /** create dual A shaped vector */
    virtual Vector<double>* make_equalities_dual_vector() const;
-   /** create dual C shaped vector using LinearAlgebraPackage */
+   /** create dual C shaped vector */
    virtual Vector<double>* make_inequalities_dual_vector() const;
    /** create a rhs vector for the augmented system */
    virtual Vector<double>* make_right_hand_side() const;
@@ -82,7 +80,6 @@ public:
    virtual ~ProblemFactory() = default;
 
 protected:
-   LinearAlgebraPackage* la{};
    /** number of elements in x */
    long long nx{0};
 
