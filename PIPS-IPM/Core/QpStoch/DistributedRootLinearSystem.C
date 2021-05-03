@@ -8,7 +8,6 @@
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
 #include "StochOptions.h"
-#include "math.h"
 
 #include "pipsport.h"
 
@@ -191,7 +190,7 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseGenMatrix& buffer, Bord
    if (sc_compute_blockwise_hierarchical)
       assert(end_rows - begin_rows <= mbuffer);
    else
-      assert(end_rows = mbuffer);
+      assert(end_rows == mbuffer);
 
    if (!Br.has_RAC && !Br.use_local_RAC)
       return;
