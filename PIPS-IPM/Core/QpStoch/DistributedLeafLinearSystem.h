@@ -40,6 +40,7 @@ public:
 
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
+   void put_barrier_parameter(double barrier) override;
 
    void
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;

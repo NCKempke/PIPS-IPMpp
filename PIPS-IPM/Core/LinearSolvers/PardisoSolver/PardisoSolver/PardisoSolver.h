@@ -21,8 +21,8 @@ public:
    virtual void firstCall() = 0;
 
    /** sets mStorage to refer to the argument sgm */
-   PardisoSolver(const SparseSymMatrix* sgm);
-   PardisoSolver(const DenseSymMatrix* m);
+   explicit PardisoSolver(const SparseSymMatrix* sgm);
+   explicit PardisoSolver(const DenseSymMatrix* m);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
@@ -32,8 +32,8 @@ public:
    void solve(int nrhss, double* rhss, int* colSparsity) override;
    void solve(GenMatrix& rhs, int* colSparsity);
 
-   bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
 
 protected:
    virtual void setIparm(int* iparm) const = 0;
@@ -42,9 +42,9 @@ protected:
          int* nrhs, int* iparm, const int* msglvl, double* rhs, double* sol, int* error) = 0;
 
    void initSystem();
-   bool iparmUnchanged() const;
+   [[nodiscard]] bool iparmUnchanged() const;
 
-   ~PardisoSolver();
+   ~PardisoSolver() override;
 
    const SparseSymMatrix* Msys{};
    const DenseSymMatrix* Mdsys{};

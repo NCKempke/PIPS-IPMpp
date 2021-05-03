@@ -109,6 +109,14 @@ void DeSymIndefSolver::matrixChanged() {
 #ifdef TIMING_FLOPS
       HPM_Start("DSYTRFFact");
 #endif
+   std::cout << "before fact\n";
+
+   for(int i = 0; i < n; ++i) {
+      for(int j = 0; j < n; ++j) {
+         std::cout << mStorage->M[i][j] << "\t";
+      }
+      std::cout << std::endl;
+   }
 
    //factorize
    FNAME(dsytrf)(&fortranUplo, &n, &mStorage->M[0][0], &n, ipiv.data(), work.data(), &optimal_workspace_size, &info);
@@ -120,6 +128,13 @@ void DeSymIndefSolver::matrixChanged() {
       printf("DeSymIndefSolver::matrixChanged : error - dsytrf returned info=%d\n", info);
    //assert(info==0);
 
+   std::cout << "after fact\n";
+   for(int i = 0; i < n; ++i) {
+      for(int j = 0; j < n; ++j) {
+         std::cout << mStorage->M[i][j] << "\t";
+      }
+      std::cout << std::endl;
+   }
    //int piv2x2=0;
    //for(int i=0; i<n; i++)
    //  if(ipiv[i]<0) piv2x2++;

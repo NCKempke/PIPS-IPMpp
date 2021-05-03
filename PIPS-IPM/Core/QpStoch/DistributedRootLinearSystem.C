@@ -854,6 +854,13 @@ void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
       it->put_dual_inequalites_diagonal();
 }
 
+void DistributedRootLinearSystem::put_barrier_parameter(double barrier) {
+   this->barrier_parameter_current_iterate = barrier;
+
+   for (auto& child : children)
+      child->put_barrier_parameter(barrier);
+}
+
 void DistributedRootLinearSystem::AddChild(DistributedLinearSystem* child) {
    children.push_back(child);
 }

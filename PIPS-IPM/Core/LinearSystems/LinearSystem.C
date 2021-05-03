@@ -206,7 +206,8 @@ void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
    assert(vars->validNonZeroPattern());
    assert(vars->validNonZeroPattern());
 
-   //barrier_parameter_current_iterate = vars->mu();
+   put_barrier_parameter(vars->mu());
+
    computeDiagonals(*vars->t, *vars->lambda, *vars->u, *vars->pi, *vars->v, *vars->gamma, *vars->w, *vars->phi);
 
    if (pips_options::getBoolParameter("HIERARCHICAL_TESTING")) {

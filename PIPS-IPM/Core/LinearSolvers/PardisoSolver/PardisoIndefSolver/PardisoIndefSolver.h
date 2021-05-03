@@ -87,13 +87,13 @@ public:
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& vec) override;
    void solve(GenMatrix&) override { assert(0 && "not supported"); };
-   void solve(int nrhss, double* rhss, int* /*colSparsity*/ );
+   void solve(int nrhss, double* rhss, int* /*colSparsity*/ ) override;
 
    void solveSynchronized(Vector<double>& vec) override;
    ~PardisoIndefSolver() override;
 
-   bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
 
 private:
    void initPardiso();

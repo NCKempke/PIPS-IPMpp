@@ -150,7 +150,6 @@ void DistributedLinearSystem::computeU_V(DistributedQP* problem, DenseGenMatrix*
 }
 
 void DistributedLinearSystem::factorize_with_correct_inertia() {
-   assert(false);
    regularization_strategy->notify_new_step();
 
    /* factor once without applying regularization */
@@ -163,6 +162,7 @@ void DistributedLinearSystem::factorize_with_correct_inertia() {
    double last_dual_equality_regularization{0.0};
    double last_dual_inequality_regularization{0.0};
 
+   // TODO : add max tries..
    while (!regularization_strategy->is_inertia_correct(solver->get_inertia())) {
       auto[primal_regularization_value, dual_equality_regularization_value, dual_inequality_regularization_value] =
       this->regularization_strategy->get_regularization_parameters(solver->get_inertia(), barrier_parameter_current_iterate);

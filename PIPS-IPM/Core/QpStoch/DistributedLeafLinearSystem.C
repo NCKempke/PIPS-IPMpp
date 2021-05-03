@@ -92,8 +92,11 @@ void DistributedLeafLinearSystem::put_dual_inequalites_diagonal() {
    kkt->atPutDiagonal(locnx + locmy, *nomegaInv_stoch.first);
 }
 
+void DistributedLeafLinearSystem::put_barrier_parameter(double barrier) {
+   this->barrier_parameter_current_iterate = barrier;
+}
+
 void DistributedLeafLinearSystem::add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector_) {
-   assert(false);
    assert(dynamic_cast<DistributedVector<double>&>(regularization_vector_).first);
 
    auto& regularization_vector = *dynamic_cast<DistributedVector<double>&>(regularization_vector_).first;
@@ -105,7 +108,6 @@ void DistributedLeafLinearSystem::add_regularization_diagonal(int offset, double
 /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
 void
 DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) {
-   assert(false);
    assert(this->primal_regularization_diagonal);
    assert(this->dual_equality_regularization_diagonal);
    assert(this->dual_inequality_regularization_diagonal);
@@ -115,11 +117,11 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
    }
 
    if (locmy > 0) {
-      add_regularization_diagonal(locnx, dual_equality_regularization, *this->dual_equality_regularization_diagonal);
+      add_regularization_diagonal(locnx, -dual_equality_regularization, *this->dual_equality_regularization_diagonal);
    }
 
    if (locmz > 0) {
-      add_regularization_diagonal(locnx + locmy, dual_inequality_regularization, *this->dual_inequality_regularization_diagonal);
+      add_regularization_diagonal(locnx + locmy, -dual_inequality_regularization, *this->dual_inequality_regularization_diagonal);
    }
 }
 

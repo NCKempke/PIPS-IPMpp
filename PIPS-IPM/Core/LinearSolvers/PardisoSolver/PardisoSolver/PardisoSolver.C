@@ -157,6 +157,7 @@ void PardisoSolver::matrixChanged() {
       }
    }
 
+   Msys->writeToStreamDense(std::cout);
    if (Mdsys) {
       // the input is a dense matrix
       const DenseSymMatrix& Md = (*Mdsys);
@@ -365,6 +366,10 @@ PardisoSolver::~PardisoSolver() {
 }
 
 std::tuple<unsigned int, unsigned int, unsigned int> PardisoSolver::get_inertia() const {
-   assert(false && "TODO: Implement");
-   return {0, 0, 0};
+   const int positive_eigenvalues = iparm[21];
+   const int negative_eigenvalues = iparm[22];
+   const int number_pivot_perturbations = iparm[13]; // indicate zero pivots and thus rank deficiency
+
+   const int zero_eigenvalues = n - positive_eigenvalues - negative_eigenvalues + number_pivot_perturbations;
+   return {positive_eigenvalues - number_pivot_perturbations, negative_eigenvalues, zero_eigenvalues};
 }

@@ -44,10 +44,10 @@ public:
    virtual void solve(Vector<double>& x) = 0;
 
    /** does this solver report inertia of the factorized matrix back */
-   virtual bool reports_inertia() const = 0;
+   [[nodiscard]] virtual bool reports_inertia() const = 0;
 
    /** get inertia of last factorized system */
-   virtual std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const = 0;
+   [[nodiscard]] virtual std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const = 0;
 
    /* override if necessary */
    virtual void solveSynchronized(Vector<double>& x) { solve(x); };
@@ -85,7 +85,7 @@ public:
    /* scale a vector */
    virtual void unscaleVector(Vector<double>& vec_in) const = 0;
 
-   virtual ~SymmetricLinearScaler() {};
+   virtual ~SymmetricLinearScaler() = default;
 };
 
 /**
@@ -99,7 +99,7 @@ class MatTimesVec {
 public:
    /** y = beta * y + alpha * A * x */
    virtual void doIt(double beta, Vector<double>& y, double alpha, Vector<double>& x) = 0;
-   virtual ~MatTimesVec();
+   virtual ~MatTimesVec() = default;
 };
 
 /**
@@ -116,7 +116,7 @@ public:
    void diagonalChanged(int, int) override {};
    void matrixChanged() override {};
 
-   virtual ~DoubleIterativeLinearSolver() = default;
+   ~DoubleIterativeLinearSolver() override = default;
 protected:
    DoubleIterativeLinearSolver() = default;
    /** MatVec operation involving system matrix*/

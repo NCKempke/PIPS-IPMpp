@@ -80,6 +80,8 @@ public:
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
 
+   void put_barrier_parameter(double barrier) override;
+
    virtual void AddChild(DistributedLinearSystem* child);
 
    virtual bool usingSparseKkt() { return hasSparseKkt; };

@@ -18,6 +18,8 @@ RegularizationStrategy::RegularizationStrategy(unsigned int positive_eigenvalues
 bool RegularizationStrategy::is_inertia_correct(const Inertia& inertia) const {
    auto[positive_eigenvalues, negative_eigenvalues, zero_eigenvalues] = inertia;
 
+   std::cout << "comparing inertia of (" << positive_eigenvalues << "," << negative_eigenvalues << "," << zero_eigenvalues << ") against expected: (" <<
+      positive_eigenvalues_expected << "," << negative_eigenvalues_expected << "," << "0)\n";
    return positive_eigenvalues_expected == positive_eigenvalues && negative_eigenvalues_expected == negative_eigenvalues && zero_eigenvalues == 0;
 }
 
@@ -64,6 +66,7 @@ Regularization RegularizationStrategy::get_regularization_new_matrix(const Inert
 
    dual_inequality_regularization_current = dual_equality_regularization_current;
 
+   std::cout << "returning suggested regularization : " << primal_regularization_current << " " << dual_equality_regularization_current << " " << dual_inequality_regularization_current << std::endl;
    return {primal_regularization_current, dual_equality_regularization_current, dual_inequality_regularization_current};
 }
 

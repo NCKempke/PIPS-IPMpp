@@ -45,7 +45,8 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    createSolversAndKKts(data);
 
    if (apply_regularization) {
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmz);
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
@@ -64,7 +65,8 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    }
 
    if (apply_regularization) {
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmz);
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
    }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
@@ -1494,7 +1496,6 @@ void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymMatrix*& CtDC_l
 
 void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization){
    assert(apply_regularization);
-   assert(false);
    assert(primal_regularization_diagonal);
 
    assert(dynamic_cast<const DistributedVector<double>*>(this->primal_regularization_diagonal));
@@ -1522,9 +1523,9 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
       // TODO : not nicely done .. temp vector here..
       std::unique_ptr<SimpleVector<double>> regularization_added(dynamic_cast<SimpleVector<double>*>(dual_inequality_regularization_vec->clone()));
-      regularization_added->setToConstant(dual_inequality_regularization);
+      regularization_added->setToConstant(-dual_inequality_regularization);
 
-      dual_inequality_regularization_vec->addConstant(dual_inequality_regularization);
+      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
 
       SymMatrix* CTDC_regularization_ptr = CtDC.get();
       compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *regularization_added);
@@ -1536,8 +1537,8 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       const auto& dual_equality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).first;
       assert(dual_equality_regularization_vec);
 
-      dual_equality_regularization_vec->addConstant(dual_equality_regularization);
-      kkt->diagonal_add_constant_from(locnx, locmy, dual_equality_regularization);
+      dual_equality_regularization_vec->addConstant(-dual_equality_regularization);
+      kkt->diagonal_add_constant_from(locnx, locmy, -dual_equality_regularization);
    }
 
    /* dual linking equalities */
@@ -1545,16 +1546,16 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
       const auto& dual_equality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_equality_regularization_diagonal).last;
       assert(dual_equality_regularization_link_cons);
 
-      dual_equality_regularization_link_cons->addConstant(dual_equality_regularization);
-      kkt->diagonal_add_constant_from(locnx + locmy, locmyl, dual_equality_regularization);
+      dual_equality_regularization_link_cons->addConstant(-dual_equality_regularization);
+      kkt->diagonal_add_constant_from(locnx + locmy, locmyl, -dual_equality_regularization);
    }
 
    if (locmzl > 0) {
       const auto& dual_inequality_regularization_link_cons = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).last;
       assert(dual_inequality_regularization_link_cons);
 
-      dual_inequality_regularization_link_cons->addConstant(dual_inequality_regularization);
-      kkt->diagonal_add_constant_from(locnx + locmy + locmyl, locmzl, dual_inequality_regularization);
+      dual_inequality_regularization_link_cons->addConstant(-dual_inequality_regularization);
+      kkt->diagonal_add_constant_from(locnx + locmy + locmyl, locmzl, -dual_inequality_regularization);
    }
 }
 

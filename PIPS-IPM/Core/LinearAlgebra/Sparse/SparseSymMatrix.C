@@ -8,7 +8,6 @@
 #include <cassert>
 #include <cmath>
 #include "SimpleVector.h"
-#include "pipsport.h"
 
 #include "DoubleMatrixTypes.h"
 
@@ -61,7 +60,7 @@ void SparseSymMatrix::setToDiagonal(const Vector<double>& vec) {
 
 void SparseSymMatrix::diagonal_add_constant_from(int from, int length, double value) {
    assert(0 <= from);
-   assert(this->size() <= from + length);
+   assert(from + length <= this->size());
    mStorage->diagonal_add_constant_from(from, length, value);
 }
 
@@ -88,7 +87,6 @@ void SparseSymMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int j
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
 
-
 void SparseSymMatrix::randomizePSD(double* seed) {
    int k, NN, chosen, icurrent;
    int nnz;
@@ -105,7 +103,6 @@ void SparseSymMatrix::randomizePSD(double* seed) {
    jcolM[0] = 0;
    M[0] = 1e-8 + drand(seed);
    krowM[1] = 1;
-   nnz = 1;
 
    // Knuth's algorithm for choosing len elements out of NN elts.
    // NN here is the number of elements in the strict lower triangle.
@@ -189,8 +186,8 @@ void SparseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& 
    int i, k;
    int info, nnz;
 
-   int* ja = new int[colExtent];
-   double* a = new double[colExtent];
+   auto* ja = new int[colExtent];
+   auto* a = new double[colExtent];
 
    nnz = 0;
    for (i = 0; i < rowExtent; i++) {
@@ -224,8 +221,8 @@ long long SparseSymMatrix::size() const {
 }
 
 void SparseSymMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
-   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    assert(x.length() == mStorage->n && y.length() == mStorage->m);
 
@@ -240,8 +237,8 @@ void SparseSymMatrix::mult(double beta, Vector<double>& y_in, double alpha, cons
 }
 
 void SparseSymMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
-   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    assert(x.length() == mStorage->n && y.length() == mStorage->m);
 
@@ -327,7 +324,7 @@ void SparseSymMatrix::reduceToLower() {
 }
 
 void SparseSymMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec) {
-   const SimpleVector<int>& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
+   const auto& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
 #ifndef NDEBUG
    int m, n;
    mStorage->getSize(m, n);
@@ -361,8 +358,8 @@ SparseGenMatrix* SparseSymMatrix::shaveSymLeftBottom(int n_vars) {
    mStorage->m -= n_vars;
    mStorage->n -= n_vars;
 
-   SparseStorage* m_border = new SparseStorage(mStorage->m, n_vars, 0);
-   SparseGenMatrix* border = new SparseGenMatrix(m_border);
+   auto* m_border = new SparseStorage(mStorage->m, n_vars, 0);
+   auto* border = new SparseGenMatrix(m_border);
 
    return border;
 }

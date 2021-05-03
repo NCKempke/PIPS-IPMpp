@@ -32,7 +32,8 @@ public:
 
    ~DeSymIndefSolver() override = default;
 
-   bool reports_inertia() const override { return true; };
+   // TODO ...
+   bool reports_inertia() const override { return false; };
    std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
       assert(false && "TODO : implement");
       return {0, 0, 0};

@@ -224,6 +224,9 @@ public:
     * augmented system matrix */
    virtual void put_dual_inequalites_diagonal() = 0;
 
+   /** communicate barrier down the linear system hierarchy */
+   virtual void put_barrier_parameter(double barrier) = 0;
+
    /** computes the diagonal matrices in the augmented system from the
        current set of variables */
    virtual void
@@ -234,10 +237,10 @@ public:
    virtual void factorize_with_correct_inertia() = 0;
 
    void print_regularization_statistics() const;
-
 protected:
    void compute_regularized_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly,
          Vector<double>& solz, const Problem& problem);
+
    void compute_system_residuals(const Vector<double>& sol, Vector<double>& res, Vector<double>& solx, Vector<double>& soly, Vector<double>& solz,
          const Problem& problem);
    //void computeResidualsReducedSlacks(const QP& data);
