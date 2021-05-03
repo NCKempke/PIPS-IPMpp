@@ -2,11 +2,11 @@
    Authors: Cosmin Petra and Miles Lubin
    See license and copyright information in the documentation */
 
-#include "sLinsysRoot.h"
+#include "DistributedRootLinearSystem.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
-#include "sDummyLinsys.h"
-#include "sLinsysLeaf.h"
+#include "DistributedDummyLinearSystem.h"
+#include "DistributedLeafLinearSystem.h"
 #include "StochOptions.h"
 #include "math.h"
 
@@ -20,20 +20,20 @@
 double g_scenNum;
 #endif
 
-sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_,
+DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_,
       is_hierarchy_root) {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
 }
 
-sLinsysRoot::sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
       Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLinearSystem(factory_,
       prob_, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, true) {
    init();
 }
 
-void sLinsysRoot::init() {
+void DistributedRootLinearSystem::init() {
    createChildren(data);
 
    precondSC = SCsparsifier(mpiComm);
@@ -51,7 +51,7 @@ void sLinsysRoot::init() {
    initProperChildrenRange();
 }
 
-sLinsysRoot::~sLinsysRoot() {
+DistributedRootLinearSystem::~DistributedRootLinearSystem() {
    for (size_t c = 0; c < children.size(); c++)
       delete children[c];
 
@@ -63,7 +63,7 @@ sLinsysRoot::~sLinsysRoot() {
 //this variable is just reset in this file; children will default to the "safe" linear solver
 extern int gLackOfAccuracy;
 
-void sLinsysRoot::assembleKKT(DistributedQP* prob, Variables* vars) {
+void DistributedRootLinearSystem::assembleKKT(DistributedQP* prob, Variables* vars) {
    if (is_hierarchy_root)
       assert(children.size() == 1);
 
@@ -80,7 +80,7 @@ void sLinsysRoot::assembleKKT(DistributedQP* prob, Variables* vars) {
    assembleLocalKKT(prob);
 }
 
-void sLinsysRoot::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) {
+void DistributedRootLinearSystem::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) {
    reduceKKT(prob);
 
    finalizeKKT(prob, vars);
@@ -88,7 +88,7 @@ void sLinsysRoot::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) {
    factorizeKKT(prob);
 }
 
-void sLinsysRoot::factor2(DistributedQP* prob, Variables* vars) {
+void DistributedRootLinearSystem::factor2(DistributedQP* prob, Variables* vars) {
    if (PIPS_MPIgetRank(mpiComm) == 0) {
       if (is_hierarchy_root) {
          assert(children.size() == 1);
@@ -180,7 +180,7 @@ void sLinsysRoot::afterFactor()
  */
 // TODO : move to aug..
 void
-sLinsysRoot::finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
+DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
    assert(0 <= begin_rows && begin_rows <= end_rows);
    // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
@@ -325,7 +325,7 @@ sLinsysRoot::finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, st
  *       [ G0V  0    0   ]
  *
  */
-void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse,
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse,
       int begin_rows, int end_rows) {
    int m_result, n_result;
    result.getSize(m_result, n_result);
@@ -418,7 +418,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContribution(DoubleMatrix& result,
 }
 
 /* SC and X0 stored in transposed form */
-void sLinsysRoot::finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
       SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
       SparseGenMatrix* G0cons_border, int begin_rows, int end_rows) {
    assert(F0vec_border);
@@ -475,7 +475,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionSparse(DoubleMatrix& S
 }
 
 /* SC and X0 stored in transposed form */
-void sLinsysRoot::finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
       SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
       SparseGenMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
    assert(F0vec_border);
@@ -535,7 +535,7 @@ void sLinsysRoot::finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC
 }
 
 /* compute result += [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T += SUM_i (Bri - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}^T */
-void sLinsysRoot::LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
+void DistributedRootLinearSystem::LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
       bool two_link_border, int begin_cols, int end_cols) {
    assert(children.size() == Br.F.children.size());
 
@@ -569,7 +569,7 @@ void sLinsysRoot::LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br
 }
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-void sLinsysRoot::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+void DistributedRootLinearSystem::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) {
    assert(!is_hierarchy_root);
 
@@ -600,7 +600,7 @@ void sLinsysRoot::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix
    }
 }
 
-void sLinsysRoot::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
 
@@ -667,7 +667,7 @@ void sLinsysRoot::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleV
    G0cons_border.transMult(1.0, rhs01, 1, -1.0, x03, 1);
 }
 
-void sLinsysRoot::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
    assert(rhs.children.size() == children.size());
    assert(border.A.children.size() == children.size());
 
@@ -736,7 +736,7 @@ void sLinsysRoot::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVe
    }
 }
 
-void sLinsysRoot::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
+void DistributedRootLinearSystem::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
    assert(pips_options::getBoolParameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
@@ -749,7 +749,7 @@ void sLinsysRoot::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleV
    }
 }
 
-void sLinsysRoot::createChildren(DistributedQP* prob) {
+void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
    DistributedLinearSystem* child{};
    assert(primal_diagonal && dq && nomegaInv && rhs && prob);
 
@@ -764,7 +764,7 @@ void sLinsysRoot::createChildren(DistributedQP* prob) {
    for (size_t it = 0; it < prob->children.size(); it++) {
       assert(primal_diagonalst.children[it] != nullptr);
       if (MPI_COMM_NULL == primal_diagonalst.children[it]->mpiComm) {
-         child = new sDummyLinsys(dynamic_cast<DistributedFactory*>(factory), prob->children[it]);
+         child = new DistributedDummyLinearSystem(dynamic_cast<DistributedFactory*>(factory), prob->children[it]);
       }
       else {
          assert(prob->children[it]);
@@ -793,7 +793,7 @@ void sLinsysRoot::createChildren(DistributedQP* prob) {
    }
 }
 
-void sLinsysRoot::deleteChildren() {
+void DistributedRootLinearSystem::deleteChildren() {
    for (size_t it = 0; it < children.size(); it++) {
       children[it]->deleteChildren();
       delete children[it];
@@ -801,7 +801,7 @@ void sLinsysRoot::deleteChildren() {
    children.clear();
 }
 
-void sLinsysRoot::initProperChildrenRange() {
+void DistributedRootLinearSystem::initProperChildrenRange() {
    assert(children.size() > 0);
 
    int childStart = -1;
@@ -836,7 +836,7 @@ void sLinsysRoot::initProperChildrenRange() {
    childrenProperEnd = childEnd;
 }
 
-void sLinsysRoot::put_primal_diagonal() {
+void DistributedRootLinearSystem::put_primal_diagonal() {
    assert(primal_diagonal);
    const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
    assert(children.size() == primal_diagonal_stoch.children.size());
@@ -847,7 +847,7 @@ void sLinsysRoot::put_primal_diagonal() {
       children[it]->put_primal_diagonal();
 }
 
-void sLinsysRoot::put_dual_inequalites_diagonal() {
+void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    assert(children.size() == nomegaInv_stoch.children.size());
@@ -860,7 +860,7 @@ void sLinsysRoot::put_dual_inequalites_diagonal() {
       children[it]->put_dual_inequalites_diagonal();
 }
 
-void sLinsysRoot::AddChild(DistributedLinearSystem* child) {
+void DistributedRootLinearSystem::AddChild(DistributedLinearSystem* child) {
    children.push_back(child);
 }
 
@@ -868,7 +868,7 @@ void sLinsysRoot::AddChild(DistributedLinearSystem* child) {
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
 /* Atoms methods of FACTOR2 for a non-leaf linear system */
-void sLinsysRoot::initializeKKT(DistributedQP*, Variables*) {
+void DistributedRootLinearSystem::initializeKKT(DistributedQP*, Variables*) {
    if (hasSparseKkt)
       dynamic_cast<SparseSymMatrix*>(kkt.get())->symPutZeroes();
    else {
@@ -877,7 +877,7 @@ void sLinsysRoot::initializeKKT(DistributedQP*, Variables*) {
    }
 }
 
-void sLinsysRoot::reduceKKT(DistributedQP* prob) {
+void DistributedRootLinearSystem::reduceKKT(DistributedQP* prob) {
    if (usePrecondDist)
       reduceKKTdist(prob);
    else if (hasSparseKkt)
@@ -888,7 +888,7 @@ void sLinsysRoot::reduceKKT(DistributedQP* prob) {
 
 
 /* collects (reduces) lower left part of dense global symmetric Schur complement */
-void sLinsysRoot::reduceKKTdense() {
+void DistributedRootLinearSystem::reduceKKTdense() {
    DenseSymMatrix* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    // parallel communication
@@ -912,7 +912,7 @@ void sLinsysRoot::reduceKKTdense() {
 
 
 // collects sparse global Schur complement
-void sLinsysRoot::reduceKKTsparse() {
+void DistributedRootLinearSystem::reduceKKTsparse() {
    if (!iAmDistrib)
       return;
    assert(kkt);
@@ -934,7 +934,7 @@ void sLinsysRoot::reduceKKTsparse() {
 }
 
 #define CHUNK_SIZE (1024*1024*64) //doubles = 128 MBytes (maximum)
-void sLinsysRoot::reduceToAllProcs(int size, double* values) {
+void DistributedRootLinearSystem::reduceToAllProcs(int size, double* values) {
    assert(values && values != sparseKktBuffer);
    assert(size > 0);
 
@@ -961,7 +961,7 @@ void sLinsysRoot::reduceToAllProcs(int size, double* values) {
 }
 
 #define CHUNK_SIZE (1024*1024*64) //doubles = 128 MBytes (maximum)
-void sLinsysRoot::reduceToProc0(int size, double* values) {
+void DistributedRootLinearSystem::reduceToProc0(int size, double* values) {
    assert(values && values != sparseKktBuffer);
    assert(size > 0);
 
@@ -993,7 +993,7 @@ void sLinsysRoot::reduceToProc0(int size, double* values) {
 }
 
 
-void sLinsysRoot::registerMatrixEntryTripletMPI() {
+void DistributedRootLinearSystem::registerMatrixEntryTripletMPI() {
    assert(MatrixEntryTriplet_mpi == MPI_DATATYPE_NULL);
 
    const int nitems = 3;
@@ -1009,7 +1009,7 @@ void sLinsysRoot::registerMatrixEntryTripletMPI() {
    MPI_Type_commit(&MatrixEntryTriplet_mpi);
 }
 
-void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob) {
+void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
    if (!iAmDistrib)
       return;
 
@@ -1127,7 +1127,7 @@ void sLinsysRoot::syncKKTdistLocalEntries(DistributedQP* prob) {
 }
 
 
-std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::receiveKKTdistLocalEntries() const {
+std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLinearSystem::receiveKKTdistLocalEntries() const {
    assert(kkt && hasSparseKkt);
    assert(MatrixEntryTriplet_mpi != MPI_DATATYPE_NULL);
 
@@ -1160,7 +1160,7 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::receiveKKTdistLocalEnt
 }
 
 
-void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const {
+void DistributedRootLinearSystem::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const {
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
    const int prevRank = myRank - 1;
@@ -1174,7 +1174,7 @@ void sLinsysRoot::sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>&
    MPI_Send(&prevEntries[0], nEntries, MatrixEntryTriplet_mpi, prevRank, 0, mpiComm);
 }
 
-std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int) const {
+std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLinearSystem::packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int) const {
    assert(kkt && hasSparseKkt);
 
    int myRank;
@@ -1240,7 +1240,7 @@ std::vector<sLinsysRoot::MatrixEntryTriplet> sLinsysRoot::packKKTdistOutOfRangeE
 }
 
 
-void sLinsysRoot::reduceKKTdist(DistributedQP* prob) {
+void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
    assert(prob);
    assert(iAmDistrib);
    assert(kkt);
@@ -1459,11 +1459,11 @@ void sLinsysRoot::reduceKKTdist(DistributedQP* prob) {
    assert(kktDist->getStorageRef().isSorted());
 }
 
-void sLinsysRoot::factorizeKKT() {
+void DistributedRootLinearSystem::factorizeKKT() {
    factorizeKKT(nullptr);
 }
 
-void sLinsysRoot::factorizeKKT(DistributedQP* prob) {
+void DistributedRootLinearSystem::factorizeKKT(DistributedQP* prob) {
    //stochNode->resMon.recFactTmLocal_start();
 #ifdef TIMING
    MPI_Barrier(mpiComm);
@@ -1537,7 +1537,7 @@ void sLinsysRoot::factorizeKKT(DistributedQP* prob) {
 }
 
 //faster than DenseSymMatrix::atPutZeros
-void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent) {
+void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent) {
    assert(row >= 0 && row + rowExtent <= mat->size());
    assert(col >= 0 && col + colExtent <= mat->size());
 
@@ -1554,12 +1554,12 @@ void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExt
    }
 }
 
-void sLinsysRoot::myAtPutZeros(DenseSymMatrix* mat) {
+void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat) {
    int n = mat->size();
    myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void sLinsysRoot::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC) {
+void DistributedRootLinearSystem::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC) {
    assert(childindex < prob->children.size());
 
    if (computeBlockwiseSC) {
@@ -1579,7 +1579,7 @@ void sLinsysRoot::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bo
    }
 }
 
-void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** M = A->mStorage->M;
    int n = A->mStorage->n;
 
@@ -1635,7 +1635,7 @@ void sLinsysRoot::submatrixAllReduce(DenseSymMatrix* A, int startRow, int startC
 }
 
 // TODO: move all this to the respective matrix and storages.......
-void sLinsysRoot::allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
+void DistributedRootLinearSystem::allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
    int n, m;
    mat.getSize(m, n);
 
@@ -1670,7 +1670,7 @@ void sLinsysRoot::allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym
    }
 }
 
-void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** const M = A->mStorage->M;
    assert(A->mStorage->n == A->mStorage->m);
    assert(A->mStorage->n >= startRow + nRows);
@@ -1679,7 +1679,7 @@ void sLinsysRoot::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int st
    submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
 }
 
-void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** const M = A->mStorage->M;
    assert(A->mStorage->m >= startRow + nRows);
    assert(A->mStorage->n >= startCol + nCols);
@@ -1687,7 +1687,7 @@ void sLinsysRoot::submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int st
    submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
 }
 
-void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    assert(nRows >= 0);
    assert(nCols >= 0);
    if (nRows == 0 || nCols == 0)
@@ -1733,7 +1733,7 @@ void sLinsysRoot::submatrixAllReduceFull(double** A, int startRow, int startCol,
 }
 
 
-void sLinsysRoot::submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm) {
    double** const M = A->mStorage->M;
 
    assert(subsize >= 0);

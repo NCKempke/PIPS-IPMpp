@@ -7,7 +7,7 @@ add_subdirectory(LinearSolvers)
 
 add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
         QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C InteriorPointMethod/Solver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C QpGen/QpGenOptions.C QpStoch/StochOptions.C Problems/ProblemFactory.cpp)
+        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C Problems/ProblemFactory.cpp)
 
 add_library(ooqpgensparse STATIC
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
@@ -20,10 +20,10 @@ add_library(ooqpstoch STATIC
         QpStoch/DistributedFactory.C
         Problems/DistributedQP.cpp
         LinearSystems/DistributedLinearSystem.C
-        QpStoch/sLinsysRoot.C
+        QpStoch/DistributedRootLinearSystem.C
         QpStoch/sLinsysRootAug.C
         QpStoch/sLinsysRootAugHierInner.C
-        QpStoch/sLinsysLeaf.C
+        QpStoch/DistributedLeafLinearSystem.C
         QpStoch/sLinsysLeafSchurSlv.C
         QpStoch/DistributedVariables.C
         QpStoch/DistributedResiduals.cpp

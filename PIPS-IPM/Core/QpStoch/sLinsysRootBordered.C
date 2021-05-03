@@ -17,7 +17,7 @@
 #include "sLinsysRootAug.h"
 #include "DistributedFactory.h"
 
-sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : sLinsysRoot(factory_, prob_, true) {
+sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
    assert(locmyl >= 0 && locmzl >= 0);
 
    if (apply_regularization) {

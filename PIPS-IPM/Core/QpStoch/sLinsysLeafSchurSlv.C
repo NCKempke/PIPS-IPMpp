@@ -63,5 +63,5 @@ void sLinsysLeafSchurSlv::factor2(DistributedQP* prob, Variables* vars) {
    //   switchedToSafeSlv=true;
    // }
 
-   sLinsysLeaf::factor2(prob, vars);
+   DistributedLeafLinearSystem::factor2(prob, vars);
 }

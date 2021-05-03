@@ -2,9 +2,9 @@
    Authors: Cosmin Petra
    See license and copyright information in the documentation */
 
-#include "sLinsysLeaf.h"
+#include "DistributedLeafLinearSystem.h"
 
-sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* factory_, DistributedQP* prob, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
       Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLinearSystem(factory_,
       prob, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_, false) {
 #ifdef TIMING
@@ -65,7 +65,7 @@ sLinsysLeaf::sLinsysLeaf(DistributedFactory* factory_, DistributedQP* prob, Vect
    mpiComm = (dynamic_cast<DistributedVector<double>*>(dd_))->mpiComm;
 }
 
-void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
+void DistributedLeafLinearSystem::factor2(DistributedQP*, Variables*) {
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
    stochNode->resMon.recFactTmLocal_start();
@@ -80,19 +80,19 @@ void sLinsysLeaf::factor2(DistributedQP*, Variables*) {
    stochNode->resMon.recFactTmLocal_stop();
 }
 
-void sLinsysLeaf::put_primal_diagonal() {
+void DistributedLeafLinearSystem::put_primal_diagonal() {
    assert(primal_diagonal);
    const auto& primal_diagonal_stoch = dynamic_cast<const DistributedVector<double>&>(*primal_diagonal);
    kkt->atPutDiagonal(0, *primal_diagonal_stoch.first);
 }
 
-void sLinsysLeaf::put_dual_inequalites_diagonal() {
+void DistributedLeafLinearSystem::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);
    kkt->atPutDiagonal(locnx + locmy, *nomegaInv_stoch.first);
 }
 
-void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector_) {
+void DistributedLeafLinearSystem::add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector_) {
    assert(false);
    assert(dynamic_cast<DistributedVector<double>&>(regularization_vector_).first);
 
@@ -104,7 +104,7 @@ void sLinsysLeaf::add_regularization_diagonal(int offset, double regularization,
 
 /** adds regularization terms to primal, dualy and dualz vectors - these might depend on the level of linsys we are in */
 void
-sLinsysLeaf::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) {
+DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) {
    assert(false);
    assert(this->primal_regularization_diagonal);
    assert(this->dual_equality_regularization_diagonal);
@@ -123,7 +123,7 @@ sLinsysLeaf::add_regularization_local_kkt(double primal_regularization, double d
    }
 }
 
-void sLinsysLeaf::Dsolve(DistributedQP*, Vector<double>& x_in) {
+void DistributedLeafLinearSystem::Dsolve(DistributedQP*, Vector<double>& x_in) {
    DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.size() == 0);
    stochNode->resMon.recDsolveTmChildren_start();
@@ -131,7 +131,7 @@ void sLinsysLeaf::Dsolve(DistributedQP*, Vector<double>& x_in) {
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
-void sLinsysLeaf::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
+void DistributedLeafLinearSystem::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
    DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
    SimpleVector<double>& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
    assert(0 == b.children.size());
@@ -149,10 +149,10 @@ void sLinsysLeaf::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, Si
 #endif
 }
 
-void sLinsysLeaf::deleteChildren() {}
+void DistributedLeafLinearSystem::deleteChildren() {}
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
-void sLinsysLeaf::addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
+void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
    SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
    SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 
@@ -199,7 +199,7 @@ void sLinsysLeaf::addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vec
    }
 }
 
-void sLinsysLeaf::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int) {
+void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int) {
    assert(prob == data);
 
    const bool sc_is_sym = true;
@@ -236,7 +236,7 @@ void sLinsysLeaf::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC,
    addBiTLeftKiBiRightToResBlockedParallelSolvers(sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0, SC.size(), 0, SC.size());
 }
 
-void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, GenMatrix& B_, GenMatrix&, int locnx, int locmy, int) {
+void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymMatrix& kkt_, GenMatrix& B_, GenMatrix&, int locnx, int locmy, int) {
    SparseSymMatrix& kkt = dynamic_cast<SparseSymMatrix&>(kkt_);
    SparseGenMatrix& B = dynamic_cast<SparseGenMatrix&>(B_);
    //SparseGenMatrix& D   = reinterpret_cast<SparseGenMatrix&>(D_);
@@ -271,7 +271,7 @@ void sLinsysLeaf::mySymAtPutSubmatrix(SymMatrix& kkt_, GenMatrix& B_, GenMatrix&
 }
 
 /* compute result += B_inner^T K^-1 Br */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes(DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols) {
+void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols) {
    assert(Br.A.children.size() == 0);
 
    /* empty dummy */
@@ -281,7 +281,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes(DenseGenMatrix& result, BorderLinsy
 }
 
 /* compute result += [ Bl^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 Bl for cols begin_cols to end_cols in (Br - SUM_j Brmodj Xj) */
-void sLinsysLeaf::addLeftBorderKiInvBrToRes(DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sparse_res, bool sym_res, int begin_cols_br, int end_cols_br, int begin_cols_res, int end_cols_res) {
    int dummy;
 #ifndef NDEBUG
@@ -380,7 +380,7 @@ void sLinsysLeaf::addLeftBorderKiInvBrToRes(DoubleMatrix& result, BorderBiBlock&
 }
 
 /* compute result += [ B_{inner}^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 B_{inner} */
-void sLinsysLeaf::addInnerBorderKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
+void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
       bool sym_res, int begin_cols, int end_cols, int) {
    int res_m, res_n;
    result.getSize(res_m, res_n);
@@ -398,7 +398,7 @@ void sLinsysLeaf::addInnerBorderKiInvBrToRes(DoubleMatrix& result, BorderLinsys&
 
 /* compute res += [Bli^T X_i]^T = [ Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) ]^T = (Bri^T - SUM_i Xi^T Brmodi^T - X0^T Bi_{inner}^T) Ki^{-1} Bli and add it to res
  * begin_cols to end_cols is the position in res */
-void sLinsysLeaf::LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+void DistributedLeafLinearSystem::LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) {
    std::unique_ptr<BorderBiBlock> BliT{};
 
@@ -432,7 +432,7 @@ void sLinsysLeaf::LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenM
 
 }
 
-void sLinsysLeaf::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
+void DistributedLeafLinearSystem::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) {
    assert(border.F.children.size() == 0);
    assert(rhs.children.size() == 0);
 
@@ -465,7 +465,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVe
    addBorderTimesRhsToB0(dynamic_cast<SimpleVector<double>&>(*rhs.first), b0, *border_block);
 }
 
-void sLinsysLeaf::addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border) {
+void DistributedLeafLinearSystem::addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border) {
    if (border.isEmpty())
       return;
 
@@ -515,7 +515,7 @@ void sLinsysLeaf::addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<
    border.G.mult(1.0, b3, -1.0, zi1);
 }
 
-void sLinsysLeaf::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
+void DistributedLeafLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) {
    assert(border.F.children.size() == 0);
    assert(rhs.children.size() == 0);
 
@@ -548,7 +548,7 @@ void sLinsysLeaf::addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleV
    addBorderX0ToRhs(dynamic_cast<SimpleVector<double>&>(*rhs.first), x0, *border_block);
 }
 
-void sLinsysLeaf::addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border) {
+void DistributedLeafLinearSystem::addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border) {
    int mFi, nFi;
    border.F.getSize(mFi, nFi);
    int mGi, nGi;

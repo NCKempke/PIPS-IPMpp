@@ -2,8 +2,8 @@
    Authors: Cosmin Petra and Miles Lubin
    See license and copyright information in the documentation */
 
-#ifndef SROOTLINSYS
-#define SROOTLINSYS
+#ifndef DISTRIBUTEDROOTLINEARSYSTEM_H
+#define DISTRIBUTEDROOTLINEARSYSTEM_H
 
 #include "DistributedLinearSystem.h"
 #include "StochGenMatrix.h"
@@ -15,13 +15,10 @@ class DistributedFactory;
 
 class DistributedQP;
 
-// DEBUG only
-//#include "ScaDenSymMatrix.h"
-
 /** 
  * ROOT (= NON-leaf) linear system
  */
-class sLinsysRoot : public DistributedLinearSystem {
+class DistributedRootLinearSystem : public DistributedLinearSystem {
    struct MatrixEntryTriplet {
       double val;
       int row;
@@ -38,8 +35,8 @@ private:
 public:
    std::vector<DistributedLinearSystem*> children;
 
-   sLinsysRoot(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
-   sLinsysRoot(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+   DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root = false);
+   DistributedRootLinearSystem(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
 
    void factor2(DistributedQP* prob, Variables* vars) override;
@@ -87,7 +84,7 @@ public:
 
    virtual bool usingSparseKkt() { return hasSparseKkt; };
 
-   ~sLinsysRoot() override;
+   ~DistributedRootLinearSystem() override;
 
    //utilities
    void myAtPutZeros(DenseSymMatrix* mat);

@@ -1,5 +1,5 @@
-#ifndef SDUMMYLINSYS
-#define SDUMMYLINSYS
+#ifndef DISTRIBUTEDDUMMYLINEARSYSTEM_H
+#define DISTRIBUTEDDUMMYLINEARSYSTEM_H
 
 #include "DistributedLinearSystem.h"
 #include "pipsport.h"
@@ -7,14 +7,14 @@
 /** 
  * DUMMY Linear system class
  */
-class sDummyLinsys : public DistributedLinearSystem {
+class DistributedDummyLinearSystem : public DistributedLinearSystem {
 public:
-   sDummyLinsys(DistributedFactory* factory, DistributedQP* prob) : DistributedLinearSystem(factory, prob, nullptr, nullptr, nullptr, nullptr,
+   DistributedDummyLinearSystem(DistributedFactory* factory, DistributedQP* prob) : DistributedLinearSystem(factory, prob, nullptr, nullptr, nullptr, nullptr,
          nullptr, nullptr, nullptr, false) {
       mpiComm = MPI_COMM_NULL;
    };
 
-   ~sDummyLinsys() override = default;
+   ~DistributedDummyLinearSystem() override = default;
 
    void factor2(DistributedQP*, Variables*) override {};
    void allreduceAndFactorKKT(DistributedQP*, Variables*) override {};

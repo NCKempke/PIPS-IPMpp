@@ -11,8 +11,8 @@
 #include "DistributedVector.h"
 #include "DistributedVariables.h"
 #include "DistributedResiduals.hpp"
-#include "sLinsysRoot.h"
-#include "sLinsysLeaf.h"
+#include "DistributedRootLinearSystem.h"
+#include "DistributedLeafLinearSystem.h"
 #include "StochOptions.h"
 #include "mpi.h"
 #include <stdio.h>
@@ -130,7 +130,7 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const DoubleMatrix* kkt
    return nullptr;
 }
 
-sLinsysLeaf*
+DistributedLeafLinearSystem*
 DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
       Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
       Vector<double>* rhs) {
@@ -195,7 +195,7 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
 #endif
       }
       else
-         return new sLinsysLeaf(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization,
+         return new DistributedLeafLinearSystem(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization,
                dual_inequality_regularization, rhs);
    }
    return nullptr;
@@ -314,12 +314,12 @@ void DistributedFactory::iterate_ended() {
    }
 }
 
-sLinsysRoot* DistributedFactory::make_linear_system_root() {
+DistributedRootLinearSystem* DistributedFactory::make_linear_system_root() {
    assert(problem);
    return new sLinsysRootAug(this, problem);
 }
 
-sLinsysRoot*
+DistributedRootLinearSystem*
 DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
       Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
       Vector<double>* rhs) {
@@ -333,7 +333,7 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>*
 
 DoubleLinearSolver* DistributedFactory::make_root_solver() { return nullptr; };
 
-sLinsysRoot* DistributedFactory::newLinsysRootHierarchical() {
+DistributedRootLinearSystem* DistributedFactory::newLinsysRootHierarchical() {
    return new sLinsysRootBordered(this, problem);
 }
 

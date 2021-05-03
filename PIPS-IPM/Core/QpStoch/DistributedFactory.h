@@ -35,9 +35,9 @@ class DistributedVariables;
 
 class DistributedLinearSystem;
 
-class sLinsysRoot;
+class DistributedRootLinearSystem;
 
-class sLinsysLeaf;
+class DistributedLeafLinearSystem;
 
 class DoubleLinearSolver;
 
@@ -71,11 +71,11 @@ public:
 
    DoubleLinearSolver* make_root_solver();
 
-   sLinsysRoot* make_linear_system_root();
+   DistributedRootLinearSystem* make_linear_system_root();
 
-   sLinsysRoot* newLinsysRootHierarchical();
+   DistributedRootLinearSystem* newLinsysRootHierarchical();
 
-   sLinsysRoot* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
+   DistributedRootLinearSystem* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
          Vector<double>* rhs);
 
@@ -91,7 +91,7 @@ public:
       assert(0 && "not implemented here");
    };
 
-   virtual sLinsysLeaf*
+   virtual DistributedLeafLinearSystem*
    make_linear_system_leaf(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
          Vector<double>* rhs);
@@ -108,7 +108,7 @@ public:
    DistributedResiduals* residuals{};
    std::vector<DistributedVariables*> registeredVars;
 
-   sLinsysRoot* linsys{};
+   DistributedRootLinearSystem* linsys{};
 
    StochIterateResourcesMonitor iterTmMonitor;
    double m_tmTotal{0.0};

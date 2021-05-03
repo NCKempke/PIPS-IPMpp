@@ -31,7 +31,7 @@
 #include "MumpsSolverRoot.h"
 #endif
 
-#include "sLinsysRoot.h"
+#include "DistributedRootLinearSystem.h"
 #include "pipsport.h"
 #include <memory>
 
@@ -40,7 +40,7 @@ class DistributedQP;
 /**
  * ROOT (= NON-leaf) linear system in reduced augmented form
  */
-class sLinsysRootAug : public sLinsysRoot {
+class sLinsysRootAug : public DistributedRootLinearSystem {
 
 public:
    sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_);

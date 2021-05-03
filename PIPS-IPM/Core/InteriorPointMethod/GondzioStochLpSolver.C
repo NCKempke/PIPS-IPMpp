@@ -18,7 +18,7 @@
 
 #include "DistributedQP.hpp"
 #include "DistributedVariables.h"
-#include "sLinsysRoot.h"
+#include "DistributedRootLinearSystem.h"
 
 #include <iostream>
 #include <algorithm>

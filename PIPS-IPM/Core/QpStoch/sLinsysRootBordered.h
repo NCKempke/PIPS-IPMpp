@@ -7,10 +7,10 @@
 #ifndef PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_
 #define PIPS_IPM_CORE_QPSTOCH_SLINSYSROOTBORDERED_H_
 
-#include "sLinsysRoot.h"
+#include "DistributedRootLinearSystem.h"
 #include <memory>
 
-class sLinsysRootBordered : public sLinsysRoot {
+class sLinsysRootBordered : public DistributedRootLinearSystem {
 public:
    sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_);
 

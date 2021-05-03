@@ -2,8 +2,8 @@
    Authors: Cosmin Petra
    See license and copyright information in the documentation */
 
-#ifndef STOCHLEAFLINSYS
-#define STOCHLEAFLINSYS
+#ifndef DISTRIBUTEDLEAFLINEARSYSTEM_H
+#define DISTRIBUTEDLEAFLINEARSYSTEM_H
 
 #include "DistributedLinearSystem.h"
 #include "sTree.h"
@@ -19,12 +19,12 @@
 /** This class solves the linear system corresponding to a leaf node.
  *  It just redirects the call to SparseLinearSystem.
  */
-class sLinsysLeaf : public DistributedLinearSystem {
+class DistributedLeafLinearSystem : public DistributedLinearSystem {
 public:
-   sLinsysLeaf(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+   DistributedLeafLinearSystem(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
 
-   ~sLinsysLeaf() override = default;
+   ~DistributedLeafLinearSystem() override = default;
 
    void factor2(DistributedQP* prob, Variables* vars) override;
    void assembleKKT(DistributedQP*, Variables*) override {};

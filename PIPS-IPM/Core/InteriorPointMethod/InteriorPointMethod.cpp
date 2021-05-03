@@ -1,7 +1,7 @@
 #include "InteriorPointMethod.hpp"
 #include "Status.h"
 #include "StochOptions.h"
-#include "sLinsysRoot.h"
+#include "DistributedRootLinearSystem.h"
 #include "DistributedFactory.h"
 
 extern int gOoqpPrintLevel;
@@ -398,7 +398,7 @@ void InteriorPointMethod::adjustLimitGondzioCorrectors() {
 
 bool InteriorPointMethod::decreasePreconditionerImpact(AbstractLinearSystem* sys) const {
    bool success = false;
-   dynamic_cast<sLinsysRoot*>(sys)->precondSC.decreaseDiagDomBound(success);
+   dynamic_cast<DistributedRootLinearSystem*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {
       if (PIPS_MPIgetRank() == 0)
          std::cout << "Cannot increase precision in preconditioner anymore\n";

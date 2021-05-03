@@ -36,7 +36,7 @@ static void biCGStabCommunicateStatus(int flag, int it) {
       gInnerBiCGFails++;
 }
 
-sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : sLinsysRoot(factory_, prob_) {
+sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_) {
    if (pips_options::getBoolParameter("HIERARCHICAL"))
       assert(false && "should not end up here");
 
@@ -53,7 +53,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
 
 sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* regP, Vector<double>* regDy, Vector<double>* regDz, Vector<double>* rhs_, bool create_solvers)
-      : sLinsysRoot(factory_, prob_, dd_, dq_, nomegaInv_, regP, regDy, regDz, rhs_) {
+      : DistributedRootLinearSystem(factory_, prob_, dd_, dq_, nomegaInv_, regP, regDy, regDz, rhs_) {
    assert(pips_options::getBoolParameter("HIERARCHICAL"));
    assert(locmyl >= 0 && locmzl >= 0);
    assert(computeBlockwiseSC);

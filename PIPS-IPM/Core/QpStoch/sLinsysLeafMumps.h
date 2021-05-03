@@ -7,7 +7,7 @@
 #ifndef PIPS_IPM_CORE_QPSTOCH_SLINSYSLEAFMUMPS_H_
 #define PIPS_IPM_CORE_QPSTOCH_SLINSYSLEAFMUMPS_H_
 
-#include "sLinsysLeaf.h"
+#include "DistributedLeafLinearSystem.h"
 #include "pipsport.h"
 
 class sFactory;
