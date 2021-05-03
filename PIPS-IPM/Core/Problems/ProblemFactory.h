@@ -84,7 +84,7 @@ protected:
    long long mz{0};
 
    ProblemFactory() = default;
-   ProblemFactory(int nx_, int my_, int mz_);
+   ProblemFactory(int nx_, int my_, int mz_) : nx(nx_), my(my_), mz(mz_) {};
 };
 
 //@}

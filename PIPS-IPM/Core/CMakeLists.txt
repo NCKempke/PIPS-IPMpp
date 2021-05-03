@@ -7,7 +7,7 @@ add_subdirectory(LinearSolvers)
 
 add_library(ooqpbase STATIC Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
         QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C InteriorPointMethod/Solver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C Problems/ProblemFactory.cpp)
+        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C)
 
 add_library(ooqpgensparse STATIC
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
