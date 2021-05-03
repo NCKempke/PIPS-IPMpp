@@ -13,7 +13,7 @@
 #include "ProblemFactory.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
-
+#include "StochOptions.h"
 #include <vector>
 #include <functional>
 #include <type_traits>

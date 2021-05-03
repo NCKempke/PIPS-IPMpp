@@ -11,7 +11,6 @@ add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/O
 
 add_library(ooqpgensparse STATIC
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
-        Problems/QPFactory.C LinearSystems/SparseLinearSystem.C #QpGenSparse
         Readers/MpsReader.C Readers/hash.C #Readers
         LinearSolvers/Preconditioners/SCsparsifier.C
         )

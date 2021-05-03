@@ -9,9 +9,8 @@
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
 #include "DoubleMatrixHandle.h"
-
+#include "StochOptions.h"
 #include "sTreeCallbacks.h"
-
 #include "pipschecks.h"
 #include "pipsport.h"
 
@@ -39,11 +38,11 @@ public:
 
    const sTree* stochNode{};
 
-   PERMUTATION getLinkVarsPermInv() const;
+   Permutation getLinkVarsPermInv() const;
 
-   PERMUTATION getLinkConsEqPermInv() const;
+   Permutation getLinkConsEqPermInv() const;
 
-   PERMUTATION getLinkConsIneqPermInv() const;
+   Permutation getLinkConsIneqPermInv() const;
 
 public:
    int getLocalnx() const;
@@ -114,7 +113,7 @@ protected:
    static void removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch, const StochGenMatrix& Cstoch,
          const std::vector<int>& linkStartBlockIdA, const std::vector<int>& linkStartBlockIdC);
 
-   static PERMUTATION
+   static Permutation
    getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree, const std::vector<int>& linkStartBlockId,
          int n_links_after_split);
 
@@ -209,9 +208,9 @@ private:
    constexpr static int nLinkStats{6};
    constexpr static double minStructuredLinksRatio{0.5};
 
-   static PERMUTATION get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
+   static Permutation get0VarsLastGlobalsFirstPermutation(std::vector<int>& linkVarsNnzCount, int& n_globals);
 
-   static PERMUTATION
+   static Permutation
    getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId, std::vector<int>& n_blocks_per_row, size_t nBlocks,
          int& n_globals);
 
@@ -276,19 +275,19 @@ private:
    std::vector<int> linkStartBlockLengthsA;
    std::vector<int> linkStartBlockLengthsC;
 
-   PERMUTATION linkVarsPermutation;
-   PERMUTATION linkConsPermutationA;
-   PERMUTATION linkConsPermutationC;
+   Permutation linkVarsPermutation;
+   Permutation linkConsPermutationA;
+   Permutation linkConsPermutationC;
    std::vector<bool> isSCrowLocal;
    std::vector<bool> isSCrowMyLocal;
 
    void initDistMarker(int blocksStart, int blocksEnd);
 
-   void permuteLinkStructureDetection(const PERMUTATION& perm_A, const PERMUTATION& perm_C);
+   void permuteLinkStructureDetection(const Permutation& perm_A, const Permutation& perm_C);
 
-   void permuteLinkingVars(const PERMUTATION& perm);
+   void permuteLinkingVars(const Permutation& perm);
 
-   void permuteLinkingCons(const PERMUTATION& permA, const PERMUTATION& permC);
+   void permuteLinkingCons(const Permutation& permA, const Permutation& permC);
 
 public:
    void printRanges() const;

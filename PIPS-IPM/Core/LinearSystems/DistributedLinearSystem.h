@@ -28,8 +28,6 @@ class DistributedFactory;
 
 class DistributedQP;
 
-class StringSymMatrix;
-
 class DistributedLinearSystem : public LinearSystem {
 public:
    template<typename T>

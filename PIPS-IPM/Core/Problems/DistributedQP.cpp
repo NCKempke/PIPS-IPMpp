@@ -904,14 +904,14 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksSta
    return (new SparseSymMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
 }
 
-PERMUTATION DistributedQP::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals) {
+Permutation DistributedQP::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals) {
    const size_t n_link_vars = link_vars_n_blocks.size();
    n_globals = 0;
 
    if (n_link_vars == 0)
-      return PERMUTATION();
+      return Permutation();
 
-   PERMUTATION permvec(n_link_vars, 0);
+   Permutation permvec(n_link_vars, 0);
 
    int count = 0;
    int back_count = n_link_vars - 1;
@@ -969,7 +969,7 @@ PERMUTATION DistributedQP::get0VarsLastGlobalsFirstPermutation(std::vector<int>&
    return permvec;
 }
 
-PERMUTATION
+Permutation
 DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& linkStartBlockId, std::vector<int>& n_blocks_per_row, size_t nBlocks,
       int& n_globals) {
    assert(linkStartBlockId.size() == n_blocks_per_row.size());
@@ -977,9 +977,9 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
    n_globals = 0;
 
    if (n_links == 0)
-      return PERMUTATION();
+      return Permutation();
 
-   PERMUTATION permvec(n_links, 0);
+   Permutation permvec(n_links, 0);
    std::vector<int> w(nBlocks + 1, 0);
 
    /* count the 2-links per block - the ones starting at block -1 are no 2-links and are counted in w[0] */
@@ -1520,10 +1520,10 @@ DistributedQP* DistributedQP::shaveDenseBorder(const sTree* tree) {
    return hierarchical_top;
 }
 
-PERMUTATION DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree,
+Permutation DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const std::vector<unsigned int>& map_block_subtree,
       const std::vector<int>& linkStartBlockId, int n_links_after_split) {
    /* assuming that global links have already been ordered last */
-   PERMUTATION perm(linkStartBlockId.size());
+   Permutation perm(linkStartBlockId.size());
 
    assert(n_links_after_split >= 0);
 
@@ -1577,8 +1577,8 @@ void DistributedQP::reorderLinkingConstraintsAccordingToSplit() {
 
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
-   PERMUTATION perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdA, stochNode->myl());
-   PERMUTATION perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdC, stochNode->mzl());
+   Permutation perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdA, stochNode->myl());
+   Permutation perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdC, stochNode->mzl());
 
    /* which blocks do the individual two-links start in */
    permuteLinkingCons(perm_A, perm_C);
@@ -1901,7 +1901,7 @@ void DistributedQP::splitDataAccordingToTree() {
    splitDataAndAddAsChildLayer();
 }
 
-void DistributedQP::permuteLinkStructureDetection(const PERMUTATION& perm_A, const PERMUTATION& perm_C) {
+void DistributedQP::permuteLinkStructureDetection(const Permutation& perm_A, const Permutation& perm_C) {
    assert(isSCrowLocal.empty());
    assert(isSCrowMyLocal.empty());
 
@@ -1915,7 +1915,7 @@ void DistributedQP::permuteLinkStructureDetection(const PERMUTATION& perm_A, con
    permuteVector(perm_C, linkConsPermutationC);
 }
 
-void DistributedQP::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATION& permC) {
+void DistributedQP::permuteLinkingCons(const Permutation& permA, const Permutation& permC) {
    assert(permutationIsValid(permA));
    assert(permutationIsValid(permC));
    assert(!is_hierarchy_root);
@@ -1940,7 +1940,7 @@ void DistributedQP::permuteLinkingCons(const PERMUTATION& permA, const PERMUTATI
    }
 }
 
-void DistributedQP::permuteLinkingVars(const PERMUTATION& perm) {
+void DistributedQP::permuteLinkingVars(const Permutation& perm) {
    assert(permutationIsValid(linkVarsPermutation));
    assert(!is_hierarchy_root);
 
@@ -1961,9 +1961,9 @@ DistributedVariables* DistributedQP::getVarsUnperm(const DistributedVariables& v
 
    assert(unperm_vars->children.size() == unpermData.children.size());
 
-   const PERMUTATION perm_inv_link_vars = getLinkVarsPermInv();
-   const PERMUTATION perm_inv_link_cons_eq = getLinkConsEqPermInv();
-   const PERMUTATION perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
+   const Permutation perm_inv_link_vars = getLinkVarsPermInv();
+   const Permutation perm_inv_link_cons_eq = getLinkConsEqPermInv();
+   const Permutation perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
 
    if (perm_inv_link_vars.size() != 0)
       unperm_vars->permuteVec0Entries(perm_inv_link_vars, true);
@@ -1985,9 +1985,9 @@ DistributedResiduals* DistributedQP::getResidsUnperm(const DistributedResiduals&
 
    assert(unperm_resids->children.size() == unpermData.children.size());
 
-   const PERMUTATION perm_inv_link_vars = this->getLinkVarsPermInv();
-   const PERMUTATION perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
-   const PERMUTATION perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
+   const Permutation perm_inv_link_vars = this->getLinkVarsPermInv();
+   const Permutation perm_inv_link_cons_eq = this->getLinkConsEqPermInv();
+   const Permutation perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
    /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already */
    const bool do_not_permut_bounds = is_hierarchy_root ? true : false;
@@ -2375,21 +2375,21 @@ DistributedQP::~DistributedQP() {
       delete children[it];
 }
 
-PERMUTATION DistributedQP::getLinkVarsPermInv() const {
+Permutation DistributedQP::getLinkVarsPermInv() const {
    if (is_hierarchy_root)
       return this->children[0]->getLinkVarsPermInv();
    else
       return getInversePermutation(linkVarsPermutation);
 }
 
-PERMUTATION DistributedQP::getLinkConsEqPermInv() const {
+Permutation DistributedQP::getLinkConsEqPermInv() const {
    if (is_hierarchy_root)
       return this->children[0]->getLinkConsEqPermInv();
    else
       return getInversePermutation(linkConsPermutationA);
 }
 
-PERMUTATION DistributedQP::getLinkConsIneqPermInv() const {
+Permutation DistributedQP::getLinkConsIneqPermInv() const {
    if (is_hierarchy_root)
       return this->children[0]->getLinkConsIneqPermInv();
    else

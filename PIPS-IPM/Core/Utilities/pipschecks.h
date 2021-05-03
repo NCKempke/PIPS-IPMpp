@@ -15,7 +15,7 @@
 #include <vector>
 
 // is the permuation vector valid?
-bool permutationIsValid(const PERMUTATION& perm);
+bool permutationIsValid(const Permutation& perm);
 
 // are the columns of the given sub-matrix ordered?
 bool subMatrixIsOrdered(const int* rowptr, const int* colidx, int rowstart, int rowend);

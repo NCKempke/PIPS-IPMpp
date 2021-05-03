@@ -15,7 +15,6 @@ include_directories(
         Core/LinearSolvers/BiCGStabSolver
         Core/LinearSystems
         Core/Problems
-        Core/QpGen
         Core/QpPreprocess
         Core/QpStoch
         Core/Readers

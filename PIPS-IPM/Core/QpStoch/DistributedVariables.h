@@ -7,8 +7,6 @@
 #include "DistributedVector.h"
 #include <vector>
 
-class QpGen;
-
 class QP;
 
 class LinearAlgebraPackage;

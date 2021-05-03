@@ -16,7 +16,7 @@ TEST_P(HierarchicalDataSplittingTest, TestPermutationOfLinkingConstraintsForSpli
    const int n_links_after_split = std::get<2>(GetParam());
    const std::vector<unsigned int>& expected_permutation = std::get<3>(GetParam());
 
-   PERMUTATION result = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, link_start_block_id, n_links_after_split);
+   Permutation result = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, link_start_block_id, n_links_after_split);
 
    EXPECT_EQ(result.size(), expected_permutation.size());
    EXPECT_THAT(result, ::testing::ContainerEq(expected_permutation));

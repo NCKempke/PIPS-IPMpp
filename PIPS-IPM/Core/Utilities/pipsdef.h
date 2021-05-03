@@ -33,7 +33,7 @@
 
 //#define PIPS_DEBUG
 
-using PERMUTATION = std::vector<unsigned int>;
+using Permutation = std::vector<unsigned int>;
 
 const double pips_eps = 1e-13;
 const double pips_eps0 = 1e-40;
@@ -142,7 +142,7 @@ inline bool contains(const std::vector<T>& subset, const std::vector<T>& vec) {
 }
 
 template<typename T>
-inline void permuteVector(const PERMUTATION& perm, std::vector<T>& vec) {
+inline void permuteVector(const Permutation& perm, std::vector<T>& vec) {
    assert(perm.size() == vec.size());
 
    std::vector<T> tmp(vec.size());
@@ -152,9 +152,9 @@ inline void permuteVector(const PERMUTATION& perm, std::vector<T>& vec) {
    vec = tmp;
 }
 
-inline PERMUTATION getInversePermutation(const PERMUTATION& perm) {
+inline Permutation getInversePermutation(const Permutation& perm) {
    size_t size = perm.size();
-   PERMUTATION perm_inv(size, 0);
+   Permutation perm_inv(size, 0);
 
    for (size_t i = 0; i < size; i++)
       perm_inv[perm[i]] = i;

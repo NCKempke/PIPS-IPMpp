@@ -16,7 +16,7 @@
 
 /**
  * Implements the main solver for linear systems that arise in
- * primal-dual interior-point methods for QP.
+ * primal-dual interior-point methods.
  * @ingroup LinearSolvers
  * @ingroup AbstractLinearAlgebra
  */
@@ -129,38 +129,6 @@ protected:
    void applyA(double beta, Vector<double>& res, double alpha, Vector<double>& x);
    void applyM1(double beta, Vector<double>& res, double alpha, Vector<double>& x);
    void applyM2(double beta, Vector<double>& res, double alpha, Vector<double>& x);
-};
-
-/**
- * An implementation of the abstract class @MatTimesVec that performs a mat-first
- * with both the matrix and vector being on the same processor.
- *
- * It can use OOQP matrix and the implementation is based on SimpleVector<double> class.
- */
-class StoredMatTimesVec : public MatTimesVec {
-public:
-   StoredMatTimesVec(DoubleMatrix* mat);
-   virtual ~StoredMatTimesVec() {};
-
-   void doIt(double beta, Vector<double>& y, double alpha, Vector<double>& x) override;
-protected:
-   DoubleMatrix* mMat;
-};
-
-/**
- * An implementation of the abstract class @MatTimesVec that performs a
- * mat transpose-first with both the matrix and vector being on the same processor.
- *
- * It can use OOQP matrix and the implementation is based on SimpleVector<double> class.
- */
-class StoredMatTransTimesVec : public MatTimesVec {
-public:
-   StoredMatTransTimesVec(DoubleMatrix* mat);
-   virtual ~StoredMatTransTimesVec() {};
-
-   void doIt(double beta, Vector<double>& y, double alpha, Vector<double>& x) override;
-protected:
-   DoubleMatrix* mMat;
 };
 
 #endif

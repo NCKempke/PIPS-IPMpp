@@ -3,7 +3,7 @@
 
 #include "mpi.h"
 #include "sTreeCallbacks.h"
-
+#include "StochOptions.h"
 #include <memory>
 
 class HierarchicalMappingParametersTest : public sTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {};

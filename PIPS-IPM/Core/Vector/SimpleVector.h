@@ -8,7 +8,6 @@
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsdef.h"
-#include "StochOptions.h"
 
 #include <vector>
 

@@ -7,8 +7,8 @@
 
 //#define PIPS_DEBUG
 #include <algorithm>
-
 #include "QpScaler.h"
+#include "StochOptions.h"
 #include "DistributedVector.h"
 #include "QP.hpp"
 #include "Variables.h"

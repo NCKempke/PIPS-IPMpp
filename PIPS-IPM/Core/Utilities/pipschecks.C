@@ -15,7 +15,7 @@
 #include <cassert>
 #include <algorithm>
 
-bool permutationIsValid(const PERMUTATION& perm) {
+bool permutationIsValid(const Permutation& perm) {
    size_t size = perm.size();
    std::vector<bool> permflag(size, false);
 

@@ -2208,7 +2208,7 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
       new_vecl->appendToBack(dynamic_cast<SimpleVector<T>&>(*last));
 
    if (!empty_vec && !data_hier.isHierarchyInnerRoot() && data_hier.isHierarchyInnerLeaf() && type != VectorType::PRIMAL) {
-      PERMUTATION link_vec_perm;
+      Permutation link_vec_perm;
 
       if (type == VectorType::DUAL_Y)
          link_vec_perm = data_hier.getLinkConsEqPermInv();

@@ -7,8 +7,6 @@
 
 #include "DistributedLeafLinearSystem.h"
 
-class StochTree;
-
 class DistributedFactory;
 
 class DistributedQP;

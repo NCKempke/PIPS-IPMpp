@@ -26,8 +26,6 @@ public:
    class StochInputNode {
       friend class StochInputTree;
 
-      friend class StochTree;
-
       friend class sTreeCallbacks;
 
    public:
@@ -116,8 +114,6 @@ public:
       bool deleteUserData{false};
 
    }; // end of inner class StochInputNode
-
-   friend class StochTree;
 
 public:
 
