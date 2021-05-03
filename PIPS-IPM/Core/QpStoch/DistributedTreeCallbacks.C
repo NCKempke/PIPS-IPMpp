@@ -17,7 +17,7 @@
 
 #include "pipsport.h"
 
-sTreeCallbacks::sTreeCallbacks(const sTreeCallbacks& other) : sTree(other), N_INACTIVE{other.N_INACTIVE}, MY_INACTIVE{other.MY_INACTIVE},
+sTreeCallbacks::sTreeCallbacks(const sTreeCallbacks& other) : DistributedTree(other), N_INACTIVE{other.N_INACTIVE}, MY_INACTIVE{other.MY_INACTIVE},
       MZ_INACTIVE{other.MZ_INACTIVE}, MYL_INACTIVE{other.MYL_INACTIVE}, MZL_INACTIVE{other.MZL_INACTIVE}, nx_active{other.nx_active},
       my_active{other.my_active}, mz_active{other.mz_active}, myl_active{other.myl_active}, mzl_active{other.mzl_active},
       nx_inactive{other.nx_inactive}, my_inactive{other.my_inactive}, mz_inactive{other.mz_inactive}, myl_inactive{other.myl_inactive},
@@ -26,7 +26,7 @@ sTreeCallbacks::sTreeCallbacks(const sTreeCallbacks& other) : sTree(other), N_IN
       map_node_sub_root(other.map_node_sub_root.begin(), other.map_node_sub_root.end()), data{other.data} {
 }
 
-sTree* sTreeCallbacks::clone() const {
+DistributedTree* sTreeCallbacks::clone() const {
    return new sTreeCallbacks(*this);
 }
 
@@ -38,7 +38,7 @@ sTreeCallbacks::sTreeCallbacks() : print_tree_sizes_on_reading{pips_options::get
 }
 
 sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
-      : sTree(), print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
+      : DistributedTree(), print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
    if (-1 == numProcs)
@@ -49,7 +49,7 @@ sTreeCallbacks::sTreeCallbacks(StochInputTree* inputTree)
 }
 
 sTreeCallbacks::sTreeCallbacks(InputNode* data_)
-      : sTree(), nx_active(data_->n), my_active(data_->my), mz_active(data_->mz), myl_active(data_->myl), mzl_active(data_->mzl),
+      : DistributedTree(), nx_active(data_->n), my_active(data_->my), mz_active(data_->mz), myl_active(data_->myl), mzl_active(data_->mzl),
       print_tree_sizes_on_reading{pips_options::getBoolParameter("PRINT_TREESIZES_ON_READ")}, data(data_) {
    assert(false && "Not used currently");
    if (-1 == rankMe)
@@ -333,7 +333,7 @@ void sTreeCallbacks::computeGlobalSizes() {
 }
 
 void sTreeCallbacks::assertTreeStructureChildren() const {
-   for (const sTree* child : children) {
+   for (const DistributedTree* child : children) {
       dynamic_cast<const sTreeCallbacks*>(child)->assertTreeStructureCorrect();
 
       if (child->commWrkrs != MPI_COMM_NULL) {
@@ -380,7 +380,7 @@ void sTreeCallbacks::assertTreeStructureIsMyNodeChildren() const {
    int MYL_children{0};
    int MZL_children{0};
 
-   for (const sTree* child_ : children) {
+   for (const DistributedTree* child_ : children) {
       const sTreeCallbacks* child = dynamic_cast<const sTreeCallbacks*>(child_);
 
       if (isInVector(rankMe, child->myProcs)) {
@@ -569,8 +569,8 @@ sTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA
 }
 
 StochGenMatrix* sTreeCallbacks::createA() const {
-   TREE_SIZE MY = &sTree::MY;
-   TREE_SIZE MYL = &sTree::MYL;
+   TREE_SIZE MY = &DistributedTree::MY;
+   TREE_SIZE MYL = &DistributedTree::MYL;
 
    DATA_INT m_ABmat = &InputNode::my;
    DATA_INT n_Mat = &InputNode::n;
@@ -592,8 +592,8 @@ StochGenMatrix* sTreeCallbacks::createA() const {
 }
 
 StochGenMatrix* sTreeCallbacks::createC() const {
-   TREE_SIZE MZ = &sTree::MZ;
-   TREE_SIZE MZL = &sTree::MZL;
+   TREE_SIZE MZ = &DistributedTree::MZ;
+   TREE_SIZE MZL = &DistributedTree::MZL;
 
    DATA_INT m_CDmat = &InputNode::mz;
    DATA_INT n_Mat = &InputNode::n;
@@ -645,7 +645,7 @@ DistributedVector<double>* sTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC
    assert(!(is_hierarchical_root || is_hierarchical_inner_root || is_hierarchical_inner_leaf) || (false && "cannot be used with hierarchical data"));
 
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    const int nlinking = (np == -1 && linking_vec != nullptr) ? data->*n_linking_vec : -1;
 
@@ -664,7 +664,7 @@ DistributedVector<double>* sTreeCallbacks::createVector(DATA_INT n_vec, DATA_VEC
       (data->*linking_vec)(data->user_data, data->id, elems_link, data->*n_linking_vec);
    }
 
-   for (const sTree* child_tree : children) {
+   for (const DistributedTree* child_tree : children) {
       DistributedVector<double>* child_vec = dynamic_cast<const sTreeCallbacks*>(child_tree)->createVector(n_vec, vec, n_linking_vec, linking_vec);
       svec->AddChild(child_vec);
    }
@@ -758,7 +758,7 @@ DistributedVector<double>* sTreeCallbacks::createicupp() const {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
 }
 
-sTree* sTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) {
+DistributedTree* sTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) {
    assertTreeStructureCorrect();
    if (PIPS_MPIgetRank() == 0 && !pips_options::getBoolParameter("SILENT"))
       std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " << mzl_to_shave
@@ -1017,7 +1017,7 @@ void sTreeCallbacks::adjustActiveMylBy(int adjustment) {
    assert(myl_active >= 0);
    assert(MYL >= 0);
 
-   for (sTree* child_ : children) {
+   for (DistributedTree* child_ : children) {
       sTreeCallbacks* child = dynamic_cast<sTreeCallbacks*>(child_);
 
       assert(child->children.size() == 0);
@@ -1206,7 +1206,7 @@ std::pair<int, int> sTreeCallbacks::splitTree(int n_layers, DistributedQP* data)
    return std::make_pair<int, int>(deleted_myl_mzl.first + deleted_children.first, deleted_myl_mzl.second + deleted_children.second);
 }
 
-sTree* sTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data) {
+DistributedTree* sTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data) {
    assert(data->exploitingLinkStructure());
 
    const int n_layers = pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS");

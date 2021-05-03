@@ -138,36 +138,37 @@ int sTree::innerSize(int which) const {
    return mz();
 }
 
-DistributedVector<double>* sTree::newPrimalVector(bool empty) const {
-   if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+DistributedVector<double>* sTree::new_primal_vector(bool empty) const {
+   if (commWrkrs == MPI_COMM_NULL) {
+      return new DistributedDummyVector<double>();
+   }
 
-   DistributedVector<double>* x{};
    if (!sub_root) {
-      x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
-
+      DistributedVector<double>* x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
       for (size_t it = 0; it < children.size(); it++) {
-         DistributedVector<double>* child = children[it]->newPrimalVector(empty);
+         DistributedVector<double>* child = children[it]->new_primal_vector(empty);
          x->AddChild(child);
       }
+      return x;
    }
    else {
       assert(children.size() == 0);
-      if (sub_root->commWrkrs == MPI_COMM_NULL)
-         x = new StochDummyVectorBase<double>();
+      if (sub_root->commWrkrs == MPI_COMM_NULL) {
+         DistributedVector<double>* x = new DistributedDummyVector<double>();
+         return x;
+      }
       else {
-         DistributedVector<double>* x_vec = sub_root->newPrimalVector(empty);
-         x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
+         DistributedVector<double>* x_vec = sub_root->new_primal_vector(empty);
+         DistributedVector<double>* x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
          x_vec->parent = x;
+         return x;
       }
    }
-
-   return x;
 }
 
 DistributedVector<double>* sTree::newDualYVector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    DistributedVector<double>* y{};
    const int yl = (np == -1) ? myl() : -1;
@@ -184,7 +185,7 @@ DistributedVector<double>* sTree::newDualYVector(bool empty) const {
       assert(children.size() == 0);
 
       if (sub_root->commWrkrs == MPI_COMM_NULL)
-         y = new StochDummyVectorBase<double>();
+         y = new DistributedDummyVector<double>();
       else {
          DistributedVector<double>* y_vec = sub_root->newDualYVector(empty);
          assert(yl == -1);
@@ -198,7 +199,7 @@ DistributedVector<double>* sTree::newDualYVector(bool empty) const {
 
 DistributedVector<double>* sTree::newDualZVector(bool empty) const {
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    DistributedVector<double>* z{};
    const int zl = (np == -1) ? mzl() : -1;
@@ -214,7 +215,7 @@ DistributedVector<double>* sTree::newDualZVector(bool empty) const {
    else {
       assert(children.size() == 0);
       if (sub_root->commWrkrs == MPI_COMM_NULL)
-         z = new StochDummyVectorBase<double>();
+         z = new DistributedDummyVector<double>();
       else {
          DistributedVector<double>* z_vec = sub_root->newDualZVector(empty);
          assert(zl == -1);
@@ -230,7 +231,7 @@ DistributedVector<double>* sTree::newDualZVector(bool empty) const {
 DistributedVector<double>* sTree::newRhs() const {
    //is this node a dead-end for this process?
    if (commWrkrs == MPI_COMM_NULL)
-      return new StochDummyVectorBase<double>();
+      return new DistributedDummyVector<double>();
 
    DistributedVector<double>* rhs{};
    if (!sub_root) {

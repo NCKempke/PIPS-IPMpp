@@ -19,18 +19,18 @@ add_library(ooqpstoch STATIC
         QpStoch/DistributedFactory.C
         Problems/DistributedQP.cpp
         LinearSystems/DistributedLinearSystem.C
-        QpStoch/DistributedRootLinearSystem.C
-        QpStoch/sLinsysRootAug.C
-        QpStoch/sLinsysRootAugHierInner.C
-        QpStoch/DistributedLeafLinearSystem.C
-        QpStoch/sLinsysLeafSchurSlv.C
+        LinearSystems/DistributedRootLinearSystem.C
+        LinearSystems/sLinsysRootAug.C
+        LinearSystems/sLinsysRootAugHierInner.C
+        LinearSystems/DistributedLeafLinearSystem.C
+        LinearSystems/sLinsysLeafSchurSlv.C
         QpStoch/DistributedVariables.C
         QpStoch/DistributedResiduals.cpp
-        QpStoch/sTree.C
-        QpStoch/sLinsysRootBordered.C
-        QpStoch/sTreeCallbacks.C
+        QpStoch/DistributedTree.C
+        LinearSystems/sLinsysRootBordered.C
+        QpStoch/DistributedTreeCallbacks.C
         LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
-        QpStoch/RegularizationStrategy.h QpStoch/RegularizationStrategy.cpp)
+        LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp)
 
 if (HAVE_MA27)
     target_compile_definitions(ooqpstoch PUBLIC -DWITH_MA27)

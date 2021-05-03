@@ -103,7 +103,7 @@ public:
    virtual DistributedVector<double>* createcupp() const = 0;
    virtual DistributedVector<double>* createicupp() const = 0;
 
-   DistributedVector<double>* newPrimalVector(bool empty = false) const;
+   DistributedVector<double>* new_primal_vector(bool empty = false) const;
    DistributedVector<double>* newDualYVector(bool empty = false) const;
    DistributedVector<double>* newDualZVector(bool empty = false) const;
 
