@@ -1,5 +1,5 @@
 #include "Solver.h"
-#include "OoqpMonitor.h"
+#include "Monitor.h"
 #include "Status.h"
 #include "Problem.h"
 #include "Variables.h"
@@ -227,7 +227,7 @@ void Solver::mehrotra_step_length_PD(Variables* iterate, Variables* step, double
 
 void Solver::do_monitor(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha, double sigma, int i, double mu,
       int stop_code, int level) {
-   OoqpMonitor* m = itsMonitors;
+   Monitor* m = itsMonitors;
 
    while (m) {
       m->doIt(this, data, iterate, residuals, alpha, sigma, i, mu, stop_code, level);
@@ -238,7 +238,7 @@ void Solver::do_monitor(const Problem* data, const Variables* iterate, const Res
 void
 Solver::do_monitor_Pd(const Problem* data, const Variables* iterate, const Residuals* residuals, double alpha_primal, double alpha_dual, double sigma,
       int i, double mu, int stop_code, int level) {
-   OoqpMonitor* m = itsMonitors;
+   Monitor* m = itsMonitors;
 
    while (m) {
       m->doItPd(this, data, iterate, residuals, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
@@ -257,12 +257,7 @@ Solver::do_status(const Problem* problem, const Variables* iterate, const Residu
    }
 }
 
-
-void Solver::monitorSelf() {
-   this->add_monitor(new OoqpSelfMonitor);
-}
-
-void Solver::add_monitor(OoqpMonitor* m) {
+void Solver::add_monitor(Monitor* m) {
    // Push the monitor onto the list
    m->nextMonitor = itsMonitors;
    itsMonitors = m;
@@ -414,9 +409,9 @@ void Solver::default_monitor(const Problem* problem /* problem */, const Variabl
 }
 
 Solver::~Solver() {
-   OoqpMonitor* m = itsMonitors;
+   Monitor* m = itsMonitors;
    while (m) {
-      OoqpMonitor* n = m->nextMonitor;
+      Monitor* n = m->nextMonitor;
       delete m;
       m = n;
    }

@@ -18,7 +18,7 @@
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
-#include "StochMonitor.h"
+#include "Monitor.h"
 
 
 #include "PreprocessFactory.h"
@@ -229,10 +229,9 @@ PIPSIpmInterface<FORMULATION, IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, M
    }
 
    solver.reset(new IPMSOLVER(*formulation_factory, *presolved_problem, scaler.get()));
-   solver->add_monitor(new StochMonitor(formulation_factory.get(), scaler.get()));
+   solver->add_monitor(new Monitor(formulation_factory.get(), scaler.get()));
 #ifdef TIMING
    if( my_rank == 0 ) printf("solver created\n");
-   //solver->monitorSelf();
 #endif
 
    MPI_Barrier(comm);

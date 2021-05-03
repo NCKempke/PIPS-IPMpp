@@ -14,7 +14,7 @@ class AbstractLinearSystem;
 
 class Status;
 
-class OoqpMonitor;
+class Monitor;
 
 class ProblemFactory;
 
@@ -70,13 +70,10 @@ public:
    default_status(const Problem* data, const Variables* iterate, const Residuals* residuals, int iteration, double mu, TerminationCode level);
 
    /** method to add user-defined monitors to the monitor operations performed at each iteration */
-   void add_monitor(OoqpMonitor* m);
+   void add_monitor(Monitor* m);
 
    /** method to replace the default_status method with a user-defined status checking method */
    void use_status(Status* s) { status = s; }
-
-   /** enables default_monitor as one of the monitors */
-   void monitorSelf();
 
    void setMuTol(double m) { mutol = m; }
 
@@ -98,7 +95,7 @@ public:
    virtual void reset_parameters() {};
 
 protected:
-   OoqpMonitor* itsMonitors{};
+   Monitor* itsMonitors{};
    Status* status{};
    const Scaler* scaler{};
    ProblemFactory& factory;

@@ -1,4 +1,4 @@
-#include "StochMonitor.h"
+#include "Monitor.h"
 #include "Status.h"
 
 #include "Residuals.h"
@@ -8,24 +8,24 @@
 #include <iostream>
 #include <cstdio>
 
-StochMonitor::StochMonitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
+Monitor::Monitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
 
-StochMonitor::StochMonitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()},
+Monitor::Monitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()},
       myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{PIPS_MPIgetRank()} {
 }
 
-void StochMonitor::doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i,
+void Monitor::doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i,
       double mu, int status_code, int level) {
-   StochMonitor::doItStoch(solver, data, vars, resids, alpha, -1.0, sigma, i, mu, status_code, level);
+   Monitor::doItStoch(solver, data, vars, resids, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
-void StochMonitor::doItPd(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal,
+void Monitor::doItPd(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal,
       double alpha_dual, double sigma, int i, double mu, int status_code, int level) {
-   StochMonitor::doItStoch(solver, data, vars, resids, alpha_primal, alpha_dual, sigma, i, mu, status_code, level);
+   Monitor::doItStoch(solver, data, vars, resids, alpha_primal, alpha_dual, sigma, i, mu, status_code, level);
 }
 
-void StochMonitor::doItStoch(const Solver* solver, const Problem* problem, const Variables* vars, const Residuals* resids, double alpha_primal,
+void Monitor::doItStoch(const Solver* solver, const Problem* problem, const Variables* vars, const Residuals* resids, double alpha_primal,
       double alpha_dual, double, int i, double mu, int status_code, int level) const {
    double objective = problem->objective_value(*vars);
 
