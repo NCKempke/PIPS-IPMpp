@@ -49,24 +49,18 @@ class AbstractLinearSystem;
 class Variables;
 
 /**
- * Creates a compatible set of components representing a problem formulation
- * specialized by structure.
+ * Creates a compatible set of components representing a problem formulation specialized by structure.
  */
 class ProblemFactory {
 public:
-   virtual void join_right_hand_side(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in,
-         const Vector<double>& rhs3_in) const = 0;
-
-   virtual void separate_variables(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const = 0;
-
    /** create x shaped vector */
-   virtual Vector<double>* make_primal_vector() const;
+   [[nodiscard]] virtual Vector<double>* make_primal_vector() const = 0;
    /** create dual A shaped vector */
-   virtual Vector<double>* make_equalities_dual_vector() const;
+   [[nodiscard]] virtual Vector<double>* make_equalities_dual_vector() const = 0;
    /** create dual C shaped vector */
-   virtual Vector<double>* make_inequalities_dual_vector() const;
+   [[nodiscard]] virtual Vector<double>* make_inequalities_dual_vector() const = 0;
    /** create a rhs vector for the augmented system */
-   virtual Vector<double>* make_right_hand_side() const;
+   [[nodiscard]] virtual Vector<double>* make_right_hand_side() const = 0;
 
    /** create the Residuals class for the relevant formulation */
    virtual Residuals* make_residuals(Problem& problem) = 0;
