@@ -20,8 +20,8 @@
  */
 class DeSymIndefSolver : public DoubleLinearSolver {
 public:
-   DeSymIndefSolver(const DenseSymMatrix* storage);
-   DeSymIndefSolver(const SparseSymMatrix* storage);
+   explicit DeSymIndefSolver(const DenseSymMatrix* storage);
+   explicit DeSymIndefSolver(const SparseSymMatrix* storage);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
@@ -32,13 +32,12 @@ public:
 
    ~DeSymIndefSolver() override = default;
 
-   // TODO ...
-   bool reports_inertia() const override { return false; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
-      assert(false && "TODO : implement");
-      return {0, 0, 0};
-   };
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
+
 protected:
+
+   void calculate_inertia_from_factorization() const;
 
    /* in PIPS symmetric matrices will be lower diagonal matrices which makes them upper diagonal in fortran access */
    const char fortranUplo = 'U';
@@ -48,6 +47,10 @@ protected:
    std::vector<int> ipiv;
 
    const SparseSymMatrix* sparseMat{};
+
+   mutable int positive_eigenvalues{-1};
+   mutable int negative_eigenvalues{-1};
+   mutable int zero_eigenvalues{0};
 };
 
 #endif

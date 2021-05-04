@@ -5,6 +5,7 @@
 #include "DeSymIndefSolver.h"
 #include "SimpleVector.h"
 #include <cassert>
+#include <memory>
 
 #include "DenseSymMatrix.h"
 #include "DenseGenMatrix.h"
@@ -52,8 +53,8 @@ DeSymIndefSolver::DeSymIndefSolver(const DenseSymMatrix* dm) : mStorage{dm->getS
 }
 
 DeSymIndefSolver::DeSymIndefSolver(const SparseSymMatrix* sm) : sparseMat{sm} {
-   const int size = sm->size();
-   mStorage = std::shared_ptr<DenseStorage>(new DenseStorage(size, size));
+   const int size = static_cast<int>(sm->size());
+   mStorage = std::make_shared<DenseStorage>(size, size);
 
    ipiv.resize(size);
 }
@@ -146,7 +147,7 @@ void DeSymIndefSolver::solve(Vector<double>& v) {
    const int one = 1;
 
    const int n = mStorage->n;
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(v);
+   auto& sv = dynamic_cast<SimpleVector<double>&>(v);
 
    if (n == 0)
       return;
@@ -164,7 +165,7 @@ void DeSymIndefSolver::solve(Vector<double>& v) {
 }
 
 void DeSymIndefSolver::solve(GenMatrix& rhs_in) {
-   DenseGenMatrix& rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
 
    int info;
    int nrows, ncols;
@@ -180,3 +181,37 @@ void DeSymIndefSolver::solve(GenMatrix& rhs_in) {
 void DeSymIndefSolver::diagonalChanged(int /* idiag */, int /* extent */) {
    this->matrixChanged();
 }
+
+void DeSymIndefSolver::calculate_inertia_from_factorization() const {
+   positive_eigenvalues = 0;
+   negative_eigenvalues = 0;
+
+   for(int i = 0; i < mStorage->n; ++i) {
+      /* 1x1 diagonal block */
+      if(ipiv[i] > 0) {
+         if(fabs(mStorage->M[i][i]) < 1e-20) {
+            ++zero_eigenvalues;
+         } else if(mStorage->M[i][i] > 0) {
+            ++positive_eigenvalues;
+         } else if (mStorage->M[i][i] < 0) {
+            ++negative_eigenvalues;
+         }
+         /* 2x2 diagonal block */
+      } else {
+         assert(i + 1 < mStorage->n);
+         assert(ipiv[i + 1] < 0);
+
+         ++i;
+         ++positive_eigenvalues;
+         ++negative_eigenvalues;
+      }
+   }
+}
+
+std::tuple<unsigned int, unsigned int, unsigned int> DeSymIndefSolver::get_inertia() const {
+
+   calculate_inertia_from_factorization();
+
+   assert(mStorage->n - positive_eigenvalues - negative_eigenvalues >= 0);
+   return {positive_eigenvalues, negative_eigenvalues, mStorage->n - positive_eigenvalues - negative_eigenvalues};
+};
