@@ -42,27 +42,27 @@ public:
 
    ~StringGenMatrix() override;
 
-   MPI_Comm getComm() const { return mpi_comm; };
+   [[nodiscard]] MPI_Comm getComm() const { return mpi_comm; };
 
    virtual void addChild(StringGenMatrix* child);
 
-   virtual bool isEmpty() const;
-   int isKindOf(int matrix) const override;
+   [[nodiscard]] virtual bool isEmpty() const;
+   [[nodiscard]] int isKindOf(int matrix) const override;
 
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    /** y = beta * y + alpha * this^T * x */
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   double abmaxnorm() const override;
+   [[nodiscard]] double abmaxnorm() const override;
    void scalarMult(double num) override;
 
    void writeToStreamDense(std::ostream&) const override;
    void writeToStreamDenseRow(std::ostream& out, int row) const override;
    void writeDashedLineToStream(std::ostream& out) const override;
 
-   void getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) override;
-   void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) override;
+   void getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) const override;
+   void getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const override;
 
    void columnScale(const Vector<double>& vec) override;
    void rowScale(const Vector<double>& vec) override;
@@ -75,39 +75,39 @@ public:
       n_ = n;
    };
    void getSize(int& m_, int& n_) const override {
-      m_ = m;
-      n_ = n;
+      m_ = static_cast<int>(m);
+      n_ = static_cast<int>(n);
    };
 
    /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
-   void combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms);
+   virtual void combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms);
    virtual void splitAlongTree(const DistributedTreeCallbacks& tree);
 
    virtual void recomputeNonzeros();
-   int numberOfNonZeros() const override;
+   [[nodiscard]] int numberOfNonZeros() const override;
 
-   GenMatrix* shaveBottom(int n_rows) override;
+   [[nodiscard]] GenMatrix* shaveBottom(int n_rows) override;
 
    /* methods not needed for Hierarchical approach */
-   double abminnormNonZero(double) const override {
+   [[nodiscard]] double abminnormNonZero(double) const override {
       assert(false && "TODO: implement");
       return 0.0;
    };
    void atPutDiagonal(int, const Vector<double>&) override { assert("not implemented" && 0); };
    void atAddDiagonal(int, const Vector<double>&) override { assert("not implemented" && 0); };
-   void fromGetDiagonal(int, Vector<double>&) override { assert("not implemented" && 0); };
-   void fromGetDense(int, int, double*, int, int, int) override { assert("not implemented" && 0); };
-   void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) override { assert("not implemented" && 0); };
-   void getDiagonal(Vector<double>&) override { assert("not implemented" && 0); };
+   void fromGetDiagonal(int, Vector<double>&) const override { assert("not implemented" && 0); };
+   void fromGetDense(int, int, double*, int, int, int) const override { assert("not implemented" && 0); };
+   void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) const override { assert("not implemented" && 0); };
+   void getDiagonal(Vector<double>&) const override { assert("not implemented" && 0); };
    void setToDiagonal(const Vector<double>&) override { assert("not implemented" && 0); };
-   void matTransDMultMat(Vector<double>&, SymMatrix**) override { assert("not implemented" && 0); };
-   void matTransDinvMultMat(Vector<double>&, SymMatrix**) override { assert("not implemented" && 0); };
+   void matTransDMultMat(const Vector<double>&, SymMatrix**) const override { assert("not implemented" && 0); };
+   void matTransDinvMultMat(const Vector<double>&, SymMatrix**) const override { assert("not implemented" && 0); };
    void symmetricScale(const Vector<double>&) override { assert("not implemented" && 0); };
    void writeToStream(std::ostream&) const override { assert("not implemented" && 0); };
-   void atPutSubmatrix(int, int, DoubleMatrix&, int, int, int, int) override { assert("not implemented" && 0); };
-   void atPutDense(int, int, double*, int, int, int) override { assert("not implemented" && 0); };
-   void atPutSpRow(int, double[], int, int[], int&) override { assert("not implemented" && 0); };
-   void putSparseTriple(int[], int, int[], double[], int&) override { assert("not implemented" && 0); };
+   void atPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert("not implemented" && 0); };
+   void atPutDense(int, int, const double*, int, int, int) override { assert("not implemented" && 0); };
+   void atPutSpRow(int, const double[], int, const int[], int&) override { assert("not implemented" && 0); };
+   void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("not implemented" && 0); };
 
 protected:
    virtual void multVertical(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;
@@ -145,18 +145,18 @@ public:
 
    void addChild(StringGenMatrix*) override {};
 
-   bool isEmpty() const override { return true; };
-   int isKindOf(int type) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
+   [[nodiscard]] bool isEmpty() const override { return true; };
+   [[nodiscard]] int isKindOf(int type) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
-   double abmaxnorm() const override { return -std::numeric_limits<double>::infinity(); };
+   [[nodiscard]] double abmaxnorm() const override { return -std::numeric_limits<double>::infinity(); };
    void scalarMult(double) override {};
    void writeToStream(std::ostream&) const override {};
    void writeToStreamDenseRow(std::ostream&, int) const override {};
    void writeDashedLineToStream(std::ostream&) const override {};
 
-   void getRowMinMaxVec(bool, bool, const Vector<double>*, Vector<double>&) override {};
-   void getColMinMaxVec(bool, bool, const Vector<double>*, Vector<double>&) override {};
+   void getRowMinMaxVec(bool, bool, const Vector<double>*, Vector<double>&) const override {};
+   void getColMinMaxVec(bool, bool, const Vector<double>*, Vector<double>&) const override {};
    void columnScale(const Vector<double>&) override {};
    void rowScale(const Vector<double>&) override {};
 
@@ -164,7 +164,7 @@ public:
    void addColSums(Vector<double>&) const override {};
 
    void recomputeNonzeros() override {};
-   int numberOfNonZeros() const override { return 0; };
+   [[nodiscard]] int numberOfNonZeros() const override { return 0; };
 
    GenMatrix* shaveBottom(int) override { return new StringGenDummyMatrix(); };
 

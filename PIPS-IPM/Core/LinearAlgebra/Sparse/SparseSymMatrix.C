@@ -36,7 +36,7 @@ SparseSymMatrix::SparseSymMatrix(int size, int nnz, int krowM[], int jcolM[], do
 }
 
 
-void SparseSymMatrix::putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) {
+void SparseSymMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
    mStorage->putSparseTriple(irow, len, jcol, A, info);
 }
 
@@ -44,12 +44,12 @@ SymMatrix* SparseSymMatrix::clone() const {
    return new SparseSymMatrix(*this);
 }
 
-void SparseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
+void SparseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
    mStorage->fromGetDense(row, col, A, lda, rowExtent, colExtent);
 }
 
 
-void SparseSymMatrix::getDiagonal(Vector<double>& vec) {
+void SparseSymMatrix::getDiagonal(Vector<double>& vec) const {
    mStorage->getDiagonal(vec);
 }
 
@@ -64,7 +64,7 @@ void SparseSymMatrix::diagonal_add_constant_from(int from, int length, double va
 }
 
 
-void SparseSymMatrix::symAtPutSpRow(int row, double A[], int lenA, int jcolA[], int& info) {
+void SparseSymMatrix::symAtPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) {
    // Lower triangular put
    int lA = lenA;
    while (lA > 0 && jcolA[lA - 1] > row)
@@ -82,11 +82,11 @@ void SparseSymMatrix::symPutZeroes() {
    mStorage->clear();
 }
 
-void SparseSymMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) {
+void SparseSymMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
 
-void SparseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
+void SparseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
    int i, k;
    int info, nnz;
 
@@ -203,7 +203,7 @@ void SparseSymMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
    mStorage->atAddDiagonal(idiag, v);
 }
 
-void SparseSymMatrix::fromGetDiagonal(int idiag, Vector<double>& v) {
+void SparseSymMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
    mStorage->fromGetDiagonal(idiag, v);
 }
 

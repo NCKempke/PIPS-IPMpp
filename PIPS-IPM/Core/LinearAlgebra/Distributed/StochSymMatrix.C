@@ -35,14 +35,14 @@ void StochSymMatrix::AddChild(StochSymMatrix* child) {
    assert(this->border == nullptr);
 
    if (!child->border)
-      child->border = new SparseGenMatrix(child->diag->size(), this->diag->size(), 0);
+      child->border = new SparseGenMatrix(static_cast<int>(child->diag->size()), static_cast<int>(this->diag->size()), 0);
 
    children.push_back(child);
 }
 
 StochSymMatrix::~StochSymMatrix() {
-   for (size_t it = 0; it < children.size(); it++)
-      delete children[it];
+   for (auto & it : children)
+      delete it;
 
    delete diag;
    delete border;
@@ -52,10 +52,10 @@ SymMatrix* StochSymMatrix::clone() const {
    SymMatrix* diag_clone = diag->clone();
    SparseGenMatrix* border_clone = border ? dynamic_cast<SparseGenMatrix*>(border->cloneFull()) : nullptr;
 
-   StochSymMatrix* clone = new StochSymMatrix(diag_clone, border_clone, mpiComm);
+   auto* clone = new StochSymMatrix(diag_clone, border_clone, mpiComm);
 
-   for (size_t it = 0; it < children.size(); it++) {
-      StochSymMatrix* child = dynamic_cast<StochSymMatrix*>(children[it]->clone());
+   for (auto it : children) {
+      auto* child = dynamic_cast<StochSymMatrix*>(it->clone());
       clone->AddChild(child);
       clone->n += child->n;
    }
@@ -68,17 +68,19 @@ void StochSymMatrix::recomputeSize() {
    assert(diag);
    n = 0;
    for (auto& child : children) {
-      child->recomputeSize();
+      if ( !child->isKindOf(kStochSymDummyMatrix)) {
+         child->recomputeSize();
+      }
 
       n += child->size();
    }
 
-   if (diag->isKindOf(kStochSymMatrix))
+   if (diag->isKindOf(kStochSymMatrix) && !diag->isKindOf(kStochSymDummyMatrix)){
       dynamic_cast<StochSymMatrix*>(diag)->recomputeSize();
+   }
 
    n += diag->size();
 }
-
 
 int StochSymMatrix::isKindOf(int type) const {
    return type == kStochSymMatrix || type == kSymMatrix;
@@ -90,10 +92,9 @@ void StochSymMatrix::getSize(long long& m_, long long& n_) const {
 }
 
 void StochSymMatrix::getSize(int& m_, int& n_) const {
-   m_ = n;
-   n_ = n;
+   m_ = static_cast<int>(n);
+   n_ = static_cast<int>(n);
 }
-
 
 long long StochSymMatrix::size() const {
    return n;
@@ -110,8 +111,8 @@ long long StochSymMatrix::size() const {
  * Here Qi are diagonal blocks, Ri are left bordering blocks
  */
 void StochSymMatrix::mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
-   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_);
-   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_);
+   const auto& x = dynamic_cast<const DistributedVector<double>&>(x_);
+   auto& y = dynamic_cast<DistributedVector<double>&>(y_);
 
    if (0.0 == alpha) {
       y.first->scale(beta);
@@ -159,8 +160,8 @@ void StochSymMatrix::transMult(double beta, Vector<double>& y_, double alpha, co
 double StochSymMatrix::abmaxnorm() const {
    double maxNorm = 0.0;
 
-   for (size_t it = 0; it < children.size(); it++)
-      maxNorm = std::max(maxNorm, children[it]->abmaxnorm());
+   for (auto it : children)
+      maxNorm = std::max(maxNorm, it->abmaxnorm());
 
    if (iAmDistrib)
       PIPS_MPIgetMaxInPlace(maxNorm, mpiComm);
@@ -174,8 +175,8 @@ double StochSymMatrix::abmaxnorm() const {
 double StochSymMatrix::abminnormNonZero(double tol) const {
    double min = std::numeric_limits<double>::infinity();
 
-   for (size_t it = 0; it < children.size(); it++)
-      min = std::min(min, children[it]->abminnormNonZero(tol));
+   for (auto it : children)
+      min = std::min(min, it->abminnormNonZero(tol));
 
    if (iAmDistrib)
       PIPS_MPIgetMinInPlace(min, mpiComm);
@@ -190,7 +191,7 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const {
    const int rank = PIPS_MPIgetRank(mpiComm);
    const int world_size = PIPS_MPIgetSize(mpiComm);
 
-   int m, n;
+   int m_loc, n_loc;
    int offset = 0;
    std::stringstream sout;
    MPI_Status status;
@@ -207,16 +208,16 @@ void StochSymMatrix::writeToStreamDense(std::ostream& out) const {
    else  //  !iAmDistrib || (iAmDistrib && rank == 0)
       this->diag->writeToStreamDense(sout);
 
-   for (size_t it = 0; it < children.size(); it++) {
-      children[it]->writeToStreamDenseChild(sout, offset);
-      children[it]->diag->getSize(m, n);
-      offset += n;
+   for (auto it : children) {
+      it->writeToStreamDenseChild(sout, offset);
+      it->diag->getSize(m_loc, n_loc);
+      offset += n_loc;
    }
 
    if (iAmDistrib && rank > 0) {
       std::string str = sout.str();
       // send string to rank ZERO to print it there:
-      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, rank, mpiComm);
+      MPI_Ssend(str.c_str(), static_cast<int>(str.length()), MPI_CHAR, 0, rank, mpiComm);
       // send offset to next process:
       if (rank < world_size - 1)
          MPI_Ssend(&offset, 1, MPI_INT, rank + 1, 0, mpiComm);
@@ -261,8 +262,8 @@ void StochSymMatrix::writeToStreamDenseChild(std::stringstream& out, int offset)
 }
 
 
-void StochSymMatrix::getDiagonal(Vector<double>& vec_) {
-   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
+void StochSymMatrix::getDiagonal(Vector<double>& vec_) const {
+   auto& vec = dynamic_cast<DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->getDiagonal(*vec.first);
@@ -272,7 +273,7 @@ void StochSymMatrix::getDiagonal(Vector<double>& vec_) {
 }
 
 void StochSymMatrix::setToDiagonal(const Vector<double>& vec_) {
-   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
+   const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->setToDiagonal(*vec.first);
@@ -282,10 +283,10 @@ void StochSymMatrix::setToDiagonal(const Vector<double>& vec_) {
 }
 
 void StochSymMatrix::atPutDiagonal(int idiag, const Vector<double>& v_) {
-   const DistributedVector<double>& v = dynamic_cast<const DistributedVector<double>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<double>&>(v_);
 
    //check the tree compatibility
-   int nChildren = children.size();
+   int nChildren = static_cast<int>(children.size());
    assert(v.children.size() - nChildren == 0);
 
    //check the node size compatibility
@@ -298,10 +299,10 @@ void StochSymMatrix::atPutDiagonal(int idiag, const Vector<double>& v_) {
 }
 
 void StochSymMatrix::atAddDiagonal(int idiag, const Vector<double>& v_) {
-   const DistributedVector<double>& v = dynamic_cast<const DistributedVector<double>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<double>&>(v_);
 
    //check the tree compatibility
-   int nChildren = children.size();
+   int nChildren = static_cast<int>(children.size());
    assert(v.children.size() - nChildren == 0);
 
    //check the node size compatibility
@@ -312,10 +313,10 @@ void StochSymMatrix::atAddDiagonal(int idiag, const Vector<double>& v_) {
    for (int it = 0; it < nChildren; it++)
       children[it]->atAddDiagonal(idiag, *v.children[it]);
 }
-void StochSymMatrix::fromGetDiagonal(int, Vector<double>& x_) {
+void StochSymMatrix::fromGetDiagonal(int, Vector<double>& x_) const {
    assert("The value of the parameter is not supported!");
 
-   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_);
+   auto& x = dynamic_cast<DistributedVector<double>&>(x_);
    assert(x.children.size() == children.size());
 
    diag->getDiagonal(*x.first);
@@ -325,7 +326,7 @@ void StochSymMatrix::fromGetDiagonal(int, Vector<double>& x_) {
 }
 
 void StochSymMatrix::symmetricScale(const Vector<double>& vec_) {
-   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
+   const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->symmetricScale(*vec.first);
@@ -335,7 +336,7 @@ void StochSymMatrix::symmetricScale(const Vector<double>& vec_) {
 }
 
 void StochSymMatrix::columnScale(const Vector<double>& vec_) {
-   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
+   const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->columnScale(*vec.first);
@@ -348,7 +349,7 @@ void StochSymMatrix::columnScale(const Vector<double>& vec_) {
 }
 
 void StochSymMatrix::rowScale(const Vector<double>& vec_) {
-   const DistributedVector<double>& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
+   const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
    assert(children.size() == vec.children.size());
 
    diag->rowScale(*vec.first);
@@ -364,25 +365,24 @@ void StochSymMatrix::scalarMult(double num) {
    diag->scalarMult(num);
    if (border)
       border->scalarMult(num);
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->scalarMult(num);
+   for (auto & it : children)
+      it->scalarMult(num);
 }
 
-
 void StochSymMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, const Vector<int>* linkParent) {
-   const DistributedVector<int>& nnzVecStoch = dynamic_cast<const DistributedVector<int>&>(nnzVec);
+   const auto& nnzVecStoch = dynamic_cast<const DistributedVector<int>&>(nnzVec);
    assert(children.size() == nnzVecStoch.children.size());
 
-   const SimpleVector<int>* vec = dynamic_cast<const SimpleVector<int>*>( nnzVecStoch.first );
+   const auto* vec = dynamic_cast<const SimpleVector<int>*>( nnzVecStoch.first );
    assert(vec);
 
-   const int n_old = n;
+   const long long n_old = n;
    for (size_t it = 0; it < children.size(); it++)
       children[it]->deleteEmptyRowsCols(*nnzVecStoch.children[it], vec);
 
    if (linkParent != nullptr) {
       assert(border);
-      assert(children.size() == 0);
+      assert(children.empty());
       // adapt border
       assert(dynamic_cast<const SimpleVector<int>*>(linkParent));
       border->deleteEmptyRowsCols(*vec, *linkParent);
@@ -402,7 +402,7 @@ void StochSymMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec, const Vector
    assert(n <= n_old);
    assert(n >= 0);
 
-   const int n_changes = n_old - n;
+   const long long n_changes = n_old - n;
 
    if (linkParent != nullptr) {
       assert(parent != nullptr);
@@ -431,7 +431,7 @@ void StochSymMatrix::splitMatrix(const std::vector<unsigned int>& map_blocks_chi
 
       const unsigned int n_blocks_for_child = end_curr_child_blocks - begin_curr_child_blocks + 1;
 
-      StochSymMatrix* diag = (child_comms[i] == MPI_COMM_NULL) ? nullptr : new StochSymMatrix(0, 0, 0, child_comms[i]);
+      StochSymMatrix* diag_new = (child_comms[i] == MPI_COMM_NULL) ? nullptr : new StochSymMatrix(0, 0, 0, child_comms[i]);
 
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for (unsigned int j = 0; j < n_blocks_for_child; ++j) {
@@ -441,23 +441,23 @@ void StochSymMatrix::splitMatrix(const std::vector<unsigned int>& map_blocks_chi
          if (child_comms[i] == MPI_COMM_NULL)
             assert(child->mpiComm == MPI_COMM_NULL);
 
-         if (diag)
-            diag->AddChild(child);
+         if (diag_new)
+            diag_new->AddChild(child);
 //         else
 //            delete child;
       }
-      if (diag)
-         diag->recomputeSize();
+      if (diag_new)
+         diag_new->recomputeSize();
 
       /* create child holding the new Bmat and it's Blmat part */
-      new_children[i] = (child_comms[i] != MPI_COMM_NULL) ? new StochSymMatrix(diag, nullptr, child_comms[i]) : new StochSymDummyMatrix();
+      new_children[i] = (child_comms[i] != MPI_COMM_NULL) ? new StochSymMatrix(diag_new, nullptr, child_comms[i]) : new StochSymDummyMatrix();
       if (child_comms[i] != MPI_COMM_NULL)
          dynamic_cast<StochSymMatrix*>(new_children[i]->diag)->parent = new_children[i];
 
       ++end_curr_child_blocks;
       begin_curr_child_blocks = end_curr_child_blocks;
    }
-   assert(children.size() == 0);
+   assert(children.empty());
 
    /* exchange children and recompute sizes */
    children.insert(children.end(), new_children.begin(), new_children.end());
@@ -490,10 +490,10 @@ StringGenMatrix* StochSymMatrix::shaveBorder(int n_vars) {
 
    SparseGenMatrix* const border_top_left = parent ? new SparseGenMatrix(0, n_vars, 0) : dynamic_cast<SparseSymMatrix*>(diag)->shaveSymLeftBottom(
          n_vars);
-   StringGenMatrix* const border_vertical = new StringGenMatrix(true, border_top_left, nullptr, mpiComm);
+   auto* const border_vertical = new StringGenMatrix(true, border_top_left, nullptr, mpiComm);
 
-   for (size_t it = 0; it < children.size(); it++)
-      border_vertical->addChild(children[it]->shaveBorder2(n_vars));
+   for (auto & it : children)
+      border_vertical->addChild(it->shaveBorder2(n_vars));
 
    n -= n_vars;
    border_vertical->recomputeNonzeros();
@@ -508,10 +508,10 @@ StringGenMatrix* StochSymMatrix::shaveBorder2(int n_vars) {
       return new StringGenMatrix(true, border_block, nullptr, mpiComm);
    }
    else {
-      assert(children.size() == 0);
+      assert(children.empty());
       assert(diag->isKindOf(kStochSymMatrix));
 
-      StochSymMatrix& diags = dynamic_cast<StochSymMatrix&>(*diag);
+      auto& diags = dynamic_cast<StochSymMatrix&>(*diag);
       return new StringGenMatrix(true, diags.shaveBorder(n_vars), nullptr, mpiComm);
    }
 }

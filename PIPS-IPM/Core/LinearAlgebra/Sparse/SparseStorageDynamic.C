@@ -17,7 +17,7 @@
 int SparseStorageDynamic::instances = 0;
 
 
-SparseStorageDynamic::SparseStorageDynamic(int m, int n, int len, double spareRatio) : spareRatio(spareRatio), m(m), m_len(m), n(n), len(len),
+SparseStorageDynamic::SparseStorageDynamic(int m, int n, int len_, double spareRatio) : spareRatio(spareRatio), m(m), m_len(m), n(n), len(len_),
       len_free(len) {
    assert(m >= 0 && len >= 0);
 
@@ -132,7 +132,7 @@ void SparseStorageDynamic::getSize(int& m, int& n) const {
    n = this->n;
 }
 
-const ROWPTRS SparseStorageDynamic::getRowPtr(int i) const {
+ROWPTRS SparseStorageDynamic::getRowPtr(int i) const {
    assert(0 <= i && i < m);
    return rowptr[i];
 }

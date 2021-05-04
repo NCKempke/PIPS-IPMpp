@@ -71,12 +71,12 @@ public:
 
    int length() { return len; };
    int numberOfNonZeros() const { return krowM[m]; };
-   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
-   void atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
+   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
+   void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
 
-   virtual void putSparseTriple(int irow[], int len, int jcol[], double A[], int& info);
+   void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
 
-   void getDiagonal(Vector<double>& vec) override;
+   void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
 
    void columnScale(const Vector<double>& vec) override;
@@ -84,14 +84,11 @@ public:
    void symmetricScale(const Vector<double>& vec) override;
    void scalarMult(double num) override;
 
-   void atPutSpRow(int col, const double A[], int lenA, int irowA[], int& info) override;
-
-   void fromGetSpRow(int row, int col, double A[], int lenA, int irowA[], int& nnz, int rowExtent, int& info) override;
+   void atPutSpRow(int col, const double A[], int lenA, const int irowA[], int& info) override;
+   void fromGetSpRow(int row, int col, double A[], int lenA, int irowA[], int& nnz, int rowExtent, int& info) const override;
 
    virtual void clear();
 
-   virtual void getTransposePat(int row, int col, int rowExtent, int colExtent, int kpat[], int krowM[], int jcolM[]);
-   virtual void getFromPat(double data[], int n, int kpat[]);
    virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
    virtual void multSym(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
 
@@ -100,7 +97,7 @@ public:
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
-   void fromGetDiagonal(int idiag, Vector<double>& v) override;
+   void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
    void atPutDiagonal(int idiag, const double x[], int incx, int extent);
    void atAddDiagonal(int idiag, const double x[], int incx, int extent);
@@ -112,8 +109,8 @@ public:
    virtual void writeToStreamDenseRow(std::ostream& out, int rowidx) const;
 
    virtual void symmetrize(int& info);
-   double abmaxnorm() const override;
-   double abminnormNonZero(double tol = 1e-30) const override;
+   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    /** Computes the sparsity pattern of MtM = M^T * D * M
     *  where D=diag(d) is a diagonal matrix and M=this.
@@ -123,7 +120,7 @@ public:
     *  Also allocates, builds and returns this^T since it is needed later for
     *   numerical multiplication.
     */
-   void matTransDSymbMultMat(double* /*d*/, int* krowMt, int* jcolMt, double* /*dMt*/, int** krowMtM, int** jcolMtM, double** dMtM);
+   void matTransDSymbMultMat(const double* /*d*/, const int* krowMt, const int* jcolMt, const double* /*dMt*/, int** krowMtM, int** jcolMtM, double** dMtM) const;
 
 
    /** Numerical multiplication MtM = M^T * D * M  where
@@ -131,8 +128,9 @@ public:
     *  M^T and MtM buffers should be allocated before calling this method by calling
     *  method matTransDSymbMultMat.
     */
-   void matTransDMultMat(double* d, int* krowMt, int* jcolMt, double* dMt, int* krowMtM, int* jcolMtM, double* dMtM);
-   void matTransDinvMultMat(double* d, int* krowMt, int* jcolMt, double* dMt, int* krowMtM, int* jcolMtM, double* dMtM);
+   void matTransDMultMat(const double* d, const int* krowMt, const int* jcolMt, const double* dMt, int* krowMtM, int* jcolMtM, double* dMtM) const;
+   void matTransDinvMultMat(const double* d, const int* krowMt, const int* jcolMt, const double* dMt, int* krowMtM, int* jcolMtM, double* dMtM) const;
+
    /** Builds the transpose: Mt = this^T */
    void transpose(int* krowMt, int* jcolMt, double* dMt) const;
 
@@ -140,18 +138,7 @@ public:
 
    void multMatSymUpper(double beta, SparseStorage& y, double alpha, const double x[], int yrow, int ycolstart) const;
 
-   void transMultLower(double beta, double y[], double alpha, double x[], int firstrow);
-   void transMultMat(double beta, double* Y, int ny, int ldy, double alpha, double* X, int ldx);
-   void transMultMatLower(double* Y, int ny, int firstrow, double alpha, double* X, int ldx);
-
-   /** Y <- alpha* M^T X + beta*Y, where M is this
-    * Special update function, computes only the elements in Y that are lower
-    * triangular elements in a larger matrix that contains Y (see impl file for
-    * more details)
-    */
-   void transMultMatLower(double beta, double* Y, int ny, int ldy, double alpha, double* X, int ldx, int colStart);
-
-   void fromGetColBlock(int col, double* A, int lda, int colExtent, int* colSparsity, bool& allzero);
+   void fromGetColBlock(int col, double* A, int lda, int colExtent, int* colSparsity, bool& allzero) const;
 
    void fromGetRowsBlock(double* rows_array_dense, size_t row_start, size_t n_rows, size_t array_line_size, size_t array_line_offest,
          int* row_sparsity) const;
@@ -176,7 +163,7 @@ public:
 
    void sortCols();
 
-   void dump(const std::string& filename);
+   void dump(const std::string& filename) const;
 
    void deleteEmptyRowsCols(const int* nnzRowVec, const int* nnzColVec);
 
@@ -191,7 +178,7 @@ public:
 
    void fortran2c();
 
-   bool fortranIndexed() const;
+   [[nodiscard]] bool fortranIndexed() const;
 
    void set2FortranIndexed();
 
@@ -211,7 +198,7 @@ public:
    virtual void dropNEmptyRowsBottom(int n_rows);
    virtual void dropNEmptyRowsTop(int n_rows);
 
-   virtual ~SparseStorage();
+   ~SparseStorage() override;
 
 private:
    bool isFortranIndexed{false};

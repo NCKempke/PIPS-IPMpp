@@ -10,20 +10,20 @@
 
 int DenseStorageInstances = 0;
 
-void DenseStorage::fromGetDiagonal(int idiag, Vector<double>& vec) {
+void DenseStorage::fromGetDiagonal(int idiag, Vector<double>& vec) const {
    const int extent = vec.length();
 
    assert(idiag + extent <= n);
    assert(idiag + extent <= m);
 
-   SimpleVector<double>& sv = (SimpleVector<double>&) vec;
+   auto& sv = (SimpleVector<double>&) vec;
 
    for (int k = idiag; k < idiag + extent; k++) {
       sv[k] = M[k][k];
    }
 }
 
-void DenseStorage::getDiagonal(Vector<double>& vec) {
+void DenseStorage::getDiagonal(Vector<double>& vec) const {
    this->fromGetDiagonal(0, vec);
 }
 
@@ -34,7 +34,7 @@ void DenseStorage::setToDiagonal(const Vector<double>& vec) {
    assert(extent <= n);
    assert(extent <= m);
 
-   SimpleVector<double>& sv = (SimpleVector<double>&) vec;
+   auto& sv = (SimpleVector<double>&) vec;
    for (int i = 0; i < m; i++) {
       for (int k = 0; k < n; k++) {
          M[i][k] = 0.0;
@@ -66,7 +66,7 @@ DenseStorage::DenseStorage(int min, int nin) {
          M[0] = new double[m * n];
       }
       else {
-         M[0] = 0;
+         M[0] = nullptr;
       }
       int i;
       for (i = 1; i < m; i++)
@@ -92,15 +92,14 @@ DenseStorage::DenseStorage(double A[], int min, int nin) {
    neverDeleteElts = 1;
 }
 
-void DenseStorage::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) {
+void DenseStorage::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
    assert(col >= 0 && col + colExtent <= n);
    assert(row >= 0 && row < m);
 
-   int j, k;
-   k = 0;
+   int k = 0;
    info = 0;
 
-   for (j = col; j < col + colExtent; j++) {
+   for (int j = col; j < col + colExtent; j++) {
       if (M[row][j] != 0.0) {
          if (k < lenA) {
             // Add the element to A
@@ -117,7 +116,7 @@ void DenseStorage::fromGetSpRow(int row, int col, double A[], int lenA, int jcol
    nnz = k;
 }
 
-void DenseStorage::atPutSpRow(int row, const double A[], int lenA, int jcolA[], int& info) {
+void DenseStorage::atPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) {
    info = 0;
    int k;
    for (k = 0; k < lenA; k++) {
@@ -126,16 +125,15 @@ void DenseStorage::atPutSpRow(int row, const double A[], int lenA, int jcolA[], 
 }
 
 
-void DenseStorage::putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) {
-   int i, k;
+void DenseStorage::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
 
-   for (i = 0; i < m; i++) {
-      for (k = 0; k < n; k++) {
+   for (int i = 0; i < m; i++) {
+      for (int k = 0; k < n; k++) {
          M[i][k] = 0.0;
       }
    }
 
-   for (k = 0; k < len; k++) {
+   for (int k = 0; k < len; k++) {
       assert(irow[k] >= 0 && irow[k] < m);
       assert(jcol[k] >= 0 && jcol[k] < n);
       M[irow[k]][jcol[k]] = A[k];
@@ -144,12 +142,11 @@ void DenseStorage::putSparseTriple(int irow[], int len, int jcol[], double A[], 
 }
 
 
-void DenseStorage::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
-   int i;
+void DenseStorage::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
    assert(row >= 0 && row + rowExtent <= m);
    assert(col >= 0 && col + colExtent <= n);
 
-   for (i = 0; i < rowExtent; i++) {
+   for (int i = 0; i < rowExtent; i++) {
       //printf("\tcopying at %d in number of %d\n", i*lda, colExtent);
       memcpy(&A[i * lda], &M[i + row][col], colExtent * sizeof(double));
    }
@@ -165,7 +162,6 @@ DenseStorage::~DenseStorage() {
 }
 
 void DenseStorage::atPutZeros(int row, int col, int rowExtent, int colExtent) {
-   int i, j;
    assert(row >= 0 && row + rowExtent <= m);
    assert(col >= 0 && col + colExtent <= n);
 
@@ -175,8 +171,8 @@ void DenseStorage::atPutZeros(int row, int col, int rowExtent, int colExtent) {
    int mrow = (row + rowExtent <= m) ? row + rowExtent : m;
    int ncol = (col + colExtent <= n) ? col + colExtent : n;
 
-   for (i = row; i < mrow; i++) {
-      for (j = col; j < ncol; j++) {
+   for (int i = row; i < mrow; i++) {
+      for (int j = col; j < ncol; j++) {
          M[i][j] = 0.0;
       }
    }
@@ -186,12 +182,11 @@ void DenseStorage::putZeros() {
    std::fill(M[0], M[0] + n * m, 0.0);
 }
 
-void DenseStorage::atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
-   int i;
+void DenseStorage::atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) {
    assert(row >= 0 && row + rowExtent <= m);
    assert(col >= 0 && col + colExtent <= n);
 
-   for (i = 0; i < rowExtent; i++) {
+   for (int i = 0; i < rowExtent; i++) {
       memcpy(&M[i + row][col], &A[i * lda], colExtent * sizeof(double));
    }
 }
@@ -230,23 +225,25 @@ void DenseStorage::addToDiagonalAt(double alpha, double x[], int incx, int idiag
 
 
 void DenseStorage::atPutDiagonal(int idiag, const Vector<double>& vvec) {
-   const SimpleVector<double>& v = dynamic_cast<const SimpleVector<double>&>(vvec);
+   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
    atPutDiagonal(idiag, &v[0], 1, v.length());
 }
 
 void DenseStorage::atAddDiagonal(int idiag, const Vector<double>& vvec) {
-   const SimpleVector<double>& v = dynamic_cast<const SimpleVector<double>&>(vvec);
+   const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
    atAddDiagonal(idiag, &v[0], 1, v.length());
 }
 
 void DenseStorage::atPutDiagonal(int idiag, const double x[], int incx, int extent) {
-   for (int i = 0; i < extent; i++)
+   for (int i = 0; i < extent; i++) {
       M[i + idiag][i + idiag] = x[i * incx];
+   }
 }
 
 void DenseStorage::atAddDiagonal(int idiag, const double x[], int incx, int extent) {
-   for (int i = 0; i < extent; i++)
+   for (int i = 0; i < extent; i++) {
       M[i + idiag][i + idiag] += x[i * incx];
+   }
 }
 
 void DenseStorage::diagonal_add_constant_from(int from, int length, double value) {
@@ -283,7 +280,7 @@ double DenseStorage::abminnormNonZero(double tol) const {
 }
 
 void DenseStorage::columnScale(const Vector<double>& scale_in) {
-   const SimpleVector<double>& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 
    assert(scale.length() == n);
 
@@ -301,7 +298,7 @@ void DenseStorage::scalarMult(double num) {
 }
 
 void DenseStorage::rowScale(const Vector<double>& scale_in) {
-   const SimpleVector<double>& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 
    assert(scale.length() == m);
 
@@ -312,7 +309,7 @@ void DenseStorage::rowScale(const Vector<double>& scale_in) {
 }
 
 void DenseStorage::symmetricScale(const Vector<double>& scale_in) {
-   const SimpleVector<double>& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
+   const auto& scale = dynamic_cast<const SimpleVector<double>&>(scale_in);
 
    assert(scale.length() == n);
    assert(scale.length() == m);

@@ -54,38 +54,39 @@ public:
 
    void AddChild(StochSymMatrix* child);
 
-   SymMatrix* clone() const override;
+   [[nodiscard]] SymMatrix* clone() const override;
 
-   int isKindOf(int type) const override;
+   [[nodiscard]] int isKindOf(int type) const override;
 
-   void fromGetDense(int, int, double*, int, int, int) override { assert(false && "Not implemented"); };
-   void symAtPutSpRow(int, double[], int, int[], int&) override { assert(false && "Not implemented"); };
+   void fromGetDense(int, int, double*, int, int, int) const override { assert(false && "Not implemented"); };
+   void symAtPutSpRow(int, const double[], int, const int[], int&) override { assert(false && "Not implemented"); };
 
    void getSize(long long& m, long long& n) const override;
    void getSize(int& m, int& n) const override;
 
-   long long size() const override;
+   [[nodiscard]] long long size() const override;
 
-   void symAtPutSubmatrix(int, int, DoubleMatrix&, int, int, int, int) override { assert(false && "Not implemented"); };;
-   void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) override { assert(false && "Not implemented"); };
+   void symAtPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert(false && "Not implemented"); };;
+   void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) const override { assert(false && "Not implemented"); };
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   double abmaxnorm() const override;
-   double abminnormNonZero(double tol = 1e-30) const override;
+   [[nodiscard]] double abmaxnorm() const override;
+   using DoubleMatrix::abminnormNonZero;
+   [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void writeToStream(std::ostream&) const override { assert(false && "Not implemented"); };
 
    void writeToStreamDense(std::ostream& out) const override;
 
-   void getDiagonal(Vector<double>& vec) override;
+   void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
-   void fromGetDiagonal(int, Vector<double>& x) override;
+   void fromGetDiagonal(int, Vector<double>& x) const override;
 
-   void putSparseTriple(int[], int, int[], double[], int&) override { assert(false && "Not implemented"); };
+   void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert(false && "Not implemented"); };
 
    void symmetricScale(const Vector<double>& vec) override;
    void columnScale(const Vector<double>& vec) override;
@@ -102,7 +103,7 @@ public:
    virtual BorderedSymMatrix* raiseBorder(int n_vars);
    virtual void splitMatrix(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms);
 
-   virtual void recomputeSize();
+   void recomputeSize();
 protected:
    virtual StringGenMatrix* shaveBorder(int n_vars);
    virtual StringGenMatrix* shaveBorder2(int n_vars);
@@ -125,12 +126,9 @@ public:
 
    ~StochSymDummyMatrix() override = default;
 
-   SymMatrix* clone() const override { return new StochSymDummyMatrix(); };
+   [[nodiscard]] SymMatrix* clone() const override { return new StochSymDummyMatrix(); };
 
-   int isKindOf(int type) const override;
-
-   void fromGetDense(int, int, double*, int, int, int) override {};
-   void symAtPutSpRow(int, double[], int, int[], int&) override {};
+   [[nodiscard]] int isKindOf(int type) const override;
 
    void getSize(long long& m, long long& n) const override {
       m = 0;
@@ -143,26 +141,19 @@ public:
 
    long long size() const override { return 0; }
 
-   void symAtPutSubmatrix(int, int, DoubleMatrix&, int, int, int, int) override {};
-
-   void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) override {};
-
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
 
    double abmaxnorm() const override { return 0.0; }
    double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); }
 
-   void writeToStream(std::ostream&) const override {};
    void writeToStreamDense(std::ostream&) const override {};
 
-   void getDiagonal(Vector<double>&) override {};
+   void getDiagonal(Vector<double>&) const override {};
    void setToDiagonal(const Vector<double>&) override {};
    void atPutDiagonal(int, const Vector<double>&) override {};
    void atAddDiagonal(int, const Vector<double>&) override {};
-   void fromGetDiagonal(int, Vector<double>&) override {};
-
-   void putSparseTriple(int[], int, int[], double[], int&) override {};
+   void fromGetDiagonal(int, Vector<double>&) const override {};
 
    void symmetricScale(const Vector<double>&) override {};
    void columnScale(const Vector<double>&) override {};
@@ -174,7 +165,6 @@ public:
       return nullptr;
    };
    void splitMatrix(const std::vector<unsigned int>&, const std::vector<MPI_Comm>&) override {};
-   void recomputeSize() override {};
 
 protected:
    StringGenMatrix* shaveBorder(int) override { return new StringGenDummyMatrix(); };

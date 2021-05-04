@@ -51,8 +51,8 @@ int BorderedSymMatrix::isKindOf(int type) const {
 
 /** y = beta * y + alpha * this * x */
 void BorderedSymMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
-   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
-   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
+   auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
 
    assert(x.children.size() == 1 && y.children.size() == 1);
    assert(x.children[0] && y.children[0]);
@@ -73,10 +73,10 @@ void BorderedSymMatrix::transMult(double beta, Vector<double>& y, double alpha, 
    this->mult(beta, y, alpha, x);
 }
 
-void BorderedSymMatrix::fromGetDiagonal(int idiag, Vector<double>& x_in) {
+void BorderedSymMatrix::fromGetDiagonal(int idiag, Vector<double>& x_in) const {
    assert("The value of the parameter idiag is not supported!" && idiag == 0);
 
-   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
+   auto& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.size() == 1);
    assert(x.children[0]);
    assert(!x.last && x.first);
@@ -107,8 +107,8 @@ void BorderedSymMatrix::getSize(long long& m_, long long& n_) const {
 }
 
 void BorderedSymMatrix::getSize(int& m_, int& n_) const {
-   m_ = n;
-   n_ = n;
+   m_ = static_cast<int>(n);
+   n_ = static_cast<int>(n);
 }
 
 long long BorderedSymMatrix::size() const {

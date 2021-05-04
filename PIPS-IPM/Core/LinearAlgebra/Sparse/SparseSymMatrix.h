@@ -29,9 +29,9 @@ public:
    SparseSymMatrix(SparseStorage* m_storage, bool is_lower_);
 
    SparseStorage& getStorageRef() { return *mStorage; }
-   const SparseStorage& getStorageRef() const { return *mStorage; }
+   [[nodiscard]] const SparseStorage& getStorageRef() const { return *mStorage; }
    SparseStorageHandle getStorageHandle() { return mStorage; }
-   const SparseStorageHandle getStorageHandle() const { return mStorage; }
+   [[nodiscard]] SparseStorageHandle getStorageHandle() const { return mStorage; }
 
    // is lower part of matrix stored? (otherwise upper part is stored)
    const bool isLower;
@@ -40,35 +40,35 @@ public:
    int* jcolM() { return mStorage->jcolM; }
    double* M() { return mStorage->M; }
 
-   const int* krowM() const { return mStorage->krowM; }
-   const int* jcolM() const { return mStorage->jcolM; }
-   const double* M() const { return mStorage->M; }
+   [[nodiscard]] const int* krowM() const { return mStorage->krowM; }
+   [[nodiscard]] const int* jcolM() const { return mStorage->jcolM; }
+   [[nodiscard]] const double* M() const { return mStorage->M; }
 
-   int isKindOf(int type) const override;
+   [[nodiscard]] int isKindOf(int type) const override;
 
-   void putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) override;
-   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
-   void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) override;
+   void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
+   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
+   void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const override;
 
    void symmetricScale(const Vector<double>& vec) override;
    void columnScale(const Vector<double>& vec) override;
    void rowScale(const Vector<double>& vec) override;
    void scalarMult(double num) override;
 
-   void symAtPutSpRow(int col, double A[], int lenA, int jcolA[], int& info) override;
+   void symAtPutSpRow(int col, const double A[], int lenA, const int jcolA[], int& info) override;
 
    virtual void symPutZeroes();
 
    void getSize(long long& m, long long& n) const override;
    void getSize(int& m, int& n) const override;
 
-   long long size() const override;
+   [[nodiscard]] long long size() const override;
 
-   void getDiagonal(Vector<double>& vec) override;
+   void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
    void diagonal_add_constant_from(int from, int length, double value) override;
 
-   void symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
+   void symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
 
    virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
@@ -77,8 +77,8 @@ public:
 
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   double abmaxnorm() const override;
-   double abminnormNonZero(double tol = 1e-30) const override;
+   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void writeToStream(std::ostream& out) const override;
    void writeNNZpatternToStreamDense(std::ostream& out) const;
@@ -88,13 +88,13 @@ public:
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
 
-   void fromGetDiagonal(int idiag, Vector<double>& v) override;
+   void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
    /** The actual number of structural non-zero elements in this sparse
     *  matrix. This includes so-called "accidental" zeros, elements that
     *  are treated as non-zero even though their value happens to be zero.
     */
-   int numberOfNonZeros() const { return mStorage->numberOfNonZeros(); }
+   [[nodiscard]] int numberOfNonZeros() const { return mStorage->numberOfNonZeros(); }
 
    /** Reduce the matrix to lower triangular */
    void reduceToLower();
@@ -111,7 +111,7 @@ public:
 
    ~SparseSymMatrix() override = default;
 
-   SymMatrix* clone() const override;
+   [[nodiscard]] SymMatrix* clone() const override;
 };
 
 #endif

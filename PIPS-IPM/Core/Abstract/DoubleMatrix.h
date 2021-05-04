@@ -24,20 +24,22 @@ class DoubleStorage : public IotrRefCount {
 public:
    DoubleStorage() = default;
 
-   virtual void atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) = 0;
-   virtual void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) = 0;
-   virtual void atPutSpRow(int row, const double A[], int lenA, int jcolA[], int& info) = 0;
+   virtual void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) = 0;
+   virtual void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const = 0;
+   virtual void atPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) = 0;
+   virtual void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const = 0;
 
-   virtual void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) = 0;
+   virtual void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) = 0;
 
    virtual void getSize(int& m, int& n) const = 0;
 
-   virtual void getDiagonal(Vector<double>& vec) = 0;
+   virtual void getDiagonal(Vector<double>& vec) const = 0;
    virtual void setToDiagonal(const Vector<double>& vec) = 0;
 
    virtual void atPutDiagonal(int idiag, const Vector<double>& x) = 0;
    virtual void atAddDiagonal(int idiag, const Vector<double>& x) = 0;
-   virtual void fromGetDiagonal(int idiag, Vector<double>& x) = 0;
+   virtual void fromGetDiagonal(int idiag, Vector<double>& x) const = 0;
+
    virtual void symmetricScale(const Vector<double>& vec) = 0;
    virtual void columnScale(const Vector<double>& vec) = 0;
    virtual void rowScale(const Vector<double>& vec) = 0;
@@ -69,7 +71,7 @@ public:
     *  @param rowExtent get rowExtent rows from this matrix.
     *  @param colExtent get colExtent columns from this matrix.
     */
-   virtual void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) = 0;
+   virtual void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const = 0;
 
    /** Get one sparse row from this matrix.
     *
@@ -83,7 +85,7 @@ public:
     *                  indices greater than or equal to col + colExtent
     * @param info info is 0 if and only if the sparse row can fit into A.
     */
-   virtual void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) = 0;
+   virtual void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const = 0;
 
    /** Copy elements from sparse triple format into this matrix
     *  @param len the number of elements
@@ -93,7 +95,7 @@ public:
     *  @param info  on return, info will be zero if and only if the insertion
     *               was successful.
     */
-   virtual void putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) = 0;
+   virtual void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) = 0;
 
    /** y = beta * y + alpha * this * x */
    virtual void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
@@ -119,7 +121,8 @@ public:
    virtual void writeDashedLineToStream(std::ostream&) const { assert(false && "not implemented"); };
 
    /** Place the diagonal elements of this matrix in the vector first */
-   virtual void getDiagonal(Vector<double>& vec) = 0;
+   virtual void getDiagonal(Vector<double>& vec) const = 0;
+
    /** Set the matrix to the diagoanl matrix whose diagonal is first */
    virtual void setToDiagonal(const Vector<double>& vec) = 0;
 
@@ -148,7 +151,7 @@ public:
     * The length of x is the number of diagonal elements to be gotten.
     * Typically x will have length less than the length of the diagonal.
     */
-   virtual void fromGetDiagonal(int idiag, Vector<double>& x) = 0;
+   virtual void fromGetDiagonal(int idiag, Vector<double>& x) const = 0;
 
    /** Get the number of rows and columns in the matrix
     * @param m the number of rows
@@ -193,7 +196,7 @@ public:
     * @param rowExtent rowExtent rows are copied from M.
     * @param colExtent colExtent columns are copied from M.
     */
-   virtual void symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
+   virtual void symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
 
    /** Put a sparse row into this matrix symmetrically.
     *
@@ -203,7 +206,7 @@ public:
     *  The meaning of the parmameters is the same as in fromGetSpRow.
     *  @see DoubleMatrix::fromGetSpRow
     */
-   virtual void symAtPutSpRow(int col, double A[], int lenA, int irowA[], int& info) = 0;
+   virtual void symAtPutSpRow(int col, const double A[], int lenA, const int irowA[], int& info) = 0;
    /** the size of this square matrix */
    [[nodiscard]] virtual long long size() const = 0;
 
@@ -230,42 +233,42 @@ public:
     * @param rowExtent rowExtent rows are copied from M.
     * @param colExtent colExtent columns are copied from M.
     */
-   virtual void atPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
+   virtual void atPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
 
    /** Set the value of some of the elements of this matrix.
     *
     *  @see DoubleMatrix::fromGetDense
     */
-   virtual void atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) = 0;
+   virtual void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) = 0;
 
    /** Put a sparse row into this matrix.
     *
     *  The meaning of the parmameters is the same as in fromGetSpRow.
     *  @see DoubleMatrix::fromGetSpRow
     */
-   virtual void atPutSpRow(int col, double A[], int lenA, int jcolA[], int& info) = 0;
+   virtual void atPutSpRow(int col, const double A[], int lenA, const int jcolA[], int& info) = 0;
 
    /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
-   virtual void matTransDMultMat(Vector<double>& d, SymMatrix** res) = 0;
+   virtual void matTransDMultMat(const Vector<double>& d, SymMatrix** res) const = 0;
 
    /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
-   virtual void matTransDinvMultMat(Vector<double>& d, SymMatrix** res) = 0;
+   virtual void matTransDinvMultMat(const Vector<double>& d, SymMatrix** res) const = 0;
 
-   virtual void writeMPSformatRows(std::ostream& /*out*/, int /*rowType*/, Vector<double>* /*irhs*/) const {}
+   virtual void writeMPSformatRows(std::ostream& /*out*/, int /*rowType*/, const Vector<double>* /*irhs*/) const {}
 
    /** get number of elements per row to given vector */
-   virtual void getNnzPerRow(Vector<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
+   virtual void getNnzPerRow(Vector<int>& /*nnzVec*/) const { assert(0 && "not implemented"); };
 
    /** get number of elements per column to given vector */
-   virtual void getNnzPerCol(Vector<int>& /*nnzVec*/) { assert(0 && "not implemented"); };
+   virtual void getNnzPerCol(Vector<int>& /*nnzVec*/) const { assert(0 && "not implemented"); };
 
    /** fill vector with absolute minimum/maximum value of each row */
-   virtual void getRowMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*colScaleVec*/, Vector<double>& /*minmaxVec*/ ) {
+   virtual void getRowMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*colScaleVec*/, Vector<double>& /*minmaxVec*/ ) const {
       assert(0 && "not implemented");
    };
 
    /** fill vector with absolute minimum/maximum value of each column */
-   virtual void getColMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*rowScaleVec*/, Vector<double>& /*minmaxVec*/ ) {
+   virtual void getColMinMaxVec(bool /*getMin*/, bool /*initializeVec*/, const Vector<double>* /*rowScaleVec*/, Vector<double>& /*minmaxVec*/ ) const {
       assert(0 && "not implemented");
    };
 
@@ -282,14 +285,21 @@ public:
    };
 
    /** clone of matrix with n = 0 - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual GenMatrix* cloneEmptyRows(bool /*s witchToDynamicStorage = false*/) const {
+   [[nodiscard]] virtual GenMatrix* cloneEmptyRows() const {
+      return cloneEmptyRows(false);
+   }
+   [[nodiscard]] virtual GenMatrix* cloneEmptyRows(bool /* switchToDynamicStorage */) const {
       assert(false && "not implemented");
       return nullptr;
    };
 
    /** full clone of matrix - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage = false */) const {
-      assert(false && "not implmented");
+   [[nodiscard]] virtual GenMatrix* cloneFull() const {
+      return cloneFull(false);
+   }
+
+   [[nodiscard]] virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage */) const {
+      assert(false && "not implemented");
       return nullptr;
    };
 

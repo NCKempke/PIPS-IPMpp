@@ -54,42 +54,42 @@ private:
 public:
    static int instances;
 
-   int getM() const { return m; };
-   int getN() const { return n; };
-   int getNVals() const { return len - len_free; };
+   [[nodiscard]] int getM() const { return m; };
+   [[nodiscard]] int getN() const { return n; };
+   [[nodiscard]] int getNVals() const { return len - len_free; };
 
-   const ROWPTRS* getRowPtr() const { return rowptr; };
-   const ROWPTRS getRowPtr(int i) const;
+   [[nodiscard]] const ROWPTRS* getRowPtr() const { return rowptr; };
+   [[nodiscard]] ROWPTRS getRowPtr(int i) const;
 
-   const int* getJcolM() const { return jcolM; };
-   int getJcolM(int i) const;
+   [[nodiscard]] const int* getJcolM() const { return jcolM; };
+   [[nodiscard]] int getJcolM(int i) const;
 
-   const double* getMat() const { return M; };
-   double getMat(int i) const;
+   [[nodiscard]] const double* getMat() const { return M; };
+   [[nodiscard]] double getMat(int i) const;
    void setMat(int i, double val);
 
-   SparseStorageDynamic(const SparseStorage& storage, double spareRatio = 0.2);
+   explicit SparseStorageDynamic(const SparseStorage& storage, double spareRatio = 0.2);
    SparseStorageDynamic(int m, int n, int len, double spareRatio = 0.2);
    SparseStorageDynamic(const SparseStorageDynamic& dynamicStorage);
 
-   ~SparseStorageDynamic();
+   ~SparseStorageDynamic() override;
 
-   void atPutDense(int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
-   void fromGetDense(int, int, double*, int, int, int) override { assert(0 && "not implemented here"); };
-   void atPutSpRow(int, const double*, int, int*, int&) override { assert(0 && "not implemented here"); };
-   void fromGetSpRow(int, int, double*, int, int*, int&, int, int&) override { assert(0 && "not implemented here"); };
-   void getDiagonal(Vector<double>&) override { assert(0 && "not implemented here"); };
+   void atPutDense(int, int, const double*, int, int, int) override { assert(0 && "not implemented here"); };
+   void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert(false && "not implemented here"); };
+   void fromGetDense(int, int, double*, int, int, int) const override { assert(0 && "not implemented here"); };
+   void atPutSpRow(int, const double*, int, const int*, int&) override { assert(0 && "not implemented here"); };
+   void fromGetSpRow(int, int, double*, int, int*, int&, int, int&) const override { assert(0 && "not implemented here"); };
+   void getDiagonal(Vector<double>&) const override { assert(0 && "not implemented here"); };
    void setToDiagonal(const Vector<double>&) override { assert(0 && "not implemented here"); };
    void atPutDiagonal(int, const Vector<double>&) override { assert(0 && "not implemented here"); };
    void atAddDiagonal(int, const Vector<double>&) override { assert(0 && "not implemented here"); };
-   void fromGetDiagonal(int, Vector<double>&) override { assert(0 && "not implemented here"); };
+   void fromGetDiagonal(int, Vector<double>&) const override { assert(0 && "not implemented here"); };
    void symmetricScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
    void columnScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
    void rowScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
    void scalarMult(double) override { assert(0 && "not implemented here"); };
 
    void getSize(int& m, int& n) const override;
-
 
    void removeEntryAtIndex(int row, int col_idx);
    void removeEntryAtRowCol(int row, int col);
@@ -115,13 +115,11 @@ public:
 
    void restoreOrder();
 
-   double abmaxnorm() const override;
-   double abminnormNonZero(double tol = 1e-30) const override;
+   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   bool isTransposedOf(const SparseStorageDynamic& mat_tp) const; // TODO..
-
-   SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;
-   SparseStorageDynamic* getTranspose() const;
+   [[nodiscard]] SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;
+   [[nodiscard]] SparseStorageDynamic* getTranspose() const;
 
    void getRowMaxVec(const double* colScaleVec, double* vec) const;
    void getRowMinMaxVec(bool getMin, const double* colScaleVec, double* vec) const;

@@ -1,8 +1,6 @@
 /* OOQP                                                               *
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP 
- *
- * 10/2/2009 MatMult function added by C. Petra
  */
 
 #include <cassert>
@@ -16,27 +14,21 @@ int DenseGenMatrix::isKindOf(int type) const {
    return type == kDenseGenMatrix || type == kGenMatrix;
 }
 
-
 DenseGenMatrix::DenseGenMatrix(int size) {
    mStorage = std::make_shared<DenseStorage>(size, size);
 }
-
 
 DenseGenMatrix::DenseGenMatrix(double A[], int m, int n) {
    mStorage = std::make_shared<DenseStorage>(A, m, n);
 }
 
-
 DenseGenMatrix::DenseGenMatrix(int m, int n) {
    mStorage = std::make_shared<DenseStorage>(m, n);
 }
 
-
-// Delegate these methods to the storage
-void DenseGenMatrix::atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
+void DenseGenMatrix::atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) {
    mStorage->atPutDense(row, col, A, lda, rowExtent, colExtent);
 }
-
 
 void DenseGenMatrix::atPutZeros(int row, int col, int rowExtent, int colExtent) {
    mStorage->atPutZeros(row, col, rowExtent, colExtent);
@@ -46,25 +38,21 @@ void DenseGenMatrix::putZeros() {
    mStorage->putZeros();
 }
 
-void DenseGenMatrix::putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) {
+void DenseGenMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
    mStorage->putSparseTriple(irow, len, jcol, A, info);
 }
 
-
-void DenseGenMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) {
+void DenseGenMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
 
-
-void DenseGenMatrix::atPutSpRow(int row, double* A, int lenA, int* jcolA, int& info) {
+void DenseGenMatrix::atPutSpRow(int row, const double* A, int lenA, const int* jcolA, int& info) {
    mStorage->atPutSpRow(row, A, lenA, jcolA, info);
 }
 
-
-void DenseGenMatrix::getDiagonal(Vector<double>& vec) {
+void DenseGenMatrix::getDiagonal(Vector<double>& vec) const {
    mStorage->getDiagonal(vec);
 }
-
 
 void DenseGenMatrix::setToDiagonal(const Vector<double>& vec) {
    mStorage->setToDiagonal(vec);
@@ -80,7 +68,7 @@ void DenseGenMatrix::getSize(int& m, int& n) const {
    n = mStorage->n;
 }
 
-void DenseGenMatrix::atPutSubmatrix(int destRow, int destCol, DoubleMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
+void DenseGenMatrix::atPutSubmatrix(int destRow, int destCol, const DoubleMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
    int m = mStorage->m, n = mStorage->n;
    double** M = mStorage->M;
 
@@ -96,7 +84,6 @@ void DenseGenMatrix::atPutSubmatrix(int destRow, int destCol, DoubleMatrix& Mat,
    Mat.fromGetDense(srcRow, srcCol, &M[destRow][destCol], n, rowExtent, colExtent);
 }
 
-
 void DenseGenMatrix::mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
    char fortranTrans = 'T';
    int n = mStorage->n, m = mStorage->m;
@@ -104,15 +91,14 @@ void DenseGenMatrix::mult(double beta, double y[], int incy, double alpha, const
    dgemv_(&fortranTrans, &n, &m, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
-
 void DenseGenMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranTrans = 'T';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
    int incx = 1, incy = 1;
 
-   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    if (n != 0 && m != 0) {
       dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, &x[0], &incx, &beta, &y[0], &incy);
@@ -132,13 +118,12 @@ void DenseGenMatrix::transMult(double beta, double y[], int incy, double alpha, 
    dgemv_(&fortranTrans, &n, &m, &alpha, &M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
-
 void DenseGenMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranTrans = 'N';
    int n = mStorage->n, m = mStorage->m;
    double** M = mStorage->M;
-   const SimpleVector<double>& x = dynamic_cast<const SimpleVector<double>&>(x_in);
-   SimpleVector<double>& y = dynamic_cast<SimpleVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
+   auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
    int incx = 1, incy = 1;
 
    if (m != 0 && n != 0) {
@@ -165,7 +150,7 @@ void DenseGenMatrix::writeToStream(std::ostream& out) const {
       for (int j = 0; j < mStorage->n; j++)
          out << mStorage->M[i][j] << "\t";
 
-      out << std::endl;
+      out << "\n";
    }
 }
 
@@ -173,9 +158,9 @@ void DenseGenMatrix::writeToStreamDense(std::ostream& out) const {
    writeToStream(out);
 }
 
-
-void DenseGenMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
-   int m = mStorage->m, n = mStorage->n;
+void DenseGenMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
+   const int m = mStorage->m;
+   const int n = mStorage->n;
 
    assert(row >= 0 && row + rowExtent <= m);
    assert(col >= 0 && col + colExtent <= n);
@@ -197,13 +182,13 @@ void DenseGenMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
    mStorage->atAddDiagonal(idiag, v);
 }
 
-void DenseGenMatrix::fromGetDiagonal(int idiag, Vector<double>& v) {
+void DenseGenMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
    mStorage->fromGetDiagonal(idiag, v);
 }
 
 void DenseGenMatrix::getRow(int rowIndex, Vector<double>& v_in) {
    assert (rowIndex >= 0 && rowIndex <= mStorage->m);
-   SimpleVector<double>& v = dynamic_cast<SimpleVector<double>&>(v_in);
+   auto& v = dynamic_cast<SimpleVector<double>&>(v_in);
 
    mStorage->fromGetDense(rowIndex, 0, &v[0], 1, 1, mStorage->n);
 }

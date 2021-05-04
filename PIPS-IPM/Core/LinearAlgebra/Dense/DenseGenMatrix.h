@@ -18,19 +18,19 @@ class DenseGenMatrix : public GenMatrix {
 public:
    std::shared_ptr<DenseStorage> mStorage;
 
-   DenseGenMatrix(int size);
+   explicit DenseGenMatrix(int size);
    DenseGenMatrix(int m, int n);
    DenseGenMatrix(double A[], int m, int n);
 
-   int isKindOf(int matType) const override;
+   [[nodiscard]] int isKindOf(int matType) const override;
 
-   int getM() const { return mStorage->m; };
-   int getN() const { return mStorage->n; };
+   [[nodiscard]] int getM() const { return mStorage->m; };
+   [[nodiscard]] int getN() const { return mStorage->n; };
 
    void getSize(long long& m, long long& n) const override;
    void getSize(int& m, int& n) const override;
 
-   void atPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
+   void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
 
    /** Fill a region of this matrix with zeros.
     *
@@ -41,13 +41,13 @@ public:
 
    void putZeros();
 
-   void getDiagonal(Vector<double>& vec) override;
+   void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
 
-   void atPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
-   void atPutSpRow(int row, double A[], int lenA, int jcolA[], int& info) override;
+   void atPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
+   void atPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) override;
 
-   void putSparseTriple(int irow[], int len, int jcol[], double A[], int& info) override;
+   void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
@@ -55,27 +55,26 @@ public:
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
 
-   void matTransDMultMat(Vector<double>&, SymMatrix**) override { assert(false && "not implemented"); };
-   void matTransDinvMultMat(Vector<double>&, SymMatrix**) override { assert(false && "not implemented"); };
+   void matTransDMultMat(const Vector<double>&, SymMatrix**) const override { assert(false && "not implemented"); };
+   void matTransDinvMultMat(const Vector<double>&, SymMatrix**) const override { assert(false && "not implemented"); };
 
-   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) override;
-
-   void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int rowExtent, int& info) override;
+   void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
+   void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int rowExtent, int& info) const override;
 
    void columnScale(const Vector<double>& vec) override;
    void rowScale(const Vector<double>& vec) override;
    void symmetricScale(const Vector<double>& vec) override;
    void scalarMult(double num) override;
 
-   double abmaxnorm() const override;
-   double abminnormNonZero(double tol = 1e-30) const override;
+   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void writeToStream(std::ostream& out) const override;
    void writeToStreamDense(std::ostream& out) const override;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
-   void fromGetDiagonal(int idiag, Vector<double>& v) override;
+   void fromGetDiagonal(int idiag, Vector<double>& v) const override;
    /** Get a row of this matrix. */
    virtual void getRow(int rowIndex, Vector<double>& v_in);
 

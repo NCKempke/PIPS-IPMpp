@@ -66,8 +66,8 @@ void BorderedGenMatrix::mult(double beta, Vector<double>& y_in, double alpha, co
    assert(hasVecStructureForBorderedMat(x_in, true));
    assert(hasVecStructureForBorderedMat(y_in, false));
 
-   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
-   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
+   auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    border_left->mult(beta, *y.children[0], alpha, *x.first);
    inner_matrix->mult(1.0, *y.children[0], alpha, *x.children[0]);
@@ -82,8 +82,8 @@ void BorderedGenMatrix::transMult(double beta, Vector<double>& y_in, double alph
    assert(hasVecStructureForBorderedMat(x_in, false));
    assert(hasVecStructureForBorderedMat(y_in, true));
 
-   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(x_in);
-   DistributedVector<double>& y = dynamic_cast<DistributedVector<double>&>(y_in);
+   const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
+   auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    border_left->transMult(beta, *y.first, alpha, *x.children[0]);
    bottom_left_block->transMult(1.0, *y.first, alpha, *x.last);
@@ -106,7 +106,7 @@ double BorderedGenMatrix::abmaxnorm() const {
 void BorderedGenMatrix::columnScale(const Vector<double>& vec) {
    assert(hasVecStructureForBorderedMat(vec, true));
 
-   const DistributedVector<double>& svec = dynamic_cast<const DistributedVector<double>&>(vec);
+   const auto& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    border_left->columnScale(*svec.first);
    bottom_left_block->columnScale(*svec.first);
@@ -118,7 +118,7 @@ void BorderedGenMatrix::columnScale(const Vector<double>& vec) {
 void BorderedGenMatrix::rowScale(const Vector<double>& vec) {
    assert(hasVecStructureForBorderedMat(vec, false));
 
-   const DistributedVector<double>& svec = dynamic_cast<const DistributedVector<double>&>(vec);
+   const auto& svec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    border_left->rowScale(*svec.children[0]);
    inner_matrix->rowScale(*svec.children[0]);
@@ -140,17 +140,17 @@ void BorderedGenMatrix::getSize(long long& m_, long long& n_) const {
 }
 
 void BorderedGenMatrix::getSize(int& m_, int& n_) const {
-   m_ = m;
-   n_ = n;
+   m_ = static_cast<int>(m);
+   n_ = static_cast<int>(n);
 }
 
-void BorderedGenMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in) {
+void BorderedGenMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in) const {
    assert(hasVecStructureForBorderedMat(minmax_in, false));
    const bool has_colscale = (col_scale_in != nullptr);
    if (has_colscale)
       assert(hasVecStructureForBorderedMat(*col_scale_in, true));
 
-   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
+   auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* col_scale = has_colscale ? dynamic_cast<const DistributedVector<double>*>(col_scale_in) : nullptr;
 
    border_left->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, *minmax.children[0]);
@@ -160,14 +160,14 @@ void BorderedGenMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const
    border_bottom->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->children[0] : nullptr, *minmax.last);
 }
 
-void BorderedGenMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in) {
+void BorderedGenMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_in) const {
    assert(hasVecStructureForBorderedMat(minmax_in, true));
 
    const bool has_rowscale = (row_scale_in != nullptr);
    if (has_rowscale)
       assert(hasVecStructureForBorderedMat(*row_scale_in, false));
 
-   DistributedVector<double>& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
+   auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
    const DistributedVector<double>* row_scale = has_rowscale ? dynamic_cast<const DistributedVector<double>*>(row_scale_in) : nullptr;
 
    border_left->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->children[0] : nullptr, *minmax.first);
@@ -180,7 +180,7 @@ void BorderedGenMatrix::getColMinMaxVec(bool get_min, bool initialize_vec, const
 void BorderedGenMatrix::addRowSums(Vector<double>& vec_) const {
    assert(hasVecStructureForBorderedMat(vec_, false));
 
-   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
+   auto& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
    border_left->addRowSums(*vec.children[0]);
    inner_matrix->addRowSums(*vec.children[0]);
@@ -192,7 +192,7 @@ void BorderedGenMatrix::addRowSums(Vector<double>& vec_) const {
 void BorderedGenMatrix::addColSums(Vector<double>& vec_) const {
    assert(hasVecStructureForBorderedMat(vec_, true));
 
-   DistributedVector<double>& vec = dynamic_cast<DistributedVector<double>&>(vec_);
+   auto& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
    border_left->addColSums(*vec.first);
    bottom_left_block->addColSums(*vec.first);
@@ -203,7 +203,7 @@ void BorderedGenMatrix::addColSums(Vector<double>& vec_) const {
 
 template<typename T>
 bool BorderedGenMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const {
-   const DistributedVector<T>& vecs = dynamic_cast<const DistributedVector<T>&>(vec);
+   const auto& vecs = dynamic_cast<const DistributedVector<T>&>(vec);
 
    if (vecs.children.size() != 1) {
       std::cout << "children" << std::endl;
@@ -265,7 +265,7 @@ void BorderedGenMatrix::writeToStreamDense(std::ostream& out) const {
    const int size = PIPS_MPIgetSize(mpi_comm);
    const bool iAmDistrib = (size != 0);
 
-   inner_matrix->writeToStreamDenseBordered(*border_left, out);
+   inner_matrix->writeToStreamDenseBordered(*border_left, out,0);
 
    int mL, nL;
    this->bottom_left_block->getSize(mL, nL);
