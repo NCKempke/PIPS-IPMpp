@@ -380,14 +380,14 @@ int main(int argc, char ** argv)
    {
       if( gmsRank == 0 )
          std::cout << "Using Hierarchical approach\n";
-      pips_options::activateHierarchialApproach();
+      pips_options::activate_hierarchial_approach();
    }
 
-   pips_options::setIntParameter("OUTER_SOLVE", 2);
+   pips_options::set_int_parameter("OUTER_SOLVE", 2);
    if( gmsRank == 0 )
       std::cout << "Using outer BICGSTAB\n";
 
-   if( gmsRank == 0 && pips_options::getIntParameter("INNER_SC_SOLVE") == 2 )
+   if( gmsRank == 0 && pips_options::get_int_parameter("INNER_SC_SOLVE") == 2 )
       std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
@@ -406,12 +406,12 @@ int main(int argc, char ** argv)
 
 	if( stepDiffLp )
 	{
-	   pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
+	   pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
 	   if( gmsRank == 0 )
 	      std::cout << "Different steplengths in primal and dual direction are used.\n";
 
-	   PIPSIpmInterface<DistributedFactory, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
+	   PIPSIpmInterface<GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
 	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 
 		if( gmsRank == 0 )
@@ -441,8 +441,8 @@ int main(int argc, char ** argv)
 	}
 	else
 	{
-      pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", true);
-      PIPSIpmInterface<DistributedFactory, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
+      pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", true);
+      PIPSIpmInterface<GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
             scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
 
 		if( gmsRank == 0 )
