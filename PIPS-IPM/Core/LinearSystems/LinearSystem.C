@@ -8,10 +8,10 @@
 #include "Variables.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "ProblemFactory.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
 #include "StochOptions.h"
+#include "DistributedFactory.h"
 #include <vector>
 #include <functional>
 #include <type_traits>
@@ -24,6 +24,106 @@ extern int gOuterBiCGFails;
 
 static std::vector<int> bicgIters;
 
+LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
+      apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")), outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
+      innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
+      outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+      outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
+      outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
+      outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
+      outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+      xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
+
+   assert(factory_);
+   assert(problem);
+
+   nx = problem->nx;
+   my = problem->my;
+   mz = problem->mz;
+   ixlow = problem->ixlow;
+   ixupp = problem->ixupp;
+   iclow = problem->iclow;
+   icupp = problem->icupp;
+
+   nxlow = problem->nxlow;
+   nxupp = problem->nxupp;
+   mclow = problem->mclow;
+   mcupp = problem->mcupp;
+
+   if (create_iter_ref_vecs) {
+      if (outerSolve || xyzs_solve_print_residuals) {
+         //for iterative refinement or BICGStab
+         sol = factory->make_right_hand_side();
+         sol2 = factory->make_right_hand_side();
+         res = factory->make_right_hand_side();
+         resx = factory->make_primal_vector();
+         resy = factory->make_equalities_dual_vector();
+         resz = factory->make_inequalities_dual_vector();
+
+         if (outerSolve == 2) {
+            //BiCGStab; additional vectors needed
+            sol3 = factory->make_right_hand_side();
+            res2 = factory->make_right_hand_side();
+            res3 = factory->make_right_hand_side();
+            res4 = factory->make_right_hand_side();
+            res5 = factory->make_right_hand_side();
+         }
+      }
+   }
+}
+
+LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
+      Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
+      Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
+      create_iter_ref_vecs) {
+   primal_diagonal = primal_diagonal_;
+   dq = dq_;
+   nomegaInv = nomegaInv_;
+   primal_regularization_diagonal = primal_regularization_;
+   dual_equality_regularization_diagonal = dual_equality_regularization_;
+   dual_inequality_regularization_diagonal = dual_inequality_regularization_;
+   rhs = rhs_;
+}
+
+LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem) : LinearSystem(factory_, problem, true) {
+   if (nxupp + nxlow > 0) {
+      primal_diagonal = factory->make_primal_vector();
+      dq = factory->make_primal_vector();
+      problem->hessian_diagonal(*dq);
+   }
+
+   nomegaInv = factory->make_inequalities_dual_vector();
+   rhs = factory->make_right_hand_side();
+
+
+   primal_regularization_diagonal = factory->make_primal_vector();
+   dual_equality_regularization_diagonal = factory->make_equalities_dual_vector();
+   dual_inequality_regularization_diagonal = factory->make_inequalities_dual_vector();
+}
+
+LinearSystem::~LinearSystem() {
+   if (!useRefs) {
+      delete dual_inequality_regularization_diagonal;
+      delete dual_equality_regularization_diagonal;
+      delete primal_regularization_diagonal;
+      delete primal_diagonal;
+      delete dq;
+      delete rhs;
+      delete nomegaInv;
+   }
+
+   delete sol;
+   delete res;
+   delete resx;
+   delete resy;
+   delete resz;
+   delete sol2;
+   delete sol3;
+   delete res2;
+   delete res3;
+   delete res4;
+   delete res5;
+}
 
 int LinearSystem::getIntValue(const std::string& s) const {
    if (s == "BICG_NITERATIONS")
@@ -98,107 +198,6 @@ static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& stat
    return false;
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
-      apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")), outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
-      innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
-      outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
-      outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
-      outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
-      outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-      outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-      xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
-
-   assert(factory_);
-   assert(problem);
-
-   nx = problem->nx;
-   my = problem->my;
-   mz = problem->mz;
-   ixlow = problem->ixlow;
-   ixupp = problem->ixupp;
-   iclow = problem->iclow;
-   icupp = problem->icupp;
-
-   nxlow = problem->nxlow;
-   nxupp = problem->nxupp;
-   mclow = problem->mclow;
-   mcupp = problem->mcupp;
-
-   if (create_iter_ref_vecs) {
-      if (outerSolve || xyzs_solve_print_residuals) {
-         //for iterative refinement or BICGStab
-         sol = factory->make_right_hand_side();
-         sol2 = factory->make_right_hand_side();
-         res = factory->make_right_hand_side();
-         resx = factory->make_primal_vector();
-         resy = factory->make_equalities_dual_vector();
-         resz = factory->make_inequalities_dual_vector();
-
-         if (outerSolve == 2) {
-            //BiCGStab; additional vectors needed
-            sol3 = factory->make_right_hand_side();
-            res2 = factory->make_right_hand_side();
-            res3 = factory->make_right_hand_side();
-            res4 = factory->make_right_hand_side();
-            res5 = factory->make_right_hand_side();
-         }
-      }
-   }
-}
-
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
-      Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
-      Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
-      create_iter_ref_vecs) {
-   primal_diagonal = primal_diagonal_;
-   dq = dq_;
-   nomegaInv = nomegaInv_;
-   primal_regularization_diagonal = primal_regularization_;
-   dual_equality_regularization_diagonal = dual_equality_regularization_;
-   dual_inequality_regularization_diagonal = dual_inequality_regularization_;
-   rhs = rhs_;
-}
-
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem) : LinearSystem(factory_, problem, true) {
-   if (nxupp + nxlow > 0) {
-      primal_diagonal = factory->make_primal_vector();
-      dq = factory->make_primal_vector();
-      problem->hessian_diagonal(*dq);
-   }
-
-   nomegaInv = factory->make_inequalities_dual_vector();
-   rhs = factory->make_right_hand_side();
-
-
-   primal_regularization_diagonal = factory->make_primal_vector();
-   dual_equality_regularization_diagonal = factory->make_equalities_dual_vector();
-   dual_inequality_regularization_diagonal = factory->make_inequalities_dual_vector();
-}
-
-LinearSystem::~LinearSystem() {
-   if (!useRefs) {
-      delete dual_inequality_regularization_diagonal;
-      delete dual_equality_regularization_diagonal;
-      delete primal_regularization_diagonal;
-      delete primal_diagonal;
-      delete dq;
-      delete rhs;
-      delete nomegaInv;
-   }
-
-   delete sol;
-   delete res;
-   delete resx;
-   delete resy;
-   delete resz;
-   delete sol2;
-   delete sol3;
-   delete res2;
-   delete res3;
-   delete res4;
-   delete res5;
-}
-
 void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
 
    assert(vars->validNonZeroPattern());
@@ -208,7 +207,7 @@ void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
 
    computeDiagonals(*vars->t, *vars->lambda, *vars->u, *vars->pi, *vars->v, *vars->gamma, *vars->w, *vars->phi);
 
-   if (pips_options::getBoolParameter("HIERARCHICAL_TESTING")) {
+   if (pips_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
       primal_diagonal->setToConstant(1.0);
       nomegaInv->setToConstant(1.0);

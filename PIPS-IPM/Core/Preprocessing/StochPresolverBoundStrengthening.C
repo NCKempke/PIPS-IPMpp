@@ -13,10 +13,10 @@
 
 
 StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
-      presolve_data, origProb), limit_iter(pips_options::getIntParameter("PRESOLVE_BOUND_STR_MAX_ITER")),
-      limit_entry(pips_options::getDoubleParameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY")),
-      limit_partial_activity(pips_options::getDoubleParameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY")),
-      limit_bounds(pips_options::getDoubleParameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_BOUNDS")), tightenings(0), local_bound_tightenings(false),
+      presolve_data, origProb), limit_iter(pips_options::get_int_parameter("PRESOLVE_BOUND_STR_MAX_ITER")),
+      limit_entry(pips_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY")),
+      limit_partial_activity(pips_options::get_double_parameter("PRESOLVE_BOUND_STR_MAX_PARTIAL_ACTIVITY")),
+      limit_bounds(pips_options::get_double_parameter("PRESOLVE_BOUND_STR_NUMERIC_LIMIT_BOUNDS")), tightenings(0), local_bound_tightenings(false),
       n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()),
       n_eq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length()),
       n_ineq_linking_rows(dynamic_cast<const DistributedVector<double>&>(*origProb.bl).last->length()), ub_linking_var(n_linking_vars),

@@ -19,7 +19,7 @@ double g_scenNum;
 
 DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_,
       is_hierarchy_root) {
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
 }
@@ -34,12 +34,12 @@ void DistributedRootLinearSystem::init() {
    createChildren(data);
 
    precondSC = SCsparsifier(mpiComm);
-   usePrecondDist = pips_options::getBoolParameter("PRECONDITION_DISTRIBUTED");
+   usePrecondDist = pips_options::get_bool_parameter("PRECONDITION_DISTRIBUTED");
 
    // use sparse KKT if (enough) 2 links are present
    hasSparseKkt = data->exploitingLinkStructure();
-   allreduce_kkt = pips_options::getBoolParameter("ALLREDUCE_SCHUR_COMPLEMENT");
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
+   allreduce_kkt = pips_options::get_bool_parameter("ALLREDUCE_SCHUR_COMPLEMENT");
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
       assert(allreduce_kkt);
 
    usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
@@ -732,7 +732,7 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
 
 void DistributedRootLinearSystem::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
-   assert(pips_options::getBoolParameter("HIERARCHICAL"));
+   assert(pips_options::get_bool_parameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
 
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
@@ -758,11 +758,10 @@ void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
    for (size_t it = 0; it < prob->children.size(); it++) {
       assert(primal_diagonalst.children[it] != nullptr);
       if (MPI_COMM_NULL == primal_diagonalst.children[it]->mpiComm) {
-         child = new DistributedDummyLinearSystem(dynamic_cast<DistributedFactory*>(factory), prob->children[it]);
+         child = new DistributedDummyLinearSystem(factory, prob->children[it]);
       }
       else {
          assert(prob->children[it]);
-         auto* stochFactory = dynamic_cast<DistributedFactory*>(factory);
          if (is_hierarchy_root) {
             assert(prob->isHierarchyRoot());
             assert(prob->children.size() == 1);
@@ -773,12 +772,12 @@ void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
          }
 
          if (prob->children[it]->children.empty()) {
-            child = stochFactory->make_linear_system_leaf(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
+            child = factory->make_linear_system_leaf(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
                   nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it]);
          }
          else {
             assert(prob->children[it]);
-            child = stochFactory->make_linear_system_root(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
+            child = factory->make_linear_system_root(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
                   nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it]);
          }
       }

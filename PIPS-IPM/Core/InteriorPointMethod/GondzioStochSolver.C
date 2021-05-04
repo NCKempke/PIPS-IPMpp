@@ -12,7 +12,6 @@
 #include "AbstractLinearSystem.h"
 #include "Status.h"
 #include "Problem.h"
-#include "ProblemFactory.h"
 #include "DistributedFactory.h"
 #include "StochOptions.h"
 #include <iostream>
@@ -27,24 +26,24 @@
 extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
-GondzioStochSolver::GondzioStochSolver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(problem_formulation,
-      problem, scaler), n_linesearch_points(pips_options::getIntParameter("GONDZIO_STOCH_N_LINESEARCH")),
-      dynamic_corrector_schedule(pips_options::getBoolParameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
-      additional_correctors_small_comp_pairs(pips_options::getBoolParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
-      max_additional_correctors(pips_options::getIntParameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
-      first_iter_small_correctors(pips_options::getIntParameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
-      max_alpha_small_correctors(pips_options::getDoubleParameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
-      push_converged_vars_from_bound(pips_options::getBoolParameter("GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND")),
-      fequency_push_converged_vars_from_bound(pips_options::getIntParameter("GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS")),
-      mu_limit_push_converged_vars_from_bound(pips_options::getDoubleParameter("GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS")),
+GondzioStochSolver::GondzioStochSolver(DistributedFactory& problem_formulation, Problem& problem, const Scaler* scaler) : Solver(problem_formulation,
+      problem, scaler), n_linesearch_points(pips_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
+      dynamic_corrector_schedule(pips_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
+      additional_correctors_small_comp_pairs(pips_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
+      max_additional_correctors(pips_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
+      first_iter_small_correctors(pips_options::get_int_parameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
+      max_alpha_small_correctors(pips_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
+      push_converged_vars_from_bound(pips_options::get_bool_parameter("GONDZIO_STOCH_PUSH_CONVERGED_VARS_FROM_BOUND")),
+      fequency_push_converged_vars_from_bound(pips_options::get_int_parameter("GONDZIO_STOCH_FREQUENCY_PUSH_CONVERGED_VARS")),
+      mu_limit_push_converged_vars_from_bound(pips_options::get_double_parameter("GONDZIO_STOCH_MU_LIMIT_PUSH_CONVERGED_VARS")),
       bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.0), bicg_iterations(0),
-      dynamic_bicg_tol(pips_options::getBoolParameter("OUTER_BICG_DYNAMIC_TOL")) {
+      dynamic_bicg_tol(pips_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")) {
    assert(max_additional_correctors > 0);
    assert(first_iter_small_correctors >= 0);
    assert(0 < max_alpha_small_correctors && max_alpha_small_correctors < 1);
    assert(n_linesearch_points > 0);
 
-   if (pips_options::getBoolParameter("GONDZIO_STOCH_ADAPTIVE_LINESEARCH")) {
+   if (pips_options::get_bool_parameter("GONDZIO_STOCH_ADAPTIVE_LINESEARCH")) {
       const int size = PIPS_MPIgetSize();
 
       if (size > 1)
@@ -383,13 +382,13 @@ void GondzioStochSolver::setBiCGStabTol(int iteration) const {
    assert(iteration >= -1);
 
    if (iteration == -1)
-      pips_options::setDoubleParameter("OUTER_BICG_TOL", 1e-10);
+      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
    else if (iteration <= 4)
-      pips_options::setDoubleParameter("OUTER_BICG_TOL", 1e-8);
+      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-8);
    else if (iteration <= 8)
-      pips_options::setDoubleParameter("OUTER_BICG_TOL", 1e-9);
+      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-9);
    else
-      pips_options::setDoubleParameter("OUTER_BICG_TOL", 1e-10);
+      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
 }
 
 void GondzioStochSolver::adjustLimitGondzioCorrectors() {

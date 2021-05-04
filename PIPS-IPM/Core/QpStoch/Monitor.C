@@ -11,7 +11,7 @@
 Monitor::Monitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
 
-Monitor::Monitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiComm{qp->tree->getCommWorkers()},
+Monitor::Monitor(const DistributedFactory& factory, Scaler* scaler) : scaler{scaler}, mpiComm{factory.tree->getCommWorkers()},
       myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{PIPS_MPIgetRank()} {
 }
 

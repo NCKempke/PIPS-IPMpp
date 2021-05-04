@@ -1,23 +1,17 @@
-add_subdirectory(InteriorPointMethod)
-add_subdirectory(Preprocessing)
-add_subdirectory(LinearAlgebra/Sparse)
-add_subdirectory(LinearAlgebra/Dense)
-add_subdirectory(LinearAlgebra/Distributed)
 add_subdirectory(LinearSolvers)
 
-add_library(ooqpbase STATIC Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
-        QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C InteriorPointMethod/Solver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C)
-
-add_library(ooqpgensparse STATIC
+add_library(pips-ipmpp STATIC
+        Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
+        #Filter.cpp FilterStrategy.cpp FilterLineSearch.cpp
+        InteriorPointMethod/Solver.C InteriorPointMethod/GondzioStochSolver.C InteriorPointMethod/GondzioStochLpSolver.C InteriorPointMethod/InteriorPointMethod.cpp
+        QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
+        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
         Readers/MpsReader.C Readers/hash.C #Readers
         LinearSolvers/Preconditioners/SCsparsifier.C
-        )
-
-add_library(ooqpstoch STATIC
-        QpStoch/DistributedFactory.C
         Problems/DistributedQP.cpp
+        Problems/DistributedFactory.C 
+        InteriorPointMethod/Solver.C
         LinearSystems/DistributedLinearSystem.C
         LinearSystems/DistributedRootLinearSystem.C
         LinearSystems/sLinsysRootAug.C
@@ -30,39 +24,56 @@ add_library(ooqpstoch STATIC
         LinearSystems/sLinsysRootBordered.C
         QpStoch/DistributedTreeCallbacks.C
         LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
-        LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp)
+        LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
+        
+        LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymMatrix.C
+        LinearAlgebra/Dense/DeSymIndefSolver.C LinearAlgebra/Dense/DeSymIndefSolver2.C
+        LinearAlgebra/Dense/DenseGenMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
+        
+        LinearAlgebra/Distributed/DistributedVector.C LinearAlgebra/Distributed/StochSymMatrix.C LinearAlgebra/Distributed/StochGenMatrix.C
+        LinearAlgebra/Distributed/BorderedGenMatrix.C LinearAlgebra/Distributed/BorderedSymMatrix.C
+        LinearAlgebra/Distributed/StochResourcesMonitor.C LinearAlgebra/Distributed/StochInputTree.C
+        
+        LinearAlgebra/Sparse/SparseStorage.C LinearAlgebra/Sparse/SparseStorageDynamic.C
+        LinearAlgebra/Sparse/SparseGenMatrix.C LinearAlgebra/Sparse/SparseSymMatrix.C
+        
+        Preprocessing/EquiStochScaler.C Preprocessing/GeoStochScaler.C Preprocessing/StochScaler.C Preprocessing/QpScaler.C
+        Preprocessing/StochRowStorage.C Preprocessing/StochColumnStorage.C Preprocessing/QpPostsolver.C Preprocessing/StochPostsolver.C Preprocessing/StochPresolver.C Preprocessing/QpPresolver.C Preprocessing/StochPresolverBase.C
+        Preprocessing/StochPresolverModelCleanup.C Preprocessing/PresolveData.C Preprocessing/StochPresolverBoundStrengthening.C Preprocessing/StochPresolverColumnFixation.C Preprocessing/StochPresolverParallelRows.C
+        Preprocessing/StochPresolverSingletonRows.C Preprocessing/StochPresolverSingletonColumns.C Preprocessing/QpPresolver.C Preprocessing/QpPostsolver.C
+)
 
 if (HAVE_MA27)
-    target_compile_definitions(ooqpstoch PUBLIC -DWITH_MA27)
-    target_link_libraries(ooqpstoch PRIVATE ma27_solver)
+    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA27)
+    target_link_libraries(pips-ipmpp PRIVATE ma27_solver)
 endif (HAVE_MA27)
 
 if (HAVE_MA57)
-    target_compile_definitions(ooqpstoch PUBLIC -DWITH_MA57)
-    target_link_libraries(ooqpstoch PRIVATE ma57_solver)
+    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA57)
+    target_link_libraries(pips-ipmpp PRIVATE ma57_solver)
 endif (HAVE_MA57)
 
 if (HAVE_MUMPS)
-    target_sources(ooqpstoch QpStoch/sLinsysLeafMumps.C)
-    target_compile_definitions(ooqpstoch PUBLIC -DWITH_MUMPS)
-    target_link_libraries(ooqpstoch PRIVATE mumps_solver)
+    target_sources(pips-ipmpp QpStoch/sLinsysLeafMumps.C)
+    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MUMPS)
+    target_link_libraries(pips-ipmpp PRIVATE mumps_solver)
 endif (HAVE_MUMPS)
 
 if (HAVE_PARDISO)
-    target_compile_definitions(ooqpstoch PUBLIC -DWITH_PARDISO)
-    target_link_libraries(ooqpstoch PRIVATE pardiso_solver)
+    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_PARDISO)
+    target_link_libraries(pips-ipmpp PRIVATE pardiso_solver)
 endif (HAVE_PARDISO)
 
 if (HAVE_MKL_PARDISO)
-    target_compile_definitions(ooqpstoch PUBLIC -DWITH_MKL_PARDISO)
-    target_link_libraries(ooqpstoch PRIVATE pardiso_mkl_solver)
+    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MKL_PARDISO)
+    target_link_libraries(pips-ipmpp PRIVATE pardiso_mkl_solver)
 endif (HAVE_MKL_PARDISO)
 
 if (HAVE_PARDISO OR HAVE_MKL_PARDISO)
-    target_link_libraries(ooqpstoch PUBLIC pardiso_abstract)
+    target_link_libraries(pips-ipmpp PUBLIC pardiso_abstract)
 endif (HAVE_PARDISO OR HAVE_MKL_PARDISO)
 
-target_link_libraries(ooqpstoch
+target_link_libraries(pips-ipmpp
         PRIVATE MPI::MPI_CXX
         PRIVATE ${MATH_LIBS}
-        )
+)

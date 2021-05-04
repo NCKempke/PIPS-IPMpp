@@ -1797,7 +1797,7 @@ void DistributedQP::activateLinkStructureExploitation() {
 
    /* don't attempt to use linking structure when there actually is no linking constraints */
    if (stochNode->myl() == 0 && stochNode->mzl() == 0) {
-      if (pips_options::getBoolParameter("HIERARCHICAL")) {
+      if (pips_options::get_bool_parameter("HIERARCHICAL")) {
          if (myrank == 0)
             std::cout << "No linking constraints found - hierarchical approach cannot be used\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
@@ -1826,7 +1826,7 @@ void DistributedQP::activateLinkStructureExploitation() {
    Cstoch.get2LinkStartBlocksAndCountsNew(linkStartBlockIdC, n_blocks_per_link_row_C);
 
    /* since 2 links can get permuted out of the linking part we cannot rely on n0Linkvars the appear in 2links */
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
       removeN0LinkVarsIn2Links(n_blocks_per_link_var, Astoch, Cstoch, linkStartBlockIdA, linkStartBlockIdC);
 
 #ifndef NDEBUG
@@ -1902,7 +1902,7 @@ void DistributedQP::activateLinkStructureExploitation() {
    }
 
 
-   if (!pips_options::getBoolParameter("HIERARCHICAL")) {
+   if (!pips_options::get_bool_parameter("HIERARCHICAL")) {
       if (ratio < minStructuredLinksRatio) {
          if (myrank == 0)
             std::cout << "not enough linking structure found ( required ratio : " << minStructuredLinksRatio << ")\n";

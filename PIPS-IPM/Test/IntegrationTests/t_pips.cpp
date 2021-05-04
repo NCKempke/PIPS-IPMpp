@@ -65,12 +65,12 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
    std::unique_ptr<StochInputTree> tree(reader.read_problem());
 
-   pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
+   pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
    double result = std::numeric_limits<double>::infinity();
 
    if (primal_dual_step) {
-      PIPSIpmInterface<DistributedFactory, GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
+      PIPSIpmInterface<GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
       try {
          pipsIpm.run();
          result = pipsIpm.getObjective();
@@ -80,7 +80,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
       }
    }
    else {
-      PIPSIpmInterface<DistributedFactory, GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
+      PIPSIpmInterface<GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
       try {
          pipsIpm.run();
          result = pipsIpm.getObjective();

@@ -1,12 +1,16 @@
 #if defined(GMS_PIPS)
+
 #include "StochInputTree.h"
 #include "PreprocessFactory.h"
 #include "PIPSIpmInterface.h"
 #include "GondzioStochSolver.h"
 #include "GondzioStochLpSolver.h"
+
 #endif
 #if defined(GMS_MPI)
+
 #include "mpi.h"
+
 #endif
 
 #include "gmspipsio.h"
@@ -18,23 +22,23 @@
 #include <iostream>
 #include <fstream>
 
-extern "C" typedef int (*FNNZ)(void* user_data, int id, int* nnz);
+extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
 
 /* Row-major format */
-extern "C" typedef int (*FMAT)(void* user_data, int id, int* krowM, int* jcolM, double* M);
+extern "C" typedef int (* FMAT)(void* user_data, int id, int* krowM, int* jcolM, double* M);
 
-extern "C" typedef int (*FVEC)(void* user_data, int id, double* vec, int len);
+extern "C" typedef int (* FVEC)(void* user_data, int id, double* vec, int len);
 
 extern "C" {
 
-static int gmsRank=0;
-static int size=1;
-static bool allGDX=false;
+static int gmsRank = 0;
+static int size = 1;
+static bool allGDX = false;
 static char fileName[256];
 static char GDXDirectory[256];
 static char* pGDXDirectory = NULL;
-static int numBlocks=0;
-FILE *fLog;
+static int numBlocks = 0;
+FILE* fLog;
 
 #define checkAndAlloc(blk)                                                        \
 if (!blocks[blk])                                                                 \
@@ -107,24 +111,24 @@ int fvec##vecType(void* user_data, int id, double* vec, int len)     \
    return 0;                                                         \
 }
 
-vecCB(c    ,ni )
-vecCB(xlow ,ni )
-vecCB(ixlow,ni )
-vecCB(xupp ,ni )
-vecCB(ixupp,ni )
-vecCB(b    ,mA )
-vecCB(clow ,mC )
-vecCB(iclow,mC )
-vecCB(cupp ,mC )
-vecCB(icupp,mC )
-vecCB(bL   ,mBL)
-vecCB(dlow ,mDL)
-vecCB(idlow,mDL)
-vecCB(dupp ,mDL)
-vecCB(idupp,mDL)
+vecCB(c, ni)
+vecCB(xlow, ni)
+vecCB(ixlow, ni)
+vecCB(xupp, ni)
+vecCB(ixupp, ni)
+vecCB(b, mA)
+vecCB(clow, mC)
+vecCB(iclow, mC)
+vecCB(cupp, mC)
+vecCB(icupp, mC)
+vecCB(bL, mBL)
+vecCB(dlow, mDL)
+vecCB(idlow, mDL)
+vecCB(dupp, mDL)
+vecCB(idupp, mDL)
 
 
-#define matCB(mat,mmat)                                                   \
+#define matCB(mat, mmat)                                                   \
 int fmat##mat(void* user_data, int id, int* krowM, int* jcolM, double* M) \
 {                                                                         \
    GMSPIPSBlockData_t** blocks = (GMSPIPSBlockData_t**) user_data;        \
@@ -153,26 +157,24 @@ int fmat##mat(void* user_data, int id, int* krowM, int* jcolM, double* M) \
    return 0;                                                              \
 }
 
-matCB(A,A)
-matCB(B,A)
-matCB(C,C)
-matCB(D,C)
-matCB(BL,BL)
-matCB(DL,DL)
+matCB(A, A)
+matCB(B, A)
+matCB(C, C)
+matCB(D, C)
+matCB(BL, BL)
+matCB(DL, DL)
 
-int fnonzeroQ(void*, int, int* nnz)
-{
-	*nnz = 0;
-	return 0;
+int fnonzeroQ(void*, int, int* nnz) {
+   *nnz = 0;
+   return 0;
 }
 
-int fmatQ(void* user_data, int id, int* krowM, int*, double*)
-{
+int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
    GMSPIPSBlockData_t* blk = ((GMSPIPSBlockData_t**) user_data)[id];
    assert(blk);
 
-   for(int i = 0; i <= blk->ni; i++ )
-       krowM[i] = 0;
+   for (int i = 0; i <= blk->ni; i++)
+      krowM[i] = 0;
 
    return 0;
 }
@@ -180,27 +182,25 @@ int fmatQ(void* user_data, int id, int* krowM, int*, double*)
 }
 
 #if defined(GMS_PIPS)
-static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname)
-{
-   if( strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0 )
+static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname) {
+   if (strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0)
       scaler_type = SCALER_EQUI_STOCH;
-   else if( strcmp(paramname, "scaleGeo") == 0 )
+   else if (strcmp(paramname, "scaleGeo") == 0)
       scaler_type = SCALER_GEO_STOCH;
-   else if( strcmp(paramname, "scaleGeoEqui") == 0 )
+   else if (strcmp(paramname, "scaleGeoEqui") == 0)
       scaler_type = SCALER_GEO_EQUI_STOCH;
-   else if( strcmp(paramname, "stepLp") == 0 )
+   else if (strcmp(paramname, "stepLp") == 0)
       stepDiffLp = true;
-   else if( strcmp(paramname, "presolve") == 0 )
+   else if (strcmp(paramname, "presolve") == 0)
       presolve = true;
-   else if( strcmp(paramname, "printsol") == 0 )
+   else if (strcmp(paramname, "printsol") == 0)
       printsol = true;
-   else if( strcmp(paramname, "hierarchical") == 0 )
+   else if (strcmp(paramname, "hierarchical") == 0)
       hierarchical = true;
 }
 
 #endif
-int main(int argc, char ** argv)
-{
+int main(int argc, char** argv) {
 
 #if defined(GMS_MPI)
    MPI_Init(&argc, &argv);
@@ -221,115 +221,80 @@ int main(int argc, char ** argv)
    bool printsol = false;
    bool hierarchical = false;
 
-   if ( (argc<3) || (argc>9) )
-   {
-      std::cout << "Usage: " << argv[0] << " numBlocks all.gdx|blockstem [GDXLibDir] [scale] [stepLp] [presolve] [printsol] [hierarchical_approach]\n";
+   if ((argc < 3) || (argc > 9)) {
+      std::cout << "Usage: " << argv[0]
+                << " numBlocks all.gdx|blockstem [GDXLibDir] [scale] [stepLp] [presolve] [printsol] [hierarchical_approach]\n";
       exit(1);
    }
 
-   allGDX = strstr(argv[2],".gdx")!=NULL;
+   allGDX = strstr(argv[2], ".gdx") != NULL;
    numBlocks = atoi(argv[1]);
-   strcpy(fileName,argv[2]);
-   if ( argc >= 4 )
-   {
-      strcpy(GDXDirectory,argv[3]);
+   strcpy(fileName, argv[2]);
+   if (argc >= 4) {
+      strcpy(GDXDirectory, argv[3]);
       pGDXDirectory = &GDXDirectory[0];
    }
 
 #if defined(GMS_PIPS)
-   for( int i = 5; i <= argc; i++ )
+   for (int i = 5; i <= argc; i++)
       setParams(scaler_type, stepDiffLp, presolve, printsol, hierarchical, argv[i - 1]);
 #endif
 
-   blocks = (GMSPIPSBlockData_t**) calloc(numBlocks,sizeof(GMSPIPSBlockData_t*));
+   blocks = (GMSPIPSBlockData_t**) calloc(numBlocks, sizeof(GMSPIPSBlockData_t*));
 
-   FNNZ fsni   = &fsizeni   ;
-   FNNZ fsmA   = &fsizemA   ;
-   FNNZ fsmC   = &fsizemC   ;
+   FNNZ fsni = &fsizeni;
+   FNNZ fsmA = &fsizemA;
+   FNNZ fsmC = &fsizemC;
 #if defined(LINKCONSTR)
-   FNNZ fsmBL  = &fsizemBL  ;
-   FNNZ fsmDL  = &fsizemDL  ;
+   FNNZ fsmBL = &fsizemBL;
+   FNNZ fsmDL = &fsizemDL;
 #endif
-   FNNZ fnnzQ  = &fnonzeroQ ;
-   FNNZ fnnzA  = &fnonzeroA ;
-   FNNZ fnnzB  = &fnonzeroB ;
-   FNNZ fnnzC  = &fnonzeroC ;
-   FNNZ fnnzD  = &fnonzeroD ;
+   FNNZ fnnzQ = &fnonzeroQ;
+   FNNZ fnnzA = &fnonzeroA;
+   FNNZ fnnzB = &fnonzeroB;
+   FNNZ fnnzC = &fnonzeroC;
+   FNNZ fnnzD = &fnonzeroD;
 #if defined(LINKCONSTR)
    FNNZ fnnzBL = &fnonzeroBL;
    FNNZ fnnzDL = &fnonzeroDL;
 #endif
-   FVEC fc     = &fvecc    ;
-   FVEC fxlow  = &fvecxlow ;
+   FVEC fc = &fvecc;
+   FVEC fxlow = &fvecxlow;
    FVEC fixlow = &fvecixlow;
-   FVEC fxupp  = &fvecxupp ;
+   FVEC fxupp = &fvecxupp;
    FVEC fixupp = &fvecixupp;
-   FVEC fb     = &fvecb    ;
-   FVEC fclow  = &fvecclow ;
+   FVEC fb = &fvecb;
+   FVEC fclow = &fvecclow;
    FVEC ficlow = &fveciclow;
-   FVEC fcupp  = &fveccupp ;
+   FVEC fcupp = &fveccupp;
    FVEC ficupp = &fvecicupp;
 #if defined(LINKCONSTR)
-   FVEC fbL    = &fvecbL   ;
-   FVEC fdlow  = &fvecdlow ;
+   FVEC fbL = &fvecbL;
+   FVEC fdlow = &fvecdlow;
    FVEC fidlow = &fvecidlow;
-   FVEC fdupp  = &fvecdupp ;
+   FVEC fdupp = &fvecdupp;
    FVEC fidupp = &fvecidupp;
 #endif
 
-   FMAT fA  = &fmatA ;
-   FMAT fB  = &fmatB ;
-   FMAT fC  = &fmatC ;
-   FMAT fD  = &fmatD ;
+   FMAT fA = &fmatA;
+   FMAT fB = &fmatB;
+   FMAT fC = &fmatC;
+   FMAT fD = &fmatD;
 #if defined(LINKCONSTR)
    FMAT fBL = &fmatBL;
    FMAT fDL = &fmatDL;
 #endif
-   FMAT fQ  = &fmatQ ;
+   FMAT fQ = &fmatQ;
 
 #if defined(GMS_PIPS)
    //build the problem tree
    StochInputTree::StochInputNode data(blocks, 0,
 #if defined(LINKCONSTR)
-      fsni, fsmA, fsmBL, fsmC, fsmDL,
-#else
-      fsni, fsmA, fsmC,
-#endif
-      fQ,  fnnzQ, fc,
-      fA,  fnnzA,
-      fB,  fnnzB,
-#if defined(LINKCONSTR)
-      fBL, fnnzBL,
-#endif
-      fb,
-#if defined(LINKCONSTR)
-      fbL,
-#endif
-      fC,  fnnzC,
-      fD,  fnnzD,
-#if defined(LINKCONSTR)
-      fDL, fnnzDL,
-#endif
-      fclow, ficlow, fcupp, ficupp,
-#if defined(LINKCONSTR)
-      fdlow, fidlow, fdupp, fidupp,
-#endif
-      fxlow, fixlow, fxupp, fixupp, false );
-   StochInputTree* root = new StochInputTree(data);
-#endif
-   for( int blk = 1; blk < numBlocks; blk++ )
-   {
-
-#if defined(GMS_PIPS)
-      StochInputTree::StochInputNode data(blocks, blk,
-#if defined(LINKCONSTR)
          fsni, fsmA, fsmBL, fsmC, fsmDL,
 #else
          fsni, fsmA, fsmC,
 #endif
-         fQ,  fnnzQ, fc,
-         fA,  fnnzA,
-         fB,  fnnzB,
+         fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
 #if defined(LINKCONSTR)
          fBL, fnnzBL,
 #endif
@@ -337,8 +302,7 @@ int main(int argc, char ** argv)
 #if defined(LINKCONSTR)
          fbL,
 #endif
-         fC,  fnnzC,
-         fD,  fnnzD,
+         fC, fnnzC, fD, fnnzD,
 #if defined(LINKCONSTR)
          fDL, fnnzDL,
 #endif
@@ -346,9 +310,37 @@ int main(int argc, char ** argv)
 #if defined(LINKCONSTR)
          fdlow, fidlow, fdupp, fidupp,
 #endif
-         fxlow, fixlow, fxupp, fixupp, false );
+         fxlow, fixlow, fxupp, fixupp, false);
+   StochInputTree* root = new StochInputTree(data);
+#endif
+   for (int blk = 1; blk < numBlocks; blk++) {
 
-       root->AddChild(new StochInputTree(data));
+#if defined(GMS_PIPS)
+      StochInputTree::StochInputNode data(blocks, blk,
+#if defined(LINKCONSTR)
+            fsni, fsmA, fsmBL, fsmC, fsmDL,
+#else
+            fsni, fsmA, fsmC,
+#endif
+            fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
+#if defined(LINKCONSTR)
+            fBL, fnnzBL,
+#endif
+            fb,
+#if defined(LINKCONSTR)
+            fbL,
+#endif
+            fC, fnnzC, fD, fnnzD,
+#if defined(LINKCONSTR)
+            fDL, fnnzDL,
+#endif
+            fclow, ficlow, fcupp, ficupp,
+#if defined(LINKCONSTR)
+            fdlow, fidlow, fdupp, fidupp,
+#endif
+            fxlow, fixlow, fxupp, fixupp, false);
+
+      root->AddChild(new StochInputTree(data));
 #endif
    }
 
@@ -360,34 +352,33 @@ int main(int argc, char ** argv)
 #if defined (GMS_LOG)
    sprintf(fbuf,"log%d.txt", gmsRank);
 #else
-   sprintf(fbuf,"/dev/null");
+   sprintf(fbuf, "/dev/null");
 #endif
    fLog = fopen(fbuf, "w+");
    fprintf(fLog, "PIPS Log for gmsRank %d\n", gmsRank);
 #endif
-   if( gmsRank == 0 )
+   if (gmsRank == 0)
 #if defined(LINKCONSTR)
       std::cout << "Using version with linking constraint.\n";
 #else
-      std::cout << "Using version without linking constraint.\n";
+   std::cout << "Using version without linking constraint.\n";
 #endif
-   if( gmsRank == 0 )
+   if (gmsRank == 0)
       std::cout << "Using a total of " << size << " MPI processes.\n";
 
 
 #if defined(GMS_PIPS)
-   if( hierarchical )
-   {
-      if( gmsRank == 0 )
+   if (hierarchical) {
+      if (gmsRank == 0)
          std::cout << "Using Hierarchical approach\n";
-      pips_options::activateHierarchialApproach();
+      pips_options::activate_hierarchial_approach();
    }
 
-   pips_options::setIntParameter("OUTER_SOLVE", 2);
-   if( gmsRank == 0 )
+   pips_options::set_int_parameter("OUTER_SOLVE", 2);
+   if (gmsRank == 0)
       std::cout << "Using outer BICGSTAB\n";
 
-   if( gmsRank == 0 && pips_options::getIntParameter("INNER_SC_SOLVE") == 2 )
+   if (gmsRank == 0 && pips_options::get_int_parameter("INNER_SC_SOLVE") == 2)
       std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
@@ -404,29 +395,26 @@ int main(int argc, char ** argv)
 
    double objective = 0.0;
 
-	if( stepDiffLp )
-	{
-	   pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
+   if (stepDiffLp) {
+      pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
-	   if( gmsRank == 0 )
-	      std::cout << "Different steplengths in primal and dual direction are used.\n";
+      if (gmsRank == 0)
+         std::cout << "Different steplengths in primal and dual direction are used.\n";
 
-	   PIPSIpmInterface<DistributedFactory, GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD,
-	         scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
+      PIPSIpmInterface<GondzioStochLpSolver> pipsIpm(root, MPI_COMM_WORLD, scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 
-		if( gmsRank == 0 )
-		   std::cout << "PIPSIpmInterface created\n";
+      if (gmsRank == 0)
+         std::cout << "PIPSIpmInterface created\n";
 
-		if( gmsRank == 0 )
-		   std::cout << "solving...\n";
+      if (gmsRank == 0)
+         std::cout << "solving...\n";
 
-		pipsIpm.run();
+      pipsIpm.run();
       objective = pipsIpm.getObjective();
-      if(presolve)
+      if (presolve)
          pipsIpm.postsolveComputedSolution();
 
-      if( printsol )
-      {
+      if (printsol) {
          primalSolVec = pipsIpm.gatherPrimalSolution();
          dualSolEqVec = pipsIpm.gatherDualSolutionEq();
          dualSolIneqVec = pipsIpm.gatherDualSolutionIneq();
@@ -438,28 +426,25 @@ int main(int argc, char ** argv)
          eqValues = pipsIpm.gatherEqualityConsValues();
          ineqValues = pipsIpm.gatherInequalityConsValues();
       }
-	}
-	else
-	{
-      pips_options::setBoolParameter("GONDZIO_ADAPTIVE_LINESEARCH", true);
-      PIPSIpmInterface<DistributedFactory, GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD,
-            scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE );
+   }
+   else {
+      pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", true);
+      PIPSIpmInterface<GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, scaler_type, presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 
-		if( gmsRank == 0 )
-		   std::cout << "PIPSIpmInterface created\n";
+      if (gmsRank == 0)
+         std::cout << "PIPSIpmInterface created\n";
 
-		if( gmsRank == 0 )
-		   std::cout << "solving...\n";
+      if (gmsRank == 0)
+         std::cout << "solving...\n";
 
-		pipsIpm.run();
+      pipsIpm.run();
       objective = pipsIpm.getObjective();
-      if(presolve)
+      if (presolve)
          pipsIpm.postsolveComputedSolution();
 
       std::vector<double> primalSolVec2 = pipsIpm.gatherPrimalSolution();
 
-      if( printsol )
-      {
+      if (printsol) {
          primalSolVec = pipsIpm.gatherPrimalSolution();
          dualSolEqVec = pipsIpm.gatherDualSolutionEq();
          dualSolIneqVec = pipsIpm.gatherDualSolutionIneq();
@@ -471,26 +456,15 @@ int main(int argc, char ** argv)
          eqValues = pipsIpm.gatherEqualityConsValues();
          ineqValues = pipsIpm.gatherInequalityConsValues();
       }
-	}
-   if( gmsRank == 0 )
-      std::cout << "solving finished. \n ---Objective value: " << objective  << "\n";
+   }
+   if (gmsRank == 0)
+      std::cout << "solving finished. \n ---Objective value: " << objective << "\n";
 
-   if( printsol && gmsRank == 0 )
-   {
+   if (printsol && gmsRank == 0) {
       int rc;
 
-      rc = writeSolution(fileName,
-						 primalSolVec.size(),
-						 dualSolEqVec.size(),
-						 dualSolIneqVec.size(),
-						 objective,
-						 &primalSolVec[0],
-						 &dualSolVarBounds[0],
-						 &eqValues[0],
-						 &ineqValues[0],
-						 &dualSolEqVec[0],
-						 &dualSolIneqVec[0],
-						 pGDXDirectory);
+      rc = writeSolution(fileName, primalSolVec.size(), dualSolEqVec.size(), dualSolIneqVec.size(), objective, &primalSolVec[0], &dualSolVarBounds[0],
+            &eqValues[0], &ineqValues[0], &dualSolEqVec[0], &dualSolIneqVec[0], pGDXDirectory);
       if (0 == rc)
          std::cout << "Solution written to " << fileName << "_sol.gdx\n";
       else if (-1 == rc)
@@ -500,28 +474,27 @@ int main(int argc, char ** argv)
    }
 
    // free memory
-  delete root;
+   delete root;
 
 #endif
 
 
-  for (int blk = 0; blk < numBlocks; blk++)
-  {
-     freeBlock(blocks[blk]);
-     free(blocks[blk]);
-  }
-  free(blocks);
+   for (int blk = 0; blk < numBlocks; blk++) {
+      freeBlock(blocks[blk]);
+      free(blocks[blk]);
+   }
+   free(blocks);
 
 #if defined(GMS_MPI)
-  MPI_Barrier(MPI_COMM_WORLD);
-  const double t1 = MPI_Wtime();
+   MPI_Barrier(MPI_COMM_WORLD);
+   const double t1 = MPI_Wtime();
 
-  if( gmsRank == 0 )
-     std::cout << "---total time (in sec.): " << t1 - t0 << "\n";
+   if (gmsRank == 0)
+      std::cout << "---total time (in sec.): " << t1 - t0 << "\n";
 
-  MPI_Finalize();
+   MPI_Finalize();
 #endif
-  fclose(fLog);
+   fclose(fLog);
 
-  return 0;
+   return 0;
 }
