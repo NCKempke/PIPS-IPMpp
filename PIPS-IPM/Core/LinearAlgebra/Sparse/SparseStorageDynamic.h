@@ -74,6 +74,8 @@ public:
 
    ~SparseStorageDynamic() override;
 
+   void diagonal_set_to_constant_from(int, int, double) override { assert(false && "not implemented here"); };
+   void diagonal_add_constant_from(int, int, double) override { assert(false && "not implemented here"); };
    void atPutDense(int, int, const double*, int, int, int) override { assert(0 && "not implemented here"); };
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert(false && "not implemented here"); };
    void fromGetDense(int, int, double*, int, int, int) const override { assert(0 && "not implemented here"); };

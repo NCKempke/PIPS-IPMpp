@@ -63,6 +63,11 @@ void SparseSymMatrix::diagonal_add_constant_from(int from, int length, double va
    mStorage->diagonal_add_constant_from(from, length, value);
 }
 
+void SparseSymMatrix::diagonal_set_to_constant_from(int from, int length, double value) {
+   assert(0 <= from);
+   assert(from + length <= this->size());
+   mStorage->diagonal_set_to_constant_from(from, length, value);
+}
 
 void SparseSymMatrix::symAtPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) {
    // Lower triangular put

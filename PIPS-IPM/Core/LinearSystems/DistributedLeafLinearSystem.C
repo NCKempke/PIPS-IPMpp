@@ -86,6 +86,10 @@ void DistributedLeafLinearSystem::put_primal_diagonal() {
    kkt->atPutDiagonal(0, *primal_diagonal_stoch.first);
 }
 
+void DistributedLeafLinearSystem::clear_dual_equality_diagonal() {
+   kkt->diagonal_add_constant_from(locnx, locmy, 0.0);
+};
+
 void DistributedLeafLinearSystem::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);

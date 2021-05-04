@@ -30,6 +30,7 @@ public:
    void put_primal_diagonal() override {};
    void put_dual_inequalites_diagonal() override {};
    void put_barrier_parameter(double) override {};
+   void clear_dual_equality_diagonal() override {};
 
    void add_regularization_local_kkt(double, double, double) override {};
 
@@ -57,7 +58,7 @@ public:
    void computeU_V(DistributedQP*, DenseGenMatrix*, DenseGenMatrix*) override {};
    void deleteChildren() override {};
 
-   bool isDummy() const override { return true; };
+   [[nodiscard]] bool isDummy() const override { return true; };
 
    void addBorderTimesRhsToB0(DistributedVector<double>&, SimpleVector<double>&, BorderLinsys&) override {};
    void addBorderX0ToRhs(DistributedVector<double>&, const SimpleVector<double>&, BorderLinsys&) override {};

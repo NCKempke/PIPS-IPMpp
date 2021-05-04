@@ -841,6 +841,13 @@ void DistributedRootLinearSystem::put_primal_diagonal() {
       it->put_primal_diagonal();
 }
 
+void DistributedRootLinearSystem::clear_dual_equality_diagonal() {
+   /* we don't have to do anything for our own kkt since the kkt will be reset completely for each iteration */
+   for (auto& child : children) {
+      child->clear_dual_equality_diagonal();
+   }
+}
+
 void DistributedRootLinearSystem::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
    const auto& nomegaInv_stoch = dynamic_cast<const DistributedVector<double>&>(*nomegaInv);

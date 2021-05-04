@@ -40,6 +40,10 @@ public:
    virtual void atAddDiagonal(int idiag, const Vector<double>& x) = 0;
    virtual void fromGetDiagonal(int idiag, Vector<double>& x) const = 0;
 
+   // TODO : could be merged and replaced by some callable modifying the diagonal entries (similar to std::transform)
+   virtual void diagonal_set_to_constant_from(int /* from */, int /* length */, double /* value */ ) = 0;
+   virtual void diagonal_add_constant_from(int /*from*/, int /*length*/, double /*value*/) = 0;
+
    virtual void symmetricScale(const Vector<double>& vec) = 0;
    virtual void columnScale(const Vector<double>& vec) = 0;
    virtual void rowScale(const Vector<double>& vec) = 0;
@@ -142,6 +146,7 @@ public:
     * Typically x will have length less than the length of the diagonal.
     */
    virtual void atAddDiagonal(int idiag, const Vector<double>& x) = 0;
+   virtual void diagonal_set_to_constant_from(int /* from */, int /* length */, double /* value */ ) { assert( false && "not implemented"); };
    virtual void diagonal_add_constant_from(int /*from*/, int /*length*/, double /*value*/) { assert(false && "not implemented"); };
 
    /** Get some of the diagonal elements of this matrix.

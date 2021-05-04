@@ -67,6 +67,7 @@ public:
    void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
    void diagonal_add_constant_from(int from, int length, double value) override;
+   void diagonal_set_to_constant_from(int from, int length, double value) override;
 
    void symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
 

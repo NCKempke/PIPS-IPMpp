@@ -53,14 +53,16 @@ public:
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void atPutSpRow(int col, const double A[], int lenA, const int irowA[], int& info) override;
-   void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info);
+   void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
 
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
    void fromGetDiagonal(int idiag, Vector<double>& v) const override;
    void atPutDiagonal(int idiag, const double x[], int incx, int extent);
    void atAddDiagonal(int idiag, const double x[], int incx, int extent);
-   void diagonal_add_constant_from(int from, int length, double value);
+
+   void diagonal_add_constant_from(int from, int length, double value) override;
+   void diagonal_set_to_constant_from(int from, int length, double value) override;
 };
 
 #endif

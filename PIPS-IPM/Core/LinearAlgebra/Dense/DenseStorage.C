@@ -246,6 +246,16 @@ void DenseStorage::atAddDiagonal(int idiag, const double x[], int incx, int exte
    }
 }
 
+void DenseStorage::diagonal_set_to_constant_from(int from, int length, double value) {
+   assert(from + length < this->m);
+   assert(from + length < this->n);
+
+   for(int i = 0; i < from + length; ++i)
+   {
+      M[i][i] = value;
+   }
+}
+
 void DenseStorage::diagonal_add_constant_from(int from, int length, double value) {
    assert(from + length < this->m);
    assert(from + length < this->n);

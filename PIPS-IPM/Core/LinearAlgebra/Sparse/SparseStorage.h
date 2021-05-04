@@ -101,7 +101,9 @@ public:
 
    void atPutDiagonal(int idiag, const double x[], int incx, int extent);
    void atAddDiagonal(int idiag, const double x[], int incx, int extent);
-   void diagonal_add_constant_from(int from, int length, double value);
+
+   void diagonal_set_to_constant_from(int from, int length, double value) override;
+   void diagonal_add_constant_from(int from, int length, double value) override;
 
    virtual void writeToStream(std::ostream& out) const;
    void writeNNZpatternToStreamDense(std::ostream& out) const;

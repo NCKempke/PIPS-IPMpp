@@ -1043,6 +1043,21 @@ void SparseStorage::atAddDiagonal(int idiag, const double x[], int incx, int ext
    }
 }
 
+void SparseStorage::diagonal_set_to_constant_from(int from, int length, double value) {
+   assert(from + length <= m);
+   assert(from + length <= n);
+
+   for (int row = from; row < from + length; ++row) {
+      int col_ptr = krowM[row];
+      while (jcolM[col_ptr] != row && col_ptr < krowM[row + 1])
+         ++col_ptr;
+      if (row == jcolM[col_ptr])
+         M[col_ptr] = value;
+      else
+         assert(false);
+   }
+}
+
 void SparseStorage::diagonal_add_constant_from(int from, int length, double value) {
    assert(from + length <= m);
    assert(from + length <= n);

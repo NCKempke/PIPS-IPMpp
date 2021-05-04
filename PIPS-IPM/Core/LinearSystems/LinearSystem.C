@@ -218,6 +218,8 @@ void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
       put_primal_diagonal();
    }
 
+   clear_dual_equality_diagonal();
+
    if (mclow + mcupp > 0) {
       put_dual_inequalites_diagonal();
    }

@@ -79,6 +79,7 @@ public:
 
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
+   void clear_dual_equality_diagonal() override;
 
    void put_barrier_parameter(double barrier) override;
 

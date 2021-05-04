@@ -71,11 +71,11 @@ protected:
    double bicg_resnorm{0.0};
    double bicg_relresnorm{0.0};
 
-   int getIntValue(const std::string& s) const override;
+   [[nodiscard]] int getIntValue(const std::string& s) const override;
 
-   double getDoubleValue(const std::string& s) const override;
+   [[nodiscard]] double getDoubleValue(const std::string& s) const override;
 
-   bool getBoolValue(const std::string& s) const override;
+   [[nodiscard]] bool getBoolValue(const std::string& s) const override;
 
    /** stores a critical diagonal matrix as a vector */
    Vector<double>* nomegaInv{};
@@ -218,6 +218,9 @@ public:
    /** places the diagonal resulting from the bounds on x into the
     * augmented system matrix */
    virtual void put_primal_diagonal() = 0;
+
+   /** set diagonal in kkt system associated with equalities to zero (necessary after regularization) */
+   virtual void clear_dual_equality_diagonal() = 0;
 
    /** places the diagonal resulting from the bounds on Cx into the
     * augmented system matrix */

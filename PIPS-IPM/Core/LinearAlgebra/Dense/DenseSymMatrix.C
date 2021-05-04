@@ -177,8 +177,17 @@ void DenseSymMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
 }
 
 void DenseSymMatrix::diagonal_add_constant_from(int from, int length, double value) {
+   assert(0 <= from);
+   assert(0 <= length);
    assert(from + length < this->size());
    mStorage->diagonal_add_constant_from(from, length, value);
+}
+
+void DenseSymMatrix::diagonal_set_to_constant_from(int from, int length, double value) {
+   assert(0 <= from);
+   assert(0 <= length);
+   assert(from + length < this->size());
+   mStorage->diagonal_set_to_constant_from(from, length, value);
 }
 
 void DenseSymMatrix::symAtPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) {

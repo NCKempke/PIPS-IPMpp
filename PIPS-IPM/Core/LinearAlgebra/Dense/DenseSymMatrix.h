@@ -75,8 +75,7 @@ public:
    void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
    void diagonal_add_constant_from(int from, int length, double value) override;
-
-   static DenseSymMatrix* randomPSD(int n, double* seed);
+   void diagonal_set_to_constant_from(int from, int length, double value) override;
 
    double* operator[](int index) { return mStorage->M[index]; }
 
@@ -91,8 +90,7 @@ public:
 
    [[nodiscard]] DenseStorage& getStorageRef() { return *mStorage; }
    [[nodiscard]] const DenseStorage& getStorageRef() const { return *mStorage; }
-   [[nodiscard]] std::shared_ptr<DenseStorage> getStorageHandle() { return mStorage; }
-   [[nodiscard]] const std::shared_ptr<DenseStorage> getStorageHandle() const { return mStorage; }
+   [[nodiscard]] std::shared_ptr<DenseStorage> getStorageHandle() const { return mStorage; }
 
    /* this = alpha * op(A)*op(B)  +   beta * this */
    void matMult(double alpha, GenMatrix& A_, int transA, GenMatrix& B_, int transB, double beta);
