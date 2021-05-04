@@ -8,7 +8,6 @@
 #include <cassert>
 #include <cmath>
 #include "SimpleVector.h"
-
 #include "DoubleMatrixTypes.h"
 
 int SparseSymMatrix::isKindOf(int type) const {
@@ -86,101 +85,6 @@ void SparseSymMatrix::symPutZeroes() {
 void SparseSymMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) {
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
-
-void SparseSymMatrix::randomizePSD(double* seed) {
-   int k, NN, chosen, icurrent;
-   int nnz;
-
-   double drand(double*);
-   int n = mStorage->n;
-   double* M = mStorage->M;
-   int* krowM = mStorage->krowM;
-   int* jcolM = mStorage->jcolM;
-
-   // We will always have non-zeros on the diagonal, so there
-   // is no randomness there. In fact, choose the (0,0) element now
-   krowM[0] = 0;
-   jcolM[0] = 0;
-   M[0] = 1e-8 + drand(seed);
-   krowM[1] = 1;
-
-   // Knuth's algorithm for choosing len elements out of NN elts.
-   // NN here is the number of elements in the strict lower triangle.
-   NN = n * (n - 1) / 2;
-   // len is the number of elements that can be stored, minus the number
-   // of elements in the diagonal, which will always be in the matrix.
-   int len = mStorage->len - n;
-   // but never more than NN elts
-   len = (len <= NN) ? len : NN;
-
-   // chosen is the number of elements that have already been chosen (now 0)
-   chosen = 0;
-   // nnz is the number of non-zeros in the matrix (now 1, because the
-   // (0,0) element is already in the matrix.
-   nnz = 1;
-   // icurrent is the index of the last row whose start has been stored in
-   // krowM;
-   icurrent = 1;
-   for (k = 0; k < NN; k++) {
-      double r = drand(seed);
-
-      if ((NN - k) * r < len - chosen) {
-         // Element k is chosen. What row is it in?
-         // In a lower triangular matrix (including a diagonal), it will be in
-         // the largest row such that row ( row + 1 ) / 2 < k. In other words
-         int row = (int) floor((-1 + sqrt(1.0 + 8.0 * k)) / 2);
-         // and its column will be the remainder
-         int col = k - row * (row + 1) / 2;
-         // but since we are only filling in the *strict* lower triangle of
-         // the matrix, we shift the row by 1
-         row++;
-
-         if (row > icurrent) {
-            // We have chosen a row beyond the current row.
-            // Choose a diagonal elt for each intermediate row and fix the
-            // data structure.
-            for (; icurrent < row; icurrent++) {
-               // Choose the diagonal
-               M[nnz] = 0.0;
-               int ll;
-               for (ll = krowM[icurrent]; ll < nnz; ll++) {
-                  M[nnz] += fabs(M[ll]);
-               }
-               M[nnz] += 1e-8 + drand(seed);
-               jcolM[nnz] = icurrent;
-
-
-               nnz++;
-               krowM[icurrent + 1] = nnz;
-            }
-         } // end if we have chosen a row beyond the current row;
-         M[nnz] = drand(seed);
-         jcolM[nnz] = col;
-         // add the value of this element (which occurs symmetrically in the
-         // upper triangle) to the appropriate diagonal element
-         M[krowM[col + 1] - 1] += fabs(M[nnz]);
-
-         nnz++; // We have added another element to the matrix
-         chosen++; // And finished choosing another element.
-      }
-   }
-   // and of course, we must choose all remaining diagonal elts.
-   for (; icurrent < n; icurrent++) {
-      // Choose the diagonal
-      M[nnz] = 0.0;
-      int ll;
-      for (ll = krowM[icurrent]; ll < nnz; ll++) {
-         M[nnz] += fabs(M[ll]);
-      }
-      M[nnz] += 1e-8 + drand(seed);
-      jcolM[nnz] = icurrent;
-
-      nnz++;
-      krowM[icurrent + 1] = nnz;
-   }
-
-}
-
 
 void SparseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
    int i, k;

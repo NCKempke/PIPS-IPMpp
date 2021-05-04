@@ -49,13 +49,6 @@ public:
    virtual bool isZero() const = 0;
    /** Set all elements of this Vector<double> to the constant value c */
    virtual void setToConstant(T c) = 0;
-   /** Fill this Vector<double> with random elements
-    *	  @param alpha
-    *      @param beta the elements will be in the interval [alpha, beta]
-    *      @param ix an aribitray number used to seed the random number
-    *             generator
-    */
-   virtual void randomize(T alpha, T beta, T* ix) = 0;
    /** Copy the elements of v into this Vector<double> object. */
    virtual void copyFrom(const Vector<T>& v) = 0;
 
@@ -99,14 +92,6 @@ public:
     *         value.
     */
    virtual void writefToStream(std::ostream& out, const char format[]) const = 0;
-
-   virtual void writeMPSformatOnlyRhs(std::ostream&, const std::string, const Vector<T>*) const { assert(0 && "not implemented here"); };
-   virtual void writeMPSformatRhs(std::ostream&, int, const Vector<T>*) const { assert(0 && "not implemented here"); };
-   virtual void writeMPSformatBounds(std::ostream&, const Vector<T>*, bool) const { assert(0 && "not implemented here"); };
-   virtual void writeMPSformatBoundsWithVar(std::ostream&, const std::string, const Vector<T>*, bool) const {
-      assert(0 && "not implemented here");
-   };
-   void writefToStreamStats(std::ostream& out, const std::string prestring);
 
    /** Scale each element of this Vector<double> by the constant alpha */
    virtual void scale(T alpha) = 0;

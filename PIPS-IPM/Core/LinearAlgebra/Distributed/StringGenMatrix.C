@@ -10,7 +10,7 @@
 #include "DistributedVector.h"
 #include "SimpleVector.h"
 #include "DoubleMatrixTypes.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 
 #include "pipsdef.h"
 #include <algorithm>
@@ -705,7 +705,7 @@ void StringGenMatrix::writeDashedLineToStream(std::ostream& out) const {
       mat_link->writeDashedLineToStream(out);
 }
 
-void StringGenMatrix::splitAlongTree(const sTreeCallbacks& tree) {
+void StringGenMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
    if (tree.getMapBlockSubTrees().empty())
       return;
    combineChildrenInNewChildren(tree.getMapBlockSubTrees(), tree.getChildComms());
@@ -728,7 +728,7 @@ void StringGenMatrix::splitAlongTree(const sTreeCallbacks& tree) {
       }
       else if (tree_child->getSubRoot()) {
          assert(children[i]->mat->isKindOf(kStringGenMatrix));
-         dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree(dynamic_cast<const sTreeCallbacks&>(*tree_child->getSubRoot()));
+         dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*tree_child->getSubRoot()));
       }
    }
 

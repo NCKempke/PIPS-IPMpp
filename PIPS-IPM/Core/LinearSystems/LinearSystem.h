@@ -6,7 +6,6 @@
 #define QPGENLINSYS
 
 #include "AbstractLinearSystem.h"
-#include "DoubleMatrixHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "Observer.h"

@@ -6,7 +6,7 @@
 #define SPSTOCHFACTORY
 
 #include "ProblemFactory.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 
 // save diagnostic state
 #pragma GCC diagnostic push
@@ -83,14 +83,6 @@ public:
 
    void switchToOriginalTree();
 
-   void join_right_hand_side(Vector<double>&, const Vector<double>&, const Vector<double>&, const Vector<double>&) const override {
-      assert(0 && "not implemented here");
-   };
-
-   void separate_variables(Vector<double>&, Vector<double>&, Vector<double>&, const Vector<double>&) const override {
-      assert(0 && "not implemented here");
-   };
-
    virtual DistributedLeafLinearSystem*
    make_linear_system_leaf(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
@@ -98,7 +90,7 @@ public:
 
    virtual DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
 
-   sTree* tree{};
+   DistributedTree* tree{};
    DistributedQP* problem{};
 
    virtual void iterate_started();
@@ -116,7 +108,7 @@ public:
    ~DistributedFactory() override;
 
 protected:
-   std::unique_ptr<sTree> hier_tree_swap{};
+   std::unique_ptr<DistributedTree> hier_tree_swap{};
    DistributedFactory() = default;
 };
 

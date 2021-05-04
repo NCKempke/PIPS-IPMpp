@@ -4,13 +4,11 @@
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SimpleVector.h"
-#include "StochVectorHandle.h"
-
 #include "mpi.h"
-
 #include <vector>
+#include <memory>
 
-class sTree;
+class DistributedTree;
 
 class DistributedQP;
 
@@ -60,7 +58,6 @@ public:
    void setToConstant(T c) override;
    bool isZero() const override;
 
-   void randomize(T, T, T*) override { assert("Not implemented" && 0); };
    void copyFrom(const Vector<T>& v) override;
    void copyFromAbs(const Vector<T>& v) override;
    double twonorm() const override;
@@ -89,11 +86,6 @@ public:
    void scalarMult(T num) override;
    void writeToStream(std::ostream& out, int offset = 0) const override;
    void writefToStream(std::ostream& out, const char format[]) const override;
-
-   void writeMPSformatOnlyRhs(std::ostream&, const std::string, const Vector<T>*) const override {};
-   void writeMPSformatBoundsWithVar(std::ostream&, const std::string, const Vector<T>*, bool) const override {};
-   void writeMPSformatRhs(std::ostream& out, int rowType, const Vector<T>* irhs) const override;
-   void writeMPSformatBounds(std::ostream& out, const Vector<T>* ix, bool upperBound) const override;
 
    void scale(T alpha) override;
 
@@ -152,9 +144,9 @@ public:
    virtual void split(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
    virtual DistributedVector<T>* raiseBorder(int n_vars, bool linking_part, bool shave_top);
-   virtual void collapseFromHierarchical(const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec = false);
+   virtual void collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
    virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-         const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
+         const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
 
    virtual Vector<T>* getLinkingVecNotHierarchicalTop() const;
 
@@ -173,16 +165,16 @@ private:
  *
  */
 template<typename T>
-class StochDummyVectorBase : public DistributedVector<T> {
+class DistributedDummyVector : public DistributedVector<T> {
 public:
 
-   StochDummyVectorBase() : DistributedVector<T>(0, MPI_COMM_NULL) {};
-   ~StochDummyVectorBase() override = default;
+   DistributedDummyVector() : DistributedVector<T>(0, MPI_COMM_NULL) {};
+   ~DistributedDummyVector() override = default;
 
    void AddChild(DistributedVector<T>*) override {};
 
-   DistributedVector<T>* clone() const override { return new StochDummyVectorBase<T>(); }
-   DistributedVector<T>* cloneFull() const override { return new StochDummyVectorBase<T>(); }
+   DistributedVector<T>* clone() const override { return new DistributedDummyVector<T>(); }
+   DistributedVector<T>* cloneFull() const override { return new DistributedDummyVector<T>(); }
 
    void jointCopyFrom(const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
    void jointCopyTo(Vector<T>&, Vector<T>&, Vector<T>&) const override {};
@@ -191,7 +183,6 @@ public:
    bool isZero() const override { return true; };
    void setToZero() override {};
    void setToConstant(T) override {};
-   void randomize(T, T, T*) override {};
    void copyFrom(const Vector<T>&) override {};
    void copyFromAbs(const Vector<T>&) override {};
    double twonorm() const override { return 0.0; }
@@ -221,12 +212,6 @@ public:
    void scalarMult(T) override {};
    void writeToStream(std::ostream&, int) const override {};
    void writefToStream(std::ostream&, const char[]) const override {};
-
-   void writeMPSformatOnlyRhs(std::ostream&, const std::string, const Vector<T>*) const override {};
-   void writeMPSformatRhs(std::ostream&, int, const Vector<T>*) const override {};
-   void writeMPSformatBounds(std::ostream&, const Vector<T>*, bool) const override {};
-   void writeMPSformatBoundsWithVar(std::ostream&, const std::string, const Vector<T>*, bool) const override {};
-
    void scale(T) override {};
 
    /** this += alpha * x */
@@ -285,7 +270,7 @@ public:
    };
 
    void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-         const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) override;
+         const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) override;
 
    Vector<T>* getLinkingVecNotHierarchicalTop() const override {
       assert(false && "Should not end up here");

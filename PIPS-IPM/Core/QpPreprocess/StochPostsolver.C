@@ -10,9 +10,7 @@
 #include "SmartPointer.h"
 #include "StochOptions.h"
 #include "pipsdef.h"
-#include "pipsport.h"
 #include "StochVectorUtilities.h"
-
 #include <limits>
 #include <stdexcept>
 #include <iostream>

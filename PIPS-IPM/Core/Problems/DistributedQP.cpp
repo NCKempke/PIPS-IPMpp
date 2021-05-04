@@ -1,16 +1,12 @@
 #include "DistributedQP.hpp"
-#include "sTree.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTree.h"
+#include "DistributedTreeCallbacks.h"
 #include "StochSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
-#include "SparseLinearAlgebraPackage.h"
 #include "mpi.h"
-
-#include "pipsport.h"
 #include "StochOptions.h"
 #include "BorderedSymMatrix.h"
-
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
@@ -1090,10 +1086,10 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
    return permvec;
 }
 
-DistributedQP::DistributedQP(const sTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
+DistributedQP::DistributedQP(const DistributedTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
       Vector<double>* xupp_in, Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in,
       Vector<double>* iclow_in, Vector<double>* cupp_in, Vector<double>* icupp_in, bool add_children, bool is_hierarchy_root,
-      bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(SparseLinearAlgebraPackage::soleInstance(), c_in, Q_in, xlow_in, ixlow_in,
+      bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(c_in, Q_in, xlow_in, ixlow_in,
       xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in), stochNode{tree_}, is_hierarchy_root{is_hierarchy_root},
       is_hierarchy_inner_root{is_hierarchy_inner_root}, is_hierarchy_inner_leaf{is_hierarchy_inner_leaf} {
    if (add_children)
@@ -1141,242 +1137,11 @@ void DistributedQP::writeToStreamDense(std::ostream& out) const {
    (*iclow).writeToStream(out);
 }
 
-/** Write the LP in MPS format. Only works if not distributed. */
-void DistributedQP::writeMPSformat(std::ostream& out) {
-   // Note: only write the inequalities that have a finite rhs
-   // (because no specified rhs of a row implies rhs=0).
-   // Also, variable coefficients with indices in inequalitites with
-   // inifnite rhs are not written because these rows do not appear in the MPs model.
-
-   int world_size;
-   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-
-   if (world_size > 1) {
-      std::cout << "MPS format writer only available using one Process!\n";
-      return;
-   }
-   std::cout << "Writing MPS format...\n";
-
-   out << "NAME PIPS_to_MPS\n";
-   out << "ROWS\n";
-   out << " N COST\n";
-
-   // write all row names and if they are E, L or G
-   (*A).writeMPSformatRows(out, 0, nullptr);
-   (*C).writeMPSformatRows(out, 1, icupp);
-   (*C).writeMPSformatRows(out, 2, iclow);
-
-   // write all variable names
-   out << "COLUMNS\n";
-   writeMPSColumns(out);
-
-   // write all rhs / lhs
-   out << "RHS\n";
-
-   (*bA).writeMPSformatRhs(out, 0, nullptr);
-   (*bu).writeMPSformatRhs(out, 1, icupp);
-   (*bl).writeMPSformatRhs(out, 2, iclow);
-
-   // write all variable bounds
-   out << "BOUNDS\n";
-   (*bux).writeMPSformatBounds(out, ixupp, true);
-   (*blx).writeMPSformatBounds(out, ixlow, false);
-
-   out << "ENDATA\n";
-
-   std::cout << "Finished writing MPS format.\n";
-}
-
-void DistributedQP::writeMPSColumns(std::ostream& out) {
-   int world_size;
-   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-   assert(world_size == 1);
-
-   int n;
-   std::string varName;
-   std::string rowNameStub;
-   std::string rowNameStubLT;
-   std::string rowNameStubGT;
-   DistributedVector<double>& gStoch = dynamic_cast<DistributedVector<double>&>(*g);
-   DistributedVector<double>& icuppStoch = dynamic_cast<DistributedVector<double>&>(*icupp);
-   DistributedVector<double>& iclowStoch = dynamic_cast<DistributedVector<double>&>(*iclow);
-   StochGenMatrix& AStoch = dynamic_cast<StochGenMatrix&>(*A);
-   SparseGenMatrix& ASparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.Bmat)->getTranspose();
-   StochGenMatrix& CStoch = dynamic_cast<StochGenMatrix&>(*C);
-   SparseGenMatrix& CSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.Bmat)->getTranspose();
-
-   SimpleVector<double>* gSimple = dynamic_cast<SimpleVector<double>*>(gStoch.first);
-   n = gSimple->length();
-
-   std::stringstream sstmCol;
-   std::stringstream sstmRow;
-
-
-   // linking variables:
-   for (int col = 0; col < n; col++) {
-      sstmCol.clear();
-      sstmCol.str("");
-      sstmCol << " var_L_" << col;
-      varName = sstmCol.str();
-
-      // cost coefficients:
-      rowNameStub = "COST";
-      if (gSimple->elements()[col] != 0)
-         out << varName << " " << rowNameStub << " " << gSimple->elements()[col] << "\n";
-
-      // coefficients in A_0:
-      rowNameStub = "row_E_R_";
-      for (int k = ASparseTrans.krowM()[col]; k < ASparseTrans.krowM()[col + 1]; k++)
-         out << varName << " " << rowNameStub << ASparseTrans.jcolM()[k] << " " << ASparseTrans.M()[k] << "\n";
-
-      // coefficients in F_0:
-      if (AStoch.Blmat) {
-         SparseGenMatrix& ABlmatSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.Blmat)->getTranspose();
-         rowNameStub = "row_E_L_";
-         for (int k = ABlmatSparseTrans.krowM()[col]; k < ABlmatSparseTrans.krowM()[col + 1]; k++)
-            out << varName << " " << rowNameStub << ABlmatSparseTrans.jcolM()[k] << " " << ABlmatSparseTrans.M()[k] << "\n";
-         dynamic_cast<SparseGenMatrix*>(AStoch.Blmat)->deleteTransposed();
-      }
-      // coefficients in A_i:
-      for (size_t it = 0; it < children.size(); it++) {
-         SparseGenMatrix& AChildSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Amat)->getTranspose();
-         sstmRow.clear();
-         sstmRow.str("");
-         sstmRow << "row_E_" << (int) it << "_";
-         rowNameStub = sstmRow.str();
-         for (int k = AChildSparseTrans.krowM()[col]; k < AChildSparseTrans.krowM()[col + 1]; k++)
-            out << varName << " " << rowNameStub << AChildSparseTrans.jcolM()[k] << " " << AChildSparseTrans.M()[k] << "\n";
-         dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Amat)->deleteTransposed();
-      }
-
-      // coefficients in C_0:
-      rowNameStubLT = "row_L_R_";
-      rowNameStubGT = "row_G_R_";
-      for (int k = CSparseTrans.krowM()[col]; k < CSparseTrans.krowM()[col + 1]; k++) {
-         int rowIdx = CSparseTrans.jcolM()[k];
-         if (dynamic_cast<SimpleVector<double>*>(icuppStoch.first)->elements()[rowIdx] != 0.0)
-            out << varName << " " << rowNameStubLT << rowIdx << " " << CSparseTrans.M()[k] << "\n";
-         if (dynamic_cast<SimpleVector<double>*>(iclowStoch.first)->elements()[rowIdx] != 0.0)
-            out << varName << " " << rowNameStubGT << rowIdx << " " << CSparseTrans.M()[k] << "\n";
-      }
-      // coefficients in G_0:
-      if (CStoch.Blmat) {
-         SparseGenMatrix& CBlmatSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.Blmat)->getTranspose();
-         rowNameStubLT = "row_L_L_";
-         rowNameStubGT = "row_G_L_";
-         for (int k = CBlmatSparseTrans.krowM()[col]; k < CBlmatSparseTrans.krowM()[col + 1]; k++) {
-            int rowIdx = CBlmatSparseTrans.jcolM()[k];
-            if (dynamic_cast<SimpleVector<double>*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
-               out << varName << " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
-            if (dynamic_cast<SimpleVector<double>*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
-               out << varName << " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
-         }
-         dynamic_cast<SparseGenMatrix*>(CStoch.Blmat)->deleteTransposed();
-      }
-      // coefficients in C_i:
-      for (size_t it = 0; it < children.size(); it++) {
-         SparseGenMatrix& CChildSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Amat)->getTranspose();
-         sstmRow.clear();
-         sstmRow.str("");
-         sstmRow << "row_L_" << (int) it << "_";
-         rowNameStubLT = sstmRow.str();
-         sstmRow.clear();
-         sstmRow.str("");
-         sstmRow << "row_G_" << (int) it << "_";
-         rowNameStubGT = sstmRow.str();
-         for (int k = CChildSparseTrans.krowM()[col]; k < CChildSparseTrans.krowM()[col + 1]; k++) {
-            int rowIdx = CChildSparseTrans.jcolM()[k];
-            if (dynamic_cast<SimpleVector<double>*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
-               out << varName << " " << rowNameStubLT << rowIdx << " " << CChildSparseTrans.M()[k] << "\n";
-            if (dynamic_cast<SimpleVector<double>*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
-               out << varName << " " << rowNameStubGT << rowIdx << " " << CChildSparseTrans.M()[k] << "\n";
-         }
-         dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Amat)->deleteTransposed();
-      }
-   }
-
-   // non-linking variables:
-   for (size_t it = 0; it < children.size(); it++) {
-      SimpleVector<double>* gSimple = dynamic_cast<SimpleVector<double>*>(gStoch.children[it]->first);
-      n = gSimple->length();
-
-      for (int col = 0; col < n; col++) {
-         sstmCol.clear();
-         sstmCol.str("");
-         sstmCol << " var_" << (int) it << "_" << col;
-         varName = sstmCol.str();
-
-         // coeffs in COST:
-         rowNameStub = "COST";
-         if (gSimple->elements()[col] != 0)
-            out << varName << " " << rowNameStub << " " << gSimple->elements()[col] << "\n";
-
-         // coeffs in A_i:
-         SparseGenMatrix& AChildSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Bmat)->getTranspose();
-         sstmRow.clear();
-         sstmRow.str("");
-         sstmRow << "row_E_" << (int) it << "_";
-         rowNameStub = sstmRow.str();
-         for (int k = AChildSparseTrans.krowM()[col]; k < AChildSparseTrans.krowM()[col + 1]; k++)
-            out << varName << " " << rowNameStub << AChildSparseTrans.jcolM()[k] << " " << AChildSparseTrans.M()[k] << "\n";
-         dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Bmat)->deleteTransposed();
-
-         // coefficients in D_i:
-         SparseGenMatrix& CChildSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Bmat)->getTranspose();
-         sstmRow.clear();
-         sstmRow.str("");
-         sstmRow << "row_L_" << (int) it << "_";
-         rowNameStubLT = sstmRow.str();
-         sstmRow.clear();
-         sstmRow.str("");
-         sstmRow << "row_G_" << (int) it << "_";
-         rowNameStubGT = sstmRow.str();
-         for (int k = CChildSparseTrans.krowM()[col]; k < CChildSparseTrans.krowM()[col + 1]; k++) {
-            int rowIdx = CChildSparseTrans.jcolM()[k];
-            if (dynamic_cast<SimpleVector<double>*>(icuppStoch.children[it]->first)->elements()[rowIdx] != 0.0)
-               out << varName << " " << rowNameStubLT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] << "\n";
-            if (dynamic_cast<SimpleVector<double>*>(iclowStoch.children[it]->first)->elements()[rowIdx] != 0.0)
-               out << varName << " " << rowNameStubGT << CChildSparseTrans.jcolM()[k] << " " << CChildSparseTrans.M()[k] << "\n";
-         }
-         dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Bmat)->deleteTransposed();
-
-         // coefficients in F_i:
-         if (dynamic_cast<StochGenMatrix*>(AStoch.children[it])->Blmat) {
-            SparseGenMatrix& ABlmatSparseTrans = dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Blmat)->getTranspose();
-            rowNameStub = "row_E_L_";
-            for (int k = ABlmatSparseTrans.krowM()[col]; k < ABlmatSparseTrans.krowM()[col + 1]; k++)
-               out << varName << " " << rowNameStub << ABlmatSparseTrans.jcolM()[k] << " " << ABlmatSparseTrans.M()[k] << "\n";
-            dynamic_cast<SparseGenMatrix*>(AStoch.children[it]->Blmat)->deleteTransposed();
-         }
-
-         // coefficients in G_i:
-         if (dynamic_cast<StochGenMatrix*>(CStoch.children[it])->Blmat) {
-            SparseGenMatrix& CBlmatSparseTrans = dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Blmat)->getTranspose();
-            rowNameStubLT = "row_L_L_";
-            rowNameStubGT = "row_G_L_";
-            for (int k = CBlmatSparseTrans.krowM()[col]; k < CBlmatSparseTrans.krowM()[col + 1]; k++) {
-               int rowIdx = CBlmatSparseTrans.jcolM()[k];
-               if (dynamic_cast<SimpleVector<double>*>(icuppStoch.last)->elements()[rowIdx] != 0.0)
-                  out << varName << " " << rowNameStubLT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
-               if (dynamic_cast<SimpleVector<double>*>(iclowStoch.last)->elements()[rowIdx] != 0.0)
-                  out << varName << " " << rowNameStubGT << rowIdx << " " << CBlmatSparseTrans.M()[k] << "\n";
-            }
-            dynamic_cast<SparseGenMatrix*>(CStoch.children[it]->Blmat)->deleteTransposed();
-         }
-      }
-   }
-
-   // delete transposed matrices:
-   dynamic_cast<SparseGenMatrix*>(AStoch.Bmat)->deleteTransposed();
-   dynamic_cast<SparseGenMatrix*>(CStoch.Bmat)->deleteTransposed();
-
-}
-
 DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    // todo Q is empty!
-   SymMatrixHandle Q_clone(Q->clone());
-   GenMatrixHandle A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
-   GenMatrixHandle C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
+   SmartPointer<SymMatrix> Q_clone(Q->clone());
+   SmartPointer<GenMatrix> A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
+   SmartPointer<GenMatrix> C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
    DistributedVector<double>* c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
    DistributedVector<double>* bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
@@ -1389,7 +1154,7 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    DistributedVector<double>* clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
    DistributedVector<double>* iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
 
-   const sTree* tree_clone = stochNode;
+   const DistributedTree* tree_clone = stochNode;
 
    // TODO : proper copy ctor..
    DistributedQP* clone = new DistributedQP(tree_clone, c_clone, Q_clone, xlow_clone, ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
@@ -1432,11 +1197,11 @@ void DistributedQP::destroyChildren() {
    children.clear();
 }
 
-DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const sTree* tree) {
-   SymMatrixHandle Q_hier(dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars));
+DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
+   SmartPointer<SymMatrix> Q_hier(dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars));
 
-   GenMatrixHandle A_hier(dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
-   GenMatrixHandle C_hier(dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
+   SmartPointer<GenMatrix> A_hier(dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
+   SmartPointer<GenMatrix> C_hier(dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
 
    /* we ordered global linking vars first and global linking rows to the end */
    DistributedVector<double>* g_hier(dynamic_cast<DistributedVector<double>&>(*g).raiseBorder(n_global_linking_vars, false, true));
@@ -1459,7 +1224,7 @@ DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const sTree* tr
          icupp_hier, false, true);
 }
 
-DistributedQP* DistributedQP::shaveDenseBorder(const sTree* tree) {
+DistributedQP* DistributedQP::shaveDenseBorder(const DistributedTree* tree) {
    DistributedQP* hierarchical_top = shaveBorderFromDataAndCreateNewTop(tree);
 
    const DistributedVector<double>& ixlow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixlow);
@@ -1575,7 +1340,7 @@ void DistributedQP::reorderLinkingConstraintsAccordingToSplit() {
    assert(isSCrowLocal.size() == 0);
    assert(isSCrowMyLocal.size() == 0);
 
-   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
    Permutation perm_A = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdA, stochNode->myl());
    Permutation perm_C = getChildLinkConsFirstOwnLinkConsLastPermutation(map_block_subtree, linkStartBlockIdC, stochNode->mzl());
@@ -1594,10 +1359,10 @@ void DistributedQP::addChildrenForSplit() {
    assert(isSCrowLocal.size() == 0);
    assert(isSCrowMyLocal.size() == 0);
 
-   const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
 
-   const sTreeCallbacks& tree = dynamic_cast<const sTreeCallbacks&>(*stochNode);
+   const DistributedTreeCallbacks& tree = dynamic_cast<const DistributedTreeCallbacks&>(*stochNode);
    std::vector<DistributedQP*> new_children(n_new_children);
 
    unsigned int childchild_pos{0};
@@ -1633,8 +1398,8 @@ void DistributedQP::addChildrenForSplit() {
       DistributedVector<double>* icupp_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*icupp).children[i]
                                                                        : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).children[i];
 
-      assert(dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
-      const sTree* tree_child = dynamic_cast<const sTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
+      assert(dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
+      const DistributedTree* tree_child = dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
 
       DistributedQP* child = new DistributedQP(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child, A_child, bA_child,
             C_child, bl_child, iclow_child, bu_child, icupp_child, false, false, false, true);
@@ -1732,35 +1497,9 @@ void DistributedQP::addChildrenForSplit() {
 }
 
 void DistributedQP::splitData() {
-   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const sTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
-   const std::vector<MPI_Comm> child_comms = dynamic_cast<const sTreeCallbacks*>(stochNode)->getChildComms();
+   const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
+   const std::vector<MPI_Comm> child_comms = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getChildComms();
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
-
-// TODO : DELETEME
-//   Vector<double>* x_bef = g;
-//   Vector<double>* y_bef = bA;
-//   Vector<double>* z_bef = bl;
-//   x_bef->setToConstant(2.0);
-//   y_bef->setToConstant(2.0);
-//   z_bef->setToConstant(2.0);
-//
-//   const double norm2_bef = g->twonorm();
-//   const double norm1_bef = g->onenorm();
-//
-//   A->transMult(2.0, *x_bef, 3.0, *y_bef);
-//   const double A2norm_bef = x_bef->twonorm();
-//   const double A1norm_bef = x_bef->onenorm();
-//
-//   C->mult(2.0, *z_bef, 3.0, *x_bef);
-//   const double C2norm_bef = z_bef->twonorm();
-//   const double C1norm_bef = z_bef->onenorm();
-//
-//   Vector<double>* x_bef2 = g->clone();
-//   x_bef2->setToConstant(2.0);
-//   Q->transMult(2.0, *x_bef2, 3.0, *x_bef);
-//
-//   const double Q2norm_bef = x_bef2->twonorm();
-//   const double Q1norm_bef = x_bef2->onenorm();
 
    if (stochNode->isHierarchicalInnerLeaf()) {
       dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
@@ -1879,8 +1618,8 @@ void DistributedQP::splitStringMatricesAccordingToSubtreeStructure() {
       return;
    }
 
-   Blmat.splitAlongTree(dynamic_cast<const sTreeCallbacks&>(*stochNode));
-   Dlmat.splitAlongTree(dynamic_cast<const sTreeCallbacks&>(*stochNode));
+   Blmat.splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*stochNode));
+   Dlmat.splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*stochNode));
 
    assert(children.size() == Blmat.children.size());
    assert(children.size() == Dlmat.children.size());
@@ -2211,27 +1950,6 @@ double DistributedQP::objective_value(const Variables& variables) const {
    this->hessian_multiplication(1.0, *temp, 0.5, *variables.x);
 
    return temp->dotProductWith(*variables.x);
-}
-
-void DistributedQP::createScaleFromQ() {
-
-   assert("Not implemented!" && 0);
-
-   // Stuff the diagonal elements of Q into the vector "sc"
-   this->hessian_diagonal(*sc);
-
-   // Modifying scVector is equivalent to modifying sc
-   /*SimpleVector<double> & scVector = dynamic_cast<SimpleVector<double> &>(*sc);
-
-    int scLength = scVector.length();
-
-    for( int i = 0; i < scLength; i++){
-    if( scVector[i] > 1)
-    scVector[i] = 1.0/sqrt( scVector[i]);
-    else
-    scVector[i] = 1.0;
-    }
-    */
 }
 
 void DistributedQP::printLinkVarsStats() {

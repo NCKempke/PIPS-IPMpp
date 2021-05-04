@@ -8,18 +8,15 @@
 #include "SparseSymMatrix.h"
 #include "StochGenMatrix.h"
 #include "DistributedVector.h"
-#include "DoubleMatrixHandle.h"
 #include "StochOptions.h"
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "pipschecks.h"
 #include "pipsport.h"
 
 #include <vector>
 #include <memory>
 
-class sTree;
-
-class LinearAlgebraPackage;
+class DistributedTree;
 
 class DistributedQP : public QP {
 protected:
@@ -27,7 +24,7 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const sTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+   DistributedQP(const DistributedTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
          Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
          Vector<double>* ciupp, bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
          bool is_hierarchy_inner_leaf = false);
@@ -36,7 +33,7 @@ public:
 
    void AddChild(DistributedQP* child);
 
-   const sTree* stochNode{};
+   const DistributedTree* stochNode{};
 
    Permutation getLinkVarsPermInv() const;
 
@@ -125,10 +122,10 @@ protected:
 
    void splitDataAndAddAsChildLayer();
 
-   DistributedQP* shaveBorderFromDataAndCreateNewTop(const sTree* tree);
+   DistributedQP* shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree);
 
 public:
-   DistributedQP* shaveDenseBorder(const sTree* tree);
+   DistributedQP* shaveDenseBorder(const DistributedTree* tree);
 
    void splitDataAccordingToTree();
 
@@ -144,15 +141,9 @@ public:
 
    virtual void writeToStreamDense(std::ostream& out) const;
 
-   void writeMPSformat(std::ostream& out);
-
-   void writeMPSColumns(std::ostream& out);
-
    virtual DistributedQP* cloneFull(bool switchToDynamicStorage = false) const;
 
    double objective_value(const Variables& variables) const override;
-
-   void createScaleFromQ();
 
    void
    cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC, const DistributedVector<int>& colNnzVec);

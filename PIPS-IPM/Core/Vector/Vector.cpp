@@ -9,19 +9,6 @@ Vector<T>::Vector(int n_) : n{n_} {
    assert(n_ >= 0);
 }
 
-template<typename T>
-void Vector<T>::writefToStreamStats(std::ostream& out, std::string prestring) {
-   T min;
-   T max;
-   int dummy;
-
-   this->min(min, dummy);
-   this->max(max, dummy);
-
-   out << prestring << " length=" << n << " min=" << min << " max=" << max << " infnorm=" << this->infnorm() << "\n";
-}
-
-
 template
 class Vector<int>;
 

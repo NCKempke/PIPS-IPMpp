@@ -1,14 +1,9 @@
 #include "DistributedVector.h"
-
-#include "VectorUtilities.h"
-#include "pipsport.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 #include "DistributedQP.hpp"
-
 #include <cassert>
 #include <cstring>
 #include <iostream>
-#include <iomanip>
 #include <limits>
 #include <math.h>
 #include <numeric>
@@ -1177,74 +1172,6 @@ void DistributedVector<T>::writefToStream(std::ostream& out, const char format[]
       children[it]->writefToStream(out, format);
 }
 
-template<typename T>
-void DistributedVector<T>::writeMPSformatRhs(std::ostream& out, int rowType, const Vector<T>* irhs) const {
-   // TODO : will not work with hierarchical data
-   int myRank;
-   MPI_Comm_rank(mpiComm, &myRank);
-   std::string rt;
-   if (rowType == 0)
-      rt = "E";
-   else if (rowType == 1)
-      rt = "L";
-   else if (rowType == 2)
-      rt = "G";
-   else
-      assert(0);
-
-   const DistributedVector<T>* ic = nullptr;
-   if (irhs)
-      ic = dynamic_cast<const DistributedVector<T>*>(irhs);
-
-   if (myRank == 0) {
-      std::string rowNameStub = " B row_";
-      rowNameStub += rt;
-      rowNameStub += "_R_";
-      if (irhs && ic)
-         first->writeMPSformatOnlyRhs(out, rowNameStub, dynamic_cast<const SimpleVector<T>*>(ic->first));
-      else
-         first->writeMPSformatOnlyRhs(out, rowNameStub, nullptr);
-      if (last) {
-         rowNameStub = " B row_";
-         rowNameStub += rt;
-         rowNameStub += "_L_";
-         if (irhs)
-            last->writeMPSformatOnlyRhs(out, rowNameStub, dynamic_cast<const SimpleVector<T>*>(ic->last));
-         else
-            last->writeMPSformatOnlyRhs(out, rowNameStub, nullptr);
-      }
-   }
-   for (int it = 0; it < (int) children.size(); it++) {
-      std::stringstream sstm;
-      sstm << " B row_" << rt << "_" << it << "_";
-      std::string rowNameStub = sstm.str();
-      if (irhs)
-         children[it]->first->writeMPSformatOnlyRhs(out, rowNameStub, dynamic_cast<const SimpleVector<T>*>(ic->children[it]->first));
-      else
-         children[it]->first->writeMPSformatOnlyRhs(out, rowNameStub, nullptr);
-   }
-}
-
-template<typename T>
-void DistributedVector<T>::writeMPSformatBounds(std::ostream& out, const Vector<T>* ix, bool upperBound) const {
-   // TODO : will not work with hierarchical data
-   int myRank;
-   MPI_Comm_rank(mpiComm, &myRank);
-
-   const DistributedVector<T>* ixStoch = dynamic_cast<const DistributedVector<T>*>(ix);
-
-   if (myRank == 0) {
-      std::string varNameStub = "var_L_";
-      first->writeMPSformatBoundsWithVar(out, varNameStub, (ixStoch->first), upperBound);
-   }
-   for (int it = 0; it < (int) children.size(); it++) {
-      std::stringstream sstm2;
-      sstm2 << "var_" << it << "_";
-      std::string varNameStub = sstm2.str();
-      children[it]->first->writeMPSformatBoundsWithVar(out, varNameStub, (ixStoch->children[it]->first), upperBound);
-   }
-}
-
 /** this += alpha * x */
 template<typename T>
 void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
@@ -2072,7 +1999,7 @@ n_links_in_root
       }
 
       /* create child holding the new DistributedVector<double> as it's first part */
-      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new StochDummyVectorBase<T>() : new DistributedVector<T>(vec, nullptr, child_comms[i]);
+      new_children[i] = (child_comms[i] == MPI_COMM_NULL) ? new DistributedDummyVector<T>() : new DistributedVector<T>(vec, nullptr, child_comms[i]);
       if (vec)
          vec->parent = new_children[i];
 
@@ -2128,12 +2055,12 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_vars, bool linking
 }
 
 template<typename T>
-void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hier, const sTree& tree_hier, VectorType type, bool empty_vec) {
-   SimpleVector<T>* new_vec = new SimpleVector<T>();
-   SimpleVector<T>* new_vecl{};
+void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec) {
+   SimpleVector<T>* new_first = new SimpleVector<T>();
+   SimpleVector<T>* new_last{};
 
    if ((tree_hier.getMYL() > 0 && type == VectorType::DUAL_Y) || (tree_hier.getMYL() > 0 && type == VectorType::DUAL_Z))
-      new_vecl = new SimpleVector<T>();
+      new_last = new SimpleVector<T>();
 
    assert(tree_hier.nChildren() == 1);
    assert(children.size() == 1);
@@ -2141,19 +2068,19 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 
    /* hierarchical top */
    std::vector<DistributedVector<T>*> new_children;
-   children[0]->appendHierarchicalToThis(new_vec, new_vecl, new_children, *tree_hier.getChildren()[0], *data_hier.children[0], type, empty_vec);
+   children[0]->appendHierarchicalToThis(new_first, new_last, new_children, *tree_hier.getChildren()[0], *data_hier.children[0], type, empty_vec);
 
    delete children[0];
    children.clear();
 
    if (first && !empty_vec)
-      new_vec->appendToFront(dynamic_cast<SimpleVector<T>&>(*first));
+      new_first->appendToFront(dynamic_cast<SimpleVector<T>&>(*first));
    if (last && !empty_vec)
-      new_vecl->appendToBack(dynamic_cast<SimpleVector<T>&>(*last));
+      new_last->appendToBack(dynamic_cast<SimpleVector<T>&>(*last));
 
-   this->n = new_vec->length();
-   if (new_vecl)
-      this->n += new_vecl->length();
+   this->n = new_first->length();
+   if (new_last)
+      this->n += new_last->length();
    for (auto child : new_children) {
       assert(child->children.empty());
       this->AddChild(child);
@@ -2161,8 +2088,8 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 
    delete first;
    delete last;
-   first = new_vec;
-   last = new_vecl;
+   first = new_first;
+   last = new_last;
 
    if (first)
       PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<double>&>(*first).elements(), first->length());
@@ -2174,13 +2101,13 @@ void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hi
 template<typename T>
 void
 DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-      const sTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
+      const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec) {
    assert(children.size() == tree_hier.nChildren());
    assert(children.size() == data_hier.children.size());
 
    for (size_t i = 0; i < children.size(); ++i) {
       DistributedVector<T>& child = *children[i];
-      const sTree* sub_root = tree_hier.getChildren()[i]->getSubRoot();
+      const DistributedTree* sub_root = tree_hier.getChildren()[i]->getSubRoot();
 
       // not a leaf
       if (sub_root) {
@@ -2222,13 +2149,13 @@ DistributedVector<T>::appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleV
 }
 
 template<typename T>
-void StochDummyVectorBase<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
-      const sTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec) {
+void DistributedDummyVector<T>::appendHierarchicalToThis(SimpleVector<T>*, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
+      const DistributedTree& tree_hier, const DistributedQP&, VectorType type, bool empty_vec) {
    assert(tree_hier.getCommWorkers() == MPI_COMM_NULL);
    const int n_dummies = tree_hier.nChildren();
    /* insert the children this dummy is representing */
    for (int i = 0; i < n_dummies; ++i)
-      new_children.insert(new_children.end(), new StochDummyVectorBase<T>());
+      new_children.insert(new_children.end(), new DistributedDummyVector<T>());
 
    if (type == VectorType::DUAL_Y && !empty_vec)
       new_vecl->appendToBack(tree_hier.getMYL(), -std::numeric_limits<T>::infinity());

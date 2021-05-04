@@ -8,8 +8,6 @@
 //#define PIPS_DEBUG
 #include "GeoStochScaler.h"
 #include "pipsdef.h"
-#include "pipsport.h"
-
 #include <memory>
 #include <cmath>
 

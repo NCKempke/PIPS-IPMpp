@@ -88,8 +88,6 @@ public:
 
    void fromGetSpRow(int row, int col, double A[], int lenA, int irowA[], int& nnz, int rowExtent, int& info) override;
 
-   virtual void randomize(double alpha, double beta, double* seed);
-
    virtual void clear();
 
    virtual void getTransposePat(int row, int col, int rowExtent, int colExtent, int kpat[], int krowM[], int jcolM[]);

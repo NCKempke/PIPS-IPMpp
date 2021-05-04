@@ -16,7 +16,7 @@ extern "C" typedef int (* FLEN)(void* user_data, int id, int* len);
 
 
 class StochInputTree {
-   friend class sTreeCallbacks;
+   friend class DistributedTreeCallbacks;
 
 public:
 
@@ -26,7 +26,7 @@ public:
    class StochInputNode {
       friend class StochInputTree;
 
-      friend class sTreeCallbacks;
+      friend class DistributedTreeCallbacks;
 
    public:
       StochInputNode(int id_ = -1);

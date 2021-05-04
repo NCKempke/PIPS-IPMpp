@@ -45,9 +45,9 @@ protected:
    std::unique_ptr<Vector<double>> vec_colscale{};
 
    // problem data
-   SymMatrixHandle Q;
-   GenMatrixHandle A;
-   GenMatrixHandle C;
+   SmartPointer<SymMatrix> Q;
+   SmartPointer<GenMatrix> A;
+   SmartPointer<GenMatrix> C;
    SmartPointer<Vector<double> > obj;
    SmartPointer<Vector<double> > bA;
    SmartPointer<Vector<double> > bux;

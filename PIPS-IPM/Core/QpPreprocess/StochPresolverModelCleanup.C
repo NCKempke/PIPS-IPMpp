@@ -9,9 +9,7 @@
 
 #include "StochOptions.h"
 #include <cmath>
-#include <utility>
 #include <vector>
-#include <string>
 
 StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(presolve_data,
       origProb), limit_min_mat_entry(pips_options::getDoubleParameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY")),

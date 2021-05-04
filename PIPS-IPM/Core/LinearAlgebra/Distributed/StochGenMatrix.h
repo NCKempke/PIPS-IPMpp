@@ -6,7 +6,7 @@
 #include "SparseGenMatrix.h"
 #include "BorderedGenMatrix.h"
 #include "StringGenMatrix.h"
-#include "sTree.h"
+#include "DistributedTree.h"
 
 #include "pipsport.h"
 #include "mpi.h"
@@ -134,8 +134,6 @@ public:
    virtual void writeDashedLineToStream(std::ostream& out, int offset) const;
 
    void writeMPSformatRows(std::ostream& out, int rowType, Vector<double>* irhs) const override;
-
-   void randomize(double, double, double*) override { assert("Not implemented" && 0); };
 
    /** initialize (dynamic) transposed matrices for A, B, Bl */
    virtual void initTransposed(bool dynamic = false);
@@ -309,8 +307,6 @@ protected:
    void writeToStreamDenseRowLink(std::ostream&, int) const override {};
 
 public:
-   void randomize(double, double, double*) override {};
-
    void atPutDiagonal(int, const Vector<double>&) override {};
    void atAddDiagonal(int, const Vector<double>&) override {};
    void fromGetDiagonal(int, Vector<double>&) override {};

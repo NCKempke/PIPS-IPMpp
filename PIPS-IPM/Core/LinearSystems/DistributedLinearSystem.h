@@ -22,7 +22,7 @@
 
 #include "mpi.h"
 
-class sTree;
+class DistributedTree;
 
 class DistributedFactory;
 
@@ -101,7 +101,6 @@ public:
    };
 
    using BorderMod = BorderMod_Block<DenseGenMatrix>;
-   using BorderModVector = BorderMod_Block<DistributedVector<double>>;
 
 
    template<typename T>
@@ -176,7 +175,7 @@ protected:
 
 public:
    MPI_Comm mpiComm{MPI_COMM_NULL};
-   sTree* stochNode{};
+   DistributedTree* stochNode{};
 
 protected:
    /* depending on SC_HIERARCHICAL_COMPUTE_BLOCKWISE either allocated a full buffer of buffer_m rows or a smaller one - returns number of rows in buffer */

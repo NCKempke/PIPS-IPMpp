@@ -9,8 +9,6 @@
 #include "EquiStochScaler.h"
 #include "DistributedVector.h"
 #include "pipsdef.h"
-#include "pipsport.h"
-
 #include <cmath>
 #include <memory>
 

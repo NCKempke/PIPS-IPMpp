@@ -14,7 +14,7 @@
 #include <vector>
 #include <memory>
 
-class sTree;
+class DistributedTree;
 
 class StochPresolverBase;
 
@@ -42,7 +42,7 @@ private:
    const int verbosity = -1;
 
    /* tree belonging to origData and preDistributedQP */
-   sTree* const tree;
+   DistributedTree* const tree;
 
    PresolveData preDistributedQP;
    std::vector<std::unique_ptr<StochPresolverBase>> presolvers;
@@ -50,7 +50,7 @@ private:
    void resetFreeVariables();
 public:
 
-   StochPresolver(sTree* tree, const Problem& prob, Postsolver* postsolver);
+   StochPresolver(DistributedTree* tree, const Problem& prob, Postsolver* postsolver);
    ~StochPresolver() override = default;
 
    Problem* presolve() override;

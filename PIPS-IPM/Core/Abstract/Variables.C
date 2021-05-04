@@ -1,11 +1,9 @@
-#include <cstring>
 #include <iostream>
 #include <SimpleVector.h>
 #include "Variables.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 
-#include "LinearAlgebraPackage.h"
 #include "Problem.h"
 #include "MpsReader.h"
 
@@ -56,72 +54,6 @@ Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>*
 
    assert(mz == u->length() || (0 == u->length() && mcupp == 0));
    assert(mz == pi->length() || (0 == pi->length() && mcupp == 0));
-}
-
-Variables::Variables(LinearAlgebraPackage* la, long long nx_, long long my_, long long mz_, Vector<double>* ixlow_in, Vector<double>* ixupp_in,
-      Vector<double>* iclow_in, Vector<double>* icupp_in) {
-   SpReferTo(ixlow, ixlow_in);
-   SpReferTo(ixupp, ixupp_in);
-   SpReferTo(iclow, iclow_in);
-   SpReferTo(icupp, icupp_in);
-
-   assert(false && "Not used anymore");
-   nx = nx_;
-   my = my_;
-   mz = mz_;
-
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   nxlow = ixlow->numberOfNonzeros();
-
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   nxupp = ixupp->numberOfNonzeros();
-
-   assert(mz == iclow->length() || 0 == iclow->length());
-   mclow = iclow->numberOfNonzeros();
-
-   assert(mz == icupp->length() || 0 == icupp->length());
-   mcupp = icupp->numberOfNonzeros();
-
-   s = SmartPointer<Vector<double> >(la->newVector(mz));
-   if (mclow > 0) {
-      t = SmartPointer<Vector<double> >(la->newVector(mz));
-      lambda = SmartPointer<Vector<double> >(la->newVector(mz));
-   }
-   else {
-      t = SmartPointer<Vector<double> >(la->newVector(0));
-      lambda = SmartPointer<Vector<double> >(la->newVector(0));
-   }
-   if (mcupp > 0) {
-      u = SmartPointer<Vector<double> >(la->newVector(mz));
-      pi = SmartPointer<Vector<double> >(la->newVector(mz));
-   }
-   else {
-      u = SmartPointer<Vector<double> >(la->newVector(0));
-      pi = SmartPointer<Vector<double> >(la->newVector(0));
-   }
-   if (nxlow > 0) {
-      v = SmartPointer<Vector<double> >(la->newVector(nx));
-      gamma = SmartPointer<Vector<double> >(la->newVector(nx));
-   }
-   else {
-      v = SmartPointer<Vector<double> >(la->newVector(0));
-      gamma = SmartPointer<Vector<double> >(la->newVector(0));
-   }
-
-   if (nxupp > 0) {
-      w = SmartPointer<Vector<double> >(la->newVector(nx));
-      phi = SmartPointer<Vector<double> >(la->newVector(nx));
-   }
-   else {
-      w = SmartPointer<Vector<double> >(la->newVector(0));
-      phi = SmartPointer<Vector<double> >(la->newVector(0));
-   }
-
-   x = SmartPointer<Vector<double> >(la->newVector(nx));
-   y = SmartPointer<Vector<double> >(la->newVector(my));
-   z = SmartPointer<Vector<double> >(la->newVector(mz));
-   nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
-
 }
 
 Variables::Variables(const Variables& vars) {

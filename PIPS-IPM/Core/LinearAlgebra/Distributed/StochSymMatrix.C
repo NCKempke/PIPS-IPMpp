@@ -3,8 +3,6 @@
 #include "DoubleMatrixTypes.h"
 #include "BorderedSymMatrix.h"
 #include "StringGenMatrix.h"
-#include "pipsport.h"
-
 #include <cassert>
 
 StochSymMatrix::StochSymMatrix(SymMatrix* diag_, SparseGenMatrix* border_, MPI_Comm mpiComm_) : diag{diag_}, border{border_}, mpiComm{mpiComm_},

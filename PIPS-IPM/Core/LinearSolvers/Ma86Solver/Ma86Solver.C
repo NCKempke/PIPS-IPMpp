@@ -2,7 +2,7 @@
  * Author: Murat Mut
  * (C) 2012 Argonne National Laboratory, see documentation for copyright
  */
-#include <stdlib.h>
+
 #include <iostream>
 
 using namespace std;

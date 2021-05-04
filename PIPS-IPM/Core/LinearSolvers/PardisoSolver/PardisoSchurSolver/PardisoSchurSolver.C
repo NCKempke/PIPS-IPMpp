@@ -5,7 +5,6 @@
 #include <iostream>
 #include "pipschecks.h"
 #include "PardisoSchurSolver.h"
-#include "SparseStorage.h"
 #include "SparseSymMatrix.h"
 #include "DenseGenMatrix.h"
 #include "StochOptions.h"

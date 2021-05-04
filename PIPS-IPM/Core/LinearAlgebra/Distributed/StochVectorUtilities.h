@@ -101,7 +101,7 @@ inline DistributedVector<U>* cloneStochVector(const DistributedVector<T>& svec) 
    DistributedVector<U>* clone;
 
    if (svec.isKindOf(kStochDummy))
-      return new StochDummyVectorBase<U>();
+      return new DistributedDummyVector<U>();
 
    if (svec.last)
       clone = new DistributedVector<U>(svec.first->length(), svec.last->length(), svec.mpiComm);
@@ -115,14 +115,14 @@ inline DistributedVector<U>* cloneStochVector(const DistributedVector<T>& svec) 
 }
 
 template<typename T, typename U>
-inline StochDummyVectorBase<U>* cloneStochVector(const StochDummyVectorBase<T>&) {
-   return new StochDummyVectorBase<U>();
+inline DistributedDummyVector<U>* cloneStochVector(const DistributedDummyVector<T>&) {
+   return new DistributedDummyVector<U>();
 }
 
 template<typename T, typename U>
 inline DistributedVector<U>* cloneStochVector(const Vector<T>& ooqpvec) {
    if (ooqpvec.isKindOf(kStochDummy))
-      return cloneStochVector<T, U>(dynamic_cast<const StochDummyVectorBase<T>&>(ooqpvec));
+      return cloneStochVector<T, U>(dynamic_cast<const DistributedDummyVector<T>&>(ooqpvec));
    else
       return cloneStochVector<T, U>(dynamic_cast<const DistributedVector<T>&>(ooqpvec));
 }

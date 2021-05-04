@@ -1,7 +1,6 @@
 #include <InteriorPointMethod.hpp>
 #include "StochInputTree.h"
 #include "PIPSIpmInterface.h"
-#include "GondzioStochSolver.h"
 
 #include "mpi.h"
 

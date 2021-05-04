@@ -221,21 +221,6 @@ void SimpleVector<T>::setToConstant(T c) {
    std::fill(v, v + this->n, c);
 }
 
-// specialiced for double only
-template<>
-void SimpleVector<double>::randomize(double alpha, double beta, double* ix) {
-   if (this->n == 0)
-      return;
-   assert(beta > alpha);
-
-   double drand(double*);
-   double scale = beta - alpha;
-   double shift = alpha / scale;
-
-   for (int i = 0; i < this->n; i++)
-      v[i] = scale * (drand(ix) + shift);
-}
-
 template<typename T>
 void SimpleVector<T>::copyFrom(const Vector<T>& vec) {
    assert(vec.length() == this->n);
@@ -426,31 +411,6 @@ void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[],
          }
          out << "\n";
       }
-   }
-}
-
-template<typename T>
-void SimpleVector<T>::writeMPSformatOnlyRhs(std::ostream& out, const std::string rowName, const Vector<T>* irhs) const {
-   if (irhs)
-      assert(this->length() == irhs->length());
-
-   for (int i = 0; i < this->n; i++) {
-      if (!irhs || (irhs && dynamic_cast<const SimpleVector<T>*>(irhs)->elements()[i] != 0.0))
-         out << rowName << i << " " << v[i] << "\n";
-   }
-}
-
-template<typename T>
-void SimpleVector<T>::writeMPSformatBoundsWithVar(std::ostream& out, const std::string varStub, const Vector<T>* ix, bool upperBound) const {
-   assert(this->n == dynamic_cast<const SimpleVector<T>*>(ix)->n);
-   std::string boundType = (upperBound) ? " UP" : " LO";
-   std::string infiniteBound = (upperBound) ? " PL" : " MI";
-
-   for (int i = 0; i < this->n; i++) {
-      if (dynamic_cast<const SimpleVector<T>*>(ix)->elements()[i] != 0.0)
-         out << boundType << " BND " << varStub << i << " " << v[i] << "\n";
-      else
-         out << infiniteBound << " BND " << varStub << i << " " << "\n";
    }
 }
 

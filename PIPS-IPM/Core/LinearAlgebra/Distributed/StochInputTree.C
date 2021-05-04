@@ -1,5 +1,4 @@
 #include "StochInputTree.h"
-#include "pipsport.h"
 #include <cstdlib>
 
 //***********************************************************

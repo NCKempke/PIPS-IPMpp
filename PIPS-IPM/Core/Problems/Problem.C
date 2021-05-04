@@ -1,9 +1,9 @@
 #include <SimpleVector.h>
 #include "Problem.h"
 
-Problem::Problem(LinearAlgebraPackage* la_in, Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
+Problem::Problem(Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
       Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
-      Vector<double>* cupp_in, Vector<double>* icupp_in) : la{la_in}, nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()},
+      Vector<double>* cupp_in, Vector<double>* icupp_in) : nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()},
       mclow{iclow_in->numberOfNonzeros()}, mcupp{icupp_in->numberOfNonzeros()} {
    SpReferTo(g, c_in);
    SpReferTo(bA, bA_in);

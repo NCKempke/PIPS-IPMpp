@@ -85,8 +85,6 @@ public:
    void writeToStreamDense(std::ostream& out) const override;
    void writeToStreamDenseRow(std::ostream& out, int row) const override;
 
-   void randomizePSD(double*) override;
-
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
 

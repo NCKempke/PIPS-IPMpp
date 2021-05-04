@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
-#include "sTreeCallbacks.h"
+#include "DistributedTreeCallbacks.h"
 #include "StringGenMatrix.h"
 #include "mpi.h"
 #include "StochGenMatrix.h"

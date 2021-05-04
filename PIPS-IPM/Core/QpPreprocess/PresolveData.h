@@ -10,7 +10,6 @@
 
 #include "DistributedQP.hpp"
 #include "StochPostsolver.h"
-#include "StochVectorHandle.h"
 #include "SparseStorageDynamic.h"
 #include "SystemType.h"
 

@@ -5,7 +5,7 @@ add_subdirectory(LinearAlgebra/Dense)
 add_subdirectory(LinearAlgebra/Distributed)
 add_subdirectory(LinearSolvers)
 
-add_library(ooqpbase STATIC Abstract/OoqpVersion.C Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
+add_library(ooqpbase STATIC Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
         QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C InteriorPointMethod/Solver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
         Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C Problems/ProblemFactory.cpp)
 
@@ -19,18 +19,18 @@ add_library(ooqpstoch STATIC
         QpStoch/DistributedFactory.C
         Problems/DistributedQP.cpp
         LinearSystems/DistributedLinearSystem.C
-        QpStoch/DistributedRootLinearSystem.C
-        QpStoch/sLinsysRootAug.C
-        QpStoch/sLinsysRootAugHierInner.C
-        QpStoch/DistributedLeafLinearSystem.C
-        QpStoch/sLinsysLeafSchurSlv.C
+        LinearSystems/DistributedRootLinearSystem.C
+        LinearSystems/sLinsysRootAug.C
+        LinearSystems/sLinsysRootAugHierInner.C
+        LinearSystems/DistributedLeafLinearSystem.C
+        LinearSystems/sLinsysLeafSchurSlv.C
         QpStoch/DistributedVariables.C
         QpStoch/DistributedResiduals.cpp
-        QpStoch/sTree.C
-        QpStoch/sLinsysRootBordered.C
-        QpStoch/sTreeCallbacks.C
+        QpStoch/DistributedTree.C
+        LinearSystems/sLinsysRootBordered.C
+        QpStoch/DistributedTreeCallbacks.C
         LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
-        QpStoch/RegularizationStrategy.h QpStoch/RegularizationStrategy.cpp)
+        LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp)
 
 if (HAVE_MA27)
     target_compile_definitions(ooqpstoch PUBLIC -DWITH_MA27)

@@ -6,13 +6,9 @@
  */
 
 #include <cassert>
-#include <cmath>
-
 #include "DenseGenMatrix.h"
-#include "DenseSymMatrix.h"
 #include "OoqpBlas.h"
 #include "SimpleVector.h"
-
 #include "DoubleMatrixTypes.h"
 #include "SparseGenMatrix.h"
 
@@ -175,23 +171,6 @@ void DenseGenMatrix::writeToStream(std::ostream& out) const {
 
 void DenseGenMatrix::writeToStreamDense(std::ostream& out) const {
    writeToStream(out);
-}
-
-
-void DenseGenMatrix::randomize(double alpha, double beta, double* seed) {
-   int m = mStorage->m, n = mStorage->n;
-   double** M = mStorage->M;
-   double drand(double*);
-   int i, j;
-
-   double scale = beta - alpha;
-   double shift = alpha / scale;
-
-   for (i = 0; i < m; i++) {
-      for (j = 0; j < n; j++) {
-         M[i][j] = scale * (drand(seed) + shift);
-      }
-   }
 }
 
 

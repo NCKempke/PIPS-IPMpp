@@ -2,12 +2,8 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include <cmath>
 #include <cassert>
-
 #include "DenseSymMatrix.h"
-#include "DeSymPSDSolver.h"
-#include "DeSymIndefSolver.h"
 #include "OoqpBlas.h"
 #include "SimpleVector.h"
 
@@ -157,31 +153,6 @@ void DenseSymMatrix::writeToStream(std::ostream& out) const {
 void DenseSymMatrix::writeToStreamDense(std::ostream& out) const {
    writeToStream(out);
 }
-
-
-void DenseSymMatrix::randomizePSD(double* seed) {
-   int n = mStorage->n;
-   double** M = mStorage->M;
-   double drand(double*);
-   int i, j, k;
-
-   mStorage->atPutZeros(0, 0, n, n);
-   for (i = 0; i < n; i++) {
-      for (j = 0; j <= i; j++) {
-         M[i][j] = drand(seed);
-      }
-   }
-
-   for (i = n - 1; i >= 0; i--) {
-      for (j = i; j >= 0; j--) {
-         M[i][j] = M[i][j] * M[j][j];
-         for (k = j - 1; k >= 0; k--) {
-            M[i][j] += M[i][k] * M[j][k];
-         }
-      }
-   }
-}
-
 
 void DenseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
    int m = mStorage->m, n = mStorage->n;

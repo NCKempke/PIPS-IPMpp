@@ -12,7 +12,6 @@
 #include "GeoStochScaler.h"
 #include "StochPresolver.h"
 #include "IotrRefCount.h"
-#include "SmartPointer.h"
 #include "StochPostsolver.h"
 #include "DistributedQP.hpp"
 #include "pipsport.h"
@@ -36,7 +35,7 @@ public:
       }
    };
 
-   static Presolver* makePresolver(sTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
+   static Presolver* makePresolver(DistributedTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
       assert(data);
       switch (type) {
          case PRESOLVER_STOCH:

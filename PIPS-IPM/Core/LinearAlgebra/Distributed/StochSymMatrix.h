@@ -79,8 +79,6 @@ public:
 
    void writeToStreamDense(std::ostream& out) const override;
 
-   void randomizePSD(double*) override { assert(false && "Not implemented"); };
-
    void getDiagonal(Vector<double>& vec) override;
    void setToDiagonal(const Vector<double>& vec) override;
    void atPutDiagonal(int idiag, const Vector<double>& v) override;
@@ -157,8 +155,6 @@ public:
 
    void writeToStream(std::ostream&) const override {};
    void writeToStreamDense(std::ostream&) const override {};
-
-   void randomizePSD(double*) override {};
 
    void getDiagonal(Vector<double>&) override {};
    void setToDiagonal(const Vector<double>&) override {};

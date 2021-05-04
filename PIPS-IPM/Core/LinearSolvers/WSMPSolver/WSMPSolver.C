@@ -18,7 +18,6 @@
 
 #include <mpi.h>
 #include <iostream>
-#include <fstream>
 
 extern int gOoqpPrintLevel;
 

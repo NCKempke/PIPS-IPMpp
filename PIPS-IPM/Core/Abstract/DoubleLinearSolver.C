@@ -1,6 +1,5 @@
 #include "DoubleLinearSolver.h"
 #include "SimpleVector.h"
-#include "pipsport.h"
 
 DoubleIterativeLinearSolver::DoubleIterativeLinearSolver(MatTimesVec* Ain, MatTimesVec* M1in, MatTimesVec* M2in) : A(Ain), ML(M1in), MR(M2in) {
 

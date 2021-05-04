@@ -8,7 +8,6 @@
 
 #include "SCsparsifier.h"
 #include "pipsdef.h"
-#include "pipsport.h"
 #include "StochOptions.h"
 #include "mpi.h"
 #include <cassert>

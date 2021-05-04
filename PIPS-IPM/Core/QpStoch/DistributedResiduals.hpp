@@ -5,7 +5,7 @@
 #include "DistributedVector.h"
 #include <vector>
 
-class sTree;
+class DistributedTree;
 
 /** 
  * Class added to supply a more generic constructor for its parent, Residuals.
@@ -25,7 +25,7 @@ public:
          Vector<double>* ixlow, double nxlowGlobal, Vector<double>* ixupp, double nxuppGlobal, Vector<double>* iclow, double mclowGlobal,
          Vector<double>* icupp, double mcuppGlobal);
 
-   DistributedResiduals(const sTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_, Vector<double>* icupp_);
+   DistributedResiduals(const DistributedTree* tree, Vector<double>* ixlow_, Vector<double>* ixupp_, Vector<double>* iclow_, Vector<double>* icupp_);
 
    DistributedResiduals(const DistributedResiduals& res);
 
@@ -37,7 +37,7 @@ public:
 
    bool isRootNodeInSync() const;
 
-   void collapseHierarchicalStructure(const DistributedQP& data, const sTree* tree_hier, SmartPointer<Vector<double> > ixlow_,
+   void collapseHierarchicalStructure(const DistributedQP& data, const DistributedTree* tree_hier, SmartPointer<Vector<double> > ixlow_,
          SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_);
 
    std::vector<DistributedResiduals*> children;

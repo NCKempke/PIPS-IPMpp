@@ -7,8 +7,6 @@
 
 #include "SparseStorageDynamic.h"
 #include "pipsdef.h"
-#include "pipsport.h"
-
 #include <cassert>
 #include <algorithm>
 #include <vector>

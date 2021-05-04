@@ -8,8 +8,6 @@
 #include "Variables.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "SimpleVector.h"
-#include "LinearAlgebraPackage.h"
 #include "ProblemFactory.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
