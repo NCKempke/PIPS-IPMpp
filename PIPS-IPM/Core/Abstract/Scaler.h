@@ -49,34 +49,34 @@ public:
    virtual double getDnormOrig() const { return dnorm_orig; }
 
    /** unscale given objective value */
-   virtual double getObjUnscaled(double objval) const = 0;
+   virtual double get_unscaled_objective(double objective_value) const = 0;
 
    /** compute original variables from given ones */
-   virtual Variables* getVariablesUnscaled(const Variables& vars) const = 0;
+   virtual Variables* get_unscaled_variables(const Variables& variables) const = 0;
 
    /** compute original residuals from given ones */
-   virtual Residuals* getResidualsUnscaled(const Residuals& resids) const = 0;
+   virtual Residuals* get_unscaled_residuals(const Residuals& residuals) const = 0;
 
    /** compute original residuals from given ones */
-   virtual void unscaleResiduals(Residuals& resids) const = 0;
+   virtual void unscaleResiduals(Residuals& residuals) const = 0;
 
-   /** compute original residuals from given ones */
-   virtual void unscaleVariables(Variables& resids) const = 0;
+   /** compute original variables from given ones */
+   virtual void unscaleVariables(Variables& variables) const = 0;
 
    /** compute original vector from given primal vector */
-   virtual Vector<double>* getPrimalUnscaled(const Vector<double>& solprimal) const = 0;
+   virtual Vector<double>* getPrimalUnscaled(const Vector<double>& primal_solution) const = 0;
 
    /** compute original vector from given dual vector */
-   virtual Vector<double>* getDualEqUnscaled(const Vector<double>& soldual) const = 0;
+   virtual Vector<double>* getDualEqUnscaled(const Vector<double>& dual_solution) const = 0;
 
    /** compute original vector from given dual vector */
-   virtual Vector<double>* getDualIneqUnscaled(const Vector<double>& soldual) const = 0;
+   virtual Vector<double>* getDualIneqUnscaled(const Vector<double>& dual_solution) const = 0;
 
    /** compute original vector from given dual vector */
-   virtual Vector<double>* getDualVarBoundsUppUnscaled(const Vector<double>& soldual) const = 0;
+   virtual Vector<double>* getDualVarBoundsUppUnscaled(const Vector<double>& dual_solution) const = 0;
 
    /** compute original vector from given dual vector */
-   virtual Vector<double>* getDualVarBoundsLowUnscaled(const Vector<double>& soldual) const = 0;
+   virtual Vector<double>* getDualVarBoundsLowUnscaled(const Vector<double>& dual_solution) const = 0;
 };
 
 //@}

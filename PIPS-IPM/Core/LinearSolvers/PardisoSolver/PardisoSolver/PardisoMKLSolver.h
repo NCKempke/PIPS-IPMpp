@@ -19,7 +19,6 @@ public:
    PardisoMKLSolver(const SparseSymMatrix* sgm);
    PardisoMKLSolver(const DenseSymMatrix* m);
 
-
 protected:
    void setIparm(int* iparm) const override;
 

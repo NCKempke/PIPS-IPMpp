@@ -49,6 +49,6 @@ endmacro()
 
 add_subdirectory(QpStoch)
 add_subdirectory(StochLinearAlgebra)
-add_subdirectory(QpPreprocess)
+add_subdirectory(Preprocessing)
 add_subdirectory(Drivers)
 add_subdirectory(IntegrationTests)

@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_EQUISTOCHSCALER_H_
 
-#include "../QpPreprocess/StochScaler.h"
+#include "StochScaler.h"
 
 class Problem;
 

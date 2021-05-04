@@ -17,8 +17,8 @@ public:
    StochScaler(Problem* prob, bool bitshifting);
    ~StochScaler() override = default;
 
-   Variables* getVariablesUnscaled(const Variables& vars) const override;
-   Residuals* getResidualsUnscaled(const Residuals& resids) const override;
+   Variables* get_unscaled_variables(const Variables& vars) const override;
+   Residuals* get_unscaled_residuals(const Residuals& resids) const override;
 };
 
 #endif /* PIPS_IPM_CORE_QPPREPROCESS_STOCHSCALER_H_ */

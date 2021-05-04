@@ -32,7 +32,7 @@ QpScaler::QpScaler(Problem* problem, bool bitshifting) : Scaler(problem, bitshif
    factor_objscale = 1.0;
 }
 
-double QpScaler::getObjUnscaled(double objval) const {
+double QpScaler::get_unscaled_objective(double objval) const {
    assert(vec_colscale != nullptr);
    assert(factor_objscale > 0.0);
 
@@ -42,13 +42,13 @@ double QpScaler::getObjUnscaled(double objval) const {
       return objval;
 }
 
-Variables* QpScaler::getVariablesUnscaled(const Variables& variables) const {
+Variables* QpScaler::get_unscaled_variables(const Variables& variables) const {
    Variables* unscaled_variables = new Variables(variables);
    unscaleVariables(*unscaled_variables);
    return unscaled_variables;
 };
 
-Residuals* QpScaler::getResidualsUnscaled(const Residuals& residuals) const {
+Residuals* QpScaler::get_unscaled_residuals(const Residuals& residuals) const {
    Residuals* unscaled_residuals = new Residuals(residuals);
    unscaleResiduals(*unscaled_residuals);
    return unscaled_residuals;

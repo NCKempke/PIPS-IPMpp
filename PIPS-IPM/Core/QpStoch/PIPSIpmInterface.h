@@ -329,7 +329,7 @@ double PIPSIpmInterface<FORMULATION, SOLVER>::getObjective() {
    else {
       obj = presolved_problem->objective_value(*variables.get());
       if (scaler)
-         obj = scaler->getObjUnscaled(obj);
+         obj = scaler->get_unscaled_objective(obj);
    }
 
    return obj;
@@ -351,7 +351,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getVarsUnscaledUnperm() {
    if (!ran_solver)
       throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted solution");
    if (scaler) {
-      std::unique_ptr<DistributedVariables> unscaled_vars{dynamic_cast<DistributedVariables*>(scaler->getVariablesUnscaled(*variables))};
+      std::unique_ptr<DistributedVariables> unscaled_vars{dynamic_cast<DistributedVariables*>(scaler->get_unscaled_variables(*variables))};
       unscaleUnpermNotHierVars.reset(presolved_problem->getVarsUnperm(*unscaled_vars, *dataUnpermNotHier));
    }
    else
@@ -367,7 +367,7 @@ void PIPSIpmInterface<FORMULATION, IPMSOLVER>::getResidsUnscaledUnperm() {
    if (!ran_solver)
       throw std::logic_error("Must call go() and start solution process before trying to retrieve unscaled unpermuted residuals");
    if (scaler) {
-      std::unique_ptr<DistributedResiduals> unscaled_resids{dynamic_cast<DistributedResiduals*>(scaler->getResidualsUnscaled(*residuals))};
+      std::unique_ptr<DistributedResiduals> unscaled_resids{dynamic_cast<DistributedResiduals*>(scaler->get_unscaled_residuals(*residuals))};
       unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*unscaled_resids, *dataUnpermNotHier));
    }
    else

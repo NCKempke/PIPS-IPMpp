@@ -1,5 +1,5 @@
 add_subdirectory(InteriorPointMethod)
-add_subdirectory(QpPreprocess)
+add_subdirectory(Preprocessing)
 add_subdirectory(LinearAlgebra/Sparse)
 add_subdirectory(LinearAlgebra/Dense)
 add_subdirectory(LinearAlgebra/Distributed)

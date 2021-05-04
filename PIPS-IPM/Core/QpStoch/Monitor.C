@@ -15,24 +15,19 @@ Monitor::Monitor(DistributedFactory* qp, Scaler* scaler) : scaler{scaler}, mpiCo
       myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{PIPS_MPIgetRank()} {
 }
 
-void Monitor::doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i,
+void Monitor::doIt(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha, double sigma, int i,
       double mu, int status_code, int level) {
-   Monitor::doItStoch(solver, data, vars, resids, alpha, -1.0, sigma, i, mu, status_code, level);
+   Monitor::doItPd(solver, problem, variables, residuals, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
-void Monitor::doItPd(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal,
-      double alpha_dual, double sigma, int i, double mu, int status_code, int level) {
-   Monitor::doItStoch(solver, data, vars, resids, alpha_primal, alpha_dual, sigma, i, mu, status_code, level);
-}
+void Monitor::doItPd(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha_primal,
+      double alpha_dual, double sigma, int i, double mu, int status_code, int level) const {
+   double objective = problem->objective_value(*variables);
 
-void Monitor::doItStoch(const Solver* solver, const Problem* problem, const Variables* vars, const Residuals* resids, double alpha_primal,
-      double alpha_dual, double, int i, double mu, int status_code, int level) const {
-   double objective = problem->objective_value(*vars);
-
-   const Residuals* resids_unscaled = resids;
+   const Residuals* resids_unscaled = residuals;
    if (scaler) {
-      objective = scaler->getObjUnscaled(objective);
-      resids_unscaled = scaler->getResidualsUnscaled(*resids);
+      objective = scaler->get_unscaled_objective(objective);
+      resids_unscaled = scaler->get_unscaled_residuals(*residuals);
    }
 
    const double dnorm = solver->dataNormOrig();
