@@ -33,15 +33,7 @@ set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}")
 add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
 target_compile_options(pipsipmCallbackExample PRIVATE ${OpenMP_CXX_FLAGS})
 target_link_libraries(pipsipmCallbackExample
-        PRIVATE ooqpstoch
-        PRIVATE ooqpstochla
-        PRIVATE interior_point_method
-        PRIVATE ooqpequistochscaler
-        PRIVATE ooqpgensparse
-        PRIVATE ooqpsparse
-        PRIVATE ooqpdense
-        PRIVATE ooqpbase
-        PRIVATE ooqpqpstochpresolver
+        PRIVATE pips-ipmpp
         PRIVATE OpenMP::OpenMP_CXX
         PRIVATE MPI::MPI_CXX
         )
@@ -174,15 +166,7 @@ target_compile_definitions(gmspips
 
 target_link_libraries(gmspips
         PRIVATE gmspipsio
-        PRIVATE ooqpstoch
-        PRIVATE ooqpstochla
-        PRIVATE interior_point_method
-        PRIVATE ooqpequistochscaler
-        PRIVATE ooqpgensparse
-        PRIVATE ooqpbase
-        PRIVATE ooqpsparse
-        PRIVATE ooqpdense
-        PRIVATE ooqpqpstochpresolver
+        PRIVATE pips-ipmpp
         PRIVATE OpenMP::OpenMP_CXX
         PRIVATE MPI::MPI_CXX
         )
@@ -200,6 +184,6 @@ add_library(gmspips_reader Drivers/gmspips/gmspips_reader.cpp)
 
 target_link_libraries(gmspips_reader
         PRIVATE gmspipsio
-        PRIVATE ooqpstoch
+        PRIVATE pips-ipmpp
         PRIVATE MPI::MPI_CXX
         )

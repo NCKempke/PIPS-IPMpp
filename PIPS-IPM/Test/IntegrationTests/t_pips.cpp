@@ -70,7 +70,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
    double result = std::numeric_limits<double>::infinity();
 
    if (primal_dual_step) {
-      PIPSIpmInterface<DistributedFactory, GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
+      PIPSIpmInterface<GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
       try {
          pipsIpm.run();
          result = pipsIpm.getObjective();
@@ -80,7 +80,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
       }
    }
    else {
-      PIPSIpmInterface<DistributedFactory, GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
+      PIPSIpmInterface<GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
       try {
          pipsIpm.run();
          result = pipsIpm.getObjective();

@@ -3,15 +3,11 @@
    See license and copyright information in the documentation */
 
 #include "sLinsysRootAug.h"
-
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
-
 #include "DistributedQP.hpp"
 #include "BorderedSymMatrix.h"
-
-
 #include "StochOptions.h"
 #include <memory>
 #include <unistd.h>

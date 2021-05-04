@@ -13,16 +13,12 @@
 #include "AbstractLinearSystem.h"
 #include "Status.h"
 #include "Problem.h"
-#include "ProblemFactory.h"
 #include "DistributedFactory.h"
-
 #include "DistributedQP.hpp"
 #include "DistributedVariables.h"
 #include "DistributedRootLinearSystem.h"
-
 #include <iostream>
 #include <algorithm>
-
 #include <cstdio>
 #include <cassert>
 #include <cmath>
@@ -32,7 +28,7 @@ extern int gOoqpPrintLevel;
 extern double g_iterNumber;
 
 
-GondzioStochLpSolver::GondzioStochLpSolver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : GondzioStochSolver(
+GondzioStochLpSolver::GondzioStochLpSolver(DistributedFactory& problem_formulation, Problem& problem, const Scaler* scaler) : GondzioStochSolver(
       problem_formulation, problem, scaler) {
 }
 

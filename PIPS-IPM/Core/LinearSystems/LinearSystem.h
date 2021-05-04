@@ -16,7 +16,7 @@
 
 class Problem;
 
-class ProblemFactory;
+class DistributedFactory;
 
 class Variables;
 
@@ -80,7 +80,7 @@ protected:
    /** stores a critical diagonal matrix as a vector */
    Vector<double>* nomegaInv{};
 
-   ProblemFactory* factory{};
+   DistributedFactory* factory{};
 
    /** right-hand side of the system */
    Vector<double>* rhs{};
@@ -94,7 +94,7 @@ protected:
    Vector<double>* dual_equality_regularization_diagonal{};
    Vector<double>* dual_inequality_regularization_diagonal{};
 
-   LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
+   LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
 
    /** dimensions of the vectors */
    long long nx{0};
@@ -151,9 +151,9 @@ protected:
 
    double barrier_parameter_current_iterate{std::numeric_limits<double>::infinity()};
 public:
-   LinearSystem(ProblemFactory* factory, Problem* problem);
+   LinearSystem(DistributedFactory* factory, Problem* problem);
 
-   LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+   LinearSystem(DistributedFactory* factory_, Problem* problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_,
          Vector<double>* rhs_, bool create_iter_ref_vecs);
 

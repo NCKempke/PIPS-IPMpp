@@ -62,7 +62,6 @@ class Ma57Solver;
 
 DistributedFactory::DistributedFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new DistributedTreeCallbacks(inputTree)) {
    tree->assignProcesses(comm);
-
    tree->computeGlobalSizes();
    // now the sizes of the problem are available, set them for the parent class
    tree->getGlobalSizes(nx, my, mz);
@@ -326,8 +325,6 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>*
       return new sLinsysRootAug(this, prob, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization,
             dual_inequality_regularization, rhs, true);
 }
-
-DoubleLinearSolver* DistributedFactory::make_root_solver() { return nullptr; };
 
 DistributedRootLinearSystem* DistributedFactory::newLinsysRootHierarchical() {
    return new sLinsysRootBordered(this, problem);

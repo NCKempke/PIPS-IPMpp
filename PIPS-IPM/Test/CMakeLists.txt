@@ -21,15 +21,7 @@ macro(package_add_test TESTNAME)
     # the test executable.  Remove g_test_main if writing your own main function.
     target_link_libraries(${TESTNAME}
             PRIVATE gmspips_reader
-            PRIVATE ooqpstoch
-            PRIVATE ooqpstochla
-            PRIVATE interior_point_method
-            PRIVATE ooqpequistochscaler
-            PRIVATE ooqpgensparse
-            PRIVATE ooqpsparse
-            PRIVATE ooqpdense
-            PRIVATE ooqpbase
-            PRIVATE ooqpqpstochpresolver
+            PRIVATE pips-ipmpp
             PRIVATE OpenMP::OpenMP_CXX
             PRIVATE customMain
             PRIVATE utilities

@@ -8,10 +8,10 @@
 #include "Variables.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "ProblemFactory.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
 #include "StochOptions.h"
+#include "DistributedFactory.h"
 #include <vector>
 #include <functional>
 #include <type_traits>
@@ -98,7 +98,7 @@ static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& stat
    return false;
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
+LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")), outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
       innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
       outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
@@ -146,7 +146,7 @@ LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, bool crea
    }
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
+LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
       Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
       create_iter_ref_vecs) {
@@ -159,7 +159,7 @@ LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem, Vector<do
    rhs = rhs_;
 }
 
-LinearSystem::LinearSystem(ProblemFactory* factory_, Problem* problem) : LinearSystem(factory_, problem, true) {
+LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem) : LinearSystem(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
       primal_diagonal = factory->make_primal_vector();
       dq = factory->make_primal_vector();
