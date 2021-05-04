@@ -157,7 +157,6 @@ void PardisoSolver::matrixChanged() {
       }
    }
 
-   Msys->writeToStreamDense(std::cout);
    if (Mdsys) {
       // the input is a dense matrix
       const DenseSymMatrix& Md = (*Mdsys);
