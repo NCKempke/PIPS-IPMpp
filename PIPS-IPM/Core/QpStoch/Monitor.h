@@ -20,7 +20,7 @@ public:
    Monitor() = default;
    virtual ~Monitor() = default;
    Monitor(Scaler* scaler = nullptr);
-   Monitor(DistributedFactory* qp, Scaler* scaler = nullptr);
+   Monitor(const DistributedFactory& factory, Scaler* scaler = nullptr);
 
    void doIt(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha, double sigma, int i, double mu,
          int status_code, int level);

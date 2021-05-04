@@ -36,7 +36,7 @@
 template<class IPMSOLVER>
 class PIPSIpmInterface {
 public:
-   PIPSIpmInterface(StochInputTree* in, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
+   PIPSIpmInterface(StochInputTree* tree, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
          PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
 
    ~PIPSIpmInterface() = default;
@@ -95,7 +95,7 @@ public:
    static bool isDistributed() { return true; }
 
 protected:
-   std::unique_ptr<DistributedFactory> factory{};
+   DistributedFactory factory;
    std::unique_ptr<PreprocessFactory> preprocess_factory{};
 
    std::unique_ptr<DistributedQP> presolved_problem{};       // possibly presolved problem
@@ -125,15 +125,14 @@ protected:
 //----------------------------------------------------------------------
 
 template<class IPMSOLVER>
-PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm, ScalerType scaler_type, PresolverType presolver_type,
-      std::string settings) : comm(comm), my_rank(PIPS_MPIgetRank()) {
+PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* tree, MPI_Comm comm, ScalerType scaler_type, PresolverType presolver_type,
+      std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
    pips_options::setOptions(settings);
    const bool postsolve = pips_options::getBoolParameter("POSTSOLVE");
 
    MPI_Barrier(comm);
    const double t0 = MPI_Wtime();
 
-   factory.reset(new DistributedFactory(in, comm));
 #ifdef TIMING
    if( my_rank == 0 ) printf("factory created\n");
 #endif
@@ -145,7 +144,7 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm,
 
    // presolving activated?
    if (presolver_type != PRESOLVER_NONE) {
-      original_problem.reset(dynamic_cast<DistributedQP*>(factory->make_problem()));
+      original_problem.reset(dynamic_cast<DistributedQP*>(factory.make_problem()));
 
       MPI_Barrier(comm);
       const double t0_presolve = MPI_Wtime();
@@ -153,12 +152,13 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm,
       if (postsolve)
          postsolver.reset(preprocess_factory->makePostsolver(original_problem.get()));
 
-      presolver.reset(preprocess_factory->makePresolver(dynamic_cast<DistributedFactory*>(factory.get())->tree, original_problem.get(),
-            presolver_type, postsolver.get()));
+      presolver.reset(
+            preprocess_factory->makePresolver(dynamic_cast<DistributedFactory*>(&factory)->tree, original_problem.get(), presolver_type,
+                  postsolver.get()));
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(presolver->presolve()));
 
-      factory->problem = presolved_problem.get(); // todo update also sTree* of factory
+      factory.problem = presolved_problem.get(); // todo update also sTree* of factory
 
       MPI_Barrier(comm);
       const double t_presolve = MPI_Wtime();
@@ -166,11 +166,9 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm,
          std::cout << "---presolve time (in sec.): " << t_presolve - t0_presolve << "\n";
    }
    else {
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->make_problem()));
+      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory.make_problem()));
       assert(presolved_problem);
    }
-
-//  data->writeToStreamDense(std::cout);
 
 #if 0
    ofstream myfile;
@@ -194,18 +192,18 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm,
       if (my_rank == 0)
          std::cout << "Using hierarchical approach!\n";
 
-      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory->switchToHierarchicalData(presolved_problem.release())));
+      presolved_problem.reset(dynamic_cast<DistributedQP*>(factory.switchToHierarchicalData(presolved_problem.release())));
 
       if (pips_options::getBoolParameter("HIERARCHICAL_PRINT_HIER_DATA"))
          presolved_problem->writeToStreamDense(std::cout);
    }
 
-   variables.reset(dynamic_cast<DistributedVariables*>( factory->make_variables(*presolved_problem)));
+   variables.reset(dynamic_cast<DistributedVariables*>( factory.make_variables(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("variables created\n");
 #endif
 
-   residuals.reset(dynamic_cast<DistributedResiduals*>( factory->make_residuals(*presolved_problem)));
+   residuals.reset(dynamic_cast<DistributedResiduals*>( factory.make_residuals(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("resids created\n");
 #endif
@@ -228,8 +226,8 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* in, MPI_Comm comm,
          std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
    }
 
-   solver.reset(new IPMSOLVER(*factory, *presolved_problem, scaler.get()));
-   solver->add_monitor(new Monitor(factory.get(), scaler.get()));
+   solver.reset(new IPMSOLVER(factory, *presolved_problem, scaler.get()));
+   solver->add_monitor(new Monitor(factory, scaler.get()));
 #ifdef TIMING
    if( my_rank == 0 ) printf("solver created\n");
 #endif
@@ -375,8 +373,7 @@ void PIPSIpmInterface<IPMSOLVER>::getResidsUnscaledUnperm() {
 }
 
 template<class IPMSOLVER>
-std::vector<double>
-PIPSIpmInterface<IPMSOLVER>::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
+std::vector<double> PIPSIpmInterface<IPMSOLVER>::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -592,14 +589,14 @@ void PIPSIpmInterface<IPMSOLVER>::postsolveComputedSolution() {
 
 
    if (pips_options::getBoolParameter("HIERARCHICAL"))
-      factory->switchToOriginalTree();
+      factory.switchToOriginalTree();
 
-   dynamic_cast<DistributedTreeCallbacks*>(factory->tree)->switchToOriginalData();
-   factory->problem = original_problem.get();
+   dynamic_cast<DistributedTreeCallbacks*>(factory.tree)->switchToOriginalData();
+   factory.problem = original_problem.get();
 
-   postsolved_variables.reset(dynamic_cast<DistributedVariables*>( factory->make_variables(*original_problem)));
+   postsolved_variables.reset(dynamic_cast<DistributedVariables*>( factory.make_variables(*original_problem)));
 
-   postsolvedResids.reset(dynamic_cast<DistributedResiduals*>(factory->make_residuals(*original_problem)));
+   postsolvedResids.reset(dynamic_cast<DistributedResiduals*>(factory.make_residuals(*original_problem)));
    postsolver->postsolve(*unscaleUnpermNotHierVars, *postsolved_variables, result);
 
    double obj_postsolved = original_problem->objective_value(*postsolved_variables.get());
