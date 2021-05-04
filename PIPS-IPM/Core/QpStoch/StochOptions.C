@@ -309,7 +309,7 @@ namespace pips_options {
       bool_options["XYZS_SOLVE_PRINT_RESISDUAL"] = false;
 
       /// REGULARIZATION FOR LINEAR SYSTEM
-      bool_options["REGULARIZATION"] = false;
+      bool_options["REGULARIZATION"] = true;
 
       double_options["REGULARIZATION_INITIAL_PRIMAL"] = 1;
       double_options["REGULARIZATION_INITIAL_DUAL_Y"] = 0;

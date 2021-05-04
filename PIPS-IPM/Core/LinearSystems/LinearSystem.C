@@ -466,7 +466,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       // Iterative refinement
       ///////////////////////////////////////////////////////////////
       auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = *problem](auto&& PH1, auto&& PH2) {
-         compute_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
+         compute_regularized_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
       };
 
       solveCompressedIterRefin(computeResiduals);
@@ -759,9 +759,9 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
 
 /**
  * res = beta * res + alpha * mat * sol
- *       [ Q + dq + gamma/ v + phi/w + regP     AT                 CT               ]
- * mat = [            A                        dual_equality_regularization_diagonal               0                ]
- *       [            C                          0    -(lambda/V + pi/u)^-1 + regDz ]
+ *       [ Q + dq + gamma/ v + phi/w + regP                   AT                                 CT               ]
+ * mat = [            A                     -dual_equality_regularization_diagonal               0                ]
+ *       [            C                                       0                     -(lambda/V + pi/u)^-1 + regDz ]
  * stepx, stepy, stepz are used as temporary buffers
  * if use_regularized_sysyem == false primal_regularization_diagonal, dual_equality_regularization_diagonal and dual_inequality_regularization_diagonal are not used
  */

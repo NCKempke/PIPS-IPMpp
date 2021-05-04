@@ -463,7 +463,6 @@ void SparseGenMatrix::matTransDinvMultMat(const Vector<double>& d_, SymMatrix** 
    assert(m_Mt);
 
    auto* MtDM = dynamic_cast<SparseSymMatrix*>(*res);
-
    mStorage->matTransDinvMultMat(&d[0], m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M(), MtDM->krowM(), MtDM->jcolM(), MtDM->M());
 }
 void SparseGenMatrix::matMultTrans(SymMatrix** res) const {

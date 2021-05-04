@@ -347,11 +347,13 @@ void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
    assert(this->n == vec.length());
    T* pv = v, * lv = v + this->n;
 
-   const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
    const T* y = sv.v;
 
-   for (; pv < lv; pv++, y++)
+   for (; pv < lv; pv++, y++) {
+      assert(*y != 0.0);
       *pv /= *y;
+   }
 }
 
 template<typename T>

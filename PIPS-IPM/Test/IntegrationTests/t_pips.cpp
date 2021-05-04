@@ -5,7 +5,6 @@
  *      Author: bzfkempk
  */
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "GondzioStochLpSolver.h"
 #include "PIPSIpmInterface.h"
 #include "gmspips_reader.hpp"
@@ -40,15 +39,15 @@ public:
 
    ScenarioTests() {
       if (const char* gams_env = std::getenv("GAMSSYSDIR")) {
-         if (!gams_env)
-            std::cout << "For this test suite to run please set your environment variable GAMSSYSDIR pointing to the gams directory\n";
          gams_path = std::string(gams_env);
+      } else {
+        std::cout << "For this test suite to run please set your environment variable GAMSSYSDIR pointing to the gams directory\n";
       }
    }
 
    std::string gams_path;
 
-   double solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step);
+   [[nodiscard]] double solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step) const;
 };
 
 std::vector<Instance> getInstances() {
@@ -59,8 +58,8 @@ std::vector<Instance> getInstances() {
 
 
 double
-ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step) {
-   testing::internal::CaptureStdout();
+ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step) const {
+//   testing::internal::CaptureStdout();
 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
    std::unique_ptr<StochInputTree> tree(reader.read_problem());
@@ -90,7 +89,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
       }
    }
 
-   testing::internal::GetCapturedStdout();
+//   testing::internal::GetCapturedStdout();
    return result;
 };
 

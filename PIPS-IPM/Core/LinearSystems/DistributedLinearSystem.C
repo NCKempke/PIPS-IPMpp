@@ -147,6 +147,7 @@ void DistributedLinearSystem::computeU_V(DistributedQP* problem, DenseGenMatrix*
 void DistributedLinearSystem::factorize_with_correct_inertia() {
    regularization_strategy->notify_new_step();
 
+   kkt->writeToStreamDense(std::cout);
    /* factor once without applying regularization */
    solver->matrixChanged();
    if (!solver->reports_inertia()) {
@@ -169,6 +170,7 @@ void DistributedLinearSystem::factorize_with_correct_inertia() {
       this->add_regularization_local_kkt(primal_regularization_value - last_primal_regularization,
             dual_equality_regularization_value - last_dual_equality_regularization,
             dual_inequality_regularization_value - last_dual_inequality_regularization);
+      kkt->writeToStreamDense(std::cout);
       solver->matrixChanged();
    }
 }
@@ -570,7 +572,7 @@ void DistributedLinearSystem::putBiTBorder(DenseGenMatrix& res, const BorderBiBl
 }
 
 void DistributedLinearSystem::solveCompressed(Vector<double>& rhs_) {
-   DistributedVector<double>& rhs = dynamic_cast<DistributedVector<double>&>(rhs_);
+   auto& rhs = dynamic_cast<DistributedVector<double>&>(rhs_);
 #ifdef TIMING
    //double tTot=MPI_Wtime();
 #endif

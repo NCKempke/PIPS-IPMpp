@@ -554,6 +554,26 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
    }
 
    ///////////////////////////////////////////////////////////////////////
+   // compute r1 = b1 - C^T * (regularization)^{-1} * rhs_reduced_b3
+   ///////////////////////////////////////////////////////////////////////
+   // if we have C part
+   if (locmz > 0) {
+      assert(dual_inequality_regularization_diagonal);
+      assert(dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).first);
+
+      const auto& ineq_regularization = *dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).first;
+
+      if (!ineq_regularization.isZero()) {
+         /* reset rhs_reduced_b3 */
+         std::copy(b + locnx + locmy, b + locnx + locmy + locmz, rhs_reduced + locnx + locmy + locmyl + locmzl);
+         assert(rhs_reduced_b3.length() == ineq_regularization.length());
+
+         rhs_reduced_b3.componentDiv(ineq_regularization);
+         C.transMult(1.0, rhs1, -1.0, rhs_reduced_b3);
+      }
+   }
+
+   ///////////////////////////////////////////////////////////////////////
    // rhs_reduced now contains all components -> solve for it
    ///////////////////////////////////////////////////////////////////////
 
@@ -577,7 +597,7 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
    ///////////////////////////////////////////////////////////////////////
    // rhs_small is now the solution to the reduced system
    // the solution to the augmented system can now be computed as
-   //      x = [rhs1; rhs2; zDiag^{-1} * (b3 - C * r1); rhs3; rhs4]
+   //      x = [rhs1; rhs2; (zDiag + regularization)^-1 * (b3 - C * r1); rhs3; rhs4]
    ///////////////////////////////////////////////////////////////////////
 
    // copy the solution components and calculate r3
@@ -587,7 +607,11 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
    if (locmz > 0) {
       SimpleVector<double> b3(b + locnx + locmy, locmz);
       C.mult(1.0, b3, -1.0, rhs1);
-      b3.componentDiv(*zDiag);
+
+      // TODO : remove temp vector
+      std::unique_ptr<SimpleVector<double>> tmp(dynamic_cast<SimpleVector<double>*>(zDiag->cloneFull()));
+      tmp->axpy(1.0, *dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal).first);
+      b3.componentDiv(*tmp);
    }
 
    // copy rhs3 and rhs4
@@ -1483,7 +1507,7 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymMatrix& CtDC_l
 void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymMatrix*& CtDC_loc, const Vector<double>& diagonal)
 {
    SparseGenMatrix& C = data->getLocalD();
-   C.matTransDinvMultMat(*zDiag, &CtDC_loc);
+   C.matTransDinvMultMat(diagonal, &CtDC_loc);
    assert(CtDC_loc->size() == locnx);
    assert(CtDC_loc);
 
@@ -1521,16 +1545,10 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
          CtDC_regularization.reset(CtDC->clone());
       }
 
-      // TODO : not nicely done .. temp vector here..
-      std::unique_ptr<SimpleVector<double>> regularization_added(dynamic_cast<SimpleVector<double>*>(dual_inequality_regularization_vec->clone()));
-      regularization_added->setToConstant(-dual_inequality_regularization);
-
       dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
-
       SymMatrix* CTDC_regularization_ptr = CtDC.get();
-      compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *regularization_added);
+      compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *dual_inequality_regularization_vec);
    }
-
 
    /* A0 dual equalities */
    if (locmy > 0) {

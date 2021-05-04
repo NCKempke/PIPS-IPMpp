@@ -130,17 +130,17 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
 }
 
 void DistributedLeafLinearSystem::Dsolve(DistributedQP*, Vector<double>& x_in) {
-   DistributedVector<double>& x = dynamic_cast<DistributedVector<double>&>(x_in);
-   assert(x.children.size() == 0);
+   auto& x = dynamic_cast<DistributedVector<double>&>(x_in);
+   assert(x.children.empty());
    stochNode->resMon.recDsolveTmChildren_start();
    solver->Dsolve(*x.first);
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
 void DistributedLeafLinearSystem::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
-   SimpleVector<double>& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
-   assert(0 == b.children.size());
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
+   assert(b.children.empty());
 
 #ifdef TIMING
    stochNode->resMon.eLtsolve.clear();
@@ -159,8 +159,8 @@ void DistributedLeafLinearSystem::deleteChildren() {}
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
 void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
-   SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
-   SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
+   auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
+   auto& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 
    solver->solve(zi);
 
