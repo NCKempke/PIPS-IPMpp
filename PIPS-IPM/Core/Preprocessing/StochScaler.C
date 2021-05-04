@@ -14,7 +14,7 @@
 StochScaler::StochScaler(Problem* prob, bool bitshifting) : QpScaler(prob, bitshifting) {
 }
 
-Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const {
+Variables* StochScaler::get_unscaled_variables(const Variables& vars) const {
    Variables* s_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(vars));
    assert(s_vars);
    assert(dynamic_cast<DistributedVariables*>(s_vars)->x);
@@ -24,7 +24,7 @@ Variables* StochScaler::getVariablesUnscaled(const Variables& vars) const {
    return s_vars;
 };
 
-Residuals* StochScaler::getResidualsUnscaled(const Residuals& resids) const {
+Residuals* StochScaler::get_unscaled_residuals(const Residuals& resids) const {
    DistributedResiduals* s_resids = new DistributedResiduals(dynamic_cast<const DistributedResiduals&>(resids));
    assert(s_resids);
 

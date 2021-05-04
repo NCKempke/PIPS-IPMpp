@@ -12,7 +12,6 @@
 QP::QP(Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
       Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
       Vector<double>* cupp_in, Vector<double>* icupp_in) :
-// superclass constructor
       Problem(c_in, xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in) {
    SpReferTo(Q, Q_in);
 }

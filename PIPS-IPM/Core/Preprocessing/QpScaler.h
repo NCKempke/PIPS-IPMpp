@@ -83,10 +83,10 @@ public:
    /** scale */
    void scale() override = 0;
 
-   double getObjUnscaled(double objval) const override;
+   double get_unscaled_objective(double objval) const override;
 
-   Variables* getVariablesUnscaled(const Variables& variables) const override;
-   Residuals* getResidualsUnscaled(const Residuals& residuals) const override;
+   Variables* get_unscaled_variables(const Variables& variables) const override;
+   Residuals* get_unscaled_residuals(const Residuals& residuals) const override;
 
    void unscaleVariables(Variables& vars) const override;
    void unscaleResiduals(Residuals& resids) const override;

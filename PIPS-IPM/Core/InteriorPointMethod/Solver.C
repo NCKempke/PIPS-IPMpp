@@ -268,7 +268,7 @@ std::pair<double, double> Solver::compute_unscaled_gap_and_residual_norm(const R
       return std::make_pair(std::fabs(residuals.duality_gap()), residuals.residualNorm());
    else {
       if (!residuals_unscaled)
-         residuals_unscaled.reset(scaler->getResidualsUnscaled(residuals));
+         residuals_unscaled.reset(scaler->get_unscaled_residuals(residuals));
       else {
          residuals_unscaled->copy(residuals);
          scaler->unscaleResiduals(*residuals_unscaled);
@@ -372,7 +372,7 @@ void Solver::default_monitor(const Problem* problem /* problem */, const Variabl
 
          const Residuals* residuals_unscaled = residuals;
          if (scaler)
-            residuals_unscaled = scaler->getResidualsUnscaled(*residuals);
+            residuals_unscaled = scaler->get_unscaled_residuals(*residuals);
 
          const double gap = residuals_unscaled->duality_gap();
          const double rnorm = residuals_unscaled->residualNorm();

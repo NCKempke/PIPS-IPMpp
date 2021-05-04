@@ -41,7 +41,7 @@ public:
    Vector() = default;
    ~Vector() override = default;
 
-   virtual void pushAwayFromZero(double /*tol*/, double /*amount*/, const Vector<T>* /*select */ ) { assert(0 && "Not implemented here"); };
+   virtual void pushAwayFromZero(double /*tol*/, double /*amount*/, const Vector<T>* /*select */ ) = 0;
 
    /** Set all elements of this Vector<double> to zero. */
    virtual void setToZero() = 0;
@@ -259,25 +259,20 @@ public:
    virtual void copyFromArray(const char v[]) = 0;
 
    /** remove entries i for which select[i] == 0 */
-   virtual void removeEntries(const Vector<int>&) { assert(0 && "not implemented here"); };
+   virtual void removeEntries(const Vector<int>&) = 0;
 
    /** Copy the absolute values of elements of v_in into this Vector<double> object. */
    virtual void copyFromAbs(const Vector<T>& v) = 0;
 
    /** compute the sum of all entries smaller considered zero with tol and count how many*/
-   virtual void getSumCountIfSmall(double, double&, int&, const Vector<T>*) const { assert(0 && "not implemented here"); };
+   virtual void getSumCountIfSmall(double, double&, int&, const Vector<T>*) const = 0;
 
    virtual void pushSmallComplementarityPairs(Vector<T>& /*other_vec*/, const Vector<T>& /*select_in*/, double /*tol_this*/, double /*tol_other*/,
-         double /*tol_pairs*/) { assert(0 && "not implemented here"); };
+         double /*tol_pairs*/) = 0;
 
-   virtual Vector<T>* clone() const {
-      assert(0 && "not implemented here");
-      return nullptr;
-   };
-   virtual Vector<T>* cloneFull() const {
-      assert(0 && "not implemented here");
-      return nullptr;
-   };
+   virtual Vector<T>* clone() const = 0;
+
+   virtual Vector<T>* cloneFull() const = 0;
 
    /** copy [this] = [vx, vy, vz] */
    virtual void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) = 0;

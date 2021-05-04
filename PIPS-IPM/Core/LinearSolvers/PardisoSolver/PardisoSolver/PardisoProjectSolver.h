@@ -10,15 +10,13 @@
 
 #include "PardisoSolver.h"
 
-#include <map>
-
-
 class PardisoProjectSolver : public PardisoSolver {
 public:
    void firstCall() override;
 
    PardisoProjectSolver(const SparseSymMatrix* sgm);
    PardisoProjectSolver(const DenseSymMatrix* m);
+   ~PardisoProjectSolver() override;
 
 protected:
    void setIparm(int* iparm) const override;
@@ -27,7 +25,7 @@ protected:
    pardisoCall(void* pt, const int* maxfct, const int* mnum, const int* mtype, const int* phase, int* n, double* M, int* krowM, int* jcolM, int* perm,
          int* nrhs, int* iparm, const int* msglvl, double* rhs, double* sol, int* error) override;
 
-   ~PardisoProjectSolver() override;
+
 private:
    double dparm[64];
 

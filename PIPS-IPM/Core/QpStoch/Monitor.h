@@ -22,16 +22,11 @@ public:
    Monitor(Scaler* scaler = nullptr);
    Monitor(DistributedFactory* qp, Scaler* scaler = nullptr);
 
-   void doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha, double sigma, int i, double mu,
+   void doIt(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha, double sigma, int i, double mu,
          int status_code, int level);
 
-   void doItPd(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, double alpha_primal, double alpha_dual,
-         double sigma, int i, double mu, int status_code, int level);
-
-private:
-   void
-   doItStoch(const Solver* solver, const Problem* problem, const Variables* vars, const Residuals* resids, double alpha_primal, double alpha_dual,
-         double, int i, double mu, int status_code, int level) const;
+   void doItPd(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha_primal, double alpha_dual,
+         double sigma, int i, double mu, int status_code, int level) const;
 
 protected:
    Scaler* scaler{};
