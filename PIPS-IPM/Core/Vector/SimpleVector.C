@@ -143,8 +143,7 @@ void SimpleVector<T>::copyFromArray(const T w[]) {
 
 template<typename T>
 void SimpleVector<T>::copyFromArray(const char w[]) {
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       this->v[i] = w[i];
    }
 }
@@ -245,8 +244,7 @@ T SimpleVector<T>::infnorm() const {
       return -std::numeric_limits<T>::max();
 
    T temp, norm = 0;
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       temp = fabs(v[i]);
       // Subtle reversal of the logic to handle NaNs
       if (!(temp <= norm))
@@ -268,8 +266,7 @@ double SimpleVector<double>::infnorm() const {
 template<typename T>
 T SimpleVector<T>::onenorm() const {
    T temp, norm = 0;
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       temp = fabs(v[i]);
       norm += temp;
    }
@@ -287,8 +284,7 @@ void SimpleVector<T>::componentMult(const Vector<T>& vec) {
    assert(this->n == vec.length());
    const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
    const T* y = sv.v;
-   int i;
-   for (i = 0; i < this->n; i++)
+   for (int i = 0; i < this->n; i++)
       v[i] *= y[i];
 }
 
@@ -332,8 +328,7 @@ void SimpleVector<T>::setNotIndicatedEntriesToVal(const T val, const Vector<T>& 
 
 template<typename T>
 void SimpleVector<T>::scalarMult(T num) {
-   int i;
-   for (i = 0; i < this->n; i++)
+   for (int i = 0; i < this->n; i++)
       v[i] *= num;
 }
 
@@ -341,8 +336,7 @@ void SimpleVector<T>::scalarMult(T num) {
 // Useful for debugging purposes...
 template<typename T>
 void SimpleVector<T>::printSolutionToStdErr() const {
-   int i;
-   for (i = 0; i < 10; i++) {
+   for (int i = 0; i < std::min(10, this->n); i++) {
       std::cerr << v[i] << "\n";
    }
    std::cerr << "******" << "\n";
@@ -382,9 +376,7 @@ void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[],
    if (select.length() > 0) {
       s = sselect.v;
    }
-   int i;
-
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       if (!s || s[i] != 0.0) {
          int j = 0;
          char c;
@@ -456,15 +448,13 @@ void SimpleVector<T>::axpy(T alpha, const Vector<T>& vec) {
 
 template<typename T>
 void SimpleVector<T>::addConstant(T c) {
-   int i;
-   for (i = 0; i < this->n; i++)
+   for (int i = 0; i < this->n; i++)
       v[i] += c;
 }
 
 template<typename T>
 void SimpleVector<T>::gondzioProjection(T rmin, T rmax) {
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       if (v[i] < rmin) {
          v[i] = rmin - v[i];
       }
@@ -527,8 +517,7 @@ void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zv
 
    assert(this->n == xvec.length() && this->n == zvec.length());
 
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       //if(x[i] > 0 && z[i] > 0)
       assert(z[i] != 0);
       v[i] += alpha * x[i] / z[i];
@@ -545,21 +534,20 @@ void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zv
    T* z = szvec.v;
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* s = sselect.v;
-   int i;
    if (alpha == 1.0) {
-      for (i = 0; i < this->n; i++) {
+      for (int i = 0; i < this->n; i++) {
          if (0.0 != s[i])
             v[i] += x[i] / z[i];
       }
    }
    else if (alpha == -1.0) {
-      for (i = 0; i < this->n; i++) {
+      for (int i = 0; i < this->n; i++) {
          if (0.0 != s[i])
             v[i] -= x[i] / z[i];
       }
    }
    else {
-      for (i = 0; i < this->n; i++) {
+      for (int i = 0; i < this->n; i++) {
          if (0.0 != s[i])
             v[i] += alpha * x[i] / z[i];
       }
@@ -611,16 +599,7 @@ T SimpleVector<T>::dotProductWith(const Vector<T>& vec) const {
 template<typename T>
 T SimpleVector<T>::dotProductSelf(T scaleFactor) const {
    assert(scaleFactor >= 0.0);
-
-   T dot = 0.0;
-
-   if (scaleFactor == 1.0)
-      dot = dotProductWith(*this);
-   else {
-      for (int i = 0; i < this->n; i++)
-         dot += (v[i] * scaleFactor) * (v[i] * scaleFactor);
-   }
-   return dot;
+   return scaleFactor*scaleFactor*dotProductWith(*this);
 }
 
 template<typename T>
@@ -661,8 +640,7 @@ T SimpleVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep, const
 
 template<typename T>
 void SimpleVector<T>::negate() {
-   int i;
-   for (i = 0; i < this->n; i++)
+   for (int i = 0; i < this->n; i++)
       v[i] = -v[i];
 }
 
@@ -712,8 +690,7 @@ void SimpleVector<T>::roundToPow2() {
 
 template<typename T>
 bool SimpleVector<T>::allPositive() const {
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       if (v[i] <= 0)
          return false;
    }
@@ -735,8 +712,7 @@ T SimpleVector<T>::stepbound(const Vector<T>& pvec, T maxStep) const {
    T* w = v;
    T bound = maxStep;
 
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       T temp = p[i];
       if (w[i] >= 0 && temp < 0) {
          temp = -w[i] / temp;
@@ -807,8 +783,7 @@ void SimpleVector<T>::selectNonZeros(const Vector<T>& select) {
    T* map = sselect.v;
 
    assert(this->n == select.length());
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       if (map[i] == 0.)
          v[i] = 0.0;
    }
@@ -837,9 +812,8 @@ void SimpleVector<T>::addSomeConstants(T c, const Vector<T>& select) {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 
-   int i;
    assert(this->n == select.length());
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       if (map[i])
          v[i] += c;
    }
@@ -851,9 +825,7 @@ bool SimpleVector<T>::somePositive(const Vector<T>& select) const {
    T* map = sselect.v;
 
    assert(this->n == select.length());
-
-   int i;
-   for (i = 0; i < this->n; i++) {
+   for (int i = 0; i < this->n; i++) {
       if (0.0 != map[i] && v[i] <= 0) {
          std::cout << "Element " << i << " is nonpositive: " << v[i] << "\n";
          return false;

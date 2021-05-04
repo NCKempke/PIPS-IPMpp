@@ -1,5 +1,5 @@
-#ifndef DATAQPSTOCH
-#define DATAQPSTOCH
+#ifndef DISTRIBUTEDQP_H
+#define DISTRIBUTEDQP_H
 
 #include "QP.hpp"
 #include "DistributedResiduals.hpp"
