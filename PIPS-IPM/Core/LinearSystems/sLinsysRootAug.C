@@ -33,7 +33,7 @@ static void biCGStabCommunicateStatus(int flag, int it) {
 }
 
 sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_) {
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
       assert(false && "should not end up here");
 
    assert(locmyl >= 0 && locmzl >= 0);
@@ -51,7 +51,7 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
 sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* regP, Vector<double>* regDy, Vector<double>* regDz, Vector<double>* rhs_, bool create_solvers)
       : DistributedRootLinearSystem(factory_, prob_, dd_, dq_, nomegaInv_, regP, regDy, regDz, rhs_) {
-   assert(pips_options::getBoolParameter("HIERARCHICAL"));
+   assert(pips_options::get_bool_parameter("HIERARCHICAL"));
    assert(locmyl >= 0 && locmzl >= 0);
    assert(computeBlockwiseSC);
 
@@ -120,7 +120,7 @@ void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
 }
 
 void sLinsysRootAug::createSolversDense() {
-   const SolverTypeDense solver_type = pips_options::getSolverDense();
+   const SolverTypeDense solver_type = pips_options::get_solver_dense();
    auto* kktmat = dynamic_cast<DenseSymMatrix*>(kkt.get());
 
    if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
@@ -134,14 +134,14 @@ void sLinsysRootAug::createSolversDense() {
 }
 
 void sLinsysRootAug::createSolversAndKKts(DistributedQP* prob) {
-   const SolverType solver_root = pips_options::getSolverRoot();
+   const SolverType solver_root = pips_options::get_solver_root();
 
    static bool printed = false;
    if (!printed && PIPS_MPIgetRank() == 0) {
       if (hasSparseKkt)
          std::cout << "sLinsysRootAug: using " << solver_root << "\n";
       else
-         std::cout << "sLinsysRootAug: using " << pips_options::getSolverDense() << "\n";
+         std::cout << "sLinsysRootAug: using " << pips_options::get_solver_dense() << "\n";
    }
 
    kkt.reset(createKKT(prob));
@@ -361,7 +361,7 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
 
 void sLinsysRootAug::assembleLocalKKT(DistributedQP* prob) {
    const bool is_layer_only_twolinks = prob->isHierarchySparseTopLayerOnlyTwolinks();
-   if (!pips_options::getBoolParameter("HIERARCHICAL"))
+   if (!pips_options::get_bool_parameter("HIERARCHICAL"))
       assert(!is_layer_only_twolinks);
 
    for (size_t c = 0; c < children.size(); ++c) {

@@ -171,7 +171,7 @@ public:
          int& local2linksEndIneq);
 
    bool isHierarchySparseTopLayerOnlyTwolinks() const {
-      return (pips_options::getBoolParameter("HIERARCHICAL")) && (pips_options::getIntParameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
+      return (pips_options::get_bool_parameter("HIERARCHICAL")) && (pips_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
              threshold_global_cons <= 1 && threshold_global_vars == 0;
    };
 

@@ -80,7 +80,7 @@ protected:
    /** stores a critical diagonal matrix as a vector */
    Vector<double>* nomegaInv{};
 
-   DistributedFactory* factory{};
+   DistributedFactory* factory;
 
    /** right-hand side of the system */
    Vector<double>* rhs{};

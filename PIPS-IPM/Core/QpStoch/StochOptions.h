@@ -34,34 +34,34 @@ std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver);
 
 
 namespace pips_options {
-   bool isSolverAvailable(SolverType solver);
-   SolverType getSolverRoot();
-   SolverType getSolverSubRoot();
-   SolverType getSolverLeaf();
-   SolverTypeDense getSolverDense();
+   bool is_solver_available(SolverType solver);
+   SolverType get_solver_root();
+   SolverType get_solver_sub_root();
+   SolverType get_solver_leaf();
+   SolverTypeDense get_solver_dense();
 
-   void activateHierarchialApproach();
+   void activate_hierarchial_approach();
 
-   void setOptions(const std::string& opt_file);
-   void setIntParameter(const std::string& identifier, int value);
-   void setDoubleParameter(const std::string& identifier, double value);
-   void setBoolParameter(const std::string& identifier, bool value);
+   void set_options(const std::string& opt_file);
+   void set_int_parameter(const std::string& identifier, int value);
+   void set_double_parameter(const std::string& identifier, double value);
+   void set_bool_parameter(const std::string& identifier, bool value);
 
-   int getIntParameter(const std::string& identifier);
-   double getDoubleParameter(const std::string& identifier);
-   bool getBoolParameter(const std::string& identifier);
+   int get_int_parameter(const std::string& identifier);
+   double get_double_parameter(const std::string& identifier);
+   bool get_bool_parameter(const std::string& identifier);
 
    class StochOptions : public qpgen_options::QpGenOptions {
 
    private:
-      friend void setIntParameter(const std::string& identifier, int value);
-      friend void setDoubleParameter(const std::string& identifier, double value);
-      friend void setBoolParameter(const std::string& identifier, bool value);
-      friend void setOptions(const std::string& opt_file);
-      friend void activateHierarchialApproach();
-      friend int getIntParameter(const std::string& identifier);
-      friend double getDoubleParameter(const std::string& identifier);
-      friend bool getBoolParameter(const std::string& identifier);
+      friend void set_int_parameter(const std::string& identifier, int value);
+      friend void set_double_parameter(const std::string& identifier, double value);
+      friend void set_bool_parameter(const std::string& identifier, bool value);
+      friend void set_options(const std::string& opt_file);
+      friend void activate_hierarchial_approach();
+      friend int get_int_parameter(const std::string& identifier);
+      friend double get_double_parameter(const std::string& identifier);
+      friend bool get_bool_parameter(const std::string& identifier);
 
       static StochOptions& getInstance() {
          static StochOptions opt;

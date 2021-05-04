@@ -14,8 +14,8 @@
 #include <cassert>
 
 StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb) : my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
-      distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)), verbosity(pips_options::getIntParameter("PRESOLVE_VERBOSITY")),
-      INF_NEG(-pips_options::getDoubleParameter("PRESOLVE_INFINITY")), INF_POS(pips_options::getDoubleParameter("PRESOLVE_INFINITY")),
+      distributed(PIPS_MPIgetDistributed(MPI_COMM_WORLD)), verbosity(pips_options::get_int_parameter("PRESOLVE_VERBOSITY")),
+      INF_NEG(-pips_options::get_double_parameter("PRESOLVE_INFINITY")), INF_POS(pips_options::get_double_parameter("PRESOLVE_INFINITY")),
       n_linking_vars(dynamic_cast<const DistributedVector<double>&>(*origProb.g).first->length()), n_linking_rows_eq(
             dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last
             ? dynamic_cast<const DistributedVector<double>&>(*origProb.bA).last->length() : 0), n_linking_rows_ineq(

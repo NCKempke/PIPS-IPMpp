@@ -32,8 +32,6 @@ class DistributedResiduals;
 
 class DistributedVariables;
 
-class DistributedLinearSystem;
-
 class DistributedRootLinearSystem;
 
 class DistributedLeafLinearSystem;
@@ -100,9 +98,9 @@ public:
    void iterate_ended();
 
    DistributedResiduals* residuals{};
-   std::vector<DistributedVariables*> registeredVars;
+   std::vector<DistributedVariables*> registered_variables;
 
-   DistributedRootLinearSystem* linsys{};
+   DistributedRootLinearSystem* linear_system{};
 
    StochIterateResourcesMonitor iterTmMonitor;
    double m_tmTotal{0.0};

@@ -44,17 +44,17 @@ extern "C" {
 PardisoSchurSolver::PardisoSchurSolver(const SparseSymMatrix* sgm) : Msys{sgm} {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
-   useSparseRhs = pips_options::getBoolParameter("PARDISO_SPARSE_RHS_LEAF");
+   useSparseRhs = pips_options::get_bool_parameter("PARDISO_SPARSE_RHS_LEAF");
 
-   symbFactorInterval = pips_options::getIntParameter("PARDISO_SYMB_INTERVAL");
+   symbFactorInterval = pips_options::get_int_parameter("PARDISO_SYMB_INTERVAL");
    if (symbFactorInterval < 0)
       symbFactorInterval = symbFactorIntervalDefault;
 
-   pivotPerturbationExp = pips_options::getIntParameter("PARDISO_PIVOT_PERTURBATION");
+   pivotPerturbationExp = pips_options::get_int_parameter("PARDISO_PIVOT_PERTURBATION");
    if (pivotPerturbationExp < 0)
       pivotPerturbationExp = pivotPerturbationExpDefault;
 
-   nIterativeRefins = pips_options::getIntParameter("PARDISO_NITERATIVE_REFINS");
+   nIterativeRefins = pips_options::get_int_parameter("PARDISO_NITERATIVE_REFINS");
    if (nIterativeRefins < 0)
       nIterativeRefins = nIterativeRefinsDefault;
 

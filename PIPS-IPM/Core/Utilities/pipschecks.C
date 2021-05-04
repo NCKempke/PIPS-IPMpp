@@ -6,12 +6,8 @@
  */
 
 #include "pipsdef.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
 #include "SimpleVector.h"
-#include "DoubleMatrixTypes.h"
 #include <cmath>
-#include <limits>
 #include <cassert>
 #include <algorithm>
 

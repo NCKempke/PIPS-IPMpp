@@ -260,7 +260,7 @@ void sLinsysRootBordered::reduceKKT(DistributedQP*) {
 }
 
 DoubleLinearSolver* sLinsysRootBordered::createSolver(DistributedQP*, const SymMatrix* kktmat_) {
-   const SolverTypeDense solver = pips_options::getSolverDense();
+   const SolverTypeDense solver = pips_options::get_solver_dense();
    const DenseSymMatrix* kktmat = dynamic_cast<const DenseSymMatrix*>(kktmat_);
 
    static bool printed = false;

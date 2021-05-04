@@ -127,8 +127,8 @@ protected:
 template<class IPMSOLVER>
 PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* tree, MPI_Comm comm, ScalerType scaler_type, PresolverType presolver_type,
       std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
-   pips_options::setOptions(settings);
-   const bool postsolve = pips_options::getBoolParameter("POSTSOLVE");
+   pips_options::set_options(settings);
+   const bool postsolve = pips_options::get_bool_parameter("POSTSOLVE");
 
    MPI_Barrier(comm);
    const double t0 = MPI_Wtime();
@@ -184,17 +184,17 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* tree, MPI_Comm com
    dataUnpermNotHier.reset(presolved_problem->cloneFull());
 
    // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
-   if (pips_options::getBoolParameter("PARDISO_FOR_GLOBAL_SC"))
+   if (pips_options::get_bool_parameter("PARDISO_FOR_GLOBAL_SC"))
       presolved_problem->activateLinkStructureExploitation();
 
    // TODO : save "old" data somewhere?
-   if (pips_options::getBoolParameter("HIERARCHICAL")) {
+   if (pips_options::get_bool_parameter("HIERARCHICAL")) {
       if (my_rank == 0)
          std::cout << "Using hierarchical approach!\n";
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(factory.switchToHierarchicalData(presolved_problem.release())));
 
-      if (pips_options::getBoolParameter("HIERARCHICAL_PRINT_HIER_DATA"))
+      if (pips_options::get_bool_parameter("HIERARCHICAL_PRINT_HIER_DATA"))
          presolved_problem->writeToStreamDense(std::cout);
    }
 
@@ -246,7 +246,7 @@ void PIPSIpmInterface<IPMSOLVER>::run() {
 
    if (my_rank == 0) {
       // TODO : use unlifted data....
-      if (!pips_options::getBoolParameter("HIERARCHICAL")) {
+      if (!pips_options::get_bool_parameter("HIERARCHICAL")) {
          std::cout << "1st stage " << presolved_problem->getLocalnx() << " variables, " << presolved_problem->getLocalmy()
                    << " equality constraints, " << presolved_problem->getLocalmz() << " inequality constraints.\n";
 
@@ -545,7 +545,7 @@ void PIPSIpmInterface<IPMSOLVER>::printComplementarityResiduals(const Distribute
 
 template<class IPMSOLVER>
 void PIPSIpmInterface<IPMSOLVER>::postsolveComputedSolution() {
-   const bool print_residuals = pips_options::getBoolParameter("POSTSOLVE_PRINT_RESIDS");
+   const bool print_residuals = pips_options::get_bool_parameter("POSTSOLVE_PRINT_RESIDS");
    const int my_rank = PIPS_MPIgetRank(comm);
 
    assert(original_problem);
@@ -588,7 +588,7 @@ void PIPSIpmInterface<IPMSOLVER>::postsolveComputedSolution() {
    const double t0_postsolve = MPI_Wtime();
 
 
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
       factory.switchToOriginalTree();
 
    dynamic_cast<DistributedTreeCallbacks*>(factory.tree)->switchToOriginalData();

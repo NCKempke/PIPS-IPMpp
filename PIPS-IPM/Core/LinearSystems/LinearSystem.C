@@ -24,80 +24,6 @@ extern int gOuterBiCGFails;
 
 static std::vector<int> bicgIters;
 
-
-int LinearSystem::getIntValue(const std::string& s) const {
-   if (s == "BICG_NITERATIONS")
-      return bicg_niterations;
-   else if (s == "BICG_CONV_FLAG")
-      return static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag);
-   else {
-      std::cout << "Unknown observer int request in LinearSystem.C: " << s << "\n";
-      return -1;
-   }
-}
-
-bool LinearSystem::getBoolValue(const std::string& s) const {
-   if (s == "BICG_CONVERGED")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::CONVERGED;
-   else if (s == "BICG_SKIPPED")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::SKIPPED;
-   else if (s == "BICG_DIVERGED")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::DIVERGED;
-   else if (s == "BICG_BREAKDOWN")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::BREAKDOWN;
-   else if (s == "BICG_STAGNATION")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::STAGNATION;
-   else if (s == "BICG_EXCEED_MAX_ITER")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS;
-   else {
-      std::cout << "Unknown observer bool request in LinearSystem.C: " << s << "\n";
-      return false;
-   }
-}
-
-double LinearSystem::getDoubleValue(const std::string& s) const {
-   if (s == "BICG_RESNORM")
-      return bicg_resnorm;
-   else if (s == "BICG_RELRESNORM")
-      return bicg_relresnorm;
-   else {
-      std::cout << "Unknown observer double request in LinearSystem.C: " << s << "\n";
-      return 0.0;
-   }
-}
-
-static void biCGStabCommunicateStatus(int flag, int it) {
-   double iterAvg = 0.0;
-
-   /* IP algorithm started? */
-   if (g_iterNumber >= 0.5) {
-      bicgIters.push_back(it);
-
-      for (size_t i = 0; i < bicgIters.size(); i++)
-         iterAvg += double(bicgIters[i]);
-
-      iterAvg /= bicgIters.size();
-   }
-   else {
-      iterAvg = it;
-   }
-
-   gOuterBiCGIterAvg = iterAvg;
-   gOuterBiCGIter = it;
-
-   if (flag != 0 && flag != 1)
-      gOuterBiCGFails++;
-}
-
-static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& status) {
-   if (PIPSisZero(val)) {
-      status = LinearSystem::IterativeSolverSolutionStatus::BREAKDOWN;
-      return true;
-   }
-
-   return false;
-}
-
 LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")), outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
       innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
@@ -199,6 +125,79 @@ LinearSystem::~LinearSystem() {
    delete res5;
 }
 
+int LinearSystem::getIntValue(const std::string& s) const {
+   if (s == "BICG_NITERATIONS")
+      return bicg_niterations;
+   else if (s == "BICG_CONV_FLAG")
+      return static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag);
+   else {
+      std::cout << "Unknown observer int request in LinearSystem.C: " << s << "\n";
+      return -1;
+   }
+}
+
+bool LinearSystem::getBoolValue(const std::string& s) const {
+   if (s == "BICG_CONVERGED")
+      return bicg_conv_flag == IterativeSolverSolutionStatus::CONVERGED;
+   else if (s == "BICG_SKIPPED")
+      return bicg_conv_flag == IterativeSolverSolutionStatus::SKIPPED;
+   else if (s == "BICG_DIVERGED")
+      return bicg_conv_flag == IterativeSolverSolutionStatus::DIVERGED;
+   else if (s == "BICG_BREAKDOWN")
+      return bicg_conv_flag == IterativeSolverSolutionStatus::BREAKDOWN;
+   else if (s == "BICG_STAGNATION")
+      return bicg_conv_flag == IterativeSolverSolutionStatus::STAGNATION;
+   else if (s == "BICG_EXCEED_MAX_ITER")
+      return bicg_conv_flag == IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS;
+   else {
+      std::cout << "Unknown observer bool request in LinearSystem.C: " << s << "\n";
+      return false;
+   }
+}
+
+double LinearSystem::getDoubleValue(const std::string& s) const {
+   if (s == "BICG_RESNORM")
+      return bicg_resnorm;
+   else if (s == "BICG_RELRESNORM")
+      return bicg_relresnorm;
+   else {
+      std::cout << "Unknown observer double request in LinearSystem.C: " << s << "\n";
+      return 0.0;
+   }
+}
+
+static void biCGStabCommunicateStatus(int flag, int it) {
+   double iterAvg = 0.0;
+
+   /* IP algorithm started? */
+   if (g_iterNumber >= 0.5) {
+      bicgIters.push_back(it);
+
+      for (size_t i = 0; i < bicgIters.size(); i++)
+         iterAvg += double(bicgIters[i]);
+
+      iterAvg /= bicgIters.size();
+   }
+   else {
+      iterAvg = it;
+   }
+
+   gOuterBiCGIterAvg = iterAvg;
+   gOuterBiCGIter = it;
+
+   if (flag != 0 && flag != 1)
+      gOuterBiCGFails++;
+}
+
+static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& status) {
+   if (PIPSisZero(val)) {
+      status = LinearSystem::IterativeSolverSolutionStatus::BREAKDOWN;
+      return true;
+   }
+
+   return false;
+}
+
 void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
 
    assert(vars->validNonZeroPattern());
@@ -208,7 +207,7 @@ void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
 
    computeDiagonals(*vars->t, *vars->lambda, *vars->u, *vars->pi, *vars->v, *vars->gamma, *vars->w, *vars->phi);
 
-   if (pips_options::getBoolParameter("HIERARCHICAL_TESTING")) {
+   if (pips_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
       primal_diagonal->setToConstant(1.0);
       nomegaInv->setToConstant(1.0);
