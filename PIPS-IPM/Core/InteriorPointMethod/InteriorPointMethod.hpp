@@ -11,7 +11,7 @@ enum StepLengthType { PRIMAL, PRIMAL_DUAL };
 
 class InteriorPointMethod : public Solver, public Observer {
 public:
-   InteriorPointMethod(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler);
+   InteriorPointMethod(DistributedFactory& problem_formulation, Problem& problem, const Scaler* scaler);
 
    virtual ~InteriorPointMethod();
 

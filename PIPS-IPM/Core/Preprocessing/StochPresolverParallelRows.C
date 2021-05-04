@@ -50,7 +50,7 @@ namespace rowlib {
 }
 
 StochPresolverParallelRows::StochPresolverParallelRows(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(presolve_data,
-      origProb), limit_tol_compare_entries(pips_options::getDoubleParameter("PRESOLVE_PARALLEL_ROWS_TOL_COMPARE_ENTRIES")) {
+      origProb), limit_tol_compare_entries(pips_options::get_double_parameter("PRESOLVE_PARALLEL_ROWS_TOL_COMPARE_ENTRIES")) {
 }
 
 StochPresolverParallelRows::~StochPresolverParallelRows() {

@@ -6,8 +6,8 @@
 #include "Residuals.h"
 #include "AbstractLinearSystem.h"
 #include "Options.h"
-#include "ProblemFactory.h"
 #include "QpGenOptions.h"
+#include "DistributedFactory.h"
 #include <iostream>
 #include <cstdio>
 #include <cassert>
@@ -18,20 +18,19 @@
 double g_iterNumber = 0.0;
 int gOoqpPrintLevel = 1000;
 int gLackOfAccuracy = 0;
-int onSafeSolver = 0;
 
 int gOuterBiCGFails = 0;
 int gOuterBiCGIter = 0;
 double gOuterBiCGIterAvg = 0.0;
-int gInnerBiCGIter = 0;
 int gInnerBiCGFails = 0;
+int gInnerBiCGIter = 0;
 
 // gmu is needed by MA57!
 double gmu;
 // double grnorm;
 extern int gOoqpPrintLevel;
 
-Solver::Solver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(problem_formulation),
+Solver::Solver(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : scaler(scaler), factory(factory),
       step(factory.make_variables(problem)), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)) {
    if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;

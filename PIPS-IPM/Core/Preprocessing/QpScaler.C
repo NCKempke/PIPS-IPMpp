@@ -16,7 +16,7 @@
 #include "pipsdef.h"
 
 QpScaler::QpScaler(Problem* problem, bool bitshifting) : Scaler(problem, bitshifting),
-      scaling_output{pips_options::getBoolParameter("SCALER_OUTPUT")} {
+      scaling_output{pips_options::get_bool_parameter("SCALER_OUTPUT")} {
    QP* qp = dynamic_cast<QP*>(problem);
 
    Q = qp->Q;

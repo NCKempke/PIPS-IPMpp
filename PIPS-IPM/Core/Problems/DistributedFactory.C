@@ -62,7 +62,6 @@ class Ma57Solver;
 
 DistributedFactory::DistributedFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new DistributedTreeCallbacks(inputTree)) {
    tree->assignProcesses(comm);
-
    tree->computeGlobalSizes();
    // now the sizes of the problem are available, set them for the parent class
    tree->getGlobalSizes(nx, my, mz);
@@ -77,9 +76,9 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const DoubleMatrix* kkt
    const SparseSymMatrix* kkt = dynamic_cast<const SparseSymMatrix*>(kkt_);
    assert(kkt);
 
-   const SolverType leaf_solver = pips_options::getSolverLeaf();
+   const SolverType leaf_solver = pips_options::get_solver_leaf();
 
-   if (!pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")) {
+   if (!pips_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
          return new MumpsSolverLeaf(kkt);
@@ -136,9 +135,9 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
       Vector<double>* rhs) {
    assert(problem);
    static bool printed = false;
-   const SolverType leaf_solver = pips_options::getSolverLeaf();
+   const SolverType leaf_solver = pips_options::get_solver_leaf();
 
-   if (!pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")) {
+   if (!pips_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
       if (PIPS_MPIgetRank() == 0 && !printed)
          std::cout << "Using " << leaf_solver << " for leaf schur complement computation - sFactory\n";
       printed = true;
@@ -162,17 +161,17 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
          }
 
          SolverType solver = SolverType::SOLVER_NONE;
-         if (pips_options::isSolverAvailable(SolverType::SOLVER_PARDISO))
+         if (pips_options::is_solver_available(SolverType::SOLVER_PARDISO))
             solver = SolverType::SOLVER_PARDISO;
-         else if (pips_options::isSolverAvailable(SolverType::SOLVER_MKL_PARDISO))
+         else if (pips_options::is_solver_available(SolverType::SOLVER_MKL_PARDISO))
             solver = SolverType::SOLVER_MKL_PARDISO;
-         else if (pips_options::isSolverAvailable(SolverType::SOLVER_MUMPS))
+         else if (pips_options::is_solver_available(SolverType::SOLVER_MUMPS))
             solver = SolverType::SOLVER_MUMPS;
 
          if (solver != SolverType::SOLVER_NONE) {
             if (PIPS_MPIgetRank() == 0)
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
-            pips_options::setIntParameter("LINEAR_LEAF_SOLVER", solver);
+            pips_options::set_int_parameter("LINEAR_LEAF_SOLVER", solver);
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
             return new sLinsysLeafSchurSlv(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization,
                   dual_inequality_regularization, rhs);
@@ -186,7 +185,7 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
    else {
       if (PIPS_MPIgetRank() == 0 && !printed)
          std::cout << "Using " << leaf_solver << " for blockwise Schur Complement computation - deactivating distributed preconditioner - sFactory\n";
-      pips_options::setBoolParameter("PRECONDITION_DISTRIBUTED", false);
+      pips_options::set_bool_parameter("PRECONDITION_DISTRIBUTED", false);
       printed = true;
 
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
@@ -252,7 +251,7 @@ Variables* DistributedFactory::make_variables(Problem& problem) {
    DistributedVariables* variables = new DistributedVariables(tree, x, s, y, z, v, gamma, w, phi, t, lambda, u, pi, problem.ixlow,
          problem.ixlow->numberOfNonzeros(), problem.ixupp, problem.ixupp->numberOfNonzeros(), problem.iclow, problem.iclow->numberOfNonzeros(),
          problem.icupp, problem.icupp->numberOfNonzeros());
-   registeredVars.push_back(variables);
+   registered_variables.push_back(variables);
    return variables;
 }
 
@@ -262,11 +261,11 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) {
 }
 
 AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
-      linsys = newLinsysRootHierarchical();
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
+      linear_system = newLinsysRootHierarchical();
    else
-      linsys = make_linear_system_root();
-   return linsys;
+      linear_system = make_linear_system_root();
+   return linear_system;
 }
 
 Vector<double>* DistributedFactory::make_primal_vector() const {
@@ -326,8 +325,6 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>*
       return new sLinsysRootAug(this, prob, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization,
             dual_inequality_regularization, rhs, true);
 }
-
-DoubleLinearSolver* DistributedFactory::make_root_solver() { return nullptr; };
 
 DistributedRootLinearSystem* DistributedFactory::newLinsysRootHierarchical() {
    return new sLinsysRootBordered(this, problem);

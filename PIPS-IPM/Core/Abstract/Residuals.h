@@ -19,8 +19,34 @@ class Variables;
  * Represents the residuals of a QP when solved by an interior point
  * QP solver. In terms of our abstract QP formulation, these residuals
  * are rQ, rA, rC and r3.
- * @ingroup AbstractProblemFormulation
+ * A quadratic program QP takes the form
+ * @code
+ * minimize    c'* x + (1/2) * x' * Q * x
+ * subject to  A x  = b
+ *             C x >= d
+ * @endcode
+ *
+ * However, for many (possibly most) QP's, the matrices in the
+ * formulation have structure that may be exploited to solve the
+ * problem more efficiently. The AbstractProblemFormulation module
+ * contains abstract base classes upon which these specialized
+ * formulations are based. The optimality conditions of the simple QP
+ * defined above as are follows:
+ *
+ * @code
+ * rQ  = c + Q * x - A' * y - C' * z = 0
+ * rA  = A * x - b                   = 0
+ * rC  = C * x - s - d               = 0
+ * r3  = S * z                       = 0
+ * s, z >= 0
+ * @endcode
+ *
+ * Where rQ, rA, rC and r3 newly defined quantities known as residual
+ * vectors and x, y, z and s are variables of used in the solution of
+ * the QPs.
+ * @{
  */
+
 class Residuals {
 protected:
    double mResidualNorm{std::numeric_limits<double>::infinity()};

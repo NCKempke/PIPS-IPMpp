@@ -16,7 +16,7 @@ class Status;
 
 class Monitor;
 
-class ProblemFactory;
+class DistributedFactory;
 
 /**  * @defgroup QpSolvers
  *
@@ -31,7 +31,7 @@ const unsigned int max_linesearch_points = 50;
  */
 class Solver {
 public:
-   Solver(ProblemFactory& problem_formulation, Problem& problem, const Scaler* = nullptr);
+   Solver(DistributedFactory& factory, Problem& problem, const Scaler* = nullptr);
 
    virtual ~Solver();
 
@@ -98,7 +98,7 @@ protected:
    Monitor* itsMonitors{};
    Status* status{};
    const Scaler* scaler{};
-   ProblemFactory& factory;
+   DistributedFactory& factory;
    /**  storage for step vectors */
    Variables* step, * corrector_step;
    /** storage for residual vectors */

@@ -10,15 +10,15 @@
 #include "math.h"
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, bool is_hierarchy_root) : LinearSystem(
-      factory_, problem), data{problem}, computeBlockwiseSC(pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")),
-      blocksizemax(pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX")), is_hierarchy_root(is_hierarchy_root),
-      blocksize_hierarchical(pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL")),
-      sc_compute_blockwise_hierarchical{pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
+      factory_, problem), data{problem}, computeBlockwiseSC(pips_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
+      blocksizemax(pips_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")), is_hierarchy_root(is_hierarchy_root),
+      blocksize_hierarchical(pips_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
+      sc_compute_blockwise_hierarchical{pips_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
    if (sc_compute_blockwise_hierarchical && PIPS_MPIgetRank() == 0)
       std::cout << "Computing hierarchical Schur complements blockwise with buffersize " << blocksize_hierarchical
                 << " (times # of available OMP threads)\n";
 
-   if (pips_options::getBoolParameter("HIERARCHICAL"))
+   if (pips_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
 
    problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
@@ -32,10 +32,10 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, Vector<double>* dd_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_,
       bool create_iter_ref_vecs) : LinearSystem(factory_, problem, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_,
-      create_iter_ref_vecs), data{problem}, computeBlockwiseSC(pips_options::getBoolParameter("SC_COMPUTE_BLOCKWISE")),
-      blocksizemax(pips_options::getIntParameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
-      blocksize_hierarchical(pips_options::getIntParameter("SC_BLOCKSIZE_HIERARCHICAL")),
-      sc_compute_blockwise_hierarchical{pips_options::getBoolParameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
+      create_iter_ref_vecs), data{problem}, computeBlockwiseSC(pips_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
+      blocksizemax(pips_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
+      blocksize_hierarchical(pips_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
+      sc_compute_blockwise_hierarchical{pips_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
    problem->getLocalSizes(locnx, locmy, locmz, locmyl, locmzl);
 
    if (primal_diagonal) {
