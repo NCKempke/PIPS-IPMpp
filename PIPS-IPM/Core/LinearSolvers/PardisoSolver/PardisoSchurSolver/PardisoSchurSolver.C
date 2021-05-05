@@ -5,9 +5,9 @@
 #include <iostream>
 #include "pipschecks.h"
 #include "PardisoSchurSolver.h"
-#include "SparseSymMatrix.h"
-#include "DenseGenMatrix.h"
-#include "StochOptions.h"
+#include "SparseSymmetricMatrix.h"
+#include "DenseMatrix.h"
+#include "DistributedOptions.h"
 #include "pipsdef.h"
 #include <algorithm>
 
@@ -41,7 +41,7 @@ extern "C" {
 
 #define SHRINK_SC
 
-PardisoSchurSolver::PardisoSchurSolver(const SparseSymMatrix* sgm) : Msys{sgm} {
+PardisoSchurSolver::PardisoSchurSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm} {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    useSparseRhs = pips_options::get_bool_parameter("PARDISO_SPARSE_RHS_LEAF");
@@ -86,7 +86,7 @@ void PardisoSchurSolver::firstCall() {
 
 // this function is called only once and creates the augmented system
 void
-PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G, int nSC0) {
+PardisoSchurSolver::firstSolveCall(SparseMatrix& R, SparseMatrix& A, SparseMatrix& C, SparseMatrix& F, SparseMatrix& G, int nSC0) {
    int nR, nA, nC, nF, nG, nx;
    nnz = 0;
 
@@ -144,7 +144,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
    nnz += nSC; //space for the 0 diagonal of 2x2 block
 
    // the lower triangular part of the augmented system in row-major
-   SparseSymMatrix augSys(n, nnz);
+   SparseSymmetricMatrix augSys(n, nnz);
 
    // pointer for augmented system
    int* krowAug = augSys.getStorageRef().krowM;
@@ -173,7 +173,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
       assert(putC == (putC && (nC > 0)));
 
       // initialize variables for At
-      SparseGenMatrix At(putA ? nx : 0, putA ? nA : 0, putA ? A.numberOfNonZeros() : 0);
+      SparseMatrix At(putA ? nx : 0, putA ? nA : 0, putA ? A.numberOfNonZeros() : 0);
       int* krowAt = At.getStorageRef().krowM;
       int* jcolAt = At.getStorageRef().jcolM;
       double* MAt = At.getStorageRef().M;
@@ -184,7 +184,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
       const int colShiftA = nR;
 
       // initialize variables for Ct
-      SparseGenMatrix Ct(putC ? nx : 0, putC ? nC : 0, putC ? C.numberOfNonZeros() : 0);
+      SparseMatrix Ct(putC ? nx : 0, putC ? nC : 0, putC ? C.numberOfNonZeros() : 0);
       int* krowCt = Ct.getStorageRef().krowM;
       int* jcolCt = Ct.getStorageRef().jcolM;
       double* MCt = Ct.getStorageRef().M;
@@ -437,7 +437,7 @@ void PardisoSchurSolver::matrixChanged() {
    //dumpSysMatrix(Msys);
 }
 
-void PardisoSchurSolver::schur_solve(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G,
+void PardisoSchurSolver::schur_solve(SparseMatrix& R, SparseMatrix& A, SparseMatrix& C, SparseMatrix& F, SparseMatrix& G,
       DenseSymMatrix& SC0) {
    int* rowptrSC = nullptr;
    int* colidxSC = nullptr;
@@ -483,8 +483,8 @@ void PardisoSchurSolver::schur_solve(SparseGenMatrix& R, SparseGenMatrix& A, Spa
 }
 
 
-void PardisoSchurSolver::schur_solve_sparse(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G,
-      SparseSymMatrix& SC0) {
+void PardisoSchurSolver::schur_solve_sparse(SparseMatrix& R, SparseMatrix& A, SparseMatrix& C, SparseMatrix& F, SparseMatrix& G,
+      SparseSymmetricMatrix& SC0) {
    int* rowptrSC = nullptr;
    int* colidxSC = nullptr;
    double* eltsSC = nullptr;

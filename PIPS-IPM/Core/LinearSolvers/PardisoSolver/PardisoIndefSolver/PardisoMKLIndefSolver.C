@@ -10,7 +10,7 @@
 #include "SimpleVector.h"
 #include "pipsdef.h"
 
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 
 #include "mkl_pardiso.h"
 #include "mkl_types.h"

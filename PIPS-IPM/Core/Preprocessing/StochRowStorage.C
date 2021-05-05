@@ -6,14 +6,14 @@
  */
 
 #include "StochRowStorage.h"
-#include "StochMatrixUtilities.h"
+#include "DistributedMatrixUtilities.h"
 
-StochRowStorage::StochRowStorage(const StochGenMatrix& system_matrix) : row_storage{
-      dynamic_cast<StochGenMatrix*>(system_matrix.cloneEmptyRows(true))} {
+StochRowStorage::StochRowStorage(const DistributedMatrix& system_matrix) : row_storage{
+      dynamic_cast<DistributedMatrix*>(system_matrix.cloneEmptyRows(true))} {
 }
 
 
-int StochRowStorage::storeRow(const INDEX& row, const StochGenMatrix& matrix_row) {
+int StochRowStorage::storeRow(const INDEX& row, const DistributedMatrix& matrix_row) {
    assert(row.isRow());
    const int stored_row_index = row_storage->appendRow(matrix_row, row.getNode(), row.getIndex(), row.getLinking());
    return stored_row_index;
@@ -74,7 +74,7 @@ double StochRowStorage::multRowTimesVec(const INDEX& row, const DistributedVecto
 
 double StochRowStorage::multLinkingRowTimesVecWithoutBl0(int row, const DistributedVector<double>& vec) const {
    const double res_full = row_storage->localRowTimesVec(vec, -1, row, true);
-   const double res_bl0 = dynamic_cast<const SparseGenMatrix*>(row_storage->Blmat)->localRowTimesVec(
+   const double res_bl0 = dynamic_cast<const SparseMatrix*>(row_storage->Blmat)->localRowTimesVec(
          dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
 
    return res_full - res_bl0;

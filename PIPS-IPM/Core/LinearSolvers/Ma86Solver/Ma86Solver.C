@@ -9,8 +9,8 @@ using namespace std;
 
 #include "Ma86Solver.h"
 #include "SparseStorage.h"
-#include "SparseSymMatrix.h"
-#include "DenseGenMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "DenseMatrix.h"
 #include "stdio.h"
 
 #ifdef HAVE_GETRUSAGE

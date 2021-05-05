@@ -32,19 +32,19 @@ protected:
    QP() = default;
 
 public:
-   SmartPointer<SymMatrix> Q;
+   SmartPointer<SymmetricMatrix> Q;
 
    /** constructor that sets up pointers to the data objects that are
        passed as arguments */
-   QP(Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
-         Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
+   QP(Vector<double>* c, SymmetricMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+         Vector<double>* ixupp, GeneralMatrix* A, Vector<double>* bA, GeneralMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
          Vector<double>* ciupp);
 
    /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putQIntoAt(SymMatrix& M, int row, int col);
+   virtual void putQIntoAt(SymmetricMatrix& M, int row, int col);
 
    /** insert the Hessian Q into the matrix M for the fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putQIntoAt(GenMatrix& M, int row, int col);
+   virtual void putQIntoAt(GeneralMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * Q * x */
    virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;

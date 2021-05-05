@@ -46,8 +46,8 @@ void DeSymPSDSolver::solve(Vector<double>& x_in) {
    dpotrs_(&fortranUplo, &n, &one, &mStorage->M[0][0], &n, &x[0], &n, &info);
 }
 
-void DeSymPSDSolver::Lsolve(GenMatrix& mat) {
-   DenseGenMatrix& B = dynamic_cast<DenseGenMatrix&>(mat);
+void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
+   DenseMatrix& B = dynamic_cast<DenseMatrix&>(mat);
    /*
 
    double A[9];

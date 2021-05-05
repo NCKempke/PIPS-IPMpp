@@ -15,7 +15,7 @@ extern "C" typedef int (* FVEC)(void* user_data, int id, double* vec, int len);
 extern "C" typedef int (* FLEN)(void* user_data, int id, int* len);
 
 
-class StochInputTree {
+class DistributedInputTree {
    friend class DistributedTreeCallbacks;
 
 public:
@@ -23,32 +23,32 @@ public:
    /**
     * Inner class that contains the node related data.
     */
-   class StochInputNode {
-      friend class StochInputTree;
+   class DistributedInputNode {
+      friend class DistributedInputTree;
 
       friend class DistributedTreeCallbacks;
 
    public:
-      StochInputNode(int id_ = -1);
+      DistributedInputNode(int id_ = -1);
 
-      StochInputNode(int id_, int n_, int my_, int myl_, int mz_, int mzl_);
+      DistributedInputNode(int id_, int n_, int my_, int myl_, int mz_, int mzl_);
 
-      StochInputNode(void* user_data, int id, int n, int my, int mz, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA, FMAT fB, FNNZ fnnzB, FVEC fb,
+      DistributedInputNode(void* user_data, int id, int n, int my, int mz, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA, FMAT fB, FNNZ fnnzB, FVEC fb,
             FMAT fC, FNNZ fnnzC, FMAT fD, FNNZ fnnzD, FVEC fclow, FVEC ficlow, FVEC fcupp, FVEC ficupp, FVEC fxlow, FVEC fixlow, FVEC fxupp,
             FVEC fixupp, bool deleteUserData = false);
 
       // full callback constructor without constraints
-      StochInputNode(void* user_data, int id, FNNZ n, FNNZ my, FNNZ mz, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA, FMAT fB, FNNZ fnnzB,
+      DistributedInputNode(void* user_data, int id, FNNZ n, FNNZ my, FNNZ mz, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA, FMAT fB, FNNZ fnnzB,
             FVEC fb, FMAT fC, FNNZ fnnzC, FMAT fD, FNNZ fnnzD, FVEC fclow, FVEC ficlow, FVEC fcupp, FVEC ficupp, FVEC fxlow, FVEC fixlow, FVEC fxupp,
             FVEC fixupp, bool deleteUserData = false);
 
       // full callback constructor including linking constraints
-      StochInputNode(void* user_data, int id, FNNZ n, FNNZ my, FNNZ myl, FNNZ mz, FNNZ mzl, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA,
+      DistributedInputNode(void* user_data, int id, FNNZ n, FNNZ my, FNNZ myl, FNNZ mz, FNNZ mzl, FMAT fQ, FNNZ fnnzQ, FVEC fc, FMAT fA, FNNZ fnnzA,
             FMAT fB, FNNZ fnnzB, FMAT fBl, FNNZ fnnzBl, FVEC fb, FVEC fbl, FMAT fC, FNNZ fnnzC, FMAT fD, FNNZ fnnzD, FMAT fDl, FNNZ fnnzDl,
             FVEC fclow, FVEC ficlow, FVEC fcupp, FVEC ficupp, FVEC fdllow, FVEC fidllow, FVEC fdlupp, FVEC fidlupp, FVEC fxlow, FVEC fixlow,
             FVEC fxupp, FVEC fixupp, bool deleteUserData = false);
 
-      ~StochInputNode();
+      ~DistributedInputNode();
 
    protected:
 
@@ -113,25 +113,25 @@ public:
 
       bool deleteUserData{false};
 
-   }; // end of inner class StochInputNode
+   }; // end of inner class DistributedInputNode
 
 public:
 
-   StochInputTree(const StochInputNode& root);
+   DistributedInputTree(const DistributedInputNode& root);
 
-   StochInputTree(StochInputNode* root);
+   DistributedInputTree(DistributedInputNode* root);
 
-   virtual ~StochInputTree();
+   virtual ~DistributedInputTree();
 
-   void AddChild(const StochInputNode& node);
+   void AddChild(const DistributedInputNode& node);
 
-   void AddChild(StochInputTree* subTree);
+   void AddChild(DistributedInputTree* subTree);
 
-   std::vector<StochInputTree*> children;
+   std::vector<DistributedInputTree*> children;
 protected:
-   StochInputTree();
+   DistributedInputTree();
 
-   StochInputNode* nodeInput{};
+   DistributedInputNode* nodeInput{};
 
 };
 

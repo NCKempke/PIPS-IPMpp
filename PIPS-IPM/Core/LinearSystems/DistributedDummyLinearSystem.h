@@ -46,16 +46,16 @@ public:
 
    void addTermToSchurResidual(DistributedQP*, SimpleVector<double>&, SimpleVector<double>&) override {};
 
-   void LsolveHierarchyBorder(DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int) override {};
-   void LsolveHierarchyBorder(DenseGenMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, int, int) override {};
-   void addInnerBorderKiInvBrToRes(DoubleMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int, int, int) override {};
+   void LsolveHierarchyBorder(DenseMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int) override {};
+   void LsolveHierarchyBorder(DenseMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, int, int) override {};
+   void addInnerBorderKiInvBrToRes(AbstractMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int, int, int) override {};
    void
-   LniTransMultHierarchyBorder(DoubleMatrix&, const DenseGenMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int,
+   LniTransMultHierarchyBorder(AbstractMatrix&, const DenseMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int,
          int, int) override {};
 
-   void allocU(DenseGenMatrix**, int) override {};
-   void allocV(DenseGenMatrix**, int) override {};
-   void computeU_V(DistributedQP*, DenseGenMatrix*, DenseGenMatrix*) override {};
+   void allocU(DenseMatrix**, int) override {};
+   void allocV(DenseMatrix**, int) override {};
+   void computeU_V(DistributedQP*, DenseMatrix*, DenseMatrix*) override {};
    void deleteChildren() override {};
 
    [[nodiscard]] bool isDummy() const override { return true; };

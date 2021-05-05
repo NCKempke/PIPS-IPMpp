@@ -25,7 +25,7 @@ enum {
    kPetscSpSymMatrix = kPetscSpMatrix + kSymMatrix,
    // 0x40-0x4f - stoch matrices
    kStochMatrix = 0x30,
-   kStochGenMatrix = kStochMatrix + kGenMatrix,
+   kDistributedMatrix = kStochMatrix + kGenMatrix,
    kStochSymMatrix = kStochMatrix + kSymMatrix,
    kStochGenDummyMatrix,
    kStochSymDummyMatrix,
@@ -37,7 +37,7 @@ enum {
    kEmtlDenSymMatrix = kEmtlDenMatrix + kSymMatrix,
    // 0x60-0x6f - string matrices
    kStringMatrix = 0x60,
-   kStringGenMatrix = kStochMatrix + kGenMatrix,
+   kStripMatrix = kStochMatrix + kGenMatrix,
    kStringGenDummyMatrix,
    // 0x70-0x7f - bordered matrices
    kBorderedMatrix = 0x70,

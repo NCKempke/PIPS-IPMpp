@@ -4,13 +4,13 @@
 
 #include "QP.hpp"
 #include "Variables.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include <cmath>
 #include "SimpleVector.h"
 #include "MpsReader.h"
 
-QP::QP(Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
-      Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
+QP::QP(Vector<double>* c_in, SymmetricMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
+      Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
       Vector<double>* cupp_in, Vector<double>* icupp_in) :
       Problem(c_in, xlow_in, ixlow_in, xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in) {
    SpReferTo(Q, Q_in);
@@ -22,7 +22,7 @@ void QP::hessian_multiplication(double beta, Vector<double>& y, double alpha, co
 }
 
 double QP::datanorm() const {
-   return std::max(Problem::datanorm(), Q->abmaxnorm());
+   return std::max(Problem::datanorm(), Q->inf_norm());
 }
 
 void QP::datainput(MpsReader* reader, int& iErr) {
@@ -55,11 +55,11 @@ void QP::print() {
    Problem::print();
 }
 
-void QP::putQIntoAt(SymMatrix& M, int row, int col) {
+void QP::putQIntoAt(SymmetricMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QP::putQIntoAt(GenMatrix& M, int row, int col) {
+void QP::putQIntoAt(GeneralMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 

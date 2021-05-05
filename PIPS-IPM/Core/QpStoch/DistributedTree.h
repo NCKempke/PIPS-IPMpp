@@ -7,8 +7,8 @@
 
 #include "StochResourcesMonitor.h"
 #include "DistributedVector.h"
-#include "StochGenMatrix.h"
-#include "StochSymMatrix.h"
+#include "DistributedMatrix.h"
+#include "DistributedSymmetricMatrix.h"
 
 #include <list>
 #include <utility>
@@ -85,7 +85,7 @@ public:
 
    void getSyncInfo(int myRank, int& syncNeeded, int& sendOrRecv, int& toFromCPU);
 
-   virtual StochSymMatrix* createQ() const = 0;
+   virtual DistributedSymmetricMatrix* createQ() const = 0;
    virtual DistributedVector<double>* createc() const = 0;
 
    virtual DistributedVector<double>* createxlow() const = 0;
@@ -93,11 +93,11 @@ public:
    virtual DistributedVector<double>* createxupp() const = 0;
    virtual DistributedVector<double>* createixupp() const = 0;
 
-   virtual StochGenMatrix* createA() const = 0;
+   virtual DistributedMatrix* createA() const = 0;
    virtual DistributedVector<double>* createb() const = 0;
 
 
-   virtual StochGenMatrix* createC() const = 0;
+   virtual DistributedMatrix* createC() const = 0;
    virtual DistributedVector<double>* createclow() const = 0;
    virtual DistributedVector<double>* createiclow() const = 0;
    virtual DistributedVector<double>* createcupp() const = 0;

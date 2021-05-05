@@ -14,7 +14,7 @@ class PardisoProjectSolver : public PardisoSolver {
 public:
    void firstCall() override;
 
-   PardisoProjectSolver(const SparseSymMatrix* sgm);
+   PardisoProjectSolver(const SparseSymmetricMatrix* sgm);
    PardisoProjectSolver(const DenseSymMatrix* m);
    ~PardisoProjectSolver() override;
 

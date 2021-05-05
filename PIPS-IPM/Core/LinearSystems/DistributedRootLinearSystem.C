@@ -7,7 +7,7 @@
 #include "DistributedQP.hpp"
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 
 /*********************************************************************/
 /************************** ROOT *************************************/
@@ -174,7 +174,7 @@ void sLinsysRoot::afterFactor()
  */
 // TODO : move to aug..
 void
-DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
+DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows) {
    assert(0 <= begin_rows && begin_rows <= end_rows);
    // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
@@ -192,14 +192,14 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseGenMatrix& buffer, Bord
 
    bool has_RAC = Br.has_RAC;
 
-   SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
-   SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
+   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first) : nullptr;
+   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first) : nullptr;
 
-   SparseGenMatrix* A0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat) : nullptr;
-   SparseGenMatrix* C0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat) : nullptr;
+   SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first) : nullptr;
+   SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first) : nullptr;
 
-   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : &data->getLocalF();
-   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : &data->getLocalG();
+   SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last) : &data->getLocalF();
+   SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last) : &data->getLocalG();
 
    if (has_RAC)
       assert(F0cons_border && G0cons_border && A0_border && C0_border);
@@ -319,7 +319,7 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseGenMatrix& buffer, Bord
  *       [ G0V  0    0   ]
  *
  */
-void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(DoubleMatrix& result, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse,
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(AbstractMatrix& result, DenseMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse,
       int begin_rows, int end_rows) {
    int m_result, n_result;
    result.getSize(m_result, n_result);
@@ -344,13 +344,13 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Doubl
    X0.getSize(mX0, nX0);
    assert(n_rows <= mX0);
 
-   SparseGenMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.F.mat) : nullptr;
-   SparseGenMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.G.mat) : nullptr;
+   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first) : nullptr;
+   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first) : nullptr;
 
-   SparseGenMatrix* A0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat) : nullptr;
-   SparseGenMatrix* C0_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat) : nullptr;
-   SparseGenMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.A.mat_link) : &data->getLocalF();
-   SparseGenMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseGenMatrix*>(Br.C.mat_link) : &data->getLocalG();
+   SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first) : nullptr;
+   SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first) : nullptr;
+   SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last) : &data->getLocalF();
+   SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last) : &data->getLocalG();
 
    assert(F0vec_border);
    assert(G0vec_border);
@@ -412,13 +412,13 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Doubl
 }
 
 /* SC and X0 stored in transposed form */
-void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
-      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
-      SparseGenMatrix* G0cons_border, int begin_rows, int end_rows) {
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border,
+      SparseMatrix* C0_border, SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border,
+      SparseMatrix* G0cons_border, int begin_rows, int end_rows) {
    assert(F0vec_border);
    assert(G0vec_border);
 
-   auto& SC = dynamic_cast<SparseSymMatrix&>(SC_);
+   auto& SC = dynamic_cast<SparseSymmetricMatrix&>(SC_);
 
    int dummy, mX0;
    X0.getSize(mX0, dummy);
@@ -469,13 +469,13 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse
 }
 
 /* SC and X0 stored in transposed form */
-void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border,
-      SparseGenMatrix* C0_border, SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border,
-      SparseGenMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border,
+      SparseMatrix* C0_border, SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border,
+      SparseMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
    assert(F0vec_border);
    assert(G0vec_border);
 
-   double** SC = is_sym ? dynamic_cast<DenseSymMatrix&>(SC_).Mat() : dynamic_cast<DenseGenMatrix&>(SC_).Mat();
+   double** SC = is_sym ? dynamic_cast<DenseSymMatrix&>(SC_).Mat() : dynamic_cast<DenseMatrix&>(SC_).Mat();
 
    const int n_rows = end_rows - begin_rows;
    int dummy, mX0;
@@ -529,7 +529,7 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(
 }
 
 /* compute result += [ SUM_i Bi_{inner}^T Ki^{-1} (Bri - SUM_j Bmodij Xij) ]^T += SUM_i (Bri - SUM_j Xij^T Bmodij^T) Ki^{-1} Bi_{inner}^T */
-void DistributedRootLinearSystem::LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
+void DistributedRootLinearSystem::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
       bool two_link_border, int begin_cols, int end_cols) {
    assert(children.size() == Br.F.children.size());
 
@@ -563,15 +563,15 @@ void DistributedRootLinearSystem::LsolveHierarchyBorder(DenseGenMatrix& result, 
 }
 
 /* compute SUM_i Bli^T X_i = SUM_i Bli^T Ki^-1 (( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-void DistributedRootLinearSystem::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+void DistributedRootLinearSystem::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) {
    assert(!is_hierarchy_root);
 
    /* X0 is still in transposed form */
    assert(children.size() == Br.F.children.size());
    assert(children.size() == Bl.F.children.size());
-   assert(!Br.F.isKindOf(kStringGenDummyMatrix));
-   assert(!Bl.F.isKindOf(kStringGenDummyMatrix));
+   assert(!Br.F.is_a(kStringGenDummyMatrix));
+   assert(!Bl.F.is_a(kStringGenDummyMatrix));
 
    /* for every child - add Bi_{outer}^T Ki^-1 (Bi_{outer} - Bi_{inner} X0) */
    for (size_t it = 0; it < children.size(); it++) {
@@ -607,32 +607,32 @@ void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    }
 
    /* add schur complement part */
-   assert(border.A.mat);
-   assert(border.C.mat);
+   assert(border.A.first);
+   assert(border.C.first);
 
-   auto& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
+   auto& A0_border = dynamic_cast<SparseMatrix&>(*border.A.first);
    int mA0, nA0;
    A0_border.getSize(mA0, nA0);
 
-   auto& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
+   auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
    int mC0, nC0;
    C0_border.getSize(mC0, nC0);
 
-   assert(border.F.mat);
-   assert(border.A.mat_link);
-   auto& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
+   assert(border.F.first);
+   assert(border.A.last);
+   auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
    int mF0V, nF0V;
    F0vec_border.getSize(mF0V, nF0V);
-   auto& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
+   auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
    int mF0C, nF0C;
    F0cons_border.getSize(mF0C, nF0C);
 
-   assert(border.C.mat_link);
-   assert(border.G.mat);
-   auto& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
+   assert(border.C.last);
+   assert(border.G.first);
+   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
    int mG0V, nG0V;
    G0vec_border.getSize(mG0V, nG0V);
-   auto& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
+   auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
    int mG0C, nG0C;
    G0cons_border.getSize(mG0C, nG0C);
 
@@ -675,32 +675,32 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
 
    /* add schur complement part */
    if (PIPS_MPIgetSize(mpiComm) == 0 || PIPS_MPIgetRank(mpiComm) == 0) {
-      assert(border.A.mat);
-      assert(border.C.mat);
+      assert(border.A.first);
+      assert(border.C.first);
 
-      auto& A0_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat);
+      auto& A0_border = dynamic_cast<SparseMatrix&>(*border.A.first);
       int mA0, nA0;
       A0_border.getSize(mA0, nA0);
 
-      auto& C0_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat);
+      auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
       int mC0, nC0;
       C0_border.getSize(mC0, nC0);
 
-      assert(border.F.mat);
-      assert(border.A.mat_link);
-      auto& F0vec_border = dynamic_cast<SparseGenMatrix&>(*border.A.mat_link);
+      assert(border.F.first);
+      assert(border.A.last);
+      auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
       int mF0V, nF0V;
       F0vec_border.getSize(mF0V, nF0V);
-      auto& F0cons_border = dynamic_cast<SparseGenMatrix&>(*border.F.mat);
+      auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
       int mF0C, nF0C;
       F0cons_border.getSize(mF0C, nF0C);
 
-      assert(border.C.mat_link);
-      assert(border.G.mat);
-      auto& G0vec_border = dynamic_cast<SparseGenMatrix&>(*border.C.mat_link);
+      assert(border.C.last);
+      assert(border.G.first);
+      auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
       int mG0V, nG0V;
       G0vec_border.getSize(mG0V, nG0V);
-      auto& G0cons_border = dynamic_cast<SparseGenMatrix&>(*border.G.mat);
+      auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
       int mG0C, nG0C;
       G0cons_border.getSize(mG0C, nG0C);
 
@@ -877,7 +877,7 @@ void DistributedRootLinearSystem::AddChild(DistributedLinearSystem* child) {
 /* Atoms methods of FACTOR2 for a non-leaf linear system */
 void DistributedRootLinearSystem::initializeKKT(DistributedQP*, Variables*) {
    if (hasSparseKkt)
-      dynamic_cast<SparseSymMatrix*>(kkt.get())->symPutZeroes();
+      dynamic_cast<SparseSymmetricMatrix*>(kkt.get())->symPutZeroes();
    else {
       auto* kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
       myAtPutZeros(kktd);
@@ -924,7 +924,7 @@ void DistributedRootLinearSystem::reduceKKTsparse() {
       return;
    assert(kkt);
 
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
    int* const krowKkt = kkts.krowM();
    double* const MKkt = kkts.M();
@@ -1022,7 +1022,7 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
 
    assert(kkt && hasSparseKkt);
 
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
    int* const krowKkt = kkts.krowM();
    int* const jColKkt = kkts.jcolM();
@@ -1187,7 +1187,7 @@ std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLine
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
 
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
    const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
    const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
    int* const krowKkt = kkts.krowM();
@@ -1255,7 +1255,7 @@ void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
    const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
    const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
 
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
    int* const krowKkt = kkts.krowM();
    int* const jColKkt = kkts.jcolM();
@@ -1369,7 +1369,7 @@ void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
    assert(!kktDist || !kktDist->isLower);
 
    delete kktDist;
-   kktDist = new SparseSymMatrix(sizeKkt, nnzDist, false);
+   kktDist = new SparseSymmetricMatrix(sizeKkt, nnzDist, false);
 
    int* const krowDist = kktDist->krowM();
    int* const jColDist = kktDist->jcolM();
@@ -1575,7 +1575,7 @@ void DistributedRootLinearSystem::addTermToSchurCompl(DistributedQP* prob, size_
    }
    else {
       if (hasSparseKkt) {
-         auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+         auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
          children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
       }
@@ -1642,13 +1642,13 @@ void DistributedRootLinearSystem::submatrixAllReduce(DenseSymMatrix* A, int star
 }
 
 // TODO: move all this to the respective matrix and storages.......
-void DistributedRootLinearSystem::allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
+void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
    int n, m;
    mat.getSize(m, n);
 
    if (is_sparse) {
       if (is_sym) {
-         auto& matsp = dynamic_cast<SparseSymMatrix&>(mat);
+         auto& matsp = dynamic_cast<SparseSymmetricMatrix&>(mat);
 
          int* const krowKkt = matsp.krowM();
          double* const MKkt = matsp.M();
@@ -1659,7 +1659,7 @@ void DistributedRootLinearSystem::allreduceMatrix(DoubleMatrix& mat, bool is_spa
          reduceToAllProcs(nnzKkt, MKkt);
       }
       else {
-         auto& matsp = dynamic_cast<SparseGenMatrix&>(mat);
+         auto& matsp = dynamic_cast<SparseMatrix&>(mat);
 
          int* const krowKkt = matsp.krowM();
          double* const MKkt = matsp.M();
@@ -1673,7 +1673,7 @@ void DistributedRootLinearSystem::allreduceMatrix(DoubleMatrix& mat, bool is_spa
       if (is_sym)
          submatrixAllReduceFull(&dynamic_cast<DenseSymMatrix&>(mat), 0, 0, m, n, comm);
       else
-         submatrixAllReduceFull(&dynamic_cast<DenseGenMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(&dynamic_cast<DenseMatrix&>(mat), 0, 0, m, n, comm);
    }
 }
 
@@ -1686,7 +1686,7 @@ void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymMatrix* A, int 
    submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
 }
 
-void DistributedRootLinearSystem::submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** const M = A->mStorage->M;
    assert(A->mStorage->m >= startRow + nRows);
    assert(A->mStorage->n >= startCol + nCols);

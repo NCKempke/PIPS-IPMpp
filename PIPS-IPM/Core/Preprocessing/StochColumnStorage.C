@@ -26,10 +26,10 @@
 #include "StochColumnStorage.h"
 #include "DoubleMatrixTypes.h"
 #include "SystemType.h"
-#include "StochMatrixUtilities.h"
-#include "StochVectorUtilities.h"
+#include "DistributedMatrixUtilities.h"
+#include "DistributedVectorUtilities.h"
 
-StochColumnStorage::StochColumnStorage(const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part) : nChildren(
+StochColumnStorage::StochColumnStorage(const DistributedMatrix& matrix_eq_part, const DistributedMatrix& matrix_ineq_part) : nChildren(
       matrix_eq_part.children.size()) {
    assert(matrix_ineq_part.children.size() == nChildren);
 
@@ -37,16 +37,16 @@ StochColumnStorage::StochColumnStorage(const StochGenMatrix& matrix_eq_part, con
    createStorageMatrix(INEQUALITY_SYSTEM, matrix_ineq_part);
 }
 
-void StochColumnStorage::createStorageMatrix(SystemType system_type, const StochGenMatrix& sys_matrix) {
-   std::unique_ptr<SparseGenMatrix>& b0_block_storage = (system_type == EQUALITY_SYSTEM) ? B0_eq : B0_ineq;
-   std::unique_ptr<StochGenMatrix>& col_storage = (system_type == EQUALITY_SYSTEM) ? stored_cols_eq : stored_cols_ineq;
+void StochColumnStorage::createStorageMatrix(SystemType system_type, const DistributedMatrix& sys_matrix) {
+   std::unique_ptr<SparseMatrix>& b0_block_storage = (system_type == EQUALITY_SYSTEM) ? B0_eq : B0_ineq;
+   std::unique_ptr<DistributedMatrix>& col_storage = (system_type == EQUALITY_SYSTEM) ? stored_cols_eq : stored_cols_ineq;
 
    /* extra storage for b0mat entries in linking variable column we want to store */
    assert(sys_matrix.Bmat);
-   b0_block_storage.reset(dynamic_cast<const SparseGenMatrix*>(sys_matrix.Bmat)->cloneEmptyRowsTransposed(true));
+   b0_block_storage.reset(dynamic_cast<const SparseMatrix*>(sys_matrix.Bmat)->cloneEmptyRowsTransposed(true));
 
    // todo : n, m are wrong here but the counters are broken anyways?
-   col_storage.reset(new StochGenMatrix(sys_matrix.n, sys_matrix.m, sys_matrix.mpiComm));
+   col_storage.reset(new DistributedMatrix(sys_matrix.n, sys_matrix.m, sys_matrix.mpiComm));
 
 
    /* the rest of the matrix is going to get transposed - note that this would normally reverse the dummy non-dummy structure of the matrix
@@ -61,35 +61,35 @@ void StochColumnStorage::createStorageMatrix(SystemType system_type, const Stoch
    assert(col_storage->Amat == nullptr);
    assert(col_storage->Bmat == nullptr);
    assert(col_storage->Blmat == nullptr);
-   col_storage->Amat = dynamic_cast<const SparseGenMatrix*>(sys_matrix.Amat)->cloneEmptyRows(true);
+   col_storage->Amat = dynamic_cast<const SparseMatrix*>(sys_matrix.Amat)->cloneEmptyRows(true);
    /* B0mat will not be used and stay empty */
-   col_storage->Bmat = dynamic_cast<const SparseGenMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
-   col_storage->Blmat = dynamic_cast<const SparseGenMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
+   col_storage->Bmat = dynamic_cast<const SparseMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
+   col_storage->Blmat = dynamic_cast<const SparseMatrix*>(sys_matrix.Blmat)->cloneEmptyRowsTransposed(true);
 
    for (size_t it = 0; it < sys_matrix.children.size(); it++) {
-      const StochGenMatrix& child = *sys_matrix.children[it];
+      const DistributedMatrix& child = *sys_matrix.children[it];
 
       /* create child */
-      StochGenMatrix* child_clone;
-      if (child.isKindOf(kStochGenDummyMatrix))
+      DistributedMatrix* child_clone;
+      if (child.is_a(kStochGenDummyMatrix))
          child_clone = new StochGenDummyMatrix();
       else
-         child_clone = new StochGenMatrix(child.m, child.n, child.mpiComm);
+         child_clone = new DistributedMatrix(child.m, child.n, child.mpiComm);
 
       /* clone submatrices */
       delete child_clone->Amat;
       delete child_clone->Bmat;
       delete child_clone->Blmat;
 
-      child_clone->Amat = dynamic_cast<const SparseGenMatrix*>(child.Blmat)->cloneEmptyRowsTransposed(true);
-      child_clone->Bmat = dynamic_cast<const SparseGenMatrix*>(child.Bmat)->cloneEmptyRowsTransposed(true);
-      child_clone->Blmat = dynamic_cast<const SparseGenMatrix*>(child.Amat)->cloneEmptyRowsTransposed(true);
+      child_clone->Amat = dynamic_cast<const SparseMatrix*>(child.Blmat)->cloneEmptyRowsTransposed(true);
+      child_clone->Bmat = dynamic_cast<const SparseMatrix*>(child.Bmat)->cloneEmptyRowsTransposed(true);
+      child_clone->Blmat = dynamic_cast<const SparseMatrix*>(child.Amat)->cloneEmptyRowsTransposed(true);
 
       col_storage->children.push_back(child_clone);
    }
 }
 
-int StochColumnStorage::storeCol(const INDEX& col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part) {
+int StochColumnStorage::storeCol(const INDEX& col, const DistributedMatrix& matrix_eq_part, const DistributedMatrix& matrix_ineq_part) {
    assert(col.isCol());
    assert(matrix_eq_part.children.size() == matrix_ineq_part.children.size());
 
@@ -99,20 +99,20 @@ int StochColumnStorage::storeCol(const INDEX& col, const StochGenMatrix& matrix_
       return storeLocalCol(col, matrix_eq_part, matrix_ineq_part);
 }
 
-int StochColumnStorage::storeLinkingCol(int col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part) {
+int StochColumnStorage::storeLinkingCol(int col, const DistributedMatrix& matrix_eq_part, const DistributedMatrix& matrix_ineq_part) {
    assert(matrix_eq_part.children.size() == matrix_ineq_part.children.size());
    assert(matrix_eq_part.children.size() == stored_cols_eq->children.size());
 
-   assert(!matrix_eq_part.isKindOf(kStochGenDummyMatrix));
-   assert(!matrix_eq_part.isKindOf(kStochGenDummyMatrix));
+   assert(!matrix_eq_part.is_a(kStochGenDummyMatrix));
+   assert(!matrix_eq_part.is_a(kStochGenDummyMatrix));
 
-   const SparseGenMatrix& B0 = *getSparseGenMatrixFromStochMat(matrix_eq_part, -1, B_MAT);
-   const SparseGenMatrix& D0 = *getSparseGenMatrixFromStochMat(matrix_ineq_part, -1, B_MAT);
-   const SparseGenMatrix& Bl0 = *getSparseGenMatrixFromStochMat(matrix_eq_part, -1, BL_MAT);
-   const SparseGenMatrix& Dl0 = *getSparseGenMatrixFromStochMat(matrix_ineq_part, -1, BL_MAT);
+   const SparseMatrix& B0 = *getSparseGenMatrixFromStochMat(matrix_eq_part, -1, B_MAT);
+   const SparseMatrix& D0 = *getSparseGenMatrixFromStochMat(matrix_ineq_part, -1, B_MAT);
+   const SparseMatrix& Bl0 = *getSparseGenMatrixFromStochMat(matrix_eq_part, -1, BL_MAT);
+   const SparseMatrix& Dl0 = *getSparseGenMatrixFromStochMat(matrix_ineq_part, -1, BL_MAT);
 
-   SparseGenMatrix& Bl0_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, -1, BL_MAT);
-   SparseGenMatrix& Dl0_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, -1, BL_MAT);
+   SparseMatrix& Bl0_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, -1, BL_MAT);
+   SparseMatrix& Dl0_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, -1, BL_MAT);
 
    const int B0_index = B0_eq->appendCol(B0, col);
 #ifndef NDEBUG
@@ -129,19 +129,19 @@ int StochColumnStorage::storeLinkingCol(int col, const StochGenMatrix& matrix_eq
 #endif
 
    for (unsigned int i = 0; i < nChildren; ++i) {
-      if (matrix_eq_part.children[i]->isKindOf(kStochGenDummyMatrix)) {
-         assert(matrix_ineq_part.children[i]->isKindOf(kStochGenDummyMatrix));
+      if (matrix_eq_part.children[i]->is_a(kStochGenDummyMatrix)) {
+         assert(matrix_ineq_part.children[i]->is_a(kStochGenDummyMatrix));
          continue;
       }
       else {
-         assert(!matrix_ineq_part.children[i]->isKindOf(kStochGenDummyMatrix));
+         assert(!matrix_ineq_part.children[i]->is_a(kStochGenDummyMatrix));
       }
 
-      const SparseGenMatrix& Ai = *getSparseGenMatrixFromStochMat(matrix_eq_part, i, A_MAT);
-      const SparseGenMatrix& Ci = *getSparseGenMatrixFromStochMat(matrix_ineq_part, i, A_MAT);
+      const SparseMatrix& Ai = *getSparseGenMatrixFromStochMat(matrix_eq_part, i, A_MAT);
+      const SparseMatrix& Ci = *getSparseGenMatrixFromStochMat(matrix_ineq_part, i, A_MAT);
 
-      SparseGenMatrix& Ai_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, i, BL_MAT);
-      SparseGenMatrix& Ci_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, i, BL_MAT);
+      SparseMatrix& Ai_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, i, BL_MAT);
+      SparseMatrix& Ci_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, i, BL_MAT);
 
 #ifndef NDEBUG
       const int Ai_index = Ai_storage.appendCol(Ai, col);
@@ -157,7 +157,7 @@ int StochColumnStorage::storeLinkingCol(int col, const StochGenMatrix& matrix_eq
    return B0_index;
 }
 
-int StochColumnStorage::storeLocalCol(const INDEX& col, const StochGenMatrix& matrix_eq_part, const StochGenMatrix& matrix_ineq_part) {
+int StochColumnStorage::storeLocalCol(const INDEX& col, const DistributedMatrix& matrix_eq_part, const DistributedMatrix& matrix_ineq_part) {
    const int node = col.getNode();
    const int col_index = col.getIndex();
 
@@ -165,18 +165,18 @@ int StochColumnStorage::storeLocalCol(const INDEX& col, const StochGenMatrix& ma
    assert(matrix_eq_part.children.size() == matrix_ineq_part.children.size());
    assert(matrix_eq_part.children.size() == stored_cols_eq->children.size());
 
-   assert(!matrix_eq_part.children[node]->isKindOf(kStochGenDummyMatrix));
-   assert(!matrix_ineq_part.children[node]->isKindOf(kStochGenDummyMatrix));
+   assert(!matrix_eq_part.children[node]->is_a(kStochGenDummyMatrix));
+   assert(!matrix_ineq_part.children[node]->is_a(kStochGenDummyMatrix));
 
-   const SparseGenMatrix& Bi = *getSparseGenMatrixFromStochMat(matrix_eq_part, node, B_MAT);
-   const SparseGenMatrix& Di = *getSparseGenMatrixFromStochMat(matrix_ineq_part, node, B_MAT);
-   const SparseGenMatrix& Bli = *getSparseGenMatrixFromStochMat(matrix_eq_part, node, BL_MAT);
-   const SparseGenMatrix& Dli = *getSparseGenMatrixFromStochMat(matrix_ineq_part, node, BL_MAT);
+   const SparseMatrix& Bi = *getSparseGenMatrixFromStochMat(matrix_eq_part, node, B_MAT);
+   const SparseMatrix& Di = *getSparseGenMatrixFromStochMat(matrix_ineq_part, node, B_MAT);
+   const SparseMatrix& Bli = *getSparseGenMatrixFromStochMat(matrix_eq_part, node, BL_MAT);
+   const SparseMatrix& Dli = *getSparseGenMatrixFromStochMat(matrix_ineq_part, node, BL_MAT);
 
-   SparseGenMatrix& Bi_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, B_MAT);
-   SparseGenMatrix& Di_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, B_MAT);
-   SparseGenMatrix& Bli_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, A_MAT);
-   SparseGenMatrix& Dli_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, A_MAT);
+   SparseMatrix& Bi_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, B_MAT);
+   SparseMatrix& Di_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, B_MAT);
+   SparseMatrix& Bli_storage = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, A_MAT);
+   SparseMatrix& Dli_storage = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, A_MAT);
 
    const int Bi_index = Bi_storage.appendCol(Bi, col_index);
 #ifndef NDEBUG
@@ -219,8 +219,8 @@ void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<
    assert(col.isCol());
    assert(!vec.isKindOf(kStochDummy));
 
-   const SparseGenMatrix& B0_mat = (system_type == EQUALITY_SYSTEM) ? *B0_eq : *B0_ineq;
-   const StochGenMatrix& mat = (system_type == EQUALITY_SYSTEM) ? *stored_cols_eq : *stored_cols_ineq;
+   const SparseMatrix& B0_mat = (system_type == EQUALITY_SYSTEM) ? *B0_eq : *B0_ineq;
+   const DistributedMatrix& mat = (system_type == EQUALITY_SYSTEM) ? *stored_cols_eq : *stored_cols_ineq;
 
    if (col.isLinkingCol()) {
       /* B0 */
@@ -228,16 +228,16 @@ void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<
       B0_mat.axpyWithRowAt(alpha, b0_vec, col.getIndex());
 
       /* Bl0 */
-      const SparseGenMatrix& Bl0_mat = *getSparseGenMatrixFromStochMat(mat, -1, BL_MAT);
+      const SparseMatrix& Bl0_mat = *getSparseGenMatrixFromStochMat(mat, -1, BL_MAT);
       SimpleVector<double>& bl0_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) : *vec_link;
       Bl0_mat.axpyWithRowAt(alpha, bl0_vec, col.getIndex());
 
       /* Amats */
       for (unsigned int node = 0; node < nChildren; ++node) {
          if (!vec.children[node]->isKindOf(kStochDummy)) {
-            assert(!mat.children[node]->isKindOf(kStochGenDummyMatrix));
+            assert(!mat.children[node]->is_a(kStochGenDummyMatrix));
 
-            const SparseGenMatrix& A_mat = *getSparseGenMatrixFromStochMat(mat, node, BL_MAT);
+            const SparseMatrix& A_mat = *getSparseGenMatrixFromStochMat(mat, node, BL_MAT);
             SimpleVector<double>& a_vec = getSimpleVecFromRowStochVec(vec, node, false);
 
             A_mat.axpyWithRowAt(alpha, a_vec, col.getIndex());
@@ -245,12 +245,12 @@ void StochColumnStorage::axpyAtCol(DistributedVector<double>& vec, SimpleVector<
       }
    }
    else {
-      assert(!mat.children[col.getNode()]->isKindOf(kStochGenDummyMatrix));
+      assert(!mat.children[col.getNode()]->is_a(kStochGenDummyMatrix));
 
-      const SparseGenMatrix& Bi_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), B_MAT);
+      const SparseMatrix& Bi_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), B_MAT);
       SimpleVector<double>& bi_vec = getSimpleVecFromRowStochVec(vec, col.getNode(), false);
 
-      const SparseGenMatrix& Bli_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), A_MAT);
+      const SparseMatrix& Bli_mat = *getSparseGenMatrixFromStochMat(mat, col.getNode(), A_MAT);
       SimpleVector<double>& bli_vec = (vec_link == nullptr) ? getSimpleVecFromRowStochVec(vec, -1, true) : *vec_link;
 
       Bi_mat.axpyWithRowAt(alpha, bi_vec, col.getIndex());
@@ -290,13 +290,13 @@ StochColumnStorage::multiplyLinkingColTimesVec(int col, const DistributedVector<
 
    double res = 0.0;
    /* equality system */
-   const SparseGenMatrix& Bl0_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, -1, BL_MAT);
+   const SparseMatrix& Bl0_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, -1, BL_MAT);
 
    res += B0_eq->localRowTimesVec(getSimpleVecFromRowStochVec(vec_eq, -1, false), col);
    res += Bl0_mat.localRowTimesVec(getSimpleVecFromRowStochVec(vec_eq, -1, true), col);
 
    /* inequality system */
-   const SparseGenMatrix& Dl0_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, -1, BL_MAT);
+   const SparseMatrix& Dl0_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, -1, BL_MAT);
 
    res += B0_ineq->localRowTimesVec(getSimpleVecFromRowStochVec(vec_ineq, -1, false), col);
    res += Dl0_mat.localRowTimesVec(getSimpleVecFromRowStochVec(vec_ineq, -1, true), col);
@@ -314,16 +314,16 @@ double StochColumnStorage::multiplyLinkingColTimesVecWithoutRootNode(int col, co
    for (unsigned int node = 0; node < nChildren; ++node) {
       if (!vec_eq.children[node]->isKindOf(kStochDummy)) {
          assert(!vec_ineq.children[node]->isKindOf(kStochDummy));
-         assert(!stored_cols_eq->children[node]->isKindOf(kStochGenDummyMatrix));
-         assert(!stored_cols_ineq->children[node]->isKindOf(kStochGenDummyMatrix));
+         assert(!stored_cols_eq->children[node]->is_a(kStochGenDummyMatrix));
+         assert(!stored_cols_ineq->children[node]->is_a(kStochGenDummyMatrix));
 
-         const SparseGenMatrix& A_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, BL_MAT);
+         const SparseMatrix& A_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, BL_MAT);
          assert(vec_eq.children[node]->first);
 
          const SimpleVector<double>& a_vec = getSimpleVecFromRowStochVec(vec_eq, node, false);
          res += A_mat.localRowTimesVec(a_vec, col);
 
-         const SparseGenMatrix& C_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, BL_MAT);
+         const SparseMatrix& C_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, BL_MAT);
          assert(vec_ineq.children[node]->first);
 
          const SimpleVector<double>& c_vec = getSimpleVecFromRowStochVec(vec_ineq, node, false);
@@ -343,19 +343,19 @@ double StochColumnStorage::multiplyLocalColTimesVec(const INDEX& col, const Dist
    assert(0 <= node && node < static_cast<int>(nChildren));
 
    assert(!vec_eq.isKindOf(kStochDummy) && !vec_ineq.isKindOf(kStochDummy));
-   assert(!stored_cols_eq->children[node]->isKindOf(kStochGenDummyMatrix));
-   assert(!stored_cols_ineq->children[node]->isKindOf(kStochGenDummyMatrix));
+   assert(!stored_cols_eq->children[node]->is_a(kStochGenDummyMatrix));
+   assert(!stored_cols_ineq->children[node]->is_a(kStochGenDummyMatrix));
 
    /* equality system */
-   const SparseGenMatrix& Bi_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, B_MAT);
-   const SparseGenMatrix& Bli_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, A_MAT);
+   const SparseMatrix& Bi_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, B_MAT);
+   const SparseMatrix& Bli_mat = *getSparseGenMatrixFromStochMat(*stored_cols_eq, node, A_MAT);
 
    res += Bi_mat.localRowTimesVec(getSimpleVecFromRowStochVec(vec_eq, node, false), col_index);
    res += Bli_mat.localRowTimesVec(getSimpleVecFromRowStochVec(vec_eq, -1, true), col_index);
 
    /* inequality system */
-   const SparseGenMatrix& Di_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, B_MAT);
-   const SparseGenMatrix& Dli_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, A_MAT);
+   const SparseMatrix& Di_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, B_MAT);
+   const SparseMatrix& Dli_mat = *getSparseGenMatrixFromStochMat(*stored_cols_ineq, node, A_MAT);
 
    res += Di_mat.localRowTimesVec(getSimpleVecFromRowStochVec(vec_ineq, node, false), col_index);
    res += Dli_mat.localRowTimesVec(getSimpleVecFromRowStochVec(vec_ineq, -1, true), col_index);

@@ -29,14 +29,14 @@
 #include "DistributedTreeCallbacks.h"
 #include "pipsport.h"
 
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 
 //#define PRESOLVE_POSTSOLVE_ONLY // will not call solve routine an just presolve and then postsolve the problem - for debugging presolve and postsolve operations
 
 template<class IPMSOLVER>
 class PIPSIpmInterface {
 public:
-   PIPSIpmInterface(StochInputTree* tree, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
+   PIPSIpmInterface(DistributedInputTree* tree, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
          PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
 
    ~PIPSIpmInterface() = default;
@@ -125,7 +125,7 @@ protected:
 //----------------------------------------------------------------------
 
 template<class IPMSOLVER>
-PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(StochInputTree* tree, MPI_Comm comm, ScalerType scaler_type, PresolverType presolver_type,
+PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(DistributedInputTree* tree, MPI_Comm comm, ScalerType scaler_type, PresolverType presolver_type,
       std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
    pips_options::set_options(settings);
    const bool postsolve = pips_options::get_bool_parameter("POSTSOLVE");

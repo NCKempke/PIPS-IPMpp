@@ -1,5 +1,5 @@
 #if defined(GMS_PIPS)
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 #include "PreprocessFactory.h"
 #include "PIPSIpmInterface.h"
 #include "GondzioStochSolver.h"
@@ -289,7 +289,7 @@ int main(int argc, char ** argv)
 
 #if defined(GMS_PIPS)
    //build the problem tree
-   StochInputTree::StochInputNode data(blocks, 0,
+   DistributedInputTree::DistributedInputNode data(blocks, 0,
 #if defined(LINKCONSTR)
       fsni, fsmA, fsmBL, fsmC, fsmDL,
 #else
@@ -315,13 +315,13 @@ int main(int argc, char ** argv)
       fdlow, fidlow, fdupp, fidupp,
 #endif
       fxlow, fixlow, fxupp, fixupp, false );
-   StochInputTree* root = new StochInputTree(data);
+   DistributedInputTree* root = new DistributedInputTree(data);
 #endif
    for( int blk = 1; blk < numBlocks; blk++ )
    {
 
 #if defined(GMS_PIPS)
-      StochInputTree::StochInputNode data(blocks, blk,
+      DistributedInputTree::DistributedInputNode data(blocks, blk,
 #if defined(LINKCONSTR)
          fsni, fsmA, fsmBL, fsmC, fsmDL,
 #else
@@ -348,7 +348,7 @@ int main(int argc, char ** argv)
 #endif
          fxlow, fixlow, fxupp, fixupp, false );
 
-       root->AddChild(new StochInputTree(data));
+       root->AddChild(new DistributedInputTree(data));
 #endif
    }
 

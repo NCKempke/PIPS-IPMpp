@@ -8,9 +8,9 @@
 //#define PIPS_DEBUG
 #include "StochPresolverBase.h"
 
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "pipsdef.h"
-#include "StochVectorUtilities.h"
+#include "DistributedVectorUtilities.h"
 #include <cassert>
 
 StochPresolverBase::StochPresolverBase(PresolveData& presolve_data, const DistributedQP& origProb) : my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)),
@@ -292,7 +292,7 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
    assert(-1 <= node && node < nChildren);
    assert(system_type == EQUALITY_SYSTEM || system_type == INEQUALITY_SYSTEM);
 
-   const SmartPointer<GenMatrix> matrix = (system_type == EQUALITY_SYSTEM) ? presolve_data.getPresProb().A : presolve_data.getPresProb().C;
+   const SmartPointer<GeneralMatrix> matrix = (system_type == EQUALITY_SYSTEM) ? presolve_data.getPresProb().A : presolve_data.getPresProb().C;
 
    /* set matrix pointers for A B and Bl */
    setPointersMatrices(matrix, node);
@@ -311,28 +311,28 @@ void StochPresolverBase::updatePointersForCurrentNode(int node, SystemType syste
 }
 
 // todo : set pointers nullptr if no linking constraints?
-void StochPresolverBase::setPointersMatrices(const SmartPointer<GenMatrix> mat, int node) {
+void StochPresolverBase::setPointersMatrices(const SmartPointer<GeneralMatrix> mat, int node) {
    assert(-1 <= node && node < nChildren);
-   const StochGenMatrix& smat = dynamic_cast<const StochGenMatrix&>(*mat);
+   const DistributedMatrix& smat = dynamic_cast<const DistributedMatrix&>(*mat);
 
    /* in root node only B0 and Bl0 are present */
    if (node == -1) {
       currAmat = nullptr;
       currAmatTrans = nullptr;
 
-      currBmat = dynamic_cast<const SparseGenMatrix*>(smat.Bmat)->getStorageDynamic();
-      currBmatTrans = dynamic_cast<const SparseGenMatrix*>(smat.Bmat)->getStorageDynamicTransposed();
+      currBmat = dynamic_cast<const SparseMatrix*>(smat.Bmat)->getStorageDynamic();
+      currBmatTrans = dynamic_cast<const SparseMatrix*>(smat.Bmat)->getStorageDynamicTransposed();
 
-      currBlmat = dynamic_cast<const SparseGenMatrix*>(smat.Blmat)->getStorageDynamic();
-      currBlmatTrans = dynamic_cast<const SparseGenMatrix*>(smat.Blmat)->getStorageDynamicTransposed();
+      currBlmat = dynamic_cast<const SparseMatrix*>(smat.Blmat)->getStorageDynamic();
+      currBlmatTrans = dynamic_cast<const SparseMatrix*>(smat.Blmat)->getStorageDynamicTransposed();
    }
    else {
-      currAmat = dynamic_cast<const SparseGenMatrix*>(smat.children[node]->Amat)->getStorageDynamic();
-      currAmatTrans = dynamic_cast<const SparseGenMatrix*>(smat.children[node]->Amat)->getStorageDynamicTransposed();
-      currBmat = dynamic_cast<const SparseGenMatrix*>(smat.children[node]->Bmat)->getStorageDynamic();
-      currBmatTrans = dynamic_cast<const SparseGenMatrix*>(smat.children[node]->Bmat)->getStorageDynamicTransposed();
-      currBlmat = dynamic_cast<const SparseGenMatrix*>(smat.children[node]->Blmat)->getStorageDynamic();
-      currBlmatTrans = dynamic_cast<const SparseGenMatrix*>(smat.children[node]->Blmat)->getStorageDynamicTransposed();
+      currAmat = dynamic_cast<const SparseMatrix*>(smat.children[node]->Amat)->getStorageDynamic();
+      currAmatTrans = dynamic_cast<const SparseMatrix*>(smat.children[node]->Amat)->getStorageDynamicTransposed();
+      currBmat = dynamic_cast<const SparseMatrix*>(smat.children[node]->Bmat)->getStorageDynamic();
+      currBmatTrans = dynamic_cast<const SparseMatrix*>(smat.children[node]->Bmat)->getStorageDynamicTransposed();
+      currBlmat = dynamic_cast<const SparseMatrix*>(smat.children[node]->Blmat)->getStorageDynamic();
+      currBlmatTrans = dynamic_cast<const SparseMatrix*>(smat.children[node]->Blmat)->getStorageDynamicTransposed();
    }
 }
 

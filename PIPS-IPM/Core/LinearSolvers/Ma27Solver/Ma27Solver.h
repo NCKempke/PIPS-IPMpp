@@ -6,8 +6,6 @@
 #define MA27LINSYS_H
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
-#include "SparseStorageHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsport.h"
@@ -47,7 +45,7 @@ class Ma27Solver : public DoubleLinearSolver {
 
 protected:
    const SparseSymMatrix* mat{};
-   SparseStorageHandle mat_storage;
+   SmartPointer<SparseStorage> mat_storage;
 
    /** control structures MA27 */
    std::vector<int> icntl = std::vector<int>(30);

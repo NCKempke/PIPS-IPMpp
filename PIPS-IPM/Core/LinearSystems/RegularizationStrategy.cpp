@@ -3,7 +3,7 @@
 //
 
 #include "RegularizationStrategy.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "pipsdef.h"
 #include<cmath>
 

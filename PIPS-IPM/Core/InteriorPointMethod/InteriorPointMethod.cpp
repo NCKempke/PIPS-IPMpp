@@ -1,6 +1,6 @@
 #include "InteriorPointMethod.hpp"
 #include "Status.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "DistributedRootLinearSystem.h"
 #include "DistributedFactory.h"
 

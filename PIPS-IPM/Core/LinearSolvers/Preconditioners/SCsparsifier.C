@@ -8,7 +8,7 @@
 
 #include "SCsparsifier.h"
 #include "pipsdef.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "mpi.h"
 #include <cassert>
 
@@ -111,7 +111,7 @@ void SCsparsifier::updateStats() {
 #endif
 }
 
-void SCsparsifier::unmarkDominatedSCdistLocals(const DistributedQP& prob, SparseSymMatrix& sc) {
+void SCsparsifier::unmarkDominatedSCdistLocals(const DistributedQP& prob, SparseSymmetricMatrix& sc) {
    const std::vector<bool>& rowIsMyLocal = prob.getSCrowMarkerMyLocal();
 
    const int* const krowM = sc.krowM();
@@ -185,7 +185,7 @@ void SCsparsifier::unmarkDominatedSCdistLocals(const DistributedQP& prob, Sparse
 }
 
 
-void SCsparsifier::resetSCdistEntries(SparseSymMatrix& sc) const {
+void SCsparsifier::resetSCdistEntries(SparseSymmetricMatrix& sc) const {
    const int nnz = sc.numberOfNonZeros();
    int* const jcolM = sc.jcolM();
 
@@ -197,7 +197,7 @@ void SCsparsifier::resetSCdistEntries(SparseSymMatrix& sc) const {
 }
 
 
-void SCsparsifier::getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymMatrix& sc) {
+void SCsparsifier::getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymmetricMatrix& sc) {
    assert(!sc.getStorageRef().fortranIndexed());
 
    int* const krowM = sc.krowM();
@@ -315,7 +315,7 @@ void SCsparsifier::updateDiagDomBound() {
 }
 
 
-std::vector<double> SCsparsifier::getDomDiagDist(const DistributedQP& prob, SparseSymMatrix& sc, bool isLeaf) const {
+std::vector<double> SCsparsifier::getDomDiagDist(const DistributedQP& prob, SparseSymmetricMatrix& sc, bool isLeaf) const {
    int* const krowM = sc.krowM();
    double* const M = sc.M();
    const int sizeSC = sc.size();

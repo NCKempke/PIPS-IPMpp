@@ -8,7 +8,7 @@
 #include "Ma57SolverRoot.h"
 
 #include "SimpleVector.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 
 Ma57SolverRoot::Ma57SolverRoot(SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma57Solver(sgm, name),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {

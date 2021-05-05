@@ -405,7 +405,7 @@ void SparseStorageDynamic::writeToStreamDenseRow(std::ostream& out, int rowidx) 
    }
 }
 
-double SparseStorageDynamic::abmaxnorm() const {
+double SparseStorageDynamic::inf_norm() const {
    double max = 0.0;
    for (int i = 0; i < m; ++i) {
       for (int j = rowptr[m].start; j < rowptr[m].end; ++j) {

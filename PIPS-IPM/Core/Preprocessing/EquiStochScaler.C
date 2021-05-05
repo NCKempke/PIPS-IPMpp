@@ -88,5 +88,5 @@ void EquiStochScaler::scale() {
 #endif
    }
 
-   assert(A->abmaxnorm() <= 2.0 && C->abmaxnorm() <= 2.0);
+   assert(A->inf_norm() <= 2.0 && C->inf_norm() <= 2.0);
 }

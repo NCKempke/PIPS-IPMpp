@@ -3,7 +3,7 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "Ma27Solver.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
 #include <fstream>

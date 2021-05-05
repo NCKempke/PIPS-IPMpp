@@ -12,7 +12,7 @@
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
 #include "DenseSymMatrix.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "DenseStorage.h"
 #include "pipsport.h"
 
@@ -20,7 +20,7 @@
 class PardisoIndefSolver : public DoubleLinearSolver {
 public:
    std::shared_ptr<DenseStorage> mStorage;
-   SparseStorageHandle mStorageSparse;
+   SmartPointer<SparseStorage> mStorageSparse;
 protected:
 
    constexpr static double precondDiagDomBound = 0.0001;
@@ -79,14 +79,14 @@ protected:
    virtual void getIparm(int* iparm) const = 0;
 public:
    PardisoIndefSolver(DenseSymMatrix* storage, bool solve_in_parallel, MPI_Comm mpi_comm);
-   PardisoIndefSolver(SparseSymMatrix* storage, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoIndefSolver(SparseSymmetricMatrix* storage, bool solve_in_parallel, MPI_Comm mpi_comm);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
-   void matrixRebuild(DoubleMatrix& matrixNew) override;
+   void matrixRebuild(AbstractMatrix& matrixNew) override;
 
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& vec) override;
-   void solve(GenMatrix&) override { assert(0 && "not supported"); };
+   void solve(GeneralMatrix&) override { assert(0 && "not supported"); };
    void solve(int nrhss, double* rhss, int* /*colSparsity*/ ) override;
 
    void solveSynchronized(Vector<double>& vec) override;
@@ -98,7 +98,7 @@ public:
 private:
    void initPardiso();
    void factorizeFromSparse();
-   void factorizeFromSparse(SparseSymMatrix& matrix_fortran);
+   void factorizeFromSparse(SparseSymmetricMatrix& matrix_fortran);
    void factorizeFromDense();
    void factorize();
 

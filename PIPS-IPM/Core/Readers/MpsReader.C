@@ -4,7 +4,7 @@
 
 #include "MpsReader.h"
 #include "Vector.hpp"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include "SimpleVector.h"
 #include <cstring>
 #include <cerrno>
@@ -120,7 +120,7 @@ double asDouble(char str[], int len, int& ierr) {
    return value;
 }
 
-void MpsReader::readColsSection(Vector<double>& c_, GenMatrix& A, GenMatrix& C, char line[], int& ierr, int& kindOfLine) {
+void MpsReader::readColsSection(Vector<double>& c_, GeneralMatrix& A, GeneralMatrix& C, char line[], int& ierr, int& kindOfLine) {
    // Create a few temporaries
    if (nnzA < 0 || nnzC < 0) {
       int nnzA_, nnzC_, nnzQ_; // Force the computation of these cached values
@@ -256,14 +256,14 @@ void MpsReader::remapRows() {
    }
 }
 
-void MpsReader::stuffMatrix(GenMatrix& A, int irow[], int nnz, int jcol[], double dA[]) {
+void MpsReader::stuffMatrix(GeneralMatrix& A, int irow[], int nnz, int jcol[], double dA[]) {
    int info = 0;
    if (nnz > 0)
       A.putSparseTriple(irow, nnz, jcol, dA, info);
    assert(info == 0); // If not, there is a program error.
 }
 
-void MpsReader::stuffMatrix(SymMatrix& Q, int irow[], int nnz, int jcol[], double dA[]) {
+void MpsReader::stuffMatrix(SymmetricMatrix& Q, int irow[], int nnz, int jcol[], double dA[]) {
    int info = 0;
    if (nnz > 0)
       Q.putSparseTriple(irow, nnz, jcol, dA, info);
@@ -671,7 +671,7 @@ void MpsReader::readBoundsSection(double xlow[], char ixlow[], double xupp[], ch
    delete[] uboundSpecified;
 }
 
-void MpsReader::readHessSection(SymMatrix& Q, char line[], int& ierr, int& kindOfLine) {
+void MpsReader::readHessSection(SymmetricMatrix& Q, char line[], int& ierr, int& kindOfLine) {
    if (nnzA < 0 || nnzC < 0) {
       int nnzA_, nnzC_, nnzQ_; // Force the computation of these cached values
       this->numberOfNonZeros(nnzQ_, nnzA_, nnzC_);
@@ -1667,7 +1667,7 @@ void MpsReader::readQpGen(double c[], int irowQ[], int jcolQ[], double dQ[], dou
 
 }
 
-void MpsReader::readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp,
+void MpsReader::readQpBound(Vector<double>& c, SymmetricMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp,
       int& iErr) {
    if (my > 0 || mz > 0) {
       iErr = 1024;
@@ -1715,8 +1715,8 @@ void MpsReader::readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlo
    this->expectHeader2(kindOfLine, "ENDATA", line, iErr);
 }
 
-void MpsReader::readQpGen(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp,
-      GenMatrix& A, Vector<double>& b, GenMatrix& C, Vector<double>& clow_, Vector<double>& iclow, Vector<double>& cupp_, Vector<double>& icupp,
+void MpsReader::readQpGen(Vector<double>& c, SymmetricMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp,
+      GeneralMatrix& A, Vector<double>& b, GeneralMatrix& C, Vector<double>& clow_, Vector<double>& iclow, Vector<double>& cupp_, Vector<double>& icupp,
       int& iErr) {
    char line[200];
    int kindOfLine;

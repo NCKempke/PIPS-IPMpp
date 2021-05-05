@@ -5,7 +5,7 @@ add_library(pips-ipmpp STATIC
         #Filter.cpp FilterStrategy.cpp FilterLineSearch.cpp
         InteriorPointMethod/Solver.C InteriorPointMethod/GondzioStochSolver.C InteriorPointMethod/GondzioStochLpSolver.C InteriorPointMethod/InteriorPointMethod.cpp
         QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C
+        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/DistributedOptions.C
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
         Readers/MpsReader.C Readers/hash.C #Readers
         LinearSolvers/Preconditioners/SCsparsifier.C
@@ -23,19 +23,19 @@ add_library(pips-ipmpp STATIC
         QpStoch/DistributedTree.C
         LinearSystems/sLinsysRootBordered.C
         QpStoch/DistributedTreeCallbacks.C
-        LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
+        LinearAlgebra/Distributed/StripMatrix.C # TODO : bad hack...
         LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
         
         LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymMatrix.C
         LinearAlgebra/Dense/DeSymIndefSolver.C LinearAlgebra/Dense/DeSymIndefSolver2.C
-        LinearAlgebra/Dense/DenseGenMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
+        LinearAlgebra/Dense/DenseMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
         
-        LinearAlgebra/Distributed/DistributedVector.C LinearAlgebra/Distributed/StochSymMatrix.C LinearAlgebra/Distributed/StochGenMatrix.C
-        LinearAlgebra/Distributed/BorderedGenMatrix.C LinearAlgebra/Distributed/BorderedSymMatrix.C
-        LinearAlgebra/Distributed/StochResourcesMonitor.C LinearAlgebra/Distributed/StochInputTree.C
+        LinearAlgebra/Distributed/DistributedVector.C LinearAlgebra/Distributed/DistributedSymmetricMatrix.C LinearAlgebra/Distributed/DistributedMatrix.C
+        LinearAlgebra/Distributed/BorderedMatrix.C LinearAlgebra/Distributed/BorderedSymmetricMatrix.C
+        LinearAlgebra/Distributed/StochResourcesMonitor.C LinearAlgebra/Distributed/DistributedInputTree.C
         
         LinearAlgebra/Sparse/SparseStorage.C LinearAlgebra/Sparse/SparseStorageDynamic.C
-        LinearAlgebra/Sparse/SparseGenMatrix.C LinearAlgebra/Sparse/SparseSymMatrix.C
+        LinearAlgebra/Sparse/SparseMatrix.C LinearAlgebra/Sparse/SparseSymmetricMatrix.C
         
         Preprocessing/EquiStochScaler.C Preprocessing/GeoStochScaler.C Preprocessing/StochScaler.C Preprocessing/QpScaler.C
         Preprocessing/StochRowStorage.C Preprocessing/StochColumnStorage.C Preprocessing/QpPostsolver.C Preprocessing/StochPostsolver.C Preprocessing/StochPresolver.C Preprocessing/QpPresolver.C Preprocessing/StochPresolverBase.C

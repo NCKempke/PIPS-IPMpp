@@ -4,8 +4,8 @@
  *  Created on: 13.11.2019
  *      Author: bzfkempk
  */
-#ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_STOCHVECTORUTILITIES_H_
-#define PIPS_IPM_CORE_STOCHLINEARALGEBRA_STOCHVECTORUTILITIES_H_
+#ifndef DISTRIBUTEDVECTORUTILITIES_H
+#define DISTRIBUTEDVECTORUTILITIES_H
 
 #include "DistributedVector.h"
 #include "SimpleVector.h"

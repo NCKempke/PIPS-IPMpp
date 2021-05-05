@@ -9,7 +9,7 @@
 #define PIPS_IPM_CORE_UTILITIES_PIPSCHECKS_H_
 
 #include "DistributedVector.h"
-#include "StochGenMatrix.h"
+#include "DistributedMatrix.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
 #include <vector>

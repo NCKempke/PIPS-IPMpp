@@ -7,7 +7,7 @@
 
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "DenseStorage.h"
 #include "pipsport.h"
 
@@ -21,14 +21,14 @@
 class DeSymIndefSolver : public DoubleLinearSolver {
 public:
    explicit DeSymIndefSolver(const DenseSymMatrix* storage);
-   explicit DeSymIndefSolver(const SparseSymMatrix* storage);
+   explicit DeSymIndefSolver(const SparseSymmetricMatrix* storage);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& vec) override;
-   void solve(GenMatrix& vec) override;
+   void solve(GeneralMatrix& vec) override;
 
    ~DeSymIndefSolver() override = default;
 
@@ -46,7 +46,7 @@ protected:
    std::vector<double> work;
    std::vector<int> ipiv;
 
-   const SparseSymMatrix* sparseMat{};
+   const SparseSymmetricMatrix* sparseMat{};
 
    mutable int positive_eigenvalues{-1};
    mutable int negative_eigenvalues{-1};

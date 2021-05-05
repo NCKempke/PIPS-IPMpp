@@ -7,8 +7,8 @@
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
 #include "DistributedQP.hpp"
-#include "BorderedSymMatrix.h"
-#include "StochOptions.h"
+#include "BorderedSymmetricMatrix.h"
+#include "DistributedOptions.h"
 #include <memory>
 #include <unistd.h>
 #include <cmath>
@@ -68,11 +68,11 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
 
-SymMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
+SymmetricMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
    const int n = locnx + locmy + locmyl + locmzl;
 
    if (hasSparseKkt) {
-      SparseSymMatrix* sparsekkt;
+      SparseSymmetricMatrix* sparsekkt;
 
       if (usePrecondDist)
          sparsekkt = prob->createSchurCompSymbSparseUpperDist(childrenProperStart, childrenProperEnd);
@@ -89,7 +89,7 @@ SymMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
 }
 
 void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
-   auto* kkt_sp = dynamic_cast<SparseSymMatrix*>(kkt.get());
+   auto* kkt_sp = dynamic_cast<SparseSymmetricMatrix*>(kkt.get());
 
    if (solver_type == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
@@ -190,7 +190,7 @@ void sLinsysRootAug::finalizeKKT(DistributedQP* prob, Variables* vars) {
 void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    assert(kkt && hasSparseKkt && prob);
 
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
@@ -233,7 +233,7 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    /////////////////////////////////////////////////////////////
    if (locmz > 0 && iAmLastRank) {
       assert(zDiag);
-      SymMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
+      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
 
       compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
       if (!CtDC) {
@@ -245,7 +245,7 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    // update the KKT with At (symmetric update forced)
    /////////////////////////////////////////////////////////////
    if (locmy > 0 && iAmLastRank) {
-      SparseGenMatrix& At = prob->getLocalB().getTranspose(); // yes, B
+      SparseMatrix& At = prob->getLocalB().getTranspose(); // yes, B
       const double* MAt = At.M();
       const int* krowAt = At.krowM();
 
@@ -285,7 +285,7 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    // update the KKT with Ft
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      SparseGenMatrix& Ft = prob->getLocalF().getTranspose();
+      SparseMatrix& Ft = prob->getLocalF().getTranspose();
 
       // add locally owned sparse part of Ft
       addLinkConsBlock0Matrix(prob, Ft, locnx + locmy, 0, local2linksStartEq, local2linksEndEq);
@@ -305,7 +305,7 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    // update the KKT with Gt and add z diagonal
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
-      SparseGenMatrix& Gt = prob->getLocalG().getTranspose();
+      SparseMatrix& Gt = prob->getLocalG().getTranspose();
       const int n2linksRowsIneq = prob->n2linkRowsIneq();
       const int bordersizeIneq = locmzl - n2linksRowsIneq;
       const int borderstartIneq = locnx + locmy + locmyl + n2linksRowsIneq;
@@ -485,12 +485,12 @@ void sLinsysRootAug::Ltsolve(DistributedQP* prob, Vector<double>& x) {
 }
 
 /* gets called for computing the dense schur complement*/
-void sLinsysRootAug::LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border,
+void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border,
       int begin_cols, int end_cols) {
    LsolveHierarchyBorder(result, Br, Br_mod_border, true, two_link_border, begin_cols, end_cols);
 }
 
-void sLinsysRootAug::LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+void sLinsysRootAug::LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& br_mod_border, bool sym_res, bool sparse_res, int begin_cols, int end_cols) {
    if (Bl.isEmpty() || (Br.isEmpty() && br_mod_border.empty()))
       return;
@@ -512,7 +512,7 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
    ///////////////////////////////////////////////////////////////////////
    // LOCAL SOLVE WITH SCHUR COMPLEMENT and i-th rhs from buffer
    ///////////////////////////////////////////////////////////////////////
-   SparseGenMatrix& C = data->getLocalD();
+   SparseMatrix& C = data->getLocalD();
 
    double* rhs_reduced = redRhs->elements();
    assert(redRhs->length() >= b_vec.length());
@@ -596,7 +596,7 @@ void sLinsysRootAug::solveReducedLinkCons(DistributedQP*, SimpleVector<double>& 
 #endif
 }
 
-void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMatrix& rhs_mat_transp, int rhs_start, int n_rhs) {
+void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs) {
 #ifdef TIMING
    t_start = MPI_Wtime();
    troot_total = tchild_total = tcomm_total = 0.0;
@@ -615,7 +615,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMa
    ///////////////////////////////////////////////////////////////////////
    // LOCAL SOLVE WITH SCHUR COMPLEMENT and set of buffer rhs
    ///////////////////////////////////////////////////////////////////////
-   SparseGenMatrix& C = data->getLocalD();
+   SparseMatrix& C = data->getLocalD();
 
 #pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
@@ -707,13 +707,13 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseGenMa
 
 /** Ht should be either Ft or Gt */
 void
-sLinsysRootAug::addLinkConsBlock0Matrix(DistributedQP* prob, SparseGenMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol) {
+sLinsysRootAug::addLinkConsBlock0Matrix(DistributedQP* prob, SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol) {
    assert(startCol >= 0 && startCol <= endCol && nKktOffsetCols >= 0 && nKktOffsetCols <= startCol);
 
    if (startCol == endCol)
       return;
 
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
    int* const jcolKkt = kkts.jcolM();
    int* const krowKkt = kkts.krowM();
@@ -842,11 +842,11 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
 
       //only this proc subtracts from rxy
       rxy.scalarMult(beta);
-      SparseSymMatrix& Q = prob->getLocalQ();
+      SparseSymmetricMatrix& Q = prob->getLocalQ();
       Q.mult(1.0, &rxy[0], 1, alpha, &x[0], 1);
 
     if (locmz > 0) {
-      auto* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
+      auto* CtDC_sp = dynamic_cast<SparseSymmetricMatrix*>(CtDC.get());
       assert(CtDC_sp);
 
          CtDC_sp->mult(1.0, &rxy[0], 1, -alpha, &x[0], 1);
@@ -857,20 +857,20 @@ void sLinsysRootAug::SCmult(double beta, SimpleVector<double>& rxy, double alpha
       for (int i = 0; i < xDiagv.length(); i++)
          rxy[i] += alpha * xDiagv[i] * x[i];
 
-      SparseGenMatrix& A = prob->getLocalB();
+      SparseMatrix& A = prob->getLocalB();
       A.transMult(1.0, &rxy[0], 1, alpha, &x[locnx], 1);
       A.mult(1.0, &rxy[locnx], 1, alpha, &x[0], 1);
 
       assert(locmyl >= 0 && locmzl >= 0);
 
       if (locmyl > 0) {
-         SparseGenMatrix& F = prob->getLocalF();
+         SparseMatrix& F = prob->getLocalF();
          F.transMult(1.0, &rxy[0], 1, alpha, &x[locnx + locmy], 1);
          F.mult(1.0, &rxy[locnx + locmy], 1, alpha, &x[0], 1);
       }
 
       if (locmzl > 0) {
-         SparseGenMatrix& G = prob->getLocalG();
+         SparseMatrix& G = prob->getLocalG();
          G.transMult(1.0, &rxy[0], 1, alpha, &x[locnx + locmy + locmyl], 1);
          G.mult(1.0, &rxy[locnx + locmy + locmyl], 1, alpha, &x[0], 1);
 
@@ -975,10 +975,10 @@ void sLinsysRootAug::solveWithIterRef(DistributedQP* prob, SimpleVector<double>&
       if (myRank == 0) {
          rxy.copyFrom(r);
          if (locmz > 0) {
-            auto* CtDC_sp = dynamic_cast<SparseSymMatrix*>(CtDC.get());
+            auto* CtDC_sp = dynamic_cast<SparseSymmetricMatrix*>(CtDC.get());
             CtDC_sp->mult(1.0, &rxy[0], 1, 1.0, &x[0], 1);
          }
-         SparseSymMatrix& Q = prob->getLocalQ();
+         SparseSymmetricMatrix& Q = prob->getLocalQ();
          Q.mult(1.0, &rxy[0], 1, -1.0, &x[0], 1);
 
          auto& xDiagv = dynamic_cast<SimpleVector<double>&>(*xDiag);
@@ -986,7 +986,7 @@ void sLinsysRootAug::solveWithIterRef(DistributedQP* prob, SimpleVector<double>&
          for (int i = 0; i < xDiagv.length(); i++)
             rxy[i] -= xDiagv[i] * x[i];
 
-         SparseGenMatrix& A = prob->getLocalB();
+         SparseMatrix& A = prob->getLocalB();
          A.transMult(1.0, &rxy[0], 1, -1.0, &x[locnx], 1);
          A.mult(1.0, &rxy[locnx], 1, -1.0, &x[0], 1);
       }
@@ -1427,11 +1427,11 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
    delete[] resvec;
 }
 
-void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymMatrix& CtDC_loc) {
+void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymmetricMatrix& CtDC_loc) {
    auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
    double** const dKkt = kktd->Mat();
 
-   const auto& CtDC_sparse = dynamic_cast<const SparseSymMatrix&>(CtDC_loc);
+   const auto& CtDC_sparse = dynamic_cast<const SparseSymmetricMatrix&>(CtDC_loc);
 
    const int* krow_CtDC = CtDC_sparse.krowM();
    const int* jcol_CtDC = CtDC_sparse.jcolM();
@@ -1447,15 +1447,15 @@ void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymMatrix& CtDC_lo
    }
 }
 
-void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymMatrix& CtDC_loc) {
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& CtDC_loc) {
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 #ifndef NDEBUG
    int* const jcolKkt = kkts.jcolM();
 #endif
    int* const krowKkt = kkts.krowM();
    double* const MKkt = kkts.M();
 
-   const auto& CtDC_sparse = dynamic_cast<const SparseSymMatrix&>(CtDC_loc);
+   const auto& CtDC_sparse = dynamic_cast<const SparseSymmetricMatrix&>(CtDC_loc);
    const int* krow_CtDC = CtDC_sparse.krowM();
    const int* jcol_CtDC = CtDC_sparse.jcolM();
    const double* M_CtDC = CtDC_sparse.M();
@@ -1476,9 +1476,9 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymMatrix& CtDC_l
 
 }
 
-void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymMatrix*& CtDC_loc, const Vector<double>& diagonal)
+void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal)
 {
-   SparseGenMatrix& C = data->getLocalD();
+   SparseMatrix& C = data->getLocalD();
    C.matTransDinvMultMat(*zDiag, &CtDC_loc);
    assert(CtDC_loc->size() == locnx);
    assert(CtDC_loc);
@@ -1523,7 +1523,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
       dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
 
-      SymMatrix* CTDC_regularization_ptr = CtDC.get();
+      SymmetricMatrix* CTDC_regularization_ptr = CtDC.get();
       compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *regularization_added);
    }
 
@@ -1556,7 +1556,7 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 }
 
 void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
-   auto& kkts = dynamic_cast<SparseSymMatrix&>(*kkt);
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
 #ifndef NDEBUG
    int* const jcolKkt = kkts.jcolM();
@@ -1595,7 +1595,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    if (locmz > 0) {
       assert(zDiag);
 
-      SymMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
+      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
       compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
       if (!CtDC){
          CtDC.reset(CtDCptr);
@@ -1606,7 +1606,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    // update the KKT with At (symmetric update forced)
    /////////////////////////////////////////////////////////////
    if (locmy > 0) {
-      SparseGenMatrix& At = prob->getLocalB().getTranspose(); // yes, B
+      SparseMatrix& At = prob->getLocalB().getTranspose(); // yes, B
       const double* MAt = At.M();
       const int* krowAt = At.krowM();
 
@@ -1633,7 +1633,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    // update the KKT with Ft
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      SparseGenMatrix& Ft = prob->getLocalF().getTranspose();
+      SparseMatrix& Ft = prob->getLocalF().getTranspose();
       const double* MFt = Ft.M();
       const int* krowFt = Ft.krowM();
       const int* jcolFt = Ft.jcolM();
@@ -1641,7 +1641,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
       int* krowGt = nullptr;
 
       if (locmzl > 0) {
-         SparseGenMatrix& Gt = prob->getLocalG().getTranspose();
+         SparseMatrix& Gt = prob->getLocalG().getTranspose();
          krowGt = Gt.krowM();
       }
 
@@ -1681,7 +1681,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    // update the KKT with Gt and add z diagonal
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
-      SparseGenMatrix& Gt = prob->getLocalG().getTranspose();
+      SparseMatrix& Gt = prob->getLocalG().getTranspose();
       const double* MGt = Gt.M();
       const int* krowGt = Gt.krowM();
       const int* jcolGt = Gt.jcolM();
@@ -1763,7 +1763,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    /////////////////////////////////////////////////////////////
    // update the KKT with Q (DO NOT PUT DIAG)
    /////////////////////////////////////////////////////////////
-   SparseSymMatrix& Q = prob->getLocalQ();
+   SparseSymmetricMatrix& Q = prob->getLocalQ();
    int* krowQ = Q.krowM();
    int* jcolQ = Q.jcolM();
    double* dQ = Q.M();
@@ -1792,7 +1792,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    /////////////////////////////////////////////////////////////
    if (locmz > 0) {
       assert(zDiag);
-      SymMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
+      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
 
       compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
 
@@ -1804,7 +1804,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    // update the KKT with A (symmetric update forced)
    /////////////////////////////////////////////////////////////
    if (locmy > 0) {
-      SparseGenMatrix& A = prob->getLocalB(); // yes, B
+      SparseMatrix& A = prob->getLocalB(); // yes, B
       const double* dA = A.M();
       const int* krowA = A.krowM();
       const int* jcolA = A.jcolM();
@@ -1825,7 +1825,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      SparseGenMatrix& F = prob->getLocalF();
+      SparseMatrix& F = prob->getLocalF();
 
       const double* dF = F.M();
       const int* krowF = F.krowM();
@@ -1847,7 +1847,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    // update the KKT with G and put z diagonal
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
-      SparseGenMatrix& G = prob->getLocalG();
+      SparseMatrix& G = prob->getLocalG();
       auto& szDiagLinkCons = dynamic_cast<SimpleVector<double>&>(*zDiagLinkCons);
 
       const double* dG = G.M();
@@ -1891,7 +1891,7 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    //myAtPutZeros(kktd, locnx, locnx, locmy, locmy);
 }
 
-void sLinsysRootAug::DsolveHierarchyBorder(DenseGenMatrix& rhs_mat_transp, int n_cols) {
+void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_cols) {
    /* b holds all rhs in transposed form - C part from schur complement is already missing in b */
    const int my_rank = PIPS_MPIgetRank(mpiComm);
 #ifdef TIMING
@@ -1940,7 +1940,7 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseGenMatrix& rhs_mat_transp, int n
    }
 }
 
-void sLinsysRootAug::addBlTKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res,
+void sLinsysRootAug::addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res,
       bool sparse_res) {
    assert(!is_hierarchy_root);
 
@@ -1980,8 +1980,8 @@ void sLinsysRootAug::addBlTKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Bl, 
 
 /* if Bl^T is a two link border this needs to be done for at most the first and the last child of this communicator (all the other children are guaranteed 0) */
 /* compute res += [ Bl^T Ki^-1 (Br - sum_j Bmodj Xj) ]^T = (Br^T - SUM_j Xj^T Bmodj^T) Ki^-1 Bl */
-void sLinsysRootAug::addBlTKiInvBrToResBlockwise(DoubleMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
-      bool sym_res, bool sparse_res, DenseGenMatrix& buffer_b0, int begin_cols, int end_cols) {
+void sLinsysRootAug::addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+      bool sym_res, bool sparse_res, DenseMatrix& buffer_b0, int begin_cols, int end_cols) {
    /* only called on sLinsysRootBordered and sLinsysRootAugHierInner */
    buffer_b0.putZeros();
 

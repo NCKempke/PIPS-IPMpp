@@ -7,9 +7,9 @@
 #include "Ma57Solver.h"
 #include <algorithm>
 #include "SparseStorage.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "SimpleVector.h"
-#include "DenseGenMatrix.h"
+#include "DenseMatrix.h"
 #include <mpi.h>
 
 extern int gOoqpPrintLevel;

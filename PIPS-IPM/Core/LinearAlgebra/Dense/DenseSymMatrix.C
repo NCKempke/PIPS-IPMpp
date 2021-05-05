@@ -7,16 +7,16 @@
 #include "OoqpBlas.h"
 #include "SimpleVector.h"
 
-#include "DenseGenMatrix.h"
-#include "SparseGenMatrix.h"
-#include "SparseSymMatrix.h"
+#include "DenseMatrix.h"
+#include "SparseMatrix.h"
+#include "SparseSymmetricMatrix.h"
 
 #include "DoubleMatrixTypes.h"
 
 // TODO : move to Blas header..
 extern "C" void dsyrk_(char* UPLO, char* TRANS, int* N, int* K, double* alpha, double* A, int* lda, double* beta, double* C, int* ldc);
 
-int DenseSymMatrix::isKindOf(int matrixType) const {
+int DenseSymMatrix::is_a(int matrixType) const {
    return matrixType == kDenseSymMatrix || matrixType == kSymMatrix;
 }
 
@@ -73,7 +73,7 @@ long long DenseSymMatrix::size() const {
    return mStorage->m;
 }
 
-void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
+void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
    const int m = mStorage->m;
    const int n = mStorage->n;
    double** M = mStorage->M;
@@ -117,8 +117,8 @@ void DenseSymMatrix::transMult(double beta, double y[], int incy, double alpha, 
    this->mult(beta, y, incy, alpha, x, incx);
 }
 
-double DenseSymMatrix::abmaxnorm() const {
-   return mStorage->abmaxnorm();
+double DenseSymMatrix::inf_norm() const {
+   return mStorage->inf_norm();
 }
 
 double DenseSymMatrix::abminnormNonZero(double tol) const {
@@ -224,10 +224,10 @@ void DenseSymMatrix::scalarMult(double num) {
 }
 
 /* updates the upper left block only  if sizes does not matches */
-void DenseSymMatrix::matMult(double alpha, GenMatrix& A_, int transA, GenMatrix& B_, int transB, double beta) {
+void DenseSymMatrix::matMult(double alpha, GeneralMatrix& A_, int transA, GeneralMatrix& B_, int transB, double beta) {
 
-   auto& A = dynamic_cast<DenseGenMatrix&>(A_);
-   auto& B = dynamic_cast<DenseGenMatrix&>(B_);
+   auto& A = dynamic_cast<DenseMatrix&>(A_);
+   auto& B = dynamic_cast<DenseMatrix&>(B_);
 
    // the other way around since fortran stores column-wise and we store row-wise
    char forTransA = (transA == 0 ? 'T' : 'N');
@@ -265,7 +265,7 @@ void DenseSymMatrix::matMult(double alpha, GenMatrix& A_, int transA, GenMatrix&
 }
 
 
-void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,
+void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,
       int forceSymUpdate) {
 
    if (forceSymUpdate == 0) {
@@ -295,7 +295,7 @@ void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMat
    }
 }
 
-void DenseSymMatrix::atRankkUpdate(double alpha, double beta, DenseGenMatrix& U, int trans) {
+void DenseSymMatrix::atRankkUpdate(double alpha, double beta, DenseMatrix& U, int trans) {
    //-----------------------------------------------
    // setup if the U is stored in column-major form
    // (FORTRAN Style)

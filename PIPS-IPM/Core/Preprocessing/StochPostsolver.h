@@ -34,8 +34,8 @@ public:
    void notifySingletonRowBoundsTightened(const INDEX& row, const INDEX& col, double xlow_old, double xupp_old, double xlow_new, double xupp_new,
          double coeff);
    void notifyRedundantSide(const INDEX& row, bool is_upper_side, double lhs, double rhs);
-   void notifyRedundantRow(const INDEX& row, int iclow, int icupp, double lhs, double rhs, const StochGenMatrix& matrix_row);
-   void notifyFixedColumn(const INDEX& col, double value, double obj_coeff, const StochGenMatrix& eq_mat, const StochGenMatrix& ineq_mat);
+   void notifyRedundantRow(const INDEX& row, int iclow, int icupp, double lhs, double rhs, const DistributedMatrix& matrix_row);
+   void notifyFixedColumn(const INDEX& col, double value, double obj_coeff, const DistributedMatrix& eq_mat, const DistributedMatrix& ineq_mat);
    void notifyFixedEmptyColumn(const INDEX& col, double value, double obj_coeff, double xlow, double xupp);
 
    void putLinkingVarsSyncEvent();
@@ -45,16 +45,16 @@ public:
 
    void
    notifyFreeColumnSingletonEquality(const INDEX& row, const INDEX& col, double rhs, double obj_coeff, double col_coeff, double xlow, double xupp,
-         const StochGenMatrix& matrix_row);
+         const DistributedMatrix& matrix_row);
    void notifyFixedSingletonFromInequalityColumn(const INDEX& col, const INDEX& row, double value, double coeff, double xlow_old, double xupp_old);
    void notifyFreeColumnSingletonInequalityRow(const INDEX& row, const INDEX& col, double rhs, double coeff, double xlow, double xupp,
-         const StochGenMatrix& matrix_row);
+         const DistributedMatrix& matrix_row);
 
    void beginBoundTightening();
    void notifyRowPropagatedBound(const INDEX& row, const INDEX& col, double old_bound, double new_bound, bool is_upper_bound,
-         const StochGenMatrix& matrix_row);
-   void endBoundTightening(const std::vector<int>& store_linking_rows_A, const std::vector<int>& store_linking_rows_C, const StochGenMatrix& mat_A,
-         const StochGenMatrix& mat_C);
+         const DistributedMatrix& matrix_row);
+   void endBoundTightening(const std::vector<int>& store_linking_rows_A, const std::vector<int>& store_linking_rows_C, const DistributedMatrix& mat_A,
+         const DistributedMatrix& mat_C);
    void notifyDeletedRow(SystemType system_type, int node, int row, bool linking_constraint);
    void notifyParallelColumns();
 
@@ -78,9 +78,9 @@ private:
    void markRowAdded(const INDEX& row);
 
    /// stores row in specified node and returns it's new row index
-   int storeRow(const INDEX& row, const StochGenMatrix& matrix_row);
+   int storeRow(const INDEX& row, const DistributedMatrix& matrix_row);
    /// stores col in specified node and returns it's new col index
-   int storeColumn(const INDEX& col, const StochGenMatrix& matrix_col_eq, const StochGenMatrix& matrix_col_ineq);
+   int storeColumn(const INDEX& col, const DistributedMatrix& matrix_col_eq, const DistributedMatrix& matrix_col_ineq);
 
    bool isRowModified(const INDEX& row) const;
    void markRowClean(const INDEX& row);

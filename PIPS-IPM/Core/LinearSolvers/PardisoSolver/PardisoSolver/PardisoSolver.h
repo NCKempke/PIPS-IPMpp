@@ -21,16 +21,16 @@ public:
    virtual void firstCall() = 0;
 
    /** sets mStorage to refer to the argument sgm */
-   explicit PardisoSolver(const SparseSymMatrix* sgm);
+   explicit PardisoSolver(const SparseSymmetricMatrix* sgm);
    explicit PardisoSolver(const DenseSymMatrix* m);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
    void solve(Vector<double>& rhs) override;
-   void solve(GenMatrix& rhs) override;
+   void solve(GeneralMatrix& rhs) override;
    void solve(int nrhss, double* rhss, int* colSparsity) override;
-   void solve(GenMatrix& rhs, int* colSparsity);
+   void solve(GeneralMatrix& rhs, int* colSparsity);
 
    [[nodiscard]] bool reports_inertia() const override { return true; };
    [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
@@ -46,7 +46,7 @@ protected:
 
    ~PardisoSolver() override;
 
-   const SparseSymMatrix* Msys{};
+   const SparseSymmetricMatrix* Msys{};
    const DenseSymMatrix* Mdsys{};
    bool first{true};
    void* pt[64];

@@ -1,4 +1,4 @@
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 #include "PIPSIpmInterface.h"
 #include "sFactoryAug.h"
 #include "MehrotraStochSolver.h"
@@ -22,17 +22,17 @@ PIPSSolve(MPI_Comm comm, void* user_data, int numScens, int nx0, int my0, int mz
       double* second_dual) {
    //build the tree for specifying the problem
    int globalID = 0;
-   StochInputTree::StochInputNode data(user_data, globalID, nx0, my0, mz0, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow,
+   DistributedInputTree::DistributedInputNode data(user_data, globalID, nx0, my0, mz0, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow,
          ficlow, fcupp, ficupp, fxlow, fixlow, fxupp, fixupp);
    globalID++;
-   StochInputTree* root = new StochInputTree(data);
+   DistributedInputTree* root = new DistributedInputTree(data);
 
    for (int i = 0; i < numScens; i++) {
-      StochInputTree::StochInputNode data(user_data, globalID, nx, my, mz, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow,
+      DistributedInputTree::DistributedInputNode data(user_data, globalID, nx, my, mz, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow,
             ficlow, fcupp, ficupp, fxlow, fixlow, fxupp, fixupp);
       globalID++;
 
-      root->AddChild(new StochInputTree(data));
+      root->AddChild(new DistributedInputTree(data));
    }
 
    int mype;

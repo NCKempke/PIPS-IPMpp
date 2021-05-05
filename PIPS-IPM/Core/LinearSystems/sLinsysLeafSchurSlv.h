@@ -22,7 +22,7 @@ public:
 
    void factor2(DistributedQP* prob, Variables* vars) override;
    void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymMatrix& SC) override;
-   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymMatrix& SC) override;
+   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymmetricMatrix& SC) override;
 
 private:
    bool switchedToSafeSlv{false};

@@ -975,7 +975,7 @@ void SparseStorage::symmetrize(int& info) {
    delete[] irowM;
 }
 
-double SparseStorage::abmaxnorm() const {
+double SparseStorage::inf_norm() const {
    double norm = 0.0;
    const int nnz = numberOfNonZeros();
 

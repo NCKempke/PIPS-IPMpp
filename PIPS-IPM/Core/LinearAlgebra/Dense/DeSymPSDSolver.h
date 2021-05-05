@@ -11,7 +11,7 @@
 #include "DenseSymMatrixHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DenseGenMatrix.h"
+#include "DenseMatrix.h"
 #include "pipsport.h"
 
 /** A linear solver for dense, symmetric positive-definite systems.
@@ -31,7 +31,7 @@ public:
 
    //specialized method that uses BLAS-3 function DTRSM for the triagular solve.
    using DoubleLinearSolver::Lsolve;
-   void Lsolve(GenMatrix& mat) override;
+   void Lsolve(GeneralMatrix& mat) override;
 
    ~DeSymPSDSolver() override = default;
 

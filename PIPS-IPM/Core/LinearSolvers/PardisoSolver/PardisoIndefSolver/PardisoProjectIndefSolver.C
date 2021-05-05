@@ -15,7 +15,7 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*, double*, int*);
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver(SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(sgm,
+PardisoProjectIndefSolver::PardisoProjectIndefSolver(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(sgm,
       solve_in_parallel, mpi_comm) {
    assert(!sgm->isLower);
 

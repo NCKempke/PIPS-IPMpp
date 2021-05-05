@@ -19,7 +19,7 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*, double*, int*);
 
-PardisoProjectSolver::PardisoProjectSolver(const SparseSymMatrix* sgm) : PardisoSolver(sgm) {
+PardisoProjectSolver::PardisoProjectSolver(const SparseSymmetricMatrix* sgm) : PardisoSolver(sgm) {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
       std::cout << "PardisoProjectSolver::PardisoProjectSolver (sparse input)\n";

@@ -8,8 +8,6 @@
 #include "pipsport.h"
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
-#include "SparseStorageHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SparseStorage.h"
@@ -53,7 +51,7 @@ void FNAME(ma57ed)(const int* n, int* ic, int keep[], const double fact[], const
 class Ma57Solver : public DoubleLinearSolver {
 
 protected:
-   SparseStorageHandle mat_storage;
+   SmartPointer<SparseStorage> mat_storage;
 
    /** control structures MA57 */
    std::vector<int> icntl = std::vector<int>(20);

@@ -13,7 +13,7 @@
 #include "Status.h"
 #include "Problem.h"
 #include "DistributedFactory.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include <iostream>
 #include <algorithm>
 #include <cstdio>

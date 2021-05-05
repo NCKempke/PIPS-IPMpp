@@ -5,20 +5,20 @@
  *      Author: bzfkempk
  */
 
-#ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDSYMMATRIX_H_
-#define PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDSYMMATRIX_H_
+#ifndef BORDEREDSYMMETRICMATRIX_H
+#define BORDEREDSYMMETRICMATRIX_H
 
-#include "DoubleMatrix.h"
-#include "SparseSymMatrix.h"
-#include "StochSymMatrix.h"
-#include "StringGenMatrix.h"
+#include "AbstractMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "DistributedSymmetricMatrix.h"
+#include "StripMatrix.h"
 #include "DistributedVector.h"
 #include <vector>
 #include "mpi.h"
 
-class StringGenMatrix;
+class StripMatrix;
 
-class StochSymMatrix;
+class DistributedSymmetricMatrix;
 
 /* representing a matrix of the type
  *
@@ -27,13 +27,13 @@ class StochSymMatrix;
  *
  */
 
-class BorderedSymMatrix : public SymMatrix {
+class BorderedSymmetricMatrix : public SymmetricMatrix {
 public:
-   BorderedSymMatrix(StochSymMatrix* inner_matrix, StringGenMatrix* border_vertical, SymMatrix* bottom_block, MPI_Comm mpiComm_);
+   BorderedSymmetricMatrix(DistributedSymmetricMatrix* inner_matrix, StripMatrix* border_vertical, SymmetricMatrix* bottom_block, MPI_Comm mpiComm_);
 
-   ~BorderedSymMatrix() override;
+   ~BorderedSymmetricMatrix() override;
 
-   [[nodiscard]] int isKindOf(int type) const override;
+   [[nodiscard]] int is_a(int type) const override;
 
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
@@ -43,7 +43,7 @@ public:
 
    void fromGetDiagonal(int idiag, Vector<double>& x) const override;
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    void scalarMult(double num) override;
    void getSize(long long& m, long long& n) const override;
    void getSize(int& m, int& n) const override;
@@ -56,7 +56,7 @@ public:
    };
    void writeToStreamDense(std::ostream&) const override { assert("Not implemented" && 0); };
    void symAtPutSpRow(int, const double[], int, const int[], int&) override { assert("Not implemented" && 0); };
-   void symAtPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
+   void symAtPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
    void atPutDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
    void atAddDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
    void fromGetDense(int, int, double*, int, int, int) const override { assert("Not implemented" && 0); };
@@ -70,10 +70,10 @@ public:
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("Not implemented" && 0); };
 
    // TODO could be more general..
-   StochSymMatrix* inner_matrix;
-   StringGenMatrix* border_vertical;
+   DistributedSymmetricMatrix* inner_matrix;
+   StripMatrix* border_vertical;
 
-   SymMatrix* top_left_block;
+   SymmetricMatrix* top_left_block;
 
 protected:
 
@@ -83,4 +83,4 @@ protected:
    long long n;
 };
 
-#endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDSYMMATRIX_H_ */
+#endif /* BORDEREDSYMMETRICMATRIX_H */

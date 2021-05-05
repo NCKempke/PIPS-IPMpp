@@ -6,7 +6,7 @@
 #define DISTRIBUTEDROOTLINEARSYSTEM_H
 
 #include "DistributedLinearSystem.h"
-#include "StochGenMatrix.h"
+#include "DistributedMatrix.h"
 #include "SCsparsifier.h"
 
 class SCsparsifier;
@@ -56,21 +56,21 @@ public:
    void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    /* compute (Br0 - sum_j Br_mod_border) - buffer */
-   virtual void finalizeZ0Hierarchical(DenseGenMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows);
+   virtual void finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows);
    /* compute SC += B0_{outer}^T X0 */
    virtual void
-   finalizeInnerSchurComplementContribution(DoubleMatrix& SC, DenseGenMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows,
+   finalizeInnerSchurComplementContribution(AbstractMatrix& SC, DenseMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse, int begin_rows,
          int end_rows);
 
    /* compute -SUM_i Bi_{inner} Ki^-1 Bi_{outer} */
    using DistributedLinearSystem::LsolveHierarchyBorder;
    void
-   LsolveHierarchyBorder(DenseGenMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border,
+   LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC, bool two_link_border,
          int begin_cols, int end_cols) override;
 
    /* compute SUM_i Bli^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
    using DistributedLinearSystem::LtsolveHierarchyBorder;
-   void LtsolveHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border,
+   void LtsolveHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& br_mod_border,
          bool sym_res, bool sparse_res, bool use_local_RAC, int begin_cols, int end_cols) override;
 
    void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
@@ -96,10 +96,10 @@ public:
    // all_reduces specified submatrix (in chunks)
    static void submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
-   void allreduceMatrix(DoubleMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm);
+   void allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm);
 
    static void submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
-   static void submatrixAllReduceFull(DenseGenMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reduces specified submatrix as a while
    static void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
@@ -111,7 +111,7 @@ public:
 
 protected: //buffers
 
-   SparseSymMatrix* kktDist{};
+   SparseSymmetricMatrix* kktDist{};
 
    Vector<double>* xDiag{};
 
@@ -141,12 +141,12 @@ private:
    std::vector<MatrixEntryTriplet> receiveKKTdistLocalEntries() const;
    std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int childEnd) const;
 
-   static void finalizeInnerSchurComplementContributionDense(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border, SparseGenMatrix* C0_border,
-         SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border, bool is_sym,
+   static void finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border, SparseMatrix* C0_border,
+         SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border, SparseMatrix* G0cons_border, bool is_sym,
          int begin_rows, int end_rows);
 
-   static void finalizeInnerSchurComplementContributionSparse(DoubleMatrix& SC_, DenseGenMatrix& X0, SparseGenMatrix* A0_border, SparseGenMatrix* C0_border,
-         SparseGenMatrix* F0vec_border, SparseGenMatrix* G0vec_border, SparseGenMatrix* F0cons_border, SparseGenMatrix* G0cons_border, int begin_rows,
+   static void finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border, SparseMatrix* C0_border,
+         SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border, SparseMatrix* G0cons_border, int begin_rows,
          int end_rows);
 
    MPI_Datatype MatrixEntryTriplet_mpi;

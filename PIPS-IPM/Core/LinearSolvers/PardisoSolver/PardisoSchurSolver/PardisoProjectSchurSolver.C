@@ -22,7 +22,7 @@ extern "C" void pardiso_get_schur(void*, int*, int*, int*, double*, int*, int*);
 
 extern double g_iterNumber;
 
-PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymMatrix* sgm) : PardisoSchurSolver(sgm) {
+PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm) : PardisoSchurSolver(sgm) {
    num_threads = PIPSgetnOMPthreads();
 
    initPardiso();
@@ -180,11 +180,11 @@ void PardisoProjectSchurSolver::initPardiso() {
 }
 
 void PardisoProjectSchurSolver::computeSC(int nSCO,
-/*const*/SparseGenMatrix& R,
-/*const*/SparseGenMatrix& A,
-/*const*/SparseGenMatrix& C,
-/*const*/SparseGenMatrix& F,
-/*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
+/*const*/SparseMatrix& R,
+/*const*/SparseMatrix& A,
+/*const*/SparseMatrix& C,
+/*const*/SparseMatrix& F,
+/*const*/SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
    assert(!rowptrSC && !colidxSC && !eltsSC);
 
    bool doSymbFact = false;

@@ -5,7 +5,7 @@
 #define STOCH_TREE_CALLBACKS
 
 #include "DistributedTree.h"
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 
 #include <memory>
 #include <functional>
@@ -22,7 +22,7 @@ protected:
    DistributedTreeCallbacks(const DistributedTreeCallbacks& other);
 public:
 
-   using InputNode = StochInputTree::StochInputNode;
+   using InputNode = DistributedInputTree::DistributedInputNode;
    using DATA_MAT = FMAT InputNode::*;
    using DATA_VEC = FVEC InputNode::*;
    using DATA_NNZ = FNNZ InputNode::*;
@@ -31,16 +31,16 @@ public:
 
    DistributedTree* clone() const override;
 
-   DistributedTreeCallbacks(StochInputTree* root);
-   DistributedTreeCallbacks(StochInputTree::StochInputNode* data_);
+   DistributedTreeCallbacks(DistributedInputTree* root);
+   DistributedTreeCallbacks(DistributedInputTree::DistributedInputNode* data_);
    ~DistributedTreeCallbacks() = default;
 
    void addChild(DistributedTreeCallbacks* child);
 
-   StochSymMatrix* createQ() const override;
+   DistributedSymmetricMatrix* createQ() const override;
 
-   StochGenMatrix* createA() const override;
-   StochGenMatrix* createC() const override;
+   DistributedMatrix* createA() const override;
+   DistributedMatrix* createC() const override;
 
    DistributedVector<double>* createc() const override;
 
@@ -90,10 +90,10 @@ protected:
    unsigned int getMapChildrenToNthRootSubTrees(int& take_nth_root, std::vector<unsigned int>& map_child_to_sub_tree, unsigned int n_children,
          unsigned int n_procs, const std::vector<unsigned int>& child_procs);
 
-   void initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C, const DistributedVector<double>& nxVec,
+   void initPresolvedData(const DistributedSymmetricMatrix& Q, const DistributedMatrix& A, const DistributedMatrix& C, const DistributedVector<double>& nxVec,
          const DistributedVector<double>& myVec, const DistributedVector<double>& mzVec, int mylParent, int mzlParent);
 
-   StochGenMatrix*
+   DistributedMatrix*
    createMatrix(TREE_SIZE my, TREE_SIZE myl, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat, DATA_INT nnzBmat,
          DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat, DATA_MAT Blmat,
          const std::string& prefix_for_print) const;

@@ -7,7 +7,7 @@
 
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include "pipsport.h"
 
 /**
@@ -35,7 +35,7 @@ public:
    virtual void matrixChanged() = 0;
 
    /** called if new matrix (but same dimension) is to be used. Triggers factorization  */
-   virtual void matrixRebuild(DoubleMatrix& /*matrixNew*/ ) { assert(0 && "Not implemented"); }
+   virtual void matrixRebuild(AbstractMatrix& /*matrixNew*/ ) { assert(0 && "Not implemented"); }
 
    /** solves a linear system.
     *
@@ -53,14 +53,14 @@ public:
    virtual void solveSynchronized(Vector<double>& x) { solve(x); };
 
    // solve with multiple RHS
-   virtual void solve(GenMatrix& /*rhs*/ ) { assert(0 && "Not implemented"); }
+   virtual void solve(GeneralMatrix& /*rhs*/ ) { assert(0 && "Not implemented"); }
 
    // solve with multiple RHS and column sparsity array (can be nullptr)
    virtual void solve(int /*nrhss*/, double* /*rhss*/, int* /*colSparsity*/ ) { assert(0 && "Not implemented"); }
 
    // TODO: remove and only use solve
    void Lsolve(Vector<double>& /*x*/ ) { assert(false && "is always empty.. "); }
-   virtual void Lsolve(GenMatrix& /*mat*/ ) { assert(0 && "Not implemented"); }
+   virtual void Lsolve(GeneralMatrix& /*mat*/ ) { assert(0 && "Not implemented"); }
    void Dsolve(Vector<double>& x) { solve(x); }
    void Ltsolve(Vector<double>& /*x*/ ) { assert(false && "is always empty.. "); }
 

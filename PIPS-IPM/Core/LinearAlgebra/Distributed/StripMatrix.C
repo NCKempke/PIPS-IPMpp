@@ -1,11 +1,11 @@
 /*
- * StringGenMatrix.C
+ * StripMatrix.C
  *
  *  Created on: Sep 14, 2020
  *      Author: bzfkempk
  */
 
-#include "StringGenMatrix.h"
+#include "StripMatrix.h"
 
 #include "DistributedVector.h"
 #include "SimpleVector.h"
@@ -15,19 +15,19 @@
 #include "pipsdef.h"
 #include <algorithm>
 
-StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view) : mat(mat),
-      mat_link(mat_link), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed(PIPS_MPIgetDistributed(mpi_comm)),
+StripMatrix::StripMatrix(bool is_vertical, GeneralMatrix* first, GeneralMatrix* last, MPI_Comm mpi_comm_, bool is_view) : first(first),
+      last(last), is_vertical(is_vertical), mpi_comm(mpi_comm_), distributed(PIPS_MPIgetDistributed(mpi_comm)),
       rank(PIPS_MPIgetRank(mpi_comm)), is_view{is_view} {
-   assert(mat);
+   assert(first);
 
-   mat->getSize(m, n);
+   first->getSize(m, n);
 
-   nonzeros += mat->numberOfNonZeros();
+   nonzeros += first->numberOfNonZeros();
 
-   if (mat_link) {
+   if (last) {
       long long ml, nl;
-      mat_link->getSize(ml, nl);
-      nonzeros += mat_link->numberOfNonZeros();
+      last->getSize(ml, nl);
+      nonzeros += last->numberOfNonZeros();
 
       if (is_vertical) {
          assert(n == nl);
@@ -40,18 +40,18 @@ StringGenMatrix::StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* ma
    }
 }
 
-StringGenMatrix::~StringGenMatrix() {
+StripMatrix::~StripMatrix() {
    if (is_view)
       return;
 
-   for (StringGenMatrix* child : children)
+   for (StripMatrix* child : children)
       delete child;
 
-   delete mat;
-   delete mat_link;
+   delete first;
+   delete last;
 }
 
-void StringGenMatrix::addChild(StringGenMatrix* child) {
+void StripMatrix::addChild(StripMatrix* child) {
    children.push_back(child);
 
    nonzeros += child->numberOfNonZeros();
@@ -59,9 +59,9 @@ void StringGenMatrix::addChild(StringGenMatrix* child) {
    long long m_, n_;
    child->getSize(m_, n_);
 
-   assert(child->is_vertical == this->is_vertical || child->isKindOf(kStringGenDummyMatrix));
+   assert(child->is_vertical == this->is_vertical || child->is_a(kStringGenDummyMatrix));
 
-   if (!child->isKindOf(kStringGenDummyMatrix)) {
+   if (!child->is_a(kStringGenDummyMatrix)) {
       if (is_vertical) {
          assert(n == n_);
          m += m_;
@@ -73,66 +73,66 @@ void StringGenMatrix::addChild(StringGenMatrix* child) {
    }
 }
 
-bool StringGenMatrix::isEmpty() const {
-   return !mat && !mat_link && children.empty() && m == 0 && n == 0;
+bool StripMatrix::isEmpty() const {
+   return !first && !last && children.empty() && m == 0 && n == 0;
 }
 
-int StringGenMatrix::isKindOf(int type) const {
-   return (type == kStringGenMatrix || type == kStringMatrix || type == kGenMatrix);
+int StripMatrix::is_a(int type) const {
+   return (type == kStripMatrix || type == kStringMatrix || type == kGenMatrix);
 }
 
-double StringGenMatrix::abmaxnorm() const {
+double StripMatrix::inf_norm() const {
    double norm = 0.0;
 
    for (auto it : children)
-      norm = std::max(norm, it->abmaxnorm());
+      norm = std::max(norm, it->inf_norm());
 
    if (distributed)
       norm = PIPS_MPIgetMax(norm, mpi_comm);
 
-   norm = std::max(norm, mat->abmaxnorm());
+   norm = std::max(norm, first->inf_norm());
 
-   if (mat_link)
-      norm = std::max(norm, mat_link->abmaxnorm());
+   if (last)
+      norm = std::max(norm, last->inf_norm());
 
    return norm;
 }
 
-void StringGenMatrix::scalarMult(double num) {
-   mat->scalarMult(num);
+void StripMatrix::scalarMult(double num) {
+   first->scalarMult(num);
 
-   if (mat_link)
-      mat_link->scalarMult(num);
+   if (last)
+      last->scalarMult(num);
 
    for (auto & it : children)
       it->scalarMult(num);
 }
 
 
-void StringGenMatrix::mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+void StripMatrix::mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    if (is_vertical)
       multVertical(beta, y, alpha, x);
    else
       multHorizontal(beta, y, alpha, x, true);
 }
 
-void StringGenMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+void StripMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    if (is_vertical)
       transMultVertical(beta, y, alpha, x, true);
    else
       transMultHorizontal(beta, y, alpha, x);
 }
 
-int StringGenMatrix::numberOfNonZeros() const {
+int StripMatrix::numberOfNonZeros() const {
 #ifndef NDEBUG
    const int nonzeros_now = static_cast<int>(nonzeros);
-   const_cast<StringGenMatrix*>(this)->recomputeNonzeros();
+   const_cast<StripMatrix*>(this)->recomputeNonzeros();
    assert(nonzeros_now == nonzeros);
 #endif
    return static_cast<int>(nonzeros);
 }
 
-void StringGenMatrix::recomputeNonzeros() {
+void StripMatrix::recomputeNonzeros() {
    nonzeros = 0;
 
    for (auto& child : children) {
@@ -143,8 +143,8 @@ void StringGenMatrix::recomputeNonzeros() {
          child->numberOfNonZeros();
    }
 
-   if (dynamic_cast<const StringGenMatrix*>(mat)) {
-      auto& matstr = dynamic_cast<StringGenMatrix&>(*mat);
+   if (dynamic_cast<const StripMatrix*>(first)) {
+      auto& matstr = dynamic_cast<StripMatrix&>(*first);
       matstr.recomputeNonzeros();
       if (PIPS_MPIgetRank(matstr.mpi_comm) == 0)
          nonzeros += matstr.numberOfNonZeros();
@@ -152,56 +152,56 @@ void StringGenMatrix::recomputeNonzeros() {
          matstr.numberOfNonZeros();
    }
    else if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
-      if (mat)
-         nonzeros += mat->numberOfNonZeros();
-      if (mat_link)
-         nonzeros += mat_link->numberOfNonZeros();
+      if (first)
+         nonzeros += first->numberOfNonZeros();
+      if (last)
+         nonzeros += last->numberOfNonZeros();
    }
 
    PIPS_MPIgetSumInPlace(nonzeros, mpi_comm);
 }
 
-void StringGenMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void StripMatrix::multVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
 
    assert(is_vertical);
    assert(y.children.size() == children.size());
 
-   mat->mult(beta, *y.first, alpha, x);
+   first->mult(beta, *y.first, alpha, x);
 
-   if (mat_link) {
+   if (last) {
       assert(y.last);
-      mat_link->mult(beta, *y.last, alpha, x);
+      last->mult(beta, *y.last, alpha, x);
    }
 
    for (size_t i = 0; i < children.size(); ++i) {
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(y.children[i]->isKindOf(kStochDummy));
 
       children[i]->multVertical(beta, *y.children[i], alpha, x);
    }
 }
 
-void StringGenMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, bool root) const {
+void StripMatrix::multHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, bool root) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    assert(!is_vertical);
    assert(x.children.size() == children.size());
-   assert((x.last && mat_link) || (x.last == nullptr && mat_link == nullptr));
+   assert((x.last && last) || (x.last == nullptr && last == nullptr));
 
-   if (mat->isKindOf(kStringGenMatrix)) {
-      assert(!mat_link);
+   if (first->is_a(kStripMatrix)) {
+      assert(!last);
       assert(children.empty());
       assert(!root);
-      dynamic_cast<const StringGenMatrix*>(mat)->multHorizontal(1.0, y, alpha, *x.first, false);
+      dynamic_cast<const StripMatrix*>(first)->multHorizontal(1.0, y, alpha, *x.first, false);
    }
    else {
       if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
-         mat->mult(root ? beta : 1.0, y, alpha, *x.first);
-         if (mat_link)
-            mat_link->mult(1.0, y, alpha, *x.last);
+         first->mult(root ? beta : 1.0, y, alpha, *x.first);
+         if (last)
+            last->mult(1.0, y, alpha, *x.last);
       }
       else if (root)
          y.setToZero();
@@ -214,26 +214,26 @@ void StringGenMatrix::multHorizontal(double beta, Vector<double>& y_in, double a
    }
 }
 
-void StringGenMatrix::transMultVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, bool root) const {
+void StripMatrix::transMultVertical(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in, bool root) const {
    const auto& x = dynamic_cast<const DistributedVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
    assert(is_vertical);
    assert(x.children.size() == children.size());
-   assert(x.first && mat);
-   assert((x.last && mat_link) || (x.last == nullptr && mat_link == nullptr));
+   assert(x.first && first);
+   assert((x.last && last) || (x.last == nullptr && last == nullptr));
 
-   if (mat->isKindOf(kStringGenMatrix)) {
-      assert(!mat_link);
+   if (first->is_a(kStripMatrix)) {
+      assert(!last);
       assert(children.empty());
       assert(!root);
-      dynamic_cast<StringGenMatrix*>(mat)->transMultVertical(1.0, y, alpha, *x.first, false);
+      dynamic_cast<StripMatrix*>(first)->transMultVertical(1.0, y, alpha, *x.first, false);
    }
    else {
       if (rank == 0) {
-         mat->transMult(root ? beta : 1.0, y, alpha, *x.first);
-         if (mat_link)
-            mat_link->transMult(1.0, y, alpha, *x.last);
+         first->transMult(root ? beta : 1.0, y, alpha, *x.first);
+         if (last)
+            last->transMult(1.0, y, alpha, *x.last);
       }
       else if (root)
          y.setToZero();
@@ -246,7 +246,7 @@ void StringGenMatrix::transMultVertical(double beta, Vector<double>& y_in, doubl
    }
 }
 
-void StringGenMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void StripMatrix::transMultHorizontal(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
 
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
@@ -254,47 +254,47 @@ void StringGenMatrix::transMultHorizontal(double beta, Vector<double>& y_in, dou
    assert(!is_vertical);
    assert(y.children.size() == children.size());
    if (y.last)
-      assert(mat_link);
+      assert(last);
    else
-      assert(mat_link == nullptr);
+      assert(last == nullptr);
 
-   mat->transMult(beta, *y.first, alpha, x);
+   first->transMult(beta, *y.first, alpha, x);
 
-   if (mat_link)
-      mat_link->transMult(beta, *y.last, alpha, x);
+   if (last)
+      last->transMult(beta, *y.last, alpha, x);
 
    for (size_t i = 0; i < children.size(); ++i) {
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(y.children[i]->isKindOf(kStochDummy));
 
       children[i]->transMultHorizontal(beta, *y.children[i], alpha, x);
    }
 }
 
-void StringGenMatrix::getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* row_scale, Vector<double>& minmax_in) const {
+void StripMatrix::getColMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* row_scale, Vector<double>& minmax_in) const {
    assert(!is_vertical);
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
 
-   assert(minmax.first && mat);
+   assert(minmax.first && first);
    assert(minmax.children.size() == children.size());
-   assert((minmax.last && mat_link) || (minmax.last == nullptr && mat_link == nullptr));
+   assert((minmax.last && last) || (minmax.last == nullptr && last == nullptr));
 
 
    for (size_t i = 0; i < children.size(); ++i) {
       assert(minmax.children[i]);
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(minmax.children[i]->isKindOf(kStochDummy));
 
       children[i]->getColMinMaxVecHorizontal(get_min, initialize_vec, row_scale, *minmax.children[i]);
    }
 
-   mat->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.first);
+   first->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.first);
 
-   if (mat_link)
-      mat_link->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.last);
+   if (last)
+      last->getColMinMaxVec(get_min, initialize_vec, row_scale, *minmax.last);
 }
 
-void StringGenMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_) const {
+void StripMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* row_scale_in, Vector<double>& minmax_) const {
    assert(is_vertical);
    const bool has_rowscale = (row_scale_in != nullptr);
 
@@ -303,12 +303,12 @@ void StringGenMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec,
 
    assert(!has_rowscale || row_scale->children.size() == children.size());
    if (has_rowscale)
-      assert((row_scale->last && mat_link) || (row_scale->last == nullptr && mat_link == nullptr));
+      assert((row_scale->last && last) || (row_scale->last == nullptr && last == nullptr));
 
 
    for (size_t i = 0; i < children.size(); i++) {
       if (has_rowscale)
-         if (children[i]->isKindOf(kStringGenDummyMatrix))
+         if (children[i]->is_a(kStringGenDummyMatrix))
             assert(row_scale->children[i]->isKindOf(kStochDummy));
 
       children[i]->getColMinMaxVecVertical(get_min, false, has_rowscale ? row_scale->children[i] : nullptr, minmax);
@@ -321,15 +321,15 @@ void StringGenMatrix::getColMinMaxVecVertical(bool get_min, bool initialize_vec,
          PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
    }
 
-   mat->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->first : nullptr, minmax);
+   first->getColMinMaxVec(get_min, initialize_vec, has_rowscale ? row_scale->first : nullptr, minmax);
 
-   if (mat_link)
-      mat_link->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, minmax);
+   if (last)
+      last->getColMinMaxVec(get_min, false, has_rowscale ? row_scale->last : nullptr, minmax);
 }
 
 /** DistributedVector<double> colScaleVec, SimpleVector<double> minmaxVec */
 void
-StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_) const {
+StripMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_) const {
    assert(!is_vertical);
    const bool has_colscale = (col_scale_in != nullptr);
 
@@ -337,12 +337,12 @@ StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, co
    auto& minmax = dynamic_cast<SimpleVector<double>&>(minmax_);
    assert(!has_colscale || col_scale->children.size() == children.size());
    if (has_colscale)
-      assert((col_scale->last && mat_link) || (col_scale->last == nullptr && mat_link == nullptr));
+      assert((col_scale->last && last) || (col_scale->last == nullptr && last == nullptr));
 
 
    for (size_t i = 0; i < children.size(); i++) {
       if (has_colscale)
-         if (children[i]->isKindOf(kStringGenDummyMatrix))
+         if (children[i]->is_a(kStringGenDummyMatrix))
             assert(col_scale->children[i]->isKindOf(kStochDummy));
 
       children[i]->getRowMinMaxVecHorizontal(get_min, false, has_colscale ? col_scale->children[i] : nullptr, minmax);
@@ -355,37 +355,37 @@ StringGenMatrix::getRowMinMaxVecHorizontal(bool get_min, bool initialize_vec, co
          PIPS_MPImaxArrayInPlace(minmax.elements(), minmax.length(), mpi_comm);
    }
 
-   mat->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, minmax);
+   first->getRowMinMaxVec(get_min, initialize_vec, has_colscale ? col_scale->first : nullptr, minmax);
 
-   if (mat_link)
-      mat_link->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last : nullptr, minmax);
+   if (last)
+      last->getRowMinMaxVec(get_min, false, has_colscale ? col_scale->last : nullptr, minmax);
 }
 
 /** DistributedVector<double> minmaxVec, SimpleVector<double> colScaleVec */
-void StringGenMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* col_scale, Vector<double>& minmax_in) const {
+void StripMatrix::getRowMinMaxVecVertical(bool get_min, bool initialize_vec, const Vector<double>* col_scale, Vector<double>& minmax_in) const {
    assert(is_vertical);
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_in);
 
-   assert(minmax.first && mat);
+   assert(minmax.first && first);
    assert(minmax.children.size() == children.size());
-   assert((minmax.last && mat_link) || (minmax.last == nullptr && mat_link == nullptr));
+   assert((minmax.last && last) || (minmax.last == nullptr && last == nullptr));
 
-   mat->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.first);
+   first->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.first);
 
    for (size_t i = 0; i < children.size(); ++i) {
       assert(minmax.children[i]);
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(minmax.children[i]->isKindOf(kStochDummy));
 
       children[i]->getRowMinMaxVecVertical(get_min, initialize_vec, col_scale, *minmax.children[i]);
    }
 
-   if (mat_link)
-      mat_link->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.last);
+   if (last)
+      last->getRowMinMaxVec(get_min, initialize_vec, col_scale, *minmax.last);
 }
 
-void StringGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) const {
+void StripMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) const {
    if (is_vertical)
       getRowMinMaxVecVertical(getMin, initializeVec, colScaleVec, minmaxVec);
    else
@@ -393,120 +393,120 @@ void StringGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vec
 }
 
 
-void StringGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const {
+void StripMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const {
    if (is_vertical)
       getColMinMaxVecVertical(getMin, initializeVec, rowScaleVec, minmaxVec);
    else
       getColMinMaxVecHorizontal(getMin, initializeVec, rowScaleVec, minmaxVec);
 }
 
-void StringGenMatrix::columnScaleVertical(const Vector<double>& vec) {
+void StripMatrix::columnScaleVertical(const Vector<double>& vec) {
    assert(is_vertical);
 
-   mat->columnScale(vec);
+   first->columnScale(vec);
 
    for (auto & i : children)
       i->columnScaleVertical(vec);
 
-   if (mat_link)
-      mat_link->columnScale(vec);
+   if (last)
+      last->columnScale(vec);
 }
 
-void StringGenMatrix::columnScaleHorizontal(const Vector<double>& vec_in) {
+void StripMatrix::columnScaleHorizontal(const Vector<double>& vec_in) {
    assert(!is_vertical);
 
    const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
-   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr));
+   assert((vec.last && last) || (vec.last == nullptr && last == nullptr));
 
-   mat->columnScale(*vec.first);
+   first->columnScale(*vec.first);
 
    for (size_t i = 0; i < children.size(); ++i) {
       assert(vec.children[i]);
-      if (children[i]->isKindOf(kStochGenDummyMatrix))
+      if (children[i]->is_a(kStochGenDummyMatrix))
          assert(vec.children[i]->isKindOf(kStochDummy));
 
       children[i]->columnScaleHorizontal(*vec.children[i]);
    }
 
-   if (mat_link)
-      mat_link->columnScale(*vec.last);
+   if (last)
+      last->columnScale(*vec.last);
 }
 
-void StringGenMatrix::rowScaleVertical(const Vector<double>& vec_in) {
+void StripMatrix::rowScaleVertical(const Vector<double>& vec_in) {
    assert(is_vertical);
 
    const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
-   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr));
+   assert((vec.last && last) || (vec.last == nullptr && last == nullptr));
 
-   mat->rowScale(*vec.first);
+   first->rowScale(*vec.first);
 
    for (size_t i = 0; i < children.size(); i++) {
       assert(vec.children[i]);
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(vec.children[i]->isKindOf(kStochDummy));
 
       children[i]->rowScaleVertical(*vec.children[i]);
    }
 
-   if (mat_link)
-      mat_link->rowScale(*vec.last);
+   if (last)
+      last->rowScale(*vec.last);
 }
 
-void StringGenMatrix::rowScaleHorizontal(const Vector<double>& vec) {
+void StripMatrix::rowScaleHorizontal(const Vector<double>& vec) {
    assert(!is_vertical);
-   mat->rowScale(vec);
+   first->rowScale(vec);
 
-   if (mat_link)
-      mat_link->rowScale(vec);
+   if (last)
+      last->rowScale(vec);
 
    for (auto & i : children)
       i->rowScaleHorizontal(vec);
 }
 
-void StringGenMatrix::columnScale(const Vector<double>& vec) {
+void StripMatrix::columnScale(const Vector<double>& vec) {
    if (is_vertical)
       columnScaleVertical(vec);
    else
       columnScaleHorizontal(vec);
 }
 
-void StringGenMatrix::rowScale(const Vector<double>& vec) {
+void StripMatrix::rowScale(const Vector<double>& vec) {
    if (is_vertical)
       rowScaleVertical(vec);
    else
       rowScaleHorizontal(vec);
 }
 
-void StringGenMatrix::addRowSumsVertical(Vector<double>& vec_in) const {
+void StripMatrix::addRowSumsVertical(Vector<double>& vec_in) const {
    assert(is_vertical);
 
    auto& vec = dynamic_cast<DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
-   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr));
+   assert((vec.last && last) || (vec.last == nullptr && last == nullptr));
 
-   mat->addRowSums(*vec.first);
+   first->addRowSums(*vec.first);
 
    for (size_t i = 0; i < children.size(); i++) {
       assert(vec.children[i]);
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(vec.children[i]->isKindOf(kStochDummy));
 
       children[i]->addRowSumsVertical(*vec.children[i]);
    }
 
-   if (mat_link)
-      mat_link->addRowSums(*vec.last);
+   if (last)
+      last->addRowSums(*vec.last);
 }
 
-void StringGenMatrix::addRowSumsHorizontal(Vector<double>& vec_in) const {
+void StripMatrix::addRowSumsHorizontal(Vector<double>& vec_in) const {
    assert(!is_vertical);
    auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
 
@@ -516,13 +516,13 @@ void StringGenMatrix::addRowSumsHorizontal(Vector<double>& vec_in) const {
    if (distributed)
       PIPS_MPIsumArrayInPlace(vec.elements(), vec.length(), mpi_comm);
 
-   mat->addRowSums(vec);
+   first->addRowSums(vec);
 
-   if (mat_link)
-      mat_link->addRowSums(vec);
+   if (last)
+      last->addRowSums(vec);
 }
 
-void StringGenMatrix::addColSumsVertical(Vector<double>& vec_in) const {
+void StripMatrix::addColSumsVertical(Vector<double>& vec_in) const {
    assert(is_vertical);
    auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);
 
@@ -532,50 +532,50 @@ void StringGenMatrix::addColSumsVertical(Vector<double>& vec_in) const {
    if (distributed)
       PIPS_MPIsumArrayInPlace(vec.elements(), vec.length(), mpi_comm);
 
-   mat->addColSums(vec);
+   first->addColSums(vec);
 
-   if (mat_link)
-      mat_link->addColSums(vec);
+   if (last)
+      last->addColSums(vec);
 }
 
-void StringGenMatrix::addColSumsHorizontal(Vector<double>& vec_in) const {
+void StripMatrix::addColSumsHorizontal(Vector<double>& vec_in) const {
    assert(!is_vertical);
 
    auto& vec = dynamic_cast<DistributedVector<double>&>(vec_in);
 
    assert(vec.first);
    assert(vec.children.size() == children.size());
-   assert((vec.last && mat_link) || (vec.last == nullptr && mat_link == nullptr));
+   assert((vec.last && last) || (vec.last == nullptr && last == nullptr));
 
-   mat->addColSums(*vec.first);
+   first->addColSums(*vec.first);
 
    for (size_t i = 0; i < children.size(); i++) {
       assert(vec.children[i]);
-      if (children[i]->isKindOf(kStringGenDummyMatrix))
+      if (children[i]->is_a(kStringGenDummyMatrix))
          assert(vec.children[i]->isKindOf(kStochDummy));
 
       children[i]->addColSumsHorizontal(*vec.children[i]);
    }
 
-   if (mat_link)
-      mat_link->addColSums(*vec.last);
+   if (last)
+      last->addColSums(*vec.last);
 }
 
-void StringGenMatrix::addRowSums(Vector<double>& vec) const {
+void StripMatrix::addRowSums(Vector<double>& vec) const {
    if (is_vertical)
       addRowSumsVertical(vec);
    else
       addRowSumsHorizontal(vec);
 }
 
-void StringGenMatrix::addColSums(Vector<double>& vec) const {
+void StripMatrix::addColSums(Vector<double>& vec) const {
    if (is_vertical)
       addColSumsVertical(vec);
    else
       addColSumsHorizontal(vec);
 }
 
-void StringGenMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms) {
+void StripMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms) {
 
 #ifndef NDEBUG
    const unsigned int n_new_children = getNDistinctValues(map_child_subchild);
@@ -594,8 +594,8 @@ void StringGenMatrix::combineChildrenInNewChildren(const std::vector<unsigned in
          }
       }
       else {
-         SparseGenMatrix* empty_filler = is_vertical ? new SparseGenMatrix(0, n, 0) : new SparseGenMatrix(m, 0, 0);
-         auto* new_child = new StringGenMatrix(is_vertical, empty_filler, nullptr, child_comms[n_children]);
+         SparseMatrix* empty_filler = is_vertical ? new SparseMatrix(0, n, 0) : new SparseMatrix(m, 0, 0);
+         auto* new_child = new StripMatrix(is_vertical, empty_filler, nullptr, child_comms[n_children]);
 
          /* will not change size of StringGenMat since new_child is of size zero */
          addChild(new_child);
@@ -620,14 +620,14 @@ void StringGenMatrix::combineChildrenInNewChildren(const std::vector<unsigned in
    recomputeNonzeros();
 }
 
-GenMatrix* StringGenMatrix::shaveBottom(int n_rows) {
+GeneralMatrix* StripMatrix::shaveBottom(int n_rows) {
    assert(!is_vertical);
-   assert(mat);
+   assert(first);
 
-   GenMatrix* mat_border = mat->shaveBottom(n_rows);
-   GenMatrix* matlink_border = mat_link ? mat_link->shaveBottom(n_rows) : nullptr;
+   GeneralMatrix* mat_border = first->shaveBottom(n_rows);
+   GeneralMatrix* matlink_border = last ? last->shaveBottom(n_rows) : nullptr;
 
-   auto* border = new StringGenMatrix(false, mat_border, matlink_border, mpi_comm);
+   auto* border = new StripMatrix(false, mat_border, matlink_border, mpi_comm);
 
 #ifndef NDEBUG
    int mB, nB;
@@ -636,7 +636,7 @@ GenMatrix* StringGenMatrix::shaveBottom(int n_rows) {
 #endif
 
    for (auto& child : children)
-      border->addChild(dynamic_cast<StringGenMatrix*>(child->shaveBottom(n_rows)));
+      border->addChild(dynamic_cast<StripMatrix*>(child->shaveBottom(n_rows)));
 
    m -= n_rows;
 
@@ -646,7 +646,7 @@ GenMatrix* StringGenMatrix::shaveBottom(int n_rows) {
    return border;
 }
 
-void StringGenMatrix::writeToStreamDense(std::ostream& out) const {
+void StripMatrix::writeToStreamDense(std::ostream& out) const {
    assert(!is_vertical);
    for (int i = 0; i < m; ++i) {
       writeToStreamDenseRow(out, i);
@@ -654,13 +654,13 @@ void StringGenMatrix::writeToStreamDense(std::ostream& out) const {
    }
 }
 
-void StringGenMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
+void StripMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
    assert(!is_vertical);
 
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    std::ostringstream row_stream{};
-   mat->writeToStreamDenseRow(row_stream, row);
+   first->writeToStreamDenseRow(row_stream, row);
 
    if (my_rank != 0) {
       row_stream.str("");
@@ -676,16 +676,16 @@ void StringGenMatrix::writeToStreamDenseRow(std::ostream& out, int row) const {
    if (my_rank == 0)
       out << full_row;
 
-   if (mat_link && my_rank == 0)
-      mat_link->writeToStreamDenseRow(out, row);
+   if (last && my_rank == 0)
+      last->writeToStreamDenseRow(out, row);
 }
 
-void StringGenMatrix::writeDashedLineToStream(std::ostream& out) const {
+void StripMatrix::writeDashedLineToStream(std::ostream& out) const {
    assert(!is_vertical);
 
    std::stringstream row_stream{};
 
-   mat->writeDashedLineToStream(row_stream);
+   first->writeDashedLineToStream(row_stream);
 
    if (PIPS_MPIgetRank(mpi_comm) != 0) {
       row_stream.str("");
@@ -701,11 +701,11 @@ void StringGenMatrix::writeDashedLineToStream(std::ostream& out) const {
    if (PIPS_MPIgetRank(mpi_comm) == 0)
       out << full_row;
 
-   if (mat_link && PIPS_MPIgetRank(mpi_comm) == 0)
-      mat_link->writeDashedLineToStream(out);
+   if (last && PIPS_MPIgetRank(mpi_comm) == 0)
+      last->writeDashedLineToStream(out);
 }
 
-void StringGenMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
+void StripMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
    if (tree.getMapBlockSubTrees().empty())
       return;
    combineChildrenInNewChildren(tree.getMapBlockSubTrees(), tree.getChildComms());
@@ -714,7 +714,7 @@ void StringGenMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
 
    for (size_t i = 0; i < children.size(); ++i) {
       auto& child = children[i];
-      auto* new_child = new StringGenMatrix(is_vertical, child, nullptr, tree.getChildComms()[i]);
+      auto* new_child = new StripMatrix(is_vertical, child, nullptr, tree.getChildComms()[i]);
       child = new_child;
    }
 
@@ -727,8 +727,8 @@ void StringGenMatrix::splitAlongTree(const DistributedTreeCallbacks& tree) {
          children[i] = new StringGenDummyMatrix();
       }
       else if (tree_child->getSubRoot()) {
-         assert(children[i]->mat->isKindOf(kStringGenMatrix));
-         dynamic_cast<StringGenMatrix*>(children[i]->mat)->splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*tree_child->getSubRoot()));
+         assert(children[i]->first->is_a(kStripMatrix));
+         dynamic_cast<StripMatrix*>(children[i]->first)->splitAlongTree(dynamic_cast<const DistributedTreeCallbacks&>(*tree_child->getSubRoot()));
       }
    }
 

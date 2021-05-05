@@ -12,7 +12,7 @@
 #include "mpi.h"
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsport.h"

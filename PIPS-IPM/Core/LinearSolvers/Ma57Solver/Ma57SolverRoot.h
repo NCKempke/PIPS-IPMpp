@@ -10,11 +10,9 @@
 
 #include "Ma57Solver.h"
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsport.h"
-
 #include "mpi.h"
 
 

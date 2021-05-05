@@ -5,33 +5,31 @@
 #ifndef SPARSESYMMATRIX_H
 #define SPARSESYMMATRIX_H
 
-#include "DoubleMatrix.h"
-
+#include "AbstractMatrix.h"
 #include "SparseStorage.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "SparseSymMatrixHandle.h"
 
-class SparseGenMatrix;
+class SparseMatrix;
 
 /** Represents sparse symmetric matrices stored in
  *  row-major Harwell-Boeing format.
  *  @ingroup SparseLinearAlgebra
  */
-class SparseSymMatrix : public SymMatrix {
-   SparseStorageHandle mStorage;
+class SparseSymmetricMatrix : public SymmetricMatrix {
+   SmartPointer<SparseStorage> mStorage;
 public:
-   SparseSymMatrix();
-   SparseSymMatrix(const SparseSymMatrix& mat);
+   SparseSymmetricMatrix();
+   SparseSymmetricMatrix(const SparseSymmetricMatrix& mat);
 
-   SparseSymMatrix(int size, int nnz, bool isLower = true);
-   SparseSymMatrix(int size, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0, bool isLower = true);
-   SparseSymMatrix(SparseStorage* m_storage, bool is_lower_);
+   SparseSymmetricMatrix(int size, int nnz, bool isLower = true);
+   SparseSymmetricMatrix(int size, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0, bool isLower = true);
+   SparseSymmetricMatrix(SparseStorage* m_storage, bool is_lower_);
 
    SparseStorage& getStorageRef() { return *mStorage; }
    [[nodiscard]] const SparseStorage& getStorageRef() const { return *mStorage; }
-   SparseStorageHandle getStorageHandle() { return mStorage; }
-   [[nodiscard]] SparseStorageHandle getStorageHandle() const { return mStorage; }
+   SmartPointer<SparseStorage> getStorageHandle() { return mStorage; }
+   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() const { return mStorage; }
 
    // is lower part of matrix stored? (otherwise upper part is stored)
    const bool isLower;
@@ -44,7 +42,7 @@ public:
    [[nodiscard]] const int* jcolM() const { return mStorage->jcolM; }
    [[nodiscard]] const double* M() const { return mStorage->M; }
 
-   [[nodiscard]] int isKindOf(int type) const override;
+   [[nodiscard]] int is_a(int type) const override;
 
    void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
@@ -69,7 +67,7 @@ public:
    void diagonal_add_constant_from(int from, int length, double value) override;
    void diagonal_set_to_constant_from(int from, int length, double value) override;
 
-   void symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
+   void symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
 
    virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
@@ -78,7 +76,7 @@ public:
 
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void writeToStream(std::ostream& out) const override;
@@ -108,11 +106,11 @@ public:
 
    void getSparseTriplet_fortran2fortran(int*& irn, int*& jcn, double*& val) const;
 
-   virtual SparseGenMatrix* shaveSymLeftBottom(int n_vars);
+   virtual SparseMatrix* shaveSymLeftBottom(int n_vars);
 
-   ~SparseSymMatrix() override = default;
+   ~SparseSymmetricMatrix() override = default;
 
-   [[nodiscard]] SymMatrix* clone() const override;
+   [[nodiscard]] SymmetricMatrix* clone() const override;
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "MumpsSolverBase.h"
 #include "SimpleVector.h"
-#include "SparseGenMatrix.h"
+#include "SparseMatrix.h"
 #include "pipsport.h"
 
 static MUMPS_INT getFortranMPIComm(MPI_Comm mpiComm_c) {

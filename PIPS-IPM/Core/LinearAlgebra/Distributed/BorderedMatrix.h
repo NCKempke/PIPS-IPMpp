@@ -5,19 +5,19 @@
  *      Author: bzfkempk
  */
 
-#ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDGENMATRIX_H_
-#define PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDGENMATRIX_H_
+#ifndef BORDEREDMATRIX_H
+#define BORDEREDMATRIX_H
 
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 
 #include <vector>
 #include "mpi.h"
 
-class StringGenMatrix;
+class StripMatrix;
 
-class StochGenMatrix;
+class DistributedMatrix;
 
-class SparseGenMatrix;
+class SparseMatrix;
 
 
 /*
@@ -26,18 +26,18 @@ class SparseGenMatrix;
  * [ B  K ]
  * [ C  B']
  *
- * Where K is a StochGenMatrix
+ * Where K is a DistributedMatrix
  */
 
 // TODO : make more general ? K B B' and C can be any matrices in theory..
-class BorderedGenMatrix : public GenMatrix {
+class BorderedMatrix : public GeneralMatrix {
 public:
-   StochGenMatrix* const inner_matrix{};
-   StringGenMatrix* const border_left{};
-   StringGenMatrix* const border_bottom{};
+   DistributedMatrix* const inner_matrix{};
+   StripMatrix* const border_left{};
+   StripMatrix* const border_bottom{};
 
    // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-   SparseGenMatrix* const bottom_left_block{};
+   SparseMatrix* const bottom_left_block{};
 
 protected:
 
@@ -49,18 +49,18 @@ protected:
    long long n{0};
 
 public:
-   BorderedGenMatrix(StochGenMatrix* inner_matrix, StringGenMatrix* border_left, StringGenMatrix* border_bottom, SparseGenMatrix* bottom_left_block,
+   BorderedMatrix(DistributedMatrix* inner_matrix, StripMatrix* border_left, StripMatrix* border_bottom, SparseMatrix* bottom_left_block,
          MPI_Comm mpi_comm_);
-   ~BorderedGenMatrix() override;
+   ~BorderedMatrix() override;
 
-   [[nodiscard]] int isKindOf(int matrixType) const override;
+   [[nodiscard]] int is_a(int matrixType) const override;
 
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    /** y = beta * y + alpha * this^T * x */
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    void columnScale(const Vector<double>& vec) override;
    void rowScale(const Vector<double>& vec) override;
 
@@ -78,7 +78,7 @@ public:
    void addColSums(Vector<double>& vec) const override;
 
    /* methods not needed for Hierarchical approach */
-   using GenMatrix::abminnormNonZero;
+   using GeneralMatrix::abminnormNonZero;
    [[nodiscard]] double abminnormNonZero(double) const override {
       assert(false && "TODO: implement");
       return 0.0;
@@ -102,8 +102,8 @@ public:
       assert(0 && "not implemented");
    }; // TODO : not sure - maybe we want this to get forwarded to the underlying matrix?
 
-   void matTransDMultMat(const Vector<double>&, SymMatrix**) const override { assert(0 && "not implemented"); }; // TODO : needed?
-   void matTransDinvMultMat(const Vector<double>&, SymMatrix**) const override { assert(0 && "not implemented"); }; // TODO : needed?
+   void matTransDMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert(0 && "not implemented"); }; // TODO : needed?
+   void matTransDinvMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert(0 && "not implemented"); }; // TODO : needed?
 
    void getNnzPerRow(Vector<int>&) const override { assert(0 && "not implemented"); };
    void getNnzPerCol(Vector<int>&) const override { assert(0 && "not implemented"); };
@@ -111,7 +111,7 @@ public:
    void fromGetSpRow(int, int, double*, int, int*, int&, int, int&) const override { assert(0 && "not implemented"); };
    void putSparseTriple(const int*, int, const int*, const double*, int&) override { assert(0 && "not implemented"); };
    void symmetricScale(const Vector<double>&) override { assert(0 && "not implemented"); };
-   void atPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert(0 && "not implemented"); };
+   void atPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert(0 && "not implemented"); };
    void atPutDense(int, int, const double*, int, int, int) override { assert(0 && "not implemented"); };
    void atPutSpRow(int, const double*, int, const int*, int&) override { assert(0 && "not implemented"); };
 private:
@@ -120,4 +120,4 @@ private:
    bool hasVecStructureForBorderedMat(const Vector<T>& vec, bool row_vec) const;
 };
 
-#endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_BORDEREDGENMATRIX_H_ */
+#endif /* BORDEREDMATRIX_H */

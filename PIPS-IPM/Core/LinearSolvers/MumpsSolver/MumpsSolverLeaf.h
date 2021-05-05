@@ -7,7 +7,7 @@
 
 #include "mpi.h"
 #include "MumpsSolverBase.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "pipsport.h"
 
 

@@ -5,15 +5,15 @@
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "DistributedTreeCallbacks.h"
-#include "StochInputTree.h"
-#include "StochSymMatrix.h"
-#include "StochGenMatrix.h"
+#include "DistributedInputTree.h"
+#include "DistributedSymmetricMatrix.h"
+#include "DistributedMatrix.h"
 #include "DistributedVector.h"
 #include "DistributedVariables.h"
 #include "DistributedResiduals.hpp"
 #include "DistributedRootLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "mpi.h"
 #include <stdio.h>
 #include "sLinsysRootAug.h"
@@ -60,7 +60,7 @@ class Ma57Solver;
 #endif
 
 
-DistributedFactory::DistributedFactory(StochInputTree* inputTree, MPI_Comm comm) : tree(new DistributedTreeCallbacks(inputTree)) {
+DistributedFactory::DistributedFactory(DistributedInputTree* inputTree, MPI_Comm comm) : tree(new DistributedTreeCallbacks(inputTree)) {
    tree->assignProcesses(comm);
    tree->computeGlobalSizes();
    // now the sizes of the problem are available, set them for the parent class
@@ -72,8 +72,8 @@ DistributedFactory::~DistributedFactory() {
       delete tree;
 }
 
-DoubleLinearSolver* DistributedFactory::make_leaf_solver(const DoubleMatrix* kkt_) {
-   const SparseSymMatrix* kkt = dynamic_cast<const SparseSymMatrix*>(kkt_);
+DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* kkt_) {
+   const SparseSymmetricMatrix* kkt = dynamic_cast<const SparseSymmetricMatrix*>(kkt_);
    assert(kkt);
 
    const SolverType leaf_solver = pips_options::get_solver_leaf();
@@ -205,16 +205,16 @@ Problem* DistributedFactory::make_problem() {
    double t2 = MPI_Wtime();
 #endif
 
-   StochGenMatrixHandle A(tree->createA());
+   DistributedMatrixHandle A(tree->createA());
    DistributedVector<double>* b(tree->createb());
 
-   StochGenMatrixHandle C(tree->createC());
+   DistributedMatrixHandle C(tree->createC());
    DistributedVector<double>* clow(tree->createclow());
    DistributedVector<double>* iclow(tree->createiclow());
    DistributedVector<double>* cupp(tree->createcupp());
    DistributedVector<double>* icupp(tree->createicupp());
 
-   SmartPointer<StochSymMatrix> Q(tree->createQ());
+   SmartPointer<DistributedSymmetricMatrix> Q(tree->createQ());
    DistributedVector<double>* c(tree->createc());
 
    DistributedVector<double>* xlow(tree->createxlow());
