@@ -22,11 +22,11 @@
 class Ma27SolverRoot : public Ma27Solver {
 
 public:
-   Ma27SolverRoot(const SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, const std::string& name_ = "root");
+   Ma27SolverRoot(const SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, const std::string& name_ = "root");
 
    ~Ma27SolverRoot() override = default;
 
-   void matrixRebuild(DoubleMatrix& matrixNew) override;
+   void matrixRebuild(AbstractMatrix& matrixNew) override;
    void matrixChanged() override;
 
    using Ma27Solver::solve;
@@ -36,8 +36,6 @@ public:
 private:
    const bool solve_in_parallel;
    const MPI_Comm comm;
-
-   void factorize();
 };
 
 

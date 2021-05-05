@@ -9,8 +9,7 @@
 
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
-#include "SparseStorage.h"
+#include "SparseSymmetricMatrix.h"
 
 #include <vector>
 
@@ -141,40 +140,39 @@ protected:
     *  larger pivots. Smaller values preserve sparsity at the cost of
     *  using smaller pivots.
     */
-   double thresholdPivoting() const { return cntl[0]; }
+   [[nodiscard]] double thresholdPivoting() const { return cntl[0]; }
    void setThresholdPivoting(double piv) { cntl[0] = piv; }
 
    /** the "small pivot" parameter, stored as pivtol in the common
     * block ma27td. The factorization will not accept a pivot whose
     * absolute value is less than this parameter as a 1x1 pivot or as
     * the off-diagonal in a 2x2 pivot.  */
-   double getSmallPivot() const { return cntl[1]; }
+   [[nodiscard]] double getSmallPivot() const { return cntl[1]; }
    void setSmallPivot(double tol) { cntl[1] = tol; }
 
-   int minimumRealWorkspace() const { return info[4]; }
-   int minimumIntWorkspace() const { return info[5]; }
+   [[nodiscard]] int minimumRealWorkspace() const { return info[4]; }
+   [[nodiscard]] int minimumIntWorkspace() const { return info[5]; }
 
    void init();
    bool checkErrorsAndReact();
 
-   void copyMatrixElements(std::vector<double>& afact, int lfact) const;
    void getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) const;
 
 public:
-   Ma57Solver(const SparseSymMatrix* sgm, const std::string& name = "leaf");
+   explicit Ma57Solver(const SparseSymmetricMatrix* sgm, std::string name = "leaf");
 
    ~Ma57Solver() override = default;
 
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& rhs) override;
    void solve(int nrhss, double* rhss, int*) override;
-   void solve(GenMatrix& rhs) override;
+   void solve(GeneralMatrix& rhs) override;
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
-   bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
 protected:
    void solve(int solveType, Vector<double>& rhs);
 //   int* new_iworkn(int dim);

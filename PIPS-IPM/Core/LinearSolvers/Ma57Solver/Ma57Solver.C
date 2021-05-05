@@ -6,6 +6,7 @@
 
 #include "Ma57Solver.h"
 #include <algorithm>
+#include <utility>
 #include "SparseStorage.h"
 #include "SparseSymmetricMatrix.h"
 #include "SimpleVector.h"
@@ -14,17 +15,8 @@
 
 extern int gOoqpPrintLevel;
 
-
-void dumpdata(int* irow, int* jcol, double* M, int, int nnz) {
-   printf("======================================================\n");
-   for (int i = 0; i < nnz; i++)
-      printf("%6d %6d %10.2f\n", irow[i], jcol[i], M[i]);
-   printf("\n");
-   printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-}
-
-Ma57Solver::Ma57Solver(const SparseSymMatrix* sgm, const std::string& name_) : mat_storage{sgm->getStorageHandle()}, n{mat_storage->n},
-      nnz{mat_storage->numberOfNonZeros()}, lkeep{7 * n + nnz + 2 * std::max(n, nnz) + 42}, n_threads{PIPSgetnOMPthreads()}, name(name_) {
+Ma57Solver::Ma57Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat_storage{sgm->getStorageHandle()}, n{mat_storage->n},
+      nnz{mat_storage->numberOfNonZeros()}, lkeep{7 * n + nnz + 2 * std::max(n, nnz) + 42}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_)) {
    assert(n_threads >= 1);
    x.resize(n * n_threads);
    resid.resize(n * n_threads);
@@ -134,7 +126,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
    SimpleVector<double> x_loc(x.data() + my_id * n, n);
    SimpleVector<double> resid_loc(resid.data() + my_id * n, n);
 
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
    /* job 1 : perform one step of iterative refinement */
    int job = 0;
@@ -200,7 +192,7 @@ void Ma57Solver::solve(int solveType, Vector<double>& rhs_in) {
       int job = solveType;
       int one_rhs = 1;
 
-      SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+      auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
       double* drhs = rhs.elements();
 
@@ -210,8 +202,8 @@ void Ma57Solver::solve(int solveType, Vector<double>& rhs_in) {
 }
 
 // rhs vectors are on the "rows", for continuous memory
-void Ma57Solver::solve(GenMatrix& rhs_in) {
-   DenseGenMatrix& rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+void Ma57Solver::solve(GeneralMatrix& rhs_in) {
+   auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
    int N, NRHS;
    rhs.getSize(NRHS, N);

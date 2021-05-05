@@ -11,18 +11,18 @@
 #include "SimpleVector.h"
 #include "SparseSymmetricMatrix.h"
 
-Ma27SolverRoot::Ma27SolverRoot(const SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma27Solver(sgm, name),
+Ma27SolverRoot::Ma27SolverRoot(const SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma27Solver(sgm, name),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    threshold_pivoting_max = 0.5;
    precision = 1e-7;
    assert(mpiComm != MPI_COMM_NULL);
 }
 
-void Ma27SolverRoot::matrixRebuild(DoubleMatrix& matrixNew) {
+void Ma27SolverRoot::matrixRebuild(AbstractMatrix& matrixNew) {
    const int my_rank = PIPS_MPIgetRank(comm);
 
    if (solve_in_parallel || my_rank == 0) {
-      SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
+      auto& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
@@ -44,7 +44,7 @@ void Ma27SolverRoot::matrixChanged() {
 }
 
 void Ma27SolverRoot::solve(Vector<double>& rhs) {
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
+   auto& sv = dynamic_cast<SimpleVector<double>&>(rhs);
 
    assert(n == rhs.length());
 
