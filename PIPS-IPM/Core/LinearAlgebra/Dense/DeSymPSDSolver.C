@@ -6,7 +6,7 @@
 #include <cassert>
 
 #include "DenseStorage.h"
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "SimpleVector.h"
 
 // declarations for LAPACK functions used to factor/solve:
@@ -20,7 +20,7 @@ extern "C" void dpotrs_(char* uplo, int* n, int* nrhs, double* A, int* lda, doub
 extern "C" void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* A, int* LDA, double* B, int* LDB);
 
 
-DeSymPSDSolver::DeSymPSDSolver(const DenseSymMatrix* dsm) {
+DeSymPSDSolver::DeSymPSDSolver(const DenseSymmetricMatrix* dsm) {
    mStorage = dsm->getStorageHandle();
 }
 
@@ -58,7 +58,7 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
    A[3]=2;A[4]=2;A[5]=0;
    A[6]=3;A[7]=1;A[8]=2;
 
-   DenseSymMatrix AA(A,3);
+   DenseSymmetricMatrix AA(A,3);
 
    double b[6];
    //b[0]=1;  b[3]=1;

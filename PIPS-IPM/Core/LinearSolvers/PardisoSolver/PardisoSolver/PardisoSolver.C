@@ -23,7 +23,7 @@ PardisoSolver::PardisoSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm}, n{st
    nvec = new double[n];
 }
 
-PardisoSolver::PardisoSolver(const DenseSymMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
+PardisoSolver::PardisoSolver(const DenseSymmetricMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
    assert(m->size() < std::numeric_limits<int>::max());
    nvec = new double[n];
 }
@@ -90,7 +90,7 @@ void PardisoSolver::initSystem() {
       // the dense matrix is also processed in matrixChanged everytime the method is called
 
       // the input is a dense matrix
-      const DenseSymMatrix& Md = (*Mdsys);
+      const DenseSymmetricMatrix& Md = (*Mdsys);
       nnz = Md.getNumberOfNonZeros();
 
       delete[] krowM;
@@ -159,7 +159,7 @@ void PardisoSolver::matrixChanged() {
 
    if (Mdsys) {
       // the input is a dense matrix
-      const DenseSymMatrix& Md = (*Mdsys);
+      const DenseSymmetricMatrix& Md = (*Mdsys);
       //double tm=MPI_Wtime();
       int nzIt = 0;
       for (int i = 0; i < n; i++) {

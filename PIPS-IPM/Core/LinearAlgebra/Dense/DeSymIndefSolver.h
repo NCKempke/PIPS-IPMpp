@@ -20,7 +20,7 @@
  */
 class DeSymIndefSolver : public DoubleLinearSolver {
 public:
-   explicit DeSymIndefSolver(const DenseSymMatrix* storage);
+   explicit DeSymIndefSolver(const DenseSymmetricMatrix* storage);
    explicit DeSymIndefSolver(const SparseSymmetricMatrix* storage);
 
    void diagonalChanged(int idiag, int extent) override;

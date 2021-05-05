@@ -26,7 +26,7 @@ add_library(pips-ipmpp STATIC
         LinearAlgebra/Distributed/StripMatrix.C # TODO : bad hack...
         LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
         
-        LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymMatrix.C
+        LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymmetricMatrix.C
         LinearAlgebra/Dense/DeSymIndefSolver.C LinearAlgebra/Dense/DeSymIndefSolver2.C
         LinearAlgebra/Dense/DenseMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
         

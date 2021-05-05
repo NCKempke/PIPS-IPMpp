@@ -12,17 +12,17 @@
 
 class PardisoMKLIndefSolver : public PardisoIndefSolver {
 public:
-   PardisoMKLIndefSolver(SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm);
-   PardisoMKLIndefSolver(DenseSymMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoMKLIndefSolver(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoMKLIndefSolver(DenseSymmetricMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm);
 
+   ~PardisoMKLIndefSolver() override;
 protected:
    void
    pardisoCall(void* pt, int* maxfct, int* mnum, int* mtype, int* phase, int* n, double* M, int* krowM, int* jcolM, int* perm, int* nrhs, int* iparm,
          int* msglvl, double* rhs, double* sol, int* error) override;
    void checkMatrix() override;
-   void getIparm(int* iparm) const override;
 
-   ~PardisoMKLIndefSolver() override;
+   void getIparm(int* iparm) const override;
 private:
    void initPardiso();
    void setIparm(int* iparm) const;

@@ -90,22 +90,22 @@ public:
    ~DistributedRootLinearSystem() override;
 
    //utilities
-   static void myAtPutZeros(DenseSymMatrix* mat);
-   static void myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent);
+   static void myAtPutZeros(DenseSymmetricMatrix* mat);
+   static void myAtPutZeros(DenseSymmetricMatrix* mat, int row, int col, int rowExtent, int colExtent);
 
    // all_reduces specified submatrix (in chunks)
-   static void submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduce(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    void allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm);
 
-   static void submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
+   static void submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
    static void submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reduces specified submatrix as a while
    static void submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm);
 
    // all_reducees lower half (including diagonal) of specified submatrix
-   static void submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm);
+   static void submatrixAllReduceDiagLower(DenseSymmetricMatrix* A, int substart, int subsize, MPI_Comm comm);
 
    SCsparsifier precondSC;
 
@@ -154,7 +154,7 @@ private:
 #ifdef STOCH_TESTING
    protected:
     static void dumpRhs(int proc, const char* nameToken,  SimpleVector<double>& rhs);
-    static void dumpMatrix(int scen, int proc, const char* nameToken, DenseSymMatrix& M);
+    static void dumpMatrix(int scen, int proc, const char* nameToken, DenseSymmetricMatrix& M);
 #endif
 #ifdef TIMING
    protected:

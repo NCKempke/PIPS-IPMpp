@@ -9,19 +9,18 @@
 #include "pipschecks.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
-
 #include "DistributedOptions.h"
 
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 
-PardisoMKLIndefSolver::PardisoMKLIndefSolver(DenseSymMatrix* dm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(dm,
+PardisoMKLIndefSolver::PardisoMKLIndefSolver(DenseSymmetricMatrix* dm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(dm,
       solve_in_parallel, mpi_comm) {
    initPardiso();
 }
 
 
-PardisoMKLIndefSolver::PardisoMKLIndefSolver(SparseSymMatrix* sm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(sm,
+PardisoMKLIndefSolver::PardisoMKLIndefSolver(SparseSymmetricMatrix* sm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(sm,
       solve_in_parallel, mpi_comm) {
    initPardiso();
 }

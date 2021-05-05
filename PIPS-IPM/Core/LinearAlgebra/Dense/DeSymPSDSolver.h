@@ -22,7 +22,7 @@ class DeSymPSDSolver : public DoubleLinearSolver {
 protected:
    std::shared_ptr<DenseStorage> mStorage;
 public:
-   DeSymPSDSolver(const DenseSymMatrix* dsm);
+   DeSymPSDSolver(const DenseSymmetricMatrix* dsm);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 

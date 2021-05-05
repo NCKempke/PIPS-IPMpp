@@ -12,14 +12,14 @@
 #include "mkl_pardiso.h"
 #include "mkl_types.h"
 
-PardisoMKLSolver::PardisoMKLSolver(const SparseSymMatrix* sgm) : PardisoSolver(sgm) {
+PardisoMKLSolver::PardisoMKLSolver(const SparseSymmetricMatrix* sgm) : PardisoSolver(sgm) {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
      std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)\n";
 #endif
 }
 
-PardisoMKLSolver::PardisoMKLSolver(const DenseSymMatrix* m) : PardisoSolver(m) {
+PardisoMKLSolver::PardisoMKLSolver(const DenseSymmetricMatrix* m) : PardisoSolver(m) {
 #ifdef TIMING
    if( PIPS_MPIgetRank() == 0 )
      std::cout << "PardisoMKLSolver::PardisoMKLSolver (sparse input)\n";

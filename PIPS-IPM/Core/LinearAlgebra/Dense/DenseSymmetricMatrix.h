@@ -2,8 +2,8 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#ifndef DENSESYMMATRIX_H
-#define DENSESYMMATRIX_H
+#ifndef DENSESYMMETRICMATRIX_H
+#define DENSESYMMETRICMATRIX_H
 
 #include <memory>
 #include "DenseStorage.h"
@@ -19,12 +19,12 @@ class DenseMatrix;
 /** A class representing dense, symmetric matrices
  * @ingroup DenseLinearAlgebra
  */
-class DenseSymMatrix : public SymmetricMatrix {
+class DenseSymmetricMatrix : public SymmetricMatrix {
 public:
    std::shared_ptr<DenseStorage> mStorage;
 
-   explicit DenseSymMatrix(int size);
-   DenseSymMatrix(double Q[], int size);
+   explicit DenseSymmetricMatrix(int size);
+   DenseSymmetricMatrix(double Q[], int size);
 
    [[nodiscard]] int is_a(int matrixType) const override;
 
@@ -107,4 +107,4 @@ public:
 };
 
 
-#endif
+#endif /* DENSESYMMETRICMATRIX_H */

@@ -20,7 +20,7 @@ extern int gLackOfAccuracy;
  * A and C are the recourse eq. and ineq. matrices, R is the cross
  * Hessian term.
  */
-void sLinsysLeafSchurSlv::addTermToDenseSchurCompl(DistributedQP* prob, DenseSymMatrix& SC) {
+void sLinsysLeafSchurSlv::addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmetricMatrix& SC) {
    SparseMatrix& A = prob->getLocalA();
    SparseMatrix& C = prob->getLocalC();
    SparseMatrix& F = prob->getLocalF();

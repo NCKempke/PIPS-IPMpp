@@ -24,7 +24,7 @@ PardisoProjectIndefSolver::PardisoProjectIndefSolver(SparseSymmetricMatrix* sgm,
    initPardiso();
 }
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver(DenseSymMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(m,
+PardisoProjectIndefSolver::PardisoProjectIndefSolver(DenseSymmetricMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(m,
       solve_in_parallel, mpi_comm) {
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */

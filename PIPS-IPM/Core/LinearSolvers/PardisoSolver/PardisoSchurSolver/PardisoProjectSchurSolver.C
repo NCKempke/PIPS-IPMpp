@@ -25,11 +25,11 @@ extern double g_iterNumber;
 PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm) : PardisoSchurSolver(sgm) {
    num_threads = PIPSgetnOMPthreads();
 
-   initPardiso();
+   //initPardiso();
 }
 
 void PardisoProjectSchurSolver::solve(Vector<double>& rhs_in) {
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
    int error = 0;
    assert(iparmUnchanged());
@@ -179,12 +179,8 @@ void PardisoProjectSchurSolver::initPardiso() {
    }
 }
 
-void PardisoProjectSchurSolver::computeSC(int nSCO,
-/*const*/SparseMatrix& R,
-/*const*/SparseMatrix& A,
-/*const*/SparseMatrix& C,
-/*const*/SparseMatrix& F,
-/*const*/SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
+void PardisoProjectSchurSolver::computeSC(int nSCO, const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C,
+   const SparseMatrix& F, const SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
    assert(!rowptrSC && !colidxSC && !eltsSC);
 
    bool doSymbFact = false;

@@ -17,7 +17,7 @@
 
 extern double g_iterNumber;
 
-PardisoMKLSchurSolver::PardisoMKLSchurSolver(const SparseSymMatrix* sm) : PardisoSchurSolver(sm) {}
+PardisoMKLSchurSolver::PardisoMKLSchurSolver(const SparseSymmetricMatrix* sm) : PardisoSchurSolver(sm) {}
 
 
 void PardisoMKLSchurSolver::setIparm(int* iparm) const {
@@ -206,12 +206,8 @@ void PardisoMKLSchurSolver::solve(Vector<double>& rhs_in) {
 }
 
 
-void PardisoMKLSchurSolver::computeSC(int nSCO,
-/*const*/SparseGenMatrix& R,
-/*const*/SparseGenMatrix& A,
-/*const*/SparseGenMatrix& C,
-/*const*/SparseGenMatrix& F,
-/*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
+void PardisoMKLSchurSolver::computeSC(int nSCO, const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C,
+   const SparseMatrix& F, const SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
    assert(!rowptrSC && !colidxSC && !eltsSC);
 
    bool doSymbFact = false;

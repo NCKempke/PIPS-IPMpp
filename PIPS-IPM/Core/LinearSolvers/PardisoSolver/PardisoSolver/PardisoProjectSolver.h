@@ -15,7 +15,7 @@ public:
    void firstCall() override;
 
    PardisoProjectSolver(const SparseSymmetricMatrix* sgm);
-   PardisoProjectSolver(const DenseSymMatrix* m);
+   PardisoProjectSolver(const DenseSymmetricMatrix* m);
    ~PardisoProjectSolver() override;
 
 protected:

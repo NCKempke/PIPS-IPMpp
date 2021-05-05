@@ -9,7 +9,7 @@
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "SparseSymmetricMatrix.h"
 #include "DenseMatrix.h"
 #include "SimpleVector.h"
@@ -212,7 +212,7 @@ public:
    /** Method(s) that use a memory-friendly mechanism for computing
     *  the terms from the Schur Complement
     */
-   virtual void addTermToDenseSchurCompl(DistributedQP* problem, DenseSymMatrix& SC);
+   virtual void addTermToDenseSchurCompl(DistributedQP* problem, DenseSymmetricMatrix& SC);
 
    virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymmetricMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };

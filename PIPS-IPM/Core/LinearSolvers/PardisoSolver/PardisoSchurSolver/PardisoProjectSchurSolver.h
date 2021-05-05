@@ -12,7 +12,7 @@
 
 class PardisoProjectSchurSolver : public PardisoSchurSolver {
 public:
-   PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm);
+   explicit PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm);
 
    void solve(Vector<double>& rhs_in) override;
    using DoubleLinearSolver::solve;
@@ -20,15 +20,12 @@ public:
 protected:
    ~PardisoProjectSchurSolver() override;
 
-   void computeSC(int nSCO, /*const*/SparseMatrix& R,
-         /*const*/SparseMatrix& A,
-         /*const*/SparseMatrix& C,
-         /*const*/SparseMatrix& F,
-         /*const*/SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
+   void computeSC(int nSCO, const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F,
+         const SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
    void initPardiso() override;
    void setIparm(int* iparm) const override;
 
-   double dparm[64];
+   double dparm[64]{};
 
    int solver{0};
    int num_threads{1};

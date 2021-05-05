@@ -7,9 +7,9 @@
 #include <cassert>
 
 #include "OoqpBlas.h"
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 
-DeSymIndefSolver2::DeSymIndefSolver2(const DenseSymMatrix* dm, int nx) : nx(nx) {
+DeSymIndefSolver2::DeSymIndefSolver2(const DenseSymmetricMatrix* dm, int nx) : nx(nx) {
    mStorage = dm->getStorageHandle();
 
    n = mStorage->n;

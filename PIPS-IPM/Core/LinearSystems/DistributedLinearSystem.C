@@ -709,7 +709,7 @@ void DistributedLinearSystem::addTermToSchurResidual(DistributedQP* problem, Sim
       G.mult(1.0, &res[res.length() - locmzl], 1, 1.0, &y[0], 1);
 }
 
-void DistributedLinearSystem::addTermToDenseSchurCompl(DistributedQP* problem, DenseSymMatrix& SC) {
+void DistributedLinearSystem::addTermToDenseSchurCompl(DistributedQP* problem, DenseSymmetricMatrix& SC) {
    SparseMatrix& A = problem->getLocalA();
    SparseMatrix& C = problem->getLocalC();
    SparseMatrix& F = problem->getLocalF();
@@ -1364,7 +1364,7 @@ void DistributedLinearSystem::addLeftBorderTimesDenseColsToResTransp(const Borde
 #ifndef NDEBUG
       int res_mrows;
       if (sym_res)
-         res_mrows = dynamic_cast<DenseSymMatrix&>(res).size();
+         res_mrows = dynamic_cast<DenseSymmetricMatrix&>(res).size();
       else
          res_mrows = dynamic_cast<DenseMatrix&>(res).mStorage->m;
       for (int i = 0; i < blocksize; ++i)
@@ -1372,7 +1372,7 @@ void DistributedLinearSystem::addLeftBorderTimesDenseColsToResTransp(const Borde
 #endif
 
       if (sym_res) {
-         DenseSymMatrix& res_dense = dynamic_cast<DenseSymMatrix&>(res);
+         DenseSymmetricMatrix& res_dense = dynamic_cast<DenseSymmetricMatrix&>(res);
          res_array = res_dense.mStorage->M;
          res_ncols = res_dense.size();
       }

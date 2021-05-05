@@ -475,7 +475,7 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(
    assert(F0vec_border);
    assert(G0vec_border);
 
-   double** SC = is_sym ? dynamic_cast<DenseSymMatrix&>(SC_).Mat() : dynamic_cast<DenseMatrix&>(SC_).Mat();
+   double** SC = is_sym ? dynamic_cast<DenseSymmetricMatrix&>(SC_).Mat() : dynamic_cast<DenseMatrix&>(SC_).Mat();
 
    const int n_rows = end_rows - begin_rows;
    int dummy, mX0;
@@ -879,7 +879,7 @@ void DistributedRootLinearSystem::initializeKKT(DistributedQP*, Variables*) {
    if (hasSparseKkt)
       dynamic_cast<SparseSymmetricMatrix*>(kkt.get())->symPutZeroes();
    else {
-      auto* kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+      auto* kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
       myAtPutZeros(kktd);
    }
 }
@@ -896,7 +896,7 @@ void DistributedRootLinearSystem::reduceKKT(DistributedQP* prob) {
 
 /* collects (reduces) lower left part of dense global symmetric Schur complement */
 void DistributedRootLinearSystem::reduceKKTdense() {
-   auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
 
    // parallel communication
    if (iAmDistrib) {
@@ -1543,8 +1543,8 @@ void DistributedRootLinearSystem::factorizeKKT(DistributedQP* prob) {
 #endif
 }
 
-//faster than DenseSymMatrix::atPutZeros
-void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat, int row, int col, int rowExtent, int colExtent) {
+//faster than DenseSymmetricMatrix::atPutZeros
+void DistributedRootLinearSystem::myAtPutZeros(DenseSymmetricMatrix* mat, int row, int col, int rowExtent, int colExtent) {
    assert(row >= 0 && row + rowExtent <= mat->size());
    assert(col >= 0 && col + colExtent <= mat->size());
 
@@ -1561,7 +1561,7 @@ void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat, int row, int
    }
 }
 
-void DistributedRootLinearSystem::myAtPutZeros(DenseSymMatrix* mat) {
+void DistributedRootLinearSystem::myAtPutZeros(DenseSymmetricMatrix* mat) {
    int n = static_cast<int>(mat->size());
    myAtPutZeros(mat, 0, 0, n, n);
 }
@@ -1580,13 +1580,13 @@ void DistributedRootLinearSystem::addTermToSchurCompl(DistributedQP* prob, size_
          children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
       }
       else {
-         auto& kktd = dynamic_cast<DenseSymMatrix&>(*kkt);
+         auto& kktd = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
          children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
       }
    }
 }
 
-void DistributedRootLinearSystem::submatrixAllReduce(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** M = A->mStorage->M;
    int n = A->mStorage->n;
 
@@ -1671,13 +1671,13 @@ void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_s
    else {
       // TODO : these seem to be not proper handling of the symmetric dense schur complement - need ot check maths first
       if (is_sym)
-         submatrixAllReduceFull(&dynamic_cast<DenseSymMatrix&>(mat), 0, 0, m, n, comm);
+         submatrixAllReduceFull(&dynamic_cast<DenseSymmetricMatrix&>(mat), 0, 0, m, n, comm);
       else
          submatrixAllReduceFull(&dynamic_cast<DenseMatrix&>(mat), 0, 0, m, n, comm);
    }
 }
 
-void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
    double** const M = A->mStorage->M;
    assert(A->mStorage->n == A->mStorage->m);
    assert(A->mStorage->n >= startRow + nRows);
@@ -1740,7 +1740,7 @@ void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRo
 }
 
 
-void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymMatrix* A, int substart, int subsize, MPI_Comm comm) {
+void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymmetricMatrix* A, int substart, int subsize, MPI_Comm comm) {
    double** const M = A->mStorage->M;
 
    assert(subsize >= 0);
@@ -1789,7 +1789,7 @@ void DistributedRootLinearSystem::submatrixAllReduceDiagLower(DenseSymMatrix* A,
 
 
 #ifdef STOCH_TESTING
-void sLinsysRoot::dumpMatrix(int scen, int proc, const char* nameToken, DenseSymMatrix& M) 
+void sLinsysRoot::dumpMatrix(int scen, int proc, const char* nameToken, DenseSymmetricMatrix& M)
 {
   int n = M.size();
   char szNumber[30];

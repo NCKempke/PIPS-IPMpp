@@ -11,7 +11,7 @@
 #include <memory>
 #include "DoubleLinearSolver.h"
 #include "DenseSymMatrixHandle.h"
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "SparseSymmetricMatrix.h"
 #include "DenseStorage.h"
 #include "pipsport.h"
@@ -78,7 +78,7 @@ protected:
    virtual void checkMatrix() = 0;
    virtual void getIparm(int* iparm) const = 0;
 public:
-   PardisoIndefSolver(DenseSymMatrix* storage, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoIndefSolver(DenseSymmetricMatrix* storage, bool solve_in_parallel, MPI_Comm mpi_comm);
    PardisoIndefSolver(SparseSymmetricMatrix* storage, bool solve_in_parallel, MPI_Comm mpi_comm);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;

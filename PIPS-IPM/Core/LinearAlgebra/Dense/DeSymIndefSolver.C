@@ -7,7 +7,7 @@
 #include <cassert>
 #include <memory>
 
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "DenseMatrix.h"
 
 
@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 
-DeSymIndefSolver::DeSymIndefSolver(const DenseSymMatrix* dm) : mStorage{dm->getStorageHandle()} {
+DeSymIndefSolver::DeSymIndefSolver(const DenseSymmetricMatrix* dm) : mStorage{dm->getStorageHandle()} {
    ipiv.resize(mStorage->n);
 }
 

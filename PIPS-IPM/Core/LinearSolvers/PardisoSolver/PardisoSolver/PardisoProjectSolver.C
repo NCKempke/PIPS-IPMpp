@@ -29,7 +29,7 @@ PardisoProjectSolver::PardisoProjectSolver(const SparseSymmetricMatrix* sgm) : P
    solver = 0; /* sparse direct solver */
 }
 
-PardisoProjectSolver::PardisoProjectSolver(const DenseSymMatrix* m) : PardisoSolver(m) {
+PardisoProjectSolver::PardisoProjectSolver(const DenseSymmetricMatrix* m) : PardisoSolver(m) {
 #ifdef TIMING
    if( myRank == PIPS_MPIgetRank() )
      std::cout << "PardisoProjectSolver created (dense input)\n";

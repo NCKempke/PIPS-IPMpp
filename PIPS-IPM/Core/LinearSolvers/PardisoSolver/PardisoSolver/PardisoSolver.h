@@ -6,7 +6,7 @@
 #define PARDISOLINSYS_H
 
 #include "DoubleLinearSolver.h"
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "pipsport.h"
 
 #include <map>
@@ -22,7 +22,7 @@ public:
 
    /** sets mStorage to refer to the argument sgm */
    explicit PardisoSolver(const SparseSymmetricMatrix* sgm);
-   explicit PardisoSolver(const DenseSymMatrix* m);
+   explicit PardisoSolver(const DenseSymmetricMatrix* m);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
@@ -47,7 +47,7 @@ protected:
    ~PardisoSolver() override;
 
    const SparseSymmetricMatrix* Msys{};
-   const DenseSymMatrix* Mdsys{};
+   const DenseSymmetricMatrix* Mdsys{};
    bool first{true};
    void* pt[64];
    int iparm[64];

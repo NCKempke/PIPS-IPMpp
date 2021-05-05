@@ -21,7 +21,7 @@ public:
 protected:
    int nx, ny, n;
 public:
-   DeSymIndefSolver2(const DenseSymMatrix* storage, int nx);
+   DeSymIndefSolver2(const DenseSymmetricMatrix* storage, int nx);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
    using DoubleLinearSolver::solve;

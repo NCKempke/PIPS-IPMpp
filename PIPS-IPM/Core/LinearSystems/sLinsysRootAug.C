@@ -84,7 +84,7 @@ SymmetricMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
       return sparsekkt;
    }
    else {
-      return new DenseSymMatrix(n);
+      return new DenseSymmetricMatrix(n);
    }
 }
 
@@ -121,7 +121,7 @@ void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
 
 void sLinsysRootAug::createSolversDense() {
    const SolverTypeDense solver_type = pips_options::get_solver_dense();
-   auto* kktmat = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* kktmat = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
 
    if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
       solver = std::make_unique<DeSymIndefSolver>(kktmat);
@@ -1428,7 +1428,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
 }
 
 void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymmetricMatrix& CtDC_loc) {
-   auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
    double** const dKkt = kktd->Mat();
 
    const auto& CtDC_sparse = dynamic_cast<const SparseSymmetricMatrix&>(CtDC_loc);
@@ -1749,7 +1749,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
 }
 
 void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
-   auto* const kktd = dynamic_cast<DenseSymMatrix*>(kkt.get());
+   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
 
    //alias for internal buffer of kkt
    double** const dKkt = kktd->Mat();
