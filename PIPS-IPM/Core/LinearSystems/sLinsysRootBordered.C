@@ -51,17 +51,18 @@ void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularizat
 
 void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*) {
    /* Add corner block
-    * [ Q0   F0T   G0T  ]
-    * [ F0  xReg    0   ]
-    * [ G0    0   OmN+1 ]
+    * [ Q0   A0^T  F0T   G0T  ]
+    * [ A0   xReg   0     0   ]
+    * [ F0    0   xReg_l  0   ]
+    * [ G0    0     0   OmN+1 ]
     */
    assert(prob->isHierarchyRoot());
 
-   const SparseGenMatrix& F0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->A).bottom_left_block;
-   const SparseGenMatrix& G0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->C).bottom_left_block;
-   const SparseSymMatrix& Q0 = dynamic_cast<const SparseSymMatrix&>(*dynamic_cast<const BorderedSymMatrix&>(*prob->Q).top_left_block);
+   const auto& F0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->A).bottom_left_block;
+   const auto& G0 = *dynamic_cast<const BorderedGenMatrix&>(*prob->C).bottom_left_block;
+   const auto& Q0 = dynamic_cast<const SparseSymMatrix&>(*dynamic_cast<const BorderedSymMatrix&>(*prob->Q).top_left_block);
 
-   DenseSymMatrix& SC = dynamic_cast<DenseSymMatrix&>(*kkt);
+   auto& SC = dynamic_cast<DenseSymMatrix&>(*kkt);
    int mSC, nSC;
    SC.getSize(mSC, nSC);
    assert(mSC == nSC);
@@ -180,14 +181,14 @@ void sLinsysRootBordered::Lsolve(DistributedQP*, Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
-   DistributedVector<double>& xs = dynamic_cast<DistributedVector<double>&>(x);
+   auto& xs = dynamic_cast<DistributedVector<double>&>(x);
    assert(xs.children.size() == 1);
    assert(data->children.size() == 1);
    DistributedVector<double>& b = *dynamic_cast<DistributedVector<double>&>(x).children[0];
 
    assert(xs.first);
    assert(!xs.last);
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
 
    computeSchurCompRightHandSide(b, b0);
 }
@@ -197,11 +198,11 @@ void sLinsysRootBordered::Dsolve(DistributedQP*, Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
-   DistributedVector<double>& xs = dynamic_cast<DistributedVector<double>&>(x);
+   auto& xs = dynamic_cast<DistributedVector<double>&>(x);
    assert(xs.children.size() == 1);
    assert(data->children.size() == 1);
    assert(xs.first);
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
 
    solver->solve(b0);
 }
@@ -211,7 +212,7 @@ void sLinsysRootBordered::Ltsolve(DistributedQP*, Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
-   DistributedVector<double>& xs = dynamic_cast<DistributedVector<double>&>(x);
+   auto& xs = dynamic_cast<DistributedVector<double>&>(x);
    assert(xs.children.size() == 1);
    assert(data->children.size() == 1);
    DistributedVector<double>& b = *dynamic_cast<DistributedVector<double>&>(x).children[0];
