@@ -17,13 +17,10 @@
 
 extern double g_iterNumber;
 
-PardisoMKLSchurSolver::PardisoMKLSchurSolver( const SparseSymMatrix * sm ) :
-   PardisoSchurSolver( sm )
-{}
+PardisoMKLSchurSolver::PardisoMKLSchurSolver(const SparseSymMatrix* sm) : PardisoSchurSolver(sm) {}
 
 
-void PardisoMKLSchurSolver::setIparm(int* iparm) const
-{
+void PardisoMKLSchurSolver::setIparm(int* iparm) const {
    /* common parameters */
    iparm[1] = 2; // 2 and 3 are for METIS - 2 is METIS 4.1, 3 is METIS 5.1, 0 for min degree ordering
 
@@ -52,67 +49,65 @@ void PardisoMKLSchurSolver::setIparm(int* iparm) const
 #endif
 }
 
-void PardisoMKLSchurSolver::initPardiso()
-{
+void PardisoMKLSchurSolver::initPardiso() {
    pardisoinit(pt, &mtype, iparm);
 }
 
-void PardisoMKLSchurSolver::solve( OoqpVector& rhs_in )
-{
-  SimpleVector& rhs=dynamic_cast<SimpleVector&>(rhs_in);
+void PardisoMKLSchurSolver::solve(Vector<double>& rhs_in) {
+   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
-  int error = 0;
-  assert(iparmUnchanged());
+   int error = 0;
+   assert(iparmUnchanged());
 
-  assert(nvec_size == n);
-  double* const x_n = nvec;
-  double* const rhs_n = nvec2;
+   assert(nvec_size == n);
+   double* const x_n = nvec;
+   double* const rhs_n = nvec2;
 
-  const int dim=rhs.length();
-  assert(dim >= 0 && dim <= n);
+   const int dim = rhs.length();
+   assert(dim >= 0 && dim <= n);
 
-  memset(x_n, 0, dim * sizeof(double));
-  memcpy(rhs_n, rhs.elements(), dim * sizeof(double));
+   memset(x_n, 0, dim * sizeof(double));
+   memcpy(rhs_n, rhs.elements(), dim * sizeof(double));
 
-  if( n > dim )
-     memset(&rhs_n[dim], 0, (n - dim) * sizeof(double));
+   if (n > dim)
+      memset(&rhs_n[dim], 0, (n - dim) * sizeof(double));
 
 #ifdef TIMING_FLOPS
-  HPM_Start("PARDISOSolve");
+   HPM_Start("PARDISOSolve");
 #endif
 
-  // solving phase
-  /* pardiso from mkl does not support same functionality as pardiso-project
-   *
-   * pardiso project:
-   * when computing the schur complement S with factorization matrices we will get
-   *
-   * [A11 A12]   [L11 0] [I 0] [U11 U12]
-   * [A21 A22] = [L12 I] [0 S] [0     I]
-   *
-   * a subsequent solve call will then only solve for A11 x1 = b1 instead of the full
-   * system.
-   *
-   * pardiso mkl:
-   * while the schur complement is the same, the factorization computed, stored and
-   * used for solve calls is a full factorization. thus pardiso from intel will always
-   * solve the full system
-   *
-   * workaround is to solve
-   *
-   * (phase 331)
-   * [L11   0] [z1] = [b1]
-   * [L12   I] [z2] = [b2]
-   *
-   * (phase 332)
-   * [I 0] [y1]   [z1]
-   * [0 S] [y2] = [z2]
-   *
-   * (phase 333)
-   * [U11 U12] [x1]   [y1]
-   * [0     I] [x2] = [y2]
-   *
-   */
+   // solving phase
+   /* pardiso from mkl does not support same functionality as pardiso-project
+    *
+    * pardiso project:
+    * when computing the schur complement S with factorization matrices we will get
+    *
+    * [A11 A12]   [L11 0] [I 0] [U11 U12]
+    * [A21 A22] = [L12 I] [0 S] [0     I]
+    *
+    * a subsequent solve call will then only solve for A11 x1 = b1 instead of the full
+    * system.
+    *
+    * pardiso mkl:
+    * while the schur complement is the same, the factorization computed, stored and
+    * used for solve calls is a full factorization. thus pardiso from intel will always
+    * solve the full system
+    *
+    * workaround is to solve
+    *
+    * (phase 331)
+    * [L11   0] [z1] = [b1]
+    * [L12   I] [z2] = [b2]
+    *
+    * (phase 332)
+    * [I 0] [y1]   [z1]
+    * [0 S] [y2] = [z2]
+    *
+    * (phase 333)
+    * [U11 U12] [x1]   [y1]
+    * [0     I] [x2] = [y2]
+    *
+    */
 
    // forward substitution
    double* z_n = new double[nvec_size];
@@ -127,28 +122,22 @@ void PardisoMKLSchurSolver::solve( OoqpVector& rhs_in )
    iparm[35] = 2;
 
    phase = 331;
-   pardiso (pt , &maxfct , &mnum, &mtype, &phase,
-         &n, eltsAug, rowptrAug, colidxAug,
-         nullptr, &nrhs, iparm, &msglvl, rhs_n, z_n, &error);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, nullptr, &nrhs, iparm, &msglvl, rhs_n, z_n, &error);
    assert(error == 0);
 
    // diagonal substitution
    phase = 332;
    double* y_n = new double[nvec_size];
 
-   pardiso (pt , &maxfct , &mnum, &mtype, &phase,
-         &n, eltsAug, rowptrAug, colidxAug,
-         nullptr, &nrhs, iparm, &msglvl, z_n, y_n, &error);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, nullptr, &nrhs, iparm, &msglvl, z_n, y_n, &error);
    assert(error == 0);
 
    // backward substitution
-   for(int i = dim; i < nvec_size; ++i)
+   for (int i = dim; i < nvec_size; ++i)
       y_n[i] = 0.0;
    phase = 333;
 
-   pardiso (pt , &maxfct , &mnum, &mtype, &phase,
-         &n, eltsAug, rowptrAug, colidxAug,
-         nullptr, &nrhs, iparm, &msglvl, y_n, x_n, &error);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, nullptr, &nrhs, iparm, &msglvl, y_n, x_n, &error);
    assert(error == 0);
 
    iparm[35] = -2;
@@ -158,62 +147,62 @@ void PardisoMKLSchurSolver::solve( OoqpVector& rhs_in )
 
 
 #ifdef TIMING_FLOPS
-  HPM_Stop("PARDISOSolve");
+   HPM_Stop("PARDISOSolve");
 #endif
 
 
 #ifdef PRINT_SC_RESIDUAL
-  //compute residual (alternative)
-  double* tmp_resid=new double[dim];
-  memcpy(tmp_resid, rhs.elements(), dim*sizeof(double));
-  double mat_max=0;
-  for( int i = 0; i < dim; i++ )
-  {
-     for( int p = rowptrAug[i]; p < rowptrAug[i + 1]; p++ )
-     {
-        const int j = colidxAug[p - 1] - 1;
-        if( j + 1 <= dim )
-        {
-           //r[i] = r[i] + M(i,j)*x(j)
-           tmp_resid[i] -= eltsAug[p - 1] * x_n[j];
+   //compute residual (alternative)
+   double* tmp_resid=new double[dim];
+   memcpy(tmp_resid, rhs.elements(), dim*sizeof(double));
+   double mat_max=0;
+   for( int i = 0; i < dim; i++ )
+   {
+      for( int p = rowptrAug[i]; p < rowptrAug[i + 1]; p++ )
+      {
+         const int j = colidxAug[p - 1] - 1;
+         if( j + 1 <= dim )
+         {
+            //r[i] = r[i] + M(i,j)*x(j)
+            tmp_resid[i] -= eltsAug[p - 1] * x_n[j];
 
-           if( abs(eltsAug[p - 1]) > mat_max )
-              mat_max = abs(eltsAug[p - 1]);
+            if( abs(eltsAug[p - 1]) > mat_max )
+               mat_max = abs(eltsAug[p - 1]);
 
-           if( j != i )
-           {
-              //r[j] = r[j] + M(j,i)*x(i)
-              tmp_resid[j] -= eltsAug[p - 1] * x_n[i];
-           }
-        }
-     }
-  }
+            if( j != i )
+            {
+               //r[j] = r[j] + M(j,i)*x(i)
+               tmp_resid[j] -= eltsAug[p - 1] * x_n[i];
+            }
+         }
+      }
+   }
 
-  double res_norm2=0.0, res_nrmInf=0, sol_inf=0.;
-  for( int i = 0; i < dim; i++ )
-  {
-     res_norm2 += tmp_resid[i] * tmp_resid[i];
-     if( res_nrmInf < fabs(tmp_resid[i]) )
-        res_nrmInf = tmp_resid[i];
-     if( abs(x_n[i]) > sol_inf )
-        sol_inf = abs(x_n[i]);
-  }
-  res_norm2 = sqrt(res_norm2);
+   double res_norm2=0.0, res_nrmInf=0, sol_inf=0.;
+   for( int i = 0; i < dim; i++ )
+   {
+      res_norm2 += tmp_resid[i] * tmp_resid[i];
+      if( res_nrmInf < fabs(tmp_resid[i]) )
+         res_nrmInf = tmp_resid[i];
+      if( abs(x_n[i]) > sol_inf )
+         sol_inf = abs(x_n[i]);
+   }
+   res_norm2 = sqrt(res_norm2);
 
-  const double rhsNorm=rhs.twonorm();
-  //if(min(res_nrmInf/(mat_max*sol_inf),res_norm2/(mat_max*sol_inf))>1e-3) {
-  if(min(res_nrmInf/rhsNorm,res_norm2/rhsNorm)>1e-6) {
-    cout << "PardisoSchurSolve large residual - norms resid="<< res_norm2 << ":" << res_nrmInf
-    << " rhs=" << rhsNorm << " sol="<<sol_inf << " mat="<< mat_max
-    << " #refin.=" << iparm[6]
-    << " rel.res.nrmInf=" << res_nrmInf/rhsNorm
-    << " bicgiter=" << gOuterBiCGIter<< endl;
+   const double rhsNorm=rhs.twonorm();
+   //if(min(res_nrmInf/(mat_max*sol_inf),res_norm2/(mat_max*sol_inf))>1e-3) {
+   if(min(res_nrmInf/rhsNorm,res_norm2/rhsNorm)>1e-6) {
+     cout << "PardisoSchurSolve large residual - norms resid="<< res_norm2 << ":" << res_nrmInf
+     << " rhs=" << rhsNorm << " sol="<<sol_inf << " mat="<< mat_max
+     << " #refin.=" << iparm[6]
+     << " rel.res.nrmInf=" << res_nrmInf/rhsNorm
+     << " bicgiter=" << gOuterBiCGIter<< endl;
 
-  }
-  delete[] tmp_resid;
+   }
+   delete[] tmp_resid;
 #endif
 
-  memcpy(&rhs[0], x_n, dim * sizeof(double));
+   memcpy(&rhs[0], x_n, dim * sizeof(double));
 }
 
 
@@ -222,19 +211,16 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
 /*const*/SparseGenMatrix& A,
 /*const*/SparseGenMatrix& C,
 /*const*/SparseGenMatrix& F,
-/*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC)
-{
+/*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) {
    assert(!rowptrSC && !colidxSC && !eltsSC);
 
    bool doSymbFact = false;
-   if( firstSolve )
-   {
+   if (firstSolve) {
       firstSolveCall(R, A, C, F, G, nSCO);
       firstSolve = false;
       doSymbFact = true;
    }
-   else
-   {
+   else {
       //update diagonal entries in the PARDISO aug sys
       const double* eltsMsys = Msys->getStorageRef().M;
       std::map<int, int>::iterator it;
@@ -258,7 +244,7 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
       std::cout << "local Schur diag: min/max/minAbs  " << min << " " << max << " " << minAbs << std::endl;
 #endif
 
-      for( it = diagMap.begin(); it != diagMap.end(); it++ )
+      for (it = diagMap.begin(); it != diagMap.end(); it++)
          eltsAug[it->second] = eltsMsys[it->first];
    }
 
@@ -268,15 +254,18 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
    const int nIter = (int) g_iterNumber;
    const int myRank = PIPS_MPIgetRank();
 
-   if( (nIter % symbFactorInterval) == 0 )
-   {
+   static bool printed = false;
+   if ((nIter % symbFactorInterval) == 0) {
       doSymbFact = true;
-      if( myRank == 0 )
+      if (myRank == 0 && !printed)
          printf("PardisoSchur: starting symbolic analysis ... ");
+      printed = true;
    }
+   else
+      printed = false;
 
    int phase = 22; // numerical factorization
-   if( doSymbFact )
+   if (doSymbFact)
       phase = 12; // numerical factorization & symb analysis
 
    assert(iparmUnchanged());
@@ -292,18 +281,18 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
     * setting all entries to 1 will return the input matrix as schur complement
     */
    int perm[n] = {0};
-   for(int i = n - nSC; i < n; ++i)
+   for (int i = n - nSC; i < n; ++i)
       perm[i] = 1;
 
    /* reordering and symbolic factorization */
    phase = 11;
 
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug,
-               colidxAug, perm, &nrhs, iparm, &msglvl, nullptr, nullptr, &error);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, perm, &nrhs, iparm, &msglvl, nullptr, nullptr, &error);
 
    /* iparm[35] should now contain the number of non-zero entries in the Schur-complement */
    /* if it does not most likely the general iparm setup is faulty */
-   assert(error == 0); assert(iparm[35] >= 0);
+   assert(error == 0);
+   assert(iparm[35] >= 0);
 
    /* preallocation of schur matrix arrays */
    int nnzSC = iparm[35];
@@ -322,34 +311,31 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
    // mkl pardiso returns arrays with zero-based index via export
    pardiso_export(pt, eltsSCtransp, rowptrSCtransp, colidxSCtransp, &step, iparm, &error);
 
-   #ifdef TIMING_FLOPS
+#ifdef TIMING_FLOPS
    HPM_Start("PARDISOFact");
-   #endif
+#endif
 
    /* factorization call */
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug,
-         colidxAug, perm, &nrhs, iparm, &msglvl, nullptr, nullptr, &error);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, eltsAug, rowptrAug, colidxAug, perm, &nrhs, iparm, &msglvl, nullptr, nullptr, &error);
 
-   #ifdef TIMING_FLOPS
+#ifdef TIMING_FLOPS
    HPM_Stop("PARDISOFact");
-   #endif
+#endif
 
-   #ifdef TIMING
+#ifdef TIMING
    if(1001*(myRank/1001)==myRank)
       printf("rank %d perturbPiv %d peakmem %d\n", myRank, iparm[13], iparm[14]); // same for MKL and pardiso
    //cout << "NNZ(SCHUR) " << nnzSC << "    SPARSITY " << nnzSC/(1.0*nSC*nSC) << endl;
-   #endif
-   if( error != 0 )
-   {
-      printf("PardisoSolver - ERROR during factorization: %d. Phase param=%d\n",
-            error, phase);
+#endif
+   if (error != 0) {
+      printf("PardisoSolver - ERROR during factorization: %d. Phase param=%d\n", error, phase);
       exit(1);
    }
 
    /////////////////////////////////////////////////////
    // transpose the matrix since it is given in lower triangular form and we are using upper triangular form
    /////////////////////////////////////////////////////
-   SparseStorage schur_transposed( nSC, nSC, nnzSC, rowptrSCtransp, colidxSCtransp, eltsSCtransp, true);
+   SparseStorage schur_transposed(nSC, nSC, nnzSC, rowptrSCtransp, colidxSCtransp, eltsSCtransp, true);
 
    rowptrSC = new int[nSC + 1];
    colidxSC = new int[nnzSC];
@@ -361,17 +347,14 @@ void PardisoMKLSchurSolver::computeSC(int nSCO,
 }
 
 
-PardisoMKLSchurSolver::~PardisoMKLSchurSolver()
-{
+PardisoMKLSchurSolver::~PardisoMKLSchurSolver() {
    int phase = -1; /* Release internal memory . */
    msglvl = 0;
    int error = 0;
 
-   pardiso (pt, &maxfct, &mnum, &mtype, &phase,
-       &n, nullptr, rowptrAug, colidxAug, nullptr, &nrhs,
-       iparm, &msglvl, nullptr, nullptr, &error );
-   if ( error != 0) {
-     printf ("PardisoMKLSchurSolver - ERROR in pardiso release: %d", error );
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, nullptr, rowptrAug, colidxAug, nullptr, &nrhs, iparm, &msglvl, nullptr, nullptr, &error);
+   if (error != 0) {
+      printf("PardisoMKLSchurSolver - ERROR in pardiso release: %d", error);
    }
 
 }

@@ -14,10 +14,10 @@
 #include <tuple>
 
 
-struct Instance{
-      const std::string name;
-      const size_t n_blocks;
-      const double result;
+struct Instance {
+   const std::string name;
+   const size_t n_blocks;
+   const double result;
 };
 
-std::vector<Instance> readInstancesFromFile( const std::string& file_name );
+std::vector<Instance> readInstancesFromFile(const std::string& file_name);

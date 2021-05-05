@@ -1,4 +1,8 @@
-project(PIPSIPMpp LANGUAGES CXX C)
+if (POLICY CMP0048)
+   cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
+
+project(PIPSIPMpp VERSION 0.0 LANGUAGES CXX C)
 
 cmake_minimum_required(VERSION 3.10)
 
@@ -33,7 +37,7 @@ add_compile_options(
   "$<$<COMPILE_LANGUAGE:CXX>:${cxx_flags}>"
 )
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(CMAKE_BUILD_TYPE)
@@ -63,6 +67,23 @@ message(STATUS "WITH_TIMING=${WITH_TIMING}")
 
 option(WITH_VERBOSE "Build with extra verbosity level" OFF)
 message(STATUS "WITH_VERBOSE=${WITH_VERBOSE}")
+
+option(WITH_MEMORY_SANITIZER "Build with sanatizer flag - useful for finding memory leaks - slower!" OFF)
+message(STATUS "WTIH_MEMORY_SANITIZER=${WITH_MEMORY_SANITIZER}")
+
+if(WITH_MEMORY_SANITIZER)
+   set(SANITIZER_C_CXX_FLAGS -fsanitize=address,undefined -fno-omit-frame-pointer -g)
+   link_libraries(-fsanitize=address,undefined)
+
+   add_compile_options(
+           "$<$<COMPILE_LANGUAGE:C>:${SANITIZER_C_CXX_FLAGS}>"
+           "$<$<COMPILE_LANGUAGE:CXX>:${SANITIZER_C_CXX_FLAGS}>"
+   )
+
+   MESSAGE(STATUS "Using the google sanitizer lsan")
+   MESSAGE(STATUS "Make sure the following environment variable is set accordingly (via export): LSAN_OPTIONS=suppressions=/PATHTOPIPS/PIPS_beamme/lsan_suppression.txt:fast_unwind_on_malloc=0")
+   MESSAGE(STATUS "replace PATHTOPIPS with your individual path to pips")
+endif(WITH_MEMORY_SANITIZER)
 
 if(WITH_TIMING)
 	add_definitions(-DTIMING -DSTOCH_TESTING -DNLPTIMING)

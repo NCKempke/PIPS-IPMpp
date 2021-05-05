@@ -11,23 +11,20 @@
 #include "SimpleVector.h"
 #include "SparseSymMatrix.h"
 
-Ma27SolverRoot::Ma27SolverRoot( const SparseSymMatrix * sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name )
- : Ma27Solver(sgm, name), solve_in_parallel(solve_in_parallel), comm(mpiComm)
-{
+Ma27SolverRoot::Ma27SolverRoot(const SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma27Solver(sgm, name),
+      solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    threshold_pivoting_max = 0.5;
    precision = 1e-7;
    assert(mpiComm != MPI_COMM_NULL);
 }
 
-void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
-{
-   const int my_rank = PIPS_MPIgetRank( comm );
+void Ma27SolverRoot::matrixRebuild(DoubleMatrix& matrixNew) {
+   const int my_rank = PIPS_MPIgetRank(comm);
 
-   if( solve_in_parallel || my_rank == 0 )
-   {
+   if (solve_in_parallel || my_rank == 0) {
       SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
 
-      assert( matrixNewSym.getStorageRef().fortranIndexed() );
+      assert(matrixNewSym.getStorageRef().fortranIndexed());
 
       freeWorkingArrays();
 
@@ -41,21 +38,19 @@ void Ma27SolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
    }
 }
 
-void Ma27SolverRoot::matrixChanged()
-{
-   if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
+void Ma27SolverRoot::matrixChanged() {
+   if (solve_in_parallel || PIPS_MPIgetRank(comm) == 0)
       Ma27Solver::matrixChanged();
 }
 
-void Ma27SolverRoot::solve(OoqpVector& rhs)
-{
-   SimpleVector& sv = dynamic_cast<SimpleVector &>(rhs);
+void Ma27SolverRoot::solve(Vector<double>& rhs) {
+   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
 
    assert(n == rhs.length());
 
-   if( solve_in_parallel || PIPS_MPIgetRank(comm) == 0 )
+   if (solve_in_parallel || PIPS_MPIgetRank(comm) == 0)
       Ma27Solver::solve(sv);
 
-   if( !solve_in_parallel && PIPS_MPIgetSize(comm) > 0 )
+   if (!solve_in_parallel && PIPS_MPIgetSize(comm) > 0)
       MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, comm);
 }

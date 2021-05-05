@@ -11,12 +11,10 @@
 #include <stdlib.h>
 
 
-MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool solve_in_parallel)
- : MumpsSolverBase(mpiComm, mpiComm, sgm), solve_in_parallel( solve_in_parallel )
-{
-   if( solve_in_parallel )
-   {
-      assert( false && "TODO : MUMPS NOT AVAILABLE FOR HIERARCHICAL APPROACH !! ");
+MumpsSolverRoot::MumpsSolverRoot(MPI_Comm mpiComm, SparseSymMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(mpiComm, mpiComm, sgm),
+      solve_in_parallel(solve_in_parallel) {
+   if (solve_in_parallel) {
+      assert(false && "TODO : MUMPS NOT AVAILABLE FOR HIERARCHICAL APPROACH !! ");
       MPI_Abort(MPI_COMM_WORLD, -1);
    }
 
@@ -24,19 +22,11 @@ MumpsSolverRoot::MumpsSolverRoot( MPI_Comm mpiComm, SparseSymMatrix * sgm, bool 
 }
 
 
-MumpsSolverRoot::MumpsSolverRoot( SparseSymMatrix * sgm, bool solve_in_parallel )
- : MumpsSolverBase(sgm), solve_in_parallel(solve_in_parallel)
-{
+MumpsSolverRoot::MumpsSolverRoot(SparseSymMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(sgm), solve_in_parallel(solve_in_parallel) {
 }
 
-MumpsSolverRoot::~MumpsSolverRoot()
-{
-}
-
-void
-MumpsSolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
-{
-   if( mpiCommMumps == MPI_COMM_NULL )
+void MumpsSolverRoot::matrixRebuild(DoubleMatrix& matrixNew) {
+   if (mpiCommMumps == MPI_COMM_NULL)
       return;
 
    Msys = &dynamic_cast<SparseSymMatrix&>(matrixNew);
@@ -49,8 +39,7 @@ MumpsSolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
    tripletJcn = nullptr;
    tripletA = nullptr;
 
-   if( rankPips == 0 )
-   {
+   if (rankPips == 0) {
       assert(Msys->getStorageRef().fortranIndexed());
 
       // todo!
@@ -66,12 +55,10 @@ MumpsSolverRoot::matrixRebuild( DoubleMatrix& matrixNew )
 }
 
 
-void
-MumpsSolverRoot::matrixChanged()
-{
+void MumpsSolverRoot::matrixChanged() {
    PIPSdebugMessage("matrix changed \n");
 
-   if( mpiCommMumps == MPI_COMM_NULL )
+   if (mpiCommMumps == MPI_COMM_NULL)
       return;
 
    assert(Msys);
@@ -97,9 +84,7 @@ MumpsSolverRoot::matrixChanged()
    this->factorize();
 }
 
-void
-MumpsSolverRoot::factorize()
-{
+void MumpsSolverRoot::factorize() {
    mumps->n = n;
    mumps->nnz = Msys->numberOfNonZeros();
    mumps->irn = tripletIrn;
@@ -143,17 +128,15 @@ MumpsSolverRoot::factorize()
    processMumpsResultFactor(starttime);
 }
 
-void
-MumpsSolverRoot::solve(OoqpVector& rhs)
-{
+void MumpsSolverRoot::solve(Vector<double>& rhs) {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 
-   SimpleVector& sv = dynamic_cast<SimpleVector &>(rhs);
+   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
 
-   if( mpiCommMumps != MPI_COMM_NULL )
-   {
+   if (mpiCommMumps != MPI_COMM_NULL) {
       assert(n == rhs.length());
-      int sizeMPI; MPI_Comm_size(mpiCommPips, &sizeMPI);
+      int sizeMPI;
+      MPI_Comm_size(mpiCommPips, &sizeMPI);
 
       mumps->nrhs = 1;
       mumps->lrhs = n;
@@ -162,7 +145,7 @@ MumpsSolverRoot::solve(OoqpVector& rhs)
       // todo try sparse also for single rhs?
       MumpsSolverBase::solve(sv.elements());
 
-      if( sizeMPI > 0 )
+      if (sizeMPI > 0)
          MPI_Bcast(sv.elements(), n, MPI_DOUBLE, 0, mpiCommPips);
    }
 }

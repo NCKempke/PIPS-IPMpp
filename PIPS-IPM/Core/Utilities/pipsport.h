@@ -17,6 +17,4 @@
 #endif
 
 
-
-
 #endif /* PIPS_IPM_CORE_UTILITIES_PIPSPORT_H_ */

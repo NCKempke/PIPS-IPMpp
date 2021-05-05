@@ -1,0 +1,254 @@
+/*
+ * StochVectorUtilities.h
+ *
+ *  Created on: 13.11.2019
+ *      Author: bzfkempk
+ */
+#ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_STOCHVECTORUTILITIES_H_
+#define PIPS_IPM_CORE_STOCHLINEARALGEBRA_STOCHVECTORUTILITIES_H_
+
+#include "DistributedVector.h"
+#include "SimpleVector.h"
+
+#include <string>
+#include <iostream>
+#include <limits>
+// TODO : Hierarchical approach cannot use any of these...
+
+/* Utility functions to return for a given StochVectorBase<T> a certain SimpleVectorBase<T> 
+ *	either from one of the children (node = 0, ..., nChildren - 1 )
+ * or from the parent node = -1
+ *
+ * for the col first function SimpleVectorBase<T> first is returned
+ *
+ * for row first function either the associated SimpleVectorBase<T> first (linking = false) or last (linking = true) is returned
+ *
+ * asserts existence of these vectors as well as the specified child
+ */
+template<typename T>
+inline SimpleVector<T>& getSimpleVecFromStochVec(const DistributedVector<T>& stochvec, int node, bool linking) {
+   assert(-1 <= node && node < static_cast<int>(stochvec.children.size()));
+
+   if (node == -1) {
+      if (linking) {
+         assert(stochvec.last);
+         return dynamic_cast<SimpleVector<T>&>(*(stochvec.last));
+      }
+      else {
+         assert(stochvec.first);
+         return dynamic_cast<SimpleVector<T>&>(*(stochvec.first));
+      }
+   }
+   else {
+      if (linking) {
+         assert(stochvec.last);
+         return dynamic_cast<SimpleVector<T>&>(*(stochvec.last));
+      }
+      else {
+         assert(stochvec.children[node]->first);
+         return dynamic_cast<SimpleVector<T>&>(*(stochvec.children[node]->first));
+      }
+   }
+}
+
+template<typename T>
+inline SimpleVector<T>& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, int node, bool linking) {
+   return getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), node, linking);
+}
+
+template<typename T>
+inline SimpleVector<T>& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, int node) {
+   return getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), node, false);
+}
+
+template<typename T>
+inline T& getSimpleVecFromRowStochVec(const SmartPointer<Vector<T> >& ooqpvec_handle, const INDEX& row) {
+   assert(row.isRow());
+   const Vector<T>& ooqp_vec = *ooqpvec_handle;
+   return getSimpleVecFromRowStochVec(ooqp_vec, row);
+}
+
+template<typename T>
+inline T& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, const INDEX& row) {
+   assert(row.isRow());
+   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), row.getNode(), row.getLinking());
+   const int index = row.getIndex();
+   assert(0 <= index && index < vec.length());
+
+   return vec[index];
+}
+
+template<typename T>
+inline T& getSimpleVecFromColStochVec(const SmartPointer<Vector<T> >& ooqpvec_handle, const INDEX& col) {
+   assert(col.isCol());
+   const Vector<T>& ooqp_vec = *ooqpvec_handle;
+   return getSimpleVecFromColStochVec(ooqp_vec, col);
+}
+
+template<typename T>
+inline T& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, const INDEX& col) {
+   assert(col.isCol());
+   SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), col.getNode(), false);
+   const int index = col.getIndex();
+   assert(0 <= index && index < vec.length());
+
+   return vec[index];
+}
+
+/// clone the structure of a StochVectorBase<T> into one of type U
+template<typename T, typename U>
+inline DistributedVector<U>* cloneStochVector(const DistributedVector<T>& svec) {
+   DistributedVector<U>* clone;
+
+   if (svec.isKindOf(kStochDummy))
+      return new DistributedDummyVector<U>();
+
+   if (svec.last)
+      clone = new DistributedVector<U>(svec.first->length(), svec.last->length(), svec.mpiComm);
+   else
+      clone = new DistributedVector<U>(svec.first->length(), svec.mpiComm);
+
+   for (size_t it = 0; it < svec.children.size(); it++) {
+      clone->AddChild(cloneStochVector<T, U>(*svec.children[it]));
+   }
+   return clone;
+}
+
+template<typename T, typename U>
+inline DistributedDummyVector<U>* cloneStochVector(const DistributedDummyVector<T>&) {
+   return new DistributedDummyVector<U>();
+}
+
+template<typename T, typename U>
+inline DistributedVector<U>* cloneStochVector(const Vector<T>& ooqpvec) {
+   if (ooqpvec.isKindOf(kStochDummy))
+      return cloneStochVector<T, U>(dynamic_cast<const DistributedDummyVector<T>&>(ooqpvec));
+   else
+      return cloneStochVector<T, U>(dynamic_cast<const DistributedVector<T>&>(ooqpvec));
+}
+
+inline void writeLBltXltUBToStreamAllStringStream(std::stringstream& sout, const SimpleVector<double>& lb, const SimpleVector<double>& ixlow,
+      const SimpleVector<double>& ub, const SimpleVector<double>& ixupp) {
+   assert(lb.length() == ixlow.length());
+   assert(lb.length() == ub.length());
+   assert(lb.length() == ixupp.length());
+
+   for (int i = 0; i < lb.length(); i++) {
+      const double lbx = PIPSisZero(ixlow[i]) ? -std::numeric_limits<double>::infinity() : lb[i];
+      const double ubx = PIPSisZero(ixupp[i]) ? std::numeric_limits<double>::infinity() : ub[i];
+
+      sout << lbx << "\t<= x <=\t" << ubx << "\n";
+   }
+}
+
+inline void
+writeLBltXltUBtoStringStreamDenseChild(std::stringstream& sout, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow,
+      const DistributedVector<double>& ub, const DistributedVector<double>& ixupp) {
+   assert(lb.children.size() == ixlow.children.size());
+   assert(lb.children.size() == ub.children.size());
+   assert(lb.children.size() == ixupp.children.size());
+
+   if (lb.isKindOf(kStochDummy)) {
+      assert(ixlow.isKindOf(kStochDummy));
+      assert(ub.isKindOf(kStochDummy));
+      assert(ixupp.isKindOf(kStochDummy));
+      return;
+   }
+
+   sout << "--" << std::endl;
+   assert(lb.first);
+   assert(ixlow.first);
+   assert(ub.first);
+   assert(ixupp.first);
+   writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first),
+         dynamic_cast<const SimpleVector<double>&>(*ixlow.first), dynamic_cast<const SimpleVector<double>&>(*ub.first),
+         dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
+
+
+   for (size_t it = 0; it < lb.children.size(); it++) {
+      sout << "-- " << std::endl;
+      writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it], *ixlow.children[it], *ub.children[it], *ixupp.children[it]);
+   }
+
+   if (lb.last) {
+      assert(ixlow.last);
+      assert(ub.last);
+      assert(ixupp.last);
+      sout << "---" << std::endl;
+      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last),
+            dynamic_cast<const SimpleVector<double>&>(*ixlow.last), dynamic_cast<const SimpleVector<double>&>(*ub.last),
+            dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
+   }
+}
+
+inline void writeLBltXltUBtoStreamDense(std::ostream& out, const DistributedVector<double>& lb, const DistributedVector<double>& ixlow,
+      const DistributedVector<double>& ub, const DistributedVector<double>& ixupp, MPI_Comm mpiComm) {
+   assert(lb.children.size() == ixlow.children.size());
+   assert(lb.children.size() == ub.children.size());
+   assert(lb.children.size() == ixupp.children.size());
+
+   if (lb.isKindOf(kStochDummy)) {
+      assert(ixlow.isKindOf(kStochDummy));
+      assert(ub.isKindOf(kStochDummy));
+      assert(ixupp.isKindOf(kStochDummy));
+      return;
+   }
+
+   const int my_rank = PIPS_MPIgetRank(mpiComm);
+   const int world_size = PIPS_MPIgetSize(mpiComm);
+   bool is_distributed = PIPS_MPIgetDistributed(mpiComm);
+
+   MPI_Status status;
+   int l;
+   std::stringstream sout;
+
+   if (my_rank == 0) {
+      sout << "----" << std::endl;
+      assert(lb.first);
+      assert(ixlow.first);
+      assert(ub.first);
+      assert(ixupp.first);
+      writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.first),
+            dynamic_cast<const SimpleVector<double>&>(*ixlow.first), dynamic_cast<const SimpleVector<double>&>(*ub.first),
+            dynamic_cast<const SimpleVector<double>&>(*ixupp.first));
+
+      for (size_t it = 0; it < lb.children.size(); it++)
+         writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it], *ixlow.children[it], *ub.children[it], *ixupp.children[it]);
+
+      out << sout.str();
+      sout.str(std::string());
+
+      for (int p = 1; p < world_size; p++) {
+         MPI_Probe(p, p, mpiComm, &status);
+         MPI_Get_count(&status, MPI_CHAR, &l);
+         char* buf = new char[l];
+         MPI_Recv(buf, l, MPI_CHAR, p, p, mpiComm, &status);
+         std::string rowPartFromP(buf, l);
+         out << rowPartFromP;
+         delete[] buf;
+      }
+      if (lb.last) {
+         assert(ixlow.last);
+         assert(ub.last);
+         assert(ixupp.last);
+         sout << "---" << std::endl;
+         writeLBltXltUBToStreamAllStringStream(sout, dynamic_cast<const SimpleVector<double>&>(*lb.last),
+               dynamic_cast<const SimpleVector<double>&>(*ixlow.last), dynamic_cast<const SimpleVector<double>&>(*ub.last),
+               dynamic_cast<const SimpleVector<double>&>(*ixupp.last));
+      }
+      sout << "----" << std::endl;
+      out << sout.str();
+   }
+   else if (is_distributed) { // rank != 0
+      for (size_t it = 0; it < lb.children.size(); it++)
+         writeLBltXltUBtoStringStreamDenseChild(sout, *lb.children[it], *ixlow.children[it], *ub.children[it], *ixupp.children[it]);
+
+      std::string str = sout.str();
+      MPI_Ssend(str.c_str(), str.length(), MPI_CHAR, 0, my_rank, mpiComm);
+   }
+
+   if (is_distributed == 1)
+      MPI_Barrier(mpiComm);
+}
+
+#endif

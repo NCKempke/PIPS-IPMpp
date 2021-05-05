@@ -26,40 +26,43 @@ class MatTimesVec;
  *
  * @ingroup LinearSolvers 
  */
-class PCGSolver : public  DoubleIterativeLinearSolver {
+class PCGSolver : public DoubleIterativeLinearSolver {
 public:
-  /** initialization constructor */
-  PCGSolver( MatTimesVec* H, MatTimesVec* P, MatTimesVec* At, int n, int m);
+   /** initialization constructor */
+   PCGSolver(MatTimesVec* H, MatTimesVec* P, MatTimesVec* At, int n, int m);
 
-  virtual ~PCGSolver();
+   virtual ~PCGSolver();
 
-  /** version of the main solve routine that takes argument as an
-   * OoqpVector
-   *
-   * @param drhs on input contains the right-hand side; on output
-   * contains the solution
-   */
-  void solve( OoqpVector& rhs );
+   /** version of the main solve routine that takes argument as an
+    * Vector<double>
+    *
+    * @param drhs on input contains the right-hand side; on output
+    * contains the solution
+    */
+   void solve(Vector<double>& rhs);
 
-  /** the standard projected CG */
-  void solvefull(OoqpVector& rhs);
+   /** the standard projected CG */
+   void solvefull(Vector<double>& rhs);
 
-  /** an economical version of projected CG */
-  void solveecon(OoqpVector& rhs);
+   /** an economical version of projected CG */
+   void solveecon(Vector<double>& rhs);
 
-  /** "outer" iterative refinement, used if the algorithm was able to reduce the
-   *  residual but not to the desired level. */
-  void refine(OoqpVector& rhs);
+   /** "outer" iterative refinement, used if the algorithm was able to reduce the
+    *  residual but not to the desired level. */
+   void refine(Vector<double>& rhs);
 protected:
-  PCGSolver() {};
+   PCGSolver() {};
 
-  double tol; double iter; int maxit; int flag;
+   double tol;
+   double iter;
+   int maxit;
+   int flag;
 
-  double *tmpVec1,*tmpVec2,*tmpVec3,*tmpVec4,*tmpVec5,*tmpVec6;
+   double* tmpVec1, * tmpVec2, * tmpVec3, * tmpVec4, * tmpVec5, * tmpVec6;
 
-  MatTimesVec* At;
+   MatTimesVec* At;
 
-  int n,m;
+   int n, m;
 };
 
 

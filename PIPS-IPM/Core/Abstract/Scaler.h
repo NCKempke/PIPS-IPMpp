@@ -7,12 +7,16 @@
 
 #ifndef PIPS_IPM_CORE_ABSTRACT_SCALER_H_
 #define PIPS_IPM_CORE_ABSTRACT_SCALER_H_
-#include "OoqpVector.h"
+
+#include "Vector.hpp"
+#include "SmartPointer.h"
 
 #include "pipsport.h"
 
-class Data;
+class Problem;
+
 class Variables;
+
 class Residuals;
 
 /**  * @defgroup Preprocessing
@@ -26,54 +30,53 @@ class Residuals;
  */
 
 
-class Scaler
-{
+class Scaler {
 protected:
-  Data* const problem;
-  const bool do_bitshifting; // only scale by power of two factors?
-  const bool with_sides; // consider lhs/rhs?
+   Problem* const problem;
+   const bool do_bitshifting; // only scale by power of two factors?
+   const bool with_sides; // consider lhs/rhs?
 
-  const double dnorm_orig;
+   const double dnorm_orig;
 
 public:
-  Scaler(Data * prob, bool bitshifting = false, bool usesides = false);
-  virtual ~Scaler() = default;
+   Scaler(Problem* prob, bool bitshifting = false, bool usesides = false);
+   virtual ~Scaler() = default;
 
-  /** scale */
-  virtual void scale() = 0;
+   /** scale */
+   virtual void scale() = 0;
 
-  /** return norm of unscaled problem */
-  virtual double getDnormOrig() const { return dnorm_orig; }
+   /** return norm of unscaled problem */
+   virtual double getDnormOrig() const { return dnorm_orig; }
 
-  /** unscale given objective value */
-  virtual double getObjUnscaled(double objval) const = 0;
+   /** unscale given objective value */
+   virtual double get_unscaled_objective(double objective_value) const = 0;
 
-  /** compute original variables from given ones */
-  virtual Variables* getVariablesUnscaled(const Variables& vars) const = 0;
+   /** compute original variables from given ones */
+   virtual Variables* get_unscaled_variables(const Variables& variables) const = 0;
 
-  /** compute original residuals from given ones */
-  virtual Residuals* getResidualsUnscaled(const Residuals& resids) const = 0;
+   /** compute original residuals from given ones */
+   virtual Residuals* get_unscaled_residuals(const Residuals& residuals) const = 0;
 
-  /** compute original residuals from given ones */
-  virtual void unscaleResiduals(Residuals& resids) const = 0;
+   /** compute original residuals from given ones */
+   virtual void unscaleResiduals(Residuals& residuals) const = 0;
 
-  /** compute original residuals from given ones */
-  virtual void unscaleVariables(Variables& resids) const = 0;
+   /** compute original variables from given ones */
+   virtual void unscaleVariables(Variables& variables) const = 0;
 
-  /** compute original vector from given primal vector */
-  virtual OoqpVector* getPrimalUnscaled(const OoqpVector& solprimal) const = 0;
+   /** compute original vector from given primal vector */
+   virtual Vector<double>* getPrimalUnscaled(const Vector<double>& primal_solution) const = 0;
 
-  /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualEqUnscaled(const OoqpVector& soldual) const = 0;
+   /** compute original vector from given dual vector */
+   virtual Vector<double>* getDualEqUnscaled(const Vector<double>& dual_solution) const = 0;
 
-  /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualIneqUnscaled(const OoqpVector& soldual) const = 0;
+   /** compute original vector from given dual vector */
+   virtual Vector<double>* getDualIneqUnscaled(const Vector<double>& dual_solution) const = 0;
 
-  /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualVarBoundsUppUnscaled(const OoqpVector& soldual) const = 0;
+   /** compute original vector from given dual vector */
+   virtual Vector<double>* getDualVarBoundsUppUnscaled(const Vector<double>& dual_solution) const = 0;
 
-  /** compute original vector from given dual vector */
-  virtual OoqpVector* getDualVarBoundsLowUnscaled(const OoqpVector& soldual) const = 0;
+   /** compute original vector from given dual vector */
+   virtual Vector<double>* getDualVarBoundsLowUnscaled(const Vector<double>& dual_solution) const = 0;
 };
 
 //@}

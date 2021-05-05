@@ -1,0 +1,34 @@
+/*
+ * StochScaler.C
+ *
+ *  Created on: 18.07.2019
+ *      Author: Nils-Christian
+ */
+
+#include "StochScaler.h"
+#include "pipsdef.h"
+#include "DistributedVariables.h"
+#include "DistributedResiduals.hpp"
+
+
+StochScaler::StochScaler(Problem* prob, bool bitshifting) : QpScaler(prob, bitshifting) {
+}
+
+Variables* StochScaler::get_unscaled_variables(const Variables& vars) const {
+   Variables* s_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(vars));
+   assert(s_vars);
+   assert(dynamic_cast<DistributedVariables*>(s_vars)->x);
+
+   unscaleVariables(*s_vars);
+
+   return s_vars;
+};
+
+Residuals* StochScaler::get_unscaled_residuals(const Residuals& resids) const {
+   DistributedResiduals* s_resids = new DistributedResiduals(dynamic_cast<const DistributedResiduals&>(resids));
+   assert(s_resids);
+
+   unscaleResiduals(*s_resids);
+
+   return s_resids;
+};

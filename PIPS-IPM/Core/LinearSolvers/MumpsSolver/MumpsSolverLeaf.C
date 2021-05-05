@@ -10,17 +10,13 @@
 #include "SparseGenMatrix.h"
 #include "dmumps_c.h"
 
-MumpsSolverLeaf::MumpsSolverLeaf( const SparseSymMatrix * sgm )
- : MumpsSolverBase(sgm)
-{
+MumpsSolverLeaf::MumpsSolverLeaf(const SparseSymMatrix* sgm) : MumpsSolverBase(sgm) {
 }
 
-void
-MumpsSolverLeaf::matrixChanged()
-{
+void MumpsSolverLeaf::matrixChanged() {
    PIPSdebugMessage("matrix changed \n");
 
-   if( mpiCommMumps == MPI_COMM_NULL )
+   if (mpiCommMumps == MPI_COMM_NULL)
       return;
 
    // todo: update only diagonal!
@@ -90,17 +86,15 @@ MumpsSolverLeaf::matrixChanged()
 }
 
 
-void
-MumpsSolverLeaf::solve(GenMatrix& rhs_f, int startRow, int range, double* sol)
-{
+void MumpsSolverLeaf::solve(GenMatrix& rhs_f, int startRow, int range, double* sol) {
    PIPSdebugMessage("MUMPS solver: solve (multiple rhs) \n");
 
    assert(sol);
    assert(startRow >= 0 && range >= 1);
 
-   SparseGenMatrix& rhs_matrix = dynamic_cast<SparseGenMatrix &>(rhs_f);
+   SparseGenMatrix& rhs_matrix = dynamic_cast<SparseGenMatrix&>(rhs_f);
 
-   if( mpiCommMumps == MPI_COMM_NULL )
+   if (mpiCommMumps == MPI_COMM_NULL)
       return;
 
    int m_org;
@@ -123,8 +117,7 @@ MumpsSolverLeaf::solve(GenMatrix& rhs_f, int startRow, int range, double* sol)
 
    int* const ia_sub = new int[m_sub + 1];
 
-   for( int i = 0; i <= m_sub; i++)
-   {
+   for (int i = 0; i <= m_sub; i++) {
       const int newPos = ia_org[i + startRow] - ia_org[startRow] + 1;
       assert(i == 0 || newPos >= ia_sub[i - 1]);
 

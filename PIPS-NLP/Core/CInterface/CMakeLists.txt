@@ -1,1 +1,0 @@
-add_library(nlpcNlpGenSparse cNlpGenSparseNLP.C cNlpGen.C cBounds.C)

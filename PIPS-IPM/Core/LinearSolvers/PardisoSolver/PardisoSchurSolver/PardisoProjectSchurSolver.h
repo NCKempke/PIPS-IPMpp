@@ -10,29 +10,28 @@
 
 #include "PardisoSchurSolver.h"
 
-class PardisoProjectSchurSolver : public PardisoSchurSolver
-{
+class PardisoProjectSchurSolver : public PardisoSchurSolver {
 public:
-  PardisoProjectSchurSolver( const SparseSymMatrix * sgm );
+   PardisoProjectSchurSolver(const SparseSymMatrix* sgm);
 
-  void solve( OoqpVector& rhs_in ) override;
-  using DoubleLinearSolver::solve;
+   void solve(Vector<double>& rhs_in) override;
+   using DoubleLinearSolver::solve;
 
 protected:
-  ~PardisoProjectSchurSolver() override;
+   ~PardisoProjectSchurSolver() override;
 
-  void computeSC(int nSCO, /*const*/SparseGenMatrix& R,
-  /*const*/SparseGenMatrix& A,
-  /*const*/SparseGenMatrix& C,
-  /*const*/SparseGenMatrix& F,
-  /*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
-  void initPardiso() override;
-  void setIparm(int* iparm) const override;
+   void computeSC(int nSCO, /*const*/SparseGenMatrix& R,
+         /*const*/SparseGenMatrix& A,
+         /*const*/SparseGenMatrix& C,
+         /*const*/SparseGenMatrix& F,
+         /*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
+   void initPardiso() override;
+   void setIparm(int* iparm) const override;
 
-  double dparm[64];
+   double dparm[64];
 
-  int solver{0};
-  int num_threads{1};
+   int solver{0};
+   int num_threads{1};
 
 };
 

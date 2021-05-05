@@ -9,15 +9,15 @@
 #include "DoubleLinearSolver.h"
 #include "SparseSymMatrixHandle.h"
 #include "SparseStorageHandle.h"
-#include "OoqpVectorHandle.h"
+#include "Vector.hpp"
+#include "SmartPointer.h"
 #include "SparseStorage.h"
 #include "SimpleVector.h"
 
 
-
 #ifndef FNAME
 #ifndef __bg__
-#define FNAME(f) f ## _ 
+#define FNAME(f) f ## _
 #else
 #define FNAME(f) f // no underscores for fortran names on bgp
 #endif
@@ -26,7 +26,6 @@
 
 typedef double ma86pkgtype_d_;
 typedef double ma86realtype_d_;
-
 
 
 struct ma86_control_d {
@@ -38,12 +37,12 @@ struct ma86_control_d {
 
    /* Printing controls */
    int diagnostics_level; /* Controls diagnostic printing.*/
-               /* Possible values are:
-                   < 0: no printing.
-                     0: error and warning messages only.
-                     1: as 0 plus basic diagnostic printing.
-                     2: as 1 plus some more detailed diagnostic messages.
-                     3: as 2 plus all entries of user-supplied arrays.       */
+   /* Possible values are:
+       < 0: no printing.
+         0: error and warning messages only.
+         1: as 0 plus basic diagnostic printing.
+         2: as 1 plus some more detailed diagnostic messages.
+         3: as 2 plus all entries of user-supplied arrays.       */
    int unit_diagnostics;   /* unit for diagnostic messages
                               Printing is suppressed if unit_diagnostics < 0. */
    int unit_error;         /* unit for error messages
@@ -128,61 +127,60 @@ struct mc68_info {
 
 /** implements the linear solver class using the Ma86 solver
  */
- 
+
 class Ma86Solver : public DoubleLinearSolver {
 private:
-  Ma86Solver() {};
-  
- public:
+   Ma86Solver() {};
 
-  Ma86Solver( SparseSymMatrix * sgm );
- 
-  virtual void firstCall();  
-  virtual void diagonalChanged( int idiag, int extent );
-  virtual void matrixChanged();
-  virtual void solve( OoqpVector& rhs );
-  virtual void solve( SimpleVector& rhs );
-  virtual void solve( GenMatrix& rhs);
-  
-  virtual ~Ma86Solver();
+public:
 
- // virtual void Lsolve( OoqpVector& x );
- // virtual void Dsolve( OoqpVector& x );
- // virtual void Ltsolve( OoqpVector& x );
-  
- private:
-  SparseSymMatrix* Msys;
-  bool first;
-  bool second;
-  int n; //
+   Ma86Solver(SparseSymMatrix* sgm);
 
-  /** storage for the upper triangular (in row-major format) */
-  int     *krowM,    *jcolM;
-  double  *M;
-  double *val;
-  
-  /** number of nonzeros in the matrix */
-  int      nnz;
-  
-  double* nvec; //temporary vec
-  
-  /* Derived types */
-  void *keep;
-  
-  struct ma86_control_d  control;
-  struct ma86_info_d  info;
-  
-  ////////////////////////////////////////////////////////
-  struct mc68_control control68;
-  struct mc68_info info68;
-  ////////////////////////////////////////////////////////
+   virtual void firstCall();
+   virtual void diagonalChanged(int idiag, int extent);
+   virtual void matrixChanged();
+   virtual void solve(Vector<double>& rhs);
+   virtual void solve(SimpleVector<double>& rhs);
+   virtual void solve(GenMatrix& rhs);
 
-  double * x;
-  int * order;
-  int * ptr;
-  int * row;
+   virtual ~Ma86Solver();
 
-	
+   // virtual void Lsolve( Vector<double>& x );
+   // virtual void Dsolve( Vector<double>& x );
+   // virtual void Ltsolve( Vector<double>& x );
+
+private:
+   SparseSymMatrix* Msys;
+   bool first;
+   bool second;
+   int n; //
+
+   /** storage for the upper triangular (in row-major format) */
+   int* krowM, * jcolM;
+   double* M;
+   double* val;
+
+   /** number of nonzeros in the matrix */
+   int nnz;
+
+   double* nvec; //temporary vec
+
+   /* Derived types */
+   void* keep;
+
+   struct ma86_control_d control;
+   struct ma86_info_d info;
+
+   ////////////////////////////////////////////////////////
+   struct mc68_control control68;
+   struct mc68_info info68;
+   ////////////////////////////////////////////////////////
+
+   double* x;
+   int* order;
+   int* ptr;
+   int* row;
+
 
 };
 
