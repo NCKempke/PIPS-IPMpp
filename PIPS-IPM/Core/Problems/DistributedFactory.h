@@ -73,7 +73,7 @@ public:
 
    DistributedRootLinearSystem* make_linear_system_root();
 
-   DistributedRootLinearSystem* newLinsysRootHierarchical();
+   DistributedRootLinearSystem* make_root_hierarchical_linear_system();
 
    DistributedRootLinearSystem* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,

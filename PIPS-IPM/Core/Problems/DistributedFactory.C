@@ -262,7 +262,7 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) {
 
 AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
    if (pips_options::get_bool_parameter("HIERARCHICAL"))
-      linear_system = newLinsysRootHierarchical();
+      linear_system = make_root_hierarchical_linear_system();
    else
       linear_system = make_linear_system_root();
    return linear_system;
@@ -326,7 +326,7 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>*
             dual_inequality_regularization, rhs, true);
 }
 
-DistributedRootLinearSystem* DistributedFactory::newLinsysRootHierarchical() {
+DistributedRootLinearSystem* DistributedFactory::make_root_hierarchical_linear_system() {
    return new sLinsysRootBordered(this, problem);
 }
 
