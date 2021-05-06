@@ -60,7 +60,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
 
    const auto& F0 = *dynamic_cast<const BorderedMatrix&>(*prob->A).bottom_left_block;
    const auto& G0 = *dynamic_cast<const BorderedMatrix&>(*prob->C).bottom_left_block;
-   const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymMatrix&>(*prob->Q).top_left_block);
+   const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymmetricMatrix&>(*prob->Q).top_left_block);
 
    auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
    int mSC, nSC;
@@ -218,7 +218,7 @@ void sLinsysRootBordered::Ltsolve(DistributedQP*, Vector<double>& x) {
    DistributedVector<double>& b = *dynamic_cast<DistributedVector<double>&>(x).children[0];
 
    assert(xs.first);
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*xs.first);
 
    computeInnerSystemRightHandSide(b, b0, false);
 
@@ -242,7 +242,7 @@ void sLinsysRootBordered::assembleLocalKKT(DistributedQP* prob) {
    assert(children.size() == 1);
 
    // assemble complete inner KKT from children
-   DenseSymmetricMatrix& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
+   auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
 
    assert(prob->children.size() == 1);
 
@@ -262,7 +262,7 @@ void sLinsysRootBordered::reduceKKT(DistributedQP*) {
 
 DoubleLinearSolver* sLinsysRootBordered::createSolver(DistributedQP*, const SymmetricMatrix* kktmat_) {
    const SolverTypeDense solver = pips_options::get_solver_dense();
-   const DenseSymmetricMatrix* kktmat = dynamic_cast<const DenseSymmetricMatrix*>(kktmat_);
+   const auto* kktmat = dynamic_cast<const DenseSymmetricMatrix*>(kktmat_);
 
    static bool printed = false;
    if (!printed && 0 == PIPS_MPIgetRank(mpiComm))
