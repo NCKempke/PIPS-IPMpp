@@ -52,8 +52,6 @@ public:
 
    int getLocalmzl() const;
 
-   int getLocalSizes(int& nx, int& my, int& mz) const;
-
    int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
 
    int getLocalNnz(int& nnzQ, int& nnzB, int& nnzD);
