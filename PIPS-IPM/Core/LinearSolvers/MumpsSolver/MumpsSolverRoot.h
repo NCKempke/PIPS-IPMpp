@@ -8,8 +8,6 @@
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_MUMPSSOLVER_MUMPSSOLVERROOT_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_MUMPSSOLVER_MUMPSSOLVERROOT_H_
 
-#include "dmumps_c.h"
-
 #include "mpi.h"
 #include "MumpsSolverBase.h"
 #include "SparseSymmetricMatrix.h"
@@ -24,19 +22,19 @@
 class MumpsSolverRoot : public MumpsSolverBase {
 
 public:
-   MumpsSolverRoot(SparseSymMatrix* sgm, bool solve_in_parallel);
-   MumpsSolverRoot(MPI_Comm mpiComm, SparseSymMatrix* sgm, bool solve_in_parallel);
+   MumpsSolverRoot(const SparseSymmetricMatrix* sgm, bool solve_in_parallel);
+   MumpsSolverRoot(MPI_Comm mpiComm, const SparseSymmetricMatrix* sgm, bool solve_in_parallel);
 
    ~MumpsSolverRoot() = default;
 
-   void matrixRebuild(DoubleMatrix& matrixNew) override;
+   void matrixRebuild( AbstractMatrix& matrixNew) override;
    void matrixChanged() override;
 
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& rhs) override;
 
 private:
-   /* indicated wether every process solves or only rank 0 */
+   /* indicated whether every process solves or only rank 0 */
    const bool solve_in_parallel;
    void factorize();
 };

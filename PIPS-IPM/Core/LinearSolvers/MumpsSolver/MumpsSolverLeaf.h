@@ -18,14 +18,14 @@ class MumpsSolverLeaf : public MumpsSolverBase {
 
 public:
    using DoubleLinearSolver::solve;
-   MumpsSolverLeaf(const SparseSymMatrix* sgm);
+   MumpsSolverLeaf(const SparseSymmetricMatrix* sgm);
 
    ~MumpsSolverLeaf() = default;
 
    void matrixChanged() override;
 
    // rhs need to be in CSC Fortran format
-   void solve(/* const */ GenMatrix& rhs_f, int startRow, int range, double* sol);
+   void solve(/* const */ GeneralMatrix& rhs_f, int startRow, int range, double* sol);
 };
 
 

@@ -1375,6 +1375,7 @@ void SparseStorage::getSparseTriplet_c2fortran(int*& irn, int*& jcn, double*& va
    int count = 0;
    assert(len > 0);
    assert(!irn && !jcn && !val);
+   assert(!fortranIndexed());
 
    irn = new int[len];
    jcn = new int[len];
@@ -1407,13 +1408,18 @@ void SparseStorage::getSparseTriplet_fortran2fortran(int*& irn, int*& jcn, doubl
    jcn = new int[len];
    val = new double[len];
 
-   for (int r = 0; r < m; r++) {
-      for (int c = krowM[r] - 1; c < krowM[r + 1] - 1; c++) {
-         const int col = jcolM[c];
-         const double value = M[c];
+   for (int row_f = 1; row_f <= m; row_f++) {
+      const int row_c = row_f - 1;
 
-         irn[count] = r + 1;
-         jcn[count] = col;
+      const int row_start_c = krowM[row_c] - 1;
+      const int row_end_c = krowM[row_c + 1] - 1;
+
+      for (int col_index = row_start_c; col_index < row_end_c; col_index++) {
+         const int col_f = jcolM[col_index];
+         const double value = M[col_index];
+
+         irn[count] = row_f;
+         jcn[count] = col_f;
          val[count] = value;
 
          count++;

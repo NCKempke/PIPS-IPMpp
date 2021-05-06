@@ -23,7 +23,7 @@ add_library(pips-ipmpp STATIC
         QpStoch/DistributedTree.C
         LinearSystems/sLinsysRootBordered.C
         QpStoch/DistributedTreeCallbacks.C
-        LinearAlgebra/Distributed/StripMatrix.C # TODO : bad hack...
+        LinearAlgebra/Distributed/StripMatrix.C
         LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
         
         LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymmetricMatrix.C
@@ -43,6 +43,9 @@ add_library(pips-ipmpp STATIC
         Preprocessing/StochPresolverSingletonRows.C Preprocessing/StochPresolverSingletonColumns.C Preprocessing/QpPresolver.C Preprocessing/QpPostsolver.C
 )
 
+target_include_directories(pips-ipmpp PRIVATE ${MUMPS_INCLUDE_DIR})
+
+
 if (HAVE_MA27)
     target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA27)
     target_link_libraries(pips-ipmpp PRIVATE ma27_solver)
@@ -54,7 +57,7 @@ if (HAVE_MA57)
 endif (HAVE_MA57)
 
 if (HAVE_MUMPS)
-    target_sources(pips-ipmpp QpStoch/sLinsysLeafMumps.C)
+    target_sources(pips-ipmpp PRIVATE LinearSystems/sLinsysLeafMumps.C)
     target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MUMPS)
     target_link_libraries(pips-ipmpp PRIVATE mumps_solver)
 endif (HAVE_MUMPS)

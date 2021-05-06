@@ -8,9 +8,8 @@
 #include <stdlib.h>
 #include "SimpleVector.h"
 #include "SparseMatrix.h"
-#include "dmumps_c.h"
 
-MumpsSolverLeaf::MumpsSolverLeaf(const SparseSymMatrix* sgm) : MumpsSolverBase(sgm) {
+MumpsSolverLeaf::MumpsSolverLeaf(const SparseSymmetricMatrix* sgm) : MumpsSolverBase(sgm) {
 }
 
 void MumpsSolverLeaf::matrixChanged() {
@@ -86,13 +85,13 @@ void MumpsSolverLeaf::matrixChanged() {
 }
 
 
-void MumpsSolverLeaf::solve(GenMatrix& rhs_f, int startRow, int range, double* sol) {
+void MumpsSolverLeaf::solve(GeneralMatrix& rhs_f, int startRow, int range, double* sol) {
    PIPSdebugMessage("MUMPS solver: solve (multiple rhs) \n");
 
    assert(sol);
    assert(startRow >= 0 && range >= 1);
 
-   SparseGenMatrix& rhs_matrix = dynamic_cast<SparseGenMatrix&>(rhs_f);
+   auto& rhs_matrix = dynamic_cast<SparseMatrix&>(rhs_f);
 
    if (mpiCommMumps == MPI_COMM_NULL)
       return;
