@@ -3,52 +3,52 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include <cassert>
-#include "DenseSymMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "OoqpBlas.h"
 #include "SimpleVector.h"
 
-#include "DenseGenMatrix.h"
-#include "SparseGenMatrix.h"
-#include "SparseSymMatrix.h"
+#include "DenseMatrix.h"
+#include "SparseMatrix.h"
+#include "SparseSymmetricMatrix.h"
 
 #include "DoubleMatrixTypes.h"
 
 // TODO : move to Blas header..
 extern "C" void dsyrk_(char* UPLO, char* TRANS, int* N, int* K, double* alpha, double* A, int* lda, double* beta, double* C, int* ldc);
 
-int DenseSymMatrix::isKindOf(int matrixType) const {
+int DenseSymmetricMatrix::is_a(int matrixType) const {
    return matrixType == kDenseSymMatrix || matrixType == kSymMatrix;
 }
 
-DenseSymMatrix::DenseSymMatrix(int size) {
+DenseSymmetricMatrix::DenseSymmetricMatrix(int size) {
    mStorage = std::make_shared<DenseStorage>(size, size);
 }
 
-DenseSymMatrix::DenseSymMatrix(double Q[], int size) {
+DenseSymmetricMatrix::DenseSymmetricMatrix(double Q[], int size) {
    mStorage = std::make_shared<DenseStorage>(Q, size, size);
 }
 
-void DenseSymMatrix::symAtPutZeros(int row, int col, int rowExtent, int colExtent) {
+void DenseSymmetricMatrix::symAtPutZeros(int row, int col, int rowExtent, int colExtent) {
    mStorage->atPutZeros(row, col, rowExtent, colExtent);
 }
 
-void DenseSymMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
+void DenseSymmetricMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
    mStorage->putSparseTriple(irow, len, jcol, A, info);
 }
 
-void DenseSymMatrix::atAddOuterProductOf(int row, int col, double alpha, double* x, int incx, int nx) {
+void DenseSymmetricMatrix::atAddOuterProductOf(int row, int col, double alpha, double* x, int incx, int nx) {
    mStorage->atAddOuterProductOf(row, col, alpha, x, incx, nx);
 }
 
-void DenseSymMatrix::getDiagonal(Vector<double>& vec) const {
+void DenseSymmetricMatrix::getDiagonal(Vector<double>& vec) const {
    mStorage->getDiagonal(vec);
 }
 
-void DenseSymMatrix::setToDiagonal(const Vector<double>& vec) {
+void DenseSymmetricMatrix::setToDiagonal(const Vector<double>& vec) {
    mStorage->setToDiagonal(vec);
 }
 
-void DenseSymMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
+void DenseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
    if (col + colExtent < row + 1) {
       mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
    }
@@ -59,21 +59,21 @@ void DenseSymMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jc
    }
 }
 
-void DenseSymMatrix::getSize(long long& m, long long& n) const {
+void DenseSymmetricMatrix::getSize(long long& m, long long& n) const {
    m = mStorage->m;
    n = mStorage->n;
 }
 
-void DenseSymMatrix::getSize(int& m, int& n) const {
+void DenseSymmetricMatrix::getSize(int& m, int& n) const {
    m = mStorage->m;
    n = mStorage->n;
 }
 
-long long DenseSymMatrix::size() const {
+long long DenseSymmetricMatrix::size() const {
    return mStorage->m;
 }
 
-void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
+void DenseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
    const int m = mStorage->m;
    const int n = mStorage->n;
    double** M = mStorage->M;
@@ -90,14 +90,14 @@ void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMat
    Mat.fromGetDense(srcRow, srcCol, &M[destRow][destCol], n, rowExtent, colExtent);
 }
 
-void DenseSymMatrix::mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
+void DenseSymmetricMatrix::mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
    char fortranUplo = 'U';
    int n = mStorage->n;
 
    dsymv_(&fortranUplo, &n, &alpha, &mStorage->M[0][0], &n, x, &incx, &beta, y, &incy);
 }
 
-void DenseSymMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void DenseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    char fortranUplo = 'U';
    int n = mStorage->n;
    auto& y = (SimpleVector<double>&) y_in;
@@ -109,23 +109,23 @@ void DenseSymMatrix::mult(double beta, Vector<double>& y_in, double alpha, const
    }
 }
 
-void DenseSymMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
+void DenseSymmetricMatrix::transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
    this->mult(beta, y, alpha, x);
 }
 
-void DenseSymMatrix::transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
+void DenseSymmetricMatrix::transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
    this->mult(beta, y, incy, alpha, x, incx);
 }
 
-double DenseSymMatrix::abmaxnorm() const {
-   return mStorage->abmaxnorm();
+double DenseSymmetricMatrix::inf_norm() const {
+   return mStorage->inf_norm();
 }
 
-double DenseSymMatrix::abminnormNonZero(double tol) const {
+double DenseSymmetricMatrix::abminnormNonZero(double tol) const {
    return mStorage->abminnormNonZero(tol);
 }
 
-void DenseSymMatrix::writeToStream(std::ostream& out) const {
+void DenseSymmetricMatrix::writeToStream(std::ostream& out) const {
    for (int i = 0; i < mStorage->m; i++) {
       for (int j = 0; j < mStorage->n; j++)
          out << mStorage->M[i][j] << "\t";
@@ -134,11 +134,11 @@ void DenseSymMatrix::writeToStream(std::ostream& out) const {
    }
 }
 
-void DenseSymMatrix::writeToStreamDense(std::ostream& out) const {
+void DenseSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
    writeToStream(out);
 }
 
-void DenseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
+void DenseSymmetricMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
    const int m = mStorage->m;
    const int n = mStorage->n;
    double** M = mStorage->M;
@@ -164,33 +164,33 @@ void DenseSymMatrix::fromGetDense(int row, int col, double* A, int lda, int rowE
 }
 
 
-void DenseSymMatrix::atPutDiagonal(int idiag, const Vector<double>& v) {
+void DenseSymmetricMatrix::atPutDiagonal(int idiag, const Vector<double>& v) {
    mStorage->atPutDiagonal(idiag, v);
 }
 
-void DenseSymMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
+void DenseSymmetricMatrix::atAddDiagonal(int idiag, const Vector<double>& v) {
    mStorage->atAddDiagonal(idiag, v);
 }
 
-void DenseSymMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
+void DenseSymmetricMatrix::fromGetDiagonal(int idiag, Vector<double>& v) const {
    mStorage->fromGetDiagonal(idiag, v);
 }
 
-void DenseSymMatrix::diagonal_add_constant_from(int from, int length, double value) {
+void DenseSymmetricMatrix::diagonal_add_constant_from(int from, int length, double value) {
    assert(0 <= from);
    assert(0 <= length);
    assert(from + length < this->size());
    mStorage->diagonal_add_constant_from(from, length, value);
 }
 
-void DenseSymMatrix::diagonal_set_to_constant_from(int from, int length, double value) {
+void DenseSymmetricMatrix::diagonal_set_to_constant_from(int from, int length, double value) {
    assert(0 <= from);
    assert(0 <= length);
    assert(from + length < this->size());
    mStorage->diagonal_set_to_constant_from(from, length, value);
 }
 
-void DenseSymMatrix::symAtPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) {
+void DenseSymmetricMatrix::symAtPutSpRow(int row, const double A[], int lenA, const int jcolA[], int& info) {
    // Lower triangular put
    int lA = lenA;
    while (lA > 0 && jcolA[lA - 1] > row)
@@ -203,37 +203,37 @@ void DenseSymMatrix::symAtPutSpRow(int row, const double A[], int lenA, const in
    }
 }
 
-void DenseSymMatrix::symAtPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
+void DenseSymmetricMatrix::symAtPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
    mStorage->atPutDense(row, col, A, lda, rowExtent, colExtent);
 }
 
-void DenseSymMatrix::symmetricScale(const Vector<double>& vec) {
+void DenseSymmetricMatrix::symmetricScale(const Vector<double>& vec) {
    mStorage->symmetricScale(vec);
 }
 
-void DenseSymMatrix::columnScale(const Vector<double>& vec) {
+void DenseSymmetricMatrix::columnScale(const Vector<double>& vec) {
    mStorage->columnScale(vec);
 }
 
-void DenseSymMatrix::rowScale(const Vector<double>& vec) {
+void DenseSymmetricMatrix::rowScale(const Vector<double>& vec) {
    mStorage->rowScale(vec);
 }
 
-void DenseSymMatrix::scalarMult(double num) {
+void DenseSymmetricMatrix::scalarMult(double num) {
    mStorage->scalarMult(num);
 }
 
 /* updates the upper left block only  if sizes does not matches */
-void DenseSymMatrix::matMult(double alpha, GenMatrix& A_, int transA, GenMatrix& B_, int transB, double beta) {
+void DenseSymmetricMatrix::matMult(double alpha, GeneralMatrix& A_, int transA, GeneralMatrix& B_, int transB, double beta) {
 
-   auto& A = dynamic_cast<DenseGenMatrix&>(A_);
-   auto& B = dynamic_cast<DenseGenMatrix&>(B_);
+   auto& A = dynamic_cast<DenseMatrix&>(A_);
+   auto& B = dynamic_cast<DenseMatrix&>(B_);
 
    // the other way around since fortran stores column-wise and we store row-wise
    char forTransA = (transA == 0 ? 'T' : 'N');
    char forTransB = (transB == 0 ? 'T' : 'N');
 
-   DenseSymMatrix& C = *this;
+   DenseSymmetricMatrix& C = *this;
 
    int m, n, k, kB;
    int ldc = mStorage->m;
@@ -265,7 +265,7 @@ void DenseSymMatrix::matMult(double alpha, GenMatrix& A_, int transA, GenMatrix&
 }
 
 
-void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,
+void DenseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent,
       int forceSymUpdate) {
 
    if (forceSymUpdate == 0) {
@@ -295,7 +295,7 @@ void DenseSymMatrix::symAtPutSubmatrix(int destRow, int destCol, const DoubleMat
    }
 }
 
-void DenseSymMatrix::atRankkUpdate(double alpha, double beta, DenseGenMatrix& U, int trans) {
+void DenseSymmetricMatrix::atRankkUpdate(double alpha, double beta, DenseMatrix& U, int trans) {
    //-----------------------------------------------
    // setup if the U is stored in column-major form
    // (FORTRAN Style)
@@ -336,7 +336,7 @@ void DenseSymMatrix::atRankkUpdate(double alpha, double beta, DenseGenMatrix& U,
    dsyrk_(&UPLO, &TRANS, &n, &k, &beta, &U.getStorageRef().M[0][0], &ldu, &alpha, &mStorage->M[0][0], &lda);
 }
 
-int DenseSymMatrix::getNumberOfNonZeros() const {
+int DenseSymmetricMatrix::getNumberOfNonZeros() const {
    assert(mStorage->m == mStorage->n);
    int nnz = 0;
    for (int i = 0; i < mStorage->m; i++) {

@@ -21,8 +21,8 @@ public:
          dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_) {};
 
    void factor2(DistributedQP* prob, Variables* vars) override;
-   void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymMatrix& SC) override;
-   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymMatrix& SC) override;
+   void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmetricMatrix& SC) override;
+   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymmetricMatrix& SC) override;
 
 private:
    bool switchedToSafeSlv{false};

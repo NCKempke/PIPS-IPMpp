@@ -12,8 +12,8 @@
 
 struct MpsRowInfo;
 struct MpsColInfo;
-class GenMatrix;
-class SymMatrix;
+class GeneralMatrix;
+class SymmetricMatrix;
 
 #ifdef TESTING
 class MpsReaderTester;
@@ -42,8 +42,8 @@ class MpsReader {
 #endif
 private:
    void insertElt(int irow[], int len, int jcol[], double dval[], int& ne, int row, int col, double val, int& ier);
-   void stuffMatrix(GenMatrix& A, int irow[], int nnz, int jcol[], double dA[]);
-   void stuffMatrix(SymMatrix& A, int irow[], int nnz, int jcol[], double dA[]);
+   void stuffMatrix(GeneralMatrix& A, int irow[], int nnz, int jcol[], double dA[]);
+   void stuffMatrix(SymmetricMatrix& A, int irow[], int nnz, int jcol[], double dA[]);
 protected:
    /** root of the filename for input (and possibly output) files */
    char* infilename;
@@ -138,7 +138,7 @@ protected:
    virtual void rowHasRange(int rownum, double val, int& iErr);
    virtual void scanHessSection(char line[62], int& iErr, int& return_getline);
 
-   virtual void readColsSection(Vector<double>& c, GenMatrix& A, GenMatrix& C, char line[62], int& iErr, int& return_getline);
+   virtual void readColsSection(Vector<double>& c, GeneralMatrix& A, GeneralMatrix& C, char line[62], int& iErr, int& return_getline);
    virtual void readColsSection(double c[], int irowA[], int jcolA[], double dA[], int irowC[], int jcolC[], double dC[], char line[62], int& iErr,
          int& return_getline);
    virtual void
@@ -152,7 +152,7 @@ protected:
    virtual void defaultBounds(double xlow[], char ixlow[], double xupp[], char ixupp[]);
    virtual void defaultBounds(Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp);
    virtual void readBoundsSection(double xlow[], char ixlow[], double xupp[], char ixupp[], char line[], int& ierr, int& kindOfLine);
-   virtual void readHessSection(SymMatrix& Q, char line[], int& ierr, int& kindOfLine);
+   virtual void readHessSection(SymmetricMatrix& Q, char line[], int& ierr, int& kindOfLine);
    virtual void readHessSection(int irowQ[], int jcolQ[], double dQ[], char line[], int& ierr, int& kindOfLine);
 
 public:
@@ -202,7 +202,7 @@ public:
     * has more than simple bounds.
     */
    virtual void
-   readQpBound(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, int& ierr);
+   readQpBound(Vector<double>& c, SymmetricMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, int& ierr);
    /**
     * Reads the various components of a QP in the "general" formulation
     * into their respective matrices and vectors, stored as objects
@@ -210,8 +210,8 @@ public:
     * the meaning of the variables.  @param iErr iErr is non-zero if
     * there was some error reading the data.  */
    virtual void
-   readQpGen(Vector<double>& c, SymMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, GenMatrix& A,
-         Vector<double>& b, GenMatrix& C, Vector<double>& clow, Vector<double>& iclow, Vector<double>& cupp, Vector<double>& icupp, int& ierr);
+   readQpGen(Vector<double>& c, SymmetricMatrix& Q, Vector<double>& xlow, Vector<double>& ixlow, Vector<double>& xupp, Vector<double>& ixupp, GeneralMatrix& A,
+         Vector<double>& b, GeneralMatrix& C, Vector<double>& clow, Vector<double>& iclow, Vector<double>& cupp, Vector<double>& icupp, int& ierr);
 
    /**
     * Reads the various components of a QP in the "general" formulation

@@ -1,41 +1,41 @@
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 #include <cstdlib>
 
 //***********************************************************
 //************************** TREE ***************************
 //***********************************************************
-StochInputTree::StochInputTree() : nodeInput(nullptr) {}
+DistributedInputTree::DistributedInputTree() : nodeInput(nullptr) {}
 
-StochInputTree::StochInputTree(const StochInputNode& root) {
-   nodeInput = new StochInputNode(root);
+DistributedInputTree::DistributedInputTree(const DistributedInputNode& root) {
+   nodeInput = new DistributedInputNode(root);
 }
 
-StochInputTree::StochInputTree(StochInputNode* root) {
+DistributedInputTree::DistributedInputTree(DistributedInputNode* root) {
    nodeInput = root;
 }
 
-StochInputTree::~StochInputTree() {
+DistributedInputTree::~DistributedInputTree() {
    if (nodeInput)
       delete nodeInput;
    for (size_t it = 0; it < children.size(); it++)
       delete children[it];
 }
 
-void StochInputTree::AddChild(const StochInputNode& node) {
-   children.push_back(new StochInputTree(node));
+void DistributedInputTree::AddChild(const DistributedInputNode& node) {
+   children.push_back(new DistributedInputTree(node));
 }
 
-void StochInputTree::AddChild(StochInputTree* subTree) {
+void DistributedInputTree::AddChild(DistributedInputTree* subTree) {
    children.push_back(subTree);
 }
 
 //***********************************************************
 //************************** NODE ***************************
 //***********************************************************
-StochInputTree::StochInputNode::StochInputNode(int id_, int n_, int my_, int myl_, int mz_, int mzl_) : id{id_}, n{n_}, my{my_}, myl{myl_}, mz{mz_},
+DistributedInputTree::DistributedInputNode::DistributedInputNode(int id_, int n_, int my_, int myl_, int mz_, int mzl_) : id{id_}, n{n_}, my{my_}, myl{myl_}, mz{mz_},
       mzl{mzl_} {}
 
-StochInputTree::StochInputNode::StochInputNode(void* user_data_, int id_, int n_, int my_, int mz_, FMAT fQ_, FNNZ fnnzQ_, FVEC fc_, FMAT fA_,
+DistributedInputTree::DistributedInputNode::DistributedInputNode(void* user_data_, int id_, int n_, int my_, int mz_, FMAT fQ_, FNNZ fnnzQ_, FVEC fc_, FMAT fA_,
       FNNZ fnnzA_, FMAT fB_, FNNZ fnnzB_, FVEC fb_, FMAT fC_, FNNZ fnnzC_, FMAT fD_, FNNZ fnnzD_, FVEC fclow_, FVEC ficlow_, FVEC fcupp_,
       FVEC ficupp_, FVEC fxlow_, FVEC fixlow_, FVEC fxupp_, FVEC fixupp_, bool deleteUserData_/*=false*/) : id(id_), n(n_), my(my_), mz(mz_),
       fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzC(fnnzC_), fnnzD(fnnzD_), fQ(fQ_), fA(fA_), fB(fB_), fC(fC_), fD(fD_), fc(fc_), fb(fb_),
@@ -44,7 +44,7 @@ StochInputTree::StochInputNode::StochInputNode(void* user_data_, int id_, int n_
 
 
 // full callback constructor without constraints
-StochInputTree::StochInputNode::StochInputNode(void* user_data_, int id_, FNNZ n_, FNNZ my_, FNNZ mz_, FMAT fQ_, FNNZ fnnzQ_, FVEC fc_, FMAT fA_,
+DistributedInputTree::DistributedInputNode::DistributedInputNode(void* user_data_, int id_, FNNZ n_, FNNZ my_, FNNZ mz_, FMAT fQ_, FNNZ fnnzQ_, FVEC fc_, FMAT fA_,
       FNNZ fnnzA_, FMAT fB_, FNNZ fnnzB_, FVEC fb_, FMAT fC_, FNNZ fnnzC_, FMAT fD_, FNNZ fnnzD_, FVEC fclow_, FVEC ficlow_, FVEC fcupp_,
       FVEC ficupp_, FVEC fxlow_, FVEC fixlow_, FVEC fxupp_, FVEC fixupp_, bool deleteUserData_/*=false*/) : id(id_), nCall(n_), myCall(my_),
       mzCall(mz_), fnnzQ(fnnzQ_), fnnzA(fnnzA_), fnnzB(fnnzB_), fnnzC(fnnzC_), fnnzD(fnnzD_), fQ(fQ_), fA(fA_), fB(fB_), fC(fC_), fD(fD_), fc(fc_),
@@ -52,7 +52,7 @@ StochInputTree::StochInputNode::StochInputNode(void* user_data_, int id_, FNNZ n
       user_data(user_data_), deleteUserData(deleteUserData_) {}
 
 // full callback constructor including linking constraints
-StochInputTree::StochInputNode::StochInputNode(void* user_data_, int id_, FNNZ n_, FNNZ my_, FNNZ myl_, FNNZ mz_, FNNZ mzl_, FMAT fQ_, FNNZ fnnzQ_,
+DistributedInputTree::DistributedInputNode::DistributedInputNode(void* user_data_, int id_, FNNZ n_, FNNZ my_, FNNZ myl_, FNNZ mz_, FNNZ mzl_, FMAT fQ_, FNNZ fnnzQ_,
       FVEC fc_, FMAT fA_, FNNZ fnnzA_, FMAT fB_, FNNZ fnnzB_, FMAT fBl_, FNNZ fnnzBl_, FVEC fb_, FVEC fbl_, FMAT fC_, FNNZ fnnzC_, FMAT fD_,
       FNNZ fnnzD_, FMAT fDl_, FNNZ fnnzDl_, FVEC fclow_, FVEC ficlow_, FVEC fcupp_, FVEC ficupp_, FVEC fdllow_, FVEC fidllow_, FVEC fdlupp_,
       FVEC fidlupp_, FVEC fxlow_, FVEC fixlow_, FVEC fxupp_, FVEC fixupp_, bool deleteUserData_/*=false*/) : id(id_), nCall(n_), myCall(my_),
@@ -61,10 +61,10 @@ StochInputTree::StochInputNode::StochInputNode(void* user_data_, int id_, FNNZ n
       ficlow(ficlow_), ficupp(ficupp_), fdllow(fdllow_), fdlupp(fdlupp_), fidllow(fidllow_), fidlupp(fidlupp_), fxlow(fxlow_), fxupp(fxupp_),
       fixlow(fixlow_), fixupp(fixupp_), user_data(user_data_), deleteUserData(deleteUserData_) {}
 
-StochInputTree::StochInputNode::StochInputNode(int id_) : id(id_) {}
+DistributedInputTree::DistributedInputNode::DistributedInputNode(int id_) : id(id_) {}
 
 
-StochInputTree::StochInputNode::~StochInputNode() {
+DistributedInputTree::DistributedInputNode::~DistributedInputNode() {
    if (deleteUserData)
       free(user_data);
 }

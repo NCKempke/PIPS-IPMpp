@@ -1,4 +1,4 @@
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 #include "PIPSIpmInterface.h"
 #include "sFactoryAug.h"
 #include "MehrotraStochSolver.h"
@@ -426,15 +426,15 @@ int main(int argc, char** argv) {
 
    int myl0 = 2;
    //build the problem tree
-   StochInputTree::StochInputNode dataLinkCons(&probData, 0, nx0, my0, myl0, mz0, mzl0, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl, fnnzBl, fb, fbl, fC,
+   DistributedInputTree::DistributedInputNode dataLinkCons(&probData, 0, nx0, my0, myl0, mz0, mzl0, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl, fnnzBl, fb, fbl, fC,
          fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow, fxupp, fixupp, false);
 
-   StochInputTree* root = new StochInputTree(dataLinkCons);
+   DistributedInputTree* root = new DistributedInputTree(dataLinkCons);
 #else
 
    int myl0 = 0;
    //build the problem tree
-   StochInputTree::StochInputNode data(&probData, 0,
+   DistributedInputTree::DistributedInputNode data(&probData, 0,
                    nx0,my0,mz0, //myl0, mzl0
                    fQ, fnnzQ, fc,
                    fA, fnnzA,
@@ -448,7 +448,7 @@ int main(int argc, char** argv) {
                   //fdllow, fidllow, fdlupp, fidlupp,
                    fxlow, fixlow, fxupp, fixupp, false );
 
-   StochInputTree* root = new StochInputTree(data);
+   DistributedInputTree* root = new DistributedInputTree(data);
 #endif
 
    for (int id = 1; id <= nScenarios; id++) {
@@ -462,14 +462,14 @@ int main(int argc, char** argv) {
       if (id == 2)
          nx = 4;
 
-      StochInputTree::StochInputNode dataLinkConsChild(&probData, id, nx, my, myl, mz, mzl, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl, fnnzBl, fb, fbl,
+      DistributedInputTree::DistributedInputNode dataLinkConsChild(&probData, id, nx, my, myl, mz, mzl, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl, fnnzBl, fb, fbl,
             fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow, fxupp, fixupp, false);
 
-      root->AddChild(new StochInputTree(dataLinkConsChild));
+      root->AddChild(new DistributedInputTree(dataLinkConsChild));
 #else
       int myl = 0;
 
-      StochInputTree::StochInputNode data(&probData, id,
+      DistributedInputTree::DistributedInputNode data(&probData, id,
                 nx, my, mz, //myl, mzl
                 fQ, fnnzQ, fc,
                 fA, fnnzA,
@@ -483,7 +483,7 @@ int main(int argc, char** argv) {
                 //fdllow, fidllow, fdlupp, fidlupp,
                 fxlow, fixlow, fxupp, fixupp, false);
 
-      root->AddChild(new StochInputTree(data));
+      root->AddChild(new DistributedInputTree(data));
 #endif
 
    }

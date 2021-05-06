@@ -10,11 +10,9 @@
 
 #include "Ma57Solver.h"
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsport.h"
-
 #include "mpi.h"
 
 
@@ -24,11 +22,11 @@
 class Ma57SolverRoot : public Ma57Solver {
 
 public:
-   Ma57SolverRoot(SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, const std::string& name = "root");
+   Ma57SolverRoot(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, std::string name = "root");
 
-   ~Ma57SolverRoot() = default;
+   ~Ma57SolverRoot() override = default;
 
-   void matrixRebuild(DoubleMatrix& matrixNew) override;
+   void matrixRebuild(AbstractMatrix& matrixNew) override;
    void matrixChanged() override;
 
    using Ma57Solver::solve;
@@ -38,8 +36,6 @@ public:
 private:
    const bool solve_in_parallel;
    const MPI_Comm comm;
-
-   void factorize();
 };
 
 

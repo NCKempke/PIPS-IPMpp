@@ -35,7 +35,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
     * where  Qq = Q + V^-1 Gamma + W^-1 Phi (so we estimate its nnzs as n_1 + nnzQ)
     */
 
-   auto* kkt_sp = new SparseSymMatrix(n, n + nnzQ + nnzB + nnzD);
+   auto* kkt_sp = new SparseSymmetricMatrix(n, n + nnzQ + nnzB + nnzD);
 
    SimpleVector<double> v(n);
    v.setToZero();
@@ -167,7 +167,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
    int dummy{0};
    int nx0{0};
 
-   SparseGenMatrix& A = prob->getLocalA();
+   SparseMatrix& A = prob->getLocalA();
    if (data->hasRAC())
       A.getSize(dummy, nx0);
 
@@ -175,8 +175,8 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
    SimpleVector<double> zi1(&zi[0], locnx);
 
    if (data->hasRAC()) {
-      SparseGenMatrix& C = prob->getLocalC();
-      SparseGenMatrix& R = prob->getLocalCrossHessian();
+      SparseMatrix& C = prob->getLocalC();
+      SparseMatrix& R = prob->getLocalCrossHessian();
 
       SimpleVector<double> zi2(&zi[locnx], locmy);
       SimpleVector<double> zi3(&zi[locnx + locmy], locmz);
@@ -191,7 +191,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
       const int nxMyMz = z0.length() - locmyl - locmzl;
 
       SimpleVector<double> z0myl(&z0[nxMyMz], locmyl);
-      SparseGenMatrix& F = prob->getLocalF();
+      SparseMatrix& F = prob->getLocalF();
       F.mult(1.0, z0myl, -1.0, zi1);
    }
 
@@ -200,12 +200,12 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
       const int nxMyMzMyl = z0.length() - locmzl;
 
       SimpleVector<double> z0mzl(&z0[nxMyMzMyl], locmzl);
-      SparseGenMatrix& G = prob->getLocalG();
+      SparseMatrix& G = prob->getLocalG();
       G.mult(1.0, z0mzl, -1.0, zi1);
    }
 }
 
-void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int) {
+void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) {
    assert(prob == data);
 
    const bool sc_is_sym = true;
@@ -242,9 +242,9 @@ void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob
    addBiTLeftKiBiRightToResBlockedParallelSolvers(sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0, SC.size(), 0, SC.size());
 }
 
-void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymMatrix& kkt_, GenMatrix& B_, GenMatrix&, int locnx, int locmy, int) {
-   SparseSymMatrix& kkt = dynamic_cast<SparseSymMatrix&>(kkt_);
-   SparseGenMatrix& B = dynamic_cast<SparseGenMatrix&>(B_);
+void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymmetricMatrix& kkt_, GeneralMatrix& B_, GeneralMatrix&, int locnx, int locmy, int) {
+   SparseSymmetricMatrix& kkt = dynamic_cast<SparseSymmetricMatrix&>(kkt_);
+   SparseMatrix& B = dynamic_cast<SparseMatrix&>(B_);
    //SparseGenMatrix& D   = reinterpret_cast<SparseGenMatrix&>(D_);
 
    int* jcolK = kkt.jcolM();
@@ -277,7 +277,7 @@ void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymMatrix& kkt_, GenMatrix
 }
 
 /* compute result += B_inner^T K^-1 Br */
-void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols) {
+void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols) {
    assert(Br.A.children.size() == 0);
 
    /* empty dummy */
@@ -287,7 +287,7 @@ void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseGenMatrix& res
 }
 
 /* compute result += [ Bl^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 Bl for cols begin_cols to end_cols in (Br - SUM_j Brmodj Xj) */
-void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sparse_res, bool sym_res, int begin_cols_br, int end_cols_br, int begin_cols_res, int end_cols_res) {
    int dummy;
 #ifndef NDEBUG
@@ -308,8 +308,8 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(DoubleMatrix& result
       data->getLocalCrossHessian().getSize(dummy, nx_border);
 
    int myl_border, mzl_border;
-   Br.F.mat->getSize(myl_border, dummy);
-   Br.G.mat->getSize(mzl_border, dummy);
+   Br.F.first->getSize(myl_border, dummy);
+   Br.G.first->getSize(mzl_border, dummy);
 
    if (sc_compute_blockwise_hierarchical)
       assert(end_cols_br <= nx_border + Br.n_empty_rows + myl_border + mzl_border);
@@ -344,14 +344,14 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(DoubleMatrix& result
 
       if (Br.has_RAC)
          BriT.reset(
-               new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*Br.R.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.A.mat).getTranspose(),
-                     dynamic_cast<SparseGenMatrix&>(*Br.C.mat).getTranspose(), Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat),
-                     dynamic_cast<SparseGenMatrix&>(*Br.G.mat)));
+               new BorderBiBlock(dynamic_cast<SparseMatrix&>(*Br.R.first).getTranspose(), dynamic_cast<SparseMatrix&>(*Br.A.first).getTranspose(),
+                     dynamic_cast<SparseMatrix&>(*Br.C.first).getTranspose(), Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first),
+                     dynamic_cast<SparseMatrix&>(*Br.G.first)));
       else if (Br.use_local_RAC)
          BriT.reset(new BorderBiBlock(data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-               Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat)));
+               Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first), dynamic_cast<SparseMatrix&>(*Br.G.first)));
       else
-         BriT.reset(new BorderBiBlock(Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat), dynamic_cast<SparseGenMatrix&>(*Br.G.mat), false));
+         BriT.reset(new BorderBiBlock(Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first), dynamic_cast<SparseMatrix&>(*Br.G.first), false));
 
 
       // TODO : return early if all Bordermods and Br were empty
@@ -368,15 +368,15 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(DoubleMatrix& result
       std::unique_ptr<BorderBiBlock> BriT{};
 
       if (Br.has_RAC)
-         BriT.reset(new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*Br.R.mat), dynamic_cast<SparseGenMatrix&>(*Br.A.mat),
-               dynamic_cast<SparseGenMatrix&>(*Br.C.mat), Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
+         BriT.reset(new BorderBiBlock(dynamic_cast<SparseMatrix&>(*Br.R.first), dynamic_cast<SparseMatrix&>(*Br.A.first),
+               dynamic_cast<SparseMatrix&>(*Br.C.first), Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first).getTranspose(),
+               dynamic_cast<SparseMatrix&>(*Br.G.first).getTranspose()));
       else if (Br.use_local_RAC)
          BriT.reset(new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(), data->getLocalC(), Br.n_empty_rows,
-               dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose()));
+               dynamic_cast<SparseMatrix&>(*Br.F.first).getTranspose(), dynamic_cast<SparseMatrix&>(*Br.G.first).getTranspose()));
       else
-         BriT.reset(new BorderBiBlock(Br.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Br.F.mat).getTranspose(),
-               dynamic_cast<SparseGenMatrix&>(*Br.G.mat).getTranspose(), false));
+         BriT.reset(new BorderBiBlock(Br.n_empty_rows, dynamic_cast<SparseMatrix&>(*Br.F.first).getTranspose(),
+               dynamic_cast<SparseMatrix&>(*Br.G.first).getTranspose(), false));
 
 
       if (!Br.isEmpty())
@@ -386,7 +386,7 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(DoubleMatrix& result
 }
 
 /* compute result += [ B_{inner}^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 B_{inner} */
-void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
+void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
       bool sym_res, int begin_cols, int end_cols, int) {
    int res_m, res_n;
    result.getSize(res_m, res_n);
@@ -404,23 +404,23 @@ void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DoubleMatrix& resul
 
 /* compute res += [Bli^T X_i]^T = [ Bli^T Ki^-1 (Bri - Br_mod_border - Bi_{inner} X0) ]^T = (Bri^T - SUM_i Xi^T Brmodi^T - X0^T Bi_{inner}^T) Ki^{-1} Bli and add it to res
  * begin_cols to end_cols is the position in res */
-void DistributedLeafLinearSystem::LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
+void DistributedLeafLinearSystem::LniTransMultHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br,
       std::vector<BorderMod>& Br_mod_border, bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) {
    std::unique_ptr<BorderBiBlock> BliT{};
 
    if (Bl.has_RAC)
-      BliT.reset(new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*Bl.R.mat).getTranspose(), dynamic_cast<SparseGenMatrix&>(*Bl.A.mat).getTranspose(),
-            dynamic_cast<SparseGenMatrix&>(*Bl.C.mat).getTranspose(), Bl.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Bl.F.mat),
-            dynamic_cast<SparseGenMatrix&>(*Bl.G.mat)));
+      BliT.reset(new BorderBiBlock(dynamic_cast<SparseMatrix&>(*Bl.R.first).getTranspose(), dynamic_cast<SparseMatrix&>(*Bl.A.first).getTranspose(),
+            dynamic_cast<SparseMatrix&>(*Bl.C.first).getTranspose(), Bl.n_empty_rows, dynamic_cast<SparseMatrix&>(*Bl.F.first),
+            dynamic_cast<SparseMatrix&>(*Bl.G.first)));
    else if (Bl.use_local_RAC)
       BliT.reset(new BorderBiBlock(data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
-            Bl.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat)));
+            Bl.n_empty_rows, dynamic_cast<SparseMatrix&>(*Bl.F.first), dynamic_cast<SparseMatrix&>(*Bl.G.first)));
    else
-      BliT.reset(new BorderBiBlock(Bl.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*Bl.F.mat), dynamic_cast<SparseGenMatrix&>(*Bl.G.mat), false));
+      BliT.reset(new BorderBiBlock(Bl.n_empty_rows, dynamic_cast<SparseMatrix&>(*Bl.F.first), dynamic_cast<SparseMatrix&>(*Bl.G.first), false));
 
    /* constructed to be able to call addLeftBorderKiInvBrToRes.. */
-   std::unique_ptr<StringGenMatrix> localF_view(std::make_unique<StringGenMatrix>(true, &data->getLocalF(), nullptr, mpiComm, true));
-   std::unique_ptr<StringGenMatrix> localG_view(std::make_unique<StringGenMatrix>(true, &data->getLocalG(), nullptr, mpiComm, true));
+   std::unique_ptr<StripMatrix> localF_view(std::make_unique<StripMatrix>(true, &data->getLocalF(), nullptr, mpiComm, true));
+   std::unique_ptr<StripMatrix> localG_view(std::make_unique<StripMatrix>(true, &data->getLocalG(), nullptr, mpiComm, true));
 
    assert(n_empty_rows_inner_border >= 0);
 
@@ -444,25 +444,25 @@ void DistributedLeafLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
 
    assert(rhs.first);
    if (border.has_RAC) {
-      assert(border.R.mat);
-      assert(border.A.mat);
-      assert(border.C.mat);
+      assert(border.R.first);
+      assert(border.A.first);
+      assert(border.C.first);
    }
-   assert(border.F.mat);
-   assert(border.G.mat);
+   assert(border.F.first);
+   assert(border.G.first);
 
    std::unique_ptr<BorderBiBlock> border_block{};
 
    if (border.has_RAC)
-      border_block.reset(new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*border.R.mat), dynamic_cast<SparseGenMatrix&>(*border.A.mat),
-            dynamic_cast<SparseGenMatrix&>(*border.C.mat), border.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*border.F.mat),
-            dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
+      border_block.reset(new BorderBiBlock(dynamic_cast<SparseMatrix&>(*border.R.first), dynamic_cast<SparseMatrix&>(*border.A.first),
+            dynamic_cast<SparseMatrix&>(*border.C.first), border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first),
+            dynamic_cast<SparseMatrix&>(*border.G.first)));
    else if (border.use_local_RAC)
       border_block.reset(new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(), data->getLocalC(), border.n_empty_rows,
-            dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
+            dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first)));
    else
       border_block.reset(
-            new BorderBiBlock(border.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat),
+            new BorderBiBlock(border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first),
                   false));
 
    if (border_block->isEmpty())
@@ -527,25 +527,25 @@ void DistributedLeafLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
 
    assert(rhs.first);
    if (border.has_RAC) {
-      assert(border.R.mat);
-      assert(border.A.mat);
-      assert(border.C.mat);
+      assert(border.R.first);
+      assert(border.A.first);
+      assert(border.C.first);
    }
-   assert(border.F.mat);
-   assert(border.G.mat);
+   assert(border.F.first);
+   assert(border.G.first);
 
    std::unique_ptr<BorderBiBlock> border_block{};
 
    if (border.has_RAC)
-      border_block.reset(new BorderBiBlock(dynamic_cast<SparseGenMatrix&>(*border.R.mat), dynamic_cast<SparseGenMatrix&>(*border.A.mat),
-            dynamic_cast<SparseGenMatrix&>(*border.C.mat), border.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*border.F.mat),
-            dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
+      border_block.reset(new BorderBiBlock(dynamic_cast<SparseMatrix&>(*border.R.first), dynamic_cast<SparseMatrix&>(*border.A.first),
+            dynamic_cast<SparseMatrix&>(*border.C.first), border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first),
+            dynamic_cast<SparseMatrix&>(*border.G.first)));
    else if (border.use_local_RAC)
       border_block.reset(new BorderBiBlock(data->getLocalCrossHessian(), data->getLocalA(), data->getLocalC(), border.n_empty_rows,
-            dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat)));
+            dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first)));
    else
       border_block.reset(
-            new BorderBiBlock(border.n_empty_rows, dynamic_cast<SparseGenMatrix&>(*border.F.mat), dynamic_cast<SparseGenMatrix&>(*border.G.mat),
+            new BorderBiBlock(border.n_empty_rows, dynamic_cast<SparseMatrix&>(*border.F.first), dynamic_cast<SparseMatrix&>(*border.G.first),
                   false));
 
    if (border_block->isEmpty())

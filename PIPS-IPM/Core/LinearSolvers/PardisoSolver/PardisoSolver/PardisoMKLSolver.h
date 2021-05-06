@@ -16,8 +16,8 @@ class PardisoMKLSolver : public PardisoSolver {
 public:
    void firstCall() override;
 
-   PardisoMKLSolver(const SparseSymMatrix* sgm);
-   PardisoMKLSolver(const DenseSymMatrix* m);
+   PardisoMKLSolver(const SparseSymmetricMatrix* sgm);
+   PardisoMKLSolver(const DenseSymmetricMatrix* m);
 
 protected:
    void setIparm(int* iparm) const override;

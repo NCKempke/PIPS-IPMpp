@@ -1,10 +1,10 @@
 #ifndef STOCHSYMMATRIX_H
 #define STOCHSYMMATRIX_H
 
-#include "DoubleMatrix.h"
-#include "SparseSymMatrix.h"
-#include "SparseGenMatrix.h"
-#include "StringGenMatrix.h"
+#include "AbstractMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "SparseMatrix.h"
+#include "StripMatrix.h"
 #include "pipsport.h"
 
 #include <vector>
@@ -13,7 +13,7 @@
 
 #include "mpi.h"
 
-class BorderedSymMatrix;
+class BorderedSymmetricMatrix;
 
 
 /*
@@ -25,7 +25,7 @@ class BorderedSymMatrix;
  * [ RN            QN  ]
  */
 
-class StochSymMatrix : public SymMatrix {
+class DistributedSymmetricMatrix : public SymmetricMatrix {
 
 private:
 
@@ -34,29 +34,29 @@ private:
    virtual void writeToStreamDenseChild(std::stringstream& out, int offset) const;
 
 public:
-   StochSymMatrix(SymMatrix* diag, SparseGenMatrix* border, MPI_Comm mpiComm);
+   DistributedSymmetricMatrix(SymmetricMatrix* diag, SparseMatrix* border, MPI_Comm mpiComm);
 
    /** Constructs a matrix with local size 'local_n' having 'local_nnz' local nonzeros
        and set the global size and the id to to 'global_n' and 'id', respectively.
        The parameter 'id' is used for output/debug purposes only.
        The created matrix will have no children.*/
-   StochSymMatrix(long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm);
+   DistributedSymmetricMatrix(long long global_n, int local_n, int local_nnz, MPI_Comm mpiComm);
 
-   ~StochSymMatrix() override;
+   ~DistributedSymmetricMatrix() override;
 
-   std::vector<StochSymMatrix*> children;
-   SymMatrix* diag{};
-   SparseGenMatrix* border{};
+   std::vector<DistributedSymmetricMatrix*> children;
+   SymmetricMatrix* diag{};
+   SparseMatrix* border{};
 
    long long n{0};
    MPI_Comm mpiComm{MPI_COMM_NULL};
    int iAmDistrib{0};
 
-   void AddChild(StochSymMatrix* child);
+   void AddChild(DistributedSymmetricMatrix* child);
 
-   [[nodiscard]] SymMatrix* clone() const override;
+   [[nodiscard]] SymmetricMatrix* clone() const override;
 
-   [[nodiscard]] int isKindOf(int type) const override;
+   [[nodiscard]] int is_a(int type) const override;
 
    void fromGetDense(int, int, double*, int, int, int) const override { assert(false && "Not implemented"); };
    void symAtPutSpRow(int, const double[], int, const int[], int&) override { assert(false && "Not implemented"); };
@@ -66,14 +66,14 @@ public:
 
    [[nodiscard]] long long size() const override;
 
-   void symAtPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert(false && "Not implemented"); };;
+   void symAtPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert(false && "Not implemented"); };;
    void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) const override { assert(false && "Not implemented"); };
 
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   [[nodiscard]] double abmaxnorm() const override;
-   using DoubleMatrix::abminnormNonZero;
+   [[nodiscard]] double inf_norm() const override;
+   using AbstractMatrix::abminnormNonZero;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void writeToStream(std::ostream&) const override { assert(false && "Not implemented"); };
@@ -100,35 +100,35 @@ public:
    }
 
    // TODO specify border bottom and left..
-   virtual BorderedSymMatrix* raiseBorder(int n_vars);
+   virtual BorderedSymmetricMatrix* raiseBorder(int n_vars);
    virtual void splitMatrix(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms);
 
    void recomputeSize();
 protected:
-   virtual StringGenMatrix* shaveBorder(int n_vars);
-   virtual StringGenMatrix* shaveBorder2(int n_vars);
+   virtual StripMatrix* shaveBorder(int n_vars);
+   virtual StripMatrix* shaveBorder2(int n_vars);
 
-   StochSymMatrix* parent{};
+   DistributedSymmetricMatrix* parent{};
 };
 
 /** 
  * Dummy stochastic symmetric matrix
  */
 
-class StochSymDummyMatrix : public StochSymMatrix {
+class StochSymDummyMatrix : public DistributedSymmetricMatrix {
 
 private:
    void writeToStreamDenseChild(std::stringstream&, int) const override {};
 
 public:
 
-   StochSymDummyMatrix() : StochSymMatrix(0, 0, 0, MPI_COMM_NULL) {};
+   StochSymDummyMatrix() : DistributedSymmetricMatrix(0, 0, 0, MPI_COMM_NULL) {};
 
    ~StochSymDummyMatrix() override = default;
 
-   [[nodiscard]] SymMatrix* clone() const override { return new StochSymDummyMatrix(); };
+   [[nodiscard]] SymmetricMatrix* clone() const override { return new StochSymDummyMatrix(); };
 
-   [[nodiscard]] int isKindOf(int type) const override;
+   [[nodiscard]] int is_a(int type) const override;
 
    void getSize(long long& m, long long& n) const override {
       m = 0;
@@ -144,7 +144,7 @@ public:
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
 
-   double abmaxnorm() const override { return 0.0; }
+   double inf_norm() const override { return 0.0; }
    double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); }
 
    void writeToStreamDense(std::ostream&) const override {};
@@ -160,18 +160,18 @@ public:
    void rowScale(const Vector<double>&) override {};
    void scalarMult(double) override {};
 
-   BorderedSymMatrix* raiseBorder(int) override {
+   BorderedSymmetricMatrix* raiseBorder(int) override {
       assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX");
       return nullptr;
    };
    void splitMatrix(const std::vector<unsigned int>&, const std::vector<MPI_Comm>&) override {};
 
 protected:
-   StringGenMatrix* shaveBorder(int) override { return new StringGenDummyMatrix(); };
-   StringGenMatrix* shaveBorder2(int) override { return new StringGenDummyMatrix(); };
+   StripMatrix* shaveBorder(int) override { return new StringGenDummyMatrix(); };
+   StripMatrix* shaveBorder2(int) override { return new StringGenDummyMatrix(); };
 
 };
 
-typedef SmartPointer<StochSymMatrix> StochSymMatrixHandle;
+typedef SmartPointer<DistributedSymmetricMatrix> StochSymMatrixHandle;
 
 #endif

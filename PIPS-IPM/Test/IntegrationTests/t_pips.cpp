@@ -63,7 +63,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
    testing::internal::CaptureStdout();
 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
-   std::unique_ptr<StochInputTree> tree(reader.read_problem());
+   std::unique_ptr<DistributedInputTree> tree(reader.read_problem());
 
    pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 

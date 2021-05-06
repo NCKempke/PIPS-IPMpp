@@ -4,8 +4,8 @@
 
 #include "DistributedTreeCallbacks.h"
 #include "DistributedQP.hpp"
-#include "StochSymMatrix.h"
-#include "StochGenMatrix.h"
+#include "DistributedSymmetricMatrix.h"
+#include "DistributedMatrix.h"
 #include "DistributedVector.h"
 #include "SimpleVector.h"
 #include <cmath>
@@ -33,7 +33,7 @@ DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_readi
       numProcs = PIPS_MPIgetSize();
 }
 
-DistributedTreeCallbacks::DistributedTreeCallbacks(StochInputTree* inputTree)
+DistributedTreeCallbacks::DistributedTreeCallbacks(DistributedInputTree* inputTree)
       : DistributedTree(), print_tree_sizes_on_reading{pips_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
@@ -146,9 +146,9 @@ bool DistributedTreeCallbacks::hasPresolved() {
 }
 
 void DistributedTreeCallbacks::initPresolvedData(const DistributedQP& presolved_data) {
-   const StochSymMatrix& Q = dynamic_cast<const StochSymMatrix&>(*presolved_data.Q);
-   const StochGenMatrix& A = dynamic_cast<const StochGenMatrix&>(*presolved_data.A);
-   const StochGenMatrix& C = dynamic_cast<const StochGenMatrix&>(*presolved_data.C);
+   const DistributedSymmetricMatrix& Q = dynamic_cast<const DistributedSymmetricMatrix&>(*presolved_data.Q);
+   const DistributedMatrix& A = dynamic_cast<const DistributedMatrix&>(*presolved_data.A);
+   const DistributedMatrix& C = dynamic_cast<const DistributedMatrix&>(*presolved_data.C);
 
    const DistributedVector<double>& g = dynamic_cast<const DistributedVector<double>&>(*presolved_data.g);
    const DistributedVector<double>& b = dynamic_cast<const DistributedVector<double>&>(*presolved_data.bA);
@@ -161,7 +161,7 @@ void DistributedTreeCallbacks::initPresolvedData(const DistributedQP& presolved_
 }
 
 void
-DistributedTreeCallbacks::initPresolvedData(const StochSymMatrix& Q, const StochGenMatrix& A, const StochGenMatrix& C, const DistributedVector<double>& nxVec,
+DistributedTreeCallbacks::initPresolvedData(const DistributedSymmetricMatrix& Q, const DistributedMatrix& A, const DistributedMatrix& C, const DistributedVector<double>& nxVec,
       const DistributedVector<double>& myVec, const DistributedVector<double>& mzVec, int mylParent, int mzlParent) {
    assert(!is_hierarchical_root || (false && "cannot be used with hierarchical data"));
    assert(!has_presolved_data);
@@ -461,7 +461,7 @@ void DistributedTreeCallbacks::assertTreeStructureCorrect() const {
       assertTreeStructureIsMyNode();
 }
 
-StochSymMatrix* DistributedTreeCallbacks::createQ() const {
+DistributedSymmetricMatrix* DistributedTreeCallbacks::createQ() const {
    assert(!is_hierarchical_root && !is_hierarchical_inner_root && !is_hierarchical_inner_leaf);
 
    //is this node a dead-end for this process?
@@ -471,19 +471,19 @@ StochSymMatrix* DistributedTreeCallbacks::createQ() const {
    if (data->nnzQ < 0)
       data->fnnzQ(data->user_data, data->id, &data->nnzQ);
 
-   StochSymMatrix* Q = new StochSymMatrix(N, data->n, data->nnzQ, commWrkrs);
+   DistributedSymmetricMatrix* Q = new DistributedSymmetricMatrix(N, data->n, data->nnzQ, commWrkrs);
 
-   data->fQ(data->user_data, data->id, dynamic_cast<SparseSymMatrix*>(Q->diag)->krowM(), dynamic_cast<SparseSymMatrix*>(Q->diag)->jcolM(),
-         dynamic_cast<SparseSymMatrix*>(Q->diag)->M());
+   data->fQ(data->user_data, data->id, dynamic_cast<SparseSymmetricMatrix*>(Q->diag)->krowM(), dynamic_cast<SparseSymmetricMatrix*>(Q->diag)->jcolM(),
+         dynamic_cast<SparseSymmetricMatrix*>(Q->diag)->M());
 
    for (size_t it = 0; it < children.size(); it++) {
-      StochSymMatrix* child = children[it]->createQ();
+      DistributedSymmetricMatrix* child = children[it]->createQ();
       Q->AddChild(child);
    }
    return Q;
 }
 
-StochGenMatrix*
+DistributedMatrix*
 DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_ABmat, DATA_INT n_Mat, DATA_INT nnzAmat, DATA_NNZ fnnzAmat, DATA_MAT Amat,
       DATA_INT nnzBmat, DATA_NNZ fnnzBmat, DATA_MAT Bmat, DATA_INT m_Blmat, DATA_INT nnzBlmat, DATA_NNZ fnnzBlmat, DATA_MAT Blmat,
       const std::string& prefix_for_print) const {
@@ -501,7 +501,7 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
    if (data->*nnzAmat < 0)
       (data->*fnnzAmat)(data->user_data, data->id, &(data->*nnzAmat));
 
-   StochGenMatrix* A = nullptr;
+   DistributedMatrix* A = nullptr;
 
    if (root) {
       data->*nnzBmat = 0;
@@ -509,18 +509,18 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
       if (data->*fnnzBlmat != nullptr) {
          // populate B with A's data B_0 is the A_0 from the theoretical form; also fill Bl
          // (i.e. the first block of linking constraints)
-         A = new StochGenMatrix(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
+         A = new DistributedMatrix(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
                data->*m_Blmat, data->*n_Mat, data->*nnzBlmat, commWrkrs);
       }
       else {
          // populate B with A's data B_0 is the A_0 from the theoretical form
-         A = new StochGenMatrix(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
+         A = new DistributedMatrix(this->*MY + this->*MYL, N, data->*m_ABmat, np, data->*nnzBmat, data->*m_ABmat, data->*n_Mat, data->*nnzAmat,
                commWrkrs);
       }
 
       //populate submatrix B
-      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Bmat)->krowM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(),
-            dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Bmat)->krowM(), dynamic_cast<SparseMatrix*>(A->Bmat)->jcolM(),
+            dynamic_cast<SparseMatrix*>(A->Bmat)->M());
 
       if (print_tree_sizes_on_reading)
          printf("root  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n", prefix_for_print.c_str(), data->*m_ABmat,
@@ -533,18 +533,18 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
          (data->*fnnzBmat)(data->user_data, data->id, &(data->*nnzBmat));
 
       if (data->fnnzBl != nullptr) {
-         A = new StochGenMatrix(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, data->*m_Blmat,
+         A = new DistributedMatrix(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, data->*m_Blmat,
                data->*n_Mat, data->*nnzBlmat, commWrkrs);
       }
       else {
-         A = new StochGenMatrix(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, commWrkrs);
+         A = new DistributedMatrix(this->*MY, N, data->*m_ABmat, np, data->*nnzAmat, data->*m_ABmat, data->*n_Mat, data->*nnzBmat, commWrkrs);
       }
 
       //populate the submatrices A, B
-      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Amat)->krowM(), dynamic_cast<SparseGenMatrix*>(A->Amat)->jcolM(),
-            dynamic_cast<SparseGenMatrix*>(A->Amat)->M());
-      (data->*Bmat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Bmat)->krowM(), dynamic_cast<SparseGenMatrix*>(A->Bmat)->jcolM(),
-            dynamic_cast<SparseGenMatrix*>(A->Bmat)->M());
+      (data->*Amat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Amat)->krowM(), dynamic_cast<SparseMatrix*>(A->Amat)->jcolM(),
+            dynamic_cast<SparseMatrix*>(A->Amat)->M());
+      (data->*Bmat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Bmat)->krowM(), dynamic_cast<SparseMatrix*>(A->Bmat)->jcolM(),
+            dynamic_cast<SparseMatrix*>(A->Bmat)->M());
 
       if (print_tree_sizes_on_reading)
          printf("  -- m%s=%d  m%sl=%d nx=%d   1st stg nx=%d nnzA=%d nnzB=%d, nnzBl=%d\n", prefix_for_print.c_str(), data->*m_ABmat,
@@ -553,18 +553,18 @@ DistributedTreeCallbacks::createMatrix(TREE_SIZE MY, TREE_SIZE MYL, DATA_INT m_A
 
    // populate Bl if existent
    if (data->*Blmat)
-      (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseGenMatrix*>(A->Blmat)->krowM(), dynamic_cast<SparseGenMatrix*>(A->Blmat)->jcolM(),
-            dynamic_cast<SparseGenMatrix*>(A->Blmat)->M());
+      (data->*Blmat)(data->user_data, data->id, dynamic_cast<SparseMatrix*>(A->Blmat)->krowM(), dynamic_cast<SparseMatrix*>(A->Blmat)->jcolM(),
+            dynamic_cast<SparseMatrix*>(A->Blmat)->M());
 
    for (size_t it = 0; it < children.size(); it++) {
-      StochGenMatrix* child = dynamic_cast<DistributedTreeCallbacks*>(children[it])->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
+      DistributedMatrix* child = dynamic_cast<DistributedTreeCallbacks*>(children[it])->createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat,
             fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix_for_print);
       A->AddChild(child);
    }
    return A;
 }
 
-StochGenMatrix* DistributedTreeCallbacks::createA() const {
+DistributedMatrix* DistributedTreeCallbacks::createA() const {
    TREE_SIZE MY = &DistributedTree::MY;
    TREE_SIZE MYL = &DistributedTree::MYL;
 
@@ -587,7 +587,7 @@ StochGenMatrix* DistributedTreeCallbacks::createA() const {
    return createMatrix(MY, MYL, m_ABmat, n_Mat, nnzAmat, fnnzAmat, Amat, nnzBmat, fnnzBmat, Bmat, m_Blmat, nnzBlmat, fnnzBlmat, Blmat, prefix);
 }
 
-StochGenMatrix* DistributedTreeCallbacks::createC() const {
+DistributedMatrix* DistributedTreeCallbacks::createC() const {
    TREE_SIZE MZ = &DistributedTree::MZ;
    TREE_SIZE MZL = &DistributedTree::MZL;
 

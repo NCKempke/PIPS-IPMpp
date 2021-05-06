@@ -1,28 +1,28 @@
 /*
- * StringGenMatrix.h
+ * StripMatrix.h
  *
  *  Created on: Sep 14, 2020
  *      Author: bzfkempk
  */
 
-#ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_
-#define PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_
+#ifndef PIPS_IPM_CORE_STOCHLINEARALGEBRA_StripMatrix_H_
+#define PIPS_IPM_CORE_STOCHLINEARALGEBRA_StripMatrix_H_
 
-#include "DoubleMatrix.h"
-#include "SparseGenMatrix.h"
+#include "AbstractMatrix.h"
+#include "SparseMatrix.h"
 #include "DoubleMatrixTypes.h"
 
 #include "mpi.h"
 
 class DistributedTreeCallbacks;
 
-class StringGenMatrix : public GenMatrix {
+class StripMatrix : public GeneralMatrix {
 public:
    // TODO : keep public? ...
    // like stoch gen matrix possibly infinite but we will only have one layer of children at all times...
-   std::vector<StringGenMatrix*> children;
-   GenMatrix* mat{}; // never null
-   GenMatrix* mat_link{}; // possibly null
+   GeneralMatrix* first{}; // never null
+   GeneralMatrix* last{}; // possibly null
+   std::vector<StripMatrix*> children;
    bool is_vertical{false};
 
 protected:
@@ -36,25 +36,25 @@ protected:
    // will not delete its data when deleted
    const bool is_view{false};
 public:
-   StringGenMatrix() = default;
+   StripMatrix() = default;
 
-   StringGenMatrix(bool is_vertical, GenMatrix* mat, GenMatrix* mat_link, MPI_Comm mpi_comm_, bool is_view = false);
+   StripMatrix(bool is_vertical, GeneralMatrix* first, GeneralMatrix* last, MPI_Comm mpi_comm_, bool is_view = false);
 
-   ~StringGenMatrix() override;
+   ~StripMatrix() override;
 
    [[nodiscard]] MPI_Comm getComm() const { return mpi_comm; };
 
-   virtual void addChild(StringGenMatrix* child);
+   virtual void addChild(StripMatrix* child);
 
    [[nodiscard]] virtual bool isEmpty() const;
-   [[nodiscard]] int isKindOf(int matrix) const override;
+   [[nodiscard]] int is_a(int matrix) const override;
 
    /** y = beta * y + alpha * this * x */
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    /** y = beta * y + alpha * this^T * x */
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    void scalarMult(double num) override;
 
    void writeToStreamDense(std::ostream&) const override;
@@ -86,7 +86,7 @@ public:
    virtual void recomputeNonzeros();
    [[nodiscard]] int numberOfNonZeros() const override;
 
-   [[nodiscard]] GenMatrix* shaveBottom(int n_rows) override;
+   [[nodiscard]] GeneralMatrix* shaveBottom(int n_rows) override;
 
    /* methods not needed for Hierarchical approach */
    [[nodiscard]] double abminnormNonZero(double) const override {
@@ -100,11 +100,11 @@ public:
    void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) const override { assert("not implemented" && 0); };
    void getDiagonal(Vector<double>&) const override { assert("not implemented" && 0); };
    void setToDiagonal(const Vector<double>&) override { assert("not implemented" && 0); };
-   void matTransDMultMat(const Vector<double>&, SymMatrix**) const override { assert("not implemented" && 0); };
-   void matTransDinvMultMat(const Vector<double>&, SymMatrix**) const override { assert("not implemented" && 0); };
+   void matTransDMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert("not implemented" && 0); };
+   void matTransDinvMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert("not implemented" && 0); };
    void symmetricScale(const Vector<double>&) override { assert("not implemented" && 0); };
    void writeToStream(std::ostream&) const override { assert("not implemented" && 0); };
-   void atPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert("not implemented" && 0); };
+   void atPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert("not implemented" && 0); };
    void atPutDense(int, int, const double*, int, int, int) override { assert("not implemented" && 0); };
    void atPutSpRow(int, const double[], int, const int[], int&) override { assert("not implemented" && 0); };
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("not implemented" && 0); };
@@ -138,18 +138,18 @@ protected:
 /**
  * Dummy version ...
  */
-class StringGenDummyMatrix : public StringGenMatrix {
+class StringGenDummyMatrix : public StripMatrix {
 public:
    StringGenDummyMatrix() = default;
    ~StringGenDummyMatrix() override = default;
 
-   void addChild(StringGenMatrix*) override {};
+   void addChild(StripMatrix*) override {};
 
    [[nodiscard]] bool isEmpty() const override { return true; };
-   [[nodiscard]] int isKindOf(int type) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStringGenMatrix; };
+   [[nodiscard]] int is_a(int type) const override { return type == kStringGenDummyMatrix || type == kStringMatrix || type == kStripMatrix; };
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
-   [[nodiscard]] double abmaxnorm() const override { return -std::numeric_limits<double>::infinity(); };
+   [[nodiscard]] double inf_norm() const override { return -std::numeric_limits<double>::infinity(); };
    void scalarMult(double) override {};
    void writeToStream(std::ostream&) const override {};
    void writeToStreamDenseRow(std::ostream&, int) const override {};
@@ -166,7 +166,7 @@ public:
    void recomputeNonzeros() override {};
    [[nodiscard]] int numberOfNonZeros() const override { return 0; };
 
-   GenMatrix* shaveBottom(int) override { return new StringGenDummyMatrix(); };
+   GeneralMatrix* shaveBottom(int) override { return new StringGenDummyMatrix(); };
 
    void splitAlongTree(const DistributedTreeCallbacks&) override { assert(false && "should not end up here"); };
 
@@ -196,4 +196,4 @@ protected:
    void addColSumsHorizontal(Vector<double>&) const override {};
 };
 
-#endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_STRINGGENMATRIX_H_ */
+#endif /* PIPS_IPM_CORE_STOCHLINEARALGEBRA_StripMatrix_H_ */

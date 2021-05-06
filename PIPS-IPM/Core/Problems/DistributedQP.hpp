@@ -4,11 +4,11 @@
 #include "QP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
-#include "StochSymMatrix.h"
-#include "SparseSymMatrix.h"
-#include "StochGenMatrix.h"
+#include "DistributedSymmetricMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "DistributedMatrix.h"
 #include "DistributedVector.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "DistributedTreeCallbacks.h"
 #include "pipschecks.h"
 #include "pipsport.h"
@@ -24,8 +24,8 @@ protected:
 
 public:
    /** constructor that sets up pointers to the data objects that are passed as arguments */
-   DistributedQP(const DistributedTree* stochNode, Vector<double>* c, SymMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
-         Vector<double>* ixupp, GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
+   DistributedQP(const DistributedTree* stochNode, Vector<double>* c, SymmetricMatrix* Q, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp,
+         Vector<double>* ixupp, GeneralMatrix* A, Vector<double>* bA, GeneralMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp,
          Vector<double>* ciupp, bool add_children = true, bool is_hierarchy_root = false, bool is_hierarchy_inner_root = false,
          bool is_hierarchy_inner_leaf = false);
 
@@ -68,30 +68,30 @@ public:
 
    bool exploitingLinkStructure() { return useLinkStructure; };
 
-   SparseSymMatrix* createSchurCompSymbSparseUpper();
+   SparseSymmetricMatrix* createSchurCompSymbSparseUpper();
 
    // distributed version
-   SparseSymMatrix* createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd);
+   SparseSymmetricMatrix* createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd);
 
-   SparseSymMatrix& getLocalQ();
+   SparseSymmetricMatrix& getLocalQ();
 
-   SparseGenMatrix& getLocalCrossHessian();
+   SparseMatrix& getLocalCrossHessian();
 
-   SparseGenMatrix& getLocalA();
+   SparseMatrix& getLocalA();
 
-   SparseGenMatrix& getLocalB();
+   SparseMatrix& getLocalB();
 
-   SparseGenMatrix& getLocalF();
+   SparseMatrix& getLocalF();
 
-   SparseGenMatrix& getLocalC();
+   SparseMatrix& getLocalC();
 
-   SparseGenMatrix& getLocalD();
+   SparseMatrix& getLocalD();
 
-   SparseGenMatrix& getLocalG();
+   SparseMatrix& getLocalG();
 
-   StringGenMatrix& getLocalGBorder();
+   StripMatrix& getLocalGBorder();
 
-   StringGenMatrix& getLocalFBorder();
+   StripMatrix& getLocalFBorder();
 
 
    void printLinkVarsStats();
@@ -107,7 +107,7 @@ public:
    bool isRootNodeInSync() const;
 
 protected:
-   static void removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch, const StochGenMatrix& Cstoch,
+   static void removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const DistributedMatrix& Astoch, const DistributedMatrix& Cstoch,
          const std::vector<int>& linkStartBlockIdA, const std::vector<int>& linkStartBlockIdC);
 
    static Permutation

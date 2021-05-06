@@ -8,31 +8,24 @@
 #include <stdlib.h>
 #include "MumpsSolverBase.h"
 #include "SimpleVector.h"
-#include "SparseGenMatrix.h"
+#include "SparseMatrix.h"
 #include "pipsport.h"
 
 static MUMPS_INT getFortranMPIComm(MPI_Comm mpiComm_c) {
    return MUMPS_INT(MPI_Comm_c2f(mpiComm_c));
-};
+}
 
-MumpsSolverBase::MumpsSolverBase(MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, SparseSymMatrix* sgm) : verbosity(defaultVerbosity),
-      maxNiterRefinments(defaultMaxNiterRefinments) {
+MumpsSolverBase::MumpsSolverBase(MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, const SparseSymmetricMatrix* sgm) :
+   verbosity(defaultVerbosity), maxNiterRefinments(defaultMaxNiterRefinments), Msys{sgm} {
    PIPSdebugMessage("creating MUMPS solver \n");
-
-   assert(sgm);
+   n = Msys->size();
    assert(sizeof(MUMPS_INT) == sizeof(int));
-
-   Msys = sgm;
-   n = sgm->size();
-   tripletIrn = nullptr;
-   tripletJcn = nullptr;
-   tripletA = nullptr;
 
    setUpMpiData(mpiCommPips_c, mpiCommMumps_c);
    setUpMumps();
 }
 
-MumpsSolverBase::MumpsSolverBase(const SparseSymMatrix* sgm) : MumpsSolverBase(MPI_COMM_WORLD, MPI_COMM_SELF, sgm) {}
+MumpsSolverBase::MumpsSolverBase(const SparseSymmetricMatrix* sgm) : MumpsSolverBase(MPI_COMM_WORLD, MPI_COMM_SELF, sgm) {}
 
 MumpsSolverBase::~MumpsSolverBase() {
    PIPSdebugMessage("deleting MUMPS solver \n");
@@ -88,7 +81,7 @@ void MumpsSolverBase::solve(double* vec) {
 void MumpsSolverBase::solve(Vector<double>& rhs) {
    PIPSdebugMessage("MUMPS solver: solve (single rhs) \n");
 
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
+   auto& sv = dynamic_cast<SimpleVector<double>&>(rhs);
 
    if (mpiCommMumps != MPI_COMM_NULL) {
       assert(n == rhs.length());

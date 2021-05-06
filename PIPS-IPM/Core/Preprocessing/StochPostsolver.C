@@ -8,9 +8,9 @@
 #include "StochPostsolver.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "pipsdef.h"
-#include "StochVectorUtilities.h"
+#include "DistributedVectorUtilities.h"
 #include <limits>
 #include <stdexcept>
 #include <iostream>
@@ -24,8 +24,8 @@ StochPostsolver::StochPostsolver(const DistributedQP& original_problem) : QpPost
       eq_row_marked_modified{dynamic_cast<DistributedVector<int>*>(padding_origrow_equality->clone())},
       ineq_row_marked_modified{dynamic_cast<DistributedVector<int>*>(padding_origrow_inequality->clone())},
       column_marked_modified{dynamic_cast<DistributedVector<int>*>(padding_origcol->clone())},
-      row_storage(dynamic_cast<const StochGenMatrix&>(*original_problem.A)),
-      col_storage(dynamic_cast<const StochGenMatrix&>(*original_problem.A), dynamic_cast<const StochGenMatrix&>(*original_problem.C)),
+      row_storage(dynamic_cast<const DistributedMatrix&>(*original_problem.A)),
+      col_storage(dynamic_cast<const DistributedMatrix&>(*original_problem.A), dynamic_cast<const DistributedMatrix&>(*original_problem.C)),
       eq_row_stored_last_at{dynamic_cast<DistributedVector<int>*>(padding_origrow_equality->clone())},
       ineq_row_stored_last_at{dynamic_cast<DistributedVector<int>*>(padding_origrow_inequality->clone())},
       col_stored_last_at{dynamic_cast<DistributedVector<int>*>(padding_origcol->clone())},
@@ -131,7 +131,7 @@ bool StochPostsolver::isColModified(const INDEX& col) const {
    return getSimpleVecFromColStochVec(*column_marked_modified, col) == 1;
 }
 
-int StochPostsolver::storeRow(const INDEX& row, const StochGenMatrix& matrix_row) {
+int StochPostsolver::storeRow(const INDEX& row, const DistributedMatrix& matrix_row) {
    assert(row.isRow());
 
    if (isRowModified(row)) {
@@ -156,7 +156,7 @@ int StochPostsolver::storeRow(const INDEX& row, const StochGenMatrix& matrix_row
    }
 }
 
-int StochPostsolver::storeColumn(const INDEX& col, const StochGenMatrix& matrix_col_eq, const StochGenMatrix& matrix_col_ineq) {
+int StochPostsolver::storeColumn(const INDEX& col, const DistributedMatrix& matrix_col_eq, const DistributedMatrix& matrix_col_ineq) {
    assert(col.isCol());
 
    if (isColModified(col)) {
@@ -192,7 +192,7 @@ void StochPostsolver::notifyFixedSingletonFromInequalityColumn(const INDEX& col,
 }
 
 void StochPostsolver::notifyFreeColumnSingletonInequalityRow(const INDEX& row, const INDEX& col, double rhs, double coeff, double xlow, double xupp,
-      const StochGenMatrix& matrix_row) {
+      const DistributedMatrix& matrix_row) {
    assert(row.isRow());
    assert(col.isCol() || col.isEmpty());
    if (col.isEmpty())
@@ -240,7 +240,7 @@ void StochPostsolver::putLinkingRowEqSyncEvent() {
 
 void
 StochPostsolver::notifyFreeColumnSingletonEquality(const INDEX& row, const INDEX& col, double rhs, double obj_coeff, double col_coeff, double xlow,
-      double xupp, const StochGenMatrix& matrix_row) {
+      double xupp, const DistributedMatrix& matrix_row) {
    assert(row.isRow());
    assert(col.isCol() || col.isEmpty());
 
@@ -456,7 +456,7 @@ void StochPostsolver::notifySingletonRowBoundsTightened(const INDEX& row, const 
 
 /** postsolve has to compute the optimal dual multipliers here and set the primal value accordingly */
 void
-StochPostsolver::notifyFixedColumn(const INDEX& col, double value, double obj_coeff, const StochGenMatrix& eq_mat, const StochGenMatrix& ineq_mat) {
+StochPostsolver::notifyFixedColumn(const INDEX& col, double value, double obj_coeff, const DistributedMatrix& eq_mat, const DistributedMatrix& ineq_mat) {
    assert(col.isCol());
    assert(!wasColumnRemoved(col));
    markColumnRemoved(col);
@@ -518,7 +518,7 @@ void StochPostsolver::notifyRedundantSide(const INDEX& row, bool is_upper_side, 
 }
 
 
-void StochPostsolver::notifyRedundantRow(const INDEX& row, int iclow, int icupp, double lhs, double rhs, const StochGenMatrix& matrix_row) {
+void StochPostsolver::notifyRedundantRow(const INDEX& row, int iclow, int icupp, double lhs, double rhs, const DistributedMatrix& matrix_row) {
    assert(row.isRow());
    assert(iclow == 1 || iclow == 0);
    assert(icupp == 1 || icupp == 0);
@@ -553,7 +553,7 @@ void StochPostsolver::beginBoundTightening() {
 }
 
 void StochPostsolver::endBoundTightening(const std::vector<int>& store_linking_rows_A, const std::vector<int>& store_linking_rows_C,
-      const StochGenMatrix& mat_A, const StochGenMatrix& mat_C) {
+      const DistributedMatrix& mat_A, const DistributedMatrix& mat_C) {
    reductions.push_back(STORE_BOUND_TIGHTENING_LINKING_ROWS);
    for (unsigned int i = 0; i < store_linking_rows_A.size(); ++i) {
       if (store_linking_rows_A[i] != 0) {
@@ -578,7 +578,7 @@ void StochPostsolver::endBoundTightening(const std::vector<int>& store_linking_r
 }
 
 void StochPostsolver::notifyRowPropagatedBound(const INDEX& row, const INDEX& col, double old_bound, double new_bound, bool is_upper_bound,
-      const StochGenMatrix& matrix_row) {
+      const DistributedMatrix& matrix_row) {
    assert(!PIPSisEQ(old_bound, new_bound));
    assert(row.isRow() || row.isEmpty());
    assert(col.isCol());

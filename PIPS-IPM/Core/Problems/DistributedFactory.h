@@ -24,9 +24,9 @@ class DistributedQP;
 
 class Variables;
 
-class StochInputTree;
+class DistributedInputTree;
 
-class StochSymMatrix;
+class DistributedSymmetricMatrix;
 
 class DistributedResiduals;
 
@@ -38,7 +38,7 @@ class DistributedLeafLinearSystem;
 
 class DoubleLinearSolver;
 
-class DoubleMatrix;
+class AbstractMatrix;
 
 class Problem;
 
@@ -50,7 +50,7 @@ class AbstractLinearSystem;
 
 class DistributedFactory {
 public:
-   DistributedFactory(StochInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
+   DistributedFactory(DistributedInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
    Problem* make_problem();
 
    Residuals* make_residuals(Problem& problem);
@@ -73,7 +73,7 @@ public:
 
    DistributedRootLinearSystem* make_linear_system_root();
 
-   DistributedRootLinearSystem* newLinsysRootHierarchical();
+   DistributedRootLinearSystem* make_root_hierarchical_linear_system();
 
    DistributedRootLinearSystem* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
@@ -88,7 +88,7 @@ public:
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
          Vector<double>* rhs);
 
-   DoubleLinearSolver* make_leaf_solver(const DoubleMatrix* kkt);
+   DoubleLinearSolver* make_leaf_solver(const AbstractMatrix* kkt);
 
    DistributedTree* tree{};
    DistributedQP* problem{};

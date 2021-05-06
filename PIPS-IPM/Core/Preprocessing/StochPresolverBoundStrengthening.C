@@ -9,7 +9,7 @@
 #include <limits>
 #include <cmath>
 #include "pipsdef.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 
 
 StochPresolverBoundStrengthening::StochPresolverBoundStrengthening(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(

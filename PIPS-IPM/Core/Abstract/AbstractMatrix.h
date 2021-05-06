@@ -48,7 +48,7 @@ public:
    virtual void columnScale(const Vector<double>& vec) = 0;
    virtual void rowScale(const Vector<double>& vec) = 0;
    virtual void scalarMult(double num) = 0;
-   [[nodiscard]] virtual double abmaxnorm() const = 0;
+   [[nodiscard]] virtual double inf_norm() const = 0;
    [[nodiscard]] double abminnormNonZero() const { return abminnormNonZero(1e-30); };
    [[nodiscard]] virtual double abminnormNonZero(double tol) const = 0;
    ~DoubleStorage() override = default;
@@ -57,12 +57,12 @@ public:
 /** Parent of all matrix classes
  * @ingroup AbstractLinearAlgebra
  */
-class DoubleMatrix : public IotrRefCount {
+class AbstractMatrix : public IotrRefCount {
 public:
-   DoubleMatrix() = default;
+   AbstractMatrix() = default;
 
    /** True if this matrix identifies itself to be of type matrixType. */
-   [[nodiscard]] virtual int isKindOf(int matrixType) const = 0;
+   [[nodiscard]] virtual int is_a(int matrixType) const = 0;
 
    /** Get the value of some of the elements of this matrix.
     *
@@ -109,7 +109,7 @@ public:
 
    /** the magnitude of the element in this matrix with largest absolute value.
     */
-   [[nodiscard]] virtual double abmaxnorm() const = 0;
+   [[nodiscard]] virtual double inf_norm() const = 0;
 
    /** the magnitude of the element in this matrix with smallest absolute value != 0. */
    [[nodiscard]] double abminnormNonZero() const { return abminnormNonZero(1e-30); };
@@ -177,13 +177,13 @@ public:
       std::cout << m << " x " << n << " (rows x cols)\n";
    }
 
-   ~DoubleMatrix() override = default;
+   ~AbstractMatrix() override = default;
 };
 
 /** Parent of all Symmetric matrices. 
  * @ingroup AbstractLinearAlgebra
  */
-class SymMatrix : public DoubleMatrix {
+class SymmetricMatrix : public AbstractMatrix {
 public:
 
    /** Put a submatrix of M into this matrix.
@@ -201,7 +201,7 @@ public:
     * @param rowExtent rowExtent rows are copied from M.
     * @param colExtent colExtent columns are copied from M.
     */
-   virtual void symAtPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
+   virtual void symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
 
    /** Put a sparse row into this matrix symmetrically.
     *
@@ -216,7 +216,7 @@ public:
    [[nodiscard]] virtual long long size() const = 0;
 
    /** deep clone matrix */
-   [[nodiscard]] virtual SymMatrix* clone() const {
+   [[nodiscard]] virtual SymmetricMatrix* clone() const {
       assert(false && "not implemented");
       return nullptr;
    };
@@ -226,7 +226,7 @@ public:
 /** Parent of all non-symmetric, possibly non-square, matrices.
  * @ingroup AbstractLinearAlgebra
  */
-class GenMatrix : public DoubleMatrix {
+class GeneralMatrix : public AbstractMatrix {
 public:
    /** Put a submatrix of M into this matrix.
     *
@@ -238,7 +238,7 @@ public:
     * @param rowExtent rowExtent rows are copied from M.
     * @param colExtent colExtent columns are copied from M.
     */
-   virtual void atPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
+   virtual void atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) = 0;
 
    /** Set the value of some of the elements of this matrix.
     *
@@ -254,10 +254,10 @@ public:
    virtual void atPutSpRow(int col, const double A[], int lenA, const int jcolA[], int& info) = 0;
 
    /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
-   virtual void matTransDMultMat(const Vector<double>& d, SymMatrix** res) const = 0;
+   virtual void matTransDMultMat(const Vector<double>& d, SymmetricMatrix** res) const = 0;
 
    /** C = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
-   virtual void matTransDinvMultMat(const Vector<double>& d, SymMatrix** res) const = 0;
+   virtual void matTransDinvMultMat(const Vector<double>& d, SymmetricMatrix** res) const = 0;
 
    virtual void writeMPSformatRows(std::ostream& /*out*/, int /*rowType*/, const Vector<double>* /*irhs*/) const {}
 
@@ -290,26 +290,26 @@ public:
    };
 
    /** clone of matrix with n = 0 - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual GenMatrix* cloneEmptyRows() const {
+   [[nodiscard]] virtual GeneralMatrix* cloneEmptyRows() const {
       return cloneEmptyRows(false);
    }
-   [[nodiscard]] virtual GenMatrix* cloneEmptyRows(bool /* switchToDynamicStorage */) const {
+   [[nodiscard]] virtual GeneralMatrix* cloneEmptyRows(bool /* switchToDynamicStorage */) const {
       assert(false && "not implemented");
       return nullptr;
    };
 
    /** full clone of matrix - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual GenMatrix* cloneFull() const {
+   [[nodiscard]] virtual GeneralMatrix* cloneFull() const {
       return cloneFull(false);
    }
 
-   [[nodiscard]] virtual GenMatrix* cloneFull(bool /* switchToDynamicStorage */) const {
+   [[nodiscard]] virtual GeneralMatrix* cloneFull(bool /* switchToDynamicStorage */) const {
       assert(false && "not implemented");
       return nullptr;
    };
 
    /** shave of bottom n constraints and return them in a new matrix */
-   [[nodiscard]] virtual GenMatrix* shaveBottom(int /* nrows */) {
+   [[nodiscard]] virtual GeneralMatrix* shaveBottom(int /* nrows */) {
       assert(false && "not implemented");
       return nullptr;
    };

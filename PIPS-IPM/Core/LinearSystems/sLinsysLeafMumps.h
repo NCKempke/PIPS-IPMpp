@@ -16,27 +16,27 @@ class DistributedQP;
 
 /** This class solves the linear system corresponding to a leaf node.
  */
-class sLinsysLeafMumps : public sLinsysLeaf {
+class sLinsysLeafMumps : public DistributedLeafLinearSystem {
 public:
    static constexpr int bufferMaxSize = (1024 * 1024 * 64);
 
-   sLinsysLeafMumps(sFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
-         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : sLinsysLeaf(factory, prob_,
+   sLinsysLeafMumps(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+         Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_) : DistributedLeafLinearSystem(factory, prob_,
          dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_) {};
 
    ~sLinsysLeafMumps();
 
-   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymMatrix& SC) override;
+   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymmetricMatrix& SC) override;
 
-   void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymMatrix& SC) override;
+   void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmetricMatrix& SC) override;
 
 private:
-   void addTermToSchurComplMumps(DistributedQP* prob, bool sparseSC, SymMatrix& SC);
+   void addTermToSchurComplMumps(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC);
 
    /* build right matrix for Schur complement; Fortran indexed, CSC, and without empty columns */
-   void buildSchurRightMatrix(DistributedQP* prob, SymMatrix& SC);
+   void buildSchurRightMatrix(DistributedQP* prob, SymmetricMatrix& SC);
 
-   SparseGenMatrix* schurRightMatrix_csc{};
+   std::unique_ptr<SparseMatrix> schurRightMatrix_csc{};
    int* schurRightNzColId{};
    int nSC{-1};
    int mSchurRight{-1};

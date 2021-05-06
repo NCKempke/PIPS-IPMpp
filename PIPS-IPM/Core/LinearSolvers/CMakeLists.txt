@@ -1,5 +1,6 @@
 if (HAVE_MUMPS)
-    add_library(mumps_solver STATIC MumpsSolver/MumpsSolverBase.C MumpsSolver/MumpsSolverLeaf.C MumpsSolver/MumpsSolverRoot.C)
+    add_library(mumps_solver SHARED MumpsSolver/MumpsSolverBase.C MumpsSolver/MumpsSolverLeaf.C MumpsSolver/MumpsSolverRoot.C)
+    target_include_directories(mumps_solver PRIVATE ${MUMPS_INCLUDE_DIR})
     target_link_libraries(mumps_solver
             PRIVATE ${MUMPS_D_LIBRARY}
             PRIVATE ${MUMPS_COMMON_LIBRARY}
@@ -15,7 +16,7 @@ if (HAVE_MUMPS)
 endif (HAVE_MUMPS)
 
 if (HAVE_MA27)
-    add_library(ma27_solver STATIC Mc30Scaler/Mc30Scaler.C Ma27Solver/Ma27Solver.C Ma27Solver/Ma27SolverRoot.C)# ../QpGen/QpGenSparseMa27.C )
+    add_library(ma27_solver STATIC Mc30Scaler/Mc30Scaler.C Ma27Solver/Ma27Solver.C Ma27Solver/Ma27SolverRoot.C)
     target_link_libraries(ma27_solver
             PRIVATE ${MA27_LIBRARY}
             PRIVATE ${GFORTRAN_LIBRARY}
@@ -23,7 +24,7 @@ if (HAVE_MA27)
 endif (HAVE_MA27)
 
 if (HAVE_MA57)
-    add_library(ma57_solver STATIC Ma57Solver/Ma57Solver.C Ma57Solver/Ma57SolverRoot.C)#../QpGen/QpGenSparseMa57.C )
+    add_library(ma57_solver STATIC Ma57Solver/Ma57Solver.C Ma57Solver/Ma57SolverRoot.C)
     target_link_libraries(ma57_solver
             PRIVATE ${MA57_LIBRARY}
             PRIVATE ${METIS_4_LIBRARY}

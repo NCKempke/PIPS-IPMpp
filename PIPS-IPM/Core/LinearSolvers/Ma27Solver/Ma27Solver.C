@@ -3,16 +3,17 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "Ma27Solver.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
 #include <fstream>
 #include <algorithm>
+#include <utility>
 
 extern int gOoqpPrintLevel;
 
-Ma27Solver::Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_) : mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n},
-      nnz{mat_storage->numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(name_)//, scaler( new Mc30Scaler() )
+Ma27Solver::Ma27Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n},
+      nnz{mat_storage->numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
 {
    assert(n_threads >= 1);
 
@@ -61,7 +62,7 @@ void Ma27Solver::firstCall() {
    double ops;
 
    /* do ordering */
-   bool done = false;
+   bool done{};
    int tries = 0;
    do {
       FNAME(ma27ad)(&n, &nnz, irowM.data(), jcolM.data(), iw, &liw, ikeep, iw1, &nsteps, &iflag, icntl.data(), cntl.data(), info.data(), &ops);
@@ -76,11 +77,11 @@ void Ma27Solver::firstCall() {
 
    delete[] iw;
 
-   la = rpessimism * minimumRealWorkspace() * 10;
+   la = static_cast<int>(rpessimism * minimumRealWorkspace() * 10.0);
    fact.resize(la);
 
    // set iw and in prep for calls to ma27bd and ma27cd
-   liw = ipessimism * minimumIntWorkspace();
+   liw = static_cast<int>(ipessimism * minimumIntWorkspace());
    iw = new int[liw];
 }
 
@@ -90,10 +91,10 @@ void Ma27Solver::diagonalChanged(int /* idiag */, int /* extent */) {
 
 bool new_factor;
 void Ma27Solver::matrixChanged() {
-   if (fact.size() == 0)
+   if (fact.empty())
       this->firstCall();
 
-   bool done = false;
+   bool done;
    int tries = 0;
    new_factor = true;
    do {
@@ -137,7 +138,7 @@ void Ma27Solver::solve(int nrhss, double* rhss, int*) {
 }
 
 void Ma27Solver::solve(Vector<double>& rhs_in) {
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
 
 #ifndef NDEBUG
    for (int i = 0; i < rhs.length(); ++i)
@@ -345,9 +346,7 @@ void Ma27Solver::getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) co
 }
 
 Ma27Solver::~Ma27Solver() {
-   if (scaler)
-      delete scaler;
-
+   delete scaler;
    freeWorkingArrays();
 }
 
@@ -356,14 +355,10 @@ void Ma27Solver::freeWorkingArrays() {
    jcolM.clear();
    fact.clear();
 
-   if (ikeep)
-      delete[] ikeep;
-   if (iw)
-      delete[] iw;
-   if (iw1)
-      delete[] iw1;
-   if (ww)
-      delete[] ww;
+   delete[] ikeep;
+   delete[] iw;
+   delete[] iw1;
+   delete[] ww;
 
    ikeep = iw = iw1 = nullptr;
    ww = nullptr;

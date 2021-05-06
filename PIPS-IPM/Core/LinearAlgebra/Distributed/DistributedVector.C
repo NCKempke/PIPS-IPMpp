@@ -58,17 +58,14 @@ DistributedVector<T>::~DistributedVector() {
    for (size_t it = 0; it < children.size(); it++)
       delete children[it];
 
-   if (first)
-      delete first;
-
-   if (last)
-      delete last;
+   delete first;
+   delete last;
 }
 
 template<typename T>
 Vector<T>* DistributedVector<T>::clone() const {
    assert(first || last);
-   DistributedVector<T>* clone = new DistributedVector<T>(first ? first->clone() : nullptr, last ? last->clone() : nullptr, mpiComm);
+   auto* clone = new DistributedVector<T>(first ? first->clone() : nullptr, last ? last->clone() : nullptr, mpiComm);
 
    for (size_t it = 0; it < children.size(); it++)
       clone->AddChild(dynamic_cast<DistributedVector<T>*>(children[it]->clone()));
@@ -80,7 +77,7 @@ Vector<T>* DistributedVector<T>::clone() const {
 template<typename T>
 Vector<T>* DistributedVector<T>::cloneFull() const {
    assert(first || last);
-   DistributedVector<T>* clone = new DistributedVector<T>(first ? first->cloneFull() : nullptr, last ? last->cloneFull() : nullptr, mpiComm);
+   auto* clone = new DistributedVector<T>(first ? first->cloneFull() : nullptr, last ? last->cloneFull() : nullptr, mpiComm);
 
    for (size_t it = 0; it < children.size(); it++)
       clone->AddChild(dynamic_cast<DistributedVector<T>*>(children[it]->cloneFull()));
@@ -91,7 +88,7 @@ Vector<T>* DistributedVector<T>::cloneFull() const {
 
 template<typename T>
 void DistributedVector<T>::setNotIndicatedEntriesToVal(T val, const Vector<T>& ind) {
-   const DistributedVector<T>& ind_vec = dynamic_cast<const DistributedVector<T>&>(ind);
+   const auto& ind_vec = dynamic_cast<const DistributedVector<T>&>(ind);
 
    assert(this->children.size() == ind_vec.children.size());
    assert((this->first && ind_vec.first) || (this->first == nullptr && ind_vec.first == nullptr));

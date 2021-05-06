@@ -1,11 +1,11 @@
-#ifndef STOCHGENMATRIX_H
-#define STOCHGENMATRIX_H
+#ifndef DistributedMatrix_H
+#define DistributedMatrix_H
 
 #include "Vector.hpp"
-#include "DoubleMatrix.h"
-#include "SparseGenMatrix.h"
-#include "BorderedGenMatrix.h"
-#include "StringGenMatrix.h"
+#include "AbstractMatrix.h"
+#include "SparseMatrix.h"
+#include "BorderedMatrix.h"
+#include "StripMatrix.h"
 #include "DistributedTree.h"
 
 #include "pipsport.h"
@@ -13,42 +13,42 @@
 
 #include <vector>
 
-class StochGenMatrix : public GenMatrix {
+class DistributedMatrix : public GeneralMatrix {
 protected:
-   StochGenMatrix() = default;
+   DistributedMatrix() = default;
 public:
 
-   StochGenMatrix(GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf = false, bool inner_root = false);
+   DistributedMatrix(GeneralMatrix* Amat, GeneralMatrix* Bmat, GeneralMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf = false, bool inner_root = false);
 
    /** Constructs a matrix having local A and B blocks having the sizes and number of nz specified by
     *  A_m, A_n, A_nnz and B_m, B_n, B_nnz.
     *  Also sets the global sizes to 'global_m' and 'global_n'.
     *  The matrix that will be created  has no children, just local data.
     */
-   StochGenMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_);
+   DistributedMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_);
 
    /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks having the sizes and number of nz specified by
        A_m, A_n, A_nnz, B_m, B_n, B_nnz, and Bl_m, Bl_n, Bl_nnz. Otherwise, identical to the above constructor */
-   StochGenMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n, int Bl_nnz,
+   DistributedMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n, int Bl_nnz,
          MPI_Comm mpiComm_);
 
    /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
-   StochGenMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
+   DistributedMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
 
    // constructor for combining scenarios
-   ~StochGenMatrix() override;
+   ~DistributedMatrix() override;
 
-   using GenMatrix::cloneFull;
-   using GenMatrix::cloneEmptyRows;
-   [[nodiscard]] GenMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
-   [[nodiscard]] GenMatrix* cloneFull(bool switchToDynamicStorage) const override;
+   using GeneralMatrix::cloneFull;
+   using GeneralMatrix::cloneEmptyRows;
+   [[nodiscard]] GeneralMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
+   [[nodiscard]] GeneralMatrix* cloneFull(bool switchToDynamicStorage) const override;
 
-   virtual void AddChild(StochGenMatrix* child);
+   virtual void AddChild(DistributedMatrix* child);
 
-   std::vector<StochGenMatrix*> children;
-   GenMatrix* Amat{};
-   GenMatrix* Bmat{};
-   GenMatrix* Blmat{};
+   std::vector<DistributedMatrix*> children;
+   GeneralMatrix* Amat{};
+   GeneralMatrix* Bmat{};
+   GeneralMatrix* Blmat{};
 
    long long m{-1};
    long long n{-1};
@@ -98,7 +98,7 @@ public:
     */
    [[nodiscard]] int numberOfNonZeros() const override;
 
-   [[nodiscard]] int isKindOf(int matType) const override;
+   [[nodiscard]] int is_a(int matType) const override;
 
    void atPutDense(int, int, const double*, int, int, int) override { assert("Not implemented" && 0); };
    void fromGetDense(int, int, double*, int, int, int) const override { assert("Not implemented" && 0); };
@@ -109,7 +109,7 @@ public:
    void scalarMult(double num) override;
 
    void fromGetSpRow(int, int, double[], int, int[], int&, int, int&) const override { assert("Not implemented" && 0); };
-   void atPutSubmatrix(int, int, const DoubleMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
+   void atPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert("Not implemented" && 0); };
    void atPutSpRow(int, const double[], int, const int[], int&) override { assert("Not implemented" && 0); };
    void putSparseTriple(const int[], int, const int[], const double[], int&) override { assert("Not implemented" && 0); };
 
@@ -121,14 +121,14 @@ public:
 
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    virtual void getLinkVarsNnz(std::vector<int>& vec) const;
 
    void writeToStream(std::ostream&) const override { assert("Not implemented" && 0); };
    virtual void writeToStreamDense(std::ostream& out, int offset) const;
-   virtual void writeToStreamDenseBordered(const StringGenMatrix& border, std::ostream& out, int offset) const;
+   virtual void writeToStreamDenseBordered(const StripMatrix& border, std::ostream& out, int offset) const;
    virtual void writeToStreamDense(std::ostream& out) const override { writeToStreamDense(out, 0); };
    virtual void writeDashedLineToStream(std::ostream& out) const override { writeDashedLineToStream(out, 0); };
    virtual void writeDashedLineToStream(std::ostream& out, int offset) const;
@@ -145,8 +145,8 @@ public:
    void atPutDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
    void atAddDiagonal(int, const Vector<double>&) override { assert("Not implemented" && 0); };
    void fromGetDiagonal(int, Vector<double>&) const override { assert("Not implemented" && 0); };
-   void matTransDMultMat(const Vector<double>&, SymMatrix**) const override { assert("Not implemented" && 0); };
-   void matTransDinvMultMat(const Vector<double>&, SymMatrix**) const override { assert("Not implemented" && 0); };
+   void matTransDMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert("Not implemented" && 0); };
+   void matTransDinvMultMat(const Vector<double>&, SymmetricMatrix**) const override { assert("Not implemented" && 0); };
 
    void getNnzPerRow(Vector<int>& nnzVec) const override {
       getNnzPerRow(nnzVec, nullptr);
@@ -168,7 +168,7 @@ public:
       initStaticStorageFromDynamic(rowNnzVec, colNnzVec, nullptr, nullptr);
    };
    virtual void freeDynamicStorage();
-   void recomputeSize(StochGenMatrix* parent = nullptr);
+   void recomputeSize(DistributedMatrix* parent = nullptr);
 
    /** returns Simple Vector indicating which linking rows have entries in exactly two blocks (indicated by 1.0 versus 0.0)*/
    virtual void get2LinkStartBlocksAndCountsNew(std::vector<int>& block_start, std::vector<int>& block_count) const;
@@ -182,7 +182,7 @@ public:
 
    [[nodiscard]] virtual bool isRootNodeInSync() const;
 
-   virtual int appendRow(const StochGenMatrix& matrix_row, int child, int row, bool linking);
+   virtual int appendRow(const DistributedMatrix& matrix_row, int child, int row, bool linking);
 
    /** calculate first^T * row where row is linking or not in child child and with row index row
     *  for a linking row only the available blocks will be multiplied - currently only possible for dynamic storage! (since
@@ -196,9 +196,9 @@ public:
    axpyWithRowAtPosNeg(double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg,
          SimpleVector<double>* y_link_neg, int child, int row, bool linking) const;
 
-   [[nodiscard]] virtual BorderedGenMatrix* raiseBorder(int m_conss, int n_vars);
+   [[nodiscard]] virtual BorderedMatrix* raiseBorder(int m_conss, int n_vars);
 
-   [[nodiscard]] virtual StringGenMatrix* shaveLinkingConstraints(unsigned int n_conss);
+   [[nodiscard]] virtual StripMatrix* shaveLinkingConstraints(unsigned int n_conss);
    virtual void
    splitMatrix(const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
          const std::vector<MPI_Comm>& child_comms);
@@ -206,7 +206,7 @@ public:
 
 protected:
    virtual void writeToStreamDenseChild(std::ostream& out, int offset) const;
-   virtual void writeToStreamDenseBorderedChild(const StringGenMatrix& border_left, std::ostream& out, int offset) const;
+   virtual void writeToStreamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out, int offset) const;
 
    virtual void writeToStreamDenseRowLink(std::ostream& out, int rowidx) const;
 
@@ -217,9 +217,9 @@ protected:
          Vector<double>& minmaxVec) const;
 
    virtual bool amatEmpty() const;
-   virtual void shaveBorder(int m_conss, int n_vars, StringGenMatrix* border_left, StringGenMatrix* border_bottom);
-   [[nodiscard]] virtual StringGenMatrix* shaveLeftBorder(int n_vars);
-   [[nodiscard]] virtual StringGenMatrix* shaveLeftBorderChild(int n_vars);
+   virtual void shaveBorder(int m_conss, int n_vars, StripMatrix* border_left, StripMatrix* border_bottom);
+   [[nodiscard]] virtual StripMatrix* shaveLeftBorder(int n_vars);
+   [[nodiscard]] virtual StripMatrix* shaveLeftBorderChild(int n_vars);
 };
 
 
@@ -227,15 +227,15 @@ protected:
  * Dummy Class 
  */
 
-class StochGenDummyMatrix : public StochGenMatrix {
+class StochGenDummyMatrix : public DistributedMatrix {
 
 protected:
 
 public:
 
-   StochGenDummyMatrix() : StochGenMatrix(0, 0, 0, 0, 0, 0, 0, 0, MPI_COMM_NULL) {};
+   StochGenDummyMatrix() : DistributedMatrix(0, 0, 0, 0, 0, 0, 0, 0, MPI_COMM_NULL) {};
    ~StochGenDummyMatrix() override = default;
-   void AddChild(StochGenMatrix*) override {};
+   void AddChild(DistributedMatrix*) override {};
 
 public:
    void updateTransposed() const override {};
@@ -249,10 +249,10 @@ public:
       n = 0;
    }
 
-   using GenMatrix::cloneFull;
-   using GenMatrix::cloneEmptyRows;
-   [[nodiscard]] GenMatrix* cloneEmptyRows(bool) const override { return new StochGenDummyMatrix(); };
-   [[nodiscard]] GenMatrix* cloneFull(bool) const override { return new StochGenDummyMatrix(); };
+   using GeneralMatrix::cloneFull;
+   using GeneralMatrix::cloneEmptyRows;
+   [[nodiscard]] GeneralMatrix* cloneEmptyRows(bool) const override { return new StochGenDummyMatrix(); };
+   [[nodiscard]] GeneralMatrix* cloneFull(bool) const override { return new StochGenDummyMatrix(); };
 
 
    /** The actual number of structural non-zero elements in this sparse
@@ -261,7 +261,7 @@ public:
     */
    [[nodiscard]] int numberOfNonZeros() const override { return 0; };
 
-   [[nodiscard]] int isKindOf(int matType) const override;
+   [[nodiscard]] int is_a(int matType) const override;
 
    void columnScale(const Vector<double>&) override {};
    void rowScale(const Vector<double>&) override {};
@@ -276,7 +276,7 @@ public:
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
    void transMult2(double, DistributedVector<double>&, double, const DistributedVector<double>&, const Vector<double>*) const override {};
 
-   [[nodiscard]] double abmaxnorm() const override { return 0.0; };
+   [[nodiscard]] double inf_norm() const override { return 0.0; };
    [[nodiscard]] double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); };
 
    void permuteLinkingVarsChild(const std::vector<unsigned int>&) override {};
@@ -286,7 +286,7 @@ public:
 
    void writeToStreamDense(std::ostream&) const override {};
    void writeToStreamDense(std::ostream&, int) const override {};
-   void writeToStreamDenseBordered(const StringGenMatrix&, std::ostream&, int) const override {};
+   void writeToStreamDenseBordered(const StripMatrix&, std::ostream&, int) const override {};
    void writeDashedLineToStream(std::ostream&) const override {};
    void writeDashedLineToStream(std::ostream&, int) const override {};
 
@@ -294,7 +294,7 @@ public:
 
 protected:
    void writeToStreamDenseChild(std::ostream&, int) const override {};
-   void writeToStreamDenseBorderedChild(const StringGenMatrix&, std::ostream&, int) const override {};
+   void writeToStreamDenseBorderedChild(const StripMatrix&, std::ostream&, int) const override {};
 
    void writeToStreamDenseRowLink(std::ostream&, int) const override {};
 
@@ -336,7 +336,7 @@ public:
 
    bool isRootNodeInSync() const override { return true; };
 
-   int appendRow(const StochGenMatrix&, int, int, bool) override {
+   int appendRow(const DistributedMatrix&, int, int, bool) override {
       assert(0 && "CANNOT APPEND ROW TO DUMMY MATRIX");
       return -1;
    };
@@ -349,11 +349,11 @@ public:
    void axpyWithRowAtPosNeg(double, DistributedVector<double>*, SimpleVector<double>*, DistributedVector<double>*, SimpleVector<double>*, int, int,
          bool) const override {};
 
-   BorderedGenMatrix* raiseBorder(int, int) override {
+   BorderedMatrix* raiseBorder(int, int) override {
       assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX");
       return nullptr;
    };
-   StringGenMatrix* shaveLinkingConstraints(unsigned int) override { return new StringGenDummyMatrix(); };
+   StripMatrix* shaveLinkingConstraints(unsigned int) override { return new StringGenDummyMatrix(); };
    void splitMatrix(const std::vector<int>&, const std::vector<unsigned int>&, unsigned int, const std::vector<MPI_Comm>&) override {
       assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX");
    };
@@ -362,16 +362,16 @@ protected:
    void getRowMinMaxVecChild(bool, bool, const Vector<double>*, Vector<double>&, Vector<double>*) const override {};
    void getColMinMaxVecChild(bool, bool, const Vector<double>*, const Vector<double>*, Vector<double>&) const override {};
 
-   void shaveBorder(int, int, StringGenMatrix* border_left, StringGenMatrix* border_bottom) override {
+   void shaveBorder(int, int, StripMatrix* border_left, StripMatrix* border_bottom) override {
       border_left->addChild(new StringGenDummyMatrix());
       border_bottom->addChild(new StringGenDummyMatrix());
    };
-   StringGenMatrix* shaveLeftBorder(int) override { return new StringGenDummyMatrix(); };
-   StringGenMatrix* shaveLeftBorderChild(int) override { return new StringGenDummyMatrix(); };
+   StripMatrix* shaveLeftBorder(int) override { return new StringGenDummyMatrix(); };
+   StripMatrix* shaveLeftBorderChild(int) override { return new StringGenDummyMatrix(); };
 
 };
 
 
-typedef SmartPointer<StochGenMatrix> StochGenMatrixHandle;
+typedef SmartPointer<DistributedMatrix> DistributedMatrixHandle;
 
 #endif

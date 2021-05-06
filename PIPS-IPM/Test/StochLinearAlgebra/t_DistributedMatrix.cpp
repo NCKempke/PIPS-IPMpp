@@ -1,28 +1,28 @@
 #include "gtest/gtest.h"
 
 #include "DistributedTreeCallbacks.h"
-#include "StringGenMatrix.h"
+#include "StripMatrix.h"
 #include "mpi.h"
-#include "StochGenMatrix.h"
+#include "DistributedMatrix.h"
 
 #include <tuple>
 #include <numeric>
 
-class StochGenMatrixSplittingTest
-      : public StochGenMatrix, public ::testing::TestWithParam<std::tuple<std::vector<unsigned int>, std::vector<int>, std::vector<unsigned int>>> {
+class DistributedMatrixSplittingTest
+      : public DistributedMatrix, public ::testing::TestWithParam<std::tuple<std::vector<unsigned int>, std::vector<int>, std::vector<unsigned int>>> {
 public:
-   StochGenMatrix*
+   DistributedMatrix*
    createTestMatrix(unsigned int n_link_vars, unsigned int m_link_vars, unsigned int n_diag, unsigned int m_diag, unsigned int n_blocks,
          unsigned int m_link_cons) const;
 };
 
-StochGenMatrix*
-StochGenMatrixSplittingTest::createTestMatrix(unsigned int n_link_vars, unsigned int m_link_vars, unsigned int n_diag, unsigned int m_diag,
+DistributedMatrix*
+DistributedMatrixSplittingTest::createTestMatrix(unsigned int n_link_vars, unsigned int m_link_vars, unsigned int n_diag, unsigned int m_diag,
       unsigned int n_blocks, unsigned int m_link_cons) const {
-   StochGenMatrix* root = new StochGenMatrix(0, 0, 0, 0, 0, m_link_vars, n_link_vars, 0, m_link_cons, n_link_vars, 0, MPI_COMM_WORLD);
+   DistributedMatrix* root = new DistributedMatrix(0, 0, 0, 0, 0, m_link_vars, n_link_vars, 0, m_link_cons, n_link_vars, 0, MPI_COMM_WORLD);
 
    for (unsigned int i = 0; i < n_blocks; ++i) {
-      StochGenMatrix* child = new StochGenMatrix(0, 0, m_diag, n_link_vars, 0, m_diag, n_diag, 0, m_link_cons, n_diag, 0, MPI_COMM_WORLD);
+      DistributedMatrix* child = new DistributedMatrix(0, 0, m_diag, n_link_vars, 0, m_diag, n_diag, 0, m_link_cons, n_diag, 0, MPI_COMM_WORLD);
       root->AddChild(child);
    }
 
@@ -30,7 +30,7 @@ StochGenMatrixSplittingTest::createTestMatrix(unsigned int n_link_vars, unsigned
    return root;
 }
 
-TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce) {
+TEST_P(DistributedMatrixSplittingTest, TestSplitDistributedMatrixOnce) {
    const std::vector<unsigned int>& mat_input(std::get<0>(GetParam()));
    const std::vector<int>& twolinks_start_in_block_id(std::get<1>(GetParam()));
    const std::vector<unsigned int>& map_blocks_children(std::get<2>(GetParam()));
@@ -58,21 +58,21 @@ TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce) {
    ASSERT_LE(n_links_in_root, m_links_cons);
    ASSERT_EQ(twolinks_start_in_block_id.size(), mat_input[4]);
 
-   std::unique_ptr<StochGenMatrix> test_mat(createTestMatrix(n_links_vars, m_links_vars, n_diag, m_diag, n_blocks, m_links_cons));
+   std::unique_ptr<DistributedMatrix> test_mat(createTestMatrix(n_links_vars, m_links_vars, n_diag, m_diag, n_blocks, m_links_cons));
    test_mat->splitMatrix(twolinks_start_in_block_id, map_blocks_children, n_links_in_root, child_comms);
 
    EXPECT_EQ(test_mat->children.size(), n_children);
 
-   EXPECT_TRUE(test_mat->Amat->isKindOf(kSparseGenMatrix));
-   EXPECT_TRUE(test_mat->Blmat->isKindOf(kSparseGenMatrix));
+   EXPECT_TRUE(test_mat->Amat->is_a(kSparseGenMatrix));
+   EXPECT_TRUE(test_mat->Blmat->is_a(kSparseGenMatrix));
 
    unsigned int sum_child_children{0};
    unsigned int sum_child_Bmat_children{0};
    unsigned int sum_child_links{0};
    for (auto& child : test_mat->children) {
-      EXPECT_TRUE(child->Bmat->isKindOf(kStochGenMatrix));
-      EXPECT_TRUE(child->Blmat->isKindOf(kStringGenMatrix));
-      EXPECT_TRUE(child->Amat->isKindOf(kSparseGenMatrix));
+      EXPECT_TRUE(child->Bmat->is_a(kDistributedMatrix));
+      EXPECT_TRUE(child->Blmat->is_a(kStripMatrix));
+      EXPECT_TRUE(child->Amat->is_a(kSparseGenMatrix));
 
       int ma, na;
       child->Amat->getSize(ma, na);
@@ -87,8 +87,8 @@ TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce) {
 
       EXPECT_EQ(mbl, n_links_in_root);
 
-      const StochGenMatrix& bmat = dynamic_cast<const StochGenMatrix&>(*child->Bmat);
-      const StringGenMatrix& blmat = dynamic_cast<const StringGenMatrix&>(*child->Blmat);
+      const DistributedMatrix& bmat = dynamic_cast<const DistributedMatrix&>(*child->Bmat);
+      const StripMatrix& blmat = dynamic_cast<const StripMatrix&>(*child->Blmat);
       EXPECT_EQ(blmat.children.size(), bmat.children.size());
       EXPECT_EQ(0, child->children.size());
 
@@ -105,7 +105,7 @@ TEST_P(StochGenMatrixSplittingTest, TestSplitStochGenMatrixOnce) {
 };
 
 INSTANTIATE_TEST_CASE_P
-(TestSplitStochGenMatrixOnce, StochGenMatrixSplittingTest, ::testing::Values(
+(TestSplitDistributedMatrixOnce, DistributedMatrixSplittingTest, ::testing::Values(
       std::make_tuple(std::vector<unsigned int>{5, 5, 10, 3, 10, 25}, std::vector<int>{2, 2, 2, 2, 2, 2, 2, 2, 2, 0},
             std::vector<unsigned int>{0, 0, 0, 1, 1, 2, 2, 2, 2, 3}),
       std::make_tuple(std::vector<unsigned int>{10, 2, 2, 2, 10, 18}, std::vector<int>{2, 2, 2, 2, 2, 2, 2, 2, 2, 0},

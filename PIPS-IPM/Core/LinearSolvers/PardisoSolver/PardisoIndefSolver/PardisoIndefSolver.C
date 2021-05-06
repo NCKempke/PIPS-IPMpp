@@ -5,7 +5,6 @@
  *      Author: Daniel Rehfeldt
  */
 
-
 #include "PardisoIndefSolver.h"
 #include "pipschecks.h"
 #include "SimpleVector.h"
@@ -13,9 +12,9 @@
 #include <algorithm>
 #include <cassert>
 #include "pipsdef.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 
-PardisoIndefSolver::PardisoIndefSolver(DenseSymMatrix* dm, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
+PardisoIndefSolver::PardisoIndefSolver(DenseSymmetricMatrix* dm, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {
    mStorage = dm->getStorageHandle();
    mStorageSparse = nullptr;
@@ -27,7 +26,7 @@ PardisoIndefSolver::PardisoIndefSolver(DenseSymMatrix* dm, bool solve_in_paralle
    initPardiso();
 }
 
-PardisoIndefSolver::PardisoIndefSolver(SparseSymMatrix* sm, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
+PardisoIndefSolver::PardisoIndefSolver(SparseSymmetricMatrix* sm, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {
    mStorage = nullptr;
    mStorageSparse = sm->getStorageHandle();
@@ -132,10 +131,10 @@ void PardisoIndefSolver::matrixChanged() {
 }
 
 
-void PardisoIndefSolver::matrixRebuild(DoubleMatrix& matrixNew) {
+void PardisoIndefSolver::matrixRebuild(AbstractMatrix& matrixNew) {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    if (solve_in_parallel || my_rank == 0) {
-      SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
+      SparseSymmetricMatrix& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
@@ -150,7 +149,7 @@ void PardisoIndefSolver::matrixRebuild(DoubleMatrix& matrixNew) {
 }
 
 
-void PardisoIndefSolver::factorizeFromSparse(SparseSymMatrix& matrix_fortran) {
+void PardisoIndefSolver::factorizeFromSparse(SparseSymmetricMatrix& matrix_fortran) {
    assert(n == matrix_fortran.size());
    assert(!deleteCSRpointers);
    assert(matrix_fortran.getStorageRef().fortranIndexed());

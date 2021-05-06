@@ -320,8 +320,8 @@ private:
    void changeNnzCounterColumn(const INDEX& col, int amount, bool at_root);
 
    /// methods for querying the problem in order to get certain structures etc.
-   StochGenMatrix& getSystemMatrix(SystemType system_type) const;
-   SparseGenMatrix* getSparseGenMatrix(const INDEX& row, const INDEX& col) const;
+   DistributedMatrix& getSystemMatrix(SystemType system_type) const;
+   SparseMatrix* getSparseGenMatrix(const INDEX& row, const INDEX& col) const;
 
    void checkBoundsInfeasible(const INDEX& col, double xlow_new, double xupp_new) const;
 public:
@@ -330,7 +330,7 @@ public:
    int countEmptyRowsBDmat() const;
 
 private:
-   void writeMatrixRowToStreamDense(std::ostream& out, const SparseGenMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,
+   void writeMatrixRowToStreamDense(std::ostream& out, const SparseMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,
          const SimpleVector<double>& xupp, const SimpleVector<double>& ixlow, const SimpleVector<double>& xlow) const;
    void printVarBoundStatistics(std::ostream& out) const;
 };

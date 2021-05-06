@@ -12,20 +12,20 @@
 
 class PardisoMKLSchurSolver : public PardisoSchurSolver {
 public:
-   PardisoMKLSchurSolver(const SparseSymMatrix* sgm);
+   PardisoMKLSchurSolver(const SparseSymmetricMatrix* sgm);
+
    void solve(Vector<double>& rhs) override;
+
    using DoubleLinearSolver::solve;
 
 protected:
    ~PardisoMKLSchurSolver() override;
 
-   void computeSC(int nSCO, /*const*/SparseGenMatrix& R,
-         /*const*/SparseGenMatrix& A,
-         /*const*/SparseGenMatrix& C,
-         /*const*/SparseGenMatrix& F,
-         /*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
+   void computeSC(int nSCO, const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F,
+      const SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) override;
 
    void setIparm(int* iparm) const override;
+
    void initPardiso() override;
 };
 

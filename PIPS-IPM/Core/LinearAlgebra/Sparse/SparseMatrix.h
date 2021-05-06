@@ -2,15 +2,14 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#ifndef SPARSEGENMATRIX_H
-#define SPARSEGENMATRIX_H
+#ifndef SPARSEMATRIX_H
+#define SPARSEMATRIX_H
 
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include "SparseStorage.h"
 #include "SparseStorageDynamic.h"
-#include "SparseGenMatrixHandle.h"
 #include "SimpleVector.h"
 #include <vector>
 #include "pipsport.h"
@@ -19,37 +18,37 @@
  *  row-major Harwell-Boeing format.
  *  @ingroup SparseLinearAlgebra
  */
-class SparseGenMatrix : public GenMatrix {
+class SparseMatrix : public GeneralMatrix {
 private:
    static void
    getMinMaxVec(bool getMin, bool initializeVec, const SparseStorage* storage, const Vector<double>* coScaleVec, Vector<double>& minmaxVec);
    static void getMinMaxVec(bool getMin, bool initializeVec, const SparseStorageDynamic* storage_dynamic, const Vector<double>* coScaleVec,
          Vector<double>& minmaxVec);
 protected:
-   SparseStorageHandle mStorage;
+   SmartPointer<SparseStorage> mStorage;
    SparseStorageDynamic* mStorageDynamic{};
 
    /* transposed will be initialized when necessary */
-   mutable SparseGenMatrix* m_Mt{};
+   mutable SparseMatrix* m_Mt{};
 
 public:
 
-   SparseGenMatrix() = default;
+   SparseMatrix() = default;
 
    void updateTransposed() const;
    void deleteTransposed() const;
 
-   SparseGenMatrix(int rows, int cols, int nnz);
-   SparseGenMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0);
-   explicit SparseGenMatrix(SparseStorage* m_storage);
+   SparseMatrix(int rows, int cols, int nnz);
+   SparseMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0);
+   explicit SparseMatrix(SparseStorage* m_storage);
 
-   using GenMatrix::cloneFull;
-   GenMatrix* cloneFull(bool switchToDynamicStorage) const override;
+   using GeneralMatrix::cloneFull;
+   GeneralMatrix* cloneFull(bool switchToDynamicStorage) const override;
 
-   using GenMatrix::cloneEmptyRows;
-   GenMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
+   using GeneralMatrix::cloneEmptyRows;
+   GeneralMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
 
-   SparseGenMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
+   SparseMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
 
    void getSize(long long& m, long long& n) const override;
    void getSize(int& m, int& n) const override;
@@ -60,7 +59,7 @@ public:
     */
    int numberOfNonZeros() const override;
 
-   int isKindOf(int matType) const override;
+   int is_a(int matType) const override;
 
    void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
@@ -73,7 +72,7 @@ public:
    void scalarMult(double num) override;
 
    void fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const override;
-   void atPutSubmatrix(int destRow, int destCol, const DoubleMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
+   void atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
    void atPutSpRow(int col, const double A[], int lenA, const int jcolA[], int& info) override;
 
    void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
@@ -84,9 +83,9 @@ public:
    void mult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
 
-   void multMatSymUpper(double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
+   void multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
 
-   void transmultMatSymUpper(double beta, SymMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
+   void transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const;
 
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
    void transMult(double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in, int incx) const;
@@ -96,18 +95,18 @@ public:
    void transMultD(double beta, Vector<double>& y, double alpha, const Vector<double>& x, const Vector<double>& d) const;
 
    /** res = this^T * D * this where D=diag(d) is a diagonal matrix. */
-   void matTransDMultMat(const Vector<double>& d, SymMatrix** res) const override;
+   void matTransDMultMat(const Vector<double>& d, SymmetricMatrix** res) const override;
    /** res = this^T * inv(D) * this where D=diag(d) is a diagonal matrix. */
-   void matTransDinvMultMat(const Vector<double>& d, SymMatrix** res) const override;
+   void matTransDinvMultMat(const Vector<double>& d, SymmetricMatrix** res) const override;
    /** C = this^T * D * this where D=diag(d) is a diagonal matrix. */
 
    /** initialize (dynamic) transposed matrix */
    void initTransposed(bool dynamic = false) const;
 
    /** res = this * this^T */
-   void matMultTrans(SymMatrix** res) const;
+   void matMultTrans(SymmetricMatrix** res) const;
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void writeToStream(std::ostream& out) const override;
@@ -143,11 +142,11 @@ public:
       return mStorageDynamic;
    }
 
-   [[nodiscard]] SparseStorageHandle getStorageHandle() {
+   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() {
       return mStorage;
    }
 
-   [[nodiscard]] SparseStorageHandle getStorageHandle() const {
+   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() const {
       return mStorage;
    }
 
@@ -216,8 +215,8 @@ public:
    void updateNonEmptyRowsCount(int blockPosition, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
          std::vector<int>& row_end_block) const;
 
-   const SparseGenMatrix& getTranspose() const;
-   SparseGenMatrix& getTranspose();
+   const SparseMatrix& getTranspose() const;
+   SparseMatrix& getTranspose();
 
    void deleteEmptyRowsCols(const Vector<int>& rowNnzVec, const Vector<int>& colNnzVec);
 
@@ -239,8 +238,8 @@ public:
 
    void freeDynamicStorage();
 
-   int appendRow(const SparseGenMatrix& matrix_row, int row);
-   int appendCol(const SparseGenMatrix& matrix_col, int col);
+   int appendRow(const SparseMatrix& matrix_row, int row);
+   int appendCol(const SparseMatrix& matrix_col, int col);
 
    double localRowTimesVec(const SimpleVector<double>& vec, int row) const;
    void axpyWithRowAt(double alpha, SimpleVector<double>& y, int row) const;
@@ -256,12 +255,12 @@ public:
 
    void addColToRow(double coeff, int col, int row);
 
-   SparseGenMatrix* shaveLeft(int n_cols);
-   GenMatrix* shaveBottom(int n_rows) override;
+   SparseMatrix* shaveLeft(int n_cols);
+   GeneralMatrix* shaveBottom(int n_rows) override;
    void dropNEmptyRowsBottom(int n_rows);
    void dropNEmptyRowsTop(int n_rows);
 
-   ~SparseGenMatrix() override;
+   ~SparseMatrix() override;
 };
 
 #endif

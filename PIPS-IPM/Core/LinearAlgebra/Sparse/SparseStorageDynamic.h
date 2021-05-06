@@ -9,7 +9,7 @@
 #define PIPS_IPM_CORE_SPARSELINEARALGEBRA_SPARSESTORAGEDYNAMIC_H_
 
 #include "pipsport.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include "SparseStorage.h"
 #include <vector>
 
@@ -117,7 +117,7 @@ public:
 
    void restoreOrder();
 
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    [[nodiscard]] SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;

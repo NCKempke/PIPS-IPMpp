@@ -199,7 +199,7 @@ gmspips_reader::~gmspips_reader() {
    }
 }
 
-StochInputTree* gmspips_reader::read_problem() {
+DistributedInputTree* gmspips_reader::read_problem() {
    FNNZ fsni = &fsizeni;
    FNNZ fsmA = &fsizemA;
    FNNZ fsmC = &fsizemC;
@@ -237,15 +237,15 @@ StochInputTree* gmspips_reader::read_problem() {
    FMAT fQ = &fmatQ;
 
    //build the problem tree
-   StochInputTree::StochInputNode data(blocks.data(), 0, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb, fbL,
+   DistributedInputTree::DistributedInputNode data(blocks.data(), 0, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb, fbL,
          fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
-   StochInputTree* root = new StochInputTree(data);
+   DistributedInputTree* root = new DistributedInputTree(data);
 
    for (int blk = 1; blk < numBlocks; blk++) {
-      StochInputTree::StochInputNode data(blocks.data(), blk, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb,
+      DistributedInputTree::DistributedInputNode data(blocks.data(), blk, fsni, fsmA, fsmBL, fsmC, fsmDL, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBL, fnnzBL, fb,
             fbL, fC, fnnzC, fD, fnnzD, fDL, fnnzDL, fclow, ficlow, fcupp, ficupp, fdlow, fidlow, fdupp, fidupp, fxlow, fixlow, fxupp, fixupp, false);
 
-      root->AddChild(new StochInputTree(data));
+      root->AddChild(new DistributedInputTree(data));
    }
 
    return root;

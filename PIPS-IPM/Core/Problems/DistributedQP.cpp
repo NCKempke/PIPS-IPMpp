@@ -1,12 +1,12 @@
 #include "DistributedQP.hpp"
 #include "DistributedTree.h"
 #include "DistributedTreeCallbacks.h"
-#include "StochSymMatrix.h"
-#include "StochGenMatrix.h"
+#include "DistributedSymmetricMatrix.h"
+#include "DistributedMatrix.h"
 #include "DistributedVector.h"
 #include "mpi.h"
-#include "StochOptions.h"
-#include "BorderedSymMatrix.h"
+#include "DistributedOptions.h"
+#include "BorderedSymmetricMatrix.h"
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
@@ -622,7 +622,7 @@ std::vector<int> DistributedQP::get2LinkLengthsVec(const std::vector<int>& linkS
    return linkStartBlockLengths;
 }
 
-SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
+SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
    assert(children.size() > 0);
    const int nx0 = getLocalnx();
    const int my0 = getLocalmy();
@@ -642,7 +642,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
    krowM[0] = 0;
 
    // get B_0^T (resp. A_0^T)
-   SparseGenMatrix& Btrans = getLocalB().getTranspose();
+   SparseMatrix& Btrans = getLocalB().getTranspose();
    int* const startRowBtrans = Btrans.krowM();
    int* const colidxBtrans = Btrans.jcolM();
 
@@ -689,7 +689,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
       appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
 
       if (myl > 0) {
-         SparseGenMatrix& Ft = getLocalF().getTranspose();
+         SparseMatrix& Ft = getLocalF().getTranspose();
          const int* startRowFtrans = Ft.krowM();
          const int* colidxFtrans = Ft.jcolM();
 
@@ -697,7 +697,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
       }
 
       if (mzl > 0) {
-         SparseGenMatrix& Gt = getLocalG().getTranspose();
+         SparseMatrix& Gt = getLocalG().getTranspose();
          const int* startRowGtrans = Gt.krowM();
          const int* colidxGtrans = Gt.jcolM();
 
@@ -753,11 +753,11 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
 
    assert(nnzcount == nnz);
 
-   return (new SparseSymMatrix(sizeSC, nnz, krowM, jcolM, M, 1, false));
+   return (new SparseSymmetricMatrix(sizeSC, nnz, krowM, jcolM, M, 1, false));
 }
 
 
-SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) {
+SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) {
    assert(children.size() > 0);
 
    const int nx0 = getLocalnx();
@@ -782,7 +782,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksSta
    krowM[0] = 0;
 
    // get B_0^T (resp. A_0^T)
-   SparseGenMatrix& Btrans = getLocalB().getTranspose();
+   SparseMatrix& Btrans = getLocalB().getTranspose();
    int* const startRowBtrans = Btrans.krowM();
    int* const colidxBtrans = Btrans.jcolM();
 
@@ -839,7 +839,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksSta
       appendRowSparse(startRowBtrans[i], startRowBtrans[i + 1], nx0, colidxBtrans, nnzcount, jcolM);
 
       if (myl > 0) {
-         SparseGenMatrix& Ft = getLocalF().getTranspose();
+         SparseMatrix& Ft = getLocalF().getTranspose();
          const int* startRowFtrans = Ft.krowM();
          const int* colidxFtrans = Ft.jcolM();
 
@@ -847,7 +847,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksSta
       }
 
       if (mzl > 0) {
-         SparseGenMatrix& Gt = getLocalG().getTranspose();
+         SparseMatrix& Gt = getLocalG().getTranspose();
          const int* startRowGtrans = Gt.krowM();
          const int* colidxGtrans = Gt.jcolM();
 
@@ -897,7 +897,7 @@ SparseSymMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksSta
 
    this->initDistMarker(blocksStart, blocksEnd);
 
-   return (new SparseSymMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
+   return (new SparseSymmetricMatrix(sizeSC, nnzcount, krowM, jcolM, M, 1, false));
 }
 
 Permutation DistributedQP::get0VarsLastGlobalsFirstPermutation(std::vector<int>& link_vars_n_blocks, int& n_globals) {
@@ -1086,8 +1086,8 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
    return permvec;
 }
 
-DistributedQP::DistributedQP(const DistributedTree* tree_, Vector<double>* c_in, SymMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
-      Vector<double>* xupp_in, Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in,
+DistributedQP::DistributedQP(const DistributedTree* tree_, Vector<double>* c_in, SymmetricMatrix* Q_in, Vector<double>* xlow_in, Vector<double>* ixlow_in,
+      Vector<double>* xupp_in, Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in,
       Vector<double>* iclow_in, Vector<double>* cupp_in, Vector<double>* icupp_in, bool add_children, bool is_hierarchy_root,
       bool is_hierarchy_inner_root, bool is_hierarchy_inner_leaf) : QP(c_in, Q_in, xlow_in, ixlow_in,
       xupp_in, ixupp_in, A_in, bA_in, C_in, clow_in, iclow_in, cupp_in, icupp_in), stochNode{tree_}, is_hierarchy_root{is_hierarchy_root},
@@ -1139,9 +1139,9 @@ void DistributedQP::writeToStreamDense(std::ostream& out) const {
 
 DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    // todo Q is empty!
-   SmartPointer<SymMatrix> Q_clone(Q->clone());
-   SmartPointer<GenMatrix> A_clone(dynamic_cast<const StochGenMatrix&>(*A).cloneFull(switchToDynamicStorage));
-   SmartPointer<GenMatrix> C_clone(dynamic_cast<const StochGenMatrix&>(*C).cloneFull(switchToDynamicStorage));
+   SmartPointer<SymmetricMatrix> Q_clone(Q->clone());
+   SmartPointer<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*A).cloneFull(switchToDynamicStorage));
+   SmartPointer<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
    DistributedVector<double>* c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
    DistributedVector<double>* bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
@@ -1168,15 +1168,15 @@ void DistributedQP::createChildren() {
    //structure for this class, and link this object with the corresponding
    //vectors and matrices
    DistributedVector<double>& gSt = dynamic_cast<DistributedVector<double>&>(*g);
-   StochSymMatrix& QSt = dynamic_cast<StochSymMatrix&>(*Q);
+   DistributedSymmetricMatrix& QSt = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
 
    DistributedVector<double>& xlowSt = dynamic_cast<DistributedVector<double>&>(*blx);
    DistributedVector<double>& ixlowSt = dynamic_cast<DistributedVector<double>&>(*ixlow);
    DistributedVector<double>& xuppSt = dynamic_cast<DistributedVector<double>&>(*bux);
    DistributedVector<double>& ixuppSt = dynamic_cast<DistributedVector<double>&>(*ixupp);
-   StochGenMatrix& ASt = dynamic_cast<StochGenMatrix&>(*A);
+   DistributedMatrix& ASt = dynamic_cast<DistributedMatrix&>(*A);
    DistributedVector<double>& bASt = dynamic_cast<DistributedVector<double>&>(*bA);
-   StochGenMatrix& CSt = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& CSt = dynamic_cast<DistributedMatrix&>(*C);
    DistributedVector<double>& clowSt = dynamic_cast<DistributedVector<double>&>(*bl);
    DistributedVector<double>& iclowSt = dynamic_cast<DistributedVector<double>&>(*iclow);
    DistributedVector<double>& cuppSt = dynamic_cast<DistributedVector<double>&>(*bu);
@@ -1198,10 +1198,10 @@ void DistributedQP::destroyChildren() {
 }
 
 DistributedQP* DistributedQP::shaveBorderFromDataAndCreateNewTop(const DistributedTree* tree) {
-   SmartPointer<SymMatrix> Q_hier(dynamic_cast<StochSymMatrix&>(*Q).raiseBorder(n_global_linking_vars));
+   SmartPointer<SymmetricMatrix> Q_hier(dynamic_cast<DistributedSymmetricMatrix&>(*Q).raiseBorder(n_global_linking_vars));
 
-   SmartPointer<GenMatrix> A_hier(dynamic_cast<StochGenMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
-   SmartPointer<GenMatrix> C_hier(dynamic_cast<StochGenMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
+   SmartPointer<GeneralMatrix> A_hier(dynamic_cast<DistributedMatrix&>(*A).raiseBorder(n_global_eq_linking_conss, n_global_linking_vars));
+   SmartPointer<GeneralMatrix> C_hier(dynamic_cast<DistributedMatrix&>(*C).raiseBorder(n_global_ineq_linking_conss, n_global_linking_vars));
 
    /* we ordered global linking vars first and global linking rows to the end */
    DistributedVector<double>* g_hier(dynamic_cast<DistributedVector<double>&>(*g).raiseBorder(n_global_linking_vars, false, true));
@@ -1367,13 +1367,13 @@ void DistributedQP::addChildrenForSplit() {
 
    unsigned int childchild_pos{0};
    for (unsigned int i = 0; i < n_new_children; ++i) {
-      StochSymMatrix* Q_child = is_hierarchy_inner_root ? dynamic_cast<StochSymMatrix&>(*Q).children[i]
-                                                        : dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).children[i];
+      DistributedSymmetricMatrix* Q_child = is_hierarchy_inner_root ? dynamic_cast<DistributedSymmetricMatrix&>(*Q).children[i]
+                                                        : dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).children[i];
 
-      StochGenMatrix* A_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*A).children[i]
-                                                        : dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).children[i];
-      StochGenMatrix* C_child = is_hierarchy_inner_root ? dynamic_cast<StochGenMatrix&>(*C).children[i]
-                                                        : dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).children[i];
+      DistributedMatrix* A_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*A).children[i]
+                                                           : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).children[i];
+      DistributedMatrix* C_child = is_hierarchy_inner_root ? dynamic_cast<DistributedMatrix&>(*C).children[i]
+                                                           : dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).children[i];
 
       DistributedVector<double>* g_child = is_hierarchy_inner_root ? dynamic_cast<DistributedVector<double>&>(*g).children[i]
                                                                    : dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).children[i];
@@ -1502,10 +1502,10 @@ void DistributedQP::splitData() {
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
 
    if (stochNode->isHierarchicalInnerLeaf()) {
-      dynamic_cast<StochSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
-      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),
+      dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),
             child_comms);
-      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(),
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(),
             child_comms);
 
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*g).first).split(map_block_subtree, child_comms);
@@ -1528,9 +1528,9 @@ void DistributedQP::splitData() {
             linkStartBlockLengthsC, stochNode->mzl());
    }
    else {
-      dynamic_cast<StochSymMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
-      dynamic_cast<StochGenMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
-      dynamic_cast<StochGenMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
+      dynamic_cast<DistributedSymmetricMatrix&>(*Q).splitMatrix(map_block_subtree, child_comms);
+      dynamic_cast<DistributedMatrix&>(*A).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(), child_comms);
+      dynamic_cast<DistributedMatrix&>(*C).splitMatrix(linkStartBlockLengthsC, map_block_subtree, stochNode->mzl(), child_comms);
 
       dynamic_cast<DistributedVector<double>&>(*g).split(map_block_subtree, child_comms);
 
@@ -1587,9 +1587,9 @@ void DistributedQP::splitData() {
 }
 
 void DistributedQP::recomputeSize() {
-   dynamic_cast<StochSymMatrix&>(*Q).recomputeSize();
-   dynamic_cast<StochGenMatrix&>(*A).recomputeSize();
-   dynamic_cast<StochGenMatrix&>(*C).recomputeSize();
+   dynamic_cast<DistributedSymmetricMatrix&>(*Q).recomputeSize();
+   dynamic_cast<DistributedMatrix&>(*A).recomputeSize();
+   dynamic_cast<DistributedMatrix&>(*C).recomputeSize();
 
    dynamic_cast<DistributedVector<double>&>(*g).recomputeSize();
 
@@ -1607,14 +1607,14 @@ void DistributedQP::recomputeSize() {
 }
 
 void DistributedQP::splitStringMatricesAccordingToSubtreeStructure() {
-   assert(dynamic_cast<StochGenMatrix&>(*A).Blmat->isKindOf(kStringGenMatrix));
-   assert(dynamic_cast<StochGenMatrix&>(*C).Blmat->isKindOf(kStringGenMatrix));
-   StringGenMatrix& Blmat = dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Blmat);
-   StringGenMatrix& Dlmat = dynamic_cast<StringGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Blmat);
+   assert(dynamic_cast<DistributedMatrix&>(*A).Blmat->is_a(kStripMatrix));
+   assert(dynamic_cast<DistributedMatrix&>(*C).Blmat->is_a(kStripMatrix));
+   StripMatrix& Blmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Blmat);
+   StripMatrix& Dlmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Blmat);
 
    if (stochNode->getCommWorkers() == MPI_COMM_NULL) {
-      assert(Blmat.isKindOf(kStringGenDummyMatrix));
-      assert(Dlmat.isKindOf(kStringGenDummyMatrix));
+      assert(Blmat.is_a(kStringGenDummyMatrix));
+      assert(Dlmat.is_a(kStringGenDummyMatrix));
       return;
    }
 
@@ -1660,8 +1660,8 @@ void DistributedQP::permuteLinkingCons(const Permutation& permA, const Permutati
    assert(!is_hierarchy_root);
 
    if (stochNode->isHierarchicalInnerLeaf()) {
-      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*A).Bmat).permuteLinkingCons(permA);
-      dynamic_cast<StochGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*C).Bmat).permuteLinkingCons(permC);
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).permuteLinkingCons(permA);
+      dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Bmat).permuteLinkingCons(permC);
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bA).first).permuteLinkingEntries(permA);
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bl).first).permuteLinkingEntries(permC);
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*bu).first).permuteLinkingEntries(permC);
@@ -1669,8 +1669,8 @@ void DistributedQP::permuteLinkingCons(const Permutation& permA, const Permutati
       dynamic_cast<DistributedVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*icupp).first).permuteLinkingEntries(permC);
    }
    else {
-      dynamic_cast<StochGenMatrix&>(*A).permuteLinkingCons(permA);
-      dynamic_cast<StochGenMatrix&>(*C).permuteLinkingCons(permC);
+      dynamic_cast<DistributedMatrix&>(*A).permuteLinkingCons(permA);
+      dynamic_cast<DistributedMatrix&>(*C).permuteLinkingCons(permC);
       dynamic_cast<DistributedVector<double>&>(*bA).permuteLinkingEntries(permA);
       dynamic_cast<DistributedVector<double>&>(*bl).permuteLinkingEntries(permC);
       dynamic_cast<DistributedVector<double>&>(*bu).permuteLinkingEntries(permC);
@@ -1683,8 +1683,8 @@ void DistributedQP::permuteLinkingVars(const Permutation& perm) {
    assert(permutationIsValid(linkVarsPermutation));
    assert(!is_hierarchy_root);
 
-   dynamic_cast<StochGenMatrix&>(*A).permuteLinkingVars(perm);
-   dynamic_cast<StochGenMatrix&>(*C).permuteLinkingVars(perm);
+   dynamic_cast<DistributedMatrix&>(*A).permuteLinkingVars(perm);
+   dynamic_cast<DistributedMatrix&>(*C).permuteLinkingVars(perm);
    dynamic_cast<DistributedVector<double>&>(*g).permuteVec0Entries(perm);
    dynamic_cast<DistributedVector<double>&>(*bux).permuteVec0Entries(perm);
    dynamic_cast<DistributedVector<double>&>(*blx).permuteVec0Entries(perm);
@@ -1743,14 +1743,14 @@ DistributedResiduals* DistributedQP::getResidsUnperm(const DistributedResiduals&
    return unperm_resids;
 }
 
-void DistributedQP::removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const StochGenMatrix& Astoch, const StochGenMatrix& Cstoch,
+void DistributedQP::removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link_var, const DistributedMatrix& Astoch, const DistributedMatrix& Cstoch,
       const std::vector<int>& linkStartBlockIdA, const std::vector<int>& linkStartBlockIdC) {
    for (size_t i = 0; i < n_blocks_per_link_var.size(); ++i) {
       /* variable is n0LinkVar */
       if (n_blocks_per_link_var[i] == 0) {
          /// Blmat
          {
-            const SparseGenMatrix& Blmat = dynamic_cast<SparseGenMatrix&>(*Astoch.Blmat).getTranspose();
+            const SparseMatrix& Blmat = dynamic_cast<SparseMatrix&>(*Astoch.Blmat).getTranspose();
             const int col_start_A = Blmat.krowM()[i];
             const int col_end_A = Blmat.krowM()[i + 1];
 
@@ -1767,7 +1767,7 @@ void DistributedQP::removeN0LinkVarsIn2Links(std::vector<int>& n_blocks_per_link
 
          /// Dlmat
          {
-            const SparseGenMatrix& Dlmat = dynamic_cast<SparseGenMatrix&>(*Cstoch.Blmat).getTranspose();
+            const SparseMatrix& Dlmat = dynamic_cast<SparseMatrix&>(*Cstoch.Blmat).getTranspose();
             const int col_start_C = Dlmat.krowM()[i];
             const int col_end_C = Dlmat.krowM()[i + 1];
 
@@ -1811,8 +1811,8 @@ void DistributedQP::activateLinkStructureExploitation() {
 
    const int nx0 = getLocalnx();
 
-   const StochGenMatrix& Astoch = dynamic_cast<const StochGenMatrix&>(*A);
-   const StochGenMatrix& Cstoch = dynamic_cast<const StochGenMatrix&>(*C);
+   const DistributedMatrix& Astoch = dynamic_cast<const DistributedMatrix&>(*A);
+   const DistributedMatrix& Cstoch = dynamic_cast<const DistributedMatrix&>(*C);
 
    n_blocks_per_link_var = std::vector<int>(nx0, 0);
    Astoch.updateKLinkVarsCount(n_blocks_per_link_var);
@@ -1961,25 +1961,25 @@ void DistributedQP::printLinkVarsStats() {
    std::vector<int> linkCount0(n, 0);
    std::vector<int> linkCountLC(n, 0);
 
-   StochGenMatrix& Astoch = dynamic_cast<StochGenMatrix&>(*A);
-   StochGenMatrix& Cstoch = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& Astoch = dynamic_cast<DistributedMatrix&>(*A);
+   DistributedMatrix& Cstoch = dynamic_cast<DistributedMatrix&>(*C);
 
    Astoch.updateKLinkVarsCount(linkCountA);
    Cstoch.updateKLinkVarsCount(linkCountC);
 
-   dynamic_cast<SparseGenMatrix*>(Astoch.Bmat)->getTranspose().updateNonEmptyRowsCount(linkCount0);
-   dynamic_cast<SparseGenMatrix*>(Astoch.Bmat)->deleteTransposed();
-   dynamic_cast<SparseGenMatrix*>(Cstoch.Bmat)->getTranspose().updateNonEmptyRowsCount(linkCount0);
-   dynamic_cast<SparseGenMatrix*>(Cstoch.Bmat)->deleteTransposed();
+   dynamic_cast<SparseMatrix*>(Astoch.Bmat)->getTranspose().updateNonEmptyRowsCount(linkCount0);
+   dynamic_cast<SparseMatrix*>(Astoch.Bmat)->deleteTransposed();
+   dynamic_cast<SparseMatrix*>(Cstoch.Bmat)->getTranspose().updateNonEmptyRowsCount(linkCount0);
+   dynamic_cast<SparseMatrix*>(Cstoch.Bmat)->deleteTransposed();
 
    if (Astoch.Blmat) {
-      dynamic_cast<SparseGenMatrix*>(Astoch.Blmat)->getTranspose().updateNonEmptyRowsCount(linkCountLC);
-      dynamic_cast<SparseGenMatrix*>(Astoch.Blmat)->deleteTransposed();
+      dynamic_cast<SparseMatrix*>(Astoch.Blmat)->getTranspose().updateNonEmptyRowsCount(linkCountLC);
+      dynamic_cast<SparseMatrix*>(Astoch.Blmat)->deleteTransposed();
    }
 
    if (Cstoch.Blmat) {
-      dynamic_cast<SparseGenMatrix*>(Cstoch.Blmat)->getTranspose().updateNonEmptyRowsCount(linkCountLC);
-      dynamic_cast<SparseGenMatrix*>(Cstoch.Blmat)->deleteTransposed();
+      dynamic_cast<SparseMatrix*>(Cstoch.Blmat)->getTranspose().updateNonEmptyRowsCount(linkCountLC);
+      dynamic_cast<SparseMatrix*>(Cstoch.Blmat)->deleteTransposed();
    }
 
    const int rank = PIPS_MPIgetRank();
@@ -2036,7 +2036,7 @@ void DistributedQP::printLinkConsStats() {
    if (myl > 0) {
       std::vector<int> linkCount(myl, 0);
 
-      dynamic_cast<StochGenMatrix&>(*A).updateKLinkConsCount(linkCount);
+      dynamic_cast<DistributedMatrix&>(*A).updateKLinkConsCount(linkCount);
 
       if (rank == 0) {
          std::vector<int> linkSizes(nLinkStats, 0);
@@ -2064,7 +2064,7 @@ void DistributedQP::printLinkConsStats() {
    if (mzl > 0) {
       std::vector<int> linkCount(mzl, 0);
 
-      dynamic_cast<StochGenMatrix&>(*C).updateKLinkConsCount(linkCount);
+      dynamic_cast<DistributedMatrix&>(*C).updateKLinkConsCount(linkCount);
 
       if (rank == 0) {
          std::vector<int> linkSizes(nLinkStats, 0);
@@ -2119,10 +2119,10 @@ int DistributedQP::getLocalnx() const {
 
    long long my{0};
    long long nx{0};
-   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
 
    if (is_hierarchy_inner_leaf)
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
    else
       Ast.Bmat->getSize(my, nx);
 
@@ -2134,10 +2134,10 @@ int DistributedQP::getLocalmy() const {
 
    long long my{0};
    long long nx{0};
-   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
 
    if (is_hierarchy_inner_leaf)
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
    else
       Ast.Bmat->getSize(my, nx);
 
@@ -2147,7 +2147,7 @@ int DistributedQP::getLocalmy() const {
 int DistributedQP::getLocalmyl() const {
    long long myl{0};
    long long nxl{0};
-   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
 
    if (is_hierarchy_root) {
       assert(0 && "TODO : implement");
@@ -2155,8 +2155,8 @@ int DistributedQP::getLocalmyl() const {
 //      Abd.Blmat->getSize(myl, nxl);
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
-      dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Blmat->getSize(myl, nxl);
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
+      dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Blmat->getSize(myl, nxl);
    }
    else
       Ast.Blmat->getSize(myl, nxl);
@@ -2167,12 +2167,12 @@ int DistributedQP::getLocalmyl() const {
 int DistributedQP::getLocalmz() const {
    long long mz{0};
    long long nx{0};
-   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+   const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
 
    if (is_hierarchy_root)
       assert(0 && "TODO : implement");
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL)
-      assert(Cst.Bmat->isKindOf(kStochGenMatrix));
+      assert(Cst.Bmat->is_a(kDistributedMatrix));
    else
       Cst.Bmat->getSize(mz, nx);
 
@@ -2180,7 +2180,7 @@ int DistributedQP::getLocalmz() const {
 }
 
 int DistributedQP::getLocalmzl() const {
-   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+   const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
    long long mzl{0};
    long long nxl{0};
 
@@ -2188,8 +2188,8 @@ int DistributedQP::getLocalmzl() const {
       assert(0 && "TODO : implement");
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Bmat->isKindOf(kStochGenMatrix));
-      dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Blmat->getSize(mzl, nxl);
+      assert(Cst.Bmat->is_a(kDistributedMatrix));
+      dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Blmat->getSize(mzl, nxl);
    }
    else
       Cst.Blmat->getSize(mzl, nxl);
@@ -2205,35 +2205,35 @@ int DistributedQP::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) 
    long long mzl_loc{0};
 
    if (is_hierarchy_root) {
-      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
-      assert(Abd.border_left->mat);
-      assert(Abd.border_left->mat_link);
-      Abd.border_left->mat->getSize(my_loc, nx_loc);
+      const BorderedMatrix& Abd = dynamic_cast<const BorderedMatrix&>(*A);
+      assert(Abd.border_left->first);
+      assert(Abd.border_left->last);
+      Abd.border_left->first->getSize(my_loc, nx_loc);
       Abd.bottom_left_block->getSize(myl_loc, nx_loc);
 
-      const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
-      assert(Cbd.border_left->mat);
-      assert(Cbd.border_left->mat_link);
-      Cbd.border_left->mat->getSize(mz_loc, nx_loc);
+      const BorderedMatrix& Cbd = dynamic_cast<const BorderedMatrix&>(*C);
+      assert(Cbd.border_left->first);
+      assert(Cbd.border_left->last);
+      Cbd.border_left->first->getSize(mz_loc, nx_loc);
       Cbd.bottom_left_block->getSize(mzl_loc, nx_loc);
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
-      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+      const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
 
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
-      assert(Cst.Bmat->isKindOf(kStochGenMatrix));
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
+      assert(Cst.Bmat->is_a(kDistributedMatrix));
 
-      dynamic_cast<const StochGenMatrix&>(*Ast.Bmat).Blmat->getSize(myl_loc, nx_loc);
-      dynamic_cast<const StochGenMatrix&>(*Cst.Bmat).Blmat->getSize(mzl_loc, nx_loc);
+      dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Blmat->getSize(myl_loc, nx_loc);
+      dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat->getSize(mzl_loc, nx_loc);
       nx_loc = 0;
    }
    else {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
       Ast.Blmat->getSize(myl_loc, nx_loc);
       Ast.Bmat->getSize(my_loc, nx_loc);
 
-      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
       Cst.Blmat->getSize(mzl_loc, nx_loc);
       Cst.Bmat->getSize(mz_loc, nx_loc);
    }
@@ -2249,29 +2249,29 @@ int DistributedQP::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) 
 int DistributedQP::getLocalSizes(int& nx, int& my, int& mz) const {
    long long nx_loc, my_loc, mz_loc;
    if (is_hierarchy_root) {
-      const BorderedGenMatrix& Abd = dynamic_cast<const BorderedGenMatrix&>(*A);
-      assert(Abd.border_left->mat);
-      Abd.border_left->mat->getSize(my_loc, nx_loc);
+      const BorderedMatrix& Abd = dynamic_cast<const BorderedMatrix&>(*A);
+      assert(Abd.border_left->first);
+      Abd.border_left->first->getSize(my_loc, nx_loc);
 
-      const BorderedGenMatrix& Cbd = dynamic_cast<const BorderedGenMatrix&>(*C);
-      assert(Cbd.border_left->mat);
-      Cbd.border_left->mat->getSize(mz_loc, nx_loc);
+      const BorderedMatrix& Cbd = dynamic_cast<const BorderedMatrix&>(*C);
+      assert(Cbd.border_left->first);
+      Cbd.border_left->first->getSize(mz_loc, nx_loc);
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
-      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+      const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
 
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
-      assert(Cst.Bmat->isKindOf(kStochGenMatrix));
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
+      assert(Cst.Bmat->is_a(kDistributedMatrix));
 
-      dynamic_cast<const StochGenMatrix&>(*Ast.Bmat).Bmat->getSize(my_loc, nx_loc);
-      dynamic_cast<const StochGenMatrix&>(*Cst.Bmat).Bmat->getSize(mz_loc, nx_loc);
+      dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Bmat->getSize(my_loc, nx_loc);
+      dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Bmat->getSize(mz_loc, nx_loc);
    }
    else {
-      const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
+      const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
       Ast.Bmat->getSize(my_loc, nx_loc);
 
-      const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+      const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
       Cst.Bmat->getSize(mz_loc, nx_loc);
    }
 
@@ -2285,13 +2285,13 @@ int DistributedQP::getLocalSizes(int& nx, int& my, int& mz) const {
 int DistributedQP::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
    if (is_hierarchy_root || is_hierarchy_inner_root || is_hierarchy_inner_leaf)
       assert(0 && "TODO : implement");
-   const StochSymMatrix& Qst = dynamic_cast<const StochSymMatrix&>(*Q);
-   const StochGenMatrix& Ast = dynamic_cast<const StochGenMatrix&>(*A);
-   const StochGenMatrix& Cst = dynamic_cast<const StochGenMatrix&>(*C);
+   const DistributedSymmetricMatrix& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*Q);
+   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
 
-   nnzQ = dynamic_cast<const SparseSymMatrix*>(Qst.diag)->getStorageRef().len + Qst.border->getStorageRef().len;
-   nnzB = dynamic_cast<const SparseGenMatrix*>(Ast.Bmat)->getStorageRef().len;
-   nnzD = dynamic_cast<const SparseGenMatrix*>(Cst.Bmat)->getStorageRef().len;
+   nnzQ = dynamic_cast<const SparseSymmetricMatrix*>(Qst.diag)->getStorageRef().len + Qst.border->getStorageRef().len;
+   nnzB = dynamic_cast<const SparseMatrix*>(Ast.Bmat)->getStorageRef().len;
+   nnzD = dynamic_cast<const SparseMatrix*>(Cst.Bmat)->getStorageRef().len;
    return 0;
 }
 
@@ -2419,13 +2419,13 @@ int DistributedQP::getSchurCompMaxNnz() {
    nnz += getSCmixedBlocksMaxNnz(linkStartBlockIdA.size(), linkStartBlockIdC.size(), linkStartBlockLengthsA, linkStartBlockLengthsC);
 
    if (myl > 0) {
-      SparseGenMatrix& Ft = getLocalF().getTranspose();
+      SparseMatrix& Ft = getLocalF().getTranspose();
       const int* startRowFtrans = Ft.krowM();
       nnz += startRowFtrans[n0] - startRowFtrans[n0 - n0LinkVars];
    }
 
    if (mzl > 0) {
-      SparseGenMatrix& Gt = getLocalG().getTranspose();
+      SparseMatrix& Gt = getLocalG().getTranspose();
       const int* startRowGtrans = Gt.krowM();
       nnz += startRowGtrans[n0] - startRowGtrans[n0 - n0LinkVars];
    }
@@ -2479,13 +2479,13 @@ int DistributedQP::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd) {
          blocksEnd);
 
    if (myl > 0) {
-      SparseGenMatrix& Ft = getLocalF().getTranspose();
+      SparseMatrix& Ft = getLocalF().getTranspose();
       const int* startRowFtrans = Ft.krowM();
       nnz += startRowFtrans[n0] - startRowFtrans[n0 - n0LinkVars];
    }
 
    if (mzl > 0) {
-      SparseGenMatrix& Gt = getLocalG().getTranspose();
+      SparseMatrix& Gt = getLocalG().getTranspose();
       const int* startRowGtrans = Gt.krowM();
       nnz += startRowGtrans[n0] - startRowGtrans[n0 - n0LinkVars];
    }
@@ -2493,22 +2493,22 @@ int DistributedQP::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd) {
    return nnz;
 }
 
-SparseSymMatrix& DistributedQP::getLocalQ() {
-   StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
+SparseSymmetricMatrix& DistributedQP::getLocalQ() {
+   DistributedSymmetricMatrix& Qst = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
    assert(!is_hierarchy_root);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Qst.diag->isKindOf(kStochSymMatrix));
-      return dynamic_cast<SparseSymMatrix&>(*dynamic_cast<StochSymMatrix&>(*Qst.diag).diag);
+      assert(Qst.diag->is_a(kStochSymMatrix));
+      return dynamic_cast<SparseSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Qst.diag).diag);
    }
    else {
-      assert(Qst.diag->isKindOf(kSparseSymMatrix));
-      return dynamic_cast<SparseSymMatrix&>(*Qst.diag);
+      assert(Qst.diag->is_a(kSparseSymMatrix));
+      return dynamic_cast<SparseSymmetricMatrix&>(*Qst.diag);
    }
 }
 
-SparseGenMatrix& DistributedQP::getLocalCrossHessian() {
-   StochSymMatrix& Qst = dynamic_cast<StochSymMatrix&>(*Q);
+SparseMatrix& DistributedQP::getLocalCrossHessian() {
+   DistributedSymmetricMatrix& Qst = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
    assert(!is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
 
    return *Qst.border;
@@ -2517,122 +2517,122 @@ SparseGenMatrix& DistributedQP::getLocalCrossHessian() {
 // T_i x_0 + W_i x_i = b_i
 
 // This is T_i
-SparseGenMatrix& DistributedQP::getLocalA() {
+SparseMatrix& DistributedQP::getLocalA() {
    assert(!is_hierarchy_root);
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+   DistributedMatrix& Ast = dynamic_cast<DistributedMatrix&>(*A);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Amat->isKindOf(kStochGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Ast.Amat).Amat);
+      assert(Ast.Amat->is_a(kDistributedMatrix));
+      return dynamic_cast<SparseMatrix&>(*dynamic_cast<DistributedMatrix&>(*Ast.Amat).Amat);
    }
    else {
-      assert(Ast.Amat->isKindOf(kSparseGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*Ast.Amat);
+      assert(Ast.Amat->is_a(kSparseGenMatrix));
+      return dynamic_cast<SparseMatrix&>(*Ast.Amat);
    }
 }
 
 // This is W_i:
-SparseGenMatrix& DistributedQP::getLocalB() {
+SparseMatrix& DistributedQP::getLocalB() {
    assert(!is_hierarchy_root);
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+   DistributedMatrix& Ast = dynamic_cast<DistributedMatrix&>(*A);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Bmat);
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<SparseMatrix&>(*dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Bmat);
    }
    else {
-      assert(Ast.Bmat->isKindOf(kSparseGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*Ast.Bmat);
+      assert(Ast.Bmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<SparseMatrix&>(*Ast.Bmat);
    }
 }
 
 // This is F_i (linking equality matrix):
-SparseGenMatrix& DistributedQP::getLocalF() {
+SparseMatrix& DistributedQP::getLocalF() {
    assert(!is_hierarchy_root);
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+   DistributedMatrix& Ast = dynamic_cast<DistributedMatrix&>(*A);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Ast.Bmat->isKindOf(kStochGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Ast.Bmat).Blmat);
+      assert(Ast.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<SparseMatrix&>(*dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Blmat);
    }
    else {
-      assert(Ast.Blmat->isKindOf(kSparseGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*Ast.Blmat);
+      assert(Ast.Blmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<SparseMatrix&>(*Ast.Blmat);
    }
 }
 
-StringGenMatrix& DistributedQP::getLocalFBorder() {
+StripMatrix& DistributedQP::getLocalFBorder() {
    assert(is_hierarchy_inner_leaf);
-   StochGenMatrix& Ast = dynamic_cast<StochGenMatrix&>(*A);
+   DistributedMatrix& Ast = dynamic_cast<DistributedMatrix&>(*A);
 
-   assert(Ast.Blmat->isKindOf(kStringGenMatrix));
-   return dynamic_cast<StringGenMatrix&>(*Ast.Blmat);
+   assert(Ast.Blmat->is_a(kStripMatrix));
+   return dynamic_cast<StripMatrix&>(*Ast.Blmat);
 }
 
-StringGenMatrix& DistributedQP::getLocalGBorder() {
+StripMatrix& DistributedQP::getLocalGBorder() {
    assert(is_hierarchy_inner_leaf);
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& Cst = dynamic_cast<DistributedMatrix&>(*C);
 
-   assert(Cst.Blmat->isKindOf(kStringGenMatrix));
-   return dynamic_cast<StringGenMatrix&>(*Cst.Blmat);
+   assert(Cst.Blmat->is_a(kStripMatrix));
+   return dynamic_cast<StripMatrix&>(*Cst.Blmat);
 }
 
 // low_i <= C_i x_0 + D_i x_i <= upp_i
 
 // This is C_i
-SparseGenMatrix& DistributedQP::getLocalC() {
+SparseMatrix& DistributedQP::getLocalC() {
    assert(!is_hierarchy_root);
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& Cst = dynamic_cast<DistributedMatrix&>(*C);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Amat->isKindOf(kStochGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Amat).Amat);
+      assert(Cst.Amat->is_a(kDistributedMatrix));
+      return dynamic_cast<SparseMatrix&>(*dynamic_cast<DistributedMatrix&>(*Cst.Amat).Amat);
    }
    else {
-      assert(Cst.Amat->isKindOf(kSparseGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*Cst.Amat);
+      assert(Cst.Amat->is_a(kSparseGenMatrix));
+      return dynamic_cast<SparseMatrix&>(*Cst.Amat);
    }
 }
 
 // This is D_i
-SparseGenMatrix& DistributedQP::getLocalD() {
+SparseMatrix& DistributedQP::getLocalD() {
    assert(!is_hierarchy_root);
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& Cst = dynamic_cast<DistributedMatrix&>(*C);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Bmat->isKindOf(kStochGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Bmat);
+      assert(Cst.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<SparseMatrix&>(*dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Bmat);
    }
    else {
-      assert(Cst.Bmat->isKindOf(kSparseGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*Cst.Bmat);
+      assert(Cst.Bmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<SparseMatrix&>(*Cst.Bmat);
    }
 
 }
 
 // This is G_i (linking inequality matrix):
-SparseGenMatrix& DistributedQP::getLocalG() {
+SparseMatrix& DistributedQP::getLocalG() {
    assert(!is_hierarchy_root);
-   StochGenMatrix& Cst = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& Cst = dynamic_cast<DistributedMatrix&>(*C);
 
    if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
-      assert(Cst.Bmat->isKindOf(kStochGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*dynamic_cast<StochGenMatrix&>(*Cst.Bmat).Blmat);
+      assert(Cst.Bmat->is_a(kDistributedMatrix));
+      return dynamic_cast<SparseMatrix&>(*dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Blmat);
    }
    else {
-      assert(Cst.Blmat->isKindOf(kSparseGenMatrix));
-      return dynamic_cast<SparseGenMatrix&>(*Cst.Blmat);
+      assert(Cst.Blmat->is_a(kSparseGenMatrix));
+      return dynamic_cast<SparseMatrix&>(*Cst.Blmat);
    }
 }
 
 void DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVecA, const DistributedVector<int>& rowNnzVecC,
       const DistributedVector<int>& colNnzVec) {
-   StochSymMatrix& Q_stoch = dynamic_cast<StochSymMatrix&>(*Q);
+   DistributedSymmetricMatrix& Q_stoch = dynamic_cast<DistributedSymmetricMatrix&>(*Q);
    // todo only works if Q is empty - not existent
    Q_stoch.deleteEmptyRowsCols(colNnzVec);
 
    // clean up equality system
-   StochGenMatrix& A_stoch = dynamic_cast<StochGenMatrix&>(*A);
+   DistributedMatrix& A_stoch = dynamic_cast<DistributedMatrix&>(*A);
    DistributedVector<double>& b_Astoch = dynamic_cast<DistributedVector<double>&>(*bA);
 
    A_stoch.initStaticStorageFromDynamic(rowNnzVecA, colNnzVec);
@@ -2642,7 +2642,7 @@ void DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVec
    b_Astoch.removeEntries(rowNnzVecA);
 
    // clean up inequality system and x
-   StochGenMatrix& C_stoch = dynamic_cast<StochGenMatrix&>(*C);
+   DistributedMatrix& C_stoch = dynamic_cast<DistributedMatrix&>(*C);
    DistributedVector<double>& g_stoch = dynamic_cast<DistributedVector<double>&>(*g);
 
    DistributedVector<double>& blx_stoch = dynamic_cast<DistributedVector<double>&>(*blx);
@@ -2755,13 +2755,13 @@ bool DistributedQP::isRootNodeInSync() const {
    // todo
 
    /* matrix A */
-   if (!dynamic_cast<const StochGenMatrix&>(*A).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedMatrix&>(*A).isRootNodeInSync()) {
       std::cout << "ERROR: matrix A corrupted!\n";
       in_sync = false;
    }
 
    /* matrix C */
-   if (!dynamic_cast<const StochGenMatrix&>(*C).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedMatrix&>(*C).isRootNodeInSync()) {
       std::cout << "ERROR: matrix C corrupted!\n";
       in_sync = false;
    }
@@ -2841,8 +2841,8 @@ void DistributedQP::printRanges() const {
    assert(absmax_objective >= 0);
 
    /* matrix range */
-   const double absmax_A = A->abmaxnorm();
-   const double absmax_C = C->abmaxnorm();
+   const double absmax_A = A->inf_norm();
+   const double absmax_C = C->inf_norm();
 
    const double absmin_A = A->abminnormNonZero();
    const double absmin_C = C->abminnormNonZero();

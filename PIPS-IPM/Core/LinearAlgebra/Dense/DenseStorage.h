@@ -5,7 +5,7 @@
 #ifndef DENSEDOUBLEMATRIX_H
 #define DENSEDOUBLEMATRIX_H
 
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include "Vector.hpp"
 
 extern int DenseStorageInstances;
@@ -49,7 +49,7 @@ public:
    void rowScale(const Vector<double>& vec) override;
    void symmetricScale(const Vector<double>& vec) override;
    void scalarMult(double num) override;
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    void atPutSpRow(int col, const double A[], int lenA, const int irowA[], int& info) override;

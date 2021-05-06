@@ -1,4 +1,4 @@
-#include "StochGenMatrix.h"
+#include "DistributedMatrix.h"
 #include "DoubleMatrixTypes.h"
 #include "DistributedVector.h"
 #include "SimpleVector.h"
@@ -8,7 +8,7 @@
 #include <numeric>
 #include <memory>
 
-StochGenMatrix::StochGenMatrix(GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf, bool inner_root) : Amat{Amat},
+DistributedMatrix::DistributedMatrix(GeneralMatrix* Amat, GeneralMatrix* Bmat, GeneralMatrix* Blmat, MPI_Comm mpiComm_, bool inner_leaf, bool inner_root) : Amat{Amat},
       Bmat{Bmat}, Blmat{Blmat}, mpiComm{mpiComm_}, iAmDistrib{PIPS_MPIgetDistributed(mpiComm)}, inner_leaf{inner_leaf}, inner_root{inner_root} {
    assert(Amat);
    assert(Bmat);
@@ -33,25 +33,25 @@ StochGenMatrix::StochGenMatrix(GenMatrix* Amat, GenMatrix* Bmat, GenMatrix* Blma
    recomputeSize();
 }
 
-StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_)
+DistributedMatrix::DistributedMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, MPI_Comm mpiComm_)
       : m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
-   Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
-   Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
-   Blmat = new SparseGenMatrix(0, B_n, 0);
+   Amat = new SparseMatrix(A_m, A_n, A_nnz);
+   Bmat = new SparseMatrix(B_m, B_n, B_nnz);
+   Blmat = new SparseMatrix(0, B_n, 0);
 }
 
-StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n,
+DistributedMatrix::DistributedMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n,
       int Bl_nnz, MPI_Comm mpiComm_) : m(global_m), n(global_n), mpiComm(mpiComm_), iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
-   Amat = new SparseGenMatrix(A_m, A_n, A_nnz);
-   Bmat = new SparseGenMatrix(B_m, B_n, B_nnz);
-   Blmat = new SparseGenMatrix(Bl_m, Bl_n, Bl_nnz);
+   Amat = new SparseMatrix(A_m, A_n, A_nnz);
+   Bmat = new SparseMatrix(B_m, B_n, B_nnz);
+   Blmat = new SparseMatrix(Bl_m, Bl_n, Bl_nnz);
 }
 
-StochGenMatrix::StochGenMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_) : m(global_m), n(global_n), mpiComm(mpiComm_),
+DistributedMatrix::DistributedMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_) : m(global_m), n(global_n), mpiComm(mpiComm_),
       iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
 }
 
-StochGenMatrix::~StochGenMatrix() {
+DistributedMatrix::~DistributedMatrix() {
    for (auto & it : children)
       delete it;
 
@@ -61,17 +61,17 @@ StochGenMatrix::~StochGenMatrix() {
 }
 
 
-bool StochGenMatrix::amatEmpty() const {
+bool DistributedMatrix::amatEmpty() const {
    int mA, nA;
    Amat->getSize(mA, nA);
    return mA <= 0 || nA <= 0;
 }
 
-bool StochGenMatrix::hasSparseMatrices() const {
-   return Amat->isKindOf(kSparseGenMatrix) && Bmat->isKindOf(kSparseGenMatrix) && Blmat->isKindOf(kSparseGenMatrix);
+bool DistributedMatrix::hasSparseMatrices() const {
+   return Amat->is_a(kSparseGenMatrix) && Bmat->is_a(kSparseGenMatrix) && Blmat->is_a(kSparseGenMatrix);
 }
-GenMatrix* StochGenMatrix::cloneFull(bool switchToDynamicStorage) const {
-   auto* clone = new StochGenMatrix(m, n, mpiComm);
+GeneralMatrix* DistributedMatrix::cloneFull(bool switchToDynamicStorage) const {
+   auto* clone = new DistributedMatrix(m, n, mpiComm);
    assert(hasSparseMatrices());
 
    // clone submatrices
@@ -80,14 +80,14 @@ GenMatrix* StochGenMatrix::cloneFull(bool switchToDynamicStorage) const {
    clone->Blmat = Blmat->cloneFull(switchToDynamicStorage);
 
    for (auto it : children)
-      clone->children.push_back(dynamic_cast<StochGenMatrix*>( it->cloneFull(switchToDynamicStorage)));
+      clone->children.push_back(dynamic_cast<DistributedMatrix*>( it->cloneFull(switchToDynamicStorage)));
 
    return clone;
 }
 
 /* creates an empty copy of the matrix with n = 0 for all submatrices and m (cols) as before */
-GenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
-   auto* clone = new StochGenMatrix(m, n, mpiComm);
+GeneralMatrix* DistributedMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
+   auto* clone = new DistributedMatrix(m, n, mpiComm);
    assert(hasSparseMatrices());
 
    // clone submatrices
@@ -96,34 +96,34 @@ GenMatrix* StochGenMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
    clone->Blmat = Blmat->cloneEmptyRows(switchToDynamicStorage);
 
    for (auto it : children)
-      clone->children.push_back(dynamic_cast<StochGenMatrix*>( it->cloneEmptyRows(switchToDynamicStorage)));
+      clone->children.push_back(dynamic_cast<DistributedMatrix*>( it->cloneEmptyRows(switchToDynamicStorage)));
 
    return clone;
 }
 
-void StochGenMatrix::AddChild(StochGenMatrix* child) {
+void DistributedMatrix::AddChild(DistributedMatrix* child) {
    children.push_back(child);
 }
 
-int StochGenMatrix::isKindOf(int type) const {
-   return type == kStochGenMatrix || type == kGenMatrix;
+int DistributedMatrix::is_a(int type) const {
+   return type == kDistributedMatrix || type == kGenMatrix;
 }
 
-int StochGenDummyMatrix::isKindOf(int type) const {
-   return type == kStochGenDummyMatrix || type == kGenMatrix || type == kStochGenMatrix;
+int StochGenDummyMatrix::is_a(int type) const {
+   return type == kStochGenDummyMatrix || type == kGenMatrix || type == kDistributedMatrix;
 }
 
-void StochGenMatrix::getSize(long long& m_out, long long& n_out) const {
+void DistributedMatrix::getSize(long long& m_out, long long& n_out) const {
    m_out = m;
    n_out = n;
 }
 
-void StochGenMatrix::getSize(int& m_out, int& n_out) const {
+void DistributedMatrix::getSize(int& m_out, int& n_out) const {
    m_out = static_cast<int>(m);
    n_out = static_cast<int>(n);
 }
 
-void StochGenMatrix::columnScale2(const Vector<double>& vec) {
+void DistributedMatrix::columnScale2(const Vector<double>& vec) {
    const auto& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
    assert(scalevec.children.empty() && children.empty());
 
@@ -135,7 +135,7 @@ void StochGenMatrix::columnScale2(const Vector<double>& vec) {
    Blmat->columnScale(*scalevec.first);
 }
 
-void StochGenMatrix::columnScale(const Vector<double>& vec) {
+void DistributedMatrix::columnScale(const Vector<double>& vec) {
    const auto& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    assert(amatEmpty());
@@ -148,7 +148,7 @@ void StochGenMatrix::columnScale(const Vector<double>& vec) {
       children[it]->columnScale2(*(scalevec.children[it]));
 }
 
-void StochGenMatrix::rowScale2(const Vector<double>& vec, const Vector<double>* linkingvec) {
+void DistributedMatrix::rowScale2(const Vector<double>& vec, const Vector<double>* linkingvec) {
    const auto& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    assert(scalevec.children.empty() && children.empty());
@@ -162,7 +162,7 @@ void StochGenMatrix::rowScale2(const Vector<double>& vec, const Vector<double>* 
       Blmat->rowScale(*linkingvec);
 }
 
-void StochGenMatrix::rowScale(const Vector<double>& vec) {
+void DistributedMatrix::rowScale(const Vector<double>& vec) {
    const auto& scalevec = dynamic_cast<const DistributedVector<double>&>(vec);
 
    Bmat->rowScale(*scalevec.first);
@@ -175,7 +175,7 @@ void StochGenMatrix::rowScale(const Vector<double>& vec) {
       children[it]->rowScale2(*(scalevec.children[it]), scalevec.last);
 }
 
-void StochGenMatrix::scalarMult(double num) {
+void DistributedMatrix::scalarMult(double num) {
    Amat->scalarMult(num);
    Bmat->scalarMult(num);
    Blmat->scalarMult(num);
@@ -184,7 +184,7 @@ void StochGenMatrix::scalarMult(double num) {
       it->scalarMult(num);
 }
 
-void StochGenMatrix::getDiagonal(Vector<double>& vec_) const {
+void DistributedMatrix::getDiagonal(Vector<double>& vec_) const {
    auto& vec = dynamic_cast<DistributedVector<double>&>(vec_);
 
    Bmat->getDiagonal(*vec.first);
@@ -195,7 +195,7 @@ void StochGenMatrix::getDiagonal(Vector<double>& vec_) const {
       children[it]->getDiagonal(*vec.children[it]);
 }
 
-void StochGenMatrix::setToDiagonal(const Vector<double>& vec_) {
+void DistributedMatrix::setToDiagonal(const Vector<double>& vec_) {
    const auto& vec = dynamic_cast<const DistributedVector<double>&>(vec_);
 
    Bmat->setToDiagonal(*vec.first);
@@ -207,7 +207,7 @@ void StochGenMatrix::setToDiagonal(const Vector<double>& vec_) {
 }
 
 /* y = beta * y + alpha * this * x */
-void StochGenMatrix::mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+void DistributedMatrix::mult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
    if (0.0 == alpha) {
       y_.scale(beta);
       return;
@@ -238,7 +238,7 @@ void StochGenMatrix::mult(double beta, Vector<double>& y_, double alpha, const V
 
 
 /* mult method for children; needed only for linking constraints */
-void StochGenMatrix::mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, Vector<double>* yparentl_) const {
+void DistributedMatrix::mult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, Vector<double>* yparentl_) const {
    assert(alpha != 0.0);
    assert(children.empty());
    assert(y.children.size() == children.size());
@@ -262,7 +262,7 @@ void StochGenMatrix::mult2(double beta, DistributedVector<double>& y, double alp
 }
 
 
-void StochGenMatrix::transMult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
+void DistributedMatrix::transMult(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_) const {
    if (0.0 == alpha) {
       y_.scale(beta);
       return;
@@ -295,7 +295,7 @@ void StochGenMatrix::transMult(double beta, Vector<double>& y_, double alpha, co
 }
 
 void
-StochGenMatrix::transMult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, const Vector<double>* xvecl) const {
+DistributedMatrix::transMult2(double beta, DistributedVector<double>& y, double alpha, const DistributedVector<double>& x, const Vector<double>* xvecl) const {
    assert(alpha != 0.0);
    assert(x.first);
    assert(y.first);
@@ -311,22 +311,22 @@ StochGenMatrix::transMult2(double beta, DistributedVector<double>& y, double alp
       Blmat->transMult(1.0, *y.first, alpha, *xvecl);
 }
 
-double StochGenMatrix::abmaxnorm() const {
+double DistributedMatrix::inf_norm() const {
    double nrm = 0.0;
 
    for (auto it : children)
-      nrm = std::max(nrm, it->abmaxnorm());
+      nrm = std::max(nrm, it->inf_norm());
 
    if (iAmDistrib)
       PIPS_MPIgetMaxInPlace(nrm, mpiComm);
 
-   nrm = std::max(nrm, std::max(Amat->abmaxnorm(), Bmat->abmaxnorm()));
-   nrm = std::max(nrm, Blmat->abmaxnorm());
+   nrm = std::max(nrm, std::max(Amat->inf_norm(), Bmat->inf_norm()));
+   nrm = std::max(nrm, Blmat->inf_norm());
 
    return nrm;
 }
 
-double StochGenMatrix::abminnormNonZero(double tol) const {
+double DistributedMatrix::abminnormNonZero(double tol) const {
    double nrm = std::numeric_limits<double>::infinity();
 
    for (auto it : children)
@@ -341,7 +341,7 @@ double StochGenMatrix::abminnormNonZero(double tol) const {
    return nrm;
 }
 
-void StochGenMatrix::getLinkVarsNnz(std::vector<int>& vec) const {
+void DistributedMatrix::getLinkVarsNnz(std::vector<int>& vec) const {
    assert(hasSparseMatrices());
 
    for (auto it : children)
@@ -357,23 +357,23 @@ void StochGenMatrix::getLinkVarsNnz(std::vector<int>& vec) const {
    }
 }
 
-void StochGenMatrix::getLinkVarsNnzChild(std::vector<int>& vec) const {
+void DistributedMatrix::getLinkVarsNnzChild(std::vector<int>& vec) const {
    assert(children.empty());
    assert(hasSparseMatrices());
 
-   dynamic_cast<const SparseGenMatrix*>(Amat)->getLinkVarsNnz(vec);
+   dynamic_cast<const SparseMatrix*>(Amat)->getLinkVarsNnz(vec);
 }
 
-void StochGenMatrix::writeToStreamDenseBorderedChild(const StringGenMatrix& border_left, std::ostream& out, int offset) const {
+void DistributedMatrix::writeToStreamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out, int offset) const {
    assert(border_left.children.size() == this->children.size());
 
-   if (Bmat->isKindOf(kStochGenMatrix)) {
-      assert(border_left.mat->isKindOf(kStringGenMatrix));
-      dynamic_cast<StochGenMatrix*>(Bmat)->writeToStreamDenseBordered(dynamic_cast<StringGenMatrix&>(*border_left.mat), out, offset);
+   if (Bmat->is_a(kDistributedMatrix)) {
+      assert(border_left.first->is_a(kStripMatrix));
+      dynamic_cast<DistributedMatrix*>(Bmat)->writeToStreamDenseBordered(dynamic_cast<StripMatrix&>(*border_left.first), out, offset);
    }
       /// Border.mat | Amat | offset | Bmat ///
    else {
-      assert(border_left.mat->isKindOf(kSparseGenMatrix));
+      assert(border_left.first->is_a(kSparseGenMatrix));
       assert(hasSparseMatrices());
       assert(PIPS_MPIgetRank(mpiComm) == 0);
 
@@ -382,12 +382,12 @@ void StochGenMatrix::writeToStreamDenseBorderedChild(const StringGenMatrix& bord
       int nA, mA;
       Amat->getSize(mA, nA);
       int nBd, mBd;
-      border_left.mat->getSize(mBd, nBd);
+      border_left.first->getSize(mBd, nBd);
 
       assert(mB == mA && mA == mBd);
 
       for (int row = 0; row < mB; ++row) {
-         border_left.mat->writeToStreamDenseRow(out, row);
+         border_left.first->writeToStreamDenseRow(out, row);
          out << "|\t";
          Amat->writeToStreamDenseRow(out, row);
 
@@ -400,7 +400,7 @@ void StochGenMatrix::writeToStreamDenseBorderedChild(const StringGenMatrix& bord
 }
 
 
-void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_left, std::ostream& out, int offset) const {
+void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_left, std::ostream& out, int offset) const {
    assert(border_left.children.size() == this->children.size());
    assert(hasSparseMatrices());
    assert(!children.empty());
@@ -414,18 +414,18 @@ void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_le
    int mBmat, nBmat;
    this->Bmat->getSize(mBmat, nBmat);
    int mBd, nBd;
-   border_left.mat->getSize(mBd, nBd);
+   border_left.first->getSize(mBd, nBd);
    assert(mBmat == mBd);
 
-   assert(Bmat->isKindOf(kSparseGenMatrix));
-   assert(border_left.mat->isKindOf(kSparseGenMatrix));
+   assert(Bmat->is_a(kSparseGenMatrix));
+   assert(border_left.first->is_a(kSparseGenMatrix));
 
    /// Border.mat | Bmat ///
    if (my_rank == 0) {
       for (int i = 0; i < mBmat; ++i) {
-         dynamic_cast<const SparseGenMatrix&>(*border_left.mat).writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseMatrix&>(*border_left.first).writeToStreamDenseRow(out, i);
          out << "|\t";
-         dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
          out << "\n";
       }
    }
@@ -438,7 +438,7 @@ void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_le
 
    for (size_t it = 0; it < children.size(); it++) {
       MPI_Barrier(mpiComm);
-      const StringGenMatrix& border_child = *border_left.children[it];
+      const StripMatrix& border_child = *border_left.children[it];
 
       children[it]->writeToStreamDenseBorderedChild(border_child, child_stream, offset);
 
@@ -458,9 +458,9 @@ void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_le
    int mlink, nlink;
    this->Blmat->getSize(mlink, nlink);
    if (mlink > 0) {
-      assert(border_left.mat_link);
+      assert(border_left.last);
       int mBdl, nBdl;
-      border_left.mat_link->getSize(mBdl, nBdl);
+      border_left.last->getSize(mBdl, nBdl);
       assert(mBdl == mlink);
 
       // for each row r do:
@@ -469,9 +469,9 @@ void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_le
          std::ostringstream link_row_stream;
 
          if (my_rank == 0) {
-            dynamic_cast<const SparseGenMatrix&>(*border_left.mat_link).writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseMatrix&>(*border_left.last).writeToStreamDenseRow(link_row_stream, r);
             link_row_stream << "|\t";
-            dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
             for (int i = 0; i < original_offset; ++i)
                link_row_stream << "\t";
          }
@@ -491,7 +491,7 @@ void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_le
 
       std::ostringstream dashed_line_stream;
       if (my_rank == 0) {
-         dynamic_cast<const SparseGenMatrix&>(*border_left.mat_link).writeDashedLineToStream(dashed_line_stream);
+         dynamic_cast<const SparseMatrix&>(*border_left.last).writeDashedLineToStream(dashed_line_stream);
          dashed_line_stream << "|\t";
       }
       writeDashedLineToStream(dashed_line_stream, original_offset);
@@ -505,14 +505,14 @@ void StochGenMatrix::writeToStreamDenseBordered(const StringGenMatrix& border_le
       MPI_Barrier(mpiComm);
 }
 
-void StochGenMatrix::writeDashedLineToStream(std::ostream& out, int offset) const {
+void DistributedMatrix::writeDashedLineToStream(std::ostream& out, int offset) const {
    const int my_rank = PIPS_MPIgetRank(mpiComm);
 
    MPI_Barrier(mpiComm);
    std::ostringstream link_row_stream;
 
    if (my_rank == 0) {
-      dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeDashedLineToStream(link_row_stream);
+      dynamic_cast<const SparseMatrix*>(this->Blmat)->writeDashedLineToStream(link_row_stream);
       for (int i = 0; i < offset; ++i)
          link_row_stream << "-\t";
    }
@@ -531,7 +531,7 @@ void StochGenMatrix::writeDashedLineToStream(std::ostream& out, int offset) cons
 
 }
 
-void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const {
+void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const {
    assert(hasSparseMatrices());
    assert(!children.empty());
 
@@ -544,14 +544,14 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const {
    int mBmat, nBmat;
    Bmat->getSize(mBmat, nBmat);
 
-   assert(Bmat->isKindOf(kSparseGenMatrix));
+   assert(Bmat->is_a(kSparseGenMatrix));
 
    /// Bmat ///
    if (my_rank == 0) {
       for (int i = 0; i < mBmat; ++i) {
          for (int j = 0; j < offset; ++j)
             out << "\t";
-         dynamic_cast<const SparseGenMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
+         dynamic_cast<const SparseMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
          out << "\n";
       }
    }
@@ -588,7 +588,7 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const {
          std::ostringstream link_row_stream;
 
          if (my_rank == 0) {
-            dynamic_cast<const SparseGenMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
+            dynamic_cast<const SparseMatrix*>(this->Blmat)->writeToStreamDenseRow(link_row_stream, r);
             for (int i = 0; i < original_offset; ++i)
                link_row_stream << "\t";
          }
@@ -611,9 +611,9 @@ void StochGenMatrix::writeToStreamDense(std::ostream& out, int offset) const {
 }
 
 /** writes child matrix blocks, offset indicates the offset between A and B block. */
-void StochGenMatrix::writeToStreamDenseChild(std::ostream& out, int offset) const {
-   if (Bmat->isKindOf(kStochGenMatrix))
-      dynamic_cast<StochGenMatrix*>(Bmat)->writeToStreamDense(out, offset);
+void DistributedMatrix::writeToStreamDenseChild(std::ostream& out, int offset) const {
+   if (Bmat->is_a(kDistributedMatrix))
+      dynamic_cast<DistributedMatrix*>(Bmat)->writeToStreamDense(out, offset);
       /// Border.mat | Amat | offset | Bmat ///
    else {
       assert(hasSparseMatrices());
@@ -636,12 +636,12 @@ void StochGenMatrix::writeToStreamDenseChild(std::ostream& out, int offset) cons
 }
 
 /** returns a string containing the linking-row rowidx of the children. */
-void StochGenMatrix::writeToStreamDenseRowLink(std::ostream& out, int rowidx) const {
-   assert(!Blmat->isKindOf(kStringGenMatrix));
-   dynamic_cast<const SparseGenMatrix&>(*Blmat).writeToStreamDenseRow(out, rowidx);
+void DistributedMatrix::writeToStreamDenseRowLink(std::ostream& out, int rowidx) const {
+   assert(!Blmat->is_a(kStripMatrix));
+   dynamic_cast<const SparseMatrix&>(*Blmat).writeToStreamDenseRow(out, rowidx);
 }
 
-void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, const Vector<double>* irhs) const {
+void DistributedMatrix::writeMPSformatRows(std::ostream& out, int rowType, const Vector<double>* irhs) const {
    assert(hasSparseMatrices());
 
    const int myRank = PIPS_MPIgetRank(mpiComm);
@@ -685,36 +685,36 @@ void StochGenMatrix::writeMPSformatRows(std::ostream& out, int rowType, const Ve
    }
 }
 
-void StochGenMatrix::initTransposed(bool dynamic) const {
+void DistributedMatrix::initTransposed(bool dynamic) const {
    assert(hasSparseMatrices());
-   dynamic_cast<const SparseGenMatrix*>(Bmat)->initTransposed(dynamic);
-   dynamic_cast<const SparseGenMatrix*>(Blmat)->initTransposed(dynamic);
+   dynamic_cast<const SparseMatrix*>(Bmat)->initTransposed(dynamic);
+   dynamic_cast<const SparseMatrix*>(Blmat)->initTransposed(dynamic);
 
    for (auto it : children)
       it->initTransposedChild(dynamic);
 }
 
-void StochGenMatrix::deleteTransposed() const {
+void DistributedMatrix::deleteTransposed() const {
    assert(hasSparseMatrices());
 
-   dynamic_cast<const SparseGenMatrix*>(Amat)->deleteTransposed();
-   dynamic_cast<const SparseGenMatrix*>(Bmat)->deleteTransposed();
-   dynamic_cast<const SparseGenMatrix*>(Blmat)->deleteTransposed();
+   dynamic_cast<const SparseMatrix*>(Amat)->deleteTransposed();
+   dynamic_cast<const SparseMatrix*>(Bmat)->deleteTransposed();
+   dynamic_cast<const SparseMatrix*>(Blmat)->deleteTransposed();
 
    for (auto it : children)
       it->deleteTransposed();
 }
 
-void StochGenMatrix::initTransposedChild(bool dynamic) const {
+void DistributedMatrix::initTransposedChild(bool dynamic) const {
    assert(hasSparseMatrices());
-   dynamic_cast<SparseGenMatrix*>(Amat)->initTransposed(dynamic);
-   dynamic_cast<SparseGenMatrix*>(Bmat)->initTransposed(dynamic);
+   dynamic_cast<SparseMatrix*>(Amat)->initTransposed(dynamic);
+   dynamic_cast<SparseMatrix*>(Bmat)->initTransposed(dynamic);
 
    if (Blmat != nullptr)
-      dynamic_cast<SparseGenMatrix*>(Blmat)->initTransposed(dynamic);
+      dynamic_cast<SparseMatrix*>(Blmat)->initTransposed(dynamic);
 }
 
-int StochGenMatrix::numberOfNonZeros() const {
+int DistributedMatrix::numberOfNonZeros() const {
    assert(hasSparseMatrices());
    int nnz = 0;
 
@@ -729,7 +729,7 @@ int StochGenMatrix::numberOfNonZeros() const {
    return nnz;
 }
 
-void StochGenMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParent) const {
+void DistributedMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParent) const {
    assert(hasSparseMatrices());
    auto& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
 
@@ -738,10 +738,10 @@ void StochGenMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParent) 
 
    SimpleVector<int>* nnzvecl = nullptr;
 
-   dynamic_cast<SparseGenMatrix*>(Bmat)->addNnzPerRow(*(nnzVecStoch.first));
+   dynamic_cast<SparseMatrix*>(Bmat)->addNnzPerRow(*(nnzVecStoch.first));
 
    if (linkParent != nullptr)
-      dynamic_cast<SparseGenMatrix*>(Amat)->addNnzPerRow(*(nnzVecStoch.first));
+      dynamic_cast<SparseMatrix*>(Amat)->addNnzPerRow(*(nnzVecStoch.first));
 
    /* with linking constraints? */
    if (nnzVecStoch.last || linkParent) {
@@ -753,7 +753,7 @@ void StochGenMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParent) 
          nnzvecl = dynamic_cast<SimpleVector<int>*>(nnzVecStoch.last);
 
       if (linkParent != nullptr || iAmSpecial(iAmDistrib, mpiComm))
-         dynamic_cast<SparseGenMatrix*>(Blmat)->addNnzPerRow(*nnzvecl);
+         dynamic_cast<SparseMatrix*>(Blmat)->addNnzPerRow(*nnzvecl);
    }
 
 
@@ -766,7 +766,7 @@ void StochGenMatrix::getNnzPerRow(Vector<int>& nnzVec, Vector<int>* linkParent) 
    }
 }
 
-void StochGenMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) const {
+void DistributedMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) const {
    assert(hasSparseMatrices());
    auto& nnzVecStoch = dynamic_cast<DistributedVector<int>&>(nnzVec);
 
@@ -776,19 +776,19 @@ void StochGenMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) 
    auto* vec = dynamic_cast<SimpleVector<int>*>(nnzVecStoch.first);
 
    if (iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr) {
-      dynamic_cast<SparseGenMatrix*>(Bmat)->addNnzPerCol(*(vec));
+      dynamic_cast<SparseMatrix*>(Bmat)->addNnzPerCol(*(vec));
 
       int blm, bln;
       Blmat->getSize(blm, bln);
 
       /* with linking constraints? */
       if (blm > 0)
-         dynamic_cast<SparseGenMatrix*>(Blmat)->addNnzPerCol(*vec);
+         dynamic_cast<SparseMatrix*>(Blmat)->addNnzPerCol(*vec);
    }
 
    // not at root?
    if (linkParent != nullptr)
-      dynamic_cast<SparseGenMatrix*>(Amat)->addNnzPerCol(*linkParent);
+      dynamic_cast<SparseMatrix*>(Amat)->addNnzPerCol(*linkParent);
    else {
       for (size_t it = 0; it < children.size(); it++)
          children[it]->getNnzPerCol(*(nnzVecStoch.children[it]), vec);
@@ -800,7 +800,7 @@ void StochGenMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParent) 
    }
 }
 
-void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* col_scale_, Vector<double>& minmax_) const {
+void DistributedMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* col_scale_, Vector<double>& minmax_) const {
    assert(amatEmpty());
 
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_);
@@ -838,7 +838,7 @@ void StochGenMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vect
    }
 }
 
-void StochGenMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* col_scale_, Vector<double>& minmax_,
+void DistributedMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* col_scale_, Vector<double>& minmax_,
       Vector<double>* minmax_linking_cons) const {
    assert(children.empty());
    auto& minmax = dynamic_cast<DistributedVector<double>&>(minmax_);
@@ -854,7 +854,7 @@ void StochGenMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const
    Bmat->getRowMinMaxVec(getMin, initializeVec, col_scale_vec, *(minmax.first));
 
    if (!amatEmpty()) {
-      assert(!Bmat->isKindOf(kStochGenMatrix));
+      assert(!Bmat->is_a(kDistributedMatrix));
       Amat->getRowMinMaxVec(getMin, false, col_scale_linkingvar_vec, *(minmax.first));
    }
 
@@ -862,7 +862,7 @@ void StochGenMatrix::getRowMinMaxVecChild(bool getMin, bool initializeVec, const
       Blmat->getRowMinMaxVec(getMin, false, col_scale_vec, *minmax_linking_cons);
 }
 
-void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec_, Vector<double>& minmaxVec_) const {
+void DistributedMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec_, Vector<double>& minmaxVec_) const {
    assert(amatEmpty());
    auto& minmaxVec = dynamic_cast<DistributedVector<double>&>(minmaxVec_);
    const auto* rowScaleVec = dynamic_cast<const DistributedVector<double>*>(rowScaleVec_);
@@ -898,7 +898,7 @@ void StochGenMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vect
    }
 }
 
-void StochGenMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* rowScale_, const Vector<double>* rowScaleParent,
+void DistributedMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* rowScale_, const Vector<double>* rowScaleParent,
       Vector<double>& minmaxVec_) const {
    assert(children.empty());
    auto& minmaxVec = dynamic_cast<DistributedVector<double>&>(minmaxVec_);
@@ -914,7 +914,7 @@ void StochGenMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, const
    Bmat->getColMinMaxVec(getMin, initializeVec, row_scale_vec, *minmaxVec.first);
 
    if (!amatEmpty()) {
-      assert(!Bmat->isKindOf(kStochGenMatrix));
+      assert(!Bmat->is_a(kDistributedMatrix));
       Amat->getColMinMaxVec(getMin, false, row_scale_vec, *minmaxVec.getLinkingVecNotHierarchicalTop());
    }
 
@@ -923,7 +923,7 @@ void StochGenMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, const
 }
 
 
-void StochGenMatrix::addRowSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
+void DistributedMatrix::addRowSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
    assert(false && "TODO : hierarchical version");
    assert(hasSparseMatrices());
 
@@ -972,7 +972,7 @@ void StochGenMatrix::addRowSums(Vector<double>& sumVec, Vector<double>* linkPare
    }
 }
 
-void StochGenMatrix::addColSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
+void DistributedMatrix::addColSums(Vector<double>& sumVec, Vector<double>* linkParent) const {
    assert(false && "TODO : hierarchical version");
    assert(hasSparseMatrices());
 
@@ -1015,7 +1015,7 @@ void StochGenMatrix::addColSums(Vector<double>& sumVec, Vector<double>* linkPare
    }
 }
 
-void StochGenMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, const Vector<int>& colNnzVec, const Vector<int>* rowLinkVec,
+void DistributedMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, const Vector<int>& colNnzVec, const Vector<int>* rowLinkVec,
       const Vector<int>* colParentVec) {
    assert(hasSparseMatrices());
 
@@ -1031,15 +1031,15 @@ void StochGenMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, 
    assert(rowvec);
    assert(colvec);
 
-   dynamic_cast<SparseGenMatrix*>(Amat)->initStaticStorageFromDynamic(*rowvec, colParentVec); // initialized with colVec == nullptr for parent
-   dynamic_cast<SparseGenMatrix*>(Bmat)->initStaticStorageFromDynamic(*rowvec, colvec);
+   dynamic_cast<SparseMatrix*>(Amat)->initStaticStorageFromDynamic(*rowvec, colParentVec); // initialized with colVec == nullptr for parent
+   dynamic_cast<SparseMatrix*>(Bmat)->initStaticStorageFromDynamic(*rowvec, colvec);
 
    // at root?
    if (colParentVec == nullptr) {
       assert(rowLinkVec == nullptr);
 
       if (rowlink != nullptr)
-         dynamic_cast<SparseGenMatrix*>(Blmat)->initStaticStorageFromDynamic(*rowlink, colvec);
+         dynamic_cast<SparseMatrix*>(Blmat)->initStaticStorageFromDynamic(*rowlink, colvec);
 
       for (size_t it = 0; it < children.size(); it++)
          children[it]->initStaticStorageFromDynamic(*(rowNnzVecStoch.children[it]), *(colNnzVecStoch.children[it]), rowlink, colvec);
@@ -1047,31 +1047,31 @@ void StochGenMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, 
    else {
       assert(children.empty());
       if (rowLinkVec != nullptr)
-         dynamic_cast<SparseGenMatrix*>(Blmat)->initStaticStorageFromDynamic(*rowLinkVec, colvec);
+         dynamic_cast<SparseMatrix*>(Blmat)->initStaticStorageFromDynamic(*rowLinkVec, colvec);
    }
 
 }
 
-void StochGenMatrix::freeDynamicStorage() {
+void DistributedMatrix::freeDynamicStorage() {
    assert(hasSparseMatrices());
 
-   dynamic_cast<SparseGenMatrix*>(Amat)->freeDynamicStorage();
-   dynamic_cast<SparseGenMatrix*>(Bmat)->freeDynamicStorage();
-   dynamic_cast<SparseGenMatrix*>(Blmat)->freeDynamicStorage();
+   dynamic_cast<SparseMatrix*>(Amat)->freeDynamicStorage();
+   dynamic_cast<SparseMatrix*>(Bmat)->freeDynamicStorage();
+   dynamic_cast<SparseMatrix*>(Blmat)->freeDynamicStorage();
 
    for (auto & it : children)
       it->freeDynamicStorage();
 }
 
-void StochGenMatrix::recomputeSize(StochGenMatrix* parent) {
+void DistributedMatrix::recomputeSize(DistributedMatrix* parent) {
    m = 0;
    n = 0;
 
-   if (Bmat->isKindOf(kStochGenMatrix)) {
+   if (Bmat->is_a(kDistributedMatrix)) {
       assert(children.empty());
       assert(inner_leaf);
 
-      dynamic_cast<StochGenMatrix*>(Bmat)->recomputeSize();
+      dynamic_cast<DistributedMatrix*>(Bmat)->recomputeSize();
    }
 
    if (!inner_root)
@@ -1098,7 +1098,7 @@ void StochGenMatrix::recomputeSize(StochGenMatrix* parent) {
    }
 }
 
-void StochGenMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const {
+void DistributedMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const {
    assert(hasSparseMatrices());
 
    if (!Blmat)
@@ -1111,9 +1111,9 @@ void StochGenMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const {
    assert(linkCount.size() == size_t(m_Blmat));
 
    for (auto it : children) {
-      if (!(it->isKindOf(kStochGenDummyMatrix))) {
+      if (!(it->is_a(kStochGenDummyMatrix))) {
          assert(it->Blmat);
-         dynamic_cast<SparseGenMatrix*>(it->Blmat)->updateNonEmptyRowsCount(linkCount);
+         dynamic_cast<SparseMatrix*>(it->Blmat)->updateNonEmptyRowsCount(linkCount);
       }
    }
 
@@ -1121,7 +1121,7 @@ void StochGenMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const {
       MPI_Allreduce(MPI_IN_PLACE, &linkCount[0], m_Blmat, MPI_INT, MPI_SUM, mpiComm);
 }
 
-void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) const {
+void DistributedMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) const {
    assert(hasSparseMatrices());
    int m_Blmat;
    int n_Blmat;
@@ -1133,9 +1133,9 @@ void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) co
    assert(link_block_count.size() == size_t(n_Blmat));
 
    for (auto it : children){
-      if (!(it->isKindOf(kStochGenDummyMatrix))) {
-         dynamic_cast<SparseGenMatrix*>(it->Amat)->getTranspose().updateNonEmptyRowsCount(link_block_count);
-         dynamic_cast<SparseGenMatrix*>(it->Amat)->deleteTransposed();
+      if (!(it->is_a(kStochGenDummyMatrix))) {
+         dynamic_cast<SparseMatrix*>(it->Amat)->getTranspose().updateNonEmptyRowsCount(link_block_count);
+         dynamic_cast<SparseMatrix*>(it->Amat)->deleteTransposed();
       }
    }
 
@@ -1143,7 +1143,7 @@ void StochGenMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) co
       PIPS_MPIsumArrayInPlace(link_block_count, mpiComm);
 }
 
-void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_start, std::vector<int>& block_count) const {
+void DistributedMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_start, std::vector<int>& block_count) const {
    assert(hasSparseMatrices());
    block_start.clear();
    block_count.clear();
@@ -1171,9 +1171,9 @@ void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_sta
    std::vector<bool> is_2_link(m_Blmat, false);
 
    for (size_t it = 0; it < children.size(); it++)
-      if (!(children[it]->isKindOf(kStochGenDummyMatrix))) {
+      if (!(children[it]->is_a(kStochGenDummyMatrix))) {
          assert(children[it]->Blmat);
-         dynamic_cast<const SparseGenMatrix*>(children[it]->Blmat)->updateNonEmptyRowsCountNew(static_cast<int>(it), block_count, block_start, block_end);
+         dynamic_cast<const SparseMatrix*>(children[it]->Blmat)->updateNonEmptyRowsCountNew(static_cast<int>(it), block_count, block_start, block_end);
       }
 
    if (iAmDistrib) {
@@ -1202,7 +1202,7 @@ void StochGenMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_sta
    }
 }
 
-std::vector<int> StochGenMatrix::get2LinkStartBlocks() const {
+std::vector<int> DistributedMatrix::get2LinkStartBlocks() const {
    assert(hasSparseMatrices());
    if (Blmat == nullptr)
       return std::vector<int>();
@@ -1221,9 +1221,9 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocks() const {
    std::vector<bool> is2link(m_loc, false);
 
    for (size_t it = 0; it < children.size(); it++)
-      if (!(children[it]->isKindOf(kStochGenDummyMatrix))) {
+      if (!(children[it]->is_a(kStochGenDummyMatrix))) {
          assert(children[it]->Blmat);
-         dynamic_cast<const SparseGenMatrix*>(children[it]->Blmat)->updateNonEmptyRowsCount(static_cast<int>(it), linkBlockCount, linkBlockStart, linkBlockEnd);
+         dynamic_cast<const SparseMatrix*>(children[it]->Blmat)->updateNonEmptyRowsCount(static_cast<int>(it), linkBlockCount, linkBlockStart, linkBlockEnd);
       }
 
    if (iAmDistrib)
@@ -1318,12 +1318,12 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocks() const {
                is2link[candRow] = true;
 
                // start block owned by this MPI process?
-               if (!children[startBlock]->isKindOf(kStochGenDummyMatrix)) {
-                  assert(children[endBlock]->isKindOf(kStochGenDummyMatrix));
+               if (!children[startBlock]->is_a(kStochGenDummyMatrix)) {
+                  assert(children[endBlock]->is_a(kStochGenDummyMatrix));
                   linkBlockStart[candRow] = startBlock;
                }
                else {
-                  assert(children[startBlock]->isKindOf(kStochGenDummyMatrix));
+                  assert(children[startBlock]->is_a(kStochGenDummyMatrix));
                   linkBlockStart[candRow] = -1;
                }
             }
@@ -1347,40 +1347,40 @@ std::vector<int> StochGenMatrix::get2LinkStartBlocks() const {
 }
 
 
-void StochGenMatrix::permuteLinkingVars(const std::vector<unsigned int>& permvec) {
+void DistributedMatrix::permuteLinkingVars(const std::vector<unsigned int>& permvec) {
    assert(hasSparseMatrices());
    if (Blmat)
-      dynamic_cast<SparseGenMatrix*>(Blmat)->permuteCols(permvec);
+      dynamic_cast<SparseMatrix*>(Blmat)->permuteCols(permvec);
 
-   dynamic_cast<SparseGenMatrix*>(Bmat)->permuteCols(permvec);
+   dynamic_cast<SparseMatrix*>(Bmat)->permuteCols(permvec);
 
    for (auto & it : children)
       it->permuteLinkingVarsChild(permvec);
 }
 
-void StochGenMatrix::permuteLinkingVarsChild(const std::vector<unsigned int>& permvec) {
+void DistributedMatrix::permuteLinkingVarsChild(const std::vector<unsigned int>& permvec) {
    assert(hasSparseMatrices());
 
-   dynamic_cast<SparseGenMatrix*>(Amat)->permuteCols(permvec);
+   dynamic_cast<SparseMatrix*>(Amat)->permuteCols(permvec);
 
    assert(children.empty());
 }
 
-void StochGenMatrix::permuteLinkingCons(const std::vector<unsigned int>& permvec) {
+void DistributedMatrix::permuteLinkingCons(const std::vector<unsigned int>& permvec) {
    assert(hasSparseMatrices());
    if (Blmat)
-      dynamic_cast<SparseGenMatrix*>(Blmat)->permuteRows(permvec);
+      dynamic_cast<SparseMatrix*>(Blmat)->permuteRows(permvec);
 
    for (auto & it : children)
       it->permuteLinkingCons(permvec);
 }
 
 
-void StochGenMatrix::updateTransposed() const {
+void DistributedMatrix::updateTransposed() const {
    assert(hasSparseMatrices());
-   dynamic_cast<const SparseGenMatrix*>(Amat)->updateTransposed();
-   dynamic_cast<const SparseGenMatrix*>(Bmat)->updateTransposed();
-   dynamic_cast<const SparseGenMatrix*>(Blmat)->updateTransposed();
+   dynamic_cast<const SparseMatrix*>(Amat)->updateTransposed();
+   dynamic_cast<const SparseMatrix*>(Bmat)->updateTransposed();
+   dynamic_cast<const SparseMatrix*>(Blmat)->updateTransposed();
 
    for (auto it : children)
       it->updateTransposed();
@@ -1392,7 +1392,7 @@ void StochGenMatrix::updateTransposed() const {
  * todo: make better use of std::vector and iterators
  * root node data is Amat (empty), Bmat and Blmat of root node. Children not checked.
  */
-bool StochGenMatrix::isRootNodeInSync() const {
+bool DistributedMatrix::isRootNodeInSync() const {
    assert(hasSparseMatrices());
    bool in_sync = true;
 
@@ -1406,9 +1406,9 @@ bool StochGenMatrix::isRootNodeInSync() const {
 
    const int my_rank = PIPS_MPIgetRank(mpiComm);
 
-   const auto& amat_sp = dynamic_cast<const SparseGenMatrix&>(*Amat);
-   const auto& bmat_sp = dynamic_cast<const SparseGenMatrix&>(*Bmat);
-   const auto& blmat_sp = dynamic_cast<const SparseGenMatrix&>(*Blmat);
+   const auto& amat_sp = dynamic_cast<const SparseMatrix&>(*Amat);
+   const auto& bmat_sp = dynamic_cast<const SparseMatrix&>(*Bmat);
+   const auto& blmat_sp = dynamic_cast<const SparseMatrix&>(*Blmat);
    /* if matrix has static storage */
    if (amat_sp.getStorageHandle().notNil() || bmat_sp.getStorageHandle().notNil() || blmat_sp.getStorageHandle().notNil()) {
       assert(amat_sp.getStorageHandle().notNil());
@@ -1624,7 +1624,7 @@ bool StochGenMatrix::isRootNodeInSync() const {
  *
  * @return rowindex (in specified block row) of newly appended row
  */
-int StochGenMatrix::appendRow(const StochGenMatrix& matrix_row, int child, int row, bool linking) {
+int DistributedMatrix::appendRow(const DistributedMatrix& matrix_row, int child, int row, bool linking) {
    assert(hasSparseMatrices());
    // todo: check that matrix is in correct format
    assert(matrix_row.children.size() == children.size());
@@ -1636,29 +1636,29 @@ int StochGenMatrix::appendRow(const StochGenMatrix& matrix_row, int child, int r
    // append row to all matrices necessary
    // todo maybe this can be done nicer - maybe we can just recursively call some method also on the dummies
    if (linking) {
-      index_row = dynamic_cast<SparseGenMatrix*>(Blmat)->appendRow(dynamic_cast<const SparseGenMatrix&>(*matrix_row.Blmat), row);
+      index_row = dynamic_cast<SparseMatrix*>(Blmat)->appendRow(dynamic_cast<const SparseMatrix&>(*matrix_row.Blmat), row);
 
       for (unsigned int i = 0; i < children.size(); ++i) {
-         if (!children[i]->isKindOf(kStochGenDummyMatrix)) {
-            assert(!matrix_row.children[i]->isKindOf(kStochGenDummyMatrix));
-            dynamic_cast<SparseGenMatrix*>(children[i]->Blmat)->appendRow(dynamic_cast<const SparseGenMatrix&>(*matrix_row.children[i]->Blmat), row);
+         if (!children[i]->is_a(kStochGenDummyMatrix)) {
+            assert(!matrix_row.children[i]->is_a(kStochGenDummyMatrix));
+            dynamic_cast<SparseMatrix*>(children[i]->Blmat)->appendRow(dynamic_cast<const SparseMatrix&>(*matrix_row.children[i]->Blmat), row);
          }
       }
    }
    else {
       if (child != -1) {
-         index_row = dynamic_cast<SparseGenMatrix&>(*children[child]->Amat).appendRow(
-               dynamic_cast<const SparseGenMatrix&>(*matrix_row.children[child]->Amat), row);
+         index_row = dynamic_cast<SparseMatrix&>(*children[child]->Amat).appendRow(
+               dynamic_cast<const SparseMatrix&>(*matrix_row.children[child]->Amat), row);
 #ifndef NDEBUG
-         const int index_row1 = dynamic_cast<SparseGenMatrix&>(*children[child]->Bmat).appendRow(
-               dynamic_cast<const SparseGenMatrix&>(*matrix_row.children[child]->Bmat), row);
+         const int index_row1 = dynamic_cast<SparseMatrix&>(*children[child]->Bmat).appendRow(
+               dynamic_cast<const SparseMatrix&>(*matrix_row.children[child]->Bmat), row);
 #else
-         dynamic_cast<SparseGenMatrix&>(*children[child]->Bmat).appendRow( dynamic_cast<SparseGenMatrix&>(*matrix_row.children[child]->Bmat), row );
+         dynamic_cast<SparseMatrix&>(*children[child]->Bmat).appendRow( dynamic_cast<SparseMatrix&>(*matrix_row.children[child]->Bmat), row );
 #endif
          assert(index_row1 == index_row);
       }
       else
-         index_row = dynamic_cast<SparseGenMatrix&>(*Bmat).appendRow(dynamic_cast<const SparseGenMatrix&>(*matrix_row.Bmat), row);
+         index_row = dynamic_cast<SparseMatrix&>(*Bmat).appendRow(dynamic_cast<const SparseMatrix&>(*matrix_row.Bmat), row);
    }
 
    return index_row;
@@ -1666,7 +1666,7 @@ int StochGenMatrix::appendRow(const StochGenMatrix& matrix_row, int child, int r
 
 /* y += alpha RowAt(child, row, linking) */
 void
-StochGenMatrix::axpyWithRowAt(double alpha, DistributedVector<double>* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const {
+DistributedMatrix::axpyWithRowAt(double alpha, DistributedVector<double>* y, SimpleVector<double>* y_linking, int child, int row, bool linking) const {
    assert(hasSparseMatrices());
    assert(y);
    assert(-1 <= child && child < static_cast<int>(children.size()));
@@ -1676,17 +1676,17 @@ StochGenMatrix::axpyWithRowAt(double alpha, DistributedVector<double>* y, Simple
    if (linking) {
       assert(Blmat);
       if (y_linking)
-         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAt(alpha, *y_linking, row);
+         dynamic_cast<const SparseMatrix*>(Blmat)->axpyWithRowAt(alpha, *y_linking, row);
       else {
          assert(y->first);
-         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
+         dynamic_cast<const SparseMatrix*>(Blmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
       }
 
       for (unsigned int i = 0; i < children.size(); ++i) {
-         if (!children[i]->isKindOf(kStochGenDummyMatrix)) {
+         if (!children[i]->is_a(kStochGenDummyMatrix)) {
             assert(children[i]->Blmat);
             assert(y->children[i]->first);
-            dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->axpyWithRowAt(alpha,
+            dynamic_cast<const SparseMatrix*>(children[i]->Blmat)->axpyWithRowAt(alpha,
                   dynamic_cast<SimpleVector<double>&>(*y->children[i]->first), row);
          }
       }
@@ -1695,10 +1695,10 @@ StochGenMatrix::axpyWithRowAt(double alpha, DistributedVector<double>* y, Simple
       if (child == -1) {
          assert(Bmat);
          if (y_linking)
-            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAt(alpha, *y_linking, row);
+            dynamic_cast<const SparseMatrix*>(Bmat)->axpyWithRowAt(alpha, *y_linking, row);
          else {
             assert(y->first);
-            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
+            dynamic_cast<const SparseMatrix*>(Bmat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
          }
       }
       else {
@@ -1706,20 +1706,20 @@ StochGenMatrix::axpyWithRowAt(double alpha, DistributedVector<double>* y, Simple
          assert(children[child]->Bmat);
 
          assert(y->children[child]->first);
-         dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->axpyWithRowAt(alpha,
+         dynamic_cast<const SparseMatrix*>(children[child]->Bmat)->axpyWithRowAt(alpha,
                dynamic_cast<SimpleVector<double>&>(*y->children[child]->first), row);
 
          if (y_linking)
-            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, *y_linking, row);
+            dynamic_cast<const SparseMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, *y_linking, row);
          else {
             assert(y->first);
-            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
+            dynamic_cast<const SparseMatrix*>(children[child]->Amat)->axpyWithRowAt(alpha, dynamic_cast<SimpleVector<double>&>(*y->first), row);
          }
       }
    }
 }
 
-void StochGenMatrix::axpyWithRowAtPosNeg(double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos,
+void DistributedMatrix::axpyWithRowAtPosNeg(double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos,
       DistributedVector<double>* y_neg, SimpleVector<double>* y_link_neg, int child, int row, bool linking) const {
    assert(hasSparseMatrices());
    assert(y_pos && y_neg);
@@ -1732,20 +1732,20 @@ void StochGenMatrix::axpyWithRowAtPosNeg(double alpha, DistributedVector<double>
    if (linking) {
       assert(Blmat);
       if (y_link_pos)
-         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
+         dynamic_cast<const SparseMatrix*>(Blmat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
       else {
          assert(y_pos->first);
          assert(y_neg->first);
-         dynamic_cast<const SparseGenMatrix*>(Blmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first),
+         dynamic_cast<const SparseMatrix*>(Blmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first),
                dynamic_cast<SimpleVector<double>&>(*y_neg->first), row);
       }
 
       for (unsigned int i = 0; i < children.size(); ++i) {
-         if (!children[i]->isKindOf(kStochGenDummyMatrix)) {
+         if (!children[i]->is_a(kStochGenDummyMatrix)) {
             assert(children[i]->Blmat);
             assert(y_pos->children[i]->first);
             assert(y_neg->children[i]->first);
-            dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->axpyWithRowAtPosNeg(alpha,
+            dynamic_cast<const SparseMatrix*>(children[i]->Blmat)->axpyWithRowAtPosNeg(alpha,
                   dynamic_cast<SimpleVector<double>&>(*y_pos->children[i]->first), dynamic_cast<SimpleVector<double>&>(*y_neg->children[i]->first),
                   row);
          }
@@ -1755,11 +1755,11 @@ void StochGenMatrix::axpyWithRowAtPosNeg(double alpha, DistributedVector<double>
       if (child == -1) {
          assert(Bmat);
          if (y_link_pos)
-            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
+            dynamic_cast<const SparseMatrix*>(Bmat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
          else {
             assert(y_pos->first);
             assert(y_neg->first);
-            dynamic_cast<const SparseGenMatrix*>(Bmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first),
+            dynamic_cast<const SparseMatrix*>(Bmat)->axpyWithRowAtPosNeg(alpha, dynamic_cast<SimpleVector<double>&>(*y_pos->first),
                   dynamic_cast<SimpleVector<double>&>(*y_neg->first), row);
          }
       }
@@ -1769,23 +1769,23 @@ void StochGenMatrix::axpyWithRowAtPosNeg(double alpha, DistributedVector<double>
 
          assert(y_pos->children[child]->first);
          assert(y_neg->children[child]->first);
-         dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->axpyWithRowAtPosNeg(alpha,
+         dynamic_cast<const SparseMatrix*>(children[child]->Bmat)->axpyWithRowAtPosNeg(alpha,
                dynamic_cast<SimpleVector<double>&>(*y_pos->children[child]->first),
                dynamic_cast<SimpleVector<double>&>(*y_neg->children[child]->first), row);
 
          if (y_link_pos)
-            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
+            dynamic_cast<const SparseMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha, *y_link_pos, *y_link_neg, row);
          else {
             assert(y_pos->first);
             assert(y_neg->first);
-            dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha,
+            dynamic_cast<const SparseMatrix*>(children[child]->Amat)->axpyWithRowAtPosNeg(alpha,
                   dynamic_cast<SimpleVector<double>&>(*y_pos->first), dynamic_cast<SimpleVector<double>&>(*y_neg->first), row);
          }
       }
    }
 }
 
-double StochGenMatrix::localRowTimesVec(const DistributedVector<double>& vec, int child, int row, bool linking) const {
+double DistributedMatrix::localRowTimesVec(const DistributedVector<double>& vec, int child, int row, bool linking) const {
    assert(hasSparseMatrices());
    assert(-1 <= child && child < static_cast<int>(children.size()));
    assert(vec.children.size() == children.size());
@@ -1796,13 +1796,13 @@ double StochGenMatrix::localRowTimesVec(const DistributedVector<double>& vec, in
    if (linking) {
       assert(Blmat);
       assert(vec.first);
-      res += dynamic_cast<const SparseGenMatrix*>(Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
+      res += dynamic_cast<const SparseMatrix*>(Blmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
 
       for (unsigned int i = 0; i < children.size(); ++i) {
-         if (!children[i]->isKindOf(kStochGenDummyMatrix)) {
+         if (!children[i]->is_a(kStochGenDummyMatrix)) {
             assert(children[i]->Blmat);
             assert(vec.children[i]->first);
-            res += dynamic_cast<const SparseGenMatrix*>(children[i]->Blmat)->localRowTimesVec(
+            res += dynamic_cast<const SparseMatrix*>(children[i]->Blmat)->localRowTimesVec(
                   dynamic_cast<const SimpleVector<double>&>(*vec.children[i]->first), row);
          }
       }
@@ -1811,16 +1811,16 @@ double StochGenMatrix::localRowTimesVec(const DistributedVector<double>& vec, in
       if (child == -1) {
          assert(Bmat);
          assert(vec.first);
-         res += dynamic_cast<const SparseGenMatrix*>(Bmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
+         res += dynamic_cast<const SparseMatrix*>(Bmat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first), row);
       }
       else {
          assert(children[child]->Amat);
          assert(children[child]->Bmat);
          assert(vec.first);
          assert(vec.children[child]->first);
-         res += dynamic_cast<const SparseGenMatrix*>(children[child]->Amat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first),
+         res += dynamic_cast<const SparseMatrix*>(children[child]->Amat)->localRowTimesVec(dynamic_cast<const SimpleVector<double>&>(*vec.first),
                row);
-         res += dynamic_cast<const SparseGenMatrix*>(children[child]->Bmat)->localRowTimesVec(
+         res += dynamic_cast<const SparseMatrix*>(children[child]->Bmat)->localRowTimesVec(
                dynamic_cast<const SimpleVector<double>&>(*vec.children[child]->first), row);
       }
    }
@@ -1829,22 +1829,22 @@ double StochGenMatrix::localRowTimesVec(const DistributedVector<double>& vec, in
 }
 
 // TODO specify border and left from DistributedQP...
-BorderedGenMatrix* StochGenMatrix::raiseBorder(int m_conss, int n_vars) {
+BorderedMatrix* DistributedMatrix::raiseBorder(int m_conss, int n_vars) {
 #ifndef NDEBUG
    int m_link, n_link;
    Blmat->getSize(m_link, n_link);
    assert(m_conss <= m_link && n_vars <= n_link);
 #endif
 
-   auto* const A_left = dynamic_cast<SparseGenMatrix*>(Bmat)->shaveLeft(n_vars);
+   auto* const A_left = dynamic_cast<SparseMatrix*>(Bmat)->shaveLeft(n_vars);
 
-   auto* const Bl_left_top = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveLeft(n_vars);
-   auto* const bottom_left_block = dynamic_cast<SparseGenMatrix*>(Bl_left_top->shaveBottom(m_conss));
+   auto* const Bl_left_top = dynamic_cast<SparseMatrix*>(Blmat)->shaveLeft(n_vars);
+   auto* const bottom_left_block = dynamic_cast<SparseMatrix*>(Bl_left_top->shaveBottom(m_conss));
 
-   auto* const Bl_right_bottom = dynamic_cast<SparseGenMatrix*>(Blmat->shaveBottom(m_conss));
+   auto* const Bl_right_bottom = dynamic_cast<SparseMatrix*>(Blmat->shaveBottom(m_conss));
 
-   auto* const border_bottom = new StringGenMatrix(false, Bl_right_bottom, nullptr, mpiComm);
-   auto* const border_left = new StringGenMatrix(true, A_left, Bl_left_top, mpiComm);
+   auto* const border_bottom = new StripMatrix(false, Bl_right_bottom, nullptr, mpiComm);
+   auto* const border_left = new StripMatrix(true, A_left, Bl_left_top, mpiComm);
 
    for (auto & it : children)
       it->shaveBorder(m_conss, n_vars, border_left, border_bottom);
@@ -1854,8 +1854,8 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder(int m_conss, int n_vars) {
    m -= m_conss;
    n -= n_vars;
 
-   auto* const bordered_matrix = new BorderedGenMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
-   StochGenMatrix* me = this;
+   auto* const bordered_matrix = new BorderedMatrix(this, border_left, border_bottom, bottom_left_block, mpiComm);
+   DistributedMatrix* me = this;
    IotrAddRef(&me);
 
    assert(m >= 0 && n >= 0);
@@ -1863,68 +1863,68 @@ BorderedGenMatrix* StochGenMatrix::raiseBorder(int m_conss, int n_vars) {
    return bordered_matrix;
 }
 
-void StochGenMatrix::shaveBorder(int m_conss, int n_vars, StringGenMatrix* border_left, StringGenMatrix* border_bottom) {
-   if (Bmat->isKindOf(kStochGenMatrix)) {
+void DistributedMatrix::shaveBorder(int m_conss, int n_vars, StripMatrix* border_left, StripMatrix* border_bottom) {
+   if (Bmat->is_a(kDistributedMatrix)) {
       assert(amatEmpty());
       border_left->addChild(
-            new StringGenMatrix(true, dynamic_cast<StringGenMatrix*>(dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder(n_vars)), nullptr,
+            new StripMatrix(true, dynamic_cast<StripMatrix*>(dynamic_cast<DistributedMatrix*>(Bmat)->shaveLeftBorder(n_vars)), nullptr,
                   mpiComm));
-      border_bottom->addChild(new StringGenMatrix(false, dynamic_cast<StringGenMatrix*>(Blmat->shaveBottom(m_conss)), nullptr, mpiComm));
+      border_bottom->addChild(new StripMatrix(false, dynamic_cast<StripMatrix*>(Blmat->shaveBottom(m_conss)), nullptr, mpiComm));
    }
    else {
       assert(hasSparseMatrices());
       assert(children.empty());
       assert(PIPS_MPIgetSize(mpiComm) == 1);
 
-      auto* const border_a_mat = dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars);
-      auto* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(dynamic_cast<SparseGenMatrix*>(Blmat)->shaveBottom(m_conss));
+      auto* const border_a_mat = dynamic_cast<SparseMatrix*>(Amat)->shaveLeft(n_vars);
+      auto* const border_bl_mat = dynamic_cast<SparseMatrix*>(dynamic_cast<SparseMatrix*>(Blmat)->shaveBottom(m_conss));
 
-      auto* border_left_child = new StringGenMatrix(true, border_a_mat, nullptr, mpiComm);
-      auto* border_bottom_child = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
+      auto* border_left_child = new StripMatrix(true, border_a_mat, nullptr, mpiComm);
+      auto* border_bottom_child = new StripMatrix(false, border_bl_mat, nullptr, mpiComm);
 
       border_left->addChild(border_left_child);
       border_bottom->addChild(border_bottom_child);
    }
 }
 
-StringGenMatrix* StochGenMatrix::shaveLeftBorder(int n_vars) {
+StripMatrix* DistributedMatrix::shaveLeftBorder(int n_vars) {
    assert(!children.empty());
    assert(hasSparseMatrices());
    assert(amatEmpty());
 
-   auto* const border_b_mat = dynamic_cast<SparseGenMatrix*>(Bmat)->shaveLeft(n_vars);
-   auto* const border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat)->shaveLeft(n_vars);
+   auto* const border_b_mat = dynamic_cast<SparseMatrix*>(Bmat)->shaveLeft(n_vars);
+   auto* const border_bl_mat = dynamic_cast<SparseMatrix*>(Blmat)->shaveLeft(n_vars);
 
-   auto* border = new StringGenMatrix(true, border_b_mat, border_bl_mat, mpiComm);
+   auto* border = new StripMatrix(true, border_b_mat, border_bl_mat, mpiComm);
 
    for (auto& child : children)
-      border->addChild(dynamic_cast<StringGenMatrix*>( child->shaveLeftBorderChild(n_vars)));
+      border->addChild(dynamic_cast<StripMatrix*>( child->shaveLeftBorderChild(n_vars)));
 
    border->recomputeNonzeros();
    return border;
 }
 
-StringGenMatrix* StochGenMatrix::shaveLeftBorderChild(int n_vars) {
+StripMatrix* DistributedMatrix::shaveLeftBorderChild(int n_vars) {
    assert(children.empty());
 
-   if (Bmat->isKindOf(kStochGenMatrix)) {
+   if (Bmat->is_a(kDistributedMatrix)) {
       assert(amatEmpty());
-      return new StringGenMatrix(true, dynamic_cast<StochGenMatrix*>(Bmat)->shaveLeftBorder(n_vars), nullptr, mpiComm);
+      return new StripMatrix(true, dynamic_cast<DistributedMatrix*>(Bmat)->shaveLeftBorder(n_vars), nullptr, mpiComm);
    }
    else
-      return new StringGenMatrix(true, dynamic_cast<SparseGenMatrix*>(Amat)->shaveLeft(n_vars), nullptr, mpiComm);
+      return new StripMatrix(true, dynamic_cast<SparseMatrix*>(Amat)->shaveLeft(n_vars), nullptr, mpiComm);
 }
 
-StringGenMatrix* StochGenMatrix::shaveLinkingConstraints(unsigned int n_conss) {
+StripMatrix* DistributedMatrix::shaveLinkingConstraints(unsigned int n_conss) {
    assert(hasSparseMatrices());
 
-   auto* border_bl_mat = dynamic_cast<SparseGenMatrix*>(Blmat->shaveBottom(static_cast<int>(n_conss)));
-   auto* border = new StringGenMatrix(false, border_bl_mat, nullptr, mpiComm);
+   auto* border_bl_mat = dynamic_cast<SparseMatrix*>(Blmat->shaveBottom(static_cast<int>(n_conss)));
+   auto* border = new StripMatrix(false, border_bl_mat, nullptr, mpiComm);
 
    if (children.empty())
       assert(PIPS_MPIgetSize(mpiComm) == 1);
    for (auto& child : children) {
-      StringGenMatrix* border_child = child->shaveLinkingConstraints(n_conss);
+      StripMatrix* border_child = child->shaveLinkingConstraints(n_conss);
       border->addChild(border_child);
    }
 
@@ -1932,7 +1932,7 @@ StringGenMatrix* StochGenMatrix::shaveLinkingConstraints(unsigned int n_conss) {
    return border;
 }
 
-void StochGenMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children,
+void DistributedMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children,
       unsigned int n_links_in_root, const std::vector<MPI_Comm>& child_comms) {
    const unsigned int n_curr_children = children.size();
 
@@ -1946,13 +1946,13 @@ void StochGenMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_block
    assert(std::accumulate(twolinks_start_in_block.begin(), twolinks_start_in_block.end(), 0) <= m_links_left);
 
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
-   std::vector<StochGenMatrix*> new_children(n_new_children);
+   std::vector<DistributedMatrix*> new_children(n_new_children);
 
-   StringGenMatrix* Blmat_new = shaveLinkingConstraints(n_links_in_root);
+   StripMatrix* Blmat_new = shaveLinkingConstraints(n_links_in_root);
 
    Blmat_new->combineChildrenInNewChildren(map_blocks_children, child_comms);
 
-   auto* Blmat_leftover = dynamic_cast<SparseGenMatrix*>(Blmat);
+   auto* Blmat_leftover = dynamic_cast<SparseMatrix*>(Blmat);
 
 #ifndef NDEBUG
    int n_child_links_sum{0};
@@ -1977,32 +1977,32 @@ void StochGenMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_block
 #ifndef NDEBUG
       n_child_links_sum += n_links_for_child;
 #endif
-      /* combine children in new StochGenMatrix Bmat_loc */
+      /* combine children in new DistributedMatrix Bmat_loc */
       /* create root node with only Blmat */
-      SparseGenMatrix* Blmat_child = Blmat_leftover;
-      Blmat_leftover = dynamic_cast<SparseGenMatrix*>(Blmat_child->shaveBottom(m_links_left - n_links_for_child));
+      SparseMatrix* Blmat_child = Blmat_leftover;
+      Blmat_leftover = dynamic_cast<SparseMatrix*>(Blmat_child->shaveBottom(m_links_left - n_links_for_child));
 
       if (child_comms[i] == MPI_COMM_NULL) {
          delete Blmat_child;
          Blmat_child = nullptr;
       }
 
-      StochGenMatrix* Bmat_loc = (child_comms[i] == MPI_COMM_NULL) ? nullptr : new StochGenMatrix(new SparseGenMatrix(0, 0, 0),
-            new SparseGenMatrix(0, nBl, 0), Blmat_child, child_comms[i], false, true);
+      DistributedMatrix* Bmat_loc = (child_comms[i] == MPI_COMM_NULL) ? nullptr : new DistributedMatrix(new SparseMatrix(0, 0, 0),
+            new SparseMatrix(0, nBl, 0), Blmat_child, child_comms[i], false, true);
 
       /* shave off empty two link part from respective children and add them to the new root/remove them from the old root */
       for (unsigned int j = 0; j < n_blocks_for_child; ++j) {
          assert(m_links_left >= n_links_for_child);
 
-         StochGenMatrix* child = children.front();
+         DistributedMatrix* child = children.front();
          children.erase(children.begin());
 
          if (child_comms[i] == MPI_COMM_NULL)
             assert(child->mpiComm == MPI_COMM_NULL);
 
          if (child->mpiComm != MPI_COMM_NULL) {
-            dynamic_cast<SparseGenMatrix*>(child->Blmat)->dropNEmptyRowsTop(static_cast<int>(m_links_so_far));
-            dynamic_cast<SparseGenMatrix*>(child->Blmat)->dropNEmptyRowsBottom(m_links_left - n_links_for_child);
+            dynamic_cast<SparseMatrix*>(child->Blmat)->dropNEmptyRowsTop(static_cast<int>(m_links_so_far));
+            dynamic_cast<SparseMatrix*>(child->Blmat)->dropNEmptyRowsBottom(m_links_left - n_links_for_child);
          }
 
 #ifndef NDEBUG
@@ -2022,14 +2022,14 @@ void StochGenMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_block
 
       /* create child holding the new Bmat_loc and it's Blmat part */
       if (child_comms[i] == MPI_COMM_NULL) {
-         assert(Blmat_new->children[i]->isKindOf(kStringGenDummyMatrix));
+         assert(Blmat_new->children[i]->is_a(kStringGenDummyMatrix));
          delete Blmat_new->children[i];
          Blmat_new->children[i] = nullptr;
       }
       else
-         assert(Blmat_new->children[i]->isKindOf(kStringGenMatrix));
+         assert(Blmat_new->children[i]->is_a(kStripMatrix));
 
-      new_children[i] = (child_comms[i] != MPI_COMM_NULL) ? new StochGenMatrix(new SparseGenMatrix(0, 0, 0), Bmat_loc, Blmat_new->children[i],
+      new_children[i] = (child_comms[i] != MPI_COMM_NULL) ? new DistributedMatrix(new SparseMatrix(0, 0, 0), Bmat_loc, Blmat_new->children[i],
             child_comms[i], true, false) : new StochGenDummyMatrix();
 
       ++end_curr_child_blocks;
@@ -2046,8 +2046,8 @@ void StochGenMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_block
    children.insert(children.end(), new_children.begin(), new_children.end());
 
    Blmat_new->children.clear();
-   Blmat = Blmat_new->mat;
-   Blmat_new->mat = nullptr;
+   Blmat = Blmat_new->first;
+   Blmat_new->first = nullptr;
    delete Blmat_new;
    delete Blmat_leftover;
 

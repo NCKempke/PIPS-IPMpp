@@ -1,5 +1,5 @@
 /*
- * StochOptions.h
+ * DistributedOptions.h
  *
  *  Created on: 03.04.2020
  *      Author: bzfkempk
@@ -51,7 +51,7 @@ namespace pips_options {
    double get_double_parameter(const std::string& identifier);
    bool get_bool_parameter(const std::string& identifier);
 
-   class StochOptions : public qpgen_options::QpGenOptions {
+   class DistributedOptions : public qpgen_options::QpGenOptions {
 
    private:
       friend void set_int_parameter(const std::string& identifier, int value);
@@ -63,17 +63,17 @@ namespace pips_options {
       friend double get_double_parameter(const std::string& identifier);
       friend bool get_bool_parameter(const std::string& identifier);
 
-      static StochOptions& getInstance() {
-         static StochOptions opt;
+      static DistributedOptions& getInstance() {
+         static DistributedOptions opt;
          return opt;
       }
 
       void setHierarchical();
       void setDefaults() override;
       void setPresolveDefaults();
-      StochOptions();
+      DistributedOptions();
 
-      ~StochOptions() override = default;
+      ~DistributedOptions() override = default;
    };
 }
 

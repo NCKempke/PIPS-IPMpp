@@ -27,11 +27,11 @@ public:
 
    void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& x0, bool) override;
 protected:
-   SymMatrix* createKKT(DistributedQP*);
+   SymmetricMatrix* createKKT(DistributedQP*);
    void assembleLocalKKT(DistributedQP* prob) override;
    void reduceKKT(DistributedQP*) override;
 
-   DoubleLinearSolver* createSolver(DistributedQP*, const SymMatrix* kktmat);
+   DoubleLinearSolver* createSolver(DistributedQP*, const SymmetricMatrix* kktmat);
 private:
    void computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, SimpleVector<double>& b0);
 

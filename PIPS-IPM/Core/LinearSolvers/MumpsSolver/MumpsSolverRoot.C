@@ -10,8 +10,7 @@
 #include "SimpleVector.h"
 #include <stdlib.h>
 
-
-MumpsSolverRoot::MumpsSolverRoot(MPI_Comm mpiComm, SparseSymMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(mpiComm, mpiComm, sgm),
+MumpsSolverRoot::MumpsSolverRoot(MPI_Comm mpiComm, const SparseSymmetricMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(mpiComm, mpiComm, sgm),
       solve_in_parallel(solve_in_parallel) {
    if (solve_in_parallel) {
       assert(false && "TODO : MUMPS NOT AVAILABLE FOR HIERARCHICAL APPROACH !! ");
@@ -21,15 +20,14 @@ MumpsSolverRoot::MumpsSolverRoot(MPI_Comm mpiComm, SparseSymMatrix* sgm, bool so
    assert(rankMumps == rankPips);
 }
 
-
-MumpsSolverRoot::MumpsSolverRoot(SparseSymMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(sgm), solve_in_parallel(solve_in_parallel) {
+MumpsSolverRoot::MumpsSolverRoot(const SparseSymmetricMatrix* sgm, bool solve_in_parallel) : MumpsSolverBase(sgm), solve_in_parallel(solve_in_parallel) {
 }
 
-void MumpsSolverRoot::matrixRebuild(DoubleMatrix& matrixNew) {
+void MumpsSolverRoot::matrixRebuild(AbstractMatrix& matrixNew) {
    if (mpiCommMumps == MPI_COMM_NULL)
       return;
 
-   Msys = &dynamic_cast<SparseSymMatrix&>(matrixNew);
+   Msys = &dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
    assert(n == Msys->size());
 
    delete[] tripletIrn;
@@ -39,16 +37,10 @@ void MumpsSolverRoot::matrixRebuild(DoubleMatrix& matrixNew) {
    tripletJcn = nullptr;
    tripletA = nullptr;
 
-   if (rankPips == 0) {
-      assert(Msys->getStorageRef().fortranIndexed());
-
-      // todo!
-#if 1
-      Msys->getStorageRef().fortran2c();
-      Msys->getSparseTriplet_c2fortran(tripletIrn, tripletJcn, tripletA);
-#else
+   if (Msys->getStorageRef().fortranIndexed()) {
       Msys->getSparseTriplet_fortran2fortran(tripletIrn, tripletJcn, tripletA);
-#endif
+   } else {
+      Msys->getSparseTriplet_c2fortran(tripletIrn, tripletJcn, tripletA);
    }
 
    this->factorize();

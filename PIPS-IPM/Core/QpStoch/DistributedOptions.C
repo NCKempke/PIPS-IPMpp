@@ -5,7 +5,7 @@
  *      Author: bzfkempk
  */
 
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 
 #include <limits>
 #include <vector>
@@ -166,7 +166,7 @@ namespace pips_options {
       return solver_leaf;
    }
 
-   void StochOptions::setHierarchical() {
+   void DistributedOptions::setHierarchical() {
       bool_options["HIERARCHICAL"] = true;
 
       bool_options["SC_COMPUTE_BLOCKWISE"] = true;
@@ -183,7 +183,7 @@ namespace pips_options {
       }
    }
 
-   StochOptions::StochOptions() {
+   DistributedOptions::DistributedOptions() {
       /* initialize base class options first (QpGenOptions) */
       QpGenOptions::getInstance();
 
@@ -191,7 +191,7 @@ namespace pips_options {
       setDefaults();
    }
 
-   void StochOptions::setDefaults() {
+   void DistributedOptions::setDefaults() {
       /// GENERAL
       bool_options["PRINT_TREESIZES_ON_READ"] = false;
       /* surpresses some of the output */
@@ -321,7 +321,7 @@ namespace pips_options {
       setPresolveDefaults();
    }
 
-   void StochOptions::setPresolveDefaults() {
+   void DistributedOptions::setPresolveDefaults() {
       /** all presolve/postsolve constants and settings */
       // TODO : many of these need adjustments/ have to be thought about
       double_options["PRESOLVE_INFINITY"] = std::numeric_limits<double>::infinity();
@@ -400,35 +400,35 @@ namespace pips_options {
 
 
    void activate_hierarchial_approach() {
-      StochOptions::getInstance().setHierarchical();
+      DistributedOptions::getInstance().setHierarchical();
    }
 
    void set_options(const std::string& opt_file) {
-      return StochOptions::getInstance().fillOptionsFromFile(opt_file);
+      return DistributedOptions::getInstance().fillOptionsFromFile(opt_file);
    }
 
    void set_int_parameter(const std::string& identifier, int value) {
-      StochOptions::getInstance().setIntParam(identifier, value);
+      DistributedOptions::getInstance().setIntParam(identifier, value);
    }
 
    void set_double_parameter(const std::string& identifier, double value) {
-      StochOptions::getInstance().setDoubleParam(identifier, value);
+      DistributedOptions::getInstance().setDoubleParam(identifier, value);
    }
 
    void set_bool_parameter(const std::string& identifier, bool value) {
-      StochOptions::getInstance().setBoolParam(identifier, value);
+      DistributedOptions::getInstance().setBoolParam(identifier, value);
    }
 
    int get_int_parameter(const std::string& identifier) {
-      return StochOptions::getInstance().getIntParam(identifier);
+      return DistributedOptions::getInstance().getIntParam(identifier);
    }
 
    bool get_bool_parameter(const std::string& identifier) {
-      return StochOptions::getInstance().getBoolParam(identifier);
+      return DistributedOptions::getInstance().getBoolParam(identifier);
    }
 
    double get_double_parameter(const std::string& identifier) {
-      return StochOptions::getInstance().getDoubleParam(identifier);
+      return DistributedOptions::getInstance().getDoubleParam(identifier);
    }
 
 }

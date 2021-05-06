@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "DistributedTreeCallbacks.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include <memory>
 
 class HierarchicalMappingParametersTest : public DistributedTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {};
@@ -59,8 +59,8 @@ class HierarchicalSplittingTest : public DistributedTreeCallbacks, public ::test
    }
 
 protected:
-   StochInputTree::StochInputNode* root_node{nullptr};
-   StochInputTree* input_tree{nullptr};
+   DistributedInputTree::DistributedInputNode* root_node{nullptr};
+   DistributedInputTree* input_tree{nullptr};
 public:
    DistributedTreeCallbacks* createTestTree(int n_children, int n_eq_links, int n_ineq_links);
 
@@ -71,17 +71,17 @@ DistributedTreeCallbacks* HierarchicalSplittingTest::createTestTree(int nChildre
    const int MY_ROOT = 20;
    const int MZ_ROOT = 30;
 
-   StochInputTree::StochInputNode* root_node = new StochInputTree::StochInputNode(-1, NX_ROOT, MY_ROOT, n_eq_linkings, MZ_ROOT, n_ineq_linkings);
+   DistributedInputTree::DistributedInputNode* root_node = new DistributedInputTree::DistributedInputNode(-1, NX_ROOT, MY_ROOT, n_eq_linkings, MZ_ROOT, n_ineq_linkings);
 
-   input_tree = new StochInputTree(root_node);
+   input_tree = new DistributedInputTree(root_node);
 
    for (int i = 0; i < nChildren; ++i) {
       const int NX_CHILD = 10 + i;
       const int MY_CHILD = 20 + i;
       const int MZ_CHILD = 30 + i;
-      StochInputTree::StochInputNode* leaf_node = new StochInputTree::StochInputNode(i, NX_CHILD, MY_CHILD, n_eq_linkings, MZ_CHILD, n_ineq_linkings);
+      DistributedInputTree::DistributedInputNode* leaf_node = new DistributedInputTree::DistributedInputNode(i, NX_CHILD, MY_CHILD, n_eq_linkings, MZ_CHILD, n_ineq_linkings);
 
-      input_tree->AddChild(new StochInputTree(leaf_node));
+      input_tree->AddChild(new DistributedInputTree(leaf_node));
    }
 
    DistributedTreeCallbacks* tree = new DistributedTreeCallbacks(input_tree);

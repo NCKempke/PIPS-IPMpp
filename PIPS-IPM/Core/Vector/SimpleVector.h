@@ -51,7 +51,7 @@ public:
    /* copy vector entries as well */
    Vector<T>* cloneFull() const override;
 
-   virtual ~SimpleVector();
+   ~SimpleVector() override;
 
    void copyIntoArray(T v[]) const override;
    void copyFromArray(const T v[]) override;
