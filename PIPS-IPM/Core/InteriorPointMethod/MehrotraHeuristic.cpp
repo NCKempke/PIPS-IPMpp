@@ -285,8 +285,6 @@ MehrotraHeuristic::corrector_predictor_pd(DistributedFactory& factory, Problem& 
    double mu = iterate.mu();
    double alpha_primal = 1., alpha_dual = 1., sigma = 1.;
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
-
-   double alpha_target, alpha_enhanced;
    TerminationCode status_code;
 
    g_iterNumber = 0.;

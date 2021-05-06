@@ -14,7 +14,7 @@
 #include "pipsdef.h"
 #include "DistributedOptions.h"
 
-PardisoIndefSolver::PardisoIndefSolver(DenseSymMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
+PardisoIndefSolver::PardisoIndefSolver(DenseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {
    mStorage = matrix->getStorageHandle();
    mStorageSparse = nullptr;
