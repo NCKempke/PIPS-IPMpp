@@ -100,21 +100,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-
-      const double* MF0 = F0.M();
-      const int* krowF0 = F0.krowM();
-      const int* jcolF0 = F0.jcolM();
-
-      for (int rowF0 = 0; rowF0 < locmyl; ++rowF0) {
-         for (int k = krowF0[rowF0]; k < krowF0[rowF0 + 1]; ++k) {
-            const int colF0 = jcolF0[k];
-            assert(colF0 < locnx);
-
-            const double valF0 = MF0[k];
-            SC[locnx + rowF0][colF0] += valF0;
-            SC[colF0][locnx + rowF0] += valF0;
-         }
-      }
+      SC.add_matrix_at(F0, locnx, 0);
    }
 
    /////////////////////////////////////////////////////////////
@@ -122,24 +108,9 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
       assert(zDiagLinkCons);
-      const auto& szDiagLinkCons = dynamic_cast<const SimpleVector<double>&>(*zDiagLinkCons);
 
-      const double* MG0 = G0.M();
-      const int* krowG0 = G0.krowM();
-      const int* jcolG0 = G0.jcolM();
-
-      for (int rowG0 = 0; rowG0 < locmzl; ++rowG0) {
-         SC[locnx + locmyl + rowG0][locnx + locmyl + rowG0] += szDiagLinkCons[rowG0];
-
-         for (int k = krowG0[rowG0]; k < krowG0[rowG0 + 1]; ++k) {
-            const int colG0 = jcolG0[k];
-            assert(colG0 < locnx);
-
-            const double valG0 = MG0[k];
-            SC[locnx + locmyl + rowG0][colG0] += valG0;
-            SC[colG0][locnx + locmyl + rowG0] += valG0;
-         }
-      }
+      SC.add_matrix_at(G0, locnx + locmyl, 0);
+      SC.atAddDiagonal(locnx + locmyl, *zDiagLinkCons);
    }
 }
 

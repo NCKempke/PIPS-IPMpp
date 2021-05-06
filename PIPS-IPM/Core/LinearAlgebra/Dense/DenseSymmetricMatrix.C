@@ -388,7 +388,7 @@ void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, 
    assert(col_n <= this->size());
 
    /* either in upper or in lower triangular part */
-   assert((row_0 > col_0 && row_0 > col_n) || (row_0 < col_0 && row_n < col_0));
+   assert((row_0 > col_0 && row_0 >= col_n) || (row_0 < col_0 && row_n <= col_0));
 #endif
 
    const double* Mat = matrix.M();
