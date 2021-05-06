@@ -54,8 +54,8 @@ void sLinsysRootAugHierInner::assembleLocalKKT(DistributedQP* prob) {
 }
 
 void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, Vector<double>& x) {
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
 
    //dumpRhs(0, "sol",  b0);
    SimpleVector<double>& z0 = b0; //just another name, for clarity
@@ -67,7 +67,7 @@ void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, Vector<double>& x) {
 void sLinsysRootAugHierInner::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool use_local_RAC) {
    assert(pips_options::get_bool_parameter("HIERARCHICAL"));
 
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
 
    computeInnerSystemRightHandSide(b, x0, use_local_RAC);
    solveCompressed(x);
@@ -102,10 +102,10 @@ sLinsysRootAugHierInner::computeInnerSystemRightHandSide(DistributedVector<doubl
 void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, Vector<double>& x) {
    assert(!is_hierarchy_root);
 
-   DistributedVector<double>& b = dynamic_cast<DistributedVector<double>&>(x);
+   auto& b = dynamic_cast<DistributedVector<double>&>(x);
    assert(children.size() == b.children.size());
 
-   SimpleVector<double>& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
+   auto& b0 = dynamic_cast<SimpleVector<double>&>(*b.first);
    assert(!b.last);
 
    if (iAmDistrib && PIPS_MPIgetRank(mpiComm) > 0)
@@ -121,7 +121,7 @@ void sLinsysRootAugHierInner::Lsolve(DistributedQP* prob, Vector<double>& x) {
 
 void sLinsysRootAugHierInner::addLniziLinkCons(DistributedQP*, Vector<double>& z0_, Vector<double>& zi, bool use_local_RAC) {
    assert(zi.isKindOf(kStochVector));
-   SimpleVector<double>& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
+   auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
 
    if (!sol_inner)
       sol_inner.reset(dynamic_cast<DistributedVector<double>*>(zi.cloneFull()));
@@ -171,7 +171,7 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& r
 
       assert(b0.length() >= mFb);
 
-      SimpleVector<double>& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+      auto& zi = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
       SimpleVector<double> zi1(&zi[0], nFb);
       SimpleVector<double> zi2(&zi[nFb], nGb);
@@ -213,7 +213,7 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, c
       assert(nFb == nGb);
       assert(x0.length() >= nFb);
 
-      SimpleVector<double>& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
+      auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
       SimpleVector<double> rhs01(&rhs0[0], mFb);
       SimpleVector<double> rhs02(&rhs0[mFb], mGb);
@@ -308,28 +308,27 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(AbstractMatrix& res, c
 
 void sLinsysRootAugHierInner::put_primal_diagonal() {
    assert(primal_diagonal);
-   assert(dynamic_cast<const DistributedVector<double>&>(*primal_diagonal).first->isKindOf(kStochVector));
+   assert(primal_diagonal->isKindOf(kStochVector));
 
-   const auto& primal_diag_loc = dynamic_cast<const DistributedVector<double>&>(*dynamic_cast<const DistributedVector<double>&>(*primal_diagonal).first);
-   assert(children.size() == primal_diag_loc.children.size());
+   auto& primal_diagonal_loc = dynamic_cast<DistributedVector<double>&>(*primal_diagonal);
+   xDiag = primal_diagonal_loc.first;
 
-   xDiag = primal_diag_loc.first;
-
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->put_primal_diagonal();
+   assert(children.size() == primal_diagonal_loc.children.size());
+   for (auto & it : children)
+      it->put_primal_diagonal();
 }
 
 
 void sLinsysRootAugHierInner::put_dual_inequalites_diagonal() {
    assert(nomegaInv);
-   assert(dynamic_cast<const DistributedVector<double>&>(*nomegaInv).first->isKindOf(kStochVector));
+   assert(nomegaInv->isKindOf(kStochVector));
 
-   const DistributedVector<double>& zdiag = dynamic_cast<const DistributedVector<double>&>(*dynamic_cast<const DistributedVector<double>&>(*nomegaInv).first);
-   assert(children.size() == zdiag.children.size());
+   auto& dual_inequality_diagonal_loc = dynamic_cast<DistributedVector<double>&>(*nomegaInv);
 
-   zDiag = zdiag.first;
-   zDiagLinkCons = zdiag.last;
+   zDiag = dual_inequality_diagonal_loc.first;
+   zDiagLinkCons = dual_inequality_diagonal_loc.last;
 
-   for (size_t it = 0; it < children.size(); it++)
-      children[it]->put_dual_inequalites_diagonal();
+   assert(children.size() == dual_inequality_diagonal_loc.children.size());
+   for (auto & it : children)
+      it->put_dual_inequalites_diagonal();
 }

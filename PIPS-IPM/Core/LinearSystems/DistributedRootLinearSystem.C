@@ -185,7 +185,7 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    if (sc_compute_blockwise_hierarchical)
       assert(end_rows - begin_rows <= mbuffer);
    else
-      assert(end_rows == mbuffer);
+      assert(end_rows <= mbuffer);
 
    if (!Br.has_RAC && !Br.use_local_RAC)
       return;

@@ -281,9 +281,9 @@ public:
 
 };
 
-
+// TODO : should be a proper enum class..
 enum {
-   kSimpleVector = 0, kPetscVector, kStochVector, kStochDummy, kScaVector, kEmtlVector
+   kSimpleVector = 0, kStochVector, kStochDummy,
 };
 
 #endif
