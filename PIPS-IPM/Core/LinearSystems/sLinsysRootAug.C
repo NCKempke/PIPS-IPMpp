@@ -1820,8 +1820,8 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
       assert(zDiagLinkCons);
-      kktd->add_matrix_at(prob->getLocalG(), locnx + locmy + locmz, 0);
-      kktd->atAddDiagonal(locnx + locmy + locmz, *zDiagLinkCons);
+      kktd->add_matrix_at(prob->getLocalG(), locnx + locmy + locmyl, 0);
+      kktd->atAddDiagonal(locnx + locmy + locmyl, *zDiagLinkCons);
    }
 
 #ifdef DUMPKKT
