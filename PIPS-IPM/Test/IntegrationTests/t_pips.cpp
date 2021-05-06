@@ -6,6 +6,7 @@
  */
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "GondzioStochSolver.h"
 #include "GondzioStochLpSolver.h"
 #include "PIPSIpmInterface.h"
 #include "gmspips_reader.hpp"

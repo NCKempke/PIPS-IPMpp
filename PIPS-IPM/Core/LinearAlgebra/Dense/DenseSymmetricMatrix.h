@@ -53,14 +53,6 @@ public:
 
    void symAtPutSpRow(int col, const double A[], int lenA, const int irowA[], int& info) override;
 
-   /** Insert the dense array symmetrically (the part that winds up
-    *  in the lower triangle of this matrix is significant.)
-    */
-   virtual void symAtPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent);
-   /** Put a block of zeros into this matrix symmetrically (the part that
-    *  winds up in the lower triangle of this matrix is significant.) */
-   virtual void symAtPutZeros(int row, int col, int rowExtent, int colExtent);
-
    void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
 
    virtual void atAddOuterProductOf(int row, int col, double alpha, double* x, int incx, int nx);

@@ -138,9 +138,9 @@ public:
     *
     * @see stepbound
     * */
-   double findBlocking(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
+   double findBlocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
 
-   void findBlocking_pd(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
+   void findBlocking_pd(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
          bool& dualBlocking);
 
@@ -150,9 +150,6 @@ public:
    /** add alpha to components of (u,t,v,w) and beta to components of
        (lambda,pi,phi,gamma) */
    void shiftBoundVariables(double alpha, double beta);
-
-   /** check whether this is an interior point. Useful as a sanity check. */
-   int isInteriorPoint();
 
    double violation();
 
@@ -172,8 +169,6 @@ public:
    void setToZero();
 
    void printNorms() const;
-
-   void setNotIndicatedBoundsTo(Problem& data, double value);
 
    virtual ~Variables() = default;
 };

@@ -79,7 +79,6 @@ public:
    void startNodeMonitors();
    void stopMonitors();
    void stopNodeMonitors();
-   void syncMonitoringData(std::vector<double>& vCPUTotal);
    bool balanceLoad();
    bool balanceLoadPrecond();
 
