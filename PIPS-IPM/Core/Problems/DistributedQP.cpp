@@ -2286,7 +2286,6 @@ int DistributedQP::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
    return 0;
 }
 
-
 /*
  * At this stage we expect the Schur Complement to be of the form
  *                                                                                             nx  my0  mz0  myl  mzl

@@ -347,3 +347,64 @@ int DenseSymmetricMatrix::getNumberOfNonZeros() const {
    }
    return nnz;
 }
+
+void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, int col_0)
+{
+   int m_matrix;
+   int n_matrix;
+   matrix.getSize(m_matrix, n_matrix);
+
+#ifndef NDEBUG
+   assert(row_0 != col_0);
+   const int row_n = row_0 + m_matrix;
+   const int col_n = col_0 + n_matrix;
+   assert(row_n <= this->size());
+   assert(col_n <= this->size());
+
+   /* either in upper or in lower triangular part */
+   assert((row_0 > col_0 && row_0 > col_n) || (row_0 < col_0 && row_n < col_0));
+#endif
+
+   for (int row = 0; row < m_matrix; ++row) {
+      for (int col = 0; col < m_matrix; ++col) {
+
+         (*this)[row_0 + row][col_0 + col] += matrix[row][col];
+         (*this)[col_0 + col][row_0 + row] += matrix[row][col];
+      }
+   }
+}
+
+void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0)
+{
+   int m_matrix;
+   int n_matrix;
+   matrix.getSize(m_matrix, n_matrix);
+
+#ifndef NDEBUG
+   assert(row_0 != col_0);
+   const int row_n = row_0 + m_matrix;
+   const int col_n = col_0 + n_matrix;
+   assert(row_n <= this->size());
+   assert(col_n <= this->size());
+
+   /* either in upper or in lower triangular part */
+   assert((row_0 > col_0 && row_0 > col_n) || (row_0 < col_0 && row_n < col_0));
+#endif
+
+   const double* Mat = matrix.M();
+   const int* krow = matrix.krowM();
+   const int* jcol = matrix.jcolM();
+
+   for (int row = 0; row < m_matrix; ++row) {
+      for (int k = krow[row]; k < krow[row + 1]; ++k) {
+         const int col = jcol[k];
+         assert(col_0 + col < this->size());
+         assert(row_0 + row < this->size());
+
+         const double val = Mat[k];
+         (*this)[row_0 + row][col_0 + col] += val;
+         (*this)[col_0 + col][row_0 + row] += val;
+      }
+   }
+}
+

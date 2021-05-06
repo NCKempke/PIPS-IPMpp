@@ -25,7 +25,7 @@ public:
    DenseStorage(int m, int n);
    DenseStorage(double A[], int m, int n);
 
-   virtual ~DenseStorage();
+   ~DenseStorage() override;
 
    void getSize(int& m, int& n) const override;
 

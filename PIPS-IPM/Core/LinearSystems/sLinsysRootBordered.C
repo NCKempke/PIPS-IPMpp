@@ -100,6 +100,7 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
+
       const double* MF0 = F0.M();
       const int* krowF0 = F0.krowM();
       const int* jcolF0 = F0.jcolM();
