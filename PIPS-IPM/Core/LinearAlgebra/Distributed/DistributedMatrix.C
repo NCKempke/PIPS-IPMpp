@@ -635,12 +635,6 @@ void DistributedMatrix::writeToStreamDenseChild(std::ostream& out, int offset) c
    }
 }
 
-/** returns a string containing the linking-row rowidx of the children. */
-void DistributedMatrix::writeToStreamDenseRowLink(std::ostream& out, int rowidx) const {
-   assert(!Blmat->is_a(kStripMatrix));
-   dynamic_cast<const SparseMatrix&>(*Blmat).writeToStreamDenseRow(out, rowidx);
-}
-
 void DistributedMatrix::writeMPSformatRows(std::ostream& out, int rowType, const Vector<double>* irhs) const {
    assert(hasSparseMatrices());
 

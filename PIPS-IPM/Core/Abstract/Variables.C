@@ -121,9 +121,9 @@ void Variables::pushSlacksFromBound(double tol, double amount) {
 
 
 double Variables::mu() {
-   double mu = 0.0;
+   double mu = 0.;
    if (nComplementaryVariables == 0) {
-      return 0.0;
+      return 0.;
    }
    else {
 
@@ -141,96 +141,90 @@ double Variables::mu() {
    }
 }
 
-double Variables::mustep_pd(const Variables* step_in, double alpha_primal, double alpha_dual) {
-   const Variables* step = (const Variables*) step_in;
-   double mu = 0.0;
+double Variables::mustep_pd(const Variables* iterate, double alpha_primal, double alpha_dual) {
+   double mu = 0.;
    if (nComplementaryVariables == 0) {
-      return 0.0;
+      return 0.;
    }
    else {
       if (mclow > 0) {
-         mu += t->shiftedDotProductWith(alpha_primal, *step->t, *lambda, alpha_dual, *step->lambda);
+         mu += t->shiftedDotProductWith(alpha_primal, *iterate->t, *lambda, alpha_dual, *iterate->lambda);
       }
       if (mcupp > 0) {
-         mu += u->shiftedDotProductWith(alpha_primal, *step->u, *pi, alpha_dual, *step->pi);
+         mu += u->shiftedDotProductWith(alpha_primal, *iterate->u, *pi, alpha_dual, *iterate->pi);
       }
       if (nxlow > 0) {
-         mu += v->shiftedDotProductWith(alpha_primal, *step->v, *gamma, alpha_dual, *step->gamma);
+         mu += v->shiftedDotProductWith(alpha_primal, *iterate->v, *gamma, alpha_dual, *iterate->gamma);
       }
       if (nxupp > 0) {
-         mu += w->shiftedDotProductWith(alpha_primal, *step->w, *phi, alpha_dual, *step->phi);
+         mu += w->shiftedDotProductWith(alpha_primal, *iterate->w, *phi, alpha_dual, *iterate->phi);
       }
       mu /= nComplementaryVariables;
       return mu;
    }
 }
 
-void Variables::saxpy(const Variables* b_in, double alpha) {
-   const Variables* b = (const Variables*) b_in;
-
-   x->axpy(alpha, *b->x);
-   y->axpy(alpha, *b->y);
-   z->axpy(alpha, *b->z);
-   s->axpy(alpha, *b->s);
+void Variables::saxpy(const Variables* iterate, double alpha) {
+   x->axpy(alpha, *iterate->x);
+   y->axpy(alpha, *iterate->y);
+   z->axpy(alpha, *iterate->z);
+   s->axpy(alpha, *iterate->s);
    if (mclow > 0) {
-      assert(b->t->matchesNonZeroPattern(*iclow) && b->lambda->matchesNonZeroPattern(*iclow));
+      assert(iterate->t->matchesNonZeroPattern(*iclow) && iterate->lambda->matchesNonZeroPattern(*iclow));
 
-      t->axpy(alpha, *b->t);
-      lambda->axpy(alpha, *b->lambda);
+      t->axpy(alpha, *iterate->t);
+      lambda->axpy(alpha, *iterate->lambda);
    }
    if (mcupp > 0) {
-      assert(b->u->matchesNonZeroPattern(*icupp) && b->pi->matchesNonZeroPattern(*icupp));
+      assert(iterate->u->matchesNonZeroPattern(*icupp) && iterate->pi->matchesNonZeroPattern(*icupp));
 
-      u->axpy(alpha, *b->u);
-      pi->axpy(alpha, *b->pi);
+      u->axpy(alpha, *iterate->u);
+      pi->axpy(alpha, *iterate->pi);
    }
    if (nxlow > 0) {
-      assert(b->v->matchesNonZeroPattern(*ixlow) && b->gamma->matchesNonZeroPattern(*ixlow));
+      assert(iterate->v->matchesNonZeroPattern(*ixlow) && iterate->gamma->matchesNonZeroPattern(*ixlow));
 
-      v->axpy(alpha, *b->v);
-      gamma->axpy(alpha, *b->gamma);
+      v->axpy(alpha, *iterate->v);
+      gamma->axpy(alpha, *iterate->gamma);
    }
    if (nxupp > 0) {
-      assert(b->w->matchesNonZeroPattern(*ixupp) && b->phi->matchesNonZeroPattern(*ixupp));
+      assert(iterate->w->matchesNonZeroPattern(*ixupp) && iterate->phi->matchesNonZeroPattern(*ixupp));
 
-      w->axpy(alpha, *b->w);
-      phi->axpy(alpha, *b->phi);
+      w->axpy(alpha, *iterate->w);
+      phi->axpy(alpha, *iterate->phi);
    }
 }
 
-void Variables::saxpy_pd(const Variables* b_in, double alpha_primal, double alpha_dual) {
-   const Variables* b = (const Variables*) b_in;
-
-   x->axpy(alpha_primal, *b->x);
-   y->axpy(alpha_dual, *b->y);
-   z->axpy(alpha_dual, *b->z);
-   s->axpy(alpha_primal, *b->s);
+void Variables::saxpy_pd(const Variables* iterate, double alpha_primal, double alpha_dual) {
+   x->axpy(alpha_primal, *iterate->x);
+   y->axpy(alpha_dual, *iterate->y);
+   z->axpy(alpha_dual, *iterate->z);
+   s->axpy(alpha_primal, *iterate->s);
    if (mclow > 0) {
-      assert(b->t->matchesNonZeroPattern(*iclow) && b->lambda->matchesNonZeroPattern(*iclow));
+      assert(iterate->t->matchesNonZeroPattern(*iclow) && iterate->lambda->matchesNonZeroPattern(*iclow));
 
-      t->axpy(alpha_primal, *b->t);
-      lambda->axpy(alpha_dual, *b->lambda);
+      t->axpy(alpha_primal, *iterate->t);
+      lambda->axpy(alpha_dual, *iterate->lambda);
    }
    if (mcupp > 0) {
-      assert(b->u->matchesNonZeroPattern(*icupp) && b->pi->matchesNonZeroPattern(*icupp));
+      assert(iterate->u->matchesNonZeroPattern(*icupp) && iterate->pi->matchesNonZeroPattern(*icupp));
 
-      u->axpy(alpha_primal, *b->u);
-      pi->axpy(alpha_dual, *b->pi);
+      u->axpy(alpha_primal, *iterate->u);
+      pi->axpy(alpha_dual, *iterate->pi);
    }
    if (nxlow > 0) {
-      assert(b->v->matchesNonZeroPattern(*ixlow) && b->gamma->matchesNonZeroPattern(*ixlow));
+      assert(iterate->v->matchesNonZeroPattern(*ixlow) && iterate->gamma->matchesNonZeroPattern(*ixlow));
 
-      v->axpy(alpha_primal, *b->v);
-      gamma->axpy(alpha_dual, *b->gamma);
+      v->axpy(alpha_primal, *iterate->v);
+      gamma->axpy(alpha_dual, *iterate->gamma);
    }
    if (nxupp > 0) {
-      assert(b->w->matchesNonZeroPattern(*ixupp) && b->phi->matchesNonZeroPattern(*ixupp));
+      assert(iterate->w->matchesNonZeroPattern(*ixupp) && iterate->phi->matchesNonZeroPattern(*ixupp));
 
-      w->axpy(alpha_primal, *b->w);
-      phi->axpy(alpha_dual, *b->phi);
+      w->axpy(alpha_primal, *iterate->w);
+      phi->axpy(alpha_dual, *iterate->phi);
    }
 }
-
 
 void Variables::negate() {
    s->negate();
@@ -255,85 +249,78 @@ void Variables::negate() {
    }
 }
 
-double Variables::stepbound(const Variables* b_in) {
-   const Variables* b = (const Variables*) b_in;
-   double maxStep;
-
-   maxStep = 1.0;
-
+double Variables::stepbound(const Variables* iterate) {
+   double maxStep = 1.0;
    if (mclow > 0) {
       assert(t->somePositive(*iclow));
       assert(lambda->somePositive(*iclow));
 
-      maxStep = t->stepbound(*b->t, maxStep);
-      maxStep = lambda->stepbound(*b->lambda, maxStep);
+      maxStep = t->stepbound(*iterate->t, maxStep);
+      maxStep = lambda->stepbound(*iterate->lambda, maxStep);
    }
 
    if (mcupp > 0) {
       assert(u->somePositive(*icupp));
       assert(pi->somePositive(*icupp));
 
-      maxStep = u->stepbound(*b->u, maxStep);
-      maxStep = pi->stepbound(*b->pi, maxStep);
+      maxStep = u->stepbound(*iterate->u, maxStep);
+      maxStep = pi->stepbound(*iterate->pi, maxStep);
    }
 
    if (nxlow > 0) {
       assert(v->somePositive(*ixlow));
       assert(gamma->somePositive(*ixlow));
 
-      maxStep = v->stepbound(*b->v, maxStep);
-      maxStep = gamma->stepbound(*b->gamma, maxStep);
+      maxStep = v->stepbound(*iterate->v, maxStep);
+      maxStep = gamma->stepbound(*iterate->gamma, maxStep);
    }
 
    if (nxupp > 0) {
       assert(w->somePositive(*ixupp));
       assert(phi->somePositive(*ixupp));
 
-      maxStep = w->stepbound(*b->w, maxStep);
-      maxStep = phi->stepbound(*b->phi, maxStep);
+      maxStep = w->stepbound(*iterate->w, maxStep);
+      maxStep = phi->stepbound(*iterate->phi, maxStep);
    }
 
    assert(maxStep <= 1.0);
    return maxStep;
 }
 
-void Variables::stepbound_pd(const Variables* b_in, double& alpha_primal, double& alpha_dual) {
-   const Variables* b = (const Variables*) b_in;
-   double maxStep_primal, maxStep_dual;
-
-   maxStep_primal = 1.0;
-   maxStep_dual = 1.0;
+void Variables::stepbound_pd(const Variables* iterate, double& alpha_primal, double& alpha_dual) {
+   double maxStep_primal = 1.0;
+   double maxStep_dual = 1.0;
 
    if (mclow > 0) {
       assert(t->somePositive(*iclow));
       assert(lambda->somePositive(*iclow));
 
-      maxStep_primal = t->stepbound(*b->t, maxStep_primal);
-      maxStep_dual = lambda->stepbound(*b->lambda, maxStep_dual);
+      maxStep_primal = t->stepbound(*iterate->t, maxStep_primal);
+      maxStep_dual = lambda->stepbound(*iterate->lambda, maxStep_dual);
    }
 
    if (mcupp > 0) {
       assert(u->somePositive(*icupp));
       assert(pi->somePositive(*icupp));
 
-      maxStep_primal = u->stepbound(*b->u, maxStep_primal);
-      maxStep_dual = pi->stepbound(*b->pi, maxStep_dual);
+      maxStep_primal = u->stepbound(*iterate->u, maxStep_primal);
+      maxStep_dual = pi->stepbound(*iterate->pi, maxStep_dual);
    }
 
    if (nxlow > 0) {
       assert(v->somePositive(*ixlow));
       assert(gamma->somePositive(*ixlow));
 
-      maxStep_primal = v->stepbound(*b->v, maxStep_primal);
-      maxStep_dual = gamma->stepbound(*b->gamma, maxStep_dual);
+      maxStep_primal = v->stepbound(*iterate->v, maxStep_primal);
+      maxStep_dual = gamma->stepbound(*iterate->gamma, maxStep_dual);
    }
 
    if (nxupp > 0) {
       assert(w->somePositive(*ixupp));
       assert(phi->somePositive(*ixupp));
 
-      maxStep_primal = w->stepbound(*b->w, maxStep_primal);
-      maxStep_dual = phi->stepbound(*b->phi, maxStep_dual);
+      maxStep_primal = w->stepbound(*iterate->w, maxStep_primal);
+      maxStep_dual = phi->stepbound(*iterate->phi, maxStep_dual);
    }
 
    assert(maxStep_primal <= 1.0);
@@ -343,50 +330,23 @@ void Variables::stepbound_pd(const Variables* b_in, double& alpha_primal, double
    alpha_dual = maxStep_dual;
 }
 
-int Variables::isInteriorPoint() {
-   int interior = 1;
-   if (mclow > 0) {
-      interior = interior && t->somePositive(*iclow) && lambda->somePositive(*iclow);
-   }
-
-   if (mcupp > 0) {
-      interior = interior && u->somePositive(*icupp) && pi->somePositive(*icupp);
-   }
-
-   if (nxlow > 0) {
-      interior = interior && v->somePositive(*ixlow) && gamma->somePositive(*ixlow);
-   }
-
-   if (nxupp > 0) {
-      interior = interior && w->somePositive(*ixupp) && phi->somePositive(*ixupp);
-   }
-
-   return interior;
-}
-
 double
 Variables::findBlocking(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) {
-   double alpha = 1.0;
+   double alpha = 1.;
    firstOrSecond = 0;
 
-   const Variables* d = (const Variables*) step;
-
    if (mclow > 0) {
-      alpha = t->find_blocking(*d->t, *lambda, *d->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = t->find_blocking(*step->t, *lambda, *step->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
-
    if (mcupp > 0) {
-      alpha = u->find_blocking(*d->u, *pi, *d->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = u->find_blocking(*step->u, *pi, *step->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
-
    if (nxlow > 0) {
-      alpha = v->find_blocking(*d->v, *gamma, *d->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = v->find_blocking(*step->v, *gamma, *step->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
-
    if (nxupp > 0) {
-      alpha = w->find_blocking(*d->w, *phi, *d->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = w->find_blocking(*step->w, *phi, *step->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
-
    return alpha;
 }
 
@@ -397,217 +357,26 @@ Variables::findBlocking_pd(const Variables* step, double& primalValue, double& p
    alphaPrimal = 1.0, alphaDual = 1.0;
    primalBlocking = false, dualBlocking = false;
 
-   const Variables* d = (const Variables*) step;
-
    if (mclow > 0) {
-      t->find_blocking_pd(*d->t, *lambda, *d->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      t->find_blocking_pd(*step->t, *lambda, *step->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (mcupp > 0) {
-      u->find_blocking_pd(*d->u, *pi, *d->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      u->find_blocking_pd(*step->u, *pi, *step->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxlow > 0) {
-      v->find_blocking_pd(*d->v, *gamma, *d->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
-            dualValue_d, dualStep_d, primalBlocking, dualBlocking);
+      v->find_blocking_pd(*step->v, *gamma, *step->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+            primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxupp > 0) {
-      w->find_blocking_pd(*d->w, *phi, *d->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
-            dualValue_d, dualStep_d, primalBlocking, dualBlocking);
+      w->find_blocking_pd(*step->w, *phi, *step->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+            primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 }
-
-
-
-//  void Variables::start(Problem *prob, Residuals * resid, LinearSystem * sys,
-//  		      Variables * step )
-//  {
-//    s->setToZero();
-//    x->setToZero();
-//    y->setToZero();
-//    z->setToZero();
-
-//    // set the r3 component of the rhs to -(norm of data), and calculate
-//    // the residuals that are obtained when all values are zero.
-
-//    double sdatanorm = prob->datanorm();
-//    double alpha  = 0.0;
-//    double beta   = 0.0;
-//    double calpha = 0.0;
-//    double cbeta  = 0.0;
-
-//    if( nxlow > 0 ) {
-//      v     ->setToConstant ( alpha );
-//      v     ->selectNonZeros( ixlow );
-//      gamma ->setToConstant ( beta  );
-//      gamma ->selectNonZeros( ixlow );
-//    }
-//    if( nxupp > 0 ) {
-//      w     ->setToConstant ( alpha );
-//      w     ->selectNonZeros( ixupp );
-//      phi   ->setToConstant ( beta  );
-//      phi   ->selectNonZeros( ixupp );
-//    }
-
-//    if( mclow > 0 ) {
-//      t      ->setToConstant ( calpha );
-//      t      ->selectNonZeros( iclow );
-//      lambda ->setToConstant ( cbeta  );
-//      lambda ->selectNonZeros( iclow );
-//    }
-//    if( mcupp > 0 ) {
-//      u      ->setToConstant ( calpha );
-//      u      ->selectNonZeros( icupp );
-//      pi     ->setToConstant ( cbeta  );
-//      pi     ->selectNonZeros( icupp );
-//    }
-//    resid->set_r3_xz_alpha( this, -sdatanorm );
-//    resid->calcresids( prob, this );
-
-//    // next, assign 1 to all the complementary variables, so that there
-//    // are identities in the coefficient matrix when we do the solve.
-
-//    alpha  = 1.0;
-//    beta   = 1.0;
-//    calpha = 1.0;
-//    cbeta  = 1.0;
-
-//    if( nxlow > 0 ) {
-//      v     ->setToConstant ( alpha );
-//      v     ->selectNonZeros( ixlow );
-//      gamma ->setToConstant ( beta  );
-//      gamma ->selectNonZeros( ixlow );
-//    }
-//    if( nxupp > 0 ) {
-//      w     ->setToConstant ( alpha );
-//      w     ->selectNonZeros( ixupp );
-//      phi   ->setToConstant ( beta  );
-//      phi   ->selectNonZeros( ixupp );
-//    }
-
-//    if( mclow > 0 ) {
-//      t      ->setToConstant ( calpha );
-//      t      ->selectNonZeros( iclow );
-//      lambda ->setToConstant ( cbeta  );
-//      lambda ->selectNonZeros( iclow );
-//    }
-//    if( mcupp > 0 ) {
-//      u      ->setToConstant ( calpha );
-//      u      ->selectNonZeros( icupp );
-//      pi     ->setToConstant ( cbeta  );
-//      pi     ->selectNonZeros( icupp );
-//    }
-
-//    //  resid->calcresids( prob, this);
-
-//    sys->factorize(prob, this);
-//    sys->solve (prob, this, resid, step);
-//    step->negate();
-
-//    // copy the "step" into the current vector
-
-//    this->copy(step);
-//    double violation = 0.0, cmin = 0.0;
-//    int iblock;
-
-//    if( nxlow > 0 ) {
-//      v->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-
-//      gamma->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-//    }
-//    if( nxupp > 0 ) {
-//      w->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-
-//      phi->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-//    }
-//    if( mclow > 0 ) {
-//      t->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-
-//      lambda->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-//    }
-//    if( mcupp > 0 ) {
-//      u->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-
-//      pi->min( cmin, iblock );
-//      if( cmin < violation ) violation = cmin;
-//    }
-
-//    //  std::cout << "violation is " << violation << std::endl;
-//    double shift = 0.0;
-//    if(violation <= 0.0) shift = -1.5 * violation;
-
-//    if( nxlow > 0 ) {
-//      v     ->addSomeConstants( shift, ixlow );
-//      gamma ->addSomeConstants( shift, ixlow );
-//    }
-//    if( nxupp > 0 ) {
-//      w     ->addSomeConstants( shift, ixupp );
-//      phi   ->addSomeConstants( shift, ixupp );
-//    }
-//    if( mclow > 0 ) {
-//      t     ->addSomeConstants( shift, iclow );
-//      lambda->addSomeConstants( shift, iclow );
-//    }
-//    if( mcupp > 0 ) {
-//      u     ->addSomeConstants( shift, icupp );
-//      pi    ->addSomeConstants( shift, icupp );
-//    }
-
-//    // do Mehrotra-type adjustment
-
-//    double mutemp = this->mu();
-//    double snorm=0.e0, xnorm=0.e0;
-//    if( nxlow > 0 ) {
-//      xnorm += v->onenorm();
-//      snorm += gamma->onenorm();
-//    }
-//    if( nxupp > 0 ) {
-//      xnorm += w->onenorm();
-//      snorm += phi->onenorm();
-//    }
-//    if( mclow > 0 ) {
-//      xnorm += t->onenorm();
-//      snorm += lambda->onenorm();
-//    }
-//    if( mcupp > 0 ) {
-//      xnorm += u->onenorm();
-//      snorm += pi->onenorm();
-//    }
-
-//    std::cout << "xnorm = " << xnorm << std::endl;
-//    std::cout << "snorm = " << snorm << std::endl;
-
-//    double deltax = 0.5 * (nxlow+nxupp+mclow+mcupp) * mutemp / snorm;
-//    double deltas = 0.5 * (nxlow+nxupp+mclow+mcupp) * mutemp / xnorm;
-
-//    if( nxlow > 0 ) {
-//      v     ->addSomeConstants( deltax, ixlow );
-//      gamma ->addSomeConstants( deltas, ixlow );
-//    }
-//    if( nxupp > 0 ) {
-//      w     ->addSomeConstants( deltax, ixupp );
-//      phi   ->addSomeConstants( deltas, ixupp );
-//    }
-//    if( mclow > 0 ) {
-//      t     ->addSomeConstants( deltax, iclow );
-//      lambda->addSomeConstants( deltas, iclow );
-//    }
-//    if( mcupp > 0 ) {
-//      u     ->addSomeConstants( deltax, icupp );
-//      pi    ->addSomeConstants( deltas, icupp );
-//    }
-
-//  }
 
 void Variables::push_to_interior(double alpha, double beta) {
    s->setToZero();
@@ -731,8 +500,7 @@ void Variables::copy(const Variables* b_in) {
 }
 
 double Variables::onenorm() const {
-   double norm;
-   norm = x->onenorm();
+   double norm = x->onenorm();
    norm += s->onenorm();
    norm += y->onenorm();
    norm += z->onenorm();
@@ -749,12 +517,9 @@ double Variables::onenorm() const {
    return norm;
 }
 
-
 double Variables::infnorm() const {
-   double norm, temp;
-   norm = 0.0;
-
-   temp = x->infnorm();
+   double norm = 0.0;
+   double temp = x->infnorm();
    if (temp > norm)
       norm = temp;
    temp = s->infnorm();
@@ -854,7 +619,6 @@ int Variables::validNonZeroPattern() {
 }
 
 void Variables::unscaleSolution(Problem* problem) {
-
 // Modifying sx is equivalent to modifying x
    SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
 
@@ -863,7 +627,6 @@ void Variables::unscaleSolution(Problem* problem) {
 }
 
 void Variables::unscaleBounds(Problem* problem) {
-
    SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
    SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
 
@@ -1016,52 +779,6 @@ void Variables::printNorms() const {
    temp_2 = pi->twonorm();
    if (my_rank == 0)
       std::cout << "||vars_pi||_INF = " << temp_inf << "\t||vars_pi||_2 = " << temp_2 << std::endl;
-}
-
-void Variables::setNotIndicatedBoundsTo(Problem& problem, double value) {
-   value = std::fabs(value);
-
-   const double x_inf = x->infnorm();
-   const double xlow_inf = std::min(-10.0 * x_inf, -value);
-   const double xupp_inf = std::min(10.0 * x_inf, value);
-
-   /* change original bounds and set ixlow ixupp */
-   problem.xlowerBound().setNotIndicatedEntriesToVal(xlow_inf, *problem.ixlow);
-   problem.xupperBound().setNotIndicatedEntriesToVal(xupp_inf, *problem.ixupp);
-
-   Vector<double>* ixupp_inv = problem.ixupp->clone();
-   ixupp_inv->setToZero();
-   ixupp_inv->setNotIndicatedEntriesToVal(1.0, *problem.ixupp);
-
-   Vector<double>* ixlow_inv = problem.ixlow->clone();
-   ixlow_inv->setToZero();
-   ixlow_inv->setNotIndicatedEntriesToVal(1.0, *problem.ixlow);
-
-   problem.ixlow->setToConstant(1);
-   problem.ixupp->setToConstant(1);
-
-   /* adjust slacks */
-   Vector<double>* x_copy = x->cloneFull();
-
-   /* x - lx */
-   x_copy->axpy(-1.0, problem.xlowerBound());
-   /* v = x - lx */
-   v->axzpy(1.0, *ixlow_inv, *x_copy);
-
-   x_copy->copyFrom(*x);
-   /* x - ux */
-   x_copy->axpy(-1.0, problem.xupperBound());
-   /* w = -( x - ux ) = ux - x */
-   w->axzpy(-1.0, *ixupp_inv, *x_copy);
-
-   /* set duals for new variable bounds to something small */
-   x_copy->setToConstant(1e-10);
-   phi->axzpy(1.0, *ixupp_inv, *x_copy);
-   gamma->axzpy(1.0, *ixlow_inv, *x_copy);
-
-   delete x_copy;
-   delete ixlow_inv;
-   delete ixupp_inv;
 }
 
 // default implementation for Variables::print() prints abusive

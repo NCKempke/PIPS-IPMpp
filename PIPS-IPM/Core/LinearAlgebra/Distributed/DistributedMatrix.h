@@ -208,8 +208,6 @@ protected:
    virtual void writeToStreamDenseChild(std::ostream& out, int offset) const;
    virtual void writeToStreamDenseBorderedChild(const StripMatrix& border_left, std::ostream& out, int offset) const;
 
-   virtual void writeToStreamDenseRowLink(std::ostream& out, int rowidx) const;
-
    /* internal methods for linking cons and hierarchical structure */
    virtual void getRowMinMaxVecChild(bool getMin, bool initializeVec, const Vector<double>* colScaleVec_, Vector<double>& minmaxVec_,
          Vector<double>* minmax_link_parent) const;
@@ -295,8 +293,6 @@ public:
 protected:
    void writeToStreamDenseChild(std::ostream&, int) const override {};
    void writeToStreamDenseBorderedChild(const StripMatrix&, std::ostream&, int) const override {};
-
-   void writeToStreamDenseRowLink(std::ostream&, int) const override {};
 
 public:
    void initTransposedChild(bool) const override {};

@@ -28,10 +28,6 @@ DenseSymMatrix::DenseSymMatrix(double Q[], int size) {
    mStorage = std::make_shared<DenseStorage>(Q, size, size);
 }
 
-void DenseSymMatrix::symAtPutZeros(int row, int col, int rowExtent, int colExtent) {
-   mStorage->atPutZeros(row, col, rowExtent, colExtent);
-}
-
 void DenseSymMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
    mStorage->putSparseTriple(irow, len, jcol, A, info);
 }
@@ -201,10 +197,6 @@ void DenseSymMatrix::symAtPutSpRow(int row, const double A[], int lenA, const in
    else {
       info = 0;
    }
-}
-
-void DenseSymMatrix::symAtPutDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) {
-   mStorage->atPutDense(row, col, A, lda, rowExtent, colExtent);
 }
 
 void DenseSymMatrix::symmetricScale(const Vector<double>& vec) {

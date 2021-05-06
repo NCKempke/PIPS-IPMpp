@@ -34,41 +34,9 @@ public:
    virtual ~Status();
 };
 
-/** structure to store data needed by termination condition checks
- * 
- * @ingroup QpSolvers */
-struct StatusData {
-   void* solver;
-   void* data;
-   void* vars;
-   void* resids;
-   int i;
-   double mu;
-   double dnorm;
-   int level;
-   void* ctx;
-};
-
 extern "C" {
 typedef TerminationCode (* StatusCFunc)(void* data);
 }
-
-
-/**
- * Class that uses a C function to check for termination of a QP solver.
- *
- * @ingroup QpSolvers
- */
-class CStatus : public Status {
-protected:
-   StatusCFunc doItC;
-   void* ctx;
-public:
-   CStatus(StatusCFunc doItC_, void* ctx);
-
-   TerminationCode
-   doIt(const Solver* solver, const Problem* data, const Variables* vars, const Residuals* resids, int i, double mu, TerminationCode level) override;
-};
 
 #endif
 

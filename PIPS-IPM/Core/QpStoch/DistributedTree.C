@@ -277,62 +277,6 @@ void DistributedTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
       children[i]->fromMonitorsList(lstExecTm);
 }
 
-void DistributedTree::syncMonitoringData(std::vector<double>& vCPUTotal) {
-
-   std::list<NodeExecEntry> lstExecTm;
-   this->toMonitorsList(lstExecTm);
-
-   int noNodes = lstExecTm.size();
-   int nCPUs = vCPUTotal.size();
-
-   double* recvBuf = new double[noNodes + nCPUs];
-   double* sendBuf = new double[noNodes + nCPUs];
-
-   std::list<NodeExecEntry>::iterator iter = lstExecTm.begin();
-   for (int it = 0; it < noNodes; it++) {
-      sendBuf[it] = iter->tmChildren;
-      iter++;
-   }
-   for (int it = noNodes; it < noNodes + nCPUs; it++)
-      sendBuf[it] = vCPUTotal[it - noNodes];
-
-
-   MPI_Allreduce(sendBuf, recvBuf, noNodes + nCPUs, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-   iter = lstExecTm.begin();
-   for (int it = 0; it < noNodes; it++) {
-      iter->tmChildren = recvBuf[it];
-      iter++;
-   }
-   for (int it = noNodes; it < noNodes + nCPUs; it++)
-      vCPUTotal[it - noNodes] = recvBuf[it];
-
-   if (children.size() > 0) {
-      //local time MPI_MAX, but only for nonleafs
-      iter = lstExecTm.begin();
-      for (int it = 0; it < noNodes; it++) {
-         sendBuf[it] = iter->tmLocal;
-         iter++;
-      }
-
-      MPI_Allreduce(sendBuf, recvBuf, noNodes, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-      iter = lstExecTm.begin();
-      for (int it = 0; it < noNodes; it++) {
-         iter->tmLocal = recvBuf[it];
-         iter++;
-      }
-   }
-   delete[] recvBuf;
-   delete[] sendBuf;
-
-   //populate the tree with the global data
-   this->fromMonitorsList(lstExecTm);
-
-   //compute syncronized total time for each node of the tree, i.e., local+childs+subchilds
-   computeNodeTotal(); //updates this->IPMIterExecTIME
-}
-
 bool DistributedTree::balanceLoad() {
    return false; //disabled for now
 }

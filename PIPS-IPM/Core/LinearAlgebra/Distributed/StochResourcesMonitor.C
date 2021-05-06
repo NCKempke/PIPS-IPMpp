@@ -56,12 +56,6 @@ void StochNodeResourcesMonitor::recFactTmChildren_stop() {
 }
 
 
-void StochNodeResourcesMonitor::recLsolveTmLocal_start() { tmOpStart = MPI_Wtime(); }
-
-void StochNodeResourcesMonitor::recLsolveTmLocal_stop() {
-   double tmOpEnd = MPI_Wtime();
-   eLsolve.tmLocal += (tmOpEnd - tmOpStart);
-}
 void StochNodeResourcesMonitor::recLsolveTmChildren_start() { tmOpStart = MPI_Wtime(); }
 
 void StochNodeResourcesMonitor::recLsolveTmChildren_stop() {
@@ -108,22 +102,6 @@ void StochNodeResourcesMonitor::recSchurCom_stop(double, stCommType) {
    vcSchur[vcSchur.size() - 1].time = tmOpEnd - tmOpStart;
 }
 
-void StochNodeResourcesMonitor::recLsolveCom_start(double size, stCommType type) {
-   NodeCommEntry commMon(0.0, size, type);
-   vcLsolve.push_back(commMon);
-   tmOpStart = MPI_Wtime();
-}
-
-void StochNodeResourcesMonitor::recLsolveCom_stop(double, stCommType) {
-   double tmOpEnd = MPI_Wtime();
-   vcLsolve[vcSchur.size() - 1].time = tmOpEnd - tmOpStart;
-}
-
-//record the dense matrix multiplication within Schur complement computation
-void StochNodeResourcesMonitor::recSchurMultChildren_start() { eMult.recChildren_start(); }
-
-void StochNodeResourcesMonitor::recSchurMultChildren_stop() { eMult.recChildren_stop(); }
-
 void StochNodeResourcesMonitor::recSchurMultLocal_start() { eMult.recLocal_start(); }
 
 void StochNodeResourcesMonitor::recSchurMultLocal_stop() { eMult.recLocal_stop(); }
@@ -136,10 +114,6 @@ void StochNodeResourcesMonitor::recReduceTmLocal_stop() { eReduce.recLocal_stop(
 void StochNodeResourcesMonitor::recReduceScatterTmLocal_start() { eReduceScatter.recLocal_start(); }
 
 void StochNodeResourcesMonitor::recReduceScatterTmLocal_stop() { eReduceScatter.recLocal_stop(); }
-
-void StochNodeResourcesMonitor::recBcastTmLocal_start() { eBcast.recLocal_start(); }
-
-void StochNodeResourcesMonitor::recBcastTmLocal_stop() { eBcast.recLocal_stop(); }
 
 //**************************************************
 //*************  NodeExecEntry   *******************

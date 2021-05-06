@@ -15,9 +15,9 @@
 #include "pipsdef.h"
 #include "DistributedOptions.h"
 
-PardisoIndefSolver::PardisoIndefSolver(DenseSymMatrix* dm, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
+PardisoIndefSolver::PardisoIndefSolver(DenseSymMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {
-   mStorage = dm->getStorageHandle();
+   mStorage = matrix->getStorageHandle();
    mStorageSparse = nullptr;
 
    assert(mStorage);
@@ -27,10 +27,10 @@ PardisoIndefSolver::PardisoIndefSolver(DenseSymMatrix* dm, bool solve_in_paralle
    initPardiso();
 }
 
-PardisoIndefSolver::PardisoIndefSolver(SparseSymmetricMatrix* sm, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
+PardisoIndefSolver::PardisoIndefSolver(SparseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {
    mStorage = nullptr;
-   mStorageSparse = sm->getStorageHandle();
+   mStorageSparse = matrix->getStorageHandle();
 
    assert(mStorageSparse);
 
