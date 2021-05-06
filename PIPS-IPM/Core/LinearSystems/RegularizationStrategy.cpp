@@ -69,6 +69,7 @@ Regularization RegularizationStrategy::get_regularization_new_matrix(const Inert
 }
 
 Regularization RegularizationStrategy::get_regularization_nth_try(const Inertia& inertia, double barrier_parameter) {
+   // TODO : unused variable in release mode
    auto[positive_eigenvalues, negative_eigenvalues, zero_eigenvalues] = inertia;
    assert(positive_eigenvalues != positive_eigenvalues_expected || negative_eigenvalues != negative_eigenvalues_expected);
 

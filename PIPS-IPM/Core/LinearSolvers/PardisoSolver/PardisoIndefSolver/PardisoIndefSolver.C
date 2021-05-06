@@ -5,7 +5,6 @@
  *      Author: Daniel Rehfeldt
  */
 
-
 #include "PardisoIndefSolver.h"
 #include "pipschecks.h"
 #include "SimpleVector.h"

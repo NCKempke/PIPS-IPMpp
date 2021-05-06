@@ -8,8 +8,8 @@
 #include "pipsdef.h"
 #include "SimpleVector.h"
 #include <cmath>
+#include <vector>
 #include <cassert>
-#include <algorithm>
 
 bool permutationIsValid(const Permutation& perm) {
    size_t size = perm.size();
@@ -42,8 +42,8 @@ bool subMatrixIsOrdered(const int* rowptr, const int* colidx, int rowstart, int 
    return true;
 }
 
-void computeFortranCSRMatResidualNorms(const int* rowptr, const int* colidx, const double* vals, /*const*/ SimpleVector<double>& rhs,
-      /*const*/ SimpleVector<double>& x, double& res_norm2, double& res_nrmInf, double& sol_inf, double& mat_max) {
+void computeFortranCSRMatResidualNorms(const int* rowptr, const int* colidx, const double* vals, const SimpleVector<double>& rhs,
+      const SimpleVector<double>& x, double& res_norm2, double& res_nrmInf, double& sol_inf, double& mat_max) {
    const int dim = rhs.length();
    double* tmp_resid = new double[dim];
    memcpy(tmp_resid, rhs.elements(), dim * sizeof(double));

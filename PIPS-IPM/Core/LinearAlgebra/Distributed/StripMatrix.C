@@ -139,8 +139,11 @@ void StripMatrix::recomputeNonzeros() {
       child->recomputeNonzeros();
       if (PIPS_MPIgetRank(child->mpi_comm) == 0)
          nonzeros += child->numberOfNonZeros();
+#ifndef NDEBUG
+         // !in DEBUG the nonzeros get recomputed so all processes have to join in - a terrible hack but for safety..
       else
-         child->numberOfNonZeros();
+         static_cast<void>(child->numberOfNonZeros());
+#endif
    }
 
    if (dynamic_cast<const StripMatrix*>(first)) {
@@ -148,8 +151,11 @@ void StripMatrix::recomputeNonzeros() {
       matstr.recomputeNonzeros();
       if (PIPS_MPIgetRank(matstr.mpi_comm) == 0)
          nonzeros += matstr.numberOfNonZeros();
+#ifndef NDEBUG
+      // !in DEBUG the nonzeros get recomputed so all processes have to join in - a terrible hack but for safety..
       else
-         matstr.numberOfNonZeros();
+         static_cast<void>(matstr.numberOfNonZeros());
+#endif
    }
    else if (PIPS_MPIiAmSpecial(distributed, mpi_comm)) {
       if (first)

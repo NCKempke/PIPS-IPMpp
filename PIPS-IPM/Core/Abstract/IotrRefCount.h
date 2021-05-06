@@ -30,7 +30,7 @@ public:
    static int instances;
 
    /** The number of references to this object. */
-   int refs() { return mRefs; };
+   int refs() const { return mRefs; };
 
    /** Release this reference to obj: it is more convenient to call the
     * template function IotrRelease().  The parameter obj contains the
