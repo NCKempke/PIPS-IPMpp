@@ -64,14 +64,14 @@ DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<d
 
 DistributedVariables::DistributedVariables(const DistributedVariables& vars) : Variables(vars) {
    stochNode = vars.stochNode;
-   for (unsigned int i = 0; i < vars.children.size(); ++i) {
-      children.push_back(new DistributedVariables(*vars.children[i]));
+   for (auto i : vars.children) {
+      children.push_back(new DistributedVariables(*i));
    }
 }
 
 DistributedVariables::~DistributedVariables() {
-   for (size_t c = 0; c < children.size(); c++)
-      delete children[c];
+   for (auto & c : children)
+      delete c;
 }
 
 void DistributedVariables::AddChild(DistributedVariables* child) {

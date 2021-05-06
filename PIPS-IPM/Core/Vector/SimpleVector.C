@@ -992,7 +992,7 @@ SimpleVector<T>* SimpleVector<T>::shaveBorder(int n_shave, bool shave_top) {
    // TODO : adjust for n_shave == this->n
    assert(n_shave <= this->n);
    assert(0 <= n_shave);
-   SimpleVector<T>* vec_new = new SimpleVector<T>(n_shave);
+   auto* vec_new = new SimpleVector<T>(n_shave);
 
    T* vec_shaved = new T[this->n - n_shave];
 
@@ -1017,8 +1017,7 @@ void SimpleVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_c
    if (this->n == 0)
       return;
 
-
-   const SimpleVector<T>* selects = dynamic_cast<const SimpleVector<T>*>(select);
+   const auto* selects = dynamic_cast<const SimpleVector<T>*>(select);
    if (selects)
       assert(this->n == selects->n);
 

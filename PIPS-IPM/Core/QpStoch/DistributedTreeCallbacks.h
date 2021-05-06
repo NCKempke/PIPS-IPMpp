@@ -72,7 +72,7 @@ public:
 
    virtual void writeSizes(std::ostream& sout) const;
 
-   DistributedTree* switchToHierarchicalTree(DistributedQP*& data) override;
+   DistributedTree* switchToHierarchicalTree(DistributedQP*& data_to_split) override;
 
    const std::vector<unsigned int>& getMapBlockSubTrees() const { return map_node_sub_root; };
    std::vector<MPI_Comm> getChildComms() const;
@@ -108,7 +108,7 @@ protected:
    std::pair<int, int>
    adjustSizesAfterSplit(const std::vector<unsigned int>& two_links_children_eq, const std::vector<unsigned int>& two_links_children_ineq);
 
-   std::pair<int, int> splitTree(int n_layers, DistributedQP* data) override;
+   std::pair<int, int> splitTree(int n_layers, DistributedQP* data_to_split) override;
 
    DistributedTree* shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) override;
 

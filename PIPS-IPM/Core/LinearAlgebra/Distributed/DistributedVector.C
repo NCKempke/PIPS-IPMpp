@@ -2021,29 +2021,37 @@ n_links_in_root
 }
 
 template<typename T>
-DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_vars, bool linking_part, bool shave_top) {
-   assert(parent == nullptr);
-   assert(first || last);
+DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, int n_last_to_shave) {
+   assert(!parent);
+   assert(n_first_to_shave >= -1);
+   assert(n_last_to_shave >= -1);
+   assert(n_first_to_shave >= 0 || n_last_to_shave >= 0);
 
-   SimpleVector<T>* vecs;
-   if (linking_part)
-      vecs = dynamic_cast<SimpleVector<T>*>(last);
-   else
-      vecs = dynamic_cast<SimpleVector<T>*>(first);
+   /* shave from first if there */
+   if (n_first_to_shave >= 0) {
+      assert(this->first);
+      assert(this->first->length() >= n_first_to_shave);
+   }
 
-   assert(vecs);
-   assert(n_vars <= vecs->length());
+   SimpleVector<T>* new_first{};
+   if (n_first_to_shave >= 0) {
+      new_first = dynamic_cast<SimpleVector<T>*>(this->first)->shaveBorder(n_first_to_shave, true);
+   }
 
-   SimpleVector<T>* border = vecs->shaveBorder(n_vars, shave_top);
+   /* shave from last if there */
+   if (n_last_to_shave >= 0) {
+      assert(this->last);
+      assert(this->last->length() >= n_last_to_shave);
+   }
 
-   DistributedVector<T>* top_layer;
-   if (shave_top)
-      top_layer = new DistributedVector<T>(border, nullptr, mpiComm);
-   else
-      top_layer = new DistributedVector<T>(nullptr, border, mpiComm);
+   SimpleVector<T>* new_last{};
+   if (n_last_to_shave >= 0) {
+      new_last = dynamic_cast<SimpleVector<T>*>(this->last)->shaveBorder(n_last_to_shave, false);
+   }
 
-   this->n -= n_vars;
+   auto* top_layer = new DistributedVector<T>(new_first, new_last, mpiComm);
 
+   this->n = this->n - std::max(0, n_first_to_shave) - std::max(0, n_last_to_shave);
    this->parent = top_layer;
    top_layer->AddChild(this);
 

@@ -145,10 +145,15 @@ public:
 
    virtual void deleteChildren() = 0;
 
-   virtual bool isDummy() const { return false; };
+   [[nodiscard]] virtual bool isDummy() const { return false; };
 
 protected:
-   int locnx, locmy, locmyl, locmz, locmzl;
+   int locnx{};
+   int locmy{};
+   int locmyl{};
+   int locmz{};
+   int locmzl{};
+
    DistributedQP* data{};
 
    int iAmDistrib;

@@ -143,7 +143,7 @@ public:
 
    virtual void split(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
-   virtual DistributedVector<T>* raiseBorder(int n_vars, bool linking_part, bool shave_top);
+   virtual DistributedVector<T>* raiseBorder(int n_first_to_shave, int n_last_to_shave);
    virtual void collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
    virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
          const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
@@ -263,7 +263,7 @@ public:
    bool isRootNodeInSync() const override { return true; };
 
    void split(const std::vector<unsigned int>&, const std::vector<MPI_Comm>&, const std::vector<int>&, int) override {};
-   DistributedVector<T>* raiseBorder(int, bool, bool) override {
+   DistributedVector<T>* raiseBorder(int, int) override {
       assert(0 && "This should never be attempted");
       return nullptr;
    };
