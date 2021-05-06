@@ -1799,73 +1799,29 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
       if (!CtDC) {
          CtDC.reset(CtDCptr);
       }
-   } //~end if locmz>0
+   }
+
    /////////////////////////////////////////////////////////////
-   // update the KKT with A (symmetric update forced)
+   // update the KKT with A
    /////////////////////////////////////////////////////////////
    if (locmy > 0) {
-      SparseMatrix& A = prob->getLocalB(); // yes, B
-      const double* dA = A.M();
-      const int* krowA = A.krowM();
-      const int* jcolA = A.jcolM();
-
-      int iKkt = locnx;
-      for (int i = 0; i < locmy; ++i, ++iKkt) {
-
-         for (int p = krowA[i], pend = krowA[i + 1]; p < pend; ++p) {
-            const int j = jcolA[p];
-            assert(j < locnx);
-
-            dKkt[iKkt][j] += dA[p];
-         }
-      }
+      kktd->add_matrix_at(prob->getLocalB(), locnx, 0); // yes, B
    }
 
    /////////////////////////////////////////////////////////////
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      SparseMatrix& F = prob->getLocalF();
-
-      const double* dF = F.M();
-      const int* krowF = F.krowM();
-      const int* jcolF = F.jcolM();
-
-      int iKkt = locnx + locmy;
-      for (int i = 0; i < locmyl; ++i, ++iKkt) {
-         for (int p = krowF[i], pend = krowF[i + 1]; p < pend; ++p) {
-            const int j = jcolF[p];
-            assert(j < locnx);
-
-            const double val = dF[p];
-            dKkt[iKkt][j] += val;
-         }
-      }
+      kktd->add_matrix_at(prob->getLocalF(), locnx + locmy, 0);
    }
 
    /////////////////////////////////////////////////////////////
    // update the KKT with G and put z diagonal
    /////////////////////////////////////////////////////////////
    if (locmzl > 0) {
-      SparseMatrix& G = prob->getLocalG();
-      auto& szDiagLinkCons = dynamic_cast<SimpleVector<double>&>(*zDiagLinkCons);
-
-      const double* dG = G.M();
-      const int* krowG = G.krowM();
-      const int* jcolG = G.jcolM();
-
-      int iKkt = locnx + locmy + locmyl;
-      for (int i = 0; i < locmzl; ++i, ++iKkt) {
-
-         dKkt[iKkt][iKkt] += szDiagLinkCons[i];
-         for (int p = krowG[i], pend = krowG[i + 1]; p < pend; ++p) {
-            const int j = jcolG[p];
-            assert(j < locnx);
-
-            const double val = dG[p];
-            dKkt[iKkt][j] += val;
-         }
-      }
+      assert(zDiagLinkCons);
+      kktd->add_matrix_at(prob->getLocalG(), locnx + locmy + locmz, 0);
+      kktd->atAddDiagonal(locnx + locmy + locmz, *zDiagLinkCons);
    }
 
 #ifdef DUMPKKT
@@ -1883,12 +1839,6 @@ void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
 
    assert(0);
 #endif
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT zeros for the lower right block
-   /////////////////////////////////////////////////////////////
-   //kktd->storage().atPutZeros(locnx, locnx, locmy+locmz, locmy+locmz);
-   //myAtPutZeros(kktd, locnx, locnx, locmy, locmy);
 }
 
 void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_cols) {
