@@ -1653,7 +1653,7 @@ int DistributedMatrix::appendRow(const DistributedMatrix& matrix_row, int child,
          const int index_row1 = dynamic_cast<SparseMatrix&>(*children[child]->Bmat).appendRow(
                dynamic_cast<const SparseMatrix&>(*matrix_row.children[child]->Bmat), row);
 #else
-         dynamic_cast<SparseGenMatrix&>(*children[child]->Bmat).appendRow( dynamic_cast<SparseGenMatrix&>(*matrix_row.children[child]->Bmat), row );
+         dynamic_cast<SparseMatrix&>(*children[child]->Bmat).appendRow( dynamic_cast<SparseMatrix&>(*matrix_row.children[child]->Bmat), row );
 #endif
          assert(index_row1 == index_row);
       }
