@@ -756,7 +756,6 @@ SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
    return (new SparseSymmetricMatrix(sizeSC, nnz, krowM, jcolM, M, 1, false));
 }
 
-
 SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) {
    assert(children.size() > 0);
 
