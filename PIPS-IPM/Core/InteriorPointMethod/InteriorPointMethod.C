@@ -24,8 +24,8 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    solve_linear_system(iterate, problem, residuals, *step);
    factory.iterate_ended();
 
-   // run Gondzios multiple corrector scheme
-   TerminationCode status_code = mehrotra_strategy.corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
+   // run Gondzio's multiple corrector scheme
+   TerminationStatus status_code = mehrotra_strategy.corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
    return status_code;
 }
 
