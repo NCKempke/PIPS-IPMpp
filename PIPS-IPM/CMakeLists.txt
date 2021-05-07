@@ -177,7 +177,8 @@ add_executable(gmschk
         )
 target_link_libraries(gmschk
         PRIVATE gmspipsio
-        )
+        PRIVATE OpenMP::OpenMP_CXX
+     	)
 
 ########### gmpipsreader ###########
 add_library(gmspips_reader Drivers/gmspips/gmspips_reader.cpp)
