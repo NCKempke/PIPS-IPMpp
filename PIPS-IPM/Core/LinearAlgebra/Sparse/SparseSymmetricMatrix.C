@@ -91,25 +91,26 @@ void SparseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA,
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
 
-void SparseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
-   int i, k;
-   int info, nnz;
+void SparseSymmetricMatrix::symAtPutSubmatrix(int this_start_row, int this_start_col, const AbstractMatrix& matrix, int matrix_start_row, int matrix_start_col, int n_rows, int n_cols) {
 
-   auto* ja = new int[colExtent];
-   auto* a = new double[colExtent];
+   /* storages for column indices and values of a row in matrix */
+   std::vector<int> ja(n_cols);
+   std::vector<double> a(n_cols);
 
-   nnz = 0;
-   for (i = 0; i < rowExtent; i++) {
-      M.fromGetSpRow(srcRow + i, srcCol, a, colExtent, ja, nnz, colExtent, info);
-      for (k = 0; k < nnz; k++) {
-         ja[k] += (destCol - srcCol);
-      }
-      this->symAtPutSpRow(destRow + i, a, nnz, ja, info);
+   int info{0};
+   int nnz = 0;
+   for (int i = 0; i < n_rows; i++) {
+      const int matrix_row = matrix_start_row + i;
+      const int this_row = this_start_row + i;
+
+      matrix.fromGetSpRow(matrix_row, matrix_start_col, a.data(), n_cols, ja.data(), nnz, n_cols, info);
+
+      const int column_offset = this_start_col - matrix_start_col;
+      std::for_each(ja.begin(), ja.begin() + nnz, [column_offset](int& d) { d += column_offset;});
+
+      this->symAtPutSpRow(this_row, a.data(), nnz, ja.data(), info);
       assert(info == 0);
    }
-
-   delete[] a;
-   delete[] ja;
 }
 
 // Pass these to storage

@@ -67,7 +67,7 @@ public:
    void diagonal_add_constant_from(int from, int length, double value) override;
    void diagonal_set_to_constant_from(int from, int length, double value) override;
 
-   void symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) override;
+   void symAtPutSubmatrix(int this_start_row, int this_start_col, const AbstractMatrix& matix, int matrix_start_row, int matrix_start_col, int n_rows, int n_col) override;
 
    virtual void mult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
