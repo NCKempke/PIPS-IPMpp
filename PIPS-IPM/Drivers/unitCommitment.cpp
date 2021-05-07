@@ -1,4 +1,4 @@
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 #include "QpGenDriver.h"
 #include "sDriver.h"
 #include "MehrotraSolver.h"
@@ -290,19 +290,19 @@ void stochSolve(int argc, char* argv[], PbData& pbData, int printx, int solveWit
    int n, my, mz, nx0, my0, mz0;
    pbData.compute1stStageSizes(nx0, my0, mz0);
 
-   StochInputTree::StochInputNode data(&pbData, globalID, nx0, my0, mz0, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow, ficlow,
+   DistributedInputTree::DistributedInputNode data(&pbData, globalID, nx0, my0, mz0, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow, ficlow,
          fcupp, ficupp, fxlow, fixlow, fxupp, fixupp);
    globalID++;
-   StochInputTree* root = new StochInputTree(data);
+   DistributedInputTree* root = new DistributedInputTree(data);
 
    for (int i = 0; i < pbData.S; i++) {
       pbData.compute2ndStageSizes(n, my, mz);
 
-      StochInputTree::StochInputNode data(&pbData, globalID, n, my, mz, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow, ficlow,
+      DistributedInputTree::DistributedInputNode data(&pbData, globalID, n, my, mz, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fb, fC, fnnzC, fD, fnnzD, fclow, ficlow,
             fcupp, ficupp, fxlow, fixlow, fxupp, fixupp);
       globalID++;
 
-      root->AddChild(new StochInputTree(data));
+      root->AddChild(new DistributedInputTree(data));
    }
    if (myRank == 0) {
 #ifdef TIMING

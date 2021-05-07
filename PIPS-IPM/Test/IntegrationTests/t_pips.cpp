@@ -5,7 +5,8 @@
  *      Author: bzfkempk
  */
 #include "gtest/gtest.h"
-#include "GondzioStochLpSolver.h"
+#include "gmock/gmock.h"
+#include "InteriorPointMethod.h"
 #include "PIPSIpmInterface.h"
 #include "gmspips_reader.hpp"
 
@@ -62,31 +63,19 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 //   testing::internal::CaptureStdout();
 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
-   std::unique_ptr<StochInputTree> tree(reader.read_problem());
+   std::unique_ptr<DistributedInputTree> tree(reader.read_problem());
 
    pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
    double result = std::numeric_limits<double>::infinity();
 
-   if (primal_dual_step) {
-      PIPSIpmInterface<GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
-      try {
-         pipsIpm.run();
-         result = pipsIpm.getObjective();
-      }
-      catch (...) {
-         EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
-      }
+   PIPSIpmInterface<InteriorPointMethod> pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
+   try {
+      pipsIpm.run();
+      result = pipsIpm.getObjective();
    }
-   else {
-      PIPSIpmInterface<GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
-      try {
-         pipsIpm.run();
-         result = pipsIpm.getObjective();
-      }
-      catch (...) {
-         EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
-      }
+   catch (...) {
+      EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
    }
 
 //   testing::internal::GetCapturedStdout();

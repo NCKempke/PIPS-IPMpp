@@ -7,8 +7,6 @@
 
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
-#include "SparseStorageHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SparseStorage.h"

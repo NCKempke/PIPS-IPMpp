@@ -45,8 +45,6 @@ public:
    virtual void recFactTmChildren_start();
    virtual void recFactTmChildren_stop();
 
-   virtual void recLsolveTmLocal_start();
-   virtual void recLsolveTmLocal_stop();
    virtual void recLsolveTmChildren_start();
    virtual void recLsolveTmChildren_stop();
 
@@ -63,24 +61,16 @@ public:
    virtual void recSchurCom_start(double size, stCommType type);
    virtual void recSchurCom_stop(double, stCommType);
 
-   virtual void recLsolveCom_start(double size, stCommType type);
-   virtual void recLsolveCom_stop(double, stCommType);
-
    //record the dense matrix multiplication within Schur complement computation
    //the recorded time is part of the recFactTmChildren kept in eFact.tmChildren
    virtual void recSchurMultLocal_start();
    virtual void recSchurMultLocal_stop();
-   virtual void recSchurMultChildren_start();
-   virtual void recSchurMultChildren_stop();
 
    virtual void recReduceTmLocal_start();
    virtual void recReduceTmLocal_stop();
 
    virtual void recReduceScatterTmLocal_start();
    virtual void recReduceScatterTmLocal_stop();
-
-   virtual void recBcastTmLocal_start();
-   virtual void recBcastTmLocal_stop();
 
 
 public:

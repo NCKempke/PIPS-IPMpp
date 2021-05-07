@@ -7,15 +7,15 @@
 
 #include "PardisoSolver.h"
 #include "SparseStorage.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "SimpleVector.h"
-#include "DenseGenMatrix.h"
+#include "DenseMatrix.h"
 #include "pipsdef.h"
 #include <cstdlib>
 
 #include "mpi.h"
 
-PardisoSolver::PardisoSolver(const SparseSymMatrix* sgm) : Msys{sgm}, n{static_cast<int>(sgm->size())}, nnz{sgm->numberOfNonZeros()} {
+PardisoSolver::PardisoSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm}, n{static_cast<int>(sgm->size())}, nnz{sgm->numberOfNonZeros()} {
    krowM = new int[n + 1];
    jcolM = new int[nnz];
    M = new double[nnz];
@@ -23,7 +23,7 @@ PardisoSolver::PardisoSolver(const SparseSymMatrix* sgm) : Msys{sgm}, n{static_c
    nvec = new double[n];
 }
 
-PardisoSolver::PardisoSolver(const DenseSymMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
+PardisoSolver::PardisoSolver(const DenseSymmetricMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
    assert(m->size() < std::numeric_limits<int>::max());
    nvec = new double[n];
 }
@@ -90,7 +90,7 @@ void PardisoSolver::initSystem() {
       // the dense matrix is also processed in matrixChanged everytime the method is called
 
       // the input is a dense matrix
-      const DenseSymMatrix& Md = (*Mdsys);
+      const DenseSymmetricMatrix& Md = (*Mdsys);
       nnz = Md.getNumberOfNonZeros();
 
       delete[] krowM;
@@ -159,7 +159,7 @@ void PardisoSolver::matrixChanged() {
 
    if (Mdsys) {
       // the input is a dense matrix
-      const DenseSymMatrix& Md = (*Mdsys);
+      const DenseSymmetricMatrix& Md = (*Mdsys);
       //double tm=MPI_Wtime();
       int nzIt = 0;
       for (int i = 0; i < n; i++) {
@@ -231,8 +231,8 @@ void PardisoSolver::solve(Vector<double>& rhs_in) {
    rhs.copyFromArray(sol_local);
 }
 
-void PardisoSolver::solve(GenMatrix& rhs_in) {
-   DenseGenMatrix& rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+void PardisoSolver::solve(GeneralMatrix& rhs_in) {
+   DenseMatrix& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
    int nrows, ncols;
    rhs.getSize(ncols, nrows);
@@ -254,9 +254,9 @@ void PardisoSolver::solve(GenMatrix& rhs_in) {
    std::copy(&rhs[0][0], &rhs[0][0] + nrows * ncols, sol.begin());
 }
 
-void PardisoSolver::solve(GenMatrix& rhs_in, int* colSparsity) {
+void PardisoSolver::solve(GeneralMatrix& rhs_in, int* colSparsity) {
    std::cout << "PardisoSolver - using sparse rhs but might lead to numerical troubles .. \n";
-   DenseGenMatrix& rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+   DenseMatrix& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
    int nrows, ncols;
    rhs.getSize(ncols, nrows);

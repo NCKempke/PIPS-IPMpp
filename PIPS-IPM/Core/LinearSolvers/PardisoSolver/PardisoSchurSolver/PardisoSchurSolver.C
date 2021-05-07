@@ -3,11 +3,10 @@
  * (C) 2012 Argonne National Laboratory, see documentation for copyright
  */
 #include <iostream>
-#include "pipschecks.h"
 #include "PardisoSchurSolver.h"
-#include "SparseSymMatrix.h"
-#include "DenseGenMatrix.h"
-#include "StochOptions.h"
+#include "SparseSymmetricMatrix.h"
+#include "DenseMatrix.h"
+#include "DistributedOptions.h"
 #include "pipsdef.h"
 #include <algorithm>
 
@@ -41,7 +40,7 @@ extern "C" {
 
 #define SHRINK_SC
 
-PardisoSchurSolver::PardisoSchurSolver(const SparseSymMatrix* sgm) : Msys{sgm} {
+PardisoSchurSolver::PardisoSchurSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm} {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    useSparseRhs = pips_options::get_bool_parameter("PARDISO_SPARSE_RHS_LEAF");
@@ -86,7 +85,7 @@ void PardisoSchurSolver::firstCall() {
 
 // this function is called only once and creates the augmented system
 void
-PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G, int nSC0) {
+PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0) {
    int nR, nA, nC, nF, nG, nx;
    nnz = 0;
 
@@ -100,7 +99,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
    nnz += A.numberOfNonZeros();
    C.getSize(nC, nx);
    nnz += C.numberOfNonZeros();
-   const int Msize = Msys->size();
+   const int Msize = static_cast<int>(Msys->size());
 
    if (nR == 0)
       assert(R.numberOfNonZeros() == 0);
@@ -144,7 +143,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
    nnz += nSC; //space for the 0 diagonal of 2x2 block
 
    // the lower triangular part of the augmented system in row-major
-   SparseSymMatrix augSys(n, nnz);
+   SparseSymmetricMatrix augSys(n, nnz);
 
    // pointer for augmented system
    int* krowAug = augSys.getStorageRef().krowM;
@@ -173,7 +172,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
       assert(putC == (putC && (nC > 0)));
 
       // initialize variables for At
-      SparseGenMatrix At(putA ? nx : 0, putA ? nA : 0, putA ? A.numberOfNonZeros() : 0);
+      SparseMatrix At(putA ? nx : 0, putA ? nA : 0, putA ? A.numberOfNonZeros() : 0);
       int* krowAt = At.getStorageRef().krowM;
       int* jcolAt = At.getStorageRef().jcolM;
       double* MAt = At.getStorageRef().M;
@@ -184,7 +183,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
       const int colShiftA = nR;
 
       // initialize variables for Ct
-      SparseGenMatrix Ct(putC ? nx : 0, putC ? nC : 0, putC ? C.numberOfNonZeros() : 0);
+      SparseMatrix Ct(putC ? nx : 0, putC ? nC : 0, putC ? C.numberOfNonZeros() : 0);
       int* krowCt = Ct.getStorageRef().krowM;
       int* jcolCt = Ct.getStorageRef().jcolM;
       double* MCt = Ct.getStorageRef().M;
@@ -223,7 +222,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
       }
       krowAug[row] = nnzIt;
    }
-   assert(nnzIt = Msys->numberOfNonZeros() + A.numberOfNonZeros() + C.numberOfNonZeros() + nx);
+   assert(nnzIt == Msys->numberOfNonZeros() + A.numberOfNonZeros() + C.numberOfNonZeros() + nx);
 
    //
    // add linking constraint matrices F and G
@@ -250,25 +249,25 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
          const bool putF = F.numberOfNonZeros() > 0;
 
          const int row0 = n - nF - nG;
-         int row = row0;
+         int row_F = row0;
          assert(row0 >= Msize + nx);
 
-         for (; row < n - nG; row++) {
-            krowAug[row] = nnzIt;
+         for (; row_F < n - nG; row_F++) {
+            krowAug[row_F] = nnzIt;
 
             if (putF) {
-               for (int c = krowF[row - row0]; c < krowF[row - row0 + 1]; c++) {
+               for (int c = krowF[row_F - row0]; c < krowF[row_F - row0 + 1]; c++) {
                   jcolAug[nnzIt] = jcolF[c];
                   MAug[nnzIt] = MF[c];
                   nnzIt++;
                }
             }
             //add the zero from the diagonal
-            jcolAug[nnzIt] = row;
+            jcolAug[nnzIt] = row_F;
             MAug[nnzIt] = 0.0;
             nnzIt++;
          }
-         krowAug[row] = nnzIt;
+         krowAug[row_F] = nnzIt;
       }
 
       // are there linking equality constraints?
@@ -282,27 +281,27 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
          const bool putG = G.numberOfNonZeros() > 0;
 
          const int row0 = n - nG;
-         int row = row0;
+         int row_G = row0;
 
-         for (; row < n; row++) {
-            krowAug[row] = nnzIt;
+         for (; row_G < n; row_G++) {
+            krowAug[row_G] = nnzIt;
 
             if (putG) {
-               for (int c = krowG[row - row0]; c < krowG[row - row0 + 1]; c++) {
+               for (int c = krowG[row_G - row0]; c < krowG[row_G - row0 + 1]; c++) {
                   jcolAug[nnzIt] = jcolG[c];
                   MAug[nnzIt] = MG[c];
                   nnzIt++;
                }
             }
             //add the zero from the diagonal
-            jcolAug[nnzIt] = row;
+            jcolAug[nnzIt] = row_G;
             MAug[nnzIt] = 0.0;
             nnzIt++;
          }
-         krowAug[row] = nnzIt;
+         krowAug[row_G] = nnzIt;
       }
    }
-   assert(nnzIt = Msys->numberOfNonZeros() + A.numberOfNonZeros() + C.numberOfNonZeros() + F.numberOfNonZeros() + G.numberOfNonZeros() + nSC);
+   assert(nnzIt == Msys->numberOfNonZeros() + A.numberOfNonZeros() + C.numberOfNonZeros() + F.numberOfNonZeros() + G.numberOfNonZeros() + nSC);
 
 #ifdef SHRINK_SC
 
@@ -311,7 +310,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
 
    augSys.deleteZeroRowsCols(shrinked2orgAug);
 
-   n = augSys.size();
+   n = static_cast<int>(augSys.size());
 
 #ifndef NDEBUG
    for (int i = 0; i < Msize; i++) {
@@ -328,7 +327,7 @@ PardisoSchurSolver::firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, Spars
    }
 #endif
 
-   nSC = augSys.size() - Msize;
+   nSC = static_cast<int>(augSys.size()) - Msize;
 
    assert(shrinked2orgSC == nullptr);
    shrinked2orgSC = new int[nSC];
@@ -437,13 +436,13 @@ void PardisoSchurSolver::matrixChanged() {
    //dumpSysMatrix(Msys);
 }
 
-void PardisoSchurSolver::schur_solve(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G,
-      DenseSymMatrix& SC0) {
+void PardisoSchurSolver::schur_solve(const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G,
+      DenseSymmetricMatrix& SC0) {
    int* rowptrSC = nullptr;
    int* colidxSC = nullptr;
    double* eltsSC = nullptr;
 
-   computeSC(SC0.size(), R, A, C, F, G, rowptrSC, colidxSC, eltsSC);
+   computeSC(static_cast<int>(SC0.size()), R, A, C, F, G, rowptrSC, colidxSC, eltsSC);
 
 #ifdef SHRINK_SC
    for (int r = 0; r < nSC; r++) {
@@ -483,13 +482,13 @@ void PardisoSchurSolver::schur_solve(SparseGenMatrix& R, SparseGenMatrix& A, Spa
 }
 
 
-void PardisoSchurSolver::schur_solve_sparse(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G,
-      SparseSymMatrix& SC0) {
+void PardisoSchurSolver::schur_solve_sparse(const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G,
+      SparseSymmetricMatrix& SC0) {
    int* rowptrSC = nullptr;
    int* colidxSC = nullptr;
    double* eltsSC = nullptr;
 
-   computeSC(SC0.size(), R, A, C, F, G, rowptrSC, colidxSC, eltsSC);
+   computeSC(static_cast<int>(SC0.size()), R, A, C, F, G, rowptrSC, colidxSC, eltsSC);
 
    int* rowptrBase = SC0.krowM();
    int* colidxBase = SC0.jcolM();

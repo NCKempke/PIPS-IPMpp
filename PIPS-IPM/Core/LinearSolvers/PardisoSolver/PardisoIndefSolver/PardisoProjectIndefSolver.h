@@ -12,9 +12,9 @@
 
 class PardisoProjectIndefSolver : public PardisoIndefSolver {
 public:
-   PardisoProjectIndefSolver(SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoProjectIndefSolver(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm);
 
-   PardisoProjectIndefSolver(DenseSymMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoProjectIndefSolver(DenseSymmetricMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm);
 
    ~PardisoProjectIndefSolver() override;
 

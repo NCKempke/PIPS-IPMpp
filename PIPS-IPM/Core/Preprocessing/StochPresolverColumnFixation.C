@@ -7,7 +7,7 @@
 #include "StochPresolverColumnFixation.h"
 
 #include "pipsdef.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include <cmath>
 
 StochPresolverColumnFixation::StochPresolverColumnFixation(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(

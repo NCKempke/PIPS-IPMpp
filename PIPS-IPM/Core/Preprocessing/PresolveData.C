@@ -7,12 +7,12 @@
 
 #include "PresolveData.h"
 
-#include "StochOptions.h"
-#include "StochGenMatrix.h"
+#include "DistributedOptions.h"
+#include "DistributedMatrix.h"
 #include "DoubleMatrixTypes.h"
-#include "StochMatrixUtilities.h"
+#include "DistributedMatrixUtilities.h"
 #include "pipsdef.h"
-#include "StochVectorUtilities.h"
+#include "DistributedVectorUtilities.h"
 #include "SimpleVector.h"
 
 #include <memory>
@@ -264,8 +264,8 @@ void PresolveData::recomputeActivities(bool linking_only) {
 void PresolveData::recomputeActivities(bool linking_only, DistributedVector<double>& actmax_eq_part, DistributedVector<double>& actmin_eq_part,
       DistributedVector<int>& actmax_eq_ubndd, DistributedVector<int>& actmin_eq_ubndd, DistributedVector<double>& actmax_ineq_part,
       DistributedVector<double>& actmin_ineq_part, DistributedVector<int>& actmax_ineq_ubndd, DistributedVector<int>& actmin_ineq_ubndd) const {
-   const StochGenMatrix& mat_A = getSystemMatrix(EQUALITY_SYSTEM);
-   const StochGenMatrix& mat_C = getSystemMatrix(INEQUALITY_SYSTEM);
+   const DistributedMatrix& mat_A = getSystemMatrix(EQUALITY_SYSTEM);
+   const DistributedMatrix& mat_C = getSystemMatrix(INEQUALITY_SYSTEM);
 
    const DistributedVector<double>& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
    const DistributedVector<double>& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
@@ -314,10 +314,10 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
       SimpleVector<int>& actmin_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.first);
       SimpleVector<int>& actmax_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.first);
 
-      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.Bmat)->getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.Bmat)->getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd,
             actmax_eq_root_part, actmax_eq_root_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
-      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.Bmat)->getStorageDynamicRef(), actmin_ineq_root_part, actmin_ineq_root_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_C.Bmat)->getStorageDynamicRef(), actmin_ineq_root_part, actmin_ineq_root_ubndd,
             actmax_ineq_root_part, actmax_ineq_root_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
@@ -333,16 +333,16 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
 
    /* Bl0 */
    if (my_rank == 0) {
-      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.Blmat)->getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.Blmat)->getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd,
             actmax_eq_link_part, actmax_eq_link_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
-      addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.Blmat)->getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_C.Blmat)->getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd,
             actmax_ineq_link_part, actmax_ineq_link_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
    /* child nodes */
    for (int node = 0; node < nChildren; ++node) {
-      if (mat_A.children[node]->isKindOf(kStochGenDummyMatrix) && mat_C.children[node]->isKindOf(kStochGenDummyMatrix))
+      if (mat_A.children[node]->is_a(kStochGenDummyMatrix) && mat_C.children[node]->is_a(kStochGenDummyMatrix))
          continue;
 
       const SimpleVector<double>& xupp_child = dynamic_cast<const SimpleVector<double>&>(*xupp.children[node]->first);
@@ -351,7 +351,7 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
       const SimpleVector<double>& ixlow_child = dynamic_cast<const SimpleVector<double>&>(*ixlow.children[node]->first);
 
       /* EQUALITY_SYSTEM */
-      if (!mat_A.children[node]->isKindOf(kStochGenDummyMatrix)) {
+      if (!mat_A.children[node]->is_a(kStochGenDummyMatrix)) {
          if (!linking_only) {
             SimpleVector<double>& actmin_eq_child_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.children[node]->first);
             SimpleVector<double>& actmax_eq_child_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.children[node]->first);
@@ -360,20 +360,20 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
             SimpleVector<int>& actmax_eq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.children[node]->first);
 
             /* Ai */
-            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Amat)->getStorageDynamicRef(), actmin_eq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.children[node]->Amat)->getStorageDynamicRef(), actmin_eq_child_part,
                   actmin_eq_child_ubndd, actmax_eq_child_part, actmax_eq_child_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
             /* Bi */
-            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Bmat)->getStorageDynamicRef(), actmin_eq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.children[node]->Bmat)->getStorageDynamicRef(), actmin_eq_child_part,
                   actmin_eq_child_ubndd, actmax_eq_child_part, actmax_eq_child_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
          }
          /* Bli */
-         addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_A.children[node]->Blmat)->getStorageDynamicRef(), actmin_eq_link_part,
+         addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.children[node]->Blmat)->getStorageDynamicRef(), actmin_eq_link_part,
                actmin_eq_link_ubndd, actmax_eq_link_part, actmax_eq_link_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
 
       }
       /* INEQUALITY_SYSTEM */
-      if (!mat_C.children[node]->isKindOf(kStochGenDummyMatrix)) {
+      if (!mat_C.children[node]->is_a(kStochGenDummyMatrix)) {
          if (!linking_only) {
             SimpleVector<double>& actmin_ineq_child_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.children[node]->first);
             SimpleVector<double>& actmax_ineq_child_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.children[node]->first);
@@ -382,16 +382,16 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
             SimpleVector<int>& actmax_ineq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.children[node]->first);
 
             /* Ai */
-            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Amat)->getStorageDynamicRef(), actmin_ineq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_C.children[node]->Amat)->getStorageDynamicRef(), actmin_ineq_child_part,
                   actmin_ineq_child_ubndd, actmax_ineq_child_part, actmax_ineq_child_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
             /* Bi */
-            addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Bmat)->getStorageDynamicRef(), actmin_ineq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_C.children[node]->Bmat)->getStorageDynamicRef(), actmin_ineq_child_part,
                   actmin_ineq_child_ubndd, actmax_ineq_child_part, actmax_ineq_child_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
          }
 
          /* Bli */
-         addActivityOfBlock(dynamic_cast<SparseGenMatrix*>(mat_C.children[node]->Blmat)->getStorageDynamicRef(), actmin_ineq_link_part,
+         addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_C.children[node]->Blmat)->getStorageDynamicRef(), actmin_ineq_link_part,
                actmin_ineq_link_ubndd, actmax_ineq_link_part, actmax_ineq_link_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
       }
 
@@ -747,8 +747,8 @@ void PresolveData::allreduceObjOffset() {
 }
 
 void PresolveData::initNnzCounter(DistributedVector<int>& nnzs_row_A, DistributedVector<int>& nnzs_row_C, DistributedVector<int>& nnzs_col) const {
-   StochGenMatrix& A = getSystemMatrix(EQUALITY_SYSTEM);
-   StochGenMatrix& C = getSystemMatrix(INEQUALITY_SYSTEM);
+   DistributedMatrix& A = getSystemMatrix(EQUALITY_SYSTEM);
+   DistributedMatrix& C = getSystemMatrix(INEQUALITY_SYSTEM);
 
    std::unique_ptr<DistributedVector<int> > colClone(dynamic_cast<DistributedVector<int>*>(nnzs_col.clone()));
 
@@ -1674,7 +1674,7 @@ void PresolveData::removeColumnFromMatrix(const INDEX& dummy_row, const INDEX& c
    if (at_root)
       assert(PIPS_MPIisValueEqual(col.getIndex()));
 
-   SparseGenMatrix* mat = getSparseGenMatrix(dummy_row, col);
+   SparseMatrix* mat = getSparseGenMatrix(dummy_row, col);
    const SparseStorageDynamic& matrix_transp = mat->getStorageDynamicTransposedRef();
 
    assert(col.getIndex() < matrix_transp.getM());
@@ -2436,7 +2436,7 @@ void PresolveData::addCoeffColToRow(double coeff, const INDEX& col, const INDEX&
    BlockType block_type = row.getBlockOfColInRow(col);
    const int node = row.isLinkingRow() ? col.getNode() : row.getNode();
 
-   SparseGenMatrix* sparse_mat = getSparseGenMatrixFromStochMat(getSystemMatrix(row.getSystemType()), node, block_type);
+   SparseMatrix* sparse_mat = getSparseGenMatrixFromStochMat(getSystemMatrix(row.getSystemType()), node, block_type);
    assert(sparse_mat);
 
    const SparseStorageDynamic& mat = sparse_mat->getStorageDynamicRef();
@@ -2562,7 +2562,7 @@ void PresolveData::removeRowFromMatrix(const INDEX& row, const INDEX& col) {
 
    assert(col.getIndex() == std::numeric_limits<int>::infinity());
 
-   SparseGenMatrix* mat = getSparseGenMatrix(row, col);
+   SparseMatrix* mat = getSparseGenMatrix(row, col);
 
    assert(mat);
    assert(mat->hasDynamicStorage());
@@ -2815,12 +2815,12 @@ bool PresolveData::nodeIsDummy(int node) const {
    if (node == -1)
       return false;
 
-   assert(getSystemMatrix(EQUALITY_SYSTEM).children[node]->isKindOf(kStochGenDummyMatrix) ==
-          getSystemMatrix(INEQUALITY_SYSTEM).children[node]->isKindOf(kStochGenDummyMatrix));
+   assert(getSystemMatrix(EQUALITY_SYSTEM).children[node]->is_a(kStochGenDummyMatrix) ==
+          getSystemMatrix(INEQUALITY_SYSTEM).children[node]->is_a(kStochGenDummyMatrix));
 
-   StochGenMatrix& matrix = getSystemMatrix(EQUALITY_SYSTEM);
+   DistributedMatrix& matrix = getSystemMatrix(EQUALITY_SYSTEM);
    // todo : asserts
-   if (matrix.children[node]->isKindOf(kStochGenDummyMatrix)) {
+   if (matrix.children[node]->is_a(kStochGenDummyMatrix)) {
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->bux)).children[node]->isKindOf(kStochDummy));
       assert(dynamic_cast<DistributedVector<double>&>(*(presProb->blx)).children[node]->isKindOf(kStochDummy));
 
@@ -2844,7 +2844,7 @@ bool PresolveData::hasLinking(SystemType system_type) const {
    int mlink, nlink;
    const INDEX dummy_link_row(ROW, -1, std::numeric_limits<int>::infinity(), true, system_type);
    const INDEX dummy_link_col(COL, -1, std::numeric_limits<int>::infinity());
-   const SparseGenMatrix* mat = getSparseGenMatrix(dummy_link_row, dummy_link_col);
+   const SparseMatrix* mat = getSparseGenMatrix(dummy_link_row, dummy_link_col);
    mat->getSize(mlink, nlink);
    if (mlink > 0) {
       // todo: assert that all vectors and matrices have linking part
@@ -3580,16 +3580,16 @@ double PresolveData::getRowCoeff(const INDEX& row, const INDEX& col) const {
 }
 
 
-StochGenMatrix& PresolveData::getSystemMatrix(SystemType system_type) const {
+DistributedMatrix& PresolveData::getSystemMatrix(SystemType system_type) const {
    if (system_type == EQUALITY_SYSTEM)
-      return dynamic_cast<StochGenMatrix&>(*presProb->A);
+      return dynamic_cast<DistributedMatrix&>(*presProb->A);
    else {
       assert(system_type == INEQUALITY_SYSTEM);
-      return dynamic_cast<StochGenMatrix&>(*presProb->C);
+      return dynamic_cast<DistributedMatrix&>(*presProb->C);
    }
 }
 
-SparseGenMatrix* PresolveData::getSparseGenMatrix(const INDEX& row, const INDEX& col) const {
+SparseMatrix* PresolveData::getSparseGenMatrix(const INDEX& row, const INDEX& col) const {
    assert(row.isRow());
    assert(col.isCol());
    assert(row.hasValidNode(nChildren));
@@ -3600,8 +3600,8 @@ SparseGenMatrix* PresolveData::getSparseGenMatrix(const INDEX& row, const INDEX&
    const BlockType block_type = row.getBlockOfColInRow(col);
    assert(!nodeIsDummy(mat_node));
 
-   const StochGenMatrix& sMat = getSystemMatrix(row.getSystemType());
-   SparseGenMatrix* res = getSparseGenMatrixFromStochMat(sMat, mat_node, block_type);
+   const DistributedMatrix& sMat = getSystemMatrix(row.getSystemType());
+   SparseMatrix* res = getSparseGenMatrixFromStochMat(sMat, mat_node, block_type);
 
    return res;
 }
@@ -3668,7 +3668,7 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
    out << "\n";
 }
 
-void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseGenMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,
+void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,
       const SimpleVector<double>& xupp, const SimpleVector<double>& ixlow, const SimpleVector<double>& xlow) const {
    const SparseStorageDynamic& storage = mat.getStorageDynamicRef();
 

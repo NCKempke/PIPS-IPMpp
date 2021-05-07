@@ -4,8 +4,8 @@
 
 #include "sLinsysLeafSchurSlv.h"
 #include "DistributedQP.hpp"
-#include "SparseSymMatrix.h"
-#include "SparseGenMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "SparseMatrix.h"
 #include "PardisoSolver.h"
 #include "PardisoSchurSolver.h"
 
@@ -20,12 +20,12 @@ extern int gLackOfAccuracy;
  * A and C are the recourse eq. and ineq. matrices, R is the cross
  * Hessian term.
  */
-void sLinsysLeafSchurSlv::addTermToDenseSchurCompl(DistributedQP* prob, DenseSymMatrix& SC) {
-   SparseGenMatrix& A = prob->getLocalA();
-   SparseGenMatrix& C = prob->getLocalC();
-   SparseGenMatrix& F = prob->getLocalF();
-   SparseGenMatrix& G = prob->getLocalG();
-   SparseGenMatrix& R = prob->getLocalCrossHessian();
+void sLinsysLeafSchurSlv::addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmetricMatrix& SC) {
+   SparseMatrix& A = prob->getLocalA();
+   SparseMatrix& C = prob->getLocalC();
+   SparseMatrix& F = prob->getLocalF();
+   SparseMatrix& G = prob->getLocalG();
+   SparseMatrix& R = prob->getLocalCrossHessian();
 
    //if(!gLackOfAccuracy && !switchedToSafeSlv) {
    PardisoSchurSolver* scSolver = dynamic_cast<PardisoSchurSolver*>(solver.get());
@@ -37,12 +37,12 @@ void sLinsysLeafSchurSlv::addTermToDenseSchurCompl(DistributedQP* prob, DenseSym
    //}
 }
 
-void sLinsysLeafSchurSlv::addTermToSparseSchurCompl(DistributedQP* prob, SparseSymMatrix& SC) {
-   SparseGenMatrix& A = prob->getLocalA();
-   SparseGenMatrix& C = prob->getLocalC();
-   SparseGenMatrix& F = prob->getLocalF();
-   SparseGenMatrix& G = prob->getLocalG();
-   SparseGenMatrix& R = prob->getLocalCrossHessian();
+void sLinsysLeafSchurSlv::addTermToSparseSchurCompl(DistributedQP* prob, SparseSymmetricMatrix& SC) {
+   SparseMatrix& A = prob->getLocalA();
+   SparseMatrix& C = prob->getLocalC();
+   SparseMatrix& F = prob->getLocalF();
+   SparseMatrix& G = prob->getLocalG();
+   SparseMatrix& R = prob->getLocalCrossHessian();
 
    PardisoSchurSolver* scSolver = dynamic_cast<PardisoSchurSolver*>(solver.get());
    scSolver->schur_solve_sparse(R, A, C, F, G, SC);

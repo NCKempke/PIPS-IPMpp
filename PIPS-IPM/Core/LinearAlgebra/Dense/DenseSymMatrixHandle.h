@@ -8,9 +8,9 @@
 #include "IotrRefCount.h"
 #include "SmartPointer.h"
 
-class DenseSymMatrix;
+class DenseSymmetricMatrix;
 
-typedef SmartPointer<DenseSymMatrix> DenseSymMatrixHandle;
+typedef SmartPointer<DenseSymmetricMatrix> DenseSymMatrixHandle;
 
 
 #endif

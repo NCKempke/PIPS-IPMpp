@@ -9,15 +9,15 @@
 #include "Vector.hpp"
 #include "SimpleVector.h"
 #include "SmartPointer.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 
 class Problem {
 protected:
    Problem() = default;
 
 public:
-   SmartPointer<GenMatrix> A;
-   SmartPointer<GenMatrix> C;
+   SmartPointer<GeneralMatrix> A;
+   SmartPointer<GeneralMatrix> C;
    SmartPointer<Vector<double> > g; // objective
    SmartPointer<Vector<double> > bA; // rhs equality
    SmartPointer<Vector<double> > bux; // upper bounds x
@@ -40,7 +40,7 @@ public:
    long long mcupp{0};
 
    Problem(Vector<double>* c, Vector<double>* xlow, Vector<double>* ixlow, Vector<double>* xupp, Vector<double>* ixupp,
-         GenMatrix* A, Vector<double>* bA, GenMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp);
+         GeneralMatrix* A, Vector<double>* bA, GeneralMatrix* C, Vector<double>* clow, Vector<double>* iclow, Vector<double>* cupp, Vector<double>* ciupp);
 
    virtual ~Problem() = default;
 
@@ -82,19 +82,19 @@ public:
 
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putAIntoAt(GenMatrix& M, int row, int col);
+   virtual void putAIntoAt(GeneralMatrix& M, int row, int col);
 
    /** insert the constraint matrix C into the matrix M for the
        fundamental linear system, where M is stored as a GenMatrix */
-   virtual void putCIntoAt(GenMatrix& M, int row, int col);
+   virtual void putCIntoAt(GeneralMatrix& M, int row, int col);
 
    /** insert the constraint matrix A into the matrix M for the
        fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putAIntoAt(SymMatrix& M, int row, int col);
+   virtual void putAIntoAt(SymmetricMatrix& M, int row, int col);
 
    /** insert the constraint matrix C into the matrix M for the
        fundamental linear system, where M is stored as a SymMatrix */
-   virtual void putCIntoAt(SymMatrix& M, int row, int col);
+   virtual void putCIntoAt(SymmetricMatrix& M, int row, int col);
 
    /** y = beta * y + alpha * A * x */
    virtual void Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const;

@@ -12,7 +12,7 @@
 #include "Scaler.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 
 #include <memory>
 
@@ -45,9 +45,9 @@ protected:
    std::unique_ptr<Vector<double>> vec_colscale{};
 
    // problem data
-   SmartPointer<SymMatrix> Q;
-   SmartPointer<GenMatrix> A;
-   SmartPointer<GenMatrix> C;
+   SmartPointer<SymmetricMatrix> Q;
+   SmartPointer<GeneralMatrix> A;
+   SmartPointer<GeneralMatrix> C;
    SmartPointer<Vector<double> > obj;
    SmartPointer<Vector<double> > bA;
    SmartPointer<Vector<double> > bux;

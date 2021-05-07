@@ -1,12 +1,10 @@
-#include "Monitor.h"
-#include "Status.h"
-
-#include "Residuals.h"
-#include "Solver.h"
-#include "Problem.h"
-#include "Variables.h"
 #include <iostream>
 #include <cstdio>
+#include "Monitor.h"
+#include "Residuals.h"
+#include "Problem.h"
+#include "Variables.h"
+#include "TerminationStatus.h"
 
 Monitor::Monitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
@@ -15,13 +13,14 @@ Monitor::Monitor(const DistributedFactory& factory, Scaler* scaler) : scaler{sca
       myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{PIPS_MPIgetRank()} {
 }
 
-void Monitor::doIt(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha, double sigma, int i,
+void Monitor::doIt(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
       double mu, int status_code, int level) {
-   Monitor::doItPd(solver, problem, variables, residuals, alpha, -1.0, sigma, i, mu, status_code, level);
+   Monitor::doItPd(problem, variables, residuals, dnorm, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
-void Monitor::doItPd(const Solver* solver, const Problem* problem, const Variables* variables, const Residuals* residuals, double alpha_primal,
-      double alpha_dual, double sigma, int i, double mu, int status_code, int level) const {
+void
+Monitor::doItPd(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
+      double sigma, int i, double mu, int status_code, int level) const {
    double objective = problem->objective_value(*variables);
 
    const Residuals* resids_unscaled = residuals;
@@ -30,7 +29,6 @@ void Monitor::doItPd(const Solver* solver, const Problem* problem, const Variabl
       resids_unscaled = scaler->get_unscaled_residuals(*residuals);
    }
 
-   const double dnorm = solver->dataNormOrig();
    const double rnorm = resids_unscaled->residualNorm();
    const double gap = resids_unscaled->duality_gap();
 
@@ -63,8 +61,7 @@ void Monitor::doItPd(const Solver* solver, const Problem* problem, const Variabl
          std::cout << " Objective: " << objective << "\n";
          std::cout << "\n";
          if (level == 1) {
-            // Termination has been detected by the status check; print
-            // appropriate message
+            // Termination has been detected by the status check; print appropriate message
             switch (status_code) {
                case SUCCESSFUL_TERMINATION:
                   std::cout << "\n *** SUCCESSFUL TERMINATION ***\n";

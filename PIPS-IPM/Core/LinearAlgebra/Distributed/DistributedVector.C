@@ -5,7 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
-#include <math.h>
+#include <cmath>
 #include <numeric>
 #include <memory>
 
@@ -58,17 +58,14 @@ DistributedVector<T>::~DistributedVector() {
    for (size_t it = 0; it < children.size(); it++)
       delete children[it];
 
-   if (first)
-      delete first;
-
-   if (last)
-      delete last;
+   delete first;
+   delete last;
 }
 
 template<typename T>
 Vector<T>* DistributedVector<T>::clone() const {
    assert(first || last);
-   DistributedVector<T>* clone = new DistributedVector<T>(first ? first->clone() : nullptr, last ? last->clone() : nullptr, mpiComm);
+   auto* clone = new DistributedVector<T>(first ? first->clone() : nullptr, last ? last->clone() : nullptr, mpiComm);
 
    for (size_t it = 0; it < children.size(); it++)
       clone->AddChild(dynamic_cast<DistributedVector<T>*>(children[it]->clone()));
@@ -80,7 +77,7 @@ Vector<T>* DistributedVector<T>::clone() const {
 template<typename T>
 Vector<T>* DistributedVector<T>::cloneFull() const {
    assert(first || last);
-   DistributedVector<T>* clone = new DistributedVector<T>(first ? first->cloneFull() : nullptr, last ? last->cloneFull() : nullptr, mpiComm);
+   auto* clone = new DistributedVector<T>(first ? first->cloneFull() : nullptr, last ? last->cloneFull() : nullptr, mpiComm);
 
    for (size_t it = 0; it < children.size(); it++)
       clone->AddChild(dynamic_cast<DistributedVector<T>*>(children[it]->cloneFull()));
@@ -91,7 +88,7 @@ Vector<T>* DistributedVector<T>::cloneFull() const {
 
 template<typename T>
 void DistributedVector<T>::setNotIndicatedEntriesToVal(T val, const Vector<T>& ind) {
-   const DistributedVector<T>& ind_vec = dynamic_cast<const DistributedVector<T>&>(ind);
+   const auto& ind_vec = dynamic_cast<const DistributedVector<T>&>(ind);
 
    assert(this->children.size() == ind_vec.children.size());
    assert((this->first && ind_vec.first) || (this->first == nullptr && ind_vec.first == nullptr));
@@ -109,9 +106,9 @@ void DistributedVector<T>::setNotIndicatedEntriesToVal(T val, const Vector<T>& i
 
 template<typename T>
 void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& vy_, const Vector<T>& vz_) {
-   const DistributedVector<T>& vx = dynamic_cast<const DistributedVector&>(vx_);
-   const DistributedVector<T>& vy = dynamic_cast<const DistributedVector&>(vy_);
-   const DistributedVector<T>& vz = dynamic_cast<const DistributedVector&>(vz_);
+   const auto& vx = dynamic_cast<const DistributedVector&>(vx_);
+   const auto& vy = dynamic_cast<const DistributedVector&>(vy_);
+   const auto& vz = dynamic_cast<const DistributedVector&>(vz_);
 
    if (vx.first->isKindOf(kStochVector)) {
       assert(vy.first->isKindOf(kStochVector) && vz.first->isKindOf(kStochVector));
@@ -122,7 +119,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
    }
    else {
       assert(first);
-      SimpleVector<T>& sv = dynamic_cast<SimpleVector<T>&>(*this->first);
+      auto& sv = dynamic_cast<SimpleVector<T>&>(*this->first);
 
       int n1 = 0;
       int n2 = 0;
@@ -132,7 +129,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       int n6 = 0;
 
       if (vx.first) {
-         const SimpleVector<T>& svx = dynamic_cast<const SimpleVector<T>&>(*vx.first);
+         const auto& svx = dynamic_cast<const SimpleVector<T>&>(*vx.first);
          n1 = svx.length();
          assert(n1 >= 0);
 
@@ -142,7 +139,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vy.first) {
-         const SimpleVector<T>& svy = dynamic_cast<const SimpleVector<T>&>(*vy.first);
+         const auto& svy = dynamic_cast<const SimpleVector<T>&>(*vy.first);
          n2 = svy.length();
          assert(n2 >= 0);
 
@@ -152,7 +149,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vz.first) {
-         const SimpleVector<T>& svz = dynamic_cast<const SimpleVector<T>&>(*vz.first);
+         const auto& svz = dynamic_cast<const SimpleVector<T>&>(*vz.first);
          n3 = svz.length();
          assert(n3 >= 0);
 
@@ -162,7 +159,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vx.last) {
-         const SimpleVector<T>& svxl = dynamic_cast<const SimpleVector<T>&>(*vx.last);
+         const auto& svxl = dynamic_cast<const SimpleVector<T>&>(*vx.last);
          n4 = svxl.length();
          assert(n4 >= 0);
 
@@ -172,7 +169,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vy.last) {
-         const SimpleVector<T>& svyl = dynamic_cast<const SimpleVector<T>&>(*vy.last);
+         const auto& svyl = dynamic_cast<const SimpleVector<T>&>(*vy.last);
          n5 = svyl.length();
          assert(n5 >= 0);
 
@@ -182,7 +179,7 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
       }
 
       if (vz.last) {
-         const SimpleVector<T>& svzl = dynamic_cast<const SimpleVector<T>&>(*vz.last);
+         const auto& svzl = dynamic_cast<const SimpleVector<T>&>(*vz.last);
          n6 = svzl.length();
          assert(n6 >= 0);
 
@@ -204,9 +201,9 @@ void DistributedVector<T>::jointCopyFrom(const Vector<T>& vx_, const Vector<T>& 
 
 template<typename T>
 void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>& vz_) const {
-   const DistributedVector<T>& vx = dynamic_cast<const DistributedVector&>(vx_);
-   const DistributedVector<T>& vy = dynamic_cast<const DistributedVector&>(vy_);
-   const DistributedVector<T>& vz = dynamic_cast<const DistributedVector&>(vz_);
+   const auto& vx = dynamic_cast<const DistributedVector&>(vx_);
+   const auto& vy = dynamic_cast<const DistributedVector&>(vy_);
+   const auto& vz = dynamic_cast<const DistributedVector&>(vz_);
 
    if (vx.first->isKindOf(kStochVector)) {
       assert(vy.first->isKindOf(kStochVector) && vz.first->isKindOf(kStochVector));
@@ -217,7 +214,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
    }
    else {
       assert(this->first);
-      const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(*this->first);
+      const auto& sv = dynamic_cast<const SimpleVector<T>&>(*this->first);
       int n1 = 0;
       int n2 = 0;
       int n3 = 0;
@@ -226,7 +223,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       int n6 = 0;
 
       if (vx.first) {
-         SimpleVector<T>& svx = dynamic_cast<SimpleVector<T>&>(*vx.first);
+         auto& svx = dynamic_cast<SimpleVector<T>&>(*vx.first);
          n1 = svx.length();
          assert(n1 >= 0);
 
@@ -236,7 +233,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vy.first) {
-         SimpleVector<T>& svy = dynamic_cast<SimpleVector<T>&>(*vy.first);
+         auto& svy = dynamic_cast<SimpleVector<T>&>(*vy.first);
          n2 = svy.length();
          assert(n2 >= 0);
 
@@ -246,7 +243,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vz.first) {
-         SimpleVector<T>& svz = dynamic_cast<SimpleVector<T>&>(*vz.first);
+         auto& svz = dynamic_cast<SimpleVector<T>&>(*vz.first);
          n3 = svz.length();
          assert(n3 >= 0);
 
@@ -256,7 +253,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vx.last) {
-         SimpleVector<T>& svxl = dynamic_cast<SimpleVector<T>&>(*vx.last);
+         auto& svxl = dynamic_cast<SimpleVector<T>&>(*vx.last);
          n4 = svxl.length();
          assert(n4 >= 0);
 
@@ -266,7 +263,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vy.last) {
-         SimpleVector<T>& svyl = dynamic_cast<SimpleVector<T>&>(*vy.last);
+         auto& svyl = dynamic_cast<SimpleVector<T>&>(*vy.last);
          n5 = svyl.length();
          assert(n5 >= 0);
 
@@ -276,7 +273,7 @@ void DistributedVector<T>::jointCopyTo(Vector<T>& vx_, Vector<T>& vy_, Vector<T>
       }
 
       if (vz.last) {
-         SimpleVector<T>& svzl = dynamic_cast<SimpleVector<T>&>(*vz.last);
+         auto& svzl = dynamic_cast<SimpleVector<T>&>(*vz.last);
          n6 = svzl.length();
          assert(n6 >= 0);
 
@@ -358,7 +355,7 @@ void DistributedVector<T>::setToConstant(T c) {
 
 template<typename T>
 void DistributedVector<T>::copyFrom(const Vector<T>& v_) {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
       assert(v.first);
@@ -382,7 +379,7 @@ void DistributedVector<T>::copyFrom(const Vector<T>& v_) {
 
 template<typename T>
 void DistributedVector<T>::copyFromAbs(const Vector<T>& v_) {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
       assert(v.first);
@@ -427,7 +424,7 @@ template<typename T>
 double DistributedVector<T>::twonorm() const {
    const T scale = this->infnorm();
 #ifndef NDEBUG
-   if (!(scale > 0.0)) {
+   if (scale <= 0.0) {
       std::cout << "ERROR : infnorm smaller 0 .. : " << scale << std::endl;
    }
    assert(scale >= 0.0);
@@ -524,7 +521,7 @@ void DistributedVector<T>::max(T& m, int& index) const {
 
 template<typename T>
 void DistributedVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
-   DistributedVector<T>& absminvecStoch = dynamic_cast<DistributedVector<T>&>(absminvec);
+   auto& absminvecStoch = dynamic_cast<DistributedVector<T>&>(absminvec);
 
    if (first) {
       assert(absminvecStoch.first);
@@ -548,7 +545,7 @@ void DistributedVector<T>::absminVecUpdate(Vector<T>& absminvec) const {
 
 template<typename T>
 void DistributedVector<T>::absmaxVecUpdate(Vector<T>& absmaxvec) const {
-   DistributedVector<T>& absmaxvecStoch = dynamic_cast<DistributedVector<T>&>(absmaxvec);
+   auto& absmaxvecStoch = dynamic_cast<DistributedVector<T>&>(absmaxvec);
 
    if (first) {
       assert(absmaxvecStoch.first);
@@ -627,7 +624,7 @@ void DistributedVector<T>::absminNonZero(T& m, T zero_eps) const {
 
 template<typename T>
 T DistributedVector<T>::stepbound(const Vector<T>& v_, T maxStep) const {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    T step = 1.0;
 
@@ -661,11 +658,12 @@ template<typename T>
 T
 DistributedVector<T>::find_blocking(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T maxStep, T* w_elt, T* wstep_elt,
       T* u_elt, T* ustep_elt, int& first_or_second) const {
+   // TODO forbid calling with T = int
    const DistributedVector<T>& w = *this;
-   const DistributedVector<T>& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
+   const auto& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
 
-   const DistributedVector<T>& wstep = dynamic_cast<const DistributedVector<T>&>(wstep_vec);
-   const DistributedVector<T>& ustep = dynamic_cast<const DistributedVector<T>&>(ustep_vec);
+   const auto& wstep = dynamic_cast<const DistributedVector<T>&>(wstep_vec);
+   const auto& ustep = dynamic_cast<const DistributedVector<T>&>(ustep_vec);
    const T local_eps = 1e-14;
 
    T step = maxStep;
@@ -776,12 +774,13 @@ void
 DistributedVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<T>& u_vec, const Vector<T>& ustep_vec, T& maxStepPri, T& maxStepDual,
       T& w_elt_p, T& wstep_elt_p, T& u_elt_p, T& ustep_elt_p, T& w_elt_d, T& wstep_elt_d, T& u_elt_d, T& ustep_elt_d, bool& primalBlocking,
       bool& dualBlocking) const {
+   // TODO : forbid calling with T = int
    const DistributedVector<T>& w = *this;
-   const DistributedVector<T>& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
+   const auto& u = dynamic_cast<const DistributedVector<T>&>(u_vec);
    const T local_eps = 1e-14;
 
-   const DistributedVector<T>& wstep = dynamic_cast<const DistributedVector<T>&>(wstep_vec);
-   const DistributedVector<T>& ustep = dynamic_cast<const DistributedVector<T>&>(ustep_vec);
+   const auto& wstep = dynamic_cast<const DistributedVector<T>&>(wstep_vec);
+   const auto& ustep = dynamic_cast<const DistributedVector<T>&>(ustep_vec);
 
    // todo only if i am special?
    if (w.last) {
@@ -914,17 +913,17 @@ DistributedVector<T>::find_blocking_pd(const Vector<T>& wstep_vec, const Vector<
       u_elt_d = bufferOut[7];
       ustep_elt_d = bufferOut[8];
 
-      primalBlocking = bufferOut[4] <= 0.5 ? false : true;
+      primalBlocking = bufferOut[4] > 0.5;
       maxStepPri = maxStepGlobalPri;
 
-      dualBlocking = bufferOut[9] <= 0.5 ? false : true;
+      dualBlocking = bufferOut[9] > 0.5;
       maxStepDual = maxStepGlobalDual;
    }
 }
 
 template<typename T>
 void DistributedVector<T>::componentMult(const Vector<T>& v_) {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
       assert(v.first);
@@ -947,7 +946,7 @@ void DistributedVector<T>::componentMult(const Vector<T>& v_) {
 
 template<typename T>
 void DistributedVector<T>::componentDiv(const Vector<T>& v_) {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    if (first) {
       assert(v.first);
@@ -971,7 +970,7 @@ void DistributedVector<T>::componentDiv(const Vector<T>& v_) {
 
 template<typename T>
 bool DistributedVector<T>::componentEqual(const Vector<T>& v_, T tol) const {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    bool component_equal = true;
 
@@ -1133,7 +1132,7 @@ void DistributedVector<T>::pushAwayFromZero(double tol, double amount, const Vec
 
 template<typename T>
 void DistributedVector<T>::getSumCountIfSmall(double tol, double& sum_small, int& n_close, const Vector<T>* select) const {
-   const DistributedVector<T>* selects = dynamic_cast<const DistributedVector<T>*>(select);
+   const auto* selects = dynamic_cast<const DistributedVector<T>*>(select);
 
    if (selects)
       assert(children.size() == selects->children.size());
@@ -1175,7 +1174,7 @@ void DistributedVector<T>::writefToStream(std::ostream& out, const char format[]
 /** this += alpha * x */
 template<typename T>
 void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
-   const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
+   const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
 
    if (alpha == 0.0)
       return;
@@ -1203,8 +1202,8 @@ void DistributedVector<T>::axpy(T alpha, const Vector<T>& x_) {
 /** this += alpha * x * z */
 template<typename T>
 void DistributedVector<T>::axzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
-   const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
-   const DistributedVector<T>& z = dynamic_cast<const DistributedVector<T>&>(z_);
+   const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
+   const auto& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
    if (first) {
       assert(x.first);
@@ -1236,8 +1235,8 @@ void DistributedVector<T>::axzpy(T alpha, const Vector<T>& x_, const Vector<T>& 
 /** this += alpha * x / z */
 template<typename T>
 void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_) {
-   const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
-   const DistributedVector<T>& z = dynamic_cast<const DistributedVector<T>&>(z_);
+   const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
+   const auto& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
    if (first) {
       assert(x.first);
@@ -1294,7 +1293,7 @@ void DistributedVector<T>::gondzioProjection(T rmin, T rmax) {
 
 template<typename T>
 T DistributedVector<T>::dotProductWith(const Vector<T>& v_) const {
-   const DistributedVector<T>& v = dynamic_cast<const DistributedVector<T>&>(v_);
+   const auto& v = dynamic_cast<const DistributedVector<T>&>(v_);
 
    T dot_product = 0.0;
 
@@ -1353,9 +1352,9 @@ T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
  */
 template<typename T>
 T DistributedVector<T>::shiftedDotProductWith(T alpha, const Vector<T>& mystep_, const Vector<T>& yvec_, T beta, const Vector<T>& ystep_) const {
-   const DistributedVector<T>& mystep = dynamic_cast<const DistributedVector<T>&>(mystep_);
-   const DistributedVector<T>& yvec = dynamic_cast<const DistributedVector<T>&>(yvec_);
-   const DistributedVector<T>& ystep = dynamic_cast<const DistributedVector<T>&>(ystep_);
+   const auto& mystep = dynamic_cast<const DistributedVector<T>&>(mystep_);
+   const auto& yvec = dynamic_cast<const DistributedVector<T>&>(yvec_);
+   const auto& ystep = dynamic_cast<const DistributedVector<T>&>(ystep_);
 
    T dot_product = 0.0;
 
@@ -1505,7 +1504,7 @@ bool DistributedVector<T>::allOf(const std::function<bool(const T&)>& pred) cons
 
 template<typename T>
 bool DistributedVector<T>::matchesNonZeroPattern(const Vector<T>& select_) const {
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    bool match = true;
 
@@ -1540,7 +1539,7 @@ bool DistributedVector<T>::matchesNonZeroPattern(const Vector<T>& select_) const
 
 template<typename T>
 void DistributedVector<T>::selectNonZeros(const Vector<T>& select_) {
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    if (first) {
       assert(select.first);
@@ -1607,7 +1606,7 @@ long long DistributedVector<T>::numberOfNonzeros() const {
 
 template<typename T>
 void DistributedVector<T>::addSomeConstants(T c, const Vector<T>& select_) {
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
    assert(children.size() == select.children.size());
 
    if (first) {
@@ -1630,9 +1629,9 @@ void DistributedVector<T>::addSomeConstants(T c, const Vector<T>& select_) {
 
 template<typename T>
 void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>& z_, const Vector<T>& select_) {
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
-   const DistributedVector<T>& x = dynamic_cast<const DistributedVector<T>&>(x_);
-   const DistributedVector<T>& z = dynamic_cast<const DistributedVector<T>&>(z_);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
+   const auto& x = dynamic_cast<const DistributedVector<T>&>(x_);
+   const auto& z = dynamic_cast<const DistributedVector<T>&>(z_);
 
 
    if (first) {
@@ -1669,7 +1668,7 @@ void DistributedVector<T>::axdzpy(T alpha, const Vector<T>& x_, const Vector<T>&
 
 template<typename T>
 bool DistributedVector<T>::somePositive(const Vector<T>& select_) const {
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    bool some_positive = true;;
 
@@ -1704,8 +1703,8 @@ bool DistributedVector<T>::somePositive(const Vector<T>& select_) const {
 
 template<typename T>
 void DistributedVector<T>::divideSome(const Vector<T>& div_, const Vector<T>& select_) {
-   const DistributedVector<T>& div = dynamic_cast<const DistributedVector<T>&>(div_);
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_);
+   const auto& div = dynamic_cast<const DistributedVector<T>&>(div_);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
 
    if (first) {
       assert(div.first);
@@ -1736,7 +1735,7 @@ void DistributedVector<T>::divideSome(const Vector<T>& div_, const Vector<T>& se
 
 template<typename T>
 void DistributedVector<T>::removeEntries(const Vector<int>& select_) {
-   const DistributedVector<int>& select = dynamic_cast<const DistributedVector<int>&>(select_);
+   const auto& select = dynamic_cast<const DistributedVector<int>&>(select_);
 
    this->n = 0;
 
@@ -1821,7 +1820,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
       // assert( false && "TODO : implement" );
    }
 
-   const SimpleVector<T>& firstvec = dynamic_cast<const SimpleVector<T>&>(*first);
+   const auto& firstvec = dynamic_cast<const SimpleVector<T>&>(*first);
    const size_t nChildren = children.size();
 
    const int my_rank = PIPS_MPIgetRank(mpiComm);
@@ -1830,7 +1829,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
    std::vector<T> gatheredVecLocal(0);
 
    for (size_t i = 0; i < nChildren; ++i) {
-      const SimpleVector<T>& vec = dynamic_cast<const SimpleVector<T>&>(*children[i]->first);
+      const auto& vec = dynamic_cast<const SimpleVector<T>&>(*children[i]->first);
 
       if (vec.length() > 0)
          gatheredVecLocal.insert(gatheredVecLocal.end(), &vec[0], &vec[0] + vec.length());
@@ -1878,7 +1877,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
       std::copy(&firstvec[0], &firstvec[0] + firstvec.length(), &gatheredVec[0]);
 
       if (last && last->length() > 0) {
-         const SimpleVector<T>& linkvec = dynamic_cast<const SimpleVector<T>&>(*last);
+         const auto& linkvec = dynamic_cast<const SimpleVector<T>&>(*last);
          gatheredVec.insert(gatheredVec.end(), &linkvec[0], &linkvec[0] + linkvec.length());
       }
    }
@@ -1897,7 +1896,7 @@ bool DistributedVector<T>::isRootNodeInSync() const {
    assert(mpiComm);
 
    bool in_sync = true;
-   const SimpleVector<T>& vec_simple = dynamic_cast<const SimpleVector<T>&>(*first);
+   const auto& vec_simple = dynamic_cast<const SimpleVector<T>&>(*first);
 
    /* no need to check if not distributed or not at root node */
    if (!iAmDistrib || parent != nullptr)
@@ -1921,7 +1920,7 @@ bool DistributedVector<T>::isRootNodeInSync() const {
    std::copy(vec_simple.elements(), vec_simple.elements() + vec_simple.length(), sendbuf.begin());
 
    if (last) {
-      const SimpleVector<T>& vecl_simple = dynamic_cast<const SimpleVector<T>&>(*last);
+      const auto& vecl_simple = dynamic_cast<const SimpleVector<T>&>(*last);
       std::copy(vecl_simple.elements(), vecl_simple.elements() + vecl_simple.length(), sendbuf.begin() + vec_simple.length());
    }
    PIPS_MPImaxArray(&sendbuf[0], &recvbuf[0], count, mpiComm);
@@ -1960,7 +1959,7 @@ n_links_in_root
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
    std::vector<DistributedVector<T>*> new_children(n_new_children);
 
-   SimpleVector<T>* vecl_leftover = dynamic_cast<SimpleVector<T>*>(last);
+   auto* vecl_leftover = dynamic_cast<SimpleVector<T>*>(last);
 
    unsigned int begin_curr_child_blocks{0};
    unsigned int end_curr_child_blocks{0};
@@ -2022,29 +2021,37 @@ n_links_in_root
 }
 
 template<typename T>
-DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_vars, bool linking_part, bool shave_top) {
-   assert(parent == nullptr);
-   assert(first || last);
+DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, int n_last_to_shave) {
+   assert(!parent);
+   assert(n_first_to_shave >= -1);
+   assert(n_last_to_shave >= -1);
+   assert(n_first_to_shave >= 0 || n_last_to_shave >= 0);
 
-   SimpleVector<T>* vecs;
-   if (linking_part)
-      vecs = dynamic_cast<SimpleVector<T>*>(last);
-   else
-      vecs = dynamic_cast<SimpleVector<T>*>(first);
+   /* shave from first if there */
+   if (n_first_to_shave >= 0) {
+      assert(this->first);
+      assert(this->first->length() >= n_first_to_shave);
+   }
 
-   assert(vecs);
-   assert(n_vars <= vecs->length());
+   SimpleVector<T>* new_first{};
+   if (n_first_to_shave >= 0) {
+      new_first = dynamic_cast<SimpleVector<T>*>(this->first)->shaveBorder(n_first_to_shave, true);
+   }
 
-   SimpleVector<T>* border = vecs->shaveBorder(n_vars, shave_top);
+   /* shave from last if there */
+   if (n_last_to_shave >= 0) {
+      assert(this->last);
+      assert(this->last->length() >= n_last_to_shave);
+   }
 
-   DistributedVector<T>* top_layer;
-   if (shave_top)
-      top_layer = new DistributedVector<T>(border, nullptr, mpiComm);
-   else
-      top_layer = new DistributedVector<T>(nullptr, border, mpiComm);
+   SimpleVector<T>* new_last{};
+   if (n_last_to_shave >= 0) {
+      new_last = dynamic_cast<SimpleVector<T>*>(this->last)->shaveBorder(n_last_to_shave, false);
+   }
 
-   this->n -= n_vars;
+   auto* top_layer = new DistributedVector<T>(new_first, new_last, mpiComm);
 
+   this->n = this->n - std::max(0, n_first_to_shave) - std::max(0, n_last_to_shave);
    this->parent = top_layer;
    top_layer->AddChild(this);
 
@@ -2056,7 +2063,7 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_vars, bool linking
 
 template<typename T>
 void DistributedVector<T>::collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec) {
-   SimpleVector<T>* new_first = new SimpleVector<T>();
+   auto* new_first = new SimpleVector<T>();
    SimpleVector<T>* new_last{};
 
    if ((tree_hier.getMYL() > 0 && type == VectorType::DUAL_Y) || (tree_hier.getMYL() > 0 && type == VectorType::DUAL_Z))
@@ -2191,8 +2198,8 @@ Vector<T>* DistributedVector<T>::getLinkingVecNotHierarchicalTop() const {
 template<typename T>
 void DistributedVector<T>::pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other,
       double tol_pairs) {
-   DistributedVector<T>& other_vec = dynamic_cast<DistributedVector<T>&>(other_vec_in);
-   const DistributedVector<T>& select = dynamic_cast<const DistributedVector<T>&>(select_in);
+   auto& other_vec = dynamic_cast<DistributedVector<T>&>(other_vec_in);
+   const auto& select = dynamic_cast<const DistributedVector<T>&>(select_in);
 
    assert(children.size() == other_vec.children.size());
    assert(children.size() == select.children.size());

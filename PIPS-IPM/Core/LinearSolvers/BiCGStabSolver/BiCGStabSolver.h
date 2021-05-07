@@ -2,7 +2,7 @@
 #define BICGSTABLINSYS_H
 
 #include "DoubleLinearSolver.h"
-#include "DoubleMatrix.h"
+#include "AbstractMatrix.h"
 #include "SimpleVector.h"
 #include "pipsport.h"
 

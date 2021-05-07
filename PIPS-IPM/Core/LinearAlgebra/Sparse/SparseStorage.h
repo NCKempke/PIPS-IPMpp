@@ -5,8 +5,7 @@
 #ifndef SPARSESTORAGE_H
 #define SPARSESTORAGE_H
 
-#include "DoubleMatrix.h"
-#include "SparseStorageHandle.h"
+#include "AbstractMatrix.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsport.h"
@@ -111,7 +110,7 @@ public:
    virtual void writeToStreamDenseRow(std::ostream& out, int rowidx) const;
 
    virtual void symmetrize(int& info);
-   [[nodiscard]] double abmaxnorm() const override;
+   [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
    /** Computes the sparsity pattern of MtM = M^T * D * M

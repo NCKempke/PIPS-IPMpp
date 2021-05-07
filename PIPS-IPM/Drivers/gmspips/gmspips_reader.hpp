@@ -13,14 +13,14 @@
 
 #include "pipsdef.h"
 #include "gmspipsio.h"
-#include "StochInputTree.h"
+#include "DistributedInputTree.h"
 
 class gmspips_reader {
 public:
    gmspips_reader(const std::string& path_to_problem, const std::string& path_to_gams, size_t n_blocks);
    virtual ~gmspips_reader();
 
-   StochInputTree* read_problem();
+   DistributedInputTree* read_problem();
 
 protected:
    gmspips_reader() {};

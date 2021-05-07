@@ -6,11 +6,8 @@
 #define MA27LINSYS_H
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
-#include "SparseStorageHandle.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
-#include "pipsport.h"
+#include "SparseSymmetricMatrix.h"
 
 #include <vector>
 #include <string>
@@ -46,8 +43,8 @@ FNAME(ma27cd)(const int* n, const double a[], const int* la, const int iw[], con
 class Ma27Solver : public DoubleLinearSolver {
 
 protected:
-   const SparseSymMatrix* mat{};
-   SparseStorageHandle mat_storage;
+   const SparseSymmetricMatrix* mat{};
+   SmartPointer<SparseStorage> mat_storage;
 
    /** control structures MA27 */
    std::vector<int> icntl = std::vector<int>(30);
@@ -102,10 +99,10 @@ protected:
    /** length of the array containing factors; may be increased during
     * the numerical factorization if the estimate obtained during the
     * symbolic factorization proves to be inadequate. */
-   int la;
+   int la{-1};
 
    /** pivot sequence and temporary storage information */
-   int* ikeep{}, * iw{}, liw{}, * iw1{}, nsteps, maxfrt;
+   int* ikeep{}, * iw{}, liw{}, * iw1{}, nsteps{-1}, maxfrt{-1};
 
    /** temporary storage for the solve stage */
    double* ww{};
@@ -138,20 +135,20 @@ protected:
     *  larger pivots. Smaller values preserve sparsity at the cost of
     *  using smaller pivots.
     */
-   double thresholdPivoting() const { return cntl[0]; }
+   [[nodiscard]] double thresholdPivoting() const { return cntl[0]; }
    void setThresholdPivoting(double piv) { cntl[0] = piv; }
 
    /** the "small pivot" parameter, stored as pivtol in the common
     * block ma27td. The factorization will not accept a pivot whose
     * absolute value is less than this parameter as a 1x1 pivot or as
     * the off-diagonal in a 2x2 pivot.  */
-   double getSmallPivot() const { return cntl[2]; }
+   [[nodiscard]] double getSmallPivot() const { return cntl[2]; }
    void setSmallPivot(double tol) { cntl[2] = tol; }
 
    void setFratio(double ratio) { cntl[1] = ratio; };
 
-   int minimumRealWorkspace() const { return info[4]; }
-   int minimumIntWorkspace() const { return info[5]; }
+   [[nodiscard]] int minimumRealWorkspace() const { return info[4]; }
+   [[nodiscard]] int minimumIntWorkspace() const { return info[5]; }
 
    void init();
    void freeWorkingArrays();
@@ -173,9 +170,9 @@ protected:
 
 //  void orderMatrix(); // TODO : implement..
 public:
-   Ma27Solver(const SparseSymMatrix* sgm, const std::string& name_ = "leaf");
+   explicit Ma27Solver(const SparseSymmetricMatrix* sgm, std::string name_ = "leaf");
 
-   ~Ma27Solver();
+   ~Ma27Solver() override;
 
    using DoubleLinearSolver::solve;
    /* thread-safe if not called by more OMP_NUM_THREADS than available when calling the ctor */
@@ -185,8 +182,8 @@ public:
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
-   bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override;
 
 };
 

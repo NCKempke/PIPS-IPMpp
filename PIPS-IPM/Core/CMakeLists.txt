@@ -1,11 +1,13 @@
 add_subdirectory(LinearSolvers)
 
 add_library(pips-ipmpp STATIC
-        Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Status.C Abstract/Scaler.C
+        Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Scaler.C
         #Filter.cpp FilterStrategy.cpp FilterLineSearch.cpp
-        InteriorPointMethod/Solver.C InteriorPointMethod/GondzioStochSolver.C InteriorPointMethod/GondzioStochLpSolver.C InteriorPointMethod/InteriorPointMethod.cpp
+        
+        InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp
+        
         QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/StochOptions.C
+        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/DistributedOptions.C
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
         Readers/MpsReader.C Readers/hash.C #Readers
         LinearSolvers/Preconditioners/SCsparsifier.C
@@ -23,25 +25,28 @@ add_library(pips-ipmpp STATIC
         QpStoch/DistributedTree.C
         LinearSystems/sLinsysRootBordered.C
         QpStoch/DistributedTreeCallbacks.C
-        LinearAlgebra/Distributed/StringGenMatrix.C # TODO : bad hack...
+        LinearAlgebra/Distributed/StripMatrix.C
         LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
         
-        LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymMatrix.C
+        LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymmetricMatrix.C
         LinearAlgebra/Dense/DeSymIndefSolver.C LinearAlgebra/Dense/DeSymIndefSolver2.C
-        LinearAlgebra/Dense/DenseGenMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
+        LinearAlgebra/Dense/DenseMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
         
-        LinearAlgebra/Distributed/DistributedVector.C LinearAlgebra/Distributed/StochSymMatrix.C LinearAlgebra/Distributed/StochGenMatrix.C
-        LinearAlgebra/Distributed/BorderedGenMatrix.C LinearAlgebra/Distributed/BorderedSymMatrix.C
-        LinearAlgebra/Distributed/StochResourcesMonitor.C LinearAlgebra/Distributed/StochInputTree.C
+        LinearAlgebra/Distributed/DistributedVector.C LinearAlgebra/Distributed/DistributedSymmetricMatrix.C LinearAlgebra/Distributed/DistributedMatrix.C
+        LinearAlgebra/Distributed/BorderedMatrix.C LinearAlgebra/Distributed/BorderedSymmetricMatrix.C
+        LinearAlgebra/Distributed/StochResourcesMonitor.C LinearAlgebra/Distributed/DistributedInputTree.C
         
         LinearAlgebra/Sparse/SparseStorage.C LinearAlgebra/Sparse/SparseStorageDynamic.C
-        LinearAlgebra/Sparse/SparseGenMatrix.C LinearAlgebra/Sparse/SparseSymMatrix.C
+        LinearAlgebra/Sparse/SparseMatrix.C LinearAlgebra/Sparse/SparseSymmetricMatrix.C
         
         Preprocessing/EquiStochScaler.C Preprocessing/GeoStochScaler.C Preprocessing/StochScaler.C Preprocessing/QpScaler.C
         Preprocessing/StochRowStorage.C Preprocessing/StochColumnStorage.C Preprocessing/QpPostsolver.C Preprocessing/StochPostsolver.C Preprocessing/StochPresolver.C Preprocessing/QpPresolver.C Preprocessing/StochPresolverBase.C
         Preprocessing/StochPresolverModelCleanup.C Preprocessing/PresolveData.C Preprocessing/StochPresolverBoundStrengthening.C Preprocessing/StochPresolverColumnFixation.C Preprocessing/StochPresolverParallelRows.C
         Preprocessing/StochPresolverSingletonRows.C Preprocessing/StochPresolverSingletonColumns.C Preprocessing/QpPresolver.C Preprocessing/QpPostsolver.C
 )
+
+target_include_directories(pips-ipmpp PRIVATE ${MUMPS_INCLUDE_DIR})
+
 
 if (HAVE_MA27)
     target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA27)
@@ -54,7 +59,7 @@ if (HAVE_MA57)
 endif (HAVE_MA57)
 
 if (HAVE_MUMPS)
-    target_sources(pips-ipmpp QpStoch/sLinsysLeafMumps.C)
+    target_sources(pips-ipmpp PRIVATE LinearSystems/sLinsysLeafMumps.C)
     target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MUMPS)
     target_link_libraries(pips-ipmpp PRIVATE mumps_solver)
 endif (HAVE_MUMPS)

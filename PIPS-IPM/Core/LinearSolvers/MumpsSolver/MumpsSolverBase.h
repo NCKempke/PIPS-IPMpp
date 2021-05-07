@@ -8,14 +8,14 @@
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_MUMPSSOLVER_MUMPSSOLVERBASE_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_MUMPSSOLVER_MUMPSSOLVERBASE_H_
 
-#include "dmumps_c.h"
 #include "mpi.h"
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "pipsport.h"
+#include "dmumps_c.h"
 
 enum MumpsVerbosity { verb_mute, verb_standard, verb_high };
 
@@ -29,10 +29,10 @@ enum MumpsVerbosity { verb_mute, verb_standard, verb_high };
 class MumpsSolverBase : public DoubleLinearSolver {
 
 public:
-   MumpsSolverBase(const SparseSymMatrix* sgm);
-   MumpsSolverBase(MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, const SparseSymMatrix* sgm);
+   explicit MumpsSolverBase(const SparseSymmetricMatrix* sgm);
+   MumpsSolverBase(MPI_Comm mpiCommPips_c, MPI_Comm mpiCommMumps_c, const SparseSymmetricMatrix* sgm);
 
-   ~MumpsSolverBase();
+   ~MumpsSolverBase() override;
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override = 0;
@@ -62,20 +62,21 @@ protected:
 
    void solve(double* vec);
 
-   long long n;
+   long long n{0};
    MumpsVerbosity verbosity;
-   unsigned maxNiterRefinments;
+   unsigned maxNiterRefinments{0};
    MPI_Comm mpiCommPips, mpiCommMumps;
 
-   int rankMumps, rankPips;
+   int rankMumps{-1};
+   int rankPips{-1};
 
-   DMUMPS_STRUC_C* mumps;
-   const SparseSymMatrix* Msys;
+   DMUMPS_STRUC_C* mumps{};
+   const SparseSymmetricMatrix* Msys{};
 
    // matrix pointer in triplet format
-   int* tripletIrn;
-   int* tripletJcn;
-   double* tripletA;
+   int* tripletIrn{};
+   int* tripletJcn{};
+   double* tripletA{};
 };
 
 

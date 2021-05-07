@@ -21,7 +21,9 @@ public:
 
    DistributedVector(int n, MPI_Comm mpiComm);
    DistributedVector(int n, int nl, MPI_Comm mpiComm);
-   ~DistributedVector() override;
+
+   // this virtual AND override need to stay - intel has a bug in its compiler triggering warnings if either is deleted...
+   virtual ~DistributedVector() override;
 
    virtual void AddChild(DistributedVector<T>* child);
 
@@ -53,14 +55,14 @@ public:
    void jointCopyFrom(const Vector<T>& vx, const Vector<T>& vy, const Vector<T>& vz) override;
    void jointCopyTo(Vector<T>& vx, Vector<T>& vy, Vector<T>& vz) const override;
 
-   bool isKindOf(int kind) const override;
+   [[nodiscard]] bool isKindOf(int kind) const override;
    void setToZero() override;
    void setToConstant(T c) override;
-   bool isZero() const override;
+   [[nodiscard]] bool isZero() const override;
 
    void copyFrom(const Vector<T>& v) override;
    void copyFromAbs(const Vector<T>& v) override;
-   double twonorm() const override;
+   [[nodiscard]] double twonorm() const override;
    T infnorm() const override;
    T onenorm() const override;
    void min(T& m, int& index) const override;
@@ -110,14 +112,14 @@ public:
    void applySqrt() override;
    void roundToPow2() override;
 
-   bool allPositive() const override;
+   [[nodiscard]] bool allPositive() const override;
    bool allOf(const std::function<bool(const T&)>& pred) const override;
 
    bool matchesNonZeroPattern(const Vector<T>& select) const override;
    void selectNonZeros(const Vector<T>& select) override;
    void selectPositive() override;
    void selectNegative() override;
-   long long numberOfNonzeros() const override;
+   [[nodiscard]] long long numberOfNonzeros() const override;
    void addSomeConstants(T c, const Vector<T>& select) override;
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override { assert(false && "Not yet implemented"); };
    void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
@@ -134,16 +136,16 @@ public:
    /** remove entries i for which select[i] == 0 */
    void removeEntries(const Vector<int>& select) override;
 
-   virtual int getSize() const { return this->n; };
-   int getNnzs() const override;
+   [[nodiscard]] virtual int getSize() const { return this->n; };
+   [[nodiscard]] int getNnzs() const override;
 
    virtual void recomputeSize();
 
-   virtual bool isRootNodeInSync() const;
+   [[nodiscard]] virtual bool isRootNodeInSync() const;
 
    virtual void split(const std::vector<unsigned int>& map_blocks_children, const std::vector<MPI_Comm>& child_comms,
          const std::vector<int>& twolinks_start_in_block = std::vector<int>(), int n_links_in_root = -1);
-   virtual DistributedVector<T>* raiseBorder(int n_vars, bool linking_part, bool shave_top);
+   virtual DistributedVector<T>* raiseBorder(int n_first_to_shave, int n_last_to_shave);
    virtual void collapseFromHierarchical(const DistributedQP& data_hier, const DistributedTree& tree_hier, VectorType type, bool empty_vec = false);
    virtual void appendHierarchicalToThis(SimpleVector<T>* new_vec, SimpleVector<T>* new_vecl, std::vector<DistributedVector<T>*>& new_children,
          const DistributedTree& tree_hier, const DistributedQP& data_hier, VectorType type, bool empty_vec);
@@ -156,7 +158,6 @@ protected:
    DistributedVector() = default;
 
 private:
-   void appendChildrenToThis();
    void
    pushSmallComplementarityPairs(Vector<T>& other_vec_in, const Vector<T>& select_in, double tol_this, double tol_other, double tol_pairs) override;
 };
@@ -264,7 +265,7 @@ public:
    bool isRootNodeInSync() const override { return true; };
 
    void split(const std::vector<unsigned int>&, const std::vector<MPI_Comm>&, const std::vector<int>&, int) override {};
-   DistributedVector<T>* raiseBorder(int, bool, bool) override {
+   DistributedVector<T>* raiseBorder(int, int) override {
       assert(0 && "This should never be attempted");
       return nullptr;
    };

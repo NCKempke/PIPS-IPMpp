@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPPREPROCESS_STOCHROWSTORAGE_H_
 #define PIPS_IPM_CORE_QPPREPROCESS_STOCHROWSTORAGE_H_
 
-#include "StochGenMatrix.h"
+#include "DistributedMatrix.h"
 #include "DistributedVector.h"
 #include "SystemType.h"
 
@@ -16,10 +16,10 @@
 
 class StochRowStorage {
 public:
-   StochRowStorage(const StochGenMatrix& system_matrix);
+   StochRowStorage(const DistributedMatrix& system_matrix);
    ~StochRowStorage() = default;
 
-   int storeRow(const INDEX& row, const StochGenMatrix& matrix_row);
+   int storeRow(const INDEX& row, const DistributedMatrix& matrix_row);
 
    /** y = beta * y + alpha * stored row */
    void axpyAtRow(double beta, DistributedVector<double>* y, SimpleVector<double>* y_linking, double alpha, const INDEX& row) const;
@@ -33,7 +33,7 @@ public:
 private:
 
    double multLinkingRowTimesVecWithoutBl0(int row, const DistributedVector<double>& vec) const;
-   std::unique_ptr<StochGenMatrix> row_storage{};
+   std::unique_ptr<DistributedMatrix> row_storage{};
 
 };
 

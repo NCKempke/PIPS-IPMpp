@@ -4,9 +4,9 @@
 
 #include "WSMPSolver.h"
 #include "SparseStorage.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 #include "SimpleVector.h"
-#include "DenseGenMatrix.h"
+#include "DenseMatrix.h"
 
 #ifdef HAVE_GETRUSAGE
 #include <sys/time.h>

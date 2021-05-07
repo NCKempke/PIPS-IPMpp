@@ -2,7 +2,7 @@
 #include "Problem.h"
 
 Problem::Problem(Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
-      Vector<double>* ixupp_in, GenMatrix* A_in, Vector<double>* bA_in, GenMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
+      Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
       Vector<double>* cupp_in, Vector<double>* icupp_in) : nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()},
       mclow{iclow_in->numberOfNonzeros()}, mcupp{icupp_in->numberOfNonzeros()} {
    SpReferTo(g, c_in);
@@ -51,19 +51,19 @@ void Problem::getbA(Vector<double>& bout) const {
    bout.copyFrom(*bA);
 }
 
-void Problem::putAIntoAt(GenMatrix& M, int row, int col) {
+void Problem::putAIntoAt(GeneralMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *A, 0, 0, my, nx);
 }
 
-void Problem::putAIntoAt(SymMatrix& M, int row, int col) {
+void Problem::putAIntoAt(SymmetricMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *A, 0, 0, my, nx);
 }
 
-void Problem::putCIntoAt(GenMatrix& M, int row, int col) {
+void Problem::putCIntoAt(GeneralMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *C, 0, 0, mz, nx);
 }
 
-void Problem::putCIntoAt(SymMatrix& M, int row, int col) {
+void Problem::putCIntoAt(SymmetricMatrix& M, int row, int col) {
    M.symAtPutSubmatrix(row, col, *C, 0, 0, mz, nx);
 }
 
@@ -121,11 +121,11 @@ double Problem::datanorm() const {
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = A->abmaxnorm();
+   componentNorm = A->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = C->abmaxnorm();
+   componentNorm = C->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 

@@ -129,9 +129,9 @@ DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const 
    }
 
    if (!sub_root) {
-      DistributedVector<double>* x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
-      for (size_t it = 0; it < children.size(); it++) {
-         DistributedVector<double>* child = children[it]->new_primal_vector(empty);
+      auto* x = new DistributedVector<double>(empty ? 0 : nx(), commWrkrs);
+      for (auto it : children) {
+         DistributedVector<double>* child = it->new_primal_vector(empty);
          x->AddChild(child);
       }
       return x;
@@ -144,7 +144,7 @@ DistributedVector<double>* DistributedTree::new_primal_vector(bool empty) const 
       }
       else {
          DistributedVector<double>* x_vec = sub_root->new_primal_vector(empty);
-         DistributedVector<double>* x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
+         auto* x = new DistributedVector<double>(x_vec, nullptr, commWrkrs);
          x_vec->parent = x;
          return x;
       }
@@ -161,13 +161,13 @@ DistributedVector<double>* DistributedTree::newDualYVector(bool empty) const {
    if (!sub_root) {
       y = new DistributedVector<double>(empty ? std::min(0, my()) : my(), empty ? std::min(yl, 0) : yl, commWrkrs);
 
-      for (size_t it = 0; it < children.size(); it++) {
-         DistributedVector<double>* child = children[it]->newDualYVector(empty);
+      for (auto it : children) {
+         DistributedVector<double>* child = it->newDualYVector(empty);
          y->AddChild(child);
       }
    }
    else {
-      assert(children.size() == 0);
+      assert(children.empty());
 
       if (sub_root->commWrkrs == MPI_COMM_NULL)
          y = new DistributedDummyVector<double>();
@@ -192,13 +192,13 @@ DistributedVector<double>* DistributedTree::newDualZVector(bool empty) const {
    if (!sub_root) {
 
       z = new DistributedVector<double>(empty ? std::min(mz(), 0) : mz(), empty ? std::min(zl, 0) : zl, commWrkrs);
-      for (size_t it = 0; it < children.size(); it++) {
-         DistributedVector<double>* child = children[it]->newDualZVector(empty);
+      for (auto it : children) {
+         DistributedVector<double>* child = it->newDualZVector(empty);
          z->AddChild(child);
       }
    }
    else {
-      assert(children.size() == 0);
+      assert(children.empty());
       if (sub_root->commWrkrs == MPI_COMM_NULL)
          z = new DistributedDummyVector<double>();
       else {
@@ -228,8 +228,8 @@ DistributedVector<double>* DistributedTree::newRhs() const {
 
       rhs = new DistributedVector<double>(nx() + std::max(my(), 0) + std::max(mz(), 0) + locmyl + locmzl, commWrkrs);
 
-      for (size_t it = 0; it < children.size(); it++) {
-         DistributedVector<double>* child = children[it]->newRhs();
+      for (auto it : children) {
+         DistributedVector<double>* child = it->newRhs();
          rhs->AddChild(child);
       }
    }
@@ -251,13 +251,13 @@ void DistributedTree::stopMonitors() {
 
 void DistributedTree::startNodeMonitors() {
    resMon.reset();
-   for (size_t i = 0; i < children.size(); i++)
-      children[i]->startNodeMonitors();
+   for (auto & i : children)
+      i->startNodeMonitors();
 }
 
 void DistributedTree::stopNodeMonitors() {
-   for (size_t i = 0; i < children.size(); i++)
-      children[i]->stopNodeMonitors();
+   for (auto & i : children)
+      i->stopNodeMonitors();
 
    resMon.computeTotal();
 }
@@ -265,72 +265,16 @@ void DistributedTree::stopNodeMonitors() {
 void DistributedTree::toMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
    lstExecTm.push_back(resMon.eTotal);
 
-   for (size_t i = 0; i < children.size(); i++)
-      children[i]->toMonitorsList(lstExecTm);
+   for (auto & i : children)
+      i->toMonitorsList(lstExecTm);
 }
 
 void DistributedTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
    resMon.eTotal = lstExecTm.front();
    lstExecTm.pop_front();
 
-   for (size_t i = 0; i < children.size(); i++)
-      children[i]->fromMonitorsList(lstExecTm);
-}
-
-void DistributedTree::syncMonitoringData(std::vector<double>& vCPUTotal) {
-
-   std::list<NodeExecEntry> lstExecTm;
-   this->toMonitorsList(lstExecTm);
-
-   int noNodes = lstExecTm.size();
-   int nCPUs = vCPUTotal.size();
-
-   double* recvBuf = new double[noNodes + nCPUs];
-   double* sendBuf = new double[noNodes + nCPUs];
-
-   std::list<NodeExecEntry>::iterator iter = lstExecTm.begin();
-   for (int it = 0; it < noNodes; it++) {
-      sendBuf[it] = iter->tmChildren;
-      iter++;
-   }
-   for (int it = noNodes; it < noNodes + nCPUs; it++)
-      sendBuf[it] = vCPUTotal[it - noNodes];
-
-
-   MPI_Allreduce(sendBuf, recvBuf, noNodes + nCPUs, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
-   iter = lstExecTm.begin();
-   for (int it = 0; it < noNodes; it++) {
-      iter->tmChildren = recvBuf[it];
-      iter++;
-   }
-   for (int it = noNodes; it < noNodes + nCPUs; it++)
-      vCPUTotal[it - noNodes] = recvBuf[it];
-
-   if (children.size() > 0) {
-      //local time MPI_MAX, but only for nonleafs
-      iter = lstExecTm.begin();
-      for (int it = 0; it < noNodes; it++) {
-         sendBuf[it] = iter->tmLocal;
-         iter++;
-      }
-
-      MPI_Allreduce(sendBuf, recvBuf, noNodes, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-      iter = lstExecTm.begin();
-      for (int it = 0; it < noNodes; it++) {
-         iter->tmLocal = recvBuf[it];
-         iter++;
-      }
-   }
-   delete[] recvBuf;
-   delete[] sendBuf;
-
-   //populate the tree with the global data
-   this->fromMonitorsList(lstExecTm);
-
-   //compute syncronized total time for each node of the tree, i.e., local+childs+subchilds
-   computeNodeTotal(); //updates this->IPMIterExecTIME
+   for (auto & i : children)
+      i->fromMonitorsList(lstExecTm);
 }
 
 bool DistributedTree::balanceLoad() {
@@ -354,14 +298,14 @@ void DistributedTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, in
 
       if (wasAssigned) {
          assert(0 == isAssigned);
-         assert(myProcs.size() > 0);
+         assert(!myProcs.empty());
          //where is this node assigned?
          toFromCPU = myProcs[0];
          sendOrRecv = maSend;
       }
       else {
          assert(1 == isAssigned);
-         assert(myOldProcs.size() > 0);
+         assert(!myOldProcs.empty());
          toFromCPU = myOldProcs[0];
          sendOrRecv = maRecv;
       }
@@ -369,15 +313,15 @@ void DistributedTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, in
 }
 
 void DistributedTree::computeNodeTotal() {
-   if (0 == children.size())
+   if (children.empty())
       this->IPMIterExecTIME = resMon.eTotal.tmChildren;
    else {
 
       this->IPMIterExecTIME = resMon.eTotal.tmLocal;
-      for (size_t i = 0; i < children.size(); i++) {
-         children[i]->computeNodeTotal();
+      for (auto & i : children) {
+         i->computeNodeTotal();
 
-         this->IPMIterExecTIME += children[i]->IPMIterExecTIME;
+         this->IPMIterExecTIME += i->IPMIterExecTIME;
       }
    }
 }
@@ -385,14 +329,14 @@ void DistributedTree::computeNodeTotal() {
 void DistributedTree::saveCurrentCPUState() {
    myOldProcs = myProcs;
 
-   for (size_t i = 0; i < children.size(); i++)
-      children[i]->saveCurrentCPUState();
+   for (auto & i : children)
+      i->saveCurrentCPUState();
 }
 
 
 void DistributedTree::appendPrintTreeLayer(std::vector<std::string>& layer_outputs, unsigned int level) const {
    if (level == layer_outputs.size())
-      layer_outputs.push_back("");
+      layer_outputs.emplace_back("");
    if (commWrkrs == MPI_COMM_NULL)
       return;
 
@@ -458,7 +402,7 @@ void DistributedTree::printProcessTree() const {
       level_outputs.push_back(level_stream.str());
    }
    else
-      level_outputs.push_back("");
+      level_outputs.emplace_back("");
 
    appendPrintTreeLayer(level_outputs, level + 1);
 
@@ -467,7 +411,7 @@ void DistributedTree::printProcessTree() const {
    if (levels > level_outputs.size()) {
       assert(levels == level_outputs.size() + 1);
       tree_unbalanced = true;
-      level_outputs.push_back("");
+      level_outputs.emplace_back("");
    }
    assert(PIPS_MPIisValueEqual(level_outputs.size()));
 

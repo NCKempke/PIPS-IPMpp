@@ -39,7 +39,7 @@ TEST_P(GmspipsReaderTest, TestReadGamsSmallProblems) {
 
    gmspips_reader reader(problem_paths, gams_path, n_blocks_per_problem);
 
-   std::unique_ptr<StochInputTree> tree(reader.read_problem());
+   std::unique_ptr<DistributedInputTree> tree(reader.read_problem());
    ASSERT_TRUE(tree);
    DistributedFactory factory(tree.get(), MPI_COMM_WORLD);
 };

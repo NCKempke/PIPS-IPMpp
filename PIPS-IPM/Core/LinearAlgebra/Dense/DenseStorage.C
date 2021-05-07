@@ -265,7 +265,7 @@ void DenseStorage::diagonal_add_constant_from(int from, int length, double value
    }
 }
 
-double DenseStorage::abmaxnorm() const {
+double DenseStorage::inf_norm() const {
    double max = 0.0;
 
    for (int i = 0; i < m; ++i) {

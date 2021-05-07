@@ -9,8 +9,8 @@
 #include "DistributedTree.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
-#include "SparseSymMatrix.h"
-#include "SparseGenMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "SparseMatrix.h"
 
 #include "pipsport.h"
 
@@ -49,32 +49,32 @@ public:
    //void Ltsolve_internal(  DistributedQP *prob, DistributedVector<double>& x, SimpleVector<double>& xp);
    void deleteChildren() override;
 
-   void addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymMatrix& SC, bool use_local_RAC, int) override;
+   void addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) override;
 
    void addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool) override;
 
-   void addInnerBorderKiInvBrToRes(DoubleMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res,
+   void addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res,
          int begin_cols, int end_cols, int) override;
    void
-   LniTransMultHierarchyBorder(DoubleMatrix& res, const DenseGenMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
+   LniTransMultHierarchyBorder(AbstractMatrix& res, const DenseMatrix& X0, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
          bool sparse_res, bool sym_res, bool, int begin_cols, int end_cols, int n_empty_rows_inner_border) override;
 
 protected:
    void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
 
-   static void mySymAtPutSubmatrix(SymMatrix& kkt, GenMatrix& B, GenMatrix&, int locnx, int locmy, int);
+   static void mySymAtPutSubmatrix(SymmetricMatrix& kkt, GeneralMatrix& B, GeneralMatrix&, int locnx, int locmy, int);
 
    void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
    void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;
 private:
-   void addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border);
-   void addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border);
+   static void addBorderTimesRhsToB0(SimpleVector<double>& rhs, SimpleVector<double>& b0, BorderBiBlock& border);
+   static void addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border);
 
    /* compute result += B_inner^T K^-1 Br */
-   void addInnerBorderKiInvBrToRes(DenseGenMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols);
+   void addInnerBorderKiInvBrToRes(DenseMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols);
 
    /* compute result += B_inner^T K^-1 ( Br - Br_mod_border ) */
-   void addLeftBorderKiInvBrToRes(DoubleMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res,
+   void addLeftBorderKiInvBrToRes(AbstractMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sparse_res,
          bool sym_res, int begin_cols_br, int end_cols_br, int begin_cols_res, int end_cols_res);
 };
 

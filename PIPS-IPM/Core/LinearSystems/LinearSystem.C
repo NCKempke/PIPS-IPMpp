@@ -10,7 +10,7 @@
 #include "SmartPointer.h"
 #include "mpi.h"
 #include "QpGenOptions.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "DistributedFactory.h"
 #include <vector>
 #include <functional>

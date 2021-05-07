@@ -9,12 +9,12 @@
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DenseSymMatrix.h"
-#include "SparseSymMatrix.h"
-#include "DenseGenMatrix.h"
+#include "DenseSymmetricMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "DenseMatrix.h"
 #include "SimpleVector.h"
 #include "DistributedVector.h"
-#include "StringGenMatrix.h"
+#include "StripMatrix.h"
 
 #include <vector>
 #include <memory>
@@ -66,26 +66,26 @@ public:
             F{block.F}, G{block.G}, n_empty_rows{block.n_empty_rows} { assert(n_empty_rows >= 0); };
    };
 
-   using BorderLinsys = RACFG_BLOCK<StringGenMatrix>;
-   using BorderBiBlock = RACFG_BLOCK<SparseGenMatrix>;
+   using BorderLinsys = RACFG_BLOCK<StripMatrix>;
+   using BorderBiBlock = RACFG_BLOCK<SparseMatrix>;
 
    static BorderLinsys getChild(BorderLinsys& border, unsigned int i) {
-      const bool dummy = border.F.children[i]->isKindOf(kStringGenDummyMatrix);
+      const bool dummy = border.F.children[i]->is_a(kStringGenDummyMatrix);
       assert(i < border.F.children.size());
       if (border.has_RAC) {
-         if (!dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix))
-            return BorderLinsys(dynamic_cast<StringGenMatrix&>(*border.R.children[i]->mat),
-                  dynamic_cast<StringGenMatrix&>(*border.A.children[i]->mat), dynamic_cast<StringGenMatrix&>(*border.C.children[i]->mat),
-                  border.n_empty_rows, dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
-                  dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat));
+         if (!dummy && border.F.children[i]->first->is_a(kStripMatrix))
+            return BorderLinsys(dynamic_cast<StripMatrix&>(*border.R.children[i]->first),
+                  dynamic_cast<StripMatrix&>(*border.A.children[i]->first), dynamic_cast<StripMatrix&>(*border.C.children[i]->first),
+                  border.n_empty_rows, dynamic_cast<StripMatrix&>(*border.F.children[i]->first),
+                  dynamic_cast<StripMatrix&>(*border.G.children[i]->first));
          else
             return BorderLinsys(*border.R.children[i], *border.A.children[i], *border.C.children[i], border.n_empty_rows, *border.F.children[i],
                   *border.G.children[i]);
       }
       else {
-         if (!dummy && border.F.children[i]->mat->isKindOf(kStringGenMatrix))
-            return BorderLinsys(border.n_empty_rows, dynamic_cast<StringGenMatrix&>(*border.F.children[i]->mat),
-                  dynamic_cast<StringGenMatrix&>(*border.G.children[i]->mat), border.use_local_RAC);
+         if (!dummy && border.F.children[i]->first->is_a(kStripMatrix))
+            return BorderLinsys(border.n_empty_rows, dynamic_cast<StripMatrix&>(*border.F.children[i]->first),
+                  dynamic_cast<StripMatrix&>(*border.G.children[i]->first), border.use_local_RAC);
          else
             return BorderLinsys(border.n_empty_rows, *border.F.children[i], *border.G.children[i], border.use_local_RAC);
       }
@@ -100,7 +100,7 @@ public:
       BorderMod_Block(BorderLinsys& border_, const T& multiplier) : border{border_}, multiplier{multiplier} {};
    };
 
-   using BorderMod = BorderMod_Block<DenseGenMatrix>;
+   using BorderMod = BorderMod_Block<DenseMatrix>;
 
 
    template<typename T>
@@ -145,10 +145,15 @@ public:
 
    virtual void deleteChildren() = 0;
 
-   virtual bool isDummy() const { return false; };
+   [[nodiscard]] virtual bool isDummy() const { return false; };
 
 protected:
-   int locnx, locmy, locmyl, locmz, locmzl;
+   int locnx{};
+   int locmy{};
+   int locmyl{};
+   int locmz{};
+   int locmzl{};
+
    DistributedQP* data{};
 
    int iAmDistrib;
@@ -166,12 +171,12 @@ protected:
    const bool is_hierarchy_root{false};
 
    /* symmetric Schur Complement / whole KKT system in lower triangular from */
-   std::unique_ptr<SymMatrix> kkt{};
+   std::unique_ptr<SymmetricMatrix> kkt{};
    std::unique_ptr<DoubleLinearSolver> solver{};
 
    const int blocksize_hierarchical{20};
    const bool sc_compute_blockwise_hierarchical{false};
-   std::unique_ptr<DenseGenMatrix> buffer_blocked_hierarchical{};
+   std::unique_ptr<DenseMatrix> buffer_blocked_hierarchical{};
 
 public:
    MPI_Comm mpiComm{MPI_COMM_NULL};
@@ -190,10 +195,10 @@ public:
 
 
    /* put BiT into res */
-   virtual void putBiTBorder(DenseGenMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows) const;
+   virtual void putBiTBorder(DenseMatrix& res, const BorderBiBlock& BiT, int begin_rows, int end_rows) const;
 
    /* compute Bli^T X_i = Bli^T Ki^-1 (Bri - Bi_{inner} X0) and add it to SC */
-   virtual void LniTransMultHierarchyBorder(DoubleMatrix& /*SC*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
+   virtual void LniTransMultHierarchyBorder(AbstractMatrix& /*SC*/, const DenseMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
          std::vector<BorderMod>& /*Br_mod_border*/, bool /*sparse_res*/, bool /*sym_res*/, bool /*use_local_RAC*/, int /*begin_cols*/,
          int /*end_cols*/, int /*n_empty_rows_inner_border*/) { assert(false && "not implemented here"); };
 
@@ -203,18 +208,18 @@ public:
    /** Methods that use dense matrices U and V to compute the
     *  terms from the Schur complement.
     */
-   virtual void allocU(DenseGenMatrix** Ut, int np);
+   virtual void allocU(DenseMatrix** Ut, int np);
 
-   virtual void allocV(DenseGenMatrix** V, int np);
+   virtual void allocV(DenseMatrix** V, int np);
 
-   virtual void computeU_V(DistributedQP* problem, DenseGenMatrix* U, DenseGenMatrix* V);
+   virtual void computeU_V(DistributedQP* problem, DenseMatrix* U, DenseMatrix* V);
 
    /** Method(s) that use a memory-friendly mechanism for computing
     *  the terms from the Schur Complement
     */
-   virtual void addTermToDenseSchurCompl(DistributedQP* problem, DenseSymMatrix& SC);
+   virtual void addTermToDenseSchurCompl(DistributedQP* problem, DenseSymmetricMatrix& SC);
 
-   virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymMatrix& /*SC*/, bool /*use_local_RAC*/,
+   virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymmetricMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
    virtual void
@@ -235,12 +240,12 @@ public:
    };
 
    virtual void addBiTLeftKiBiRightToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-         /* const */ BorderBiBlock& border_right, DoubleMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res);
+         /* const */ BorderBiBlock& border_right, AbstractMatrix& result, int begin_cols, int end_cols, int begin_rows_res, int end_rows_res);
 
    void addBiTLeftKiDenseToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
-         /* const */ DenseGenMatrix& BT, DoubleMatrix& result, int begin_rows_res, int end_rows_res);
+         /* const */ DenseMatrix& BT, AbstractMatrix& result, int begin_rows_res, int end_rows_res);
 
-   virtual void addTermToSparseSchurCompl(DistributedQP* /*problem*/, SparseSymMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
+   virtual void addTermToSparseSchurCompl(DistributedQP* /*problem*/, SparseSymmetricMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
 
    /** Used in the iterative refinement for the dense Schur complement systems
     * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
@@ -249,67 +254,67 @@ public:
 
    // TODO only compute bottom left part for symmetric matrices
    /* compute result += Bl^T K^-1 Br where K is our own linear system */
-   virtual void addBlTKiInvBrToRes(DoubleMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
+   virtual void addBlTKiInvBrToRes(AbstractMatrix& /*result*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/,
          bool /*sym_res*/, bool /*sparse_res*/) { assert(false && "not implemented here"); }
 
    /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ) and add it up in result */
    virtual void
-   LsolveHierarchyBorder(DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*two_link_border*/,
+   LsolveHierarchyBorder(DenseMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*two_link_border*/,
          int /*begin_cols*/, int /*end_cols*/) { assert(false && "not implemented here"); };
 
    virtual void
-   LsolveHierarchyBorder(DenseGenMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC*/,
+   LsolveHierarchyBorder(DenseMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*use_local_RAC*/,
          bool /*two_link_border*/, int /*begin_cols*/, int /*end_cols*/) { assert(false && "not implemented here"); };
 
    /* solve with SC and comput X_0 = SC^-1 B_0 */
-   virtual void DsolveHierarchyBorder(DenseGenMatrix& /*buffer_b0*/, int /*n_cols*/) { assert(false && "not implemented here"); };
+   virtual void DsolveHierarchyBorder(DenseMatrix& /*buffer_b0*/, int /*n_cols*/) { assert(false && "not implemented here"); };
 
    /* compute RES += SUM_i Bli_^T X_i = Bli^T Ki^-1 ( ( Bri - sum_j Bmodij Xij ) - Bi_{inner} X0) */
-   virtual void LtsolveHierarchyBorder(DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
+   virtual void LtsolveHierarchyBorder(AbstractMatrix& /*res*/, const DenseMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
          std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, int /*begin_cols*/, int /*end_cols*/) {
       assert(false && "not implemented here");
    };
 
-   virtual void LtsolveHierarchyBorder(DoubleMatrix& /*res*/, const DenseGenMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
+   virtual void LtsolveHierarchyBorder(AbstractMatrix& /*res*/, const DenseMatrix& /*X0*/, BorderLinsys& /*Bl*/, BorderLinsys& /*Br*/,
          std::vector<BorderMod>& /*Br_mod_border*/, bool /*sym_res*/, bool /*sparse_res*/, bool /*use_local_RAC*/, int /*begin_cols*/,
          int /*end_cols*/) { assert(false && "not implemented here"); };
 
    /* compute Bi_{inner}^T Ki^{-1} ( Bri - sum_j Brmod_ij Xj )and add it to result */
    virtual void
-   addInnerBorderKiInvBrToRes(DoubleMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*has_RAC*/,
+   addInnerBorderKiInvBrToRes(AbstractMatrix& /*result*/, BorderLinsys& /*Br*/, std::vector<BorderMod>& /*Br_mod_border*/, bool /*has_RAC*/,
          bool /*sparse_res*/, bool /*sym_res*/, int /*begin_cols*/, int /*end_cols*/, int /*n_empty_rows_inner_border*/) {
       assert(false && "not implemented here");
    };
 
 protected:
    void addLeftBorderTimesDenseColsToResTransp(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
-         bool sparse_res, bool sym_res, DoubleMatrix& res) const;
+         bool sparse_res, bool sym_res, AbstractMatrix& res) const;
 
    void addLeftBorderTimesDenseColsToResTranspSparse(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
-         SparseSymMatrix& res) const;
+         SparseSymmetricMatrix& res) const;
 
    void addLeftBorderTimesDenseColsToResTranspDense(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
          int n_cols_res, double** res) const;
 
    /* calculate res -= BT0 * X0 */
-   void finalizeDenseBorderBlocked(BorderLinsys& B, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows);
+   void finalizeDenseBorderBlocked(BorderLinsys& B, const DenseMatrix& X, DenseMatrix& result, int begin_rows, int end_rows);
 
    /* calculate res -= X0 * BT */
-   void multRightDenseBorderBlocked(BorderBiBlock& BT, const DenseGenMatrix& X, DenseGenMatrix& result, int begin_rows, int end_rows);
+   void multRightDenseBorderBlocked(BorderBiBlock& BT, const DenseMatrix& X, DenseMatrix& result, int begin_rows, int end_rows);
 
    /* calculate res -= (sum_j X0jT * BjT ) */
-   void multRightDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseGenMatrix& result, int begin_cols, int end_cols);
+   void multRightDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result, int begin_cols, int end_cols);
 
    /* calculate res -= (sum_j X0jT * B0JT ) */
-   void finalizeDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseGenMatrix& result, int begin_rows, int end_rows);
+   void finalizeDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result, int begin_rows, int end_rows);
 
 };
 
 template<>
-bool DistributedLinearSystem::RACFG_BLOCK<StringGenMatrix>::isEmpty() const;
+bool DistributedLinearSystem::RACFG_BLOCK<StripMatrix>::isEmpty() const;
 
 template<>
-bool DistributedLinearSystem::RACFG_BLOCK<SparseGenMatrix>::isEmpty() const;
+bool DistributedLinearSystem::RACFG_BLOCK<SparseMatrix>::isEmpty() const;
 
 
 #endif

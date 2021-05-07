@@ -8,7 +8,7 @@
 //#define PIPS_DEBUG
 #include <algorithm>
 #include "QpScaler.h"
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include "DistributedVector.h"
 #include "QP.hpp"
 #include "Variables.h"
@@ -169,7 +169,7 @@ Vector<double>* QpScaler::getDualVarBoundsLowUnscaled(const Vector<double>& sold
 void QpScaler::applyScaling() {
    PIPSdebugMessage("before scaling: \n "
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-            obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
+            obj->infnorm(), A->inf_norm(), C->inf_norm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
 
    // todo scale Q
    doObjScaling();
@@ -193,7 +193,7 @@ void QpScaler::applyScaling() {
 
    PIPSdebugMessage("after scaling: \n "
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-            obj->infnorm(), A->abmaxnorm(), C->abmaxnorm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
+            obj->infnorm(), A->inf_norm(), C->inf_norm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
 }
 
 double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,
@@ -210,13 +210,13 @@ double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, V
       double max = -std::numeric_limits<double>::max();
 
       maxvecA.max(max, j);
-      assert(max < 0 || max == A->abmaxnorm());
+      assert(max < 0 || max == A->inf_norm());
 
       j = -1;
       max = -std::numeric_limits<double>::max();
       maxvecC.max(max, j);
 
-      assert(max < 0 || max == C->abmaxnorm());
+      assert(max < 0 || max == C->inf_norm());
    }
 #endif
 
@@ -273,7 +273,7 @@ double QpScaler::maxColRatio(Vector<double>& maxvec, Vector<double>& minvec, con
 
       maxvec.max(max, j);
 
-      assert(max < 0 || max == std::max(A->abmaxnorm(), C->abmaxnorm()));
+      assert(max < 0 || max == std::max(A->inf_norm(), C->inf_norm()));
    }
 #endif
 

@@ -8,7 +8,7 @@
 // TODO : distinguish between fixing and removals when printing the stats
 
 #include "StochPresolverSingletonColumns.h"
-#include "StochVectorUtilities.h"
+#include "DistributedVectorUtilities.h"
 
 StochPresolverSingletonColumns::StochPresolverSingletonColumns(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(
       presolve_data, origProb), removed_cols(0), local_singletons(false),

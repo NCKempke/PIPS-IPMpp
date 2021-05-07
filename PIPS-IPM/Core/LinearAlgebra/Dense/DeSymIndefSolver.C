@@ -7,8 +7,8 @@
 #include <cassert>
 #include <memory>
 
-#include "DenseSymMatrix.h"
-#include "DenseGenMatrix.h"
+#include "DenseSymmetricMatrix.h"
+#include "DenseMatrix.h"
 
 
 #ifndef FNAME
@@ -48,11 +48,11 @@ extern "C" {
 #endif
 
 
-DeSymIndefSolver::DeSymIndefSolver(const DenseSymMatrix* dm) : mStorage{dm->getStorageHandle()} {
+DeSymIndefSolver::DeSymIndefSolver(const DenseSymmetricMatrix* dm) : mStorage{dm->getStorageHandle()} {
    ipiv.resize(mStorage->n);
 }
 
-DeSymIndefSolver::DeSymIndefSolver(const SparseSymMatrix* sm) : sparseMat{sm} {
+DeSymIndefSolver::DeSymIndefSolver(const SparseSymmetricMatrix* sm) : sparseMat{sm} {
    const int size = static_cast<int>(sm->size());
    mStorage = std::make_shared<DenseStorage>(size, size);
 
@@ -133,8 +133,8 @@ void DeSymIndefSolver::solve(Vector<double>& v) {
    assert(info == 0);
 }
 
-void DeSymIndefSolver::solve(GenMatrix& rhs_in) {
-   auto& rhs = dynamic_cast<DenseGenMatrix&>(rhs_in);
+void DeSymIndefSolver::solve(GeneralMatrix& rhs_in) {
+   auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
    int info;
    int nrows, ncols;

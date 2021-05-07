@@ -5,8 +5,6 @@
 #define WSMPLINSYS_H
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrixHandle.h"
-#include "SparseStorageHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SparseStorage.h"
@@ -74,7 +72,7 @@ protected:
    int freshFactor;
 
    /** store as a sparse symmetric matrix */
-   SparseStorageHandle mStorage;
+   SmartPointer<SparseStorage> mStorage;
 
    /** called the very first time a matrix is factored. Allocates space
     * for the factorization and performs ordering */

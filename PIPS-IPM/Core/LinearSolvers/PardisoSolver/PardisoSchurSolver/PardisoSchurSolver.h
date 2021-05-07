@@ -6,9 +6,9 @@
 #define PARDISO_SCHUR_SOLVER
 
 #include "DoubleLinearSolver.h"
-#include "SparseSymMatrix.h"
-#include "SparseGenMatrix.h"
-#include "DenseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
+#include "SparseMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "SparseStorage.h"
@@ -29,21 +29,20 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 
 public:
    virtual void firstCall(); //first factorization call
-   void
-   firstSolveCall(SparseGenMatrix& R, SparseGenMatrix& A, SparseGenMatrix& C, SparseGenMatrix& F, SparseGenMatrix& G, int nSC0); //first solve call
+   void firstSolveCall( const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0); //first solve call
 
    /** sets mStorage to refer to the argument sgm */
-   PardisoSchurSolver(const SparseSymMatrix* sgm);
+   explicit PardisoSchurSolver(const SparseSymmetricMatrix* sgm);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& rhs) override = 0;
-   void solve(GenMatrix&) override { assert(false && "Function not supported. Use PardisoSolver for this functionality."); };
+   void solve(GeneralMatrix&) override { assert(false && "Function not supported. Use PardisoSolver for this functionality."); };
 
-   bool reports_inertia() const override { return false; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { return {0, 0, 0}; };
+   [[nodiscard]] bool reports_inertia() const override { return false; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override { return {0, 0, 0}; };
 
    /** Functions specific to the Schur approach. The last argument is the Schur first
     * stage matrix that will be updated.
@@ -54,25 +53,19 @@ public:
     *  - avoids forming the matrix rhs [R' A' B']'
     *  - assumes rhs does not change
     */
-   virtual void schur_solve(/*const*/ SparseGenMatrix& R,
-         /*const*/ SparseGenMatrix& A,
-         /*const*/ SparseGenMatrix& C,
-         /*const*/ SparseGenMatrix& F,
-         /*const*/ SparseGenMatrix& G, DenseSymMatrix& SC);
+   void schur_solve( const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F,
+         const SparseMatrix& G, DenseSymmetricMatrix& SC);
 
-   virtual void schur_solve_sparse(/*const*/ SparseGenMatrix& R,
-         /*const*/ SparseGenMatrix& A,
-         /*const*/ SparseGenMatrix& C,
-         /*const*/ SparseGenMatrix& F,
-         /*const*/ SparseGenMatrix& G, SparseSymMatrix& SC);
+   void schur_solve_sparse(const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F,
+         const SparseMatrix& G, SparseSymmetricMatrix& SC);
 
 protected:
 
-   const SparseSymMatrix* Msys{}; // this is the (1,1) block in the augmented system
+   const SparseSymmetricMatrix* Msys{}; // this is the (1,1) block in the augmented system
    bool first{true};
    bool firstSolve{true};
-   void* pt[64];
-   int iparm[64];
+   void* pt[64]{};
+   int iparm[64]{};
    bool useSparseRhs{true};
    int symbFactorInterval;
 
@@ -114,12 +107,8 @@ protected:
    virtual void setIparm(int* iparm) const = 0;
    bool iparmUnchanged();
 
-   virtual void computeSC(int nSCO,
-         /*const*/SparseGenMatrix& R,
-         /*const*/SparseGenMatrix& A,
-         /*const*/SparseGenMatrix& C,
-         /*const*/SparseGenMatrix& F,
-         /*const*/SparseGenMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) = 0;
+   virtual void computeSC(int nSCO, const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F,
+      const SparseMatrix& G, int*& rowptrSC, int*& colidxSC, double*& eltsSC) = 0;
 
    ~PardisoSchurSolver() override;
 };

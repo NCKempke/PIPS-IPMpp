@@ -45,13 +45,13 @@ public:
    void updateStats();
 
    // sets CSR column marker col of dominated local Schur complement (distributed) entries to -col
-   void unmarkDominatedSCdistLocals(const DistributedQP& prob, SparseSymMatrix& sc);
+   void unmarkDominatedSCdistLocals(const DistributedQP& prob, SparseSymmetricMatrix& sc);
 
    // resets unmarkDominatedSCdistEntries actions
-   void resetSCdistEntries(SparseSymMatrix& sc) const;
+   void resetSCdistEntries(SparseSymmetricMatrix& sc) const;
 
    // deletes dominated Schur complement entries and converts matrix to Fortran format
-   void getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymMatrix& sc);
+   void getSparsifiedSC_fortran(const DistributedQP& prob, SparseSymmetricMatrix& sc);
 
    // updates the bound according the convergence history of BICGStab
    // todo this method should be removed and increaseDiagDomBound/decreaseDiagDomBound should be used instead
@@ -72,7 +72,7 @@ private:
 
    MPI_Comm mpiComm;
 
-   std::vector<double> getDomDiagDist(const DistributedQP& prob, SparseSymMatrix& sc, bool isLeaf = false) const;
+   std::vector<double> getDomDiagDist(const DistributedQP& prob, SparseSymmetricMatrix& sc, bool isLeaf = false) const;
 
 };
 

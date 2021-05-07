@@ -14,8 +14,8 @@
 #include "DistributedQP.hpp"
 #include "DistributedTreeCallbacks.h"
 
-#include "StochOptions.h"
-#include "StochGenMatrix.h"
+#include "DistributedOptions.h"
+#include "DistributedMatrix.h"
 #include "Vector.hpp"
 #include "StochPostsolver.h"
 #include "StochPresolverBoundStrengthening.h"

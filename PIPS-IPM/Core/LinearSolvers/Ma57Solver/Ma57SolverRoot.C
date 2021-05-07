@@ -8,19 +8,19 @@
 #include "Ma57SolverRoot.h"
 
 #include "SimpleVector.h"
-#include "SparseSymMatrix.h"
+#include "SparseSymmetricMatrix.h"
 
-Ma57SolverRoot::Ma57SolverRoot(SparseSymMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma57Solver(sgm, name),
+Ma57SolverRoot::Ma57SolverRoot(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, std::string name) : Ma57Solver(sgm, std::move(name)),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    assert(mpiComm != MPI_COMM_NULL);
 }
 
-void Ma57SolverRoot::matrixRebuild(DoubleMatrix& matrixNew) {
+void Ma57SolverRoot::matrixRebuild(AbstractMatrix& matrixNew) {
    assert(omp_get_thread_num() == 0);
    const int my_rank = PIPS_MPIgetRank(comm);
 
    if (solve_in_parallel || my_rank == 0) {
-      SparseSymMatrix& matrixNewSym = dynamic_cast<SparseSymMatrix&>(matrixNew);
+      auto& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
@@ -43,7 +43,7 @@ void Ma57SolverRoot::matrixChanged() {
 }
 
 void Ma57SolverRoot::solve(Vector<double>& rhs) {
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(rhs);
+   auto& sv = dynamic_cast<SimpleVector<double>&>(rhs);
 
    assert(n == rhs.length());
 

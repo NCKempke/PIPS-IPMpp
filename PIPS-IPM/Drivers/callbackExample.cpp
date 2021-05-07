@@ -1,7 +1,7 @@
-#include <InteriorPointMethod.hpp>
-#include "StochInputTree.h"
+#include <InteriorPointMethod.h>
+#include "DistributedInputTree.h"
 #include "PIPSIpmInterface.h"
-
+#include "MehrotraStrategy.hpp"
 #include "mpi.h"
 
 #define LINKING_CONS 1
@@ -424,11 +424,11 @@ int main(int argc, char** argv) {
 
 #if LINKING_CONS
    //build the problem tree
-   StochInputTree::StochInputNode dataLinkCons(&probData, 0, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl,
+   DistributedInputTree::DistributedInputNode dataLinkCons(&probData, 0, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB, fBl,
          fnnzBl, fb, fbl, fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow, fxupp,
          fixupp, false);
 
-   StochInputTree* root = new StochInputTree(dataLinkCons);
+   DistributedInputTree* root = new DistributedInputTree(dataLinkCons);
 #else
 
    int nx0 = 2;
@@ -436,7 +436,7 @@ int main(int argc, char** argv) {
    int mz0 = 1;
 
    //build the problem tree
-   StochInputTree::StochInputNode data(&probData, 0,
+   DistributedInputTree::DistributedInputNode data(&probData, 0,
                    nx0,my0,mz0, //myl0, mzl0
                    fQ, fnnzQ, fc,
                    fA, fnnzA,
@@ -450,23 +450,23 @@ int main(int argc, char** argv) {
                   //fdllow, fidllow, fdlupp, fidlupp,
                    fxlow, fixlow, fxupp, fixupp, false );
 
-   StochInputTree* root = new StochInputTree(data);
+   DistributedInputTree* root = new DistributedInputTree(data);
 #endif
 
 
    for (int id = 1; id <= nScenarios; id++) {
 #if LINKING_CONS
-      StochInputTree::StochInputNode dataLinkConsChild(&probData, id, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
+      DistributedInputTree::DistributedInputNode dataLinkConsChild(&probData, id, nCall, myCall, mylCall, mzCall, mzlCall, fQ, fnnzQ, fc, fA, fnnzA, fB, fnnzB,
             fBl, fnnzBl, fb, fbl, fC, fnnzC, fD, fnnzD, fDl, fnnzDl, fclow, ficlow, fcupp, ficupp, fdllow, fidllow, fdlupp, fidlupp, fxlow, fixlow,
             fxupp, fixupp, false);
 
-      root->AddChild(new StochInputTree(dataLinkConsChild));
+      root->AddChild(new DistributedInputTree(dataLinkConsChild));
 #else
       int nx = 2;
       int my = 2;
       int mz = 1;
 
-      StochInputTree::StochInputNode data(&probData, id,
+      DistributedInputTree::DistributedInputNode data(&probData, id,
                 nx, my, mz, //myl, mzl
                 fQ, fnnzQ, fc,
                 fA, fnnzA,
@@ -480,7 +480,7 @@ int main(int argc, char** argv) {
                 //fdllow, fidllow, fdlupp, fidlupp,
                 fxlow, fixlow, fxupp, fixupp, false);
 
-      root->AddChild(new StochInputTree(data));
+      root->AddChild(new DistributedInputTree(data));
 #endif
 
    }
@@ -490,8 +490,7 @@ int main(int argc, char** argv) {
 
    /* use BiCGStab for outer solve */
    pips_options::set_int_parameter("INNER_SC_SOLVE", 0);
-   //PIPSIpmInterface<GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
-   PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 
    if (rank == 0)
       std::cout << "PIPSIpmInterface created" << std::endl;

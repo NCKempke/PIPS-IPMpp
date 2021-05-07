@@ -7,7 +7,7 @@
 
 #include "StochPresolverModelCleanup.h"
 
-#include "StochOptions.h"
+#include "DistributedOptions.h"
 #include <cmath>
 #include <vector>
 
@@ -206,8 +206,8 @@ int StochPresolverModelCleanup::removeRedundantRows(SystemType system_type, int 
  * be in a consistent state.
  */
 int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_type) {
-   assert(dynamic_cast<const StochGenMatrix&>(*(presolve_data.getPresProb().A)).children.size() == (size_t) nChildren);
-   assert(dynamic_cast<const StochGenMatrix&>(*(presolve_data.getPresProb().C)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().A)).children.size() == (size_t) nChildren);
+   assert(dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children.size() == (size_t) nChildren);
 
    int n_elims = 0;
 
