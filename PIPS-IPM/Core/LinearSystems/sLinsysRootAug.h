@@ -90,9 +90,12 @@ private:
 
    void add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& CtDC);
    void add_CtDC_to_dense_schur_complement(const SymmetricMatrix& CtDC);
+   void remove_CtDC_block_from_sparse_Schur_complement();
+   void remove_CtDC_block_from_dense_Schur_complement();
 
-   /** computes CtDC and stores it  in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
+   /** computes CtDC and stores it in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
    void compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal);
+   void remove_CtDC_block_from_Schur_complement();
 
    // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
    void addLinkConsBlock0Matrix(DistributedQP* prob, SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
@@ -100,13 +103,22 @@ private:
    /** y = beta*y - alpha* SC * x */
    void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x, DistributedQP* prob);
 
+   void schur_complement_put_primal_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement) const;
+   void schur_complement_add_CTDC_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement);
+   void schur_complement_put_AT_block(SymmetricMatrix& schur_complement) const;
+
+   // TODO : unused ..
+   const bool eliminate_C_block_from_kkt{true};
    /** stores C^T D^-1 C from the KKT matrix */
    std::unique_ptr<SymmetricMatrix> CtDC;
-   /** stores C^T reg_z^-1 C from the regularization added to the KKT matrix */
-   std::unique_ptr<SymmetricMatrix> CtDC_regularization;
+
+   /** since we eliminate the C0 block we need a buffer for (D + reg)^-1 */
+   std::unique_ptr<Vector<double>> dual_inequality_diagonal_regularized{};
 
    std::vector<double> reduced_rhss_blocked;
    std::unique_ptr<SimpleVector<double>> redRhs;
+
+
 };
 
 #endif

@@ -69,8 +69,6 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
 }
 
 SymmetricMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
-   const int n = locnx + locmy + locmyl + locmzl;
-
    if (hasSparseKkt) {
       SparseSymmetricMatrix* sparsekkt;
 
@@ -79,11 +77,10 @@ SymmetricMatrix* sLinsysRootAug::createKKT(DistributedQP* prob) const {
       else
          sparsekkt = prob->createSchurCompSymbSparseUpper();
 
-      assert(sparsekkt->size() == n);
-
       return sparsekkt;
    }
    else {
+      const int n = locnx + locmy + locmyl + locmzl;
       return new DenseSymmetricMatrix(n);
    }
 }
@@ -150,7 +147,7 @@ void sLinsysRootAug::createSolversAndKKts(DistributedQP* prob) {
       if (hasSparseKkt)
          std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << prob->getSchurCompMaxNnz() << "\n";
       else {
-         const int n = locnx + locmy + locmyl + locmzl;
+         const long long n = kkt->size();
          std::cout << "sLinsysRootAug: getSchurCompMaxNnz " << n * n << "\n";
       }
    }
@@ -210,62 +207,18 @@ void sLinsysRootAug::finalizeKKTdist(DistributedQP* prob) {
    assert(kkts.size() == locnx + locmy + locmyl + locmzl);
    assert(!kkts.isLower);
    assert(locmyl >= 0 && locmzl >= 0);
-   assert(prob->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for dist. sparse kkt");
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1}S
-   /////////////////////////////////////////////////////////////
-   if (xDiag && iAmLastRank) {
-      // TODO : use addDiag method
-      const auto& sxDiag = dynamic_cast<const SimpleVector<double>&>(*xDiag);
+   /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
-      for (int i = 0; i < locnx; i++) {
-         const int diagIdx = krowKkt[i];
-         assert(jcolKkt[diagIdx] == i);
+   if (iAmLastRank) {
+      /* put Q + diag(q) + X^{-1} Z */
+      schur_complement_put_primal_block(xDiag, *kkt);
 
-         MKkt[diagIdx] += sxDiag[i];
-      }
-   }
+      /* update Schur complement with - C' * diag(zDiag) *C */
+      schur_complement_add_CTDC_block(zDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
-   /////////////////////////////////////////////////////////////
-   if (locmz > 0 && iAmLastRank) {
-      assert(zDiag);
-      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
-
-      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-      if (!CtDC) {
-         CtDC.reset(CtDCptr);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with At (symmetric update forced)
-   /////////////////////////////////////////////////////////////
-   if (locmy > 0 && iAmLastRank) {
-      SparseMatrix& At = prob->getLocalB().getTranspose(); // yes, B
-      const double* MAt = At.M();
-      const int* krowAt = At.krowM();
-
-      for (int i = 0; i < locnx; ++i) {
-         const int pstart = krowAt[i];
-         const int pend = krowAt[i + 1];
-
-         // get start position of sparse kkt block
-         const int blockStart = krowKkt[i] + locnx - i;
-
-         assert(blockStart <= krowKkt[i + 1]);
-
-         for (int p = pstart; p < pend; ++p) {
-            assert(At.jcolM()[p] < locmy);
-            assert(blockStart + (p - pstart) <= krowKkt[i + 1]);
-            assert(jcolKkt[blockStart + (p - pstart)] == (locnx + At.jcolM()[p]));
-
-            MKkt[blockStart + (p - pstart)] += MAt[p];
-         }
-      }
+      /* put AT into Schur complement */
+      schur_complement_put_AT_block(*kkt);
    }
 
    int local2linksStartEq;
@@ -375,9 +328,103 @@ void sLinsysRootAug::assembleLocalKKT(DistributedQP* prob) {
 
       //---------------------------------------------
       addTermToSchurCompl(prob, c, !is_layer_only_twolinks);
-
       //---------------------------------------------
+
       children[c]->stochNode->resMon.recFactTmChildren_stop();
+   }
+}
+
+void sLinsysRootAug::schur_complement_put_primal_block(const Vector<double>* diagonal, SymmetricMatrix& schur_complement) const {
+   if (locnx <= 0) {
+      return;
+   }
+
+   /* update the schur complement with Q (DO NOT PUT DIAG) */
+   if (hasSparseKkt) {
+      assert(data->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for sparse kkt");
+   } else {
+      auto& dense_schur_complement = dynamic_cast<DenseSymmetricMatrix&>(schur_complement);
+      SparseSymmetricMatrix& Q = data->getLocalQ();
+      int* krowQ = Q.krowM();
+      int* jcolQ = Q.jcolM();
+      double* dQ = Q.M();
+      for (int i = 0; i < locnx; i++) {
+         const int pend = krowQ[i + 1];
+         for (int p = krowQ[i]; p < pend; p++) {
+            const int j = jcolQ[p];
+            if (i == j)
+               continue;
+            double val = dQ[p];
+            dense_schur_complement[i][j] += val;
+            dense_schur_complement[j][i] += val;
+
+            assert(0 && "non-empty Q currently not supported");
+         }
+      }
+   }
+
+   assert(diagonal);
+   assert(diagonal->length() == locnx);
+
+   /* put diagonal diag = diag(Q) + X^{-1} Z + primal_regularization */
+   schur_complement.atAddDiagonal(0, *diagonal);
+}
+
+void sLinsysRootAug::schur_complement_add_CTDC_block(const Vector<double>* diagonal,
+   SymmetricMatrix& schur_complement) {
+   if (locmz <= 0) {
+      return;
+   }
+
+   assert(diagonal);
+   SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
+
+   compute_CtDC_and_add_to_Schur_complement(CtDCptr, *diagonal);
+
+   if (!CtDC){
+      CtDC.reset(CtDCptr);
+   }
+}
+
+void sLinsysRootAug::schur_complement_put_AT_block(SymmetricMatrix& schur_complement) const {
+   assert(locnx >= 0);
+   if (locmy <= 0) {
+      return;
+   }
+
+   if (hasSparseKkt) {
+      const SparseMatrix& AT = data->getLocalB().getTranspose(); // yes, B
+      auto& sparse_schur_complement = dynamic_cast<SparseSymmetricMatrix&>(schur_complement);
+
+      int* krowM_schur_complement = sparse_schur_complement.krowM();
+
+      /* the structure for At has been pre-allocated in the schur complement */
+      const double* MAt = AT.M();
+      const int* krowAt = AT.krowM();
+
+      for (int i = 0; i < locnx; ++i) {
+
+         const int At_row_start = krowAt[i];
+         const int At_row_end = krowAt[i + 1];
+
+         /* start position of sparse At block in the Schur complement */
+         const int At_block_start = krowM_schur_complement[i] + locnx - i;
+
+         assert(At_block_start <= krowM_schur_complement[i + 1]);
+
+         for (int p = At_row_start; p < At_row_end; ++p) {
+            assert(AT.jcolM()[p] < locmy);
+            assert(At_block_start + (p - At_row_start) <= krowM_schur_complement[i + 1]);
+            assert(sparse_schur_complement.jcolM()[At_block_start + (p - At_row_start)] == (locnx + AT.jcolM()[p]));
+
+            sparse_schur_complement.M()[At_block_start + (p - At_row_start)] += MAt[p];
+         }
+      }
+   } else {
+      const SparseMatrix& A = data->getLocalB(); // yes, B
+
+      auto& dense_schur_complement = dynamic_cast<DenseSymmetricMatrix&>(schur_complement);
+      dense_schur_complement.add_matrix_at(A, locnx, 0); // yes, B
    }
 }
 
@@ -484,7 +531,7 @@ void sLinsysRootAug::Ltsolve(DistributedQP* prob, Vector<double>& x) {
 #endif
 }
 
-/* gets called for computing the dense schur complement*/
+/* gets called for computing the dense schur complement */
 void sLinsysRootAug::LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border,
       int begin_cols, int end_cols) {
    LsolveHierarchyBorder(result, Br, Br_mod_border, true, two_link_border, begin_cols, end_cols);
@@ -1471,6 +1518,44 @@ void sLinsysRootAug::add_CtDC_to_dense_schur_complement(const SymmetricMatrix& C
    }
 }
 
+void sLinsysRootAug::remove_CtDC_block_from_dense_Schur_complement() {
+   auto& schur_complement_dense = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
+
+   for (int i = 0; i < locnx; ++i) {
+      std::fill(schur_complement_dense[i] + i, schur_complement_dense[i] + locnx, 0.0);
+   }
+
+   if (locnx > 0) {
+      assert(xDiag);
+      kkt->atPutDiagonal(0, *xDiag);
+   }
+}
+
+void sLinsysRootAug::remove_CtDC_block_from_sparse_Schur_complement() {
+   auto& schur_complement_sparse = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
+
+   for (int i = 0; i < locnx; ++i) {
+      const int row_start = schur_complement_sparse.krowM()[i];
+      const int entries_above_diagonal = locnx - i;
+
+#ifndef NDEBUG
+      assert(entries_above_diagonal > 0);
+      const int row_end = schur_complement_sparse.krowM()[i+1];
+
+      assert(schur_complement_sparse.jcolM()[row_start] == i);
+      assert(row_end - row_start >= entries_above_diagonal);
+      assert(schur_complement_sparse.jcolM()[row_start + entries_above_diagonal - 1] == locnx);
+#endif
+
+      std::fill(schur_complement_sparse.M() + row_start, schur_complement_sparse.M() + row_start + entries_above_diagonal, 0.0);
+   }
+
+   if (locnx > 0) {
+      assert(xDiag);
+      kkt->atPutDiagonal(0, *xDiag);
+   }
+}
+
 void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& CtDC_loc) {
    auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 #ifndef NDEBUG
@@ -1497,7 +1582,14 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& 
          }
       }
    }
+}
 
+void sLinsysRootAug::remove_CtDC_block_from_Schur_complement() {
+   if (hasSparseKkt) {
+      remove_CtDC_block_from_sparse_Schur_complement();
+   } else {
+      remove_CtDC_block_from_dense_Schur_complement();
+   }
 }
 
 void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal)
@@ -1533,13 +1625,14 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
 
    /* C^T reg^-1 C block */
    if (locmz > 0) {
+      assert(zDiag);
+      if (!dual_inequality_diagonal_regularized) {
+         dual_inequality_diagonal_regularized.reset(zDiag->clone());
+      }
+
       const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
       assert(dual_inequality_regularization_vec);
-
       assert(CtDC);
-      if(!CtDC_regularization) {
-         CtDC_regularization.reset(CtDC->clone());
-      }
 
       dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
       SymmetricMatrix* CTDC_regularization_ptr = CtDC.get();
@@ -1587,65 +1680,16 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    assert(!kkts.isLower);
    assert(locmyl >= 0 && locmzl >= 0);
 
-   //////////////////////////////////////////////////////
-   // compute Q+diag(xdiag) - C' * diag(zDiag) * C
-   // and update the KKT
-   //////////////////////////////////////////////////////
+   /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with Q (DO NOT PUT DIAG)
-   /////////////////////////////////////////////////////////////
-   assert(prob->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for sparse kkt");
+   /* put Q + diag(q) + X^{-1} Z */
+   schur_complement_put_primal_block(xDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1} S
-   /////////////////////////////////////////////////////////////
-   // TODO if (locnx > 0) {
-   if (locnx > 0) {
-      assert(xDiag);
-      kkt->atAddDiagonal(0, *xDiag);
-   }
+   /* update Schur complement with - C' * diag(zDiag) *C */
+   schur_complement_add_CTDC_block(zDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
-   /////////////////////////////////////////////////////////////
-   if (locmz > 0) {
-      assert(zDiag);
-
-      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
-      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-      if (!CtDC){
-         CtDC.reset(CtDCptr);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with At (symmetric update forced)
-   /////////////////////////////////////////////////////////////
-   if (locmy > 0) {
-      SparseMatrix& At = prob->getLocalB().getTranspose(); // yes, B
-      const double* MAt = At.M();
-      const int* krowAt = At.krowM();
-
-      for (int i = 0; i < locnx; ++i) {
-         const int pstart = krowAt[i];
-         const int pend = krowAt[i + 1];
-
-         // get start position of sparse kkt block
-         const int blockStart = krowKkt[i] + locnx - i;
-
-         assert(blockStart <= krowKkt[i + 1]);
-
-         for (int p = pstart; p < pend; ++p) {
-            assert(At.jcolM()[p] < locmy);
-            assert(blockStart + (p - pstart) <= krowKkt[i + 1]);
-            assert(jcolKkt[blockStart + (p - pstart)] == (locnx + At.jcolM()[p]));
-
-            MKkt[blockStart + (p - pstart)] += MAt[p];
-         }
-      }
-   }
+   /* put AT into Schur complement */
+   schur_complement_put_AT_block(*kkt);
 
    /////////////////////////////////////////////////////////////
    // update the KKT with Ft
@@ -1769,62 +1813,16 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
 void sLinsysRootAug::finalizeKKTdense(DistributedQP* prob, Variables*) {
    auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
 
-   //alias for internal buffer of kkt
-   double** const dKkt = kktd->Mat();
+   /* put Q+ X^{-1} Z - C' * diag(zDiag) * C into Schur complement */
 
-   //////////////////////////////////////////////////////
-   // compute Q+diag(xdiag) - C' * diag(zDiag) * C
-   // and update the KKT
-   //////////////////////////////////////////////////////
+   /* put Q + diag(q) + X^{-1} Z */
+   schur_complement_put_primal_block(xDiag, *kkt);
 
+   /* update Schur complement with - C' * diag(zDiag) *C */
+   schur_complement_add_CTDC_block(zDiag, *kkt);
 
-   /////////////////////////////////////////////////////////////
-   // update the KKT with Q (DO NOT PUT DIAG)
-   /////////////////////////////////////////////////////////////
-   SparseSymmetricMatrix& Q = prob->getLocalQ();
-   int* krowQ = Q.krowM();
-   int* jcolQ = Q.jcolM();
-   double* dQ = Q.M();
-   for (int i = 0; i < locnx; i++) {
-      const int pend = krowQ[i + 1];
-      for (int p = krowQ[i]; p < pend; p++) {
-         const int j = jcolQ[p];
-         if (i == j)
-            continue;
-         double val = dQ[p];
-         dKkt[i][j] += val;
-         dKkt[j][i] += val;
-
-         assert(0 && "non-empty Q currently not supported");
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with the diagonals
-   // xDiag is in fact diag(Q)+X^{-1}S
-   /////////////////////////////////////////////////////////////
-   kktd->atAddDiagonal(0, *xDiag);
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with   - C' * diag(zDiag) *C
-   /////////////////////////////////////////////////////////////
-   if (locmz > 0) {
-      assert(zDiag);
-      SymmetricMatrix* CtDCptr = CtDC ? CtDC.get() : nullptr;
-
-      compute_CtDC_and_add_to_Schur_complement(CtDCptr, *zDiag);
-
-      if (!CtDC) {
-         CtDC.reset(CtDCptr);
-      }
-   }
-
-   /////////////////////////////////////////////////////////////
-   // update the KKT with A
-   /////////////////////////////////////////////////////////////
-   if (locmy > 0) {
-      kktd->add_matrix_at(prob->getLocalB(), locnx, 0); // yes, B
-   }
+   /* put AT into Schur complement */
+   schur_complement_put_AT_block(*kkt);
 
    /////////////////////////////////////////////////////////////
    // update the KKT with F
