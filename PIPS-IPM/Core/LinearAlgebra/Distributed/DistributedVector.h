@@ -21,7 +21,9 @@ public:
 
    DistributedVector(int n, MPI_Comm mpiComm);
    DistributedVector(int n, int nl, MPI_Comm mpiComm);
-   ~DistributedVector() override;
+
+   // this virtual AND override need to stay - intel has a bug in its compiler triggering warnings if either is deleted...
+   virtual ~DistributedVector() override;
 
    virtual void AddChild(DistributedVector<T>* child);
 
