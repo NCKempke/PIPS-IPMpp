@@ -6,8 +6,7 @@
  */
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "GondzioStochSolver.h"
-#include "GondzioStochLpSolver.h"
+#include "InteriorPointMethod.h"
 #include "PIPSIpmInterface.h"
 #include "gmspips_reader.hpp"
 
@@ -70,27 +69,14 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 
    double result = std::numeric_limits<double>::infinity();
 
-   if (primal_dual_step) {
-      PIPSIpmInterface<GondzioStochLpSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
-      try {
-         pipsIpm.run();
-         result = pipsIpm.getObjective();
-      }
-      catch (...) {
-         EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
-      }
+   PIPSIpmInterface<InteriorPointMethod> pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
+   try {
+      pipsIpm.run();
+      result = pipsIpm.getObjective();
    }
-   else {
-      PIPSIpmInterface<GondzioStochSolver> pipsIpm(tree.get(), MPI_COMM_WORLD, scaler, presolver);
-      try {
-         pipsIpm.run();
-         result = pipsIpm.getObjective();
-      }
-      catch (...) {
-         EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
-      }
+   catch (...) {
+      EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
    }
-
    testing::internal::GetCapturedStdout();
    return result;
 };

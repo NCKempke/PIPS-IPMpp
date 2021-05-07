@@ -10,25 +10,18 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <memory>
-
-//#include "stochasticInput.hpp"
-//#include "sTreeImpl.h"
-
+#include <MehrotraStrategy.hpp>
 #include "DistributedTree.h"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"
 #include "Monitor.h"
-
-
 #include "PreprocessFactory.h"
 #include "Scaler.h"
 #include "Presolver.h"
 #include "Postsolver.h"
-
 #include "DistributedTreeCallbacks.h"
 #include "pipsport.h"
-
 #include "DistributedOptions.h"
 
 //#define PRESOLVE_POSTSOLVE_ONLY // will not call solve routine an just presolve and then postsolve the problem - for debugging presolve and postsolve operations
@@ -36,7 +29,7 @@
 template<class IPMSOLVER>
 class PIPSIpmInterface {
 public:
-   PIPSIpmInterface(DistributedInputTree* tree, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
+   PIPSIpmInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
          PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
 
    ~PIPSIpmInterface() = default;
@@ -125,8 +118,8 @@ protected:
 //----------------------------------------------------------------------
 
 template<class IPMSOLVER>
-PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(DistributedInputTree* tree, MPI_Comm comm, ScalerType scaler_type, PresolverType presolver_type,
-      std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
+PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm comm, ScalerType
+scaler_type, PresolverType presolver_type, std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
    pips_options::set_options(settings);
    const bool postsolve = pips_options::get_bool_parameter("POSTSOLVE");
 
@@ -226,7 +219,7 @@ PIPSIpmInterface<IPMSOLVER>::PIPSIpmInterface(DistributedInputTree* tree, MPI_Co
          std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
    }
 
-   solver.reset(new IPMSOLVER(factory, *presolved_problem, scaler.get()));
+   solver.reset(new IPMSOLVER(factory, *presolved_problem, mehrotra_heuristic, scaler.get()));
    solver->add_monitor(new Monitor(factory, scaler.get()));
 #ifdef TIMING
    if( my_rank == 0 ) printf("solver created\n");

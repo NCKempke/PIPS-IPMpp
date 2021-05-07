@@ -1,12 +1,10 @@
-#include "Monitor.h"
-#include "Status.h"
-
-#include "Residuals.h"
-#include "Solver.h"
-#include "Problem.h"
-#include "Variables.h"
 #include <iostream>
 #include <cstdio>
+#include "Monitor.h"
+#include "Residuals.h"
+#include "Problem.h"
+#include "Variables.h"
+#include "Status.h"
 
 Monitor::Monitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
@@ -63,8 +61,7 @@ Monitor::doItPd(const Problem* problem, const Variables* variables, const Residu
          std::cout << " Objective: " << objective << "\n";
          std::cout << "\n";
          if (level == 1) {
-            // Termination has been detected by the status check; print
-            // appropriate message
+            // Termination has been detected by the status check; print appropriate message
             switch (status_code) {
                case SUCCESSFUL_TERMINATION:
                   std::cout << "\n *** SUCCESSFUL TERMINATION ***\n";
