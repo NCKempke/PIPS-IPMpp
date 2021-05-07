@@ -15,7 +15,7 @@
 InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler)
 : Solver(factory, problem), mehrotra_strategy(factory, problem, mehrotra_heuristic, scaler) {}
 
-TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate, Residuals& residuals) {
+TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterate, Residuals& residuals) {
    // initialization of (x,y,z) and factorization routine.
    linear_system = factory.make_linear_system(problem);
 
@@ -25,7 +25,7 @@ TerminationCode InteriorPointMethod::solve(Problem& problem, Variables& iterate,
    factory.iterate_ended();
 
    // run Mehrotra's corrector predictor scheme
-   TerminationCode status_code = mehrotra_strategy.corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
+   TerminationStatus status_code = mehrotra_strategy.corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
    return status_code;
 }
 

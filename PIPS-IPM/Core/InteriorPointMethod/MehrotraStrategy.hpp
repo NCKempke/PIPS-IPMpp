@@ -7,7 +7,7 @@
 
 #include <memory>
 #include "Observer.h"
-#include "Status.h"
+#include "TerminationStatus.h"
 
 class Problem;
 
@@ -28,7 +28,7 @@ enum MehrotraHeuristic {PRIMAL, PRIMAL_DUAL};
 class MehrotraStrategy: public Observer {
 public:
    MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler);
-   TerminationCode corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+   TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
    void set_BiCGStab_tolerance(int iteration) const;
    [[nodiscard]] double dataNorm() const { return dnorm; }
@@ -111,9 +111,9 @@ protected:
    bool print_timestamp{true};
    double start_time{-1.};
 
-   TerminationCode corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+   TerminationStatus corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
-   TerminationCode corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+   TerminationStatus corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
@@ -140,8 +140,8 @@ protected:
          int i, double mu, int stop_code, int level);
    double mehrotra_step_length(Variables* iterate, Variables* step);
    void mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-   TerminationCode default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double
-   dnorm_orig, int iteration, double mu, TerminationCode level);
+   TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double
+   dnorm_orig, int iteration, double mu, TerminationStatus level);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,

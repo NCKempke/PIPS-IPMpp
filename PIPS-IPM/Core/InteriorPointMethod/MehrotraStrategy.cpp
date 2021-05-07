@@ -72,7 +72,7 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
    phi_min_history = new double[max_iterations];
 }
 
-TerminationCode MehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
+TerminationStatus MehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
       Variables& step, AbstractLinearSystem& linear_system) {
    if (this->mehrotra_heuristic == PRIMAL) {
       return this->corrector_predictor_primal(factory, problem, iterate, residuals, step, linear_system);
@@ -82,7 +82,7 @@ TerminationCode MehrotraStrategy::corrector_predictor(DistributedFactory& factor
    }
 }
 
-TerminationCode
+TerminationStatus
 MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
@@ -98,7 +98,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 
    double mu_affine;
    double alpha_target, alpha_enhanced;
-   TerminationCode status_code;
+   TerminationStatus status_code;
 
    g_iterNumber = 0.;
 
@@ -283,7 +283,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
    return status_code;
 }
 
-TerminationCode
+TerminationStatus
 MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
@@ -296,7 +296,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
    double mu = iterate.mu();
    double alpha_primal = 1., alpha_dual = 1., sigma = 1.;
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
-   TerminationCode status_code;
+   TerminationStatus status_code;
 
    g_iterNumber = 0.;
 
@@ -837,11 +837,11 @@ void MehrotraStrategy::do_monitor_Pd(const Problem* problem, const Variables* it
    }
 }
 
-TerminationCode
+TerminationStatus
 MehrotraStrategy::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double dnorm_orig,
-      int iteration, double mu, TerminationCode level) {
+      int iteration, double mu, TerminationStatus level) {
    const int myrank = PIPS_MPIgetRank();
-   TerminationCode stop_code = NOT_FINISHED;
+   TerminationStatus stop_code = NOT_FINISHED;
 
    const std::pair<double, double> gap_norm = compute_unscaled_gap_and_residual_norm(*residuals);
    const double gap = gap_norm.first;

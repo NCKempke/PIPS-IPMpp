@@ -4,7 +4,7 @@
 #include "Residuals.h"
 #include "Problem.h"
 #include "Variables.h"
-#include "Status.h"
+#include "TerminationStatus.h"
 
 Monitor::Monitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
 }
