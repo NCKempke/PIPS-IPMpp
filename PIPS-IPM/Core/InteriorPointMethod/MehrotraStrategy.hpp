@@ -6,6 +6,7 @@
 #define MEHROTRAHEURISTIC_H
 
 #include <memory>
+#include "Statistics.hpp"
 #include "Observer.h"
 #include "TerminationStatus.h"
 
@@ -19,13 +20,11 @@ class AbstractLinearSystem;
 
 class DistributedFactory;
 
-class Monitor;
-
 class Scaler;
 
-enum MehrotraHeuristic {PRIMAL, PRIMAL_DUAL};
+enum MehrotraHeuristic { PRIMAL, PRIMAL_DUAL };
 
-class MehrotraStrategy: public Observer {
+class MehrotraStrategy : public Observer {
 public:
    MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler);
    TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
@@ -33,7 +32,7 @@ public:
    void set_BiCGStab_tolerance(int iteration) const;
    [[nodiscard]] double dataNorm() const { return dnorm; }
    [[nodiscard]] double dataNormOrig() const { return dnorm_orig; }
-   void add_monitor(Monitor* m);
+   void add_monitor(Statistics* m);
    ~MehrotraStrategy();
 
 protected:
@@ -44,7 +43,7 @@ protected:
    Residuals* corrector_residuals;
    unsigned int n_linesearch_points;
    Variables* temp_step;
-   Monitor* itsMonitors{};
+   Statistics statistics;
 
    std::unique_ptr<Residuals> residuals_unscaled{};
    /** termination parameters */
@@ -111,9 +110,11 @@ protected:
    bool print_timestamp{true};
    double start_time{-1.};
 
-   TerminationStatus corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+   TerminationStatus
+   corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
-   TerminationStatus corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+   TerminationStatus
+   corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
@@ -121,9 +122,9 @@ protected:
    compute_gondzio_corrector(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
    void calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor,
          double& alpha_candidate, double& weight_candidate);
-   void calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
-         double alpha_dual, double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate,
-         double& weight_dual_candidate);
+   void
+   calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
+         double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
    void doProbing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
    void doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_pri, double& alpha_dual);
    bool restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
@@ -134,14 +135,16 @@ protected:
    void adjustLimitGondzioCorrectors();
    void notifyFromSubject() override;
    void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
-   void do_monitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma, int i, double mu, int
-   stop_code, int level);
-   void do_monitor_Pd(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual, double sigma,
-         int i, double mu, int stop_code, int level);
+   void
+   print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
+         double mu, int stop_code, int level);
+   void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
+         double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
    double mehrotra_step_length(Variables* iterate, Variables* step);
    void mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-   TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double
-   dnorm_orig, int iteration, double mu, TerminationStatus level);
+   TerminationStatus
+   default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double dnorm_orig, int iteration,
+         double mu, TerminationStatus level);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,

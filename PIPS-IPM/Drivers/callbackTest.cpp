@@ -1,5 +1,5 @@
 #include "DistributedInputTree.h"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 #include "sFactoryAug.h"
 #include "MehrotraStochSolver.h"
 
@@ -491,10 +491,10 @@ int main(int argc, char** argv) {
    if (rank == 0)
       cout << "Using a total of " << size << " MPI processes." << endl;
 
-   PIPSIpmInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(root);
+   PIPSIPMppInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(root);
 
    if (rank == 0)
-      cout << "PIPSIpmInterface created" << endl;
+      cout << "PIPSIPMppInterface created" << endl;
 
    if (rank == 0)
       cout << "solving..." << endl;

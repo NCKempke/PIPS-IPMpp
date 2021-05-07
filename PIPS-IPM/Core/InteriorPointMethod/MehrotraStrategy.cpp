@@ -3,10 +3,9 @@
 //
 
 #include <cassert>
-#include <Observer.h>
-#include <DistributedOptions.h>
-#include <Monitor.h>
 #include "MehrotraStrategy.hpp"
+#include "Observer.h"
+#include "DistributedOptions.h"
 #include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"
@@ -25,6 +24,7 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
       scaler(scaler), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)),
       n_linesearch_points(pips_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
       temp_step(factory.make_variables(problem)),
+      statistics(factory, scaler),
       bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.), bicg_iterations(0),
       dynamic_corrector_schedule(pips_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
       additional_correctors_small_comp_pairs(pips_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
@@ -123,7 +123,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
          break;
 
       if (gOoqpPrintLevel >= 10) {
-         this->do_monitor(&problem, &iterate, &residuals, dnorm, alpha, sigma, iteration, mu, status_code, 0);
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, alpha, sigma, iteration, mu, status_code, 0);
       }
 
 // *** Predictor step ***
@@ -143,7 +143,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
       sigma = pow(mu_affine / mu, tsig);
 
       if (gOoqpPrintLevel >= 10) {
-         this->do_monitor(&problem, &iterate, &residuals, dnorm, alpha, sigma, iteration, mu, status_code, 2);
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, alpha, sigma, iteration, mu, status_code, 2);
       }
 
       g_iterNumber += 1.;
@@ -278,7 +278,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
    }
    residuals.evaluate(problem, iterate);
    if (gOoqpPrintLevel >= 10) {
-      this->do_monitor(&problem, &iterate, &residuals, dnorm, alpha, sigma, iteration, mu, status_code, 1);
+      this->print_statistics(&problem, &iterate, &residuals, dnorm, alpha, sigma, iteration, mu, status_code, 1);
    }
    return status_code;
 }
@@ -322,7 +322,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
          break;
 
       if (gOoqpPrintLevel >= 10) {
-         this->do_monitor_Pd(&problem, &iterate, &residuals, dnorm, alpha_primal, alpha_dual, sigma, iteration, mu, status_code, 0);
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, alpha_primal, alpha_dual, sigma, iteration, mu, status_code, 0);
       }
 
       // *** Predictor step ***
@@ -342,7 +342,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
       sigma = pow(mu_affine / mu, tsig);
 
       if (gOoqpPrintLevel >= 10) {
-         this->do_monitor_Pd(&problem, &iterate, &residuals, dnorm, alpha_primal, alpha_dual, sigma, iteration, mu, status_code, 2);
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, alpha_primal, alpha_dual, sigma, iteration, mu, status_code, 2);
       }
 
       g_iterNumber += 1.;
@@ -512,7 +512,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
    }
    residuals.evaluate(problem, iterate);
    if (gOoqpPrintLevel >= 10) {
-      this->do_monitor_Pd(&problem, &iterate, &residuals, dnorm, alpha_primal, alpha_dual, sigma, iteration, mu, status_code, 1);
+      this->print_statistics(&problem, &iterate, &residuals, dnorm, alpha_primal, alpha_dual, sigma, iteration, mu, status_code, 1);
    }
    return status_code;
 }
@@ -810,31 +810,15 @@ void MehrotraStrategy::checkLinsysSolveNumericalTroublesAndReact(Residuals* resi
    }
 }
 
-void MehrotraStrategy::add_monitor(Monitor* m) {
-   // Push the monitor onto the list
-   m->nextMonitor = itsMonitors;
-   itsMonitors = m;
-}
-
 void
-MehrotraStrategy::do_monitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma,
+MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma,
       int i, double mu, int stop_code, int level) {
-   Monitor* m = itsMonitors;
-
-   while (m) {
-      m->doIt(problem, iterate, residuals, dnorm, alpha, sigma, i, mu, stop_code, level);
-      m = m->nextMonitor;
-   }
+   statistics.print(problem, iterate, residuals, dnorm, alpha, sigma, i, mu, stop_code, level);
 }
 
-void MehrotraStrategy::do_monitor_Pd(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
+void MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
       double alpha_dual, double sigma, int i, double mu, int stop_code, int level) {
-   Monitor* m = itsMonitors;
-
-   while (m) {
-      m->doItPd(problem, iterate, residuals, dnorm, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
-      m = m->nextMonitor;
-   }
+   statistics.print(problem, iterate, residuals, dnorm, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
 }
 
 TerminationStatus
@@ -1117,12 +1101,5 @@ MehrotraStrategy::~MehrotraStrategy() {
    delete[] residual_norm_history;
    delete[] phi_history;
    delete[] phi_min_history;
-
-   Monitor* m = itsMonitors;
-   while (m) {
-      Monitor* n = m->nextMonitor;
-      delete m;
-      m = n;
-   }
    delete temp_step;
 }

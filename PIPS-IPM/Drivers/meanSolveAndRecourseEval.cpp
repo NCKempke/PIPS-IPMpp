@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "rawInput.hpp"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 #include "OOQPRecourseInterface.hpp"
 #include "QpGenSparseMa57.h"
 #include "QpGenSparseMa27.h"
@@ -85,8 +85,8 @@ int main(int argc, char** argv) {
    std::vector<double> firstStageSol;
    std::vector<double> fstStageDual;
    {
-      //PIPSIpmInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
-      PIPSIpmInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
+      //PIPSIPMppInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
+      PIPSIPMppInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*sMean, MPI_COMM_SELF);
       delete sMean;
 
       pipsIpm.go();

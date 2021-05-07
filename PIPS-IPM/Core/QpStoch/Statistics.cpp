@@ -1,55 +1,55 @@
 #include <iostream>
 #include <cstdio>
-#include "Monitor.h"
+#include "Statistics.hpp"
 #include "Residuals.h"
 #include "Problem.h"
 #include "Variables.h"
 #include "TerminationStatus.h"
 
-Monitor::Monitor(Scaler* scaler) : scaler{scaler}, mpiComm{MPI_COMM_WORLD}, myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{myRank} {
+Statistics::Statistics(Scaler* scaler) : scaler{scaler}, mpi_comm{MPI_COMM_WORLD}, rank{PIPS_MPIgetRank(mpi_comm)}, global_rank{rank} {
 }
 
-Monitor::Monitor(const DistributedFactory& factory, Scaler* scaler) : scaler{scaler}, mpiComm{factory.tree->getCommWorkers()},
-      myRank{PIPS_MPIgetRank(mpiComm)}, myGlobRank{PIPS_MPIgetRank()} {
+Statistics::Statistics(const DistributedFactory& factory, const Scaler* scaler) : scaler{scaler}, mpi_comm{factory.tree->getCommWorkers()},
+      rank{PIPS_MPIgetRank(mpi_comm)}, global_rank{PIPS_MPIgetRank()} {
 }
 
-void Monitor::doIt(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
+void Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
       double mu, int status_code, int level) {
-   Monitor::doItPd(problem, variables, residuals, dnorm, alpha, -1.0, sigma, i, mu, status_code, level);
+   Statistics::print(problem, variables, residuals, dnorm, alpha, -1.0, sigma, i, mu, status_code, level);
 }
 
 void
-Monitor::doItPd(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
+Statistics::print(const Problem* problem, const Variables* variables, const Residuals* residuals, double dnorm, double alpha_primal, double alpha_dual,
       double sigma, int i, double mu, int status_code, int level) const {
    double objective = problem->objective_value(*variables);
 
-   const Residuals* resids_unscaled = residuals;
+   const Residuals* unscaled_residuals = residuals;
    if (scaler) {
       objective = scaler->get_unscaled_objective(objective);
-      resids_unscaled = scaler->get_unscaled_residuals(*residuals);
+      unscaled_residuals = scaler->get_unscaled_residuals(*residuals);
    }
 
-   const double rnorm = resids_unscaled->residualNorm();
-   const double gap = resids_unscaled->duality_gap();
+   const double residual_norm = unscaled_residuals->residualNorm();
+   const double duality_gap = unscaled_residuals->duality_gap();
 
    if (scaler)
-      delete resids_unscaled;
+      delete unscaled_residuals;
 
    // log only on the first proc
-   if (myRank > 0)
+   if (rank > 0)
       return;
 
    switch (level) {
       case 0:
       case 1: {
-         std::cout << " --- Iteration " << i << " --- (rank " << myGlobRank << ")" << "\n";
+         std::cout << " --- Iteration " << i << " --- (rank " << global_rank << ")" << "\n";
          if (i == 1)
-            printf(" mu = %16.12e  rel.res.norm=%16.12e  datanorm=%16.12e\n", mu, rnorm / dnorm, dnorm);
+            printf(" mu = %16.12e  rel.res.norm=%16.12e  datanorm=%16.12e\n", mu, residual_norm / dnorm, dnorm);
          else
-            printf(" mu = %16.12e  rel.res.norm=%16.12e\n", mu, rnorm / dnorm);
+            printf(" mu = %16.12e  rel.res.norm=%16.12e\n", mu, residual_norm / dnorm);
          //cout << " mu = " << mu << " relative residual norm = "
          //cout << resids->residualNorm() / dnorm << "\n";
-         std::cout << " Duality Gap:  " << gap << "\n";
+         std::cout << " Duality Gap:  " << duality_gap << "\n";
          if (i > 1) {
             if (alpha_dual != -1.0) {
                std::cout << " alpha primal = " << alpha_primal << "\n";

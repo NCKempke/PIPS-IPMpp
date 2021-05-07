@@ -28,7 +28,3 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    TerminationStatus status_code = mehrotra_strategy.corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
    return status_code;
 }
-
-void InteriorPointMethod::add_monitor(Monitor* monitor) {
-   this->mehrotra_strategy.add_monitor(monitor);
-}

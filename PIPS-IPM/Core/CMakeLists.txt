@@ -5,8 +5,8 @@ add_library(pips-ipmpp STATIC
         #Filter.cpp FilterStrategy.cpp FilterLineSearch.cpp
         
         InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp
-        
-        QpStoch/Monitor.C Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
+
+        QpStoch/Statistics.cpp Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
         Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/DistributedOptions.C
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
         Readers/MpsReader.C Readers/hash.C #Readers
@@ -43,7 +43,8 @@ add_library(pips-ipmpp STATIC
         Preprocessing/StochRowStorage.C Preprocessing/StochColumnStorage.C Preprocessing/QpPostsolver.C Preprocessing/StochPostsolver.C Preprocessing/StochPresolver.C Preprocessing/QpPresolver.C Preprocessing/StochPresolverBase.C
         Preprocessing/StochPresolverModelCleanup.C Preprocessing/PresolveData.C Preprocessing/StochPresolverBoundStrengthening.C Preprocessing/StochPresolverColumnFixation.C Preprocessing/StochPresolverParallelRows.C
         Preprocessing/StochPresolverSingletonRows.C Preprocessing/StochPresolverSingletonColumns.C Preprocessing/QpPresolver.C Preprocessing/QpPostsolver.C
-)
+
+        )
 
 target_include_directories(pips-ipmpp PRIVATE ${MUMPS_INCLUDE_DIR})
 

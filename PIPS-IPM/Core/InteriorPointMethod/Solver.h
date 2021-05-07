@@ -13,7 +13,7 @@ class AbstractLinearSystem;
 
 class DistributedFactory;
 
-class Monitor;
+class Statistics;
 
 /**
  * Interior-point solver
@@ -26,10 +26,8 @@ public:
 
    /** implements the interior-point method for solving the subproblem */
    virtual TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) = 0;
-
    /** solve the IPM system */
    virtual void solve_linear_system(Variables& iterate, Problem& problem, Residuals& residuals, Variables& step);
-   virtual void add_monitor(Monitor* monitor) = 0;
 
 protected:
    DistributedFactory& factory;

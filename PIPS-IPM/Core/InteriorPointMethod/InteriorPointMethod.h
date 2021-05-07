@@ -23,8 +23,7 @@ class InteriorPointMethod : public Solver {
 public:
    InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler = nullptr);
    TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) override;
-   virtual void add_monitor(Monitor* monitor) override;
-   ~InteriorPointMethod() = default;
+   virtual ~InteriorPointMethod() = default;
 
 protected:
    MehrotraStrategy mehrotra_strategy;

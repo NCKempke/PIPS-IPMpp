@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include "rawInput.hpp"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 
 #include "sFactoryAugSchurLeaf.h"
 #include "MehrotraStochSolver.h"
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 
    rawInput* s = new rawInput(datarootname, nscen, commBatch);
 
-   PIPSIpmInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*s, commBatch);
+   PIPSIPMppInterface<sFactoryAug, MehrotraStochSolver> pipsIpm(*s, commBatch);
    delete s;
    pipsIpm.go();
 

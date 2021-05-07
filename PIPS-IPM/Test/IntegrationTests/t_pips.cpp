@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "InteriorPointMethod.h"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 #include "gmspips_reader.hpp"
 
 #include "utilities.hpp"
@@ -69,7 +69,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 
    double result = std::numeric_limits<double>::infinity();
 
-   PIPSIpmInterface<InteriorPointMethod> pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
+   PIPSIPMppInterface<InteriorPointMethod> pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
    try {
       pipsIpm.run();
       result = pipsIpm.getObjective();

@@ -1,6 +1,6 @@
 #include <InteriorPointMethod.h>
 #include "DistributedInputTree.h"
-#include "PIPSIpmInterface.h"
+#include "PIPSIPMppInterface.hpp"
 #include "MehrotraStrategy.hpp"
 #include "mpi.h"
 
@@ -490,10 +490,10 @@ int main(int argc, char** argv) {
 
    /* use BiCGStab for outer solve */
    pips_options::set_int_parameter("INNER_SC_SOLVE", 0);
-   PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   PIPSIPMppInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 
    if (rank == 0)
-      std::cout << "PIPSIpmInterface created" << std::endl;
+      std::cout << "PIPSIPMppInterface created" << std::endl;
 
    if (rank == 0)
       std::cout << "solving..." << std::endl;
