@@ -6,8 +6,7 @@
 #include <Observer.h>
 #include <DistributedOptions.h>
 #include <Monitor.h>
-#include "Status.h"
-#include "MehrotraHeuristic.hpp"
+#include "MehrotraStrategy.hpp"
 #include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"
@@ -20,7 +19,9 @@ extern double g_iterNumber;
 int gLackOfAccuracy = 0;
 const unsigned int max_linesearch_points = 50;
 
-MehrotraHeuristic::MehrotraHeuristic(DistributedFactory& factory, Problem& problem, const Scaler* scaler = nullptr) :
+MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler =
+      nullptr) :
+      mehrotra_heuristic(mehrotra_heuristic),
       scaler(scaler), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)),
       n_linesearch_points(pips_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
       temp_step(factory.make_variables(problem)),
@@ -71,8 +72,18 @@ MehrotraHeuristic::MehrotraHeuristic(DistributedFactory& factory, Problem& probl
    phi_min_history = new double[max_iterations];
 }
 
+TerminationCode MehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
+      Variables& step, AbstractLinearSystem& linear_system) {
+   if (this->mehrotra_heuristic == PRIMAL) {
+      return this->corrector_predictor_primal(factory, problem, iterate, residuals, step, linear_system);
+   }
+   else {
+      return this->corrector_predictor_primal_dual(factory, problem, iterate, residuals, step, linear_system);
+   }
+}
+
 TerminationCode
-MehrotraHeuristic::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
    // register as observer for the BiCGStab solves
@@ -273,7 +284,7 @@ MehrotraHeuristic::corrector_predictor(DistributedFactory& factory, Problem& pro
 }
 
 TerminationCode
-MehrotraHeuristic::corrector_predictor_pd(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
    // register as observer for the BiCGStab solves
@@ -506,7 +517,7 @@ MehrotraHeuristic::corrector_predictor_pd(DistributedFactory& factory, Problem& 
    return status_code;
 }
 
-void MehrotraHeuristic::compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system,
+void MehrotraStrategy::compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system,
       Variables& step) {
    residuals.set_complementarity_residual(iterate, 0.);
    linear_system.factorize(&problem, &iterate);
@@ -515,7 +526,7 @@ void MehrotraHeuristic::compute_predictor_step(Problem& problem, Variables& iter
 }
 
 void
-MehrotraHeuristic::compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma,
+MehrotraStrategy::compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma,
       double mu) {
    corrector_residuals->clear_linear_residuals();
    // form right hand side of linear system:
@@ -525,7 +536,7 @@ MehrotraHeuristic::compute_corrector_step(Problem& problem, Variables& iterate, 
    corrector_step->negate();
 }
 
-void MehrotraHeuristic::compute_gondzio_corrector(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax,
+void MehrotraStrategy::compute_gondzio_corrector(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax,
       bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
    corrector_residuals->set_complementarity_residual(*corrector_step, 0.);
@@ -542,7 +553,7 @@ void MehrotraHeuristic::compute_gondzio_corrector(Problem& problem, Variables& i
 }
 
 void
-MehrotraHeuristic::calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor,
+MehrotraStrategy::calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor,
       double& alpha_candidate, double& weight_candidate) {
    assert(corrector_step);
    assert(predictor_step);
@@ -581,7 +592,7 @@ MehrotraHeuristic::calculate_alpha_weight_candidate(Variables* iterate, Variable
    alpha_candidate = alpha_best;
 }
 
-void MehrotraHeuristic::calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+void MehrotraStrategy::calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
       double alpha_dual, double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate,
       double& weight_dual_candidate) {
    assert(alpha_primal > 0. && alpha_primal <= 1.);
@@ -628,7 +639,7 @@ void MehrotraHeuristic::calculateAlphaPDWeightCandidate(Variables* iterate, Vari
    alpha_dual_candidate = alpha_dual_best;
 }
 
-void MehrotraHeuristic::doProbing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha) {
+void MehrotraStrategy::doProbing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha) {
    const double mu_last = iterate->mu();
    const double resids_norm_last = residuals->residualNorm();
 
@@ -643,7 +654,7 @@ void MehrotraHeuristic::doProbing(Problem* problem, Variables* iterate, Residual
    alpha = factor * alpha;
 }
 
-void MehrotraHeuristic::doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual) {
+void MehrotraStrategy::doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual) {
    const double mu_last = iterate->mu();
    const double resids_norm_last = residuals->residualNorm();
 
@@ -659,7 +670,7 @@ void MehrotraHeuristic::doProbing_pd(Problem* problem, Variables* iterate, Resid
    alpha_dual = factor * alpha_dual;
 }
 
-bool MehrotraHeuristic::restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
+bool MehrotraStrategy::restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
    const int my_rank = PIPS_MPIgetRank();
 
    if (!pure_centering_step && alpha_max < mutol * 1e-2) {
@@ -679,19 +690,19 @@ bool MehrotraHeuristic::restartIterateBecauseOfPoorStep(bool& pure_centering_ste
    return false;
 }
 
-void MehrotraHeuristic::computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
+void MehrotraStrategy::computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
    probing_step->copy(iterate);
    probing_step->saxpy(step, alpha);
 }
 
-void MehrotraHeuristic::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double
+void MehrotraStrategy::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double
 alpha_dual) const {
    probing_step->copy(iterate);
    probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
 }
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
-double MehrotraHeuristic::compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
+double MehrotraStrategy::compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
    assert(resids_norm_last > 0.);
    assert(resids_norm_probing > 0.);
 
@@ -731,7 +742,7 @@ double MehrotraHeuristic::compute_step_factor_probing(double resids_norm_last, d
    return factor;
 }
 
-bool MehrotraHeuristic::decreasePreconditionerImpact(AbstractLinearSystem* sys) const {
+bool MehrotraStrategy::decreasePreconditionerImpact(AbstractLinearSystem* sys) const {
    bool success = false;
    dynamic_cast<DistributedRootLinearSystem*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {
@@ -741,7 +752,7 @@ bool MehrotraHeuristic::decreasePreconditionerImpact(AbstractLinearSystem* sys) 
    return success;
 }
 
-void MehrotraHeuristic::adjustLimitGondzioCorrectors() {
+void MehrotraStrategy::adjustLimitGondzioCorrectors() {
    assert(bicg_iterations >= 0);
    if (dynamic_corrector_schedule) {
       if (bicgstab_skipped)
@@ -757,7 +768,7 @@ void MehrotraHeuristic::adjustLimitGondzioCorrectors() {
    }
 }
 
-void MehrotraHeuristic::set_BiCGStab_tolerance(int iteration) const {
+void MehrotraStrategy::set_BiCGStab_tolerance(int iteration) const {
    if (!dynamic_bicg_tol)
       return;
 
@@ -773,7 +784,7 @@ void MehrotraHeuristic::set_BiCGStab_tolerance(int iteration) const {
       pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
 }
 
-void MehrotraHeuristic::notifyFromSubject() {
+void MehrotraStrategy::notifyFromSubject() {
    const Subject& subj = *getSubject();
 
    bicgstab_skipped = subj.getBoolValue("BICG_SKIPPED");
@@ -787,7 +798,7 @@ void MehrotraHeuristic::notifyFromSubject() {
       PIPSdebugMessage("BiGCStab had troubles converging\n");
 }
 
-void MehrotraHeuristic::checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
+void MehrotraStrategy::checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
    if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->residualNorm()) {
       PIPSdebugMessage("Step computation in BiCGStab failed");
       numerical_troubles = true;
@@ -799,14 +810,14 @@ void MehrotraHeuristic::checkLinsysSolveNumericalTroublesAndReact(Residuals* res
    }
 }
 
-void MehrotraHeuristic::add_monitor(Monitor* m) {
+void MehrotraStrategy::add_monitor(Monitor* m) {
    // Push the monitor onto the list
    m->nextMonitor = itsMonitors;
    itsMonitors = m;
 }
 
 void
-MehrotraHeuristic::do_monitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma,
+MehrotraStrategy::do_monitor(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma,
       int i, double mu, int stop_code, int level) {
    Monitor* m = itsMonitors;
 
@@ -816,7 +827,7 @@ MehrotraHeuristic::do_monitor(const Problem* problem, const Variables* iterate, 
    }
 }
 
-void MehrotraHeuristic::do_monitor_Pd(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
+void MehrotraStrategy::do_monitor_Pd(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
       double alpha_dual, double sigma, int i, double mu, int stop_code, int level) {
    Monitor* m = itsMonitors;
 
@@ -827,7 +838,7 @@ void MehrotraHeuristic::do_monitor_Pd(const Problem* problem, const Variables* i
 }
 
 TerminationCode
-MehrotraHeuristic::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double dnorm_orig,
+MehrotraStrategy::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double dnorm_orig,
       int iteration, double mu, TerminationCode level) {
    const int myrank = PIPS_MPIgetRank();
    TerminationCode stop_code = NOT_FINISHED;
@@ -902,7 +913,7 @@ MehrotraHeuristic::default_status(const Problem* data, const Variables* iterate 
    return stop_code;
 }
 
-double MehrotraHeuristic::mehrotra_step_length(Variables* iterate, Variables* step) {
+double MehrotraStrategy::mehrotra_step_length(Variables* iterate, Variables* step) {
    double primalValue = -std::numeric_limits<double>::max();
    double primalStep = -std::numeric_limits<double>::max();
    double dualValue = -std::numeric_limits<double>::max();
@@ -957,7 +968,7 @@ double MehrotraHeuristic::mehrotra_step_length(Variables* iterate, Variables* st
    return step_length;
 }
 
-void MehrotraHeuristic::mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
+void MehrotraStrategy::mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
    double primalValue_p = -std::numeric_limits<double>::max();
    double primalStep_p = -std::numeric_limits<double>::max();
    double dualValue_p = -std::numeric_limits<double>::max();
@@ -1027,7 +1038,7 @@ void MehrotraHeuristic::mehrotra_step_length_PD(Variables* iterate, Variables* s
    assert(alpha_primal >= 0 && alpha_dual >= 0);
 }
 
-void MehrotraHeuristic::set_problem_norm(const Problem& problem) {
+void MehrotraStrategy::set_problem_norm(const Problem& problem) {
    dnorm = problem.datanorm();
 
    if (scaler)
@@ -1036,7 +1047,7 @@ void MehrotraHeuristic::set_problem_norm(const Problem& problem) {
       dnorm_orig = dnorm;
 }
 
-std::pair<double, double> MehrotraHeuristic::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
+std::pair<double, double> MehrotraStrategy::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
    if (!scaler)
       return std::make_pair(std::fabs(residuals.duality_gap()), residuals.residualNorm());
    else {
@@ -1051,7 +1062,7 @@ std::pair<double, double> MehrotraHeuristic::compute_unscaled_gap_and_residual_n
    }
 }
 
-void MehrotraHeuristic::default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals,
+void MehrotraStrategy::default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals,
       double alpha, double sigma, int i, double mu, int status_code, int level) const {
    switch (level) {
       case 0 :
@@ -1095,13 +1106,13 @@ void MehrotraHeuristic::default_monitor(const Problem* problem /* problem */, co
    }
 }
 
-void MehrotraHeuristic::registerBiCGStabOvserver(AbstractLinearSystem* linear_system) {
+void MehrotraStrategy::registerBiCGStabOvserver(AbstractLinearSystem* linear_system) {
    /* every linsys handed to the GondzioStoch should be observable */
    assert(dynamic_cast<Subject*>(linear_system));
    setSubject(dynamic_cast<Subject*>(linear_system));
 }
 
-MehrotraHeuristic::~MehrotraHeuristic() {
+MehrotraStrategy::~MehrotraStrategy() {
    delete[] mu_history;
    delete[] residual_norm_history;
    delete[] phi_history;

@@ -1,7 +1,7 @@
-#include <GondzioStochSolver.h>
+#include <InteriorPointMethod.h>
 #include "DistributedInputTree.h"
 #include "PIPSIpmInterface.h"
-
+#include "MehrotraStrategy.hpp"
 #include "mpi.h"
 
 #define LINKING_CONS 1
@@ -490,8 +490,7 @@ int main(int argc, char** argv) {
 
    /* use BiCGStab for outer solve */
    pips_options::set_int_parameter("INNER_SC_SOLVE", 0);
-   PIPSIpmInterface<GondzioStochSolver> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
-   //PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   PIPSIpmInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 
    if (rank == 0)
       std::cout << "PIPSIpmInterface created" << std::endl;

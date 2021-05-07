@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "Observer.h"
+#include "Status.h"
 
 class Problem;
 
@@ -22,20 +23,21 @@ class Monitor;
 
 class Scaler;
 
-class MehrotraHeuristic: public Observer {
+enum MehrotraHeuristic {PRIMAL, PRIMAL_DUAL};
+
+class MehrotraStrategy: public Observer {
 public:
-   MehrotraHeuristic(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
+   MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler);
    TerminationCode corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system);
-   TerminationCode corrector_predictor_pd(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
    void set_BiCGStab_tolerance(int iteration) const;
    [[nodiscard]] double dataNorm() const { return dnorm; }
    [[nodiscard]] double dataNormOrig() const { return dnorm_orig; }
    void add_monitor(Monitor* m);
-   ~MehrotraHeuristic();
+   ~MehrotraStrategy();
 
 protected:
+   MehrotraHeuristic mehrotra_heuristic;
    const Scaler* scaler{};
    Variables* corrector_step;
    /** storage for residual vectors */
@@ -109,6 +111,10 @@ protected:
    bool print_timestamp{true};
    double start_time{-1.};
 
+   TerminationCode corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system);
+   TerminationCode corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
    void

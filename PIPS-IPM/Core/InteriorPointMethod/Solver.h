@@ -7,6 +7,8 @@ class Problem;
 
 class Variables;
 
+class Residuals;
+
 class AbstractLinearSystem;
 
 class DistributedFactory;
