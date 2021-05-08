@@ -120,32 +120,32 @@ protected:
    void calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor,
          double& alpha_candidate, double& weight_candidate);
    void
-   calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
+   calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
          double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
-   void doProbing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
-   void doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_pri, double& alpha_dual);
-   bool restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
-   void computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const;
-   void computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
+   void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
+   void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual);
+   bool restart_iterate_because_of_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
+   void compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const;
+   void compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
    double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const;
-   bool decreasePreconditionerImpact(AbstractLinearSystem* sys) const;
-   void adjustLimitGondzioCorrectors();
-   void notifyFromSubject() override;
-   void checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
+   bool decrease_preconditioner_impact(AbstractLinearSystem* sys) const;
+   void adjust_limit_gondzio_correctors();
+   void notify_from_subject() override;
+   void check_linsys_solve_numerical_troubles_and_react(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void
    print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
          double mu, int stop_code, int level);
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
    double mehrotra_step_length(Variables* iterate, Variables* step);
-   void mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
+   void mehrotra_step_length(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
    TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu,
          TerminationStatus level);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
          double sigma, int i, double mu, int status_code, int level) const;
-   void registerBiCGStabOvserver(AbstractLinearSystem* linear_system);
+   void register_observer(AbstractLinearSystem* linear_system);
 };
 
 

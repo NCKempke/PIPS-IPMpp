@@ -28,7 +28,7 @@ Observer::~Observer() {
    removeSubject();
 }
 
-void Observer::setSubject(Subject* subject) {
+void Observer::set_subject(Subject* subject) {
    if (subj != nullptr)
       subj->unregisterObserver(this);
    subj = subject;
@@ -44,5 +44,5 @@ void Observer::removeSubject() {
 
 void Subject::notifyObservers() {
    for (std::list<Observer*>::iterator it = observers.begin(); it != observers.end(); ++it)
-      (*it)->notifyFromSubject();
+      (*it)->notify_from_subject();
 }

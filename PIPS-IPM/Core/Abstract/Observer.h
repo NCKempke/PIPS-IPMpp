@@ -31,11 +31,11 @@ public:
       return subj != nullptr;
    };
 
-   void setSubject(Subject* subject);
+   void set_subject(Subject* subject);
    const Subject* getSubject() const;
    void removeSubject();
 
-   virtual void notifyFromSubject() = 0;
+   virtual void notify_from_subject() = 0;
 };
 
 class Subject {

@@ -91,7 +91,7 @@ public:
    Residuals(const Residuals& residuals);
 
    /** The norm of the residuals, ommiting the complementarity conditions */
-   double residualNorm() const { return mResidualNorm; }
+   double residual_norm() const { return mResidualNorm; }
 
    /** A quantity that measures progress toward feasibility. IN terms of the abstract problem formulation, this quantity is defined as
     *  @code

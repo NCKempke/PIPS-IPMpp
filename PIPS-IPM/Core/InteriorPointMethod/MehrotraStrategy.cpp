@@ -82,7 +82,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
       AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
    // register as observer for the BiCGStab solves
-   registerBiCGStabOvserver(&linear_system);
+   register_observer(&linear_system);
    set_BiCGStab_tolerance(-1);
 
    int iteration = 0;
@@ -124,7 +124,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 // *** Predictor step ***
       if (!pure_centering_step) {
          compute_predictor_step(problem, iterate, residuals, linear_system, step);
-         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
+         check_linsys_solve_numerical_troubles_and_react(&residuals, numerical_troubles, small_corr);
       }
       else
          step.setToZero();
@@ -144,7 +144,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
       g_iterNumber += 1.;
 
       compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
-      checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
+      check_linsys_solve_numerical_troubles_and_react(&residuals, numerical_troubles, small_corr);
 
 // calculate weighted predictor-corrector step
       double weight_candidate = -1.;
@@ -172,7 +172,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 // enter the Gondzio correction loop:
       while (number_gondzio_corrections < maximum_correctors && NumberSmallCorrectors < max_additional_correctors && PIPSisLT(alpha, 1.)) {
          if (dynamic_corrector_schedule)
-            adjustLimitGondzioCorrectors();
+            adjust_limit_gondzio_correctors();
          corrector_step->copy(&iterate);
 
 // calculate target steplength
@@ -187,7 +187,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 /* compute corrector step */
          compute_gondzio_corrector(problem, iterate, linear_system, rmin, rmax, small_corr);
          const bool was_small_corr = small_corr;
-         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
+         check_linsys_solve_numerical_troubles_and_react(&residuals, numerical_troubles, small_corr);
 
          if (numerical_troubles) {
             if (!was_small_corr && small_corr)
@@ -256,9 +256,9 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 // if we encountered numerical troubles while computing the step enter a probing round
       if (numerical_troubles) {
          if (precond_decreased)
-            precond_decreased = decreasePreconditionerImpact(&linear_system);
-         doProbing(&problem, &iterate, &residuals, &step, alpha);
-         if (restartIterateBecauseOfPoorStep(pure_centering_step, precond_decreased, alpha))
+            precond_decreased = decrease_preconditioner_impact(&linear_system);
+         do_probing(&problem, &iterate, &residuals, &step, alpha);
+         if (restart_iterate_because_of_poor_step(pure_centering_step, precond_decreased, alpha))
             continue;
       }
 
@@ -283,7 +283,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
       Variables& step, AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
    // register as observer for the BiCGStab solves
-   registerBiCGStabOvserver(&linear_system);
+   register_observer(&linear_system);
    set_BiCGStab_tolerance(-1);
 
    int iteration = 0;
@@ -323,7 +323,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
       // *** Predictor step ***
       if (!pure_centering_step) {
          compute_predictor_step(problem, iterate, residuals, linear_system, step);
-         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
+         check_linsys_solve_numerical_troubles_and_react(&residuals, numerical_troubles, small_corr);
       }
       else
          step.setToZero();
@@ -344,13 +344,13 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
 
       // *** Corrector step ***
       compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
-      checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
+      check_linsys_solve_numerical_troubles_and_react(&residuals, numerical_troubles, small_corr);
 
       // calculate weighted predictor-corrector step
       double weight_primal_candidate, weight_dual_candidate = -1.;
 
-      calculateAlphaPDWeightCandidate(&iterate, &step, corrector_step, alpha_primal, alpha_dual, alpha_primal, alpha_dual, weight_primal_candidate,
-            weight_dual_candidate);
+      calculate_alpha_pd_weight_candidate(&iterate, &step, corrector_step, alpha_primal, alpha_dual, alpha_primal, alpha_dual,
+            weight_primal_candidate, weight_dual_candidate);
 
       assert(weight_primal_candidate >= 0. && weight_primal_candidate <= 1.);
       assert(weight_dual_candidate >= 0. && weight_dual_candidate <= 1.);
@@ -371,7 +371,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
       while (number_gondzio_corrections < maximum_correctors && NumberSmallCorrectors < max_additional_correctors &&
              (PIPSisLT(alpha_primal, 1.) || PIPSisLT(alpha_dual, 1.))) {
          if (dynamic_corrector_schedule)
-            adjustLimitGondzioCorrectors();
+            adjust_limit_gondzio_correctors();
          corrector_step->copy(&iterate);
 
          double alpha_primal_enhanced, alpha_dual_enhanced;
@@ -387,7 +387,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
          /* compute corrector step */
          compute_gondzio_corrector(problem, iterate, linear_system, rmin, rmax, small_corr);
          const bool was_small_corr = small_corr;
-         checkLinsysSolveNumericalTroublesAndReact(&residuals, numerical_troubles, small_corr);
+         check_linsys_solve_numerical_troubles_and_react(&residuals, numerical_troubles, small_corr);
 
          if (numerical_troubles) {
             if (!was_small_corr && small_corr)
@@ -398,7 +398,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
          }
 
          // calculate weighted predictor-corrector step
-         calculateAlphaPDWeightCandidate(&iterate, &step, corrector_step, alpha_p_target, alpha_dual_target, alpha_primal_enhanced,
+         calculate_alpha_pd_weight_candidate(&iterate, &step, corrector_step, alpha_p_target, alpha_dual_target, alpha_primal_enhanced,
                alpha_dual_enhanced, weight_primal_candidate, weight_dual_candidate);
 
          // if the enhanced step length is actually 1, make it official
@@ -480,19 +480,18 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
          }
       }
 
-      // We've finally decided on a step direction, now calculate the
-      // length using Mehrotra's heuristic.x
-      mehrotra_step_length_PD(&iterate, &step, alpha_primal, alpha_dual);
+      // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic.x
+      mehrotra_step_length(&iterate, &step, alpha_primal, alpha_dual);
 
       // if we encountered numerical troubles while computing the step check enter a probing round
       if (numerical_troubles) {
          if (precond_decreased)
-            precond_decreased = decreasePreconditionerImpact(&linear_system);
+            precond_decreased = decrease_preconditioner_impact(&linear_system);
 
-         doProbing_pd(&problem, &iterate, &residuals, &step, alpha_primal, alpha_dual);
+         do_probing(&problem, &iterate, &residuals, &step, alpha_primal, alpha_dual);
          const double alpha_max = std::max(alpha_primal, alpha_dual);
 
-         if (restartIterateBecauseOfPoorStep(pure_centering_step, precond_decreased, alpha_max))
+         if (restart_iterate_because_of_poor_step(pure_centering_step, precond_decreased, alpha_max))
             continue;
       }
 
@@ -587,7 +586,7 @@ MehrotraStrategy::calculate_alpha_weight_candidate(Variables* iterate, Variables
    alpha_candidate = alpha_best;
 }
 
-void MehrotraStrategy::calculateAlphaPDWeightCandidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+void MehrotraStrategy::calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
       double alpha_dual, double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate,
       double& weight_dual_candidate) {
    assert(alpha_primal > 0. && alpha_primal <= 1.);
@@ -634,31 +633,31 @@ void MehrotraStrategy::calculateAlphaPDWeightCandidate(Variables* iterate, Varia
    alpha_dual_candidate = alpha_dual_best;
 }
 
-void MehrotraStrategy::doProbing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha) {
+void MehrotraStrategy::do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha) {
    const double mu_last = iterate->mu();
-   const double resids_norm_last = residuals->residualNorm();
+   const double resids_norm_last = residuals->residual_norm();
 
-   computeProbingStep(temp_step, iterate, step, alpha);
+   compute_probing_step(temp_step, iterate, step, alpha);
 
    residuals->evaluate(*problem, *temp_step, false);
    const double mu_probing = temp_step->mu();
-   const double resids_norm_probing = residuals->residualNorm();
+   const double resids_norm_probing = residuals->residual_norm();
 
    const double factor = compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
 
    alpha = factor * alpha;
 }
 
-void MehrotraStrategy::doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal,
+void MehrotraStrategy::do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal,
       double& alpha_dual) {
    const double mu_last = iterate->mu();
-   const double resids_norm_last = residuals->residualNorm();
+   const double resids_norm_last = residuals->residual_norm();
 
-   computeProbingStep_pd(temp_step, iterate, step, alpha_primal, alpha_dual);
+   compute_probing_step(temp_step, iterate, step, alpha_primal, alpha_dual);
 
    residuals->evaluate(*problem, *temp_step, false);
    const double mu_probing = temp_step->mu();
-   const double resids_norm_probing = residuals->residualNorm();
+   const double resids_norm_probing = residuals->residual_norm();
 
    const double factor = compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
 
@@ -666,7 +665,7 @@ void MehrotraStrategy::doProbing_pd(Problem* problem, Variables* iterate, Residu
    alpha_dual = factor * alpha_dual;
 }
 
-bool MehrotraStrategy::restartIterateBecauseOfPoorStep(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
+bool MehrotraStrategy::restart_iterate_because_of_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
    const int my_rank = PIPS_MPIgetRank();
 
    if (!pure_centering_step && alpha_max < mutol * 1e-2) {
@@ -686,12 +685,12 @@ bool MehrotraStrategy::restartIterateBecauseOfPoorStep(bool& pure_centering_step
    return false;
 }
 
-void MehrotraStrategy::computeProbingStep(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
+void MehrotraStrategy::compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
    probing_step->copy(iterate);
    probing_step->saxpy(step, alpha);
 }
 
-void MehrotraStrategy::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
+void MehrotraStrategy::compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
       double alpha_dual) const {
    probing_step->copy(iterate);
    probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
@@ -738,7 +737,7 @@ double MehrotraStrategy::compute_step_factor_probing(double resids_norm_last, do
    return factor;
 }
 
-bool MehrotraStrategy::decreasePreconditionerImpact(AbstractLinearSystem* sys) const {
+bool MehrotraStrategy::decrease_preconditioner_impact(AbstractLinearSystem* sys) const {
    bool success = false;
    dynamic_cast<DistributedRootLinearSystem*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {
@@ -748,7 +747,7 @@ bool MehrotraStrategy::decreasePreconditionerImpact(AbstractLinearSystem* sys) c
    return success;
 }
 
-void MehrotraStrategy::adjustLimitGondzioCorrectors() {
+void MehrotraStrategy::adjust_limit_gondzio_correctors() {
    assert(bicg_iterations >= 0);
    if (dynamic_corrector_schedule) {
       if (bicgstab_skipped)
@@ -780,7 +779,7 @@ void MehrotraStrategy::set_BiCGStab_tolerance(int iteration) const {
       pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
 }
 
-void MehrotraStrategy::notifyFromSubject() {
+void MehrotraStrategy::notify_from_subject() {
    const Subject& subj = *getSubject();
 
    bicgstab_skipped = subj.getBoolValue("BICG_SKIPPED");
@@ -794,8 +793,8 @@ void MehrotraStrategy::notifyFromSubject() {
       PIPSdebugMessage("BiGCStab had troubles converging\n");
 }
 
-void MehrotraStrategy::checkLinsysSolveNumericalTroublesAndReact(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
-   if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->residualNorm()) {
+void MehrotraStrategy::check_linsys_solve_numerical_troubles_and_react(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const {
+   if (!bicgstab_converged && bigcstab_norm_res_rel * 1e2 * dnorm > residuals->residual_norm()) {
       PIPSdebugMessage("Step computation in BiCGStab failed");
       numerical_troubles = true;
       if (additional_correctors_small_comp_pairs && !small_corr) {
@@ -948,7 +947,7 @@ double MehrotraStrategy::mehrotra_step_length(Variables* iterate, Variables* ste
    return step_length;
 }
 
-void MehrotraStrategy::mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
+void MehrotraStrategy::mehrotra_step_length(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual) {
    double primalValue_p = -std::numeric_limits<double>::max();
    double primalStep_p = -std::numeric_limits<double>::max();
    double dualValue_p = -std::numeric_limits<double>::max();
@@ -1029,7 +1028,7 @@ void MehrotraStrategy::set_problem_norm(const Problem& problem) {
 
 std::pair<double, double> MehrotraStrategy::compute_unscaled_gap_and_residual_norm(const Residuals& residuals) {
    if (!scaler)
-      return std::make_pair(std::fabs(residuals.duality_gap()), residuals.residualNorm());
+      return std::make_pair(std::fabs(residuals.duality_gap()), residuals.residual_norm());
    else {
       if (!residuals_unscaled)
          residuals_unscaled.reset(scaler->get_unscaled_residuals(residuals));
@@ -1038,7 +1037,7 @@ std::pair<double, double> MehrotraStrategy::compute_unscaled_gap_and_residual_no
          scaler->unscaleResiduals(*residuals_unscaled);
       }
 
-      return std::make_pair(std::fabs(residuals_unscaled->duality_gap()), residuals_unscaled->residualNorm());
+      return std::make_pair(std::fabs(residuals_unscaled->duality_gap()), residuals_unscaled->residual_norm());
    }
 }
 
@@ -1053,7 +1052,7 @@ void MehrotraStrategy::default_monitor(const Problem* problem /* problem */, con
             residuals_unscaled = scaler->get_unscaled_residuals(*residuals);
 
          const double gap = residuals_unscaled->duality_gap();
-         const double rnorm = residuals_unscaled->residualNorm();
+         const double rnorm = residuals_unscaled->residual_norm();
 
          if (scaler)
             delete residuals_unscaled;
@@ -1086,10 +1085,10 @@ void MehrotraStrategy::default_monitor(const Problem* problem /* problem */, con
    }
 }
 
-void MehrotraStrategy::registerBiCGStabOvserver(AbstractLinearSystem* linear_system) {
+void MehrotraStrategy::register_observer(AbstractLinearSystem* linear_system) {
    /* every linsys handed to the GondzioStoch should be observable */
    assert(dynamic_cast<Subject*>(linear_system));
-   setSubject(dynamic_cast<Subject*>(linear_system));
+   set_subject(dynamic_cast<Subject*>(linear_system));
 }
 
 MehrotraStrategy::~MehrotraStrategy() {
