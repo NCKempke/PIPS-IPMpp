@@ -1044,7 +1044,7 @@ DistributedQP::getAscending2LinkFirstGlobalsLastPermutation(std::vector<int>& li
    }
    n_globals = n_links - front_pointer;
 
-   assert(permutationIsValid(permvec));
+   assert(permutation_is_valid(permvec));
 
    permuteVector(permvec, n_blocks_per_row);
    permuteVector(permvec, linkStartBlockId);
@@ -1332,7 +1332,7 @@ Permutation DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const
    }
    assert(pos_child_twolinks == end_child_twolinks);
    assert(pos_remaining_links == linkStartBlockId.size());
-   assert(permutationIsValid(perm));
+   assert(permutation_is_valid(perm));
    return perm;
 }
 
@@ -1682,8 +1682,8 @@ void DistributedQP::permuteLinkStructureDetection(const Permutation& perm_A, con
 }
 
 void DistributedQP::permuteLinkingCons(const Permutation& permA, const Permutation& permC) {
-   assert(permutationIsValid(permA));
-   assert(permutationIsValid(permC));
+   assert(permutation_is_valid(permA));
+   assert(permutation_is_valid(permC));
    assert(!is_hierarchy_root);
 
    if (stochNode->isHierarchicalInnerLeaf()) {
@@ -1707,7 +1707,7 @@ void DistributedQP::permuteLinkingCons(const Permutation& permA, const Permutati
 }
 
 void DistributedQP::permuteLinkingVars(const Permutation& perm) {
-   assert(permutationIsValid(linkVarsPermutation));
+   assert(permutation_is_valid(linkVarsPermutation));
    assert(!is_hierarchy_root);
 
    dynamic_cast<DistributedMatrix&>(*A).permuteLinkingVars(perm);

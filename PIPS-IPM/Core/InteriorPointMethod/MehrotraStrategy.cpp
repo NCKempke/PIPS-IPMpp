@@ -80,10 +80,10 @@ MehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& prob
 TerminationStatus
 MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
-   set_problem_norm(problem);
+   this->set_problem_norm(problem);
    // register as observer for the BiCGStab solves
-   register_observer(&linear_system);
-   set_BiCGStab_tolerance(-1);
+   this->register_observer(&linear_system);
+   this->set_BiCGStab_tolerance(-1);
 
    int iteration = 0;
    int number_gondzio_corrections = 0;
@@ -281,10 +281,10 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 TerminationStatus
 MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
       Variables& step, AbstractLinearSystem& linear_system) {
-   set_problem_norm(problem);
+   this->set_problem_norm(problem);
    // register as observer for the BiCGStab solves
-   register_observer(&linear_system);
-   set_BiCGStab_tolerance(-1);
+   this->register_observer(&linear_system);
+   this->set_BiCGStab_tolerance(-1);
 
    int iteration = 0;
    int number_gondzio_corrections = 0;
@@ -653,13 +653,13 @@ void MehrotraStrategy::do_probing(Problem* problem, Variables* iterate, Residual
    const double mu_last = iterate->mu();
    const double resids_norm_last = residuals->residual_norm();
 
-   compute_probing_step(temp_step, iterate, step, alpha_primal, alpha_dual);
+   this->compute_probing_step(temp_step, iterate, step, alpha_primal, alpha_dual);
 
    residuals->evaluate(*problem, *temp_step, false);
    const double mu_probing = temp_step->mu();
    const double resids_norm_probing = residuals->residual_norm();
 
-   const double factor = compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
+   const double factor = this->compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
 
    alpha_primal = factor * alpha_primal;
    alpha_dual = factor * alpha_dual;

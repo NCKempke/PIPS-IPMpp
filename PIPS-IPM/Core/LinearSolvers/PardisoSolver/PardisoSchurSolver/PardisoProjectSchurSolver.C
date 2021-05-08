@@ -289,7 +289,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO, const SparseMatrix& R, const
    for (int it = 0; it < nnzSC; it++)
       colidxSC[it]--;
 
-   assert(subMatrixIsOrdered(rowptrSC, colidxSC, 0, nSC));
+   assert(submatrix_is_ordered(rowptrSC, colidxSC, 0, nSC));
 }
 
 
