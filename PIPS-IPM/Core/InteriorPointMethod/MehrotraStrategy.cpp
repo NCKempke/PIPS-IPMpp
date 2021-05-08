@@ -18,25 +18,19 @@ extern double g_iterNumber;
 int gLackOfAccuracy = 0;
 const unsigned int max_linesearch_points = 50;
 
-MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler =
-      nullptr) :
-      mehrotra_heuristic(mehrotra_heuristic),
-      scaler(scaler), corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)),
-      n_linesearch_points(pips_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
-      temp_step(factory.make_variables(problem)),
-      statistics(factory, scaler),
-      bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.), bicg_iterations(0),
+MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic,
+      const Scaler* scaler = nullptr) : mehrotra_heuristic(mehrotra_heuristic), scaler(scaler), corrector_step(factory.make_variables(problem)),
+      corrector_residuals(factory.make_residuals(problem)), n_linesearch_points(pips_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
+      temp_step(factory.make_variables(problem)), statistics(factory, scaler), bicgstab_skipped(false), bicgstab_converged(true),
+      bigcstab_norm_res_rel(0.), bicg_iterations(0),
       dynamic_corrector_schedule(pips_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
       additional_correctors_small_comp_pairs(pips_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
       max_additional_correctors(pips_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
       first_iter_small_correctors(pips_options::get_int_parameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
-      max_alpha_small_correctors(pips_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")),
-      NumberSmallCorrectors(0),
-      maximum_correctors(qpgen_options::getIntParameter("GONDZIO_MAX_CORRECTORS")),
-      number_gondzio_corrections(0),
-      step_factor0(0.3), step_factor1(1.5), acceptance_tolerance(0.01), beta_min(0.1), beta_max(10),
-      dynamic_bicg_tol(pips_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")),
-      tsig(3.), max_iterations(300) {
+      max_alpha_small_correctors(pips_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
+      maximum_correctors(qpgen_options::getIntParameter("GONDZIO_MAX_CORRECTORS")), number_gondzio_corrections(0), step_factor0(0.3),
+      step_factor1(1.5), acceptance_tolerance(0.01), beta_min(0.1), beta_max(10),
+      dynamic_bicg_tol(pips_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")), tsig(3.), max_iterations(300) {
    assert(max_additional_correctors > 0);
    assert(first_iter_small_correctors >= 0);
    assert(0 < max_alpha_small_correctors && max_alpha_small_correctors < 1);
@@ -53,7 +47,7 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
       if (size > 1)
          this->n_linesearch_points = std::min(unsigned(size) + this->n_linesearch_points, max_linesearch_points);
    }
-   
+
    if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;
       gamma_f = 0.95;
@@ -72,8 +66,9 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
    phi_min_history = new double[max_iterations];
 }
 
-TerminationStatus MehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
-      Variables& step, AbstractLinearSystem& linear_system) {
+TerminationStatus
+MehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+      AbstractLinearSystem& linear_system) {
    if (this->mehrotra_heuristic == PRIMAL) {
       return this->corrector_predictor_primal(factory, problem, iterate, residuals, step, linear_system);
    }
@@ -117,7 +112,7 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
       residuals.evaluate(problem, iterate);
 
 //  termination test:
-      status_code = this->default_status(&problem, &iterate, &residuals, dnorm, iteration, mu, SUCCESSFUL_TERMINATION);
+      status_code = this->default_status(&problem, &iterate, &residuals, iteration, mu, SUCCESSFUL_TERMINATION);
 
       if (status_code != NOT_FINISHED)
          break;
@@ -284,8 +279,8 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 }
 
 TerminationStatus
-MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-      AbstractLinearSystem& linear_system) {
+MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
+      Variables& step, AbstractLinearSystem& linear_system) {
    set_problem_norm(problem);
    // register as observer for the BiCGStab solves
    registerBiCGStabOvserver(&linear_system);
@@ -316,7 +311,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
       residuals.evaluate(problem, iterate);
 
       //  termination test:
-      status_code = this->default_status(&problem, &iterate, &residuals, dnorm, iteration, mu, SUCCESSFUL_TERMINATION);
+      status_code = this->default_status(&problem, &iterate, &residuals, iteration, mu, SUCCESSFUL_TERMINATION);
 
       if (status_code != NOT_FINISHED)
          break;
@@ -404,7 +399,7 @@ MehrotraStrategy::corrector_predictor_primal_dual(DistributedFactory& factory, P
 
          // calculate weighted predictor-corrector step
          calculateAlphaPDWeightCandidate(&iterate, &step, corrector_step, alpha_p_target, alpha_dual_target, alpha_primal_enhanced,
-               alpha_dual_enhanced,weight_primal_candidate, weight_dual_candidate);
+               alpha_dual_enhanced, weight_primal_candidate, weight_dual_candidate);
 
          // if the enhanced step length is actually 1, make it official
          // and stop correcting
@@ -654,7 +649,8 @@ void MehrotraStrategy::doProbing(Problem* problem, Variables* iterate, Residuals
    alpha = factor * alpha;
 }
 
-void MehrotraStrategy::doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual) {
+void MehrotraStrategy::doProbing_pd(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal,
+      double& alpha_dual) {
    const double mu_last = iterate->mu();
    const double resids_norm_last = residuals->residualNorm();
 
@@ -695,8 +691,8 @@ void MehrotraStrategy::computeProbingStep(Variables* probing_step, const Variabl
    probing_step->saxpy(step, alpha);
 }
 
-void MehrotraStrategy::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double
-alpha_dual) const {
+void MehrotraStrategy::computeProbingStep_pd(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
+      double alpha_dual) const {
    probing_step->copy(iterate);
    probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
 }
@@ -810,20 +806,20 @@ void MehrotraStrategy::checkLinsysSolveNumericalTroublesAndReact(Residuals* resi
    }
 }
 
-void
-MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma,
-      int i, double mu, int stop_code, int level) {
+void MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha,
+      double sigma, int i, double mu, int stop_code, int level) {
    statistics.print(problem, iterate, residuals, dnorm, alpha, sigma, i, mu, stop_code, level);
 }
 
-void MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
+void
+MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
       double alpha_dual, double sigma, int i, double mu, int stop_code, int level) {
    statistics.print(problem, iterate, residuals, dnorm, alpha_primal, alpha_dual, sigma, i, mu, stop_code, level);
 }
 
 TerminationStatus
-MehrotraStrategy::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double dnorm_orig,
-      int iteration, double mu, TerminationStatus level) {
+MehrotraStrategy::default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu,
+      TerminationStatus level) {
    const int myrank = PIPS_MPIgetRank();
    TerminationStatus stop_code = NOT_FINISHED;
 

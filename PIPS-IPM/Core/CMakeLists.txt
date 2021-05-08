@@ -4,9 +4,9 @@ add_library(pips-ipmpp STATIC
         Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Scaler.C
         #Filter.cpp FilterStrategy.cpp FilterLineSearch.cpp
         
-        InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp
+        InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
 
-        QpStoch/Statistics.cpp Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
+        Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
         Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/DistributedOptions.C
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
         Readers/MpsReader.C Readers/hash.C #Readers

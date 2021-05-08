@@ -30,9 +30,6 @@ public:
    TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
    void set_BiCGStab_tolerance(int iteration) const;
-   [[nodiscard]] double dataNorm() const { return dnorm; }
-   [[nodiscard]] double dataNormOrig() const { return dnorm_orig; }
-   void add_monitor(Statistics* m);
    ~MehrotraStrategy();
 
 protected:
@@ -142,9 +139,8 @@ protected:
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
    double mehrotra_step_length(Variables* iterate, Variables* step);
    void mehrotra_step_length_PD(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-   TerminationStatus
-   default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, double dnorm_orig, int iteration,
-         double mu, TerminationStatus level);
+   TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu,
+         TerminationStatus level);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
