@@ -12,7 +12,6 @@
 #include <cstring>
 #include <iostream>
 #include "Vector.hpp"
-#include "SmartPointer.h"
 
 class DoubleLinearSolver;
 

@@ -6,7 +6,6 @@
 #define DOUBLELINEARSOLVER_H
 
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "AbstractMatrix.h"
 #include "pipsport.h"
 

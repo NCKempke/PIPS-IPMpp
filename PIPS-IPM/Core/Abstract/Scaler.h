@@ -9,8 +9,6 @@
 #define PIPS_IPM_CORE_ABSTRACT_SCALER_H_
 
 #include "Vector.hpp"
-#include "SmartPointer.h"
-
 #include "pipsport.h"
 
 class Problem;

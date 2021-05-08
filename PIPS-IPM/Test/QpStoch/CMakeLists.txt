@@ -1,3 +1,4 @@
+include_directories(../../Core/Options)
 include_directories(../../Core/Problems)
 include_directories(../../Core/LinearSystems)
 include_directories(../../Core/QpGen)

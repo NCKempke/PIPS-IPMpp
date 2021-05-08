@@ -10,7 +10,6 @@
 
 #include "QpPresolver.h"
 #include "PresolveData.h"
-
 #include <vector>
 #include <memory>
 

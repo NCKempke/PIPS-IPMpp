@@ -14,6 +14,7 @@ include_directories(
         Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
         Core/LinearSolvers/BiCGStabSolver
         Core/LinearSystems
+        Core/Options
         Core/Problems
         Core/Preprocessing
         Core/QpStoch

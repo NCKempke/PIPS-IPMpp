@@ -10,10 +10,8 @@
 #include <iostream>
 #include <string>
 #include <memory>
-
 #include "DistributedQP.hpp"
 #include "DistributedTreeCallbacks.h"
-
 #include "DistributedOptions.h"
 #include "DistributedMatrix.h"
 #include "Vector.hpp"

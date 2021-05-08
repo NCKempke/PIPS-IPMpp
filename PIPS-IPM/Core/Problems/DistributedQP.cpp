@@ -1502,32 +1502,6 @@ void DistributedQP::splitData() {
    const std::vector<MPI_Comm> child_comms = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getChildComms();
    assert(child_comms.size() == getNDistinctValues(map_block_subtree));
 
-   // TODO : DELETEME
-//   SmartPointer<Vector<double>> x_bef = g;
-//   SmartPointer<Vector<double>> y_bef = bA;
-//   SmartPointer<Vector<double>> z_bef = bl;
-//   x_bef->setToConstant(2.0);
-//   y_bef->setToConstant(2.0);
-//   z_bef->setToConstant(2.0);
-//
-//   const double norm2_bef = g->twonorm();
-//   const double norm1_bef = g->onenorm();
-//
-//   A->transMult(2.0, *x_bef, 3.0, *y_bef);
-//   const double A2norm_bef = x_bef->twonorm();
-//   const double A1norm_bef = x_bef->onenorm();
-//
-//   C->mult(2.0, *z_bef, 3.0, *x_bef);
-//   const double C2norm_bef = z_bef->twonorm();
-//   const double C1norm_bef = z_bef->onenorm();
-//
-//   Vector<double>* x_bef2 = g->clone();
-//   x_bef2->setToConstant(2.0);
-//   Q->transMult(2.0, *x_bef2, 3.0, *x_bef);
-//
-//   const double Q2norm_bef = x_bef2->twonorm();
-//   const double Q1norm_bef = x_bef2->onenorm();
-
    if (stochNode->isHierarchicalInnerLeaf()) {
       dynamic_cast<DistributedSymmetricMatrix&>(*dynamic_cast<DistributedSymmetricMatrix&>(*Q).diag).splitMatrix(map_block_subtree, child_comms);
       dynamic_cast<DistributedMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Bmat).splitMatrix(linkStartBlockLengthsA, map_block_subtree, stochNode->myl(),
@@ -1573,44 +1547,6 @@ void DistributedQP::splitData() {
       dynamic_cast<DistributedVector<double>&>(*bl).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
       dynamic_cast<DistributedVector<double>&>(*iclow).split(map_block_subtree, child_comms, linkStartBlockLengthsC, stochNode->mzl());
    }
-// TODO : DELETEME
-//   SmartPointer<Vector<double>> x_after = g;
-//   SmartPointer<Vector<double>> y_after = bA;
-//   SmartPointer<Vector<double>> z_after = bl;
-//   x_after->setToConstant(2.0);
-//   y_after->setToConstant(2.0);
-//   z_after->setToConstant(2.0);
-//
-//   const double norm2_after = g->twonorm();
-//   const double norm1_after = g->onenorm();
-//
-//   A->transMult(2.0, *x_after, 3.0, *y_after);
-//   const double A2norm_after = x_after->twonorm();
-//   const double A1norm_after = x_after->onenorm();
-//   C->mult(2.0, *z_after, 3.0, *x_after);
-//   const double C2norm_after = z_after->twonorm();
-//   const double C1norm_after = z_after->onenorm();
-//
-//   Vector<double>* x_after2 = g->clone();
-//   x_after2->setToConstant(2.0);
-//   Q->transMult(2.0, *x_after2, 3.0, *x_after);
-//
-//   const double Q2norm_after = x_after2->twonorm();
-//   const double Q1norm_after = x_after2->onenorm();
-//
-//   std::cout << "normg1 before : " << norm1_bef << " vs normg1 after : " << norm1_after << " difference " << norm1_bef - norm1_after << "\n";
-//   std::cout << "normg2 before : " << norm2_bef << " vs normg2 after : " << norm2_after << " difference " << norm2_bef - norm2_after << "\n";
-//
-//   std::cout << "A2norm before : " << A2norm_bef << " vs A2norm after : " << A2norm_after << " difference " << A2norm_bef - A2norm_after << "\n";
-//   std::cout << "C2norm before : " << C2norm_bef << " vs C2norm after : " << C2norm_after << " difference " << C2norm_bef - C2norm_after << "\n";
-//   std::cout << "Q2norm before : " << Q2norm_bef << " vs Q2norm after : " << Q2norm_after << " difference " << Q2norm_bef - Q2norm_after << "\n";
-//   std::cout << "\n";
-//   std::cout << "A1norm before : " << A1norm_bef << " vs A1norm after : " << A1norm_after << " difference " << A1norm_bef - A1norm_after << "\n";
-//   std::cout << "C1norm before : " << C1norm_bef << " vs C1norm after : " << C1norm_after << " difference " << C1norm_bef - C1norm_after << "\n";
-//   std::cout << "Q1norm before : " << Q1norm_bef << " vs Q1norm after : " << Q1norm_after << " difference " << Q1norm_bef - Q1norm_after << "\n";
-
-   // TODO : when Q is used we also need this here..
-   //DistributedVector<double>* sc_hier = dynamic_cast<DistributedVector<double>&>(*sc).shaveBorder(-1);
 }
 
 void DistributedQP::recomputeSize() {
@@ -1971,11 +1907,10 @@ void DistributedQP::AddChild(DistributedQP* child) {
 
 double DistributedQP::objective_value(const Variables& variables) const {
    const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(*variables.x);
-   SmartPointer<Vector<double> > temp(x.clone());
+   std::unique_ptr<Vector<double> > temp(x.clone());
 
    this->getg(*temp);
    this->hessian_multiplication(1.0, *temp, 0.5, *variables.x);
-
    return temp->dotProductWith(*variables.x);
 }
 

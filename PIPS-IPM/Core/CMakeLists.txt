@@ -1,13 +1,16 @@
 add_subdirectory(LinearSolvers)
 
 add_library(pips-ipmpp STATIC
-        Abstract/Options.C Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Scaler.C
-        #Filter.cpp FilterStrategy.cpp FilterLineSearch.cpp
+        Abstract/Observer.C Abstract/Variables.C Problems/Problem.C Abstract/Residuals.cpp Abstract/Scaler.C
+        
+        # Globalization/Filter.cpp Globalization/FilterStrategy.cpp Globalization/FilterLineSearch.cpp
         
         InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
 
+        Options/Options.C Options/QpGenOptions.C Options/DistributedOptions.C
+
         Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C Abstract/QpGenOptions.C QpStoch/DistributedOptions.C
+        Utilities/pipschecks.C 
         Abstract/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
         Readers/MpsReader.C Readers/hash.C #Readers
         LinearSolvers/Preconditioners/SCsparsifier.C

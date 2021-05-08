@@ -12,12 +12,9 @@
 #include <fstream>
 #include <sstream>
 #include <functional>
-
 #include "Vector.hpp"
-
 #include "IotrRefCount.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "pipsdef.h"
 #include "pipsport.h"
 
