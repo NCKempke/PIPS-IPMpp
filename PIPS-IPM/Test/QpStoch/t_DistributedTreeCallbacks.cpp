@@ -51,7 +51,7 @@ class HierarchicalSplittingTest : public DistributedTreeCallbacks, public ::test
       DistributedTree::rankPrcnd = -1;
       DistributedTree::rankZeroW = 0;
       DistributedTree::rankMe = 0;
-      distributed_options::set_bool_parameter("SILENT", true);
+      pipsipmpp_options::set_bool_parameter("SILENT", true);
    }
 
    void TearDown() override {

@@ -65,7 +65,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
    std::unique_ptr<DistributedInputTree> tree(reader.read_problem());
 
-   distributed_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
+   pipsipmpp_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", false);
 
    double result = std::numeric_limits<double>::infinity();
 

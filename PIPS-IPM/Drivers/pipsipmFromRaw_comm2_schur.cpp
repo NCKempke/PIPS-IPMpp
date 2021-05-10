@@ -49,8 +49,8 @@ int main(int argc, char** argv) {
       cout << " raw input created from " << datarootname << endl;
    PIPSIPMppInterface<sFactoryAugComm2SchurLeaf, MehrotraStochSolver> pipsIpm(*s);
 
-   distributed_options::setIntParameter("OUTER_SOLVE", outerSolve);
-   distributed_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
+   pipsipmpp_options::setIntParameter("OUTER_SOLVE", outerSolve);
+   pipsipmpp_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
 
    if (mype == 0)
       cout << "PIPSIPMppInterface created" << endl;

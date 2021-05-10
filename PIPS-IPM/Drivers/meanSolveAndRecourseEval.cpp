@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
       if (scen % nbatchprocs == myBatchPe) {
          printf("Proc [%d][%d] does scen [%d] in batch [%s]\n", mype, myBatchPe, scen, datarootname.c_str());
 
-         distributed_options::setIntParameter("OUTER_SOLVE", 1); //iter.refin.
+         pipsipmpp_options::setIntParameter("OUTER_SOLVE", 1); //iter.refin.
          OOQPRecourseInterface <MehrotraSolver, QpGenSparseMa27> ooqpRecourse(*s, scen, firstStageSol);
          ooqpRecourse.go();
 
