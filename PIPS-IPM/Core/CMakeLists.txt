@@ -23,11 +23,11 @@ add_library(pips-ipmpp STATIC
         LinearSystems/sLinsysRootAugHierInner.C
         LinearSystems/DistributedLeafLinearSystem.C
         LinearSystems/sLinsysLeafSchurSlv.C
-        QpStoch/DistributedVariables.C
-        QpStoch/DistributedResiduals.cpp
-        QpStoch/DistributedTree.C
+        LinearAlgebra/Distributed/DistributedVariables.C
+        LinearAlgebra/Distributed/DistributedResiduals.cpp
+        LinearAlgebra/Distributed/DistributedTree.C
         LinearSystems/sLinsysRootBordered.C
-        QpStoch/DistributedTreeCallbacks.C
+        LinearAlgebra/Distributed/DistributedTreeCallbacks.C
         LinearAlgebra/Distributed/StripMatrix.C
         LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
         
