@@ -8,7 +8,7 @@
 #include "SparseSymmetricMatrix.h"
 #include "DistributedMatrix.h"
 #include "DistributedVector.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "DistributedTreeCallbacks.h"
 #include "pipschecks.h"
 #include "pipsport.h"
@@ -169,7 +169,7 @@ public:
          int& local2linksEndIneq);
 
    bool isHierarchySparseTopLayerOnlyTwolinks() const {
-      return (pips_options::get_bool_parameter("HIERARCHICAL")) && (pips_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
+      return (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) && (pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
              threshold_global_cons <= 1 && threshold_global_vars == 0;
    };
 

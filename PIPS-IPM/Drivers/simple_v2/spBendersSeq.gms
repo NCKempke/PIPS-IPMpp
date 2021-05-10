@@ -262,7 +262,7 @@ model sub /
     + Eq_objsub 
     /;
 
-* Options for solver
+* AbstractOptions for solver
 option limrow=0, limcol=0, solprint=silent;
 option lp = cplex;
 

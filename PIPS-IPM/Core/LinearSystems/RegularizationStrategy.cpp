@@ -3,14 +3,14 @@
 //
 
 #include "RegularizationStrategy.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "pipsdef.h"
 #include<cmath>
 
 RegularizationStrategy::RegularizationStrategy(unsigned int positive_eigenvalues_expected_, unsigned int negative_eigenvalues_expected_)
       : positive_eigenvalues_expected{positive_eigenvalues_expected_}, negative_eigenvalues_expected{negative_eigenvalues_expected_},
-      primal_regularization_absolute_minimum{pips_options::get_double_parameter("REGULARIZATION_MIN_PRIMAL")},
-      primal_regularization_absolute_maximum{pips_options::get_double_parameter("REGULARIZATION_MAX_PRIMAL")} {
+      primal_regularization_absolute_minimum{pipsipmpp_options::get_double_parameter("REGULARIZATION_MIN_PRIMAL")},
+      primal_regularization_absolute_maximum{pipsipmpp_options::get_double_parameter("REGULARIZATION_MAX_PRIMAL")} {
 }
 
 bool RegularizationStrategy::is_inertia_correct(const Inertia& inertia) const {

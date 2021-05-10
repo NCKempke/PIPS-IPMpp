@@ -7,7 +7,7 @@ add_library(pips-ipmpp STATIC
         
         InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
 
-        Options/Options.C Options/QpGenOptions.C Options/DistributedOptions.C
+        Options/AbstractOptions.C Options/Options.C Options/PIPSIPMppOptions.C
 
         Abstract/IotrRefCount.C Abstract/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
         Utilities/pipschecks.C 

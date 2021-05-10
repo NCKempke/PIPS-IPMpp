@@ -33,7 +33,7 @@ std::ostream& operator<<(std::ostream& os, const SolverType solver);
 std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver);
 
 
-namespace distributed_options {
+namespace pipsipmpp_options {
    bool is_solver_available(SolverType solver);
    SolverType get_solver_root();
    SolverType get_solver_sub_root();
@@ -51,7 +51,7 @@ namespace distributed_options {
    double get_double_parameter(const std::string& identifier);
    bool get_bool_parameter(const std::string& identifier);
 
-   class DistributedOptions : public options::Options {
+   class PIPSIPMppOptions : public options::Options {
 
    private:
       friend void set_int_parameter(const std::string& identifier, int value);
@@ -63,17 +63,17 @@ namespace distributed_options {
       friend double get_double_parameter(const std::string& identifier);
       friend bool get_bool_parameter(const std::string& identifier);
 
-      static DistributedOptions& getInstance() {
-         static DistributedOptions opt;
+      static PIPSIPMppOptions& getInstance() {
+         static PIPSIPMppOptions opt;
          return opt;
       }
 
       void setHierarchical();
       void setDefaults() override;
       void setPresolveDefaults();
-      DistributedOptions();
+      PIPSIPMppOptions();
 
-      ~DistributedOptions() override = default;
+      ~PIPSIPMppOptions() override = default;
    };
 }
 

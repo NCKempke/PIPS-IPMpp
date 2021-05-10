@@ -8,7 +8,7 @@
 #include "StochPostsolver.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "pipsdef.h"
 #include "DistributedVectorUtilities.h"
 #include <limits>
@@ -16,8 +16,8 @@
 #include <iostream>
 
 StochPostsolver::StochPostsolver(const DistributedQP& original_problem) : QpPostsolver(original_problem),
-      postsolve_tol(pips_options::get_double_parameter("POSTSOLVE_TOLERANCE")), INF_NEG(-pips_options::get_double_parameter("PRESOLVE_INFINITY")),
-      INF_POS(pips_options::get_double_parameter("PRESOLVE_INFINITY")), n_rows_original(original_problem.my + original_problem.mz),
+      postsolve_tol(pipsipmpp_options::get_double_parameter("POSTSOLVE_TOLERANCE")), INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
+      INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")), n_rows_original(original_problem.my + original_problem.mz),
       n_cols_original(original_problem.nx), padding_origcol{cloneStochVector<double, int>(*original_problem.g)},
       padding_origrow_equality{cloneStochVector<double, int>(*original_problem.bA)},
       padding_origrow_inequality{cloneStochVector<double, int>(*original_problem.bu)},

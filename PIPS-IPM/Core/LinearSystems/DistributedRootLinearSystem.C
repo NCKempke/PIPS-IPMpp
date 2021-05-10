@@ -7,7 +7,7 @@
 #include "DistributedQP.hpp"
 #include "DistributedDummyLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 
 /*********************************************************************/
 /************************** ROOT *************************************/
@@ -19,7 +19,7 @@ double g_scenNum;
 
 DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* factory_, DistributedQP* prob_, bool is_hierarchy_root) : DistributedLinearSystem(factory_, prob_,
       is_hierarchy_root) {
-   if (pips_options::get_bool_parameter("HIERARCHICAL"))
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(is_hierarchy_root);
    init();
 }
@@ -34,12 +34,12 @@ void DistributedRootLinearSystem::init() {
    createChildren(data);
 
    precondSC = SCsparsifier(mpiComm);
-   usePrecondDist = pips_options::get_bool_parameter("PRECONDITION_DISTRIBUTED");
+   usePrecondDist = pipsipmpp_options::get_bool_parameter("PRECONDITION_DISTRIBUTED");
 
    // use sparse KKT if (enough) 2 links are present
    hasSparseKkt = data->exploitingLinkStructure();
-   allreduce_kkt = pips_options::get_bool_parameter("ALLREDUCE_SCHUR_COMPLEMENT");
-   if (pips_options::get_bool_parameter("HIERARCHICAL"))
+   allreduce_kkt = pipsipmpp_options::get_bool_parameter("ALLREDUCE_SCHUR_COMPLEMENT");
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(allreduce_kkt);
 
    usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
@@ -732,7 +732,7 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
 
 void DistributedRootLinearSystem::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
-   assert(pips_options::get_bool_parameter("HIERARCHICAL"));
+   assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
 
    auto& b = dynamic_cast<DistributedVector<double>&>(x);

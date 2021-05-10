@@ -3,7 +3,7 @@
 #include "Variables.h"
 #include "Residuals.h"
 #include "AbstractLinearSystem.h"
-#include "Options.h"
+#include "AbstractOptions.h"
 #include "DistributedFactory.h"
 #include <cmath>
 

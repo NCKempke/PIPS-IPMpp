@@ -22,7 +22,7 @@
 #include "Postsolver.h"
 #include "DistributedTreeCallbacks.h"
 #include "pipsport.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 
 template<class IPMSOLVER>
 class PIPSIPMppInterface {
@@ -109,8 +109,8 @@ protected:
 template<class IPMSOLVER>
 PIPSIPMppInterface<IPMSOLVER>::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm comm, ScalerType
 scaler_type, PresolverType presolver_type, std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
-   pips_options::set_options(settings);
-   const bool postsolve = pips_options::get_bool_parameter("POSTSOLVE");
+   pipsipmpp_options::set_options(settings);
+   const bool postsolve = pipsipmpp_options::get_bool_parameter("POSTSOLVE");
 
    MPI_Barrier(comm);
    const double t0 = MPI_Wtime();
@@ -166,17 +166,17 @@ scaler_type, PresolverType presolver_type, std::string settings) : factory(tree,
    dataUnpermNotHier.reset(presolved_problem->cloneFull());
 
    // after identifying the linking structure switch to hierarchical data structure -> will this do anything to the scaler?
-   if (pips_options::get_bool_parameter("PARDISO_FOR_GLOBAL_SC"))
+   if (pipsipmpp_options::get_bool_parameter("PARDISO_FOR_GLOBAL_SC"))
       presolved_problem->activateLinkStructureExploitation();
 
    // TODO : save "old" data somewhere?
-   if (pips_options::get_bool_parameter("HIERARCHICAL")) {
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
       if (my_rank == 0)
          std::cout << "Using hierarchical approach!\n";
 
       presolved_problem.reset(dynamic_cast<DistributedQP*>(factory.switchToHierarchicalData(presolved_problem.release())));
 
-      if (pips_options::get_bool_parameter("HIERARCHICAL_PRINT_HIER_DATA"))
+      if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_PRINT_HIER_DATA"))
          presolved_problem->writeToStreamDense(std::cout);
    }
 
@@ -227,7 +227,7 @@ void PIPSIPMppInterface<IPMSOLVER>::run() {
 
    if (my_rank == 0) {
       // TODO : use unlifted data....
-      if (!pips_options::get_bool_parameter("HIERARCHICAL")) {
+      if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
          std::cout << "1st stage " << presolved_problem->getLocalnx() << " variables, " << presolved_problem->getLocalmy()
                    << " equality constraints, " << presolved_problem->getLocalmz() << " inequality constraints.\n";
 
@@ -526,7 +526,7 @@ void PIPSIPMppInterface<IPMSOLVER>::printComplementarityResiduals(const Distribu
 
 template<class IPMSOLVER>
 void PIPSIPMppInterface<IPMSOLVER>::postsolveComputedSolution() {
-   const bool print_residuals = pips_options::get_bool_parameter("POSTSOLVE_PRINT_RESIDS");
+   const bool print_residuals = pipsipmpp_options::get_bool_parameter("POSTSOLVE_PRINT_RESIDS");
    const int my_rank = PIPS_MPIgetRank(comm);
 
    assert(original_problem);
@@ -569,7 +569,7 @@ void PIPSIPMppInterface<IPMSOLVER>::postsolveComputedSolution() {
    const double t0_postsolve = MPI_Wtime();
 
 
-   if (pips_options::get_bool_parameter("HIERARCHICAL"))
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       factory.switchToOriginalTree();
 
    dynamic_cast<DistributedTreeCallbacks*>(factory.tree)->switchToOriginalData();

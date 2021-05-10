@@ -7,14 +7,14 @@
 
 #include "StochPresolverModelCleanup.h"
 
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include <cmath>
 #include <vector>
 
 StochPresolverModelCleanup::StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb) : StochPresolverBase(presolve_data,
-      origProb), limit_min_mat_entry(pips_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY")),
-      limit_max_matrix_entry_impact(pips_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MAX_MATRIX_ENTRY_IMPACT")),
-      limit_matrix_entry_impact_feasdist(pips_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MATRIX_ENTRY_IMPACT_FEASDIST")),
+      origProb), limit_min_mat_entry(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MIN_MATRIX_ENTRY")),
+      limit_max_matrix_entry_impact(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MAX_MATRIX_ENTRY_IMPACT")),
+      limit_matrix_entry_impact_feasdist(pipsipmpp_options::get_double_parameter("PRESOLVE_MODEL_CLEANUP_MATRIX_ENTRY_IMPACT_FEASDIST")),
       removed_entries_total(0), fixed_empty_cols_total(0), removed_rows_total(0) {
 }
 

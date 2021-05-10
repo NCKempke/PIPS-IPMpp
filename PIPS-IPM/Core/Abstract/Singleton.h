@@ -11,7 +11,7 @@
 /**
  * Abstract base class for options class.
  * Implements a inheritable to a singleton pattern.
- * The getInstance method must be specified in the BaseClasses,
+ * The get_instance method must be specified in the BaseClasses,
  * thus for each base class there can only be exactly one instance.
  */
 

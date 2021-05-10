@@ -370,14 +370,14 @@ int main(int argc, char** argv) {
    if (hierarchical) {
       if (gmsRank == 0)
          std::cout << "Using Hierarchical approach\n";
-      pips_options::activate_hierarchial_approach();
+      pipsipmpp_options::activate_hierarchial_approach();
    }
 
-   pips_options::set_int_parameter("OUTER_SOLVE", 2);
+   pipsipmpp_options::set_int_parameter("OUTER_SOLVE", 2);
    if (gmsRank == 0)
       std::cout << "Using outer BICGSTAB\n";
 
-   if (gmsRank == 0 && pips_options::get_int_parameter("INNER_SC_SOLVE") == 2)
+   if (gmsRank == 0 && pipsipmpp_options::get_int_parameter("INNER_SC_SOLVE") == 2)
       std::cout << "Using inner BICGSTAB\n";
 
    std::vector<double> primalSolVec;
@@ -388,7 +388,7 @@ int main(int argc, char** argv) {
    std::vector<double> eqValues;
    std::vector<double> ineqValues;
 
-   pips_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", !primal_dual_step_length);
+   pipsipmpp_options::set_bool_parameter("GONDZIO_ADAPTIVE_LINESEARCH", !primal_dual_step_length);
    if (primal_dual_step_length && gmsRank == 0) {
       std::cout << "Different steplengths in primal and dual direction are used.\n";
    }

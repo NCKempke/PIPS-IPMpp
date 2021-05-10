@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "DistributedTreeCallbacks.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include <memory>
 
 class HierarchicalMappingParametersTest : public DistributedTreeCallbacks, public ::testing::TestWithParam<std::vector<unsigned int>> {};
@@ -51,7 +51,7 @@ class HierarchicalSplittingTest : public DistributedTreeCallbacks, public ::test
       DistributedTree::rankPrcnd = -1;
       DistributedTree::rankZeroW = 0;
       DistributedTree::rankMe = 0;
-      pips_options::set_bool_parameter("SILENT", true);
+      distributed_options::set_bool_parameter("SILENT", true);
    }
 
    void TearDown() override {

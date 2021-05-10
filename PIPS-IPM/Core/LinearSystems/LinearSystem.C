@@ -9,8 +9,8 @@
 #include "Vector.hpp"
 #include "SmartPointer.h"
 #include "mpi.h"
-#include "QpGenOptions.h"
-#include "DistributedOptions.h"
+#include "Options.h"
+#include "PIPSIPMppOptions.h"
 #include "DistributedFactory.h"
 #include <vector>
 #include <functional>
@@ -25,14 +25,14 @@ extern int gOuterBiCGFails;
 static std::vector<int> bicgIters;
 
 LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
-      apply_regularization(qpgen_options::getBoolParameter("REGULARIZATION")), outerSolve(qpgen_options::getIntParameter("OUTER_SOLVE")),
-      innerSCSolve(qpgen_options::getIntParameter("INNER_SC_SOLVE")),
-      outer_bicg_print_statistics(qpgen_options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
-      outer_bicg_eps(qpgen_options::getDoubleParameter("OUTER_BICG_EPSILON")),
-      outer_bicg_max_iter(qpgen_options::getIntParameter("OUTER_BICG_MAX_ITER")),
-      outer_bicg_max_normr_divergences(qpgen_options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
-      outer_bicg_max_stagnations(qpgen_options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-      xyzs_solve_print_residuals(qpgen_options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
+      apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
+      innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")),
+      outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+      outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")),
+      outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
+      outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
+      outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
+      xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
 
    assert(factory_);
    assert(problem);
@@ -207,7 +207,7 @@ void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
 
    computeDiagonals(*vars->t, *vars->lambda, *vars->u, *vars->pi, *vars->v, *vars->gamma, *vars->w, *vars->phi);
 
-   if (pips_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
       primal_diagonal->setToConstant(1.0);
       nomegaInv->setToConstant(1.0);
@@ -539,7 +539,7 @@ void LinearSystem::solveCompressedBiCGStab(const std::function<void(double, Vect
    Vector<double>& r0 = *res2, & dx = *sol2, & best_x = *sol3, & v = *res3, & t = *res4, & p = *res5;
    Vector<double>& x = *sol, & r = *res, & b = *rhs;
 
-   const double tol = qpgen_options::getDoubleParameter("OUTER_BICG_TOL");
+   const double tol = options::getDoubleParameter("OUTER_BICG_TOL");
    const double n2b = b.twonorm();
    const double tolb = std::max(n2b * tol, outer_bicg_eps);
 

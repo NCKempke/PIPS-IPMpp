@@ -10,7 +10,7 @@
 #include "DeSymIndefSolver.h"
 #include "DeSymIndefSolver2.h"
 #include "DeSymPSDSolver.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "DistributedFactory.h"
 
 sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, DistributedQP* prob_) : DistributedRootLinearSystem(factory_, prob_, true) {
@@ -235,7 +235,7 @@ void sLinsysRootBordered::reduceKKT(DistributedQP*) {
 }
 
 DoubleLinearSolver* sLinsysRootBordered::createSolver(DistributedQP*, const SymmetricMatrix* kktmat_) {
-   const SolverTypeDense solver = pips_options::get_solver_dense();
+   const SolverTypeDense solver = pipsipmpp_options::get_solver_dense();
    const auto* kktmat = dynamic_cast<const DenseSymmetricMatrix*>(kktmat_);
 
    static bool printed = false;

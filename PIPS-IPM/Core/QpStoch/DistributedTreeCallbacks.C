@@ -26,7 +26,7 @@ DistributedTree* DistributedTreeCallbacks::clone() const {
    return new DistributedTreeCallbacks(*this);
 }
 
-DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_reading{pips_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")} {
+DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
    if (-1 == numProcs)
@@ -34,7 +34,7 @@ DistributedTreeCallbacks::DistributedTreeCallbacks() : print_tree_sizes_on_readi
 }
 
 DistributedTreeCallbacks::DistributedTreeCallbacks(DistributedInputTree* inputTree)
-      : DistributedTree(), print_tree_sizes_on_reading{pips_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
+      : DistributedTree(), print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data{inputTree->nodeInput} {
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
    if (-1 == numProcs)
@@ -46,7 +46,7 @@ DistributedTreeCallbacks::DistributedTreeCallbacks(DistributedInputTree* inputTr
 
 DistributedTreeCallbacks::DistributedTreeCallbacks(InputNode* data_)
       : DistributedTree(), nx_active(data_->n), my_active(data_->my), mz_active(data_->mz), myl_active(data_->myl), mzl_active(data_->mzl),
-      print_tree_sizes_on_reading{pips_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data(data_) {
+      print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data(data_) {
    assert(false && "Not used currently");
    if (-1 == rankMe)
       rankMe = PIPS_MPIgetRank();
@@ -756,7 +756,7 @@ DistributedVector<double>* DistributedTreeCallbacks::createicupp() const {
 
 DistributedTree* DistributedTreeCallbacks::shaveDenseBorder(int nx_to_shave, int myl_to_shave, int mzl_to_shave) {
    assertTreeStructureCorrect();
-   if (PIPS_MPIgetRank() == 0 && !pips_options::get_bool_parameter("SILENT"))
+   if (PIPS_MPIgetRank() == 0 && !pipsipmpp_options::get_bool_parameter("SILENT"))
       std::cout << "Trimming " << nx_to_shave << " vars, " << myl_to_shave << " dense equalities, and " << mzl_to_shave
                 << " inequalities for the border\n";
 
@@ -1170,7 +1170,7 @@ std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, Distribute
    const unsigned int two_links_children_eq_sum = std::accumulate(two_links_children_eq.begin(), two_links_children_eq.end(), unsigned(0));
    const unsigned int two_links_children_ineq_sum = std::accumulate(two_links_children_ineq.begin(), two_links_children_ineq.end(), unsigned(0));
 
-   if (rankMe == 0 && !pips_options::get_bool_parameter("SILENT")) {
+   if (rankMe == 0 && !pipsipmpp_options::get_bool_parameter("SILENT")) {
       std::cout << "Splitting node into " << children.size() << " subroots\n";
       std::cout << "Splitting " << two_links_children_eq_sum + two_links_root_eq << " equality two-links into " << two_links_root_eq << " root and "
                 << two_links_children_eq_sum << " child links\n";
@@ -1208,7 +1208,7 @@ std::pair<int, int> DistributedTreeCallbacks::splitTree(int n_layers, Distribute
 DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQP*& data_to_split) {
    assert(data_to_split->exploitingLinkStructure());
 
-   const int n_layers = pips_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS");
+   const int n_layers = pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS");
 
    assert(!is_hierarchical_root);
    assert(np == -1);
@@ -1223,7 +1223,7 @@ DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQ
          std::cout << "Adding " << n_layers << " layers to hierarchical data_to_split\n";
       }
 
-      if (n_layers > 1 && pips_options::get_bool_parameter("HIERARCHICAL_APPLY_SPLIT")) {
+      if (n_layers > 1 && pipsipmpp_options::get_bool_parameter("HIERARCHICAL_APPLY_SPLIT")) {
          splitTree(n_layers, data_to_split);
          assertTreeStructureCorrect();
          printProcessTree();
@@ -1231,7 +1231,7 @@ DistributedTree* DistributedTreeCallbacks::switchToHierarchicalTree(DistributedQ
          if (map_node_sub_root.empty()) {
             if (PIPS_MPIgetRank() == 0)
                std::cout << "Not a single split has been applied - hierarchical approach will have no additional sparse layers\n";
-            pips_options::set_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS", 1);
+            pipsipmpp_options::set_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS", 1);
          }
       }
 

@@ -13,7 +13,7 @@
 #include "DistributedResiduals.hpp"
 #include "DistributedRootLinearSystem.h"
 #include "DistributedLeafLinearSystem.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "mpi.h"
 #include <stdio.h>
 #include "sLinsysRootAug.h"
@@ -76,9 +76,9 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* k
    const SparseSymmetricMatrix* kkt = dynamic_cast<const SparseSymmetricMatrix*>(kkt_);
    assert(kkt);
 
-   const SolverType leaf_solver = pips_options::get_solver_leaf();
+   const SolverType leaf_solver = pipsipmpp_options::get_solver_leaf();
 
-   if (!pips_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
+   if (!pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
          return new MumpsSolverLeaf(kkt);
@@ -135,9 +135,9 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
       Vector<double>* rhs) {
    assert(problem);
    static bool printed = false;
-   const SolverType leaf_solver = pips_options::get_solver_leaf();
+   const SolverType leaf_solver = pipsipmpp_options::get_solver_leaf();
 
-   if (!pips_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
+   if (!pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")) {
       if (PIPS_MPIgetRank() == 0 && !printed)
          std::cout << "Using " << leaf_solver << " for leaf schur complement computation - sFactory\n";
       printed = true;
@@ -161,17 +161,17 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
          }
 
          SolverType solver = SolverType::SOLVER_NONE;
-         if (pips_options::is_solver_available(SolverType::SOLVER_PARDISO))
+         if (pipsipmpp_options::is_solver_available(SolverType::SOLVER_PARDISO))
             solver = SolverType::SOLVER_PARDISO;
-         else if (pips_options::is_solver_available(SolverType::SOLVER_MKL_PARDISO))
+         else if (pipsipmpp_options::is_solver_available(SolverType::SOLVER_MKL_PARDISO))
             solver = SolverType::SOLVER_MKL_PARDISO;
-         else if (pips_options::is_solver_available(SolverType::SOLVER_MUMPS))
+         else if (pipsipmpp_options::is_solver_available(SolverType::SOLVER_MUMPS))
             solver = SolverType::SOLVER_MUMPS;
 
          if (solver != SolverType::SOLVER_NONE) {
             if (PIPS_MPIgetRank() == 0)
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
-            pips_options::set_int_parameter("LINEAR_LEAF_SOLVER", solver);
+            pipsipmpp_options::set_int_parameter("LINEAR_LEAF_SOLVER", solver);
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
             return new sLinsysLeafSchurSlv(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization,
                   dual_inequality_regularization, rhs);
@@ -185,7 +185,7 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, Vector<doubl
    else {
       if (PIPS_MPIgetRank() == 0 && !printed)
          std::cout << "Using " << leaf_solver << " for blockwise Schur Complement computation - deactivating distributed preconditioner - sFactory\n";
-      pips_options::set_bool_parameter("PRECONDITION_DISTRIBUTED", false);
+      pipsipmpp_options::set_bool_parameter("PRECONDITION_DISTRIBUTED", false);
       printed = true;
 
       if (leaf_solver == SolverType::SOLVER_MUMPS) {
@@ -261,7 +261,7 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) {
 }
 
 AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
-   if (pips_options::get_bool_parameter("HIERARCHICAL"))
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       linear_system = make_root_hierarchical_linear_system();
    else
       linear_system = make_linear_system_root();

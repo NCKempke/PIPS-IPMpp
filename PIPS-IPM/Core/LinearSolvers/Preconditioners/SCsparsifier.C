@@ -8,7 +8,7 @@
 
 #include "SCsparsifier.h"
 #include "pipsdef.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "mpi.h"
 #include <cassert>
 

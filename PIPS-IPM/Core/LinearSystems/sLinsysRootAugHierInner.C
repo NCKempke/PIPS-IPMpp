@@ -22,7 +22,7 @@ sLinsysRootAugHierInner::sLinsysRootAugHierInner(DistributedFactory* factory, Di
 void sLinsysRootAugHierInner::createSolversAndKKts(DistributedQP* prob) {
    assert(hasSparseKkt);
 
-   const SolverType solver_sub_root = pips_options::get_solver_sub_root();
+   const SolverType solver_sub_root = pipsipmpp_options::get_solver_sub_root();
 
    static bool printed = false;
    if (!printed && PIPS_MPIgetRank() == 0)
@@ -65,7 +65,7 @@ void sLinsysRootAugHierInner::Ltsolve(DistributedQP* prob, Vector<double>& x) {
 }
 
 void sLinsysRootAugHierInner::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool use_local_RAC) {
-   assert(pips_options::get_bool_parameter("HIERARCHICAL"));
+   assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
 
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
 

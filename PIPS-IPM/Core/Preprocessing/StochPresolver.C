@@ -12,7 +12,7 @@
 #include <memory>
 #include "DistributedQP.hpp"
 #include "DistributedTreeCallbacks.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "DistributedMatrix.h"
 #include "Vector.hpp"
 #include "StochPostsolver.h"
@@ -24,27 +24,27 @@
 #include "StochPresolverParallelRows.h"
 
 StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr) : QpPresolver(prob, postsolver),
-      my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)), limit_max_rounds(pips_options::get_int_parameter("PRESOLVE_MAX_ROUNDS")),
-      reset_free_variables_after_presolve(pips_options::get_bool_parameter("PRESOLVE_RESET_FREE_VARIABLES")),
-      print_problem(pips_options::get_bool_parameter("PRESOLVE_PRINT_PROBLEM")),
-      write_presolved_problem(pips_options::get_bool_parameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS")),
-      verbosity(pips_options::get_int_parameter("PRESOLVE_VERBOSITY")), tree(tree_),
+      my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)), limit_max_rounds(pipsipmpp_options::get_int_parameter("PRESOLVE_MAX_ROUNDS")),
+      reset_free_variables_after_presolve(pipsipmpp_options::get_bool_parameter("PRESOLVE_RESET_FREE_VARIABLES")),
+      print_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_PRINT_PROBLEM")),
+      write_presolved_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS")),
+      verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")), tree(tree_),
       preDistributedQP(dynamic_cast<const DistributedQP&>(origprob), dynamic_cast<StochPostsolver*>(postsolver)) {
    const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
 
-   if (pips_options::get_bool_parameter("PRESOLVE_SINGLETON_ROWS"))
+   if (pipsipmpp_options::get_bool_parameter("PRESOLVE_SINGLETON_ROWS"))
       presolvers.emplace_back(std::make_unique<StochPresolverSingletonRows>(preDistributedQP, sorigprob));
 
-   if (pips_options::get_bool_parameter("PRESOLVE_COLUMN_FIXATION"))
+   if (pipsipmpp_options::get_bool_parameter("PRESOLVE_COLUMN_FIXATION"))
       presolvers.emplace_back(std::make_unique<StochPresolverColumnFixation>(preDistributedQP, sorigprob));
 
-   if (pips_options::get_bool_parameter("PRESOLVE_PARALLEL_ROWS"))
+   if (pipsipmpp_options::get_bool_parameter("PRESOLVE_PARALLEL_ROWS"))
       presolvers.emplace_back(std::make_unique<StochPresolverParallelRows>(preDistributedQP, sorigprob));
 
-   if (pips_options::get_bool_parameter("PRESOLVE_SINGLETON_COLUMNS"))
+   if (pipsipmpp_options::get_bool_parameter("PRESOLVE_SINGLETON_COLUMNS"))
       presolvers.emplace_back(std::make_unique<StochPresolverSingletonColumns>(preDistributedQP, sorigprob));
 
-   if (pips_options::get_bool_parameter("PRESOLVE_BOUND_STRENGTHENING"))
+   if (pipsipmpp_options::get_bool_parameter("PRESOLVE_BOUND_STRENGTHENING"))
       presolvers.emplace_back(std::make_unique<StochPresolverBoundStrengthening>(preDistributedQP, sorigprob));
 }
 

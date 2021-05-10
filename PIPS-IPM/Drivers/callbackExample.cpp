@@ -489,7 +489,7 @@ int main(int argc, char** argv) {
       std::cout << "Using a total of " << size << " MPI processes." << std::endl;
 
    /* use BiCGStab for outer solve */
-   pips_options::set_int_parameter("INNER_SC_SOLVE", 0);
+   pipsipmpp_options::set_int_parameter("INNER_SC_SOLVE", 0);
    PIPSIPMppInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 
    if (rank == 0)

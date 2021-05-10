@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPGEN_QPGENOPTIONS_H_
 #define PIPS_IPM_CORE_QPGEN_QPGENOPTIONS_H_
 
-#include "Options.h"
+#include "AbstractOptions.h"
 #include "pipsport.h"
 
 #include <cassert>
@@ -18,13 +18,13 @@
  * Defines default options.
  */
 
-namespace qpgen_options {
+namespace options {
    void setOptions(const std::string& opt_file);
    int getIntParameter(const std::string& identifier);
    double getDoubleParameter(const std::string& identifier);
    bool getBoolParameter(const std::string& identifier);
 
-   class QpGenOptions : public base_options::Options {
+   class Options : public abstract_options::AbstractOptions {
 
    protected :
       friend void setOptions(const std::string& opt_file);
@@ -32,31 +32,31 @@ namespace qpgen_options {
       friend double getDoubleParameter(const std::string& identifier);
       friend bool getBoolParameter(const std::string& identifier);
 
-      static QpGenOptions& getInstance() {
-         static QpGenOptions opt;
+      static Options& getInstance() {
+         static Options opt;
          return opt;
       }
 
       void setDefaults() override;
-      QpGenOptions();
+      Options();
 
-      virtual ~QpGenOptions() {};
+      virtual ~Options() {};
    };
 
    inline void setOptions(const std::string& opt_file) {
-      return QpGenOptions::getInstance().fillOptionsFromFile(opt_file);
+      return Options::getInstance().load_options_from_file(opt_file);
    }
 
    inline int getIntParameter(const std::string& identifier) {
-      return QpGenOptions::getInstance().getIntParam(identifier);
+      return Options::getInstance().get_int_param(identifier);
    }
 
    inline bool getBoolParameter(const std::string& identifier) {
-      return QpGenOptions::getInstance().getBoolParam(identifier);
+      return Options::getInstance().get_bool_param(identifier);
    }
 
    inline double getDoubleParameter(const std::string& identifier) {
-      return QpGenOptions::getInstance().getDoubleParam(identifier);
+      return Options::getInstance().get_double_param(identifier);
    }
 }
 

@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <cassert>
 #include "pipsdef.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 
 PardisoIndefSolver::PardisoIndefSolver(DenseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {
@@ -69,11 +69,11 @@ void PardisoIndefSolver::initPardiso() {
 
    iparm[0] = 0;
 
-   pivotPerturbationExp = pips_options::get_int_parameter("PARDISO_PIVOT_PERTURBATION_ROOT");
+   pivotPerturbationExp = pipsipmpp_options::get_int_parameter("PARDISO_PIVOT_PERTURBATION_ROOT");
    if (pivotPerturbationExp < 0)
       pivotPerturbationExp = pivotPerturbationExpDefault;
 
-   nIterativeRefins = pips_options::get_int_parameter("PARDISO_NITERATIVE_REFINS_ROOT");
+   nIterativeRefins = pipsipmpp_options::get_int_parameter("PARDISO_NITERATIVE_REFINS_ROOT");
    if (nIterativeRefins < 0)
       nIterativeRefins = nIterativeRefinsDefault;
 
@@ -117,7 +117,7 @@ void PardisoIndefSolver::matrixChanged() {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    if (solve_in_parallel || my_rank == 0) {
-      if (!pips_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
+      if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
          printf("\n PardisoIndefSolver: Schur complement factorization is starting ...\n ");
 
       if (mStorageSparse)
@@ -125,7 +125,7 @@ void PardisoIndefSolver::matrixChanged() {
       else
          factorizeFromDense();
 
-      if (!pips_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
+      if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
          printf("\n PardisoIndefSolver: Schur complement factorization completed \n");
    }
 }
@@ -138,12 +138,12 @@ void PardisoIndefSolver::matrixRebuild(AbstractMatrix& matrixNew) {
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
-      if (!pips_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
+      if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
          printf("\n Schur complement factorization is starting ...\n ");
 
       factorizeFromSparse(matrixNewSym);
 
-      if (!pips_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
+      if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
          printf("\n Schur complement factorization completed \n");
    }
 }
@@ -172,7 +172,7 @@ void PardisoIndefSolver::factorizeFromSparse() {
    const int* const iaStorage = mStorageSparse->krowM;
    const int* const jaStorage = mStorageSparse->jcolM;
    const double* const aStorage = mStorageSparse->M;
-   const bool usePrecondSparse = pips_options::get_bool_parameter("PRECONDITION_SPARSE");
+   const bool usePrecondSparse = pipsipmpp_options::get_bool_parameter("PRECONDITION_SPARSE");
 
    // first call?
    if (ia == nullptr) {
@@ -224,7 +224,7 @@ void PardisoIndefSolver::factorizeFromSparse() {
       ia[r + 1] = nnznew + 1;
    }
 
-   if (!pips_options::get_bool_parameter("HIERARCHICAL") && PIPS_MPIgetRank(mpi_comm) == 0)
+   if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && PIPS_MPIgetRank(mpi_comm) == 0)
       std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")" << std::endl;
 
 #if 0
@@ -347,7 +347,7 @@ else
       exit(1);
    }
 
-   if (!pips_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0) {
+   if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0) {
       printf("\nReordering completed: ");
       printf("\nNumber of nonzeros in factors  = %d", iparm[17]);
    }

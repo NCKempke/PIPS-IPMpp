@@ -9,7 +9,7 @@
 #include "pipschecks.h"
 #include "SimpleVector.h"
 #include "pipsdef.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 
 #include "mkl_pardiso.h"
 #include "mkl_types.h"

@@ -5,7 +5,7 @@
  *      Author: bzfkempk
  */
 
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 
 #include <limits>
 #include <vector>
@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver) {
    return os;
 }
 
-namespace distributed_options {
+namespace pipsipmpp_options {
    const std::vector<SolverType> solvers_available{
 #ifdef WITH_PARDISO
          SolverType::SOLVER_PARDISO,
@@ -166,7 +166,7 @@ namespace distributed_options {
       return solver_leaf;
    }
 
-   void DistributedOptions::setHierarchical() {
+   void PIPSIPMppOptions::setHierarchical() {
       bool_options["HIERARCHICAL"] = true;
 
       bool_options["SC_COMPUTE_BLOCKWISE"] = true;
@@ -183,7 +183,7 @@ namespace distributed_options {
       }
    }
 
-   DistributedOptions::DistributedOptions() {
+   PIPSIPMppOptions::PIPSIPMppOptions() {
       /* initialize base class options first (QpGenOptions) */
       Options::getInstance();
 
@@ -191,7 +191,7 @@ namespace distributed_options {
       setDefaults();
    }
 
-   void DistributedOptions::setDefaults() {
+   void PIPSIPMppOptions::setDefaults() {
       /// GENERAL
       bool_options["PRINT_TREESIZES_ON_READ"] = false;
       /* surpresses some of the output */
@@ -321,7 +321,7 @@ namespace distributed_options {
       setPresolveDefaults();
    }
 
-   void DistributedOptions::setPresolveDefaults() {
+   void PIPSIPMppOptions::setPresolveDefaults() {
       /** all presolve/postsolve constants and settings */
       // TODO : many of these need adjustments/ have to be thought about
       double_options["PRESOLVE_INFINITY"] = std::numeric_limits<double>::infinity();
@@ -400,35 +400,35 @@ namespace distributed_options {
 
 
    void activate_hierarchial_approach() {
-      DistributedOptions::getInstance().setHierarchical();
+      PIPSIPMppOptions::getInstance().setHierarchical();
    }
 
    void set_options(const std::string& opt_file) {
-      return DistributedOptions::getInstance().load_options_from_file(opt_file);
+      return PIPSIPMppOptions::getInstance().load_options_from_file(opt_file);
    }
 
    void set_int_parameter(const std::string& identifier, int value) {
-      DistributedOptions::getInstance().set_int_param(identifier, value);
+      PIPSIPMppOptions::getInstance().set_int_param(identifier, value);
    }
 
    void set_double_parameter(const std::string& identifier, double value) {
-      DistributedOptions::getInstance().set_double_param(identifier, value);
+      PIPSIPMppOptions::getInstance().set_double_param(identifier, value);
    }
 
    void set_bool_parameter(const std::string& identifier, bool value) {
-      DistributedOptions::getInstance().set_bool_param(identifier, value);
+      PIPSIPMppOptions::getInstance().set_bool_param(identifier, value);
    }
 
    int get_int_parameter(const std::string& identifier) {
-      return DistributedOptions::getInstance().get_int_param(identifier);
+      return PIPSIPMppOptions::getInstance().get_int_param(identifier);
    }
 
    bool get_bool_parameter(const std::string& identifier) {
-      return DistributedOptions::getInstance().get_bool_param(identifier);
+      return PIPSIPMppOptions::getInstance().get_bool_param(identifier);
    }
 
    double get_double_parameter(const std::string& identifier) {
-      return DistributedOptions::getInstance().get_double_param(identifier);
+      return PIPSIPMppOptions::getInstance().get_double_param(identifier);
    }
 
 }

@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
       cout << "Pyomo input created from " << datarootname << endl;
    PIPSIPMppInterface<sFactoryAugSchurLeaf, MehrotraStochSolver> pipsIpm(*s);
 
-   pips_options::setIntParameter("OUTER_SOLVE", outerSolve);
-   pips_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
+   distributed_options::setIntParameter("OUTER_SOLVE", outerSolve);
+   distributed_options::setIntParameter("INNER_SC_SOLVE", innerSolve);
 
    if (mype == 0)
       cout << "PIPSIPMppInterface created" << endl;

@@ -7,7 +7,7 @@
 
 #include "PresolveData.h"
 
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "DistributedMatrix.h"
 #include "DoubleMatrixTypes.h"
 #include "DistributedMatrixUtilities.h"
@@ -30,7 +30,7 @@ bool PresolveData::iTrackRow() const {
 }
 
 PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver) : postsolver(postsolver),
-      limit_max_bound_accepted(pips_options::get_double_parameter("PRESOLVE_MAX_BOUND_ACCEPTED")),
+      limit_max_bound_accepted(pipsipmpp_options::get_double_parameter("PRESOLVE_MAX_BOUND_ACCEPTED")),
       array_outdated_indicators(new bool[length_array_outdated_indicators]), outdated_lhsrhs(array_outdated_indicators[0]),
       outdated_nnzs(array_outdated_indicators[1]), outdated_linking_var_bounds(array_outdated_indicators[2]),
       outdated_activities(array_outdated_indicators[3]), outdated_obj_vector(array_outdated_indicators[4]),
@@ -41,13 +41,13 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
       actmin_eq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_A->clone())}, actmax_ineq_part{cloneStochVector<int, double>(*nnzs_row_C)},
       actmin_ineq_part{dynamic_cast<DistributedVector<double>*>(actmax_ineq_part->clone())},
       actmax_ineq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_C->clone())},
-      actmin_ineq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_C->clone())}, INF_NEG(-pips_options::get_double_parameter("PRESOLVE_INFINITY")),
-      INF_POS(pips_options::get_double_parameter("PRESOLVE_INFINITY")), nChildren(nnzs_col->children.size()),
-      track_row(pips_options::get_bool_parameter("PRESOLVE_TRACK_ROW")), track_col(pips_options::get_bool_parameter("PRESOLVE_TRACK_COL")),
-      tracked_row(ROW, pips_options::get_int_parameter("PRESOLVE_TRACK_ROW_NODE"), pips_options::get_int_parameter("PRESOLVE_TRACK_ROW_INDEX"),
-            pips_options::get_bool_parameter("PRESOLVE_TRACK_ROW_LINKING"),
-            (pips_options::get_int_parameter("PRESOLVE_TRACK_ROW_SYSTEM") == 0 ? EQUALITY_SYSTEM : INEQUALITY_SYSTEM)),
-      tracked_col(COL, pips_options::get_int_parameter("PRESOLVE_TRACK_COL_NODE"), pips_options::get_int_parameter("PRESOLVE_TRACK_COL_INDEX")),
+      actmin_ineq_ubndd{dynamic_cast<DistributedVector<int>*>(nnzs_row_C->clone())}, INF_NEG(-pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")),
+      INF_POS(pipsipmpp_options::get_double_parameter("PRESOLVE_INFINITY")), nChildren(nnzs_col->children.size()),
+      track_row(pipsipmpp_options::get_bool_parameter("PRESOLVE_TRACK_ROW")), track_col(pipsipmpp_options::get_bool_parameter("PRESOLVE_TRACK_COL")),
+      tracked_row(ROW, pipsipmpp_options::get_int_parameter("PRESOLVE_TRACK_ROW_NODE"), pipsipmpp_options::get_int_parameter("PRESOLVE_TRACK_ROW_INDEX"),
+            pipsipmpp_options::get_bool_parameter("PRESOLVE_TRACK_ROW_LINKING"),
+            (pipsipmpp_options::get_int_parameter("PRESOLVE_TRACK_ROW_SYSTEM") == 0 ? EQUALITY_SYSTEM : INEQUALITY_SYSTEM)),
+      tracked_col(COL, pipsipmpp_options::get_int_parameter("PRESOLVE_TRACK_COL_NODE"), pipsipmpp_options::get_int_parameter("PRESOLVE_TRACK_COL_INDEX")),
       objective_vec_chgs{new SimpleVector<double>(nnzs_col->first->length())},
       lower_bound_implied_by_system{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},
       lower_bound_implied_by_row{dynamic_cast<DistributedVector<int>*>(nnzs_col->clone())},

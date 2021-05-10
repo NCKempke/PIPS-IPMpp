@@ -1,4 +1,4 @@
-#include "Options.h"
+#include "AbstractOptions.h"
 #include "pipsdef.h"
 
 #include <fstream>
@@ -8,19 +8,19 @@
 #include <cstdlib>
 #endif
 
-namespace base_options {
-   std::map<std::string, double> Options::double_options;
-   std::map<std::string, int> Options::int_options;
-   std::map<std::string, bool> Options::bool_options;
+namespace abstract_options {
+   std::map<std::string, double> AbstractOptions::double_options;
+   std::map<std::string, int> AbstractOptions::int_options;
+   std::map<std::string, bool> AbstractOptions::bool_options;
 
-   Options::Options() {
+   AbstractOptions::AbstractOptions() {
       /// INTERIOR-POINT ALGORITHM
       bool_options["IP_ACCURACY_REDUCED"] = false;
       bool_options["IP_PRINT_TIMESTAMP"] = false;
       bool_options["IP_STEPLENGTH_CONSERVATIVE"] = false;
    }
 
-   int Options::getIntParam(const std::string& identifier) const {
+   int AbstractOptions::get_int_param(const std::string& identifier) const {
       const std::map<std::string, int>::const_iterator& it = int_options.find(identifier);
 
       if (it != int_options.end())
@@ -31,7 +31,7 @@ namespace base_options {
       }
    }
 
-   double Options::getDoubleParam(const std::string& identifier) const {
+   double AbstractOptions::get_double_param(const std::string& identifier) const {
       const std::map<std::string, double>::const_iterator it = double_options.find(identifier);
 
       if (it != double_options.end())
@@ -42,7 +42,7 @@ namespace base_options {
       }
    }
 
-   bool Options::getBoolParam(const std::string& identifier) const {
+   bool AbstractOptions::get_bool_param(const std::string& identifier) const {
       const std::map<std::string, bool>::const_iterator it = bool_options.find(identifier);
 
       if (it != bool_options.end())
@@ -53,15 +53,15 @@ namespace base_options {
       }
    }
 
-   void Options::setIntParam(const std::string& param, int value) {
+   void AbstractOptions::set_int_param(const std::string& param, int value) {
       int_options[param] = value;
    }
 
-   void Options::setBoolParam(const std::string& param, bool value) {
+   void AbstractOptions::set_bool_param(const std::string& param, bool value) {
       bool_options[param] = value;
    }
 
-   void Options::setDoubleParam(const std::string& param, double value) {
+   void AbstractOptions::set_double_param(const std::string& param, double value) {
       double_options[param] = value;
    }
 
@@ -74,7 +74,7 @@ namespace base_options {
          return false;
    }
 
-   void Options::fillOptionsFromFile(const std::string& filename) {
+   void AbstractOptions::load_options_from_file(const std::string& filename) {
       std::ifstream params;
       params.open(filename.c_str(), std::ios::in);
       const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
@@ -111,7 +111,7 @@ namespace base_options {
             continue;
 
          try {
-            if (!identifierExists(identifier)) {
+            if (!identifier_exists(identifier)) {
                if (my_rank == 0)
                   std::cout << "Warning - unknown identifier - skipping it: " << identifier << std::endl;
             }
@@ -152,12 +152,12 @@ namespace base_options {
       }
    }
 
-   bool Options::identifierExists(const std::string& identifier) const {
+   bool AbstractOptions::identifier_exists(const std::string& identifier) const {
       return int_options.find(identifier) != int_options.end() || bool_options.find(identifier) != bool_options.end() ||
              double_options.find(identifier) != double_options.end();
    }
 
-   bool Options::isIdentifierUnique(const std::string& identifier) const {
+   bool AbstractOptions::is_identifier_unique(const std::string& identifier) const {
       int n_found = 0;
 
       if (int_options.find(identifier) != int_options.end())

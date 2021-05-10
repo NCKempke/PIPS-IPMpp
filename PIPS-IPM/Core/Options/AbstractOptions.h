@@ -18,12 +18,12 @@
  * base class for options class.
  */
 
-namespace base_options {
-   int getIntParameter(const std::string& identifier);
-   double getDoubleParameter(const std::string& identifier);
-   bool getBoolParameter(const std::string& identifier);
+namespace abstract_options {
+   int get_int_parameter(const std::string& identifier);
+   double get_double_parameter(const std::string& identifier);
+   bool get_bool_parameter(const std::string& identifier);
 
-   class Options : public Singleton {
+   class AbstractOptions : public Singleton {
    private:
       virtual void setDefaults() {};
 
@@ -34,41 +34,41 @@ namespace base_options {
       static std::map<std::string, int> int_options;
       static std::map<std::string, bool> bool_options;
 
-      friend int getIntParameter(const std::string& identifier);
-      friend double getDoubleParameter(const std::string& identifier);
-      friend bool getBoolParameter(const std::string& identifier);
+      friend int get_int_parameter(const std::string& identifier);
+      friend double get_double_parameter(const std::string& identifier);
+      friend bool get_bool_parameter(const std::string& identifier);
 
-      Options();
-      virtual ~Options() = default;
+      AbstractOptions();
+      virtual ~AbstractOptions() = default;
 
-      static Options& getInstance() {
-         static Options opt;
+      static AbstractOptions& get_instance() {
+         static AbstractOptions opt;
          return opt;
       }
 
-      bool isIdentifierUnique(const std::string& identifier) const;
-      bool identifierExists(const std::string& identifier) const;
-      void fillOptionsFromFile(const std::string& filename);
+      bool is_identifier_unique(const std::string& identifier) const;
+      bool identifier_exists(const std::string& identifier) const;
+      void load_options_from_file(const std::string& filename);
 
-      int getIntParam(const std::string& identifier) const;
-      double getDoubleParam(const std::string& identifier) const;
-      bool getBoolParam(const std::string& identifier) const;
+      int get_int_param(const std::string& identifier) const;
+      double get_double_param(const std::string& identifier) const;
+      bool get_bool_param(const std::string& identifier) const;
 
-      void setIntParam(const std::string& param, int value);
-      void setBoolParam(const std::string& param, bool value);
-      void setDoubleParam(const std::string& param, double value);
+      void set_int_param(const std::string& param, int value);
+      void set_bool_param(const std::string& param, bool value);
+      void set_double_param(const std::string& param, double value);
    };
 
-   inline int getIntParameter(const std::string& identifier) {
-      return Options::getInstance().getIntParam(identifier);
+   inline int get_int_parameter(const std::string& identifier) {
+      return AbstractOptions::get_instance().get_int_param(identifier);
    }
 
-   inline bool getBoolParameter(const std::string& identifier) {
-      return Options::getInstance().getBoolParam(identifier);
+   inline bool get_bool_parameter(const std::string& identifier) {
+      return AbstractOptions::get_instance().get_bool_param(identifier);
    }
 
-   inline double getDoubleParameter(const std::string& identifier) {
-      return Options::getInstance().getDoubleParam(identifier);
+   inline double get_double_parameter(const std::string& identifier) {
+      return AbstractOptions::get_instance().get_double_param(identifier);
    }
 }
 

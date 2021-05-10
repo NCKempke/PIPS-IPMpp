@@ -5,7 +5,7 @@
 #include <cassert>
 #include "MehrotraStrategy.hpp"
 #include "Observer.h"
-#include "DistributedOptions.h"
+#include "PIPSIPMppOptions.h"
 #include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"
@@ -20,41 +20,41 @@ const unsigned int max_linesearch_points = 50;
 
 MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic,
       const Scaler* scaler = nullptr) : mehrotra_heuristic(mehrotra_heuristic), scaler(scaler), corrector_step(factory.make_variables(problem)),
-      corrector_residuals(factory.make_residuals(problem)), n_linesearch_points(pips_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
+      corrector_residuals(factory.make_residuals(problem)), n_linesearch_points(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")),
       temp_step(factory.make_variables(problem)), statistics(factory, scaler), bicgstab_skipped(false), bicgstab_converged(true),
       bigcstab_norm_res_rel(0.), bicg_iterations(0),
-      dynamic_corrector_schedule(pips_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
-      additional_correctors_small_comp_pairs(pips_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
-      max_additional_correctors(pips_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
-      first_iter_small_correctors(pips_options::get_int_parameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
-      max_alpha_small_correctors(pips_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
-      maximum_correctors(qpgen_options::getIntParameter("GONDZIO_MAX_CORRECTORS")), number_gondzio_corrections(0), step_factor0(0.3),
+      dynamic_corrector_schedule(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
+      additional_correctors_small_comp_pairs(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
+      max_additional_correctors(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
+      first_iter_small_correctors(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
+      max_alpha_small_correctors(pipsipmpp_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
+      maximum_correctors(options::getIntParameter("GONDZIO_MAX_CORRECTORS")), number_gondzio_corrections(0), step_factor0(0.3),
       step_factor1(1.5), acceptance_tolerance(0.01), beta_min(0.1), beta_max(10),
-      dynamic_bicg_tol(pips_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")), tsig(3.), max_iterations(300) {
+      dynamic_bicg_tol(pipsipmpp_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")), tsig(3.), max_iterations(300) {
    assert(max_additional_correctors > 0);
    assert(first_iter_small_correctors >= 0);
    assert(0 < max_alpha_small_correctors && max_alpha_small_correctors < 1);
    assert(n_linesearch_points > 0);
 
-   if (base_options::getBoolParameter("IP_ACCURACY_REDUCED")) {
+   if (abstract_options::get_bool_parameter("IP_ACCURACY_REDUCED")) {
       artol = 1.e-3;
       mutol = 1.e-5;
    }
 
-   if (pips_options::get_bool_parameter("GONDZIO_STOCH_ADAPTIVE_LINESEARCH")) {
+   if (pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_ADAPTIVE_LINESEARCH")) {
       const int size = PIPS_MPIgetSize();
 
       if (size > 1)
          this->n_linesearch_points = std::min(unsigned(size) + this->n_linesearch_points, max_linesearch_points);
    }
 
-   if (base_options::getBoolParameter("IP_STEPLENGTH_CONSERVATIVE")) {
+   if (abstract_options::get_bool_parameter("IP_STEPLENGTH_CONSERVATIVE")) {
       steplength_factor = 0.99;
       gamma_f = 0.95;
    }
    gamma_a = 1. / (1. - gamma_f);
 
-   if (base_options::getBoolParameter("IP_PRINT_TIMESTAMP")) {
+   if (abstract_options::get_bool_parameter("IP_PRINT_TIMESTAMP")) {
       print_timestamp = true;
       start_time = MPI_Wtime();
    }
@@ -770,13 +770,13 @@ void MehrotraStrategy::set_BiCGStab_tolerance(int iteration) const {
    assert(iteration >= -1);
 
    if (iteration == -1)
-      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
+      pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
    else if (iteration <= 4)
-      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-8);
+      pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-8);
    else if (iteration <= 8)
-      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-9);
+      pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-9);
    else
-      pips_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
+      pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
 }
 
 void MehrotraStrategy::notify_from_subject() {

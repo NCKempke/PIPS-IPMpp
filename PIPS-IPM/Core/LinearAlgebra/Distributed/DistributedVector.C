@@ -1815,7 +1815,7 @@ void DistributedVector<T>::permuteLinkingEntries(const std::vector<unsigned int>
 
 template<typename T>
 std::vector<T> DistributedVector<T>::gatherStochVector() const {
-   if (pips_options::get_bool_parameter("HIERARCHICAL")) {
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
       // TODO adapt for hier approach
       // assert( false && "TODO : implement" );
    }
@@ -1887,7 +1887,7 @@ std::vector<T> DistributedVector<T>::gatherStochVector() const {
 // is root node data of DistributedVector<double> same on all procs?
 template<typename T>
 bool DistributedVector<T>::isRootNodeInSync() const {
-   if (pips_options::get_bool_parameter("HIERARCHICAL")) {
+   if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) {
       // TODO adapt for hier approach
       // assert( false && "TODO : implement" );
    }
