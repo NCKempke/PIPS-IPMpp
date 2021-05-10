@@ -1,75 +1,63 @@
 /*
- * Options.h
+ * QpGenOptions.h
  *
- *  Created on: 03.04.2020
+ *  Created on: 01.07.2020
  *      Author: bzfkempk
  */
 
-#ifndef PIPS_IPM_CORE_ABSTRACT_OPTIONS_H_
-#define PIPS_IPM_CORE_ABSTRACT_OPTIONS_H_
+#ifndef PIPS_IPM_CORE_QPGEN_QPGENOPTIONS_H_
+#define PIPS_IPM_CORE_QPGEN_QPGENOPTIONS_H_
 
-#include <string>
-#include <map>
-
+#include "Options.h"
 #include "pipsport.h"
-#include "Singleton.h"
+
+#include <cassert>
 
 /**
- * base class for options class.
+ * The getInstanceMethod must be specified in this BaseClass.
+ * Defines default options.
  */
 
-namespace base_options {
+namespace qpgen_options {
+   void setOptions(const std::string& opt_file);
    int getIntParameter(const std::string& identifier);
    double getDoubleParameter(const std::string& identifier);
    bool getBoolParameter(const std::string& identifier);
 
-   class Options : public Singleton {
-   private:
-      virtual void setDefaults() {};
+   class QpGenOptions : public base_options::Options {
 
-   protected:
-      // not thread safe when modified..
-      // TODO : there is no hash_map in C++03 I think
-      static std::map<std::string, double> double_options;
-      static std::map<std::string, int> int_options;
-      static std::map<std::string, bool> bool_options;
-
+   protected :
+      friend void setOptions(const std::string& opt_file);
       friend int getIntParameter(const std::string& identifier);
       friend double getDoubleParameter(const std::string& identifier);
       friend bool getBoolParameter(const std::string& identifier);
 
-      Options();
-      virtual ~Options() = default;
-
-      static Options& getInstance() {
-         static Options opt;
+      static QpGenOptions& getInstance() {
+         static QpGenOptions opt;
          return opt;
       }
 
-      bool isIdentifierUnique(const std::string& identifier) const;
-      bool identifierExists(const std::string& identifier) const;
-      void fillOptionsFromFile(const std::string& filename);
+      void setDefaults() override;
+      QpGenOptions();
 
-      int getIntParam(const std::string& identifier) const;
-      double getDoubleParam(const std::string& identifier) const;
-      bool getBoolParam(const std::string& identifier) const;
-
-      void setIntParam(const std::string& param, int value);
-      void setBoolParam(const std::string& param, bool value);
-      void setDoubleParam(const std::string& param, double value);
+      virtual ~QpGenOptions() {};
    };
 
+   inline void setOptions(const std::string& opt_file) {
+      return QpGenOptions::getInstance().fillOptionsFromFile(opt_file);
+   }
+
    inline int getIntParameter(const std::string& identifier) {
-      return Options::getInstance().getIntParam(identifier);
+      return QpGenOptions::getInstance().getIntParam(identifier);
    }
 
    inline bool getBoolParameter(const std::string& identifier) {
-      return Options::getInstance().getBoolParam(identifier);
+      return QpGenOptions::getInstance().getBoolParam(identifier);
    }
 
    inline double getDoubleParameter(const std::string& identifier) {
-      return Options::getInstance().getDoubleParam(identifier);
+      return QpGenOptions::getInstance().getDoubleParam(identifier);
    }
 }
 
-#endif /* PIPS_IPM_CORE_ABSTRACT_OPTIONS_H_ */
+#endif /* PIPS_IPM_CORE_QPGEN_QPGENOPTIONS_H_ */

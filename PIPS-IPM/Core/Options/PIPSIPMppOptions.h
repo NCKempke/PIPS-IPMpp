@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_QPSTOCH_STOCHOPTIONS_H_
 #define PIPS_IPM_CORE_QPSTOCH_STOCHOPTIONS_H_
 
-#include "QpGenOptions.h"
+#include "Options.h"
 #include "pipsport.h"
 
 #include <cassert>
@@ -33,7 +33,7 @@ std::ostream& operator<<(std::ostream& os, const SolverType solver);
 std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver);
 
 
-namespace pips_options {
+namespace distributed_options {
    bool is_solver_available(SolverType solver);
    SolverType get_solver_root();
    SolverType get_solver_sub_root();
@@ -51,7 +51,7 @@ namespace pips_options {
    double get_double_parameter(const std::string& identifier);
    bool get_bool_parameter(const std::string& identifier);
 
-   class DistributedOptions : public qpgen_options::QpGenOptions {
+   class DistributedOptions : public options::Options {
 
    private:
       friend void set_int_parameter(const std::string& identifier, int value);

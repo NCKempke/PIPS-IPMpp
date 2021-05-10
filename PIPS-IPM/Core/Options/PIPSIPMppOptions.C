@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& os, const SolverTypeDense solver) {
    return os;
 }
 
-namespace pips_options {
+namespace distributed_options {
    const std::vector<SolverType> solvers_available{
 #ifdef WITH_PARDISO
          SolverType::SOLVER_PARDISO,
@@ -185,7 +185,7 @@ namespace pips_options {
 
    DistributedOptions::DistributedOptions() {
       /* initialize base class options first (QpGenOptions) */
-      QpGenOptions::getInstance();
+      Options::getInstance();
 
       /* now override with own set of options */
       setDefaults();
@@ -404,31 +404,31 @@ namespace pips_options {
    }
 
    void set_options(const std::string& opt_file) {
-      return DistributedOptions::getInstance().fillOptionsFromFile(opt_file);
+      return DistributedOptions::getInstance().load_options_from_file(opt_file);
    }
 
    void set_int_parameter(const std::string& identifier, int value) {
-      DistributedOptions::getInstance().setIntParam(identifier, value);
+      DistributedOptions::getInstance().set_int_param(identifier, value);
    }
 
    void set_double_parameter(const std::string& identifier, double value) {
-      DistributedOptions::getInstance().setDoubleParam(identifier, value);
+      DistributedOptions::getInstance().set_double_param(identifier, value);
    }
 
    void set_bool_parameter(const std::string& identifier, bool value) {
-      DistributedOptions::getInstance().setBoolParam(identifier, value);
+      DistributedOptions::getInstance().set_bool_param(identifier, value);
    }
 
    int get_int_parameter(const std::string& identifier) {
-      return DistributedOptions::getInstance().getIntParam(identifier);
+      return DistributedOptions::getInstance().get_int_param(identifier);
    }
 
    bool get_bool_parameter(const std::string& identifier) {
-      return DistributedOptions::getInstance().getBoolParam(identifier);
+      return DistributedOptions::getInstance().get_bool_param(identifier);
    }
 
    double get_double_parameter(const std::string& identifier) {
-      return DistributedOptions::getInstance().getDoubleParam(identifier);
+      return DistributedOptions::getInstance().get_double_param(identifier);
    }
 
 }
