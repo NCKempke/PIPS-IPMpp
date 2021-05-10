@@ -1,6 +1,6 @@
 #add_definitions(-DTIMING -DSTOCH_TESTING) # timing output
 include_directories(
-        Core/Abstract
+        Core/Base
         Core/InteriorPointMethod
         Core/LinearAlgebra/Sparse
         Core/LinearAlgebra/Dense
