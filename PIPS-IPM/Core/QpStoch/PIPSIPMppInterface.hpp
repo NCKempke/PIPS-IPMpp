@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <memory>
 #include <MehrotraStrategy.hpp>
+#include <InteriorPointMethod.h>
 #include "DistributedTree.h"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
@@ -24,7 +25,6 @@
 #include "pipsport.h"
 #include "PIPSIPMppOptions.h"
 
-template<class IPMSOLVER>
 class PIPSIPMppInterface {
 public:
    PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
@@ -92,7 +92,7 @@ protected:
    std::unique_ptr<Presolver> presolver{};
    std::unique_ptr<Postsolver> postsolver{};
    std::unique_ptr<Scaler> scaler{};
-   std::unique_ptr<IPMSOLVER> solver{};
+   std::unique_ptr<InteriorPointMethod> solver{};
 
    MPI_Comm comm = MPI_COMM_NULL;
    const int my_rank = -1;
@@ -106,8 +106,7 @@ protected:
 // implementation
 #ifdef PIPSIPMPPINTERFACE_H
 
-template<class IPMSOLVER>
-PIPSIPMppInterface<IPMSOLVER>::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm comm, ScalerType
+PIPSIPMppInterface::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm comm, ScalerType
 scaler_type, PresolverType presolver_type, std::string settings) : factory(tree, comm), comm(comm), my_rank(PIPS_MPIgetRank()) {
    pipsipmpp_options::set_options(settings);
    const bool postsolve = pipsipmpp_options::get_bool_parameter("POSTSOLVE");
@@ -208,7 +207,7 @@ scaler_type, PresolverType presolver_type, std::string settings) : factory(tree,
          std::cout << "---scaling time (in sec.): " << t_scaling - t0_scaling << "\n";
    }
 
-   solver.reset(new IPMSOLVER(factory, *presolved_problem, mehrotra_heuristic, scaler.get()));
+   solver.reset(new InteriorPointMethod(factory, *presolved_problem, mehrotra_heuristic, scaler.get()));
 #ifdef TIMING
    if( my_rank == 0 ) printf("solver created\n");
 #endif
@@ -219,9 +218,7 @@ scaler_type, PresolverType presolver_type, std::string settings) : factory(tree,
       std::cout << "---reading time (in sec.): " << t1 - t0 << "\n";
 }
 
-
-template<typename IPMSOLVER>
-void PIPSIPMppInterface<IPMSOLVER>::run() {
+void PIPSIPMppInterface::run() {
    if (my_rank == 0)
       std::cout << "solving ...\n";
 
@@ -293,8 +290,7 @@ void PIPSIPMppInterface<IPMSOLVER>::run() {
 #endif
 }
 
-template<typename SOLVER>
-double PIPSIPMppInterface<SOLVER>::getObjective() {
+double PIPSIPMppInterface::getObjective() {
 
    if (!ran_solver)
       throw std::logic_error("Must call go() and start solution process before trying to retrieve original solution");
@@ -314,16 +310,13 @@ double PIPSIPMppInterface<SOLVER>::getObjective() {
    return obj;
 }
 
-
-template<typename SOLVER>
-double PIPSIPMppInterface<SOLVER>::getFirstStageObjective() const {
+double PIPSIPMppInterface::getFirstStageObjective() const {
    Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->x).first);
    Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
    return c.dotProductWith(x);
 }
 
-template<class IPMSOLVER>
-void PIPSIPMppInterface<IPMSOLVER>::getVarsUnscaledUnperm() {
+void PIPSIPMppInterface::getVarsUnscaledUnperm() {
    assert(unscaleUnpermNotHierVars == nullptr);
    assert(dataUnpermNotHier);
 
@@ -338,8 +331,7 @@ void PIPSIPMppInterface<IPMSOLVER>::getVarsUnscaledUnperm() {
 
 }
 
-template<class IPMSOLVER>
-void PIPSIPMppInterface<IPMSOLVER>::getResidsUnscaledUnperm() {
+void PIPSIPMppInterface::getResidsUnscaledUnperm() {
    assert(unscaleUnpermNotHierResids == nullptr);
    assert(dataUnpermNotHier);
 
@@ -353,8 +345,7 @@ void PIPSIPMppInterface<IPMSOLVER>::getResidsUnscaledUnperm() {
       unscaleUnpermNotHierResids.reset(presolved_problem->getResidsUnperm(*residuals, *dataUnpermNotHier));
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
+std::vector<double> PIPSIPMppInterface::gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather) {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -370,33 +361,33 @@ std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherFromSolution(SmartPoint
    return vec;
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherPrimalSolution() {
+
+std::vector<double> PIPSIPMppInterface::gatherPrimalSolution() {
    return gatherFromSolution(&DistributedVariables::x);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionEq() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionEq() {
    return gatherFromSolution(&DistributedVariables::y);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionIneq() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionIneq() {
    return gatherFromSolution(&DistributedVariables::z);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionIneqUpp() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionIneqUpp() {
    return gatherFromSolution(&DistributedVariables::pi);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionIneqLow() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionIneqLow() {
    return gatherFromSolution(&DistributedVariables::lambda);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionVarBounds() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionVarBounds() {
    std::vector<double> duals_varbounds_upp = gatherDualSolutionVarBoundsUpp();
    std::vector<double> duals_varbounds_low = gatherDualSolutionVarBoundsLow();
 
@@ -411,18 +402,18 @@ std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionVarBounds()
    return duals_varbounds;
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionVarBoundsUpp() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionVarBoundsUpp() {
    return gatherFromSolution(&DistributedVariables::phi);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherDualSolutionVarBoundsLow() {
+
+std::vector<double> PIPSIPMppInterface::gatherDualSolutionVarBoundsLow() {
    return gatherFromSolution(&DistributedVariables::gamma);
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherEqualityConsValues() {
+
+std::vector<double> PIPSIPMppInterface::gatherEqualityConsValues() {
    if (unscaleUnpermNotHierResids == nullptr)
       this->getResidsUnscaledUnperm();
 
@@ -446,8 +437,8 @@ std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherEqualityConsValues() {
 }
 
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherInequalityConsValues() {
+
+std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
    if (unscaleUnpermNotHierVars == nullptr)
       this->getVarsUnscaledUnperm();
 
@@ -473,14 +464,14 @@ std::vector<double> PIPSIPMppInterface<IPMSOLVER>::gatherInequalityConsValues() 
    return ineq_vals_vec;
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::getFirstStagePrimalColSolution() const {
+
+std::vector<double> PIPSIPMppInterface::getFirstStagePrimalColSolution() const {
    auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
-template<class IPMSOLVER>
-std::vector<double> PIPSIPMppInterface<IPMSOLVER>::getSecondStagePrimalColSolution(int scen) const {
+
+std::vector<double> PIPSIPMppInterface::getSecondStagePrimalColSolution(int scen) const {
    auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
@@ -488,8 +479,8 @@ std::vector<double> PIPSIPMppInterface<IPMSOLVER>::getSecondStagePrimalColSoluti
       return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
-template<class IPMSOLVER>
-void PIPSIPMppInterface<IPMSOLVER>::printComplementarityResiduals(const DistributedVariables& svars) const {
+
+void PIPSIPMppInterface::printComplementarityResiduals(const DistributedVariables& svars) const {
    const int my_rank = PIPS_MPIgetRank();
 
    /* complementarity residuals before postsolve */
@@ -524,8 +515,8 @@ void PIPSIPMppInterface<IPMSOLVER>::printComplementarityResiduals(const Distribu
    }
 }
 
-template<class IPMSOLVER>
-void PIPSIPMppInterface<IPMSOLVER>::postsolveComputedSolution() {
+
+void PIPSIPMppInterface::postsolveComputedSolution() {
    const bool print_residuals = pipsipmpp_options::get_bool_parameter("POSTSOLVE_PRINT_RESIDS");
    const int my_rank = PIPS_MPIgetRank(comm);
 

@@ -394,7 +394,7 @@ int main(int argc, char** argv) {
    }
 
    // create the PIPS-IPM++ interface
-   PIPSIPMppInterface<InteriorPointMethod> pipsIpm(root, primal_dual_step_length ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler_type,
+   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
 
    if (gmsRank == 0) {

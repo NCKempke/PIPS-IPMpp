@@ -490,7 +490,7 @@ int main(int argc, char** argv) {
 
    /* use BiCGStab for outer solve */
    pipsipmpp_options::set_int_parameter("INNER_SC_SOLVE", 0);
-   PIPSIPMppInterface<InteriorPointMethod> pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
+   PIPSIPMppInterface pipsIpm(root, PRIMAL, MPI_COMM_WORLD, SCALER_GEO_STOCH, PRESOLVER_NONE);
 
    if (rank == 0)
       std::cout << "PIPSIPMppInterface created" << std::endl;

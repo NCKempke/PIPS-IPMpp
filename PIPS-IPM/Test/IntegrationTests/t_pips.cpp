@@ -69,7 +69,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 
    double result = std::numeric_limits<double>::infinity();
 
-   PIPSIPMppInterface<InteriorPointMethod> pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
+   PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
    try {
       pipsIpm.run();
       result = pipsIpm.getObjective();
