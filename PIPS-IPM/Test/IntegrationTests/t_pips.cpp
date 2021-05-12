@@ -6,7 +6,7 @@
  */
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "InteriorPointMethod.h"
+#include "InteriorPointMethod.hpp"
 #include "PIPSIPMppInterface.hpp"
 #include "gmspips_reader.hpp"
 

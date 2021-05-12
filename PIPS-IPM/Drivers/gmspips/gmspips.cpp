@@ -3,7 +3,7 @@
 #include "DistributedInputTree.h"
 #include "PreprocessFactory.h"
 #include "PIPSIPMppInterface.hpp"
-#include "InteriorPointMethod.h"
+#include "InteriorPointMethod.hpp"
 
 #endif
 #if defined(GMS_MPI)

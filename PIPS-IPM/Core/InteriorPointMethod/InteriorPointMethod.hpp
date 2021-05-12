@@ -8,7 +8,7 @@
 #ifndef INTERIORPOINTMETHOD_H
 #define INTERIORPOINTMETHOD_H
 
-#include "Solver.h"
+#include "Solver.hpp"
 #include "MehrotraStrategy.hpp"
 
 class Problem;

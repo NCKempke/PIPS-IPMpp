@@ -7,7 +7,7 @@
 
 #include <memory>
 #include <MehrotraStrategy.hpp>
-#include <InteriorPointMethod.h>
+#include <InteriorPointMethod.hpp>
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"
 #include "DistributedVariables.h"

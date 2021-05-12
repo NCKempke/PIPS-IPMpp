@@ -1,4 +1,4 @@
-#include "Solver.h"
+#include "Solver.hpp"
 #include "Problem.h"
 #include "Variables.h"
 #include "Residuals.h"

@@ -4,8 +4,8 @@ add_library(pips-ipmpp STATIC
         Base/Observer.C Base/Variables.C Problems/Problem.C Base/Residuals.cpp Base/Scaler.C
         
         # Globalization/Filter.cpp Globalization/FilterStrategy.cpp Globalization/FilterLineSearch.cpp
-        
-        InteriorPointMethod/Solver.C InteriorPointMethod/InteriorPointMethod.C InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
+
+        InteriorPointMethod/Solver.cpp InteriorPointMethod/InteriorPointMethod.cpp InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
 
         Options/AbstractOptions.C Options/Options.C Options/PIPSIPMppOptions.C
 
@@ -15,8 +15,8 @@ add_library(pips-ipmpp STATIC
         Readers/MpsReader.C Readers/hash.C #Readers
         LinearSolvers/Preconditioners/SCsparsifier.C
         Problems/DistributedQP.cpp
-        Problems/DistributedFactory.C 
-        InteriorPointMethod/Solver.C
+        Problems/DistributedFactory.C
+        InteriorPointMethod/Solver.cpp
         LinearSystems/DistributedLinearSystem.C
         LinearSystems/DistributedRootLinearSystem.C
         LinearSystems/sLinsysRootAug.C

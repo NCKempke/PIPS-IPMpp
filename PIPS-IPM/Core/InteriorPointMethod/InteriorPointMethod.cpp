@@ -5,7 +5,7 @@
  *      Author: Daniel Rehfeldt
  */
 
-#include "InteriorPointMethod.h"
+#include "InteriorPointMethod.hpp"
 #include "Variables.h"
 #include "Residuals.h"
 #include "AbstractLinearSystem.h"
