@@ -7,7 +7,6 @@
 
 #include <memory>
 #include "Statistics.hpp"
-#include "Observer.h"
 #include "TerminationStatus.h"
 
 class Problem;
@@ -24,7 +23,7 @@ class Scaler;
 
 enum MehrotraHeuristic { PRIMAL, PRIMAL_DUAL };
 
-class MehrotraStrategy : public Observer {
+class MehrotraStrategy {
 public:
    MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler);
    TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
@@ -113,6 +112,8 @@ protected:
    TerminationStatus
    corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
+   void gondzio_correction_loop_primal(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system, int iteration, double& alpha_target, double& alpha, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
    void
@@ -130,7 +131,6 @@ protected:
    double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const;
    bool decrease_preconditioner_impact(AbstractLinearSystem* sys) const;
    void adjust_limit_gondzio_correctors();
-   void notify_from_subject() override;
    void check_linsys_solve_numerical_troubles_and_react(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void
    print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
@@ -139,13 +139,11 @@ protected:
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
    double mehrotra_step_length(Variables* iterate, Variables* step);
    void mehrotra_step_length(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-   TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu,
-         TerminationStatus level);
+   TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
          double sigma, int i, double mu, int status_code, int level) const;
-   void register_observer(AbstractLinearSystem* linear_system);
 };
 
 

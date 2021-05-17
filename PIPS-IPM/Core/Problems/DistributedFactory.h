@@ -57,7 +57,7 @@ public:
 
    Variables* make_variables(Problem& problem);
 
-   AbstractLinearSystem* make_linear_system(Problem& problem);
+   std::unique_ptr<AbstractLinearSystem> make_linear_system(Problem& problem);
 
    /** create x shaped vector using tree */
    Vector<double>* make_primal_vector() const;
@@ -71,9 +71,9 @@ public:
    /** create rhs for augmented system using tree */
    Vector<double>* make_right_hand_side() const;
 
-   DistributedRootLinearSystem* make_linear_system_root();
+   std::unique_ptr<DistributedRootLinearSystem> make_linear_system_root();
 
-   DistributedRootLinearSystem* make_root_hierarchical_linear_system();
+   std::unique_ptr<DistributedRootLinearSystem> make_root_hierarchical_linear_system();
 
    DistributedRootLinearSystem* make_linear_system_root(DistributedQP* problem, Vector<double>* primal_diagonal, Vector<double>* dq, Vector<double>* nomegaInv,
          Vector<double>* primal_regularization, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization,
@@ -100,10 +100,10 @@ public:
    DistributedResiduals* residuals{};
    std::vector<DistributedVariables*> registered_variables;
 
-   DistributedRootLinearSystem* linear_system{};
+   //DistributedRootLinearSystem* linear_system{};
 
-   StochIterateResourcesMonitor iterTmMonitor;
-   double m_tmTotal{0.0};
+   Timer timer;
+   double total_time{0.0};
 
    ~DistributedFactory();
 

@@ -19,7 +19,7 @@
 #include <mpi.h>
 #include <iostream>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 #ifdef STOCH_TESTING
 extern double g_iterNumber;

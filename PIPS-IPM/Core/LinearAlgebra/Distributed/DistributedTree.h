@@ -22,7 +22,7 @@ class DistributedTree {
    friend DistributedTreeCallbacks;
 public:
    StochNodeResourcesMonitor resMon;
-   static StochIterateResourcesMonitor iterMon;
+   static Timer iterMon;
 
    long long getN() const { return N; };
    long long getMY() const { return MY; };
@@ -148,8 +148,8 @@ protected:
 
    DistributedTree() = default;
 
-   void toMonitorsList(std::list<NodeExecEntry>&);
-   void fromMonitorsList(std::list<NodeExecEntry>&);
+   void toMonitorsList(std::list<NodeTimer>&);
+   void fromMonitorsList(std::list<NodeTimer>&);
 
    void computeNodeTotal();
 

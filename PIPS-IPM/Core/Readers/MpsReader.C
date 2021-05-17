@@ -13,7 +13,7 @@
 #include <cctype>
 #include <cmath>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 enum { DATALINE = 1, HEADERLINE };
 enum {
@@ -2674,7 +2674,7 @@ void MpsReader::printSolution(double x[], int nx, double xlow[], char ixlow[], d
          iErr = mpsfileopenerr;
          return;
       }
-      if (gOoqpPrintLevel > 0) {
+      if (print_level > 0) {
          printf("\nprinting solution:  input file name %s\n", infilename);
          printf("printing solution: output file name %s\n", outfilename);
       }

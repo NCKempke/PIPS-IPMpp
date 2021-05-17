@@ -4,7 +4,7 @@
 
 #include <math.h>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 #define EPS 2.220e-16
 
@@ -201,7 +201,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
          relres = normr_act / n2b;
       }
 
-      if (gOoqpPrintLevel >= 1) {
+      if (print_level >= 1) {
          printf("CG did not NOT converged after %d  max of %d iters were made.\n", iter, ii);
          printf("\t - Error code %d\n\t - Act res=%g\n\t - Rel res=%g %g\n\n", flag, normr, relres, normrmin);
       }

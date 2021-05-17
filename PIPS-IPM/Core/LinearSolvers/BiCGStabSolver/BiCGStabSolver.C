@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 #define EPS 2.220e-16
 
@@ -268,7 +268,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
          relres = normr / n2b;
       }
 
-      if (gOoqpPrintLevel >= 1) {
+      if (print_level >= 1) {
          printf("BiCGStab did not NOT converged after %g[%d] iterations.\n", iter, ii);
          printf("\t - Error code %d\n\t - Act res=%g\n\t - Rel res=%g %g\n\n", flag, normr, relres, normrmin);
       }
@@ -464,7 +464,7 @@ void BiCGStabSolver::solve( Vector<double>& rhs_ )
       relres = normr_act/n2b;
     }
   
-    if(gOoqpPrintLevel>=1) printf("BiCGStab did NOT converged after %d iterations. Error code %d",
+    if(print_level>=1) printf("BiCGStab did NOT converged after %d iterations. Error code %d",
 				  iter, flag);
   }
 

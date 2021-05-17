@@ -19,7 +19,7 @@ using namespace std;
 #include <unistd.h>
 #endif
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 
 /* Initialise control with default values */

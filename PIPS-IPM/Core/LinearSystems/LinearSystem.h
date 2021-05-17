@@ -8,7 +8,6 @@
 #include "AbstractLinearSystem.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
-#include "Observer.h"
 #include "RegularizationStrategy.h"
 
 #include <functional>
@@ -35,7 +34,7 @@ class Residuals;
  * @ingroup QpGen 
  */
 
-class LinearSystem : public AbstractLinearSystem, public Subject {
+class LinearSystem : public AbstractLinearSystem {
 
 public:
    enum class IterativeSolverSolutionStatus : int {
@@ -70,12 +69,6 @@ protected:
 
    double bicg_resnorm{0.0};
    double bicg_relresnorm{0.0};
-
-   [[nodiscard]] int getIntValue(const std::string& s) const override;
-
-   [[nodiscard]] double getDoubleValue(const std::string& s) const override;
-
-   [[nodiscard]] bool getBoolValue(const std::string& s) const override;
 
    /** stores a critical diagonal matrix as a vector */
    Vector<double>* nomegaInv{};

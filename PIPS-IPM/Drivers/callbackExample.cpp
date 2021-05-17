@@ -1,4 +1,4 @@
-#include <InteriorPointMethod.h>
+#include <InteriorPointMethod.hpp>
 #include "DistributedInputTree.h"
 #include "PIPSIPMppInterface.hpp"
 #include "MehrotraStrategy.hpp"
