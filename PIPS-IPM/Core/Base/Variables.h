@@ -105,7 +105,7 @@ public:
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
     * @see find_blocking */
-   double stepbound(const Variables* b);
+   double stepbound(const Variables* iterate);
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
     * variables stay nonnegative in the given search direction b. In the
@@ -114,7 +114,7 @@ public:
     *
     * @see stepbound
     */
-   void stepbound_pd(const Variables* b, double& alpha_primal, double& alpha_dual);
+   std::pair<double, double> stepbound_pd(const Variables* iterate);
 
    /** Performs the same function as stepbound, and supplies additional
     * information about which component of the nonnegative variables is

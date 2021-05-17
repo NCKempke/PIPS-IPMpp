@@ -114,7 +114,7 @@ public:
    void selectNonZeros(const Vector<T>& select) override;
    void selectPositive() override;
    void selectNegative() override;
-   void addSomeConstants(T c, const Vector<T>& select) override;
+   void add_constant(T c, const Vector<T>& select) override;
    void writefSomeToStream(std::ostream& out, const char format[], const Vector<T>& select) const override;
    void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
 

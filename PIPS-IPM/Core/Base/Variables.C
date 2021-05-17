@@ -250,44 +250,44 @@ void Variables::negate() {
 }
 
 double Variables::stepbound(const Variables* iterate) {
-   double maxStep = 1.0;
+   double max_step = 1.0;
    if (mclow > 0) {
       assert(t->somePositive(*iclow));
       assert(lambda->somePositive(*iclow));
 
-      maxStep = t->stepbound(*iterate->t, maxStep);
-      maxStep = lambda->stepbound(*iterate->lambda, maxStep);
+      max_step = t->stepbound(*iterate->t, max_step);
+      max_step = lambda->stepbound(*iterate->lambda, max_step);
    }
 
    if (mcupp > 0) {
       assert(u->somePositive(*icupp));
       assert(pi->somePositive(*icupp));
 
-      maxStep = u->stepbound(*iterate->u, maxStep);
-      maxStep = pi->stepbound(*iterate->pi, maxStep);
+      max_step = u->stepbound(*iterate->u, max_step);
+      max_step = pi->stepbound(*iterate->pi, max_step);
    }
 
    if (nxlow > 0) {
       assert(v->somePositive(*ixlow));
       assert(gamma->somePositive(*ixlow));
 
-      maxStep = v->stepbound(*iterate->v, maxStep);
-      maxStep = gamma->stepbound(*iterate->gamma, maxStep);
+      max_step = v->stepbound(*iterate->v, max_step);
+      max_step = gamma->stepbound(*iterate->gamma, max_step);
    }
 
    if (nxupp > 0) {
       assert(w->somePositive(*ixupp));
       assert(phi->somePositive(*ixupp));
 
-      maxStep = w->stepbound(*iterate->w, maxStep);
-      maxStep = phi->stepbound(*iterate->phi, maxStep);
+      max_step = w->stepbound(*iterate->w, max_step);
+      max_step = phi->stepbound(*iterate->phi, max_step);
    }
 
-   assert(maxStep <= 1.0);
-   return maxStep;
+   assert(max_step <= 1.0);
+   return max_step;
 }
 
-void Variables::stepbound_pd(const Variables* iterate, double& alpha_primal, double& alpha_dual) {
+std::pair<double, double> Variables::stepbound_pd(const Variables* iterate) {
    double maxStep_primal = 1.0;
    double maxStep_dual = 1.0;
 
@@ -325,9 +325,7 @@ void Variables::stepbound_pd(const Variables* iterate, double& alpha_primal, dou
 
    assert(maxStep_primal <= 1.0);
    assert(maxStep_dual <= 1.0);
-
-   alpha_primal = maxStep_primal;
-   alpha_dual = maxStep_dual;
+   return std::make_pair(maxStep_primal, maxStep_dual);
 }
 
 double
@@ -456,20 +454,20 @@ double Variables::violation() {
 
 void Variables::shiftBoundVariables(double alpha, double beta) {
    if (nxlow > 0) {
-      v->addSomeConstants(alpha, *ixlow);
-      gamma->addSomeConstants(beta, *ixlow);
+      v->add_constant(alpha, *ixlow);
+      gamma->add_constant(beta, *ixlow);
    }
    if (nxupp > 0) {
-      w->addSomeConstants(alpha, *ixupp);
-      phi->addSomeConstants(beta, *ixupp);
+      w->add_constant(alpha, *ixupp);
+      phi->add_constant(beta, *ixupp);
    }
    if (mclow > 0) {
-      t->addSomeConstants(alpha, *iclow);
-      lambda->addSomeConstants(beta, *iclow);
+      t->add_constant(alpha, *iclow);
+      lambda->add_constant(beta, *iclow);
    }
    if (mcupp > 0) {
-      u->addSomeConstants(alpha, *icupp);
-      pi->addSomeConstants(beta, *icupp);
+      u->add_constant(alpha, *icupp);
+      pi->add_constant(beta, *icupp);
    }
 }
 

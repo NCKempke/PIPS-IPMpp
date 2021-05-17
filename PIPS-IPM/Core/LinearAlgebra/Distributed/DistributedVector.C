@@ -1605,26 +1605,26 @@ long long DistributedVector<T>::numberOfNonzeros() const {
 }
 
 template<typename T>
-void DistributedVector<T>::addSomeConstants(T c, const Vector<T>& select_) {
+void DistributedVector<T>::add_constant(T c, const Vector<T>& select_) {
    const auto& select = dynamic_cast<const DistributedVector<T>&>(select_);
    assert(children.size() == select.children.size());
 
    if (first) {
       assert(select.first);
-      first->addSomeConstants(c, *select.first);
+      first->add_constant(c, *select.first);
    }
    else
       assert(select.first == nullptr);
 
    if (last) {
       assert(select.last);
-      last->addSomeConstants(c, *select.last);
+      last->add_constant(c, *select.last);
    }
    else
       assert(select.last == nullptr);
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->addSomeConstants(c, *select.children[it]);
+      children[it]->add_constant(c, *select.children[it]);
 }
 
 template<typename T>
