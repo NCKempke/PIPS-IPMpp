@@ -1159,23 +1159,16 @@ bool StochPresolverParallelRows::nearlyParallelEqualityAndInequalityRow(const IN
          xupp_new = (rhs_curr - xlow_curr * s) / a_col;
       if (xupp_curr != INF_POS)
          xlow_new = (rhs_curr - xupp_curr * s) / a_col;
-//      if( !PIPSisZero( (*norm_iclow)[row_ineq_index]) )
-//         xupp_new = ( (*norm_b)[row_eq_index] - (*norm_clow)[row_ineq_index] ) * (*norm_factorA)[row_eq_index] / a_col;
-//      if( !PIPSisZero((*norm_icupp)[row_ineq_index]) )
-//         xlow_new = ( (*norm_b)[row_eq_index] - (*norm_cupp)[row_ineq_index] ) * (*norm_factorA)[row_eq_index] / a_col ;
    }
    else if (faq < 0) {
       if (xupp_curr != INF_POS)
          xupp_new = (rhs_curr - xupp_curr * s) / a_col;
       if (xlow_curr != INF_NEG)
          xlow_new = (rhs_curr - xlow_curr * s) / a_col;
-//      if( !PIPSisZero((*norm_iclow)[row_ineq_index]) )
-//         xlow_new = ( (*norm_b)[row_eq_index] - (*norm_clow)[row_ineq_index] ) * (*norm_factorA)[row_eq_index] / a_col;
-//      if( !PIPSisZero((*norm_icupp)[row_ineq_index]) )
-//         xupp_new = ( (*norm_b)[row_eq_index] - (*norm_cupp)[row_ineq_index] ) * (*norm_factorA)[row_eq_index] / a_col;
    }
 
-   presolve_data.tightenBoundsNearlyParallelRows(row_eq, row_ineq, col, INDEX(), xlow_new, xupp_new, INF_POS, INF_POS, s);
+   if (xlow_curr < xlow_new || xupp_new < xupp_curr)
+      presolve_data.tightenBoundsNearlyParallelRows(row_eq, row_ineq, col, INDEX(), xlow_new, xupp_new, INF_POS, INF_POS, s);
 
    presolve_data.removeRedundantParallelRow(row_ineq, row_eq);
 
