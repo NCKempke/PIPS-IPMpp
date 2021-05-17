@@ -125,13 +125,13 @@ protected:
          double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
    void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
    void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual);
-   bool restart_iterate_because_of_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
+   bool is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
    void compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const;
    void compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
    double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const;
    bool decrease_preconditioner_impact(AbstractLinearSystem* sys) const;
    void adjust_limit_gondzio_correctors();
-   void check_linsys_solve_numerical_troubles_and_react(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
+   void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void
    print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
          double mu, int stop_code, int level);
@@ -139,7 +139,7 @@ protected:
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
    double mehrotra_step_length(Variables* iterate, Variables* step);
    void mehrotra_step_length(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-   TerminationStatus default_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
+   TerminationStatus compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
