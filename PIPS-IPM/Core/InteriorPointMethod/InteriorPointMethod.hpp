@@ -10,6 +10,7 @@
 
 #include "Solver.hpp"
 #include "MehrotraStrategy.hpp"
+#include "FilterLineSearch.hpp"
 
 class Problem;
 
@@ -27,6 +28,7 @@ public:
 
 protected:
    MehrotraStrategy mehrotra_strategy;
+   FilterLineSearch filter_line_search;
 };
 
 #endif /* INTERIORPOINTMETHOD_H */

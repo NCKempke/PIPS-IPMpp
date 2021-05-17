@@ -35,8 +35,8 @@ void StochNodeResourcesMonitor::reset() {
 
 
 void StochNodeResourcesMonitor::computeTotal() {
-   eTotal.tmLocal = eFact.tmLocal + eLsolve.tmLocal + eDsolve.tmLocal + eLtsolve.tmLocal;
-   eTotal.tmChildren = eFact.tmChildren + eLsolve.tmChildren + eDsolve.tmChildren + eLtsolve.tmChildren;
+   eTotal.local_time = eFact.local_time + eLsolve.local_time + eDsolve.local_time + eLtsolve.local_time;
+   eTotal.children_time = eFact.children_time + eLsolve.children_time + eDsolve.children_time + eLtsolve.children_time;
 }
 
 void StochNodeResourcesMonitor::recFactTmLocal_start() {
@@ -45,14 +45,14 @@ void StochNodeResourcesMonitor::recFactTmLocal_start() {
 
 void StochNodeResourcesMonitor::recFactTmLocal_stop() {
    double tmOpEnd = MPI_Wtime();
-   eFact.tmLocal += (tmOpEnd - tmOpStart);
+   eFact.local_time += (tmOpEnd - tmOpStart);
 }
 
 void StochNodeResourcesMonitor::recFactTmChildren_start() { tmOpStart = MPI_Wtime(); }
 
 void StochNodeResourcesMonitor::recFactTmChildren_stop() {
    double tmOpEnd = MPI_Wtime();
-   eFact.tmChildren += (tmOpEnd - tmOpStart);
+   eFact.children_time += (tmOpEnd - tmOpStart);
 }
 
 
@@ -60,34 +60,34 @@ void StochNodeResourcesMonitor::recLsolveTmChildren_start() { tmOpStart = MPI_Wt
 
 void StochNodeResourcesMonitor::recLsolveTmChildren_stop() {
    double tmOpEnd = MPI_Wtime();
-   eLsolve.tmChildren += (tmOpEnd - tmOpStart);
+   eLsolve.children_time += (tmOpEnd - tmOpStart);
 }
 
 void StochNodeResourcesMonitor::recDsolveTmLocal_start() { tmOpStart = MPI_Wtime(); }
 
 void StochNodeResourcesMonitor::recDsolveTmLocal_stop() {
    double tmOpEnd = MPI_Wtime();
-   eDsolve.tmLocal += (tmOpEnd - tmOpStart);
+   eDsolve.local_time += (tmOpEnd - tmOpStart);
 }
 
 void StochNodeResourcesMonitor::recDsolveTmChildren_start() { tmOpStart = MPI_Wtime(); }
 
 void StochNodeResourcesMonitor::recDsolveTmChildren_stop() {
    double tmOpEnd = MPI_Wtime();
-   eDsolve.tmChildren += (tmOpEnd - tmOpStart);
+   eDsolve.children_time += (tmOpEnd - tmOpStart);
 }
 
 void StochNodeResourcesMonitor::recLtsolveTmLocal_start() { tmOpStart = MPI_Wtime(); }
 
 void StochNodeResourcesMonitor::recLtsolveTmLocal_stop() {
    double tmOpEnd = MPI_Wtime();
-   eLtsolve.tmLocal += (tmOpEnd - tmOpStart);
+   eLtsolve.local_time += (tmOpEnd - tmOpStart);
 }
 void StochNodeResourcesMonitor::recLtsolveTmChildren_start() { tmOpStart = MPI_Wtime(); }
 
 void StochNodeResourcesMonitor::recLtsolveTmChildren_stop() {
    double tmOpEnd = MPI_Wtime();
-   eLtsolve.tmChildren += (tmOpEnd - tmOpStart);
+   eLtsolve.children_time += (tmOpEnd - tmOpStart);
 }
 
 
@@ -102,87 +102,53 @@ void StochNodeResourcesMonitor::recSchurCom_stop(double, stCommType) {
    vcSchur[vcSchur.size() - 1].time = tmOpEnd - tmOpStart;
 }
 
-void StochNodeResourcesMonitor::recSchurMultLocal_start() { eMult.recLocal_start(); }
+void StochNodeResourcesMonitor::recSchurMultLocal_start() { eMult.start_local(); }
 
-void StochNodeResourcesMonitor::recSchurMultLocal_stop() { eMult.recLocal_stop(); }
+void StochNodeResourcesMonitor::recSchurMultLocal_stop() { eMult.stop_local(); }
 
-void StochNodeResourcesMonitor::recReduceTmLocal_start() { eReduce.recLocal_start(); }
+void StochNodeResourcesMonitor::recReduceTmLocal_start() { eReduce.start_local(); }
 
-void StochNodeResourcesMonitor::recReduceTmLocal_stop() { eReduce.recLocal_stop(); }
+void StochNodeResourcesMonitor::recReduceTmLocal_stop() { eReduce.stop_local(); }
 
 
-void StochNodeResourcesMonitor::recReduceScatterTmLocal_start() { eReduceScatter.recLocal_start(); }
+void StochNodeResourcesMonitor::recReduceScatterTmLocal_start() { eReduceScatter.start_local(); }
 
-void StochNodeResourcesMonitor::recReduceScatterTmLocal_stop() { eReduceScatter.recLocal_stop(); }
+void StochNodeResourcesMonitor::recReduceScatterTmLocal_stop() { eReduceScatter.stop_local(); }
 
 //**************************************************
 //*************  NodeExecEntry   *******************
 //**************************************************
-NodeExecEntry::NodeExecEntry(double localTime, double childrenTime) : tmLocal(localTime), tmChildren(childrenTime) {};
+NodeTimer::NodeTimer(double localTime, double childrenTime) : local_time(localTime), children_time(childrenTime) {};
 
-void NodeExecEntry::clear() {
-   tmLocal = 0.0;
-   tmChildren = 0.0;
+void NodeTimer::clear() {
+   local_time = 0.0;
+   children_time = 0.0;
 }
 
-void NodeExecEntry::recLocal_start() { tmOpStartLocal = MPI_Wtime(); }
+void NodeTimer::start_local() {
+   local_start_time = MPI_Wtime();
+}
 
-void NodeExecEntry::recLocal_stop() {
-   double tmOpEnd = MPI_Wtime();
-   tmLocal += (tmOpEnd - tmOpStartLocal);
+void NodeTimer::stop_local() {
+   local_time += (MPI_Wtime() - local_start_time);
 };
 
-void NodeExecEntry::recChildren_start() { tmOpStartChildren = MPI_Wtime(); }
+void NodeTimer::start_children() {
+   children_start_time = MPI_Wtime();
+}
 
-void NodeExecEntry::recChildren_stop() {
-   double tmOpEnd = MPI_Wtime();
-   tmChildren += (tmOpEnd - tmOpStartChildren);
+void NodeTimer::stop_children() {
+   children_time += (MPI_Wtime() - children_start_time);
 };
 
 //**************************************************
 //*************  ITERATE monitor *******************
 //**************************************************
-StochIterateResourcesMonitor::StochIterateResourcesMonitor() {}
-StochIterateResourcesMonitor::~StochIterateResourcesMonitor() {}
 
-void StochIterateResourcesMonitor::recIterateTm_start() {
-   tmIterateStart = MPI_Wtime();
+void Timer::start() {
+   start_time = MPI_Wtime();
 }
 
-void StochIterateResourcesMonitor::recIterateTm_stop() {
-   tmIterate = MPI_Wtime() - tmIterateStart;
-}
-
-
-// returns the "high water mark" of resident memory usage
-// during the execution of this process
-unsigned long StochIterateResourcesMonitor::getMaxMemUsage() {
-   std::ifstream fd("/proc/self/status");
-   std::string line;
-   const std::string numbers("0123456789");
-   size_t pos;
-   unsigned long hwm, rss, * toset;
-   while (!fd.eof()) {
-      toset = 0;
-      getline(fd, line);
-      std::string numstr;
-      pos = line.find("VmHWM");
-      if (pos != std::string::npos) {
-         toset = &hwm;
-      }
-      pos = line.find("VmRSS");
-      if (pos != std::string::npos) {
-         toset = &rss;
-      }
-      if (toset) {
-         numstr = line.substr(line.find_first_of(numbers), line.find_last_of(numbers) + 1);
-         std::istringstream s(numstr);
-         s >> *toset;
-      }
-   }
-   fd.close();
-
-   // according to documentation, rss can be larger than hwm
-   return MAX(hwm, rss);
-
+void Timer::stop() {
+   end_time = MPI_Wtime() - start_time;
 }

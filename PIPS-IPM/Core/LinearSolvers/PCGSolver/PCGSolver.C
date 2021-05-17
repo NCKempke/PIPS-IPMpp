@@ -1,7 +1,7 @@
 #include "PCGSolver.h"
 #include "SimpleVector.h"
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 #define EPS 2.220e-16
 
@@ -232,7 +232,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
       for (int i = n; i < m + n; i++)
          b[i] = y[i - n];
 
-      if (gOoqpPrintLevel >= 1) {
+      if (print_level >= 1) {
          printf("Projected CG did not NOT converged after %d iters. The solution from iter %d was returned.\n", ii, imin);
          printf("\t - Error code %d\n\t - Act res=%g\n\t - Rel res=%g %g\n\n", flag, normr_act, normrmin);
       }

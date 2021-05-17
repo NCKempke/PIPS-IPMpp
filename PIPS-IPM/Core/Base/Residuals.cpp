@@ -369,10 +369,10 @@ double Residuals::constraint_violation() {
 }
 
 double Residuals::optimality_measure(double mu) {
-   return this->lagrangian_gradient->twonorm() + mu;
+   return this->lagrangian_gradient->infnorm();// + mu;
 }
 double Residuals::feasibility_measure(double mu) {
-   double complementarity = 0.;
+   //double complementarity = 0.;
    // compute componentwise products of complementary variables
 //   if (mclow > 0) {
 //      SmartPointer<Vector<double> > rt_copy = SmartPointer<Vector<double> >(rt->cloneFull());
@@ -398,5 +398,5 @@ double Residuals::feasibility_measure(double mu) {
 //      rw_copy->addConstant(-mu);
 //      complementarity += rw_copy->onenorm();
 //   }
-   return this->constraint_violation() + complementarity;
+   return this->constraint_violation();
 }

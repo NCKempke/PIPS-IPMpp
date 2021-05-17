@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <cmath>
 
-StochIterateResourcesMonitor DistributedTree::iterMon;
+Timer DistributedTree::iterMon;
 int DistributedTree::rankMe = -1;
 int DistributedTree::rankZeroW = 0;
 int DistributedTree::rankPrcnd = -1;
@@ -240,12 +240,12 @@ DistributedVector<double>* DistributedTree::newRhs() const {
 }
 
 void DistributedTree::startMonitors() {
-   iterMon.recIterateTm_start();
+   iterMon.start();
    startNodeMonitors();
 }
 
 void DistributedTree::stopMonitors() {
-   iterMon.recIterateTm_stop();
+   iterMon.stop();
    stopNodeMonitors();
 }
 
@@ -262,14 +262,14 @@ void DistributedTree::stopNodeMonitors() {
    resMon.computeTotal();
 }
 
-void DistributedTree::toMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
+void DistributedTree::toMonitorsList(std::list<NodeTimer>& lstExecTm) {
    lstExecTm.push_back(resMon.eTotal);
 
    for (auto & i : children)
       i->toMonitorsList(lstExecTm);
 }
 
-void DistributedTree::fromMonitorsList(std::list<NodeExecEntry>& lstExecTm) {
+void DistributedTree::fromMonitorsList(std::list<NodeTimer>& lstExecTm) {
    resMon.eTotal = lstExecTm.front();
    lstExecTm.pop_front();
 
@@ -314,10 +314,10 @@ void DistributedTree::getSyncInfo(int rank, int& syncNeeded, int& sendOrRecv, in
 
 void DistributedTree::computeNodeTotal() {
    if (children.empty())
-      this->IPMIterExecTIME = resMon.eTotal.tmChildren;
+      this->IPMIterExecTIME = resMon.eTotal.children_time;
    else {
 
-      this->IPMIterExecTIME = resMon.eTotal.tmLocal;
+      this->IPMIterExecTIME = resMon.eTotal.local_time;
       for (auto & i : children) {
          i->computeNodeTotal();
 

@@ -1,9 +1,9 @@
 add_subdirectory(LinearSolvers)
 
 add_library(pips-ipmpp STATIC
-        Base/Observer.C Base/Variables.C Problems/Problem.C Base/Residuals.cpp Base/Scaler.C
+        Base/Variables.C Problems/Problem.C Base/Residuals.cpp Base/Scaler.C
         
-        # Globalization/Filter.cpp Globalization/FilterStrategy.cpp Globalization/FilterLineSearch.cpp
+        Globalization/Filter.cpp Globalization/FilterStrategy.cpp Globalization/FilterLineSearch.cpp
 
         InteriorPointMethod/Solver.cpp InteriorPointMethod/InteriorPointMethod.cpp InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
 

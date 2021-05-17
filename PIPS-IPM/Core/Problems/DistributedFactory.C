@@ -2,6 +2,7 @@
    Authors: Cosmin Petra
    See license and copyright information in the documentation */
 
+#include <memory>
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "DistributedTreeCallbacks.h"
@@ -260,12 +261,11 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) {
    return residuals;
 }
 
-AbstractLinearSystem* DistributedFactory::make_linear_system(Problem&) {
+std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Problem&) {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
-      linear_system = make_root_hierarchical_linear_system();
+      return make_root_hierarchical_linear_system();
    else
-      linear_system = make_linear_system_root();
-   return linear_system;
+      return make_linear_system_root();
 }
 
 Vector<double>* DistributedFactory::make_primal_vector() const {
@@ -285,7 +285,7 @@ Vector<double>* DistributedFactory::make_right_hand_side() const {
 }
 
 void DistributedFactory::iterate_started() {
-   iterTmMonitor.recIterateTm_start();
+   timer.start();
    tree->startMonitors();
 }
 
@@ -296,8 +296,8 @@ void DistributedFactory::iterate_ended() {
       printf("Should not get here! OMG OMG OMG\n");
    }
    //logging and monitoring
-   iterTmMonitor.recIterateTm_stop();
-   m_tmTotal += iterTmMonitor.tmIterate;
+   timer.stop();
+   total_time += timer.end_time;
 
    if (PIPS_MPIgetRank() == 0) {
 #ifdef TIMING
@@ -309,9 +309,9 @@ void DistributedFactory::iterate_ended() {
    }
 }
 
-DistributedRootLinearSystem* DistributedFactory::make_linear_system_root() {
+std::unique_ptr<DistributedRootLinearSystem> DistributedFactory::make_linear_system_root() {
    assert(problem);
-   return new sLinsysRootAug(this, problem);
+   return std::make_unique<sLinsysRootAug>(this, problem);
 }
 
 DistributedRootLinearSystem*
@@ -326,8 +326,8 @@ DistributedFactory::make_linear_system_root(DistributedQP* prob, Vector<double>*
             dual_inequality_regularization, rhs, true);
 }
 
-DistributedRootLinearSystem* DistributedFactory::make_root_hierarchical_linear_system() {
-   return new sLinsysRootBordered(this, problem);
+std::unique_ptr<DistributedRootLinearSystem> DistributedFactory::make_root_hierarchical_linear_system() {
+   return std::make_unique<sLinsysRootBordered>(this, problem);
 }
 
 Problem* DistributedFactory::switchToHierarchicalData(Problem*) {

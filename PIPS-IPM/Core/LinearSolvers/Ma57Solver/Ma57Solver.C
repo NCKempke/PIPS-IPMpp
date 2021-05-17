@@ -13,7 +13,7 @@
 #include "DenseMatrix.h"
 #include <mpi.h>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 Ma57Solver::Ma57Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat_storage{sgm->getStorageHandle()}, n{mat_storage->n},
       nnz{mat_storage->numberOfNonZeros()}, lkeep{7 * n + nnz + 2 * std::max(n, nnz) + 42}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_)) {
@@ -153,7 +153,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
             // refactor with a higher Threshold Pivoting parameter
             setThresholdPivoting(std::min(thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max));
 
-            if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+            if (print_level >= ooqp_print_level_warnings)
                std::cout << "WARNING MA57 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting()
                          << " for future factorizations\n";
          }
@@ -166,7 +166,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
             done = false;
          }
          else {
-            if (gOoqpPrintLevel >= ooqp_print_level_warnings) {
+            if (print_level >= ooqp_print_level_warnings) {
                if (thresholdPivoting() == threshold_pivoting_max)
                   std::cout << "WARNING MA57 " << name << ": Unprecise solution but ThresholdPivoting is already at its max\n";
                else
@@ -243,28 +243,28 @@ bool Ma57Solver::checkErrorsAndReact() {
       };
          break;
       case -3 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": insufficient space in fact: " << info[1] << " suggest reset to " << info[16] << "\n";
          rpessimism *= 1.1;
 
          lfact = std::max(static_cast<int>(rpessimism * lfact), static_cast<int>(rpessimism * info[16]));
          fact.resize(lfact);
 
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << lfact << "\n";
 
          error = true;
       };
          break;
       case -4 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": insufficient factorization space in ifact: " << info[1] << " suggest reset to " << info[17]
                       << "\n";;
          ipessimism *= 1.1;
 
          lifact = std::max(static_cast<int>(ipessimism * lifact), static_cast<int>(ipessimism * info[17]));
          ifact.resize(lifact);
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << lifact << "\n";
 
          error = true;
@@ -287,7 +287,7 @@ bool Ma57Solver::checkErrorsAndReact() {
       };
          break;
       case -8: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": iterative refinement failed to converge\n";
          error = true;
       };
@@ -343,58 +343,58 @@ bool Ma57Solver::checkErrorsAndReact() {
       };
          break;
       case 1 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": detected " << info[2] << " entries out of range in irowM and jcolM; ignored\n";
       };
          break;
       case 2 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING M57 " << name << ": detected " << info[3]
                       << " duplicate entries in user supplied matrix detected - summing them up\n";
       }
          break;
       case 3: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": out of range etries and duplicates detected .. ignoring/summing them up\n";
       };
          break;
       case 4: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": rank deficient matrix detected; apparent rank is " << info[24] << "\n";
       };
          break;
       case 5: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": pivots have different sign when factorizing supposedly definite matrix; " << info[25]
                       << " sign changes detected\n";
       };
          break;
       case 8: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": inf norm of computed solution was zero\n";
       };
          break;
       case 10: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": insufficient space in fact: " << lfact << "\n";
          rpessimism *= 2;
 
          lfact = static_cast<int>(rpessimism * lfact);
          fact.resize(lfact);
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << lfact << "\n";
 
          error = true;
       };
          break;
       case 11: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": insufficient factorization space in ifact: " << lifact << "\n";
          ipessimism *= 2;
 
          lifact = static_cast<int>(ipessimism * lifact);
          ifact.resize(lifact);
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << lifact << "\n";
 
          error = true;

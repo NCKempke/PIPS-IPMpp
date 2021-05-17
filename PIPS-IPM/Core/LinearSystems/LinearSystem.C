@@ -125,47 +125,6 @@ LinearSystem::~LinearSystem() {
    delete res5;
 }
 
-int LinearSystem::getIntValue(const std::string& s) const {
-   if (s == "BICG_NITERATIONS")
-      return bicg_niterations;
-   else if (s == "BICG_CONV_FLAG")
-      return static_cast<std::underlying_type<IterativeSolverSolutionStatus>::type>(bicg_conv_flag);
-   else {
-      std::cout << "Unknown observer int request in LinearSystem.C: " << s << "\n";
-      return -1;
-   }
-}
-
-bool LinearSystem::getBoolValue(const std::string& s) const {
-   if (s == "BICG_CONVERGED")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::CONVERGED;
-   else if (s == "BICG_SKIPPED")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::SKIPPED;
-   else if (s == "BICG_DIVERGED")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::DIVERGED;
-   else if (s == "BICG_BREAKDOWN")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::BREAKDOWN;
-   else if (s == "BICG_STAGNATION")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::STAGNATION;
-   else if (s == "BICG_EXCEED_MAX_ITER")
-      return bicg_conv_flag == IterativeSolverSolutionStatus::NOT_CONVERGED_MAX_ITERATIONS;
-   else {
-      std::cout << "Unknown observer bool request in LinearSystem.C: " << s << "\n";
-      return false;
-   }
-}
-
-double LinearSystem::getDoubleValue(const std::string& s) const {
-   if (s == "BICG_RESNORM")
-      return bicg_resnorm;
-   else if (s == "BICG_RELRESNORM")
-      return bicg_relresnorm;
-   else {
-      std::cout << "Unknown observer double request in LinearSystem.C: " << s << "\n";
-      return 0.0;
-   }
-}
-
 static void biCGStabCommunicateStatus(int flag, int it) {
    double iterAvg = 0.0;
 
@@ -500,9 +459,6 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       solveCompressedBiCGStab(matMult, matInfnorm);
 
       this->separateVars(stepx, stepy, stepz, *sol);
-
-      /* notify observers about result of BiCGStab */
-      notifyObservers();
    }
 
    if (xyzs_solve_print_residuals) {

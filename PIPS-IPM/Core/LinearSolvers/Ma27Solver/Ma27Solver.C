@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <utility>
 
-extern int gOoqpPrintLevel;
+extern int print_level;
 
 Ma27Solver::Ma27Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n},
       nnz{mat_storage->numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
@@ -223,7 +223,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
          std::cout << "bad resnorm " << rnorm << " >= precision " << precision << " * 1+rhsnorm " << 1 + rhsnorm << " = "
                    << precision * (1.0 + rhsnorm) << "\n";
          if (thresholdPivoting() >= threshold_pivoting_max) {
-            if (gOoqpPrintLevel >= ooqp_print_level_warnings) {
+            if (print_level >= ooqp_print_level_warnings) {
                std::cout << "WARNING MA27 " << name
                          << ": threshold_pivoting parameter is already at its max and iterative refinement steps are exceeded with unsifficient precision"
                          << "\n";
@@ -233,7 +233,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
          else {
             setThresholdPivoting(std::min(thresholdPivoting() * threshold_pivoting_factor, threshold_pivoting_max));
 
-            if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+            if (print_level >= ooqp_print_level_warnings)
                std::cout << "STATUS MA27 " << name << ": Setting ThresholdPivoting parameter to " << thresholdPivoting()
                          << " refactorization suggested\n";
 //
@@ -384,7 +384,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       };
          break;
       case -3 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": insufficient space in iw: " << liw << " suggest reset to " << error_info << "\n";
          ipessimism *= 1.1;
 
@@ -393,14 +393,14 @@ bool Ma27Solver::checkErrorsAndReact() {
 
          liw = std::max(static_cast<int>(ipessimism * error_info), static_cast<int>(ipessimism * liw));
          iw = new int[liw];
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << liw << "\n";
 
          error = true;
       };
          break;
       case -4 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": insufficient factorization space: " << la << "\n";;
          rpessimism *= 1.1;
 
@@ -408,14 +408,14 @@ bool Ma27Solver::checkErrorsAndReact() {
          fact.resize(la);
 
          this->copyMatrixElements(fact, la);
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << " resetting to " << la << "\n";
 
          error = true;
       }
          break;
       case -5: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": matrix apparently numerically singular, detected at stage " << error_info << "\n";
 
          if (getSmallPivot() <= threshold_pivtol) {
@@ -432,7 +432,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       };
          break;
       case -6: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": change of sign of pivots detected at stage " << error_info << "\n";
       };
          break;
@@ -442,7 +442,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       };
          break;
       case 1 : {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": detected " << error_info << " entries out of range in irowM and jcolM; ignored" << "\n";
       };
          break;
@@ -452,7 +452,7 @@ bool Ma27Solver::checkErrorsAndReact() {
       }
          break;
       case 3: {
-         if (gOoqpPrintLevel >= ooqp_print_level_warnings)
+         if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA27 " << name << ": rank deficient matrix detected; apparent rank is " << error_info << " != n : " << this->n
                       << "\n";
          error = false;

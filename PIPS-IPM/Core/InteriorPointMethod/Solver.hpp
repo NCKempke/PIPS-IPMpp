@@ -27,13 +27,13 @@ public:
    /** implements the interior-point method for solving the subproblem */
    virtual TerminationStatus solve(Problem& problem, Variables& iterate, Residuals& residuals) = 0;
    /** solve the IPM system */
-   virtual void solve_linear_system(Variables& iterate, Problem& problem, Residuals& residuals, Variables& step);
+   virtual void solve_linear_system(Variables& iterate, Problem& problem, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system);
 
 protected:
    DistributedFactory& factory;
    /**  storage for step vector */
    Variables* step;
-   AbstractLinearSystem* linear_system{};
+   //AbstractLinearSystem* linear_system{};
 };
 
 #endif

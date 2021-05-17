@@ -8,21 +8,21 @@
 
 enum stCommType { ctAllreduce = 0, ctReduce, ctOther };
 
-class NodeExecEntry {
+class NodeTimer {
 public:
-   NodeExecEntry(double localTime, double childrenTime);
+   NodeTimer(double localTime, double childrenTime);
    void clear();
 
-   double tmLocal, tmChildren;
+   double local_time, children_time;
 
-   void recLocal_start();
-   void recLocal_stop();
+   void start_local();
+   void stop_local();
 
-   void recChildren_start();
-   void recChildren_stop();
+   void start_children();
+   void stop_children();
 
 protected:
-   double tmOpStartLocal, tmOpStartChildren;
+   double local_start_time, children_start_time;
 };
 
 class NodeCommEntry {
@@ -75,32 +75,28 @@ public:
 
 public:
 
-   NodeExecEntry eFact, eLsolve, eDsolve, eLtsolve;
-   NodeExecEntry eTotal;
-   NodeExecEntry eMult;
-   NodeExecEntry eReduce, eReduceScatter, eBcast;
+   NodeTimer eFact, eLsolve, eDsolve, eLtsolve;
+   NodeTimer eTotal;
+   NodeTimer eMult;
+   NodeTimer eReduce, eReduceScatter, eBcast;
    std::vector<NodeCommEntry> vcSchur, vcLsolve;
 
 private:
    double tmOpStart;
 };
 
-class StochIterateResourcesMonitor {
+class Timer {
 public:
-   StochIterateResourcesMonitor();
-   virtual ~StochIterateResourcesMonitor();
+   Timer() = default;
+   virtual ~Timer() = default;
 
-   virtual void recIterateTm_start();
-   virtual void recIterateTm_stop();
-   static unsigned long getMaxMemUsage();
+   virtual void start();
+   virtual void stop();
 
 public:
-   double tmIterate;
+   double end_time;
 protected:
-   double tmIterateStart;
-
-   std::vector<double> tmHistory;
-
+   double start_time;
 };
 
 #endif
