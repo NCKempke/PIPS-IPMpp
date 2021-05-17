@@ -112,17 +112,19 @@ protected:
    TerminationStatus
    corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
-   void gondzio_correction_loop_primal(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration, double& alpha, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
+   void
+   gondzio_correction_loop_primal(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration, double& alpha, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
+   void gondzio_correction_loop_primal_dual(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system, int iteration, double& alpha_primal, double& alpha_dual, double weight_primal_candidate,
+         double weight_dual_candidate, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
    void
    compute_gondzio_corrector(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
-   void calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor,
-         double& alpha_candidate, double& weight_candidate);
-   void
-   calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal, double alpha_dual,
-         double& alpha_primal_candidate, double& alpha_dual_candidate, double& weight_primal_candidate, double& weight_dual_candidate);
+   std::pair<double, double> calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor);
+   std::tuple<double, double, double, double> calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+         double alpha_dual);
    void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
    void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual);
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
@@ -137,9 +139,10 @@ protected:
          double mu, int stop_code, int level);
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
-   double mehrotra_step_length(Variables* iterate, Variables* step);
-   void mehrotra_step_length(Variables* iterate, Variables* step, double& alpha_primal, double& alpha_dual);
-   TerminationStatus compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
+   double mehrotra_step_length_primal(Variables* iterate, Variables* step);
+   std::pair<double, double> mehrotra_step_length_primal_dual(Variables* iterate, Variables* step);
+   TerminationStatus
+   compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
