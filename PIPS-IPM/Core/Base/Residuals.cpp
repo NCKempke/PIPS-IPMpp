@@ -229,13 +229,13 @@ void Residuals::add_to_complementarity_residual(const Variables& variables, doub
 
    if (alpha != 0.0) {
       if (mclow > 0)
-         rlambda->addSomeConstants(alpha, *iclow);
+         rlambda->add_constant(alpha, *iclow);
       if (mcupp > 0)
-         rpi->addSomeConstants(alpha, *icupp);
+         rpi->add_constant(alpha, *icupp);
       if (nxlow > 0)
-         rgamma->addSomeConstants(alpha, *ixlow);
+         rgamma->add_constant(alpha, *ixlow);
       if (nxupp > 0)
-         rphi->addSomeConstants(alpha, *ixupp);
+         rphi->add_constant(alpha, *ixupp);
    }
 }
 

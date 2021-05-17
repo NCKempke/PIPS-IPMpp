@@ -120,7 +120,7 @@ public:
    void selectPositive() override;
    void selectNegative() override;
    [[nodiscard]] long long numberOfNonzeros() const override;
-   void addSomeConstants(T c, const Vector<T>& select) override;
+   void add_constant(T c, const Vector<T>& select) override;
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override { assert(false && "Not yet implemented"); };
    void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
 
@@ -242,7 +242,7 @@ public:
    void selectPositive() override {};
    void selectNegative() override {};
    long long numberOfNonzeros() const override { return 0; }
-   void addSomeConstants(T, const Vector<T>&) override {};
+   void add_constant(T, const Vector<T>&) override {};
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override {};
    void axdzpy(T, const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
 

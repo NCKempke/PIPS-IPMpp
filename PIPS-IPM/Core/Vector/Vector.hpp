@@ -177,11 +177,11 @@ public:
 
    /** Add the constant c to some of the elements of this Vector<double>
     *  @param c The constant to be added
-    *  @param select a mask Vector<double>. The constant c is added to an element
-    *         of this Vector<double> only if the corresponding element of select is
+    *  @param mask a mask Vector<double>. The constant c is added to an element
+    *         of this Vector<double> only if the corresponding element of mask is
     *         non-zero.
     */
-   virtual void addSomeConstants(T c, const Vector<T>& select) = 0;
+   virtual void add_constant(T c, const Vector<T>& mask) = 0;
 
    /** Write some elements of this Vector<double> to a stream, subject to a format.
     *  @param out a C++-style output stream

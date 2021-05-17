@@ -808,7 +808,7 @@ void SimpleVector<T>::selectNegative() {
 }
 
 template<typename T>
-void SimpleVector<T>::addSomeConstants(T c, const Vector<T>& select) {
+void SimpleVector<T>::add_constant(T c, const Vector<T>& select) {
    const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* map = sselect.v;
 

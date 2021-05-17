@@ -456,20 +456,20 @@ double Variables::violation() {
 
 void Variables::shiftBoundVariables(double alpha, double beta) {
    if (nxlow > 0) {
-      v->addSomeConstants(alpha, *ixlow);
-      gamma->addSomeConstants(beta, *ixlow);
+      v->add_constant(alpha, *ixlow);
+      gamma->add_constant(beta, *ixlow);
    }
    if (nxupp > 0) {
-      w->addSomeConstants(alpha, *ixupp);
-      phi->addSomeConstants(beta, *ixupp);
+      w->add_constant(alpha, *ixupp);
+      phi->add_constant(beta, *ixupp);
    }
    if (mclow > 0) {
-      t->addSomeConstants(alpha, *iclow);
-      lambda->addSomeConstants(beta, *iclow);
+      t->add_constant(alpha, *iclow);
+      lambda->add_constant(beta, *iclow);
    }
    if (mcupp > 0) {
-      u->addSomeConstants(alpha, *icupp);
-      pi->addSomeConstants(beta, *icupp);
+      u->add_constant(alpha, *icupp);
+      pi->add_constant(beta, *icupp);
    }
 }
 

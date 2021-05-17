@@ -113,7 +113,7 @@ protected:
    corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system);
    void gondzio_correction_loop_primal(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration, double& alpha_target, double& alpha, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
+         AbstractLinearSystem& linear_system, int iteration, double& alpha, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
    void
