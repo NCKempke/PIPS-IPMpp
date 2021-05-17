@@ -89,12 +89,13 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
 
    g_iterNumber = 0.;
 
+   bool pure_centering_step = false;
+   bool numerical_troubles = false;
    bool precond_decreased = true;
    bool termination = false;
    while (!termination) {
       iteration++;
-      bool pure_centering_step = false;
-      bool numerical_troubles = false;
+
 
       set_BiCGStab_tolerance(iteration);
       bool small_corr = false;
@@ -164,6 +165,8 @@ MehrotraStrategy::corrector_predictor_primal(DistributedFactory& factory, Proble
             if (restart_iterate_because_of_poor_step(pure_centering_step, precond_decreased, alpha))
                continue;
          }
+         pure_centering_step = false;
+         numerical_troubles = false;
 
          // take the step (at last!)
          iterate.saxpy(&step, alpha);
