@@ -40,14 +40,14 @@ bool StochPresolverBoundStrengthening::applyPresolving() {
 
 #ifndef NDEBUG
    if (my_rank == 0 && verbosity > 1) {
-      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" << "\n";
-      std::cout << "--- Before Bound Strengthening Presolving:" << "\n";
+      std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+      std::cout << "--- Before Bound Strengthening Presolving:\n";
    }
    countRowsCols();
 #endif
 
    if (my_rank == 0 && verbosity > 1)
-      std::cout << "Start Bound Strengthening Presolving..." << "\n";
+      std::cout << "Start Bound Strengthening Presolving...\n";
 
 
    int iter = 0;

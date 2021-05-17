@@ -347,7 +347,7 @@ namespace pipsipmpp_options {
 
       /// BOUND STRENGTHENING
       /** limit for rounds of bound strengthening per call of presolver */
-      int_options["PRESOLVE_BOUND_STR_MAX_ITER"] = 10;
+      int_options["PRESOLVE_BOUND_STR_MAX_ITER"] = 2;
       /** min entry to devide by in order to derive a bound */
       double_options["PRESOLVE_BOUND_STR_NUMERIC_LIMIT_ENTRY"] = 1e-7;
       /** max activity to be devided */

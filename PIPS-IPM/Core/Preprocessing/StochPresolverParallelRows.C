@@ -1148,26 +1148,24 @@ bool StochPresolverParallelRows::nearlyParallelEqualityAndInequalityRow(const IN
    double xlow_new = INF_NEG;
    double xupp_new = INF_POS;
 
-   double rhs_curr;
-   double xlow_curr;
-   double xupp_curr;
-   presolve_data.getRowBounds(row_ineq, xlow_curr, xupp_curr);
-   presolve_data.getRowBounds(row_eq, rhs_curr, rhs_curr);
+   const auto [clow_curr, cupp_curr] = presolve_data.getRowBounds(row_ineq);
+   const auto [rhs_curr, dummy] = presolve_data.getRowBounds(row_eq);
+   (void) dummy;
 
    if (0 < faq) {
-      if (xlow_curr != INF_NEG)
-         xupp_new = (rhs_curr - xlow_curr * s) / a_col;
-      if (xupp_curr != INF_POS)
-         xlow_new = (rhs_curr - xupp_curr * s) / a_col;
+      if (clow_curr != INF_NEG)
+         xupp_new = (rhs_curr - clow_curr * s) / a_col;
+      if (cupp_curr != INF_POS)
+         xlow_new = (rhs_curr - cupp_curr * s) / a_col;
    }
    else if (faq < 0) {
-      if (xupp_curr != INF_POS)
-         xupp_new = (rhs_curr - xupp_curr * s) / a_col;
-      if (xlow_curr != INF_NEG)
-         xlow_new = (rhs_curr - xlow_curr * s) / a_col;
+      if (cupp_curr != INF_POS)
+         xupp_new = (rhs_curr - cupp_curr * s) / a_col;
+      if (clow_curr != INF_NEG)
+         xlow_new = (rhs_curr - clow_curr * s) / a_col;
    }
 
-   if (xlow_curr < xlow_new || xupp_new < xupp_curr)
+   if (clow_curr < xlow_new || xupp_new < cupp_curr)
       presolve_data.tightenBoundsNearlyParallelRows(row_eq, row_ineq, col, INDEX(), xlow_new, xupp_new, INF_POS, INF_POS, s);
 
    presolve_data.removeRedundantParallelRow(row_ineq, row_eq);

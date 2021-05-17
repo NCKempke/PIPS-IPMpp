@@ -15,7 +15,7 @@ class StochPresolverModelCleanup : public StochPresolverBase {
 public:
    StochPresolverModelCleanup(PresolveData& presolve_data, const DistributedQP& origProb);
 
-   virtual ~StochPresolverModelCleanup();
+   ~StochPresolverModelCleanup() override = default;
 
    // remove small matrix entries
    bool applyPresolving() override;

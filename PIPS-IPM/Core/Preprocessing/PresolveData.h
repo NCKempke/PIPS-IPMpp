@@ -140,8 +140,8 @@ public :
    int getNChildren() const { return nChildren; };
 
    void getRowActivities(const INDEX& row, double& max_act, double& min_act, int& max_ubndd, int& min_ubndd) const;
-   void getRowBounds(const INDEX& row, double& lhs, double& rhs) const;
-   void getColBounds(const INDEX& col, double& xlow, double& xupp) const;
+   std::pair<double,double> getRowBounds(const INDEX& row) const;
+   std::pair<double,double> getColBounds(const INDEX& col) const;
 
 
    double getRowCoeff(const INDEX& row, const INDEX& col) const;
@@ -219,16 +219,19 @@ public :
    void deleteEntryAtIndex(const INDEX& row, const INDEX& col, int col_index);
 
    /* methods for verifying state of presolve_data or querying the problem */
-   bool verifyNnzcounters() const;
-   bool verifyActivities() const;
+   [[nodiscard]] bool verifyNnzcounters() const;
+   [[nodiscard]] bool verifyActivities() const;
 
-   bool nodeIsDummy(int node) const;
-   bool hasLinking(SystemType system_type) const;
+   [[nodiscard]] bool nodeIsDummy(int node) const;
+   [[nodiscard]] bool hasLinking(SystemType system_type) const;
+
+   /* compute and update activities */
+   void recomputeActivities() { recomputeActivities(false); }
 
    bool varBoundImpliedFreeBy(bool upper, const INDEX& col, const INDEX& row);
 private:
-   bool iTrackColumn() const;
-   bool iTrackRow() const;
+   [[nodiscard]] bool iTrackColumn() const;
+   [[nodiscard]] bool iTrackRow() const;
 
    void setRowBounds(const INDEX& row, double clow, double cupp);
    bool updateColBounds(const INDEX& col, double xlow, double xupp);
@@ -284,9 +287,6 @@ private:
    void updateRowActivitiesBlock(const INDEX& row, const INDEX& col, double xlow_new, double xupp_new, double xlow_old, double xupp_old);
 
    void updateRowActivitiesBlock(const INDEX& row, const INDEX& col, double bound, double old_bound, bool upper);
-
-   /* compute and update activities */
-   void recomputeActivities() { recomputeActivities(false); }
 
    /* computes all row activities and number of unbounded variables per row
     * If there is more than one unbounded variable in the min/max activity of a row
