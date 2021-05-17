@@ -918,7 +918,7 @@ void StochPresolverParallelRows::tightenOriginalBoundsOfRow1(const INDEX& row1, 
 
    /* test for infeasibility */
    if ((!PIPSisZero(iclow_row1) && PIPSisLT(norm_cupp_row2, norm_clow_row1)) ||
-       (!PIPSisZero(iclow_row1) && PIPSisLT(norm_cupp_row1, norm_clow_row2))) {
+       (!PIPSisZero(icupp_row1) && PIPSisLT(norm_cupp_row1, norm_clow_row2))) {
       PIPS_MPIabortInfeasible("Found incompatible row rhs/lhs", "StochPresolverParallelRows.C", "tightenOriginalBoundsOfRow1");
    }
 
