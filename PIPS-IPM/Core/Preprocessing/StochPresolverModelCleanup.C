@@ -74,7 +74,7 @@ bool StochPresolverModelCleanup::applyPresolving() {
       std::cout << "--- After model cleanup:" << "\n";
    }
    else if (my_rank == 0 && verbosity == 1)
-      std::cout << "Clean:\t removed " << removed_rows_total << " rows, " << fixed_empty_cols_total << " cols\n";
+      std::cout << "Clean:\t removed " << removed_rows_total << " rows, " << fixed_empty_cols_total << " cols, " << removed_entries_total << " entries\n";
 
    countRowsCols();
    if (my_rank == 0 && verbosity > 1)
@@ -219,7 +219,6 @@ int StochPresolverModelCleanup::removeTinyEntriesFromSystem(SystemType system_ty
    if (presolve_data.hasLinking(system_type))
       n_elims += removeTinyInnerLoop(system_type, -1, BL_MAT);
 
-
    /* count eliminations in B0 and Bl0 only once */
    if (distributed && my_rank != 0)
       n_elims = 0;
@@ -317,7 +316,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop(SystemType system_type, int 
             if (my_rank == 0 || !(node_row == -1 && node_col == -1))
                ++n_elims;
          }
-            /* remove entries where their corresponding variables have valid lower and upper bounds, that overall do not have a real influence though */
+         /* remove entries where their corresponding variables have valid lower and upper bounds, that overall do not have a real influence though */
          else if (!PIPSisZero((*x_upper_idx)[col]) && !PIPSisZero((*x_lower_idx)[col])) {
             const double bux = (*x_upper)[col];
             const double blx = (*x_lower)[col];
