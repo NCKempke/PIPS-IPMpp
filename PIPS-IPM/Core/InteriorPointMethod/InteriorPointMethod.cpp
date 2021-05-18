@@ -13,7 +13,8 @@
 #include "DistributedFactory.h"
 
 InteriorPointMethod::InteriorPointMethod(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler)
-: Solver(factory, problem), mehrotra_strategy(factory, problem, mehrotra_heuristic, scaler), filter_line_search() {}
+: Solver(factory, problem),
+mehrotra_strategy(MehrotraFactory::create(factory, problem, mehrotra_heuristic, scaler)), filter_line_search() {}
 
 TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterate, Residuals& residuals) {
    // initialization of (x,y,z) and factorization routine.
@@ -25,6 +26,6 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    factory.iterate_ended();
 
    // run Gondzio's multiple corrector scheme
-   TerminationStatus status_code = mehrotra_strategy.corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
+   TerminationStatus status_code = mehrotra_strategy->corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
    return status_code;
 }

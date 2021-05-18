@@ -21,18 +21,23 @@ class DistributedFactory;
 
 class Scaler;
 
-enum MehrotraHeuristic { PRIMAL, PRIMAL_DUAL };
-
 class MehrotraStrategy {
 public:
-   MehrotraStrategy(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler);
-   TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system);
+   MehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler = nullptr);
+   virtual TerminationStatus
+   corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system) = 0;
+   virtual void fraction_to_boundary_rule(Variables& iterate, Variables& step) = 0;
+   virtual double compute_centering_parameter(Variables& iterate, Variables& step) = 0;
+   virtual void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i,
+         double mu, int stop_code, int level) = 0;
+   virtual void take_step(Variables& iterate, Variables& step) = 0;
+   virtual void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
    void set_BiCGStab_tolerance(int iteration) const;
-   ~MehrotraStrategy();
+   virtual ~MehrotraStrategy();
 
 protected:
-   MehrotraHeuristic mehrotra_heuristic;
    const Scaler* scaler{};
    Variables* corrector_step;
    /** storage for residual vectors */
@@ -106,24 +111,14 @@ protected:
    bool print_timestamp{true};
    double start_time{-1.};
 
-   TerminationStatus
-   corrector_predictor_primal(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system);
-   TerminationStatus
-   corrector_predictor_primal_dual(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system);
-   void
-   gondzio_correction_loop_primal(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
-         int iteration, double& alpha, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
-   void gondzio_correction_loop_primal_dual(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration, double& alpha_primal, double& alpha_dual, double weight_primal_candidate,
-         double weight_dual_candidate, double sigma, double mu, bool& small_corr, bool& numerical_troubles);
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
    void
    compute_gondzio_corrector(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
-   std::pair<double, double> calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor);
-   std::tuple<double, double, double, double> calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+   std::pair<double, double>
+   calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor);
+   std::tuple<double, double, double, double>
+   calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
          double alpha_dual);
    void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
    void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual);
@@ -134,9 +129,6 @@ protected:
    bool decrease_preconditioner_impact(AbstractLinearSystem* sys) const;
    void adjust_limit_gondzio_correctors();
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
-   void
-   print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha, double sigma, int i,
-         double mu, int stop_code, int level);
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
    double mehrotra_step_length_primal(Variables* iterate, Variables* step);
@@ -147,6 +139,52 @@ protected:
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
          double sigma, int i, double mu, int status_code, int level) const;
+};
+
+class PrimalMehrotraStrategy : public MehrotraStrategy {
+public:
+   PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
+   TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system) override;
+   void fraction_to_boundary_rule(Variables& iterate, Variables& step) override;
+   double compute_centering_parameter(Variables& iterate, Variables& step) override;
+   void take_step(Variables& iterate, Variables& step) override;
+   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
+   void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
+         int stop_code, int level) override;
+
+protected:
+   double primal_step_length;
+   double alpha_candidate, weight_candidate;
+};
+
+class PrimalDualMehrotraStrategy : public MehrotraStrategy {
+public:
+   PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
+   TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system) override;
+   void fraction_to_boundary_rule(Variables& iterate, Variables& step) override;
+   double compute_centering_parameter(Variables& iterate, Variables& step) override;
+   void take_step(Variables& iterate, Variables& step) override;
+   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
+         AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
+   void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
+         int stop_code, int level) override;
+
+protected:
+   double primal_step_length;
+   double dual_step_length;
+   double alpha_primal_candidate, alpha_dual_candidate, weight_primal_candidate, weight_dual_candidate;
+   double alpha_primal_enhanced, alpha_dual_enhanced;
+};
+
+enum MehrotraHeuristic { PRIMAL, PRIMAL_DUAL };
+
+class MehrotraFactory {
+public:
+   static std::unique_ptr<MehrotraStrategy>
+   create(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler = nullptr);
 };
 
 

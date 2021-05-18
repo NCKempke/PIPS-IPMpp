@@ -27,7 +27,7 @@ public:
    virtual ~InteriorPointMethod() = default;
 
 protected:
-   MehrotraStrategy mehrotra_strategy;
+   std::unique_ptr<MehrotraStrategy> mehrotra_strategy;
    FilterLineSearch filter_line_search;
 };
 
