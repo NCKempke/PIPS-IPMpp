@@ -33,13 +33,13 @@ Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResi
 }
 
 double updateNormAndPrint(double norm, const Vector<double>& vec, bool print, std::string&& name) {
-   const double infnorm = vec.infnorm();
+   const double infnorm = vec.inf_norm();
 
    if (print) {
-      const double twonorm = vec.twonorm();
+      const double twonorm = vec.two_norm();
 
       if (0 == PIPS_MPIgetRank())
-         std::cout << name << " infnorm = " << infnorm << " | twonorm = " << twonorm << "\n";
+         std::cout << name << " inf_norm = " << infnorm << " | two_norm = " << twonorm << "\n";
    }
 
    return std::max(norm, infnorm);
@@ -174,43 +174,43 @@ double Residuals::recompute_residual_norm() {
    mResidualNorm = 0.0;
 
    double componentNorm = 0.0;
-   componentNorm = lagrangian_gradient->infnorm();
+   componentNorm = lagrangian_gradient->inf_norm();
 
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
-   componentNorm = rA->infnorm();
+   componentNorm = rA->inf_norm();
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
-   componentNorm = rC->infnorm();
+   componentNorm = rC->inf_norm();
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
    if (mclow > 0) {
-      componentNorm = rt->infnorm();
+      componentNorm = rt->inf_norm();
       if (componentNorm > mResidualNorm)
          mResidualNorm = componentNorm;
    }
 
    if (mcupp > 0) {
-      componentNorm = ru->infnorm();
+      componentNorm = ru->inf_norm();
       if (componentNorm > mResidualNorm)
          mResidualNorm = componentNorm;
    }
 
-   componentNorm = rz->infnorm();
+   componentNorm = rz->inf_norm();
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
    if (nxlow > 0) {
-      componentNorm = rv->infnorm();
+      componentNorm = rv->inf_norm();
       if (componentNorm > mResidualNorm)
          mResidualNorm = componentNorm;
    }
 
    if (nxupp > 0) {
-      componentNorm = rw->infnorm();
+      componentNorm = rw->inf_norm();
       if (componentNorm > mResidualNorm)
          mResidualNorm = componentNorm;
    }
@@ -365,11 +365,11 @@ void Residuals::writeToStream(std::ostream& out) {
 }
 
 double Residuals::constraint_violation() {
-   return rA->onenorm() + rC->onenorm();
+   return rA->one_norm() + rC->one_norm();
 }
 
 double Residuals::optimality_measure(double mu) {
-   return this->lagrangian_gradient->infnorm();// + mu;
+   return this->lagrangian_gradient->inf_norm();// + mu;
 }
 double Residuals::feasibility_measure(double mu) {
    //double complementarity = 0.;

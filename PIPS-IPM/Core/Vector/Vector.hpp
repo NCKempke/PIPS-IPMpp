@@ -50,11 +50,11 @@ public:
    virtual void copyFrom(const Vector<T>& v) = 0;
 
    /** Return the infinity norm of this Vector<double> object. */
-   virtual double twonorm() const = 0;
+   virtual double two_norm() const = 0;
    /** Return the infinity norm of this Vector<double> object. */
-   virtual T infnorm() const = 0;
+   virtual T inf_norm() const = 0;
    /** Return the one norm of this Vector<double> object. */
-   virtual T onenorm() const = 0;
+   virtual T one_norm() const = 0;
 
    /** Return number of elements in this vector not considered zero */
    virtual int getNnzs() const = 0;

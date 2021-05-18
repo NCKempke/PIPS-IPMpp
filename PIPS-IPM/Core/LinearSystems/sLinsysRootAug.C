@@ -930,7 +930,7 @@ void sLinsysRootAug::solveWithIterRef(DistributedQP* prob, SimpleVector<double>&
    taux=MPI_Wtime();
 #endif
 
-   double rhsNorm = r.twonorm(); //r== the initial rhs of the reduced system here
+   double rhsNorm = r.two_norm(); //r== the initial rhs of the reduced system here
 
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
@@ -1021,7 +1021,7 @@ void sLinsysRootAug::solveWithIterRef(DistributedQP* prob, SimpleVector<double>&
       tcomm_total += (MPI_Wtime()-taux);
 #endif
 
-      double relResNorm = rxy.twonorm() / rhsNorm;
+      double relResNorm = rxy.two_norm() / rhsNorm;
 
       if (relResNorm < 1.0e-10) {
          break;
@@ -1109,7 +1109,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
    //  Problem Setup and initialization
    //////////////////////////////////////////////////////////////////
 
-   n2b = b.twonorm();
+   n2b = b.two_norm();
    tolb = n2b * tol;
 
    tolb = std::max(tolb, EPS);
@@ -1140,7 +1140,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
    tchild_total +=  (MPI_Wtime()-taux);
 #endif
 
-   normr = r.twonorm();
+   normr = r.two_norm();
    normr_act = normr;
 
    if (normr <= tolb) {
@@ -1224,7 +1224,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
       }
 
       alpha = rho / rtv;
-      if (fabs(alpha) * ph.twonorm() < EPS * x.twonorm())
+      if (fabs(alpha) * ph.two_norm() < EPS * x.two_norm())
          stag++;
       else
          stag = 0;
@@ -1234,7 +1234,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
       xhalf.axpy(alpha, ph);
       s.copyFrom(r);
       s.axpy(-alpha, v);
-      normr = s.twonorm();
+      normr = s.two_norm();
       normr_act = normr;
       resvec[2 * ii] = normr;
 
@@ -1244,7 +1244,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
          s.copyFrom(b);
          //applyA(1.0, s, -1.0, xhalf); // s=b-Ax
          SCmult(1.0, s, -1.0, xhalf, prob);
-         normr_act = s.twonorm();
+         normr_act = s.two_norm();
 
          if (normr <= tolb) {
             //converged
@@ -1308,7 +1308,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
       omega = t.dotProductWith(s);
       omega /= tt;
 
-      if (fabs(omega) * sh.twonorm() < EPS * xhalf.twonorm())
+      if (fabs(omega) * sh.two_norm() < EPS * xhalf.two_norm())
          stag++;
       else
          stag = 0;
@@ -1318,7 +1318,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
       r.copyFrom(s);
       r.axpy(-omega, t); // r=s-omega*t
 
-      normr = r.twonorm();
+      normr = r.two_norm();
       normr_act = normr;
       resvec[2 * ii + 1] = normr;
 
@@ -1330,7 +1330,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
          r.copyFrom(b);
          //applyA(1.0, r, -1.0, x); //r=b-Ax
          SCmult(1.0, r, -1.0, x, prob);
-         normr_act = r.twonorm();
+         normr_act = r.two_norm();
 
          if (normr <= tolb) {
             flag = 0;
@@ -1394,7 +1394,7 @@ void sLinsysRootAug::solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>
       //applyA(1.0, r, -1.0, xmin);
       SCmult(1.0, r, -1.0, xmin, prob);
 
-      normr = r.twonorm();
+      normr = r.two_norm();
       if (normr >= normr_act) {
          x.copyFrom(xmin);
          //iter=imin;

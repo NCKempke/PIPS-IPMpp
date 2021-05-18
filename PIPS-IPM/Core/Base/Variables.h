@@ -84,9 +84,9 @@ public:
 
    Variables(const Variables& vars);
 
-   double getAverageDistanceToBoundForConvergedVars(const Problem&, double tol) const;
+   double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
 
-   void pushSlacksFromBound(double tol, double amount);
+   void push_slacks_from_bound(double tol, double amount);
 
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    double mu();
@@ -138,9 +138,9 @@ public:
     *
     * @see stepbound
     * */
-   double findBlocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
+   double find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
 
-   void findBlocking_pd(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
+   void find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
          bool& dualBlocking);
 
@@ -149,26 +149,26 @@ public:
 
    /** add alpha to components of (u,t,v,w) and beta to components of
        (lambda,pi,phi,gamma) */
-   void shiftBoundVariables(double alpha, double beta);
+   void shift_bound_variables(double alpha, double beta);
 
    double violation();
 
    void print();
-   void printSolution(MpsReader* reader, Problem* problem, int& iErr);
+   void print_solution(MpsReader* reader, Problem* problem, int& iErr);
 
-   void unscaleSolution(Problem* problem);
-   void unscaleBounds(Problem* problem);
+   void unscale_solution(Problem* problem);
+   void unscale_bounds(Problem* problem);
 
-   int validNonZeroPattern();
+   int valid_non_zero_pattern();
 
    void copy(const Variables* b);
 
-   double onenorm() const;
-   double infnorm() const;
+   double one_norm() const;
+   double inf_norm() const;
 
-   void setToZero();
+   void set_to_zero();
 
-   void printNorms() const;
+   void print_norms() const;
 
    virtual ~Variables() = default;
 };

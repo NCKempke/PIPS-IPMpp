@@ -2762,7 +2762,7 @@ void DistributedQP::printRanges() const {
    double absmin_objective;
    g->absminNonZero(absmin_objective, 0.0);
    assert(absmin_objective >= 0);
-   const double absmax_objective = g->infnorm();
+   const double absmax_objective = g->inf_norm();
    assert(absmax_objective >= 0);
 
    /* matrix range */
@@ -2783,9 +2783,9 @@ void DistributedQP::printRanges() const {
    double absmin_bu;
    bu->absminNonZero(absmin_bu, 0.0);
 
-   const double absmax_bA = bA->infnorm();
-   const double absmax_bl = bl->infnorm();
-   const double absmax_bu = bu->infnorm();
+   const double absmax_bA = bA->inf_norm();
+   const double absmax_bl = bl->inf_norm();
+   const double absmax_bu = bu->inf_norm();
 
    const double rhs_min = std::min(absmin_bA, std::min(absmin_bl, absmin_bu));
    const double rhs_max = std::max(absmax_bA, std::max(absmax_bl, absmax_bu));
@@ -2796,8 +2796,8 @@ void DistributedQP::printRanges() const {
    double absmin_bux;
    bux->absminNonZero(absmin_bux, 0.0);
 
-   const double absmax_blx = blx->infnorm();
-   const double absmax_bux = bux->infnorm();
+   const double absmax_blx = blx->inf_norm();
+   const double absmax_bux = bux->inf_norm();
 
    const double bounds_min = std::min(absmin_blx, absmin_bux);
    const double bounds_max = std::max(absmax_blx, absmax_bux);

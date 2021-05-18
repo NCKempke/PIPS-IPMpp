@@ -113,11 +113,11 @@ double Problem::datanorm() const {
    double norm = 0.0;
    double componentNorm;
 
-   componentNorm = g->infnorm();
+   componentNorm = g->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
-   componentNorm = bA->infnorm();
+   componentNorm = bA->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
@@ -130,22 +130,22 @@ double Problem::datanorm() const {
       norm = componentNorm;
 
    assert(blx->matchesNonZeroPattern(*ixlow));
-   componentNorm = blx->infnorm();
+   componentNorm = blx->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
    assert(bux->matchesNonZeroPattern(*ixupp));
-   componentNorm = bux->infnorm();
+   componentNorm = bux->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
    assert(bl->matchesNonZeroPattern(*iclow));
-   componentNorm = bl->infnorm();
+   componentNorm = bl->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 
    assert(bu->matchesNonZeroPattern(*icupp));
-   componentNorm = bu->infnorm();
+   componentNorm = bu->inf_norm();
    if (componentNorm > norm)
       norm = componentNorm;
 

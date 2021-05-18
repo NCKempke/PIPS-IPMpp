@@ -36,6 +36,9 @@ public:
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
    virtual void mehrotra_step_length(Variables& iterate, Variables& step) = 0;
    virtual bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const = 0;
+   double compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step);
+   virtual void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) = 0;
+   virtual void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const = 0;
    void set_BiCGStab_tolerance(int iteration) const;
    virtual ~MehrotraStrategy();
 
@@ -122,8 +125,6 @@ protected:
    std::tuple<double, double, double, double>
    calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
          double alpha_dual);
-   void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha);
-   void do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual);
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
    void compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const;
    void compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal, double alpha_dual) const;
@@ -153,6 +154,8 @@ public:
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
+   void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
+   void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
@@ -173,6 +176,8 @@ public:
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
+   void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
+   void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 

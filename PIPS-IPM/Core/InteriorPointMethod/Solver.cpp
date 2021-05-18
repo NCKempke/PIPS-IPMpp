@@ -36,7 +36,7 @@ void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals
    // take the full affine scaling step
    iterate.saxpy(&step, 1.);
    double shift = 1e3 + 2 * iterate.violation();
-   iterate.shiftBoundVariables(shift, shift);
+   iterate.shift_bound_variables(shift, shift);
    return;
 }
 

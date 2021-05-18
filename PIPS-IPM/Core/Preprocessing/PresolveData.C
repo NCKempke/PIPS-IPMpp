@@ -3683,13 +3683,13 @@ void PresolveData::printVarBoundStatistics(std::ostream& out) const {
    double nr_bounds_upper = ixupp.dotProductSelf(1.0);
    double nr_bounds_lower = ixlow.dotProductSelf(1.0);
 
-   double xupp_twonorm = xupp_def->twonorm();
-   double xupp_infnorm = xupp_def->infnorm();
-   double xupp_onenorm = xupp_def->onenorm();
+   double xupp_twonorm = xupp_def->two_norm();
+   double xupp_infnorm = xupp_def->inf_norm();
+   double xupp_onenorm = xupp_def->one_norm();
 
-   double xlow_twonorm = xlow_def->twonorm();
-   double xlow_infnorm = xlow_def->infnorm();
-   double xlow_onenorm = xlow_def->onenorm();
+   double xlow_twonorm = xlow_def->two_norm();
+   double xlow_infnorm = xlow_def->inf_norm();
+   double xlow_onenorm = xlow_def->one_norm();
 
    double min_low;
    double max_low;
@@ -3709,17 +3709,17 @@ void PresolveData::printVarBoundStatistics(std::ostream& out) const {
 
       out << "xlow:\n";
       out << "nr_bounds\t" << nr_bounds_lower << "\n";
-      out << "twonorm  \t" << xlow_twonorm << "\n";
-      out << "onenorm  \t" << xlow_onenorm << "\n";
-      out << "infnorm  \t" << xlow_infnorm << "\n";
+      out << "two_norm  \t" << xlow_twonorm << "\n";
+      out << "one_norm  \t" << xlow_onenorm << "\n";
+      out << "inf_norm  \t" << xlow_infnorm << "\n";
       out << "min      \t" << max_low << "\n";
       out << "max      \t" << max_low << "\n";
       out << "\n";
       out << "xupp:\n";
       out << "nr_bounds\t" << nr_bounds_upper << "\n";
-      out << "twonorm  \t" << xupp_twonorm << "\n";
-      out << "onenorm  \t" << xupp_onenorm << "\n";
-      out << "infnorm  \t" << xupp_infnorm << "\n";
+      out << "two_norm  \t" << xupp_twonorm << "\n";
+      out << "one_norm  \t" << xupp_onenorm << "\n";
+      out << "inf_norm  \t" << xupp_infnorm << "\n";
       out << "min      \t" << min_upp << "\n";
       out << "max      \t" << max_upp << "\n";
 
@@ -3729,11 +3729,11 @@ void PresolveData::printVarBoundStatistics(std::ostream& out) const {
 }
 
 void PresolveData::printRowColStats() const {
-   const int nnzs_cols = nnzs_col->onenorm();
+   const int nnzs_cols = nnzs_col->one_norm();
 
 #ifndef NDEBUG
-   const int nnzs_A = nnzs_row_A->onenorm();
-   const int nnzs_C = nnzs_row_C->onenorm();
+   const int nnzs_A = nnzs_row_A->one_norm();
+   const int nnzs_C = nnzs_row_C->one_norm();
 
    assert(nnzs_cols == nnzs_A + nnzs_C);
 #endif

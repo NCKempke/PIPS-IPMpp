@@ -60,9 +60,9 @@ public:
    void setToConstant(T c) override;
    void copyFrom(const Vector<T>& v) override;
    void copyFromAbs(const Vector<T>& v) override;
-   double twonorm() const override;
-   T infnorm() const override;
-   T onenorm() const override;
+   double two_norm() const override;
+   T inf_norm() const override;
+   T one_norm() const override;
    void min(T& m, int& index) const override;
    void max(T& m, int& index) const override;
    void absminVecUpdate(Vector<T>& absminvec) const override;

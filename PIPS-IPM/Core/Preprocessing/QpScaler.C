@@ -169,7 +169,7 @@ Vector<double>* QpScaler::getDualVarBoundsLowUnscaled(const Vector<double>& sold
 void QpScaler::applyScaling() {
    PIPSdebugMessage("before scaling: \n "
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-            obj->infnorm(), A->inf_norm(), C->inf_norm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
+            obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
 
    // todo scale Q
    doObjScaling();
@@ -193,7 +193,7 @@ void QpScaler::applyScaling() {
 
    PIPSdebugMessage("after scaling: \n "
                     "objnorm: %f \n Anorm:  %f \n Cnorm  %f \n bAnorm %f \n rhsCnorm %f \n lhsCnorm %f \n buxnorm %f \n blxnorm %f \n  ",
-            obj->infnorm(), A->inf_norm(), C->inf_norm(), bA->infnorm(), rhsC->infnorm(), lhsC->infnorm(), bux->infnorm(), blx->infnorm());
+            obj->inf_norm(), A->inf_norm(), C->inf_norm(), bA->inf_norm(), rhsC->inf_norm(), lhsC->inf_norm(), bux->inf_norm(), blx->inf_norm());
 }
 
 double QpScaler::maxRowRatio(Vector<double>& maxvecA, Vector<double>& maxvecC, Vector<double>& minvecA, Vector<double>& minvecC,

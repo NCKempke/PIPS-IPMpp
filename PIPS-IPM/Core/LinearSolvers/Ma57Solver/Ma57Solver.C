@@ -136,7 +136,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
    else
       icntl_loc[8] = n_iterative_refinement; // Iterative refinement
 
-   const double rhsnorm = rhs.infnorm();
+   const double rhsnorm = rhs.inf_norm();
 
    bool done = false;
 
@@ -146,7 +146,7 @@ void Ma57Solver::solve(Vector<double>& rhs_in) {
 
       done = checkErrorsAndReact();
 
-      if (resid_loc.infnorm() < precision * (1 + rhsnorm) || resid_loc.infnorm() < precision)
+      if (resid_loc.inf_norm() < precision * (1 + rhsnorm) || resid_loc.inf_norm() < precision)
          done = true;
       else {
          if (thresholdPivoting() < threshold_pivoting_max) {

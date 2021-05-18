@@ -238,7 +238,7 @@ void SimpleVector<T>::copyFromAbs(const Vector<T>& vec) {
 }
 
 template<typename T>
-T SimpleVector<T>::infnorm() const {
+T SimpleVector<T>::inf_norm() const {
 
    if (this->n == 0)
       return -std::numeric_limits<T>::max();
@@ -255,7 +255,7 @@ T SimpleVector<T>::infnorm() const {
 }
 
 template<>
-double SimpleVector<double>::infnorm() const {
+double SimpleVector<double>::inf_norm() const {
    if (this->n == 0)
       return -std::numeric_limits<double>::max();
 
@@ -264,7 +264,7 @@ double SimpleVector<double>::infnorm() const {
 }
 
 template<typename T>
-T SimpleVector<T>::onenorm() const {
+T SimpleVector<T>::one_norm() const {
    T temp, norm = 0;
    for (int i = 0; i < this->n; i++) {
       temp = fabs(v[i]);
@@ -274,7 +274,7 @@ T SimpleVector<T>::onenorm() const {
 }
 
 template<typename T>
-double SimpleVector<T>::twonorm() const {
+double SimpleVector<T>::two_norm() const {
    T temp = dotProductWith(*this);
    return sqrt(temp);
 }

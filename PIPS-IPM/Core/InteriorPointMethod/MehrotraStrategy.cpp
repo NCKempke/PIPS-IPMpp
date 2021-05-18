@@ -17,25 +17,6 @@ extern double g_iterNumber;
 int gLackOfAccuracy = 0;
 const unsigned int max_linesearch_points = 50;
 
-PrimalMehrotraStrategy::PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : MehrotraStrategy(factory,
-      problem, scaler) {
-}
-
-PrimalDualMehrotraStrategy::PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : MehrotraStrategy(
-      factory, problem, scaler) {
-}
-
-std::unique_ptr<MehrotraStrategy>
-MehrotraFactory::create(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler) {
-   if (mehrotra_heuristic == PRIMAL) {
-      return std::make_unique<PrimalMehrotraStrategy>(factory, problem, scaler);
-   }
-   else {
-      return std::make_unique<PrimalDualMehrotraStrategy>(factory, problem, scaler);
-   }
-}
-
-
 MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : scaler(scaler),
       corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)),
       n_linesearch_points(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")), temp_step(factory.make_variables(problem)),
@@ -83,6 +64,14 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
    phi_min_history = new double[max_iterations];
 }
 
+PrimalMehrotraStrategy::PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : MehrotraStrategy(factory,
+      problem, scaler), primal_step_length(1.) {
+}
+
+PrimalDualMehrotraStrategy::PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : MehrotraStrategy(
+      factory, problem, scaler), primal_step_length(1.), dual_step_length(1.) {
+}
+
 void PrimalMehrotraStrategy::fraction_to_boundary_rule(Variables& iterate, Variables& step) {
    this->primal_step_length = iterate.stepbound(&step);
    return;
@@ -110,7 +99,6 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
 
    int iteration = 0;
    double sigma = 1.;
-   this->primal_step_length = 1.;
 
    TerminationStatus status_code;
 
@@ -146,7 +134,7 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
             check_numerical_troubles(&residuals, numerical_troubles, small_corr);
          }
          else {
-            step.setToZero();
+            step.set_to_zero();
          }
 
          this->fraction_to_boundary_rule(iterate, step);
@@ -181,7 +169,7 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
          if (numerical_troubles) {
             if (precond_decreased)
                precond_decreased = decrease_preconditioner_impact(&linear_system);
-            do_probing(&problem, &iterate, &residuals, &step, this->primal_step_length);
+            do_probing(problem, iterate, residuals, step);
             if (is_poor_step(pure_centering_step, precond_decreased))
                continue;
          }
@@ -232,8 +220,6 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
    int iteration = 0;
    double mu = iterate.mu();
    double sigma = 1.;
-   this->primal_step_length = 1.;
-   this->dual_step_length = 1.;
    TerminationStatus status_code;
 
    g_iterNumber = 0.;
@@ -268,7 +254,7 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
             check_numerical_troubles(&residuals, numerical_troubles, small_corr);
          }
          else
-            step.setToZero();
+            step.set_to_zero();
 
          this->fraction_to_boundary_rule(iterate, step);
 
@@ -307,7 +293,7 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
             if (precond_decreased)
                precond_decreased = decrease_preconditioner_impact(&linear_system);
 
-            do_probing(&problem, &iterate, &residuals, &step, this->primal_step_length, this->dual_step_length);
+            do_probing(problem, iterate, residuals, step);
             if (is_poor_step(pure_centering_step, precond_decreased))
                continue;
          }
@@ -645,36 +631,29 @@ MehrotraStrategy::calculate_alpha_pd_weight_candidate(Variables* iterate, Variab
    return std::make_tuple(alpha_primal_best, alpha_dual_best, weight_primal_best, weight_dual_best);
 }
 
-void MehrotraStrategy::do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha) {
-   const double mu_last = iterate->mu();
-   const double resids_norm_last = residuals->residual_norm();
-
-   compute_probing_step(temp_step, iterate, step, alpha);
-
-   residuals->evaluate(*problem, *temp_step, false);
+double MehrotraStrategy::compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
+   const double mu_last = iterate.mu();
+   const double resids_norm_last = residuals.residual_norm();
+   this->compute_probing_step(*temp_step, iterate, step);
+   residuals.evaluate(problem, *temp_step, false);
    const double mu_probing = temp_step->mu();
-   const double resids_norm_probing = residuals->residual_norm();
+   const double resids_norm_probing = residuals.residual_norm();
 
    const double factor = compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
-
-   alpha = factor * alpha;
+   return factor;
 }
 
-void
-MehrotraStrategy::do_probing(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step, double& alpha_primal, double& alpha_dual) {
-   const double mu_last = iterate->mu();
-   const double resids_norm_last = residuals->residual_norm();
+void PrimalMehrotraStrategy::do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
+   const double factor = MehrotraStrategy::compute_probing_factor(problem, iterate, residuals, step);
+   this->primal_step_length = factor * this->primal_step_length;
+   return;
+}
 
-   this->compute_probing_step(temp_step, iterate, step, alpha_primal, alpha_dual);
-
-   residuals->evaluate(*problem, *temp_step, false);
-   const double mu_probing = temp_step->mu();
-   const double resids_norm_probing = residuals->residual_norm();
-
-   const double factor = this->compute_step_factor_probing(resids_norm_last, resids_norm_probing, mu_last, mu_probing);
-
-   alpha_primal = factor * alpha_primal;
-   alpha_dual = factor * alpha_dual;
+void PrimalDualMehrotraStrategy::do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
+   const double factor = MehrotraStrategy::compute_probing_factor(problem, iterate, residuals, step);
+   this->primal_step_length = factor * this->primal_step_length;
+   this->dual_step_length = factor * this->dual_step_length;
+   return;
 }
 
 bool MehrotraStrategy::is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
@@ -706,15 +685,14 @@ bool PrimalDualMehrotraStrategy::is_poor_step(bool& pure_centering_step, bool pr
    return MehrotraStrategy::is_poor_step(pure_centering_step, precond_decreased, alpha_max);
 }
 
-void MehrotraStrategy::compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
-   probing_step->copy(iterate);
-   probing_step->saxpy(step, alpha);
+void PrimalMehrotraStrategy::compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const {
+   probing_step.copy(&iterate);
+   probing_step.saxpy(&step, this->primal_step_length);
 }
 
-void MehrotraStrategy::compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha_primal,
-      double alpha_dual) const {
-   probing_step->copy(iterate);
-   probing_step->saxpy_pd(step, alpha_primal, alpha_dual);
+void PrimalDualMehrotraStrategy::compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const {
+   probing_step.copy(&iterate);
+   probing_step.saxpy_pd(&step, this->primal_step_length, this->dual_step_length);
 }
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
@@ -919,7 +897,7 @@ void PrimalMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variables&
 #endif
 
    int firstOrSecond = -1;
-   const double maximum_step_length = iterate.findBlocking(&step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
+   const double maximum_step_length = iterate.find_blocking(&step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
    const double mu_full = iterate.mustep_pd(&step, maximum_step_length, maximum_step_length) / gamma_a;
 
    this->primal_step_length = 1.;
@@ -972,7 +950,7 @@ void PrimalDualMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variab
 
    bool primalBlocking, dualBlocking;
 
-   iterate.findBlocking_pd(&step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
+   iterate.find_blocking(&step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
          maxAlpha_p, maxAlpha_d, primalBlocking, dualBlocking);
 
    const double mufull = iterate.mustep_pd(&step, maxAlpha_p, maxAlpha_d) / gamma_a;
@@ -1104,4 +1082,14 @@ MehrotraStrategy::~MehrotraStrategy() {
    delete[] phi_history;
    delete[] phi_min_history;
    delete temp_step;
+}
+
+std::unique_ptr<MehrotraStrategy>
+MehrotraFactory::create(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler) {
+   if (mehrotra_heuristic == PRIMAL) {
+      return std::make_unique<PrimalMehrotraStrategy>(factory, problem, scaler);
+   }
+   else {
+      return std::make_unique<PrimalDualMehrotraStrategy>(factory, problem, scaler);
+   }
 }

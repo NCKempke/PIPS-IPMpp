@@ -404,10 +404,10 @@ void PIPSIPMppInterface::printComplementarityResiduals(const DistributedVariable
    w_clone->componentMult(*svars.phi);
    w_clone->selectNonZeros(*svars.ixupp);
 
-   const double rlambda_infnorm = t_clone->infnorm();
-   const double rpi_infnorm = u_clone->infnorm();
-   const double rgamma_infnorm = v_clone->infnorm();
-   const double rphi_infnorm = w_clone->infnorm();
+   const double rlambda_infnorm = t_clone->inf_norm();
+   const double rpi_infnorm = u_clone->inf_norm();
+   const double rgamma_infnorm = v_clone->inf_norm();
+   const double rphi_infnorm = w_clone->inf_norm();
 
    if (my_rank == 0) {
       std::cout << " rl norm = " << rlambda_infnorm << "\n";

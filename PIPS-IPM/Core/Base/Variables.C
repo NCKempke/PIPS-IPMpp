@@ -91,7 +91,7 @@ Variables::Variables(const Variables& vars) {
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 }
 
-double Variables::getAverageDistanceToBoundForConvergedVars(const Problem&, double tol) const {
+double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
    assert(0 < tol);
 
    double sum_small_distance = 0.0;
@@ -108,7 +108,7 @@ double Variables::getAverageDistanceToBoundForConvergedVars(const Problem&, doub
 }
 
 
-void Variables::pushSlacksFromBound(double tol, double amount) {
+void Variables::push_slacks_from_bound(double tol, double amount) {
    if (nxlow > 0)
       v->pushAwayFromZero(tol, amount, &*ixlow);
    if (nxupp > 0)
@@ -329,49 +329,49 @@ std::pair<double, double> Variables::stepbound_pd(const Variables* iterate) {
 }
 
 double
-Variables::findBlocking(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) {
+Variables::find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) {
    double alpha = 1.;
    firstOrSecond = 0;
 
    if (mclow > 0) {
-      alpha = t->find_blocking(*step->t, *lambda, *step->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = t->find_blocking(*step_in->t, *lambda, *step_in->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (mcupp > 0) {
-      alpha = u->find_blocking(*step->u, *pi, *step->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = u->find_blocking(*step_in->u, *pi, *step_in->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (nxlow > 0) {
-      alpha = v->find_blocking(*step->v, *gamma, *step->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = v->find_blocking(*step_in->v, *gamma, *step_in->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (nxupp > 0) {
-      alpha = w->find_blocking(*step->w, *phi, *step->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = w->find_blocking(*step_in->w, *phi, *step_in->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    return alpha;
 }
 
 void
-Variables::findBlocking_pd(const Variables* step, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
+Variables::find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
       double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
       bool& dualBlocking) {
    alphaPrimal = 1.0, alphaDual = 1.0;
    primalBlocking = false, dualBlocking = false;
 
    if (mclow > 0) {
-      t->find_blocking_pd(*step->t, *lambda, *step->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      t->find_blocking_pd(*step_in->t, *lambda, *step_in->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (mcupp > 0) {
-      u->find_blocking_pd(*step->u, *pi, *step->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      u->find_blocking_pd(*step_in->u, *pi, *step_in->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxlow > 0) {
-      v->find_blocking_pd(*step->v, *gamma, *step->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      v->find_blocking_pd(*step_in->v, *gamma, *step_in->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxupp > 0) {
-      w->find_blocking_pd(*step->w, *phi, *step->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      w->find_blocking_pd(*step_in->w, *phi, *step_in->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 }
@@ -452,7 +452,7 @@ double Variables::violation() {
    return -viol;
 }
 
-void Variables::shiftBoundVariables(double alpha, double beta) {
+void Variables::shift_bound_variables(double alpha, double beta) {
    if (nxlow > 0) {
       v->add_constant(alpha, *ixlow);
       gamma->add_constant(beta, *ixlow);
@@ -497,71 +497,71 @@ void Variables::copy(const Variables* b_in) {
 
 }
 
-double Variables::onenorm() const {
-   double norm = x->onenorm();
-   norm += s->onenorm();
-   norm += y->onenorm();
-   norm += z->onenorm();
+double Variables::one_norm() const {
+   double norm = x->one_norm();
+   norm += s->one_norm();
+   norm += y->one_norm();
+   norm += z->one_norm();
 
-   norm += v->onenorm();
-   norm += phi->onenorm();
-   norm += w->onenorm();
-   norm += gamma->onenorm();
-   norm += t->onenorm();
-   norm += lambda->onenorm();
-   norm += u->onenorm();
-   norm += pi->onenorm();
+   norm += v->one_norm();
+   norm += phi->one_norm();
+   norm += w->one_norm();
+   norm += gamma->one_norm();
+   norm += t->one_norm();
+   norm += lambda->one_norm();
+   norm += u->one_norm();
+   norm += pi->one_norm();
 
    return norm;
 }
 
-double Variables::infnorm() const {
+double Variables::inf_norm() const {
    double norm = 0.0;
-   double temp = x->infnorm();
+   double temp = x->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = s->infnorm();
+   temp = s->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = y->infnorm();
+   temp = y->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = z->infnorm();
-   if (temp > norm)
-      norm = temp;
-
-   temp = v->infnorm();
-   if (temp > norm)
-      norm = temp;
-   temp = phi->infnorm();
+   temp = z->inf_norm();
    if (temp > norm)
       norm = temp;
 
-   temp = w->infnorm();
+   temp = v->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = gamma->infnorm();
-   if (temp > norm)
-      norm = temp;
-
-   temp = t->infnorm();
-   if (temp > norm)
-      norm = temp;
-   temp = lambda->infnorm();
+   temp = phi->inf_norm();
    if (temp > norm)
       norm = temp;
 
-   temp = u->infnorm();
+   temp = w->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = pi->infnorm();
+   temp = gamma->inf_norm();
+   if (temp > norm)
+      norm = temp;
+
+   temp = t->inf_norm();
+   if (temp > norm)
+      norm = temp;
+   temp = lambda->inf_norm();
+   if (temp > norm)
+      norm = temp;
+
+   temp = u->inf_norm();
+   if (temp > norm)
+      norm = temp;
+   temp = pi->inf_norm();
    if (temp > norm)
       norm = temp;
 
    return norm;
 }
 
-void Variables::setToZero() {
+void Variables::set_to_zero() {
    x->setToZero();
    s->setToZero();
    y->setToZero();
@@ -580,7 +580,7 @@ void Variables::setToZero() {
    pi->setToZero();
 }
 
-int Variables::validNonZeroPattern() {
+int Variables::valid_non_zero_pattern() {
    if (nxlow > 0 && (!v->matchesNonZeroPattern(*ixlow) || !gamma->matchesNonZeroPattern(*ixlow))) {
 
       if (!v->matchesNonZeroPattern(*ixlow))
@@ -616,7 +616,7 @@ int Variables::validNonZeroPattern() {
    return 1;
 }
 
-void Variables::unscaleSolution(Problem* problem) {
+void Variables::unscale_solution(Problem* problem) {
 // Modifying sx is equivalent to modifying x
    SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
 
@@ -624,7 +624,7 @@ void Variables::unscaleSolution(Problem* problem) {
    sx.componentMult(problem->scale());
 }
 
-void Variables::unscaleBounds(Problem* problem) {
+void Variables::unscale_bounds(Problem* problem) {
    SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
    SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
 
@@ -635,7 +635,7 @@ void Variables::unscaleBounds(Problem* problem) {
    sxupp.componentMult(problem->scale());
 }
 
-void Variables::printSolution(MpsReader* reader, Problem* problem, int& iErr) {
+void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    assert(x->isKindOf(kSimpleVector)); // Otherwise this routine
 
    SimpleVector<double> g(nx);
@@ -702,8 +702,8 @@ void Variables::printSolution(MpsReader* reader, Problem* problem, int& iErr) {
 
    if (reader->scalingOption == 1) {
       // Unscale the solution and bounds before printing
-      this->unscaleSolution(problem);
-      this->unscaleBounds(problem);
+      this->unscale_solution(problem);
+      this->unscale_bounds(problem);
    }
 
    reader->printSolution(sx.elements(), nx, sxlow.elements(), cxlow, sxupp.elements(), cxupp, sgamma.elements(), sphi.elements(), sy.elements(), my,
@@ -714,67 +714,67 @@ void Variables::printSolution(MpsReader* reader, Problem* problem, int& iErr) {
    delete[] cxupp;
 }
 
-void Variables::printNorms() const {
+void Variables::print_norms() const {
    const int my_rank = PIPS_MPIgetRank();
 
-   const double infnorm = this->infnorm();
+   const double infnorm = this->inf_norm();
 
    if (my_rank == 0)
       std::cout << "||vars||_INF = " << infnorm << std::endl;
 
-   double temp_inf = x->infnorm();
-   double temp_2 = x->twonorm();
+   double temp_inf = x->inf_norm();
+   double temp_2 = x->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_x||_INF = " << temp_inf << "\t||vars_x||_2 = " << temp_2 << std::endl;
 
-   temp_inf = s->infnorm();
-   temp_2 = s->twonorm();
+   temp_inf = s->inf_norm();
+   temp_2 = s->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_s||_INF = " << temp_inf << "\t||vars_s||_2 = " << temp_2 << std::endl;
 
-   temp_inf = y->infnorm();
-   temp_2 = y->twonorm();
+   temp_inf = y->inf_norm();
+   temp_2 = y->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_y||_INF = " << temp_inf << "\t||vars_y||_2 = " << temp_2 << std::endl;
 
-   temp_inf = z->infnorm();
-   temp_2 = z->twonorm();
+   temp_inf = z->inf_norm();
+   temp_2 = z->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_z||_INF = " << temp_inf << "\t||vars_z||_2 = " << temp_2 << std::endl;
 
-   temp_inf = v->infnorm();
-   temp_2 = v->twonorm();
+   temp_inf = v->inf_norm();
+   temp_2 = v->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_v||_INF = " << temp_inf << "\t||vars_v||_2 = " << temp_2 << std::endl;
-   temp_inf = phi->infnorm();
-   temp_2 = phi->twonorm();
+   temp_inf = phi->inf_norm();
+   temp_2 = phi->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_phi||_INF = " << temp_inf << "\t||vars_phi||_2 = " << temp_2 << std::endl;
 
-   temp_inf = w->infnorm();
-   temp_2 = w->twonorm();
+   temp_inf = w->inf_norm();
+   temp_2 = w->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_w||_INF = " << temp_inf << "\t||vars_w||_2 = " << temp_2 << std::endl;
-   temp_inf = gamma->infnorm();
-   temp_2 = gamma->twonorm();
+   temp_inf = gamma->inf_norm();
+   temp_2 = gamma->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_gamma||_INF = " << temp_inf << "\t||vars_gamma||_2 = " << temp_2 << std::endl;
 
-   temp_inf = t->infnorm();
-   temp_2 = t->twonorm();
+   temp_inf = t->inf_norm();
+   temp_2 = t->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_t||_INF = " << temp_inf << "\t||vars_t||_2 = " << temp_2 << std::endl;
-   temp_inf = lambda->infnorm();
-   temp_2 = lambda->twonorm();
+   temp_inf = lambda->inf_norm();
+   temp_2 = lambda->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_lambda||_INF = " << temp_inf << "\t||vars_lambda||_2 = " << temp_2 << std::endl;
 
-   temp_inf = u->infnorm();
-   temp_2 = u->twonorm();
+   temp_inf = u->inf_norm();
+   temp_2 = u->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_u||_INF = " << temp_inf << "\t||vars_u||_2 = " << temp_2 << std::endl;
-   temp_inf = pi->infnorm();
-   temp_2 = pi->twonorm();
+   temp_inf = pi->inf_norm();
+   temp_2 = pi->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_pi||_INF = " << temp_inf << "\t||vars_pi||_2 = " << temp_2 << std::endl;
 }

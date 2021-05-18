@@ -62,9 +62,9 @@ public:
 
    void copyFrom(const Vector<T>& v) override;
    void copyFromAbs(const Vector<T>& v) override;
-   [[nodiscard]] double twonorm() const override;
-   T infnorm() const override;
-   T onenorm() const override;
+   [[nodiscard]] double two_norm() const override;
+   T inf_norm() const override;
+   T one_norm() const override;
    void min(T& m, int& index) const override;
    void max(T& m, int& index) const override;
    void absminVecUpdate(Vector<T>& absminvec) const override;
@@ -186,9 +186,9 @@ public:
    void setToConstant(T) override {};
    void copyFrom(const Vector<T>&) override {};
    void copyFromAbs(const Vector<T>&) override {};
-   double twonorm() const override { return 0.0; }
-   T infnorm() const override { return 0.0; }
-   T onenorm() const override { return 0.0; }
+   double two_norm() const override { return 0.0; }
+   T inf_norm() const override { return 0.0; }
+   T one_norm() const override { return 0.0; }
    void min(T&, int&) const override {};
    void max(T&, int&) const override {};
    void absminVecUpdate(Vector<T>&) const override {};

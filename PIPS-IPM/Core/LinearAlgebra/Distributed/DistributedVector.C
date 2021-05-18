@@ -402,17 +402,17 @@ void DistributedVector<T>::copyFromAbs(const Vector<T>& v_) {
 }
 
 template<typename T>
-T DistributedVector<T>::infnorm() const {
+T DistributedVector<T>::inf_norm() const {
    T infnrm = 0.0;
 
    for (size_t it = 0; it < children.size(); it++)
-      infnrm = std::max(infnrm, children[it]->infnorm());
+      infnrm = std::max(infnrm, children[it]->inf_norm());
 
    if (first)
-      infnrm = std::max(first->infnorm(), infnrm);
+      infnrm = std::max(first->inf_norm(), infnrm);
 
    if (last)
-      infnrm = std::max(last->infnorm(), infnrm);
+      infnrm = std::max(last->inf_norm(), infnrm);
 
    if (iAmDistrib)
       PIPS_MPIgetMaxInPlace(infnrm, mpiComm);
@@ -421,11 +421,11 @@ T DistributedVector<T>::infnorm() const {
 }
 
 template<typename T>
-double DistributedVector<T>::twonorm() const {
-   const T scale = this->infnorm();
+double DistributedVector<T>::two_norm() const {
+   const T scale = this->inf_norm();
 #ifndef NDEBUG
    if (scale <= 0.0) {
-      std::cout << "ERROR : infnorm smaller 0 .. : " << scale << std::endl;
+      std::cout << "ERROR : inf_norm smaller 0 .. : " << scale << std::endl;
    }
    assert(scale >= 0.0);
 #endif
@@ -437,17 +437,17 @@ double DistributedVector<T>::twonorm() const {
 }
 
 template<typename T>
-T DistributedVector<T>::onenorm() const {
+T DistributedVector<T>::one_norm() const {
    T onenorm = 0.0;
 
    for (size_t it = 0; it < children.size(); it++)
-      onenorm += children[it]->onenorm();
+      onenorm += children[it]->one_norm();
 
    if (first && (iAmSpecial || first->isKindOf(kStochVector)))
-      onenorm += first->onenorm();
+      onenorm += first->one_norm();
 
    if (iAmSpecial && last)
-      onenorm += last->onenorm();
+      onenorm += last->one_norm();
 
    if (iAmDistrib && !parent)
       PIPS_MPIgetSumInPlace(onenorm, mpiComm);
@@ -1326,7 +1326,7 @@ template<typename T>
 T DistributedVector<T>::dotProductSelf(T scaleFactor) const {
 #ifndef NDEBUG
    if (scaleFactor < 0.0) {
-      std::cout << "ERROR : infnorm smaller 0 .. : " << scaleFactor << std::endl;
+      std::cout << "ERROR : inf_norm smaller 0 .. : " << scaleFactor << std::endl;
    }
    assert(scaleFactor >= 0.0);
 #endif
