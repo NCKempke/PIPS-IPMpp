@@ -47,7 +47,7 @@ add_library(pips-ipmpp STATIC
         Preprocessing/StochPresolverModelCleanup.C Preprocessing/PresolveData.C Preprocessing/StochPresolverBoundStrengthening.C Preprocessing/StochPresolverColumnFixation.C Preprocessing/StochPresolverParallelRows.C
         Preprocessing/StochPresolverSingletonRows.C Preprocessing/StochPresolverSingletonColumns.C Preprocessing/QpPresolver.C Preprocessing/QpPostsolver.C
         
-        QpStoch/PIPSIPMppInterface.cpp
+        Interface/PIPSIPMppInterface.cpp
 )
 
 target_include_directories(pips-ipmpp PRIVATE ${MUMPS_INCLUDE_DIR})

@@ -18,7 +18,7 @@ include_directories(
         Core/Options
         Core/Problems
         Core/Preprocessing
-        Core/QpStoch
+        Core/Interface
         Core/Readers
         Core/Utilities
         Core/Vector

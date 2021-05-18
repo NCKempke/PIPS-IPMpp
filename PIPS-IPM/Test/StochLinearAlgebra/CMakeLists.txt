@@ -1,6 +1,5 @@
 include_directories(../../Core/Options)
-include_directories(../../Core/QpGen)
-include_directories(../../Core/QpStoch)
+include_directories(../../Core/Interface)
 include_directories(../../Core/LinearAlgebra/Distributed)
 include_directories(../../Core/Vector)
 include_directories(../../Core/Base)
