@@ -35,6 +35,7 @@ public:
    virtual void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
    virtual void mehrotra_step_length(Variables& iterate, Variables& step) = 0;
+   virtual bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const = 0;
    void set_BiCGStab_tolerance(int iteration) const;
    virtual ~MehrotraStrategy();
 
@@ -132,8 +133,6 @@ protected:
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
-   double mehrotra_step_length(Variables* iterate, Variables* step);
-   std::pair<double, double> mehrotra_step_length_primal_dual(Variables* iterate, Variables* step);
    TerminationStatus
    compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
    void set_problem_norm(const Problem& problem);
@@ -153,6 +152,7 @@ public:
    void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
+   bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
@@ -172,6 +172,7 @@ public:
    void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
+   bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 

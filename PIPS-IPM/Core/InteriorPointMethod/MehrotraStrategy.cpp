@@ -182,7 +182,7 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
             if (precond_decreased)
                precond_decreased = decrease_preconditioner_impact(&linear_system);
             do_probing(&problem, &iterate, &residuals, &step, this->primal_step_length);
-            if (is_poor_step(pure_centering_step, precond_decreased, this->primal_step_length))
+            if (is_poor_step(pure_centering_step, precond_decreased))
                continue;
          }
          pure_centering_step = false;
@@ -308,9 +308,7 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
                precond_decreased = decrease_preconditioner_impact(&linear_system);
 
             do_probing(&problem, &iterate, &residuals, &step, this->primal_step_length, this->dual_step_length);
-            const double alpha_max = std::max(this->primal_step_length, this->dual_step_length);
-
-            if (is_poor_step(pure_centering_step, precond_decreased, alpha_max))
+            if (is_poor_step(pure_centering_step, precond_decreased))
                continue;
          }
 
@@ -697,6 +695,15 @@ bool MehrotraStrategy::is_poor_step(bool& pure_centering_step, bool precond_decr
    if (my_rank == 0)
       std::cout << "poor step computed but keeping it\n";
    return false;
+}
+
+bool PrimalMehrotraStrategy::is_poor_step(bool& pure_centering_step, bool precond_decreased) const {
+   return MehrotraStrategy::is_poor_step(pure_centering_step, precond_decreased, this->primal_step_length);
+}
+
+bool PrimalDualMehrotraStrategy::is_poor_step(bool& pure_centering_step, bool precond_decreased) const {
+   const double alpha_max = std::max(this->primal_step_length, this->dual_step_length);
+   return MehrotraStrategy::is_poor_step(pure_centering_step, precond_decreased, alpha_max);
 }
 
 void MehrotraStrategy::compute_probing_step(Variables* probing_step, const Variables* iterate, const Variables* step, double alpha) const {
