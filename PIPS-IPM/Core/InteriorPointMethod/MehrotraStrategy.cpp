@@ -44,7 +44,7 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
       additional_correctors_small_comp_pairs(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
       max_additional_correctors(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
       first_iter_small_correctors(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_FIRST_ITER_SMALL_CORRECTORS")),
-      max_alpha_small_correctors(pipsipmpp_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), NumberSmallCorrectors(0),
+      max_alpha_small_correctors(pipsipmpp_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), number_small_correctors(0),
       maximum_correctors(options::getIntParameter("GONDZIO_MAX_CORRECTORS")), number_gondzio_corrections(0), step_factor0(0.3), step_factor1(1.5),
       acceptance_tolerance(0.01), beta_min(0.1), beta_max(10), dynamic_bicg_tol(pipsipmpp_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")),
       tsig(3.), max_iterations(300) {
@@ -175,8 +175,7 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
          this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
 
          // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
-         this->primal_step_length = mehrotra_step_length_primal(&iterate, &step);
-         assert(this->primal_step_length != 0);
+         this->mehrotra_step_length(iterate, step);
 
          // if we encountered numerical troubles while computing the step, enter a probing round
          if (numerical_troubles) {
@@ -300,8 +299,8 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
 
          this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
 
-         // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic.x
-         std::tie(this->primal_step_length, this->dual_step_length) = mehrotra_step_length_primal_dual(&iterate, &step);
+         // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
+         this->mehrotra_step_length(iterate, step);
 
          // if we encountered numerical troubles while computing the step check enter a probing round
          if (numerical_troubles) {
@@ -343,10 +342,10 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
    const double rmax = sigma * mu * beta_max;
 
    number_gondzio_corrections = 0;
-   NumberSmallCorrectors = 0;
+   number_small_correctors = 0;
 
    // enter the Gondzio correction loop:
-   while (number_gondzio_corrections < maximum_correctors && NumberSmallCorrectors < max_additional_correctors &&
+   while (number_gondzio_corrections < maximum_correctors && number_small_correctors < max_additional_correctors &&
           (PIPSisLT(this->alpha_primal_candidate, 1.) || PIPSisLT(this->alpha_dual_candidate, 1.))) {
       if (dynamic_corrector_schedule)
          adjust_limit_gondzio_correctors();
@@ -390,7 +389,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
          this->alpha_dual_candidate = alpha_dual_enhanced;
 
          if (small_corr)
-            NumberSmallCorrectors++;
+            number_small_correctors++;
 
          number_gondzio_corrections++;
 
@@ -410,7 +409,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
          this->alpha_dual_candidate = alpha_dual_enhanced;
 
          if (small_corr)
-            NumberSmallCorrectors++;
+            number_small_correctors++;
 
          number_gondzio_corrections++;
       }
@@ -422,7 +421,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
          this->alpha_primal_candidate = alpha_primal_enhanced;
 
          if (small_corr)
-            NumberSmallCorrectors++;
+            number_small_correctors++;
 
          number_gondzio_corrections++;
       }
@@ -434,7 +433,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
          this->alpha_dual_candidate = alpha_dual_enhanced;
 
          if (small_corr)
-            NumberSmallCorrectors++;
+            number_small_correctors++;
 
          number_gondzio_corrections++;
       }
@@ -463,12 +462,12 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
       AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) {
    const int my_rank = PIPS_MPIgetRank(MPI_COMM_WORLD);
    int number_gondzio_corrections = 0;
-   NumberSmallCorrectors = 0;
+   number_small_correctors = 0;
    // calculate the target box:
    const double rmin = sigma * mu * beta_min;
    const double rmax = sigma * mu * beta_max;
 
-   while (number_gondzio_corrections < maximum_correctors && NumberSmallCorrectors < max_additional_correctors && PIPSisLT(this->alpha_candidate, 1.)) {
+   while (number_gondzio_corrections < maximum_correctors && number_small_correctors < max_additional_correctors && PIPSisLT(this->alpha_candidate, 1.)) {
       if (dynamic_corrector_schedule)
          adjust_limit_gondzio_correctors();
       corrector_step->copy(&iterate);
@@ -504,7 +503,7 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
          this->alpha_candidate = alpha_enhanced;
 
          if (small_corr)
-            NumberSmallCorrectors++;
+            number_small_correctors++;
 
          number_gondzio_corrections++;
 
@@ -519,7 +518,7 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
          this->alpha_candidate = alpha_enhanced;
 
          if (small_corr)
-            NumberSmallCorrectors++;
+            number_small_correctors++;
 
          number_gondzio_corrections++;
       }
@@ -900,7 +899,7 @@ MehrotraStrategy::compute_status(const Problem* data, const Variables* iterate /
    return status;
 }
 
-double MehrotraStrategy::mehrotra_step_length_primal(Variables* iterate, Variables* step) {
+void PrimalMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variables& step) {
    double primalValue = -std::numeric_limits<double>::max();
    double primalStep = -std::numeric_limits<double>::max();
    double dualValue = -std::numeric_limits<double>::max();
@@ -913,23 +912,23 @@ double MehrotraStrategy::mehrotra_step_length_primal(Variables* iterate, Variabl
 #endif
 
    int firstOrSecond = -1;
-   const double maximum_step_length = iterate->findBlocking(step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
-   const double mu_full = iterate->mustep_pd(step, maximum_step_length, maximum_step_length) / gamma_a;
+   const double maximum_step_length = iterate.findBlocking(&step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
+   const double mu_full = iterate.mustep_pd(&step, maximum_step_length, maximum_step_length) / gamma_a;
 
-   double step_length = 1.;
+   this->primal_step_length = 1.;
    switch (firstOrSecond) {
       case 0:
-         step_length = 1; // No constraints were blocking
+         this->primal_step_length = 1; // No constraints were blocking
          break;
       case 1:
-         step_length = (-primalValue + mu_full / (dualValue + maximum_step_length * dualStep)) / primalStep;
+         this->primal_step_length = (-primalValue + mu_full / (dualValue + maximum_step_length * dualStep)) / primalStep;
 #ifdef TIMING
          if( myrank == 0 )
             std::cout << "(primal) original alpha " << alpha << std::endl;
 #endif
          break;
       case 2:
-         step_length = (-dualValue + mu_full / (primalValue + maximum_step_length * primalStep)) / dualStep;
+         this->primal_step_length = (-dualValue + mu_full / (primalValue + maximum_step_length * primalStep)) / dualStep;
 #ifdef TIMING
          if( myrank == 0 )
             std::cout << "(dual) original alpha " << alpha << std::endl;
@@ -941,21 +940,17 @@ double MehrotraStrategy::mehrotra_step_length_primal(Variables* iterate, Variabl
          break;
    }
    // safeguard against numerical troubles in the above computations
-   step_length = std::min(maximum_step_length, step_length);
-
-   // make it at least gamma_f * maxStep
-   if (step_length < gamma_f * maximum_step_length)
-      step_length = gamma_f * maximum_step_length;
+   this->primal_step_length = std::min(this->primal_step_length, maximum_step_length);
+   this->primal_step_length = std::max(this->primal_step_length, gamma_f * maximum_step_length);
 
    // back off just a touch (or a bit more)
-   step_length *= steplength_factor;
+   this->primal_step_length *= steplength_factor;
 
-   assert(step_length < 1.);
-
-   return step_length;
+   assert(0. < this->primal_step_length && this->primal_step_length < 1.);
+   return;
 }
 
-std::pair<double, double> MehrotraStrategy::mehrotra_step_length_primal_dual(Variables* iterate, Variables* step) {
+void PrimalDualMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variables& step) {
    double primalValue_p = -std::numeric_limits<double>::max();
    double primalStep_p = -std::numeric_limits<double>::max();
    double dualValue_p = -std::numeric_limits<double>::max();
@@ -970,61 +965,62 @@ std::pair<double, double> MehrotraStrategy::mehrotra_step_length_primal_dual(Var
 
    bool primalBlocking, dualBlocking;
 
-   iterate->findBlocking_pd(step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
+   iterate.findBlocking_pd(&step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
          maxAlpha_p, maxAlpha_d, primalBlocking, dualBlocking);
 
-   const double mufull = iterate->mustep_pd(step, maxAlpha_p, maxAlpha_d) / gamma_a;
+   const double mufull = iterate.mustep_pd(&step, maxAlpha_p, maxAlpha_d) / gamma_a;
 
-   double alpha_primal = 1., alpha_dual = 1.;
+   this->primal_step_length = 1.;
+   this->dual_step_length = 1.;
    // No primal constraints were blocking?
    if (!primalBlocking) {
-      alpha_primal = 1.;
+      this->primal_step_length = 1.;
    }
    else {
       const double dualValueEstim_p = dualValue_p + maxAlpha_d * dualStep_p;
 
       if (PIPSisEQ(dualValueEstim_p, 0.)) {
-         alpha_primal = 0.; // to be corrected below
+         this->primal_step_length = 0.; // to be corrected below
       }
       else {
-         alpha_primal = (-primalValue_p + mufull / (dualValueEstim_p)) / primalStep_p;
+         this->primal_step_length = (-primalValue_p + mufull / (dualValueEstim_p)) / primalStep_p;
       }
    }
 
    // No dual constraints were blocking?
    if (!dualBlocking) {
-      alpha_dual = 1.;
+      this->dual_step_length = 1.;
    }
    else {
       const double primValueEstim_d = primalValue_d + maxAlpha_p * primalStep_d;
 
       if (PIPSisEQ(primValueEstim_d, 0.)) {
-         alpha_dual = 0.; // to be corrected below
+         this->dual_step_length = 0.; // to be corrected below
       }
       else {
-         alpha_dual = (-dualValue_d + mufull / (primValueEstim_d)) / dualStep_d;
+         this->dual_step_length = (-dualValue_d + mufull / (primValueEstim_d)) / dualStep_d;
       }
    }
 
-   assert(alpha_primal <= 1.);
-   assert(alpha_dual <= 1.);
+   assert(this->primal_step_length <= 1.);
+   assert(this->dual_step_length <= 1.);
 
    // safeguard against numerical troubles in the above computations
-   alpha_primal = std::min(alpha_primal, maxAlpha_p);
-   alpha_dual = std::min(alpha_dual, maxAlpha_d);
+   this->primal_step_length = std::min(this->primal_step_length, maxAlpha_p);
+   this->dual_step_length = std::min(this->dual_step_length, maxAlpha_d);
 
    // make it at least gamma_f * maxAlpha and no bigger than 1
-   if (alpha_primal < gamma_f * maxAlpha_p)
-      alpha_primal = gamma_f * maxAlpha_p;
-   if (alpha_dual < gamma_f * maxAlpha_d)
-      alpha_dual = gamma_f * maxAlpha_d;
+   if (this->primal_step_length < gamma_f * maxAlpha_p)
+      this->primal_step_length = gamma_f * maxAlpha_p;
+   if (this->dual_step_length < gamma_f * maxAlpha_d)
+      this->dual_step_length = gamma_f * maxAlpha_d;
 
-   alpha_primal *= steplength_factor;
-   alpha_dual *= steplength_factor;
+   this->primal_step_length *= steplength_factor;
+   this->dual_step_length *= steplength_factor;
 
-   assert(alpha_primal < 1. && alpha_dual < 1.);
-   assert(alpha_primal >= 0 && alpha_dual >= 0);
-   return std::make_pair(alpha_primal, alpha_dual);
+   assert(this->primal_step_length < 1. && this->dual_step_length < 1.);
+   assert(this->primal_step_length >= 0 && this->dual_step_length >= 0);
+   return;
 }
 
 void MehrotraStrategy::set_problem_norm(const Problem& problem) {

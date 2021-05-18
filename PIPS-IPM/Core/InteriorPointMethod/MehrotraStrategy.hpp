@@ -34,6 +34,7 @@ public:
    virtual void take_step(Variables& iterate, Variables& step) = 0;
    virtual void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
+   virtual void mehrotra_step_length(Variables& iterate, Variables& step) = 0;
    void set_BiCGStab_tolerance(int iteration) const;
    virtual ~MehrotraStrategy();
 
@@ -72,7 +73,7 @@ protected:
    const int first_iter_small_correctors;
    /** alpha must be lower equal to this value for the IPM to try and apply small corrector steps */
    const double max_alpha_small_correctors;
-   int NumberSmallCorrectors;
+   int number_small_correctors;
 
    /** maximum number of Gondzio corrector steps */
    int maximum_correctors;
@@ -131,7 +132,7 @@ protected:
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
-   double mehrotra_step_length_primal(Variables* iterate, Variables* step);
+   double mehrotra_step_length(Variables* iterate, Variables* step);
    std::pair<double, double> mehrotra_step_length_primal_dual(Variables* iterate, Variables* step);
    TerminationStatus
    compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
@@ -151,6 +152,7 @@ public:
    void take_step(Variables& iterate, Variables& step) override;
    void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
+   void mehrotra_step_length(Variables& iterate, Variables& step) override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
@@ -169,6 +171,7 @@ public:
    void take_step(Variables& iterate, Variables& step) override;
    void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
          AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
+   void mehrotra_step_length(Variables& iterate, Variables& step) override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
