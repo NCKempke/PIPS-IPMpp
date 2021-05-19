@@ -28,7 +28,9 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
       max_alpha_small_correctors(pipsipmpp_options::get_double_parameter("GONDZIO_STOCH_MAX_ALPHA_SMALL_CORRECTORS")), number_small_correctors(0),
       maximum_correctors(options::getIntParameter("GONDZIO_MAX_CORRECTORS")), number_gondzio_corrections(0), step_factor0(0.3), step_factor1(1.5),
       acceptance_tolerance(0.01), beta_min(0.1), beta_max(10), dynamic_bicg_tol(pipsipmpp_options::get_bool_parameter("OUTER_BICG_DYNAMIC_TOL")),
-      tsig(3.), max_iterations(300) {
+      tsig(3.), max_iterations(300),
+      pure_centering_step(false), numerical_troubles(false), precond_decreased(true)
+{
    assert(max_additional_correctors > 0);
    assert(first_iter_small_correctors >= 0);
    assert(0 < max_alpha_small_correctors && max_alpha_small_correctors < 1);
@@ -62,14 +64,20 @@ MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem
    residual_norm_history = new double[max_iterations];
    phi_history = new double[max_iterations];
    phi_min_history = new double[max_iterations];
+   g_iterNumber = 0.;
+   this->sigma = 1.;
 }
 
 PrimalMehrotraStrategy::PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : MehrotraStrategy(factory,
       problem, scaler), primal_step_length(1.) {
+   this->set_problem_norm(problem);
+   this->set_BiCGStab_tolerance(-1);
 }
 
 PrimalDualMehrotraStrategy::PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : MehrotraStrategy(
       factory, problem, scaler), primal_step_length(1.), dual_step_length(1.) {
+   this->set_problem_norm(problem);
+   this->set_BiCGStab_tolerance(-1);
 }
 
 void PrimalMehrotraStrategy::fraction_to_boundary_rule(Variables& iterate, Variables& step) {
@@ -94,19 +102,10 @@ void PrimalMehrotraStrategy::take_step(Variables& iterate, Variables& step) {
 TerminationStatus
 PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
-   this->set_problem_norm(problem);
-   this->set_BiCGStab_tolerance(-1);
-
-   int iteration = 0;
-   double sigma = 1.;
 
    TerminationStatus status_code;
 
-   g_iterNumber = 0.;
-
-   bool pure_centering_step = false;
-   bool numerical_troubles = false;
-   bool precond_decreased = true;
+   int iteration = 0;
    bool termination = false;
    while (!termination) {
       iteration++;
@@ -182,12 +181,12 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
       }
       else {
          termination = true;
+         residuals.evaluate(problem, iterate);
+         double mu = iterate.mu();
+         if (print_level >= 10) {
+            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
+         }
       }
-   }
-   residuals.evaluate(problem, iterate);
-   double mu = iterate.mu();
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
    }
    return status_code;
 }
@@ -214,20 +213,10 @@ void PrimalDualMehrotraStrategy::take_step(Variables& iterate, Variables& step) 
 TerminationStatus
 PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
       Variables& step, AbstractLinearSystem& linear_system) {
-   this->set_problem_norm(problem);
-   this->set_BiCGStab_tolerance(-1);
-
-   int iteration = 0;
    double mu = iterate.mu();
-   double sigma = 1.;
    TerminationStatus status_code;
 
-   g_iterNumber = 0.;
-
-   bool pure_centering_step = false;
-   bool numerical_troubles = false;
-   bool precond_decreased = true;
-
+   int iteration = 0;
    bool termination = false;
    while (!termination) {
       iteration++;
@@ -309,11 +298,11 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
       }
       else {
          termination = true;
+         residuals.evaluate(problem, iterate);
+         if (print_level >= 10) {
+            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
+         }
       }
-   }
-   residuals.evaluate(problem, iterate);
-   if (print_level >= 10) {
-      this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
    }
    return status_code;
 }
