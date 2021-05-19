@@ -166,7 +166,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
    double best_resid = std::numeric_limits<double>::infinity();
 
 
-   const double rhsnorm = rhs.twonorm();
+   const double rhsnorm = rhs.two_norm();
 
    bool done = false;
    int n_iter_ref = 0;
@@ -202,7 +202,7 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
       mat_storage->multSym(1.0, residual_loc.elements(), 1, -1.0, iter_loc.elements(), 1);
 
       /* res = res - A * drhs where A * drhs_out = drhs_in */
-      rnorm = residual_loc.twonorm();
+      rnorm = residual_loc.two_norm();
 
       if (PIPSisEQ(rnorm, res_last, 1e-7) || rnorm > 100 * best_resid)
          done = true;
