@@ -222,9 +222,9 @@ DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double b
    assert(row_start <= row_end);
    assert(row_end <= mStorage->m);
 
-   const auto [mat_m, mat_n] = mat.n_rows_columns();
+   const auto mat_n = mat.n_columns();
 
-   assert(col_offset_this <= mStorage->n && col_offset_this + mat_m <= mStorage->n);
+   assert(col_offset_this <= mStorage->n && col_offset_this + mat.n_rows() <= mStorage->n);
 
    const int n_rows = row_end - row_start;
    assert(col_offset_result >= 0);
