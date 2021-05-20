@@ -1341,11 +1341,16 @@ bool PresolveData::rowPropagatedBounds(const INDEX& row, const INDEX& col, doubl
 
    /// set upper bound
    if (xupp_new < xupp_old) {
-      if (std::fabs(xupp_new) < limit_max_bound_accepted) {
-         if (fabs(xupp_new) < 1e-8) {
+      if (std::fabs(xupp_new) < limit_max_bound_accepted && min_impact_bound_change <= (xupp_old - xupp_new)) {
+         if (std::fabs(xupp_new) < 1e-8) {
             xupp_new = 0.0;
          }
-
+         
+         if (col.isLinkingCol()) {
+            assert(PIPS_MPIisValueEqual(xupp_new));
+            assert(PIPS_MPIisValueEqual(xupp_old));
+         }
+         
          if (updateColUpperBound(col, xupp_new)) {
             /* store node and row that implied the bound (necessary for resetting bounds later on) */
             markRowAsImplyingColumnBound(col, row, true);
@@ -1355,9 +1360,14 @@ bool PresolveData::rowPropagatedBounds(const INDEX& row, const INDEX& col, doubl
    }
    /// set lower bound
    if (xlow_old < xlow_new) {
-      if (std::fabs(xlow_new) < limit_max_bound_accepted) {
+      if (std::fabs(xlow_new) < limit_max_bound_accepted && min_impact_bound_change <= (xlow_old - xlow_new)) { 
          if (std::fabs(xlow_new) < 1e-8) {
             xlow_new = 0.0;
+         }
+
+         if (col.isLinkingCol()) {
+            assert(PIPS_MPIisValueEqual(xlow_new));
+            assert(PIPS_MPIisValueEqual(xlow_old));
          }
 
          if (updateColLowerBound(col, xlow_new)) {
@@ -3500,14 +3510,14 @@ bool PresolveData::updateColBounds(const INDEX& col, double xlow, double xupp) {
    checkBoundsInfeasible(col, xlow, xupp);
 
    bool updated = false;
-   if (xupp < INF_POS && PIPSisLT(xupp, xupp_old)) {
+   if (xupp < INF_POS && xupp < xupp_old) {
       updated = true;
 
       getSimpleVecFromColStochVec(presProb->bux, col) = xupp;
       getSimpleVecFromColStochVec(presProb->ixupp, col) = 1.0;
    }
 
-   if (INF_NEG < xlow && PIPSisLT(xlow_old, xlow)) {
+   if (INF_NEG < xlow && xlow_old < xlow) {
       updated = true;
 
       getSimpleVecFromColStochVec(presProb->blx, col) = xlow;
