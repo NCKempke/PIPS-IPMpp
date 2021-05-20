@@ -336,12 +336,12 @@ int DenseSymmetricMatrix::getNumberOfNonZeros() const {
 
 void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, int col_0)
 {
-   const auto [m_matrix, n_matrix] = matrix.n_rows_columns();
+   const auto m_matrix = matrix.n_rows();
 
 #ifndef NDEBUG
    assert(row_0 != col_0);
    const int row_n = row_0 + m_matrix;
-   const int col_n = col_0 + n_matrix;
+   const int col_n = col_0 + matrix.n_columns();
    assert(row_n <= this->size());
    assert(col_n <= this->size());
 
@@ -360,12 +360,12 @@ void DenseSymmetricMatrix::add_matrix_at(const DenseMatrix& matrix, int row_0, i
 
 void DenseSymmetricMatrix::add_matrix_at(const SparseMatrix& matrix, int row_0, int col_0)
 {
-   const auto [m_matrix, n_matrix] = matrix.n_rows_columns();
+   const auto m_matrix = matrix.n_rows();
 
 #ifndef NDEBUG
    assert(row_0 != col_0);
    const int row_n = row_0 + m_matrix;
-   const int col_n = col_0 + n_matrix;
+   const int col_n = col_0 + matrix.n_columns();
    assert(row_n <= this->size());
    assert(col_n <= this->size());
 

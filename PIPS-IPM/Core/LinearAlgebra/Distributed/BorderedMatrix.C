@@ -266,7 +266,7 @@ void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
 
    inner_matrix->writeToStreamDenseBordered(*border_left, out,0);
 
-   const auto [mL, nL] = this->bottom_left_block->n_rows_columns();
+   const auto mL = this->bottom_left_block->n_rows();
    if (mL > 0) {
       if (iAmDistrib)
          MPI_Barrier(mpi_comm);

@@ -375,11 +375,9 @@ void DistributedMatrix::writeToStreamDenseBorderedChild(const StripMatrix& borde
       assert(hasSparseMatrices());
       assert(PIPS_MPIgetRank(mpiComm) == 0);
 
-      const auto [mB, nB] = Bmat->n_rows_columns();
-      const auto [mA, nA] = Amat->n_rows_columns();
-      const auto [mBd, nBd] = border_left.first->n_rows_columns();
+      const auto mB = Bmat->n_rows();
 
-      assert(mB == mA && mA == mBd);
+      assert(mB == Amat->n_rows() && Amat->n_rows() == border_left.first->n_rows());
 
       for (int row = 0; row < mB; ++row) {
          border_left.first->writeToStreamDenseRow(out, row);
@@ -406,9 +404,8 @@ void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_lef
    if (iAmDistrib)
       MPI_Barrier(mpiComm);
 
-   const auto [mBmat, nBmat] = this->Bmat->n_rows_columns();
-   const auto [mBd, nBd] = border_left.first->n_rows_columns();
-   assert(mBmat == mBd);
+   const auto mBmat = this->Bmat->n_rows();
+   assert(mBmat == border_left.first->n_rows());
 
    assert(Bmat->is_a(kSparseGenMatrix));
    assert(border_left.first->is_a(kSparseGenMatrix));
@@ -434,9 +431,7 @@ void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_lef
       const StripMatrix& border_child = *border_left.children[it];
 
       children[it]->writeToStreamDenseBorderedChild(border_child, child_stream, offset);
-
-      const auto [mChild, nChild] = children[it]->n_rows_columns();
-      offset += static_cast<int>(PIPS_MPIgetSum(nChild, mpiComm));
+      offset += static_cast<int>(PIPS_MPIgetSum(children[it]->n_columns(), mpiComm));
 
       MPI_Barrier(mpiComm);
    }
@@ -447,12 +442,10 @@ void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_lef
       out << all_children;
 
    /// border.bl_mat | Blmat | offset | children ///
-   const auto [mlink, nlink] = this->Blmat->n_rows_columns();
+   const auto mlink = this->Blmat->n_rows();
    if (mlink > 0) {
       assert(border_left.last);
-
-      const auto [mBdl, nBdl] = border_left.last->n_rows_columns();
-      assert(mBdl == mlink);
+      assert(border_left.n_rows() == mlink);
 
       // for each row r do:
       for (int r = 0; r < mlink; r++) {
@@ -532,13 +525,11 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
    if (iAmDistrib)
       MPI_Barrier(mpiComm);
 
-   const auto [mBmat, nBmat] = Bmat->n_rows_columns();
-
    assert(Bmat->is_a(kSparseGenMatrix));
 
    /// Bmat ///
    if (my_rank == 0) {
-      for (int i = 0; i < mBmat; ++i) {
+      for (int i = 0; i < Bmat->n_rows(); ++i) {
          for (int j = 0; j < offset; ++j)
             out << "\t";
          dynamic_cast<const SparseMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
@@ -555,9 +546,7 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
    for (auto it : children) {
       MPI_Barrier(mpiComm);
       it->writeToStreamDenseChild(child_stream, offset);
-
-      const auto [mChild, nChild] = it->n_rows_columns();
-      offset += static_cast<int>(PIPS_MPIgetSum(nChild, mpiComm));
+      offset += static_cast<int>(PIPS_MPIgetSum(it->n_rows(), mpiComm));
 
       MPI_Barrier(mpiComm);
    }
@@ -568,7 +557,7 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
       out << all_children;
 
    /// Blmat | offset | children ///
-   const auto [mlink, nlink] = this->Blmat->n_rows_columns();
+   const auto mlink = this->Blmat->n_rows();
    if (mlink > 0) {
       // for each row r do:
       for (int r = 0; r < mlink; r++) {
@@ -606,12 +595,9 @@ void DistributedMatrix::writeToStreamDenseChild(std::ostream& out, int offset) c
    else {
       assert(hasSparseMatrices());
       assert(PIPS_MPIgetRank(mpiComm) == 0);
+      assert(Bmat->n_rows() == Amat->n_rows());
 
-      const auto [mB, nB] = Bmat->n_rows_columns();
-      const auto [mA, nA] = Amat->n_rows_columns();
-      assert(mB == mA);
-
-      for (int row = 0; row < mB; ++row) {
+      for (int row = 0; row < Bmat->n_rows(); ++row) {
          Amat->writeToStreamDenseRow(out, row);
          for (int i = 0; i < offset; ++i)
             out << "\t";

@@ -1911,9 +1911,8 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    // TODO
 #endif
 
-   const int n = rhs_mat_transp.n_columns();
+   const auto [m, n] = rhs_mat_transp.n_rows_columns();
 #ifndef NDEBUG
-   const int m = rhs_mat_transp.n_rows();
    assert(locmyl >= 0 && locmzl >= 0);
 
    assert(n_cols <= m);

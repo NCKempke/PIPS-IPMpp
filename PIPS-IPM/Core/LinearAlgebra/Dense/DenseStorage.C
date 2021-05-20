@@ -265,12 +265,10 @@ void DenseStorage::diagonal_set_to_constant_from(int from, int length, double va
 
 void DenseStorage::fill_from_sparse(const SparseStorage& other)
 {
-   const auto [m_other, n_other] = other.n_rows_columns();
-   assert(this->m == m_other);
-   assert(this->n == n_other);
+   assert(this->n_rows_columns() == other.n_rows_columns());
 
    this->putZeros();
-   for (int row = 0; row < m_other; ++row) {
+   for (int row = 0; row < other.n_rows(); ++row) {
       for(int j = other.krowM[row]; j < other.krowM[row + 1]; ++j)
       {
          const int col = other.jcolM[j];
@@ -281,10 +279,7 @@ void DenseStorage::fill_from_sparse(const SparseStorage& other)
 
 void DenseStorage::fill_from_dense(const DenseStorage& other)
 {
-   const auto [m_other, n_other] = other.n_rows_columns();
-   assert(this->m == m_other);
-   assert(this->n == n_other);
-
+   assert(this->n_rows_columns() == other.n_rows_columns());
    std::copy(other.M[0], other.M[0] + n * m, this->M[0]);
 }
 

@@ -205,10 +205,8 @@ void Ma57Solver::solve(int solveType, Vector<double>& rhs_in) {
 void Ma57Solver::solve(GeneralMatrix& rhs_in) {
    auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
-   const auto [N, NRHS] = rhs.n_rows_columns();
-
-   assert(n == N);
-   solve(static_cast<int>(NRHS), rhs.elements(), nullptr);
+   assert(n == rhs.n_rows());
+   solve(static_cast<int>(rhs.n_columns()), rhs.elements(), nullptr);
 }
 
 void Ma57Solver::solve(int nrhss, double* rhss, int*) {

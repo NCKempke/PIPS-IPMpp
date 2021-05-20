@@ -292,7 +292,7 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
    const int n_cols = end_cols_br - begin_cols_br;
    assert(end_cols_res - begin_cols_res == n_cols);
 
-   const auto [mres, nres] = result.n_rows_columns();
+   const auto mres = result.n_rows();
    assert(0 <= begin_cols_br && begin_cols_br <= end_cols_br);
    assert(0 <= begin_cols_res && begin_cols_res <= end_cols_res);
    assert(end_cols_res <= mres);
@@ -319,13 +319,9 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
 
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
-#ifndef NDEBUG
-   const int n_buffer = kkt->size();
-   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(result.n_rows(), n_buffer);
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(result.n_rows(), kkt->size());
+   (void) m_buffer;
    assert(n_cols <= m_buffer);
-#else
-   allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
-#endif
    /* put cols from begin_cols to end_cold of (Bri)^T into buffer
     *
     *                [ RiT 0 AiT CiT ]
@@ -381,7 +377,7 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
 /* compute result += [ B_{inner}^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 B_{inner} */
 void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
       bool sym_res, int begin_cols, int end_cols, int) {
-   const auto [res_m, res_n] = result.n_rows_columns();
+   const auto res_n = result.n_columns();
    const int n_empty = data->hasRAC() ? res_n - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m -
                                         data->getLocalG().getStorageRef().m : res_n - data->getLocalF().getStorageRef().m -
                                                                               data->getLocalG().getStorageRef().m;
@@ -547,9 +543,9 @@ void DistributedLeafLinearSystem::addBorderX0ToRhs(SimpleVector<double>& rhs, co
    const auto mGi = border.G.n_rows();
    const auto mRi = border.has_RAC ? border.R.n_rows() : 0;
    const auto mAi = border.has_RAC ? border.A.n_rows() : 0;
-   const auto mCi = border.has_RAC ? border.C.n_rows() : 0;
 
 #ifndef NDEBUG
+   const auto mCi = border.has_RAC ? border.C.n_rows() : 0;
    int nRi{0};
    if (border.has_RAC) {
       assert(border.F.n_columns() == mRi);

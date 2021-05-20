@@ -181,12 +181,10 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
 
-   const auto mbuffer = buffer.n_rows();
-
    if (sc_compute_blockwise_hierarchical)
-      assert(end_rows - begin_rows <= mbuffer);
+      assert(end_rows - begin_rows <= buffer.n_rows());
    else
-      assert(end_rows <= mbuffer);
+      assert(end_rows <= buffer.n_rows());
 
    if (!Br.has_RAC && !Br.use_local_RAC)
       return;
@@ -220,13 +218,12 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
       std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
 
    int mG0C = G0cons_border ? G0cons_border->n_rows() : 0;
-   int mF0V = F0vec_border->n_rows();
+   const auto [mF0V, nF0V] = F0vec_border->n_rows_columns();
    int mG0V = G0vec_border->n_rows();
 
 #ifndef NDEBUG
    long long nC0 = C0_border ? C0_border->n_columns() : 0;
    long long nG0C = G0cons_border ? G0cons_border->n_columns() : 0;
-   long long nF0V = F0vec_border->n_columns();
    long long nG0V = G0vec_border->n_columns();
 
    assert(nA0 == nC0);
@@ -241,9 +238,9 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
    if (!sc_compute_blockwise_hierarchical) {
       if (has_RAC)
-         assert(mbuffer >= nF0V + mF0C + mG0C);
+         assert(buffer.n_rows() >= nF0V + mF0C + mG0C);
       else
-         assert(mbuffer >= nF0V);
+         assert(buffer.n_rows() >= nF0V);
    }
 #endif
 
@@ -595,17 +592,17 @@ void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    assert(border.A.last);
 
    auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
+   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
    const auto mF0V = F0vec_border.n_rows();
 
    auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
+   auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
    const auto [mF0C, nF0C] = F0cons_border.n_rows_columns();
 
 #ifndef NDEBUG
    assert(border.C.last);
    assert(border.G.first);
 
-   auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
-   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
 
    assert(rhs.first);
    assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + G0vec_border.n_rows());

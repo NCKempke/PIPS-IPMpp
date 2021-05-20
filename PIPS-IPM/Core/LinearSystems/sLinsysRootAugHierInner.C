@@ -284,12 +284,9 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(AbstractMatrix& res, c
 
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
-#ifndef NDEBUG
    const int m_buffer = allocateAndZeroBlockedComputationsBuffer(res.n_rows(), n_buffer);
+   (void)m_buffer;
    assert(end_cols - begin_cols <= m_buffer);
-#else
-   allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
-#endif
 
    addBlTKiInvBrToResBlockwise(res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols);
 }

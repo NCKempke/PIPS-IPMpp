@@ -233,8 +233,7 @@ DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const Dense
    if (F0cons_border) {
       std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
    }
-
-   const auto nF0V = F0vec_border->n_columns();
+   const auto [mF0V, nF0V] = F0vec_border->n_rows_columns();
    const auto nG0V = G0vec_border->n_columns();
 
    if (!has_RAC && nF0V == 0 && nG0V == 0) {
@@ -245,7 +244,6 @@ DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const Dense
    const auto nA0 = A0_border ? A0_border->n_columns() : 0;
    const auto nC0 = C0_border ? C0_border->n_columns() : 0;
 
-   const auto mF0V = F0vec_border->n_rows();
    const auto mG0V = G0vec_border->n_rows();
 
    const auto [mX0, nX0] = X.n_rows_columns();
@@ -409,13 +407,12 @@ void DistributedLinearSystem::putBiTBorder(DenseMatrix& res, const BorderBiBlock
    const auto [mRt, nRt] = BiT.R.n_rows_columns();
    const auto nAt = BiT.A.n_columns();
    const auto mF = BiT.F.n_rows();
-   const auto mG = BiT.G.n_rows();
 
    const int n_empty_rows = BiT.n_empty_rows;
 
 #ifndef NDEBUG
    const auto nF = BiT.F.n_columns();
-   const auto nG = BiT.G.n_columns();
+   const auto [mG, nG] = BiT.G.n_rows_columns();
 
    const long long m_border = BiT.has_RAC ? mRt + n_empty_rows + mF + mG : n_empty_rows + mF + mG;
 
@@ -1117,7 +1114,7 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const Bord
     */
    const auto mF = Bl.F.n_rows();
    const auto mG = Bl.G.n_rows();
-   const auto [mRes, nRes] = res.n_rows_columns();
+   const auto nRes = res.n_columns();
 
    const bool with_RAC = Bl.has_RAC;
    const bool with_F = mF > 0;
@@ -1126,6 +1123,7 @@ DistributedLinearSystem::addLeftBorderTimesDenseColsToResTranspSparse(const Bord
 #ifndef NDEBUG
    const auto nF = Bl.F.n_columns();
    const auto nG = Bl.G.n_columns();
+   const auto mRes = res.n_rows();
 
    assert(mRes == nRes);
    if (with_RAC) {
