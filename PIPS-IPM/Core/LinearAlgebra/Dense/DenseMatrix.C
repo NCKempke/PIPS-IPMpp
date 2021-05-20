@@ -245,7 +245,7 @@ DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double b
             const double val = mat_tp.M[k];
 
             assert(col_offset_result + i < res.mStorage->n);
-            assert(row < mat_m);
+            assert(row < mat.n_rows());
             assert(row + col_offset_this < mStorage->n);
             res[row_start_res + j][col_offset_result + i] += mStorage->M[row_start + j][row + col_offset_this] * val * alpha;
          }
