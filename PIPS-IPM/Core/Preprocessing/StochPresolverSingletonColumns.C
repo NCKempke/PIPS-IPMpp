@@ -407,7 +407,7 @@ INDEX StochPresolverSingletonColumns::findRowForLinkingSingletonInSystem(int col
 }
 
 bool StochPresolverSingletonColumns::findRowForSingletonColumnInMatrix(const SparseStorageDynamic& mat, int& row, const int& col) {
-   assert(col < mat.getM());
+   assert(col < mat.n_rows());
    if (mat.getRowPtr(col).start != mat.getRowPtr(col).end) {
       assert((mat.getRowPtr(col).end - mat.getRowPtr(col).start) == 1);
       row = mat.getJcolM(mat.getRowPtr(col).start);

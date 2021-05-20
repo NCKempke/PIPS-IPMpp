@@ -130,11 +130,10 @@ void PardisoIndefSolver::matrixChanged() {
    }
 }
 
-
 void PardisoIndefSolver::matrixRebuild(AbstractMatrix& matrixNew) {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    if (solve_in_parallel || my_rank == 0) {
-      SparseSymmetricMatrix& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
+      auto& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
 
       assert(matrixNewSym.getStorageRef().fortranIndexed());
 
@@ -270,11 +269,7 @@ void PardisoIndefSolver::factorizeFromDense() {
 #endif
 
    assert(mStorage->n == mStorage->m);
-   int nnz = 0;
-   for (int i = 0; i < n; i++)
-      for (int j = 0; j <= i; j++)
-         if (mStorage->M[i][j] != 0.0)
-            nnz++;
+   const int nnz = mStorage->non_zeros();
 
    if (deleteCSRpointers) {
       delete[] ia;
@@ -288,21 +283,21 @@ void PardisoIndefSolver::factorizeFromDense() {
 
    deleteCSRpointers = true;
 
-   nnz = 0;
+   int pos = 0;
    for (int j = 0; j < n; j++) {
-      ia[j] = nnz;
+      ia[j] = pos;
       for (int i = j; i < n; i++)
          if (mStorage->M[i][j] != 0.0) {
-            ja[nnz] = i;
-            a[nnz++] = mStorage->M[i][j];
+            ja[pos] = i;
+            a[pos++] = mStorage->M[i][j];
          }
    }
 
-   ia[n] = nnz;
+   ia[n] = pos;
 
    for (int i = 0; i < n + 1; i++)
       ia[i] += 1;
-   for (int i = 0; i < nnz; i++)
+   for (int i = 0; i < pos; i++)
       ja[i] += 1;
 
    factorize();
@@ -380,7 +375,7 @@ void PardisoIndefSolver::solve(Vector<double>& v) {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
    phase = 33;
-   SimpleVector<double>& sv = dynamic_cast<SimpleVector<double>&>(v);
+   auto& sv = dynamic_cast<SimpleVector<double>&>(v);
 
    double* b = sv.elements();
 
@@ -566,10 +561,15 @@ PardisoIndefSolver::~PardisoIndefSolver() {
 }
 
 std::tuple<unsigned int, unsigned int, unsigned int> PardisoIndefSolver::get_inertia() const {
-   const int positive_eigenvalues = iparm[21];
-   const int negative_eigenvalues = iparm[22];
-   const int number_pivot_perturbations = iparm[13]; // indicate zero pivots and thus rank deficiency
+   if (solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0)
+   {
+      const int positive_eigenvalues = iparm[21];
+      const int negative_eigenvalues = iparm[22];
+      const int number_pivot_perturbations = iparm[13]; // indicate zero pivots and thus rank deficiency
 
-   const int zero_eigenvalues = n - positive_eigenvalues - negative_eigenvalues + number_pivot_perturbations;
-   return {positive_eigenvalues - number_pivot_perturbations, negative_eigenvalues, zero_eigenvalues};
+      return {positive_eigenvalues, negative_eigenvalues, number_pivot_perturbations};
+   } else {
+      return {0, 0, n};
+   }
+
 }

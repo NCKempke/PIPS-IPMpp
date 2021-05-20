@@ -70,14 +70,9 @@ public:
    void addRowSums(Vector<double>& vec) const override;
    void addColSums(Vector<double>& vec) const override;
 
-   void getSize(long long& m_, long long& n_) const override {
-      m_ = m;
-      n_ = n;
-   };
-   void getSize(int& m_, int& n_) const override {
-      m_ = static_cast<int>(m);
-      n_ = static_cast<int>(n);
-   };
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
 
    /** split the current children according to map_child_subchild: the new StringGenMatrices has one additional layer of StringGenMatrices */
    virtual void combineChildrenInNewChildren(const std::vector<unsigned int>& map_child_subchild, const std::vector<MPI_Comm>& child_comms);

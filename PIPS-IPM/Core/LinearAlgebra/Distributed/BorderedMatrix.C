@@ -28,26 +28,23 @@ BorderedMatrix::BorderedMatrix(DistributedMatrix* inner_matrix_, StripMatrix* bo
    assert(border_bottom);
    assert(bottom_left_block);
 
-   bottom_left_block->getSize(m, n);
+   m = bottom_left_block->n_rows();
+   n = bottom_left_block->n_columns();
 
-   int m_bottom, n_bottom;
-   border_bottom->getSize(m_bottom, n_bottom);
-
-   int m_left, n_left;
-   border_left->getSize(m_left, n_left);
-
-   int m_inner, n_inner;
-   inner_matrix->getSize(m_inner, n_inner);
+#ifndef NDEBUG
+   const auto [m_bottom, n_bottom] = border_bottom->n_rows_columns();
+   const auto [m_left, n_left] = border_left->n_rows_columns();
+   const auto [m_inner, n_inner] = inner_matrix->n_rows_columns();
 
    assert(n == n_left);
    assert(m == m_bottom);
 
    assert(m_inner == m_left);
    assert(n_inner == n_bottom);
+#endif
 
-   m += m_left;
-   n += n_bottom;
-
+   m += border_left->n_rows();
+   n += border_bottom->n_columns();
 }
 
 BorderedMatrix::~BorderedMatrix() {
@@ -134,14 +131,16 @@ void BorderedMatrix::scalarMult(double num) {
    bottom_left_block->scalarMult(num);
 }
 
-void BorderedMatrix::getSize(long long& m_, long long& n_) const {
-   m_ = m;
-   n_ = n;
+std::pair<long long, long long> BorderedMatrix::n_rows_columns() const {
+   return {m, n};
 }
 
-void BorderedMatrix::getSize(int& m_, int& n_) const {
-   m_ = static_cast<int>(m);
-   n_ = static_cast<int>(n);
+long long BorderedMatrix::n_rows() const {
+   return m;
+}
+
+long long BorderedMatrix::n_columns() const {
+   return n;
 }
 
 void BorderedMatrix::getRowMinMaxVec(bool get_min, bool initialize_vec, const Vector<double>* col_scale_in, Vector<double>& minmax_in) const {
@@ -246,8 +245,8 @@ bool BorderedMatrix::hasVecStructureForBorderedMat(const Vector<T>& vec, bool ro
       return false;
    }
 
-   int n_border, m_border;
-   border_left->getSize(m_border, n_border);
+   const auto [m_border, n_border] = border_left->n_rows_columns();
+
    if (row_vec && vecs.first->length() != n_border) {
       std::cout << "ROW: root.first.length = " << vecs.first->length() << " != " << n_border << " = border.n " << std::endl;
       return false;
@@ -267,8 +266,7 @@ void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
 
    inner_matrix->writeToStreamDenseBordered(*border_left, out,0);
 
-   int mL, nL;
-   this->bottom_left_block->getSize(mL, nL);
+   const auto [mL, nL] = this->bottom_left_block->n_rows_columns();
    if (mL > 0) {
       if (iAmDistrib)
          MPI_Barrier(mpi_comm);
@@ -293,4 +291,3 @@ void BorderedMatrix::writeToStreamDense(std::ostream& out) const {
    if (iAmDistrib)
       MPI_Barrier(mpi_comm);
 }
-

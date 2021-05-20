@@ -5,6 +5,7 @@
 #include <cassert>
 #include "OoqpBlas.h"
 #include "DenseStorage.h"
+#include "SparseStorage.h"
 #include "Vector.hpp"
 #include "SimpleVector.h"
 
@@ -46,10 +47,16 @@ void DenseStorage::setToDiagonal(const Vector<double>& vec) {
    }
 }
 
+std::pair<int,int> DenseStorage::n_rows_columns() const {
+   return {m, n};
+}
 
-void DenseStorage::getSize(int& m_, int& n_) const {
-   m_ = m;
-   n_ = n;
+int DenseStorage::n_rows() const {
+   return m;
+}
+
+int DenseStorage::n_columns() const {
+   return n;
 }
 
 DenseStorage::DenseStorage(int min, int nin) {
@@ -173,7 +180,7 @@ void DenseStorage::atPutZeros(int row, int col, int rowExtent, int colExtent) {
 
    for (int i = row; i < mrow; i++) {
       for (int j = col; j < ncol; j++) {
-         M[i][j] = 0.0;
+         this->M[i][j] = 0.0;
       }
    }
 }
@@ -256,9 +263,34 @@ void DenseStorage::diagonal_set_to_constant_from(int from, int length, double va
    }
 }
 
+void DenseStorage::fill_from_sparse(const SparseStorage& other)
+{
+   const auto [m_other, n_other] = other.n_rows_columns();
+   assert(this->m == m_other);
+   assert(this->n == n_other);
+
+   this->putZeros();
+   for (int row = 0; row < m_other; ++row) {
+      for(int j = other.krowM[row]; j < other.krowM[row + 1]; ++j)
+      {
+         const int col = other.jcolM[j];
+         this->M[row][col] = other.M[j];
+      }
+   }
+}
+
+void DenseStorage::fill_from_dense(const DenseStorage& other)
+{
+   const auto [m_other, n_other] = other.n_rows_columns();
+   assert(this->m == m_other);
+   assert(this->n == n_other);
+
+   std::copy(other.M[0], other.M[0] + n * m, this->M[0]);
+}
+
 void DenseStorage::diagonal_add_constant_from(int from, int length, double value) {
-   assert(from + length < this->m);
-   assert(from + length < this->n);
+   assert(from + length <= this->m);
+   assert(from + length <= this->n);
 
    for (int i = from; i < from + length; ++i) {
       M[i][i] += value;
@@ -287,6 +319,17 @@ double DenseStorage::abminnormNonZero(double tol) const {
       }
    }
    return min;
+}
+
+int DenseStorage::non_zeros() const {
+   int nnzs{0};
+   for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+         if (M[i][j] != 0)
+            ++nnzs;
+      }
+   }
+   return nnzs;
 }
 
 void DenseStorage::columnScale(const Vector<double>& scale_in) {

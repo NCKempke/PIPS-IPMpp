@@ -86,18 +86,17 @@ void PardisoSchurSolver::firstCall() {
 // this function is called only once and creates the augmented system
 void
 PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0) {
-   int nR, nA, nC, nF, nG, nx;
    nnz = 0;
 
-   F.getSize(nF, nx);
+   const auto nF = F.n_rows();
    nnz += F.numberOfNonZeros();
-   G.getSize(nG, nx);
+   const auto nG = G.n_rows();
    nnz += G.numberOfNonZeros();
-   R.getSize(nR, nx);
+   const auto [nR, nx] = R.n_rows_columns();
    nnz += R.numberOfNonZeros();
-   A.getSize(nA, nx);
+   const auto nA = A.n_rows();
    nnz += A.numberOfNonZeros();
-   C.getSize(nC, nx);
+   const auto nC = C.n_rows();
    nnz += C.numberOfNonZeros();
    const int Msize = static_cast<int>(Msys->size());
 

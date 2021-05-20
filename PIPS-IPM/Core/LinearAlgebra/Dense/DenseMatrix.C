@@ -58,14 +58,16 @@ void DenseMatrix::setToDiagonal(const Vector<double>& vec) {
    mStorage->setToDiagonal(vec);
 }
 
-void DenseMatrix::getSize(long long& m, long long& n) const {
-   m = mStorage->m;
-   n = mStorage->n;
+std::pair<long long, long long> DenseMatrix::n_rows_columns() const {
+   return mStorage->n_rows_columns();
 }
 
-void DenseMatrix::getSize(int& m, int& n) const {
-   m = mStorage->m;
-   n = mStorage->n;
+long long DenseMatrix::n_rows() const {
+   return mStorage->n_rows();
+}
+
+long long DenseMatrix::n_columns() const {
+   return mStorage->n_columns();
 }
 
 void DenseMatrix::atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& Mat, int srcRow, int srcCol, int rowExtent, int colExtent) {
@@ -209,50 +211,6 @@ void DenseMatrix::scalarMult(double num) {
    mStorage->scalarMult(num);
 }
 
-void DenseMatrix::matMult(double alpha, DenseMatrix& A, int transA, DenseMatrix& B, int transB, double beta) {
-   assert(0);
-   char fortranTransA = (transA == 0 ? 'N' : 'T');
-   char fortranTransB = (transB == 0 ? 'N' : 'T');
-
-   DenseMatrix& C = *this;
-
-   int m, n, k, tmp;
-
-
-   if (transA) {
-      // A^T op(B)
-      A.getSize(k, m);
-   }
-   else {
-      // A op(B)
-      A.getSize(m, k);
-   }
-
-   if (transB) {
-      //op(A) B^T
-      B.getSize(n, tmp);
-   }
-   else {
-      // op(A) B
-      B.getSize(tmp, n);
-   }
-
-   assert(m == C.mStorage->m);
-   assert(n == C.mStorage->n);
-   assert(k == tmp);
-
-   double** CC = C.mStorage->M;
-   double** AA = A.mStorage->M;
-   double** BB = B.mStorage->M;
-
-   dgemm_(&fortranTransA, &fortranTransB, &m, &n, &k, &alpha, &AA[0][0], &m, &BB[0][0], &k, &beta, &CC[0][0], &m);
-
-   //  if( n != 0 && m != 0 ) {
-   //  dgemv_( &fortranTrans, &n, &m, &alpha, &C[0][0], &n,
-   //	    &x[0], &incx, &beta, &y[0], &incy );
-
-}
-
 // TODO : probably move to some utility class..
 /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
  * starting at mul_start and the results gets added starting at res_start */
@@ -264,8 +222,7 @@ DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double b
    assert(row_start <= row_end);
    assert(row_end <= mStorage->m);
 
-   int mat_m, mat_n;
-   mat.getSize(mat_m, mat_n);
+   const auto [mat_m, mat_n] = mat.n_rows_columns();
 
    assert(col_offset_this <= mStorage->n && col_offset_this + mat_m <= mStorage->n);
 
@@ -297,8 +254,7 @@ DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double b
 }
 
 void DenseMatrix::addMatAt(const SparseMatrix& mat, int mat_row_start, int mat_row_end, int this_row_0, int this_col_0) {
-   int mmat, nmat;
-   mat.getSize(mmat, nmat);
+   const auto [mmat, nmat] = mat.n_rows_columns();
    if (mmat <= 0 || nmat <= 0)
       return;
 

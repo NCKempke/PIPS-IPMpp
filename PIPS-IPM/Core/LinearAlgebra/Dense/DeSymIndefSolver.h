@@ -42,11 +42,13 @@ protected:
    /* in PIPS symmetric matrices will be lower diagonal matrices which makes them upper diagonal in fortran access */
    const char fortranUplo = 'U';
 
-   std::shared_ptr<DenseStorage> mStorage;
+   const SymmetricMatrix& matrix;
+   bool is_mat_sparse{false};
+
+   const int n;
+   std::unique_ptr<DenseStorage> mStorage;
    std::vector<double> work;
    std::vector<int> ipiv;
-
-   const SparseSymmetricMatrix* sparseMat{};
 
    mutable int positive_eigenvalues{-1};
    mutable int negative_eigenvalues{-1};

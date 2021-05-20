@@ -34,8 +34,9 @@ public:
    virtual void transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const;
    void transMult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
 
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;

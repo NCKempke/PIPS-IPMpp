@@ -61,9 +61,9 @@ public:
    void fromGetDense(int, int, double*, int, int, int) const override { assert(false && "Not implemented"); };
    void symAtPutSpRow(int, const double[], int, const int[], int&) override { assert(false && "Not implemented"); };
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
-
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
    [[nodiscard]] long long size() const override;
 
    void symAtPutSubmatrix(int, int, const AbstractMatrix&, int, int, int, int) override { assert(false && "Not implemented"); };;
@@ -130,22 +130,17 @@ public:
 
    [[nodiscard]] int is_a(int type) const override;
 
-   void getSize(long long& m, long long& n) const override {
-      m = 0;
-      n = 0;
-   }
-   void getSize(int& m, int& n) const override {
-      m = 0;
-      n = 0;
-   }
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override { return {0,0}; };
 
-   long long size() const override { return 0; }
+   [[nodiscard]] long long n_rows() const override { return size(); };
+   [[nodiscard]] long long n_columns() const override { return size(); };
+   [[nodiscard]] long long size() const override { return 0; };
 
    void mult(double, Vector<double>&, double, const Vector<double>&) const override {};
    void transMult(double, Vector<double>&, double, const Vector<double>&) const override {};
 
-   double inf_norm() const override { return 0.0; }
-   double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); }
+   [[nodiscard]] double inf_norm() const override { return 0.0; }
+   [[nodiscard]] double abminnormNonZero(double) const override { return std::numeric_limits<double>::infinity(); }
 
    void writeToStreamDense(std::ostream&) const override {};
 
@@ -171,7 +166,4 @@ protected:
    StripMatrix* shaveBorder2(int) override { return new StringGenDummyMatrix(); };
 
 };
-
-typedef SmartPointer<DistributedSymmetricMatrix> StochSymMatrixHandle;
-
 #endif

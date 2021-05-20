@@ -151,7 +151,7 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
    char diag = 'N';    //is or is  not unit triangular
 
    int n, cols;
-   B.getSize(n, cols);
+   std::tie(n,cols) = B.n_rows_columns();
    assert(n == mStorage->n);
    int ldb = cols;
 

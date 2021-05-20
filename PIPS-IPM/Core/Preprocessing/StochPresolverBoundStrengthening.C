@@ -212,7 +212,7 @@ bool StochPresolverBoundStrengthening::strenghtenBoundsInBlock(SystemType system
    assert(mat);
 
    /* for every row in the current block and every entry in said row check if we can improve on the currently known bounds */
-   for (int row = 0; row < mat->getM(); ++row) {
+   for (int row = 0; row < mat->n_rows(); ++row) {
       const INDEX row_INDEX(ROW, linking ? -1 : node, row, linking, system_type);
 
       double actmin_part, actmax_part;

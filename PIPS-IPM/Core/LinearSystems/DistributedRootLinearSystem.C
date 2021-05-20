@@ -42,6 +42,8 @@ void DistributedRootLinearSystem::init() {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(allreduce_kkt);
 
+   std::cout << "ALLREDUCE KKT " << allreduce_kkt << std::endl;
+
    usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
    MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
 
@@ -179,8 +181,7 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    // TODO : parallelize over MPI procs?
    finalizeDenseBorderModBlocked(Br_mod_border, buffer, begin_rows, end_rows);
 
-   int mbuffer, nbuffer;
-   buffer.getSize(mbuffer, nbuffer);
+   const auto mbuffer = buffer.n_rows();
 
    if (sc_compute_blockwise_hierarchical)
       assert(end_rows - begin_rows <= mbuffer);
@@ -209,32 +210,25 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    int mA0{0};
    int nA0{0};
    if (A0_border)
-      A0_border->getSize(mA0, nA0);
+      std::tie(mA0, nA0) = A0_border->n_rows_columns();
 
-   int mC0{0};
-   int nC0{0};
-   if (C0_border)
-      C0_border->getSize(mC0, nC0);
+   int mC0 = C0_border ? C0_border->n_rows() : 0;
 
    int mF0C{0};
    int nF0C{0};
    if (F0cons_border)
-      F0cons_border->getSize(mF0C, nF0C);
+      std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
 
-   int mG0C{0};
-   int nG0C{0};
-   if (G0cons_border)
-      G0cons_border->getSize(mG0C, nG0C);
-
-   int mF0V{0};
-   int nF0V{0};
-   F0vec_border->getSize(mF0V, nF0V);
-
-   int mG0V{0};
-   int nG0V{0};
-   G0vec_border->getSize(mG0V, nG0V);
+   int mG0C = G0cons_border ? G0cons_border->n_rows() : 0;
+   int mF0V = F0vec_border->n_rows();
+   int mG0V = G0vec_border->n_rows();
 
 #ifndef NDEBUG
+   long long nC0 = C0_border ? C0_border->n_columns() : 0;
+   long long nG0C = G0cons_border ? G0cons_border->n_columns() : 0;
+   long long nF0V = F0vec_border->n_columns();
+   long long nG0V = G0vec_border->n_columns();
+
    assert(nA0 == nC0);
    assert(nF0V == nG0V);
 
@@ -243,7 +237,7 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
    assert(nF0C == nG0C);
    if (mA0 != 0)
-      assert(nF0C + mA0 + mC0 + mF0V + mG0V == nbuffer);
+      assert(nF0C + mA0 + mC0 + mF0V + mG0V == buffer.n_columns());
 
    if (!sc_compute_blockwise_hierarchical) {
       if (has_RAC)
@@ -255,7 +249,7 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
 
    /* add A0^T, C0^T, F0V^T, G0V^T */
    if (begin_rows < nF0V) {
-      const int end_f0vblock = std::min(nF0V, end_rows);
+      const int end_f0vblock = std::min((int)nF0V, end_rows);
 
       /* A0^T */
       if (mA0 > 0)
@@ -321,17 +315,6 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
  */
 void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(AbstractMatrix& result, DenseMatrix& X0, BorderLinsys& Br, bool is_sym, bool is_sparse,
       int begin_rows, int end_rows) {
-   int m_result, n_result;
-   result.getSize(m_result, n_result);
-
-#ifndef NDEBUG
-   assert(0 <= begin_rows && begin_rows <= end_rows);
-   const int n_rows = end_rows - begin_rows;
-   if (sc_compute_blockwise_hierarchical)
-      assert(n_rows <= m_result);
-   else
-      assert(end_rows <= m_result && begin_rows == 0);
-#endif
 
    if (is_sparse)
       assert(is_sym);
@@ -339,10 +322,6 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
    const bool has_RAC = Br.has_RAC;
    if (!has_RAC && !Br.use_local_RAC)
       return;
-
-   int mX0, nX0;
-   X0.getSize(mX0, nX0);
-   assert(n_rows <= mX0);
 
    SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.F.first) : nullptr;
    SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.G.first) : nullptr;
@@ -355,38 +334,48 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
    assert(F0vec_border);
    assert(G0vec_border);
 
-   int mF0V{0};
-   int nF0V{0};
-   F0vec_border->getSize(mF0V, nF0V);
-
-   int mG0V{0};
-   int nG0V{0};
-   G0vec_border->getSize(mG0V, nG0V);
-
-   if (!has_RAC && nF0V == 0 && nG0V == 0)
+   if (!has_RAC && F0vec_border->n_columns() == 0 && G0vec_border->n_columns() == 0)
       return;
 
 #ifndef NDEBUG
+   const auto [m_result, n_result] = result.n_rows_columns();
+   const auto [mX0, nX0] = X0.n_rows_columns();
+   const auto [mF0V, nF0V] = F0vec_border->n_rows_columns();
+   const auto [mG0V, nG0V] = G0vec_border->n_rows_columns();
+
    int mF0C{0};
    int nF0C{0};
-   if (F0cons_border)
-      F0cons_border->getSize(mF0C, nF0C);
+   if (F0cons_border) {
+      std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
+   }
 
    int mG0C{0};
    int nG0C{0};
-   if (G0cons_border)
-      G0cons_border->getSize(mG0C, nG0C);
+   if (G0cons_border) {
+      std::tie(mG0C, nG0C) = G0cons_border->n_rows_columns();
+   }
 
    int mA0{0};
    int nA0{0};
-   if (A0_border)
-      A0_border->getSize(mA0, nA0);
+   if (A0_border) {
+      std::tie(mA0, nA0) = A0_border->n_rows_columns();
+   }
 
    int mC0{0};
    int nC0{0};
-   if (C0_border)
-      C0_border->getSize(mC0, nC0);
+   if (C0_border) {
+      std::tie(mC0, nC0) = C0_border->n_rows_columns();
+   }
 
+   const int n_rows = end_rows - begin_rows;
+
+   assert(n_rows <= mX0);
+   assert(0 <= begin_rows && begin_rows <= end_rows);
+   if (sc_compute_blockwise_hierarchical) {
+         ;
+   }
+   else
+      assert(end_rows <= m_result && begin_rows == 0);
 
    assert(nA0 == nC0);
    assert(nF0V == nG0V);
@@ -420,29 +409,22 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse
 
    auto& SC = dynamic_cast<SparseSymmetricMatrix&>(SC_);
 
-   int dummy, mX0;
-   X0.getSize(mX0, dummy);
-   assert(0 <= begin_rows && begin_rows <= end_rows && end_rows - begin_rows <= mX0);
+   assert(0 <= begin_rows && begin_rows <= end_rows && end_rows - begin_rows <= X0.n_rows());
 
    int mA0{0};
    int nA0{0};
    if (A0_border)
-      A0_border->getSize(mA0, nA0);
+      std::tie(mA0, nA0) = A0_border->n_rows_columns();
 
-   int mC0{0};
-   if (C0_border)
-      C0_border->getSize(mC0, dummy);
+   int mC0 = C0_border ? C0_border->n_rows() : 0;
 
    int nF0C{0};
    int mF0C{0};
    if (F0cons_border)
-      F0cons_border->getSize(mF0C, nF0C);
+      std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
 
-   int mF0V{0};
-   F0vec_border->getSize(mF0V, dummy);
-
-   int mG0V{0};
-   G0vec_border->getSize(mG0V, dummy);
+   const int mF0V = F0vec_border->n_rows();
+   const int mG0V = G0vec_border->n_rows();
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
@@ -478,35 +460,28 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(
    double** SC = is_sym ? dynamic_cast<DenseSymmetricMatrix&>(SC_).Mat() : dynamic_cast<DenseMatrix&>(SC_).Mat();
 
    const int n_rows = end_rows - begin_rows;
-   int dummy, mX0;
-   X0.getSize(mX0, dummy);
-   int mSC;
-   SC_.getSize(mSC, dummy);
-   assert(0 <= begin_rows && begin_rows <= end_rows && n_rows <= mX0);
-   assert(n_rows <= mSC);
+   assert(0 <= begin_rows && begin_rows <= end_rows && n_rows <= X0.n_rows());
+   assert(n_rows <= SC_.n_rows());
 
    int mA0{0};
    int nA0{0};
    if (A0_border)
-      A0_border->getSize(mA0, nA0);
+      std::tie(mA0, nA0) = A0_border->n_rows_columns();
 
-   int mC0{0};
-   if (C0_border)
-      C0_border->getSize(mC0, dummy);
+   int mC0 = C0_border ? C0_border->n_rows() : 0;
 
    int nF0C{0};
    int mF0C{0};
    if (F0cons_border)
-      F0cons_border->getSize(mF0C, nF0C);
+      std::tie(mF0C, nF0C) = F0cons_border->n_rows_columns();
 
-   int mF0V{0};
-   F0vec_border->getSize(mF0V, dummy);
+   int mF0V = F0vec_border->n_rows();
 
    // multiply each column with B_{outer]}^T and add it to res
    // todo: #pragma omp parallel for schedule(dynamic, 10)
    for (int i = 0; i < n_rows; ++i) {
       const int row = is_sym ? i + begin_rows : i;
-      assert(i < mX0 && row < mSC);
+      assert(i < X0.n_rows() && row < SC_.n_rows());
 
       const double* const col = X0[i];
 
@@ -611,34 +586,31 @@ void DistributedRootLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
    assert(border.C.first);
 
    auto& A0_border = dynamic_cast<SparseMatrix&>(*border.A.first);
-   int mA0, nA0;
-   A0_border.getSize(mA0, nA0);
+   const auto [mA0, nA0] = A0_border.n_rows_columns();
 
    auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
-   int mC0, nC0;
-   C0_border.getSize(mC0, nC0);
+   const auto mC0 = C0_border.n_rows();
 
    assert(border.F.first);
    assert(border.A.last);
-   auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
-   int mF0V, nF0V;
-   F0vec_border.getSize(mF0V, nF0V);
-   auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
-   int mF0C, nF0C;
-   F0cons_border.getSize(mF0C, nF0C);
 
+   auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
+   const auto mF0V = F0vec_border.n_rows();
+
+   auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
+   const auto [mF0C, nF0C] = F0cons_border.n_rows_columns();
+
+#ifndef NDEBUG
    assert(border.C.last);
    assert(border.G.first);
-   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
-   int mG0V, nG0V;
-   G0vec_border.getSize(mG0V, nG0V);
+
    auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
-   int mG0C, nG0C;
-   G0cons_border.getSize(mG0C, nG0C);
+   auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
 
    assert(rhs.first);
-   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
-   assert(x0.length() == nA0 + mF0C + mG0C);
+   assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + G0vec_border.n_rows());
+   assert(x0.length() == nA0 + mF0C + G0cons_border.n_rows());
+#endif
 
    auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
 
@@ -679,30 +651,24 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
       assert(border.C.first);
 
       auto& A0_border = dynamic_cast<SparseMatrix&>(*border.A.first);
-      int mA0, nA0;
-      A0_border.getSize(mA0, nA0);
+      const auto [mA0, nA0] = A0_border.n_rows_columns();
 
       auto& C0_border = dynamic_cast<SparseMatrix&>(*border.C.first);
-      int mC0, nC0;
-      C0_border.getSize(mC0, nC0);
+      const auto mC0 = C0_border.n_rows();
 
       assert(border.F.first);
       assert(border.A.last);
       auto& F0vec_border = dynamic_cast<SparseMatrix&>(*border.A.last);
-      int mF0V, nF0V;
-      F0vec_border.getSize(mF0V, nF0V);
+      const auto mF0V = F0vec_border.n_rows();
       auto& F0cons_border = dynamic_cast<SparseMatrix&>(*border.F.first);
-      int mF0C, nF0C;
-      F0cons_border.getSize(mF0C, nF0C);
+      const auto [mF0C, nF0C]  = F0cons_border.n_rows_columns();
 
       assert(border.C.last);
       assert(border.G.first);
       auto& G0vec_border = dynamic_cast<SparseMatrix&>(*border.C.last);
-      int mG0V, nG0V;
-      G0vec_border.getSize(mG0V, nG0V);
+      const auto mG0V = G0vec_border.n_rows();
       auto& G0cons_border = dynamic_cast<SparseMatrix&>(*border.G.first);
-      int mG0C, nG0C;
-      G0cons_border.getSize(mG0C, nG0C);
+      const auto mG0C = G0cons_border.n_rows();
 
       assert(rhs.first);
       assert(rhs.first->length() == nF0C + mA0 + mC0 + mF0V + mG0V);
@@ -1643,8 +1609,7 @@ void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix* A, in
 
 // TODO: move all this to the respective matrix and storages.......
 void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
-   int n, m;
-   mat.getSize(m, n);
+   const auto [n, m] = mat.n_rows_columns();
 
    if (is_sparse) {
       if (is_sym) {

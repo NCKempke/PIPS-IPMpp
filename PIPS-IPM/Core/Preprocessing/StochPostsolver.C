@@ -2379,11 +2379,11 @@ bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
    PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>*>(padding_origcol->first)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origcol->first)->length());
 
-   SimpleVector<double>& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.x).first);
-   SimpleVector<double>& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.v).first);
-   SimpleVector<double>& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.w).first);
-   SimpleVector<double>& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.gamma).first);
-   SimpleVector<double>& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.phi).first);
+   auto& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.x).first);
+   auto& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.v).first);
+   auto& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.w).first);
+   auto& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.gamma).first);
+   auto& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.phi).first);
 
    for (int i = 0; i < linking_x.length(); ++i) {
       if (wasColumnRemoved(INDEX(COL, -1, i)))
@@ -2432,7 +2432,7 @@ bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_var
    PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>*>(padding_origrow_equality->last)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origrow_equality->last)->length());
 
-   SimpleVector<double>& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.y).last);
+   auto& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.y).last);
 
    for (int i = 0; i < linking_y.length(); ++i) {
       if (wasRowRemoved(INDEX(ROW, -1, i, true, EQUALITY_SYSTEM)))

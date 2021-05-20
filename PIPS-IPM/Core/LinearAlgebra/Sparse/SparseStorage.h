@@ -60,16 +60,18 @@ public:
    void copyFrom(int* krowM_, int* jcolM_, double* M_) const;
 
    void shiftRows(int row, int shift, int& info);
-   void getSize(int& m, int& n) const override;
-   int rows() const { return m; }
-   int cols() const { return n; }
 
-   bool isValid() const;
-   bool isSorted() const;
+   [[nodiscard]] std::pair<int,int> n_rows_columns() const override;
+   [[nodiscard]] int n_rows() const override;
+   [[nodiscard]] int n_columns() const override;
+
+   [[nodiscard]] bool isValid() const;
+   [[nodiscard]] bool isSorted() const;
 
 
-   int length() { return len; };
-   int numberOfNonZeros() const { return krowM[m]; };
+   [[nodiscard]] int length() const { return len; };
+   [[nodiscard]] int numberOfNonZeros() const { return krowM[m]; };
+
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
    void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
 

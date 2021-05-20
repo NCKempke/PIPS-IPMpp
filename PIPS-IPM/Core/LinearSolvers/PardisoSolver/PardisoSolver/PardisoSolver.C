@@ -209,7 +209,7 @@ void PardisoSolver::matrixChanged() {
 }
 
 void PardisoSolver::solve(Vector<double>& rhs_in) {
-   SimpleVector<double>& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
+   auto& rhs = dynamic_cast<SimpleVector<double>&>(rhs_in);
    double* sol_local = nvec;
 
    //int maxRefinSteps=(gLackOfAccuracy==0?3:6);
@@ -232,17 +232,16 @@ void PardisoSolver::solve(Vector<double>& rhs_in) {
 }
 
 void PardisoSolver::solve(GeneralMatrix& rhs_in) {
-   DenseMatrix& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
-   int nrows, ncols;
-   rhs.getSize(ncols, nrows);
+   const auto [nrows, ncols] = rhs.n_rows_columns();
    assert(nrows == n);
 
    if (static_cast<int>(sol.size()) < nrows * ncols)
       sol.resize(nrows * ncols);
 
    phase = 33; // solve and iterative refinement
-   nrhs = ncols;
+   nrhs = static_cast<int>(ncols);
    iparm[30] = 0;
    assert(iparmUnchanged());
 
@@ -256,10 +255,9 @@ void PardisoSolver::solve(GeneralMatrix& rhs_in) {
 
 void PardisoSolver::solve(GeneralMatrix& rhs_in, int* colSparsity) {
    std::cout << "PardisoSolver - using sparse rhs but might lead to numerical troubles .. \n";
-   DenseMatrix& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
+   auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
-   int nrows, ncols;
-   rhs.getSize(ncols, nrows);
+   const auto [nrows, ncols] = rhs.n_rows_columns();
    assert(nrows == n);
 
    if (static_cast<int>(sol.size()) < nrows * ncols)
@@ -269,7 +267,7 @@ void PardisoSolver::solve(GeneralMatrix& rhs_in, int* colSparsity) {
    phase = 33; // solve and iterative refinement
    iparm[30] = 1;
 
-   nrhs = ncols;
+   nrhs = static_cast<int>(ncols);
 
    pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, M, krowM, jcolM, colSparsity, &nrhs, iparm, &msglvl, &rhs[0][0], sol.data(), &error);
 

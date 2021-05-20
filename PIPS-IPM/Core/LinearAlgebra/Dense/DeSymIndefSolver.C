@@ -47,37 +47,26 @@ extern "C" {
 }
 #endif
 
-
-DeSymIndefSolver::DeSymIndefSolver(const DenseSymmetricMatrix* dm) : mStorage{dm->getStorageHandle()} {
-   ipiv.resize(mStorage->n);
+DeSymIndefSolver::DeSymIndefSolver(const DenseSymmetricMatrix* dm) : matrix{*dm}, is_mat_sparse{false}, n{static_cast<int>(dm->size())} {
+   mStorage = std::make_unique<DenseStorage>(n,n);
+   ipiv.resize(this->n);
 }
 
-DeSymIndefSolver::DeSymIndefSolver(const SparseSymmetricMatrix* sm) : sparseMat{sm} {
-   const int size = static_cast<int>(sm->size());
-   mStorage = std::make_shared<DenseStorage>(size, size);
-
-   ipiv.resize(size);
+DeSymIndefSolver::DeSymIndefSolver(const SparseSymmetricMatrix* sm) : matrix{*sm}, is_mat_sparse{true}, n{static_cast<int>(sm->size())} {
+   mStorage = std::make_unique<DenseStorage>(n,n);
+   ipiv.resize(this->n);
 }
 
 void DeSymIndefSolver::matrixChanged() {
    int info;
 
-   const int n = mStorage->n;
    if (n == 0)
       return;
 
-   if (sparseMat) {
-      std::fill(mStorage->M[0], mStorage->M[0] + n * n, 0.);
-
-      const double* sM = sparseMat->M();
-      const int* jcolM = sparseMat->jcolM();
-      const int* krowM = sparseMat->krowM();
-      for (int i = 0; i < n; i++) {
-         for (int k = krowM[i]; k < krowM[i + 1]; k++) {
-            int col = jcolM[k];
-            mStorage->M[i][col] = sM[k];
-         }
-      }
+   if (is_mat_sparse) {
+      this->mStorage->fill_from_sparse(dynamic_cast<const SparseSymmetricMatrix&>(matrix).getStorageRef());
+   } else {
+      this->mStorage->fill_from_dense(dynamic_cast<const DenseSymmetricMatrix&>(matrix).getStorageRef());
    }
 
 #ifdef TIMING
@@ -115,7 +104,6 @@ void DeSymIndefSolver::solve(Vector<double>& v) {
    int info;
    const int one = 1;
 
-   const int n = mStorage->n;
    auto& sv = dynamic_cast<SimpleVector<double>&>(v);
 
    if (n == 0)
@@ -137,10 +125,7 @@ void DeSymIndefSolver::solve(GeneralMatrix& rhs_in) {
    auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
    int info;
-   int nrows, ncols;
-   rhs.getSize(ncols, nrows);
-
-   const int n = mStorage->n;
+   const int ncols = rhs.n_rows();
 
    FNAME(dsytrs)(&fortranUplo, &n, &ncols, &mStorage->M[0][0], &n, ipiv.data(), &rhs[0][0], &n, &info);
 
@@ -154,13 +139,13 @@ void DeSymIndefSolver::diagonalChanged(int /* idiag */, int /* extent */) {
 void DeSymIndefSolver::calculate_inertia_from_factorization() const {
    positive_eigenvalues = 0;
    negative_eigenvalues = 0;
+   // TODO: what whould be zero evs?
+   zero_eigenvalues = 0;
 
-   for(int i = 0; i < mStorage->n; ++i) {
+   for(int i = 0; i < this->n; ++i) {
       /* 1x1 diagonal block */
       if(ipiv[i] > 0) {
-         if(fabs(mStorage->M[i][i]) < 1e-20) {
-            ++zero_eigenvalues;
-         } else if(mStorage->M[i][i] > 0) {
+         if(mStorage->M[i][i] > 0) {
             ++positive_eigenvalues;
          } else if (mStorage->M[i][i] < 0) {
             ++negative_eigenvalues;
@@ -183,4 +168,4 @@ std::tuple<unsigned int, unsigned int, unsigned int> DeSymIndefSolver::get_inert
 
    assert(mStorage->n - positive_eigenvalues - negative_eigenvalues >= 0);
    return {positive_eigenvalues, negative_eigenvalues, mStorage->n - positive_eigenvalues - negative_eigenvalues};
-};
+}

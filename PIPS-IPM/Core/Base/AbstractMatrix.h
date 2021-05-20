@@ -11,6 +11,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <utility>
 #include "Vector.hpp"
 
 class DoubleLinearSolver;
@@ -30,7 +31,9 @@ public:
 
    virtual void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) = 0;
 
-   virtual void getSize(int& m, int& n) const = 0;
+   [[nodiscard]] virtual std::pair<int,int> n_rows_columns() const = 0;
+   [[nodiscard]] virtual int n_rows() const = 0;
+   [[nodiscard]] virtual int n_columns() const = 0;
 
    virtual void getDiagonal(Vector<double>& vec) const = 0;
    virtual void setToDiagonal(const Vector<double>& vec) = 0;
@@ -167,13 +170,13 @@ public:
    virtual void rowScale(const Vector<double>& vec) = 0;
    virtual void scalarMult(double num) = 0;
 
-   virtual void getSize(long long& m, long long& n) const = 0;
-   virtual void getSize(int& m, int& n) const = 0;
+   [[nodiscard]] virtual std::pair<long long,long long> n_rows_columns() const = 0;
+   [[nodiscard]] virtual long long n_rows() const = 0;
+   [[nodiscard]] virtual long long n_columns() const = 0;
+
 
    void printSize() const {
-      long long m, n;
-      getSize(m, n);
-      std::cout << m << " x " << n << " (rows x cols)\n";
+      std::cout << this->n_rows() << " x " << this->n_columns() << " (rows x cols)\n";
    }
 
    ~AbstractMatrix() override = default;

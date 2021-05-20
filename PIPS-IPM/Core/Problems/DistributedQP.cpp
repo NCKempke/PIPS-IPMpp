@@ -598,8 +598,8 @@ int DistributedQP::getSCmixedBlocksMaxNnzDist(size_t nRows, size_t nCols, const 
 int DistributedQP::n2linksRows(const std::vector<int>& linkStartBlockLengths) {
    int n = 0;
 
-   for (size_t i = 0; i < linkStartBlockLengths.size(); ++i)
-      n += linkStartBlockLengths[i];
+   for (int linkStartBlockLength : linkStartBlockLengths)
+      n += linkStartBlockLength;
 
    return n;
 }
@@ -623,7 +623,7 @@ std::vector<int> DistributedQP::get2LinkLengthsVec(const std::vector<int>& linkS
 }
 
 SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
-   assert(children.size() > 0);
+   assert(!children.empty());
    const int nx0 = getLocalnx();
    const int my0 = getLocalmy();
    const int myl = getLocalmyl();
@@ -636,7 +636,7 @@ SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
 
    int* krowM = new int[sizeSC + 1];
    int* jcolM = new int[nnz];
-   double* M = new double[nnz];
+   auto* M = new double[nnz];
    std::uninitialized_fill(M, M + nnz, 0);
 
    krowM[0] = 0;
@@ -648,8 +648,7 @@ SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
 
 #ifndef NDEBUG
    if (!is_hierarchy_inner_leaf) {
-      int bm, bn;
-      Btrans.getSize(bm, bn);
+      const auto [bm, bn] = Btrans.n_rows_columns();
       assert(bm == nx0 && bn == my0);
    }
    else {
@@ -758,7 +757,7 @@ SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpper() {
 
 
 SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) {
-   assert(children.size() > 0);
+   assert(!children.empty());
 
    const int nx0 = getLocalnx();
    const int my0 = getLocalmy();
@@ -776,7 +775,7 @@ SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blo
 
    int* const krowM = new int[sizeSC + 1];
    int* const jcolM = new int[nnz];
-   double* const M = new double[nnz];
+   auto* const M = new double[nnz];
    std::uninitialized_fill(M, M + nnz, 0);
 
    krowM[0] = 0;
@@ -787,8 +786,7 @@ SparseSymmetricMatrix* DistributedQP::createSchurCompSymbSparseUpperDist(int blo
    int* const colidxBtrans = Btrans.jcolM();
 
 #ifndef NDEBUG
-   int bm, bn;
-   Btrans.getSize(bm, bn);
+   const auto [bm, bn] = Btrans.n_rows_columns();
    assert(bm == nx0 && bn == my0);
 #endif
 
@@ -1143,21 +1141,21 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    SmartPointer<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*A).cloneFull(switchToDynamicStorage));
    SmartPointer<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
-   DistributedVector<double>* c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
-   DistributedVector<double>* bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
-   DistributedVector<double>* xupp_clone(dynamic_cast<DistributedVector<double>*>(bux->cloneFull()));
-   DistributedVector<double>* ixupp_clone(dynamic_cast<DistributedVector<double>*>(ixupp->cloneFull()));
-   DistributedVector<double>* xlow_clone(dynamic_cast<DistributedVector<double>*>(blx->cloneFull()));
-   DistributedVector<double>* ixlow_clone(dynamic_cast<DistributedVector<double>*>(ixlow->cloneFull()));
-   DistributedVector<double>* cupp_clone(dynamic_cast<DistributedVector<double>*>(bu->cloneFull()));
-   DistributedVector<double>* icupp_clone(dynamic_cast<DistributedVector<double>*>(icupp->cloneFull()));
-   DistributedVector<double>* clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
-   DistributedVector<double>* iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
+   auto* c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
+   auto* bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
+   auto* xupp_clone(dynamic_cast<DistributedVector<double>*>(bux->cloneFull()));
+   auto* ixupp_clone(dynamic_cast<DistributedVector<double>*>(ixupp->cloneFull()));
+   auto* xlow_clone(dynamic_cast<DistributedVector<double>*>(blx->cloneFull()));
+   auto* ixlow_clone(dynamic_cast<DistributedVector<double>*>(ixlow->cloneFull()));
+   auto* cupp_clone(dynamic_cast<DistributedVector<double>*>(bu->cloneFull()));
+   auto* icupp_clone(dynamic_cast<DistributedVector<double>*>(icupp->cloneFull()));
+   auto* clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
+   auto* iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
 
    const DistributedTree* tree_clone = stochNode;
 
    // TODO : proper copy ctor..
-   DistributedQP* clone = new DistributedQP(tree_clone, c_clone, Q_clone, xlow_clone, ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
+   auto* clone = new DistributedQP(tree_clone, c_clone, Q_clone, xlow_clone, ixlow_clone, xupp_clone, ixupp_clone, A_clone, bA_clone,
          C_clone, clow_clone, iclow_clone, cupp_clone, icupp_clone);
 
    return clone;
@@ -1173,14 +1171,14 @@ void DistributedQP::createChildren() {
    auto& xlowSt = dynamic_cast<DistributedVector<double>&>(*blx);
    auto& ixlowSt = dynamic_cast<DistributedVector<double>&>(*ixlow);
    auto& xuppSt = dynamic_cast<DistributedVector<double>&>(*bux);
-   DistributedVector<double>& ixuppSt = dynamic_cast<DistributedVector<double>&>(*ixupp);
-   DistributedMatrix& ASt = dynamic_cast<DistributedMatrix&>(*A);
-   DistributedVector<double>& bASt = dynamic_cast<DistributedVector<double>&>(*bA);
-   DistributedMatrix& CSt = dynamic_cast<DistributedMatrix&>(*C);
-   DistributedVector<double>& clowSt = dynamic_cast<DistributedVector<double>&>(*bl);
-   DistributedVector<double>& iclowSt = dynamic_cast<DistributedVector<double>&>(*iclow);
-   DistributedVector<double>& cuppSt = dynamic_cast<DistributedVector<double>&>(*bu);
-   DistributedVector<double>& icuppSt = dynamic_cast<DistributedVector<double>&>(*icupp);
+   auto& ixuppSt = dynamic_cast<DistributedVector<double>&>(*ixupp);
+   auto& ASt = dynamic_cast<DistributedMatrix&>(*A);
+   auto& bASt = dynamic_cast<DistributedVector<double>&>(*bA);
+   auto& CSt = dynamic_cast<DistributedMatrix&>(*C);
+   auto& clowSt = dynamic_cast<DistributedVector<double>&>(*bl);
+   auto& iclowSt = dynamic_cast<DistributedVector<double>&>(*iclow);
+   auto& cuppSt = dynamic_cast<DistributedVector<double>&>(*bu);
+   auto& icuppSt = dynamic_cast<DistributedVector<double>&>(*icupp);
 
    for (size_t it = 0; it < gSt.children.size(); it++) {
       AddChild(new DistributedQP(stochNode->getChildren()[it], gSt.children[it], QSt.children[it], xlowSt.children[it], ixlowSt.children[it],
@@ -1242,10 +1240,9 @@ DistributedQP* DistributedQP::shaveDenseBorder(const DistributedTree* tree) {
    mclow -= iclow.last->numberOfNonzeros();
    mcupp -= icupp.last->numberOfNonzeros();
 
-   long long dummy;
    nx = g->length();
-   A->getSize(my, dummy);
-   C->getSize(mz, dummy);
+   my = A->n_rows();
+   mz = C->n_rows();
 
    /* adapt vectors and global link sizes - we pushed these up */
 
@@ -1298,7 +1295,7 @@ Permutation DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const
 #endif
 
    size_t pos_child_twolinks = 0;
-   const size_t end_child_twolinks = static_cast<size_t>(linkStartBlockId.size() - n_links_after_split);
+   const auto end_child_twolinks = static_cast<size_t>(linkStartBlockId.size() - n_links_after_split);
    size_t pos_remaining_links = end_child_twolinks;
 
    for (size_t i = 0; i < linkStartBlockId.size(); ++i) {
@@ -1312,7 +1309,7 @@ Permutation DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const
       }
       else {
          assert(0 <= linkStartBlockId[i]);
-         const size_t start_block_link_i = static_cast<size_t>(linkStartBlockId[i]);
+         const auto start_block_link_i = static_cast<size_t>(linkStartBlockId[i]);
          assert(start_block_link_i < map_block_subtree.size());
 
          if (start_block_link_i == map_block_subtree.size() - 1) {
@@ -1338,8 +1335,8 @@ Permutation DistributedQP::getChildLinkConsFirstOwnLinkConsLastPermutation(const
 
 void DistributedQP::reorderLinkingConstraintsAccordingToSplit() {
    /* assert that distributed Schur complement has not yet been initialized */
-   assert(isSCrowLocal.size() == 0);
-   assert(isSCrowMyLocal.size() == 0);
+   assert(isSCrowLocal.empty());
+   assert(isSCrowMyLocal.empty());
 
    const std::vector<unsigned int>& map_block_subtree = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
 
@@ -1357,13 +1354,13 @@ void DistributedQP::addChildrenForSplit() {
    else
       is_hierarchy_inner_root = true;
 
-   assert(isSCrowLocal.size() == 0);
-   assert(isSCrowMyLocal.size() == 0);
+   assert(isSCrowLocal.empty());
+   assert(isSCrowMyLocal.empty());
 
    const std::vector<unsigned int>& map_blocks_children = dynamic_cast<const DistributedTreeCallbacks*>(stochNode)->getMapBlockSubTrees();
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
 
-   const DistributedTreeCallbacks& tree = dynamic_cast<const DistributedTreeCallbacks&>(*stochNode);
+   const auto& tree = dynamic_cast<const DistributedTreeCallbacks&>(*stochNode);
    std::vector<DistributedQP*> new_children(n_new_children);
 
    unsigned int childchild_pos{0};
@@ -1402,7 +1399,7 @@ void DistributedQP::addChildrenForSplit() {
       assert(dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).isHierarchicalInnerLeaf());
       const DistributedTree* tree_child = dynamic_cast<const DistributedTreeCallbacks&>(*tree.getChildren()[i]).getSubRoot();
 
-      DistributedQP* child = new DistributedQP(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child, A_child, bA_child,
+      auto* child = new DistributedQP(tree_child, g_child, Q_child, blx_child, ixlow_child, bux_child, ixupp_child, A_child, bA_child,
             C_child, bl_child, iclow_child, bu_child, icupp_child, false, false, false, true);
       new_children[i] = child;
 
@@ -1482,13 +1479,13 @@ void DistributedQP::addChildrenForSplit() {
    linkStartBlockLengthsC.erase(std::remove_if(linkStartBlockLengthsC.begin(), linkStartBlockLengthsC.end(), [](int a) { return a == -20; }),
          linkStartBlockLengthsC.end());
 
-   for (unsigned int i = 0; i < linkStartBlockIdA.size(); ++i)
-      if (linkStartBlockIdA[i] >= 0)
-         linkStartBlockIdA[i] = map_blocks_children[linkStartBlockIdA[i]];
+   for (int & i : linkStartBlockIdA)
+      if (i >= 0)
+         i = map_blocks_children[i];
 
-   for (unsigned int i = 0; i < linkStartBlockIdC.size(); ++i)
-      if (linkStartBlockIdC[i] >= 0)
-         linkStartBlockIdC[i] = map_blocks_children[linkStartBlockIdC[i]];
+   for (int & i : linkStartBlockIdC)
+      if (i >= 0)
+         i = map_blocks_children[i];
 
    children.clear();
    children.insert(children.begin(), new_children.begin(), new_children.end());
@@ -1572,8 +1569,8 @@ void DistributedQP::recomputeSize() {
 void DistributedQP::splitStringMatricesAccordingToSubtreeStructure() {
    assert(dynamic_cast<DistributedMatrix&>(*A).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<DistributedMatrix&>(*C).Blmat->is_a(kStripMatrix));
-   StripMatrix& Blmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Blmat);
-   StripMatrix& Dlmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Blmat);
+   auto& Blmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*A).Blmat);
+   auto& Dlmat = dynamic_cast<StripMatrix&>(*dynamic_cast<DistributedMatrix&>(*C).Blmat);
 
    if (stochNode->getCommWorkers() == MPI_COMM_NULL) {
       assert(Blmat.is_a(kStringGenDummyMatrix));
@@ -1656,7 +1653,7 @@ void DistributedQP::permuteLinkingVars(const Permutation& perm) {
 }
 
 DistributedVariables* DistributedQP::getVarsUnperm(const DistributedVariables& vars, const DistributedQP& unpermData) const {
-   DistributedVariables* unperm_vars = new DistributedVariables(vars);
+   auto* unperm_vars = new DistributedVariables(vars);
 
    if (is_hierarchy_root)
       unperm_vars->collapseHierarchicalStructure(*this, unpermData.stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
@@ -1667,20 +1664,20 @@ DistributedVariables* DistributedQP::getVarsUnperm(const DistributedVariables& v
    const Permutation perm_inv_link_cons_eq = getLinkConsEqPermInv();
    const Permutation perm_inv_link_cons_ineq = getLinkConsIneqPermInv();
 
-   if (perm_inv_link_vars.size() != 0)
+   if (!perm_inv_link_vars.empty())
       unperm_vars->permuteVec0Entries(perm_inv_link_vars, true);
 
-   if (perm_inv_link_cons_eq.size() != 0)
+   if (!perm_inv_link_cons_eq.empty())
       unperm_vars->permuteEqLinkingEntries(perm_inv_link_cons_eq);
 
-   if (perm_inv_link_cons_ineq.size() != 0)
+   if (!perm_inv_link_cons_ineq.empty())
       unperm_vars->permuteIneqLinkingEntries(perm_inv_link_cons_ineq, true);
 
    return unperm_vars;
 }
 
 DistributedResiduals* DistributedQP::getResidsUnperm(const DistributedResiduals& resids, const DistributedQP& unpermData) const {
-   DistributedResiduals* unperm_resids = new DistributedResiduals(resids);
+   auto* unperm_resids = new DistributedResiduals(resids);
 
    if (is_hierarchy_root)
       unperm_resids->collapseHierarchicalStructure(*this, stochNode, unpermData.ixlow, unpermData.ixupp, unpermData.iclow, unpermData.icupp);
@@ -1692,15 +1689,15 @@ DistributedResiduals* DistributedQP::getResidsUnperm(const DistributedResiduals&
    const Permutation perm_inv_link_cons_ineq = this->getLinkConsIneqPermInv();
 
    /* when using the hierarchical approach the unpermute is done in collapsHierarchicalStructure already */
-   const bool do_not_permut_bounds = is_hierarchy_root ? true : false;
+   const bool do_not_permut_bounds = is_hierarchy_root;
 
-   if (perm_inv_link_vars.size() != 0)
+   if (!perm_inv_link_vars.empty())
       unperm_resids->permuteVec0Entries(perm_inv_link_vars, do_not_permut_bounds);
 
-   if (perm_inv_link_cons_eq.size() != 0)
+   if (!perm_inv_link_cons_eq.empty())
       unperm_resids->permuteEqLinkingEntries(perm_inv_link_cons_eq);
 
-   if (perm_inv_link_cons_ineq.size() != 0)
+   if (!perm_inv_link_cons_ineq.empty())
       unperm_resids->permuteIneqLinkingEntries(perm_inv_link_cons_ineq, do_not_permut_bounds);
 
    return unperm_resids;
@@ -1774,8 +1771,8 @@ void DistributedQP::activateLinkStructureExploitation() {
 
    const int nx0 = getLocalnx();
 
-   const DistributedMatrix& Astoch = dynamic_cast<const DistributedMatrix&>(*A);
-   const DistributedMatrix& Cstoch = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Astoch = dynamic_cast<const DistributedMatrix&>(*A);
+   const auto& Cstoch = dynamic_cast<const DistributedMatrix&>(*C);
 
    n_blocks_per_link_var = std::vector<int>(nx0, 0);
    Astoch.updateKLinkVarsCount(n_blocks_per_link_var);
@@ -1833,18 +1830,18 @@ void DistributedQP::activateLinkStructureExploitation() {
 
 #ifndef NDEBUG
    int n0LinkVars_cpy = 0;
-   for (size_t i = 0; i < n_blocks_per_link_var.size(); ++i)
-      if (n_blocks_per_link_var[i] == 0)
+   for (int i : n_blocks_per_link_var)
+      if (i == 0)
          n0LinkVars_cpy++;
 
    int n2LinksEq_cpy = 0;
-   for (size_t i = 0; i < linkStartBlockIdA.size(); ++i)
-      if (linkStartBlockIdA[i] >= 0)
+   for (int i : linkStartBlockIdA)
+      if (i >= 0)
          n2LinksEq_cpy++;
 
    int n2LinksIneq_cpy = 0;
-   for (size_t i = 0; i < linkStartBlockIdC.size(); ++i)
-      if (linkStartBlockIdC[i] >= 0)
+   for (int i : linkStartBlockIdC)
+      if (i >= 0)
          n2LinksIneq_cpy++;
 
    assert(n0LinkVars_cpy == n0LinkVars);
@@ -1883,8 +1880,8 @@ void DistributedQP::activateLinkStructureExploitation() {
       assert(myl >= 0 && mzl >= 0 && (mzl + myl > 0));
 #endif
 
-      assert(linkConsPermutationA.size() == 0);
-      assert(linkConsPermutationC.size() == 0);
+      assert(linkConsPermutationA.empty());
+      assert(linkConsPermutationC.empty());
 
       const size_t nBlocks = dynamic_cast<DistributedVector<double>&>(*g).children.size();
 
@@ -1895,7 +1892,7 @@ void DistributedQP::activateLinkStructureExploitation() {
             n_global_ineq_linking_conss);
       permuteLinkingCons(linkConsPermutationA, linkConsPermutationC);
 
-      assert(linkVarsPermutation.size() == 0);
+      assert(linkVarsPermutation.empty());
       linkVarsPermutation = get0VarsLastGlobalsFirstPermutation(n_blocks_per_link_var, n_global_linking_vars);
       permuteLinkingVars(linkVarsPermutation);
    }
@@ -1906,7 +1903,7 @@ void DistributedQP::AddChild(DistributedQP* child) {
 }
 
 double DistributedQP::objective_value(const Variables& variables) const {
-   const DistributedVector<double>& x = dynamic_cast<const DistributedVector<double>&>(*variables.x);
+   const auto& x = dynamic_cast<const DistributedVector<double>&>(*variables.x);
    std::unique_ptr<Vector<double> > temp(x.clone());
 
    this->getg(*temp);
@@ -1923,8 +1920,8 @@ void DistributedQP::printLinkVarsStats() {
    std::vector<int> linkCount0(n, 0);
    std::vector<int> linkCountLC(n, 0);
 
-   DistributedMatrix& Astoch = dynamic_cast<DistributedMatrix&>(*A);
-   DistributedMatrix& Cstoch = dynamic_cast<DistributedMatrix&>(*C);
+   auto& Astoch = dynamic_cast<DistributedMatrix&>(*A);
+   auto& Cstoch = dynamic_cast<DistributedMatrix&>(*C);
 
    Astoch.updateKLinkVarsCount(linkCountA);
    Cstoch.updateKLinkVarsCount(linkCountC);
@@ -2051,8 +2048,8 @@ void DistributedQP::printLinkConsStats() {
 }
 
 DistributedQP::~DistributedQP() {
-   for (size_t it = 0; it < children.size(); it++)
-      delete children[it];
+   for (auto & it : children)
+      delete it;
 }
 
 Permutation DistributedQP::getLinkVarsPermInv() const {
@@ -2079,14 +2076,13 @@ Permutation DistributedQP::getLinkConsIneqPermInv() const {
 int DistributedQP::getLocalnx() const {
    assert(!is_hierarchy_root);
 
-   long long my{0};
    long long nx{0};
-   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
 
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
    if (is_hierarchy_inner_leaf)
       assert(Ast.Bmat->is_a(kDistributedMatrix));
    else
-      Ast.Bmat->getSize(my, nx);
+      nx = Ast.Bmat->n_columns();
 
    return nx;
 }
@@ -2095,21 +2091,19 @@ int DistributedQP::getLocalmy() const {
    assert(!is_hierarchy_root);
 
    long long my{0};
-   long long nx{0};
-   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
 
    if (is_hierarchy_inner_leaf)
       assert(Ast.Bmat->is_a(kDistributedMatrix));
    else
-      Ast.Bmat->getSize(my, nx);
+      my = Ast.Bmat->n_rows();
 
    return my;
 }
 
 int DistributedQP::getLocalmyl() const {
    long long myl{0};
-   long long nxl{0};
-   const DistributedMatrix& Ast = dynamic_cast<const DistributedMatrix&>(*A);
+   const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
 
    if (is_hierarchy_root) {
       assert(0 && "TODO : implement");
@@ -2118,66 +2112,60 @@ int DistributedQP::getLocalmyl() const {
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Ast.Bmat->is_a(kDistributedMatrix));
-      dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Blmat->getSize(myl, nxl);
+      myl = dynamic_cast<DistributedMatrix&>(*Ast.Bmat).Blmat->n_rows();
    }
    else
-      Ast.Blmat->getSize(myl, nxl);
+      myl = Ast.Blmat->n_rows();
 
    return myl;
 }
 
 int DistributedQP::getLocalmz() const {
    long long mz{0};
-   long long nx{0};
-   const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
 
    if (is_hierarchy_root)
       assert(0 && "TODO : implement");
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL)
       assert(Cst.Bmat->is_a(kDistributedMatrix));
    else
-      Cst.Bmat->getSize(mz, nx);
+      mz = Cst.Bmat->n_rows();
 
    return mz;
 }
 
 int DistributedQP::getLocalmzl() const {
-   const DistributedMatrix& Cst = dynamic_cast<const DistributedMatrix&>(*C);
+   const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
    long long mzl{0};
-   long long nxl{0};
 
    if (is_hierarchy_root) {
       assert(0 && "TODO : implement");
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       assert(Cst.Bmat->is_a(kDistributedMatrix));
-      dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Blmat->getSize(mzl, nxl);
+      mzl = dynamic_cast<DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
    }
    else
-      Cst.Blmat->getSize(mzl, nxl);
+      mzl = Cst.Blmat->n_rows();
 
    return mzl;
 }
 
 int DistributedQP::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const {
-   long long nx_loc{0};
-   long long my_loc{0};
-   long long mz_loc{0};
-   long long myl_loc{0};
-   long long mzl_loc{0};
-
    if (is_hierarchy_root) {
       const auto& Abd = dynamic_cast<const BorderedMatrix&>(*A);
       assert(Abd.border_left->first);
       assert(Abd.border_left->last);
-      Abd.border_left->first->getSize(my_loc, nx_loc);
-      Abd.bottom_left_block->getSize(myl_loc, nx_loc);
+
+      nx = Abd.border_left->first->n_columns();
+      my = Abd.border_left->first->n_rows();
+      myl = Abd.bottom_left_block->n_rows();
 
       const auto& Cbd = dynamic_cast<const BorderedMatrix&>(*C);
       assert(Cbd.border_left->first);
       assert(Cbd.border_left->last);
-      Cbd.border_left->first->getSize(mz_loc, nx_loc);
-      Cbd.bottom_left_block->getSize(mzl_loc, nx_loc);
+      mz = Cbd.border_left->first->n_rows();
+      mzl = Cbd.bottom_left_block->n_rows();
    }
    else if (is_hierarchy_inner_leaf && stochNode->getCommWorkers() != MPI_COMM_NULL) {
       const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
@@ -2186,25 +2174,24 @@ int DistributedQP::getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) 
       assert(Ast.Bmat->is_a(kDistributedMatrix));
       assert(Cst.Bmat->is_a(kDistributedMatrix));
 
-      dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Blmat->getSize(myl_loc, nx_loc);
-      dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat->getSize(mzl_loc, nx_loc);
-      nx_loc = 0;
+      nx = 0;
+      my = 0;
+      myl = dynamic_cast<const DistributedMatrix&>(*Ast.Bmat).Blmat->n_rows();
+
+      mz = 0;
+      mzl = dynamic_cast<const DistributedMatrix&>(*Cst.Bmat).Blmat->n_rows();
    }
    else {
       const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
-      Ast.Blmat->getSize(myl_loc, nx_loc);
-      Ast.Bmat->getSize(my_loc, nx_loc);
+
+      nx = Ast.Bmat->n_columns();
+      my = Ast.Bmat->n_rows();
+      myl = Ast.Blmat->n_rows();
 
       const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
-      Cst.Blmat->getSize(mzl_loc, nx_loc);
-      Cst.Bmat->getSize(mz_loc, nx_loc);
+      mz = Cst.Bmat->n_rows();
+      mzl = Cst.Blmat->n_rows();
    }
-
-   nx = nx_loc;
-   my = my_loc;
-   mz = mz_loc;
-   myl = myl_loc;
-   mzl = mzl_loc;
    return 0;
 }
 
@@ -2305,8 +2292,7 @@ int DistributedQP::getSchurCompMaxNnz() {
 
 #ifndef NDEBUG
    if (!is_hierarchy_inner_leaf) {
-      int mB, nB;
-      getLocalB().getSize(mB, nB);
+      const auto [mB, nB] = getLocalB().n_rows_columns();
       assert(mB == my && nB == n0);
    }
    else {
@@ -2370,8 +2356,7 @@ int DistributedQP::getSchurCompMaxNnzDist(int blocksStart, int blocksEnd) {
 
 #ifndef NDEBUG
    {
-      int mB, nB;
-      getLocalB().getSize(mB, nB);
+      const auto [mB, nB] = getLocalB().n_rows_columns();
       assert(mB == my && nB == n0);
    }
 #endif
@@ -2596,10 +2581,9 @@ void DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVec
    bu_stoch.removeEntries(rowNnzVecC);
    icupp_stoch.removeEntries(rowNnzVecC);
 
-   long long dummy;
    nx = g_stoch.length();
-   A_stoch.getSize(my, dummy);
-   C_stoch.getSize(mz, dummy);
+   my = A_stoch.n_rows();
+   mz = C_stoch.n_rows();
 
    nxlow = ixlow_stoch.numberOfNonzeros();
    nxupp = ixupp_stoch.numberOfNonzeros();

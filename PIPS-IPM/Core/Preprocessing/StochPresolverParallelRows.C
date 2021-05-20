@@ -99,7 +99,7 @@ bool StochPresolverParallelRows::applyPresolving() {
          assert(normNnzRowC);
          insertRowsIntoHashtable(row_support_hashtable, norm_Cmat.get(), norm_Dmat.get(), INEQUALITY_SYSTEM, normNnzRowC.get(), currNnzRowC);
 
-         assert(static_cast<int>(row_support_hashtable.size()) <= mA + norm_Cmat->getM());
+         assert(static_cast<int>(row_support_hashtable.size()) <= mA + norm_Cmat->n_rows());
 
          // Second Hashing: Per bucket, do Second Hashing:
          row_coefficients_hashtable.clear();
@@ -139,7 +139,7 @@ bool StochPresolverParallelRows::applyPresolving() {
    assert(static_cast<int>(row_support_hashtable.size()) <= mA);
 
    insertRowsIntoHashtable(row_support_hashtable, nullptr, norm_Dmat.get(), INEQUALITY_SYSTEM, normNnzRowC.get(), currNnzRowC);
-   assert(static_cast<int>(row_support_hashtable.size()) <= mA + norm_Dmat->getM());
+   assert(static_cast<int>(row_support_hashtable.size()) <= mA + norm_Dmat->n_rows());
    // Second Hashing: Per bucket, do Second Hashing:
    for (size_t i = 0; i < row_support_hashtable.bucket_count(); ++i) {
       if (row_support_hashtable.bucket_size(i) < 2)
@@ -373,8 +373,8 @@ void StochPresolverParallelRows::setNormalizedPointers(int node) {
 
    assert(norm_Bmat);
    /* set mA, nA */
-   mA = (norm_Amat) ? norm_Amat->getM() : norm_Bmat->getM();
-   nA = (norm_Amat) ? norm_Amat->getN() : norm_Bmat->getN();
+   mA = (norm_Amat) ? norm_Amat->n_rows() : norm_Bmat->n_rows();
+   nA = (norm_Amat) ? norm_Amat->n_columns() : norm_Bmat->n_columns();
 
    /* remove singleton columns before normalization */
    removeSingletonVars();
@@ -411,10 +411,10 @@ void StochPresolverParallelRows::setNormalizedPointers(int node) {
    assert(norm_Bmat || norm_Dmat);
 
    if (node != -1 && norm_Amat && norm_Cmat) {
-      assert(norm_Amat->getN() == norm_Cmat->getN());
-      assert(norm_Bmat->getN() == norm_Dmat->getN());
-      assert(norm_Amat->getM() == norm_Bmat->getM());
-      assert(norm_Cmat->getM() == norm_Dmat->getM());
+      assert(norm_Amat->n_columns() == norm_Cmat->n_columns());
+      assert(norm_Bmat->n_columns() == norm_Dmat->n_columns());
+      assert(norm_Amat->n_rows() == norm_Bmat->n_rows());
+      assert(norm_Cmat->n_rows() == norm_Dmat->n_rows());
    }
 }
 
@@ -462,11 +462,11 @@ void StochPresolverParallelRows::removeSingletonVars() {
  */
 void StochPresolverParallelRows::removeEntry(int col, SimpleVector<int>& rowContainsSingletonVar, SparseStorageDynamic& matrix,
       SparseStorageDynamic& matrixTrans, SimpleVector<int>& nnzRow, SimpleVector<int>& nnzCol, bool parent) {
-   assert(0 <= col && col < matrixTrans.getM());
+   assert(0 <= col && col < matrixTrans.n_rows());
    assert(matrixTrans.getRowPtr(col).start + 1 == matrixTrans.getRowPtr(col).end);
-   assert(nnzRow.length() == matrix.getM());
-   assert(matrix.getN() == nnzCol.length());
-   assert(nnzCol.length() == matrixTrans.getM());
+   assert(nnzRow.length() == matrix.n_rows());
+   assert(matrix.n_columns() == nnzCol.length());
+   assert(nnzCol.length() == matrixTrans.n_rows());
    assert(PIPSisEQ(nnzCol[col], 1.0));
 
    // get indices of the singleton entry int mat_trans
@@ -489,7 +489,7 @@ void StochPresolverParallelRows::removeEntry(int col, SimpleVector<int>& rowCont
       rowContainsSingletonVar[row] = col + nA;
 
    // find row in matrix
-   assert(0 <= row && row < matrix.getM());
+   assert(0 <= row && row < matrix.n_rows());
    int i = -1;
    int end = matrix.getRowPtr(row).end;
    int start = matrix.getRowPtr(row).start;
@@ -520,16 +520,16 @@ void StochPresolverParallelRows::normalizeBlocksRowwise(SystemType system_type, 
       SimpleVector<double>* cupp, SimpleVector<double>* clow, SimpleVector<double>* icupp, SimpleVector<double>* iclow) const {
    assert(b_mat);
    assert(cupp);
-   assert(b_mat->getM() == cupp->length());
+   assert(b_mat->n_rows() == cupp->length());
    if (a_mat)
-      assert(a_mat->getM() == b_mat->getM());
+      assert(a_mat->n_rows() == b_mat->n_rows());
 
    if (system_type == INEQUALITY_SYSTEM) {
       assert(clow && iclow && icupp);
       assert(clow->length() == cupp->length() && iclow->length() == clow->length() && iclow->length() == clow->length());
    }
 
-   const int n_rows = b_mat->getM();
+   const int n_rows = b_mat->n_rows();
 
    /// for every row find the max value and normalize by that
    for (int row = 0; row < n_rows; row++) {
@@ -618,13 +618,13 @@ void StochPresolverParallelRows::insertRowsIntoHashtable(boost::unordered_set<ro
       const SimpleVector<int>* nnz_row_orig) {
    assert(b_mat);
    if (a_mat)
-      assert(a_mat->getM() == b_mat->getM());
+      assert(a_mat->n_rows() == b_mat->n_rows());
    if (system_type == EQUALITY_SYSTEM && (b_mat != nullptr && a_mat == nullptr))
-      assert(mA == b_mat->getM());
+      assert(mA == b_mat->n_rows());
    if (system_type == EQUALITY_SYSTEM && a_mat != nullptr)
-      assert(mA == a_mat->getM());
+      assert(mA == a_mat->n_rows());
 
-   for (int row = 0; row < b_mat->getM(); row++) {
+   for (int row = 0; row < b_mat->n_rows(); row++) {
       // ignore rows containing more than one singleton entry: // TODO: why? // TODO: this should not be an issue in my opinion
       if (system_type == EQUALITY_SYSTEM && (*rowContainsSingletonVariableA)[row] == -2)
          continue;
@@ -902,8 +902,8 @@ void StochPresolverParallelRows::tightenOriginalBoundsOfRow1(const INDEX& row1, 
    const int row1_index = row1.getIndex();
    const int row2_index = row2.getIndex();
 
-   assert(row1_index < currCmat->getM() && row2_index < currCmat->getM());
-   assert(norm_factorC && norm_factorC->length() == currCmat->getM());
+   assert(row1_index < currCmat->n_rows() && row2_index < currCmat->n_rows());
+   assert(norm_factorC && norm_factorC->length() == currCmat->n_rows());
 
    const double norm_factor_row1 = (*norm_factorC)[row1_index];
    const double norm_factor_row2 = (*norm_factorC)[row2_index];

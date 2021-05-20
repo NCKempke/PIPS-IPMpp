@@ -40,10 +40,8 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
 
    createSolversAndKKts(data);
 
-   if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
-   }
+   std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+   regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
@@ -60,10 +58,8 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
       createSolversAndKKts(data);
    }
 
-   if (apply_regularization) {
-      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
-      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
-   }
+   std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+   regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
@@ -602,8 +598,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseMatri
    troot_total = tchild_total = tcomm_total = 0.0;
 #endif
 
-   int m, length_rhs;
-   rhs_mat_transp.getSize(m, length_rhs);
+   const int length_rhs = rhs_mat_transp.n_columns();
 
    assert(locmyl >= 0 && locmzl >= 0);
    assert(locnx + locmy + locmz + locmyl + locmzl == length_rhs);
@@ -619,7 +614,7 @@ void sLinsysRootAug::solveReducedLinkConsBlocked(DistributedQP* data, DenseMatri
 
 #pragma omp parallel for schedule(dynamic, 1)
    for (int rhs_i = rhs_start; rhs_i < rhs_start + n_rhs; ++rhs_i) {
-      assert(rhs_i < m);
+      assert(rhs_i < rhs_mat_transp.n_rows());
 
       double* rhs_reduced = reduced_rhss_blocked.data() + (rhs_i - rhs_start) * length_reduced;
 
@@ -1473,20 +1468,79 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& 
          }
       }
    }
-
 }
 
 void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal)
 {
+   assert(diagonal.allOf([](auto& v){ return v <= 0.0; }));
+
    SparseMatrix& C = data->getLocalD();
-   C.matTransDinvMultMat(*zDiag, &CtDC_loc);
+   C.matTransDinvMultMat(diagonal, &CtDC_loc);
    assert(CtDC_loc->size() == locnx);
    assert(CtDC_loc);
 
-   if (hasSparseKkt) {
+   if (this->hasSparseKkt) {
       add_CtDC_to_sparse_schur_complement(*CtDC_loc);
    } else {
       add_CtDC_to_dense_schur_complement(*CtDC_loc);
+   }
+}
+
+void sLinsysRootAug::clear_CtDC_from_dense_schur_complement(const SymmetricMatrix& CtDC_loc) {
+   auto* const kktd = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
+   double** const dKkt = kktd->Mat();
+
+   const auto& CtDC_sparse = dynamic_cast<const SparseSymmetricMatrix&>(CtDC_loc);
+
+   const int* krow_CtDC = CtDC_sparse.krowM();
+   const int* jcol_CtDC = CtDC_sparse.jcolM();
+   const double* M_CtDC = CtDC_sparse.M();
+
+   for (int i = 0; i < locnx; i++) {
+      for (int p = krow_CtDC[i]; p < krow_CtDC[i + 1]; p++) {
+         const int j = jcol_CtDC[p];
+
+         if (j <= i)
+            dKkt[i][j] += M_CtDC[p];
+      }
+   }
+}
+
+void sLinsysRootAug::clear_CtDC_from_sparse_schur_complement(const SymmetricMatrix& CtDC_loc) {
+   auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
+#ifndef NDEBUG
+   int* const jcolKkt = kkts.jcolM();
+#endif
+   int* const krowKkt = kkts.krowM();
+   double* const MKkt = kkts.M();
+
+   const auto& CtDC_sparse = dynamic_cast<const SparseSymmetricMatrix&>(CtDC_loc);
+   const int* krow_CtDC = CtDC_sparse.krowM();
+   const int* jcol_CtDC = CtDC_sparse.jcolM();
+   const double* M_CtDC = CtDC_sparse.M();
+
+   for (int i = 0; i < locnx; i++) {
+      for (int p = krow_CtDC[i]; p < krow_CtDC[i + 1]; p++) {
+         const int col = jcol_CtDC[p];
+
+         if (col >= i) {
+            // get start position of dense kkt block
+            const int blockStart = krowKkt[i];
+            assert(col < locnx && jcolKkt[blockStart + col - i] == col);
+
+            MKkt[blockStart + col - i] += M_CtDC[p];
+         }
+      }
+   }
+}
+
+void sLinsysRootAug::clear_CtDC_from_schur_complement(const SymmetricMatrix& CtDC_loc){
+   assert(CtDC_loc.size() == locnx);
+
+   if (this->hasSparseKkt) {
+      clear_CtDC_from_sparse_schur_complement(CtDC_loc);
+   } else {
+      clear_CtDC_from_dense_schur_complement(CtDC_loc);
    }
 }
 
@@ -1497,6 +1551,15 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    assert(dynamic_cast<const DistributedVector<double>*>(this->primal_regularization_diagonal));
    assert(dynamic_cast<const DistributedVector<double>*>(this->dual_equality_regularization_diagonal));
    assert(dynamic_cast<const DistributedVector<double>*>(this->dual_inequality_regularization_diagonal));
+
+
+   assert(primal_regularization >= 0);
+   assert(dual_inequality_regularization >= 0);
+   assert(dual_equality_regularization >= 0);
+
+   if (PIPS_MPIgetRank() == 0) {
+      std::cout << "regularizing with root " << primal_regularization << " " << dual_equality_regularization << " " << dual_inequality_regularization << std::endl;
+   }
 
    /* primal diagonal */
    if (locnx > 0) {
@@ -1510,21 +1573,21 @@ void sLinsysRootAug::add_regularization_local_kkt(double primal_regularization, 
    /* C^T reg^-1 C block */
    if (locmz > 0) {
       const auto& dual_inequality_regularization_vec = dynamic_cast<DistributedVector<double>&>(*this->dual_inequality_regularization_diagonal).first;
+      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
       assert(dual_inequality_regularization_vec);
 
+      assert(zDiag);
       assert(CtDC);
-      if(!CtDC_regularization) {
-         CtDC_regularization.reset(CtDC->clone());
-      }
 
-      // TODO : not nicely done .. temp vector here..
-      std::unique_ptr<SimpleVector<double>> regularization_added(dynamic_cast<SimpleVector<double>*>(dual_inequality_regularization_vec->clone()));
-      regularization_added->setToConstant(-dual_inequality_regularization);
+      if (!dual_inequality_non_link_diagonal_regularized)
+         dual_inequality_non_link_diagonal_regularized.reset(dynamic_cast<SimpleVector<double>*>(zDiag->clone()));
 
-      dual_inequality_regularization_vec->addConstant(-dual_inequality_regularization);
+      dual_inequality_non_link_diagonal_regularized->copyFrom(*zDiag);
+      dual_inequality_non_link_diagonal_regularized->axpy(1.0, *dual_inequality_regularization_vec);
 
-      SymmetricMatrix* CTDC_regularization_ptr = CtDC.get();
-      compute_CtDC_and_add_to_Schur_complement(CTDC_regularization_ptr, *regularization_added);
+      SymmetricMatrix* CTDC_ptr = CtDC.get();
+      clear_CtDC_from_schur_complement(*CtDC);
+      compute_CtDC_and_add_to_Schur_complement(CTDC_ptr, *dual_inequality_non_link_diagonal_regularized);
    }
 
 
@@ -1583,9 +1646,9 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    // update the KKT with the diagonals
    // xDiag is in fact diag(Q)+X^{-1} S
    /////////////////////////////////////////////////////////////
-   // TODO if (locnx > 0) {
    if (locnx > 0) {
       assert(xDiag);
+      assert(xDiag->allOf([](const auto& d) { return d >= 0.0; }));
       kkt->atAddDiagonal(0, *xDiag);
    }
 
@@ -1848,9 +1911,9 @@ void sLinsysRootAug::DsolveHierarchyBorder(DenseMatrix& rhs_mat_transp, int n_co
    // TODO
 #endif
 
-   int m, n;
-   rhs_mat_transp.getSize(m, n);
+   const int n = rhs_mat_transp.n_columns();
 #ifndef NDEBUG
+   const int m = rhs_mat_transp.n_rows();
    assert(locmyl >= 0 && locmzl >= 0);
 
    assert(n_cols <= m);
@@ -1897,8 +1960,7 @@ void sLinsysRootAug::addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl
    if (Bl.isEmpty() || (Br.isEmpty() && Br_mod_border.empty()))
       return;
 
-   int dummy, m_result;
-   result.getSize(m_result, dummy);
+   const int m_result = result.n_rows();
 
    assert(m_result > 0);
    assert(blocksize_hierarchical > 0);
@@ -1938,8 +2000,8 @@ void sLinsysRootAug::addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderL
    /* buffer_b0 is in transposed for so that we can access its cols (or rows in the storage) quickly in Dsolve */
    assert(!is_hierarchy_root);
    assert(0 <= begin_cols && begin_cols <= end_cols);
-   assert(buffer_b0.getN() == kkt->size() || buffer_b0.getN() == kkt->size() + locmz);
-   assert(buffer_b0.getM() >= end_cols - begin_cols);
+   assert(buffer_b0.n_columns() == kkt->size() || buffer_b0.n_columns() == kkt->size() + locmz);
+   assert(buffer_b0.n_rows() >= end_cols - begin_cols);
 
    const bool two_link_border_left = !(Bl.has_RAC || Bl.use_local_RAC);
    const bool two_link_border_right = !(Br.has_RAC || Br.use_local_RAC);

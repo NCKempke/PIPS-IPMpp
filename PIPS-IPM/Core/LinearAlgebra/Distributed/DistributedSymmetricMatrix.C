@@ -86,14 +86,16 @@ int DistributedSymmetricMatrix::is_a(int type) const {
    return type == kStochSymMatrix || type == kSymMatrix;
 }
 
-void DistributedSymmetricMatrix::getSize(long long& m_, long long& n_) const {
-   m_ = n;
-   n_ = n;
+std::pair<long long, long long> DistributedSymmetricMatrix::n_rows_columns() const {
+   return {n, n};
 }
 
-void DistributedSymmetricMatrix::getSize(int& m_, int& n_) const {
-   m_ = static_cast<int>(n);
-   n_ = static_cast<int>(n);
+long long DistributedSymmetricMatrix::n_rows() const {
+   return size();
+}
+
+long long DistributedSymmetricMatrix::n_columns() const {
+   return size();
 }
 
 long long DistributedSymmetricMatrix::size() const {
@@ -191,7 +193,6 @@ void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
    const int rank = PIPS_MPIgetRank(mpiComm);
    const int world_size = PIPS_MPIgetSize(mpiComm);
 
-   int m_loc, n_loc;
    int offset = 0;
    std::stringstream sout;
    MPI_Status status;
@@ -210,8 +211,7 @@ void DistributedSymmetricMatrix::writeToStreamDense(std::ostream& out) const {
 
    for (auto it : children) {
       it->writeToStreamDenseChild(sout, offset);
-      it->diag->getSize(m_loc, n_loc);
-      offset += n_loc;
+      offset += static_cast<int>(it->diag->size());
    }
 
    if (iAmDistrib && rank > 0) {
