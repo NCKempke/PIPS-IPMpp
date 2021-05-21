@@ -1063,7 +1063,7 @@ int gdxSplitting(const int numBlocks,        /** < total number of blocks n in p
       printf("Could not open GDX file %s (errNr=%d)\n", gdxFilename, rc);
       return 1;
    }
-
+   
    printf("Reading equations stages\n");fflush(stdout);
    GDXSAVECALLX(fGDX,gdxFindSymbol(fGDX, "i", &symNr));
    GDXSAVECALLX(fGDX,gdxDataReadRawStart(fGDX, symNr, &gdxM));
@@ -1387,6 +1387,12 @@ int readBlock(const int numBlocks,       /** < total number of blocks n in probl
       gdxErrorStr(fGDX, rc, s);
       printf("GDX Error for GDX file: %s\n",s);
       return 1;
+   }
+   {
+	   double sv[GMS_SVIDX_MAX];
+       GDXSAVECALLX(fGDX,gdxGetSpecialValues(fGDX,sv));
+       sv[GMS_SVIDX_EPS] = 0.0;
+       GDXSAVECALLX(fGDX,gdxSetReadSpecialValues(fGDX,sv));	   
    }
 
    GDXSAVECALLX(fGDX,gdxSystemInfo (fGDX, &symNr, &numUels));
