@@ -42,8 +42,6 @@ void DistributedRootLinearSystem::init() {
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       assert(allreduce_kkt);
 
-   std::cout << "ALLREDUCE KKT " << allreduce_kkt << std::endl;
-
    usePrecondDist = usePrecondDist && hasSparseKkt && iAmDistrib;
    MatrixEntryTriplet_mpi = MPI_DATATYPE_NULL;
 

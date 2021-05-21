@@ -40,8 +40,10 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
 
    createSolversAndKKts(data);
 
-   std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
-   regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   if (apply_regularization) {
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
@@ -58,8 +60,10 @@ sLinsysRootAug::sLinsysRootAug(DistributedFactory* factory_, DistributedQP* prob
       createSolversAndKKts(data);
    }
 
-   std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
-   regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   if (apply_regularization) {
+      std::cout << "setting up root regularization : " << locnx << " " << locmy << " " << locmz << " " << locmyl << " " << locmzl << std::endl;
+      regularization_strategy = std::make_unique<RegularizationStrategy>(locnx, locmy + locmyl + locmzl);
+   }
 
    redRhs = std::make_unique<SimpleVector<double>>(locnx + locmy + locmz + locmyl + locmzl);
 }
