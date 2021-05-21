@@ -1093,8 +1093,8 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
 
    /* add -dz/dy * row to gamma/phi */
    /* store linking variable changes and allreduce them later except when using a row from D/B0 or D/Bl0 */
-   DistributedVector<double>& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
-   DistributedVector<double>& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
+   auto& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
+   auto& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
 
    /* linking rows not at root - so far we changed the slacks for the variable - missing is dual for the row and resulting corrections */
    if (!at_root_node && row.isLinkingRow()) {

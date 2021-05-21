@@ -836,7 +836,7 @@ void DistributedLinearSystem::addBiTLeftKiBiRightToResBlockedParallelSolvers(boo
    const auto nF_right = border_right.F.n_columns();
    const auto nG_right = border_right.G.n_columns();
 
-   const auto [nR_r, mR_r] = border_right.R.n_rows_columns();
+   const auto [mR_r, nR_r] = border_right.R.n_rows_columns();
    const auto mA_r = border_right.A.n_rows();
 
    const bool with_RAC = border_right.has_RAC;

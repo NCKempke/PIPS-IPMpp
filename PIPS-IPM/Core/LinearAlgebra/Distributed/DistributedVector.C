@@ -424,7 +424,7 @@ template<typename T>
 double DistributedVector<T>::two_norm() const {
    const T scale = this->inf_norm();
 #ifndef NDEBUG
-   if (scale <= 0.0) {
+   if (scale < 0.0 ) {
       std::cout << "ERROR : inf_norm smaller 0 .. : " << scale << std::endl;
    }
    assert(scale >= 0.0);

@@ -1606,7 +1606,7 @@ void DistributedRootLinearSystem::submatrixAllReduce(DenseSymmetricMatrix* A, in
 
 // TODO: move all this to the respective matrix and storages.......
 void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_sparse, bool is_sym, MPI_Comm comm) {
-   const auto [n, m] = mat.n_rows_columns();
+   const auto [m, n] = mat.n_rows_columns();
 
    if (is_sparse) {
       if (is_sym) {
@@ -1640,20 +1640,17 @@ void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_s
 }
 
 void DistributedRootLinearSystem::submatrixAllReduceFull(DenseSymmetricMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
-   double** const M = A->mStorage->M;
-   assert(A->mStorage->n == A->mStorage->m);
-   assert(A->mStorage->n >= startRow + nRows);
-   assert(A->mStorage->n >= startCol + nCols);
+   assert(A->n_rows() >= startRow + nRows);
+   assert(A->n_columns() >= startCol + nCols);
 
-   submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
+   submatrixAllReduceFull(A->mStorage->M, startRow, startCol, nRows, nCols, comm);
 }
 
 void DistributedRootLinearSystem::submatrixAllReduceFull(DenseMatrix* A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {
-   double** const M = A->mStorage->M;
-   assert(A->mStorage->m >= startRow + nRows);
-   assert(A->mStorage->n >= startCol + nCols);
+   assert(A->n_rows() >= startRow + nRows);
+   assert(A->n_columns() >= startCol + nCols);
 
-   submatrixAllReduceFull(M, startRow, startCol, nRows, nCols, comm);
+   submatrixAllReduceFull(A->mStorage->M, startRow, startCol, nRows, nCols, comm);
 }
 
 void DistributedRootLinearSystem::submatrixAllReduceFull(double** A, int startRow, int startCol, int nRows, int nCols, MPI_Comm comm) {

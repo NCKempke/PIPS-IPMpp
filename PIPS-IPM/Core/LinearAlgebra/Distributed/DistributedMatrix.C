@@ -1882,7 +1882,7 @@ void DistributedMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_bl
    assert(n_curr_children == twolinks_start_in_block.size());
    assert(twolinks_start_in_block.back() == 0);
 
-   auto [nBl, m_links_left] = Blmat->n_rows_columns();
+   auto [m_links_left, nBl] = Blmat->n_rows_columns();
    assert(std::accumulate(twolinks_start_in_block.begin(), twolinks_start_in_block.end(), 0) <= m_links_left);
 
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
