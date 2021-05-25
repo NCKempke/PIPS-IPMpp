@@ -63,9 +63,6 @@ void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*
    const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymmetricMatrix&>(*prob->Q).top_left_block);
 
    auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
-   int mSC, nSC;
-   SC.getSize(mSC, nSC);
-   assert(mSC == nSC);
 
    /////////////////////////////////////////////////////////////
    // update the KKT with Q (DO NOT PUT DIAG)

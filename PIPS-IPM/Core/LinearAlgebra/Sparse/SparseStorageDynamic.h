@@ -54,26 +54,27 @@ private:
 public:
    static int instances;
 
-   [[nodiscard]] int getM() const { return m; };
-   [[nodiscard]] int getN() const { return n; };
+   [[nodiscard]] std::pair<int,int> n_rows_columns() const override;
+   [[nodiscard]] int n_rows() const override;
+   [[nodiscard]] int n_columns() const override;
+
    [[nodiscard]] int getNVals() const { return len - len_free; };
-
    [[nodiscard]] const ROWPTRS* getRowPtr() const { return rowptr; };
+
    [[nodiscard]] ROWPTRS getRowPtr(int i) const;
-
    [[nodiscard]] const int* getJcolM() const { return jcolM; };
-   [[nodiscard]] int getJcolM(int i) const;
 
+   [[nodiscard]] int getJcolM(int i) const;
    [[nodiscard]] const double* getMat() const { return M; };
    [[nodiscard]] double getMat(int i) const;
-   void setMat(int i, double val);
 
+   void setMat(int i, double val);
    explicit SparseStorageDynamic(const SparseStorage& storage, double spareRatio = 0.2);
    SparseStorageDynamic(int m, int n, int len, double spareRatio = 0.2);
+
    SparseStorageDynamic(const SparseStorageDynamic& dynamicStorage);
 
    ~SparseStorageDynamic() override;
-
    void diagonal_set_to_constant_from(int, int, double) override { assert(false && "not implemented here"); };
    void diagonal_add_constant_from(int, int, double) override { assert(false && "not implemented here"); };
    void atPutDense(int, int, const double*, int, int, int) override { assert(0 && "not implemented here"); };
@@ -89,9 +90,8 @@ public:
    void symmetricScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
    void columnScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
    void rowScale(const Vector<double>&) override { assert(0 && "not implemented here"); };
-   void scalarMult(double) override { assert(0 && "not implemented here"); };
 
-   void getSize(int& m, int& n) const override;
+   void scalarMult(double) override { assert(0 && "not implemented here"); };
 
    void removeEntryAtIndex(int row, int col_idx);
    void removeEntryAtRowCol(int row, int col);
@@ -128,7 +128,4 @@ public:
    void getRowMinVec(const double* colScaleVec, double* vec) const;
 
 };
-
-typedef SmartPointer<SparseStorageDynamic> SparseStorageDynamicHandle;
-
 #endif /* PIPS_IPM_CORE_SPARSELINEARALGEBRA_SPARSESTORAGEDYNAMIC_H_ */

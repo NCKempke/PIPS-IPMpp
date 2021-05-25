@@ -8,6 +8,8 @@
 #include "AbstractMatrix.h"
 #include "Vector.hpp"
 
+class SparseStorage;
+
 extern int DenseStorageInstances;
 
 /** A class for manupulating the storage of dense matrices.
@@ -27,7 +29,9 @@ public:
 
    ~DenseStorage() override;
 
-   void getSize(int& m, int& n) const override;
+   [[nodiscard]] std::pair<int,int> n_rows_columns() const override;
+   [[nodiscard]] int n_rows() const override;
+   [[nodiscard]] int n_columns() const override;
 
    void getDiagonal(Vector<double>& vec) const override;
    void setToDiagonal(const Vector<double>& vec) override;
@@ -51,6 +55,7 @@ public:
    void scalarMult(double num) override;
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
+   [[nodiscard]] int non_zeros() const;
 
    void atPutSpRow(int col, const double A[], int lenA, const int irowA[], int& info) override;
    void putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) override;
@@ -63,6 +68,9 @@ public:
 
    void diagonal_add_constant_from(int from, int length, double value) override;
    void diagonal_set_to_constant_from(int from, int length, double value) override;
+
+   void fill_from_sparse(const SparseStorage& other);
+   void fill_from_dense(const DenseStorage& other);
 };
 
 #endif

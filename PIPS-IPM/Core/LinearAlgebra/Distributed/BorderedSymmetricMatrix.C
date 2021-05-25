@@ -21,18 +21,16 @@ BorderedSymmetricMatrix::BorderedSymmetricMatrix(DistributedSymmetricMatrix* inn
    assert(inner_matrix->children.size() == border_vertical->children.size());
    assert(border_vertical->is_vertical);
 
-   inner_matrix->getSize(n, n);
+   n = inner_matrix->size();
 
-   int n_border, m_border;
-   border_vertical->getSize(m_border, n_border);
+   const auto n_border = border_vertical->n_columns();
 
    n += n_border;
 
 #ifndef NDEBUG
-   int n_bottom;
-   top_left_block->getSize(n_bottom, n_bottom);
-   int n_inner;
-   inner_matrix->getSize(n_inner, n_inner);
+   const auto n_bottom = top_left_block->size();
+   const auto n_inner = inner_matrix->size();
+   const auto m_border = border_vertical->n_rows();
 
    assert(n_inner == m_border);
    assert(n_bottom == n_border);
@@ -96,19 +94,21 @@ double BorderedSymmetricMatrix::inf_norm() const {
    return norm;
 }
 
+std::pair<long long, long long> BorderedSymmetricMatrix::n_rows_columns() const {
+   return {n, n};
+}
+
+long long BorderedSymmetricMatrix::n_rows() const {
+   return size();
+}
+
+long long BorderedSymmetricMatrix::n_columns() const {
+   return size();
+}
+
 void BorderedSymmetricMatrix::scalarMult(double num) {
    inner_matrix->scalarMult(num);
    border_vertical->scalarMult(num);
-}
-
-void BorderedSymmetricMatrix::getSize(long long& m_, long long& n_) const {
-   m_ = n;
-   n_ = n;
-}
-
-void BorderedSymmetricMatrix::getSize(int& m_, int& n_) const {
-   m_ = static_cast<int>(n);
-   n_ = static_cast<int>(n);
 }
 
 long long BorderedSymmetricMatrix::size() const {

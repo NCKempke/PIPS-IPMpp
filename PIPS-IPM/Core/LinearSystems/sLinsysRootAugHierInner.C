@@ -160,12 +160,10 @@ void sLinsysRootAugHierInner::addBorderTimesRhsToB0(DistributedVector<double>& r
       SparseMatrix& G_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.C.last).getTranspose()
                                                  : data->getLocalG().getTranspose();
 
-      int mFb, nFb;
-      F_border.getSize(mFb, nFb);
-      int mGb, nGb;
-      G_border.getSize(mGb, nGb);
+      const auto [mFb, nFb] = F_border.n_rows_columns();
+      int nGb = G_border.n_columns();
 
-      assert(mFb == mGb);
+      assert(mFb == G_border.n_rows());
       assert(rhs.first);
       assert(rhs.first->length() == nFb + nGb);
 
@@ -203,14 +201,12 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, c
    if (border.has_RAC || border.use_local_RAC) {
       SparseMatrix& F_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.A.last) : data->getLocalF();
       SparseMatrix& G_border = border.has_RAC ? dynamic_cast<SparseMatrix&>(*border.C.last) : data->getLocalG();
-      int mFb, nFb;
-      F_border.getSize(mFb, nFb);
-      int mGb, nGb;
-      G_border.getSize(mGb, nGb);
+      const auto [mFb, nFb] = F_border.n_rows_columns();
+      const auto mGb = G_border.n_rows();
 
       assert(rhs.first);
       assert(rhs.first->length() == mFb + mGb);
-      assert(nFb == nGb);
+      assert(nFb == G_border.n_columns());
       assert(x0.length() >= nFb);
 
       auto& rhs0 = dynamic_cast<SimpleVector<double>&>(*rhs.first);
@@ -229,8 +225,7 @@ void sLinsysRootAugHierInner::addBorderX0ToRhs(DistributedVector<double>& rhs, c
 void
 sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool use_local_RAC,
       bool sparse_res, bool sym_res, int begin_cols, int end_cols, int n_empty_rows_inner_border) {
-   int mres, dummy;
-   result.getSize(mres, dummy);
+   const auto mres = result.n_rows();
    assert(dynamic_cast<DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
 
@@ -254,12 +249,7 @@ sLinsysRootAugHierInner::addInnerBorderKiInvBrToRes(AbstractMatrix& result, Bord
 void sLinsysRootAugHierInner::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC,
       int n_empty_rows_inner_border) {
    assert(data == prob);
-
-   int mG, nG, mF, nF;
-   data->getLocalFBorder().getSize(mF, nF);
-   data->getLocalGBorder().getSize(mG, nG);
-
-   assert(nF == nG);
+   assert(data->getLocalFBorder().n_columns() == data->getLocalGBorder().n_columns());
    assert(dynamic_cast<DistributedMatrix&>(*data->A).Blmat->is_a(kStripMatrix));
    assert(dynamic_cast<DistributedMatrix&>(*data->C).Blmat->is_a(kStripMatrix));
 
@@ -291,17 +281,12 @@ void sLinsysRootAugHierInner::LniTransMultHierarchyBorder(AbstractMatrix& res, c
    }
 
    const int n_buffer = locnx + locmy + locmz + locmyl + locmzl;
-   int dummy, m_result;
-   res.getSize(m_result, dummy);
 
    // buffer b0 for blockwise computation of Br0 - SUM_i  Bi_{inner}^T Ki^{-1} ( Bri - sum_j Bmodij Xij ), stored in transposed form (for quick access of cols in solve)
    // dense since we have no clue about any structure in the system and Xij are dense
-#ifndef NDEBUG
-   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(res.n_rows(), n_buffer);
+   (void)m_buffer;
    assert(end_cols - begin_cols <= m_buffer);
-#else
-   allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
-#endif
 
    addBlTKiInvBrToResBlockwise(res, Bl, Br, border_mod, sym_res, sparse_res, *buffer_blocked_hierarchical, begin_cols, end_cols);
 }

@@ -43,7 +43,10 @@ Regularization RegularizationStrategy::get_regularization_parameters(const Inert
 }
 
 Regularization RegularizationStrategy::get_regularization_new_matrix(const Inertia& inertia, double barrier_parameter) {
-   auto[positive_eigenvalues, negative_eigenvalues, zero_eigenvalues] = inertia;
+   const auto[positive_eigenvalues, negative_eigenvalues, zero_eigenvalues] = inertia;
+   (void) positive_eigenvalues;
+   (void) negative_eigenvalues;
+
    assert(positive_eigenvalues != positive_eigenvalues_expected || negative_eigenvalues != negative_eigenvalues_expected);
    assert(primal_regularization_current == -1.0 && dual_equality_regularization_current == -1.0 && dual_inequality_regularization_current == -1.0);
 
@@ -51,7 +54,7 @@ Regularization RegularizationStrategy::get_regularization_new_matrix(const Inert
       dual_equality_regularization_current = std::pow(barrier_parameter, barrier_exponent_dual);
    }
    else {
-      dual_equality_regularization_current = 0.0;
+      dual_equality_regularization_current = 1e-4;
    }
 
    if (primal_regularization_last == 0.0) {
@@ -70,7 +73,8 @@ Regularization RegularizationStrategy::get_regularization_new_matrix(const Inert
 
 Regularization RegularizationStrategy::get_regularization_nth_try(const Inertia& inertia, double barrier_parameter) {
    // TODO : unused variable in release mode
-   auto[positive_eigenvalues, negative_eigenvalues, zero_eigenvalues] = inertia;
+   const auto[positive_eigenvalues, negative_eigenvalues, zero_eigenvalues] = inertia;
+   (void) positive_eigenvalues; (void) negative_eigenvalues; (void) zero_eigenvalues;
    assert(positive_eigenvalues != positive_eigenvalues_expected || negative_eigenvalues != negative_eigenvalues_expected);
 
    if (primal_regularization_last == 0.0) {
@@ -85,4 +89,3 @@ Regularization RegularizationStrategy::get_regularization_nth_try(const Inertia&
 
    return {primal_regularization_current, dual_equality_regularization_current, dual_inequality_regularization_current};
 }
-

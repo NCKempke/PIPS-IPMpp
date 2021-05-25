@@ -229,12 +229,12 @@ void SimpleVector<T>::copyFrom(const Vector<T>& vec) {
 
 template<typename T>
 void SimpleVector<T>::copyFromAbs(const Vector<T>& vec) {
-   const SimpleVector<T>& vecSimple = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& vecSimple = dynamic_cast<const SimpleVector<T>&>(vec);
    assert(vec.length() == this->n);
    T* const vecArr = vecSimple.elements();
 
    for (int i = 0; i < this->n; i++)
-      v[i] = fabs(vecArr[i]);
+      v[i] = std::abs(vecArr[i]);
 }
 
 template<typename T>
@@ -245,7 +245,7 @@ T SimpleVector<T>::inf_norm() const {
 
    T temp, norm = 0;
    for (int i = 0; i < this->n; i++) {
-      temp = fabs(v[i]);
+      temp = std::abs(v[i]);
       // Subtle reversal of the logic to handle NaNs
       if (!(temp <= norm))
          norm = temp;
@@ -267,7 +267,7 @@ template<typename T>
 T SimpleVector<T>::one_norm() const {
    T temp, norm = 0;
    for (int i = 0; i < this->n; i++) {
-      temp = fabs(v[i]);
+      temp = std::abs(v[i]);
       norm += temp;
    }
    return norm;
@@ -347,7 +347,7 @@ void SimpleVector<T>::componentDiv(const Vector<T>& vec) {
    assert(this->n == vec.length());
    T* pv = v, * lv = v + this->n;
 
-   const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
    const T* y = sv.v;
 
    for (; pv < lv; pv++, y++)
@@ -371,7 +371,7 @@ void SimpleVector<T>::writefToStream(std::ostream& out, const char format[]) con
 
 template<typename T>
 void SimpleVector<T>::writefSomeToStream(std::ostream& out, const char format[], const Vector<T>& select) const {
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+   const auto& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* s = 0;
    if (select.length() > 0) {
       s = sselect.v;
@@ -428,7 +428,7 @@ void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
    if (this->n == 0)
       return;
 
-   const SimpleVector<double>& sv = dynamic_cast<const SimpleVector<double>&>(vec);
+   const auto& sv = dynamic_cast<const SimpleVector<double>&>(vec);
    const int one = 1;
    daxpy_(&this->n, &alpha, sv.v, &one, v, &one);
 }
@@ -436,7 +436,7 @@ void SimpleVector<double>::axpy(double alpha, const Vector<double>& vec) {
 template<typename T>
 void SimpleVector<T>::axpy(T alpha, const Vector<T>& vec) {
    assert(this->n == vec.length());
-   const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
 
 #ifndef PRE_CPP11
    std::transform(this->v, this->v + this->n, sv.v, this->v, [alpha](T a, T b) -> T { return a + alpha * b; });
@@ -474,8 +474,8 @@ template<typename T>
 void SimpleVector<T>::axzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
-   const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
-   const SimpleVector<T>& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
+   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
+   const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
 
    T* x = sxvec.v;
    T* z = szvec.v;
@@ -512,7 +512,7 @@ template<typename T>
 void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec) {
    const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
    T* x = sxvec.v;
-   const SimpleVector<T>& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
+   const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
    T* z = szvec.v;
 
    assert(this->n == xvec.length() && this->n == zvec.length());
@@ -528,11 +528,11 @@ template<typename T>
 void SimpleVector<T>::axdzpy(T alpha, const Vector<T>& xvec, const Vector<T>& zvec, const Vector<T>& select) {
    assert(this->n == xvec.length() && this->n == zvec.length());
 
-   const SimpleVector<T>& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
+   const auto& sxvec = dynamic_cast<const SimpleVector<T>&>(xvec);
    T* x = sxvec.v;
-   const SimpleVector<T>& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
+   const auto& szvec = dynamic_cast<const SimpleVector<T>&>(zvec);
    T* z = szvec.v;
-   const SimpleVector<T>& sselect = dynamic_cast<const SimpleVector<T>&>(select);
+   const auto& sselect = dynamic_cast<const SimpleVector<T>&>(select);
    T* s = sselect.v;
    if (alpha == 1.0) {
       for (int i = 0; i < this->n; i++) {

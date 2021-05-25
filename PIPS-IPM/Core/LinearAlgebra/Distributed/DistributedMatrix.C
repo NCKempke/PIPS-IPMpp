@@ -15,12 +15,9 @@ DistributedMatrix::DistributedMatrix(GeneralMatrix* Amat, GeneralMatrix* Bmat, G
    assert(Blmat);
 
 #ifndef NDEBUG
-   int mA, nA;
-   Amat->getSize(mA, nA);
-   int mB, nB;
-   Bmat->getSize(mB, nB);
-   int mBl, nBl;
-   Blmat->getSize(mBl, nBl);
+   const auto [mA, nA] = Amat->n_rows_columns();
+   const auto [mB, nB] = Bmat->n_rows_columns();
+   const long long nBl = Blmat->n_columns();
 
    if (nA == 0 && mA == 0)
       assert(nBl == nB);
@@ -62,8 +59,7 @@ DistributedMatrix::~DistributedMatrix() {
 
 
 bool DistributedMatrix::amatEmpty() const {
-   int mA, nA;
-   Amat->getSize(mA, nA);
+   const auto [mA, nA] = Amat->n_rows_columns();
    return mA <= 0 || nA <= 0;
 }
 
@@ -113,14 +109,16 @@ int StochGenDummyMatrix::is_a(int type) const {
    return type == kStochGenDummyMatrix || type == kGenMatrix || type == kDistributedMatrix;
 }
 
-void DistributedMatrix::getSize(long long& m_out, long long& n_out) const {
-   m_out = m;
-   n_out = n;
+std::pair<long long, long long> DistributedMatrix::n_rows_columns() const{
+   return {m, n};
 }
 
-void DistributedMatrix::getSize(int& m_out, int& n_out) const {
-   m_out = static_cast<int>(m);
-   n_out = static_cast<int>(n);
+long long DistributedMatrix::n_rows() const {
+   return m;
+}
+
+long long DistributedMatrix::n_columns() const {
+   return n;
 }
 
 void DistributedMatrix::columnScale2(const Vector<double>& vec) {
@@ -377,14 +375,9 @@ void DistributedMatrix::writeToStreamDenseBorderedChild(const StripMatrix& borde
       assert(hasSparseMatrices());
       assert(PIPS_MPIgetRank(mpiComm) == 0);
 
-      int nB, mB;
-      Bmat->getSize(mB, nB);
-      int nA, mA;
-      Amat->getSize(mA, nA);
-      int nBd, mBd;
-      border_left.first->getSize(mBd, nBd);
+      const auto mB = Bmat->n_rows();
 
-      assert(mB == mA && mA == mBd);
+      assert(mB == Amat->n_rows() && Amat->n_rows() == border_left.first->n_rows());
 
       for (int row = 0; row < mB; ++row) {
          border_left.first->writeToStreamDenseRow(out, row);
@@ -411,11 +404,8 @@ void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_lef
    if (iAmDistrib)
       MPI_Barrier(mpiComm);
 
-   int mBmat, nBmat;
-   this->Bmat->getSize(mBmat, nBmat);
-   int mBd, nBd;
-   border_left.first->getSize(mBd, nBd);
-   assert(mBmat == mBd);
+   const auto mBmat = this->Bmat->n_rows();
+   assert(mBmat == border_left.first->n_rows());
 
    assert(Bmat->is_a(kSparseGenMatrix));
    assert(border_left.first->is_a(kSparseGenMatrix));
@@ -441,10 +431,7 @@ void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_lef
       const StripMatrix& border_child = *border_left.children[it];
 
       children[it]->writeToStreamDenseBorderedChild(border_child, child_stream, offset);
-
-      int mChild, nChild;
-      children[it]->getSize(mChild, nChild);
-      offset += PIPS_MPIgetSum(nChild, mpiComm);
+      offset += static_cast<int>(PIPS_MPIgetSum(children[it]->n_columns(), mpiComm));
 
       MPI_Barrier(mpiComm);
    }
@@ -455,13 +442,10 @@ void DistributedMatrix::writeToStreamDenseBordered(const StripMatrix& border_lef
       out << all_children;
 
    /// border.bl_mat | Blmat | offset | children ///
-   int mlink, nlink;
-   this->Blmat->getSize(mlink, nlink);
+   const auto mlink = this->Blmat->n_rows();
    if (mlink > 0) {
       assert(border_left.last);
-      int mBdl, nBdl;
-      border_left.last->getSize(mBdl, nBdl);
-      assert(mBdl == mlink);
+      assert(border_left.n_rows() == mlink);
 
       // for each row r do:
       for (int r = 0; r < mlink; r++) {
@@ -541,14 +525,11 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
    if (iAmDistrib)
       MPI_Barrier(mpiComm);
 
-   int mBmat, nBmat;
-   Bmat->getSize(mBmat, nBmat);
-
    assert(Bmat->is_a(kSparseGenMatrix));
 
    /// Bmat ///
    if (my_rank == 0) {
-      for (int i = 0; i < mBmat; ++i) {
+      for (int i = 0; i < Bmat->n_rows(); ++i) {
          for (int j = 0; j < offset; ++j)
             out << "\t";
          dynamic_cast<const SparseMatrix*>(this->Bmat)->writeToStreamDenseRow(out, i);
@@ -565,10 +546,7 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
    for (auto it : children) {
       MPI_Barrier(mpiComm);
       it->writeToStreamDenseChild(child_stream, offset);
-
-      int mChild, nChild;
-      it->getSize(mChild, nChild);
-      offset += PIPS_MPIgetSum(nChild, mpiComm);
+      offset += static_cast<int>(PIPS_MPIgetSum(it->n_rows(), mpiComm));
 
       MPI_Barrier(mpiComm);
    }
@@ -579,8 +557,7 @@ void DistributedMatrix::writeToStreamDense(std::ostream& out, int offset) const 
       out << all_children;
 
    /// Blmat | offset | children ///
-   int mlink, nlink;
-   this->Blmat->getSize(mlink, nlink);
+   const auto mlink = this->Blmat->n_rows();
    if (mlink > 0) {
       // for each row r do:
       for (int r = 0; r < mlink; r++) {
@@ -618,14 +595,9 @@ void DistributedMatrix::writeToStreamDenseChild(std::ostream& out, int offset) c
    else {
       assert(hasSparseMatrices());
       assert(PIPS_MPIgetRank(mpiComm) == 0);
+      assert(Bmat->n_rows() == Amat->n_rows());
 
-      int nB, mB;
-      Bmat->getSize(mB, nB);
-      int nA, mA;
-      Amat->getSize(mA, nA);
-      assert(mB == mA);
-
-      for (int row = 0; row < mB; ++row) {
+      for (int row = 0; row < Bmat->n_rows(); ++row) {
          Amat->writeToStreamDenseRow(out, row);
          for (int i = 0; i < offset; ++i)
             out << "\t";
@@ -651,18 +623,17 @@ void DistributedMatrix::writeMPSformatRows(std::ostream& out, int rowType, const
 
    const auto* irhsStoch = dynamic_cast<const DistributedVector<double>*>(irhs);
 
-   int m_loc, n_loc;
    if (myRank == 0) {
       // A_0 block:
-      this->Bmat->getSize(m_loc, n_loc);
-      for (int i = 0; i < m_loc; i++) {
+      const auto mB = this->Bmat->n_rows();
+      for (int i = 0; i < mB; i++) {
          if (!irhs || (irhsStoch && dynamic_cast<const SimpleVector<double>&>(*irhsStoch->first)[i] != 0.0))
             out << " " << rt << " row_" << rt << "_" << "R" << "_" << i << "\n";
       }
       // linking rows:
       if (Blmat) {
-         this->Blmat->getSize(m_loc, n_loc);
-         for (int i = 0; i < m_loc; i++) {
+         const auto mBl = this->Blmat->n_rows();
+         for (int i = 0; i < mBl; i++) {
             if (!irhs || (irhsStoch && dynamic_cast<const SimpleVector<double>&>(*irhsStoch->last)[i] != 0.0))
                out << " " << rt << " row_" << rt << "_" << "L" << "_" << i << "\n";
             if (!irhs || (irhsStoch && dynamic_cast<const SimpleVector<double>&>(*irhsStoch->last)[i] != 0.0))
@@ -671,8 +642,8 @@ void DistributedMatrix::writeMPSformatRows(std::ostream& out, int rowType, const
       }
    }
    for (size_t it = 0; it < children.size(); it++) {
-      children[it]->Amat->getSize(m_loc, n_loc);
-      for (int i = 0; i < m_loc; i++) {
+      const auto mA = children[it]->Amat->n_rows();
+      for (int i = 0; i < mA; i++) {
          if (!irhs || (irhsStoch && dynamic_cast<const SimpleVector<double>&>(*irhsStoch->children[it]->first)[i] != 0.0))
             out << " " << rt << " row_" << rt << "_" << it << "_" << i << "\n";
       }
@@ -772,11 +743,8 @@ void DistributedMatrix::getNnzPerCol(Vector<int>& nnzVec, Vector<int>* linkParen
    if (iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr) {
       dynamic_cast<SparseMatrix*>(Bmat)->addNnzPerCol(*(vec));
 
-      int blm, bln;
-      Blmat->getSize(blm, bln);
-
       /* with linking constraints? */
-      if (blm > 0)
+      if (Blmat->n_rows() > 0)
          dynamic_cast<SparseMatrix*>(Blmat)->addNnzPerCol(*vec);
    }
 
@@ -861,10 +829,8 @@ void DistributedMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const V
    auto& minmaxVec = dynamic_cast<DistributedVector<double>&>(minmaxVec_);
    const auto* rowScaleVec = dynamic_cast<const DistributedVector<double>*>(rowScaleVec_);
 
-   int blm, bln;
-   Blmat->getSize(blm, bln);
    const bool scale = rowScaleVec;
-   const bool has_linking = blm > 0;
+   const bool has_linking = Blmat->n_rows() > 0;
 
    const Vector<double>* row_scale_vec = scale ? rowScaleVec->first : nullptr;
    const Vector<double>* row_scale_link = scale ? rowScaleVec->last : nullptr;
@@ -897,10 +863,8 @@ void DistributedMatrix::getColMinMaxVecChild(bool getMin, bool initializeVec, co
    assert(children.empty());
    auto& minmaxVec = dynamic_cast<DistributedVector<double>&>(minmaxVec_);
 
-   int blm, bln;
-   Blmat->getSize(blm, bln);
    const bool scale = rowScale_;
-   const bool has_linking = blm > 0;
+   const bool has_linking = Blmat->n_rows() > 0;
 
    const auto* rowScale = dynamic_cast<const DistributedVector<double>*>(rowScale_);
    const Vector<double>* row_scale_vec = scale ? rowScale->first : nullptr;
@@ -980,11 +944,8 @@ void DistributedMatrix::addColSums(Vector<double>& sumVec, Vector<double>* linkP
    if (iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr)
       Bmat->addColSums(*mvec);
 
-   int blm, bln;
-   Blmat->getSize(blm, bln);
-
    /* with linking constraints? */
-   if (blm > 0 && (iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr))
+   if (Blmat->n_rows() > 0 && (iAmSpecial(iAmDistrib, mpiComm) || linkParent != nullptr))
       Blmat->addColSums(*mvec);
 
    // not at root?
@@ -1069,7 +1030,7 @@ void DistributedMatrix::recomputeSize(DistributedMatrix* parent) {
    }
 
    if (!inner_root)
-      Bmat->getSize(m, n);
+      std::tie(m,n) = Bmat->n_rows_columns();
 
    assert(m >= 0);
    assert(n >= 0);
@@ -1077,18 +1038,14 @@ void DistributedMatrix::recomputeSize(DistributedMatrix* parent) {
    for (auto & it : children) {
       it->recomputeSize(this);
 
-      int m_child, n_child;
-      it->getSize(m_child, n_child);
+      const auto [m_child, n_child] = it->n_rows_columns();
 
       m += m_child;
       n += n_child;
    }
 
    if (!parent) {
-      int bl_mat_m = 0;
-      int bl_mat_n = 0;
-      Blmat->getSize(bl_mat_m, bl_mat_n);
-      m += bl_mat_m;
+      m += Blmat->n_rows();
    }
 }
 
@@ -1098,9 +1055,7 @@ void DistributedMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const 
    if (!Blmat)
       return;
 
-   int m_Blmat;
-   int n_Blmat;
-   Blmat->getSize(m_Blmat, n_Blmat);
+   const auto m_Blmat = Blmat->n_rows();
    assert(m_Blmat > 0);
    assert(linkCount.size() == size_t(m_Blmat));
 
@@ -1117,14 +1072,12 @@ void DistributedMatrix::updateKLinkConsCount(std::vector<int>& linkCount) const 
 
 void DistributedMatrix::updateKLinkVarsCount(std::vector<int>& link_block_count) const {
    assert(hasSparseMatrices());
-   int m_Blmat;
-   int n_Blmat;
-   Bmat->getSize(m_Blmat, n_Blmat);
+   const auto n_Bmat = Bmat->n_columns();
 
-   if (n_Blmat == 0)
+   if (n_Bmat == 0)
       return;
 
-   assert(link_block_count.size() == size_t(n_Blmat));
+   assert(link_block_count.size() == size_t(n_Bmat));
 
    for (auto it : children){
       if (!(it->is_a(kStochGenDummyMatrix))) {
@@ -1145,10 +1098,7 @@ void DistributedMatrix::get2LinkStartBlocksAndCountsNew(std::vector<int>& block_
    if (Blmat == nullptr)
       return;
 
-   int m_Blmat;
-   int n_Blmat;
-   Blmat->getSize(m_Blmat, n_Blmat);
-
+   const auto m_Blmat = Blmat->n_rows();
    if (m_Blmat == 0)
       return;
    assert(m_Blmat > 0);
@@ -1201,9 +1151,7 @@ std::vector<int> DistributedMatrix::get2LinkStartBlocks() const {
    if (Blmat == nullptr)
       return std::vector<int>();
 
-   int m_loc;
-   int n_loc;
-   Blmat->getSize(m_loc, n_loc);
+   const auto m_loc = Blmat->n_rows();
 
    if (m_loc == 0)
       return std::vector<int>();
@@ -1490,20 +1438,20 @@ bool DistributedMatrix::isRootNodeInSync() const {
 
       /* dynamic storage */
       int bmat_dyn_len = 0;
-      for (int i = 0; i < Bmat_dyn.getM(); ++i)
+      for (int i = 0; i < Bmat_dyn.n_rows(); ++i)
          bmat_dyn_len += (Bmat_dyn.getRowPtr(i).end - Bmat_dyn.getRowPtr(i).start);
 
       int blmat_dyn_len = 0;
-      for (int i = 0; i < Blmat_dyn.getM(); ++i)
+      for (int i = 0; i < Blmat_dyn.n_rows(); ++i)
          blmat_dyn_len += (Blmat_dyn.getRowPtr(i).end - Blmat_dyn.getRowPtr(i).start);
 
       const int lenght_entries_bmat_dynamic = bmat_dyn_len;
       const int length_columns_bmat_dynamic = bmat_dyn_len;
-      const int lenght_rowoffest_bmat_dynamic = Bmat_dyn.getM() + 1;
+      const int lenght_rowoffest_bmat_dynamic = Bmat_dyn.n_rows() + 1;
 
       const int lenght_entries_blmat_dynamic = blmat_dyn_len;
       const int length_columns_blmat_dynamic = blmat_dyn_len;
-      const int lenght_rowoffest_blmat_dynamic = Blmat_dyn.getM() + 1;
+      const int lenght_rowoffest_blmat_dynamic = Blmat_dyn.n_rows() + 1;
 
       const long long count_row_cols_dyn =
             length_columns_bmat_dynamic + 2 * lenght_rowoffest_bmat_dynamic + length_columns_blmat_dynamic + 2 * lenght_rowoffest_blmat_dynamic;
@@ -1526,7 +1474,7 @@ bool DistributedMatrix::isRootNodeInSync() const {
       int count_row_col = 0;
 
       /* entries Bmat into double array */
-      for (int i = 0; i < Bmat_dyn.getM(); ++i) {
+      for (int i = 0; i < Bmat_dyn.n_rows(); ++i) {
          for (int j = Bmat_dyn.getRowPtr(i).start; j < Bmat_dyn.getRowPtr(i).end; ++j) {
             sendbuf_entries_dynamic[count_entries] = M[j];
             count_entries++;
@@ -1543,7 +1491,7 @@ bool DistributedMatrix::isRootNodeInSync() const {
       assert(count_row_col == 2 * lenght_rowoffest_bmat_dynamic);
 
       /* col indices of Bmat into int array */
-      for (int i = 0; i < Bmat_dyn.getM(); ++i) {
+      for (int i = 0; i < Bmat_dyn.n_rows(); ++i) {
          for (int j = Bmat_dyn.getRowPtr(i).start; j < Bmat_dyn.getRowPtr(i).end; ++j) {
             sendbuf_row_col_dynamic[count_row_col] = jColM[j];
             count_row_col++;
@@ -1556,7 +1504,7 @@ bool DistributedMatrix::isRootNodeInSync() const {
       const int* jColMl = Blmat_dyn.getJcolM();
 
       /* entries Blmat into double array */
-      for (int i = 0; i < Blmat_dyn.getM(); ++i) {
+      for (int i = 0; i < Blmat_dyn.n_rows(); ++i) {
          for (int j = Blmat_dyn.getRowPtr(i).start; j < Blmat_dyn.getRowPtr(i).end; ++j) {
             sendbuf_entries_dynamic[count_entries] = Ml[j];
             count_entries++;
@@ -1574,7 +1522,7 @@ bool DistributedMatrix::isRootNodeInSync() const {
       assert(count_row_col == 2 * lenght_rowoffest_bmat_dynamic + length_columns_bmat_dynamic + 2 * lenght_rowoffest_blmat_dynamic);
 
       /* col indices of Bmat into int array */
-      for (int i = 0; i < Blmat_dyn.getM(); ++i) {
+      for (int i = 0; i < Blmat_dyn.n_rows(); ++i) {
          for (int j = Blmat_dyn.getRowPtr(i).start; j < Blmat_dyn.getRowPtr(i).end; ++j) {
             sendbuf_row_col_dynamic[count_row_col] = jColMl[j];
             count_row_col++;
@@ -1825,8 +1773,7 @@ double DistributedMatrix::localRowTimesVec(const DistributedVector<double>& vec,
 // TODO specify border and left from DistributedQP...
 BorderedMatrix* DistributedMatrix::raiseBorder(int m_conss, int n_vars) {
 #ifndef NDEBUG
-   int m_link, n_link;
-   Blmat->getSize(m_link, n_link);
+   const auto [m_link, n_link] = Blmat->n_rows_columns();
    assert(m_conss <= m_link && n_vars <= n_link);
 #endif
 
@@ -1935,8 +1882,7 @@ void DistributedMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_bl
    assert(n_curr_children == twolinks_start_in_block.size());
    assert(twolinks_start_in_block.back() == 0);
 
-   int nBl, m_links_left;
-   Blmat->getSize(m_links_left, nBl);
+   auto [m_links_left, nBl] = Blmat->n_rows_columns();
    assert(std::accumulate(twolinks_start_in_block.begin(), twolinks_start_in_block.end(), 0) <= m_links_left);
 
    const unsigned int n_new_children = getNDistinctValues(map_blocks_children);
@@ -2001,9 +1947,7 @@ void DistributedMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_bl
 
 #ifndef NDEBUG
          if (child->mpiComm != MPI_COMM_NULL) {
-            int blm, bln;
-            child->Blmat->getSize(blm, bln);
-            assert(blm == n_links_for_child);
+            assert(child->Blmat->n_rows() == n_links_for_child);
          }
 #endif
          if (Bmat_loc)

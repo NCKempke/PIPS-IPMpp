@@ -16,15 +16,13 @@ Problem::Problem(Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* 
    SpReferTo(bu, cupp_in);
    SpReferTo(icupp, icupp_in);
 
-   long long dummy;
-
    nx = g->length();
 
    SpReferTo(A, A_in);
-   A->getSize(my, dummy);
+   my = A->n_rows();
 
    SpReferTo(C, C_in);
-   C->getSize(mz, dummy);
+   mz = C->n_rows();
 }
 
 void Problem::Amult(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const {
@@ -76,7 +74,7 @@ void Problem::scaleC() {
 }
 
 void Problem::scaleg() {
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
    assert (scVector.length() == g->length());
 
    // D * g
@@ -84,7 +82,7 @@ void Problem::scaleg() {
 }
 
 void Problem::scalexupp() {
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    assert (scVector.length() == bux->length());
 
@@ -95,7 +93,7 @@ void Problem::scalexupp() {
 
 
 void Problem::scalexlow() {
-   SimpleVector<double>& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
+   auto& scVector = dynamic_cast<SimpleVector<double>&>(*sc);
 
    assert (scVector.length() == blx->length());
 

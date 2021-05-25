@@ -57,9 +57,9 @@ public:
 
    virtual void symPutZeroes();
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
-
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
    [[nodiscard]] long long size() const override;
 
    void getDiagonal(Vector<double>& vec) const override;

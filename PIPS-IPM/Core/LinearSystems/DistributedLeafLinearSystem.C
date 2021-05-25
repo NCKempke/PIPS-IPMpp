@@ -118,6 +118,7 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
    assert(this->dual_equality_regularization_diagonal);
    assert(this->dual_inequality_regularization_diagonal);
 
+   std::cout << "regularizing leaf with " << primal_regularization << " " << dual_equality_regularization << " " << dual_inequality_regularization << std::endl;
    if (locnx > 0) {
       add_regularization_diagonal(0, primal_regularization, *this->primal_regularization_diagonal);
    }
@@ -166,17 +167,13 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
 
    solver->solve(zi);
 
-   int dummy{0};
-   int nx0{0};
-
-   SparseMatrix& A = prob->getLocalA();
-   if (data->hasRAC())
-      A.getSize(dummy, nx0);
+   int nx0 = data->hasRAC() ? prob->getLocalA().n_columns() : 0;
 
    SimpleVector<double> z01(&z0[0], nx0);
    SimpleVector<double> zi1(&zi[0], locnx);
 
    if (data->hasRAC()) {
+      SparseMatrix& A = prob->getLocalA();
       SparseMatrix& C = prob->getLocalC();
       SparseMatrix& R = prob->getLocalCrossHessian();
 
@@ -280,7 +277,7 @@ void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymmetricMatrix& kkt_, Gen
 
 /* compute result += B_inner^T K^-1 Br */
 void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseMatrix& result, BorderLinsys& Br, int begin_cols, int end_cols) {
-   assert(Br.A.children.size() == 0);
+   assert(Br.A.children.empty());
 
    /* empty dummy */
    std::vector<BorderMod> Br_mod_border;
@@ -291,13 +288,11 @@ void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(DenseMatrix& result
 /* compute result += [ Bl^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 Bl for cols begin_cols to end_cols in (Br - SUM_j Brmodj Xj) */
 void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& result, BorderBiBlock& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border,
       bool sparse_res, bool sym_res, int begin_cols_br, int end_cols_br, int begin_cols_res, int end_cols_res) {
-   int dummy;
 #ifndef NDEBUG
    const int n_cols = end_cols_br - begin_cols_br;
    assert(end_cols_res - begin_cols_res == n_cols);
 
-   int mres, nres;
-   result.getSize(mres, nres);
+   const auto mres = result.n_rows();
    assert(0 <= begin_cols_br && begin_cols_br <= end_cols_br);
    assert(0 <= begin_cols_res && begin_cols_res <= end_cols_res);
    assert(end_cols_res <= mres);
@@ -305,13 +300,12 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
 
    int nx_border{0};
    if (Br.has_RAC)
-      Br.R.getSize(dummy, nx_border);
+      nx_border = Br.R.n_columns();
    else if (Br.use_local_RAC)
-      data->getLocalCrossHessian().getSize(dummy, nx_border);
+      nx_border = data->getLocalCrossHessian().n_columns();
 
-   int myl_border, mzl_border;
-   Br.F.first->getSize(myl_border, dummy);
-   Br.G.first->getSize(mzl_border, dummy);
+   const int myl_border = Br.F.first->n_rows();
+   const int mzl_border = Br.G.first->n_rows();
 
    if (sc_compute_blockwise_hierarchical)
       assert(end_cols_br <= nx_border + Br.n_empty_rows + myl_border + mzl_border);
@@ -325,16 +319,9 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
 
    /* buffer for (Bri - (sum_j Brmodj * Xmodj)_i - Bi_{inner} X0)^T = Bri^T - X0^T Bi_{inner}^T - (sum_j Xmodj^T Brmodj^T)_i */
    /* Bi buffer and X0 are in transposed form for memory alignment reasons when solving with K_i */
-   const int n_buffer = kkt->size();
-   int m_result;
-   result.getSize(m_result, dummy);
-
-#ifndef NDEBUG
-   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
+   const int m_buffer = allocateAndZeroBlockedComputationsBuffer(result.n_rows(), kkt->size());
+   (void) m_buffer;
    assert(n_cols <= m_buffer);
-#else
-   allocateAndZeroBlockedComputationsBuffer(m_result, n_buffer);
-#endif
    /* put cols from begin_cols to end_cold of (Bri)^T into buffer
     *
     *                [ RiT 0 AiT CiT ]
@@ -390,8 +377,7 @@ void DistributedLeafLinearSystem::addLeftBorderKiInvBrToRes(AbstractMatrix& resu
 /* compute result += [ B_{inner}^T K^-1 ( Br - SUM_j Brmodj Xj ) ]^T = (Br^T - SUM_j Xj^T Brmodj^T) K^-1 B_{inner} */
 void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
       bool sym_res, int begin_cols, int end_cols, int) {
-   int res_m, res_n;
-   result.getSize(res_m, res_n);
+   const auto res_n = result.n_columns();
    const int n_empty = data->hasRAC() ? res_n - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m -
                                         data->getLocalG().getStorageRef().m : res_n - data->getLocalF().getStorageRef().m -
                                                                               data->getLocalG().getStorageRef().m;
@@ -477,21 +463,17 @@ void DistributedLeafLinearSystem::addBorderTimesRhsToB0(SimpleVector<double>& rh
    if (border.isEmpty())
       return;
 
-   int mFi, nFi;
-   border.F.getSize(mFi, nFi);
-   int mGi, nGi;
-   border.G.getSize(mGi, nGi);
+   const auto [mFi, nFi] = border.F.n_rows_columns();
+   const auto mGi = border.G.n_rows();
 
    int mRi{0};
    int nRi{0};
    int mAi{0};
-   int nAi{0};
    int mCi{0};
-   int nCi{0};
    if (border.has_RAC) {
-      border.R.getSize(mRi, nRi);
-      border.A.getSize(mAi, nAi);
-      border.C.getSize(mCi, nCi);
+      std::tie(mRi, nRi) = border.R.n_rows_columns();
+      mAi = border.A.n_rows();
+      mCi = border.C.n_rows();
 
       assert(nFi == mRi);
       assert(rhs.length() == mRi + mAi + mCi);
@@ -557,30 +539,23 @@ void DistributedLeafLinearSystem::addBorderX0ToRhs(DistributedVector<double>& rh
 }
 
 void DistributedLeafLinearSystem::addBorderX0ToRhs(SimpleVector<double>& rhs, const SimpleVector<double>& x0, BorderBiBlock& border) {
-   int mFi, nFi;
-   border.F.getSize(mFi, nFi);
-   int mGi, nGi;
-   border.G.getSize(mGi, nGi);
-   int mRi{0};
+   const auto mFi = border.F.n_rows();
+   const auto mGi = border.G.n_rows();
+   const auto mRi = border.has_RAC ? border.R.n_rows() : 0;
+   const auto mAi = border.has_RAC ? border.A.n_rows() : 0;
+
+#ifndef NDEBUG
+   const auto mCi = border.has_RAC ? border.C.n_rows() : 0;
    int nRi{0};
-   int mAi{0};
-   int nAi{0};
-   int mCi{0};
-   int nCi{0};
-
    if (border.has_RAC) {
-      border.R.getSize(mRi, nRi);
-      border.A.getSize(mAi, nAi);
-      border.C.getSize(mCi, nCi);
-
-      assert(nFi == mRi);
+      assert(border.F.n_columns() == mRi);
       assert(rhs.length() == mRi + mAi + mCi);
    }
    else
-      assert(rhs.length() >= nFi);
+      assert(rhs.length() >= border.F.n_columns());
 
    assert(x0.length() >= nRi + mFi + mGi);
-
+#endif
    if (border.isEmpty())
       return;
 

@@ -94,16 +94,22 @@ private:
    /** computes CtDC and stores it  in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
    void compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal);
 
+   void clear_CtDC_from_sparse_schur_complement(const SymmetricMatrix& CtDC);
+   void clear_CtDC_from_dense_schur_complement(const SymmetricMatrix& CtDC);
+
+   /** computes CtDC and stores it  in CtDC_loc + adds it to the Schur complement. If CtDC == nullptr it will also allocate CtDC */
+   void clear_CtDC_from_schur_complement(const SymmetricMatrix& CtDC_loc);
+
    // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
    void addLinkConsBlock0Matrix(DistributedQP* prob, SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
 
    /** y = beta*y - alpha* SC * x */
    void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x, DistributedQP* prob);
 
-   /** stores C^T D^-1 C from the KKT matrix */
+   /** stores C^T (Omega + Reg)^-1 C from the KKT matrix */
    std::unique_ptr<SymmetricMatrix> CtDC;
-   /** stores C^T reg_z^-1 C from the regularization added to the KKT matrix */
-   std::unique_ptr<SymmetricMatrix> CtDC_regularization;
+   /** stores Omeag + Reg for computation of CtDC */
+   std::unique_ptr<SimpleVector<double>> dual_inequality_non_link_diagonal_regularized;
 
    std::vector<double> reduced_rhss_blocked;
    std::unique_ptr<SimpleVector<double>> redRhs;

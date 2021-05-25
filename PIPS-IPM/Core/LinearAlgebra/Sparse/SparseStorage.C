@@ -60,11 +60,17 @@ void SparseStorage::copyFrom(int* krowM_, int* jcolM_, double* M_) const {
    memcpy(krowM_, krowM, (m + 1) * sizeof(krowM[0]));
 }
 
-void SparseStorage::getSize(int& m_, int& n_) const {
-   m_ = m;
-   n_ = n;
+std::pair<int, int> SparseStorage::n_rows_columns() const {
+   return {m, n};
 }
 
+int SparseStorage::n_rows() const {
+   return m;
+}
+
+int SparseStorage::n_columns() const {
+   return n;
+}
 
 void SparseStorage::fromGetDiagonal(int idiag, Vector<double>& vec_in) const {
    auto& vec = dynamic_cast<SimpleVector<double>&>(vec_in);

@@ -50,8 +50,9 @@ public:
 
    SparseMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
 
-   void getSize(long long& m, long long& n) const override;
-   void getSize(int& m, int& n) const override;
+   [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
+   [[nodiscard]] long long n_rows() const override;
+   [[nodiscard]] long long n_columns() const override;
 
    /** The actual number of structural non-zero elements in this sparse
     *  matrix. This includes so-called "accidental" zeros, elements that

@@ -293,7 +293,7 @@ int StochPresolverModelCleanup::removeTinyInnerLoop(SystemType system_type, int 
    const SparseStorageDynamic* storage = mat;
 
    /* for every row in row in matrix */
-   for (int r = 0; r < storage->getM(); r++) {
+   for (int r = 0; r < storage->n_rows(); r++) {
       double total_sum_modifications_row = 0.0;
 
       int start = storage->getRowPtr(r).start;

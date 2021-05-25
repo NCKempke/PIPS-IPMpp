@@ -136,8 +136,8 @@ void SparseMatrix::writeToStreamDense(std::ostream& out) const {
 
 void SparseMatrix::writeToStreamDenseRow(std::ostream& out, int rowidx) const {
    if (mStorageDynamic != nullptr) {
-      if (mStorageDynamic->getN() > 0) {
-         assert(rowidx < mStorageDynamic->getM());
+      if (mStorageDynamic->n_columns() > 0) {
+         assert(rowidx < mStorageDynamic->n_rows());
          mStorageDynamic->writeToStreamDenseRow(out, rowidx);
       }
    }
@@ -151,7 +151,7 @@ void SparseMatrix::writeToStreamDenseRow(std::ostream& out, int rowidx) const {
 
 void SparseMatrix::writeDashedLineToStream(std::ostream& out) const {
    if (mStorageDynamic != nullptr) {
-      for (int i = 0; i < mStorageDynamic->getN(); ++i)
+      for (int i = 0; i < mStorageDynamic->n_columns(); ++i)
          out << "-\t";
    }
    else {
@@ -188,39 +188,35 @@ void SparseMatrix::symmetrize(int& info) {
 }
 
 
-void SparseMatrix::getSize(long long& m, long long& n) const {
-   if (mStorageDynamic != nullptr) {
-      m = mStorageDynamic->getM();
-      n = mStorageDynamic->getN();
-   }
-   else {
-      if (mStorage) {
-         m = mStorage->m;
-         n = mStorage->n;
-      }
-      else {
-         m = -1;
-         n = -1;
-      }
-   }
-}
-void SparseMatrix::getSize(int& m, int& n) const {
-   if (mStorageDynamic != nullptr) {
-      m = mStorageDynamic->getM();
-      n = mStorageDynamic->getN();
-   }
-   else {
-      if (mStorage) {
-         m = mStorage->m;
-         n = mStorage->n;
-      }
-      else {
-         m = -1;
-         n = -1;
-      }
+std::pair<long long, long long> SparseMatrix::n_rows_columns() const {
+   if (mStorageDynamic) {
+      return mStorageDynamic->n_rows_columns();
+   } else if (mStorage) {
+      return mStorage->n_rows_columns();
+   } else {
+     return {-1, -1};
    }
 }
 
+long long SparseMatrix::n_rows() const {
+   if (mStorageDynamic) {
+      return mStorageDynamic->n_rows();
+   } else if (mStorage) {
+      return mStorage->n_rows();
+   } else {
+      return -1;
+   }
+}
+
+long long SparseMatrix::n_columns() const {
+   if (mStorageDynamic) {
+      return mStorageDynamic->n_columns();
+   } else if (mStorage) {
+      return mStorage->n_columns();
+   } else {
+      return -1;
+   }
+}
 
 void SparseMatrix::atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
    int i, k;
@@ -496,7 +492,7 @@ void SparseMatrix::addNnzPerRow(Vector<int>& nnzVec) const {
    auto& vec = dynamic_cast<SimpleVector<int>&>(nnzVec);
 
    if (mStorageDynamic != nullptr) {
-      assert(vec.length() == mStorageDynamic->getM());
+      assert(vec.length() == mStorageDynamic->n_rows());
       mStorageDynamic->addNnzPerRow(vec.elements());
    }
    else {
@@ -512,7 +508,7 @@ void SparseMatrix::addNnzPerCol(Vector<int>& nnzVec) const {
       initTransposed();
 
    if (m_Mt->mStorageDynamic != nullptr) {
-      assert(vec.length() == m_Mt->mStorageDynamic->getM());
+      assert(vec.length() == m_Mt->mStorageDynamic->n_rows());
       m_Mt->mStorageDynamic->addNnzPerRow(vec.elements());
    }
    else {
@@ -531,7 +527,7 @@ void SparseMatrix::addNnzPerCol(Vector<int>& nnzVec, int begin_cols, int end_col
       initTransposed();
 
    if (m_Mt->mStorageDynamic != nullptr) {
-      assert(end_cols <= m_Mt->mStorageDynamic->getM());
+      assert(end_cols <= m_Mt->mStorageDynamic->n_rows());
       m_Mt->mStorageDynamic->addNnzPerRow(vec.elements(), begin_cols, end_cols);
    }
    else {
@@ -563,7 +559,7 @@ void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseSto
       Vector<double>& minmaxVec) {
    auto& mvec = dynamic_cast<SimpleVector<double>&>(minmaxVec);
 
-   assert(mvec.length() == storage_dynamic->getM());
+   assert(mvec.length() == storage_dynamic->n_rows());
 
    if (initializeVec) {
       if (getMin)
@@ -795,7 +791,7 @@ int SparseMatrix::appendRow(const SparseMatrix& matrix_row, int row) {
 
    mStorageDynamic->appendRow(matrix_row.getStorageDynamicRef(), row);
 
-   return mStorageDynamic->getM() - 1;
+   return mStorageDynamic->n_rows() - 1;
 }
 
 int SparseMatrix::appendCol(const SparseMatrix& matrix_col, int col) {
@@ -806,7 +802,7 @@ int SparseMatrix::appendCol(const SparseMatrix& matrix_col, int col) {
 
    mStorageDynamic->appendRow(matrix_col.getStorageDynamicTransposedRef(), col);
 
-   return mStorageDynamic->getM() - 1;
+   return mStorageDynamic->n_rows() - 1;
 }
 
 void SparseMatrix::axpyWithRowAt(double alpha, SimpleVector<double>& y, int row) const {

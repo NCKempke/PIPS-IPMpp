@@ -112,21 +112,20 @@ void SparseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const Ab
    delete[] ja;
 }
 
-// Pass these to storage
-void SparseSymmetricMatrix::getSize(long long& m, long long& n) const {
-   int mint, nint;
-   mStorage->getSize(mint, nint);
-   m = mint;
-   n = nint;
+std::pair<long long, long long> SparseSymmetricMatrix::n_rows_columns() const {
+   return mStorage->n_rows_columns();
 }
-
-void SparseSymmetricMatrix::getSize(int& m, int& n) const {
-   mStorage->getSize(m, n);
-}
-
 
 long long SparseSymmetricMatrix::size() const {
-   return mStorage->rows();
+   return mStorage->n_rows();
+}
+
+long long SparseSymmetricMatrix::n_rows() const {
+   return mStorage->n_rows();
+}
+
+long long SparseSymmetricMatrix::n_columns() const {
+   return mStorage->n_columns();
 }
 
 void SparseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
@@ -235,8 +234,7 @@ void SparseSymmetricMatrix::reduceToLower() {
 void SparseSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec) {
    const auto& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
 #ifndef NDEBUG
-   int m, n;
-   mStorage->getSize(m, n);
+   const auto [m, n] = mStorage->n_rows_columns();
    assert(nnzVec.length() == m);
    assert(nnzVec.length() == n);
 #endif

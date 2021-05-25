@@ -53,9 +53,6 @@ public:
    LniTransMultHierarchyBorder(AbstractMatrix&, const DenseMatrix&, BorderLinsys&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, bool, int,
          int, int) override {};
 
-   void allocU(DenseMatrix**, int) override {};
-   void allocV(DenseMatrix**, int) override {};
-   void computeU_V(DistributedQP*, DenseMatrix*, DenseMatrix*) override {};
    void deleteChildren() override {};
 
    [[nodiscard]] bool isDummy() const override { return true; };

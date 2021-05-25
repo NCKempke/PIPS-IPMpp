@@ -127,9 +127,16 @@ SparseStorageDynamic::SparseStorageDynamic(const SparseStorageDynamic& dynamicSt
    SparseStorageDynamic::instances++;
 }
 
-void SparseStorageDynamic::getSize(int& m, int& n) const {
-   m = this->m;
-   n = this->n;
+std::pair<int,int> SparseStorageDynamic::n_rows_columns() const {
+   return {this->m, this->n};
+}
+
+int SparseStorageDynamic::n_rows() const {
+   return this->m;
+}
+
+int SparseStorageDynamic::n_columns() const {
+   return this->n;
 }
 
 ROWPTRS SparseStorageDynamic::getRowPtr(int i) const {
@@ -165,7 +172,7 @@ SparseStorage* SparseStorageDynamic::getStaticStorage(const int* rowNnz, const i
          if (rowNnz[r] != 0.0)
             m_static++;
 
-      SparseStorage* staticStorage = new SparseStorage(m_static, n, len);
+      auto* staticStorage = new SparseStorage(m_static, n, len);
 
       return staticStorage;
    }
@@ -222,7 +229,7 @@ SparseStorage* SparseStorageDynamic::getStaticStorage(const int* rowNnz, const i
          n_static++;
    }
 
-   SparseStorage* staticStorage = new SparseStorage(m_static, n_static, len_static);
+   auto* staticStorage = new SparseStorage(m_static, n_static, len_static);
 
    int* const krowM_static = staticStorage->krowM;
    int* const jcolM_static = staticStorage->jcolM;
@@ -296,7 +303,7 @@ SparseStorageDynamic* SparseStorageDynamic::getTranspose() const {
    for (int i = 0; i < n; i++)
       translen += w[i] + int(w[i] * spareRatio);
 
-   SparseStorageDynamic* transpose = new SparseStorageDynamic(n, m, translen, spareRatio);
+   auto* transpose = new SparseStorageDynamic(n, m, translen, spareRatio);
 
    // set row pointers
 
@@ -437,7 +444,7 @@ void SparseStorageDynamic::restoreOrder() {
       std::vector<std::pair<int, double> > pairVector;
 
       for (int j = start; j < end; j++)
-         pairVector.push_back(std::make_pair(jcolM[j], M[j]));
+         pairVector.emplace_back(jcolM[j], M[j]);
 
       std::sort(pairVector.begin(), pairVector.end(), first_is_smaller());
       for (int j = start; j < end; j++) {
@@ -545,7 +552,7 @@ void SparseStorageDynamic::clearCol(int col) {
 }
 
 void SparseStorageDynamic::appendRow(const SparseStorageDynamic& storage, int row) {
-   assert(storage.getN() <= n);
+   assert(storage.n_columns() <= n);
    if (m_len == 0) {
       rowptr[0].start = rowptr[0].end = 0;
    }
@@ -626,7 +633,7 @@ void SparseStorageDynamic::extendStorageRows() {
       m_len_tmp = 2;
 
    /* extend the storage */
-   ROWPTRS* rowptr_tmp = new ROWPTRS[m_len_tmp + 1];
+   auto* rowptr_tmp = new ROWPTRS[m_len_tmp + 1];
 
    std::copy(rowptr, rowptr + m_len + 1, rowptr_tmp);
 
@@ -664,7 +671,7 @@ void SparseStorageDynamic::extendStorageValues() {
 
    /* extend the storage */
    int* jcolM_tmp = new int[len_tmp];
-   double* M_tmp = new double[len_tmp];
+   auto* M_tmp = new double[len_tmp];
 
    if (len != 0) {
       std::copy(jcolM, jcolM + len, jcolM_tmp);

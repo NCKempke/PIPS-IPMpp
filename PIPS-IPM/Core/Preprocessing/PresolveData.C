@@ -475,11 +475,12 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
 void PresolveData::addActivityOfBlock(const SparseStorageDynamic& matrix, SimpleVector<double>& min_partact, SimpleVector<int>& unbounded_min,
       SimpleVector<double>& max_partact, SimpleVector<int>& unbounded_max, const SimpleVector<double>& xlow, const SimpleVector<double>& ixlow,
       const SimpleVector<double>& xupp, const SimpleVector<double>& ixupp) const {
-   assert(xlow.length() == matrix.getN() && ixlow.length() == matrix.getN() && xupp.length() == matrix.getN() && ixupp.length() == matrix.getN());
-   assert(max_partact.length() == matrix.getM() && min_partact.length() == matrix.getM());
-   assert(unbounded_min.length() == matrix.getM() && unbounded_max.length() == matrix.getM());
+   assert(xlow.length() == matrix.n_columns() && ixlow.length() == matrix.n_columns() && xupp.length() == matrix.n_columns() && ixupp.length() ==
+      matrix.n_columns());
+   assert(max_partact.length() == matrix.n_rows() && min_partact.length() == matrix.n_rows());
+   assert(unbounded_min.length() == matrix.n_rows() && unbounded_max.length() == matrix.n_rows());
 
-   for (int row = 0; row < matrix.getM(); ++row) {
+   for (int row = 0; row < matrix.n_rows(); ++row) {
       for (int j = matrix.getRowPtr(row).start; j < matrix.getRowPtr(row).end; j++) {
          const int col = matrix.getJcolM(j);
          const double entry = matrix.getMat(j);
@@ -1341,11 +1342,16 @@ bool PresolveData::rowPropagatedBounds(const INDEX& row, const INDEX& col, doubl
 
    /// set upper bound
    if (xupp_new < xupp_old) {
-      if (std::fabs(xupp_new) < limit_max_bound_accepted) {
-         if (fabs(xupp_new) < 1e-8) {
+      if (std::fabs(xupp_new) < limit_max_bound_accepted && min_impact_bound_change <= (xupp_old - xupp_new)) {
+         if (std::fabs(xupp_new) < 1e-8) {
             xupp_new = 0.0;
          }
-
+         
+         if (col.isLinkingCol()) {
+            assert(PIPS_MPIisValueEqual(xupp_new));
+            assert(PIPS_MPIisValueEqual(xupp_old));
+         }
+         
          if (updateColUpperBound(col, xupp_new)) {
             /* store node and row that implied the bound (necessary for resetting bounds later on) */
             markRowAsImplyingColumnBound(col, row, true);
@@ -1355,9 +1361,14 @@ bool PresolveData::rowPropagatedBounds(const INDEX& row, const INDEX& col, doubl
    }
    /// set lower bound
    if (xlow_old < xlow_new) {
-      if (std::fabs(xlow_new) < limit_max_bound_accepted) {
+      if (std::fabs(xlow_new) < limit_max_bound_accepted && min_impact_bound_change <= (xlow_old - xlow_new)) { 
          if (std::fabs(xlow_new) < 1e-8) {
             xlow_new = 0.0;
+         }
+
+         if (col.isLinkingCol()) {
+            assert(PIPS_MPIisValueEqual(xlow_new));
+            assert(PIPS_MPIisValueEqual(xlow_old));
          }
 
          if (updateColLowerBound(col, xlow_new)) {
@@ -1675,7 +1686,7 @@ void PresolveData::removeColumnFromMatrix(const INDEX& dummy_row, const INDEX& c
    SparseMatrix* mat = getSparseGenMatrix(dummy_row, col);
    const SparseStorageDynamic& matrix_transp = mat->getStorageDynamicTransposedRef();
 
-   assert(col.getIndex() < matrix_transp.getM());
+   assert(col.getIndex() < matrix_transp.n_rows());
 
    /* remove all entries in column from the sparse storage dynamic */
    for (int j = matrix_transp.getRowPtr(col.getIndex()).start; j < matrix_transp.getRowPtr(col.getIndex()).end; j++) {
@@ -2827,12 +2838,10 @@ bool PresolveData::nodeIsDummy(int node) const {
 }
 
 bool PresolveData::hasLinking(SystemType system_type) const {
-   int mlink, nlink;
    const INDEX dummy_link_row(ROW, -1, std::numeric_limits<int>::infinity(), true, system_type);
    const INDEX dummy_link_col(COL, -1, std::numeric_limits<int>::infinity());
    const SparseMatrix* mat = getSparseGenMatrix(dummy_link_row, dummy_link_col);
-   mat->getSize(mlink, nlink);
-   if (mlink > 0) {
+   if (mat->n_rows() > 0) {
       // todo: assert that all vectors and matrices have linking part
       return true;
    }
@@ -3176,7 +3185,7 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
 
    const SparseStorageDynamic& mat_transp = getSparseGenMatrix(row, col)->getStorageDynamicTransposedRef();
 
-   assert(col.getIndex() < mat_transp.getM());
+   assert(col.getIndex() < mat_transp.n_rows());
 
    SimpleVector<int>& actmax_ubndd = row.inEqSys() ? getSimpleVecFromRowStochVec(*actmax_eq_ubndd, row.getNode(), row.isLinkingRow())
                                                    : getSimpleVecFromRowStochVec(*actmax_ineq_ubndd, row.getNode(), row.isLinkingRow());
@@ -3500,14 +3509,14 @@ bool PresolveData::updateColBounds(const INDEX& col, double xlow, double xupp) {
    checkBoundsInfeasible(col, xlow, xupp);
 
    bool updated = false;
-   if (xupp < INF_POS && PIPSisLT(xupp, xupp_old)) {
+   if (xupp < INF_POS && xupp < xupp_old) {
       updated = true;
 
       getSimpleVecFromColStochVec(presProb->bux, col) = xupp;
       getSimpleVecFromColStochVec(presProb->ixupp, col) = 1.0;
    }
 
-   if (INF_NEG < xlow && PIPSisLT(xlow_old, xlow)) {
+   if (INF_NEG < xlow && xlow_old < xlow) {
       updated = true;
 
       getSimpleVecFromColStochVec(presProb->blx, col) = xlow;
@@ -3757,13 +3766,13 @@ int PresolveData::countEmptyRowsBDmat() const {
       const SparseStorageDynamic& bmat = getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), child, B_MAT)->getStorageDynamicRef();
       const SparseStorageDynamic& dmat = getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), child, B_MAT)->getStorageDynamicRef();
 
-      for (int row = 0; row < bmat.getM(); ++row) {
+      for (int row = 0; row < bmat.n_rows(); ++row) {
          const INDEX row_INDEX(ROW, child, row, false, EQUALITY_SYSTEM);
          if (bmat.getRowPtr(row).start == bmat.getRowPtr(row).end && getNnzsRow(row_INDEX) != 0)
             ++count;
       }
 
-      for (int row = 0; row < dmat.getM(); ++row) {
+      for (int row = 0; row < dmat.n_rows(); ++row) {
          const INDEX row_INDEX(ROW, child, row, false, INEQUALITY_SYSTEM);
          if (dmat.getRowPtr(row).start == dmat.getRowPtr(row).end && getNnzsRow(row_INDEX) != 0)
             ++count;

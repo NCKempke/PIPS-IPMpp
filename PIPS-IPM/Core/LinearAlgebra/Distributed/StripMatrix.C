@@ -20,13 +20,13 @@ StripMatrix::StripMatrix(bool is_vertical, GeneralMatrix* first, GeneralMatrix* 
       rank(PIPS_MPIgetRank(mpi_comm)), is_view{is_view} {
    assert(first);
 
-   first->getSize(m, n);
+   m = first->n_rows();
+   n = first->n_columns();
 
    nonzeros += first->numberOfNonZeros();
 
    if (last) {
-      long long ml, nl;
-      last->getSize(ml, nl);
+      const auto [ml, nl] = last->n_rows_columns();
       nonzeros += last->numberOfNonZeros();
 
       if (is_vertical) {
@@ -56,8 +56,7 @@ void StripMatrix::addChild(StripMatrix* child) {
 
    nonzeros += child->numberOfNonZeros();
 
-   long long m_, n_;
-   child->getSize(m_, n_);
+   const auto [m_, n_] = child->n_rows_columns();
 
    assert(child->is_vertical == this->is_vertical || child->is_a(kStringGenDummyMatrix));
 
@@ -71,6 +70,18 @@ void StripMatrix::addChild(StripMatrix* child) {
          n += n_;
       }
    }
+}
+
+std::pair<long long, long long> StripMatrix::n_rows_columns() const {
+   return {m, n};
+}
+
+long long StripMatrix::n_rows() const {
+   return m;
+}
+
+long long StripMatrix::n_columns() const {
+   return n;
 }
 
 bool StripMatrix::isEmpty() const {
@@ -636,8 +647,8 @@ GeneralMatrix* StripMatrix::shaveBottom(int n_rows) {
    auto* border = new StripMatrix(false, mat_border, matlink_border, mpi_comm);
 
 #ifndef NDEBUG
-   int mB, nB;
-   border->getSize(mB, nB);
+   const auto [mB, nB] = border->n_rows_columns();
+   (void) nB;
    assert(mB == n_rows);
 #endif
 

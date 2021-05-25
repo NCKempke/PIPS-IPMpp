@@ -205,11 +205,8 @@ void Ma57Solver::solve(int solveType, Vector<double>& rhs_in) {
 void Ma57Solver::solve(GeneralMatrix& rhs_in) {
    auto& rhs = dynamic_cast<DenseMatrix&>(rhs_in);
 
-   int N, NRHS;
-   rhs.getSize(NRHS, N);
-
-   assert(n == N);
-   solve(NRHS, rhs.elements(), nullptr);
+   assert(n == rhs.n_rows());
+   solve(static_cast<int>(rhs.n_columns()), rhs.elements(), nullptr);
 }
 
 void Ma57Solver::solve(int nrhss, double* rhss, int*) {
@@ -235,12 +232,12 @@ bool Ma57Solver::checkErrorsAndReact() {
       case -1 : {
          std::cerr << "ERROR MA57 " << name << ": N out of range or < -1: " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -2 : {
          std::cerr << "ERROR MA57 " << name << ": NNZ out of range or < -1 : " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -3 : {
          if (print_level >= ooqp_print_level_warnings)
@@ -254,7 +251,7 @@ bool Ma57Solver::checkErrorsAndReact() {
             std::cout << " resetting to " << lfact << "\n";
 
          error = true;
-      };
+      }
          break;
       case -4 : {
          if (print_level >= ooqp_print_level_warnings)
@@ -273,39 +270,39 @@ bool Ma57Solver::checkErrorsAndReact() {
       case -5: {
          std::cerr << "WARNING MA57 " << name << ": Small pivot found when pivoting disabled\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -6: {
          std::cerr << "ERROR M527 " << name << ": change of sign of pivots detected at stage even though matrix supposedly definiet" << error_info
                    << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -7: {
          std::cerr << "ERROR MA57 " << name << ": value new int/real array not bigger than old value in MA57ED " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -8: {
          if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": iterative refinement failed to converge\n";
          error = true;
-      };
+      }
          break;
       case -9: {
          std::cerr << "ERROR MA57 " << name << ": error in permutation array pos " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -10: {
          std::cerr << "ERROR MA57 " << name << ": icntl[6] " << error_info << " is out of range\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -11: {
          std::cerr << "ERROR MA57 " << name << ": LRHS " << error_info << " smaller than n " << n << " on solve call\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -12: {
          std::cerr << "ERROR MA57 " << name << ": invalid value " << error_info << " for job\n";
@@ -320,32 +317,32 @@ bool Ma57Solver::checkErrorsAndReact() {
       case -14: {
          std::cerr << "ERROR MA57 " << name << ": MC71AD (icntl > 10) failed inside of MA57DD\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -15: {
          std::cerr << "ERROR MA57 " << name << ": lkeep " << error_info << " less than required" << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -16: {
          std::cerr << "ERROR MA57 " << name << ": NRHS " << error_info << " less than one" << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -17: {
          std::cerr << "ERROR MA57 " << name << ": lwork too small: " << error_info << "\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case -18: {
          std::cerr << "ERROR MA57 " << name << ": METIS ordering requested but METIS was not linked\n";
          MPI_Abort(MPI_COMM_WORLD, -1);
-      };
+      }
          break;
       case 1 : {
          if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": detected " << info[2] << " entries out of range in irowM and jcolM; ignored\n";
-      };
+      }
          break;
       case 2 : {
          if (print_level >= ooqp_print_level_warnings)
@@ -356,23 +353,23 @@ bool Ma57Solver::checkErrorsAndReact() {
       case 3: {
          if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": out of range etries and duplicates detected .. ignoring/summing them up\n";
-      };
+      }
          break;
       case 4: {
          if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": rank deficient matrix detected; apparent rank is " << info[24] << "\n";
-      };
+      }
          break;
       case 5: {
          if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": pivots have different sign when factorizing supposedly definite matrix; " << info[25]
                       << " sign changes detected\n";
-      };
+      }
          break;
       case 8: {
          if (print_level >= ooqp_print_level_warnings)
             std::cout << "WARNING MA57 " << name << ": inf norm of computed solution was zero\n";
-      };
+      }
          break;
       case 10: {
          if (print_level >= ooqp_print_level_warnings)
@@ -385,7 +382,7 @@ bool Ma57Solver::checkErrorsAndReact() {
             std::cout << " resetting to " << lfact << "\n";
 
          error = true;
-      };
+      }
          break;
       case 11: {
          if (print_level >= ooqp_print_level_warnings)
@@ -398,11 +395,11 @@ bool Ma57Solver::checkErrorsAndReact() {
             std::cout << " resetting to " << lifact << "\n";
 
          error = true;
-      };
+      }
          break;
       default : {
          assert(error_flag == 0);
-      };
+      }
          break;
    }
 

@@ -70,7 +70,7 @@ protected:
    double bicg_resnorm{0.0};
    double bicg_relresnorm{0.0};
 
-   /** stores a critical diagonal matrix as a vector */
+   /** - (T_n^-1 \Lambda_n + U_n^-1 \Pi_n)^-1*/
    Vector<double>* nomegaInv{};
 
    DistributedFactory* factory;

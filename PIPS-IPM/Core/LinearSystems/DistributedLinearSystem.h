@@ -205,15 +205,6 @@ public:
    /** y += alpha * Lni^T * x */
    virtual void LniTransMult(DistributedQP* problem, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 
-   /** Methods that use dense matrices U and V to compute the
-    *  terms from the Schur complement.
-    */
-   virtual void allocU(DenseMatrix** Ut, int np);
-
-   virtual void allocV(DenseMatrix** V, int np);
-
-   virtual void computeU_V(DistributedQP* problem, DenseMatrix* U, DenseMatrix* V);
-
    /** Method(s) that use a memory-friendly mechanism for computing
     *  the terms from the Schur Complement
     */
@@ -290,8 +281,8 @@ protected:
    void addLeftBorderTimesDenseColsToResTransp(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
          bool sparse_res, bool sym_res, AbstractMatrix& res) const;
 
-   void addLeftBorderTimesDenseColsToResTranspSparse(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
-         SparseSymmetricMatrix& res) const;
+   static void addLeftBorderTimesDenseColsToResTranspSparse(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
+         SparseSymmetricMatrix& res) ;
 
    void addLeftBorderTimesDenseColsToResTranspDense(const BorderBiBlock& Bl, const double* cols, const int* cols_id, int length_col, int n_cols,
          int n_cols_res, double** res) const;
@@ -300,7 +291,7 @@ protected:
    void finalizeDenseBorderBlocked(BorderLinsys& B, const DenseMatrix& X, DenseMatrix& result, int begin_rows, int end_rows);
 
    /* calculate res -= X0 * BT */
-   void multRightDenseBorderBlocked(BorderBiBlock& BT, const DenseMatrix& X, DenseMatrix& result, int begin_rows, int end_rows);
+   static void multRightDenseBorderBlocked(BorderBiBlock& BT, const DenseMatrix& X, DenseMatrix& result, int begin_rows, int end_rows);
 
    /* calculate res -= (sum_j X0jT * BjT ) */
    void multRightDenseBorderModBlocked(std::vector<BorderMod>& border_mod, DenseMatrix& result, int begin_cols, int end_cols);

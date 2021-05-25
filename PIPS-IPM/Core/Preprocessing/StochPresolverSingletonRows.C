@@ -220,8 +220,8 @@ void StochPresolverSingletonRows::getBoundsAndColFromSingletonRow(const INDEX& r
       else {
          assert(currAmat);
          assert(currBmat);
-         assert(row_index < currAmat->getM());
-         assert(row_index < currBmat->getM());
+         assert(row_index < currAmat->n_rows());
+         assert(row_index < currBmat->n_rows());
          assert((currAmat->getRowPtr(row_index).end - currAmat->getRowPtr(row_index).start == 1) ||
                 (currBmat->getRowPtr(row_index).end - currBmat->getRowPtr(row_index).start == 1));
 
