@@ -1065,6 +1065,21 @@ void MehrotraStrategy::default_monitor(const Problem* problem /* problem */, con
    }
 }
 
+void MehrotraStrategy::notify_from_subject() {
+   const Subject& subject = *getSubject();
+   std::cout << "notify_from_subject\n";
+
+   bicgstab_skipped = subject.getBoolValue("BICG_SKIPPED");
+   if (!bicgstab_skipped)
+      bicgstab_converged = subject.getBoolValue("BICG_CONVERGED");
+   else
+      bicgstab_converged = true;
+   bigcstab_norm_res_rel = subject.getDoubleValue("BICG_RELRESNORM");
+   bicg_iterations = subject.getIntValue("BICG_NITERATIONS");
+   if (!bicgstab_converged)
+      PIPSdebugMessage("BiGCStab had troubles converging\n");
+}
+
 MehrotraStrategy::~MehrotraStrategy() {
    delete[] mu_history;
    delete[] residual_norm_history;

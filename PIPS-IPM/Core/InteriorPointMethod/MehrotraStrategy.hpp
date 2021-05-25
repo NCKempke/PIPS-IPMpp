@@ -8,6 +8,7 @@
 #include <memory>
 #include "Statistics.hpp"
 #include "TerminationStatus.h"
+#include "Observer.h"
 #include "MehrotraStrategyType.h"
 
 class Problem;
@@ -22,7 +23,7 @@ class DistributedFactory;
 
 class Scaler;
 
-class MehrotraStrategy {
+class MehrotraStrategy : public Observer {
 public:
    MehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler = nullptr);
    virtual TerminationStatus
@@ -145,6 +146,7 @@ protected:
    compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
+   void notify_from_subject() override;
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
          double sigma, int i, double mu, int status_code, int level) const;
 };
