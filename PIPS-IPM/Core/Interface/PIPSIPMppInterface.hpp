@@ -78,24 +78,24 @@ private:
    std::vector<double> gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather);
 
 protected:
-   std::unique_ptr<DistributedFactory> factory{};
-   std::unique_ptr<PreprocessFactory> preprocess_factory{};
+   std::unique_ptr<DistributedFactory> factory;
+   std::unique_ptr<PreprocessFactory> preprocess_factory;
 
-   std::unique_ptr<DistributedQP> presolved_problem{};       // possibly presolved problem
-   std::unique_ptr<DistributedQP> dataUnpermNotHier{}; // data after presolve before permutation, scaling and hierarchical data
-   std::unique_ptr<DistributedQP> original_problem{};   // original data
-   std::unique_ptr<DistributedVariables> variables{};
-   std::unique_ptr<DistributedVariables> unscaleUnpermNotHierVars{};
-   std::unique_ptr<DistributedVariables> postsolved_variables{};
+   std::unique_ptr<DistributedQP> presolved_problem; // possibly presolved problem
+   std::unique_ptr<DistributedQP> dataUnpermNotHier; // data after presolve before permutation, scaling and hierarchical data
+   std::unique_ptr<DistributedQP> original_problem; // original data
+   std::unique_ptr<DistributedVariables> variables;
+   std::unique_ptr<DistributedVariables> unscaleUnpermNotHierVars;
+   std::unique_ptr<DistributedVariables> postsolved_variables;
 
-   std::unique_ptr<DistributedResiduals> residuals{};
-   std::unique_ptr<DistributedResiduals> unscaleUnpermNotHierResids{};
-   std::unique_ptr<DistributedResiduals> postsolvedResids{};
+   std::unique_ptr<DistributedResiduals> residuals;
+   std::unique_ptr<DistributedResiduals> unscaleUnpermNotHierResids;
+   std::unique_ptr<DistributedResiduals> postsolvedResids;
 
-   std::unique_ptr<Presolver> presolver{};
-   std::unique_ptr<Postsolver> postsolver{};
-   std::unique_ptr<Scaler> scaler{};
-   std::unique_ptr<InteriorPointMethod> solver{};
+   std::unique_ptr<Presolver> presolver;
+   std::unique_ptr<Postsolver> postsolver;
+   std::unique_ptr<Scaler> scaler;
+   std::unique_ptr<InteriorPointMethod> solver;
 
    MPI_Comm comm = MPI_COMM_NULL;
    const int my_rank = -1;

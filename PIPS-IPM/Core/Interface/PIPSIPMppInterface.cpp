@@ -18,8 +18,6 @@
 #include <functional>
 #include <memory>
 
-PIPSIPMppInterface::~PIPSIPMppInterface() = default;
-
 PIPSIPMppInterface::PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm comm, ScalerType
 scaler_type, PresolverType presolver_type, const std::string& settings) : comm(comm), my_rank(PIPS_MPIgetRank()) {
    factory = std::make_unique<DistributedFactory>(tree, comm);
@@ -132,6 +130,8 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
    if (my_rank == 0)
       std::cout << "---reading time (in sec.): " << t1 - t0 << "\n";
 }
+
+PIPSIPMppInterface::~PIPSIPMppInterface() = default;;
 
 void PIPSIPMppInterface::run() {
    if (my_rank == 0)
