@@ -75,17 +75,8 @@ public:
    SmartPointer<Vector<double> > slack_upper_bound_gap;
    SmartPointer<Vector<double> > slack_upper_bound_gap_dual;
 
-   /** constructor in which the data and variable pointers are set to
-       point to the given arguments */
-   Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in,
-         Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in,
-         Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in);
-   Variables() {};
    Variables(const Variables& vars);
-
-   [[nodiscard]] double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
-
-   void push_slacks_from_bound(double tol, double amount);
+   Variables() { };
 
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    double mu();
@@ -146,8 +137,7 @@ public:
    /** sets components of (u,t,v,w) to alpha and of (lambda,pi,phi,gamma) to beta */
    void push_to_interior(double alpha, double beta);
 
-   /** add alpha to components of (u,t,v,w) and beta to components of
-       (lambda,pi,phi,gamma) */
+   /** add alpha to components of (u,t,v,w) and beta to components of (lambda,pi,phi,gamma) */
    void shift_bound_variables(double alpha, double beta);
 
    double violation();

@@ -7,55 +7,6 @@
 #include "Problem.h"
 #include "MpsReader.h"
 
-Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in,
-      Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in,
-      Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in) {
-   SpReferTo(primals, x_in);
-   SpReferTo(slacks, s_in);
-   SpReferTo(equality_duals, y_in);
-   SpReferTo(inequality_duals, z_in);
-   SpReferTo(primal_lower_bound_gap, v_in);
-   SpReferTo(primal_upper_bound_gap_dual, phi_in);
-   SpReferTo(primal_upper_bound_gap, w_in);
-   SpReferTo(primal_lower_bound_gap_dual, gamma_in);
-   SpReferTo(slack_lower_bound_gap, t_in);
-   SpReferTo(slack_lower_bound_gap_dual, lambda_in);
-   SpReferTo(slack_upper_bound_gap, u_in);
-   SpReferTo(slack_upper_bound_gap_dual, pi_in);
-   SpReferTo(ixlow, ixlow_in);
-   SpReferTo(ixupp, ixupp_in);
-   SpReferTo(iclow, iclow_in);
-   SpReferTo(icupp, icupp_in);
-
-   nx = primals->length();
-   my = equality_duals->length();
-   mz = inequality_duals->length();
-
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   assert(nx == ixlow->length() || 0 == ixlow->length());
-   assert(mz == iclow->length() || 0 == iclow->length());
-   assert(mz == icupp->length() || 0 == icupp->length());
-
-   nxlow = ixlow->number_nonzeros();
-   nxupp = ixupp->number_nonzeros();
-   mclow = iclow->number_nonzeros();
-   mcupp = icupp->number_nonzeros();
-   number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
-
-   assert(mz == slacks->length());
-   assert(nx == primal_lower_bound_gap->length() || (0 == primal_lower_bound_gap->length() && nxlow == 0));
-   assert(nx == primal_lower_bound_gap_dual->length() || (0 == primal_lower_bound_gap_dual->length() && nxlow == 0));
-
-   assert(nx == primal_upper_bound_gap->length() || (0 == primal_upper_bound_gap->length() && nxupp == 0));
-   assert(nx == primal_upper_bound_gap_dual->length() || (0 == primal_upper_bound_gap_dual->length() && nxupp == 0));
-
-   assert(mz == slack_lower_bound_gap->length() || (0 == slack_lower_bound_gap->length() && mclow == 0));
-   assert(mz == slack_lower_bound_gap_dual->length() || (0 == slack_lower_bound_gap_dual->length() && mclow == 0));
-
-   assert(mz == slack_upper_bound_gap->length() || (0 == slack_upper_bound_gap->length() && mcupp == 0));
-   assert(mz == slack_upper_bound_gap_dual->length() || (0 == slack_upper_bound_gap_dual->length() && mcupp == 0));
-}
-
 Variables::Variables(const Variables& vars) {
    ixlow = SmartPointer<Vector<double> >(vars.ixlow->cloneFull());
    ixupp = SmartPointer<Vector<double> >(vars.ixupp->cloneFull());
@@ -90,35 +41,6 @@ Variables::Variables(const Variables& vars) {
    inequality_duals = SmartPointer<Vector<double> >(vars.inequality_duals->cloneFull());
    number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
 }
-
-double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
-   assert(0 < tol);
-
-   double sum_small_distance = 0.0;
-   int n_close = 0;
-   primal_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixlow);
-   primal_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixupp);
-   slack_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*icupp);
-   slack_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*iclow);
-
-   if (n_close == 0)
-      return std::numeric_limits<double>::infinity();
-   else
-      return sum_small_distance / (double) n_close;
-}
-
-
-void Variables::push_slacks_from_bound(double tol, double amount) {
-   if (nxlow > 0)
-      primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*ixlow);
-   if (nxupp > 0)
-      primal_upper_bound_gap->pushAwayFromZero(tol, amount, &*ixupp);
-   if (mclow > 0)
-      slack_lower_bound_gap->pushAwayFromZero(tol, amount, &*iclow);
-   if (mcupp > 0)
-      slack_upper_bound_gap->pushAwayFromZero(tol, amount, &*icupp);
-}
-
 
 double Variables::mu() {
    double mu = 0.;
