@@ -42,14 +42,20 @@ public:
    ScenarioTests() {
       if (const char* gams_env = std::getenv("GAMSSYSDIR")) {
          if (!gams_env)
-            std::cout << "For this test suite to run please set your environment variable GAMSSYSDIR pointing to the gams directory\n";
+            std::cout
+               << "For this test suite to run please set your environment variable GAMSSYSDIR pointing to the gams directory\n";
          gams_path = std::string(gams_env);
       }
    }
 
    std::string gams_path;
 
-   double solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step);
+   void solveInstanceAndCheckResult(double expected_result, const std::string& path, size_t n_blocks,
+      PresolverType presolver_type, ScalerType scaler_type, MehrotraHeuristic primal_dual_type);
+
+   [[nodiscard]] std::pair<double, std::string>
+   solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler,
+      MehrotraHeuristic primal_dual_type) const;
 };
 
 std::vector<Instance> getInstances() {
@@ -59,8 +65,9 @@ std::vector<Instance> getInstances() {
 }
 
 
-double
-ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver, ScalerType scaler, bool primal_dual_step) {
+std::pair<double, std::string>
+ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, PresolverType presolver,
+   ScalerType scaler, MehrotraHeuristic primal_dual_type) const {
    testing::internal::CaptureStdout();
 
    gmspips_reader reader(path_instance, gams_path, n_blocks);
@@ -70,7 +77,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 
    double result = std::numeric_limits<double>::infinity();
 
-   PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_step ? MehrotraHeuristic::PRIMAL_DUAL : MehrotraHeuristic::PRIMAL, MPI_COMM_WORLD, scaler, presolver);
+   PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_type, MPI_COMM_WORLD, scaler, presolver);
    try {
       pipsIpm.run();
       result = pipsIpm.getObjective();
@@ -78,23 +85,29 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
    catch (...) {
       EXPECT_TRUE(false) << " PIPS threw while solving " << path_instance;
    }
-   testing::internal::GetCapturedStdout();
-   return result;
+   std::string output = testing::internal::GetCapturedStdout();
+   return {result, output};
 };
 
-TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {
-   const std::string& problem_paths(GetParam().name);
-   const size_t& n_blocks(GetParam().n_blocks);
-   const double& result(GetParam().result);
+void ScenarioTests::solveInstanceAndCheckResult(double expected_result, const std::string& path, size_t n_blocks,
+   PresolverType presolver_type, ScalerType scaler_type, MehrotraHeuristic primal_dual_type) {
 
    ASSERT_GE(world_size, 1);
 
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, true);
+   const auto[result_solve, output_solve] = solveInstance(path, n_blocks, presolver_type, scaler_type, primal_dual_type);
 
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   EXPECT_NEAR(expected_result, result_solve, solution_tol) << " while solving " << path << "\nOutput_run: " << output_solve << "\n";
+}
+
+TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {
+   const std::string& problem_paths(GetParam().name);
+   const size_t& n_blocks(GetParam().n_blocks);
+   const double& result(GetParam().result);
+
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, MehrotraHeuristic::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
@@ -102,15 +115,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   ASSERT_GE(world_size, 1);
-
-   /* skip test if too many mpi procs were run for this example */
-   if (static_cast<size_t>(world_size) >= n_blocks)
-      GTEST_SKIP();
-
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, true);
-
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraHeuristic::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
@@ -118,14 +123,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   ASSERT_GE(world_size, 1);
-
-   if (static_cast<size_t>(world_size) >= n_blocks)
-      GTEST_SKIP();
-
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, true);
-
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
@@ -133,14 +131,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   ASSERT_GE(world_size, 1);
-
-   if (static_cast<size_t>(world_size) >= n_blocks)
-      GTEST_SKIP();
-
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, true);
-
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL_DUAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallNoSettings) {
@@ -148,14 +139,7 @@ TEST_P(ScenarioTests, TestGamssmallNoSettings) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   ASSERT_GE(world_size, 1);
-
-   if (static_cast<size_t>(world_size) >= n_blocks)
-      GTEST_SKIP();
-
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, false);
-
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallPresolve) {
@@ -163,14 +147,7 @@ TEST_P(ScenarioTests, TestGamssmallPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   ASSERT_GE(world_size, 1);
-
-   if (static_cast<size_t>(world_size) >= n_blocks)
-      GTEST_SKIP();
-
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, false);
-
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, MehrotraHeuristic::PRIMAL);
 };
 
 TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
@@ -178,14 +155,7 @@ TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
    const size_t& n_blocks(GetParam().n_blocks);
    const double& result(GetParam().result);
 
-   ASSERT_GE(world_size, 1);
-
-   if (static_cast<size_t>(world_size) >= n_blocks)
-      GTEST_SKIP();
-
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, false);
-
-   EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
+   solveInstanceAndCheckResult(result, root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, MehrotraHeuristic::PRIMAL);
 };
 
 INSTANTIATE_TEST_SUITE_P(InstantiateTestsWithAllGamssmallInstances, ScenarioTests, ::testing::ValuesIn(getInstances()));
