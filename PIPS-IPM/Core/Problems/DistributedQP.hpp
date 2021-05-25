@@ -34,61 +34,61 @@ public:
 
    const DistributedTree* stochNode{};
 
-   Permutation getLinkVarsPermInv() const;
+   [[nodiscard]] Permutation getLinkVarsPermInv() const;
 
-   Permutation getLinkConsEqPermInv() const;
+   [[nodiscard]] Permutation getLinkConsEqPermInv() const;
 
-   Permutation getLinkConsIneqPermInv() const;
+   [[nodiscard]] Permutation getLinkConsIneqPermInv() const;
 
 public:
-   int getLocalnx() const;
+   [[nodiscard]] int getLocalnx() const;
 
-   int getLocalmy() const;
+   [[nodiscard]] int getLocalmy() const;
 
-   int getLocalmyl() const;
+   [[nodiscard]] int getLocalmyl() const;
 
-   int getLocalmz() const;
+   [[nodiscard]] int getLocalmz() const;
 
-   int getLocalmzl() const;
+   [[nodiscard]] int getLocalmzl() const;
 
    int getLocalSizes(int& nx, int& my, int& mz, int& myl, int& mzl) const;
 
    int getLocalNnz(int& nnzQ, int& nnzB, int& nnzD);
 
-   int getN0LinkVars() { return n0LinkVars; }
+   [[nodiscard]] int getN0LinkVars() const { return n0LinkVars; }
 
    // returns upper bound on number of non-zeroes in Schur complement
-   int getSchurCompMaxNnz();
+   int getSchurCompMaxNnz() const;
 
    // distributed version
-   int getSchurCompMaxNnzDist(int blocksStart, int blocksEnd);
+   int getSchurCompMaxNnzDist(int blocksStart, int blocksEnd) const;
 
-   bool exploitingLinkStructure() { return useLinkStructure; };
+   [[nodiscard]] bool exploitingLinkStructure() const { return useLinkStructure; };
 
-   SparseSymmetricMatrix* createSchurCompSymbSparseUpper();
+   SparseSymmetricMatrix* createSchurCompSymbSparseUpper() const;
 
    // distributed version
-   SparseSymmetricMatrix* createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd);
+   SparseSymmetricMatrix* createSchurCompSymbSparseUpperDist(int blocksStart, int blocksEnd) const;
 
-   SparseSymmetricMatrix& getLocalQ();
+   const SparseSymmetricMatrix& getLocalQ() const;
 
-   SparseMatrix& getLocalCrossHessian();
+   const SparseMatrix& getLocalCrossHessian() const;
 
-   SparseMatrix& getLocalA();
+   const SparseMatrix& getLocalA() const;
 
-   SparseMatrix& getLocalB();
+   const SparseMatrix& getLocalB() const;
 
-   SparseMatrix& getLocalF();
+   const SparseMatrix& getLocalF() const;
 
-   SparseMatrix& getLocalC();
+   const SparseMatrix& getLocalC() const;
 
-   SparseMatrix& getLocalD();
+   const SparseMatrix& getLocalD() const;
 
-   SparseMatrix& getLocalG();
+   const SparseMatrix& getLocalG() const;
 
-   StripMatrix& getLocalGBorder();
+   const StripMatrix& getLocalGBorder() const;
 
-   StripMatrix& getLocalFBorder();
+   const StripMatrix& getLocalFBorder() const;
 
 
    void printLinkVarsStats();
@@ -165,7 +165,7 @@ public:
    // start and end positions for local 2-links in Schur complement that are owned by
    // blocks greater equal blocksStart and smaller blocksEnd are considered
    void getSCrangeMarkersMy(int blocksStart, int blocksEnd, int& local2linksStartEq, int& local2linksEndEq, int& local2linksStartIneq,
-         int& local2linksEndIneq);
+         int& local2linksEndIneq) const;
 
    bool isHierarchySparseTopLayerOnlyTwolinks() const {
       return (pipsipmpp_options::get_bool_parameter("HIERARCHICAL")) && (pipsipmpp_options::get_int_parameter("HIERARCHICAL_APPROACH_N_LAYERS") > 1) &&
@@ -266,10 +266,12 @@ private:
    Permutation linkVarsPermutation;
    Permutation linkConsPermutationA;
    Permutation linkConsPermutationC;
-   std::vector<bool> isSCrowLocal;
-   std::vector<bool> isSCrowMyLocal;
 
-   void initDistMarker(int blocksStart, int blocksEnd);
+   /* get initialized lazily */
+   mutable std::vector<bool> isSCrowLocal;
+   mutable std::vector<bool> isSCrowMyLocal;
+
+   void initDistMarker(int blocksStart, int blocksEnd) const;
 
    void permuteLinkStructureDetection(const Permutation& perm_A, const Permutation& perm_C);
 

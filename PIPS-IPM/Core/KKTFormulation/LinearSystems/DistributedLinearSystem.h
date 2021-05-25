@@ -44,22 +44,22 @@ public:
        * [ C_i 0   0     0   ]             [  F_i    0     0   ]
        *                                   [  G_i    0     0   ]
        */
-      T& R;
-      T& A;
-      T& C;
-      T& F;
-      T& G;
+      const T& R;
+      const T& A;
+      const T& C;
+      const T& F;
+      const T& G;
 
       /* n_empty_rows gives the distance between RAC and F,G blocks */
       int n_empty_rows;
 
-      bool isEmpty() const;
+      [[nodiscard]] bool isEmpty() const;
 
-      RACFG_BLOCK(T& R, T& A, T& C, int n_empty_rows, T& F, T& G) : has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G}, n_empty_rows{n_empty_rows} {
+      RACFG_BLOCK(const T& R, const T& A, const T& C, int n_empty_rows, const T& F, const T& G) : has_RAC{true}, R{R}, A{A}, C{C}, F{F}, G{G}, n_empty_rows{n_empty_rows} {
          assert(n_empty_rows >= 0);
       };
 
-      RACFG_BLOCK(int n_empty_rows, T& F, T& G, bool use_local_RAC) : use_local_RAC{use_local_RAC}, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy},
+      RACFG_BLOCK(int n_empty_rows, const T& F, const T& G, bool use_local_RAC) : use_local_RAC{use_local_RAC}, has_RAC{false}, R{*dummy}, A{*dummy}, C{*dummy},
             F{F}, G{G}, n_empty_rows{n_empty_rows} { assert(n_empty_rows >= 0); };
 
       RACFG_BLOCK(const RACFG_BLOCK<T>& block) : use_local_RAC{block.use_local_RAC}, has_RAC{block.has_RAC}, R{block.R}, A{block.A}, C{block.C},
@@ -116,32 +116,28 @@ public:
 
    ~DistributedLinearSystem() override = default;
 
-   void factorize(Problem* problem, Variables* variables) override;
+   void factorize(Variables& variables) override;
 
    void factorize_with_correct_inertia() override;
 
    virtual void
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) = 0;
 
-   virtual void factor2(DistributedQP* problem, Variables* variables) = 0;
+   virtual void factor2() = 0;
 
-   virtual void assembleKKT(DistributedQP* problem, Variables* variables) = 0;
+   virtual void assembleKKT() = 0;
 
-   virtual void allreduceAndFactorKKT(DistributedQP* problem, Variables* variables) = 0;
+   virtual void allreduceAndFactorKKT() = 0;
 
-   virtual void Lsolve(DistributedQP* problem, Vector<double>& x) = 0;
+   virtual void Lsolve(Vector<double>& x) = 0;
 
-   virtual void Dsolve(DistributedQP* problem, Vector<double>& x) = 0;
+   virtual void Dsolve(Vector<double>& x) = 0;
 
-   virtual void Ltsolve(DistributedQP* problem, Vector<double>& x) = 0;
+   virtual void Ltsolve(Vector<double>& x) = 0;
 
-   virtual void Ltsolve2(DistributedQP* problem, DistributedVector<double>& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
+   virtual void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool use_local_RAC) = 0;
 
    void solveCompressed(Vector<double>& rhs) override;
-
-   void joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const override;
-
-   void separateVars(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& variables_in) const override;
 
    virtual void deleteChildren() = 0;
 
@@ -154,7 +150,7 @@ protected:
    int locmz{};
    int locmzl{};
 
-   DistributedQP* data{};
+   const DistributedQP* data{};
 
    int iAmDistrib;
 
@@ -187,9 +183,9 @@ protected:
    int allocateAndZeroBlockedComputationsBuffer(int buffer_m, int buffer_n);
 
 public:
-   virtual void addLnizi(DistributedQP* problem, Vector<double>& z0, Vector<double>& zi);
+   virtual void addLnizi(Vector<double>& z0, Vector<double>& zi);
 
-   virtual void addLniziLinkCons(DistributedQP*/*problem*/, Vector<double>& /*z0*/, Vector<double>& /*zi*/, bool /*use_local_RAC*/) {
+   virtual void addLniziLinkCons(Vector<double>& /*z0*/, Vector<double>& /*zi*/, bool /*use_local_RAC*/) {
       assert(false && "not implemented here");
    };
 
@@ -203,14 +199,14 @@ public:
          int /*end_cols*/, int /*n_empty_rows_inner_border*/) { assert(false && "not implemented here"); };
 
    /** y += alpha * Lni^T * x */
-   virtual void LniTransMult(DistributedQP* problem, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
+   virtual void LniTransMult(SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 
    /** Method(s) that use a memory-friendly mechanism for computing
     *  the terms from the Schur Complement
     */
-   virtual void addTermToDenseSchurCompl(DistributedQP* problem, DenseSymmetricMatrix& SC);
+   virtual void addTermToDenseSchurCompl(DenseSymmetricMatrix& SC);
 
-   virtual void addTermToSchurComplBlocked(DistributedQP* /*problem*/, bool /*sparseSC*/, SymmetricMatrix& /*SC*/, bool /*use_local_RAC*/,
+   virtual void addTermToSchurComplBlocked(bool /*sparseSC*/, SymmetricMatrix& /*SC*/, bool /*use_local_RAC*/,
          int /*n_empty_rows_inner_border*/) { assert(0 && "not implemented here"); };
 
    virtual void
@@ -236,12 +232,12 @@ public:
    void addBiTLeftKiDenseToResBlockedParallelSolvers(bool sparse_res, bool sym_res, const BorderBiBlock& border_left_transp,
          /* const */ DenseMatrix& BT, AbstractMatrix& result, int begin_rows_res, int end_rows_res);
 
-   virtual void addTermToSparseSchurCompl(DistributedQP* /*problem*/, SparseSymmetricMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
+   virtual void addTermToSparseSchurCompl(SparseSymmetricMatrix& /*SC*/ ) { assert(0 && "not implemented here"); };
 
    /** Used in the iterative refinement for the dense Schur complement systems
     * Computes res += [0 A^T C^T ]*inv(KKT)*[0;A;C] x
     */
-   virtual void addTermToSchurResidual(DistributedQP* problem, SimpleVector<double>& res, SimpleVector<double>& x);
+   virtual void addTermToSchurResidual(SimpleVector<double>& res, SimpleVector<double>& x);
 
    // TODO only compute bottom left part for symmetric matrices
    /* compute result += Bl^T K^-1 Br where K is our own linear system */

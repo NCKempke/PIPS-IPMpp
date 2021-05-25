@@ -19,9 +19,9 @@ sLinsysRootBordered::sLinsysRootBordered(DistributedFactory* factory_, Distribut
    if (apply_regularization) {
       assert(false && "TODO : regularization not implemented for hierarchical approach currently");
    }
-   kkt.reset(createKKT(prob_));
+   kkt.reset(createKKT());
 
-   solver.reset(createSolver(prob_, kkt.get()));
+   solver.reset(createSolver(kkt.get()));
 }
 
 void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization,
@@ -49,18 +49,18 @@ void sLinsysRootBordered::add_regularization_local_kkt(double primal_regularizat
    }
 }
 
-void sLinsysRootBordered::finalizeKKT(/* const */DistributedQP* prob, Variables*) {
+void sLinsysRootBordered::finalizeKKT() {
    /* Add corner block
     * [ Q0   A0^T  F0T   G0T  ]
     * [ A0   xReg   0     0   ]
     * [ F0    0   xReg_l  0   ]
     * [ G0    0     0   OmN+1 ]
     */
-   assert(prob->isHierarchyRoot());
+   assert(data->isHierarchyRoot());
 
-   const auto& F0 = *dynamic_cast<const BorderedMatrix&>(*prob->A).bottom_left_block;
-   const auto& G0 = *dynamic_cast<const BorderedMatrix&>(*prob->C).bottom_left_block;
-   const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymmetricMatrix&>(*prob->Q).top_left_block);
+   const auto& F0 = *dynamic_cast<const BorderedMatrix&>(*data->A).bottom_left_block;
+   const auto& G0 = *dynamic_cast<const BorderedMatrix&>(*data->C).bottom_left_block;
+   const auto& Q0 = dynamic_cast<const SparseSymmetricMatrix&>(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).top_left_block);
 
    auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
 
@@ -123,9 +123,9 @@ void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<
    if (PIPS_MPIgetRank(mpiComm) != 0)
       b0.setToZero();
 
-   BorderLinsys border(*dynamic_cast<BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<BorderedMatrix&>(*data->A).border_left,
-         *dynamic_cast<BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<BorderedMatrix&>(*data->A).border_bottom,
-         *dynamic_cast<BorderedMatrix&>(*data->C).border_bottom);
+   BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
+         *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
+         *dynamic_cast<const BorderedMatrix&>(*data->C).border_bottom);
 
    children[0]->addBorderTimesRhsToB0(*sol_inner, b0, border);
 
@@ -133,9 +133,9 @@ void sLinsysRootBordered::computeSchurCompRightHandSide(const DistributedVector<
 }
 
 void sLinsysRootBordered::computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& b0, bool) {
-   BorderLinsys border(*dynamic_cast<BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<BorderedMatrix&>(*data->A).border_left,
-         *dynamic_cast<BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<BorderedMatrix&>(*data->A).border_bottom,
-         *dynamic_cast<BorderedMatrix&>(*data->C).border_bottom);
+   BorderLinsys border(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
+         *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
+         *dynamic_cast<const BorderedMatrix&>(*data->C).border_bottom);
 
    children[0]->addBorderX0ToRhs(rhs_inner, b0, border);
 }
@@ -146,7 +146,7 @@ void sLinsysRootBordered::computeInnerSystemRightHandSide(DistributedVector<doub
  *    [ B^T K0 ] [ x_0 ] = [ b_0 ]
  */
 /* forms right hand side for schur system \tilda{b_0} = b_0 - B^T * K^-1 b and in doing so solves K^-1 b */
-void sLinsysRootBordered::Lsolve(DistributedQP*, Vector<double>& x) {
+void sLinsysRootBordered::Lsolve(Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
@@ -163,7 +163,7 @@ void sLinsysRootBordered::Lsolve(DistributedQP*, Vector<double>& x) {
 }
 
 /* does Schur Complement solve and computes SC x_0 = \tilda{b_0} = ( K0 - B^T K B ) x_0 */
-void sLinsysRootBordered::Dsolve(DistributedQP*, Vector<double>& x) {
+void sLinsysRootBordered::Dsolve(Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
@@ -177,7 +177,7 @@ void sLinsysRootBordered::Dsolve(DistributedQP*, Vector<double>& x) {
 }
 
 /* back substitute x_0 : K x = b - B x_0 and solve for x */
-void sLinsysRootBordered::Ltsolve(DistributedQP*, Vector<double>& x) {
+void sLinsysRootBordered::Ltsolve(Vector<double>& x) {
    assert(is_hierarchy_root);
    assert(children.size() == 1);
 
@@ -195,7 +195,7 @@ void sLinsysRootBordered::Ltsolve(DistributedQP*, Vector<double>& x) {
 }
 
 /* create kkt used to store Schur Complement of border layer */
-SymmetricMatrix* sLinsysRootBordered::createKKT(DistributedQP*) {
+SymmetricMatrix* sLinsysRootBordered::createKKT() {
    assert(stochNode->mz() == -1);
    //assert(locmy >= 0);
    const int n = locnx + locmyl + locmzl;
@@ -206,7 +206,7 @@ SymmetricMatrix* sLinsysRootBordered::createKKT(DistributedQP*) {
    return new DenseSymmetricMatrix(n);
 }
 
-void sLinsysRootBordered::assembleLocalKKT(DistributedQP* prob) {
+void sLinsysRootBordered::assembleLocalKKT() {
    assert(allreduce_kkt);
    assert(is_hierarchy_root);
    assert(!hasSparseKkt);
@@ -215,23 +215,23 @@ void sLinsysRootBordered::assembleLocalKKT(DistributedQP* prob) {
    // assemble complete inner KKT from children
    auto& SC = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
 
-   assert(prob->children.size() == 1);
+   assert(data->children.size() == 1);
 
-   BorderLinsys B(*dynamic_cast<BorderedSymmetricMatrix&>(*prob->Q).border_vertical, *dynamic_cast<BorderedMatrix&>(*prob->A).border_left,
-         *dynamic_cast<BorderedMatrix&>(*prob->C).border_left, 0, *dynamic_cast<BorderedMatrix&>(*prob->A).border_bottom,
-         *dynamic_cast<BorderedMatrix&>(*prob->C).border_bottom);
+   BorderLinsys B(*dynamic_cast<const BorderedSymmetricMatrix&>(*data->Q).border_vertical, *dynamic_cast<const BorderedMatrix&>(*data->A).border_left,
+         *dynamic_cast<const BorderedMatrix&>(*data->C).border_left, 0, *dynamic_cast<const BorderedMatrix&>(*data->A).border_bottom,
+         *dynamic_cast<const BorderedMatrix&>(*data->C).border_bottom);
    std::vector<BorderMod> border_mod;
 
    children[0]->addBlTKiInvBrToRes(SC, B, B, border_mod, true, false);
 }
 
 /* since we have only one child we will not allreduce anything */
-void sLinsysRootBordered::reduceKKT(DistributedQP*) {
+void sLinsysRootBordered::reduceKKT() {
    if (iAmDistrib)
       allreduceMatrix(*kkt, false, true, mpiComm);
 }
 
-DoubleLinearSolver* sLinsysRootBordered::createSolver(DistributedQP*, const SymmetricMatrix* kktmat_) {
+DoubleLinearSolver* sLinsysRootBordered::createSolver(const SymmetricMatrix* kktmat_) {
    const SolverTypeDense solver = pipsipmpp_options::get_solver_dense();
    const auto* kktmat = dynamic_cast<const DenseSymmetricMatrix*>(kktmat_);
 

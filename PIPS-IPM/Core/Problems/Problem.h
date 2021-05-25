@@ -78,7 +78,7 @@ public:
 
    virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const = 0;
 
-   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) = 0;
+   virtual void hessian_diagonal(Vector<double>& hessian_diagonal) const = 0;
 
    /** insert the constraint matrix A into the matrix M for the
     fundamental linear system, where M is stored as a GenMatrix */

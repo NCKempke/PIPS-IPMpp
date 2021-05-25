@@ -216,7 +216,7 @@ void DenseMatrix::scalarMult(double num) {
  * starting at mul_start and the results gets added starting at res_start */
 void
 DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseMatrix& res,
-      double alpha, /* const */ SparseMatrix& mat) const {
+      double alpha, const SparseMatrix& mat) const {
    assert(0 <= col_offset_this);
    assert(0 <= row_start);
    assert(row_start <= row_end);
@@ -231,7 +231,7 @@ DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double b
    assert(col_offset_result <= res.mStorage->n && col_offset_result + mat_n <= res.mStorage->n);
    assert(n_rows + row_start_res <= res.mStorage->m);
 
-   SparseStorage& mat_tp = mat.getTranspose().getStorageRef();
+   const SparseStorage& mat_tp = mat.getTranspose().getStorageRef();
    for (int j = 0; j < n_rows; ++j) {
       for (int i = 0; i < mat_n; ++i) {
          if (beta != 1.0)

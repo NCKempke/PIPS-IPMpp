@@ -91,7 +91,7 @@ public:
    /* compute beta * res += alpha * this * mat where mat gets multiplied to the submatrix
     * starting at mul_start and the results gets added starting at res_start */
    void multMatAt(int row_start, int row_end, int col_offset_this, double beta, int row_start_res, int col_offset_result, DenseMatrix& res,
-         double alpha, /* const */ SparseMatrix& mat) const;
+         double alpha, const SparseMatrix& mat) const;
 
    /* adds mat to this starting at row_0 col_0 */
    void addMatAt(const SparseMatrix& mat, int mat_row_start, int mat_row_end, int this_row_0, int this_col_0);

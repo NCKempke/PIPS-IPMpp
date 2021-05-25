@@ -50,7 +50,7 @@ public:
    virtual void hessian_multiplication(double beta, Vector<double>& y, double alpha, const Vector<double>& x) const override;
 
    /** extract the diagonal of the Hessian and put it in the Vector<double> hessian_diagonal */
-   void hessian_diagonal(Vector<double>& hessian_diagonal) override;
+   void hessian_diagonal(Vector<double>& hessian_diagonal) const override;
 
    void createScaleFromQ();
 

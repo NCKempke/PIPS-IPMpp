@@ -24,7 +24,7 @@ extern int gOuterBiCGFails;
 
 static std::vector<int> bicgIters;
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
+LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
       innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")),
       outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
@@ -32,23 +32,22 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool 
       outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
       outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
       outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-      xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
+      xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")), data{problem} {
 
    assert(factory_);
-   assert(problem);
 
-   nx = problem->nx;
-   my = problem->my;
-   mz = problem->mz;
-   ixlow = problem->ixlow;
-   ixupp = problem->ixupp;
-   iclow = problem->iclow;
-   icupp = problem->icupp;
+   nx = data.nx;
+   my = data.my;
+   mz = data.mz;
+   ixlow = data.ixlow;
+   ixupp = data.ixupp;
+   iclow = data.iclow;
+   icupp = data.icupp;
 
-   nxlow = problem->nxlow;
-   nxupp = problem->nxupp;
-   mclow = problem->mclow;
-   mcupp = problem->mcupp;
+   nxlow = data.nxlow;
+   nxupp = data.nxupp;
+   mclow = data.mclow;
+   mcupp = data.mcupp;
 
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {
@@ -72,7 +71,7 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool 
    }
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
+LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
       Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
       create_iter_ref_vecs) {
@@ -85,11 +84,11 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, Vecto
    rhs = rhs_;
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem) : LinearSystem(factory_, problem, true) {
+LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem) : LinearSystem(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
       primal_diagonal = factory->make_primal_vector();
       dq = factory->make_primal_vector();
-      problem->hessian_diagonal(*dq);
+      data.hessian_diagonal(*dq);
    }
 
    nomegaInv = factory->make_inequalities_dual_vector();
@@ -199,14 +198,14 @@ static bool isZero(double val, LinearSystem::IterativeSolverSolutionStatus& stat
    return false;
 }
 
-void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
+void LinearSystem::factorize(Variables& vars) {
 
-   assert(vars->valid_non_zero_pattern());
-   assert(vars->valid_non_zero_pattern());
+   assert(vars.valid_non_zero_pattern());
+   assert(vars.valid_non_zero_pattern());
 
-   put_barrier_parameter(vars->mu());
+   put_barrier_parameter(vars.mu());
 
-   computeDiagonals(*vars->t, *vars->lambda, *vars->u, *vars->pi, *vars->v, *vars->gamma, *vars->w, *vars->phi);
+   computeDiagonals(*vars.t, *vars.lambda, *vars.u, *vars.pi, *vars.v, *vars.gamma, *vars.w, *vars.phi);
 
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
@@ -302,141 +301,130 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
    nomegaInv->negate();
 }
 
-void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* residuals, Variables* step) {
-   assert(variables->valid_non_zero_pattern());
-   assert(residuals->valid_non_zero_pattern());
+void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& step) {
+   assert(variables.valid_non_zero_pattern());
+   assert(residuals.valid_non_zero_pattern());
 
    /*** compute rX ***/
    /* rx = rQ */
-   step->x->copyFrom(*residuals->lagrangian_gradient);
+   step.x->copyFrom(*residuals.lagrangian_gradient);
    if (nxlow > 0) {
-      Vector<double>& gamma_by_v = *step->v;
-      gamma_by_v.copyFrom(*variables->gamma);
-      gamma_by_v.divideSome(*variables->v, *ixlow);
+      Vector<double>& gamma_by_v = *step.v;
+      gamma_by_v.copyFrom(*variables.gamma);
+      gamma_by_v.divideSome(*variables.v, *ixlow);
 
       /* rx = rQ + Gamma/V rv */
-      step->x->axzpy(1.0, gamma_by_v, *residuals->rv);
+      step.x->axzpy(1.0, gamma_by_v, *residuals.rv);
       /* rx = rQ + Gamma/V rv + rGamma/V */
-      step->x->axdzpy(1.0, *residuals->rgamma, *variables->v, *ixlow);
+      step.x->axdzpy(1.0, *residuals.rgamma, *variables.v, *ixlow);
    }
 
    if (nxupp > 0) {
-      Vector<double>& phi_by_w = *step->w;
-      phi_by_w.copyFrom(*variables->phi);
-      phi_by_w.divideSome(*variables->w, *ixupp);
+      Vector<double>& phi_by_w = *step.w;
+      phi_by_w.copyFrom(*variables.phi);
+      phi_by_w.divideSome(*variables.w, *ixupp);
 
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
-      step->x->axzpy(1.0, phi_by_w, *residuals->rw);
+      step.x->axzpy(1.0, phi_by_w, *residuals.rw);
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
-      step->x->axdzpy(-1.0, *residuals->rphi, *variables->w, *ixupp);
+      step.x->axdzpy(-1.0, *residuals.rphi, *variables.w, *ixupp);
    }
 
-   // start by partially computing step->s
+   // start by partially computing step.s
    /*** compute rs ***/
-   /* step->s = rz */
-   step->s->copyFrom(*residuals->rz);
+   /* step.s = rz */
+   step.s->copyFrom(*residuals.rz);
    if (mclow > 0) {
-      Vector<double>& lambda_by_t = *step->t;
-      lambda_by_t.copyFrom(*variables->lambda);
-      lambda_by_t.divideSome(*variables->t, *iclow);
+      Vector<double>& lambda_by_t = *step.t;
+      lambda_by_t.copyFrom(*variables.lambda);
+      lambda_by_t.divideSome(*variables.t, *iclow);
 
-      /* step->s = rz + Lambda/T * rt */
-      step->s->axzpy(1.0, lambda_by_t, *residuals->rt);
-      /* step->s = rz + Lambda/T * rt + rlambda/T */
-      step->s->axdzpy(1.0, *residuals->rlambda, *variables->t, *iclow);
+      /* step.s = rz + Lambda/T * rt */
+      step.s->axzpy(1.0, lambda_by_t, *residuals.rt);
+      /* step.s = rz + Lambda/T * rt + rlambda/T */
+      step.s->axdzpy(1.0, *residuals.rlambda, *variables.t, *iclow);
    }
 
    if (mcupp > 0) {
-      Vector<double>& pi_by_u = *step->u;
-      pi_by_u.copyFrom(*variables->pi);
-      pi_by_u.divideSome(*variables->u, *icupp);
+      Vector<double>& pi_by_u = *step.u;
+      pi_by_u.copyFrom(*variables.pi);
+      pi_by_u.divideSome(*variables.u, *icupp);
 
-      /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-      step->s->axzpy(1.0, pi_by_u, *residuals->ru);
-      /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
-      step->s->axdzpy(-1.0, *residuals->rpi, *variables->u, *icupp);
+      /* step.s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
+      step.s->axzpy(1.0, pi_by_u, *residuals.ru);
+      /* step.s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
+      step.s->axdzpy(-1.0, *residuals.rpi, *variables.u, *icupp);
    }
 
    /*** ry = rA ***/
-   step->y->copyFrom(*residuals->rA);
+   step.y->copyFrom(*residuals.rA);
    /*** rz = rC ***/
-   step->z->copyFrom(*residuals->rC);
+   step.z->copyFrom(*residuals.rC);
 
    {
-      // Unfortunately, we need a temporary Vector<double> for the solve,
-      // Use step->lambda or step->pi
-      SmartPointer<Vector<double> > ztemp;
-      if (mclow > 0) {
-         ztemp = step->lambda;
-      }
-      else {
-         ztemp = step->pi;
-      }
-
-      solveXYZS(*step->x, *step->y, *step->z, *step->s, *ztemp, problem);
+      solveXYZS(*step.x, *step.y, *step.z, *step.s);
    }
 
    if (mclow > 0) {
       /* Dt = Ds - rt */
-      step->t->copyFrom(*step->s);
-      step->t->axpy(-1.0, *residuals->rt);
-      step->t->selectNonZeros(*iclow);
+      step.t->copyFrom(*step.s);
+      step.t->axpy(-1.0, *residuals.rt);
+      step.t->selectNonZeros(*iclow);
 
       /* Dlambda = T^-1 (rlambda - Lambda * Dt ) */
-      step->lambda->copyFrom(*residuals->rlambda);
-      step->lambda->axzpy(-1.0, *variables->lambda, *step->t);
-      step->lambda->divideSome(*variables->t, *iclow);
+      step.lambda->copyFrom(*residuals.rlambda);
+      step.lambda->axzpy(-1.0, *variables.lambda, *step.t);
+      step.lambda->divideSome(*variables.t, *iclow);
       //!
-      step->lambda->selectNonZeros(*iclow);
+      step.lambda->selectNonZeros(*iclow);
    }
 
    if (mcupp > 0) {
       /* Du = ru - Ds */
-      step->u->copyFrom(*residuals->ru);
-      step->u->axpy(-1.0, *step->s);
-      step->u->selectNonZeros(*icupp);
+      step.u->copyFrom(*residuals.ru);
+      step.u->axpy(-1.0, *step.s);
+      step.u->selectNonZeros(*icupp);
 
       /* Dpi = U^-1 ( rpi - Pi * Du ) */
-      step->pi->copyFrom(*residuals->rpi);
-      step->pi->axzpy(-1.0, *variables->pi, *step->u);
-      step->pi->divideSome(*variables->u, *icupp);
+      step.pi->copyFrom(*residuals.rpi);
+      step.pi->axzpy(-1.0, *variables.pi, *step.u);
+      step.pi->divideSome(*variables.u, *icupp);
       //!
-      step->pi->selectNonZeros(*icupp);
+      step.pi->selectNonZeros(*icupp);
    }
 
    if (nxlow > 0) {
       /* Dv = Dx - rv */
-      step->v->copyFrom(*step->x);
-      step->v->axpy(-1.0, *residuals->rv);
-      step->v->selectNonZeros(*ixlow);
+      step.v->copyFrom(*step.x);
+      step.v->axpy(-1.0, *residuals.rv);
+      step.v->selectNonZeros(*ixlow);
 
       /* Dgamma = V^-1 ( rgamma - Gamma * Dv ) */
-      step->gamma->copyFrom(*residuals->rgamma);
-      step->gamma->axzpy(-1.0, *variables->gamma, *step->v);
-      step->gamma->divideSome(*variables->v, *ixlow);
+      step.gamma->copyFrom(*residuals.rgamma);
+      step.gamma->axzpy(-1.0, *variables.gamma, *step.v);
+      step.gamma->divideSome(*variables.v, *ixlow);
       //!
-      step->gamma->selectNonZeros(*ixlow);
+      step.gamma->selectNonZeros(*ixlow);
    }
 
    if (nxupp > 0) {
       /* Dw = rw - Dx */
-      step->w->copyFrom(*residuals->rw);
-      step->w->axpy(-1.0, *step->x);
-      step->w->selectNonZeros(*ixupp);
+      step.w->copyFrom(*residuals.rw);
+      step.w->axpy(-1.0, *step.x);
+      step.w->selectNonZeros(*ixupp);
 
       /* Dphi = W^-1 ( rphi - Phi * Dw ) */
-      step->phi->copyFrom(*residuals->rphi);
-      step->phi->axzpy(-1.0, *variables->phi, *step->w);
-      step->phi->divideSome(*variables->w, *ixupp);
+      step.phi->copyFrom(*residuals.rphi);
+      step.phi->axzpy(-1.0, *variables.phi, *step.w);
+      step.phi->divideSome(*variables.w, *ixupp);
       //!
-      step->phi->selectNonZeros(*ixupp);
+      step.phi->selectNonZeros(*ixupp);
    }
-   assert(step->valid_non_zero_pattern());
+   assert(step.valid_non_zero_pattern());
 
 }
 
-void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& /* ztemp */,
-      Problem* problem) {
+void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps) {
    /* step->z = rC */
    /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
 
@@ -465,7 +453,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       ///////////////////////////////////////////////////////////////
       // Iterative refinement
       ///////////////////////////////////////////////////////////////
-      auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = *problem](auto&& PH1, auto&& PH2) {
+      auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = data](auto&& PH1, auto&& PH2) {
          compute_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
       };
 
@@ -489,12 +477,12 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       ///////////////////////////////////////////////////////////////
 
       const bool use_regularized_system = true;
-      auto matMult = [this, &capture0 = *problem, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      auto matMult = [this, &capture0 = data, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
          system_mult(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3),
                std::forward<decltype(PH4)>(PH4), capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
-      auto matInfnorm = [this, &capture0 = *problem, &stepx, &stepy, &stepz] {
+      auto matInfnorm = [this, &capture0 = data, &stepx, &stepy, &stepz] {
          return matXYZinfnorm(capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
@@ -510,7 +498,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       assert(sol);
       const double bnorm = residual->inf_norm();
       this->joinRHS(*sol, stepx, stepy, stepz);
-      this->system_mult(1.0, *residual, -1.0, *sol, *problem, stepx, stepy, stepz, true);
+      this->system_mult(1.0, *residual, -1.0, *sol, data, stepx, stepy, stepz, true);
 
       this->separateVars(*resx, *resy, *resz, *residual);
       const double resxnorm = resx->inf_norm();
@@ -949,10 +937,10 @@ void LinearSystem::compute_system_residuals(const Vector<double>& sol, Vector<do
 }
 
 void
-LinearSystem::joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) const {
+LinearSystem::joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in, const Vector<double>& rhs3_in) {
    rhs_in.jointCopyFrom(rhs1_in, rhs2_in, rhs3_in);
 }
 
-void LinearSystem::separateVars(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const {
+void LinearSystem::separateVars(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) {
    vars_in.jointCopyTo(x_in, y_in, z_in);
 }

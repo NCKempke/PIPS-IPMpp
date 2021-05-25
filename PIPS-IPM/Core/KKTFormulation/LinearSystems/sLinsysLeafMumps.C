@@ -22,12 +22,12 @@ sLinsysLeafMumps::~sLinsysLeafMumps() {
    delete[] buffer;
 }
 
-void sLinsysLeafMumps::addTermToSparseSchurCompl(DistributedQP* prob, SparseSymmetricMatrix& SC) {
-   this->addTermToSchurComplMumps(prob, true, SC);
+void sLinsysLeafMumps::addTermToSparseSchurCompl(SparseSymmetricMatrix& SC) {
+   this->addTermToSchurComplMumps(true, SC);
 }
 
-void sLinsysLeafMumps::addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmetricMatrix& SC) {
-   this->addTermToSchurComplMumps(prob, false, SC);
+void sLinsysLeafMumps::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC) {
+   this->addTermToSchurComplMumps(false, SC);
 }
 
 // creates new (Fortran indexed, implicit CSC) matrix
@@ -38,17 +38,17 @@ void sLinsysLeafMumps::addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmet
 //  (G          )
 //
 // ... but leave out empty rows (columns in the original right Schur factor)
-void sLinsysLeafMumps::buildSchurRightMatrix(DistributedQP* prob, SymmetricMatrix& SC) {
+void sLinsysLeafMumps::buildSchurRightMatrix(SymmetricMatrix& SC) {
    assert(prob);
    assert(!schurRightMatrix_csc);
    assert(!schurRightNzColId);
    assert(nSC == -1 && mSchurRight == -1 && nSchurRight == -1);
 
-   auto& A = prob->getLocalA();
-   auto& C = prob->getLocalC();
-   auto& F = prob->getLocalF();
-   auto& G = prob->getLocalG();
-   auto& R = prob->getLocalCrossHessian();
+   const auto& A = data->getLocalA();
+   const auto& C = data->getLocalC();
+   const auto& F = data->getLocalF();
+   const auto& G = data->getLocalG();
+   const auto& R = data->getLocalCrossHessian();
 
    assert(R.numberOfNonZeros() == 0); // currently not supported
 
@@ -168,9 +168,9 @@ void sLinsysLeafMumps::buildSchurRightMatrix(DistributedQP* prob, SymmetricMatri
 }
 
 
-void sLinsysLeafMumps::addTermToSchurComplMumps(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC) {
+void sLinsysLeafMumps::addTermToSchurComplMumps(bool sparseSC, SymmetricMatrix& SC) {
    if (!schurRightMatrix_csc)
-      buildSchurRightMatrix(prob, SC);
+      buildSchurRightMatrix(SC);
 
    const int nNzRhs = schurRightMatrix_csc->getStorageRef().m;
    const int solSize = nNzRhs * mSchurRight;
@@ -200,7 +200,7 @@ void sLinsysLeafMumps::addTermToSchurComplMumps(DistributedQP* prob, bool sparse
    assert(solverMumps);
 
    const int n_empty =
-      SC.size() - prob->getLocalCrossHessian().getStorageRef().n - prob->getLocalF().getStorageRef().m - prob->getLocalG().getStorageRef().m;
+      SC.size() - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
 
    //  do block-wise computation of
    //
@@ -215,14 +215,14 @@ void sLinsysLeafMumps::addTermToSchurComplMumps(DistributedQP* prob, bool sparse
       addLeftBorderTimesDenseColsToResTransp(border_left_transp, buffer, schurRightNzColId + i * bufferNrhs, mSchurRight, bufferNrhs, sparseSC, true,
             SC);
 
-//      multLeftSchurComplBlocked(prob, buffer, schurRightNzColId + i * bufferNrhs, bufferNrhs, sparseSC, SC);
+//      multLeftSchurComplBlocked(data, buffer, schurRightNzColId + i * bufferNrhs, bufferNrhs, sparseSC, SC);
    }
 
    if (leftoverNrhs > 0) {
       solverMumps->solve(*schurRightMatrix_csc, nRuns * bufferNrhs, leftoverNrhs, buffer);
       addLeftBorderTimesDenseColsToResTransp(border_left_transp, buffer, schurRightNzColId + nRuns * bufferNrhs, mSchurRight, leftoverNrhs, sparseSC,
             true, SC);
-//      multLeftSchurComplBlocked(prob, buffer, schurRightNzColId + nRuns * bufferNrhs, leftoverNrhs, sparseSC, SC);
+//      multLeftSchurComplBlocked(data, buffer, schurRightNzColId + nRuns * bufferNrhs, leftoverNrhs, sparseSC, SC);
    }
 
 

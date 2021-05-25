@@ -1084,7 +1084,7 @@ bool StochPresolverParallelRows::twoNearlyParallelInequalityRows(const INDEX& ro
    const int col2_index = col2.getIndex();
    /* c_1 * c_2 >= 0 */
    const double c1 = col1.isLinkingCol() ? (*currgParent)[col1_index] : (*currgChild)[col1_index];
-   const double c2 = col1.isLinkingCol() ? (*currgParent)[col2_index] : (*currgChild)[col2_index];
+   const double c2 = col2.isLinkingCol() ? (*currgParent)[col2_index] : (*currgChild)[col2_index];
 
    if (PIPSisLT(c1 * c2, 0.0))
       return false;

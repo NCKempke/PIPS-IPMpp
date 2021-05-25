@@ -37,7 +37,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       this->number_iterations++;
       // compute the trial iterate
       Variables trial_iterate(current_iterate);
-      trial_iterate.saxpy_pd(&direction, primal_step_length, dual_step_length);
+      trial_iterate.saxpy_pd(direction, primal_step_length, dual_step_length);
 
       // evaluate the residuals at the trial iterate
       Residuals trial_residuals(current_residuals);
@@ -51,7 +51,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
             primal_step_length);
       // if the trial iterate was accepted, current_iterate was overwritten
       if (is_accepted) {
-         current_iterate.copy(&trial_iterate);
+         current_iterate.copy(trial_iterate);
       }
       else {
          /* decrease the step length */
@@ -64,7 +64,6 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
       std::cout << "Enter restoration phase (not implemented yet)\n";
       assert(false);
    }
-   return;
 }
 
 bool FilterLineSearch::termination_(bool is_accepted) {

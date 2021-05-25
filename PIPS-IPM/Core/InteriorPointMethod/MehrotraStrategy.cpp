@@ -81,13 +81,12 @@ PrimalDualMehrotraStrategy::PrimalDualMehrotraStrategy(DistributedFactory& facto
 }
 
 void PrimalMehrotraStrategy::fraction_to_boundary_rule(Variables& iterate, Variables& step) {
-   this->primal_step_length = iterate.stepbound(&step);
-   return;
+   this->primal_step_length = iterate.stepbound(step);
 }
 
 double PrimalMehrotraStrategy::compute_centering_parameter(Variables& iterate, Variables& step) {
    double mu = iterate.mu();
-   double mu_affine = iterate.mustep_pd(&step, this->primal_step_length, this->primal_step_length);
+   double mu_affine = iterate.mustep_pd(step, this->primal_step_length, this->primal_step_length);
 
    assert(!PIPSisZero(mu));
    double sigma = pow(mu_affine / mu, tsig);
@@ -95,8 +94,7 @@ double PrimalMehrotraStrategy::compute_centering_parameter(Variables& iterate, V
 }
 
 void PrimalMehrotraStrategy::take_step(Variables& iterate, Variables& step) {
-   iterate.saxpy(&step, this->primal_step_length);
-   return;
+   iterate.saxpy(step, this->primal_step_length);
 }
 
 TerminationStatus
@@ -130,7 +128,7 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
 
          // predictor step
          if (!pure_centering_step) {
-            compute_predictor_step(problem, iterate, residuals, linear_system, step);
+            compute_predictor_step(iterate, residuals, linear_system, step);
             check_numerical_troubles(&residuals, numerical_troubles, small_corr);
          }
          else {
@@ -147,14 +145,14 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
          }
          g_iterNumber += 1.;
 
-         compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
+         compute_corrector_step(iterate, linear_system, step, sigma, mu);
          check_numerical_troubles(&residuals, numerical_troubles, small_corr);
 
          // calculate weighted predictor-corrector step
-         std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(&iterate, &step, corrector_step, this->primal_step_length);
+         std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(iterate, step, *corrector_step, this->primal_step_length);
          assert(weight_candidate >= 0. && weight_candidate <= 1.);
 
-         step.saxpy(corrector_step, weight_candidate);
+         step.saxpy(*corrector_step, weight_candidate);
 
          // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
          corrector_residuals->clear_linear_residuals();
@@ -193,13 +191,12 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
 }
 
 void PrimalDualMehrotraStrategy::fraction_to_boundary_rule(Variables& iterate, Variables& step) {
-   std::tie(this->primal_step_length, this->dual_step_length) = iterate.stepbound_pd(&step);
-   return;
+   std::tie(this->primal_step_length, this->dual_step_length) = iterate.stepbound_pd(step);
 }
 
 double PrimalDualMehrotraStrategy::compute_centering_parameter(Variables& iterate, Variables& step) {
    double mu = iterate.mu();
-   double mu_affine = iterate.mustep_pd(&step, this->primal_step_length, this->dual_step_length);
+   double mu_affine = iterate.mustep_pd(step, this->primal_step_length, this->dual_step_length);
 
    assert(!PIPSisZero(mu));
    double sigma = pow(mu_affine / mu, tsig);
@@ -207,8 +204,7 @@ double PrimalDualMehrotraStrategy::compute_centering_parameter(Variables& iterat
 }
 
 void PrimalDualMehrotraStrategy::take_step(Variables& iterate, Variables& step) {
-   iterate.saxpy_pd(&step, this->primal_step_length, this->dual_step_length);
-   return;
+   iterate.saxpy_pd(step, this->primal_step_length, this->dual_step_length);
 }
 
 TerminationStatus
@@ -241,7 +237,7 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
 
          // *** Predictor step ***
          if (!pure_centering_step) {
-            compute_predictor_step(problem, iterate, residuals, linear_system, step);
+            compute_predictor_step(iterate, residuals, linear_system, step);
             check_numerical_troubles(&residuals, numerical_troubles, small_corr);
          }
          else
@@ -259,17 +255,17 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
          g_iterNumber += 1.;
 
          // *** Corrector step ***
-         compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
+         compute_corrector_step(iterate, linear_system, step, sigma, mu);
          check_numerical_troubles(&residuals, numerical_troubles, small_corr);
 
          // calculate weighted predictor-corrector step
          std::tie(alpha_primal_candidate, alpha_dual_candidate, weight_primal_candidate, weight_dual_candidate) =
-               calculate_alpha_pd_weight_candidate(&iterate, &step, corrector_step, this->primal_step_length, this->dual_step_length);
+               calculate_alpha_pd_weight_candidate(iterate, step, *corrector_step, this->primal_step_length, this->dual_step_length);
 
          assert(weight_primal_candidate >= 0. && weight_primal_candidate <= 1.);
          assert(weight_dual_candidate >= 0. && weight_dual_candidate <= 1.);
 
-         step.saxpy_pd(corrector_step, weight_primal_candidate, weight_dual_candidate);
+         step.saxpy_pd(*corrector_step, weight_primal_candidate, weight_dual_candidate);
 
          // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
          corrector_residuals->clear_linear_residuals();
@@ -324,7 +320,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
           (PIPSisLT(this->alpha_primal_candidate, 1.) || PIPSisLT(this->alpha_dual_candidate, 1.))) {
       if (dynamic_corrector_schedule)
          adjust_limit_gondzio_correctors();
-      corrector_step->copy(&iterate);
+      corrector_step->copy(iterate);
 
       const double alpha_p_target = std::min(1., step_factor1 * this->alpha_primal_candidate + step_factor0);
       const double alpha_dual_target = std::min(1., step_factor1 * this->alpha_dual_candidate + step_factor0);
@@ -333,11 +329,11 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
             this->alpha_dual_candidate);
 
       // add a step of this length to corrector_step
-      corrector_step->saxpy_pd(&step, alpha_p_target, alpha_dual_target);
+      corrector_step->saxpy_pd(step, alpha_p_target, alpha_dual_target);
       // corrector_step is now x_k + alpha_target * delta_p (a trial point)
 
       /* compute corrector step */
-      compute_gondzio_corrector(problem, iterate, linear_system, rmin, rmax, small_corr);
+      compute_gondzio_corrector(iterate, linear_system, rmin, rmax, small_corr);
       const bool was_small_corr = small_corr;
       check_numerical_troubles(&residuals, numerical_troubles, small_corr);
 
@@ -351,14 +347,14 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
 
       // calculate weighted predictor-corrector step
       std::tie(alpha_primal_enhanced, alpha_dual_enhanced, weight_primal_candidate, weight_dual_candidate) = calculate_alpha_pd_weight_candidate(
-            &iterate, &step, corrector_step, alpha_p_target, alpha_dual_target);
+            iterate, step, *corrector_step, alpha_p_target, alpha_dual_target);
 
       // if the enhanced step length is actually 1, make it official
       // and stop correcting
       if (PIPSisEQ(alpha_primal_enhanced, 1.) && PIPSisEQ(alpha_dual_enhanced, 1.)) {
          PIPSdebugMessage("both 1. \n");
 
-         step.saxpy_pd(corrector_step, weight_primal_candidate, weight_dual_candidate);
+         step.saxpy_pd(*corrector_step, weight_primal_candidate, weight_dual_candidate);
 
          this->alpha_primal_candidate = alpha_primal_enhanced;
          this->alpha_dual_candidate = alpha_dual_enhanced;
@@ -378,7 +374,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
          // if enhanced step length is significantly better than the
          // current alpha, make the enhanced step official, but maybe
          // keep correcting
-         step.saxpy_pd(corrector_step, weight_primal_candidate, weight_dual_candidate);
+         step.saxpy_pd(*corrector_step, weight_primal_candidate, weight_dual_candidate);
 
          this->alpha_primal_candidate = alpha_primal_enhanced;
          this->alpha_dual_candidate = alpha_dual_enhanced;
@@ -391,7 +387,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
       else if (alpha_primal_enhanced >= (1. + acceptance_tolerance) * this->alpha_primal_candidate) {
          PIPSdebugMessage("primal better \n");
 
-         step.saxpy_pd(corrector_step, weight_primal_candidate, 0.);
+         step.saxpy_pd(*corrector_step, weight_primal_candidate, 0.);
 
          this->alpha_primal_candidate = alpha_primal_enhanced;
 
@@ -403,7 +399,7 @@ void PrimalDualMehrotraStrategy::gondzio_correction_loop(Problem& problem, Varia
       else if (alpha_dual_enhanced >= (1. + acceptance_tolerance) * this->alpha_dual_candidate) {
          PIPSdebugMessage("dual better \n");
 
-         step.saxpy_pd(corrector_step, 0., weight_dual_candidate);
+         step.saxpy_pd(*corrector_step, 0., weight_dual_candidate);
 
          this->alpha_dual_candidate = alpha_dual_enhanced;
 
@@ -445,17 +441,17 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
    while (number_gondzio_corrections < maximum_correctors && number_small_correctors < max_additional_correctors && PIPSisLT(this->alpha_candidate, 1.)) {
       if (dynamic_corrector_schedule)
          adjust_limit_gondzio_correctors();
-      corrector_step->copy(&iterate);
+      corrector_step->copy(iterate);
 
       // calculate target step length
       double alpha_target = std::min(step_factor1 * this->alpha_candidate + step_factor0, 1.);
 
       // add a step of this length to corrector_step
-      corrector_step->saxpy(&step, alpha_target);
+      corrector_step->saxpy(step, alpha_target);
       // corrector_step (a trial point) is now x_k + alpha_target * delta_p
 
       /* compute corrector step */
-      compute_gondzio_corrector(problem, iterate, linear_system, rmin, rmax, small_corr);
+      compute_gondzio_corrector(iterate, linear_system, rmin, rmax, small_corr);
       const bool was_small_corr = small_corr;
       check_numerical_troubles(&residuals, numerical_troubles, small_corr);
 
@@ -469,12 +465,12 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
       }
 
       // calculate weighted predictor-corrector step
-      auto[alpha_enhanced, weight_candidate] = calculate_alpha_weight_candidate(&iterate, &step, corrector_step, alpha_target);
+      auto[alpha_enhanced, weight_candidate] = calculate_alpha_weight_candidate(iterate, step, *corrector_step, alpha_target);
 
       // if the enhanced step length is actually 1, make it official
       // and stop correcting
       if (PIPSisEQ(alpha_enhanced, 1.)) {
-         step.saxpy(corrector_step, weight_candidate);
+         step.saxpy(*corrector_step, weight_candidate);
          this->alpha_candidate = alpha_enhanced;
 
          if (small_corr)
@@ -489,7 +485,7 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
          // if enhanced step length is significantly better than the
          // current alpha, make the enhanced step official, but maybe
          // keep correcting
-         step.saxpy(corrector_step, weight_candidate);
+         step.saxpy(*corrector_step, weight_candidate);
          this->alpha_candidate = alpha_enhanced;
 
          if (small_corr)
@@ -518,27 +514,27 @@ void PrimalMehrotraStrategy::gondzio_correction_loop(Problem& problem, Variables
    }
 }
 
-void MehrotraStrategy::compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system,
+void MehrotraStrategy::compute_predictor_step(Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system,
       Variables& step) {
    residuals.set_complementarity_residual(iterate, 0.);
-   linear_system.factorize(&problem, &iterate);
+   linear_system.factorize(iterate);
 
-   linear_system.solve(&problem, &iterate, &residuals, &step);
+   linear_system.solve(iterate, residuals, step);
    step.negate();
 }
 
 void
-MehrotraStrategy::compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma,
+MehrotraStrategy::compute_corrector_step(Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma,
       double mu) {
    corrector_residuals->clear_linear_residuals();
    // form right hand side of linear system:
    corrector_residuals->set_complementarity_residual(step, -sigma * mu);
 
-   linear_system.solve(&problem, &iterate, corrector_residuals, corrector_step);
+   linear_system.solve(iterate, *corrector_residuals, *corrector_step);
    corrector_step->negate();
 }
 
-void MehrotraStrategy::compute_gondzio_corrector(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax,
+void MehrotraStrategy::compute_gondzio_corrector(Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax,
       bool small_corr) {
    // place XZ into the r3 component of corrector_residuals
    corrector_residuals->set_complementarity_residual(*corrector_step, 0.);
@@ -548,15 +544,12 @@ void MehrotraStrategy::compute_gondzio_corrector(Problem& problem, Variables& it
    corrector_residuals->project_r3(rmin, small_corr ? std::numeric_limits<double>::infinity() : rmax);
 
    // solve for corrector direction
-   linear_system.solve(&problem, &iterate, corrector_residuals, corrector_step); // corrector_step is now delta_m
+   linear_system.solve(iterate, *corrector_residuals, *corrector_step); // corrector_step is now delta_m
 }
 
 std::pair<double, double>
-MehrotraStrategy::calculate_alpha_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_predictor) {
-   assert(corrector_step);
-   assert(predictor_step);
+MehrotraStrategy::calculate_alpha_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_predictor) {
    assert(temp_step);
-
    assert(alpha_predictor > 0. && alpha_predictor <= 1.);
 
    double alpha_candidate = -1.;
@@ -572,7 +565,7 @@ MehrotraStrategy::calculate_alpha_weight_candidate(Variables* iterate, Variables
       temp_step->copy(predictor_step);
       temp_step->saxpy(corrector_step, weight_curr);
 
-      const double alpha_curr = iterate->stepbound(temp_step);
+      const double alpha_curr = iterate.stepbound(*temp_step);
       assert(alpha_curr > 0. && alpha_curr <= 1.);
 
       if (alpha_curr > alpha_candidate) {
@@ -585,7 +578,7 @@ MehrotraStrategy::calculate_alpha_weight_candidate(Variables* iterate, Variables
 }
 
 std::tuple<double, double, double, double>
-MehrotraStrategy::calculate_alpha_pd_weight_candidate(Variables* iterate, Variables* predictor_step, Variables* corrector_step, double alpha_primal,
+MehrotraStrategy::calculate_alpha_pd_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_primal,
       double alpha_dual) {
    assert(alpha_primal > 0. && alpha_primal <= 1.);
    assert(alpha_dual > 0. && alpha_dual <= 1.);
@@ -603,7 +596,7 @@ MehrotraStrategy::calculate_alpha_pd_weight_candidate(Variables* iterate, Variab
       temp_step->copy(predictor_step);
       temp_step->saxpy(corrector_step, weight_curr);
 
-      auto[alpha_primal_curr, alpha_dual_curr] = iterate->stepbound_pd(temp_step);
+      auto[alpha_primal_curr, alpha_dual_curr] = iterate.stepbound_pd(*temp_step);
       assert(alpha_primal_curr > 0. && alpha_primal_curr <= 1.);
       assert(alpha_dual_curr > 0. && alpha_dual_curr <= 1.);
 
@@ -637,14 +630,12 @@ double MehrotraStrategy::compute_probing_factor(Problem& problem, Variables& ite
 void PrimalMehrotraStrategy::do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
    const double factor = MehrotraStrategy::compute_probing_factor(problem, iterate, residuals, step);
    this->primal_step_length = factor * this->primal_step_length;
-   return;
 }
 
 void PrimalDualMehrotraStrategy::do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) {
    const double factor = MehrotraStrategy::compute_probing_factor(problem, iterate, residuals, step);
    this->primal_step_length = factor * this->primal_step_length;
    this->dual_step_length = factor * this->dual_step_length;
-   return;
 }
 
 bool MehrotraStrategy::is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const {
@@ -677,17 +668,17 @@ bool PrimalDualMehrotraStrategy::is_poor_step(bool& pure_centering_step, bool pr
 }
 
 void PrimalMehrotraStrategy::compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const {
-   probing_step.copy(&iterate);
-   probing_step.saxpy(&step, this->primal_step_length);
+   probing_step.copy(iterate);
+   probing_step.saxpy(step, this->primal_step_length);
 }
 
 void PrimalDualMehrotraStrategy::compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const {
-   probing_step.copy(&iterate);
-   probing_step.saxpy_pd(&step, this->primal_step_length, this->dual_step_length);
+   probing_step.copy(iterate);
+   probing_step.saxpy_pd(step, this->primal_step_length, this->dual_step_length);
 }
 
 /* when numerical troubles occurred we only allow controlled steps that worsen the residuals and mu by at most a factor of 10 */
-double MehrotraStrategy::compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) const {
+double MehrotraStrategy::compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) {
    assert(resids_norm_last > 0.);
    assert(resids_norm_probing > 0.);
 
@@ -727,7 +718,7 @@ double MehrotraStrategy::compute_step_factor_probing(double resids_norm_last, do
    return factor;
 }
 
-bool MehrotraStrategy::decrease_preconditioner_impact(AbstractLinearSystem* sys) const {
+bool MehrotraStrategy::decrease_preconditioner_impact(AbstractLinearSystem* sys) {
    bool success = false;
    dynamic_cast<DistributedRootLinearSystem*>(sys)->precondSC.decreaseDiagDomBound(success);
    if (!success) {
@@ -888,8 +879,8 @@ void PrimalMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variables&
 #endif
 
    int firstOrSecond = -1;
-   const double maximum_step_length = iterate.find_blocking(&step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
-   const double mu_full = iterate.mustep_pd(&step, maximum_step_length, maximum_step_length) / gamma_a;
+   const double maximum_step_length = iterate.find_blocking(step, primalValue, primalStep, dualValue, dualStep, firstOrSecond);
+   const double mu_full = iterate.mustep_pd(step, maximum_step_length, maximum_step_length) / gamma_a;
 
    this->primal_step_length = 1.;
    switch (firstOrSecond) {
@@ -941,10 +932,10 @@ void PrimalDualMehrotraStrategy::mehrotra_step_length(Variables& iterate, Variab
 
    bool primalBlocking, dualBlocking;
 
-   iterate.find_blocking(&step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
+   iterate.find_blocking(step, primalValue_p, primalStep_p, dualValue_p, dualStep_p, primalValue_d, primalStep_d, dualValue_d, dualStep_d,
          maxAlpha_p, maxAlpha_d, primalBlocking, dualBlocking);
 
-   const double mufull = iterate.mustep_pd(&step, maxAlpha_p, maxAlpha_d) / gamma_a;
+   const double mufull = iterate.mustep_pd(step, maxAlpha_p, maxAlpha_d) / gamma_a;
 
    this->primal_step_length = 1.;
    this->dual_step_length = 1.;
@@ -1093,7 +1084,6 @@ MehrotraStrategy::~MehrotraStrategy() {
    delete[] residual_norm_history;
    delete[] phi_history;
    delete[] phi_min_history;
-   delete temp_step;
 }
 
 std::unique_ptr<MehrotraStrategy>

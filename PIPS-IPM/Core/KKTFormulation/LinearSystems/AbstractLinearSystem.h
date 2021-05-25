@@ -19,10 +19,10 @@ class Residuals;
 class AbstractLinearSystem {
 public:
    /** factorizes the matrix, stores data related to the factorization to prepare for later calls to "solve" */
-   virtual void factorize(Problem* problem, Variables* iterate) = 0;
+   virtual void factorize(Variables& iterate) = 0;
 
    /** assuming the "factor" call was successful, supplies the right-hand side and solves the system. */
-   virtual void solve(Problem* problem, Variables* iterate, Residuals* residuals, Variables* step) = 0;
+   virtual void solve(Variables& iterate, Residuals& residuals, Variables& step) = 0;
 
    virtual ~AbstractLinearSystem() = default;
 };

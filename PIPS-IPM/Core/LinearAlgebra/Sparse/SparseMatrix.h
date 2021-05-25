@@ -231,10 +231,10 @@ public:
          int* row_sparsity = nullptr) const;
 
    void
-   fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset, double* colsArrayDense, int* rowSparsity = nullptr);
+   fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset, double* colsArrayDense, int* rowSparsity = nullptr) const;
 
    void
-   fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset, double* cols_array_dense, int* row_sparsity = nullptr);
+   fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset, double* cols_array_dense, int* row_sparsity = nullptr) const;
 
    bool hasTransposed() const;
 

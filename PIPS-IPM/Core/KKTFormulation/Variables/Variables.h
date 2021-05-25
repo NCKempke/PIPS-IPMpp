@@ -84,17 +84,17 @@ public:
 
    Variables(const Variables& vars);
 
-   double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
+   [[nodiscard]] double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
 
    void push_slacks_from_bound(double tol, double amount);
 
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    double mu();
 
-   double mustep_pd(const Variables* step, double alpha_primal, double alpha_dual);
+   double mustep_pd(const Variables& step, double alpha_primal, double alpha_dual);
 
-   void saxpy(const Variables* b, double alpha);
-   void saxpy_pd(const Variables* b, double alpha_primal, double alpha_dual);
+   void saxpy(const Variables& b, double alpha);
+   void saxpy_pd(const Variables& b, double alpha_primal, double alpha_dual);
 
    void negate();
 
@@ -105,7 +105,7 @@ public:
     * (b->t,b->u,b->v,b->w,b->lambda,b->pi,b->phi,b->gamma) >= 0.
     *
     * @see find_blocking */
-   double stepbound(const Variables* iterate);
+   double stepbound(const Variables& iterate);
 
    /** calculate the largest alpha_primal and alpha_dual in (0,1] such that the nonnegative
     * variables stay nonnegative in the given search direction b. In the
@@ -114,7 +114,7 @@ public:
     *
     * @see stepbound
     */
-   std::pair<double, double> stepbound_pd(const Variables* iterate);
+   std::pair<double, double> stepbound_pd(const Variables& iterate);
 
    /** Performs the same function as stepbound, and supplies additional
     * information about which component of the nonnegative variables is
@@ -138,9 +138,9 @@ public:
     *
     * @see stepbound
     * */
-   double find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
+   double find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond);
 
-   void find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
+   void find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
          bool& dualBlocking);
 
@@ -161,10 +161,10 @@ public:
 
    int valid_non_zero_pattern();
 
-   void copy(const Variables* b);
+   void copy(const Variables& b);
 
-   double one_norm() const;
-   double inf_norm() const;
+   [[nodiscard]] double one_norm() const;
+   [[nodiscard]] double inf_norm() const;
 
    void set_to_zero();
 

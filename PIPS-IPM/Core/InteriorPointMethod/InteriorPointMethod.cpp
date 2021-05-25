@@ -26,7 +26,6 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
    factory.iterate_ended();
 
    TerminationStatus status_code;
-   int iteration = 0;
    bool termination = false;
    while (!termination) {
       termination = true;

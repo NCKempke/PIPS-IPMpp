@@ -10,6 +10,7 @@
 #include "SmartPointer.h"
 #include "Observer.h"
 #include "RegularizationStrategy.h"
+#include "QP.hpp"
 
 #include <functional>
 #include <memory>
@@ -95,7 +96,7 @@ protected:
    Vector<double>* dual_equality_regularization_diagonal{};
    Vector<double>* dual_inequality_regularization_diagonal{};
 
-   LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs);
+   LinearSystem(DistributedFactory* factory_, const QP& problem, bool create_iter_ref_vecs);
 
    /** dimensions of the vectors */
    long long nx{0};
@@ -151,10 +152,13 @@ protected:
    const bool xyzs_solve_print_residuals;
 
    double barrier_parameter_current_iterate{std::numeric_limits<double>::infinity()};
-public:
-   LinearSystem(DistributedFactory* factory, Problem* problem);
 
-   LinearSystem(DistributedFactory* factory_, Problem* problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+   const QP& data;
+
+public:
+   LinearSystem(DistributedFactory* factory, const QP& problem);
+
+   LinearSystem(DistributedFactory* factory_, const QP& problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_,
          Vector<double>* rhs_, bool create_iter_ref_vecs);
 
@@ -168,7 +172,7 @@ public:
     * @see QpGenSparseLinsys::factorize
     * @see QpGenDenseLinsys::factorize
     */
-   void factorize(Problem* problem, Variables* iterate) override;
+   void factorize(Variables& iterate) override;
 
    /** solves the system for a given set of residuals. Assembles the
     * right-hand side appropriate to the matrix factored in factor,
@@ -180,7 +184,7 @@ public:
     * @see QpGenSparseLinsys::solveCompressed
     * @see QpGenDenseLinsys::solveCompressed
  */
-   void solve(Problem* problem, Variables* variables, Residuals* residuals, Variables* step) override;
+   void solve(Variables& variables, Residuals& residuals, Variables& step) override;
 
    /** assembles a single vector object from three given vectors
     *
@@ -189,7 +193,7 @@ public:
     * @param rhs2 (input) middle part of rhs
     * @param rhs3 (input) last part of rhs
     */
-   virtual void joinRHS(Vector<double>& rhs, const Vector<double>& rhs1, const Vector<double>& rhs2, const Vector<double>& rhs3) const;
+   static void joinRHS(Vector<double>& rhs, const Vector<double>& rhs1, const Vector<double>& rhs2, const Vector<double>& rhs3);
 
    /** extracts three component vectors from a given aggregated vector.
     *
@@ -198,12 +202,11 @@ public:
     * @param vars2 (output) middle part of vars
     * @param vars3 (output) last part of vars
     */
-   virtual void separateVars(Vector<double>& vars1, Vector<double>& vars2, Vector<double>& vars3, const Vector<double>& vars) const;
+   static void separateVars(Vector<double>& vars1, Vector<double>& vars2, Vector<double>& vars3, const Vector<double>& vars);
 
    /** assemble right-hand side of augmented system and call
        solveCompressed to solve it */
-   virtual void
-   solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps, Vector<double>& ztemp, Problem* problem);
+   void solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vector<double>& stepz, Vector<double>& steps);
 
    /** perform the actual solve using the factors produced in factor.
     *

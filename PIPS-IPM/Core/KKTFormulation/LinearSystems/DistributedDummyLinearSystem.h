@@ -15,14 +15,14 @@ public:
 
    ~DistributedDummyLinearSystem() override = default;
 
-   void factor2(DistributedQP*, Variables*) override {};
-   void allreduceAndFactorKKT(DistributedQP*, Variables*) override {};
-   void assembleKKT(DistributedQP*, Variables*) override {}
+   void factor2() override {};
+   void allreduceAndFactorKKT() override {};
+   void assembleKKT() override {}
 
-   void Lsolve(DistributedQP*, Vector<double>&) override {};
-   void Dsolve(DistributedQP*, Vector<double>&) override {};
-   void Ltsolve(DistributedQP*, Vector<double>&) override {};
-   void Ltsolve2(DistributedQP*, DistributedVector<double>&, SimpleVector<double>&, bool) override {};
+   void Lsolve(Vector<double>&) override {};
+   void Dsolve(Vector<double>&) override {};
+   void Ltsolve(Vector<double>&) override {};
+   void Ltsolve2(DistributedVector<double>&, SimpleVector<double>&, bool) override {};
 
    void solveCompressed(Vector<double>&) override {};
 
@@ -33,17 +33,13 @@ public:
 
    void add_regularization_local_kkt(double, double, double) override {};
 
-   void joinRHS(Vector<double>&, const Vector<double>&, const Vector<double>&, const Vector<double>&) const override {};
-
-   void separateVars(Vector<double>&, Vector<double>&, Vector<double>&, const Vector<double>&) const override {};
-
-   void addLnizi(DistributedQP*, Vector<double>&, Vector<double>&) override {};
-   void addLniziLinkCons(DistributedQP*, Vector<double>&, Vector<double>&, bool) override {};
+   void addLnizi(Vector<double>&, Vector<double>&) override {};
+   void addLniziLinkCons(Vector<double>&, Vector<double>&, bool) override {};
 
    /** y += alpha * Lni^T * x */
-   //  void LniTransMult(DistributedQP *prob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x) override {};
+   //  void LniTransMult(rob, SimpleVector<double>& y, double alpha, SimpleVector<double>& x) override {};
 
-   void addTermToSchurResidual(DistributedQP*, SimpleVector<double>&, SimpleVector<double>&) override {};
+   void addTermToSchurResidual(SimpleVector<double>&, SimpleVector<double>&) override {};
 
    void LsolveHierarchyBorder(DenseMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, int, int) override {};
    void LsolveHierarchyBorder(DenseMatrix&, BorderLinsys&, std::vector<BorderMod>&, bool, bool, int, int) override {};

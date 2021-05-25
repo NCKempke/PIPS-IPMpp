@@ -45,12 +45,14 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
 
    kkt_sp->symAtPutSubmatrix(0, 0, prob->getLocalQ(), 0, 0, locnx, locnx);
 
+   // TODO this logic or is flawed - requires Bi to exist..
    if (locmz > 0) {
       kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
       kkt_sp->symAtPutSubmatrix(locnx + locmy, 0, prob->getLocalD(), 0, 0, locmz, locnx);
    }
    else
-      mySymAtPutSubmatrix(*kkt_sp, prob->getLocalB(), prob->getLocalD(), locnx, locmy, locmz);
+      kkt_sp->symAtPutSubmatrix(locnx, 0, prob->getLocalB(), 0, 0, locmy, locnx);
+//      mySymAtPutSubmatrix(*kkt_sp, data->getLocalB(), locnx, locmy, locmz);
 
 #ifdef TIMING
    if( myRank == 0 ) std::cout << "Rank 0: finished " << std::endl;
@@ -67,7 +69,7 @@ DistributedLeafLinearSystem::DistributedLeafLinearSystem(DistributedFactory* fac
    mpiComm = (dynamic_cast<DistributedVector<double>*>(dd_))->mpiComm;
 }
 
-void DistributedLeafLinearSystem::factor2(DistributedQP*, Variables*) {
+void DistributedLeafLinearSystem::factor2() {
    // Diagonals were already updated, so
    // just trigger a local refactorization (if needed, depends on the type of lin solver).
    stochNode->resMon.recFactTmLocal_start();
@@ -132,7 +134,7 @@ DistributedLeafLinearSystem::add_regularization_local_kkt(double primal_regulari
    }
 }
 
-void DistributedLeafLinearSystem::Dsolve(DistributedQP*, Vector<double>& x_in) {
+void DistributedLeafLinearSystem::Dsolve(Vector<double>& x_in) {
    auto& x = dynamic_cast<DistributedVector<double>&>(x_in);
    assert(x.children.empty());
    stochNode->resMon.recDsolveTmChildren_start();
@@ -140,7 +142,7 @@ void DistributedLeafLinearSystem::Dsolve(DistributedQP*, Vector<double>& x_in) {
    stochNode->resMon.recDsolveTmChildren_stop();
 }
 
-void DistributedLeafLinearSystem::Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
+void DistributedLeafLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) {
    auto& b = dynamic_cast<DistributedVector<double>&>(x);
    auto& bi = dynamic_cast<SimpleVector<double>&>(*b.first);
    assert(b.children.empty());
@@ -151,7 +153,7 @@ void DistributedLeafLinearSystem::Ltsolve2(DistributedQP* prob, DistributedVecto
 #endif
 
    //b_i -= Lni^T x0
-   LniTransMult(prob, bi, -1.0, xp);
+   LniTransMult(bi, -1.0, xp);
    //  solver->Ltsolve(bi); -> empty
 #ifdef TIMING
    stochNode->resMon.recLtsolveTmChildren_stop();
@@ -161,21 +163,21 @@ void DistributedLeafLinearSystem::Ltsolve2(DistributedQP* prob, DistributedVecto
 void DistributedLeafLinearSystem::deleteChildren() {}
 
 /** sum up right hand side for (current) scenario i and add it to right hand side of scenario 0 */
-void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
+void DistributedLeafLinearSystem::addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi_, bool /*use_local_RAC*/) {
    auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
    auto& zi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(zi_).first);
 
    solver->solve(zi);
 
-   int nx0 = data->hasRAC() ? prob->getLocalA().n_columns() : 0;
+   int nx0 = data->hasRAC() ? data->getLocalA().n_columns() : 0;
 
    SimpleVector<double> z01(&z0[0], nx0);
    SimpleVector<double> zi1(&zi[0], locnx);
 
    if (data->hasRAC()) {
-      SparseMatrix& A = prob->getLocalA();
-      SparseMatrix& C = prob->getLocalC();
-      SparseMatrix& R = prob->getLocalCrossHessian();
+      const SparseMatrix& A = data->getLocalA();
+      const SparseMatrix& C = data->getLocalC();
+      const SparseMatrix& R = data->getLocalCrossHessian();
 
       SimpleVector<double> zi2(&zi[locnx], locmy);
       SimpleVector<double> zi3(&zi[locnx + locmy], locmz);
@@ -190,7 +192,7 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
       const int nxMyMz = z0.length() - locmyl - locmzl;
 
       SimpleVector<double> z0myl(&z0[nxMyMz], locmyl);
-      SparseMatrix& F = prob->getLocalF();
+      const SparseMatrix& F = data->getLocalF();
       F.mult(1.0, z0myl, -1.0, zi1);
    }
 
@@ -199,14 +201,12 @@ void DistributedLeafLinearSystem::addLniziLinkCons(DistributedQP* prob, Vector<d
       const int nxMyMzMyl = z0.length() - locmzl;
 
       SimpleVector<double> z0mzl(&z0[nxMyMzMyl], locmzl);
-      SparseMatrix& G = prob->getLocalG();
+      const SparseMatrix& G = data->getLocalG();
       G.mult(1.0, z0mzl, -1.0, zi1);
    }
 }
 
-void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) {
-   assert(prob == data);
-
+void DistributedLeafLinearSystem::addTermToSchurComplBlocked(bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) {
    const bool sc_is_sym = true;
 
    std::unique_ptr<BorderBiBlock> border_right{};
@@ -214,24 +214,24 @@ void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob
 
    if (use_local_RAC) {
       const int n_empty =
-            SC.size() - prob->getLocalCrossHessian().getStorageRef().n - prob->getLocalF().getStorageRef().m - prob->getLocalG().getStorageRef().m;
+            SC.size() - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
 
-      assert(prob->hasRAC());
+      assert(data->hasRAC());
       border_right = std::make_unique<BorderBiBlock>(
-            prob->getLocalCrossHessian(), prob->getLocalA(), prob->getLocalC(), n_empty, prob->getLocalF().getTranspose(),
-                  prob->getLocalG().getTranspose());
+            data->getLocalCrossHessian(), data->getLocalA(), data->getLocalC(), n_empty, data->getLocalF().getTranspose(),
+                  data->getLocalG().getTranspose());
 
       border_left_transp = std::make_unique<BorderBiBlock>(
-            prob->getLocalCrossHessian().getTranspose(), prob->getLocalA().getTranspose(), prob->getLocalC().getTranspose(),
-                  n_empty, prob->getLocalF(), prob->getLocalG());
+            data->getLocalCrossHessian().getTranspose(), data->getLocalA().getTranspose(), data->getLocalC().getTranspose(),
+                  n_empty, data->getLocalF(), data->getLocalG());
 
    }
    else {
-      assert(!prob->hasRAC());
-      const int n_empty = SC.size() - prob->getLocalF().getStorageRef().m - prob->getLocalG().getStorageRef().m;
+      assert(!data->hasRAC());
+      const int n_empty = SC.size() - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
 
-      border_right = std::make_unique<BorderBiBlock>(n_empty, prob->getLocalF().getTranspose(), prob->getLocalG().getTranspose(), use_local_RAC);
-      border_left_transp = std::make_unique<BorderBiBlock>(n_empty, prob->getLocalF(), prob->getLocalG(), use_local_RAC);
+      border_right = std::make_unique<BorderBiBlock>(n_empty, data->getLocalF().getTranspose(), data->getLocalG().getTranspose(), use_local_RAC);
+      border_left_transp = std::make_unique<BorderBiBlock>(n_empty, data->getLocalF(), data->getLocalG(), use_local_RAC);
    }
 
 
@@ -241,17 +241,16 @@ void DistributedLeafLinearSystem::addTermToSchurComplBlocked(DistributedQP* prob
    addBiTLeftKiBiRightToResBlockedParallelSolvers(sparseSC, sc_is_sym, *border_left_transp, *border_right, SC, 0, SC.size(), 0, SC.size());
 }
 
-void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymmetricMatrix& kkt_, GeneralMatrix& B_, GeneralMatrix&, int locnx, int locmy, int) {
+void DistributedLeafLinearSystem::mySymAtPutSubmatrix(SymmetricMatrix& kkt_, const GeneralMatrix& B_, int locnx, int locmy, int) {
    auto& kkt = dynamic_cast<SparseSymmetricMatrix&>(kkt_);
-   auto& B = dynamic_cast<SparseMatrix&>(B_);
-   //SparseGenMatrix& D   = reinterpret_cast<SparseGenMatrix&>(D_);
+   auto& B = dynamic_cast<const SparseMatrix&>(B_);
 
    int* jcolK = kkt.jcolM();
-   int* jcolB = B.jcolM(); //int* jcolD = D.jcolM();
+   const int* jcolB = B.jcolM(); //int* jcolD = D.jcolM();
    int* krowK = kkt.krowM();
-   int* krowB = B.krowM(); //int* krowD =  D.krowM();
+   const int* krowB = B.krowM(); //int* krowD =  D.krowM();
    double* MK = kkt.M();
-   double* MB = B.M();
+   const double* MB = B.M();
 
    for (int i = 0; i < locmy; i++) {
       int itK = krowK[i + locnx];
@@ -407,8 +406,9 @@ void DistributedLeafLinearSystem::LniTransMultHierarchyBorder(AbstractMatrix& re
       BliT = std::make_unique<BorderBiBlock>(Bl.n_empty_rows, dynamic_cast<SparseMatrix&>(*Bl.F.first), dynamic_cast<SparseMatrix&>(*Bl.G.first), false);
 
    /* constructed to be able to call addLeftBorderKiInvBrToRes.. */
-   std::unique_ptr<StripMatrix> localF_view(std::make_unique<StripMatrix>(true, &data->getLocalF(), nullptr, mpiComm, true));
-   std::unique_ptr<StripMatrix> localG_view(std::make_unique<StripMatrix>(true, &data->getLocalG(), nullptr, mpiComm, true));
+   // TODO : const cast...
+   std::unique_ptr<const StripMatrix> localF_view(std::make_unique<const StripMatrix>(true, const_cast<SparseMatrix*>(&data->getLocalF()), nullptr, mpiComm, true));
+   std::unique_ptr<const StripMatrix> localG_view(std::make_unique<const StripMatrix>(true, const_cast<SparseMatrix*>(&data->getLocalG()), nullptr, mpiComm, true));
 
    assert(n_empty_rows_inner_border >= 0);
 

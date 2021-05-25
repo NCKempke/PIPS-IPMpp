@@ -141,88 +141,88 @@ double Variables::mu() {
    }
 }
 
-double Variables::mustep_pd(const Variables* iterate, double alpha_primal, double alpha_dual) {
+double Variables::mustep_pd(const Variables& iterate, double alpha_primal, double alpha_dual) {
    double mu = 0.;
    if (nComplementaryVariables == 0) {
       return 0.;
    }
    else {
       if (mclow > 0) {
-         mu += t->shiftedDotProductWith(alpha_primal, *iterate->t, *lambda, alpha_dual, *iterate->lambda);
+         mu += t->shiftedDotProductWith(alpha_primal, *iterate.t, *lambda, alpha_dual, *iterate.lambda);
       }
       if (mcupp > 0) {
-         mu += u->shiftedDotProductWith(alpha_primal, *iterate->u, *pi, alpha_dual, *iterate->pi);
+         mu += u->shiftedDotProductWith(alpha_primal, *iterate.u, *pi, alpha_dual, *iterate.pi);
       }
       if (nxlow > 0) {
-         mu += v->shiftedDotProductWith(alpha_primal, *iterate->v, *gamma, alpha_dual, *iterate->gamma);
+         mu += v->shiftedDotProductWith(alpha_primal, *iterate.v, *gamma, alpha_dual, *iterate.gamma);
       }
       if (nxupp > 0) {
-         mu += w->shiftedDotProductWith(alpha_primal, *iterate->w, *phi, alpha_dual, *iterate->phi);
+         mu += w->shiftedDotProductWith(alpha_primal, *iterate.w, *phi, alpha_dual, *iterate.phi);
       }
       mu /= nComplementaryVariables;
       return mu;
    }
 }
 
-void Variables::saxpy(const Variables* iterate, double alpha) {
-   x->axpy(alpha, *iterate->x);
-   y->axpy(alpha, *iterate->y);
-   z->axpy(alpha, *iterate->z);
-   s->axpy(alpha, *iterate->s);
+void Variables::saxpy(const Variables& iterate, double alpha) {
+   x->axpy(alpha, *iterate.x);
+   y->axpy(alpha, *iterate.y);
+   z->axpy(alpha, *iterate.z);
+   s->axpy(alpha, *iterate.s);
    if (mclow > 0) {
-      assert(iterate->t->matchesNonZeroPattern(*iclow) && iterate->lambda->matchesNonZeroPattern(*iclow));
+      assert(iterate.t->matchesNonZeroPattern(*iclow) && iterate.lambda->matchesNonZeroPattern(*iclow));
 
-      t->axpy(alpha, *iterate->t);
-      lambda->axpy(alpha, *iterate->lambda);
+      t->axpy(alpha, *iterate.t);
+      lambda->axpy(alpha, *iterate.lambda);
    }
    if (mcupp > 0) {
-      assert(iterate->u->matchesNonZeroPattern(*icupp) && iterate->pi->matchesNonZeroPattern(*icupp));
+      assert(iterate.u->matchesNonZeroPattern(*icupp) && iterate.pi->matchesNonZeroPattern(*icupp));
 
-      u->axpy(alpha, *iterate->u);
-      pi->axpy(alpha, *iterate->pi);
+      u->axpy(alpha, *iterate.u);
+      pi->axpy(alpha, *iterate.pi);
    }
    if (nxlow > 0) {
-      assert(iterate->v->matchesNonZeroPattern(*ixlow) && iterate->gamma->matchesNonZeroPattern(*ixlow));
+      assert(iterate.v->matchesNonZeroPattern(*ixlow) && iterate.gamma->matchesNonZeroPattern(*ixlow));
 
-      v->axpy(alpha, *iterate->v);
-      gamma->axpy(alpha, *iterate->gamma);
+      v->axpy(alpha, *iterate.v);
+      gamma->axpy(alpha, *iterate.gamma);
    }
    if (nxupp > 0) {
-      assert(iterate->w->matchesNonZeroPattern(*ixupp) && iterate->phi->matchesNonZeroPattern(*ixupp));
+      assert(iterate.w->matchesNonZeroPattern(*ixupp) && iterate.phi->matchesNonZeroPattern(*ixupp));
 
-      w->axpy(alpha, *iterate->w);
-      phi->axpy(alpha, *iterate->phi);
+      w->axpy(alpha, *iterate.w);
+      phi->axpy(alpha, *iterate.phi);
    }
 }
 
-void Variables::saxpy_pd(const Variables* iterate, double alpha_primal, double alpha_dual) {
-   x->axpy(alpha_primal, *iterate->x);
-   y->axpy(alpha_dual, *iterate->y);
-   z->axpy(alpha_dual, *iterate->z);
-   s->axpy(alpha_primal, *iterate->s);
+void Variables::saxpy_pd(const Variables& iterate, double alpha_primal, double alpha_dual) {
+   x->axpy(alpha_primal, *iterate.x);
+   y->axpy(alpha_dual, *iterate.y);
+   z->axpy(alpha_dual, *iterate.z);
+   s->axpy(alpha_primal, *iterate.s);
    if (mclow > 0) {
-      assert(iterate->t->matchesNonZeroPattern(*iclow) && iterate->lambda->matchesNonZeroPattern(*iclow));
+      assert(iterate.t->matchesNonZeroPattern(*iclow) && iterate.lambda->matchesNonZeroPattern(*iclow));
 
-      t->axpy(alpha_primal, *iterate->t);
-      lambda->axpy(alpha_dual, *iterate->lambda);
+      t->axpy(alpha_primal, *iterate.t);
+      lambda->axpy(alpha_dual, *iterate.lambda);
    }
    if (mcupp > 0) {
-      assert(iterate->u->matchesNonZeroPattern(*icupp) && iterate->pi->matchesNonZeroPattern(*icupp));
+      assert(iterate.u->matchesNonZeroPattern(*icupp) && iterate.pi->matchesNonZeroPattern(*icupp));
 
-      u->axpy(alpha_primal, *iterate->u);
-      pi->axpy(alpha_dual, *iterate->pi);
+      u->axpy(alpha_primal, *iterate.u);
+      pi->axpy(alpha_dual, *iterate.pi);
    }
    if (nxlow > 0) {
-      assert(iterate->v->matchesNonZeroPattern(*ixlow) && iterate->gamma->matchesNonZeroPattern(*ixlow));
+      assert(iterate.v->matchesNonZeroPattern(*ixlow) && iterate.gamma->matchesNonZeroPattern(*ixlow));
 
-      v->axpy(alpha_primal, *iterate->v);
-      gamma->axpy(alpha_dual, *iterate->gamma);
+      v->axpy(alpha_primal, *iterate.v);
+      gamma->axpy(alpha_dual, *iterate.gamma);
    }
    if (nxupp > 0) {
-      assert(iterate->w->matchesNonZeroPattern(*ixupp) && iterate->phi->matchesNonZeroPattern(*ixupp));
+      assert(iterate.w->matchesNonZeroPattern(*ixupp) && iterate.phi->matchesNonZeroPattern(*ixupp));
 
-      w->axpy(alpha_primal, *iterate->w);
-      phi->axpy(alpha_dual, *iterate->phi);
+      w->axpy(alpha_primal, *iterate.w);
+      phi->axpy(alpha_dual, *iterate.phi);
    }
 }
 
@@ -249,45 +249,45 @@ void Variables::negate() {
    }
 }
 
-double Variables::stepbound(const Variables* iterate) {
+double Variables::stepbound(const Variables& iterate) {
    double max_step = 1.0;
    if (mclow > 0) {
       assert(t->somePositive(*iclow));
       assert(lambda->somePositive(*iclow));
 
-      max_step = t->stepbound(*iterate->t, max_step);
-      max_step = lambda->stepbound(*iterate->lambda, max_step);
+      max_step = t->stepbound(*iterate.t, max_step);
+      max_step = lambda->stepbound(*iterate.lambda, max_step);
    }
 
    if (mcupp > 0) {
       assert(u->somePositive(*icupp));
       assert(pi->somePositive(*icupp));
 
-      max_step = u->stepbound(*iterate->u, max_step);
-      max_step = pi->stepbound(*iterate->pi, max_step);
+      max_step = u->stepbound(*iterate.u, max_step);
+      max_step = pi->stepbound(*iterate.pi, max_step);
    }
 
    if (nxlow > 0) {
       assert(v->somePositive(*ixlow));
       assert(gamma->somePositive(*ixlow));
 
-      max_step = v->stepbound(*iterate->v, max_step);
-      max_step = gamma->stepbound(*iterate->gamma, max_step);
+      max_step = v->stepbound(*iterate.v, max_step);
+      max_step = gamma->stepbound(*iterate.gamma, max_step);
    }
 
    if (nxupp > 0) {
       assert(w->somePositive(*ixupp));
       assert(phi->somePositive(*ixupp));
 
-      max_step = w->stepbound(*iterate->w, max_step);
-      max_step = phi->stepbound(*iterate->phi, max_step);
+      max_step = w->stepbound(*iterate.w, max_step);
+      max_step = phi->stepbound(*iterate.phi, max_step);
    }
 
    assert(max_step <= 1.0);
    return max_step;
 }
 
-std::pair<double, double> Variables::stepbound_pd(const Variables* iterate) {
+std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) {
    double maxStep_primal = 1.0;
    double maxStep_dual = 1.0;
 
@@ -295,32 +295,32 @@ std::pair<double, double> Variables::stepbound_pd(const Variables* iterate) {
       assert(t->somePositive(*iclow));
       assert(lambda->somePositive(*iclow));
 
-      maxStep_primal = t->stepbound(*iterate->t, maxStep_primal);
-      maxStep_dual = lambda->stepbound(*iterate->lambda, maxStep_dual);
+      maxStep_primal = t->stepbound(*iterate.t, maxStep_primal);
+      maxStep_dual = lambda->stepbound(*iterate.lambda, maxStep_dual);
    }
 
    if (mcupp > 0) {
       assert(u->somePositive(*icupp));
       assert(pi->somePositive(*icupp));
 
-      maxStep_primal = u->stepbound(*iterate->u, maxStep_primal);
-      maxStep_dual = pi->stepbound(*iterate->pi, maxStep_dual);
+      maxStep_primal = u->stepbound(*iterate.u, maxStep_primal);
+      maxStep_dual = pi->stepbound(*iterate.pi, maxStep_dual);
    }
 
    if (nxlow > 0) {
       assert(v->somePositive(*ixlow));
       assert(gamma->somePositive(*ixlow));
 
-      maxStep_primal = v->stepbound(*iterate->v, maxStep_primal);
-      maxStep_dual = gamma->stepbound(*iterate->gamma, maxStep_dual);
+      maxStep_primal = v->stepbound(*iterate.v, maxStep_primal);
+      maxStep_dual = gamma->stepbound(*iterate.gamma, maxStep_dual);
    }
 
    if (nxupp > 0) {
       assert(w->somePositive(*ixupp));
       assert(phi->somePositive(*ixupp));
 
-      maxStep_primal = w->stepbound(*iterate->w, maxStep_primal);
-      maxStep_dual = phi->stepbound(*iterate->phi, maxStep_dual);
+      maxStep_primal = w->stepbound(*iterate.w, maxStep_primal);
+      maxStep_dual = phi->stepbound(*iterate.phi, maxStep_dual);
    }
 
    assert(maxStep_primal <= 1.0);
@@ -329,49 +329,49 @@ std::pair<double, double> Variables::stepbound_pd(const Variables* iterate) {
 }
 
 double
-Variables::find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) {
+Variables::find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, int& firstOrSecond) {
    double alpha = 1.;
    firstOrSecond = 0;
 
    if (mclow > 0) {
-      alpha = t->find_blocking(*step_in->t, *lambda, *step_in->lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = t->find_blocking(*step_in.t, *lambda, *step_in.lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (mcupp > 0) {
-      alpha = u->find_blocking(*step_in->u, *pi, *step_in->pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = u->find_blocking(*step_in.u, *pi, *step_in.pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (nxlow > 0) {
-      alpha = v->find_blocking(*step_in->v, *gamma, *step_in->gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = v->find_blocking(*step_in.v, *gamma, *step_in.gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (nxupp > 0) {
-      alpha = w->find_blocking(*step_in->w, *phi, *step_in->phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = w->find_blocking(*step_in.w, *phi, *step_in.phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    return alpha;
 }
 
 void
-Variables::find_blocking(const Variables* step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
+Variables::find_blocking(const Variables& step_in, double& primalValue, double& primalStep, double& dualValue, double& dualStep, double& primalValue_d,
       double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
       bool& dualBlocking) {
    alphaPrimal = 1.0, alphaDual = 1.0;
    primalBlocking = false, dualBlocking = false;
 
    if (mclow > 0) {
-      t->find_blocking_pd(*step_in->t, *lambda, *step_in->lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      t->find_blocking_pd(*step_in.t, *lambda, *step_in.lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (mcupp > 0) {
-      u->find_blocking_pd(*step_in->u, *pi, *step_in->pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      u->find_blocking_pd(*step_in.u, *pi, *step_in.pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxlow > 0) {
-      v->find_blocking_pd(*step_in->v, *gamma, *step_in->gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      v->find_blocking_pd(*step_in.v, *gamma, *step_in.gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxupp > 0) {
-      w->find_blocking_pd(*step_in->w, *phi, *step_in->phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      w->find_blocking_pd(*step_in.w, *phi, *step_in.phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 }
@@ -471,29 +471,28 @@ void Variables::shift_bound_variables(double alpha, double beta) {
    }
 }
 
-void Variables::copy(const Variables* b_in) {
-   const Variables* b = (const Variables*) b_in;
+void Variables::copy(const Variables& b) {
 
-   s->copyFrom(*b->s);
+   s->copyFrom(*b.s);
    if (nxlow > 0) {
-      v->copyFrom(*b->v);
-      gamma->copyFrom(*b->gamma);
+      v->copyFrom(*b.v);
+      gamma->copyFrom(*b.gamma);
    }
    if (nxupp > 0) {
-      w->copyFrom(*b->w);
-      phi->copyFrom(*b->phi);
+      w->copyFrom(*b.w);
+      phi->copyFrom(*b.phi);
    }
    if (mclow > 0) {
-      t->copyFrom(*b->t);
-      lambda->copyFrom(*b->lambda);
+      t->copyFrom(*b.t);
+      lambda->copyFrom(*b.lambda);
    }
    if (mcupp > 0) {
-      u->copyFrom(*b->u);
-      pi->copyFrom(*b->pi);
+      u->copyFrom(*b.u);
+      pi->copyFrom(*b.pi);
    }
-   x->copyFrom(*b->x);
-   y->copyFrom(*b->y);
-   z->copyFrom(*b->z);
+   x->copyFrom(*b.x);
+   y->copyFrom(*b.y);
+   z->copyFrom(*b.z);
 
 }
 

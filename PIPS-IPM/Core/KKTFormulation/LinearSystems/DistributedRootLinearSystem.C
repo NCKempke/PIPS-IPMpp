@@ -31,7 +31,7 @@ DistributedRootLinearSystem::DistributedRootLinearSystem(DistributedFactory* fac
 }
 
 void DistributedRootLinearSystem::init() {
-   createChildren(data);
+   createChildren();
 
    precondSC = SCsparsifier(mpiComm);
    usePrecondDist = pipsipmpp_options::get_bool_parameter("PRECONDITION_DISTRIBUTED");
@@ -57,32 +57,32 @@ DistributedRootLinearSystem::~DistributedRootLinearSystem() {
    delete[] sparseKktBuffer;
 }
 
-void DistributedRootLinearSystem::assembleKKT(DistributedQP* prob, Variables* vars) {
+void DistributedRootLinearSystem::assembleKKT() {
    if (is_hierarchy_root)
       assert(children.size() == 1);
 
    /* set kkt to zero */
-   initializeKKT(prob, vars);
+   initializeKKT();
 
    /* important that int separate loops! else block in Allreduce might occur */
-   for (size_t c = 0; c < children.size(); c++)
-      children[c]->assembleKKT(prob->children[c], vars);
-   for (size_t c = 0; c < children.size(); c++)
-      children[c]->allreduceAndFactorKKT(prob->children[c], vars);
+   for (auto & c : children)
+      c->assembleKKT();
+   for (auto & c : children)
+      c->allreduceAndFactorKKT();
 
    /* build KKT from local children */
-   assembleLocalKKT(prob);
+   assembleLocalKKT();
 }
 
-void DistributedRootLinearSystem::allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) {
-   reduceKKT(prob);
+void DistributedRootLinearSystem::allreduceAndFactorKKT() {
+   reduceKKT();
 
-   finalizeKKT(prob, vars);
+   finalizeKKT();
 
-   factorizeKKT(prob);
+   factorizeKKT();
 }
 
-void DistributedRootLinearSystem::factor2(DistributedQP* prob, Variables* vars) {
+void DistributedRootLinearSystem::factor2() {
    if (PIPS_MPIgetRank(mpiComm) == 0) {
       if (is_hierarchy_root) {
          assert(children.size() == 1);
@@ -93,26 +93,26 @@ void DistributedRootLinearSystem::factor2(DistributedQP* prob, Variables* vars) 
    }
 
    /* set kkt to zero */
-   initializeKKT(prob, vars);
+   initializeKKT();
 
    // First tell children to factorize.
-   for (size_t c = 0; c < children.size(); c++)
-      children[c]->factor2(prob->children[c], vars);
+   for (auto & c : children)
+      c->factor2();
 
    /* build KKT from local children */
-   assembleLocalKKT(prob);
+   assembleLocalKKT();
 
 #ifdef TIMING
    MPI_Barrier(MPI_COMM_WORLD);
    stochNode->resMon.recReduceTmLocal_start();
 #endif
 
-   reduceKKT(prob);
+   reduceKKT();
 #ifdef TIMING
    stochNode->resMon.recReduceTmLocal_stop();
 #endif
 
-   finalizeKKT(prob, vars);
+   finalizeKKT();
 
    if (PIPS_MPIgetRank(mpiComm) == 0) {
       if (is_hierarchy_root)
@@ -121,7 +121,7 @@ void DistributedRootLinearSystem::factor2(DistributedQP* prob, Variables* vars) 
          std::cout << " Sparse top level Schur Complement factorization is starting... ";
    }
 
-   factorizeKKT(prob);
+   factorizeKKT();
 
    if (PIPS_MPIgetRank(mpiComm) == 0) {
       if (is_hierarchy_root || data->isHierarchyInnerRoot())
@@ -195,8 +195,8 @@ DistributedRootLinearSystem::finalizeZ0Hierarchical(DenseMatrix& buffer, BorderL
    SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first) : nullptr;
    SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first) : nullptr;
 
-   SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last) : &data->getLocalF();
-   SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last) : &data->getLocalG();
+   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last) : &data->getLocalF();
+   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last) : &data->getLocalG();
 
    if (has_RAC)
       assert(F0cons_border && G0cons_border && A0_border && C0_border);
@@ -323,8 +323,8 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
 
    SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.first) : nullptr;
    SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.first) : nullptr;
-   SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last) : &data->getLocalF();
-   SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last) : &data->getLocalG();
+   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.A.last) : &data->getLocalF();
+   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(Br.C.last) : &data->getLocalG();
 
    assert(F0vec_border);
    assert(G0vec_border);
@@ -396,9 +396,9 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContribution(Abstr
 }
 
 /* SC and X0 stored in transposed form */
-void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border,
-      SparseMatrix* C0_border, SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border,
-      SparseMatrix* G0cons_border, int begin_rows, int end_rows) {
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, const DenseMatrix& X0, const SparseMatrix* A0_border,
+      const SparseMatrix* C0_border, const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
+      const SparseMatrix* G0cons_border, int begin_rows, int end_rows) {
    assert(F0vec_border);
    assert(G0vec_border);
 
@@ -446,9 +446,9 @@ void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionSparse
 }
 
 /* SC and X0 stored in transposed form */
-void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border,
-      SparseMatrix* C0_border, SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border,
-      SparseMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
+void DistributedRootLinearSystem::finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, const DenseMatrix& X0, const SparseMatrix* A0_border,
+      const SparseMatrix* C0_border, const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border,
+      const SparseMatrix* G0cons_border, bool is_sym, int begin_rows, int end_rows) {
    assert(F0vec_border);
    assert(G0vec_border);
 
@@ -691,7 +691,7 @@ void DistributedRootLinearSystem::addBorderTimesRhsToB0(DistributedVector<double
    }
 }
 
-void DistributedRootLinearSystem::Ltsolve2(DistributedQP*, DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
+void DistributedRootLinearSystem::Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& x0, bool) {
    assert(false && "not in use");
    assert(pipsipmpp_options::get_bool_parameter("HIERARCHICAL"));
    assert(children.size() == x.children.size());
@@ -704,9 +704,9 @@ void DistributedRootLinearSystem::Ltsolve2(DistributedQP*, DistributedVector<dou
    }
 }
 
-void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
+void DistributedRootLinearSystem::createChildren() {
    DistributedLinearSystem* child{};
-   assert(primal_diagonal && dq && nomegaInv && rhs && prob);
+   assert(primal_diagonal && dq && nomegaInv && rhs);
 
    auto& primal_diagonalst = dynamic_cast<DistributedVector<double>&>(*primal_diagonal);
    auto& dqst = dynamic_cast<DistributedVector<double>&>(*dq);
@@ -716,29 +716,29 @@ void DistributedRootLinearSystem::createChildren(DistributedQP* prob) {
    auto& regDzst = dynamic_cast<DistributedVector<double>&>(*dual_inequality_regularization_diagonal);
    auto& rhsst = dynamic_cast<DistributedVector<double>&>(*rhs);
 
-   for (size_t it = 0; it < prob->children.size(); it++) {
+   for (size_t it = 0; it < data->children.size(); it++) {
       assert(primal_diagonalst.children[it] != nullptr);
       if (MPI_COMM_NULL == primal_diagonalst.children[it]->mpiComm) {
-         child = new DistributedDummyLinearSystem(factory, prob->children[it]);
+         child = new DistributedDummyLinearSystem(factory, data->children[it]);
       }
       else {
-         assert(prob->children[it]);
+         assert(data->children[it]);
          if (is_hierarchy_root) {
-            assert(prob->isHierarchyRoot());
-            assert(prob->children.size() == 1);
-            assert(prob->children[0]);
+            assert(data->isHierarchyRoot());
+            assert(data->children.size() == 1);
+            assert(data->children[0]);
             assert(primal_diagonalst.children.size() == 1 && dqst.children.size() == 1 && nomegaInvst.children.size() == 1 &&
                    rhsst.children.size() == 1);
             assert(MPI_COMM_NULL != primal_diagonalst.children[0]->mpiComm);
          }
 
-         if (prob->children[it]->children.empty()) {
-            child = factory->make_linear_system_leaf(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
+         if (data->children[it]->children.empty()) {
+            child = factory->make_linear_system_leaf(data->children[it], primal_diagonalst.children[it], dqst.children[it],
                   nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it]);
          }
          else {
-            assert(prob->children[it]);
-            child = factory->make_linear_system_root(prob->children[it], primal_diagonalst.children[it], dqst.children[it],
+            assert(data->children[it]);
+            child = factory->make_linear_system_root(data->children[it], primal_diagonalst.children[it], dqst.children[it],
                   nomegaInvst.children[it], regPst.children[it], regDyst.children[it], regDzst.children[it], rhsst.children[it]);
          }
       }
@@ -836,7 +836,7 @@ void DistributedRootLinearSystem::AddChild(DistributedLinearSystem* child) {
 // ATOMS of FACTOR 2
 //////////////////////////////////////////////////////////
 /* Atoms methods of FACTOR2 for a non-leaf linear system */
-void DistributedRootLinearSystem::initializeKKT(DistributedQP*, Variables*) {
+void DistributedRootLinearSystem::initializeKKT() {
    if (hasSparseKkt)
       dynamic_cast<SparseSymmetricMatrix*>(kkt.get())->symPutZeroes();
    else {
@@ -845,9 +845,9 @@ void DistributedRootLinearSystem::initializeKKT(DistributedQP*, Variables*) {
    }
 }
 
-void DistributedRootLinearSystem::reduceKKT(DistributedQP* prob) {
+void DistributedRootLinearSystem::reduceKKT() {
    if (usePrecondDist)
-      reduceKKTdist(prob);
+      reduceKKTdist();
    else if (hasSparseKkt)
       reduceKKTsparse();
    else
@@ -977,7 +977,7 @@ void DistributedRootLinearSystem::registerMatrixEntryTripletMPI() {
    MPI_Type_commit(&MatrixEntryTriplet_mpi);
 }
 
-void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
+void DistributedRootLinearSystem::syncKKTdistLocalEntries() {
    if (!iAmDistrib)
       return;
 
@@ -1003,7 +1003,7 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
       registerMatrixEntryTripletMPI();
 
    // pack the entries that will be send below
-   std::vector<MatrixEntryTriplet> prevEntries = this->packKKTdistOutOfRangeEntries(prob, childStart, childEnd);
+   std::vector<MatrixEntryTriplet> prevEntries = this->packKKTdistOutOfRangeEntries(childStart, childEnd);
    std::vector<MatrixEntryTriplet> myEntries(0);
 
    assert(!prevEntries.empty() && prevEntries[0].row == -1 && prevEntries[0].col == -1);
@@ -1036,8 +1036,8 @@ void DistributedRootLinearSystem::syncKKTdistLocalEntries(DistributedQP* prob) {
    int lastC = -1;
 
 #ifndef NDEBUG
-   const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
-   const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
+   const std::vector<bool>& rowIsLocal = data->getSCrowMarkerLocal();
+   const std::vector<bool>& rowIsMyLocal = data->getSCrowMarkerMyLocal();
 #endif
 
    // finally, put received data into Schur complement matrix
@@ -1142,15 +1142,15 @@ void DistributedRootLinearSystem::sendKKTdistLocalEntries(const std::vector<Matr
    MPI_Send(&prevEntries[0], nEntries, MatrixEntryTriplet_mpi, prevRank, 0, mpiComm);
 }
 
-std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLinearSystem::packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int) const {
+std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLinearSystem::packKKTdistOutOfRangeEntries(int childStart, int) const {
    assert(kkt && hasSparseKkt);
 
    int myRank;
    MPI_Comm_rank(mpiComm, &myRank);
 
    auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
-   const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
-   const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
+   const std::vector<bool>& rowIsLocal = data->getSCrowMarkerLocal();
+   const std::vector<bool>& rowIsMyLocal = data->getSCrowMarkerMyLocal();
    int* const krowKkt = kkts.krowM();
    int* const jColKkt = kkts.jcolM();
    double* const MKkt = kkts.M();
@@ -1208,13 +1208,12 @@ std::vector<DistributedRootLinearSystem::MatrixEntryTriplet> DistributedRootLine
 }
 
 
-void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
-   assert(prob);
+void DistributedRootLinearSystem::reduceKKTdist() {
    assert(iAmDistrib);
    assert(kkt);
 
-   const std::vector<bool>& rowIsLocal = prob->getSCrowMarkerLocal();
-   const std::vector<bool>& rowIsMyLocal = prob->getSCrowMarkerMyLocal();
+   const std::vector<bool>& rowIsLocal = data->getSCrowMarkerLocal();
+   const std::vector<bool>& rowIsMyLocal = data->getSCrowMarkerMyLocal();
 
    auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
@@ -1235,13 +1234,13 @@ void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
    assert(int(rowIsLocal.size()) == sizeKkt);
 
    // add up locally owned entries
-   syncKKTdistLocalEntries(prob);
+   syncKKTdistLocalEntries();
 
    // add B_0, F_0, G_0 and diagonals (all scattered)
-   finalizeKKTdist(prob);
+   finalizeKKTdist();
 
    precondSC.updateDiagDomBound();
-   precondSC.unmarkDominatedSCdistLocals(*prob, kkts);
+   precondSC.unmarkDominatedSCdistLocals(*data, kkts);
 
    // compute row lengths
    for (int r = 0; r < sizeKkt; r++) {
@@ -1428,10 +1427,6 @@ void DistributedRootLinearSystem::reduceKKTdist(DistributedQP* prob) {
 }
 
 void DistributedRootLinearSystem::factorizeKKT() {
-   factorizeKKT(nullptr);
-}
-
-void DistributedRootLinearSystem::factorizeKKT(DistributedQP* prob) {
    //stochNode->resMon.recFactTmLocal_start();
 #ifdef TIMING
    MPI_Barrier(mpiComm);
@@ -1445,10 +1440,9 @@ void DistributedRootLinearSystem::factorizeKKT(DistributedQP* prob) {
       const int myRank = PIPS_MPIgetRank(mpiComm);
 
       assert(kktDist);
-      assert(prob);
 
       if (allreduce_kkt || myRank == 0)
-         precondSC.getSparsifiedSC_fortran(*prob, *kktDist);
+         precondSC.getSparsifiedSC_fortran(*data, *kktDist);
 
       // todo do that properly
       precondSC.updateStats();
@@ -1527,22 +1521,22 @@ void DistributedRootLinearSystem::myAtPutZeros(DenseSymmetricMatrix* mat) {
    myAtPutZeros(mat, 0, 0, n, n);
 }
 
-void DistributedRootLinearSystem::addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC) {
-   assert(childindex < prob->children.size());
+void DistributedRootLinearSystem::addTermToSchurCompl(size_t childindex, bool use_local_RAC) {
+   assert(childindex < data->children.size());
 
    if (computeBlockwiseSC) {
       const int n_empty_rows_border = use_local_RAC ? locmy : locnx + locmy;
-      children[childindex]->addTermToSchurComplBlocked(prob->children[childindex], hasSparseKkt, *kkt, use_local_RAC, n_empty_rows_border);
+      children[childindex]->addTermToSchurComplBlocked(hasSparseKkt, *kkt, use_local_RAC, n_empty_rows_border);
    }
    else {
       if (hasSparseKkt) {
          auto& kkts = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
-         children[childindex]->addTermToSparseSchurCompl(prob->children[childindex], kkts);
+         children[childindex]->addTermToSparseSchurCompl(kkts);
       }
       else {
          auto& kktd = dynamic_cast<DenseSymmetricMatrix&>(*kkt);
-         children[childindex]->addTermToDenseSchurCompl(prob->children[childindex], kktd);
+         children[childindex]->addTermToDenseSchurCompl(kktd);
       }
    }
 }

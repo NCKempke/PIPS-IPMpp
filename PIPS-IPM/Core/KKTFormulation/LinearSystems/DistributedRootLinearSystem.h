@@ -26,7 +26,7 @@ class DistributedRootLinearSystem : public DistributedLinearSystem {
    };
 
 protected:
-   void createChildren(DistributedQP* prob);
+   void createChildren();
    void deleteChildren() override;
 
 private:
@@ -39,21 +39,20 @@ public:
    DistributedRootLinearSystem(DistributedFactory* factory, DistributedQP* prob_, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_);
 
-   void factor2(DistributedQP* prob, Variables* vars) override;
-   void assembleKKT(DistributedQP* prob, Variables* vars) override;
-   void allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) override;
+   void factor2() override;
+   void assembleKKT() override;
+   void allreduceAndFactorKKT() override;
 
    /* Atoms methods of FACTOR2 for a non-leaf linear system */
-   virtual void initializeKKT(DistributedQP* prob, Variables* vars);
-   virtual void assembleLocalKKT(DistributedQP* prob) = 0;
-   void addTermToSchurCompl(DistributedQP* prob, size_t childindex, bool use_local_RAC);
-   virtual void reduceKKT(DistributedQP* prob);
+   virtual void initializeKKT();
+   virtual void assembleLocalKKT() = 0;
+   void addTermToSchurCompl(size_t childindex, bool use_local_RAC);
+   virtual void reduceKKT();
    virtual void factorizeKKT();
-   virtual void factorizeKKT(DistributedQP* prob);
-   virtual void finalizeKKT(DistributedQP* prob, Variables* vars) = 0;
-   virtual void finalizeKKTdist(DistributedQP* /*prob*/ ) { assert("not implemented here \n" && 0); };
+   virtual void finalizeKKT() = 0;
+   virtual void finalizeKKTdist() { assert("not implemented here \n" && 0); };
 
-   void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    /* compute (Br0 - sum_j Br_mod_border) - buffer */
    virtual void finalizeZ0Hierarchical(DenseMatrix& buffer, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, int begin_rows, int end_rows);
@@ -131,22 +130,22 @@ protected: //buffers
 private:
    void initProperChildrenRange();
    void registerMatrixEntryTripletMPI();
-   void reduceKKTdist(DistributedQP* prob);
+   void reduceKKTdist();
    void reduceKKTdense();
    void reduceKKTsparse();
    void reduceToProc0(int size, double* values);
    void reduceToAllProcs(int size, double* values);
-   void syncKKTdistLocalEntries(DistributedQP* prob);
+   void syncKKTdistLocalEntries();
    void sendKKTdistLocalEntries(const std::vector<MatrixEntryTriplet>& prevEntries) const;
-   std::vector<MatrixEntryTriplet> receiveKKTdistLocalEntries() const;
-   std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(DistributedQP* prob, int childStart, int childEnd) const;
+   [[nodiscard]] std::vector<MatrixEntryTriplet> receiveKKTdistLocalEntries() const;
+   [[nodiscard]] std::vector<MatrixEntryTriplet> packKKTdistOutOfRangeEntries(int childStart, int childEnd) const;
 
-   static void finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border, SparseMatrix* C0_border,
-         SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border, SparseMatrix* G0cons_border, bool is_sym,
+   static void finalizeInnerSchurComplementContributionDense(AbstractMatrix& SC_, const DenseMatrix& X0, const SparseMatrix* A0_border, const SparseMatrix* C0_border,
+         const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border, const SparseMatrix* G0cons_border, bool is_sym,
          int begin_rows, int end_rows);
 
-   static void finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, DenseMatrix& X0, SparseMatrix* A0_border, SparseMatrix* C0_border,
-         SparseMatrix* F0vec_border, SparseMatrix* G0vec_border, SparseMatrix* F0cons_border, SparseMatrix* G0cons_border, int begin_rows,
+   static void finalizeInnerSchurComplementContributionSparse(AbstractMatrix& SC_, const DenseMatrix& X0, const SparseMatrix* A0_border, const SparseMatrix* C0_border,
+         const SparseMatrix* F0vec_border, const SparseMatrix* G0vec_border, const SparseMatrix* F0cons_border, const SparseMatrix* G0cons_border, int begin_rows,
          int end_rows);
 
    MPI_Datatype MatrixEntryTriplet_mpi;

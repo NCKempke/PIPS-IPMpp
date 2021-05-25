@@ -19,19 +19,19 @@ public:
    void
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
-   void finalizeKKT(DistributedQP* prob, Variables*) override;
+   void finalizeKKT() override;
 
-   void Lsolve(DistributedQP*, Vector<double>& x) override;
-   void Dsolve(DistributedQP*, Vector<double>& x) override;
-   void Ltsolve(DistributedQP*, Vector<double>& v) override;
+   void Lsolve(Vector<double>& x) override;
+   void Dsolve(Vector<double>& x) override;
+   void Ltsolve(Vector<double>& v) override;
 
    void computeInnerSystemRightHandSide(DistributedVector<double>& rhs_inner, const SimpleVector<double>& x0, bool) override;
 protected:
-   SymmetricMatrix* createKKT(DistributedQP*);
-   void assembleLocalKKT(DistributedQP* prob) override;
-   void reduceKKT(DistributedQP*) override;
+   SymmetricMatrix* createKKT();
+   void assembleLocalKKT() override;
+   void reduceKKT() override;
 
-   DoubleLinearSolver* createSolver(DistributedQP*, const SymmetricMatrix* kktmat);
+   DoubleLinearSolver* createSolver(const SymmetricMatrix* kktmat);
 private:
    void computeSchurCompRightHandSide(const DistributedVector<double>& rhs_inner, SimpleVector<double>& b0);
 

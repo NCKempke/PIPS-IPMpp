@@ -47,12 +47,12 @@ public:
          Vector<double>* regP, Vector<double>* regDy, Vector<double>* regDz, Vector<double>* rhs_, bool creat_solvers);
    ~sLinsysRootAug() override = default;
 
-   void finalizeKKT(DistributedQP* prob, Variables* vars) override;
-   void finalizeKKTdist(DistributedQP* prob) override;
+   void finalizeKKT() override;
+   void finalizeKKTdist() override;
 
-   void Lsolve(DistributedQP* prob, Vector<double>& x) override;
-   void Dsolve(DistributedQP* prob, Vector<double>& x) override;
-   void Ltsolve(DistributedQP* prob, Vector<double>& x) override;
+   void Lsolve(Vector<double>& x) override;
+   void Dsolve(Vector<double>& x) override;
+   void Ltsolve(Vector<double>& x) override;
 
    using DistributedLinearSystem::LsolveHierarchyBorder;
    void LsolveHierarchyBorder(DenseMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool two_link_border, int begin_cols,
@@ -66,24 +66,24 @@ public:
    add_regularization_local_kkt(double primal_regularization, double dual_equality_regularization, double dual_inequality_regularization) override;
 
 protected:
-   SymmetricMatrix* createKKT(DistributedQP* prob) const;
+   SymmetricMatrix* createKKT() const;
    void createSolversSparse(SolverType solver);
    void createSolversDense();
 
-   void assembleLocalKKT(DistributedQP* prob) override;
-   void solveReducedLinkCons(DistributedQP* prob, SimpleVector<double>& b);
-   void solveReducedLinkConsBlocked(DistributedQP* data, DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs);
+   void assembleLocalKKT() override;
+   void solveReducedLinkCons(SimpleVector<double>& b);
+   void solveReducedLinkConsBlocked(DenseMatrix& rhs_mat_transp, int rhs_start, int n_rhs);
    void addBlTKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res,
          bool sparse_res) override;
    void addBlTKiInvBrToResBlockwise(AbstractMatrix& result, BorderLinsys& Bl, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool sym_res,
          bool sparse_res, DenseMatrix& buffer_b0, int begin_cols, int end_cols);
 
 private:
-   void createSolversAndKKts(DistributedQP* prob);
-   void finalizeKKTdense(DistributedQP* prob, Variables* vars);
-   void finalizeKKTsparse(DistributedQP* prob, Variables* vars);
-   void solveWithIterRef(DistributedQP* prob, SimpleVector<double>& b);
-   void solveWithBiCGStab(DistributedQP* prob, SimpleVector<double>& b);
+   void createSolversAndKKts();
+   void finalizeKKTdense();
+   void finalizeKKTsparse();
+   void solveWithIterRef(SimpleVector<double>& b);
+   void solveWithBiCGStab(SimpleVector<double>& b);
 
    void DsolveHierarchyBorder(DenseMatrix& b, int n_cols) override;
 
@@ -100,10 +100,10 @@ private:
    void clear_CtDC_from_schur_complement(const SymmetricMatrix& CtDC_loc);
 
    // add specified columns of given matrix Ht (either Ft or Gt) to Schur complement
-   void addLinkConsBlock0Matrix(DistributedQP* prob, SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
+   void addLinkConsBlock0Matrix(const SparseMatrix& Ht, int nHtOffsetCols, int nKktOffsetCols, int startCol, int endCol);
 
    /** y = beta*y - alpha* SC * x */
-   void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x, DistributedQP* prob);
+   void SCmult(double beta, SimpleVector<double>& y, double alpha, SimpleVector<double>& x);
 
    /** stores C^T (Omega + Reg)^-1 C from the KKT matrix */
    std::unique_ptr<SymmetricMatrix> CtDC;

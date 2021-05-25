@@ -11,7 +11,7 @@
 #include "DistributedQP.hpp"
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, bool is_hierarchy_root) : LinearSystem(
-      factory_, problem), data{problem}, computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
+      factory_, *problem), data{problem}, computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
       blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")), is_hierarchy_root(is_hierarchy_root),
       blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
       sc_compute_blockwise_hierarchical{pipsipmpp_options::get_bool_parameter("SC_HIERARCHICAL_COMPUTE_BLOCKWISE")}, stochNode{factory_->tree} {
@@ -32,7 +32,7 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
 
 DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, DistributedQP* problem, Vector<double>* dd_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* primal_reg_, Vector<double>* dual_y_reg_, Vector<double>* dual_z_reg_, Vector<double>* rhs_,
-      bool create_iter_ref_vecs) : LinearSystem(factory_, problem, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_,
+      bool create_iter_ref_vecs) : LinearSystem(factory_, *problem, dd_, dq_, nomegaInv_, primal_reg_, dual_y_reg_, dual_z_reg_, rhs_,
       create_iter_ref_vecs), data{problem}, computeBlockwiseSC(pipsipmpp_options::get_bool_parameter("SC_COMPUTE_BLOCKWISE")),
       blocksizemax(pipsipmpp_options::get_int_parameter("SC_BLOCKWISE_BLOCKSIZE_MAX")),
       blocksize_hierarchical(pipsipmpp_options::get_int_parameter("SC_BLOCKSIZE_HIERARCHICAL")),
@@ -52,42 +52,18 @@ DistributedLinearSystem::DistributedLinearSystem(DistributedFactory* factory_, D
    useRefs = true;
 }
 
-
-void DistributedLinearSystem::joinRHS(Vector<double>& rhs_in, const Vector<double>& rhs1_in, const Vector<double>& rhs2_in,
-      const Vector<double>& rhs3_in) const {
-   auto& rhs = dynamic_cast<DistributedVector<double>&>(rhs_in);
-   const auto& rhs1 = dynamic_cast<const DistributedVector<double>&>(rhs1_in);
-   const auto& rhs2 = dynamic_cast<const DistributedVector<double>&>(rhs2_in);
-   const auto& rhs3 = dynamic_cast<const DistributedVector<double>&>(rhs3_in);
-
-   rhs.jointCopyFrom(rhs1, rhs2, rhs3);
-}
-
-void DistributedLinearSystem::separateVars(Vector<double>& x_in, Vector<double>& y_in, Vector<double>& z_in, const Vector<double>& vars_in) const {
-   auto& x = dynamic_cast<DistributedVector<double>&>(x_in);
-   auto& y = dynamic_cast<DistributedVector<double>&>(y_in);
-   auto& z = dynamic_cast<DistributedVector<double>&>(z_in);
-   const auto& vars = dynamic_cast<const DistributedVector<double>&>(vars_in);
-
-   vars.jointCopyTo(x, y, z);
-}
-
-void DistributedLinearSystem::factorize(Problem* problem_, Variables* vars) {
+void DistributedLinearSystem::factorize(Variables& vars) {
 #ifdef TIMING
    double tTot = MPI_Wtime();
 #endif
    // the call to the the parent's method takes care of all necessary updates
    // to the KKT system (updating diagonals mainly). This is done recursively,
    // we don't have to worry about it anymore.
-   LinearSystem::factorize(problem_, vars);
+   LinearSystem::factorize(vars);
 
    // now DO THE LINEAR ALGEBRA!
-
-   auto* problem = dynamic_cast<DistributedQP*>(problem_);
    // in order to avoid a call to QpGenLinsys::factor, call factor2 method.
-   factor2(problem, vars);
-//  assembleKKT(problem, vars);
-//  allreduceAndFactorKKT(problem, vars);
+   factor2();
 
 #ifdef TIMING
    tTot = MPI_Wtime() - tTot;
@@ -130,16 +106,16 @@ void DistributedLinearSystem::factorize_with_correct_inertia() {
  *
  * 
  */
-void DistributedLinearSystem::addLnizi(DistributedQP* problem, Vector<double>& z0_, Vector<double>& zi_) {
+void DistributedLinearSystem::addLnizi(Vector<double>& z0_, Vector<double>& zi_) {
    auto& z0 = dynamic_cast<SimpleVector<double>&>(z0_);
    auto& zi = dynamic_cast<SimpleVector<double>&>(zi_);
 
    solver->Dsolve(zi);
    solver->Ltsolve(zi);
 
-   SparseMatrix& A = problem->getLocalA();
-   SparseMatrix& C = problem->getLocalC();
-   SparseMatrix& R = problem->getLocalCrossHessian();
+   const SparseMatrix& A = data->getLocalA();
+   const SparseMatrix& C = data->getLocalC();
+   const SparseMatrix& R = data->getLocalCrossHessian();
 
    //get n0= nx(parent)= #cols of A or C
    const auto n0 = A.n_columns();
@@ -213,13 +189,13 @@ DistributedLinearSystem::finalizeDenseBorderBlocked(BorderLinsys& B, const Dense
    if (!B.has_RAC && !B.use_local_RAC)
       return;
 
-   SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.F.first) : nullptr;
-   SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.G.first) : nullptr;
+   const SparseMatrix* F0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.F.first) : nullptr;
+   const SparseMatrix* G0cons_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.G.first) : nullptr;
 
-   SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.first) : nullptr;
-   SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.first) : nullptr;
-   SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.last) : &data->getLocalF();
-   SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.last) : &data->getLocalG();
+   const SparseMatrix* A0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.first) : nullptr;
+   const SparseMatrix* C0_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.first) : nullptr;
+   const SparseMatrix* F0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.A.last) : &data->getLocalF();
+   const SparseMatrix* G0vec_border = has_RAC ? dynamic_cast<SparseMatrix*>(B.C.last) : &data->getLocalG();
 
    assert(F0vec_border);
    assert(G0vec_border);
@@ -477,9 +453,9 @@ void DistributedLinearSystem::solveCompressed(Vector<double>& rhs_) {
 #ifdef TIMING
    //double tTot=MPI_Wtime();
 #endif
-   Lsolve(data, rhs);
-   Dsolve(data, rhs);
-   Ltsolve(data, rhs);
+   Lsolve(rhs);
+   Dsolve(rhs);
+   Ltsolve(rhs);
 #ifdef TIMING
    //cout << "SolveCompressed took: " << (MPI_Wtime()-tTot) << endl;
 #endif
@@ -493,8 +469,8 @@ void DistributedLinearSystem::solveCompressed(Vector<double>& rhs_) {
  *  y = beta*y + Di\Li\ (  [ A 0 0 ] * x )
  *                      (  [ C 0 0 ]    )
  */
-void DistributedLinearSystem::LniTransMult(DistributedQP* problem, SimpleVector<double>& y, double alpha, SimpleVector<double>& x) {
-   SparseMatrix& A = problem->getLocalA();
+void DistributedLinearSystem::LniTransMult(SimpleVector<double>& y, double alpha, SimpleVector<double>& x) {
+   const SparseMatrix& A = data->getLocalA();
    int N{0}, nx0{0};
 
    //get nx(parent) from the number of cols of A (or C). Use N as dummy
@@ -509,7 +485,6 @@ void DistributedLinearSystem::LniTransMult(DistributedQP* problem, SimpleVector<
    //!memopt
    SimpleVector<double> LniTx(N);
 
-   // shortcuts
    SimpleVector<double> x1(&x[0], nx0);
    SimpleVector<double> LniTx1(&LniTx[0], locnx);
 
@@ -518,8 +493,8 @@ void DistributedLinearSystem::LniTransMult(DistributedQP* problem, SimpleVector<
       SimpleVector<double> LniTx2(&LniTx[locnx], locmy);
       SimpleVector<double> LniTx3(&LniTx[locnx + locmy], locmz);
 
-      SparseMatrix& C = problem->getLocalC();
-      SparseMatrix& R = problem->getLocalCrossHessian();
+      const SparseMatrix& C = data->getLocalC();
+      const SparseMatrix& R = data->getLocalCrossHessian();
       R.mult(0.0, LniTx1, 1.0, x1);
       A.mult(0.0, LniTx2, 1.0, x1);
       C.mult(0.0, LniTx3, 1.0, x1);
@@ -529,7 +504,7 @@ void DistributedLinearSystem::LniTransMult(DistributedQP* problem, SimpleVector<
    if (locmyl > 0) {
       int nxMyMzP = x.length() - locmyl - locmzl;
 
-      SparseMatrix& F = problem->getLocalF();
+      const SparseMatrix& F = data->getLocalF();
       SimpleVector<double> xlink(&x[nxMyMzP], locmyl);
 
       F.transMult(1.0, LniTx1, 1.0, xlink);
@@ -538,7 +513,7 @@ void DistributedLinearSystem::LniTransMult(DistributedQP* problem, SimpleVector<
    if (locmzl > 0) {
       int nxMyMzMylP = x.length() - locmzl;
 
-      SparseMatrix& G = problem->getLocalG();
+      const SparseMatrix& G = data->getLocalG();
       SimpleVector<double> xlink(&x[nxMyMzMylP], locmzl);
 
       G.transMult(1.0, LniTx1, 1.0, xlink);
@@ -557,12 +532,12 @@ void DistributedLinearSystem::LniTransMult(DistributedQP* problem, SimpleVector<
  *                 [G           ]
  */
 
-void DistributedLinearSystem::addTermToSchurResidual(DistributedQP* problem, SimpleVector<double>& res, SimpleVector<double>& x) {
-   SparseMatrix& A = problem->getLocalA();
-   SparseMatrix& C = problem->getLocalC();
-   SparseMatrix& F = problem->getLocalF();
-   SparseMatrix& G = problem->getLocalG();
-   SparseMatrix& R = problem->getLocalCrossHessian();
+void DistributedLinearSystem::addTermToSchurResidual(SimpleVector<double>& res, SimpleVector<double>& x) {
+   const SparseMatrix& A = data->getLocalA();
+   const SparseMatrix& C = data->getLocalC();
+   const SparseMatrix& F = data->getLocalF();
+   const SparseMatrix& G = data->getLocalG();
+   const SparseMatrix& R = data->getLocalCrossHessian();
 
 #ifndef NDEBUG
    assert(A.n_rows() == locmy);
@@ -608,12 +583,12 @@ void DistributedLinearSystem::addTermToSchurResidual(DistributedQP* problem, Sim
       G.mult(1.0, &res[res.length() - locmzl], 1, 1.0, &y[0], 1);
 }
 
-void DistributedLinearSystem::addTermToDenseSchurCompl(DistributedQP* problem, DenseSymmetricMatrix& SC) {
-   SparseMatrix& A = problem->getLocalA();
-   SparseMatrix& C = problem->getLocalC();
-   SparseMatrix& F = problem->getLocalF();
-   SparseMatrix& G = problem->getLocalG();
-   SparseMatrix& R = problem->getLocalCrossHessian();
+void DistributedLinearSystem::addTermToDenseSchurCompl(DenseSymmetricMatrix& SC) {
+   const SparseMatrix& A = data->getLocalA();
+   const SparseMatrix& C = data->getLocalC();
+   const SparseMatrix& F = data->getLocalF();
+   const SparseMatrix& G = data->getLocalG();
+   const SparseMatrix& R = data->getLocalCrossHessian();
 
    const bool withR = (R.n_columns() != -1);
    const bool withA = (A.n_columns() != -1);

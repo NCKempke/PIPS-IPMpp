@@ -26,15 +26,15 @@ public:
 
    ~sLinsysLeafMumps();
 
-   void addTermToSparseSchurCompl(DistributedQP* prob, SparseSymmetricMatrix& SC) override;
+   void addTermToSparseSchurCompl(SparseSymmetricMatrix& SC) override;
 
-   void addTermToDenseSchurCompl(DistributedQP* prob, DenseSymmetricMatrix& SC) override;
+   void addTermToDenseSchurCompl(DenseSymmetricMatrix& SC) override;
 
 private:
-   void addTermToSchurComplMumps(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC);
+   void addTermToSchurComplMumps(bool sparseSC, SymmetricMatrix& SC);
 
    /* build right matrix for Schur complement; Fortran indexed, CSC, and without empty columns */
-   void buildSchurRightMatrix(DistributedQP* prob, SymmetricMatrix& SC);
+   void buildSchurRightMatrix(SymmetricMatrix& SC);
 
    std::unique_ptr<SparseMatrix> schurRightMatrix_csc{};
    int* schurRightNzColId{};

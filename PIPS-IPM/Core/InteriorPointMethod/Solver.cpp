@@ -29,15 +29,14 @@ void Solver::solve_linear_system(Variables& iterate, Problem& problem, Residuals
    residuals.evaluate(problem, iterate);
    residuals.set_complementarity_residual(iterate, 0.);
 
-   linear_system.factorize(&problem, &iterate);
-   linear_system.solve(&problem, &iterate, &residuals, &step);
+   linear_system.factorize(iterate);
+   linear_system.solve(iterate, residuals, step);
    step.negate();
 
    // take the full affine scaling step
-   iterate.saxpy(&step, 1.);
+   iterate.saxpy(step, 1.);
    double shift = 1e3 + 2 * iterate.violation();
    iterate.shift_bound_variables(shift, shift);
-   return;
 }
 
 Solver::~Solver() {

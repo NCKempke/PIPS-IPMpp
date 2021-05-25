@@ -665,7 +665,7 @@ void SparseMatrix::deleteEmptyRows(int*& orgIndex) {
 }
 
 void SparseMatrix::fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset, double* colsArrayDense,
-      int* rowSparsity) {
+      int* rowSparsity) const {
    if (!m_Mt)
       initTransposed();
 
@@ -673,7 +673,7 @@ void SparseMatrix::fromGetColsBlock(const int* colIndices, int nCols, int arrayL
 }
 
 void SparseMatrix::fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset, double* cols_array_dense,
-      int* row_sparsity) {
+      int* row_sparsity) const {
    if (!m_Mt)
       initTransposed();
 

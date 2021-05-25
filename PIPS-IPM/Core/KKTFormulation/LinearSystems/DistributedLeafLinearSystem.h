@@ -24,17 +24,17 @@ public:
 
    ~DistributedLeafLinearSystem() override = default;
 
-   void factor2(DistributedQP* prob, Variables* vars) override;
-   void assembleKKT(DistributedQP*, Variables*) override {};
-   void allreduceAndFactorKKT(DistributedQP* prob, Variables* vars) override { factor2(prob, vars); };
+   void factor2() override;
+   void assembleKKT() override {};
+   void allreduceAndFactorKKT() override { factor2(); };
 
-   void Lsolve(DistributedQP*, Vector<double>&) override {};
-   void Dsolve(DistributedQP*, Vector<double>& x) override;
-   void Ltsolve(DistributedQP*, Vector<double>&) override {};
+   void Lsolve(Vector<double>&) override {};
+   void Dsolve(Vector<double>& x) override;
+   void Ltsolve(Vector<double>&) override {};
 
    //void Lsolve2 ( Vector<double>& x ) override;
    //void Dsolve2 ( Vector<double>& x ) override;
-   void Ltsolve2(DistributedQP* prob, DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
+   void Ltsolve2(DistributedVector<double>& x, SimpleVector<double>& xp, bool) override;
 
    void put_primal_diagonal() override;
    void put_dual_inequalites_diagonal() override;
@@ -47,9 +47,9 @@ public:
    //void Ltsolve_internal(  DistributedQP *prob, DistributedVector<double>& x, SimpleVector<double>& xp);
    void deleteChildren() override;
 
-   void addTermToSchurComplBlocked(DistributedQP* prob, bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) override;
+   void addTermToSchurComplBlocked(bool sparseSC, SymmetricMatrix& SC, bool use_local_RAC, int) override;
 
-   void addLniziLinkCons(DistributedQP* prob, Vector<double>& z0_, Vector<double>& zi_, bool) override;
+   void addLniziLinkCons(Vector<double>& z0_, Vector<double>& zi_, bool) override;
 
    void addInnerBorderKiInvBrToRes(AbstractMatrix& result, BorderLinsys& Br, std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res, bool sym_res,
          int begin_cols, int end_cols, int) override;
@@ -60,7 +60,7 @@ public:
 protected:
    void add_regularization_diagonal(int offset, double regularization, Vector<double>& regularization_vector);
 
-   static void mySymAtPutSubmatrix(SymmetricMatrix& kkt, GeneralMatrix& B, GeneralMatrix&, int locnx, int locmy, int);
+   static void mySymAtPutSubmatrix(SymmetricMatrix& kkt, const GeneralMatrix& B, int locnx, int locmy, int);
 
    void addBorderTimesRhsToB0(DistributedVector<double>& rhs, SimpleVector<double>& b0, BorderLinsys& border) override;
    void addBorderX0ToRhs(DistributedVector<double>& rhs, const SimpleVector<double>& x0, BorderLinsys& border) override;

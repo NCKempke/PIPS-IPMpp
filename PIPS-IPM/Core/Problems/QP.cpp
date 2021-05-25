@@ -63,7 +63,7 @@ void QP::putQIntoAt(GeneralMatrix& M, int row, int col) {
    M.atPutSubmatrix(row, col, *Q, 0, 0, nx, nx);
 }
 
-void QP::hessian_diagonal(Vector<double>& hessian_diagonal) {
+void QP::hessian_diagonal(Vector<double>& hessian_diagonal) const {
    Q->fromGetDiagonal(0, hessian_diagonal);
 }
 
