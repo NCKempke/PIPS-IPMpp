@@ -101,92 +101,83 @@ void PrimalMehrotraStrategy::take_step(Variables& iterate, Variables& step) {
 
 TerminationStatus
 PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-      AbstractLinearSystem& linear_system) {
-   this->register_observer(&linear_system);
+      AbstractLinearSystem& linear_system, int iteration) {
 
-   TerminationStatus status_code;
+   set_BiCGStab_tolerance(iteration);
+   bool small_corr = false;
 
-   int iteration = 0;
-   bool termination = false;
-   while (!termination) {
-      iteration++;
-      set_BiCGStab_tolerance(iteration);
-      bool small_corr = false;
+   factory.iterate_started();
 
-      factory.iterate_started();
+   // evaluate residuals and update algorithm status:
+   residuals.evaluate(problem, iterate);
 
-      // evaluate residuals and update algorithm status:
-      residuals.evaluate(problem, iterate);
+   double mu = iterate.mu();
+   assert(!PIPSisZero(mu));
 
-      double mu = iterate.mu();
-      assert(!PIPSisZero(mu));
+   //  termination test
+   TerminationStatus status_code = this->compute_status(&problem, &iterate, &residuals, iteration, mu);
+   if (status_code == NOT_FINISHED) {
+      if (print_level >= 10) {
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 0);
+      }
 
-      //  termination test
-      status_code = this->compute_status(&problem, &iterate, &residuals, iteration, mu);
-      if (status_code == NOT_FINISHED) {
-         if (print_level >= 10) {
-            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 0);
-         }
-
-         // predictor step
-         if (!pure_centering_step) {
-            compute_predictor_step(problem, iterate, residuals, linear_system, step);
-            check_numerical_troubles(&residuals, numerical_troubles, small_corr);
-         }
-         else {
-            step.set_to_zero();
-         }
-
-         this->fraction_to_boundary_rule(iterate, step);
-
-         // calculate centering parameter
-         sigma = this->compute_centering_parameter(iterate, step);
-
-         if (print_level >= 10) {
-            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 2);
-         }
-         g_iterNumber += 1.;
-
-         compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
+      // predictor step
+      if (!pure_centering_step) {
+         compute_predictor_step(problem, iterate, residuals, linear_system, step);
          check_numerical_troubles(&residuals, numerical_troubles, small_corr);
-
-         // calculate weighted predictor-corrector step
-         std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(&iterate, &step, corrector_step, this->primal_step_length);
-         assert(weight_candidate >= 0. && weight_candidate <= 1.);
-
-         step.saxpy(corrector_step, weight_candidate);
-
-         // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
-         corrector_residuals->clear_linear_residuals();
-
-         // Gondzio correction loop:
-         this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
-
-         // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
-         this->mehrotra_step_length(iterate, step);
-
-         // if we encountered numerical troubles while computing the step, enter a probing round
-         if (numerical_troubles) {
-            if (precond_decreased)
-               precond_decreased = decrease_preconditioner_impact(&linear_system);
-            do_probing(problem, iterate, residuals, step);
-            if (is_poor_step(pure_centering_step, precond_decreased))
-               continue;
-         }
-         pure_centering_step = false;
-         numerical_troubles = false;
-
-         // take the step (at last!)
-         this->take_step(iterate, step);
-         factory.iterate_ended();
       }
       else {
-         termination = true;
-         residuals.evaluate(problem, iterate);
+         step.set_to_zero();
+      }
+
+      this->fraction_to_boundary_rule(iterate, step);
+
+      // calculate centering parameter
+      sigma = this->compute_centering_parameter(iterate, step);
+
+      if (print_level >= 10) {
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 2);
+      }
+      g_iterNumber += 1.;
+
+      compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
+      check_numerical_troubles(&residuals, numerical_troubles, small_corr);
+
+      // calculate weighted predictor-corrector step
+      std::tie(alpha_candidate, weight_candidate) = calculate_alpha_weight_candidate(&iterate, &step, corrector_step, this->primal_step_length);
+      assert(weight_candidate >= 0. && weight_candidate <= 1.);
+
+      step.saxpy(corrector_step, weight_candidate);
+
+      // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
+      corrector_residuals->clear_linear_residuals();
+
+      // Gondzio correction loop:
+      this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
+
+      // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
+      this->mehrotra_step_length(iterate, step);
+
+      // if we encountered numerical troubles while computing the step, enter a probing round
+      if (numerical_troubles) {
+         if (precond_decreased)
+            precond_decreased = decrease_preconditioner_impact(&linear_system);
+         do_probing(problem, iterate, residuals, step);
+         if (is_poor_step(pure_centering_step, precond_decreased))
+            return status_code;
+      }
+      pure_centering_step = false;
+      numerical_troubles = false;
+
+      // take the step (at last!)
+      this->take_step(iterate, step);
+      factory.iterate_ended();
+   }
+   else { // termination
+      residuals.evaluate(problem, iterate);
+      if (print_level >= 10) {
          double mu = iterate.mu();
-         if (print_level >= 10) {
-            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
-         }
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
       }
    }
    return status_code;
@@ -213,97 +204,87 @@ void PrimalDualMehrotraStrategy::take_step(Variables& iterate, Variables& step) 
 
 TerminationStatus
 PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
-      Variables& step, AbstractLinearSystem& linear_system) {
-   this->register_observer(&linear_system);
+      Variables& step, AbstractLinearSystem& linear_system, int iteration) {
+   set_BiCGStab_tolerance(iteration);
+   bool small_corr = false;
+
+   factory.iterate_started();
+
+   // evaluate residuals and update algorithm status:
+   residuals.evaluate(problem, iterate);
+
+   //  termination test:
    double mu = iterate.mu();
-   TerminationStatus status_code;
+   TerminationStatus status_code = this->compute_status(&problem, &iterate, &residuals, iteration, mu);
 
-   int iteration = 0;
-   bool termination = false;
-   while (!termination) {
-      iteration++;
-
-      set_BiCGStab_tolerance(iteration);
-      bool small_corr = false;
-
-      factory.iterate_started();
-
-      // evaluate residuals and update algorithm status:
-      residuals.evaluate(problem, iterate);
-
-      //  termination test:
-      status_code = this->compute_status(&problem, &iterate, &residuals, iteration, mu);
-
-      if (status_code == NOT_FINISHED) {
-         if (print_level >= 10) {
-            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 0);
-         }
-
-         // *** Predictor step ***
-         if (!pure_centering_step) {
-            compute_predictor_step(problem, iterate, residuals, linear_system, step);
-            check_numerical_troubles(&residuals, numerical_troubles, small_corr);
-         }
-         else
-            step.set_to_zero();
-
-         this->fraction_to_boundary_rule(iterate, step);
-
-         // calculate centering parameter
-         sigma = this->compute_centering_parameter(iterate, step);
-
-         if (print_level >= 10) {
-            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 2);
-         }
-
-         g_iterNumber += 1.;
-
-         // *** Corrector step ***
-         compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
-         check_numerical_troubles(&residuals, numerical_troubles, small_corr);
-
-         // calculate weighted predictor-corrector step
-         std::tie(alpha_primal_candidate, alpha_dual_candidate, weight_primal_candidate, weight_dual_candidate) =
-               calculate_alpha_pd_weight_candidate(&iterate, &step, corrector_step, this->primal_step_length, this->dual_step_length);
-
-         assert(weight_primal_candidate >= 0. && weight_primal_candidate <= 1.);
-         assert(weight_dual_candidate >= 0. && weight_dual_candidate <= 1.);
-
-         step.saxpy_pd(corrector_step, weight_primal_candidate, weight_dual_candidate);
-
-         // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
-         corrector_residuals->clear_linear_residuals();
-
-         this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
-
-         // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
-         this->mehrotra_step_length(iterate, step);
-
-         // if we encountered numerical troubles while computing the step check enter a probing round
-         if (numerical_troubles) {
-            if (precond_decreased)
-               precond_decreased = decrease_preconditioner_impact(&linear_system);
-
-            do_probing(problem, iterate, residuals, step);
-            if (is_poor_step(pure_centering_step, precond_decreased))
-               continue;
-         }
-
-         // actually take the step and calculate the new mu
-         this->take_step(iterate, step);
-         mu = iterate.mu();
-
-         pure_centering_step = false;
-         numerical_troubles = false;
-
-         factory.iterate_ended();
+   if (status_code == NOT_FINISHED) {
+      if (print_level >= 10) {
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 0);
       }
-      else {
-         termination = true;
-         residuals.evaluate(problem, iterate);
-         if (print_level >= 10) {
-            this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
-         }
+
+      // *** Predictor step ***
+      if (!pure_centering_step) {
+         compute_predictor_step(problem, iterate, residuals, linear_system, step);
+         check_numerical_troubles(&residuals, numerical_troubles, small_corr);
+      }
+      else
+         step.set_to_zero();
+
+      this->fraction_to_boundary_rule(iterate, step);
+
+      // calculate centering parameter
+      sigma = this->compute_centering_parameter(iterate, step);
+
+      if (print_level >= 10) {
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 2);
+      }
+
+      g_iterNumber += 1.;
+
+      // *** Corrector step ***
+      compute_corrector_step(problem, iterate, linear_system, step, sigma, mu);
+      check_numerical_troubles(&residuals, numerical_troubles, small_corr);
+
+      // calculate weighted predictor-corrector step
+      std::tie(alpha_primal_candidate, alpha_dual_candidate, weight_primal_candidate, weight_dual_candidate) =
+            calculate_alpha_pd_weight_candidate(&iterate, &step, corrector_step, this->primal_step_length, this->dual_step_length);
+
+      assert(weight_primal_candidate >= 0. && weight_primal_candidate <= 1.);
+      assert(weight_dual_candidate >= 0. && weight_dual_candidate <= 1.);
+
+      step.saxpy_pd(corrector_step, weight_primal_candidate, weight_dual_candidate);
+
+      // prepare for Gondzio corrector loop: zero out the corrector_residuals structure:
+      corrector_residuals->clear_linear_residuals();
+
+      this->gondzio_correction_loop(problem, iterate, residuals, step, linear_system, iteration, sigma, mu, small_corr, numerical_troubles);
+
+      // We've finally decided on a step direction, now calculate the length using Mehrotra's heuristic
+      this->mehrotra_step_length(iterate, step);
+
+      // if we encountered numerical troubles while computing the step check enter a probing round
+      if (numerical_troubles) {
+         if (precond_decreased)
+            precond_decreased = decrease_preconditioner_impact(&linear_system);
+
+         do_probing(problem, iterate, residuals, step);
+         if (is_poor_step(pure_centering_step, precond_decreased))
+            return status_code;
+      }
+
+      // actually take the step and calculate the new mu
+      this->take_step(iterate, step);
+
+      pure_centering_step = false;
+      numerical_troubles = false;
+
+      factory.iterate_ended();
+   }
+   else {
+      residuals.evaluate(problem, iterate);
+      if (print_level >= 10) {
+         double mu = iterate.mu();
+         this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 1);
       }
    }
    return status_code;
