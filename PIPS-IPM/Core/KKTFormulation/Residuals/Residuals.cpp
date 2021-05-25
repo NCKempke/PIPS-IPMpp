@@ -63,15 +63,15 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    // contribution calculate x^T (g + Qx) to duality gap */
    gap = lagrangian_gradient->dotProductWith(*iterate.primals);
 
-   problem.ATransmult(1.0, *lagrangian_gradient, -1.0, *iterate.y);
-   problem.CTransmult(1.0, *lagrangian_gradient, -1.0, *iterate.z);
+   problem.ATransmult(1.0, *lagrangian_gradient, -1.0, *iterate.equality_duals);
+   problem.CTransmult(1.0, *lagrangian_gradient, -1.0, *iterate.inequality_duals);
 
-   iterate.gamma->selectNonZeros(*ixlow);
-   iterate.phi->selectNonZeros(*ixupp);
+   iterate.primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
+   iterate.primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
    if (nxlow > 0)
-      lagrangian_gradient->axpy(-1.0, *iterate.gamma);
+      lagrangian_gradient->axpy(-1.0, *iterate.primal_lower_bound_gap_dual);
    if (nxupp > 0)
-      lagrangian_gradient->axpy(1.0, *iterate.phi);
+      lagrangian_gradient->axpy(1.0, *iterate.primal_upper_bound_gap_dual);
 
    norm = updateNormAndPrint(norm, *lagrangian_gradient, print_resids, "rQ");
 
@@ -82,7 +82,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    norm = updateNormAndPrint(norm, *rA, print_resids, "rA");
 
    // contribution -d^T y to duality gap
-   const double ba_y = problem.bA->dotProductWith(*iterate.y);
+   const double ba_y = problem.bA->dotProductWith(*iterate.equality_duals);
    gap -= ba_y;
    dual_objective += ba_y;
 
@@ -93,12 +93,12 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    norm = updateNormAndPrint(norm, *rC, print_resids, "rC");
 
    /*** rz = z - lambda + pi ***/
-   rz->copyFrom(*iterate.z);
+   rz->copyFrom(*iterate.inequality_duals);
 
    if (mclow > 0)
-      rz->axpy(-1.0, *iterate.lambda);
+      rz->axpy(-1.0, *iterate.slack_lower_bound_gap_dual);
    if (mcupp > 0)
-      rz->axpy(1.0, *iterate.pi);
+      rz->axpy(1.0, *iterate.slack_upper_bound_gap_dual);
 
    norm = updateNormAndPrint(norm, *rz, print_resids, "rz");
 
@@ -107,10 +107,10 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
       rt->copyFrom(*iterate.slacks);
       rt->axpy(-1.0, problem.slowerBound());
       rt->selectNonZeros(*iclow);
-      rt->axpy(-1.0, *iterate.t);
+      rt->axpy(-1.0, *iterate.slack_lower_bound_gap);
 
       // contribution - d^T lambda to duality gap
-      const double bl_lambda = problem.bl->dotProductWith(*iterate.lambda);
+      const double bl_lambda = problem.bl->dotProductWith(*iterate.slack_lower_bound_gap_dual);
       gap -= bl_lambda;
       dual_objective += bl_lambda;
 
@@ -122,10 +122,10 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
       ru->copyFrom(*iterate.slacks);
       ru->axpy(-1.0, problem.supperBound());
       ru->selectNonZeros(*icupp);
-      ru->axpy(1.0, *iterate.u);
+      ru->axpy(1.0, *iterate.slack_upper_bound_gap);
 
       // contribution - f^T pi to duality gap
-      const double bu_pi = problem.bu->dotProductWith(*iterate.pi);
+      const double bu_pi = problem.bu->dotProductWith(*iterate.slack_upper_bound_gap_dual);
       gap += bu_pi;
       dual_objective -= bu_pi;
 
@@ -137,11 +137,11 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
       rv->copyFrom(*iterate.primals);
       rv->axpy(-1.0, problem.xlowerBound());
       rv->selectNonZeros(*ixlow);
-      rv->axpy(-1.0, *iterate.v);
+      rv->axpy(-1.0, *iterate.primal_lower_bound_gap);
 
       norm = updateNormAndPrint(norm, *rv, print_resids, "rv");
       // contribution - lx^T gamma to duality gap
-      const double blx_gamma = problem.blx->dotProductWith(*iterate.gamma);
+      const double blx_gamma = problem.blx->dotProductWith(*iterate.primal_lower_bound_gap_dual);
       gap -= blx_gamma;
       dual_objective += blx_gamma;
 
@@ -152,12 +152,12 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
       rw->copyFrom(*iterate.primals);
       rw->axpy(-1.0, problem.xupperBound());
       rw->selectNonZeros(*ixupp);
-      rw->axpy(1.0, *iterate.w);
+      rw->axpy(1.0, *iterate.primal_upper_bound_gap);
 
       norm = updateNormAndPrint(norm, *rw, print_resids, "rw");
 
       // contribution + bu^T phi to duality gap
-      const double bux_phi = problem.bux->dotProductWith(*iterate.phi);
+      const double bux_phi = problem.bux->dotProductWith(*iterate.primal_upper_bound_gap_dual);
       gap += bux_phi;
       dual_objective -= bux_phi;
    }
@@ -219,13 +219,13 @@ double Residuals::recompute_residual_norm() {
 
 void Residuals::add_to_complementarity_residual(const Variables& variables, double alpha) {
    if (mclow > 0)
-      rlambda->axzpy(1.0, *variables.t, *variables.lambda);
+      rlambda->axzpy(1.0, *variables.slack_lower_bound_gap, *variables.slack_lower_bound_gap_dual);
    if (mcupp > 0)
-      rpi->axzpy(1.0, *variables.u, *variables.pi);
+      rpi->axzpy(1.0, *variables.slack_upper_bound_gap, *variables.slack_upper_bound_gap_dual);
    if (nxlow > 0)
-      rgamma->axzpy(1.0, *variables.v, *variables.gamma);
+      rgamma->axzpy(1.0, *variables.primal_lower_bound_gap, *variables.primal_lower_bound_gap_dual);
    if (nxupp > 0)
-      rphi->axzpy(1.0, *variables.w, *variables.phi);
+      rphi->axzpy(1.0, *variables.primal_upper_bound_gap, *variables.primal_upper_bound_gap_dual);
 
    if (alpha != 0.0) {
       if (mclow > 0)

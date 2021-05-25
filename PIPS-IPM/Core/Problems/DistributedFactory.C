@@ -250,8 +250,8 @@ Variables* DistributedFactory::make_variables(Problem& problem) {
    SmartPointer<Vector<double> > pi = SmartPointer<Vector<double> >(make_inequalities_dual_vector());
 
    DistributedVariables* variables = new DistributedVariables(tree, x, s, y, z, v, gamma, w, phi, t, lambda, u, pi, problem.ixlow,
-         problem.ixlow->numberOfNonzeros(), problem.ixupp, problem.ixupp->numberOfNonzeros(), problem.iclow, problem.iclow->numberOfNonzeros(),
-         problem.icupp, problem.icupp->numberOfNonzeros());
+         problem.ixlow->number_nonzeros(), problem.ixupp, problem.ixupp->number_nonzeros(), problem.iclow, problem.iclow->number_nonzeros(),
+         problem.icupp, problem.icupp->number_nonzeros());
    registered_variables.push_back(variables);
    return variables;
 }

@@ -23,7 +23,7 @@ SimpleVector<T>::SimpleVector(int n_) : Vector<T>(n_), test(n_) {
 }
 
 template<typename T>
-long long SimpleVector<T>::numberOfNonzeros() const {
+long long SimpleVector<T>::number_nonzeros() const {
    long long i, count = 0;
    for (i = 0; i < this->n; i++) {
       if (v[i] != (T) 0.0)
@@ -276,7 +276,7 @@ T SimpleVector<T>::one_norm() const {
 template<typename T>
 double SimpleVector<T>::two_norm() const {
    T temp = dotProductWith(*this);
-   return sqrt(temp);
+   return std::sqrt(temp);
 }
 
 template<typename T>
@@ -653,17 +653,17 @@ void SimpleVector<T>::invert() {
 }
 
 template<typename T>
-void SimpleVector<T>::invertSave(T zeroReplacementVal) {
+void SimpleVector<T>::safe_invert(T zero_replacement_value) {
    for (int i = 0; i < this->n; i++) {
       if (v[i] != 0.0)
          v[i] = 1 / v[i];
       else
-         v[i] = zeroReplacementVal;
+         v[i] = zero_replacement_value;
    }
 }
 
 template<typename T>
-void SimpleVector<T>::applySqrt() {
+void SimpleVector<T>::sqrt() {
    for (int i = 0; i < this->n; i++) {
       assert(v[i] >= 0.0);
       v[i] = std::sqrt(v[i]);
@@ -689,7 +689,7 @@ void SimpleVector<T>::roundToPow2() {
 }
 
 template<typename T>
-bool SimpleVector<T>::allPositive() const {
+bool SimpleVector<T>::all_positive() const {
    for (int i = 0; i < this->n; i++) {
       if (v[i] <= 0)
          return false;
@@ -698,7 +698,7 @@ bool SimpleVector<T>::allPositive() const {
 }
 
 template<typename T>
-bool SimpleVector<T>::allOf(const std::function<bool(const T&)>& pred) const {
+bool SimpleVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
    return std::all_of(v, v + this->n, pred);
 }
 

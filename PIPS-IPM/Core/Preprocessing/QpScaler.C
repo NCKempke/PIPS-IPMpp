@@ -66,16 +66,16 @@ void QpScaler::unscaleVariables(Variables& variables) const {
 
    variables.primals->componentMult(*vec_colscale);
    variables.slacks->componentDiv(*vec_rowscaleC);
-   variables.y->componentMult(*vec_rowscaleA);
-   variables.z->componentMult(*vec_rowscaleC);
-   variables.v->componentMult(*vec_colscale);
-   variables.gamma->componentDiv(*vec_colscale);
-   variables.w->componentMult(*vec_colscale);
-   variables.phi->componentDiv(*vec_colscale);
-   variables.t->componentDiv(*vec_rowscaleC);
-   variables.lambda->componentMult(*vec_rowscaleC);
-   variables.u->componentDiv(*vec_rowscaleC);
-   variables.pi->componentMult(*vec_rowscaleC);
+   variables.equality_duals->componentMult(*vec_rowscaleA);
+   variables.inequality_duals->componentMult(*vec_rowscaleC);
+   variables.primal_lower_bound_gap->componentMult(*vec_colscale);
+   variables.primal_lower_bound_gap_dual->componentDiv(*vec_colscale);
+   variables.primal_upper_bound_gap->componentMult(*vec_colscale);
+   variables.primal_upper_bound_gap_dual->componentDiv(*vec_colscale);
+   variables.slack_lower_bound_gap->componentDiv(*vec_rowscaleC);
+   variables.slack_lower_bound_gap_dual->componentMult(*vec_rowscaleC);
+   variables.slack_upper_bound_gap->componentDiv(*vec_rowscaleC);
+   variables.slack_upper_bound_gap_dual->componentMult(*vec_rowscaleC);
 }
 
 void QpScaler::unscaleResiduals(Residuals& residuals) const {

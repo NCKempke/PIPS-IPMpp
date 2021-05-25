@@ -1476,7 +1476,7 @@ void sLinsysRootAug::add_CtDC_to_sparse_schur_complement(const SymmetricMatrix& 
 
 void sLinsysRootAug::compute_CtDC_and_add_to_Schur_complement(SymmetricMatrix*& CtDC_loc, const Vector<double>& diagonal)
 {
-   assert(diagonal.allOf([](auto& v){ return v <= 0.0; }));
+   assert(diagonal.all_of([](auto& v) { return v <= 0.0; }));
 
    SparseMatrix& C = data->getLocalD();
    C.matTransDinvMultMat(diagonal, &CtDC_loc);
@@ -1652,7 +1652,7 @@ void sLinsysRootAug::finalizeKKTsparse(DistributedQP* prob, Variables*) {
    /////////////////////////////////////////////////////////////
    if (locnx > 0) {
       assert(xDiag);
-      assert(xDiag->allOf([](const auto& d) { return d >= 0.0; }));
+      assert(xDiag->all_of([](const auto& d) { return d >= 0.0; }));
       kkt->atAddDiagonal(0, *xDiag);
    }
 

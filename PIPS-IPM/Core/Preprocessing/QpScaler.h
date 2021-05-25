@@ -28,7 +28,7 @@
 class QpScaler : public Scaler {
 protected:
    static void invertAndRound(bool round, Vector<double>& vector) {
-      vector.invertSave(1.0);
+      vector.safe_invert(1.0);
       if (round)
          vector.roundToPow2();
    }

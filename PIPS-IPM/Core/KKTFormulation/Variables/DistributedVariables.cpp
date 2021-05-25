@@ -16,24 +16,24 @@ DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<d
 
    SpReferTo(primals, x_in);
    SpReferTo(slacks, s_in);
-   SpReferTo(y, y_in);
-   SpReferTo(z, z_in);
-   SpReferTo(v, v_in);
-   SpReferTo(phi, phi_in);
-   SpReferTo(w, w_in);
-   SpReferTo(gamma, gamma_in);
-   SpReferTo(t, t_in);
-   SpReferTo(lambda, lambda_in);
-   SpReferTo(u, u_in);
-   SpReferTo(pi, pi_in);
+   SpReferTo(equality_duals, y_in);
+   SpReferTo(inequality_duals, z_in);
+   SpReferTo(primal_lower_bound_gap, v_in);
+   SpReferTo(primal_upper_bound_gap_dual, phi_in);
+   SpReferTo(primal_upper_bound_gap, w_in);
+   SpReferTo(primal_lower_bound_gap_dual, gamma_in);
+   SpReferTo(slack_lower_bound_gap, t_in);
+   SpReferTo(slack_lower_bound_gap_dual, lambda_in);
+   SpReferTo(slack_upper_bound_gap, u_in);
+   SpReferTo(slack_upper_bound_gap_dual, pi_in);
    SpReferTo(ixlow, ixlow_in);
    SpReferTo(ixupp, ixupp_in);
    SpReferTo(iclow, iclow_in);
    SpReferTo(icupp, icupp_in);
 
    nx = primals->length();
-   my = y->length();
-   mz = z->length();
+   my = equality_duals->length();
+   mz = inequality_duals->length();
 
    assert(nx == ixlow->length() || 0 == ixlow->length());
    assert(nx == ixupp->length() || 0 == ixupp->length());
@@ -44,20 +44,20 @@ DistributedVariables::DistributedVariables(const DistributedTree* tree, Vector<d
    nxupp = nxuppGlobal;
    mclow = mclowGlobal;
    mcupp = mcuppGlobal;
-   nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
+   number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
 
    assert(mz == slacks->length());
-   assert(nx == v->length() || (0 == v->length() && nxlow == 0));
-   assert(nx == gamma->length() || (0 == gamma->length() && nxlow == 0));
+   assert(nx == primal_lower_bound_gap->length() || (0 == primal_lower_bound_gap->length() && nxlow == 0));
+   assert(nx == primal_lower_bound_gap_dual->length() || (0 == primal_lower_bound_gap_dual->length() && nxlow == 0));
 
-   assert(nx == w->length() || (0 == w->length() && nxupp == 0));
-   assert(nx == phi->length() || (0 == phi->length() && nxupp == 0));
+   assert(nx == primal_upper_bound_gap->length() || (0 == primal_upper_bound_gap->length() && nxupp == 0));
+   assert(nx == primal_upper_bound_gap_dual->length() || (0 == primal_upper_bound_gap_dual->length() && nxupp == 0));
 
-   assert(mz == t->length() || (0 == t->length() && mclow == 0));
-   assert(mz == lambda->length() || (0 == lambda->length() && mclow == 0));
+   assert(mz == slack_lower_bound_gap->length() || (0 == slack_lower_bound_gap->length() && mclow == 0));
+   assert(mz == slack_lower_bound_gap_dual->length() || (0 == slack_lower_bound_gap_dual->length() && mclow == 0));
 
-   assert(mz == u->length() || (0 == u->length() && mcupp == 0));
-   assert(mz == pi->length() || (0 == pi->length() && mcupp == 0));
+   assert(mz == slack_upper_bound_gap->length() || (0 == slack_upper_bound_gap->length() && mcupp == 0));
+   assert(mz == slack_upper_bound_gap_dual->length() || (0 == slack_upper_bound_gap_dual->length() && mcupp == 0));
 
    createChildren();
 }
@@ -82,16 +82,16 @@ void DistributedVariables::AddChild(DistributedVariables* child) {
 void DistributedVariables::createChildren() {
    DistributedVector<double>& xst = dynamic_cast<DistributedVector<double>&>(*primals);
    DistributedVector<double>& sst = dynamic_cast<DistributedVector<double>&>(*slacks);
-   DistributedVector<double>& yst = dynamic_cast<DistributedVector<double>&>(*y);
-   DistributedVector<double>& zst = dynamic_cast<DistributedVector<double>&>(*z);
-   DistributedVector<double>& vst = dynamic_cast<DistributedVector<double>&>(*v);
-   DistributedVector<double>& gammast = dynamic_cast<DistributedVector<double>&>(*gamma);
-   DistributedVector<double>& wst = dynamic_cast<DistributedVector<double>&>(*w);
-   DistributedVector<double>& phist = dynamic_cast<DistributedVector<double>&>(*phi);
-   DistributedVector<double>& tst = dynamic_cast<DistributedVector<double>&>(*t);
-   DistributedVector<double>& lambdast = dynamic_cast<DistributedVector<double>&>(*lambda);
-   DistributedVector<double>& ust = dynamic_cast<DistributedVector<double>&>(*u);
-   DistributedVector<double>& pist = dynamic_cast<DistributedVector<double>&>(*pi);
+   DistributedVector<double>& yst = dynamic_cast<DistributedVector<double>&>(*equality_duals);
+   DistributedVector<double>& zst = dynamic_cast<DistributedVector<double>&>(*inequality_duals);
+   DistributedVector<double>& vst = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap);
+   DistributedVector<double>& gammast = dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap_dual);
+   DistributedVector<double>& wst = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap);
+   DistributedVector<double>& phist = dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap_dual);
+   DistributedVector<double>& tst = dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap);
+   DistributedVector<double>& lambdast = dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap_dual);
+   DistributedVector<double>& ust = dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap);
+   DistributedVector<double>& pist = dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap_dual);
    DistributedVector<double>& ixlowst = dynamic_cast<DistributedVector<double>&>(*ixlow);
    DistributedVector<double>& ixuppst = dynamic_cast<DistributedVector<double>&>(*ixupp);
    DistributedVector<double>& iclowst = dynamic_cast<DistributedVector<double>&>(*iclow);
@@ -111,19 +111,19 @@ DistributedVariables::collapseHierarchicalStructure(const DistributedQP& hier_da
       SmartPointer<Vector<double> > ixupp_, SmartPointer<Vector<double> > iclow_, SmartPointer<Vector<double> > icupp_) {
    dynamic_cast<DistributedVector<double>&>(*primals).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
 
-   dynamic_cast<DistributedVector<double>&>(*v).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<DistributedVector<double>&>(*w).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<DistributedVector<double>&>(*phi).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
-   dynamic_cast<DistributedVector<double>&>(*gamma).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::PRIMAL);
 
-   dynamic_cast<DistributedVector<double>&>(*y).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Y);
+   dynamic_cast<DistributedVector<double>&>(*equality_duals).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Y);
 
    dynamic_cast<DistributedVector<double>&>(*slacks).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*z).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*t).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*u).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*pi).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*lambda).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*inequality_duals).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap_dual).collapseFromHierarchical(hier_data, *stochNode, VectorType::DUAL_Z);
 
    stochNode = stochNode_;
 
@@ -146,14 +146,14 @@ void DistributedVariables::permuteVec0Entries(const std::vector<unsigned int>& p
    }
 
    dynamic_cast<DistributedVector<double>&>(*primals).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*v).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*w).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*phi).permuteVec0Entries(perm);
-   dynamic_cast<DistributedVector<double>&>(*gamma).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_upper_bound_gap_dual).permuteVec0Entries(perm);
+   dynamic_cast<DistributedVector<double>&>(*primal_lower_bound_gap_dual).permuteVec0Entries(perm);
 }
 
 void DistributedVariables::permuteEqLinkingEntries(const std::vector<unsigned int>& perm) {
-   dynamic_cast<DistributedVector<double>&>(*y).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*equality_duals).permuteLinkingEntries(perm);
 }
 
 void DistributedVariables::permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool vars_only) {
@@ -163,11 +163,11 @@ void DistributedVariables::permuteIneqLinkingEntries(const std::vector<unsigned 
    }
 
    dynamic_cast<DistributedVector<double>&>(*slacks).permuteLinkingEntries(perm);
-   dynamic_cast<DistributedVector<double>&>(*z).permuteLinkingEntries(perm);
-   dynamic_cast<DistributedVector<double>&>(*t).permuteLinkingEntries(perm);
-   dynamic_cast<DistributedVector<double>&>(*u).permuteLinkingEntries(perm);
-   dynamic_cast<DistributedVector<double>&>(*pi).permuteLinkingEntries(perm);
-   dynamic_cast<DistributedVector<double>&>(*lambda).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*inequality_duals).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*slack_upper_bound_gap_dual).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*slack_lower_bound_gap_dual).permuteLinkingEntries(perm);
 }
 
 bool DistributedVariables::isRootNodeInSync() const {
@@ -183,56 +183,56 @@ bool DistributedVariables::isRootNodeInSync() const {
          std::cout << "s not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*y).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*equality_duals).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "y not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*z).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_duals).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "z not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const DistributedVector<double>&>(*v).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_lower_bound_gap).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "v not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*gamma).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_lower_bound_gap_dual).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "gamma not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const DistributedVector<double>&>(*w).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_upper_bound_gap).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "w not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*phi).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*primal_upper_bound_gap_dual).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "phi not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const DistributedVector<double>&>(*t).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*slack_lower_bound_gap).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "t not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*lambda).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*slack_lower_bound_gap_dual).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "lambda not in sync" << std::endl;
       in_sync = false;
    }
 
-   if (!dynamic_cast<const DistributedVector<double>&>(*u).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*slack_upper_bound_gap).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "u not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*pi).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*slack_upper_bound_gap_dual).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "pi not in sync" << std::endl;
       in_sync = false;

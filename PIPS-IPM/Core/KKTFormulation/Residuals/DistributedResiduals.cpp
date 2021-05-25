@@ -40,16 +40,16 @@ DistributedResiduals::DistributedResiduals(const DistributedTree* tree, Vector<d
       Vector<double>* icupp_) {
 
    SpReferTo(ixlow, ixlow_);
-   nxlow = ixlow->numberOfNonzeros();
+   nxlow = ixlow->number_nonzeros();
 
    SpReferTo(ixupp, ixupp_);
-   nxupp = ixupp->numberOfNonzeros();
+   nxupp = ixupp->number_nonzeros();
 
    SpReferTo(iclow, iclow_);
-   mclow = iclow->numberOfNonzeros();
+   mclow = iclow->number_nonzeros();
 
    SpReferTo(icupp, icupp_);
-   mcupp = icupp->numberOfNonzeros();
+   mcupp = icupp->number_nonzeros();
 
    const bool empty_vector = true;
    lagrangian_gradient = SmartPointer<Vector<double> >((Vector<double>*) tree->new_primal_vector());

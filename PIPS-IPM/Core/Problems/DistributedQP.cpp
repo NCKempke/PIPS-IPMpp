@@ -1230,15 +1230,15 @@ DistributedQP* DistributedQP::shaveDenseBorder(const DistributedTree* tree) {
    const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->ixupp);
    assert(ixlow.first);
    assert(ixupp.first);
-   nxlow -= ixlow.first->numberOfNonzeros();
-   nxupp -= ixupp.first->numberOfNonzeros();
+   nxlow -= ixlow.first->number_nonzeros();
+   nxupp -= ixupp.first->number_nonzeros();
 
    const auto& iclow = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->iclow);
    const auto& icupp = dynamic_cast<const DistributedVector<double>&>(*hierarchical_top->icupp);
    assert(iclow.last);
    assert(icupp.last);
-   mclow -= iclow.last->numberOfNonzeros();
-   mcupp -= icupp.last->numberOfNonzeros();
+   mclow -= iclow.last->number_nonzeros();
+   mcupp -= icupp.last->number_nonzeros();
 
    nx = g->length();
    my = A->n_rows();
@@ -2585,10 +2585,10 @@ void DistributedQP::cleanUpPresolvedData(const DistributedVector<int>& rowNnzVec
    my = A_stoch.n_rows();
    mz = C_stoch.n_rows();
 
-   nxlow = ixlow_stoch.numberOfNonzeros();
-   nxupp = ixupp_stoch.numberOfNonzeros();
-   mclow = iclow_stoch.numberOfNonzeros();
-   mcupp = icupp_stoch.numberOfNonzeros();
+   nxlow = ixlow_stoch.number_nonzeros();
+   nxupp = ixupp_stoch.number_nonzeros();
+   mclow = iclow_stoch.number_nonzeros();
+   mcupp = icupp_stoch.number_nonzeros();
 }
 
 void DistributedQP::initDistMarker(int blocksStart, int blocksEnd) {

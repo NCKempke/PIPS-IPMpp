@@ -140,21 +140,21 @@ public:
    virtual void invert() = 0;
 
    /** Invert (1/x) the elements of this Vector<double>, but don't divide by zero and replace by zeroReplacementVal instead */
-   virtual void invertSave(T zeroReplacementVal = 0.0) = 0;
+   virtual void safe_invert(T zero_replacement_value = 0.0) = 0;
 
    /** Take the square root of each element of this Vector<double>. */
-   virtual void applySqrt() = 0;
+   virtual void sqrt() = 0;
 
    /** Rounds vector entries to nearest power of two values */
    virtual void roundToPow2() = 0;
 
    /** True if all elements of this Vector<double> are positive. */
-   virtual bool allPositive() const = 0;
+   virtual bool all_positive() const = 0;
 
-   virtual bool allOf(const std::function<bool(const T&)>& pred) const = 0;
+   virtual bool all_of(const std::function<bool(const T&)>& pred) const = 0;
 
    /** Return the number of non-zero elements in this Vector<double>. */
-   virtual long long numberOfNonzeros() const = 0;
+   virtual long long number_nonzeros() const = 0;
 
    /** True if this Vector<double> has the same non-zero pattern as select. */
    virtual bool matchesNonZeroPattern(const Vector<T>& select) const = 0;

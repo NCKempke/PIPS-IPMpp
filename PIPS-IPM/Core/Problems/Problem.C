@@ -3,8 +3,8 @@
 
 Problem::Problem(Vector<double>* c_in, Vector<double>* xlow_in, Vector<double>* ixlow_in, Vector<double>* xupp_in,
       Vector<double>* ixupp_in, GeneralMatrix* A_in, Vector<double>* bA_in, GeneralMatrix* C_in, Vector<double>* clow_in, Vector<double>* iclow_in,
-      Vector<double>* cupp_in, Vector<double>* icupp_in) : nxlow{ixlow_in->numberOfNonzeros()}, nxupp{ixupp_in->numberOfNonzeros()},
-      mclow{iclow_in->numberOfNonzeros()}, mcupp{icupp_in->numberOfNonzeros()} {
+      Vector<double>* cupp_in, Vector<double>* icupp_in) : nxlow{ixlow_in->number_nonzeros()}, nxupp{ixupp_in->number_nonzeros()},
+      mclow{iclow_in->number_nonzeros()}, mcupp{icupp_in->number_nonzeros()} {
    SpReferTo(g, c_in);
    SpReferTo(bA, bA_in);
    SpReferTo(blx, xlow_in);
