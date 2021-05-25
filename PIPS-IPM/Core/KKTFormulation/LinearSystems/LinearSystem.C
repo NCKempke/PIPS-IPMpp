@@ -26,10 +26,8 @@ static std::vector<int> bicgIters;
 
 LinearSystem::LinearSystem(DistributedFactory* factory_, Problem* problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
-      innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")),
-      outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
-      outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")),
-      outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
+      innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")), outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
+      outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")), outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
       outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
       outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
       xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")) {
@@ -206,7 +204,8 @@ void LinearSystem::factorize(Problem* /* problem */, Variables* vars) {
 
    put_barrier_parameter(vars->mu());
 
-   computeDiagonals(*vars->slack_lower_bound_gap, *vars->slack_lower_bound_gap_dual, *vars->slack_upper_bound_gap, *vars->slack_upper_bound_gap_dual, *vars->primal_lower_bound_gap, *vars->primal_lower_bound_gap_dual, *vars->primal_upper_bound_gap, *vars->primal_upper_bound_gap_dual);
+   computeDiagonals(*vars->slack_lower_bound_gap, *vars->slack_lower_bound_gap_dual, *vars->slack_upper_bound_gap, *vars->slack_upper_bound_gap_dual,
+         *vars->primal_lower_bound_gap, *vars->primal_lower_bound_gap_dual, *vars->primal_upper_bound_gap, *vars->primal_upper_bound_gap_dual);
 
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
