@@ -102,6 +102,7 @@ void PrimalMehrotraStrategy::take_step(Variables& iterate, Variables& step) {
 TerminationStatus
 PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
       AbstractLinearSystem& linear_system) {
+   this->register_observer(&linear_system);
 
    TerminationStatus status_code;
 
@@ -213,6 +214,7 @@ void PrimalDualMehrotraStrategy::take_step(Variables& iterate, Variables& step) 
 TerminationStatus
 PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals,
       Variables& step, AbstractLinearSystem& linear_system) {
+   this->register_observer(&linear_system);
    double mu = iterate.mu();
    TerminationStatus status_code;
 
@@ -1067,7 +1069,6 @@ void MehrotraStrategy::default_monitor(const Problem* problem /* problem */, con
 
 void MehrotraStrategy::notify_from_subject() {
    const Subject& subject = *getSubject();
-   std::cout << "notify_from_subject\n";
 
    bicgstab_skipped = subject.getBoolValue("BICG_SKIPPED");
    if (!bicgstab_skipped)
@@ -1079,6 +1080,13 @@ void MehrotraStrategy::notify_from_subject() {
    if (!bicgstab_converged)
       PIPSdebugMessage("BiGCStab had troubles converging\n");
 }
+
+void MehrotraStrategy::register_observer(AbstractLinearSystem* linear_system) {
+   /* every linsys handed to the GondzioStoch should be observable */
+   assert(dynamic_cast<Subject*>(linear_system));
+   set_subject(dynamic_cast<Subject*>(linear_system));
+}
+
 
 MehrotraStrategy::~MehrotraStrategy() {
    delete[] mu_history;
