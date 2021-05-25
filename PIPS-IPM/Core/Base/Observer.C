@@ -26,7 +26,7 @@ const Subject* Observer::getSubject() const {
 }
 
 Observer::~Observer() {
-   removeSubject();
+   //removeSubject();
 }
 
 void Observer::set_subject(Subject* subject) {
@@ -40,7 +40,7 @@ void Observer::set_subject(Subject* subject) {
 void Observer::removeSubject() {
    if (subj != nullptr)
       subj->unregisterObserver(this);
-   subj = nullptr;
+   //subj = nullptr;
 }
 
 void Subject::notifyObservers() {

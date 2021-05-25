@@ -147,6 +147,7 @@ protected:
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void notify_from_subject() override;
+   void register_observer(AbstractLinearSystem* linear_system);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
          double sigma, int i, double mu, int status_code, int level) const;
 };
