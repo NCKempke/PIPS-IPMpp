@@ -64,8 +64,8 @@ void QpScaler::unscaleVariables(Variables& variables) const {
    assert(vec_rowscaleA);
    assert(vec_rowscaleC);
 
-   variables.x->componentMult(*vec_colscale);
-   variables.s->componentDiv(*vec_rowscaleC);
+   variables.primals->componentMult(*vec_colscale);
+   variables.slacks->componentDiv(*vec_rowscaleC);
    variables.y->componentMult(*vec_rowscaleA);
    variables.z->componentMult(*vec_rowscaleC);
    variables.v->componentMult(*vec_colscale);

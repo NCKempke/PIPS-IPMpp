@@ -308,16 +308,16 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
 
    /*** compute rX ***/
    /* rx = rQ */
-   step->x->copyFrom(*residuals->lagrangian_gradient);
+   step->primals->copyFrom(*residuals->lagrangian_gradient);
    if (nxlow > 0) {
       Vector<double>& gamma_by_v = *step->v;
       gamma_by_v.copyFrom(*variables->gamma);
       gamma_by_v.divideSome(*variables->v, *ixlow);
 
       /* rx = rQ + Gamma/V rv */
-      step->x->axzpy(1.0, gamma_by_v, *residuals->rv);
+      step->primals->axzpy(1.0, gamma_by_v, *residuals->rv);
       /* rx = rQ + Gamma/V rv + rGamma/V */
-      step->x->axdzpy(1.0, *residuals->rgamma, *variables->v, *ixlow);
+      step->primals->axdzpy(1.0, *residuals->rgamma, *variables->v, *ixlow);
    }
 
    if (nxupp > 0) {
@@ -326,24 +326,24 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
       phi_by_w.divideSome(*variables->w, *ixupp);
 
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
-      step->x->axzpy(1.0, phi_by_w, *residuals->rw);
+      step->primals->axzpy(1.0, phi_by_w, *residuals->rw);
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
-      step->x->axdzpy(-1.0, *residuals->rphi, *variables->w, *ixupp);
+      step->primals->axdzpy(-1.0, *residuals->rphi, *variables->w, *ixupp);
    }
 
    // start by partially computing step->s
    /*** compute rs ***/
    /* step->s = rz */
-   step->s->copyFrom(*residuals->rz);
+   step->slacks->copyFrom(*residuals->rz);
    if (mclow > 0) {
       Vector<double>& lambda_by_t = *step->t;
       lambda_by_t.copyFrom(*variables->lambda);
       lambda_by_t.divideSome(*variables->t, *iclow);
 
       /* step->s = rz + Lambda/T * rt */
-      step->s->axzpy(1.0, lambda_by_t, *residuals->rt);
+      step->slacks->axzpy(1.0, lambda_by_t, *residuals->rt);
       /* step->s = rz + Lambda/T * rt + rlambda/T */
-      step->s->axdzpy(1.0, *residuals->rlambda, *variables->t, *iclow);
+      step->slacks->axdzpy(1.0, *residuals->rlambda, *variables->t, *iclow);
    }
 
    if (mcupp > 0) {
@@ -352,9 +352,9 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
       pi_by_u.divideSome(*variables->u, *icupp);
 
       /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-      step->s->axzpy(1.0, pi_by_u, *residuals->ru);
+      step->slacks->axzpy(1.0, pi_by_u, *residuals->ru);
       /* step->s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
-      step->s->axdzpy(-1.0, *residuals->rpi, *variables->u, *icupp);
+      step->slacks->axdzpy(-1.0, *residuals->rpi, *variables->u, *icupp);
    }
 
    /*** ry = rA ***/
@@ -373,12 +373,12 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
          ztemp = step->pi;
       }
 
-      solveXYZS(*step->x, *step->y, *step->z, *step->s, *ztemp, problem);
+      solveXYZS(*step->primals, *step->y, *step->z, *step->slacks, *ztemp, problem);
    }
 
    if (mclow > 0) {
       /* Dt = Ds - rt */
-      step->t->copyFrom(*step->s);
+      step->t->copyFrom(*step->slacks);
       step->t->axpy(-1.0, *residuals->rt);
       step->t->selectNonZeros(*iclow);
 
@@ -393,7 +393,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    if (mcupp > 0) {
       /* Du = ru - Ds */
       step->u->copyFrom(*residuals->ru);
-      step->u->axpy(-1.0, *step->s);
+      step->u->axpy(-1.0, *step->slacks);
       step->u->selectNonZeros(*icupp);
 
       /* Dpi = U^-1 ( rpi - Pi * Du ) */
@@ -406,7 +406,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
 
    if (nxlow > 0) {
       /* Dv = Dx - rv */
-      step->v->copyFrom(*step->x);
+      step->v->copyFrom(*step->primals);
       step->v->axpy(-1.0, *residuals->rv);
       step->v->selectNonZeros(*ixlow);
 
@@ -421,7 +421,7 @@ void LinearSystem::solve(Problem* problem, Variables* variables, Residuals* resi
    if (nxupp > 0) {
       /* Dw = rw - Dx */
       step->w->copyFrom(*residuals->rw);
-      step->w->axpy(-1.0, *step->x);
+      step->w->axpy(-1.0, *step->primals);
       step->w->selectNonZeros(*ixupp);
 
       /* Dphi = W^-1 ( rphi - Phi * Dw ) */

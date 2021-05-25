@@ -1903,12 +1903,12 @@ void DistributedQP::AddChild(DistributedQP* child) {
 }
 
 double DistributedQP::objective_value(const Variables& variables) const {
-   const auto& x = dynamic_cast<const DistributedVector<double>&>(*variables.x);
+   const auto& x = dynamic_cast<const DistributedVector<double>&>(*variables.primals);
    std::unique_ptr<Vector<double> > temp(x.clone());
 
    this->getg(*temp);
-   this->hessian_multiplication(1.0, *temp, 0.5, *variables.x);
-   return temp->dotProductWith(*variables.x);
+   this->hessian_multiplication(1.0, *temp, 0.5, *variables.primals);
+   return temp->dotProductWith(*variables.primals);
 }
 
 void DistributedQP::printLinkVarsStats() {

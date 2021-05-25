@@ -61,7 +61,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    problem.objective_gradient(iterate, *lagrangian_gradient); // Qx + g
 
    // contribution calculate x^T (g + Qx) to duality gap */
-   gap = lagrangian_gradient->dotProductWith(*iterate.x);
+   gap = lagrangian_gradient->dotProductWith(*iterate.primals);
 
    problem.ATransmult(1.0, *lagrangian_gradient, -1.0, *iterate.y);
    problem.CTransmult(1.0, *lagrangian_gradient, -1.0, *iterate.z);
@@ -77,7 +77,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
    /*** rA = Ax - b ***/
    problem.getbA(*rA);
-   problem.Amult(-1.0, *rA, 1.0, *iterate.x);
+   problem.Amult(-1.0, *rA, 1.0, *iterate.primals);
 
    norm = updateNormAndPrint(norm, *rA, print_resids, "rA");
 
@@ -87,8 +87,8 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    dual_objective += ba_y;
 
    /*** rC = Cx - s ***/
-   rC->copyFrom(*iterate.s);
-   problem.Cmult(-1.0, *rC, 1.0, *iterate.x);
+   rC->copyFrom(*iterate.slacks);
+   problem.Cmult(-1.0, *rC, 1.0, *iterate.primals);
 
    norm = updateNormAndPrint(norm, *rC, print_resids, "rC");
 
@@ -104,7 +104,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
    if (mclow > 0) {
       /*** rt = s - d - t ***/
-      rt->copyFrom(*iterate.s);
+      rt->copyFrom(*iterate.slacks);
       rt->axpy(-1.0, problem.slowerBound());
       rt->selectNonZeros(*iclow);
       rt->axpy(-1.0, *iterate.t);
@@ -119,7 +119,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
    if (mcupp > 0) {
       /*** ru = s - f + u ***/
-      ru->copyFrom(*iterate.s);
+      ru->copyFrom(*iterate.slacks);
       ru->axpy(-1.0, problem.supperBound());
       ru->selectNonZeros(*icupp);
       ru->axpy(1.0, *iterate.u);
@@ -134,7 +134,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
    if (nxlow > 0) {
       /*** rv = x - lx - v ***/
-      rv->copyFrom(*iterate.x);
+      rv->copyFrom(*iterate.primals);
       rv->axpy(-1.0, problem.xlowerBound());
       rv->selectNonZeros(*ixlow);
       rv->axpy(-1.0, *iterate.v);
@@ -149,7 +149,7 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
    if (nxupp > 0) {
       /*** rw = x - ux + w ***/
-      rw->copyFrom(*iterate.x);
+      rw->copyFrom(*iterate.primals);
       rw->axpy(-1.0, problem.xupperBound());
       rw->selectNonZeros(*ixupp);
       rw->axpy(1.0, *iterate.w);

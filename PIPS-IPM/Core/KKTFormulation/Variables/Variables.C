@@ -10,8 +10,8 @@
 Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in,
       Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in,
       Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in) {
-   SpReferTo(x, x_in);
-   SpReferTo(s, s_in);
+   SpReferTo(primals, x_in);
+   SpReferTo(slacks, s_in);
    SpReferTo(y, y_in);
    SpReferTo(z, z_in);
    SpReferTo(v, v_in);
@@ -27,7 +27,7 @@ Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>*
    SpReferTo(iclow, iclow_in);
    SpReferTo(icupp, icupp_in);
 
-   nx = x->length();
+   nx = primals->length();
    my = y->length();
    mz = z->length();
 
@@ -42,7 +42,7 @@ Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>*
    mcupp = icupp->numberOfNonzeros();
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
 
-   assert(mz == s->length());
+   assert(mz == slacks->length());
    assert(nx == v->length() || (0 == v->length() && nxlow == 0));
    assert(nx == gamma->length() || (0 == gamma->length() && nxlow == 0));
 
@@ -71,7 +71,7 @@ Variables::Variables(const Variables& vars) {
    mclow = iclow->numberOfNonzeros();
    mcupp = icupp->numberOfNonzeros();
 
-   s = SmartPointer<Vector<double> >(vars.s->cloneFull());
+   slacks = SmartPointer<Vector<double> >(vars.slacks->cloneFull());
 
    t = SmartPointer<Vector<double> >(vars.t->cloneFull());
    lambda = SmartPointer<Vector<double> >(vars.lambda->cloneFull());
@@ -85,7 +85,7 @@ Variables::Variables(const Variables& vars) {
    w = SmartPointer<Vector<double> >(vars.w->cloneFull());
    phi = SmartPointer<Vector<double> >(vars.phi->cloneFull());
 
-   x = SmartPointer<Vector<double> >(vars.x->cloneFull());
+   primals = SmartPointer<Vector<double> >(vars.primals->cloneFull());
    y = SmartPointer<Vector<double> >(vars.y->cloneFull());
    z = SmartPointer<Vector<double> >(vars.z->cloneFull());
    nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
@@ -165,10 +165,10 @@ double Variables::mustep_pd(const Variables* iterate, double alpha_primal, doubl
 }
 
 void Variables::saxpy(const Variables* iterate, double alpha) {
-   x->axpy(alpha, *iterate->x);
+   primals->axpy(alpha, *iterate->primals);
    y->axpy(alpha, *iterate->y);
    z->axpy(alpha, *iterate->z);
-   s->axpy(alpha, *iterate->s);
+   slacks->axpy(alpha, *iterate->slacks);
    if (mclow > 0) {
       assert(iterate->t->matchesNonZeroPattern(*iclow) && iterate->lambda->matchesNonZeroPattern(*iclow));
 
@@ -196,10 +196,10 @@ void Variables::saxpy(const Variables* iterate, double alpha) {
 }
 
 void Variables::saxpy_pd(const Variables* iterate, double alpha_primal, double alpha_dual) {
-   x->axpy(alpha_primal, *iterate->x);
+   primals->axpy(alpha_primal, *iterate->primals);
    y->axpy(alpha_dual, *iterate->y);
    z->axpy(alpha_dual, *iterate->z);
-   s->axpy(alpha_primal, *iterate->s);
+   slacks->axpy(alpha_primal, *iterate->slacks);
    if (mclow > 0) {
       assert(iterate->t->matchesNonZeroPattern(*iclow) && iterate->lambda->matchesNonZeroPattern(*iclow));
 
@@ -227,8 +227,8 @@ void Variables::saxpy_pd(const Variables* iterate, double alpha_primal, double a
 }
 
 void Variables::negate() {
-   s->negate();
-   x->negate();
+   slacks->negate();
+   primals->negate();
    y->negate();
    z->negate();
    if (mclow > 0) {
@@ -377,8 +377,8 @@ Variables::find_blocking(const Variables* step_in, double& primalValue, double& 
 }
 
 void Variables::push_to_interior(double alpha, double beta) {
-   s->setToZero();
-   x->setToZero();
+   slacks->setToZero();
+   primals->setToZero();
    y->setToZero();
    z->setToZero();
 
@@ -474,7 +474,7 @@ void Variables::shift_bound_variables(double alpha, double beta) {
 void Variables::copy(const Variables* b_in) {
    const Variables* b = (const Variables*) b_in;
 
-   s->copyFrom(*b->s);
+   slacks->copyFrom(*b->slacks);
    if (nxlow > 0) {
       v->copyFrom(*b->v);
       gamma->copyFrom(*b->gamma);
@@ -491,15 +491,15 @@ void Variables::copy(const Variables* b_in) {
       u->copyFrom(*b->u);
       pi->copyFrom(*b->pi);
    }
-   x->copyFrom(*b->x);
+   primals->copyFrom(*b->primals);
    y->copyFrom(*b->y);
    z->copyFrom(*b->z);
 
 }
 
 double Variables::one_norm() const {
-   double norm = x->one_norm();
-   norm += s->one_norm();
+   double norm = primals->one_norm();
+   norm += slacks->one_norm();
    norm += y->one_norm();
    norm += z->one_norm();
 
@@ -517,10 +517,10 @@ double Variables::one_norm() const {
 
 double Variables::inf_norm() const {
    double norm = 0.0;
-   double temp = x->inf_norm();
+   double temp = primals->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = s->inf_norm();
+   temp = slacks->inf_norm();
    if (temp > norm)
       norm = temp;
    temp = y->inf_norm();
@@ -562,8 +562,8 @@ double Variables::inf_norm() const {
 }
 
 void Variables::set_to_zero() {
-   x->setToZero();
-   s->setToZero();
+   primals->setToZero();
+   slacks->setToZero();
    y->setToZero();
    z->setToZero();
 
@@ -618,7 +618,7 @@ int Variables::valid_non_zero_pattern() {
 
 void Variables::unscale_solution(Problem* problem) {
 // Modifying sx is equivalent to modifying x
-   SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
+   SimpleVector<double>& sx = (SimpleVector<double>&) *this->primals;
 
 // x = D * x'
    sx.componentMult(problem->scale());
@@ -636,14 +636,14 @@ void Variables::unscale_bounds(Problem* problem) {
 }
 
 void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
-   assert(x->isKindOf(kSimpleVector)); // Otherwise this routine
+   assert(primals->isKindOf(kSimpleVector)); // Otherwise this routine
 
    SimpleVector<double> g(nx);
    problem->getg(g);
-   problem->hessian_multiplication(1.0, g, 0.5, *x);
-   double objective = g.dotProductWith(*x);
+   problem->hessian_multiplication(1.0, g, 0.5, *primals);
+   double objective = g.dotProductWith(*primals);
 
-   SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
+   SimpleVector<double>& sx = (SimpleVector<double>&) *this->primals;
    SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
    SimpleVector<double>& sixlow = (SimpleVector<double>&) problem->ixlowerBound();
    SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
@@ -651,7 +651,7 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    SimpleVector<double>& sgamma = (SimpleVector<double>&) *this->gamma;
    SimpleVector<double>& sphi = (SimpleVector<double>&) *this->phi;
    SimpleVector<double>& sy = (SimpleVector<double>&) *this->y;
-   SimpleVector<double>& ss = (SimpleVector<double>&) *this->s;
+   SimpleVector<double>& ss = (SimpleVector<double>&) *this->slacks;
    SimpleVector<double>& slambda = (SimpleVector<double>&) *this->lambda;
    SimpleVector<double>& spi = (SimpleVector<double>&) *this->pi;
    SimpleVector<double>& sz = (SimpleVector<double>&) *this->z;
@@ -722,13 +722,13 @@ void Variables::print_norms() const {
    if (my_rank == 0)
       std::cout << "||vars||_INF = " << infnorm << std::endl;
 
-   double temp_inf = x->inf_norm();
-   double temp_2 = x->two_norm();
+   double temp_inf = primals->inf_norm();
+   double temp_2 = primals->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_x||_INF = " << temp_inf << "\t||vars_x||_2 = " << temp_2 << std::endl;
 
-   temp_inf = s->inf_norm();
-   temp_2 = s->two_norm();
+   temp_inf = slacks->inf_norm();
+   temp_2 = slacks->two_norm();
    if (my_rank == 0)
       std::cout << "||vars_s||_INF = " << temp_inf << "\t||vars_s||_2 = " << temp_2 << std::endl;
 

@@ -17,7 +17,7 @@ StochScaler::StochScaler(Problem* prob, bool bitshifting) : QpScaler(prob, bitsh
 Variables* StochScaler::get_unscaled_variables(const Variables& vars) const {
    Variables* s_vars = new DistributedVariables(dynamic_cast<const DistributedVariables&>(vars));
    assert(s_vars);
-   assert(dynamic_cast<DistributedVariables*>(s_vars)->x);
+   assert(dynamic_cast<DistributedVariables*>(s_vars)->primals);
 
    unscaleVariables(*s_vars);
 

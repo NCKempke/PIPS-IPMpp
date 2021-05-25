@@ -57,10 +57,9 @@ public:
    SmartPointer<Vector<double> > ixupp;
    SmartPointer<Vector<double> > icupp;
    SmartPointer<Vector<double> > iclow;
-   Variables() {};
 
-   SmartPointer<Vector<double> > x;
-   SmartPointer<Vector<double> > s;
+   SmartPointer<Vector<double> > primals;
+   SmartPointer<Vector<double> > slacks;
    SmartPointer<Vector<double> > y;
    SmartPointer<Vector<double> > z;
 
@@ -81,7 +80,7 @@ public:
    Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in,
          Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in,
          Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in);
-
+   Variables() {};
    Variables(const Variables& vars);
 
    double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;

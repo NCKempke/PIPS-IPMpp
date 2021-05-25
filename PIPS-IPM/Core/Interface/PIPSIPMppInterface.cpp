@@ -226,7 +226,7 @@ double PIPSIPMppInterface::getObjective() {
 }
 
 double PIPSIPMppInterface::getFirstStageObjective() const {
-   Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->x).first);
+   Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->primals).first);
    Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
    return c.dotProductWith(x);
 }
@@ -278,7 +278,7 @@ std::vector<double> PIPSIPMppInterface::gatherFromSolution(SmartPointer<Vector<d
 
 
 std::vector<double> PIPSIPMppInterface::gatherPrimalSolution() {
-   return gatherFromSolution(&DistributedVariables::x);
+   return gatherFromSolution(&DistributedVariables::primals);
 }
 
 
@@ -368,9 +368,9 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
                                           : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
 
    if (postsolved_variables == nullptr)
-      ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->s);
+      ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->slacks);
    else
-      ineq_vals->axpy(1.0, *postsolved_variables->s);
+      ineq_vals->axpy(1.0, *postsolved_variables->slacks);
 
    std::vector<double> ineq_vals_vec = ineq_vals->gatherStochVector();
 
@@ -381,13 +381,13 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
 
 
 std::vector<double> PIPSIPMppInterface::getFirstStagePrimalColSolution() const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->primals).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
 
 std::vector<double> PIPSIPMppInterface::getSecondStagePrimalColSolution(int scen) const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).children[scen]->first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->primals).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
    else
