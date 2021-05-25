@@ -30,7 +30,7 @@ StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Post
       write_presolved_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS")),
       verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")), tree(tree_),
       preDistributedQP(dynamic_cast<const DistributedQP&>(origprob), dynamic_cast<StochPostsolver*>(postsolver)) {
-   const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
+   const auto& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
 
    if (pipsipmpp_options::get_bool_parameter("PRESOLVE_SINGLETON_ROWS"))
       presolvers.emplace_back(std::make_unique<StochPresolverSingletonRows>(preDistributedQP, sorigprob));
@@ -53,7 +53,7 @@ Problem* StochPresolver::presolve() {
       std::cout << "start stoch presolving\n";
    preDistributedQP.printRowColStats();
 
-   const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
+   const auto& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
    sorigprob.printRanges();
 
    assert(sorigprob.isRootNodeInSync());
@@ -74,8 +74,8 @@ Problem* StochPresolver::presolve() {
 
    for (int i = 0; i < limit_max_rounds; ++i) {
       bool success = false;
-      for (unsigned int i = 0; i < presolvers.size(); ++i) {
-         bool presolver_success = presolvers[i]->applyPresolving();
+      for (auto & presolver : presolvers) {
+         bool presolver_success = presolver->applyPresolving();
          success = success || presolver_success;
       }
 
@@ -93,12 +93,12 @@ Problem* StochPresolver::presolve() {
       resetFreeVariables();
 
    /* finalize data and switch tree to new presolved data */
-   DistributedQP* finalPreDistributedQP = preDistributedQP.finalize();
+   DistributedQP* finalPreDistributedQP = dynamic_cast<DistributedQP*>(preDistributedQP.finalize());
 
    assert(tree != nullptr);
    assert(tree == finalPreDistributedQP->stochNode);
 
-   DistributedTreeCallbacks& callbackTree = dynamic_cast<DistributedTreeCallbacks&>(*tree);
+   auto& callbackTree = dynamic_cast<DistributedTreeCallbacks&>(*tree);
    callbackTree.initPresolvedData(*finalPreDistributedQP);
    callbackTree.switchToPresolvedData();
 
@@ -152,7 +152,7 @@ void StochPresolver::resetFreeVariables() {
    if (my_rank == 0)
       std::cout << "Resetting bounds found in bound strengthening\n";
 
-   const DistributedQP& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
+   const auto& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
 
    preDistributedQP.resetOriginallyFreeVarsBounds(sorigprob);
 }

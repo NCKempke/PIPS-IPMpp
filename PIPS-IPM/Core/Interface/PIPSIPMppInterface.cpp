@@ -92,12 +92,12 @@ scaler_type, PresolverType presolver_type, const std::string& settings) : comm(c
          presolved_problem->writeToStreamDense(std::cout);
    }
 
-   variables.reset(dynamic_cast<DistributedVariables*>( factory->make_variables(*presolved_problem)));
+   variables.reset(dynamic_cast<DistributedVariables*>(factory->make_variables(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("variables created\n");
 #endif
 
-   residuals.reset(dynamic_cast<DistributedResiduals*>( factory->make_residuals(*presolved_problem)));
+   residuals.reset(dynamic_cast<DistributedResiduals*>(factory->make_residuals(*presolved_problem)));
 #ifdef TIMING
    if( my_rank == 0 ) printf("resids created\n");
 #endif

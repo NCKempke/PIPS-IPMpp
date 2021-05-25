@@ -84,30 +84,30 @@ PresolveData::PresolveData(const DistributedQP& sorigprob, StochPostsolver* post
    const int length_array_nnz_chgs = n_linking_vars + n_linking_A + n_linking_C;
    array_nnz_chgs.resize(length_array_nnz_chgs, 0);
 
-   nnzs_col_chgs.reset(new SimpleVector<int>(array_nnz_chgs.data(), n_linking_vars));
-   nnzs_row_A_chgs.reset(new SimpleVector<int>(array_nnz_chgs.data() + n_linking_vars, n_linking_A));
-   nnzs_row_C_chgs.reset(new SimpleVector<int>(array_nnz_chgs.data() + n_linking_vars + n_linking_A, n_linking_C));
+   nnzs_col_chgs = std::make_unique<SimpleVector<int>>(array_nnz_chgs.data(), n_linking_vars);
+   nnzs_row_A_chgs = std::make_unique<SimpleVector<int>>(array_nnz_chgs.data() + n_linking_vars, n_linking_A);
+   nnzs_row_C_chgs = std::make_unique<SimpleVector<int>>(array_nnz_chgs.data() + n_linking_vars + n_linking_A, n_linking_C);
 
    const int lenght_array_act_chgs = n_linking_A * 2 + n_linking_C * 2;
    array_act_chgs.resize(lenght_array_act_chgs, 0.0);
 
-   actmax_eq_chgs.reset(new SimpleVector<double>(array_act_chgs.data(), n_linking_A));
-   actmin_eq_chgs.reset(new SimpleVector<double>(array_act_chgs.data() + n_linking_A, n_linking_A));
-   actmax_ineq_chgs.reset(new SimpleVector<double>(array_act_chgs.data() + 2 * n_linking_A, n_linking_C));
-   actmin_ineq_chgs.reset(new SimpleVector<double>(array_act_chgs.data() + 2 * n_linking_A + n_linking_C, n_linking_C));
+   actmax_eq_chgs = std::make_unique<SimpleVector<double>>(array_act_chgs.data(), n_linking_A);
+   actmin_eq_chgs = std::make_unique<SimpleVector<double>>(array_act_chgs.data() + n_linking_A, n_linking_A);
+   actmax_ineq_chgs = std::make_unique<SimpleVector<double>>(array_act_chgs.data() + 2 * n_linking_A, n_linking_C);
+   actmin_ineq_chgs = std::make_unique<SimpleVector<double>>(array_act_chgs.data() + 2 * n_linking_A + n_linking_C, n_linking_C);
 
    array_act_unbounded_chgs.resize(lenght_array_act_chgs, 0);
 
-   actmax_eq_ubndd_chgs.reset(new SimpleVector<int>(array_act_unbounded_chgs.data(), n_linking_A));
-   actmin_eq_ubndd_chgs.reset(new SimpleVector<int>(array_act_unbounded_chgs.data() + n_linking_A, n_linking_A));
-   actmax_ineq_ubndd_chgs.reset(new SimpleVector<int>(array_act_unbounded_chgs.data() + 2 * n_linking_A, n_linking_C));
-   actmin_ineq_ubndd_chgs.reset(new SimpleVector<int>(array_act_unbounded_chgs.data() + 2 * n_linking_A + n_linking_C, n_linking_C));
+   actmax_eq_ubndd_chgs = std::make_unique<SimpleVector<int>>(array_act_unbounded_chgs.data(), n_linking_A);
+   actmin_eq_ubndd_chgs = std::make_unique<SimpleVector<int>>(array_act_unbounded_chgs.data() + n_linking_A, n_linking_A);
+   actmax_ineq_ubndd_chgs = std::make_unique<SimpleVector<int>>(array_act_unbounded_chgs.data() + 2 * n_linking_A, n_linking_C);
+   actmin_ineq_ubndd_chgs = std::make_unique<SimpleVector<int>>(array_act_unbounded_chgs.data() + 2 * n_linking_A + n_linking_C, n_linking_C);
 
    const int lenght_array_bound_chgs = n_linking_A + n_linking_C;
    array_bound_chgs.resize(lenght_array_bound_chgs, 0.0);
 
-   bound_chgs_A.reset(new SimpleVector<double>(array_bound_chgs.data(), n_linking_A));
-   bound_chgs_C.reset(new SimpleVector<double>(array_bound_chgs.data() + n_linking_A, n_linking_C));
+   bound_chgs_A = std::make_unique<SimpleVector<double>>(array_bound_chgs.data(), n_linking_A);
+   bound_chgs_C = std::make_unique<SimpleVector<double>>(array_bound_chgs.data() + n_linking_A, n_linking_C);
 
    // initialize all dynamic transposed sub matrices
    getSystemMatrix(EQUALITY_SYSTEM).initTransposed(true);
@@ -141,20 +141,20 @@ PresolveData::~PresolveData() {
 
 /* set non existent bounds on all variables to +/- value */
 void PresolveData::setUndefinedVarboundsTo(double value) {
-   DistributedVector<double>& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->blx);
-   DistributedVector<double>& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->ixlow);
-   DistributedVector<double>& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
-   DistributedVector<double>& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
+   auto& xlow = dynamic_cast<DistributedVector<double>&>(*presProb->blx);
+   auto& ixlow = dynamic_cast<DistributedVector<double>&>(*presProb->ixlow);
+   auto& xupp = dynamic_cast<DistributedVector<double>&>(*presProb->bux);
+   auto& ixupp = dynamic_cast<DistributedVector<double>&>(*presProb->ixupp);
 
    xlow.setNotIndicatedEntriesToVal(-value, ixlow);
    xupp.setNotIndicatedEntriesToVal(value, ixupp);
 }
 
 void PresolveData::setUndefinedRowboundsTo(double value) {
-   DistributedVector<double>& clow = dynamic_cast<DistributedVector<double>&>(*presProb->bl);
-   DistributedVector<double>& iclow = dynamic_cast<DistributedVector<double>&>(*presProb->iclow);
-   DistributedVector<double>& cupp = dynamic_cast<DistributedVector<double>&>(*presProb->bu);
-   DistributedVector<double>& icupp = dynamic_cast<DistributedVector<double>&>(*presProb->icupp);
+   auto& clow = dynamic_cast<DistributedVector<double>&>(*presProb->bl);
+   auto& iclow = dynamic_cast<DistributedVector<double>&>(*presProb->iclow);
+   auto& cupp = dynamic_cast<DistributedVector<double>&>(*presProb->bu);
+   auto& icupp = dynamic_cast<DistributedVector<double>&>(*presProb->icupp);
 
    clow.setNotIndicatedEntriesToVal(-value, iclow);
    cupp.setNotIndicatedEntriesToVal(value, icupp);
@@ -296,22 +296,22 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
    }
 
    /* compute activities at root node */
-   const SimpleVector<double>& xupp_root = dynamic_cast<const SimpleVector<double>&>(*xupp.first);
-   const SimpleVector<double>& ixupp_root = dynamic_cast<const SimpleVector<double>&>(*ixupp.first);
-   const SimpleVector<double>& xlow_root = dynamic_cast<const SimpleVector<double>&>(*xlow.first);
-   const SimpleVector<double>& ixlow_root = dynamic_cast<const SimpleVector<double>&>(*ixlow.first);
+   const auto& xupp_root = dynamic_cast<const SimpleVector<double>&>(*xupp.first);
+   const auto& ixupp_root = dynamic_cast<const SimpleVector<double>&>(*ixupp.first);
+   const auto& xlow_root = dynamic_cast<const SimpleVector<double>&>(*xlow.first);
+   const auto& ixlow_root = dynamic_cast<const SimpleVector<double>&>(*ixlow.first);
 
    /* A0/B0 */
    if (!linking_only) {
-      SimpleVector<double>& actmin_eq_root_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.first);
-      SimpleVector<double>& actmax_eq_root_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.first);
-      SimpleVector<double>& actmin_ineq_root_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.first);
-      SimpleVector<double>& actmax_ineq_root_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.first);
+      auto& actmin_eq_root_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.first);
+      auto& actmax_eq_root_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.first);
+      auto& actmin_ineq_root_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.first);
+      auto& actmax_ineq_root_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.first);
 
-      SimpleVector<int>& actmin_eq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd.first);
-      SimpleVector<int>& actmax_eq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.first);
-      SimpleVector<int>& actmin_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.first);
-      SimpleVector<int>& actmax_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.first);
+      auto& actmin_eq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd.first);
+      auto& actmax_eq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.first);
+      auto& actmin_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.first);
+      auto& actmax_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.first);
 
       addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.Bmat)->getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd,
             actmax_eq_root_part, actmax_eq_root_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
@@ -320,15 +320,15 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
             actmax_ineq_root_part, actmax_ineq_root_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
-   SimpleVector<double>& actmin_eq_link_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.last);
-   SimpleVector<double>& actmax_eq_link_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.last);
-   SimpleVector<double>& actmin_ineq_link_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.last);
-   SimpleVector<double>& actmax_ineq_link_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.last);
+   auto& actmin_eq_link_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.last);
+   auto& actmax_eq_link_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.last);
+   auto& actmin_ineq_link_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.last);
+   auto& actmax_ineq_link_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.last);
 
-   SimpleVector<int>& actmin_eq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd.last);
-   SimpleVector<int>& actmax_eq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.last);
-   SimpleVector<int>& actmin_ineq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.last);
-   SimpleVector<int>& actmax_ineq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.last);
+   auto& actmin_eq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd.last);
+   auto& actmax_eq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.last);
+   auto& actmin_ineq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.last);
+   auto& actmax_ineq_link_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.last);
 
    /* Bl0 */
    if (my_rank == 0) {
@@ -344,19 +344,19 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
       if (mat_A.children[node]->is_a(kStochGenDummyMatrix) && mat_C.children[node]->is_a(kStochGenDummyMatrix))
          continue;
 
-      const SimpleVector<double>& xupp_child = dynamic_cast<const SimpleVector<double>&>(*xupp.children[node]->first);
-      const SimpleVector<double>& ixupp_child = dynamic_cast<const SimpleVector<double>&>(*ixupp.children[node]->first);
-      const SimpleVector<double>& xlow_child = dynamic_cast<const SimpleVector<double>&>(*xlow.children[node]->first);
-      const SimpleVector<double>& ixlow_child = dynamic_cast<const SimpleVector<double>&>(*ixlow.children[node]->first);
+      const auto& xupp_child = dynamic_cast<const SimpleVector<double>&>(*xupp.children[node]->first);
+      const auto& ixupp_child = dynamic_cast<const SimpleVector<double>&>(*ixupp.children[node]->first);
+      const auto& xlow_child = dynamic_cast<const SimpleVector<double>&>(*xlow.children[node]->first);
+      const auto& ixlow_child = dynamic_cast<const SimpleVector<double>&>(*ixlow.children[node]->first);
 
       /* EQUALITY_SYSTEM */
       if (!mat_A.children[node]->is_a(kStochGenDummyMatrix)) {
          if (!linking_only) {
-            SimpleVector<double>& actmin_eq_child_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.children[node]->first);
-            SimpleVector<double>& actmax_eq_child_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.children[node]->first);
+            auto& actmin_eq_child_part = dynamic_cast<SimpleVector<double>&>(*actmin_eq_part.children[node]->first);
+            auto& actmax_eq_child_part = dynamic_cast<SimpleVector<double>&>(*actmax_eq_part.children[node]->first);
 
-            SimpleVector<int>& actmin_eq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd.children[node]->first);
-            SimpleVector<int>& actmax_eq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.children[node]->first);
+            auto& actmin_eq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_eq_ubndd.children[node]->first);
+            auto& actmax_eq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.children[node]->first);
 
             /* Ai */
             addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_A.children[node]->Amat)->getStorageDynamicRef(), actmin_eq_child_part,
@@ -374,11 +374,11 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
       /* INEQUALITY_SYSTEM */
       if (!mat_C.children[node]->is_a(kStochGenDummyMatrix)) {
          if (!linking_only) {
-            SimpleVector<double>& actmin_ineq_child_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.children[node]->first);
-            SimpleVector<double>& actmax_ineq_child_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.children[node]->first);
+            auto& actmin_ineq_child_part = dynamic_cast<SimpleVector<double>&>(*actmin_ineq_part.children[node]->first);
+            auto& actmax_ineq_child_part = dynamic_cast<SimpleVector<double>&>(*actmax_ineq_part.children[node]->first);
 
-            SimpleVector<int>& actmin_ineq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.children[node]->first);
-            SimpleVector<int>& actmax_ineq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.children[node]->first);
+            auto& actmin_ineq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.children[node]->first);
+            auto& actmax_ineq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.children[node]->first);
 
             /* Ai */
             addActivityOfBlock(dynamic_cast<SparseMatrix*>(mat_C.children[node]->Amat)->getStorageDynamicRef(), actmin_ineq_child_part,
@@ -474,7 +474,7 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
 /** Computes minimal and maximal activity of all rows in given matrix. Adds activities to min/max_activities accordingly. */
 void PresolveData::addActivityOfBlock(const SparseStorageDynamic& matrix, SimpleVector<double>& min_partact, SimpleVector<int>& unbounded_min,
       SimpleVector<double>& max_partact, SimpleVector<int>& unbounded_max, const SimpleVector<double>& xlow, const SimpleVector<double>& ixlow,
-      const SimpleVector<double>& xupp, const SimpleVector<double>& ixupp) const {
+      const SimpleVector<double>& xupp, const SimpleVector<double>& ixupp) {
    assert(xlow.length() == matrix.n_columns() && ixlow.length() == matrix.n_columns() && xupp.length() == matrix.n_columns() && ixupp.length() ==
       matrix.n_columns());
    assert(max_partact.length() == matrix.n_rows() && min_partact.length() == matrix.n_rows());
@@ -2592,17 +2592,17 @@ bool PresolveData::verifyActivities() const {
 
    bool activities_correct = true;
 
-   DistributedVector<double>* actmax_eq_part_new(dynamic_cast<DistributedVector<double>*>(actmax_eq_part->clone()));
-   DistributedVector<double>* actmin_eq_part_new(dynamic_cast<DistributedVector<double>*>(actmin_eq_part->clone()));
+   std::unique_ptr<DistributedVector<double>> actmax_eq_part_new(dynamic_cast<DistributedVector<double>*>(actmax_eq_part->clone()));
+   std::unique_ptr<DistributedVector<double>> actmin_eq_part_new(dynamic_cast<DistributedVector<double>*>(actmin_eq_part->clone()));
 
-   std::unique_ptr<DistributedVector<int> > actmax_eq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmax_eq_ubndd->clone()));
-   std::unique_ptr<DistributedVector<int> > actmin_eq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmin_eq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int>> actmax_eq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmax_eq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int>> actmin_eq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmin_eq_ubndd->clone()));
 
-   DistributedVector<double>* actmax_ineq_part_new(dynamic_cast<DistributedVector<double>*>(actmax_ineq_part->clone()));
-   DistributedVector<double>* actmin_ineq_part_new(dynamic_cast<DistributedVector<double>*>(actmin_ineq_part->clone()));
+   std::unique_ptr<DistributedVector<double>> actmax_ineq_part_new(dynamic_cast<DistributedVector<double>*>(actmax_ineq_part->clone()));
+   std::unique_ptr<DistributedVector<double>> actmin_ineq_part_new(dynamic_cast<DistributedVector<double>*>(actmin_ineq_part->clone()));
 
-   std::unique_ptr<DistributedVector<int> > actmax_ineq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmax_ineq_ubndd->clone()));
-   std::unique_ptr<DistributedVector<int> > actmin_ineq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmin_ineq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int>> actmax_ineq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmax_ineq_ubndd->clone()));
+   std::unique_ptr<DistributedVector<int>> actmin_ineq_ubndd_new(dynamic_cast<DistributedVector<int>*>(actmin_ineq_ubndd->clone()));
 
    actmax_eq_part_new->setToZero();
    actmin_eq_part_new->setToZero();
@@ -2688,8 +2688,8 @@ bool PresolveData::verifyNnzcounters() const {
    initNnzCounter(*nnzs_row_A_new, *nnzs_row_C_new, *nnzs_col_new);
 
    // linking variables:
-   SimpleVector<int>* nColOrigSimple = dynamic_cast<SimpleVector<int>*>(nnzs_col_new->first);
-   SimpleVector<int>* nColUpdatedSimple = dynamic_cast<SimpleVector<int>*>(nnzs_col->first);
+   auto* nColOrigSimple = dynamic_cast<SimpleVector<int>*>(nnzs_col_new->first);
+   auto* nColUpdatedSimple = dynamic_cast<SimpleVector<int>*>(nnzs_col->first);
    assert(nColUpdatedSimple->length() == nColOrigSimple->length());
    for (int i = 0; i < nColUpdatedSimple->length(); i++) {
       if ((*nColUpdatedSimple)[i] != (*nColOrigSimple)[i]) {
@@ -2719,8 +2719,8 @@ bool PresolveData::verifyNnzcounters() const {
    }
 
    // rows A:
-   SimpleVector<int>* nRowAOrigSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_A_new->first);
-   SimpleVector<int>* nRowAUpdatedSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_A->first);
+   auto* nRowAOrigSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_A_new->first);
+   auto* nRowAUpdatedSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_A->first);
    assert(nRowAUpdatedSimple->length() == nRowAOrigSimple->length());
    for (int i = 0; i < nRowAUpdatedSimple->length(); i++) {
 
@@ -2762,8 +2762,8 @@ bool PresolveData::verifyNnzcounters() const {
       }
    }
    // rows C:
-   SimpleVector<int>* nRowCOrigSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_C_new->first);
-   SimpleVector<int>* nRowCUpdatedSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_C->first);
+   auto* nRowCOrigSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_C_new->first);
+   auto* nRowCUpdatedSimple = dynamic_cast<SimpleVector<int>*>(nnzs_row_C->first);
    assert(nRowCUpdatedSimple->length() == nRowCOrigSimple->length());
    for (int i = 0; i < nRowCUpdatedSimple->length(); i++) {
       if ((*nRowCUpdatedSimple)[i] != (*nRowCOrigSimple)[i]) {
@@ -3678,13 +3678,13 @@ void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseMa
 }
 
 void PresolveData::printVarBoundStatistics(std::ostream& out) const {
-   const DistributedVector<double>& xupp = dynamic_cast<const DistributedVector<double>&>(*presProb->bux);
-   const DistributedVector<double>& xlow = dynamic_cast<const DistributedVector<double>&>(*presProb->blx);
-   const DistributedVector<double>& ixupp = dynamic_cast<const DistributedVector<double>&>(*presProb->ixupp);
-   const DistributedVector<double>& ixlow = dynamic_cast<const DistributedVector<double>&>(*presProb->ixlow);
+   const auto& xupp = dynamic_cast<const DistributedVector<double>&>(*presProb->bux);
+   const auto& xlow = dynamic_cast<const DistributedVector<double>&>(*presProb->blx);
+   const auto& ixupp = dynamic_cast<const DistributedVector<double>&>(*presProb->ixupp);
+   const auto& ixlow = dynamic_cast<const DistributedVector<double>&>(*presProb->ixlow);
 
-   DistributedVector<double>* xlow_def = dynamic_cast<DistributedVector<double>*>(xlow.cloneFull());
-   DistributedVector<double>* xupp_def = dynamic_cast<DistributedVector<double>*>(xupp.cloneFull());
+   std::unique_ptr<DistributedVector<double>> xlow_def (dynamic_cast<DistributedVector<double>*>(xlow.cloneFull()));
+   std::unique_ptr<DistributedVector<double>> xupp_def (dynamic_cast<DistributedVector<double>*>(xupp.cloneFull()));
 
    xlow_def->componentMult(ixlow);
    xupp_def->componentMult(ixupp);

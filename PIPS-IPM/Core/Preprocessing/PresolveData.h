@@ -134,25 +134,25 @@ public :
    PresolveData(const DistributedQP& sorigprob, StochPostsolver* postsolver);
    ~PresolveData();
 
-   const DistributedQP& getPresProb() const { return *presProb; };
+   [[nodiscard]] const DistributedQP& getPresProb() const { return *presProb; };
 
-   double getObjOffset() const { return objOffset; };
-   int getNChildren() const { return nChildren; };
+   [[nodiscard]] double getObjOffset() const { return objOffset; };
+   [[nodiscard]] int getNChildren() const { return nChildren; };
 
    void getRowActivities(const INDEX& row, double& max_act, double& min_act, int& max_ubndd, int& min_ubndd) const;
-   std::pair<double,double> getRowBounds(const INDEX& row) const;
-   std::pair<double,double> getColBounds(const INDEX& col) const;
+   [[nodiscard]] std::pair<double,double> getRowBounds(const INDEX& row) const;
+   [[nodiscard]] std::pair<double,double> getColBounds(const INDEX& col) const;
 
 
-   double getRowCoeff(const INDEX& row, const INDEX& col) const;
+   [[nodiscard]] double getRowCoeff(const INDEX& row, const INDEX& col) const;
 
-   const DistributedVector<int>& getNnzsRow(SystemType system_type) const { return (system_type == EQUALITY_SYSTEM) ? *nnzs_row_A : *nnzs_row_C; }
-   const DistributedVector<int>& getNnzsRowA() const { return *nnzs_row_A; }; // todo maybe this is a problem - these counters might not be up to date
-   const DistributedVector<int>& getNnzsRowC() const { return *nnzs_row_C; };
-   const DistributedVector<int>& getNnzsCol() const { return *nnzs_col; };
+   [[nodiscard]] const DistributedVector<int>& getNnzsRow(SystemType system_type) const { return (system_type == EQUALITY_SYSTEM) ? *nnzs_row_A : *nnzs_row_C; }
+   [[nodiscard]] const DistributedVector<int>& getNnzsRowA() const { return *nnzs_row_A; }; // todo maybe this is a problem - these counters might not be up to date
+   [[nodiscard]] const DistributedVector<int>& getNnzsRowC() const { return *nnzs_row_C; };
+   [[nodiscard]] const DistributedVector<int>& getNnzsCol() const { return *nnzs_col; };
 
-   int getNnzsRow(const INDEX& row) const;
-   int getNnzsCol(const INDEX& col) const;
+   [[nodiscard]] int getNnzsRow(const INDEX& row) const;
+   [[nodiscard]] int getNnzsCol(const INDEX& col) const;
 
    std::queue<INDEX>& getSingletonRows() { return singleton_rows; };
    std::queue<INDEX>& getSingletonCols() { return singleton_cols; };
@@ -166,7 +166,7 @@ public :
    bool reductionsEmpty();
 
    /* checks activities, non-zeros and root node */
-   bool presolve_dataInSync() const;
+   [[nodiscard]] bool presolve_dataInSync() const;
 
    /// synchronizing the problem over all mpi processes if necessary
    // TODO : add a allreduceEverything method that simply calls all the others
@@ -177,8 +177,8 @@ public :
    void allreduceAndApplyObjVecChanges();
    void allreduceObjOffset();
 
-   bool wasColumnRemoved(const INDEX& col) const;
-   bool wasRowRemoved(const INDEX& row) const;
+   [[nodiscard]] bool wasColumnRemoved(const INDEX& col) const;
+   [[nodiscard]] bool wasRowRemoved(const INDEX& row) const;
 
    /// interface methods called from the presolvers when they detect a possible modification
    void startColumnFixation();
@@ -272,9 +272,9 @@ private:
    void setUndefinedVarboundsTo(double value);
    void setUndefinedRowboundsTo(double value);
 
-   void addActivityOfBlock(const SparseStorageDynamic& matrix, SimpleVector<double>& min_partact, SimpleVector<int>& unbounded_min,
+   static void addActivityOfBlock(const SparseStorageDynamic& matrix, SimpleVector<double>& min_partact, SimpleVector<int>& unbounded_min,
          SimpleVector<double>& max_partact, SimpleVector<int>& unbounded_max, const SimpleVector<double>& xlow, const SimpleVector<double>& ixlow,
-         const SimpleVector<double>& xupp, const SimpleVector<double>& ixupp) const;
+         const SimpleVector<double>& xupp, const SimpleVector<double>& ixupp) ;
 
    long resetOriginallyFreeVarsBounds(const SimpleVector<double>& ixlow_orig, const SimpleVector<double>& ixupp_orig, int node);
 
@@ -301,7 +301,7 @@ private:
          DistributedVector<int>& actmax_eq_ubndd, DistributedVector<int>& actmin_eq_ubndd, DistributedVector<double>& actmax_ineq_part,
          DistributedVector<double>& actmin_ineq_part, DistributedVector<int>& actmax_ineq_ubndd, DistributedVector<int>& actmin_ineq_ubndd) const;
 
-   double computeLocalLinkingRowMinOrMaxActivity(const INDEX& row, bool upper) const;
+   [[nodiscard]] double computeLocalLinkingRowMinOrMaxActivity(const INDEX& row, bool upper) const;
    void computeRowMinOrMaxActivity(const INDEX& row, bool upper);
 
    void removeColumn(const INDEX& col, double fixation);
@@ -320,14 +320,14 @@ private:
    void changeNnzCounterColumn(const INDEX& col, int amount, bool at_root);
 
    /// methods for querying the problem in order to get certain structures etc.
-   DistributedMatrix& getSystemMatrix(SystemType system_type) const;
-   SparseMatrix* getSparseGenMatrix(const INDEX& row, const INDEX& col) const;
+   [[nodiscard]] DistributedMatrix& getSystemMatrix(SystemType system_type) const;
+   [[nodiscard]] SparseMatrix* getSparseGenMatrix(const INDEX& row, const INDEX& col) const;
 
    void checkBoundsInfeasible(const INDEX& col, double xlow_new, double xupp_new) const;
 public:
    void writeRowLocalToStreamDense(std::ostream& out, const INDEX& row) const;
    void printRowColStats() const;
-   int countEmptyRowsBDmat() const;
+   [[nodiscard]] int countEmptyRowsBDmat() const;
 
 private:
    void writeMatrixRowToStreamDense(std::ostream& out, const SparseMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,

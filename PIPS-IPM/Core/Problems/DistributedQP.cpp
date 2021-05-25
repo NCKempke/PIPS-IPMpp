@@ -1141,16 +1141,16 @@ DistributedQP* DistributedQP::cloneFull(bool switchToDynamicStorage) const {
    SmartPointer<GeneralMatrix> A_clone(dynamic_cast<const DistributedMatrix&>(*A).cloneFull(switchToDynamicStorage));
    SmartPointer<GeneralMatrix> C_clone(dynamic_cast<const DistributedMatrix&>(*C).cloneFull(switchToDynamicStorage));
 
-   auto* c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
-   auto* bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
-   auto* xupp_clone(dynamic_cast<DistributedVector<double>*>(bux->cloneFull()));
-   auto* ixupp_clone(dynamic_cast<DistributedVector<double>*>(ixupp->cloneFull()));
-   auto* xlow_clone(dynamic_cast<DistributedVector<double>*>(blx->cloneFull()));
-   auto* ixlow_clone(dynamic_cast<DistributedVector<double>*>(ixlow->cloneFull()));
-   auto* cupp_clone(dynamic_cast<DistributedVector<double>*>(bu->cloneFull()));
-   auto* icupp_clone(dynamic_cast<DistributedVector<double>*>(icupp->cloneFull()));
-   auto* clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
-   auto* iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
+   SmartPointer<DistributedVector<double>> c_clone(dynamic_cast<DistributedVector<double>*>(g->cloneFull()));
+   SmartPointer<DistributedVector<double>> bA_clone(dynamic_cast<DistributedVector<double>*>(bA->cloneFull()));
+   SmartPointer<DistributedVector<double>> xupp_clone(dynamic_cast<DistributedVector<double>*>(bux->cloneFull()));
+   SmartPointer<DistributedVector<double>> ixupp_clone(dynamic_cast<DistributedVector<double>*>(ixupp->cloneFull()));
+   SmartPointer<DistributedVector<double>> xlow_clone(dynamic_cast<DistributedVector<double>*>(blx->cloneFull()));
+   SmartPointer<DistributedVector<double>> ixlow_clone(dynamic_cast<DistributedVector<double>*>(ixlow->cloneFull()));
+   SmartPointer<DistributedVector<double>> cupp_clone(dynamic_cast<DistributedVector<double>*>(bu->cloneFull()));
+   SmartPointer<DistributedVector<double>> icupp_clone(dynamic_cast<DistributedVector<double>*>(icupp->cloneFull()));
+   SmartPointer<DistributedVector<double>> clow_clone(dynamic_cast<DistributedVector<double>*>(bl->cloneFull()));
+   SmartPointer<DistributedVector<double>> iclow_clone(dynamic_cast<DistributedVector<double>*>(iclow->cloneFull()));
 
    const DistributedTree* tree_clone = stochNode;
 

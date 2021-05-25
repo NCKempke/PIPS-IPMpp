@@ -44,25 +44,25 @@ public:
 
    virtual ~Problem() = default;
 
-   virtual double objective_value(const Variables& x) const = 0;
+   [[nodiscard]] virtual double objective_value(const Variables& x) const = 0;
 
    virtual void objective_gradient(const Variables& vars, Vector<double>& gradient) const = 0;
 
    /** compute the norm of the problem data */
-   virtual double datanorm() const;
+   [[nodiscard]] virtual double datanorm() const;
 
    /** print the problem data */
    virtual void print();
 
    Vector<double>& xupperBound() { return *bux; };
 
-   const Vector<double>& xupperBound() const { return *bux; };
+   [[nodiscard]] const Vector<double>& xupperBound() const { return *bux; };
 
    Vector<double>& ixupperBound() { return *ixupp; };
 
    Vector<double>& xlowerBound() { return *blx; };
 
-   const Vector<double>& xlowerBound() const { return *blx; };
+   [[nodiscard]] const Vector<double>& xlowerBound() const { return *blx; };
 
    Vector<double>& ixlowerBound() { return *ixlow; };
 
