@@ -28,7 +28,7 @@ public:
    MehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler = nullptr);
    virtual TerminationStatus
    corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system) = 0;
+         AbstractLinearSystem& linear_system, int iteration) = 0;
    virtual void fraction_to_boundary_rule(Variables& iterate, Variables& step) = 0;
    virtual double compute_centering_parameter(Variables& iterate, Variables& step) = 0;
    virtual void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i,
@@ -42,6 +42,7 @@ public:
    virtual void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) = 0;
    virtual void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const = 0;
    void set_BiCGStab_tolerance(int iteration) const;
+   void register_observer(AbstractLinearSystem* linear_system);
    ~MehrotraStrategy() override;
 
 protected:
@@ -147,7 +148,6 @@ protected:
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void notify_from_subject() override;
-   void register_observer(AbstractLinearSystem* linear_system);
    void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
          double sigma, int i, double mu, int status_code, int level) const;
 };
@@ -156,7 +156,7 @@ class PrimalMehrotraStrategy : public MehrotraStrategy {
 public:
    PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
    TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system) override;
+         AbstractLinearSystem& linear_system, int iteration) override;
    void fraction_to_boundary_rule(Variables& iterate, Variables& step) override;
    double compute_centering_parameter(Variables& iterate, Variables& step) override;
    void take_step(Variables& iterate, Variables& step) override;
@@ -178,7 +178,7 @@ class PrimalDualMehrotraStrategy : public MehrotraStrategy {
 public:
    PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
    TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system) override;
+         AbstractLinearSystem& linear_system, int iteration) override;
    void fraction_to_boundary_rule(Variables& iterate, Variables& step) override;
    double compute_centering_parameter(Variables& iterate, Variables& step) override;
    void take_step(Variables& iterate, Variables& step) override;

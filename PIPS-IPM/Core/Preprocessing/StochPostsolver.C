@@ -844,18 +844,18 @@ bool StochPostsolver::postsolveRedundantSide(DistributedVariables& original_vars
    assert(row.inInEqSys());
 
    if (is_upper_side) {
-      assert(getSimpleVecFromRowStochVec(*original_vars.u, row) == 0);
-      double value_row = lhs + getSimpleVecFromRowStochVec(*original_vars.t, row);
+      assert(getSimpleVecFromRowStochVec(*original_vars.slack_upper_bound_gap, row) == 0);
+      double value_row = lhs + getSimpleVecFromRowStochVec(*original_vars.slack_lower_bound_gap, row);
 
       assert(PIPSisLTFeas(value_row, rhs));
-      getSimpleVecFromRowStochVec(*original_vars.u, row) = rhs - value_row;
+      getSimpleVecFromRowStochVec(*original_vars.slack_upper_bound_gap, row) = rhs - value_row;
    }
    else {
-      assert(getSimpleVecFromRowStochVec(*original_vars.t, row) == 0);
-      double value_row = rhs - getSimpleVecFromRowStochVec(*original_vars.u, row);
+      assert(getSimpleVecFromRowStochVec(*original_vars.slack_lower_bound_gap, row) == 0);
+      double value_row = rhs - getSimpleVecFromRowStochVec(*original_vars.slack_upper_bound_gap, row);
 
       assert(PIPSisLTFeas(lhs, value_row));
-      getSimpleVecFromRowStochVec(*original_vars.t, row) = value_row - lhs;
+      getSimpleVecFromRowStochVec(*original_vars.slack_lower_bound_gap, row) = value_row - lhs;
    }
 
    return true;
@@ -906,7 +906,7 @@ bool StochPostsolver::postsolveRedundantRow(DistributedVariables& original_vars,
    /* get current row activity - redundant linking rows have to lie on the stack in the same order */
 
    /* primal values */
-   DistributedVector<double>& x_vec = dynamic_cast<DistributedVector<double>&>(*original_vars.x);
+   DistributedVector<double>& x_vec = dynamic_cast<DistributedVector<double>&>(*original_vars.primals);
    const double value_row = row_storage.multRowTimesVec(stored_row, x_vec);
 
    assert(wasRowRemoved(row));
@@ -919,16 +919,16 @@ bool StochPostsolver::postsolveRedundantRow(DistributedVariables& original_vars,
       assert(PIPSisEQ(value_row, rhs, postsolve_tol));
 
       /* set dual multiplier to zero and mark row as added */
-      getSimpleVecFromRowStochVec(original_vars.y, row) = 0;
+      getSimpleVecFromRowStochVec(original_vars.equality_duals, row) = 0;
    }
    else {
       /* set dual multipliers to zero and mark row as added */
       /* dual of row is zero */
-      getSimpleVecFromRowStochVec(original_vars.z, row) = 0;
-      getSimpleVecFromRowStochVec(original_vars.lambda, row) = 0;
-      getSimpleVecFromRowStochVec(original_vars.pi, row) = 0;
+      getSimpleVecFromRowStochVec(original_vars.inequality_duals, row) = 0;
+      getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row) = 0;
+      getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row) = 0;
 
-      getSimpleVecFromRowStochVec(original_vars.s, row) = value_row;
+      getSimpleVecFromRowStochVec(original_vars.slacks, row) = value_row;
 
       if (iclow == 1) {
          if (!PIPSisLEFeas(lhs, value_row))
@@ -946,14 +946,14 @@ bool StochPostsolver::postsolveRedundantRow(DistributedVariables& original_vars,
 
       /* set correct slacks */
       if (iclow == 1)
-         getSimpleVecFromRowStochVec(original_vars.t, row) = value_row - lhs;
+         getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap, row) = value_row - lhs;
       else
-         getSimpleVecFromRowStochVec(original_vars.t, row) = 0;
+         getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap, row) = 0;
 
       if (icupp == 1)
-         getSimpleVecFromRowStochVec(original_vars.u, row) = rhs - value_row;
+         getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap, row) = rhs - value_row;
       else
-         getSimpleVecFromRowStochVec(original_vars.u, row) = 0;
+         getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap, row) = 0;
 
       assert(complementarySlackRowMet(original_vars, row, postsolve_tol));
    }
@@ -1007,7 +1007,7 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
    const double new_bound = float_values[first_float_val + 1];
 #endif
 
-   const double curr_x = getSimpleVecFromColStochVec(original_vars.x, col);
+   const double curr_x = getSimpleVecFromColStochVec(original_vars.primals, col);
 
    if (is_upper_bound) {
       assert(PIPSisLT(new_bound, old_bound));
@@ -1018,8 +1018,8 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
       assert(PIPSisLEFeas(new_bound, curr_x));
    }
 
-   double& slack = is_upper_bound ? getSimpleVecFromColStochVec(original_vars.w, col) : getSimpleVecFromColStochVec(original_vars.v, col);
-   double dual_bound = is_upper_bound ? getSimpleVecFromColStochVec(original_vars.phi, col) : getSimpleVecFromColStochVec(original_vars.gamma, col);
+   double& slack = is_upper_bound ? getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col) : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col);
+   double dual_bound = is_upper_bound ? getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col);
    if (col.isLinkingCol())
       dual_bound += is_upper_bound ? (*phi_changes)[col.getIndex()] : (*gamma_changes)[col.getIndex()];
    /* If the bound was tight all other variables in that row must have been at their respective upper
@@ -1073,7 +1073,7 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
             dual += diff_dual_bound;
       }
       else {
-         double& dual = is_upper_bound ? getSimpleVecFromColStochVec(original_vars.phi, col) : getSimpleVecFromColStochVec(original_vars.gamma, col);
+         double& dual = is_upper_bound ? getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col);
          if (std::fabs(old_bound) == INF_POS)
             dual = 0.0;
          else
@@ -1093,8 +1093,8 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
 
    /* add -dz/dy * row to gamma/phi */
    /* store linking variable changes and allreduce them later except when using a row from D/B0 or D/Bl0 */
-   auto& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
-   auto& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
+   auto& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual);
+   auto& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual);
 
    /* linking rows not at root - so far we changed the slacks for the variable - missing is dual for the row and resulting corrections */
    if (!at_root_node && row.isLinkingRow()) {
@@ -1118,14 +1118,14 @@ bool StochPostsolver::postsolveBoundsTightened(DistributedVariables& original_va
 
    /* adjust the row dual */
    if (row.inInEqSys()) {
-      double& z = getSimpleVecFromRowStochVec(original_vars.z, row);
-      double& lambda = getSimpleVecFromRowStochVec(original_vars.lambda, row);
-      double& pi = getSimpleVecFromRowStochVec(original_vars.pi, row);
+      double& z = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row);
+      double& lambda = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row);
+      double& pi = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row);
 
       addIneqRowDual(z, lambda, pi, change_dual_row);
    }
    else
-      getSimpleVecFromRowStochVec(original_vars.y, row) += change_dual_row;
+      getSimpleVecFromRowStochVec(original_vars.equality_duals, row) += change_dual_row;
 
    return true;
 }
@@ -1162,15 +1162,15 @@ bool StochPostsolver::postsolveFixedColumn(DistributedVariables& original_vars, 
    markColumnAdded(col);
 
    /* set x value */
-   getSimpleVecFromColStochVec(original_vars.x, col) = value;
+   getSimpleVecFromColStochVec(original_vars.primals, col) = value;
 
    /* set slacks for x bounds to zero (bounds were tight) */
-   getSimpleVecFromColStochVec(original_vars.v, col) = 0.0;
-   getSimpleVecFromColStochVec(original_vars.w, col) = 0.0;
+   getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col) = 0.0;
+   getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col) = 0.0;
 
    /* set duals for bounds to satisfy reduced costs of reintroduced column times x */
-   const double col_times_duals = col_storage.multColTimesVec(stored_col, dynamic_cast<const DistributedVector<double>&>(*original_vars.y),
-         dynamic_cast<const DistributedVector<double>&>(*original_vars.z));
+   const double col_times_duals = col_storage.multColTimesVec(stored_col, dynamic_cast<const DistributedVector<double>&>(*original_vars.equality_duals),
+         dynamic_cast<const DistributedVector<double>&>(*original_vars.inequality_duals));
 
    const double reduced_costs = obj_coeff - col_times_duals;
 
@@ -1178,15 +1178,15 @@ bool StochPostsolver::postsolveFixedColumn(DistributedVariables& original_vars, 
    /* add col * value to slacks */
    /* for linking rows we have to store the slack changes if they are not happening in the root node */
    if (col.isLinkingCol())
-      col_storage.axpyAtCol(1.0, nullptr, &dynamic_cast<DistributedVector<double>&>(*original_vars.s), nullptr, nullptr, value, stored_col);
+      col_storage.axpyAtCol(1.0, nullptr, &dynamic_cast<DistributedVector<double>&>(*original_vars.slacks), nullptr, nullptr, value, stored_col);
    else {
       outdated_inequality_linking_rows = true;
-      col_storage.axpyAtCol(1.0, nullptr, &dynamic_cast<DistributedVector<double>&>(*original_vars.s), nullptr, s_changes.get(), value, stored_col);
+      col_storage.axpyAtCol(1.0, nullptr, &dynamic_cast<DistributedVector<double>&>(*original_vars.slacks), nullptr, s_changes.get(), value, stored_col);
    }
 
    /* set duals of bounds of x */
-   double& gamma = getSimpleVecFromColStochVec(original_vars.gamma, col);
-   double& phi = getSimpleVecFromColStochVec(original_vars.phi, col);
+   double& gamma = getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col);
+   double& phi = getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col);
    gamma = 0.0;
    phi = 0.0;
 
@@ -1238,37 +1238,37 @@ bool StochPostsolver::postsolveFixedEmptyColumn(DistributedVariables& original_v
    /* primal */
    /* mark entry as set and set x value to fixation */
    markColumnAdded(col);
-   getSimpleVecFromColStochVec(original_vars.x, col) = value;
+   getSimpleVecFromColStochVec(original_vars.primals, col) = value;
 
    assert(PIPSisLEFeas(xlow, value));
    assert(PIPSisLEFeas(value, xupp));
 
    /* dual */
-   getSimpleVecFromColStochVec(original_vars.gamma, col) = 0.0;
-   getSimpleVecFromColStochVec(original_vars.phi, col) = 0.0;
+   getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col) = 0.0;
+   getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) = 0.0;
 
    if (!PIPSisZero(obj_coeff)) {
       if (PIPSisLT(obj_coeff, 0.0)) {
          assert(xupp != INF_POS);
          assert(PIPSisEQ(value, xupp));
-         getSimpleVecFromColStochVec(original_vars.phi, col) = obj_coeff;
+         getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) = obj_coeff;
       }
       else if (PIPSisLT(0.0, obj_coeff)) {
          assert(xlow != INF_NEG);
          assert(PIPSisEQ(value, xlow));
-         getSimpleVecFromColStochVec(original_vars.gamma, col) = obj_coeff;
+         getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col) = obj_coeff;
       }
    }
 
    if (xlow != INF_NEG)
-      getSimpleVecFromColStochVec(original_vars.v, col) = value - xlow;
+      getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col) = value - xlow;
    else
-      getSimpleVecFromColStochVec(original_vars.v, col) = 0.0;
+      getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col) = 0.0;
 
    if (xupp != INF_POS)
-      getSimpleVecFromColStochVec(original_vars.w, col) = xupp - value;
+      getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col) = xupp - value;
    else
-      getSimpleVecFromColStochVec(original_vars.w, col) = 0.0;
+      getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col) = 0.0;
 
    assert(complementarySlackVariablesMet(original_vars, col, postsolve_tol));
 
@@ -1307,14 +1307,14 @@ bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(DistributedVar
    const bool local_linking_col = col.isLinkingCol() && row.getNode() != -1;
 
    /* set x value - bound is tight - compute slacks of x - set duals to zero */
-   assert(PIPSisEQ(getSimpleVecFromColStochVec(original_vars.x, col), value));
+   assert(PIPSisEQ(getSimpleVecFromColStochVec(original_vars.primals, col), value));
 
    /* set slacks for x bounds */
    assert(PIPSisLE(value, xupp_old) || xupp_old == INF_POS);
    assert(PIPSisLE(xlow_old, value) || xlow_old == INF_NEG);
 
-   double& v = local_linking_col ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col);
-   double& w = local_linking_col ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.w, col);
+   double& v = local_linking_col ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col);
+   double& w = local_linking_col ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col);
 
    assert(PIPSisZeroFeas(v) && PIPSisZeroFeas(w));
    v = (xlow_old == INF_NEG) ? 0 : value - xlow_old;
@@ -1325,9 +1325,9 @@ bool StochPostsolver::postsolveFixedColumnSingletonFromInequality(DistributedVar
 
    /* if a bound is no longer tight we do not have to adjust the respective duals since these should be zero anyway */
    if (!PIPSisZero(v))
-      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.gamma, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col)));
    if (!PIPSisZero(w))
-      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.phi, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col)));
 
    assert(complementarySlackVariablesMet(original_vars, col, postsolve_tol));
 
@@ -1366,12 +1366,12 @@ bool StochPostsolver::postsolveSingletonEqualityRow(DistributedVariables& origin
 
    assert(!PIPSisZero(coeff) || coeff == NAN);
 
-   const double curr_x = getSimpleVecFromColStochVec(original_vars.x, col);
-   double& slack_lower = getSimpleVecFromColStochVec(original_vars.v, col);
-   double& slack_upper = getSimpleVecFromColStochVec(original_vars.w, col);
+   const double curr_x = getSimpleVecFromColStochVec(original_vars.primals, col);
+   double& slack_lower = getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col);
+   double& slack_upper = getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col);
 
-   double& dual_lower = getSimpleVecFromColStochVec(original_vars.gamma, col);
-   double& dual_upper = getSimpleVecFromColStochVec(original_vars.phi, col);
+   double& dual_lower = getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col);
+   double& dual_upper = getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col);
 
    double error_in_reduced_costs = 0.0;
    /* adjust the slacks */
@@ -1417,7 +1417,7 @@ bool StochPostsolver::postsolveSingletonEqualityRow(DistributedVariables& origin
    /* adjust duals of bounds so that complementary slackness is still met - iff we are the process that has the row to adjust on it */
    if (row.isRow()) {
       if (!PIPSisZero(error_in_reduced_costs)) {
-         double& dual_singelton_row = getSimpleVecFromRowStochVec(original_vars.y, row);
+         double& dual_singelton_row = getSimpleVecFromRowStochVec(original_vars.equality_duals, row);
          assert(coeff != NAN);
          /* we use the coeff * dual_singleton_row to balance the error in the reduced costs */
          const double diff_dual_row = error_in_reduced_costs / coeff;
@@ -1468,9 +1468,9 @@ bool StochPostsolver::postsolveSingletonInequalityRow(DistributedVariables& orig
 
    bool lower_bound_changed = (xlow_new != INF_NEG);
 
-   const double curr_x = getSimpleVecFromColStochVec(original_vars.x, col);
-   double& slack = lower_bound_changed ? getSimpleVecFromColStochVec(original_vars.v, col) : getSimpleVecFromColStochVec(original_vars.w, col);
-   double& dual_bound = lower_bound_changed ? getSimpleVecFromColStochVec(original_vars.gamma, col) : getSimpleVecFromColStochVec(original_vars.phi,
+   const double curr_x = getSimpleVecFromColStochVec(original_vars.primals, col);
+   double& slack = lower_bound_changed ? getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col) : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col);
+   double& dual_bound = lower_bound_changed ? getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col) : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual,
          col);
 
    const double old_bound = lower_bound_changed ? xlow_old : xupp_old;
@@ -1506,17 +1506,17 @@ bool StochPostsolver::postsolveSingletonInequalityRow(DistributedVariables& orig
    if (row.isRow()) {
       /* correct optimality conditions and reduced costs */
       if (!PIPSisZero(error_in_reduced_costs)) {
-         double& dual_singelton_row = getSimpleVecFromRowStochVec(original_vars.z, row);
+         double& dual_singelton_row = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row);
          assert(PIPSisZero(dual_singelton_row));
-         assert(PIPSisZero(getSimpleVecFromRowStochVec(original_vars.lambda, row)));
-         assert(PIPSisZero(getSimpleVecFromRowStochVec(original_vars.pi, row)));
+         assert(PIPSisZero(getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row)));
+         assert(PIPSisZero(getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row)));
 
          /* we use the coeff * dual_singleton_row to balance the error in the reduced costs */
          const double diff_dual_row = error_in_reduced_costs / coeff;
          dual_singelton_row += diff_dual_row;
 
-         getSimpleVecFromRowStochVec(original_vars.lambda, row) = std::max(0.0, dual_singelton_row);
-         getSimpleVecFromRowStochVec(original_vars.pi, row) = -std::min(0.0, dual_singelton_row);
+         getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row) = std::max(0.0, dual_singelton_row);
+         getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row) = -std::min(0.0, dual_singelton_row);
 
          assert(PIPSisEQ(diff_dual_row * coeff, error_in_reduced_costs, postsolve_tol));
       }
@@ -1585,37 +1585,37 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(DistributedVariables&
 
    /* set duals of row depending on equality/inequality row */
    if (row.inEqSys()) {
-      getSimpleVecFromRowStochVec(original_vars.y, row) = dual_value_row;
-      assert(PIPSisZero(obj_coeff - getSimpleVecFromRowStochVec(original_vars.y, row) * col_coeff));
+      getSimpleVecFromRowStochVec(original_vars.equality_duals, row) = dual_value_row;
+      assert(PIPSisZero(obj_coeff - getSimpleVecFromRowStochVec(original_vars.equality_duals, row) * col_coeff));
    }
    else {
       /* cupp == clow so slacks must be zero close to zero */
-      getSimpleVecFromRowStochVec(original_vars.s, row) = 0.0;
-      getSimpleVecFromRowStochVec(original_vars.t, row) = 0.0;
-      getSimpleVecFromRowStochVec(original_vars.u, row) = 0.0;
+      getSimpleVecFromRowStochVec(original_vars.slacks, row) = 0.0;
+      getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap, row) = 0.0;
+      getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap, row) = 0.0;
 
       /* set dual */
-      getSimpleVecFromRowStochVec(original_vars.z, row) = dual_value_row;
+      getSimpleVecFromRowStochVec(original_vars.inequality_duals, row) = dual_value_row;
       if (PIPSisLT(0.0, dual_value_row))
-         getSimpleVecFromRowStochVec(original_vars.pi, row) = dual_value_row;
+         getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row) = dual_value_row;
       else
-         getSimpleVecFromRowStochVec(original_vars.lambda, row) = -dual_value_row;
+         getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row) = -dual_value_row;
    }
 
    /* synchronize value of row for x_val */
-   const double value_row = row_storage.multRowTimesVec(stored_row, dynamic_cast<const DistributedVector<double>&>(*original_vars.x));
+   const double value_row = row_storage.multRowTimesVec(stored_row, dynamic_cast<const DistributedVector<double>&>(*original_vars.primals));
    if (col.isCol())
-      assert(PIPSisZero(getSimpleVecFromColStochVec(*original_vars.x, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(*original_vars.primals, col)));
    assert(std::abs(value_row) != INF_POS);
 
    /* reintroduce the removed column on process owning column */
    if (col.isCol()) {
       const bool local_col_change = col.isLinkingCol() && row.getNode() != -1;
 
-      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.x, col)));
+      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primals, col)));
       if (local_col_change)
          outdated_linking_vars = true;
-      double& x_val = local_col_change ? (*x_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.x, col);
+      double& x_val = local_col_change ? (*x_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.primals, col);
 
       /* mark column as set */
       getSimpleVecFromColStochVec(*padding_origcol, col) = 1;
@@ -1625,8 +1625,8 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(DistributedVariables&
       assert(PIPSisZeroFeas(x_val * col_coeff + value_row - rhs));
 
       /* compute slacks and set duals for bounds to zero */
-      double& slack_lower = local_col_change ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col);
-      double& slack_upper = local_col_change ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.w, col);
+      double& slack_lower = local_col_change ? (*v_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col);
+      double& slack_upper = local_col_change ? (*w_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col);
 
       if (xlow == INF_NEG)
          slack_lower = 0.0;
@@ -1642,8 +1642,8 @@ bool StochPostsolver::postsolveFreeColumnSingletonEquality(DistributedVariables&
          slack_upper = xupp - x_val;
       }
 
-      getSimpleVecFromColStochVec(original_vars.gamma, col) = 0.0;
-      getSimpleVecFromColStochVec(original_vars.phi, col) = 0.0;
+      getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col) = 0.0;
+      getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) = 0.0;
    }
 
    return true;
@@ -1712,34 +1712,34 @@ bool StochPostsolver::postsolveNearlyParallelRowSubstitution(DistributedVariable
       assert(PIPSisZero(translation));
    }
 
-   const double val_col1 = col1.isCol() ? getSimpleVecFromColStochVec(original_vars.x, col1) : 0.0;
+   const double val_col1 = col1.isCol() ? getSimpleVecFromColStochVec(original_vars.primals, col1) : 0.0;
    const double val_col2 = scalar * val_col1 + translation;
 
    /* primal postsolve */
 
    /* reintroduce the substituted column */
    if (local_linking_col2) {
-      (*x_changes)[col2.getIndex()] += val_col2 - getSimpleVecFromColStochVec(original_vars.x, col2);
+      (*x_changes)[col2.getIndex()] += val_col2 - getSimpleVecFromColStochVec(original_vars.primals, col2);
       outdated_linking_vars = true;
    }
    else
-      getSimpleVecFromColStochVec(original_vars.x, col2) = val_col2;
+      getSimpleVecFromColStochVec(original_vars.primals, col2) = val_col2;
 
    assert(PIPSisLEFeas(xlow_col2, val_col2));
    assert(PIPSisLEFeas(val_col2, xupp_col2));
 
-   assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.phi, col2)));
-   assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.gamma, col2)));
+   assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col2)));
+   assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col2)));
    /* slacks for bounds */
    /* bound duals to zero */
    if (local_linking_col2) {
-      (*v_changes)[col2.getIndex()] += (xlow_col2 == INF_NEG) ? -getSimpleVecFromColStochVec(original_vars.v, col2) : (*x_changes)[col2.getIndex()];
-      (*w_changes)[col2.getIndex()] -= (xupp_col2 == INF_POS) ? getSimpleVecFromColStochVec(original_vars.w, col2) : (*x_changes)[col2.getIndex()];
+      (*v_changes)[col2.getIndex()] += (xlow_col2 == INF_NEG) ? -getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col2) : (*x_changes)[col2.getIndex()];
+      (*w_changes)[col2.getIndex()] -= (xupp_col2 == INF_POS) ? getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col2) : (*x_changes)[col2.getIndex()];
       outdated_linking_vars = true;
    }
    else {
-      getSimpleVecFromColStochVec(original_vars.v, col2) = (xlow_col2 == INF_NEG) ? 0 : val_col2 - xlow_col2;
-      getSimpleVecFromColStochVec(original_vars.w, col2) = (xupp_col2 == INF_POS) ? 0 : xupp_col2 - val_col2;
+      getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col2) = (xlow_col2 == INF_NEG) ? 0 : val_col2 - xlow_col2;
+      getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col2) = (xupp_col2 == INF_POS) ? 0 : xupp_col2 - val_col2;
    }
 
    /* dual postsolve substitution */
@@ -1750,8 +1750,8 @@ bool StochPostsolver::postsolveNearlyParallelRowSubstitution(DistributedVariable
 
    /* postsolve two equalities */
    if (row1.inEqSys()) {
-      double& dual_row1 = getSimpleVecFromRowStochVec(original_vars.y, row1);
-      double& dual_row2 = getSimpleVecFromRowStochVec(original_vars.y, row2);
+      double& dual_row1 = getSimpleVecFromRowStochVec(original_vars.equality_duals, row1);
+      double& dual_row2 = getSimpleVecFromRowStochVec(original_vars.equality_duals, row2);
 
       assert(PIPSisZero(dual_row2));
 
@@ -1780,24 +1780,24 @@ bool StochPostsolver::postsolveNearlyParallelRowSubstitution(DistributedVariable
       const double factor_row1 = obj_col1 / (obj_col1 + change_objective_row1);
 
       /* shift duals from row1 to row2 */
-      double& z_row1 = getSimpleVecFromRowStochVec(original_vars.z, row1);
-      double& lambda_row1 = getSimpleVecFromRowStochVec(original_vars.lambda, row1);
-      double& pi_row1 = getSimpleVecFromRowStochVec(original_vars.pi, row1);
+      double& z_row1 = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row1);
+      double& lambda_row1 = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row1);
+      double& pi_row1 = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row1);
 
-      double& z_row2 = getSimpleVecFromRowStochVec(original_vars.z, row2);
-      double& lambda_row2 = getSimpleVecFromRowStochVec(original_vars.lambda, row2);
-      double& pi_row2 = getSimpleVecFromRowStochVec(original_vars.pi, row2);
+      double& z_row2 = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row2);
+      double& lambda_row2 = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row2);
+      double& pi_row2 = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row2);
 
       assert(PIPSisZero(z_row2));
       assert(PIPSisZero(pi_row2));
       assert(PIPSisZero(lambda_row2));
 
       /* bound duals */
-      double& gamma_row1 = getSimpleVecFromRowStochVec(original_vars.gamma, row1);
-      double& phi_row1 = getSimpleVecFromRowStochVec(original_vars.phi, row1);
+      double& gamma_row1 = getSimpleVecFromRowStochVec(original_vars.primal_lower_bound_gap_dual, row1);
+      double& phi_row1 = getSimpleVecFromRowStochVec(original_vars.primal_upper_bound_gap_dual, row1);
 
-      double& gamma_row2 = getSimpleVecFromRowStochVec(original_vars.gamma, row2);
-      double& phi_row2 = getSimpleVecFromRowStochVec(original_vars.phi, row2);
+      double& gamma_row2 = getSimpleVecFromRowStochVec(original_vars.primal_lower_bound_gap_dual, row2);
+      double& phi_row2 = getSimpleVecFromRowStochVec(original_vars.primal_upper_bound_gap_dual, row2);
 
 #ifndef NDEBUG
       assert(PIPSisZero(gamma_row2));
@@ -1917,7 +1917,7 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
 
    assert(!PIPSisZero(scalar));
 #ifndef NDEBUG
-   const double val_col1 = getSimpleVecFromColStochVec(original_vars.x, col1);
+   const double val_col1 = getSimpleVecFromColStochVec(original_vars.primals, col1);
 #endif
 
    /* if the variable bound of col1 was actually implied via col2 we have to shift it's dual multipliers over via also adjusting the dual of row1 */
@@ -1993,8 +1993,8 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
    assert(PIPSisLE(xupp_implied, xupp_col1, postsolve_tol));
 
 #ifndef NDEBUG
-   const double old_slack_lower = getSimpleVecFromColStochVec(original_vars.v, col1);
-   const double old_slack_upper = getSimpleVecFromColStochVec(original_vars.w, col1);
+   const double old_slack_lower = getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col1);
+   const double old_slack_upper = getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col1);
 #endif
 
    assert(complementarySlackVariablesMet(original_vars, col1, postsolve_tol));
@@ -2008,12 +2008,12 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
       if (local_linking_col1)
          outdated_linking_vars = true;
 
-      const double gamma_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.gamma, col1) + (*gamma_changes)[col1.getIndex()]
-                                                       : getSimpleVecFromColStochVec(original_vars.gamma, col1);
-      const double v_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.v, col1) + (*v_changes)[col1.getIndex()]
-                                                   : getSimpleVecFromColStochVec(original_vars.v, col1);
-      double& gamma_col1 = local_linking_col1 ? (*gamma_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.gamma, col1);
-      double& v_col1 = local_linking_col1 ? (*v_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.v, col1);
+      const double gamma_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col1) + (*gamma_changes)[col1.getIndex()]
+                                                       : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col1);
+      const double v_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col1) + (*v_changes)[col1.getIndex()]
+                                                   : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col1);
+      double& gamma_col1 = local_linking_col1 ? (*gamma_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col1);
+      double& v_col1 = local_linking_col1 ? (*v_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col1);
 
       /* reset bounds and adjust slacks */
       if (xlow_col1 != INF_NEG)
@@ -2032,17 +2032,17 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
          assert(PIPSisEQ(coeff_col1 * dual_shift_row1, gamma_col1_old));
          gamma_col1 -= gamma_col1_old;
 
-         getSimpleVecFromRowStochVec(original_vars.y, row1) += dual_shift_row1;
+         getSimpleVecFromRowStochVec(original_vars.equality_duals, row1) += dual_shift_row1;
 
          /* compensate again and adjust dual of col2 */
          const double dual_shift_row2 = -dual_shift_row1 * parallel_factor;
 
          if (row2.inEqSys())
-            getSimpleVecFromRowStochVec(original_vars.y, row2) += dual_shift_row2;
+            getSimpleVecFromRowStochVec(original_vars.equality_duals, row2) += dual_shift_row2;
          else {
-            double& z = getSimpleVecFromRowStochVec(original_vars.z, row2);
-            double& lambda = getSimpleVecFromRowStochVec(original_vars.lambda, row2);
-            double& pi = getSimpleVecFromRowStochVec(original_vars.pi, row2);
+            double& z = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row2);
+            double& lambda = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row2);
+            double& pi = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row2);
 
             addIneqRowDual(z, lambda, pi, dual_shift_row2);
          }
@@ -2051,22 +2051,22 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
          if (col2.isCol()) {
             /* assert bounds of substituted variable are similarly tight */
             if (PIPSisLT(0.0, scalar))
-               assert(PIPSisEQ(getSimpleVecFromColStochVec(original_vars.x, col2) - xlow_col2, std::fabs(old_slack_lower * scalar), postsolve_tol));
+               assert(PIPSisEQ(getSimpleVecFromColStochVec(original_vars.primals, col2) - xlow_col2, std::fabs(old_slack_lower * scalar), postsolve_tol));
             else
-               assert(PIPSisEQ(xupp_col2 - getSimpleVecFromColStochVec(original_vars.x, col2), std::fabs(old_slack_lower * scalar), postsolve_tol));
+               assert(PIPSisEQ(xupp_col2 - getSimpleVecFromColStochVec(original_vars.primals, col2), std::fabs(old_slack_lower * scalar), postsolve_tol));
 
             const double dual_shift_col2 = -coeff_col2 * dual_shift_row2;
             PIPSisLT(0.0, scalar) ? assert(PIPSisLE(0.0, dual_shift_col2)) : assert(PIPSisLE(dual_shift_col2, 0.0));
 
             if (PIPSisLT(0.0, scalar)) {
-               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.gamma, col2)));
-               double& gamma = local_linking_col2 ? (*gamma_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.gamma, col2);
+               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col2)));
+               double& gamma = local_linking_col2 ? (*gamma_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col2);
 
                gamma += std::fabs(dual_shift_col2);
             }
             else {
-               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.phi, col2)));
-               double& phi = local_linking_col2 ? (*phi_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.phi, col2);
+               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col2)));
+               double& phi = local_linking_col2 ? (*phi_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col2);
 
                phi += std::fabs(dual_shift_col2);
             }
@@ -2081,12 +2081,12 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
       if (local_linking_col1)
          outdated_linking_vars = true;
 
-      const double phi_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.phi, col1) + (*phi_changes)[col1.getIndex()]
-                                                     : getSimpleVecFromColStochVec(original_vars.phi, col1);
-      const double w_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.w, col1) + (*w_changes)[col1.getIndex()]
-                                                   : getSimpleVecFromColStochVec(original_vars.w, col1);
-      double& phi_col1 = local_linking_col1 ? (*phi_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.phi, col1);
-      double& w_col1 = local_linking_col1 ? (*w_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.w, col1);
+      const double phi_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col1) + (*phi_changes)[col1.getIndex()]
+                                                     : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col1);
+      const double w_col1_old = local_linking_col1 ? getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col1) + (*w_changes)[col1.getIndex()]
+                                                   : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col1);
+      double& phi_col1 = local_linking_col1 ? (*phi_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col1);
+      double& w_col1 = local_linking_col1 ? (*w_changes)[col1.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col1);
 
       /* reset bounds and adjust slacks */
       if (xupp_col1 != INF_POS)
@@ -2104,17 +2104,17 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
          assert(PIPSisEQ(coeff_col1 * dual_shift_row1, -phi_col1_old));
          phi_col1 -= phi_col1_old;
 
-         getSimpleVecFromRowStochVec(original_vars.y, row1) += dual_shift_row1;
+         getSimpleVecFromRowStochVec(original_vars.equality_duals, row1) += dual_shift_row1;
 
          /* compensate again and adjust dual of col2 */
          const double dual_shift_row2 = -dual_shift_row1 * parallel_factor;
 
          if (row2.inEqSys())
-            getSimpleVecFromRowStochVec(original_vars.y, row2) += dual_shift_row2;
+            getSimpleVecFromRowStochVec(original_vars.equality_duals, row2) += dual_shift_row2;
          else {
-            double& z = getSimpleVecFromRowStochVec(original_vars.z, row2);
-            double& lambda = getSimpleVecFromRowStochVec(original_vars.lambda, row2);
-            double& pi = getSimpleVecFromRowStochVec(original_vars.pi, row2);
+            double& z = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row2);
+            double& lambda = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row2);
+            double& pi = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row2);
 
             addIneqRowDual(z, lambda, pi, dual_shift_row2);
          }
@@ -2122,23 +2122,23 @@ bool StochPostsolver::postsolveNearlyParallelRowBoundsTightened(DistributedVaria
          if (col2.isCol()) {
             /* assert bounds of substituted variable are similarly tight */
             if (PIPSisLT(0.0, scalar))
-               assert(PIPSisEQ(xupp_col2 - getSimpleVecFromColStochVec(original_vars.x, col2), std::fabs(old_slack_upper * scalar), postsolve_tol));
+               assert(PIPSisEQ(xupp_col2 - getSimpleVecFromColStochVec(original_vars.primals, col2), std::fabs(old_slack_upper * scalar), postsolve_tol));
             else
-               assert(PIPSisEQ(getSimpleVecFromColStochVec(original_vars.x, col2) - xlow_col2, std::fabs(old_slack_upper * scalar), postsolve_tol));
+               assert(PIPSisEQ(getSimpleVecFromColStochVec(original_vars.primals, col2) - xlow_col2, std::fabs(old_slack_upper * scalar), postsolve_tol));
 
             const double dual_shift_col2 = -coeff_col2 * dual_shift_row2;
             /* -row^T * dual - gamma + phi */
             PIPSisLT(0.0, scalar) ? assert(PIPSisLE(dual_shift_col2, 0.0)) : assert(PIPSisLE(0.0, dual_shift_col2));
 
             if (PIPSisLT(0.0, scalar)) {
-               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.phi, col2)));
-               double& phi = local_linking_col2 ? (*phi_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.phi, col2);
+               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col2)));
+               double& phi = local_linking_col2 ? (*phi_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col2);
 
                phi += std::fabs(dual_shift_col2);
             }
             else {
-               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.gamma, col2)));
-               double& gamma = local_linking_col2 ? (*gamma_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.gamma, col2);
+               assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col2)));
+               double& gamma = local_linking_col2 ? (*gamma_changes)[col2.getIndex()] : getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col2);
 
                gamma += std::fabs(dual_shift_col2);
             }
@@ -2186,12 +2186,12 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow(DistributedVaria
    assert(wasRowRemoved(row));
    markRowAdded(row);
 
-   const double row_value = row_storage.multRowTimesVec(row_stored, dynamic_cast<const DistributedVector<double>&>(*original_vars.x));
+   const double row_value = row_storage.multRowTimesVec(row_stored, dynamic_cast<const DistributedVector<double>&>(*original_vars.primals));
 
    /* duals of row and bounds are zero */
-   getSimpleVecFromRowStochVec(original_vars.z, row) = 0;
-   getSimpleVecFromRowStochVec(original_vars.lambda, row) = 0;
-   getSimpleVecFromRowStochVec(original_vars.pi, row) = 0;
+   getSimpleVecFromRowStochVec(original_vars.inequality_duals, row) = 0;
+   getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row) = 0;
+   getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row) = 0;
 
    if (col.isCol()) {
       const bool local_linking_col = col.isLinkingCol() && row.getNode() != -1;
@@ -2199,35 +2199,35 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow(DistributedVaria
          outdated_linking_vars = true;
 
       /* set x value such that row is satisfied */
-      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.x, col)));
-      double& x_val = local_linking_col ? (*x_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.x, col);
+      assert(PIPSisZero(getSimpleVecFromColStochVec(original_vars.primals, col)));
+      double& x_val = local_linking_col ? (*x_changes)[col.getIndex()] : getSimpleVecFromColStochVec(original_vars.primals, col);
       x_val = (rhs - row_value) / coeff;
 
-      getSimpleVecFromColStochVec(original_vars.gamma, col) = 0;
-      getSimpleVecFromColStochVec(original_vars.phi, col) = 0;
+      getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col) = 0;
+      getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) = 0;
 
       if (xlow == INF_NEG)
-         getSimpleVecFromColStochVec(original_vars.v, col) = 0;
+         getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col) = 0;
       else {
          assert(PIPSisLE(xlow, x_val));
          if (local_linking_col)
             (*v_changes)[col.getIndex()] = x_val - xlow;
          else
-            getSimpleVecFromColStochVec(original_vars.v, col) = x_val - xlow;
+            getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap, col) = x_val - xlow;
       }
 
       if (xupp == INF_POS)
-         getSimpleVecFromColStochVec(original_vars.w, col) = 0;
+         getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col) = 0;
       else {
          assert(PIPSisLE(x_val, xupp));
          if (local_linking_col)
             (*w_changes)[col.getIndex()] = xupp - x_val;
          else
-            getSimpleVecFromColStochVec(original_vars.w, col) = xupp - x_val;
+            getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap, col) = xupp - x_val;
       }
 
-      getSimpleVecFromColStochVec(original_vars.gamma, col) = 0.0;
-      getSimpleVecFromColStochVec(original_vars.phi, col) = 0.0;
+      getSimpleVecFromColStochVec(original_vars.primal_lower_bound_gap_dual, col) = 0.0;
+      getSimpleVecFromColStochVec(original_vars.primal_upper_bound_gap_dual, col) = 0.0;
 
       const double row_slack = row_value + coeff * x_val;
 
@@ -2240,13 +2240,13 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow(DistributedVaria
          (*s_changes)[row.getIndex()] = 0;
       }
 
-      getSimpleVecFromRowStochVec(original_vars.s, row) = row_slack;
+      getSimpleVecFromRowStochVec(original_vars.slacks, row) = row_slack;
    }
    else {
       assert(row.isLinkingRow());
 
       const double row_slack = PIPS_MPIgetSum(0.0);
-      getSimpleVecFromRowStochVec(original_vars.s, row) = row_slack;
+      getSimpleVecFromRowStochVec(original_vars.slacks, row) = row_slack;
 
       /* we just recomputed the slack */
       (*s_changes)[row.getIndex()] = 0;
@@ -2254,8 +2254,8 @@ bool StochPostsolver::postsolveFreeColumnSingletonInequalityRow(DistributedVaria
 
    /* compute slacks for bounds and row */
    /* slack for row is zero by construction */
-   getSimpleVecFromRowStochVec(original_vars.t, row) = 0;
-   getSimpleVecFromRowStochVec(original_vars.u, row) = 0;
+   getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap, row) = 0;
+   getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap, row) = 0;
 
    return true;
 }
@@ -2303,16 +2303,16 @@ bool StochPostsolver::postsolveParallelRowsBoundsTightened(DistributedVariables&
       assert(cupp_tightened_by_row2);
 
    /* recompute duals and slack of both rows - if one bound was tight and thus the dual non-zero we shift it to the row originally implying the bound */
-   double& z_row1 = getSimpleVecFromRowStochVec(original_vars.z, row1);
-   double& lambda_row1 = getSimpleVecFromRowStochVec(original_vars.lambda, row1);
-   double& pi_row1 = getSimpleVecFromRowStochVec(original_vars.pi, row1);
+   double& z_row1 = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row1);
+   double& lambda_row1 = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row1);
+   double& pi_row1 = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row1);
 
-   double& t_row1 = getSimpleVecFromRowStochVec(original_vars.t, row1);
-   double& u_row1 = getSimpleVecFromRowStochVec(original_vars.u, row1);
+   double& t_row1 = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap, row1);
+   double& u_row1 = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap, row1);
 
-   double& z_row2 = getSimpleVecFromRowStochVec(original_vars.z, row2);
-   double& lambda_row2 = getSimpleVecFromRowStochVec(original_vars.lambda, row2);
-   double& pi_row2 = getSimpleVecFromRowStochVec(original_vars.pi, row2);
+   double& z_row2 = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row2);
+   double& lambda_row2 = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row2);
+   double& pi_row2 = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row2);
 
    assert(PIPSisZero(z_row2));
    assert(PIPSisZero(pi_row2));
@@ -2364,11 +2364,11 @@ bool StochPostsolver::postsolveParallelRowsBoundsTightened(DistributedVariables&
 
 /* sync linking variables - either the variables are not set everywhere or on some procs they are set to something non-zero while on others they are zero */
 bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars) {
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.x).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.v).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.w).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.gamma).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.phi).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_lower_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_upper_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual).isRootNodeInSync());
 
    PIPS_MPIgetLogicOrInPlace(outdated_linking_vars);
 
@@ -2379,11 +2379,11 @@ bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
    PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>*>(padding_origcol->first)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origcol->first)->length());
 
-   auto& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.x).first);
-   auto& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.v).first);
-   auto& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.w).first);
-   auto& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.gamma).first);
-   auto& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.phi).first);
+   auto& linking_x = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primals).first);
+   auto& linking_v = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap).first);
+   auto& linking_w = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap).first);
+   auto& linking_gamma = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual).first);
+   auto& linking_phi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual).first);
 
    for (int i = 0; i < linking_x.length(); ++i) {
       if (wasColumnRemoved(INDEX(COL, -1, i)))
@@ -2413,11 +2413,11 @@ bool StochPostsolver::syncLinkingVarChanges(DistributedVariables& original_vars)
    std::fill(array_linking_var_changes.begin(), array_linking_var_changes.end(), 0.0);
    outdated_linking_vars = false;
 
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.x).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.v).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.w).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.gamma).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.phi).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_lower_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_upper_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual).isRootNodeInSync());
 
    return true;
 }
@@ -2432,7 +2432,7 @@ bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_var
    PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>*>(padding_origrow_equality->last)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origrow_equality->last)->length());
 
-   auto& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.y).last);
+   auto& linking_y = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.equality_duals).last);
 
    for (int i = 0; i < linking_y.length(); ++i) {
       if (wasRowRemoved(INDEX(ROW, -1, i, true, EQUALITY_SYSTEM)))
@@ -2447,18 +2447,18 @@ bool StochPostsolver::syncEqLinkingRowChanges(DistributedVariables& original_var
    std::fill(array_eq_linking_row_changes.begin(), array_ineq_linking_row_changes.end(), 0.0);
    outdated_equality_linking_rows = false;
 
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.y).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.equality_duals).isRootNodeInSync());
 
    return true;
 }
 
 bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_vars) {
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.s).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.t).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.u).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.inequality_duals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slacks).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_lower_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_upper_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).isRootNodeInSync());
 
    PIPS_MPIgetLogicOrInPlace(outdated_inequality_linking_rows);
 
@@ -2469,13 +2469,13 @@ bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_v
    PIPS_MPImaxArrayInPlace(dynamic_cast<SimpleVector<int>*>(padding_origrow_inequality->last)->elements(),
          dynamic_cast<SimpleVector<int>*>(padding_origrow_inequality->last)->length());
 
-   SimpleVector<double>& linking_z = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.z).last);
-   SimpleVector<double>& linking_lambda = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.lambda).last);
-   SimpleVector<double>& linking_pi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.pi).last);
+   SimpleVector<double>& linking_z = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.inequality_duals).last);
+   SimpleVector<double>& linking_lambda = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).last);
+   SimpleVector<double>& linking_pi = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).last);
 
-   SimpleVector<double>& linking_s = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.s).last);
-   SimpleVector<double>& linking_t = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.t).last);
-   SimpleVector<double>& linking_u = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.u).last);
+   SimpleVector<double>& linking_s = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slacks).last);
+   SimpleVector<double>& linking_t = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap).last);
+   SimpleVector<double>& linking_u = dynamic_cast<SimpleVector<double>&>(*dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap).last);
 
    for (int i = 0; i < linking_z.length(); ++i) {
       if (wasRowRemoved(INDEX(ROW, -1, i, true, INEQUALITY_SYSTEM)))
@@ -2507,22 +2507,22 @@ bool StochPostsolver::syncIneqLinkingRowChanges(DistributedVariables& original_v
    std::fill(array_ineq_linking_row_changes.begin(), array_ineq_linking_row_changes.end(), 0.0);
    outdated_inequality_linking_rows = false;
 
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.s).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.t).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.u).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.inequality_duals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slacks).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_lower_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_upper_bound_gap).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).isRootNodeInSync());
 
    return true;
 }
 
 // TODO : who sets these to 0.0 after applying the changes?
 bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& original_vars, int i) {
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.y).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.equality_duals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.inequality_duals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).isRootNodeInSync());
 
    PIPS_MPIgetLogicOrInPlace(outdated_equality_linking_rows);
    PIPS_MPIgetLogicOrInPlace(outdated_inequality_linking_rows);
@@ -2537,8 +2537,8 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& 
    }
 
    unsigned int current_pos = start_idx_indices.at(i);
-   DistributedVector<double>& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
-   DistributedVector<double>& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
+   DistributedVector<double>& gamma = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual);
+   DistributedVector<double>& phi = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual);
 
    /* gather all z and y changes if any */
    if (outdated_equality_linking_rows) {
@@ -2554,7 +2554,7 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& 
             const INDEX stored_row(ROW, -1, row_stored, true, EQUALITY_SYSTEM);
             /// adjust duals of rows and bounds
             row_storage.axpyAtRowPosNeg(1.0, &phi, nullptr, &gamma, nullptr, change_dual_row, stored_row);
-            getSimpleVecFromRowStochVec(original_vars.y, row_INDEX) += change_dual_row;
+            getSimpleVecFromRowStochVec(original_vars.equality_duals, row_INDEX) += change_dual_row;
          }
       }
    }
@@ -2575,18 +2575,18 @@ bool StochPostsolver::syncLinkingRowsAfterBoundTightening(DistributedVariables& 
             row_storage.axpyAtRowPosNeg(1.0, &phi, nullptr, &gamma, nullptr, change_dual_row, stored_row);
 
             /* adjust the row dual */
-            double& z = getSimpleVecFromRowStochVec(original_vars.z, row_INDEX);
-            double& lambda = getSimpleVecFromRowStochVec(original_vars.lambda, row_INDEX);
-            double& pi = getSimpleVecFromRowStochVec(original_vars.pi, row_INDEX);
+            double& z = getSimpleVecFromRowStochVec(original_vars.inequality_duals, row_INDEX);
+            double& lambda = getSimpleVecFromRowStochVec(original_vars.slack_lower_bound_gap_dual, row_INDEX);
+            double& pi = getSimpleVecFromRowStochVec(original_vars.slack_upper_bound_gap_dual, row_INDEX);
 
             addIneqRowDual(z, lambda, pi, change_dual_row);
          }
       }
    }
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.y).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.z).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.lambda).isRootNodeInSync());
-   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.pi).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.equality_duals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.inequality_duals).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual).isRootNodeInSync());
+   assert(dynamic_cast<const DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual).isRootNodeInSync());
 
    outdated_equality_linking_rows = false;
    outdated_inequality_linking_rows = false;
@@ -2693,74 +2693,74 @@ void StochPostsolver::setOriginalVarsFromReduced(const DistributedVariables& red
 #endif
 
    /* x */
-   const DistributedVector<double>& x_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.x);
-   DistributedVector<double>& x_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.x);
+   const DistributedVector<double>& x_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.primals);
+   DistributedVector<double>& x_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.primals);
    x_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced<>(x_orig, x_reduced, *padding_origcol);
 
    /* s */
-   const DistributedVector<double>& s_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.s);
-   DistributedVector<double>& s_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.s);
+   const DistributedVector<double>& s_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.slacks);
+   DistributedVector<double>& s_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.slacks);
    s_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(s_orig, s_reduced, *padding_origrow_inequality);
 
    /* y */
-   const DistributedVector<double>& y_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.y);
-   DistributedVector<double>& y_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.y);
+   const DistributedVector<double>& y_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.equality_duals);
+   DistributedVector<double>& y_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.equality_duals);
    y_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(y_orig, y_reduced, *padding_origrow_equality);
 
    /* z */
-   const DistributedVector<double>& z_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.z);
-   DistributedVector<double>& z_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.z);
+   const DistributedVector<double>& z_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.inequality_duals);
+   DistributedVector<double>& z_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.inequality_duals);
    z_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(z_orig, z_reduced, *padding_origrow_inequality);
 
    /* v */
-   const DistributedVector<double>& v_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.v);
-   DistributedVector<double>& v_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.v);
+   const DistributedVector<double>& v_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.primal_lower_bound_gap);
+   DistributedVector<double>& v_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap);
    v_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(v_orig, v_reduced, *padding_origcol);
 
    /* gamma */
-   const DistributedVector<double>& gamma_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.gamma);
-   DistributedVector<double>& gamma_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.gamma);
+   const DistributedVector<double>& gamma_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.primal_lower_bound_gap_dual);
+   DistributedVector<double>& gamma_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_lower_bound_gap_dual);
    gamma_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(gamma_orig, gamma_reduced, *padding_origcol);
 
    /* w */
-   const DistributedVector<double>& w_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.w);
-   DistributedVector<double>& w_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.w);
+   const DistributedVector<double>& w_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.primal_upper_bound_gap);
+   DistributedVector<double>& w_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap);
    w_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(w_orig, w_reduced, *padding_origcol);
 
    /* phi */
-   const DistributedVector<double>& phi_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.phi);
-   DistributedVector<double>& phi_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.phi);
+   const DistributedVector<double>& phi_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.primal_upper_bound_gap_dual);
+   DistributedVector<double>& phi_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.primal_upper_bound_gap_dual);
    phi_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(phi_orig, phi_reduced, *padding_origcol);
 
    /* t */
-   const DistributedVector<double>& t_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.t);
-   DistributedVector<double>& t_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.t);
+   const DistributedVector<double>& t_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.slack_lower_bound_gap);
+   DistributedVector<double>& t_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap);
    t_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(t_orig, t_reduced, *padding_origrow_inequality);
 
    /* lambda */
-   const DistributedVector<double>& lambda_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.lambda);
-   DistributedVector<double>& lambda_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.lambda);
+   const DistributedVector<double>& lambda_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.slack_lower_bound_gap_dual);
+   DistributedVector<double>& lambda_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.slack_lower_bound_gap_dual);
    lambda_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(lambda_orig, lambda_reduced, *padding_origrow_inequality);
 
    /* u */
-   const DistributedVector<double>& u_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.u);
-   DistributedVector<double>& u_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.u);
+   const DistributedVector<double>& u_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.slack_upper_bound_gap);
+   DistributedVector<double>& u_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap);
    u_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(u_orig, u_reduced, *padding_origrow_inequality);
 
    /* pi */
-   const DistributedVector<double>& pi_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.pi);
-   DistributedVector<double>& pi_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.pi);
+   const DistributedVector<double>& pi_reduced = dynamic_cast<const DistributedVector<double>&>(*reduced_vars.slack_upper_bound_gap_dual);
+   DistributedVector<double>& pi_orig = dynamic_cast<DistributedVector<double>&>(*original_vars.slack_upper_bound_gap_dual);
    pi_orig.setToConstant(initial_const);
    setOriginalValuesFromReduced(pi_orig, pi_reduced, *padding_origrow_inequality);
 }
@@ -2774,84 +2774,84 @@ bool StochPostsolver::allVariablesSet(const DistributedVariables& vars) const {
 #endif
 
    /* x */
-   if (!vars.x->componentNotEqual(initial_const)) {
+   if (!vars.primals->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "x not all set" << "\n";
       all_set = false;
    }
 
    /* s */
-   if (!vars.s->componentNotEqual(initial_const)) {
+   if (!vars.slacks->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "s not all set" << "\n";
       all_set = false;
    }
 
    /* y */
-   if (!vars.y->componentNotEqual(initial_const)) {
+   if (!vars.equality_duals->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "y not all set" << "\n";
       all_set = false;
    }
 
    /* z */
-   if (!vars.z->componentNotEqual(initial_const)) {
+   if (!vars.inequality_duals->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "z not all set" << "\n";
       all_set = false;
    }
 
    /* v */
-   if (!vars.v->componentNotEqual(initial_const)) {
+   if (!vars.primal_lower_bound_gap->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "v not all set" << "\n";
       all_set = false;
    }
 
    /* gamma */
-   if (!vars.gamma->componentNotEqual(initial_const)) {
+   if (!vars.primal_lower_bound_gap_dual->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "gamma not all set" << "\n";
       all_set = false;
    }
 
    /* w */
-   if (!vars.w->componentNotEqual(initial_const)) {
+   if (!vars.primal_upper_bound_gap->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "w not all set" << "\n";
       all_set = false;
    }
 
    /* phi */
-   if (!vars.phi->componentNotEqual(initial_const)) {
+   if (!vars.primal_upper_bound_gap_dual->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "phi not all set" << "\n";
       all_set = false;
    }
 
    /* t */
-   if (!vars.t->componentNotEqual(initial_const)) {
+   if (!vars.slack_lower_bound_gap->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "t not all set" << "\n";
       all_set = false;
    }
 
    /* lambda */
-   if (!vars.phi->componentNotEqual(initial_const)) {
+   if (!vars.primal_upper_bound_gap_dual->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "phi not all set" << "\n";
       all_set = false;
    }
 
    /* u */
-   if (!vars.u->componentNotEqual(initial_const)) {
+   if (!vars.slack_upper_bound_gap->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "u not all set" << "\n";
       all_set = false;
    }
 
    /* pi */
-   if (!vars.pi->componentNotEqual(initial_const)) {
+   if (!vars.slack_upper_bound_gap_dual->componentNotEqual(initial_const)) {
       if (my_rank == 0)
          std::cout << "pi not all set" << "\n";
       all_set = false;
@@ -2867,11 +2867,11 @@ bool StochPostsolver::complementarySlackVariablesMet(const DistributedVariables&
 
    const int index = col.getIndex();
 
-   const double v = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.v, col) + (*v_changes)[index] : getSimpleVecFromColStochVec(vars.v, col);
-   const double w = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.w, col) + (*w_changes)[index] : getSimpleVecFromColStochVec(vars.w, col);
-   const double gamma = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.gamma, col) + (*gamma_changes)[index] : getSimpleVecFromColStochVec(
-         vars.gamma, col);
-   const double phi = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.phi, col) + (*phi_changes)[index] : getSimpleVecFromColStochVec(vars.phi,
+   const double v = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.primal_lower_bound_gap, col) + (*v_changes)[index] : getSimpleVecFromColStochVec(vars.primal_lower_bound_gap, col);
+   const double w = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.primal_upper_bound_gap, col) + (*w_changes)[index] : getSimpleVecFromColStochVec(vars.primal_upper_bound_gap, col);
+   const double gamma = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.primal_lower_bound_gap_dual, col) + (*gamma_changes)[index] : getSimpleVecFromColStochVec(
+         vars.primal_lower_bound_gap_dual, col);
+   const double phi = col.isLinkingCol() ? getSimpleVecFromColStochVec(vars.primal_upper_bound_gap_dual, col) + (*phi_changes)[index] : getSimpleVecFromColStochVec(vars.primal_upper_bound_gap_dual,
          col);
 
    assert(!std::isnan(v));
@@ -2895,10 +2895,10 @@ bool StochPostsolver::complementarySlackRowMet(const DistributedVariables& vars,
    assert(!wasRowRemoved(row));
    assert(tol > 0);
 
-   const double t = getSimpleVecFromRowStochVec(vars.t, row);
-   const double u = getSimpleVecFromRowStochVec(vars.u, row);
-   const double lambda = getSimpleVecFromRowStochVec(vars.lambda, row);
-   const double pi = getSimpleVecFromRowStochVec(vars.pi, row);
+   const double t = getSimpleVecFromRowStochVec(vars.slack_lower_bound_gap, row);
+   const double u = getSimpleVecFromRowStochVec(vars.slack_upper_bound_gap, row);
+   const double lambda = getSimpleVecFromRowStochVec(vars.slack_lower_bound_gap_dual, row);
+   const double pi = getSimpleVecFromRowStochVec(vars.slack_upper_bound_gap_dual, row);
 
    assert(!std::isnan(t));
    assert(!std::isnan(u));

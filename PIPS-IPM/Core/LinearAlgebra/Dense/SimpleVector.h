@@ -102,13 +102,13 @@ public:
    T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const override;
    void negate() override;
    void invert() override;
-   void invertSave(T zeroReplacementVal = 0.0) override;
-   void applySqrt() override;
+   void safe_invert(T zero_replacement_value = 0.0) override;
+   void sqrt() override;
    void roundToPow2() override;
-   bool allPositive() const override;
-   bool allOf(const std::function<bool(const T&)>& pred) const override;
+   bool all_positive() const override;
+   bool all_of(const std::function<bool(const T&)>& pred) const override;
 
-   long long numberOfNonzeros() const override;
+   long long number_nonzeros() const override;
 
    bool matchesNonZeroPattern(const Vector<T>& select) const override;
    void selectNonZeros(const Vector<T>& select) override;

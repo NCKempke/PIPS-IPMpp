@@ -47,7 +47,7 @@ public:
 #endif
 
    /** number of complementary primal-dual variables. */
-   long long nComplementaryVariables;
+   long long number_complementarity_pairs;
 
    long long nx, nxupp, nxlow;
    long long my;
@@ -57,31 +57,30 @@ public:
    SmartPointer<Vector<double> > ixupp;
    SmartPointer<Vector<double> > icupp;
    SmartPointer<Vector<double> > iclow;
-   Variables() {};
 
-   SmartPointer<Vector<double> > x;
-   SmartPointer<Vector<double> > s;
-   SmartPointer<Vector<double> > y;
-   SmartPointer<Vector<double> > z;
+   SmartPointer<Vector<double> > primals;
+   SmartPointer<Vector<double> > slacks;
+   SmartPointer<Vector<double> > equality_duals;
+   SmartPointer<Vector<double> > inequality_duals;
 
-   SmartPointer<Vector<double> > v;
-   SmartPointer<Vector<double> > gamma;
+   SmartPointer<Vector<double> > primal_lower_bound_gap;
+   SmartPointer<Vector<double> > primal_lower_bound_gap_dual;
 
-   SmartPointer<Vector<double> > w;
-   SmartPointer<Vector<double> > phi;
+   SmartPointer<Vector<double> > primal_upper_bound_gap;
+   SmartPointer<Vector<double> > primal_upper_bound_gap_dual;
 
-   SmartPointer<Vector<double> > t;
-   SmartPointer<Vector<double> > lambda;
+   SmartPointer<Vector<double> > slack_lower_bound_gap;
+   SmartPointer<Vector<double> > slack_lower_bound_gap_dual;
 
-   SmartPointer<Vector<double> > u;
-   SmartPointer<Vector<double> > pi;
+   SmartPointer<Vector<double> > slack_upper_bound_gap;
+   SmartPointer<Vector<double> > slack_upper_bound_gap_dual;
 
    /** constructor in which the data and variable pointers are set to
        point to the given arguments */
    Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in, Vector<double>* gamma_in,
          Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in, Vector<double>* pi_in,
          Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in);
-
+   Variables() {};
    Variables(const Variables& vars);
 
    [[nodiscard]] double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
@@ -167,8 +166,6 @@ public:
    [[nodiscard]] double inf_norm() const;
 
    void set_to_zero();
-
-   void print_norms() const;
 
    virtual ~Variables() = default;
 };

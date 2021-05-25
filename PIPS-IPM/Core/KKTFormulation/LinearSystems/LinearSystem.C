@@ -205,7 +205,7 @@ void LinearSystem::factorize(Variables& vars) {
 
    put_barrier_parameter(vars.mu());
 
-   computeDiagonals(*vars.t, *vars.lambda, *vars.u, *vars.pi, *vars.v, *vars.gamma, *vars.w, *vars.phi);
+   computeDiagonals(*vars.slack_lower_bound_gap, *vars.slack_lower_bound_gap_dual, *vars.slack_upper_bound_gap, *vars.slack_upper_bound_gap_dual, *vars.primal_lower_bound_gap, *vars.primal_lower_bound_gap_dual, *vars.primal_upper_bound_gap, *vars.primal_upper_bound_gap_dual);
 
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
@@ -281,7 +281,7 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
       if (nxupp > 0)
          primal_diagonal->axdzpy(1.0, phi, w, *ixupp);
    }
-   assert(primal_diagonal->allOf([](const double& d) {
+   assert(primal_diagonal->all_of([](const double& d) {
       return d >= 0;
    }));
 
@@ -292,12 +292,12 @@ void LinearSystem::computeDiagonals(Vector<double>& t, Vector<double>& lambda, V
    if (mcupp > 0)
       nomegaInv->axdzpy(1.0, pi, u, *icupp);
 
-   assert(nomegaInv->allOf([](const double& d) {
+   assert(nomegaInv->all_of([](const double& d) {
       return d >= 0;
    }));
 
    /*** omega = -omega^-1 ***/
-   nomegaInv->invert();
+   nomegaInv->safe_invert();
    nomegaInv->negate();
 }
 
@@ -307,118 +307,118 @@ void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& 
 
    /*** compute rX ***/
    /* rx = rQ */
-   step.x->copyFrom(*residuals.lagrangian_gradient);
+   step.primals->copyFrom(*residuals.lagrangian_gradient);
    if (nxlow > 0) {
-      Vector<double>& gamma_by_v = *step.v;
-      gamma_by_v.copyFrom(*variables.gamma);
-      gamma_by_v.divideSome(*variables.v, *ixlow);
+      Vector<double>& gamma_by_v = *step.primal_lower_bound_gap;
+      gamma_by_v.copyFrom(*variables.primal_lower_bound_gap_dual);
+      gamma_by_v.divideSome(*variables.primal_lower_bound_gap, *ixlow);
 
       /* rx = rQ + Gamma/V rv */
-      step.x->axzpy(1.0, gamma_by_v, *residuals.rv);
+      step.primals->axzpy(1.0, gamma_by_v, *residuals.rv);
       /* rx = rQ + Gamma/V rv + rGamma/V */
-      step.x->axdzpy(1.0, *residuals.rgamma, *variables.v, *ixlow);
+      step.primals->axdzpy(1.0, *residuals.rgamma, *variables.primal_lower_bound_gap, *ixlow);
    }
 
    if (nxupp > 0) {
-      Vector<double>& phi_by_w = *step.w;
-      phi_by_w.copyFrom(*variables.phi);
-      phi_by_w.divideSome(*variables.w, *ixupp);
+      Vector<double>& phi_by_w = *step.primal_upper_bound_gap;
+      phi_by_w.copyFrom(*variables.primal_upper_bound_gap_dual);
+      phi_by_w.divideSome(*variables.primal_upper_bound_gap, *ixupp);
 
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw */
-      step.x->axzpy(1.0, phi_by_w, *residuals.rw);
+      step.primals->axzpy(1.0, phi_by_w, *residuals.rw);
       /* rx = rQ + Gamma/V * rv + rGamma/V + Phi/W * rw - rphi/W */
-      step.x->axdzpy(-1.0, *residuals.rphi, *variables.w, *ixupp);
+      step.primals->axdzpy(-1.0, *residuals.rphi, *variables.primal_upper_bound_gap, *ixupp);
    }
 
    // start by partially computing step.s
    /*** compute rs ***/
-   /* step.s = rz */
-   step.s->copyFrom(*residuals.rz);
+   /* step->s = rz */
+   step.slacks->copyFrom(*residuals.rz);
    if (mclow > 0) {
-      Vector<double>& lambda_by_t = *step.t;
-      lambda_by_t.copyFrom(*variables.lambda);
-      lambda_by_t.divideSome(*variables.t, *iclow);
+      Vector<double>& lambda_by_t = *step.slack_lower_bound_gap;
+      lambda_by_t.copyFrom(*variables.slack_lower_bound_gap_dual);
+      lambda_by_t.divideSome(*variables.slack_lower_bound_gap, *iclow);
 
       /* step.s = rz + Lambda/T * rt */
-      step.s->axzpy(1.0, lambda_by_t, *residuals.rt);
+      step.slacks->axzpy(1.0, lambda_by_t, *residuals.rt);
       /* step.s = rz + Lambda/T * rt + rlambda/T */
-      step.s->axdzpy(1.0, *residuals.rlambda, *variables.t, *iclow);
+      step.slacks->axdzpy(1.0, *residuals.rlambda, *variables.slack_lower_bound_gap, *iclow);
    }
 
    if (mcupp > 0) {
-      Vector<double>& pi_by_u = *step.u;
-      pi_by_u.copyFrom(*variables.pi);
-      pi_by_u.divideSome(*variables.u, *icupp);
+      Vector<double>& pi_by_u = *step.slack_upper_bound_gap;
+      pi_by_u.copyFrom(*variables.slack_upper_bound_gap_dual);
+      pi_by_u.divideSome(*variables.slack_upper_bound_gap, *icupp);
 
       /* step.s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru */
-      step.s->axzpy(1.0, pi_by_u, *residuals.ru);
+      step.slacks->axzpy(1.0, pi_by_u, *residuals.ru);
       /* step.s = rz + Lambda/T * rt + rlambda/T + Pi/U *ru - rpi/U */
-      step.s->axdzpy(-1.0, *residuals.rpi, *variables.u, *icupp);
+      step.slacks->axdzpy(-1.0, *residuals.rpi, *variables.slack_upper_bound_gap, *icupp);
    }
 
    /*** ry = rA ***/
-   step.y->copyFrom(*residuals.rA);
+   step.equality_duals->copyFrom(*residuals.rA);
    /*** rz = rC ***/
-   step.z->copyFrom(*residuals.rC);
+   step.inequality_duals->copyFrom(*residuals.rC);
 
    {
-      solveXYZS(*step.x, *step.y, *step.z, *step.s);
+      solveXYZS(*step.primals, *step.equality_duals, *step.inequality_duals, *step.slacks);
    }
 
    if (mclow > 0) {
       /* Dt = Ds - rt */
-      step.t->copyFrom(*step.s);
-      step.t->axpy(-1.0, *residuals.rt);
-      step.t->selectNonZeros(*iclow);
+      step.slack_lower_bound_gap->copyFrom(*step.slacks);
+      step.slack_lower_bound_gap->axpy(-1.0, *residuals.rt);
+      step.slack_lower_bound_gap->selectNonZeros(*iclow);
 
       /* Dlambda = T^-1 (rlambda - Lambda * Dt ) */
-      step.lambda->copyFrom(*residuals.rlambda);
-      step.lambda->axzpy(-1.0, *variables.lambda, *step.t);
-      step.lambda->divideSome(*variables.t, *iclow);
+      step.slack_lower_bound_gap_dual->copyFrom(*residuals.rlambda);
+      step.slack_lower_bound_gap_dual->axzpy(-1.0, *variables.slack_lower_bound_gap_dual, *step.slack_lower_bound_gap);
+      step.slack_lower_bound_gap_dual->divideSome(*variables.slack_lower_bound_gap, *iclow);
       //!
-      step.lambda->selectNonZeros(*iclow);
+      step.slack_lower_bound_gap_dual->selectNonZeros(*iclow);
    }
 
    if (mcupp > 0) {
       /* Du = ru - Ds */
-      step.u->copyFrom(*residuals.ru);
-      step.u->axpy(-1.0, *step.s);
-      step.u->selectNonZeros(*icupp);
+      step.slack_upper_bound_gap->copyFrom(*residuals.ru);
+      step.slack_upper_bound_gap->axpy(-1.0, *step.slacks);
+      step.slack_upper_bound_gap->selectNonZeros(*icupp);
 
       /* Dpi = U^-1 ( rpi - Pi * Du ) */
-      step.pi->copyFrom(*residuals.rpi);
-      step.pi->axzpy(-1.0, *variables.pi, *step.u);
-      step.pi->divideSome(*variables.u, *icupp);
+      step.slack_upper_bound_gap_dual->copyFrom(*residuals.rpi);
+      step.slack_upper_bound_gap_dual->axzpy(-1.0, *variables.slack_upper_bound_gap_dual, *step.slack_upper_bound_gap);
+      step.slack_upper_bound_gap_dual->divideSome(*variables.slack_upper_bound_gap, *icupp);
       //!
-      step.pi->selectNonZeros(*icupp);
+      step.slack_upper_bound_gap_dual->selectNonZeros(*icupp);
    }
 
    if (nxlow > 0) {
       /* Dv = Dx - rv */
-      step.v->copyFrom(*step.x);
-      step.v->axpy(-1.0, *residuals.rv);
-      step.v->selectNonZeros(*ixlow);
+      step.primal_lower_bound_gap->copyFrom(*step.primals);
+      step.primal_lower_bound_gap->axpy(-1.0, *residuals.rv);
+      step.primal_lower_bound_gap->selectNonZeros(*ixlow);
 
       /* Dgamma = V^-1 ( rgamma - Gamma * Dv ) */
-      step.gamma->copyFrom(*residuals.rgamma);
-      step.gamma->axzpy(-1.0, *variables.gamma, *step.v);
-      step.gamma->divideSome(*variables.v, *ixlow);
+      step.primal_lower_bound_gap_dual->copyFrom(*residuals.rgamma);
+      step.primal_lower_bound_gap_dual->axzpy(-1.0, *variables.primal_lower_bound_gap_dual, *step.primal_lower_bound_gap);
+      step.primal_lower_bound_gap_dual->divideSome(*variables.primal_lower_bound_gap, *ixlow);
       //!
-      step.gamma->selectNonZeros(*ixlow);
+      step.primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
    }
 
    if (nxupp > 0) {
       /* Dw = rw - Dx */
-      step.w->copyFrom(*residuals.rw);
-      step.w->axpy(-1.0, *step.x);
-      step.w->selectNonZeros(*ixupp);
+      step.primal_upper_bound_gap->copyFrom(*residuals.rw);
+      step.primal_upper_bound_gap->axpy(-1.0, *step.primals);
+      step.primal_upper_bound_gap->selectNonZeros(*ixupp);
 
       /* Dphi = W^-1 ( rphi - Phi * Dw ) */
-      step.phi->copyFrom(*residuals.rphi);
-      step.phi->axzpy(-1.0, *variables.phi, *step.w);
-      step.phi->divideSome(*variables.w, *ixupp);
+      step.primal_upper_bound_gap_dual->copyFrom(*residuals.rphi);
+      step.primal_upper_bound_gap_dual->axzpy(-1.0, *variables.primal_upper_bound_gap_dual, *step.primal_upper_bound_gap);
+      step.primal_upper_bound_gap_dual->divideSome(*variables.primal_upper_bound_gap, *ixupp);
       //!
-      step.phi->selectNonZeros(*ixupp);
+      step.primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
    }
    assert(step.valid_non_zero_pattern());
 

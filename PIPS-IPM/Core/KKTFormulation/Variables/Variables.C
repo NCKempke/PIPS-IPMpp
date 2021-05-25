@@ -10,50 +10,50 @@
 Variables::Variables(Vector<double>* x_in, Vector<double>* s_in, Vector<double>* y_in, Vector<double>* z_in, Vector<double>* v_in,
       Vector<double>* gamma_in, Vector<double>* w_in, Vector<double>* phi_in, Vector<double>* t_in, Vector<double>* lambda_in, Vector<double>* u_in,
       Vector<double>* pi_in, Vector<double>* ixlow_in, Vector<double>* ixupp_in, Vector<double>* iclow_in, Vector<double>* icupp_in) {
-   SpReferTo(x, x_in);
-   SpReferTo(s, s_in);
-   SpReferTo(y, y_in);
-   SpReferTo(z, z_in);
-   SpReferTo(v, v_in);
-   SpReferTo(phi, phi_in);
-   SpReferTo(w, w_in);
-   SpReferTo(gamma, gamma_in);
-   SpReferTo(t, t_in);
-   SpReferTo(lambda, lambda_in);
-   SpReferTo(u, u_in);
-   SpReferTo(pi, pi_in);
+   SpReferTo(primals, x_in);
+   SpReferTo(slacks, s_in);
+   SpReferTo(equality_duals, y_in);
+   SpReferTo(inequality_duals, z_in);
+   SpReferTo(primal_lower_bound_gap, v_in);
+   SpReferTo(primal_upper_bound_gap_dual, phi_in);
+   SpReferTo(primal_upper_bound_gap, w_in);
+   SpReferTo(primal_lower_bound_gap_dual, gamma_in);
+   SpReferTo(slack_lower_bound_gap, t_in);
+   SpReferTo(slack_lower_bound_gap_dual, lambda_in);
+   SpReferTo(slack_upper_bound_gap, u_in);
+   SpReferTo(slack_upper_bound_gap_dual, pi_in);
    SpReferTo(ixlow, ixlow_in);
    SpReferTo(ixupp, ixupp_in);
    SpReferTo(iclow, iclow_in);
    SpReferTo(icupp, icupp_in);
 
-   nx = x->length();
-   my = y->length();
-   mz = z->length();
+   nx = primals->length();
+   my = equality_duals->length();
+   mz = inequality_duals->length();
 
    assert(nx == ixlow->length() || 0 == ixlow->length());
    assert(nx == ixlow->length() || 0 == ixlow->length());
    assert(mz == iclow->length() || 0 == iclow->length());
    assert(mz == icupp->length() || 0 == icupp->length());
 
-   nxlow = ixlow->numberOfNonzeros();
-   nxupp = ixupp->numberOfNonzeros();
-   mclow = iclow->numberOfNonzeros();
-   mcupp = icupp->numberOfNonzeros();
-   nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
+   nxlow = ixlow->number_nonzeros();
+   nxupp = ixupp->number_nonzeros();
+   mclow = iclow->number_nonzeros();
+   mcupp = icupp->number_nonzeros();
+   number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
 
-   assert(mz == s->length());
-   assert(nx == v->length() || (0 == v->length() && nxlow == 0));
-   assert(nx == gamma->length() || (0 == gamma->length() && nxlow == 0));
+   assert(mz == slacks->length());
+   assert(nx == primal_lower_bound_gap->length() || (0 == primal_lower_bound_gap->length() && nxlow == 0));
+   assert(nx == primal_lower_bound_gap_dual->length() || (0 == primal_lower_bound_gap_dual->length() && nxlow == 0));
 
-   assert(nx == w->length() || (0 == w->length() && nxupp == 0));
-   assert(nx == phi->length() || (0 == phi->length() && nxupp == 0));
+   assert(nx == primal_upper_bound_gap->length() || (0 == primal_upper_bound_gap->length() && nxupp == 0));
+   assert(nx == primal_upper_bound_gap_dual->length() || (0 == primal_upper_bound_gap_dual->length() && nxupp == 0));
 
-   assert(mz == t->length() || (0 == t->length() && mclow == 0));
-   assert(mz == lambda->length() || (0 == lambda->length() && mclow == 0));
+   assert(mz == slack_lower_bound_gap->length() || (0 == slack_lower_bound_gap->length() && mclow == 0));
+   assert(mz == slack_lower_bound_gap_dual->length() || (0 == slack_lower_bound_gap_dual->length() && mclow == 0));
 
-   assert(mz == u->length() || (0 == u->length() && mcupp == 0));
-   assert(mz == pi->length() || (0 == pi->length() && mcupp == 0));
+   assert(mz == slack_upper_bound_gap->length() || (0 == slack_upper_bound_gap->length() && mcupp == 0));
+   assert(mz == slack_upper_bound_gap_dual->length() || (0 == slack_upper_bound_gap_dual->length() && mcupp == 0));
 }
 
 Variables::Variables(const Variables& vars) {
@@ -66,29 +66,29 @@ Variables::Variables(const Variables& vars) {
    my = vars.my;
    mz = vars.mz;
 
-   nxlow = ixlow->numberOfNonzeros();
-   nxupp = ixupp->numberOfNonzeros();
-   mclow = iclow->numberOfNonzeros();
-   mcupp = icupp->numberOfNonzeros();
+   nxlow = ixlow->number_nonzeros();
+   nxupp = ixupp->number_nonzeros();
+   mclow = iclow->number_nonzeros();
+   mcupp = icupp->number_nonzeros();
 
-   s = SmartPointer<Vector<double> >(vars.s->cloneFull());
+   slacks = SmartPointer<Vector<double> >(vars.slacks->cloneFull());
 
-   t = SmartPointer<Vector<double> >(vars.t->cloneFull());
-   lambda = SmartPointer<Vector<double> >(vars.lambda->cloneFull());
+   slack_lower_bound_gap = SmartPointer<Vector<double> >(vars.slack_lower_bound_gap->cloneFull());
+   slack_lower_bound_gap_dual = SmartPointer<Vector<double> >(vars.slack_lower_bound_gap_dual->cloneFull());
 
-   u = SmartPointer<Vector<double> >(vars.u->cloneFull());
-   pi = SmartPointer<Vector<double> >(vars.pi->cloneFull());
+   slack_upper_bound_gap = SmartPointer<Vector<double> >(vars.slack_upper_bound_gap->cloneFull());
+   slack_upper_bound_gap_dual = SmartPointer<Vector<double> >(vars.slack_upper_bound_gap_dual->cloneFull());
 
-   v = SmartPointer<Vector<double> >(vars.v->cloneFull());
-   gamma = SmartPointer<Vector<double> >(vars.gamma->cloneFull());
+   primal_lower_bound_gap = SmartPointer<Vector<double> >(vars.primal_lower_bound_gap->cloneFull());
+   primal_lower_bound_gap_dual = SmartPointer<Vector<double> >(vars.primal_lower_bound_gap_dual->cloneFull());
 
-   w = SmartPointer<Vector<double> >(vars.w->cloneFull());
-   phi = SmartPointer<Vector<double> >(vars.phi->cloneFull());
+   primal_upper_bound_gap = SmartPointer<Vector<double> >(vars.primal_upper_bound_gap->cloneFull());
+   primal_upper_bound_gap_dual = SmartPointer<Vector<double> >(vars.primal_upper_bound_gap_dual->cloneFull());
 
-   x = SmartPointer<Vector<double> >(vars.x->cloneFull());
-   y = SmartPointer<Vector<double> >(vars.y->cloneFull());
-   z = SmartPointer<Vector<double> >(vars.z->cloneFull());
-   nComplementaryVariables = mclow + mcupp + nxlow + nxupp;
+   primals = SmartPointer<Vector<double> >(vars.primals->cloneFull());
+   equality_duals = SmartPointer<Vector<double> >(vars.equality_duals->cloneFull());
+   inequality_duals = SmartPointer<Vector<double> >(vars.inequality_duals->cloneFull());
+   number_complementarity_pairs = mclow + mcupp + nxlow + nxupp;
 }
 
 double Variables::get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const {
@@ -96,10 +96,10 @@ double Variables::get_average_distance_to_bound_for_converged_vars(const Problem
 
    double sum_small_distance = 0.0;
    int n_close = 0;
-   v->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixlow);
-   w->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixupp);
-   u->getSumCountIfSmall(tol, sum_small_distance, n_close, &*icupp);
-   t->getSumCountIfSmall(tol, sum_small_distance, n_close, &*iclow);
+   primal_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixlow);
+   primal_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*ixupp);
+   slack_upper_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*icupp);
+   slack_lower_bound_gap->getSumCountIfSmall(tol, sum_small_distance, n_close, &*iclow);
 
    if (n_close == 0)
       return std::numeric_limits<double>::infinity();
@@ -110,177 +110,177 @@ double Variables::get_average_distance_to_bound_for_converged_vars(const Problem
 
 void Variables::push_slacks_from_bound(double tol, double amount) {
    if (nxlow > 0)
-      v->pushAwayFromZero(tol, amount, &*ixlow);
+      primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*ixlow);
    if (nxupp > 0)
-      w->pushAwayFromZero(tol, amount, &*ixupp);
+      primal_upper_bound_gap->pushAwayFromZero(tol, amount, &*ixupp);
    if (mclow > 0)
-      t->pushAwayFromZero(tol, amount, &*iclow);
+      slack_lower_bound_gap->pushAwayFromZero(tol, amount, &*iclow);
    if (mcupp > 0)
-      u->pushAwayFromZero(tol, amount, &*icupp);
+      slack_upper_bound_gap->pushAwayFromZero(tol, amount, &*icupp);
 }
 
 
 double Variables::mu() {
    double mu = 0.;
-   if (nComplementaryVariables == 0) {
+   if (number_complementarity_pairs == 0) {
       return 0.;
    }
    else {
 
       if (mclow > 0)
-         mu += t->dotProductWith(*lambda);
+         mu += slack_lower_bound_gap->dotProductWith(*slack_lower_bound_gap_dual);
       if (mcupp > 0)
-         mu += u->dotProductWith(*pi);
+         mu += slack_upper_bound_gap->dotProductWith(*slack_upper_bound_gap_dual);
       if (nxlow > 0)
-         mu += v->dotProductWith(*gamma);
+         mu += primal_lower_bound_gap->dotProductWith(*primal_lower_bound_gap_dual);
       if (nxupp > 0)
-         mu += w->dotProductWith(*phi);
+         mu += primal_upper_bound_gap->dotProductWith(*primal_upper_bound_gap_dual);
 
-      mu /= nComplementaryVariables;
+      mu /= number_complementarity_pairs;
       return mu;
    }
 }
 
 double Variables::mustep_pd(const Variables& iterate, double alpha_primal, double alpha_dual) {
    double mu = 0.;
-   if (nComplementaryVariables == 0) {
+   if (number_complementarity_pairs == 0) {
       return 0.;
    }
    else {
       if (mclow > 0) {
-         mu += t->shiftedDotProductWith(alpha_primal, *iterate.t, *lambda, alpha_dual, *iterate.lambda);
+         mu += slack_lower_bound_gap->shiftedDotProductWith(alpha_primal, *iterate.slack_lower_bound_gap, *slack_lower_bound_gap_dual, alpha_dual, *iterate.slack_lower_bound_gap_dual);
       }
       if (mcupp > 0) {
-         mu += u->shiftedDotProductWith(alpha_primal, *iterate.u, *pi, alpha_dual, *iterate.pi);
+         mu += slack_upper_bound_gap->shiftedDotProductWith(alpha_primal, *iterate.slack_upper_bound_gap, *slack_upper_bound_gap_dual, alpha_dual, *iterate.slack_upper_bound_gap_dual);
       }
       if (nxlow > 0) {
-         mu += v->shiftedDotProductWith(alpha_primal, *iterate.v, *gamma, alpha_dual, *iterate.gamma);
+         mu += primal_lower_bound_gap->shiftedDotProductWith(alpha_primal, *iterate.primal_lower_bound_gap, *primal_lower_bound_gap_dual, alpha_dual, *iterate.primal_lower_bound_gap_dual);
       }
       if (nxupp > 0) {
-         mu += w->shiftedDotProductWith(alpha_primal, *iterate.w, *phi, alpha_dual, *iterate.phi);
+         mu += primal_upper_bound_gap->shiftedDotProductWith(alpha_primal, *iterate.primal_upper_bound_gap, *primal_upper_bound_gap_dual, alpha_dual, *iterate.primal_upper_bound_gap_dual);
       }
-      mu /= nComplementaryVariables;
+      mu /= number_complementarity_pairs;
       return mu;
    }
 }
 
 void Variables::saxpy(const Variables& iterate, double alpha) {
-   x->axpy(alpha, *iterate.x);
-   y->axpy(alpha, *iterate.y);
-   z->axpy(alpha, *iterate.z);
-   s->axpy(alpha, *iterate.s);
+   primals->axpy(alpha, *iterate.primals);
+   equality_duals->axpy(alpha, *iterate.equality_duals);
+   inequality_duals->axpy(alpha, *iterate.inequality_duals);
+   slacks->axpy(alpha, *iterate.slacks);
    if (mclow > 0) {
-      assert(iterate.t->matchesNonZeroPattern(*iclow) && iterate.lambda->matchesNonZeroPattern(*iclow));
+      assert(iterate.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && iterate.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
 
-      t->axpy(alpha, *iterate.t);
-      lambda->axpy(alpha, *iterate.lambda);
+      slack_lower_bound_gap->axpy(alpha, *iterate.slack_lower_bound_gap);
+      slack_lower_bound_gap_dual->axpy(alpha, *iterate.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
-      assert(iterate.u->matchesNonZeroPattern(*icupp) && iterate.pi->matchesNonZeroPattern(*icupp));
+      assert(iterate.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && iterate.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
 
-      u->axpy(alpha, *iterate.u);
-      pi->axpy(alpha, *iterate.pi);
+      slack_upper_bound_gap->axpy(alpha, *iterate.slack_upper_bound_gap);
+      slack_upper_bound_gap_dual->axpy(alpha, *iterate.slack_upper_bound_gap_dual);
    }
    if (nxlow > 0) {
-      assert(iterate.v->matchesNonZeroPattern(*ixlow) && iterate.gamma->matchesNonZeroPattern(*ixlow));
+      assert(iterate.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && iterate.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
 
-      v->axpy(alpha, *iterate.v);
-      gamma->axpy(alpha, *iterate.gamma);
+      primal_lower_bound_gap->axpy(alpha, *iterate.primal_lower_bound_gap);
+      primal_lower_bound_gap_dual->axpy(alpha, *iterate.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
-      assert(iterate.w->matchesNonZeroPattern(*ixupp) && iterate.phi->matchesNonZeroPattern(*ixupp));
+      assert(iterate.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && iterate.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
 
-      w->axpy(alpha, *iterate.w);
-      phi->axpy(alpha, *iterate.phi);
+      primal_upper_bound_gap->axpy(alpha, *iterate.primal_upper_bound_gap);
+      primal_upper_bound_gap_dual->axpy(alpha, *iterate.primal_upper_bound_gap_dual);
    }
 }
 
 void Variables::saxpy_pd(const Variables& iterate, double alpha_primal, double alpha_dual) {
-   x->axpy(alpha_primal, *iterate.x);
-   y->axpy(alpha_dual, *iterate.y);
-   z->axpy(alpha_dual, *iterate.z);
-   s->axpy(alpha_primal, *iterate.s);
+   primals->axpy(alpha_primal, *iterate.primals);
+   equality_duals->axpy(alpha_dual, *iterate.equality_duals);
+   inequality_duals->axpy(alpha_dual, *iterate.inequality_duals);
+   slacks->axpy(alpha_primal, *iterate.slacks);
    if (mclow > 0) {
-      assert(iterate.t->matchesNonZeroPattern(*iclow) && iterate.lambda->matchesNonZeroPattern(*iclow));
+      assert(iterate.slack_lower_bound_gap->matchesNonZeroPattern(*iclow) && iterate.slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow));
 
-      t->axpy(alpha_primal, *iterate.t);
-      lambda->axpy(alpha_dual, *iterate.lambda);
+      slack_lower_bound_gap->axpy(alpha_primal, *iterate.slack_lower_bound_gap);
+      slack_lower_bound_gap_dual->axpy(alpha_dual, *iterate.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
-      assert(iterate.u->matchesNonZeroPattern(*icupp) && iterate.pi->matchesNonZeroPattern(*icupp));
+      assert(iterate.slack_upper_bound_gap->matchesNonZeroPattern(*icupp) && iterate.slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp));
 
-      u->axpy(alpha_primal, *iterate.u);
-      pi->axpy(alpha_dual, *iterate.pi);
+      slack_upper_bound_gap->axpy(alpha_primal, *iterate.slack_upper_bound_gap);
+      slack_upper_bound_gap_dual->axpy(alpha_dual, *iterate.slack_upper_bound_gap_dual);
    }
    if (nxlow > 0) {
-      assert(iterate.v->matchesNonZeroPattern(*ixlow) && iterate.gamma->matchesNonZeroPattern(*ixlow));
+      assert(iterate.primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) && iterate.primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow));
 
-      v->axpy(alpha_primal, *iterate.v);
-      gamma->axpy(alpha_dual, *iterate.gamma);
+      primal_lower_bound_gap->axpy(alpha_primal, *iterate.primal_lower_bound_gap);
+      primal_lower_bound_gap_dual->axpy(alpha_dual, *iterate.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
-      assert(iterate.w->matchesNonZeroPattern(*ixupp) && iterate.phi->matchesNonZeroPattern(*ixupp));
+      assert(iterate.primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) && iterate.primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp));
 
-      w->axpy(alpha_primal, *iterate.w);
-      phi->axpy(alpha_dual, *iterate.phi);
+      primal_upper_bound_gap->axpy(alpha_primal, *iterate.primal_upper_bound_gap);
+      primal_upper_bound_gap_dual->axpy(alpha_dual, *iterate.primal_upper_bound_gap_dual);
    }
 }
 
 void Variables::negate() {
-   s->negate();
-   x->negate();
-   y->negate();
-   z->negate();
+   slacks->negate();
+   primals->negate();
+   equality_duals->negate();
+   inequality_duals->negate();
    if (mclow > 0) {
-      t->negate();
-      lambda->negate();
+      slack_lower_bound_gap->negate();
+      slack_lower_bound_gap_dual->negate();
    }
    if (mcupp > 0) {
-      u->negate();
-      pi->negate();
+      slack_upper_bound_gap->negate();
+      slack_upper_bound_gap_dual->negate();
    }
    if (nxlow > 0) {
-      v->negate();
-      gamma->negate();
+      primal_lower_bound_gap->negate();
+      primal_lower_bound_gap_dual->negate();
    }
    if (nxupp > 0) {
-      w->negate();
-      phi->negate();
+      primal_upper_bound_gap->negate();
+      primal_upper_bound_gap_dual->negate();
    }
 }
 
 double Variables::stepbound(const Variables& iterate) {
    double max_step = 1.0;
    if (mclow > 0) {
-      assert(t->somePositive(*iclow));
-      assert(lambda->somePositive(*iclow));
+      assert(slack_lower_bound_gap->somePositive(*iclow));
+      assert(slack_lower_bound_gap_dual->somePositive(*iclow));
 
-      max_step = t->stepbound(*iterate.t, max_step);
-      max_step = lambda->stepbound(*iterate.lambda, max_step);
+      max_step = slack_lower_bound_gap->stepbound(*iterate.slack_lower_bound_gap, max_step);
+      max_step = slack_lower_bound_gap_dual->stepbound(*iterate.slack_lower_bound_gap_dual, max_step);
    }
 
    if (mcupp > 0) {
-      assert(u->somePositive(*icupp));
-      assert(pi->somePositive(*icupp));
+      assert(slack_upper_bound_gap->somePositive(*icupp));
+      assert(slack_upper_bound_gap_dual->somePositive(*icupp));
 
-      max_step = u->stepbound(*iterate.u, max_step);
-      max_step = pi->stepbound(*iterate.pi, max_step);
+      max_step = slack_upper_bound_gap->stepbound(*iterate.slack_upper_bound_gap, max_step);
+      max_step = slack_upper_bound_gap_dual->stepbound(*iterate.slack_upper_bound_gap_dual, max_step);
    }
 
    if (nxlow > 0) {
-      assert(v->somePositive(*ixlow));
-      assert(gamma->somePositive(*ixlow));
+      assert(primal_lower_bound_gap->somePositive(*ixlow));
+      assert(primal_lower_bound_gap_dual->somePositive(*ixlow));
 
-      max_step = v->stepbound(*iterate.v, max_step);
-      max_step = gamma->stepbound(*iterate.gamma, max_step);
+      max_step = primal_lower_bound_gap->stepbound(*iterate.primal_lower_bound_gap, max_step);
+      max_step = primal_lower_bound_gap_dual->stepbound(*iterate.primal_lower_bound_gap_dual, max_step);
    }
 
    if (nxupp > 0) {
-      assert(w->somePositive(*ixupp));
-      assert(phi->somePositive(*ixupp));
+      assert(primal_upper_bound_gap->somePositive(*ixupp));
+      assert(primal_upper_bound_gap_dual->somePositive(*ixupp));
 
-      max_step = w->stepbound(*iterate.w, max_step);
-      max_step = phi->stepbound(*iterate.phi, max_step);
+      max_step = primal_upper_bound_gap->stepbound(*iterate.primal_upper_bound_gap, max_step);
+      max_step = primal_upper_bound_gap_dual->stepbound(*iterate.primal_upper_bound_gap_dual, max_step);
    }
 
    assert(max_step <= 1.0);
@@ -292,35 +292,35 @@ std::pair<double, double> Variables::stepbound_pd(const Variables& iterate) {
    double maxStep_dual = 1.0;
 
    if (mclow > 0) {
-      assert(t->somePositive(*iclow));
-      assert(lambda->somePositive(*iclow));
+      assert(slack_lower_bound_gap->somePositive(*iclow));
+      assert(slack_lower_bound_gap_dual->somePositive(*iclow));
 
-      maxStep_primal = t->stepbound(*iterate.t, maxStep_primal);
-      maxStep_dual = lambda->stepbound(*iterate.lambda, maxStep_dual);
+      maxStep_primal = slack_lower_bound_gap->stepbound(*iterate.slack_lower_bound_gap, maxStep_primal);
+      maxStep_dual = slack_lower_bound_gap_dual->stepbound(*iterate.slack_lower_bound_gap_dual, maxStep_dual);
    }
 
    if (mcupp > 0) {
-      assert(u->somePositive(*icupp));
-      assert(pi->somePositive(*icupp));
+      assert(slack_upper_bound_gap->somePositive(*icupp));
+      assert(slack_upper_bound_gap_dual->somePositive(*icupp));
 
-      maxStep_primal = u->stepbound(*iterate.u, maxStep_primal);
-      maxStep_dual = pi->stepbound(*iterate.pi, maxStep_dual);
+      maxStep_primal = slack_upper_bound_gap->stepbound(*iterate.slack_upper_bound_gap, maxStep_primal);
+      maxStep_dual = slack_upper_bound_gap_dual->stepbound(*iterate.slack_upper_bound_gap_dual, maxStep_dual);
    }
 
    if (nxlow > 0) {
-      assert(v->somePositive(*ixlow));
-      assert(gamma->somePositive(*ixlow));
+      assert(primal_lower_bound_gap->somePositive(*ixlow));
+      assert(primal_lower_bound_gap_dual->somePositive(*ixlow));
 
-      maxStep_primal = v->stepbound(*iterate.v, maxStep_primal);
-      maxStep_dual = gamma->stepbound(*iterate.gamma, maxStep_dual);
+      maxStep_primal = primal_lower_bound_gap->stepbound(*iterate.primal_lower_bound_gap, maxStep_primal);
+      maxStep_dual = primal_lower_bound_gap_dual->stepbound(*iterate.primal_lower_bound_gap_dual, maxStep_dual);
    }
 
    if (nxupp > 0) {
-      assert(w->somePositive(*ixupp));
-      assert(phi->somePositive(*ixupp));
+      assert(primal_upper_bound_gap->somePositive(*ixupp));
+      assert(primal_upper_bound_gap_dual->somePositive(*ixupp));
 
-      maxStep_primal = w->stepbound(*iterate.w, maxStep_primal);
-      maxStep_dual = phi->stepbound(*iterate.phi, maxStep_dual);
+      maxStep_primal = primal_upper_bound_gap->stepbound(*iterate.primal_upper_bound_gap, maxStep_primal);
+      maxStep_dual = primal_upper_bound_gap_dual->stepbound(*iterate.primal_upper_bound_gap_dual, maxStep_dual);
    }
 
    assert(maxStep_primal <= 1.0);
@@ -334,16 +334,16 @@ Variables::find_blocking(const Variables& step_in, double& primalValue, double& 
    firstOrSecond = 0;
 
    if (mclow > 0) {
-      alpha = t->find_blocking(*step_in.t, *lambda, *step_in.lambda, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = slack_lower_bound_gap->find_blocking(*step_in.slack_lower_bound_gap, *slack_lower_bound_gap_dual, *step_in.slack_lower_bound_gap_dual, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (mcupp > 0) {
-      alpha = u->find_blocking(*step_in.u, *pi, *step_in.pi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = slack_upper_bound_gap->find_blocking(*step_in.slack_upper_bound_gap, *slack_upper_bound_gap_dual, *step_in.slack_upper_bound_gap_dual, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (nxlow > 0) {
-      alpha = v->find_blocking(*step_in.v, *gamma, *step_in.gamma, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = primal_lower_bound_gap->find_blocking(*step_in.primal_lower_bound_gap, *primal_lower_bound_gap_dual, *step_in.primal_lower_bound_gap_dual, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    if (nxupp > 0) {
-      alpha = w->find_blocking(*step_in.w, *phi, *step_in.phi, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
+      alpha = primal_upper_bound_gap->find_blocking(*step_in.primal_upper_bound_gap, *primal_upper_bound_gap_dual, *step_in.primal_upper_bound_gap_dual, alpha, &primalValue, &primalStep, &dualValue, &dualStep, firstOrSecond);
    }
    return alpha;
 }
@@ -356,56 +356,56 @@ Variables::find_blocking(const Variables& step_in, double& primalValue, double& 
    primalBlocking = false, dualBlocking = false;
 
    if (mclow > 0) {
-      t->find_blocking_pd(*step_in.t, *lambda, *step_in.lambda, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      slack_lower_bound_gap->find_blocking_pd(*step_in.slack_lower_bound_gap, *slack_lower_bound_gap_dual, *step_in.slack_lower_bound_gap_dual, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (mcupp > 0) {
-      u->find_blocking_pd(*step_in.u, *pi, *step_in.pi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
+      slack_upper_bound_gap->find_blocking_pd(*step_in.slack_upper_bound_gap, *slack_upper_bound_gap_dual, *step_in.slack_upper_bound_gap_dual, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d, primalStep_d,
             dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxlow > 0) {
-      v->find_blocking_pd(*step_in.v, *gamma, *step_in.gamma, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      primal_lower_bound_gap->find_blocking_pd(*step_in.primal_lower_bound_gap, *primal_lower_bound_gap_dual, *step_in.primal_lower_bound_gap_dual, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 
    if (nxupp > 0) {
-      w->find_blocking_pd(*step_in.w, *phi, *step_in.phi, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
+      primal_upper_bound_gap->find_blocking_pd(*step_in.primal_upper_bound_gap, *primal_upper_bound_gap_dual, *step_in.primal_upper_bound_gap_dual, alphaPrimal, alphaDual, primalValue, primalStep, dualValue, dualStep, primalValue_d,
             primalStep_d, dualValue_d, dualStep_d, primalBlocking, dualBlocking);
    }
 }
 
 void Variables::push_to_interior(double alpha, double beta) {
-   s->setToZero();
-   x->setToZero();
-   y->setToZero();
-   z->setToZero();
+   slacks->setToZero();
+   primals->setToZero();
+   equality_duals->setToZero();
+   inequality_duals->setToZero();
 
    if (nxlow > 0) {
-      v->setToConstant(alpha);
-      v->selectNonZeros(*ixlow);
-      gamma->setToConstant(beta);
-      gamma->selectNonZeros(*ixlow);
+      primal_lower_bound_gap->setToConstant(alpha);
+      primal_lower_bound_gap->selectNonZeros(*ixlow);
+      primal_lower_bound_gap_dual->setToConstant(beta);
+      primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
    }
    if (nxupp > 0) {
-      w->setToConstant(alpha);
-      w->selectNonZeros(*ixupp);
-      phi->setToConstant(beta);
-      phi->selectNonZeros(*ixupp);
+      primal_upper_bound_gap->setToConstant(alpha);
+      primal_upper_bound_gap->selectNonZeros(*ixupp);
+      primal_upper_bound_gap_dual->setToConstant(beta);
+      primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
    }
 
    if (mclow > 0) {
-      t->setToConstant(alpha);
-      t->selectNonZeros(*iclow);
-      lambda->setToConstant(beta);
-      lambda->selectNonZeros(*iclow);
+      slack_lower_bound_gap->setToConstant(alpha);
+      slack_lower_bound_gap->selectNonZeros(*iclow);
+      slack_lower_bound_gap_dual->setToConstant(beta);
+      slack_lower_bound_gap_dual->selectNonZeros(*iclow);
    }
    if (mcupp > 0) {
-      u->setToConstant(alpha);
-      u->selectNonZeros(*icupp);
-      pi->setToConstant(beta);
-      pi->selectNonZeros(*icupp);
+      slack_upper_bound_gap->setToConstant(alpha);
+      slack_upper_bound_gap->selectNonZeros(*icupp);
+      slack_upper_bound_gap_dual->setToConstant(beta);
+      slack_upper_bound_gap_dual->selectNonZeros(*icupp);
    }
 }
 
@@ -414,38 +414,38 @@ double Variables::violation() {
    int iblock;
 
    if (nxlow > 0) {
-      v->min(cmin, iblock);
+      primal_lower_bound_gap->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
 
-      gamma->min(cmin, iblock);
+      primal_lower_bound_gap_dual->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
    }
    if (nxupp > 0) {
-      w->min(cmin, iblock);
+      primal_upper_bound_gap->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
 
-      phi->min(cmin, iblock);
+      primal_upper_bound_gap_dual->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
    }
    if (mclow > 0) {
-      t->min(cmin, iblock);
+      slack_lower_bound_gap->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
 
-      lambda->min(cmin, iblock);
+      slack_lower_bound_gap_dual->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
    }
    if (mcupp > 0) {
-      u->min(cmin, iblock);
+      slack_upper_bound_gap->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
 
-      pi->min(cmin, iblock);
+      slack_upper_bound_gap_dual->min(cmin, iblock);
       if (cmin < viol)
          viol = cmin;
    }
@@ -454,106 +454,106 @@ double Variables::violation() {
 
 void Variables::shift_bound_variables(double alpha, double beta) {
    if (nxlow > 0) {
-      v->add_constant(alpha, *ixlow);
-      gamma->add_constant(beta, *ixlow);
+      primal_lower_bound_gap->add_constant(alpha, *ixlow);
+      primal_lower_bound_gap_dual->add_constant(beta, *ixlow);
    }
    if (nxupp > 0) {
-      w->add_constant(alpha, *ixupp);
-      phi->add_constant(beta, *ixupp);
+      primal_upper_bound_gap->add_constant(alpha, *ixupp);
+      primal_upper_bound_gap_dual->add_constant(beta, *ixupp);
    }
    if (mclow > 0) {
-      t->add_constant(alpha, *iclow);
-      lambda->add_constant(beta, *iclow);
+      slack_lower_bound_gap->add_constant(alpha, *iclow);
+      slack_lower_bound_gap_dual->add_constant(beta, *iclow);
    }
    if (mcupp > 0) {
-      u->add_constant(alpha, *icupp);
-      pi->add_constant(beta, *icupp);
+      slack_upper_bound_gap->add_constant(alpha, *icupp);
+      slack_upper_bound_gap_dual->add_constant(beta, *icupp);
    }
 }
 
 void Variables::copy(const Variables& b) {
 
-   s->copyFrom(*b.s);
+   slacks->copyFrom(*b.slacks);
    if (nxlow > 0) {
-      v->copyFrom(*b.v);
-      gamma->copyFrom(*b.gamma);
+      primal_lower_bound_gap->copyFrom(*b.primal_lower_bound_gap);
+      primal_lower_bound_gap_dual->copyFrom(*b.primal_lower_bound_gap_dual);
    }
    if (nxupp > 0) {
-      w->copyFrom(*b.w);
-      phi->copyFrom(*b.phi);
+      primal_upper_bound_gap->copyFrom(*b.primal_upper_bound_gap);
+      primal_upper_bound_gap_dual->copyFrom(*b.primal_upper_bound_gap_dual);
    }
    if (mclow > 0) {
-      t->copyFrom(*b.t);
-      lambda->copyFrom(*b.lambda);
+      slack_lower_bound_gap->copyFrom(*b.slack_lower_bound_gap);
+      slack_lower_bound_gap_dual->copyFrom(*b.slack_lower_bound_gap_dual);
    }
    if (mcupp > 0) {
-      u->copyFrom(*b.u);
-      pi->copyFrom(*b.pi);
+      slack_upper_bound_gap->copyFrom(*b.slack_upper_bound_gap);
+      slack_upper_bound_gap_dual->copyFrom(*b.slack_upper_bound_gap_dual);
    }
-   x->copyFrom(*b.x);
-   y->copyFrom(*b.y);
-   z->copyFrom(*b.z);
+   primals->copyFrom(*b.primals);
+   equality_duals->copyFrom(*b.equality_duals);
+   inequality_duals->copyFrom(*b.inequality_duals);
 
 }
 
 double Variables::one_norm() const {
-   double norm = x->one_norm();
-   norm += s->one_norm();
-   norm += y->one_norm();
-   norm += z->one_norm();
+   double norm = primals->one_norm();
+   norm += slacks->one_norm();
+   norm += equality_duals->one_norm();
+   norm += inequality_duals->one_norm();
 
-   norm += v->one_norm();
-   norm += phi->one_norm();
-   norm += w->one_norm();
-   norm += gamma->one_norm();
-   norm += t->one_norm();
-   norm += lambda->one_norm();
-   norm += u->one_norm();
-   norm += pi->one_norm();
+   norm += primal_lower_bound_gap->one_norm();
+   norm += primal_upper_bound_gap_dual->one_norm();
+   norm += primal_upper_bound_gap->one_norm();
+   norm += primal_lower_bound_gap_dual->one_norm();
+   norm += slack_lower_bound_gap->one_norm();
+   norm += slack_lower_bound_gap_dual->one_norm();
+   norm += slack_upper_bound_gap->one_norm();
+   norm += slack_upper_bound_gap_dual->one_norm();
 
    return norm;
 }
 
 double Variables::inf_norm() const {
    double norm = 0.0;
-   double temp = x->inf_norm();
+   double temp = primals->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = s->inf_norm();
+   temp = slacks->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = y->inf_norm();
+   temp = equality_duals->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = z->inf_norm();
-   if (temp > norm)
-      norm = temp;
-
-   temp = v->inf_norm();
-   if (temp > norm)
-      norm = temp;
-   temp = phi->inf_norm();
+   temp = inequality_duals->inf_norm();
    if (temp > norm)
       norm = temp;
 
-   temp = w->inf_norm();
+   temp = primal_lower_bound_gap->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = gamma->inf_norm();
-   if (temp > norm)
-      norm = temp;
-
-   temp = t->inf_norm();
-   if (temp > norm)
-      norm = temp;
-   temp = lambda->inf_norm();
+   temp = primal_upper_bound_gap_dual->inf_norm();
    if (temp > norm)
       norm = temp;
 
-   temp = u->inf_norm();
+   temp = primal_upper_bound_gap->inf_norm();
    if (temp > norm)
       norm = temp;
-   temp = pi->inf_norm();
+   temp = primal_lower_bound_gap_dual->inf_norm();
+   if (temp > norm)
+      norm = temp;
+
+   temp = slack_lower_bound_gap->inf_norm();
+   if (temp > norm)
+      norm = temp;
+   temp = slack_lower_bound_gap_dual->inf_norm();
+   if (temp > norm)
+      norm = temp;
+
+   temp = slack_upper_bound_gap->inf_norm();
+   if (temp > norm)
+      norm = temp;
+   temp = slack_upper_bound_gap_dual->inf_norm();
    if (temp > norm)
       norm = temp;
 
@@ -561,53 +561,53 @@ double Variables::inf_norm() const {
 }
 
 void Variables::set_to_zero() {
-   x->setToZero();
-   s->setToZero();
-   y->setToZero();
-   z->setToZero();
+   primals->setToZero();
+   slacks->setToZero();
+   equality_duals->setToZero();
+   inequality_duals->setToZero();
 
-   v->setToZero();
-   gamma->setToZero();
+   primal_lower_bound_gap->setToZero();
+   primal_lower_bound_gap_dual->setToZero();
 
-   w->setToZero();
-   phi->setToZero();
+   primal_upper_bound_gap->setToZero();
+   primal_upper_bound_gap_dual->setToZero();
 
-   t->setToZero();
-   lambda->setToZero();
+   slack_lower_bound_gap->setToZero();
+   slack_lower_bound_gap_dual->setToZero();
 
-   u->setToZero();
-   pi->setToZero();
+   slack_upper_bound_gap->setToZero();
+   slack_upper_bound_gap_dual->setToZero();
 }
 
 int Variables::valid_non_zero_pattern() {
-   if (nxlow > 0 && (!v->matchesNonZeroPattern(*ixlow) || !gamma->matchesNonZeroPattern(*ixlow))) {
+   if (nxlow > 0 && (!primal_lower_bound_gap->matchesNonZeroPattern(*ixlow) || !primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow))) {
 
-      if (!v->matchesNonZeroPattern(*ixlow))
+      if (!primal_lower_bound_gap->matchesNonZeroPattern(*ixlow))
          printf("invalidNonZeroPattern v\n");
-      if (!gamma->matchesNonZeroPattern(*ixlow))
+      if (!primal_lower_bound_gap_dual->matchesNonZeroPattern(*ixlow))
          printf("invalidNonZeroPattern gamma\n");
       return 0;
    }
 
-   if (nxupp > 0 && (!w->matchesNonZeroPattern(*ixupp) || !phi->matchesNonZeroPattern(*ixupp))) {
-      if (!w->matchesNonZeroPattern(*ixupp))
+   if (nxupp > 0 && (!primal_upper_bound_gap->matchesNonZeroPattern(*ixupp) || !primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp))) {
+      if (!primal_upper_bound_gap->matchesNonZeroPattern(*ixupp))
          printf("invalidNonZeroPattern w\n");
-      if (!phi->matchesNonZeroPattern(*ixupp))
+      if (!primal_upper_bound_gap_dual->matchesNonZeroPattern(*ixupp))
          printf("invalidNonZeroPattern phi\n");
       return 0;
    }
-   if (mclow > 0 && (!t->matchesNonZeroPattern(*iclow) || !lambda->matchesNonZeroPattern(*iclow))) {
-      if (!t->matchesNonZeroPattern(*iclow))
+   if (mclow > 0 && (!slack_lower_bound_gap->matchesNonZeroPattern(*iclow) || !slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow))) {
+      if (!slack_lower_bound_gap->matchesNonZeroPattern(*iclow))
          printf("invalidNonZeroPattern t\n");
-      if (!lambda->matchesNonZeroPattern(*iclow))
+      if (!slack_lower_bound_gap_dual->matchesNonZeroPattern(*iclow))
          printf("invalidNonZeroPattern lambda\n");
       return 0;
    }
 
-   if (mcupp > 0 && (!u->matchesNonZeroPattern(*icupp) || !pi->matchesNonZeroPattern(*icupp))) {
-      if (!u->matchesNonZeroPattern(*icupp))
+   if (mcupp > 0 && (!slack_upper_bound_gap->matchesNonZeroPattern(*icupp) || !slack_upper_bound_gap_dual->matchesNonZeroPattern(*icupp))) {
+      if (!slack_upper_bound_gap->matchesNonZeroPattern(*icupp))
          printf("invalidNonZeroPattern u\n");
-      if (!phi->matchesNonZeroPattern(*icupp))
+      if (!primal_upper_bound_gap_dual->matchesNonZeroPattern(*icupp))
          printf("invalidNonZeroPattern phi\n");
       return 0;
    }
@@ -617,7 +617,7 @@ int Variables::valid_non_zero_pattern() {
 
 void Variables::unscale_solution(Problem* problem) {
 // Modifying sx is equivalent to modifying x
-   SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
+   SimpleVector<double>& sx = (SimpleVector<double>&) *this->primals;
 
 // x = D * x'
    sx.componentMult(problem->scale());
@@ -635,25 +635,25 @@ void Variables::unscale_bounds(Problem* problem) {
 }
 
 void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
-   assert(x->isKindOf(kSimpleVector)); // Otherwise this routine
+   assert(primals->isKindOf(kSimpleVector)); // Otherwise this routine
 
    SimpleVector<double> g(nx);
    problem->getg(g);
-   problem->hessian_multiplication(1.0, g, 0.5, *x);
-   double objective = g.dotProductWith(*x);
+   problem->hessian_multiplication(1.0, g, 0.5, *primals);
+   double objective = g.dotProductWith(*primals);
 
-   SimpleVector<double>& sx = (SimpleVector<double>&) *this->x;
+   SimpleVector<double>& sx = (SimpleVector<double>&) *this->primals;
    SimpleVector<double>& sxlow = (SimpleVector<double>&) problem->xlowerBound();
    SimpleVector<double>& sixlow = (SimpleVector<double>&) problem->ixlowerBound();
    SimpleVector<double>& sxupp = (SimpleVector<double>&) problem->xupperBound();
    SimpleVector<double>& sixupp = (SimpleVector<double>&) problem->ixupperBound();
-   SimpleVector<double>& sgamma = (SimpleVector<double>&) *this->gamma;
-   SimpleVector<double>& sphi = (SimpleVector<double>&) *this->phi;
-   SimpleVector<double>& sy = (SimpleVector<double>&) *this->y;
-   SimpleVector<double>& ss = (SimpleVector<double>&) *this->s;
-   SimpleVector<double>& slambda = (SimpleVector<double>&) *this->lambda;
-   SimpleVector<double>& spi = (SimpleVector<double>&) *this->pi;
-   SimpleVector<double>& sz = (SimpleVector<double>&) *this->z;
+   SimpleVector<double>& sgamma = (SimpleVector<double>&) *this->primal_lower_bound_gap_dual;
+   SimpleVector<double>& sphi = (SimpleVector<double>&) *this->primal_upper_bound_gap_dual;
+   SimpleVector<double>& sy = (SimpleVector<double>&) *this->equality_duals;
+   SimpleVector<double>& ss = (SimpleVector<double>&) *this->slacks;
+   SimpleVector<double>& slambda = (SimpleVector<double>&) *this->slack_lower_bound_gap_dual;
+   SimpleVector<double>& spi = (SimpleVector<double>&) *this->slack_upper_bound_gap_dual;
+   SimpleVector<double>& sz = (SimpleVector<double>&) *this->inequality_duals;
    SimpleVector<double>& sclow = (SimpleVector<double>&) problem->slowerBound();
    SimpleVector<double>& siclow = (SimpleVector<double>&) problem->islowerBound();
    SimpleVector<double>& scupp = (SimpleVector<double>&) problem->supperBound();
@@ -713,77 +713,12 @@ void Variables::print_solution(MpsReader* reader, Problem* problem, int& iErr) {
    delete[] cxupp;
 }
 
-void Variables::print_norms() const {
-   const int my_rank = PIPS_MPIgetRank();
-
-   const double infnorm = this->inf_norm();
-
-   if (my_rank == 0)
-      std::cout << "||vars||_INF = " << infnorm << std::endl;
-
-   double temp_inf = x->inf_norm();
-   double temp_2 = x->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_x||_INF = " << temp_inf << "\t||vars_x||_2 = " << temp_2 << std::endl;
-
-   temp_inf = s->inf_norm();
-   temp_2 = s->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_s||_INF = " << temp_inf << "\t||vars_s||_2 = " << temp_2 << std::endl;
-
-   temp_inf = y->inf_norm();
-   temp_2 = y->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_y||_INF = " << temp_inf << "\t||vars_y||_2 = " << temp_2 << std::endl;
-
-   temp_inf = z->inf_norm();
-   temp_2 = z->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_z||_INF = " << temp_inf << "\t||vars_z||_2 = " << temp_2 << std::endl;
-
-   temp_inf = v->inf_norm();
-   temp_2 = v->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_v||_INF = " << temp_inf << "\t||vars_v||_2 = " << temp_2 << std::endl;
-   temp_inf = phi->inf_norm();
-   temp_2 = phi->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_phi||_INF = " << temp_inf << "\t||vars_phi||_2 = " << temp_2 << std::endl;
-
-   temp_inf = w->inf_norm();
-   temp_2 = w->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_w||_INF = " << temp_inf << "\t||vars_w||_2 = " << temp_2 << std::endl;
-   temp_inf = gamma->inf_norm();
-   temp_2 = gamma->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_gamma||_INF = " << temp_inf << "\t||vars_gamma||_2 = " << temp_2 << std::endl;
-
-   temp_inf = t->inf_norm();
-   temp_2 = t->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_t||_INF = " << temp_inf << "\t||vars_t||_2 = " << temp_2 << std::endl;
-   temp_inf = lambda->inf_norm();
-   temp_2 = lambda->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_lambda||_INF = " << temp_inf << "\t||vars_lambda||_2 = " << temp_2 << std::endl;
-
-   temp_inf = u->inf_norm();
-   temp_2 = u->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_u||_INF = " << temp_inf << "\t||vars_u||_2 = " << temp_2 << std::endl;
-   temp_inf = pi->inf_norm();
-   temp_2 = pi->two_norm();
-   if (my_rank == 0)
-      std::cout << "||vars_pi||_INF = " << temp_inf << "\t||vars_pi||_2 = " << temp_2 << std::endl;
-}
-
 // default implementation for Variables::print() prints abusive
 // message. Since we don't have any knowledge of how the variables are
 // stored at this top level, we can't do much except print their
 // dimensions.
 
 void Variables::print() {
-   std::cout << " Complementary Variables = " << nComplementaryVariables << std::endl;
+   std::cout << " Complementary Variables = " << number_complementarity_pairs << std::endl;
    std::cout << "(Cannot tell you more at this level)" << std::endl;
 }

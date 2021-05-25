@@ -226,7 +226,7 @@ double PIPSIPMppInterface::getObjective() {
 }
 
 double PIPSIPMppInterface::getFirstStageObjective() const {
-   Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->x).first);
+   Vector<double>& x = *(dynamic_cast<DistributedVector<double>&>(*variables->primals).first);
    Vector<double>& c = *(dynamic_cast<DistributedVector<double>&>(*presolved_problem->g).first);
    return c.dotProductWith(x);
 }
@@ -278,27 +278,27 @@ std::vector<double> PIPSIPMppInterface::gatherFromSolution(SmartPointer<Vector<d
 
 
 std::vector<double> PIPSIPMppInterface::gatherPrimalSolution() {
-   return gatherFromSolution(&DistributedVariables::x);
+   return gatherFromSolution(&DistributedVariables::primals);
 }
 
 
 std::vector<double> PIPSIPMppInterface::gatherDualSolutionEq() {
-   return gatherFromSolution(&DistributedVariables::y);
+   return gatherFromSolution(&DistributedVariables::equality_duals);
 }
 
 
 std::vector<double> PIPSIPMppInterface::gatherDualSolutionIneq() {
-   return gatherFromSolution(&DistributedVariables::z);
+   return gatherFromSolution(&DistributedVariables::inequality_duals);
 }
 
 
 std::vector<double> PIPSIPMppInterface::gatherDualSolutionIneqUpp() {
-   return gatherFromSolution(&DistributedVariables::pi);
+   return gatherFromSolution(&DistributedVariables::slack_upper_bound_gap_dual);
 }
 
 
 std::vector<double> PIPSIPMppInterface::gatherDualSolutionIneqLow() {
-   return gatherFromSolution(&DistributedVariables::lambda);
+   return gatherFromSolution(&DistributedVariables::slack_lower_bound_gap_dual);
 }
 
 
@@ -319,12 +319,12 @@ std::vector<double> PIPSIPMppInterface::gatherDualSolutionVarBounds() {
 
 
 std::vector<double> PIPSIPMppInterface::gatherDualSolutionVarBoundsUpp() {
-   return gatherFromSolution(&DistributedVariables::phi);
+   return gatherFromSolution(&DistributedVariables::primal_upper_bound_gap_dual);
 }
 
 
 std::vector<double> PIPSIPMppInterface::gatherDualSolutionVarBoundsLow() {
-   return gatherFromSolution(&DistributedVariables::gamma);
+   return gatherFromSolution(&DistributedVariables::primal_lower_bound_gap_dual);
 }
 
 
@@ -368,9 +368,9 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
                                           : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
 
    if (postsolved_variables == nullptr)
-      ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->s);
+      ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->slacks);
    else
-      ineq_vals->axpy(1.0, *postsolved_variables->s);
+      ineq_vals->axpy(1.0, *postsolved_variables->slacks);
 
    std::vector<double> ineq_vals_vec = ineq_vals->gatherStochVector();
 
@@ -381,13 +381,13 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
 
 
 std::vector<double> PIPSIPMppInterface::getFirstStagePrimalColSolution() const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->primals).first);
    return std::vector<double>(&v[0], &v[0] + v.length());
 }
 
 
 std::vector<double> PIPSIPMppInterface::getSecondStagePrimalColSolution(int scen) const {
-   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->x).children[scen]->first);
+   auto const& v = *dynamic_cast<SimpleVector<double> const*>(dynamic_cast<DistributedVector<double> const&>(*variables->primals).children[scen]->first);
    if (!v.length())
       return std::vector<double>(); //this vector is not on this processor
    else
@@ -399,21 +399,21 @@ void PIPSIPMppInterface::printComplementarityResiduals(const DistributedVariable
    const int my_rank = PIPS_MPIgetRank();
 
    /* complementarity residuals before postsolve */
-   std::unique_ptr<Vector<double>> t_clone{svars.t->cloneFull()};
-   std::unique_ptr<Vector<double>> u_clone{svars.u->cloneFull()};
-   std::unique_ptr<Vector<double>> v_clone{svars.v->cloneFull()};
-   std::unique_ptr<Vector<double>> w_clone{svars.w->cloneFull()};
+   std::unique_ptr<Vector<double>> t_clone{svars.slack_lower_bound_gap->cloneFull()};
+   std::unique_ptr<Vector<double>> u_clone{svars.slack_upper_bound_gap->cloneFull()};
+   std::unique_ptr<Vector<double>> v_clone{svars.primal_lower_bound_gap->cloneFull()};
+   std::unique_ptr<Vector<double>> w_clone{svars.primal_upper_bound_gap->cloneFull()};
 
-   t_clone->componentMult(*svars.lambda);
+   t_clone->componentMult(*svars.slack_lower_bound_gap_dual);
    t_clone->selectNonZeros(*svars.iclow);
 
-   u_clone->componentMult(*svars.pi);
+   u_clone->componentMult(*svars.slack_upper_bound_gap_dual);
    u_clone->selectNonZeros(*svars.icupp);
 
-   v_clone->componentMult(*svars.gamma);
+   v_clone->componentMult(*svars.primal_lower_bound_gap_dual);
    v_clone->selectNonZeros(*svars.ixlow);
 
-   w_clone->componentMult(*svars.phi);
+   w_clone->componentMult(*svars.primal_upper_bound_gap_dual);
    w_clone->selectNonZeros(*svars.ixupp);
 
    const double rlambda_infnorm = t_clone->inf_norm();

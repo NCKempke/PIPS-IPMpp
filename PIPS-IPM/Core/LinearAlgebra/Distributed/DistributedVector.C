@@ -1409,37 +1409,37 @@ void DistributedVector<T>::negate() {
 template<typename T>
 void DistributedVector<T>::invert() {
    if (first)
-      first->invert();
+      first->safe_invert();
 
    if (last)
-      last->invert();
+      last->safe_invert();
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->invert();
+      children[it]->safe_invert();
 }
 
 template<typename T>
-void DistributedVector<T>::invertSave(T zeroReplacementVal) {
+void DistributedVector<T>::safe_invert(T zero_replacement_value) {
    if (first)
-      first->invertSave(zeroReplacementVal);
+      first->safe_invert(zero_replacement_value);
 
    if (last)
-      last->invertSave(zeroReplacementVal);
+      last->safe_invert(zero_replacement_value);
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->invertSave(zeroReplacementVal);
+      children[it]->safe_invert(zero_replacement_value);
 }
 
 template<typename T>
-void DistributedVector<T>::applySqrt() {
+void DistributedVector<T>::sqrt() {
    if (first)
-      first->applySqrt();
+      first->sqrt();
 
    if (last)
-      last->applySqrt();
+      last->sqrt();
 
    for (size_t it = 0; it < children.size(); it++)
-      children[it]->applySqrt();
+      children[it]->sqrt();
 }
 
 template<typename T>
@@ -1455,21 +1455,21 @@ void DistributedVector<T>::roundToPow2() {
 }
 
 template<typename T>
-bool DistributedVector<T>::allPositive() const {
+bool DistributedVector<T>::all_positive() const {
    bool all_pos = true;
 
    if (first) {
-      const bool all_pos_tmp = first->allPositive();
+      const bool all_pos_tmp = first->all_positive();
       all_pos = all_pos && all_pos_tmp;
    }
 
    if (last) {
-      const bool all_pos_tmp = last->allPositive();
+      const bool all_pos_tmp = last->all_positive();
       all_pos = all_pos && all_pos_tmp;
    }
 
    for (size_t it = 0; it < children.size(); it++) {
-      const bool all_pos_tmp = children[it]->allPositive();
+      const bool all_pos_tmp = children[it]->all_positive();
       all_pos = all_pos && all_pos_tmp;
    }
 
@@ -1480,21 +1480,21 @@ bool DistributedVector<T>::allPositive() const {
 }
 
 template<typename T>
-bool DistributedVector<T>::allOf(const std::function<bool(const T&)>& pred) const {
+bool DistributedVector<T>::all_of(const std::function<bool(const T&)>& pred) const {
    bool all = true;
 
    if (first) {
-      const bool all_vec = first->allOf(pred);
+      const bool all_vec = first->all_of(pred);
       all = all && all_vec;
    }
 
    if (last) {
-      const bool all_vecl = last->allOf(pred);
+      const bool all_vecl = last->all_of(pred);
       all = all && all_vecl;
    }
 
    for (const auto& child : children) {
-      const bool all_child = child->allOf(pred);
+      const bool all_child = child->all_of(pred);
       all = all && all_child;
    }
 
@@ -1585,18 +1585,18 @@ void DistributedVector<T>::selectNegative() {
 }
 
 template<typename T>
-long long DistributedVector<T>::numberOfNonzeros() const {
+long long DistributedVector<T>::number_nonzeros() const {
    //!opt - store the number of nnz to avoid communication
    long long nnz = 0;
 
    for (size_t it = 0; it < children.size(); it++)
-      nnz += children[it]->numberOfNonzeros();
+      nnz += children[it]->number_nonzeros();
 
    if (first && (iAmSpecial || first->isKindOf(kStochVector)))
-      nnz += first->numberOfNonzeros();
+      nnz += first->number_nonzeros();
 
    if (iAmSpecial && last)
-      nnz += last->numberOfNonzeros();
+      nnz += last->number_nonzeros();
 
    if (iAmDistrib && parent == nullptr)
       PIPS_MPIgetSumInPlace(nnz, mpiComm);

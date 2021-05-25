@@ -22,16 +22,21 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
    // solve the augmented linear system
    factory.iterate_started();
-   solve_linear_system(iterate, problem, residuals, *step, *linear_system);
+   this->solve_linear_system(iterate, problem, residuals, *step, *linear_system);
    factory.iterate_ended();
+   // register the linear system to the step computation strategy
+   mehrotra_strategy->register_observer(linear_system.get());
 
    TerminationStatus status_code;
    bool termination = false;
+   int iteration = -1;
    while (!termination) {
-      termination = true;
+      iteration++;
+      // run Gondzio's multiple corrector scheme
+      status_code = mehrotra_strategy->corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system, iteration);
+      if (status_code != NOT_FINISHED) {
+         termination = true;
+      }
    }
-
-   // run Gondzio's multiple corrector scheme
-   status_code = mehrotra_strategy->corrector_predictor(factory, problem, iterate, residuals, *step, *linear_system);
    return status_code;
 }

@@ -69,15 +69,15 @@ void QP::hessian_diagonal(Vector<double>& hessian_diagonal) const {
 
 void QP::objective_gradient(const Variables& variables, Vector<double>& gradient) const {
    this->getg(gradient);
-   this->hessian_multiplication(1., gradient, 1., *variables.x);
+   this->hessian_multiplication(1., gradient, 1., *variables.primals);
    return;
 }
 
 double QP::objective_value(const Variables& variables) const {
    SimpleVector<double> gradient(nx);
    this->getg(gradient);
-   this->hessian_multiplication(1., gradient, 0.5, *variables.x);
-   return gradient.dotProductWith(*variables.x);
+   this->hessian_multiplication(1., gradient, 0.5, *variables.primals);
+   return gradient.dotProductWith(*variables.primals);
 }
 
 void QP::createScaleFromQ() {

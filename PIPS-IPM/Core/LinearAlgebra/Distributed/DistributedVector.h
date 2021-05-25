@@ -108,18 +108,18 @@ public:
    T shiftedDotProductWith(T alpha, const Vector<T>& mystep, const Vector<T>& yvec, T beta, const Vector<T>& ystep) const override;
    void negate() override;
    void invert() override;
-   void invertSave(T zeroReplacementVal = 0.0) override;
-   void applySqrt() override;
+   void safe_invert(T zero_replacement_value = 0.0) override;
+   void sqrt() override;
    void roundToPow2() override;
 
-   [[nodiscard]] bool allPositive() const override;
-   bool allOf(const std::function<bool(const T&)>& pred) const override;
+   [[nodiscard]] bool all_positive() const override;
+   bool all_of(const std::function<bool(const T&)>& pred) const override;
 
    bool matchesNonZeroPattern(const Vector<T>& select) const override;
    void selectNonZeros(const Vector<T>& select) override;
    void selectPositive() override;
    void selectNegative() override;
-   [[nodiscard]] long long numberOfNonzeros() const override;
+   [[nodiscard]] long long number_nonzeros() const override;
    void add_constant(T c, const Vector<T>& select) override;
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override { assert(false && "Not yet implemented"); };
    void axdzpy(T alpha, const Vector<T>& x, const Vector<T>& z, const Vector<T>& select) override;
@@ -231,17 +231,17 @@ public:
    T shiftedDotProductWith(T, const Vector<T>&, const Vector<T>&, T, const Vector<T>&) const override { return 0.0; }
    void negate() override {};
    void invert() override {};
-   void invertSave(T) override {};
-   void applySqrt() override {};
+   void safe_invert(T) override {};
+   void sqrt() override {};
    void roundToPow2() override {};
-   bool allPositive() const override { return true; };
-   bool allOf(const std::function<bool(const T&)>&) const override { return true; };
+   bool all_positive() const override { return true; };
+   bool all_of(const std::function<bool(const T&)>&) const override { return true; };
 
    bool matchesNonZeroPattern(const Vector<T>&) const override { return true; }
    void selectNonZeros(const Vector<T>&) override {};
    void selectPositive() override {};
    void selectNegative() override {};
-   long long numberOfNonzeros() const override { return 0; }
+   long long number_nonzeros() const override { return 0; }
    void add_constant(T, const Vector<T>&) override {};
    void writefSomeToStream(std::ostream&, const char[], const Vector<T>&) const override {};
    void axdzpy(T, const Vector<T>&, const Vector<T>&, const Vector<T>&) override {};
