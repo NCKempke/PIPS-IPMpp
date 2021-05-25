@@ -117,6 +117,12 @@ protected:
    bool print_timestamp{true};
    double start_time{-1.};
 
+   double sigma;
+
+   bool pure_centering_step;
+   bool numerical_troubles;
+   bool precond_decreased;
+
    void compute_predictor_step(Problem& problem, Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Problem& problem, Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
    void
