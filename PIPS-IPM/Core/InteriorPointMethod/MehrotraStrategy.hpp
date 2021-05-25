@@ -52,7 +52,7 @@ protected:
    Variables* temp_step;
    Statistics statistics;
 
-   std::unique_ptr<Residuals> residuals_unscaled{};
+   std::unique_ptr<Residuals> residuals_unscaled;
    /** termination parameters */
    double mutol{1.e-6};
    double artol{1.e-4};
