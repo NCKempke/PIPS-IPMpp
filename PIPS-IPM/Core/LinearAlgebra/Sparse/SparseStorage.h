@@ -5,12 +5,8 @@
 #ifndef SPARSESTORAGE_H
 #define SPARSESTORAGE_H
 
-#include "AbstractMatrix.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "pipsport.h"
+#include "../Abstract/AbstractMatrix.h"
 
-#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <fstream>

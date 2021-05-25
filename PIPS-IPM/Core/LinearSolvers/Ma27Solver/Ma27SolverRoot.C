@@ -8,9 +8,6 @@
 
 #include "Ma27SolverRoot.h"
 
-#include "SimpleVector.h"
-#include "SparseSymmetricMatrix.h"
-
 Ma27SolverRoot::Ma27SolverRoot(const SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma27Solver(sgm, name),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    threshold_pivoting_max = 0.5;

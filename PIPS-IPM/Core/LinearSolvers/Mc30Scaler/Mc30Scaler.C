@@ -5,7 +5,9 @@
  *      Author: bzfkempk
  */
 #include "Mc30Scaler.h"
-#include "SimpleVector.h"
+
+#include "../LinearAlgebra/Dense/SimpleVector.h"
+
 #include <algorithm>
 
 void Mc30Scaler::getFortranIndex(const int* rowM, const int* colM, int length, int max_index) {

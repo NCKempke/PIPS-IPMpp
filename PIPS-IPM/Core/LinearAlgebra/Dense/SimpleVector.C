@@ -282,7 +282,7 @@ double SimpleVector<T>::two_norm() const {
 template<typename T>
 void SimpleVector<T>::componentMult(const Vector<T>& vec) {
    assert(this->n == vec.length());
-   const SimpleVector<T>& sv = dynamic_cast<const SimpleVector<T>&>(vec);
+   const auto& sv = dynamic_cast<const SimpleVector<T>&>(vec);
    const T* y = sv.v;
    for (int i = 0; i < this->n; i++)
       v[i] *= y[i];

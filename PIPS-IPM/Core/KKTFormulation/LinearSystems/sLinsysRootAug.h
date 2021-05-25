@@ -32,7 +32,6 @@
 #endif
 
 #include "DistributedRootLinearSystem.h"
-#include "pipsport.h"
 #include <memory>
 
 class DistributedQP;

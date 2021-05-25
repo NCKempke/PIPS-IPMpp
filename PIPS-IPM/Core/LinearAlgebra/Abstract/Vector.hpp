@@ -12,11 +12,8 @@
 #include <fstream>
 #include <sstream>
 #include <functional>
-#include "Vector.hpp"
-#include "IotrRefCount.h"
-#include "Vector.hpp"
-#include "pipsdef.h"
-#include "pipsport.h"
+#include "../../Base/IotrRefCount.h"
+#include "../../Utilities/pipsdef.h"
 
 /** An abstract class representing the implementation of a OoqpVectorTemplate.
  *

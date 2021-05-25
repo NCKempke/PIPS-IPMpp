@@ -6,11 +6,7 @@
  */
 
 #include "PardisoProjectSchurSolver.h"
-
-#include "pipsdef.h"
-#include "pipschecks.h"
-
-#include "SimpleVector.h"
+#include "../../../Utilities/pipschecks.h"
 
 extern "C" void pardisoinit(void*, int*, int*, int*, double*, int*);
 extern "C" void pardiso(void*, int*, int*, int*, int*, int*, double*, int*, int*, int*, int*, int*, int*, double*, double*, int*, double*);

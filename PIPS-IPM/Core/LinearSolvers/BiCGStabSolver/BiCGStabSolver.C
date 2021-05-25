@@ -1,7 +1,7 @@
 #include "BiCGStabSolver.h"
 #include "SimpleVector.h"
 
-#include <math.h>
+#include <cmath>
 
 extern int print_level;
 
@@ -15,7 +15,7 @@ BiCGStabSolver::BiCGStabSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2)
 };
 
 void BiCGStabSolver::solve(Vector<double>& rhs_) {
-   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
+   auto& b = dynamic_cast<SimpleVector<double>&>(rhs_);
    int n = b.length();
 
    SimpleVector<double> r(n);           //residual
@@ -40,7 +40,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
    //////////////////////////////////////////////////////////////////
    //  Problem Setup and intialization
    //////////////////////////////////////////////////////////////////
-   n2b = b.twonorm();
+   n2b = b.two_norm();
    tolb = n2b * tol;
    x.setToZero(); //initial guess
 
@@ -48,7 +48,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
    r.copyFrom(b);
    applyA(1.0, r, -1.0, x);
    //applyA(x,r); r.axpy(-1.0, b); r.negate(); // residual r=b-Ax
-   normr = r.twonorm();
+   normr = r.two_norm();
 
    if (normr < tolb) {
       //initial guess is good enough
@@ -65,7 +65,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
    rho = 1.0;
    omega = 1.0;
    stag = 0;
-   maxmsteps = min(min(n / 50, 5), n - maxit);
+   maxmsteps = std::min(std::min(n / 50, 5), n - maxit);
    maxstagsteps = 3;
    moresteps = 0;
 
@@ -114,7 +114,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       }
 
       alpha = rho / rtv;
-      if (fabs(alpha) * ph.twonorm() < EPS * x.twonorm())
+      if (fabs(alpha) * ph.two_norm() < EPS * x.two_norm())
          stag++;
       else
          stag = 0;
@@ -124,7 +124,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       xhalf.axpy(alpha, ph);
       s.copyFrom(r);
       s.axpy(-alpha, v);
-      normr = s.twonorm();
+      normr = s.two_norm();
       normr_act = normr;
       resvec[2 * ii] = normr;
 
@@ -134,7 +134,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
          s.copyFrom(b);
          applyA(1.0, s, -1.0, xhalf); // s=b-Ax
          //applyA(xhalf, s); s.negate(); s.axpy(1.0, b); // s=b-Ax
-         normr_act = s.twonorm();
+         normr_act = s.two_norm();
 
          if (normr <= tolb) {
             //converged
@@ -186,7 +186,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       omega = t.dotProductWith(s);
       omega /= tt;
 
-      if (fabs(omega) * sh.twonorm() < EPS * xhalf.twonorm())
+      if (fabs(omega) * sh.two_norm() < EPS * xhalf.two_norm())
          stag++;
       else
          stag = 0;
@@ -196,7 +196,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       r.copyFrom(s);
       r.axpy(-omega, t); // r=s-omega*t
 
-      normr = r.twonorm();
+      normr = r.two_norm();
       normr_act = normr;
       resvec[2 * ii + 1] = normr;
 
@@ -208,7 +208,7 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
          //applyA(x, r); r.negate(); r.axpy(1.0, b); // r=b-Ax
          r.copyFrom(b);
          applyA(1.0, r, -1.0, x);
-         normr_act = r.twonorm();
+         normr_act = r.two_norm();
 
          if (normr <= tolb) {
             flag = 0;
@@ -257,9 +257,10 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
       r.copyFrom(b);
       applyA(1.0, r, -1.0, xmin);
       //applyA(x,r); r.negate(); r.axpy(1.0, b);
-      normr = r.twonorm();
+      normr = r.two_norm();
       if (normr >= normr_act) {
          x.copyFrom(xmin);
+         (void) imin;
          //iter=imin;
          relres = normr / n2b;
       }
@@ -307,11 +308,11 @@ void BiCGStabSolver::solve( Vector<double>& rhs_ )
   //////////////////////////////////////////////////////////////////
   //  Problem Setup and intialization
   //////////////////////////////////////////////////////////////////
-  n2b = b.twonorm();
+  n2b = b.two_norm();
   tolb = n2b*tol;
   x.setToZero(); //initial guess
   applyA(x,r); r.axpy(-1.0, b); r.negate(); // residual r=b-Ax
-  normr=r.twonorm();
+  normr=r.two_norm();
 
   if(normr<tolb) {
     //initial guess is good enough
@@ -354,19 +355,19 @@ void BiCGStabSolver::solve( Vector<double>& rhs_ )
     if(rtv==0.0) { flag=4; break; }
 
     alpha = rho/rtv;
-    if(fabs(alpha)*ph.twonorm()<EPS*x.twonorm()) stag++;
+    if(fabs(alpha)*ph.two_norm()<EPS*x.two_norm()) stag++;
     else                                         stag=0;
 
     // xhalf = x + alpha*ph and the associated residual
     xhalf.copyFrom(x); xhalf.axpy( alpha, ph);
     s.    copyFrom(r);     s.axpy(-alpha, v);
-    normr = s.twonorm(); normr_act = normr;
+    normr = s.two_norm(); normr_act = normr;
     resvec[2*ii] = normr;
 
     //-------- check for convergence in the middle of the iterate.  -------- 
     if(normr<=tolb || stag>=maxstagsteps || moresteps) {
       applyA(xhalf, s); s.negate(); s.axpy(1.0, b); // s=b-Ax
-      normr_act = s.twonorm();
+      normr_act = s.two_norm();
       
       if(normr<=tolb) {
 	//converged
@@ -408,19 +409,19 @@ void BiCGStabSolver::solve( Vector<double>& rhs_ )
 
     omega=t.dotProductWith(s); omega /= tt;
 
-    if(fabs(omega)*sh.twonorm() < EPS*xhalf.twonorm()) stag++;
+    if(fabs(omega)*sh.two_norm() < EPS*xhalf.two_norm()) stag++;
     else                                              stag=0;
 
     x.copyFrom(xhalf); x.axpy( omega, sh); // x=xhalf+omega*sh
     r.copyFrom(s);     r.axpy(-omega, t ); // r=s-omega*t
 
-    normr = r.twonorm(); normr_act = normr;
+    normr = r.two_norm(); normr_act = normr;
     resvec[2*ii+1] = normr;
     
     //-------- check for convergence in the middle of the iterate.  -------- 
     if(normr<=tolb || stag>=maxstagsteps || moresteps) {
       applyA(x, r); r.negate(); r.axpy(1.0, b); // r=b-Ax
-      normr_act=r.twonorm();
+      normr_act=r.two_norm();
 
       if(normr<=tolb) { flag = 0; iter = 1.0+ii; break; }
       else {
@@ -454,7 +455,7 @@ void BiCGStabSolver::solve( Vector<double>& rhs_ )
   } else {
     //FAILURE -> return minimum resid-norm iterate
     applyA(x,r); r.negate(); r.axpy(1.0, b);
-    normr=r.twonorm();
+    normr=r.two_norm();
     if(normr <= normr_act) {
       x.copyFrom(xmin);
       iter=imin;

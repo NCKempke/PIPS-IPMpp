@@ -1,87 +1,58 @@
+add_library(pips-ipmpp STATIC
+        Base/IotrRefCount.C
+        Base/Scaler.C
+
+        Globalization/Filter.cpp
+        Globalization/FilterLineSearch.cpp
+        Globalization/FilterStrategy.cpp
+
+        Interface/PIPSIPMppInterface.cpp
+
+        Options/AbstractOptions.C
+        Options/Options.C
+        Options/PIPSIPMppOptions.C
+
+        Problems/DistributedFactory.C
+        Problems/DistributedQP.cpp
+        Problems/Problem.C
+        Problems/QP.cpp
+        Problems/StochResourcesMonitor.C
+
+        Readers/Distributed/DistributedInputTree.C
+        Readers/Distributed/DistributedTree.C
+        Readers/Distributed/DistributedTreeCallbacks.C
+        Readers/MpsReader.C
+
+        Utilities/pipschecks.C
+        Utilities/hash.C
+        Utilities/sort.cpp
+        )
+
+target_include_directories(pips-ipmpp
+    PRIVATE
+        Base
+        Globalization
+        Interface
+        Options
+        Problems
+        Readers
+        Utilities
+    PUBLIC
+        Readers/Distributed
+    )
+
+add_subdirectory(InteriorPointMethod)
+add_subdirectory(KKTFormulation)
+add_subdirectory(LinearAlgebra)
+
 add_subdirectory(LinearSolvers)
 
-add_library(pips-ipmpp STATIC
-        Base/Variables.C Problems/Problem.C Base/Residuals.cpp Base/Scaler.C
-        
-        Globalization/Filter.cpp Globalization/FilterStrategy.cpp Globalization/FilterLineSearch.cpp
+MESSAGE(STATUS "Solver libraries: ${lin_solvers_list}")
+foreach(linear_solver ${lin_solvers_list})
+    target_link_libraries(pips-ipmpp PRIVATE ${linear_solver})
+endforeach(linear_solver)
 
-        InteriorPointMethod/Solver.cpp InteriorPointMethod/InteriorPointMethod.cpp InteriorPointMethod/MehrotraStrategy.cpp InteriorPointMethod/Statistics.cpp
-
-        Options/AbstractOptions.C Options/Options.C Options/PIPSIPMppOptions.C
-
-        Base/IotrRefCount.C Base/DoubleLinearSolver.C Vector/Vector.cpp Vector/SimpleVector.C Utilities/drand.C Utilities/sort.C
-        Utilities/pipschecks.C 
-        Base/Variables.C Problems/QP.cpp LinearSystems/LinearSystem.C #QpGen
-        Readers/MpsReader.C Readers/hash.C #Readers
-        LinearSolvers/Preconditioners/SCsparsifier.C
-        Problems/DistributedQP.cpp
-        Problems/DistributedFactory.C
-        InteriorPointMethod/Solver.cpp
-        LinearSystems/DistributedLinearSystem.C
-        LinearSystems/DistributedRootLinearSystem.C
-        LinearSystems/sLinsysRootAug.C
-        LinearSystems/sLinsysRootAugHierInner.C
-        LinearSystems/DistributedLeafLinearSystem.C
-        LinearSystems/sLinsysLeafSchurSlv.C
-        LinearAlgebra/Distributed/DistributedVariables.C
-        LinearAlgebra/Distributed/DistributedResiduals.cpp
-        LinearAlgebra/Distributed/DistributedTree.C
-        LinearSystems/sLinsysRootBordered.C
-        LinearAlgebra/Distributed/DistributedTreeCallbacks.C
-        LinearAlgebra/Distributed/StripMatrix.C
-        LinearSystems/RegularizationStrategy.h LinearSystems/RegularizationStrategy.cpp
-        
-        LinearAlgebra/Dense/DenseStorage.C LinearAlgebra/Dense/DenseSymmetricMatrix.C
-        LinearAlgebra/Dense/DeSymIndefSolver.C LinearAlgebra/Dense/DeSymIndefSolver2.C
-        LinearAlgebra/Dense/DenseMatrix.C LinearAlgebra/Dense/DeSymPSDSolver.C
-        
-        LinearAlgebra/Distributed/DistributedVector.C LinearAlgebra/Distributed/DistributedSymmetricMatrix.C LinearAlgebra/Distributed/DistributedMatrix.C
-        LinearAlgebra/Distributed/BorderedMatrix.C LinearAlgebra/Distributed/BorderedSymmetricMatrix.C
-        LinearAlgebra/Distributed/StochResourcesMonitor.C LinearAlgebra/Distributed/DistributedInputTree.C
-        
-        LinearAlgebra/Sparse/SparseStorage.C LinearAlgebra/Sparse/SparseStorageDynamic.C
-        LinearAlgebra/Sparse/SparseMatrix.C LinearAlgebra/Sparse/SparseSymmetricMatrix.C
-        
-        Preprocessing/EquiStochScaler.C Preprocessing/GeoStochScaler.C Preprocessing/StochScaler.C Preprocessing/QpScaler.C
-        Preprocessing/StochRowStorage.C Preprocessing/StochColumnStorage.C Preprocessing/QpPostsolver.C Preprocessing/StochPostsolver.C Preprocessing/StochPresolver.C Preprocessing/QpPresolver.C Preprocessing/StochPresolverBase.C
-        Preprocessing/StochPresolverModelCleanup.C Preprocessing/PresolveData.C Preprocessing/StochPresolverBoundStrengthening.C Preprocessing/StochPresolverColumnFixation.C Preprocessing/StochPresolverParallelRows.C
-        Preprocessing/StochPresolverSingletonRows.C Preprocessing/StochPresolverSingletonColumns.C Preprocessing/QpPresolver.C Preprocessing/QpPostsolver.C
-        
-        Interface/PIPSIPMppInterface.cpp
-)
-
-target_include_directories(pips-ipmpp PRIVATE ${MUMPS_INCLUDE_DIR})
-
-
-if (HAVE_MA27)
-    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA27)
-    target_link_libraries(pips-ipmpp PRIVATE ma27_solver)
-endif (HAVE_MA27)
-
-if (HAVE_MA57)
-    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MA57)
-    target_link_libraries(pips-ipmpp PRIVATE ma57_solver)
-endif (HAVE_MA57)
-
-if (HAVE_MUMPS)
-    target_sources(pips-ipmpp PRIVATE LinearSystems/sLinsysLeafMumps.C)
-    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MUMPS)
-    target_link_libraries(pips-ipmpp PRIVATE mumps_solver)
-endif (HAVE_MUMPS)
-
-if (HAVE_PARDISO)
-    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_PARDISO)
-    target_link_libraries(pips-ipmpp PRIVATE pardiso_solver)
-endif (HAVE_PARDISO)
-
-if (HAVE_MKL_PARDISO)
-    target_compile_definitions(pips-ipmpp PUBLIC -DWITH_MKL_PARDISO)
-    target_link_libraries(pips-ipmpp PRIVATE pardiso_mkl_solver)
-endif (HAVE_MKL_PARDISO)
-
-if (HAVE_PARDISO OR HAVE_MKL_PARDISO)
-    target_link_libraries(pips-ipmpp PUBLIC pardiso_abstract)
-endif (HAVE_PARDISO OR HAVE_MKL_PARDISO)
+add_subdirectory(Preprocessing)
 
 target_link_libraries(pips-ipmpp
         PRIVATE MPI::MPI_CXX

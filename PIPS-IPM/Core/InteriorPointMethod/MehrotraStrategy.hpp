@@ -8,6 +8,7 @@
 #include <memory>
 #include "Statistics.hpp"
 #include "TerminationStatus.h"
+#include "MehrotraStrategyType.h"
 
 class Problem;
 
@@ -187,8 +188,6 @@ protected:
    double alpha_primal_candidate, alpha_dual_candidate, weight_primal_candidate, weight_dual_candidate;
    double alpha_primal_enhanced, alpha_dual_enhanced;
 };
-
-enum MehrotraHeuristic { PRIMAL, PRIMAL_DUAL };
 
 class MehrotraFactory {
 public:

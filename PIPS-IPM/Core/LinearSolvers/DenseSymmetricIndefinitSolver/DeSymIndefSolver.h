@@ -6,10 +6,9 @@
 #define DESYMINDEFSOLVER_H
 
 #include "DoubleLinearSolver.h"
-#include "DenseSymMatrixHandle.h"
 #include "SparseSymmetricMatrix.h"
+#include "DenseSymmetricMatrix.h"
 #include "DenseStorage.h"
-#include "pipsport.h"
 
 #include <vector>
 #include <memory>

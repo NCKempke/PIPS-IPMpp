@@ -5,7 +5,6 @@
 #ifndef DENSEGENMATRIX_H
 #define DENSEGENMATRIX_H
 
-#include "AbstractMatrix.h"
 #include "DenseStorage.h"
 #include <memory>
 

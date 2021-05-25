@@ -1,6 +1,5 @@
 #include "CGSolver.h"
 #include "SimpleVector.h"
-#include "pipsport.h"
 
 #include <math.h>
 
@@ -42,7 +41,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
    double alpha, beta, rho, rho1, pq;
    int iter;
 
-   double n2b = b.twonorm();
+   double n2b = b.two_norm();
    double tolb = n2b * tol;
 
    if (tmpVec1 == nullptr)
@@ -75,7 +74,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
 
    r.copyFrom(b);
    applyA(1.0, r, -1.0, x);
-   normr = r.twonorm();
+   normr = r.two_norm();
 
    maxit = n / 2 + 20;
    if (normr < tolb) {
@@ -87,7 +86,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
    normrmin = normr;
    rho = 1.0;
    stag = 0;
-   maxmsteps = min(min(n / 50, 5), n - maxit);
+   maxmsteps = std::min(std::min(n / 50, 5), n - maxit);
    maxstagsteps = 2;
    moresteps = 0;
    iter = 0;
@@ -129,7 +128,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       alpha = rho / pq;
 
       //check for stagnation
-      if (p.twonorm() * fabs(alpha) < EPS * x.twonorm())
+      if (p.two_norm() * fabs(alpha) < EPS * x.two_norm())
          stag++;
       else
          stag = 0;
@@ -137,7 +136,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       //---- updates ----
       x.axpy(alpha, p);
       r.axpy(-alpha, q);
-      normr = r.twonorm();
+      normr = r.two_norm();
       normr_act = normr;
 
       //printf("stag=%d  maxstagsteps=%d moresteps=%d  normr=%g\n",
@@ -146,7 +145,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       if (normr <= tolb || stag >= maxstagsteps || moresteps) {
          r.copyFrom(b);
          applyA(1.0, r, -1.0, x);
-         normr_act = r.twonorm();
+         normr_act = r.two_norm();
 
          if (normr_act <= tolb) {
             flag = 0;
@@ -190,7 +189,7 @@ void CGSolver::solve(Vector<double>& rhs_) {
       double relres = normr_act / n2b;
       r.copyFrom(b);
       applyA(1.0, r, -1.0, xmin);
-      normr = r.twonorm();
+      normr = r.two_norm();
       if (normr < normr_act) {
          x.copyFrom(xmin);
          iter = imin;

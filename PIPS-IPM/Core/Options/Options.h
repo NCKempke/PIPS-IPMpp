@@ -9,8 +9,6 @@
 #define PIPS_IPM_CORE_QPGEN_QPGENOPTIONS_H_
 
 #include "AbstractOptions.h"
-#include "pipsport.h"
-
 #include <cassert>
 
 /**

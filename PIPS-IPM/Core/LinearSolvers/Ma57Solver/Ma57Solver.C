@@ -5,13 +5,6 @@
  */
 
 #include "Ma57Solver.h"
-#include <algorithm>
-#include <utility>
-#include "SparseStorage.h"
-#include "SparseSymmetricMatrix.h"
-#include "SimpleVector.h"
-#include "DenseMatrix.h"
-#include <mpi.h>
 
 extern int print_level;
 

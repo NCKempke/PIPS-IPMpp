@@ -117,9 +117,9 @@ public:
 
 public:
 
-   DistributedInputTree(const DistributedInputNode& root);
+   explicit DistributedInputTree(const DistributedInputNode& root);
 
-   DistributedInputTree(DistributedInputNode* root);
+   explicit DistributedInputTree(DistributedInputNode* root);
 
    virtual ~DistributedInputTree();
 

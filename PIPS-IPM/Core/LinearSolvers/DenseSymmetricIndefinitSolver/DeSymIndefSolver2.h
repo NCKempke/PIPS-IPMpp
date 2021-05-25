@@ -6,10 +6,8 @@
 #define DESYMINDEFSOLVER2_H
 
 #include "DoubleLinearSolver.h"
-#include "DenseSymMatrixHandle.h"
-#include "pipsport.h"
+#include "DenseSymmetricMatrix.h"
 #include <memory>
-#include "DenseStorage.h"
 
 /** Specialized LDL^T solver for saddle point systems
  * @ingroup DenseLinearAlgebra

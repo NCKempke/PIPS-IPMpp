@@ -26,7 +26,6 @@ class SparseMatrix;
  * [ B  K ]
  * [ C  B']
  *
- * Where K is a DistributedMatrix
  */
 
 // TODO : make more general ? K B B' and C can be any matrices in theory..

@@ -1086,7 +1086,7 @@ MehrotraStrategy::~MehrotraStrategy() {
 
 std::unique_ptr<MehrotraStrategy>
 MehrotraFactory::create(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler) {
-   if (mehrotra_heuristic == PRIMAL) {
+   if (mehrotra_heuristic == MehrotraHeuristic::PRIMAL) {
       return std::make_unique<PrimalMehrotraStrategy>(factory, problem, scaler);
    }
    else {

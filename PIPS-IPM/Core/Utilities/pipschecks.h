@@ -8,7 +8,7 @@
 #ifndef PIPS_IPM_CORE_UTILITIES_PIPSCHECKS_H_
 #define PIPS_IPM_CORE_UTILITIES_PIPSCHECKS_H_
 
-#include "SimpleVector.h"
+#include "../LinearAlgebra/Dense/SimpleVector.h"
 #include "pipsdef.h"
 
 // is the permutation vector valid?

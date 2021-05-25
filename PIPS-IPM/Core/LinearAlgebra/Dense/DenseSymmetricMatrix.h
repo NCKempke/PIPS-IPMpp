@@ -6,9 +6,7 @@
 #define DENSESYMMETRICMATRIX_H
 
 #include <memory>
-#include "DenseStorage.h"
-#include "AbstractMatrix.h"
-#include "DenseSymMatrixHandle.h"
+#include "./DenseStorage.h"
 
 class SparseSymmetricMatrix;
 

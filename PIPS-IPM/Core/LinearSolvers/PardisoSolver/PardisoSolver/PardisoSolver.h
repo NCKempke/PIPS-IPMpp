@@ -5,9 +5,9 @@
 #ifndef PARDISOLINSYS_H
 #define PARDISOLINSYS_H
 
-#include "DoubleLinearSolver.h"
-#include "DenseSymmetricMatrix.h"
-#include "pipsport.h"
+#include "../../DoubleLinearSolver.h"
+#include "../../../LinearAlgebra/Dense/DenseSymmetricMatrix.h"
+#include "../../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
 
 #include <map>
 #include <vector>

@@ -5,25 +5,35 @@
 #ifndef PIPSIPMPPINTERFACE_H
 #define PIPSIPMPPINTERFACE_H
 
+#include <vector>
+#include <string>
 #include <memory>
-#include <MehrotraStrategy.hpp>
-#include <InteriorPointMethod.hpp>
-#include "DistributedQP.hpp"
-#include "DistributedResiduals.hpp"
-#include "DistributedVariables.h"
-#include "PreprocessFactory.h"
-#include "Scaler.h"
-#include "Presolver.h"
-#include "Postsolver.h"
-#include "pipsport.h"
-#include "PIPSIPMppOptions.h"
+
+#include "MehrotraStrategyType.h"
+#include "pipsdef.h"
+#include "PreprocessType.h"
+#include "SmartPointer.h"
+
+template<typename T>
+class Vector;
+
+class DistributedInputTree;
+class DistributedFactory;
+class PreprocessFactory;
+class DistributedResiduals;
+class DistributedVariables;
+class DistributedQP;
+class Presolver;
+class Postsolver;
+class Scaler;
+class InteriorPointMethod;
 
 class PIPSIPMppInterface {
 public:
-   PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = SCALER_NONE,
-         PresolverType presolver_type = PRESOLVER_NONE, std::string settings = "PIPSIPMpp.opt");
+   PIPSIPMppInterface(DistributedInputTree* tree, MehrotraHeuristic mehrotra_heuristic, MPI_Comm = MPI_COMM_WORLD, ScalerType scaler_type = ScalerType::SCALER_NONE,
+         PresolverType presolver_type = PresolverType::PRESOLVER_NONE, const std::string& settings = "PIPSIPMpp.opt");
 
-   ~PIPSIPMppInterface() = default;
+   ~PIPSIPMppInterface();
 
    void run();
 
@@ -63,12 +73,12 @@ public:
    //more get methods to follow here
 
 private:
-   void printComplementarityResiduals(const DistributedVariables& vars) const;
+   static void printComplementarityResiduals(const DistributedVariables& vars) ;
 
    std::vector<double> gatherFromSolution(SmartPointer<Vector<double> > DistributedVariables::* member_to_gather);
 
 protected:
-   DistributedFactory factory;
+   std::unique_ptr<DistributedFactory> factory{};
    std::unique_ptr<PreprocessFactory> preprocess_factory{};
 
    std::unique_ptr<DistributedQP> presolved_problem{};       // possibly presolved problem

@@ -3,9 +3,12 @@
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
 #include "MpsReader.h"
+
 #include "Vector.hpp"
 #include "AbstractMatrix.h"
 #include "SimpleVector.h"
+#include "sort.h"
+
 #include <cstring>
 #include <cerrno>
 #include <cassert>
@@ -36,8 +39,6 @@ struct MpsColInfo {
 
 int MpsRowTypeFromCode(char code[4]);
 int MpsRowTypeFromCode2(char code);
-
-void doubleLexSort(int first[], int n, int second[], double data[]);
 
 MpsReader::MpsReader(FILE* file_) {
    file = file_;

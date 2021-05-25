@@ -13,7 +13,6 @@
  * @ingroup ReferenceCounting
  */
 #include <cassert>
-#include "pipsport.h"
 
 /**
  * A class whose instances act like pointers that manage their

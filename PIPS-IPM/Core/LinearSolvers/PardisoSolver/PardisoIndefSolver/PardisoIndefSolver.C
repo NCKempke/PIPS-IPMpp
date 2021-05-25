@@ -6,13 +6,7 @@
  */
 
 #include "PardisoIndefSolver.h"
-#include "pipschecks.h"
-#include "SimpleVector.h"
-#include <cmath>
-#include <algorithm>
-#include <cassert>
-#include "pipsdef.h"
-#include "PIPSIPMppOptions.h"
+#include "../../../Options/PIPSIPMppOptions.h"
 
 PardisoIndefSolver::PardisoIndefSolver(DenseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
       solve_in_parallel{solve_in_parallel} {

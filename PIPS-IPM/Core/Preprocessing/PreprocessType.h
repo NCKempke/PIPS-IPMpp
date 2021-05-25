@@ -1,0 +1,11 @@
+//
+// Created by nils-christian on 25.05.21.
+//
+
+#ifndef PIPSIPMPP_PREPROCESSTYPE_H
+#define PIPSIPMPP_PREPROCESSTYPE_H
+
+enum class ScalerType { SCALER_NONE, SCALER_EQUI_STOCH, SCALER_GEO_STOCH, SCALER_GEO_EQUI_STOCH };
+enum class PresolverType { PRESOLVER_NONE, PRESOLVER_STOCH };
+
+#endif //PIPSIPMPP_PREPROCESSTYPE_H

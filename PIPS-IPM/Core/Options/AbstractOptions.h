@@ -11,8 +11,7 @@
 #include <string>
 #include <map>
 
-#include "pipsport.h"
-#include "Singleton.h"
+#include "../Base/Singleton.h"
 
 /**
  * base class for options class.

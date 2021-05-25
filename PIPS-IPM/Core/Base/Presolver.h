@@ -8,7 +8,6 @@
 #ifndef PIPS_IPM_CORE_ABSTRACT_PRESOLVER_H_
 #define PIPS_IPM_CORE_ABSTRACT_PRESOLVER_H_
 
-#include "pipsport.h"
 #include <cstddef>
 
 class Problem;

@@ -5,11 +5,10 @@
 #ifndef MA57LINSYS_H
 #define MA57LINSYS_H
 
-#include "pipsport.h"
-
-#include "DoubleLinearSolver.h"
-#include "Vector.hpp"
-#include "SparseSymmetricMatrix.h"
+#include "../DoubleLinearSolver.h"
+#include "../../LinearAlgebra/Dense/SimpleVector.h"
+#include "../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
+#include "../../LinearAlgebra/Dense/DenseMatrix.h"
 
 #include <vector>
 

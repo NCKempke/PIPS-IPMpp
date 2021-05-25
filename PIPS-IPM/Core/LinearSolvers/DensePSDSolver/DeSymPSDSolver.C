@@ -5,7 +5,6 @@
 #include "DeSymPSDSolver.h"
 #include <cassert>
 
-#include "DenseStorage.h"
 #include "DenseSymmetricMatrix.h"
 #include "SimpleVector.h"
 
@@ -41,7 +40,7 @@ void DeSymPSDSolver::solve(Vector<double>& x_in) {
    int one = 1;
 
    int n = mStorage->n;
-   SimpleVector<double>& x = dynamic_cast<SimpleVector<double>&>(x_in);
+   auto& x = dynamic_cast<SimpleVector<double>&>(x_in);
 
    dpotrs_(&fortranUplo, &n, &one, &mStorage->M[0][0], &n, &x[0], &n, &info);
 }

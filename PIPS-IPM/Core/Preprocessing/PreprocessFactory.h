@@ -12,36 +12,33 @@
 #include "GeoStochScaler.h"
 #include "StochPresolver.h"
 #include "IotrRefCount.h"
+#include "PreprocessType.h"
 #include "StochPostsolver.h"
 #include "DistributedQP.hpp"
-#include "pipsport.h"
-
-enum ScalerType { SCALER_NONE, SCALER_EQUI_STOCH, SCALER_GEO_STOCH, SCALER_GEO_EQUI_STOCH };
-enum PresolverType { PRESOLVER_NONE, PRESOLVER_STOCH };
 
 class PreprocessFactory : public IotrRefCount {
 public:
 
    static Scaler* makeScaler(Problem* data, ScalerType type) {
       switch (type) {
-         case SCALER_EQUI_STOCH:
+         case ScalerType::SCALER_EQUI_STOCH:
             return new EquiStochScaler(data, false);
-         case SCALER_GEO_STOCH:
+         case ScalerType::SCALER_GEO_STOCH:
             return new GeoStochScaler(data, false, false);
-         case SCALER_GEO_EQUI_STOCH:
+         case ScalerType::SCALER_GEO_EQUI_STOCH:
             return new GeoStochScaler(data, true, false);
          default:
-            return 0;
+            return nullptr;
       }
    };
 
    static Presolver* makePresolver(DistributedTree* tree, const Problem* data, PresolverType type, Postsolver* postsolver = nullptr) {
       assert(data);
       switch (type) {
-         case PRESOLVER_STOCH:
+         case PresolverType::PRESOLVER_STOCH:
             return new StochPresolver(tree, *data, postsolver);
          default:
-            return 0;
+            return nullptr;
       }
    };
 

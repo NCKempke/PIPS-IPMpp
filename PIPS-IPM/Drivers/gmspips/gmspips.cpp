@@ -1,9 +1,11 @@
 #if defined(GMS_PIPS)
 
-#include "DistributedInputTree.h"
-#include "PreprocessFactory.h"
 #include "PIPSIPMppInterface.hpp"
-#include "InteriorPointMethod.hpp"
+#include "DistributedInputTree.h"
+
+#include "PIPSIPMppOptions.h"
+#include "PreprocessType.h"
+#include "MehrotraStrategyType.h"
 
 #endif
 #if defined(GMS_MPI)
@@ -13,13 +15,12 @@
 #endif
 
 #include "gmspipsio.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <cstring>
 
 #include <iostream>
-#include <fstream>
 
 extern "C" typedef int (* FNNZ)(void* user_data, int id, int* nnz);
 
@@ -183,11 +184,11 @@ int fmatQ(void* user_data, int id, int* krowM, int*, double*) {
 #if defined(GMS_PIPS)
 static void setParams(ScalerType& scaler_type, bool& stepDiffLp, bool& presolve, bool& printsol, bool& hierarchical, const char* paramname) {
    if (strcmp(paramname, "scale") == 0 || strcmp(paramname, "scaleEqui") == 0)
-      scaler_type = SCALER_EQUI_STOCH;
+      scaler_type = ScalerType::SCALER_EQUI_STOCH;
    else if (strcmp(paramname, "scaleGeo") == 0)
-      scaler_type = SCALER_GEO_STOCH;
+      scaler_type = ScalerType::SCALER_GEO_STOCH;
    else if (strcmp(paramname, "scaleGeoEqui") == 0)
-      scaler_type = SCALER_GEO_EQUI_STOCH;
+      scaler_type = ScalerType::SCALER_GEO_EQUI_STOCH;
    else if (strcmp(paramname, "stepLp") == 0)
       stepDiffLp = true;
    else if (strcmp(paramname, "presolve") == 0)
@@ -212,7 +213,7 @@ int main(int argc, char** argv) {
 
    GMSPIPSBlockData_t** blocks;
 #if defined(GMS_PIPS)
-   ScalerType scaler_type = SCALER_NONE;
+   ScalerType scaler_type = ScalerType::SCALER_NONE;
 #endif
 
    bool primal_dual_step_length = false;
@@ -226,7 +227,7 @@ int main(int argc, char** argv) {
       exit(1);
    }
 
-   allGDX = strstr(argv[2], ".gdx") != NULL;
+   allGDX = strstr(argv[2], ".gdx") != nullptr;
    numBlocks = atoi(argv[1]);
    strcpy(fileName, argv[2]);
    if (argc >= 4) {
@@ -310,7 +311,7 @@ int main(int argc, char** argv) {
          fdlow, fidlow, fdupp, fidupp,
 #endif
          fxlow, fixlow, fxupp, fixupp, false);
-   DistributedInputTree* root = new DistributedInputTree(data);
+   auto* root = new DistributedInputTree(data);
 #endif
    for (int blk = 1; blk < numBlocks; blk++) {
 
@@ -394,8 +395,8 @@ int main(int argc, char** argv) {
    }
 
    // create the PIPS-IPM++ interface
-   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler_type,
-         presolve ? PRESOLVER_STOCH : PRESOLVER_NONE);
+   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? MehrotraHeuristic::PRIMAL_DUAL : MehrotraHeuristic::PRIMAL, MPI_COMM_WORLD, scaler_type,
+         presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
 
    if (gmsRank == 0) {
       std::cout << "PIPSIPMppInterface created\n";

@@ -6,10 +6,11 @@
  */
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+
 #include "InteriorPointMethod.hpp"
 #include "PIPSIPMppInterface.hpp"
 #include "gmspips_reader.hpp"
-
+#include "PIPSIPMppOptions.h"
 #include "utilities.hpp"
 
 #include <memory>
@@ -69,7 +70,7 @@ ScenarioTests::solveInstance(const std::string& path_instance, size_t n_blocks, 
 
    double result = std::numeric_limits<double>::infinity();
 
-   PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_step ? PRIMAL_DUAL : PRIMAL, MPI_COMM_WORLD, scaler, presolver);
+   PIPSIPMppInterface pipsIpm(tree.get(), primal_dual_step ? MehrotraHeuristic::PRIMAL_DUAL : MehrotraHeuristic::PRIMAL, MPI_COMM_WORLD, scaler, presolver);
    try {
       pipsIpm.run();
       result = pipsIpm.getObjective();
@@ -91,7 +92,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeo) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_GEO_STOCH, true);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_GEO_STOCH, true);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };
@@ -107,7 +108,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepScaleGeoPresolve) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH, true);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, true);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };
@@ -122,7 +123,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStep) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE, true);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, true);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };
@@ -137,7 +138,7 @@ TEST_P(ScenarioTests, TestGamssmallPrimalDualStepPresolve) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE, true);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, true);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };
@@ -152,7 +153,7 @@ TEST_P(ScenarioTests, TestGamssmallNoSettings) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_NONE, SCALER_NONE, false);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_NONE, ScalerType::SCALER_NONE, false);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };
@@ -167,7 +168,7 @@ TEST_P(ScenarioTests, TestGamssmallPresolve) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_NONE, false);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_NONE, false);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };
@@ -182,7 +183,7 @@ TEST_P(ScenarioTests, TestGamssmallScaleGeoPresolve) {
    if (static_cast<size_t>(world_size) >= n_blocks)
       GTEST_SKIP();
 
-   const double result_solve = solveInstance(root + problem_paths, n_blocks, PRESOLVER_STOCH, SCALER_GEO_STOCH, false);
+   const double result_solve = solveInstance(root + problem_paths, n_blocks, PresolverType::PRESOLVER_STOCH, ScalerType::SCALER_GEO_STOCH, false);
 
    EXPECT_NEAR(result, result_solve, solution_tol) << " while solving " << problem_paths;
 };

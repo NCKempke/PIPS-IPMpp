@@ -9,7 +9,6 @@
 #define PIPS_IPM_CORE_QPPREPROCESS_QPPRESOLVER_H_
 
 #include "Presolver.h"
-#include "pipsport.h"
 
 /**  * @defgroup QpPreprocess
  *

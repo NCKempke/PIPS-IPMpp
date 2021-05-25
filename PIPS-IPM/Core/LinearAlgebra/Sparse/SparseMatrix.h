@@ -5,14 +5,15 @@
 #ifndef SPARSEMATRIX_H
 #define SPARSEMATRIX_H
 
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "AbstractMatrix.h"
+#include "../Abstract/Vector.hpp"
+#include "../Abstract/AbstractMatrix.h"
+
+#include "../Dense/SimpleVector.h"
+
 #include "SparseStorage.h"
 #include "SparseStorageDynamic.h"
-#include "SimpleVector.h"
+
 #include <vector>
-#include "pipsport.h"
 
 /** Represents sparse non-symmetric, possibly non-square matrices stored in
  *  row-major Harwell-Boeing format.

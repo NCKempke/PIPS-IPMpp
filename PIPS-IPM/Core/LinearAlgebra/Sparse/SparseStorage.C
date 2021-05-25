@@ -2,13 +2,15 @@
  * Authors: E. Michael Gertz, Stephen J. Wright                       *
  * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
 
-#include <cmath>
-#include <cstring>
-#include <cassert>
 #include "SparseStorage.h"
 #include "Vector.hpp"
 #include "SimpleVector.h"
 #include "pipsdef.h"
+#include "sort.h"
+
+#include <cmath>
+#include <cstring>
+#include <cassert>
 #include <limits>
 #include <fstream>
 #include <string>
@@ -927,9 +929,6 @@ void SparseStorage::multMatSymUpper(double beta, SparseStorage& y, double alpha,
       assert(c_y != krowM_y[yrow + 1]);
    }
 }
-
-// TODO : ugly
-void doubleLexSort(int first[], int n, int second[], double data[]);
 
 void SparseStorage::symmetrize(int& info) {
    int i, k, ku;

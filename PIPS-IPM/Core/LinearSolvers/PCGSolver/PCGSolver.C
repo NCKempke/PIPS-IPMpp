@@ -11,23 +11,18 @@ PCGSolver::PCGSolver(MatTimesVec* H_in, MatTimesVec* P_in, MatTimesVec* At_in, i
    maxit = 10;
    iter = -1;
    flag = -1;
-   tmpVec1 = tmpVec2 = tmpVec3 = tmpVec4 = tmpVec5 = tmpVec6 = nullptr;
    At = At_in;
 };
 
 PCGSolver::~PCGSolver() {
-   if (tmpVec1)
-      delete[] tmpVec1;
-   if (tmpVec2)
-      delete[] tmpVec2;
-   if (tmpVec3)
-      delete[] tmpVec3;
-   if (tmpVec4)
-      delete[] tmpVec4;
-   if (tmpVec5)
-      delete[] tmpVec5;
-   if (tmpVec6)
-      delete[] tmpVec6;
+
+   delete[] tmpVec1;
+
+   delete[] tmpVec2;
+   delete[] tmpVec3;
+   delete[] tmpVec4;
+   delete[] tmpVec5;
+   delete[] tmpVec6;
 }
 
 void PCGSolver::solve(Vector<double>& rhs_) {
@@ -35,7 +30,7 @@ void PCGSolver::solve(Vector<double>& rhs_) {
 }
 
 void PCGSolver::solvefull(Vector<double>& rhs_) {
-   SimpleVector<double>& b = dynamic_cast<SimpleVector<double>&>(rhs_);
+   auto& b = dynamic_cast<SimpleVector<double>&>(rhs_);
    assert(n + m == b.length());
 
    int flag, imin;
@@ -43,7 +38,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
    double normr, normr_act, normrmin;
    double alpha, beta, rg, pHp;
 
-   double n2b = b.twonorm();
+   double n2b = b.two_norm();
    double tolb = n2b * tol;
 
    if (tmpVec1 == nullptr)
@@ -99,7 +94,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
    p.copyFrom(g);
    p.negate();
 
-   normr = rx.twonorm();
+   normr = rx.two_norm();
    rg = rx.dotProductWith(g);
 
    xmin.copyFrom(x);
@@ -142,7 +137,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
       x.axpy(alpha, p);
       rx.axpy(alpha, Hp);
 
-      normr = rx.twonorm();
+      normr = rx.two_norm();
       ///////////////////////////////////////
       //convergence tests
       ///////////////////////////////////////
@@ -151,7 +146,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
          SimpleVector<double> rx_act(&auxnm[0], n);
          rx_act.copyFromArray(&b[0]);
          applyA(-1.0, rx_act, 1.0, x);
-         normr_act = rx_act.twonorm();
+         normr_act = rx_act.two_norm();
 
          //if(normr_act/n2b<tolb) { flag=0; break; }
          {
@@ -225,7 +220,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
       SimpleVector<double> rx(&auxnm[0], n);
       rx.copyFromArray(&b[0]);
       applyA(1.0, rx, -1.0, x);
-      normr_act = rx.twonorm();
+      normr_act = rx.two_norm();
 
       for (int i = 0; i < n; i++)
          b[i] = x[i];
@@ -234,7 +229,7 @@ void PCGSolver::solvefull(Vector<double>& rhs_) {
 
       if (print_level >= 1) {
          printf("Projected CG did not NOT converged after %d iters. The solution from iter %d was returned.\n", ii, imin);
-         printf("\t - Error code %d\n\t - Act res=%g\n\t - Rel res=%g %g\n\n", flag, normr_act, normrmin);
+         printf("\t - Error code %d\n\t - Act res=%g\n\t - Rel res=%g\n\n", flag, normr_act, normrmin);
       }
 
    }

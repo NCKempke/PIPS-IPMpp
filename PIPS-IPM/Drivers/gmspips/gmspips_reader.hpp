@@ -10,8 +10,9 @@
 #define PIPS_IPM_DRIVERS_GMSPIPS_GMSPIPSREADER_HPP_
 
 #include <string>
-
+#include <cassert>
 #include "pipsdef.h"
+
 #include "gmspipsio.h"
 #include "DistributedInputTree.h"
 
@@ -23,7 +24,7 @@ public:
    DistributedInputTree* read_problem();
 
 protected:
-   gmspips_reader() {};
+   gmspips_reader() = default;
 
 
    std::vector<GMSPIPSBlockData_t*> blocks;

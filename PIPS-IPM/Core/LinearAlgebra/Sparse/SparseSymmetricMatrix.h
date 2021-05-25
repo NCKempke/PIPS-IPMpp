@@ -5,10 +5,8 @@
 #ifndef SPARSESYMMATRIX_H
 #define SPARSESYMMATRIX_H
 
-#include "AbstractMatrix.h"
-#include "SparseStorage.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
+#include "../Abstract/AbstractMatrix.h"
+#include "./SparseStorage.h"
 
 class SparseMatrix;
 

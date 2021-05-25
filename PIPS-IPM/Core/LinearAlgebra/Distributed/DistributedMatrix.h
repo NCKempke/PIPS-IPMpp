@@ -8,7 +8,6 @@
 #include "StripMatrix.h"
 #include "DistributedTree.h"
 
-#include "pipsport.h"
 #include "mpi.h"
 
 #include <vector>

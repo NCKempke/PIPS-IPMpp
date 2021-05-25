@@ -17,6 +17,7 @@
  **/
 
 #include <cassert>
+#include "./SmartPointer.h"
 
 /**
  * A base class for classes that support reference-count 

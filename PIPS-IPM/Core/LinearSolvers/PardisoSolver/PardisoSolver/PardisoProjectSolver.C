@@ -6,9 +6,6 @@
  */
 
 #include "PardisoProjectSolver.h"
-#include "pipsdef.h"
-
-#include "mpi.h"
 
 extern "C" void pardisoinit(void*, const int*, int*, int*, double*, int*);
 extern "C" void

@@ -9,11 +9,8 @@
 #define PIPS_IPM_CORE_QPSTOCH_STOCHOPTIONS_H_
 
 #include "Options.h"
-#include "pipsport.h"
 
-#include <cassert>
 #include <vector>
-#include <ostream>
 
 /**
  * The getInstanceMethod must be specified in this BaseClass.

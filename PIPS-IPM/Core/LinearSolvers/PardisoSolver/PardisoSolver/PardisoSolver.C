@@ -6,12 +6,8 @@
 #include <algorithm>
 
 #include "PardisoSolver.h"
-#include "SparseStorage.h"
-#include "SparseSymmetricMatrix.h"
-#include "SimpleVector.h"
-#include "DenseMatrix.h"
-#include "pipsdef.h"
-#include <cstdlib>
+#include "../../../LinearAlgebra/Dense/SimpleVector.h"
+#include "../../../LinearAlgebra/Dense/DenseMatrix.h"
 
 #include "mpi.h"
 

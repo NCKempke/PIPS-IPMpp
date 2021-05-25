@@ -2,7 +2,6 @@
 #define DISTRIBUTEDDUMMYLINEARSYSTEM_H
 
 #include "DistributedLinearSystem.h"
-#include "pipsport.h"
 
 /** 
  * DUMMY Linear system class

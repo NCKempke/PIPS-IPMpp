@@ -4,7 +4,6 @@
 #include "DoubleLinearSolver.h"
 #include "AbstractMatrix.h"
 #include "SimpleVector.h"
-#include "pipsport.h"
 
 class MatTimesVec;
 
@@ -19,7 +18,7 @@ public:
     */
    CGSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2 = nullptr);
 
-   virtual ~CGSolver();
+   ~CGSolver() override;
 
    /** version of the main solve routine that takes argument as an
     * Vector<double>
@@ -27,17 +26,21 @@ public:
     * @param drhs on input contains the right-hand side; on output
     * contains the solution
     */
+    using DoubleLinearSolver::solve;
    void solve(Vector<double>& rhs);
 
 protected:
-   CGSolver() {};
+   double tol{};
+   double iter{};
+   int maxit{};
+   int flag{};
 
-   double tol;
-   double iter;
-   int maxit;
-   int flag;
-
-   double* tmpVec1, * tmpVec2, * tmpVec3, * tmpVec4, * tmpVec5, * tmpVec6;
+   double* tmpVec1{};
+   double* tmpVec2{};
+   double* tmpVec3{};
+   double* tmpVec4{};
+   double* tmpVec5{};
+   double* tmpVec6{};
    //int firstSolve;
 };
 

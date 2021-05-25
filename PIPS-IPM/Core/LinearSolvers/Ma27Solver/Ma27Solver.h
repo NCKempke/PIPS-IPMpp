@@ -5,9 +5,11 @@
 #ifndef MA27LINSYS_H
 #define MA27LINSYS_H
 
-#include "DoubleLinearSolver.h"
-#include "Vector.hpp"
-#include "SparseSymmetricMatrix.h"
+#include "../DoubleLinearSolver.h"
+#include "../Base/SmartPointer.h"
+
+#include "../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
+#include "../LinearAlgebra/Dense/SimpleVector.h"
 
 #include <vector>
 #include <string>

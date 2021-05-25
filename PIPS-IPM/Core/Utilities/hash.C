@@ -16,7 +16,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include "pipsport.h"
 
 // modified 5/21/04 based on the new primes in PCx
 /* 2015. Modified by Feng Qiang to support C++11*/

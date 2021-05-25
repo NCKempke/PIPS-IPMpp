@@ -12,6 +12,7 @@
 #include <cstring>
 #include <iostream>
 #include <utility>
+
 #include "Vector.hpp"
 
 class DoubleLinearSolver;

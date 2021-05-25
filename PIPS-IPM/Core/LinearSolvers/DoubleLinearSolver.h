@@ -5,9 +5,11 @@
 #ifndef DOUBLELINEARSOLVER_H
 #define DOUBLELINEARSOLVER_H
 
-#include "Vector.hpp"
-#include "AbstractMatrix.h"
-#include "pipsport.h"
+#include <utility>
+#include <cassert>
+
+#include "../LinearAlgebra/Abstract/Vector.hpp"
+#include "../LinearAlgebra/Abstract/AbstractMatrix.h"
 
 /**
  * @defgroup LinearSolvers

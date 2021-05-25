@@ -8,8 +8,8 @@
 #ifndef PIPS_IPM_CORE_ABSTRACT_SCALER_H_
 #define PIPS_IPM_CORE_ABSTRACT_SCALER_H_
 
-#include "Vector.hpp"
-#include "pipsport.h"
+template<typename name>
+class Vector;
 
 class Problem;
 

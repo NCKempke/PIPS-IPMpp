@@ -9,12 +9,7 @@
 #define PIPS_IPM_CORE_LINEARSOLVERS_MA27SOLVER_MA27SOLVERROOT_H_
 
 #include "Ma27Solver.h"
-#include "DoubleLinearSolver.h"
-#include "Vector.hpp"
-#include "SmartPointer.h"
-#include "pipsport.h"
 #include "mpi.h"
-
 
 /** implements linear solver class for root nodes that uses the MA57 solver
  */

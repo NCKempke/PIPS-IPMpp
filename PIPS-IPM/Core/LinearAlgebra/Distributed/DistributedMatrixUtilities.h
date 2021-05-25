@@ -10,7 +10,6 @@
 #include "SparseMatrix.h"
 #include "DistributedMatrix.h"
 #include "SystemType.h"
-#include "pipsport.h"
 
 #include <vector>
 

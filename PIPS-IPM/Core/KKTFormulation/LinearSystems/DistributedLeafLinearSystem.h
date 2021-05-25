@@ -12,8 +12,6 @@
 #include "SparseSymmetricMatrix.h"
 #include "SparseMatrix.h"
 
-#include "pipsport.h"
-
 #include "omp.h"
 
 /** This class solves the linear system corresponding to a leaf node.

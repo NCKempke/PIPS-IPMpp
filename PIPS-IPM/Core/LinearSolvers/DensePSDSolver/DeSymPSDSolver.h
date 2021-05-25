@@ -8,11 +8,10 @@
 #define DESYMPSDSOLVER_H
 
 #include "DoubleLinearSolver.h"
-#include "DenseSymMatrixHandle.h"
 #include "Vector.hpp"
 #include "SmartPointer.h"
+#include "DenseSymmetricMatrix.h"
 #include "DenseMatrix.h"
-#include "pipsport.h"
 
 /** A linear solver for dense, symmetric positive-definite systems.
  *  @ingroup DenseLinearAlgebra

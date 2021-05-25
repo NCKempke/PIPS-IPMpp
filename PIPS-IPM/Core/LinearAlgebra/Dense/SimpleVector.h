@@ -5,8 +5,7 @@
 #ifndef SIMPLEVECTOR
 #define SIMPLEVECTOR
 
-#include "Vector.hpp"
-#include "pipsdef.h"
+#include "../Abstract/Vector.hpp"
 
 #include <vector>
 
@@ -50,7 +49,8 @@ public:
    /* copy vector entries as well */
    Vector<T>* cloneFull() const override;
 
-   ~SimpleVector() override;
+   // this virtual AND override need to stay - Intel's icpc has a bug in its compiler triggering warnings if either is deleted...
+   virtual ~SimpleVector() override;
 
    void copyIntoArray(T v[]) const override;
    void copyFromArray(const T v[]) override;

@@ -5,8 +5,8 @@
 #ifndef DENSEDOUBLEMATRIX_H
 #define DENSEDOUBLEMATRIX_H
 
-#include "AbstractMatrix.h"
-#include "Vector.hpp"
+#include "../Abstract/AbstractMatrix.h"
+#include "../Abstract/Vector.hpp"
 
 class SparseStorage;
 

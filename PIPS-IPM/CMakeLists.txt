@@ -1,38 +1,14 @@
 #add_definitions(-DTIMING -DSTOCH_TESTING) # timing output
-include_directories(
-        Core/Base
-        Core/Globalization
-        Core/InteriorPointMethod
-        Core/LinearAlgebra/Sparse
-        Core/LinearAlgebra/Dense
-        Core/LinearAlgebra/Distributed
-        Core/LinearSolvers/Ma27Solver
-        Core/LinearSolvers/Ma57Solver
-        Core/LinearSolvers/Mc30Scaler
-        Core/LinearSolvers/Preconditioners
-        Core/LinearSolvers/PardisoSolver/PardisoSolver
-        Core/LinearSolvers/PardisoSolver/PardisoIndefSolver
-        Core/LinearSolvers/PardisoSolver/PardisoSchurSolver
-        Core/LinearSolvers/BiCGStabSolver
-        Core/LinearSystems
-        Core/Options
-        Core/Problems
-        Core/Preprocessing
-        Core/Interface
-        Core/Readers
-        Core/Utilities
-        Core/Vector
-)
-
-if (HAVE_MUMPS)
-    include_directories(Core/LinearSolvers/MumpsSolver)
-endif (HAVE_MUMPS)
 
 add_subdirectory(Core)
 
+set(includes_for_interface Core/Preprocessing Core/Interface Core/InteriorPointMethod Core/Utilities
+        Core/Base Core/Options )
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}")
 
 add_executable(pipsipmCallbackExample Drivers/callbackExample.cpp)
+
+target_include_directories(pipsipmCallbackExample PRIVATE ${includes_for_interface})
 target_compile_options(pipsipmCallbackExample PRIVATE ${OpenMP_CXX_FLAGS})
 target_link_libraries(pipsipmCallbackExample
         PRIVATE pips-ipmpp
@@ -154,6 +130,7 @@ target_link_libraries(gmspipsio
 
 ############## gmspips ##############
 add_executable(gmspips Drivers/gmspips/gmspips.cpp)
+target_include_directories(gmspips PRIVATE ${includes_for_interface})
 
 target_compile_options(gmspips
         PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wextra>"
@@ -185,6 +162,7 @@ target_link_libraries(gmschk
 ########### gmpipsreader ###########
 add_library(gmspips_reader Drivers/gmspips/gmspips_reader.cpp)
 
+target_include_directories(gmspips_reader PRIVATE Core/Readers/Distributed Core/Utilities)
 target_link_libraries(gmspips_reader
         PRIVATE gmspipsio
         PRIVATE pips-ipmpp

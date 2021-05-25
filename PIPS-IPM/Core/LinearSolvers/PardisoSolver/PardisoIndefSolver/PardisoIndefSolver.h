@@ -9,12 +9,10 @@
 #define _PARDISOINDEFSOLVER_H_
 
 #include <memory>
-#include "DoubleLinearSolver.h"
-#include "DenseSymMatrixHandle.h"
-#include "DenseSymmetricMatrix.h"
-#include "SparseSymmetricMatrix.h"
-#include "DenseStorage.h"
-#include "pipsport.h"
+#include "../../DoubleLinearSolver.h"
+#include "../../../LinearAlgebra/Dense/SimpleVector.h"
+#include "../../../LinearAlgebra/Dense/DenseSymmetricMatrix.h"
+#include "../../../LinearAlgebra/Sparse/SparseSymmetricMatrix.h"
 
 /* root pardiso solver */
 class PardisoIndefSolver : public DoubleLinearSolver {

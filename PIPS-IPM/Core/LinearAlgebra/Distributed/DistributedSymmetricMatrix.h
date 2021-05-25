@@ -5,7 +5,6 @@
 #include "SparseSymmetricMatrix.h"
 #include "SparseMatrix.h"
 #include "StripMatrix.h"
-#include "pipsport.h"
 
 #include <vector>
 #include <iostream>

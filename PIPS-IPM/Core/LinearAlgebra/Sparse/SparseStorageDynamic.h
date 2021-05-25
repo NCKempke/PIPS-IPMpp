@@ -8,9 +8,9 @@
 #ifndef PIPS_IPM_CORE_SPARSELINEARALGEBRA_SPARSESTORAGEDYNAMIC_H_
 #define PIPS_IPM_CORE_SPARSELINEARALGEBRA_SPARSESTORAGEDYNAMIC_H_
 
-#include "pipsport.h"
-#include "AbstractMatrix.h"
+#include "../Abstract/AbstractMatrix.h"
 #include "SparseStorage.h"
+
 #include <vector>
 
 typedef struct {

@@ -11,7 +11,6 @@
 #include "PIPSIPMppOptions.h"
 #include "DistributedTreeCallbacks.h"
 #include "pipschecks.h"
-#include "pipsport.h"
 
 #include <vector>
 #include <memory>

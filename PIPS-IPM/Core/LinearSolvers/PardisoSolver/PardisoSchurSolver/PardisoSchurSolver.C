@@ -2,12 +2,8 @@
  * Authors: Cosmin G. Petra, Miles Lubin
  * (C) 2012 Argonne National Laboratory, see documentation for copyright
  */
-#include <iostream>
 #include "PardisoSchurSolver.h"
-#include "SparseSymmetricMatrix.h"
-#include "DenseMatrix.h"
-#include "PIPSIPMppOptions.h"
-#include "pipsdef.h"
+#include "../../../Options/PIPSIPMppOptions.h"
 #include <algorithm>
 
 #ifdef STOCH_TESTING

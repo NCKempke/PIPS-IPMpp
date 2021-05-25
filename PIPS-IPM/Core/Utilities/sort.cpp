@@ -1,13 +1,15 @@
-/* OOQP                                                               *
- * Authors: E. Michael Gertz, Stephen J. Wright                       *
- * (C) 2001 University of Chicago. See Copyright Notification in OOQP */
+//
+// Created by nils-christian on 25.05.21.
+//
 
+#include "sort.h"
 #include <climits>
 
 void doubleLexSort(int first[], int n, int second[], double data[]) {
    int fi, se, j, k, kinc, inc;
    double dtemp;
-   const int incs[] = {1, 5, 19, 41, 109, 209, 505, 929, 2161, 3905, 8929, 16001, INT_MAX};
+   const int incs[] = {1, 5, 19, 41, 109, 209, 505,
+      929, 2161, 3905, 8929, 16001, INT_MAX};
 
    for (k = 0; incs[k] <= n / 2; k++);
 
@@ -25,12 +27,13 @@ void doubleLexSort(int first[], int n, int second[], double data[]) {
          fi = first[k];
          se = second[k];
          for (j = k; j >= inc; j -= inc) {
-            if (fi < first[j - inc] || (fi == first[j - inc] && se < second[j - inc])) {
+            if (fi < first[j - inc] ||
+               (fi == first[j - inc] &&
+                  se < second[j - inc])) {
                data[j] = data[j - inc];
                first[j] = first[j - inc];
                second[j] = second[j - inc];
-            }
-            else {
+            } else {
                break;
             }
          }
@@ -40,3 +43,4 @@ void doubleLexSort(int first[], int n, int second[], double data[]) {
       }
    } // End loop over all increments
 }
+

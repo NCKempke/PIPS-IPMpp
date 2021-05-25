@@ -14,7 +14,6 @@
 #include "DistributedQP.hpp"
 #include "SystemType.h"
 #include "StochPostsolver.h"
-#include "pipsport.h"
 #include <vector>
 
 class StochPresolverBase {

@@ -8,7 +8,6 @@
 #ifndef PIPS_IPM_CORE_LINEARSOLVERS_PRECONDITIONERS_SCSPARSIFIER_H_
 #define PIPS_IPM_CORE_LINEARSOLVERS_PRECONDITIONERS_SCSPARSIFIER_H_
 
-#include "pipsport.h"
 #include "DistributedQP.hpp"
 #include <vector>
 
