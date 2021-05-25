@@ -203,8 +203,8 @@ void LinearSystem::factorize(Variables& vars) {
 
    put_barrier_parameter(vars.mu());
 
-   computeDiagonals(*vars->slack_lower_bound_gap, *vars->slack_lower_bound_gap_dual, *vars->slack_upper_bound_gap, *vars->slack_upper_bound_gap_dual,
-         *vars->primal_lower_bound_gap, *vars->primal_lower_bound_gap_dual, *vars->primal_upper_bound_gap, *vars->primal_upper_bound_gap_dual);
+   computeDiagonals(*vars.slack_lower_bound_gap, *vars.slack_lower_bound_gap_dual, *vars.slack_upper_bound_gap, *vars.slack_upper_bound_gap_dual,
+         *vars.primal_lower_bound_gap, *vars.primal_lower_bound_gap_dual, *vars.primal_upper_bound_gap, *vars.primal_upper_bound_gap_dual);
 
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL_TESTING")) {
       std::cout << "Setting diags to 1.0 for Hierarchical debugging\n";
