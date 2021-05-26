@@ -143,8 +143,7 @@ protected:
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
-   TerminationStatus
-   compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu);
+   TerminationStatus compute_status(const Residuals& residuals, int iteration, double mu);
    void set_problem_norm(const Problem& problem);
    std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void notify_from_subject() override;

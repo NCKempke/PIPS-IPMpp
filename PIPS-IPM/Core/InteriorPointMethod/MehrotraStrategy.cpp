@@ -113,7 +113,7 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
    assert(!PIPSisZero(mu));
 
    //  termination test
-   TerminationStatus status_code = this->compute_status(&problem, &iterate, &residuals, iteration, mu);
+   TerminationStatus status_code = this->compute_status(residuals, iteration, mu);
    if (status_code == NOT_FINISHED) {
       if (print_level >= 10) {
          this->print_statistics(&problem, &iterate, &residuals, dnorm, sigma, iteration, mu, status_code, 0);
@@ -211,7 +211,7 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
 
    //  termination test:
    double mu = iterate.mu();
-   TerminationStatus status_code = this->compute_status(&problem, &iterate, &residuals, iteration, mu);
+   TerminationStatus status_code = this->compute_status(residuals, iteration, mu);
 
    if (status_code == NOT_FINISHED) {
       if (print_level >= 10) {
@@ -733,9 +733,9 @@ void MehrotraStrategy::set_BiCGStab_tolerance(int iteration) const {
 
    if (iteration == -1)
       pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
-   else if (iteration <= 4)
+   else if (iteration <= 3)
       pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-8);
-   else if (iteration <= 8)
+   else if (iteration <= 7)
       pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-9);
    else
       pipsipmpp_options::set_double_parameter("OUTER_BICG_TOL", 1e-10);
@@ -773,15 +773,15 @@ MehrotraStrategy::print_statistics(const Problem* problem, const Variables* iter
 }
 
 TerminationStatus
-MehrotraStrategy::compute_status(const Problem* data, const Variables* iterate /* iterate */, const Residuals* residuals, int iteration, double mu) {
+MehrotraStrategy::compute_status(const Residuals& residuals, int iteration, double mu) {
    const int myrank = PIPS_MPIgetRank();
    TerminationStatus status = NOT_FINISHED;
 
-   const std::pair<double, double> gap_norm = compute_unscaled_gap_and_residual_norm(*residuals);
+   const std::pair<double, double> gap_norm = compute_unscaled_gap_and_residual_norm(residuals);
    const double gap = gap_norm.first;
    const double rnorm = gap_norm.second;
 
-   int index = std::min(std::max(0, iteration - 1), max_iterations - 1);
+   int index = std::min(std::max(0, iteration), max_iterations - 1);
 
    // store the historical record
    mu_history[index] = mu;
@@ -797,7 +797,7 @@ MehrotraStrategy::compute_status(const Problem* data, const Variables* iterate /
    else
       phi_min_history[index] = phi;
 
-   if (iteration >= max_iterations)
+   if (iteration >= max_iterations - 1)
       status = MAX_ITS_EXCEEDED;
    else if (mu <= mutol && rnorm <= artol * dnorm_orig)
       status = SUCCESSFUL_TERMINATION;

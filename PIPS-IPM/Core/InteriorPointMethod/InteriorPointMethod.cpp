@@ -29,7 +29,7 @@ TerminationStatus InteriorPointMethod::solve(Problem& problem, Variables& iterat
 
    TerminationStatus status_code;
    bool termination = false;
-   int iteration = 0;
+   int iteration = -1;
    while (!termination) {
       iteration++;
       // run Gondzio's multiple corrector scheme
