@@ -135,8 +135,6 @@ protected:
    calculate_alpha_pd_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_primal,
          double alpha_dual);
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
-   void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step, double alpha) const;
-   void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step, double alpha_primal, double alpha_dual) const;
    static double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) ;
    static bool decrease_preconditioner_impact(AbstractLinearSystem* sys) ;
    void adjust_limit_gondzio_correctors();
