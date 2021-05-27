@@ -132,7 +132,6 @@ void PardisoIndefSolver::matrixRebuild(const AbstractMatrix& matrixNew) {
    }
 }
 
-
 void PardisoIndefSolver::factorizeFromSparse(const SparseSymmetricMatrix& matrix_fortran) {
    assert(n == matrix_fortran.size());
    assert(matrix_fortran.getStorage().fortranIndexed());
