@@ -23,14 +23,14 @@
 #include "StochPresolverSingletonColumns.h"
 #include "StochPresolverParallelRows.h"
 
-StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr) : QpPresolver(prob, postsolver),
+StochPresolver::StochPresolver(DistributedTree* tree_, const Problem& prob, Postsolver* postsolver = nullptr) : Presolver(prob, postsolver),
       my_rank(PIPS_MPIgetRank(MPI_COMM_WORLD)), limit_max_rounds(pipsipmpp_options::get_int_parameter("PRESOLVE_MAX_ROUNDS")),
       reset_free_variables_after_presolve(pipsipmpp_options::get_bool_parameter("PRESOLVE_RESET_FREE_VARIABLES")),
       print_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_PRINT_PROBLEM")),
       write_presolved_problem(pipsipmpp_options::get_bool_parameter("PRESOLVE_WRITE_PRESOLVED_PROBLEM_MPS")),
       verbosity(pipsipmpp_options::get_int_parameter("PRESOLVE_VERBOSITY")), tree(tree_),
-      preDistributedQP(dynamic_cast<const DistributedQP&>(origprob), dynamic_cast<StochPostsolver*>(postsolver)) {
-   const auto& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
+      preDistributedQP(dynamic_cast<const DistributedQP&>(original_problem), dynamic_cast<StochPostsolver*>(postsolver)) {
+   const auto& sorigprob = dynamic_cast<const DistributedQP&>(original_problem);
 
    if (pipsipmpp_options::get_bool_parameter("PRESOLVE_SINGLETON_ROWS"))
       presolvers.emplace_back(std::make_unique<StochPresolverSingletonRows>(preDistributedQP, sorigprob));
@@ -53,7 +53,7 @@ Problem* StochPresolver::presolve() {
       std::cout << "start stoch presolving\n";
    preDistributedQP.printRowColStats();
 
-   const auto& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
+   const auto& sorigprob = dynamic_cast<const DistributedQP&>(original_problem);
    sorigprob.printRanges();
 
    assert(sorigprob.isRootNodeInSync());
@@ -152,7 +152,7 @@ void StochPresolver::resetFreeVariables() {
    if (my_rank == 0)
       std::cout << "Resetting bounds found in bound strengthening\n";
 
-   const auto& sorigprob = dynamic_cast<const DistributedQP&>(origprob);
+   const auto& sorigprob = dynamic_cast<const DistributedQP&>(original_problem);
 
    preDistributedQP.resetOriginallyFreeVarsBounds(sorigprob);
 }

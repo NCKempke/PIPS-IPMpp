@@ -5,7 +5,7 @@ target_sources(pips-ipmpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/GeoStochScaler.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PresolveData.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/QpPostsolver.C
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/QpPresolver.C
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Presolver.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Scaler.cpp
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochColumnStorage.C
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StochPostsolver.C
