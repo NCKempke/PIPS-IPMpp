@@ -42,6 +42,7 @@ public:
    double compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step);
    virtual void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) = 0;
    virtual void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const = 0;
+   virtual std::pair<double, double> get_step_lengths() const = 0;
    void set_BiCGStab_tolerance(int iteration) const;
    void register_observer(AbstractLinearSystem* linear_system);
    ~MehrotraStrategy() override;
@@ -165,6 +166,7 @@ public:
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
    void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
+   std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
@@ -187,6 +189,7 @@ public:
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
    void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
+   std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
