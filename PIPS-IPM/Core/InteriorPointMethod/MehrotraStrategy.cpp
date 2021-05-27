@@ -168,8 +168,10 @@ PrimalMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Problem
       pure_centering_step = false;
       numerical_troubles = false;
 
-      // take the step (at last!)
-      this->take_step(iterate, step);
+      // figure out step lengths that produce a sufficient decrease
+      auto [initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
+      this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
+      //this->take_step(iterate, step);
       factory.iterate_ended();
    }
    else { // termination
@@ -269,8 +271,11 @@ PrimalDualMehrotraStrategy::corrector_predictor(DistributedFactory& factory, Pro
             return status_code;
       }
 
+      // figure out step lengths that produce a sufficient decrease
+      auto [initial_primal_step_length, initial_dual_step_length] = this->get_step_lengths();
+      this->filter_line_search.compute_acceptable_iterate(problem, iterate, step, residuals, initial_primal_step_length, initial_dual_step_length);
       // actually take the step and calculate the new mu
-      this->take_step(iterate, step);
+      //this->take_step(iterate, step);
 
       pure_centering_step = false;
       numerical_troubles = false;
@@ -1060,6 +1065,13 @@ void MehrotraStrategy::register_observer(AbstractLinearSystem* linear_system) {
    set_subject(dynamic_cast<Subject*>(linear_system));
 }
 
+std::pair<double, double> PrimalMehrotraStrategy::get_step_lengths() const {
+   return std::make_pair(this->primal_step_length, this->primal_step_length);
+}
+
+std::pair<double, double> PrimalDualMehrotraStrategy::get_step_lengths() const {
+   return std::make_pair(this->primal_step_length, this->dual_step_length);
+}
 
 MehrotraStrategy::~MehrotraStrategy() {
    delete[] mu_history;
