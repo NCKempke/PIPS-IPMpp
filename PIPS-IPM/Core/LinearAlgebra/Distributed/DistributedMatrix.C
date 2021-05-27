@@ -1368,6 +1368,8 @@ bool DistributedMatrix::isRootNodeInSync() const {
       return in_sync;
 
    const int my_rank = PIPS_MPIgetRank(mpiComm);
+   const auto& bmat_sp = dynamic_cast<const SparseMatrix&>(*Bmat);
+   const auto& blmat_sp = dynamic_cast<const SparseMatrix&>(*Blmat);
 
    /* since we are in root node Amat should be empty */
    assert(Amat->numberOfNonZeros() == 0);
