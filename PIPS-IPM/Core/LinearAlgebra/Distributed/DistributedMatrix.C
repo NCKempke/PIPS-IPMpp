@@ -1369,15 +1369,9 @@ bool DistributedMatrix::isRootNodeInSync() const {
 
    const int my_rank = PIPS_MPIgetRank(mpiComm);
 
-   const auto& amat_sp = dynamic_cast<const SparseMatrix&>(*Amat);
-   const auto& bmat_sp = dynamic_cast<const SparseMatrix&>(*Bmat);
-   const auto& blmat_sp = dynamic_cast<const SparseMatrix&>(*Blmat);
-
    /* since we are in root node Amat should be empty */
-   assert(amat_sp.numberOfNonZeros() == 0);
-//   assert(amat_sp.n_columns() == 0);
-//   assert(amat_sp.n_rows() == -1);
-//
+   assert(Amat->numberOfNonZeros() == 0);
+
    /* static storage */
    const int lenght_entries_bmat = bmat_sp.getStorage().len;
    const int length_columns_bmat = bmat_sp.getStorage().len;

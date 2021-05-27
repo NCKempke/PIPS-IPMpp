@@ -26,11 +26,10 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
    SimpleVector<double> xhalf(n);       // half iterate of BiCG
    SimpleVector<double> p(n), paux(n);
    SimpleVector<double> v(n), t(n);
-   int flag;
+   int flag = -1;
    double imin;
    double n2b;                  //norm of b
-   double normr, normrmin;      //norm of the residual and norm of residual at min-resid iterate
-   double normr_act;
+   double normrmin;      //norm of the residual and norm of residual at min-resid iterate
    double tolb;                 //relative tolerance
    double rho, omega, alpha;
    int stag, maxmsteps, maxstagsteps, moresteps;
@@ -48,7 +47,8 @@ void BiCGStabSolver::solve(Vector<double>& rhs_) {
    r.copyFrom(b);
    applyA(1.0, r, -1.0, x);
    //applyA(x,r); r.axpy(-1.0, b); r.negate(); // residual r=b-Ax
-   normr = r.two_norm();
+   double normr = r.two_norm();
+   double normr_act = normr;
 
    if (normr < tolb) {
       //initial guess is good enough
