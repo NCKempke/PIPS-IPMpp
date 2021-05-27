@@ -35,6 +35,7 @@ void FilterLineSearch::compute_acceptable_iterate(Problem& problem, Variables& c
 
    while (!this->termination_(is_accepted)) {
       this->number_iterations++;
+      std::cout << "Line search current step lengths: " << primal_step_length << ", " << dual_step_length << "\n";
       // compute the trial iterate
       Variables trial_iterate(current_iterate);
       trial_iterate.saxpy_pd(direction, primal_step_length, dual_step_length);

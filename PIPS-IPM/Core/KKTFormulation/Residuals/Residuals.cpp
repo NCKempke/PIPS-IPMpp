@@ -18,7 +18,7 @@ Residuals::Residuals(std::unique_ptr<Vector<double>> rQ_, std::unique_ptr<Vector
    ixlow{std::move(ixlow_)}, nxlow{ixlow->number_nonzeros()},
    icupp{std::move(icupp_)}, mcupp{icupp->number_nonzeros()}, iclow{std::move(iclow_)}, mclow{iclow->number_nonzeros()},
    lagrangian_gradient{std::move(rQ_)},
-   rA{std::move(rA_)}, rC{std::move(rC_)}, rz{std::move(rz_)}, rv{std::move(rv_)},
+   equality_residuals{std::move(rA_)}, inequality_residuals{std::move(rC_)}, inequality_dual_residuals{std::move(rz_)}, rv{std::move(rv_)},
    rw{std::move(rw_)},
    rt{std::move(rt_)}, ru{std::move(ru_)}, rgamma{std::move(rgamma_)},
    rphi{std::move(rphi_)},
@@ -32,8 +32,8 @@ Residuals::Residuals(const Residuals& residuals) : mResidualNorm{residuals.mResi
    my{residuals.my}, mz{residuals.mz},
    ixupp{residuals.ixupp}, nxupp{residuals.nxupp}, ixlow{residuals.ixlow}, nxlow{residuals.nxlow},
    icupp{residuals.icupp}, mcupp{residuals.mcupp}, iclow{residuals.iclow}, mclow{residuals.mclow},
-   lagrangian_gradient{residuals.lagrangian_gradient->cloneFull()}, rA{residuals.rA->cloneFull()},
-   rC{residuals.rC->cloneFull()}, rz{residuals.rz->cloneFull()}, rv{residuals.rv->cloneFull()},
+   lagrangian_gradient{residuals.lagrangian_gradient->cloneFull()}, equality_residuals{residuals.equality_residuals->cloneFull()},
+   inequality_residuals{residuals.inequality_residuals->cloneFull()}, inequality_dual_residuals{residuals.inequality_dual_residuals->cloneFull()}, rv{residuals.rv->cloneFull()},
    rw{residuals.rw->cloneFull()},
    rt{residuals.rt->cloneFull()}, ru{residuals.ru->cloneFull()}, rgamma{residuals.rgamma->cloneFull()},
    rphi{residuals.rphi->cloneFull()},
@@ -59,94 +59,94 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
    const int myRank = PIPS_MPIgetRank();
 
    double norm = 0.0, gap = 0.0;
-   primal_objective = 0.0;
-   dual_objective = 0.0;
+   this->primal_objective = 0.0;
+   this->dual_objective = 0.0;
 
-   primal_objective = problem.objective_value(iterate);
+   this->primal_objective = problem.objective_value(iterate);
 
    /*** rQ = Qx + g - A^T y - C^T z - gamma + phi ***/
-   problem.objective_gradient(iterate, *lagrangian_gradient); // Qx + g
+   problem.objective_gradient(iterate, *this->lagrangian_gradient); // Qx + g
 
    // contribution calculate x^T (g + Qx) to duality gap */
-   gap = lagrangian_gradient->dotProductWith(*iterate.primals);
+   gap = this->lagrangian_gradient->dotProductWith(*iterate.primals);
 
-   problem.ATransmult(1.0, *lagrangian_gradient, -1.0, *iterate.equality_duals);
-   problem.CTransmult(1.0, *lagrangian_gradient, -1.0, *iterate.inequality_duals);
+   problem.ATransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.equality_duals);
+   problem.CTransmult(1.0, *this->lagrangian_gradient, -1.0, *iterate.inequality_duals);
 
    iterate.primal_lower_bound_gap_dual->selectNonZeros(*ixlow);
    iterate.primal_upper_bound_gap_dual->selectNonZeros(*ixupp);
    if (nxlow > 0)
-      lagrangian_gradient->axpy(-1.0, *iterate.primal_lower_bound_gap_dual);
+      this->lagrangian_gradient->axpy(-1.0, *iterate.primal_lower_bound_gap_dual);
    if (nxupp > 0)
-      lagrangian_gradient->axpy(1.0, *iterate.primal_upper_bound_gap_dual);
+      this->lagrangian_gradient->axpy(1.0, *iterate.primal_upper_bound_gap_dual);
 
-   norm = updateNormAndPrint(norm, *lagrangian_gradient, print_resids, "rQ");
+   norm = updateNormAndPrint(norm, *this->lagrangian_gradient, print_resids, "rQ");
 
    /*** rA = Ax - b ***/
-   problem.getbA(*rA);
-   problem.Amult(-1.0, *rA, 1.0, *iterate.primals);
+   problem.getbA(*this->equality_residuals);
+   problem.Amult(-1.0, *this->equality_residuals, 1.0, *iterate.primals);
 
-   norm = updateNormAndPrint(norm, *rA, print_resids, "rA");
+   norm = updateNormAndPrint(norm, *this->equality_residuals, print_resids, "rA");
 
    // contribution -d^T y to duality gap
    const double ba_y = problem.bA->dotProductWith(*iterate.equality_duals);
    gap -= ba_y;
-   dual_objective += ba_y;
+   this->dual_objective += ba_y;
 
    /*** rC = Cx - s ***/
-   rC->copyFrom(*iterate.slacks);
-   problem.Cmult(-1.0, *rC, 1.0, *iterate.primals);
+   this->inequality_residuals->copyFrom(*iterate.slacks);
+   problem.Cmult(-1.0, *this->inequality_residuals, 1.0, *iterate.primals);
 
-   norm = updateNormAndPrint(norm, *rC, print_resids, "rC");
+   norm = updateNormAndPrint(norm, *this->inequality_residuals, print_resids, "rC");
 
    /*** rz = z - lambda + pi ***/
-   rz->copyFrom(*iterate.inequality_duals);
+   this->inequality_dual_residuals->copyFrom(*iterate.inequality_duals);
 
    if (mclow > 0)
-      rz->axpy(-1.0, *iterate.slack_lower_bound_gap_dual);
+      this->inequality_dual_residuals->axpy(-1.0, *iterate.slack_lower_bound_gap_dual);
    if (mcupp > 0)
-      rz->axpy(1.0, *iterate.slack_upper_bound_gap_dual);
+      this->inequality_dual_residuals->axpy(1.0, *iterate.slack_upper_bound_gap_dual);
 
-   norm = updateNormAndPrint(norm, *rz, print_resids, "rz");
+   norm = updateNormAndPrint(norm, *this->inequality_dual_residuals, print_resids, "rz");
 
    if (mclow > 0) {
       /*** rt = s - d - t ***/
-      rt->copyFrom(*iterate.slacks);
-      rt->axpy(-1.0, problem.slowerBound());
-      rt->selectNonZeros(*iclow);
-      rt->axpy(-1.0, *iterate.slack_lower_bound_gap);
+      this->rt->copyFrom(*iterate.slacks);
+      this->rt->axpy(-1.0, problem.slowerBound());
+      this->rt->selectNonZeros(*iclow);
+      this->rt->axpy(-1.0, *iterate.slack_lower_bound_gap);
 
       // contribution - d^T lambda to duality gap
       const double bl_lambda = problem.bl->dotProductWith(*iterate.slack_lower_bound_gap_dual);
       gap -= bl_lambda;
       dual_objective += bl_lambda;
 
-      norm = updateNormAndPrint(norm, *rt, print_resids, "rt");
+      norm = updateNormAndPrint(norm, *this->rt, print_resids, "rt");
    }
 
    if (mcupp > 0) {
       /*** ru = s - f + u ***/
-      ru->copyFrom(*iterate.slacks);
-      ru->axpy(-1.0, problem.supperBound());
-      ru->selectNonZeros(*icupp);
-      ru->axpy(1.0, *iterate.slack_upper_bound_gap);
+      this->ru->copyFrom(*iterate.slacks);
+      this->ru->axpy(-1.0, problem.supperBound());
+      this->ru->selectNonZeros(*icupp);
+      this->ru->axpy(1.0, *iterate.slack_upper_bound_gap);
 
       // contribution - f^T pi to duality gap
       const double bu_pi = problem.bu->dotProductWith(*iterate.slack_upper_bound_gap_dual);
       gap += bu_pi;
       dual_objective -= bu_pi;
 
-      norm = updateNormAndPrint(norm, *ru, print_resids, "ru");
+      norm = updateNormAndPrint(norm, *this->ru, print_resids, "ru");
    }
 
    if (nxlow > 0) {
       /*** rv = x - lx - v ***/
-      rv->copyFrom(*iterate.primals);
-      rv->axpy(-1.0, problem.xlowerBound());
-      rv->selectNonZeros(*ixlow);
-      rv->axpy(-1.0, *iterate.primal_lower_bound_gap);
+      this->rv->copyFrom(*iterate.primals);
+      this->rv->axpy(-1.0, problem.xlowerBound());
+      this->rv->selectNonZeros(*ixlow);
+      this->rv->axpy(-1.0, *iterate.primal_lower_bound_gap);
 
-      norm = updateNormAndPrint(norm, *rv, print_resids, "rv");
+      norm = updateNormAndPrint(norm, *this->rv, print_resids, "rv");
       // contribution - lx^T gamma to duality gap
       const double blx_gamma = problem.blx->dotProductWith(*iterate.primal_lower_bound_gap_dual);
       gap -= blx_gamma;
@@ -156,12 +156,12 @@ void Residuals::evaluate(Problem& problem, Variables& iterate, bool print_resids
 
    if (nxupp > 0) {
       /*** rw = x - ux + w ***/
-      rw->copyFrom(*iterate.primals);
-      rw->axpy(-1.0, problem.xupperBound());
-      rw->selectNonZeros(*ixupp);
-      rw->axpy(1.0, *iterate.primal_upper_bound_gap);
+      this->rw->copyFrom(*iterate.primals);
+      this->rw->axpy(-1.0, problem.xupperBound());
+      this->rw->selectNonZeros(*ixupp);
+      this->rw->axpy(1.0, *iterate.primal_upper_bound_gap);
 
-      norm = updateNormAndPrint(norm, *rw, print_resids, "rw");
+      norm = updateNormAndPrint(norm, *this->rw, print_resids, "rw");
 
       // contribution + bu^T phi to duality gap
       const double bux_phi = problem.bux->dotProductWith(*iterate.primal_upper_bound_gap_dual);
@@ -186,11 +186,11 @@ double Residuals::recompute_residual_norm() {
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
-   componentNorm = rA->inf_norm();
+   componentNorm = equality_residuals->inf_norm();
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
-   componentNorm = rC->inf_norm();
+   componentNorm = inequality_residuals->inf_norm();
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
@@ -206,7 +206,7 @@ double Residuals::recompute_residual_norm() {
          mResidualNorm = componentNorm;
    }
 
-   componentNorm = rz->inf_norm();
+   componentNorm = inequality_dual_residuals->inf_norm();
    if (componentNorm > mResidualNorm)
       mResidualNorm = componentNorm;
 
@@ -264,9 +264,9 @@ void Residuals::clear_complementarity_residual() {
 
 void Residuals::clear_linear_residuals() {
    lagrangian_gradient->setToZero();
-   rA->setToZero();
-   rC->setToZero();
-   rz->setToZero();
+   equality_residuals->setToZero();
+   inequality_residuals->setToZero();
+   inequality_dual_residuals->setToZero();
    if (nxlow > 0)
       rv->setToZero();
    if (nxupp > 0)
@@ -337,10 +337,10 @@ void Residuals::copy(const Residuals& residuals) {
    iclow->copyFrom(*residuals.iclow);
 
    lagrangian_gradient->copyFrom(*residuals.lagrangian_gradient);
-   rA->copyFrom(*residuals.rA);
-   rC->copyFrom(*residuals.rC);
+   equality_residuals->copyFrom(*residuals.equality_residuals);
+   inequality_residuals->copyFrom(*residuals.inequality_residuals);
 
-   rz->copyFrom(*residuals.rz);
+   inequality_dual_residuals->copyFrom(*residuals.inequality_dual_residuals);
    rv->copyFrom(*residuals.rv);
    rw->copyFrom(*residuals.rw);
    rt->copyFrom(*residuals.rt);
@@ -360,21 +360,22 @@ void Residuals::writeToStream(std::ostream& out) {
    rA->writeToStream(out);printf("---------------------------\n");
    */
    printf("rC\n");
-   rC->writeToStream(out);
+   inequality_residuals->writeToStream(out);
    printf("---------------------------\n");
 
 
    printf("rz\n");
-   rz->writeToStream(out);
+   inequality_dual_residuals->writeToStream(out);
    printf("---------------------------\n");
 }
 
 double Residuals::constraint_violation() {
-   return rA->one_norm() + rC->one_norm();
+   return equality_residuals->one_norm() + inequality_residuals->one_norm();
 }
 
 double Residuals::optimality_measure(double mu) {
-   return this->lagrangian_gradient->inf_norm();// + mu;
+   //return this->lagrangian_gradient->inf_norm();// + mu;
+   return this->primal_objective;
 }
 
 double Residuals::feasibility_measure(double mu) {

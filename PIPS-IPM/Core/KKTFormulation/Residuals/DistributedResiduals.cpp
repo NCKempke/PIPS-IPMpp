@@ -46,10 +46,10 @@ DistributedResiduals::collapseHierarchicalStructure(const DistributedQP& data_hi
          VectorType::PRIMAL, empty_vec);
    }
 
-   dynamic_cast<DistributedVector<double>&>(*rA).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Y);
+   dynamic_cast<DistributedVector<double>&>(*equality_residuals).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Y);
 
-   dynamic_cast<DistributedVector<double>&>(*rC).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
-   dynamic_cast<DistributedVector<double>&>(*rz).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*inequality_residuals).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
+   dynamic_cast<DistributedVector<double>&>(*inequality_dual_residuals).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
 
    if (mcupp > 0) {
       dynamic_cast<DistributedVector<double>&>(*ru).collapseFromHierarchical(data_hier, *tree_hier, VectorType::DUAL_Z);
@@ -100,7 +100,7 @@ void DistributedResiduals::permuteVec0Entries(const std::vector<unsigned int>& p
 }
 
 void DistributedResiduals::permuteEqLinkingEntries(const std::vector<unsigned int>& perm) {
-   dynamic_cast<DistributedVector<double>&>(*rA).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*equality_residuals).permuteLinkingEntries(perm);
 }
 
 void DistributedResiduals::permuteIneqLinkingEntries(const std::vector<unsigned int>& perm, bool resids_only) {
@@ -109,8 +109,8 @@ void DistributedResiduals::permuteIneqLinkingEntries(const std::vector<unsigned 
       dynamic_cast<DistributedVector<double>&>(*icupp).permuteLinkingEntries(perm);
    }
 
-   dynamic_cast<DistributedVector<double>&>(*rC).permuteLinkingEntries(perm);
-   dynamic_cast<DistributedVector<double>&>(*rz).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*inequality_residuals).permuteLinkingEntries(perm);
+   dynamic_cast<DistributedVector<double>&>(*inequality_dual_residuals).permuteLinkingEntries(perm);
 
    if (mcupp > 0) {
       dynamic_cast<DistributedVector<double>&>(*ru).permuteLinkingEntries(perm);
@@ -131,17 +131,17 @@ bool DistributedResiduals::isRootNodeInSync() const {
          std::cout << "rQ not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*rC).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_residuals).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "rC not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*rA).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*equality_residuals).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "rA not in sync" << std::endl;
       in_sync = false;
    }
-   if (!dynamic_cast<const DistributedVector<double>&>(*rz).isRootNodeInSync()) {
+   if (!dynamic_cast<const DistributedVector<double>&>(*inequality_dual_residuals).isRootNodeInSync()) {
       if (my_rank == 0)
          std::cout << "rz not in sync" << std::endl;
       in_sync = false;
