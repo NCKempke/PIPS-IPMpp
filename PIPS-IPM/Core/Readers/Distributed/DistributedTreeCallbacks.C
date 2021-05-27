@@ -44,16 +44,6 @@ DistributedTreeCallbacks::DistributedTreeCallbacks(DistributedInputTree* inputTr
       children.push_back(new DistributedTreeCallbacks(it));
 }
 
-DistributedTreeCallbacks::DistributedTreeCallbacks(InputNode* data_)
-      : DistributedTree(), nx_active(data_->n), my_active(data_->my), mz_active(data_->mz), myl_active(data_->myl), mzl_active(data_->mzl),
-      print_tree_sizes_on_reading{pipsipmpp_options::get_bool_parameter("PRINT_TREESIZES_ON_READ")}, data(data_) {
-   assert(false && "Not used currently");
-   if (-1 == rankMe)
-      rankMe = PIPS_MPIgetRank();
-   if (-1 == numProcs)
-      numProcs = PIPS_MPIgetSize();
-}
-
 void DistributedTreeCallbacks::addChild(DistributedTreeCallbacks* child) {
    N += child->N;
 

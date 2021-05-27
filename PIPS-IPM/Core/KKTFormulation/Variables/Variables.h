@@ -75,10 +75,6 @@ public:
 
    Variables(const Variables& vars);
 
-   [[nodiscard]] double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
-
-   void push_slacks_from_bound(double tol, double amount);
-
    /** computes mu = (t'lambda +u'pi + v'gamma + w'phi)/(mclow+mcupp+nxlow+nxupp) */
    [[nodiscard]] double mu() const;
 
@@ -135,11 +131,14 @@ public:
          double& primalStep_d, double& dualValue_d, double& dualStep_d, double& alphaPrimal, double& alphaDual, bool& primalBlocking,
          bool& dualBlocking) const;
 
+   double get_average_distance_to_bound_for_converged_vars(const Problem&, double tol) const;
+
+   void push_slacks_from_bound(double tol, double amount);
+
    /** sets components of (u,t,v,w) to alpha and of (lambda,pi,phi,gamma) to beta */
    void push_to_interior(double alpha, double beta);
 
-   /** add alpha to components of (u,t,v,w) and beta to components of
-       (lambda,pi,phi,gamma) */
+   /** add alpha to components of (u,t,v,w) and beta to components of (lambda,pi,phi,gamma) */
    void shift_bound_variables(double alpha, double beta);
 
    [[nodiscard]] double violation() const;

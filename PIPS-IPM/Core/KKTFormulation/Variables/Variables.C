@@ -72,7 +72,6 @@ double Variables::get_average_distance_to_bound_for_converged_vars(const Problem
       return sum_small_distance / (double) n_close;
 }
 
-
 void Variables::push_slacks_from_bound(double tol, double amount) {
    if (nxlow > 0)
       primal_lower_bound_gap->pushAwayFromZero(tol, amount, &*ixlow);

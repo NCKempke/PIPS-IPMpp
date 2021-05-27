@@ -7,6 +7,7 @@
 #include <iostream>
 #include <utility>
 
+
 DistributedVariables::DistributedVariables(const DistributedTree* tree, std::unique_ptr<Vector<double>> x_in, std::unique_ptr<Vector<double>> s_in,
    std::unique_ptr<Vector<double>> y_in, std::unique_ptr<Vector<double>> z_in, std::unique_ptr<Vector<double>> v_in,
    std::unique_ptr<Vector<double>> gamma_in, std::unique_ptr<Vector<double>> w_in, std::unique_ptr<Vector<double>> phi_in, std::unique_ptr<Vector<double>> t_in,

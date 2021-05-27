@@ -32,7 +32,6 @@ public:
    DistributedTree* clone() const override;
 
    DistributedTreeCallbacks(DistributedInputTree* root);
-   DistributedTreeCallbacks(DistributedInputTree::DistributedInputNode* data_);
    ~DistributedTreeCallbacks() = default;
 
    void addChild(DistributedTreeCallbacks* child);
