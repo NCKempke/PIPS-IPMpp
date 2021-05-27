@@ -78,9 +78,8 @@ public:
 
    [[nodiscard]] long long size() const override;
 
-   [[nodiscard]] DenseStorage& getStorageRef() { return *mStorage; }
-   [[nodiscard]] const DenseStorage& getStorageRef() const { return *mStorage; }
-   [[nodiscard]] std::shared_ptr<DenseStorage> getStorageHandle() const { return mStorage; }
+   [[nodiscard]] DenseStorage& getStorage() { return *mStorage; }
+   [[nodiscard]] const DenseStorage& getStorage() const { return *mStorage; }
 
    /* this = alpha * op(A)*op(B)  +   beta * this */
    void matMult(double alpha, GeneralMatrix& A_, int transA, GeneralMatrix& B_, int transB, double beta);

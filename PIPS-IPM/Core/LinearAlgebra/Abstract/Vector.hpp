@@ -13,7 +13,6 @@
 #include <sstream>
 #include <memory>
 #include <functional>
-#include "../../Base/IotrRefCount.h"
 #include "../../Utilities/pipsdef.h"
 
 /** An abstract class representing the implementation of a OoqpVectorTemplate.
@@ -24,7 +23,7 @@
  *  @ingroup AbstractLinearAlgebra
  */
 template<typename T>
-class Vector : public IotrRefCount, public std::enable_shared_from_this<Vector<T>> {
+class Vector : public std::enable_shared_from_this<Vector<T>> {
 protected:
    int n{0};
 public:

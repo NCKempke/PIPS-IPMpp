@@ -1,5 +1,4 @@
 add_library(pips-ipmpp STATIC
-        Base/IotrRefCount.C
         Base/Scaler.C
         Base/Observer.C
 

@@ -78,8 +78,7 @@ DistributedFactory::~DistributedFactory() {
 }
 
 DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* kkt_) {
-   const auto* kkt = dynamic_cast<const SparseSymmetricMatrix*>(kkt_);
-   assert(kkt);
+   const auto& kkt = dynamic_cast<const SparseSymmetricMatrix&>(*kkt_);
 
    const SolverType leaf_solver = pipsipmpp_options::get_solver_leaf();
 
@@ -129,7 +128,8 @@ DoubleLinearSolver* DistributedFactory::make_leaf_solver(const AbstractMatrix* k
 }
 
 DistributedLeafLinearSystem*
-DistributedFactory::make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
+DistributedFactory::make_linear_system_leaf(DistributedQP* problem, std::shared_ptr<Vector<double>> primal_diagonal,
+   std::shared_ptr<Vector<double>> dq,
    std::shared_ptr<Vector<double>> nomegaInv,
    std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
    std::shared_ptr<Vector<double>> dual_inequality_regularization,
@@ -150,9 +150,10 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, std::shared_
 #endif
       } else if (leaf_solver == SolverType::SOLVER_PARDISO || leaf_solver == SolverType::SOLVER_MKL_PARDISO) {
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
-         return new sLinsysLeafSchurSlv(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization,
-            dual_equality_regularization,
-            dual_inequality_regularization, rhs);
+         return new sLinsysLeafSchurSlv(this, problem, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv),
+            std::move(primal_regularization),
+            std::move(dual_equality_regularization),
+            std::move(dual_inequality_regularization), std::move(rhs));
 #endif
       } else {
          if (PIPS_MPIgetRank() == 0) {
@@ -174,9 +175,10 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, std::shared_
                std::cout << " Found solver " << solver << " - using that for leaf computations\n";
             pipsipmpp_options::set_int_parameter("LINEAR_LEAF_SOLVER", solver);
 #if defined(WITH_PARDISO) or defined(WITH_MKL_PARDISO)
-            return new sLinsysLeafSchurSlv(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization,
-               dual_equality_regularization,
-               dual_inequality_regularization, rhs);
+            return new sLinsysLeafSchurSlv(this, problem, std::move(primal_diagonal), std::move(dq),
+               std::move(nomegaInv), std::move(primal_regularization),
+               std::move(dual_equality_regularization),
+               std::move(dual_inequality_regularization), std::move(rhs));
 #endif
          }
 
@@ -195,14 +197,15 @@ DistributedFactory::make_linear_system_leaf(DistributedQP* problem, std::shared_
          return new sLinsysLeafMumps(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization, dual_equality_regularization, dual_inequality_regularization, rhs);
 #endif
       } else
-         return new DistributedLeafLinearSystem(this, problem, primal_diagonal, dq, nomegaInv, primal_regularization,
-            dual_equality_regularization,
-            dual_inequality_regularization, rhs);
+         return new DistributedLeafLinearSystem(this, problem, std::move(primal_diagonal), std::move(dq),
+            std::move(nomegaInv), std::move(primal_regularization),
+            std::move(dual_equality_regularization),
+            std::move(dual_inequality_regularization), std::move(rhs));
    }
    return nullptr;
 }
 
-Problem* DistributedFactory::make_problem() {
+Problem* DistributedFactory::make_problem() const {
 #ifdef TIMING
    double t2 = MPI_Wtime();
 #endif
@@ -236,7 +239,7 @@ Problem* DistributedFactory::make_problem() {
       std::move(icupp));
 }
 
-Variables* DistributedFactory::make_variables(Problem& problem) {
+Variables* DistributedFactory::make_variables(Problem& problem) const {
 
    std::unique_ptr<Vector<double>> x(make_primal_vector());
    std::unique_ptr<Vector<double>> s(make_inequalities_dual_vector());
@@ -290,7 +293,7 @@ Residuals* DistributedFactory::make_residuals(Problem& problem) const {
       std::move(rphi), problem.ixlow, problem.ixupp, problem.iclow, problem.icupp);
 }
 
-std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Problem& problem_in){
+std::unique_ptr<AbstractLinearSystem> DistributedFactory::make_linear_system(Problem& problem_in) {
    auto* problem = dynamic_cast<DistributedQP*>(&problem_in);
    if (pipsipmpp_options::get_bool_parameter("HIERARCHICAL"))
       return make_root_hierarchical_linear_system(problem);
@@ -345,22 +348,26 @@ std::unique_ptr<DistributedRootLinearSystem> DistributedFactory::make_linear_sys
 }
 
 DistributedRootLinearSystem*
-DistributedFactory::make_linear_system_root(DistributedQP* prob, std::shared_ptr<Vector<double>> primal_diagonal, std::shared_ptr<Vector<double>> dq,
+DistributedFactory::make_linear_system_root(DistributedQP* prob, std::shared_ptr<Vector<double>> primal_diagonal,
+   std::shared_ptr<Vector<double>> dq,
    std::shared_ptr<Vector<double>> nomegaInv,
    std::shared_ptr<Vector<double>> primal_regularization, std::shared_ptr<Vector<double>> dual_equality_regularization,
    std::shared_ptr<Vector<double>> dual_inequality_regularization,
    std::shared_ptr<Vector<double>> rhs) {
    if (prob->isHierarchyInnerLeaf())
-      return new sLinsysRootAugHierInner(this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv), std::move(primal_regularization),
+      return new sLinsysRootAugHierInner(this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv),
+         std::move(primal_regularization),
          std::move(dual_equality_regularization),
          std::move(dual_inequality_regularization), std::move(rhs));
    else
-      return new sLinsysRootAug(this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv), std::move(primal_regularization),
+      return new sLinsysRootAug(this, prob, std::move(primal_diagonal), std::move(dq), std::move(nomegaInv),
+         std::move(primal_regularization),
          std::move(dual_equality_regularization),
          std::move(dual_inequality_regularization), rhs, true);
 }
 
-std::unique_ptr<DistributedRootLinearSystem> DistributedFactory::make_root_hierarchical_linear_system(DistributedQP* problem) {
+std::unique_ptr<DistributedRootLinearSystem>
+DistributedFactory::make_root_hierarchical_linear_system(DistributedQP* problem) {
    return std::make_unique<sLinsysRootBordered>(this, problem);
 }
 

@@ -14,21 +14,20 @@
  * @ingroup LinearSolvers
  */
 class DeSymIndefSolver2 : public DoubleLinearSolver {
-public:
-   std::shared_ptr<DenseStorage> mStorage;
 protected:
+   std::unique_ptr<DenseStorage> mStorage;
    int nx, ny, n;
 public:
-   DeSymIndefSolver2(const DenseSymmetricMatrix* storage, int nx);
+   DeSymIndefSolver2(const DenseSymmetricMatrix& storage, int nx);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& vec) override;
-   virtual ~DeSymIndefSolver2();
+   ~DeSymIndefSolver2() override;
 
 
-   bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
       assert(false && "TODO : implement");
       return {0, 0, 0};
    };

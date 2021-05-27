@@ -36,7 +36,7 @@ public:
    virtual void matrixChanged() = 0;
 
    /** called if new matrix (but same dimension) is to be used. Triggers factorization  */
-   virtual void matrixRebuild(AbstractMatrix& /*matrixNew*/ ) { assert(0 && "Not implemented"); }
+   virtual void matrixRebuild(const AbstractMatrix& /*matrixNew*/ ) { assert(0 && "Not implemented"); }
 
    /** solves a linear system.
     *

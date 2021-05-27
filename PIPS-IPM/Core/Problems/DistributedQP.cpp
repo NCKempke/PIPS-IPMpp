@@ -2278,9 +2278,9 @@ int DistributedQP::getLocalNnz(int& nnzQ, int& nnzB, int& nnzD) {
    const auto& Ast = dynamic_cast<const DistributedMatrix&>(*A);
    const auto& Cst = dynamic_cast<const DistributedMatrix&>(*C);
 
-   nnzQ = dynamic_cast<const SparseSymmetricMatrix&>(*Qst.diag).getStorageRef().len + Qst.border->getStorageRef().len;
-   nnzB = dynamic_cast<const SparseMatrix&>(*Ast.Bmat).getStorageRef().len;
-   nnzD = dynamic_cast<const SparseMatrix&>(*Cst.Bmat).getStorageRef().len;
+   nnzQ = dynamic_cast<const SparseSymmetricMatrix&>(*Qst.diag).getStorage().len + dynamic_cast<const SparseMatrix&>(*Qst.border).getStorage().len;
+   nnzB = dynamic_cast<const SparseMatrix&>(*Ast.Bmat).getStorage().len;
+   nnzD = dynamic_cast<const SparseMatrix&>(*Cst.Bmat).getStorage().len;
    return 0;
 }
 
@@ -2499,7 +2499,7 @@ const SparseMatrix& DistributedQP::getLocalCrossHessian() const {
    auto& Qst = dynamic_cast<const DistributedSymmetricMatrix&>(*Q);
    assert(!is_hierarchy_inner_root && !is_hierarchy_root && !is_hierarchy_inner_leaf);
 
-   return *Qst.border;
+   return dynamic_cast<const SparseMatrix&>(*Qst.border);
 }
 
 // T_i x_0 + W_i x_i = b_i

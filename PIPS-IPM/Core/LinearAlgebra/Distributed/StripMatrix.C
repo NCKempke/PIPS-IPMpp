@@ -643,7 +643,7 @@ void StripMatrix::combineChildrenInNewChildren(const std::vector<unsigned int>& 
    recomputeNonzeros();
 }
 
-GeneralMatrix* StripMatrix::shaveBottom(int n_rows) {
+std::unique_ptr<GeneralMatrix> StripMatrix::shaveBottom(int n_rows) {
    assert(!is_vertical);
    assert(first);
 
@@ -659,14 +659,14 @@ GeneralMatrix* StripMatrix::shaveBottom(int n_rows) {
 #endif
 
    for (auto& child : children)
-      border->addChild(std::unique_ptr<StripMatrix>(dynamic_cast<StripMatrix*>(child->shaveBottom(n_rows))));
+      border->addChild(std::unique_ptr<StripMatrix>(dynamic_cast<StripMatrix*>(child->shaveBottom(n_rows).release())));
 
    m -= n_rows;
 
    recomputeNonzeros();
    border->recomputeNonzeros();
 
-   return border.release();
+   return border;
 }
 
 void StripMatrix::writeToStreamDense(std::ostream& out) const {

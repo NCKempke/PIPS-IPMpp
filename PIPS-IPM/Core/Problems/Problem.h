@@ -8,7 +8,6 @@
 #include "Variables.h"
 #include "Vector.hpp"
 #include "SimpleVector.h"
-#include "SmartPointer.h"
 #include "AbstractMatrix.h"
 
 class Problem {

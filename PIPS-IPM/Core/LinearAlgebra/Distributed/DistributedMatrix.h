@@ -31,16 +31,13 @@ public:
    DistributedMatrix(long long global_m, long long global_n, int A_m, int A_n, int A_nnz, int B_m, int B_n, int B_nnz, int Bl_m, int Bl_n, int Bl_nnz,
          MPI_Comm mpiComm_);
 
-   /** Constructs a matrix with local A, B, and Bl (linking constraints) blocks set to nullptr */
-   DistributedMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_);
-
    // constructor for combining scenarios
    ~DistributedMatrix() override = default;
 
    using GeneralMatrix::cloneFull;
    using GeneralMatrix::cloneEmptyRows;
-   [[nodiscard]] GeneralMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
-   [[nodiscard]] GeneralMatrix* cloneFull(bool switchToDynamicStorage) const override;
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool switchToDynamicStorage) const override;
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneFull(bool switchToDynamicStorage) const override;
 
    virtual void AddChild(const std::shared_ptr<DistributedMatrix>& child);
 
@@ -196,9 +193,9 @@ public:
    axpyWithRowAtPosNeg(double alpha, DistributedVector<double>* y_pos, SimpleVector<double>* y_link_pos, DistributedVector<double>* y_neg,
          SimpleVector<double>* y_link_neg, int child, int row, bool linking) const;
 
-   [[nodiscard]] virtual BorderedMatrix* raiseBorder(int m_conss, int n_vars);
+   [[nodiscard]] virtual std::unique_ptr<BorderedMatrix> raiseBorder(int m_conss, int n_vars);
 
-   [[nodiscard]] virtual StripMatrix* shaveLinkingConstraints(unsigned int n_conss);
+   [[nodiscard]] virtual std::unique_ptr<StripMatrix> shaveLinkingConstraints(unsigned int n_conss);
    virtual void
    splitMatrix(const std::vector<int>& twolinks_start_in_block, const std::vector<unsigned int>& map_blocks_children, unsigned int n_links_in_root,
          const std::vector<MPI_Comm>& child_comms);
@@ -216,8 +213,8 @@ protected:
 
    [[nodiscard]] virtual bool amatEmpty() const;
    virtual void shaveBorder(int m_conss, int n_vars, StripMatrix* border_left, StripMatrix* border_bottom);
-   [[nodiscard]] virtual StripMatrix* shaveLeftBorder(int n_vars);
-   [[nodiscard]] virtual StripMatrix* shaveLeftBorderChild(int n_vars);
+   [[nodiscard]] virtual std::unique_ptr<StripMatrix> shaveLeftBorder(int n_vars);
+   [[nodiscard]] virtual std::unique_ptr<StripMatrix> shaveLeftBorderChild(int n_vars);
 };
 
 
@@ -244,8 +241,8 @@ public:
 
    using GeneralMatrix::cloneFull;
    using GeneralMatrix::cloneEmptyRows;
-   [[nodiscard]] GeneralMatrix* cloneEmptyRows(bool) const override { return new StochGenDummyMatrix(); };
-   [[nodiscard]] GeneralMatrix* cloneFull(bool) const override { return new StochGenDummyMatrix(); };
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool) const override { return std::make_unique<StochGenDummyMatrix>(); };
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> cloneFull(bool) const override { return std::make_unique<StochGenDummyMatrix>(); };
 
 
    /** The actual number of structural non-zero elements in this sparse
@@ -341,11 +338,11 @@ public:
    void axpyWithRowAtPosNeg(double, DistributedVector<double>*, SimpleVector<double>*, DistributedVector<double>*, SimpleVector<double>*, int, int,
          bool) const override {};
 
-   [[nodiscard]] BorderedMatrix* raiseBorder(int, int) override {
+   [[nodiscard]] std::unique_ptr<BorderedMatrix> raiseBorder(int, int) override {
       assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX");
       return nullptr;
    };
-   StripMatrix* shaveLinkingConstraints(unsigned int) override { return new StringGenDummyMatrix(); };
+   std::unique_ptr<StripMatrix> shaveLinkingConstraints(unsigned int) override { return std::make_unique<StringGenDummyMatrix>(); };
    void splitMatrix(const std::vector<int>&, const std::vector<unsigned int>&, unsigned int, const std::vector<MPI_Comm>&) override {
       assert(0 && "CANNOT SHAVE BORDER OFF OF A DUMMY MATRIX");
    };
@@ -358,12 +355,10 @@ protected:
       border_left->addChild(std::make_unique<StringGenDummyMatrix>());
       border_bottom->addChild(std::make_unique<StringGenDummyMatrix>());
    };
-   StripMatrix* shaveLeftBorder(int) override { return new StringGenDummyMatrix(); };
-   StripMatrix* shaveLeftBorderChild(int) override { return new StringGenDummyMatrix(); };
+
+   std::unique_ptr<StripMatrix> shaveLeftBorder(int) override { return std::make_unique<StringGenDummyMatrix>(); };
+   std::unique_ptr<StripMatrix> shaveLeftBorderChild(int) override { return std::make_unique<StringGenDummyMatrix>(); };
 
 };
-
-
-typedef SmartPointer<DistributedMatrix> DistributedMatrixHandle;
 
 #endif

@@ -16,10 +16,10 @@
 
 /* root pardiso solver */
 class PardisoIndefSolver : public DoubleLinearSolver {
-public:
-   std::shared_ptr<DenseStorage> mStorage;
-   SmartPointer<SparseStorage> mStorageSparse;
+
 protected:
+   const DenseStorage* mStorage{};
+   const SparseStorage* mStorageSparse{};
 
    constexpr static double precondDiagDomBound = 0.0001;
    constexpr static int pivotPerturbationExpDefault = 8;
@@ -46,18 +46,19 @@ protected:
 
    int nrhs{1}; /* Number of right hand sides. */
 
-   void* pt[64];  /* Internal solver memory pointer pt */
+   void* pt[64]{};  /* Internal solver memory pointer pt */
 
    /* Pardiso control parameters. */
-   int iparm[64];
+   int iparm[64]{};
 
    int maxfct{1};
    int mnum{1};
    int phase{11};
    int msglvl{0};
-   int* ia{};
-   int* ja{};
-   double* a{};
+
+   std::vector<int> ia;
+   std::vector<int> ja{};
+   std::vector<double> a{};
    int idum{-1};
    double ddum{-1.0};
    int pivotPerturbationExp; // 10^-exp
@@ -66,7 +67,6 @@ protected:
    bool parallelForwardBackward{parallelForwardBackwardDefault};
    bool factorizationTwoLevel{factorizationTwoLevelDefault};
    bool useSparseRhs{useSparseRhsDefault};
-   bool deleteCSRpointers{false};
    bool solve_in_parallel;
 
 
@@ -76,11 +76,11 @@ protected:
    virtual void checkMatrix() = 0;
    virtual void getIparm(int* iparm) const = 0;
 public:
-   PardisoIndefSolver(DenseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm);
-   PardisoIndefSolver(SparseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoIndefSolver(const DenseSymmetricMatrix& matrix, bool solve_in_parallel, MPI_Comm mpi_comm);
+   PardisoIndefSolver(const SparseSymmetricMatrix& matrix, bool solve_in_parallel, MPI_Comm mpi_comm);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
-   void matrixRebuild(AbstractMatrix& matrixNew) override;
+   void matrixRebuild(const AbstractMatrix& matrixNew) override;
 
    using DoubleLinearSolver::solve;
    void solve(Vector<double>& vec) override;
@@ -96,7 +96,7 @@ public:
 private:
    void initPardiso();
    void factorizeFromSparse();
-   void factorizeFromSparse(SparseSymmetricMatrix& matrix_fortran);
+   void factorizeFromSparse(const SparseSymmetricMatrix& matrix_fortran);
    void factorizeFromDense();
    void factorize();
 

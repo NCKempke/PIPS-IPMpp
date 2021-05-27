@@ -313,10 +313,10 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
       auto& actmin_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmin_ineq_ubndd.first);
       auto& actmax_ineq_root_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.first);
 
-      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.Bmat).getStorageDynamicRef(), actmin_eq_root_part, actmin_eq_root_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.Bmat).getStorageDynamic(), actmin_eq_root_part, actmin_eq_root_ubndd,
             actmax_eq_root_part, actmax_eq_root_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
-      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.Bmat).getStorageDynamicRef(), actmin_ineq_root_part, actmin_ineq_root_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.Bmat).getStorageDynamic(), actmin_ineq_root_part, actmin_ineq_root_ubndd,
             actmax_ineq_root_part, actmax_ineq_root_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
@@ -332,10 +332,10 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
 
    /* Bl0 */
    if (my_rank == 0) {
-      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.Blmat).getStorageDynamicRef(), actmin_eq_link_part, actmin_eq_link_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.Blmat).getStorageDynamic(), actmin_eq_link_part, actmin_eq_link_ubndd,
             actmax_eq_link_part, actmax_eq_link_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
-      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.Blmat).getStorageDynamicRef(), actmin_ineq_link_part, actmin_ineq_link_ubndd,
+      addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.Blmat).getStorageDynamic(), actmin_ineq_link_part, actmin_ineq_link_ubndd,
             actmax_ineq_link_part, actmax_ineq_link_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
    }
 
@@ -359,15 +359,15 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
             auto& actmax_eq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_eq_ubndd.children[node]->first);
 
             /* Ai */
-            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.children[node]->Amat).getStorageDynamicRef(), actmin_eq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.children[node]->Amat).getStorageDynamic(), actmin_eq_child_part,
                   actmin_eq_child_ubndd, actmax_eq_child_part, actmax_eq_child_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
             /* Bi */
-            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.children[node]->Bmat).getStorageDynamicRef(), actmin_eq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.children[node]->Bmat).getStorageDynamic(), actmin_eq_child_part,
                   actmin_eq_child_ubndd, actmax_eq_child_part, actmax_eq_child_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
          }
          /* Bli */
-         addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.children[node]->Blmat).getStorageDynamicRef(), actmin_eq_link_part,
+         addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_A.children[node]->Blmat).getStorageDynamic(), actmin_eq_link_part,
                actmin_eq_link_ubndd, actmax_eq_link_part, actmax_eq_link_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
 
       }
@@ -381,16 +381,16 @@ void PresolveData::recomputeActivities(bool linking_only, DistributedVector<doub
             auto& actmax_ineq_child_ubndd = dynamic_cast<SimpleVector<int>&>(*actmax_ineq_ubndd.children[node]->first);
 
             /* Ai */
-            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.children[node]->Amat).getStorageDynamicRef(), actmin_ineq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.children[node]->Amat).getStorageDynamic(), actmin_ineq_child_part,
                   actmin_ineq_child_ubndd, actmax_ineq_child_part, actmax_ineq_child_ubndd, xlow_root, ixlow_root, xupp_root, ixupp_root);
 
             /* Bi */
-            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.children[node]->Bmat).getStorageDynamicRef(), actmin_ineq_child_part,
+            addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.children[node]->Bmat).getStorageDynamic(), actmin_ineq_child_part,
                   actmin_ineq_child_ubndd, actmax_ineq_child_part, actmax_ineq_child_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
          }
 
          /* Bli */
-         addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.children[node]->Blmat).getStorageDynamicRef(), actmin_ineq_link_part,
+         addActivityOfBlock(dynamic_cast<SparseMatrix&>(*mat_C.children[node]->Blmat).getStorageDynamic(), actmin_ineq_link_part,
                actmin_ineq_link_ubndd, actmax_ineq_link_part, actmax_ineq_link_ubndd, xlow_child, ixlow_child, xupp_child, ixupp_child);
       }
 
@@ -866,7 +866,7 @@ void PresolveData::deleteEntryAtIndex(const INDEX& row, const INDEX& col, int co
    assert(row.hasValidNode(nChildren));
    assert(col.hasValidNode(nChildren));
 
-   const SparseStorageDynamic& storage = getSparseGenMatrix(row, col)->getStorageDynamicRef();
+   const SparseStorageDynamic& storage = getSparseGenMatrix(row, col)->getStorageDynamic();
 
    const double val = storage.getMat(col_index);
    assert(col.getIndex() == storage.getJcolM(col_index));
@@ -1070,7 +1070,7 @@ void PresolveData::varboundImpliedFreeFullCheck(bool& upper_implied, bool& lower
    getRowActivities(row, max_act, min_act, max_ubndd, min_ubndd);
 
    /* get matrix in order to get the coefficient of col in row */
-   const SparseStorageDynamic& mat = getSparseGenMatrix(row, col)->getStorageDynamicRef();
+   const SparseStorageDynamic& mat = getSparseGenMatrix(row, col)->getStorageDynamic();
 
    const int row_start = mat.getRowPtr(row.getIndex()).start;
    const int row_end = mat.getRowPtr(row.getIndex()).end;
@@ -1684,7 +1684,7 @@ void PresolveData::removeColumnFromMatrix(const INDEX& dummy_row, const INDEX& c
       assert(PIPS_MPIisValueEqual(col.getIndex()));
 
    SparseMatrix* mat = getSparseGenMatrix(dummy_row, col);
-   const SparseStorageDynamic& matrix_transp = mat->getStorageDynamicTransposedRef();
+   const SparseStorageDynamic& matrix_transp = mat->getStorageDynamicTransposed();
 
    assert(col.getIndex() < matrix_transp.n_rows());
 
@@ -2317,7 +2317,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
 
    if (col.isCol()) {
 #ifndef NDEBUG
-      const SparseStorageDynamic& col_mat_tp = getSparseGenMatrix(row, col)->getStorageDynamicTransposedRef();
+      const SparseStorageDynamic& col_mat_tp = getSparseGenMatrix(row, col)->getStorageDynamicTransposed();
 #endif
       assert((col_mat_tp.getRowPtr(col.getIndex()).end - col_mat_tp.getRowPtr(col.getIndex()).start) == 1);
       assert(row.getIndex() == col_mat_tp.getJcolM(col_mat_tp.getRowPtr(col.getIndex()).start));
@@ -2335,7 +2335,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       const INDEX col_b_mat(COL, row.getNode(), dummy_index);
 
       /* Bmat */
-      const SparseStorageDynamic& b_mat = getSparseGenMatrix(row, col_b_mat)->getStorageDynamicRef();
+      const SparseStorageDynamic& b_mat = getSparseGenMatrix(row, col_b_mat)->getStorageDynamic();
 
       for (int i = b_mat.getRowPtr(row.getIndex()).start; i < b_mat.getRowPtr(row.getIndex()).end; ++i) {
          const int col_idx = b_mat.getJcolM(i);
@@ -2347,7 +2347,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       if (row.getNode() != -1) {
          const INDEX col_a_mat(COL, -1, dummy_index);
 
-         const SparseStorageDynamic& a_mat = getSparseGenMatrix(row, col_a_mat)->getStorageDynamicRef();
+         const SparseStorageDynamic& a_mat = getSparseGenMatrix(row, col_a_mat)->getStorageDynamic();
 
          for (int i = a_mat.getRowPtr(row.getIndex()).start; i < a_mat.getRowPtr(row.getIndex()).end; ++i) {
             const int col_idx = a_mat.getJcolM(i);
@@ -2362,7 +2362,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       assert(block_type == BL_MAT);
       const INDEX col_b0_mat(COL, -1, dummy_index);
       /* Bl0 */
-      const SparseStorageDynamic& bl0_mat = getSparseGenMatrix(row, col_b0_mat)->getStorageDynamicRef();
+      const SparseStorageDynamic& bl0_mat = getSparseGenMatrix(row, col_b0_mat)->getStorageDynamic();
 
       for (int i = bl0_mat.getRowPtr(row.getIndex()).start; i < bl0_mat.getRowPtr(row.getIndex()).end; ++i) {
          const int col_ptr = bl0_mat.getJcolM(i);
@@ -2378,7 +2378,7 @@ void PresolveData::adaptObjectiveSubstitutedRow(const INDEX& row, const INDEX& c
       for (int node = 0; node < nChildren; ++node) {
          if (!nodeIsDummy(node)) {
             const INDEX col_bli_mat(COL, node, dummy_index);
-            const SparseStorageDynamic& bli_mat = getSparseGenMatrix(row, col_bli_mat)->getStorageDynamicRef();
+            const SparseStorageDynamic& bli_mat = getSparseGenMatrix(row, col_bli_mat)->getStorageDynamic();
 
             for (int i = bli_mat.getRowPtr(row.getIndex()).start; i < bli_mat.getRowPtr(row.getIndex()).end; ++i) {
                const int col_ptr = bli_mat.getJcolM(i);
@@ -2436,7 +2436,7 @@ void PresolveData::addCoeffColToRow(double coeff, const INDEX& col, const INDEX&
    SparseMatrix* sparse_mat = getSparseGenMatrixFromStochMat(getSystemMatrix(row.getSystemType()), node, block_type);
    assert(sparse_mat);
 
-   const SparseStorageDynamic& mat = sparse_mat->getStorageDynamicRef();
+   const SparseStorageDynamic& mat = sparse_mat->getStorageDynamic();
 
    if (postsolver) {
       postsolver->notifyColModified(col);
@@ -2564,7 +2564,7 @@ void PresolveData::removeRowFromMatrix(const INDEX& row, const INDEX& col) {
    assert(mat);
    assert(mat->hasDynamicStorage());
 
-   const SparseStorageDynamic& mat_storage = mat->getStorageDynamicRef();
+   const SparseStorageDynamic& mat_storage = mat->getStorageDynamic();
 
    /* update non-zero counters and tell postsolver which rows/cols changed */
    const int row_start = mat_storage.getRowPtr(row.getIndex()).start;
@@ -2964,7 +2964,7 @@ double PresolveData::computeLocalLinkingRowMinOrMaxActivity(const INDEX& row, bo
 
       /* get matrix */
       const INDEX dummy_col(COL, node, dummy_index);
-      const SparseStorageDynamic& mat = getSparseGenMatrix(row, dummy_col)->getStorageDynamicRef();
+      const SparseStorageDynamic& mat = getSparseGenMatrix(row, dummy_col)->getStorageDynamic();
 
       for (int j = mat.getRowPtr(row.getIndex()).start; j < mat.getRowPtr(row.getIndex()).end; j++) {
          const int col = mat.getJcolM(j);
@@ -3025,7 +3025,7 @@ void PresolveData::computeRowMinOrMaxActivity(const INDEX& row, bool upper) {
    const SimpleVector<double>& xupp = getSimpleVecFromColStochVec(*(presProb->bux), row.getNode());
 
    /* get matrix */
-   const SparseStorageDynamic& Bmat = getSparseGenMatrix(row, INDEX(COL, row.getNode(), dummy_index))->getStorageDynamicRef();
+   const SparseStorageDynamic& Bmat = getSparseGenMatrix(row, INDEX(COL, row.getNode(), dummy_index))->getStorageDynamic();
 
    /* get activity vector */
    SimpleVector<double>* act_vec;
@@ -3065,7 +3065,7 @@ void PresolveData::computeRowMinOrMaxActivity(const INDEX& row, bool upper) {
 
    /* Amat */
    if (row.getNode() != -1) {
-      const SparseStorageDynamic& Amat = getSparseGenMatrix(row, INDEX(COL, -1, dummy_index))->getStorageDynamicRef();
+      const SparseStorageDynamic& Amat = getSparseGenMatrix(row, INDEX(COL, -1, dummy_index))->getStorageDynamic();
       for (int j = Amat.getRowPtr(row.getIndex()).start; j < Amat.getRowPtr(row.getIndex()).end; j++) {
          const int col = Amat.getJcolM(j);
          const double entry = Amat.getMat(j);
@@ -3183,7 +3183,7 @@ void PresolveData::updateRowActivitiesBlock(const INDEX& row, const INDEX& col, 
    if ((upper && !PIPSisLT(bound, old_bound)) || (!upper && PIPSisLT(bound, old_bound)))
       return;
 
-   const SparseStorageDynamic& mat_transp = getSparseGenMatrix(row, col)->getStorageDynamicTransposedRef();
+   const SparseStorageDynamic& mat_transp = getSparseGenMatrix(row, col)->getStorageDynamicTransposed();
 
    assert(col.getIndex() < mat_transp.n_rows());
 
@@ -3556,7 +3556,7 @@ double PresolveData::getRowCoeff(const INDEX& row, const INDEX& col) const {
    assert(col.isCol());
    assert(!nodeIsDummy(col.getNode()));
 
-   const SparseStorageDynamic& mat = getSparseGenMatrix(row, col)->getStorageDynamicRef();
+   const SparseStorageDynamic& mat = getSparseGenMatrix(row, col)->getStorageDynamic();
 
    const int row_start = mat.getRowPtr(row.getIndex()).start;
    const int row_end = mat.getRowPtr(row.getIndex()).end;
@@ -3662,7 +3662,7 @@ void PresolveData::writeRowLocalToStreamDense(std::ostream& out, const INDEX& ro
 
 void PresolveData::writeMatrixRowToStreamDense(std::ostream& out, const SparseMatrix& mat, int node, int row, const SimpleVector<double>& ixupp,
       const SimpleVector<double>& xupp, const SimpleVector<double>& ixlow, const SimpleVector<double>& xlow) const {
-   const SparseStorageDynamic& storage = mat.getStorageDynamicRef();
+   const SparseStorageDynamic& storage = mat.getStorageDynamic();
 
    const int start = storage.getRowPtr(row).start;
    const int end = storage.getRowPtr(row).end;
@@ -3763,8 +3763,8 @@ int PresolveData::countEmptyRowsBDmat() const {
    for (int child = 0; child < nChildren; ++child) {
       if (nodeIsDummy(child))
          continue;
-      const SparseStorageDynamic& bmat = getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), child, B_MAT)->getStorageDynamicRef();
-      const SparseStorageDynamic& dmat = getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), child, B_MAT)->getStorageDynamicRef();
+      const SparseStorageDynamic& bmat = getSparseGenMatrixFromStochMat(getSystemMatrix(EQUALITY_SYSTEM), child, B_MAT)->getStorageDynamic();
+      const SparseStorageDynamic& dmat = getSparseGenMatrixFromStochMat(getSystemMatrix(INEQUALITY_SYSTEM), child, B_MAT)->getStorageDynamic();
 
       for (int row = 0; row < bmat.n_rows(); ++row) {
          const INDEX row_INDEX(ROW, child, row, false, EQUALITY_SYSTEM);

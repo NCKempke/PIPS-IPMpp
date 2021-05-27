@@ -25,31 +25,29 @@ private:
    getMinMaxVec(bool getMin, bool initializeVec, const SparseStorage* storage, const Vector<double>* coScaleVec, Vector<double>& minmaxVec);
    static void getMinMaxVec(bool getMin, bool initializeVec, const SparseStorageDynamic* storage_dynamic, const Vector<double>* coScaleVec,
          Vector<double>& minmaxVec);
-protected:
-   SmartPointer<SparseStorage> mStorage;
-   SparseStorageDynamic* mStorageDynamic{};
+
+   std::unique_ptr<SparseStorage> mStorage{};
+   std::unique_ptr<SparseStorageDynamic> mStorageDynamic{};
 
    /* transposed will be initialized when necessary */
-   mutable SparseMatrix* m_Mt{};
-
+   mutable std::unique_ptr<SparseMatrix> m_Mt{};
 public:
-
-   SparseMatrix() = default;
 
    void updateTransposed() const;
    void deleteTransposed() const;
 
+   SparseMatrix() : SparseMatrix(0,0,0) {};
    SparseMatrix(int rows, int cols, int nnz);
    SparseMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0);
-   explicit SparseMatrix(SparseStorage* m_storage);
+   explicit SparseMatrix(std::unique_ptr<SparseStorage> m_storage);
 
    using GeneralMatrix::cloneFull;
-   GeneralMatrix* cloneFull(bool switchToDynamicStorage) const override;
+   std::unique_ptr<GeneralMatrix> cloneFull(bool switchToDynamicStorage) const override;
 
    using GeneralMatrix::cloneEmptyRows;
-   GeneralMatrix* cloneEmptyRows(bool switchToDynamicStorage) const override;
+   std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool switchToDynamicStorage) const override;
 
-   SparseMatrix* cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
+   std::unique_ptr<SparseMatrix> cloneEmptyRowsTransposed(bool switchToDynamicStorage = false) const;
 
    [[nodiscard]] std::pair<long long, long long> n_rows_columns() const override;
    [[nodiscard]] long long n_rows() const override;
@@ -127,9 +125,6 @@ public:
    void atAddDiagonal(int idiag, const Vector<double>& v) override;
    void fromGetDiagonal(int idiag, Vector<double>& v) const override;
 
-   [[nodiscard]] SparseStorage& getStorageRef() { return *mStorage; }
-   [[nodiscard]] const SparseStorage& getStorageRef() const { return *mStorage; }
-
    [[nodiscard]] int* krowM() { return mStorage->krowM; }
    [[nodiscard]] const int* krowM() const { return mStorage->krowM; }
 
@@ -139,52 +134,53 @@ public:
    [[nodiscard]] double* M() { return mStorage->M; }
    [[nodiscard]] const double* M() const { return mStorage->M; }
 
-   [[nodiscard]] SparseStorageDynamic* getStorageDynamic() {
-      assert(mStorageDynamic);
-      return mStorageDynamic;
-   }
-
-   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() {
-      return mStorage;
-   }
-
-   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() const {
-      return mStorage;
-   }
-
-   [[nodiscard]] const SparseStorageDynamic* getStorageDynamic() const {
-      assert(mStorageDynamic);
-      return mStorageDynamic;
-   }
-
-   [[nodiscard]] SparseStorageDynamic& getStorageDynamicRef() {
+   [[nodiscard]] SparseStorageDynamic& getStorageDynamic() {
       assert(mStorageDynamic);
       return *mStorageDynamic;
    }
 
-   [[nodiscard]] const SparseStorageDynamic& getStorageDynamicRef() const {
+   [[nodiscard]] const SparseStorageDynamic& getStorageDynamic() const {
       assert(mStorageDynamic);
       return *mStorageDynamic;
    }
 
-   [[nodiscard]] SparseStorageDynamic* getStorageDynamicTransposed() {
+   [[nodiscard]] const SparseStorageDynamic* getStorageDynamicPtr() const {
+      return mStorageDynamic.get();
+   }
+
+   [[nodiscard]] SparseStorage& getStorage() {
+      assert(mStorage);
+      return *mStorage;
+   }
+
+   [[nodiscard]] const SparseStorage& getStorage() const {
+      assert(mStorage);
+      return *mStorage;
+   }
+
+   [[nodiscard]] SparseStorageDynamic& getStorageDynamicTransposed() {
       assert(m_Mt && m_Mt->hasDynamicStorage());
       return m_Mt->getStorageDynamic();
    }
 
-   [[nodiscard]] const SparseStorageDynamic* getStorageDynamicTransposed() const {
+   [[nodiscard]] const SparseStorageDynamic* getStorageDynamicTransposedPtr() const {
+      assert(m_Mt && m_Mt->hasDynamicStorage());
+      return m_Mt->getStorageDynamicPtr();
+   }
+
+   [[nodiscard]] const SparseStorageDynamic& getStorageDynamicTransposed() const {
       assert(m_Mt && m_Mt->hasDynamicStorage());
       return m_Mt->getStorageDynamic();
    }
 
-   [[nodiscard]] SparseStorageDynamic& getStorageDynamicTransposedRef() {
-      assert(m_Mt && m_Mt->hasDynamicStorage());
-      return m_Mt->getStorageDynamicRef();
+   [[nodiscard]] SparseStorage& getStorageTransposed() {
+      assert(m_Mt);
+      return m_Mt->getStorage();
    }
 
-   [[nodiscard]] const SparseStorageDynamic& getStorageDynamicTransposedRef() const {
-      assert(m_Mt && m_Mt->hasDynamicStorage());
-      return m_Mt->getStorageDynamicRef();
+   [[nodiscard]] const SparseStorage& getStorageTransposed() const {
+      assert(m_Mt);
+      return m_Mt->getStorage();
    }
 
    [[nodiscard]] bool hasDynamicStorage() const { return (mStorageDynamic != nullptr); };
@@ -257,12 +253,12 @@ public:
 
    void addColToRow(double coeff, int col, int row);
 
-   SparseMatrix* shaveLeft(int n_cols);
-   GeneralMatrix* shaveBottom(int n_rows) override;
+   std::unique_ptr<SparseMatrix> shaveLeft(int n_cols);
+   std::unique_ptr<GeneralMatrix> shaveBottom(int n_rows) override;
    void dropNEmptyRowsBottom(int n_rows);
    void dropNEmptyRowsTop(int n_rows);
 
-   ~SparseMatrix() override;
+   ~SparseMatrix() override = default;
 };
 
 #endif

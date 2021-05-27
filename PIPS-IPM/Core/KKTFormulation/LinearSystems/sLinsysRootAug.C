@@ -95,7 +95,7 @@ SymmetricMatrix* sLinsysRootAug::createKKT() const {
 }
 
 void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
-   auto* kkt_sp = dynamic_cast<SparseSymmetricMatrix*>(kkt.get());
+   auto& kkt_sp = dynamic_cast<SparseSymmetricMatrix&>(*kkt);
 
    if (solver_type == SolverType::SOLVER_MUMPS) {
 #ifdef WITH_MUMPS
@@ -123,7 +123,7 @@ void sLinsysRootAug::createSolversSparse(SolverType solver_type) {
 
 void sLinsysRootAug::createSolversDense() {
    const SolverTypeDense solver_type = pipsipmpp_options::get_solver_dense();
-   auto* kktmat = dynamic_cast<DenseSymmetricMatrix*>(kkt.get());
+   const auto& kktmat = dynamic_cast<const DenseSymmetricMatrix&>(*kkt);
 
    if (solver_type == SolverTypeDense::SOLVER_DENSE_SYM_INDEF)
       solver = std::make_unique<DeSymIndefSolver>(kktmat);
@@ -209,7 +209,7 @@ void sLinsysRootAug::finalizeKKTdist() {
 
    assert(childStart >= 0 && childStart < childEnd);
    assert(kkts.size() == locnx + locmy + locmyl + locmzl);
-   assert(!kkts.isLower);
+   assert(!kkts.is_lower());
    assert(locmyl >= 0 && locmzl >= 0);
    assert(data->getLocalQ().krowM()[locnx] == 0 && "Q currently not supported for dist. sparse kkt");
 
@@ -1630,7 +1630,7 @@ void sLinsysRootAug::finalizeKKTsparse() {
    const int n0Links = data->getN0LinkVars();
 
    assert(kkts.size() == locnx + locmy + locmyl + locmzl);
-   assert(!kkts.isLower);
+   assert(!kkts.is_lower());
    assert(locmyl >= 0 && locmzl >= 0);
 
    //////////////////////////////////////////////////////

@@ -9,7 +9,7 @@
 #include "DistributedMatrixUtilities.h"
 
 StochRowStorage::StochRowStorage(const DistributedMatrix& system_matrix) : row_storage{
-      dynamic_cast<DistributedMatrix*>(system_matrix.cloneEmptyRows(true))} {
+      dynamic_cast<DistributedMatrix*>(system_matrix.cloneEmptyRows(true).release())} {
 }
 
 
@@ -87,7 +87,7 @@ double StochRowStorage::getRowCoefficientAtColumn(const INDEX& row, const INDEX&
    if (col.getNode() == -1 && row.getNode() != -1)
       block_col = A_MAT;
 
-   const SparseStorageDynamic& mat = *getSparseGenMatrixFromStochMat(*row_storage, block_col == BL_MAT ? col.getNode() : row.getNode(),
+   const SparseStorageDynamic& mat = getSparseGenMatrixFromStochMat(*row_storage, block_col == BL_MAT ? col.getNode() : row.getNode(),
          block_col)->getStorageDynamic();
 
    const int row_start = mat.getRowPtr(row.getIndex()).start;

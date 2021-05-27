@@ -916,7 +916,7 @@ void DistributedRootLinearSystem::reduceKKTsparse() {
    const int nnzKkt = krowKkt[sizeKkt];
 
    assert(kkts.size() == sizeKkt);
-   assert(!kkts.isLower);
+   assert(!kkts.is_lower());
 
    if (allreduce_kkt)
       reduceToAllProcs(nnzKkt, MKkt);
@@ -1354,7 +1354,7 @@ void DistributedRootLinearSystem::reduceKKTdist() {
 
    const int nnzDist = nnzDistLocal + nnzDistShared;
 
-   assert(!kktDist || !kktDist->isLower);
+   assert(!kktDist || !kktDist->is_lower());
 
    delete kktDist;
    kktDist = new SparseSymmetricMatrix(sizeKkt, nnzDist, false);
@@ -1441,17 +1441,17 @@ void DistributedRootLinearSystem::reduceKKTdist() {
    }
 #endif
 
-   kktDist->getStorageRef().sortCols();
+   kktDist->getStorage().sortCols();
 
-   assert(kktDist->getStorageRef().isValid());
+   assert(kktDist->getStorage().isValid());
 
    if (allreduce_kkt)
       reduceToAllProcs(nnzDist, MDist);
    else
       reduceToProc0(nnzDist, MDist);
 
-   assert(kktDist->getStorageRef().isValid());
-   assert(kktDist->getStorageRef().isSorted());
+   assert(kktDist->getStorage().isValid());
+   assert(kktDist->getStorage().isSorted());
 }
 
 void DistributedRootLinearSystem::factorizeKKT() {
@@ -1529,7 +1529,7 @@ DistributedRootLinearSystem::myAtPutZeros(DenseSymmetricMatrix* mat, int row, in
    assert(row >= 0 && row + rowExtent <= mat->size());
    assert(col >= 0 && col + colExtent <= mat->size());
 
-   double** M = mat->getStorageRef().M;
+   double** M = mat->getStorage().M;
 
    for (int j = col; j < col + colExtent; j++) {
       M[row][j] = 0.0;
@@ -1633,7 +1633,7 @@ void DistributedRootLinearSystem::allreduceMatrix(AbstractMatrix& mat, bool is_s
          double* const MKkt = matsp.M();
          const int nnzKkt = krowKkt[m];
 
-         assert(!matsp.isLower);
+         assert(!matsp.is_lower());
 
          reduceToAllProcs(nnzKkt, MKkt);
       } else {

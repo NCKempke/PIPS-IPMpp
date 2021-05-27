@@ -9,7 +9,6 @@
 
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "DenseSymmetricMatrix.h"
 #include "DenseMatrix.h"
 
@@ -19,9 +18,9 @@
  */
 class DeSymPSDSolver : public DoubleLinearSolver {
 protected:
-   std::shared_ptr<DenseStorage> mStorage;
+   const DenseStorage* mStorage;
 public:
-   DeSymPSDSolver(const DenseSymmetricMatrix* dsm);
+   explicit DeSymPSDSolver(const DenseSymmetricMatrix& dsm);
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;
 
@@ -35,8 +34,8 @@ public:
    ~DeSymPSDSolver() override = default;
 
 
-   bool reports_inertia() const override { return true; };
-   std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
+   [[nodiscard]] bool reports_inertia() const override { return true; };
+   [[nodiscard]] std::tuple<unsigned int, unsigned int, unsigned int> get_inertia() const override {
       assert(false && "TODO : implement");
       return {0, 0, 0};
    };

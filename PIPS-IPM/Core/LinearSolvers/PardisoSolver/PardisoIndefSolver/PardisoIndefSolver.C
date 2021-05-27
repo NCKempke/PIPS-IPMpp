@@ -8,27 +8,17 @@
 #include "PardisoIndefSolver.h"
 #include "../../../Options/PIPSIPMppOptions.h"
 
-PardisoIndefSolver::PardisoIndefSolver(DenseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
-      solve_in_parallel{solve_in_parallel} {
-   mStorage = matrix->getStorageHandle();
-   mStorageSparse = nullptr;
-
+PardisoIndefSolver::PardisoIndefSolver(const DenseSymmetricMatrix& matrix, bool solve_in_parallel, MPI_Comm mpi_comm) :
+   mStorage{&matrix.getStorage()}, mpi_comm{mpi_comm}, solve_in_parallel{solve_in_parallel} {
    assert(mStorage);
-
    n = mStorage->n;
-
    initPardiso();
 }
 
-PardisoIndefSolver::PardisoIndefSolver(SparseSymmetricMatrix* matrix, bool solve_in_parallel, MPI_Comm mpi_comm) : mpi_comm{mpi_comm},
-      solve_in_parallel{solve_in_parallel} {
-   mStorage = nullptr;
-   mStorageSparse = matrix->getStorageHandle();
-
+PardisoIndefSolver::PardisoIndefSolver(const SparseSymmetricMatrix& matrix, bool solve_in_parallel, MPI_Comm mpi_comm) :
+   mStorageSparse{&matrix.getStorage()}, mpi_comm{mpi_comm}, solve_in_parallel{solve_in_parallel} {
    assert(mStorageSparse);
-
    n = mStorageSparse->n;
-
    initPardiso();
 }
 
@@ -49,7 +39,8 @@ bool PardisoIndefSolver::iparmUnchanged() {
       if (std::find(to_compare.begin(), to_compare.end(), i) != to_compare.end()) {
          if (iparm[i] != iparm_compare[i]) {
             if (print)
-               std::cout << "ERROR - PardisoIndefSolver: elements in iparm changed at " << i << ": " << iparm[i] << " != " << iparm_compare[i]
+               std::cout << "ERROR - PardisoIndefSolver: elements in iparm changed at " << i << ": " << iparm[i]
+                         << " != " << iparm_compare[i]
                          << "(new)" << std::endl;
             unchanged = false;
          }
@@ -124,12 +115,12 @@ void PardisoIndefSolver::matrixChanged() {
    }
 }
 
-void PardisoIndefSolver::matrixRebuild(AbstractMatrix& matrixNew) {
+void PardisoIndefSolver::matrixRebuild(const AbstractMatrix& matrixNew) {
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
    if (solve_in_parallel || my_rank == 0) {
-      auto& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
+      auto& matrixNewSym = dynamic_cast<const SparseSymmetricMatrix&>(matrixNew);
 
-      assert(matrixNewSym.getStorageRef().fortranIndexed());
+      assert(matrixNewSym.getStorage().fortranIndexed());
 
       if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && my_rank == 0)
          printf("\n Schur complement factorization is starting ...\n ");
@@ -142,14 +133,25 @@ void PardisoIndefSolver::matrixRebuild(AbstractMatrix& matrixNew) {
 }
 
 
-void PardisoIndefSolver::factorizeFromSparse(SparseSymmetricMatrix& matrix_fortran) {
+void PardisoIndefSolver::factorizeFromSparse(const SparseSymmetricMatrix& matrix_fortran) {
    assert(n == matrix_fortran.size());
-   assert(!deleteCSRpointers);
-   assert(matrix_fortran.getStorageRef().fortranIndexed());
+   assert(matrix_fortran.getStorage().fortranIndexed());
 
-   ia = matrix_fortran.krowM();
-   ja = matrix_fortran.jcolM();
-   a = matrix_fortran.M();
+   if (ia.size() < static_cast<size_t>(n + 1)) {
+      ia.resize(n + 1);
+   }
+
+   const size_t nnz = matrix_fortran.numberOfNonZeros();
+
+   assert(nnz >= 0);
+   if (ja.size() < nnz || a.size() < nnz) {
+      ja.resize(nnz);
+      a.resize(nnz);
+   }
+
+   std::copy(matrix_fortran.krowM(), matrix_fortran.krowM() + n + 1, ia.begin());
+   std::copy(matrix_fortran.jcolM(), matrix_fortran.jcolM() + nnz, ja.begin());
+   std::copy(matrix_fortran.M(), matrix_fortran.M() + nnz, a.begin());
 
    assert(ia[0] == 1);
 
@@ -168,13 +170,12 @@ void PardisoIndefSolver::factorizeFromSparse() {
    const bool usePrecondSparse = pipsipmpp_options::get_bool_parameter("PRECONDITION_SPARSE");
 
    // first call?
-   if (ia == nullptr) {
-      assert(ja == nullptr && a == nullptr);
-      deleteCSRpointers = true;
+   if (ia.empty()) {
+      assert(ja.empty() && a.empty());
 
-      ia = new int[n + 1];
-      ja = new int[nnz];
-      a = new double[nnz];
+      ia.resize(n+1);
+      ja.resize(nnz);
+      a.resize(nnz);
    }
 
    assert(n >= 0);
@@ -203,12 +204,10 @@ void PardisoIndefSolver::factorizeFromSparse() {
                if ((fabs(aStorage[j]) >= diag[r] || fabs(aStorage[j]) >= diag[jaStorage[j]])) {
                   ja[nnznew] = jaStorage[j] + 1;
                   a[nnznew++] = aStorage[j];
-               }
-               else {
+               } else {
                   assert(jaStorage[j] != r);
                }
-            }
-            else {
+            } else {
                ja[nnznew] = jaStorage[j] + 1;
                a[nnznew++] = aStorage[j];
             }
@@ -218,7 +217,8 @@ void PardisoIndefSolver::factorizeFromSparse() {
    }
 
    if (!pipsipmpp_options::get_bool_parameter("HIERARCHICAL") && PIPS_MPIgetRank(mpi_comm) == 0)
-      std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")" << std::endl;
+      std::cout << "real nnz in KKT: " << nnznew << " (ratio: " << double(nnznew) / double(iaStorage[n]) << ")"
+                << std::endl;
 
 #if 0
    {
@@ -265,17 +265,14 @@ void PardisoIndefSolver::factorizeFromDense() {
    assert(mStorage->n == mStorage->m);
    const int nnz = mStorage->non_zeros();
 
-   if (deleteCSRpointers) {
-      delete[] ia;
-      delete[] ja;
-      delete[] a;
+   if (ia.size() < static_cast<size_t>(n + 1)) {
+      ia.resize(n + 1);
    }
-
-   ia = new int[n + 1];
-   ja = new int[nnz];
-   a = new double[nnz];
-
-   deleteCSRpointers = true;
+   if (ja.size() < static_cast<size_t>(nnz) || a.size() < static_cast<size_t>(nnz))
+   {
+      ja.resize(nnz);
+      a.resize(nnz);
+   }
 
    int pos = 0;
    for (int j = 0; j < n; j++) {
@@ -302,7 +299,7 @@ void PardisoIndefSolver::factorize() {
    int error;
    const int my_rank = PIPS_MPIgetRank(mpi_comm);
 
-   assert(ia && ja && a);
+   assert(!ia.empty() && !ja.empty() && !a.empty());
    checkMatrix();
 
    iparm[17] = -1; /* compute number of nonzeros in factors */
@@ -329,7 +326,7 @@ else
    phase = 11;
    assert(iparmUnchanged());
 
-   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a.data(), ia.data(), ja.data(), &idum, &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
 
    if (error != 0) {
       printf("\nERROR during symbolic factorization: %d", error);
@@ -344,7 +341,7 @@ else
    phase = 22;
    assert(iparmUnchanged());
 
-   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a.data(), ia.data(), ja.data(), &idum, &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
 
    if (error != 0) {
       printf("\nERROR during numerical factorization: %d", error);
@@ -394,12 +391,11 @@ void PardisoIndefSolver::solve(Vector<double>& v) {
          for (int i = 0; i < n; i++)
             if (!PIPSisZero(b[i]))
                rhsSparsity[i] = 1;
-      }
-      else {
+      } else {
          iparm[30] = 0;
       }
 
-      pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, rhsSparsity, &nrhs, iparm, &msglvl, b, x, &error);
+      pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a.data(), ia.data(), ja.data(), rhsSparsity, &nrhs, iparm, &msglvl, b, x, &error);
       if (error != 0) {
          printf("\nERROR during solution: %d", error);
          exit(3);
@@ -446,8 +442,7 @@ void PardisoIndefSolver::solve(Vector<double>& v) {
 #ifdef TIMING
       printf("sparse kkt iterative refinement steps: %d \n", iparm[6]);
 #endif
-   }
-   else {
+   } else {
       assert(!solve_in_parallel);
       assert(size > 0);
       MPI_Bcast(b, n, MPI_DOUBLE, 0, mpi_comm);
@@ -523,13 +518,11 @@ void PardisoIndefSolver::solve(int nrhss, double* rhss, int* /*colSparsity*/ ) {
    }
 
    assert(pt);
-   assert(a);
-   assert(ia);
-   assert(ja);
    assert(rhss);
    int error = 0;
 
-   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a, ia, ja, nullptr, &nrhss_local, iparm, &msglvl, rhss_nonzero.data(), sol.data(), &error);
+   pardisoCall(pt, &maxfct, &mnum, &mtype, &phase, &n, a.data(), ia.data(), ja.data(), nullptr, &nrhss_local, iparm, &msglvl,
+      rhss_nonzero.data(), sol.data(), &error);
 
    if (error != 0) {
       printf("PardisoSolver - ERROR during solve: %d", error);
@@ -545,18 +538,11 @@ void PardisoIndefSolver::diagonalChanged(int /* idiag */, int /* extent */) {
 }
 
 PardisoIndefSolver::~PardisoIndefSolver() {
-   if (deleteCSRpointers) {
-      delete[] ia;
-      delete[] ja;
-      delete[] a;
-   }
-
    delete[] x;
 }
 
 std::tuple<unsigned int, unsigned int, unsigned int> PardisoIndefSolver::get_inertia() const {
-   if (solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0)
-   {
+   if (solve_in_parallel || PIPS_MPIgetRank(mpi_comm) == 0) {
       const int positive_eigenvalues = iparm[21];
       const int negative_eigenvalues = iparm[22];
       const int number_pivot_perturbations = iparm[13]; // indicate zero pivots and thus rank deficiency

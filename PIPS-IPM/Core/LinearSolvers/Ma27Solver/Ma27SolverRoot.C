@@ -8,24 +8,24 @@
 
 #include "Ma27SolverRoot.h"
 
-Ma27SolverRoot::Ma27SolverRoot(const SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma27Solver(sgm, name),
+Ma27SolverRoot::Ma27SolverRoot(const SparseSymmetricMatrix& sgm, bool solve_in_parallel, MPI_Comm mpiComm, const std::string& name) : Ma27Solver(sgm, name),
       solve_in_parallel(solve_in_parallel), comm(mpiComm) {
    threshold_pivoting_max = 0.5;
    precision = 1e-7;
    assert(mpiComm != MPI_COMM_NULL);
 }
 
-void Ma27SolverRoot::matrixRebuild(AbstractMatrix& matrixNew) {
+void Ma27SolverRoot::matrixRebuild(const AbstractMatrix& matrixNew) {
    const int my_rank = PIPS_MPIgetRank(comm);
 
    if (solve_in_parallel || my_rank == 0) {
-      auto& matrixNewSym = dynamic_cast<SparseSymmetricMatrix&>(matrixNew);
+      auto& matrixNewSym = dynamic_cast<const SparseSymmetricMatrix&>(matrixNew);
 
-      assert(matrixNewSym.getStorageRef().fortranIndexed());
+      assert(matrixNewSym.getStorage().fortranIndexed());
 
       freeWorkingArrays();
 
-      mat_storage = matrixNewSym.getStorageHandle();
+      mat_storage = &matrixNewSym.getStorage();
       nnz = matrixNewSym.numberOfNonZeros();
 
       init();

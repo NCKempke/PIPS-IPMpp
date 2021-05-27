@@ -7,7 +7,6 @@
 
 #include "AbstractLinearSystem.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "Observer.h"
 #include "RegularizationStrategy.h"
 

@@ -49,7 +49,7 @@ void FNAME(ma57ed)(const int* n, int* ic, int keep[], const double fact[], const
 class Ma57Solver : public DoubleLinearSolver {
 
 protected:
-   SmartPointer<SparseStorage> mat_storage;
+   const SparseStorage* mat_storage;
 
    /** control structures MA57 */
    std::vector<int> icntl = std::vector<int>(20);
@@ -158,7 +158,7 @@ protected:
    void getIndices(std::vector<int>& irowM, std::vector<int>& jcolM) const;
 
 public:
-   explicit Ma57Solver(const SparseSymmetricMatrix* sgm, std::string name = "leaf");
+   explicit Ma57Solver(const SparseSymmetricMatrix& sgm, std::string name = "leaf");
 
    ~Ma57Solver() override = default;
 

@@ -37,7 +37,7 @@ public:
    std::unique_ptr<StripMatrix> const border_bottom{};
 
    // TODO: is SparseGenMatrix appropriate? What does this block look like -> it has parts of the diagonals in it for inequality linking constraints and nothing else?
-   std::unique_ptr<SparseMatrix> const bottom_left_block{};
+   std::unique_ptr<GeneralMatrix> const bottom_left_block{};
 
 protected:
 
@@ -50,7 +50,7 @@ protected:
 
 public:
    BorderedMatrix(std::shared_ptr<DistributedMatrix> inner_matrix, std::unique_ptr<StripMatrix> border_left,
-      std::unique_ptr<StripMatrix> border_bottom, std::unique_ptr<SparseMatrix> bottom_left_block,
+      std::unique_ptr<StripMatrix> border_bottom, std::unique_ptr<GeneralMatrix> bottom_left_block,
       MPI_Comm mpi_comm_);
 
    ~BorderedMatrix() override = default;

@@ -36,7 +36,7 @@ extern "C" {
 
 #define SHRINK_SC
 
-PardisoSchurSolver::PardisoSchurSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm} {
+PardisoSchurSolver::PardisoSchurSolver(const SparseSymmetricMatrix& sgm) : Msys{&sgm} {
    const int myRank = PIPS_MPIgetRank(MPI_COMM_WORLD);
 
    useSparseRhs = pipsipmpp_options::get_bool_parameter("PARDISO_SPARSE_RHS_LEAF");
@@ -107,12 +107,12 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
    if (nG == 0)
       assert(G.numberOfNonZeros() == 0);
 
-   assert(F.getStorageRef().isValid());
-   assert(G.getStorageRef().isValid());
-   assert(R.getStorageRef().isValid());
-   assert(A.getStorageRef().isValid());
-   assert(C.getStorageRef().isValid());
-   assert(Msys->getStorageRef().isValid());
+   assert(F.getStorage().isValid());
+   assert(G.getStorage().isValid());
+   assert(R.getStorage().isValid());
+   assert(A.getStorage().isValid());
+   assert(C.getStorage().isValid());
+   assert(Msys->getStorage().isValid());
 
    // todo not implemented yet
    assert(R.numberOfNonZeros() == 0);
@@ -141,16 +141,16 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
    SparseSymmetricMatrix augSys(n, nnz);
 
    // pointer for augmented system
-   int* krowAug = augSys.getStorageRef().krowM;
-   int* jcolAug = augSys.getStorageRef().jcolM;
-   double* MAug = augSys.getStorageRef().M;
+   int* krowAug = augSys.getStorage().krowM;
+   int* jcolAug = augSys.getStorage().jcolM;
+   double* MAug = augSys.getStorage().M;
 
    //
    //put (1,1) block in the augmented system
    //
-   memcpy(krowAug, Msys->getStorageRef().krowM, sizeof(int) * Msize);
-   memcpy(jcolAug, Msys->getStorageRef().jcolM, sizeof(int) * Msys->numberOfNonZeros());
-   memcpy(MAug, Msys->getStorageRef().M, sizeof(double) * Msys->numberOfNonZeros());
+   memcpy(krowAug, Msys->getStorage().krowM, sizeof(int) * Msize);
+   memcpy(jcolAug, Msys->getStorage().jcolM, sizeof(int) * Msys->numberOfNonZeros());
+   memcpy(MAug, Msys->getStorage().M, sizeof(double) * Msys->numberOfNonZeros());
 
 
    int nnzIt = Msys->numberOfNonZeros();
@@ -168,23 +168,23 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
 
       // initialize variables for At
       SparseMatrix At(putA ? nx : 0, putA ? nA : 0, putA ? A.numberOfNonZeros() : 0);
-      int* krowAt = At.getStorageRef().krowM;
-      int* jcolAt = At.getStorageRef().jcolM;
-      double* MAt = At.getStorageRef().M;
+      int* krowAt = At.getStorage().krowM;
+      int* jcolAt = At.getStorage().jcolM;
+      double* MAt = At.getStorage().M;
 
       if (putA)
-         A.getStorageRef().transpose(krowAt, jcolAt, MAt);
+         A.getStorage().transpose(krowAt, jcolAt, MAt);
 
       const int colShiftA = nR;
 
       // initialize variables for Ct
       SparseMatrix Ct(putC ? nx : 0, putC ? nC : 0, putC ? C.numberOfNonZeros() : 0);
-      int* krowCt = Ct.getStorageRef().krowM;
-      int* jcolCt = Ct.getStorageRef().jcolM;
-      double* MCt = Ct.getStorageRef().M;
+      int* krowCt = Ct.getStorage().krowM;
+      int* jcolCt = Ct.getStorage().jcolM;
+      double* MCt = Ct.getStorage().M;
 
       if (putC)
-         C.getStorageRef().transpose(krowCt, jcolCt, MCt);
+         C.getStorage().transpose(krowCt, jcolCt, MCt);
 
       const int colShiftC = nR + nA;
 
@@ -237,9 +237,9 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
       if (nF > 0) {
          // put F in the lower triangular part below R (and below 0 block)
 
-         int* krowF = F.getStorageRef().krowM;
-         int* jcolF = F.getStorageRef().jcolM;
-         double* MF = F.getStorageRef().M;
+         int* krowF = F.getStorage().krowM;
+         int* jcolF = F.getStorage().jcolM;
+         double* MF = F.getStorage().M;
 
          const bool putF = F.numberOfNonZeros() > 0;
 
@@ -269,9 +269,9 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
       if (nG > 0) {
          // put G in the lower triangular part below F
 
-         int* krowG = G.getStorageRef().krowM;
-         int* jcolG = G.getStorageRef().jcolM;
-         double* MG = G.getStorageRef().M;
+         int* krowG = G.getStorage().krowM;
+         int* jcolG = G.getStorage().jcolM;
+         double* MG = G.getStorage().M;
 
          const bool putG = G.numberOfNonZeros() > 0;
 
@@ -315,7 +315,7 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
          MPI_Abort(MPI_COMM_WORLD, 1);
       }
 
-      if (Msys->getStorageRef().krowM[i] == Msys->getStorageRef().krowM[i + 1]) {
+      if (Msys->getStorage().krowM[i] == Msys->getStorage().krowM[i + 1]) {
          std::cout << "(2) zero row in (1,1) block of Schur complement!" << std::endl;
          MPI_Abort(MPI_COMM_WORLD, 1);
       }
@@ -343,13 +343,13 @@ PardisoSchurSolver::firstSolveCall( const SparseMatrix& R, const SparseMatrix& A
    colidxAug = new int[nnz];
    eltsAug = new double[nnz];
 
-   augSys.getStorageRef().transpose(rowptrAug, colidxAug, eltsAug);
+   augSys.getStorage().transpose(rowptrAug, colidxAug, eltsAug);
 
    assert(rowptrAug[n] == nnz);
 
    //save the indices for diagonal entries for a streamlined later update
-   int* krowMsys = Msys->getStorageRef().krowM;
-   int* jcolMsys = Msys->getStorageRef().jcolM;
+   int* krowMsys = Msys->getStorage().krowM;
+   int* jcolMsys = Msys->getStorage().jcolM;
 
    for (int r = 0; r < Msize; r++) {
 

@@ -15,7 +15,6 @@
 #include <utility>
 
 #include "Vector.hpp"
-#include "../../Base/IotrRefCount.h"
 
 class DoubleLinearSolver;
 
@@ -23,7 +22,7 @@ class DoubleLinearSolver;
  * Handle the manipulation of matrix elements
  * @ingroup AbstractLinearAlgebra
  */
-class DoubleStorage : public IotrRefCount {
+class DoubleStorage {
 public:
    DoubleStorage() = default;
 
@@ -56,13 +55,13 @@ public:
    [[nodiscard]] virtual double inf_norm() const = 0;
    [[nodiscard]] double abminnormNonZero() const { return abminnormNonZero(1e-30); };
    [[nodiscard]] virtual double abminnormNonZero(double tol) const = 0;
-   ~DoubleStorage() override = default;
+   virtual ~DoubleStorage() = default;
 };
 
 /** Parent of all matrix classes
  * @ingroup AbstractLinearAlgebra
  */
-class AbstractMatrix : public IotrRefCount, public std::enable_shared_from_this<AbstractMatrix> {
+class AbstractMatrix : public std::enable_shared_from_this<AbstractMatrix> {
 public:
    AbstractMatrix() = default;
 
@@ -221,7 +220,7 @@ public:
    [[nodiscard]] virtual long long size() const = 0;
 
    /** deep clone matrix */
-   [[nodiscard]] virtual SymmetricMatrix* clone() const {
+   [[nodiscard]] virtual std::unique_ptr<SymmetricMatrix> clone() const {
       assert(false && "not implemented");
       return nullptr;
    };
@@ -295,26 +294,26 @@ public:
    };
 
    /** clone of matrix with n = 0 - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual GeneralMatrix* cloneEmptyRows() const {
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> cloneEmptyRows() const {
       return cloneEmptyRows(false);
    }
-   [[nodiscard]] virtual GeneralMatrix* cloneEmptyRows(bool /* switchToDynamicStorage */) const {
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> cloneEmptyRows(bool /* switchToDynamicStorage */) const {
       assert(false && "not implemented");
       return nullptr;
    };
 
    /** full clone of matrix - possibly with underlying dynamic sparse storage */
-   [[nodiscard]] virtual GeneralMatrix* cloneFull() const {
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> cloneFull() const {
       return cloneFull(false);
    }
 
-   [[nodiscard]] virtual GeneralMatrix* cloneFull(bool /* switchToDynamicStorage */) const {
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> cloneFull(bool /* switchToDynamicStorage */) const {
       assert(false && "not implemented");
       return nullptr;
    };
 
    /** shave of bottom n constraints and return them in a new matrix */
-   [[nodiscard]] virtual GeneralMatrix* shaveBottom(int /* nrows */) {
+   [[nodiscard]] virtual std::unique_ptr<GeneralMatrix> shaveBottom(int /* nrows */) {
       assert(false && "not implemented");
       return nullptr;
    };

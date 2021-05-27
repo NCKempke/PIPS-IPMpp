@@ -52,11 +52,11 @@ class DistributedFactory {
 public:
    DistributedFactory(DistributedInputTree* tree, MPI_Comm comm = MPI_COMM_WORLD);
 
-   Problem* make_problem();
+   Problem* make_problem() const;
 
    Residuals* make_residuals(Problem& problem) const;
 
-   Variables* make_variables(Problem& problem);
+   Variables* make_variables(Problem& problem) const;
 
    std::unique_ptr<AbstractLinearSystem> make_linear_system(Problem& problem);
 

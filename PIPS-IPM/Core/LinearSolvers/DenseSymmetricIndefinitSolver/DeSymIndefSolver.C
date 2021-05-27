@@ -47,12 +47,12 @@ extern "C" {
 }
 #endif
 
-DeSymIndefSolver::DeSymIndefSolver(const DenseSymmetricMatrix* dm) : matrix{*dm}, is_mat_sparse{false}, n{static_cast<int>(dm->size())} {
+DeSymIndefSolver::DeSymIndefSolver(const DenseSymmetricMatrix& dm) : matrix{dm}, is_mat_sparse{false}, n{static_cast<int>(dm.size())} {
    mStorage = std::make_unique<DenseStorage>(n,n);
    ipiv.resize(this->n);
 }
 
-DeSymIndefSolver::DeSymIndefSolver(const SparseSymmetricMatrix* sm) : matrix{*sm}, is_mat_sparse{true}, n{static_cast<int>(sm->size())} {
+DeSymIndefSolver::DeSymIndefSolver(const SparseSymmetricMatrix& sm) : matrix{sm}, is_mat_sparse{true}, n{static_cast<int>(sm.size())} {
    mStorage = std::make_unique<DenseStorage>(n,n);
    ipiv.resize(this->n);
 }
@@ -64,9 +64,9 @@ void DeSymIndefSolver::matrixChanged() {
       return;
 
    if (is_mat_sparse) {
-      this->mStorage->fill_from_sparse(dynamic_cast<const SparseSymmetricMatrix&>(matrix).getStorageRef());
+      this->mStorage->fill_from_sparse(dynamic_cast<const SparseSymmetricMatrix&>(matrix).getStorage());
    } else {
-      this->mStorage->fill_from_dense(dynamic_cast<const DenseSymmetricMatrix&>(matrix).getStorageRef());
+      this->mStorage->fill_from_dense(dynamic_cast<const DenseSymmetricMatrix&>(matrix).getStorage());
    }
 
 #ifdef TIMING

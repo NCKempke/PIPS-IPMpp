@@ -159,7 +159,7 @@ void SparseStorageDynamic::setMat(int i, double val) {
    M[i] = val;
 }
 
-SparseStorage* SparseStorageDynamic::getStaticStorage(const int* rowNnz, const int* colNnz) const {
+std::unique_ptr<SparseStorage> SparseStorageDynamic::getStaticStorage(const int* rowNnz, const int* colNnz) const {
    int m_static = 0;
 
    // empty?
@@ -172,9 +172,7 @@ SparseStorage* SparseStorageDynamic::getStaticStorage(const int* rowNnz, const i
          if (rowNnz[r] != 0.0)
             m_static++;
 
-      auto* staticStorage = new SparseStorage(m_static, n, len);
-
-      return staticStorage;
+      return std::make_unique<SparseStorage>(m_static, n, len);
    }
 
    assert(rowNnz != nullptr && colNnz != nullptr);
@@ -229,7 +227,7 @@ SparseStorage* SparseStorageDynamic::getStaticStorage(const int* rowNnz, const i
          n_static++;
    }
 
-   auto* staticStorage = new SparseStorage(m_static, n_static, len_static);
+   auto staticStorage = std::make_unique<SparseStorage>(m_static, n_static, len_static);
 
    int* const krowM_static = staticStorage->krowM;
    int* const jcolM_static = staticStorage->jcolM;
@@ -276,7 +274,7 @@ SparseStorage* SparseStorageDynamic::getStaticStorage(const int* rowNnz, const i
 }
 
 
-SparseStorageDynamic* SparseStorageDynamic::getTranspose() const {
+std::unique_ptr<SparseStorageDynamic> SparseStorageDynamic::getTranspose() const {
    assert(n > 0);
 
    // compute nnz of each row of At (column of A)
@@ -303,7 +301,7 @@ SparseStorageDynamic* SparseStorageDynamic::getTranspose() const {
    for (int i = 0; i < n; i++)
       translen += w[i] + int(w[i] * spareRatio);
 
-   auto* transpose = new SparseStorageDynamic(n, m, translen, spareRatio);
+   auto transpose = std::make_unique<SparseStorageDynamic>(n, m, translen, spareRatio);
 
    // set row pointers
 

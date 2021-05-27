@@ -18,7 +18,7 @@ extern "C" void pardiso_get_schur(void*, int*, int*, int*, double*, int*, int*);
 
 extern double g_iterNumber;
 
-PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm) : PardisoSchurSolver(sgm) {
+PardisoProjectSchurSolver::PardisoProjectSchurSolver(const SparseSymmetricMatrix& sgm) : PardisoSchurSolver(sgm) {
    num_threads = PIPSgetnOMPthreads();
 
    //initPardiso();
@@ -187,7 +187,7 @@ void PardisoProjectSchurSolver::computeSC(int nSCO, const SparseMatrix& R, const
    }
    else {
       //update diagonal entries in the PARDISO aug sys
-      const double* eltsMsys = Msys->getStorageRef().M;
+      const double* eltsMsys = Msys->getStorage().M;
       std::map<int, int>::iterator it;
 
 #if 0

@@ -80,7 +80,7 @@ public:
    virtual void recomputeNonzeros();
    [[nodiscard]] int numberOfNonZeros() const override;
 
-   [[nodiscard]] GeneralMatrix* shaveBottom(int n_rows) override;
+   [[nodiscard]] std::unique_ptr<GeneralMatrix> shaveBottom(int n_rows) override;
 
    /* methods not needed for Hierarchical approach */
    [[nodiscard]] double abminnormNonZero(double) const override {
@@ -160,7 +160,7 @@ public:
    void recomputeNonzeros() override {};
    [[nodiscard]] int numberOfNonZeros() const override { return 0; };
 
-   GeneralMatrix* shaveBottom(int) override { return new StringGenDummyMatrix(); };
+   std::unique_ptr<GeneralMatrix> shaveBottom(int) override { return std::make_unique<StringGenDummyMatrix>(); };
 
    void splitAlongTree(const DistributedTreeCallbacks&) override { assert(false && "should not end up here"); };
 

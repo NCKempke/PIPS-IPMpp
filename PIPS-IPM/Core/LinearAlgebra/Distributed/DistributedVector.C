@@ -2059,9 +2059,6 @@ DistributedVector<T>* DistributedVector<T>::raiseBorder(int n_first_to_shave, in
    this->parent = top_layer;
    top_layer->AddChild(std::dynamic_pointer_cast<DistributedVector>(this->shared_from_this()));
 
-   DistributedVector<T>* me = this;
-   IotrAddRef(&me);
-
    return top_layer;
 }
 

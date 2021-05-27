@@ -223,8 +223,8 @@ DistributedLeafLinearSystem::addTermToSchurComplBlocked(bool sparseSC, Symmetric
 
    if (use_local_RAC) {
       const int n_empty =
-         SC.size() - data->getLocalCrossHessian().getStorageRef().n - data->getLocalF().getStorageRef().m -
-            data->getLocalG().getStorageRef().m;
+         SC.size() - data->getLocalCrossHessian().getStorage().n - data->getLocalF().getStorage().m -
+            data->getLocalG().getStorage().m;
 
       assert(data->hasRAC());
       border_right = std::make_unique<BorderBiBlock>(
@@ -238,7 +238,7 @@ DistributedLeafLinearSystem::addTermToSchurComplBlocked(bool sparseSC, Symmetric
 
    } else {
       assert(!data->hasRAC());
-      const int n_empty = SC.size() - data->getLocalF().getStorageRef().m - data->getLocalG().getStorageRef().m;
+      const int n_empty = SC.size() - data->getLocalF().getStorage().m - data->getLocalG().getStorage().m;
 
       border_right = std::make_unique<BorderBiBlock>(n_empty, data->getLocalF().getTranspose(),
          data->getLocalG().getTranspose(), use_local_RAC);
@@ -405,10 +405,10 @@ void DistributedLeafLinearSystem::addInnerBorderKiInvBrToRes(AbstractMatrix& res
    std::vector<BorderMod>& Br_mod_border, bool, bool sparse_res,
    bool sym_res, int begin_cols, int end_cols, int) {
    const auto res_n = result.n_columns();
-   const int n_empty = data->hasRAC() ? res_n - data->getLocalCrossHessian().getStorageRef().n -
-      data->getLocalF().getStorageRef().m -
-      data->getLocalG().getStorageRef().m : res_n - data->getLocalF().getStorageRef().m -
-      data->getLocalG().getStorageRef().m;
+   const int n_empty = data->hasRAC() ? res_n - data->getLocalCrossHessian().getStorage().n -
+      data->getLocalF().getStorage().m -
+      data->getLocalG().getStorage().m : res_n - data->getLocalF().getStorage().m -
+      data->getLocalG().getStorage().m;
    assert(n_empty >= 0);
 
    BorderBiBlock BiT_inner = data->hasRAC() ? BorderBiBlock(data->getLocalCrossHessian().getTranspose(),

@@ -73,7 +73,7 @@ public:
 
    virtual ~DistributedTree();
 
-   bool distributedPreconditionerActive() const;
+   [[nodiscard]] bool distributedPreconditionerActive() const;
 
    void startMonitors();
    void startNodeMonitors();

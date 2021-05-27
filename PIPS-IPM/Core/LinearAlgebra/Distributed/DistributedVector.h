@@ -2,7 +2,6 @@
 #define DISTRIBUTEDVECTOR_H
 
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "SimpleVector.h"
 #include "mpi.h"
 #include <vector>

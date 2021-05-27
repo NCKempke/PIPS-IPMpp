@@ -15,22 +15,22 @@ class SparseMatrix;
  *  @ingroup SparseLinearAlgebra
  */
 class SparseSymmetricMatrix : public SymmetricMatrix {
-   SmartPointer<SparseStorage> mStorage;
+private:
+   std::unique_ptr<SparseStorage> mStorage;
+
+   // is lower part of matrix stored? (otherwise upper part is stored)
+   const bool isLower;
+
 public:
    SparseSymmetricMatrix();
    SparseSymmetricMatrix(const SparseSymmetricMatrix& mat);
 
    SparseSymmetricMatrix(int size, int nnz, bool isLower = true);
    SparseSymmetricMatrix(int size, int nnz, int krowM[], int jcolM[], double M[], int deleteElts = 0, bool isLower = true);
-   SparseSymmetricMatrix(SparseStorage* m_storage, bool is_lower_);
+   SparseSymmetricMatrix(std::unique_ptr<SparseStorage> m_storage, bool is_lower_);
 
-   SparseStorage& getStorageRef() { return *mStorage; }
-   [[nodiscard]] const SparseStorage& getStorageRef() const { return *mStorage; }
-   SmartPointer<SparseStorage> getStorageHandle() { return mStorage; }
-   [[nodiscard]] SmartPointer<SparseStorage> getStorageHandle() const { return mStorage; }
-
-   // is lower part of matrix stored? (otherwise upper part is stored)
-   const bool isLower;
+   SparseStorage& getStorage() { return *mStorage; }
+   [[nodiscard]] const SparseStorage& getStorage() const { return *mStorage; }
 
    int* krowM() { return mStorage->krowM; }
    int* jcolM() { return mStorage->jcolM; }
@@ -96,6 +96,8 @@ public:
    /** Reduce the matrix to lower triangular */
    void reduceToLower();
 
+   [[nodiscard]] bool is_lower() const { return isLower; };
+
    void deleteEmptyRowsCols(const Vector<int>& nnzVec);
 
    void deleteZeroRowsCols(int*& new2orgIdx);
@@ -104,11 +106,11 @@ public:
 
    void getSparseTriplet_fortran2fortran(int*& irn, int*& jcn, double*& val) const;
 
-   virtual SparseMatrix* shaveSymLeftBottom(int n_vars);
+   std::unique_ptr<SparseMatrix> shaveSymLeftBottom(int n_vars);
 
    ~SparseSymmetricMatrix() override = default;
 
-   [[nodiscard]] SymmetricMatrix* clone() const override;
+   [[nodiscard]] std::unique_ptr<SymmetricMatrix> clone() const override;
 };
 
 #endif

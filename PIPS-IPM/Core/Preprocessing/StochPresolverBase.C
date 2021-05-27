@@ -320,19 +320,19 @@ void StochPresolverBase::setPointersMatrices(const GeneralMatrix& mat, int node)
       currAmat = nullptr;
       currAmatTrans = nullptr;
 
-      currBmat = dynamic_cast<const SparseMatrix&>(*smat.Bmat).getStorageDynamic();
-      currBmatTrans = dynamic_cast<const SparseMatrix&>(*smat.Bmat).getStorageDynamicTransposed();
+      currBmat = dynamic_cast<const SparseMatrix&>(*smat.Bmat).getStorageDynamicPtr();
+      currBmatTrans = dynamic_cast<const SparseMatrix&>(*smat.Bmat).getStorageDynamicTransposedPtr();
 
-      currBlmat = dynamic_cast<const SparseMatrix&>(*smat.Blmat).getStorageDynamic();
-      currBlmatTrans = dynamic_cast<const SparseMatrix&>(*smat.Blmat).getStorageDynamicTransposed();
+      currBlmat = dynamic_cast<const SparseMatrix&>(*smat.Blmat).getStorageDynamicPtr();
+      currBlmatTrans = dynamic_cast<const SparseMatrix&>(*smat.Blmat).getStorageDynamicTransposedPtr();
    }
    else {
-      currAmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Amat).getStorageDynamic();
-      currAmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Amat).getStorageDynamicTransposed();
-      currBmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Bmat).getStorageDynamic();
-      currBmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Bmat).getStorageDynamicTransposed();
-      currBlmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Blmat).getStorageDynamic();
-      currBlmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Blmat).getStorageDynamicTransposed();
+      currAmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Amat).getStorageDynamicPtr();
+      currAmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Amat).getStorageDynamicTransposedPtr();
+      currBmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Bmat).getStorageDynamicPtr();
+      currBmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Bmat).getStorageDynamicTransposedPtr();
+      currBlmat = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Blmat).getStorageDynamicPtr();
+      currBlmatTrans = dynamic_cast<const SparseMatrix&>(*smat.children[node]->Blmat).getStorageDynamicTransposedPtr();
    }
 }
 

@@ -6,8 +6,8 @@
 
 extern int print_level;
 
-Ma27Solver::Ma27Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat{sgm}, mat_storage(sgm->getStorageHandle()), n{mat_storage->n},
-      nnz{mat_storage->numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
+Ma27Solver::Ma27Solver(const SparseSymmetricMatrix& sgm, std::string name_) : mat_storage(&sgm.getStorage()), n{mat_storage->n},
+      nnz{sgm.numberOfNonZeros()}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_))//, scaler( new Mc30Scaler() )
 {
    assert(n_threads >= 1);
 
@@ -83,14 +83,12 @@ void Ma27Solver::diagonalChanged(int /* idiag */, int /* extent */) {
    this->matrixChanged();
 }
 
-bool new_factor;
 void Ma27Solver::matrixChanged() {
    if (fact.empty())
       this->firstCall();
 
    bool done;
    int tries = 0;
-   new_factor = true;
    do {
       // copy M to fact
       copyMatrixElements(fact, la);
@@ -259,17 +257,17 @@ void Ma27Solver::solve(Vector<double>& rhs_in) {
 //
 //      myfile << "ia: ";
 //      for( int i = 0; i <= n; i++ )
-//         myfile << mat->getStorageRef().krowM[i] << ", ";
+//         myfile << mat->getStorage().krowM[i] << ", ";
 //      myfile << "\n";
 //
 //      myfile << "ja: ";
 //      for( int i = 0; i < nnz; i++ )
-//         myfile << mat->getStorageRef().jcolM[i] << ", ";
+//         myfile << mat->getStorage().jcolM[i] << ", ";
 //      myfile << "\n";
 //
 //      myfile << "a: ";
 //      for( int i = 0; i < nnz; i++ )
-//         myfile << mat->getStorageRef().M[i] << ", ";
+//         myfile << mat->getStorage().M[i] << ", ";
 //      myfile << "\n";
 //
 //      myfile.close();

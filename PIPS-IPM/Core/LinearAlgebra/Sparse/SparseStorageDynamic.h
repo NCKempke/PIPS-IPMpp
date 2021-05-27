@@ -120,8 +120,8 @@ public:
    [[nodiscard]] double inf_norm() const override;
    [[nodiscard]] double abminnormNonZero(double tol) const override;
 
-   [[nodiscard]] SparseStorage* getStaticStorage(const int* rowNnz, const int* colNnz) const;
-   [[nodiscard]] SparseStorageDynamic* getTranspose() const;
+   [[nodiscard]] std::unique_ptr<SparseStorage> getStaticStorage(const int* rowNnz, const int* colNnz) const;
+   [[nodiscard]] std::unique_ptr<SparseStorageDynamic> getTranspose() const;
 
    void getRowMaxVec(const double* colScaleVec, double* vec) const;
    void getRowMinMaxVec(bool getMin, const double* colScaleVec, double* vec) const;

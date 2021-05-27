@@ -23,7 +23,7 @@ class StochPostsolver : public QpPostsolver {
 
 public:
    StochPostsolver(const DistributedQP& original_problem);
-   virtual ~StochPostsolver();
+   ~StochPostsolver() override;
 
    void notifyRowModified(const INDEX& row);
    void notifyColModified(const INDEX& col);
@@ -68,8 +68,8 @@ public:
    void notifyParallelRowsBoundsTightened(const INDEX& row1, const INDEX& row2, double clow_old, double cupp_old, double clow_new, double cupp_new,
          double factor);
 
-   bool wasColumnRemoved(const INDEX& col) const;
-   bool wasRowRemoved(const INDEX& row) const;
+   [[nodiscard]] bool wasColumnRemoved(const INDEX& col) const;
+   [[nodiscard]] bool wasRowRemoved(const INDEX& row) const;
 
 private:
    void markColumnRemoved(const INDEX& col);
@@ -82,10 +82,10 @@ private:
    /// stores col in specified node and returns it's new col index
    int storeColumn(const INDEX& col, const DistributedMatrix& matrix_col_eq, const DistributedMatrix& matrix_col_ineq);
 
-   bool isRowModified(const INDEX& row) const;
+   [[nodiscard]] bool isRowModified(const INDEX& row) const;
    void markRowClean(const INDEX& row);
    void markColClean(const INDEX& col);
-   bool isColModified(const INDEX& col) const;
+   [[nodiscard]] bool isColModified(const INDEX& col) const;
 
 public:
    /// synchronization events
@@ -216,11 +216,11 @@ private:
    void addIneqRowDual(double& z, double& lambda, double& pi, double value) const;
 
    void setOriginalVarsFromReduced(const DistributedVariables& reduced_vars, DistributedVariables& original_vars) const;
-   bool allVariablesSet(const DistributedVariables& vars) const;
-   bool complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const;
-   bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
+   [[nodiscard]] bool allVariablesSet(const DistributedVariables& vars) const;
+   [[nodiscard]] bool complementarySlackVariablesMet(const DistributedVariables& vars, const INDEX& col, double tol) const;
+   [[nodiscard]] bool complementarySlackRowMet(const DistributedVariables& vars, const INDEX& row, double tol) const;
 
-   bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
+   [[nodiscard]] bool sameNonZeroPatternDistributed(const DistributedVector<double>& svec) const; // TODO: move
    static bool sameNonZeroPatternDistributed(const SimpleVector<double>& vec) ; // TODO: move
 
    template<typename T>

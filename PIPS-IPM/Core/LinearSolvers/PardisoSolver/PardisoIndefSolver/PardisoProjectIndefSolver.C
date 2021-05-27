@@ -14,16 +14,16 @@ extern "C" void pardiso_chkmatrix(int*, int*, double*, int*, int*, int*);
 extern "C" void pardiso_chkvec(int*, int*, double*, int*);
 extern "C" void pardiso_printstats(int*, int*, double*, int*, int*, int*, double*, int*);
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(sgm,
+PardisoProjectIndefSolver::PardisoProjectIndefSolver(SparseSymmetricMatrix& sgm, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(sgm,
       solve_in_parallel, mpi_comm) {
-   assert(!sgm->isLower);
+   assert(!sgm.is_lower());
 
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */
    initPardiso();
 }
 
-PardisoProjectIndefSolver::PardisoProjectIndefSolver(DenseSymmetricMatrix* m, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(m,
+PardisoProjectIndefSolver::PardisoProjectIndefSolver(DenseSymmetricMatrix& m, bool solve_in_parallel, MPI_Comm mpi_comm) : PardisoIndefSolver(m,
       solve_in_parallel, mpi_comm) {
    num_threads = PIPSgetnOMPthreads();
    solver = 0; /* sparse direct solver */
@@ -106,7 +106,7 @@ void PardisoProjectIndefSolver::checkMatrix() {
 PardisoProjectIndefSolver::~PardisoProjectIndefSolver() {
    phase = -1; /* Release internal memory. */
    int error;
-   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, &ddum, ia, ja, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
+   pardiso(pt, &maxfct, &mnum, &mtype, &phase, &n, &ddum, ia.data(), ja.data(), &idum, &nrhs, iparm, &msglvl, &ddum, &ddum, &error, dparm);
 
    if (error != 0) {
       printf("PardisoIndefSolver - ERROR in pardiso release: %d", error);

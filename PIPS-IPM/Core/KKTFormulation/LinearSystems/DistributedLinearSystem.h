@@ -8,7 +8,6 @@
 #include "LinearSystem.h"
 #include "DoubleLinearSolver.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "DenseSymmetricMatrix.h"
 #include "SparseSymmetricMatrix.h"
 #include "DenseMatrix.h"

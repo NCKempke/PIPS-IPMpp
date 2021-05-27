@@ -3,8 +3,6 @@
 //
 
 #include "PIPSIPMppInterface.hpp"
-#include "SmartPointer.h"
-#include "PreprocessType.h"
 #include "DistributedFactory.h"
 #include "DistributedQP.hpp"
 #include "DistributedResiduals.hpp"

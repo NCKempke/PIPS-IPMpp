@@ -26,10 +26,10 @@ class PardisoSchurSolver : public DoubleLinearSolver {
 
 public:
    virtual void firstCall(); //first factorization call
-   void firstSolveCall( const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0); //first solve call
+   void firstSolveCall(const SparseMatrix& R, const SparseMatrix& A, const SparseMatrix& C, const SparseMatrix& F, const SparseMatrix& G, int nSC0); //first solve call
 
    /** sets mStorage to refer to the argument sgm */
-   explicit PardisoSchurSolver(const SparseSymmetricMatrix* sgm);
+   explicit PardisoSchurSolver(const SparseSymmetricMatrix& sgm);
 
    void diagonalChanged(int idiag, int extent) override;
    void matrixChanged() override;

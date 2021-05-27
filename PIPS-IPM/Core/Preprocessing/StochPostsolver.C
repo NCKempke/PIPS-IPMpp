@@ -7,7 +7,6 @@
 
 #include "StochPostsolver.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "PIPSIPMppOptions.h"
 #include "pipsdef.h"
 #include "DistributedVectorUtilities.h"

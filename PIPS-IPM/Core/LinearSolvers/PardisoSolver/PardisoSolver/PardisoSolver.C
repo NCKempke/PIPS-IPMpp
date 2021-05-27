@@ -11,7 +11,7 @@
 
 #include "mpi.h"
 
-PardisoSolver::PardisoSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm}, n{static_cast<int>(sgm->size())}, nnz{sgm->numberOfNonZeros()} {
+PardisoSolver::PardisoSolver(const SparseSymmetricMatrix& sgm) : Msys{&sgm}, n{static_cast<int>(sgm.size())}, nnz{sgm.numberOfNonZeros()} {
    krowM = new int[n + 1];
    jcolM = new int[nnz];
    M = new double[nnz];
@@ -19,8 +19,8 @@ PardisoSolver::PardisoSolver(const SparseSymmetricMatrix* sgm) : Msys{sgm}, n{st
    nvec = new double[n];
 }
 
-PardisoSolver::PardisoSolver(const DenseSymmetricMatrix* m) : Mdsys{m}, n{static_cast<int>(Mdsys->size())} {
-   assert(m->size() < std::numeric_limits<int>::max());
+PardisoSolver::PardisoSolver(const DenseSymmetricMatrix& m) : Mdsys{&m}, n{static_cast<int>(Mdsys->size())} {
+   assert(m.size() < std::numeric_limits<int>::max());
    nvec = new double[n];
 }
 
@@ -50,14 +50,14 @@ bool PardisoSolver::iparmUnchanged() const {
 
 void PardisoSolver::initSystem() {
    if (Msys) {
-      assert(Msys->isLower);
+      assert(Msys->is_lower());
 
       //get the matrix in upper triangular
-      Msys->getStorageRef().transpose(krowM, jcolM, M);
+      Msys->getStorage().transpose(krowM, jcolM, M);
 
       //save the indices for diagonal entries for a streamlined later update
-      int* krowMsys = Msys->getStorageRef().krowM;
-      int* jcolMsys = Msys->getStorageRef().jcolM;
+      int* krowMsys = Msys->getStorage().krowM;
+      int* jcolMsys = Msys->getStorage().jcolM;
       for (int r = 0; r < n; r++) {
          // Msys - find the index in jcol for the diagonal (r,r)
          int idxDiagMsys = -1;
@@ -146,7 +146,7 @@ void PardisoSolver::matrixChanged() {
    else {
       if (Msys) {
          //update diagonal entries in the PARDISO aug sys (if the input is sparse)
-         double* eltsMsys = Msys->getStorageRef().M;
+         double* eltsMsys = Msys->getStorage().M;
          std::map<int, int>::iterator it;
          for (it = diagMap.begin(); it != diagMap.end(); it++)
             M[it->second] = eltsMsys[it->first];

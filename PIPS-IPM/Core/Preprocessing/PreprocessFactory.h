@@ -11,12 +11,11 @@
 #include "EquiStochScaler.h"
 #include "GeoStochScaler.h"
 #include "StochPresolver.h"
-#include "IotrRefCount.h"
 #include "PreprocessType.h"
 #include "StochPostsolver.h"
 #include "DistributedQP.hpp"
 
-class PreprocessFactory : public IotrRefCount {
+class PreprocessFactory {
 public:
 
    static Scaler* makeScaler(Problem* data, ScalerType type) {

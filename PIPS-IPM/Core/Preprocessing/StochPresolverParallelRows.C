@@ -6,6 +6,8 @@
  */
 
 //#define PIPS_DEBUG
+#include <memory>
+
 #include "StochPresolverParallelRows.h"
 #include "PIPSIPMppOptions.h"
 #include "DistributedVectorUtilities.h"
@@ -211,35 +213,35 @@ void StochPresolverParallelRows::setNormalizedPointersMatrices(int node) {
       norm_Amat.reset();
       norm_AmatTrans.reset();
 
-      norm_Bmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.Bmat).getStorageDynamicRef()));
-      norm_BmatTrans.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.Bmat).getStorageDynamicTransposedRef()));
+      norm_Bmat = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixA.Bmat).getStorageDynamic());
+      norm_BmatTrans = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixA.Bmat).getStorageDynamicTransposed());
 
       /* INEQUALITY_SYSTEM */
       norm_Cmat.reset();
       norm_CmatTrans.reset();
 
-      norm_Dmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.Bmat).getStorageDynamicRef()));
-      norm_DmatTrans.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.Bmat).getStorageDynamicTransposedRef()));
+      norm_Dmat = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixC.Bmat).getStorageDynamic());
+      norm_DmatTrans = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixC.Bmat).getStorageDynamicTransposed());
    }
    else {
       if (!presolve_data.nodeIsDummy(node)) {
          /* EQUALITY_SYSTEM */
-         norm_Amat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Amat).getStorageDynamicRef()));
-         norm_AmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Amat).getStorageDynamicTransposedRef()));
+         norm_Amat = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Amat).getStorageDynamic());
+         norm_AmatTrans = std::make_unique<SparseStorageDynamic>(
+               dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Amat).getStorageDynamicTransposed());
 
-         norm_Bmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Bmat).getStorageDynamicRef()));
-         norm_BmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Bmat).getStorageDynamicTransposedRef()));
+         norm_Bmat = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Bmat).getStorageDynamic());
+         norm_BmatTrans = std::make_unique<SparseStorageDynamic>(
+               dynamic_cast<SparseMatrix&>(*matrixA.children[node]->Bmat).getStorageDynamicTransposed());
 
          /* INEQUALITY_SYSTEM */
-         norm_Cmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Amat).getStorageDynamicRef()));
-         norm_CmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Amat).getStorageDynamicTransposedRef()));
+         norm_Cmat = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Amat).getStorageDynamic());
+         norm_CmatTrans = std::make_unique<SparseStorageDynamic>(
+               dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Amat).getStorageDynamicTransposed());
 
-         norm_Dmat.reset(new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Bmat).getStorageDynamicRef()));
-         norm_DmatTrans.reset(
-               new SparseStorageDynamic(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Bmat).getStorageDynamicTransposedRef()));
+         norm_Dmat = std::make_unique<SparseStorageDynamic>(dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Bmat).getStorageDynamic());
+         norm_DmatTrans = std::make_unique<SparseStorageDynamic>(
+               dynamic_cast<SparseMatrix&>(*matrixC.children[node]->Bmat).getStorageDynamicTransposed());
       }
       else {
          norm_Amat.reset();
@@ -277,8 +279,8 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
 
    if (node == -1) {
       /* INEQUALITY_SYSTEM */
-      currCmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat).getStorageDynamic();
-      currCmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat).getStorageDynamicTransposed();
+      currCmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat).getStorageDynamicPtr();
+      currCmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).Bmat).getStorageDynamicTransposedPtr();
 
       currDmat = nullptr;
       currDmatTrans = nullptr;
@@ -293,11 +295,11 @@ void StochPresolverParallelRows::updateExtendedPointersForCurrentNode(int node) 
    else {
 
       /* INEQUALITY_SYSTEM */
-      currCmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat).getStorageDynamic();
-      currCmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat).getStorageDynamicTransposed();
+      currCmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat).getStorageDynamicPtr();
+      currCmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Amat).getStorageDynamicTransposedPtr();
 
-      currDmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamic();
-      currDmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamicTransposed();
+      currDmat = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamicPtr();
+      currDmatTrans = dynamic_cast<SparseMatrix&>(*dynamic_cast<const DistributedMatrix&>(*(presolve_data.getPresProb().C)).children[node]->Bmat).getStorageDynamicTransposedPtr();
 
       currIneqRhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bu)).children[node]->first.get());
       currIneqLhs = dynamic_cast<const SimpleVector<double>*>(dynamic_cast<const DistributedVector<double>&>(*(presolve_data.getPresProb().bl)).children[node]->first.get());
@@ -326,9 +328,9 @@ void StochPresolverParallelRows::setNormalizedSingletonFlags(int node) {
    singletonCoeffsColParent.reset(dynamic_cast<SimpleVector<double>*>(getSimpleVecFromColStochVec(*presolve_data.getPresProb().g, -1).clone()));
    singletonCoeffsColParent->setToZero();
 
-   rowContainsSingletonVariableA.reset(new SimpleVector<int>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).length()));
+   rowContainsSingletonVariableA = std::make_unique<SimpleVector<int>>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowA(), node, false).length());
    rowContainsSingletonVariableA->setToConstant(-1);
-   rowContainsSingletonVariableC.reset(new SimpleVector<int>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).length()));
+   rowContainsSingletonVariableC = std::make_unique<SimpleVector<int>>(getSimpleVecFromRowStochVec(presolve_data.getNnzsRowC(), node, false).length());
    rowContainsSingletonVariableC->setToConstant(-1);
 
    if (node == -1)
@@ -743,7 +745,7 @@ void StochPresolverParallelRows::compareRowsInCoeffHashTable(int& nRowElims, int
  * Compare two rowWithEntries rows if the normalized coefficients are the same, at the same
  * columns indices. If yes, return true. Else, return false.
  */
-bool StochPresolverParallelRows::checkRowsAreParallel(const rowlib::rowWithEntries& row1, const rowlib::rowWithEntries& row2) {
+bool StochPresolverParallelRows::checkRowsAreParallel(const rowlib::rowWithEntries& row1, const rowlib::rowWithEntries& row2) const {
    assert(row1.id >= 0 && row2.id >= 0);
    if (row1.id == row2.id)
       return false;

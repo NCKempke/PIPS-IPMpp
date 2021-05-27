@@ -8,7 +8,7 @@
 
 extern int print_level;
 
-Ma57Solver::Ma57Solver(const SparseSymmetricMatrix* sgm, std::string name_) : mat_storage{sgm->getStorageHandle()}, n{mat_storage->n},
+Ma57Solver::Ma57Solver(const SparseSymmetricMatrix& sgm, std::string name_) : mat_storage{&sgm.getStorage()}, n{mat_storage->n},
       nnz{mat_storage->numberOfNonZeros()}, lkeep{7 * n + nnz + 2 * std::max(n, nnz) + 42}, n_threads{PIPSgetnOMPthreads()}, name(std::move(name_)) {
    assert(n_threads >= 1);
    x.resize(n * n_threads);

@@ -17,11 +17,11 @@
 class Ma57SolverRoot : public Ma57Solver {
 
 public:
-   Ma57SolverRoot(SparseSymmetricMatrix* sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, std::string name = "root");
+   Ma57SolverRoot(SparseSymmetricMatrix& sgm, bool solve_in_parallel, MPI_Comm mpiComm = MPI_COMM_WORLD, std::string name = "root");
 
    ~Ma57SolverRoot() override = default;
 
-   void matrixRebuild(AbstractMatrix& matrixNew) override;
+   void matrixRebuild(const AbstractMatrix& matrixNew) override;
    void matrixChanged() override;
 
    using Ma57Solver::solve;

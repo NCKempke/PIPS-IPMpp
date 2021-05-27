@@ -62,13 +62,6 @@ inline SimpleVector<T>& getSimpleVecFromColStochVec(const Vector<T>& ooqpvec, in
 }
 
 template<typename T>
-inline T& getSimpleVecFromRowStochVec(const SmartPointer<Vector<T>>& ooqpvec_handle, const INDEX& row) {
-   assert(row.isRow());
-   const Vector<T>& ooqp_vec = *ooqpvec_handle;
-   return getSimpleVecFromRowStochVec(ooqp_vec, row);
-}
-
-template<typename T>
 inline T& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, const INDEX& row) {
    assert(row.isRow());
    SimpleVector<T>& vec = getSimpleVecFromStochVec(dynamic_cast<const DistributedVector<T>&>(ooqpvec), row.getNode(), row.getLinking());
@@ -76,13 +69,6 @@ inline T& getSimpleVecFromRowStochVec(const Vector<T>& ooqpvec, const INDEX& row
    assert(0 <= index && index < vec.length());
 
    return vec[index];
-}
-
-template<typename T>
-inline T& getSimpleVecFromColStochVec(const SmartPointer<Vector<T> >& ooqpvec_handle, const INDEX& col) {
-   assert(col.isCol());
-   const Vector<T>& ooqp_vec = *ooqpvec_handle;
-   return getSimpleVecFromColStochVec(ooqp_vec, col);
 }
 
 template<typename T>

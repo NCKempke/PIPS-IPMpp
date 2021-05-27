@@ -231,7 +231,7 @@ DenseMatrix::multMatAt(int row_start, int row_end, int col_offset_this, double b
    assert(col_offset_result <= res.mStorage->n && col_offset_result + mat_n <= res.mStorage->n);
    assert(n_rows + row_start_res <= res.mStorage->m);
 
-   const SparseStorage& mat_tp = mat.getTranspose().getStorageRef();
+   const SparseStorage& mat_tp = mat.getTranspose().getStorage();
    for (int j = 0; j < n_rows; ++j) {
       for (int i = 0; i < mat_n; ++i) {
          if (beta != 1.0)

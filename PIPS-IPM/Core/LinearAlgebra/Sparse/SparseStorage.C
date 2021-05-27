@@ -206,6 +206,15 @@ bool SparseStorage::isSorted() const {
    return true;
 }
 
+int SparseStorage::numberOfNonZeros() const {
+   if ( this->isFortranIndexed) {
+      return krowM[m] -1;
+   } else
+   {
+      return krowM[m];
+   }
+}
+
 void SparseStorage::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
 
    assert(row >= 0 && row + rowExtent <= m);
@@ -1924,12 +1933,12 @@ void SparseStorage::fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdx
    }
 }
 
-SparseStorage* SparseStorage::shaveLeft(int n_cols) {
+std::unique_ptr<SparseStorage> SparseStorage::shaveLeft(int n_cols) {
    assert(n_cols <= n);
    assert(0 <= n_cols);
 
    if (n_cols == 0)
-      return new SparseStorage(m, 0, 0);
+      return std::make_unique<SparseStorage>(m, 0, 0);
 
    // TODO : adjust for when n_cols == n
    const int n_border = n_cols;
@@ -1994,7 +2003,7 @@ SparseStorage* SparseStorage::shaveLeft(int n_cols) {
    delete[] krowM_new;
    delete[] jcolM_new;
 
-   auto* border = new SparseStorage(m_border, n_border, len_border, krowM_border, jcolM_border, M_border, true);
+   auto border = std::make_unique<SparseStorage>(m_border, n_border, len_border, krowM_border, jcolM_border, M_border, true);
 
    assert(this->isValid());
    assert(border->isValid());
@@ -2002,12 +2011,12 @@ SparseStorage* SparseStorage::shaveLeft(int n_cols) {
    return border;
 }
 
-SparseStorage* SparseStorage::shaveBottom(int n_rows) {
+std::unique_ptr<SparseStorage> SparseStorage::shaveBottom(int n_rows) {
    assert(n_rows <= m);
    assert(0 <= n_rows);
 
    if (n_rows == 0)
-      return new SparseStorage(0, n, 0);
+      return std::make_unique<SparseStorage>(0, n, 0);
 
    // TODO : adjust for n_rows == m
    const int n_border = n;
@@ -2036,7 +2045,7 @@ SparseStorage* SparseStorage::shaveBottom(int n_rows) {
    len = len_new;
    assert(krowM[m] == len);
 
-   auto* border = new SparseStorage(m_border, n_border, len_border, krowM_border, jcolM_border, M_border, true);
+   auto border = std::make_unique<SparseStorage>(m_border, n_border, len_border, krowM_border, jcolM_border, M_border, true);
    assert(this->isValid());
    assert(border->isValid());
 
@@ -2072,11 +2081,10 @@ void SparseStorage::dropNEmptyRowsTop(int n_rows) {
    assert(isValid());
 }
 
-SparseStorage* SparseStorage::shaveSymLeftBottom(int) {
+std::unique_ptr<SparseStorage> SparseStorage::shaveSymLeftBottom(int) {
    assert(0 && "TODO : implement");
    // TODO : assert is symmetric - either upper or lower?? then shave of elements from left and top at the same time
    return nullptr;
-
 }
 
 // concatenate matrices

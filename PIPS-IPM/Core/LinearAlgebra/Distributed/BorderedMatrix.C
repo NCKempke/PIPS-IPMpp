@@ -20,7 +20,7 @@
 #include "StripMatrix.h"
 
 BorderedMatrix::BorderedMatrix(std::shared_ptr<DistributedMatrix> inner_matrix_, std::unique_ptr<StripMatrix> border_left_, std::unique_ptr<StripMatrix> border_bottom_,
-      std::unique_ptr<SparseMatrix> bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{std::move(inner_matrix_)}, border_left{std::move(border_left_)},
+      std::unique_ptr<GeneralMatrix> bottom_left_block_, MPI_Comm mpi_comm_) : inner_matrix{std::move(inner_matrix_)}, border_left{std::move(border_left_)},
       border_bottom{std::move(border_bottom_)}, bottom_left_block{std::move(bottom_left_block_)}, mpi_comm(mpi_comm_), distributed(mpi_comm == MPI_COMM_NULL),
       rank(PIPS_MPIgetRank(mpi_comm)) {
    assert(inner_matrix);

@@ -66,7 +66,7 @@ public:
 
 
    [[nodiscard]] int length() const { return len; };
-   [[nodiscard]] int numberOfNonZeros() const { return krowM[m]; };
+   [[nodiscard]] int numberOfNonZeros() const;
 
    void fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const override;
    void atPutDense(int row, int col, const double* A, int lda, int rowExtent, int colExtent) override;
@@ -191,11 +191,11 @@ public:
     */
    void fullMatrixFromUpperTriangular(int*& rowPtrFull, int*& colIdxFull, double*& valuesFull) const;
 
-   virtual SparseStorage* shaveLeft(int n_cols);
-   virtual SparseStorage* shaveSymLeftBottom(int n);
-   virtual SparseStorage* shaveBottom(int n_rows);
-   virtual void dropNEmptyRowsBottom(int n_rows);
-   virtual void dropNEmptyRowsTop(int n_rows);
+   std::unique_ptr<SparseStorage> shaveLeft(int n_cols);
+   std::unique_ptr<SparseStorage> shaveSymLeftBottom(int n);
+   std::unique_ptr<SparseStorage> shaveBottom(int n_rows);
+   void dropNEmptyRowsBottom(int n_rows);
+   void dropNEmptyRowsTop(int n_rows);
 
    ~SparseStorage() override;
 

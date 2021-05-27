@@ -18,30 +18,29 @@ SparseSymmetricMatrix::SparseSymmetricMatrix() : isLower(true) {
    mStorage = nullptr;
 }
 
-SparseSymmetricMatrix::SparseSymmetricMatrix(const SparseSymmetricMatrix& mat) : isLower(mat.isLower) {
-   mStorage = SmartPointer<SparseStorage>(new SparseStorage(mat.mStorage->m, mat.mStorage->n, mat.mStorage->len));
-   mat.getStorageRef().copyFrom(mStorage->krowM, mStorage->jcolM, mStorage->M);
+// TODO implement mStorage copy ctor..
+SparseSymmetricMatrix::SparseSymmetricMatrix(const SparseSymmetricMatrix& mat) : mStorage{
+   std::make_unique<SparseStorage>(mat.mStorage->m, mat.mStorage->n, mat.mStorage->len)}, isLower(mat.isLower) {
+   mat.getStorage().copyFrom(mStorage->krowM, mStorage->jcolM, mStorage->M);
 }
 
-SparseSymmetricMatrix::SparseSymmetricMatrix(int size, int nnz, bool isLower) : isLower(isLower) {
-   mStorage = SmartPointer<SparseStorage>(new SparseStorage(size, size, nnz));
+SparseSymmetricMatrix::SparseSymmetricMatrix(int size, int nnz, bool isLower) : mStorage{
+   std::make_unique<SparseStorage>(size, size, nnz)}, isLower(isLower) {}
+
+SparseSymmetricMatrix::SparseSymmetricMatrix(std::unique_ptr<SparseStorage> m_storage, bool is_lower_) :
+   mStorage{std::move(m_storage)}, isLower(is_lower_) {
 }
 
-SparseSymmetricMatrix::SparseSymmetricMatrix(SparseStorage* m_storage, bool is_lower_) : isLower(is_lower_) {
-   mStorage = SmartPointer<SparseStorage>(m_storage);
-}
-
-SparseSymmetricMatrix::SparseSymmetricMatrix(int size, int nnz, int krowM[], int jcolM[], double M[], int deleteElts, bool isLower) : isLower(isLower) {
-   mStorage = SmartPointer<SparseStorage>(new SparseStorage(size, size, nnz, krowM, jcolM, M, deleteElts));
-}
+SparseSymmetricMatrix::SparseSymmetricMatrix(int size, int nnz, int krowM[], int jcolM[], double M[], int deleteElts,
+   bool isLower) : mStorage{std::make_unique<SparseStorage>(size, size, nnz, krowM, jcolM, M, deleteElts)}, isLower(isLower) {}
 
 
 void SparseSymmetricMatrix::putSparseTriple(const int irow[], int len, const int jcol[], const double A[], int& info) {
    mStorage->putSparseTriple(irow, len, jcol, A, info);
 }
 
-SymmetricMatrix* SparseSymmetricMatrix::clone() const {
-   return new SparseSymmetricMatrix(*this);
+std::unique_ptr<SymmetricMatrix> SparseSymmetricMatrix::clone() const {
+   return std::make_unique<SparseSymmetricMatrix>(*this);
 }
 
 void SparseSymmetricMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExtent, int colExtent) const {
@@ -76,8 +75,7 @@ void SparseSymmetricMatrix::symAtPutSpRow(int row, const double A[], int lenA, c
       lA--;
    if (lA > 0) {
       mStorage->atPutSpRow(row, A, lA, jcolA, info);
-   }
-   else {
+   } else {
       info = 0;
    }
 }
@@ -87,11 +85,13 @@ void SparseSymmetricMatrix::symPutZeroes() {
    mStorage->clear();
 }
 
-void SparseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
+void SparseSymmetricMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent,
+   int& info) const {
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
 
-void SparseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
+void SparseSymmetricMatrix::symAtPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol,
+   int rowExtent, int colExtent) {
    int i, k;
    int info, nnz;
 
@@ -144,7 +144,8 @@ void SparseSymmetricMatrix::mult(double beta, Vector<double>& y_in, double alpha
    this->mult(beta, yv, 1, alpha, xv, 1);
 }
 
-void SparseSymmetricMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
+void
+SparseSymmetricMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
@@ -160,7 +161,8 @@ void SparseSymmetricMatrix::transMult(double beta, Vector<double>& y_in, double 
    this->mult(beta, yv, 1, alpha, xv, 1);
 }
 
-void SparseSymmetricMatrix::transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
+void
+SparseSymmetricMatrix::transMult(double beta, double y[], int incy, double alpha, const double x[], int incx) const {
    this->mult(beta, y, incy, alpha, x, incx);
 }
 
@@ -169,7 +171,7 @@ double SparseSymmetricMatrix::inf_norm() const {
 }
 
 double SparseSymmetricMatrix::abminnormNonZero(double tol) const {
-   if (mStorage.notNil())
+   if (mStorage)
       return mStorage->abminnormNonZero(tol);
    else
       return std::numeric_limits<double>::infinity();
@@ -234,7 +236,7 @@ void SparseSymmetricMatrix::reduceToLower() {
 void SparseSymmetricMatrix::deleteEmptyRowsCols(const Vector<int>& nnzVec) {
    const auto& vec = dynamic_cast<const SimpleVector<int>&>(nnzVec);
 #ifndef NDEBUG
-   const auto [m, n] = mStorage->n_rows_columns();
+   const auto[m, n] = mStorage->n_rows_columns();
    assert(nnzVec.length() == m);
    assert(nnzVec.length() == n);
 #endif
@@ -254,7 +256,7 @@ void SparseSymmetricMatrix::deleteZeroRowsCols(int*& new2orgIdx) {
    mStorage->deleteZeroRowsColsSym(new2orgIdx);
 }
 
-SparseMatrix* SparseSymmetricMatrix::shaveSymLeftBottom(int n_vars) {
+std::unique_ptr<SparseMatrix> SparseSymmetricMatrix::shaveSymLeftBottom(int n_vars) {
    assert(n_vars <= mStorage->n);
    assert(n_vars >= 0);
    //   SparseStorage* border = mStorage->shaveSymLeftBottom( n_vars );
@@ -265,8 +267,8 @@ SparseMatrix* SparseSymmetricMatrix::shaveSymLeftBottom(int n_vars) {
    mStorage->m -= n_vars;
    mStorage->n -= n_vars;
 
-   auto* m_border = new SparseStorage(mStorage->m, n_vars, 0);
-   auto* border = new SparseMatrix(m_border);
+   auto m_border = std::make_unique<SparseStorage>(mStorage->m, n_vars, 0);
+   auto border = std::make_unique<SparseMatrix>(std::move(m_border));
 
    return border;
 }

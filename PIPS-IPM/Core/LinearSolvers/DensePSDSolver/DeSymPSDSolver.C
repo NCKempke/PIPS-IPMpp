@@ -19,9 +19,7 @@ extern "C" void dpotrs_(char* uplo, int* n, int* nrhs, double* A, int* lda, doub
 extern "C" void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* A, int* LDA, double* B, int* LDB);
 
 
-DeSymPSDSolver::DeSymPSDSolver(const DenseSymmetricMatrix* dsm) {
-   mStorage = dsm->getStorageHandle();
-}
+DeSymPSDSolver::DeSymPSDSolver(const DenseSymmetricMatrix& dsm) : mStorage{&dsm.getStorage()} {}
 
 void DeSymPSDSolver::matrixChanged() {
    char fortranUplo = 'U';
@@ -46,7 +44,7 @@ void DeSymPSDSolver::solve(Vector<double>& x_in) {
 }
 
 void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
-   DenseMatrix& B = dynamic_cast<DenseMatrix&>(mat);
+   auto& B = dynamic_cast<DenseMatrix&>(mat);
    /*
 
    double A[9];
@@ -95,8 +93,8 @@ void DeSymPSDSolver::Lsolve(GeneralMatrix& mat) {
      &colst,
      &nt,
       &onet,
-     &AA.getStorageRef().M[0][0], &nt,
-     &BB.getStorageRef().M[0][0],
+     &AA.getStorage().M[0][0], &nt,
+     &BB.getStorage().M[0][0],
      &colst);
 
    //for(int i=0; i<3; i++) { for(int j=0; j<2; j++) printf("%5.3f ", BB[i][j]); printf("\n"); }; printf("----------------\n");

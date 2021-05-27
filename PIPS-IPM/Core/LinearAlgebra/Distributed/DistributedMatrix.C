@@ -50,11 +50,6 @@ DistributedMatrix::DistributedMatrix(long long global_m, long long global_n, int
    Blmat = std::make_unique<SparseMatrix>(Bl_m, Bl_n, Bl_nnz);
 }
 
-DistributedMatrix::DistributedMatrix(long long global_m, long long global_n, MPI_Comm mpiComm_) : m(global_m),
-   n(global_n), mpiComm(mpiComm_),
-   iAmDistrib(PIPS_MPIgetDistributed(mpiComm)) {
-}
-
 bool DistributedMatrix::amatEmpty() const {
    const auto[mA, nA] = Amat->n_rows_columns();
    return mA <= 0 || nA <= 0;
@@ -64,35 +59,38 @@ bool DistributedMatrix::hasSparseMatrices() const {
    return Amat->is_a(kSparseGenMatrix) && Bmat->is_a(kSparseGenMatrix) && Blmat->is_a(kSparseGenMatrix);
 }
 
-GeneralMatrix* DistributedMatrix::cloneFull(bool switchToDynamicStorage) const {
-   auto* clone = new DistributedMatrix(m, n, mpiComm);
+std::unique_ptr<GeneralMatrix> DistributedMatrix::cloneFull(bool switchToDynamicStorage) const {
+//   auto clone = std::make_unique<DistributedMatrix>(m, n, mpiComm);
    assert(hasSparseMatrices());
 
    // clone submatrices
-   clone->Amat.reset(Amat->cloneFull(switchToDynamicStorage));
-   clone->Bmat.reset(Bmat->cloneFull(switchToDynamicStorage));
-   clone->Blmat.reset(Blmat->cloneFull(switchToDynamicStorage));
+   auto Amat_clone = Amat->cloneFull(switchToDynamicStorage);
+   auto Bmat_clone = Bmat->cloneFull(switchToDynamicStorage);
+   auto Blmat_clone = Blmat->cloneFull(switchToDynamicStorage);
 
+   auto clone = std::make_unique<DistributedMatrix>(std::move(Amat_clone), std::move(Bmat_clone), std::move(Blmat_clone), mpiComm);
    for (const auto& it : children)
-      clone->children.push_back(
-         std::shared_ptr<DistributedMatrix>(dynamic_cast<DistributedMatrix*>(it->cloneFull(switchToDynamicStorage))));
-
+   {
+      std::shared_ptr<DistributedMatrix> child_clone{dynamic_cast<DistributedMatrix*>(it->cloneFull(switchToDynamicStorage).release())};
+      clone->children.push_back(std::move(child_clone));
+   }
    return clone;
 }
 
 /* creates an empty copy of the matrix with n = 0 for all submatrices and m (cols) as before */
-GeneralMatrix* DistributedMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
-   auto* clone = new DistributedMatrix(m, n, mpiComm);
+std::unique_ptr<GeneralMatrix> DistributedMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
    assert(hasSparseMatrices());
 
    // clone submatrices
-   clone->Amat.reset(Amat->cloneEmptyRows(switchToDynamicStorage));
-   clone->Bmat.reset(Bmat->cloneEmptyRows(switchToDynamicStorage));
-   clone->Blmat.reset(Blmat->cloneEmptyRows(switchToDynamicStorage));
+   auto Amat_clone = Amat->cloneEmptyRows(switchToDynamicStorage);
+   auto Bmat_clone = Bmat->cloneEmptyRows(switchToDynamicStorage);
+   auto Blmat_clone = Blmat->cloneEmptyRows(switchToDynamicStorage);
 
-   for (const auto& it : children)
-      clone->children.push_back(std::shared_ptr<DistributedMatrix>(
-         dynamic_cast<DistributedMatrix*>(it->cloneEmptyRows(switchToDynamicStorage))));
+   auto clone = std::make_unique<DistributedMatrix>(std::move(Amat_clone), std::move(Bmat_clone), std::move(Blmat_clone), mpiComm);
+   for (const auto& it : children){
+      std::shared_ptr<DistributedMatrix> child_clone{dynamic_cast<DistributedMatrix*>(it->cloneEmptyRows(switchToDynamicStorage).release())};
+      clone->children.push_back(std::move(child_clone));
+   }
 
    return clone;
 }
@@ -1374,85 +1372,79 @@ bool DistributedMatrix::isRootNodeInSync() const {
    const auto& amat_sp = dynamic_cast<const SparseMatrix&>(*Amat);
    const auto& bmat_sp = dynamic_cast<const SparseMatrix&>(*Bmat);
    const auto& blmat_sp = dynamic_cast<const SparseMatrix&>(*Blmat);
-   /* if matrix has static storage */
-   if (amat_sp.getStorageHandle().notNil() || bmat_sp.getStorageHandle().notNil() ||
-      blmat_sp.getStorageHandle().notNil()) {
-      assert(amat_sp.getStorageHandle().notNil());
-      assert(bmat_sp.getStorageHandle().notNil());
-      assert(blmat_sp.getStorageHandle().notNil());
 
-      /* since we are in root node Amat should look as follows */
-      assert(amat_sp.getStorageRef().len == 0);
-      assert(amat_sp.getStorageRef().n == -1);
+   /* since we are in root node Amat should be empty */
+   assert(amat_sp.numberOfNonZeros() == 0);
+//   assert(amat_sp.n_columns() == 0);
+//   assert(amat_sp.n_rows() == -1);
+//
+   /* static storage */
+   const int lenght_entries_bmat = bmat_sp.getStorage().len;
+   const int length_columns_bmat = bmat_sp.getStorage().len;
+   const int lenght_rowoffest_bmat = bmat_sp.getStorage().m + 1;
 
-      /* static storage */
-      const int lenght_entries_bmat = bmat_sp.getStorageRef().len;
-      const int length_columns_bmat = bmat_sp.getStorageRef().len;
-      const int lenght_rowoffest_bmat = bmat_sp.getStorageRef().m + 1;
+   const int lenght_entries_blmat = blmat_sp.getStorage().len;
+   const int length_columns_blmat = blmat_sp.getStorage().len;
+   const int lenght_rowoffest_blmat = blmat_sp.getStorage().m + 1;
 
-      const int lenght_entries_blmat = blmat_sp.getStorageRef().len;
-      const int length_columns_blmat = blmat_sp.getStorageRef().len;
-      const int lenght_rowoffest_blmat = blmat_sp.getStorageRef().m + 1;
+   const long long count_row_cols =
+      length_columns_bmat + lenght_rowoffest_bmat + length_columns_blmat + lenght_rowoffest_blmat;
+   const long long count_entries = lenght_entries_bmat + lenght_entries_blmat;
 
-      const long long count_row_cols =
-         length_columns_bmat + lenght_rowoffest_bmat + length_columns_blmat + lenght_rowoffest_blmat;
-      const long long count_entries = lenght_entries_bmat + lenght_entries_blmat;
+   assert(count_row_cols < std::numeric_limits<int>::max());
+   assert(count_entries < std::numeric_limits<int>::max());
 
-      assert(count_row_cols < std::numeric_limits<int>::max());
-      assert(count_entries < std::numeric_limits<int>::max());
+   std::vector<double> sendbuf_entries(count_entries, 0.0);
+   std::vector<double> recvbuf_entries(count_entries, 0.0);
 
-      std::vector<double> sendbuf_entries(count_entries, 0.0);
-      std::vector<double> recvbuf_entries(count_entries, 0.0);
+   std::vector<int> sendbuf_row_col(count_row_cols, 0);
+   std::vector<int> recvbuf_row_col(count_row_cols, 0);
 
-      std::vector<int> sendbuf_row_col(count_row_cols, 0);
-      std::vector<int> recvbuf_row_col(count_row_cols, 0);
+   /* fill Bmat into send buffers */
+   const double* M = bmat_sp.getStorage().M;
+   const int* krowM = bmat_sp.getStorage().krowM;
+   const int* jColM = bmat_sp.getStorage().jcolM;
 
-      /* fill Bmat into send buffers */
-      const double* M = bmat_sp.getStorageRef().M;
-      const int* krowM = bmat_sp.getStorageRef().krowM;
-      const int* jColM = bmat_sp.getStorageRef().jcolM;
+   std::copy(M, M + lenght_entries_bmat, sendbuf_entries.begin());
 
-      std::copy(M, M + lenght_entries_bmat, sendbuf_entries.begin());
+   std::copy(krowM, krowM + lenght_rowoffest_bmat, sendbuf_row_col.begin());
+   std::copy(jColM, jColM + lenght_entries_bmat, sendbuf_row_col.begin() + lenght_rowoffest_bmat);
 
-      std::copy(krowM, krowM + lenght_rowoffest_bmat, sendbuf_row_col.begin());
-      std::copy(jColM, jColM + lenght_entries_bmat, sendbuf_row_col.begin() + lenght_rowoffest_bmat);
+   /* fill Blmat into send buffers */
+   const double* Ml = blmat_sp.getStorage().M;
+   const int* krowMl = blmat_sp.getStorage().krowM;
+   const int* jColMl = blmat_sp.getStorage().jcolM;
 
-      /* fill Blmat into send buffers */
-      const double* Ml = blmat_sp.getStorageRef().M;
-      const int* krowMl = blmat_sp.getStorageRef().krowM;
-      const int* jColMl = blmat_sp.getStorageRef().jcolM;
+   std::copy(Ml, Ml + lenght_entries_blmat, sendbuf_entries.begin() + lenght_entries_bmat);
+   std::copy(krowMl, krowMl + lenght_rowoffest_blmat,
+      sendbuf_row_col.begin() + lenght_rowoffest_bmat + lenght_entries_bmat);
+   std::copy(jColMl, jColMl + lenght_entries_blmat,
+      sendbuf_row_col.begin() + lenght_rowoffest_bmat + lenght_entries_bmat + lenght_rowoffest_blmat);
 
-      std::copy(Ml, Ml + lenght_entries_blmat, sendbuf_entries.begin() + lenght_entries_bmat);
-      std::copy(krowMl, krowMl + lenght_rowoffest_blmat,
-         sendbuf_row_col.begin() + lenght_rowoffest_bmat + lenght_entries_bmat);
-      std::copy(jColMl, jColMl + lenght_entries_blmat,
-         sendbuf_row_col.begin() + lenght_rowoffest_bmat + lenght_entries_bmat + lenght_rowoffest_blmat);
+   /* Reduce Bmat and Blmat buffers */
+   MPI_Allreduce(&sendbuf_entries[0], &recvbuf_entries[0], static_cast<int>(count_entries), MPI_DOUBLE, MPI_MAX,
+      mpiComm);
 
-      /* Reduce Bmat and Blmat buffers */
-      MPI_Allreduce(&sendbuf_entries[0], &recvbuf_entries[0], static_cast<int>(count_entries), MPI_DOUBLE, MPI_MAX,
-         mpiComm);
+   MPI_Allreduce(&sendbuf_row_col[0], &recvbuf_row_col[0], static_cast<int>(count_row_cols), MPI_INT, MPI_MAX,
+      mpiComm);
 
-      MPI_Allreduce(&sendbuf_row_col[0], &recvbuf_row_col[0], static_cast<int>(count_row_cols), MPI_INT, MPI_MAX,
-         mpiComm);
-
-      /* check recvbuf_entries */
-      for (int i = 0; i < count_entries; ++i) {
-         if (!PIPSisEQ(sendbuf_entries[i], recvbuf_entries[i])) {
-            /* someone else had a higher value here */
-            if (my_rank == 0)
-               std::cout << "matrix entries out of sync\n";
-            in_sync = false;
-            break;
-         }
+   /* check recvbuf_entries */
+   for (int i = 0; i < count_entries; ++i) {
+      if (!PIPSisEQ(sendbuf_entries[i], recvbuf_entries[i])) {
+         /* someone else had a higher value here */
+         if (my_rank == 0)
+            std::cout << "matrix entries out of sync\n";
+         in_sync = false;
+         break;
       }
+   }
 
-      for (int i = 0; i < count_row_cols; ++i) {
-         if (!PIPSisEQ(sendbuf_row_col[i], recvbuf_row_col[i])) {
-            /* someone else had a higher value here */
-            if (my_rank == 0)
-               std::cout << "matrix indices (col or row) out of sync\n";
-            in_sync = false;
-         }
+   for (int i = 0; i < count_row_cols; ++i) {
+      if (!PIPSisEQ(sendbuf_row_col[i], recvbuf_row_col[i])) {
+         /* someone else had a higher value here */
+         if (my_rank == 0)
+            std::cout << "matrix indices (col or row) out of sync\n";
+         in_sync = false;
       }
    }
 
@@ -1461,8 +1453,8 @@ bool DistributedMatrix::isRootNodeInSync() const {
       assert(bmat_sp.hasDynamicStorage());
       assert(blmat_sp.hasDynamicStorage());
 
-      const SparseStorageDynamic& Bmat_dyn = bmat_sp.getStorageDynamicRef();
-      const SparseStorageDynamic& Blmat_dyn = blmat_sp.getStorageDynamicRef();
+      const SparseStorageDynamic& Bmat_dyn = bmat_sp.getStorageDynamic();
+      const SparseStorageDynamic& Blmat_dyn = blmat_sp.getStorageDynamic();
 
       /* dynamic storage */
       int bmat_dyn_len = 0;
@@ -1496,20 +1488,20 @@ bool DistributedMatrix::isRootNodeInSync() const {
       std::vector<int> recvbuf_row_coldynamic(count_row_cols_dyn, 0);;
 
       /* fill Bmat into send buffers */
-      const double* M = Bmat_dyn.getMat();
-      const int* jColM = Bmat_dyn.getJcolM();
+      const double* M_dyn = Bmat_dyn.getMat();
+      const int* jColM_dyn = Bmat_dyn.getJcolM();
 
-      int count_entries = 0;
+      int count_entries_2 = 0;
       int count_row_col = 0;
 
       /* entries Bmat into double array */
       for (int i = 0; i < Bmat_dyn.n_rows(); ++i) {
          for (int j = Bmat_dyn.getRowPtr(i).start; j < Bmat_dyn.getRowPtr(i).end; ++j) {
-            sendbuf_entries_dynamic[count_entries] = M[j];
-            count_entries++;
+            sendbuf_entries_dynamic[count_entries_2] = M_dyn[j];
+            count_entries_2++;
          }
       }
-      assert(count_entries == lenght_entries_bmat_dynamic);
+      assert(count_entries_2 == lenght_entries_bmat_dynamic);
 
       /* row pointers Bmat into int array */
       for (int i = 0; i < lenght_rowoffest_bmat_dynamic; ++i) {
@@ -1522,24 +1514,24 @@ bool DistributedMatrix::isRootNodeInSync() const {
       /* col indices of Bmat into int array */
       for (int i = 0; i < Bmat_dyn.n_rows(); ++i) {
          for (int j = Bmat_dyn.getRowPtr(i).start; j < Bmat_dyn.getRowPtr(i).end; ++j) {
-            sendbuf_row_col_dynamic[count_row_col] = jColM[j];
+            sendbuf_row_col_dynamic[count_row_col] = jColM_dyn[j];
             count_row_col++;
          }
       }
       assert(count_row_col == 2 * lenght_rowoffest_bmat_dynamic + length_columns_bmat_dynamic);
 
       /* fill Blmat into send buffers */
-      const double* Ml = Blmat_dyn.getMat();
-      const int* jColMl = Blmat_dyn.getJcolM();
+      const double* Ml_dyn = Blmat_dyn.getMat();
+      const int* jColMl_dyn = Blmat_dyn.getJcolM();
 
       /* entries Blmat into double array */
       for (int i = 0; i < Blmat_dyn.n_rows(); ++i) {
          for (int j = Blmat_dyn.getRowPtr(i).start; j < Blmat_dyn.getRowPtr(i).end; ++j) {
-            sendbuf_entries_dynamic[count_entries] = Ml[j];
-            count_entries++;
+            sendbuf_entries_dynamic[count_entries_2] = Ml_dyn[j];
+            count_entries_2++;
          }
       }
-      assert(count_entries == lenght_entries_bmat_dynamic + lenght_entries_blmat_dynamic);
+      assert(count_entries_2 == lenght_entries_bmat_dynamic + lenght_entries_blmat_dynamic);
 
       /* row pointers Blmat into int array */
       for (int i = 0; i < lenght_rowoffest_blmat_dynamic; ++i) {
@@ -1554,7 +1546,7 @@ bool DistributedMatrix::isRootNodeInSync() const {
       /* col indices of Bmat into int array */
       for (int i = 0; i < Blmat_dyn.n_rows(); ++i) {
          for (int j = Blmat_dyn.getRowPtr(i).start; j < Blmat_dyn.getRowPtr(i).end; ++j) {
-            sendbuf_row_col_dynamic[count_row_col] = jColMl[j];
+            sendbuf_row_col_dynamic[count_row_col] = jColMl_dyn[j];
             count_row_col++;
          }
       }
@@ -1813,7 +1805,7 @@ DistributedMatrix::localRowTimesVec(const DistributedVector<double>& vec, int ch
 }
 
 // TODO specify border and left from DistributedQP...
-BorderedMatrix* DistributedMatrix::raiseBorder(int m_conss, int n_vars) {
+std::unique_ptr<BorderedMatrix> DistributedMatrix::raiseBorder(int m_conss, int n_vars) {
 #ifndef NDEBUG
    const auto[m_link, n_link] = Blmat->n_rows_columns();
    assert(m_conss <= m_link && n_vars <= n_link);
@@ -1822,9 +1814,9 @@ BorderedMatrix* DistributedMatrix::raiseBorder(int m_conss, int n_vars) {
    std::unique_ptr<SparseMatrix> A_left{dynamic_cast<SparseMatrix&>(*Bmat).shaveLeft(n_vars)};
 
    std::unique_ptr<SparseMatrix> Bl_left_top{dynamic_cast<SparseMatrix&>(*Blmat).shaveLeft(n_vars)};
-   std::unique_ptr<SparseMatrix> bottom_left_block{dynamic_cast<SparseMatrix*>(Bl_left_top->shaveBottom(m_conss))};
+   std::unique_ptr<GeneralMatrix> bottom_left_block = Bl_left_top->shaveBottom(m_conss);
 
-   std::unique_ptr<SparseMatrix> Bl_right_bottom(dynamic_cast<SparseMatrix*>(Blmat->shaveBottom(m_conss)));
+   std::unique_ptr<GeneralMatrix> Bl_right_bottom = Blmat->shaveBottom(m_conss);
 
    auto border_bottom = std::make_unique<StripMatrix>(false, std::move(Bl_right_bottom), nullptr, mpiComm);
    auto border_left = std::make_unique<StripMatrix>(true, std::move(A_left), std::move(Bl_left_top), mpiComm);
@@ -1842,25 +1834,22 @@ BorderedMatrix* DistributedMatrix::raiseBorder(int m_conss, int n_vars) {
 
    assert(m >= 0 && n >= 0);
 
-   return bordered_matrix.release();
+   return bordered_matrix;
 }
 
 void DistributedMatrix::shaveBorder(int m_conss, int n_vars, StripMatrix* border_left, StripMatrix* border_bottom) {
    if (Bmat->is_a(kDistributedMatrix)) {
       assert(amatEmpty());
-      border_left->addChild(std::make_unique<StripMatrix>(true,
-         std::unique_ptr<StripMatrix>(
-            dynamic_cast<StripMatrix*>(dynamic_cast<DistributedMatrix&>(*Bmat).shaveLeftBorder(n_vars))), nullptr,
+      border_left->addChild(std::make_unique<StripMatrix>(true, dynamic_cast<DistributedMatrix&>(*Bmat).shaveLeftBorder(n_vars), nullptr,
          mpiComm));
-      border_bottom->addChild(std::make_unique<StripMatrix>(false,
-         std::unique_ptr<StripMatrix>(dynamic_cast<StripMatrix*>(Blmat->shaveBottom(m_conss))), nullptr, mpiComm));
+      border_bottom->addChild(std::make_unique<StripMatrix>(false, Blmat->shaveBottom(m_conss), nullptr, mpiComm));
    } else {
       assert(hasSparseMatrices());
       assert(children.empty());
       assert(PIPS_MPIgetSize(mpiComm) == 1);
 
-      std::unique_ptr<SparseMatrix> border_a_mat{dynamic_cast<SparseMatrix&>(*Amat).shaveLeft(n_vars)};
-      std::unique_ptr<SparseMatrix> border_bl_mat{dynamic_cast<SparseMatrix*>(dynamic_cast<SparseMatrix&>(*Blmat).shaveBottom(m_conss))};
+      std::unique_ptr<SparseMatrix> border_a_mat = dynamic_cast<SparseMatrix&>(*Amat).shaveLeft(n_vars);
+      std::unique_ptr<GeneralMatrix> border_bl_mat = dynamic_cast<SparseMatrix&>(*Blmat).shaveBottom(m_conss);
 
       std::unique_ptr<StripMatrix> border_left_child = std::make_unique<StripMatrix>(true, std::move(border_a_mat), nullptr,
          mpiComm);
@@ -1872,7 +1861,7 @@ void DistributedMatrix::shaveBorder(int m_conss, int n_vars, StripMatrix* border
    }
 }
 
-StripMatrix* DistributedMatrix::shaveLeftBorder(int n_vars) {
+std::unique_ptr<StripMatrix> DistributedMatrix::shaveLeftBorder(int n_vars) {
    assert(!children.empty());
    assert(hasSparseMatrices());
    assert(amatEmpty());
@@ -1880,36 +1869,33 @@ StripMatrix* DistributedMatrix::shaveLeftBorder(int n_vars) {
    std::unique_ptr<SparseMatrix> border_b_mat{dynamic_cast<SparseMatrix&>(*Bmat).shaveLeft(n_vars)};
    std::unique_ptr<SparseMatrix> border_bl_mat{dynamic_cast<SparseMatrix&>(*Blmat).shaveLeft(n_vars)};
 
-   auto* border = new StripMatrix(true, std::move(border_b_mat), std::move(border_bl_mat), mpiComm);
+   auto border = std::make_unique<StripMatrix>(true, std::move(border_b_mat), std::move(border_bl_mat), mpiComm);
 
    for (auto& child : children) {
-      std::unique_ptr<StripMatrix> child_border{dynamic_cast<StripMatrix*>( child->shaveLeftBorderChild(n_vars))};
-      border->addChild(std::move(child_border));
+      border->addChild(child->shaveLeftBorderChild(n_vars));
    }
 
    border->recomputeNonzeros();
    return border;
 }
 
-StripMatrix* DistributedMatrix::shaveLeftBorderChild(int n_vars) {
+std::unique_ptr<StripMatrix> DistributedMatrix::shaveLeftBorderChild(int n_vars) {
    assert(children.empty());
 
    if (Bmat->is_a(kDistributedMatrix)) {
       assert(amatEmpty());
-      return new StripMatrix(true,
+      return std::make_unique<StripMatrix>(true,
          std::unique_ptr<StripMatrix>(dynamic_cast<DistributedMatrix&>(*Bmat).shaveLeftBorder(n_vars)), nullptr,
          mpiComm);
    } else
-      return new StripMatrix(true, std::unique_ptr<SparseMatrix>(dynamic_cast<SparseMatrix&>(*Amat).shaveLeft(n_vars)),
-         nullptr, mpiComm);
+      return std::make_unique<StripMatrix>(true, dynamic_cast<SparseMatrix&>(*Amat).shaveLeft(n_vars), nullptr, mpiComm);
 }
 
-StripMatrix* DistributedMatrix::shaveLinkingConstraints(unsigned int n_conss) {
+std::unique_ptr<StripMatrix> DistributedMatrix::shaveLinkingConstraints(unsigned int n_conss) {
    assert(hasSparseMatrices());
 
-   std::unique_ptr<SparseMatrix> border_bl_mat{
-      dynamic_cast<SparseMatrix*>(Blmat->shaveBottom(static_cast<int>(n_conss)))};
-   auto* border = new StripMatrix(false, std::move(border_bl_mat), nullptr, mpiComm);
+   std::unique_ptr<GeneralMatrix> border_bl_mat = Blmat->shaveBottom(static_cast<int>(n_conss));
+   auto border = std::make_unique<StripMatrix>(false, std::move(border_bl_mat), nullptr, mpiComm);
 
    if (children.empty())
       assert(PIPS_MPIgetSize(mpiComm) == 1);
@@ -1942,7 +1928,7 @@ void DistributedMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_bl
 
    Blmat_new->combineChildrenInNewChildren(map_blocks_children, child_comms);
 
-   std::unique_ptr<SparseMatrix> Blmat_leftover(dynamic_cast<SparseMatrix*>(Blmat.release()));
+   std::unique_ptr<GeneralMatrix> Blmat_leftover = std::move(Blmat);
 
 #ifndef NDEBUG
    int n_child_links_sum{0};
@@ -1969,8 +1955,7 @@ void DistributedMatrix::splitMatrix(const std::vector<int>& twolinks_start_in_bl
 #endif
       /* combine children in new DistributedMatrix Bmat_loc */
       /* create root node with only Blmat */
-      std::unique_ptr<SparseMatrix> new_Blmat_leftover{
-         dynamic_cast<SparseMatrix*>(Blmat_leftover->shaveBottom(m_links_left - n_links_for_child))};
+      std::unique_ptr<GeneralMatrix> new_Blmat_leftover = Blmat_leftover->shaveBottom(m_links_left - n_links_for_child);
 
       if (child_comms[i] == MPI_COMM_NULL) {
          Blmat_leftover = nullptr;

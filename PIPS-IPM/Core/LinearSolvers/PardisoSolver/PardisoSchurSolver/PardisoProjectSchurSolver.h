@@ -12,7 +12,7 @@
 
 class PardisoProjectSchurSolver : public PardisoSchurSolver {
 public:
-   explicit PardisoProjectSchurSolver(const SparseSymmetricMatrix* sgm);
+   explicit PardisoProjectSchurSolver(const SparseSymmetricMatrix& sgm);
 
    void solve(Vector<double>& rhs_in) override;
    using DoubleLinearSolver::solve;

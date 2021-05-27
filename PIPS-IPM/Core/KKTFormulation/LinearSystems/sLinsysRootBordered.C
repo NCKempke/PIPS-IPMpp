@@ -97,7 +97,7 @@ void sLinsysRootBordered::finalizeKKT() {
    // update the KKT with F
    /////////////////////////////////////////////////////////////
    if (locmyl > 0) {
-      SC.add_matrix_at(F0, locnx, 0);
+      SC.add_matrix_at(dynamic_cast<const SparseMatrix&>(F0), locnx, 0);
    }
 
    /////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ void sLinsysRootBordered::finalizeKKT() {
    if (locmzl > 0) {
       assert(zDiagLinkCons);
 
-      SC.add_matrix_at(G0, locnx + locmyl, 0);
+      SC.add_matrix_at(dynamic_cast<const SparseMatrix&>(G0), locnx + locmyl, 0);
       SC.atAddDiagonal(locnx + locmyl, *zDiagLinkCons);
    }
 }
@@ -233,7 +233,7 @@ void sLinsysRootBordered::reduceKKT() {
 
 DoubleLinearSolver* sLinsysRootBordered::createSolver(const SymmetricMatrix* kktmat_) {
    const SolverTypeDense solver = pipsipmpp_options::get_solver_dense();
-   const auto* kktmat = dynamic_cast<const DenseSymmetricMatrix*>(kktmat_);
+   const auto& kktmat = dynamic_cast<const DenseSymmetricMatrix&>(*kktmat_);
 
    static bool printed = false;
    if (!printed && 0 == PIPS_MPIgetRank(mpiComm))

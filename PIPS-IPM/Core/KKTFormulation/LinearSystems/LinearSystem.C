@@ -7,7 +7,6 @@
 #include "Problem.h"
 #include "Variables.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "mpi.h"
 #include "Options.h"
 #include "PIPSIPMppOptions.h"

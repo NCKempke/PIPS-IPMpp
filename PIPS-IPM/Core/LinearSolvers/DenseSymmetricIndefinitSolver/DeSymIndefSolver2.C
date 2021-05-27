@@ -9,12 +9,9 @@
 #include "OoqpBlas.h"
 #include "DenseSymmetricMatrix.h"
 
-DeSymIndefSolver2::DeSymIndefSolver2(const DenseSymmetricMatrix* dm, int nx) : nx(nx) {
-   mStorage = dm->getStorageHandle();
-
+DeSymIndefSolver2::DeSymIndefSolver2(const DenseSymmetricMatrix& dm, int nx) : mStorage(std::make_unique<DenseStorage>(dm.getStorage())), nx(nx) {
    n = mStorage->n;
    ny = n - nx;
-
 }
 //#include "mpi.h"
 void DeSymIndefSolver2::matrixChanged() {

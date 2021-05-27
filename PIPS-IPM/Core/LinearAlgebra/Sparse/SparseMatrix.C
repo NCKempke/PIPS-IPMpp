@@ -14,85 +14,71 @@ int SparseMatrix::is_a(int type) const {
    return type == kSparseGenMatrix || type == kGenMatrix;
 }
 
-SparseMatrix::SparseMatrix(int rows, int cols, int nnz) {
-   mStorage = SmartPointer<SparseStorage>(new SparseStorage(rows, cols, nnz));
-}
+SparseMatrix::SparseMatrix(int rows, int cols, int nnz) : mStorage{std::make_unique<SparseStorage>(rows, cols, nnz)} {}
 
+SparseMatrix::SparseMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts)
+   : mStorage{std::make_unique<SparseStorage>(rows, cols, nnz, krowM, jcolM, M, deleteElts)} {}
 
-SparseMatrix::SparseMatrix(int rows, int cols, int nnz, int krowM[], int jcolM[], double M[], int deleteElts) {
-   mStorage = SmartPointer<SparseStorage>(new SparseStorage(rows, cols, nnz, krowM, jcolM, M, deleteElts));
-}
-
-SparseMatrix::SparseMatrix(SparseStorage* m_storage) {
-   mStorage = SmartPointer<SparseStorage>(m_storage);
-}
-
-SparseMatrix::~SparseMatrix() {
-   delete m_Mt;
-   delete mStorageDynamic;
-}
+SparseMatrix::SparseMatrix( std::unique_ptr<SparseStorage> m_storage) : mStorage{std::move(m_storage)} {}
 
 /* create a matrix with the same amount of columns but no rows in it */
-GeneralMatrix* SparseMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
-   SparseMatrix* clone;
+std::unique_ptr<GeneralMatrix> SparseMatrix::cloneEmptyRows(bool switchToDynamicStorage) const {
+   std::unique_ptr<SparseMatrix> clone;
 
    if (switchToDynamicStorage) {
-      clone = new SparseMatrix();
-      clone->mStorageDynamic = new SparseStorageDynamic(0, mStorage->n, 0);
+      clone = std::make_unique<SparseMatrix>();
+      clone->mStorageDynamic = std::make_unique<SparseStorageDynamic>(0, mStorage->n, 0);
       assert(!m_Mt);
+   } else {
+      clone = std::make_unique<SparseMatrix>(0, mStorage->n, 0);
    }
-   else
-      clone = new SparseMatrix(0, mStorage->n, 0);
 
    if (m_Mt) {
       assert(!clone->m_Mt);
-      clone->m_Mt = new SparseMatrix(0, m_Mt->getStorageRef().length(), 0);
+      clone->m_Mt = std::make_unique<SparseMatrix>(0, m_Mt->getStorage().length(), 0);
    }
 
-   return clone;
+   return std::move(clone);
 }
 
 /* same as clone empty rows but transposes the matrix first */
-SparseMatrix* SparseMatrix::cloneEmptyRowsTransposed(bool switchToDynamicStorage) const {
-   SparseMatrix* clone;
+std::unique_ptr<SparseMatrix> SparseMatrix::cloneEmptyRowsTransposed(bool switchToDynamicStorage) const {
+   std::unique_ptr<SparseMatrix> clone;
+
    if (switchToDynamicStorage) {
-      clone = new SparseMatrix();
-      clone->mStorageDynamic = new SparseStorageDynamic(0, mStorage->m, 0);
+      clone = std::make_unique<SparseMatrix>();
+      clone->mStorageDynamic = std::make_unique<SparseStorageDynamic>(0, mStorage->m, 0);
       assert(!m_Mt);
+   } else {
+      clone = std::make_unique<SparseMatrix>(0, mStorage->m, 0);
    }
-   else
-      clone = new SparseMatrix(0, mStorage->m, 0);
 
    if (m_Mt) {
       assert(clone->m_Mt == nullptr);
-      clone->m_Mt = new SparseMatrix(0, m_Mt->getStorageRef().m, 0);
+      clone->m_Mt = std::make_unique<SparseMatrix>(0, m_Mt->getStorage().m, 0);
    }
 
    return clone;
 }
 
-GeneralMatrix* SparseMatrix::cloneFull(bool switchToDynamicStorage) const {
-   SparseMatrix* clone;
+std::unique_ptr<GeneralMatrix> SparseMatrix::cloneFull(bool switchToDynamicStorage) const {
+   std::unique_ptr<SparseMatrix> clone;
 
    if (switchToDynamicStorage) {
-      clone = new SparseMatrix();
-      clone->mStorageDynamic = new SparseStorageDynamic(*mStorage);
+      clone = std::make_unique<SparseMatrix>();
+      clone->mStorageDynamic = std::make_unique<SparseStorageDynamic>(*mStorage);
       assert(!m_Mt);
-   }
-   else {
-      clone = new SparseMatrix(mStorage->m, mStorage->n, mStorage->len);
+   } else {
+      clone = std::make_unique<SparseMatrix>(mStorage->m, mStorage->n, mStorage->len);
       mStorage->copyFrom(clone->krowM(), clone->jcolM(), clone->M());
    }
 
    if (m_Mt) {
       assert(clone->m_Mt == nullptr);
+      SparseStorage& storage_t = m_Mt->getStorage();
 
-      SparseStorage& storage_t = m_Mt->getStorageRef();
-      clone->m_Mt = new SparseMatrix(storage_t.m, storage_t.length(), storage_t.len);
-
-      SparseMatrix* clone_t = clone->m_Mt;
-
-      storage_t.copyFrom(clone_t->krowM(), clone_t->jcolM(), clone_t->M());
+      clone->m_Mt = std::make_unique<SparseMatrix>(storage_t.m, storage_t.length(), storage_t.len);
+      storage_t.copyFrom(clone->m_Mt->krowM(), clone->m_Mt->jcolM(), clone->m_Mt->M());
    }
 
    return clone;
@@ -110,7 +96,8 @@ void SparseMatrix::fromGetDense(int row, int col, double* A, int lda, int rowExt
 }
 
 
-void SparseMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent, int& info) const {
+void SparseMatrix::fromGetSpRow(int row, int col, double A[], int lenA, int jcolA[], int& nnz, int colExtent,
+   int& info) const {
    mStorage->fromGetSpRow(row, col, A, lenA, jcolA, nnz, colExtent, info);
 }
 
@@ -140,8 +127,7 @@ void SparseMatrix::writeToStreamDenseRow(std::ostream& out, int rowidx) const {
          assert(rowidx < mStorageDynamic->n_rows());
          mStorageDynamic->writeToStreamDenseRow(out, rowidx);
       }
-   }
-   else {
+   } else {
       if (mStorage->n > 0) {
          assert(rowidx < mStorage->m);
          mStorage->writeToStreamDenseRow(out, rowidx);
@@ -153,8 +139,7 @@ void SparseMatrix::writeDashedLineToStream(std::ostream& out) const {
    if (mStorageDynamic != nullptr) {
       for (int i = 0; i < mStorageDynamic->n_columns(); ++i)
          out << "-\t";
-   }
-   else {
+   } else {
       for (int i = 0; i < mStorage->n; ++i)
          out << "-\t";
    }
@@ -191,34 +176,30 @@ void SparseMatrix::symmetrize(int& info) {
 std::pair<long long, long long> SparseMatrix::n_rows_columns() const {
    if (mStorageDynamic) {
       return mStorageDynamic->n_rows_columns();
-   } else if (mStorage) {
-      return mStorage->n_rows_columns();
    } else {
-     return {-1, -1};
+      return mStorage->n_rows_columns();
    }
 }
 
 long long SparseMatrix::n_rows() const {
    if (mStorageDynamic) {
       return mStorageDynamic->n_rows();
-   } else if (mStorage) {
-      return mStorage->n_rows();
    } else {
-      return -1;
+      return mStorage->n_rows();
    }
 }
 
 long long SparseMatrix::n_columns() const {
    if (mStorageDynamic) {
       return mStorageDynamic->n_columns();
-   } else if (mStorage) {
-      return mStorage->n_columns();
    } else {
-      return -1;
+      return mStorage->n_columns();
    }
 }
 
-void SparseMatrix::atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent, int colExtent) {
+void
+SparseMatrix::atPutSubmatrix(int destRow, int destCol, const AbstractMatrix& M, int srcRow, int srcCol, int rowExtent,
+   int colExtent) {
    int i, k;
    int info, nnz;
 
@@ -246,8 +227,8 @@ void SparseMatrix::mult(double beta, Vector<double>& y_in, double alpha, const V
 
    assert(x.length() == mStorage->n && y.length() == mStorage->m);
 
-   const double* xv = 0;
-   double* yv = 0;
+   const double* xv = nullptr;
+   double* yv = nullptr;
 
    if (x.length() > 0)
       xv = &x[0];
@@ -261,22 +242,24 @@ void SparseMatrix::mult(double beta, double y[], int incy, double alpha, const d
    mStorage->mult(beta, y, incy, alpha, x, incx);
 }
 
-void SparseMatrix::multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const {
+void SparseMatrix::multMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart,
+   int ycolstart) const {
    auto& y_sparse = dynamic_cast<SparseSymmetricMatrix&>(y);
-   assert(!y_sparse.isLower);
+   assert(!y_sparse.is_lower());
 
-   mStorage->multMatSymUpper(beta, y_sparse.getStorageRef(), alpha, x, yrowstart, ycolstart);
+   mStorage->multMatSymUpper(beta, y_sparse.getStorage(), alpha, x, yrowstart, ycolstart);
 }
 
-void SparseMatrix::transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart, int ycolstart) const {
-   if(!m_Mt)
+void SparseMatrix::transmultMatSymUpper(double beta, SymmetricMatrix& y, double alpha, const double x[], int yrowstart,
+   int ycolstart) const {
+   if (!m_Mt)
       initTransposed();
    assert(m_Mt);
 
    auto& y_sparse = dynamic_cast<SparseSymmetricMatrix&>(y);
-   assert(!y_sparse.isLower);
+   assert(!y_sparse.is_lower());
 
-   m_Mt->getStorageRef().multMatSymUpper(beta, y_sparse.getStorageRef(), alpha, x, yrowstart, ycolstart);
+   m_Mt->getStorage().multMatSymUpper(beta, y_sparse.getStorage(), alpha, x, yrowstart, ycolstart);
 }
 
 void SparseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, const Vector<double>& x_in) const {
@@ -288,7 +271,8 @@ void SparseMatrix::transMult(double beta, Vector<double>& y_in, double alpha, co
    mStorage->transMult(beta, y.elements(), 1, alpha, x.elements(), 1);
 }
 
-void SparseMatrix::transMult(double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in, int incx) const {
+void SparseMatrix::transMult(double beta, Vector<double>& y_in, int incy, double alpha, const Vector<double>& x_in,
+   int incx) const {
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_in);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_in);
 
@@ -303,7 +287,8 @@ void SparseMatrix::transMult(double beta, double yv[], int incy, double alpha, c
    mStorage->transMult(beta, yv, incy, alpha, xv, incx);
 }
 
-void SparseMatrix::transMultD(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_, const Vector<double>& d_) const {
+void SparseMatrix::transMultD(double beta, Vector<double>& y_, double alpha, const Vector<double>& x_,
+   const Vector<double>& d_) const {
    const auto& x = dynamic_cast<const SimpleVector<double>&>(x_);
    const auto& d = dynamic_cast<const SimpleVector<double>&>(d_);
    auto& y = dynamic_cast<SimpleVector<double>&>(y_);
@@ -337,7 +322,7 @@ void SparseMatrix::atPutDiagonal(int idiag, const Vector<double>& vvec) {
 
    mStorage->atPutDiagonal(idiag, &v[0], 1, v.length());
 
-   if(m_Mt)
+   if (m_Mt)
       m_Mt->atPutDiagonal(idiag, vvec);
 }
 
@@ -345,7 +330,7 @@ void SparseMatrix::atAddDiagonal(int idiag, const Vector<double>& vvec) {
    const auto& v = dynamic_cast<const SimpleVector<double>&>(vvec);
    mStorage->atAddDiagonal(idiag, &v[0], 1, v.length());
 
-   if(m_Mt)
+   if (m_Mt)
       m_Mt->atAddDiagonal(idiag, vvec);
 }
 
@@ -391,7 +376,7 @@ void SparseMatrix::matTransDMultMat(const Vector<double>& d_, SymmetricMatrix** 
    if (*res == nullptr) {
       assert(m_Mt == nullptr);
       //we need to form the transpose
-      m_Mt = new SparseMatrix(n, m, nnz);
+      m_Mt = std::make_unique<SparseMatrix>(n, m, nnz);
       mStorage->transpose(m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M());
 
       //find the sparsity pattern of the product -> the buffers for result will be allocated
@@ -412,21 +397,20 @@ void SparseMatrix::matTransDMultMat(const Vector<double>& d_, SymmetricMatrix** 
 }
 
 void SparseMatrix::initTransposed(bool dynamic) const {
-   if(m_Mt)
+   if (m_Mt)
       return;
 
    if (dynamic) {
       assert(mStorageDynamic != nullptr);
-      m_Mt = new SparseMatrix();
+      m_Mt = std::make_unique<SparseMatrix>();
 
       m_Mt->mStorageDynamic = mStorageDynamic->getTranspose();
-   }
-   else {
+   } else {
       const int m = mStorage->m;
       const int n = mStorage->n;
       const int nnz = mStorage->numberOfNonZeros();
 
-      m_Mt = new SparseMatrix(n, m, nnz);
+      m_Mt = std::make_unique<SparseMatrix>(n, m, nnz);
       mStorage->transpose(m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M());
    }
 }
@@ -441,7 +425,7 @@ void SparseMatrix::matTransDinvMultMat(const Vector<double>& d_, SymmetricMatrix
 
       // we need to form the transpose
       if (!m_Mt) {
-         m_Mt = new SparseMatrix(n, m, nnz);
+         m_Mt = std::make_unique<SparseMatrix>(n, m, nnz);
          mStorage->transpose(m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M());
       }
 
@@ -459,8 +443,10 @@ void SparseMatrix::matTransDinvMultMat(const Vector<double>& d_, SymmetricMatrix
 
    auto* MtDM = dynamic_cast<SparseSymmetricMatrix*>(*res);
 
-   mStorage->matTransDinvMultMat(&d[0], m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M(), MtDM->krowM(), MtDM->jcolM(), MtDM->M());
+   mStorage->matTransDinvMultMat(&d[0], m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M(), MtDM->krowM(), MtDM->jcolM(),
+      MtDM->M());
 }
+
 void SparseMatrix::matMultTrans(SymmetricMatrix** res) const {
    int m = mStorage->m;
    int n = mStorage->n;
@@ -472,7 +458,7 @@ void SparseMatrix::matMultTrans(SymmetricMatrix** res) const {
    if (*res == nullptr) {
       //we need to form the transpose
       if (!m_Mt) {
-         m_Mt = new SparseMatrix(n, m, nnz);
+         m_Mt = std::make_unique<SparseMatrix>(n, m, nnz);
          mStorage->transpose(m_Mt->krowM(), m_Mt->jcolM(), m_Mt->M());
       }
       //find the sparsity pattern of the product -> the buffers for result will be allocated
@@ -494,8 +480,7 @@ void SparseMatrix::addNnzPerRow(Vector<int>& nnzVec) const {
    if (mStorageDynamic != nullptr) {
       assert(vec.length() == mStorageDynamic->n_rows());
       mStorageDynamic->addNnzPerRow(vec.elements());
-   }
-   else {
+   } else {
       assert(vec.length() == mStorage->m);
       mStorage->addNnzPerRow(vec.elements());
    }
@@ -510,8 +495,7 @@ void SparseMatrix::addNnzPerCol(Vector<int>& nnzVec) const {
    if (m_Mt->mStorageDynamic != nullptr) {
       assert(vec.length() == m_Mt->mStorageDynamic->n_rows());
       m_Mt->mStorageDynamic->addNnzPerRow(vec.elements());
-   }
-   else {
+   } else {
       assert(vec.length() == m_Mt->mStorage->m);
       m_Mt->mStorage->addNnzPerRow(vec.elements());
    }
@@ -529,8 +513,7 @@ void SparseMatrix::addNnzPerCol(Vector<int>& nnzVec, int begin_cols, int end_col
    if (m_Mt->mStorageDynamic != nullptr) {
       assert(end_cols <= m_Mt->mStorageDynamic->n_rows());
       m_Mt->mStorageDynamic->addNnzPerRow(vec.elements(), begin_cols, end_cols);
-   }
-   else {
+   } else {
       assert(end_cols <= m_Mt->mStorage->m);
       m_Mt->mStorage->addNnzPerRow(vec.elements(), begin_cols, end_cols);
    }
@@ -555,8 +538,9 @@ void SparseMatrix::addColSums(Vector<double>& sumVec) const {
    m_Mt->mStorage->addRowSums(vec.elements());
 }
 
-void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseStorageDynamic* storage_dynamic, const Vector<double>* coScaleVec,
-      Vector<double>& minmaxVec) {
+void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseStorageDynamic* storage_dynamic,
+   const Vector<double>* coScaleVec,
+   Vector<double>& minmaxVec) {
    auto& mvec = dynamic_cast<SimpleVector<double>&>(minmaxVec);
 
    assert(mvec.length() == storage_dynamic->n_rows());
@@ -572,14 +556,14 @@ void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseSto
       const auto* covec = dynamic_cast<const SimpleVector<double>*>(coScaleVec);
 
       storage_dynamic->getRowMinMaxVec(getMin, covec->elements(), mvec.elements());
-   }
-   else {
+   } else {
       storage_dynamic->getRowMinMaxVec(getMin, nullptr, mvec.elements());
    }
 }
 
-void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseStorage* storage, const Vector<double>* coScaleVec,
-      Vector<double>& minmaxVec) {
+void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseStorage* storage,
+   const Vector<double>* coScaleVec,
+   Vector<double>& minmaxVec) {
    auto& mvec = dynamic_cast<SimpleVector<double>&>(minmaxVec);
 
    assert(mvec.length() == storage->m);
@@ -594,32 +578,32 @@ void SparseMatrix::getMinMaxVec(bool getMin, bool initializeVec, const SparseSto
       const auto* covec = dynamic_cast<const SimpleVector<double>*>(coScaleVec);
 
       storage->getRowMinMaxVec(getMin, covec->elements(), mvec.elements());
-   }
-   else {
+   } else {
       storage->getRowMinMaxVec(getMin, nullptr, mvec.elements());
    }
 }
 
-void SparseMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec, Vector<double>& minmaxVec) const {
+void SparseMatrix::getRowMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* colScaleVec,
+   Vector<double>& minmaxVec) const {
    if (hasDynamicStorage())
-      getMinMaxVec(getMin, initializeVec, mStorageDynamic, colScaleVec, minmaxVec);
+      getMinMaxVec(getMin, initializeVec, mStorageDynamic.get(), colScaleVec, minmaxVec);
    else
-      getMinMaxVec(getMin, initializeVec, mStorage, colScaleVec, minmaxVec);
+      getMinMaxVec(getMin, initializeVec, mStorage.get(), colScaleVec, minmaxVec);
 }
 
-void SparseMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec, Vector<double>& minmaxVec) const {
+void SparseMatrix::getColMinMaxVec(bool getMin, bool initializeVec, const Vector<double>* rowScaleVec,
+   Vector<double>& minmaxVec) const {
    if (hasDynamicStorage()) {
-      assert(getStorageDynamic());
-      assert(getStorageDynamicTransposed());
+      assert(mStorageDynamic);
+      assert(m_Mt->hasDynamicStorage());
 
-      getMinMaxVec(getMin, initializeVec, getStorageDynamicTransposed(), rowScaleVec, minmaxVec);
-   }
-   else {
+      getMinMaxVec(getMin, initializeVec, &getStorageDynamicTransposed(), rowScaleVec, minmaxVec);
+   } else {
       // we may need to form the transpose
       if (!m_Mt)
          initTransposed();
 
-      getMinMaxVec(getMin, initializeVec, m_Mt->mStorage, rowScaleVec, minmaxVec);
+      getMinMaxVec(getMin, initializeVec, m_Mt->mStorage.get(), rowScaleVec, minmaxVec);
    }
 }
 
@@ -630,12 +614,8 @@ void SparseMatrix::initStaticStorageFromDynamic(const Vector<int>& rowNnzVec, co
    const auto* colNnzVecSimple = dynamic_cast<const SimpleVector<int>*>(colNnzVec);
 
    mStorageDynamic->restoreOrder();
-   SmartPointer<SparseStorage> staticStorage(
-         mStorageDynamic->getStaticStorage(rowNnzVecSimple.elements(), (colNnzVecSimple == nullptr) ? nullptr : colNnzVecSimple->elements()));
-
-   mStorage = staticStorage;
-
-   assert(mStorage->refs() == 2);
+   mStorage = mStorageDynamic->getStaticStorage(rowNnzVecSimple.elements(),
+      (colNnzVecSimple == nullptr) ? nullptr : colNnzVecSimple->elements());
 }
 
 void SparseMatrix::deleteEmptyRowsCols(const Vector<int>& rowNnzVec, const Vector<int>& colNnzVec) {
@@ -645,14 +625,16 @@ void SparseMatrix::deleteEmptyRowsCols(const Vector<int>& rowNnzVec, const Vecto
    mStorage->deleteEmptyRowsCols(rowNnzVecSimple.elements(), colNnzVecSimple.elements());
 }
 
-void SparseMatrix::fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset, double* rowsArrayDense,
-      int* rowSparsity) const {
+void SparseMatrix::fromGetRowsBlock(const int* rowIndices, int nRows, int arrayLineSize, int arrayLineOffset,
+   double* rowsArrayDense,
+   int* rowSparsity) const {
 
    mStorage->fromGetRowsBlock(rowIndices, nRows, arrayLineSize, arrayLineOffset, rowsArrayDense, rowSparsity);
 }
 
-void SparseMatrix::fromGetRowsBlock(int row_start, int n_rows, int array_line_size, int array_line_offset, double* rows_array_dense,
-      int* row_sparsity) const {
+void SparseMatrix::fromGetRowsBlock(int row_start, int n_rows, int array_line_size, int array_line_offset,
+   double* rows_array_dense,
+   int* row_sparsity) const {
    assert(0 <= row_start && 0 <= n_rows && 0 <= array_line_size && 0 <= array_line_offset);
    mStorage->fromGetRowsBlock(rows_array_dense, row_start, n_rows, array_line_size, array_line_offset, row_sparsity);
 }
@@ -664,20 +646,24 @@ void SparseMatrix::deleteEmptyRows(int*& orgIndex) {
       this->updateTransposed();
 }
 
-void SparseMatrix::fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset, double* colsArrayDense,
-      int* rowSparsity) const {
+void SparseMatrix::fromGetColsBlock(const int* colIndices, int nCols, int arrayLineSize, int arrayLineOffset,
+   double* colsArrayDense,
+   int* rowSparsity) const {
    if (!m_Mt)
       initTransposed();
 
-   m_Mt->getStorageRef().fromGetRowsBlock(colIndices, nCols, arrayLineSize, arrayLineOffset, colsArrayDense, rowSparsity);
+   m_Mt->getStorage().fromGetRowsBlock(colIndices, nCols, arrayLineSize, arrayLineOffset, colsArrayDense,
+      rowSparsity);
 }
 
-void SparseMatrix::fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset, double* cols_array_dense,
-      int* row_sparsity) const {
+void SparseMatrix::fromGetColsBlock(int col_start, int n_cols, int array_line_size, int array_line_offset,
+   double* cols_array_dense,
+   int* row_sparsity) const {
    if (!m_Mt)
       initTransposed();
 
-   m_Mt->getStorageRef().fromGetRowsBlock(cols_array_dense, col_start, n_cols, array_line_size, array_line_offset, row_sparsity);
+   m_Mt->getStorage().fromGetRowsBlock(cols_array_dense, col_start, n_cols, array_line_size, array_line_offset,
+      row_sparsity);
 }
 
 bool SparseMatrix::hasTransposed() const {
@@ -685,7 +671,6 @@ bool SparseMatrix::hasTransposed() const {
 }
 
 void SparseMatrix::freeDynamicStorage() {
-   delete mStorageDynamic;
    mStorageDynamic = nullptr;
 }
 
@@ -695,10 +680,7 @@ void SparseMatrix::updateTransposed() const {
 }
 
 void SparseMatrix::deleteTransposed() const {
-   if (m_Mt) {
-      delete m_Mt;
-      m_Mt = nullptr;
-   }
+   m_Mt = nullptr;
 }
 
 void SparseMatrix::getLinkVarsNnz(std::vector<int>& vec) const {
@@ -716,8 +698,9 @@ void SparseMatrix::updateNonEmptyRowsCount(std::vector<int>& rowcount) const {
          rowcount[i]++;
 }
 
-void SparseMatrix::updateNonEmptyRowsCountNew(int block_id, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
-      std::vector<int>& row_end_block) const {
+void SparseMatrix::updateNonEmptyRowsCountNew(int block_id, std::vector<int>& n_blocks_per_row,
+   std::vector<int>& row_start_block,
+   std::vector<int>& row_end_block) const {
    const int m = mStorage->m;
    const int* const rowStart = mStorage->krowM;
 
@@ -734,8 +717,9 @@ void SparseMatrix::updateNonEmptyRowsCountNew(int block_id, std::vector<int>& n_
       }
 }
 
-void SparseMatrix::updateNonEmptyRowsCount(int block_id, std::vector<int>& n_blocks_per_row, std::vector<int>& row_start_block,
-      std::vector<int>& row_end_block) const {
+void SparseMatrix::updateNonEmptyRowsCount(int block_id, std::vector<int>& n_blocks_per_row,
+   std::vector<int>& row_start_block,
+   std::vector<int>& row_end_block) const {
    const int m = mStorage->m;
    const int* const rowStart = mStorage->krowM;
 
@@ -789,7 +773,7 @@ int SparseMatrix::appendRow(const SparseMatrix& matrix_row, int row) {
    assert(!hasTransposed());
    assert(matrix_row.hasDynamicStorage());
 
-   mStorageDynamic->appendRow(matrix_row.getStorageDynamicRef(), row);
+   mStorageDynamic->appendRow(matrix_row.getStorageDynamic(), row);
 
    return mStorageDynamic->n_rows() - 1;
 }
@@ -800,7 +784,7 @@ int SparseMatrix::appendCol(const SparseMatrix& matrix_col, int col) {
    assert(hasDynamicStorage());
    assert(!hasTransposed());
 
-   mStorageDynamic->appendRow(matrix_col.getStorageDynamicTransposedRef(), col);
+   mStorageDynamic->appendRow(matrix_col.getStorageDynamicTransposed(), col);
 
    return mStorageDynamic->n_rows() - 1;
 }
@@ -811,7 +795,8 @@ void SparseMatrix::axpyWithRowAt(double alpha, SimpleVector<double>& y, int row)
    mStorageDynamic->axpyWithRowAt(alpha, y.elements(), y.length(), row);
 }
 
-void SparseMatrix::axpyWithRowAtPosNeg(double alpha, SimpleVector<double>& y_pos, SimpleVector<double>& y_neg, int row) const {
+void SparseMatrix::axpyWithRowAtPosNeg(double alpha, SimpleVector<double>& y_pos, SimpleVector<double>& y_neg,
+   int row) const {
    assert(hasDynamicStorage());
    assert(y_pos.length() == y_neg.length());
 
@@ -827,12 +812,11 @@ double SparseMatrix::localRowTimesVec(const SimpleVector<double>& vec, int row) 
 void SparseMatrix::removeRow(int row) {
    assert(hasDynamicStorage());
    if (hasTransposed()) {
-      assert(m_Mt->getStorageDynamic());
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
-      removeRowUsingTransposed(row, m_Mt->getStorageDynamicRef());
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
-   }
-   else
+      assert(m_Mt->hasDynamicStorage());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
+      removeRowUsingTransposed(row, m_Mt->getStorageDynamic());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
+   } else
       mStorageDynamic->clearRow(row);
 }
 
@@ -855,14 +839,13 @@ void SparseMatrix::removeRowUsingTransposed(int row, SparseStorageDynamic& mat_t
 void SparseMatrix::removeCol(int col) {
    assert(hasDynamicStorage());
    if (hasTransposed()) {
-      assert(m_Mt->getStorageDynamic());
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(m_Mt->hasDynamicStorage());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
       m_Mt->removeRowUsingTransposed(col, *mStorageDynamic);
 
       m_Mt->removeRow(col);
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
-   }
-   else
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
+   } else
       mStorageDynamic->clearCol(col);
 }
 
@@ -870,13 +853,13 @@ void SparseMatrix::removeEntryAtRowCol(int row, int col) {
    assert(hasDynamicStorage());
 
    if (hasTransposed())
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
 
    mStorageDynamic->removeEntryAtRowCol(row, col);
 
    if (hasTransposed()) {
       m_Mt->removeEntryAtRowCol(col, row);
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
    }
 }
 
@@ -884,14 +867,14 @@ void SparseMatrix::removeEntryAtRowColIndex(int row, int col_index) {
    assert(hasDynamicStorage());
 
    if (hasTransposed())
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
 
    const int col = mStorageDynamic->getJcolM(col_index);
    mStorageDynamic->removeEntryAtIndex(row, col_index);
 
    if (hasTransposed()) {
       m_Mt->removeEntryAtRowCol(col, row);
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
    }
 }
 
@@ -899,42 +882,42 @@ void SparseMatrix::addColToRow(double coeff, int col, int row) {
    assert(hasDynamicStorage());
 
    if (hasTransposed())
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
 
    mStorageDynamic->addColToRow(coeff, col, row);
 
    if (hasTransposed()) {
       m_Mt->addColToRow(coeff, row, col);
-      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic()->getNVals());
+      assert(mStorageDynamic->getNVals() == m_Mt->getStorageDynamic().getNVals());
    }
 }
 
-SparseMatrix* SparseMatrix::shaveLeft(int n_cols) {
+std::unique_ptr<SparseMatrix> SparseMatrix::shaveLeft(int n_cols) {
    assert(!hasDynamicStorage());
    assert(n_cols <= mStorage->n);
 
-   SparseStorage* border = mStorage->shaveLeft(n_cols);
+   std::unique_ptr<SparseStorage> border = mStorage->shaveLeft(n_cols);
 
    if (n_cols != 0 && m_Mt) {
-      delete m_Mt;
+      m_Mt = nullptr;
       this->initTransposed(false);
    }
 
-   return new SparseMatrix(border);
+   return std::make_unique<SparseMatrix>(std::move(border));
 }
 
-GeneralMatrix* SparseMatrix::shaveBottom(int n_rows) {
+std::unique_ptr<GeneralMatrix> SparseMatrix::shaveBottom(int n_rows) {
    assert(!hasDynamicStorage());
    assert(n_rows <= mStorage->m);
 
-   SparseStorage* border = mStorage->shaveBottom(n_rows);
+   std::unique_ptr<SparseStorage> border = mStorage->shaveBottom(n_rows);
 
    if (n_rows != 0 && m_Mt) {
-      delete m_Mt;
+      m_Mt = nullptr;
       this->initTransposed(false);
    }
 
-   return new SparseMatrix(border);
+   return std::make_unique<SparseMatrix>(std::move(border));
 }
 
 void SparseMatrix::dropNEmptyRowsBottom(int n_rows) {
@@ -944,7 +927,7 @@ void SparseMatrix::dropNEmptyRowsBottom(int n_rows) {
    mStorage->dropNEmptyRowsBottom(n_rows);
 
    if (n_rows != 0 && m_Mt) {
-      delete m_Mt;
+      m_Mt = nullptr;
       this->initTransposed(false);
    }
 }
@@ -956,7 +939,7 @@ void SparseMatrix::dropNEmptyRowsTop(int n_rows) {
    mStorage->dropNEmptyRowsTop(n_rows);
 
    if (n_rows != 0 && m_Mt) {
-      delete m_Mt;
+      m_Mt = nullptr;
       this->initTransposed(false);
    }
 }
