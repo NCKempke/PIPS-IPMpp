@@ -18,7 +18,7 @@ public:
     */
    CGSolver(MatTimesVec* A, MatTimesVec* M1, MatTimesVec* M2 = nullptr);
 
-   ~CGSolver() override;
+   ~CGSolver() override = default;
 
    /** version of the main solve routine that takes argument as an
     * Vector<double>
@@ -26,8 +26,9 @@ public:
     * @param drhs on input contains the right-hand side; on output
     * contains the solution
     */
-    using DoubleLinearSolver::solve;
-   void solve(Vector<double>& rhs);
+   using DoubleLinearSolver::solve;
+
+   void solve(Vector<double>& rhs) override;
 
 protected:
    double tol{};
@@ -35,12 +36,12 @@ protected:
    int maxit{};
    int flag{};
 
-   double* tmpVec1{};
-   double* tmpVec2{};
-   double* tmpVec3{};
-   double* tmpVec4{};
-   double* tmpVec5{};
-   double* tmpVec6{};
+   std::vector<double> tmpVec1;
+   std::vector<double> tmpVec2;
+   std::vector<double> tmpVec3;
+   std::vector<double> tmpVec4;
+   std::vector<double> tmpVec5;
+   std::vector<double> tmpVec6;
    //int firstSolve;
 };
 
