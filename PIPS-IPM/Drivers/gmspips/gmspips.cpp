@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
    }
 
    // create the PIPS-IPM++ interface
-   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? MehrotraHeuristic::PRIMAL_DUAL : MehrotraHeuristic::PRIMAL, MPI_COMM_WORLD, scaler_type,
+   PIPSIPMppInterface pipsIpm(root, primal_dual_step_length ? MehrotraStrategyType::PRIMAL_DUAL : MehrotraStrategyType::PRIMAL, MPI_COMM_WORLD, scaler_type,
          presolve ? PresolverType::PRESOLVER_STOCH : PresolverType::PRESOLVER_NONE);
 
    if (gmsRank == 0) {

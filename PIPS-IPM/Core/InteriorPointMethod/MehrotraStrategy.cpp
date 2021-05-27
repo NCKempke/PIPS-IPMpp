@@ -20,7 +20,8 @@ const unsigned int max_linesearch_points = 50;
 MehrotraStrategy::MehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler) : scaler(scaler),
       corrector_step(factory.make_variables(problem)), corrector_residuals(factory.make_residuals(problem)),
       n_linesearch_points(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_N_LINESEARCH")), temp_step(factory.make_variables(problem)),
-      statistics(factory, scaler), bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.), bicg_iterations(0),
+      statistics(factory, scaler), filter_line_search(), bicgstab_skipped(false), bicgstab_converged(true), bigcstab_norm_res_rel(0.),
+      bicg_iterations(0),
       dynamic_corrector_schedule(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_USE_DYNAMIC_CORRECTOR_SCHEDULE")),
       additional_correctors_small_comp_pairs(pipsipmpp_options::get_bool_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_SMALL_VARS")),
       max_additional_correctors(pipsipmpp_options::get_int_parameter("GONDZIO_STOCH_ADDITIONAL_CORRECTORS_MAX")),
@@ -1068,8 +1069,8 @@ MehrotraStrategy::~MehrotraStrategy() {
 }
 
 std::unique_ptr<MehrotraStrategy>
-MehrotraFactory::create(DistributedFactory& factory, Problem& problem, MehrotraHeuristic mehrotra_heuristic, const Scaler* scaler) {
-   if (mehrotra_heuristic == MehrotraHeuristic::PRIMAL) {
+MehrotraFactory::create(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_heuristic, const Scaler* scaler) {
+   if (mehrotra_heuristic == MehrotraStrategyType::PRIMAL) {
       return std::make_unique<PrimalMehrotraStrategy>(factory, problem, scaler);
    }
    else {
