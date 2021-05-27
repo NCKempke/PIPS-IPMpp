@@ -44,7 +44,7 @@ protected:
    std::unique_ptr<Vector<double>> vec_colscale{};
 
    // problem data
-   std::shared_ptr<SymmetricMatrix> Q;
+   //std::shared_ptr<SymmetricMatrix> Q;
    std::shared_ptr<GeneralMatrix> A;
    std::shared_ptr<GeneralMatrix> C;
    std::shared_ptr<Vector<double>> obj;

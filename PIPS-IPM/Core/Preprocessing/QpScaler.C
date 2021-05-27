@@ -17,19 +17,15 @@
 
 QpScaler::QpScaler(Problem* problem, bool bitshifting) : Scaler(problem, bitshifting),
       scaling_output{pipsipmpp_options::get_bool_parameter("SCALER_OUTPUT")} {
-   QP* qp = dynamic_cast<QP*>(problem);
-
-   Q = qp->Q;
-   A = qp->A;
-   C = qp->C;
-   obj = qp->g;
-   bA = qp->bA;
-   bux = qp->bux; // upper bound of x
-   blx = qp->blx; // lower bound of x
-   rhsC = qp->bu; // RHS of C
-   lhsC = qp->bl; // LHS of C
-
-   factor_objscale = 1.0;
+   A = problem->A;
+   C = problem->C;
+   obj = problem->g;
+   bA = problem->bA;
+   bux = problem->bux; // upper bound of x
+   blx = problem->blx; // lower bound of x
+   rhsC = problem->bu; // RHS of C
+   lhsC = problem->bl; // LHS of C
+   factor_objscale = 1.;
 }
 
 double QpScaler::get_unscaled_objective(double objval) const {
