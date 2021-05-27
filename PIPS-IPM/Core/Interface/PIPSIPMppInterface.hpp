@@ -12,7 +12,6 @@
 #include "MehrotraStrategyType.h"
 #include "pipsdef.h"
 #include "PreprocessType.h"
-#include "SmartPointer.h"
 
 template<typename T>
 class Vector;

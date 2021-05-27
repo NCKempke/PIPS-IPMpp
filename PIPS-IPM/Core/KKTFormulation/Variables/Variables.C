@@ -3,8 +3,6 @@
 #include <SimpleVector.h>
 #include "Variables.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
-
 #include "Problem.h"
 #include "MpsReader.h"
 

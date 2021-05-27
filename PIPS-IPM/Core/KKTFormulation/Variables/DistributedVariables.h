@@ -3,7 +3,6 @@
 
 #include "Variables.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "DistributedVector.h"
 #include <vector>
 

@@ -11,7 +11,6 @@
 
 #include "Scaler.h"
 #include "Vector.hpp"
-#include "SmartPointer.h"
 #include "AbstractMatrix.h"
 
 #include <memory>
