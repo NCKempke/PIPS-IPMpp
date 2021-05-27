@@ -74,9 +74,9 @@ protected:
 
 public:
    std::unique_ptr<Vector<double>> lagrangian_gradient;
-   std::unique_ptr<Vector<double>> rA;
-   std::unique_ptr<Vector<double>> rC;
-   std::unique_ptr<Vector<double>> rz;
+   std::unique_ptr<Vector<double>> equality_residuals;
+   std::unique_ptr<Vector<double>> inequality_residuals;
+   std::unique_ptr<Vector<double>> inequality_dual_residuals;
    std::unique_ptr<Vector<double>> rv;
    std::unique_ptr<Vector<double>> rw;
    std::unique_ptr<Vector<double>> rt;

@@ -331,8 +331,8 @@ std::vector<double> PIPSIPMppInterface::gatherEqualityConsValues() {
       this->postsolveComputedSolution();
 
    DistributedVector<double>* eq_vals = (postsolved_variables == nullptr)
-                                        ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rA->cloneFull())
-                                        : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rA->cloneFull());
+                                        ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->equality_residuals->cloneFull())
+                                        : dynamic_cast<DistributedVector<double>*>(postsolvedResids->equality_residuals->cloneFull());
 
    if (original_problem == nullptr || postsolved_variables == nullptr)
       eq_vals->axpy(1.0, *presolved_problem->bA);
@@ -359,8 +359,8 @@ std::vector<double> PIPSIPMppInterface::gatherInequalityConsValues() {
       this->postsolveComputedSolution();
 
    DistributedVector<double>* ineq_vals = (postsolved_variables == nullptr)
-                                          ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->rC->cloneFull())
-                                          : dynamic_cast<DistributedVector<double>*>(postsolvedResids->rC->cloneFull());
+                                          ? dynamic_cast<DistributedVector<double>*>(unscaleUnpermNotHierResids->inequality_residuals->cloneFull())
+                                          : dynamic_cast<DistributedVector<double>*>(postsolvedResids->inequality_residuals->cloneFull());
 
    if (postsolved_variables == nullptr)
       ineq_vals->axpy(1.0, *unscaleUnpermNotHierVars->slacks);

@@ -83,9 +83,9 @@ void Scaler::unscale_residuals(Residuals& residuals) const {
    assert(vec_rowscaleC);
 
    residuals.lagrangian_gradient->componentDiv(*vec_colscale);
-   residuals.rA->componentDiv(*vec_rowscaleA);
-   residuals.rC->componentDiv(*vec_rowscaleC);
-   residuals.rz->componentMult(*vec_rowscaleC);
+   residuals.equality_residuals->componentDiv(*vec_rowscaleA);
+   residuals.inequality_residuals->componentDiv(*vec_rowscaleC);
+   residuals.inequality_dual_residuals->componentMult(*vec_rowscaleC);
 
    if (residuals.getNxlow() > 0)
       residuals.rv->componentMult(*vec_colscale);

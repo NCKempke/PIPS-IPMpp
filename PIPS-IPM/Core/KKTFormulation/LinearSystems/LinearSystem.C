@@ -308,7 +308,7 @@ void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& 
    // start by partially computing step.s
    /*** compute rs ***/
    /* step->s = rz */
-   step.slacks->copyFrom(*residuals.rz);
+   step.slacks->copyFrom(*residuals.inequality_dual_residuals);
    if (mclow > 0) {
       Vector<double>& lambda_by_t = *step.slack_lower_bound_gap;
       lambda_by_t.copyFrom(*variables.slack_lower_bound_gap_dual);
@@ -332,9 +332,9 @@ void LinearSystem::solve(Variables& variables, Residuals& residuals, Variables& 
    }
 
    /*** ry = rA ***/
-   step.equality_duals->copyFrom(*residuals.rA);
+   step.equality_duals->copyFrom(*residuals.equality_residuals);
    /*** rz = rC ***/
-   step.inequality_duals->copyFrom(*residuals.rC);
+   step.inequality_duals->copyFrom(*residuals.inequality_residuals);
 
    {
       solveXYZS(*step.primals, *step.equality_duals, *step.inequality_duals, *step.slacks);

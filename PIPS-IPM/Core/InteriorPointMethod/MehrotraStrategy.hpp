@@ -26,17 +26,18 @@ class Scaler;
 
 class MehrotraStrategy : public Observer {
 public:
-   MehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler = nullptr);
-   virtual TerminationStatus
-   corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration) = 0;
+   MehrotraStrategy(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler = nullptr);
+   virtual void corrector_predictor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration) = 0;
    virtual void fraction_to_boundary_rule(Variables& iterate, Variables& step) = 0;
    virtual double compute_centering_parameter(Variables& iterate, Variables& step) = 0;
-   virtual void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i,
-         double mu, int stop_code, int level) = 0;
+   virtual void
+   print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
+         int stop_code, int level) = 0;
    virtual void take_step(Variables& iterate, Variables& step) = 0;
-   virtual void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
+   virtual void
+   gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) = 0;
    virtual void mehrotra_step_length(Variables& iterate, Variables& step) = 0;
    virtual bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const = 0;
    double compute_probing_factor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step);
@@ -45,10 +46,13 @@ public:
    virtual std::pair<double, double> get_step_lengths() const = 0;
    void set_BiCGStab_tolerance(int iteration) const;
    void register_observer(AbstractLinearSystem* linear_system);
-   ~MehrotraStrategy() override;
+   virtual ~MehrotraStrategy() = default;
+
+   double sigma;
 
 protected:
-   const Scaler* scaler{};
+   /** norm of problem data */
+   double dnorm{0.};
    std::unique_ptr<Variables> corrector_step;
    /** storage for residual vectors */
    std::unique_ptr<Residuals> corrector_residuals;
@@ -57,15 +61,8 @@ protected:
    Statistics statistics;
    FilterLineSearch filter_line_search;
 
-   std::unique_ptr<Residuals> residuals_unscaled;
    /** termination parameters */
    double mutol{1.e-6};
-   double artol{1.e-4};
-
-   /** norm of problem data */
-   double dnorm{0.};
-   /** norm of original unscaled problem */
-   double dnorm_orig{0.};
 
    /* observer stuff for checking convergence of BiCGStab */
    bool bicgstab_skipped;
@@ -106,67 +103,43 @@ protected:
    /** number in (0,1) with which the step length is multiplied */
    double steplength_factor{0.99999999};
 
-   /** maximum number of iterations allowed */
-   int max_iterations{0};
-
-   /** history of values of mu obtained on all iterations to date */
-   double* mu_history{};
-   /** history of values of residual norm obtained on all iterations to date */
-   double* residual_norm_history{};
-
-   /** history of values of phi obtained on all iterations to date */
-   double* phi_history{};
-   /** the i-th entry of this array contains the minimum value of phi encountered by the algorithm on or before iteration i */
-   double* phi_min_history{};
-
-   bool print_timestamp{true};
-   double start_time{-1.};
-
-   double sigma;
-
    bool pure_centering_step;
    bool numerical_troubles;
    bool precond_decreased;
 
    static void compute_predictor_step(Variables& iterate, Residuals& residuals, AbstractLinearSystem& linear_system, Variables& step);
    void compute_corrector_step(Variables& iterate, AbstractLinearSystem& linear_system, Variables& step, double sigma, double mu);
-   void
-   compute_gondzio_corrector(Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
+   void compute_gondzio_corrector(Variables& iterate, AbstractLinearSystem& linear_system, double rmin, double rmax, bool small_corr);
    std::pair<double, double>
    calculate_alpha_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_predictor);
    std::tuple<double, double, double, double>
    calculate_alpha_pd_weight_candidate(Variables& iterate, Variables& predictor_step, Variables& corrector_step, double alpha_primal,
          double alpha_dual);
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased, double alpha_max) const;
-   static double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing) ;
-   static bool decrease_preconditioner_impact(AbstractLinearSystem* sys) ;
+   static double compute_step_factor_probing(double resids_norm_last, double resids_norm_probing, double mu_last, double mu_probing);
+   static bool decrease_preconditioner_impact(AbstractLinearSystem* sys);
    void adjust_limit_gondzio_correctors();
    void check_numerical_troubles(Residuals* residuals, bool& numerical_troubles, bool& small_corr) const;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double alpha_primal,
          double alpha_dual, double sigma, int i, double mu, int stop_code, int level);
-   TerminationStatus compute_status(const Residuals& residuals, int iteration, double mu);
-   void set_problem_norm(const Problem& problem);
-   std::pair<double, double> compute_unscaled_gap_and_residual_norm(const Residuals& residuals);
    void notify_from_subject() override;
-   void default_monitor(const Problem* problem /* problem */, const Variables* iterate /* iterate */, const Residuals* residuals, double alpha,
-         double sigma, int i, double mu, int status_code, int level) const;
 };
 
 class PrimalMehrotraStrategy : public MehrotraStrategy {
 public:
-   PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
-   TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration) override;
+   PrimalMehrotraStrategy(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
+   void corrector_predictor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration) override;
    void fraction_to_boundary_rule(Variables& iterate, Variables& step) override;
    double compute_centering_parameter(Variables& iterate, Variables& step) override;
    void take_step(Variables& iterate, Variables& step) override;
-   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
+   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
    void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
    void compute_probing_step(Variables& probing_step, const Variables& iterate, const Variables& step) const override;
-   std::pair<double, double> get_step_lengths() const override;
+   [[nodiscard]] std::pair<double, double> get_step_lengths() const override;
    void print_statistics(const Problem* problem, const Variables* iterate, const Residuals* residuals, double dnorm, double sigma, int i, double mu,
          int stop_code, int level) override;
 
@@ -177,14 +150,14 @@ protected:
 
 class PrimalDualMehrotraStrategy : public MehrotraStrategy {
 public:
-   PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, const Scaler* scaler);
-   TerminationStatus corrector_predictor(DistributedFactory& factory, Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration) override;
+   PrimalDualMehrotraStrategy(DistributedFactory& factory, Problem& problem, double dnorm, const Scaler* scaler);
+   void corrector_predictor(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration) override;
    void fraction_to_boundary_rule(Variables& iterate, Variables& step) override;
    double compute_centering_parameter(Variables& iterate, Variables& step) override;
    void take_step(Variables& iterate, Variables& step) override;
-   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step,
-         AbstractLinearSystem& linear_system, int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
+   void gondzio_correction_loop(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step, AbstractLinearSystem& linear_system,
+         int iteration, double sigma, double mu, bool& small_corr, bool& numerical_troubles) override;
    void mehrotra_step_length(Variables& iterate, Variables& step) override;
    bool is_poor_step(bool& pure_centering_step, bool precond_decreased) const override;
    void do_probing(Problem& problem, Variables& iterate, Residuals& residuals, Variables& step) override;
@@ -203,7 +176,7 @@ protected:
 class MehrotraFactory {
 public:
    static std::unique_ptr<MehrotraStrategy>
-   create(DistributedFactory& factory, Problem& problem, MehrotraStrategyType mehrotra_heuristic, const Scaler* scaler = nullptr);
+   create(DistributedFactory& factory, Problem& problem, double dnorm, MehrotraStrategyType mehrotra_heuristic, const Scaler* scaler = nullptr);
 };
 
 
