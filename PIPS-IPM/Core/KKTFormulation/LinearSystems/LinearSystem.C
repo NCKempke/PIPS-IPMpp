@@ -24,28 +24,28 @@ extern int gOuterBiCGFails;
 
 static std::vector<int> bicgIters;
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, bool create_iter_ref_vecs) : factory(factory_),
+LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem, bool create_iter_ref_vecs) : factory(factory_),
       apply_regularization(options::getBoolParameter("REGULARIZATION")), outerSolve(options::getIntParameter("OUTER_SOLVE")),
       innerSCSolve(options::getIntParameter("INNER_SC_SOLVE")), outer_bicg_print_statistics(options::getBoolParameter("OUTER_BICG_PRINT_STATISTICS")),
       outer_bicg_eps(options::getDoubleParameter("OUTER_BICG_EPSILON")), outer_bicg_max_iter(options::getIntParameter("OUTER_BICG_MAX_ITER")),
       outer_bicg_max_normr_divergences(options::getIntParameter("OUTER_BICG_MAX_NORMR_DIVERGENCES")),
       outer_bicg_max_stagnations(options::getIntParameter("OUTER_BICG_MAX_STAGNATIONS")),
-      xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")), data{problem} {
+      xyzs_solve_print_residuals(options::getBoolParameter("XYZS_SOLVE_PRINT_RESISDUAL")), problem(problem) {
 
    assert(factory_);
 
-   nx = data.nx;
-   my = data.my;
-   mz = data.mz;
-   ixlow = data.ixlow;
-   ixupp = data.ixupp;
-   iclow = data.iclow;
-   icupp = data.icupp;
+   nx = problem.nx;
+   my = problem.my;
+   mz = problem.mz;
+   ixlow = problem.ixlow;
+   ixupp = problem.ixupp;
+   iclow = problem.iclow;
+   icupp = problem.icupp;
 
-   nxlow = data.nxlow;
-   nxupp = data.nxupp;
-   mclow = data.mclow;
-   mcupp = data.mcupp;
+   nxlow = problem.nxlow;
+   nxupp = problem.nxupp;
+   mclow = problem.mclow;
+   mcupp = problem.mcupp;
 
    if (create_iter_ref_vecs) {
       if (outerSolve || xyzs_solve_print_residuals) {
@@ -69,7 +69,7 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, bool
    }
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
+LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem, Vector<double>* primal_diagonal_, Vector<double>* dq_,
       Vector<double>* nomegaInv_, Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization_,
       Vector<double>* dual_inequality_regularization_, Vector<double>* rhs_, bool create_iter_ref_vecs) : LinearSystem(factory_, problem,
       create_iter_ref_vecs) {
@@ -82,11 +82,11 @@ LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem, Vect
    rhs = rhs_;
 }
 
-LinearSystem::LinearSystem(DistributedFactory* factory_, const QP& problem) : LinearSystem(factory_, problem, true) {
+LinearSystem::LinearSystem(DistributedFactory* factory_, const Problem& problem) : LinearSystem(factory_, problem, true) {
    if (nxupp + nxlow > 0) {
       primal_diagonal = factory->make_primal_vector();
       dq = factory->make_primal_vector();
-      data.hessian_diagonal(*dq);
+      problem.hessian_diagonal(*dq);
    }
 
    nomegaInv = factory->make_inequalities_dual_vector();
@@ -452,7 +452,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       ///////////////////////////////////////////////////////////////
       // Iterative refinement
       ///////////////////////////////////////////////////////////////
-      auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = data](auto&& PH1, auto&& PH2) {
+      auto computeResiduals = [this, &stepx, &stepy, &stepz, &capture0 = problem](auto&& PH1, auto&& PH2) {
          compute_system_residuals(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), stepx, stepy, stepz, capture0);
       };
 
@@ -476,12 +476,12 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       ///////////////////////////////////////////////////////////////
 
       const bool use_regularized_system = true;
-      auto matMult = [this, &capture0 = data, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
+      auto matMult = [this, &capture0 = problem, &stepx, &stepy, &stepz, use_regularized_system](auto&& PH1, auto&& PH2, auto&& PH3, auto&& PH4) {
          system_mult(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3),
                std::forward<decltype(PH4)>(PH4), capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
-      auto matInfnorm = [this, &capture0 = data, &stepx, &stepy, &stepz] {
+      auto matInfnorm = [this, &capture0 = problem, &stepx, &stepy, &stepz] {
          return matXYZinfnorm(capture0, stepx, stepy, stepz, use_regularized_system);
       };
 
@@ -497,7 +497,7 @@ void LinearSystem::solveXYZS(Vector<double>& stepx, Vector<double>& stepy, Vecto
       assert(sol);
       const double bnorm = residual->inf_norm();
       this->joinRHS(*sol, stepx, stepy, stepz);
-      this->system_mult(1.0, *residual, -1.0, *sol, data, stepx, stepy, stepz, true);
+      this->system_mult(1.0, *residual, -1.0, *sol, problem, stepx, stepy, stepz, true);
 
       this->separateVars(*resx, *resy, *resz, *residual);
       const double resxnorm = resx->inf_norm();

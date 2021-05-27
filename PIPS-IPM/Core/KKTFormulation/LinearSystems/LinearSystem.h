@@ -10,7 +10,6 @@
 #include "SmartPointer.h"
 #include "Observer.h"
 #include "RegularizationStrategy.h"
-#include "QP.hpp"
 
 #include <functional>
 #include <memory>
@@ -96,7 +95,7 @@ protected:
    Vector<double>* dual_equality_regularization_diagonal{};
    Vector<double>* dual_inequality_regularization_diagonal{};
 
-   LinearSystem(DistributedFactory* factory_, const QP& problem, bool create_iter_ref_vecs);
+   LinearSystem(DistributedFactory* factory_, const Problem& problem, bool create_iter_ref_vecs);
 
    /** dimensions of the vectors */
    long long nx{0};
@@ -153,12 +152,12 @@ protected:
 
    double barrier_parameter_current_iterate{std::numeric_limits<double>::infinity()};
 
-   const QP& data;
+   const Problem& problem;
 
 public:
-   LinearSystem(DistributedFactory* factory, const QP& problem);
+   LinearSystem(DistributedFactory* factory, const Problem& problem);
 
-   LinearSystem(DistributedFactory* factory_, const QP& problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
+   LinearSystem(DistributedFactory* factory_, const Problem& problem, Vector<double>* dd_, Vector<double>* dq_, Vector<double>* nomegaInv_,
          Vector<double>* primal_regularization_, Vector<double>* dual_equality_regularization, Vector<double>* dual_inequality_regularization_,
          Vector<double>* rhs_, bool create_iter_ref_vecs);
 
